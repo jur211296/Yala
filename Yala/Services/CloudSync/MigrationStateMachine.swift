@@ -299,6 +299,25 @@ nonisolated enum MigrationEvent: Equatable {
     /// La persona cancela la vuelta desde la pantalla de espera («Cancelar y seguir en la nube»). Misma salida
     /// que el tope, sin esperar a que venza.
     case reverseUploadCancelled(returnTo: ReverseOrigin)
+
+    // MARK: Techo y salida de las CUATRO fases previas al montaje
+    // (ticket `reverse-before-mount-has-no-way-to-abandon-the-return`)
+
+    /// Observación de una fase PREVIA al montaje que no avanza. Válido desde las cuatro (`reverseClaimLeader`,
+    /// `reverseDrainAll`, `reverseVerify`, `reverseFreezeBackend`), y bajo presupuesto HOLDEA en su propia fase como
+    /// el techo de la espera de subida. `stalledSeconds` lo mide el RUNNER —`now()` menos
+    /// `MigrationState.reversePreMountProgressAt`, el instante del último CAMBIO de fase journaleado—, `cause` elige
+    /// el presupuesto (`MigrationPolicy.reversePreMount*BudgetSeconds`) y `returnTo` lo inyecta el runner desde
+    /// `reverseOriginRaw`, como en `reverseOtherLeader`.
+    ///
+    /// Aquí «avanzar» no es una cifra que baje sino cambiar de fase: el drenaje no expone un pendiente comparable, la
+    /// verificación es un veredicto y el congelado es una sola llamada. El único bucle posible
+    /// (`reverseVerify ⇄ reverseDrainAll` por mismatch) lo acota `maxMismatchRetries`, así que no puede re-sellar el
+    /// reloj para siempre.
+    case reversePreMountStalled(stalledSeconds: Double, cause: MarkerExportStall, returnTo: ReverseOrigin)
+    /// La persona cancela la vuelta desde una de las cuatro fases previas al montaje. Misma salida que su techo, sin
+    /// esperar a que venza.
+    case reversePreMountCancelled(returnTo: ReverseOrigin)
 }
 
 // MARK: - Effects
@@ -403,6 +422,17 @@ nonisolated struct MigrationPolicy: Equatable {
     /// el del ÚLTIMO avance, no el del inicio, así que un corpus grande que sube despacio nunca lo agota.
     var reverseUploadUnknownBudgetSeconds: Double = 259_200
 
+    /// Techo de las CUATRO fases previas al montaje del espejo cuando el SERVIDOR ya dijo que no (`other_leader`,
+    /// un rechazo del congelado, o la cuenta en la nube no disponible): 15 min sin cambiar de fase. Ticket
+    /// `reverse-before-mount-has-no-way-to-abandon-the-return`; es el mismo número que el resto de techos de esta
+    /// familia, y no hay medición que justifique otro. Mientras tanto el teléfono NO sincroniza: ninguna de las
+    /// cuatro fases es estable.
+    var reversePreMountDefinitiveBudgetSeconds: Double = 900
+    /// Techo de las mismas cuatro fases cuando no se sabe por qué no avanzan: 72 h. Aquí caen la red que no vuelve y
+    /// la sesión que nadie renueva —incluida la cuenta a la que ya no se puede entrar—, y las dos tienen su aviso y
+    /// su botón mucho antes de llegar a esto.
+    var reversePreMountUnknownBudgetSeconds: Double = 259_200
+
     static let `default` = MigrationPolicy()
 
     init(
@@ -411,7 +441,9 @@ nonisolated struct MigrationPolicy: Equatable {
         markerExportDefinitiveBudgetSeconds: Double = 900,
         markerExportUnknownBudgetSeconds: Double = 259_200,
         reverseUploadDefinitiveBudgetSeconds: Double = 900,
-        reverseUploadUnknownBudgetSeconds: Double = 259_200
+        reverseUploadUnknownBudgetSeconds: Double = 259_200,
+        reversePreMountDefinitiveBudgetSeconds: Double = 900,
+        reversePreMountUnknownBudgetSeconds: Double = 259_200
     ) {
         self.maxMismatchRetries = maxMismatchRetries
         self.maxNetworkRetries = maxNetworkRetries
@@ -419,6 +451,8 @@ nonisolated struct MigrationPolicy: Equatable {
         self.markerExportUnknownBudgetSeconds = markerExportUnknownBudgetSeconds
         self.reverseUploadDefinitiveBudgetSeconds = reverseUploadDefinitiveBudgetSeconds
         self.reverseUploadUnknownBudgetSeconds = reverseUploadUnknownBudgetSeconds
+        self.reversePreMountDefinitiveBudgetSeconds = reversePreMountDefinitiveBudgetSeconds
+        self.reversePreMountUnknownBudgetSeconds = reversePreMountUnknownBudgetSeconds
     }
 }
 
@@ -660,6 +694,39 @@ nonisolated enum MigrationStateMachine {
         // reverseUpload · SALIDA de la persona: la misma vuelta que el techo, sin esperar a que venza.
         case let (.reverseUpload, .reverseUploadCancelled(origin)):
             return .transition(next: reverseOriginPhase(origin), effects: [.rearmMirrorOff, .reverseRollback])
+
+        // Las CUATRO fases PREVIAS al montaje · TECHO (ticket `reverse-before-mount-has-no-way-to-abandon-the-return`).
+        // Bajo presupuesto HOLDEA en su propia fase, sin efectos: el runner corta retomable y el próximo resume vuelve
+        // a observar. Al agotarlo, la vuelta regresa a su origen en modo nube **SIN EFECTOS**, y las dos mitades de esa
+        // frase son decisiones:
+        //   · Sin `.rearmMirrorOff` porque pre-montaje el local está INTACTO: el espejo no se ha re-encendido todavía
+        //     (lo enciende `.mountMirrorAndRelaunch`, en la arista `reverseFreezeBackend → reverseMountMirror`), así que
+        //     no hay nada que re-armar. Es el mismo motivo por el que `reverseClaimRejected` sale sin efectos.
+        //   · Sin `.reverseRollback` porque ese efecto LANZA con el token ausente, con la sesión caducada y con
+        //     cualquier `.transient` —el 403 incluido, que `CloudAccountClient` lee como red—, y un efecto que lanza no
+        //     se consume: `MigrationBootDecision.decide` devuelve `.resume` mientras haya pendientes, así que volvería a
+        //     lanzar en cada arranque y en cada vuelta a la app. Ese es el bug-class que esta salida existe para cerrar
+        //     (criterio 3 del ticket). El `reverse_abort` lo intenta el RUNNER, una vez y best-effort, DESPUÉS de
+        //     journalear la salida; que no salga cuesta poco, porque el re-claim del mismo dispositivo es idempotente y
+        //     no mira la edad del lease.
+        case let (.reverseClaimLeader, .reversePreMountStalled(stalled, cause, origin)),
+             let (.reverseDrainAll, .reversePreMountStalled(stalled, cause, origin)),
+             let (.reverseVerify, .reversePreMountStalled(stalled, cause, origin)),
+             let (.reverseFreezeBackend, .reversePreMountStalled(stalled, cause, origin)):
+            let budget = cause == .definitive
+                ? policy.reversePreMountDefinitiveBudgetSeconds
+                : policy.reversePreMountUnknownBudgetSeconds
+            guard stalled >= budget else {
+                return .transition(next: phase, effects: [])
+            }
+            return .transition(next: reverseOriginPhase(origin), effects: [])
+
+        // Las mismas cuatro · SALIDA de la persona: la misma vuelta que el techo, sin esperar a que venza.
+        case let (.reverseClaimLeader, .reversePreMountCancelled(origin)),
+             let (.reverseDrainAll, .reversePreMountCancelled(origin)),
+             let (.reverseVerify, .reversePreMountCancelled(origin)),
+             let (.reverseFreezeBackend, .reversePreMountCancelled(origin)):
+            return .transition(next: reverseOriginPhase(origin), effects: [])
 
         // fatalError PRE-mount (nothing local changed; the mirror was never re-lit) → reverseFailedRollback.
         case (.reverseClaimLeader, .fatalError),

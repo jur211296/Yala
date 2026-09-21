@@ -6029,3 +6029,18 @@
 
 /* Restore: cuerpo del estado importIncomplete. Describe lo observado (el import sigue en marcha), no promete un tiempo ni afirma cuántos datos hay. */
 "welcome.restore.importIncompleteBody" = "iCloud 仍在发送你的历史记录。记录较多或网络较慢时，可能需要几分钟。请稍后再搜索一次。";
+
+/* Salida de la vuelta antes de montar el espejo: el servidor no dejó continuar */
+"storage.reverseAbort.preMountRefused" = "未能完成切回 iCloud：你的云端账户不允许。你的数据仍在 Yala 云端。请发邮件到 %@，我们会和你一起查看。";
+
+/* Salida de la vuelta antes de montar el espejo: venció el techo largo */
+"storage.reverseAbort.preMountStalled" = "未能完成切回 iCloud：过程停止推进。你的数据仍在 Yala 云端，随时可以重试。";
+
+/* Cuerpo del diálogo de cancelar antes de montar el espejo: no hay relanzamiento */
+"storage.confirm.cancelReverseBeforeMountBody" = "你的数据仍保留在 Yala 云端和本设备上。随时可以重试。";
+
+/* Diálogo de cancelar: seguir, antes de montar el espejo */
+"storage.confirm.cancelReverseKeepBeforeMount" = "继续切回 iCloud";
+
+/* Salida de la vuelta antes de montar el espejo: otro dispositivo tomó el relevo */
+"storage.reverseAbort.preMountOtherDevice" = "未能完成切回 iCloud：你的另一台设备接手了。等它完成后，你可以在这台设备上继续。";

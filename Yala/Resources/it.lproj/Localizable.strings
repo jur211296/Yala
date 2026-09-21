@@ -6027,3 +6027,18 @@
 
 /* Restore: cuerpo del estado importIncomplete. Describe lo observado (el import sigue en marcha), no promete un tiempo ni afirma cuántos datos hay. */
 "welcome.restore.importIncompleteBody" = "iCloud sta ancora inviando la tua cronologia. Con molti movimenti o una connessione lenta può volerci qualche minuto. Riprova la ricerca tra poco.";
+
+/* Salida de la vuelta antes de montar el espejo: el servidor no dejó continuar */
+"storage.reverseAbort.preMountRefused" = "Non siamo riusciti a completare il ritorno a iCloud: il tuo account nel cloud non l’ha permesso. I tuoi dati restano nel cloud di Yala. Scrivici a %@ e lo verifichiamo insieme.";
+
+/* Salida de la vuelta antes de montar el espejo: venció el techo largo */
+"storage.reverseAbort.preMountStalled" = "Non siamo riusciti a completare il ritorno a iCloud: non avanzava. I tuoi dati restano nel cloud di Yala e puoi riprovare quando vuoi.";
+
+/* Cuerpo del diálogo de cancelar antes de montar el espejo: no hay relanzamiento */
+"storage.confirm.cancelReverseBeforeMountBody" = "I tuoi dati restano nel cloud di Yala e su questo dispositivo. Puoi riprovare quando vuoi.";
+
+/* Diálogo de cancelar: seguir, antes de montar el espejo */
+"storage.confirm.cancelReverseKeepBeforeMount" = "Continua il ritorno a iCloud";
+
+/* Salida de la vuelta antes de montar el espejo: otro dispositivo tomó el relevo */
+"storage.reverseAbort.preMountOtherDevice" = "Non siamo riusciti a completare il ritorno a iCloud: un altro dei tuoi dispositivi ha preso il posto. Quando avrà finito, potrai farlo su questo.";

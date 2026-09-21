@@ -233,6 +233,25 @@ final class CloudMigrationController {
     /// barra clavada al 95 % sin una palabra (ticket `reverse-upload-has-no-ceiling-and-no-exit`).
     var isWaitingReverseUpload: Bool { journaledPhase == .reverseUpload }
 
+    /// ¿Se puede abandonar la vuelta a iCloud ahora mismo? En las CINCO fases en las que la salida existe: las cuatro
+    /// previas al montaje del espejo (ticket `reverse-before-mount-has-no-way-to-abandon-the-return`) y la espera de
+    /// la subida. Antes solo la última, así que al 15/30/50/62 % la tarjeta ofrecía «Retomar» y nada más.
+    ///
+    /// Va por la FASE journaleada y no por lo que se esté pintando: la tarjeta de progreso sale también en fases
+    /// posteriores al montaje, donde el espejo ya está vivo y no hay salida que ofrecer.
+    var canCancelReverse: Bool {
+        journaledPhase == .reverseUpload || isBeforeReverseMount
+    }
+
+    /// ¿La vuelta está en una de las cuatro fases ANTERIORES al montaje del espejo? Lo lee el cuerpo de la
+    /// confirmación, que solo ahí puede prometer que no habrá relanzamiento.
+    ///
+    /// Va en POSITIVO a propósito. El ternario que pregunta «¿no es la espera de la subida?» falla ABIERTO: le
+    /// daría el texto «no hay que relanzar» a cualquier fase POST-montaje que mañana entre en `canCancelReverse`,
+    /// y ahí el espejo está vivo y sí hay que relanzar. Es el mismo `else` que fallaba abierto en
+    /// `syncStatusSection` y pintaba «Todo sincronizado» con el motor parado.
+    var isBeforeReverseMount: Bool { ReversePreMountPhase(phase: journaledPhase) != nil }
+
     /// La última observación de esa espera en este proceso (`MigrationRunner.lastReverseUploadSample`): cuántas
     /// filas faltan y por qué no drena. `nil` = aún no observada; la pantalla dice entonces solo que está subiendo.
     private(set) var reverseUploadSample: ReverseUploadSample?
@@ -244,7 +263,7 @@ final class CloudMigrationController {
     /// runtime del dominio en `.stoppedUntilSignIn`, y en estas cuatro fases el runtime no corre —ninguna es estable—
     /// así que la persona veía una barra parada sin una palabra (ticket
     /// `reverse-before-mount-stays-stuck-with-an-expired-session`).
-    private(set) var reverseSessionExpiry: ReverseSessionExpiryPhase?
+    private(set) var reverseSessionExpiry: ReversePreMountPhase?
 
     /// ¿Hay que pedirle que vuelva a entrar para que la vuelta a iCloud siga? Lo lee la tarjeta de progreso.
     ///
@@ -820,9 +839,9 @@ final class CloudMigrationController {
         let claimExitBefore = runner.lastReverseClaimExit
         let forwardRefusalBefore = runner.lastForwardClaimRefusal
         if cancelReverseRequested {
-            // El «sí» de «Cancelar» que la pre-espera no dejó pasar. Si la espera ya terminó, el runner no hace nada.
+            // El «sí» de «Cancelar» que la pre-espera no dejó pasar. Si la vuelta ya avanzó, el runner no hace nada.
             cancelReverseRequested = false
-            await runner.cancelReverseUpload()
+            await runner.cancelReverse()
         }
         await runner.resume()
         refresh()
@@ -896,24 +915,39 @@ final class CloudMigrationController {
 
         // Con sesión buena y de la misma cuenta, el camino de siempre: el runner re-intenta la fase journaleada y su
         // primer paso con éxito limpia la observación, así que la tarjeta deja de pedir volver a entrar sola.
+        //
+        // **Y retira un «Cancelar» que quedara apuntado**, que es lo contrario de lo que este gesto pide. Hasta el
+        // 2026-09-21 los dos botones no podían coexistir —«Volver a entrar» solo sale en las cuatro fases previas al
+        // montaje y «Cancelar» solo salía en la espera de la subida—, así que la pregunta no se planteaba; con el
+        // botón ofrecido también en esas cuatro (`reverse-before-mount-has-no-way-to-abandon-the-return`) sí se
+        // planteó: un «sí» que la pre-espera del import no dejó pasar lo ejecutaba el `resume()` de aquí, y la
+        // persona que firma para CONTINUAR se encontraba la vuelta abandonada en silencio, sin nota (`cancelled` no
+        // la deja a propósito).
+        cancelReverseRequested = false
         releasedForResume = true
         isWorking = false
         await resume()
     }
 
-    /// «Cancelar y seguir en la nube» en la espera de `reverseUpload`.
+    /// «Cancelar y seguir en la nube», en cualquiera de las cinco fases que lo ofrecen (`canCancelReverse`).
     ///
     /// No descarta el gesto si hay trabajo en vuelo: el refresco de la pantalla re-kickea cada 30 s y el runner
     /// ignoraría en silencio una segunda acción (`runGuarded`), así que un «sí» confirmado justo entonces no haría
-    /// nada. Espera a que suelte y cancela después. Si mientras tanto la espera ya terminó —drenó, o saltó el
+    /// nada. Espera a que suelte y cancela después. Si mientras tanto la vuelta ya avanzó —drenó, o saltó su
     /// techo—, el runner no hace nada: no hay de dónde salir.
-    func cancelReverseUpload() async {
+    func cancelReverse() async {
+        // El «sí» se apunta ANTES del spin, no después. Un re-kick de 30 s en vuelo puede cruzar las cuatro fases
+        // previas al montaje en una sola pasada —cada una es una llamada de red, no una espera—, y con el flag
+        // puesto después, el `resume()` que viniera detrás no lo veía: el gesto se perdía en silencio tras haber
+        // prometido lo contrario. Lo que queda fuera de alcance es el pase que YA cruzó hasta el montaje: ahí la
+        // salida previa no existe y el toque es no-op, con su ticket.
+        cancelReverseRequested = true
         while isWorking {
             do {
                 try await Task.sleep(for: .milliseconds(200))
             } catch {
                 #if DEBUG
-                print("CloudMigrationController.cancelReverseUpload: espera cancelada: \(error)")
+                print("CloudMigrationController.cancelReverse: espera cancelada: \(error)")
                 #endif
                 return
             }
@@ -923,14 +957,13 @@ final class CloudMigrationController {
         lastError = nil
         // Misma pre-espera que `resume()` (#36): sin ella, con el import de iCloud activo, el runner se rendiría a
         // los 120 s de su propia espera en silencio y el «sí» no haría nada. Con ella la tarjeta dice que espera a
-        // iCloud mientras tanto. Si vence, el «sí» queda apuntado y lo ejecuta el siguiente `resume()` que la pase.
-        cancelReverseRequested = true
+        // iCloud mientras tanto. Si vence, el «sí» sigue apuntado y lo ejecuta el siguiente `resume()` que la pase.
         guard await awaitImportQuiescenceForResume() else {
             refresh()
             return
         }
         cancelReverseRequested = false
-        await runner.cancelReverseUpload()
+        await runner.cancelReverse()
         refresh()
     }
 

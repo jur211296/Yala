@@ -1120,4 +1120,125 @@ struct MigrationStateMachineTests {
                      .reverseUploadStalled(stalledSeconds: 900, cause: .unknown, returnTo: .done)).next
             == .reverseUpload)
     }
+    // MARK: - Techo y salida de las CUATRO fases previas al montaje
+    // (ticket `reverse-before-mount-has-no-way-to-abandon-the-return`)
+
+    private static let preMountPolicy = MigrationPolicy(
+        reversePreMountDefinitiveBudgetSeconds: 60,
+        reversePreMountUnknownBudgetSeconds: 600
+    )
+
+    /// Las cuatro fases que la salida cubre. `reverseUpload` NO está: esa tiene la suya, con otros efectos.
+    private static let preMountPhases: [Phase] = [
+        .reverseClaimLeader, .reverseDrainAll, .reverseVerify, .reverseFreezeBackend,
+    ]
+
+    /// Bajo presupuesto, cada fase HOLDEA EN SÍ MISMA y sin efectos. Lo segundo importa tanto como lo primero: una
+    /// observación que emitiera `.reverseRollback` descongelaría el backend en cada re-kick de 30 s.
+    @Test func reversePreMountStalled_belowBudget_holdsItsOwnPhase_noEffects() {
+        let policy = Self.preMountPolicy
+        let below: [Double] = [0, 1, policy.reversePreMountDefinitiveBudgetSeconds - 1]
+        for phase in Self.preMountPhases {
+            for (origin, _) in Self.origins {
+                for cause in [MarkerExportStall.definitive, .unknown] {
+                    for stalled in below {
+                        let r = step(
+                            phase,
+                            .reversePreMountStalled(stalledSeconds: stalled, cause: cause, returnTo: origin),
+                            policy: policy)
+                        #expect(r.next == phase, "\(phase): \(stalled)s (\(cause), \(origin)) se queda donde está")
+                        #expect(r.effects.isEmpty)
+                    }
+                }
+            }
+        }
+    }
+
+    /// EL test del ticket: agotado el techo, cada una de las cuatro vuelve a su ORIGEN y **sin un solo efecto**.
+    /// (Las dos aserciones «no es `reverseFailedRollback`, no es `icloudActive`» que este caso tenía se quitaron:
+    /// con `origins` acotado a `.done`/`.notStarted`, la igualdad de arriba ya las implica en las 24 iteraciones.)
+    /// Las dos mitades son decisiones y las dos tienen su mutante aquí:
+    ///  · sin `.rearmMirrorOff`, porque pre-montaje el espejo nunca se re-encendió;
+    ///  · sin `.reverseRollback`, porque ese efecto lanza sin sesión y un efecto que lanza se relanza en cada
+    ///    arranque — el bug-class que esta salida cierra. El `reverse_abort` lo intenta el runner, best-effort.
+    @Test func reversePreMountStalled_atOrPastBudget_returnsToOrigin_withNoEffectsAtAll() {
+        let policy = Self.preMountPolicy
+        let budget = policy.reversePreMountDefinitiveBudgetSeconds
+        for phase in Self.preMountPhases {
+            for (origin, originPhase) in Self.origins {
+                for stalled in [budget, budget + 1, budget * 100] {
+                    let r = step(
+                        phase,
+                        .reversePreMountStalled(stalledSeconds: stalled, cause: .definitive, returnTo: origin),
+                        policy: policy)
+                    #expect(r.next == originPhase, "\(phase): \(stalled)s >= \(budget)s vuelve a \(originPhase)")
+                    #expect(r.effects.isEmpty, "\(phase): ni re-armado ni abort journaleados")
+                }
+            }
+        }
+    }
+
+    /// La causa elige el techo: el mismo tiempo parado que hace salir con `.definitive` —el servidor ya dijo que
+    /// no— sigue esperando con `.unknown`, que es donde caen la red y la sesión. Un mutante que intercambie los dos
+    /// presupuestos muere en las dos mitades.
+    @Test func reversePreMountStalled_unknownUsesTheLongBudget() {
+        let policy = Self.preMountPolicy
+        let shortBudget = policy.reversePreMountDefinitiveBudgetSeconds
+        let longBudget = policy.reversePreMountUnknownBudgetSeconds
+        for phase in Self.preMountPhases {
+            #expect(step(phase,
+                         .reversePreMountStalled(stalledSeconds: shortBudget, cause: .definitive, returnTo: .done),
+                         policy: policy).next == .done)
+            #expect(step(phase,
+                         .reversePreMountStalled(stalledSeconds: shortBudget, cause: .unknown, returnTo: .done),
+                         policy: policy).next == phase,
+                    "\(phase): sin palabra del servidor, el techo corto no aplica")
+            #expect(step(phase,
+                         .reversePreMountStalled(stalledSeconds: longBudget, cause: .unknown, returnTo: .done),
+                         policy: policy).next == .done,
+                    "\(phase): pero el largo tampoco es infinito")
+        }
+    }
+
+    /// La salida de la persona: la misma vuelta, sin esperar y sin efectos.
+    @Test func reversePreMountCancelled_returnsToOrigin_withNoEffects() {
+        for phase in Self.preMountPhases {
+            for (origin, originPhase) in Self.origins {
+                let r = step(phase, .reversePreMountCancelled(returnTo: origin))
+                #expect(r.next == originPhase, "\(phase) → \(originPhase)")
+                #expect(r.effects.isEmpty)
+            }
+        }
+    }
+
+    /// Y solo esas cuatro. En `reverseUpload` y en el resto de fases POST-montaje el espejo ya está vivo: salir de
+    /// ahí sin `.rearmMirrorOff` dejaría `.cloud` + mirror montado, el estado prohibido de `isCloudWithMirrorOn`.
+    /// Tiempo parado absurdo: si alguna arista existiera de más, saldría por ella.
+    @Test func reversePreMountExitEvents_outsideTheFourPhases_areInvalid() {
+        let events: [Event] = [
+            .reversePreMountStalled(stalledSeconds: 10_000_000, cause: .definitive, returnTo: .done),
+            .reversePreMountCancelled(returnTo: .done),
+        ]
+        for phase in Self.allPhases where !Self.preMountPhases.contains(phase) {
+            for event in events {
+                #expect(
+                    MigrationStateMachine.transition(from: phase, event: event, policy: Self.preMountPolicy)
+                        == .invalid(from: phase, event: event),
+                    "\(phase) + \(event) debe ser inválido")
+            }
+        }
+    }
+
+    /// Los techos por defecto: los mismos números que el resto de esta familia. Cambiarlos tiene que ser
+    /// deliberado, y aquí se ve que el corto de verdad se aplica y el largo de verdad no.
+    @Test func reversePreMountBudgets_defaultsArePinnedProductDecision() {
+        #expect(MigrationPolicy.default.reversePreMountDefinitiveBudgetSeconds == 900)      // 15 min
+        #expect(MigrationPolicy.default.reversePreMountUnknownBudgetSeconds == 259_200)     // 72 h
+        #expect(step(.reverseDrainAll,
+                     .reversePreMountStalled(stalledSeconds: 900, cause: .definitive, returnTo: .done)).next
+            == .done)
+        #expect(step(.reverseDrainAll,
+                     .reversePreMountStalled(stalledSeconds: 900, cause: .unknown, returnTo: .done)).next
+            == .reverseDrainAll)
+    }
 }

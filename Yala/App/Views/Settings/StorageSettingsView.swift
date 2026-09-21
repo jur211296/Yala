@@ -160,11 +160,11 @@ struct StorageSettingsView: View {
         .onChange(of: controller?.lastError) { _, newValue in
             showError = (newValue != nil)
         }
-        // Si la espera termina con la confirmación de «Cancelar» abierta —drenó, o saltó el techo—, el botón que la
-        // ancla desaparece y SwiftUI puede cerrarla sin tocar el flag. Sin esto, el diálogo reaparecería solo en la
-        // siguiente espera.
-        .onChange(of: controller?.isWaitingReverseUpload) { _, waiting in
-            if waiting != true { confirmCancelReverse = false }
+        // Si la vuelta avanza con la confirmación de «Cancelar» abierta —drenó, saltó el techo, o simplemente pasó
+        // a la fase siguiente—, el botón que la ancla desaparece y SwiftUI puede cerrarla sin tocar el flag. Sin
+        // esto, el diálogo reaparecería solo en la siguiente fase que lo ofrezca.
+        .onChange(of: controller?.canCancelReverse) { _, cancellable in
+            if cancellable != true { confirmCancelReverse = false }
         }
     }
 
@@ -485,7 +485,7 @@ struct StorageSettingsView: View {
             .buttonStyle(.plain)
             .disabled(controller.isWorking)
             .accessibilityIdentifier("storage_resume_button")
-            if reverse && controller.isWaitingReverseUpload {
+            if reverse && controller.canCancelReverse {
                 cancelReverseButton(controller)
             }
         }
@@ -529,8 +529,14 @@ struct StorageSettingsView: View {
         }
     }
 
-    /// «Cancelar y seguir en la nube»: la salida de la persona, disponible durante toda la espera (decisión de
-    /// Jürgen, 2026-09-16). Pide confirmación porque cambia dónde viven sus datos y obliga a relanzar Yala.
+    /// «Cancelar y seguir en la nube»: la salida de la persona, disponible durante toda la espera de la subida
+    /// (decisión de Jürgen, 2026-09-16) y también en las cuatro fases previas al montaje del espejo
+    /// (`reverse-before-mount-has-no-way-to-abandon-the-return`). Pide confirmación porque cambia dónde viven sus
+    /// datos.
+    ///
+    /// **El cuerpo del diálogo cambia con la fase, y no es cosmética.** El de la espera dice que Yala pedirá cerrarla
+    /// y volver a abrirla, porque ahí el espejo ESTÁ montado y hay que re-armar su apagado. Antes del montaje no hay
+    /// espejo que apagar, así que esa frase sería falsa: no hay relanzamiento que pedir.
     private func cancelReverseButton(_ controller: CloudMigrationController) -> some View {
         YalaSecondaryButton(L10n.Storage.Progress.cancelReverse, icon: "arrow.uturn.backward",
                             isDisabled: controller.isWorking) {
@@ -540,11 +546,15 @@ struct StorageSettingsView: View {
         .confirmationDialog(L10n.Storage.Confirm.cancelReverseTitle,
                             isPresented: $confirmCancelReverse, titleVisibility: .visible) {
             Button(L10n.Storage.Confirm.cancelReverseConfirm) {
-                Task { await controller.cancelReverseUpload() }
+                Task { await controller.cancelReverse() }
             }
-            Button(L10n.Storage.Confirm.cancelReverseKeep, role: .cancel) {}
+            Button(controller.isBeforeReverseMount
+                   ? L10n.Storage.Confirm.cancelReverseKeepBeforeMount
+                   : L10n.Storage.Confirm.cancelReverseKeep, role: .cancel) {}
         } message: {
-            Text(L10n.Storage.Confirm.cancelReverseBody)
+            Text(controller.isBeforeReverseMount
+                 ? L10n.Storage.Confirm.cancelReverseBeforeMountBody
+                 : L10n.Storage.Confirm.cancelReverseBody)
         }
     }
 

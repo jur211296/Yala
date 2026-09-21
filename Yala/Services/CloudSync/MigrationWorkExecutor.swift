@@ -515,7 +515,9 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
                 return liveOutboxRows().isEmpty ? .newDeltaDetected : .networkTimeout
             case .sessionExpired:
                 return .sessionExpired
-            case .accountUnavailable, .transient:
+            case .accountUnavailable:
+                return .blocked(.accountUnavailable)
+            case .transient:
                 return .networkTimeout
             }
         }
@@ -527,7 +529,9 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
             break
         case .sessionExpired:
             return .sessionExpired
-        case .busy, .transient, .accountUnavailable:
+        case .accountUnavailable:
+            return .blocked(.accountUnavailable)
+        case .busy, .transient:
             return .networkTimeout
         }
 
@@ -952,8 +956,10 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     /// se construyen esos clientes sin `canRenewSession`, el default `{ false }` volvería a decir aquí «vuelve a
     /// entrar» a quien solo está sin cobertura — lo fija `AttestWiringTests`.
     ///
-    /// `.accountUnavailable` (403, cuenta suspendida) se queda en `.transient`, como hasta hoy: no es una sesión que
-    /// renovar, y ofrecer «Iniciar sesión» ahí mandaría a un gesto que no cambia nada. Tiene su propio residual.
+    /// `.accountUnavailable` (403, cuenta suspendida) **sale tipado desde el 2026-09-21** (ticket
+    /// `reverse-before-mount-has-no-way-to-abandon-the-return`): sigue sin ofrecer «Iniciar sesión» —no es una sesión
+    /// que renovar— pero ya no se confunde con la red, porque es lo que elige el techo CORTO de esta etapa. Hasta ese
+    /// día se quedaba en `.transient` y la vuelta se paraba aquí sin salida.
     func reverseDrainOnce() async -> ReverseStepOutcome {
         engine.drainOnce(context: context)
         let allLive = liveOutboxRows()
@@ -965,7 +971,9 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
                 await pushClient.applyResults(results, rows: live, engine: engine, context: context)
             case .sessionExpired:
                 return .sessionExpired
-            case .accountUnavailable, .transient:
+            case .accountUnavailable:
+                return .blocked(.accountUnavailable)
+            case .transient:
                 return .transient
             }
         }
@@ -974,14 +982,19 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
             return .completed
         case .sessionExpired:
             return .sessionExpired
-        case .busy, .transient, .accountUnavailable:
+        case .accountUnavailable:
+            return .blocked(.accountUnavailable)
+        case .busy, .transient:
             return .transient
         }
     }
 
     /// `reverseFreezeBackend` (§h, I11-3): `reverse_freeze` server-side — estampa `reverse_frozen_at`
     /// (guard reverse-líder SIN edad de lease: el MISMO líder lento siempre puede continuar; idempotente).
-    /// `.ok` → `.completed`; el resto → breadcrumb + corte retomable SIN evento. **Devolvía `Bool`** hasta el ticket
+    /// `.ok` → `.completed`; la red y la sesión → breadcrumb + corte retomable SIN evento; `otherLeader` y `rejected`
+    /// → `.blocked`, que es lo que elige el techo CORTO de la etapa (ticket
+    /// `reverse-before-mount-has-no-way-to-abandon-the-return`; hasta el 2026-09-21 los dos colapsaban en
+    /// `.transient`, y este paso era el único de las cuatro fases sin ninguna salida). **Devolvía `Bool`** hasta el ticket
     /// `reverse-before-mount-stays-stuck-with-an-expired-session`: ese `false` único metía en el mismo saco la red y
     /// una sesión que solo la persona puede renovar, y la barra se quedaba muda al 62 %. El
     /// ENFORCEMENT del freeze en `/sync/push` está ACTIVO (cerrado 2026-07-11): el gateway rechaza 409
@@ -1007,10 +1020,10 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
             return .completed
         case .otherLeader:
             CloudSyncBreadcrumb.reverseFreezeRejected(reason: "otherLeader")
-            return .transient
+            return .blocked(.otherLeader)
         case .rejected(let reason):
             CloudSyncBreadcrumb.reverseFreezeRejected(reason: reason)
-            return .transient
+            return .blocked(.refused)
         case .sessionExpired:
             CloudSyncBreadcrumb.reverseFreezeRejected(reason: "sessionExpired")
             return .sessionExpired

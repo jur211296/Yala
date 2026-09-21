@@ -1080,6 +1080,30 @@ enum CloudSyncBreadcrumb {
 
     /// §h `reverseRollback` (I11-3): `reverse_abort` OK — backend DES-congelado (`rip=false` +
     /// `reverse_frozen_at=null`; `reverted_at` queda null). El estado local ya era terminal estable.
+    /// Una fase PREVIA al montaje del espejo lleva parada `stalledSeconds` sin cambiar de fase (ticket
+    /// `reverse-before-mount-has-no-way-to-abandon-the-return`). `blocker` es la palabra del servidor si la hay
+    /// —y solo entonces el presupuesto es el corto—; `nil` = red o sesión. Sin PII: los dos son códigos del build.
+    static func reversePreMountStalled(phase: String, stalledSeconds: Double, blocker: String?) {
+        let seconds = Int(stalledSeconds)
+        logger.notice(
+            "CloudSyncReverse preMountStalled phase=\(phase, privacy: .public) stalled=\(seconds, privacy: .public)s blocker=\(blocker ?? "-", privacy: .public)")
+    }
+
+    /// La vuelta salió de una fase previa al montaje y volvió a su origen en modo nube: por su techo o porque la
+    /// persona tocó «Cancelar y seguir en la nube».
+    static func reversePreMountExited(phase: String, reason: String) {
+        logger.notice(
+            "CloudSyncReverse preMountExited phase=\(phase, privacy: .public) reason=\(reason, privacy: .public) — vuelve al origen en modo nube")
+    }
+
+    /// El `reverse_abort` best-effort de una salida previa al montaje no salió. La salida SIGUE EN PIE —está
+    /// journaleada— y no queda ningún efecto pendiente: la reserva del servidor se queda puesta hasta que caduque su
+    /// lease, y el re-claim de este mismo dispositivo es idempotente-ok.
+    static func reverseAbortBestEffortFailed(reason: String) {
+        logger.notice(
+            "CloudSyncReverse abortBestEffortFailed reason=\(reason, privacy: .public) — la salida sigue en pie")
+    }
+
     static func reverseAborted() {
         logger.notice("CloudSyncReverse aborted — backend des-congelado (rip=false, frozen_at=null)")
     }

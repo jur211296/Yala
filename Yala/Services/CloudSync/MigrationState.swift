@@ -34,7 +34,10 @@ extension CloudSyncSchemaVersions {
     /// Subió a 6 con `forwardClaimIntentRaw`: qué pidió la persona al llegar al claim de la ida, para que un relanzamiento
     /// con el claim aparcado no adopte lo que «Migrar a la nube» no pidió (ticket
     /// `settings-migrate-to-cloud-adopts-silently-instead-of-migrating`).
-    static let migrationState = 6
+    /// Subió a 7 con los dos campos aditivos del techo de las fases previas al montaje de la vuelta
+    /// (`reversePreMountProgressAt`, `reversePreMountPhaseRaw`), ticket
+    /// `reverse-before-mount-has-no-way-to-abandon-the-return`.
+    static let migrationState = 7
 }
 
 /// Journal single-row de la migración. Debe existir a lo sumo UNA fila (el runner la crea
@@ -125,6 +128,19 @@ final class MigrationState {
     /// que se lee como `adoptIfExisting`: una fila anterior a la v6 se comporta como siempre.
     var forwardClaimIntentRaw: String?
 
+    /// Techo de las fases PREVIAS al montaje del espejo en la vuelta a iCloud: el instante del último avance, con el
+    /// `now` INYECTADO (ticket `reverse-before-mount-has-no-way-to-abandon-the-return`). Aquí no hay cifra que baje
+    /// —el drenaje no expone un pendiente comparable, la verificación es un veredicto y el congelado es una sola
+    /// llamada—, así que **avanzar es cambiar de fase**, y eso lo dice `reversePreMountPhaseRaw`. Un sello en el
+    /// FUTURO (el reloj del teléfono puesto atrás durante la espera) se re-sella en vez de posponer el techo para
+    /// siempre. `nil` = ninguna de las cuatro fases se ha observado parada todavía.
+    var reversePreMountProgressAt: Date?
+
+    /// En qué fase previa al montaje se selló `reversePreMountProgressAt` (`ReversePreMountPhase.rawValue`, no el
+    /// JSON de la fase: solo hace falta compararlo). Sin este campo el reloj mediría el tiempo total de la etapa, y
+    /// un drenaje largo y sano se comería el presupuesto del mismo modo que uno parado. `nil` = sin sello.
+    var reversePreMountPhaseRaw: String?
+
     /// Cuándo empezó la migración (el runner lo estampa con el `now` INYECTADO al arrancar). `nil` = no
     /// iniciada.
     var startedAt: Date?
@@ -152,6 +168,8 @@ final class MigrationState {
         reverseAbortReasonRaw: String? = nil,
         reverseOriginPendingEffectsData: Data? = nil,
         forwardClaimIntentRaw: String? = nil,
+        reversePreMountProgressAt: Date? = nil,
+        reversePreMountPhaseRaw: String? = nil,
         startedAt: Date? = nil,
         updatedAt: Date = Date.now,
         schemaVersion: Int = CloudSyncSchemaVersions.migrationState
@@ -171,6 +189,8 @@ final class MigrationState {
         self.reverseAbortReasonRaw = reverseAbortReasonRaw
         self.reverseOriginPendingEffectsData = reverseOriginPendingEffectsData
         self.forwardClaimIntentRaw = forwardClaimIntentRaw
+        self.reversePreMountProgressAt = reversePreMountProgressAt
+        self.reversePreMountPhaseRaw = reversePreMountPhaseRaw
         self.startedAt = startedAt
         self.updatedAt = updatedAt
         self.schemaVersion = schemaVersion

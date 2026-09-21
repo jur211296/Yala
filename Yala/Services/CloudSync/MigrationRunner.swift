@@ -48,6 +48,11 @@ enum VerifyProbe: Equatable {
     /// mapea a `networkTimeout`, que es lo que hacía antes de que este caso existiera, y hay un test que lo fija.
     /// Un token que no llega sin red NO llega aquí: lo separan los clientes con `canRenewSession`.
     case sessionExpired
+    /// El servidor dijo que no, y no es red ni sesión (hoy: 403, la cuenta en la nube no está disponible). **En la
+    /// VUELTA** elige el techo CORTO de la etapa previa al montaje (ticket
+    /// `reverse-before-mount-has-no-way-to-abandon-the-return`); en la IDA el trato tampoco cambia, `driveVerify` lo
+    /// mapea a `networkTimeout` como hacía antes de que este caso existiera.
+    case blocked(ReversePreMountBlocker)
 }
 
 /// Por qué se aparcó un claim cuando la causa **no es la red**. Es el hecho que separa «no te llega la
@@ -89,26 +94,50 @@ nonisolated enum ReverseClaimOutcome: Equatable {
 /// `sessionExpired` corta igual pero DEJA RASTRO para la pantalla (ticket
 /// `reverse-before-mount-stays-stuck-with-an-expired-session`): esperar no lo arregla, y hasta ese ticket las dos
 /// eran el mismo corte mudo. Un token que no llega sin red NO es esto: lo separa `canRenewSession` aguas arriba.
+///
+/// `blocked` es el tercero de esa familia y lo añade `reverse-before-mount-has-no-way-to-abandon-the-return`: el
+/// servidor dijo que no y esperar tampoco lo arregla, así que elige el techo CORTO. Hasta ese ticket sus tres motivos
+/// —el `other_leader` y el `rejected` del congelado, el 403 del drenaje— llegaban aquí como `transient`, y esa es la
+/// razón de que la vuelta se quedara parada en esas fases sin salida.
 nonisolated enum ReverseStepOutcome: Equatable {
     case completed
     case transient
     case sessionExpired
+    case blocked(ReversePreMountBlocker)
 }
 
-/// En qué fase de la vuelta a iCloud se paró el trabajo porque la sesión de la nube ya no vale (ticket
-/// `reverse-before-mount-stays-stuck-with-an-expired-session`). Las cuatro son ANTERIORES al montaje del espejo, así
-/// que ninguna es estable: el motor de la nube no corre (`MigrationRuntimeGate.isDomainStablePhase`) y el aviso de
-/// «vuelve a entrar» de Ajustes (`syncNeedsSignIn`) no sale, porque ese solo se enciende con el runtime en
-/// `.stoppedUntilSignIn` y lo que se pinta es la tarjeta de progreso.
+/// Las CUATRO fases de la vuelta a iCloud anteriores al montaje del espejo. Ninguna es estable: el motor de la nube
+/// no corre con ellas journaleadas (`MigrationRuntimeGate.isDomainStablePhase`) y el aviso de «vuelve a entrar» de
+/// Ajustes (`syncNeedsSignIn`) no sale, porque ese solo se enciende con el runtime en `.stoppedUntilSignIn` y lo que
+/// se pinta es la tarjeta de progreso.
 ///
-/// En memoria, molde de `lastClaimBlocker` y `lastReverseUploadSample`: describe la OBSERVACIÓN, no el estado durable
-/// —el journal sigue en su fase, retomable— y cada paso que avanza la limpia. La repone el resume del arranque y el
-/// re-kick de 30 s de la pantalla, que para las cuatro fases decide `.resume` (`MigrationBootDecision.decide`).
-nonisolated enum ReverseSessionExpiryPhase: String, Equatable, Sendable {
+/// Dos consumidores, y el `rawValue` es el mismo para los dos (WIRE del canario `cloudReverseBlockedByExpiredSession`,
+/// que no cambia de serie con el renombrado del tipo):
+///
+/// 1. **La sesión caducada** (ticket `reverse-before-mount-stays-stuck-with-an-expired-session`), en memoria y molde
+///    de `lastClaimBlocker`: describe la OBSERVACIÓN, no el estado durable —el journal sigue en su fase, retomable— y
+///    cada paso que avanza la limpia. La repone el resume del arranque y el re-kick de 30 s de la pantalla, que para
+///    las cuatro fases decide `.resume` (`MigrationBootDecision.decide`).
+/// 2. **El techo de la etapa** (ticket `reverse-before-mount-has-no-way-to-abandon-the-return`), journaleado en
+///    `MigrationState.reversePreMountPhaseRaw`: cambiar de fase es lo que cuenta como AVANCE, así que el reloj
+///    necesita saber en cuál se selló.
+nonisolated enum ReversePreMountPhase: String, Equatable, Sendable {
     case claim
     case drain
     case verify
     case freeze
+
+    /// La fase journaleada, si es una de las cuatro. `nil` en cualquier otra —incluidas las POST-montaje de la propia
+    /// vuelta—: el techo de esta etapa no las cubre, porque ahí el espejo ya está vivo y la salida es otra.
+    init?(phase: MigrationPhase) {
+        switch phase {
+        case .reverseClaimLeader:   self = .claim
+        case .reverseDrainAll:      self = .drain
+        case .reverseVerify:        self = .verify
+        case .reverseFreezeBackend: self = .freeze
+        default:                    return nil
+        }
+    }
 }
 
 /// Resultado del barrido de zombies (§h.3 `deletingZombies`). `completed(deleted:)` = filas vivas
@@ -374,7 +403,7 @@ final class MigrationRunner {
     /// **La escribe UN solo sitio** (`noteReverseSessionExpiry`), y los cuatro pasos la ponen o la limpian con su
     /// outcome: un paso que avanza, o que corta por red, la borra — si no, un «vuelve a entrar» de hace un rato
     /// seguiría en pantalla mientras la vuelta ya progresa.
-    private(set) var lastReverseSessionExpiry: ReverseSessionExpiryPhase?
+    private(set) var lastReverseSessionExpiry: ReversePreMountPhase?
 
     /// La intención que se journaleará al llegar a `claimingMigration` (`ForwardClaimIntent`). La ponen las entradas de
     /// `CloudMigrationController`; el default conserva el comportamiento de siempre. `driveClaim` NO lee esto: lee lo
@@ -520,6 +549,8 @@ final class MigrationRunner {
             state.reverseUploadLowestPending = nil
             state.reverseUploadProgressAt = nil
             state.reverseAbortReasonRaw = nil
+            state.reversePreMountProgressAt = nil
+            state.reversePreMountPhaseRaw = nil
             state.setReverseOriginPendingEffects([])
             state.forwardClaimIntentRaw = nil
             if target == .notStarted { state.startedAt = nil }
@@ -529,21 +560,33 @@ final class MigrationRunner {
         }
     }
 
-    /// «Cancelar y seguir en la nube» desde la espera de `reverseUpload` (ticket
-    /// `reverse-upload-has-no-ceiling-and-no-exit`). La máquina vuelve al origen journaleado con los mismos
-    /// efectos que el techo, en el mismo orden. No-op fuera de esa fase: un toque que llega tarde —la espera ya
-    /// drenó o ya salió por el techo— no puede sacar a nadie de un sitio en el que ya no está.
-    func cancelReverseUpload() async {
+    /// «Cancelar y seguir en la nube». **Un solo gesto para las CINCO fases en las que se ofrece**, y por eso una
+    /// sola entrada: la espera de `reverseUpload` (ticket `reverse-upload-has-no-ceiling-and-no-exit`) y las cuatro
+    /// previas al montaje (`reverse-before-mount-has-no-way-to-abandon-the-return`). La máquina vuelve al origen
+    /// journaleado con la salida que le toque a cada una, y el motivo journaleado es `cancelled` en las cinco: lo
+    /// decidió la persona, así que no deja nota.
+    ///
+    /// No-op en cualquier otra fase: un toque que llega tarde —la vuelta ya avanzó, o ya salió por su techo— no
+    /// puede sacar a nadie de un sitio en el que ya no está.
+    func cancelReverse() async {
         guard await awaitQuiescence() else {
             CloudSyncBreadcrumb.migrationQuiescenceTimeout()
             return
         }
         await runGuarded {
             if try self.normalizeCorruptJournalIfNeeded() { return }
-            guard try self.loadState().readPhase().phase == .reverseUpload else { return }
+            let phase = try self.loadState().readPhase().phase
             let origin = try self.originFromJournal()
-            _ = try await self.journalReverseUploadStep(
-                .reverseUploadCancelled(returnTo: origin), exitReason: .cancelled, hold: nil)
+            if phase == .reverseUpload {
+                _ = try await self.journalReverseUploadStep(
+                    .reverseUploadCancelled(returnTo: origin), exitReason: .cancelled, hold: nil)
+            } else if let preMount = ReversePreMountPhase(phase: phase) {
+                _ = try await self.leaveReversePreMount(
+                    .reversePreMountCancelled(returnTo: origin),
+                    phase: preMount, exitReason: .cancelled, hold: nil)
+            } else {
+                return
+            }
             try await self.drive()
         }
     }
@@ -600,7 +643,14 @@ final class MigrationRunner {
             } else if ReverseOriginPendingEffects.restoresOnReturn(from: current, to: next) {
                 nextPending += state.readReverseOriginPendingEffects()
                 state.setReverseOriginPendingEffects([])
-            } else if current == .reverseClaimLeader {
+            } else if current == .reverseClaimLeader, next != .reverseClaimLeader {
+                // El término `next !=` no es cosmético: desde el techo de las fases previas al montaje
+                // (`reverse-before-mount-has-no-way-to-abandon-the-return`) esta fase tiene un SELF-HOLD, que es la
+                // primera arista que la deja en sí misma. Sin él, una observación bajo presupuesto —un claim sin
+                // cobertura— tiraba los pendientes guardados del origen, y el rechazo que llegara después los reponía
+                // vacíos: el `.runLeaderReconcileFromFrozenCloudKit` del líder, que es lo ÚNICO que manda `complete`,
+                // se perdía para siempre. Es el bug que cerró `reverse-claim-rejection-has-no-way-out-in-the-client`,
+                // reabierto por un corte de red.
                 state.setReverseOriginPendingEffects([])
             }
             state.setPhase(next)
@@ -627,6 +677,11 @@ final class MigrationRunner {
                 state.reverseUploadLowestPending = nil
                 state.reverseUploadProgressAt = nil
                 state.reverseAbortReasonRaw = nil
+                // Techo de las fases previas al montaje: lo MISMO, y aquí no es higiene sino corrección. El reloj de
+                // esta etapa se compara por FASE, así que un sello de un intento anterior en la misma fase daría un
+                // `stalled` de días en la primera observación del intento nuevo: techo instantáneo.
+                state.reversePreMountProgressAt = nil
+                state.reversePreMountPhaseRaw = nil
             }
             // S2 (review adversarial): al llegar a un estado de CIERRE de intento, limpiar los campos
             // SCOPED a la migración en el MISMO save — un `leaderDeviceID`/contador/cursor stale que
@@ -656,11 +711,22 @@ final class MigrationRunner {
                 state.reverseUploadLowestPending = nil
                 state.reverseUploadProgressAt = nil
                 if next == .icloudActive { state.reverseAbortReasonRaw = nil }
+                state.reversePreMountProgressAt = nil
+                state.reversePreMountPhaseRaw = nil
                 // Los pendientes guardados de una vuelta ya se repusieron arriba si tocaba; en un cierre no queda nada
                 // que reponer.
                 state.setReverseOriginPendingEffects([])
                 // La intención es del intento que se cierra.
                 state.forwardClaimIntentRaw = nil
+            }
+            // Techo de las fases previas al montaje: el reloj se compara por FASE, así que cualquier cambio de fase
+            // lo invalida — incluido el RETORNO a una ya visitada, que es el que muerde: `reverseVerify` vuelve a
+            // `reverseDrainAll` por mismatch, y sin esto la segunda visita heredaba el sello de la primera y el techo
+            // saltaba con cero segundos de parada real. El self-hold no entra (ahí `next == current`), así que el
+            // sello que escribe la observación sobrevive.
+            if ReversePreMountPhase(phase: next) != ReversePreMountPhase(phase: current) {
+                state.reversePreMountProgressAt = nil
+                state.reversePreMountPhaseRaw = nil
             }
             mutate(state, next)
             state.updatedAt = now()
@@ -768,23 +834,34 @@ final class MigrationRunner {
                     // cerrar el paso para no dejar la lease de 60 min usurpable a mitad de la reversa.
                     await executor.sendLeaseHeartbeatIfDue()
                 case .transient:
-                            return
+                    try await observeReversePreMountStall(.drain, blocker: nil)
+                    return
                 case .sessionExpired:
                     noteReverseSessionExpiry(.drain)
+                    try await observeReversePreMountStall(.drain, blocker: nil)
+                    return
+                case let .blocked(blocker):
+                    try await observeReversePreMountStall(.drain, blocker: blocker)
                     return
                 }
             case .reverseVerify:
                 if !(try await driveReverseVerify()) { return }
             case .reverseFreezeBackend:
-                // `reverse_freeze` server-side (I11-3): rechazo/red → stop retomable SIN evento; la sesión caducada
-                // corta igual, pero deja rastro para la pantalla.
+                // `reverse_freeze` server-side (I11-3): la red corta retomable SIN evento; la sesión caducada corta
+                // igual, pero deja rastro para la pantalla. Los dos, y también el rechazo del servidor, pasan por el
+                // techo de la etapa antes de cortar.
                 switch await executor.freezeBackendForReverse() {
                 case .completed:
                             try await handle(.reverseBackendFrozen)    // efecto: mountMirrorAndRelaunch
                 case .transient:
-                            return
+                    try await observeReversePreMountStall(.freeze, blocker: nil)
+                    return
                 case .sessionExpired:
                     noteReverseSessionExpiry(.freeze)
+                    try await observeReversePreMountStall(.freeze, blocker: nil)
+                    return
+                case let .blocked(blocker):
+                    try await observeReversePreMountStall(.freeze, blocker: blocker)
                     return
                 }
             case .reverseMountMirror:
@@ -914,7 +991,12 @@ final class MigrationRunner {
         // revierte: separarlo ahí es otro ticket, con su propia QA (`forward-verify-reads-an-expired-session-as-network`).
         // Sin este `case` explícito el compilador exigiría uno igual, y quien lo escribiera sin este porqué diría
         // «ya estaba así». Lo fija `MigrationRunnerTests.forwardVerify_sessionExpired_spendsNetworkRetry`.
-        case .networkTimeout, .sessionExpired:
+        //
+        // `blocked` entra aquí por lo MISMO y el 2026-09-21 (ticket
+        // `reverse-before-mount-has-no-way-to-abandon-the-return`): el 403 lo tipa ahora `verify()`, que sigue siendo
+        // compartida, y en la ida se lee como red igual que antes. Su residual es el mismo
+        // (`forward-verify-reads-an-expired-session-as-network`).
+        case .networkTimeout, .sessionExpired, .blocked:
             let spent = try loadState().verifyNetworkRetries
             try await handle(.verifyOutcome(.networkTimeout(retriesSoFar: spent))) { state, next in
                 if next == .verifying { state.verifyNetworkRetries += 1 }
@@ -1030,8 +1112,10 @@ final class MigrationRunner {
 
     /// `reverseClaimLeader`. `accepted` → avanza; `otherLeader` y `rejected` → vuelven al origin journaleado con su
     /// porqué (ticket `reverse-claim-rejection-has-no-way-out-in-the-client`: antes un rechazo cortaba sin evento y la
-    /// fase, que es TRANSITORIA, no salía nunca); `sessionExpired`/`transient` → stop retomable SIN evento (un resume
-    /// re-claima). Devuelve `false` para cortar el bucle.
+    /// fase, que es TRANSITORIA, no salía nunca); `sessionExpired`/`transient` → stop retomable, **observando el techo
+    /// de la etapa** (`reverse-before-mount-has-no-way-to-abandon-the-return`: hasta el 2026-09-21 cortaban sin
+    /// evento, y bajo presupuesto la observación holdea en la misma fase y sin efectos). Devuelve `false` para cortar
+    /// el bucle.
     private func driveReverseClaim() async throws -> Bool {
         switch await executor.performReverseClaim() {
         case .accepted:
@@ -1045,9 +1129,11 @@ final class MigrationRunner {
             return false                                   // la máquina ya movió al origin (terminal/forward)
         case .sessionExpired:
             noteReverseSessionExpiry(.claim)
+            try await observeReversePreMountStall(.claim, blocker: nil)
             return false
         case .transient:
             CloudSyncBreadcrumb.migrationClaimNoSuccess(reason: "reverse: transient")
+            try await observeReversePreMountStall(.claim, blocker: nil)
             return false
         case let .rejected(reason):
             CloudSyncBreadcrumb.reverseClaimRejected(reason: reason)
@@ -1065,7 +1151,7 @@ final class MigrationRunner {
     /// chocar con la misma sesión caducada cada medio minuto, y una tarde mirando la barra llenaría el spool con un
     /// único hecho; dedupear a mano aquí pediría un segundo testigo que `drive()` no borra, y ese testigo no lo
     /// puede cazar ningún test. El breadcrumb SÍ sale cada vez: es un log, y ver que el atasco sigue ayuda.
-    private func noteReverseSessionExpiry(_ phase: ReverseSessionExpiryPhase) {
+    private func noteReverseSessionExpiry(_ phase: ReversePreMountPhase) {
         lastReverseSessionExpiry = phase
         CloudSyncBreadcrumb.reverseBlockedByExpiredSession(phase: phase.rawValue)
         MetricsService.cloudReverseBlockedByExpiredSession(phase: phase.rawValue)
@@ -1105,11 +1191,20 @@ final class MigrationRunner {
     private func driveReverseVerify() async throws -> Bool {
         switch await executor.verify() {
         case .sessionExpired:
-            // SIN evento, que es lo que cumple el criterio: el `networkTimeout` que este caso tenía antes gastaba
-            // `verifyNetworkRetries` y al agotarlo degradaba a `reverseFailedRollback` con `.reverseRollback`
+            // NO gasta `verifyNetworkRetries` ni degrada, que es lo que cumple el criterio del ticket hermano: el
+            // `networkTimeout` que este caso tenía antes acababa en `reverseFailedRollback` con `.reverseRollback`
             // pendiente — un efecto que con la sesión caducada LANZA en cada resume, así que la fase de fallo se
             // quedaba con su abort sin ejecutar. Esperar no renueva una sesión: la renueva la persona.
+            //
+            // Hasta el 2026-09-21 cortaba SIN evento; desde el techo de la etapa emite `reversePreMountStalled`, que
+            // bajo presupuesto holdea en la misma fase y sin efectos.
             noteReverseSessionExpiry(.verify)
+            try await observeReversePreMountStall(.verify, blocker: nil)
+            return false
+        case let .blocked(blocker):
+            // El servidor dijo que no y esperar no lo cambia, así que NO gasta `verifyNetworkRetries` —ese camino
+            // acaba en `reverseFailedRollback` con el abort pendiente— y va derecho al techo CORTO de la etapa.
+            try await observeReversePreMountStall(.verify, blocker: blocker)
             return false
         case .match:
             try await handle(.reverseVerifyOutcome(.match))
@@ -1264,6 +1359,165 @@ final class MigrationRunner {
         MetricsService.cloudReverseUploadAborted(reason: reason.rawValue)
     }
 
+    // MARK: - Techo y salida de las CUATRO fases previas al montaje
+    // (ticket `reverse-before-mount-has-no-way-to-abandon-the-return`)
+
+    /// Una observación de una fase PREVIA al montaje que no avanzó en esta pasada. Se llama desde los cortes de las
+    /// cuatro, y decide si la vuelta se queda esperando o sale a su origen.
+    ///
+    /// **El reloj es el del último CAMBIO DE FASE**, no el del inicio de la etapa: aquí no hay una cifra que baje
+    /// —el drenaje no expone un pendiente comparable, la verificación es un veredicto y el congelado es una sola
+    /// llamada—, así que avanzar es pasar a la fase siguiente. Un drenaje largo y sano no agota el presupuesto
+    /// porque cuando termina cambia de fase y el reloj vuelve a cero; el único bucle posible
+    /// (`reverseVerify ⇄ reverseDrainAll` por mismatch) lo acota `maxMismatchRetries`.
+    ///
+    /// La primera observación de una fase SELLA el reloj sin contarla como parada, y nunca lo sella hacia atrás: un
+    /// sello en el futuro es un reloj que iba adelantado y ya se corrigió, y conservarlo aplazaría el techo hasta
+    /// que el reloj real alcanzara aquella fecha (molde del techo de la espera de subida).
+    ///
+    /// `blocker` es la palabra del servidor cuando la hay —y solo entonces el presupuesto es el CORTO—. Sin ella
+    /// (red, sesión caducada) el presupuesto es el largo: la red vuelve sola y la sesión la renueva la persona, que
+    /// además tiene su aviso y su botón mucho antes de que esto venza.
+    ///
+    /// Devuelve `true` si la vuelta SALIÓ. Los llamadores lo DESCARTAN y cortan la pasada, como hace la salida del
+    /// claim: el origen es `.done` o `.notStarted`, donde `drive()` corta igual, así que releer la fase no ganaría
+    /// nada y el próximo resume retoma desde el origen.
+    @discardableResult
+    private func observeReversePreMountStall(
+        _ phase: ReversePreMountPhase,
+        blocker: ReversePreMountBlocker?
+    ) async throws -> Bool {
+        let state = try loadState()
+        let observedAt = now()
+        let sealedPhase = state.reversePreMountPhaseRaw.flatMap(ReversePreMountPhase.init(rawValue:))
+        let lastProgressAt: Date
+        if sealedPhase != phase {
+            lastProgressAt = observedAt                      // cambió de fase: eso ES el avance
+        } else if let sealed = state.reversePreMountProgressAt, sealed <= observedAt {
+            lastProgressAt = sealed
+        } else {
+            lastProgressAt = observedAt                      // sin sello, o con un sello en el FUTURO
+        }
+        let stalled = observedAt.timeIntervalSince(lastProgressAt)
+        let cause = blocker?.stallCause ?? .unknown
+        CloudSyncBreadcrumb.reversePreMountStalled(
+            phase: phase.rawValue, stalledSeconds: stalled, blocker: blocker?.rawValue)
+        // En CADA observación, no solo al salir: es lo que deja ver un atasco sistémico —un 403 en toda la flota—
+        // antes de que ningún teléfono agote sus 15 min o sus 72 h. Es la regla de la familia
+        // (`.claude/rules/swiftdata-cloudkit.md`, el canario del marcador) y esta etapa era la única sin cumplirla.
+        MetricsService.cloudReversePreMountWaiting(
+            phase: phase.rawValue, stalledSeconds: stalled, blocker: blocker?.rawValue)
+        let origin = try originFromJournal()
+        return try await leaveReversePreMount(
+            .reversePreMountStalled(stalledSeconds: stalled, cause: cause, returnTo: origin),
+            phase: phase,
+            exitReason: blocker?.abortReason ?? .preMountStalled,
+            hold: (phase: phase, progressAt: lastProgressAt))
+    }
+
+    /// Journalea el paso y, si dejó la etapa, des-reserva el servidor. **El abort se intenta también cuando el paso
+    /// LANZA**, y ese `catch` es el hallazgo de una lente: la salida se journalea y se salva ANTES de drenar los
+    /// pendientes del origen que `handle` repone, así que un reconcile que falla siempre —el residual
+    /// `reverse-claim-exit-with-a-restored-failing-effect-keeps-the-engine-off`— dejaba la salida hecha y el aviso al
+    /// servidor sin intentar **nunca**: no es un efecto journaleado, y la fase ya no vuelve a pasar por aquí. El
+    /// error sigue su camino después, para que `runGuarded` corte la pasada como siempre.
+    private func leaveReversePreMount(
+        _ event: MigrationEvent,
+        phase: ReversePreMountPhase,
+        exitReason: ReverseAbortReason,
+        hold: (phase: ReversePreMountPhase, progressAt: Date)?
+    ) async throws -> Bool {
+        do {
+            let left = try await journalReversePreMountStep(
+                event, phase: phase, exitReason: exitReason, hold: hold)
+            if left { await abortReverseServerBestEffort() }
+            return left
+        } catch {
+            if try leftThePreMountStage() { await abortReverseServerBestEffort() }
+            throw error
+        }
+    }
+
+    /// ¿El journal ya salió de las cuatro fases previas al montaje? Se relee del journal y no de un flag en memoria:
+    /// el paso que lanzó puede haberlo dejado escrito antes de fallar.
+    private func leftThePreMountStage() throws -> Bool {
+        ReversePreMountPhase(phase: try loadState().readPhase().phase) == nil
+    }
+
+    /// Journalea un paso del techo de las fases previas al montaje —una observación o la cancelación— y devuelve si
+    /// la máquina dejó la etapa. Si la DEJA: el motivo sobrevive a la vuelta al origen (la persona puede leerlo
+    /// días después, en la tarjeta de «Volver a iCloud») y el reloj y el origen se van con el intento. Si HOLDEA:
+    /// se sella el reloj de `hold`.
+    ///
+    /// La máquina no pone efectos en esta salida, así que aquí no hay nada que drenar: el `reverse_abort` lo
+    /// intenta el llamador DESPUÉS, y que no salga no deshace la salida.
+    private func journalReversePreMountStep(
+        _ event: MigrationEvent,
+        phase: ReversePreMountPhase,
+        exitReason: ReverseAbortReason,
+        hold: (phase: ReversePreMountPhase, progressAt: Date)?
+    ) async throws -> Bool {
+        var leftTheStage = false
+        try await handle(event) { state, next in
+            guard ReversePreMountPhase(phase: next) == nil else {
+                if let hold {
+                    state.reversePreMountPhaseRaw = hold.phase.rawValue
+                    state.reversePreMountProgressAt = hold.progressAt
+                }
+                return
+            }
+            leftTheStage = true
+            state.reverseAbortReasonRaw = exitReason.rawValue
+            state.reversePreMountProgressAt = nil
+            state.reversePreMountPhaseRaw = nil
+            state.reverseOriginRaw = nil
+            // Se cuenta AQUÍ, en el paso que journalea la salida y antes de intentar el `reverse_abort`: ese aviso al
+            // servidor puede tardar o no salir, y perder el canario por eso dejaría la salida sin medir.
+            self.reportReversePreMountExit(phase: phase, reason: exitReason)
+        }
+        return leftTheStage
+    }
+
+    /// **No borra `lastReverseSessionExpiry`**, y esa ausencia es deliberada: `drive()` es su ÚNICO borrador
+    /// (`.claude/rules/swiftdata-cloudkit.md`, «un escritor y UN borrador»), y añadir aquí un segundo sería una línea
+    /// que se cumple sola — lo único que lee ese testigo es `reverseNeedsSignIn`, que solo consume la tarjeta de
+    /// progreso, y esa tarjeta no se pinta en `.done` ni en `.notStarted`. Ningún test podría cazar su borrado.
+    private func reportReversePreMountExit(phase: ReversePreMountPhase, reason: ReverseAbortReason) {
+        CloudSyncBreadcrumb.reversePreMountExited(phase: phase.rawValue, reason: reason.rawValue)
+        MetricsService.cloudReversePreMountAborted(phase: phase.rawValue, reason: reason.rawValue)
+    }
+
+    /// Des-reserva el servidor (`reverse_abort`) tras una salida PREVIA al montaje, **una vez y tragándose el
+    /// fallo**. No es un efecto journaleado a propósito, y el criterio 3 del ticket es exactamente eso:
+    /// `execute(.reverseRollback)` LANZA con el token ausente, con la sesión caducada y con cualquier `.transient`
+    /// —ahí cae el 403—, un efecto que lanza no se consume, y `MigrationBootDecision.decide` devuelve `.resume`
+    /// mientras haya pendientes ⇒ volvería a lanzar en cada arranque y en cada vuelta a la app, que es el bug-class
+    /// que esta salida existe para cerrar.
+    ///
+    /// **Va DESPUÉS de journalear la salida**, no antes: si el proceso muere entre las dos cosas, el estado que
+    /// queda es «en el origen, con la reserva puesta», que se cura solo. Al revés quedaría «en una fase
+    /// pre-montaje, con la reserva ya quitada», reintentando un paso cuya reserva no existe.
+    ///
+    /// **Y que no salga cuesta poco, medido:** el re-claim del MISMO dispositivo es idempotente-ok y no mira la
+    /// edad del lease (`gateway/test/account.goldens.test.ts`, golden 14), así que este teléfono puede volver a
+    /// intentarlo cuando quiera; para los demás dispositivos de la cuenta el lease caduca a los 60 min.
+    ///
+    /// **Con UNA excepción, que hay que decir entera:** desde `reverseFreezeBackend` el congelado puede haberse
+    /// estampado y haberse perdido la respuesta. Ahí el backend SÍ responde 409 `yala_account_reverting` a los
+    /// pushes, y un abort que no sale deja el motor parado contra su propia nube. Es el residual
+    /// `reverse-abort-rejected-leaves-a-frozen-cloud-saying-up-to-date`; desde las otras tres fases no hay congelado
+    /// que deshacer y el motor arranca igual en el origen.
+    private func abortReverseServerBestEffort() async {
+        do {
+            try await executor.execute(.reverseRollback)
+        } catch {
+            // El TIPO del error, no su descripción: `reverse_abort` viaja por red y un error arbitrario interpolado
+            // con `privacy: .public` puede arrastrar cuerpo de respuesta. Molde de `MetricsClient` y
+            // `CloudRemoteConfig`, que ya lo hacen así cuando el error no es del propio build.
+            CloudSyncBreadcrumb.reverseAbortBestEffortFailed(reason: String(describing: type(of: error)))
+        }
+    }
+
     /// El `origin` de la reversa journaleado (`reverseOriginRaw`) para el desatascador `reverseOtherLeader`.
     /// Fallback `.done` si falta (benigno: markerReconciliation(done)→.none; veraz para el líder migrado —
     /// el único caso real actual).
@@ -1318,6 +1572,8 @@ final class MigrationRunner {
         state.reverseUploadLowestPending = nil
         state.reverseUploadProgressAt = nil
         state.reverseAbortReasonRaw = nil
+        state.reversePreMountProgressAt = nil
+        state.reversePreMountPhaseRaw = nil
         state.setReverseOriginPendingEffects([])
         state.forwardClaimIntentRaw = nil
         state.startedAt = nil
