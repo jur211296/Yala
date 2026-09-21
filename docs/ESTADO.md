@@ -5,10 +5,58 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-21 (Lima)
 
-**Rama** `2.1` — Merge #200: **El restore abandonado ya no se lleva el reloj de la ventana de sesión.**
+**Rama** `2.1` — Merge #201: **La vuelta a iCloud avisa al rendirse, y sin cobertura espera en vez de fallar.**
 TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
-## Esta sesión (#200 · el restore abandonado ya no se lleva el reloj de la ventana de sesión)
+## Esta sesión (#201 · la vuelta a iCloud avisa al rendirse, y sin cobertura espera)
+
+Los dos residuales que dejó #199, los dos decididos por Jürgen el mismo día.
+
+**Estaba mirando cómo vuelve a iCloud, la barra desaparecía de golpe y la pantalla cambiaba.** La nota que lo
+explicaba quedaba en la tarjeta, pero nadie me la ponía delante — y si hubo otro intento fallido hace días, la nota
+que veo puede ser aquella. **Ahora sale un aviso en el momento**, con el mismo texto que la nota, y solo si la salida
+es de ahora. Cancelar a propósito sigue sin sacar nada: lo decidió la persona.
+
+**Y quedarse sin cobertura en el paso de comprobación ya no da la vuelta por fallida.** Ocho intentos sin conexión
+—unos minutos— la declaraban fallida y dejaban el aviso al servidor pendiente hasta que la red volviera. Ahora espera,
+como ya hacía en los otros tres pasos, y cuando la red vuelve sigue sola.
+
+Era la única de las **ocho** combinaciones fase × causa fuera del techo. En la vuelta el único contador S9 vivo pasa a
+ser el del mismatch, así que `reverseVerifyOutcome(.networkTimeout)` **dejó de ser un par legal** desde `reverseVerify`:
+dejar esa rama viva sin emisor es código muerto que afirma lo contrario del ticket.
+
+El aviso va por un testigo en memoria con secuencia (`ReversePreMountExit`, molde de `ReverseClaimExit` y de
+`ForwardClaimRefusal`), escrito **solo al dejar la etapa** — bajo presupuesto no hay salida, así que el re-kick de 30 s
+no repite alerta. Y pasa por `ReverseUploadWaitingCopyLogic.abortNote`: ese término es la única diferencia con el helper
+del claim, porque «Cancelar y seguir en la nube» vive también en estas cuatro fases y el copy agrupa `cancelled` con
+`stalled` — sin el filtro, cancelar sacaba una alerta de error.
+
+**La premisa del ticket volvió a caer al medirla.** D10 dejó el verify fuera «para no arrastrar a la IDA, que comparte
+`verify()`»; `driveVerify` y `driveReverseVerify` son funciones distintas desde siempre y la ida ya agrupaba red, sesión
+y `blocked` en su rama con el porqué escrito. No se tocó una línea, y se fijó con test en las dos capas.
+
+**Dos cosas medidas, no inferidas.** Desde una fase estable el toque de «Volver a iCloud» **no puede** cruzar el techo
+—el cruce limpia el reloj—, pero con el journal ya en la etapa **sí**: `submit` conduce `drive()` aunque el evento sea
+inválido. O sea que el aviso de `startReverse` no es camino muerto. Y el comentario del runner que decía que la vuelta
+era **DARK** llevaba obsoleto desde que existe el botón de Ajustes: **una lente de la review se lo creyó** y rebajó por
+eso la gravedad de un hallazgo.
+
+Verificado: build ×2, **411 unit en 26 suites** (pedidas = corridas), 10 XCUITest en 4 suites con el centinela en cero,
+y **10 mutantes muertos**. La review de tres lentes cazó **tres defectos míos, los tres en la red de tests**: el test
+estrella tenía tres aserciones incapaces de fallar —y el revert *parcial* las dejaba las cuatro en verde, o sea el limbo
+del ticket padre reabierto sin rojo—; nada cazaba el tight-loop (`return true`); y un test de la máquina era duplicado
+literal de dos que ya existían. Arreglados y re-medidos.
+
+**Cinco hallazgos quedan fuera con ticket**, uno `medium`: `.networkTimeout` es un cajón que aplana el 401 y el 403 de
+`/sync/merkle`, así que esa mitad pasa de degradar en minutos a esperar 72 h — el arreglo está aguas arriba, en
+`SyncMerkle`, que comparten la ida y el motor (`reverse-verify-network-bucket-hides-a-definitive-server-no`). Los otros
+cuatro: el toque sobre la tarjeta desfasada, el «Cancelar» que borra el aviso recién nacido, el aviso publicado con la
+pantalla cerrada, y el panel DEBUG que pinta «red 0» de una vuelta parada por red.
+
+Un XCUITest falló en lote y pasó aislado **con el diff de producción idéntico entre las dos corridas** y el centinela en
+cero las dos veces: se suma al ticket de flaky que ya existía, que ahora tiene dos casos de dos suites distintas.
+
+## Sesión anterior (#200 · el restore abandonado ya no se lleva el reloj de la ventana de sesión)
 
 **Entro a «Restaurar desde iCloud», me arrepiento y toco atrás. Vuelvo un rato largo después y esta vez
 sí espero — y a media descarga la app me dice que mis datos son de otra persona.** El permiso que deja
@@ -52,7 +100,7 @@ mismo daño por el eje del desenlace: el tope de 90 s apaga la ventana con el im
 `restore-error-state-is-never-reached` (el `case error` de `WelcomeRestoreView` lo pinta el `switch` y no
 lo asigna nadie).
 
-## Sesión anterior (#199 · la vuelta a iCloud ya se puede abandonar antes de montar el espejo)
+## Antes de eso (#199 · la vuelta a iCloud ya se puede abandonar antes de montar el espejo)
 
 **Empiezo a volver a iCloud y algo no deja terminar: la barra se queda en el 15, el 30, el 50 o el 62 % y no hay
 forma de dejarlo.** No es una barra parada: con cualquiera de esas cuatro fases journaleada **el teléfono deja de
