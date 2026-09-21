@@ -29,7 +29,10 @@
 //
 //   1. **Nunca se abrió** — nadie pidió restaurar en este proceso.
 //   2. **El flujo TERMINÓ** (`noteRestoreFinished`, gane o pierda) — precisión, no red: el usuario que
-//      toca «atrás» a mitad cancela ese `Task` y este camino no corre.
+//      toca «atrás» a mitad cancela ese `Task` y este camino no corre. **Esa frase fue una aspiración
+//      hasta el 2026-09-21**: `forceFetchAndWait` no observaba cancelación, así que el flujo abandonado
+//      despertaba al minuto y medio y SÍ apagaba. Hoy la espera se corta y el apagado va detrás del
+//      `guard !Task.isCancelled` de `RestoreProgressView`, que es lo que lo hace cierto.
 //   3. **El import ASENTÓ** — sus filas ya son corpus como cualquier otro.
 //   4. **La CADUCIDAD** — sin actividad de import pasada la gracia, y el tope duro pase lo que pase.
 //

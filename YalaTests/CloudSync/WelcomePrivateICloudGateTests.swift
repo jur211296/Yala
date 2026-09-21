@@ -1057,12 +1057,32 @@ struct WelcomePrivateICloudGateWiringTests {
     func deviceCorpusWipe_hasTheSameNetAsItsSibling() throws {
         let src = try Self.code("Yala/App/ContentView.swift")
         let wipe = try Self.body(of: "private func performDeviceCorpusWipe() async -> String? {", in: src)
-        let linea = try #require(wipe.split(separator: "\n").first(where: { $0.contains("waitForImportQuiescence") }))
-        #expect(linea.contains("guard"), """
+        // **Se mide el INVARIANTE, no la forma de la línea** (2026-09-21). Hasta hoy esto exigía un
+        // `guard` en la MISMA línea del `waitForImportQuiescence`; al hacer que la espera observe
+        // cancelación (`force-fetch-and-wait-ignores-cancellation`) hubo que partirla en dos —el
+        // veredicto de la cancelación tiene que ganarle al motivo, o un borrado cancelado le enseña al
+        // usuario «el import no se asentó», que es falso—. El invariante no cambió: lo que la espera
+        // devuelve tiene que CORTAR el borrado. Lo que cambió es dónde está escrito.
+        let espera = try #require(wipe.range(of: "await iCloudSyncService.shared.waitForImportQuiescence(timeout: 30)"))
+        let corte = wipe.range(of: "return \"importNotQuiescent\"", range: espera.upperBound..<wipe.endIndex)
+        let siguienteEscritura = wipe.range(of: "DataWipeService.", range: espera.upperBound..<wipe.endIndex)
+        #expect(corte != nil, """
             el veredicto de la quiescencia tiene que CORTAR el borrado: un `save()` de SwiftData durante
             un import de CloudKit dispara el SIGTRAP, y con un corpus grande agotar el tope es el caso
             NORMAL.
-            Línea: \(linea)
+            """)
+        if let corte, let siguienteEscritura {
+            #expect(corte.upperBound < siguienteEscritura.lowerBound, """
+                el corte por quiescencia quedó DESPUÉS del primer borrado. Descubrir a medias que el
+                import seguía en vuelo no sirve de nada: el `save()` ya se hizo.
+                """)
+        }
+        // Y el motivo no puede adelantarse a la cancelación: la espera devuelve `false` también cuando
+        // la cancelan, así que sin este orden el usuario lee «el import no se asentó» por un `Task` que
+        // se fue.
+        let cancelado = wipe.range(of: "return \"cancelled\"", range: espera.upperBound..<wipe.endIndex)
+        #expect(cancelado != nil && corte != nil && cancelado!.upperBound < corte!.lowerBound, """
+            el chequeo de cancelación tiene que ir DELANTE del motivo `importNotQuiescent`.
             """)
         try Self.expectOrder("DataWipeService." + Self.wipeCall,
                              before: "DataWipeService.wipeLocalGroupsDomain(in: modelContext)", in: wipe,
@@ -1250,13 +1270,29 @@ struct WelcomePrivateICloudGateWiringTests {
             """)
         // **El resultado de la espera se MIRA.** Descartarlo con `_ =` y seguir al agotar el tope es el
         // crash-loop: con un corpus grande el timeout es el caso NORMAL.
-        let linea = try #require(wipe.split(separator: "\n")
-            .first(where: { $0.contains("waitForImportQuiescence") }))
-        #expect(linea.contains("guard"), """
+        //
+        // Se mide el INVARIANTE y no la forma de la línea (2026-09-21, mismo motivo que su hermano de
+        // arriba): `force-fetch-and-wait-ignores-cancellation` partió la expresión en dos porque la
+        // espera ya devuelve `false` también al cancelarla, y el motivo que se le enseña al usuario no
+        // puede adelantarse a esa distinción.
+        let espera = try #require(wipe.range(of: "await iCloudSyncService.shared.waitForImportQuiescence(timeout: 30)"))
+        let corte = wipe.range(of: "return \"importNotQuiescent\"", range: espera.upperBound..<wipe.endIndex)
+        let primerBorrado = wipe.range(of: "ICloudPersonalCorpusProbe.wipe()", range: espera.upperBound..<wipe.endIndex)
+        #expect(corte != nil, """
             el veredicto de la quiescencia tiene que CORTAR el borrado, no solo consultarse: descartarlo
             con `_ =` y seguir al agotar el tope es el crash-loop —con un corpus grande el timeout es el
             caso NORMAL, y detrás viene un `save()` durante el import.
-            Línea: \(linea)
+            """)
+        if let corte, let primerBorrado {
+            #expect(corte.upperBound < primerBorrado.lowerBound, """
+                el corte por quiescencia quedó DESPUÉS del borrado de la zona. Descubrirlo entonces no
+                sirve: la zona ya se fue con el import a medias y el espejo re-crea filas.
+                """)
+        }
+        let cancelado = wipe.range(of: "return \"cancelled\"", range: espera.upperBound..<wipe.endIndex)
+        #expect(cancelado != nil && corte != nil && cancelado!.upperBound < corte!.lowerBound, """
+            el chequeo de cancelación tiene que ir DELANTE del motivo `importNotQuiescent`, o un borrado
+            que se canceló le dice al usuario que el import no se asentó.
             """)
         // **La purga del dominio de Grupos SÍ va aquí desde el 2026-09-13, y solo del guard para abajo.**
         // Hasta entonces este test la prohibía entera con este motivo: «Grupos vive en OTRO contenedor y

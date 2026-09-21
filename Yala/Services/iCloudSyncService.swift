@@ -537,36 +537,46 @@ final class iCloudSyncService {
 
     /// Espera hasta que CloudKit complete su primer importEvent (o ya esté completo) hasta `timeout`.
     /// - Parameter timeout: Máximo de segundos a esperar antes de devolver `false`.
-    /// - Returns: `true` si el fetch terminó OK; `false` si timeout o iCloud no disponible.
+    /// - Returns: `true` si el fetch terminó OK; `false` si se agotó el tope, si la espera se CANCELÓ
+    ///   o si iCloud no está disponible.
     ///
     /// Observa `Notification.Name.iCloudFirstImportCompleted` que se postea una vez
-    /// tras el primer `importEvent` exitoso (ver `apply` línea ~227). Single-resume
-    /// guard via `NSLock` + flag para garantizar que el continuation se invoca solo una vez.
+    /// tras el primer `importEvent` exitoso (ver `apply` línea ~227).
+    ///
+    /// **Observa cancelación desde el 2026-09-21** (`force-fetch-and-wait-ignores-cancellation`). Antes
+    /// solo la resolvían la notificación y su propio tope, así que un `Task` cancelado —la persona sale
+    /// de la pantalla que esperaba— seguía clavado aquí hasta agotar los 15 s del arranque o los 90 s
+    /// del restore, reteniendo el observer y un `Task` de sleep. Ahora son **tres** las vías que compiten
+    /// por resolver la misma continuation, y un doble `resume` es un CRASH y no un test rojo: de ahí
+    /// `ForceFetchWaitBox`, que garantiza una sola resolución y suelta lo que las otras dos dejaron vivo.
+    ///
+    /// **Y el `Task` del tope se CANCELA al resolver.** Hasta hoy sobrevivía al desenlace feliz: la
+    /// notificación llegaba a los 2 s y el sleep de 15 (o 90) seguía durmiendo hasta agotarse. Ese
+    /// también era trabajo fantasma, solo que no lo veía nadie.
     func forceFetchAndWait(timeout: TimeInterval = 15) async -> Bool {
         guard isAccountAvailable else { return false }
         if hasCompletedFirstImport { return true }
 
-        return await withCheckedContinuation { (continuation: CheckedContinuation<Bool, Never>) in
-            let lock = NSLock()
-            nonisolated(unsafe) var didResume = false
-            nonisolated(unsafe) var observer: NSObjectProtocol?
+        // Sin `if Task.isCancelled { return false }` de entrada A PROPÓSITO: `withTaskCancellationHandler`
+        // ya corre `onCancel` de inmediato cuando el `Task` llega cancelado, así que ese término sería un
+        // cinturón sin rama propia — ningún mutante podría matarlo, y un término que ningún test puede
+        // matar es un término que sobra. Lo prueba `forceFetchAndWait_returnsFalseWhenAlreadyCancelled`.
+        let box = ForceFetchWaitBox()
+        return await withTaskCancellationHandler {
+            await withCheckedContinuation { (continuation: CheckedContinuation<Bool, Never>) in
+                let observer = NotificationCenter.default.addObserver(
+                    forName: .iCloudFirstImportCompleted, object: nil, queue: .main
+                ) { _ in box.resolve(true) }
 
-            func resumeOnce(_ value: Bool) {
-                lock.lock(); defer { lock.unlock() }
-                guard !didResume else { return }
-                didResume = true
-                if let observer { NotificationCenter.default.removeObserver(observer) }
-                continuation.resume(returning: value)
+                let timeoutTask = Task {
+                    try? await Task.sleep(for: .seconds(timeout))
+                    box.resolve(false)
+                }
+
+                box.arm(continuation: continuation, observer: observer, timeoutTask: timeoutTask)
             }
-
-            observer = NotificationCenter.default.addObserver(
-                forName: .iCloudFirstImportCompleted, object: nil, queue: .main
-            ) { _ in resumeOnce(true) }
-
-            Task {
-                try? await Task.sleep(for: .seconds(timeout))
-                resumeOnce(false)
-            }
+        } onCancel: {
+            box.resolve(false)
         }
     }
 
@@ -865,5 +875,80 @@ extension ModelContext {
             primaryCurrencyCode: appPreferences.defaultCurrencyCode.rawValue,
             categoriesCount: categories
         )
+    }
+}
+
+// MARK: - La resolución única de `forceFetchAndWait`
+
+/// Una sola resolución para la espera del primer import, entre las TRES vías que compiten por ella: la
+/// notificación de CloudKit, el tope y la cancelación del `Task` que espera.
+///
+/// **Existe porque un doble `resume` de una `CheckedContinuation` es un CRASH**, no un test rojo, y
+/// porque la carrera que lo produce no es teórica: `withTaskCancellationHandler` ejecuta su `onCancel`
+/// **antes** de `operation` cuando el `Task` ya venía cancelado, o sea antes de que
+/// `withCheckedContinuation` haya instalado nada. Por eso `resolve(_:)` guarda el valor pendiente
+/// cuando todavía no hay continuation, y `arm(...)` lo cobra en cuanto la hay — el modo de fallo de no
+/// hacerlo es el contrario y peor: una espera que no resuelve NUNCA.
+///
+/// Y se queda con lo que hay que **soltar** al resolver: el observer de `NotificationCenter` y el
+/// `Task` del tope. Cancelar el segundo es lo que impide que un desenlace feliz a los 2 s deje un sleep
+/// de 90 s durmiendo detrás.
+///
+/// **`nonisolated` explícito y `@unchecked Sendable`**: el proyecto compila con
+/// `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`, así que sin la anotación esta clase nace aislada al
+/// MainActor y el `onCancel` —que es un closure `@Sendable` nonisolated— la llamaría desde fuera. El
+/// `NSLock` es quien serializa el estado; el actor no pinta nada aquí.
+/// **No es `private`, y eso es una decisión medida.** Sus tres pasos —retirar el observer, cancelar el
+/// `Task` del tope y resolver una sola vez— son invisibles desde `forceFetchAndWait`: un mutante que
+/// quitase el `guard` de resolución única SOBREVIVÍA a la suite entera (medido el 2026-09-21), porque el
+/// doble `resume` lo tapa el `continuation = nil` de la línea de al lado. Con la caja alcanzable, esos
+/// pasos tienen red de COMPORTAMIENTO (`ForceFetchWaitBoxTests`) en vez de un source-scan.
+nonisolated final class ForceFetchWaitBox: @unchecked Sendable {
+
+    private let lock = NSLock()
+    private var continuation: CheckedContinuation<Bool, Never>?
+    private var observer: NSObjectProtocol?
+    private var timeoutTask: Task<Void, Never>?
+    private var didResolve = false
+    /// El valor con el que resolver en cuanto exista continuation. Solo se llena si alguien resolvió
+    /// ANTES de que la hubiera — en la práctica, el `onCancel` de un `Task` que llegó ya cancelado.
+    private var pendingValue: Bool?
+
+    /// Entrega la continuation y lo que hay que soltar con ella. Si ya se resolvió antes de existir,
+    /// resuelve aquí mismo y suelta en el acto.
+    func arm(continuation: CheckedContinuation<Bool, Never>,
+             observer: NSObjectProtocol,
+             timeoutTask: Task<Void, Never>) {
+        lock.lock()
+        if let pendingValue {
+            lock.unlock()
+            NotificationCenter.default.removeObserver(observer)
+            timeoutTask.cancel()
+            continuation.resume(returning: pendingValue)
+            return
+        }
+        self.continuation = continuation
+        self.observer = observer
+        self.timeoutTask = timeoutTask
+        lock.unlock()
+    }
+
+    /// Resuelve la espera con `value`, una sola vez, y suelta observer y `Task` del tope.
+    func resolve(_ value: Bool) {
+        lock.lock()
+        guard !didResolve else { lock.unlock(); return }
+        didResolve = true
+        let continuation = self.continuation
+        let observer = self.observer
+        let timeoutTask = self.timeoutTask
+        self.continuation = nil
+        self.observer = nil
+        self.timeoutTask = nil
+        if continuation == nil { pendingValue = value }
+        lock.unlock()
+
+        if let observer { NotificationCenter.default.removeObserver(observer) }
+        timeoutTask?.cancel()
+        continuation?.resume(returning: value)
     }
 }

@@ -15,13 +15,19 @@
 //  sigue bajando filas. Apagarla ahí dejaría el bug intacto, porque «tocar atrás» ES el escenario.
 //  Lo que la apaga es que el import ASIENTE, y eso lo decide la lógica pura leyendo el mundo.
 //
-//  **El apagado está acotado a UN flujo, y esa simetría se pagó** (fix del 2026-09-21). Hasta hoy el
-//  encendido era idempotente y el apagado incondicional, así que un flujo ABANDONADO cerraba la
+//  **El apagado está acotado a UN flujo, y esa simetría se pagó** (fix del 2026-09-21). Hasta entonces
+//  el encendido era idempotente y el apagado incondicional, así que un flujo ABANDONADO cerraba la
 //  ventana de otro que seguía vivo: entrar a Restaurar, tocar atrás a los 5 s, volver a entrar a los
 //  10 y, al minuto y medio, ver cómo el primer intento —clavado en el tope de `forceFetchAndWait`—
 //  despertaba y apagaba la ventana del segundo, con su import a medias y el guard cross-cuenta
 //  cerrándose sobre el dueño legítimo. Hoy cada entrada recibe su `FlowToken` y solo el DUEÑO vigente
 //  puede cerrar.
+//
+//  **Y ese despertar ya no ocurre** (mismo día, `force-fetch-and-wait-ignores-cancellation`):
+//  `forceFetchAndWait` observa cancelación, así que el intento abandonado se corta al salir de la
+//  pantalla y `RestoreProgressView` NO llama aquí — el apagado quedó detrás de su `guard
+//  !Task.isCancelled`, que es lo que hace verdad el párrafo de arriba. El token sigue siendo la red
+//  para cuando el apagado sí corre.
 //
 
 import Foundation
@@ -77,17 +83,25 @@ enum ICloudRestoreSessionSignal {
         return token
     }
 
-    /// El flujo de restauración TERMINÓ — gane o pierda. Lo llama `RestoreProgressView` cuando su
-    /// espera se resuelve, en los DOS desenlaces (`completed` y `partial`): en ese punto ya no hay
-    /// ninguna descarga que justifique tener abierto un guard de frontera de cuenta.
+    /// El flujo de restauración TERMINÓ **por sus propios méritos** — gane (`completed`) o pierda
+    /// (`partial`): en ese punto ya no hay ninguna descarga que justifique tener abierto un guard de
+    /// frontera de cuenta.
     ///
-    /// **Solo cierra si `token` es el dueño vigente.** Un flujo abandonado —la persona tocó atrás y su
-    /// `Task` quedó clavado en el tope de `forceFetchAndWait`, que no observa cancelación— despierta
-    /// igual y llega hasta aquí; lo que ya no puede es llevarse por delante la ventana del intento que
-    /// entró después y sigue bajando datos.
+    /// **«Por sus propios méritos» es la precisión que añadió el 2026-09-21**, y no es un matiz:
+    /// `RestoreProgressView` llama detrás de un `guard !Task.isCancelled`, así que una espera que
+    /// resuelve mientras la pantalla se va NO llega aquí — ni siquiera cuando resuelve con `true`, que
+    /// `waitForImportQuiescence` puede hacer sobre un `Task` ya cancelado si el import quedó quiescente.
+    /// Esa ventana la cierra entonces la lógica pura, leyendo el mundo.
     ///
-    /// Es precisión, no la red: quien toca «atrás» y no vuelve deja su apagado para dentro de un
-    /// minuto y medio, y para ese hueco quien cierra es la caducidad de la lógica pura.
+    /// **Solo cierra si `token` es el dueño vigente.** Desde el arreglo de la cancelación
+    /// (`force-fetch-and-wait-ignores-cancellation`) el flujo abandonado ya ni siquiera llega aquí —
+    /// `RestoreProgressView` se corta al salir de la pantalla—, pero el guard se queda: es lo único que
+    /// separa «este intento terminó» de «un intento cualquiera terminó», y basta con que alguien vuelva
+    /// a llamar desde un camino que no comprueba la cancelación para que la distinción haga falta otra
+    /// vez.
+    ///
+    /// Es precisión, no la red: quien toca «atrás» y no vuelve no apaga nada, y para ese hueco quien
+    /// cierra es la lógica pura — el import que asienta, o la caducidad.
     static func noteRestoreFinished(_ token: FlowToken) {
         guard currentFlow == token else { return }
         restoreStartedAt = nil

@@ -371,16 +371,84 @@ struct ICloudRestoreSignalWiringTests {
             todo ese rato.
             """)
 
-        // Y el ORDEN: va ANTES del `guard !Task.isCancelled`, porque si la vista se desmontó justo en
-        // ese instante el early-return se llevaría el apagado por delante.
+        // Y el ORDEN, **invertido el 2026-09-21** (`force-fetch-and-wait-ignores-cancellation`): el
+        // apagado va DETRÁS del `guard !Task.isCancelled`, no delante.
+        //
+        // Antes iba delante porque la espera no observaba cancelación: llegar ahí solo podía significar
+        // «el flujo terminó por sus propios méritos», y el guard cubría el desmontaje en ese instante
+        // exacto. Desde que salir de la pantalla CORTA la espera, llegar ahí puede significar «la
+        // persona tocó atrás» — y apagar ahí es justo lo que `ICloudRestoreSessionSignal` prohíbe («no
+        // se apaga al volver atrás: CloudKit sigue bajando filas»), porque le devuelve al dueño
+        // legítimo el bloqueo cross-cuenta sobre su propia cuenta.
         let apagado = try #require(code.range(of: "ICloudRestoreSessionSignal.noteRestoreFinished(flowToken)"))
         let espera = try #require(code.range(of: "await iCloudSyncService.shared.waitForImportQuiescence"))
         let cancelado = try #require(
             code.range(of: "guard !Task.isCancelled", range: espera.upperBound..<code.endIndex))
-        #expect(espera.upperBound < apagado.lowerBound && apagado.upperBound < cancelado.lowerBound, """
-            El apagado tiene que ir entre la espera y el primer `guard !Task.isCancelled` posterior. \
-            Detrás del guard, un desmontaje en ese instante se lo lleva.
+        #expect(espera.upperBound < cancelado.lowerBound && cancelado.upperBound < apagado.lowerBound, """
+            El apagado volvió a ponerse ANTES del `guard !Task.isCancelled`. Con la espera observando \
+            cancelación, eso hace que tocar «atrás» cierre la ventana de sesión mientras el import \
+            sigue bajando — el bug que `ICloudRestoreInProgressLogic` existe para cerrar, y que su \
+            camino (2) da explícitamente por imposible.
             """)
+    }
+
+    /// **La cancelación llega a los DOS `Task` de la pantalla, y al refresher por su propia vía.**
+    ///
+    /// El refresher es un `Task {}` no estructurado: no hereda la cancelación de `runTask`. Atarlo solo
+    /// al `cancel()` que va después de la espera sería hacer que su tramo lo cumpla el vecino — y el
+    /// vecino es justo lo que este ticket acaba de arreglar. Sin handle propio, salir de la pantalla
+    /// dejaba un `iCloudAccountSummary` sobre 5+ entidades cada 0,6 s en el MainActor, escribiendo el
+    /// `@State` de una vista muerta.
+    @Test("MUTACIÓN: salir de la pantalla apaga la espera Y el refresher")
+    func leavingTheScreenStopsBothTasks() throws {
+        let code = try Self.code(Self.progressView)
+
+        #expect(code.contains(".onDisappear { runTask?.cancel(); refreshTask?.cancel() }"), """
+            El desmontaje dejó de apagar los dos `Task`. Con solo `runTask`, el refresher sigue \
+            contando filas con la pantalla cerrada; con solo `refreshTask`, vuelve el ticket entero.
+            """)
+        #expect(code.contains("@State private var refreshTask: Task<Void, Never>?"), """
+            El refresher perdió su handle propio y volvió a ser una variable local dentro de `runTask`. \
+            Desde fuera ya no se puede apagar: su única salida vuelve a ser que la espera devuelva.
+            """)
+        #expect(code.contains("refreshTask = Task { @MainActor in"), """
+            El refresher dejó de guardarse en su handle (un `Task {}` suelto basta para romperlo).
+            """)
+
+        // Y que el apagado del refresher siga ocurriendo en el camino normal, DETRÁS del guard de
+        // cancelación. Delante mataría el refresher de la generación NUEVA: `refreshTask` es un
+        // `@State`, o sea una caja compartida, y un `runTask` cancelado que despierta tras un
+        // re-montaje leería de ella el handle del intento vivo. Lo cazó una lente de la review.
+        let espera = try #require(code.range(of: "await iCloudSyncService.shared.waitForImportQuiescence"))
+        let cancelacion = try #require(
+            code.range(of: "guard !Task.isCancelled", range: espera.upperBound..<code.endIndex))
+        let apagaRefresher = try #require(
+            code.range(of: "refreshTask?.cancel()", range: espera.upperBound..<code.endIndex), """
+            Tras resolverse la espera nadie apaga el refresher. Seguiría refrescando durante el mínimo \
+            de exhibición y más allá, hasta que la vista se desmonte.
+            """)
+        #expect(cancelacion.upperBound < apagaRefresher.lowerBound, """
+            El apagado del refresher volvió a ponerse DELANTE del guard de cancelación. En el camino \
+            cancelado ese `cancel()` es redundante —`onDisappear` es el único sitio que cancela \
+            `runTask`, así que ya apagó los dos— y lo único que puede hacer es matarle el refresher a \
+            la generación siguiente de la vista.
+            """)
+
+        // Y los handles previos se cancelan antes de reasignarlos: un `Task` pisado sin cancelar
+        // queda vivo y sin dueño.
+        let arranque = try #require(code.range(of: "private func startFlow() {"))
+        let limpiaRefresher = try #require(
+            code.range(of: "refreshTask?.cancel()", range: arranque.upperBound..<code.endIndex), """
+            `startFlow()` dejó de cancelar el refresher anterior antes de reasignarlo.
+            """)
+        let limpiaRun = try #require(
+            code.range(of: "runTask?.cancel()", range: limpiaRefresher.upperBound..<code.endIndex), """
+            `startFlow()` dejó de cancelar la espera anterior antes de reasignarla.
+            """)
+        let asigna = try #require(
+            code.range(of: "refreshTask = Task { @MainActor in", range: arranque.upperBound..<code.endIndex))
+        #expect(limpiaRun.upperBound < asigna.lowerBound,
+                "la limpieza tiene que ir ANTES de la asignación, o no limpia nada")
     }
 
     /// **El token del flujo, de punta a punta.** Es el mecanismo entero de
@@ -398,10 +466,10 @@ struct ICloudRestoreSignalWiringTests {
             """)
         #expect(view.contains("if let flowToken {"), """
             **La puerta cayó.** Sin ella la espera de 90 s arranca en el PRIMER render —`state` nace \
-            en `.searching`— o sea antes de que `startSearch()` haya mirado iCloud ni el wipe, y \
-            sobrevive al desvío a `.wiped` o `.iCloudDisabled` porque `forceFetchAndWait` no observa \
-            cancelación. Quien enciende iCloud y toca «volver a buscar» tiene entonces DOS esperas \
-            vivas, y la fantasma apaga la ventana de la buena.
+            en `.searching`— o sea antes de que `startSearch()` haya mirado iCloud ni el wipe. Quien \
+            enciende iCloud y toca «volver a buscar» tendría entonces DOS esperas vivas. Desde el \
+            2026-09-21 la fantasma se cancela al cambiar de estado, así que lo que la puerta evita es \
+            MONTARLA — más barato que montarla y cancelarla — y que el token llegue por re-disparo.
             """)
 
         // Y que el token del `@State` sea el que VIAJA. Es la pasarela del cableado: la reserva y el
