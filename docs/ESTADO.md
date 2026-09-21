@@ -5,10 +5,59 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-21 (Lima)
 
-**Rama** `2.1` — Merge #198: **La espera del import de iCloud se corta al salir de la pantalla.**
+**Rama** `2.1` — Merge #199: **La vuelta a iCloud ya se puede abandonar antes de montar el espejo.**
 TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
-## Esta sesión (#198 · la espera del import de iCloud se corta al salir de la pantalla)
+## Esta sesión (#199 · la vuelta a iCloud ya se puede abandonar antes de montar el espejo)
+
+**Empiezo a volver a iCloud y algo no deja terminar: la barra se queda en el 15, el 30, el 50 o el 62 % y no hay
+forma de dejarlo.** No es una barra parada: con cualquiera de esas cuatro fases journaleada **el teléfono deja de
+sincronizar**, así que quien se quedaba ahí perdía el canal entero hasta que alguien se diera cuenta. Las cuatro
+salían SOLO por éxito.
+
+**Ahora tienen techo y botón.** «Cancelar y seguir en la nube», que solo salía al 95 %, se ofrece también en las
+cuatro; y si no hay nadie delante, la app sale sola: **15 min** cuando el servidor ya dijo que no —la cuenta en la
+nube no está disponible, otro dispositivo tomó el relevo, el congelado salió rechazado— y **72 h** cuando no se sabe
+por qué no avanza, que es lo que cubre el caso peor: una cuenta a la que ya no se puede entrar. Los tres motivos del
+servidor **llegaban colapsados en `.transient`**: sin separarlos, el techo corto era inalcanzable.
+
+**El techo mide el tiempo SIN CAMBIAR DE FASE**, no el total de la etapa: aquí no hay cifra que baje, así que avanzar
+es pasar a la fase siguiente. Y la salida vuelve al origen en modo nube **sin un solo efecto de máquina**: sin
+re-armar el espejo, porque pre-montaje nunca se re-encendió, y sin journalear el `reverse_abort`, porque ese efecto
+lanza sin sesión, no se consume y volvería a lanzar en cada arranque — el bug-class que esta salida existe para
+cerrar. El aviso al servidor lo intenta el runner una vez, best-effort, DESPUÉS de journalear: si el proceso muere en
+medio, «en el origen con la reserva puesta» se cura solo y al revés no.
+
+**La review adversarial con cuatro lentes tumbó nueve cosas, y tres eran de publicación:**
+
+ · **El hold nuevo del claim BORRABA los pendientes del origen.** `reverseClaimLeader` nunca había tenido una arista
+   que la dejara en sí misma, y el brazo que descarta lo guardado cazaba ese hold: un corte de red durante el claim
+   perdía el `runLeaderReconcileFromFrozenCloudKit` del líder —lo único que manda `complete`— y el rechazo posterior
+   reponía una lista vacía. El bug que cerró `reverse-claim-rejection-has-no-way-out-in-the-client`, reabierto por la
+   puerta de al lado.
+ · **El reloj no se re-sellaba al VOLVER a una fase ya visitada.** `verify` vuelve a `drain` por mismatch, y la
+   segunda visita heredaba el sello de la primera: el techo saltaba con cero segundos de parada real. Mi test solo
+   cubría el avance a una fase nueva.
+ · **Firmar para continuar ejecutaba un «Cancelar» apuntado.** Los dos botones nunca habían podido coexistir —
+   «Volver a entrar» solo sale pre-montaje y «Cancelar» solo salía en la espera—, y con el nuevo ahí, quien rescataba
+   la vuelta se la encontraba abandonada, en silencio y sin nota.
+
+Y seis más: `CloudSyncSchemaParityTests` en rojo (no pedí esa suite), el abort que no se intentaba si un pendiente
+repuesto lanzaba, el ternario del cuerpo del diálogo fallando **abierto**, una regla mía violada —«un escritor y UN
+borrador», y dos lentes discreparon sobre si la línea hacía falta: lo zanjó medir quién lee el testigo—, **cinco
+aserciones que no podían fallar**, y el copy del relevo diciendo «no pudimos EMPEZAR» cuando desde el congelado la
+vuelta sí había empezado.
+
+**Verificado:** build ×2, **460 casos en 22 suites** (ojo: pedí 13 y corrieron 11 — `CloudMigrationI14Tests` y
+`CloudWelcomeSignInFlowTests` son nombres de FICHERO, no de tipo, y dentro están justo las suites que roza este
+cambio), 6 casos de XCUITest con el centinela en 0, y **13 mutantes, los 13 cazados**. La regla de área ganó una
+entrada nueva y **seis correcciones**: el diff dejaba falsas seis afirmaciones que ya estaban escritas.
+
+**Queda:** device-QA en iPhone, con guion de cinco criterios y SQL de montaje en el ticket; y el residual
+`reverse-pre-mount-ceiling-has-no-alert-and-leaves-network-verify-out` (el techo no avisa en el momento, y
+`reverseVerify` + red pura sigue saliendo por el terminal viejo).
+
+## Sesión anterior (#198 · la espera del import de iCloud se corta al salir de la pantalla)
 
 **Salgo de una pantalla que está esperando a iCloud y esa espera seguía viva por debajo hasta minuto y
 medio: la app seguía contando mis movimientos cada seis décimas con la pantalla ya cerrada y yo en otro
@@ -67,7 +116,7 @@ exista y vaya antes del primer borrado— en vez de la forma de la línea.
 **Queda en `qa`**: el device-QA no se puede montar en el simulador, porque el caso vive en el tiempo real
 de un import de CloudKit.
 
-## Sesión anterior (#197 · unos presupuestos en iCloud ya no se leen como «no hay datos»)
+## Antes de eso (#197 · unos presupuestos en iCloud ya no se leen como «no hay datos»)
 **Tenías presupuestos en iCloud y todavía no había bajado nada más. Restaurar te los enseñaba subir en la pantalla
 de progreso y la siguiente te contestaba «No encontramos tus datos. No hay datos asociados a tu cuenta de iCloud»**,
 con «Empezar desde cero» de botón primario. CloudKit entrega por lotes y sin orden garantizado, así que «bajó un
