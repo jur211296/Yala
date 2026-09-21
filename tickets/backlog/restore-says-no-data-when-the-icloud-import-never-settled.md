@@ -73,5 +73,5 @@ que es lo normal con un histórico grande — y el desenlace incluye un botón d
 
 No ahora: solo subir/adaptar el tope de 90 s (opción 2) como remedio principal.
 
-Cola: no lanzar hasta que cierre el ticket A en curso (`reverse-before-mount-stays-stuck-with-an-expired-session`) — cola en serie.
+Cola: reverse #194 mergeado; Jürgen reanudó cola A 2026-09-20 ~22:00 Lima — este ticket es el siguiente.
 
