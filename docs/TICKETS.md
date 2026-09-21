@@ -36,7 +36,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 
 | id | status | path |
 |---|---|---|
-| abandoned-restore-no-longer-clears-the-session-window-clock | in-progress | tickets/in-progress/abandoned-restore-no-longer-clears-the-session-window-clock.md |
+| abandoned-restore-no-longer-clears-the-session-window-clock | qa | tickets/qa/abandoned-restore-no-longer-clears-the-session-window-clock.md |
 | account-currency-change-leaves-scheduled-and-favorites-stale | backlog | tickets/backlog/account-currency-change-leaves-scheduled-and-favorites-stale.md |
 | account-currency-conversion-overlay-has-no-ceiling | backlog | tickets/backlog/account-currency-conversion-overlay-has-no-ceiling.md |
 | account-form-as-medium-detent-sheet | backlog | tickets/backlog/account-form-as-medium-detent-sheet.md |

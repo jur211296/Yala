@@ -1,6 +1,6 @@
 ---
 id: abandoned-restore-no-longer-clears-the-session-window-clock
-status: in-progress
+status: qa
 priority: medium
 area: "icloud, restore, sesiones"
 created: 2026-09-21
