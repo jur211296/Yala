@@ -54,6 +54,8 @@
 - [Mi salida nueva es un camino muerto](feedback_mi_salida_nueva_es_un_camino_muerto.md) — antes de cambiar «sigue» por «vuelve», cuenta las salidas del destino.
 - [El otro control va al mismo sitio](feedback_el_otro_control_va_al_mismo_sitio.md) — el chevron salía sin retirar el arm que su botón vecino sí retiraba.
 - [Mi arreglo abre un camino INALCANZABLE](feedback_mi_arreglo_abre_un_camino_inalcanzable.md) — quitar un efecto vuelve alcanzable código que nunca corrió, con sus bugs intactos; recorre el gesto como 2.ª pasada.
+- [La pantalla se monta antes de decidir](feedback_la_pantalla_se_monta_antes_de_decidir.md) — el `state` inicial arranca trabajo que sobrevive al desvío; la puerta va en el MONTAJE, no en un `.task(id:)`.
+- [El diseño que no puedo medir no es el diseño](feedback_el_diseno_que_no_puedo_medir_no_es_el_diseno.md) — rehacer a media implementación sale barato; la decisión descartada se escribe CON su medición.
 - [El consumidor lee una COPIA](feedback_el_consumidor_lee_una_copia.md) — actualicé el `@State` y el lector siguió con el valor viejo: lo recibe por VALOR y sin `await` nadie re-evalúa el body.
 - [Mi arreglo rompe la premisa de OTRO guard](feedback_mi_arreglo_rompe_la_premisa_de_otro_guard.md) — ensanchar un predicado, o abrir un CAMINO nuevo hacia él, deja mentirosos a guards que están a varios ficheros.
 - [El testigo vive menos que lo que describe](feedback_el_testigo_vive_menos_que_lo_que_describe.md) — el borrado va DENTRO del escritor; y un sello que abre una excepción muere donde termina lo que certifica.
@@ -135,6 +137,7 @@
 - [Rediseño de sesiones: dos ejes](project_rediseno_sesiones_dos_ejes.md) — ADR 9-sep + 13 tickets con orden; M1 retirada y «en la nube» RATIFICADOS.
 - [La frontera de la visita: SUPERADA](project_la_frontera_de_la_visita.md) — el ADR del 9-sep retira M1 y sus 12 tickets están descartados; no reabrir ninguno suelto.
 - [Decisiones que esperan a Jürgen](project_decisiones_que_esperan_a_jurgen.md) — 19 contestadas el 6-sep; «¿queda alguna?» se responde LEYENDO los 94, no con grep.
+- [Salir de Restaurar ya no apaga la búsqueda viva](project_salir_de_restaurar_no_apaga_la_busqueda.md) — PR #196; deja el residual de la cancelación con ticket propio.
 - [Trabajo anterior al 14-sep](project_indice_trabajo_anterior.md) — PR #62 a #154: qué cerró cada uno y qué dejó abierto.
 
 ## Entorno y herramientas
