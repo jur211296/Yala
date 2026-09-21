@@ -34,3 +34,11 @@ comportamiento, y el hueco de `hasAnyData` salió en ticket propio.
 - Este es el hermano de [[el-mutante-que-sobrevive-puede-sobrar]] por el otro lado: allí el mutante
   vive y falta decidir entre test y código; aquí el mutante MUERE y el término sobra igual.
   Relacionado: [[el-predicado-del-ticket-no-es-el-criterio]], [[mi-arreglo-abre-un-camino-inalcanzable]].
+
+**Actualización 2026-09-21 — media premisa de arriba CADUCÓ, y la conclusión aguanta.** Al cerrar
+`restore-treats-budgets-and-groups-as-no-data`, `hasAnyData` pasó a contar los presupuestos, así que
+esa mitad de la población ya no llega a la rama. **Los grupos siguen sin contar**, medido y a
+propósito —no vienen de iCloud—, de modo que la rama conserva población y el término seguiría
+sobrando por el mismo motivo. La lección no cambia; la frase «son presupuestos o grupos» sí. Es el
+caso de [[el-copy-caduca-por-un-cambio-ajeno]] aplicado a mi propia memoria: **una memoria que cita
+un predicado envejece cuando el predicado crece.**

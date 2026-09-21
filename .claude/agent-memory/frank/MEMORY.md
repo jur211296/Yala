@@ -1,155 +1,157 @@
 # Memoria de Frank — Yala
 
 ## Cómo trabaja Jürgen
-- [Sesión de rediseño](feedback_sesion_de_rediseno.md) — si el QA se vuelve producto, se sigue: acta en docs/sessions, cierre = ADR + tickets + descartes.
+- [Sesión de rediseño](feedback_sesion_de_rediseno.md) — si el QA se vuelve producto, se sigue: acta en docs/sessions.
 - [«Creo que» no es aprobación](feedback_creo_que_no_es_aprobacion.md) — si no reconoce el componente, explicar antes de borrar.
-- [Push: solo lo de la sesión](feedback_push_solo_lo_de_la_sesion.md) — lo pendiente de otros se deja y lo sube su agente; el aviso del arranque es info, no tarea.
+- [Push: solo lo de la sesión](feedback_push_solo_lo_de_la_sesion.md) — lo pendiente de otros se deja y lo sube su agente.
 - [Levanta sus propias reglas](feedback_jurgen_levanta_sus_reglas.md) — si te pide algo que un default tuyo prohíbe, se hace y se dice.
 - [El tablero antes que el bug](feedback_el_tablero_antes_que_el_bug.md) — prefiere sanear el board antes que atacar producción.
 - [El cierre incluye TICKETS.md y ticket por hallazgo](feedback_cierre_board_tickets_y_hallazgos.md) — mandato 6-sep: índice = disco.
 - [Tarjetas blancas: identidad](feedback_tarjetas_blancas_identidad.md) — cuándo un cambio visual toca identidad y no es polish.
-- [Alcance mínimo, salvo incoherencia](feedback_alcance_minimo_salvo_incoherencia.md) — completar el objeto que su decisión nombra es lo esperado (ratificado 5-sep).
+- [Alcance mínimo, salvo incoherencia](feedback_alcance_minimo_salvo_incoherencia.md) — completar el objeto que su decisión nombra es lo esperado.
 - [Autónomo es hasta el final](feedback_autonomo_hasta_el_final.md) — decide en bloque y suelta la ejecución; los rojos y el entorno también son míos.
 - [Prefiere lo limpio a lo defensivo](feedback_prefiere_lo_limpio_a_lo_defensivo.md) — retira el mecanismo que falla en vez de apuntalarlo.
-- [Cuándo la app pregunta al usuario](feedback_cuando_la_app_pregunta_al_usuario.md) — pregunta si la decisión mueve DATOS suyos; si solo cambia el recorrido, informa o calla.
+- [Cuándo la app pregunta al usuario](feedback_cuando_la_app_pregunta_al_usuario.md) — pregunta si la decisión mueve DATOS suyos.
 - [Un límite de plataforma se explica en la pregunta](feedback_un_limite_de_plataforma_se_explica_en_la_pregunta.md) — preguntó por qué Apple solo usa el Apple ID del teléfono y eligió levantarlo.
 
 ## Cómo mido y cómo entrego
 - [El reintento de fuera multiplica el de dentro](feedback_el_reintento_de_fuera_multiplica_el_de_dentro.md) — el SDK ya reintentaba la renovación: mi coste era falso por 3x y el reintento tapaba un mutante.
-- [El orden hace INVISIBLE al segundo término](feedback_el_orden_hace_invisible_al_segundo_termino.md) — «A implica B por el orden» puede significar que A se traga a B; el flag se encendía antes de mirar el error.
-- [El mutante muere y el término sobra](feedback_el_mutante_muere_y_el_termino_sobra.md) — 5 mutantes muertos y la rama solo la alcanzaba gente con datos: cuenta la POBLACIÓN, no las muertes.
-- [Un registro no prueba la elección](feedback_un_registro_no_prueba_la_eleccion.md) — bloqueé el `nil` y un cinturón fabricaba el `true` de otra persona: cuenta los ESCRITORES del registro.
-- [El copy que promete una acción se recorre](feedback_el_copy_que_promete_se_recorre.md) — «en Perfil puedes exportar» era falso para no-Pro: mira el gate de PLAN, no solo que la pantalla exista.
+- [El orden hace INVISIBLE al segundo término](feedback_el_orden_hace_invisible_al_segundo_termino.md) — «A implica B por el orden» puede significar.
+- [El mutante muere y el término sobra](feedback_el_mutante_muere_y_el_termino_sobra.md) — 5 mutantes muertos y la rama solo la alcanzaba gente con.
+- [Un registro no prueba la elección](feedback_un_registro_no_prueba_la_eleccion.md) — bloqueé el `nil` y un cinturón fabricaba el `true` de otra.
+- [El copy que promete una acción se recorre](feedback_el_copy_que_promete_se_recorre.md) — «en Perfil puedes exportar» era falso para no-Pro.
 - [Antes de poner techo, mide que la espera existe](feedback_antes_de_poner_techo_mide_que_la_espera_existe.md) — acoté una espera que para casi todos terminaba al instante con un falso «hecho»; lo cazó la review.
-- [Una ventana dura lo que su reintento](feedback_una_ventana_dura_lo_que_su_reintento.md) — «una petición» era todo lo que el claim pasa aparcado: lo en memoria llega con su default tras relanzar.
+- [Una ventana dura lo que su reintento](feedback_una_ventana_dura_lo_que_su_reintento.md) — «una petición» era todo lo que el claim pasa aparcado.
 - [Mi puerta bloquea lo que su propio flujo dejó](feedback_mi_puerta_bloquea_lo_que_su_propio_flujo_dejo.md) — el claim deja la cuenta `complete` y mi comprobación cerraba «Reintentar» para siempre.
-- [El predicado del ticket no es el criterio](feedback_el_predicado_del_ticket_no_es_el_criterio.md) — mide con qué predicado decide la superficie que desbloqueas: el literal del ticket dejaba el bug vivo.
-- [Una key nueva está AUSENTE en todo el parque](feedback_una_key_nueva_esta_ausente_en_todo_el_parque.md) — «no hay marca» = «primera vez que corre este código»; el paso de QA que decide es ACTUALIZAR, no reinstalar.
+- [El predicado del ticket no es el criterio](feedback_el_predicado_del_ticket_no_es_el_criterio.md) — mide con qué predicado decide la superficie.
+- [Una key nueva está AUSENTE en todo el parque](feedback_una_key_nueva_esta_ausente_en_todo_el_parque.md) — «no hay marca» = «primera vez que corre.
 - [La premisa del ENCARGO también se mide](feedback_la_premisa_del_encargo_tambien_se_mide.md) — hereda los errores del ticket.
 - [Una frase de alcance se cuenta por llamadores](feedback_una_frase_de_alcance_se_cuenta_por_llamadores.md) — «solo en carrera» cayó: la migración sube sin la puerta que yo miré.
 - [`-only-testing` filtra por TIPO, no por fichero](feedback_only_testing_filtra_por_tipo_no_por_fichero.md) — pedí 12 suites y corrieron 7; una escaneaba la función que yo acababa de tocar. Cuenta pedidas vs. `Test run with`.
-- [El barrido de QA rinde por lotes](feedback_el_barrido_qa_rinde_por_lotes.md) — agrupa por estado de simulador; dos números que comparas, mismo lanzamiento.
+- [El barrido de QA rinde por lotes](feedback_el_barrido_qa_rinde_por_lotes.md) — agrupa por estado de simulador; dos números que comparas.
 - [Instrumentar gana a razonar](feedback_instrumentar_gana_a_razonar.md) — a la tercera hipótesis caída, cuenta en vez de deducir.
 - [El oráculo del mutante es el efecto que produce](feedback_el_oraculo_del_mutante_es_el_efecto_que_produce.md) — un mutante que SOBREVIVE puede estar midiendo la pantalla mientras el código cambia el estado.
-- [El CI se verifica en LOCAL](feedback_el_ci_se_verifica_en_local.md) — el `run:` se extrae del YAML y se corre con matriz; actionlint con control negativo.
-- [El paso 3 del gate no detecta cero casos](feedback_gate_paso3_no_detecta_cero_casos.md) — XCUITest es XCTest: cuenta «Test Suite» y «Executed», no «Test run with».
+- [El CI se verifica en LOCAL](feedback_el_ci_se_verifica_en_local.md) — el `run:` se extrae del YAML y se corre con matriz.
+- [El paso 3 del gate no detecta cero casos](feedback_gate_paso3_no_detecta_cero_casos.md) — XCUITest es XCTest: cuenta «Test Suite» y «Executed».
 - [Mi docblock también es una premisa](feedback_mi_docblock_tambien_es_una_premisa.md) — describo la intención como si fuera el comportamiento.
-- [El tramo sin acotar lo cumple el vecino](feedback_el_tramo_sin_acotar_lo_cumple_el_vecino.md) — un recorte que llega al final del cuerpo se cumple desde el `case` de al lado.
+- [El tramo sin acotar lo cumple el vecino](feedback_el_tramo_sin_acotar_lo_cumple_el_vecino.md) — un recorte que llega al final del cuerpo se.
 - [El source-scan de dos literales no es una red](feedback_el_source_scan_de_dos_literales_no_es_una_red.md) — si el target es inalcanzable, fija el cuerpo ENTERO; ni la coma final ni «cae dentro de la puerta» bastan.
 - [El denominador de una resta es el número que se ve](feedback_el_denominador_de_una_resta_es_el_numero_que_se_ve.md) — numerador en magnitudes, denominador en lo que se muestra; y una decisión escrita gana a dos lentes que coinciden.
-- [Borrar un test por TRAMO se lleva vecinos](feedback_borrar_un_test_por_tramo_se_lleva_vecinos.md) — la suite sigue verde; lo canta el mutante que ayer moría y hoy vive.
-- [El término nuevo desarma el test viejo](feedback_el_termino_nuevo_desarma_el_test_viejo.md) — al añadir un operando a un AND, re-mide QUÉ mata a los tests que ya pasaban; el docblock caduca en silencio.
-- [Un número sustituto lo cumple otra cosa](feedback_un_numero_sustituto_lo_cumple_otra_cosa.md) — «3 rechazos» los cumplía un gesto y «2 cambios» cualquier par: cuenta en la unidad de la decisión.
+- [Borrar un test por TRAMO se lleva vecinos](feedback_borrar_un_test_por_tramo_se_lleva_vecinos.md) — la suite sigue verde; lo canta el mutante que.
+- [El término nuevo desarma el test viejo](feedback_el_termino_nuevo_desarma_el_test_viejo.md) — al añadir un operando a un AND.
+- [Un número sustituto lo cumple otra cosa](feedback_un_numero_sustituto_lo_cumple_otra_cosa.md) — «3 rechazos» los cumplía un gesto y «2 cambios».
 - [La segunda capa no cubre lo que dice](feedback_la_segunda_capa_no_cubre_lo_que_dice.md) — mide el ALCANCE de cada defensa por separado.
-- [La aserción que no puede fallar](feedback_la_asercion_que_no_puede_fallar.md) — el mutante valida el CASO, no cada `#expect`; ensucia la columna quieta.
+- [La aserción que no puede fallar](feedback_la_asercion_que_no_puede_fallar.md) — el mutante valida el CASO, no cada `#expect`.
 - [Sacar un `await` a una tarea aparte pierde garantías](feedback_lo_que_saco_a_una_tarea_aparte_pierde_garantias.md) — cancelación heredada e identidad del handle; el `defer` que pone a nil un campo compartido es una bomba.
-- [El pre-filtro tapa al criterio](feedback_el_prefiltro_tapa_al_criterio.md) — misma condición en el fetch y en la lógica: el mutante de la lógica sale VERDE. Me pasó dos veces el 8-sep.
-- [Dos getters que parecen sinónimos](feedback_dos_getters_que_parecen_sinonimos.md) — el compuesto era fail-closed: el aviso NO salía al teléfono restaurado, que era la población del ticket.
-- [Mi arreglo empeora un ticket HERMANO](feedback_mi_arreglo_empeora_un_ticket_hermano.md) — el colateral pasó de neutro a nombrar un gesto ajeno; se mide y se anota allí, no se corta por motivo.
-- [El copy caduca por un cambio AJENO](feedback_el_copy_caduca_por_un_cambio_ajeno.md) — la frase era cierta por la mañana; al cerrar un mecanismo, busca el copy que lo prometía.
+- [El predicado que amplío CORTOCIRCUITA](feedback_el_predicado_que_amplio_cortocircuita.md) — un término nuevo APAGA las ramas de detrás.
+- [El scan de la condición no ve la rama vacía](feedback_el_scan_de_la_condicion_no_ve_la_rama_vacia.md) — exige que la rama AÑADA, y con su cifra.
+- [El pre-filtro tapa al criterio](feedback_el_prefiltro_tapa_al_criterio.md) — misma condición en el fetch y en la lógica.
+- [Dos getters que parecen sinónimos](feedback_dos_getters_que_parecen_sinonimos.md) — el compuesto era fail-closed.
+- [Mi arreglo empeora un ticket HERMANO](feedback_mi_arreglo_empeora_un_ticket_hermano.md) — el colateral pasó de neutro a nombrar un gesto ajeno.
+- [El copy caduca por un cambio AJENO](feedback_el_copy_caduca_por_un_cambio_ajeno.md) — la frase era cierta por la mañana.
 - [La tabla del ticket nombra un sitio por pantalla](feedback_la_tabla_del_ticket_nombra_un_sitio_por_pantalla.md) — 7 superficies eran 21.
-- [Ticket nuevo: busca el duplicado primero](feedback_ticket_nuevo_busca_el_duplicado_primero.md) — dos de tres ya existían el 10-sep; y antes de arreglar un comentario de paso, también.
-- [Ramas aparcadas tocan tu ticket](feedback_ramas_aparcadas_tocan_tu_ticket.md) — `git log --all -- 'tickets/*/<id>.md'` antes de diseñar: una rama sin PR le había escrito requisitos al paso 9.
+- [Ticket nuevo: busca el duplicado primero](feedback_ticket_nuevo_busca_el_duplicado_primero.md) — dos de tres ya existían el 10-sep.
+- [Ramas aparcadas tocan tu ticket](feedback_ramas_aparcadas_tocan_tu_ticket.md) — `git log --all -- 'tickets/*/<id>.md'` antes de diseñar.
 - [El mecanismo que existe se probó con OTRO corpus](feedback_el_mecanismo_existente_se_probo_con_otro_corpus.md) — reusar un barrido sobre un corpus nuevo puede destruir datos buenos; el AC dice QUÉ, no CÓMO.
-- [Mi salida nueva es un camino muerto](feedback_mi_salida_nueva_es_un_camino_muerto.md) — antes de cambiar «sigue» por «vuelve», cuenta las salidas del destino.
-- [El otro control va al mismo sitio](feedback_el_otro_control_va_al_mismo_sitio.md) — el chevron salía sin retirar el arm que su botón vecino sí retiraba.
-- [Mi arreglo abre un camino INALCANZABLE](feedback_mi_arreglo_abre_un_camino_inalcanzable.md) — quitar un efecto vuelve alcanzable código que nunca corrió, con sus bugs intactos; recorre el gesto como 2.ª pasada.
-- [La pantalla se monta antes de decidir](feedback_la_pantalla_se_monta_antes_de_decidir.md) — el `state` inicial arranca trabajo que sobrevive al desvío; la puerta va en el MONTAJE, no en un `.task(id:)`.
-- [El diseño que no puedo medir no es el diseño](feedback_el_diseno_que_no_puedo_medir_no_es_el_diseno.md) — rehacer a media implementación sale barato; la decisión descartada se escribe CON su medición.
-- [El consumidor lee una COPIA](feedback_el_consumidor_lee_una_copia.md) — actualicé el `@State` y el lector siguió con el valor viejo: lo recibe por VALOR y sin `await` nadie re-evalúa el body.
-- [Mi arreglo rompe la premisa de OTRO guard](feedback_mi_arreglo_rompe_la_premisa_de_otro_guard.md) — ensanchar un predicado, o abrir un CAMINO nuevo hacia él, deja mentirosos a guards que están a varios ficheros.
-- [El testigo vive menos que lo que describe](feedback_el_testigo_vive_menos_que_lo_que_describe.md) — el borrado va DENTRO del escritor; y un sello que abre una excepción muere donde termina lo que certifica.
-- [El guard va DENTRO del escritor](feedback_el_guard_va_dentro_del_escritor.md) — repetido en vistas SwiftUI solo lo prueba un grep, y un grep no ve un guard invertido.
-- [Mi fix hereda la forma del bug](feedback_mi_fix_hereda_la_forma_del_bug.md) — el arreglo repite el error del bug; enuncia el bug en una frase y aplícasela al arreglo.
+- [Mi salida nueva es un camino muerto](feedback_mi_salida_nueva_es_un_camino_muerto.md) — antes de cambiar «sigue» por «vuelve».
+- [El otro control va al mismo sitio](feedback_el_otro_control_va_al_mismo_sitio.md) — el chevron salía sin retirar el arm que su botón vecino sí.
+- [Mi arreglo abre un camino INALCANZABLE](feedback_mi_arreglo_abre_un_camino_inalcanzable.md) — quitar un efecto vuelve alcanzable código que nunca.
+- [La pantalla se monta antes de decidir](feedback_la_pantalla_se_monta_antes_de_decidir.md) — el `state` inicial arranca trabajo que sobrevive al.
+- [El diseño que no puedo medir no es el diseño](feedback_el_diseno_que_no_puedo_medir_no_es_el_diseno.md) — rehacer a media implementación sale.
+- [El consumidor lee una COPIA](feedback_el_consumidor_lee_una_copia.md) — actualicé el `@State` y el lector siguió con el valor viejo.
+- [Mi arreglo rompe la premisa de OTRO guard](feedback_mi_arreglo_rompe_la_premisa_de_otro_guard.md) — ensanchar un predicado.
+- [El testigo vive menos que lo que describe](feedback_el_testigo_vive_menos_que_lo_que_describe.md) — el borrado va DENTRO del escritor.
+- [El guard va DENTRO del escritor](feedback_el_guard_va_dentro_del_escritor.md) — repetido en vistas SwiftUI solo lo prueba un grep.
+- [Mi fix hereda la forma del bug](feedback_mi_fix_hereda_la_forma_del_bug.md) — el arreglo repite el error del bug.
 - [El alert de SwiftUI compite con su propio botón](feedback_el_alert_de_swiftui_compite_con_su_propio_boton.md) — el `set` del binding corre al pulsar CUALQUIER botón.
 - [Un gate derivado de una AUSENCIA falla abierto](feedback_un_gate_derivado_de_una_ausencia_falla_abierto.md) — la marca va POSITIVA.
 - [Un `await` de red en el arranque bloquea la pantalla](feedback_un_await_de_red_en_el_arranque_bloquea_la_pantalla.md) — deja sin ejecutar el `defer` que libera `bootstrapPending`; ese trabajo va PRE-MOUNT.
-- [Un timeout no distingue lento de colgado](feedback_un_timeout_no_distingue_lento_de_colgado.md) — 5010 ms clavados no son un cuelgue: súbelo y mide. Refutó un ticket entero.
-- [Un gate falla ABIERTO por su entrada](feedback_un_gate_falla_abierto_por_su_entrada.md) — lista vacía por error = «no hay»; y el snapshot se congela durante el `await`.
+- [Un timeout no distingue lento de colgado](feedback_un_timeout_no_distingue_lento_de_colgado.md) — 5010 ms clavados no son un cuelgue.
+- [Un gate falla ABIERTO por su entrada](feedback_un_gate_falla_abierto_por_su_entrada.md) — lista vacía por error = «no hay».
 - [El avisador que se rescata no vigila](feedback_el_avisador_que_se_rescata_no_vigila.md) — el respaldo ciega al vigilante.
-- [La corrección de la lente reintroduce el bug](feedback_la_correccion_de_la_lente_reintroduce_el_bug.md) — el 10-sep, dos veces en el mismo predicado.
-- [El ancla que no existe](feedback_el_ancla_que_no_existe.md) — antes de diseñar un «vuelve a enlazarse», comprueba que el objeto TIENE identidad serializable.
+- [La corrección de la lente reintroduce el bug](feedback_la_correccion_de_la_lente_reintroduce_el_bug.md) — el 10-sep, dos veces en el mismo.
+- [El ancla que no existe](feedback_el_ancla_que_no_existe.md) — antes de diseñar un «vuelve a enlazarse».
 - [La review y los mutantes no comparten árbol](feedback_la_review_y_los_mutantes_no_comparten_arbol.md) — una lente leyó un fichero MUTADO.
 - [Mi refutación falla ABIERTO](feedback_mi_refutacion_falla_abierto.md) — 33 de 45 hallazgos salieron «refutados» sin que nadie los juzgara.
-- [Tras la puerta, el error es otro](feedback_tras_la_puerta_el_error_es_otro.md) — copié «el 401 del attest suma a la racha» de Grupos al personal, donde una puerta ya filtra al teléfono: tres falsos positivos.
-- [El guion de QA tiene que distinguir builds](feedback_el_guion_de_qa_tiene_que_distinguir_builds.md) — sin red la puerta de attest salía antes del push: el PASS habría sido falso.
-- [El molde no traslada sus precondiciones](feedback_el_molde_no_traslada_sus_precondiciones.md) — copiar «con el molde de X» hereda la forma; el belt copiado no firmaba en el caso principal.
-- [El mutante que sobrevive puede SOBRAR](feedback_el_mutante_que_sobrevive_puede_sobrar.md) — dos respuestas: falta un test, o sobra el código. Elegir la 1.ª por defecto fija una línea inerte.
-- [La review adversarial caza lo MÍO](feedback_review_adversarial_caza_lo_mio.md) — el 14-sep cazó que MI ARREGLO no arreglaba, con 5 mutantes y una captura del simulador ya en verde.
+- [Tras la puerta, el error es otro](feedback_tras_la_puerta_el_error_es_otro.md) — copié «el 401 del attest suma a la racha» de Grupos al personal.
+- [El guion de QA tiene que distinguir builds](feedback_el_guion_de_qa_tiene_que_distinguir_builds.md) — sin red la puerta de attest salía antes del.
+- [El molde no traslada sus precondiciones](feedback_el_molde_no_traslada_sus_precondiciones.md) — copiar «con el molde de X» hereda la forma.
+- [El mutante que sobrevive puede SOBRAR](feedback_el_mutante_que_sobrevive_puede_sobrar.md) — dos respuestas: falta un test.
+- [La review adversarial caza lo MÍO](feedback_review_adversarial_caza_lo_mio.md) — el 14-sep cazó que MI ARREGLO no arreglaba.
 - [Apagar una voz destapa el residual de la otra](feedback_apagar_una_voz_destapa_el_residual_de_la_otra.md) — el spinner tapaba con una mentira el hueco del aviso; al callarlo quedó silencio.
-- [La fase ajena tiene otros escritores](feedback_la_fase_ajena_tiene_otros_escritores.md) — mi «en vuelo» leía un `.idle` como transitorio; Ajustes lo ponía y dejaba un progreso eterno.
-- [El flag que conserva deja estado incoherente](feedback_el_flag_que_conserva_deja_estado_incoherente.md) — «conservar preferencias» ≠ «conservar estado de las filas»: el centinela del seed dejó al usuario sin categorías.
+- [La fase ajena tiene otros escritores](feedback_la_fase_ajena_tiene_otros_escritores.md) — mi «en vuelo» leía un `.idle` como transitorio.
+- [El flag que conserva deja estado incoherente](feedback_el_flag_que_conserva_deja_estado_incoherente.md) — «conservar preferencias» ≠ «conservar.
 - [Mi escritura dispara el `onChange` que evito](feedback_mi_escritura_dispara_el_onchange_que_evito.md) — cancelar antes de escribir no cancela nada.
-- [El outcome que clasifico lo produce OTRO](feedback_el_outcome_que_clasifico_lo_produce_otro.md) — en un ciclo push+pull el veredicto es el del pull; mapearlo como «falló la subida» culpa al servidor de fallos locales.
-- [La rule de área es una lente más](feedback_la_rule_de_area_es_una_lente_mas.md) — leerla CONTRA el diff: cazó lo que las tres lentes no vieron el 8-sep y otras dos cosas el 10-sep.
+- [El outcome que clasifico lo produce OTRO](feedback_el_outcome_que_clasifico_lo_produce_otro.md) — en un ciclo push+pull el veredicto es el del.
+- [La rule de área es una lente más](feedback_la_rule_de_area_es_una_lente_mas.md) — leerla CONTRA el diff: cazó lo que las tres lentes no vieron el.
 - [Las lentes se contradicen entre sí](feedback_lentes_adversariales_se_contradicen.md) — cuando dos discrepan, mídelo.
 - [El test viejo CUELGA, no falla](feedback_el_test_viejo_cuelga_no_falla.md) — al mover un outcome de parada a reintento.
-- [Mi arreglo deja el mecanismo sin productor](feedback_mi_arreglo_deja_el_mecanismo_sin_productor.md) — mide aguas arriba y abajo; una salida que «deshace» devuelve lo que la entrada tiró.
-- [El árbol base contesta «¿es mío?»](feedback_el_arbol_base_contesta_si_es_mio.md) — worktree desde HEAD zanja un rojo ajeno en 90 s; y devuelve el disco que se come.
-- [Un «rojo conocido» no exime de bisecar](feedback_rojo_conocido_no_exime_de_bisecar.md) — dos rojos idénticos en el log, causas opuestas: uno era mío y rompía guardar una transacción.
-- [La suite completa cuando no hay memoria](feedback_suite_completa_sin_memoria.md) — separa el compilador de la corrida; y una lista sacada de `@Suite` deja fuera 273 tipos y cuadra igual.
-- [XCUITest completo: por lotes](reference_xcuitest_completo_por_lotes.md) — `BUILD INTERRUPTED` no es veredicto; cuenta por CLASE, en UN proceso de fondo; el conjunto del gate se CALCULA.
-- [Dos corridas, un simulador](feedback_dos_corridas_un_simulador.md) — vigila la corrida ENTERA, no solo la foto de antes: un rojo CON línea de fallo tampoco es tuyo si otra corrida instaló su app encima.
-- [Bisecar un flaky miente](feedback_bisect_de_un_flaky_miente.md) — la correlación es azar; lo que zanja es la muestra IMPOSIBLE, y el rojo que se muda de test.
+- [Mi arreglo deja el mecanismo sin productor](feedback_mi_arreglo_deja_el_mecanismo_sin_productor.md) — mide aguas arriba y abajo.
+- [El árbol base contesta «¿es mío?»](feedback_el_arbol_base_contesta_si_es_mio.md) — worktree desde HEAD zanja un rojo ajeno en 90 s.
+- [Un «rojo conocido» no exime de bisecar](feedback_rojo_conocido_no_exime_de_bisecar.md) — dos rojos idénticos en el log, causas opuestas.
+- [La suite completa cuando no hay memoria](feedback_suite_completa_sin_memoria.md) — separa el compilador de la corrida.
+- [XCUITest completo: por lotes](reference_xcuitest_completo_por_lotes.md) — `BUILD INTERRUPTED` no es veredicto.
+- [Dos corridas, un simulador](feedback_dos_corridas_un_simulador.md) — vigila la corrida ENTERA, no solo la foto de antes.
+- [Bisecar un flaky miente](feedback_bisect_de_un_flaky_miente.md) — la correlación es azar; lo que zanja es la muestra IMPOSIBLE.
 - [El generador regenera lo que edito](feedback_el_generador_regenera_lo_que_edito.md) — re-corre el script DESPUÉS de editar a mano.
-- [El mutante compilado zanja hipótesis](feedback_mutante_compilado_zanja_hipotesis.md) — si un ticket dice que no hay dato para elegir, recompila el código anterior y reproduce: ese es el dato.
-- [El orden del enum se ve fuera](feedback_el_orden_del_enum_se_ve_fuera.md) — un case nuevo en medio cambia el número del alert que se usa para diagnosticar; va al final.
-- [El testigo global miente en el host de test](feedback_el_testigo_global_miente_en_el_host_de_test.md) — mide qué vale bajo `-uitest` ANTES de cablearlo.
+- [El mutante compilado zanja hipótesis](feedback_mutante_compilado_zanja_hipotesis.md) — si un ticket dice que no hay dato para elegir.
+- [El orden del enum se ve fuera](feedback_el_orden_del_enum_se_ve_fuera.md) — un case nuevo en medio cambia el número del alert que se usa para.
+- [El testigo global miente en el host de test](feedback_el_testigo_global_miente_en_el_host_de_test.md) — mide qué vale bajo `-uitest` ANTES de.
 - [El mecanismo que reuso trae sus precondiciones](feedback_el_mecanismo_que_reuso_trae_sus_precondiciones.md) — si no las cumples, entra por el COORDINADOR que sí las cumple, no adaptes el `arm*`.
-- [Una premisa corregida no reabre el camino](feedback_una_premisa_corregida_no_reabre_el_camino.md) — las razones de un `blocked` son una conjunción: se refutan TODAS, con su coordenada, antes de escribir.
-- [Mis mediciones fallan por el filtro](feedback_mis_mediciones_fallan_por_el_filtro.md) — control positivo siempre; el negativo va PRIMERO y en transacción fresca.
-- [`head` retiene el veredicto de xcodebuild](feedback_head_retiene_el_veredicto_de_xcodebuild.md) — un `| head -N` no imprime nada hasta que el proceso muere: parece un teardown colgado y es el pipe.
+- [Una premisa corregida no reabre el camino](feedback_una_premisa_corregida_no_reabre_el_camino.md) — las razones de un `blocked` son una.
+- [Mis mediciones fallan por el filtro](feedback_mis_mediciones_fallan_por_el_filtro.md) — control positivo siempre; el negativo va PRIMERO y en.
+- [`head` retiene el veredicto de xcodebuild](feedback_head_retiene_el_veredicto_de_xcodebuild.md) — un `| head -N` no imprime nada hasta que el.
 - [zsh no divide variables](feedback_zsh_no_divide_variables.md) — «SUCCEEDED» con cero tests; y el exit del wrapper es del `echo`, no de xcodebuild.
-- [Revertir sin commit destruye](feedback_revertir_sin_commit_destruye.md) — `git checkout -- <f>` borra el trabajo; un SIGKILL deja el mutante puesto: compara con la copia.
+- [Revertir sin commit destruye](feedback_revertir_sin_commit_destruye.md) — `git checkout -- <f>` borra el trabajo.
 - [Nunca el trailer Co-Authored-By](feedback_trailer_commit_medido.md) — desde el 9-sep un hook del repo bloquea el COMMIT.
 - [Generar y persistir en un solo gesto](feedback_generar_y_persistir_credenciales.md) — una credencial nunca vive solo en pantalla.
-- [Medir la web: axe, Lighthouse, preview](feedback_medir_la_web_a11y_y_preview.md) — axe ciego con opacity 0; preview con SSO se verifica por config.json.
-- [Capturas del simulador para la web](feedback_capturas_simulador_para_la_web.md) — receta y trampas: Secrets.xcconfig, nombre efímero, `sips -Z` escala el lado largo.
+- [Medir la web: axe, Lighthouse, preview](feedback_medir_la_web_a11y_y_preview.md) — axe ciego con opacity 0; preview con SSO se verifica por.
+- [Capturas del simulador para la web](feedback_capturas_simulador_para_la_web.md) — receta y trampas: Secrets.xcconfig, nombre efímero.
 - [El fixture hereda la anatomía de producción](feedback_el_fixture_hereda_la_anatomia_de_produccion.md) — no la deduzcas del ticket.
-- [El seam que usa el camino de producción](feedback_el_seam_que_usa_el_camino_de_produccion.md) — hereda su persistencia; la purga simétrica cubre al seam, no al almacén.
+- [El seam que usa el camino de producción](feedback_el_seam_que_usa_el_camino_de_produccion.md) — hereda su persistencia; la purga simétrica cubre.
 - [El reparador, tan re-ejecutable como el destructor](feedback_el_reparador_tan_reejecutable_como_el_destructor.md) — en un hook kill-safe, `consume()` mata lo que repara en la 2.ª pasada.
-- [El estado paralelo al lado del step](feedback_el_estado_paralelo_al_lado_del_step.md) — «siempre va con aquello» se hereda en silencio: mételo DENTRO y que lo obligue el compilador. Cuéntalos, no lo afirmes.
+- [El estado paralelo al lado del step](feedback_el_estado_paralelo_al_lado_del_step.md) — «siempre va con aquello» se hereda en silencio.
 - [El prefijo que elegí tiene DOS efectos](feedback_el_prefijo_que_elegi_tiene_dos_efectos.md) — excluir una key de un barrido la excluye de todos.
-- [El default seguro no es el mismo para todos](feedback_el_default_seguro_no_es_el_mismo_para_todos.md) — el consumidor que alcanza datos de FUERA invierte el default.
-- [«Cero warnings» se mide en TODOS los logs](feedback_cero_warnings_se_mide_en_todos_los_logs.md) — el gate no mira los tests y lee un build incremental.
+- [El default seguro no es el mismo para todos](feedback_el_default_seguro_no_es_el_mismo_para_todos.md) — el consumidor que alcanza datos de FUERA.
+- [«Cero warnings» se mide en TODOS los logs](feedback_cero_warnings_se_mide_en_todos_los_logs.md) — el gate no mira los tests y lee un build.
 
 ## Estado del trabajo
-- [La vuelta a iCloud ya pide volver a entrar](project_vuelta_icloud_pide_volver_a_entrar.md) — PR #194; en qa con 8 pasos en iPhone; los pasos 6 y 7 son los que deciden.
-- [La sesión de la persona anterior ya se retira](project_retiro_sesion_persona_anterior.md) — PR #192; en qa con 9 pasos en iPhone, y el paso 4 (ACTUALIZAR encima) decide si se publica.
-- [Las acciones de Grupos leen pasajero el token nulo](project_acciones_grupos_token_nulo_pasajero.md) — en qa con guion sin ventana estrecha; una decisión low (reintento de la unión al volver la red).
-- [La sesión anterior tras «Empezar desde cero»](project_sesion_anterior_tras_empezar_de_cero.md) — PR #190; en qa por pasos en iPhone; la reinstalación sin sello espera decisión (4 opciones).
-- [El spinner de hidratación se rinde con el veredicto](project_spinner_hidratacion_se_rinde.md) — PR #189; done sin device-QA; residual del reloj y dos decisiones low.
-- [El canal personal lee pasajero el token nulo sin red](project_sync_personal_token_nulo_pasajero.md) — en qa con un guion de ventana estrecha; dos decisiones de producto esperan.
-- [«Migrar a la nube» ya no adopta](project_migrar_a_la_nube_no_adopta.md) — PR #187; en qa por pasos en iPhone; D18 cierra a sabiendas la salida de una migración abandonada.
-- [Un rechazo al volver a iCloud ya sale a la nube](project_rechazo_del_claim_de_la_reversa.md) — PR #186; en qa con SQL en staging; la salida repone lo que la entrada tiró.
-- [Sin App Attest no se ofrece la nube](project_puerta_del_alta_sin_attest.md) — Welcome (#180, #181) y la tarjeta de Ajustes entera; en qa por pasos en iPhone; sin secreto el simulador no crea cuentas.
-- [Grupos ya despierta al volver a la app](project_grupos_despierta_al_volver_a_la_app.md) — PR #179; deja el ticket del piggyback con el motor parado y un mutante declarado sin test.
-- [El aviso de attest personal, en dos superficies](project_aviso_attest_personal_en_dos_superficies.md) — PR #177; arregló un «Todo sincronizado» con el motor parado; el 401 del 16-sep no era su agujero.
+- [La vuelta a iCloud ya pide volver a entrar](project_vuelta_icloud_pide_volver_a_entrar.md) — PR #194; en qa con 8 pasos en iPhone.
+- [La sesión de la persona anterior ya se retira](project_retiro_sesion_persona_anterior.md) — PR #192; en qa con 9 pasos en iPhone.
+- [Las acciones de Grupos leen pasajero el token nulo](project_acciones_grupos_token_nulo_pasajero.md) — en qa con guion sin ventana estrecha.
+- [La sesión anterior tras «Empezar desde cero»](project_sesion_anterior_tras_empezar_de_cero.md) — PR #190; en qa por pasos en iPhone.
+- [El spinner de hidratación se rinde con el veredicto](project_spinner_hidratacion_se_rinde.md) — PR #189; done sin device-QA.
+- [El canal personal lee pasajero el token nulo sin red](project_sync_personal_token_nulo_pasajero.md) — en qa con un guion de ventana estrecha.
+- [«Migrar a la nube» ya no adopta](project_migrar_a_la_nube_no_adopta.md) — PR #187; en qa por pasos en iPhone.
+- [Un rechazo al volver a iCloud ya sale a la nube](project_rechazo_del_claim_de_la_reversa.md) — PR #186; en qa con SQL en staging.
+- [Sin App Attest no se ofrece la nube](project_puerta_del_alta_sin_attest.md) — Welcome (#180, #181) y la tarjeta de Ajustes entera.
+- [Grupos ya despierta al volver a la app](project_grupos_despierta_al_volver_a_la_app.md) — PR #179; deja el ticket del piggyback con el motor.
+- [El aviso de attest personal, en dos superficies](project_aviso_attest_personal_en_dos_superficies.md) — PR #177; arregló un «Todo sincronizado».
 - [Grupos ya avisa sin App Attest](project_grupos_avisa_sin_attest.md) — PR #176, en `done` y sin device-QA; el hermano personal sigue sin hacer.
 - [El teléfono sin App Attest ya tiene veredicto y salida](project_telefono_sin_attest_veredicto_y_salida.md) — en qa solo espera la racha: la salida con pérdida no se monta en ningún dispositivo.
-- [La hoja del cambio de Apple ID ya enseña el bloqueo](project_hoja_apple_id_cierre_bloqueado.md) — la review cazó un progreso eterno MÍO; queda device-QA y una decisión de copy.
+- [La hoja del cambio de Apple ID ya enseña el bloqueo](project_hoja_apple_id_cierre_bloqueado.md) — la review cazó un progreso eterno MÍO.
 - [El aviso de datos borrados ya no se monta encima de nada](project_aviso_datos_borrados_va_por_la_cola.md) — PR #164; la premisa del encargo acertaba la VÍA y erraba el case.
 - [«Empezar desde cero» sin iCloud ya vuelve en vez de mentir](project_discard_gate_vuelve_sin_prometer.md) — PR #160; la review cazó que MI extensión al estado K creaba un camino muerto.
-- [Cambiar el Apple ID ya cierra la sesión privada](project_apple_id_cierra_la_sesion_privada.md) — PR #159; el ticket decía «alinear un aviso» y no había detección que alinear.
+- [Cambiar el Apple ID ya cierra la sesión privada](project_apple_id_cierra_la_sesion_privada.md) — PR #159; el ticket decía «alinear un aviso» y no.
 - [«Empezar desde cero» en la activación ya borra de verdad](project_activacion_descarta_y_borra_de_verdad.md) — el hermano lo dio por imposible.
 - [Un fallo pasajero al cerrar sesión en la nube ya se dice honesto](project_aviso_pasajero_cierre_nube.md) — PR #156.
-- [«Empezar desde cero» en Restaurar ya borra](project_restore_start_fresh_pasa_por_la_puerta.md) — PR #155; la review cazó 11 MÍOS y el 1.º era que el arreglo no arreglaba.
+- [«Empezar desde cero» en Restaurar ya borra](project_restore_start_fresh_pasa_por_la_puerta.md) — PR #155; la review cazó 11 MÍOS y el 1.º era que.
 - [Rediseño de sesiones: dos ejes](project_rediseno_sesiones_dos_ejes.md) — ADR 9-sep + 13 tickets con orden; M1 retirada y «en la nube» RATIFICADOS.
-- [La frontera de la visita: SUPERADA](project_la_frontera_de_la_visita.md) — el ADR del 9-sep retira M1 y sus 12 tickets están descartados; no reabrir ninguno suelto.
-- [Decisiones que esperan a Jürgen](project_decisiones_que_esperan_a_jurgen.md) — 19 contestadas el 6-sep; «¿queda alguna?» se responde LEYENDO los 94, no con grep.
-- [Salir de Restaurar ya no apaga la búsqueda viva](project_salir_de_restaurar_no_apaga_la_busqueda.md) — PR #196; deja el residual de la cancelación con ticket propio.
+- [La frontera de la visita: SUPERADA](project_la_frontera_de_la_visita.md) — el ADR del 9-sep retira M1 y sus 12 tickets están descartados.
+- [Decisiones que esperan a Jürgen](project_decisiones_que_esperan_a_jurgen.md) — 19 contestadas el 6-sep; «¿queda alguna?» se responde LEYENDO los.
+- [Salir de Restaurar ya no apaga la búsqueda viva](project_salir_de_restaurar_no_apaga_la_busqueda.md) — PR #196; deja el residual de la.
 - [Trabajo anterior al 14-sep](project_indice_trabajo_anterior.md) — PR #62 a #154: qué cerró cada uno y qué dejó abierto.
 
 ## Entorno y herramientas
 - [`removeObject` sin efecto = es el simulador](feedback_simulador_preferencias_fuera_del_contenedor.md) — `simctl erase` va PRIMERO.
 - [El sello del gate ancla en HEAD](reference_gate_sello_ancla_en_head.md) — una tanda de commits obliga a re-sellar entre ellos.
 - [Avisar a Frank: lo hace el hook, no tú](reference_avisar_a_frank_webhook.md) — el hook manda PR y rojos solo; «prueba» en el texto lo descarta.
-- [El aviso de cierre necesita el cwd del repo](reference_aviso_cierre_necesita_cwd.md) — tras retirar el worktree va a Dan y se descarta en silencio; lee la línea ENVIADO.
-- [Un campo Codable nuevo apaga los widgets](feedback_campo_codable_nuevo_apaga_el_widget.md) — el DTO del App Group está DUPLICADO y decodifica entero.
-- [El acceso al backend se MIDE cada sesión](reference_verificar_backend_yala.md) — el 10-sep estaba invertido; `execute_sql` y `apply_migration` no comparten rol.
+- [El aviso de cierre necesita el cwd del repo](reference_aviso_cierre_necesita_cwd.md) — tras retirar el worktree va a Dan y se descarta en.
+- [Un campo Codable nuevo apaga los widgets](feedback_campo_codable_nuevo_apaga_el_widget.md) — el DTO del App Group está DUPLICADO y decodifica.
+- [El acceso al backend se MIDE cada sesión](reference_verificar_backend_yala.md) — el 10-sep estaba invertido; `execute_sql` y `apply_migration` no.
 - [Runbook de DDL en staging](reference_runbook_staging_ddl.md) — las tres migraciones en un solo sitio; su «falta la credencial» CADUCÓ el 10-sep.
 - [El hook de secretos está desactivado](hook_secretos_disparador_substring.md) — retirado del push el 2026-09-01 (ADR-009).
-- [El hook de /cerrar salta con «cerramos»](hook_cerrar_disparador_substring.md) — verifica la premisa contra su mensaje: cerrar un ticket no es cerrar la sesión, y el bloque de disco es irreversible.
+- [El hook de /cerrar salta con «cerramos»](hook_cerrar_disparador_substring.md) — verifica la premisa contra su mensaje.
 - [DNS de yala-app.pe](reference_dns_yala_app_pe.md) — el correo autentica desde el 8-sep; qué leer en la cabecera además de los tres `pass`.
 
 - [El disco: los GB están DENTRO del simulador](reference_disco_cache_simulador.md) — coresymbolicationd + containermanagerd ≈ 7,6 GB regenerables.

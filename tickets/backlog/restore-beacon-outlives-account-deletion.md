@@ -87,6 +87,14 @@ saber qué cerró el paso 6 y qué no.
   afirmando de más. Tampoco se limpia con Google y otro hash, porque ahí no hay prueba.
 - **§2** (`.iCloudDisabled` le pide iCloud a un nacido en la nube) y **§3** (el migrado que ve su copia
   congelada como `.found`): intactos.
+- **§3 creció un poco el 2026-09-21**, y se anota aquí en vez de callarlo:
+  `restore-treats-budgets-and-groups-as-no-data` amplió `hasAnyData` de tres cifras a cinco
+  (presupuestos y grupos), así que la población que cae en `.found` con la copia congelada incluye
+  ahora a quien solo tuviera presupuestos. **El delta medido es casi nulo** —migrar exige tener
+  datos, y un migrado sin cuentas ni categorías no es un caso realista— pero la frase de arriba
+  («`hasAnyData` incluye las categorías») ya no describe el predicado: hoy incluye las cinco. El
+  diagnóstico de §3 no cambia; su población es un pelo mayor y su enunciado hay que releerlo con el
+  predicado nuevo delante.
 
 ## Relacionados
 

@@ -320,6 +320,12 @@ struct WelcomeRestoreView: View {
 
     /// Items visibles del resumen `.found` (count > 0), cada uno renderizado
     /// como card individual.
+    ///
+    /// **Toda cifra que enciende `hasAnyData` tiene que tener su card aquí.** Es la misma invariante que
+    /// gobierna `WelcomePrivateICloudGateView.countsLine`, y se escribe porque se rompió en los dos
+    /// sitios por el mismo motivo: un término del predicado sin consumidor que lo pinte deja la pantalla
+    /// afirmando «Encontramos tus datos en iCloud:» sobre NADA — `countCards` con cero items cae en su
+    /// `default` y dibuja un grid vacío.
     private struct CountItem: Identifiable {
         let id = UUID()
         let icon: String
@@ -337,6 +343,15 @@ struct WelcomeRestoreView: View {
             items.append(CountItem(icon: "list.bullet.rectangle.fill", count: s.transactionsCount,
                                    label: L10n.Welcome.Restore.foundTransactions(s.transactionsCount)))
         }
+        // **Las categorías, desde el 2026-09-21** (`restore-treats-budgets-and-groups-as-no-data`, D5).
+        // Es un hueco ANTERIOR a ese ticket, cazado al revisar este consumidor: `hasAnyData` ya las
+        // contaba y esta lista era el único de los tres sitios que enseñan cifras del restore que no las
+        // pintaba (`RestoreProgressView.liveCounts` sí, `countsLine` desde el 10-sep). Quien restauraba
+        // solo categorías veía la pantalla del hallazgo con el grid en blanco.
+        if s.categoriesCount > 0 {
+            items.append(CountItem(icon: "tag.fill", count: s.categoriesCount,
+                                   label: L10n.Welcome.PrivateICloud.foundCategories(s.categoriesCount)))
+        }
         if s.budgetsCount > 0 {
             items.append(CountItem(icon: "chart.pie.fill", count: s.budgetsCount,
                                    label: L10n.Welcome.Restore.foundBudgets(s.budgetsCount)))
@@ -348,9 +363,14 @@ struct WelcomeRestoreView: View {
         return items
     }
 
-    /// Layout adaptativo según número de categorías visibles:
+    /// Layout adaptativo según número de CIFRAS visibles:
     /// 1 → card centrado max-width 280pt; 2 → HStack 2 cols;
-    /// 3 → HStack 3 cols; 4 → grid 2×2.
+    /// 3 → HStack 3 cols; **4 o 5 → grid de 2 columnas** (2×2, o 2×2+1 con la quinta sola en su fila).
+    ///
+    /// **Cinco es alcanzable desde el 2026-09-21** y hasta entonces no lo era: las categorías entraron
+    /// en `visibleCountItems` ese día, así que un restore con las cinco cifras deja una card sola en la
+    /// última fila. Es un grid impar, no un defecto, pero se mira con los ojos en el device-QA — el
+    /// docblock decía «4 → grid 2×2» y describía un máximo que ya no existe.
     @ViewBuilder
     private func countCards(for summary: ICloudAccountSummary) -> some View {
         let items = visibleCountItems(for: summary)
@@ -419,13 +439,23 @@ struct WelcomeRestoreView: View {
     /// **Pregunta SIEMPRE, y eso se midió en vez de razonarse.** El criterio que pide el ticket es
     /// «cuando la búsqueda/import no asentó», y el primer intento llevó ese término en el estado
     /// (`.notFound(conclusive:)`). Al buscar quién alcanza la rama concluyente salió que `settled`
-    /// exige `hasCompletedFirstImport` (`iCloudSyncService.swift:586`), o sea que CloudKit trajo algo;
-    /// y si trajo algo y `hasAnyData` sigue en `false`, lo que trajo son presupuestos o grupos, que ese
-    /// predicado no cuenta (`iCloudSyncService.swift:773-775`). ⇒ la rama que llamaba directo tenía
-    /// **una sola población, y es gente con datos** — le hacía daño justo a quien pretendía no
-    /// molestar. Con el hueco de `hasAnyData` abierto, «no asentó» y «siempre» son el MISMO
-    /// comportamiento, así que se escribe el que no tiene agujero. El hueco tiene su ticket:
-    /// `restore-treats-budgets-and-groups-as-no-data`.
+    /// exige `hasCompletedFirstImport` (`iCloudSyncService.waitForImportQuiescence`), o sea que CloudKit
+    /// trajo algo;
+    /// y si trajo algo y `hasAnyData` seguía en `false`, lo que trajo eran presupuestos o grupos, que
+    /// aquel predicado no contaba. ⇒ la rama que llamaba directo tenía **una sola población, y era
+    /// gente con datos** — le hacía daño justo a quien pretendía no molestar.
+    ///
+    /// **Ese hueco se cerró A MEDIAS el 2026-09-21** (`restore-treats-budgets-and-groups-as-no-data`),
+    /// y la mitad que queda abierta es la que sostiene el gesto: `hasAnyData` cuenta ya los
+    /// presupuestos, así que quien los tenga no llega aquí; **los grupos siguen sin contar, medido y a
+    /// propósito** —no vienen de iCloud, y contarlos haría inalcanzables `.importIncomplete`,
+    /// `.cloudPaused`, `.cloudUnverified` y este mismo estado para toda la población con grupos—. A
+    /// quien solo tiene grupos se le sigue avisando antes de borrar, pero **en la puerta**, no aquí:
+    /// su `deviceHasData` sale de `ContentView.checkHasExistingData()`, que sí los cuenta.
+    ///
+    /// **Y el gesto NO se desanda**, por dos razones ahora: esa población sigue llegando, y
+    /// `.inconclusive` sigue sin separar a quien de verdad no tiene nada del teléfono al que CloudKit
+    /// no contestó (ver `RestoreImportSettlement.inconclusive`).
     private var notFoundView: some View {
         emptyStateView(
             icon: "icloud.slash",

@@ -294,10 +294,15 @@ nonisolated enum RestoreImportSettlement: Equatable {
     /// «CloudKit no contestó», que es justo la pregunta de este ticket.
     ///
     /// Un primer intento le colgó además el gesto destructivo de `.notFound` (`conclusive:`), y se
-    /// midió que esa rama tiene una sola población y **es gente con datos**: `settled` exige
-    /// `hasCompletedFirstImport`, o sea que CloudKit trajo algo, y si lo trajo y `hasAnyData` sigue en
-    /// `false` es porque son presupuestos o grupos, que ese predicado no cuenta
-    /// (`iCloudSyncService.swift:773-775`). Ticket: `restore-treats-budgets-and-groups-as-no-data`.
+    /// midió que esa rama tenía una sola población y **era gente con datos**: `settled` exige
+    /// `hasCompletedFirstImport`, o sea que CloudKit trajo algo, y si lo trajo y `hasAnyData` seguía en
+    /// `false` era porque son presupuestos o grupos, que aquel predicado no contaba.
+    ///
+    /// **Ese hueco se cerró A MEDIAS el 2026-09-21** (`restore-treats-budgets-and-groups-as-no-data`):
+    /// `hasAnyData` cuenta ya los presupuestos, **pero NO los grupos** —no vienen de iCloud, y contarlos
+    /// haría inalcanzable este mismo caso para toda la población con grupos—. Así que la rama sigue
+    /// teniendo población, solo que otra: ya no es «presupuestos o grupos», es «grupos» a secas, más el
+    /// import a medias. El gesto de `.notFound` no cambia, y ahora lo sostienen las dos razones.
     case settledEmpty
     /// El tope se agotó **habiendo visto actividad de import**: hay datos bajando y lo que faltó fue
     /// tiempo. Negarlos aquí es el bug; lo honesto es decir que siguen llegando.
