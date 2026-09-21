@@ -5,10 +5,66 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-21 (Lima)
 
-**Rama** `2.1` — Merge #196: **Salir de Restaurar y volver a entrar ya no apaga la búsqueda que sigue viva.**
+**Rama** `2.1` — Merge #197: **Unos presupuestos en iCloud ya no se leen como «no hay datos».**
 TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
-## Esta sesión (#196 · salir de Restaurar y volver a entrar ya no apaga la búsqueda que sigue viva)
+## Esta sesión (#197 · unos presupuestos en iCloud ya no se leen como «no hay datos»)
+
+**Tenías presupuestos en iCloud y todavía no había bajado nada más. Restaurar te los enseñaba subir en la pantalla
+de progreso y la siguiente te contestaba «No encontramos tus datos. No hay datos asociados a tu cuenta de iCloud»**,
+con «Empezar desde cero» de botón primario. CloudKit entrega por lotes y sin orden garantizado, así que «bajó un
+presupuesto y todavía no una categoría» no es un borde: es un estado normal a media descarga. Ahora los cuenta.
+
+**Y la pantalla del hallazgo enseña también tus categorías.** Ese hueco es anterior al ticket y salió al revisar el
+consumidor que su propio criterio manda revisar: `hasAnyData` ya las contaba y ésta era la única de las tres
+pantallas que enseñan cifras que no las pintaba — quien restauraba solo categorías veía **«Encontramos tus datos en
+iCloud:» encima de un hueco**.
+
+**Lo que NO cambia, y es la corrección que define la sesión: los grupos se quedaron FUERA del criterio, contra lo
+que pedía el ticket.** Se implementó primero con ellos dentro, con los mutantes en verde, y la review adversarial lo
+refutó con tres medidas:
+
+ · **No vienen de iCloud.** `SplitGroup` vive en `groupsSchema`, cuyo store monta `cloudKitDatabase: .none`, y sus
+   filas llegan por el backend de Yala.
+ · **Contarlos TAPA cuatro estados.** `WelcomeRestoreView` decide con un `if summary.hasAnyData` que
+   **cortocircuita antes de leer el veredicto del import**, así que con un solo grupo local dejaban de alcanzarse
+   `.importIncomplete` —el #195, cerrado anteayer—, `.cloudPaused`, `.cloudUnverified` y `.notFound`. En
+   `FullModeActivationView`, que monta esa misma pantalla y a la que **solo se llega desde una sesión solo-grupos**,
+   eran inalcanzables por construcción; y el docblock de su «Empezar desde cero» dice explícitamente que cuenta con
+   que ese `.notFound` ocurra.
+ · **La protección que lo motivaba YA EXISTÍA.** El argumento era que `.notFound` ofrece «Empezar desde cero» y ese
+   camino purga el dominio de Grupos. Se ofrece, sí, pero no borra sin avisar: pasa por la puerta del paso 4, cuyo
+   `deviceHasData` sale de `ContentView.checkHasExistingData()`, que **sí cuenta `SplitGroup`**.
+
+⇒ son **dos preguntas** —«¿trajo algo el espejo de iCloud?» y «¿hay datos que perder en este teléfono?»— y cada una
+ya tenía su predicado. Colapsarlas produce el error en las dos direcciones. **Ésa es la lección de método**: al
+ampliar un predicado no basta con contar a quién alcanzas — hay que mirar el `if` que lo consume y contar **qué se
+vuelve inalcanzable**.
+
+Validación: build ×2 sin warnings nuevos · **162 unit en 17 suites** · **XCUITest 14 en 4 clases** con centinela
+limpio · **21 mutantes en dos tandas, 21 muertos** —el primer source-scan dejó uno VIVO: miraba la condición del
+`if` y no que la rama pintara nada, y se endureció— · review con 2 lentes + las rules de área, **15 hallazgos** ·
+`validate-coverage` OK · `docs/TICKETS.md` al día (478) · **CI verde**.
+
+**Qué te toca:**
+
+1. **Device-QA de `restore-treats-budgets-and-groups-as-no-data`** (en `qa`): 6 pasos en iPhone. **Deciden el 1**
+   —con presupuestos bajando, al terminar no puede salir «No encontramos tus datos»— **y el 5**, que es el control
+   que protege lo que NO cambió: en un teléfono solo-grupos, «Empezar desde cero» tiene que seguir avisando de que
+   hay datos en este teléfono antes de borrar. Los tres primeros no se pueden montar en simulador: CloudKit no
+   existe ahí.
+2. **El paso 3 es una pregunta de diseño, no un PASS/FAIL**: con las cinco cifras a la vista el grid deja una card
+   sola en su fila. Dinos si se ve mal y se cambia; mover UI que nadie pidió no entraba en el ticket.
+3. Siguen pendientes los device-QA del **#196** y del **#195**.
+
+**Cuatro tickets nuevos, los cuatro de la review:** `restore-prefill-skips-currency-for-an-empty-summary` (low, un
+resumen de solo presupuestos salta el paso de la divisa porque `hasPrefill` es un `!= nil`),
+`restore-found-state-leaves-no-breadcrumb` (low, `.found` es el único desenlace sin rastro y este bug reproduce en
+CloudKit Production), `group-presence-predicates-disagree-on-archived-and-hidden` (medium, tres sitios cuentan
+`SplitGroup` con tres criterios distintos) y `restore-found-copy-says-icloud-for-groups-that-never-were` (low, el
+encabezado dice «en iCloud» sobre una lista que puede incluir la card de grupos).
+
+## Sesión anterior (#196 · salir de Restaurar y volver a entrar ya no apaga la búsqueda que sigue viva)
 
 **Tocabas «Restaurar desde iCloud», te lo pensabas, volvías atrás y entrabas otra vez. Minuto y medio después, con
 tu histórico todavía bajando, la app dejaba de saber que estabas restaurando** — el primer intento seguía clavado
@@ -51,7 +107,7 @@ atendidos · `validate-coverage` OK · `docs/TICKETS.md` al día (474) · **CI v
 iCloud no observa cancelación y el refresher de la pantalla no hereda la del padre, así que siguen vivos hasta el
 tope. Es coste, no corrupción, y la primitiva la usa el arranque de la app: no se toca de paso.
 
-## Sesión anterior (#195 · el tope de la búsqueda de iCloud ya no se lee como «no hay datos»)
+## Sesión #195 · el tope de la búsqueda de iCloud ya no se lee como «no hay datos»
 
 **Reinstalabas Yala con tu histórico en iCloud y la app te contestaba «No encontramos tus datos. No hay datos asociados
 a tu cuenta de iCloud»** — con tus datos ahí. Debajo, «Empezar desde cero» **no preguntaba nada**: un toque y

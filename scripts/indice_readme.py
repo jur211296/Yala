@@ -87,7 +87,15 @@ def cola(repo):
               + u' **No cargues el índice entero para buscar una:** localízala y abre solo su fichero.']
     gordos = []
     for raiz, dirs, fich in os.walk(repo):
-        dirs[:] = [d for d in dirs if d not in ('.git', 'node_modules', '.build', 'DerivedData')]
+        # **Un subdirectorio con su propio `.git` es OTRO checkout, no contenido de este repo.**
+        # Sin esta condición el índice de ficheros gordos listaba dos veces cada documento grande —
+        # `docs/DECISIONS.md` y `.claude/worktrees/<id>/docs/DECISIONS.md`— porque ahí cuelga un
+        # worktree del propio repo. Se comprueba por la PRESENCIA de `.git` y no por el nombre del
+        # directorio: en un worktree es un fichero, en un clon anidado un directorio, y los dos
+        # responden a `os.path.exists`.
+        dirs[:] = [d for d in dirs
+                   if d not in ('.git', 'node_modules', '.build', 'DerivedData')
+                   and not os.path.exists(os.path.join(raiz, d, '.git'))]
         for f in fich:
             if not f.endswith('.md'):
                 continue
