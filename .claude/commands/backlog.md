@@ -11,7 +11,7 @@ Para cada archivo, extraer del frontmatter: `status`, `priority`, `area`, `creat
 
 ## PASO 2: MOSTRAR TABLA
 
-Presentar ordenado por prioridad (alta > media > baja; sin priority al final), luego por fecha:
+Presentar ordenado por prioridad (`critical` > `very-high` > `high` > `medium` > `low` > `very-low`; sin priority al final), luego por fecha:
 
 ```
 ## Backlog

@@ -1,7 +1,7 @@
 ---
 id: indice-readme-barre-worktrees-anidados
 status: backlog
-priority: low
+priority: very-low
 area: "tooling, docs"
 created: 2026-09-21
 updated: 2026-09-21

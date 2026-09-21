@@ -1,7 +1,7 @@
 ---
 id: el-turno-del-simulador-cubre-tambien-la-compilacion
 status: backlog
-priority: low
+priority: very-low
 area: qa
 created: 2026-09-12
 updated: 2026-09-12
