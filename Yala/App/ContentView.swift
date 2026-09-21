@@ -1847,9 +1847,14 @@ struct ContentView: View {
         // import, arm superviviente, y el arranque siguiente repitiendo lo mismo. Un borrado aplazado
         // cuesta un arranque; un crash-loop cuesta la app.
         if ICloudPersonalCorpusProbe.mirrorWillSync() {
-            guard await iCloudSyncService.shared.waitForImportQuiescence(timeout: 30) else {
-                return "importNotQuiescent"
-            }
+            let quiescent = await iCloudSyncService.shared.waitForImportQuiescence(timeout: 30)
+            // **El motivo se decide DESPUÉS de mirar la cancelación, y ese orden lo obliga el arreglo de
+            // `force-fetch-and-wait-ignores-cancellation`.** Desde que la espera observa cancelación,
+            // devuelve `false` también cuando la cancelaron — y sin este guard delante, el motivo que
+            // esta función le enseña al usuario pasaría a ser «el import no se asentó» cuando lo que
+            // pasó fue que el `Task` se fue. Es una mentira nueva, y barata de evitar.
+            guard !Task.isCancelled else { return "cancelled" }
+            guard quiescent else { return "importNotQuiescent" }
         }
         guard !Task.isCancelled else { return "cancelled" }
         if let failure = await ICloudPersonalCorpusProbe.wipe() {
@@ -1923,9 +1928,14 @@ struct ContentView: View {
         // es neutro y `mirrorWillSync()` es `false`, así que no cuesta nada; en el otro —la puerta
         // alcanzada con el espejo ya adjunto— es lo que evita el crash.
         if ICloudPersonalCorpusProbe.mirrorWillSync() {
-            guard await iCloudSyncService.shared.waitForImportQuiescence(timeout: 30) else {
-                return "importNotQuiescent"
-            }
+            let quiescent = await iCloudSyncService.shared.waitForImportQuiescence(timeout: 30)
+            // **El motivo se decide DESPUÉS de mirar la cancelación, y ese orden lo obliga el arreglo de
+            // `force-fetch-and-wait-ignores-cancellation`.** Desde que la espera observa cancelación,
+            // devuelve `false` también cuando la cancelaron — y sin este guard delante, el motivo que
+            // esta función le enseña al usuario pasaría a ser «el import no se asentó» cuando lo que
+            // pasó fue que el `Task` se fue. Es una mentira nueva, y barata de evitar.
+            guard !Task.isCancelled else { return "cancelled" }
+            guard quiescent else { return "importNotQuiescent" }
         }
         guard !Task.isCancelled else { return "cancelled" }
         // **La gracia se cancela ANTES de borrar, no después, y eso es una corrección de la review.**

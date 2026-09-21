@@ -97,10 +97,13 @@ struct WelcomeRestoreView: View {
                     // arreglo de `restore-back-and-reenter-closes-the-live-session-window`.**
                     // `state` nace en `.searching`, así que sin la puerta esta pantalla arrancaría su
                     // espera de 90 s en el PRIMER render — antes de que `startSearch()` haya mirado
-                    // iCloud ni el wipe—, y esa espera sobrevive al desvío a `.wiped` o
-                    // `.iCloudDisabled` porque `forceFetchAndWait` no observa cancelación. Desde que
-                    // `.iCloudDisabled` ofrece reintentar (2026-09-20), quien enciende iCloud y
-                    // recarga tenía DOS esperas vivas, y la fantasma apagaba la ventana de la buena.
+                    // iCloud ni el wipe. Desde que `.iCloudDisabled` ofrece reintentar (2026-09-20),
+                    // quien enciende iCloud y recarga tenía DOS esperas vivas, y la fantasma apagaba la
+                    // ventana de la buena. **El motivo cambió de mitad el 2026-09-21**: aquella espera
+                    // sobrevivía al desvío a `.wiped` o `.iCloudDisabled` porque `forceFetchAndWait` no
+                    // observaba cancelación, y ahora sí la observa — la puerta se queda porque lo que
+                    // evita es MONTARLA, que es más barato que montarla y cancelarla, y porque el token
+                    // llega por montaje.
                     //
                     // Con la puerta, el token llega por MONTAJE y no por re-disparo: nada depende de
                     // en qué orden corran el `.task` de esta vista y el de la de abajo.

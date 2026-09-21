@@ -1466,8 +1466,21 @@ final class AppBootstrapper {
 
         // 2) Poll hasta que el gate resuelva .run o se agote el tope total (→ DEFER, jamás forzar).
         //    Un import genuinamente colgado mantiene `isQuiescent=false` → nunca resuelve → DEFER al tope.
+        //
+        //    **El sleep se espera con `try`/`catch`, no con `try?`, y eso no es estilo.** Sobre un `Task`
+        //    cancelado un `try? await Task.sleep` vuelve al instante, así que el bucle giraba EN CALIENTE
+        //    los 120 s del tope. Lo cerró su propio hermano —la rama `.cloudEngine` de
+        //    `awaitPersonalStoreReady`, con el mismo comentario— y esta mitad se quedó sin cerrar; el
+        //    arreglo de `forceFetchAndWait` (2026-09-21) la ALCANZA antes, porque el paso 1 ya no se come
+        //    15 s antes de llegar aquí. Cancelado ⇒ valor conservador (el caller difiere) y SIN registrar
+        //    el outcome: un `Task` que se fue no es un DEFER del gate y no debe inflar su contador de
+        //    consecutivos, que es el que dispara el canario a los ≥3.
         while gateDecision() == .wait && Date().timeIntervalSince(start) < totalPollCap {
-            try? await Task.sleep(for: .seconds(pollInterval))
+            do {
+                try await Task.sleep(for: .seconds(pollInterval))
+            } catch {
+                return false
+            }
         }
 
         let decision = gateDecision()

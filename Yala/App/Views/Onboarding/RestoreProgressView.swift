@@ -5,6 +5,8 @@
 //  Pantalla de progreso del restore de iCloud (rama B + alert "Cargar mis datos").
 //  La espera real la hace `iCloudSyncService.waitForImportQuiescence`; un refresher
 //  paralelo refresca los conteos REALES en vivo (CloudKit no expone un % del import).
+//  Salir de la pantalla apaga los DOS: la espera observa cancelación desde el 2026-09-21
+//  y el refresher tiene handle propio, así que ninguno sobrevive al desmontaje.
 //  Barra por fases (connecting → importing → completed/partial). Siempre se muestra
 //  un mínimo para no parpadear. Al asentar (o timeout) llama `onSettled` con el summary.
 //
@@ -40,6 +42,14 @@ struct RestoreProgressView: View {
     @State private var counts: ICloudAccountSummary?
     @State private var phase: OnboardingRestorePhase = .connecting
     @State private var runTask: Task<Void, Never>?
+    /// El refresco visual paralelo, con handle PROPIO y apagado por la MISMA vía que su padre.
+    ///
+    /// **No es un hijo estructurado de `runTask`**, así que no hereda su cancelación, y atarlo al
+    /// `cancel()` que va después de la espera sería hacer que su tramo lo cumpla el vecino: hasta el
+    /// 2026-09-21 la espera no se cortaba al salir de la pantalla, así que este bucle seguía haciendo un
+    /// `iCloudAccountSummary` sobre 5+ entidades cada 0,6 s —unos 150 fetches en el MainActor— con la
+    /// vista ya desmontada, escribiendo el `@State` de una vista muerta.
+    @State private var refreshTask: Task<Void, Never>?
 
     init(flowToken: ICloudRestoreSessionSignal.FlowToken,
          timeout: TimeInterval = 90,
@@ -66,7 +76,7 @@ struct RestoreProgressView: View {
             Spacer()
         }
         .task { startFlow() }
-        .onDisappear { runTask?.cancel() }
+        .onDisappear { runTask?.cancel(); refreshTask?.cancel() }
     }
 
     private var phaseLabel: String {
@@ -146,25 +156,31 @@ struct RestoreProgressView: View {
     }
 
     private func startFlow() {
-        runTask = Task { @MainActor in
-            // Refresco visual paralelo: conteos reales + fase, hasta que asiente.
-            let refresher = Task { @MainActor in
-                while !Task.isCancelled {
-                    do {
-                        counts = try modelContext.iCloudAccountSummary(appPreferences: appPreferences)
-                    } catch {
-                        #if DEBUG
-                        print("RestoreProgressView: iCloudAccountSummary falló: \(error)")
-                        #endif
-                    }
-                    phase = OnboardingRestoreProgress.phase(
-                        hasCompletedFirstImport: iCloudSyncService.shared.hasCompletedFirstImport,
-                        isQuiescent: iCloudSyncService.shared.isImportQuiescent,
-                        timedOut: false
-                    )
-                    try? await Task.sleep(for: .seconds(0.6))
+        // **Los handles previos se cancelan antes de reasignar**, y no es defensa: un `Task` que se
+        // pisa sin cancelar queda vivo y sin dueño. `.task` corre una vez por identidad de vista, pero
+        // el coste de que SwiftUI lo re-dispare sin pasar por `onDisappear` es un bucle de
+        // `iCloudAccountSummary` sobre 5+ entidades cada 0,6 s que ya nadie puede apagar.
+        refreshTask?.cancel()
+        runTask?.cancel()
+        // Refresco visual paralelo: conteos reales + fase, hasta que asiente o se vaya la pantalla.
+        refreshTask = Task { @MainActor in
+            while !Task.isCancelled {
+                do {
+                    counts = try modelContext.iCloudAccountSummary(appPreferences: appPreferences)
+                } catch {
+                    #if DEBUG
+                    print("RestoreProgressView: iCloudAccountSummary falló: \(error)")
+                    #endif
                 }
+                phase = OnboardingRestoreProgress.phase(
+                    hasCompletedFirstImport: iCloudSyncService.shared.hasCompletedFirstImport,
+                    isQuiescent: iCloudSyncService.shared.isImportQuiescent,
+                    timedOut: false
+                )
+                try? await Task.sleep(for: .seconds(0.6))
             }
+        }
+        runTask = Task { @MainActor in
             // Espera real (primer import + quiescencia) con tope.
             let settled = await iCloudSyncService.shared.waitForImportQuiescence(timeout: timeout)
             // La señal se lee EN ESTE INSTANTE, pegada al `settled` que describe. Leerla al final —tras
@@ -176,18 +192,43 @@ struct RestoreProgressView: View {
                 hasObservedImportActivity: iCloudSyncService.shared.hasObservedImportActivity,
                 lastImportErrorAt: iCloudSyncService.shared.lastImportErrorAt,
                 lastSuccessfulImportAt: iCloudSyncService.shared.lastSuccessfulImportDate)
-            refresher.cancel()
+            // **El guard de cancelación va antes de TODO lo que sigue, y ese orden se invirtió el
+            // 2026-09-21.**
+            // Hasta entonces la espera no observaba cancelación, así que llegar aquí solo podía
+            // significar «el flujo terminó por sus propios méritos» —asentó o se agotó el tope— y el
+            // apagado iba delante para que un desmontaje en ese instante exacto no se lo llevara.
+            // Desde que salir de la pantalla SÍ corta la espera, llegar aquí ya no significa eso: puede
+            // ser que la persona tocara atrás. Y apagar ahí es justo lo que el diseño prohíbe —
+            // `ICloudRestoreSessionSignal` lo dice entero: «no se apaga al volver atrás; salir de la
+            // pantalla de restaurar no para el import: CloudKit sigue bajando filas». Le devolvería al
+            // dueño legítimo el bloqueo cross-cuenta sobre su propia cuenta, que es el bug que la señal
+            // existe para cerrar. Su lógica pura ya lo daba por hecho («el usuario que toca atrás a
+            // mitad cancela ese `Task` y este camino no corre»): hasta hoy esa frase era falsa.
+            //
+            // Lo que se pierde es PRECISIÓN, y la lógica pura la acota: quien toca atrás y no vuelve
+            // deja la ventana a cargo del import que asienta y de la caducidad (60 s sin actividad,
+            // tope duro de 600 s). **Y el tramo de 600 s no es solo «el import va lento»**, que es lo
+            // que decía la primera versión de este comentario y lo refutó la review:
+            // `hasObservedImportActivity` se enciende en `iCloudSyncService` ANTES del `if let error`,
+            // así que un import que FALLÓ y no va a volver también cae en esa rama. Se acepta —el tope
+            // duro cierra igual— pero no se cuenta como si fuera el caso bueno.
+            guard !Task.isCancelled else { return }
+            // **El refresher se apaga DETRÁS del guard, y eso lo cazó una lente de la review.** Delante
+            // parecía inofensivo —«apágalo siempre»— y no lo era: `refreshTask` es un `@State`, o sea
+            // una caja COMPARTIDA entre generaciones de la vista. Un `runTask` cancelado que despierta
+            // después de que la pantalla se haya vuelto a montar leería de esa caja el refresher de la
+            // generación NUEVA y lo mataría, dejando los conteos congelados en el intento vivo. Detrás
+            // del guard no puede pasar: en el camino cancelado ya lo apagó el `onDisappear` —que es el
+            // único sitio del fichero que cancela `runTask`, así que uno cancelado implica el otro—, y
+            // ahí ese `cancel()` solo podía acertarle al vecino.
+            refreshTask?.cancel()
             // El flujo terminó, gane (`settled`) o pierda (timeout): a partir de aquí no hay ninguna
-            // descarga en curso que justifique tener abierto el guard cross-cuenta. Va ANTES del
-            // `guard !Task.isCancelled` de abajo a propósito — si la vista se desmontó justo ahora, el
-            // early-return se llevaría el apagado y la ventana quedaría viva hasta caducar.
+            // descarga en curso que justifique tener abierto el guard cross-cuenta.
             // Con el token de ESTE flujo, no incondicional: quien tocó atrás y volvió a entrar tiene un
-            // intento vivo con otro token, y el abandonado —clavado hasta aquí porque
-            // `forceFetchAndWait` no observa cancelación— ya no puede apagarle la ventana. Si esta
+            // intento vivo con otro token, y el abandonado no puede apagarle la ventana. Si esta
             // pantalla se montó en un camino que nunca llegó a encender la señal (`.wiped`,
             // `.iCloudDisabled`), su token no es dueño de nada y esto es un no-op.
             ICloudRestoreSessionSignal.noteRestoreFinished(flowToken)
-            guard !Task.isCancelled else { return }
             phase = settled ? .completed : .partial
             do {
                 counts = try modelContext.iCloudAccountSummary(appPreferences: appPreferences)

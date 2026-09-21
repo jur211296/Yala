@@ -332,6 +332,107 @@ struct iCloudSyncServiceTests {
         #expect(result == false)
     }
 
+    // MARK: - forceFetchAndWait · la cancelación (`force-fetch-and-wait-ignores-cancellation`)
+    //
+    // **Estos casos llevan tope PROPIO, no el del SUT, y eso lo decidió un mutante.** La primera versión
+    // se apoyaba en el `timeout:` que se le pasa a la espera: si el arreglo regresaba, la espera se
+    // resolvería por su tope y el caso fallaría por duración. **Falso para el modo de fallo que más
+    // importa**: si `arm(...)` deja de cobrar el valor que `resolve(_:)` guardó, la caja queda
+    // `didResolve == true` con la continuation dentro, así que ni el tope ni la notificación vuelven a
+    // resolverla — la espera NO TERMINA NUNCA y el caso CUELGA en vez de ponerse rojo, que es un rojo
+    // mal leído (AC nº4 del ticket). Medido con el mutante M2 el 2026-09-21.
+    //
+    // ⇒ la espera corre en un `Task` suelto que deja su resultado en una caja, y el caso sondea esa caja
+    // con su propio tope. Sin valor al tope, FALLA.
+
+    /// Caja de resultado para las esperas con tope propio.
+    private actor ResultBox {
+        private var value: Bool?
+        func set(_ v: Bool) { if value == nil { value = v } }
+        func get() -> Bool? { value }
+    }
+
+    /// Corre `op` con un tope propio de `topeSegundos`. Devuelve `nil` si no terminó a tiempo — un caso
+    /// que cuelga no es un rojo, y por eso el tope no puede vivir dentro del SUT.
+    private func conTope(_ topeSegundos: Double,
+                         _ op: @escaping @Sendable () async -> Bool) async -> (valor: Bool?, segundos: TimeInterval) {
+        let caja = ResultBox()
+        let inicio = Date.now
+        let trabajo = Task { await caja.set(await op()) }
+        while await caja.get() == nil, Date.now.timeIntervalSince(inicio) < topeSegundos {
+            try? await Task.sleep(for: .milliseconds(20))
+        }
+        let valor = await caja.get()
+        if valor == nil { trabajo.cancel() }   // que no siga vivo en las suites siguientes
+        return (valor, Date.now.timeIntervalSince(inicio))
+    }
+
+    /// El `Task` llega a la espera YA cancelado. Es el caso que ejercita la carrera de verdad: el
+    /// `onCancel` de `withTaskCancellationHandler` corre ANTES de que `withCheckedContinuation` haya
+    /// instalado nada, así que la resolución tiene que quedarse guardada y cobrarse al instalar.
+    @MainActor @Test func forceFetchAndWait_returnsFalseWhenAlreadyCancelled() async {
+        let service = freshService()
+        #expect(service.hasCompletedFirstImport == false)
+
+        let medida = await conTope(1.5) { @MainActor in
+            // El `cancel()` llega mientras el `Task` duerme, así que la espera arranca ya cancelada.
+            let espera = Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(30))
+                return await service.forceFetchAndWait(timeout: 10)
+            }
+            espera.cancel()
+            return await espera.value
+        }
+
+        #expect(medida.valor == false, """
+            La espera arrancó con el `Task` ya cancelado y no resolvió en \(medida.segundos) s \
+            (`nil` = no resolvió NUNCA). O `withTaskCancellationHandler` dejó de envolverla, o \
+            `arm(...)` dejó de cobrar el valor pendiente que `resolve(_:)` guardó antes de que \
+            existiera la continuation — y ese segundo caso deja la espera colgada para siempre, \
+            no solo lenta.
+            """)
+    }
+
+    /// Cancelar a media espera la corta. Es el caso del usuario: sale de la pantalla que esperaba a
+    /// iCloud, y hasta el 2026-09-21 la espera seguía viva hasta 15 s (arranque) o 90 s (restore).
+    @MainActor @Test func forceFetchAndWait_returnsFalsePromptlyWhenCancelledMidFlight() async {
+        let service = freshService()
+        #expect(service.hasCompletedFirstImport == false)
+
+        let medida = await conTope(1.5) { @MainActor in
+            let espera = Task { @MainActor in await service.forceFetchAndWait(timeout: 10) }
+            try? await Task.sleep(for: .milliseconds(100))
+            espera.cancel()
+            return await espera.value
+        }
+
+        #expect(medida.valor == false, """
+            Cancelar la espera no la cortó: seguía viva a los \(medida.segundos) s con un tope \
+            interno de 10. El `Task` abandonado retiene el observer de `NotificationCenter` y su \
+            `Task` de sleep hasta agotar ese tope, con la pantalla ya cerrada.
+            """)
+    }
+
+    /// La espera de dos pasos hereda la cancelación por su paso 1. Es lo que consumen `RestoreProgressView`
+    /// (90 s), los dos borrados de `ContentView` (30 s) y la convergencia del bridge de Grupos (30 s).
+    @MainActor @Test func waitForImportQuiescence_returnsFalsePromptlyWhenCancelled() async {
+        let service = freshService()
+        #expect(service.hasCompletedFirstImport == false)
+
+        let medida = await conTope(1.5) { @MainActor in
+            let espera = Task { @MainActor in await service.waitForImportQuiescence(timeout: 10) }
+            try? await Task.sleep(for: .milliseconds(100))
+            espera.cancel()
+            return await espera.value
+        }
+
+        #expect(medida.valor == false, """
+            La espera de quiescencia seguía viva a los \(medida.segundos) s tras cancelarla. Su \
+            paso 1 es `forceFetchAndWait`: si no corta, la pantalla de restaurar sigue contando \
+            filas noventa segundos después de que la persona se haya ido.
+            """)
+    }
+
     // MARK: - Paso 9 · el ancla del export y la prueba de «no hay cuenta»
 
     // Las anclas de estos tests van en el PASADO (2023): una del futuro se descarta por diseño
