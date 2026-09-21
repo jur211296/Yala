@@ -195,7 +195,8 @@ motivo es una cifra que el ticket no mira:
   el espejo montado están en su iCloud. Para ese usuario `hasAnyData` ya era `true` antes de este
   ticket: nunca vio el mensaje.
 
-⇒ las dos poblaciones que SÍ llegan, y las dos siguen justificando el cambio:
+⇒ las dos poblaciones que SÍ llegan. **Solo la primera justifica el cambio**; la segunda se midió
+después y resultó estar ya cubierta (ver D1):
 
 1. **El import a medias, que es el caso del ticket padre.** CloudKit entrega por lotes y sin orden
    garantizado: puede haber bajado `CD_Budget` y todavía no `CD_Subcategory`. Ahí `budgetsCount > 0`
@@ -205,8 +206,12 @@ motivo es una cifra que el ticket no mira:
    —la semilla la disparan `OnboardingView:1724`, `GroupInviteOnboardingView:558` y
    `SubcategorySelectorSheet:41`, no el arranque, pese a lo que dice el docblock de
    `CategorySeed.swift`— y su store personal es el neutro, que no espeja. Su iCloud está vacío de
-   verdad y sus grupos son locales. **Es la población con pérdida**: `.notFound` le ofrece de
-   primera «Empezar desde cero», y ese camino purga el dominio de Grupos.
+   verdad y sus grupos son locales. **Y aquí el mensaje es CORRECTO**: en su iCloud no hay nada
+   suyo. Esta era la población que D1 pretendía cubrir metiendo los grupos en el predicado, y la
+   medición dice que no le hacía falta: «Empezar desde cero» la manda a la puerta del paso 4, cuyo
+   `deviceHasData` sí cuenta sus grupos, así que recibe el aviso con doble confirmación antes de
+   cualquier borrado. Lo único que se le puede reprochar a la pantalla es no nombrarlos — y eso no
+   se arregla mintiendo sobre lo que hay en iCloud.
 
 **Y un efecto medido del cambio que conviene tener escrito**, porque no es gratis: con el import a
 medias y un presupuesto ya bajado, la pantalla pasa de `.importIncomplete` («seguimos trayendo tus
