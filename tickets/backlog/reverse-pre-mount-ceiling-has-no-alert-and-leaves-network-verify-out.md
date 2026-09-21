@@ -53,3 +53,12 @@ pendiente hasta que la red vuelva.
 - `reverse-before-mount-has-no-way-to-abandon-the-return` — el ticket que dejó estos dos residuales.
 - `reverse-claim-rejection-has-no-way-out-in-the-client` — de donde sale el molde de la alerta.
 - `forward-verify-reads-an-expired-session-as-network` — el gemelo del segundo punto, por el lado de la ida.
+
+## Decisión Jürgen (2026-09-21)
+
+**El techo avisa en el momento** (alerta al disparar, no silencio).
+
+**verify + red entra al techo nuevo** — no quedan fuera del techo pre-montaje.
+
+Listo para cola A cuando toque (serie; no adelantar a `abandoned-restore-no-longer-clears-the-session-window-clock`).
+
