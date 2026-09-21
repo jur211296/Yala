@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: testing
 created: 2026-09-05
-updated: 2026-09-16
+updated: 2026-09-21
 source: rojo clasificado en el gate de group-joiner-flag-consumers-still-narrow
 ---
 
@@ -183,3 +183,31 @@ Las cuatro medidas, en orden, sobre el MISMO lote y el MISMO código:
 La 4 es la que zanja: la 1 y la 4 son la misma condición exacta y dan resultados opuestos, así que el
 rojo no lo explica ningún diff. Refuerza lo que ya dice este ticket —«falla en lote y pasa solo»— y
 añade que **tampoco falla siempre en lote**.
+
+
+---
+
+## Segunda observación, 2026-09-21: otro caso, misma forma
+
+En el gate de `reverse-pre-mount-ceiling-has-no-alert-and-leaves-network-verify-out`, el mismo lote de cuatro suites
+(`StorageMigrationAttestUITests`, `StorageMigrationIdentityBlockUITests`, `EdgeCasesUITests`,
+`WelcomeFreshStartAlertUITests`) dio **verde una vez y rojo la siguiente**, con un caso distinto:
+
+```
+YalaUITests/Flows/StorageMigrationAttestUITests.swift:47: error:
+-[…] test_withoutAppAttest_storageDoesNotOfferTheCloud] : XCTAssertTrue failed —
+No aparece la fila «¿Dónde viven tus datos?» en Ajustes.
+```
+
+Falla en la **navegación previa**, no en la aserción del caso. Re-corrida la suite aislada: verde en 38 s.
+
+**Lo que lo zanja no es la re-corrida, es la muestra imposible.** Entre la corrida verde y la roja, el diff de
+producción fue **el mismo**: lo único que cambió en el árbol entre una y otra fueron comentarios y ficheros de test
+(comprobado con `git diff -U0 -- Yala/` filtrando comentarios). El mismo binario dio los dos veredictos, así que la
+causa no está en el código bajo prueba. El centinela (`sim-libre.sh --vigilar`) salió **0** en las dos corridas, así
+que tampoco fue otra sesión pisando el simulador — que es la otra explicación habitual y la que hay que descartar
+antes de llamarlo flaky.
+
+El lote rojo tardó **249 s**; el verde, **195 s**. Encaja con la hipótesis de arriba: bajo carga el `waitForExistence`
+de la navegación se queda corto. Ahora son **dos** casos distintos, de dos suites distintas, con la misma forma — lo
+que refuerza que el sitio a mirar es el timeout compartido de los helpers de navegación, no cada caso.

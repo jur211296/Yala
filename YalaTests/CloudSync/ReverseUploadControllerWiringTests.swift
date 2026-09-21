@@ -146,6 +146,54 @@ struct ReverseUploadControllerWiringTests {
         #expect(resumeRefresh.lowerBound < resumeAnnounce.lowerBound)
     }
 
+    /// La alerta del techo de las cuatro fases previas al montaje (ticket
+    /// `reverse-pre-mount-ceiling-has-no-alert-and-leaves-network-verify-out`, decisión de Jürgen). Misma forma que
+    /// la del claim y por el mismo motivo —la foto ANTES de llamar al runner, porque el porqué journaleado no
+    /// distingue esta salida de la de un intento anterior—, con UNA diferencia que este test es el único que fija:
+    /// el motivo pasa por `ReverseUploadWaitingCopyLogic.abortNote` antes de traducirse.
+    ///
+    /// Sin ese filtro, «Cancelar y seguir en la nube» desde una de estas cuatro fases journalea `cancelled`, y
+    /// `L10n.Storage.ReverseAbort.note(for:)` agrupa ese motivo con `stalled`: la persona que decide cancelar se
+    /// llevaría una alerta de error diciéndole que no se pudo. El cuerpo entero está fijado porque quitar el filtro
+    /// deja el resto del test en verde.
+    @Test func preMountExitAlert_filtersTheReasonThePersonChose_fromTheTapAndFromResume() throws {
+        let helper = try Self.body(of: "private func announceReversePreMountExit(since before: ReversePreMountExit?) {")
+        let helperLines = helper.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+        #expect(helperLines == [
+            "guard let exit = _runner?.lastReversePreMountExit, exit != before,",
+            "let reason = ReverseUploadWaitingCopyLogic.abortNote(exit.reason) else { return }",
+            "lastError = L10n.Storage.ReverseAbort.note(for: reason)",
+        ], "el cuerpo entero: comparar con la foto, filtrar lo que la persona pidió, y traducir con la MISMA función")
+
+        // Y el filtro dice lo que este test cree que dice: sin esto, la aserción de arriba fija un nombre, no un
+        // comportamiento.
+        #expect(ReverseUploadWaitingCopyLogic.abortNote(.cancelled) == nil)
+        #expect(ReverseUploadWaitingCopyLogic.abortNote(.preMountStalled) == .preMountStalled)
+
+        let start = try Self.body(of: "func startReverse() async {")
+        let snapshot = try #require(start.range(of: "let preMountExitBefore = r.lastReversePreMountExit"))
+        let activated = try #require(start.range(of: "await r.submit(.reverseActivated)"))
+        #expect(snapshot.lowerBound < activated.lowerBound, "la foto va antes de emitir nada")
+        #expect(Self.occurrences(of: "lastReversePreMountExit", in: start) == 1,
+                "una foto; la lectura es del helper")
+        // El orden aviso-pendiente ⟶ aviso-del-techo NO se afirma aquí: la línea del `if` va antes del cuerpo de su
+        // `else` por construcción del lenguaje, así que la aserción no podría fallar. Lo que sí lo fija es el cuerpo
+        // entero pinneado en `startReverseAndResume_wholeBodiesArePinned`. Medido en la review del 2026-09-21.
+
+        let resume = try Self.body(of: "func resume(clearingError: Bool = true) async {")
+        let resumeSnapshot = try #require(resume.range(of: "let preMountExitBefore = runner.lastReversePreMountExit"))
+        let cancelCall = try #require(resume.range(of: "await runner.cancelReverse()"))
+        let resumeCall = try #require(resume.range(of: "await runner.resume()"))
+        let resumeAnnounce = try #require(resume.range(of: "announceReversePreMountExit(since: preMountExitBefore)"))
+        #expect(resumeSnapshot.lowerBound < cancelCall.lowerBound,
+                "la foto va antes de cualquier llamada al runner, y `cancelReverse` también produce salida")
+        #expect(resumeCall.lowerBound < resumeAnnounce.lowerBound)
+        // Que el aviso no viva dentro de un `if clearingError` —sería mudo justo con la pantalla delante, que es el
+        // caso del ticket— tampoco se afirma aquí: un `contains` de UNA grafía exacta lo esquiva cualquier mutante
+        // escrito en dos líneas o con otro espaciado. Lo caza el cuerpo entero normalizado del test de al lado.
+    }
+
     /// Los dos cuerpos ENTEROS, normalizados (segunda pasada de review). El orden de arriba no caza dos mutantes que
     /// dejan la alerta muda con todo en verde: envolver el aviso de `resume` en `if clearingError { … }` —el re-kick con
     /// la pantalla delante ya no avisaría— y bajar un `lastError = nil` por debajo del aviso —se asigna y se borra en el
@@ -161,6 +209,7 @@ struct ReverseUploadControllerWiringTests {
             "cancelReverseRequested = false",
             "let r = runner",
             "let claimExitBefore = r.lastReverseClaimExit",
+            "let preMountExitBefore = r.lastReversePreMountExit",
             "await r.submit(.reverseActivated)    // done/notStarted → reverseConfirm(origin)",
             "await r.submit(.reverseConfirmed)    // → reverseClaimLeader → drive",
             "refresh()",
@@ -168,6 +217,7 @@ struct ReverseUploadControllerWiringTests {
             "lastError = L10n.Storage.Errors.reversePendingExit",
             "} else {",
             "announceReverseClaimExit(since: claimExitBefore)",
+            "announceReversePreMountExit(since: preMountExitBefore)",
             "}",
         ])
         #expect(lines(try Self.body(of: "func resume(clearingError: Bool = true) async {")) == [
@@ -180,6 +230,7 @@ struct ReverseUploadControllerWiringTests {
             "return",
             "}",
             "let claimExitBefore = runner.lastReverseClaimExit",
+            "let preMountExitBefore = runner.lastReversePreMountExit",
             "let forwardRefusalBefore = runner.lastForwardClaimRefusal",
             "if cancelReverseRequested {",
             "cancelReverseRequested = false",
@@ -188,6 +239,9 @@ struct ReverseUploadControllerWiringTests {
             "await runner.resume()",
             "refresh()",
             "announceReverseClaimExit(since: claimExitBefore)",
+            // Ticket `reverse-pre-mount-ceiling-has-no-alert-and-leaves-network-verify-out`: el techo de las cuatro
+            // fases previas al montaje sale SIN efectos, así que sin este aviso la pantalla cambiaba muda.
+            "announceReversePreMountExit(since: preMountExitBefore)",
             // Ticket `settings-migrate-to-cloud-adopts-silently-instead-of-migrating`: un claim de «Migrar» aparcado por
             // la red puede contestar `existing_stable` al retomar. Su aviso lo fija `MigrationIdentityGateWiringTests`.
             "await announceForwardClaimRefusal(since: forwardRefusalBefore)",

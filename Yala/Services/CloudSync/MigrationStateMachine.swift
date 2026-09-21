@@ -641,7 +641,7 @@ nonisolated enum MigrationStateMachine {
 
         // reverseVerify — S9 reused; the mismatch fix is a PULL (re-drain), not a re-upload.
         case let (.reverseVerify, .reverseVerifyOutcome(outcome)):
-            return reverseVerifyTransition(outcome: outcome, policy: policy)
+            return reverseVerifyTransition(outcome: outcome, policy: policy, from: phase, event: event)
 
         // reverseFreezeBackend → reverseMountMirror (RE-LIGHT the mirror, crosses the process boundary).
         case (.reverseFreezeBackend, .reverseBackendFrozen):
@@ -811,10 +811,22 @@ nonisolated enum MigrationStateMachine {
         }
     }
 
-    /// The reverse verify (§h) — REUSES `VerifyOutcome` and the S9 counters (INDEPENDENT of the forward
-    /// verify's; the runner resets them on `reverseClaimLeader`). Authority in the reverse is backend→local,
+    /// The reverse verify (§h) — REUSES `VerifyOutcome`, but only for the MISMATCH counter (independent of the
+    /// forward verify's; the runner resets them on `reverseClaimLeader`). Authority in the reverse is backend→local,
     /// so a mismatch is fixed by a PULL (`reverseDrainAll`), NEVER a re-upload.
-    private static func reverseVerifyTransition(outcome: VerifyOutcome, policy: MigrationPolicy) -> TransitionOutcome {
+    ///
+    /// **`networkTimeout` ya no es un par legal aquí** (2026-09-21, ticket
+    /// `reverse-pre-mount-ceiling-has-no-alert-and-leaves-network-verify-out`, decisión de Jürgen). La red de la
+    /// VUELTA pasa por el techo de la etapa previa al montaje —igual que la del drenaje y la del congelado—, así que
+    /// `driveReverseVerify` emite `reversePreMountStalled` y no este evento. Dejar la rama viva la habría convertido
+    /// en una rama muerta que afirma lo contrario del ticket: que la vuelta degrada a `reverseFailedRollback` con
+    /// `.reverseRollback` pendiente por quedarse sin cobertura. `.invalid` lo dice, y un test lo puede fijar.
+    ///
+    /// La IDA no cambia: `verifyTransition` sigue tratando el suyo igual, y esa sí es la rama que `driveVerify`
+    /// alimenta con la red, la sesión caducada y el `blocked`.
+    private static func reverseVerifyTransition(
+        outcome: VerifyOutcome, policy: MigrationPolicy, from: MigrationPhase, event: MigrationEvent
+    ) -> TransitionOutcome {
         switch outcome {
         case .match:
             return .transition(next: .reverseFreezeBackend, effects: [])
@@ -827,11 +839,8 @@ nonisolated enum MigrationStateMachine {
             }
             // Backend→local authority: fix a divergence by re-pulling/draining, never re-uploading.
             return .transition(next: .reverseDrainAll, effects: [])
-        case let .networkTimeout(retriesSoFar):
-            if retriesSoFar >= policy.maxNetworkRetries {
-                return .transition(next: .reverseFailedRollback, effects: [.reverseRollback])
-            }
-            return .transition(next: .reverseVerify, effects: [])
+        case .networkTimeout:
+            return .invalid(from: from, event: event)
         }
     }
 
