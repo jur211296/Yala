@@ -5,10 +5,54 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-21 (Lima)
 
-**Rama** `2.1` — Merge #199: **La vuelta a iCloud ya se puede abandonar antes de montar el espejo.**
+**Rama** `2.1` — Merge #200: **El restore abandonado ya no se lleva el reloj de la ventana de sesión.**
 TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
-## Esta sesión (#199 · la vuelta a iCloud ya se puede abandonar antes de montar el espejo)
+## Esta sesión (#200 · el restore abandonado ya no se lleva el reloj de la ventana de sesión)
+
+**Entro a «Restaurar desde iCloud», me arrepiento y toco atrás. Vuelvo un rato largo después y esta vez
+sí espero — y a media descarga la app me dice que mis datos son de otra persona.** El permiso que deja
+entrar a la propia cuenta contaba su reloj desde la PRIMERA vez, no desde ésta, así que se agotaba con
+el import a medias y `CrossAccountEntryGuardLogic` devolvía `.blockedForeignData` al dueño legítimo.
+
+**Ahora el reloj empieza cuando entré esta vez**, y lo que ya estaba bien no se movió: salir de la
+pantalla con el import bajando sigue sin apagar nada.
+
+El reloj (`restoreStartedAt`) y el dueño (`currentFlow`) pasan a ser dos cosas distintas. Hasta hoy el
+invariante era `restoreStartedAt == nil ⇔ currentFlow == nil`, o sea que apagar la ventana y liberar su
+reloj eran el MISMO acto; desde que el flujo abandonado dejó de apagar (#198, con razón: el import sigue
+bajando) dejó también de liberar. Hoy hay un estado más, **la ventana HUÉRFANA** —reloj puesto, dueño
+`nil`—: viva para el import que la justifica, sin nadie que la vigile, y la entrada siguiente la estrena.
+La suelta `noteRestoreAbandoned` desde el `onDisappear` de la pantalla de progreso, y **no toca el
+reloj**: apagar ahí reabriría entero el ticket del que sale éste.
+
+**La premisa del ticket cayó al medirla.** El docblock decía que conservar el reloj impedía que el botón
+de reintentar extendiera el tope a voluntad; no lo impedía. Los cinco botones de «volver a buscar» solo
+salen en estados terminales, aguas abajo del apagado, así que cuando la persona los toca el reloj ya es
+`nil` y se estrena igual. Lo único que aquel guard producía era el bug.
+
+**Y la review cazó que MI arreglo abría otro.** Con «estrena si no hay dueño» a secas, el ciclo
+entrar-atrás-repetir re-ancla el reloj en cada vuelta, y como la gracia de 60 s se mide desde ahí, quien
+navegue más rápido que eso mantiene abierto indefinidamente el guard de frontera de cuenta — en un
+teléfono con el corpus de otra persona, la adopción que el guard existe para impedir. Antes del ticket no
+se podía. Lo cierra el **testigo del import**: una huérfana solo se re-ancla si llegó algún
+`.importEvent`. Va **sin default**, como el `restoreInProgress` del guard.
+
+Verificado: build ×2, 268 unit en 28 suites, 16 XCUITest en 4 suites con el centinela en cero, y **8
+mutantes muertos**. De paso, un rojo AJENO que llevaba desde el 17-sep mudo en `2.1`:
+`NeutralMountWiringTests` seguía anclado a la firma vieja de `personalStoreFileExists()` —perdió su
+`private` en `e765ad070`— así que su `#require` de marcador fallaba antes de llegar a las tres
+aserciones.
+
+**Queda device-QA** (ticket en `qa`, guion de 8 pasos): no se monta en simulador, exige corpus real en
+iCloud y un import de más de 90 s.
+
+**Dos tickets nuevos:** `restore-timeout-closes-the-session-window-with-the-import-still-running` (el
+mismo daño por el eje del desenlace: el tope de 90 s apaga la ventana con el import en marcha) y
+`restore-error-state-is-never-reached` (el `case error` de `WelcomeRestoreView` lo pinta el `switch` y no
+lo asigna nadie).
+
+## Sesión anterior (#199 · la vuelta a iCloud ya se puede abandonar antes de montar el espejo)
 
 **Empiezo a volver a iCloud y algo no deja terminar: la barra se queda en el 15, el 30, el 50 o el 62 % y no hay
 forma de dejarlo.** No es una barra parada: con cualquiera de esas cuatro fases journaleada **el teléfono deja de

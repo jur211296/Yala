@@ -18,7 +18,7 @@
 | ¿Cómo arranco de cero en otra máquina? | [`docs/HANDOFF.md`](./docs/HANDOFF.md) |
 
 > **Ficheros de más de 60 KB** — `✓` = lleva índice arriba, entra por ahí:
-> ✓ `docs/DECISIONS.md` (256 KB) · ✓ `docs/aprendizajes-tecnicos.md` (207 KB) · ✓ `qa/cloud/README.md` (130 KB) · ✓ `docs/modo-nube/MODO-NUBE-DIFERIDOS.md` (113 KB) · ✗ `docs/ESTADO.md` (103 KB) · ✓ `tickets/qa/groups-consent-door-spec.md` (98 KB) · ✓ `.claude/rules/swiftdata-cloudkit.md` (95 KB) · ✓ `docs/audit/AUDIT-UI-patterns.md` (94 KB) · ✓ `docs/modo-nube/MODO-NUBE-AUDITORIA-ESCENARIOS.md` (94 KB) · ✓ `docs/modo-nube/_archive/groups-backend-v1.md` (72 KB) · ✓ `docs/modo-nube/_archive/fase3-medicion/fase3-REMEDICION-2026-08-04.md` (64 KB) · ✓ `docs/modo-nube/MODO-NUBE-DECISION-RELEASE-2.1.md` (61 KB)
+> ✓ `docs/DECISIONS.md` (256 KB) · ✓ `docs/aprendizajes-tecnicos.md` (207 KB) · ✓ `qa/cloud/README.md` (130 KB) · ✓ `docs/modo-nube/MODO-NUBE-DIFERIDOS.md` (113 KB) · ✗ `docs/ESTADO.md` (106 KB) · ✓ `tickets/qa/groups-consent-door-spec.md` (98 KB) · ✓ `.claude/rules/swiftdata-cloudkit.md` (95 KB) · ✓ `docs/audit/AUDIT-UI-patterns.md` (94 KB) · ✓ `docs/modo-nube/MODO-NUBE-AUDITORIA-ESCENARIOS.md` (94 KB) · ✓ `docs/modo-nube/_archive/groups-backend-v1.md` (72 KB) · ✓ `docs/modo-nube/_archive/fase3-medicion/fase3-REMEDICION-2026-08-04.md` (64 KB) · ✓ `docs/modo-nube/MODO-NUBE-DECISION-RELEASE-2.1.md` (61 KB)
 
 <!-- INDICE:fin -->
 
