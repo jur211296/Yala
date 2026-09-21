@@ -55,34 +55,56 @@ nonisolated struct ICloudPersonalCorpus: Equatable, Sendable, Identifiable {
     let accounts: Int
     /// Subcategorías propias: `CD_Subcategory` sin `CD_isSystem`.
     let categories: Int
+    /// Presupuestos: `CD_Budget`, todos. **Sin exclusiones y no es un descuido**: en producción un
+    /// `Budget` nace de `BudgetEditorViewModel`, de `OnboardingView.createOnboardingBudget()` (si la
+    /// persona lo pide al cerrar el onboarding), del backfill de migración o del apply de Modo Nube
+    /// (`EntityApplyMap`, hoy DARK) —los seeds que crean presupuestos son `#if DEBUG`—, así que no hay
+    /// «presupuesto de sistema» del que defenderse, y el conteo del store hermano
+    /// (`ModelContext.iCloudAccountSummary`) tampoco filtra ninguno.
+    let budgets: Int
     /// El movimiento más antiguo, para el «desde <fecha>» del aviso. `nil` si no hay ninguno con fecha
     /// legible — el copy tiene que aguantarlo sin prometer una fecha que no tiene.
     let oldestTransactionDate: Date?
     /// Se alcanzó el tope de registros y las cifras son un MÍNIMO, no un total. El copy lo dice.
     let truncated: Bool
 
-    /// Mismo criterio que `ICloudAccountSummary.hasAnyData`: tres cifras, cualquiera de ellas basta.
-    /// **Se pregunta por los tres y no solo por los movimientos** porque un corpus real puede no tener
-    /// ninguno todavía —alguien que creó sus cuentas y lo dejó— y borrárselo sin avisar sería el mismo
-    /// bug con otro disfraz.
+    /// Mismo criterio que `ICloudAccountSummary.hasAnyData`: **cuatro** cifras, cualquiera de ellas
+    /// basta. **Se pregunta por todas y no solo por los movimientos** porque un corpus real puede no
+    /// tener ninguno todavía —alguien que creó sus cuentas y lo dejó, o que solo dejó presupuestos— y
+    /// borrárselo sin avisar sería el mismo bug con otro disfraz.
     ///
-    /// **Y `truncated` cuenta como «sí hay», aunque las tres cifras sean cero** (review adversarial,
+    /// **Los grupos no están aquí, y tampoco en el predicado hermano: es la misma decisión, medida el
+    /// 2026-09-21** (`restore-treats-budgets-and-groups-as-no-data`). `SplitGroup` vive en
+    /// `groupsSchema`, cuyo store monta `cloudKitDatabase: .none`, y sus filas llegan por el backend de
+    /// Yala; el contenedor de Grupos es otro y este fichero no lo toca a propósito (ver la cabecera).
+    ///
+    /// **Matiz que cazó la review, y que conviene no perder: «no hay grupos en el contenedor personal»
+    /// es cierto POR DISEÑO, no por observación.** Hasta el 2026-06-14 `groupsConfiguration` omitía su
+    /// `cloudKitDatabase: .none` y llegó a subir `CD_Split*` a este contenedor (`docs/DECISIONS.md`,
+    /// confirmado entonces en el Dashboard); el arreglo fue una línea y **no borró lo ya subido**
+    /// (`docs/modo-nube/MODO-NUBE-AUDITORIA-ESCENARIOS.md`, INV-04: estado server-side NO VERIFICADO).
+    /// Esos residuos caen en el `default` de `classify` y no encienden ninguna cifra, pero **sí suman a
+    /// `scanned`** y por tanto acercan el `truncated`. Si algún día hay que detectarlos o limpiarlos,
+    /// este párrafo es el permiso: lo que se prohíbe es contarlos como «datos del usuario», no mirarlos.
+    ///
+    /// **Y `truncated` cuenta como «sí hay», aunque las cuatro cifras sean cero** (review adversarial,
     /// 2026-09-10). El tope se cuenta sobre TODOS los tipos de la zona —el schema personal espeja
     /// tasas, notificaciones, etiquetas, presupuestos…— y `recordZoneChanges` no garantiza ningún orden,
     /// así que un corpus enorme puede agotar el tope antes de que llegue el primer `CD_TransactionItem`.
     /// `truncated` significa **«no lo sé»**, y leerlo como «no hay» borraría el histórico de quien más
     /// tiene sin decirle una palabra — que es exactamente el bug de este ticket, con otro disfraz.
     var hasAnyData: Bool {
-        truncated || transactions > 0 || accounts > 0 || categories > 0
+        truncated || transactions > 0 || accounts > 0 || categories > 0 || budgets > 0
     }
 
     /// `Identifiable` para el `.sheet(item:)` del aviso tardío. La identidad son las CIFRAS: dos sondas
     /// que miden lo mismo describen el mismo hecho, así que no re-presentan la hoja. El fallo seguro es
     /// ese — una hoja que reaparece encima de sí misma sería una presentación sobre otra.
-    var id: String { "\(transactions)-\(accounts)-\(categories)-\(truncated)" }
+    var id: String { "\(transactions)-\(accounts)-\(categories)-\(budgets)-\(truncated)" }
 
     static let empty = ICloudPersonalCorpus(
-        transactions: 0, accounts: 0, categories: 0, oldestTransactionDate: nil, truncated: false)
+        transactions: 0, accounts: 0, categories: 0, budgets: 0,
+        oldestTransactionDate: nil, truncated: false)
 }
 
 /// Cómo terminó la sonda. Tres desenlaces y **ninguno bloquea**, que es la regla del ADR §9.
@@ -207,6 +229,7 @@ enum ICloudPersonalCorpusProbe {
             var transactions = 0
             var accounts = 0
             var categories = 0
+            var budgets = 0
             var oldest: Date?
             var scanned = 0
             var truncated = false
@@ -231,6 +254,7 @@ enum ICloudPersonalCorpusProbe {
                                  transactions: &transactions,
                                  accounts: &accounts,
                                  categories: &categories,
+                                 budgets: &budgets,
                                  oldest: &oldest)
                     }
                     token = batch.changeToken
@@ -252,6 +276,7 @@ enum ICloudPersonalCorpusProbe {
                 transactions: transactions,
                 accounts: accounts,
                 categories: categories,
+                budgets: budgets,
                 oldestTransactionDate: oldest,
                 truncated: truncated))
         } catch let error as CKError {
@@ -275,6 +300,10 @@ enum ICloudPersonalCorpusProbe {
 
     /// Un registro → su casilla.
     ///
+    /// **`CD_Budget` se cuenta desde el 2026-09-21**; `CD_SplitGroup` cae en el `default` y no se
+    /// cuenta — el porqué, y el matiz de los residuos legacy que sí pueden existir ahí, en `hasAnyData`
+    /// arriba.
+    ///
     /// **Las exclusiones se PARECEN a las de `ModelContext.iCloudAccountSummary`, no la espejan.** Aquél
     /// descarta además las cuentas archivadas y las de `type == "system"`; aquí no se puede sin ampliar
     /// `desiredKeys`, que es justo la lista que el device-QA tiene que validar primero. La diferencia
@@ -284,6 +313,7 @@ enum ICloudPersonalCorpusProbe {
                                  transactions: inout Int,
                                  accounts: inout Int,
                                  categories: inout Int,
+                                 budgets: inout Int,
                                  oldest: inout Date?) {
         switch record.recordType {
         case "CD_TransactionItem":
@@ -298,6 +328,11 @@ enum ICloudPersonalCorpusProbe {
         case "CD_Subcategory":
             guard !isFlagSet(record["CD_isSystem"]) else { return }
             categories += 1
+        case "CD_Budget":
+            // Sin `guard`: no hay presupuestos de sistema de los que defenderse (ver `budgets`). Y sin
+            // keys nuevas en `desiredKeys` —el tipo basta para contar—, así que el punto bloqueante del
+            // device-QA sobre esa lista no crece.
+            budgets += 1
         default:
             return
         }

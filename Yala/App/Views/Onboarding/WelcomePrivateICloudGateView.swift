@@ -848,6 +848,12 @@ struct WelcomePrivateICloudGateView: View {
     /// aviso con ellas solas —alguien que dejó sus categorías y nada más— y sin esta línea esa persona
     /// veía un `Text("")` en medio de un aviso que le pide confirmar un borrado irreversible.
     ///
+    /// **Y los presupuestos, por lo mismo, desde el 2026-09-21**
+    /// (`restore-treats-budgets-and-groups-as-no-data`). Entraron en `hasAnyData` en ese ticket, así que
+    /// heredaron exactamente el hueco que las categorías tuvieron aquí: cifra que levanta el aviso y no
+    /// se enseña. **Toda cifra de `hasAnyData` tiene que tener su línea aquí** — es la invariante de esta
+    /// función, y es la que un término nuevo rompe en silencio.
+    ///
     /// `forVoiceOver` cambia el separador `·` —que la voz lee como un carácter suelto, o se salta— por una
     /// coma. Es el MISMO contenido: si divergiera, la pantalla y su lectura afirmarían cosas distintas.
     static func countsLine(_ corpus: ICloudPersonalCorpus, forVoiceOver: Bool = false) -> String {
@@ -862,6 +868,9 @@ struct WelcomePrivateICloudGateView: View {
         }
         if corpus.categories > 0 {
             parts.append(L10n.Welcome.PrivateICloud.foundCategories(corpus.categories))
+        }
+        if corpus.budgets > 0 {
+            parts.append(L10n.Welcome.Restore.foundBudgets(corpus.budgets))
         }
         if let oldest = corpus.oldestTransactionDate {
             parts.append(L10n.Welcome.PrivateICloud.foundSince(Self.monthYear.string(from: oldest)))

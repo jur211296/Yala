@@ -45,8 +45,10 @@
 //  (13) `.importIncomplete` llamando directo, sin confirmar → 1 fallo.
 //  (14) `.notFound` devuelto a `primaryAction: onStartFresh` → 1 fallo. (La versión con el gesto
 //       CONDICIONAL —`if conclusive`— también moría, y aun así se retiró: su rama directa solo la
-//       alcanza quien tiene presupuestos o grupos en iCloud, o sea gente con datos. El mutante moría
-//       y el término sobraba.)
+//       alcanzaba quien tiene presupuestos o grupos, o sea gente con datos. El mutante moría y el
+//       término sobraba. Desde el 2026-09-21 los presupuestos cuentan en `hasAnyData` y los grupos no
+//       —`restore-treats-budgets-and-groups-as-no-data`, y los grupos nunca estuvieron «en iCloud»—,
+//       así que la rama conserva población y la conclusión no cambia.)
 //  (15) el corte `!settlement.consultsRemoteConfig` desactivado, o sea el bug entero con el enum nuevo
 //       puesto y la tabla de decisión en verde → 2 fallos.
 //  (16) `hasObservedImportActivity:` cableado a `settled` en la pantalla de progreso → 1 fallo.

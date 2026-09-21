@@ -32,7 +32,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (474)
+## Index (478)
 
 | id | status | path |
 |---|---|---|
@@ -212,6 +212,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | group-balance-service-shares-not-deduped | backlog | tickets/backlog/group-balance-service-shares-not-deduped.md |
 | group-joiner-flag-consumers-still-narrow | done | tickets/done/group-joiner-flag-consumers-still-narrow.md |
 | group-notif-credits-payer-not-editor | done | tickets/done/group-notif-credits-payer-not-editor.md |
+| group-presence-predicates-disagree-on-archived-and-hidden | backlog | tickets/backlog/group-presence-predicates-disagree-on-archived-and-hidden.md |
 | groups-account-association-in-storage-row | done | tickets/done/groups-account-association-in-storage-row.md |
 | groups-actions-do-not-retry-a-401-with-a-forced-token-refresh | backlog | tickets/backlog/groups-actions-do-not-retry-a-401-with-a-forced-token-refresh.md |
 | groups-actions-read-an-offline-token-refresh-as-a-session-expiry | qa | tickets/qa/groups-actions-read-an-offline-token-refresh-as-a-session-expiry.md |
@@ -387,10 +388,13 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | restore-beacon-may-not-have-synced-yet-on-a-fresh-install | backlog | tickets/backlog/restore-beacon-may-not-have-synced-yet-on-a-fresh-install.md |
 | restore-beacon-outlives-account-deletion | backlog | tickets/backlog/restore-beacon-outlives-account-deletion.md |
 | restore-empty-state-resolution-cannot-be-cancelled | backlog | tickets/backlog/restore-empty-state-resolution-cannot-be-cancelled.md |
+| restore-found-copy-says-icloud-for-groups-that-never-were | backlog | tickets/backlog/restore-found-copy-says-icloud-for-groups-that-never-were.md |
+| restore-found-state-leaves-no-breadcrumb | backlog | tickets/backlog/restore-found-state-leaves-no-breadcrumb.md |
 | restore-gate-claims-a-wipe-this-device-did-not-do | backlog | tickets/backlog/restore-gate-claims-a-wipe-this-device-did-not-do.md |
+| restore-prefill-skips-currency-for-an-empty-summary | backlog | tickets/backlog/restore-prefill-skips-currency-for-an-empty-summary.md |
 | restore-says-no-data-when-the-icloud-import-never-settled | qa | tickets/qa/restore-says-no-data-when-the-icloud-import-never-settled.md |
 | restore-start-fresh-keeps-the-imported-corpus | qa | tickets/qa/restore-start-fresh-keeps-the-imported-corpus.md |
-| restore-treats-budgets-and-groups-as-no-data | backlog | tickets/backlog/restore-treats-budgets-and-groups-as-no-data.md |
+| restore-treats-budgets-and-groups-as-no-data | qa | tickets/qa/restore-treats-budgets-and-groups-as-no-data.md |
 | restore-unverified-message-depends-on-a-single-gateway-host | backlog | tickets/backlog/restore-unverified-message-depends-on-a-single-gateway-host.md |
 | retire-guest-vocabulary-for-session-terms | done | tickets/done/retire-guest-vocabulary-for-session-terms.md |
 | reverse-abort-rejected-leaves-a-frozen-cloud-saying-up-to-date | backlog | tickets/backlog/reverse-abort-rejected-leaves-a-frozen-cloud-saying-up-to-date.md |

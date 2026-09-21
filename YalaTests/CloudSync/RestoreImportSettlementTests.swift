@@ -27,12 +27,17 @@
 //  **Un mutante SOBREVIVIÓ y por eso este fichero es más corto de lo que fue.** El enum llevó un
 //  segundo derivado, `isConclusive`, que decidía si «Empezar desde cero» preguntaba en `.notFound`;
 //  cablearlo a `true` fijo mataba 5 casos, así que parecía cubierto. Lo que no estaba medido era su
-//  POBLACIÓN: `settled` exige `hasCompletedFirstImport` (`iCloudSyncService.swift:586`), o sea que
-//  CloudKit trajo algo, y si trajo algo y `hasAnyData` sigue en `false` es porque son presupuestos o
-//  grupos, que ese predicado no cuenta (`iCloudSyncService.swift:773-775`). La rama «concluyente» solo
-//  la alcanzaba GENTE CON DATOS, a la que el botón dejaba borrar sin preguntar. No faltaba un test:
-//  sobraba el término. `.notFound` confirma siempre y el hueco tiene ticket propio
-//  (`restore-treats-budgets-and-groups-as-no-data`).
+//  POBLACIÓN: `settled` exige `hasCompletedFirstImport` (`iCloudSyncService.waitForImportQuiescence`),
+//  o sea que CloudKit trajo algo, y si trajo algo y `hasAnyData` seguía en `false` era porque son
+//  presupuestos o grupos, que aquel predicado no contaba. La rama «concluyente» solo la alcanzaba
+//  GENTE CON DATOS, a la que el botón dejaba borrar sin preguntar. No faltaba un test: sobraba el
+//  término.
+//
+//  **Al 2026-09-21 los presupuestos SÍ cuentan** (`restore-treats-budgets-and-groups-as-no-data`), así
+//  que esa mitad de la población ya no llega; **los grupos siguen sin contar, medido y a propósito** —no
+//  vienen de iCloud, y contarlos haría inalcanzable `.notFound` para todo el que tenga alguno—, de modo
+//  que la rama conserva población y el término seguiría sobrando por el mismo motivo. `.notFound`
+//  confirma siempre.
 //
 
 import Foundation

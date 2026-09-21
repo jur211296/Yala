@@ -778,8 +778,47 @@ struct ICloudAccountSummary: Equatable {
     let primaryCurrencyCode: String?
     let categoriesCount: Int
 
+    /// ¿Hay algo que restaurar **de iCloud**? **Cuatro cifras desde el 2026-09-21**
+    /// (`restore-treats-budgets-and-groups-as-no-data`): entran los presupuestos, que faltaban.
+    ///
+    /// El hueco que cierra: `budgetsCount` lo transporta este mismo struct y
+    /// `RestoreProgressView.liveCounts` lo pinta subiendo en vivo, así que la pantalla enseñaba llegar
+    /// unos presupuestos que la siguiente negaba. CloudKit entrega por lotes y sin orden garantizado,
+    /// de modo que «bajó `CD_Budget` y todavía no `CD_Subcategory`» es un estado real y observable.
+    ///
+    /// **`groupsCount` NO entra, y la decisión está medida — no es un olvido ni una asimetría que
+    /// convenga «alinear».** El ticket pedía incluirlo y la medición lo refutó por tres sitios:
+    ///
+    ///  1. **Los grupos no vienen de iCloud.** `SplitGroup` vive en `groupsSchema`, cuyo store monta
+    ///     `cloudKitDatabase: .none`, y sus filas llegan por el backend de Yala. Este predicado
+    ///     contesta «¿trajo algo el espejo?», y un conteo que el espejo no puede mover solo puede
+    ///     mentir.
+    ///  2. **Contarlo TAPA cuatro estados legítimos.** `WelcomeRestoreView` decide con un
+    ///     `if hasAnyData` que cortocircuita antes de mirar el veredicto del import, así que con un
+    ///     solo grupo local `.importIncomplete` («tus datos siguen llegando», que es el ticket
+    ///     `restore-says-no-data-when-the-icloud-import-never-settled`), `.cloudPaused`,
+    ///     `.cloudUnverified` y `.notFound` dejarían de alcanzarse. En `FullModeActivationView`, que
+    ///     monta esa misma pantalla y a la que **solo se llega desde una sesión solo-grupos**, serían
+    ///     inalcanzables POR CONSTRUCCIÓN — y el docblock de su «Empezar desde cero» dice
+    ///     explícitamente que cuenta con que ese `.notFound` ocurra.
+    ///  3. **La protección que motivaba incluirlo YA EXISTE.** El argumento era que `.notFound` ofrece
+    ///     «Empezar desde cero» de botón primario y ese camino purga el dominio de Grupos. Cierto, pero
+    ///     no borra sin avisar: pasa por la puerta del paso 4, cuyo `deviceHasData` sale de
+    ///     `ContentView.checkHasExistingData()`, que **sí cuenta `SplitGroup`** ⇒ quien solo tiene
+    ///     grupos cae en `.foundDeviceData` y recibe el aviso con doble confirmación.
+    ///
+    /// ⇒ **son dos preguntas distintas y cada una tiene su predicado**: «¿hay algo que restaurar de
+    /// iCloud?» es ésta; «¿hay datos que perder en este teléfono?» es `checkHasExistingData()`.
+    /// Colapsarlas es lo que produce el error en las dos direcciones.
+    ///
+    /// **Ni presupuestos ni grupos los crea la app por su cuenta** —en producción un `Budget` nace de
+    /// `BudgetEditorViewModel`, de `OnboardingView.createOnboardingBudget()` (si la persona lo pide al
+    /// final del onboarding), del backfill de migración o del apply de Modo Nube (hoy DARK); los seeds
+    /// que crean presupuestos son `#if DEBUG`—, así que el término nuevo no enciende esto en una
+    /// instalación recién hecha. Los de sistema que sí existen (cuentas y subcategorías del bridge) ya
+    /// los descuenta el constructor de abajo.
     var hasAnyData: Bool {
-        accountsCount > 0 || transactionsCount > 0 || categoriesCount > 0
+        accountsCount > 0 || transactionsCount > 0 || categoriesCount > 0 || budgetsCount > 0
     }
 
     /// El user puede saltar el onboarding completo si tiene nombre + cuentas + categorías.

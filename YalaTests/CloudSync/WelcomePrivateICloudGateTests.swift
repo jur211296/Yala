@@ -30,10 +30,10 @@ import Testing
 
 private typealias Gate = WelcomePrivateICloudGateLogic
 
-private func corpus(transactions: Int = 0, accounts: Int = 0, categories: Int = 0,
+private func corpus(transactions: Int = 0, accounts: Int = 0, categories: Int = 0, budgets: Int = 0,
                     oldest: Date? = nil, truncated: Bool = false) -> ICloudPersonalCorpus {
     ICloudPersonalCorpus(transactions: transactions, accounts: accounts, categories: categories,
-                         oldestTransactionDate: oldest, truncated: truncated)
+                         budgets: budgets, oldestTransactionDate: oldest, truncated: truncated)
 }
 
 // MARK: - (A) La decisión de la puerta
@@ -59,10 +59,16 @@ struct WelcomePrivateICloudGateDecisionTests {
         #expect(Gate.advancesWithoutAsking(decision))
     }
 
-    /// **Las tres cifras cuentan, no solo los movimientos.** Alguien que creó sus cuentas y lo dejó tiene
-    /// un corpus real y cero transacciones; tratarlo como «vacío» le borraría los datos sin preguntar.
-    @Test("cualquiera de las tres cifras basta para avisar",
-          arguments: [corpus(transactions: 1), corpus(accounts: 1), corpus(categories: 1)])
+    /// **Las CUATRO cifras cuentan, no solo los movimientos.** Alguien que creó sus cuentas y lo dejó
+    /// tiene un corpus real y cero transacciones; tratarlo como «vacío» le borraría los datos sin
+    /// preguntar. Los presupuestos entraron el 2026-09-21
+    /// (`restore-treats-budgets-and-groups-as-no-data`) por la misma razón, y **son el único término
+    /// que el hermano `ICloudAccountSummary.hasAnyData` tiene y aquí faltaba**: los grupos, su quinto
+    /// término, no pueden estar —no existe `CD_SplitGroup` en este contenedor— y eso va escrito en el
+    /// docblock del predicado para que no se lea como un olvido.
+    @Test("cualquiera de las cuatro cifras basta para avisar",
+          arguments: [corpus(transactions: 1), corpus(accounts: 1), corpus(categories: 1),
+                      corpus(budgets: 1)])
     func anyCountTriggersTheNotice(_ c: ICloudPersonalCorpus) {
         #expect(c.hasAnyData)
         #expect(Gate.decide(skipValidation: false, outcome: .measured(c), deviceHasData: false) == .foundData(c))
@@ -383,6 +389,19 @@ struct ICloudCorpusCountsTests {
         #expect(line == L10n.Welcome.PrivateICloud.foundCategories(7))
     }
 
+    /// **Y los presupuestos, el término que entró el 2026-09-21** — mismo hueco, mismo test, y por eso
+    /// va pegado al de las categorías: una cifra que dispara el aviso y no se pinta deja un borrado
+    /// irreversible pidiéndose a ciegas. La clave se reusa de las del restore: es el mismo hecho contado
+    /// en el mismo sitio.
+    @Test("un corpus de solo presupuestos tiene línea, no una cadena vacía")
+    func budgetsOnly_stillRenders() {
+        let c = corpus(budgets: 4)
+        #expect(c.hasAnyData)
+        let line = WelcomePrivateICloudGateView.countsLine(c)
+        #expect(!line.isEmpty)
+        #expect(line == L10n.Welcome.Restore.foundBudgets(4))
+    }
+
     /// **El tope de la sonda cambia lo que la línea AFIRMA, no cómo se ve.** Con el corpus truncado la
     /// cifra es un mínimo; presentarla como total sería decirle a la persona que tiene menos datos de los
     /// que va a borrar. La primera versión comparaba `full != capped`, que sobrevive a **invertir el
@@ -504,6 +523,9 @@ struct ICloudPersonalCorpusProbeSeamTests {
         #expect(corpus(transactions: 3).id == corpus(transactions: 3).id)
         #expect(corpus(transactions: 3).id != corpus(transactions: 4).id)
         #expect(corpus(transactions: 3).id != corpus(transactions: 3, truncated: true).id)
+        // Los presupuestos entran en la identidad como cualquier otra cifra: dos sondas que difieren
+        // SOLO en ellos midieron hechos distintos, y la hoja tiene que volver a presentarse.
+        #expect(corpus(transactions: 3).id != corpus(transactions: 3, budgets: 1).id)
         // La fecha NO entra en la identidad: el espejo puede bajar una fila más vieja entre dos sondas del
         // mismo arranque sin que el hecho cambie.
         #expect(corpus(transactions: 3).id == corpus(transactions: 3, oldest: .now).id)

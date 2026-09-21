@@ -264,21 +264,97 @@ struct ICloudAccountSummaryTests {
 
     /// `hasAnyData` decide si el alert "Detectamos tu cuenta" se muestra (post-Hero).
     /// Caso "todos cero" ya cubierto por `iCloudAccountSummary_emptyContext_returnsZeros`
-    /// arriba (integration). Aquí solo el caso no obvio: budgets+groups ≠ data REAL.
+    /// arriba (integration). Aquí los casos no obvios: presupuestos y grupos, CADA UNO SOLO.
 
-    @Test func hasAnyData_ignoresBudgetsAndGroups() {
-        // Budgets y groups por sí solos NO triggerean el alert: el user puede tener
-        // budgets sin haber registrado nada. La intención del flag es "hay data REAL"
-        // (cuentas/registros/categorías), no "hay artefactos secundarios".
+    /// **Los presupuestos CUENTAN; los grupos NO, y las dos mitades están medidas** (2026-09-21,
+    /// `restore-treats-budgets-and-groups-as-no-data`).
+    ///
+    /// Este test decía que ninguno de los dos contaba, con el argumento de que eran «artefactos
+    /// secundarios». Lo que se midió al cerrar el ticket:
+    ///
+    ///  · **Presupuestos: sí.** Viven en `personalSchema`, así que el espejo los baja, y
+    ///    `RestoreProgressView.liveCounts` los pinta subiendo mientras la pantalla siguiente negaba
+    ///    que existieran. CloudKit entrega por lotes y sin orden garantizado.
+    ///  · **Grupos: no.** `SplitGroup` vive en un store `cloudKitDatabase: .none` y llega por el
+    ///    backend de Yala, así que este predicado —que contesta «¿trajo algo el espejo?»— no puede
+    ///    moverse con ellos sin mentir. Y contarlos tapaba cuatro estados: ver
+    ///    `hasAnyData_ignoresGroups_becauseTheyDoNotComeFromICloud` abajo.
+    @Test("los presupuestos encienden el predicado por sí solos")
+    func hasAnyData_countsBudgets() {
         let summary = ICloudAccountSummary(
             userName: "Juan",
             accountsCount: 0,
             transactionsCount: 0,
             budgetsCount: 5,
+            groupsCount: 0,
+            primaryCurrencyCode: "PEN",
+            categoriesCount: 0
+        )
+        #expect(summary.hasAnyData == true, """
+            con presupuestos bajados y nada más, esta persona SÍ tiene datos en iCloud: negarlo la
+            manda a `.notFound` con «Empezar desde cero» de botón primario.
+            """)
+    }
+
+    /// **Y los grupos NO lo encienden, que es la otra mitad de la decisión.**
+    ///
+    /// La razón no es que no sean datos —lo son, y `checkHasExistingData()` sí los cuenta para avisar
+    /// antes de borrar—, sino que **no vienen de iCloud**. `WelcomeRestoreView` decide con un
+    /// `if hasAnyData` que cortocircuita antes de leer el veredicto del import, así que con un solo
+    /// grupo local se volverían inalcanzables `.importIncomplete`, `.cloudPaused`, `.cloudUnverified`
+    /// y `.notFound`. En `FullModeActivationView`, que monta esa pantalla y a la que **solo se llega
+    /// desde una sesión solo-grupos**, lo serían POR CONSTRUCCIÓN.
+    ///
+    /// Este caso existe para que nadie «alinee» el predicado con `visibleCountItems` —que sí pinta los
+    /// grupos— sin leer antes esto.
+    @Test("los grupos NO encienden el predicado: no vienen de iCloud")
+    func hasAnyData_ignoresGroups_becauseTheyDoNotComeFromICloud() {
+        let summary = ICloudAccountSummary(
+            userName: "Juan",
+            accountsCount: 0,
+            transactionsCount: 0,
+            budgetsCount: 0,
             groupsCount: 3,
             primaryCurrencyCode: "PEN",
             categoriesCount: 0
         )
-        #expect(summary.hasAnyData == false)
+        #expect(summary.hasAnyData == false, """
+            contar los grupos aquí tapa cuatro estados de `WelcomeRestoreView` y deja `.notFound`
+            inalcanzable en la activación de Yala completo, donde siempre hay grupos.
+            """)
+    }
+
+    /// Y el conteo de VERDAD, contra un store: el predicado puede estar perfecto mientras el
+    /// constructor deja la cifra en cero — el struct de arriba se lo inventa.
+    @Test func iCloudAccountSummary_budgetOnly_hasAnyData() throws {
+        let context = try makeTestContext()
+        let prefs = makePreferences()
+        _ = makeTestBudget(context: context, name: "Comida")
+
+        let summary = try context.iCloudAccountSummary(appPreferences: prefs)
+
+        #expect(summary.budgetsCount == 1)
+        #expect(summary.accountsCount == 0)
+        #expect(summary.transactionsCount == 0)
+        #expect(summary.categoriesCount == 0)
+        #expect(summary.hasAnyData == true)
+    }
+
+    /// El grupo se CUENTA —la cifra viaja y la pantalla del hallazgo la pinta— pero **no enciende el
+    /// predicado**. Las dos mitades en el mismo caso, porque separarlas deja pasar el mutante que
+    /// confunde «no se transporta» con «no decide».
+    @Test func iCloudAccountSummary_groupOnly_countsButDoesNotFlagData() throws {
+        let context = try makeTestContext()
+        let prefs = makePreferences()
+        context.insert(SplitGroup(name: "Viaje"))
+
+        let summary = try context.iCloudAccountSummary(appPreferences: prefs)
+
+        #expect(summary.groupsCount == 1, "la cifra viaja: `visibleCountItems` la pinta")
+        #expect(summary.accountsCount == 0)
+        #expect(summary.hasAnyData == false, """
+            pero no decide: los grupos no vienen de iCloud. A quien solo tiene grupos se le avisa antes
+            de borrar en la PUERTA, cuyo `deviceHasData` sale de `checkHasExistingData()`.
+            """)
     }
 }
