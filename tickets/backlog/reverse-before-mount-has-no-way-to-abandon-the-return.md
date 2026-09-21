@@ -1,6 +1,7 @@
 ---
 id: reverse-before-mount-has-no-way-to-abandon-the-return
 status: backlog
+updated: 2026-09-21
 priority: medium
 area: "modo-nube, migración"
 created: 2026-09-17
@@ -67,3 +68,12 @@ Los tres motivos que llegan aquí y que esperar NO arregla:
 - `reverse-claim-rejection-has-no-way-out-in-the-client` — el molde: la salida al origen sin efectos.
 - `reverse-upload-has-no-ceiling-and-no-exit` — el molde del techo y del botón de cancelar, post-montaje.
 - `reverse-before-mount-stays-stuck-with-an-expired-session` — el que cerró el caso de la sesión caducada y midió esto.
+
+## Decisión Jürgen (2026-09-21)
+
+**Salida completa:** techo automático **y** botón de cancelar.
+
+- **Qué hace la salida:** rollback al origen en modo nube, molde de la salida de espera de `reverseUpload` / rechazo de claim — sin dejar `reverse_abort` pendiente que dispare en cada resume si no hay sesión.
+- **Copy:** molde `ReverseAbortReason` + `L10n.Storage.ReverseAbort.note(for:)`.
+- Listo para implementar cuando la cola A lo tome (serie; no adelantar a `force-fetch` en curso).
+
