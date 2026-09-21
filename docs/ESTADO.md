@@ -5,11 +5,69 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-21 (Lima)
 
-**Rama** `2.1` — Merge #197: **Unos presupuestos en iCloud ya no se leen como «no hay datos».**
+**Rama** `2.1` — Merge #198: **La espera del import de iCloud se corta al salir de la pantalla.**
 TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
-## Esta sesión (#197 · unos presupuestos en iCloud ya no se leen como «no hay datos»)
+## Esta sesión (#198 · la espera del import de iCloud se corta al salir de la pantalla)
 
+**Salgo de una pantalla que está esperando a iCloud y esa espera seguía viva por debajo hasta minuto y
+medio: la app seguía contando mis movimientos cada seis décimas con la pantalla ya cerrada y yo en otro
+sitio.** `forceFetchAndWait` solo resolvía por la notificación de CloudKit o por su propio tope, así que
+un `Task` cancelado se quedaba clavado los 15 s del arranque o los 90 s del restore, reteniendo un
+observer y un `Task` de sleep. Ahora va envuelta en `withTaskCancellationHandler` y resuelve por
+`ForceFetchWaitBox`, una caja con `NSLock` que garantiza **una sola** resolución entre las tres vías que
+compiten —un doble `resume` de una `CheckedContinuation` es un **crash**, no un test rojo— y suelta las
+dos cosas que retenía. Ese `cancel()` cierra además un fantasma que nadie había contado: una espera
+resuelta por la notificación a los 2 s dejaba su sleep de 15 s, o de 90, durmiendo detrás.
+
+**Y la mitad que define la sesión: salir ya NO cierra la ventana que te deja entrar a tu propia cuenta.**
+Mientras iCloud baja tus datos, la app mantiene abierto un permiso para que el guard de frontera no te
+tome por otra persona. Se apagaba «cuando el flujo termina», y hasta hoy tocar atrás no terminaba nada
+—la espera seguía clavada—, así que nunca se apagaba antes de tiempo. **Arreglar la cancelación sin
+tocar nada más habría hecho que tocar atrás apagara esa ventana con el import todavía bajando**, que es
+justo el bug que la señal existe para evitar; su propia lógica ya lo daba por hecho («el usuario que toca
+atrás a mitad cancela ese `Task` y este camino no corre»), y esa frase era **falsa** hasta hoy. El
+apagado pasó detrás del `guard !Task.isCancelled`.
+
+**Lo demás del pack, por el mismo patrón:** el refresher de la pantalla de progreso gana handle propio y
+se apaga en el mismo `onDisappear` que la espera; el poll de boot-save de `AppBootstrapper` deja de girar
+**en caliente** sobre un `Task` cancelado, espejando la rama `.cloudEngine` de su hermana, que ya lo
+cerraba; y los dos borrados de `ContentView` conservan su motivo `cancelled` en vez de pasar a decir
+`importNotQuiescent`, que sería una mentira nueva.
+
+**La review adversarial cazó SIETE cosas, todas MÍAS, y tres enseñan método:**
+
+ · **Mi source-scan del poll era VACUO.** Sus cuatro pasos —`do {`, `try await Task.sleep(...)`,
+   `} catch {`, `return false`— son **byte-idénticos** a los de la rama hermana `.cloudEngine`, que vive
+   más abajo en el mismo fichero; como la búsqueda avanza hacia adelante, casaban allí. **Los cuatro
+   mutantes del poll sobrevivían, incluido el que el propio test dice cazar.** Es «el tramo sin acotar lo
+   cumple el vecino», repetido tal cual pese a tenerlo escrito.
+ · **Mis casos de cancelación COLGABAN en vez de fallar** ante el mutante que rompe `arm(...)`: apoyarse
+   en el tope del SUT solo funciona si la espera resuelve, y ese mutante la deja sin resolver para
+   siempre. Es el AC nº4 del propio ticket, incumplido por mí. Llevan tope propio, y la suite de la caja
+   lleva `.timeLimit`.
+ · **`refreshTask?.cancel()` delante del guard podía matar el refresher de OTRA generación de la vista**:
+   `@State` es una caja compartida entre montajes, así que un `runTask` cancelado que despierta tras un
+   re-montaje leía de ella el handle del intento **vivo**.
+
+**Un residual con ticket propio, y no es menor:** el flujo abandonado ya no libera el reloj de la ventana
+de sesión. Hasta hoy despertaba a los 90 s y limpiaba el ancla; ahora, quien abandona y vuelve a los 400 s
+hereda el reloj de la primera entrada, y si su import tarda, el tope duro caduca a medias y el **dueño
+legítimo** ve «estos datos son de otra persona». Arreglarlo pide separar el reloj del dueño y romper el
+invariante `restoreStartedAt == nil ⇔ currentFlow == nil`: es rediseño de la señal, otro eje ⇒
+`abandoned-restore-no-longer-clears-the-session-window-clock`.
+
+Validación: build ×2 sin warnings nuevos · **unit completa 7286 tests en 738 suites** con **un solo rojo,
+ajeno y con ticket** (`neutral-mount-wiring-scan-is-red-on-2-1`, verificado corriendo esa suite en un
+worktree limpio desde `HEAD`: falla igual sin nada mío) · **XCUITest 5 suites, 26 casos**, lock del
+simulador y centinela en 0 · **10 mutantes, 10 muertos**. Dos tests preexistentes se desarmaron al partir
+la línea del `waitForImportQuiescence` y se reescribieron para medir el **invariante** —que el corte
+exista y vaya antes del primer borrado— en vez de la forma de la línea.
+
+**Queda en `qa`**: el device-QA no se puede montar en el simulador, porque el caso vive en el tiempo real
+de un import de CloudKit.
+
+## Sesión anterior (#197 · unos presupuestos en iCloud ya no se leen como «no hay datos»)
 **Tenías presupuestos en iCloud y todavía no había bajado nada más. Restaurar te los enseñaba subir en la pantalla
 de progreso y la siguiente te contestaba «No encontramos tus datos. No hay datos asociados a tu cuenta de iCloud»**,
 con «Empezar desde cero» de botón primario. CloudKit entrega por lotes y sin orden garantizado, así que «bajó un

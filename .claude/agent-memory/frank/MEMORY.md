@@ -76,6 +76,8 @@
 - [Tras la puerta, el error es otro](feedback_tras_la_puerta_el_error_es_otro.md) — copié «el 401 del attest suma a la racha» de Grupos al personal.
 - [El guion de QA tiene que distinguir builds](feedback_el_guion_de_qa_tiene_que_distinguir_builds.md) — sin red la puerta de attest salía antes del.
 - [El molde no traslada sus precondiciones](feedback_el_molde_no_traslada_sus_precondiciones.md) — copiar «con el molde de X» hereda la forma.
+- [El tope del test de cancelación es PROPIO](feedback_el_tope_del_test_de_cancelacion_es_propio.md) — el mutante que deja la espera sin resolver la hace COLGAR, no fallar.
+- [Mi arreglo cumple una premisa que era FALSA](feedback_mi_arreglo_cumple_una_premisa_que_era_falsa.md) — busca quién dependía de que no se cumpliera.
 - [El mutante que sobrevive puede SOBRAR](feedback_el_mutante_que_sobrevive_puede_sobrar.md) — dos respuestas: falta un test.
 - [La review adversarial caza lo MÍO](feedback_review_adversarial_caza_lo_mio.md) — el 14-sep cazó que MI ARREGLO no arreglaba.
 - [Apagar una voz destapa el residual de la otra](feedback_apagar_una_voz_destapa_el_residual_de_la_otra.md) — el spinner tapaba con una mentira el hueco del aviso; al callarlo quedó silencio.
