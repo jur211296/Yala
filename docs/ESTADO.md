@@ -5,10 +5,53 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-21 (Lima)
 
-**Rama** `2.1` — Merge #195: **Restaurar ya no confunde «iCloud tarda» con «no tienes datos».**
+**Rama** `2.1` — Merge #196: **Salir de Restaurar y volver a entrar ya no apaga la búsqueda que sigue viva.**
 TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
-## Esta sesión (#195 · el tope de la búsqueda de iCloud ya no se lee como «no hay datos»)
+## Esta sesión (#196 · salir de Restaurar y volver a entrar ya no apaga la búsqueda que sigue viva)
+
+**Tocabas «Restaurar desde iCloud», te lo pensabas, volvías atrás y entrabas otra vez. Minuto y medio después, con
+tu histórico todavía bajando, la app dejaba de saber que estabas restaurando** — el primer intento seguía clavado
+esperando a iCloud y, al despertar, apagaba la ventana del segundo. A partir de ahí, entrar por la card de tu
+propia cuenta te contestaba que esos datos eran de otra persona. Ahora **cada intento lleva su identidad y solo el
+vigente puede cerrar la ventana**; el reloj no se reinicia, así que su tope sigue sin ser extensible a voluntad.
+
+**El ticket pedía «un token por flujo» y eso solo no bastaba: la review adversarial encontró dos caminos más, y los
+dos los cierra la misma pieza** — que la espera **no se monte sin intento** (`if let flowToken`):
+
+ · **El apagado podía correr ANTES del encendido.** Con el espejo ya importado y quieto,
+   `waitForImportQuiescence` vuelve **sin suspenderse**. Como `state` nace en `.searching`, la pantalla de progreso
+   se monta en el primer render, así que su apagado podía llegar antes de que `startSearch()` registrara el token:
+   ventana sin dueño, abierta hasta el tope de 600 s.
+ · **El bug tenía una segunda puerta, dentro de UNA sola pantalla.** Desde el #195 `.iCloudDisabled` ofrece «volver
+   a buscar». Quien entraba con iCloud Drive apagado ya había arrancado una espera de 90 s; al encender iCloud y
+   recargar tenía **dos esperas vivas**, y la fantasma apagaba la ventana de la buena. Sin cerrarlo, este ticket
+   arreglaba el gesto de «atrás» y dejaba ese otro abierto.
+
+**Y el diseño se rehízo a media implementación, que es la lección de método.** La primera versión usaba
+`.task(id:)`: apoyaba la corrección en que SwiftUI vuelva a disparar un `.task` al cambiar su `id`, y **la pantalla
+de Restaurar no tiene ni un XCUITest que entre en ella**, así que no había forma barata de medirlo — y si el
+contrato fallaba, la búsqueda no arrancaba NUNCA. La puerta de montaje no depende de ningún re-disparo. Rehacer
+costó veinte minutos con los tests ya escritos, y las dos reviews, que corrían contra el diseño viejo, confirmaron
+después que sus hallazgos de más peso los cerraba justo la versión nueva.
+
+Validación: build ×2 sin warnings nuevos · **121 unit en 15 suites** · **XCUITest 16 en 4 clases** con centinela
+limpio · **6 mutantes, 6 muertos** (el sexto no compila) · review con 2 lentes + la rule de área, 10 hallazgos
+atendidos · `validate-coverage` OK · `docs/TICKETS.md` al día (474) · **CI verde**.
+
+**Qué te toca:**
+
+1. **Device-QA de `restore-back-and-reenter-closes-the-live-session-window`** (en `qa`): 8 pasos en iPhone.
+   **Deciden el 3 y el 5**, los dos a los 90 s — no debe salir la pantalla de «estos datos son de otra persona»
+   mientras tu histórico baja. El paso 4 pide apagar iCloud Drive. No se puede montar en simulador: el defecto
+   necesita que el import de CloudKit **tarde**.
+2. Sigue pendiente el **device-QA del #195** (`restore-says-no-data-when-the-icloud-import-never-settled`).
+
+**Un ticket nuevo, del Paso 0 y de la review:** `force-fetch-and-wait-ignores-cancellation` (medium) — la espera de
+iCloud no observa cancelación y el refresher de la pantalla no hereda la del padre, así que siguen vivos hasta el
+tope. Es coste, no corrupción, y la primitiva la usa el arranque de la app: no se toca de paso.
+
+## Sesión anterior (#195 · el tope de la búsqueda de iCloud ya no se lee como «no hay datos»)
 
 **Reinstalabas Yala con tu histórico en iCloud y la app te contestaba «No encontramos tus datos. No hay datos asociados
 a tu cuenta de iCloud»** — con tus datos ahí. Debajo, «Empezar desde cero» **no preguntaba nada**: un toque y
@@ -65,7 +108,7 @@ Validación: build ×2 sin warnings nuevos · **suite completa 7260 casos / 735 
 `restore-empty-state-resolution-cannot-be-cancelled` (low) ·
 `import-activity-flag-describes-the-process-not-the-search` (low).
 
-## Sesión anterior (#194 · la vuelta a iCloud ya pide volver a entrar)
+## Antes de eso (#194 · la vuelta a iCloud ya pide volver a entrar)
 
 **Pulsaba «Volver a iCloud» y la barra se paraba al 15 %, al 30 %, al 50 % o al 62 %.** Sin mensaje, con un «Retomar»
 que recibía lo mismo, y mientras tanto el teléfono no sincronizaba. Lo que fallaba era la sesión de la nube, y la
@@ -106,7 +149,7 @@ Validación: build ×2 · unit **181 casos en 4 suites** tras el rebase, y la su
 con 1 solo rojo, el preexistente de arriba** · XCUITest 15 en 4 clases · **17 mutantes cazados** · review con 4 lentes ·
 `validate-coverage` OK · `docs/TICKETS.md` igual al disco (466) · **CI verde** (33 min).
 
-## Antes de eso (#193 · Restaurar dice la verdad cuando no se pudo comprobar la nube)
+## Sesión #193 · Restaurar dice la verdad cuando no se pudo comprobar la nube
 
 **Reinstalo Yala —o estreno móvil— y la abro sin conexión.** Hasta hoy, «Restaurar desde iCloud» me contestaba **«No
 encontramos tus datos»** con mi histórico intacto en el servidor. Ahora dice **«No pudimos comprobar tus datos»** y me
