@@ -637,7 +637,10 @@ struct GroupsOrganizerWiringTests {
     @Test("MUTACIÓN: la puerta no apaga el latch de restauración")
     func neutralReturnDoesNotCancelTheRestoreSignal() throws {
         let code = try Self.code(Self.gateView)
-        #expect(!code.contains("ICloudRestoreSessionSignal.noteRestoreFinished()"), """
+        // Con paréntesis abierto y sin cerrar: desde el 2026-09-21 el apagado lleva el token del flujo
+        // (`noteRestoreFinished(flowToken)`), así que anclar al literal sin argumento dejaba pasar en
+        // verde exactamente lo que este test prohíbe.
+        #expect(!code.contains("ICloudRestoreSessionSignal.noteRestoreFinished("), """
             apagar el latch aquí lo deja apagado también cuando el cierre se aborta, y su único encendedor
             vive en otra pantalla. El relanzamiento ya lo apaga, porque vive en memoria.
             """)
