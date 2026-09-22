@@ -6,9 +6,12 @@
 //  La espera real la hace `iCloudSyncService.waitForImportQuiescence`; un refresher
 //  paralelo refresca los conteos REALES en vivo (CloudKit no expone un % del import).
 //  Salir de la pantalla apaga los DOS: la espera observa cancelación desde el 2026-09-21
-//  y el refresher tiene handle propio, así que ninguno sobrevive al desmontaje. Y suelta
-//  la titularidad de la ventana de sesión SIN apagarla: el import sigue bajando, pero el
-//  reloj deja de ser de nadie y la entrada siguiente lo estrena.
+//  y el refresher tiene handle propio, así que ninguno sobrevive al desmontaje. La
+//  titularidad de la ventana de sesión NO se suelta aquí —este desmontaje también ocurre
+//  al cambiar de estado, con la persona todavía dentro de Restaurar—: la suelta
+//  `WelcomeRestoreView` al desaparecer ella.
+//  Y el apagado de la ventana no es «gane o pierda»: el tope agotado CON el import en
+//  marcha deja la ventana viva, porque las filas siguen entrando.
 //  Barra por fases (connecting → importing → completed/partial). Siempre se muestra
 //  un mínimo para no parpadear. Al asentar (o timeout) llama `onSettled` con el summary.
 //
@@ -18,7 +21,9 @@ import SwiftUI
 
 struct RestoreProgressView: View {
     /// El flujo de restauración al que pertenece esta espera, y lo único que autoriza a cerrar la
-    /// ventana de sesión al terminar (`ICloudRestoreSessionSignal.noteRestoreFinished(_:)`).
+    /// ventana de sesión **cuando el flujo no deja descarga detrás**
+    /// (`ICloudRestoreSessionSignal.noteRestoreFinished(_:)`, tras la puerta de
+    /// `ICloudRestoreInProgressLogic.closesTheSessionWindow` — ver `startFlow()`).
     ///
     /// **Llega RESERVADO desde arriba y no se lee del latch aquí**, y esa es la pieza que hace
     /// correcto el arreglo de `restore-back-and-reenter-closes-the-live-session-window`. Esta pantalla
@@ -78,21 +83,24 @@ struct RestoreProgressView: View {
             Spacer()
         }
         .task { startFlow() }
-        // **Y la titularidad se SUELTA al irse, que no es apagar la ventana.** La distinción es el
-        // ticket entero (`abandoned-restore-no-longer-clears-the-session-window-clock`): el import
-        // sigue bajando cuando esta pantalla se va, así que el reloj no se toca —apagarlo aquí es lo
-        // que prohíbe el docblock de la señal— pero el intento deja de vigilarlo, y la entrada
-        // siguiente estrena ventana en vez de heredar un instante de hace siete minutos que la haría
-        // caducar a media descarga.
+        // **Este desmontaje apaga los dos `Task` y NO suelta la titularidad de la ventana**, y esa
+        // segunda mitad se mudó a `WelcomeRestoreView` el 2026-09-21
+        // (`restore-timeout-closes-the-session-window-with-the-import-still-running`).
         //
-        // Va AQUÍ y no en el `else` del guard de cancelación de `runTask` porque `onDisappear` es
-        // incondicional: no depende de que la espera resuelva. En el camino normal es un no-op —
-        // `noteRestoreFinished` ya rotó el dueño a `nil` unas líneas antes de que este desmontaje
-        // ocurra— y en cualquier camino con un intento MÁS NUEVO vivo también, por el guard del token.
+        // El motivo es que esta pantalla se desmonta por DOS razones que no se parecen en nada: porque
+        // la persona se fue de Restaurar, o porque el estado de arriba cambió a `.importIncomplete`,
+        // `.found` o cualquier otro desenlace — o sea con la persona todavía dentro, mirando «seguimos
+        // trayendo tus datos» y con un botón de volver a buscar delante. Soltar en el segundo caso deja
+        // la ventana HUÉRFANA, y entonces el reintento la re-ancla (`currentFlow == nil` **Y**
+        // `hasObservedImportActivity`, que es un latch monótono del proceso): el tope duro de 600 s
+        // pasaría a renovarse cada 90 s con solo pulsar «volver a buscar», que es justo lo que el tercer
+        // criterio del ticket prohíbe.
+        //
+        // Quien sabe distinguir las dos razones es la pantalla de arriba: su propio desmontaje SÍ
+        // significa «me fui de Restaurar». Ahí vive ahora el `noteRestoreAbandoned`.
         .onDisappear {
             runTask?.cancel()
             refreshTask?.cancel()
-            ICloudRestoreSessionSignal.noteRestoreAbandoned(flowToken)
         }
     }
 
@@ -204,9 +212,14 @@ struct RestoreProgressView: View {
             // el mínimo de exhibición— haría que la pareja hablara de dos momentos distintos. El flag es
             // monótono dentro de la sesión, así que retrasarlo solo puede cambiar el veredicto a mejor;
             // aun así el testigo se toma donde se toma la medida.
+            // El testigo del import se lee UNA vez y alimenta a los dos, que preguntan cosas distintas
+            // sobre el mismo instante: `RestoreImportSettlement` elige el COPY y
+            // `ICloudRestoreInProgressLogic.closesTheSessionWindow` decide si se apaga un guard de
+            // frontera de cuenta. Leerlo dos veces los dejaría hablando de dos momentos.
+            let sawImport = iCloudSyncService.shared.hasObservedImportActivity
             let settlement = RestoreImportSettlement.resolve(
                 settled: settled,
-                hasObservedImportActivity: iCloudSyncService.shared.hasObservedImportActivity,
+                hasObservedImportActivity: sawImport,
                 lastImportErrorAt: iCloudSyncService.shared.lastImportErrorAt,
                 lastSuccessfulImportAt: iCloudSyncService.shared.lastSuccessfulImportDate)
             // **El guard de cancelación va antes de TODO lo que sigue, y ese orden se invirtió el
@@ -239,13 +252,33 @@ struct RestoreProgressView: View {
             // único sitio del fichero que cancela `runTask`, así que uno cancelado implica el otro—, y
             // ahí ese `cancel()` solo podía acertarle al vecino.
             refreshTask?.cancel()
-            // El flujo terminó, gane (`settled`) o pierda (timeout): a partir de aquí no hay ninguna
-            // descarga en curso que justifique tener abierto el guard cross-cuenta.
+            // **El apagado dejó de ser «gane o pierda» el 2026-09-21**
+            // (`restore-timeout-closes-the-session-window-with-the-import-still-running`).
+            //
+            // Perder tiene dos formas y solo una significa que no queda descarga: agotar el tope SIN
+            // haber visto un import es un final —no hay nada bajando ni lo hubo— y ahí apagar es la
+            // precisión que este camino aporta sobre la caducidad. Agotarlo **habiendo visto un import**
+            // no lo es: las filas siguen entrando, y `restoreStartedAt = nil` le devuelve al dueño
+            // legítimo el `.blockedForeignData` sobre su propia cuenta justo mientras sus datos bajan.
+            //
+            // **El criterio NO es el `settlement`, y esa distinción la trajo la review**: aquel elige el
+            // copy, y su `.inconclusive` agrupa «no vi ningún import» con «el último import dio error»,
+            // que a esta pregunta contestan distinto —la mayoría de esos errores son retriables y
+            // CloudKit sigue trayendo filas detrás—. Con el `settlement` como puerta, un restore grande
+            // con la red floja volvía a quedarse bloqueado en su propia cuenta.
+            //
             // Con el token de ESTE flujo, no incondicional: quien tocó atrás y volvió a entrar tiene un
             // intento vivo con otro token, y el abandonado no puede apagarle la ventana. Si esta
             // pantalla se montó en un camino que nunca llegó a encender la señal (`.wiped`,
             // `.iCloudDisabled`), su token no es dueño de nada y esto es un no-op.
-            ICloudRestoreSessionSignal.noteRestoreFinished(flowToken)
+            //
+            // Y cuando NO apaga, tampoco suelta: la titularidad se queda con este intento mientras la
+            // persona siga dentro de Restaurar, que es lo único que impide que el reintento re-ancle el
+            // tope duro (`noteRestoreStarted` conserva el reloj si hay dueño vigente).
+            if ICloudRestoreInProgressLogic.closesTheSessionWindow(
+                settled: settled, hasObservedImportActivity: sawImport) {
+                ICloudRestoreSessionSignal.noteRestoreFinished(flowToken)
+            }
             phase = settled ? .completed : .partial
             do {
                 counts = try modelContext.iCloudAccountSummary(appPreferences: appPreferences)

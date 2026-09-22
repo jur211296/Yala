@@ -203,4 +203,51 @@ struct RestoreImportSettlementTests {
                 """))
         }
     }
+
+    /// **Este enum NO decide si se apaga la ventana de sesión del restore, y el escáner lo fija.**
+    ///
+    /// El primer intento de `restore-timeout-closes-the-session-window-with-the-import-still-running`
+    /// le colgó aquí un `closesTheSessionWindow` gemelo de `consultsRemoteConfig`, y lo tumbó la
+    /// review: **`.inconclusive` agrupa dos poblaciones que a esa pregunta contestan distinto** —la que
+    /// no vio un solo import y la que vio uno con un error VIGENTE—, y aquí se agrupan a propósito
+    /// porque el COPY sí es el mismo para las dos. Como la mayoría de esos errores son retriables
+    /// (`iCloudSyncService.isRetriable` da `true` hasta en su `default`) y el testigo se enciende antes
+    /// del `if let error`, un restore grande con la red floja se quedaba bloqueado en su propia cuenta
+    /// con CloudKit todavía trayendo filas: el bug del ticket, sin arreglar, entrando por el copy.
+    ///
+    /// Ningún test de comportamiento lo caza —los dos criterios coinciden en 7 de las 9 filas de la
+    /// tabla de arriba— así que lo que queda es impedir que el derivado vuelva.
+    @Test("MUTACIÓN: el desenlace del copy no decide la ventana de sesión")
+    func theCopyOutcomeDoesNotDecideTheSessionWindow() throws {
+        let root = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        let src = try String(
+            contentsOf: root.appendingPathComponent("Yala/App/Logic/WelcomeAccountChoiceLogic.swift"),
+            encoding: .utf8)
+        let code = src
+            .split(separator: "\n", omittingEmptySubsequences: false)
+            .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
+            .joined(separator: "\n")
+        #expect(!code.contains("closesTheSessionWindow"), """
+            El criterio de la ventana de sesión volvió a este enum. Aquí `.inconclusive` agrupa al \
+            usuario sin nada que importar con el import que dio un error retriable y sigue bajando: \
+            colgar de esa agrupación un guard de frontera de cuenta le apaga la ventana al segundo con \
+            las filas entrando. Vive en `ICloudRestoreInProgressLogic`, con los términos crudos.
+            """)
+
+        // Y el escáner por el otro lado: la pantalla de progreso NO usa el settlement para decidir el
+        // apagado. Sin esto, devolver la puerta a `settlement.consultsRemoteConfig` —que vale lo mismo
+        // que el derivado retirado— reabre el ticket con la tabla entera en verde.
+        let vista = try String(
+            contentsOf: root.appendingPathComponent("Yala/App/Views/Onboarding/RestoreProgressView.swift"),
+            encoding: .utf8)
+            .split(separator: "\n", omittingEmptySubsequences: false)
+            .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
+            .joined(separator: "\n")
+        #expect(!vista.contains("settlement.consultsRemoteConfig"), """
+            La puerta del apagado pasó a leer el criterio del COPY. Decide si se llama a la red, no si \
+            se cierra un guard de frontera de cuenta, y sus dos poblaciones de `.inconclusive` no \
+            contestan igual a esta pregunta.
+            """)
+    }
 }

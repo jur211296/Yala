@@ -42,10 +42,31 @@
 //   · `noteRestoreStarted` — entra un intento. **Estrena reloj si la ventana está apagada, y re-ancla
 //     una huérfana solo si hay descarga real detrás**; con dueño vigente lo conserva. Los dos límites
 //     son lo que impide que re-anclar se convierta en un tope extensible a voluntad.
-//   · `noteRestoreAbandoned` — el intento se va con el import bajando. **Suelta la titularidad y NO
-//     toca el reloj**: la ventana sigue abierta para ese import, y la cierran el asentamiento o la
-//     caducidad. Apagarla aquí es justo lo que prohíbe el párrafo de «no se apaga al volver atrás».
-//   · `noteRestoreFinished` — el intento terminó por sus propios méritos. Apaga las dos cosas.
+//   · `noteRestoreAbandoned` — la persona **se fue de Restaurar** con el import bajando. **Suelta la
+//     titularidad y NO toca el reloj**: la ventana sigue abierta para ese import, y la cierran el
+//     asentamiento o la caducidad. Apagarla aquí es justo lo que prohíbe el párrafo de «no se apaga al
+//     volver atrás». Lo llama `WelcomeRestoreView` al desaparecer ELLA, no la pantalla de progreso —
+//     ver su docblock, que es la mitad del ticket del tope.
+//   · `noteRestoreFinished` — el intento terminó **y no queda descarga**. Apaga las dos cosas.
+//
+//  **Y «terminó» dejó de significar «la espera devolvió» el 2026-09-21**
+//  (`restore-timeout-closes-the-session-window-with-the-import-still-running`). Agotar el tope de 90 s
+//  tiene dos formas y solo una es un final: **sin un solo import observado** no hay nada bajando ni lo
+//  hubo, y apagar es la precisión que este verbo aporta; **habiendo visto un import**, las filas siguen
+//  entrando, así que apagar le devolvía al dueño legítimo el `.blockedForeignData` sobre su propia
+//  cuenta justo mientras sus datos bajaban. En ese desenlace la pantalla de progreso **no llama a
+//  nada**: ni apaga ni suelta, y conservar la titularidad es lo que impide que el reintento desde
+//  «seguimos trayendo tus datos» re-ancle el tope duro cada 90 s. El término que lo decide es
+//  `ICloudRestoreInProgressLogic.closesTheSessionWindow`, con los dos valores crudos — **no el
+//  desenlace que elige el copy**, que agrupa «no vi ningún import» con «el último dio error» y esos
+//  errores suelen ser retriables, con CloudKit trayendo filas detrás.
+//
+//  **El precio, medido y aceptado**: para esa población la ventana pasa de cerrarse a los 90 s a vivir
+//  hasta que el import asiente o caduque —tope duro de 600 s—, y dentro de ese tramo `isRestoringNow`
+//  se recalcula vivo, así que un import de rutina del espejo puede reabrirla. Es la exposición que el
+//  ticket compra a cambio de no bloquear al dueño legítimo sobre sus propios datos, y las dos salidas
+//  que sí sabían que no queda descarga la cierran antes: el asentamiento, y «Empezar desde cero», que
+//  apaga desde su propia confirmación en `WelcomeRestoreView`.
 //
 
 import Foundation
@@ -170,14 +191,37 @@ enum ICloudRestoreSessionSignal {
     /// una pantalla vieja le quitaría la titularidad al intento vivo y su
     /// `noteRestoreFinished` pasaría a ser un no-op — la ventana del vivo se quedaría abierta hasta
     /// caducar.
+    ///
+    /// **Quien llama es `WelcomeRestoreView` al desaparecer, y no la pantalla de progreso** (mudanza
+    /// del 2026-09-21, `restore-timeout-closes-the-session-window-with-the-import-still-running`).
+    /// Aquélla se desmonta también cuando solo cambia el `state` de arriba —a `.importIncomplete`, a
+    /// `.found`—, o sea con la persona TODAVÍA dentro de Restaurar: soltar ahí deja la ventana huérfana
+    /// y el reintento la re-ancla, porque `hasObservedImportActivity` es un latch monótono del proceso
+    /// y una vez encendido lo está para siempre. El tope duro de 600 s pasaba a renovarse cada 90 s con
+    /// solo pulsar «volver a buscar». El desmontaje de la pantalla de Restaurar sí significa «me fui».
     static func noteRestoreAbandoned(_ token: FlowToken) {
         guard currentFlow == token else { return }
         currentFlow = nil
     }
 
-    /// El flujo de restauración TERMINÓ **por sus propios méritos** — gane (`completed`) o pierda
-    /// (`partial`): en ese punto ya no hay ninguna descarga que justifique tener abierto un guard de
-    /// frontera de cuenta.
+    /// El flujo de restauración TERMINÓ **por sus propios méritos y sin dejar descarga detrás**: en ese
+    /// punto ya no hay nada que justifique tener abierto un guard de frontera de cuenta.
+    ///
+    /// **«Sin dejar descarga detrás» es la precisión del 2026-09-21**
+    /// (`restore-timeout-closes-the-session-window-with-the-import-still-running`), y sustituye al
+    /// «gane o pierda» de antes. Quién llega aquí lo decide
+    /// `ICloudRestoreInProgressLogic.closesTheSessionWindow`: el import que asentó, y el tope agotado
+    /// **sin un solo import observado**. El tope agotado habiendo visto un import NO llega — apagar
+    /// ahí ponía `restoreStartedAt = nil` con las filas entrando, y `CrossAccountEntryGuardLogic`
+    /// volvía a `.blockedForeignData` para el dueño legítimo, que es el bug entero por el eje del
+    /// DESENLACE en vez del abandono.
+    ///
+    /// **Y hay un segundo llamador desde ese mismo día, que no es un final de la espera**: la
+    /// confirmación de «Empezar desde cero» en `WelcomeRestoreView`. Ahí la persona acaba de declarar
+    /// que descarta el import —lo que hay detrás del botón es la puerta que lo borra—, así que la
+    /// premisa de la que cuelga todo este diseño, «las filas siguen entrando», deja de valer. Sin ese
+    /// apagado la salida se llevaba la ventana abierta hasta diez minutos, y lo cazó una lente de la
+    /// review como regresión del propio ticket.
     ///
     /// **«Por sus propios méritos» es la precisión que añadió el 2026-09-21**, y no es un matiz:
     /// `RestoreProgressView` llama detrás de un `guard !Task.isCancelled`, así que una espera que

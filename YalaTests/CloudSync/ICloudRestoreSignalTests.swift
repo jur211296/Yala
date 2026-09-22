@@ -118,6 +118,67 @@ struct ICloudRestoreInProgressLogicTests {
             declarado.
             """)
     }
+    // MARK: - ¿Este final deja descarga detrás?
+    // (`restore-timeout-closes-the-session-window-with-the-import-still-running`, 2026-09-21)
+
+    /// **Las cuatro combinaciones, y las dos que importan son las de la diagonal.** El criterio no es
+    /// el desenlace que elige el copy —`RestoreImportSettlement`— sino los dos términos crudos: aquél
+    /// agrupa en `.inconclusive` al usuario sin nada que importar con el import que dio un error
+    /// vigente, y esos errores suelen ser retriables, con CloudKit trayendo filas detrás.
+    @Test("el final cierra la ventana si asentó o si no hubo un solo import, y no en otro caso")
+    func closingTheWindowFollowsTheTwoRawTerms() {
+        #expect(ICloudRestoreInProgressLogic.closesTheSessionWindow(
+            settled: true, hasObservedImportActivity: true), """
+            El import ASENTÓ y la ventana se queda abierta hasta caducar. Esas filas ya son corpus como \
+            cualquier otro y el guard de frontera de cuenta no tiene por qué seguir entornado.
+            """)
+        #expect(ICloudRestoreInProgressLogic.closesTheSessionWindow(
+            settled: true, hasObservedImportActivity: false),
+            "asentar cierra pase lo que pase con el testigo")
+        #expect(ICloudRestoreInProgressLogic.closesTheSessionWindow(
+            settled: false, hasObservedImportActivity: false), """
+            El tope se agotó SIN un solo `.importEvent`: no hay nada bajando ni lo hubo, y es la \
+            población del usuario realmente nuevo. Dejarle la ventana abierta pierde la precisión que \
+            este apagado aporta sobre la caducidad — hasta 60 s de gracia con el guard entornado.
+            """)
+        #expect(!ICloudRestoreInProgressLogic.closesTheSessionWindow(
+            settled: false, hasObservedImportActivity: true), """
+            **EL CASO DEL TICKET.** El tope se agotó habiendo visto un import: las filas siguen \
+            entrando. Apagar aquí pone `restoreStartedAt` a `nil` con la descarga viva, y el dueño \
+            legítimo que toque atrás y firme con su cuenta se encuentra un `.blockedForeignData` sobre \
+            sus propios datos. Es el bug entero.
+            """)
+    }
+
+    /// **El control por separado de cada término, que es lo que impide "arreglarlo" con una constante.**
+    /// Con `true` fijo vuelve el ticket; con `false` fijo, la ventana del usuario nuevo vive hasta
+    /// caducar. Y con `settled || hasObservedImportActivity` —el `!` perdido— se invierte justo en las
+    /// dos filas que deciden.
+    @Test("MUTACIÓN: los dos términos por separado, y ninguna constante los cumple")
+    func neitherConstantSatisfiesBothTerms() {
+        let filas: [(settled: Bool, activity: Bool, esperado: Bool)] = [
+            (true,  true,  true),
+            (true,  false, true),
+            (false, false, true),
+            (false, true,  false),
+        ]
+        for fila in filas {
+            let cierra = ICloudRestoreInProgressLogic.closesTheSessionWindow(
+                settled: fila.settled, hasObservedImportActivity: fila.activity)
+            #expect(cierra == fila.esperado, Comment(rawValue: """
+                settled=\(fila.settled) actividad=\(fila.activity) ⇒ cierra=\(cierra), \
+                esperado \(fila.esperado)
+                """))
+        }
+        // Y que el resultado NO sea constante, que es lo que ninguna fila sola comprueba.
+        let valores = Set(filas.map {
+            ICloudRestoreInProgressLogic.closesTheSessionWindow(
+                settled: $0.settled, hasObservedImportActivity: $0.activity)
+        })
+        #expect(valores == [true, false],
+                "el criterio se volvió una constante: deja de separar población ninguna")
+    }
+
 }
 
 @Suite("La restauración en curso · el latch de sesión", .serialized)
@@ -162,8 +223,9 @@ struct ICloudRestoreSessionSignalTests {
             """)
     }
 
-    /// El apagado explícito: cuando el flujo termina —gane o pierda— la ventana se cierra sin esperar
-    /// a la caducidad.
+    /// El apagado explícito: cuando el flujo termina **sin dejar descarga detrás** la ventana se
+    /// cierra sin esperar a la caducidad. («Gane o pierda» valió hasta el 2026-09-21: quién llega a
+    /// este verbo lo decide hoy `ICloudRestoreInProgressLogic.closesTheSessionWindow`.)
     @Test("terminar el flujo cierra la ventana")
     @MainActor
     func finishingTheFlowClosesTheWindow() {
@@ -471,6 +533,232 @@ struct ICloudRestoreSessionSignalTests {
             siendo incondicional para todo el que llegue tarde.
             """)
     }
+
+    // MARK: - El tope agotado con el import todavía bajando
+    // (`restore-timeout-closes-the-session-window-with-the-import-still-running`, 2026-09-21)
+
+    /// **El veredicto del guard de frontera de cuenta**, que es donde la persona sufre el bug: entra
+    /// por la card de su cuenta con filas locales que su claim no reclama —el claim vive en
+    /// `UserDefaults` y murió con la reinstalación, que es la mitad del escenario— y lo único que puede
+    /// dejarla pasar es que la señal diga que está restaurando.
+    ///
+    /// **Va hasta `CrossAccountEntryGuardLogic` a propósito y no se queda en `restoreStartedAt`**: lo
+    /// pidió una lente de la review, y tiene razón — el criterio del ticket habla del dueño bloqueado
+    /// en su propia cuenta, no de un campo. El reloj se inyecta porque el getter de la señal mide desde
+    /// `.now` y el escenario dura minutos.
+    @MainActor
+    private static func guardDecide(en momento: Date) -> CrossAccountEntryGuardLogic.Decision {
+        CrossAccountEntryGuardLogic.decide(
+            hasLocalData: true,
+            sameAccountClaimExists: false,
+            restoreInProgress: ICloudRestoreInProgressLogic.isRestoringNow(
+                restoreStartedAt: ICloudRestoreSessionSignal.restoreStartedAt,
+                hasCompletedFirstImport: false,
+                isImportQuiescent: false,
+                hasObservedImportActivity: true,
+                now: momento))
+    }
+
+    /// **EL CASO DEL TICKET.** Histórico grande: la persona entra a Restaurar y a los 90 s la espera se
+    /// rinde con el import de CloudKit todavía trayendo filas. Hasta el 2026-09-21 la pantalla llamaba
+    /// al apagado «gane o pierda», así que `restoreStartedAt` se ponía a `nil` en ese mismo instante —
+    /// y quien tocaba atrás y firmaba con su propia cuenta se encontraba con que sus datos eran «de
+    /// otra persona», con las filas entrando por debajo.
+    @Test("el tope agotado CON el import en marcha no cierra la ventana: las filas siguen entrando")
+    @MainActor
+    func timeoutWithALiveImportKeepsTheWindowOpen() {
+        ICloudRestoreSessionSignal._testReset()
+        defer { ICloudRestoreSessionSignal._testReset() }
+
+        let t0 = Date(timeIntervalSince1970: 1_760_000_000)
+        let intento = ICloudRestoreSessionSignal.noteRestoreStarted(now: t0, hasObservedImportActivity: false)
+
+        // t=90: la espera se rinde habiendo visto un import, así que la pantalla NO llama al apagado.
+        // Es la puerta REAL de `RestoreProgressView`, con los dos términos crudos.
+        if ICloudRestoreInProgressLogic.closesTheSessionWindow(
+            settled: false, hasObservedImportActivity: true) {
+            ICloudRestoreSessionSignal.noteRestoreFinished(intento)
+        }
+
+        #expect(ICloudRestoreSessionSignal.restoreStartedAt == t0, """
+            El tope agotado apagó la ventana con el import de CloudKit todavía bajando. A partir de \
+            aquí `CrossAccountEntryGuardLogic` ve filas locales sin claim que las reclame y le bloquea \
+            al dueño la entrada a su propia cuenta — mientras sus datos entran en ese mismo momento.
+            """)
+        #expect(Self.guardDecide(en: t0.addingTimeInterval(95)) == .proceed, """
+            Y el efecto que de verdad importa, medido donde la persona lo sufre: a los 95 s el guard \
+            tiene que dejar pasar al dueño legítimo. Es justo el instante en que la pantalla le dice \
+            «seguimos trayendo tus datos» y él toca atrás para firmar con su cuenta — y el veredicto \
+            que se llevaba era `.blockedForeignData` sobre sus propios datos.
+            """)
+    }
+
+    /// **El caso que la review encontró sin cubrir, y era el bug del ticket sin arreglar.** Un restore
+    /// grande con la red floja recibe errores de import RETRIABLES —`requestRateLimited`, `zoneBusy`,
+    /// `networkUnavailable`— y CloudKit sigue trayendo filas detrás de cada uno. El primer intento de
+    /// este ticket puso la puerta en `RestoreImportSettlement`, cuyo `.inconclusive` agrupa esa
+    /// población con la del usuario que no tiene nada: le apagaba la ventana con la descarga viva.
+    @Test("un error RETRIABLE con el import vivo tampoco cierra la ventana")
+    @MainActor
+    func aRetriableImportErrorDoesNotCloseTheWindowEither() {
+        ICloudRestoreSessionSignal._testReset()
+        defer { ICloudRestoreSessionSignal._testReset() }
+
+        let t0 = Date(timeIntervalSince1970: 1_760_000_000)
+        let intento = ICloudRestoreSessionSignal.noteRestoreStarted(now: t0, hasObservedImportActivity: false)
+
+        // El copy de esta población es el de siempre —y así tiene que seguir— porque un error vigente
+        // no permite prometer que los datos vienen.
+        let copy = RestoreImportSettlement.resolve(
+            settled: false, hasObservedImportActivity: true,
+            lastImportErrorAt: t0.addingTimeInterval(15), lastSuccessfulImportAt: nil)
+        #expect(copy == .inconclusive, "el copy de esta población no cambia: sigue sin prometer datos")
+
+        // Pero la VENTANA no sigue al copy: hubo import, así que puede seguir bajando.
+        if ICloudRestoreInProgressLogic.closesTheSessionWindow(
+            settled: false, hasObservedImportActivity: true) {
+            ICloudRestoreSessionSignal.noteRestoreFinished(intento)
+        }
+        #expect(ICloudRestoreSessionSignal.restoreStartedAt == t0, """
+            Un error retriable apagó la ventana. `iCloudSyncService.isRetriable` da `true` a \
+            `requestRateLimited`, `zoneBusy`, `networkUnavailable` y hasta en su `default`, y el \
+            testigo del import se enciende ANTES del `if let error`: o sea que a un restore grande con \
+            la red floja —el caso normal— se le apaga la ventana con CloudKit todavía trayendo filas.
+            """)
+        #expect(Self.guardDecide(en: t0.addingTimeInterval(95)) == .proceed,
+                "y el dueño legítimo sigue sin poder entrar en su propia cuenta")
+    }
+
+    /// **«Empezar desde cero» SÍ apaga, y es la otra mitad que la review encontró rota.** Desde que el
+    /// tope agotado con el import vivo ya no apaga, la única salida que quedaba en ese camino era
+    /// soltar la titularidad — que no toca el reloj —, así que la ventana se iba abierta hasta diez
+    /// minutos con el guard de frontera de cuenta entornado. Y ahí la persona acaba de declarar lo
+    /// contrario de la premisa que sostiene todo el diseño: lo que hay detrás del botón es la puerta
+    /// que borra esas filas.
+    @Test("descartar el import APAGA la ventana, no la suelta")
+    @MainActor
+    func discardingTheImportClosesTheWindow() {
+        ICloudRestoreSessionSignal._testReset()
+        defer { ICloudRestoreSessionSignal._testReset() }
+
+        let t0 = Date(timeIntervalSince1970: 1_760_000_000)
+        let intento = ICloudRestoreSessionSignal.noteRestoreStarted(now: t0, hasObservedImportActivity: false)
+        // t=90: el tope se agota con el import vivo y no se apaga nada.
+        #expect(!ICloudRestoreInProgressLogic.closesTheSessionWindow(
+            settled: false, hasObservedImportActivity: true))
+
+        // t=95: «Empezar desde cero» → confirmar.
+        ICloudRestoreSessionSignal.noteRestoreFinished(intento)
+        #expect(ICloudRestoreSessionSignal.restoreStartedAt == nil, """
+            Descartar dejó la ventana viva. Con el corpus de otra persona en el teléfono, eso son ocho \
+            minutos de sobra para firmar encima de sus datos: el guard de frontera de cuenta contesta \
+            `.proceed` mientras la señal siga encendida.
+            """)
+        #expect(Self.guardDecide(en: t0.addingTimeInterval(120)) == .blockedForeignData,
+                "y el guard vuelve a hacer su trabajo en el acto, sin esperar a la caducidad")
+    }
+
+    /// **La otra mitad, y es la que impide arreglar la primera de más**: cuando el tope se agota sin
+    /// haber visto un solo import —el usuario realmente nuevo, cuyo store vacío no dispara ningún
+    /// `.importEvent`— el apagado explícito sigue corriendo. Lo que aporta sobre la caducidad es PRECISIÓN: sin él, la
+    /// ventana de alguien que no tiene ningún import vive hasta la gracia de 60 s (o el tope duro de
+    /// 600), con el guard de frontera de cuenta entornado todo ese rato.
+    @Test("el tope agotado SIN nada que importar sigue cerrando la ventana en el acto")
+    @MainActor
+    func timeoutWithoutAnyImportStillClosesTheWindow() {
+        ICloudRestoreSessionSignal._testReset()
+        defer { ICloudRestoreSessionSignal._testReset() }
+
+        let t0 = Date(timeIntervalSince1970: 1_760_000_000)
+        let intento = ICloudRestoreSessionSignal.noteRestoreStarted(
+            now: t0, hasObservedImportActivity: false)
+        if ICloudRestoreInProgressLogic.closesTheSessionWindow(
+            settled: false, hasObservedImportActivity: false) {
+            ICloudRestoreSessionSignal.noteRestoreFinished(intento)
+        }
+        #expect(ICloudRestoreSessionSignal.restoreStartedAt == nil, """
+            La ventana se quedó abierta esperando a caducar. Sin un solo `.importEvent` no hay ninguna \
+            descarga que la justifique —ni la hubo— y el guard de frontera de cuenta queda entornado \
+            hasta 60 s de más, que es justo la precisión que este apagado aporta sobre la caducidad.
+            """)
+        #expect(ICloudRestoreSessionSignal.currentFlow == nil, "y el intento deja de ser dueño de nada")
+        #expect(Self.guardDecide(en: t0.addingTimeInterval(1)) == .blockedForeignData,
+                "y el guard vuelve a decidir como siempre en el acto")
+    }
+
+    /// **EL TERCER CRITERIO: el reintento desde «seguimos trayendo tus datos» no re-ancla el tope.**
+    ///
+    /// Es el riesgo que trae dejar la ventana viva: si además se soltara la titularidad, quedaría
+    /// HUÉRFANA, y `noteRestoreStarted` re-ancla una huérfana en cuanto hay descarga detrás. Como
+    /// `hasObservedImportActivity` es un latch monótono del proceso, ese término está encendido para
+    /// siempre a partir del primer `.importEvent`: pulsar «volver a buscar» cada 90 s renovaría el tope
+    /// duro de 600 s indefinidamente, y en un teléfono con el corpus de otra persona eso mantiene
+    /// abierta de par en par la puerta que el guard existe para cerrar.
+    ///
+    /// Lo que lo impide es que el intento CONSERVE la titularidad mientras la persona siga dentro de
+    /// Restaurar — o sea que el `noteRestoreAbandoned` viva en `WelcomeRestoreView` y no en la pantalla
+    /// de progreso, que se desmonta en cada cambio de estado.
+    @Test("el reintento desde `.importIncomplete` NO re-ancla el tope duro")
+    @MainActor
+    func retryingFromImportIncompleteDoesNotReArmTheHardCap() {
+        ICloudRestoreSessionSignal._testReset()
+        defer { ICloudRestoreSessionSignal._testReset() }
+
+        let t0 = Date(timeIntervalSince1970: 1_760_000_000)
+        _ = ICloudRestoreSessionSignal.noteRestoreStarted(now: t0, hasObservedImportActivity: false)
+
+        // Seis vueltas de «el tope se agota con el import vivo → vuelvo a buscar», que son más de los
+        // 600 s del tope duro. Ninguna apaga, ninguna suelta: la pantalla de progreso se desmonta al
+        // cambiar de estado, pero la de Restaurar sigue en pantalla.
+        var reloj = t0
+        for _ in 0..<6 {
+            reloj = reloj.addingTimeInterval(90)
+            _ = ICloudRestoreSessionSignal.noteRestoreStarted(now: reloj, hasObservedImportActivity: true)
+            #expect(ICloudRestoreSessionSignal.restoreStartedAt == t0, """
+                El reintento re-ancló la ventana. El tope duro deja de ser un tope: basta pulsar \
+                «volver a buscar» cada 90 s para mantener abierto el guard de frontera de cuenta todo \
+                lo que se quiera, y en un teléfono con el corpus de otra persona eso es exactamente la \
+                adopción que el guard impide.
+                """)
+        }
+
+        #expect(Self.guardDecide(en: t0.addingTimeInterval(601)) == .blockedForeignData, """
+            Y pasado el tope duro el guard vuelve a bloquear: es la red que no depende de que corra \
+            ningún callback, y seis reintentos no la corren. (Salir de Restaurar y volver a entrar SÍ \
+            estrena ventana —con descarga real detrás— y eso queda fuera de este criterio: es el \
+            comportamiento que ratificó `abandoned-restore-no-longer-clears-the-session-window-clock`, \
+            con su propio ticket abierto para acotarlo.)
+            """)
+    }
+
+    /// **Y el ticket hermano sigue en pie**, que es lo que no se puede romper para conseguir lo de
+    /// arriba: irse de Restaurar SÍ suelta la titularidad, así que quien vuelve a entrar con una
+    /// descarga real detrás estrena ventana en vez de heredar un reloj que no describe nada suyo
+    /// (`abandoned-restore-no-longer-clears-the-session-window-clock`).
+    @Test("irse de Restaurar tras el tope sí suelta: la entrada siguiente estrena ventana")
+    @MainActor
+    func leavingRestoreAfterTheTimeoutStillReleasesOwnership() {
+        ICloudRestoreSessionSignal._testReset()
+        defer { ICloudRestoreSessionSignal._testReset() }
+
+        let t0 = Date(timeIntervalSince1970: 1_760_000_000)
+        let intento = ICloudRestoreSessionSignal.noteRestoreStarted(now: t0, hasObservedImportActivity: false)
+
+        // t=90: el tope se agota con el import vivo y no se apaga nada. t=95: la persona toca atrás y
+        // se va de Restaurar — ahí sí se suelta.
+        ICloudRestoreSessionSignal.noteRestoreAbandoned(intento)
+        #expect(ICloudRestoreSessionSignal.restoreStartedAt == t0,
+                "soltar no puede apagar: el import sigue bajando")
+
+        let t400 = t0.addingTimeInterval(400)
+        _ = ICloudRestoreSessionSignal.noteRestoreStarted(now: t400, hasObservedImportActivity: true)
+        #expect(ICloudRestoreSessionSignal.restoreStartedAt == t400, """
+            La entrada nueva heredó el reloj del intento que la persona dejó atrás. Su tope duro caduca \
+            200 s después de empezar a bajar datos en vez de a los 600, y el guard de frontera de \
+            cuenta se cierra sobre el dueño legítimo con su propio import a medias.
+            """)
+    }
+
 }
 
 @Suite("La restauración en curso · el cableado (source-scan)")
@@ -610,7 +898,15 @@ struct ICloudRestoreSignalWiringTests {
     /// restaurar») deja al usuario re-anclar la ventana a voluntad, que es justo el tope duro que
     /// `noteRestoreStarted` protege al conservar el reloj con dueño vigente. Y no pondría roja ni una
     /// tabla: la lógica pura no se entera de quién movió el reloj.
-    @Test("MUTACIÓN: la titularidad se suelta en UN solo sitio, y es la pantalla de progreso")
+    ///
+    /// **Ese único sitio se MUDÓ el 2026-09-21** de la pantalla de progreso a la de restaurar
+    /// (`restore-timeout-closes-the-session-window-with-the-import-still-running`), y la mudanza es la
+    /// mitad del ticket: la de progreso se desmonta también cuando solo cambia el `state` —a
+    /// `.importIncomplete`, a `.found`—, o sea con la persona TODAVÍA dentro de Restaurar. Soltar ahí
+    /// deja la ventana huérfana y el reintento la re-ancla, porque `hasObservedImportActivity` es un
+    /// latch monótono del proceso: el tope duro de 600 s pasaba a renovarse cada 90 s con solo pulsar
+    /// «volver a buscar». El desmontaje de la pantalla de restaurar sí significa «me fui».
+    @Test("MUTACIÓN: la titularidad se suelta en UN solo sitio, y es la pantalla de RESTAURAR")
     func onlyOneProductionCallSiteReleasesOwnership() throws {
         let root = Self.repoRoot.appendingPathComponent("Yala")
         var callSites: [String] = []
@@ -624,10 +920,94 @@ struct ICloudRestoreSignalWiringTests {
                 .joined(separator: "\n")
             if body.contains("noteRestoreAbandoned(") { callSites.append(url.lastPathComponent) }
         }
-        #expect(callSites == ["RestoreProgressView.swift"], """
+        #expect(callSites == ["WelcomeRestoreView.swift"], """
             Sitios que sueltan la titularidad: \(callSites.sorted()). Tiene que haber EXACTAMENTE uno \
-            y ser la pantalla de progreso, que es la única que sabe cuándo la espera de ESTE intento \
-            deja de existir. Desde cualquier otro, el reloj de la ventana se vuelve re-anclable.
+            y ser la pantalla de RESTAURAR, que es la única cuyo desmontaje significa «me fui de \
+            Restaurar». Desde la pantalla de progreso —donde vivía hasta el 2026-09-21— también suelta \
+            al cambiar de estado con la persona todavía dentro, y entonces el reintento re-ancla el \
+            tope duro. Desde cualquier otro, el reloj de la ventana se vuelve re-anclable sin más.
+            """)
+    }
+
+    /// **La otra mitad de la mudanza: soltar va donde el desmontaje SIGNIFICA irse.**
+    ///
+    /// El conteo de arriba dice que hay un solo sitio; esto dice que ese sitio es el `onDisappear` de
+    /// la pantalla entera y que va con el token reservado. Un `noteRestoreAbandoned` colgado de otra
+    /// cosa de ese mismo fichero —del `onBack` del toolbar, por ejemplo— pasaría el conteo y dejaría
+    /// sin cubrir las demás salidas: continuar con el resumen, irse a la puerta de «empezar desde
+    /// cero», o que el contenedor de arriba cambie de pantalla.
+    @Test("MUTACIÓN: la pantalla de restaurar suelta la titularidad en su `onDisappear`, con SU token")
+    func theRestoreScreenReleasesOnItsOwnDisappear() throws {
+        let view = try Self.code(Self.restoreView)
+
+        // **El `.onDisappear` es UNO y cuelga de la pantalla entera, no de una vista de dentro.** Lo
+        // pidió una lente de la review y mata el mutante que reabre el ticket: mover este bloque al
+        // `RestoreProgressView(flowToken:)` del `case .searching` deja los otros scans en verde —el
+        // conteo por fichero no cambia— y devuelve exactamente el comportamiento de antes del fix,
+        // porque esa vista se desmonta en cada cambio de `state`.
+        #expect(view.components(separatedBy: ".onDisappear {").count - 1 == 1, """
+            La pantalla de restaurar tiene más de un `.onDisappear` (o ninguno). El scan de abajo mira \
+            el primero, así que un segundo lo deja ciego.
+            """)
+        let montaProgreso = try #require(view.range(of: "RestoreProgressView(flowToken: flowToken)"))
+        let arranque = try #require(view.range(of: ".task { startSearch() }"))
+        let salidaRango = try #require(view.range(of: ".onDisappear {"))
+        #expect(montaProgreso.upperBound < arranque.lowerBound
+                && arranque.upperBound < salidaRango.lowerBound, """
+            El `.onDisappear` se movió DENTRO del `switch` de estados —al `RestoreProgressView`, o a \
+            cualquier vista de un `case`—. Ahí vuelve a soltar la titularidad en cada cambio de \
+            `state`, con la persona todavía en Restaurar y un «volver a buscar» delante: ventana \
+            huérfana, y el reintento re-ancla el tope duro cada 90 s. Va al nivel del `NavigationStack`, \
+            pegado al `.task { startSearch() }`.
+            """)
+
+        let salida = try Self.body(of: ".onDisappear {", in: view)
+        #expect(salida.contains("ICloudRestoreSessionSignal.noteRestoreAbandoned(flowToken)"), """
+            El desmontaje de la pantalla de restaurar dejó de soltar la titularidad. Quien entra, se \
+            arrepiente y vuelve siete minutos después hereda un reloj que no describe nada suyo: su \
+            tope duro caduca a media descarga y el guard de frontera de cuenta se cierra sobre el \
+            dueño legítimo — `abandoned-restore-no-longer-clears-the-session-window-clock` entero.
+            """)
+        #expect(salida.contains("if let flowToken {"), """
+            Se soltó sin comprobar que hay token. `.wiped` y `.iCloudDisabled` salen de `startSearch()` \
+            antes de encender nada, así que ahí no hay titularidad ninguna que soltar.
+            """)
+        #expect(!salida.contains("noteRestoreFinished"), """
+            El DESMONTAJE apaga la ventana en vez de soltarla. Salir de Restaurar no para el import —\
+            CloudKit sigue trayendo filas— así que esto reabre entero \
+            `force-fetch-and-wait-ignores-cancellation`.
+            """)
+    }
+
+    /// **Descartar el import APAGA la ventana, y va en la CONFIRMACIÓN y no en el botón.**
+    ///
+    /// Lo cazó una lente de la review como regresión de este mismo ticket: desde que el tope agotado
+    /// con el import vivo ya no apaga, esta salida se llevaba la ventana abierta hasta diez minutos —
+    /// el `onDisappear` suelta, y soltar no toca el reloj—. Con el corpus de otra persona en el
+    /// teléfono, eso son ocho minutos de sobra para firmar encima de sus datos.
+    ///
+    /// **En la confirmación** porque el botón solo abre el diálogo (`showStartFreshConfirm = true`) y
+    /// el `cancel` tiene que poder volver sin haber apagado nada.
+    @Test("MUTACIÓN: «Empezar desde cero» apaga la ventana al CONFIRMAR")
+    func discardingTheImportClosesTheWindowFromTheConfirmation() throws {
+        let view = try Self.code(Self.restoreView)
+        let confirmar = try Self.body(of: "Button(L10n.Welcome.Restore.startFreshConfirmConfirm, role: .destructive) {",
+                                      in: view)
+        #expect(confirmar.contains("ICloudRestoreSessionSignal.noteRestoreFinished(flowToken)"), """
+            Descartar el import dejó de apagar la ventana de sesión. La persona acaba de declarar que \
+            NO quiere esas filas —detrás de este botón está la puerta que las borra—, así que la \
+            premisa que sostiene todo el diseño de la señal, «las filas siguen entrando», deja de \
+            valer. Sin esto, el desmontaje solo SUELTA y la ventana vive hasta el tope duro de 600 s \
+            con el guard de frontera de cuenta entornado.
+            """)
+        #expect(confirmar.contains("onStartFresh()"), "y sigue llevando a la puerta de descarte")
+
+        // El `cancel` no puede apagar nada: quien se arrepiente del diálogo sigue restaurando.
+        let cancelar = try Self.body(of: "Button(L10n.Welcome.Restore.startFreshConfirmCancel, role: .cancel) {",
+                                     in: view)
+        #expect(!cancelar.contains("ICloudRestoreSessionSignal"), """
+            Cancelar el diálogo toca la ventana de sesión. Quien se arrepiente sigue en Restaurar con \
+            su import bajando, y apagarle la ventana ahí le devuelve el bloqueo sobre su propia cuenta.
             """)
     }
 
@@ -656,13 +1036,64 @@ struct ICloudRestoreSignalWiringTests {
     /// caducidad de la lógica pura cierra la ventana igual, solo que tarda. Lo que se pierde al
     /// quitarlo es la PRECISIÓN —hasta diez minutos con un guard de frontera de cuenta abierto de
     /// más— y eso solo lo ve un escáner.
-    @Test("MUTACIÓN: la pantalla de progreso apaga la señal al terminar, gane o pierda")
+    ///
+    /// **Y desde el 2026-09-21 el apagado va DENTRO de una puerta**
+    /// (`restore-timeout-closes-the-session-window-with-the-import-still-running`): ya no es «gane o
+    /// pierda», porque perder con el import en marcha no es un final. La puerta es lo único que separa
+    /// los dos, y el mutante que la borra —dejando la llamada incondicional— reabre el ticket entero
+    /// sin poner roja ni una tabla: `RestoreImportSettlement` seguiría clasificando perfectamente y
+    /// nadie le haría caso.
+    @Test("MUTACIÓN: la pantalla de progreso apaga la señal al terminar, y SOLO si no queda descarga")
     func theProgressViewClosesTheWindowWhenTheFlowEnds() throws {
         let code = try Self.code(Self.progressView)
         #expect(code.contains("ICloudRestoreSessionSignal.noteRestoreFinished(flowToken)"), """
             La pantalla de restaurar dejó de cerrar la ventana al terminar, o la cierra con otro \
             token. La señal seguiría viva hasta caducar, con el guard cross-cuenta abierto de más \
             todo ese rato.
+            """)
+
+        // **El apagado está EXACTAMENTE una vez, y eso es lo que caza el mutante que la review
+        // encontró**: dejar la puerta puesta y añadir DEBAJO la llamada incondicional. Un `contains`
+        // de la condición y otro del cuerpo lo dan por bueno; el conteo no.
+        #expect(code.components(separatedBy: "noteRestoreFinished(").count - 1 == 1, """
+            La pantalla de progreso apaga la ventana en más de un sitio (o en ninguno). Con una \
+            segunda llamada fuera de la puerta, agotar el tope con el import de CloudKit en marcha \
+            vuelve a poner `restoreStartedAt = nil` con las filas entrando — y la puerta de arriba \
+            sigue estando, así que todo lo demás sale verde.
+            """)
+
+        // La PUERTA, fijada por su cuerpo entero y no por el literal de la condición: un `if` cuyo
+        // cuerpo fuera otra cosa —o que envolviera además el `phase =` y el resumen— cumpliría un
+        // `contains` de la condición sola y dejaría el apagado fuera, o el desenlace sin pintar.
+        // El marcador incluye la LLAVE de apertura: sin ella `body(of:)` empieza a contar desde el
+        // paréntesis de la condición, la primera `{` que encuentra es justo la del `if`, y el cierre
+        // del `if` lo devuelve a profundidad 1 — así que el «cuerpo» se traga la closure entera y las
+        // dos aserciones de debajo dejan de significar nada.
+        #expect(code.contains("if ICloudRestoreInProgressLogic.closesTheSessionWindow("),
+                "la puerta del apagado desapareció o cambió de criterio")
+        let puerta = try Self.body(of: "hasObservedImportActivity: sawImport) {", in: code)
+        #expect(puerta.contains("ICloudRestoreSessionSignal.noteRestoreFinished(flowToken)"), """
+            La puerta del apagado cambió de forma. Dentro va EXACTAMENTE el apagado: si desaparece, \
+            agotar el tope de 90 s con el import de CloudKit en marcha vuelve a poner \
+            `restoreStartedAt = nil` con las filas entrando.
+            """)
+        #expect(!puerta.contains("phase =") && !puerta.contains("onSettled("), """
+            La puerta se tragó el desenlace visual o la entrega del resumen: el import en marcha \
+            dejaría de pintarse y `.importIncomplete` no llegaría nunca.
+            """)
+
+        // **Y los dos términos que entran, que es donde vive la corrección de la review.** Cableados
+        // al `settlement` —o a una constante— el escáner de arriba sigue verde y vuelve el ticket para
+        // la población del error retriable, que es la mayoría de un restore grande con red floja.
+        #expect(code.contains("settled: settled, hasObservedImportActivity: sawImport"), """
+            La puerta dejó de recibir los dos términos CRUDOS de la espera. Con el desenlace del copy \
+            ahí, su `.inconclusive` agrupa «no vi ningún import» con «el último dio error» —y esos \
+            errores suelen ser retriables, con CloudKit trayendo filas detrás—, así que apagaría la \
+            ventana con la descarga viva.
+            """)
+        #expect(code.contains("let sawImport = iCloudSyncService.shared.hasObservedImportActivity"), """
+            El testigo del import dejó de leerse VIVO, una sola vez, pegado al `settled` que describe. \
+            Cableado a una constante compila, no deja warning y las tablas siguen verdes.
             """)
 
         // Y el ORDEN, **invertido el 2026-09-21** (`force-fetch-and-wait-ignores-cancellation`): el
@@ -706,16 +1137,12 @@ struct ICloudRestoreSignalWiringTests {
                 contando filas con la pantalla cerrada; con solo `refreshTask`, vuelve el ticket entero.
                 """))
         }
-        #expect(salida.contains("ICloudRestoreSessionSignal.noteRestoreAbandoned(flowToken)"), """
-            El desmontaje dejó de SOLTAR la titularidad de la ventana. Ningún test de comportamiento \
-            lo caza —la ventana caduca igual, solo que su reloj sigue siendo de un intento que ya no \
-            está— y la siguiente entrada a Restaurar lo hereda: su tope duro se agota a media descarga \
-            y el guard de frontera de cuenta se cierra sobre el dueño legítimo.
-            """)
-        #expect(!salida.contains("noteRestoreFinished"), """
-            El desmontaje APAGA la ventana en vez de soltarla. Salir de Restaurar no para el import —\
-            CloudKit sigue trayendo filas— así que esto reabre entero \
-            `force-fetch-and-wait-ignores-cancellation`, que es el ticket del que sale éste.
+        #expect(!salida.contains("ICloudRestoreSessionSignal."), """
+            El desmontaje de la pantalla de PROGRESO volvió a tocar la ventana de sesión. Aquí se \
+            desmonta también por un cambio de estado —a `.importIncomplete`, a `.found`—, o sea con la \
+            persona todavía dentro de Restaurar y un «volver a buscar» delante: soltar deja la ventana \
+            huérfana y el reintento la re-ancla (el tope duro renovándose cada 90 s), y apagar reabre \
+            `force-fetch-and-wait-ignores-cancellation`. Quien suelta es `WelcomeRestoreView`.
             """)
         #expect(code.contains("@State private var refreshTask: Task<Void, Never>?"), """
             El refresher perdió su handle propio y volvió a ser una variable local dentro de `runTask`. \

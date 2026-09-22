@@ -94,7 +94,16 @@ apaga nada**.
 | Invariante | `restoreStartedAt == nil ⇔ currentFlow == nil` | `currentFlow != nil ⇒ restoreStartedAt != nil` (solo esa dirección) |
 | Estado nuevo | — | **ventana huérfana**: reloj puesto, dueño `nil` |
 | `noteRestoreStarted` | estrena reloj si no hay RELOJ | enciende si está apagada, y **re-ancla una huérfana solo con descarga real detrás** |
-| Soltar sin apagar | no existía | `noteRestoreAbandoned(token)`, desde el `onDisappear` de `RestoreProgressView` |
+| Soltar sin apagar | no existía | `noteRestoreAbandoned(token)`, desde el `onDisappear` de `RestoreProgressView` — **se mudó a `WelcomeRestoreView` el mismo día**, ver nota abajo |
+
+> **Nota del 2026-09-21, misma tarde.** `restore-timeout-closes-the-session-window-with-the-import-still-running`
+> **mudó el `noteRestoreAbandoned` a `WelcomeRestoreView.onDisappear`**. El motivo: la pantalla de
+> progreso se desmonta también cuando solo cambia el `state` —a `.importIncomplete`, a `.found`—, o sea
+> con la persona todavía dentro de Restaurar, y soltar ahí dejaba la ventana huérfana para que el
+> reintento la re-anclara cada 90 s. El mecanismo de este ticket no cambia: el re-ancla con descarga real
+> detrás sigue siendo el arreglo, y sigue habiendo un solo call-site. Lo que cambia es cuál.
+> El residual que eso deja abierto —salir de Restaurar y volver renueva el tope duro— tiene ticket propio:
+> `leaving-and-reentering-restore-renews-the-hard-cap`.
 
 La ventana huérfana es lo que hace posibles las dos mitades a la vez: sigue viva para el import que
 baja —la cierran el asentamiento o la caducidad, como siempre— pero ya no la vigila nadie, así que la

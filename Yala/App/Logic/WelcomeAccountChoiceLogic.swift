@@ -340,6 +340,16 @@ nonisolated enum RestoreImportSettlement: Equatable {
     /// CloudKit la respuesta del backend propio no cambia nada —el kill-switch gobierna la nube de Yala,
     /// no el espejo de Apple— y preguntar le costaría otro fetch a quien ya esperó el tope entero.
     var consultsRemoteConfig: Bool { self != .stillImporting }
+
+    // **Aquí NO vive el criterio de la ventana de sesión del restore**, y el primer intento de
+    // `restore-timeout-closes-the-session-window-with-the-import-still-running` lo puso aquí: un
+    // `closesTheSessionWindow` gemelo de `consultsRemoteConfig`. Lo tumbó la review, y el porqué vale
+    // para cualquier derivado que se quiera colgar de este enum: **`.inconclusive` agrupa dos
+    // poblaciones que a esa pregunta contestan distinto** —la que no vio un solo import y la que vio
+    // uno con un error VIGENTE, que casi siempre sigue bajando filas porque el error es retriable—, y
+    // aquí se agrupan a propósito, porque el COPY sí es el mismo para las dos. El criterio de la
+    // ventana vive en `ICloudRestoreInProgressLogic.closesTheSessionWindow(settled:hasObservedImportActivity:)`,
+    // con los dos términos crudos.
 }
 
 /// El gate de las cards de «Soy nuevo» leído con las flags VIVAS. Existe para que el Welcome y la activación
