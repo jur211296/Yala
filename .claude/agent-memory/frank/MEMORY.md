@@ -16,7 +16,7 @@
 
 ## Cómo mido y cómo entrego
 - [Tipar un desenlace despierta defensas DORMIDAS](feedback_tipar_un_desenlace_despierta_defensas_dormidas.md) — el Merkle llevaba meses sin `canRenewSession` y era inofensivo hasta que su 401…
-- [El copy lo elige quien PRODUJO el motivo](feedback_el_copy_lo_elige_quien_produjo_el_motivo.md) — «techo corto» no decide el texto; reusé un terminal que acusaba a la cuenta por un…
+- [El copy lo elige quien PRODUJO el motivo](feedback_el_copy_lo_elige_quien_produjo_el_motivo.md) — y la clasificación también: `.sessionExpired` tenía dos productores y solo uno era definitivo.
 - [El estado compartido no es testigo de su rama](feedback_el_estado_compartido_no_es_testigo_de_su_rama.md) — un campo lo enciende 1 sitio y lo apagan 13; cuenta escritores antes de leer.
 - [Mi arreglo quita la SALIDA que había](feedback_mi_arreglo_quita_la_salida_que_habia.md) — cerrar un abuso puede dejar sin puerta al dueño legítimo; enumera quién salía por ahí.
 - [La limpieza «por si acaso» enmascara mutantes](feedback_la_limpieza_por_si_acaso_enmascara_mutantes.md) — una línea inalcanzable recoge lo que el camino bueno deja pasar.
@@ -132,6 +132,7 @@
 - [«Cero warnings» se mide en TODOS los logs](feedback_cero_warnings_se_mide_en_todos_los_logs.md) — el gate no mira los tests y lee un build.
 
 ## Estado del trabajo
+- [La subida al 55 % ya tiene techo y «Cancelar»](project_techo_de_la_subida_del_snapshot.md) — PR del 22-sep; tres lentes cazaron el 401 con la sesión guardada.
 - [Un fallo de una vez ya no cobra las horas de otra espera](project_reloj_por_causa_en_el_techo_pre_mount.md) — PR #210; la review cazó 6 defectos míos y cambió el diseño.
 - [Un «no» definitivo en la vuelta ya no espera 72 h](project_un_no_definitivo_en_la_vuelta_ya_no_espera_72h.md) — PR #209; la review cazó 7 defectos míos y dejó 2 residuales con ticket.
 - [El estado borrado ya no llega a la puerta con la ventana abierta](project_wiped_no_llega_con_la_ventana_abierta.md) — PR #207; la review cazó 8 defectos míos y dejó un residual con ticket.

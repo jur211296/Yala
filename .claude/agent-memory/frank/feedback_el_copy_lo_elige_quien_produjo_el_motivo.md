@@ -42,3 +42,16 @@ consultan la máquina y el runner — escrito dos veces, un día discrepan. Y si
 persona reintenta y a los 15 min sale con el motivo bueno, que entonces sí es verdad.
 
 Relacionado: [[feedback_el_predicado_que_amplio_cortocircuita]], [[feedback_el_termino_nuevo_desarma_el_test_viejo]].
+
+## Y el mismo día, un paso antes del copy: la CLASIFICACIÓN también la elige quien produjo el motivo
+
+En `snapshot-upload-has-no-ceiling-and-no-way-out` clasifiqué `.sessionExpired` como definitivo **por su nombre**:
+«esperar no arregla una sesión caducada». Las **tres** lentes de la review cazaron por separado que ese caso tiene dos
+productores. Uno es el SDK que ya borró la sesión, y ése sí es definitivo. El otro es un 401 del gateway con la sesión
+todavía guardada, casi siempre por el reloj del teléfono atrasado, y ése lo cura la renovación del SDK a su hora.
+Tratarlo como definitivo metía una regresión: el reintento reusaba el mismo JWT rechazado sin pedir nada.
+
+**How to apply:** antes de decidir en qué techo cae un outcome, lista sus PRODUCTORES (`grep` de cada `return
+.<caso>`) y pregunta para cada uno «¿esperar lo arregla?». Si la respuesta cambia de uno a otro, el outcome no basta
+y hace falta un testigo que los separe (aquí, `canRenewSession` leído después de la llamada). El nombre de un caso
+describe el SÍNTOMA del cliente, no la causa.
