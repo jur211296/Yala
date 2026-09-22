@@ -44,6 +44,8 @@
 - [El paso 3 del gate no detecta cero casos](feedback_gate_paso3_no_detecta_cero_casos.md) — XCUITest es XCTest: cuenta «Test Suite» y «Executed».
 - [Mi docblock también es una premisa](feedback_mi_docblock_tambien_es_una_premisa.md) — describo la intención como si fuera el comportamiento.
 - [El tramo sin acotar lo cumple el vecino](feedback_el_tramo_sin_acotar_lo_cumple_el_vecino.md) — un recorte que llega al final del cuerpo se.
+- [El `contains` deja sitio a una sentencia ANTEPUESTA](feedback_el_contains_deja_sitio_a_una_sentencia_antepuesta.md) — fija el cuerpo ENTERO; y cuenta el identificador, no la llamada.
+- [El script de mutantes revierte mi trabajo](feedback_el_script_de_mutantes_revierte_mi_trabajo.md) — restaura desde una COPIA del scratchpad, no con `git checkout --`.
 - [El source-scan de dos literales no es una red](feedback_el_source_scan_de_dos_literales_no_es_una_red.md) — si el target es inalcanzable, fija el cuerpo ENTERO; ni la coma final ni «cae dentro de la puerta» bastan.
 - [El denominador de una resta es el número que se ve](feedback_el_denominador_de_una_resta_es_el_numero_que_se_ve.md) — numerador en magnitudes, denominador en lo que se muestra; y una decisión escrita gana a dos lentes que coinciden.
 - [Borrar un test por TRAMO se lleva vecinos](feedback_borrar_un_test_por_tramo_se_lleva_vecinos.md) — la suite sigue verde; lo canta el mutante que.
@@ -127,6 +129,7 @@
 - [«Cero warnings» se mide en TODOS los logs](feedback_cero_warnings_se_mide_en_todos_los_logs.md) — el gate no mira los tests y lee un build.
 
 ## Estado del trabajo
+- [El estado borrado ya no llega a la puerta con la ventana abierta](project_wiped_no_llega_con_la_ventana_abierta.md) — PR #207; la review cazó 8 defectos míos y dejó un residual con ticket.
 - [Volver de la puerta de descarte ya no estrena permiso](project_volver_de_la_puerta_no_estrena_permiso.md) — PR #205; la review cazó que MI fix dejaba al dueño sin salida.
 - [Salir y volver a Restaurar ya no renueva con una descarga vieja](project_salir_y_volver_no_renueva_con_descarga_vieja.md) — PR #204; en qa, y el techo con número se fue a ticket propio.
 - [El tope de 90 s ya no cierra la sesión con el import bajando](project_tope_90s_no_cierra_con_import_bajando.md) — PR #203; en qa con guion de 7 pasos y un residual con ticket propio.
