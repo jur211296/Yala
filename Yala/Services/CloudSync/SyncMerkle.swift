@@ -245,6 +245,34 @@ enum SyncMerkle {
 
 // MARK: - MerkleVerdict + verifyIntegrity
 
+/// Los `reason` de `.skipped` que produce `verifyIntegrity`, en UN solo sitio.
+///
+/// **Existen porque el literal es una junta entre dos ficheros, y desde el 2026-09-22 esa junta decide cosas
+/// distintas a cada lado** (`reverse-verify-network-bucket-hides-a-definitive-server-no`): `VerifyProbeMapping` manda
+/// `outbox-fetch-failed` al techo CORTO con un copy y el `default` a otro, así que una errata en el literal de aquí
+/// —o un renombrado en uno solo de los dos lados— cambiaría el desenlace en producción **sin poner ni un test en
+/// rojo**: el test del mapping construye su veredicto con el mismo literal que consume, así que se mide contra sí
+/// mismo. Lo cazó una lente de la review. Antes de ese día la errata era inocua, porque los dos caían en «red».
+///
+/// Los de Grupos (`GroupsSyncClient.verifyGroupIntegrity`) NO están aquí: son de otro canal, no pasan por este
+/// mapping y comparten solo el tipo del veredicto.
+nonisolated enum MerkleSkipReason {
+    static let outboxPending = "outbox-pending"
+    static let deadLetters = "dead-letters"
+    static let noCompletedPull = "no-completed-pull"
+    static let fetchFailed = "fetch-failed"
+    static let outboxFetchFailed = "outbox-fetch-failed"
+    static let quarantineFetchFailed = "quarantine-fetch-failed"
+    static let canonVersionMismatch = "canon-version-mismatch"
+    static let capabilitySetMismatch = "capability-set-mismatch"
+
+    /// Los OCHO, para que el mapping y su canario de motivo desconocido no tengan que repetirlos.
+    static let all: [String] = [
+        outboxPending, deadLetters, noCompletedPull, fetchFailed,
+        outboxFetchFailed, quarantineFetchFailed, canonVersionMismatch, capabilitySetMismatch,
+    ]
+}
+
 /// Veredicto de una verificación de integridad. La REMEDIACIÓN (re-pull reconciliado de la tabla
 /// divergente) NO se dispara automática en I8f-3 — es wiring de I9; el verdict la habilita.
 enum MerkleVerdict: Equatable {
@@ -253,6 +281,16 @@ enum MerkleVerdict: Equatable {
     case diverged(entities: [String])
     /// No se verificó (precondición A-3 no satisfecha / transporte). NUNCA canario.
     case skipped(reason: String)
+    /// 401 de `/sync/merkle`: la sesión de la nube ya no vale. Esperar no la renueva — la renueva la persona.
+    ///
+    /// **Es un caso propio desde el ticket `reverse-verify-network-bucket-hides-a-definitive-server-no`**, y hasta
+    /// ese día salía como `.skipped(reason: "fetch-failed")`: el mapping lo leía como red y la vuelta a iCloud se
+    /// quedaba TRES DÍAS en «Comprobando que todo llegó…» ante un «no» que ya era definitivo. Se tipa aquí, donde
+    /// el cliente ya lo distinguía, y no en el consumidor: el push y el pull lo hacen así desde siempre.
+    case sessionExpired
+    /// 403 de `/sync/merkle`: la cuenta en la nube no está disponible. Tampoco se arregla esperando. Mismo ticket
+    /// y mismo porqué que `.sessionExpired`.
+    case accountUnavailable
 }
 
 extension CloudSyncEngine {
@@ -272,12 +310,12 @@ extension CloudSyncEngine {
             #if DEBUG
             print("CloudSyncEngine.verifyIntegrity: fetch outbox falló: \(error)")
             #endif
-            return .skipped(reason: "outbox-fetch-failed")
+            return .skipped(reason: MerkleSkipReason.outboxFetchFailed)
         }
         let liveOutbox = rows.filter { $0.rejectedReason == nil }.count
         guard liveOutbox == 0 else {
             CloudSyncBreadcrumb.merkleSkippedNotQuiescent(reason: "outbox-pending:\(liveOutbox)")
-            return .skipped(reason: "outbox-pending")
+            return .skipped(reason: MerkleSkipReason.outboxPending)
         }
         // Fix #3 del review: un DEAD-LETTER persistente representa un delta local que el server NUNCA
         // materializará → el árbol local diverge del remoto EN CADA verificación para siempre, diluyendo
@@ -286,29 +324,42 @@ extension CloudSyncEngine {
         let deadLetters = rows.count - liveOutbox
         guard deadLetters == 0 else {
             CloudSyncBreadcrumb.merkleSkippedNotQuiescent(reason: "dead-letters:\(deadLetters)")
-            return .skipped(reason: "dead-letters")
+            return .skipped(reason: MerkleSkipReason.deadLetters)
         }
         guard lastPullCycleCompleted else {
             CloudSyncBreadcrumb.merkleSkippedNotQuiescent(reason: "no-completed-pull")
-            return .skipped(reason: "no-completed-pull")
+            return .skipped(reason: MerkleSkipReason.noCompletedPull)
         }
 
-        // Snapshot remoto.
+        // Snapshot remoto. **No se aplana**: el cliente ya distingue 401 / 403 / resto, y colapsarlos aquí en un
+        // solo `reason` era lo que hacía que la vuelta a iCloud esperase 72 h ante un «no» definitivo del servidor
+        // (ticket `reverse-verify-network-bucket-hides-a-definitive-server-no`). El breadcrumb se conserva EN LOS
+        // TRES para no perder el rastro que ya existía.
         let outcome = await client.fetchMerkle()
-        guard case .snapshot(let remote) = outcome else {
+        let remote: RemoteMerkle
+        switch outcome {
+        case .snapshot(let snapshot):
+            remote = snapshot
+        case .sessionExpired:
             CloudSyncBreadcrumb.merkleSkippedNotQuiescent(reason: "fetch:\(outcome)")
-            return .skipped(reason: "fetch-failed")
+            return .sessionExpired
+        case .accountUnavailable:
+            CloudSyncBreadcrumb.merkleSkippedNotQuiescent(reason: "fetch:\(outcome)")
+            return .accountUnavailable
+        case .transient:
+            CloudSyncBreadcrumb.merkleSkippedNotQuiescent(reason: "fetch:\(outcome)")
+            return .skipped(reason: MerkleSkipReason.fetchFailed)
         }
         // Fix #1 del review: NUNCA comparar árboles de contratos distintos. Un server en un canon
         // futuro (c2) o respondiendo a otro capability-set produciría divergencia FALSA PERMANENTE —
         // debe ser un skip limpio, no un canario.
         guard remote.canonVersion == "c1" else {
             CloudSyncBreadcrumb.merkleSkippedNotQuiescent(reason: "canon-version:\(remote.canonVersion)")
-            return .skipped(reason: "canon-version-mismatch")
+            return .skipped(reason: MerkleSkipReason.canonVersionMismatch)
         }
         guard remote.capabilitySet == SyncPullClient.capabilitySet else {
             CloudSyncBreadcrumb.merkleSkippedNotQuiescent(reason: "capability-set:\(remote.capabilitySet)")
-            return .skipped(reason: "capability-set-mismatch")
+            return .skipped(reason: MerkleSkipReason.capabilitySetMismatch)
         }
 
         // Árbol local + tablas con cuarentena (regla 5: nunca compararlas — el cliente no las
@@ -321,7 +372,7 @@ extension CloudSyncEngine {
             #if DEBUG
             print("CloudSyncEngine.verifyIntegrity: fetch quarantine falló: \(error)")
             #endif
-            return .skipped(reason: "quarantine-fetch-failed")
+            return .skipped(reason: MerkleSkipReason.quarantineFetchFailed)
         }
 
         var diverged: [String] = []

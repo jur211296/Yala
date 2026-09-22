@@ -48,10 +48,13 @@ enum VerifyProbe: Equatable {
     /// mapea a `networkTimeout`, que es lo que hacía antes de que este caso existiera, y hay un test que lo fija.
     /// Un token que no llega sin red NO llega aquí: lo separan los clientes con `canRenewSession`.
     case sessionExpired
-    /// El servidor dijo que no, y no es red ni sesión (hoy: 403, la cuenta en la nube no está disponible). **En la
-    /// VUELTA** elige el techo CORTO de la etapa previa al montaje (ticket
-    /// `reverse-before-mount-has-no-way-to-abandon-the-return`); en la IDA el trato tampoco cambia, `driveVerify` lo
-    /// mapea a `networkTimeout` como hacía antes de que este caso existiera.
+    /// Algo que no es red ni sesión paró el paso, y esperar no lo arregla. **En la VUELTA** elige el techo CORTO de la
+    /// etapa previa al montaje (ticket `reverse-before-mount-has-no-way-to-abandon-the-return`); en la IDA el trato
+    /// tampoco cambia, `driveVerify` lo mapea a `networkTimeout` como hacía antes de que este caso existiera.
+    ///
+    /// Nació con el 403 (`.accountUnavailable`) y desde el 2026-09-22 lo produce también la verificación Merkle cuando
+    /// la base LOCAL falla al leer (`.localFailure`) o cuando el veredicto trae un motivo que este build no conoce
+    /// (`.unknownVerdict`) — ticket `reverse-verify-network-bucket-hides-a-definitive-server-no`.
     case blocked(ReversePreMountBlocker)
 }
 
@@ -1022,6 +1025,12 @@ final class MigrationRunner {
         // `reverse-before-mount-has-no-way-to-abandon-the-return`): el 403 lo tipa ahora `verify()`, que sigue siendo
         // compartida, y en la ida se lee como red igual que antes. Su residual es el mismo
         // (`forward-verify-reads-an-expired-session-as-network`).
+        //
+        // El 2026-09-22 empezaron a llegar por esta misma rama TRES desenlaces más, los del Merkle: su 401, su 403 y
+        // los dos `blocked` nuevos (`localFailure`, `unknownVerdict`) del ticket
+        // `reverse-verify-network-bucket-hides-a-definitive-server-no`. **En la ida tampoco cambian nada**, y por eso
+        // ese ticket no toca esta función: los cinco ya caían aquí cuando `SyncMerkle` los aplanaba en
+        // `.networkTimeout`. Lo fija `MigrationRunnerTests.forwardVerify_typedMerkleOutcomes_stillSpendTheNetworkBudget`.
         case .networkTimeout, .sessionExpired, .blocked:
             let spent = try loadState().verifyNetworkRetries
             try await handle(.verifyOutcome(.networkTimeout(retriesSoFar: spent))) { state, next in
@@ -1233,9 +1242,14 @@ final class MigrationRunner {
             try await observeReversePreMountStall(.verify, blocker: nil)
             return false
         case let .blocked(blocker):
-            // El servidor dijo que no y esperar no lo cambia, así que NO gasta `verifyNetworkRetries` —el camino que
-            // lo gastaba acababa en `reverseFailedRollback` con el abort pendiente— y va derecho al techo CORTO de
-            // la etapa. Es el único de los tres que elige el corto: los otros dos no son una respuesta del servidor.
+            // Esperar no lo cambia, así que NO gasta `verifyNetworkRetries` —el camino que lo gastaba acababa en
+            // `reverseFailedRollback` con el abort pendiente— y va derecho al techo CORTO de la etapa.
+            //
+            // **Nació siendo solo el 403 y desde el 2026-09-22 son tres** (ticket
+            // `reverse-verify-network-bucket-hides-a-definitive-server-no`): el 403 del servidor, el `fetch` de la
+            // base LOCAL que lanzó y el veredicto con un motivo que este build no sabe leer. Lo que los junta no es
+            // quién habló —dos de los tres no son una respuesta de nadie— sino que ninguno mejora esperando tres
+            // días. `blocker.stallCause` lo dice caso por caso.
             try await observeReversePreMountStall(.verify, blocker: blocker)
             return false
         case .match:
@@ -1264,15 +1278,14 @@ final class MigrationRunner {
             // `blocker: nil` ⇒ techo LARGO (72 h): la red vuelve sola, y quien está sin cobertura una tarde no
             // pierde la vuelta por eso.
             //
-            // **`.networkTimeout` NO es solo «no hay red», y eso es deuda heredada que este `case` ahora expone**
-            // (medido el 2026-09-21, hallazgo de la review). `VerifyProbeMapping` lo usa de cajón: el `fetch-failed`
-            // del Merkle —que aplana el 401 y el 403 de `/sync/merkle`, porque `SyncMerkle` colapsa todo lo que no
-            // sea `.snapshot`—, los dos `fetch` de SwiftData que lanzan, y el `default` de un `reason` que este build
-            // no conozca. Para esa mitad el techo largo es GENEROSO: no se va a resolver sola en 72 h. El push y el
-            // pull, que corren ANTES en `verify()`, sí tipan su 401/403, así que la ventana es la del 403 que empieza
-            // justo entre el pull y el Merkle. Antes de este ticket esa mitad degradaba a `reverseFailedRollback` en
-            // minutos, con tarjeta y botón; hoy espera. Se aceptó para no tocar `SyncMerkle`, que comparten la ida y
-            // el motor, y tiene ticket propio: `reverse-verify-network-bucket-hides-a-definitive-server-no`.
+            // **Y desde el 2026-09-22 `.networkTimeout` ES solo «no hay red»**, que es lo que hace legítimo mandarlo
+            // aquí. Entre el 21 y el 22 fue un cajón —deuda que este `case` expuso—: `SyncMerkle` aplanaba el 401 y el
+            // 403 de `/sync/merkle` en un `fetch-failed`, y con ellos caían aquí los dos `fetch` de SwiftData que
+            // lanzan y el `default` de un `reason` desconocido; para esa mitad el techo largo era generoso —no se
+            // resuelve sola en 72 h— y la persona esperaba tres días delante de un «no» definitivo. Lo cerró
+            // `reverse-verify-network-bucket-hides-a-definitive-server-no`: el Merkle propaga tipado y esos cuatro
+            // salen por `.sessionExpired` y por `.blocked`, arriba. Lo que queda aquí es el transporte caído, el
+            // `non-http`, un 5xx, un 200 indecodificable y el `no-completed-pull`.
             //
             // **La IDA no cambia**: `driveVerify` es otra función y agrupa este caso con `.sessionExpired` y
             // `.blocked` en su rama de red, como antes de que ninguno de los dos existiera. Lo fija
@@ -1427,9 +1440,13 @@ final class MigrationRunner {
     /// sello en el futuro es un reloj que iba adelantado y ya se corrigió, y conservarlo aplazaría el techo hasta
     /// que el reloj real alcanzara aquella fecha (molde del techo de la espera de subida).
     ///
-    /// `blocker` es la palabra del servidor cuando la hay —y solo entonces el presupuesto es el CORTO—. Sin ella
-    /// (red, sesión caducada) el presupuesto es el largo: la red vuelve sola y la sesión la renueva la persona, que
-    /// además tiene su aviso y su botón mucho antes de que esto venza.
+    /// `blocker` es lo que paró el paso cuando no fue la red ni la sesión —y solo entonces el presupuesto es el
+    /// CORTO—. Sin él (red, sesión caducada) el presupuesto es el largo: la red vuelve sola y la sesión la renueva la
+    /// persona, que además tiene su aviso y su botón mucho antes de que esto venza.
+    ///
+    /// **Hasta el 2026-09-22 la frase decía «la palabra del servidor», y desde ese día es falsa**: dos de los cinco
+    /// motivos de `ReversePreMountBlocker` no son una respuesta de nadie. Al añadir uno, el criterio es «¿esperar lo
+    /// arregla?», no «¿contestó el servidor?».
     ///
     /// Devuelve `true` si la vuelta SALIÓ. Los llamadores lo DESCARTAN y cortan la pasada, como hace la salida del
     /// claim: el origen es `.done` o `.notStarted`, donde `drive()` corta igual, así que releer la fase no ganaría

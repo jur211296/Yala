@@ -497,6 +497,11 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     /// colapsa en `.networkTimeout`: sale tipado y **cada dirección decide**. La vuelta corta sin gastar reintento; la
     /// ida lo trata como red, igual que antes de que el caso existiera. El token que no llega sin red y el 401 del
     /// attest no llegan aquí: los filtran los clientes con `canRenewSession`.
+    ///
+    /// **El TERCER paso también tipa desde el 2026-09-22** (`reverse-verify-network-bucket-hides-a-definitive-server-no`):
+    /// el Merkle. Hasta ese día el push y el pull separaban su 401 y su 403 y el Merkle los aplanaba, así que el 403
+    /// que empieza justo ENTRE el pull y el Merkle —la ventana que quedaba— salía de aquí como red y la vuelta lo
+    /// esperaba 72 h. Ahora los tres pasos contestan con el mismo vocabulario.
     func verify() async -> VerifyProbe {
         // Pre-check TOCTOU: drenar + subir si hay filas vivas ANTES de verificar. Partición poison (#26,
         // fix del review adversarial — simetría con el uploader): una fila no-construible se AÍSLA como

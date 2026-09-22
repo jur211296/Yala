@@ -227,6 +227,10 @@ struct CloudSyncE2EStagingTests {
                     "solo tx_items puede divergir (filas parciales hand-crafted de staging): \(entities)")
         case .skipped(let reason):
             Issue.record("Merkle no se verificó (\(reason)) — el guard A-3 debía estar satisfecho")
+        case .sessionExpired:
+            Issue.record("Merkle: 401 de /sync/merkle — el JWT del login de staging debía valer")
+        case .accountUnavailable:
+            Issue.record("Merkle: 403 de /sync/merkle — la cuenta de staging debía estar disponible")
         }
     }
 
@@ -288,6 +292,10 @@ struct CloudSyncE2EStagingTests {
                     "solo tx_items puede divergir (filas parciales hand-crafted de staging): \(entities)")
         case .skipped(let reason):
             Issue.record("Merkle no se verificó (\(reason)) — el guard A-3 debía estar satisfecho")
+        case .sessionExpired:
+            Issue.record("Merkle: 401 de /sync/merkle — el JWT del login de staging debía valer")
+        case .accountUnavailable:
+            Issue.record("Merkle: 403 de /sync/merkle — la cuenta de staging debía estar disponible")
         }
     }
 
@@ -431,6 +439,10 @@ struct CloudSyncE2EStagingTests {
                     "solo tx_items puede divergir; si hay budgets/scheduled_payments, tombstonear en staging: \(entities)")
         case .skipped(let reason):
             Issue.record("Merkle no se verificó (\(reason)) — el guard A-3 debía estar satisfecho")
+        case .sessionExpired:
+            Issue.record("Merkle: 401 de /sync/merkle — el JWT del login de staging debía valer")
+        case .accountUnavailable:
+            Issue.record("Merkle: 403 de /sync/merkle — la cuenta de staging debía estar disponible")
         }
     }
 
@@ -577,6 +589,10 @@ struct CloudSyncE2EStagingTests {
                     "solo tx_items puede divergir; cualquier otra tabla = filas legacy de staging a tombstonear: \(entities)")
         case .skipped(let reason):
             Issue.record("Merkle no se verificó (\(reason)) — el guard A-3 debía estar satisfecho")
+        case .sessionExpired:
+            Issue.record("Merkle: 401 de /sync/merkle — el JWT del login de staging debía valer")
+        case .accountUnavailable:
+            Issue.record("Merkle: 403 de /sync/merkle — la cuenta de staging debía estar disponible")
         }
     }
 
@@ -653,6 +669,10 @@ struct CloudSyncE2EStagingTests {
             }
         case .skipped(let reason):
             Issue.record("Merkle no se verificó (\(reason)) — el guard A-3 debía estar satisfecho")
+        case .sessionExpired:
+            Issue.record("Merkle: 401 de /sync/merkle — el JWT del login de staging debía valer")
+        case .accountUnavailable:
+            Issue.record("Merkle: 403 de /sync/merkle — la cuenta de staging debía estar disponible")
         }
     }
 

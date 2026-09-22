@@ -357,7 +357,7 @@ final class CloudMigrationController {
         let canRenew: @MainActor () -> Bool = { session.canRenewSession }
         let push = SyncPushClient(tokenProvider: token, attestProvider: attest, canRenewSession: canRenew)
         let pull = SyncPullClient(tokenProvider: token, attestProvider: attest, canRenewSession: canRenew)
-        let merkle = SyncMerkleClient(tokenProvider: token, attestProvider: attest)
+        let merkle = SyncMerkleClient(tokenProvider: token, attestProvider: attest, canRenewSession: canRenew)
         // Provider REAL de la sesión hacia el claim/faro, leído VIVO en cada uso (I4 CERRADO en la
         // sesión 3 Google Sign-In, ajuste A1): el closure se evalúa EN el momento del claim/faro, no al
         // construir el executor — un runner nacido antes del sign-in ya no congela "apple" para una

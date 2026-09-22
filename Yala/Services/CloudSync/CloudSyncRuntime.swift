@@ -324,7 +324,7 @@ final class CloudSyncRuntime {
         let engine = CloudSyncEngine()
         let push = SyncPushClient(tokenProvider: token, attestProvider: attest, canRenewSession: canRenew)
         let pull = SyncPullClient(tokenProvider: token, attestProvider: attest, canRenewSession: canRenew)
-        let merkle = SyncMerkleClient(tokenProvider: token, attestProvider: attest)
+        let merkle = SyncMerkleClient(tokenProvider: token, attestProvider: attest, canRenewSession: canRenew)
         return CloudSyncRuntime(
             engine: engine,
             pushClient: push,

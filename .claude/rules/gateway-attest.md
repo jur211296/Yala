@@ -117,8 +117,12 @@ inyectan el proveedor — no el cliente entero.
   paraba el loop y enseñaba «Tu sesión caducó».
 - **Decide `GatewayErrorEnvelope.isAttestRequired`**, que lee `error.type` (`jsonError` escribe el mismo valor en
   `code`). En `GroupsSyncClient` va dentro de `send`, para que cuente también en la re-emisión tras un refresh;
-  `GroupsMembershipClient.call` lo lanza como `.transient(status: 401)`, con su reintento corto. El Merkle y el
-  push token no lo distinguen: su 401 no llega a nada visible.
+  `GroupsMembershipClient.call` lo lanza como `.transient(status: 401)`, con su reintento corto. **El Merkle del canal
+  PERSONAL sí lo distingue desde el 2026-09-22** (`reverse-verify-network-bucket-hides-a-definitive-server-no`), y no
+  por gusto: ese día su 401 dejó de aplanarse y pasó a encender el aviso de «vuelve a entrar» de la vuelta a iCloud,
+  así que confundirlo le pedía firmar otra vez a un teléfono cuyo problema es el attest. Con él llegó también su
+  `canRenewSession`, por lo mismo. El Merkle de GRUPOS y el push token siguen sin distinguirlo: su 401 no llega a
+  nada visible.
 - **Al tocar cualquiera de las cuatro guards, cada código se queda en su rama**: `yala_attest_invalid` para el
   JWT, `yala_attest_required` para el attest. Fundidos, el cliente leería una sesión muerta como pasajera y
   reintentaría para siempre. En las dos guards de Grupos lo fija `gateway/test/groups.attest401.test.ts`; en
@@ -129,7 +133,7 @@ inyectan el proveedor — no el cliente entero.
   «Cannot find module …group_capability_manifest.json».
 - **El canal personal también lo lee pasajero desde el 2026-09-16** (`SyncPushClient`, `SyncPullClient`, `PrefsSyncClient`;
   ticket `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry`): `yala_attest_required` es `.transient`, con
-  rastro `CloudSync attestRequired edge=push|pull|prefs-push|prefs-pull` y el canario `cloudSyncAttestRequired`. El resto
+  rastro `CloudSync attestRequired edge=push|pull|merkle|prefs-push|prefs-pull` (el `merkle`, desde el 2026-09-22) y el canario `cloudSyncAttestRequired`. El resto
   de 401 sigue siendo caducada, sin el reintento con refresh forzado de Grupos
   (`personal-sync-does-not-retry-a-401-with-a-forced-token-refresh`).
 - **Y ahí NO suma a la racha del teléfono, a diferencia de Grupos.** `CloudSyncRuntime.performCycle` consigue el token en

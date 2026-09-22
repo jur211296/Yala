@@ -2439,6 +2439,111 @@ struct MigrationRunnerTests {
         #expect(j.readPendingEffects().isEmpty)
     }
 
+    // MARK: - Los desenlaces del MERKLE en la vuelta
+    // (ticket `reverse-verify-network-bucket-hides-a-definitive-server-no`)
+
+    /// **Los dos motivos que el Merkle estrenó el 2026-09-22 eligen el techo CORTO.** Antes de ese día llegaban
+    /// aquí como `.networkTimeout` —`SyncMerkle` aplanaba su fetch y el mapping los leía como red— y la vuelta los
+    /// esperaba **72 h** en silencio: un `fetch` de SwiftData que lanza y un veredicto que este build no sabe leer
+    /// no mejoran por esperar tres días.
+    ///
+    /// El caso mide el TECHO y no solo el motivo journaleado, que es lo que lo hace discriminante: a los 900 s ya
+    /// tiene que haber salido. Si solo mirase `reverseAbortReasonRaw`, un mutante que les devolviera el presupuesto
+    /// largo dejaría verde la mitad que importa —`localFailure` sale con `preMountStalled`, el mismo motivo que la
+    /// red—, y eso es exactamente el bug del ticket.
+    @Test func reverseVerify_merkleBlockers_useTheShortBudget() async throws {
+        let cases: [(ReversePreMountBlocker, String)] = [
+            (.localFailure, "preMountStalled"),
+            (.unknownVerdict, "preMountStalled"),
+        ]
+        for (blocker, expectedReason) in cases {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let context = try makeContext(dir)
+            let fake = FakeExecutor()
+            fake.verifyProbes = [.blocked(blocker)]
+            let clock = MutableClock(fixedNow.addingTimeInterval(900))
+            try seedJournal(context, phase: .reverseVerify, reverseOriginRaw: "done",
+                            reversePreMountProgressAt: fixedNow, reversePreMountPhaseRaw: "verify")
+
+            await makeRunner(context, fake, now: { clock.value }).resume()
+
+            let j = try journal(context)
+            #expect(j.readPhase().phase == .done, "\(blocker): a los 900 s sale, no espera las 72 h de la red")
+            #expect(j.reverseAbortReasonRaw == expectedReason, "\(blocker)")
+            #expect(j.reverseAbortReasonRaw != "preMountRefused",
+                    "\(blocker): ese copy acusa a la cuenta en la nube y manda a soporte, y aquí no habló el servidor")
+            #expect(j.readPendingEffects().isEmpty, "\(blocker): ningún efecto journaleado")
+            #expect(fake.count(.reverseRollback) == 1, "\(blocker): el abort se intenta una vez, best-effort")
+            #expect(j.verifyNetworkRetries == 0, "\(blocker): el presupuesto de RED no se toca")
+
+            // El control en la dirección contraria, con el MISMO seed y el mismo reloj: la red pura sigue con el
+            // presupuesto largo. Es lo que impide «arreglar» el ticket mandando todo al techo corto, y va aquí
+            // dentro y no en un caso propio porque `reversePreMountCeiling_networkAndExpiredSession_useTheLongBudget`
+            // ya recorre esa fila entera —duplicarla no añadía ni un mutante—.
+            let dirRed = freshDir(); defer { cleanup(dirRed) }
+            let contextRed = try makeContext(dirRed)
+            let fakeRed = FakeExecutor()
+            fakeRed.verifyProbes = [.networkTimeout]
+            try seedJournal(contextRed, phase: .reverseVerify, reverseOriginRaw: "done",
+                            reversePreMountProgressAt: fixedNow, reversePreMountPhaseRaw: "verify")
+            await makeRunner(contextRed, fakeRed, now: { clock.value }).resume()
+            #expect(try journal(contextRed).readPhase().phase == .reverseVerify,
+                    "\(blocker): a los 900 s la red PURA sigue esperando — el techo corto no es de todos")
+        }
+    }
+
+    /// **La IDA no cambia, y eso es una decisión del Paso 0.** `verify()` lo comparten las dos direcciones, así que
+    /// los tres desenlaces que el Merkle empezó a tipar llegan también a `driveVerify` — donde ya caían cuando
+    /// venían aplanados en `.networkTimeout`. Los tres siguen gastando el presupuesto de RED de la ida y degradando
+    /// al tope, exactamente como antes.
+    ///
+    /// Cada desenlace se mide DOS veces —con el presupuesto a cero y con el presupuesto agotado— porque una sola
+    /// mitad no discrimina: con el contador a cero un mutante que le diera rama propia solo movería un número, y
+    /// con el tope puesto el contador ya no sube (la transición degrada sin escribirlo). Juntas fijan las dos
+    /// mitades del trato de la ida: gasta, y al tope revierte.
+    @Test func forwardVerify_typedMerkleOutcomes_stillSpendTheNetworkBudget() async throws {
+        let probes: [(VerifyProbe, String)] = [
+            (.sessionExpired, "401 del Merkle"),
+            (.blocked(.accountUnavailable), "403 del Merkle"),
+            (.blocked(.localFailure), "fetch local que lanzó"),
+            (.blocked(.unknownVerdict), "veredicto desconocido"),
+        ]
+        for (probe, label) in probes {
+            // (a) Con presupuesto: gasta uno y se queda reintentando en `verifying`.
+            let dirA = freshDir(); defer { cleanup(dirA) }
+            let contextA = try makeContext(dirA)
+            let fakeA = FakeExecutor()
+            fakeA.verifyProbes = [probe]
+            try seedJournal(contextA, phase: .verifying, networkRetries: 0)
+
+            let rA = runner(contextA, fakeA)
+            await rA.resume()
+
+            let jA = try journal(contextA)
+            #expect(jA.verifyNetworkRetries == 1, "\(label): en la IDA gasta red, como antes del ticket")
+            #expect(jA.readPhase().phase == .verifying, "\(label): y reintenta, no corta")
+            #expect(rA.lastReverseSessionExpiry == nil, "\(label): no anota nada de la vuelta")
+
+            // (b) Con el presupuesto AGOTADO: degrada a `failedRollback` con su rollback pendiente, que es lo que
+            // separa el trato de la ida del de la vuelta —allí ninguno de los cuatro degrada—.
+            let dirB = freshDir(); defer { cleanup(dirB) }
+            let contextB = try makeContext(dirB)
+            let fakeB = FakeExecutor()
+            fakeB.verifyProbes = [probe]
+            let spent = MigrationPolicy.default.maxNetworkRetries
+            try seedJournal(contextB, phase: .verifying, networkRetries: spent)
+
+            await runner(contextB, fakeB).resume()
+
+            #expect(try journal(contextB).readPhase().phase == .failedRollback,
+                    "\(label): al tope degrada, como antes del ticket")
+            #expect(fakeB.count(.rollback) == 1,
+                    "\(label): y con su rollback, que es lo que la vuelta NO hace con estos cuatro")
+            // El contador NO se comprueba aquí: el `.rollback` de la degradación reinicia el journal, así que
+            // leerlo después mide el reset y no el trato de la red. Esa mitad la mide el bloque (a).
+        }
+    }
+
     /// **Dónde es alcanzable el aviso del toque, MEDIDO el 2026-09-21** (ticket
     /// `reverse-pre-mount-ceiling-has-no-alert-and-leaves-network-verify-out`). `CloudMigrationController.startReverse`
     /// hace exactamente este par de `submit`, y el aviso que lleva detrás solo vale si el par puede producir una

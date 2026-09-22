@@ -123,7 +123,10 @@ enum MetricsCanary: String {
     /// caduquen menos sesiones.
     case cloudSyncBlockedByExpiredSession
     /// El gateway respondió 401 `yala_attest_required` a una ruta del canal personal (`/sync/push`, `/sync/pull`,
-    /// `/prefs/*`). Una vez por proceso y ruta; `detail` = la ruta del cliente (`push`, `pull`, `prefs-push`, `prefs-pull`).
+    /// `/sync/merkle`, `/prefs/*`). Una vez por proceso y ruta; `detail` = la ruta del cliente (`push`, `pull`,
+    /// `merkle`, `prefs-push`, `prefs-pull`). **`merkle` entró el 2026-09-22**
+    /// (`reverse-verify-network-bucket-hides-a-definitive-server-no`): hasta ese día ese 401 no se distinguía, y su
+    /// desenlace se aplanaba en «red».
     /// Desde el motor de sync, la puerta de attest ya filtró los fallos del TELÉFONO, así que apunta al reloj, a un build que
     /// no manda la cabecera o al servidor: **un pico tras un release es una regresión**. **Salvedad:** la migración, la vuelta
     /// a iCloud y el adopt usan los mismos clientes SIN esa puerta (`CloudMigrationController.makeExecutor` pide el attest con
@@ -562,7 +565,15 @@ extension MetricsService {
     }
 
     /// Una observación de una fase ANTERIOR al montaje que sigue parada. `detail` = `<fase>|<tramo>|<causa>`, con
-    /// la causa `server_<blocker>` cuando el servidor dijo algo y `waiting` cuando es red o sesión.
+    /// la causa `stop_<blocker>` cuando el paso chocó con algo que no se arregla esperando y `waiting` cuando es red
+    /// o sesión.
+    ///
+    /// **El prefijo era `server_` hasta el 2026-09-22 y se renombró con
+    /// `reverse-verify-network-bucket-hides-a-definitive-server-no`**: ese día entraron dos motivos que NO son la
+    /// palabra del servidor —`localFailure`, un `fetch` de SwiftData que lanzó, y `unknownVerdict`, un motivo que
+    /// este build no sabe leer— y seguir llamándolos `server_` habría hecho que quien lee el dashboard contara
+    /// averías del teléfono como incidentes del backend, que es justo lo contrario de para lo que existe la serie.
+    /// **La serie cambia de valores con ese build**: los tres viejos pasan de `server_x` a `stop_x`.
     ///
     /// Existe por la misma razón que su hermano del marcador: **un fallo sistémico se ve en la flota mucho antes de
     /// que ningún teléfono degrade**. Sin esta serie, un 403 que afectara a toda la población sería invisible 15 min
@@ -589,7 +600,7 @@ extension MetricsService {
         case ..<259_200: bucket = "24h_72h"
         default: bucket = "gte_72h"
         }
-        return "\(phase)|\(bucket)|\(blocker.map { "server_\($0)" } ?? "waiting")"
+        return "\(phase)|\(bucket)|\(blocker.map { "stop_\($0)" } ?? "waiting")"
     }
 
     /// El motivo del servidor tal cual si tiene forma de código; si no, `other`. El gateway rechaza el LOTE entero de

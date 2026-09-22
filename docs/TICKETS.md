@@ -430,6 +430,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | reverse-exit-on-a-reverted-account-rejects-the-retry | backlog | tickets/backlog/reverse-exit-on-a-reverted-account-rejects-the-retry.md |
 | reverse-hidden-on-a-born-cloud-second-device | backlog | tickets/backlog/reverse-hidden-on-a-born-cloud-second-device.md |
 | reverse-offered-on-a-device-without-icloud | backlog | tickets/backlog/reverse-offered-on-a-device-without-icloud.md |
+| reverse-pre-mount-ceiling-charges-a-stall-to-whoever-stops-it-last | backlog | tickets/backlog/reverse-pre-mount-ceiling-charges-a-stall-to-whoever-stops-it-last.md |
 | reverse-pre-mount-ceiling-has-no-alert-and-leaves-network-verify-out | qa | tickets/qa/reverse-pre-mount-ceiling-has-no-alert-and-leaves-network-verify-out.md |
 | reverse-tap-is-lost-while-a-resume-is-running | backlog | tickets/backlog/reverse-tap-is-lost-while-a-resume-is-running.md |
 | reverse-tap-on-a-stale-card-aborts-instead-of-starting | backlog | tickets/backlog/reverse-tap-on-a-stale-card-aborts-instead-of-starting.md |
@@ -437,7 +438,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | reverse-upload-has-no-ceiling-and-no-exit | qa | tickets/qa/reverse-upload-has-no-ceiling-and-no-exit.md |
 | reverse-upload-sample-reads-unreadable-rows-as-drained | backlog | tickets/backlog/reverse-upload-sample-reads-unreadable-rows-as-drained.md |
 | reverse-upload-sample-walks-every-row-twice-on-the-main-thread | backlog | tickets/backlog/reverse-upload-sample-walks-every-row-twice-on-the-main-thread.md |
-| reverse-verify-network-bucket-hides-a-definitive-server-no | backlog | tickets/backlog/reverse-verify-network-bucket-hides-a-definitive-server-no.md |
+| reverse-verify-network-bucket-hides-a-definitive-server-no | qa | tickets/qa/reverse-verify-network-bucket-hides-a-definitive-server-no.md |
 | reverse-zombie-sweep-reads-an-expired-session-as-network | backlog | tickets/backlog/reverse-zombie-sweep-reads-an-expired-session-as-network.md |
 | revert-card-copy-says-datos-regresan-a-quien-nunca-estuvo | backlog | tickets/backlog/revert-card-copy-says-datos-regresan-a-quien-nunca-estuvo.md |
 | rojo-heroBuckets-thisWeek-trailing-window | done | tickets/done/rojo-heroBuckets-thisWeek-trailing-window.md |
@@ -509,6 +510,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | unit-tests-clear-the-attest-streak-of-a-device-qa-in-progress | backlog | tickets/backlog/unit-tests-clear-the-attest-streak-of-a-device-qa-in-progress.md |
 | update-banner-appstore-criteria | done | tickets/done/update-banner-appstore-criteria.md |
 | verify-dual-channel-zone-in-supabase | backlog | tickets/backlog/verify-dual-channel-zone-in-supabase.md |
+| verify-reads-a-failed-local-fetch-as-an-empty-outbox | backlog | tickets/backlog/verify-reads-a-failed-local-fetch-as-an-empty-outbox.md |
 | vigilante-calla-si-no-puede-comprobar-la-nocturna | backlog | tickets/backlog/vigilante-calla-si-no-puede-comprobar-la-nocturna.md |
 | vigilante-margen-menor-que-el-retraso-real-del-cron | backlog | tickets/backlog/vigilante-margen-menor-que-el-retraso-real-del-cron.md |
 | vision-amount-sign-contract-is-only-a-prompt-example | backlog | tickets/backlog/vision-amount-sign-contract-is-only-a-prompt-example.md |
