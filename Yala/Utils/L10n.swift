@@ -7164,6 +7164,9 @@ enum L10n {
             }
             static var reverseICloudMaybeOff: String { ls("storage.progress.reverseICloudMaybeOff", comment: "") }
             static var cancelReverse: String { ls("storage.progress.cancelReverse", comment: "") }
+            /// «Cancelar la activación» durante la subida del snapshot de la ida (ticket
+            /// `snapshot-upload-has-no-ceiling-and-no-way-out`).
+            static var cancelMigration: String { ls("storage.progress.cancelMigration", comment: "") }
             /// La vuelta a iCloud parada porque la sesión de la nube ya no vale, antes de montar el espejo (ticket
             /// `reverse-before-mount-stays-stuck-with-an-expired-session`). El BOTÓN que la acompaña reusa
             /// `Storage.Sync.signInButton`: es el mismo gesto que ya pide el banner hermano de esta pantalla, y dos
@@ -7305,6 +7308,15 @@ enum L10n {
             static var migrationICloudFull: String { ls("storage.failed.migrationICloudFull", comment: "") }
             static var migrationICloudOff: String { ls("storage.failed.migrationICloudOff", comment: "") }
             static var migrationICloudStalled: String { ls("storage.failed.migrationICloudStalled", comment: "") }
+            // Una subida del snapshot que venció su techo, por MOTIVO (ticket
+            // `snapshot-upload-has-no-ceiling-and-no-way-out`, decisión de Jürgen: texto por motivo, no el genérico).
+            static var snapshotStalled: String { ls("storage.failed.snapshotStalled", comment: "") }
+            static var snapshotSessionExpired: String { ls("storage.failed.snapshotSessionExpired", comment: "") }
+            /// Con el correo de soporte (`AppConstants.supportEmail`): reintentar no despierta una cuenta suspendida.
+            static func snapshotAccountUnavailable(_ supportEmail: String) -> String {
+                String(format: ls("storage.failed.snapshotAccountUnavailable", comment: ""), supportEmail)
+            }
+            static var snapshotLocalFailure: String { ls("storage.failed.snapshotLocalFailure", comment: "") }
         }
 
         enum Confirm {
@@ -7334,6 +7346,11 @@ enum L10n {
                 ls("storage.confirm.cancelReverseKeepBeforeMount", comment: "")
             }
             static var cancelReverseKeep: String { ls("storage.confirm.cancelReverseKeep", comment: "") }
+            // «Cancelar la activación» de la ida, durante la subida del snapshot.
+            static var cancelMigrationTitle: String { ls("storage.confirm.cancelMigrationTitle", comment: "") }
+            static var cancelMigrationBody: String { ls("storage.confirm.cancelMigrationBody", comment: "") }
+            static var cancelMigrationConfirm: String { ls("storage.confirm.cancelMigrationConfirm", comment: "") }
+            static var cancelMigrationKeep: String { ls("storage.confirm.cancelMigrationKeep", comment: "") }
         }
 
         enum Errors {

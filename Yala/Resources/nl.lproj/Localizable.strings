@@ -6044,3 +6044,23 @@
 
 /* Salida de la vuelta antes de montar el espejo: otro dispositivo tomó el relevo */
 "storage.reverseAbort.preMountOtherDevice" = "We konden de terugkeer naar iCloud niet voltooien: een ander apparaat van je heeft het overgenomen. Zodra dat klaar is, kun je het op dit apparaat doen.";
+
+/* Techo y cancelación de la subida al activar la nube (ticket snapshot-upload-has-no-ceiling-and-no-way-out) */
+/* Fallo de la activación: 72 h sin subir nada, con cualquier causa (techo largo): no acusa a nadie */
+"storage.failed.snapshotStalled" = "We konden de cloud niet inschakelen: het uploaden van je gegevens komt al dagen niet vooruit. Je gegevens staan veilig op je apparaat — probeer het later opnieuw.";
+/* Fallo de la activación: la sesión caducó durante la subida */
+"storage.failed.snapshotSessionExpired" = "We konden de cloud niet inschakelen: je sessie is verlopen terwijl we je gegevens uploadden. Je gegevens staan veilig op je apparaat — probeer het opnieuw en log nog een keer in.";
+/* Fallo de la activación: la cuenta en la nube no lo permitió (%@ = correo de soporte) */
+"storage.failed.snapshotAccountUnavailable" = "We konden de cloud niet inschakelen: je cloudaccount stond het niet toe. Je gegevens staan veilig op je apparaat. Mail ons op %@ en we zoeken het samen uit.";
+/* Fallo de la activación: el dispositivo no pudo preparar los datos */
+"storage.failed.snapshotLocalFailure" = "We konden de cloud niet inschakelen: dit apparaat kon je gegevens niet klaarzetten voor het uploaden. Je gegevens staan hier nog, ongewijzigd — probeer het over een tijdje opnieuw.";
+/* Botón de la tarjeta de progreso: cancelar la activación de la nube */
+"storage.progress.cancelMigration" = "Inschakelen annuleren";
+/* Título de la confirmación de cancelar la activación */
+"storage.confirm.cancelMigrationTitle" = "Inschakelen van de cloud annuleren?";
+/* Cuerpo de la confirmación de cancelar la activación */
+"storage.confirm.cancelMigrationBody" = "Je gegevens blijven op dit apparaat, net als voorheen. Wat al geüpload is, blijft in je cloudaccount. Je kunt het opnieuw proberen wanneer je wilt.";
+/* Botón que confirma cancelar la activación */
+"storage.confirm.cancelMigrationConfirm" = "Ja, annuleren";
+/* Botón que sigue con la activación */
+"storage.confirm.cancelMigrationKeep" = "Doorgaan met inschakelen";

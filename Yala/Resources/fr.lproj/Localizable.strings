@@ -6033,3 +6033,23 @@
 
 /* Salida de la vuelta antes de montar el espejo: otro dispositivo tomó el relevo */
 "storage.reverseAbort.preMountOtherDevice" = "Nous n’avons pas pu terminer le retour vers iCloud : un autre de vos appareils a pris le relais. Une fois qu’il aura fini, vous pourrez le faire sur celui-ci.";
+
+/* Techo y cancelación de la subida al activar la nube (ticket snapshot-upload-has-no-ceiling-and-no-way-out) */
+/* Fallo de la activación: 72 h sin subir nada, con cualquier causa (techo largo): no acusa a nadie */
+"storage.failed.snapshotStalled" = "Nous n’avons pas pu activer le cloud : l’envoi de tes données n’avance plus depuis plusieurs jours. Tes données sont en sécurité sur ton appareil ; réessaie plus tard.";
+/* Fallo de la activación: la sesión caducó durante la subida */
+"storage.failed.snapshotSessionExpired" = "Nous n’avons pas pu activer le cloud : ta session a expiré pendant l’envoi de tes données. Tes données sont en sécurité sur ton appareil ; réessaie et reconnecte-toi.";
+/* Fallo de la activación: la cuenta en la nube no lo permitió (%@ = correo de soporte) */
+"storage.failed.snapshotAccountUnavailable" = "Nous n’avons pas pu activer le cloud : ton compte cloud ne l’a pas permis. Tes données sont en sécurité sur ton appareil. Écris-nous à %@ et nous regarderons cela avec toi.";
+/* Fallo de la activación: el dispositivo no pudo preparar los datos */
+"storage.failed.snapshotLocalFailure" = "Nous n’avons pas pu activer le cloud : cet appareil n’a pas pu préparer tes données pour l’envoi. Tes données sont toujours là, inchangées ; réessaie dans un moment.";
+/* Botón de la tarjeta de progreso: cancelar la activación de la nube */
+"storage.progress.cancelMigration" = "Annuler l’activation";
+/* Título de la confirmación de cancelar la activación */
+"storage.confirm.cancelMigrationTitle" = "Annuler l’activation du cloud ?";
+/* Cuerpo de la confirmación de cancelar la activación */
+"storage.confirm.cancelMigrationBody" = "Tes données restent sur cet appareil, comme avant. Ce qui a déjà été envoyé reste dans ton compte cloud. Tu peux réessayer quand tu veux.";
+/* Botón que confirma cancelar la activación */
+"storage.confirm.cancelMigrationConfirm" = "Oui, annuler";
+/* Botón que sigue con la activación */
+"storage.confirm.cancelMigrationKeep" = "Continuer l’activation";

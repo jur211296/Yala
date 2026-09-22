@@ -225,6 +225,16 @@ final class CloudMigrationController {
     /// último paso") en vez del genérico; `nil` = sin veredicto ⇒ copy genérico de siempre.
     private(set) var cutoverBlocker: ICloudChannelVerdict?
 
+    /// Por qué venció el techo de la subida del snapshot (`MigrationState.snapshotExitReasonRaw`, ticket
+    /// `snapshot-upload-has-no-ceiling-and-no-way-out`). Sale del JOURNAL, como `cutoverBlocker`, porque la tarjeta de
+    /// fallo se lee también tras relanzar. `nil` = el fallo no vino de la subida.
+    private(set) var snapshotExitReason: SnapshotExitReason?
+
+    /// ¿Se puede cancelar la activación ahora mismo? Solo con la subida del snapshot journaleada: es la única fase de la
+    /// ida que ofrece la salida (decisión de Jürgen del 2026-09-22). El botón además se deshabilita con trabajo en vuelo,
+    /// así que en la práctica solo se toca con la subida aparcada.
+    var canCancelSnapshotUpload: Bool { journaledPhase == .uploadingSnapshot }
+
     /// C-1: el cutover está en el paso 4 esperando que iCloud confirme el marcador. Es el estado que antes
     /// se mostraba como un 89 % mudo, sin decir a qué se esperaba.
     var isWaitingICloudExport: Bool { journaledPhase == .cutover(.markerWritten) }
@@ -352,8 +362,9 @@ final class CloudMigrationController {
         let token: () async -> String? = { await CloudAuthService.shared.accessToken() }
         let attest: () async -> String? = { try? await session.attestToken() }
         // Sin token, el SDK dice si es caducada o pasajero (ticket
-        // `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry`). Aquí no cambia lo que hace la máquina —el
-        // executor colapsa las dos en la misma parada retomable—, pero el outcome ya no miente.
+        // `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry`). Desde el 2026-09-22 SÍ cambia lo que hace la
+        // máquina en la subida del snapshot: la sesión caducada con el SDK sin sesión elige su techo corto, y el mismo
+        // testigo separa el 401 con la sesión todavía guardada, que va al largo (`MigrationSnapshotUploader`).
         let canRenew: @MainActor () -> Bool = { session.canRenewSession }
         let push = SyncPushClient(tokenProvider: token, attestProvider: attest, canRenewSession: canRenew)
         let pull = SyncPullClient(tokenProvider: token, attestProvider: attest, canRenewSession: canRenew)
@@ -966,6 +977,49 @@ final class CloudMigrationController {
         await resume()
     }
 
+    /// «Cancelar la activación» durante la subida del snapshot (`canCancelSnapshotUpload`, ticket
+    /// `snapshot-upload-has-no-ceiling-and-no-way-out`). Vuelve a «Migrar a la nube» sin aviso de fallo.
+    ///
+    /// **El «sí» se apunta en el runner ANTES de esperar** (`requestSnapshotCancel`), y la pasada en vuelo lo ve antes
+    /// de su próxima página. El re-kick de 30 s puede arrancar con el diálogo abierto, y con la red de vuelta esa pasada
+    /// subía todo y seguía hasta el cutover: el «sí» llegaba tarde y la persona confirmaba cancelar para encontrarse la
+    /// migración terminada (hallazgo de la review). Luego espera a que suelte el trabajo y cancela, que es lo que pasa
+    /// cuando no había nada en vuelo. Si la pre-espera del import vence, el «sí» sigue apuntado y lo ejecuta la próxima
+    /// pasada que llegue a la subida.
+    ///
+    /// **Y cierra la sesión que abrió ESTE intento**, molde de la parada del claim (`closeSessionIfOpened`): una sesión
+    /// viva en un teléfono con sesión privada la registra `GroupsAssociationRegistrar` como cuenta de grupos en el
+    /// siguiente arranque, y quien cancela no pidió eso. Tras un relanzamiento ya no se sabe quién la abrió
+    /// (`migrationAttempt` vive en memoria), así que no se cierra, igual que allí.
+    func cancelSnapshotUpload() async {
+        runner.requestSnapshotCancel()
+        while isWorking {
+            do {
+                try await Task.sleep(for: .milliseconds(200))
+            } catch {
+                #if DEBUG
+                print("CloudMigrationController.cancelSnapshotUpload: espera cancelada: \(error)")
+                #endif
+                return
+            }
+        }
+        isWorking = true
+        defer { isWorking = false }
+        lastError = nil
+        guard await awaitImportQuiescenceForResume() else {
+            refresh()
+            return
+        }
+        await runner.cancelSnapshotUpload()
+        refresh()
+        // `notStarted` solo puede venir de la cancelación: desde la subida no hay otra arista que lleve ahí. Si el toque
+        // llegó tarde y la migración avanzó, la sesión es la de una migración que sigue, y no se toca.
+        if journaledPhase == .notStarted, let attempt = migrationAttempt {
+            migrationAttempt = nil
+            _ = await closeSessionIfOpened(attempt.sessionOpenedByThisAttempt)
+        }
+    }
+
     /// «Cancelar y seguir en la nube», en cualquiera de las cinco fases que lo ofrecen (`canCancelReverse`).
     ///
     /// No descarta el gesto si hay trabajo en vuelo: el refresco de la pantalla re-kickea cada 30 s y el runner
@@ -1215,6 +1269,7 @@ final class CloudMigrationController {
         do {
             guard let state = try context.fetch(descriptor).first else {
                 cutoverBlocker = nil
+                snapshotExitReason = nil
                 reverseAbortReason = nil
                 hasPendingReverseExit = false
                 return (.notStarted, 0)
@@ -1222,6 +1277,7 @@ final class CloudMigrationController {
             // C-1: el veredicto del canal iCloud viaja con el journal (sobrevive a `failedRollback` justo para
             // esto) → la card de fallo puede nombrar la causa real.
             cutoverBlocker = state.cutoverICloudVerdictRaw.flatMap(ICloudChannelVerdict.init(rawValue:))
+            snapshotExitReason = state.snapshotExitReasonRaw.flatMap(SnapshotExitReason.init(rawValue:))
             reverseAbortReason = state.reverseAbortReasonRaw.flatMap(ReverseAbortReason.init(rawValue:))
             let pending = state.readPendingEffects()
             hasPendingReverseExit = ReverseExitPending.isPending(pending)
@@ -1231,6 +1287,7 @@ final class CloudMigrationController {
             print("CloudMigrationController.readJournalSnapshot: fetch(MigrationState) falló: \(error)")
             #endif
             cutoverBlocker = nil
+            snapshotExitReason = nil
             reverseAbortReason = nil
             hasPendingReverseExit = false
             return (.notStarted, 0)

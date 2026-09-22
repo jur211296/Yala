@@ -6042,3 +6042,23 @@
 
 /* Salida de la vuelta antes de montar el espejo: otro dispositivo tomó el relevo */
 "storage.reverseAbort.preMountOtherDevice" = "Non siamo riusciti a completare il ritorno a iCloud: un altro dei tuoi dispositivi ha preso il posto. Quando avrà finito, potrai farlo su questo.";
+
+/* Techo y cancelación de la subida al activar la nube (ticket snapshot-upload-has-no-ceiling-and-no-way-out) */
+/* Fallo de la activación: 72 h sin subir nada, con cualquier causa (techo largo): no acusa a nadie */
+"storage.failed.snapshotStalled" = "Non siamo riusciti ad attivare il cloud: il caricamento dei tuoi dati non avanza da giorni. I tuoi dati sono al sicuro sul dispositivo; riprova più tardi.";
+/* Fallo de la activación: la sesión caducó durante la subida */
+"storage.failed.snapshotSessionExpired" = "Non siamo riusciti ad attivare il cloud: la tua sessione è scaduta mentre caricavamo i tuoi dati. I tuoi dati sono al sicuro sul dispositivo; riprova ed effettua di nuovo l’accesso.";
+/* Fallo de la activación: la cuenta en la nube no lo permitió (%@ = correo de soporte) */
+"storage.failed.snapshotAccountUnavailable" = "Non siamo riusciti ad attivare il cloud: il tuo account nel cloud non l’ha permesso. I tuoi dati sono al sicuro sul dispositivo. Scrivici a %@ e lo verifichiamo insieme.";
+/* Fallo de la activación: el dispositivo no pudo preparar los datos */
+"storage.failed.snapshotLocalFailure" = "Non siamo riusciti ad attivare il cloud: questo dispositivo non è riuscito a preparare i tuoi dati per il caricamento. I tuoi dati sono ancora qui, invariati; riprova tra poco.";
+/* Botón de la tarjeta de progreso: cancelar la activación de la nube */
+"storage.progress.cancelMigration" = "Annulla l’attivazione";
+/* Título de la confirmación de cancelar la activación */
+"storage.confirm.cancelMigrationTitle" = "Annullare l’attivazione del cloud?";
+/* Cuerpo de la confirmación de cancelar la activación */
+"storage.confirm.cancelMigrationBody" = "I tuoi dati restano su questo dispositivo, come prima. Ciò che è già stato caricato resta nel tuo account nel cloud. Puoi riprovare quando vuoi.";
+/* Botón que confirma cancelar la activación */
+"storage.confirm.cancelMigrationConfirm" = "Sì, annulla";
+/* Botón que sigue con la activación */
+"storage.confirm.cancelMigrationKeep" = "Continua l’attivazione";

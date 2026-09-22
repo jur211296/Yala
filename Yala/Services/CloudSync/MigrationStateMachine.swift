@@ -201,6 +201,19 @@ nonisolated enum MigrationEvent: Equatable {
     case claimRefusedExistingAccount
     case identityAssigned
     case snapshotUploaded
+    /// Observación de `uploadingSnapshot` en una pasada que no confirmó ninguna página (ticket
+    /// `snapshot-upload-has-no-ceiling-and-no-way-out`). Bajo presupuesto HOLDEA en la fase, sin efectos: el runner
+    /// corta retomable y el próximo resume vuelve a observar. **Trae DOS relojes, y cada uno gobierna un techo**, molde
+    /// de `reversePreMountStalled`:
+    ///  · `stalledSeconds` es el de AVANCE —`now()` menos `MigrationState.snapshotStallProgressAt`, la última página
+    ///    confirmada— y gobierna el presupuesto LARGO, con cualquier causa;
+    ///  · `causeStalledSeconds` es el de CAUSA —lo ACUMULADO bajo el mismo motivo desde el último avance— y gobierna
+    ///    el CORTO, que solo aplica con `cause == .definitive`.
+    /// Aquí avanzar SÍ es una cifra: la subida confirma páginas, así que un corpus grande que sube despacio re-sella
+    /// los dos relojes en cada página y no agota nunca ninguno.
+    case snapshotUploadStalled(stalledSeconds: Double, causeStalledSeconds: Double, cause: MarkerExportStall)
+    /// La persona cancela la activación de la nube desde la tarjeta de progreso de la subida.
+    case snapshotUploadCancelled
     case verifyOutcome(VerifyOutcome)
     /// Cutover step 1 acked: backend confirmed `profiles.migrated_at`. (Steps 1-2 carry no effect:
     /// the runtime performs the write and reports completion via this ack.)
@@ -454,6 +467,23 @@ nonisolated struct MigrationPolicy: Equatable {
     /// invitaba a bajarlo creyendo que solo tocaba lo desconocido.
     var reversePreMountPhaseBudgetSeconds: Double = 259_200
 
+    /// Techo de `uploadingSnapshot` contra el reloj de la CAUSA, y solo cuando esperar no la arregla (sesión caducada,
+    /// cuenta suspendida, fallo local): 15 min ACUMULADOS bajo ese motivo desde la última página confirmada. Decisión
+    /// de Jürgen del 2026-09-22 (ticket `snapshot-upload-has-no-ceiling-and-no-way-out`): el mismo número que el resto
+    /// de techos cortos de la familia. Aquí rendirse no rompe nada —el teléfono sigue intacto en iCloud—, así que no
+    /// hay nada que proteger esperando más.
+    var snapshotCauseBudgetSeconds: Double = 900
+    /// Techo de la misma fase contra el reloj de AVANCE, con CUALQUIER causa: 72 h sin confirmar una sola página. Aquí
+    /// cae la red que no vuelve. Es también el suelo del mecanismo: con dos causas definitivas alternándose el reloj
+    /// corto se reinicia en cada cambio, y lo único que garantiza que la espera termine es éste.
+    var snapshotProgressBudgetSeconds: Double = 259_200
+
+    /// El predicado del techo CORTO de la subida, en un solo sitio por la misma razón que el de la vuelta: lo
+    /// consultan la máquina (para salir) y el runner (para elegir el motivo que journalea).
+    func snapshotCauseCeilingReached(causeStalledSeconds: Double, cause: MarkerExportStall) -> Bool {
+        cause == .definitive && causeStalledSeconds >= snapshotCauseBudgetSeconds
+    }
+
     /// **El predicado del techo CORTO, en UN solo sitio.** Lo consultan la máquina —para decidir si la vuelta sale—
     /// y el runner —para decidir QUÉ MOTIVO journalea—, y tenerlo dos veces escrito es precisamente la forma de que
     /// un día discrepen: el runner diría «la cuenta en la nube no lo permitió», con su correo de soporte, en una
@@ -474,7 +504,9 @@ nonisolated struct MigrationPolicy: Equatable {
         reverseUploadDefinitiveBudgetSeconds: Double = 900,
         reverseUploadUnknownBudgetSeconds: Double = 259_200,
         reversePreMountCauseBudgetSeconds: Double = 900,
-        reversePreMountPhaseBudgetSeconds: Double = 259_200
+        reversePreMountPhaseBudgetSeconds: Double = 259_200,
+        snapshotCauseBudgetSeconds: Double = 900,
+        snapshotProgressBudgetSeconds: Double = 259_200
     ) {
         self.maxMismatchRetries = maxMismatchRetries
         self.maxNetworkRetries = maxNetworkRetries
@@ -484,6 +516,8 @@ nonisolated struct MigrationPolicy: Equatable {
         self.reverseUploadUnknownBudgetSeconds = reverseUploadUnknownBudgetSeconds
         self.reversePreMountCauseBudgetSeconds = reversePreMountCauseBudgetSeconds
         self.reversePreMountPhaseBudgetSeconds = reversePreMountPhaseBudgetSeconds
+        self.snapshotCauseBudgetSeconds = snapshotCauseBudgetSeconds
+        self.snapshotProgressBudgetSeconds = snapshotProgressBudgetSeconds
     }
 }
 
@@ -545,6 +579,31 @@ nonisolated enum MigrationStateMachine {
         // uploadingSnapshot → verifying
         case (.uploadingSnapshot, .snapshotUploaded):
             return .transition(next: .verifying, effects: [])
+
+        // uploadingSnapshot · TECHO (ticket `snapshot-upload-has-no-ceiling-and-no-way-out`). Hasta este ticket la fase
+        // tenía dos salidas y ninguna alcanzable ante un fallo persistente: `snapshotUploaded` y un `fatalError` que el
+        // runner nunca emite aquí. La barra se quedaba al 55 % para siempre.
+        //
+        // Bajo presupuesto HOLDEA sin efectos. Al agotarlo sale a `failedRollback` con `[.rollback]`, la misma salida que
+        // `verifying` cuando agota sus reintentos: antes del cutover el teléfono está intacto (el espejo nunca se apagó)
+        // y `.rollback` no toca la red, así que no puede quedarse pendiente lanzando en cada arranque. Lo ya subido se
+        // queda en el backend —no existe RPC de abort de la ida— y el siguiente intento lo re-sube y converge por LWW.
+        //
+        // Sale con el PRIMERO de los dos techos que venza, igual que la vuelta: el largo contra el reloj de AVANCE con
+        // cualquier causa, el corto contra el de CAUSA solo con `.definitive`.
+        case let (.uploadingSnapshot, .snapshotUploadStalled(stalled, causeStalled, cause)):
+            let hitProgressCeiling = stalled >= policy.snapshotProgressBudgetSeconds
+            let hitCauseCeiling = policy.snapshotCauseCeilingReached(causeStalledSeconds: causeStalled, cause: cause)
+            guard hitProgressCeiling || hitCauseCeiling else {
+                return .transition(next: .uploadingSnapshot, effects: [])
+            }
+            return .transition(next: .failedRollback, effects: [.rollback])
+
+        // uploadingSnapshot · SALIDA de la persona («Cancelar la activación»). A `notStarted` SIN efectos, molde de
+        // `consentDeclined` y `claimRefusedExistingAccount`: no queda nada local que deshacer, y lo que decidió la
+        // persona no es un fallo que explicar. El backend queda como en la salida del techo.
+        case (.uploadingSnapshot, .snapshotUploadCancelled):
+            return .transition(next: .notStarted, effects: [])
 
         // verifying — S9 split of "diverge" vs "couldn't verify".
         case let (.verifying, .verifyOutcome(outcome)):

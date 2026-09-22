@@ -198,6 +198,11 @@ struct CloudSyncSchemaParityTests {
             "reversePreMountCauseRaw",
             "reversePreMountCauseAt",
             "reversePreMountCauseAccruedSeconds",
+            "snapshotStallProgressAt",
+            "snapshotStallCauseRaw",
+            "snapshotStallCauseAt",
+            "snapshotStallCauseAccruedSeconds",
+            "snapshotExitReasonRaw",
             "startedAt",
             "updatedAt",
             "schemaVersion",
@@ -205,7 +210,7 @@ struct CloudSyncSchemaParityTests {
         #expect(propertyNames(MigrationState.self) == expected)
     }
 
-    @Test func migrationState_schemaVersion_isEight() {
+    @Test func migrationState_schemaVersion_isNine() {
         // Subió a 2 en I11-2 al añadir el campo aditivo `reverseOriginRaw`; a 3 en C-1 con
         // `markerWrittenSince` (reloj del tope del paso 4) + `cutoverICloudVerdictRaw` (veredicto del canal
         // iCloud), ambos ADITIVOS y opcionales → una fila escrita por un build v2 sigue abriéndose. A 4 con los
@@ -223,7 +228,36 @@ struct CloudSyncSchemaParityTests {
         // esas cuatro fases se abre sin nada acumulado, y la primera observación con motivo lo empieza — o sea, el
         // techo corto le cuenta desde que este build la mira, no desde que se paró (ticket
         // `reverse-pre-mount-ceiling-charges-a-stall-to-whoever-stops-it-last`).
-        #expect(CloudSyncSchemaVersions.migrationState == 8)
+        // A 9 con los CINCO del techo de `uploadingSnapshot` (los cuatro `snapshotStall*` de sus dos relojes y
+        // `snapshotExitReasonRaw`), opcionales: una fila v8 parada en la subida se abre sin reloj, y la primera
+        // observación lo sella — el presupuesto le cuenta desde que este build la mira (ticket
+        // `snapshot-upload-has-no-ceiling-and-no-way-out`).
+        #expect(CloudSyncSchemaVersions.migrationState == 9)
+    }
+
+    /// **Los CUATRO campos de los relojes del techo de la subida se limpian juntos** (`clearSnapshotStallCeiling()`),
+    /// con la familia derivada del SCHEMA por su prefijo, como la de arriba: un quinto campo `snapshotStall*` rompe
+    /// la igualdad y obliga a pasar por aquí. El motivo de la salida (`snapshotExitReasonRaw`) queda FUERA a propósito:
+    /// es el desenlace, sobrevive a `failedRollback`, y el helper no puede tocarlo.
+    @Test func migrationState_clearSnapshotStallCeiling_clearsTheWholeFamily_andNotTheExitReason() {
+        let family = Set(propertyNames(MigrationState.self).filter { $0.hasPrefix("snapshotStall") })
+        let known: Set<String> = [
+            "snapshotStallProgressAt",
+            "snapshotStallCauseRaw",
+            "snapshotStallCauseAt",
+            "snapshotStallCauseAccruedSeconds",
+        ]
+        #expect(family == known, "campo nuevo en la familia: añádelo a `clearSnapshotStallCeiling()` y a esta lista")
+
+        let state = MigrationState(
+            snapshotStallProgressAt: .now, snapshotStallCauseRaw: "localFailure", snapshotStallCauseAt: .now,
+            snapshotStallCauseAccruedSeconds: 42, snapshotExitReasonRaw: "stalled")
+        state.clearSnapshotStallCeiling()
+        #expect(state.snapshotStallProgressAt == nil)
+        #expect(state.snapshotStallCauseRaw == nil)
+        #expect(state.snapshotStallCauseAt == nil)
+        #expect(state.snapshotStallCauseAccruedSeconds == nil)
+        #expect(state.snapshotExitReasonRaw == "stalled", "el motivo de la salida no es parte del reloj")
     }
 
     /// **Los CINCO campos del techo previo al montaje se limpian juntos**, y `clearReversePreMountCeiling()` es lo

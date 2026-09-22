@@ -6044,3 +6044,23 @@
 
 /* Salida de la vuelta antes de montar el espejo: otro dispositivo tomó el relevo */
 "storage.reverseAbort.preMountOtherDevice" = "iCloud への切り替えを完了できませんでした。別のお使いの端末が引き継ぎました。そちらが終わったら、この端末でも実行できます。";
+
+/* Techo y cancelación de la subida al activar la nube (ticket snapshot-upload-has-no-ceiling-and-no-way-out) */
+/* Fallo de la activación: 72 h sin subir nada, con cualquier causa (techo largo): no acusa a nadie */
+"storage.failed.snapshotStalled" = "クラウドを有効化できませんでした。データのアップロードが数日間進んでいません。データはデバイスに安全に残っています。時間をおいて、もう一度お試しください。";
+/* Fallo de la activación: la sesión caducó durante la subida */
+"storage.failed.snapshotSessionExpired" = "クラウドを有効化できませんでした。データのアップロード中にセッションの有効期限が切れました。データはデバイスに安全に残っています。もう一度お試しいただき、再度サインインしてください。";
+/* Fallo de la activación: la cuenta en la nube no lo permitió (%@ = correo de soporte) */
+"storage.failed.snapshotAccountUnavailable" = "クラウドを有効化できませんでした。クラウドのアカウントが許可しませんでした。データはデバイスに安全に残っています。%@ までご連絡ください。一緒に確認します。";
+/* Fallo de la activación: el dispositivo no pudo preparar los datos */
+"storage.failed.snapshotLocalFailure" = "クラウドを有効化できませんでした。このデバイスでアップロード用のデータを準備できませんでした。データは変更されずにここに残っています。しばらくしてから、もう一度お試しください。";
+/* Botón de la tarjeta de progreso: cancelar la activación de la nube */
+"storage.progress.cancelMigration" = "有効化をキャンセル";
+/* Título de la confirmación de cancelar la activación */
+"storage.confirm.cancelMigrationTitle" = "クラウドの有効化をキャンセルしますか？";
+/* Cuerpo de la confirmación de cancelar la activación */
+"storage.confirm.cancelMigrationBody" = "データはこれまでどおりこのデバイスに残ります。すでにアップロードされたものは、クラウドのアカウントに残ります。いつでもやり直せます。";
+/* Botón que confirma cancelar la activación */
+"storage.confirm.cancelMigrationConfirm" = "キャンセルする";
+/* Botón que sigue con la activación */
+"storage.confirm.cancelMigrationKeep" = "有効化を続ける";

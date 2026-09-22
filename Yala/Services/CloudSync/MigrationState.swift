@@ -41,7 +41,11 @@ extension CloudSyncSchemaVersions {
     /// `reversePreMountCauseAt`, `reversePreMountCauseAccruedSeconds`): el techo corto mide el tiempo ACUMULADO
     /// parado bajo ESA causa, no el de la fase entera
     /// (ticket `reverse-pre-mount-ceiling-charges-a-stall-to-whoever-stops-it-last`).
-    static let migrationState = 8
+    /// Subió a 9 con los CINCO campos del techo de `uploadingSnapshot` (ticket
+    /// `snapshot-upload-has-no-ceiling-and-no-way-out`): los cuatro de sus dos relojes (`snapshotStallProgressAt`,
+    /// `snapshotStallCauseRaw`, `snapshotStallCauseAt`, `snapshotStallCauseAccruedSeconds`) y el motivo de la salida
+    /// (`snapshotExitReasonRaw`).
+    static let migrationState = 9
 }
 
 /// Journal single-row de la migración. Debe existir a lo sumo UNA fila (el runner la crea
@@ -173,6 +177,38 @@ final class MigrationState {
     /// causa nunca ha tenido un tramo cerrado, o la fila viene de un build anterior a la v8.
     var reversePreMountCauseAccruedSeconds: Double?
 
+    // MARK: Techo de `uploadingSnapshot` (ticket `snapshot-upload-has-no-ceiling-and-no-way-out`)
+    //
+    // Dos relojes, molde del techo previo al montaje de la vuelta: el de AVANCE gobierna las 72 h y el de CAUSA los
+    // 15 min. Los cuatro `snapshotStall*` solo pueden estar puestos con la fase en `uploadingSnapshot`: `handle` los
+    // limpia al ENTRAR y al SALIR de ella (`clearSnapshotStallCeiling()`), así que una vuelta desde `verifying` por
+    // mismatch empieza sin reloj.
+
+    /// El instante del último AVANCE de la subida —la última página confirmada—, con el `now` INYECTADO. Lo sella la
+    /// primera observación sin avance y lo re-sella cada `pageConfirmed`. `nil` = aún sin observar en esta visita a la
+    /// fase, o la fila viene de un build anterior a la v9: el presupuesto le empieza a contar desde que este build la
+    /// mira.
+    var snapshotStallProgressAt: Date?
+
+    /// Qué causa DEFINITIVA se está midiendo (`SnapshotStallBlocker.rawValue`). `nil` = ninguna observada desde el
+    /// último avance.
+    var snapshotStallCauseRaw: String?
+
+    /// Desde cuándo corre el tramo ABIERTO de esa causa. `nil` con la causa presente = tramo CERRADO: la última
+    /// observación no traía motivo (la red llega así) y el reloj quedó en PAUSA, no borrado.
+    var snapshotStallCauseAt: Date?
+
+    /// Lo que esa causa acumuló en tramos CERRADOS. Un acumulado y no una racha, por lo mismo que en la vuelta: con el
+    /// re-kick de 30 s de Almacenamiento, un timeout intercalado reiniciaría una racha y los 900 s no llegarían nunca.
+    var snapshotStallCauseAccruedSeconds: Double?
+
+    /// `SnapshotExitReason.rawValue` de la subida que venció su techo. Es lo que elige el texto de la tarjeta de
+    /// fallo, y por eso **sobrevive a `failedRollback`**, como `cutoverICloudVerdictRaw`. Solo puede estar puesto en
+    /// esa fase —lo escribe la salida del techo, que va ahí— y de esa fase solo se sale por `resetAfterRollback`
+    /// («Reintentar») o por la normalización de un journal ilegible, que son los dos sitios que lo limpian. `nil` =
+    /// nada que explicar, o un fallo que no vino de la subida.
+    var snapshotExitReasonRaw: String?
+
     /// Cuándo empezó la migración (el runner lo estampa con el `now` INYECTADO al arrancar). `nil` = no
     /// iniciada.
     var startedAt: Date?
@@ -205,6 +241,11 @@ final class MigrationState {
         reversePreMountCauseRaw: String? = nil,
         reversePreMountCauseAt: Date? = nil,
         reversePreMountCauseAccruedSeconds: Double? = nil,
+        snapshotStallProgressAt: Date? = nil,
+        snapshotStallCauseRaw: String? = nil,
+        snapshotStallCauseAt: Date? = nil,
+        snapshotStallCauseAccruedSeconds: Double? = nil,
+        snapshotExitReasonRaw: String? = nil,
         startedAt: Date? = nil,
         updatedAt: Date = Date.now,
         schemaVersion: Int = CloudSyncSchemaVersions.migrationState
@@ -229,6 +270,11 @@ final class MigrationState {
         self.reversePreMountCauseRaw = reversePreMountCauseRaw
         self.reversePreMountCauseAt = reversePreMountCauseAt
         self.reversePreMountCauseAccruedSeconds = reversePreMountCauseAccruedSeconds
+        self.snapshotStallProgressAt = snapshotStallProgressAt
+        self.snapshotStallCauseRaw = snapshotStallCauseRaw
+        self.snapshotStallCauseAt = snapshotStallCauseAt
+        self.snapshotStallCauseAccruedSeconds = snapshotStallCauseAccruedSeconds
+        self.snapshotExitReasonRaw = snapshotExitReasonRaw
         self.startedAt = startedAt
         self.updatedAt = updatedAt
         self.schemaVersion = schemaVersion
@@ -256,6 +302,23 @@ extension MigrationState {
         reversePreMountCauseRaw = nil
         reversePreMountCauseAt = nil
         reversePreMountCauseAccruedSeconds = nil
+    }
+}
+
+// MARK: - Techo de la subida del snapshot
+
+extension MigrationState {
+
+    /// Borra los CUATRO campos de los dos relojes del techo de `uploadingSnapshot`. Juntos siempre: un campo que
+    /// sobreviva a la fase deja el techo venciendo con cero segundos de parada real en la visita siguiente. NO toca
+    /// `snapshotExitReasonRaw`, que es el desenlace y no el reloj (ver su docblock). Lo que garantiza que un campo
+    /// NUEVO de la familia no se quede fuera es `CloudSyncSchemaParityTests`, que deriva la familia del schema por su
+    /// prefijo `snapshotStall`.
+    func clearSnapshotStallCeiling() {
+        snapshotStallProgressAt = nil
+        snapshotStallCauseRaw = nil
+        snapshotStallCauseAt = nil
+        snapshotStallCauseAccruedSeconds = nil
     }
 }
 

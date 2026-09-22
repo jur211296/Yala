@@ -121,7 +121,13 @@ private final class FakeExecutor: MigrationWorkExecuting {
         if let error = assignIdentityError { throw error }
     }
 
+    /// Se llama al EMPEZAR cada `uploadSnapshot`, con el índice de la llamada (0-based). Lo pide el techo de la subida
+    /// para que pase tiempo DENTRO de una pasada —entre una página confirmada y el intento siguiente—, que con un reloj
+    /// fijo por `resume` no se puede montar.
+    var onUploadSnapshot: ((Int) -> Void)?
+
     func uploadSnapshot(cursor: String?) async -> SnapshotStepOutcome {
+        onUploadSnapshot?(uploadIndex)
         uploadCursorsSeen.append(cursor)
         guard !uploadOutcomes.isEmpty else { return .transient }   // M3: guion vacío no trapea
         let outcome = uploadOutcomes[min(uploadIndex, uploadOutcomes.count - 1)]
@@ -284,7 +290,12 @@ struct MigrationRunnerTests {
         reversePreMountCauseRaw: String? = nil, reversePreMountCauseAt: Date? = nil,
         reversePreMountCauseAccruedSeconds: Double? = nil,
         // La intención del claim de la ida (ticket `settings-migrate-to-cloud-adopts-silently-instead-of-migrating`).
-        forwardClaimIntentRaw: String? = nil
+        forwardClaimIntentRaw: String? = nil,
+        // Techo de `uploadingSnapshot`: los dos relojes y el motivo de la salida
+        // (ticket `snapshot-upload-has-no-ceiling-and-no-way-out`).
+        snapshotStallProgressAt: Date? = nil, snapshotStallCauseRaw: String? = nil,
+        snapshotStallCauseAt: Date? = nil, snapshotStallCauseAccruedSeconds: Double? = nil,
+        snapshotExitReasonRaw: String? = nil
     ) throws -> MigrationState {
         let state = MigrationState()
         state.setPhase(phase)
@@ -305,6 +316,11 @@ struct MigrationRunnerTests {
         state.reversePreMountCauseAt = reversePreMountCauseAt
         state.reversePreMountCauseAccruedSeconds = reversePreMountCauseAccruedSeconds
         state.forwardClaimIntentRaw = forwardClaimIntentRaw
+        state.snapshotStallProgressAt = snapshotStallProgressAt
+        state.snapshotStallCauseRaw = snapshotStallCauseRaw
+        state.snapshotStallCauseAt = snapshotStallCauseAt
+        state.snapshotStallCauseAccruedSeconds = snapshotStallCauseAccruedSeconds
+        state.snapshotExitReasonRaw = snapshotExitReasonRaw
         state.startedAt = fixedNow
         state.updatedAt = fixedNow
         context.insert(state)
@@ -3278,4 +3294,378 @@ struct MigrationRunnerTests {
                 "y el aviso al servidor también, pese a que el anterior lanzó")
     }
 
+
+    // MARK: - §14 · Techo y salida de `uploadingSnapshot` (ticket `snapshot-upload-has-no-ceiling-and-no-way-out`)
+    //
+    // Hasta este ticket la subida del snapshot de la ida cortaba sin evento ante cualquier fallo, y la barra se quedaba
+    // en «Activando la nube…» 55 % para siempre. Cada caso de abajo mide que la FASE CAMBIA —o que no cambia cuando no
+    // debe—, que es el criterio del ticket: un reloj que se sella bien y una fase que no sale no arreglan nada.
+
+    /// **EL caso del ticket, por su causa vieja: la red.** Un push que devuelve `.transient` sin fin. A las 72 h sin
+    /// confirmar una página la fase sale a `failedRollback`, clavado con sus dos vecinos, y con el motivo del techo LARGO.
+    @Test func snapshotCeiling_persistentNetworkFailure_leavesAt72hWithoutProgress() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.uploadOutcomes = [.transient]
+        let clock = MutableClock(fixedNow)
+        try seedJournal(context, phase: .uploadingSnapshot)
+
+        await makeRunner(context, fake, now: { clock.value }).resume()        // sella
+        var j = try journal(context)
+        #expect(j.readPhase().phase == .uploadingSnapshot)
+        #expect(j.snapshotStallProgressAt == fixedNow, "la primera observación sella el reloj de avance")
+        #expect(j.snapshotStallCauseRaw == nil, "la red no trae motivo: no hay reloj de causa")
+
+        clock.value = fixedNow.addingTimeInterval(259_199)
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        #expect(try journal(context).readPhase().phase == .uploadingSnapshot, "a 259 199 s todavía no")
+
+        clock.value = fixedNow.addingTimeInterval(259_200)
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        j = try journal(context)
+        #expect(j.readPhase().phase == .failedRollback, "a las 72 h sin avanzar, la subida se rinde")
+        #expect(j.snapshotExitReasonRaw == "stalled")
+        #expect(fake.count(.rollback) == 1)
+        #expect(j.snapshotStallProgressAt == nil, "el reloj se va con la fase")
+    }
+
+    /// **La causa nueva del 2026-09-22: el `fetch` local que lanza siempre.** Llega como `.blocked(.localFailure)` y
+    /// sale a los 900 s ACUMULADOS de ese motivo, clavado con sus dos vecinos, con su propio motivo.
+    @Test func snapshotCeiling_persistentLocalFailure_leavesAt900SecondsOfItsOwn() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.uploadOutcomes = [.blocked(.localFailure)]
+        let clock = MutableClock(fixedNow)
+        try seedJournal(context, phase: .uploadingSnapshot)
+
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        #expect(try journal(context).snapshotStallCauseRaw == "localFailure")
+        clock.value = fixedNow.addingTimeInterval(899)
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        #expect(try journal(context).readPhase().phase == .uploadingSnapshot, "a 899 s todavía no")
+
+        clock.value = fixedNow.addingTimeInterval(900)
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .failedRollback, "a 900 s de ese mismo motivo, sale")
+        #expect(j.snapshotExitReasonRaw == "localFailure")
+        #expect(fake.count(.rollback) == 1)
+    }
+
+    /// Los otros dos motivos definitivos salen igual y con su nombre: el texto de la tarjeta depende de esto.
+    @Test func snapshotCeiling_sessionExpiredAndAccountUnavailable_leaveWithTheirOwnReason() async throws {
+        for (blocker, raw) in [(SnapshotStallBlocker.sessionExpired, "sessionExpired"),
+                               (.accountUnavailable, "accountUnavailable")] {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let context = try makeContext(dir)
+            let fake = FakeExecutor()
+            fake.uploadOutcomes = [.blocked(blocker)]
+            let clock = MutableClock(fixedNow)
+            try seedJournal(context, phase: .uploadingSnapshot)
+
+            await makeRunner(context, fake, now: { clock.value }).resume()
+            clock.value = fixedNow.addingTimeInterval(900)
+            await makeRunner(context, fake, now: { clock.value }).resume()
+            let j = try journal(context)
+            #expect(j.readPhase().phase == .failedRollback, "\(blocker)")
+            #expect(j.snapshotExitReasonRaw == raw)
+        }
+    }
+
+    /// **Una página confirmada reinicia LOS DOS relojes.** Sin esto, un corpus grande que sube despacio agotaría el
+    /// techo mientras avanza. El guion: 71 h 58 min sin avanzar y 800 s de fallo local acumulados; en la pasada, una
+    /// página sube y la siguiente choca con el mismo fallo. La fase no sale, y los dos relojes empiezan AHORA.
+    @Test func snapshotCeiling_aConfirmedPageRestartsBothClocks() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.uploadOutcomes = [.pageConfirmed(cursor: "c9"), .blocked(.localFailure)]
+        let now = fixedNow.addingTimeInterval(259_080)
+        let clock = MutableClock(now)
+        try seedJournal(context, phase: .uploadingSnapshot,
+                        snapshotStallProgressAt: fixedNow, snapshotStallCauseRaw: "localFailure",
+                        snapshotStallCauseAt: fixedNow.addingTimeInterval(258_280), snapshotStallCauseAccruedSeconds: 0)
+
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        var j = try journal(context)
+        #expect(j.readPhase().phase == .uploadingSnapshot, "subió una página: la subida está viva")
+        #expect(j.snapshotCursorJSON == "c9")
+        #expect(j.snapshotStallProgressAt == now, "el reloj de avance empieza en la página confirmada")
+        #expect(j.snapshotStallCauseAt == now, "y el de causa empieza de cero en el fallo de después")
+        #expect(j.snapshotStallCauseAccruedSeconds == 0)
+
+        // Y de verdad empieza de cero: a 899 s del fallo nuevo sigue esperando.
+        clock.value = now.addingTimeInterval(899)
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        j = try journal(context)
+        #expect(j.readPhase().phase == .uploadingSnapshot)
+    }
+
+    /// **El reloj de avance cuenta desde la PÁGINA confirmada, no desde la siguiente vez que se mira.** La página sube
+    /// a t0 y el intento siguiente de la misma pasada falla dos minutos después: esos dos minutos ya son parada. Sin el
+    /// sello de la página, la limpieza de delante deja el reloj a `nil` y la observación lo sellaría a t0+120 — el techo
+    /// se aplazaría todo lo que tarde el siguiente vistazo (un cierre de la app entre medias, por ejemplo). Lo cazó el
+    /// mutante M1, que sobrevivía a toda la suite.
+    @Test func snapshotCeiling_theProgressClockStartsAtTheConfirmedPage() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.uploadOutcomes = [.pageConfirmed(cursor: "c1"), .transient]
+        let clock = MutableClock(fixedNow)
+        fake.onUploadSnapshot = { index in if index == 1 { clock.value = self.fixedNow.addingTimeInterval(120) } }
+        try seedJournal(context, phase: .uploadingSnapshot)
+
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .uploadingSnapshot)
+        #expect(fake.uploadCursorsSeen == [nil, "c1"], "control del escenario: la página subió y se volvió a intentar")
+        #expect(j.snapshotStallProgressAt == fixedNow, "el reloj arranca en la página, no dos minutos después")
+    }
+
+    /// **Un fallo local aislado tras horas sin red NO se cobra las horas** (la lección de #210). Tres horas sin avanzar
+    /// por red, y en la pasada un fallo local: holdea, y el reloj de causa se sella ahora.
+    @Test func snapshotCeiling_anIsolatedLocalFailureAfterALongWait_retries() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.uploadOutcomes = [.blocked(.localFailure)]
+        let threeHours = fixedNow.addingTimeInterval(10_800)
+        try seedJournal(context, phase: .uploadingSnapshot, snapshotStallProgressAt: fixedNow)
+
+        await makeRunner(context, fake, now: { threeHours }).resume()
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .uploadingSnapshot, "las tres horas eran de otra cosa y no se le cobran")
+        #expect(j.snapshotExitReasonRaw == nil)
+        #expect(j.snapshotStallProgressAt == fixedNow, "el reloj de avance sigue midiendo las tres horas")
+        #expect(j.snapshotStallCauseAt == threeHours, "y el de causa empieza ahora, que es cuando apareció")
+    }
+
+    /// **Una observación SIN motivo PAUSA el reloj de causa; no lo borra ni lo cuenta.** Con el re-kick de 30 s, una
+    /// racha consecutiva no llegaría a 900 s con un timeout intercalado cada quince minutos. El guion: 403 a t0 y a
+    /// 840 s · red a 850 s (cierra el tramo: 850 acumulados) · 403 a 1000 s (reanuda: 850, el hueco no cuenta) · 403 a
+    /// 1050 s (900: sale). Con racha, a 1050 s llevaría 50; contando el hueco, habría salido a 1000 s.
+    @Test func snapshotCeiling_anObservationWithoutACause_pausesInsteadOfResetting() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.uploadOutcomes = [.blocked(.accountUnavailable), .blocked(.accountUnavailable), .transient,
+                               .blocked(.accountUnavailable), .blocked(.accountUnavailable)]
+        let clock = MutableClock(fixedNow)
+        try seedJournal(context, phase: .uploadingSnapshot)
+
+        for offset in [0.0, 840, 850, 1000] {
+            clock.value = fixedNow.addingTimeInterval(offset)
+            await makeRunner(context, fake, now: { clock.value }).resume()
+            #expect(try journal(context).readPhase().phase == .uploadingSnapshot, "a \(offset) s todavía no")
+        }
+        #expect(try journal(context).snapshotStallCauseAccruedSeconds == 850, "el hueco de la red no sumó")
+
+        clock.value = fixedNow.addingTimeInterval(1050)
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .failedRollback, "900 s acumulados bajo el 403")
+        #expect(j.snapshotExitReasonRaw == "accountUnavailable")
+    }
+
+    /// **Una causa DISTINTA empieza de cero**: lo acumulado bajo un motivo no se le regala a otro.
+    @Test func snapshotCeiling_aDifferentCause_startsItsOwnClock() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.uploadOutcomes = [.blocked(.accountUnavailable), .blocked(.accountUnavailable),
+                               .blocked(.sessionExpired), .blocked(.sessionExpired), .blocked(.sessionExpired)]
+        let clock = MutableClock(fixedNow)
+        try seedJournal(context, phase: .uploadingSnapshot)
+
+        for offset in [0.0, 800, 810, 1709] {
+            clock.value = fixedNow.addingTimeInterval(offset)
+            await makeRunner(context, fake, now: { clock.value }).resume()
+            #expect(try journal(context).readPhase().phase == .uploadingSnapshot, "a \(offset) s todavía no")
+        }
+        clock.value = fixedNow.addingTimeInterval(1710)
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .failedRollback, "900 s de la sesión caducada, contados desde que apareció")
+        #expect(j.snapshotExitReasonRaw == "sessionExpired")
+    }
+
+    /// **El motivo lo elige el techo que VENCIÓ.** A las 72 h sin avanzar, una pasada que trae un 403 recién visto sale
+    /// con «dejó de avanzar»: decirle «tu cuenta no lo permitió» a quien llevaba tres días sin red sería falso.
+    @Test func snapshotCeiling_theLongCeilingWithAFreshBlocker_leavesAsStalled() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.uploadOutcomes = [.blocked(.accountUnavailable)]
+        try seedJournal(context, phase: .uploadingSnapshot, snapshotStallProgressAt: fixedNow)
+
+        await makeRunner(context, fake, now: { self.fixedNow.addingTimeInterval(259_200) }).resume()
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .failedRollback)
+        #expect(j.snapshotExitReasonRaw == "stalled", "el 403 tiene cero segundos: no fue él quien terminó esto")
+    }
+
+    /// **Volver a la fase desde `verifying` por mismatch empieza sin reloj.** Journal con un reloj de hace más de 72 h:
+    /// la subida termina, el verify diverge, la fase vuelve, y la primera observación de la visita nueva holdea. Sin la
+    /// limpieza al cruzar la fase, heredaría el sello viejo y saldría en el acto.
+    @Test func snapshotCeiling_reenteringThePhaseAfterAMismatch_startsWithoutAClock() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.uploadOutcomes = [.completed, .transient]
+        fake.verifyProbes = [.mismatch]
+        let now = fixedNow.addingTimeInterval(259_300)
+        try seedJournal(context, phase: .uploadingSnapshot,
+                        snapshotStallProgressAt: fixedNow, snapshotStallCauseRaw: "localFailure",
+                        snapshotStallCauseAt: fixedNow, snapshotStallCauseAccruedSeconds: 0)
+
+        await makeRunner(context, fake, now: { now }).resume()
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .uploadingSnapshot, "la visita nueva no hereda las 72 h de la anterior")
+        #expect(j.verifyMismatchRetries == 1, "control del escenario: pasó por el mismatch")
+        #expect(j.snapshotStallProgressAt == now, "la primera observación de la visita nueva sella ahora")
+        #expect(j.snapshotStallCauseRaw == nil, "y el motivo de la visita anterior se fue con ella")
+    }
+
+    /// Un sello en el FUTURO —el reloj iba adelantado y ya se corrigió— se re-sella ahora. Conservarlo aplazaría el
+    /// techo hasta que el reloj real alcanzara aquella fecha.
+    @Test func snapshotCeiling_aSealInTheFuture_isResealedNow() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.uploadOutcomes = [.transient]
+        try seedJournal(context, phase: .uploadingSnapshot,
+                        snapshotStallProgressAt: fixedNow.addingTimeInterval(86_400))
+
+        await makeRunner(context, fake).resume()
+        #expect(try journal(context).snapshotStallProgressAt == fixedNow)
+    }
+
+    /// «Cancelar la activación»: a `notStarted`, sin efectos, sin motivo y sin relojes. Es lo que la persona pidió.
+    @Test func snapshotCancel_returnsToNotStarted_withNothingToExplain() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        try seedJournal(context, phase: .uploadingSnapshot, leaderDeviceID: deviceID, snapshotCursor: "c3",
+                        snapshotStallProgressAt: fixedNow, snapshotStallCauseRaw: "localFailure",
+                        snapshotStallCauseAt: fixedNow, snapshotStallCauseAccruedSeconds: 10)
+
+        await makeRunner(context, fake).cancelSnapshotUpload()
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .notStarted)
+        #expect(j.readPendingEffects().isEmpty)
+        #expect(fake.executedEffects.isEmpty, "no hay nada que deshacer: el teléfono sigue intacto")
+        #expect(j.snapshotExitReasonRaw == nil, "lo decidió la persona: no hay fallo que explicar")
+        #expect(j.snapshotStallProgressAt == nil)
+        #expect(j.snapshotStallCauseRaw == nil)
+        #expect(j.snapshotCursorJSON == nil, "el intento se cierra entero")
+        #expect(j.startedAt == nil)
+    }
+
+    /// **El «sí» apuntado para la pasada en vuelo en la página siguiente** (hallazgo de la review). Sin el apunte, un
+    /// re-kick que arrancara con el diálogo abierto y la red de vuelta subía todo y seguía hasta el cutover, y el «sí»
+    /// llegaba tarde. El guion: la pasada confirma c1; durante el segundo intento la persona confirma; la segunda página
+    /// termina y la pasada se para ANTES de pedir la tercera.
+    @Test func snapshotCancel_requestedDuringAPass_stopsAtTheNextPage() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.uploadOutcomes = [.pageConfirmed(cursor: "c1"), .pageConfirmed(cursor: "c2"), .completed]
+        try seedJournal(context, phase: .uploadingSnapshot)
+        let runner = makeRunner(context, fake)
+        fake.onUploadSnapshot = { index in if index == 1 { runner.requestSnapshotCancel() } }
+
+        await runner.resume()
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .notStarted, "la persona dijo que sí: la subida se para")
+        #expect(fake.uploadCursorsSeen == [nil, "c1"], "y se para en la página siguiente, sin pedir la tercera")
+        #expect(fake.verifyCallCount == 0, "no llega a verificar ni al cutover")
+    }
+
+    /// El «sí» vale para ESTA visita a la subida. Apuntado con la fase en otra parte, no cancela la visita siguiente —aquí,
+    /// la vuelta desde `verifying` por mismatch—: la persona no dijo que sí a esa.
+    @Test func snapshotCancel_requestedOutsideThePhase_doesNotCancelTheNextVisit() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.verifyProbes = [.mismatch]
+        fake.uploadOutcomes = [.transient]
+        try seedJournal(context, phase: .verifying)
+        let runner = makeRunner(context, fake)
+        runner.requestSnapshotCancel()
+
+        await runner.resume()
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .uploadingSnapshot, "la visita nueva sigue: nadie la canceló")
+        #expect(fake.uploadCursorsSeen == [nil], "control: se llegó a intentar la subida")
+    }
+
+    /// Si la pasada que tenía que ejecutarlo no llegó a correr (sin quiescencia), el «sí» se queda apuntado y lo ejecuta
+    /// la próxima pasada que llegue a la subida, sin volver a preguntar.
+    @Test func snapshotCancel_withoutQuiescence_staysPendingForTheNextPass() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.uploadOutcomes = [.transient]
+        try seedJournal(context, phase: .uploadingSnapshot)
+        var quiescent = false
+        let runner = makeRunner(context, fake, quiescence: { quiescent }, timeout: 0)
+        runner.requestSnapshotCancel()
+
+        await runner.cancelSnapshotUpload()
+        #expect(try journal(context).readPhase().phase == .uploadingSnapshot, "sin quiescencia no se toca el journal")
+
+        quiescent = true
+        await runner.resume()
+        #expect(try journal(context).readPhase().phase == .notStarted, "la próxima pasada ejecuta el «sí» apuntado")
+        #expect(fake.uploadCursorsSeen.isEmpty, "sin subir nada antes")
+    }
+
+    /// Un «Cancelar» que llega tarde no saca a nadie de la fase en la que está.
+    @Test func snapshotCancel_outsideThePhase_isANoOp() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        try seedJournal(context, phase: .verifying)
+
+        await makeRunner(context, fake).cancelSnapshotUpload()
+        #expect(try journal(context).readPhase().phase == .verifying)
+        #expect(fake.uploadCursorsSeen.isEmpty && fake.verifyCallCount == 0, "y no arranca trabajo")
+    }
+
+    /// «Reintentar» tras una subida que venció su techo: el intento nuevo no puede nacer con el texto del anterior.
+    @Test func snapshotExitReason_isClearedByTheRetry() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        try seedJournal(context, phase: .failedRollback, snapshotExitReasonRaw: "localFailure")
+
+        await makeRunner(context, fake).resetAfterRollback()
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .notStarted)
+        #expect(j.snapshotExitReasonRaw == nil)
+    }
+
+    /// Un journal ilegible se normaliza entero, también los campos del techo de la subida.
+    @Test func snapshotCeiling_aCorruptJournal_isNormalizedWithTheWholeFamily() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        let state = try seedJournal(context, phase: .uploadingSnapshot,
+                                    snapshotStallProgressAt: fixedNow, snapshotStallCauseRaw: "localFailure",
+                                    snapshotStallCauseAt: fixedNow, snapshotStallCauseAccruedSeconds: 10,
+                                    snapshotExitReasonRaw: "stalled")
+        state.phaseData = Data("no-es-una-fase".utf8)
+        try context.save()
+
+        await makeRunner(context, fake).resume()
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .notStarted)
+        #expect(j.snapshotStallProgressAt == nil)
+        #expect(j.snapshotStallCauseRaw == nil)
+        #expect(j.snapshotStallCauseAt == nil)
+        #expect(j.snapshotStallCauseAccruedSeconds == nil)
+        #expect(j.snapshotExitReasonRaw == nil)
+    }
 }
