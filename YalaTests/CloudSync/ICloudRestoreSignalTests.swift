@@ -1011,6 +1011,80 @@ struct ICloudRestoreSessionSignalTests {
                 "y el guard vuelve a hacer su trabajo en el acto, sin esperar a la caducidad")
     }
 
+    /// **EL CASO DEL TICKET `wiped-state-reaches-the-discard-gate-with-the-window-open`** (2026-09-22):
+    /// el reintento que cae en `.wiped` llega a la puerta de descarte con la ventana CERRADA.
+    ///
+    /// Los cuatro pasos, en el orden exacto en el que los corre la pantalla:
+    ///  1. Entra a Restaurar con iCloud disponible → `startSearch()` enciende la señal.
+    ///  2. El tope se agota **con el import vivo** → no se apaga nada, y la pantalla ofrece «volver a
+    ///     buscar» desde `.importIncomplete`. La ventana sigue viva y su token sigue siendo el dueño.
+    ///  3. El sello del wipe llega **de otro dispositivo** —`lastWipeTimestamp` es una preferencia
+    ///     sincronizada— y el reintento sale por el `return` temprano de `.wiped`, que llama a
+    ///     `noteRestoreUnavailable()`. Ése tira el aparcado y la gracia **y nada más**: la ventana y
+    ///     su dueño siguen en pie, por diseño.
+    ///  4. «Empezar desde cero» → el punto único del descarte.
+    ///
+    /// Sin el paso 4 la ventana se iba a la puerta viva, y el `.onDisappear` la dejaba HUÉRFANA hasta
+    /// el tope duro de 600 s con el guard de frontera de cuenta entornado.
+    ///
+    /// **Lo que este test NO dice, y hay que leerlo entero**: no ancla la VISTA —que `wipedView` pase
+    /// por el punto único es una closure de SwiftUI que ningún unit test puede invocar, y de eso
+    /// responde `everyPathToTheDiscardGateClosesTheSessionWindow`— **y no mata ningún mutante que la
+    /// suite no matara ya.** Lo midió una lente de la review, y conviene tenerlo escrito porque la
+    /// primera versión de este docblock afirmaba lo contrario: los pasos 1, 2 y 4 son
+    /// `discardingTheImportClosesTheWindow`, y el paso 3 lo cubre entero
+    /// `droppingTheParkedClockLeavesALiveWindowAlone`, que ya se pone rojo si
+    /// `noteRestoreUnavailable` toca la titularidad. Lo único que endurece es `currentFlow == intento`
+    /// donde aquél pide `!= nil`.
+    ///
+    /// **Se queda porque es el recorrido del ticket de punta a punta**, con los cuatro verbos en el
+    /// orden en que los corre la pantalla: es lo que hace revisable que la composición sea coherente,
+    /// y es el criterio 3 del ticket. Lo que NO es, es la red — ésa es el escáner.
+    @Test("el reintento que cae en `.wiped` llega a la puerta con la ventana APAGADA")
+    @MainActor
+    func theWipedRetryReachesTheDiscardGateWithTheWindowClosed() {
+        ICloudRestoreSessionSignal._testReset()
+        defer { ICloudRestoreSessionSignal._testReset() }
+
+        let t0 = Date(timeIntervalSince1970: 1_760_000_000)
+        // 1. Primera entrada: la señal se enciende y acuña su token.
+        let intento = ICloudRestoreSessionSignal.noteRestoreStarted(now: t0, hasLiveImportActivity: false)
+
+        // 2. t=90: el tope se rinde con el import bajando, así que nadie apaga.
+        #expect(!ICloudRestoreInProgressLogic.closesTheSessionWindow(
+            settled: false, hasObservedImportActivity: true))
+        #expect(Self.guardDecide(en: t0.addingTimeInterval(95)) == .proceed,
+                "la ventana sigue viva, que es la premisa del recorrido")
+
+        // 3. t=100: llega el sello del wipe del otro dispositivo y el reintento sale por `.wiped`.
+        ICloudRestoreSessionSignal.noteRestoreUnavailable()
+        #expect(ICloudRestoreSessionSignal.restoreStartedAt == t0, """
+            La entrada que no puede restaurar nada apagó la ventana de otro intento. No es suya —ésta \
+            ni siquiera llegó a encender— y apagarla desde ahí es el bug que `noteRestoreAbandoned` \
+            existe para no cometer.
+            """)
+        #expect(ICloudRestoreSessionSignal.currentFlow == intento, """
+            La entrada que no puede restaurar nada se llevó la TITULARIDAD por delante. Sin dueño, el \
+            descarte del paso siguiente es un no-op y la ventana llega a la puerta viva: el ticket \
+            entero, por dentro.
+            """)
+
+        // 4. «Empezar desde cero» en `.wiped` → el punto único del descarte.
+        ICloudRestoreSessionSignal.noteRestoreDiscardRequested(intento)
+        #expect(ICloudRestoreSessionSignal.restoreStartedAt == nil, """
+            El camino de `.wiped` llegó a la puerta de descarte con la ventana viva. En un teléfono \
+            con el corpus de otra persona son hasta diez minutos con el guard de frontera de cuenta \
+            entornado, y la persona está parada delante de esa pantalla.
+            """)
+        #expect(ICloudRestoreSessionSignal.currentFlow == nil, "y sin dueño, como cualquier apagado")
+        #expect(ICloudRestoreSessionSignal.parkedStartedAt == t0, """
+            El descarte apagó OLVIDANDO el reloj. Por este camino la puerta también solo PREGUNTA: \
+            sus dos salidas de vuelta remontan Restaurar, y con el olvido cada vuelta estrenaría 600 s.
+            """)
+        #expect(Self.guardDecide(en: t0.addingTimeInterval(120)) == .blockedForeignData,
+                "y el guard vuelve a decidir como siempre, en el acto")
+    }
+
     /// **La otra mitad, y es la que impide arreglar la primera de más**: cuando el tope se agota sin
     /// haber visto un solo import —el usuario realmente nuevo, cuyo store vacío no dispara ningún
     /// `.importEvent`— el apagado explícito sigue corriendo. Lo que aporta sobre la caducidad es PRECISIÓN: sin él, la
@@ -1971,6 +2045,7 @@ struct ICloudRestoreSignalWiringTests {
         let root = Self.repoRoot.appendingPathComponent("Yala")
         var finished: [String] = []
         var discarded: [String] = []
+        var enLaPantalla = 0
         let enumerator = FileManager.default.enumerator(at: root, includingPropertiesForKeys: nil)
         while let url = enumerator?.nextObject() as? URL {
             guard url.pathExtension == "swift" else { continue }
@@ -1980,7 +2055,11 @@ struct ICloudRestoreSignalWiringTests {
                 .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
                 .joined(separator: "\n")
             if body.contains("noteRestoreFinished(") { finished.append(url.lastPathComponent) }
-            if body.contains("noteRestoreDiscardRequested(") { discarded.append(url.lastPathComponent) }
+            let n = body.components(separatedBy: "noteRestoreDiscardRequested(").count - 1
+            if n > 0 {
+                discarded.append(url.lastPathComponent)
+                if url.lastPathComponent == "WelcomeRestoreView.swift" { enLaPantalla = n }
+            }
         }
         #expect(finished == ["RestoreProgressView.swift"], """
             Sitios que apagan la ventana al TERMINAR: \(finished.sorted()). Tiene que haber \
@@ -1991,9 +2070,17 @@ struct ICloudRestoreSignalWiringTests {
             """)
         #expect(discarded == ["WelcomeRestoreView.swift"], """
             Sitios que apagan la ventana APARCANDO el reloj: \(discarded.sorted()). Tiene que haber \
-            exactamente uno y ser la confirmación de «Empezar desde cero»: es el único gesto en el que \
-            la persona declara que descarta el import. Desde cualquier otro sitio apaga una descarga \
-            que sigue viva, y encima deja aparcado un reloj que la entrada siguiente heredará.
+            exactamente uno y ser la pantalla de restaurar: es donde vive el único gesto en el que la \
+            persona declara que descarta el import. Desde cualquier otro sitio apaga una descarga que \
+            sigue viva, y encima deja aparcado un reloj que la entrada siguiente heredará.
+            """)
+        #expect(enLaPantalla == 1, """
+            La pantalla apaga aparcando en \(enLaPantalla) sitio(s) y tiene que ser UNO: el punto \
+            único `discardImportAndStartFresh()`, por el que pasan los siete caminos a la puerta \
+            (`wiped-state-reaches-the-discard-gate-with-the-window-open`, 2026-09-22). Este conteo va \
+            por OCURRENCIAS y no por fichero, y esa mitad la trajo una lente de la review: contando \
+            ficheros, un segundo call-site DENTRO de esta misma vista —que es exactamente la forma del \
+            defecto que el ticket cerró— pasaba en verde.
             """)
     }
 
@@ -2286,34 +2373,136 @@ struct ICloudRestoreSignalWiringTests {
     /// verbo deja verdes todas las tablas de la señal: **solo lo caza este escáner y el ciclo completo
     /// de la suite del latch**.
     ///
-    /// **En la confirmación** porque el botón solo abre el diálogo (`showStartFreshConfirm = true`) y
-    /// el `cancel` tiene que poder volver sin haber apagado nada.
-    @Test("MUTACIÓN: «Empezar desde cero» apaga la ventana al CONFIRMAR, y APARCANDO su reloj")
+    /// **Y desde el 2026-09-22 el apagado NO vive en la confirmación, sino un nivel arriba**
+    /// (`wiped-state-reaches-the-discard-gate-with-the-window-open`). Estando en la closure del botón
+    /// destructivo cubría SEIS de los siete caminos a la puerta: el séptimo, `.wiped`, es el único que
+    /// no confirma —su búsqueda concluye por acto de la propia persona— y llegaba con la ventana
+    /// ABIERTA. Hoy los siete pasan por `discardImportAndStartFresh()`, así que lo que este test fija
+    /// es que la confirmación sale por ese punto y que el `cancel` sigue sin pasar por él; que ese
+    /// punto apague lo fija el test de abajo.
+    @Test("MUTACIÓN: «Empezar desde cero» sale por el punto único del descarte, y el cancel no")
     func discardingTheImportClosesTheWindowFromTheConfirmation() throws {
         let view = try Self.code(Self.restoreView)
         let confirmar = try Self.body(of: "Button(L10n.Welcome.Restore.startFreshConfirmConfirm, role: .destructive) {",
                                       in: view)
-        #expect(confirmar.contains("ICloudRestoreSessionSignal.noteRestoreDiscardRequested(flowToken)"), """
-            Descartar el import dejó de apagar la ventana de sesión con el verbo que APARCA su reloj. \
-            La persona acaba de declarar que no quiere esas filas —detrás de este botón está la puerta \
-            que las borra—, así que la premisa que sostiene todo el diseño de la señal, «las filas \
-            siguen entrando», deja de valer; pero la puerta solo PREGUNTA, así que volver de ella no \
-            puede estrenar un tope duro nuevo. Con `noteRestoreFinished` aquí vuelve el recorrido de \
-            tres toques entero, y sin él la ventana vive hasta 600 s con el guard entornado.
+        #expect(confirmar.contains("discardImportAndStartFresh()"), """
+            La confirmación dejó de salir por el punto único que COMPROMETE el descarte. Llamar al \
+            callback directo desde aquí —o apagar a mano— es el swap que compila y que reabre el \
+            ticket: la persona acaba de declarar que no quiere esas filas y la ventana se iría abierta \
+            hasta 600 s con el guard de frontera de cuenta entornado.
             """)
         #expect(!confirmar.contains("noteRestoreFinished"), """
             La confirmación volvió a apagar OLVIDANDO el reloj. Ése es el recorrido de tres toques: \
             «Empezar desde cero» → «Volver» → Restaurar estrena ventana nueva, sin esperar nada y sin \
             que ninguna descarga tenga que estar viva.
             """)
-        #expect(confirmar.contains("onStartFresh()"), "y sigue llevando a la puerta de descarte")
 
         // El `cancel` no puede apagar nada: quien se arrepiente del diálogo sigue restaurando.
+        // **Y sus dos negativas no pueden fallar HOY, que lo midió una lente de la review**: ese
+        // cuerpo está vacío, así que no contiene nada. Se quedan como red de futuro —el día que
+        // alguien le ponga trabajo dentro, esto dice qué no puede hacer—, no como medida de ahora.
         let cancelar = try Self.body(of: "Button(L10n.Welcome.Restore.startFreshConfirmCancel, role: .cancel) {",
                                      in: view)
         #expect(!cancelar.contains("ICloudRestoreSessionSignal"), """
             Cancelar el diálogo toca la ventana de sesión. Quien se arrepiente sigue en Restaurar con \
             su import bajando, y apagarle la ventana ahí le devuelve el bloqueo sobre su propia cuenta.
+            """)
+        #expect(!cancelar.contains("discardImportAndStartFresh"), """
+            Cancelar el diálogo COMPROMETE el descarte. Ese botón existe para volver sin haber hecho \
+            nada: apaga la ventana de quien sigue restaurando y encima se lleva a la puerta.
+            """)
+    }
+
+    /// **TODO CAMINO DE LA PANTALLA A LA PUERTA DE DESCARTE PASA POR EL PUNTO ÚNICO, y el cuerpo de
+    /// ese punto se fija ENTERO.**
+    ///
+    /// `wiped-state-reaches-the-discard-gate-with-the-window-open`, 2026-09-22. El defecto no era una
+    /// decisión mal tomada: era un camino que no pasaba por ella. `wipedView` llevaba
+    /// `primaryAction: onStartFresh` —el callback crudo— y por ahí se llegaba a la puerta con la
+    /// ventana de sesión viva; el `.onDisappear` solo SUELTA la titularidad, así que quedaba huérfana
+    /// hasta el tope duro de 600 s con el guard de frontera de cuenta entornado.
+    ///
+    /// **Lo que caza ESTE ticket son los dos literales, no el conteo — y conviene no confundirlos,
+    /// porque la primera versión de este docblock decía lo contrario** (lo midió una lente de la
+    /// review): sobre el árbol de ANTES del arreglo el conteo de `onStartFresh` también daba 2, y
+    /// seguía dándolo con el bug dentro. Lo que cae en el árbol viejo son `wipedView` sin el literal
+    /// del punto único y el `#require` del propio punto, que no existía. **El conteo cubre otra cosa,
+    /// y por eso se queda**: el octavo camino que alguien escriba mañana.
+    ///
+    /// **Y el conteo va sobre el IDENTIFICADOR, no sobre `onStartFresh()`.** También lo midió la
+    /// review: contando solo la llamada, `YalaPrimaryButton(titulo, action: onStartFresh)` —con la
+    /// `a` minúscula, que es la firma interna de `emptyStateView`—, `primaryAction: self.onStartFresh`
+    /// y `.onTapGesture(perform: onStartFresh)` pasaban los dos escáneres: ahí el callback no se
+    /// llama, se ENTREGA. Contando el identificador, las dos declaraciones que quedan vivas son la
+    /// del `var` y la llamada del punto único, y cualquier tercera aparición —la llame o la entregue,
+    /// con la grafía que sea— pone esto rojo.
+    ///
+    /// **El cuerpo del punto único se fija ENTERO y normalizado, no por `contains`.** Es la regla de
+    /// `.claude/rules/testing.md` para cuando el source-scan es la única red posible, y aquí lo es:
+    /// los dos lados son closures de SwiftUI que ningún unit test invoca. Con cuatro `contains`
+    /// sueltos sobrevivían tres mutantes que la review compiló y midió, y los tres reabren el ticket
+    /// entero: un `noteRestoreAbandoned(flowToken)` antepuesto —que deja el dueño en `nil` y hace que
+    /// el descarte se caiga por su propio `guard`—, un `flowToken = nil` antes del `if let`, y una
+    /// sentencia cualquiera de más. En los tres el conteo daba 1, el orden era correcto y los cuatro
+    /// literales estaban.
+    ///
+    /// **Lo que este test NO cubre, y tiene ticket propio**
+    /// (`discard-gate-cannot-close-an-orphan-session-window`): que el punto único APAGUE de verdad.
+    /// Solo apaga si esta instancia de la vista tiene el token y sigue siendo el dueño; quien sale de
+    /// Restaurar y vuelve a entrar llega con `flowToken == nil` y el descarte es un no-op sobre una
+    /// ventana huérfana todavía viva. Arreglarlo es una decisión —apagar una ventana ajena es justo
+    /// lo que `noteRestoreAbandoned` existe para no hacer—, así que va aparte.
+    @Test("MUTACIÓN: todo camino a la puerta pasa por el punto único, y su cuerpo está fijado entero")
+    func everyPathToTheDiscardGateClosesTheSessionWindow() throws {
+        let view = try Self.code(Self.restoreView)
+
+        let wiped = try Self.body(of: "private var wipedView: some View {", in: view)
+        #expect(wiped.contains("primaryAction: discardImportAndStartFresh"), """
+            `.wiped` volvió a llegar a la puerta de descarte sin pasar por el punto único. Ese estado \
+            sale de un `return` temprano de `startSearch()` que no enciende nada, así que casi siempre \
+            no hay ventana que cerrar — pero `RestoreOfferGate.wasWiped` lee una preferencia \
+            SINCRONIZADA, así que el sello del wipe puede llegar de otro dispositivo entre la primera \
+            búsqueda y el «volver a buscar». Entonces el reintento cae aquí con la ventana del intento \
+            anterior viva y su token puesto, y esto es lo único que la cierra.
+            """)
+
+        // **El IDENTIFICADOR, no la llamada**: entregar el callback no lo llama, y es el swap que
+        // tenía `.wiped`. Dos apariciones legales: la declaración del `var` y la llamada del punto
+        // único. Cualquier tercera es un camino que no apaga.
+        let usos = view.components(separatedBy: "onStartFresh").count - 1
+        #expect(usos == 2, """
+            `onStartFresh` aparece \(usos) vez(veces) en la pantalla de restaurar y tienen que ser \
+            DOS: su declaración (`var onStartFresh: () -> Void`) y la llamada de dentro de \
+            `discardImportAndStartFresh()`. Una tercera es una vista que llega a la puerta de descarte \
+            por su cuenta —llamándolo o ENTREGÁNDOLO como acción de un botón, que el conteo de \
+            `onStartFresh()` no vería—, y ése es el defecto de este ticket con otra vista delante.
+            """)
+        #expect(view.contains("var onStartFresh: () -> Void"), """
+            La declaración del callback cambió de forma, así que el conteo de arriba ya no cuadra por \
+            lo que dice cuadrar: dos usos podrían ser dos llamadas.
+            """)
+
+        // **EL CUERPO ENTERO, normalizado.** Cuatro `contains` dejan sitio a una sentencia antepuesta
+        // que desarma el apagado sin tocar ninguno de los literales — lo midió la review con tres
+        // mutantes vivos. Esto es la regla de `.claude/rules/testing.md` para el source-scan como
+        // única red: cuerpo completo y en orden, no presencia de literales.
+        let punto = try Self.body(of: "private func discardImportAndStartFresh() {", in: view)
+        let sentencias = punto
+            .split(separator: "\n", omittingEmptySubsequences: false)
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+        #expect(sentencias == [
+            "if let flowToken {",
+            "ICloudRestoreSessionSignal.noteRestoreDiscardRequested(flowToken)",
+            "}",
+            "onStartFresh()",
+        ], """
+            El cuerpo del punto único ya no es exactamente el par «apaga, y entonces sale»: \
+            \(sentencias). Cada sentencia de más es un mutante que la review midió vivo: un \
+            `noteRestoreAbandoned(flowToken)` antepuesto deja el dueño en `nil` y el descarte se cae \
+            por su propio `guard`; un `flowToken = nil` antes del `if let` hace que ni entre. Los dos \
+            dejan la ventana viva camino de la puerta con los literales todos presentes. Y el ORDEN \
+            va aquí dentro: el apagado antes del callback, que es lo que cambia de pantalla.
             """)
     }
 

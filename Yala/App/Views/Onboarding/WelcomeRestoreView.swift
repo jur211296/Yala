@@ -208,33 +208,16 @@ struct WelcomeRestoreView: View {
                 titleVisibility: .visible
             ) {
                 Button(L10n.Welcome.Restore.startFreshConfirmConfirm, role: .destructive) {
-                    // **Descartar APAGA la ventana, que no es lo mismo que soltarla.** Lo cazó una
-                    // lente de la review del 2026-09-21 y era una regresión de este mismo ticket:
-                    // desde que el tope agotado con el import vivo ya no apaga, la única salida que
-                    // quedaba aquí era el `onDisappear`, que suelta y deja el reloj —o sea, la ventana
-                    // viva hasta diez minutos con el guard de frontera de cuenta entornado, y en un
-                    // teléfono con el corpus de otra persona eso son ocho minutos de sobra para firmar
-                    // encima. Antes lo cerraba el apagado incondicional a los 90 s.
+                    // **Confirmar ES comprometer el descarte**, así que sale por el punto único que
+                    // lo hace: `discardImportAndStartFresh()`, al final del fichero, donde está
+                    // escrito por qué apagar aquí es correcto y por qué aparca el reloj en vez de
+                    // olvidarlo. Hasta el 2026-09-22 el apagado vivía en esta closure y por eso
+                    // cubría seis de los siete caminos — el séptimo es `.wiped`, que no confirma.
                     //
-                    // Y es el ÚNICO camino de salida en el que apagar es correcto: todo el diseño de la
-                    // señal se apoya en «las filas siguen entrando», y aquí la persona acaba de decir
-                    // lo contrario — lo que hay detrás de este botón es la puerta que las borra.
-                    //
-                    // **Pero apaga APARCANDO el reloj, y no lo olvida** (`restore-session-window-has-no-
-                    // reachable-ceiling`, 2026-09-21). Con `noteRestoreFinished` —lo que había aquí
-                    // hasta hoy— el estado quedaba idéntico al de «nadie ha pedido restaurar en este
-                    // proceso», así que **arrepentirse estrenaba una ventana entera**: la puerta de
-                    // descarte solo PREGUNTA, y sus dos salidas de vuelta («Volver» y «Traer mis
-                    // datos») remontan esta pantalla, cuyo `.task` llama a `startSearch()`. Tres
-                    // toques, sin esperar nada y sin que ninguna descarga tuviera que estar viva, y
-                    // repetibles a voluntad: el recorrido que dejó sin techo al ticket anterior.
-                    // Aparcado, la vuelta hereda el reloj y el tope duro sigue contando desde donde
-                    // contaba — y si ese tope ya se agotó, la entrada estrena con normalidad, que es
-                    // lo que impide reeditar el bloqueo permanente del techo que la review tumbó.
-                    if let flowToken {
-                        ICloudRestoreSessionSignal.noteRestoreDiscardRequested(flowToken)
-                    }
-                    onStartFresh()
+                    // **El `cancel` de aquí al lado NO pasa por ahí, y ése es el otro criterio**:
+                    // quien se arrepiente del diálogo sigue en Restaurar con su import bajando, y
+                    // apagarle la ventana le devolvería el bloqueo sobre su propia cuenta.
+                    discardImportAndStartFresh()
                 }
                 Button(L10n.Welcome.Restore.startFreshConfirmCancel, role: .cancel) {}
             } message: {
@@ -638,9 +621,12 @@ struct WelcomeRestoreView: View {
             primaryTitle: L10n.Welcome.Restore.retry,
             primaryAction: { state = .searching; startSearch() },
             secondaryTitle: L10n.Welcome.Restore.startFresh,
-            // Reusa el `confirmationDialog` del camino `.found` en vez de llamar directo. Desde el
-            // 2026-09-20 lo comparten todos menos uno: el ÚNICO que sigue llamando directo es `.wiped`,
-            // el único desenlace concluyente por acto de la propia persona. Empezar de cero desde aquí
+            // Reusa el `confirmationDialog` del camino `.found` en vez de saltárselo. Desde el
+            // 2026-09-20 lo comparten todos menos uno: el ÚNICO que no confirma es `.wiped`, el único
+            // desenlace concluyente por acto de la propia persona. **Ojo, que ya no llama «directo»**
+            // desde el 2026-09-22: desde entonces los siete caminos pasan por
+            // `discardImportAndStartFresh()`, y lo que `.wiped` no tiene es el diálogo, no el apagado.
+            // Empezar de cero desde aquí
             // arranca un dataset paralelo que, al levantarse el kill, convive con la cuenta que este
             // mismo texto acaba de prometer intacta.
             secondaryAction: { showStartFreshConfirm = true }
@@ -683,6 +669,13 @@ struct WelcomeRestoreView: View {
 
     /// Respeto al wipe: el usuario borró sus datos en este dispositivo → no
     /// ofrecemos recargar, solo empezar de nuevo.
+    ///
+    /// **El ÚNICO de los siete caminos que no confirma, y se queda así** (`bothStatesThatClaimData
+    /// StillConfirm` fija el criterio): la búsqueda aquí concluye por acto de la propia persona, que
+    /// acaba de borrar en este dispositivo, y preguntarle otra vez sería preguntar por algo que ella
+    /// misma decidió hace un momento. **Lo que sí comparte desde el 2026-09-22 es el apagado**
+    /// (`wiped-state-reaches-the-discard-gate-with-the-window-open`): hasta hoy pasaba el callback
+    /// crudo y llegaba a la puerta de descarte con la ventana de sesión abierta.
     private var wipedView: some View {
         emptyStateView(
             // A11Y-DM: gris neutro de estado vacío (sistema, adapta a Dark Mode)
@@ -691,11 +684,80 @@ struct WelcomeRestoreView: View {
             title: L10n.Welcome.Restore.Wiped.title,
             body: L10n.Welcome.Restore.Wiped.body,
             primaryTitle: L10n.Welcome.Restore.startFresh,
-            primaryAction: onStartFresh
+            primaryAction: discardImportAndStartFresh
         )
     }
 
     // MARK: - Helpers
+
+    /// **El ÚNICO punto por el que se COMPROMETE el descarte del import**: apaga la ventana de sesión
+    /// aparcando su reloj, y entonces lleva a la puerta.
+    ///
+    /// **Apagar**, porque la persona acaba de declarar que no quiere esas filas —lo que hay detrás es
+    /// la puerta que las borra— y la premisa de la que cuelga todo el diseño de la señal, «las filas
+    /// siguen entrando y hay que protegerlas», deja de valer. Es el único gesto de salida en el que
+    /// apagar es correcto: irse de Restaurar SUELTA la titularidad y no toca el reloj, porque CloudKit
+    /// no para porque nadie mire.
+    ///
+    /// **Aparcando**, y no olvidando (`restore-session-window-has-no-reachable-ceiling`, 2026-09-21):
+    /// la puerta de descarte **solo PREGUNTA, no ha borrado nada**, y sus dos salidas de vuelta
+    /// —«Volver» y «Traer mis datos»— remontan esta pantalla, cuyo `.task` llama a `startSearch()`.
+    /// Con un apagado a secas el estado quedaba idéntico al de «nadie ha pedido restaurar en este
+    /// proceso» y volver estrenaba 600 s enteros en tres toques, sin esperar nada y sin que ninguna
+    /// descarga tuviera que estar viva. Aparcado, la vuelta hereda el reloj; y agotado el tope duro,
+    /// la entrada siguiente estrena con normalidad, que es lo que impide reeditar el bloqueo que la
+    /// review tumbó.
+    ///
+    /// **Es un punto único desde el 2026-09-22**
+    /// (`wiped-state-reaches-the-discard-gate-with-the-window-open`), y antes vivía dentro de la
+    /// closure del botón destructivo del diálogo. Ahí cubría SEIS de los siete caminos: el séptimo,
+    /// `.wiped`, pasa el callback sin confirmar, así que llegaba a la puerta con la ventana ABIERTA.
+    /// El `.onDisappear` de arriba solo SUELTA la titularidad, de modo que quedaba huérfana y viva
+    /// hasta el tope duro de 600 s con el guard de frontera de cuenta entornado — en un teléfono con
+    /// el corpus de otra persona, ocho minutos de sobra para firmar encima.
+    ///
+    /// **Y por `.wiped` ese aparcado es INERTE, medido**: la vuelta desde la puerta remonta esta
+    /// pantalla, `startSearch()` sale otra vez por el mismo `return` —el sello del wipe no ha
+    /// cambiado— y `noteRestoreUnavailable()` lo tira. Para heredarlo haría falta una entrada con
+    /// `wasWiped == false`, y cualquier entrada intermedia lo destruye antes. Se aparca igual porque
+    /// este punto es compartido y por los otros seis caminos sí vale; el párrafo de arriba describe
+    /// esos seis, no éste.
+    ///
+    /// **Por `.wiped` normalmente no hay ventana que cerrar, y ahí estaba la trampa**: ese estado sale
+    /// de un `return` temprano de `startSearch()`, que corre ANTES del encendido, así que en la
+    /// primera entrada esto es un no-op limpio. Pero `RestoreOfferGate.wasWiped` lee
+    /// `PreferenceSyncService.lastWipeTimestamp`, **una preferencia SINCRONIZADA**: puede llegar de
+    /// otro dispositivo entre la primera búsqueda y el «volver a buscar», y entonces el reintento cae
+    /// en `.wiped` con la ventana del intento anterior viva y su token todavía en `flowToken`
+    /// —`noteRestoreUnavailable()` tira el aparcado y la gracia, pero no la ventana ni su dueño, por
+    /// diseño—.
+    ///
+    /// **El orden es el seguro, y su daño está INFERIDO, no medido** —lo midieron dos lentes de la
+    /// review, y este párrafo decía antes que sí—. El apagado va ANTES de `onStartFresh()`, que es lo
+    /// que cambia de pantalla; detrás de ese cambio corre el `.onDisappear`, que llama a
+    /// `noteRestoreAbandoned` y pone el dueño a `nil`. **Hoy invertirlo también funcionaría**: los dos
+    /// consumidores navegan mutando estado (`ContentView` baja su binding, `FullModeActivationView`
+    /// hace `go(to:)`), así que el `.onDisappear` corre en el ciclo de actualización siguiente y no
+    /// dentro de esta closure — y aunque corriera, llegaría con el dueño ya en `nil` y sería un
+    /// no-op. Se fija el orden igualmente porque depende de cómo navegue un consumidor futuro, no de
+    /// este código.
+    ///
+    /// **Y el `cancel` del diálogo no pasa por aquí**, que es el otro criterio del ticket: quien se
+    /// arrepiente vuelve a Restaurar con su import bajando y su ventana intacta.
+    ///
+    /// **LO QUE ESTO NO CIERRA, y tiene ticket propio**
+    /// (`discard-gate-cannot-close-an-orphan-session-window`, lente 1 de la review del 2026-09-22):
+    /// apagar pide las dos cosas —token en el `@State` de ESTA instancia y que siga siendo el dueño—,
+    /// así que quien sale de Restaurar y **vuelve a entrar** llega aquí con `flowToken == nil` y esto
+    /// es un no-op sobre una ventana huérfana que sigue viva. Cerrarlo es una decisión, no una
+    /// omisión: apagar una ventana que no es de este intento es justo lo que `noteRestoreAbandoned`
+    /// existe para no hacer.
+    private func discardImportAndStartFresh() {
+        if let flowToken {
+            ICloudRestoreSessionSignal.noteRestoreDiscardRequested(flowToken)
+        }
+        onStartFresh()
+    }
 
     private func emptyStateView(
         icon: String,

@@ -67,9 +67,12 @@
 //     asentamiento o la caducidad. Apagarla aquí es justo lo que prohíbe el párrafo de «no se apaga al
 //     volver atrás». Lo llama `WelcomeRestoreView` al desaparecer ELLA, no la pantalla de progreso —
 //     ver su docblock, que es la mitad del ticket del tope.
-//   · `noteRestoreDiscardRequested` — la persona **confirmó «Empezar desde cero»**. Apaga las dos
+//   · `noteRestoreDiscardRequested` — la persona **pidió «Empezar desde cero»**. Apaga las dos
 //     cosas **y aparca el reloj**, porque la puerta que hay detrás solo PREGUNTA: si vuelve sin haber
-//     borrado nada, esa entrada hereda el reloj en vez de estrenar tope duro nuevo.
+//     borrado nada, esa entrada hereda el reloj en vez de estrenar tope duro nuevo. Dice «pidió» y no
+//     «confirmó» desde el 2026-09-22: seis de los siete caminos confirman con diálogo y `.wiped` no
+//     —su búsqueda concluye por acto de la propia persona—, así que lo llama el punto único de
+//     `WelcomeRestoreView` y no una confirmación.
 //   · `noteRestoreFinished` — el intento terminó **y no queda descarga**. Apaga las dos cosas, y
 //     además BORRA el aparcado: después de un final de verdad, lo que venga es una entrada nueva.
 //     **Lo que NO borra es el ancla de la gracia**, y eso es el ticket del 2026-09-22: es el verbo por
@@ -98,8 +101,8 @@
 //  se recalcula vivo, así que un import de rutina del espejo puede reabrirla. Es la exposición que el
 //  ticket compra a cambio de no bloquear al dueño legítimo sobre sus propios datos, y las dos salidas
 //  que sí sabían que no queda descarga la cierran antes: el asentamiento, y «Empezar desde cero», que
-//  apaga desde su propia confirmación en `WelcomeRestoreView` —aparcando el reloj, para que volver de
-//  la puerta sin haber borrado no estrene uno nuevo—.
+//  apaga desde el punto único de `WelcomeRestoreView` —aparcando el reloj, para que volver de la
+//  puerta sin haber borrado no estrene uno nuevo—.
 //
 
 import Foundation
@@ -150,7 +153,7 @@ enum ICloudRestoreSessionSignal {
     /// `restore-session-window-has-no-reachable-ceiling`, 2026-09-21. Lo escribe
     /// `noteRestoreDiscardRequested` y lo lee —una vez— el estreno de `noteRestoreStarted`. Existe
     /// porque apagar la ventana y OLVIDAR que existió son dos cosas distintas, y confundirlas era el
-    /// recorrido de tres toques que tumbó el techo del ticket anterior: la confirmación de «Empezar
+    /// recorrido de tres toques que tumbó el techo del ticket anterior: el «Empezar
     /// desde cero» dejaba el estado idéntico al de «nadie ha pedido restaurar en este proceso», y la
     /// vuelta desde la puerta —que **solo pregunta: no ha borrado nada**— estrenaba 600 s enteros sin
     /// esperar nada y sin necesitar que ninguna descarga estuviera viva.
@@ -381,11 +384,18 @@ enum ICloudRestoreSessionSignal {
         graceStartedAt = nil
     }
 
-    /// La persona **confirmó que quiere empezar de cero**: apaga la ventana y APARCA su reloj.
+    /// La persona **pidió empezar de cero**: apaga la ventana y APARCA su reloj.
     ///
-    /// `restore-session-window-has-no-reachable-ceiling`, 2026-09-21. Lo llama la confirmación de
-    /// «Empezar desde cero» en `WelcomeRestoreView`, que hasta hoy llamaba a `noteRestoreFinished`.
-    /// Las dos mitades hacen falta y ninguna sola basta:
+    /// `restore-session-window-has-no-reachable-ceiling`, 2026-09-21. Lo llama
+    /// `WelcomeRestoreView.discardImportAndStartFresh()`, que hasta ese día era una llamada a
+    /// `noteRestoreFinished` dentro de la confirmación del diálogo. Las dos mitades hacen falta y
+    /// ninguna sola basta:
+    ///
+    /// **«Pidió» y no «confirmó», desde el 2026-09-22**
+    /// (`wiped-state-reaches-the-discard-gate-with-the-window-open`): el apagado subió de la closure
+    /// del botón destructivo a un punto único por el que pasan los SIETE caminos a la puerta. Seis
+    /// confirman con diálogo; `.wiped` no, porque su búsqueda concluye por acto de la propia persona
+    /// —acaba de borrar en ese dispositivo—. Lo que comparten no es la confirmación: es el gesto.
     ///
     ///  · **Apagar**, porque la persona acaba de declarar que descarta el import, y la premisa de la
     ///    que cuelga todo este diseño —«las filas siguen entrando y hay que protegerlas»— deja de
@@ -436,7 +446,7 @@ enum ICloudRestoreSessionSignal {
     /// DESENLACE en vez del abandono.
     ///
     /// **Y su llamador es UNO: la espera de `RestoreProgressView`.** Durante unas horas del 2026-09-21
-    /// tuvo un segundo —la confirmación de «Empezar desde cero»— y ése se mudó a
+    /// tuvo un segundo —el botón de «Empezar desde cero»— y ése se mudó a
     /// `noteRestoreDiscardRequested`, que apaga igual pero APARCA el reloj
     /// (`restore-session-window-has-no-reachable-ceiling`). La diferencia no es de estilo: aquí
     /// «terminó» significa que no queda nada que proteger, mientras que detrás del botón de descarte
