@@ -114,6 +114,10 @@ private final class RoutingStub: SyncHTTPSession, @unchecked Sendable {
     var merkleErrorBody = Data()
     private let lock = NSLock()
     private(set) var pushedSyncIDs: [String] = []
+    /// Cuántas veces se pidió cada paso. Lo que prueba que un desenlace CORTÓ la pasada no es su valor —un
+    /// `.blocked` puede salir de cualquiera de los tres— sino que los pasos posteriores no llegaron a pedirse.
+    private(set) var pullCallCount = 0
+    private(set) var merkleCallCount = 0
     /// Deltas COMPLETOS del último push (para assertar contenido real — lección d49d2e47: fila full-row, no
     /// solo identidad). Cada entry es el objeto JSON `{sync_id, entity_type, fields, client_mutation_id}`.
     private(set) var lastPushedDeltas: [[String: Any]] = []
@@ -151,10 +155,12 @@ private final class RoutingStub: SyncHTTPSession, @unchecked Sendable {
             return (body, resp(200))
         }
         if path.contains("sync/pull") {
+            pullCallCount += 1
             if pullStatus != 200 { return (Data(), resp(pullStatus)) }
             return (Data("{\"deltas\":[],\"max_server_seq\":0}".utf8), resp(200))
         }
         if path.contains("sync/merkle") {
+            merkleCallCount += 1
             if merkleStatus != 200 { return (merkleErrorBody, resp(merkleStatus)) }
             return (merkleBody, resp(200))
         }
@@ -596,7 +602,7 @@ struct MigrationWorkExecutorTests {
         // `.newDeltaDetected` antes de llegar al pull. Un `reverseDrainOnce` con el push en 200 lo limpia.
         stub.pushStatus = 200
         #expect(await executor.reverseDrainOnce() == .completed, "control: con todo en 200, el drain cierra")
-        #expect(liveOutboxRows(context).isEmpty, "control del escenario: sin este vacío, el pull no se alcanza")
+        #expect(try liveOutboxRows(context).isEmpty, "control del escenario: sin este vacío, el pull no se alcanza")
         stub.pullStatus = 403
         #expect(await executor.verify() == .blocked(.accountUnavailable),
                 "verify: el 403 del pull no es red, y tampoco pide volver a entrar")
@@ -606,9 +612,166 @@ struct MigrationWorkExecutorTests {
 
     /// Filas vivas del outbox: el escenario de arriba depende de que esté vacío, y afirmarlo es lo que impide que el
     /// caso se sostenga por casualidad (la trampa del «escenario que no recorre la rama que dice»).
-    private func liveOutboxRows(_ context: ModelContext) -> [SyncOutbox] {
-        ((try? context.fetch(FetchDescriptor<SyncOutbox>())) ?? []).filter { $0.rejectedReason == nil }
+    ///
+    /// **Propaga desde el 2026-09-22** (ticket `verify-reads-a-failed-local-fetch-as-an-empty-outbox`): era un
+    /// `try?` con `?? []`, o sea el mismo antipatrón que el ticket arregla, metido en el CONTROL del escenario. Un
+    /// fetch que lanzara aquí habría dado «outbox vacío» y el control habría certificado una premisa falsa — justo
+    /// lo que estos helpers existen para no hacer. Si lanza, el test se cae, que es lo correcto.
+    private func liveOutboxRows(_ context: ModelContext) throws -> [SyncOutbox] {
+        try context.fetch(FetchDescriptor<SyncOutbox>()).filter { $0.rejectedReason == nil }
     }
+
+    // MARK: - El outbox que no se deja leer (`verify-reads-a-failed-local-fetch-as-an-empty-outbox`)
+
+    /// **EL caso del ticket.** Hasta el 2026-09-22 un `fetch(SyncOutbox)` que lanzaba devolvía `[]`, y la misma
+    /// avería producía dos conclusiones opuestas en UNA pasada: el pre-check leía «no hay nada que subir» y se
+    /// saltaba el push entero, y veinte líneas después `verifyIntegrity` repetía el mismo fetch y lo trataba como
+    /// algo que no se arregla esperando. La primera era demasiado optimista y la segunda demasiado pesimista.
+    ///
+    /// Se mide en las dos mitades, porque un desenlace correcto por el camino equivocado no cierra el ticket:
+    /// (a) el veredicto es `.blocked(.localFailure)`, el mismo al que `VerifyProbeMapping` manda
+    /// `outbox-fetch-failed` — o sea, la pasada tiene UNA sola lectura; (b) **la pasada CORTÓ**, y eso se afirma
+    /// con los contadores del stub: sin push subido, sin pull pedido y sin Merkle pedido. Con el `[]` de antes el
+    /// pull y el Merkle sí se pedían, así que el contador en cero es lo que distingue «lo arreglé» de «coincide».
+    @Test("verify: un outbox ilegible corta con un desenlace propio y NO se salta el push")
+    func verify_unreadableOutbox_blocksLocalFailure_andStopsThePass() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let executor = makeExecutor(context, CloudSyncEngine(), stub,
+                                    FakeSession(token: "jwt", userID: "sub-1"), FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+
+        // Una fila local pendiente: sin ella el escenario no distingue «no había nada» de «no se pudo leer».
+        context.insert(Category(name: "food", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false))
+        try context.save()
+
+        // Control del escenario ANTES de la avería: esa fila LLEGA al outbox y sin el seam se sube. Sin esto, el
+        // caso no distinguiría «no había nada que subir» de «no se pudo leer», que es justo su tesis.
+        let sano = makeExecutor(context, CloudSyncEngine(), stub,
+                                FakeSession(token: "jwt", userID: "sub-1"), FakeBeaconStore(),
+                                personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        #expect(await sano.verify() == .newDeltaDetected,
+                "control del escenario: sin la avería esta fila se sube y la pasada pide un re-run")
+        #expect(!stub.pushedSyncIDs.isEmpty, "control del escenario: la fila existe y el push la sube")
+
+        // Y ahora el caso, con el outbox re-poblado para que haya algo que saltarse.
+        context.insert(Category(name: "drinks", colorHex: "#FEDCBA", isIncome: false, isDefaultSeed: false))
+        try context.save()
+        let pullsAntes = stub.pullCallCount
+        let merkleAntes = stub.merkleCallCount
+        let subidasAntes = stub.pushedSyncIDs.count
+
+        executor._testOutboxFetchThrowsFromCall = 1
+        let probe = await executor.verify()
+
+        #expect(probe == .blocked(.localFailure),
+                "el outbox ilegible tiene desenlace propio, no se lee como vacío")
+        #expect(probe == VerifyProbeMapping.map(verdict: .skipped(reason: MerkleSkipReason.outboxFetchFailed)),
+                "y es EL MISMO que el verificador Merkle da para ese fallo: una lectura, una conclusión")
+        #expect(stub.pushedSyncIDs.count == subidasAntes, "no se sube nada a ciegas")
+        // Y NO llega al pull. Con el `[]` de antes sí llegaba, y es el detalle que distingue este arreglo de
+        // cualquier otro corte: `live.isEmpty` daba true, se saltaba el push entero y la pasada seguía adelante
+        // hasta el Merkle, que sacaba la conclusión CONTRARIA del mismo fallo. Lo mata el mutante.
+        #expect(stub.pullCallCount == pullsAntes, "la pasada corta AQUÍ: con el `[]` de antes seguía al pull")
+        #expect(stub.merkleCallCount == merkleAntes, "y no llega al Merkle a sacar la conclusión contraria")
+    }
+
+    /// La SEGUNDA lectura de `verify()`, la de después del push, y era la peor de las dos: con `[]` devolvía
+    /// `.newDeltaDetected`, que **no consume reintento**. O sea que una base ilegible no solo se leía como «todo
+    /// subido» sino como «llegó un delta, vuelve a correr gratis» — una re-corrida sin techo alimentada por la
+    /// propia avería. El contador del seam existe para que esta rama sea alcanzable: con un `Bool`, la primera
+    /// lectura corta antes y nadie mediría ésta.
+    ///
+    /// El control del escenario es `pushedSyncIDs`: si el push no llegó a correr, este test estaría midiendo el
+    /// caso de arriba con otro nombre.
+    @Test("verify: si el outbox se vuelve ilegible DESPUÉS del push, tampoco es un re-run gratis")
+    func verify_unreadableOutboxAfterPush_blocksInsteadOfFreeRerun() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let executor = makeExecutor(context, CloudSyncEngine(), stub,
+                                    FakeSession(token: "jwt", userID: "sub-1"), FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+
+        context.insert(Category(name: "food", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false))
+        try context.save()
+
+        // La 1.ª lectura (pre-check) pasa y deja correr el push; la 2.ª (post-push) lanza.
+        executor._testOutboxFetchThrowsFromCall = 2
+        let probe = await executor.verify()
+
+        #expect(!stub.pushedSyncIDs.isEmpty, "control del escenario: el push TIENE que haber corrido")
+        #expect(probe == .blocked(.localFailure),
+                "la relectura fallida no vale un re-run barato — devolvía `.newDeltaDetected`, que NO consume reintento")
+    }
+
+    /// El gemelo en la VUELTA, y donde el precio es mayor: `reverseDrainOnce` podía devolver `.completed` con el
+    /// outbox sin leer, y lo siguiente que hace la vuelta a iCloud es CONGELAR el backend. Dar por drenado lo que
+    /// nadie pudo mirar y cerrar la puerta detrás.
+    ///
+    /// `.blocked(.localFailure)` elige el techo CORTO de la etapa (`ReversePreMountBlocker.stallCause`), que es el
+    /// trato que el ticket hermano ya le dio a esta misma avería vista desde el Merkle.
+    @Test("reverseDrainOnce: un outbox ilegible no se da por drenado")
+    func reverseDrain_unreadableOutbox_doesNotReportCompleted() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let executor = makeExecutor(context, CloudSyncEngine(), stub,
+                                    FakeSession(token: "jwt", userID: "sub-1"), FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+
+        context.insert(Category(name: "food", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false))
+        try context.save()
+
+        executor._testOutboxFetchThrowsFromCall = 1
+        let outcome = await executor.reverseDrainOnce()
+
+        #expect(outcome == .blocked(.localFailure),
+                "esperar no arregla una lectura que falla, y no se da por drenado: detrás viene el congelado")
+        #expect(stub.pullCallCount == 0, "corta antes del pull final")
+        #expect(stub.pushedSyncIDs.isEmpty, "sin subir nada a ciegas")
+
+        // Control en la dirección contraria: con el store legible el mismo escenario cierra Y SUBE. Sin la
+        // segunda mitad, `.completed` también sale con el outbox vacío —el push es condicional— así que el
+        // control pasaría aunque la `Category` no hubiera encolado nada.
+        executor._testOutboxFetchThrowsFromCall = nil
+        #expect(await executor.reverseDrainOnce() == .completed,
+                "control: sin la avería, este escenario SÍ drena — el `blocked` de arriba lo produce el fetch")
+        #expect(!stub.pushedSyncIDs.isEmpty, "control del escenario: y había de verdad una fila que subir")
+    }
+
+    /// El barrido del líder antes de `migration_progress('complete')`. Con `[]` el residual salía vacío, no se
+    /// subía nada y el `complete` se mandaba igual: la migración de la cuenta se cerraba con las filas del líder
+    /// fuera. Ahora propaga como el resto de cortes retomables de ese bloque, y el `complete` no llega a pedirse.
+    @Test("leader-reconcile: un outbox ilegible corta retomable y NO manda 'complete'")
+    func leaderReconcile_unreadableOutbox_throwsBeforeComplete() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let executor = makeExecutor(context, CloudSyncEngine(), stub,
+                                    FakeSession(token: "jwt", userID: "sub-1"), FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+
+        // Control del escenario PRIMERO: sin la avería este efecto llega a mandar `complete`. Sin él, un mutante
+        // que lanzara al ENTRAR en el efecto pasaría las dos aserciones de abajo sin tocar el outbox.
+        let sano = makeExecutor(context, CloudSyncEngine(), stub,
+                                FakeSession(token: "jwt", userID: "sub-1"), FakeBeaconStore(),
+                                personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        try await sano.execute(.runLeaderReconcileFromFrozenCloudKit)
+        #expect(stub.migrationCallCount == 1, "control del escenario: sin la avería SÍ se manda `complete`")
+
+        executor._testOutboxFetchThrowsFromCall = 1
+        // El `effect` EXACTO, no el tipo: `notWired` es el mismo case que usan `sweepTransient`,
+        // `sessionExpired`, `otherLeader` y `rejected`, así que `throws: MigrationExecutorError.self` no
+        // distinguiría esta rama de ninguna de las otras cuatro.
+        await #expect(throws: MigrationExecutorError.notWired(effect: "runLeaderReconcile: outboxUnreadable")) {
+            try await executor.execute(.runLeaderReconcileFromFrozenCloudKit)
+        }
+        #expect(stub.migrationCallCount == 1,
+                "el `complete` NO se manda otra vez: cerraría la migración con filas del líder sin subir")
+    }
+
 
     @Test("verify limpio: pull vacío marca lastPull + Merkle converge → match")
     func verify_clean_converged_match() async throws {
@@ -621,7 +784,7 @@ struct MigrationWorkExecutorTests {
                                     personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
 
         // Merkle remoto = árbol LOCAL (store vacío → converge byte a byte).
-        let local = SyncMerkle.computeLocalMerkle(context: context)
+        let local = try SyncMerkle.computeLocalMerkle(context: context)
         var entitiesJSON: [String: Any] = [:]
         for (table, summary) in local.entities {
             entitiesJSON[table] = ["count": summary.count, "hash": summary.hashHex]
@@ -655,7 +818,7 @@ struct MigrationWorkExecutorTests {
                                     personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
 
         // Merkle remoto = árbol LOCAL (store vacío → converge byte a byte) para el control del final.
-        let local = SyncMerkle.computeLocalMerkle(context: context)
+        let local = try SyncMerkle.computeLocalMerkle(context: context)
         var entitiesJSON: [String: Any] = [:]
         for (table, summary) in local.entities {
             entitiesJSON[table] = ["count": summary.count, "hash": summary.hashHex]
@@ -665,7 +828,7 @@ struct MigrationWorkExecutorTests {
             "root": local.rootHex, "entities": entitiesJSON,
         ])
 
-        #expect(liveOutboxRows(context).isEmpty, "control del escenario: sin outbox vacío no se alcanza el Merkle")
+        #expect(try liveOutboxRows(context).isEmpty, "control del escenario: sin outbox vacío no se alcanza el Merkle")
 
         stub.merkleStatus = 401
         #expect(await executor.verify() == .sessionExpired,
@@ -692,9 +855,12 @@ struct MigrationWorkExecutorTests {
         #expect(await executor.verify() == .match)
     }
 
-    /// Los dos `fetch` de SwiftData de `verifyIntegrity` y el `reason` desconocido no se pueden montar desde el
-    /// transporte, así que su lectura se fija en el mapping (`VerifyProbeMappingTests`). Lo que SÍ se mide aquí es
-    /// que ese mapping es el que `verify()` usa: con un canon que este build no compara, el veredicto sale por él.
+    /// El `reason` desconocido y el `fetch` de la CUARENTENA no se pueden montar desde el transporte, así que su
+    /// lectura se fija en el mapping (`VerifyProbeMappingTests`). **Ya no son «los dos `fetch`»**: desde
+    /// `verify-reads-a-failed-local-fetch-as-an-empty-outbox` el del outbox SÍ se monta —con
+    /// `_testOutboxFetchThrowsFromCall`, en los tests de más arriba— y el del cómputo del árbol local también, en
+    /// `SyncMerkleTests`. Lo que SÍ se mide aquí es que ese mapping es el que `verify()` usa: con un canon que
+    /// este build no compara, el veredicto sale por él.
     @Test("verify: el veredicto del Merkle pasa por VerifyProbeMapping, no por una tabla paralela")
     func verify_contractMismatch_goesThroughTheMapping() async throws {
         let dir = freshDir(); defer { cleanup(dir) }

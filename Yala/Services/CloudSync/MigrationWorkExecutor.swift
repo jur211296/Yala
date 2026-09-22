@@ -34,6 +34,10 @@ nonisolated enum MigrationExecutorError: Error, Equatable {
     /// resume" (quiescencia no alcanzada, red del reconcile). Mismo tratamiento del runner que `notWired`
     /// (throw → journaled retomable), pero el log no miente diciendo que falta wiring.
     case adoptRetry(reason: String)
+    /// El `fetch` de `SyncOutbox` lanzó (ticket `verify-reads-a-failed-local-fetch-as-an-empty-outbox`). No se
+    /// deja escapar el error de SwiftData tal cual: que tenga un caso PROPIO es lo que permite a cada llamador
+    /// distinguir «no pude leer la cola» de cualquier otro fallo, y a un test afirmarlo sin mirar un string.
+    case outboxUnreadable
 }
 
 // MARK: - AdoptReconcileOutcome (DIFERIDOS #30, mecanismo v1 DARK)
@@ -154,6 +158,17 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     private let provider: @MainActor () -> String
     private let beacon: CloudBeacon
     private let personalStoreURL: URL
+
+    /// A partir de la N-ésima llamada (1-based), `liveOutboxRows()` LANZA — monta «la base local no se deja leer»
+    /// sin tocar el store. `ModelContext` es una `final class` de SwiftData sin protocolo detrás, así que no hay
+    /// doble que inyectar; el molde es `CloudSyncEngine._testThrowOnTokenHistoryFetch` y sus tres hermanos.
+    ///
+    /// **Es un contador y no un `Bool` porque `verify()` lee el outbox DOS veces** y las dos lecturas tienen
+    /// desenlaces distintos que arreglar: la de antes del push se saltaba el push, y la de después devolvía
+    /// `.newDeltaDetected`, que no consume reintento. Con un `Bool` la segunda es inalcanzable —la primera corta
+    /// antes— y su rama quedaría sin medir. SOLO tests.
+    var _testOutboxFetchThrowsFromCall: Int?
+    private var _testOutboxFetchCount = 0
     private let uploader: MigrationSnapshotUploader
     /// Fuente de tombstones para el barrido de zombies (§h.3). Default = `pullClient`; inyectable para el
     /// golden §h.5 (enumeración PURA, sin applyPage/cursor/testigos).
@@ -508,7 +523,18 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         // dead-letter (el mismatch que provoca consume presupuesto de MISMATCH → degrada honesto a
         // failedRollback) en vez de hacer fallar el push entero consumiendo presupuesto de RED.
         engine.drainOnce(context: context)
-        let allLive = liveOutboxRows()
+        // El outbox que no se deja leer NO es un outbox vacío, y este es el sitio donde esa diferencia se paga
+        // (ticket `verify-reads-a-failed-local-fetch-as-an-empty-outbox`). Hasta el 2026-09-22 el `catch` del
+        // helper devolvía `[]`, así que la misma avería se leía aquí como «no hay nada que subir» —saltándose un
+        // push que sí hacía falta— y veinte líneas después, en `verifyIntegrity`, como algo definitivo. Dos
+        // conclusiones opuestas de una sola lectura fallida, en la misma pasada.
+        let allLive: [SyncOutbox]
+        do {
+            allLive = try liveOutboxRows()
+        } catch {
+            CloudSyncBreadcrumb.outboxFetchFailed(step: "verify")
+            return .blocked(.localFailure)
+        }
         let (live, poison) = pushClient.partitionBuildable(allLive)
         engine.deadLetterPoison(poison, context: context, now: now())
         if !live.isEmpty {
@@ -517,7 +543,17 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
                 await pushClient.applyResults(results, rows: live, engine: engine, context: context)
                 // Si tras el push quedan filas VIVAS → red (transient); si el outbox quedó limpio → un delta
                 // aterrizó y se subió → re-run barato (NO consume retry).
-                return liveOutboxRows().isEmpty ? .newDeltaDetected : .networkTimeout
+                //
+                // **Y si no se deja leer, no es ninguna de las dos.** Esta relectura era la peor de las cuatro:
+                // `[]` daba `.newDeltaDetected`, que NO consume reintento, así que una base ilegible no solo se
+                // leía como «todo subido» sino como «llegó un delta, vuelve a correr gratis» — una re-corrida sin
+                // techo alimentada por la avería.
+                do {
+                    return try liveOutboxRows().isEmpty ? .newDeltaDetected : .networkTimeout
+                } catch {
+                    CloudSyncBreadcrumb.outboxFetchFailed(step: "verify-after-push")
+                    return .blocked(.localFailure)
+                }
             case .sessionExpired:
                 return .sessionExpired
             case .accountUnavailable:
@@ -549,14 +585,29 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         return VerifyProbeMapping.map(verdict: verdict)
     }
 
-    private func liveOutboxRows() -> [SyncOutbox] {
+    /// Filas de outbox VIVAS (dead-letters excluidos — nunca suben).
+    ///
+    /// **LANZA desde el 2026-09-22** (ticket `verify-reads-a-failed-local-fetch-as-an-empty-outbox`). Devolvía
+    /// `[]`, y `[]` aquí no significa «no hay nada que subir»: significa «no sé lo que hay». Los cuatro
+    /// llamadores lo leían como lo primero y se saltaban el push — el mismo fallo que veinte líneas después
+    /// `verifyIntegrity` ya trataba como un desenlace propio (`.blocked(.localFailure)`). Con `throws`, cada uno
+    /// contesta por su cuenta y el compilador no deja que nadie se olvide.
+    private func liveOutboxRows() throws -> [SyncOutbox] {
+        // El seam va DENTRO del `do`, no antes: así el camino de error que recorre un test es el `catch` REAL
+        // del fetch. Puesto fuera, un mutante que reintrodujera `return []` ahí seguiría verde.
         do {
+            // El contador solo corre con el seam ARMADO: en producción `from` es `nil` y esto es una
+            // comparación, no una escritura.
+            if let from = _testOutboxFetchThrowsFromCall {
+                _testOutboxFetchCount += 1
+                if _testOutboxFetchCount >= from { throw MigrationExecutorError.outboxUnreadable }
+            }
             return try context.fetch(FetchDescriptor<SyncOutbox>()).filter { $0.rejectedReason == nil }
         } catch {
             #if DEBUG
             print("MigrationWorkExecutor: fetch(SyncOutbox) falló: \(error)")
             #endif
-            return []
+            throw MigrationExecutorError.outboxUnreadable
         }
     }
 
@@ -656,7 +707,17 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
             // ventana (resurrección benigna) + import-lag (duplicado curable). Candidato v2 (device que jamás
             // adopta) = lectura directa del CloudKit congelado por el líder (opción C, descartada v1).
             engine.drainOnce(context: context)
-            let residual = liveOutboxRows()
+            // Un outbox ilegible PROPAGA (ticket `verify-reads-a-failed-local-fetch-as-an-empty-outbox`): con `[]`
+            // el barrido salía vacío y el `migration_progress('complete')` de abajo se mandaba igual, cerrando la
+            // migración de la cuenta con filas del líder sin subir. El molde retomable es el que este bloque ya
+            // usa para la red — el resume re-corre el efecto entero, que es idempotente.
+            let residual: [SyncOutbox]
+            do {
+                residual = try liveOutboxRows()
+            } catch {
+                CloudSyncBreadcrumb.outboxFetchFailed(step: "leader-reconcile")
+                throw MigrationExecutorError.notWired(effect: "runLeaderReconcile: outboxUnreadable")
+            }
             let (buildable, poison) = pushClient.partitionBuildable(residual)
             engine.deadLetterPoison(poison, context: context, now: now())
             if !buildable.isEmpty {
@@ -967,7 +1028,17 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     /// día se quedaba en `.transient` y la vuelta se paraba aquí sin salida.
     func reverseDrainOnce() async -> ReverseStepOutcome {
         engine.drainOnce(context: context)
-        let allLive = liveOutboxRows()
+        // Igual que en `verify()`, y aquí el precio es mayor: con `[]` esta fase podía devolver `.completed` sin
+        // haber subido nada, y lo siguiente que hace la vuelta es CONGELAR el backend. O sea, dar por drenado un
+        // outbox que nadie pudo leer y cerrar la puerta detrás (ticket
+        // `verify-reads-a-failed-local-fetch-as-an-empty-outbox`).
+        let allLive: [SyncOutbox]
+        do {
+            allLive = try liveOutboxRows()
+        } catch {
+            CloudSyncBreadcrumb.outboxFetchFailed(step: "reverse-drain")
+            return .blocked(.localFailure)
+        }
         let (live, poison) = pushClient.partitionBuildable(allLive)
         engine.deadLetterPoison(poison, context: context, now: now())
         if !live.isEmpty {
@@ -1337,7 +1408,16 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         // Push con el idiom EXACTO del leader-reconcile: liveOutboxRows + partitionBuildable + deadLetterPoison
         // + push + applyResults. NO se drena la History (las huérfanas ya están en el outbox por el enqueue;
         // drenar re-emitiría el corpus importado — ver contrato).
-        let residual = liveOutboxRows()
+        // Ilegible → `.transient` (ticket `verify-reads-a-failed-local-fetch-as-an-empty-outbox`). Con `[]` el
+        // guard de abajo devolvía `.completed(uploaded: 0)`, o sea «no había huérfanas», y el adopt no vuelve a
+        // pasar por aquí: las filas que acababan de encolarse se quedaban fuera del backend para siempre.
+        let residual: [SyncOutbox]
+        do {
+            residual = try liveOutboxRows()
+        } catch {
+            CloudSyncBreadcrumb.outboxFetchFailed(step: "adopt-orphan-reconcile")
+            return .transient
+        }
         let (buildable, poison) = pushClient.partitionBuildable(residual)
         engine.deadLetterPoison(poison, context: context, now: now())
         guard !buildable.isEmpty else { return .completed(uploaded: 0, identityAssigned: identityAssigned) }

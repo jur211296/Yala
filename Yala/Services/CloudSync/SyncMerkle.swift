@@ -35,11 +35,35 @@ import SwiftData
 
 // MARK: - SyncMerkle (cómputo local + ensamblado puro)
 
+/// Una lectura de la base LOCAL que no se pudo hacer durante el cómputo del árbol (ticket
+/// `verify-reads-a-failed-local-fetch-as-an-empty-outbox`). Existe para que el fallo tenga un TIPO y no se
+/// confunda con el error de canonicalización de una fila, que es otra cosa y se salta: aquí no hay corpus que
+/// comparar, y comparar un corpus que no se leyó produce una divergencia que no ocurrió.
+enum SyncMerkleLocalReadError: Error, Equatable {
+    /// El fetch de las filas de una entidad cableada lanzó. `entity` es el nombre de tabla (sin PII).
+    case leafFetchFailed(entity: String)
+    /// El fetch del registro de refs colgadas lanzó. Sin él los leaves emiten `null` donde el servidor tiene el
+    /// UUID: no es un detalle, es divergencia falsa garantizada en multi-device.
+    case danglingFetchFailed
+}
+
 @MainActor
 enum SyncMerkle {
 
     /// Columnas emitidas que NO entran al leaf del Canal 1 (A-2b). Simétrico con `canon.ts`.
     nonisolated static let channel1ExcludedColumns: Set<String> = ["local_day"]
+
+    /// Seams para montar «la base local no se deja leer» sin tocar el store: `ModelContext` es una `final class`
+    /// de SwiftData sin protocolo detrás, así que no hay doble que inyectar. Molde de
+    /// `CloudSyncEngine._testThrowOnTokenHistoryFetch` y sus tres hermanos. SOLO tests.
+    ///
+    /// **Son DOS y no uno, y esa es la diferencia entre medir y creer que se mide.** `computeLocalMerkle` llama a
+    /// `danglingOverrides` ANTES que a cualquier `collectLeaves`, así que con un solo `Bool` el primero corta
+    /// siempre y **el `catch` del segundo es inalcanzable**: un mutante que le devolviera `return []` pasaría en
+    /// verde. Es el mismo argumento que obligó a que el seam del outbox de `MigrationWorkExecutor` sea un
+    /// contador y no un `Bool`; aquí se olvidó, y lo cazó una lente de la review del 2026-09-22.
+    static var _testThrowOnDanglingFetch = false
+    static var _testThrowOnLeafFetch = false
 
     struct EntitySummary: Equatable {
         let count: Int
@@ -57,7 +81,11 @@ enum SyncMerkle {
     /// Computa el árbol local del Canal 1: para las 6 entidades cableadas, filas con `syncID != nil` →
     /// proyección FULL (todas las columnas emitidas MENOS `local_day`) → canon c1 → leaf → entityHash.
     /// Las 10 tablas restantes aportan su hash-vacío (el cliente no las materializa — límite v1).
-    static func computeLocalMerkle(context: ModelContext) -> LocalMerkle {
+    ///
+    /// **`throws` desde el 2026-09-22** (ticket `verify-reads-a-failed-local-fetch-as-an-empty-outbox`): una
+    /// lectura local que falla ya no se ensambla como un corpus vacío. El único consumidor de producción es
+    /// `verifyIntegrity`, que lo convierte en `.skipped(localMerkleFetchFailed)`.
+    static func computeLocalMerkle(context: ModelContext) throws -> LocalMerkle {
         var digests: [String: Data] = [:]
         var entities: [String: EntitySummary] = [:]
 
@@ -67,11 +95,11 @@ enum SyncMerkle {
             entities[table] = EntitySummary(count: 0, hashHex: hexString(emptyDigest))
         }
 
-        let overrides = danglingOverrides(context: context)
+        let overrides = try danglingOverrides(context: context)
 
         // Las cableadas se computan de verdad (dispatch CONCRETO por tipo). D1: la identidad de sync es
         // `syncID` (las 6 sintéticas) o `id` (las cableadas en I12) — se pasa como closure.
-        let computed: [(String, [(String, Data)])] = [
+        let computed: [(String, [(String, Data)])] = try [
             (EntityEmissionMap.transactionItem.table,
              collectLeaves(TransactionItem.self, emission: EntityEmissionMap.transactionItem,
                            identity: { $0.syncID }, overrides: overrides, context: context)),
@@ -139,9 +167,19 @@ enum SyncMerkle {
     /// tiene el uuid → divergencia FALSA PERMANENTE por diseño en CUALQUIER multi-device. El dangler
     /// ES el conocimiento local del wire — usarlo en el leaf responde la pregunta correcta del Canal 1:
     /// "¿sé todo lo que el server sabe?" (sí, aunque no pueda materializar la relación todavía).
-    private static func danglingOverrides(context: ModelContext) -> [UUID: [String: UUID]] {
+    ///
+    /// **LANZA si su fetch lanza, y por lo que dice el párrafo de arriba** (ticket
+    /// `verify-reads-a-failed-local-fetch-as-an-empty-outbox`). Hasta el 2026-09-22 se tragaba el error y seguía
+    /// con el diccionario a medias, que es EXACTAMENTE el escenario que este registro existe para evitar: sin los
+    /// overrides los `_ref` singulares emiten `null` donde el servidor tiene el UUID ⇒ divergencia falsa en
+    /// cualquier multi-device. Un override ausente por avería no se distingue de un override que no existe, así
+    /// que el único desenlace honesto es no comparar.
+    private static func danglingOverrides(context: ModelContext) throws -> [UUID: [String: UUID]] {
         var overrides: [UUID: [String: UUID]] = [:]
+        // El seam va DENTRO del `do`, no antes: así el camino de error que recorre un test es el `catch` REAL
+        // del fetch. Puesto fuera, un mutante que reintrodujera `return []` ahí seguiría verde.
         do {
+            if _testThrowOnDanglingFetch { throw SyncMerkleLocalReadError.danglingFetchFailed }
             for dangler in try context.fetch(FetchDescriptor<SyncDanglingRef>()) {
                 overrides[dangler.rowSyncID, default: [:]][dangler.column] = dangler.targetUUID
             }
@@ -149,6 +187,8 @@ enum SyncMerkle {
             #if DEBUG
             print("SyncMerkle.danglingOverrides fetch falló: \(error)")
             #endif
+            CloudSyncBreadcrumb.merkleLocalReadFailed(stage: "dangling-overrides")
+            throw SyncMerkleLocalReadError.danglingFetchFailed
         }
         return overrides
     }
@@ -156,18 +196,33 @@ enum SyncMerkle {
     /// Leaves de UNA entidad cableada. Una fila cuyo payload el codec rechaza (dato no-canonicalizable;
     /// tampoco habría podido pushearse — el drain la descarta con canario) se SALTA con rastro: mejor
     /// una divergencia detectable que un crash del verificador (hueco documentado v1).
+    ///
+    /// **El fetch que lanza NO se salta: LANZA** (ticket `verify-reads-a-failed-local-fetch-as-an-empty-outbox`).
+    /// Hasta el 2026-09-22 devolvía `[]`, y `[]` no es «esta tabla está vacía»: el ensamblado lo hashea con
+    /// `sha256("")` —el hash del corpus vacío, byte a byte el mismo— así que una tabla ILEGIBLE y una tabla SIN
+    /// FILAS producían el mismo entityHash. Con el servidor poblado eso sale de `verifyIntegrity` como
+    /// `.diverged`, o sea como una pérdida de integridad que no ocurrió; y en la vuelta a iCloud una divergencia
+    /// consume presupuesto de MISMATCH, que termina en `reverseFailedRollback`. Las dos filas del contraste viven
+    /// en esta misma función: la fila que no canonicaliza deja rastro (`encodeRejected`) y se salta, porque el
+    /// resto de la tabla SÍ se leyó; la tabla que no se pudo leer no deja nada que comparar.
+    ///
+    /// La distinción entre las dos es lo que separa «sé lo que hay y una fila no cabe» de «no sé lo que hay».
     private static func collectLeaves<M: PersistentModel>(
         _ type: M.Type, emission: EntityEmission<M>, identity: (M) -> UUID?,
         overrides: [UUID: [String: UUID]], context: ModelContext
-    ) -> [(String, Data)] {
+    ) throws -> [(String, Data)] {
         let models: [M]
+        // El seam va DENTRO del `do`, no antes: así el camino de error que recorre un test es el `catch` REAL
+        // del fetch. Puesto fuera, un mutante que reintrodujera `return []` ahí seguiría verde.
         do {
+            if _testThrowOnLeafFetch { throw SyncMerkleLocalReadError.leafFetchFailed(entity: emission.table) }
             models = try context.fetch(FetchDescriptor<M>())
         } catch {
             #if DEBUG
             print("SyncMerkle.collectLeaves<\(M.self)> fetch falló: \(error)")
             #endif
-            return []
+            CloudSyncBreadcrumb.merkleLocalReadFailed(stage: "leaves:\(emission.table)")
+            throw SyncMerkleLocalReadError.leafFetchFailed(entity: emission.table)
         }
         var leaves: [(String, Data)] = []
         for model in models {
@@ -263,13 +318,20 @@ nonisolated enum MerkleSkipReason {
     static let fetchFailed = "fetch-failed"
     static let outboxFetchFailed = "outbox-fetch-failed"
     static let quarantineFetchFailed = "quarantine-fetch-failed"
+    /// El cómputo del árbol LOCAL no pudo leer el corpus (ticket
+    /// `verify-reads-a-failed-local-fetch-as-an-empty-outbox`). **Motivo PROPIO y no un reuso de
+    /// `outboxFetchFailed`**: el desenlace de los dos es el mismo —`.blocked(.localFailure)`— pero el `rawValue`
+    /// es lo único que deja distinguir en la flota «no pude leer la cola de subida» de «no pude leer los datos»,
+    /// y son averías distintas con remedios distintos. Juntarlos ahorraba una constante y borraba esa señal.
+    static let localMerkleFetchFailed = "local-merkle-fetch-failed"
     static let canonVersionMismatch = "canon-version-mismatch"
     static let capabilitySetMismatch = "capability-set-mismatch"
 
-    /// Los OCHO, para que el mapping y su canario de motivo desconocido no tengan que repetirlos.
+    /// Los NUEVE, para que el mapping y su canario de motivo desconocido no tengan que repetirlos.
     static let all: [String] = [
         outboxPending, deadLetters, noCompletedPull, fetchFailed,
-        outboxFetchFailed, quarantineFetchFailed, canonVersionMismatch, capabilitySetMismatch,
+        outboxFetchFailed, quarantineFetchFailed, localMerkleFetchFailed,
+        canonVersionMismatch, capabilitySetMismatch,
     ]
 }
 
@@ -364,7 +426,22 @@ extension CloudSyncEngine {
 
         // Árbol local + tablas con cuarentena (regla 5: nunca compararlas — el cliente no las
         // materializa; compararlas sería divergencia falsa garantizada).
-        let local = SyncMerkle.computeLocalMerkle(context: context)
+        //
+        // El cómputo local LANZA desde el 2026-09-22 (ticket
+        // `verify-reads-a-failed-local-fetch-as-an-empty-outbox`): hasta ese día una tabla que no se dejaba leer
+        // entraba al ensamblado con el hash del corpus VACÍO, indistinguible de una tabla sin filas, y salía de
+        // aquí como `.diverged` — una pérdida de integridad inventada, con su canario y, en la vuelta a iCloud,
+        // consumiendo el presupuesto de MISMATCH hasta `reverseFailedRollback`.
+        let local: SyncMerkle.LocalMerkle
+        do {
+            local = try SyncMerkle.computeLocalMerkle(context: context)
+        } catch {
+            #if DEBUG
+            print("CloudSyncEngine.verifyIntegrity: cómputo del árbol local falló: \(error)")
+            #endif
+            CloudSyncBreadcrumb.merkleSkippedNotQuiescent(reason: MerkleSkipReason.localMerkleFetchFailed)
+            return .skipped(reason: MerkleSkipReason.localMerkleFetchFailed)
+        }
         let quarantinedTables: Set<String>
         do {
             quarantinedTables = Set(try context.fetch(FetchDescriptor<SyncQuarantine>()).map(\.entityType))

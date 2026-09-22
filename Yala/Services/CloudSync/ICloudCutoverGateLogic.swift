@@ -224,9 +224,15 @@ nonisolated enum ReversePreMountBlocker: String, Equatable, Sendable {
     case otherLeader
     /// El servidor rechazó el paso por un motivo que no es ni red ni sesión.
     case refused
-    /// La base de datos LOCAL del teléfono falló al leer durante la verificación (los dos `fetch` que `verifyIntegrity`
-    /// puede ver lanzar: el del outbox y el de la cuarentena). No es red ni es el servidor, y hasta el 2026-09-22 se
+    /// La base de datos LOCAL del teléfono falló al leer. No es red ni es el servidor, y hasta el 2026-09-22 se
     /// leía como red: la persona esperaba 72 h delante de una avería de su propio teléfono.
+    ///
+    /// **Nació acotado a la verificación y a dos `fetch`, y ese mismo día dejó de estarlo** (ticket
+    /// `verify-reads-a-failed-local-fetch-as-an-empty-outbox`). Hoy lo producen: los TRES `fetch` que
+    /// `verifyIntegrity` puede ver lanzar —el del outbox, el de la cuarentena y el cómputo del árbol local—, las
+    /// dos lecturas del outbox que `verify()` hace ANTES de preguntarle nada al Merkle, y **el DRENAJE**
+    /// (`reverseDrainOnce`), que no es una fase de verificación. Lo que los junta sigue siendo el criterio del
+    /// tipo, no quién habló: ninguno se arregla esperando.
     case localFailure
     /// El verificador contestó con un motivo que este build no sabe leer. Antes se presumía pasajero —«conservador»—,
     /// y con el techo largo detrás eso dejó de ser lo conservador: esperar tres días por algo que nadie sabe leer no

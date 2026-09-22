@@ -54,7 +54,9 @@ enum VerifyProbe: Equatable {
     ///
     /// Nació con el 403 (`.accountUnavailable`) y desde el 2026-09-22 lo produce también la verificación Merkle cuando
     /// la base LOCAL falla al leer (`.localFailure`) o cuando el veredicto trae un motivo que este build no conoce
-    /// (`.unknownVerdict`) — ticket `reverse-verify-network-bucket-hides-a-definitive-server-no`.
+    /// (`.unknownVerdict`) — ticket `reverse-verify-network-bucket-hides-a-definitive-server-no`. Y ese mismo día,
+    /// **la propia `verify()` sin llegar al Merkle**: sus dos lecturas del outbox salen por aquí con
+    /// `.localFailure` cuando el `fetch` lanza (`verify-reads-a-failed-local-fetch-as-an-empty-outbox`).
     case blocked(ReversePreMountBlocker)
 }
 
@@ -102,6 +104,11 @@ nonisolated enum ReverseClaimOutcome: Equatable {
 /// servidor dijo que no y esperar tampoco lo arregla, así que elige el techo CORTO. Hasta ese ticket sus tres motivos
 /// —el `other_leader` y el `rejected` del congelado, el 403 del drenaje— llegaban aquí como `transient`, y esa es la
 /// razón de que la vuelta se quedara parada en esas fases sin salida.
+///
+/// **«El servidor dijo que no» dejó de describirlos a todos el 2026-09-22**
+/// (`verify-reads-a-failed-local-fetch-as-an-empty-outbox`): `reverseDrainOnce` devuelve `.blocked(.localFailure)`
+/// cuando el `fetch` del outbox lanza, y ahí no ha hablado nadie. El criterio es el mismo de
+/// `ReversePreMountBlocker`: no es quién habló, es que esperar no lo arregla.
 nonisolated enum ReverseStepOutcome: Equatable {
     case completed
     case transient
@@ -1276,7 +1283,7 @@ final class MigrationRunner {
             //
             // **Y desde el 2026-09-22 `.networkTimeout` ES solo «no hay red»**, que es lo que hace legítimo mandarlo
             // aquí. Entre el 21 y el 22 fue un cajón —deuda que este `case` expuso—: `SyncMerkle` aplanaba el 401 y el
-            // 403 de `/sync/merkle` en un `fetch-failed`, y con ellos caían aquí los dos `fetch` de SwiftData que
+            // 403 de `/sync/merkle` en un `fetch-failed`, y con ellos caían aquí los `fetch` de SwiftData que
             // lanzan y el `default` de un `reason` desconocido; para esa mitad el techo largo era generoso —no se
             // resuelve sola en 72 h— y la persona esperaba tres días delante de un «no» definitivo. Lo cerró
             // `reverse-verify-network-bucket-hides-a-definitive-server-no`: el Merkle propaga tipado y esos cuatro

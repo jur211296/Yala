@@ -310,6 +310,16 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSyncMerkle skipped reason=\(reason, privacy: .public)")
     }
 
+    /// El cómputo del árbol LOCAL no pudo leer el corpus (ticket
+    /// `verify-reads-a-failed-local-fetch-as-an-empty-outbox`). `stage` dice QUÉ lectura falló —`leaves:<tabla>` o
+    /// `dangling-overrides`— y es lo único que separa en la flota una avería de una tabla concreta de una del
+    /// store entero. Sin PII: nombres de tabla y nada más. **No es un canario**: es una avería del teléfono, no
+    /// una pérdida de integridad; el canario de divergencia es justo el que este rastro evita que se dispare en
+    /// falso.
+    static func merkleLocalReadFailed(stage: String) {
+        logger.notice("CloudSyncMerkle localReadFailed stage=\(stage, privacy: .public) — no se compara nada")
+    }
+
     /// Una tabla con cuarentena local se EXCLUYE de la comparación (el cliente no la materializa —
     /// compararla sería divergencia falsa; límite v1, regla 5).
     static func merkleEntitySkippedQuarantined(entity: String) {
@@ -799,16 +809,34 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSyncMigration snapshotPageConfirmed table=\(table, privacy: .public) rows=\(rows, privacy: .public)")
     }
 
+    /// El `fetch` de `SyncOutbox` lanzó (ticket `verify-reads-a-failed-local-fetch-as-an-empty-outbox`). `step`
+    /// dice QUIÉN lo pedía, y son DOCE: `verify`, `verify-after-push`, `reverse-drain`, `leader-reconcile`,
+    /// `adopt-orphan-reconcile`, `runtime-cycle`, `snapshot-page`, `snapshot-residual` y las cuatro relecturas del
+    /// uploader (`snapshot-page-poison`, `snapshot-page-after-push`, `snapshot-residual-poison`,
+    /// `snapshot-residual-after-push`). Se separan porque el desenlace de cada uno es distinto y en la flota el
+    /// `step` es lo único que los distingue. Sin PII.
+    ///
+    /// Hasta ese ticket este fallo no dejaba NADA: los tres helpers homónimos devolvían `[]` bajo un `print` de
+    /// `#if DEBUG`, así que en producción una base ilegible se leía como «no hay nada que subir» en silencio.
+    static func outboxFetchFailed(step: String) {
+        logger.notice("CloudSyncOutbox fetchFailed step=\(step, privacy: .public) — no se decide nada con el outbox")
+    }
+
     /// w5/w6/w8: un efecto/paso de la migración aún NO está cableado (cutover/reconcile/rollback/adopt) →
     /// el runner lo deja journaled (retomable). `step` = nombre del efecto/paso (sin PII).
     static func migrationExecutorNotWired(step: String) {
         logger.notice("CloudSyncMigration executorNotWired step=\(step, privacy: .public) — journaled, retomable")
     }
 
-    /// w5: `verifyIntegrity` devolvió un `skipped` con un reason DESCONOCIDO (contrato futuro) → el mapping
-    /// toma la rama conservadora `networkTimeout` (nunca crashea ni consume un retry de mismatch). Canario.
+    /// w5: `verifyIntegrity` devolvió un `skipped` con un reason DESCONOCIDO (contrato futuro) → el mapping lo
+    /// manda a `.blocked(.unknownVerdict)`, o sea al techo CORTO (nunca crashea ni consume un retry de mismatch).
+    /// Canario.
+    ///
+    /// Este docblock decía `networkTimeout` hasta hoy, y eso dejó de ser verdad el 2026-09-22 con
+    /// `reverse-verify-network-bucket-hides-a-definitive-server-no`: «conservador» significaba esperar, y detrás
+    /// había 72 h.
     static func migrationVerifyUnknownReason(reason: String) {
-        logger.notice("CloudSyncMigration verifyUnknownReason reason=\(reason, privacy: .public) — networkTimeout conservador")
+        logger.notice("CloudSyncMigration verifyUnknownReason reason=\(reason, privacy: .public) — blocked(unknownVerdict), techo corto")
     }
 
     // MARK: Cutover (I10-wiring w6, §g.4)

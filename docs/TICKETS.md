@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (493)
+## Index (503)
 
 | id | status | path |
 |---|---|---|
@@ -63,12 +63,16 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | after-session-redesign-review-widgets-siri-applepay-and-web-copy | backlog | tickets/backlog/after-session-redesign-review-widgets-siri-applepay-and-web-copy.md |
 | ai-chat-reads-heavier-than-a-messaging-app | backlog | tickets/backlog/ai-chat-reads-heavier-than-a-messaging-app.md |
 | ai-recommended-budgets | backlog | tickets/backlog/ai-recommended-budgets.md |
+| alternating-definitive-causes-never-reach-the-short-ceiling | backlog | tickets/backlog/alternating-definitive-causes-never-reach-the-short-ceiling.md |
+| an-incomplete-inventory-reads-as-the-whole-corpus | backlog | tickets/backlog/an-incomplete-inventory-reads-as-the-whole-corpus.md |
+| an-unreadable-migration-journal-reads-as-never-started | backlog | tickets/backlog/an-unreadable-migration-journal-reads-as-never-started.md |
 | apple-id-change-should-close-the-private-session | done | tickets/done/apple-id-change-should-close-the-private-session.md |
 | apple-id-close-blocked-has-no-visible-outcome | done | tickets/done/apple-id-close-blocked-has-no-visible-outcome.md |
 | apple-id-close-notice-does-not-say-what-else-the-close-does | backlog | tickets/backlog/apple-id-close-notice-does-not-say-what-else-the-close-does.md |
 | apple-watch | backlog | tickets/backlog/apple-watch.md |
 | applepay-shortcut-warm-launch-empty-data | qa | tickets/qa/applepay-shortcut-warm-launch-empty-data.md |
 | apply-better-ui-emil-design-eng-rules-to-redesigns | backlog | tickets/backlog/apply-better-ui-emil-design-eng-rules-to-redesigns.md |
+| apply-overwrites-a-pending-local-write-without-its-guards | backlog | tickets/backlog/apply-overwrites-a-pending-local-write-without-its-guards.md |
 | apppreferences-rewritten-on-launch | blocked | tickets/blocked/apppreferences-rewritten-on-launch.md |
 | approximate-mark-ors-over-whole-period | done | tickets/done/approximate-mark-ors-over-whole-period.md |
 | appstorage-onboarding-desarma-el-aislamiento-de-tests | backlog | tickets/backlog/appstorage-onboarding-desarma-el-aislamiento-de-tests.md |
@@ -268,6 +272,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-log-expense-via-chat-voice | backlog | tickets/backlog/groups-log-expense-via-chat-voice.md |
 | groups-loop-in-backoff-ignores-the-return-to-foreground | done | tickets/done/groups-loop-in-backoff-ignores-the-return-to-foreground.md |
 | groups-loop-restart-docs-cite-a-retired-mount-guard | backlog | tickets/backlog/groups-loop-restart-docs-cite-a-retired-mount-guard.md |
+| groups-merkle-reads-an-unreadable-table-as-an-empty-one | backlog | tickets/backlog/groups-merkle-reads-an-unreadable-table-as-an-empty-one.md |
 | groups-only-account-deletion-skips-export-wait | backlog | tickets/backlog/groups-only-account-deletion-skips-export-wait.md |
 | groups-only-private-restart-skips-the-wipe-alert | done | tickets/done/groups-only-private-restart-skips-the-wipe-alert.md |
 | groups-only-second-launch-mounts-icloud-mirror | qa | tickets/qa/groups-only-second-launch-mounts-icloud-mirror.md |
@@ -322,11 +327,11 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | ipad-native-app | backlog | tickets/backlog/ipad-native-app.md |
 | iphone-duo-native-app | backlog | tickets/backlog/iphone-duo-native-app.md |
 | joiner-flag-residuals-cosmetic-and-service-guard | backlog | tickets/backlog/joiner-flag-residuals-cosmetic-and-service-guard.md |
-| leaving-and-reentering-restore-renews-the-hard-cap | qa | tickets/qa/leaving-and-reentering-restore-renews-the-hard-cap.md |
 | l10n-check-corre-13-de-17-tests | backlog | tickets/backlog/l10n-check-corre-13-de-17-tests.md |
 | la-nocturna-de-ui-no-ha-disparado-ni-una-vez | done | tickets/done/la-nocturna-de-ui-no-ha-disparado-ni-una-vez.md |
 | language-override-bypasses-the-cloud-prefs-channel | backlog | tickets/backlog/language-override-bypasses-the-cloud-prefs-channel.md |
 | late-icloud-wipe-can-re-export-between-its-two-halves | backlog | tickets/backlog/late-icloud-wipe-can-re-export-between-its-two-halves.md |
+| leaving-and-reentering-restore-renews-the-hard-cap | qa | tickets/qa/leaving-and-reentering-restore-renews-the-hard-cap.md |
 | live-anchor-breakdown-doubles-the-approximate-glyph | backlog | tickets/backlog/live-anchor-breakdown-doubles-the-approximate-glyph.md |
 | m1-prose-outlives-its-code-in-comments | backlog | tickets/backlog/m1-prose-outlives-its-code-in-comments.md |
 | merchant-memory-suggests-across-natures-in-three-more-places | backlog | tickets/backlog/merchant-memory-suggests-across-natures-in-three-more-places.md |
@@ -432,9 +437,9 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | reverse-offered-on-a-device-without-icloud | backlog | tickets/backlog/reverse-offered-on-a-device-without-icloud.md |
 | reverse-pre-mount-ceiling-charges-a-stall-to-whoever-stops-it-last | qa | tickets/qa/reverse-pre-mount-ceiling-charges-a-stall-to-whoever-stops-it-last.md |
 | reverse-pre-mount-ceiling-has-no-alert-and-leaves-network-verify-out | qa | tickets/qa/reverse-pre-mount-ceiling-has-no-alert-and-leaves-network-verify-out.md |
-| reverse-upload-ceiling-charges-a-wait-to-whoever-stops-it-last | backlog | tickets/backlog/reverse-upload-ceiling-charges-a-wait-to-whoever-stops-it-last.md |
 | reverse-tap-is-lost-while-a-resume-is-running | backlog | tickets/backlog/reverse-tap-is-lost-while-a-resume-is-running.md |
 | reverse-tap-on-a-stale-card-aborts-instead-of-starting | backlog | tickets/backlog/reverse-tap-on-a-stale-card-aborts-instead-of-starting.md |
+| reverse-upload-ceiling-charges-a-wait-to-whoever-stops-it-last | backlog | tickets/backlog/reverse-upload-ceiling-charges-a-wait-to-whoever-stops-it-last.md |
 | reverse-upload-ceiling-trusts-a-clock-set-back-during-the-wait | backlog | tickets/backlog/reverse-upload-ceiling-trusts-a-clock-set-back-during-the-wait.md |
 | reverse-upload-has-no-ceiling-and-no-exit | qa | tickets/qa/reverse-upload-has-no-ceiling-and-no-exit.md |
 | reverse-upload-sample-reads-unreadable-rows-as-drained | backlog | tickets/backlog/reverse-upload-sample-reads-unreadable-rows-as-drained.md |
@@ -479,6 +484,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | siri-intent-dual-container | done | tickets/done/siri-intent-dual-container.md |
 | siri-shortcut-error-replies-speak-english-on-a-spanish-iphone | backlog | tickets/backlog/siri-shortcut-error-replies-speak-english-on-a-spanish-iphone.md |
 | smart-ai-notifications | backlog | tickets/backlog/smart-ai-notifications.md |
+| snapshot-upload-has-no-ceiling-and-no-way-out | backlog | tickets/backlog/snapshot-upload-has-no-ceiling-and-no-way-out.md |
 | spike-r3-eje-4b-flaky-en-suite-completa | backlog | tickets/backlog/spike-r3-eje-4b-flaky-en-suite-completa.md |
 | staging-test-credentials-in-public-repo | done | tickets/done/staging-test-credentials-in-public-repo.md |
 | staging-test-user-c-does-not-exist | backlog | tickets/backlog/staging-test-user-c-does-not-exist.md |
@@ -497,6 +503,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | sync-runtime-safety-note-assumes-every-prod-device-is-icloud | backlog | tickets/backlog/sync-runtime-safety-note-assumes-every-prod-device-is-icloud.md |
 | synced-prefs-outside-prefsynckey | discarded | tickets/discarded/synced-prefs-outside-prefsynckey.md |
 | tests-borran-el-store-sqlite-abierto | backlog | tickets/backlog/tests-borran-el-store-sqlite-abierto.md |
+| the-gate-destination-no-longer-resolves-on-this-mac | backlog | tickets/backlog/the-gate-destination-no-longer-resolves-on-this-mac.md |
 | transaction-save-helper-flake-one-per-suite | backlog | tickets/backlog/transaction-save-helper-flake-one-per-suite.md |
 | transaction-service-bulk-block-is-dead-code | backlog | tickets/backlog/transaction-service-bulk-block-is-dead-code.md |
 | trends-comparison-kpi-vs-curve | done | tickets/done/trends-comparison-kpi-vs-curve.md |
@@ -511,7 +518,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | unit-tests-clear-the-attest-streak-of-a-device-qa-in-progress | backlog | tickets/backlog/unit-tests-clear-the-attest-streak-of-a-device-qa-in-progress.md |
 | update-banner-appstore-criteria | done | tickets/done/update-banner-appstore-criteria.md |
 | verify-dual-channel-zone-in-supabase | backlog | tickets/backlog/verify-dual-channel-zone-in-supabase.md |
-| verify-reads-a-failed-local-fetch-as-an-empty-outbox | in-progress | tickets/in-progress/verify-reads-a-failed-local-fetch-as-an-empty-outbox.md |
+| verify-reads-a-failed-local-fetch-as-an-empty-outbox | qa | tickets/qa/verify-reads-a-failed-local-fetch-as-an-empty-outbox.md |
 | vigilante-calla-si-no-puede-comprobar-la-nocturna | backlog | tickets/backlog/vigilante-calla-si-no-puede-comprobar-la-nocturna.md |
 | vigilante-margen-menor-que-el-retraso-real-del-cron | backlog | tickets/backlog/vigilante-margen-menor-que-el-retraso-real-del-cron.md |
 | vision-amount-sign-contract-is-only-a-prompt-example | backlog | tickets/backlog/vision-amount-sign-contract-is-only-a-prompt-example.md |
@@ -543,4 +550,3 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | xcode-project-config-json-format-when-27-2-stable | backlog | tickets/backlog/xcode-project-config-json-format-when-27-2-stable.md |
 | yala-android | backlog | tickets/backlog/yala-android.md |
 | zone-decisions-still-per-row | backlog | tickets/backlog/zone-decisions-still-per-row.md |
-
