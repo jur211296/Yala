@@ -5,10 +5,76 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-22 (Lima)
 
-**Rama** `2.1` — Merge #209: **Un «no» definitivo del servidor en la vuelta a iCloud ya no espera 72 horas.**
+**Rama** `2.1` — Merge #210: **Un fallo de una vez ya no cobra las horas que la vuelta esperaba por otra cosa.**
 TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
-## Esta sesión (#209 · un «no» definitivo en la vuelta ya no espera 72 horas)
+> ⚠️ **Xcode se actualizó a 27.0 en la Mac el 22-sep y su licencia NO está aceptada** (la aceptada es la 26.3), así
+> que `xcodebuild` está bloqueado: **no se puede correr un gate en esta máquina** hasta un `sudo xcodebuild -license
+> accept`. `git` y `python3` de `/usr/bin` también, pero eso tiene salida sin sudo — el binario real del toolchain
+> (`/Applications/Xcode.app/Contents/Developer/usr/bin/git`) no comprueba la licencia. El gate de #210 corrió ENTERO
+> antes de la actualización, o sea con el Xcode anterior.
+
+## Esta sesión (#210 · un fallo de una vez ya no cobra las horas de otra espera)
+
+**Llevo tres horas volviendo a iCloud sin cobertura y la app espera, que es lo correcto: la red vuelve sola. Vuelve
+el wifi y, justo en esa pasada, algo del teléfono falla una vez —una lectura de la base local que no sale—. La app
+abandonaba la vuelta EN ESE INSTANTE** y me mandaba al principio. Lo que me sacaba no era el fallo: era haber
+esperado mucho antes **por otra cosa**. El mismo fallo a los dos minutos de empezar no habría hecho nada. Ahora
+reintenta.
+
+**Lo que NO cambia, y es la mitad que sostiene el arreglo:** un rechazo repetido de la cuenta sigue saliendo a los
+15 min de estar parada POR ESO, y una espera de 72 h sigue terminando pase lo que pase.
+
+**Son DOS relojes donde había uno.** El de FASE mide lo que lleva parada, venga de donde venga, y gobierna el plazo
+largo; el de CAUSA mide el tiempo **acumulado** bajo un mismo motivo y gobierna el corto. Se sale con el primero que
+venza. Que el largo siga aplicando con cualquier causa **no es redundancia**: sin él, dos motivos definitivos
+alternándose reinician el corto en cada observación y la espera vuelve a no tener techo — el bug-class que esta
+familia existe para cerrar, reintroducido por la puerta de al lado.
+
+`MigrationState` sube a **schema 8** (tres campos aditivos; los cinco de la familia se limpian juntos con
+`clearReversePreMountCeiling()` en los seis sitios que lo hacen). Los presupuestos se renombran a
+`reversePreMountCauseBudgetSeconds` / `…PhaseBudgetSeconds`: los viejos (`Definitive`/`Unknown`) ya mentían.
+
+**LA REVIEW CAZÓ SEIS DEFECTOS MÍOS**, con cuatro lentes independientes, y tres los vieron dos lentes por separado:
+
+1. **La racha consecutiva volvía el techo corto INALCANZABLE.** Elegí «racha» sobre «acumulado» por barata. La
+   pantalla de Almacenamiento re-kickea **cada 30 s**, así que con una cuenta suspendida y cobertura intermitente
+   basta un timeout cada quince minutos para que los 900 s no lleguen nunca: el desenlace pasaba de 15 min a **72 h**,
+   y era peor cuanto más miraba la persona la pantalla. Pasa a acumulado con PAUSA. **Y la decisión de Jürgen ya lo
+   decía**: «tiempo ACUMULADO bajo ESA causa» — mi Paso 0 lo interpretó a la baja.
+2. **El motivo journaleado lo escribía un blocker de 0 s.** Con dos vías de salida, la vuelta puede salir por el
+   plazo de FASE en una pasada que traiga un 403 recién visto; ese copy acusa a la cuenta y da el correo de soporte.
+   Ahora lo elige **el techo que venció**, con el predicado en UN solo sitio.
+3. **El canario publicaba un solo reloj** y dejaba ciega la mitad del mecanismo en las dos direcciones.
+4. Los nombres de los presupuestos ya mentían.
+5. **El test del helper prometía cazar un campo nuevo de la familia y no podía**: una lista literal comparada consigo
+   misma. Ahora la familia se deriva del schema.
+6. Faltaban cinco casos, incluido el round-trip `save + refetch`, cuyo modo de fallo es silencioso.
+
+**Un hallazgo se refutó, y por medición**: dos lentes pidieron un cinturón `sealedPhase == phase`. La lente de
+corrección enumeró los tres `setPhase` que no pasan por `handle` y los tres limpian o no cambian de fase — sería una
+condición inalcanzable, de las que recogen lo que el camino bueno deja pasar sin que ningún test pueda matarlas.
+Entró el test del call site en su lugar.
+
+**El canario cambia de forma y de valores, segundo día seguido.** `cloudReversePreMountWaiting` pasa a
+`<fase>|<tramo de fase>|<tramo de causa>|<causa>`, con `-` cuando no hay motivo. Una caída del tramo alto en `stop_*`
+es el arreglo, no una mejora de la flota.
+
+**Ticket en `qa`** con guion de 6 pasos, que dice también lo que NO se puede montar a mano: el escenario exacto
+—tres horas de espera y un fallo local en la pasada justa— lo cubren los tests. En el teléfono se comprueban las dos
+mitades que el cambio podría haber roto.
+
+**Deja un ticket nuevo, medido de paso: el GEMELO en la espera de SUBIDA**
+(`reverse-upload-ceiling-charges-a-wait-to-whoever-stops-it-last`). `observeReverseUploadWait` tiene la misma forma y
+sigue con un reloj. Camino medido: tras horas sin cuenta iCloud (plazo largo), entras a iCloud y el espejo contesta
+`notAuthenticated` —lo habitual justo al iniciar sesión, y que el propio código trata como pasajero—, lo que elige el
+plazo corto y cobra las horas de golpe. Su implementación no es copiar el diff: allí existe una noción de AVANCE (la
+cifra de pendientes que baja) con la que el reloj de causa tiene que convivir.
+
+Gate: build ×2 verde, **7426 unit en 741 suites**, 4 XCUITest con el simulador en exclusiva, índice de QA con seis
+áreas al día.
+
+## Sesión anterior (#209 · un «no» definitivo en la vuelta ya no espera 72 horas)
 
 **Volviendo a iCloud, si la cuenta en la nube dejaba de estar disponible justo en el paso de comprobación, la app se
 quedaba TRES DÍAS en «Comprobando que todo llegó…»** sin decir nada, como si fuera la conexión. No lo era, y esperar no
