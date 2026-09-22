@@ -581,26 +581,49 @@ extension MetricsService {
     ///
     /// Dedupe por PROCESO y por `detail` (`canaryOnce`, molde de `cloudReverseUploadWaiting`): el re-kick de 30 s de
     /// la pantalla re-observa lo mismo cada medio minuto y el spool guarda 50 eventos FIFO.
-    static func cloudReversePreMountWaiting(phase: String, stalledSeconds: Double, blocker: String?) {
+    static func cloudReversePreMountWaiting(
+        phase: String, stalledSeconds: Double, causeStalledSeconds: Double, blocker: String?
+    ) {
         let detail = reversePreMountWaitingDetail(
-            phase: phase, stalledSeconds: stalledSeconds, blocker: blocker)
+            phase: phase, stalledSeconds: stalledSeconds,
+            causeStalledSeconds: causeStalledSeconds, blocker: blocker)
         canaryOnce(.cloudReversePreMountWaiting, key: detail, detail: detail)
     }
 
-    /// Detalle de esa observación. Reusa los tramos de la espera de la subida: los dos techos de esta etapa son los
-    /// mismos números, así que los bordes valen igual y las dos series se leen con la misma escala.
+    /// Detalle de esa observación.
+    ///
+    /// **Desde el 2026-09-22 son DOS tramos, porque son dos relojes y cada uno gobierna un techo** (ticket
+    /// `reverse-pre-mount-ceiling-charges-a-stall-to-whoever-stops-it-last`): el de la FASE, contra el que corren
+    /// las 72 h, y el de la CAUSA, contra el que corren los 15 min. **Publicar uno solo dejaba ciega la mitad del
+    /// mecanismo**, y las dos mitades se miden:
+    ///  · con solo el de la fase, `stop_localFailure|1h_24h` se leería como tres horas de avería local cuando la
+    ///    avería lleva doce segundos y las tres horas eran de red;
+    ///  · con solo el de la causa, un teléfono con dos motivos alternándose 72 h publica `lt_15m` en cada
+    ///    observación y, con el dedupe por proceso, la flota ve **un** evento diciendo que no pasa nada — justo el
+    ///    atasco sistémico que esta serie existe para enseñar antes de que nadie agote su techo.
+    ///
+    /// El tramo de causa es `-` cuando la observación no trae motivo: ahí no hay reloj de causa que contar, y un
+    /// `lt_15m` constante sería ruido que se lee como dato. La forma es fija de cuatro segmentos para que se pueda
+    /// partir sin adivinar. **La serie cambia de valores con este build**, un día después del cambio anterior: una
+    /// caída del tramo alto en `stop_*` es el arreglo, no una mejora de la flota.
     nonisolated static func reversePreMountWaitingDetail(
-        phase: String, stalledSeconds: Double, blocker: String?
+        phase: String, stalledSeconds: Double, causeStalledSeconds: Double, blocker: String?
     ) -> String {
-        let bucket: String
-        switch stalledSeconds {
-        case ..<900: bucket = "lt_15m"
-        case ..<3_600: bucket = "15m_1h"
-        case ..<86_400: bucket = "1h_24h"
-        case ..<259_200: bucket = "24h_72h"
-        default: bucket = "gte_72h"
+        let causeBucket = blocker == nil ? "-" : reversePreMountBucket(causeStalledSeconds)
+        return "\(phase)|\(reversePreMountBucket(stalledSeconds))|\(causeBucket)|"
+            + "\(blocker.map { "stop_\($0)" } ?? "waiting")"
+    }
+
+    /// Los tramos, compartidos por los dos relojes. Reusa los de la espera de la subida: los techos de esta etapa
+    /// son los mismos números, así que los bordes valen igual y las series se leen con la misma escala.
+    nonisolated static func reversePreMountBucket(_ seconds: Double) -> String {
+        switch seconds {
+        case ..<900: return "lt_15m"
+        case ..<3_600: return "15m_1h"
+        case ..<86_400: return "1h_24h"
+        case ..<259_200: return "24h_72h"
+        default: return "gte_72h"
         }
-        return "\(phase)|\(bucket)|\(blocker.map { "stop_\($0)" } ?? "waiting")"
     }
 
     /// El motivo del servidor tal cual si tiene forma de código; si no, `other`. El gateway rechaza el LOTE entero de

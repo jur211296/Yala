@@ -37,7 +37,11 @@ extension CloudSyncSchemaVersions {
     /// Subió a 7 con los dos campos aditivos del techo de las fases previas al montaje de la vuelta
     /// (`reversePreMountProgressAt`, `reversePreMountPhaseRaw`), ticket
     /// `reverse-before-mount-has-no-way-to-abandon-the-return`.
-    static let migrationState = 7
+    /// Subió a 8 con los TRES campos del RELOJ POR CAUSA de ese mismo techo (`reversePreMountCauseRaw`,
+    /// `reversePreMountCauseAt`, `reversePreMountCauseAccruedSeconds`): el techo corto mide el tiempo ACUMULADO
+    /// parado bajo ESA causa, no el de la fase entera
+    /// (ticket `reverse-pre-mount-ceiling-charges-a-stall-to-whoever-stops-it-last`).
+    static let migrationState = 8
 }
 
 /// Journal single-row de la migración. Debe existir a lo sumo UNA fila (el runner la crea
@@ -141,6 +145,34 @@ final class MigrationState {
     /// un drenaje largo y sano se comería el presupuesto del mismo modo que uno parado. `nil` = sin sello.
     var reversePreMountPhaseRaw: String?
 
+    /// **El OTRO reloj de ese techo, en TRES campos** (ticket
+    /// `reverse-pre-mount-ceiling-charges-a-stall-to-whoever-stops-it-last`). El de arriba mide el tiempo parado de
+    /// la FASE y gobierna el techo largo; éste mide el tiempo ACUMULADO parado bajo una misma causa y gobierna el
+    /// CORTO. Sin él, un `fetch` local que falla UNA vez tras tres horas sin cobertura cobraba las tres horas contra
+    /// su presupuesto de 15 min y sacaba de la vuelta sin un solo reintento.
+    ///
+    /// Qué causa se está midiendo (`ReversePreMountBlocker.rawValue`). Comparar el rawValue basta, y **es el
+    /// rawValue y no el `abortReason`**: dos motivos distintos pueden compartir el texto que se le enseña a la
+    /// persona (`accountUnavailable` y `refused` comparten `preMountRefused`) y fundir sus relojes sumaría dos
+    /// causas como si fueran una. `nil` = todavía no se ha observado ninguna en esta fase.
+    var reversePreMountCauseRaw: String?
+
+    /// Desde cuándo corre el tramo ABIERTO de esa causa, con el `now` INYECTADO. `nil` con la causa presente
+    /// significa que el tramo está CERRADO: la última observación no traía motivo —la red llega así— y el reloj
+    /// quedó en pausa, no borrado.
+    var reversePreMountCauseAt: Date?
+
+    /// Lo que esa causa ya acumuló en tramos CERRADOS. **Un acumulado y no una racha consecutiva**, y la
+    /// diferencia no es teórica: la pantalla de Almacenamiento re-kickea cada 30 s, así que con una cuenta
+    /// suspendida y cobertura intermitente basta un timeout de red cada quince minutos para que una racha no
+    /// llegue nunca a los 900 s — el techo corto se volvía inalcanzable justo cuando más se mira, y el desenlace
+    /// pasaba de 15 min a 72 h. Con el acumulado, el hueco sin cobertura PAUSA el reloj en vez de borrarlo, y lo
+    /// que no se pudo observar no cuenta ni a favor ni en contra.
+    ///
+    /// Un cambio de causa sí reinicia los tres: lo que se acumuló bajo un motivo no se le regala a otro. `nil` = la
+    /// causa nunca ha tenido un tramo cerrado, o la fila viene de un build anterior a la v8.
+    var reversePreMountCauseAccruedSeconds: Double?
+
     /// Cuándo empezó la migración (el runner lo estampa con el `now` INYECTADO al arrancar). `nil` = no
     /// iniciada.
     var startedAt: Date?
@@ -170,6 +202,9 @@ final class MigrationState {
         forwardClaimIntentRaw: String? = nil,
         reversePreMountProgressAt: Date? = nil,
         reversePreMountPhaseRaw: String? = nil,
+        reversePreMountCauseRaw: String? = nil,
+        reversePreMountCauseAt: Date? = nil,
+        reversePreMountCauseAccruedSeconds: Double? = nil,
         startedAt: Date? = nil,
         updatedAt: Date = Date.now,
         schemaVersion: Int = CloudSyncSchemaVersions.migrationState
@@ -191,9 +226,36 @@ final class MigrationState {
         self.forwardClaimIntentRaw = forwardClaimIntentRaw
         self.reversePreMountProgressAt = reversePreMountProgressAt
         self.reversePreMountPhaseRaw = reversePreMountPhaseRaw
+        self.reversePreMountCauseRaw = reversePreMountCauseRaw
+        self.reversePreMountCauseAt = reversePreMountCauseAt
+        self.reversePreMountCauseAccruedSeconds = reversePreMountCauseAccruedSeconds
         self.startedAt = startedAt
         self.updatedAt = updatedAt
         self.schemaVersion = schemaVersion
+    }
+}
+
+// MARK: - Techo de las fases previas al montaje de la vuelta
+
+extension MigrationState {
+
+    /// Borra los CINCO campos del techo de las fases previas al montaje: el reloj de fase con su sello, y los tres
+    /// del reloj por causa. Existe porque se limpian SIEMPRE juntos y en seis sitios distintos —el reset tras
+    /// rollback, el arranque de una vuelta nueva, los tres cierres de intento, el cambio de fase, la salida del
+    /// techo y la normalización de un journal ilegible—, y un campo que se olvide en uno solo de ellos no deja la
+    /// fila fea: deja el techo venciendo con cero segundos de parada real en el intento siguiente, que es el bug
+    /// que el par del reloj de fase ya tuvo una vez.
+    ///
+    /// **Lo que garantiza que no se olvide un campo NUEVO no es este método, es su test**
+    /// (`CloudSyncSchemaParityTests`), y solo porque ese test fija el CONJUNTO de campos `reversePreMount*` del
+    /// schema además de comprobar que quedan a `nil`: enumerar aquí los cinco que hay deja verde un sexto. Lo que
+    /// este método garantiza es que los seis sitios no diverjan entre sí, que es el otro fallo.
+    func clearReversePreMountCeiling() {
+        reversePreMountProgressAt = nil
+        reversePreMountPhaseRaw = nil
+        reversePreMountCauseRaw = nil
+        reversePreMountCauseAt = nil
+        reversePreMountCauseAccruedSeconds = nil
     }
 }
 

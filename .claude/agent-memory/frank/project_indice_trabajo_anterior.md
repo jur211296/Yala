@@ -1,14 +1,40 @@
 ---
 name: indice-trabajo-anterior
-description: Índice de las memorias de proyecto de los PR #62 a #154 (4-14 sep): qué cerró cada uno y qué dejó abierto. Salió de MEMORY.md el 15-sep para que el índice cupiera en su límite; los ficheros siguen enteros.
+description: Índice de las memorias de proyecto de los PR #62 a #196 (4-22 sep): qué cerró cada uno y qué dejó abierto. Salió de MEMORY.md el 15-sep para que el índice cupiera en su límite; los ficheros siguen enteros.
 metadata:
   type: project
 ---
 
-# Trabajo anterior al 14-sep
+# Trabajo anterior al 22-sep
 
 Cada línea apunta a su memoria completa. Lo que sigue abierto vive en su ticket (`tickets/`), que es la fuente;
 aquí queda el porqué y el contexto de cada entrega.
+
+## PR #155 a #196 (15-22 sep) — salieron de `MEMORY.md` el 22-sep por el mismo motivo
+
+- [La vuelta a iCloud ya pide volver a entrar](project_vuelta_icloud_pide_volver_a_entrar.md) — PR #194; en qa con 8 pasos en iPhone.
+- [La sesión de la persona anterior ya se retira](project_retiro_sesion_persona_anterior.md) — PR #192; en qa con 9 pasos en iPhone.
+- [Las acciones de Grupos leen pasajero el token nulo](project_acciones_grupos_token_nulo_pasajero.md) — en qa con guion sin ventana estrecha.
+- [La sesión anterior tras «Empezar desde cero»](project_sesion_anterior_tras_empezar_de_cero.md) — PR #190; en qa por pasos en iPhone.
+- [El spinner de hidratación se rinde con el veredicto](project_spinner_hidratacion_se_rinde.md) — PR #189; done sin device-QA.
+- [El canal personal lee pasajero el token nulo sin red](project_sync_personal_token_nulo_pasajero.md) — en qa con un guion de ventana estrecha.
+- [«Migrar a la nube» ya no adopta](project_migrar_a_la_nube_no_adopta.md) — PR #187; en qa por pasos en iPhone.
+- [Un rechazo al volver a iCloud ya sale a la nube](project_rechazo_del_claim_de_la_reversa.md) — PR #186; en qa con SQL en staging.
+- [Sin App Attest no se ofrece la nube](project_puerta_del_alta_sin_attest.md) — Welcome (#180, #181) y la tarjeta de Ajustes entera.
+- [Grupos ya despierta al volver a la app](project_grupos_despierta_al_volver_a_la_app.md) — PR #179; deja el ticket del piggyback con el motor.
+- [El aviso de attest personal, en dos superficies](project_aviso_attest_personal_en_dos_superficies.md) — PR #177; arregló un «Todo sincronizado».
+- [Grupos ya avisa sin App Attest](project_grupos_avisa_sin_attest.md) — PR #176, en `done` y sin device-QA; el hermano personal sigue sin hacer.
+- [El teléfono sin App Attest ya tiene veredicto y salida](project_telefono_sin_attest_veredicto_y_salida.md) — en qa solo espera la racha: la salida con pérdida no se monta en ningún dispositivo.
+- [La hoja del cambio de Apple ID ya enseña el bloqueo](project_hoja_apple_id_cierre_bloqueado.md) — la review cazó un progreso eterno MÍO.
+- [El aviso de datos borrados ya no se monta encima de nada](project_aviso_datos_borrados_va_por_la_cola.md) — PR #164; la premisa del encargo acertaba la VÍA y erraba el case.
+- [«Empezar desde cero» sin iCloud ya vuelve en vez de mentir](project_discard_gate_vuelve_sin_prometer.md) — PR #160; la review cazó que MI extensión al estado K creaba un camino muerto.
+- [Cambiar el Apple ID ya cierra la sesión privada](project_apple_id_cierra_la_sesion_privada.md) — PR #159; el ticket decía «alinear un aviso» y no.
+- [«Empezar desde cero» en la activación ya borra de verdad](project_activacion_descarta_y_borra_de_verdad.md) — el hermano lo dio por imposible.
+- [Un fallo pasajero al cerrar sesión en la nube ya se dice honesto](project_aviso_pasajero_cierre_nube.md) — PR #156.
+- [«Empezar desde cero» en Restaurar ya borra](project_restore_start_fresh_pasa_por_la_puerta.md) — PR #155; la review cazó 11 MÍOS y el 1.º era que.
+- [Salir de Restaurar ya no apaga la búsqueda viva](project_salir_de_restaurar_no_apaga_la_busqueda.md) — PR #196; deja el residual de la.
+
+## PR #62 a #154 (4-14 sep)
 
 - [Un 403 de infra ya no es un veredicto de cuenta](project_403_infra_no_es_veredicto_de_cuenta.md) — PR #154.
 - [El eje 1 ya tiene fuente propia](project_eje1_marca_sesion_privada.md) — PR #150; eran 9 constructores y no 6; el barrido de M1 es el PR-B y el device-QA NO es simulable.

@@ -119,13 +119,61 @@ struct ReversePreMountExitLogicTests {
         for blocker: ReversePreMountBlocker in [.accountUnavailable, .otherLeader, .refused,
                                                 .localFailure, .unknownVerdict] {
             let detail = MetricsService.reversePreMountWaitingDetail(
-                phase: "verify", stalledSeconds: 1_000, blocker: blocker.rawValue)
-            #expect(detail == "verify|15m_1h|stop_\(blocker.rawValue)", "\(blocker)")
+                phase: "verify", stalledSeconds: 1_000, causeStalledSeconds: 1_000,
+                blocker: blocker.rawValue)
+            #expect(detail == "verify|15m_1h|15m_1h|stop_\(blocker.rawValue)", "\(blocker)")
             #expect(!detail.contains("server_"), "\(blocker): el prefijo afirmaría que contestó el servidor")
         }
         // Y sin motivo sigue diciendo que espera, que es la otra mitad de la serie.
         #expect(MetricsService.reversePreMountWaitingDetail(
-            phase: "verify", stalledSeconds: 1_000, blocker: nil) == "verify|15m_1h|waiting")
+            phase: "verify", stalledSeconds: 1_000, causeStalledSeconds: 0,
+            blocker: nil) == "verify|15m_1h|-|waiting")
+    }
+
+    /// **El detalle publica los DOS relojes**, y cada mitad tiene su modo de fallo (ticket
+    /// `reverse-pre-mount-ceiling-charges-a-stall-to-whoever-stops-it-last`):
+    ///  · si publicara solo el de la FASE, un fallo local de doce segundos tras tres horas sin cobertura saldría
+    ///    como `stop_localFailure|1h_24h` y el dashboard leería tres horas de avería local;
+    ///  · si publicara solo el de la CAUSA, un teléfono con dos motivos alternándose 72 h publicaría `lt_15m` en
+    ///    cada observación y —con el dedupe por proceso— la flota vería UN evento diciendo que no pasa nada.
+    ///
+    /// Los dos casos de abajo son esas dos mitades: en el primero los tramos DIFIEREN, así que un mutante que
+    /// duplique cualquiera de los dos muere. El tercero fija el `-` de la observación sin motivo, que es lo que
+    /// impide que un `lt_15m` constante se lea como un dato.
+    @Test func waitingCanaryDetail_publishesBothClocks() {
+        #expect(MetricsService.reversePreMountWaitingDetail(
+            phase: "verify", stalledSeconds: 10_800, causeStalledSeconds: 12,
+            blocker: "localFailure") == "verify|1h_24h|lt_15m|stop_localFailure")
+        #expect(MetricsService.reversePreMountWaitingDetail(
+            phase: "drain", stalledSeconds: 259_200, causeStalledSeconds: 60,
+            blocker: "accountUnavailable") == "drain|gte_72h|lt_15m|stop_accountUnavailable")
+        #expect(MetricsService.reversePreMountWaitingDetail(
+            phase: "claim", stalledSeconds: 10_800, causeStalledSeconds: 0,
+            blocker: nil) == "claim|1h_24h|-|waiting")
+    }
+
+    /// El detalle viaja al gateway, que RECHAZA EL LOTE ENTERO si un detalle pasa de 128 caracteres
+    /// (`gateway/src/metrics.ts`) — y ahí se caen con él los demás canarios del spool. El segmento nuevo lo acerca
+    /// al tope, así que se mide el peor caso real: la fase y el motivo más largos con los dos tramos más largos.
+    @Test func waitingCanaryDetail_worstCaseFitsTheGatewayCap() {
+        let worst = MetricsService.reversePreMountWaitingDetail(
+            phase: "freeze", stalledSeconds: 259_200, causeStalledSeconds: 259_200,
+            blocker: ReversePreMountBlocker.accountUnavailable.rawValue)
+        #expect(worst.count <= 128, "\(worst.count) caracteres: \(worst)")
+        #expect(!worst.isEmpty, "un detalle vacío también tumba el lote")
+    }
+
+    /// Los cinco tramos, con sus bordes clavados. Son los mismos números que los dos techos, así que un borde
+    /// movido haría que el dashboard dijera «todavía le queda» de un teléfono que ya salió.
+    @Test func waitingCanaryBuckets_pinTheirBoundaries() {
+        #expect(MetricsService.reversePreMountBucket(899) == "lt_15m")
+        #expect(MetricsService.reversePreMountBucket(900) == "15m_1h")
+        #expect(MetricsService.reversePreMountBucket(3_599) == "15m_1h")
+        #expect(MetricsService.reversePreMountBucket(3_600) == "1h_24h")
+        #expect(MetricsService.reversePreMountBucket(86_399) == "1h_24h")
+        #expect(MetricsService.reversePreMountBucket(86_400) == "24h_72h")
+        #expect(MetricsService.reversePreMountBucket(259_199) == "24h_72h")
+        #expect(MetricsService.reversePreMountBucket(259_200) == "gte_72h")
     }
 
     // MARK: - El texto

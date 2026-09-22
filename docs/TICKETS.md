@@ -430,8 +430,9 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | reverse-exit-on-a-reverted-account-rejects-the-retry | backlog | tickets/backlog/reverse-exit-on-a-reverted-account-rejects-the-retry.md |
 | reverse-hidden-on-a-born-cloud-second-device | backlog | tickets/backlog/reverse-hidden-on-a-born-cloud-second-device.md |
 | reverse-offered-on-a-device-without-icloud | backlog | tickets/backlog/reverse-offered-on-a-device-without-icloud.md |
-| reverse-pre-mount-ceiling-charges-a-stall-to-whoever-stops-it-last | backlog | tickets/backlog/reverse-pre-mount-ceiling-charges-a-stall-to-whoever-stops-it-last.md |
+| reverse-pre-mount-ceiling-charges-a-stall-to-whoever-stops-it-last | qa | tickets/qa/reverse-pre-mount-ceiling-charges-a-stall-to-whoever-stops-it-last.md |
 | reverse-pre-mount-ceiling-has-no-alert-and-leaves-network-verify-out | qa | tickets/qa/reverse-pre-mount-ceiling-has-no-alert-and-leaves-network-verify-out.md |
+| reverse-upload-ceiling-charges-a-wait-to-whoever-stops-it-last | backlog | tickets/backlog/reverse-upload-ceiling-charges-a-wait-to-whoever-stops-it-last.md |
 | reverse-tap-is-lost-while-a-resume-is-running | backlog | tickets/backlog/reverse-tap-is-lost-while-a-resume-is-running.md |
 | reverse-tap-on-a-stale-card-aborts-instead-of-starting | backlog | tickets/backlog/reverse-tap-on-a-stale-card-aborts-instead-of-starting.md |
 | reverse-upload-ceiling-trusts-a-clock-set-back-during-the-wait | backlog | tickets/backlog/reverse-upload-ceiling-trusts-a-clock-set-back-during-the-wait.md |
