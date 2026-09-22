@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-22 (Lima)
 
-**Rama** `2.1` — Merge #212: **La subida al activar la nube ya no se queda al 55 % para siempre.**
+**Rama** `2.1` — Merge #213: **En MODO AUTÓNOMO la sesión ya no pregunta «¿Sigo?» ni deja el merge a Jürgen.**
 TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,16 @@ TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#212 · la subida al activar la nube ya no se queda al 55 % para siempre)
+## Esta sesión (#213 · en MODO AUTÓNOMO la sesión ya no pregunta «¿Sigo?» ni deja el merge a Jürgen)
+
+**Una sesión de la cola autónoma ya no se para a preguntar «¿Sigo?» tras listar el plan, ni deja el PR abierto para
+que lo mergee Jürgen.** Sigue hasta `/cerrar-total`: gate, commit, PR, CI, merge y board. El device-QA de iPhone deja
+el ticket en `qa` con su guion y no frena el merge. En sesión interactiva nada cambia: más de 3 ficheros espera OK, y
+tras implementar se para. La norma de día sigue: de 6:00 a 21:00 (Lima), una decisión real de producto o de acceso
+se pregunta. La bifurcación vive en `CLAUDE.md` § «Control de Ejecución»; `frank.md` y su memoria remiten ahí.
+Solo proceso, sin código. Ticket en `done`.
+
+## Sesión anterior (#212 · la subida al activar la nube ya no se queda al 55 % para siempre)
 
 **Si la subida de tus datos a la nube deja de avanzar, la app ya no se queda en «Activando la nube…» 55 % para
 siempre.** Se rinde sola: a los **15 min** si el motivo es de los que esperar no arregla (la sesión ya borrada, la
