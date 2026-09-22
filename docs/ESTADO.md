@@ -5,10 +5,70 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-22 (Lima)
 
-**Rama** `2.1` — Merge #208: **La puerta de descarte ya apaga una ventana de sesión huérfana.**
+**Rama** `2.1` — Merge #209: **Un «no» definitivo del servidor en la vuelta a iCloud ya no espera 72 horas.**
 TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
-## Esta sesión (#208 · la puerta de descarte ya apaga una ventana huérfana)
+## Esta sesión (#209 · un «no» definitivo en la vuelta ya no espera 72 horas)
+
+**Volviendo a iCloud, si la cuenta en la nube dejaba de estar disponible justo en el paso de comprobación, la app se
+quedaba TRES DÍAS en «Comprobando que todo llegó…»** sin decir nada, como si fuera la conexión. No lo era, y esperar no
+lo arreglaba. Lo mismo con la sesión caducada y con un fallo de la base de datos del propio teléfono. Ahora, a los 15
+minutos vuelve al sitio de donde salió y deja dicho por qué; si lo que caducó es la sesión, sale la tarjeta de «vuelve a
+entrar» en vez del silencio.
+
+**La cadena, medida entera.** `SyncMerkleClient` **sí** distinguía 401 / 403 / red, pero `SyncMerkle.verifyIntegrity`
+los aplanaba con un `guard case .snapshot` y los tres salían como `fetch-failed`; `VerifyProbeMapping` mandaba ese
+reason —y los dos `fetch` de SwiftData, y el `default` de un motivo futuro— a `.networkTimeout`; y desde el 21-sep la
+vuelta manda la red al techo LARGO de 259 200 s. La ventana viva era la del rechazo que empieza justo **entre el pull y
+el Merkle**: el push y el pull tipan su 401/403 desde el 16-sep, el Merkle era el tercero y no lo hacía.
+
+`MerkleVerdict` gana dos casos tipados y el mapping deja de ser un cajón: `.networkTimeout` es SOLO red, los dos `fetch`
+locales van a `.blocked(.localFailure)` y el `default` a `.blocked(.unknownVerdict)`, los dos con techo CORTO (900 s).
+
+**EL 401 CONSERVA EL TECHO LARGO, y es una decisión.** A la sesión la renueva la persona, que ahora ve la tarjeta mucho
+antes de que venzan las 72 h. Lo que se le quitó fue el silencio, no la espera. **La IDA no cambia**: `driveVerify` ya
+agrupaba los tres, y hay test que lo fija.
+
+**LA REVIEW CAZÓ SIETE DEFECTOS MÍOS**, con tres lentes independientes, y tres son de la misma familia —cosas que eran
+inofensivas hasta que el cambio les dio consecuencia—:
+
+1. **El Merkle era el ÚNICO cliente del canal sin `canRenewSession` ni la rama de `yala_attest_required`.** Llevaba
+   meses así y no molestaba: su desenlace se aplanaba en «red», así que acertar daba igual. En cuanto empezó a encender
+   el aviso, pedía firmar otra vez a quien solo estaba sin cobertura y a quien no puede acuñar App Attest. El docblock
+   que justificaba la ausencia **era cierto el día en que se escribió**.
+2. **`.unknownVerdict` salía con `preMountRefused`**, cuyo copy dice «tu cuenta en la nube no lo permitió» y da el correo
+   de soporte — y ese motivo lo escribe una función LOCAL. Causa inventada para la persona y correos a soporte por un
+   desajuste de contrato del cliente. Pasa a `preMountStalled`, con el techo corto intacto: la decisión de Jürgen era
+   sobre el TECHO, no sobre el copy.
+3. **El canario decía `server_<motivo>`** para dos motivos que no son del servidor: el dashboard contaría averías del
+   teléfono como incidentes del backend. Renombrado a `stop_`. **La serie `cloudReversePreMountWaiting` cambia de
+   valores con este build**, y `cloudSyncAttestRequired` estrena el edge `merkle`.
+4. **El literal del `reason` era una junta medida contra sí misma**: el test del mapping construía el veredicto con el
+   mismo literal que consumía, así que un renombrado a un solo lado cambiaba producción sin un rojo. Cerrado por
+   construcción con `MerkleSkipReason`.
+5. **Tres tests míos no podían fallar** (un `Set` de rawValues que garantiza el compilador, un recorrido de `blocked`
+   subsumido por los tres casos de arriba, una tanda de `!=` implicados por sus `==`) y **uno prometía más de lo que
+   medía**: los guards antes del fetch se afirmaban con el veredicto, que no cambia. Ahora se cuentan las peticiones.
+6. **Un test duplicaba una fila que ya existía**, sin añadir un mutante.
+7. **Cinco premisas de las reglas de área y dos comentarios del runner** quedaban falsos.
+
+**16 mutantes verificados.** Gate completo **en la Mini ya actualizada a macOS 27.0 / Xcode 26.6**: los dos builds sin
+warnings nuevos, 7412 unit en 741 suites, 15 XCUITest en 6 suites con el centinela del simulador en 0.
+
+**Un rojo de XCUITest que apareció antes del reinicio de la Mini NO era una regresión**: `Failing tests:` sin una sola
+línea `Test Case … failed` y con el runner reiniciado, o sea una muerte sin veredicto. Repetido aislado, 4/4 verde.
+
+**Ticket a `qa`** con guion de 5 pasos en teléfono (el caso del 403 necesita staging; los pasos 4 y 5 son los controles
+negativos: sin cobertura y sin App Attest **no** debe salir «vuelve a entrar»).
+
+**Dos residuales con ticket propio**, los dos de la review:
+`reverse-pre-mount-ceiling-charges-a-stall-to-whoever-stops-it-last` —el reloj del techo es de la FASE y la causa de la
+ÚLTIMA observación, así que un fallo local aislado tras horas de espera por red saca en el acto, sin un reintento; existe
+desde el 21-sep para el 403 y este cambio lo hace alcanzable por un blip local— y
+`verify-reads-a-failed-local-fetch-as-an-empty-outbox` —el mismo `fetch` leído como «outbox vacío» y, veinte líneas
+después, como desenlace definitivo—.
+
+## Sesión anterior (#208 · la puerta de descarte ya apaga una ventana huérfana)
 
 **Salir de Restaurar y volver a entrar dejaba el permiso que deja firmar sin aviso VIVO y sin dueño**,
 y desde ahí «Empezar desde cero» era un no-op: la persona llegaba a la pantalla que borra con ese
