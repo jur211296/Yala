@@ -8,7 +8,7 @@ Index of `tickets/`. Folder name **is** `status`. Filename **is** `id` + `.md` (
 ---
 id: <slug>                          # = filename without .md
 status: backlog|in-progress|qa|done|blocked|discarded
-priority: high|medium|low           # only if the source had it
+priority: <one of the six below>    # only if the source had it
 area: (if present on the source)
 created: (if present on the source)
 updated: 2026-08-26
@@ -21,7 +21,18 @@ source: YalaWiki/<origin path>
 Rules:
 
 - `status` equals the parent folder. Moving the file and editing `status` is the same act.
-- Omit `priority` when the source did not have a real value (`high` / `medium` / `low`). Do not invent it.
+- `priority` takes exactly one of six rungs, from most to least urgent:
+
+  | value | what it means |
+  |---|---|
+  | `critical` | production emergency or a broken ship, right now. Reserved — it is not used "just in case". |
+  | `very-high` | blocks shipping 2.1 in cloud mode without a dead end: data at risk, or the user gets trapped. |
+  | `high` | important. Includes the device-QA Jürgen has to run, as long as no open code path is a dead end. |
+  | `medium` | a clear improvement, not urgent. |
+  | `low` | nice-to-have. |
+  | `very-low` | polish, far-off tooling, housekeeping docs. |
+
+- Omit `priority` when the source did not have a real value. Do not invent it.
 - Closed write-ups (bugs `closed`/`fixed`, backlog `done`/`cancelled`) are **not** copied.
 - Last line of a migrated body: `migrated from YalaWiki <path> @ 1934e8ad`.
 - Do not invent PASS or close a ticket.
@@ -32,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (479)
+## Index (487)
 
 | id | status | path |
 |---|---|---|

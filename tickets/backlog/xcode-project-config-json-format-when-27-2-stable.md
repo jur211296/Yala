@@ -1,7 +1,7 @@
 ---
 id: xcode-project-config-json-format-when-27-2-stable
 status: backlog
-priority: low
+priority: very-low
 area: "tooling, xcode"
 created: 2026-09-20
 source: "Apple docs (Beta) vía Dan — Jürgen 2026-09-20; captura Frank"
@@ -19,7 +19,7 @@ Hoy el project file es frágil para diffs y para Claude/agentes. Cuando el toolc
 
 ## Qué no hacer ahora
 
-- **No atacar en beta.** Prioridad low; solo cuando Yala esté en **Xcode 27.2+ estable** o Jürgen diga go.
+- **No atacar en beta.** Prioridad very-low; solo cuando Yala esté en **Xcode 27.2+ estable** o Jürgen diga go.
 - No es rewrite de app ni cambio de producto.
 
 ## Criterio de listo (cuando se ataque)

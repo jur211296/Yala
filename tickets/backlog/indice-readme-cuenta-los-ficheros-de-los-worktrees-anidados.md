@@ -1,7 +1,7 @@
 ---
 id: indice-readme-cuenta-los-ficheros-de-los-worktrees-anidados
 status: backlog
-priority: low
+priority: very-low
 area: "documentación, tooling"
 created: 2026-09-16
 updated: 2026-09-16

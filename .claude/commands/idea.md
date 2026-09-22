@@ -18,10 +18,13 @@ PASOS:
 3. CLASIFICA LA IDEA:
    - Tipo: [Feature | Improvement | Tech Debt | Bug | Research]
    - Categoría: [UI/UX | Data Model | Business Logic | Performance | Architecture]
-   - Prioridad estimada: [high | medium | low] basada en:
-     * high: bloquea trabajo actual o tiene impacto grande
-     * medium: mejora importante pero no urgente
+   - Prioridad estimada: [critical | very-high | high | medium | low | very-low] basada en:
+     * critical: emergencia en produccion o ship roto ahora. Reservado, no se usa "por si acaso"
+     * very-high: bloquea salir 2.1 en modo nube sin callejon (dato en riesgo o usuario atrapado)
+     * high: importante; incluye el device-QA que Jurgen debe correr, sin callejon de codigo abierto
+     * medium: mejora clara, no urgente
      * low: nice-to-have sin impacto inmediato
+     * very-low: polish, tooling lejano, docs de higiene
 
 4. CAPTURA EN `tickets/backlog/<english-kebab-slug>.md`:
    - Slug inglés kebab-case (filename = id)
