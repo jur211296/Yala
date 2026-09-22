@@ -15,6 +15,9 @@
 - [Un límite de plataforma se explica en la pregunta](feedback_un_limite_de_plataforma_se_explica_en_la_pregunta.md) — preguntó por qué Apple solo usa el Apple ID del teléfono y eligió levantarlo.
 
 ## Cómo mido y cómo entrego
+- [Dos derivados del mismo enum no son independientes](feedback_dos_derivados_del_mismo_enum_no_son_independientes.md) — comparten su forma de AGRUPAR; defenderlo por escrito no los separa.
+- [El scan de un modifier no ancla a QUÉ vista cuelga](feedback_el_scan_de_un_modifier_no_ancla_a_que_vista_cuelga.md) — moverlo un nivel hacia dentro reabre el ticket en verde.
+- [Al quitar un apagado incondicional, busca quién lo usaba](feedback_al_quitar_un_apagado_incondicional_busca_quien_lo_usaba.md) — condicionar un efecto se lo quita a caminos que nadie enumeró.
 - [El reintento de fuera multiplica el de dentro](feedback_el_reintento_de_fuera_multiplica_el_de_dentro.md) — el SDK ya reintentaba la renovación: mi coste era falso por 3x y el reintento tapaba un mutante.
 - [El orden hace INVISIBLE al segundo término](feedback_el_orden_hace_invisible_al_segundo_termino.md) — «A implica B por el orden» puede significar.
 - [El mutante muere y el término sobra](feedback_el_mutante_muere_y_el_termino_sobra.md) — 5 mutantes muertos y la rama solo la alcanzaba gente con.
@@ -118,6 +121,7 @@
 - [«Cero warnings» se mide en TODOS los logs](feedback_cero_warnings_se_mide_en_todos_los_logs.md) — el gate no mira los tests y lee un build.
 
 ## Estado del trabajo
+- [El tope de 90 s ya no cierra la sesión con el import bajando](project_tope_90s_no_cierra_con_import_bajando.md) — PR #203; en qa con guion de 7 pasos y un residual con ticket propio.
 - [La vuelta a iCloud ya pide volver a entrar](project_vuelta_icloud_pide_volver_a_entrar.md) — PR #194; en qa con 8 pasos en iPhone.
 - [La sesión de la persona anterior ya se retira](project_retiro_sesion_persona_anterior.md) — PR #192; en qa con 9 pasos en iPhone.
 - [Las acciones de Grupos leen pasajero el token nulo](project_acciones_grupos_token_nulo_pasajero.md) — en qa con guion sin ventana estrecha.
