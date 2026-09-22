@@ -1,6 +1,6 @@
 ---
 id: restore-retry-reopens-the-session-window-every-90-seconds
-status: in-progress
+status: qa
 priority: medium
 area: "icloud, restore, sesiones"
 created: 2026-09-21
