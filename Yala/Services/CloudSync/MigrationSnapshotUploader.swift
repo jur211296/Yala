@@ -44,6 +44,13 @@ final class MigrationSnapshotUploader {
     private let now: () -> Date
     private let pageSize: Int
 
+    /// A partir de la N-ésima llamada (1-based), `liveOutboxRows()` LANZA. Mismo molde y mismo porqué que su
+    /// gemelo de `MigrationWorkExecutor`, **contador incluido**: este fichero lee el outbox SEIS veces por pasada
+    /// y cada lectura tiene su propio desenlace. Con un `Bool`, la primera corta y las otras cinco quedan sin
+    /// medir — el defecto que una lente de la review cazó en el seam del Merkle el 2026-09-22. SOLO tests.
+    var _testOutboxFetchThrowsFromCall: Int?
+    private var _testOutboxFetchCount = 0
+
     /// Especificaciones de las 16 entidades, en orden de tabla UTF-8 asc (fijado en `init`).
     private lazy var specs: [SnapshotEntitySpec] = buildSpecs()
 
@@ -179,7 +186,17 @@ final class MigrationSnapshotUploader {
     /// push no fue 2xx.
     private func drainPushConfirm() async -> Bool {
         engine.drainOnce(context: context)
-        let live = liveOutboxRows()
+        // Un outbox ilegible devuelve `false`, NUNCA `true` (ticket
+        // `verify-reads-a-failed-local-fetch-as-an-empty-outbox`). `true` aquí significa «página confirmada» y
+        // avanza el cursor: con `[]`, una avería de lectura daba por subida una página que no se subió, y el
+        // snapshot seguía adelante sin ella.
+        let live: [SyncOutbox]
+        do {
+            live = try liveOutboxRows()
+        } catch {
+            CloudSyncBreadcrumb.outboxFetchFailed(step: "snapshot-page")
+            return false
+        }
         guard !live.isEmpty else { return true }  // nada que subir (todo ya confirmado)
 
         // partitionBuildable (#26): aislar poison ANTES de push + DEAD-LETTEREARLO (fix del review
@@ -187,14 +204,15 @@ final class MigrationSnapshotUploader {
         // migración atascada en transient perpetuo en vez de degradar honesto vía el mismatch de verify).
         let (buildable, poison) = pushClient.partitionBuildable(live)
         engine.deadLetterPoison(poison, context: context, now: now())
-        guard !buildable.isEmpty else { return liveOutboxRows().isEmpty }  // solo poison → dead-lettereado → puede avanzar
+        guard !buildable.isEmpty else { return liveOutboxIsEmpty(step: "snapshot-page-poison") }  // solo poison → dead-lettereado → puede avanzar
 
         switch await pushClient.push(buildable) {
         case .completed(let results):
             await pushClient.applyResults(results, rows: buildable, engine: engine, context: context)
             // Confirmada SOLO si no quedan filas VIVAS (los dead-letters no son vivos → la página avanza y
             // el mismatch permanente lo caza verify → failedRollback tras topes, correcto por diseño).
-            return liveOutboxRows().isEmpty
+            // Y si la relectura no se deja hacer, no se confirma: mismo criterio que el pre-check.
+            return liveOutboxIsEmpty(step: "snapshot-page-after-push")
         case .sessionExpired, .accountUnavailable, .transient:
             return false
         }
@@ -204,32 +222,67 @@ final class MigrationSnapshotUploader {
     /// outbox vivo queda vacío; `.transient` si algo quedó pendiente (el runner reintenta antes de avanzar).
     private func finishResidual() async -> SnapshotStepOutcome {
         engine.drainOnce(context: context)
-        let live = liveOutboxRows()
+        // Ilegible → `.transient`, no `.completed` (mismo ticket y mismo porqué que en `drainPushConfirm`): el
+        // runner reintenta la pasada antes de avanzar, que es exactamente lo que hace falta cuando no se sabe si
+        // quedó algo pendiente.
+        let live: [SyncOutbox]
+        do {
+            live = try liveOutboxRows()
+        } catch {
+            CloudSyncBreadcrumb.outboxFetchFailed(step: "snapshot-residual")
+            return .transient
+        }
         guard !live.isEmpty else { return .completed }
         let (buildable, poison) = pushClient.partitionBuildable(live)
         engine.deadLetterPoison(poison, context: context, now: now())
         guard !buildable.isEmpty else {
             // Solo poison → dead-lettereado → si el outbox vivo quedó vacío, la pasada COMPLETA (el
             // mismatch que el poison provoca lo caza verify → degrada honesto por topes).
-            return liveOutboxRows().isEmpty ? .completed : .transient
+            return liveOutboxIsEmpty(step: "snapshot-residual-poison") ? .completed : .transient
         }
         switch await pushClient.push(buildable) {
         case .completed(let results):
             await pushClient.applyResults(results, rows: buildable, engine: engine, context: context)
-            return liveOutboxRows().isEmpty ? .completed : .transient
+            return liveOutboxIsEmpty(step: "snapshot-residual-after-push") ? .completed : .transient
         case .sessionExpired, .accountUnavailable, .transient:
             return .transient
         }
     }
 
-    private func liveOutboxRows() -> [SyncOutbox] {
+    /// «¿El outbox vivo quedó VACÍO?» — con la avería de lectura contestando que NO.
+    ///
+    /// Las cuatro relecturas de este fichero deciden si una página o la pasada se dan por CONFIRMADAS, así que
+    /// el desenlace honesto de «no pude leer» es el conservador: no confirmar. Es un helper y no un `try?` en
+    /// cada sitio porque el `try?` se lleva el rastro, y el rastro es justo lo que faltaba antes de este ticket
+    /// (`verify-reads-a-failed-local-fetch-as-an-empty-outbox`): un `print` de `#if DEBUG` y nada en producción.
+    private func liveOutboxIsEmpty(step: String) -> Bool {
         do {
+            return try liveOutboxRows().isEmpty
+        } catch {
+            CloudSyncBreadcrumb.outboxFetchFailed(step: step)
+            return false
+        }
+    }
+
+    /// Filas de outbox VIVAS. **LANZA desde el 2026-09-22**, por lo mismo que su gemela de
+    /// `MigrationWorkExecutor` (ticket `verify-reads-a-failed-local-fetch-as-an-empty-outbox`): `[]` decía «no
+    /// hay nada que subir» cuando lo cierto era «no sé lo que hay», y aquí eso CONFIRMABA la página.
+    private func liveOutboxRows() throws -> [SyncOutbox] {
+        // El seam va DENTRO del `do`, no antes: así el camino de error que recorre un test es el `catch` REAL
+        // del fetch. Puesto fuera, un mutante que reintrodujera `return []` ahí seguiría verde.
+        do {
+            // El contador solo corre con el seam ARMADO: en producción `from` es `nil` y esto es una
+            // comparación, no una escritura.
+            if let from = _testOutboxFetchThrowsFromCall {
+                _testOutboxFetchCount += 1
+                if _testOutboxFetchCount >= from { throw MigrationExecutorError.outboxUnreadable }
+            }
             return try context.fetch(FetchDescriptor<SyncOutbox>()).filter { $0.rejectedReason == nil }
         } catch {
             #if DEBUG
             print("MigrationSnapshotUploader: fetch(SyncOutbox) falló: \(error)")
             #endif
-            return []
+            throw MigrationExecutorError.outboxUnreadable
         }
     }
 

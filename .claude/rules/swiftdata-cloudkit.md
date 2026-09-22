@@ -204,8 +204,16 @@ paths:
   Si el 403 es real no se pierde nada — la persona reintenta y a los 15 min sale con el motivo bueno.
   (2) **Solo acorta lo que no se arregla esperando** (`ReversePreMountBlocker`: el 403 `accountUnavailable` del drenaje
   y del verify, el `other_leader` y el `rejected` del congelado; desde el 2026-09-22 también `localFailure` —un `fetch`
-  de SwiftData que lanzó dentro de la verificación— y `unknownVerdict` —un veredicto con un motivo que este build no
-  sabe leer—, ticket `reverse-verify-network-bucket-hides-a-definitive-server-no`): 900 s. **Hasta ese día la regla
+  de SwiftData que lanzó— y `unknownVerdict` —un veredicto con un motivo que este build no
+  sabe leer—, ticket `reverse-verify-network-bucket-hides-a-definitive-server-no`): 900 s. **`localFailure` nació
+  acotado a la verificación y ese mismo día dejó de estarlo**: `verify-reads-a-failed-local-fetch-as-an-empty-outbox`
+  lo añadió al **DRENAJE** (`reverseDrainOnce`, cuando el `fetch` del outbox lanza) y a las dos lecturas que
+  `verify()` hace antes de preguntarle nada al Merkle. ⇒ **la fase `drain` pasó de tener UN motivo definitivo a
+  tener DOS**, y con la regla «causa distinta ⇒ el reloj corto empieza de cero» eso las hace mutuamente
+  cancelatorias: una cuenta suspendida **y** un store que falla a ratos alternan `accountUnavailable`/`localFailure`
+  en cada observación, el reloj corto se re-sella siempre y los 900 s no vencen nunca — la salida se va al reloj de
+  FASE, 72 h. `reverseVerify` ya tenía tres motivos y por tanto ya era alcanzable ahí; el agujero está admitido en el
+  docblock de la máquina. Ticket: `alternating-definitive-causes-never-reach-the-short-ceiling`. **Hasta ese día la regla
   decía «solo la palabra del SERVIDOR» y dejó de ser cierta**: los dos nuevos no son una respuesta de nadie. Los dos
   salen con `preMountStalled` y NO con `preMountRefused`, porque ese copy acusa a la cuenta en la nube y da el correo
   de soporte — y ahí no habló ninguna cuenta; lo cazaron dos lentes de la review. El canario de la espera renombró su

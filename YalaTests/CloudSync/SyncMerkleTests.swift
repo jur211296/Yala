@@ -133,7 +133,7 @@ struct SyncMerkleTests {
         let context = try makeContext(dir)
         let fixture = try Self.loadFixture()
 
-        let local = SyncMerkle.computeLocalMerkle(context: context)
+        let local = try SyncMerkle.computeLocalMerkle(context: context)
         #expect(local.entities.count == 16)  // SIEMPRE las 16 (root independiente de qué tablas tienen datos)
         for (table, summary) in local.entities {
             #expect(summary.count == 0, Comment(rawValue: table))
@@ -159,13 +159,13 @@ struct SyncMerkleTests {
         context.insert(cat)
         try context.save()
 
-        let local = SyncMerkle.computeLocalMerkle(context: context)
+        let local = try SyncMerkle.computeLocalMerkle(context: context)
         #expect(local.entities["tx_items"]?.count == 2)
         #expect(local.entities["categories"]?.count == 1)
         #expect(local.entities["budgets"]?.count == 0)
 
         // Determinismo: recomputar produce EXACTAMENTE los mismos hashes.
-        let again = SyncMerkle.computeLocalMerkle(context: context)
+        let again = try SyncMerkle.computeLocalMerkle(context: context)
         #expect(again == local)
 
         // Coherencia con el ensamblado puro: el hash de tx_items == leaves recomputados a mano.
@@ -197,7 +197,7 @@ struct SyncMerkleTests {
         #expect(payload.contains("\"subcategory_ref\":\"\(target.uuidString.lowercased())\""))
 
         // computeLocalMerkle consume el registro automáticamente (hash == ensamblado con el override).
-        let local = SyncMerkle.computeLocalMerkle(context: context)
+        let local = try SyncMerkle.computeLocalMerkle(context: context)
         let sid = tx.syncID!.uuidString.lowercased()
         let expected = SyncMerkle.entityDigest([(sid, SyncMerkle.leafDigest(syncID: sid, payload: payload))])
         #expect(local.entities["tx_items"]?.hashHex == SyncMerkle.hexString(expected))
@@ -280,7 +280,7 @@ struct SyncMerkleTests {
         try context.save()
 
         // Stub que ECOA el árbol local → converged (root incluido: sin cuarentena se compara).
-        let local = SyncMerkle.computeLocalMerkle(context: context)
+        let local = try SyncMerkle.computeLocalMerkle(context: context)
         var entities: [String: (Int, String)] = [:]
         for (table, s) in local.entities { entities[table] = (s.count, s.hashHex) }
         let convergedVerdict = await engine.verifyIntegrity(
@@ -308,7 +308,7 @@ struct SyncMerkleTests {
                                       rawDelta: "{}", hlc: "h"))
         try context.save()
 
-        let local = SyncMerkle.computeLocalMerkle(context: context)
+        let local = try SyncMerkle.computeLocalMerkle(context: context)
         var entities: [String: (Int, String)] = [:]
         for (table, s) in local.entities { entities[table] = (s.count, s.hashHex) }
         // Root remoto DISTINTO (los budgets server-side lo mueven) — no debe contar como divergencia.
@@ -316,6 +316,107 @@ struct SyncMerkleTests {
             using: stubMerkleClient(remoteJSON(root: "distinto", entities: entities)),
             context: context)
         #expect(verdict == .converged)
+    }
+
+    // MARK: - El corpus que no se deja leer (`verify-reads-a-failed-local-fetch-as-an-empty-outbox`)
+
+    /// **Una tabla ilegible NO es una tabla vacía, y el ensamblado no sabía distinguirlas.** `collectLeaves`
+    /// devolvía `[]` en su `catch`, y `[]` se hashea con `sha256("")` — byte a byte el mismo hash que una tabla
+    /// sin filas. Con el servidor poblado, eso salía de `verifyIntegrity` como `.diverged`: una pérdida de
+    /// integridad inventada, con su canario y su métrica, y en la vuelta a iCloud consumiendo el presupuesto de
+    /// MISMATCH hasta `reverseFailedRollback`.
+    ///
+    /// **Las tres aserciones son el caso**: el veredicto es el skip PROPIO, **no** es `.diverged` —que es lo que
+    /// daba—, y el control en la dirección contraria prueba que este escenario SÍ diverge cuando la avería no
+    /// está. Sin el control, un mutante que devolviera siempre el skip saldría verde y el verificador dejaría de
+    /// detectar divergencias de verdad.
+    @Test("verifyIntegrity: un corpus local ilegible no se compara como vacío ni sale como divergencia")
+    func verify_unreadableLocalCorpus_skipsInsteadOfDiverging() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        engine.lastPullCycleCompleted = true
+
+        _ = makeTx(-10, note: "x", context: context)
+        try context.save()
+
+        // Remoto POBLADO: el árbol que el servidor tiene de verdad. Con el corpus local ilegible leído como
+        // vacío, ese remoto y este local no casan → es el escenario que producía la divergencia falsa.
+        let local = try SyncMerkle.computeLocalMerkle(context: context)
+        var entities: [String: (Int, String)] = [:]
+        for (table, s) in local.entities { entities[table] = (s.count, s.hashHex) }
+        let remote = remoteJSON(root: local.rootHex, entities: entities)
+
+        // Solo el fetch de los LEAVES. `danglingOverrides` corre antes en el cómputo, así que con un seam
+        // compartido cortaría él y esta rama no se recorrería nunca — el defecto que cazó la review.
+        SyncMerkle._testThrowOnLeafFetch = true
+        defer { SyncMerkle._testThrowOnLeafFetch = false }
+
+        let verdict = await engine.verifyIntegrity(using: stubMerkleClient(remote), context: context)
+        #expect(verdict == .skipped(reason: MerkleSkipReason.localMerkleFetchFailed),
+                "no se compara nada: no hay corpus que comparar, y desde luego no es `.diverged`")
+
+        // Control en la dirección contraria, DOS veces: sin la avería el mismo escenario converge, y con el hash
+        // corrompido sigue divergiendo. El verificador no se ha vuelto mudo.
+        SyncMerkle._testThrowOnLeafFetch = false
+        #expect(await engine.verifyIntegrity(using: stubMerkleClient(remote), context: context) == .converged,
+                "control: sin la avería, este escenario converge")
+        entities["tx_items"] = (1, "deadbeef")
+        #expect(await engine.verifyIntegrity(
+            using: stubMerkleClient(remoteJSON(root: local.rootHex, entities: entities)), context: context)
+            == .diverged(entities: ["tx_items"]),
+                "control: una divergencia REAL se sigue detectando")
+    }
+
+    /// El cómputo local propaga en vez de ensamblar a medias, y con su error TIPADO. Sin el tipo, el consumidor
+    /// tendría que distinguir «no pude leer» de cualquier otro fallo mirando un string.
+    @Test("computeLocalMerkle: lanza en vez de devolver un árbol construido sobre lo que no se pudo leer")
+    func computeLocalMerkle_unreadableCorpus_throws() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        _ = makeTx(-10, note: "x", context: context)
+        try context.save()
+
+        // Control positivo primero: sin el seam, computa.
+        #expect(throws: Never.self) { _ = try SyncMerkle.computeLocalMerkle(context: context) }
+
+        // Las dos mitades por separado, y con el error TIPADO en cada una: un `#expect(throws:)` sobre el tipo
+        // a secas lo satisface cualquiera de los dos casos, así que no distinguiría cuál lanzó.
+        SyncMerkle._testThrowOnLeafFetch = true
+        defer { SyncMerkle._testThrowOnLeafFetch = false }
+        var fromLeaves: SyncMerkleLocalReadError?
+        do { _ = try SyncMerkle.computeLocalMerkle(context: context) } catch let e as SyncMerkleLocalReadError {
+            fromLeaves = e
+        }
+        #expect(fromLeaves == .leafFetchFailed(entity: EntityEmissionMap.transactionItem.table),
+                "el corpus ilegible lanza por su propio caso, y nombra la tabla")
+        SyncMerkle._testThrowOnLeafFetch = false
+
+        // Y sigue computando en cuanto el seam se apaga: el control de que el flag es lo único que lo paraba.
+        #expect(throws: Never.self) { _ = try SyncMerkle.computeLocalMerkle(context: context) }
+    }
+
+    /// El registro de refs colgadas es la otra mitad, y su propio docblock lo llama LOAD-BEARING: sin los
+    /// overrides los `_ref` singulares emiten `null` donde el servidor tiene el UUID ⇒ divergencia falsa
+    /// garantizada en cualquier multi-device. Se tragaba el error y seguía con el diccionario a medias, o sea
+    /// que producía EXACTAMENTE el escenario que ese registro existe para evitar.
+    ///
+    /// Se prueba por separado del de arriba porque son dos `catch` distintos: un arreglo que solo cubriera
+    /// `collectLeaves` dejaría éste vivo y ningún test lo diría.
+    @Test("danglingOverrides: un registro de refs colgadas ilegible no se lee como «no hay ninguna»")
+    func danglingOverrides_unreadable_throwsWithItsOwnCase() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        SyncMerkle._testThrowOnDanglingFetch = true
+        defer { SyncMerkle._testThrowOnDanglingFetch = false }
+
+        var thrown: SyncMerkleLocalReadError?
+        do {
+            _ = try SyncMerkle.computeLocalMerkle(context: context)
+        } catch let error as SyncMerkleLocalReadError {
+            thrown = error
+        }
+        #expect(thrown == .danglingFetchFailed, "tiene caso propio, y no se confunde con el de los leaves")
     }
 
     // MARK: - Fix #3 review: dead-letters bloquean el verify (skip, nunca canario)

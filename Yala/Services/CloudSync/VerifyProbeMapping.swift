@@ -11,7 +11,9 @@
 //
 //  **`.networkTimeout` dejó de ser un cajón el 2026-09-22** (ticket
 //  `reverse-verify-network-bucket-hides-a-definitive-server-no`). Hasta ese día caían aquí el 401 y el 403 de
-//  `/sync/merkle` —que `SyncMerkle` aplanaba en un solo `fetch-failed`—, los dos `fetch` de SwiftData que lanzan y
+//  `/sync/merkle` —que `SyncMerkle` aplanaba en un solo `fetch-failed`—, los `fetch` de SwiftData que lanzan (eran
+//  dos ese día; el tercero, el del cómputo del árbol local, ni siquiera podía decirlo hasta
+//  `verify-reads-a-failed-local-fetch-as-an-empty-outbox`) y
 //  cualquier `reason` que este build no conozca; y como la vuelta a iCloud manda la red al techo LARGO, esa mitad
 //  esperaba 72 h en «Comprobando que todo llegó…» ante algo que no se arregla esperando. Hoy `.networkTimeout` es
 //  SOLO red.
@@ -39,9 +41,13 @@ nonisolated enum VerifyProbeMapping {
     ///  - `.skipped("dead-letters")` → `.mismatch` (rechazo DEFINITIVO del server: jamás auto-sana → tope).
     ///  - `.skipped("canon-version-mismatch"|"capability-set-mismatch")` → `.mismatch` (contrato roto mid-migración: terminal por tope).
     ///  - `.skipped("no-completed-pull"|"fetch-failed")` → `.networkTimeout` (retry idempotente). Estas dos SÍ son red.
-    ///  - `.skipped("outbox-fetch-failed"|"quarantine-fetch-failed")` → `.blocked(.localFailure)`: la base de datos
-    ///    LOCAL falló al leer. No es red ni es el servidor, así que el techo largo no le corresponde — y con él la
-    ///    persona esperaba tres días delante de un fallo del propio teléfono.
+    ///  - `.skipped("outbox-fetch-failed"|"quarantine-fetch-failed"|"local-merkle-fetch-failed")` →
+    ///    `.blocked(.localFailure)`: la base de datos LOCAL falló al leer. No es red ni es el servidor, así que el
+    ///    techo largo no le corresponde — y con él la persona esperaba tres días delante de un fallo del propio
+    ///    teléfono. **El tercero entró el 2026-09-22** con `verify-reads-a-failed-local-fetch-as-an-empty-outbox`:
+    ///    es el cómputo del árbol local, que hasta ese día no tenía cómo decir que no pudo leer —hasheaba la tabla
+    ///    ilegible como VACÍA y salía por `.diverged`, o sea por la rama del contrato roto, gastando el presupuesto
+    ///    de MISMATCH por una divergencia que no existía.
     ///  - reason DESCONOCIDO → `.blocked(.unknownVerdict)`: techo CORTO. «Conservador» dejó de significar «espera» el
     ///    día en que detrás había 72 h; un motivo que nadie sabe leer no se presume pasajero, que es lo mismo que el
     ///    claim decidió para su `claimRefused`. El canario lo sigue emitiendo el caller vía `isUnknownSkip`.
@@ -67,7 +73,8 @@ nonisolated enum VerifyProbeMapping {
                 return .mismatch
             case MerkleSkipReason.noCompletedPull, MerkleSkipReason.fetchFailed:
                 return .networkTimeout
-            case MerkleSkipReason.outboxFetchFailed, MerkleSkipReason.quarantineFetchFailed:
+            case MerkleSkipReason.outboxFetchFailed, MerkleSkipReason.quarantineFetchFailed,
+                 MerkleSkipReason.localMerkleFetchFailed:
                 return .blocked(.localFailure)
             default:
                 return .blocked(.unknownVerdict)  // nunca crashea ni consume mismatch, pero tampoco espera 72 h

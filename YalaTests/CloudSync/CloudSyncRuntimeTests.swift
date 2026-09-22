@@ -68,16 +68,23 @@ struct CloudSyncRuntimeTests {
         return Data("{\"results\":[\(results)]}".utf8)
     }
 
-    private func liveRow(_ context: ModelContext, entityType: String, h: String) -> SyncOutbox {
+    /// **El `save` PROPAGA desde el 2026-09-22** (mismo ticket que el helper de abajo): con `try?`, un save que
+    /// falla dejaba el escenario sin fila y en silencio — un test que cree estar midiendo «con filas vivas»
+    /// midiendo el caso vacío. Si el save falla, el test debe caerse.
+    private func liveRow(_ context: ModelContext, entityType: String, h: String) throws -> SyncOutbox {
         let row = SyncOutbox(syncID: UUID(), entityType: entityType, op: .upsert, hlc: h,
                              clientMutationID: UUID(), fieldsJSON: "{}", fieldHlcsJSON: "{}", author: "")
         context.insert(row)
-        try? context.save()
+        try context.save()
         return row
     }
 
-    private func outbox(_ context: ModelContext) -> [SyncOutbox] {
-        (try? context.fetch(FetchDescriptor<SyncOutbox>())) ?? []
+    /// **Propaga desde el 2026-09-22** (ticket `verify-reads-a-failed-local-fetch-as-an-empty-outbox`): era un
+    /// `try?` con `?? []`, el mismo antipatrón que ese ticket arregla en producción, y aquí hacía de CONTROL DE
+    /// ESCENARIO —`#expect(outbox(context).isEmpty)` con el comentario «ni rehydrate ni drain corrieron»—. Un
+    /// fetch que lanzara habría dado «outbox vacío» y el control habría certificado una premisa falsa.
+    private func outbox(_ context: ModelContext) throws -> [SyncOutbox] {
+        try context.fetch(FetchDescriptor<SyncOutbox>())
     }
 
     /// Construye un runtime con clients stubbeados (push/pull/merkle) y sesión stub. Los `@MainActor`
@@ -171,7 +178,7 @@ struct CloudSyncRuntimeTests {
         let runtime = makeRuntime(session: StubCloudSession(userID: "u1", claim: .proceedMigration))
         await runtime.start(context: context)
         #expect(runtime.state == .idle)
-        #expect(outbox(context).isEmpty)  // ni rehydrate ni drain corrieron
+        #expect(try outbox(context).isEmpty)  // ni rehydrate ni drain corrieron
     }
 
     /// P6 cableado (guard de IDENTIDAD): `.cloud` + sesión SIN registro de claim (`claimAction == nil`,
@@ -317,7 +324,7 @@ struct CloudSyncRuntimeTests {
         runtime.teardownGuestSession()  // detener la cadencia async
 
         // La fila del espejo se re-insertó en el outbox durante el arranque.
-        #expect(outbox(context).contains { $0.syncID == sid })
+        #expect(try outbox(context).contains { $0.syncID == sid })
     }
 
     // MARK: - Teardown M1
@@ -344,21 +351,56 @@ struct CloudSyncRuntimeTests {
     @Test func syncCycle_poisonRow_deadLettered_restUploads() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
-        let good = liveRow(context, entityType: SyncEntityType.transactionItem, h: hlc(1))  // buildable
+        let good = try liveRow(context, entityType: SyncEntityType.transactionItem, h: hlc(1))  // buildable
         // Poison = clase SIN mapeo a tabla Postgres (`table(forClass:)` → nil). `Budget` YA no sirve
         // (cableada en I12 commit A); un literal inexistente delata igual el path de dead-letter.
-        let bad = liveRow(context, entityType: "LegacyUnmappedEntity", h: hlc(2))
+        let bad = try liveRow(context, entityType: "LegacyUnmappedEntity", h: hlc(2))
 
         let push = StubSession(body: pushAppliedJSON([good]))
         let runtime = makeRuntime(push: push, pull: StubSession(body: emptyPageJSON()),
                                   session: StubCloudSession(userID: "u1"))
         _ = await runtime.syncCycle(context: context)
 
-        let rows = outbox(context)
+        let rows = try outbox(context)
         // La fila buildable se subió y purgó; la poison quedó dead-letter (no se subió, no se perdió).
         #expect(!rows.contains { $0.syncID == good.syncID })
         let deadLetter = rows.first { $0.syncID == bad.syncID }
         #expect(deadLetter?.rejectedReason == "unbuildable:LegacyUnmappedEntity")
+    }
+
+    // MARK: - El outbox que no se deja leer (`verify-reads-a-failed-local-fetch-as-an-empty-outbox`)
+
+    /// El tercer helper homónimo, y el que corre en cada ciclo del motor. Con el `[]` de su `catch`, un outbox
+    /// ilegible se leía como «no hay nada que subir»: el ciclo se saltaba el push, pasaba al pull y devolvía el
+    /// veredicto de ÉSTE —normalmente un `.completed` de página vacía—. La cadencia recibía «todo bien» sobre una
+    /// avería, y las filas pendientes esperaban a que la lectura volviera sola.
+    ///
+    /// Aquí el desenlace correcto es `.transient` y no un `blocked`: el motor tiene backoff y reintenta él solo,
+    /// que es lo único honesto que se puede hacer sin saber qué hay. El daño dura un ciclo, no una migración — y
+    /// esa es justo la razón de que el trato sea otro.
+    ///
+    /// Las dos aserciones que cargan el peso son la del `callCount` a cero (el push NO se pidió a ciegas) y el
+    /// control del final: con el store legible, el mismo escenario sube la fila y cierra.
+    @Test("syncCycle: un outbox ilegible corta el ciclo en vez de seguir al pull como si estuviera limpio")
+    func syncCycle_unreadableOutbox_isTransient() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        _ = try liveRow(context, entityType: SyncEntityType.transactionItem, h: hlc(1))
+
+        let push = StubSession(status: 200, body: Data(#"{"results":[]}"#.utf8))
+        let pull = StubSession(body: emptyPageJSON())
+        let runtime = makeRuntime(push: push, pull: pull, session: StubCloudSession(userID: "u1", canRenew: true))
+        runtime._testThrowOnOutboxFetch = true
+
+        let outcome = await runtime.syncCycle(context: context)
+        #expect(outcome == .transient, "el ciclo se reintenta; no se declara nada sobre un outbox sin leer")
+        #expect(push.callCount == 0, "no se sube a ciegas")
+        #expect(pull.callCount == 0, "y NO se sigue al pull: ése es el `[]` que este ticket quita")
+
+        // Control en la dirección contraria: sin la avería el mismo ciclo llega al push y al pull.
+        runtime._testThrowOnOutboxFetch = false
+        _ = await runtime.syncCycle(context: context)
+        #expect(push.callCount > 0, "control: sin la avería la fila viva SÍ se sube")
     }
 
     // MARK: - Gates de sesión / cuenta
@@ -366,7 +408,7 @@ struct CloudSyncRuntimeTests {
     @Test func syncCycle_push401_sessionExpired() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
-        _ = liveRow(context, entityType: SyncEntityType.transactionItem, h: hlc(1))
+        _ = try liveRow(context, entityType: SyncEntityType.transactionItem, h: hlc(1))
         let runtime = makeRuntime(push: StubSession(status: 401),
                                   session: StubCloudSession(userID: "u1", canRenew: true))
         let outcome = await runtime.syncCycle(context: context)
@@ -376,7 +418,7 @@ struct CloudSyncRuntimeTests {
     @Test func syncCycle_push403_accountUnavailable_noRetry() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
-        _ = liveRow(context, entityType: SyncEntityType.transactionItem, h: hlc(1))
+        _ = try liveRow(context, entityType: SyncEntityType.transactionItem, h: hlc(1))
         let runtime = makeRuntime(push: StubSession(status: 403),
                                   session: StubCloudSession(userID: "u1", canRenew: true))
         let outcome = await runtime.syncCycle(context: context)
@@ -386,7 +428,7 @@ struct CloudSyncRuntimeTests {
     @Test func syncCycle_sessionExpiryPreflight_blocksWhenNotRenewable() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
-        _ = liveRow(context, entityType: SyncEntityType.transactionItem, h: hlc(1))
+        _ = try liveRow(context, entityType: SyncEntityType.transactionItem, h: hlc(1))
         // Pendientes + no renovable → estado accionable ANTES del push (el push stub no se consulta).
         let runtime = makeRuntime(push: StubSession(status: 200, body: Data("{\"results\":[]}".utf8)),
                                   session: StubCloudSession(userID: "u1", canRenew: false))
@@ -406,7 +448,7 @@ struct CloudSyncRuntimeTests {
         let racha = try IsolatedAttestStreak(); defer { racha.restore() }
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
-        _ = liveRow(context, entityType: SyncEntityType.transactionItem, h: hlc(1))
+        _ = try liveRow(context, entityType: SyncEntityType.transactionItem, h: hlc(1))
 
         let guardada = makeRuntime(session: StubCloudSession(userID: "u1", canRenew: true),
                                    clientToken: nil, clientSessionKept: true)
@@ -414,7 +456,7 @@ struct CloudSyncRuntimeTests {
         #expect(pasajero == .transient)
         #expect(SyncCadencePolicy.nextAction(outcome: pasajero, consecutiveTransients: 1) == .backoff(SyncCadencePolicy.backoffBase),
                 "el loop tiene que seguir reintentando solo, no parar hasta volver a entrar")
-        #expect(outbox(context).count == 1, "la fila sigue viva para el reintento")
+        #expect(try outbox(context).count == 1, "la fila sigue viva para el reintento")
 
         // El SDK borra la sesión DURANTE la renovación: el preflight la vio viva y el push la ve borrada.
         let borrada = makeRuntime(session: StubCloudSession(userID: "u1", canRenew: true),
@@ -542,14 +584,14 @@ struct CloudSyncRuntimeTests {
     func syncCycle_push401AttestRequired_isTransient() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
-        _ = liveRow(context, entityType: SyncEntityType.transactionItem, h: hlc(1))
+        _ = try liveRow(context, entityType: SyncEntityType.transactionItem, h: hlc(1))
         let racha = try IsolatedAttestStreak(); defer { racha.restore() }
         let rechazo = Data(#"{"error":{"message":"m","type":"yala_attest_required","param":null,"code":"yala_attest_required"}}"#.utf8)
         let runtime = makeRuntime(push: StubSession(status: 401, body: rechazo),
                                   session: StubCloudSession(userID: "u1", canRenew: true))
         let outcome = await runtime.syncCycle(context: context)
         #expect(outcome == .transient, "volver a entrar no arregla un attest: el loop no puede pararse a esperar un sign-in")
-        #expect(outbox(context).count == 1, "la fila sigue viva para el reintento")
+        #expect(try outbox(context).count == 1, "la fila sigue viva para el reintento")
     }
 
     @Test("la parada terminal de la puerta (`.accountUnavailable`) también es el teléfono sin attest")
@@ -628,7 +670,7 @@ struct CloudSyncRuntimeTests {
     @Test func teardownDuringSuspendedPush_abortsWithoutApplyingResults() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
-        let row = liveRow(context, entityType: SyncEntityType.transactionItem, h: hlc(1))
+        let row = try liveRow(context, entityType: SyncEntityType.transactionItem, h: hlc(1))
 
         // Push stub que SUSPENDE hasta `release()` — simula un request en vuelo durante el teardown.
         let gated = GatedSession(body: pushAppliedJSON([row]))
@@ -645,7 +687,7 @@ struct CloudSyncRuntimeTests {
         // El ciclo abortó SIN aplicar los resultados: la fila NO se purgó/confirmó post-teardown,
         // y el outcome no lleva señal de cadencia (el loop ya está cancelado).
         #expect(outcome == .coalesced)
-        let rows = outbox(context)
+        let rows = try outbox(context)
         #expect(rows.contains { $0.syncID == row.syncID && $0.rejectedReason == nil },
                 "la fila debe seguir viva: los resultados de un push post-teardown NO se aplican")
     }
@@ -697,7 +739,7 @@ struct CloudSyncRuntimeTests {
         context.insert(tx)
         try context.save()
         engine.drainOnce(context: context)
-        for row in outbox(context) {
+        for row in try outbox(context) {
             engine.confirmUploaded(syncID: row.syncID, hlc: row.hlc, context: context)
         }
     }

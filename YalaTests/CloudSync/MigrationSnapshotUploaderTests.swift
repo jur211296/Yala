@@ -316,6 +316,94 @@ struct MigrationSnapshotUploaderTests {
         #expect(stub.pushedSyncIDs == [tx1.syncID!.uuidString.lowercased()])
     }
 
+    // MARK: - El outbox que no se deja leer (`verify-reads-a-failed-local-fetch-as-an-empty-outbox`)
+
+    /// **Aquí el `[]` del `catch` CONFIRMABA la página.** `drainPushConfirm` devolvía `true` —«subido, avanza el
+    /// cursor»— cuando lo cierto era que nadie había podido mirar el outbox, así que el snapshot seguía adelante
+    /// dejando atrás filas que no viajaron.
+    ///
+    /// El control del final es lo que impide que el caso se sostenga por casualidad: con el store legible, el
+    /// mismo dataset confirma su página y sube de verdad.
+    @Test("uploadPage: un outbox ilegible no confirma la página")
+    func uploadPage_unreadableOutbox_neverConfirms() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        let stub = ApplyingStubSession()
+
+        let cat = Category(name: "cat", colorHex: "#111111", isIncome: false, isDefaultSeed: false)
+        cat.syncID = UUID()
+        context.insert(cat)
+        try context.save()
+
+        let uploader = makeUploader(context, engine, stub, pageSize: 10)
+        uploader._testOutboxFetchThrowsFromCall = 1
+
+        let outcome = await uploader.uploadPage(cursor: nil)
+        // `SnapshotStepOutcome` tiene tres casos, así que `== .transient` ya excluye `.pageConfirmed` y
+        // `.completed`: una aserción de `!=` sobre los otros dos no podría fallar por separado.
+        #expect(outcome == .transient, "sin poder leer el outbox no se avanza el cursor ni se cierra la pasada")
+        #expect(stub.pushedSyncIDs.isEmpty, "y no se sube nada a ciegas")
+
+        // Control en la dirección contraria: sin la avería, el mismo dataset sube y confirma.
+        uploader._testOutboxFetchThrowsFromCall = nil
+        let healthy = await uploader.uploadPage(cursor: nil)
+        #expect(healthy != .transient, "control: sin la avería este dataset SÍ avanza")
+        #expect(!stub.pushedSyncIDs.isEmpty, "control: y sube de verdad — la fila existía")
+    }
+
+    /// La RELECTURA de después del push, que es otra decisión y otro `catch`. Con el seam en la 2.ª llamada el
+    /// pre-check pasa, el push corre de verdad —lo afirma `pushedSyncIDs`— y lo que falla es la comprobación de
+    /// «¿quedó algo vivo?». Con el `[]` de antes eso valía **página confirmada**.
+    ///
+    /// El seam es un contador y no un `Bool` justo por esto: con un `Bool` la primera lectura corta y esta rama
+    /// no se recorre nunca. Lo cazó una lente de la review del 2026-09-22 sobre el seam gemelo del Merkle.
+    @Test("uploadPage: si el outbox se vuelve ilegible DESPUÉS del push, la página tampoco se confirma")
+    func uploadPage_unreadableAfterPush_neverConfirms() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        let stub = ApplyingStubSession()
+
+        let cat = Category(name: "cat", colorHex: "#111111", isIncome: false, isDefaultSeed: false)
+        cat.syncID = UUID()
+        context.insert(cat)
+        try context.save()
+
+        let uploader = makeUploader(context, engine, stub, pageSize: 10)
+        uploader._testOutboxFetchThrowsFromCall = 2
+
+        let outcome = await uploader.uploadPage(cursor: nil)
+        #expect(!stub.pushedSyncIDs.isEmpty, "control del escenario: el push TIENE que haber corrido")
+        #expect(outcome == .transient, "la relectura que no se deja hacer no confirma la página")
+    }
+
+    /// El CIERRE de la pasada, que es el otro desenlace del mismo helper y devolvía `.completed`. Se alcanza con
+    /// el store vacío: sin páginas que paginar, `uploadPage` va directo a `finishResidual`.
+    ///
+    /// Es un test aparte y no una aserción más del de arriba porque son dos funciones distintas: un arreglo que
+    /// solo cubriera `drainPushConfirm` dejaría ésta devolviendo «pasada completa» sobre un outbox que nadie
+    /// pudo leer, y ningún test lo diría.
+    @Test("uploadPage: con el store vacío, un outbox ilegible no cierra la pasada como completa")
+    func finishResidual_unreadableOutbox_isTransientNotCompleted() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        let stub = ApplyingStubSession()
+
+        let uploader = makeUploader(context, engine, stub, pageSize: 10)
+
+        // Control del escenario PRIMERO: sin la avería, este store cierra la pasada. Si no fuera así, el
+        // `.transient` de abajo podría venir de cualquier otra cosa.
+        #expect(await uploader.uploadPage(cursor: nil) == .completed,
+                "control del escenario: con el store vacío la pasada se cierra")
+
+        let sick = makeUploader(context, engine, stub, pageSize: 10)
+        sick._testOutboxFetchThrowsFromCall = 1
+        #expect(await sick.uploadPage(cursor: nil) == .transient,
+                "y con el outbox ilegible NO se cierra: el runner reintenta antes de avanzar")
+    }
+
     // MARK: - Helpers
 
     /// Extrae el nombre de tabla de un cursor JSON `{table, afterSyncID}` para las asserts de orden.

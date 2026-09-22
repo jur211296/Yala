@@ -170,6 +170,10 @@ final class CloudSyncRuntime {
     /// anterior no puede convertir el corte de red de éste en «este teléfono no puede sincronizar».
     private var lastCycleStoppedAtAttestGate = false
 
+    /// Cuando `true`, `liveOutboxRows(_:)` LANZA. Mismo molde y mismo porqué que sus dos gemelos de la
+    /// migración. SOLO tests.
+    var _testThrowOnOutboxFetch = false
+
     /// ¿Paró el ciclo que acaba de correr porque este teléfono ya no consigue App Attest? Es la señal que el push-all previo
     /// a cerrar sesión necesita para ofrecer exportar y salir perdiendo los cambios PERSONALES
     /// (`CloudSignOutFlowLogic.BlockReason.personalAttestUnavailable`, ticket
@@ -553,7 +557,16 @@ final class CloudSyncRuntime {
         guard epoch == sessionEpoch else { return .coalesced }  // SERIO-2: teardown durante el attest
 
         // 3) Push de filas vivas (partición poison ANTES; dead-letter poison + canario; el resto sube).
-        let liveRows = liveOutboxRows(context)
+        //    Un outbox que no se deja leer corta el ciclo como `.transient` en vez de seguir al pull: `[]` no es
+        //    «no hay nada que subir» (ticket `verify-reads-a-failed-local-fetch-as-an-empty-outbox`). El backoff
+        //    de la cadencia ya sabe reintentar, y es lo único honesto que se puede hacer sin saber qué hay.
+        let liveRows: [SyncOutbox]
+        do {
+            liveRows = try liveOutboxRows(context)
+        } catch {
+            CloudSyncBreadcrumb.outboxFetchFailed(step: "runtime-cycle")
+            return .transient
+        }
         if !liveRows.isEmpty {
             let (buildable, poison) = pushClient.partitionBuildable(liveRows)
             if !poison.isEmpty { deadLetterPoison(poison, context: context) }
@@ -731,15 +744,23 @@ final class CloudSyncRuntime {
     // MARK: - Helpers
 
     /// Filas de outbox VIVAS (dead-letters excluidos — nunca suben).
-    private func liveOutboxRows(_ context: ModelContext) -> [SyncOutbox] {
+    ///
+    /// **LANZA desde el 2026-09-22**, la tercera del mismo nombre y del mismo arreglo (ticket
+    /// `verify-reads-a-failed-local-fetch-as-an-empty-outbox`). Aquí el daño dura un ciclo en vez de una
+    /// migración, pero es el mismo: con `[]` el motor se saltaba el push y seguía al pull como si el outbox
+    /// estuviera limpio, y la cadencia recibía el veredicto del pull — «todo bien» sobre una avería.
+    private func liveOutboxRows(_ context: ModelContext) throws -> [SyncOutbox] {
+        // El seam va DENTRO del `do`, no antes: así el camino de error que recorre un test es el `catch` REAL
+        // del fetch. Puesto fuera, un mutante que reintrodujera `return []` ahí seguiría verde.
         do {
+            if _testThrowOnOutboxFetch { throw MigrationExecutorError.outboxUnreadable }
             return try context.fetch(FetchDescriptor<SyncOutbox>())
                 .filter { $0.rejectedReason == nil }
         } catch {
             #if DEBUG
             print("CloudSyncRuntime.liveOutboxRows: fetch falló: \(error)")
             #endif
-            return []
+            throw MigrationExecutorError.outboxUnreadable
         }
     }
 
