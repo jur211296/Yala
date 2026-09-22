@@ -97,6 +97,24 @@ final class iCloudSyncService {
     /// este flag se queda `false` para él; un restore con datos lo pone `true` apenas arranca el import.
     private(set) var hasObservedImportActivity: Bool = false
 
+    /// **CUÁNDO vio este proceso la última señal de descarga**: el instante en que se OBSERVÓ un
+    /// `.importEvent`, con o sin error. Es el hermano con fecha de `hasObservedImportActivity`, y existe
+    /// porque aquél es un latch monótono: una vez encendido afirma «hay descarga» para siempre, incluso
+    /// veinte minutos después de que el import terminara. Quien necesite saber si la descarga sigue
+    /// VIGENTE —no si la hubo alguna vez— compara esta fecha con el ahora
+    /// (`ICloudRestoreInProgressLogic.hasLiveImportActivity`, el testigo del re-ancla de la ventana de
+    /// sesión). Mismo patrón que `lastExportErrorAt` y `lastImportErrorAt` sobre sus latches.
+    ///
+    /// **Es el instante de OBSERVACIÓN y no el `endDate`/`startDate` del evento, a propósito.** Las
+    /// fechas del evento describen el import; ésta describe qué sabe este proceso y cuándo lo supo, que
+    /// es la pregunta del testigo. Un import largo que cierra con un `endDate` de hace cinco minutos
+    /// acaba de dar señal de vida AHORA, y anotarlo con su `endDate` lo leería como descarga muerta.
+    /// Además sube siempre, así que un evento fuera de orden nunca retrasa el sello.
+    ///
+    /// `nil` = ningún `.importEvent` en este proceso. En memoria como el resto de la familia: si el
+    /// proceso muere, el testigo muere con él.
+    private(set) var lastImportActivityAt: Date?
+
     /// **Paso 9 · el espejo contestó que no hay cuenta.** Un evento con `CKError.notAuthenticated` lo pone a
     /// `true`; cualquier evento con éxito lo apaga. Es la prueba de CloudKit —no la del token de iCloud
     /// Drive— de que no hay copia a la que subir, y la usa el cierre privado para avisar de que no la hay
@@ -262,6 +280,17 @@ final class iCloudSyncService {
         // Paso 9 · otra cuenta de iCloud, otra historia de exports: lo confirmado para la anterior no dice
         // nada de la nueva. Borrarla es el lado seguro (el cierre privado pasa a «no se puede confirmar»).
         Self.clearConfirmedExportStart(exportAnchorDefaults)
+        // Y el sello de actividad de import, por la misma razón y en una frontera que pesa más: lo lee el
+        // re-ancla de la ventana de sesión del restore, que abre un guard de FRONTERA DE CUENTA. Con la
+        // descarga de la cuenta anterior recién sellada, entrar a Restaurar dentro de su frescura
+        // re-anclaría la ventana apoyándose en un import que ya no es de esta cuenta — justo la frontera
+        // que el guard vigila (lo midió una lente de la review, 2026-09-21).
+        //
+        // `hasObservedImportActivity` NO se limpia aquí y es a propósito: tiene otros consumidores
+        // —`BootSaveGateLogic`, el gate del sync de grupos— que preguntan por el store de ESTE proceso y
+        // no por la cuenta, y cambiarles el suelo desde aquí es otro ticket
+        // (`import-activity-latch-survives-an-icloud-account-change`).
+        lastImportActivityAt = nil
         checkAccountStatus()
     }
 
@@ -319,8 +348,12 @@ final class iCloudSyncService {
     /// subió nada, y el cierre privado borraba lo que no estaba en iCloud (review adversarial del paso 9).
     /// Solo gobierna las dos piezas del paso 9 —el ancla y `mirrorReportedNotAuthenticated`—; el resto del
     /// estado sigue como estaba (ticket `icloud-sync-status-treats-non-ck-failures-as-success`).
+    ///
+    /// `observedAt` es CUÁNDO llega este evento a este proceso, y sella `lastImportActivityAt`. Tiene
+    /// default `.now` porque en producción siempre es el ahora —el observer corre al recibirlo— y
+    /// existe como parámetro para que un test pueda situar una descarga en el pasado sin dormir.
     func apply(eventType: RawEventType, error: CKError?, endDate: Date?, startDate: Date? = nil,
-               succeeded: Bool = true) {
+               succeeded: Bool = true, observedAt: Date = .now) {
         // Cualquier evento del container significa que el observer está vivo y
         // gobernará el status → el watchdog de force-sync ya no hace falta.
         pendingForceSyncReset?.cancel()
@@ -350,6 +383,11 @@ final class iCloudSyncService {
             // Cualquier importEvent (en curso, completado o con error) implica que hay data remota que
             // importar → marca actividad de import para el gate de grupos (un store vacío nunca llega aquí).
             hasObservedImportActivity = true
+            // Y CUÁNDO la vimos, que es lo que distingue «hay descarga» de «la hubo alguna vez». Va en la
+            // misma cabecera y no dentro de una rama: el latch de arriba lo enciende cualquier evento —en
+            // curso, terminal o con error— y el sello tiene que describir exactamente esa población, o los
+            // dos dejan de hablar del mismo mundo. Monótono por construcción (`observedAt` es el ahora).
+            lastImportActivityAt = lastImportActivityAt.map { max($0, observedAt) } ?? observedAt
             if let error {
                 lastImportError = error
                 lastImportErrorAt = endDate ?? startDate
@@ -717,6 +755,7 @@ final class iCloudSyncService {
         consecutiveFailures = 0
         hasCompletedFirstImport = false
         hasObservedImportActivity = false
+        lastImportActivityAt = nil
         _testIgnoreExternalEvents = true
         _testForceAccountAvailable = nil
         mirrorReportedNotAuthenticated = false

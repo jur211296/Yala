@@ -40,8 +40,20 @@
 //  Hoy son tres verbos y cada uno mueve lo suyo:
 //
 //   · `noteRestoreStarted` — entra un intento. **Estrena reloj si la ventana está apagada, y re-ancla
-//     una huérfana solo si hay descarga real detrás**; con dueño vigente lo conserva. Los dos límites
-//     son lo que impide que re-anclar se convierta en un tope extensible a voluntad.
+//     una huérfana solo si hay descarga VIGENTE detrás**; con dueño vigente lo conserva. Los dos
+//     límites son lo que impide que re-anclar se convierta en un tope extensible a voluntad.
+//     **«VIGENTE» dejó de significar «alguna vez» el 2026-09-21**
+//     (`leaving-and-reentering-restore-renews-the-hard-cap`): hasta ese día el testigo era
+//     `hasObservedImportActivity`, un latch monótono del proceso, así que salir de Restaurar y volver
+//     estrenaba 600 s apoyándose en un import que podía haber terminado veinte minutos antes.
+//     **Lo que ese ticket NO consiguió, y conviene saberlo antes de intentarlo otra vez: un techo.**
+//     Se implementó uno —un reloj de la cadena de re-anclas que ningún re-ancla movía— y la review lo
+//     tumbó midiendo las dos mitades: no acotaba a quien quisiera saltárselo, porque
+//     `noteRestoreFinished` es alcanzable desde la UI con el import vivo («Empezar desde cero» →
+//     «Volver» → Restaurar, tres toques) y tras él la entrada siguiente ESTRENA; y sí bloqueaba al
+//     dueño legítimo, de forma permanente en el proceso, porque agotado el techo ninguna entrada podía
+//     ya ni re-anclar ni estrenar. Ticket abierto con lo medido:
+//     `restore-session-window-has-no-reachable-ceiling`.
 //   · `noteRestoreAbandoned` — la persona **se fue de Restaurar** con el import bajando. **Suelta la
 //     titularidad y NO toca el reloj**: la ventana sigue abierta para ese import, y la cierran el
 //     asentamiento o la caducidad. Apagarla aquí es justo lo que prohíbe el párrafo de «no se apaga al
@@ -111,6 +123,7 @@ enum ICloudRestoreSessionSignal {
     /// heredara un reloj que no describía nada suyo.
     private(set) static var currentFlow: FlowToken?
 
+
     /// Lo llama `WelcomeRestoreView` al pasar a `.searching`, que es el único estado en el que hay un
     /// import de CloudKit de verdad — `.wiped` y `.iCloudDisabled` no importan nada y encender ahí
     /// abriría la señal sin corpus que la justifique.
@@ -121,20 +134,24 @@ enum ICloudRestoreSessionSignal {
     ///  · **La ventana apagada la enciende cualquier entrada** (`restoreStartedAt == nil`): es la
     ///    primera del proceso, o la que sigue a un flujo que terminó. Sin este término la señal no se
     ///    encendería nunca.
-    ///  · **Una ventana HUÉRFANA solo la re-ancla una entrada con descarga real detrás**
-    ///    (`currentFlow == nil` **Y** `hasObservedImportActivity`). Re-anclar es lo que arregla
-    ///    `abandoned-restore-no-longer-clears-the-session-window-clock`: quien entra, se arrepiente y
-    ///    vuelve 400 s después heredaba un reloj que no describía su descarga, y su tope duro caducaba
-    ///    a media bajada con el guard cross-cuenta cerrándose sobre el dueño legítimo.
-    ///    **Y el testigo del import es lo que impide que re-anclar se vuelva un tope infinito**, que
-    ///    lo cazó una lente de la review: sin él, entrar y salir de Restaurar cada menos de 60 s
-    ///    renueva la ventana indefinidamente —`isRestoringNow` mide TODOS sus plazos desde este
-    ///    instante, gracia incluida— y en un teléfono con el corpus de otra persona eso mantiene
-    ///    abierta de par en par la puerta que el guard existe para cerrar. Con el testigo, ese ciclo
-    ///    no re-ancla nada: sin un solo `.importEvent` no hay descarga que justifique una ventana
-    ///    nueva, y la gracia de 60 s la cierra como antes del ticket. Es el mismo testigo con el que
-    ///    `ICloudRestoreInProgressLogic` separa «el import va lento» de «no hay nada que importar», y
-    ///    su modo de fallo es conservar el reloj viejo, o sea CERRAR ANTES.
+    ///  · **Una ventana HUÉRFANA solo la re-ancla una entrada con descarga real detrás Y dentro del
+    ///    techo de su cadena** (`currentFlow == nil` **Y** `ICloudRestoreInProgressLogic.reanchorsOrphanWindow`).
+    ///    Re-anclar es lo que arregla `abandoned-restore-no-longer-clears-the-session-window-clock`:
+    ///    quien entra, se arrepiente y vuelve 400 s después heredaba un reloj que no describía su
+    ///    descarga, y su tope duro caducaba a media bajada con el guard cross-cuenta cerrándose sobre
+    ///    el dueño legítimo.
+    ///    **Y el testigo es lo que impide que re-anclar se vuelva un tope infinito**, que lo cazó una
+    ///    lente de la review: sin él, entrar y salir de Restaurar renueva la ventana indefinidamente
+    ///    —`isRestoringNow` mide TODOS sus plazos desde este instante, gracia incluida— y en un
+    ///    teléfono con el corpus de otra persona eso mantiene abierta de par en par la puerta que el
+    ///    guard existe para cerrar.
+    ///    **Era `hasObservedImportActivity` hasta el 2026-09-21, y ése es un latch MONÓTONO**: una vez
+    ///    visto un `.importEvent`, cualquier salir-y-volver estrenaba 600 s nuevos apoyándose en una
+    ///    descarga que podía haber terminado veinte minutos antes. Hoy pregunta si sigue bajando algo
+    ///    AHORA (`ICloudRestoreInProgressLogic.hasLiveImportActivity`), así que el ciclo solo renueva
+    ///    mientras la descarga esté viva — **lo cual acota la exposición a la vida de esa descarga, no
+    ///    a un número**; el techo con número tiene ticket propio y el porqué está en la cabecera.
+    ///    Su modo de fallo es conservar el reloj viejo, o sea CERRAR ANTES.
     ///  · Con dueño vigente el reloj **NO se toca** pase lo que pase, y ahí está el tope de dentro: un
     ///    flujo vivo que vuelva a pasar por aquí no puede re-anclar su propia ventana. Es la condición
     ///    que de verdad significa «dentro de un restore vivo» — y hasta el 2026-09-21 el guard decía
@@ -147,10 +164,15 @@ enum ICloudRestoreSessionSignal {
     ///    el derecho a cerrar. Sin esa rotación los dos comparten identidad y el token no distingue
     ///    nada, que es exactamente el bug que este mecanismo existe para cerrar.
     ///
-    /// - Parameter hasObservedImportActivity: ¿llegó ALGÚN `.importEvent` en este proceso, con o sin
-    ///   error? **SIN valor por defecto a propósito**, misma familia que el `restoreInProgress: Bool`
-    ///   de `CrossAccountEntryGuardLogic` y que el `init` `fileprivate` de `FlowToken`: un default
-    ///   sería una constante, y las dos constantes posibles rompen algo —`false` no re-ancla nunca y
+    /// - Parameter hasLiveImportActivity: ¿sigue bajando algo AHORA?
+    ///   (`ICloudRestoreInProgressLogic.hasLiveImportActivity`, con el estado del espejo y la fecha
+    ///   del último `.importEvent` observado). **Se llamaba `hasObservedImportActivity` y el rename es
+    ///   deliberado**: el significado cambió de «lo hubo alguna vez en este proceso» a «lo hay
+    ///   ahora», y un parámetro con el nombre viejo habría dejado los call-sites en verde afirmando
+    ///   una premisa que ya no es la suya.
+    ///   **SIN valor por defecto a propósito**, misma familia que el `restoreInProgress: Bool` de
+    ///   `CrossAccountEntryGuardLogic` y que el `init` `fileprivate` de `FlowToken`: un default sería
+    ///   una constante, y las dos constantes posibles rompen algo —`false` no re-ancla nunca y
     ///   devuelve el bug de heredar el reloj; `true` re-ancla siempre y deja el tope duro extensible
     ///   con solo navegar—, así que quien añada un call-site tiene que DECIDIR de dónde sale, y lo
     ///   comprueba el compilador y no un `grep`. Leerlo dentro tampoco vale: bajo el host de test
@@ -162,9 +184,9 @@ enum ICloudRestoreSessionSignal {
     ///   `noteRestoreAbandoned(_:)`: es lo único que autoriza a cerrar la ventana o a soltarla.
     static func noteRestoreStarted(
         now: Date = .now,
-        hasObservedImportActivity: Bool
+        hasLiveImportActivity: Bool
     ) -> FlowToken {
-        if restoreStartedAt == nil || (currentFlow == nil && hasObservedImportActivity) {
+        if restoreStartedAt == nil || (currentFlow == nil && hasLiveImportActivity) {
             restoreStartedAt = now
         }
         let token = FlowToken()

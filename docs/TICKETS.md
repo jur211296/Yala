@@ -305,6 +305,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | icloud-kv-prefs-cross-sessions-on-a-lent-phone | qa | tickets/qa/icloud-kv-prefs-cross-sessions-on-a-lent-phone.md |
 | icloud-sync-status-treats-non-ck-failures-as-success | backlog | tickets/backlog/icloud-sync-status-treats-non-ck-failures-as-success.md |
 | import-activity-flag-describes-the-process-not-the-search | backlog | tickets/backlog/import-activity-flag-describes-the-process-not-the-search.md |
+| import-activity-latch-survives-an-icloud-account-change | backlog | tickets/backlog/import-activity-latch-survives-an-icloud-account-change.md |
 | inbox-convert-draft-to-group-expense | done | tickets/done/inbox-convert-draft-to-group-expense.md |
 | inbox-crash-convert-to-group-expense | done | tickets/done/inbox-crash-convert-to-group-expense.md |
 | indice-readme-barre-worktrees-anidados | backlog | tickets/backlog/indice-readme-barre-worktrees-anidados.md |
@@ -320,7 +321,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | ipad-native-app | backlog | tickets/backlog/ipad-native-app.md |
 | iphone-duo-native-app | backlog | tickets/backlog/iphone-duo-native-app.md |
 | joiner-flag-residuals-cosmetic-and-service-guard | backlog | tickets/backlog/joiner-flag-residuals-cosmetic-and-service-guard.md |
-| leaving-and-reentering-restore-renews-the-hard-cap | backlog | tickets/backlog/leaving-and-reentering-restore-renews-the-hard-cap.md |
+| leaving-and-reentering-restore-renews-the-hard-cap | qa | tickets/qa/leaving-and-reentering-restore-renews-the-hard-cap.md |
 | l10n-check-corre-13-de-17-tests | backlog | tickets/backlog/l10n-check-corre-13-de-17-tests.md |
 | la-nocturna-de-ui-no-ha-disparado-ni-una-vez | done | tickets/done/la-nocturna-de-ui-no-ha-disparado-ni-una-vez.md |
 | language-override-bypasses-the-cloud-prefs-channel | backlog | tickets/backlog/language-override-bypasses-the-cloud-prefs-channel.md |
@@ -409,6 +410,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | restore-gate-claims-a-wipe-this-device-did-not-do | backlog | tickets/backlog/restore-gate-claims-a-wipe-this-device-did-not-do.md |
 | restore-prefill-skips-currency-for-an-empty-summary | backlog | tickets/backlog/restore-prefill-skips-currency-for-an-empty-summary.md |
 | restore-says-no-data-when-the-icloud-import-never-settled | qa | tickets/qa/restore-says-no-data-when-the-icloud-import-never-settled.md |
+| restore-session-window-has-no-reachable-ceiling | backlog | tickets/backlog/restore-session-window-has-no-reachable-ceiling.md |
 | restore-start-fresh-keeps-the-imported-corpus | qa | tickets/qa/restore-start-fresh-keeps-the-imported-corpus.md |
 | restore-timeout-closes-the-session-window-with-the-import-still-running | qa | tickets/qa/restore-timeout-closes-the-session-window-with-the-import-still-running.md |
 | restore-treats-budgets-and-groups-as-no-data | qa | tickets/qa/restore-treats-budgets-and-groups-as-no-data.md |
