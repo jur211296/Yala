@@ -166,12 +166,62 @@ struct WelcomeRestoreView: View {
                 }
             }
             .task { startSearch() }
+            // **Irse de Restaurar SUELTA la titularidad de la ventana de sesión, y no la apaga.**
+            //
+            // La distinción es `abandoned-restore-no-longer-clears-the-session-window-clock`: el import
+            // sigue bajando cuando esta pantalla se va —CloudKit no para porque nadie mire—, así que el
+            // reloj no se toca; lo que se libera es el derecho a cerrarla, para que quien vuelva a entrar
+            // ESTRENE ventana en vez de heredar un instante de hace siete minutos que la haría caducar a
+            // media descarga.
+            //
+            // **Vive aquí desde el 2026-09-21 y antes vivía en la pantalla de progreso**
+            // (`restore-timeout-closes-the-session-window-with-the-import-still-running`). Aquélla se
+            // desmonta también cuando solo cambia el `state` —a `.importIncomplete`, a `.found`—, o sea
+            // con la persona todavía dentro de Restaurar y un botón de «volver a buscar» delante: soltar
+            // ahí dejaba la ventana huérfana y el reintento la re-anclaba, porque `hasObservedImportActivity`
+            // es un latch monótono del proceso. El tope duro de 600 s pasaba a renovarse cada 90 s a
+            // voluntad. Este desmontaje es mucho mejor aproximación a «me fui»: las salidas de
+            // `ContentView.welcomeRestoreCover` bajan todas `showWelcomeRestore`, y el `case .restore`
+            // de `FullModeActivationView` cambia de pantalla.
+            //
+            // **Lo que NO es, y conviene no creérselo** (lo midió una lente de la review): no cubre
+            // TODAS las salidas ni solo las salidas. `FullModeActivationView.finishRestoreSearch` con
+            // un resumen completo pinta su `finale` ENCIMA, en el mismo `ZStack`, sin desmontar nada —
+            // así que ahí la persona se fue y esto no corre—; y en sentido contrario, su `go(to:)` a la
+            // puerta de descarte desmonta con la persona todavía dentro del flujo de activación. Hoy
+            // ninguna de las dos hace daño —soltar no toca el reloj, y descartar apaga por su cuenta en
+            // el botón de arriba—, pero cualquier cosa que se cuelgue de aquí hereda los dos huecos.
+            //
+            // El `if let` no es defensa: `.wiped` y `.iCloudDisabled` salen de `startSearch()` antes de
+            // encender nada, y sin token no hay titularidad que soltar. En el camino normal es un no-op —
+            // `noteRestoreFinished` ya rotó el dueño a `nil`— y con un intento MÁS NUEVO vivo también,
+            // por el guard del token dentro de la señal.
+            .onDisappear {
+                if let flowToken {
+                    ICloudRestoreSessionSignal.noteRestoreAbandoned(flowToken)
+                }
+            }
             .confirmationDialog(
                 L10n.Welcome.Restore.startFreshConfirmTitle,
                 isPresented: $showStartFreshConfirm,
                 titleVisibility: .visible
             ) {
                 Button(L10n.Welcome.Restore.startFreshConfirmConfirm, role: .destructive) {
+                    // **Descartar APAGA la ventana, que no es lo mismo que soltarla.** Lo cazó una
+                    // lente de la review del 2026-09-21 y era una regresión de este mismo ticket:
+                    // desde que el tope agotado con el import vivo ya no apaga, la única salida que
+                    // quedaba aquí era el `onDisappear`, que suelta y deja el reloj —o sea, la ventana
+                    // viva hasta diez minutos con el guard de frontera de cuenta entornado, y en un
+                    // teléfono con el corpus de otra persona eso son ocho minutos de sobra para firmar
+                    // encima. Antes lo cerraba el apagado incondicional a los 90 s.
+                    //
+                    // Y es el ÚNICO camino de salida en el que apagar es correcto: todo el diseño de la
+                    // señal se apoya en «las filas siguen entrando», y aquí la persona acaba de decir
+                    // lo contrario — lo que hay detrás de este botón es la puerta que las borra. Si se
+                    // arrepiente, volver a Restaurar estrena ventana como cualquier entrada nueva.
+                    if let flowToken {
+                        ICloudRestoreSessionSignal.noteRestoreFinished(flowToken)
+                    }
                     onStartFresh()
                 }
                 Button(L10n.Welcome.Restore.startFreshConfirmCancel, role: .cancel) {}

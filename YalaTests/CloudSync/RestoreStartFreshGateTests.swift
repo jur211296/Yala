@@ -461,9 +461,23 @@ struct RestoreStartFreshGateTests {
     func theImportSignalIsWiredFromTheLiveFlag() throws {
         let progress = try Self.code("Yala/App/Views/Onboarding/RestoreProgressView.swift")
 
+        // **El testigo del import viaja por una variable desde el 2026-09-21**
+        // (`restore-timeout-closes-the-session-window-with-the-import-still-running`): ahora lo leen
+        // DOS consumidores en el mismo instante —este `resolve`, que elige el copy, y la puerta que
+        // decide si se apaga la ventana de sesión— y se lee una sola vez para que no hablen de dos
+        // momentos. El invariante de este test no cambia: sigue teniendo que salir del flag VIVO. Lo
+        // que cambia es que hay que fijar los dos extremos del cable, porque cada uno por separado
+        // deja pasar un swap: la variable sola podría venir de una constante, y el argumento solo
+        // podría alimentarse de `settled`.
+        #expect(progress.contains("let sawImport = iCloudSyncService.shared.hasObservedImportActivity"), """
+            El testigo del import dejó de leerse del flag VIVO del servicio. Cableado a `settled`, a una
+            constante o a un valor de otro instante, el veredicto es el de antes del ticket y ninguna
+            tabla se pone roja: `resolve` sigue siendo correcta, solo que nadie le cuenta lo que pasó.
+            """)
+
         // Las TRES entradas vivas, por su lectura completa y no por la etiqueta del argumento: un
         // `hasObservedImportActivity:` a secas casa primero con la etiqueta, que no puede moverse sola.
-        for lectura in ["hasObservedImportActivity: iCloudSyncService.shared.hasObservedImportActivity",
+        for lectura in ["hasObservedImportActivity: sawImport",
                         "lastImportErrorAt: iCloudSyncService.shared.lastImportErrorAt",
                         "lastSuccessfulImportAt: iCloudSyncService.shared.lastSuccessfulImportDate"] {
             #expect(progress.contains(lectura), Comment(rawValue: """

@@ -28,11 +28,15 @@
 //  de verdad, porque no dependen de que corra ningún callback:
 //
 //   1. **Nunca se abrió** — nadie pidió restaurar en este proceso.
-//   2. **El flujo TERMINÓ** (`noteRestoreFinished`, gane o pierda) — precisión, no red: el usuario que
-//      toca «atrás» a mitad cancela ese `Task` y este camino no corre. **Esa frase fue una aspiración
-//      hasta el 2026-09-21**: `forceFetchAndWait` no observaba cancelación, así que el flujo abandonado
-//      despertaba al minuto y medio y SÍ apagaba. Hoy la espera se corta y el apagado va detrás del
-//      `guard !Task.isCancelled` de `RestoreProgressView`, que es lo que lo hace cierto.
+//   2. **El flujo TERMINÓ y no dejó descarga detrás** (`noteRestoreFinished`) — precisión, no red: el
+//      usuario que toca «atrás» a mitad cancela ese `Task` y este camino no corre. **Esa frase fue una
+//      aspiración hasta el 2026-09-21**: `forceFetchAndWait` no observaba cancelación, así que el flujo
+//      abandonado despertaba al minuto y medio y SÍ apagaba. Hoy la espera se corta y el apagado va
+//      detrás del `guard !Task.isCancelled` de `RestoreProgressView`, que es lo que lo hace cierto.
+//      **Y ya no es «gane o pierda»** (mismo día,
+//      `restore-timeout-closes-the-session-window-with-the-import-still-running`): agotar el tope de
+//      90 s **con el import en marcha** no apaga nada, porque las filas siguen entrando y apagar ahí es
+//      el bug que esta lógica existe para cerrar. Lo que cierra ese caso es (3) o (4).
 //      **Abandonar NO es un quinto camino**: `noteRestoreAbandoned` suelta la titularidad y deja el
 //      reloj donde está, así que la ventana del abandonado sigue viva aquí hasta que la cierren (3) o
 //      (4). Lo único que cambia es que la entrada SIGUIENTE estrena reloj en vez de heredarlo.
@@ -99,5 +103,42 @@ nonisolated enum ICloudRestoreInProgressLogic {
         if !hasObservedImportActivity && elapsed >= graceForNoActivity { return false }
 
         return true
+    }
+
+    /// **¿El flujo que acaba de terminar deja alguna descarga detrás?** Es lo que decide si
+    /// `RestoreProgressView` apaga la ventana (`noteRestoreFinished`) o la deja viva.
+    ///
+    /// **El bug que cierra** (`restore-timeout-closes-the-session-window-with-the-import-still-running`,
+    /// 2026-09-21): el apagado era incondicional —«gane o pierda»—, así que agotar el tope de 90 s con
+    /// el import de CloudKit en marcha ponía `restoreStartedAt = nil` en el acto. La pantalla decía
+    /// «seguimos trayendo tus datos» —y era verdad— mientras la señal afirmaba lo contrario: quien
+    /// tocaba atrás y firmaba con su propia cuenta se encontraba con que sus datos eran «de otra
+    /// persona», con las filas entrando en ese mismo momento.
+    ///
+    /// **Vive AQUÍ y no como un derivado de `RestoreImportSettlement`, y esa es la corrección que trajo
+    /// la review.** El primer intento lo colgó de aquel enum (`self != .stillImporting`), que es el que
+    /// elige el COPY de la pantalla — y el copy agrupa en `.inconclusive` dos poblaciones que a esta
+    /// pregunta contestan distinto: la que no vio un solo import y la que vio uno con un ERROR VIGENTE.
+    /// La segunda tiene descarga viva la mayor parte de las veces: `iCloudSyncService.isRetriable` da
+    /// `true` a `.networkUnavailable`, `.requestRateLimited`, `.zoneBusy` y al `default`, y el testigo
+    /// se enciende en la cabecera del `case .importEvent`, antes del `if let error`. O sea que a un
+    /// restore grande con la red floja —el caso NORMAL— se le apagaba la ventana con CloudKit todavía
+    /// trayendo filas: el bug del ticket, sin arreglar, entrando por el copy.
+    ///
+    /// Los dos términos son los mismos que gobiernan la ventana aquí arriba, y no por casualidad: esto
+    /// es el complemento exacto de sus caminos (2) y (3).
+    ///
+    ///  · **`settled`** — el import ASENTÓ. Sus filas ya son corpus como cualquier otro (camino 2).
+    ///  · **`!hasObservedImportActivity`** — no llegó un solo `.importEvent` en todo el proceso, así que
+    ///    no hay nada bajando ni lo hubo (camino 3). Es la población del usuario realmente nuevo, y
+    ///    cerrarle la ventana en el acto es la PRECISIÓN que este apagado aporta sobre la caducidad:
+    ///    sin él viviría hasta la gracia de 60 s con el guard de frontera de cuenta entornado.
+    ///
+    /// **Lo que queda fuera a propósito**: el import que arrancó y no asentó, con o sin error. Su
+    /// ventana la cierran el asentamiento o la caducidad, igual que la de quien se va de la pantalla —
+    /// y el tope duro de 600 s la acota pase lo que pase. Es el mismo residuo que el camino (3) de
+    /// arriba ya acepta y documenta para el import que FALLA.
+    static func closesTheSessionWindow(settled: Bool, hasObservedImportActivity: Bool) -> Bool {
+        settled || !hasObservedImportActivity
     }
 }
