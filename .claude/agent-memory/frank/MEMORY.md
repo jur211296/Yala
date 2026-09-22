@@ -16,6 +16,9 @@
 
 ## Cómo mido y cómo entrego
 - [El estado compartido no es testigo de su rama](feedback_el_estado_compartido_no_es_testigo_de_su_rama.md) — un campo lo enciende 1 sitio y lo apagan 13; cuenta escritores antes de leer.
+- [Mi arreglo quita la SALIDA que había](feedback_mi_arreglo_quita_la_salida_que_habia.md) — cerrar un abuso puede dejar sin puerta al dueño legítimo; enumera quién salía por ahí.
+- [La limpieza «por si acaso» enmascara mutantes](feedback_la_limpieza_por_si_acaso_enmascara_mutantes.md) — una línea inalcanzable recoge lo que el camino bueno deja pasar.
+- [Un verbo nuevo hereda las PROHIBICIONES del viejo](feedback_un_verbo_nuevo_hereda_las_prohibiciones_del_viejo.md) — los negativos se anclan al nombre y el gemelo pasa en verde.
 - [El techo que se resetea no es un techo](feedback_el_techo_que_se_resetea_no_es_un_techo.md) — enumera quién lo reinicia y a quién muerde; con las dos en contra, se retira.
 - [Un plazo nuevo se clava con sus dos vecinos](feedback_un_plazo_nuevo_se_clava_con_sus_dos_vecinos.md) — 599 y 600, y de dónde sale el número.
 - [Dos derivados del mismo enum no son independientes](feedback_dos_derivados_del_mismo_enum_no_son_independientes.md) — comparten su forma de AGRUPAR; defenderlo por escrito no los separa.
@@ -124,6 +127,7 @@
 - [«Cero warnings» se mide en TODOS los logs](feedback_cero_warnings_se_mide_en_todos_los_logs.md) — el gate no mira los tests y lee un build.
 
 ## Estado del trabajo
+- [Volver de la puerta de descarte ya no estrena permiso](project_volver_de_la_puerta_no_estrena_permiso.md) — PR #205; la review cazó que MI fix dejaba al dueño sin salida.
 - [Salir y volver a Restaurar ya no renueva con una descarga vieja](project_salir_y_volver_no_renueva_con_descarga_vieja.md) — PR #204; en qa, y el techo con número se fue a ticket propio.
 - [El tope de 90 s ya no cierra la sesión con el import bajando](project_tope_90s_no_cierra_con_import_bajando.md) — PR #203; en qa con guion de 7 pasos y un residual con ticket propio.
 - [La vuelta a iCloud ya pide volver a entrar](project_vuelta_icloud_pide_volver_a_entrar.md) — PR #194; en qa con 8 pasos en iPhone.
