@@ -193,9 +193,10 @@ struct WelcomeRestoreView: View {
             // el botón de arriba—, pero cualquier cosa que se cuelgue de aquí hereda los dos huecos.
             //
             // El `if let` no es defensa: `.wiped` y `.iCloudDisabled` salen de `startSearch()` antes de
-            // encender nada, y sin token no hay titularidad que soltar. En el camino normal es un no-op —
-            // `noteRestoreFinished` ya rotó el dueño a `nil`— y con un intento MÁS NUEVO vivo también,
-            // por el guard del token dentro de la señal.
+            // encender nada, y sin token no hay titularidad que soltar. En el camino normal es un no-op
+            // —el dueño ya está en `nil`, lo haya rotado `noteRestoreFinished` al terminar la espera o
+            // `noteRestoreDiscardRequested` al confirmar el descarte— y con un intento MÁS NUEVO vivo
+            // también, por el guard del token dentro de la señal.
             .onDisappear {
                 if let flowToken {
                     ICloudRestoreSessionSignal.noteRestoreAbandoned(flowToken)
@@ -217,10 +218,21 @@ struct WelcomeRestoreView: View {
                     //
                     // Y es el ÚNICO camino de salida en el que apagar es correcto: todo el diseño de la
                     // señal se apoya en «las filas siguen entrando», y aquí la persona acaba de decir
-                    // lo contrario — lo que hay detrás de este botón es la puerta que las borra. Si se
-                    // arrepiente, volver a Restaurar estrena ventana como cualquier entrada nueva.
+                    // lo contrario — lo que hay detrás de este botón es la puerta que las borra.
+                    //
+                    // **Pero apaga APARCANDO el reloj, y no lo olvida** (`restore-session-window-has-no-
+                    // reachable-ceiling`, 2026-09-21). Con `noteRestoreFinished` —lo que había aquí
+                    // hasta hoy— el estado quedaba idéntico al de «nadie ha pedido restaurar en este
+                    // proceso», así que **arrepentirse estrenaba una ventana entera**: la puerta de
+                    // descarte solo PREGUNTA, y sus dos salidas de vuelta («Volver» y «Traer mis
+                    // datos») remontan esta pantalla, cuyo `.task` llama a `startSearch()`. Tres
+                    // toques, sin esperar nada y sin que ninguna descarga tuviera que estar viva, y
+                    // repetibles a voluntad: el recorrido que dejó sin techo al ticket anterior.
+                    // Aparcado, la vuelta hereda el reloj y el tope duro sigue contando desde donde
+                    // contaba — y si ese tope ya se agotó, la entrada estrena con normalidad, que es
+                    // lo que impide reeditar el bloqueo permanente del techo que la review tumbó.
                     if let flowToken {
-                        ICloudRestoreSessionSignal.noteRestoreFinished(flowToken)
+                        ICloudRestoreSessionSignal.noteRestoreDiscardRequested(flowToken)
                     }
                     onStartFresh()
                 }
@@ -237,7 +249,15 @@ struct WelcomeRestoreView: View {
     /// los hace `RestoreProgressView` (estado `.searching`). Respeta el wipe: si el
     /// último acto del usuario fue un wipe, no ofrecemos restaurar (estado `.wiped`).
     private func startSearch() {
+        // **Los dos `return` de abajo TIRAN el reloj que la puerta de descarte pudiera haber
+        // aparcado**, y esa línea la trajo la review (`restore-session-window-has-no-reachable-ceiling`).
+        // Aquí no se enciende la señal —no hay import que la justifique— así que el aparcado se
+        // quedaba VARADO esperando a un estreno futuro que no tiene nada que ver con él: el recorrido
+        // medido es volver de la puerta sin iCloud, caer en `.iCloudDisabled`, encenderlo, y que el
+        // «volver a buscar» estrene heredando un reloj de hace minutos sobre una descarga que acaba
+        // de empezar. Su tope duro caducaría a media bajada.
         guard iCloudSyncService.shared.isAccountAvailable else {
+            ICloudRestoreSessionSignal.noteRestoreUnavailable()
             state = .iCloudDisabled
             return
         }
@@ -245,6 +265,7 @@ struct WelcomeRestoreView: View {
             lastOnboarding: PreferenceSyncService.shared.lastOnboardingTimestamp,
             lastWipe: PreferenceSyncService.shared.lastWipeTimestamp
         ) {
+            ICloudRestoreSessionSignal.noteRestoreUnavailable()
             RestoreBreadcrumb.wiped()
             state = .wiped
             return

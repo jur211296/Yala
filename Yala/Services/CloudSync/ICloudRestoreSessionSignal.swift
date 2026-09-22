@@ -37,7 +37,7 @@
 //  media descarga y el guard cross-cuenta se cerraba sobre el dueño legítimo — el bug que esta señal
 //  existe para impedir, entrando por la puerta de al lado.
 //
-//  Hoy son tres verbos y cada uno mueve lo suyo:
+//  Hoy son cuatro verbos y cada uno mueve lo suyo:
 //
 //   · `noteRestoreStarted` — entra un intento. **Estrena reloj si la ventana está apagada, y re-ancla
 //     una huérfana solo si hay descarga VIGENTE detrás**; con dueño vigente lo conserva. Los dos
@@ -46,20 +46,29 @@
 //     (`leaving-and-reentering-restore-renews-the-hard-cap`): hasta ese día el testigo era
 //     `hasObservedImportActivity`, un latch monótono del proceso, así que salir de Restaurar y volver
 //     estrenaba 600 s apoyándose en un import que podía haber terminado veinte minutos antes.
-//     **Lo que ese ticket NO consiguió, y conviene saberlo antes de intentarlo otra vez: un techo.**
+//     **Y desde ese mismo día hereda el reloj APARCADO si la puerta de descarte dejó uno**
+//     (`restore-session-window-has-no-reachable-ceiling`). Es el cuarto verbo de abajo, y cierra el
+//     recorrido de tres toques que tumbó el techo del ticket anterior.
+//     **El techo con NÚMERO sigue sin existir, y conviene saber por qué antes de intentarlo otra vez.**
 //     Se implementó uno —un reloj de la cadena de re-anclas que ningún re-ancla movía— y la review lo
 //     tumbó midiendo las dos mitades: no acotaba a quien quisiera saltárselo, porque
-//     `noteRestoreFinished` es alcanzable desde la UI con el import vivo («Empezar desde cero» →
-//     «Volver» → Restaurar, tres toques) y tras él la entrada siguiente ESTRENA; y sí bloqueaba al
+//     `noteRestoreFinished` era alcanzable desde la UI con el import vivo («Empezar desde cero» →
+//     «Volver» → Restaurar, tres toques) y tras él la entrada siguiente ESTRENABA; y sí bloqueaba al
 //     dueño legítimo, de forma permanente en el proceso, porque agotado el techo ninguna entrada podía
-//     ya ni re-anclar ni estrenar. Ticket abierto con lo medido:
-//     `restore-session-window-has-no-reachable-ceiling`.
+//     ya ni re-anclar ni estrenar. Lo que entró en su lugar cierra la primera mitad SIN abrir la
+//     segunda: el aparcado caduca con el mismo tope duro de la ventana, así que agotado ése se estrena
+//     con normalidad. Por debajo sigue el baseline irreductible —la señal vive en memoria a propósito,
+//     y matar la app lo estrena todo—, que es lo que hace inalcanzable cualquier techo absoluto.
 //   · `noteRestoreAbandoned` — la persona **se fue de Restaurar** con el import bajando. **Suelta la
 //     titularidad y NO toca el reloj**: la ventana sigue abierta para ese import, y la cierran el
 //     asentamiento o la caducidad. Apagarla aquí es justo lo que prohíbe el párrafo de «no se apaga al
 //     volver atrás». Lo llama `WelcomeRestoreView` al desaparecer ELLA, no la pantalla de progreso —
 //     ver su docblock, que es la mitad del ticket del tope.
-//   · `noteRestoreFinished` — el intento terminó **y no queda descarga**. Apaga las dos cosas.
+//   · `noteRestoreDiscardRequested` — la persona **confirmó «Empezar desde cero»**. Apaga las dos
+//     cosas **y aparca el reloj**, porque la puerta que hay detrás solo PREGUNTA: si vuelve sin haber
+//     borrado nada, esa entrada hereda el reloj en vez de estrenar tope duro nuevo.
+//   · `noteRestoreFinished` — el intento terminó **y no queda descarga**. Apaga las dos cosas, y
+//     además BORRA el aparcado: después de un final de verdad, lo que venga es una entrada nueva.
 //
 //  **Y «terminó» dejó de significar «la espera devolvió» el 2026-09-21**
 //  (`restore-timeout-closes-the-session-window-with-the-import-still-running`). Agotar el tope de 90 s
@@ -78,7 +87,8 @@
 //  se recalcula vivo, así que un import de rutina del espejo puede reabrirla. Es la exposición que el
 //  ticket compra a cambio de no bloquear al dueño legítimo sobre sus propios datos, y las dos salidas
 //  que sí sabían que no queda descarga la cierran antes: el asentamiento, y «Empezar desde cero», que
-//  apaga desde su propia confirmación en `WelcomeRestoreView`.
+//  apaga desde su propia confirmación en `WelcomeRestoreView` —aparcando el reloj, para que volver de
+//  la puerta sin haber borrado no estrene uno nuevo—.
 //
 
 import Foundation
@@ -123,6 +133,25 @@ enum ICloudRestoreSessionSignal {
     /// heredara un reloj que no describía nada suyo.
     private(set) static var currentFlow: FlowToken?
 
+    /// **El reloj que la puerta de descarte se guarda en el bolsillo**: `nil` = nadie pasó por ella, o
+    /// el aparcado ya se consumió.
+    ///
+    /// `restore-session-window-has-no-reachable-ceiling`, 2026-09-21. Lo escribe
+    /// `noteRestoreDiscardRequested` y lo lee —una vez— el estreno de `noteRestoreStarted`. Existe
+    /// porque apagar la ventana y OLVIDAR que existió son dos cosas distintas, y confundirlas era el
+    /// recorrido de tres toques que tumbó el techo del ticket anterior: la confirmación de «Empezar
+    /// desde cero» dejaba el estado idéntico al de «nadie ha pedido restaurar en este proceso», y la
+    /// vuelta desde la puerta —que **solo pregunta: no ha borrado nada**— estrenaba 600 s enteros sin
+    /// esperar nada y sin necesitar que ninguna descarga estuviera viva.
+    ///
+    /// **Y solo lo aparca el descarte, no cualquier apagado.** `noteRestoreFinished` lo LIMPIA, y esa
+    /// asimetría es la que evita reeditar el bloqueo por la puerta de al lado: los cinco botones de
+    /// «volver a buscar» de `WelcomeRestoreView` salen en estados terminales, aguas abajo de aquél, y
+    /// ese reintento tiene que ESTRENAR — heredar ahí un reloj viejo haría caducar a media bajada la
+    /// descarga que el reintento acaba de arrancar, que es el daño de
+    /// `abandoned-restore-no-longer-clears-the-session-window-clock`.
+    private(set) static var parkedStartedAt: Date?
+
 
     /// Lo llama `WelcomeRestoreView` al pasar a `.searching`, que es el único estado en el que hay un
     /// import de CloudKit de verdad — `.wiped` y `.iCloudDisabled` no importan nada y encender ahí
@@ -133,9 +162,13 @@ enum ICloudRestoreSessionSignal {
     ///
     ///  · **La ventana apagada la enciende cualquier entrada** (`restoreStartedAt == nil`): es la
     ///    primera del proceso, o la que sigue a un flujo que terminó. Sin este término la señal no se
-    ///    encendería nunca.
-    ///  · **Una ventana HUÉRFANA solo la re-ancla una entrada con descarga real detrás Y dentro del
-    ///    techo de su cadena** (`currentFlow == nil` **Y** `ICloudRestoreInProgressLogic.reanchorsOrphanWindow`).
+    ///    encendería nunca. **Lo que ya no decide es su instante** (2026-09-21,
+    ///    `restore-session-window-has-no-reachable-ceiling`): si la puerta de descarte dejó un reloj
+    ///    aparcado y sigue sirviendo, la entrada lo HEREDA en vez de estrenar `now`. Volver de esa
+    ///    puerta sin haber borrado nada no es una entrada nueva —la puerta solo pregunta—, y darle
+    ///    tope duro nuevo era el recorrido de tres toques que dejó al ticket anterior sin techo.
+    ///  · **Una ventana HUÉRFANA solo la re-ancla una entrada con descarga real detrás**
+    ///    (`currentFlow == nil` **Y** `hasLiveImportActivity`).
     ///    Re-anclar es lo que arregla `abandoned-restore-no-longer-clears-the-session-window-clock`:
     ///    quien entra, se arrepiente y vuelve 400 s después heredaba un reloj que no describía su
     ///    descarga, y su tope duro caducaba a media bajada con el guard cross-cuenta cerrándose sobre
@@ -186,7 +219,46 @@ enum ICloudRestoreSessionSignal {
         now: Date = .now,
         hasLiveImportActivity: Bool
     ) -> FlowToken {
-        if restoreStartedAt == nil || (currentFlow == nil && hasLiveImportActivity) {
+        // **El RESCATE del dueño en pantalla, y su alcance es lo que costó la review**
+        // (`restore-session-window-has-no-reachable-ceiling`). Con el reloj caducado y el dueño
+        // todavía vigente no se entraba ni al estreno (`restoreStartedAt != nil`) ni al re-ancla
+        // (`currentFlow != nil`): los cinco botones de «volver a buscar» no podían resucitar la
+        // ventana y el dueño legítimo se quedaba con el bloqueo sobre sus propios datos el resto del
+        // proceso, con las filas entrando. Es el defecto que tumbó el techo de cadena, entrando por
+        // la caducidad en vez de por un presupuesto.
+        //
+        // **Y va con `currentFlow != nil`, no con la caducidad a secas: ahí está TODO el cuidado.**
+        // Mi primera versión trataba «ventana agotada» como «ventana apagada» para cualquiera, y eso
+        // deshace `leaving-and-reentering-restore-renews-the-hard-cap`: el ciclo salir-volver, que
+        // suelta la titularidad cada vuelta, pasaba a estrenar 600 s **sin necesitar descarga viva**,
+        // que es exactamente lo que aquel ticket cerró. Lo cazó su propio test, en rojo.
+        //
+        // Quien SALIÓ tiene la rama de abajo, que le exige una descarga real detrás; quien sigue
+        // dentro no tiene ninguna otra, y su gesto es explícito: pulsó «volver a buscar». Eso no le
+        // pide el testigo del import a propósito — la población del caso es el restore grande cuyo
+        // import pasa minutos sin emitir, que es justo donde el testigo contesta `false`.
+        //
+        // Y conceder aquí no extiende nada: una ventana agotada ya no abre el guard, así que esto es
+        // estrenar, no renovar — lo mismo que hace cualquiera matando la app.
+        let ownerIsStuckOnASpentWindow = currentFlow != nil && restoreStartedAt.map {
+            ICloudRestoreInProgressLogic.windowHasExpired(restoreStartedAt: $0, now: now)
+        } ?? false
+
+        if restoreStartedAt == nil {
+            // **ESTRENO — salvo que la puerta de descarte tenga un reloj en el bolsillo.**
+            // `resumableParkedWindowStart` devuelve ese instante mientras siga sirviendo, y `nil`
+            // cuando toca reloj nuevo; el aparcado se CONSUME aquí en los dos casos, porque un
+            // aparcado que sobreviviera al estreno se lo comería también al reintento legítimo que
+            // viene después.
+            restoreStartedAt = ICloudRestoreInProgressLogic.resumableParkedWindowStart(
+                parkedStartedAt: parkedStartedAt, now: now) ?? now
+            parkedStartedAt = nil
+        } else if currentFlow == nil && hasLiveImportActivity {
+            // RE-ANCLA de una ventana huérfana. No mira el aparcado: cuando hay reloj vivo, no hay
+            // nada aparcado —`noteRestoreDiscardRequested` apaga al aparcar— y este camino es el que
+            // arregla `abandoned-restore-no-longer-clears-the-session-window-clock`.
+            restoreStartedAt = now
+        } else if ownerIsStuckOnASpentWindow {
             restoreStartedAt = now
         }
         let token = FlowToken()
@@ -226,6 +298,69 @@ enum ICloudRestoreSessionSignal {
         currentFlow = nil
     }
 
+    /// **Esta entrada a Restaurar no puede restaurar nada**: tira el reloj aparcado, si lo hay.
+    ///
+    /// Lo llaman los dos `return` tempranos de `WelcomeRestoreView.startSearch()` —sin cuenta de
+    /// iCloud, y tras un wipe—, que son los estados en los que la pantalla NO enciende la señal.
+    ///
+    /// **Existe porque el aparcado se quedaba VARADO ahí, y lo midió una lente de la review.** El
+    /// recorrido: la puerta de descarte contesta sin iCloud, la persona vuelve a Restaurar y cae en
+    /// `.iCloudDisabled` —que desde el 2026-09-20 ofrece reintentar—, enciende iCloud, y su
+    /// «volver a buscar» **estrena heredando el reloj de hace minutos**. Esa descarga es NUEVA: sin
+    /// cuenta no bajaba nada. Su tope duro caducaría a media bajada y el guard de frontera de cuenta
+    /// se cerraría sobre el dueño legítimo, que es el daño entero de
+    /// `abandoned-restore-no-longer-clears-the-session-window-clock`.
+    ///
+    /// **No toca la ventana ni la titularidad, y es deliberado**: si hay una viva, no es suya —esta
+    /// entrada ni siquiera llegó a encender— y apagarla desde aquí sería el bug que
+    /// `noteRestoreAbandoned` existe para no cometer. Lo único que declara es que el reloj guardado
+    /// ya no describe nada.
+    static func noteRestoreUnavailable() {
+        parkedStartedAt = nil
+    }
+
+    /// La persona **confirmó que quiere empezar de cero**: apaga la ventana y APARCA su reloj.
+    ///
+    /// `restore-session-window-has-no-reachable-ceiling`, 2026-09-21. Lo llama la confirmación de
+    /// «Empezar desde cero» en `WelcomeRestoreView`, que hasta hoy llamaba a `noteRestoreFinished`.
+    /// Las dos mitades hacen falta y ninguna sola basta:
+    ///
+    ///  · **Apagar**, porque la persona acaba de declarar que descarta el import, y la premisa de la
+    ///    que cuelga todo este diseño —«las filas siguen entrando y hay que protegerlas»— deja de
+    ///    valer. Sin el apagado, la ventana sobrevivía a la puerta hasta diez minutos con el guard de
+    ///    frontera de cuenta entornado; lo cazó una lente de la review del ticket anterior.
+    ///  · **Aparcar**, porque **la puerta de descarte solo PREGUNTA: no ha borrado nada.** Sus dos
+    ///    salidas de vuelta —«Volver» y «Traer mis datos»— devuelven a Restaurar con el mismo corpus y
+    ///    la misma descarga que había antes, así que eso no es una entrada nueva y no merece un tope
+    ///    duro nuevo. Con el apagado a secas, el estado quedaba indistinguible de «nadie ha pedido
+    ///    restaurar en este proceso» y la vuelta estrenaba 600 s **sin esperar nada y sin que ninguna
+    ///    descarga tuviera que estar viva**: tres toques, repetibles a voluntad, que es lo que dejó el
+    ///    ticket anterior sin techo.
+    ///
+    /// **Lo que NO hace, y es deliberado: no bloquea.** El aparcado caduca con el mismo tope duro de la
+    /// ventana (`ICloudRestoreInProgressLogic.resumableParkedWindowStart`), así que agotado ése la
+    /// entrada siguiente ESTRENA con normalidad. Es la diferencia exacta con el techo de cadena que la
+    /// review tumbó: aquél, una vez agotado, no dejaba ni re-anclar ni estrenar en el resto del
+    /// proceso, y le devolvía al dueño legítimo el bloqueo sobre su propia cuenta.
+    ///
+    /// **Solo aparca si `token` es el dueño vigente**, por la misma razón que sus dos hermanos: un
+    /// intento que ya perdió la titularidad no puede apagar —ni marcar— la ventana del que entró
+    /// después.
+    ///
+    /// Y si el descarte se consuma, nadie limpia el aparcado a mano. **La primera versión decía que no
+    /// hacía falta porque «desde el borrado no hay vuelta a Restaurar sin pasar por el onboarding», y
+    /// eso es FALSO**: lo midió una lente de la review en la activación —borrar, llegar al onboarding,
+    /// CANCELARLO (`FullModeActivationView.cancelActivation` deja el restore pendiente) y reabrir
+    /// «Activar Yala completo» aterriza en `.restore` directo—. La razón de verdad es la otra mitad de
+    /// aquella frase, que sí se sostiene sola: heredar un reloj más corto sobre un corpus que acaba de
+    /// borrarse es el lado seguro de esta señal, y a los 600 s el aparcado deja de heredarse.
+    static func noteRestoreDiscardRequested(_ token: FlowToken) {
+        guard currentFlow == token else { return }
+        parkedStartedAt = restoreStartedAt
+        restoreStartedAt = nil
+        currentFlow = nil
+    }
+
     /// El flujo de restauración TERMINÓ **por sus propios méritos y sin dejar descarga detrás**: en ese
     /// punto ya no hay nada que justifique tener abierto un guard de frontera de cuenta.
     ///
@@ -238,12 +373,14 @@ enum ICloudRestoreSessionSignal {
     /// volvía a `.blockedForeignData` para el dueño legítimo, que es el bug entero por el eje del
     /// DESENLACE en vez del abandono.
     ///
-    /// **Y hay un segundo llamador desde ese mismo día, que no es un final de la espera**: la
-    /// confirmación de «Empezar desde cero» en `WelcomeRestoreView`. Ahí la persona acaba de declarar
-    /// que descarta el import —lo que hay detrás del botón es la puerta que lo borra—, así que la
-    /// premisa de la que cuelga todo este diseño, «las filas siguen entrando», deja de valer. Sin ese
-    /// apagado la salida se llevaba la ventana abierta hasta diez minutos, y lo cazó una lente de la
-    /// review como regresión del propio ticket.
+    /// **Y su llamador es UNO: la espera de `RestoreProgressView`.** Durante unas horas del 2026-09-21
+    /// tuvo un segundo —la confirmación de «Empezar desde cero»— y ése se mudó a
+    /// `noteRestoreDiscardRequested`, que apaga igual pero APARCA el reloj
+    /// (`restore-session-window-has-no-reachable-ceiling`). La diferencia no es de estilo: aquí
+    /// «terminó» significa que no queda nada que proteger, mientras que detrás del botón de descarte
+    /// hay una puerta que **solo pregunta**, y volver de ella sin haber borrado nada no puede valer un
+    /// tope duro nuevo. Que este verbo tenga un solo llamador es además lo que devuelve sentido a su
+    /// nombre: hoy ya no es alcanzable desde la UI con el import vivo.
     ///
     /// **«Por sus propios méritos» es la precisión que añadió el 2026-09-21**, y no es un matiz:
     /// `RestoreProgressView` llama detrás de un `guard !Task.isCancelled`, así que una espera que
@@ -266,6 +403,13 @@ enum ICloudRestoreSessionSignal {
         guard currentFlow == token else { return }
         restoreStartedAt = nil
         currentFlow = nil
+        // **Y NO toca el aparcado, porque aquí no puede haber ninguno.** La primera versión lo
+        // limpiaba «por si acaso» y la review midió que la línea era inalcanzable: aparcar apaga en el
+        // mismo acto, y la única forma de volver a tener dueño —que es lo que exige el guard de
+        // arriba— es pasar por el estreno, que lo consume. Peor que inútil: ENMASCARABA al mutante que
+        // le quita el consumo al estreno, porque lo recogía aquí detrás. Quien añada un segundo
+        // llamador del descarte tiene enfrente el escáner de unicidad de la suite, que es la red
+        // correcta para eso.
     }
 
     /// El input del guard cross-cuenta. Se lee EN el instante de decidir y nunca se cachea: el mirror
@@ -284,6 +428,7 @@ enum ICloudRestoreSessionSignal {
     static func _testReset() {
         restoreStartedAt = nil
         currentFlow = nil
+        parkedStartedAt = nil
     }
     #endif
 }

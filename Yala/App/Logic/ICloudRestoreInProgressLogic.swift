@@ -24,8 +24,9 @@
 //  firmar sobre el corpus de otro humano. El sesgo declarado («ante la duda, false») estaba invertido
 //  respecto al implementado, porque `!(A && B)` con `A` desconocido devuelve `true`, que es ABRIR.
 //
-//  ⇒ hoy la ventana se cierra por CUATRO caminos, y los dos últimos son los que la hacen fail-closed
-//  de verdad, porque no dependen de que corra ningún callback:
+//  ⇒ hoy la ventana se cierra por CINCO caminos, y son (3) y (4) los que la hacen fail-closed de
+//  verdad, porque no dependen de que corra ningún callback. Los otros tres son PRECISIÓN: cierran
+//  antes, y cuando no corren la cierran igual esos dos.
 //
 //   1. **Nunca se abrió** — nadie pidió restaurar en este proceso.
 //   2. **El flujo TERMINÓ y no dejó descarga detrás** (`noteRestoreFinished`) — precisión, no red: el
@@ -42,6 +43,11 @@
 //      (4). Lo único que cambia es que la entrada SIGUIENTE estrena reloj en vez de heredarlo.
 //   3. **El import ASENTÓ** — sus filas ya son corpus como cualquier otro.
 //   4. **La CADUCIDAD** — sin actividad de import pasada la gracia, y el tope duro pase lo que pase.
+//   5. **La persona pidió DESCARTAR** (`noteRestoreDiscardRequested`, 2026-09-21) — acaba de declarar
+//      que no quiere ese import, así que la premisa «las filas siguen entrando y hay que protegerlas»
+//      deja de valer. Es el único cierre que además APARCA el reloj: lo que hay detrás del botón es una
+//      puerta que solo PREGUNTA, y si vuelve sin haber borrado nada, esa entrada hereda el reloj en vez
+//      de estrenar tope duro nuevo (`resumableParkedWindowStart`, abajo).
 //
 //  Y el latch sigue viviendo en memoria a propósito: si el proceso muere, la ventana muere con él.
 //
@@ -53,6 +59,44 @@
 import Foundation
 
 nonisolated enum ICloudRestoreInProgressLogic {
+
+    /// **El tope duro de la ventana, y es UNO para todo el subsistema.**
+    ///
+    /// Tres funciones de este fichero lo usan por defecto —`isRestoringNow`, `hasLiveImportActivity` y
+    /// `resumableParkedWindowStart`— y sus docblocks llevaban desde el 2026-09-21 afirmando «el mismo
+    /// `hardCap`» sobre **tres literales independientes**, que es una simetría que solo existía en la
+    /// prosa. Lo midió una lente de la review: bajar el de `isRestoringNow` a 300 y no tocar los otros
+    /// hace que un aparcado de 400 s se siga heredando **y nazca muerto** —ventana caducada con el
+    /// reloj puesto—, que es el bloqueo permanente del techo que la review tumbó, reintroducido sin
+    /// que se ponga rojo nada salvo el test cuyos números el propio cambio actualizaría.
+    ///
+    /// Con la constante, cambiar el tope los mueve a los tres o a ninguno.
+    static let sessionWindowHardCap: TimeInterval = 600
+
+    /// **¿El reloj de esta ventana agotó ya el tope duro?** El término (1) de `isRestoringNow`,
+    /// extraído para que lo pueda preguntar también quien decide si una entrada ESTRENA.
+    ///
+    /// **Y esa segunda lectura es la que cierra un callejón** (2026-09-21,
+    /// `restore-session-window-has-no-reachable-ceiling`): con la ventana caducada y su dueño todavía
+    /// en pantalla, `noteRestoreStarted` no entraba ni por el estreno (`restoreStartedAt != nil`) ni
+    /// por el re-ancla (`currentFlow != nil`), así que **los cinco botones de «volver a buscar» no
+    /// podían resucitarla** y el dueño legítimo se quedaba con el `.blockedForeignData` sobre sus
+    /// propios datos durante el resto del proceso. Era el mismo defecto que tumbó el techo de cadena,
+    /// entrando por la caducidad en vez de por un presupuesto.
+    ///
+    /// **Conceder ahí no extiende nada**: una ventana agotada ya no abre el guard, así que volver a
+    /// abrirla es estrenar, no renovar — y estrenar tras la caducidad es lo que cualquiera puede hacer
+    /// matando la app, que es el baseline declarado de esta señal.
+    ///
+    /// Un `elapsed` negativo (el reloj del sistema retrocedió) NO cuenta como agotado, exactamente
+    /// igual que en `isRestoringNow`: los dos leen el mismo término y tienen que contestar lo mismo.
+    static func windowHasExpired(
+        restoreStartedAt: Date,
+        now: Date,
+        hardCap: TimeInterval = sessionWindowHardCap
+    ) -> Bool {
+        now.timeIntervalSince(restoreStartedAt) >= hardCap
+    }
 
     /// - Parameters:
     ///   - restoreRequestedThisSession: el usuario abrió el restore de iCloud en ESTE proceso y la
@@ -76,7 +120,7 @@ nonisolated enum ICloudRestoreInProgressLogic {
         hasObservedImportActivity: Bool,
         now: Date,
         graceForNoActivity: TimeInterval = 60,
-        hardCap: TimeInterval = 600
+        hardCap: TimeInterval = sessionWindowHardCap
     ) -> Bool {
         guard let restoreStartedAt else { return false }
         let elapsed = now.timeIntervalSince(restoreStartedAt)
@@ -84,7 +128,12 @@ nonisolated enum ICloudRestoreInProgressLogic {
         // (1) TOPE DURO. La red que no depende de nada: ni de que un callback corra, ni de que
         // CloudKit emita, ni de que la pantalla se desmonte por donde esperamos. Un import que lleva
         // diez minutos sin asentar no es una restauración en curso, es un estado atascado.
-        guard elapsed < hardCap else { return false }
+        // Va por `windowHasExpired` y no inline porque el ESTRENO pregunta lo mismo: dos copias del
+        // término harían que una entrada pudiera estrenar sobre una ventana que aquí sigue viva, o
+        // heredar una que aquí ya está muerta.
+        guard !windowHasExpired(restoreStartedAt: restoreStartedAt, now: now, hardCap: hardCap) else {
+            return false
+        }
 
         // (2) EL IMPORT ASENTÓ ⇒ esas filas ya son corpus como cualquier otro.
         // `hasCompletedFirstImport` solo NO basta y la asimetría es la misma que documenta
@@ -198,11 +247,66 @@ nonisolated enum ICloudRestoreInProgressLogic {
         isImportingNow: Bool,
         lastImportActivityAt: Date?,
         now: Date,
-        freshness: TimeInterval = 600
+        freshness: TimeInterval = sessionWindowHardCap
     ) -> Bool {
         if isImportingNow { return true }
         guard let lastImportActivityAt else { return false }
         let age = now.timeIntervalSince(lastImportActivityAt)
         return age >= 0 && age < freshness
+    }
+
+    // MARK: - El reloj APARCADO de la puerta de descarte
+    //
+    // `restore-session-window-has-no-reachable-ceiling`, 2026-09-21. Cierra el recorrido de tres toques
+    // que tumbó el techo de cadena del ticket anterior: en `.found` o `.importIncomplete`, «Empezar
+    // desde cero» → confirmar → «Volver» → Restaurar estrenaba una ventana entera de 600 s **sin
+    // esperar nada y sin que la descarga tuviera que estar viva**, porque la confirmación dejaba
+    // `restoreStartedAt == nil` y el estreno no pregunta por ningún testigo. Tres toques, y otra vez,
+    // y otra.
+    //
+    // **La puerta de descarte solo PREGUNTA: no ha borrado nada.** Así que volver de ella sin haber
+    // descartado no es una entrada nueva — es la misma sesión de restauración, con la misma descarga
+    // detrás. Lo que la distingue es este reloj: la confirmación lo aparca al apagar la ventana y la
+    // vuelta lo rehidrata, de modo que el tope duro sigue contando desde donde contaba.
+
+    /// **El instante que debe heredar una entrada que llega con la ventana apagada**, o `nil` si le
+    /// toca estrenar reloj.
+    ///
+    /// Lo consulta `ICloudRestoreSessionSignal.noteRestoreStarted` en su rama de estreno, y su única
+    /// fuente es el reloj que aparcó la confirmación de «Empezar desde cero». Los dos rechazos son
+    /// mediciones, no cautela:
+    ///
+    ///  · **Un aparcado más viejo que el tope duro no se hereda, y esa es la mitad que impide reeditar
+    ///    el bloqueo permanente del techo tumbado.** Heredarlo daría una ventana ya caducada —
+    ///    `elapsed >= hardCap` en el primer `isRestoringNow`— o sea el `.blockedForeignData` sobre la
+    ///    propia cuenta del dueño legítimo, sin salida en el resto del proceso. Es la misma simetría
+    ///    con la que `hasLiveImportActivity` elige su frescura: el testigo deja de conceder justo
+    ///    cuando lo que concedería ya estaría muerto. ⇒ **agotado el tope, la entrada siguiente
+    ///    ESTRENA**, y ningún camino deja a nadie sin poder abrir ventana.
+    ///  · **Un aparcado en el FUTURO tampoco** (el reloj del sistema retrocedió con la app abierta), y
+    ///    aquí el sesgo es el contrario que en `hasLiveImportActivity` **porque el efecto es el
+    ///    contrario**: allí conservar el reloj viejo CIERRA antes, que es el lado seguro; heredar un
+    ///    instante futuro daría `elapsed` negativo, o sea una ventana que **no caduca nunca** hasta que
+    ///    el reloj avance. Estrenar `now` la deja acotada a sus 600 s como cualquier otra.
+    ///
+    /// - Parameters:
+    ///   - parkedStartedAt: `ICloudRestoreSessionSignal.parkedStartedAt` — el `restoreStartedAt` que
+    ///     tenía la ventana cuando la persona confirmó que quería empezar de cero. `nil` = no se pasó
+    ///     por la puerta de descarte, o el aparcado ya se consumió.
+    ///   - hardCap: **el mismo 600 s de `isRestoringNow`, y tiene que serlo**: este parámetro decide si
+    ///     la ventana heredada nacería viva, y quien lo contesta allí es ese tope. Dos números
+    ///     distintos harían que esta función concediera relojes que el guard declara muertos, o al
+    ///     revés.
+    ///
+    /// - Returns: el instante a heredar, o `nil` para estrenar en `now`.
+    static func resumableParkedWindowStart(
+        parkedStartedAt: Date?,
+        now: Date,
+        hardCap: TimeInterval = sessionWindowHardCap
+    ) -> Date? {
+        guard let parkedStartedAt else { return nil }
+        let age = now.timeIntervalSince(parkedStartedAt)
+        guard age >= 0 && age < hardCap else { return nil }
+        return parkedStartedAt
     }
 }

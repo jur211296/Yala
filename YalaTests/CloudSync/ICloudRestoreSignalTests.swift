@@ -330,6 +330,88 @@ struct ICloudRestoreLiveImportWitnessTests {
     }
 }
 
+@Suite("La restauración en curso · el reloj aparcado (tabla)")
+struct ICloudRestoreParkedWindowTests {
+
+    private static let t0 = Date(timeIntervalSince1970: 1_760_000_000)
+
+    @Test("sin nada aparcado, la entrada estrena")
+    func nothingParkedMeansAFreshClock() {
+        #expect(ICloudRestoreInProgressLogic.resumableParkedWindowStart(
+            parkedStartedAt: nil, now: Self.t0) == nil)
+    }
+
+    @Test("un aparcado reciente se hereda tal cual")
+    func aFreshParkedClockIsInherited() {
+        #expect(ICloudRestoreInProgressLogic.resumableParkedWindowStart(
+            parkedStartedAt: Self.t0, now: Self.t0.addingTimeInterval(45)) == Self.t0, """
+            Volver de la puerta de descarte estrena reloj. La puerta solo PREGUNTA —no ha borrado nada—             así que la vuelta es la misma sesión de restauración y no puede valer un tope duro nuevo.
+            """)
+    }
+
+    /// **El borde, con sus dos vecinos**, y el número es el mismo `hardCap` de `isRestoringNow` a
+    /// propósito: pasado él, el reloj heredado nacería muerto.
+    @Test("el aparcado caduca a los 600 s exactos: 599 se hereda, 600 ya no")
+    func theParkedBoundaryIsPinned() {
+        #expect(ICloudRestoreInProgressLogic.resumableParkedWindowStart(
+            parkedStartedAt: Self.t0, now: Self.t0.addingTimeInterval(599)) == Self.t0, """
+            A los 599 s deja de heredarse. Bajar este número reabre el recorrido de tres toques: quien             tiene el teléfono de otra persona descarta, vuelve y estrena ventana.
+            """)
+        #expect(ICloudRestoreInProgressLogic.resumableParkedWindowStart(
+            parkedStartedAt: Self.t0, now: Self.t0.addingTimeInterval(600)) == nil, """
+            A los 600 s todavía se hereda, y eso es el bloqueo permanente del techo que la review             tumbó: la ventana heredada nace caducada y el dueño legítimo se queda sin poder abrir             ninguna en el resto del proceso.
+            """)
+    }
+
+    /// **Los tres topes son EL MISMO, y esto es lo único que lo comprueba.**
+    ///
+    /// `isRestoringNow`, `hasLiveImportActivity` y `resumableParkedWindowStart` llevaban tres literales
+    /// `600` independientes mientras sus docblocks afirmaban «el mismo `hardCap`» — una simetría que
+    /// solo existía en la prosa. Lo midió una lente: bajar el de `isRestoringNow` a 300 y no tocar los
+    /// otros hace que un aparcado de 400 s se siga heredando **y nazca muerto**, o sea el bloqueo
+    /// permanente del techo que la review tumbó, sin que se ponga rojo nada.
+    ///
+    /// La red de verdad es la constante compartida; este test es su testigo: recorre el eje entero y
+    /// afirma la equivalencia «heredable ⟺ la ventana que saldría estaría viva» para cualquier tope.
+    @Test("heredar un aparcado y tener ventana viva son la MISMA frontera")
+    func theParkedBoundaryAndTheHardCapAreTheSameNumber() {
+        for tope in [ICloudRestoreInProgressLogic.sessionWindowHardCap, 120, 900] {
+            for edad in [0.0, 1, tope / 2, tope - 1, tope, tope + 1, tope * 2] {
+                let ahora = Self.t0.addingTimeInterval(edad)
+                let heredable = ICloudRestoreInProgressLogic.resumableParkedWindowStart(
+                    parkedStartedAt: Self.t0, now: ahora, hardCap: tope) != nil
+                let viva = ICloudRestoreInProgressLogic.isRestoringNow(
+                    restoreStartedAt: Self.t0,
+                    hasCompletedFirstImport: false,
+                    isImportQuiescent: false,
+                    hasObservedImportActivity: true,
+                    now: ahora,
+                    graceForNoActivity: tope * 10,   // fuera de juego: aquí se mide el TOPE DURO
+                    hardCap: tope)
+                #expect(heredable == viva, Comment(rawValue: """
+                    Con tope \(Int(tope)) s y edad \(Int(edad)) s, heredar el aparcado da \
+                    \(heredable) y la ventana resultante está viva: \(viva). Los dos números tienen \
+                    que ser el mismo: si el aparcado se hereda más allá del tope duro, la ventana nace \
+                    muerta y el dueño legítimo se queda sin poder abrir ninguna; si se rechaza antes, \
+                    se estrena donde se podía heredar y el recorrido de tres toques se reabre.
+                    """))
+            }
+        }
+    }
+
+    /// **Un aparcado en el FUTURO no se hereda, y el sesgo es el CONTRARIO que en
+    /// `hasLiveImportActivity` porque el efecto es el contrario.** Allí conservar el reloj viejo cierra
+    /// antes, que es el lado seguro; heredar aquí un instante futuro daría `elapsed` negativo, o sea una
+    /// ventana que no caduca NUNCA hasta que el reloj del sistema avance.
+    @Test("un aparcado en el futuro estrena en vez de heredarse")
+    func aFutureParkedClockIsRejected() {
+        #expect(ICloudRestoreInProgressLogic.resumableParkedWindowStart(
+            parkedStartedAt: Self.t0.addingTimeInterval(120), now: Self.t0) == nil, """
+            Se heredó un instante futuro (el reloj del sistema retrocedió con la app abierta). La             ventana que sale de ahí tiene `elapsed` negativo: el tope duro no la cierra jamás, y el             guard de frontera de cuenta se queda abierto hasta que el reloj avance.
+            """)
+    }
+}
+
 @Suite("La restauración en curso · el latch de sesión", .serialized)
 struct ICloudRestoreSessionSignalTests {
 
@@ -796,8 +878,11 @@ struct ICloudRestoreSessionSignalTests {
         #expect(!ICloudRestoreInProgressLogic.closesTheSessionWindow(
             settled: false, hasObservedImportActivity: true))
 
-        // t=95: «Empezar desde cero» → confirmar.
-        ICloudRestoreSessionSignal.noteRestoreFinished(intento)
+        // t=95: «Empezar desde cero» → confirmar. Con el verbo del descarte, que es el que corre en
+        // producción desde `restore-session-window-has-no-reachable-ceiling`: con `noteRestoreFinished`
+        // este test seguía verde —apagar apaga igual— pero dejó de modelar ningún camino real, así que
+        // la mitad «apagar» del verbo nuevo podía romperse entera sin ponerlo rojo.
+        ICloudRestoreSessionSignal.noteRestoreDiscardRequested(intento)
         #expect(ICloudRestoreSessionSignal.restoreStartedAt == nil, """
             Descartar dejó la ventana viva. Con el corpus de otra persona en el teléfono, eso son ocho \
             minutos de sobra para firmar encima de sus datos: el guard de frontera de cuenta contesta \
@@ -995,6 +1080,379 @@ struct ICloudRestoreSessionSignalTests {
             """)
     }
 
+    // MARK: - El reloj APARCADO de la puerta de descarte
+    //
+    // `restore-session-window-has-no-reachable-ceiling`, 2026-09-21. El recorrido de tres toques que
+    // tumbó el techo del ticket anterior, recorrido entero y con el paso por el descarte dentro.
+
+    /// **EL RECORRIDO DE TRES TOQUES, y es el test que da nombre al ticket.**
+    ///
+    /// Hasta hoy, en un teléfono con el corpus de otra persona: «Empezar desde cero» → confirmar →
+    /// «Volver» → Restaurar estrenaba 600 s enteros. Sin esperar nada, sin que ninguna descarga tuviera
+    /// que estar viva, y repetible a voluntad. La puerta de descarte **solo pregunta: no borra nada**,
+    /// así que volver de ella es seguir en la misma sesión de restauración.
+    ///
+    /// El testigo va en `true` a propósito: en el escenario real la descarga ajena SÍ está bajando, y
+    /// un arreglo que se apoyara en él no cerraría nada.
+    @Test("volver de la puerta de descarte sin haber borrado NO estrena ventana nueva")
+    @MainActor
+    func returningFromTheDiscardGateDoesNotRenewTheWindow() {
+        ICloudRestoreSessionSignal._testReset()
+        defer { ICloudRestoreSessionSignal._testReset() }
+
+        let t0 = Date(timeIntervalSince1970: 1_760_000_000)
+        let entrada = ICloudRestoreSessionSignal.noteRestoreStarted(now: t0, hasLiveImportActivity: false)
+        #expect(ICloudRestoreSessionSignal.restoreStartedAt == t0)
+
+        // Toque 1 y 2: «Empezar desde cero» → confirmar.
+        ICloudRestoreSessionSignal.noteRestoreDiscardRequested(entrada)
+        #expect(ICloudRestoreSessionSignal.restoreStartedAt == nil, """
+            Descartar dejó de apagar la ventana. La persona acaba de declarar que no quiere esas filas,             y sin el apagado la ventana vive hasta el tope duro con el guard de frontera de cuenta             entornado mientras ella está en la puerta.
+            """)
+
+        // Toque 3: «Volver» → la pantalla de Restaurar remonta y su `.task` llama a `startSearch()`.
+        _ = ICloudRestoreSessionSignal.noteRestoreStarted(now: t0.addingTimeInterval(30),
+                                                          hasLiveImportActivity: true)
+        #expect(ICloudRestoreSessionSignal.restoreStartedAt == t0, """
+            **El recorrido de tres toques estrena ventana otra vez.** Volver de la puerta de descarte             sin haber borrado nada no es una entrada nueva —la puerta solo PREGUNTA—, así que no puede             valer un tope duro nuevo. Con el reloj estrenado, quien tiene en la mano el teléfono de             otra persona mantiene abierta indefinidamente, y con tres toques por vuelta, la puerta que             el guard de frontera de cuenta existe para cerrar.
+            """)
+
+        // Y el efecto donde se sufre: el tope duro sigue contando desde la PRIMERA entrada.
+        #expect(Self.guardDecide(en: t0.addingTimeInterval(601)) == .blockedForeignData, """
+            A los 601 s de la primera entrada el guard sigue abierto: el paso por la puerta de descarte             le regaló un tope duro nuevo.
+            """)
+    }
+
+    /// **La otra mitad, y es la que tumbó el techo anterior: NADIE se queda sin ventana.**
+    ///
+    /// El techo de cadena, agotado, no dejaba ni re-anclar ni estrenar en el resto del proceso: al dueño
+    /// legítimo que volvía con sus datos bajando le devolvía el `.blockedForeignData` sobre su propia
+    /// cuenta, para siempre. El aparcado caduca con el mismo tope duro de la ventana, así que pasado
+    /// ése la entrada siguiente ESTRENA con normalidad.
+    @Test("agotado el tope duro, la entrada siguiente estrena: el aparcado no bloquea a nadie")
+    @MainActor
+    func anExpiredParkedClockStillLetsTheOwnerStartAFreshWindow() {
+        ICloudRestoreSessionSignal._testReset()
+        defer { ICloudRestoreSessionSignal._testReset() }
+
+        let t0 = Date(timeIntervalSince1970: 1_760_000_000)
+        let entrada = ICloudRestoreSessionSignal.noteRestoreStarted(now: t0, hasLiveImportActivity: false)
+        ICloudRestoreSessionSignal.noteRestoreDiscardRequested(entrada)
+
+        // Se lo piensa un buen rato en la puerta y vuelve cuando el tope duro ya se agotó.
+        let vuelta = t0.addingTimeInterval(700)
+        _ = ICloudRestoreSessionSignal.noteRestoreStarted(now: vuelta, hasLiveImportActivity: true)
+        #expect(ICloudRestoreSessionSignal.restoreStartedAt == vuelta, """
+            La entrada heredó un reloj YA CADUCADO. Eso es el techo que la review tumbó, reintroducido:             el dueño legítimo vuelve a Restaurar con sus datos bajando y el guard le dice que son de             otra persona, sin salida en el resto del proceso.
+            """)
+        #expect(Self.guardDecide(en: vuelta.addingTimeInterval(120)) == .proceed, """
+            Y el efecto donde se sufre: dos minutos después de volver, con sus datos bajando, el guard             tiene que reconocerle como dueño.
+            """)
+    }
+
+    /// **El borde del aparcado, clavado con sus dos vecinos.** Sin los dos casos, el mutante que sube el
+    /// número deja al dueño legítimo con una ventana muerta —el bloqueo permanente del techo tumbado— y
+    /// el que lo baja reabre el recorrido de tres toques.
+    @Test("el aparcado sirve 599 s y a los 600 ya no")
+    @MainActor
+    func theParkedClockBoundaryIsPinned() {
+        // El `defer` no es adorno: es el único test de la suite que resetea DENTRO del bucle, así que
+        // sin él basta que alguien convierta un `#expect` en `#require` para que salga con dueño
+        // vigente y el test siguiente de esta suite `.serialized` no pueda ni estrenar ni re-anclar.
+        defer { ICloudRestoreSessionSignal._testReset() }
+        let t0 = Date(timeIntervalSince1970: 1_760_000_000)
+
+        for (espera, heredado) in [(599.0, true), (600.0, false)] {
+            ICloudRestoreSessionSignal._testReset()
+            let entrada = ICloudRestoreSessionSignal.noteRestoreStarted(now: t0, hasLiveImportActivity: false)
+            ICloudRestoreSessionSignal.noteRestoreDiscardRequested(entrada)
+            let vuelta = t0.addingTimeInterval(espera)
+            _ = ICloudRestoreSessionSignal.noteRestoreStarted(now: vuelta, hasLiveImportActivity: false)
+            #expect(ICloudRestoreSessionSignal.restoreStartedAt == (heredado ? t0 : vuelta),
+                    Comment(rawValue: """
+                        A los \(Int(espera)) s de la primera entrada el aparcado \(heredado ? "dejó de                         heredarse" : "se sigue heredando"). El número es el mismo tope duro de la                         ventana a propósito: más allá de él, el reloj heredado nacería muerto y el                         dueño legítimo se quedaría sin poder abrir ninguna.
+                        """))
+        }
+    }
+
+    /// **El aparcado se consume en el ESTRENO, y sin eso el arreglo del techo rompe a su hermano.**
+    ///
+    /// El recorrido: descartar → volver → Restaurar (hereda el reloj) → la espera asienta
+    /// (`noteRestoreFinished`) → «volver a buscar». Ese reintento arranca una descarga NUEVA y tiene que
+    /// estrenar: heredar ahí el reloj de la primera entrada le haría caducar el tope a media bajada, que
+    /// es el daño entero de `abandoned-restore-no-longer-clears-the-session-window-clock`.
+    ///
+    /// **Su nombre decía «no sobrevive a `noteRestoreFinished`» y eso era FALSO**: lo midió una lente de
+    /// la review. Cuando el flujo termina, el aparcado hace rato que se consumió —lo hizo el estreno de
+    /// la vuelta, dos pasos antes—, así que la limpieza que aquel verbo hacía «por si acaso» era
+    /// inalcanzable, y encima ENMASCARABA al mutante que le quita el consumo al estreno. Retirada esa
+    /// línea, este test pasa a matarlo, que es lo que de verdad mide.
+    @Test("el aparcado se consume en el ESTRENO: el reintento posterior estrena limpio")
+    @MainActor
+    func theParkedClockIsConsumedByTheFreshStart() {
+        ICloudRestoreSessionSignal._testReset()
+        defer { ICloudRestoreSessionSignal._testReset() }
+
+        let t0 = Date(timeIntervalSince1970: 1_760_000_000)
+        let primera = ICloudRestoreSessionSignal.noteRestoreStarted(now: t0, hasLiveImportActivity: false)
+        ICloudRestoreSessionSignal.noteRestoreDiscardRequested(primera)
+
+        let vuelta = ICloudRestoreSessionSignal.noteRestoreStarted(now: t0.addingTimeInterval(30),
+                                                                   hasLiveImportActivity: true)
+        #expect(ICloudRestoreSessionSignal.restoreStartedAt == t0)
+
+        // La espera termina y no queda descarga: `RestoreProgressView` apaga.
+        ICloudRestoreSessionSignal.noteRestoreFinished(vuelta)
+        #expect(ICloudRestoreSessionSignal.restoreStartedAt == nil)
+
+        // «Volver a buscar» desde el estado terminal.
+        let reintento = t0.addingTimeInterval(100)
+        _ = ICloudRestoreSessionSignal.noteRestoreStarted(now: reintento, hasLiveImportActivity: false)
+        #expect(ICloudRestoreSessionSignal.restoreStartedAt == reintento, """
+            El reintento heredó el reloj que la puerta de descarte había aparcado hace rato. Su tope             duro caduca a media descarga y el guard de frontera de cuenta se cierra sobre el dueño             legítimo — `abandoned-restore-no-longer-clears-the-session-window-clock`, reabierto por el             arreglo del techo.
+            """)
+    }
+
+    /// **El re-ancla del ticket hermano sigue intacto**, y este test lo recorre CON el aparcado de por
+    /// medio: descartar, volver, y desde ahí irse de Restaurar y volver siete minutos después con la
+    /// descarga viva. Esa última vuelta re-ancla porque la ventana está HUÉRFANA, un camino que no mira
+    /// el aparcado — y no puede mirarlo, porque cuando hay reloj vivo no hay nada aparcado.
+    @Test("con el aparcado de por medio, la vuelta legítima con descarga viva sigue re-anclando")
+    @MainActor
+    func theOrphanReanchorSurvivesTheParkedClock() {
+        ICloudRestoreSessionSignal._testReset()
+        defer { ICloudRestoreSessionSignal._testReset() }
+
+        let t0 = Date(timeIntervalSince1970: 1_760_000_000)
+        let primera = ICloudRestoreSessionSignal.noteRestoreStarted(now: t0, hasLiveImportActivity: false)
+        ICloudRestoreSessionSignal.noteRestoreDiscardRequested(primera)
+
+        let vuelta = ICloudRestoreSessionSignal.noteRestoreStarted(now: t0.addingTimeInterval(20),
+                                                                   hasLiveImportActivity: true)
+        #expect(ICloudRestoreSessionSignal.restoreStartedAt == t0)
+
+        // Se va de Restaurar con el import bajando: la ventana queda huérfana, el reloj sigue puesto.
+        ICloudRestoreSessionSignal.noteRestoreAbandoned(vuelta)
+        #expect(ICloudRestoreSessionSignal.restoreStartedAt == t0)
+
+        // Y vuelve 400 s después, con sus datos todavía bajando.
+        let regreso = t0.addingTimeInterval(420)
+        _ = ICloudRestoreSessionSignal.noteRestoreStarted(now: regreso, hasLiveImportActivity: true)
+        #expect(ICloudRestoreSessionSignal.restoreStartedAt == regreso, """
+            El re-ancla de la ventana huérfana dejó de funcionar cuando antes hubo un descarte. El             dueño legítimo que se arrepiente y vuelve hereda un reloj de siete minutos: su tope duro             caduca a media descarga.
+            """)
+        #expect(Self.guardDecide(en: regreso.addingTimeInterval(500)) == .proceed,
+                "y el guard tiene que seguir reconociéndole como dueño 500 s después de volver")
+    }
+
+    /// **Aparcar es APAGAR, no dejar viva.** La mitad que cazó la review del ticket anterior: mientras la
+    /// persona está en la puerta de descarte, la ventana tiene que estar cerrada — con el corpus de otra
+    /// persona en el teléfono, dejarla abierta son ocho minutos de sobra para firmar encima.
+    @Test("mientras se está en la puerta de descarte, la ventana está CERRADA")
+    @MainActor
+    func theWindowIsClosedWhileStandingAtTheDiscardGate() {
+        ICloudRestoreSessionSignal._testReset()
+        defer { ICloudRestoreSessionSignal._testReset() }
+
+        let t0 = Date(timeIntervalSince1970: 1_760_000_000)
+        let entrada = ICloudRestoreSessionSignal.noteRestoreStarted(now: t0, hasLiveImportActivity: false)
+        ICloudRestoreSessionSignal.noteRestoreDiscardRequested(entrada)
+
+        #expect(Self.guardDecide(en: t0.addingTimeInterval(60)) == .blockedForeignData, """
+            La ventana sigue abierta con la persona parada en la puerta de descarte. Aparcar el reloj             no puede significar dejarla viva: `parkedStartedAt` es memoria, no permiso.
+            """)
+        #expect(ICloudRestoreSessionSignal.currentFlow == nil,
+                "y sin dueño: quien descartó ya no vigila nada")
+    }
+
+    /// **EL CALLEJÓN, y es el hallazgo caro de la review de este ticket.**
+    ///
+    /// Con la ventana caducada y su dueño todavía en pantalla, `noteRestoreStarted` no entraba ni al
+    /// estreno (`restoreStartedAt != nil`) ni al re-ancla (`currentFlow != nil`): **los cinco botones
+    /// de «volver a buscar» no podían resucitarla**. Y la primera versión de este ticket le quitaba al
+    /// dueño legítimo su única salida, porque hasta entonces el descarte apagaba y la vuelta estrenaba
+    /// limpio. Recorrido medido por la lente: import de doce minutos, el tope de 90 s se rinde con las
+    /// filas entrando, descarta a los 100 s, se lo piensa y vuelve a los 300 → hereda el reloj de t0 →
+    /// a los 600 la ventana muere **con la descarga viva** → y a partir de ahí ningún reintento la
+    /// reabre. Es el mismo defecto que tumbó el techo de cadena, entrando por la caducidad.
+    @Test("con la ventana agotada y el dueño en pantalla, «volver a buscar» ESTRENA")
+    @MainActor
+    func anExhaustedWindowCanAlwaysBeRestartedFromTheScreen() {
+        ICloudRestoreSessionSignal._testReset()
+        defer { ICloudRestoreSessionSignal._testReset() }
+
+        let t0 = Date(timeIntervalSince1970: 1_760_000_000)
+        let primera = ICloudRestoreSessionSignal.noteRestoreStarted(now: t0, hasLiveImportActivity: false)
+        ICloudRestoreSessionSignal.noteRestoreDiscardRequested(primera)
+        _ = ICloudRestoreSessionSignal.noteRestoreStarted(now: t0.addingTimeInterval(300),
+                                                          hasLiveImportActivity: true)
+        #expect(ICloudRestoreSessionSignal.restoreStartedAt == t0, "hereda, que es lo que pide el ticket")
+
+        // t=700: la ventana lleva 100 s muerta y el import sigue bajando. La persona toca «volver a
+        // buscar» SIN salir de la pantalla, así que el dueño sigue siendo suyo.
+        let reintento = t0.addingTimeInterval(700)
+        _ = ICloudRestoreSessionSignal.noteRestoreStarted(now: reintento, hasLiveImportActivity: true)
+        #expect(ICloudRestoreSessionSignal.restoreStartedAt == reintento, """
+            **El dueño legítimo se quedó sin ventana para el resto del proceso.** Con el reloj caducado \
+            y el dueño vigente no se entra ni al estreno ni al re-ancla, así que ningún reintento en \
+            pantalla la resucita: toca atrás, firma con su cuenta y el guard le dice que sus datos son \
+            de otra persona, con las filas entrando en ese momento. Es la mitad 2 del techo que la \
+            review tumbó el día anterior, reintroducida por la caducidad.
+            """)
+        #expect(Self.guardDecide(en: reintento.addingTimeInterval(120)) == .proceed,
+                "y el guard vuelve a reconocerle como dueño dos minutos después de reintentar")
+    }
+
+    /// **Y el rescate NO alcanza a quien salió, que es donde vive la garantía del ticket hermano.**
+    /// Mi primera versión trataba «ventana agotada» como «apagada» para cualquiera, y con eso el ciclo
+    /// salir-volver —que suelta la titularidad en cada vuelta— volvía a estrenar 600 s sin necesitar
+    /// descarga viva: `leaving-and-reentering-restore-renews-the-hard-cap`, deshecho. Lo cazó su
+    /// propio test en rojo, y este caso es el que impide que vuelva a pasar desde aquí.
+    @Test("el rescate no alcanza a la ventana HUÉRFANA agotada sin descarga detrás")
+    @MainActor
+    func theRescueDoesNotReachAnOrphanWindow() {
+        ICloudRestoreSessionSignal._testReset()
+        defer { ICloudRestoreSessionSignal._testReset() }
+
+        let t0 = Date(timeIntervalSince1970: 1_760_000_000)
+        let primero = ICloudRestoreSessionSignal.noteRestoreStarted(now: t0, hasLiveImportActivity: true)
+        ICloudRestoreSessionSignal.noteRestoreAbandoned(primero)
+
+        // Vuelve con la ventana ya agotada y sin nada bajando: no hay descarga que justificar.
+        let vuelta = t0.addingTimeInterval(700)
+        _ = ICloudRestoreSessionSignal.noteRestoreStarted(now: vuelta, hasLiveImportActivity: false)
+        #expect(ICloudRestoreSessionSignal.restoreStartedAt == t0, """
+            El ciclo salir-volver estrenó ventana con la descarga muerta, apoyándose en la caducidad. \
+            Eso es el ticket hermano deshecho: quien tiene el teléfono de otra persona mantiene \
+            abierto el guard navegando, sin un solo import detrás.
+            """)
+        #expect(Self.guardDecide(en: vuelta) == .blockedForeignData,
+                "y el guard tiene que seguir bloqueando")
+    }
+
+    /// **La ventana VIVA sigue sin poder re-anclarse desde dentro**, que es el tope que el término de
+    /// arriba no puede llevarse por delante. Sin este caso, el mutante que estrena siempre pasa el test
+    /// del callejón y deja el tope duro extensible con solo pulsar «volver a buscar».
+    @Test("con la ventana VIVA, «volver a buscar» no mueve el reloj")
+    @MainActor
+    func aLiveWindowIsStillNotExtendableFromTheScreen() {
+        ICloudRestoreSessionSignal._testReset()
+        defer { ICloudRestoreSessionSignal._testReset() }
+
+        let t0 = Date(timeIntervalSince1970: 1_760_000_000)
+        _ = ICloudRestoreSessionSignal.noteRestoreStarted(now: t0, hasLiveImportActivity: false)
+        _ = ICloudRestoreSessionSignal.noteRestoreStarted(now: t0.addingTimeInterval(599),
+                                                          hasLiveImportActivity: true)
+        #expect(ICloudRestoreSessionSignal.restoreStartedAt == t0, """
+            Un reintento con la ventana todavía viva reinició su reloj. El tope duro deja de ser un \
+            tope: pulsando «volver a buscar» cada nueve minutos se mantiene abierto para siempre.
+            """)
+    }
+
+    /// **El aparcado no puede quedarse VARADO cuando la vuelta no puede restaurar nada.** Lo midió una
+    /// lente: se vuelve de la puerta sin iCloud, la pantalla cae en `.iCloudDisabled` —que ofrece
+    /// reintentar—, la persona enciende iCloud y su «volver a buscar» estrena heredando un reloj de
+    /// hace minutos **sobre una descarga que acaba de empezar**, porque sin cuenta no bajaba nada.
+    @Test("una entrada que no puede restaurar nada TIRA el reloj aparcado")
+    @MainActor
+    func anEntryThatCannotRestoreDropsTheParkedClock() {
+        ICloudRestoreSessionSignal._testReset()
+        defer { ICloudRestoreSessionSignal._testReset() }
+
+        let t0 = Date(timeIntervalSince1970: 1_760_000_000)
+        let primera = ICloudRestoreSessionSignal.noteRestoreStarted(now: t0, hasLiveImportActivity: false)
+        ICloudRestoreSessionSignal.noteRestoreDiscardRequested(primera)
+        #expect(ICloudRestoreSessionSignal.parkedStartedAt == t0, "control positivo: hay algo aparcado")
+
+        // La vuelta cae en `.iCloudDisabled`: `startSearch` sale antes de encender.
+        ICloudRestoreSessionSignal.noteRestoreUnavailable()
+        #expect(ICloudRestoreSessionSignal.parkedStartedAt == nil, """
+            El reloj aparcado sobrevivió a una entrada que no podía restaurar nada. Se queda varado \
+            esperando a un estreno futuro con el que no tiene nada que ver: la persona enciende iCloud, \
+            toca «volver a buscar», y su descarga NUEVA nace con un tope duro que puede tener un \
+            segundo de vida.
+            """)
+
+        // Y el estreno posterior es limpio.
+        let encendido = t0.addingTimeInterval(120)
+        _ = ICloudRestoreSessionSignal.noteRestoreStarted(now: encendido, hasLiveImportActivity: true)
+        #expect(ICloudRestoreSessionSignal.restoreStartedAt == encendido)
+    }
+
+    /// **`noteRestoreUnavailable` no puede apagar una ventana que no es suya.** Esa entrada ni siquiera
+    /// llegó a encender: apagar desde ahí es el bug que `noteRestoreAbandoned` existe para no cometer.
+    @Test("tirar el aparcado no toca la ventana ni su dueño")
+    @MainActor
+    func droppingTheParkedClockLeavesALiveWindowAlone() {
+        ICloudRestoreSessionSignal._testReset()
+        defer { ICloudRestoreSessionSignal._testReset() }
+
+        let t0 = Date(timeIntervalSince1970: 1_760_000_000)
+        _ = ICloudRestoreSessionSignal.noteRestoreStarted(now: t0, hasLiveImportActivity: false)
+        ICloudRestoreSessionSignal.noteRestoreUnavailable()
+        #expect(ICloudRestoreSessionSignal.restoreStartedAt == t0, """
+            Una entrada que no puede restaurar nada apagó la ventana de un import que sigue bajando. \
+            El dueño legítimo que vuelva atrás y firme se encuentra con que sus datos son de otra \
+            persona.
+            """)
+        #expect(ICloudRestoreSessionSignal.currentFlow != nil, "y el dueño vigente sigue siéndolo")
+    }
+
+    /// El reset de tests limpia el aparcado, **con control positivo**. Sin este caso, el mutante que se
+    /// lo quita al `_testReset` sobrevive: el único aparcado que se filtra entre tests vale justo el
+    /// `t0` que todos usan como primer `now`, así que heredarlo es indistinguible de estrenar.
+    @Test("el reset de tests limpia el reloj aparcado")
+    @MainActor
+    func theTestResetClearsTheParkedClock() {
+        ICloudRestoreSessionSignal._testReset()
+        defer { ICloudRestoreSessionSignal._testReset() }
+
+        let t0 = Date(timeIntervalSince1970: 1_760_000_000)
+        let intento = ICloudRestoreSessionSignal.noteRestoreStarted(now: t0, hasLiveImportActivity: false)
+        ICloudRestoreSessionSignal.noteRestoreDiscardRequested(intento)
+        #expect(ICloudRestoreSessionSignal.parkedStartedAt != nil, "control positivo")
+
+        ICloudRestoreSessionSignal._testReset()
+        #expect(ICloudRestoreSessionSignal.parkedStartedAt == nil, """
+            El reset deja el aparcado puesto, así que un test contamina al siguiente de esta suite \
+            `.serialized` y su estreno hereda un reloj que nadie escribió ahí.
+            """)
+    }
+
+    /// **Un descarte de un intento que ya perdió la titularidad no aparca nada.** Mismo guard que sus dos
+    /// hermanos: sin él, una confirmación que llega tarde desde una pantalla vieja le apaga la ventana al
+    /// intento que entró después.
+    @Test("descartar desde un token que ya no es dueño es un no-op")
+    @MainActor
+    func discardingFromAStaleTokenIsANoOp() {
+        ICloudRestoreSessionSignal._testReset()
+        defer { ICloudRestoreSessionSignal._testReset() }
+
+        let t0 = Date(timeIntervalSince1970: 1_760_000_000)
+        // **Con un descarte legítimo ANTES, para que la aserción del aparcado cargue peso.** Sin él,
+        // `parkedStartedAt == nil` lo garantizaba el `_testReset` y la aserción no mataba ningún
+        // mutante que la de arriba no matara ya — lo midió una lente de la review.
+        let primero = ICloudRestoreSessionSignal.noteRestoreStarted(now: t0, hasLiveImportActivity: false)
+        ICloudRestoreSessionSignal.noteRestoreDiscardRequested(primero)
+        let viejo = ICloudRestoreSessionSignal.noteRestoreStarted(now: t0.addingTimeInterval(20),
+                                                                  hasLiveImportActivity: false)
+        #expect(ICloudRestoreSessionSignal.restoreStartedAt == t0, "hereda, y el aparcado se consumió")
+        // Y entra un intento MÁS NUEVO, que es quien pasa a ser el dueño.
+        _ = ICloudRestoreSessionSignal.noteRestoreStarted(now: t0.addingTimeInterval(30),
+                                                          hasLiveImportActivity: false)
+
+        ICloudRestoreSessionSignal.noteRestoreDiscardRequested(viejo)
+        #expect(ICloudRestoreSessionSignal.restoreStartedAt == t0, """
+            Un intento abandonado apagó la ventana del que está vivo, con su import bajando. Es el \
+            bug que el `FlowToken` existe para cerrar, por el verbo nuevo.
+            """)
+        #expect(ICloudRestoreSessionSignal.parkedStartedAt == nil, """
+            Y tampoco pudo APARCAR: aparcar es la otra mitad de apagar. Con el guard relajado, una \
+            confirmación que llega tarde desde una pantalla vieja deja aparcado el reloj del intento \
+            VIVO, y la entrada siguiente lo hereda.
+            """)
+    }
+
 }
 
 @Suite("La restauración en curso · el cableado (source-scan)")
@@ -1091,6 +1549,79 @@ struct ICloudRestoreSignalWiringTests {
             """)
     }
 
+    /// **Los DOS verbos que APAGAN también se pinnean, y esto lo pidieron dos lentes de la review.**
+    ///
+    /// El fichero llevaba el conteo de los que ENCIENDEN y SUELTAN, y ninguno de los que apagan: un
+    /// segundo apagado en cualquier vista del Welcome deja el fix inerte con toda la suite en verde.
+    /// **Y el daño tiene precedente escrito**: `GroupsOrganizerBranchTests` prohíbe llamar al apagado
+    /// desde `WelcomeGroupsGateView` porque ahí el import SIGUE bajando con el latch muerto y nadie lo
+    /// vuelve a encender (la enmienda D2). Ese test conocía un solo verbo; desde este ticket hay dos
+    /// que producen ese mismo daño.
+    @Test("MUTACIÓN: los dos verbos que APAGAN la ventana tienen un solo call-site cada uno")
+    func onlyOneProductionCallSiteTurnsItOff() throws {
+        let root = Self.repoRoot.appendingPathComponent("Yala")
+        var finished: [String] = []
+        var discarded: [String] = []
+        let enumerator = FileManager.default.enumerator(at: root, includingPropertiesForKeys: nil)
+        while let url = enumerator?.nextObject() as? URL {
+            guard url.pathExtension == "swift" else { continue }
+            guard url.lastPathComponent != "ICloudRestoreSessionSignal.swift" else { continue }
+            let body = try String(contentsOf: url, encoding: .utf8)
+                .split(separator: "\n", omittingEmptySubsequences: false)
+                .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
+                .joined(separator: "\n")
+            if body.contains("noteRestoreFinished(") { finished.append(url.lastPathComponent) }
+            if body.contains("noteRestoreDiscardRequested(") { discarded.append(url.lastPathComponent) }
+        }
+        #expect(finished == ["RestoreProgressView.swift"], """
+            Sitios que apagan la ventana al TERMINAR: \(finished.sorted()). Tiene que haber \
+            exactamente uno y ser la espera: cualquier otro la apaga con el import de CloudKit todavía \
+            bajando, y el dueño legítimo que firme con su cuenta se encuentra con que sus datos son de \
+            otra persona. Y el docblock de ese verbo AFIRMA que su llamador es uno — esta es la única \
+            comprobación de esa frase.
+            """)
+        #expect(discarded == ["WelcomeRestoreView.swift"], """
+            Sitios que apagan la ventana APARCANDO el reloj: \(discarded.sorted()). Tiene que haber \
+            exactamente uno y ser la confirmación de «Empezar desde cero»: es el único gesto en el que \
+            la persona declara que descarta el import. Desde cualquier otro sitio apaga una descarga \
+            que sigue viva, y encima deja aparcado un reloj que la entrada siguiente heredará.
+            """)
+    }
+
+    /// **Y el tercero, que no apaga nada pero decide cuál es tu reloj.** Su sitio son los dos `return`
+    /// tempranos de la pantalla de restaurar. Puesto en cualquier otro, tira el aparcado de alguien que
+    /// sí iba a volver, y el recorrido de tres toques se reabre entero.
+    @Test("MUTACIÓN: tirar el aparcado se hace SOLO desde la pantalla de restaurar, y dos veces")
+    func onlyTheRestoreScreenDropsTheParkedClock() throws {
+        let root = Self.repoRoot.appendingPathComponent("Yala")
+        var sitios: [String] = []
+        var enLaPantalla = 0
+        let enumerator = FileManager.default.enumerator(at: root, includingPropertiesForKeys: nil)
+        while let url = enumerator?.nextObject() as? URL {
+            guard url.pathExtension == "swift" else { continue }
+            guard url.lastPathComponent != "ICloudRestoreSessionSignal.swift" else { continue }
+            let body = try String(contentsOf: url, encoding: .utf8)
+                .split(separator: "\n", omittingEmptySubsequences: false)
+                .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
+                .joined(separator: "\n")
+            let n = body.components(separatedBy: "noteRestoreUnavailable()").count - 1
+            if n > 0 {
+                sitios.append(url.lastPathComponent)
+                if url.lastPathComponent == "WelcomeRestoreView.swift" { enLaPantalla = n }
+            }
+        }
+        #expect(sitios == ["WelcomeRestoreView.swift"], """
+            Sitios que tiran el reloj aparcado: \(sitios.sorted()). Solo puede hacerlo la entrada que \
+            descubre que no hay nada que restaurar.
+            """)
+        #expect(enLaPantalla == 2, """
+            La pantalla tira el aparcado en \(enLaPantalla) sitio(s) y tienen que ser DOS: los dos \
+            `return` tempranos de `startSearch` —sin cuenta de iCloud, y tras un wipe—. Si falta uno, \
+            el aparcado se queda varado por ese camino y la descarga NUEVA que venga después hereda un \
+            reloj que puede tener un segundo de vida.
+            """)
+    }
+
     /// **El testigo del import llega VIVO al encendido, y eso solo lo ve un escáner.**
     ///
     /// El parámetro no tiene default —el escáner de abajo lo fija— y su valor sale de un cálculo
@@ -1146,14 +1677,50 @@ struct ICloudRestoreSignalWiringTests {
             subirlo devuelve el latch monótono sin poner nada rojo.
             """)
 
-        // Y que la condición del encendido conserve sus DOS límites. Ninguno cubre al otro: sin el
+        // Y que el encendido conserve sus DOS ramas con sus límites. Ninguno cubre al otro: sin el
         // dueño, un flujo vivo re-ancla su propia ventana; sin el testigo, la re-ancla cualquier
-        // navegación sin una descarga detrás.
-        #expect(code.contains("if restoreStartedAt == nil || (currentFlow == nil && hasLiveImportActivity) {"), """
-            La condición del encendido cambió de forma. Cada término tapa un agujero distinto: \
-            `restoreStartedAt == nil` es lo único que ENCIENDE la señal, `currentFlow == nil` impide \
-            que un flujo vivo renueve su propio tope, y `hasLiveImportActivity` impide que lo renueve \
-            una navegación sin ninguna descarga VIGENTE detrás.
+        // navegación sin una descarga detrás; y sin la consulta al aparcado, volver de la puerta de
+        // descarte estrena tope duro nuevo en tres toques.
+        #expect(code.contains("if restoreStartedAt == nil {"), """
+            El ESTRENO cambió de forma. `restoreStartedAt == nil` es lo único que enciende la señal: \
+            sin esa rama no se enciende nunca.
+            """)
+        #expect(code.contains("currentFlow != nil && restoreStartedAt.map {")
+                && code.contains("ICloudRestoreInProgressLogic.windowHasExpired(restoreStartedAt: $0, now: now)"), """
+            El RESCATE del dueño en pantalla desapareció, o dejó de preguntarle el tope a la lógica \
+            pura. Sin él, con el reloj caducado y el dueño vigente no se entra ni al estreno ni al \
+            re-ancla: «volver a buscar» no resucita la ventana y el dueño legítimo se queda con el \
+            bloqueo sobre sus propios datos el resto del proceso. Y escrito a mano en vez de \
+            delegado, su tope se desacopla del que apaga la ventana.
+            """)
+        #expect(code.contains("} else if ownerIsStuckOnASpentWindow {"), """
+            El rescate dejó de ser la ÚLTIMA rama, o dejó de estar acotado al dueño vigente. Tratar \
+            «ventana agotada» como «ventana apagada» para cualquiera deshace \
+            `leaving-and-reentering-restore-renews-the-hard-cap`: el ciclo salir-volver suelta la \
+            titularidad en cada vuelta, así que pasaría a estrenar 600 s SIN necesitar descarga viva.
+            """)
+        #expect(code.contains("} else if currentFlow == nil && hasLiveImportActivity {"), """
+            El RE-ANCLA de la ventana huérfana cambió de forma, o dejó de ser exclusivo del estreno. \
+            Sus dos términos tapan agujeros distintos: `currentFlow == nil` impide que un flujo vivo \
+            renueve su propio tope, y `hasLiveImportActivity` impide que lo renueve una navegación sin \
+            ninguna descarga VIGENTE detrás. Y tiene que ser un `else if`: en la rama del estreno no \
+            hay reloj que re-anclar, y colgarlo de un `if` suelto le pisaría el instante heredado del \
+            aparcado — el recorrido de tres toques, reabierto.
+            """)
+        // El estreno, acotado a su propia rama: un `contains` sobre el fichero entero lo cumpliría
+        // cualquier otra línea del archivo, y lo que se fija aquí es que la consulta y el consumo
+        // vivan DENTRO del estreno.
+        let estreno = try Self.body(of: "if restoreStartedAt == nil {", in: code)
+        #expect(estreno.contains("ICloudRestoreInProgressLogic.resumableParkedWindowStart(")
+                && estreno.contains("?? now"), """
+            El estreno dejó de consultar el reloj que aparcó la puerta de descarte. Vuelve el \
+            recorrido de tres toques: «Empezar desde cero» → «Volver» → Restaurar estrena 600 s \
+            enteros, sin esperar nada y sin que ninguna descarga tenga que estar viva.
+            """)
+        #expect(estreno.contains("parkedStartedAt = nil"), """
+            El estreno consulta el aparcado pero no lo CONSUME. Así se lo come también al reintento \
+            legítimo que venga después —«volver a buscar» arranca una descarga nueva y tiene que \
+            estrenar—, y su tope duro caducaría a media bajada.
             """)
     }
 
@@ -1242,28 +1809,47 @@ struct ICloudRestoreSignalWiringTests {
             CloudKit sigue trayendo filas— así que esto reabre entero \
             `force-fetch-and-wait-ignores-cancellation`.
             """)
+        #expect(!salida.contains("noteRestoreDiscardRequested"), """
+            El DESMONTAJE apaga la ventana por el verbo del descarte. Irse de Restaurar no es declarar \
+            que se descarta el import: apaga igual que el anterior —reabriendo \
+            `force-fetch-and-wait-ignores-cancellation`— y encima le quita a la vuelta legítima su \
+            re-ancla, porque el reloj heredado la haría caducar a media descarga.
+            """)
     }
 
-    /// **Descartar el import APAGA la ventana, y va en la CONFIRMACIÓN y no en el botón.**
+    /// **Descartar el import APAGA la ventana APARCANDO su reloj, y va en la CONFIRMACIÓN.**
     ///
-    /// Lo cazó una lente de la review como regresión de este mismo ticket: desde que el tope agotado
-    /// con el import vivo ya no apaga, esta salida se llevaba la ventana abierta hasta diez minutos —
-    /// el `onDisappear` suelta, y soltar no toca el reloj—. Con el corpus de otra persona en el
-    /// teléfono, eso son ocho minutos de sobra para firmar encima de sus datos.
+    /// El apagado lo cazó una lente de la review del ticket anterior: desde que el tope agotado con el
+    /// import vivo ya no apaga, esta salida se llevaba la ventana abierta hasta diez minutos —el
+    /// `onDisappear` suelta, y soltar no toca el reloj—. Con el corpus de otra persona en el teléfono,
+    /// eso son ocho minutos de sobra para firmar encima de sus datos.
+    ///
+    /// **Y el verbo cambió el 2026-09-21** (`restore-session-window-has-no-reachable-ceiling`): era
+    /// `noteRestoreFinished`, que apaga Y OLVIDA, y ese olvido dejaba el estado idéntico al de «nadie ha
+    /// pedido restaurar en este proceso» — la vuelta desde la puerta estrenaba 600 s enteros en tres
+    /// toques. `noteRestoreDiscardRequested` apaga igual y aparca el reloj. El mutante que revierte el
+    /// verbo deja verdes todas las tablas de la señal: **solo lo caza este escáner y el ciclo completo
+    /// de la suite del latch**.
     ///
     /// **En la confirmación** porque el botón solo abre el diálogo (`showStartFreshConfirm = true`) y
     /// el `cancel` tiene que poder volver sin haber apagado nada.
-    @Test("MUTACIÓN: «Empezar desde cero» apaga la ventana al CONFIRMAR")
+    @Test("MUTACIÓN: «Empezar desde cero» apaga la ventana al CONFIRMAR, y APARCANDO su reloj")
     func discardingTheImportClosesTheWindowFromTheConfirmation() throws {
         let view = try Self.code(Self.restoreView)
         let confirmar = try Self.body(of: "Button(L10n.Welcome.Restore.startFreshConfirmConfirm, role: .destructive) {",
                                       in: view)
-        #expect(confirmar.contains("ICloudRestoreSessionSignal.noteRestoreFinished(flowToken)"), """
-            Descartar el import dejó de apagar la ventana de sesión. La persona acaba de declarar que \
-            NO quiere esas filas —detrás de este botón está la puerta que las borra—, así que la \
-            premisa que sostiene todo el diseño de la señal, «las filas siguen entrando», deja de \
-            valer. Sin esto, el desmontaje solo SUELTA y la ventana vive hasta el tope duro de 600 s \
-            con el guard de frontera de cuenta entornado.
+        #expect(confirmar.contains("ICloudRestoreSessionSignal.noteRestoreDiscardRequested(flowToken)"), """
+            Descartar el import dejó de apagar la ventana de sesión con el verbo que APARCA su reloj. \
+            La persona acaba de declarar que no quiere esas filas —detrás de este botón está la puerta \
+            que las borra—, así que la premisa que sostiene todo el diseño de la señal, «las filas \
+            siguen entrando», deja de valer; pero la puerta solo PREGUNTA, así que volver de ella no \
+            puede estrenar un tope duro nuevo. Con `noteRestoreFinished` aquí vuelve el recorrido de \
+            tres toques entero, y sin él la ventana vive hasta 600 s con el guard entornado.
+            """)
+        #expect(!confirmar.contains("noteRestoreFinished"), """
+            La confirmación volvió a apagar OLVIDANDO el reloj. Ése es el recorrido de tres toques: \
+            «Empezar desde cero» → «Volver» → Restaurar estrena ventana nueva, sin esperar nada y sin \
+            que ninguna descarga tenga que estar viva.
             """)
         #expect(confirmar.contains("onStartFresh()"), "y sigue llevando a la puerta de descarte")
 
@@ -1460,7 +2046,6 @@ struct ICloudRestoreSignalWiringTests {
     @Test("MUTACIÓN: el token que enciende la ventana es el que viaja a la pantalla y el que la cierra")
     func theFlowTokenTravelsFromTheSwitchToTheShutdown() throws {
         let view = try Self.code(Self.restoreView)
-        let progress = try Self.code(Self.progressView)
 
         #expect(view.contains("flowToken = ICloudRestoreSessionSignal.noteRestoreStarted("), """
             El encendido dejó de GUARDAR su token (un `_ =` basta para hacerlo). Sin token, la \

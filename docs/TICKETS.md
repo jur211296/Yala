@@ -409,8 +409,9 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | restore-found-state-leaves-no-breadcrumb | backlog | tickets/backlog/restore-found-state-leaves-no-breadcrumb.md |
 | restore-gate-claims-a-wipe-this-device-did-not-do | backlog | tickets/backlog/restore-gate-claims-a-wipe-this-device-did-not-do.md |
 | restore-prefill-skips-currency-for-an-empty-summary | backlog | tickets/backlog/restore-prefill-skips-currency-for-an-empty-summary.md |
+| restore-retry-reopens-the-session-window-every-90-seconds | backlog | tickets/backlog/restore-retry-reopens-the-session-window-every-90-seconds.md |
 | restore-says-no-data-when-the-icloud-import-never-settled | qa | tickets/qa/restore-says-no-data-when-the-icloud-import-never-settled.md |
-| restore-session-window-has-no-reachable-ceiling | backlog | tickets/backlog/restore-session-window-has-no-reachable-ceiling.md |
+| restore-session-window-has-no-reachable-ceiling | qa | tickets/qa/restore-session-window-has-no-reachable-ceiling.md |
 | restore-start-fresh-keeps-the-imported-corpus | qa | tickets/qa/restore-start-fresh-keeps-the-imported-corpus.md |
 | restore-timeout-closes-the-session-window-with-the-import-still-running | qa | tickets/qa/restore-timeout-closes-the-session-window-with-the-import-still-running.md |
 | restore-treats-budgets-and-groups-as-no-data | qa | tickets/qa/restore-treats-budgets-and-groups-as-no-data.md |
@@ -532,6 +533,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | wipe-copy-reads-one-axis-while-the-sheet-reads-two | backlog | tickets/backlog/wipe-copy-reads-one-axis-while-the-sheet-reads-two.md |
 | wipe-data-does-not-cancel-the-remote-wipe-grace | backlog | tickets/backlog/wipe-data-does-not-cancel-the-remote-wipe-grace.md |
 | wipe-sheet-still-promises-every-apple-id-device | done | tickets/done/wipe-sheet-still-promises-every-apple-id-device.md |
+| wiped-state-reaches-the-discard-gate-with-the-window-open | backlog | tickets/backlog/wiped-state-reaches-the-discard-gate-with-the-window-open.md |
 | wire-decoder-accepts-non-finite-money | backlog | tickets/backlog/wire-decoder-accepts-non-finite-money.md |
 | wrangler-prod-onboarding-choice-percent-drift | done | tickets/done/wrangler-prod-onboarding-choice-percent-drift.md |
 | xcode-project-config-json-format-when-27-2-stable | backlog | tickets/backlog/xcode-project-config-json-format-when-27-2-stable.md |
