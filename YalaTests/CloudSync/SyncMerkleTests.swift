@@ -229,10 +229,19 @@ struct SyncMerkleTests {
         """.utf8)
     }
 
-    private func stubMerkleClient(_ body: Data) -> SyncMerkleClient {
-        SyncMerkleClient(baseURL: URL(string: "https://example.test")!,
-                         tokenProvider: { "jwt" },
-                         urlSession: FixedMerkleSession(body))
+    private func stubMerkleClient(_ body: Data, status: Int = 200,
+                                  token: String? = "jwt", canRenew: Bool = false) -> SyncMerkleClient {
+        makeMerkleClient(body, status: status, token: token, canRenew: canRenew).client
+    }
+
+    /// El mismo cliente, devolviendo también la sesión para poder contar las peticiones.
+    private func makeMerkleClient(_ body: Data, status: Int = 200, token: String? = "jwt",
+                                  canRenew: Bool = false) -> (client: SyncMerkleClient, session: FixedMerkleSession) {
+        let session = FixedMerkleSession(body, status: status)
+        return (SyncMerkleClient(baseURL: URL(string: "https://example.test")!,
+                                 tokenProvider: { token },
+                                 urlSession: session,
+                                 canRenewSession: { canRenew }), session)
     }
 
     @Test func verify_outboxPending_skipsWithoutCanary() async throws {
@@ -248,7 +257,7 @@ struct SyncMerkleTests {
 
         let verdict = await engine.verifyIntegrity(using: stubMerkleClient(remoteJSON(root: "r", entities: [:])),
                                                    context: context)
-        #expect(verdict == .skipped(reason: "outbox-pending"))
+        #expect(verdict == .skipped(reason: MerkleSkipReason.outboxPending))
     }
 
     @Test func verify_noCompletedPull_skips() async throws {
@@ -258,7 +267,7 @@ struct SyncMerkleTests {
 
         let verdict = await engine.verifyIntegrity(using: stubMerkleClient(remoteJSON(root: "r", entities: [:])),
                                                    context: context)
-        #expect(verdict == .skipped(reason: "no-completed-pull"))
+        #expect(verdict == .skipped(reason: MerkleSkipReason.noCompletedPull))
     }
 
     @Test func verify_convergedAndDiverged() async throws {
@@ -327,7 +336,135 @@ struct SyncMerkleTests {
 
         let verdict = await engine.verifyIntegrity(using: stubMerkleClient(remoteJSON(root: "r", entities: [:])),
                                                    context: context)
-        #expect(verdict == .skipped(reason: "dead-letters"))
+        #expect(verdict == .skipped(reason: MerkleSkipReason.deadLetters))
+    }
+
+    // MARK: - El fetch NO se aplana (ticket `reverse-verify-network-bucket-hides-a-definitive-server-no`)
+
+    /// **Los tres desenlaces del fetch salen distintos, y ésa es toda la pelea del ticket.** Hasta el 2026-09-22
+    /// `verifyIntegrity` los colapsaba con un `guard case .snapshot`, así que un 403 —un «no» definitivo del
+    /// servidor— viajaba como `fetch-failed`, el mapping lo leía como red y la vuelta a iCloud lo esperaba **72
+    /// horas** en «Comprobando que todo llegó…».
+    ///
+    /// El caso los pide en la MISMA función y con el mismo escenario quiescente para que un mutante que devuelva
+    /// cualquiera de los dos al `.skipped` caiga aquí, y el `.transient` de al lado es el control que impide
+    /// «arreglarlo» tipando todo lo que no sea snapshot.
+    @Test func verify_fetchOutcomes_areNotFlattened() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        engine.lastPullCycleCompleted = true
+
+        let body = remoteJSON(root: "r", entities: [:])
+
+        let expired = await engine.verifyIntegrity(using: stubMerkleClient(body, status: 401), context: context)
+        #expect(expired == .sessionExpired, "el 401 de /sync/merkle es sesión caducada, no «no hay red»")
+
+        let unavailable = await engine.verifyIntegrity(using: stubMerkleClient(body, status: 403), context: context)
+        #expect(unavailable == .accountUnavailable, "el 403 es la cuenta no disponible, no «no hay red»")
+
+        // Control: lo que SÍ es red sigue saliendo por el mismo sitio de siempre.
+        let transient = await engine.verifyIntegrity(using: stubMerkleClient(body, status: 503), context: context)
+        #expect(transient == .skipped(reason: MerkleSkipReason.fetchFailed), "un 5xx sigue siendo red")
+
+        // Y un 200 indecodificable también: el fallo es del transporte, no del servidor.
+        let garbage = await engine.verifyIntegrity(using: stubMerkleClient(Data("no-json".utf8)), context: context)
+        #expect(garbage == .skipped(reason: MerkleSkipReason.fetchFailed))
+    }
+
+    /// **Los DOS 401 del gateway no son el mismo, y el Merkle era el único cliente del canal que no los separaba.**
+    /// Mientras su desenlace se aplanaba en «red» daba igual acertar; desde que enciende el aviso de «vuelve a
+    /// entrar» de la vuelta a iCloud, confundirlos le pide firmar otra vez a un teléfono cuyo problema es App
+    /// Attest —un gesto que no arregla nada— y a uno que solo está sin cobertura. Es la lectura que el push y el
+    /// pull hacen desde el 2026-09-16 (`.claude/rules/gateway-attest.md`).
+    @Test func verify_theTwo401s_areSeparated() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        engine.lastPullCycleCompleted = true
+
+        // (a) 401 `yala_attest_required`: el JWT vale y falta el token de attest → pasajero, NO caducada.
+        let attestBody = Data(#"{"error":{"type":"yala_attest_required","message":"attest required"}}"#.utf8)
+        let attest = await engine.verifyIntegrity(using: stubMerkleClient(attestBody, status: 401), context: context)
+        #expect(attest == .skipped(reason: MerkleSkipReason.fetchFailed),
+                "el 401 de attest es pasajero: pedir volver a entrar ahí manda a un gesto que no cambia nada")
+
+        // (b) Cualquier OTRO 401 sigue siendo la sesión caducada — el control que impide «arreglarlo» leyendo todo
+        // 401 como pasajero, que dejaría a la vuelta esperando 72 h por una sesión que nadie va a renovar.
+        let otro = await engine.verifyIntegrity(
+            using: stubMerkleClient(Data(#"{"error":{"type":"yala_attest_invalid"}}"#.utf8), status: 401),
+            context: context)
+        #expect(otro == .sessionExpired)
+    }
+
+    /// **Un token que no llega SIN RED no es una sesión caducada**, y el SDK es quien lo sabe: solo borra la sesión
+    /// guardada ante los cuatro motivos que la invalidan. Sin este término, quedarse sin cobertura con el JWT
+    /// vencido sacaba «Tu sesión caducó. Vuelve a entrar» en la tarjeta de la vuelta — el falso positivo que cerró
+    /// `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry` en los otros dos clientes del canal.
+    @Test func verify_tokenUnavailable_isTransientWhileTheSDKKeepsTheSession() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        engine.lastPullCycleCompleted = true
+        let body = remoteJSON(root: "r", entities: [:])
+
+        let sinRed = await engine.verifyIntegrity(
+            using: stubMerkleClient(body, token: nil, canRenew: true), context: context)
+        #expect(sinRed == .skipped(reason: MerkleSkipReason.fetchFailed),
+                "con la sesión guardada intacta, un token que no llega es pasajero")
+
+        // Control: con la sesión BORRADA por el SDK sí es caducada, que es lo que el aviso necesita para valer.
+        let borrada = await engine.verifyIntegrity(
+            using: stubMerkleClient(body, token: nil, canRenew: false), context: context)
+        #expect(borrada == .sessionExpired)
+    }
+
+    /// **El canario del 401 de attest sale con SU edge.** Sin esta aserción, escribir `edge: "pull"` en el Merkle
+    /// quedaba verde —el veredicto no cambia— y además el canario del Merkle **desaparecía de la flota**:
+    /// `cloudSyncAttestRequired` deduplica por proceso y por edge (`canaryOnce(key: edge)`), así que con la etiqueta
+    /// del pull ya emitida en ese proceso el del Merkle se suprime. Molde de `SyncPullClientTests`.
+    @Test func merkleFetch_attest401_emitsItsOwnEdgeCanary() async throws {
+        let racha = try IsolatedAttestStreak(); defer { racha.restore() }
+        let antes = GroupsAttestStreakStore.current()
+        let defaults = makeIsolatedDefaults(prefix: "syncMerkle.metrics")
+        MetricsService._testReset()
+        MetricsService.start(
+            client: MetricsClient(baseURL: URL(string: "https://gw.test")!,
+                                  urlSession: FixedMerkleSession(Data(), status: 500)),
+            defaults: defaults)
+        defer { MetricsService._testReset() }
+
+        let body = Data(#"{"error":{"message":"m","type":"yala_attest_required","code":"yala_attest_required"}}"#.utf8)
+        let (client, _) = makeMerkleClient(body, status: 401)
+        #expect(await client.fetchMerkle() == .transient)
+
+        let pendientes = MetricsSpool.pending(defaults).filter { $0.e == "canary" }
+        #expect(pendientes.filter { $0.n == "cloudSyncAttestRequired" }.map(\.d) == ["merkle"])
+        #expect(GroupsAttestStreakStore.current() == antes,
+                "este 401 no habla del teléfono: ni suma un rechazo ni borra la racha")
+    }
+
+    /// El ORDEN importa y conviene fijarlo: los guards de quiescencia (A-3) corren ANTES del fetch, así que con un
+    /// delta local pendiente el 403 del servidor ni se pide. Sin este caso, mover el fetch por encima de los guards
+    /// pasaría inadvertido y el Merkle saldría a la red en cada verificación que iba a saltarse igual.
+    @Test func verify_quiescenceGuardsRunBeforeTheFetch() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        engine.lastPullCycleCompleted = true
+
+        context.insert(SyncOutbox(syncID: UUID(), entityType: SyncEntityType.transactionItem,
+                                  op: .upsert, hlc: "x", fieldsJSON: "{}", author: ""))
+        try context.save()
+
+        let (client, session) = makeMerkleClient(remoteJSON(root: "r", entities: [:]), status: 403)
+        let verdict = await engine.verifyIntegrity(using: client, context: context)
+        #expect(verdict == .skipped(reason: MerkleSkipReason.outboxPending),
+                "con el outbox sucio no se llega al fetch, así que el 403 no puede ganarle al guard")
+        // **Lo que carga el peso es el contador**, no el veredicto: subir el `fetchMerkle()` por encima de los
+        // guards deja el veredicto idéntico y saca a la red una petición en CADA verificación que iba a saltarse.
+        // Con el veredicto solo, ese mutante quedaba verde — lo midió una lente de la review.
+        #expect(session.calls == 0, "el snapshot no se pide siquiera")
     }
 
     // MARK: - Fix #1 review: canon_version / capability_set distintos → skip, nunca comparar
@@ -342,13 +479,13 @@ struct SyncMerkleTests {
         let c2 = await engine.verifyIntegrity(
             using: stubMerkleClient(remoteJSON(root: "r", entities: [:], canonVersion: "c2")),
             context: context)
-        #expect(c2 == .skipped(reason: "canon-version-mismatch"))
+        #expect(c2 == .skipped(reason: MerkleSkipReason.canonVersionMismatch))
 
         // Respuesta a OTRO capability-set (proyección distinta → árboles no comparables).
         let otherCap = await engine.verifyIntegrity(
             using: stubMerkleClient(remoteJSON(root: "r", entities: [:], capabilitySet: "full")),
             context: context)
-        #expect(otherCap == .skipped(reason: "capability-set-mismatch"))
+        #expect(otherCap == .skipped(reason: MerkleSkipReason.capabilitySetMismatch))
     }
 
     // MARK: - Fix #4 review: la exclusión de local_day atada a UNA regla (formato del manifest)
@@ -378,8 +515,13 @@ struct SyncMerkleTests {
 
 private final class FixedMerkleSession: SyncHTTPSession, @unchecked Sendable {
     let body: Data
-    init(_ body: Data) { self.body = body }
+    let status: Int
+    /// Cuántas veces se pidió de verdad el snapshot. Sin este contador, «los guards corren antes del fetch» solo se
+    /// puede afirmar mirando el veredicto — y el veredicto es el mismo se pida la red o no.
+    private(set) var calls = 0
+    init(_ body: Data, status: Int = 200) { self.body = body; self.status = status }
     func data(for request: URLRequest) async throws -> (Data, URLResponse) {
-        (body, HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!)
+        calls += 1
+        return (body, HTTPURLResponse(url: request.url!, statusCode: status, httpVersion: nil, headerFields: nil)!)
     }
 }

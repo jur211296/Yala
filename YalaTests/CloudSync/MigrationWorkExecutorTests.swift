@@ -106,6 +106,12 @@ private final class RoutingStub: SyncHTTPSession, @unchecked Sendable {
     /// hasta el ticket `reverse-before-mount-stays-stuck-with-an-expired-session`.
     var pullStatus = 200
     var merkleBody = Data()
+    /// Status de `/sync/merkle`. 401 y 403 son la mitad que el Merkle NO podía separar hasta el ticket
+    /// `reverse-verify-network-bucket-hides-a-definitive-server-no`: `SyncMerkle` aplanaba los tres desenlaces del
+    /// fetch y salían como red.
+    var merkleStatus = 200
+    /// Cuerpo de la respuesta cuando `merkleStatus != 200` — el envelope del gateway separa los dos 401.
+    var merkleErrorBody = Data()
     private let lock = NSLock()
     private(set) var pushedSyncIDs: [String] = []
     /// Deltas COMPLETOS del último push (para assertar contenido real — lección d49d2e47: fila full-row, no
@@ -149,6 +155,7 @@ private final class RoutingStub: SyncHTTPSession, @unchecked Sendable {
             return (Data("{\"deltas\":[],\"max_server_seq\":0}".utf8), resp(200))
         }
         if path.contains("sync/merkle") {
+            if merkleStatus != 200 { return (merkleErrorBody, resp(merkleStatus)) }
             return (merkleBody, resp(200))
         }
         return (Data(), resp(404))
@@ -625,6 +632,84 @@ struct MigrationWorkExecutorTests {
         ])
 
         #expect(await executor.verify() == .match)
+    }
+
+    /// **La cadena ENTERA, que es lo que el ticket cierra: un «no» del servidor que solo ve el TERCER paso.**
+    /// El push y el pull tipan su 401 y su 403 desde el 2026-09-16, y el Merkle los aplanaba, así que la ventana
+    /// viva era la del rechazo que empieza justo entre el pull y el Merkle. Aquí se monta exactamente eso: los dos
+    /// primeros pasos en 200 y el Merkle contestando que no.
+    ///
+    /// El escenario arranca con el outbox VACÍO a propósito: con filas vivas el push las sube y `verify()` sale por
+    /// `.newDeltaDetected` sin llegar al Merkle. **Con él vacío el push no se ejecuta siquiera** —`live.isEmpty`
+    /// salta el bloque entero—, así que el único paso que corre antes del Merkle es el pull, que es justo la ventana
+    /// que el ticket describe. El control positivo del final impide que el caso se sostenga por casualidad: con el
+    /// mismo escenario y el Merkle en 200, `verify()` da `.match`.
+    @Test("verify: el 401 y el 403 que solo ve el MERKLE ya no salen como red")
+    func verify_merkleOnly401and403_areTyped() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        let stub = RoutingStub()
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let executor = makeExecutor(context, engine, stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+
+        // Merkle remoto = árbol LOCAL (store vacío → converge byte a byte) para el control del final.
+        let local = SyncMerkle.computeLocalMerkle(context: context)
+        var entitiesJSON: [String: Any] = [:]
+        for (table, summary) in local.entities {
+            entitiesJSON[table] = ["count": summary.count, "hash": summary.hashHex]
+        }
+        stub.merkleBody = try JSONSerialization.data(withJSONObject: [
+            "canon_version": "c1", "capability_set": "v1",
+            "root": local.rootHex, "entities": entitiesJSON,
+        ])
+
+        #expect(liveOutboxRows(context).isEmpty, "control del escenario: sin outbox vacío no se alcanza el Merkle")
+
+        stub.merkleStatus = 401
+        #expect(await executor.verify() == .sessionExpired,
+                "verify: el 401 del Merkle es sesión caducada — en la vuelta enciende «vuelve a entrar»")
+
+        stub.merkleStatus = 403
+        #expect(await executor.verify() == .blocked(.accountUnavailable),
+                "verify: el 403 del Merkle no es red — en la vuelta elige el techo CORTO")
+
+        // Control en la dirección contraria: lo que SÍ es red del Merkle sigue siendo red. Y el 401 del ATTEST
+        // también, que es la otra mitad de este 401 y la que no debe pedir volver a entrar (regla
+        // `.claude/rules/gateway-attest.md`): en la vuelta elige el techo LARGO, como el resto de la red.
+        stub.merkleStatus = 503
+        #expect(await executor.verify() == .networkTimeout, "verify: un 5xx del Merkle sigue siendo red")
+
+        stub.merkleStatus = 401
+        stub.merkleErrorBody = Data(#"{"error":{"type":"yala_attest_required","code":"yala_attest_required"}}"#.utf8)
+        #expect(await executor.verify() == .networkTimeout,
+                "verify: el 401 de attest del Merkle es pasajero, no una sesión que renovar")
+        stub.merkleErrorBody = Data()
+
+        // Control positivo: el mismo escenario con el Merkle sano converge.
+        stub.merkleStatus = 200
+        #expect(await executor.verify() == .match)
+    }
+
+    /// Los dos `fetch` de SwiftData de `verifyIntegrity` y el `reason` desconocido no se pueden montar desde el
+    /// transporte, así que su lectura se fija en el mapping (`VerifyProbeMappingTests`). Lo que SÍ se mide aquí es
+    /// que ese mapping es el que `verify()` usa: con un canon que este build no compara, el veredicto sale por él.
+    @Test("verify: el veredicto del Merkle pasa por VerifyProbeMapping, no por una tabla paralela")
+    func verify_contractMismatch_goesThroughTheMapping() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        let stub = RoutingStub()
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let executor = makeExecutor(context, engine, stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+
+        stub.merkleBody = try JSONSerialization.data(withJSONObject: [
+            "canon_version": "c2", "capability_set": "v1", "root": "r", "entities": [:],
+        ])
+        #expect(await executor.verify() == .mismatch,
+                "canon futuro → mismatch, que es lo que dice la tabla del mapping")
     }
 
     // MARK: - Identidad

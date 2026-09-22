@@ -57,24 +57,42 @@ final class SyncMerkleClient {
     private let tokenProvider: () async -> String?
     private let attestProvider: () async -> String?
     private let urlSession: SyncHTTPSession
+    /// ¿Conserva el SDK la sesión guardada? Ver `SyncPushClient.canRenewSession`: mismo contrato y mismo default de
+    /// test `{ false }`.
+    ///
+    /// **Llegó aquí el 2026-09-22, con el ticket `reverse-verify-network-bucket-hides-a-definitive-server-no`.**
+    /// Hasta ese día este cliente era el único de los tres sin él, y no se notaba porque `SyncMerkle` aplanaba su
+    /// `.sessionExpired` en un `fetch-failed` que se leía como red: daba igual acertar. Desde que el desenlace sale
+    /// tipado y enciende el aviso de «vuelve a entrar» de la vuelta a iCloud, acertar es justo lo que importa — sin
+    /// este testigo, un token que no llega **sin cobertura** le pediría firmar otra vez a quien tiene la sesión
+    /// intacta, que es el falso positivo que cerró `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry`.
+    private let canRenewSession: @MainActor () -> Bool
 
     init(
         baseURL: URL = ProxyConfig.baseURL,
         tokenProvider: @escaping () async -> String?,
         attestProvider: @escaping () async -> String? = { nil },
-        urlSession: SyncHTTPSession = URLSession.shared
+        urlSession: SyncHTTPSession = URLSession.shared,
+        canRenewSession: @escaping @MainActor () -> Bool = { false }
     ) {
         self.baseURL = baseURL
         self.tokenProvider = tokenProvider
         self.attestProvider = attestProvider
         self.urlSession = urlSession
+        self.canRenewSession = canRenewSession
     }
 
     /// GET /sync/merkle con el capability-set v1. Nunca lanza por red/HTTP (→ `.transient`).
     func fetchMerkle() async -> MerkleFetchOutcome {
+        // Sin token: caducada solo si el SDK borró la sesión; si la conserva, la renovación no volvió y es pasajero.
+        // Ver `SyncPullClient.pull`.
         guard let token = await tokenProvider(), !token.isEmpty else {
-            CloudSyncBreadcrumb.pullBlockedNoSession()
-            return .sessionExpired
+            guard canRenewSession() else {
+                CloudSyncBreadcrumb.pullBlockedNoSession()
+                return .sessionExpired
+            }
+            CloudSyncBreadcrumb.pullTokenUnavailable()
+            return .transient
         }
         var request = URLRequest(url: baseURL.appendingPathComponent("sync/merkle"))
         request.httpMethod = "GET"
@@ -104,6 +122,14 @@ final class SyncMerkleClient {
                 CloudSyncBreadcrumb.pullTransport(reason: "merkle:decode-200:\(error)")
                 return .transient
             }
+        case 401 where GatewayErrorEnvelope.isAttestRequired(data):
+            // El JWT vale y el gateway no acepta el token de App Attest: pasajero, y NO es una sesión que renovar —
+            // «vuelve a entrar» ahí manda a un gesto que no arregla nada. Es la misma lectura que el push y el pull
+            // hacen desde el 2026-09-16 (`.claude/rules/gateway-attest.md`, «Los dos 401 de la guard»), y el Merkle
+            // la necesita desde que su 401 enciende el aviso de la vuelta.
+            CloudSyncBreadcrumb.attestRequired(edge: "merkle")
+            MetricsService.cloudSyncAttestRequired(edge: "merkle")
+            return .transient
         case 401:
             CloudSyncBreadcrumb.pullBlockedNoSession()
             return .sessionExpired

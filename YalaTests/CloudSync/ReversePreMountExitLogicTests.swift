@@ -53,11 +53,15 @@ struct ReversePreMountExitLogicTests {
 
     // MARK: - Qué presupuesto elige cada palabra del servidor
 
-    /// Los tres motivos que llegan tipados son la palabra del SERVIDOR, así que los tres acortan. Es lo contrario
-    /// del fail-open de `ReverseUploadBlocker`, donde la ambigüedad (un token de Drive ausente) nunca acortaba
-    /// porque no era una respuesta.
-    @Test func blocker_everyServerWordChoosesTheShortBudget() {
-        for blocker: ReversePreMountBlocker in [.accountUnavailable, .otherLeader, .refused] {
+    /// Los CINCO acortan, y el criterio dejó de ser «quién habló» el 2026-09-22
+    /// (`reverse-verify-network-bucket-hides-a-definitive-server-no`): los tres primeros son la palabra del
+    /// servidor, los dos últimos no lo son —una lectura de la base local que falló y un veredicto que este build
+    /// no sabe leer— y aun así ninguno se arregla esperando tres días. Es lo contrario del fail-open de
+    /// `ReverseUploadBlocker`, donde la ambigüedad (un token de Drive ausente) nunca acortaba porque no era un
+    /// desenlace.
+    @Test func blocker_everyCaseChoosesTheShortBudget() {
+        for blocker: ReversePreMountBlocker in [.accountUnavailable, .otherLeader, .refused,
+                                                .localFailure, .unknownVerdict] {
             #expect(blocker.stallCause == .definitive, "\(blocker)")
         }
         // Y el contraste que le da sentido: la causa de la OTRA espera sí distingue, así que «todo definitivo» no
@@ -73,6 +77,55 @@ struct ReversePreMountExitLogicTests {
         #expect(ReversePreMountBlocker.otherLeader.abortReason == .preMountOtherDevice)
         #expect(ReversePreMountBlocker.accountUnavailable.abortReason == .preMountRefused)
         #expect(ReversePreMountBlocker.refused.abortReason == .preMountRefused)
+        // Los dos del 2026-09-22, y NO caen en el mismo sitio: lo que separa a `preMountRefused` de
+        // `preMountStalled` es el correo de soporte, y una lectura local que falló sí puede ir bien al siguiente
+        // intento. El motivo DESCONOCIDO sí va a soporte, que es lo que el claim ya decidió para el suyo.
+        #expect(ReversePreMountBlocker.localFailure.abortReason == .preMountStalled)
+        #expect(ReversePreMountBlocker.unknownVerdict.abortReason == .preMountStalled)
+    }
+
+    /// **Y la razón por la que los dos nuevos NO van a `preMountRefused`**, que es lo que la primera versión hacía
+    /// con `.unknownVerdict` y tumbaron dos lentes de la review: ese texto afirma que la cuenta en la nube rechazó
+    /// el paso y da el correo de soporte. Un `fetch` local que lanzó y un motivo que este build no sabe leer no son
+    /// la cuenta de nadie, así que ese copy sería una causa inventada y una consulta a soporte sin nada que
+    /// consultar. El caso compara los TEXTOS, no los enums: es el texto lo que la persona lee.
+    @Test func note_theNewBlockersNeverBlameTheCloudAccount() {
+        for blocker: ReversePreMountBlocker in [.localFailure, .unknownVerdict] {
+            let texto = L10n.Storage.ReverseAbort.note(for: blocker.abortReason)
+            #expect(!texto.contains(AppConstants.supportEmail),
+                    "\(blocker): no hay nada que consultar a soporte por un fallo que no es del servidor")
+            #expect(texto != L10n.Storage.ReverseAbort.note(for: .preMountRefused), "\(blocker)")
+        }
+        // Control: el que SÍ es la palabra del servidor conserva el correo, o el caso de arriba pasaría vaciando el
+        // copy de todos.
+        #expect(L10n.Storage.ReverseAbort.note(for: .preMountRefused).contains(AppConstants.supportEmail))
+    }
+
+    /// El `rawValue` de los dos nuevos, letra a letra: es la mitad del detalle del canario
+    /// `cloudReversePreMountWaiting`, así que cambiarlo parte la serie de la flota.
+    ///
+    /// **Sin la línea de «los cinco son distintos» que llevaba la primera versión**: en un enum `String` sin
+    /// rawValues explícitos el rawValue ES el nombre del caso y el compilador rechaza dos iguales, así que esa
+    /// aserción no tenía mutante posible. Lo midió una lente de la review.
+    @Test func blocker_rawValues_areWireStable() {
+        #expect(ReversePreMountBlocker.localFailure.rawValue == "localFailure")
+        #expect(ReversePreMountBlocker.unknownVerdict.rawValue == "unknownVerdict")
+    }
+
+    /// **El detalle del canario ya no dice `server_`**, y esto es lo que impide que un dashboard cuente una avería
+    /// del teléfono como un incidente del backend. Se renombró a `stop_` el 2026-09-22 justamente porque dos de los
+    /// cinco motivos dejaron de ser la palabra del servidor; la serie cambia de valores con ese build.
+    @Test func waitingCanaryDetail_neverClaimsTheServerSpoke() {
+        for blocker: ReversePreMountBlocker in [.accountUnavailable, .otherLeader, .refused,
+                                                .localFailure, .unknownVerdict] {
+            let detail = MetricsService.reversePreMountWaitingDetail(
+                phase: "verify", stalledSeconds: 1_000, blocker: blocker.rawValue)
+            #expect(detail == "verify|15m_1h|stop_\(blocker.rawValue)", "\(blocker)")
+            #expect(!detail.contains("server_"), "\(blocker): el prefijo afirmaría que contestó el servidor")
+        }
+        // Y sin motivo sigue diciendo que espera, que es la otra mitad de la serie.
+        #expect(MetricsService.reversePreMountWaitingDetail(
+            phase: "verify", stalledSeconds: 1_000, blocker: nil) == "verify|15m_1h|waiting")
     }
 
     // MARK: - El texto

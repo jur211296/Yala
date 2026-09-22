@@ -203,7 +203,12 @@ struct AttestWiringTests {
     /// fichero que la contiene define `canRenew` como la lectura del proveedor de sesión. Con solo la etiqueta, un
     /// `let canRenew = { false }`, uno invertido o uno sobre `hasSession` (que lleva el seam de uitest) salían en verde.
     @Test func personalChannelConstructions_passTheSessionRenewalWitness() {
-        let personal: [(type: String, expected: Int)] = [("SyncPushClient", 2), ("SyncPullClient", 2), ("PrefsSyncClient", 1)]
+        // `SyncMerkleClient` entró el 2026-09-22 (`reverse-verify-network-bucket-hides-a-definitive-server-no`): su
+        // 401 dejó de aplanarse y ahora enciende el aviso de «vuelve a entrar» de la vuelta a iCloud, así que
+        // acertar en qué es una sesión caducada pasó a importar también en el tercer cliente del canal.
+        let personal: [(type: String, expected: Int)] = [
+            ("SyncPushClient", 2), ("SyncPullClient", 2), ("PrefsSyncClient", 1), ("SyncMerkleClient", 2),
+        ]
         let definicion = "let canRenew: @MainActor () -> Bool = { session.canRenewSession }"
         let sources = Self.productionSources()
         #expect(!sources.isEmpty, "El barrido no leyó NINGÚN fuente: el test no está comprobando nada.")

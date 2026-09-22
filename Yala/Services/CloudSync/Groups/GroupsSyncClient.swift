@@ -3236,7 +3236,13 @@ extension GroupsSyncClient {
             case .diverged:
                 verifiedGroups += 1
                 divergentGroups.append(gid)
-            case .skipped:
+            // `.sessionExpired` y `.accountUnavailable` son casos del enum COMPARTIDO que el Merkle personal
+            // estrenó el 2026-09-22 (`reverse-verify-network-bucket-hides-a-definitive-server-no`), y
+            // `verifyGroupIntegrity` **no los devuelve**: sigue aplanando su fetch en `.skipped("fetch-failed")`,
+            // que es lo que aquí hacía y hace su 401 y su 403. Van juntos a propósito — el día que Grupos deje de
+            // aplanar, este caller no tiene que cambiar: aquí no hay techo de migración detrás, el ciclo de sync ya
+            // gestiona la sesión y el 403 aguas arriba, y lo correcto para los tres sigue siendo no contar ni remediar.
+            case .skipped, .sessionExpired, .accountUnavailable:
                 continue  // precondición no satisfecha (breadcrumb ya emitido); no cuenta ni remedia
             }
         }

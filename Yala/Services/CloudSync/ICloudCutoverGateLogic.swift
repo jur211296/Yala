@@ -186,8 +186,10 @@ nonisolated enum ReverseAbortReason: String, Equatable, Sendable {
     /// que el texto da el correo de soporte. NO se reusa `claimRefused`: ese dice «ese intento no cambió nada», y
     /// aquí la reserva sí llegó a existir.
     case preMountRefused
-    /// El techo LARGO de las fases previas al montaje venció sin que el servidor dijera por qué: red que no vuelve,
-    /// o una sesión que nadie renovó en 72 h. Sin correo de soporte: volver a intentarlo sí puede funcionar.
+    /// El techo de las fases previas al montaje venció sin que el servidor dijera por qué. Casi siempre es el LARGO:
+    /// red que no vuelve, o una sesión que nadie renovó en 72 h. Desde el 2026-09-22 también lo produce el CORTO con
+    /// `.localFailure` —una lectura de la base local que falló—, y por el mismo motivo: sin correo de soporte, porque
+    /// volver a intentarlo sí puede funcionar.
     case preMountStalled
     /// Otro dispositivo de la cuenta tomó el relevo de la vuelta MIENTRAS esta ya había empezado (el `other_leader`
     /// del congelado). No se reusa `otherDeviceReverting` por lo mismo que no se reusa `claimRefused`: ese dice «no
@@ -201,10 +203,15 @@ nonisolated enum ReverseAbortReason: String, Equatable, Sendable {
     }
 }
 
-/// Qué dijo el servidor para parar una fase PREVIA al montaje del espejo, cuando lo que dijo no es red y esperar no
-/// lo arregla (ticket `reverse-before-mount-has-no-way-to-abandon-the-return`). Hasta este ticket los tres llegaban
-/// al runner colapsados en `.transient`, y por eso la vuelta se quedaba parada ahí sin salida: sin distinguirlos no
-/// hay forma de elegir el techo corto.
+/// Qué paró una fase PREVIA al montaje del espejo cuando no fue la red ni la sesión, y esperar no lo arregla
+/// (ticket `reverse-before-mount-has-no-way-to-abandon-the-return`). Hasta ese ticket los tres primeros llegaban al
+/// runner colapsados en `.transient`, y por eso la vuelta se quedaba parada ahí sin salida: sin distinguirlos no hay
+/// forma de elegir el techo corto.
+///
+/// **Los tres primeros son la palabra del servidor; los dos últimos no, y entraron el 2026-09-22**
+/// (`reverse-verify-network-bucket-hides-a-definitive-server-no`). Lo que los junta a todos no es quién habló, sino
+/// que ninguno se resuelve solo: un `fetch` de SwiftData que lanza y un veredicto que este build no sabe leer tampoco
+/// mejoran por esperar tres días. El criterio de este tipo es ése, y por eso el techo corto es de los cinco.
 ///
 /// `String`/`rawValue` porque viaja como mitad del detalle del canario: WIRE-ESTABLE.
 nonisolated enum ReversePreMountBlocker: String, Equatable, Sendable {
@@ -217,28 +224,50 @@ nonisolated enum ReversePreMountBlocker: String, Equatable, Sendable {
     case otherLeader
     /// El servidor rechazó el paso por un motivo que no es ni red ni sesión.
     case refused
+    /// La base de datos LOCAL del teléfono falló al leer durante la verificación (los dos `fetch` que `verifyIntegrity`
+    /// puede ver lanzar: el del outbox y el de la cuarentena). No es red ni es el servidor, y hasta el 2026-09-22 se
+    /// leía como red: la persona esperaba 72 h delante de una avería de su propio teléfono.
+    case localFailure
+    /// El verificador contestó con un motivo que este build no sabe leer. Antes se presumía pasajero —«conservador»—,
+    /// y con el techo largo detrás eso dejó de ser lo conservador: esperar tres días por algo que nadie sabe leer no
+    /// es prudencia, es silencio.
+    case unknownVerdict
 
-    /// Las tres son la palabra del servidor, así que las tres eligen el presupuesto CORTO. Nada que ver con el
-    /// fail-open de `ReverseUploadBlocker`: allí la ambigüedad —un token de Drive ausente— no acortaba porque no era
-    /// una respuesta, y aquí sí lo es.
+    /// Los cinco eligen el presupuesto CORTO, y el criterio NO es quién habló: es que ninguno se arregla esperando.
+    /// Nada que ver con el fail-open de `ReverseUploadBlocker`: allí la ambigüedad —un token de Drive ausente— no
+    /// acortaba porque no era un desenlace, y aquí los cinco lo son.
     ///
     /// `switch` exhaustivo y no un `.definitive` a secas: con la constante, un motivo NUEVO heredaría el techo corto
     /// sin que nadie lo decidiera, y ningún test podría cazarlo —una aserción por caso sobre una constante no puede
     /// fallar—. Así el compilador obliga a contestar la pregunta.
     var stallCause: MarkerExportStall {
         switch self {
-        case .accountUnavailable, .otherLeader, .refused:
+        case .accountUnavailable, .otherLeader, .refused, .localFailure, .unknownVerdict:
             return .definitive
         }
     }
 
     /// El motivo que se journalea si el techo vence con esta causa.
+    ///
+    /// **Los dos motivos del 2026-09-22 salen con `preMountStalled`, no con `preMountRefused`**, y la diferencia la
+    /// decide el COPY, no el techo: el texto de `refused` dice «tu cuenta en la nube no lo permitió» y da el correo de
+    /// soporte, y eso solo es verdad cuando el servidor contestó. Una lectura de la base local que falló no es la
+    /// cuenta, y un veredicto que este build no sabe leer es un desajuste de contrato del propio cliente — acusar a la
+    /// cuenta ahí manda a soporte a quien no tiene nada que consultar, y le cuenta a la persona una causa inventada.
+    /// **No es el molde del claim**: allí `claimRefused` acoge el motivo desconocido porque ese motivo lo escribe el
+    /// SERVIDOR; aquí lo escribe una función local. Lo cazaron dos lentes de la review por separado.
+    ///
+    /// Que los dos compartan `abortReason` no los hace redundantes: lo que los separa es el `rawValue`, que viaja en
+    /// el canario `cloudReversePreMountWaiting` y es lo único que deja distinguir en la flota una avería local de un
+    /// contrato roto.
     var abortReason: ReverseAbortReason {
         switch self {
         case .otherLeader:
             return .preMountOtherDevice
         case .accountUnavailable, .refused:
             return .preMountRefused
+        case .localFailure, .unknownVerdict:
+            return .preMountStalled
         }
     }
 }
