@@ -6044,3 +6044,23 @@
 
 /* Salida de la vuelta antes de montar el espejo: otro dispositivo tomó el relevo */
 "storage.reverseAbort.preMountOtherDevice" = "未能完成切回 iCloud：你的另一台设备接手了。等它完成后，你可以在这台设备上继续。";
+
+/* Techo y cancelación de la subida al activar la nube (ticket snapshot-upload-has-no-ceiling-and-no-way-out) */
+/* Fallo de la activación: 72 h sin subir nada, con cualquier causa (techo largo): no acusa a nadie */
+"storage.failed.snapshotStalled" = "无法启用云端：数据上传已经好几天没有进展。您的数据仍安全保存在设备上，请稍后重试。";
+/* Fallo de la activación: la sesión caducó durante la subida */
+"storage.failed.snapshotSessionExpired" = "无法启用云端：上传数据时您的登录已过期。您的数据仍安全保存在设备上，请重试并重新登录。";
+/* Fallo de la activación: la cuenta en la nube no lo permitió (%@ = correo de soporte) */
+"storage.failed.snapshotAccountUnavailable" = "无法启用云端：您的云端账户不允许此操作。您的数据仍安全保存在设备上。请发邮件到 %@，我们会和您一起查看。";
+/* Fallo de la activación: el dispositivo no pudo preparar los datos */
+"storage.failed.snapshotLocalFailure" = "无法启用云端：这台设备无法准备要上传的数据。您的数据仍在这里，没有任何改动，请稍后重试。";
+/* Botón de la tarjeta de progreso: cancelar la activación de la nube */
+"storage.progress.cancelMigration" = "取消启用";
+/* Título de la confirmación de cancelar la activación */
+"storage.confirm.cancelMigrationTitle" = "要取消启用云端吗？";
+/* Cuerpo de la confirmación de cancelar la activación */
+"storage.confirm.cancelMigrationBody" = "您的数据会像以前一样保留在这台设备上。已上传的内容会保留在您的云端账户中。随时可以重试。";
+/* Botón que confirma cancelar la activación */
+"storage.confirm.cancelMigrationConfirm" = "是，取消";
+/* Botón que sigue con la activación */
+"storage.confirm.cancelMigrationKeep" = "继续启用云端";

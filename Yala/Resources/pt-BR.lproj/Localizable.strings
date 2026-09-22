@@ -6032,3 +6032,23 @@
 
 /* Salida de la vuelta antes de montar el espejo: otro dispositivo tomó el relevo */
 "storage.reverseAbort.preMountOtherDevice" = "Não conseguimos concluir a volta para o iCloud: outro dos seus dispositivos assumiu. Quando ele terminar, você poderá fazer isso neste.";
+
+/* Techo y cancelación de la subida al activar la nube (ticket snapshot-upload-has-no-ceiling-and-no-way-out) */
+/* Fallo de la activación: 72 h sin subir nada, con cualquier causa (techo largo): no acusa a nadie */
+"storage.failed.snapshotStalled" = "Não conseguimos ativar a nuvem: o envio dos seus dados está há dias sem avançar. Seus dados estão seguros no dispositivo; tente de novo mais tarde.";
+/* Fallo de la activación: la sesión caducó durante la subida */
+"storage.failed.snapshotSessionExpired" = "Não conseguimos ativar a nuvem: sua sessão expirou enquanto enviávamos seus dados. Seus dados estão seguros no dispositivo; tente de novo e entre outra vez na sua conta.";
+/* Fallo de la activación: la cuenta en la nube no lo permitió (%@ = correo de soporte) */
+"storage.failed.snapshotAccountUnavailable" = "Não conseguimos ativar a nuvem: sua conta na nuvem não permitiu. Seus dados estão seguros no dispositivo. Escreva para %@ e vamos verificar junto com você.";
+/* Fallo de la activación: el dispositivo no pudo preparar los datos */
+"storage.failed.snapshotLocalFailure" = "Não conseguimos ativar a nuvem: este dispositivo não conseguiu preparar seus dados para o envio. Seus dados continuam aqui, sem alterações; tente de novo daqui a pouco.";
+/* Botón de la tarjeta de progreso: cancelar la activación de la nube */
+"storage.progress.cancelMigration" = "Cancelar a ativação";
+/* Título de la confirmación de cancelar la activación */
+"storage.confirm.cancelMigrationTitle" = "Cancelar a ativação da nuvem?";
+/* Cuerpo de la confirmación de cancelar la activación */
+"storage.confirm.cancelMigrationBody" = "Seus dados continuam neste dispositivo, como antes. O que já foi enviado fica na sua conta na nuvem. Você pode tentar de novo quando quiser.";
+/* Botón que confirma cancelar la activación */
+"storage.confirm.cancelMigrationConfirm" = "Sim, cancelar";
+/* Botón que sigue con la activación */
+"storage.confirm.cancelMigrationKeep" = "Continuar ativando a nuvem";

@@ -48,6 +48,8 @@ struct StorageSettingsView: View {
     /// Confirmación de «Cancelar y seguir en la nube» en la espera de la vuelta a iCloud. Un solo diálogo, colgado
     /// del propio botón: no encadena con los de `StorageConfirmations`.
     @State private var confirmCancelReverse = false
+    /// Confirmación de «Cancelar la activación» durante la subida del snapshot de la ida. Mismo molde que la de arriba.
+    @State private var confirmCancelMigration = false
     @State private var showError = false
     /// El aviso de un «Migrar a la nube» que se paró (`CloudMigrationController.migrationIdentityBlock`), copiado para
     /// presentarlo: la hoja no se queda vacía si el controller lo suelta mientras está arriba. El controller lo suelta
@@ -165,6 +167,11 @@ struct StorageSettingsView: View {
         // esto, el diálogo reaparecería solo en la siguiente fase que lo ofrezca.
         .onChange(of: controller?.canCancelReverse) { _, cancellable in
             if cancellable != true { confirmCancelReverse = false }
+        }
+        // Lo mismo para «Cancelar la activación»: si la subida termina o vence su techo con el diálogo abierto, no
+        // puede reaparecer en otra pantalla por un flag que nadie bajó.
+        .onChange(of: controller?.canCancelSnapshotUpload) { _, cancellable in
+            if cancellable != true { confirmCancelMigration = false }
         }
     }
 
@@ -488,6 +495,11 @@ struct StorageSettingsView: View {
             if reverse && controller.canCancelReverse {
                 cancelReverseButton(controller)
             }
+            // Sin término `reverse`: la fase la decide el controller, y `uploadingSnapshot` solo se pinta en la ida.
+            // Repetirlo aquí sería la misma condición dos veces, y un mutante en la del controller saldría verde.
+            if controller.canCancelSnapshotUpload {
+                cancelMigrationButton(controller)
+            }
         }
         .frame(maxWidth: .infinity)
         .storageCardStyle()
@@ -555,6 +567,27 @@ struct StorageSettingsView: View {
             Text(controller.isBeforeReverseMount
                  ? L10n.Storage.Confirm.cancelReverseBeforeMountBody
                  : L10n.Storage.Confirm.cancelReverseBody)
+        }
+    }
+
+    /// «Cancelar la activación» durante la subida del snapshot (ticket `snapshot-upload-has-no-ceiling-and-no-way-out`,
+    /// decisión de Jürgen del 2026-09-22). Pide confirmación porque abandona algo que la persona empezó, y el cuerpo dice
+    /// lo que se queda: sus datos siguen en el teléfono, y lo que ya subió se queda en su cuenta de la nube. Deshabilitado
+    /// con trabajo en vuelo, así que solo se toca con la subida aparcada.
+    private func cancelMigrationButton(_ controller: CloudMigrationController) -> some View {
+        YalaSecondaryButton(L10n.Storage.Progress.cancelMigration, icon: "xmark.circle",
+                            isDisabled: controller.isWorking) {
+            confirmCancelMigration = true
+        }
+        .accessibilityIdentifier("storage_cancel_migration_button")
+        .confirmationDialog(L10n.Storage.Confirm.cancelMigrationTitle,
+                            isPresented: $confirmCancelMigration, titleVisibility: .visible) {
+            Button(L10n.Storage.Confirm.cancelMigrationConfirm) {
+                Task { await controller.cancelSnapshotUpload() }
+            }
+            Button(L10n.Storage.Confirm.cancelMigrationKeep, role: .cancel) {}
+        } message: {
+            Text(L10n.Storage.Confirm.cancelMigrationBody)
         }
     }
 
@@ -627,25 +660,12 @@ struct StorageSettingsView: View {
         .storageCardStyle()
     }
 
-    /// C-1: copy del fallo por MOTIVO. El veredicto del canal iCloud sobrevive en el journal a `failedRollback`
-    /// justo para esto: "no pudimos" sin decir por qué deja al usuario sin ninguna acción posible, y con
-    /// "iCloud lleno" la acción (liberar espacio) es concreta. Sin veredicto → el copy genérico de siempre,
-    /// intacto. La reversa no cambia.
+    /// El texto de la tarjeta de fallo: lo decide `StorageFailureCopyLogic`, que antes vivía aquí dentro.
     private func failureMessage(
         _ controller: CloudMigrationController, kind: CloudMigrationUIState.FailureKind
     ) -> String {
-        guard kind == .migration else { return L10n.Storage.Failed.reverse }
-        switch controller.cutoverBlocker {
-        case .quotaExceeded:
-            return L10n.Storage.Failed.migrationICloudFull
-        case .noAccountWithFootprint, .accountUnusable:
-            return L10n.Storage.Failed.migrationICloudOff
-        case .healthy, .noChannelNoFootprint:
-            // El canal se veía sano y aun así el marcador no llegó: es el atasco sin causa conocida.
-            return L10n.Storage.Failed.migrationICloudStalled
-        case nil:
-            return L10n.Storage.Failed.migration
-        }
+        StorageFailureCopyLogic.message(
+            kind: kind, snapshotExit: controller.snapshotExitReason, cutoverBlocker: controller.cutoverBlocker)
     }
 
     // MARK: - Panel DEBUG (DEV_BUILD only)

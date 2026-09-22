@@ -1134,6 +1134,22 @@ enum CloudSyncBreadcrumb {
             "CloudSyncReverse preMountExited phase=\(phase, privacy: .public) reason=\(reason, privacy: .public) — vuelve al origen en modo nube")
     }
 
+    /// La subida del snapshot de la ida no confirmó ninguna página en esta pasada (ticket
+    /// `snapshot-upload-has-no-ceiling-and-no-way-out`). `stalled` = reloj de AVANCE, `cause` = reloj de CAUSA.
+    static func snapshotUploadStalled(stalledSeconds: Double, causeStalledSeconds: Double, blocker: String?) {
+        let seconds = Int(stalledSeconds)
+        let causeSeconds = Int(causeStalledSeconds)
+        logger.notice(
+            "CloudSyncMigration snapshotStalled stalled=\(seconds, privacy: .public)s cause=\(causeSeconds, privacy: .public)s blocker=\(blocker ?? "-", privacy: .public)")
+    }
+
+    /// La subida del snapshot salió de su fase: por su techo (a `failedRollback`) o porque la persona canceló (a
+    /// `notStarted`, `reason=cancelled`).
+    static func snapshotUploadExited(reason: String) {
+        logger.notice(
+            "CloudSyncMigration snapshotExited reason=\(reason, privacy: .public) — el teléfono sigue intacto en iCloud")
+    }
+
     /// El `reverse_abort` best-effort de una salida previa al montaje no salió. La salida SIGUE EN PIE —está
     /// journaleada— y no queda ningún efecto pendiente: la reserva del servidor se queda puesta hasta que caduque su
     /// lease, y el re-claim de este mismo dispositivo es idempotente-ok.

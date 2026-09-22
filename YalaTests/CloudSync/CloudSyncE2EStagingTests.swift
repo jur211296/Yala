@@ -644,6 +644,8 @@ struct CloudSyncE2EStagingTests {
                 cursor = c
             case .transient:
                 Issue.record("snapshot .transient contra staging"); return
+            case let .blocked(blocker):
+                Issue.record("snapshot .blocked(\(blocker)) contra staging"); return
             }
             if done { break }
         }

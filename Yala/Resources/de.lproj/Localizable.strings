@@ -6032,3 +6032,23 @@
 
 /* Salida de la vuelta antes de montar el espejo: otro dispositivo tomó el relevo */
 "storage.reverseAbort.preMountOtherDevice" = "Die Rückkehr zu iCloud konnte nicht abgeschlossen werden: Ein anderes deiner Geräte hat übernommen. Wenn es fertig ist, kannst du es auf diesem Gerät machen.";
+
+/* Techo y cancelación de la subida al activar la nube (ticket snapshot-upload-has-no-ceiling-and-no-way-out) */
+/* Fallo de la activación: 72 h sin subir nada, con cualquier causa (techo largo): no acusa a nadie */
+"storage.failed.snapshotStalled" = "Wir konnten die Cloud nicht aktivieren: Das Hochladen deiner Daten kommt seit Tagen nicht voran. Deine Daten sind sicher auf deinem Gerät – versuche es später erneut.";
+/* Fallo de la activación: la sesión caducó durante la subida */
+"storage.failed.snapshotSessionExpired" = "Wir konnten die Cloud nicht aktivieren: Deine Sitzung ist abgelaufen, während wir deine Daten hochgeladen haben. Deine Daten sind sicher auf deinem Gerät – versuche es erneut und melde dich noch einmal an.";
+/* Fallo de la activación: la cuenta en la nube no lo permitió (%@ = correo de soporte) */
+"storage.failed.snapshotAccountUnavailable" = "Wir konnten die Cloud nicht aktivieren: Dein Cloud-Konto hat es nicht zugelassen. Deine Daten sind sicher auf deinem Gerät. Schreib uns an %@, dann sehen wir es uns gemeinsam an.";
+/* Fallo de la activación: el dispositivo no pudo preparar los datos */
+"storage.failed.snapshotLocalFailure" = "Wir konnten die Cloud nicht aktivieren: Dieses Gerät konnte deine Daten nicht für den Upload vorbereiten. Deine Daten sind unverändert hier – versuche es in einer Weile erneut.";
+/* Botón de la tarjeta de progreso: cancelar la activación de la nube */
+"storage.progress.cancelMigration" = "Aktivierung abbrechen";
+/* Título de la confirmación de cancelar la activación */
+"storage.confirm.cancelMigrationTitle" = "Aktivierung der Cloud abbrechen?";
+/* Cuerpo de la confirmación de cancelar la activación */
+"storage.confirm.cancelMigrationBody" = "Deine Daten bleiben wie bisher auf diesem Gerät. Was schon hochgeladen wurde, bleibt in deinem Cloud-Konto. Du kannst es jederzeit erneut versuchen.";
+/* Botón que confirma cancelar la activación */
+"storage.confirm.cancelMigrationConfirm" = "Ja, abbrechen";
+/* Botón que sigue con la activación */
+"storage.confirm.cancelMigrationKeep" = "Cloud weiter aktivieren";

@@ -69,3 +69,11 @@ haga dos veces ni se olvide.
 
 - `verify-reads-a-failed-local-fetch-as-an-empty-outbox` — el mismo patrón sobre el fetch de `SyncOutbox`, cerrado.
 - `reverse-upload-sample-reads-unreadable-rows-as-drained` — la mitad del muestreo de la vuelta.
+
+## Nota del 2026-09-22 (`snapshot-upload-has-no-ceiling-and-no-way-out`)
+
+La fila de `MigrationSnapshotUploader.makeSpec` tiene desde ese ticket un desenlace listo para usar:
+`SnapshotStepOutcome.blocked(.localFailure)`, que elige el techo CORTO de la subida (15 min acumulados) y sale a la
+tarjeta de fallo con el texto «este dispositivo no pudo preparar tus datos». Antes, cortar ahí habría dejado la barra
+al 55 % para siempre; ahora cortar es seguro. Lo que sigue abierto es que el `catch` de `makeSpec` todavía no corta:
+salta la tabla.

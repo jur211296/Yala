@@ -76,10 +76,109 @@ nonisolated enum ClaimBlocker: Equatable {
 
 /// Resultado de un paso del uploader del snapshot (w4). `pageConfirmed` avanza el cursor sin cambiar de
 /// fase (re-loop); `completed` cierra la subida; `transient` corta retomable.
+///
+/// `blocked` corta igual, pero dice que esperar no lo arregla, y elige el techo CORTO de la fase (ticket
+/// `snapshot-upload-has-no-ceiling-and-no-way-out`). Hasta ese ticket los tres motivos llegaban aquí como `transient`,
+/// y sin separarlos no había techo corto posible.
 enum SnapshotStepOutcome: Equatable {
     case completed
     case pageConfirmed(cursor: String)
     case transient
+    case blocked(SnapshotStallBlocker)
+}
+
+/// Por qué no avanza la subida del snapshot cuando la causa es de las que esperar NO arregla. El `rawValue` es la clave
+/// del reloj de causa (`MigrationState.snapshotStallCauseRaw`) y el detalle del canario, así que es WIRE: no se renombra.
+///
+/// **La sesión caducada es definitiva aquí, y en la vuelta a iCloud no lo es.** Allí la tarjeta ofrece «Iniciar sesión»
+/// y la renovación la hace la persona sin salir de la vuelta; en la ida no hay ese botón, y la salida del techo (la
+/// tarjeta de fallo con «Reintentar») es justo la que vuelve a pedir la sesión. **Pero solo llega aquí con la sesión
+/// BORRADA por el SDK**: un 401 del gateway con la sesión todavía guardada (reloj del teléfono atrasado, una revocación
+/// que el SDK aún no ha descubierto) va como `transient`, porque esperar sí lo arregla y el reintento no pediría nada
+/// (`MigrationSnapshotUploader.canRenewSession`). Un token que no llega sin red tampoco es esto.
+nonisolated enum SnapshotStallBlocker: String, Equatable, Sendable {
+    /// El push devolvió `.sessionExpired` y el SDK ya no conserva una sesión que renovar.
+    case sessionExpired
+    /// El push devolvió `.accountUnavailable`: en `/sync/push` hoy es el 409 `yala_account_reverting` (la cuenta está
+    /// congelada porque otro dispositivo la está devolviendo a iCloud), o un 403 si la ruta llega a emitirlo.
+    case accountUnavailable
+    /// Una lectura o escritura LOCAL lanzó: el `fetch` del outbox, o el encolado de la página (salvo la deriva del
+    /// reloj, que va como `transient` porque el reloj puede corregirse solo).
+    case localFailure
+}
+
+/// Por qué terminó una subida que venció su techo. Lo journalea la salida (`MigrationState.snapshotExitReasonRaw`) y
+/// elige el texto de la tarjeta de fallo, así que también es WIRE.
+///
+/// **Lo elige el techo que VENCIÓ, no la última observación** (`MigrationRunner.snapshotExitReason`): tras 72 h sin red,
+/// una pasada que traiga un 403 recién visto no puede decirle a la persona que su cuenta no lo permitió.
+nonisolated enum SnapshotExitReason: String, Equatable, Sendable {
+    /// Venció el techo LARGO: 72 h sin confirmar una sola página, con la causa que fuera.
+    case stalled
+    case sessionExpired
+    case accountUnavailable
+    case localFailure
+
+    init(_ blocker: SnapshotStallBlocker) {
+        switch blocker {
+        case .sessionExpired:     self = .sessionExpired
+        case .accountUnavailable: self = .accountUnavailable
+        case .localFailure:       self = .localFailure
+        }
+    }
+}
+
+/// El reloj por CAUSA de un techo con dos relojes, PURO. Lo comparten las dos etapas que lo tienen: las cuatro fases
+/// previas al montaje de la vuelta (ticket `reverse-pre-mount-ceiling-charges-a-stall-to-whoever-stops-it-last`) y la
+/// subida del snapshot (`snapshot-upload-has-no-ceiling-and-no-way-out`). Está aquí y no copiado en cada una porque es
+/// la parte sutil del mecanismo, y dos copias divergen.
+///
+/// Tres reglas, y las tres son la decisión de fondo:
+///  · **Causa distinta ⇒ empieza de cero.** Lo acumulado bajo un motivo no se le regala a otro, y por eso la clave es el
+///    `rawValue` del motivo y no el texto que ve la persona: dos motivos que comparten texto sumarían como uno.
+///  · **Misma causa ⇒ suma.** Lo acumulado en tramos cerrados más lo que lleva el tramo abierto.
+///  · **Sin motivo ⇒ PAUSA, no borra.** Cierra el tramo y conserva la causa. Es lo que impide que el techo corto se
+///    vuelva inalcanzable con cobertura intermitente: la pantalla de Almacenamiento re-kickea cada 30 s, así que con una
+///    racha consecutiva bastaba un timeout cada quince minutos para que los 900 s no llegaran nunca. Un hueco no es
+///    evidencia de que el motivo se fuera: es que no se pudo ni preguntar.
+///
+/// Un sello del tramo abierto en el FUTURO —el reloj del teléfono iba adelantado y ya se corrigió— re-abre el tramo
+/// AHORA en vez de contar un tramo negativo: conservarlo aplazaría el techo hasta que el reloj real alcanzase aquella
+/// fecha.
+nonisolated enum CauseStallClock {
+    /// Lo que la observación cuenta (`stalled`) y lo que hay que volver a sellar en el journal si la fase holdea.
+    struct Reading: Equatable {
+        /// Lo acumulado bajo el motivo de ESTA observación. 0 sin motivo: su techo es solo el largo.
+        let stalled: Double
+        let raw: String?
+        let accruedFrom: Date?
+        let accrued: Double?
+    }
+
+    static func observe(
+        sealedRaw: String?,
+        sealedOpenSince: Date?,
+        sealedAccrued: Double?,
+        blockerRaw: String?,
+        observedAt: Date
+    ) -> Reading {
+        let openSince: Date? = sealedOpenSince.flatMap { $0 <= observedAt ? $0 : nil }
+        let openTramo = openSince.map { observedAt.timeIntervalSince($0) } ?? 0
+
+        guard let blockerRaw else {
+            // SIN motivo: se PAUSA. El tramo abierto se cierra sumándose al acumulado, y la causa se conserva.
+            guard sealedRaw != nil else { return Reading(stalled: 0, raw: nil, accruedFrom: nil, accrued: nil) }
+            return Reading(stalled: 0, raw: sealedRaw, accruedFrom: nil, accrued: (sealedAccrued ?? 0) + openTramo)
+        }
+        guard sealedRaw == blockerRaw else {
+            // Causa DISTINTA (o la primera): empieza de cero.
+            return Reading(stalled: 0, raw: blockerRaw, accruedFrom: observedAt, accrued: 0)
+        }
+        // MISMA causa: el acumulado más el tramo abierto. Si venía pausada, el tramo se abre ahora.
+        let carried = sealedAccrued ?? 0
+        return Reading(stalled: carried + openTramo, raw: blockerRaw, accruedFrom: openSince ?? observedAt,
+                       accrued: carried)
+    }
 }
 
 // MARK: - Outcomes de la reversa (§h, I11-2). `nonisolated` Equatable: los compara la lógica de tests.
@@ -437,6 +536,14 @@ final class MigrationRunner {
     /// seguiría en pantalla mientras la vuelta ya progresa.
     private(set) var lastReverseSessionExpiry: ReversePreMountPhase?
 
+    /// El «sí» de «Cancelar la activación», apuntado por el controller ANTES de esperar a que suelte la pasada en vuelo
+    /// (ticket `snapshot-upload-has-no-ceiling-and-no-way-out`, hallazgo de la review). `drive()` lo mira antes de cada
+    /// página: sin él, un re-kick que arrancara con el diálogo abierto y la red de vuelta subía todo, pasaba por la
+    /// verificación y el cutover, y el «sí» llegaba tarde — la persona confirmaba cancelar y le salía «cierra y vuelve a
+    /// abrir». Vale solo para ESTA visita a la fase: `drive()` lo retira en cuanto la ve en otra, y
+    /// `cancelSnapshotUpload()` lo consume siempre. En memoria a propósito: tras relanzar, el diálogo ya no existe.
+    private var snapshotCancelRequested = false
+
     /// La intención que se journaleará al llegar a `claimingMigration` (`ForwardClaimIntent`). La ponen las entradas de
     /// `CloudMigrationController`; el default conserva el comportamiento de siempre. `driveClaim` NO lee esto: lee lo
     /// journaleado, que es lo que sobrevive a un relanzamiento.
@@ -584,6 +691,9 @@ final class MigrationRunner {
             state.clearReversePreMountCeiling()
             state.setReverseOriginPendingEffects([])
             state.forwardClaimIntentRaw = nil
+            // El motivo de una subida que venció su techo: «Reintentar» es la salida de `failedRollback`, y el intento
+            // nuevo no puede nacer con el texto del anterior. Los relojes ya salieron a `nil` al dejar la fase.
+            state.snapshotExitReasonRaw = nil
             if target == .notStarted { state.startedAt = nil }
             state.updatedAt = self.now()
             try self.context.save()
@@ -619,6 +729,44 @@ final class MigrationRunner {
                 return
             }
             try await self.drive()
+        }
+    }
+
+    /// «Cancelar la activación» desde la tarjeta de progreso de la subida del snapshot (ticket
+    /// `snapshot-upload-has-no-ceiling-and-no-way-out`, decisión de Jürgen del 2026-09-22). Vuelve a `notStarted` sin
+    /// efectos y sin motivo journaleado: lo decidió la persona, así que no hay fallo que explicar.
+    ///
+    /// No-op fuera de `uploadingSnapshot`: un toque que llega tarde —la subida ya terminó, o ya salió por su techo— no
+    /// puede sacar a nadie de un sitio en el que ya no está. Y con una pasada en vuelo, `runGuarded` lo descarta: el
+    /// botón solo se puede tocar con la subida aparcada, que es la «subida parada» de la decisión.
+    func cancelSnapshotUpload() async {
+        guard await awaitQuiescence() else {
+            // Sin quiescencia el «sí» se queda APUNTADO: lo ejecuta la próxima pasada que llegue a la subida.
+            CloudSyncBreadcrumb.migrationQuiescenceTimeout()
+            return
+        }
+        await runGuarded {
+            // Aquí se consume pase lo que pase: la salida ocurre ahora, o el toque llegó tarde y no hay de dónde salir.
+            defer { self.snapshotCancelRequested = false }
+            if try self.normalizeCorruptJournalIfNeeded() { return }
+            // Sin guard de fase: fuera de `uploadingSnapshot` la máquina ya devuelve `.invalid` y `handle` no toca nada.
+            try await self.journalSnapshotCancel()
+        }
+    }
+
+    /// Apunta el «sí» de «Cancelar la activación» para la pasada que esté en vuelo (`snapshotCancelRequested`). Síncrono
+    /// a propósito: lo llama el controller antes de su primer `await`, y la pasada lo ve en su próxima página.
+    func requestSnapshotCancel() {
+        snapshotCancelRequested = true
+    }
+
+    /// Journalea la cancelación. El canario va DENTRO del paso (`mutate` solo corre con una transición válida): solo se
+    /// cuenta una salida que ocurrió.
+    private func journalSnapshotCancel() async throws {
+        snapshotCancelRequested = false
+        try await handle(.snapshotUploadCancelled) { _, _ in
+            CloudSyncBreadcrumb.snapshotUploadExited(reason: "cancelled")
+            MetricsService.cloudSnapshotUploadAborted(reason: "cancelled")
         }
     }
 
@@ -756,6 +904,12 @@ final class MigrationRunner {
             if ReversePreMountPhase(phase: next) != ReversePreMountPhase(phase: current) {
                 state.clearReversePreMountCeiling()
             }
+            // Techo de `uploadingSnapshot`: lo MISMO, al ENTRAR y al SALIR de la fase. Al entrar desde `verifying` por
+            // mismatch, la visita nueva no puede heredar el reloj de la anterior; al salir, un reloj que sobreviviera
+            // estaría ahí para la próxima. El self-hold no entra, así que lo que sella la observación sobrevive.
+            if (next == .uploadingSnapshot) != (current == .uploadingSnapshot) {
+                state.clearSnapshotStallCeiling()
+            }
             mutate(state, next)
             state.updatedAt = now()
             try context.save()
@@ -824,6 +978,9 @@ final class MigrationRunner {
                 return
             }
             let phase = try loadState().readPhase().phase
+            // El «sí» de «Cancelar la activación» vale para la visita a la subida en la que se dio: si la pasada ya salió
+            // de ella, no puede cancelar otra cosa, ni la próxima visita (p. ej. la vuelta desde `verifying`).
+            if phase != .uploadingSnapshot { snapshotCancelRequested = false }
             switch phase {
             case .notStarted, .dryRun, .consent, .authenticating, .done, .failedRollback:
                 return                       // terminal / requiere evento externo (UI/auth, I14)
@@ -842,6 +999,10 @@ final class MigrationRunner {
                 }
                 try await handle(.identityAssigned)
             case .uploadingSnapshot:
+                if snapshotCancelRequested {
+                    try await journalSnapshotCancel()
+                    return                           // notStarted: nada más que conducir
+                }
                 if !(try await driveUpload()) { return }
             case .verifying:
                 if !(try await driveVerify()) { return }
@@ -964,7 +1125,8 @@ final class MigrationRunner {
     }
 
     /// `uploadingSnapshot`. `pageConfirmed` journalea el cursor (no cambia de fase, re-loop); `completed`
-    /// avanza; `transient` corta retomable.
+    /// avanza; `transient` y `blocked` pasan por el TECHO de la fase y cortan retomables mientras no venza (ticket
+    /// `snapshot-upload-has-no-ceiling-and-no-way-out`: hasta ese ticket cortaban sin evento y la fase no salía nunca).
     private func driveUpload() async throws -> Bool {
         let cursor = try loadState().snapshotCursorJSON
         switch await executor.uploadSnapshot(cursor: cursor) {
@@ -974,6 +1136,11 @@ final class MigrationRunner {
         case let .pageConfirmed(newCursor):
             let state = try loadState()
             state.snapshotCursorJSON = newCursor
+            // AVANCE: la página subió, así que los dos relojes del techo vuelven a empezar. El de causa también: una
+            // página confirmada prueba que la sesión, la cuenta y la lectura local funcionaron. En el MISMO save que el
+            // cursor, para que un kill no deje el cursor avanzado con el reloj viejo.
+            state.clearSnapshotStallCeiling()
+            state.snapshotStallProgressAt = now()
             state.updatedAt = now()
             try context.save()
             // Heartbeat (I14-pre): el snapshot de un corpus 10k+ podría superar los 60 min del lease — late
@@ -981,8 +1148,82 @@ final class MigrationRunner {
             await executor.sendLeaseHeartbeatIfDue()
             return true                       // re-loop: sigue subiendo desde el cursor confirmado
         case .transient:
-            return false                      // el caller reintenta después (sin retry-loop de red aquí)
+            // Sin retry-loop de red aquí: bajo presupuesto se corta y el reintento llega por el próximo resume. Si el
+            // techo venció, `true` hace que `drive()` relea la fase y salga por el terminal.
+            return try await observeSnapshotStall(blocker: nil)
+        case let .blocked(blocker):
+            return try await observeSnapshotStall(blocker: blocker)
         }
+    }
+
+    /// Una observación de `uploadingSnapshot` en una pasada que no confirmó ninguna página. Decide si la subida sigue
+    /// esperando o sale a `failedRollback` (ticket `snapshot-upload-has-no-ceiling-and-no-way-out`).
+    ///
+    /// **Dos relojes, molde de `observeReversePreMountStall`.** El de AVANCE mide desde la última página confirmada
+    /// (`snapshotStallProgressAt`) y gobierna las 72 h con cualquier causa. El de CAUSA mide lo acumulado bajo el mismo
+    /// motivo desde el último avance (`CauseStallClock`) y gobierna los 15 min, solo con un motivo que esperar no
+    /// arregla. Con uno solo, un fallo local aislado tras horas sin red se cobraría las horas contra sus 15 min.
+    ///
+    /// La primera observación de una visita a la fase SELLA el reloj de avance sin contarla como parada, y nunca lo sella
+    /// hacia atrás: un sello en el FUTURO es un reloj que iba adelantado y ya se corrigió, y conservarlo aplazaría el
+    /// techo. Devuelve `true` si la subida SALIÓ.
+    private func observeSnapshotStall(blocker: SnapshotStallBlocker?) async throws -> Bool {
+        let state = try loadState()
+        let observedAt = now()
+        let lastProgressAt: Date
+        if let sealed = state.snapshotStallProgressAt, sealed <= observedAt {
+            lastProgressAt = sealed
+        } else {
+            lastProgressAt = observedAt                      // sin sello, o con un sello en el FUTURO
+        }
+        let stalled = observedAt.timeIntervalSince(lastProgressAt)
+        let cause: MarkerExportStall = blocker == nil ? .unknown : .definitive
+        let clock = CauseStallClock.observe(
+            sealedRaw: state.snapshotStallCauseRaw,
+            sealedOpenSince: state.snapshotStallCauseAt,
+            sealedAccrued: state.snapshotStallCauseAccruedSeconds,
+            blockerRaw: blocker?.rawValue,
+            observedAt: observedAt)
+        CloudSyncBreadcrumb.snapshotUploadStalled(
+            stalledSeconds: stalled, causeStalledSeconds: clock.stalled, blocker: blocker?.rawValue)
+        // En CADA observación, no solo al salir: un fallo sistémico —un 403 en toda la flota, un build que rompe el
+        // push— se ve así mucho antes de que ningún teléfono agote sus 15 min o sus 72 h.
+        MetricsService.cloudSnapshotUploadWaiting(
+            stalledSeconds: stalled, causeStalledSeconds: clock.stalled, blocker: blocker?.rawValue)
+        let reason = snapshotExitReason(blocker: blocker, causeStalledSeconds: clock.stalled, cause: cause)
+        var left = false
+        try await handle(.snapshotUploadStalled(
+            stalledSeconds: stalled, causeStalledSeconds: clock.stalled, cause: cause)) { state, next in
+            guard next != .uploadingSnapshot else {
+                state.snapshotStallProgressAt = lastProgressAt
+                // Los tres del reloj de causa se escriben SIEMPRE, también a `nil`: una observación sin motivo CIERRA
+                // el tramo abierto, y dejar la fecha puesta contaría el hueco como parada por una causa no observada.
+                state.snapshotStallCauseRaw = clock.raw
+                state.snapshotStallCauseAt = clock.accruedFrom
+                state.snapshotStallCauseAccruedSeconds = clock.accrued
+                return
+            }
+            left = true
+            state.snapshotExitReasonRaw = reason.rawValue
+            // Se cuenta AQUÍ, en el save que journalea la salida: lo que venga después puede no llegar a correr.
+            CloudSyncBreadcrumb.snapshotUploadExited(reason: reason.rawValue)
+            MetricsService.cloudSnapshotUploadAborted(reason: reason.rawValue)
+        }
+        return left
+    }
+
+    /// El motivo que se journalea al salir de la subida, y **lo elige el techo que VENCIÓ**, no la última observación
+    /// (la misma regla que `reversePreMountExitReason`). Tras 72 h sin avanzar, una pasada que traiga un 403 recién
+    /// visto sale con «dejó de avanzar»: decirle «tu cuenta no lo permitió» a quien llevaba tres días sin red la
+    /// mandaría a soporte por nada. Si el 403 es real, el reintento sale a los 15 min con el motivo bueno.
+    private func snapshotExitReason(
+        blocker: SnapshotStallBlocker?, causeStalledSeconds: Double, cause: MarkerExportStall
+    ) -> SnapshotExitReason {
+        guard let blocker, policy.snapshotCauseCeilingReached(
+            causeStalledSeconds: causeStalledSeconds, cause: cause) else {
+            return .stalled
+        }
+        return SnapshotExitReason(blocker)
     }
 
     /// `verifying` (S9). Inyecta el `retriesSoFar` desde el journal; incrementa el contador correcto en el
@@ -1475,10 +1716,11 @@ final class MigrationRunner {
     /// hasta este ticket— hacía que un `fetch` local que falla UNA vez tras tres horas sin cobertura cobrase las
     /// tres horas contra sus 15 minutos: la vuelta se abandonaba en ese mismo instante, sin un solo reintento.
     ///
-    /// El reloj de causa es una RACHA: lo re-sella cualquier cambio de causa, incluido pasar a una observación SIN
-    /// causa (la red llega así). Eso reinicia siempre hacia más reintentos, y lo que impide que se vuelva eterno es
-    /// que el techo largo de la fase sigue por encima con cualquier causa — la máquina sale con el primero de los
-    /// dos que venza.
+    /// El reloj de causa es un ACUMULADO con pausa (`CauseStallClock`): lo reinicia un cambio de causa, y una
+    /// observación SIN causa (la red llega así) lo pausa en vez de borrarlo. Esta frase decía «racha» hasta el
+    /// 2026-09-22, que es lo que se descartó en la review de #210; lo que impide que se vuelva eterno con dos causas
+    /// alternándose es que el techo largo de la fase sigue por encima con cualquier causa — la máquina sale con el
+    /// primero de los dos que venza.
     ///
     /// Devuelve `true` si la vuelta SALIÓ. Los llamadores lo DESCARTAN y cortan la pasada, como hace la salida del
     /// claim: el origen es `.done` o `.notStarted`, donde `drive()` corta igual, así que releer la fase no ganaría
@@ -1524,47 +1766,20 @@ final class MigrationRunner {
     }
 
     /// El reloj por CAUSA, leído del journal y devuelto con lo que hay que volver a sellar
-    /// (ticket `reverse-pre-mount-ceiling-charges-a-stall-to-whoever-stops-it-last`).
-    ///
-    /// Tres reglas, y las tres son la decisión de fondo:
-    ///  · **Causa distinta ⇒ empieza de cero.** Lo acumulado bajo un motivo no se le regala a otro, y por eso la
-    ///    clave es el `rawValue` y no el `abortReason`: `accountUnavailable` y `refused` comparten el texto que ve
-    ///    la persona, y fundirlos sumaría dos causas como si fueran una.
-    ///  · **Misma causa ⇒ suma.** Lo acumulado en tramos cerrados más lo que lleva el tramo abierto.
-    ///  · **Sin motivo ⇒ PAUSA, no borra.** Cierra el tramo y conserva la causa. Es lo que impide que el techo
-    ///    corto se vuelva inalcanzable con cobertura intermitente: la pantalla de Almacenamiento re-kickea cada
-    ///    30 s, así que con una racha consecutiva bastaba un timeout cada quince minutos para que los 900 s no
-    ///    llegaran nunca y el desenlace pasara de 15 min a 72 h. Un hueco no es evidencia de que el motivo se
-    ///    fuera: es que no se pudo ni preguntar, así que no cuenta ni a favor ni en contra.
-    ///
-    /// El sello en el FUTURO —el reloj del teléfono iba adelantado y ya se corrigió— re-abre el tramo en vez de
-    /// contar un tramo negativo, por lo mismo que el reloj de fase.
+    /// (ticket `reverse-pre-mount-ceiling-charges-a-stall-to-whoever-stops-it-last`). Las reglas viven en
+    /// `CauseStallClock`, que comparte con el techo de la subida del snapshot.
     private func reversePreMountCauseClock(
         _ state: MigrationState,
         blocker: ReversePreMountBlocker?,
         observedAt: Date
     ) -> (stalled: Double, raw: String?, accruedFrom: Date?, accrued: Double?) {
-        let sealedRaw = state.reversePreMountCauseRaw
-        // El tramo ABIERTO, normalizado. Un sello en el FUTURO —el reloj del teléfono iba adelantado y ya se
-        // corrigió— se descarta y el tramo se re-abre AHORA: conservarlo aplazaría el techo hasta que el reloj real
-        // alcanzase aquella fecha, que es lo mismo que hace el reloj de fase con su propio sello.
-        let openSince: Date? = state.reversePreMountCauseAt.flatMap { $0 <= observedAt ? $0 : nil }
-        let openTramo = openSince.map { observedAt.timeIntervalSince($0) } ?? 0
-
-        guard let blocker else {
-            // SIN motivo: se PAUSA. El tramo abierto se cierra sumándose al acumulado, y la causa se conserva
-            // para cuando vuelva. `stalled` es 0 porque esta observación no tiene causa: su techo es el de la fase.
-            guard sealedRaw != nil else { return (0, nil, nil, nil) }
-            return (0, sealedRaw, nil, (state.reversePreMountCauseAccruedSeconds ?? 0) + openTramo)
-        }
-        guard sealedRaw == blocker.rawValue else {
-            // Causa DISTINTA (o la primera): empieza de cero. Lo acumulado bajo otro motivo no se le regala a éste.
-            return (0, blocker.rawValue, observedAt, 0)
-        }
-        // MISMA causa: el acumulado más el tramo abierto. Si venía pausada, el tramo se abre ahora (`openTramo`
-        // es 0 porque `reversePreMountCauseAt` estaba a `nil`) y lo acumulado se conserva entero.
-        let carried = state.reversePreMountCauseAccruedSeconds ?? 0
-        return (carried + openTramo, blocker.rawValue, openSince ?? observedAt, carried)
+        let reading = CauseStallClock.observe(
+            sealedRaw: state.reversePreMountCauseRaw,
+            sealedOpenSince: state.reversePreMountCauseAt,
+            sealedAccrued: state.reversePreMountCauseAccruedSeconds,
+            blockerRaw: blocker?.rawValue,
+            observedAt: observedAt)
+        return (reading.stalled, reading.raw, reading.accruedFrom, reading.accrued)
     }
 
     /// El motivo que se journalea al salir, y **lo elige el techo que VENCIÓ, no la última observación**.
@@ -1761,6 +1976,8 @@ final class MigrationRunner {
         state.reverseUploadProgressAt = nil
         state.reverseAbortReasonRaw = nil
         state.clearReversePreMountCeiling()
+        state.clearSnapshotStallCeiling()
+        state.snapshotExitReasonRaw = nil
         state.setReverseOriginPendingEffects([])
         state.forwardClaimIntentRaw = nil
         state.startedAt = nil

@@ -165,6 +165,12 @@ enum MetricsCanary: String {
     /// Una observación de una fase anterior al montaje que no avanza. Es lo que deja ver un atasco SISTÉMICO —un
     /// 403 en toda la flota— antes de que ningún teléfono llegue a su techo, que son 15 min o 72 h.
     case cloudReversePreMountWaiting
+    /// La subida del snapshot de la ida salió de su fase: por su techo o porque la persona canceló (ticket
+    /// `snapshot-upload-has-no-ceiling-and-no-way-out`). `detail` = `SnapshotExitReason.rawValue` o `cancelled`.
+    case cloudSnapshotUploadAborted
+    /// Una observación de la subida del snapshot que no confirmó ninguna página. Deja ver un atasco SISTÉMICO antes de
+    /// que ningún teléfono llegue a sus 15 min o sus 72 h.
+    case cloudSnapshotUploadWaiting
     /// «Migrar a la nube» se paró sin escribir nada porque la cuenta elegida no puede recibir la migración (ticket
     /// `settings-migrate-to-cloud-adopts-silently-instead-of-migrating`). `detail` = `<motivo>@<dónde>`: el motivo es
     /// `personal_data`, `other_groups_account`, `returned_to_icloud`, `fresh_start_session` o `unchecked`, y el sitio
@@ -624,6 +630,28 @@ extension MetricsService {
         case ..<259_200: return "24h_72h"
         default: return "gte_72h"
         }
+    }
+
+    /// Una subida del snapshot de la ida salió de su fase (ticket `snapshot-upload-has-no-ceiling-and-no-way-out`).
+    static func cloudSnapshotUploadAborted(reason: String) {
+        canary(.cloudSnapshotUploadAborted, detail: reason)
+    }
+
+    /// Una observación de la subida del snapshot que no avanzó. `detail` = `<tramo de avance>|<tramo de causa>|<causa>`,
+    /// la forma de `cloudReversePreMountWaiting` sin la fase (aquí solo hay una): `-` en el tramo de causa cuando la
+    /// observación no trae motivo, y `stop_<blocker>` o `waiting` en la causa. Los tramos son los mismos, porque los
+    /// techos son los mismos números. Dedupe por PROCESO y por `detail`, por el re-kick de 30 s de la pantalla.
+    static func cloudSnapshotUploadWaiting(stalledSeconds: Double, causeStalledSeconds: Double, blocker: String?) {
+        let detail = snapshotUploadWaitingDetail(
+            stalledSeconds: stalledSeconds, causeStalledSeconds: causeStalledSeconds, blocker: blocker)
+        canaryOnce(.cloudSnapshotUploadWaiting, key: detail, detail: detail)
+    }
+
+    nonisolated static func snapshotUploadWaitingDetail(
+        stalledSeconds: Double, causeStalledSeconds: Double, blocker: String?
+    ) -> String {
+        let causeBucket = blocker == nil ? "-" : reversePreMountBucket(causeStalledSeconds)
+        return "\(reversePreMountBucket(stalledSeconds))|\(causeBucket)|\(blocker.map { "stop_\($0)" } ?? "waiting")"
     }
 
     /// El motivo del servidor tal cual si tiene forma de código; si no, `other`. El gateway rechaza el LOTE entero de

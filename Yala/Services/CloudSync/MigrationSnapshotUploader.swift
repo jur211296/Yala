@@ -43,6 +43,16 @@ final class MigrationSnapshotUploader {
     private let calendar: Calendar
     private let now: () -> Date
     private let pageSize: Int
+    /// ¿El SDK conserva una sesión que puede renovar? Se lee DESPUÉS de un push `.sessionExpired`, y separa los dos 401
+    /// que el push aplana en ese caso (ticket `snapshot-upload-has-no-ceiling-and-no-way-out`, hallazgo de las tres
+    /// lentes de la review). Con la sesión BORRADA es definitivo: «Reintentar» → «Migrar» vuelve a pedir la cuenta.
+    /// Con la sesión GUARDADA es un 401 del gateway sobre un JWT que el SDK todavía da por bueno —el reloj del teléfono
+    /// atrasado es el caso principal, o una sesión revocada que el SDK aún no ha descubierto—, y ahí esperar SÍ lo
+    /// arregla: a su hora el SDK renueva (y el servidor acepta) o descubre la revocación y borra la sesión, y entonces
+    /// sí sale como definitivo. Tratarlo como definitivo sacaba de la subida a los 15 min a un teléfono con el reloj
+    /// atrasado, y el reintento reusaba el mismo token rechazado sin pedir nada. **Default `{ false }` solo para tests**
+    /// (el trato de antes); producción pasa el de su sesión.
+    private let canRenewSession: @MainActor () -> Bool
 
     /// A partir de la N-ésima llamada (1-based), `liveOutboxRows()` LANZA. Mismo molde y mismo porqué que su
     /// gemelo de `MigrationWorkExecutor`, **contador incluido**: este fichero lee el outbox SEIS veces por pasada
@@ -50,6 +60,10 @@ final class MigrationSnapshotUploader {
     /// medir — el defecto que una lente de la review cazó en el seam del Merkle el 2026-09-22. SOLO tests.
     var _testOutboxFetchThrowsFromCall: Int?
     private var _testOutboxFetchCount = 0
+
+    /// Si no es `nil`, el encolado de la página LANZA este error en vez de encolar. Existe para recorrer los dos `catch`
+    /// de verdad —la deriva del reloj y el fallo local— sin tener que romper el store. SOLO tests.
+    var _testEnqueueError: (any Error)?
 
     /// Especificaciones de las 16 entidades, en orden de tabla UTF-8 asc (fijado en `init`).
     private lazy var specs: [SnapshotEntitySpec] = buildSpecs()
@@ -60,7 +74,8 @@ final class MigrationSnapshotUploader {
         context: ModelContext,
         calendar: Calendar = .current,
         now: @escaping () -> Date = { .now },
-        pageSize: Int = 200
+        pageSize: Int = 200,
+        canRenewSession: @escaping @MainActor () -> Bool = { false }
     ) {
         self.engine = engine
         self.pushClient = pushClient
@@ -68,6 +83,7 @@ final class MigrationSnapshotUploader {
         self.calendar = calendar
         self.now = now
         self.pageSize = max(1, pageSize)
+        self.canRenewSession = canRenewSession
     }
 
     // MARK: - Cursor
@@ -107,7 +123,10 @@ final class MigrationSnapshotUploader {
     /// Outcomes mapeados 1:1 al seam del runner:
     ///   - `.pageConfirmed(cursor)` — la página se subió y confirmó; sigue habiendo trabajo (re-loop).
     ///   - `.completed` — no quedan páginas (residual del outbox también drenado/subido).
-    ///   - `.transient` — push no-2xx / red / la página no quedó confirmada (el runner reintenta después).
+    ///   - `.transient` — red / 5xx / deriva del reloj / la página no quedó confirmada (el runner reintenta después).
+    ///   - `.blocked(motivo)` — sesión caducada, cuenta suspendida o fallo LOCAL: esperar no lo arregla, y elige el
+    ///     techo corto de la fase (ticket `snapshot-upload-has-no-ceiling-and-no-way-out`; hasta ese ticket los tres
+    ///     salían como `.transient`).
     func uploadPage(cursor: String?) async -> SnapshotStepOutcome {
         let decoded = decodeCursor(cursor)
         // Baseline UNA vez al arrancar una pasada (cursor nil o no decodificable): cierra la ventana de
@@ -124,23 +143,48 @@ final class MigrationSnapshotUploader {
             return await finishResidual()
         }
 
-        // Encolar la página (full-row) en el outbox vía el seam del motor. Un drift del reloj → transient
-        // (el runner reintenta; la página se re-emite idempotente).
+        // Encolar la página (full-row) en el outbox vía el seam del motor. Dos familias de fallo, y cada una elige su
+        // techo: la DERIVA del reloj (HLC) es `.transient` —el reloj puede corregirse solo y el texto de «fallo en
+        // este dispositivo» no sería verdad para ella—; cualquier otro error es un `fetch`/`save` LOCAL que lanzó.
         do {
+            // El seam va DENTRO del `do`, por lo mismo que el del outbox: el camino que recorre el test es el `catch` real.
+            if let error = _testEnqueueError { throw error }
             try engine.enqueueSnapshotRows(page.inputs, context: context, now: now())
-        } catch {
+        } catch let error where error is ClockDriftError || error is CanonicalTimeError {
             #if DEBUG
             print("MigrationSnapshotUploader: enqueueSnapshotRows lanzó (drift): \(error)")
             #endif
             return .transient
+        } catch {
+            #if DEBUG
+            print("MigrationSnapshotUploader: enqueueSnapshotRows lanzó (local): \(error)")
+            #endif
+            // Sin `outboxFetchFailed`: aquí puede haber lanzado un `save`, no solo un `fetch`, y ese rastro diría lo
+            // segundo. El del techo (`snapshotStalled blocker=localFailure`) ya lo deja.
+            return .blocked(.localFailure)
         }
 
         // Push: capturar incrementales pendientes + subir TODO lo vivo (página + incrementales).
-        let confirmed = await drainPushConfirm()
-        guard confirmed else { return .transient }
+        switch await drainPushConfirm() {
+        case .confirmed:
+            CloudSyncBreadcrumb.migrationSnapshotPageConfirmed(table: page.cursor.table, rows: page.inputs.count)
+            return .pageConfirmed(cursor: encodeCursor(page.cursor))
+        case .notConfirmed:
+            return .transient
+        case let .blocked(blocker):
+            return .blocked(blocker)
+        }
+    }
 
-        CloudSyncBreadcrumb.migrationSnapshotPageConfirmed(table: page.cursor.table, rows: page.inputs.count)
-        return .pageConfirmed(cursor: encodeCursor(page.cursor))
+    /// Qué dejó un push de la página (o del residual). Tres desenlaces y no un `Bool`: «no confirmada» y «no se puede
+    /// confirmar esperando» eligen techos distintos (ticket `snapshot-upload-has-no-ceiling-and-no-way-out`).
+    private enum PushConfirmation: Equatable {
+        /// El outbox vivo quedó VACÍO.
+        case confirmed
+        /// Quedan filas vivas, o el push falló por red: el runner reintenta.
+        case notConfirmed
+        /// Sesión caducada, cuenta suspendida o lectura local que lanza.
+        case blocked(SnapshotStallBlocker)
     }
 
     // MARK: - Enumeración
@@ -181,30 +225,29 @@ final class MigrationSnapshotUploader {
 
     // MARK: - Push por página
 
-    /// Drena incrementales, sube TODAS las filas vivas del outbox y aplica resultados. `true` si el outbox
-    /// vivo quedó VACÍO tras el push (página confirmada); `false` si quedan filas vivas (transient/red) o el
-    /// push no fue 2xx.
-    private func drainPushConfirm() async -> Bool {
+    /// Drena incrementales, sube TODAS las filas vivas del outbox y aplica resultados. `.confirmed` si el outbox
+    /// vivo quedó VACÍO tras el push (página confirmada); `.notConfirmed` si quedan filas vivas o el push falló por
+    /// red; `.blocked` si esperar no lo arregla.
+    private func drainPushConfirm() async -> PushConfirmation {
         engine.drainOnce(context: context)
-        // Un outbox ilegible devuelve `false`, NUNCA `true` (ticket
-        // `verify-reads-a-failed-local-fetch-as-an-empty-outbox`). `true` aquí significa «página confirmada» y
-        // avanza el cursor: con `[]`, una avería de lectura daba por subida una página que no se subió, y el
-        // snapshot seguía adelante sin ella.
+        // Un outbox ilegible NUNCA confirma (ticket `verify-reads-a-failed-local-fetch-as-an-empty-outbox`):
+        // `.confirmed` avanza el cursor, y con `[]` una avería de lectura daba por subida una página que no se subió.
+        // Desde `snapshot-upload-has-no-ceiling-and-no-way-out` además dice POR QUÉ, para que el techo corto lo vea.
         let live: [SyncOutbox]
         do {
             live = try liveOutboxRows()
         } catch {
             CloudSyncBreadcrumb.outboxFetchFailed(step: "snapshot-page")
-            return false
+            return .blocked(.localFailure)
         }
-        guard !live.isEmpty else { return true }  // nada que subir (todo ya confirmado)
+        guard !live.isEmpty else { return .confirmed }  // nada que subir (todo ya confirmado)
 
         // partitionBuildable (#26): aislar poison ANTES de push + DEAD-LETTEREARLO (fix del review
         // adversarial: sin dead-letter, el poison queda vivo para siempre → esta página jamás confirma →
         // migración atascada en transient perpetuo en vez de degradar honesto vía el mismatch de verify).
         let (buildable, poison) = pushClient.partitionBuildable(live)
         engine.deadLetterPoison(poison, context: context, now: now())
-        guard !buildable.isEmpty else { return liveOutboxIsEmpty(step: "snapshot-page-poison") }  // solo poison → dead-lettereado → puede avanzar
+        guard !buildable.isEmpty else { return liveOutboxState(step: "snapshot-page-poison") }  // solo poison → dead-lettereado → puede avanzar
 
         switch await pushClient.push(buildable) {
         case .completed(let results):
@@ -212,25 +255,29 @@ final class MigrationSnapshotUploader {
             // Confirmada SOLO si no quedan filas VIVAS (los dead-letters no son vivos → la página avanza y
             // el mismatch permanente lo caza verify → failedRollback tras topes, correcto por diseño).
             // Y si la relectura no se deja hacer, no se confirma: mismo criterio que el pre-check.
-            return liveOutboxIsEmpty(step: "snapshot-page-after-push")
-        case .sessionExpired, .accountUnavailable, .transient:
-            return false
+            return liveOutboxState(step: "snapshot-page-after-push")
+        case .sessionExpired:
+            return canRenewSession() ? .notConfirmed : .blocked(.sessionExpired)
+        case .accountUnavailable:
+            return .blocked(.accountUnavailable)
+        case .transient:
+            return .notConfirmed
         }
     }
 
     /// Cierre de la pasada: drena y sube el residual del outbox (incrementales tardíos). `.completed` si el
-    /// outbox vivo queda vacío; `.transient` si algo quedó pendiente (el runner reintenta antes de avanzar).
+    /// outbox vivo queda vacío; `.transient` o `.blocked` si algo quedó pendiente (el runner reintenta antes de
+    /// avanzar).
     private func finishResidual() async -> SnapshotStepOutcome {
         engine.drainOnce(context: context)
-        // Ilegible → `.transient`, no `.completed` (mismo ticket y mismo porqué que en `drainPushConfirm`): el
-        // runner reintenta la pasada antes de avanzar, que es exactamente lo que hace falta cuando no se sabe si
-        // quedó algo pendiente.
+        // Ilegible → nunca `.completed` (mismo ticket y mismo porqué que en `drainPushConfirm`): el runner reintenta
+        // la pasada antes de avanzar, que es exactamente lo que hace falta cuando no se sabe si quedó algo pendiente.
         let live: [SyncOutbox]
         do {
             live = try liveOutboxRows()
         } catch {
             CloudSyncBreadcrumb.outboxFetchFailed(step: "snapshot-residual")
-            return .transient
+            return .blocked(.localFailure)
         }
         guard !live.isEmpty else { return .completed }
         let (buildable, poison) = pushClient.partitionBuildable(live)
@@ -238,29 +285,43 @@ final class MigrationSnapshotUploader {
         guard !buildable.isEmpty else {
             // Solo poison → dead-lettereado → si el outbox vivo quedó vacío, la pasada COMPLETA (el
             // mismatch que el poison provoca lo caza verify → degrada honesto por topes).
-            return liveOutboxIsEmpty(step: "snapshot-residual-poison") ? .completed : .transient
+            return residualOutcome(liveOutboxState(step: "snapshot-residual-poison"))
         }
         switch await pushClient.push(buildable) {
         case .completed(let results):
             await pushClient.applyResults(results, rows: buildable, engine: engine, context: context)
-            return liveOutboxIsEmpty(step: "snapshot-residual-after-push") ? .completed : .transient
-        case .sessionExpired, .accountUnavailable, .transient:
+            return residualOutcome(liveOutboxState(step: "snapshot-residual-after-push"))
+        case .sessionExpired:
+            return canRenewSession() ? .transient : .blocked(.sessionExpired)
+        case .accountUnavailable:
+            return .blocked(.accountUnavailable)
+        case .transient:
             return .transient
         }
     }
 
-    /// «¿El outbox vivo quedó VACÍO?» — con la avería de lectura contestando que NO.
+    /// El desenlace del residual para el runner: confirmado cierra la pasada.
+    private func residualOutcome(_ confirmation: PushConfirmation) -> SnapshotStepOutcome {
+        switch confirmation {
+        case .confirmed:            return .completed
+        case .notConfirmed:         return .transient
+        case let .blocked(blocker): return .blocked(blocker)
+        }
+    }
+
+    /// «¿El outbox vivo quedó VACÍO?» — con la avería de lectura contestando `.blocked(.localFailure)`, nunca
+    /// `.confirmed`.
     ///
     /// Las cuatro relecturas de este fichero deciden si una página o la pasada se dan por CONFIRMADAS, así que
     /// el desenlace honesto de «no pude leer» es el conservador: no confirmar. Es un helper y no un `try?` en
     /// cada sitio porque el `try?` se lleva el rastro, y el rastro es justo lo que faltaba antes de este ticket
     /// (`verify-reads-a-failed-local-fetch-as-an-empty-outbox`): un `print` de `#if DEBUG` y nada en producción.
-    private func liveOutboxIsEmpty(step: String) -> Bool {
+    private func liveOutboxState(step: String) -> PushConfirmation {
         do {
-            return try liveOutboxRows().isEmpty
+            return try liveOutboxRows().isEmpty ? .confirmed : .notConfirmed
         } catch {
             CloudSyncBreadcrumb.outboxFetchFailed(step: step)
-            return false
+            return .blocked(.localFailure)
         }
     }
 

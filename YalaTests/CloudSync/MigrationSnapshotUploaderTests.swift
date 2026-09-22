@@ -15,6 +15,9 @@ import Testing
 
 @testable import Yala
 
+/// Un error cualquiera de la base local, para el `catch` genérico del encolado.
+private struct FakeLocalError: Error {}
+
 // MARK: - Stub HTTP que ecoa `applied` por delta
 
 /// Parsea el body `{deltas:[…]}` del push y devuelve `{results:[{…, status:"applied"}]}` correlacionando por
@@ -87,11 +90,13 @@ struct MigrationSnapshotUploaderTests {
     }
 
     private func makeUploader(_ context: ModelContext, _ engine: CloudSyncEngine,
-                              _ stub: ApplyingStubSession, pageSize: Int) -> MigrationSnapshotUploader {
+                              _ stub: ApplyingStubSession, pageSize: Int,
+                              canRenewSession: Bool = false) -> MigrationSnapshotUploader {
         let push = SyncPushClient(baseURL: workerURL, tokenProvider: { "jwt" }, urlSession: stub)
         return MigrationSnapshotUploader(engine: engine, pushClient: push, context: context,
                                          calendar: Calendar(identifier: .gregorian),
-                                         now: { self.fixedNow }, pageSize: pageSize)
+                                         now: { self.fixedNow }, pageSize: pageSize,
+                                         canRenewSession: { canRenewSession })
     }
 
     private func liveOutbox(_ context: ModelContext) throws -> [SyncOutbox] {
@@ -111,6 +116,9 @@ struct MigrationSnapshotUploaderTests {
                 cursors.append(c)
             case .transient:
                 Issue.record("transient inesperado")
+                return cursors
+            case let .blocked(blocker):
+                Issue.record("blocked(\(blocker)) inesperado")
                 return cursors
             }
         }
@@ -340,15 +348,18 @@ struct MigrationSnapshotUploaderTests {
         uploader._testOutboxFetchThrowsFromCall = 1
 
         let outcome = await uploader.uploadPage(cursor: nil)
-        // `SnapshotStepOutcome` tiene tres casos, así que `== .transient` ya excluye `.pageConfirmed` y
-        // `.completed`: una aserción de `!=` sobre los otros dos no podría fallar por separado.
-        #expect(outcome == .transient, "sin poder leer el outbox no se avanza el cursor ni se cierra la pasada")
+        // Igualdad con UN caso concreto, no una desigualdad: excluye a la vez `.pageConfirmed`, `.completed` y
+        // `.transient`. Desde `snapshot-upload-has-no-ceiling-and-no-way-out` además dice POR QUÉ, que es lo que elige
+        // el techo corto de la fase: con `.transient` la subida esperaría 72 h a una avería que esperar no arregla.
+        #expect(outcome == .blocked(.localFailure),
+                "sin poder leer el outbox no se avanza el cursor ni se cierra la pasada, y se dice por qué")
         #expect(stub.pushedSyncIDs.isEmpty, "y no se sube nada a ciegas")
 
         // Control en la dirección contraria: sin la avería, el mismo dataset sube y confirma.
         uploader._testOutboxFetchThrowsFromCall = nil
         let healthy = await uploader.uploadPage(cursor: nil)
-        #expect(healthy != .transient, "control: sin la avería este dataset SÍ avanza")
+        #expect({ if case .pageConfirmed = healthy { return true }; return false }(),
+                "control: sin la avería este dataset SÍ avanza (\(healthy))")
         #expect(!stub.pushedSyncIDs.isEmpty, "control: y sube de verdad — la fila existía")
     }
 
@@ -375,7 +386,7 @@ struct MigrationSnapshotUploaderTests {
 
         let outcome = await uploader.uploadPage(cursor: nil)
         #expect(!stub.pushedSyncIDs.isEmpty, "control del escenario: el push TIENE que haber corrido")
-        #expect(outcome == .transient, "la relectura que no se deja hacer no confirma la página")
+        #expect(outcome == .blocked(.localFailure), "la relectura que no se deja hacer no confirma la página")
     }
 
     /// El CIERRE de la pasada, que es el otro desenlace del mismo helper y devolvía `.completed`. Se alcanza con
@@ -385,7 +396,7 @@ struct MigrationSnapshotUploaderTests {
     /// solo cubriera `drainPushConfirm` dejaría ésta devolviendo «pasada completa» sobre un outbox que nadie
     /// pudo leer, y ningún test lo diría.
     @Test("uploadPage: con el store vacío, un outbox ilegible no cierra la pasada como completa")
-    func finishResidual_unreadableOutbox_isTransientNotCompleted() async throws {
+    func finishResidual_unreadableOutbox_isBlockedNotCompleted() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
         let engine = CloudSyncEngine()
@@ -394,14 +405,181 @@ struct MigrationSnapshotUploaderTests {
         let uploader = makeUploader(context, engine, stub, pageSize: 10)
 
         // Control del escenario PRIMERO: sin la avería, este store cierra la pasada. Si no fuera así, el
-        // `.transient` de abajo podría venir de cualquier otra cosa.
+        // desenlace de abajo podría venir de cualquier otra cosa.
         #expect(await uploader.uploadPage(cursor: nil) == .completed,
                 "control del escenario: con el store vacío la pasada se cierra")
 
         let sick = makeUploader(context, engine, stub, pageSize: 10)
         sick._testOutboxFetchThrowsFromCall = 1
-        #expect(await sick.uploadPage(cursor: nil) == .transient,
-                "y con el outbox ilegible NO se cierra: el runner reintenta antes de avanzar")
+        #expect(await sick.uploadPage(cursor: nil) == .blocked(.localFailure),
+                "y con el outbox ilegible NO se cierra: el runner reintenta antes de avanzar, con el motivo")
+    }
+
+    // MARK: - Qué motivo lleva cada corte (`snapshot-upload-has-no-ceiling-and-no-way-out`)
+    //
+    // Hasta este ticket los cuatro cortes de abajo salían como `.transient`, y sin separarlos el techo de la fase no
+    // podía tener un plazo corto: una cuenta suspendida esperaba lo mismo que un túnel. Cada caso fija el suyo con
+    // igualdad exacta, y el de red (`pushTransient_cursorNotAdvanced`, arriba) fija que la red SIGUE siendo `.transient`.
+
+    /// Un 401 que no es el de App Attest: la sesión ya no vale. En la ida la tarjeta no ofrece «Iniciar sesión», y la
+    /// salida del techo (la tarjeta de fallo con «Reintentar») es la que vuelve a pedirla: por eso es definitivo aquí.
+    @Test("uploadPage: un push 401 corta con .blocked(.sessionExpired)")
+    func uploadPage_push401_isSessionExpired() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        let stub = ApplyingStubSession()
+        stub.failWithStatus = 401
+
+        let cat = Category(name: "food", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+        cat.syncID = UUID()
+        context.insert(cat)
+        try context.save()
+
+        let outcome = await makeUploader(context, engine, stub, pageSize: 10).uploadPage(cursor: nil)
+        #expect(outcome == .blocked(.sessionExpired))
+        #expect(try !liveOutbox(context).isEmpty, "la fila sigue encolada: nada se dio por subido")
+    }
+
+    /// **El 401 con la sesión todavía GUARDADA no es definitivo** (hallazgo de las tres lentes de la review). Su caso
+    /// principal es el reloj del teléfono atrasado: el gateway rechaza un JWT que el SDK aún da por bueno, y lo cura la
+    /// renovación del SDK a su hora. Definitivo, sacaba de la subida a los 15 min y el reintento reusaba el mismo JWT
+    /// sin pedir nada. Aquí es `.transient` —el techo largo— en la página y en el residual; el caso de arriba, con la
+    /// sesión borrada (`canRenewSession == false`), es el que sigue siendo definitivo.
+    @Test("uploadPage: un push 401 con la sesión todavía guardada es .transient, no definitivo")
+    func uploadPage_push401_withARenewableSession_isTransient() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        let stub = ApplyingStubSession()
+
+        let cat = Category(name: "food", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+        cat.syncID = UUID()
+        context.insert(cat)
+        try context.save()
+
+        let uploader = makeUploader(context, engine, stub, pageSize: 10, canRenewSession: true)
+        guard case let .pageConfirmed(cursor) = await uploader.uploadPage(cursor: nil) else {
+            Issue.record("control del escenario: la primera página tiene que confirmarse"); return
+        }
+        // Página: un segundo registro para que haya otra página que subir con el 401.
+        let cat2 = Category(name: "rent", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+        cat2.syncID = UUID(uuidString: "ffffffff-ffff-4fff-bfff-ffffffffffff")
+        context.insert(cat2)
+        try context.save()
+        stub.failWithStatus = 401
+        #expect(await uploader.uploadPage(cursor: cursor) == .transient, "página")
+
+        // Residual: sin páginas que paginar y con una fila viva.
+        stub.failWithStatus = nil
+        let fresh = makeUploader(context, engine, stub, pageSize: 10, canRenewSession: true)
+        var c = cursor
+        while case let .pageConfirmed(next) = await fresh.uploadPage(cursor: c) { c = next }
+        cat.name = "food-edited"
+        try context.save()
+        stub.failWithStatus = 401
+        #expect(await fresh.uploadPage(cursor: c) == .transient, "residual")
+        #expect(try !liveOutbox(context).isEmpty, "control: el residual tenía una fila viva que subir")
+    }
+
+    /// Un `fetch`/`save` LOCAL que lanza al encolar la página (el `catch` genérico) es `.blocked(.localFailure)`; la
+    /// deriva del reloj, `.transient`. Los dos `catch` se recorren con el seam, sin romper el store.
+    @Test("uploadPage: un fallo local al encolar es .blocked(.localFailure); la deriva del reloj, .transient")
+    func uploadPage_enqueueFailures_areClassifiedByKind() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        let stub = ApplyingStubSession()
+
+        let cat = Category(name: "food", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+        cat.syncID = UUID()
+        context.insert(cat)
+        try context.save()
+
+        let uploader = makeUploader(context, engine, stub, pageSize: 10)
+        uploader._testEnqueueError = FakeLocalError()
+        #expect(await uploader.uploadPage(cursor: nil) == .blocked(.localFailure))
+        uploader._testEnqueueError = ClockDriftError.driftExceeded(driftMillis: 600_000)
+        #expect(await uploader.uploadPage(cursor: nil) == .transient)
+        #expect(stub.pushedSyncIDs.isEmpty, "control: los dos cortes fueron al encolar, antes de subir nada")
+    }
+
+    @Test("uploadPage: un push 403 corta con .blocked(.accountUnavailable)")
+    func uploadPage_push403_isAccountUnavailable() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        let stub = ApplyingStubSession()
+        stub.failWithStatus = 403
+
+        let cat = Category(name: "food", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+        cat.syncID = UUID()
+        context.insert(cat)
+        try context.save()
+
+        let outcome = await makeUploader(context, engine, stub, pageSize: 10).uploadPage(cursor: nil)
+        #expect(outcome == .blocked(.accountUnavailable))
+        #expect(try !liveOutbox(context).isEmpty, "la fila sigue encolada: nada se dio por subido")
+    }
+
+    /// El CIERRE de la pasada tiene su propio `switch` del push, y un arreglo que solo tipara el de la página lo dejaría
+    /// devolviendo `.transient`. Se llega con las páginas ya confirmadas y un cambio posterior que el drain captura
+    /// como incremental: sin páginas que paginar, `uploadPage` va a `finishResidual` con una fila viva.
+    @Test("finishResidual: el push del residual también tipa el 401 y el 403")
+    func finishResidual_push401and403_areTyped() async throws {
+        for (status, expected) in [(401, SnapshotStepOutcome.blocked(.sessionExpired)),
+                                   (403, SnapshotStepOutcome.blocked(.accountUnavailable))] {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let context = try makeContext(dir)
+            let engine = CloudSyncEngine()
+            let stub = ApplyingStubSession()
+
+            let cat = Category(name: "food", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+            cat.syncID = UUID()
+            context.insert(cat)
+            try context.save()
+
+            let uploader = makeUploader(context, engine, stub, pageSize: 10)
+            guard case let .pageConfirmed(cursor) = await uploader.uploadPage(cursor: nil) else {
+                Issue.record("control del escenario: la primera página tiene que confirmarse"); return
+            }
+            cat.name = "food-edited"
+            try context.save()
+            stub.failWithStatus = status
+            #expect(await uploader.uploadPage(cursor: cursor) == expected, "status \(status)")
+            #expect(try !liveOutbox(context).isEmpty, "control: el residual tenía una fila viva que subir")
+        }
+    }
+
+    /// La DERIVA del reloj (HLC por delante del reloj de pared más de 5 min) va como `.transient`, no como fallo
+    /// local: el reloj puede corregirse solo, y el texto de «este dispositivo no pudo preparar tus datos» no sería
+    /// verdad. Se provoca subiendo una página con un reloj y la siguiente con otro un día atrás: el HLC persistido va
+    /// por delante.
+    @Test("uploadPage: la deriva del reloj al encolar es .transient, no .blocked(.localFailure)")
+    func uploadPage_clockDrift_isTransient() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        let stub = ApplyingStubSession()
+
+        for name in ["a", "b"] {
+            let cat = Category(name: name, colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+            cat.syncID = UUID()
+            context.insert(cat)
+        }
+        try context.save()
+
+        let uploader = makeUploader(context, engine, stub, pageSize: 1)
+        guard case let .pageConfirmed(cursor) = await uploader.uploadPage(cursor: nil) else {
+            Issue.record("control del escenario: la primera página tiene que confirmarse"); return
+        }
+        let push = SyncPushClient(baseURL: workerURL, tokenProvider: { "jwt" }, urlSession: stub)
+        let behind = MigrationSnapshotUploader(
+            engine: engine, pushClient: push, context: context, calendar: Calendar(identifier: .gregorian),
+            now: { self.fixedNow.addingTimeInterval(-86_400) }, pageSize: 1)
+        stub.resetCapture()
+        #expect(await behind.uploadPage(cursor: cursor) == .transient)
+        #expect(stub.pushedSyncIDs.isEmpty, "control: el corte fue al encolar, antes de subir nada")
     }
 
     // MARK: - Helpers

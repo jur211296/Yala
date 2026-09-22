@@ -6038,3 +6038,23 @@
 
 /* Salida de la vuelta antes de montar el espejo: otro dispositivo tomó el relevo */
 "storage.reverseAbort.preMountOtherDevice" = "We couldn’t finish going back to iCloud: another one of your devices took over. Once it’s done, you can do it on this one.";
+
+/* Techo y cancelación de la subida al activar la nube (ticket snapshot-upload-has-no-ceiling-and-no-way-out) */
+/* Fallo de la activación: 72 h sin subir nada, con cualquier causa (techo largo): no acusa a nadie */
+"storage.failed.snapshotStalled" = "We couldn’t turn on the cloud: uploading your data hasn’t made progress for days. Your data is safe on your device — try again later.";
+/* Fallo de la activación: la sesión caducó durante la subida */
+"storage.failed.snapshotSessionExpired" = "We couldn’t turn on the cloud: your session expired while we were uploading your data. Your data is safe on your device — try again and sign in once more.";
+/* Fallo de la activación: la cuenta en la nube no lo permitió (%@ = correo de soporte) */
+"storage.failed.snapshotAccountUnavailable" = "We couldn’t turn on the cloud: your cloud account didn’t allow it. Your data is safe on your device. Write to us at %@ and we’ll look into it with you.";
+/* Fallo de la activación: el dispositivo no pudo preparar los datos */
+"storage.failed.snapshotLocalFailure" = "We couldn’t turn on the cloud: this device couldn’t prepare your data for upload. Your data is still here, unchanged — try again in a little while.";
+/* Botón de la tarjeta de progreso: cancelar la activación de la nube */
+"storage.progress.cancelMigration" = "Cancel turning on the cloud";
+/* Título de la confirmación de cancelar la activación */
+"storage.confirm.cancelMigrationTitle" = "Cancel turning on the cloud?";
+/* Cuerpo de la confirmación de cancelar la activación */
+"storage.confirm.cancelMigrationBody" = "Your data stays on this device, just as before. What was already uploaded stays in your cloud account. You can try again whenever you like.";
+/* Botón que confirma cancelar la activación */
+"storage.confirm.cancelMigrationConfirm" = "Yes, cancel";
+/* Botón que sigue con la activación */
+"storage.confirm.cancelMigrationKeep" = "Keep turning on the cloud";

@@ -1304,4 +1304,77 @@ struct MigrationStateMachineTests {
                                              cause: .unknown, returnTo: .done)).next
             == .reverseDrainAll)
     }
+
+    // MARK: - Techo y salida de `uploadingSnapshot` (ticket `snapshot-upload-has-no-ceiling-and-no-way-out`)
+
+    /// Hasta este ticket la fase tenía dos salidas y ninguna alcanzable ante un fallo persistente. Bajo presupuesto la
+    /// observación HOLDEA en la propia fase y sin efectos, en las dos combinaciones de causa.
+    @Test func snapshotUploadStalled_belowBothBudgets_holdsWithNoEffects() {
+        for cause in [MarkerExportStall.unknown, .definitive] {
+            let r = step(.uploadingSnapshot,
+                         .snapshotUploadStalled(stalledSeconds: 259_199, causeStalledSeconds: 899, cause: cause))
+            #expect(r.next == .uploadingSnapshot, "\(cause)")
+            #expect(r.effects.isEmpty, "\(cause)")
+        }
+    }
+
+    /// El techo LARGO vale con CUALQUIER causa, clavado con sus dos vecinos. Con `.definitive` también: es el suelo del
+    /// mecanismo cuando dos causas definitivas se alternan y el reloj corto no llega nunca.
+    @Test func snapshotUploadStalled_progressCeiling_appliesWithAnyCause() {
+        for cause in [MarkerExportStall.unknown, .definitive] {
+            #expect(step(.uploadingSnapshot,
+                         .snapshotUploadStalled(stalledSeconds: 259_199, causeStalledSeconds: 0, cause: cause)).next
+                == .uploadingSnapshot, "\(cause) a 259 199 s todavía no")
+            let out = step(.uploadingSnapshot,
+                           .snapshotUploadStalled(stalledSeconds: 259_200, causeStalledSeconds: 0, cause: cause))
+            #expect(out.next == .failedRollback, "\(cause) a 259 200 s sale")
+            #expect(out.effects == [.rollback], "la misma salida que `verifying` al agotar sus reintentos")
+        }
+    }
+
+    /// El techo CORTO: solo con `.definitive` y contra el reloj de CAUSA, no el de avance.
+    @Test func snapshotUploadStalled_causeCeiling_onlyWithADefinitiveCause() {
+        #expect(step(.uploadingSnapshot,
+                     .snapshotUploadStalled(stalledSeconds: 0, causeStalledSeconds: 899, cause: .definitive)).next
+            == .uploadingSnapshot)
+        #expect(step(.uploadingSnapshot,
+                     .snapshotUploadStalled(stalledSeconds: 0, causeStalledSeconds: 900, cause: .definitive)).next
+            == .failedRollback)
+        // Con `.unknown`, el reloj de causa no manda aunque venga enorme: la red solo tiene el largo.
+        #expect(step(.uploadingSnapshot,
+                     .snapshotUploadStalled(stalledSeconds: 0, causeStalledSeconds: 100_000, cause: .unknown)).next
+            == .uploadingSnapshot)
+        // Y el corto no se mide contra el reloj de AVANCE: tres horas sin avanzar con una causa recién vista holdean.
+        #expect(step(.uploadingSnapshot,
+                     .snapshotUploadStalled(stalledSeconds: 10_800, causeStalledSeconds: 0, cause: .definitive)).next
+            == .uploadingSnapshot)
+    }
+
+    /// «Cancelar la activación»: a `notStarted` SIN efectos. Lo decidió la persona, no hay fallo que explicar.
+    @Test func snapshotUploadCancelled_returnsToNotStarted_withNoEffects() {
+        let out = step(.uploadingSnapshot, .snapshotUploadCancelled)
+        #expect(out.next == .notStarted)
+        #expect(out.effects.isEmpty)
+    }
+
+    /// Los dos eventos solo son legales desde `uploadingSnapshot`: un techo o un «Cancelar» que llegan en otra fase no
+    /// pueden sacar a nadie de ella.
+    @Test func snapshotUploadEvents_areInvalidOutsideTheirPhase() {
+        let events: [Event] = [
+            .snapshotUploadStalled(stalledSeconds: 10_000_000, causeStalledSeconds: 10_000_000, cause: .definitive),
+            .snapshotUploadCancelled,
+        ]
+        for phase in Self.allPhases where phase != .uploadingSnapshot {
+            for event in events {
+                #expect(MigrationStateMachine.transition(from: phase, event: event) == .invalid(from: phase, event: event),
+                        "\(phase) + \(event) debe ser inválido")
+            }
+        }
+    }
+
+    /// Los números son la decisión de Jürgen del 2026-09-22: los mismos que el resto de techos de la familia.
+    @Test func snapshotBudgets_defaultsArePinnedProductDecision() {
+        #expect(MigrationPolicy.default.snapshotCauseBudgetSeconds == 900)          // 15 min
+        #expect(MigrationPolicy.default.snapshotProgressBudgetSeconds == 259_200)   // 72 h
+    }
 }

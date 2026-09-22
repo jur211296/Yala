@@ -287,7 +287,8 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
             ?? { iCloudSyncService.shared.lastSuccessfulExportDate }
         self.uploader = MigrationSnapshotUploader(
             engine: engine, pushClient: pushClient, context: context,
-            calendar: calendar, now: now, pageSize: snapshotPageSize)
+            calendar: calendar, now: now, pageSize: snapshotPageSize,
+            canRenewSession: { [session] in session.canRenewSession })
         self.tombstoneSource = reverseTombstoneSource ?? pullClient
     }
 
