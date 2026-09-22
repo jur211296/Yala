@@ -5,16 +5,126 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-22 (Lima)
 
-**Rama** `2.1` — Merge #210: **Un fallo de una vez ya no cobra las horas que la vuelta esperaba por otra cosa.**
+**Rama** `2.1` — Merge #211: **Un fetch de outbox que falla ya no se lee como «no hay nada que subir».**
 TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
-> ⚠️ **Xcode se actualizó a 27.0 en la Mac el 22-sep y su licencia NO está aceptada** (la aceptada es la 26.3), así
-> que `xcodebuild` está bloqueado: **no se puede correr un gate en esta máquina** hasta un `sudo xcodebuild -license
-> accept`. `git` y `python3` de `/usr/bin` también, pero eso tiene salida sin sudo — el binario real del toolchain
-> (`/Applications/Xcode.app/Contents/Developer/usr/bin/git`) no comprueba la licencia. El gate de #210 corrió ENTERO
-> antes de la actualización, o sea con el Xcode anterior.
+> ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
+> `-destination 'platform=iOS Simulator,name=iPhone 17 Pro'` sin `OS=` significa `OS:latest` = **iOS 27.0**, y no
+> hay ningún device de 27.0 creado (el runtime sí está instalado). Eso sale con **exit 70 y CERO tests**, que es
+> el modo de fallo que el gate existe para no cometer. Se corre con
+> `-destination 'platform=iOS Simulator,id=9D0F6D32-1F49-46AD-8070-603D42B5220F'` (iPhone 17 Pro en 26.5) y pasa
+> entero: `SDKROOT` es el 27.0 y el deployment target es 26.0. Ticket:
+> `the-gate-destination-no-longer-resolves-on-this-mac`.
+>
+> **La licencia de Xcode 27.0 SÍ está aceptada** — `IDEXcodeVersionForAgreedToGMLicense = 27.0`, y
+> `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
+> correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#210 · un fallo de una vez ya no cobra las horas de otra espera)
+## Esta sesión (#211 · un fetch de outbox que falla ya no se lee como «no hay nada que subir»)
+
+**Si la base del teléfono no se deja leer, la app decidía con esa lectura igualmente — y en la misma pasada
+sacaba dos conclusiones opuestas.** Primero daba por hecho que no tenía nada pendiente de subir y se saltaba
+ese paso; veinte líneas después trataba el mismo fallo como algo definitivo. La primera lectura era demasiado
+optimista —se saltaba una subida que sí hacía falta— y la segunda demasiado pesimista.
+
+**Y la mitad que más costaba: una tabla que no se dejaba leer se comparaba contra el servidor como si estuviera
+VACÍA.** El hash de «vacío» y el de «no lo pude leer» eran el mismo byte a byte (`sha256("")`), así que con el
+servidor poblado la app concluía que sus datos no coincidían con los de la nube — una pérdida de integridad que
+no había ocurrido, con su canario y, en la vuelta a iCloud, gastando el presupuesto que acaba en
+`reverseFailedRollback`.
+
+Ahora, cuando una lectura local falla, **la app no decide nada con ella**: para el paso con un motivo propio y
+reintenta.
+
+**Eran TRES helpers homónimos, no uno.** `liveOutboxRows` existe con el mismo nombre, la misma forma y el mismo
+`return []` en `MigrationWorkExecutor`, `MigrationSnapshotUploader` y `CloudSyncRuntime`; el ticket nombraba uno.
+Diez desenlaces, uno por consumidor: `verify()` y `reverseDrainOnce()` con `.blocked(.localFailure)` —el mismo
+al que el mapping manda `outbox-fetch-failed`, o sea UNA conclusión por pasada—, el leader-reconcile propagando
+(no manda `complete` con filas del líder sin subir), el adopt con `.transient`, el snapshot sin confirmar la
+página ni cerrar la pasada, y el ciclo del motor con `.transient`.
+
+**La relectura post-push de `verify()` era la peor de las cuatro** y el ticket no la nombraba: devolvía
+`.newDeltaDetected`, que **no consume reintento**, así que una base ilegible no solo se leía como «todo subido»
+sino como «llegó un delta, vuelve a correr gratis» — un bucle sin techo alimentado por la propia avería.
+
+`MerkleSkipReason` pasa de OCHO a NUEVE motivos: `local-merkle-fetch-failed` es propio y no un reuso de
+`outbox-fetch-failed`, porque el desenlace de los dos es el mismo pero el `rawValue` es lo único que separa en
+la flota «no pude leer la cola de subida» de «no pude leer los datos». **Rastro nuevo en producción**, que no
+había ninguno: `outboxFetchFailed(step:)` con doce valores y `merkleLocalReadFailed(stage:)`; las cinco
+funciones que se tragaban el error lo dejaban en un `print` de `#if DEBUG`.
+
+**LA REVIEW ADVERSARIAL CAZÓ SEIS DEFECTOS MÍOS**, con cuatro lentes independientes:
+
+1. **El `catch` de `collectLeaves` no lo ejecutaba ningún test.** `computeLocalMerkle` llama a
+   `danglingOverrides` ANTES que a cualquier `collectLeaves`, y les puse **el mismo `Bool`**: el primero cortaba
+   siempre y el segundo quedaba intestable. Un mutante que le devolviera `return []` —la avería titular del
+   ticket— habría pasado en verde. **El argumento ya estaba escrito por mí en el otro seam** («con un `Bool` la
+   segunda es inalcanzable»): lo apliqué en el executor y lo olvidé aquí. **Y mi propia verificación lo tapó**,
+   porque la primera tanda mutó los dos `catch` a la vez. Desde ahí, los 13 mutantes van uno a uno.
+2. **Borré 737 caracteres de la SSOT de cobertura.** El `lastVerified` de `cloud-sync-runtime` no era una fecha:
+   llevaba dentro la nota entera de `cloud-tab-does-not-say-this-phone-cannot-sync-personal-data`. Restaurado, y
+   verificado con un diff programático de que ninguna de las tres áreas perdió su cola histórica.
+3. **Corregí el docblock de `migrationVerifyUnknownReason` y dejé mintiendo la línea que sí viaja a la flota**
+   (`logger.notice(… networkTimeout conservador)`) — el mismo defecto que ese docblock denuncia, una línea más
+   abajo.
+4. **`allReasonsAreListed` prometía cazar un motivo olvidado en `all` y no podía**: comparaba contra una lista
+   escrita a mano en el test. Ahora es un source-scan del fichero, con control positivo del propio escáner.
+5. Cuatro aserciones que no podían fallar por separado, un matcher de error que no distinguía cinco ramas, dos
+   tests sin control positivo, y un `try? ?? []` **haciendo de control de escenario** dentro de
+   `CloudSyncRuntimeTests` — el antipatrón de este ticket, dentro del test.
+6. Cinco docblocks que el cambio dejó falsos («los dos `fetch`», «durante la verificación»), incluida la regla
+   de área `.claude/rules/swiftdata-cloudkit.md`.
+
+**Y un control positivo mío falló al correrlo, que es exactamente para lo que está.** Afirmé que la pasada sana
+llegaba al pull; es falso —con filas vivas `verify()` sale por `.newDeltaDetected` sin tocarlo—.
+
+**12 tests nuevos en 5 suites y 13 mutantes medidos UNO A UNO**, cada uno aplicado solo y restaurado desde una
+copia del scratchpad. Los seis que cambian un desenlace concreto matan **un solo test cada uno**: eso es lo que
+prueba que cada test fija su desenlace y no solo que «algo cambió».
+
+### Lo que este merge deja pendiente, y es lo SIGUIENTE (decisión de Jürgen, 22-sep)
+
+**`snapshot-upload-has-no-ceiling-and-no-way-out` (very-high) es el próximo ticket, y no es opcional: los dos
+arreglos tienen que aterrizar juntos.** Con un fallo PERSISTENTE de la base local, la migración se queda al
+**55 %, «Migrando…»**, sin aviso, sin «Cancelar» y sin que el botón «Reintentar» alcance esa fase.
+
+El limbo **ya existía para la red** —`uploadingSnapshot` tiene dos aristas de salida y ninguna es un techo—,
+pero antes esta avería concreta salía de él *por la puerta falsa*: daba la página por confirmada sin subirla,
+el Merkle divergía y acababa en `failedRollback`. Se aceptó porque **mejora el caso común y empeora el raro**:
+con un `fetch` que falla un segundo, antes esas filas se perdían para siempre; ahora se reintentan. El arreglo
+correcto es darle techo a la fase, no volver al `[]`.
+
+### Siete tickets nuevos, todos medidos en el árbol
+
+El barrido encontró **~40 sitios** con el mismo patrón en `Yala/Services/CloudSync/`. Entra la familia que la
+decisión nombra; el resto sale con ticket:
+
+- `snapshot-upload-has-no-ceiling-and-no-way-out` (**very-high**) — el de arriba.
+- `an-unreadable-migration-journal-reads-as-never-started` (**very-high**) — `notStarted` es fase ESTABLE, y de
+  paso el `catch` **borra el motivo del aborto**.
+- `apply-overwrites-a-pending-local-write-without-its-guards` (**very-high**) — un guard LWW a medias deja que
+  un remoto pise una escritura local pendiente.
+- `groups-merkle-reads-an-unreadable-table-as-an-empty-one` (**high**) — el mismo patrón en Grupos, con peor
+  desenlace: resetea cursores y re-baja el grupo entero.
+- `an-incomplete-inventory-reads-as-the-whole-corpus` (**high**) — `makeSpec` da una entidad por subida.
+- `alternating-definitive-causes-never-reach-the-short-ceiling` (**high**) — la fase `drain` pasó de uno a dos
+  motivos definitivos; alternándose, los 900 s no vencen nunca y la salida se va a las 72 h.
+- `the-gate-destination-no-longer-resolves-on-this-mac` (**high**) — ver abajo.
+
+### Dos cosas del entorno, medidas hoy
+
+1. **El destino del gate no resuelve en esta Mac.** `-destination 'platform=iOS Simulator,name=iPhone 17 Pro'`
+   significa `OS:latest` = **iOS 27.0**, y no hay ningún device de 27.0 creado (el runtime sí está instalado).
+   Sale con **exit 70 y CERO tests**, el modo de fallo que el gate existe para no cometer. Todo el gate de este
+   PR corrió con `id=9D0F6D32-…` (iPhone 17 Pro en 26.5) y pasa entero: `SDKROOT` es el 27.0 y el deployment
+   target es 26.0, así que 26.5 lo cumple. ⇒ la frase de `.claude/rules/testing.md:145` («el device DEBE casar
+   con el runtime del SDK») **no es cierta en este caso**.
+2. **La licencia de Xcode 27.0 SÍ está aceptada.** `IDEXcodeVersionForAgreedToGMLicense = 27.0` y
+   `xcodebuild -version` responde. El aviso que este documento traía arriba ya no aplica y se retira.
+
+Y una menor: `docs/TICKETS.md` tenía **493 en la cabecera sobre 496 filas**. Regenerado desde el disco: 503.
+
+## Sesión anterior (#210 · un fallo de una vez ya no cobra las horas de otra espera)
 
 **Llevo tres horas volviendo a iCloud sin cobertura y la app espera, que es lo correcto: la red vuelve sola. Vuelve
 el wifi y, justo en esa pasada, algo del teléfono falla una vez —una lectura de la base local que no sale—. La app
