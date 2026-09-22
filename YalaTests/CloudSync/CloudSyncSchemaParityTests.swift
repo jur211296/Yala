@@ -195,6 +195,9 @@ struct CloudSyncSchemaParityTests {
             "forwardClaimIntentRaw",
             "reversePreMountProgressAt",
             "reversePreMountPhaseRaw",
+            "reversePreMountCauseRaw",
+            "reversePreMountCauseAt",
+            "reversePreMountCauseAccruedSeconds",
             "startedAt",
             "updatedAt",
             "schemaVersion",
@@ -202,7 +205,7 @@ struct CloudSyncSchemaParityTests {
         #expect(propertyNames(MigrationState.self) == expected)
     }
 
-    @Test func migrationState_schemaVersion_isSeven() {
+    @Test func migrationState_schemaVersion_isEight() {
         // Subió a 2 en I11-2 al añadir el campo aditivo `reverseOriginRaw`; a 3 en C-1 con
         // `markerWrittenSince` (reloj del tope del paso 4) + `cutoverICloudVerdictRaw` (veredicto del canal
         // iCloud), ambos ADITIVOS y opcionales → una fila escrita por un build v2 sigue abriéndose. A 4 con los
@@ -215,7 +218,44 @@ struct CloudSyncSchemaParityTests {
         // `reversePreMountPhaseRaw`), opcionales: una fila v6 parada en una de esas cuatro fases se abre sin reloj, y
         // la primera observación lo sella — o sea, el presupuesto le empieza a contar desde que este build la mira, no
         // desde que se paró (ticket `reverse-before-mount-has-no-way-to-abandon-the-return`).
-        #expect(CloudSyncSchemaVersions.migrationState == 7)
+        // A 8 con los TRES del RELOJ POR CAUSA de ese mismo techo (`reversePreMountCauseRaw`,
+        // `reversePreMountCauseAt`, `reversePreMountCauseAccruedSeconds`), opcionales: una fila v7 parada en una de
+        // esas cuatro fases se abre sin nada acumulado, y la primera observación con motivo lo empieza — o sea, el
+        // techo corto le cuenta desde que este build la mira, no desde que se paró (ticket
+        // `reverse-pre-mount-ceiling-charges-a-stall-to-whoever-stops-it-last`).
+        #expect(CloudSyncSchemaVersions.migrationState == 8)
+    }
+
+    /// **Los CINCO campos del techo previo al montaje se limpian juntos**, y `clearReversePreMountCeiling()` es lo
+    /// que lo garantiza en los seis sitios que lo hacen.
+    ///
+    /// **La primera versión de este caso enumeraba los campos a mano y prometía cazar un campo NUEVO que se
+    /// olvidara en el helper. No podía**: una lista literal comparada consigo misma deja verde un sexto campo. Lo
+    /// cazó una lente de la review. Ahora la lista se deriva del SCHEMA —todo lo que empiece por `reversePreMount`
+    /// pertenece a esta familia— y se compara con la que el caso conoce: un campo nuevo rompe esa igualdad y
+    /// obliga a pasar por aquí, que es donde se ve si el helper lo limpia.
+    @Test func migrationState_clearReversePreMountCeiling_clearsTheWholeFamily() {
+        let family = Set(propertyNames(MigrationState.self).filter { $0.hasPrefix("reversePreMount") })
+        let known: Set<String> = [
+            "reversePreMountProgressAt",
+            "reversePreMountPhaseRaw",
+            "reversePreMountCauseRaw",
+            "reversePreMountCauseAt",
+            "reversePreMountCauseAccruedSeconds",
+        ]
+        #expect(family == known,
+                "campo nuevo en la familia: añádelo a `clearReversePreMountCeiling()` y a esta lista")
+
+        let state = MigrationState(
+            reversePreMountProgressAt: .now, reversePreMountPhaseRaw: "verify",
+            reversePreMountCauseRaw: "localFailure", reversePreMountCauseAt: .now,
+            reversePreMountCauseAccruedSeconds: 42)
+        state.clearReversePreMountCeiling()
+        #expect(state.reversePreMountProgressAt == nil)
+        #expect(state.reversePreMountPhaseRaw == nil)
+        #expect(state.reversePreMountCauseRaw == nil)
+        #expect(state.reversePreMountCauseAt == nil)
+        #expect(state.reversePreMountCauseAccruedSeconds == nil)
     }
 
     // MARK: - (b·G2) GroupSyncOutbox / GroupSyncCursor (canal de Grupos → backend)

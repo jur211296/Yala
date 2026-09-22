@@ -1081,12 +1081,22 @@ enum CloudSyncBreadcrumb {
     /// §h `reverseRollback` (I11-3): `reverse_abort` OK — backend DES-congelado (`rip=false` +
     /// `reverse_frozen_at=null`; `reverted_at` queda null). El estado local ya era terminal estable.
     /// Una fase PREVIA al montaje del espejo lleva parada `stalledSeconds` sin cambiar de fase (ticket
-    /// `reverse-before-mount-has-no-way-to-abandon-the-return`). `blocker` es la palabra del servidor si la hay
-    /// —y solo entonces el presupuesto es el corto—; `nil` = red o sesión. Sin PII: los dos son códigos del build.
-    static func reversePreMountStalled(phase: String, stalledSeconds: Double, blocker: String?) {
+    /// `reverse-before-mount-has-no-way-to-abandon-the-return`). `blocker` es el motivo que no se arregla
+    /// esperando, si lo hay —y solo entonces entra el presupuesto corto—; `nil` = red o sesión.
+    ///
+    /// **Los DOS relojes van en el rastro**, y el segundo es lo que deja leer un techo que venció: `cause` es lo
+    /// que la fase lleva parada SEGUIDA por ese mismo motivo, y es contra el que se mide el corto (ticket
+    /// `reverse-pre-mount-ceiling-charges-a-stall-to-whoever-stops-it-last`). Con una sola cifra, una salida a las
+    /// tres horas no dejaba distinguir «tres horas de 403» de «tres horas sin cobertura y un fallo local al
+    /// final», que es exactamente lo que ese ticket vino a separar. Sin PII: los cuatro son códigos y números del
+    /// build.
+    static func reversePreMountStalled(
+        phase: String, stalledSeconds: Double, causeStalledSeconds: Double, blocker: String?
+    ) {
         let seconds = Int(stalledSeconds)
+        let causeSeconds = Int(causeStalledSeconds)
         logger.notice(
-            "CloudSyncReverse preMountStalled phase=\(phase, privacy: .public) stalled=\(seconds, privacy: .public)s blocker=\(blocker ?? "-", privacy: .public)")
+            "CloudSyncReverse preMountStalled phase=\(phase, privacy: .public) stalled=\(seconds, privacy: .public)s cause=\(causeSeconds, privacy: .public)s blocker=\(blocker ?? "-", privacy: .public)")
     }
 
     /// La vuelta salió de una fase previa al montaje y volvió a su origen en modo nube: por su techo o porque la

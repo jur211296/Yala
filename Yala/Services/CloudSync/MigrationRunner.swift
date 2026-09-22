@@ -574,8 +574,7 @@ final class MigrationRunner {
             state.reverseUploadLowestPending = nil
             state.reverseUploadProgressAt = nil
             state.reverseAbortReasonRaw = nil
-            state.reversePreMountProgressAt = nil
-            state.reversePreMountPhaseRaw = nil
+            state.clearReversePreMountCeiling()
             state.setReverseOriginPendingEffects([])
             state.forwardClaimIntentRaw = nil
             if target == .notStarted { state.startedAt = nil }
@@ -705,8 +704,7 @@ final class MigrationRunner {
                 // Techo de las fases previas al montaje: lo MISMO, y aquí no es higiene sino corrección. El reloj de
                 // esta etapa se compara por FASE, así que un sello de un intento anterior en la misma fase daría un
                 // `stalled` de días en la primera observación del intento nuevo: techo instantáneo.
-                state.reversePreMountProgressAt = nil
-                state.reversePreMountPhaseRaw = nil
+                state.clearReversePreMountCeiling()
             }
             // S2 (review adversarial): al llegar a un estado de CIERRE de intento, limpiar los campos
             // SCOPED a la migración en el MISMO save — un `leaderDeviceID`/contador/cursor stale que
@@ -736,8 +734,7 @@ final class MigrationRunner {
                 state.reverseUploadLowestPending = nil
                 state.reverseUploadProgressAt = nil
                 if next == .icloudActive { state.reverseAbortReasonRaw = nil }
-                state.reversePreMountProgressAt = nil
-                state.reversePreMountPhaseRaw = nil
+                state.clearReversePreMountCeiling()
                 // Los pendientes guardados de una vuelta ya se repusieron arriba si tocaba; en un cierre no queda nada
                 // que reponer.
                 state.setReverseOriginPendingEffects([])
@@ -750,8 +747,7 @@ final class MigrationRunner {
             // saltaba con cero segundos de parada real. El self-hold no entra (ahí `next == current`), así que el
             // sello que escribe la observación sobrevive.
             if ReversePreMountPhase(phase: next) != ReversePreMountPhase(phase: current) {
-                state.reversePreMountProgressAt = nil
-                state.reversePreMountPhaseRaw = nil
+                state.clearReversePreMountCeiling()
             }
             mutate(state, next)
             state.updatedAt = now()
@@ -1427,6 +1423,24 @@ final class MigrationRunner {
     // MARK: - Techo y salida de las CUATRO fases previas al montaje
     // (ticket `reverse-before-mount-has-no-way-to-abandon-the-return`)
 
+    /// Lo que se re-sella en el journal cuando una observación HOLDEA: el reloj de fase con su sello, y los tres
+    /// campos del reloj por causa. Struct y no tupla porque son cinco y tres opcionales — una tupla así se lee al
+    /// revés con una facilidad que no compensa lo que ahorra.
+    private struct ReversePreMountHold {
+        /// La fase en la que se sella el reloj de fase.
+        let phase: ReversePreMountPhase
+        /// El instante del último avance (= del último cambio de fase).
+        let progressAt: Date
+        /// La causa que se está midiendo. **Sobrevive a una observación SIN motivo**: el reloj se pausa, no se
+        /// borra. Solo lo cambia una causa distinta.
+        let causeRaw: String?
+        /// Desde cuándo corre el tramo ABIERTO de esa causa. `nil` = tramo cerrado (la observación no traía
+        /// motivo), con la causa todavía puesta.
+        let causeAccruedFrom: Date?
+        /// Lo que esa causa lleva acumulado en tramos ya CERRADOS.
+        let causeAccrued: Double?
+    }
+
     /// Una observación de una fase PREVIA al montaje que no avanzó en esta pasada. Se llama desde los cortes de las
     /// cuatro, y decide si la vuelta se queda esperando o sale a su origen.
     ///
@@ -1440,13 +1454,24 @@ final class MigrationRunner {
     /// sello en el futuro es un reloj que iba adelantado y ya se corrigió, y conservarlo aplazaría el techo hasta
     /// que el reloj real alcanzara aquella fecha (molde del techo de la espera de subida).
     ///
-    /// `blocker` es lo que paró el paso cuando no fue la red ni la sesión —y solo entonces el presupuesto es el
-    /// CORTO—. Sin él (red, sesión caducada) el presupuesto es el largo: la red vuelve sola y la sesión la renueva la
-    /// persona, que además tiene su aviso y su botón mucho antes de que esto venza.
+    /// `blocker` es lo que paró el paso cuando no fue la red ni la sesión —y solo entonces entra en juego el
+    /// presupuesto CORTO—. Sin él (red, sesión caducada) solo queda el largo: la red vuelve sola y la sesión la
+    /// renueva la persona, que además tiene su aviso y su botón mucho antes de que esto venza.
     ///
     /// **Hasta el 2026-09-22 la frase decía «la palabra del servidor», y desde ese día es falsa**: dos de los cinco
     /// motivos de `ReversePreMountBlocker` no son una respuesta de nadie. Al añadir uno, el criterio es «¿esperar lo
     /// arregla?», no «¿contestó el servidor?».
+    ///
+    /// **Son DOS relojes y no uno** (ticket `reverse-pre-mount-ceiling-charges-a-stall-to-whoever-stops-it-last`).
+    /// El de FASE mide lo que lleva parada la fase, venga de donde venga, y es el del techo largo. El de CAUSA mide
+    /// lo que lleva parada bajo la causa de ESTA observación, y es el del corto. Juntarlos —que es lo que había
+    /// hasta este ticket— hacía que un `fetch` local que falla UNA vez tras tres horas sin cobertura cobrase las
+    /// tres horas contra sus 15 minutos: la vuelta se abandonaba en ese mismo instante, sin un solo reintento.
+    ///
+    /// El reloj de causa es una RACHA: lo re-sella cualquier cambio de causa, incluido pasar a una observación SIN
+    /// causa (la red llega así). Eso reinicia siempre hacia más reintentos, y lo que impide que se vuelva eterno es
+    /// que el techo largo de la fase sigue por encima con cualquier causa — la máquina sale con el primero de los
+    /// dos que venza.
     ///
     /// Devuelve `true` si la vuelta SALIÓ. Los llamadores lo DESCARTAN y cortan la pasada, como hace la salida del
     /// claim: el origen es `.done` o `.notStarted`, donde `drive()` corta igual, así que releer la fase no ganaría
@@ -1469,19 +1494,94 @@ final class MigrationRunner {
         }
         let stalled = observedAt.timeIntervalSince(lastProgressAt)
         let cause = blocker?.stallCause ?? .unknown
+        let clock = reversePreMountCauseClock(state, blocker: blocker, observedAt: observedAt)
         CloudSyncBreadcrumb.reversePreMountStalled(
-            phase: phase.rawValue, stalledSeconds: stalled, blocker: blocker?.rawValue)
+            phase: phase.rawValue, stalledSeconds: stalled,
+            causeStalledSeconds: clock.stalled, blocker: blocker?.rawValue)
         // En CADA observación, no solo al salir: es lo que deja ver un atasco sistémico —un 403 en toda la flota—
         // antes de que ningún teléfono agote sus 15 min o sus 72 h. Es la regla de la familia
         // (`.claude/rules/swiftdata-cloudkit.md`, el canario del marcador) y esta etapa era la única sin cumplirla.
         MetricsService.cloudReversePreMountWaiting(
-            phase: phase.rawValue, stalledSeconds: stalled, blocker: blocker?.rawValue)
+            phase: phase.rawValue, stalledSeconds: stalled,
+            causeStalledSeconds: clock.stalled, blocker: blocker?.rawValue)
         let origin = try originFromJournal()
         return try await leaveReversePreMount(
-            .reversePreMountStalled(stalledSeconds: stalled, cause: cause, returnTo: origin),
+            .reversePreMountStalled(stalledSeconds: stalled, causeStalledSeconds: clock.stalled,
+                                    cause: cause, returnTo: origin),
             phase: phase,
-            exitReason: blocker?.abortReason ?? .preMountStalled,
-            hold: (phase: phase, progressAt: lastProgressAt))
+            exitReason: reversePreMountExitReason(
+                blocker: blocker, causeStalledSeconds: clock.stalled, cause: cause),
+            hold: ReversePreMountHold(
+                phase: phase, progressAt: lastProgressAt,
+                causeRaw: clock.raw, causeAccruedFrom: clock.accruedFrom, causeAccrued: clock.accrued))
+    }
+
+    /// El reloj por CAUSA, leído del journal y devuelto con lo que hay que volver a sellar
+    /// (ticket `reverse-pre-mount-ceiling-charges-a-stall-to-whoever-stops-it-last`).
+    ///
+    /// Tres reglas, y las tres son la decisión de fondo:
+    ///  · **Causa distinta ⇒ empieza de cero.** Lo acumulado bajo un motivo no se le regala a otro, y por eso la
+    ///    clave es el `rawValue` y no el `abortReason`: `accountUnavailable` y `refused` comparten el texto que ve
+    ///    la persona, y fundirlos sumaría dos causas como si fueran una.
+    ///  · **Misma causa ⇒ suma.** Lo acumulado en tramos cerrados más lo que lleva el tramo abierto.
+    ///  · **Sin motivo ⇒ PAUSA, no borra.** Cierra el tramo y conserva la causa. Es lo que impide que el techo
+    ///    corto se vuelva inalcanzable con cobertura intermitente: la pantalla de Almacenamiento re-kickea cada
+    ///    30 s, así que con una racha consecutiva bastaba un timeout cada quince minutos para que los 900 s no
+    ///    llegaran nunca y el desenlace pasara de 15 min a 72 h. Un hueco no es evidencia de que el motivo se
+    ///    fuera: es que no se pudo ni preguntar, así que no cuenta ni a favor ni en contra.
+    ///
+    /// El sello en el FUTURO —el reloj del teléfono iba adelantado y ya se corrigió— re-abre el tramo en vez de
+    /// contar un tramo negativo, por lo mismo que el reloj de fase.
+    private func reversePreMountCauseClock(
+        _ state: MigrationState,
+        blocker: ReversePreMountBlocker?,
+        observedAt: Date
+    ) -> (stalled: Double, raw: String?, accruedFrom: Date?, accrued: Double?) {
+        let sealedRaw = state.reversePreMountCauseRaw
+        // El tramo ABIERTO, normalizado. Un sello en el FUTURO —el reloj del teléfono iba adelantado y ya se
+        // corrigió— se descarta y el tramo se re-abre AHORA: conservarlo aplazaría el techo hasta que el reloj real
+        // alcanzase aquella fecha, que es lo mismo que hace el reloj de fase con su propio sello.
+        let openSince: Date? = state.reversePreMountCauseAt.flatMap { $0 <= observedAt ? $0 : nil }
+        let openTramo = openSince.map { observedAt.timeIntervalSince($0) } ?? 0
+
+        guard let blocker else {
+            // SIN motivo: se PAUSA. El tramo abierto se cierra sumándose al acumulado, y la causa se conserva
+            // para cuando vuelva. `stalled` es 0 porque esta observación no tiene causa: su techo es el de la fase.
+            guard sealedRaw != nil else { return (0, nil, nil, nil) }
+            return (0, sealedRaw, nil, (state.reversePreMountCauseAccruedSeconds ?? 0) + openTramo)
+        }
+        guard sealedRaw == blocker.rawValue else {
+            // Causa DISTINTA (o la primera): empieza de cero. Lo acumulado bajo otro motivo no se le regala a éste.
+            return (0, blocker.rawValue, observedAt, 0)
+        }
+        // MISMA causa: el acumulado más el tramo abierto. Si venía pausada, el tramo se abre ahora (`openTramo`
+        // es 0 porque `reversePreMountCauseAt` estaba a `nil`) y lo acumulado se conserva entero.
+        let carried = state.reversePreMountCauseAccruedSeconds ?? 0
+        return (carried + openTramo, blocker.rawValue, openSince ?? observedAt, carried)
+    }
+
+    /// El motivo que se journalea al salir, y **lo elige el techo que VENCIÓ, no la última observación**.
+    ///
+    /// Con el reloj por causa la vuelta puede salir por el techo de la FASE —72 h sin cobertura— en una pasada que
+    /// casualmente traiga un motivo recién visto. Journalear el motivo de ese blocker le contaría a la persona una
+    /// causa que no terminó nada: con `accountUnavailable` o `refused` el copy dice «tu cuenta en la nube no lo
+    /// permitió» y da el correo de soporte, así que tres días sin red acabarían mandando a soporte a quien no
+    /// tiene nada que consultar. Es el mismo criterio que `ReversePreMountBlocker.abortReason` ya aplica al
+    /// elegir el copy, un paso más arriba.
+    ///
+    /// Si el 403 es real, no se pierde nada: la vuelta sale con `preMountStalled` («no llegó a completarse»), la
+    /// persona lo reintenta, y a los 15 min de 403 sostenido sale con `preMountRefused` y su correo, que entonces
+    /// sí es verdad.
+    private func reversePreMountExitReason(
+        blocker: ReversePreMountBlocker?,
+        causeStalledSeconds: Double,
+        cause: MarkerExportStall
+    ) -> ReverseAbortReason {
+        guard let blocker, policy.reversePreMountCauseCeilingReached(
+            causeStalledSeconds: causeStalledSeconds, cause: cause) else {
+            return .preMountStalled
+        }
+        return blocker.abortReason
     }
 
     /// Journalea el paso y, si dejó la etapa, des-reserva el servidor. **El abort se intenta también cuando el paso
@@ -1494,7 +1594,7 @@ final class MigrationRunner {
         _ event: MigrationEvent,
         phase: ReversePreMountPhase,
         exitReason: ReverseAbortReason,
-        hold: (phase: ReversePreMountPhase, progressAt: Date)?
+        hold: ReversePreMountHold?
     ) async throws -> Bool {
         do {
             let left = try await journalReversePreMountStep(
@@ -1524,7 +1624,7 @@ final class MigrationRunner {
         _ event: MigrationEvent,
         phase: ReversePreMountPhase,
         exitReason: ReverseAbortReason,
-        hold: (phase: ReversePreMountPhase, progressAt: Date)?
+        hold: ReversePreMountHold?
     ) async throws -> Bool {
         var leftTheStage = false
         try await handle(event) { state, next in
@@ -1532,13 +1632,18 @@ final class MigrationRunner {
                 if let hold {
                     state.reversePreMountPhaseRaw = hold.phase.rawValue
                     state.reversePreMountProgressAt = hold.progressAt
+                    // Los tres del reloj de causa se escriben SIEMPRE, también cuando vienen a `nil`: una
+                    // observación sin motivo CIERRA el tramo abierto, y dejar la fecha puesta haría que el hueco
+                    // contase como tiempo parado por una causa que en ese rato nadie observó.
+                    state.reversePreMountCauseRaw = hold.causeRaw
+                    state.reversePreMountCauseAt = hold.causeAccruedFrom
+                    state.reversePreMountCauseAccruedSeconds = hold.causeAccrued
                 }
                 return
             }
             leftTheStage = true
             state.reverseAbortReasonRaw = exitReason.rawValue
-            state.reversePreMountProgressAt = nil
-            state.reversePreMountPhaseRaw = nil
+            state.clearReversePreMountCeiling()
             state.reverseOriginRaw = nil
             // Se cuenta AQUÍ, en el paso que journalea la salida y antes de intentar el `reverse_abort`: ese aviso al
             // servidor puede tardar o no salir, y perder el canario por eso dejaría la salida sin medir.
@@ -1648,8 +1753,7 @@ final class MigrationRunner {
         state.reverseUploadLowestPending = nil
         state.reverseUploadProgressAt = nil
         state.reverseAbortReasonRaw = nil
-        state.reversePreMountProgressAt = nil
-        state.reversePreMountPhaseRaw = nil
+        state.clearReversePreMountCeiling()
         state.setReverseOriginPendingEffects([])
         state.forwardClaimIntentRaw = nil
         state.startedAt = nil

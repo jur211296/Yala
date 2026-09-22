@@ -338,6 +338,67 @@ struct MigrationStateJournalTests {
         #expect(recleared.reverseAbortReasonRaw == nil)
     }
 
+    // MARK: - (d·PM) Techo de las fases previas al montaje: los CINCO campos sobreviven al kill
+
+    /// **El modo de fallo de estos cinco es SILENCIOSO y deshace dos tickets a la vez.** Si el reloj de fase no
+    /// persiste, el techo de 72 h vuelve a cero en cada arranque y la espera es eterna otra vez
+    /// (`reverse-before-mount-has-no-way-to-abandon-the-return`); si no persisten los tres del reloj por causa,
+    /// `causeStalled` es 0 en cada pasada, el techo de 15 min **no vence jamás** y una cuenta suspendida se queda
+    /// tres días parada (`reverse-pre-mount-ceiling-charges-a-stall-to-whoever-stops-it-last`). En los dos casos
+    /// la app se comporta «bien» —espera— y ningún test de lógica lo vería: la única forma de cazarlo es medir
+    /// que la fila vuelve del store con los valores puestos.
+    ///
+    /// El par del reloj de fase llevaba sin este caso desde que se añadió, así que entra con los tres nuevos.
+    /// Tres lecturas, como sus hermanos: `nil` por defecto, valor tras re-fetch, y vuelta a `nil` DURABLE — esa
+    /// última es la que prueba que `clearReversePreMountCeiling()` limpia de verdad el store y no solo la
+    /// instancia en memoria.
+    @Test func reversePreMountCeilingFields_roundTripAcrossSaveAndRefetch_includingNil() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        let progressAt = Date(timeIntervalSince1970: 1_700_000_900)
+        let causeAt = Date(timeIntervalSince1970: 1_700_003_400)
+        let state = try MigrationState.loadOrCreate(in: context)
+        #expect(state.reversePreMountProgressAt == nil)
+        #expect(state.reversePreMountPhaseRaw == nil)
+        #expect(state.reversePreMountCauseRaw == nil)
+        #expect(state.reversePreMountCauseAt == nil)
+        #expect(state.reversePreMountCauseAccruedSeconds == nil)
+
+        state.setPhase(.reverseVerify)
+        state.reversePreMountProgressAt = progressAt
+        state.reversePreMountPhaseRaw = ReversePreMountPhase.verify.rawValue
+        state.reversePreMountCauseRaw = ReversePreMountBlocker.accountUnavailable.rawValue
+        state.reversePreMountCauseAt = causeAt
+        state.reversePreMountCauseAccruedSeconds = 612.5
+        try context.save()
+
+        var descriptor = FetchDescriptor<MigrationState>()
+        descriptor.fetchLimit = 1
+        let context2 = ModelContext(context.container)
+        let reloaded = try #require(try context2.fetch(descriptor).first)
+        #expect(reloaded.readPhase().phase == .reverseVerify)
+        #expect(reloaded.reversePreMountProgressAt == progressAt)
+        // Los dos rawValues tienen que RECONSTRUIR su tipo: renombrar un case dejaría el reloj sin fase a la que
+        // compararse, o la racha de la causa sin causa, y el techo se comportaría como si no hubiera sello.
+        #expect(ReversePreMountPhase(rawValue: reloaded.reversePreMountPhaseRaw ?? "") == .verify)
+        #expect(ReversePreMountBlocker(rawValue: reloaded.reversePreMountCauseRaw ?? "") == .accountUnavailable)
+        #expect(reloaded.reversePreMountCauseAt == causeAt)
+        #expect(reloaded.reversePreMountCauseAccruedSeconds == 612.5,
+                "y el acumulado con sus decimales: truncarlo movería el techo")
+
+        reloaded.clearReversePreMountCeiling()
+        try context2.save()
+
+        let context3 = ModelContext(context.container)
+        let recleared = try #require(try context3.fetch(descriptor).first)
+        #expect(recleared.reversePreMountProgressAt == nil)
+        #expect(recleared.reversePreMountPhaseRaw == nil)
+        #expect(recleared.reversePreMountCauseRaw == nil)
+        #expect(recleared.reversePreMountCauseAt == nil)
+        #expect(recleared.reversePreMountCauseAccruedSeconds == nil)
+    }
+
     /// Los pendientes del origen que la vuelta reemplaza (ticket `reverse-claim-rejection-has-no-way-out-in-the-client`)
     /// tienen que sobrevivir a un kill en `reverseClaimLeader`: un rechazo que llega tras relanzar los repone. Y vacío es
     /// `nil`, no un `[]` codificado: sin nada que reponer no queda rastro en la fila.
