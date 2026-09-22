@@ -409,7 +409,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | restore-found-state-leaves-no-breadcrumb | backlog | tickets/backlog/restore-found-state-leaves-no-breadcrumb.md |
 | restore-gate-claims-a-wipe-this-device-did-not-do | backlog | tickets/backlog/restore-gate-claims-a-wipe-this-device-did-not-do.md |
 | restore-prefill-skips-currency-for-an-empty-summary | backlog | tickets/backlog/restore-prefill-skips-currency-for-an-empty-summary.md |
-| restore-retry-reopens-the-session-window-every-90-seconds | backlog | tickets/backlog/restore-retry-reopens-the-session-window-every-90-seconds.md |
+| restore-retry-reopens-the-session-window-every-90-seconds | in-progress | tickets/in-progress/restore-retry-reopens-the-session-window-every-90-seconds.md |
 | restore-says-no-data-when-the-icloud-import-never-settled | qa | tickets/qa/restore-says-no-data-when-the-icloud-import-never-settled.md |
 | restore-session-window-has-no-reachable-ceiling | qa | tickets/qa/restore-session-window-has-no-reachable-ceiling.md |
 | restore-start-fresh-keeps-the-imported-corpus | qa | tickets/qa/restore-start-fresh-keeps-the-imported-corpus.md |

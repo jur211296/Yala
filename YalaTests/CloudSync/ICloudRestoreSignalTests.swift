@@ -24,6 +24,7 @@ struct ICloudRestoreInProgressLogicTests {
     /// Atajo: la ventana recién abierta y con el import dando señales de vida, que es el caso normal.
     private static func isRestoring(
         startedAt: Date? = t0,
+        graceStartedAt: Date? = nil,
         firstImport: Bool = false,
         quiescent: Bool = false,
         activity: Bool = true,
@@ -31,6 +32,7 @@ struct ICloudRestoreInProgressLogicTests {
     ) -> Bool {
         ICloudRestoreInProgressLogic.isRestoringNow(
             restoreStartedAt: startedAt,
+            graceStartedAt: graceStartedAt,
             hasCompletedFirstImport: firstImport,
             isImportQuiescent: quiescent,
             hasObservedImportActivity: activity,
@@ -105,6 +107,113 @@ struct ICloudRestoreInProgressLogicTests {
             No hay NI UN `.importEvent` y ha pasado la gracia: no hay ninguna restauración en curso \
             que justifique la ventana. Con la señal pegada, cualquiera puede firmar sobre el corpus \
             de otro humano — el guard cross-cuenta queda desarmado hasta que se mate la app.
+            """)
+    }
+
+    // MARK: - La gracia se cuenta una vez por PROCESO
+    // (`restore-retry-reopens-the-session-window-every-90-seconds`, 2026-09-22)
+
+    /// **EL TÉRMINO DEL TICKET, en la tabla.** Un estreno que llega detrás de un final sin imports
+    /// trae reloj nuevo —tope duro entero— pero NO gracia nueva: el ancla del proceso sigue siendo la
+    /// del primer estreno, y desde ella los 60 s ya se gastaron.
+    @Test("con el ancla del proceso puesta, un estreno nuevo NO trae gracia nueva")
+    func aFreshClockDoesNotBuyFreshGrace() {
+        // El ciclo del ticket: T0 entra, a los 91 s la espera se rinde sin un solo evento y «volver a
+        // buscar» estrena reloj en T0+91. A los 5 s de ESE reloj la gracia del proceso lleva 96 s.
+        let relojNuevo = Self.t0.addingTimeInterval(91)
+        #expect(!Self.isRestoring(
+            startedAt: relojNuevo, graceStartedAt: Self.t0, activity: false, afterSeconds: 96), """
+            El reintento compró otros 60 s de gracia. En un teléfono con el corpus de otra persona eso \
+            mantiene abierto el guard de frontera de cuenta ~60 s de cada ~91 indefinidamente, con UN \
+            toque por vuelta y sin que tenga que bajar nada: el camino más barato que quedaba.
+            """)
+        // Y sin ancla —la primera entrada del proceso— la gracia es la de siempre.
+        #expect(Self.isRestoring(
+            startedAt: relojNuevo, graceStartedAt: nil, activity: false, afterSeconds: 96), """
+            Sin ancla el término tiene que comportarse como antes del ticket: la PRIMERA entrada del \
+            proceso conserva sus 60 s enteros, que es lo que cubre al dueño legítimo mientras espera \
+            al primer `.importEvent`.
+            """)
+    }
+
+    /// **La gracia es un PRESUPUESTO de 60 s, no un interruptor.** Es la razón de que el ancla sea una
+    /// fecha: `closesTheSessionWindow` puede apagar la ventana a los 3 s —no espera a la gracia— y con
+    /// un `Bool` «ya se usó» el reintento perdería los 57 s que nadie gastó.
+    @Test("la gracia se reparte entre las entradas: lo que queda, queda")
+    func theGraceIsABudgetSharedByTheEntries() {
+        // Primera entrada a T0, se rinde a los 3 s. Segunda entrada estrena reloj en T0+3.
+        let segundoReloj = Self.t0.addingTimeInterval(3)
+        #expect(Self.isRestoring(
+            startedAt: segundoReloj, graceStartedAt: Self.t0, activity: false, afterSeconds: 50), """
+            A los 50 s del proceso quedan 10 s de gracia sin gastar y la ventana tiene que seguir \
+            viva: el dueño legítimo cuya primera búsqueda se rindió en tres segundos no puede perder \
+            los 57 s que nadie consumió.
+            """)
+        #expect(!Self.isRestoring(
+            startedAt: segundoReloj, graceStartedAt: Self.t0, activity: false, afterSeconds: 61),
+            "y agotado el presupuesto del proceso, se apaga aunque el reloj de la entrada sea nuevo")
+
+        // **La frontera exacta, contada desde el ANCLA: 59 vive, 60 ya no.** Sin estos dos, cambiar el
+        // `>=` del término por `>` no pone nada rojo — lo midió una lente de la review. Es el mismo par
+        // que ya tiene el tope duro (599/601) y que tiene el aparcado.
+        #expect(Self.isRestoring(
+            startedAt: segundoReloj, graceStartedAt: Self.t0, activity: false, afterSeconds: 59),
+            "a los 59 s del ancla queda un segundo de gracia")
+        #expect(!Self.isRestoring(
+            startedAt: segundoReloj, graceStartedAt: Self.t0, activity: false, afterSeconds: 60), """
+            A los 60 s EXACTOS la gracia está agotada, no un segundo después: el término compara con \
+            `>=`, igual que el tope duro y que la frontera del aparcado. Un `>` aquí regala un segundo \
+            de guard entornado por cada vuelta del ciclo.
+            """)
+    }
+
+    /// **El ancla NO toca el tope duro, y ésa es la mitad que protege al dueño legítimo.** Con un
+    /// `.importEvent` observado la gracia deja de decidir nada, así que un ancla vieja no puede
+    /// recortarle a nadie su ventana de 600 s.
+    @Test("el ancla de la gracia no recorta el tope duro: la ventana sigue entera")
+    func theGraceAnchorDoesNotShortenTheHardCap() {
+        let relojNuevo = Self.t0.addingTimeInterval(91)
+        // 599 s DEL RELOJ NUEVO, o sea 690 s desde el ancla: el tope duro se mide desde el reloj.
+        #expect(Self.isRestoring(
+            startedAt: relojNuevo, graceStartedAt: Self.t0, activity: true, afterSeconds: 690), """
+            El ancla de la gracia le recortó el tope duro a la entrada nueva. El criterio del ticket \
+            dice lo contrario: el dueño legítimo que reintenta con razón conserva su ventana COMPLETA \
+            de 600 s, y lo único que no se renueva es la gracia.
+            """)
+        #expect(!Self.isRestoring(
+            startedAt: relojNuevo, graceStartedAt: Self.t0, activity: true, afterSeconds: 692),
+            "y a los 600 s de SU reloj caduca como cualquier otra")
+    }
+
+    /// **En cuanto llega UN import, la ventana se reabre**, y por eso el recorte de la gracia no deja
+    /// a nadie bloqueado: el latch es monótono y el getter se recalcula vivo.
+    @Test("el primer `.importEvent` reabre la ventana aunque la gracia esté agotada")
+    func theFirstImportEventReopensTheWindow() {
+        let relojNuevo = Self.t0.addingTimeInterval(91)
+        #expect(!Self.isRestoring(
+            startedAt: relojNuevo, graceStartedAt: Self.t0, activity: false, afterSeconds: 120),
+            "sin un solo evento y con la gracia agotada, cerrada")
+        #expect(Self.isRestoring(
+            startedAt: relojNuevo, graceStartedAt: Self.t0, activity: true, afterSeconds: 120), """
+            Llegó el primer `.importEvent` y la ventana sigue cerrada. Ése es el residual que el \
+            ticket NO acepta: el dueño legítimo cuyo primer intento no vio nada, reintenta, y ahora sí \
+            está bajando sus datos — el término de la gracia tiene que dejar de decidir en ese \
+            instante, o se queda con el bloqueo sobre su propia cuenta con las filas entrando.
+            """)
+    }
+
+    /// **El ancla se toma por el MÁS VIEJO, y es el sesgo fail-closed.** Un ancla POSTERIOR al reloj no
+    /// puede alargar la gracia: con el reloj del sistema corriendo hacia atrás, tomarla a secas daría
+    /// más ventana de la que nadie concedió.
+    @Test("un ancla POSTERIOR al reloj no alarga la gracia")
+    func aLaterAnchorNeverExtendsTheGrace() {
+        // Reloj en t0, ancla 90 s DESPUÉS (el reloj del sistema retrocedió entre las dos escrituras).
+        let anclaTardía = Self.t0.addingTimeInterval(90)
+        #expect(!Self.isRestoring(
+            startedAt: Self.t0, graceStartedAt: anclaTardía, activity: false, afterSeconds: 61), """
+            Con el ancla por delante del reloj la gracia se alargó hasta 150 s. Esta señal abre un \
+            guard de frontera de cuenta: su modo de fallo tiene que ser apagarse antes, nunca vivir \
+            de más.
             """)
     }
 
@@ -382,6 +491,7 @@ struct ICloudRestoreParkedWindowTests {
                     parkedStartedAt: Self.t0, now: ahora, hardCap: tope) != nil
                 let viva = ICloudRestoreInProgressLogic.isRestoringNow(
                     restoreStartedAt: Self.t0,
+                    graceStartedAt: nil,
                     hasCompletedFirstImport: false,
                     isImportQuiescent: false,
                     hasObservedImportActivity: true,
@@ -777,16 +887,25 @@ struct ICloudRestoreSessionSignalTests {
     /// pidió una lente de la review, y tiene razón — el criterio del ticket habla del dueño bloqueado
     /// en su propia cuenta, no de un campo. El reloj se inyecta porque el getter de la señal mide desde
     /// `.now` y el escenario dura minutos.
+    /// **`conImports` es el eje del ticket del reintento cada 90 s** (2026-09-22). El valor por
+    /// defecto es el de los tickets anteriores —un proceso que SÍ vio bajar filas, donde la gracia no
+    /// decide nada— y `false` es la población de éste: el teléfono cuyo corpus ajeno ya se importó en
+    /// un arranque anterior, así que en este proceso no hay un solo `.importEvent` y lo único que
+    /// puede abrir la ventana es la gracia.
     @MainActor
-    private static func guardDecide(en momento: Date) -> CrossAccountEntryGuardLogic.Decision {
+    private static func guardDecide(
+        en momento: Date,
+        conImports: Bool = true
+    ) -> CrossAccountEntryGuardLogic.Decision {
         CrossAccountEntryGuardLogic.decide(
             hasLocalData: true,
             sameAccountClaimExists: false,
             restoreInProgress: ICloudRestoreInProgressLogic.isRestoringNow(
                 restoreStartedAt: ICloudRestoreSessionSignal.restoreStartedAt,
+                graceStartedAt: ICloudRestoreSessionSignal.graceStartedAt,
                 hasCompletedFirstImport: false,
                 isImportQuiescent: false,
-                hasObservedImportActivity: true,
+                hasObservedImportActivity: conImports,
                 now: momento))
     }
 
@@ -1453,6 +1572,292 @@ struct ICloudRestoreSessionSignalTests {
             """)
     }
 
+    // MARK: - El ciclo «volver a buscar» cada 90 s
+    //
+    // `restore-retry-reopens-the-session-window-every-90-seconds`, 2026-09-22. El camino más barato de
+    // los que quedaban: no pasa por ninguna puerta, cuesta UN toque por vuelta y no necesita que baje
+    // nada. La población es la que no tiene un solo `.importEvent` en el proceso — el teléfono cuyo
+    // corpus ajeno ya se importó en un arranque anterior.
+
+    /// **EL CRITERIO 1, y se mide en el guard porque es donde la persona lo sufre.** SIETE vueltas de
+    /// «la espera se rinde a los 90 s → volver a buscar» —637 s, o sea más que los 600 s del tope duro,
+    /// que es lo que hace falta para que el ciclo demuestre sobrevivir a la única red que no depende de
+    /// que corra ningún callback—: la gracia se gasta UNA vez y ninguna vuelta compra otra.
+    ///
+    /// **Eran seis y la frase mentía**, que es un dato medido por una lente de la review: 6 × 91 = 546 s,
+    /// por debajo del tope.
+    @Test("el ciclo reintentar-reintentar deja de reabrir la ventana cada 90 s")
+    @MainActor
+    func theRetryCycleStopsReopeningTheWindow() {
+        ICloudRestoreSessionSignal._testReset()
+        defer { ICloudRestoreSessionSignal._testReset() }
+
+        let t0 = Date(timeIntervalSince1970: 1_760_000_000)
+        var intento = ICloudRestoreSessionSignal.noteRestoreStarted(now: t0, hasLiveImportActivity: false)
+
+        // **Control positivo: la PRIMERA gracia sigue entera.** Es la que cubre al dueño legítimo que
+        // acaba de entrar y solo espera al primer `.importEvent`, y el fix no puede quitársela.
+        #expect(Self.guardDecide(en: t0.addingTimeInterval(30), conImports: false) == .proceed, """
+            El fix se comió la gracia inicial. Quien entra a Restaurar de verdad y espera a que \
+            CloudKit emita su primer evento se queda bloqueado en su propia cuenta desde el segundo 0.
+            """)
+
+        var reloj = t0
+        for vuelta in 1...7 {
+            // El tope de 90 s se rinde sin un solo evento ⇒ la pantalla apaga la ventana.
+            reloj = reloj.addingTimeInterval(90)
+            if ICloudRestoreInProgressLogic.closesTheSessionWindow(
+                settled: false, hasObservedImportActivity: false) {
+                ICloudRestoreSessionSignal.noteRestoreFinished(intento)
+            }
+            #expect(ICloudRestoreSessionSignal.restoreStartedAt == nil, "control: la vuelta apagó")
+
+            // Un toque en «volver a buscar»: estrena reloj, pero ya no gracia.
+            reloj = reloj.addingTimeInterval(1)
+            intento = ICloudRestoreSessionSignal.noteRestoreStarted(
+                now: reloj, hasLiveImportActivity: false)
+
+            #expect(Self.guardDecide(en: reloj.addingTimeInterval(5), conImports: false)
+                    == .blockedForeignData, Comment(rawValue: """
+                Vuelta \(vuelta): el reintento volvió a abrir la ventana. Un toque cada ~91 s mantiene \
+                entornado el guard de frontera de cuenta ~60 s de cada ~91, indefinidamente, sin pasar \
+                por ninguna puerta y sin que tenga que bajar nada — más barato que los tres toques y \
+                los 600 s de la puerta de descarte.
+                """))
+        }
+
+        #expect(ICloudRestoreSessionSignal.graceStartedAt == t0, """
+            El ancla de la gracia se movió. Es del PROCESO: la pone el primer estreno y ninguna entrada \
+            posterior la toca, o el ciclo vuelve a comprar 60 s por vuelta.
+            """)
+    }
+
+    /// **EL CRITERIO 2: el dueño legítimo que reintenta con razón conserva su ventana COMPLETA.** Lo
+    /// que no se renueva es la gracia; el tope duro se estrena entero, y en cuanto su descarga emite
+    /// el primer evento la ventana se reabre y vive los 600 s de SU reloj.
+    @Test("el dueño legítimo que reintenta con razón sigue con los 600 s enteros")
+    @MainActor
+    func theLegitimateOwnerKeepsTheWholeWindow() {
+        ICloudRestoreSessionSignal._testReset()
+        defer { ICloudRestoreSessionSignal._testReset() }
+
+        let t0 = Date(timeIntervalSince1970: 1_760_000_000)
+        let primero = ICloudRestoreSessionSignal.noteRestoreStarted(now: t0, hasLiveImportActivity: false)
+        // Su primer intento no vio un solo evento —la red estaba caída— y a los 90 s se rinde.
+        ICloudRestoreSessionSignal.noteRestoreFinished(primero)
+
+        // Vuelve la red y pulsa «volver a buscar». Estrena reloj: T0+91.
+        let reintento = t0.addingTimeInterval(91)
+        _ = ICloudRestoreSessionSignal.noteRestoreStarted(now: reintento, hasLiveImportActivity: false)
+        #expect(ICloudRestoreSessionSignal.restoreStartedAt == reintento, """
+            El reintento heredó el reloj viejo. Eso le recorta el tope duro a una descarga que acaba de \
+            empezar, y su ventana caducaría a media bajada con el guard cerrándose sobre él.
+            """)
+
+        // **El RESIDUAL declarado, y es la mitad que mide el código nuevo.** Mientras su descarga no
+        // emita un solo evento, el reintento no tiene ventana: la gracia del proceso ya se gastó en el
+        // intento que no vio nada. Antes del ticket aquí había 60 s nuevos — y el mismo regalo se lo
+        // llevaba el teléfono con el corpus de otra persona, porque la señal no los distingue.
+        #expect(Self.guardDecide(en: reintento.addingTimeInterval(5), conImports: false)
+                == .blockedForeignData, """
+            El reintento volvió a comprar gracia. Es el ciclo del ticket: la señal no tiene ningún \
+            término que separe a este dueño legítimo del teléfono con el corpus ajeno, así que dársela \
+            a uno es dársela al otro.
+            """)
+
+        // Ahora CloudKit sí emite: el latch se enciende y la ventana se reabre en el acto.
+        #expect(Self.guardDecide(en: reintento.addingTimeInterval(120), conImports: true) == .proceed, """
+            Con la descarga dando señales de vida, el término de la gracia no puede seguir decidiendo: \
+            el dueño legítimo estaría bloqueado en su propia cuenta con sus filas entrando.
+            """)
+        #expect(Self.guardDecide(en: reintento.addingTimeInterval(599), conImports: true) == .proceed, """
+            Y su ventana es la COMPLETA: 600 s contados desde SU reloj, no desde el ancla de la gracia. \
+            Es el criterio que descartó heredar el reloj entero como hace el aparcado del descarte.
+            """)
+        #expect(Self.guardDecide(en: reintento.addingTimeInterval(601), conImports: true)
+                == .blockedForeignData, "y a los 600 s de su reloj caduca como cualquier otra")
+    }
+
+    /// **Quien enciende iCloud y reintenta estrena gracia nueva.** Ese camino no pasa por el estreno:
+    /// cae en el `return` temprano de `startSearch`, que llama a `noteRestoreUnavailable` — y ése tira
+    /// el ancla por la misma razón por la que ya tiraba el aparcado: la descarga que viene es NUEVA.
+    @Test("una entrada que no puede restaurar nada TIRA también el ancla de la gracia")
+    @MainActor
+    func theUnavailableEntryAlsoDropsTheGraceAnchor() {
+        ICloudRestoreSessionSignal._testReset()
+        defer { ICloudRestoreSessionSignal._testReset() }
+
+        let t0 = Date(timeIntervalSince1970: 1_760_000_000)
+        let primero = ICloudRestoreSessionSignal.noteRestoreStarted(now: t0, hasLiveImportActivity: false)
+        ICloudRestoreSessionSignal.noteRestoreFinished(primero)
+        #expect(ICloudRestoreSessionSignal.graceStartedAt == t0, "control positivo: el ancla está puesta")
+
+        // La cuenta de iCloud se cayó: la entrada siguiente ni siquiera enciende la señal.
+        ICloudRestoreSessionSignal.noteRestoreUnavailable()
+        #expect(ICloudRestoreSessionSignal.graceStartedAt == nil, """
+            El ancla sobrevivió a una entrada que declaró que no puede restaurar nada. Quien enciende \
+            iCloud y pulsa «volver a buscar» tiene una descarga NUEVA detrás y se quedaría sin gracia \
+            desde el primer instante — es el recorrido del dueño legítimo que el ticket midió.
+            """)
+
+        // Enciende iCloud y reintenta a los 5 minutos: gracia entera desde SU entrada.
+        let conCuenta = t0.addingTimeInterval(300)
+        _ = ICloudRestoreSessionSignal.noteRestoreStarted(now: conCuenta, hasLiveImportActivity: false)
+        #expect(ICloudRestoreSessionSignal.graceStartedAt == conCuenta, "el ancla se estrena con él")
+        #expect(Self.guardDecide(en: conCuenta.addingTimeInterval(30), conImports: false) == .proceed, """
+            Y su gracia es la entera: 60 s desde que su búsqueda arrancó de verdad.
+            """)
+    }
+
+    /// **El ancla nace pegada al reloj HEREDADO, no a `now`**, y por eso el recorrido de la puerta de
+    /// descarte no cambia de comportamiento (`restore-session-window-has-no-reachable-ceiling`, #205).
+    @Test("volver de la puerta de descarte no estrena gracia: el ancla viaja con el reloj heredado")
+    @MainActor
+    func comingBackFromTheDiscardGateDoesNotBuyFreshGrace() {
+        ICloudRestoreSessionSignal._testReset()
+        defer { ICloudRestoreSessionSignal._testReset() }
+
+        let t0 = Date(timeIntervalSince1970: 1_760_000_000)
+        let primero = ICloudRestoreSessionSignal.noteRestoreStarted(now: t0, hasLiveImportActivity: false)
+        ICloudRestoreSessionSignal.noteRestoreDiscardRequested(primero)
+
+        // «Volver» remonta la pantalla a los 40 s: hereda el reloj aparcado.
+        let vuelta = t0.addingTimeInterval(40)
+        _ = ICloudRestoreSessionSignal.noteRestoreStarted(now: vuelta, hasLiveImportActivity: false)
+        #expect(ICloudRestoreSessionSignal.restoreStartedAt == t0, "#205: hereda el reloj aparcado")
+        #expect(ICloudRestoreSessionSignal.graceStartedAt == t0, """
+            El ancla se quedó en el instante de la VUELTA. Los tres toques de la puerta de descarte \
+            volverían a comprar gracia nueva por su lado, que es justo lo que #205 cerró para el reloj.
+            """)
+        #expect(Self.guardDecide(en: t0.addingTimeInterval(61), conImports: false) == .blockedForeignData,
+                "y la gracia se agota donde se agotaba: 60 s desde el primer estreno del proceso")
+    }
+
+    /// **Con la ventana VIVA y el ancla tirada, la entrada siguiente la re-deriva del RELOJ, no de
+    /// `now`.** Es el recorrido gemelo del de arriba y lo midieron dos lentes de la review: la persona
+    /// se fue de Restaurar sin que nadie apagara —la ventana queda huérfana, viva—, iCloud se cae, y el
+    /// `noteRestoreUnavailable` de la entrada siguiente tira el ancla dejando el reloj puesto. Ahí
+    /// `?? now` daría gracia nueva sobre una ventana que nunca se cerró.
+    @Test("con la ventana viva, tirar el ancla no compra gracia: se re-deriva del reloj")
+    @MainActor
+    func droppingTheAnchorOnALiveWindowDoesNotBuyGrace() {
+        ICloudRestoreSessionSignal._testReset()
+        defer { ICloudRestoreSessionSignal._testReset() }
+
+        let t0 = Date(timeIntervalSince1970: 1_760_000_000)
+        let primero = ICloudRestoreSessionSignal.noteRestoreStarted(now: t0, hasLiveImportActivity: false)
+        // Se va de Restaurar: suelta la titularidad y NO apaga. La ventana sigue viva en t0.
+        ICloudRestoreSessionSignal.noteRestoreAbandoned(primero)
+        // iCloud se cae y la entrada siguiente ni llega a encender: tira el aparcado y el ancla.
+        ICloudRestoreSessionSignal.noteRestoreUnavailable()
+        #expect(ICloudRestoreSessionSignal.restoreStartedAt == t0, "control: la ventana sigue viva")
+        #expect(ICloudRestoreSessionSignal.graceStartedAt == nil, "control: el ancla se tiró")
+
+        // Enciende iCloud y reintenta a los 200 s, sin descarga viva detrás: ninguna rama mueve el reloj.
+        let reintento = t0.addingTimeInterval(200)
+        _ = ICloudRestoreSessionSignal.noteRestoreStarted(now: reintento, hasLiveImportActivity: false)
+        #expect(ICloudRestoreSessionSignal.restoreStartedAt == t0,
+                "control: sin descarga viva no re-ancla, que es #204")
+        #expect(ICloudRestoreSessionSignal.graceStartedAt == t0, """
+            El ancla se re-derivó de `now` en vez del reloj vigente. Esa ventana lleva 200 s abierta y \
+            nadie la cerró: darle gracia nueva es el ciclo del ticket con otra puerta —basta apagar y \
+            encender iCloud entre reintentos— y además contradice al reloj que sigue mandando.
+            """)
+        #expect(Self.guardDecide(en: reintento.addingTimeInterval(5), conImports: false)
+                == .blockedForeignData,
+                "y el veredicto es el que corresponde a una ventana de 205 s sin un solo import")
+    }
+
+    /// **Pasados los 600 s, volver de la puerta de descarte ESTRENA reloj pero no gracia.** Es la
+    /// mitad que el test de la vuelta a los 40 s no puede medir: allí el aparcado todavía sirve, así
+    /// que el ancla se re-deriva del reloj heredado y un `graceStartedAt = nil` en el descarte sería
+    /// indistinguible. Lo midió una lente de la review.
+    @Test("con el aparcado ya caducado, la vuelta de la puerta estrena reloj pero no gracia")
+    @MainActor
+    func comingBackAfterTheParkedClockExpiredStillHasNoGrace() {
+        ICloudRestoreSessionSignal._testReset()
+        defer { ICloudRestoreSessionSignal._testReset() }
+
+        let t0 = Date(timeIntervalSince1970: 1_760_000_000)
+        let primero = ICloudRestoreSessionSignal.noteRestoreStarted(now: t0, hasLiveImportActivity: false)
+        ICloudRestoreSessionSignal.noteRestoreDiscardRequested(primero)
+
+        // La persona se queda en la puerta más de los 600 s: el aparcado ya no se hereda (#205).
+        let vuelta = t0.addingTimeInterval(700)
+        _ = ICloudRestoreSessionSignal.noteRestoreStarted(now: vuelta, hasLiveImportActivity: false)
+        #expect(ICloudRestoreSessionSignal.restoreStartedAt == vuelta, """
+            #205: agotado el tope, la entrada siguiente ESTRENA. Si heredara, nacería muerta y el dueño \
+            legítimo se quedaría sin poder abrir ventana en el resto del proceso.
+            """)
+        #expect(ICloudRestoreSessionSignal.graceStartedAt == t0, """
+            La puerta de descarte borró el ancla de la gracia. Por ahí vuelve el ciclo: tres toques y \
+            una espera de diez minutos compran otros 60 s de guard entornado, y eso es exactamente lo \
+            que el ticket de hoy quita por la puerta barata.
+            """)
+        #expect(Self.guardDecide(en: vuelta.addingTimeInterval(5), conImports: false)
+                == .blockedForeignData, "y el veredicto lo confirma donde la persona lo sufre")
+    }
+
+    /// **El RESCATE del dueño en una ventana agotada convive con la gracia agotada, y hoy solo porque
+    /// el latch está encendido.** Lo midió una lente de la review: llegar al rescate exige conservar la
+    /// titularidad tras 600 s, y lo único que la conserva es que `closesTheSessionWindow` haya dicho
+    /// `false`, que exige un import observado. Este test ancla esa dependencia por escrito: si algún
+    /// día el rescate fuera alcanzable sin imports, el término de la gracia lo mataría en silencio.
+    @Test("el rescate resucita la ventana del dueño, y con la gracia del proceso ya agotada")
+    @MainActor
+    func theRescueWorksWithTheProcessGraceAlreadySpent() {
+        ICloudRestoreSessionSignal._testReset()
+        defer { ICloudRestoreSessionSignal._testReset() }
+
+        let t0 = Date(timeIntervalSince1970: 1_760_000_000)
+        _ = ICloudRestoreSessionSignal.noteRestoreStarted(now: t0, hasLiveImportActivity: false)
+
+        // 601 s dentro de Restaurar sin soltar ni terminar: el dueño sigue vigente y su ventana agotó.
+        let rescate = t0.addingTimeInterval(601)
+        _ = ICloudRestoreSessionSignal.noteRestoreStarted(now: rescate, hasLiveImportActivity: false)
+        #expect(ICloudRestoreSessionSignal.restoreStartedAt == rescate, "#205: «volver a buscar» estrena")
+        #expect(ICloudRestoreSessionSignal.graceStartedAt == t0, """
+            El rescate movió el ancla de la gracia. Hoy da igual —su población tiene el latch encendido, \
+            que es lo que le dejó conservar la titularidad 600 s— pero moverla abre un ciclo de 60 s \
+            cada 600 para quien se quede parado en Restaurar, y el ticket dice que la gracia es una por \
+            proceso.
+            """)
+
+        #expect(Self.guardDecide(en: rescate.addingTimeInterval(5), conImports: true) == .proceed, """
+            **La población del rescate es la que SÍ vio bajar filas**, y para ella la gracia no decide \
+            nada: su ventana nueva vale los 600 s enteros. Si esto se pone rojo, el rescate de #205 se \
+            volvió inalcanzable o dejó de resucitar la ventana — y el dueño legítimo se queda con el \
+            bloqueo sobre sus propios datos el resto del proceso.
+            """)
+        #expect(Self.guardDecide(en: rescate.addingTimeInterval(5), conImports: false)
+                == .blockedForeignData, """
+            Y la otra mitad, escrita para que la dependencia no quede implícita: **un rescate sin un solo \
+            import en el proceso NO abre la ventana**, porque la gracia ya se gastó. Hoy ese estado es \
+            inalcanzable —conservar la titularidad 600 s exige que `closesTheSessionWindow` haya dicho \
+            `false`, o sea un import observado—; si alguien toca ese verbo y lo vuelve alcanzable, el \
+            rescate muere en silencio y esto es lo único que lo dice.
+            """)
+    }
+
+    /// **El reset de tests limpia el ancla**, o un test contamina al siguiente de esta suite
+    /// `.serialized` y su gracia nace agotada sin que nadie la haya gastado.
+    @Test("el reset de tests limpia el ancla de la gracia")
+    @MainActor
+    func theTestResetClearsTheGraceAnchor() {
+        ICloudRestoreSessionSignal._testReset()
+        defer { ICloudRestoreSessionSignal._testReset() }
+
+        let t0 = Date(timeIntervalSince1970: 1_760_000_000)
+        _ = ICloudRestoreSessionSignal.noteRestoreStarted(now: t0, hasLiveImportActivity: false)
+        #expect(ICloudRestoreSessionSignal.graceStartedAt != nil, "control positivo")
+
+        ICloudRestoreSessionSignal._testReset()
+        #expect(ICloudRestoreSessionSignal.graceStartedAt == nil, """
+            El reset deja el ancla puesta: el test siguiente arranca con la gracia del proceso ya \
+            consumida y sus aserciones afirman una premisa que no es la suya.
+            """)
+    }
+
 }
 
 @Suite("La restauración en curso · el cableado (source-scan)")
@@ -1499,6 +1904,10 @@ struct ICloudRestoreSignalWiringTests {
     private static let restoreView = "Yala/App/Views/Onboarding/WelcomeRestoreView.swift"
     private static let signInView = "Yala/App/Views/Onboarding/WelcomeCloudSignInView.swift"
     private static let signal = "Yala/Services/CloudSync/ICloudRestoreSessionSignal.swift"
+    /// **La lógica pura vive en OTRO fichero, y esta constante faltaba.** Su ausencia hizo vacua la
+    /// aserción de «sin valor por defecto» del ancla de la gracia: escaneaba `signal`, donde el literal
+    /// no puede aparecer nunca. Lo midieron dos lentes de la review del 2026-09-22.
+    private static let logic = "Yala/App/Logic/ICloudRestoreInProgressLogic.swift"
     private static let guardLogic = "Yala/App/Logic/CrossAccountEntryGuardLogic.swift"
 
     @Test("MUTACIÓN: el guard del sign-in LEE la señal, y la lee viva")
@@ -1635,6 +2044,52 @@ struct ICloudRestoreSignalWiringTests {
     /// caducado —un import en curso puede pasar minutos sin emitir— y hereda un reloj que no describe
     /// su descarga; con `status.isImporting` solo, vuelve el latch, porque ese estado no tiene
     /// watchdog que lo apague.
+    /// **El ancla de la gracia llega al término desde la señal, y eso solo lo ve un escáner**
+    /// (`restore-retry-reopens-the-session-window-every-90-seconds`, 2026-09-22). Cableado a `nil` en
+    /// el getter de producción, la tabla entera sigue verde —allí el ancla se pasa a mano— y el ciclo
+    /// «volver a buscar» cada 91 s vuelve a comprar sus 60 s de gracia por vuelta.
+    @Test("MUTACIÓN: el getter de producción pasa el ANCLA de la gracia, no `nil`")
+    func theProductionGetterPassesTheGraceAnchor() throws {
+        let code = try Self.code(Self.signal)
+        let getter = try Self.body(of: "static var isRestoringNow: Bool {", in: code)
+        #expect(getter.contains("graceStartedAt: graceStartedAt"), """
+            El único call-site de producción del término dejó de pasar el ancla del proceso. Con `nil` \
+            ahí, la gracia vuelve a colgar del reloj de cada entrada y el reintento cada 90 s mantiene \
+            entornado el guard de frontera de cuenta con un toque por vuelta.
+            """)
+        // **Se escanea la LÓGICA PURA, que es donde vive el parámetro.** La primera versión miraba el
+        // fichero de la señal —copiando el molde del testigo del import, cuya función sí vive allí— y
+        // por eso no podía ponerse roja NUNCA: el literal no aparece en ese fichero ni con el mutante
+        // puesto. Lo midieron dos lentes de la review.
+        let logic = try Self.code(Self.logic)
+        #expect(logic.contains("graceStartedAt: Date?"), """
+            El parámetro del ancla desapareció de la lógica pura: o se renombró, o el escáner apunta a \
+            un fichero que ya no lo contiene, y entonces la aserción de abajo no puede fallar nunca.
+            """)
+        #expect(!logic.contains("graceStartedAt: Date? ="), """
+            El ancla ganó un valor por defecto en la lógica pura. Cualquier constante ahí es el bug: \
+            `nil` fijo devuelve la gracia por entrada y deja TODA la tabla verde, porque allí el ancla \
+            se pasa a mano. Sin default, quien añada un call-site tiene que DECIDIR de dónde sale — \
+            misma familia que `hasLiveImportActivity` y que el `restoreInProgress: Bool` del guard.
+            """)
+    }
+
+    /// **`noteRestoreFinished` NO puede tocar el ancla, y es el ticket entero.** Es el verbo por el que
+    /// pasa cada vuelta del ciclo: si borrara el ancla, el estreno siguiente compraría gracia nueva.
+    @Test("MUTACIÓN: el final del flujo no toca el ancla de la gracia")
+    func theFinishedVerbDoesNotTouchTheGraceAnchor() throws {
+        let code = try Self.code(Self.signal)
+        let cuerpo = try Self.body(
+            of: "static func noteRestoreFinished(_ token: FlowToken) {", in: code)
+        #expect(!cuerpo.contains("graceStartedAt"), """
+            El final del flujo volvió a tocar el ancla de la gracia. Es el verbo por el que pasa cada \
+            vuelta del ciclo «la espera se rinde a los 90 s → volver a buscar»: borrar ahí el ancla le \
+            devuelve al reintento sus 60 s de gracia por vuelta, que es el bug que este ticket cierra.
+            """)
+        // Control positivo del escáner: el verbo sí sigue apagando lo suyo.
+        #expect(cuerpo.contains("restoreStartedAt = nil"), "control: el verbo sigue apagando la ventana")
+    }
+
     @Test("MUTACIÓN: el encendido lee el testigo del import VIVO, no una constante")
     func theStartReadsTheLiveImportWitness() throws {
         let code = try Self.code(Self.signal)

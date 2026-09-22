@@ -43,6 +43,11 @@
 //      (4). Lo único que cambia es que la entrada SIGUIENTE estrena reloj en vez de heredarlo.
 //   3. **El import ASENTÓ** — sus filas ya son corpus como cualquier otro.
 //   4. **La CADUCIDAD** — sin actividad de import pasada la gracia, y el tope duro pase lo que pase.
+//      **La gracia se cuenta una vez por PROCESO desde el 2026-09-22**
+//      (`restore-retry-reopens-the-session-window-every-90-seconds`): tiene su propia ancla, que un
+//      final sin imports no borra. Colgada del reloj de cada entrada, el ciclo «la espera se rinde a
+//      los 90 s → volver a buscar» compraba 60 s de ventana por cada 91 con un solo toque por vuelta.
+//      El tope duro sí se estrena entero en cada entrada: lo que no se renueva es la gracia.
 //   5. **La persona pidió DESCARTAR** (`noteRestoreDiscardRequested`, 2026-09-21) — acaba de declarar
 //      que no quiere ese import, así que la premisa «las filas siguen entrando y hay que protegerlas»
 //      deja de valer. Es el único cierre que además APARCA el reloj: lo que hay detrás del botón es una
@@ -98,23 +103,39 @@ nonisolated enum ICloudRestoreInProgressLogic {
         now.timeIntervalSince(restoreStartedAt) >= hardCap
     }
 
+    /// **El orden de este bloque se arregló el 2026-09-22.** Abría con un parámetro que la función no
+    /// tiene (`restoreRequestedThisSession`, rot de un rename viejo) y metía el `- Returns:` EN MEDIO,
+    /// así que los dos parámetros de abajo no se renderizaban como tales. Lo midió una lente de la
+    /// review al ver que el párrafo nuevo caía dentro del defecto.
+    ///
     /// - Parameters:
-    ///   - restoreRequestedThisSession: el usuario abrió el restore de iCloud en ESTE proceso y la
+    ///   - restoreStartedAt: cuándo abrió el usuario el restore de iCloud en ESTE proceso, si la
     ///     búsqueda llegó a arrancar (iCloud disponible y sin wipe reciente — los dos estados en que
-    ///     `WelcomeRestoreView` NO importa nada).
+    ///     `WelcomeRestoreView` NO importa nada). `nil` = nadie lo pidió.
     ///   - hasCompletedFirstImport: CloudKit cerró al menos un `importEvent`
     ///     (`iCloudSyncService.hasCompletedFirstImport`).
     ///   - isImportQuiescent: pasó la ventana de quietud desde el último import
     ///     (`iCloudSyncService.isImportQuiescent`).
-    ///
-    /// - Returns: `true` SOLO si el corpus local de este device lo está trayendo el propio dueño
-    ///   ahora. Ante cualquier duda, `false` — y `false` significa «el guard decide como siempre».
     ///   - hasObservedImportActivity: `iCloudSyncService.hasObservedImportActivity` — ¿llegó ALGÚN
     ///     `.importEvent`, con o sin error? Es lo que distingue «el import va lento» de «no hay
     ///     absolutamente nada que importar», y un store vacío nunca lo enciende.
+    ///   - graceStartedAt: **desde cuándo se cuenta la GRACIA en este proceso**, que desde el
+    ///     2026-09-22 ya no es lo mismo que `restoreStartedAt`
+    ///     (`restore-retry-reopens-the-session-window-every-90-seconds`). Es el ancla que pone el
+    ///     PRIMER estreno de `ICloudRestoreSessionSignal` y que un final sin imports NO borra: con la
+    ///     gracia colgada del reloj de cada entrada, el ciclo «la espera se rinde a los 90 s → volver a
+    ///     buscar» compraba 60 s de ventana por cada 91, indefinidamente y con un toque por vuelta.
+    ///     `nil` ⇒ se cuenta desde `restoreStartedAt`, que es el comportamiento de siempre.
+    ///     **Se toma el MÁS VIEJO de los dos**, nunca el ancla a secas: es el sesgo fail-closed de esta
+    ///     señal —la gracia se agota antes, no después— y cubre el ancla que llegara por detrás del
+    ///     reloj si el del sistema corre hacia atrás.
     ///   - now / graceForNoActivity / hardCap: la caducidad. Ver el bloque de abajo.
+    ///
+    /// - Returns: `true` SOLO si el corpus local de este device lo está trayendo el propio dueño
+    ///   ahora. Ante cualquier duda, `false` — y `false` significa «el guard decide como siempre».
     static func isRestoringNow(
         restoreStartedAt: Date?,
+        graceStartedAt: Date?,
         hasCompletedFirstImport: Bool,
         isImportQuiescent: Bool,
         hasObservedImportActivity: Bool,
@@ -123,7 +144,6 @@ nonisolated enum ICloudRestoreInProgressLogic {
         hardCap: TimeInterval = sessionWindowHardCap
     ) -> Bool {
         guard let restoreStartedAt else { return false }
-        let elapsed = now.timeIntervalSince(restoreStartedAt)
 
         // (1) TOPE DURO. La red que no depende de nada: ni de que un callback corra, ni de que
         // CloudKit emita, ni de que la pantalla se desmonte por donde esperamos. Un import que lleva
@@ -149,7 +169,21 @@ nonisolated enum ICloudRestoreInProgressLogic {
         // `.importEvent`, con o sin error, y un store que nada importa jamás la enciende.
         // La gracia existe porque al principio también es `false`: apagar ahí devolvería el bloqueo al
         // dueño legítimo que sí está restaurando y solo espera al primer evento.
-        if !hasObservedImportActivity && elapsed >= graceForNoActivity { return false }
+        //
+        // **Y se cuenta UNA VEZ POR PROCESO, no una por entrada** (2026-09-22,
+        // `restore-retry-reopens-the-session-window-every-90-seconds`). Colgada del reloj de cada
+        // entrada era el camino más barato que le quedaba al teléfono con el corpus de otra persona:
+        // la espera de 90 s se rinde sin un solo evento, `closesTheSessionWindow` apaga, y «volver a
+        // buscar» estrena otros 60 s de gracia — un toque cada 91 s, indefinidamente, sin pasar por
+        // ninguna puerta y sin que tuviera que bajar nada. El ancla de proceso la sobrevive: lo que
+        // no renueva un final sin imports es la GRACIA, no el tope duro, que sigue estrenándose
+        // entero para no recortarle la ventana al dueño legítimo que reintenta con razón.
+        //
+        // El recorte solo alcanza a quien no ha visto NI UN `.importEvent` en todo el proceso —el
+        // latch es monótono— y en cuanto llega uno este término deja de cerrar y la ventana se
+        // reabre sola, porque el getter se recalcula vivo.
+        let graceElapsed = now.timeIntervalSince(min(graceStartedAt ?? restoreStartedAt, restoreStartedAt))
+        if !hasObservedImportActivity && graceElapsed >= graceForNoActivity { return false }
 
         return true
     }
@@ -181,7 +215,9 @@ nonisolated enum ICloudRestoreInProgressLogic {
     ///  · **`!hasObservedImportActivity`** — no llegó un solo `.importEvent` en todo el proceso, así que
     ///    no hay nada bajando ni lo hubo (camino 3). Es la población del usuario realmente nuevo, y
     ///    cerrarle la ventana en el acto es la PRECISIÓN que este apagado aporta sobre la caducidad:
-    ///    sin él viviría hasta la gracia de 60 s con el guard de frontera de cuenta entornado.
+    ///    sin él viviría hasta la gracia con el guard de frontera de cuenta entornado — 60 s en la
+    ///    PRIMERA entrada del proceso, y lo que quede del presupuesto en las siguientes
+    ///    (`restore-retry-reopens-the-session-window-every-90-seconds`, 2026-09-22).
     ///
     /// **Lo que queda fuera a propósito**: el import que arrancó y no asentó, con o sin error. Su
     /// ventana la cierran el asentamiento o la caducidad, igual que la de quien se va de la pantalla —
