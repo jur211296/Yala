@@ -5,10 +5,69 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-22 (Lima)
 
-**Rama** `2.1` — Merge #206: **El reintento ya no reabre la ventana de sesión cada 90 s.**
-TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
+**Rama** `2.1` — Merge #207: **El estado «Borraste tus datos» ya no llega a la puerta de descarte
+con la ventana abierta.** TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
-## Esta sesión (#206 · el reintento ya no reabre la ventana de sesión cada 90 s)
+## Esta sesión (#207 · el estado borrado ya no llega a la puerta con la ventana abierta)
+
+**Había un camino —estrecho— por el que se llegaba a «Empezar desde cero» sin que se cerrara el
+permiso que deja firmar sin aviso**, y se quedaba abierto hasta diez minutos con la persona parada en
+esa pantalla. En un teléfono con los datos de otra persona, eso es tiempo de sobra para firmar encima.
+Era el séptimo de los siete caminos a esa puerta: los otros seis confirman con diálogo y ese diálogo
+sí apagaba.
+
+**Para el dueño legítimo no cambia nada**, y eso era lo que había que conservar: quien cancela el
+diálogo sigue restaurando con su ventana intacta, y quien cae en «Borraste tus datos» en su primera
+búsqueda —casi todo el mundo— no tenía nada abierto que cerrar.
+
+**El mecanismo.** `wipedView` pasaba `primaryAction: onStartFresh`, el callback crudo. El apagado
+sube un nivel, a `discardImportAndStartFresh()`, un punto único que apaga aparcando el reloj y
+**entonces** llama al callback; el `cancel` no pasa por ahí. `.wiped` sigue **sin confirmar**, y se
+ratifica: su búsqueda concluye por acto de la propia persona, que acaba de borrar en ese dispositivo.
+Lo que comparten los siete no es el diálogo, es el gesto.
+
+**Por qué casi nunca hay ventana que cerrar por ahí, y por qué a veces sí.** `.wiped` sale de un
+`return` temprano de `startSearch()`, que corre ANTES del encendido. Pero `RestoreOfferGate.wasWiped`
+lee `PreferenceSyncService.lastWipeTimestamp`, **una preferencia sincronizada por el iCloud-KV**: el
+sello puede llegar de otro dispositivo entre la primera búsqueda y el «volver a buscar». Entonces el
+reintento cae ahí con la ventana del intento anterior VIVA y su token puesto —`noteRestoreUnavailable()`
+tira el aparcado y la gracia, pero no la ventana ni su dueño, por diseño— y el `.onDisappear` solo
+SUELTA la titularidad: huérfana y viva hasta el tope duro de 600 s.
+
+**Re-medido antes de tocar nada:** el ticket es del 21-sep y desde entonces entró #206, que añadió
+`noteRestoreUnavailable()` a los dos `return` tempranos. El agujero seguía abierto, y está escrito en
+el docblock de ese verbo.
+
+**LAS TRES LENTES CAZARON OCHO DEFECTOS MÍOS, y cuatro de los once mutantes solo mueren por lo que
+pidieron.** (1) **Tres mutantes vivos dentro del cuerpo del punto único**, por fijarlo con `contains`
+sueltos en vez de entero: un `noteRestoreAbandoned(flowToken)` antepuesto —que deja el dueño en `nil`
+y hace que el descarte se caiga por su propio `guard`—, un `flowToken = nil` antes del `if let`, y una
+sentencia de más. En los tres, el conteo daba 1, el orden era correcto y los cuatro literales estaban.
+(2) **El conteo miraba `onStartFresh()`**, así que tres formas de ENTREGAR el callback pasaban, una de
+ellas con la grafía que usa el propio helper de la vista. (3) **Mi docblock decía «la red es el
+CONTEO»** y para este ticket es al revés: el conteo también daba 2 en el árbol con el bug dentro.
+(4) **Mi test de comportamiento no mata ningún mutante que la suite no matara ya** —y su docblock
+afirmaba lo contrario—; se queda porque es el recorrido del ticket de punta a punta, pero ahora lo
+dice. (5) **El escáner de call-sites contaba FICHEROS**, así que un segundo apagado dentro de esta
+misma vista pasaba en verde. Y tres de documentación: la causalidad del orden estaba presentada como
+medida y es inferida, el aparcado que escribe `.wiped` es inerte y se justificaba mal, y **ocho
+docblocks decían que el verbo lo llama «la confirmación»** cuando `.wiped` no confirma.
+
+**El residual, con ticket propio y es una DECISIÓN de Jürgen**
+(`discard-gate-cannot-close-an-orphan-session-window`, medium): el punto único solo apaga si ESA
+instancia de la vista tiene el token y sigue siendo el dueño, así que quien sale de Restaurar y
+**vuelve a entrar** llega con `flowToken == nil` y el descarte es un no-op sobre una ventana huérfana
+todavía viva. No es regresión —es la exposición que ya acepta `noteRestoreAbandoned`— y cerrarlo exige
+decidir si el descarte puede apagar una ventana que no es de su intento, que es justo lo que ese verbo
+existe para no hacer.
+
+**Gate**: build ×2 sin warnings nuevos, 105 unit en 8 suites, 14 XCUITest de tres suites con el
+simulador en exclusiva (centinela 0), índice de QA al día en `welcome-flow-visual`, **11/11 mutantes
+compilados muertos**. CI verde. Ticket en `qa` con guion de tres casos: **pide DOS teléfonos con el
+mismo Apple ID**, porque el sello del wipe viaja por el iCloud-KV y tiene que llegar con la pantalla
+de Restaurar abierta y un import vivo.
+
+## Sesión anterior (#206 · el reintento ya no reabre la ventana de sesión cada 90 s)
 
 **En un teléfono con los datos de otra persona, tocar «volver a buscar» renovaba cada minuto y medio el
 permiso que deja firmar sin aviso.** Un toque por vuelta, indefinidamente, sin pasar por ninguna puerta
@@ -61,7 +120,7 @@ simulador en exclusiva (centinela 0), índice de QA al día en `welcome-flow-vis
 no se puede montar en simulador, porque el ciclo son minutos de reloj real por vuelta y la población
 exige un teléfono en el que CloudKit no baje nada.
 
-## Sesión anterior (#205 · volver de la puerta de descarte ya no estrena permiso nuevo)
+## Sesiones previas (#205 · volver de la puerta de descarte ya no estrena permiso nuevo)
 
 **En un teléfono con los datos de otra persona, pedir «Empezar desde cero» y arrepentirse renovaba el
 permiso que deja firmar sin aviso.** Tres toques —«Empezar desde cero», confirmar, «Volver»— y la
