@@ -1,14 +1,66 @@
 ---
-updated: 2026-09-21
+updated: 2026-09-22
 tags: [now, punto-de-retomada]
 ---
 
-# NOW — 2026-09-21 (Lima)
+# NOW — 2026-09-22 (Lima)
 
-**Rama** `2.1` — Merge #204: **Salir y volver a Restaurar ya no renueva el permiso con una descarga
-vieja.** TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
+**Rama** `2.1` — Merge #205: **Volver de la puerta de descarte ya no estrena permiso nuevo.**
+TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
-## Esta sesión (#204 · salir y volver a Restaurar ya no renueva con una descarga vieja)
+## Esta sesión (#205 · volver de la puerta de descarte ya no estrena permiso nuevo)
+
+**En un teléfono con los datos de otra persona, pedir «Empezar desde cero» y arrepentirse renovaba el
+permiso que deja firmar sin aviso.** Tres toques —«Empezar desde cero», confirmar, «Volver»— y la
+cuenta atrás empezaba de cero, sin esperar nada y sin que hiciera falta que bajara nada. Ahora volver
+de esa pantalla continúa la cuenta donde estaba: la puerta **solo pregunta, no borra nada**, así que
+arrepentirse no es empezar de nuevo.
+
+Y de paso se arregla algo que nadie había notado y que sí muerde al dueño legítimo: **con una
+descarga larga, «volver a buscar» no podía reabrir el permiso una vez agotado.** Quien traía un
+histórico grande se quedaba, pasados los diez minutos, con la app diciéndole que sus propios datos
+eran de otra persona —con las filas entrando en ese momento— y sin más salida que cerrar la app.
+
+**El mecanismo.** La confirmación llamaba a `noteRestoreFinished`, que apaga la ventana **y borra su
+reloj**: eso dejaba el estado idéntico al de «nadie ha pedido restaurar en este proceso», y la vuelta
+—que remonta la pantalla, cuyo `.task` llama a `startSearch()`— estrenaba 600 s por la puerta grande
+del estreno, que no pregunta por ningún testigo. Entra `noteRestoreDiscardRequested`: apaga igual **y
+APARCA el reloj**. El estreno lo hereda mientras siga vigente (edad en `[0, 600)`) y lo consume
+siempre. **Agotado el tope, la entrada siguiente ESTRENA con normalidad, y eso es lo que lo distingue
+del techo de cadena que la review tumbó el día anterior**: aquél, agotado, no dejaba ni re-anclar ni
+estrenar en el resto del proceso.
+
+**LAS TRES LENTES CAZARON DEFECTOS MÍOS, y dos eran caros.** (1) Mi primera versión **le quitaba al
+dueño legítimo su única salida**: con el reloj heredado caducado y el dueño todavía en pantalla no se
+entraba ni al estreno ni al re-ancla, así que ningún reintento la resucitaba — la mitad 2 del techo
+tumbado, entrando por la caducidad. Lo cierra una rama nueva, el RESCATE, y **su alcance costó una
+segunda iteración**: tratar «ventana agotada» como «apagada» para cualquiera deshace #204, porque el
+ciclo salir-volver suelta la titularidad en cada vuelta y pasaba a estrenar sin descarga viva. Lo
+cantó su propio test, en rojo. (2) El reloj aparcado se quedaba **VARADO** cuando la vuelta caía en
+`.iCloudDisabled` o `.wiped`, y la descarga NUEVA que viniera después nacía con un tope que podía
+tener un segundo de vida.
+
+Y tres de verificación: `parkedStartedAt = nil` en `noteRestoreFinished` era **inalcanzable** y
+ENMASCARABA al mutante que le quita el consumo al estreno; al verbo nuevo le faltaba el escáner de
+unicidad que sus hermanos sí tienen, y **la enmienda D2 de `GroupsOrganizerBranchTests` solo conocía
+uno de los dos verbos que apagan**; y un docblock mío afirmaba una premisa falsa. Los tres `600` del
+subsistema salen ya de una constante única.
+
+⇒ De los tres criterios del ticket, cierra el 2 y el 3, y el 1 para el recorrido que nombra — **no es
+un techo absoluto y no lo habrá**: por debajo sigue el baseline de matar la app.
+
+**Lo que hay que hacer con esto:**
+
+1. **QA en el teléfono** (`tickets/qa/restore-session-window-has-no-reachable-ceiling.md`, guion de
+   tres casos). **Solo se puede probar con un histórico que tarde varios minutos en bajar**: con un
+   restore pequeño el import asienta antes de llegar al botón y parecerá que el fix no hace nada.
+2. **Decidir por dónde sigue el techo.** La review midió una vía **más barata** que la que este PR
+   cierra: un toque cada 91 s, sin pasar por ninguna puerta, en el teléfono cuyo corpus ajeno ya se
+   importó (`restore-retry-reopens-the-session-window-every-90-seconds`). Su arreglo toca la gracia
+   de 60 s, que es decisión de producto.
+3. El otro residual, menor: `wiped-state-reaches-the-discard-gate-with-the-window-open`.
+
+## Sesión anterior (#204 · salir y volver a Restaurar ya no renueva con una descarga vieja)
 
 **En un teléfono con los datos de otra persona bastaba UN instante de descarga en todo el arranque
 para que salir de «Restaurar desde iCloud» y volver a entrar renovara el permiso que deja firmar sin
