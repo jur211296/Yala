@@ -151,6 +151,7 @@
 - [Un campo Codable nuevo apaga los widgets](feedback_campo_codable_nuevo_apaga_el_widget.md) — el DTO del App Group está DUPLICADO y decodifica.
 - [El acceso al backend se MIDE cada sesión](reference_verificar_backend_yala.md) — el 10-sep estaba invertido; `execute_sql` y `apply_migration` no.
 - [Runbook de DDL en staging](reference_runbook_staging_ddl.md) — las tres migraciones en un solo sitio; su «falta la credencial» CADUCÓ el 10-sep.
+- [`git` bloqueado por la licencia de Xcode](reference_git_bloqueado_por_licencia_de_xcode.md) — tras actualizar Xcode; el binario real del toolchain desbloquea sin sudo.
 - [El hook de secretos está desactivado](hook_secretos_disparador_substring.md) — retirado del push el 2026-09-01 (ADR-009).
 - [El hook de /cerrar salta con «cerramos»](hook_cerrar_disparador_substring.md) — verifica la premisa contra su mensaje.
 - [DNS de yala-app.pe](reference_dns_yala_app_pe.md) — el correo autentica desde el 8-sep; qué leer en la cabecera además de los tres `pass`.
