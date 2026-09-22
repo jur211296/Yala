@@ -296,20 +296,20 @@ nonisolated enum ICloudRestoreInProgressLogic {
     // `restore-session-window-has-no-reachable-ceiling`, 2026-09-21. Cierra el recorrido de tres toques
     // que tumbó el techo de cadena del ticket anterior: en `.found` o `.importIncomplete`, «Empezar
     // desde cero» → confirmar → «Volver» → Restaurar estrenaba una ventana entera de 600 s **sin
-    // esperar nada y sin que la descarga tuviera que estar viva**, porque la confirmación dejaba
+    // esperar nada y sin que la descarga tuviera que estar viva**, porque el descarte dejaba
     // `restoreStartedAt == nil` y el estreno no pregunta por ningún testigo. Tres toques, y otra vez,
     // y otra.
     //
     // **La puerta de descarte solo PREGUNTA: no ha borrado nada.** Así que volver de ella sin haber
     // descartado no es una entrada nueva — es la misma sesión de restauración, con la misma descarga
-    // detrás. Lo que la distingue es este reloj: la confirmación lo aparca al apagar la ventana y la
+    // detrás. Lo que la distingue es este reloj: el descarte lo aparca al apagar la ventana y la
     // vuelta lo rehidrata, de modo que el tope duro sigue contando desde donde contaba.
 
     /// **El instante que debe heredar una entrada que llega con la ventana apagada**, o `nil` si le
     /// toca estrenar reloj.
     ///
     /// Lo consulta `ICloudRestoreSessionSignal.noteRestoreStarted` en su rama de estreno, y su única
-    /// fuente es el reloj que aparcó la confirmación de «Empezar desde cero». Los dos rechazos son
+    /// fuente es el reloj que aparcó el «Empezar desde cero» de la pantalla. Los dos rechazos son
     /// mediciones, no cautela:
     ///
     ///  · **Un aparcado más viejo que el tope duro no se hereda, y esa es la mitad que impide reeditar
@@ -327,7 +327,7 @@ nonisolated enum ICloudRestoreInProgressLogic {
     ///
     /// - Parameters:
     ///   - parkedStartedAt: `ICloudRestoreSessionSignal.parkedStartedAt` — el `restoreStartedAt` que
-    ///     tenía la ventana cuando la persona confirmó que quería empezar de cero. `nil` = no se pasó
+    ///     tenía la ventana cuando la persona pidió empezar de cero. `nil` = no se pasó
     ///     por la puerta de descarte, o el aparcado ya se consumió.
     ///   - hardCap: **el mismo 600 s de `isRestoringNow`, y tiene que serlo**: este parámetro decide si
     ///     la ventana heredada nacería viva, y quien lo contesta allí es ese tope. Dos números

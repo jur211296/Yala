@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (487)
+## Index (493)
 
 | id | status | path |
 |---|---|---|
@@ -165,6 +165,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | device-qa-groups-invite-neutral-return | qa | tickets/qa/device-qa-groups-invite-neutral-return.md |
 | device-qa-private-gate-device-corpus | done | tickets/done/device-qa-private-gate-device-corpus.md |
 | diez-worktrees-comparten-un-simulador | done | tickets/done/diez-worktrees-comparten-un-simulador.md |
+| discard-gate-cannot-close-an-orphan-session-window | backlog | tickets/backlog/discard-gate-cannot-close-an-orphan-session-window.md |
 | discard-gate-proceed-leaves-the-imported-rows-behind | backlog | tickets/backlog/discard-gate-proceed-leaves-the-imported-rows-behind.md |
 | distribucion-recalcula-dos-veces-por-toque-y-sin-debounce | backlog | tickets/backlog/distribucion-recalcula-dos-veces-por-toque-y-sin-debounce.md |
 | distribution-balance-kpi-skips-fx | done | tickets/done/distribution-balance-kpi-skips-fx.md |
@@ -533,7 +534,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | wipe-copy-reads-one-axis-while-the-sheet-reads-two | backlog | tickets/backlog/wipe-copy-reads-one-axis-while-the-sheet-reads-two.md |
 | wipe-data-does-not-cancel-the-remote-wipe-grace | backlog | tickets/backlog/wipe-data-does-not-cancel-the-remote-wipe-grace.md |
 | wipe-sheet-still-promises-every-apple-id-device | done | tickets/done/wipe-sheet-still-promises-every-apple-id-device.md |
-| wiped-state-reaches-the-discard-gate-with-the-window-open | backlog | tickets/backlog/wiped-state-reaches-the-discard-gate-with-the-window-open.md |
+| wiped-state-reaches-the-discard-gate-with-the-window-open | qa | tickets/qa/wiped-state-reaches-the-discard-gate-with-the-window-open.md |
 | wire-decoder-accepts-non-finite-money | backlog | tickets/backlog/wire-decoder-accepts-non-finite-money.md |
 | wrangler-prod-onboarding-choice-percent-drift | done | tickets/done/wrangler-prod-onboarding-choice-percent-drift.md |
 | xcode-project-config-json-format-when-27-2-stable | backlog | tickets/backlog/xcode-project-config-json-format-when-27-2-stable.md |
