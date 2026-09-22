@@ -28,7 +28,7 @@ La SSOT de proceso y tickets es **este repo**. No uses Obsidian / YalaWiki como 
 ## General Rules
 
 - Hacer SOLO los cambios explícitamente solicitados. No mover UI, refactorizar adyacente, ni añadir mejoras no pedidas.
-- Antes de editar, listar archivos a modificar y qué cambia. Esperar aprobación si son más de 3 archivos.
+- Antes de editar, listar archivos a modificar y qué cambia. En sesión interactiva, si son más de 3, esperar aprobación. En **MODO AUTÓNOMO** la lista es una nota y no espera a nadie (ver «Control de Ejecución»).
 - Confirmar que rutas referenciadas existen antes de proceder. Si no, preguntar al usuario.
 - Evitar refactors grandes innecesarios. No introducir dependencias nuevas sin justificación.
 - Mantener separación UI / lógica / SwiftData.
@@ -97,7 +97,7 @@ Esta lista **ya no es** «la del job `changes` de `.github/workflows/qa.yml` men
 - **`.claude/` está aquí fuera y allí dentro.** Hooks, rules y permisos no rompen el build —por eso el CI los deja pasar— pero cambian cómo trabaja todo el mundo, así que van por PR.
 - **`.github/` está aquí dentro y allí fuera** (2026-09-03). En local no hay nada que compilar, así que el gate no aporta; en CI un cambio al workflow **tiene** que disparar la suite, o el CI dejaría de probar sus propios cambios — que es justo lo que hay que evitar después de un día ejecutando cero tests.
 
-**El release sigue siendo de Jürgen**, y un PR abierto lo mergea él salvo que pida otra cosa. Lo que desaparece es el PR como trámite para el trabajo de una sesión única, no su criterio.
+**El release sigue siendo de Jürgen**, y un PR abierto lo mergea él salvo que pida otra cosa. Un encargo en **MODO AUTÓNOMO ya lo pide**: ahí la sesión mergea su propio PR con el CI en verde. Mergear no es release; subir un build sigue siendo suyo. Lo que desaparece es el PR como trámite para el trabajo de una sesión única, no su criterio.
 
 **Documentación: dos superficies, no cinco.** El ticket en `tickets/` (qué y por qué, mientras el trabajo vive) y la regla durable en `.claude/rules/` (lo que el yo-futuro no debe romper). Git ya guarda el qué y el cuándo; `docs/ESTADO.md` y `docs/DECISIONS.md` son narrativa de proceso, no bitácora de cada commit.
 
@@ -117,7 +117,17 @@ Al modificar modelos / servicios / ViewModels: los gotchas nuevos van al fichero
 
 ## Control de Ejecución
 
-Tras implementar: resumen **en lenguaje de usuario** (qué cambia para él), build para confirmar, sugerir el siguiente paso y **detenerse**. No encadenar tests, QA ni commits sin que los pida.
+Se bifurca según cómo se abrió la sesión, y eso se lee en el encargo o en el chat: no se adivina.
+
+**Sesión interactiva** (Jürgen delante, sin MODO AUTÓNOMO). Tras implementar: resumen **en lenguaje de usuario** (qué cambia para él), build para confirmar, sugerir el siguiente paso y **detenerse**. No encadenar tests, QA ni commits sin que los pida.
+
+**MODO AUTÓNOMO.** Cuenta como tal un encargo con la sección «MODO AUTÓNOMO HASTA TERMINAR», una sesión de la cola en bypass, o Jürgen diciendo «autónomo» o «hasta el final». Ahí se sigue el tren entero sin checkpoints de proceso: implementar → `/gate` → commit → PR → CI → merge a la base del encargo → board y `docs/TICKETS.md` → `/cerrar-total`.
+
+- **No** se pregunta «¿Sigo?» tras listar el plan, toque los ficheros que toque.
+- **No** se para tras implementar, ni se deja el PR abierto «para que Jürgen mergee».
+- El device-QA de iPhone **no bloquea el merge**: el ticket va a `qa` con su guion y Jürgen lo corre cuando pueda.
+- El gate rojo sigue parando: sin gate no hay commit, en ningún modo.
+- La norma de día no cambia. De 6:00 a 21:00 (Lima) una decisión **real de producto o de acceso** que el encargo no toma se pregunta con `AskUserQuestion`. El plan, el merge y el cierre no son decisiones de ésas; lo técnico y lo de proceso, tampoco.
 
 **Git:** cada comando de lectura una sola vez, secuencialmente. No matar shells con git en curso.
 

@@ -1,6 +1,6 @@
 ---
 name: autonomo-hasta-el-final
-description: Jürgen decide en bloque por adelantado y luego suelta la ejecución entera; «autónomo» significa que también los rojos y el entorno son míos hasta el final — PERO de 6:00 a 21:00 (Lima) las decisiones de producto y de acceso se le preguntan con AskUserQuestion
+description: Jürgen decide en bloque por adelantado y luego suelta la ejecución entera; «autónomo» significa que también los rojos y el entorno son míos hasta el final — PERO de 6:00 a 21:00 (Lima) las decisiones de producto y de acceso se le preguntan con AskUserQuestion — nunca «¿sigo?» ni «¿mergeo?»
 metadata:
   type: feedback
 ---
@@ -21,6 +21,12 @@ metadata:
 > **Y vale cuando una sesión nocturna cruza las 6:00** (2026-09-16): el Paso 0 se auto-contestó a las 5:36, la review
 > destapó a las 6:0x que la opción elegida dejaba un callejón, y esa decisión de diseño se le preguntó —una pregunta, la
 > recomendada delante, lo técnico ya hecho—. Contestó en minutos con la recomendada.
+>
+> **Lo que esta excepción NO cubre** (Jürgen, 2026-09-22): el plan, el conteo de ficheros, el merge y el cierre.
+> «¿Sigo con el plan?» o «¿mergeo?» no son decisiones de producto: en MODO AUTÓNOMO se sigue hasta `/cerrar-total`
+> también de día, y el device-QA de iPhone deja el ticket en `qa` sin frenar el merge. Me pasó en el PR #212 —plan
+> listo → «¿Sigo?»; PR verde → «mergea tú»— y lo cortó con un encargo propio. La regla vive en el `CLAUDE.md`,
+> § «Control de Ejecución».
 
 Su forma de delegar tiene dos tiempos muy marcados. **Primero decide en bloque**: le llevé siete
 decisiones en dos tandas —cuatro antes de escribir el ticket, tres antes de implementar— y las
