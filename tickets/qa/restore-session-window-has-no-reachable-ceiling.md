@@ -188,3 +188,60 @@ Y tres más, de verificación:
 - `wiped-state-reaches-the-discard-gate-with-the-window-open` — el séptimo camino a la puerta, el
   único que no pasa por el diálogo, no apaga nada.
 - `restore-retry-reopens-the-session-window-every-90-seconds` — la vía barata de arriba.
+
+---
+
+## QA en el teléfono (Jürgen)
+
+**Por qué no vale el simulador ni un restore pequeño.** El fix solo muerde con la **descarga viva**:
+si el import asienta antes de que llegues al botón, `RestoreProgressView` ya cerró la ventana por sus
+propios méritos y el descarte es un no-op. Hace falta un corpus que tarde — varios minutos de bajada.
+
+### Montaje
+
+1. En el **iPhone de pruebas**, instala el build de TestFlight que salga de este merge.
+2. Ajustes de iOS → tu nombre → **iCloud** → comprueba que la cuenta con el histórico grande está
+   activa y que **iCloud Drive** está encendido (si está apagado, la app cae en `.iCloudDisabled`,
+   que es otro camino).
+3. Borra Yala del teléfono y vuelve a instalarla, para que el claim local desaparezca: ese claim es
+   justo lo que hace falta que falte.
+4. Ábrela y **no toques nada más**: déjala en el Hero.
+
+### Caso 1 · El recorrido de tres toques ya no renueva (lo que cierra el ticket)
+
+5. Hero → «Ya tengo una cuenta» → «Restaurar desde iCloud». La app se relanza sola: es normal.
+6. Ábrela otra vez. Verás «Buscando tus datos…» con los conteos subiendo. **Apunta la hora exacta.**
+7. Espera a que salga «Seguimos trayendo tus datos» o la pantalla con los conteos, **con el import
+   todavía en marcha** (los números tienen que seguir moviéndose).
+8. Toca **«Empezar desde cero»** → **Confirmar**. Llegas a la puerta que enseña las cifras de iCloud.
+9. **No borres nada.** Toca **«Traer mis datos»** (o el chevron de atrás, da igual: los dos valen).
+10. Vuelves a Restaurar. Espera a que pasen **más de diez minutos desde la hora del paso 6**.
+11. Toca atrás y entra por la card de tu cuenta.
+    - ✅ **Esperado**: la app te dice que **los datos son de otra persona** y no te deja firmar sin
+      aviso. La cuenta atrás no se reinició al volver de la puerta.
+    - ❌ **Fallo**: te deja entrar sin avisar. El paso 9 renovó el permiso.
+
+### Caso 2 · El dueño legítimo no se queda encerrado (lo que arregló la review)
+
+12. Repite del 3 al 9.
+13. Quédate **en la pantalla de Restaurar** y espera a que pasen diez minutos desde el paso 6, con el
+    import todavía bajando.
+14. Toca el botón de **recargar** (la flecha circular, arriba a la derecha).
+15. Ahora toca atrás y entra por la card de tu cuenta.
+    - ✅ **Esperado**: **te deja entrar**, porque tus datos siguen bajando y acabas de pedir que
+      busque otra vez.
+    - ❌ **Fallo**: te dice que los datos son de otra persona. Eso es el callejón sin salida.
+
+### Caso 3 · Arrepentirse pronto sigue funcionando (que no se rompió nada)
+
+16. Repite del 3 al 9, pero en el paso 10 **no esperes**: entra y sal de Restaurar una vez, y a los
+    dos o tres minutos toca atrás y entra por la card de tu cuenta.
+    - ✅ **Esperado**: **te deja entrar**. Tu descarga sigue viva y el reloj heredado aún tiene margen.
+
+### Si algo sale raro
+
+- **La app se relanza sola** entre el paso 5 y el 6: es el montaje del espejo de iCloud, esperado.
+- **Los conteos salen en cero** en el paso 7: el import no arrancó. Comprueba la red y repite desde
+  el 3 — no sigas, porque sin import el fix no participa.
+- **Sale «Necesitas tener iCloud activado»**: es el paso 2 sin hacer. Ese camino tiene su propio
+  arreglo en este PR, pero no es el que se prueba aquí.
