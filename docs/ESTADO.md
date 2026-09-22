@@ -5,10 +5,57 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-21 (Lima)
 
-**Rama** `2.1` — Merge #203: **El tope de 90 s ya no cierra la sesión con el import todavía bajando.**
-TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
+**Rama** `2.1` — Merge #204: **Salir y volver a Restaurar ya no renueva el permiso con una descarga
+vieja.** TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
-## Esta sesión (#203 · el tope de 90 s ya no cierra la sesión con el import bajando)
+## Esta sesión (#204 · salir y volver a Restaurar ya no renueva con una descarga vieja)
+
+**En un teléfono con los datos de otra persona bastaba UN instante de descarga en todo el arranque
+para que salir de «Restaurar desde iCloud» y volver a entrar renovara el permiso que deja firmar sin
+aviso** — dos toques, y para siempre. Ahora renovarlo exige una descarga bajando de verdad en ese
+momento; cuando la descarga termina o muere, el ciclo deja de renovar nada y la puerta se cierra
+sola. Y lo que ya estaba bien no se movió: quien se arrepiente y vuelve minutos después con sus datos
+todavía bajando sigue estrenando su permiso completo.
+
+El término era `hasObservedImportActivity`, un **latch monótono del proceso**. Lo sustituye
+`ICloudRestoreInProgressLogic.hasLiveImportActivity`, con dos crudos del servicio y un sello nuevo
+—`lastImportActivityAt`, el instante en que se OBSERVÓ cada `.importEvent`, que se limpia al cambiar
+de cuenta de iCloud porque lo lee un guard de frontera de cuenta—.
+
+**Los dos crudos hacen falta y los dos números salen de la review.** `status` es un escalar ÚNICO que
+comparten import, export y setup: lo enciende un sitio y lo apagan trece, así que un export de diez
+segundos en el minuto 0 de una bajada de siete minutos deja `isImporting == false` los 6 m 50 s
+restantes. Y la fecha sola no cubre un import grande, que emite un evento al empezar y otro al
+acabar. La frescura son 600 s —el mismo `hardCap` de la ventana— y **los 60 s de mi primera versión
+eran falsos**: el error de import RETRIABLE deja `.idle` mientras CloudKit reintenta con backoff de
+minutos, o sea el caso NORMAL de un restore grande con la red floja.
+
+**EL TECHO CON NÚMERO NO ENTRA, y ése es el hallazgo caro.** Implementé uno —un reloj de la cadena de
+re-anclas que ningún re-ancla movía— y la review lo tumbó por sus dos mitades: **no acotaba**, porque
+`noteRestoreFinished` es alcanzable desde la UI con el import vivo («Empezar desde cero» → «Volver» →
+Restaurar, tres toques, y la puerta no borra nada) y por debajo relanzar la app estrena todo; **y sí
+bloqueaba al dueño legítimo**, de forma permanente en el proceso, porque agotado el techo ninguna
+entrada podía ya ni re-anclar ni estrenar. Un mecanismo que no frena a quien quiere saltárselo y sí
+castiga a quien no, se retira. Lo medido va entero en `restore-session-window-has-no-reachable-ceiling`.
+
+⇒ De los tres criterios del ticket, cierra el 2 y el 3, y el 1 a medias: la exposición del ciclo pasa
+de la vida del PROCESO a la vida de la DESCARGA, pero no hay número.
+
+**Las tres lentes de la review cazaron defectos míos**, y dos eran el ticket hermano reabierto por mi
+propio arreglo. La cuarta cosa que cazaron fueron cuatro huecos en mi red de tests: la frescura no la
+fijaba ningún caso, el source-scan del call-site dejaba libres `now:` y `freshness:`, nadie afirmaba
+que un export no BORRARA el sello, y el test del criterio 2 se medía pasando el bool a mano — o sea
+asumiendo la conclusión.
+
+**Verificado:** build ×2 sin warnings nuevos · unit 7359/7359 · XCUITest 24 en 7 suites con el
+centinela limpio en los dos lotes · índice de QA OK · **9 mutantes, los 9 muertos**, y el primero es
+mi propia primera versión.
+
+**Queda:** device-QA del ticket (8 pasos, el 7 es el del ticket) y los dos tickets nuevos
+—`restore-session-window-has-no-reachable-ceiling` y
+`import-activity-latch-survives-an-icloud-account-change`—.
+
+## Sesión anterior (#203 · el tope de 90 s ya no cierra la sesión con el import bajando)
 
 **Entro a «Restaurar desde iCloud» con un histórico grande. A los 90 s la pantalla se rinde y me dice
 «seguimos trayendo tus datos» — que es verdad: siguen bajando. Toco atrás, firmo con mi cuenta y la app
