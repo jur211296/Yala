@@ -143,6 +143,46 @@ lo que el camino bueno deja pasar sin que ningún test pueda matarla. En su luga
 - [x] Test que siembre una espera larga con una causa y observe con otra: hoy sale al instante y debe holdear.
       → el primero de la lista, con el reloj de fase sembrado en 3 h
 
+## Guion de QA (device, iPhone)
+
+Hace falta una cuenta en la nube con la migración terminada y el teléfono en modo nube. **El 403 no se puede montar
+desde el teléfono**: se provoca en staging.
+
+**Y hay que decir lo que este guion NO cubre.** El escenario exacto del ticket —tres horas de espera por red y un
+fallo de la base local justo en la pasada en que vuelve el wifi— **no se monta a mano**: pide esperar tres horas y
+provocar un `fetch` de SwiftData que lance en el instante justo. Esa mitad la cubren los tests
+(`reversePreMountCauseClock_anIsolatedLocalFailureAfterALongWait_retriesInsteadOfLeaving`). Lo que sí se comprueba
+en el teléfono es que **el resto del mecanismo no se rompió**, que es donde un error saldría caro.
+
+1. En Ajustes → «¿Dónde viven tus datos?», toca **«Volver a iCloud»** y acepta. La barra debe pasar del claim al
+   drenaje.
+
+2. **El 403 repetido sigue saliendo a los 15 minutos.** Con la vuelta en «Comprobando que todo llegó…», suspende la
+   cuenta en staging (el gateway debe responder 403 a `/sync/merkle`). Deja Yala abierta en la pantalla de
+   Almacenamiento y mira el reloj.
+   - **Espera:** a los **15 minutos** la tarjeta desaparece y queda la nota «tu cuenta en la nube no lo permitió»,
+     con el correo de soporte. Ni antes ni tres días después.
+   - **Esto es lo que más importa medir**, porque es la mitad que el cambio podría haber roto: si el reloj de causa
+     no persiste, este paso **no termina nunca** y solo saldría a las 72 h.
+
+3. **La pausa: un corte de red NO reinicia la cuenta.** Repite el paso 2, pero a los **7 minutos** pon el teléfono
+   en modo avión un minuto y quítalo.
+   - **Espera:** la salida llega a los **~15 minutos de 403**, no a los 22. El minuto sin cobertura ni suma ni
+     resta. Antes de este arreglo (y con una racha consecutiva) el contador se habría puesto a cero y **no habría
+     salido nunca** mientras la cobertura fuera intermitente.
+
+4. **Control: la red pura conserva su plazo largo.** Restaura la cuenta, relanza la vuelta y pon el teléfono en modo
+   avión durante la comprobación.
+   - **Espera:** a los 15 minutos la vuelta **sigue ahí**. No se ha ido a ninguna parte.
+
+5. **Control: un intento nuevo empieza de cero.** Tras la salida del paso 2, restaura la cuenta y vuelve a tocar
+   «Volver a iCloud».
+   - **Espera:** la vuelta nueva **arranca y espera**. Si saliera en el acto, el reloj del intento anterior se
+     habría quedado puesto.
+
+6. **El copy, en los dos casos.** Comprueba que la nota del paso 2 menciona la cuenta y da soporte, y que **ninguna**
+   de las salidas de los pasos 3-5 lo hace.
+
 ## Relacionado
 
 - `reverse-verify-network-bucket-hides-a-definitive-server-no` — el que metió `.localFailure` en el techo corto.
