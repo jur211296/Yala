@@ -195,8 +195,13 @@ struct WelcomeRestoreView: View {
             // El `if let` no es defensa: `.wiped` y `.iCloudDisabled` salen de `startSearch()` antes de
             // encender nada, y sin token no hay titularidad que soltar. En el camino normal es un no-op
             // —el dueño ya está en `nil`, lo haya rotado `noteRestoreFinished` al terminar la espera o
-            // `noteRestoreDiscardRequested` al confirmar el descarte— y con un intento MÁS NUEVO vivo
-            // también, por el guard del token dentro de la señal.
+            // `discardImportAndStartFresh()` al comprometer el descarte— y con un intento MÁS NUEVO
+            // vivo también, por el guard del token dentro de la señal.
+            //
+            // **Y desde el 2026-09-22 el ORDEN con el descarte dejó de importar**
+            // (`discard-gate-cannot-close-an-orphan-session-window`): aquel apaga sin pedir
+            // titularidad, así que da igual si este desmontaje ya la soltó. Antes, esa secuencia —y la
+            // de salir de Restaurar y volver a entrar— era el bug.
             .onDisappear {
                 if let flowToken {
                     ICloudRestoreSessionSignal.noteRestoreAbandoned(flowToken)
@@ -210,9 +215,8 @@ struct WelcomeRestoreView: View {
                 Button(L10n.Welcome.Restore.startFreshConfirmConfirm, role: .destructive) {
                     // **Confirmar ES comprometer el descarte**, así que sale por el punto único que
                     // lo hace: `discardImportAndStartFresh()`, al final del fichero, donde está
-                    // escrito por qué apagar aquí es correcto y por qué aparca el reloj en vez de
-                    // olvidarlo. Hasta el 2026-09-22 el apagado vivía en esta closure y por eso
-                    // cubría seis de los siete caminos — el séptimo es `.wiped`, que no confirma.
+                    // escrito por qué apagar aquí es correcto, por qué aparca el reloj en vez de
+                    // olvidarlo, y por qué desde el 2026-09-22 apaga SIN pedir titularidad.
                     //
                     // **El `cancel` de aquí al lado NO pasa por ahí, y ése es el otro criterio**:
                     // quien se arrepiente del diálogo sigue en Restaurar con su import bajando, y
@@ -684,6 +688,11 @@ struct WelcomeRestoreView: View {
             title: L10n.Welcome.Restore.Wiped.title,
             body: L10n.Welcome.Restore.Wiped.body,
             primaryTitle: L10n.Welcome.Restore.startFresh,
+            // **Sin confirmar, pero por el punto único igual.** `.wiped` es el único de los siete
+            // caminos que no pregunta —la búsqueda concluyó por acto de la propia persona, que acaba
+            // de borrar en este dispositivo—, y lo que comparte con los otros seis no es el diálogo:
+            // es el gesto. Pasarle `onStartFresh` crudo es el defecto que cerró
+            // `wiped-state-reaches-the-discard-gate-with-the-window-open`.
             primaryAction: discardImportAndStartFresh
         )
     }
@@ -704,58 +713,51 @@ struct WelcomeRestoreView: View {
     /// —«Volver» y «Traer mis datos»— remontan esta pantalla, cuyo `.task` llama a `startSearch()`.
     /// Con un apagado a secas el estado quedaba idéntico al de «nadie ha pedido restaurar en este
     /// proceso» y volver estrenaba 600 s enteros en tres toques, sin esperar nada y sin que ninguna
-    /// descarga tuviera que estar viva. Aparcado, la vuelta hereda el reloj; y agotado el tope duro,
-    /// la entrada siguiente estrena con normalidad, que es lo que impide reeditar el bloqueo que la
-    /// review tumbó.
+    /// descarga tuviera que estar viva.
     ///
     /// **Es un punto único desde el 2026-09-22**
     /// (`wiped-state-reaches-the-discard-gate-with-the-window-open`), y antes vivía dentro de la
     /// closure del botón destructivo del diálogo. Ahí cubría SEIS de los siete caminos: el séptimo,
     /// `.wiped`, pasa el callback sin confirmar, así que llegaba a la puerta con la ventana ABIERTA.
-    /// El `.onDisappear` de arriba solo SUELTA la titularidad, de modo que quedaba huérfana y viva
-    /// hasta el tope duro de 600 s con el guard de frontera de cuenta entornado — en un teléfono con
-    /// el corpus de otra persona, ocho minutos de sobra para firmar encima.
     ///
-    /// **Y por `.wiped` ese aparcado es INERTE, medido**: la vuelta desde la puerta remonta esta
-    /// pantalla, `startSearch()` sale otra vez por el mismo `return` —el sello del wipe no ha
-    /// cambiado— y `noteRestoreUnavailable()` lo tira. Para heredarlo haría falta una entrada con
-    /// `wasWiped == false`, y cualquier entrada intermedia lo destruye antes. Se aparca igual porque
-    /// este punto es compartido y por los otros seis caminos sí vale; el párrafo de arriba describe
-    /// esos seis, no éste.
+    /// **Y APAGA SIN PEDIR TITULARIDAD, que es el ticket de hoy**
+    /// (`discard-gate-cannot-close-an-orphan-session-window`, decisión de Jürgen, 2026-09-22). Hasta
+    /// hoy esto llevaba un `if let flowToken` y el verbo un `guard currentFlow == token`, y las dos
+    /// cosas juntas dejaban abierto el recorrido de seis pasos: entra a Restaurar (dueño `T1`), el tope
+    /// de 90 s se rinde con el import vivo, toca **atrás** —el `.onDisappear` suelta la titularidad y
+    /// la ventana queda **viva y HUÉRFANA**—, **vuelve a entrar** (instancia nueva ⇒ `flowToken` nace
+    /// en `nil`), `startSearch()` sale por un `return` temprano sin encender, y «Empezar desde cero»
+    /// era un **no-op** sobre una ventana que seguía abierta hasta el tope duro de 600 s. Hoy apaga:
+    /// quien declara que no quiere esas filas deroga la premisa que las protege, sea de quien sea el
+    /// intento que las traía. Es el único de los cinco verbos que puede hacerlo.
     ///
-    /// **Por `.wiped` normalmente no hay ventana que cerrar, y ahí estaba la trampa**: ese estado sale
-    /// de un `return` temprano de `startSearch()`, que corre ANTES del encendido, así que en la
-    /// primera entrada esto es un no-op limpio. Pero `RestoreOfferGate.wasWiped` lee
-    /// `PreferenceSyncService.lastWipeTimestamp`, **una preferencia SINCRONIZADA**: puede llegar de
-    /// otro dispositivo entre la primera búsqueda y el «volver a buscar», y entonces el reintento cae
-    /// en `.wiped` con la ventana del intento anterior viva y su token todavía en `flowToken`
-    /// —`noteRestoreUnavailable()` tira el aparcado y la gracia, pero no la ventana ni su dueño, por
-    /// diseño—.
+    /// **Y ESTO SIGUE VIVIENDO EN EL GESTO, no en el destino, y esa decisión se midió.** La tentación
+    /// es subirlo al montaje de `WelcomePrivateICloudGateView`, que es el destino común de los siete
+    /// caminos de aquí. **Hace daño**: esa vista tiene TRES instanciaciones y dos de ellas no son un
+    /// descarte —`WelcomeFlowContainer` la usa también para «Soy nuevo» → «Privado»
+    /// (`handleNewOption(.privateAccount)`), y `FullModeActivationView.privateGate` igual—, y sus
+    /// propios docblocks lo dicen con estas palabras: «quien llega aquí acaba de elegir privado y
+    /// **todavía no ha pedido borrar nada**». Quien abandona Restaurar, mira esa puerta y vuelve sin
+    /// tocar nada se quedaba sin ventana, y al firmar con su cuenta el guard de frontera le contestaba
+    /// que sus propios datos son de otra persona — el bug que toda esta señal existe para impedir,
+    /// entrando por la puerta de al lado. Lo cazaron las tres lentes de la review. Y hay una segunda
+    /// razón: aquí el apagado cuelga de un TAP, que provablemente ocurrió; allí colgaría de un
+    /// MONTAJE, y en este anchor las presentaciones se caen (`.claude/rules/swiftui-ds.md`, regla 4 de
+    /// Presentaciones) — o sea que su modo de fallo sería dejar la ventana ABIERTA, en silencio.
     ///
     /// **El orden es el seguro, y su daño está INFERIDO, no medido** —lo midieron dos lentes de la
-    /// review, y este párrafo decía antes que sí—. El apagado va ANTES de `onStartFresh()`, que es lo
-    /// que cambia de pantalla; detrás de ese cambio corre el `.onDisappear`, que llama a
-    /// `noteRestoreAbandoned` y pone el dueño a `nil`. **Hoy invertirlo también funcionaría**: los dos
-    /// consumidores navegan mutando estado (`ContentView` baja su binding, `FullModeActivationView`
-    /// hace `go(to:)`), así que el `.onDisappear` corre en el ciclo de actualización siguiente y no
-    /// dentro de esta closure — y aunque corriera, llegaría con el dueño ya en `nil` y sería un
-    /// no-op. Se fija el orden igualmente porque depende de cómo navegue un consumidor futuro, no de
-    /// este código.
+    /// review—. El apagado va ANTES de `onStartFresh()`, que es lo que cambia de pantalla; detrás de
+    /// ese cambio corre el `.onDisappear`, que llama a `noteRestoreAbandoned` y pone el dueño a `nil`.
+    /// **Hoy invertirlo también funcionaría**: los dos consumidores navegan mutando estado
+    /// (`ContentView` baja su binding, `FullModeActivationView` hace `go(to:)`), así que el
+    /// `.onDisappear` corre en el ciclo de actualización siguiente y no dentro de esta closure — y
+    /// aunque corriera, llegaría con el dueño ya en `nil` y, desde hoy, eso ya no impide apagar. Se
+    /// fija el orden igualmente porque depende de cómo navegue un consumidor futuro.
     ///
     /// **Y el `cancel` del diálogo no pasa por aquí**, que es el otro criterio del ticket: quien se
     /// arrepiente vuelve a Restaurar con su import bajando y su ventana intacta.
-    ///
-    /// **LO QUE ESTO NO CIERRA, y tiene ticket propio**
-    /// (`discard-gate-cannot-close-an-orphan-session-window`, lente 1 de la review del 2026-09-22):
-    /// apagar pide las dos cosas —token en el `@State` de ESTA instancia y que siga siendo el dueño—,
-    /// así que quien sale de Restaurar y **vuelve a entrar** llega aquí con `flowToken == nil` y esto
-    /// es un no-op sobre una ventana huérfana que sigue viva. Cerrarlo es una decisión, no una
-    /// omisión: apagar una ventana que no es de este intento es justo lo que `noteRestoreAbandoned`
-    /// existe para no hacer.
     private func discardImportAndStartFresh() {
-        if let flowToken {
-            ICloudRestoreSessionSignal.noteRestoreDiscardRequested(flowToken)
-        }
+        ICloudRestoreSessionSignal.noteRestoreDiscardRequested()
         onStartFresh()
     }
 

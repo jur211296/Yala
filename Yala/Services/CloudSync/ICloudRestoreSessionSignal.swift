@@ -67,12 +67,17 @@
 //     asentamiento o la caducidad. Apagarla aquí es justo lo que prohíbe el párrafo de «no se apaga al
 //     volver atrás». Lo llama `WelcomeRestoreView` al desaparecer ELLA, no la pantalla de progreso —
 //     ver su docblock, que es la mitad del ticket del tope.
-//   · `noteRestoreDiscardRequested` — la persona **pidió «Empezar desde cero»**. Apaga las dos
-//     cosas **y aparca el reloj**, porque la puerta que hay detrás solo PREGUNTA: si vuelve sin haber
-//     borrado nada, esa entrada hereda el reloj en vez de estrenar tope duro nuevo. Dice «pidió» y no
-//     «confirmó» desde el 2026-09-22: seis de los siete caminos confirman con diálogo y `.wiped` no
-//     —su búsqueda concluye por acto de la propia persona—, así que lo llama el punto único de
-//     `WelcomeRestoreView` y no una confirmación.
+//   · `noteRestoreDiscardRequested` — la persona **llegó a la puerta que borra**. Apaga las dos
+//     cosas **y aparca el reloj**, porque esa puerta solo PREGUNTA: si vuelve sin haber borrado nada,
+//     esa entrada hereda el reloj en vez de estrenar tope duro nuevo. Dice «pidió» y no «confirmó»
+//     desde el 2026-09-22: seis de los siete caminos de Restaurar confirman con diálogo y `.wiped` no
+//     —su búsqueda concluye por acto de la propia persona—, así que lo que comparten no es el diálogo.
+//     **Y es el ÚNICO que apaga SIN titularidad** (2026-09-22,
+//     `discard-gate-cannot-close-an-orphan-session-window`): quien declara que no quiere esas filas
+//     deroga la premisa que las protege, sea de quien sea el intento que las traía. Su llamador es el
+//     MONTAJE de `WelcomePrivateICloudGateView` —el destino común de los siete caminos de Restaurar y
+//     de los dos de «Soy nuevo» → «Privado»—, y no un punto dentro de `WelcomeRestoreView`, que no
+//     alcanzaba a los segundos.
 //   · `noteRestoreFinished` — el intento terminó **y no queda descarga**. Apaga las dos cosas, y
 //     además BORRA el aparcado: después de un final de verdad, lo que venga es una entrada nueva.
 //     **Lo que NO borra es el ancla de la gracia**, y eso es el ticket del 2026-09-22: es el verbo por
@@ -100,9 +105,8 @@
 //  hasta que el import asiente o caduque —tope duro de 600 s—, y dentro de ese tramo `isRestoringNow`
 //  se recalcula vivo, así que un import de rutina del espejo puede reabrirla. Es la exposición que el
 //  ticket compra a cambio de no bloquear al dueño legítimo sobre sus propios datos, y las dos salidas
-//  que sí sabían que no queda descarga la cierran antes: el asentamiento, y «Empezar desde cero», que
-//  apaga desde el punto único de `WelcomeRestoreView` —aparcando el reloj, para que volver de la
-//  puerta sin haber borrado no estrene uno nuevo—.
+//  que sí sabían que no queda descarga la cierran antes: el asentamiento, y llegar a la puerta que
+//  borra —aparcando el reloj, para que volver de ella sin haber borrado no estrene uno nuevo—.
 //
 
 import Foundation
@@ -113,11 +117,18 @@ enum ICloudRestoreSessionSignal {
     /// La identidad de UN intento de restauración: quién tiene derecho a cerrar la ventana.
     ///
     /// **Su `init` es `fileprivate` y eso es el invariante entero**: la única forma de tener un token
-    /// es haber llamado a `noteRestoreStarted()`, así que un apagado no puede venir de un flujo que
-    /// nunca encendió nada, y el mutante barato —`RestoreProgressView(flowToken: .init())`, que
-    /// deshace el ticket y deja la suite verde— **no compila**. Misma familia que el
+    /// es haber llamado a `noteRestoreStarted()`, así que ni soltar ni terminar pueden venir de un
+    /// flujo que nunca encendió nada, y el mutante barato —`RestoreProgressView(flowToken: .init())`,
+    /// que deshace el ticket y deja la suite verde— **no compila**. Misma familia que el
     /// `restoreInProgress: Bool` sin valor por defecto de `CrossAccountEntryGuardLogic`: quien añada
     /// un call-site tiene que DECIDIR, y lo comprueba el compilador y no un `grep`.
+    ///
+    /// **Gobierna TRES de los cinco verbos, no los cinco, y desde el 2026-09-22 son tres y no cuatro**
+    /// (`discard-gate-cannot-close-an-orphan-session-window`). `noteRestoreDiscardRequested` dejó de
+    /// pedirlo: quien declara que descarta el import deroga la premisa que lo protege, sea de quien
+    /// sea el intento que lo traía, y exigir titularidad ahí dejaba en no-op el descarte de quien
+    /// salió de Restaurar y volvió a entrar. Para ese verbo la red no es el compilador: es el conteo
+    /// de call-sites de `ICloudRestoreSignalWiringTests`, y está dicho en su mensaje.
     struct FlowToken: Hashable, Sendable {
         private let raw: UUID
         fileprivate init() { raw = UUID() }
@@ -386,16 +397,20 @@ enum ICloudRestoreSessionSignal {
 
     /// La persona **pidió empezar de cero**: apaga la ventana y APARCA su reloj.
     ///
-    /// `restore-session-window-has-no-reachable-ceiling`, 2026-09-21. Lo llama
-    /// `WelcomeRestoreView.discardImportAndStartFresh()`, que hasta ese día era una llamada a
-    /// `noteRestoreFinished` dentro de la confirmación del diálogo. Las dos mitades hacen falta y
-    /// ninguna sola basta:
+    /// `restore-session-window-has-no-reachable-ceiling`, 2026-09-21. Lo llama el MONTAJE de
+    /// `WelcomePrivateICloudGateView`, que hasta ese día era una llamada a `noteRestoreFinished`
+    /// dentro de la confirmación del diálogo de Restaurar. Las dos mitades hacen falta y ninguna sola
+    /// basta:
     ///
-    /// **«Pidió» y no «confirmó», desde el 2026-09-22**
-    /// (`wiped-state-reaches-the-discard-gate-with-the-window-open`): el apagado subió de la closure
-    /// del botón destructivo a un punto único por el que pasan los SIETE caminos a la puerta. Seis
-    /// confirman con diálogo; `.wiped` no, porque su búsqueda concluye por acto de la propia persona
-    /// —acaba de borrar en ese dispositivo—. Lo que comparten no es la confirmación: es el gesto.
+    /// **El apagado SUBIÓ DOS VECES, y la segunda es la que lo hace cierto.** El 2026-09-22 salió de la
+    /// closure del botón destructivo a un punto único de `WelcomeRestoreView`
+    /// (`wiped-state-reaches-the-discard-gate-with-the-window-open`), porque seis de los siete caminos
+    /// confirman con diálogo y `.wiped` no —su búsqueda concluye por acto de la propia persona—. Ese
+    /// mismo día subió otra vez, del gesto al DESTINO
+    /// (`discard-gate-cannot-close-an-orphan-session-window`): la puerta tiene **tres**
+    /// instanciaciones y solo una llega desde Restaurar; por «Soy nuevo» → «Privado» se llega sin
+    /// pasar por esa pantalla siquiera. Lo que comparten los caminos no es el diálogo, ni el gesto: es
+    /// la pantalla a la que llegan.
     ///
     ///  · **Apagar**, porque la persona acaba de declarar que descarta el import, y la premisa de la
     ///    que cuelga todo este diseño —«las filas siguen entrando y hay que protegerlas»— deja de
@@ -415,9 +430,35 @@ enum ICloudRestoreSessionSignal {
     /// review tumbó: aquél, una vez agotado, no dejaba ni re-anclar ni estrenar en el resto del
     /// proceso, y le devolvía al dueño legítimo el bloqueo sobre su propia cuenta.
     ///
-    /// **Solo aparca si `token` es el dueño vigente**, por la misma razón que sus dos hermanos: un
-    /// intento que ya perdió la titularidad no puede apagar —ni marcar— la ventana del que entró
-    /// después.
+    /// **NO pide titularidad, y ésa es la decisión del 2026-09-22**
+    /// (`discard-gate-cannot-close-an-orphan-session-window`, decisión de Jürgen). Es el ÚNICO de los
+    /// cinco verbos que puede apagar una ventana que no es de su intento, y el porqué es el del primer
+    /// bullet llevado hasta el final: la premisa que protege a un import —«las filas siguen entrando»—
+    /// la deroga quien declara que no las quiere, y esa declaración no distingue de qué intento son.
+    /// Hasta ese día llevaba `guard currentFlow == token`, y el recorrido que dejaba abierto era éste:
+    /// entra a Restaurar (dueño `T1`), el tope de 90 s se rinde con el import vivo, toca atrás
+    /// —`noteRestoreAbandoned(T1)` deja la ventana **viva y HUÉRFANA**—, vuelve a entrar y su
+    /// `startSearch()` sale por un `return` temprano sin encender nada. Ahí el descarte se caía por su
+    /// propio `guard` y la ventana llegaba a la puerta viva hasta el tope duro de 600 s, con el guard
+    /// de frontera de cuenta entornado.
+    ///
+    /// **Lo que aquel guard protegía es hoy inalcanzable por construcción**: quien llama es el montaje
+    /// de `WelcomePrivateICloudGateView`, que no guarda ningún token, así que no existe la «pantalla
+    /// vieja que confirma tarde» de la que hablaban sus dos hermanos. Ellos SÍ lo conservan, y no es
+    /// incoherencia: a `noteRestoreAbandoned` y a `noteRestoreFinished` los llama una pantalla que sí
+    /// tiene token, y ahí la distinción sigue siendo la red.
+    ///
+    /// **Y el invariante del ticket hermano sigue intacto**
+    /// (`abandoned-restore-no-longer-clears-the-session-window-clock`): quien abandona Restaurar y
+    /// vuelve **sin pasar por la puerta** conserva su ventana viva. Lo que apaga no es irse: es llegar
+    /// a la pantalla que borra.
+    ///
+    /// **Aparca SOLO si hay reloj, y esa rama es alcanzable — no es una defensa «por si acaso».** Se
+    /// llega a esta puerta sin haber pedido nunca restaurar («Soy nuevo» → «Privado»), y su `.onAppear`
+    /// puede correr más de una vez sobre el mismo montaje. Con la asignación incondicional, la segunda
+    /// pasada escribe `parkedStartedAt = nil` encima del reloj que la primera acababa de guardar, y la
+    /// vuelta desde la puerta estrena 600 s enteros: el recorrido de tres toques de
+    /// `restore-session-window-has-no-reachable-ceiling`, reabierto por el montaje.
     ///
     /// Y si el descarte se consuma, nadie limpia el aparcado a mano. **La primera versión decía que no
     /// hacía falta porque «desde el borrado no hay vuelta a Restaurar sin pasar por el onboarding», y
@@ -426,9 +467,10 @@ enum ICloudRestoreSessionSignal {
     /// «Activar Yala completo» aterriza en `.restore` directo—. La razón de verdad es la otra mitad de
     /// aquella frase, que sí se sostiene sola: heredar un reloj más corto sobre un corpus que acaba de
     /// borrarse es el lado seguro de esta señal, y a los 600 s el aparcado deja de heredarse.
-    static func noteRestoreDiscardRequested(_ token: FlowToken) {
-        guard currentFlow == token else { return }
-        parkedStartedAt = restoreStartedAt
+    static func noteRestoreDiscardRequested() {
+        if let restoreStartedAt {
+            parkedStartedAt = restoreStartedAt
+        }
         restoreStartedAt = nil
         currentFlow = nil
     }

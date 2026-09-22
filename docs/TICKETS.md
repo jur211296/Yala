@@ -165,7 +165,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | device-qa-groups-invite-neutral-return | qa | tickets/qa/device-qa-groups-invite-neutral-return.md |
 | device-qa-private-gate-device-corpus | done | tickets/done/device-qa-private-gate-device-corpus.md |
 | diez-worktrees-comparten-un-simulador | done | tickets/done/diez-worktrees-comparten-un-simulador.md |
-| discard-gate-cannot-close-an-orphan-session-window | backlog | tickets/backlog/discard-gate-cannot-close-an-orphan-session-window.md |
+| discard-gate-cannot-close-an-orphan-session-window | qa | tickets/qa/discard-gate-cannot-close-an-orphan-session-window.md |
 | discard-gate-proceed-leaves-the-imported-rows-behind | backlog | tickets/backlog/discard-gate-proceed-leaves-the-imported-rows-behind.md |
 | distribucion-recalcula-dos-veces-por-toque-y-sin-debounce | backlog | tickets/backlog/distribucion-recalcula-dos-veces-por-toque-y-sin-debounce.md |
 | distribution-balance-kpi-skips-fx | done | tickets/done/distribution-balance-kpi-skips-fx.md |
