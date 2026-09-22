@@ -1,6 +1,6 @@
 ---
 id: reverse-pre-mount-ceiling-charges-a-stall-to-whoever-stops-it-last
-status: in-progress
+status: qa
 priority: medium
 area: "modo-nube, migración"
 created: 2026-09-22
