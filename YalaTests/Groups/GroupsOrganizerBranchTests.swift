@@ -644,6 +644,16 @@ struct GroupsOrganizerWiringTests {
             apagar el latch aquí lo deja apagado también cuando el cierre se aborta, y su único encendedor
             vive en otra pantalla. El relanzamiento ya lo apaga, porque vive en memoria.
             """)
+        // **Y el segundo verbo que apaga, desde `restore-session-window-has-no-reachable-ceiling`
+        // (2026-09-21).** Este test se escribió cuando solo había uno; `noteRestoreDiscardRequested`
+        // pone `restoreStartedAt` y `currentFlow` a `nil` exactamente igual, así que produce el daño de
+        // arriba entero — y encima deja un reloj aparcado que la entrada siguiente heredaría. Lo cazaron
+        // dos lentes de la review de aquel ticket, con este test en verde.
+        #expect(!code.contains("ICloudRestoreSessionSignal.noteRestoreDiscardRequested("), """
+            el verbo del descarte apaga el latch igual que su hermano, así que aquí hace el mismo daño:
+            con el cierre abortado, el import sigue bajando sin latch y nadie lo vuelve a encender.
+            Además aparca el reloj, y la próxima entrada a Restaurar nacería con un tope duro gastado.
+            """)
     }
 
     /// **La celda se mide ANTES de arrancar, y ésa es la red contra los tres `return` mudos de `signOut`.**
