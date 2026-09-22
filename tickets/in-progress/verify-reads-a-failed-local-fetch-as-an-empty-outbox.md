@@ -1,6 +1,6 @@
 ---
 id: verify-reads-a-failed-local-fetch-as-an-empty-outbox
-status: backlog
+status: in-progress
 priority: medium
 area: "modo-nube, migración"
 created: 2026-09-22
@@ -32,6 +32,11 @@ tenía consecuencia**: los dos caminos acababan en `.networkTimeout`. Desde que 
 
 Hay un tercero con el mismo patrón: `SyncMerkle.collectLeaves` devuelve `[]` cuando su fetch lanza, así que una tabla
 ilegible se hashea como VACÍA y produce una divergencia que no es real.
+
+
+## Decisión (2026-09-22 · Frank / regla robusta Jürgen)
+
+**Ambos:** (1) un `fetch` de outbox que lanza NO se lee como vacío ni se salta el push; (2) `verify()` aborta con desenlace propio de ese fallo. Incluye el mismo patrón en `collectLeaves` (fetch→`[]` = divergencia falsa) en este mismo ticket.
 
 ## Qué habría que decidir antes de hacerlo
 
