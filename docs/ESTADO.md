@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-22 (Lima)
 
-**Rama** `2.1` — Merge #211: **Un fetch de outbox que falla ya no se lee como «no hay nada que subir».**
+**Rama** `2.1` — Merge #212: **La subida al activar la nube ya no se queda al 55 % para siempre.**
 TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,43 @@ TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#211 · un fetch de outbox que falla ya no se lee como «no hay nada que subir»)
+## Esta sesión (#212 · la subida al activar la nube ya no se queda al 55 % para siempre)
+
+**Si la subida de tus datos a la nube deja de avanzar, la app ya no se queda en «Activando la nube…» 55 % para
+siempre.** Se rinde sola: a los **15 min** si el motivo es de los que esperar no arregla (la sesión ya borrada, la
+cuenta congelada por una vuelta a iCloud en otro dispositivo, el teléfono que no puede preparar sus datos) y a las
+**72 h sin subir una sola página** con cualquier causa. Cada página confirmada reinicia la cuenta. Al rendirse sale la
+tarjeta de fallo con **un texto por motivo** y «Reintentar»; y mientras la subida está parada hay **«Cancelar la
+activación»**, con confirmación, que vuelve a «Migrar a la nube» sin aviso de fallo y cierra la sesión que abrió el
+intento. Antes de este paso el teléfono sigue entero en iCloud: nada local se deshace.
+
+Decisiones de Jürgen (22-sep, sesión de día): 15 min / 72 h como la vuelta, **texto por motivo** (se apartó de mi
+recomendación de reusar el genérico), «Cancelar» con confirmación, y **solo la subida**.
+
+**Lo que cazó la review, y es lo que no se toca sin romperlo** (las tres lentes, por separado): un 401 con la sesión
+TODAVÍA GUARDADA no es definitivo. Su caso principal es el reloj del teléfono atrasado, que el SDK cura al renovar;
+tratado como definitivo sacaba de la subida a los 15 min y «Reintentar» reusaba el mismo JWT rechazado sin pedir nada.
+Solo es definitiva la sesión que el SDK ya borró (`canRenewSession` leído después del push). La regla vive en
+`.claude/rules/swiftdata-cloudkit.md`, bullet «La subida del snapshot de la IDA también tiene techo…».
+
+`MigrationState` sube a **v9** (cinco campos opcionales). Canarios nuevos: `cloudSnapshotUploadWaiting` (por
+observación) y `cloudSnapshotUploadAborted` (salida). El reloj por causa sale a `CauseStallClock`, que ahora comparten
+la subida y las fases previas al montaje de la vuelta (la vuelta no cambia de comportamiento).
+
+Gate: 7478 unit en 742 suites y 10 XCUITest en 4 suites, verdes con el destino por `id=`. 18 mutantes, todos muertos.
+
+### Lo que espera de Jürgen
+
+- **Device-QA** del ticket `snapshot-upload-has-no-ceiling-and-no-way-out` (en `qa`): 7 pasos con **Yala Dev** y
+  modo avión a mitad de la subida. Se mergeó sin esperarlo por decisión suya (cola autónoma).
+
+### Lo siguiente de la misma familia
+
+- `forward-migration-steps-have-no-ceiling-and-no-exit` (**very-high**) — el mismo agujero en los pasos del 22 %, 35 %
+  y 80 % de la ida. Ya tiene piezas para reusar: `CauseStallClock` y `StorageFailureCopyLogic`.
+- `a-failed-snapshot-enqueue-save-leaves-the-journal-unsaved` (medium, inferido por una lente, no medido).
+
+## Sesión anterior (#211 · un fetch de outbox que falla ya no se lee como «no hay nada que subir»)
 
 **Si la base del teléfono no se deja leer, la app decidía con esa lectura igualmente — y en la misma pasada
 sacaba dos conclusiones opuestas.** Primero daba por hecho que no tenía nada pendiente de subir y se saltaba
@@ -84,7 +120,7 @@ prueba que cada test fija su desenlace y no solo que «algo cambió».
 
 ### Lo que este merge deja pendiente, y es lo SIGUIENTE (decisión de Jürgen, 22-sep)
 
-**`snapshot-upload-has-no-ceiling-and-no-way-out` (very-high) es el próximo ticket, y no es opcional: los dos
+**[CERRADO en #212, 22-sep.]** **`snapshot-upload-has-no-ceiling-and-no-way-out` (very-high) es el próximo ticket, y no es opcional: los dos
 arreglos tienen que aterrizar juntos.** Con un fallo PERSISTENTE de la base local, la migración se queda al
 **55 %, «Migrando…»**, sin aviso, sin «Cancelar» y sin que el botón «Reintentar» alcance esa fase.
 
