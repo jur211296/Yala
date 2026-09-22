@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (505)
+## Index (506)
 
 | id | status | path |
 |---|---|---|
@@ -81,6 +81,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | association-read-writes-defaults-from-a-view-body | backlog | tickets/backlog/association-read-writes-defaults-from-a-view-body.md |
 | attest-gateway-reports-a-storage-failure-as-an-invalid-attestation | backlog | tickets/backlog/attest-gateway-reports-a-storage-failure-as-an-invalid-attestation.md |
 | attest-session-token-rejected-by-the-gateway-stays-cached | backlog | tickets/backlog/attest-session-token-rejected-by-the-gateway-stays-cached.md |
+| autonomous-mode-still-asks-to-continue-after-listing-more-than-three-files | done | tickets/done/autonomous-mode-still-asks-to-continue-after-listing-more-than-three-files.md |
 | aviso-de-nuevo-miembro-no-llega-hasta-abrir-la-app | qa | tickets/qa/aviso-de-nuevo-miembro-no-llega-hasta-abrir-la-app.md |
 | backend-account-kind-complete-or-groups-only | done | tickets/done/backend-account-kind-complete-or-groups-only.md |
 | beacon-routes-only-never-blocks | qa | tickets/qa/beacon-routes-only-never-blocks.md |

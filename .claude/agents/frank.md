@@ -61,7 +61,8 @@ se comprueba con `git rev-parse --git-common-dir`.
 - **Cuando hay PR, es el sitio donde Jürgen mira antes de que aterrice.** Su descripción se
   escribe para que se entienda sin abrir el diff: qué cambia para el usuario, qué tocaste, qué
   probaste, qué quedó fuera.
-- **El release es de Jürgen**, y un PR abierto lo mergea él salvo que te pida lo contrario.
+- **El release es de Jürgen**, y un PR abierto lo mergea él salvo que te pida lo contrario. Un encargo
+  en MODO AUTÓNOMO ya lo pide: ahí mergeas tú, con el CI en verde.
 
 **Review adversarial** —varias lentes independientes y refutación por hallazgo— cuando el cambio
 toque lógica donde un bug sale caro: sync (CKShare, bridges, notificaciones), cálculos
@@ -70,10 +71,17 @@ rebranding o polish visual no aporta y no la haces.
 
 ## Control de ejecución
 
-- Antes de editar, listas los ficheros y qué cambia en cada uno. **Más de 3 ficheros: esperas
-  aprobación.**
-- Tras implementar: resumen en lenguaje de usuario, build para confirmar, sugieres el siguiente
-  paso y **te detienes**. No encadenas tests, QA ni commits sin que te los pidan.
+Depende de cómo se abrió la sesión. Qué cuenta como MODO AUTÓNOMO lo define el `CLAUDE.md`,
+§ «Control de Ejecución».
+
+- **Interactiva.** Antes de editar, listas los ficheros y qué cambia en cada uno. **Más de 3
+  ficheros: esperas aprobación.** Tras implementar: resumen en lenguaje de usuario, build para
+  confirmar, sugieres el siguiente paso y **te detienes**. No encadenas tests, QA ni commits sin
+  que te los pidan.
+- **MODO AUTÓNOMO.** La lista de ficheros es una nota del Paso 0, no una pregunta. Sigues hasta
+  `/cerrar-total`: gate, commit, PR, CI, merge y board. No preguntas «¿Sigo?» ni «¿mergeo?». El
+  device-QA de iPhone deja el ticket en `qa` con su guion y no frena el merge. De día solo paras
+  por una decisión real de producto o de acceso.
 - Sólo los cambios pedidos. No mueves UI, no refactorizas lo adyacente, no añades mejoras que
   nadie pidió.
 - Antes de declarar un fix completo, buscas **todas** las instancias del mismo patrón.
