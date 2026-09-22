@@ -236,8 +236,9 @@ struct RestoreProgressView: View {
             // mitad cancela ese `Task` y este camino no corre»): hasta hoy esa frase era falsa.
             //
             // Lo que se pierde es PRECISIÓN, y la lógica pura la acota: quien toca atrás y no vuelve
-            // deja la ventana a cargo del import que asienta y de la caducidad (60 s sin actividad,
-            // tope duro de 600 s). **Y el tramo de 600 s no es solo «el import va lento»**, que es lo
+            // deja la ventana a cargo del import que asienta y de la caducidad (la gracia sin
+            // actividad —60 s por PROCESO desde el 2026-09-22, no por entrada— y el tope duro de
+            // 600 s). **Y el tramo de 600 s no es solo «el import va lento»**, que es lo
             // que decía la primera versión de este comentario y lo refutó la review:
             // `hasObservedImportActivity` se enciende en `iCloudSyncService` ANTES del `if let error`,
             // así que un import que FALLÓ y no va a volver también cae en esa rama. Se acepta —el tope

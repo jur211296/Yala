@@ -37,7 +37,10 @@
 //  media descarga y el guard cross-cuenta se cerraba sobre el dueño legítimo — el bug que esta señal
 //  existe para impedir, entrando por la puerta de al lado.
 //
-//  Hoy son cuatro verbos y cada uno mueve lo suyo:
+//  Hoy son CINCO verbos y cada uno mueve lo suyo. **Eran cuatro en esta lista hasta el 2026-09-22 y
+//  el quinto ya existía**: faltaba `noteRestoreUnavailable`, que es justo el único que borra el ancla
+//  de la gracia que estrenó `restore-retry-reopens-the-session-window-every-90-seconds`. Lo midió una
+//  lente de la review.
 //
 //   · `noteRestoreStarted` — entra un intento. **Estrena reloj si la ventana está apagada, y re-ancla
 //     una huérfana solo si hay descarga VIGENTE detrás**; con dueño vigente lo conserva. Los dos
@@ -69,6 +72,14 @@
 //     borrado nada, esa entrada hereda el reloj en vez de estrenar tope duro nuevo.
 //   · `noteRestoreFinished` — el intento terminó **y no queda descarga**. Apaga las dos cosas, y
 //     además BORRA el aparcado: después de un final de verdad, lo que venga es una entrada nueva.
+//     **Lo que NO borra es el ancla de la gracia**, y eso es el ticket del 2026-09-22: es el verbo por
+//     el que pasa cada vuelta del ciclo «la espera se rinde a los 90 s → volver a buscar», y borrarla
+//     ahí le devolvía al reintento sus 60 s por vuelta.
+//   · `noteRestoreUnavailable` — esta entrada **no puede restaurar nada** (sin cuenta de iCloud, o tras
+//     un wipe). No toca la ventana ni la titularidad: tira el aparcado y el ancla de la gracia, que son
+//     las dos cosas que ya no describen nada. **El borrado del ancla solo cambia algo cuando el reloj
+//     también está apagado** — con la ventana viva, la entrada siguiente vuelve a derivarla de ese
+//     reloj, que es el estado correcto y no un olvido; medido por una lente de la review.
 //
 //  **Y «terminó» dejó de significar «la espera devolvió» el 2026-09-21**
 //  (`restore-timeout-closes-the-session-window-with-the-import-still-running`). Agotar el tope de 90 s
@@ -152,6 +163,28 @@ enum ICloudRestoreSessionSignal {
     /// `abandoned-restore-no-longer-clears-the-session-window-clock`.
     private(set) static var parkedStartedAt: Date?
 
+    /// **Desde cuándo se cuenta la GRACIA de 60 s, y es del PROCESO y no de la entrada.**
+    ///
+    /// `restore-retry-reopens-the-session-window-every-90-seconds`, 2026-09-22. Lo pone el primer
+    /// estreno y lo lee `isRestoringNow`; lo único que lo borra es `noteRestoreUnavailable` —y matar
+    /// la app—. En particular **`noteRestoreFinished` NO lo toca, y ése es el ticket entero**: con la
+    /// gracia colgada del reloj de cada entrada, el teléfono con el corpus de otra persona mantenía
+    /// abierto el guard de frontera de cuenta con UN toque cada minuto y medio. La espera de 90 s se
+    /// rendía sin un solo `.importEvent`, `closesTheSessionWindow` apagaba, y «volver a buscar»
+    /// estrenaba otros 60 s de gracia — sin pasar por ninguna puerta y sin que tuviera que bajar nada.
+    /// Era el camino más barato que quedaba: el de la puerta de descarte cuesta tres toques y 600 s.
+    ///
+    /// **Es una FECHA y no un `Bool` «ya se gastó»** porque la gracia consumida no siempre son 60 s: un
+    /// final sin imports puede llegar a los 3 s —`closesTheSessionWindow` no espera a la gracia— y con
+    /// un `Bool` el reintento perdería los 57 s que nadie gastó. Así es un presupuesto de 60 s
+    /// repartido entre las entradas que hagan falta.
+    ///
+    /// **Y es SEPARADA del reloj a propósito**: el aparcado del descarte hereda `restoreStartedAt`
+    /// entero, que recorta también el tope duro. Aquí eso violaría el criterio del ticket —el dueño
+    /// legítimo que reintenta con razón conserva su ventana COMPLETA de 600 s—, así que el estreno
+    /// sigue dando reloj nuevo y lo único que no se renueva es la gracia.
+    private(set) static var graceStartedAt: Date?
+
 
     /// Lo llama `WelcomeRestoreView` al pasar a `.searching`, que es el único estado en el que hay un
     /// import de CloudKit de verdad — `.wiped` y `.iCloudDisabled` no importan nada y encender ahí
@@ -175,7 +208,9 @@ enum ICloudRestoreSessionSignal {
     ///    el dueño legítimo.
     ///    **Y el testigo es lo que impide que re-anclar se vuelva un tope infinito**, que lo cazó una
     ///    lente de la review: sin él, entrar y salir de Restaurar renueva la ventana indefinidamente
-    ///    —`isRestoringNow` mide TODOS sus plazos desde este instante, gracia incluida— y en un
+    ///    —`isRestoringNow` mide desde este instante el tope duro; **la gracia dejó de contarse desde
+    ///    aquí el 2026-09-22** (`restore-retry-reopens-the-session-window-every-90-seconds`): tiene su
+    ///    propia ancla de proceso, así que este término ya no la renueva— y en un
     ///    teléfono con el corpus de otra persona eso mantiene abierta de par en par la puerta que el
     ///    guard existe para cerrar.
     ///    **Era `hasObservedImportActivity` hasta el 2026-09-21, y ése es un latch MONÓTONO**: una vez
@@ -261,6 +296,14 @@ enum ICloudRestoreSessionSignal {
         } else if ownerIsStuckOnASpentWindow {
             restoreStartedAt = now
         }
+        // **El ancla de la GRACIA, y la pone la PRIMERA entrada del proceso**
+        // (`restore-retry-reopens-the-session-window-every-90-seconds`, 2026-09-22). El `??` es lo que
+        // la hace del proceso: una vez puesta, ninguna entrada posterior la mueve, y `noteRestoreFinished`
+        // no la borra — que es lo que le quita al ciclo reintentar-reintentar sus 60 s por vuelta.
+        // Va FUERA de las ramas para no depender de cuál corrió: las tres dejan `restoreStartedAt`
+        // puesto, y en la de estreno el ancla nace pegada al reloj (heredado o `now`), que es lo que
+        // hace que el recorrido de la puerta de descarte no cambie de comportamiento.
+        graceStartedAt = graceStartedAt ?? restoreStartedAt
         let token = FlowToken()
         currentFlow = token
         return token
@@ -315,8 +358,27 @@ enum ICloudRestoreSessionSignal {
     /// entrada ni siquiera llegó a encender— y apagarla desde aquí sería el bug que
     /// `noteRestoreAbandoned` existe para no cometer. Lo único que declara es que el reloj guardado
     /// ya no describe nada.
+    ///
+    /// **Y desde el 2026-09-22 tira también el ancla de la gracia**
+    /// (`restore-retry-reopens-the-session-window-every-90-seconds`), por la misma razón y para la
+    /// misma persona: quien entra sin cuenta, la enciende y pulsa «volver a buscar» tiene una descarga
+    /// NUEVA detrás, y hacerle heredar una gracia que se consumió antes de que hubiera cuenta le
+    /// dejaría la ventana cerrada desde el primer instante. Es el recorrido que el ticket midió como
+    /// «el dueño legítimo que reintenta con razón».
+    ///
+    /// **Y ese borrado solo cambia algo cuando el reloj TAMBIÉN está apagado** — lo midió una lente de
+    /// la review y conviene tenerlo escrito, porque el recorrido gemelo existe: si la persona se fue de
+    /// Restaurar sin que nadie apagara (`noteRestoreAbandoned`) la ventana sigue viva, y la entrada que
+    /// venga después vuelve a derivar el ancla de ESE reloj. No es un olvido ni una fuga: con la
+    /// ventana viva, la gracia contada desde su reloj es exactamente lo que describe ese tramo, y
+    /// moverla sería darle margen nuevo a una ventana que nunca se cerró. Apagar el reloj desde aquí sí
+    /// sería un bug — es lo que prohíbe el párrafo de arriba.
+    ///
+    /// No le da salida a nadie más: llegar aquí pide apagar iCloud —o un wipe— en Ajustes del sistema,
+    /// más caro que matar la app, que ya es el baseline declarado de esta señal.
     static func noteRestoreUnavailable() {
         parkedStartedAt = nil
+        graceStartedAt = nil
     }
 
     /// La persona **confirmó que quiere empezar de cero**: apaga la ventana y APARCA su reloj.
@@ -410,6 +472,15 @@ enum ICloudRestoreSessionSignal {
         // le quita el consumo al estreno, porque lo recogía aquí detrás. Quien añada un segundo
         // llamador del descarte tiene enfrente el escáner de unicidad de la suite, que es la red
         // correcta para eso.
+        //
+        // **Y NO toca el ancla de la GRACIA, y eso sí es una decisión**
+        // (`restore-retry-reopens-the-session-window-every-90-seconds`, 2026-09-22). Este verbo es el
+        // que cierra el ciclo barato: el tope de 90 s se rinde sin un solo `.importEvent`, aquí se
+        // apaga, y el «volver a buscar» siguiente estrena reloj. Si el ancla se fuera con el reloj,
+        // ese estreno compraría otros 60 s de gracia y el guard de frontera de cuenta se quedaría
+        // abierto 60 s de cada 91 indefinidamente, con un toque por vuelta. Sobreviviéndole, el
+        // estreno da tope duro nuevo —la ventana del dueño legítimo sigue entera— pero ya no da
+        // gracia nueva.
     }
 
     /// El input del guard cross-cuenta. Se lee EN el instante de decidir y nunca se cachea: el mirror
@@ -417,6 +488,7 @@ enum ICloudRestoreSessionSignal {
     static var isRestoringNow: Bool {
         ICloudRestoreInProgressLogic.isRestoringNow(
             restoreStartedAt: restoreStartedAt,
+            graceStartedAt: graceStartedAt,
             hasCompletedFirstImport: iCloudSyncService.shared.hasCompletedFirstImport,
             isImportQuiescent: iCloudSyncService.shared.isImportQuiescent,
             hasObservedImportActivity: iCloudSyncService.shared.hasObservedImportActivity,
@@ -429,6 +501,7 @@ enum ICloudRestoreSessionSignal {
         restoreStartedAt = nil
         currentFlow = nil
         parkedStartedAt = nil
+        graceStartedAt = nil
     }
     #endif
 }
