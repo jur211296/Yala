@@ -26,3 +26,19 @@ separa es el `rawValue` del canario, y eso es lo único que en la flota distingu
 
 Relacionado: [[feedback_el_molde_no_traslada_sus_precondiciones]], [[feedback_el_copy_que_promete_se_recorre]],
 [[feedback_alcance_minimo_salvo_incoherencia]].
+
+## Y el 2026-09-22, en el mismo techo: al añadir una SEGUNDA vía de salida, el copy se quedó con la vieja
+
+Cuando una salida pasa de tener **un** disparador a tener **dos**, el motivo que se journalea deja de ser obvio y hay
+que volver a elegirlo. Añadí `fase >= 72 h OR (causa definitiva && causa >= 900 s)` y dejé intacto el
+`exitReason: blocker?.abortReason ?? .preMountStalled` — que era correcto cuando la única vía con blocker era la del
+blocker. Con dos vías, la vuelta puede salir por el techo de FASE en una pasada que casualmente traiga un 403 de
+**cero segundos**, y journalear `preMountRefused` le da el correo de soporte a quien llevaba tres días sin red.
+
+**How to apply:** cada vez que una salida gane una vía nueva, busca el sitio que **nombra** esa salida —el motivo, el
+copy, el canario— y pregúntate cuál de las dos vías lo produjo. La regla que salió: **el motivo lo elige el techo que
+VENCIÓ**, y el predicado vive en un solo sitio (`MigrationPolicy.reversePreMountCauseCeilingReached`) porque lo
+consultan la máquina y el runner — escrito dos veces, un día discrepan. Y si el 403 era real no se pierde nada: la
+persona reintenta y a los 15 min sale con el motivo bueno, que entonces sí es verdad.
+
+Relacionado: [[feedback_el_predicado_que_amplio_cortocircuita]], [[feedback_el_termino_nuevo_desarma_el_test_viejo]].

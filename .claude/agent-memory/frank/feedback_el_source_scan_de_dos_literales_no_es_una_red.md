@@ -81,3 +81,17 @@ el término entero y el `case .idle` entero, y aun así la lente de tests encont
 lectura de la capacidad (`isDisabled: … || AppAttestClient.canObtainSessionToken`) y una copia de la declaración bajo
 `#if DEBUG … #else`, que satisface el `contains` con la copia de Debug —la que compilan los tests—. ⇒ **contar lecturas y
 declaraciones (`== 1`)**, además de fijar la buena. Verificado con 13 mutantes, cada uno rojo solo en su test.
+
+**Y la quinta forma, el 22-sep y sin ser un scan de fuente: el test que enumera A MANO la familia que promete vigilar.**
+Escribí `clearReversePreMountCeiling()` —limpia cinco campos del journal y se llama desde seis sitios— y un test cuyo
+docblock prometía: «un campo que entre a la familia y se olvide en el helper muere aquí». **No podía.** El caso
+construía un `MigrationState` con los cinco campos puestos y afirmaba los cinco a `nil`: una lista literal comparada
+consigo misma. Un sexto campo que el helper olvidara lo dejaba **verde**, y el test de paridad de schema tampoco lo
+caza —ése obliga a DECLARAR el campo, no a limpiarlo—. Lo cazó una lente leyendo el docblock contra el código.
+
+**How to apply:** un test que promete cubrir una FAMILIA tiene que **derivar la familia de la fuente de verdad**, no
+enumerarla. Aquí bastó `propertyNames(MigrationState.self).filter { $0.hasPrefix("reversePreMount") }` comparado
+contra el conjunto conocido: un campo nuevo rompe esa igualdad y obliga a pasar por el caso, que es donde se ve si el
+helper lo limpia. Misma prueba que el resto de esta ficha, formulada como pregunta: **¿qué mutante mata este test?**
+Si la respuesta es «ninguno que no tenga que tocar el propio test», el test no es una red — es un espejo.
+
