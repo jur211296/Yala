@@ -354,14 +354,37 @@ struct RestoreStartFreshGateTests {
 
         // El diálogo existe y su botón destructivo hace algo: montarlo con la closure vacía lo deja
         // presente y muerto.
+        //
         // Desde el 2026-09-22 sale por `discardImportAndStartFresh()`, el punto único que COMPROMETE
-        // el descarte: apaga la ventana de sesión y entonces llama al callback
-        // (`wiped-state-reaches-the-discard-gate-with-the-window-open`). Que ese punto haga las dos
-        // cosas, y en ese orden, lo fija `ICloudRestoreSignalWiringTests`.
+        // el descarte: apaga la ventana de sesión —desde ese mismo día, SIN pedir titularidad— y
+        // entonces llama al callback (`wiped-state-reaches-the-discard-gate-with-the-window-open` +
+        // `discard-gate-cannot-close-an-orphan-session-window`). Que ese punto haga las dos cosas, y en
+        // ese orden, lo fija `ICloudRestoreSignalWiringTests`.
         let dialog = try Self.body(of: "isPresented: $showStartFreshConfirm,", in: src)
-        #expect(dialog.contains("discardImportAndStartFresh()"), """
-            el botón destructivo del diálogo dejó de llevar a la puerta: la confirmación sigue saliendo y
-            ya no lleva a ninguna parte.
+        #expect(!dialog.contains("ICloudRestoreSessionSignal"), """
+            el diálogo volvió a tocar la ventana de sesión a mano. Quien la apaga es el punto único
+            `discardImportAndStartFresh()`, cuyo cuerpo entero está fijado en
+            `ICloudRestoreSignalWiringTests`. Un apagado suelto aquí es un segundo escritor, y desde el
+            2026-09-22 el verbo ya no pide titularidad: apagaría la ventana de cualquiera sin que nada
+            se lo impida.
+            """)
+
+        // **Y va ACOTADO al botón destructivo, no al diálogo entero.** Sobre el diálogo, un
+        // `contains("onStartFresh()")` lo cumple igual la closure del CANCEL — y ese swap manda a la
+        // puerta a quien acaba de arrepentirse, con su import bajando.
+        let confirmar = try Self.body(of: "Button(L10n.Welcome.Restore.startFreshConfirmConfirm, role: .destructive) {",
+                                      in: src)
+        #expect(confirmar.trimmingCharacters(in: .whitespacesAndNewlines) == "discardImportAndStartFresh()", """
+            el botón destructivo del diálogo ya no es exactamente «llama al callback»: \(confirmar). \
+            Vacío, la confirmación sigue saliendo y no lleva a ninguna parte; con trabajo de más, es el \
+            sitio donde volvería a colarse un apagado que la puerta ya hace.
+            """)
+        let cancelar = try Self.body(of: "Button(L10n.Welcome.Restore.startFreshConfirmCancel, role: .cancel) {",
+                                     in: src)
+        #expect(cancelar.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, """
+            el «cancelar» del diálogo dejó de estar vacío: \(cancelar). Ese botón existe para volver sin \
+            haber hecho nada — quien se arrepiente sigue en Restaurar con su import bajando, y \
+            mandarlo a la puerta le apaga la ventana sobre su propia cuenta.
             """)
 
         // `.found` es el camino principal del ticket: el que enseña las cifras de lo que bajó.
@@ -370,8 +393,13 @@ struct RestoreStartFreshGateTests {
         #expect(found.contains("showStartFreshConfirm = true"), """
             el estado que acaba de enseñar «encontramos tus datos» descarta el restore sin confirmar.
             """)
-        #expect(!found.contains("onStartFresh()") && !found.contains("discardImportAndStartFresh"), """
+        #expect(!found.contains("onStartFresh"), """
             y lo hace por el diálogo, no llamando al callback directo — que es el swap que compila.
+            **Se cuenta el IDENTIFICADOR y no la llamada** (lección de
+            `wiped-state-reaches-the-discard-gate-with-the-window-open`): entregarlo como acción de un
+            botón —`primaryAction: onStartFresh`— tampoco pasa por el diálogo y un conteo de
+            `onStartFresh()` no lo vería. El segundo término, sobre `discardImportAndStartFresh`, se
+            retira el 2026-09-22: ese símbolo ya no existe, así que la mitad no podía fallar.
             """)
 
         // `.cloudPaused` lo REUSA en vez de llamar directo: los estados que niegan que haya datos no
@@ -390,8 +418,13 @@ struct RestoreStartFreshGateTests {
             «no pudimos comprobar tus datos» pasó a descartar sin confirmar: es el único estado que no
             sabe si hay algo que perder, así que es el que MENOS puede permitirse saltarse el diálogo.
             """)
-        #expect(!unverified.contains("onStartFresh()") && !unverified.contains("discardImportAndStartFresh"), """
+        #expect(!unverified.contains("onStartFresh"), """
             y lo hace por el diálogo, no llamando al callback directo — que es el swap que compila.
+            **Se cuenta el IDENTIFICADOR y no la llamada** (lección de
+            `wiped-state-reaches-the-discard-gate-with-the-window-open`): entregarlo como acción de un
+            botón —`primaryAction: onStartFresh`— tampoco pasa por el diálogo y un conteo de
+            `onStartFresh()` no lo vería. El segundo término, sobre `discardImportAndStartFresh`, se
+            retira el 2026-09-22: ese símbolo ya no existe, así que la mitad no podía fallar.
             """)
 
         // `.importIncomplete` (2026-09-20) es el caso más fuerte de los cuatro: no es que no sepamos si
@@ -402,8 +435,9 @@ struct RestoreStartFreshGateTests {
             que el histórico EXISTE y está entrando: empezar de cero encima abre un dataset paralelo
             que convivirá con él en cuanto el import termine.
             """)
-        #expect(!importing.contains("onStartFresh()") && !importing.contains("discardImportAndStartFresh"), """
-            y por el diálogo, no llamando al callback directo — el swap que compila.
+        #expect(!importing.contains("onStartFresh"), """
+            y por el diálogo, no llamando al callback directo ni ENTREGÁNDOLO — los dos swaps que
+            compilan.
             """)
 
         // `.iCloudDisabled` (2026-09-20). Estuvo en el bucle de abajo hasta hoy, clasificado como
@@ -417,7 +451,7 @@ struct RestoreStartFreshGateTests {
             comprobó NADA: quien pulsa ahí puede tener su histórico entero en la cuenta que acaba de
             quedarse sin Drive.
             """)
-        #expect(!disabled.contains("onStartFresh()") && !disabled.contains("discardImportAndStartFresh"), """
+        #expect(!disabled.contains("onStartFresh"), """
             y por el diálogo. Ojo: `onOpenSettings` sigue siendo el primario y es el que no se toca.
             """)
 
@@ -432,9 +466,9 @@ struct RestoreStartFreshGateTests {
             pendiente: su rama directa tiene una sola población y es gente con datos, la de
             `restore-treats-budgets-and-groups-as-no-data`.
             """)
-        #expect(!notFound.contains("primaryAction: onStartFresh")
-                && !notFound.contains("discardImportAndStartFresh"), """
-            y por el diálogo, no pasando el callback como acción — el swap que compila.
+        #expect(!notFound.contains("onStartFresh"), """
+            y por el diálogo, no pasando el callback como acción ni llamándolo — los dos swaps que
+            compilan.
             """)
 
         // Y la exclusividad en la otra dirección: el ÚNICO estado que no confirma es `.wiped`.

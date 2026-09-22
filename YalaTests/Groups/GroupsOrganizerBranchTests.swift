@@ -649,6 +649,11 @@ struct GroupsOrganizerWiringTests {
         // pone `restoreStartedAt` y `currentFlow` a `nil` exactamente igual, así que produce el daño de
         // arriba entero — y encima deja un reloj aparcado que la entrada siguiente heredaría. Lo cazaron
         // dos lentes de la review de aquel ticket, con este test en verde.
+        //
+        // **Y desde el 2026-09-22 ese verbo ya ni siquiera pide titularidad**
+        // (`discard-gate-cannot-close-an-orphan-session-window`), así que aquí haría el daño SIEMPRE:
+        // antes, un token que no fuera el dueño vigente lo dejaba en no-op y el daño dependía de quién
+        // llamara. Hoy no hay nada que lo frene salvo este escáner.
         #expect(!code.contains("ICloudRestoreSessionSignal.noteRestoreDiscardRequested("), """
             el verbo del descarte apaga el latch igual que su hermano, así que aquí hace el mismo daño:
             con el cierre abortado, el import sigue bajando sin latch y nadie lo vuelve a encender.
