@@ -5,10 +5,57 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-21 (Lima)
 
-**Rama** `2.1` — Merge #202: **La escala de prioridades del board pasa de 3 a 6 peldaños.**
+**Rama** `2.1` — Merge #203: **El tope de 90 s ya no cierra la sesión con el import todavía bajando.**
 TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
-## Esta sesión (#202 · la escala de prioridades pasa de 3 a 6 peldaños)
+## Esta sesión (#203 · el tope de 90 s ya no cierra la sesión con el import bajando)
+
+**Entro a «Restaurar desde iCloud» con un histórico grande. A los 90 s la pantalla se rinde y me dice
+«seguimos trayendo tus datos» — que es verdad: siguen bajando. Toco atrás, firmo con mi cuenta y la app
+me contesta que estos datos son de otra persona.** Son míos, y están entrando en ese mismo momento. Ya
+no pasa: mientras el import siga trayendo filas, la app me sigue reconociendo como el dueño.
+
+Y cuando de verdad no hay nada que traer, la puerta se cierra en el acto como hasta ahora: quien no
+tiene datos no gana ninguna espera.
+
+**El criterio no es el desenlace que elige el copy, y esa fue la primera versión.** La tumbó la review:
+`RestoreImportSettlement` agrupa en `.inconclusive` dos poblaciones que a esta pregunta contestan
+distinto —la que no vio un import y la que vio uno con un error vigente—, y esos errores suelen ser
+retriables (`isRetriable` da `true` hasta en su `default`), con CloudKit trayendo filas detrás. O sea
+que a un restore grande con la red floja —**el caso normal**— se le apagaba la ventana con la descarga
+viva: el bug del ticket, sin arreglar, entrando por el copy. Hoy decide
+`ICloudRestoreInProgressLogic.closesTheSessionWindow`, con los dos términos crudos.
+
+**El `noteRestoreAbandoned` se mudó de `RestoreProgressView` a `WelcomeRestoreView`**, y era la única
+forma de cumplir el tercer criterio sin inventar estado: la pantalla de progreso se desmonta también al
+cambiar de `state` —a `.importIncomplete`, a `.found`—, o sea con la persona todavía dentro de
+Restaurar. Soltar ahí dejaba la ventana huérfana y el reintento la re-anclaba; como el testigo del
+import es un latch monótono, el tope duro de 600 s se renovaba cada 90 s con solo pulsar «volver a
+buscar».
+
+**«Empezar desde cero» apaga la ventana desde su propia confirmación**, y eso lo destapó la review como
+**regresión de este mismo ticket**: sin ello esa salida se llevaba la ventana abierta hasta diez
+minutos, donde antes la cerraba el apagado incondicional. Es la otra salida que sabe que no queda
+descarga, porque la persona acaba de decirlo.
+
+**La review de tres lentes cazó tres defectos míos, y dos eran el bug sin arreglar.** El tercero fueron
+tres agujeros en mi red de tests: el scan del `.onDisappear` no anclaba a qué vista cuelga —mover el
+bloque dentro del `switch` reabría el ticket con todo en verde—, el del apagado no contaba ocurrencias,
+y el criterio 1 se afirmaba sobre un campo y no sobre `CrossAccountEntryGuardLogic`, que es donde la
+persona lo sufre. Y una premisa mía que era falsa: «el desmontaje de Restaurar significa me fui» —en
+`FullModeActivationView` no siempre.
+
+Verificado: build ×2 sin warnings nuevos, **352 unit en 37 suites** (pedidas = corridas), **16 XCUITest
+en 4 suites** con el centinela en cero, y **dos tandas de mutantes, 12 en total, todos muertos**.
+
+**Residual con ticket propio:** salir de Restaurar y volver renueva el tope duro
+(`leaving-and-reentering-restore-renews-the-hard-cap`). No es regresión —antes el apagado incondicional
+estrenaba reloj por la otra rama— y el tercer criterio habla del reintento, que sí queda cerrado.
+
+El ticket va a `qa` con guion de siete pasos para iPhone: el escenario necesita un histórico que
+CloudKit tarde más de 90 s en bajar, y eso no se monta en simulador.
+
+## Sesión anterior (#202 · la escala de prioridades pasa de 3 a 6 peldaños)
 
 Sesión de board, sin una línea de Swift. Jürgen pidió el 21-sep ampliar la escala de prioridades y
 remapear el board abierto en el mismo gesto.
@@ -118,7 +165,8 @@ invariante era `restoreStartedAt == nil ⇔ currentFlow == nil`, o sea que apaga
 reloj eran el MISMO acto; desde que el flujo abandonado dejó de apagar (#198, con razón: el import sigue
 bajando) dejó también de liberar. Hoy hay un estado más, **la ventana HUÉRFANA** —reloj puesto, dueño
 `nil`—: viva para el import que la justifica, sin nadie que la vigile, y la entrada siguiente la estrena.
-La suelta `noteRestoreAbandoned` desde el `onDisappear` de la pantalla de progreso, y **no toca el
+La suelta `noteRestoreAbandoned` desde el `onDisappear` de la pantalla de progreso —**mudado a
+`WelcomeRestoreView` por #203**, ver arriba—, y **no toca el
 reloj**: apagar ahí reabriría entero el ticket del que sale éste.
 
 **La premisa del ticket cayó al medirla.** El docblock decía que conservar el reloj impedía que el botón
