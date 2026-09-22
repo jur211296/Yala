@@ -5,10 +5,72 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-22 (Lima)
 
-**Rama** `2.1` — Merge #207: **El estado «Borraste tus datos» ya no llega a la puerta de descarte
-con la ventana abierta.** TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
+**Rama** `2.1` — Merge #208: **La puerta de descarte ya apaga una ventana de sesión huérfana.**
+TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
-## Esta sesión (#207 · el estado borrado ya no llega a la puerta con la ventana abierta)
+## Esta sesión (#208 · la puerta de descarte ya apaga una ventana huérfana)
+
+**Salir de Restaurar y volver a entrar dejaba el permiso que deja firmar sin aviso VIVO y sin dueño**,
+y desde ahí «Empezar desde cero» era un no-op: la persona llegaba a la pantalla que borra con ese
+permiso abierto hasta diez minutos, parada delante. En un teléfono con los datos de otra persona, es
+tiempo de sobra para firmar encima. El hermano de #207, que cerró el camino en el que la misma
+instancia tiene el token.
+
+**Para el dueño legítimo no cambia nada**: quien abandona Restaurar y vuelve **sin** pasar por esa
+pantalla sigue con su permiso intacto, porque su import sigue trayendo filas.
+
+**El mecanismo, y son DOS mitades.** El apagado pedía un token en el `@State` de esa instancia **y**
+que ese token siguiera siendo el dueño vigente. La instancia nueva nace sin token, y el dueño es `nil`
+desde que la anterior se fue. `noteRestoreDiscardRequested` pierde el token y su `guard`, y
+`discardImportAndStartFresh()` pierde su `if let`. Es el **único de los cinco verbos** que apaga sin
+titularidad, y el porqué es el del diseño llevado hasta el final: la premisa «las filas siguen
+entrando y hay que protegerlas» la deroga quien declara que no las quiere, y esa declaración no
+distingue de qué intento son. Los otros dos verbos conservan su `guard`: a ésos los llama una pantalla
+que sí tiene token.
+
+**El aparcado se escribe SOLO si hay reloj, y esa rama es alcanzable.** Sin ese término, un descarte
+sobre una ventana ya apagada pisa con `nil` el reloj que el anterior guardó, y la vuelta estrena 600 s
+— el recorrido de tres toques de `restore-session-window-has-no-reachable-ceiling`, reabierto.
+
+**EL ALCANCE SE MIDIÓ, Y EL APAGADO SE QUEDA EN EL GESTO.** El encargo pedía cubrir las **tres**
+instanciaciones de la puerta subiendo el apagado a su montaje. Se implementó, y **las tres lentes de
+la review lo tumbaron por el mismo motivo**: dos de esas tres no son un descarte —«Soy nuevo» →
+«Privado», en el Welcome y en la activación— y sus propios docblocks lo dicen con estas palabras,
+«quien llega aquí acaba de elegir privado y **todavía no ha pedido borrar nada**». Apagar desde el
+montaje le devuelve al dueño legítimo el «estos datos son de otra persona» sobre sus propios datos, y
+**no se auto-repara**: el aparcado solo se hereda volviendo a Restaurar, y ese recorrido va a firmar.
+Tampoco se arregla condicionando por `unverifiedExit`: en el Welcome el camino del descarte y el de
+«Soy nuevo» comparten el MISMO step. Y hay una razón de robustez: en el gesto el apagado cuelga de un
+TAP, que provablemente ocurrió; en el montaje colgaría de una presentación, y en este anchor las
+presentaciones se caen — o sea fail-**abierto**, el desenlace que el ticket cierra.
+
+**Lo que queda fuera a propósito:** por «Soy nuevo» → «Privado» se llega a esa puerta con la ventana
+huérfana viva y nadie la apaga. Quien llega ahí no ha declarado nada —es el invariante de
+`abandoned-restore-…`— y si desde ahí sí borra, el borrado arma el relanzamiento y la señal muere con
+el proceso, porque vive en memoria a propósito.
+
+**La review cazó tres cosas mías además del rumbo**: un escáner de OTRO fichero
+(`RestoreStartFreshGateTests`) que mi cambio dejaba rojo y que yo no había mirado —lo destapó la suite
+completa, no el build—, 12 variables que quedaron muertas al quitar el token, y tres docblocks que
+pasaron a afirmar lo contrario del código, entre ellos el de `FlowToken`, que decía «un apagado no
+puede venir de un flujo que nunca encendió nada».
+
+**12 mutantes, 12 muertos** sobre 124 casos en 8 suites: reintroducir el `guard` del verbo;
+reintroducir el `if let flowToken`; aparcado incondicional; `.wiped` al callback crudo; `.wiped` con el
+botón muerto; la confirmación saltándose el punto único; el `cancel` comprometiendo el descarte; una
+sentencia antepuesta; el orden invertido; quitar `currentFlow = nil`; quitar `restoreStartedAt = nil`;
+y subir el apagado al montaje de la puerta. Gate: build ×2 sin warnings nuevos, **7397 unit**, 10
+XCUITest con el centinela en 0, índice de QA OK. CI entero en verde.
+
+**Queda en `qa`** con guion de 4 casos en iPhone (pide dos cuentas de nube y un iCloud con histórico
+grande). El **caso 2 es el control negativo del alcance**: por «Soy nuevo» → «Privado» la ventana NO se
+apaga, y eso es lo correcto.
+
+**Lección de método, y es la cara:** una premisa del ENCARGO también se mide. «Cubre las tres
+instanciaciones» sonaba a simetría y era un daño; lo que lo separó fue leer qué dice cada call-site de
+sí mismo, no razonar sobre la forma.
+
+## Sesión anterior (#207 · el estado borrado ya no llega a la puerta con la ventana abierta)
 
 **Había un camino —estrecho— por el que se llegaba a «Empezar desde cero» sin que se cerrara el
 permiso que deja firmar sin aviso**, y se quedaba abierto hasta diez minutos con la persona parada en
