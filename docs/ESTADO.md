@@ -5,10 +5,57 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-21 (Lima)
 
-**Rama** `2.1` — Merge #201: **La vuelta a iCloud avisa al rendirse, y sin cobertura espera en vez de fallar.**
+**Rama** `2.1` — Merge #202: **La escala de prioridades del board pasa de 3 a 6 peldaños.**
 TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
-## Esta sesión (#201 · la vuelta a iCloud avisa al rendirse, y sin cobertura espera)
+## Esta sesión (#202 · la escala de prioridades pasa de 3 a 6 peldaños)
+
+Sesión de board, sin una línea de Swift. Jürgen pidió el 21-sep ampliar la escala de prioridades y
+remapear el board abierto en el mismo gesto.
+
+Con tres peldaños los extremos vivían apelotonados: «esto bloquea salir 2.1» compartía casilla con
+«esto es importante», y «polish que puede esperar un año» con «nice-to-have». La escala queda
+**`critical` · `very-high` · `high` · `medium` · `low` · `very-low`**, cada una con su definición en
+el esquema de `docs/TICKETS.md`, y replicada en los dos comandos que la usan: `/idea` clasifica,
+`/backlog` ordena.
+
+**Los dos peldaños de arriba quedan vacíos, y el de arriba del todo es a propósito.** `critical` es
+para una emergencia en producción; repartirla la vacía de significado. `very-high` quedó vacío
+**tras medir**: leí los nueve `high` abiertos de código que existen —7 en `backlog`, 2 en
+`blocked`— y ninguno es un callejón de nube/restore/sesión con el usuario atrapado. Son el chat de
+IA caído, el rendimiento de la lista de Grupos, el corpus de staging que crece, cuatro XCUITest en
+rojo de una nocturna, el copy de la web (que es de Lola), Siri de iOS 27, el índice del rediseño de
+sesiones, y los dos `blocked` cuyo arreglo ya está en el código esperando dos teléfonos reales. El
+callejón más vivo del board —`restore-timeout-closes-the-session-window-with-the-import-still-running`—
+está `in-progress` con `medium` y lo lleva otra sesión: promoverlo desde aquí era pisarle el ticket.
+
+Los **38 `high` de `qa`** —el device-QA que corre Jürgen— se quedan donde estaban. Cuatro `low`
+bajan a `very-low`: el formato JSON del project de Xcode (documentado en beta, no se toca hasta
+27.2 estable), los dos del `indice_readme.py` con worktrees anidados, y partir el turno del
+simulador para no ocuparlo mientras compila — su propio ticket dice que «la cola funciona; es que
+podría ser más corta sin perder nada». `gateway-typecheck-roto-y-fuera-del-ci` **se queda `low`**
+aunque venía en la lista de candidatos: un typecheck que falla y que el CI no corre es una red
+ausente, no polish. Y los 19 tickets sin `priority` siguen sin ella: no se inventa.
+
+**El índice decía 479 y en disco hay 487.** Crucé las 487 filas contra los ficheros reales —id,
+status y path, uno a uno—: cero faltantes, cero sobrantes, cero con el status de otra carpeta. Era
+solo el conteo del encabezado. No añadí tabla de conteos por prioridad: envejecería con cada ticket
+nuevo y un número que se consulta creyéndolo cierto es peor que no tenerlo.
+
+Conteo de los 381 tickets abiertos tras el remap: `critical` 0 · `very-high` 0 · `high` 47 ·
+`medium` 187 · `low` 124 · `very-low` 4 · sin prioridad 19. Ningún ticket del repo, abierto o
+cerrado, tiene hoy un valor fuera de la escala.
+
+**Dos cosas vistas de camino, ninguna nueva.** Los dos tickets del `indice_readme.py` son el mismo
+bug escrito dos veces (16-sep y 21-sep); no los fusioné porque tocar cuerpos quedaba fuera. Y el job
+`changes` del CI disparó la suite entera de simulador —22 min de runner— por un `.md` de
+`encargos/`: ya tiene dos tickets propios (`encargos-markdown-triggers-the-whole-ios-suite` y
+`ci-allowlist-no-cubre-encargos-ni-qa-scripts`), así que no dupliqué.
+
+Verificado: gate docs-only (sin `.swift` ni infraestructura de build en el diff), `validate-coverage.sh`
+en `RESULT: OK`, y el CI del PR entero en verde, suite de simulador incluida.
+
+## Sesión anterior (#201 · la vuelta a iCloud avisa al rendirse, y sin cobertura espera)
 
 Los dos residuales que dejó #199, los dos decididos por Jürgen el mismo día.
 
