@@ -5,10 +5,63 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-22 (Lima)
 
-**Rama** `2.1` — Merge #205: **Volver de la puerta de descarte ya no estrena permiso nuevo.**
+**Rama** `2.1` — Merge #206: **El reintento ya no reabre la ventana de sesión cada 90 s.**
 TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
-## Esta sesión (#205 · volver de la puerta de descarte ya no estrena permiso nuevo)
+## Esta sesión (#206 · el reintento ya no reabre la ventana de sesión cada 90 s)
+
+**En un teléfono con los datos de otra persona, tocar «volver a buscar» renovaba cada minuto y medio el
+permiso que deja firmar sin aviso.** Un toque por vuelta, indefinidamente, sin pasar por ninguna puerta
+y sin que tuviera que bajar nada: **más barato que los tres toques y los diez minutos de la puerta de
+descarte que cerró #205**, que es de donde salió medido. Ahora el margen inicial de espera —los 60 s que
+cubren a quien de verdad está restaurando y aún no ve bajar nada— **se cuenta una vez por sesión de la
+app**, no una por cada intento.
+
+**Y quien restaura de verdad conserva su ventana completa**: el tope de diez minutos se estrena entero
+en cada entrada, y en cuanto CloudKit trae la primera fila el permiso se reabre solo. Quien entra sin
+iCloud, lo enciende y vuelve a buscar estrena margen nuevo: su descarga es otra.
+
+**El mecanismo.** La gracia de 60 s colgaba de `restoreStartedAt`, el reloj de CADA entrada, así que el
+ciclo «la espera se rinde a los 90 s → reintentar» compraba 60 s de guard entornado por cada 91. Entra
+`graceStartedAt`, un ancla de PROCESO que pone el primer estreno y que **`noteRestoreFinished` no
+borra** — ese verbo es por el que pasa cada vuelta del ciclo. Es una FECHA y no un `Bool` «ya se gastó»
+porque un final sin imports puede llegar a los 3 s y el reintento no puede perder los 57 que nadie
+gastó; y es SEPARADA del reloj porque heredarlo entero —como hace el aparcado de #205— le recortaría el
+tope duro al dueño legítimo. `noteRestoreUnavailable` sí la tira, y con la ventana viva la entrada
+siguiente la re-deriva de ese reloj, que es el estado correcto.
+
+**LAS TRES LENTES CAZARON OCHO DEFECTOS MÍOS, y cuatro de los doce mutantes solo mueren por los tests
+que ellas pidieron.** (1) **Una aserción NO PODÍA FALLAR**: el escáner de «el ancla no tiene valor por
+defecto» miraba el fichero de la señal y el parámetro vive en la lógica pura, así que el literal no
+aparecía ahí ni con el mutante puesto — copié el molde de su hermano, que sí funciona porque su función
+sí vive en ese fichero. (2) **Mi test del recorrido «enciendo iCloud y reintento» medía el caso fácil**:
+apagaba el reloj antes, y ahí los dos operandos del `??` coinciden; el recorrido REAL —irse de Restaurar
+sin que nadie apague, que deja la ventana viva— no lo tocaba nadie. (3) **La puerta de descarte solo
+estaba medida a los 40 s**, donde el aparcado aún se hereda y el mutante es indistinguible; a los 700 s
+sí se ve. (4) Faltaba la frontera exacta 59/60. (5) **Un dato falso en un docblock mío**: «seis vueltas,
+más de los 600 s del tope» son 546 s.
+
+Y tres de documentación: la cabecera decía **cuatro verbos y son cinco** —falta justo
+`noteRestoreUnavailable`, el único que borra el ancla—, dos docblocks pasaron a mentir sobre la gracia,
+y el `- Parameters:` de `isRestoringNow` abría con un parámetro inexistente y metía el `- Returns:` en
+medio, así que el párrafo nuevo no se renderizaba.
+
+**Refutado un hallazgo:** una lente avisó de que el copy del bloqueo prometía una salida que el fix
+quita. Medido: dice «**si acabas de pedir una restauración** desde iCloud…», y quien no ha visto un solo
+import no tiene ninguna en curso. El copy no caduca.
+
+**El residual, escrito y aceptado** (el criterio del ticket lo permite): entre el toque del reintento y
+el primer `.importEvent` de esa descarga no hay ventana, y **la señal no tiene ningún término que separe
+a ese dueño legítimo del teléfono con el corpus ajeno** — el claim murió con la reinstalación, que es la
+mitad del escenario en los dos casos. Se cura solo: el latch es monótono y el getter se recalcula vivo.
+
+**Gate**: build ×2 sin warnings nuevos, 7394 unit / 741 suites, 12 XCUITest de tres suites con el
+simulador en exclusiva (centinela 0), índice de QA al día en `welcome-flow-visual` y `edge-cases-logic`,
+**12/12 mutantes compilados muertos**. CI verde. Ticket en `qa` con guion de tres casos en el teléfono:
+no se puede montar en simulador, porque el ciclo son minutos de reloj real por vuelta y la población
+exige un teléfono en el que CloudKit no baje nada.
+
+## Sesión anterior (#205 · volver de la puerta de descarte ya no estrena permiso nuevo)
 
 **En un teléfono con los datos de otra persona, pedir «Empezar desde cero» y arrepentirse renovaba el
 permiso que deja firmar sin aviso.** Tres toques —«Empezar desde cero», confirmar, «Volver»— y la
