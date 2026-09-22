@@ -141,4 +141,68 @@ nonisolated enum ICloudRestoreInProgressLogic {
     static func closesTheSessionWindow(settled: Bool, hasObservedImportActivity: Bool) -> Bool {
         settled || !hasObservedImportActivity
     }
+
+    // MARK: - El re-ancla de una ventana huérfana
+    //
+    // `leaving-and-reentering-restore-renews-the-hard-cap`, 2026-09-21. La pregunta que decide
+    // `ICloudRestoreSessionSignal.noteRestoreStarted` cuando entra un intento y la ventana está
+    // HUÉRFANA —viva, pero sin nadie que la vigile—: **¿hay una descarga que justifique estrenar reloj?**
+    //
+    // Hasta hoy la contestaba `iCloudSyncService.hasObservedImportActivity`, un latch MONÓTONO del
+    // proceso: una vez visto un `.importEvent` afirma «hay descarga» para siempre, así que cualquier
+    // salir-de-Restaurar-y-volver estrenaba 600 s nuevos con dos toques, apoyándose en un import que
+    // podía haber terminado veinte minutos antes.
+
+    /// **¿Sigue bajando algo AHORA?** — el testigo del re-ancla, y el reemplazo del latch monótono.
+    ///
+    /// Dos términos, y ninguno basta solo. Los dos están medidos contra `iCloudSyncService.apply`, y las
+    /// dos mediciones son lo que fija sus valores:
+    ///
+    ///  · **`isImportingNow` no es exclusivo del import, y por eso no puede ser el único término.**
+    ///    `status` es un escalar ÚNICO que comparten import, export y setup: lo enciende un solo sitio
+    ///    —el `.importEvent` sin `endDate`— y lo apagan trece, entre ellos el terminal de un export
+    ///    cualquiera y el `.idle` con que `surfaceOrSuppress` traga un error transitorio. Un export de
+    ///    diez segundos en el minuto 0 de una bajada de siete minutos deja `isImporting == false` los
+    ///    6 m 50 s restantes: el terminal del import que baja no vuelve a `.importing`, va a
+    ///    `promoteToIdleOrStalled`.
+    ///  · **Y la fecha sola tampoco, porque un import en curso puede pasar MINUTOS sin emitir.** En un
+    ///    corpus grande hay un evento al arrancar y otro al acabar. Sin el estado del espejo, el caso
+    ///    que ratificó `abandoned-restore-no-longer-clears-the-session-window-clock` —entrar,
+    ///    arrepentirse y volver siete minutos después con la descarga viva— llegaría con el sello
+    ///    caducado, heredaría un reloj de siete minutos y su tope duro caducaría a media bajada: el bug
+    ///    hermano, reabierto por el arreglo de éste.
+    ///
+    /// - Parameters:
+    ///   - isImportingNow: `iCloudSyncService.status.isImporting`. **Solo puede mentir en una
+    ///     dirección**: lo enciende únicamente un `.importEvent` real, así que no hay falso positivo —
+    ///     todo su error es el falso negativo del párrafo de arriba.
+    ///   - lastImportActivityAt: `iCloudSyncService.lastImportActivityAt` — cuándo se OBSERVÓ el último
+    ///     `.importEvent`, con o sin error. `nil` = ninguno en este proceso.
+    ///   - freshness: **600 s, el mismo `hardCap` de la ventana, y ese número no es una elección de
+    ///     gusto.** Es la simetría que lo hace defendible: si la última señal de descarga es más vieja
+    ///     que eso, la ventana que este re-ancla crearía ya habría caducado por su propio tope duro, así
+    ///     que el testigo deja de conceder exactamente cuando lo que concedería ya estaría muerto.
+    ///     **Los 60 s de la primera versión eran falsos y lo midió la review**: el error de import
+    ///     RETRIABLE —`networkUnavailable`, `requestRateLimited`, `zoneBusy`, o sea «un restore grande
+    ///     con la red floja», que este mismo fichero llama el caso NORMAL— deja el status en `.idle` y
+    ///     CloudKit reintenta con un backoff que pasa del minuto sin esfuerzo. Con 60 s esa población
+    ///     perdía el re-ancla, que es el daño del ticket hermano.
+    ///
+    /// Su modo de fallo es `false` —no re-anclar, o sea conservar el reloj viejo, o sea CERRAR ANTES—,
+    /// que es el sesgo de esta señal. Por eso un sello en el FUTURO (el reloj del sistema retrocedió con
+    /// la app abierta) no cuenta como fresco, igual que `PrivateSignOutExportGateLogic.usableAnchor`
+    /// descarta un ancla futura. **Y conviene decir que ese sesgo no es gratis**: para el guard, cerrar
+    /// antes es el lado seguro; para el hermano, cerrar antes ES el daño. Los dos tickets tiran de este
+    /// parámetro en direcciones opuestas y esta función elige la del guard a sabiendas.
+    static func hasLiveImportActivity(
+        isImportingNow: Bool,
+        lastImportActivityAt: Date?,
+        now: Date,
+        freshness: TimeInterval = 600
+    ) -> Bool {
+        if isImportingNow { return true }
+        guard let lastImportActivityAt else { return false }
+        let age = now.timeIntervalSince(lastImportActivityAt)
+        return age >= 0 && age < freshness
+    }
 }

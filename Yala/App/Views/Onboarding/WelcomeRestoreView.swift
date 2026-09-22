@@ -265,12 +265,23 @@ struct WelcomeRestoreView: View {
         //
         // **Y el testigo del import viaja desde aquí, vivo.** Es lo que decide si esta entrada
         // RE-ANCLA una ventana huérfana —la que dejó un intento que la persona abandonó— o se
-        // conforma con su reloj. Sin él, entrar y salir de esta pantalla cada menos de 60 s renueva
-        // la ventana del guard cross-cuenta indefinidamente; con él, solo la renueva quien tiene una
-        // descarga de verdad detrás. No tiene default en la señal justamente para que este call-site
-        // tenga que decidir de dónde sale.
+        // conforma con su reloj. Sin él, entrar y salir de esta pantalla renueva la ventana del guard
+        // cross-cuenta indefinidamente; con él, solo la renueva quien tiene una descarga de verdad
+        // detrás. No tiene default en la señal justamente para que este call-site tenga que decidir
+        // de dónde sale.
+        //
+        // **Y lleva FECHA desde el 2026-09-21** (`leaving-and-reentering-restore-renews-the-hard-cap`).
+        // Hasta ese día era `hasObservedImportActivity` a secas, un latch monótono del proceso: una
+        // vez visto el primer `.importEvent` estaba encendido para siempre, así que cualquier
+        // salir-de-Restaurar-y-volver estrenaba 600 s nuevos con dos toques, apoyándose en una
+        // descarga que podía haber terminado veinte minutos antes. Los dos crudos van juntos porque
+        // un import EN CURSO puede pasar minutos sin emitir un solo evento — el estado del espejo es
+        // lo que cubre ese hueco, y sin él la vuelta legítima a los siete minutos no re-anclaría.
         flowToken = ICloudRestoreSessionSignal.noteRestoreStarted(
-            hasObservedImportActivity: iCloudSyncService.shared.hasObservedImportActivity)
+            hasLiveImportActivity: ICloudRestoreInProgressLogic.hasLiveImportActivity(
+                isImportingNow: iCloudSyncService.shared.status.isImporting,
+                lastImportActivityAt: iCloudSyncService.shared.lastImportActivityAt,
+                now: .now))
         state = .searching
     }
 

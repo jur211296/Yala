@@ -283,6 +283,106 @@ struct iCloudSyncServiceTests {
         }
     }
 
+    // MARK: - El sello con fecha de la actividad de import
+    //
+    // `leaving-and-reentering-restore-renews-the-hard-cap`, 2026-09-21. `hasObservedImportActivity` es
+    // un latch monótono: dice si hubo descarga alguna vez, no si la hay. El sello con fecha es lo que
+    // permite preguntar lo segundo, y lo lee el re-ancla de la ventana de sesión del restore.
+
+    /// **Los tres tipos de `.importEvent` sellan, y ésa es la mitad que se olvida.** El latch se
+    /// enciende en la cabecera del `case`, antes de mirar el error, así que el sello tiene que
+    /// describir exactamente esa población: si solo sellara el import con éxito, un restore con la red
+    /// floja —errores retriables con CloudKit trayendo filas detrás, o sea el caso NORMAL— parecería
+    /// una descarga muerta a los 60 s.
+    @MainActor @Test func importActivityStamp_isWrittenByEveryImportEvent() {
+        for (etiqueta, error, fin) in [
+            ("en curso", CKError?.none, Date?.none),
+            ("completado", CKError?.none, Date?.some(.now)),
+            ("con error retriable", CKError?.some(CKError(.networkUnavailable)), Date?.some(.now))
+        ] {
+            let service = freshService()
+            #expect(service.lastImportActivityAt == nil, "el reset deja el sello limpio")
+
+            let visto = Date(timeIntervalSince1970: 1_760_000_000)
+            service.apply(eventType: .importEvent, error: error, endDate: fin, observedAt: visto)
+
+            #expect(service.lastImportActivityAt == visto, """
+                Un `.importEvent` \(etiqueta) no dejó sello. El latch `hasObservedImportActivity` sí se \
+                enciende para los tres, así que el sello describiría otra población: el re-ancla de la \
+                ventana de sesión leería como descarga muerta un import que está bajando filas.
+                """)
+            #expect(service.hasObservedImportActivity, "y el latch sigue encendiéndose igual")
+        }
+    }
+
+    /// **El sello es el instante de OBSERVACIÓN, no el `endDate` del evento, y además es monótono.**
+    /// Un import largo que cierra con una fecha de hace cinco minutos acaba de dar señal de vida
+    /// AHORA; anotarlo con su `endDate` lo leería como una descarga muerta. Y un evento fuera de orden
+    /// nunca puede retrasar el sello.
+    @MainActor @Test func importActivityStamp_usesObservationInstant_andNeverGoesBack() {
+        let service = freshService()
+        let ahora = Date(timeIntervalSince1970: 1_760_000_000)
+        let hace5min = ahora.addingTimeInterval(-300)
+
+        service.apply(eventType: .importEvent, error: nil, endDate: hace5min, observedAt: ahora)
+        #expect(service.lastImportActivityAt == ahora, """
+            El sello se tomó del `endDate` del evento. Las fechas del evento describen el import; el \
+            sello describe qué sabe este proceso y cuándo lo supo, que es la pregunta del testigo.
+            """)
+
+        service.apply(eventType: .importEvent, error: nil, endDate: nil,
+                      observedAt: ahora.addingTimeInterval(-60))
+        #expect(service.lastImportActivityAt == ahora, """
+            Un evento observado antes retrasó el sello. El testigo tiene que ser monótono: si no, un \
+            evento fuera de orden apaga una descarga viva.
+            """)
+    }
+
+    /// Un evento que NO es de import ni SELLA ni BORRA, y las dos mitades hacen falta. La segunda la
+    /// cazó una lente de la review: afirmar solo que no escribe se cumple partiendo de `nil`, así que
+    /// un `lastImportActivityAt = nil` colado en la rama del export pasaba los tres tests — y en
+    /// producción los exports son constantes, o sea que apagaría el testigo todo el rato.
+    @MainActor @Test func importActivityStamp_isNeitherWrittenNorErasedByOtherEvents() {
+        let service = freshService()
+        service.apply(eventType: .exportEvent, error: nil, endDate: .now)
+        service.apply(eventType: .setup, error: nil, endDate: .now)
+        #expect(service.lastImportActivityAt == nil, """
+            Un export o un setup dejaron sello de actividad de IMPORT. Con eso, un teléfono que solo \
+            sube datos se leería como si estuviera bajando el corpus de alguien.
+            """)
+
+        let visto = Date(timeIntervalSince1970: 1_760_000_000)
+        service.apply(eventType: .importEvent, error: nil, endDate: nil, observedAt: visto)
+        service.apply(eventType: .exportEvent, error: nil, endDate: .now)
+        service.apply(eventType: .exportEvent, error: CKError(.networkUnavailable), endDate: .now)
+        service.apply(eventType: .setup, error: nil, endDate: .now)
+        #expect(service.lastImportActivityAt == visto, """
+            Un evento ajeno BORRÓ el sello de la descarga. Los exports son constantes en un arranque \
+            normal, así que con eso el testigo del re-ancla se apaga en cualquier restore real y quien \
+            vuelve a Restaurar hereda un reloj que no describe su descarga.
+            """)
+    }
+
+    /// **Otra cuenta de iCloud, otra descarga.** El sello lo lee el re-ancla de la ventana de sesión
+    /// del restore, que abre un guard de FRONTERA DE CUENTA: con la descarga de la cuenta anterior
+    /// recién sellada, entrar a Restaurar dentro de su frescura re-anclaría la ventana apoyándose en
+    /// un import que ya no es de esta cuenta. Lo midió una lente de la review.
+    @MainActor @Test func importActivityStamp_isClearedWhenTheICloudAccountChanges() {
+        let service = freshService()
+        service.apply(eventType: .importEvent, error: nil, endDate: nil,
+                      observedAt: Date(timeIntervalSince1970: 1_760_000_000))
+        #expect(service.lastImportActivityAt != nil, "control: la descarga de la cuenta anterior selló")
+
+        NotificationCenter.default.post(
+            name: .NSUbiquityIdentityDidChange, object: nil)
+
+        #expect(service.lastImportActivityAt == nil, """
+            El sello de actividad de import sobrevivió al cambio de cuenta de iCloud. El testigo del \
+            re-ancla pasa a afirmar una descarga que ya no es de esta cuenta, y lo que abre es \
+            justamente la frontera de cuenta que `CrossAccountEntryGuardLogic` vigila.
+            """)
+    }
+
     /// Regresión: el bridge personal (y `retryPendingBridges`) se gatea por `isImporting`, NO por
     /// `isSyncing`. Solo un IMPORT a medio aplicar crashea el save del grafo personal; un export no.
     /// Si `isImporting` se "simplificara" a aliasear `isSyncing`, el bridge se bloquearía durante los
