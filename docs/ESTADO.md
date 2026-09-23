@@ -1,11 +1,11 @@
 ---
-updated: 2026-09-22
+updated: 2026-09-23
 tags: [now, punto-de-retomada]
 ---
 
 # NOW — 2026-09-22 (Lima)
 
-**Rama** `2.1` — Merge #215: **Un registro de la migración que no se deja leer ya no dice que nunca empezó.**
+**Rama** `2.1` — Merge #216: **Si la app no puede leer sus salvaguardas, lo que baja de la nube ya no pisa un cambio tuyo sin subir.**
 TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,31 @@ TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#215 · un registro de la migración que no se deja leer ya no dice que nunca empezó)
+## Esta sesión (#216 · lo que baja de la nube ya no pisa un cambio sin subir si la app no puede leer sus salvaguardas)
+
+**Si el teléfono no consigue leer sus propias salvaguardas mientras baja algo de la nube, ese cambio espera y se
+reintenta**: ya no entra encima de un cambio tuyo que no había subido, no duplica nada en cuarentena y no da por borrado
+lo que no pudo borrar. Al volver a iCloud, el barrido de restos tampoco se da por hecho con una tabla ilegible.
+
+Todo lo que `applyPage` lee para no pisar datos LANZA si el fetch falla —guard LWW, dedupe de cuarentena (solo si la
+página trae algo sin cablear), búsqueda de fila e identidad, reloj por unidad (`upsertChecked`/`deleteChecked`)— y cae
+en el rollback que ya existía: `false`, cursor quieto, `.transient`. En `EntityApplyMap` conviven ahora `find*` (lanza,
+para quien crea o borra) y `fetch*` (tolerante, para leer una señal). Regla: `.claude/rules/swiftdata-cloudkit.md`,
+«En el apply del pull, "no pude leer" NUNCA es "no hay nada"».
+
+Gate: 7568 unit en 747 suites y 4 XCUITest. 14 mutantes, todos muertos. Review de tres lentes: sin defectos en lo
+cambiado; cazó el reloj por unidad (entró) y los gemelos de fuera del save (a ticket).
+
+### Lo que espera de Jürgen
+
+- **Nada.** A `done` sin device-QA: una base local ilegible no se provoca en un iPhone.
+- Tickets nuevos en `backlog`: `dangling-ref-repair-is-lost-when-its-row-cannot-be-read` (**very-high**: el pase final
+  de refs pendientes lee una fila ilegible como «ya no existe» y borra la reparación — el siguiente de la familia),
+  `drain-duplicates-the-unit-clock-when-its-row-cannot-be-read` (high) y
+  `a-local-read-failure-in-the-migration-apply-reads-as-network` (low). Nota nueva en
+  `reverse-zombie-sweep-reads-an-expired-session-as-network`.
+
+## Sesión anterior (#215 · un registro de la migración que no se deja leer ya no dice que nunca empezó)
 
 **Si el registro del paso de los datos a la nube (o de la vuelta a iCloud) no se deja leer, «¿Dónde viven tus datos?»
 ya no dice que nunca empezó**: dice que no pudo comprobarlo, que por ahora no se pueden mover y que lo sigue intentando.
@@ -49,7 +73,7 @@ Gate: 7556 unit en 747 suites y 17 XCUITest en 6 suites, verdes. 33 mutantes uno
   sigue siendo `notStarted`) y `apple-id-change-boot-check-runs-before-the-migration-guard-can-see` (previo a este PR). Y
   ampliado `cloud-sync-status-says-all-synced-with-changes-still-pending` con el motor `.idle`.
 
-## Sesión anterior (#214 · los pasos del 22, 35 y 80 % al activar la nube ya no se quedan parados para siempre)
+## Sesión del #214 ( los pasos del 22, 35 y 80 % al activar la nube ya no se quedan parados para siempre)
 
 **Al activar la nube, la barra ya no se puede quedar quieta para siempre al 22 % (reservar la cuenta), al 35 %
 (preparar los datos) ni al 80 % (confirmar el cambio con el servidor).** Es el arreglo de #212 para el 55 %, en los
