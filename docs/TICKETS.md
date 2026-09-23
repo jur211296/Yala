@@ -125,6 +125,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | ci-warns-but-does-not-block | backlog | tickets/backlog/ci-warns-but-does-not-block.md |
 | ci-workflow-cites-missing-testing-strategy | backlog | tickets/backlog/ci-workflow-cites-missing-testing-strategy.md |
 | claim-promotion-lost-response-blocks-the-retry | backlog | tickets/backlog/claim-promotion-lost-response-blocks-the-retry.md |
+| clock-drift-aborted-drain-lets-the-pull-overwrite-untranslated-edits | backlog | tickets/backlog/clock-drift-aborted-drain-lets-the-pull-overwrite-untranslated-edits.md |
 | cloud-attest-notice-does-not-cover-a-gateway-rejected-token | backlog | tickets/backlog/cloud-attest-notice-does-not-cover-a-gateway-rejected-token.md |
 | cloud-engine-can-start-with-a-reverse-abort-pending | backlog | tickets/backlog/cloud-engine-can-start-with-a-reverse-abort-pending.md |
 | cloud-fx-rates-blob-two-faces | done | tickets/done/cloud-fx-rates-blob-two-faces.md |
@@ -187,7 +188,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | dmarc-sube-la-politica-tras-observar | backlog | tickets/backlog/dmarc-sube-la-politica-tras-observar.md |
 | doble-conteo-dia1-previo-thismonth | done | tickets/done/doble-conteo-dia1-previo-thismonth.md |
 | dos-criterios-de-aproximado-en-la-misma-pantalla | backlog | tickets/backlog/dos-criterios-de-aproximado-en-la-misma-pantalla.md |
-| drain-duplicates-the-unit-clock-when-its-row-cannot-be-read | in-progress | tickets/in-progress/drain-duplicates-the-unit-clock-when-its-row-cannot-be-read.md |
+| drain-duplicates-the-unit-clock-when-its-row-cannot-be-read | done | tickets/done/drain-duplicates-the-unit-clock-when-its-row-cannot-be-read.md |
 | dry-run-del-avisador-envia-igual | backlog | tickets/backlog/dry-run-del-avisador-envia-igual.md |
 | edgecases-extreme-minimum-flaky-under-load | backlog | tickets/backlog/edgecases-extreme-minimum-flaky-under-load.md |
 | el-aviso-de-cierre-cita-el-pr-de-otra-sesion | backlog | tickets/backlog/el-aviso-de-cierre-cita-el-pr-de-otra-sesion.md |
@@ -208,6 +209,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | fab-appears-without-animation | backlog | tickets/backlog/fab-appears-without-animation.md |
 | filtro-de-cuentas-se-colapsa-al-navegar-a-registros | backlog | tickets/backlog/filtro-de-cuentas-se-colapsa-al-navegar-a-registros.md |
 | financial-report-amounts-unmarked | backlog | tickets/backlog/financial-report-amounts-unmarked.md |
+| first-drain-cursor-creation-saves-pending-edits-under-the-engine-author | backlog | tickets/backlog/first-drain-cursor-creation-saves-pending-edits-under-the-engine-author.md |
 | flows-atlas-predates-session-redesign | backlog | tickets/backlog/flows-atlas-predates-session-redesign.md |
 | force-fetch-and-wait-ignores-cancellation | qa | tickets/qa/force-fetch-and-wait-ignores-cancellation.md |
 | forcesync-returns-ok-without-touching-the-network | backlog | tickets/backlog/forcesync-returns-ok-without-touching-the-network.md |
@@ -262,6 +264,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-deleted-group-detail-stays-open | done | tickets/done/groups-deleted-group-detail-stays-open.md |
 | groups-detach-ledger-has-no-exit | backlog | tickets/backlog/groups-detach-ledger-has-no-exit.md |
 | groups-detach-save-breadcrumb-never-closes-on-throw | backlog | tickets/backlog/groups-detach-save-breadcrumb-never-closes-on-throw.md |
+| groups-drain-has-no-rollback-and-keeps-the-mirror-of-a-failed-save | backlog | tickets/backlog/groups-drain-has-no-rollback-and-keeps-the-mirror-of-a-failed-save.md |
 | groups-entry-on-a-mirrored-store-still-blocks-the-owner | qa | tickets/qa/groups-entry-on-a-mirrored-store-still-blocks-the-owner.md |
 | groups-equal-split-shows-not-participating-on-peer | qa | tickets/qa/groups-equal-split-shows-not-participating-on-peer.md |
 | groups-expense-notif-only-on-foreground | qa | tickets/qa/groups-expense-notif-only-on-foreground.md |
@@ -321,6 +324,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | icloud-export-error-latch-never-clears | backlog | tickets/backlog/icloud-export-error-latch-never-clears.md |
 | icloud-kv-prefs-cross-sessions-on-a-lent-phone | qa | tickets/qa/icloud-kv-prefs-cross-sessions-on-a-lent-phone.md |
 | icloud-sync-status-treats-non-ck-failures-as-success | backlog | tickets/backlog/icloud-sync-status-treats-non-ck-failures-as-success.md |
+| identity-uuid-repair-can-commit-half-done-after-a-read-failure | backlog | tickets/backlog/identity-uuid-repair-can-commit-half-done-after-a-read-failure.md |
 | import-activity-flag-describes-the-process-not-the-search | backlog | tickets/backlog/import-activity-flag-describes-the-process-not-the-search.md |
 | import-activity-latch-survives-an-icloud-account-change | backlog | tickets/backlog/import-activity-latch-survives-an-icloud-account-change.md |
 | inbox-convert-draft-to-group-expense | done | tickets/done/inbox-convert-draft-to-group-expense.md |
@@ -376,6 +380,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | post-pull-reconcilers-read-an-unreadable-table-as-nothing-to-repair | backlog | tickets/backlog/post-pull-reconcilers-read-an-unreadable-table-as-nothing-to-repair.md |
 | preferred-currency-has-three-different-defaults | backlog | tickets/backlog/preferred-currency-has-three-different-defaults.md |
 | prefs-domain-per-secondary-session | discarded | tickets/discarded/prefs-domain-per-secondary-session.md |
+| prefs-outbox-reads-an-unreadable-file-as-corrupt-and-overwrites-it | backlog | tickets/backlog/prefs-outbox-reads-an-unreadable-file-as-corrupt-and-overwrites-it.md |
 | prefs-synced-keys-upload-not-download | backlog | tickets/backlog/prefs-synced-keys-upload-not-download.md |
 | presentation-net-desarm-has-no-automated-net | backlog | tickets/backlog/presentation-net-desarm-has-no-automated-net.md |
 | previous-person-cloud-session-survives-fresh-start-and-reinstall | qa | tickets/qa/previous-person-cloud-session-survives-fresh-start-and-reinstall.md |
@@ -526,6 +531,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | uitest-seam-for-a-seeded-groups-association | backlog | tickets/backlog/uitest-seam-for-a-seeded-groups-association.md |
 | uitest-seed-reseeds-the-corpus-without-reset | backlog | tickets/backlog/uitest-seed-reseeds-the-corpus-without-reset.md |
 | undercount-dias-intervalos-cerrados | done | tickets/done/undercount-dias-intervalos-cerrados.md |
+| unit-clocks-duplicated-before-the-fix-are-never-merged | backlog | tickets/backlog/unit-clocks-duplicated-before-the-fix-are-never-merged.md |
 | unit-suite-nondeterministic-reds | done | tickets/done/unit-suite-nondeterministic-reds.md |
 | unit-test-suites-leave-orphan-userdefaults-domains | backlog | tickets/backlog/unit-test-suites-leave-orphan-userdefaults-domains.md |
 | unit-tests-clear-the-attest-streak-of-a-device-qa-in-progress | backlog | tickets/backlog/unit-tests-clear-the-attest-streak-of-a-device-qa-in-progress.md |
