@@ -68,7 +68,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | ai-chat-reads-heavier-than-a-messaging-app | backlog | tickets/backlog/ai-chat-reads-heavier-than-a-messaging-app.md |
 | ai-recommended-budgets | backlog | tickets/backlog/ai-recommended-budgets.md |
 | alternating-definitive-causes-never-reach-the-short-ceiling | backlog | tickets/backlog/alternating-definitive-causes-never-reach-the-short-ceiling.md |
-| an-incomplete-inventory-reads-as-the-whole-corpus | backlog | tickets/backlog/an-incomplete-inventory-reads-as-the-whole-corpus.md |
+| an-incomplete-inventory-reads-as-the-whole-corpus | in-progress | tickets/in-progress/an-incomplete-inventory-reads-as-the-whole-corpus.md |
 | an-undecodable-migration-phase-reads-as-never-started | backlog | tickets/backlog/an-undecodable-migration-phase-reads-as-never-started.md |
 | an-unreadable-migration-journal-reads-as-never-started | done | tickets/done/an-unreadable-migration-journal-reads-as-never-started.md |
 | apple-id-change-boot-check-runs-before-the-migration-guard-can-see | backlog | tickets/backlog/apple-id-change-boot-check-runs-before-the-migration-guard-can-see.md |
