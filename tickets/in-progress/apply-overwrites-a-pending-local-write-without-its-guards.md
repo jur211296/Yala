@@ -1,6 +1,6 @@
 ---
 id: apply-overwrites-a-pending-local-write-without-its-guards
-status: backlog
+status: in-progress
 priority: very-high
 area: "modo-nube, sync"
 created: 2026-09-22
