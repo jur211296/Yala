@@ -149,6 +149,10 @@ struct MigrationIdentityGateWiringTests {
     /// migrar a la cuenta de grupos de otra persona, y perder `discovery = found` cambiaba el aviso de «volvió a iCloud».
     /// El seam va primero y solo en DEBUG, y el eje se pasa sin leer `PrivateSessionMark`.
     ///
+    /// **Y la marca del claim sin respuesta viaja aparte del sello** (ticket
+    /// `forward-migration-steps-have-no-ceiling-and-no-exit`): la lógica pura la trata distinto —no se salta la red de
+    /// «Empezar desde cero»—, así que fundirla aquí con un `||` en `claimedForMigrationHere` le quitaría esa diferencia.
+    ///
     /// **El sello de «Empezar desde cero» y el origen de la sesión viajan tal cual** (ticket
     /// `fresh-start-keeps-a-groups-session-that-migrate-promotes`): con la key equivocada, o con el parámetro fijado a
     /// `true`, la sesión que dejó la persona anterior volvía a promoverse con las finanzas de la nueva.
@@ -177,11 +181,15 @@ struct MigrationIdentityGateWiringTests {
             "let claimedForMigrationHere = userID.map {",
             "CloudClaimActionStore.shared.action(forUserID: $0) == .proceedMigration",
             "} ?? false",
+            "let hasUnansweredMigrationClaim = userID.map {",
+            "CloudClaimActionStore.shared.hasMigrationClaimAttempt(forUserID: $0)",
+            "} ?? false",
             "let check = StorageMigrationIdentityGateLogic.check(",
             "answer: answer,",
             "deviceState: .privateSession,",
             "isAssociatedGroupsAccount: GroupsAccountAssociation.shared.isAssociated(sub: userID),",
             "claimedForMigrationHere: claimedForMigrationHere,",
+            "hasUnansweredMigrationClaim: hasUnansweredMigrationClaim,",
             "sessionOpenedByThisAttempt: sessionOpenedByThisAttempt,",
             "deviceSealedForFreshStart: UserDefaults.standard.bool(",
             "forKey: AppPreferences.Keys.groupsDomainSealedForFreshStart))",
@@ -317,7 +325,10 @@ struct MigrationIdentityGateWiringTests {
         let body = try Self.body(of: "private func driveClaim() async throws -> Bool {", in: Self.runnerPath)
         let reads = try #require(body.range(
             of: "let intent = state.forwardClaimIntentRaw.flatMap(ForwardClaimIntent.init(rawValue:)) ?? .adoptIfExisting"))
-        let claims = try #require(body.range(of: "switch await executor.performClaim() {"))
+        // Con la marca del claim sin respuesta solo en «Migrar» (ticket `forward-migration-steps-have-no-ceiling-and-no-exit`):
+        // la intención que la decide es también la journaleada.
+        let claims = try #require(body.range(
+            of: "switch await executor.performClaim(marksMigrationAttempt: intent == .migrateOnly) {"))
         let refuses = try #require(body.range(of: "if intent.refuses(claimState) {"))
         let discard = try #require(body.range(of: "executor.discardLastClaimStamp()"))
         let refused = try #require(body.range(of: "try await handle(.claimRefusedExistingAccount)"))

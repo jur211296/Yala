@@ -20,6 +20,7 @@
 - [El estado compartido no es testigo de su rama](feedback_el_estado_compartido_no_es_testigo_de_su_rama.md) — un campo lo enciende 1 sitio y lo apagan 13; cuenta escritores antes de leer.
 - [Mi arreglo quita la SALIDA que había](feedback_mi_arreglo_quita_la_salida_que_habia.md) — cerrar un abuso puede dejar sin puerta al dueño legítimo; enumera quién salía por ahí.
 - [La limpieza «por si acaso» enmascara mutantes](feedback_la_limpieza_por_si_acaso_enmascara_mutantes.md) — una línea inalcanzable recoge lo que el camino bueno deja pasar.
+- [Fundir una entrada nueva hereda sus excepciones](feedback_fundir_una_entrada_nueva_hereda_sus_excepciones.md) — un `||` en el parámetro de la puerta le regaló a la marca el atajo del sello.
 - [Un verbo nuevo hereda las PROHIBICIONES del viejo](feedback_un_verbo_nuevo_hereda_las_prohibiciones_del_viejo.md) — los negativos se anclan al nombre y el gemelo pasa en verde.
 - [Un reinicio se mide contra su CADENCIA](feedback_un_reinicio_se_mide_contra_su_cadencia.md) — racha vs. acumulado: con el re-kick de 30 s, 900 s eran 30 observaciones sin un hueco.
 - [El techo que se resetea no es un techo](feedback_el_techo_que_se_resetea_no_es_un_techo.md) — enumera quién lo reinicia y a quién muerde; con las dos en contra, se retira.
@@ -67,7 +68,7 @@
 - [Ticket nuevo: busca el duplicado primero](feedback_ticket_nuevo_busca_el_duplicado_primero.md) — dos de tres ya existían el 10-sep.
 - [Ramas aparcadas tocan tu ticket](feedback_ramas_aparcadas_tocan_tu_ticket.md) — `git log --all -- 'tickets/*/<id>.md'` antes de diseñar.
 - [El mecanismo que existe se probó con OTRO corpus](feedback_el_mecanismo_existente_se_probo_con_otro_corpus.md) — reusar un barrido sobre un corpus nuevo puede destruir datos buenos; el AC dice QUÉ, no…
-- [Mi salida nueva es un camino muerto](feedback_mi_salida_nueva_es_un_camino_muerto.md) — antes de cambiar «sigue» por «vuelve».
+- [Mi salida nueva es un camino muerto](feedback_mi_salida_nueva_es_un_camino_muerto.md) — antes de cambiar «sigue» por «vuelve»; y cuenta QUIÉN conduce la fase (el claim del adopt).
 - [El otro control va al mismo sitio](feedback_el_otro_control_va_al_mismo_sitio.md) — el chevron salía sin retirar el arm que su botón vecino sí.
 - [Mi arreglo abre un camino INALCANZABLE](feedback_mi_arreglo_abre_un_camino_inalcanzable.md) — quitar un efecto vuelve alcanzable código que nunca.
 - [La pantalla se monta antes de decidir](feedback_la_pantalla_se_monta_antes_de_decidir.md) — el `state` inicial arranca trabajo que sobrevive al.
@@ -132,6 +133,7 @@
 - [«Cero warnings» se mide en TODOS los logs](feedback_cero_warnings_se_mide_en_todos_los_logs.md) — el gate no mira los tests y lee un build.
 
 ## Estado del trabajo
+- [Los pasos del 22/35/80 % ya tienen techo y «Cancelar»](project_techo_de_los_tres_pasos_de_la_ida.md) — PR del 22-sep; el claim del adopt se quedó fuera a propósito.
 - [La subida al 55 % ya tiene techo y «Cancelar»](project_techo_de_la_subida_del_snapshot.md) — PR del 22-sep; tres lentes cazaron el 401 con la sesión guardada.
 - [Un fallo de una vez ya no cobra las horas de otra espera](project_reloj_por_causa_en_el_techo_pre_mount.md) — PR #210; la review cazó 6 defectos míos y cambió el diseño.
 - [Un «no» definitivo en la vuelta ya no espera 72 h](project_un_no_definitivo_en_la_vuelta_ya_no_espera_72h.md) — PR #209; la review cazó 7 defectos míos y dejó 2 residuales con ticket.

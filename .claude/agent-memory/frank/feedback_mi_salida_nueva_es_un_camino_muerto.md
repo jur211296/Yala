@@ -28,3 +28,15 @@ roto — el cuerpo tiene que llevar la CAUSA, no solo el hecho.
 Hermana de [[feedback_mi_arreglo_abre_un_camino_inalcanzable]] y de
 [[feedback_mi_fix_hereda_la_forma_del_bug]]: aquí el arreglo no hereda la forma del bug, hereda la forma
 de un bug VECINO que ya estaba documentado en el mismo fichero.
+
+## Y el 2026-09-22: la fase la comparten DOS flujos, y la salida solo es buena para uno
+
+Le di techo y «Cancelar» a `claimingMigration` pensando en «Migrar a la nube». Esa misma fase la conducen el adopt
+(«Ya tengo una cuenta», «Activar la nube en este dispositivo») y el seguidor. Para ellos la salida era un callejón: tras
+`failedRollback` → «Reintentar» → `notStarted`, la pantalla solo ofrece «Migrar», la puerta de identidad lo para con esa
+cuenta, y el texto «tus datos siguen en este dispositivo» era falso en un teléfono recién instalado. Además su espera se
+curaba sola al volver la red: la salida era peor que el bug. Lo cazó la lente de consumidores.
+
+**How to apply:** antes de añadir una salida a una fase, **lista quién la conduce** (`grep` de las entradas que llevan
+ahí y de la intención que journalean) y recorre el destino con cada uno. Si la fase lleva una intención journaleada, el
+alcance de la salida probablemente dependa de ella: aquí `ForwardCancelScope.offersCancel(_:claimIntent:)`.

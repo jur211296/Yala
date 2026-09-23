@@ -21,10 +21,11 @@
 //     alimenta un `claimResult` crudo en `waitingForLeader`.
 //   - Contrato especial `.disableMirrorAndRelaunch` (cruza el process boundary): en `resume()` se
 //     resuelve por OBSERVACIÓN (`isMirrorConfirmedOff`), no por re-ejecución ciega → sin relaunch-loop.
-//   - `ClaimOutcome` no-success (sessionExpired/accountUnavailable/transient) → stop SIN evento, JAMÁS
+//   - `ClaimOutcome` no-success (sessionExpired/accountUnavailable/transient) → stop retomable, JAMÁS
 //     `fatalError` (un 401 recuperable no debe producir un rollback espurio). Lo que SÍ se registra es
 //     la CAUSA, en `lastClaimBlocker` y fuera del journal: sin ella los tres se veían iguales desde la
-//     pantalla del adopt, que dejaba «Conectando con tu cuenta…» puesta también ante un 403.
+//     pantalla del adopt, que dejaba «Conectando con tu cuenta…» puesta también ante un 403. Desde el
+//     2026-09-22 el stop pasa por el TECHO del paso (`forwardStepStalled`): bajo presupuesto holdea igual.
 //
 //  DARK: NADA de producción instancia este runner ni lee el journal (la UI de migración llega en I14;
 //  el panel DEBUG en w7). Solo lo ejercitan los tests de este ciclo.
@@ -126,6 +127,115 @@ nonisolated enum SnapshotExitReason: String, Equatable, Sendable {
         case .localFailure:       self = .localFailure
         }
     }
+}
+
+/// Los TRES pasos de la ida en los que avanzar no es una cifra que baje, sino pasar al paso siguiente (ticket
+/// `forward-migration-steps-have-no-ceiling-and-no-exit`). El `rawValue` es el detalle del canario, así que es WIRE.
+///
+/// La subida del snapshot NO está aquí aunque vaya entre medias: tiene su propio techo, y ahí avanzar sí es una cifra
+/// (cada página confirmada). `verifying` tampoco: su salida es el contador de reintentos S9. Y del cutover solo entra
+/// `.pending` — desde `.serverConfirmed` el backend ya estampó `migrated_at` y rendirse no puede ser un rollback.
+nonisolated enum ForwardStepPhase: String, Equatable, Sendable {
+    case claim
+    case identity
+    case cutoverPending
+
+    /// El paso journaleado, si es uno de los tres. `nil` en cualquier otra fase.
+    init?(phase: MigrationPhase) {
+        switch phase {
+        case .claimingMigration:  self = .claim
+        case .assigningIdentity:  self = .identity
+        case .cutover(.pending):  self = .cutoverPending
+        default:                  return nil
+        }
+    }
+}
+
+/// ¿En qué fases de la ida se ofrece «Cancelar la activación»? En las cuatro en las que el teléfono sigue intacto en
+/// iCloud y la fase puede quedarse parada: la subida del snapshot (ticket `snapshot-upload-has-no-ceiling-and-no-way-out`)
+/// y los tres pasos sin cifra que baje (`forward-migration-steps-have-no-ceiling-and-no-exit`). Decisiones de Jürgen del
+/// 2026-09-22.
+///
+/// **El claim, solo con «Migrar a la nube»** (`ForwardClaimIntent.migrateOnly`; lo cazó una lente de la review). El mismo
+/// claim lo conducen el adopt —«Ya tengo una cuenta» del Welcome, «Activar la nube en este dispositivo»— y el seguidor, y
+/// ahí salir es un callejón: la persona quería ENTRAR en una cuenta con datos, «Tus datos siguen en este dispositivo» es
+/// falso en un teléfono recién instalado, y tras cancelar la pantalla solo ofrece «Migrar», que la puerta de identidad para
+/// con esa cuenta. Además su espera se cura sola: el re-kick reclama en cuanto vuelve la red. El techo del claim tampoco
+/// aplica ahí (`MigrationRunner.driveClaim`), y lo que falta tiene ticket: `adopt-claim-stays-parked-with-no-ceiling`.
+/// Desde la identidad en adelante el claim ya contestó `created` —una migración de verdad, venga de donde venga—, y la
+/// salida vale igual.
+///
+/// **Un solo predicado, y en POSITIVO**: lo consultan el runner —para honrar un «sí» apuntado— y el controller —para
+/// pintar el botón—, y escrito dos veces un día discrepan. «¿No es el cutover confirmado?» fallaría abierto con cualquier
+/// fase nueva.
+nonisolated enum ForwardCancelScope {
+    static func offersCancel(_ phase: MigrationPhase, claimIntent: ForwardClaimIntent) -> Bool {
+        switch phase {
+        case .uploadingSnapshot, .assigningIdentity, .cutover(.pending):
+            return true
+        case .claimingMigration:
+            return claimIntent == .migrateOnly
+        default:
+            return false
+        }
+    }
+}
+
+/// Por qué no avanza uno de esos tres pasos cuando la causa es de las que esperar NO arregla. El `rawValue` es la clave
+/// del reloj de causa (`MigrationState.forwardStepStallCauseRaw`) y el detalle del canario: WIRE, no se renombra.
+///
+/// **La sesión caducada solo llega aquí con la sesión BORRADA por el SDK** (`canRenewSession == false`, leído después
+/// de la llamada), igual que en la subida. Un token que no se renueva sin red, o un 401 del gateway con la sesión
+/// todavía guardada —el reloj del teléfono atrasado es el caso principal—, esperan el plazo largo: los cura el SDK.
+nonisolated enum ForwardStepBlocker: String, Equatable, Sendable {
+    /// El claim o el `cutover` no tienen sesión que usar, y el SDK ya no conserva ninguna que renovar.
+    case sessionExpired
+    /// El claim devolvió 403. `/account/claim` no lo emite hoy; es defensivo, y reintentar no lo despierta.
+    case accountUnavailable
+    /// `migration_progress('cutover')` contestó `ok:false` con un motivo que no es `other_leader`: `not_in_progress`,
+    /// `no_profile` o `bad_action`. Ninguno se arregla esperando.
+    case refused
+    /// `migration_progress('cutover')` contestó `other_leader`: otro dispositivo de la cuenta tomó el relevo del lease
+    /// (este lleva más de 60 min sin latir). Desde aquí no se vuelve a liderar.
+    case otherDevice
+    /// `assignIdentity()` lanzó: el único `throw` posible es el `context.save()` de la base local.
+    case localFailure
+}
+
+/// Por qué terminó uno de esos tres pasos al vencer su techo. Lo journalea la salida
+/// (`MigrationState.forwardStepExitReasonRaw`) y elige el texto de la tarjeta de fallo: WIRE.
+///
+/// **Lo elige el techo que VENCIÓ** (`MigrationRunner.forwardStepExitReason`), como en la subida: tras 72 h sin avanzar,
+/// una pasada con un motivo recién visto sale con `stalled`.
+nonisolated enum ForwardStepExitReason: String, Equatable, Sendable {
+    /// Venció el techo LARGO: 72 h en el mismo paso, con la causa que fuera.
+    case stalled
+    case sessionExpired
+    case accountUnavailable
+    case refused
+    case otherDevice
+    case localFailure
+
+    init(_ blocker: ForwardStepBlocker) {
+        switch blocker {
+        case .sessionExpired:     self = .sessionExpired
+        case .accountUnavailable: self = .accountUnavailable
+        case .refused:            self = .refused
+        case .otherDevice:        self = .otherDevice
+        case .localFailure:       self = .localFailure
+        }
+    }
+}
+
+/// Resultado de `confirmCutoverServer()` (w6 paso 1). Era un `Bool` hasta el ticket
+/// `forward-migration-steps-have-no-ceiling-and-no-exit`, y ese `false` único metía en el mismo saco la red, una sesión
+/// borrada y un servidor que dice que no: sin separarlos no había techo corto posible.
+nonisolated enum CutoverServerOutcome: Equatable {
+    /// El backend estampó `migrated_at` (idempotente).
+    case confirmed
+    /// Red, 5xx, o un 401/token nulo con la sesión todavía guardada: esperar lo puede arreglar.
+    case transient
+    case blocked(ForwardStepBlocker)
 }
 
 /// El reloj por CAUSA de un techo con dos relojes, PURO. Lo comparten las dos etapas que lo tienen: las cuatro fases
@@ -382,7 +492,12 @@ nonisolated enum ReverseExitPending {
 @MainActor
 protocol MigrationWorkExecuting: AnyObject {
     /// `POST /account/claim` (§f.1) — reusa `ClaimOutcome` de `CloudAccountClient`.
-    func performClaim() async -> ClaimOutcome
+    ///
+    /// `marksMigrationAttempt`: si este claim es de «Migrar a la nube» (`ForwardClaimIntent.migrateOnly`), deja ANTES del
+    /// POST la marca del claim sin respuesta (`CloudClaimActionStore.recordMigrationClaimAttempt`, ticket
+    /// `forward-migration-steps-have-no-ceiling-and-no-exit`). Solo ahí: la marca abre la puerta de «Migrar», y la de un adopt
+    /// o un seguidor la abriría a teléfonos que nunca lo pidieron (lo cazaron dos lentes de la review).
+    func performClaim(marksMigrationAttempt: Bool) async -> ClaimOutcome
     /// Deshace el sello que `performClaim` dejó en `CloudClaimActionStore` en su última llamada, y repone el que hubiera.
     /// Lo pide el runner cuando `ForwardClaimIntent` devuelve el claim al inicio: el sello de `existing_stable` es
     /// `.routeReturningUser`, el mismo que deja el adopt, y sin adopt afirmaría que esa cuenta entró en este dispositivo; el
@@ -395,8 +510,13 @@ protocol MigrationWorkExecuting: AnyObject {
     func uploadSnapshot(cursor: String?) async -> SnapshotStepOutcome
     /// w5: cuenta + checksum Merkle local vs backend, confirmado server-side.
     func verify() async -> VerifyProbe
-    /// w6 paso 1: escribe `profiles.migrated_at` y espera el ack síncrono del backend.
-    func confirmCutoverServer() async -> Bool
+    /// ¿Conserva el SDK una sesión que renovar? `false` solo cuando la BORRÓ. Lo lee el runner DESPUÉS de un claim que
+    /// contestó `.sessionExpired` (el SDK borra la sesión antes de lanzar), para separar la sesión caducada de verdad del
+    /// token que no llega sin red y del 401 con la sesión guardada (ticket `forward-migration-steps-have-no-ceiling-and-no-exit`).
+    func canRenewSession() -> Bool
+    /// w6 paso 1: escribe `profiles.migrated_at` y espera el ack síncrono del backend. Clasifica el no: `transient` si
+    /// esperar lo puede arreglar, `blocked` si no.
+    func confirmCutoverServer() async -> CutoverServerOutcome
     /// w6 paso 2: persiste `storageMode=.cloud` atómicamente.
     func persistLocalMode() async -> Bool
     /// Ejecuta un efecto DECLARATIVO (beacon KV, marker CK, mirror-off+relaunch, reconcile, rollback, adopt).
@@ -537,12 +657,17 @@ final class MigrationRunner {
     private(set) var lastReverseSessionExpiry: ReversePreMountPhase?
 
     /// El «sí» de «Cancelar la activación», apuntado por el controller ANTES de esperar a que suelte la pasada en vuelo
-    /// (ticket `snapshot-upload-has-no-ceiling-and-no-way-out`, hallazgo de la review). `drive()` lo mira antes de cada
-    /// página: sin él, un re-kick que arrancara con el diálogo abierto y la red de vuelta subía todo, pasaba por la
-    /// verificación y el cutover, y el «sí» llegaba tarde — la persona confirmaba cancelar y le salía «cierra y vuelve a
-    /// abrir». Vale solo para ESTA visita a la fase: `drive()` lo retira en cuanto la ve en otra, y
-    /// `cancelSnapshotUpload()` lo consume siempre. En memoria a propósito: tras relanzar, el diálogo ya no existe.
-    private var snapshotCancelRequested = false
+    /// (ticket `snapshot-upload-has-no-ceiling-and-no-way-out`, hallazgo de la review). `drive()` lo mira en cada vuelta:
+    /// sin él, un re-kick que arrancara con el diálogo abierto y la red de vuelta subía todo, pasaba por la verificación y
+    /// el cutover, y el «sí» llegaba tarde — la persona confirmaba cancelar y le salía «cierra y vuelve a abrir».
+    ///
+    /// **Vale para la pasada, no para una fase** (ticket `forward-migration-steps-have-no-ceiling-and-no-exit`): se honra
+    /// en la próxima fase que ofrece cancelar (`ForwardCancelScope`) y `drive()` lo retira en la primera que no. Hasta ese
+    /// ticket valía solo para la subida, y con el botón también al 22 % un «sí» dado con el claim en vuelo se perdía al
+    /// pasar a la identidad, y la pasada seguía hasta el cutover. La vuelta desde `verifying` a la subida por mismatch
+    /// sigue sin cancelarse: la verificación no ofrece el botón, así que el «sí» ya se retiró ahí. `cancelMigration()` lo
+    /// consume siempre. En memoria a propósito: tras relanzar, el diálogo ya no existe.
+    private var migrationCancelRequested = false
 
     /// La intención que se journaleará al llegar a `claimingMigration` (`ForwardClaimIntent`). La ponen las entradas de
     /// `CloudMigrationController`; el default conserva el comportamiento de siempre. `driveClaim` NO lee esto: lee lo
@@ -694,6 +819,8 @@ final class MigrationRunner {
             // El motivo de una subida que venció su techo: «Reintentar» es la salida de `failedRollback`, y el intento
             // nuevo no puede nacer con el texto del anterior. Los relojes ya salieron a `nil` al dejar la fase.
             state.snapshotExitReasonRaw = nil
+            // Lo mismo para los tres pasos sin cifra que baje (22 %, 35 %, 80 %).
+            state.forwardStepExitReasonRaw = nil
             if target == .notStarted { state.startedAt = nil }
             state.updatedAt = self.now()
             try self.context.save()
@@ -732,42 +859,65 @@ final class MigrationRunner {
         }
     }
 
-    /// «Cancelar la activación» desde la tarjeta de progreso de la subida del snapshot (ticket
-    /// `snapshot-upload-has-no-ceiling-and-no-way-out`, decisión de Jürgen del 2026-09-22). Vuelve a `notStarted` sin
-    /// efectos y sin motivo journaleado: lo decidió la persona, así que no hay fallo que explicar.
+    /// «Cancelar la activación» desde la tarjeta de progreso de la ida. Nació para la subida del snapshot (ticket
+    /// `snapshot-upload-has-no-ceiling-and-no-way-out`) y desde `forward-migration-steps-have-no-ceiling-and-no-exit` vale
+    /// también en los tres pasos sin cifra que baje (22 %, 35 %, 80 %) — decisiones de Jürgen del 2026-09-22, las dos.
+    /// Vuelve a `notStarted` sin efectos y sin motivo journaleado: lo decidió la persona, así que no hay fallo que explicar.
     ///
-    /// No-op fuera de `uploadingSnapshot`: un toque que llega tarde —la subida ya terminó, o ya salió por su techo— no
-    /// puede sacar a nadie de un sitio en el que ya no está. Y con una pasada en vuelo, `runGuarded` lo descarta: el
-    /// botón solo se puede tocar con la subida aparcada, que es la «subida parada» de la decisión.
-    func cancelSnapshotUpload() async {
+    /// No-op fuera de esas cuatro fases, y en el claim de un adopt (`ForwardCancelScope`): un toque que llega tarde —el
+    /// paso ya avanzó, o ya salió por su techo— no puede sacar a nadie de un sitio en el que ya no está. Y con una pasada en
+    /// vuelo, `runGuarded` lo descarta: el botón solo se puede tocar con la activación aparcada.
+    ///
+    /// **Lo que sí hace, y conviene saberlo:** el controller lo llama cuando la pasada en vuelo suelta el trabajo, así que
+    /// cancela en la fase en la que ESA pasada se aparcó si la ofrece, aunque la pasada hubiera retirado su «sí» por el
+    /// camino. Un «sí» dado sobre la subida puede acabar cancelando al 80 %: es lo que la persona pidió, y la fase sigue
+    /// siendo una de las que dejan el teléfono intacto (lo midió una lente de la review; el comportamiento viene de #212).
+    func cancelMigration() async {
         guard await awaitQuiescence() else {
-            // Sin quiescencia el «sí» se queda APUNTADO: lo ejecuta la próxima pasada que llegue a la subida.
+            // Sin quiescencia el «sí» se queda APUNTADO: lo ejecuta la próxima pasada que llegue a una fase cancelable.
             CloudSyncBreadcrumb.migrationQuiescenceTimeout()
             return
         }
         await runGuarded {
             // Aquí se consume pase lo que pase: la salida ocurre ahora, o el toque llegó tarde y no hay de dónde salir.
-            defer { self.snapshotCancelRequested = false }
+            defer { self.migrationCancelRequested = false }
             if try self.normalizeCorruptJournalIfNeeded() { return }
-            // Sin guard de fase: fuera de `uploadingSnapshot` la máquina ya devuelve `.invalid` y `handle` no toca nada.
-            try await self.journalSnapshotCancel()
+            _ = try await self.journalMigrationCancel()
         }
     }
 
-    /// Apunta el «sí» de «Cancelar la activación» para la pasada que esté en vuelo (`snapshotCancelRequested`). Síncrono
-    /// a propósito: lo llama el controller antes de su primer `await`, y la pasada lo ve en su próxima página.
-    func requestSnapshotCancel() {
-        snapshotCancelRequested = true
+    /// Apunta el «sí» de «Cancelar la activación» para la pasada que esté en vuelo (`migrationCancelRequested`). Síncrono
+    /// a propósito: lo llama el controller antes de su primer `await`, y la pasada lo ve en su próxima vuelta.
+    func requestMigrationCancel() {
+        migrationCancelRequested = true
     }
 
-    /// Journalea la cancelación. El canario va DENTRO del paso (`mutate` solo corre con una transición válida): solo se
-    /// cuenta una salida que ocurrió.
-    private func journalSnapshotCancel() async throws {
-        snapshotCancelRequested = false
-        try await handle(.snapshotUploadCancelled) { _, _ in
-            CloudSyncBreadcrumb.snapshotUploadExited(reason: "cancelled")
-            MetricsService.cloudSnapshotUploadAborted(reason: "cancelled")
+    /// Journalea la cancelación con el evento de la fase en la que está, y devuelve si canceló. Retira el «sí» apuntado en
+    /// los dos casos: se ejecuta ahora, o la fase ya no lo ofrece. El canario va DENTRO del paso (`mutate` solo corre con
+    /// una transición válida): solo se cuenta una salida que ocurrió.
+    ///
+    /// **El alcance lo decide `ForwardCancelScope`, aquí y solo aquí**: la máquina aceptaría `.forwardStepCancelled` desde
+    /// el claim de un adopt, que es justo donde salir es un callejón. Este es el único sitio que journalea la cancelación,
+    /// así que el toque del controller y el «sí» que honra `drive()` pasan los dos por la misma pregunta.
+    private func journalMigrationCancel() async throws -> Bool {
+        migrationCancelRequested = false
+        let state = try loadState()
+        let phase = state.readPhase().phase
+        let claimIntent = state.forwardClaimIntentRaw.flatMap(ForwardClaimIntent.init(rawValue:)) ?? .adoptIfExisting
+        guard ForwardCancelScope.offersCancel(phase, claimIntent: claimIntent) else { return false }
+        if phase == .uploadingSnapshot {
+            try await handle(.snapshotUploadCancelled) { _, _ in
+                CloudSyncBreadcrumb.snapshotUploadExited(reason: "cancelled")
+                MetricsService.cloudSnapshotUploadAborted(reason: "cancelled")
+            }
+            return true
         }
+        let step = ForwardStepPhase(phase: phase)
+        try await handle(.forwardStepCancelled) { _, _ in
+            guard let step else { return }
+            self.reportForwardStepExit(step, reason: "cancelled")
+        }
+        return true
     }
 
     /// Follower (M3): un poll externo estando en `waitingForLeader`. Re-claima y TRADUCE el resultado a
@@ -910,6 +1060,14 @@ final class MigrationRunner {
             if (next == .uploadingSnapshot) != (current == .uploadingSnapshot) {
                 state.clearSnapshotStallCeiling()
             }
+            // Techo de los tres pasos sin cifra que baje (22 %, 35 %, 80 %): aquí avanzar ES cambiar de paso, así que
+            // cualquier cambio de `ForwardStepPhase` —entrar, salir o pasar de uno a otro, incluido el claim que vuelve
+            // desde `waitingForLeader`— borra los dos relojes. No hay campo de paso que compararlos después: esta
+            // limpieza es la única que impide que la identidad herede el sello del claim y salga con cero segundos de
+            // parada real. El self-hold no entra, así que lo que sella la observación sobrevive.
+            if ForwardStepPhase(phase: next) != ForwardStepPhase(phase: current) {
+                state.clearForwardStepStallCeiling()
+            }
             mutate(state, next)
             state.updatedAt = now()
             try context.save()
@@ -977,10 +1135,14 @@ final class MigrationRunner {
                 #endif
                 return
             }
+            // El «sí» de «Cancelar la activación» vale para ESTA pasada: se honra en la primera fase que ofrece el botón y
+            // se retira en la primera que no, que ya no puede cancelar (la verificación, el cutover confirmado) ni la
+            // próxima visita a una que sí (p. ej. la vuelta a la subida desde `verifying` por mismatch). Lo retira
+            // `journalMigrationCancel` en los dos casos; aquí solo se corta si canceló.
+            if migrationCancelRequested, try await journalMigrationCancel() {
+                return                               // notStarted: nada más que conducir
+            }
             let phase = try loadState().readPhase().phase
-            // El «sí» de «Cancelar la activación» vale para la visita a la subida en la que se dio: si la pasada ya salió
-            // de ella, no puede cancelar otra cosa, ni la próxima visita (p. ej. la vuelta desde `verifying`).
-            if phase != .uploadingSnapshot { snapshotCancelRequested = false }
             switch phase {
             case .notStarted, .dryRun, .consent, .authenticating, .done, .failedRollback:
                 return                       // terminal / requiere evento externo (UI/auth, I14)
@@ -989,20 +1151,8 @@ final class MigrationRunner {
             case .claimingMigration:
                 if !(try await driveClaim()) { return }
             case .assigningIdentity:
-                do {
-                    try await executor.assignIdentity()
-                } catch {
-                    #if DEBUG
-                    print("MigrationRunner: assignIdentity falló (retomable): \(error)")
-                    #endif
-                    return
-                }
-                try await handle(.identityAssigned)
+                if !(try await driveIdentity()) { return }
             case .uploadingSnapshot:
-                if snapshotCancelRequested {
-                    try await journalSnapshotCancel()
-                    return                           // notStarted: nada más que conducir
-                }
                 if !(try await driveUpload()) { return }
             case .verifying:
                 if !(try await driveVerify()) { return }
@@ -1082,7 +1232,16 @@ final class MigrationRunner {
     /// `claimingInProgress + sameDeviceReclaim=true` de la máquina queda intencionalmente
     /// INALCANZABLE desde este runner.
     ///
-    /// Devuelve `false` para cortar el bucle (no-success).
+    /// Con «Migrar a la nube» (`migrateOnly`), los tres no-éxitos pasan por el TECHO del paso (`observeForwardStepStall`,
+    /// ticket `forward-migration-steps-have-no-ceiling-and-no-exit`): hasta ese ticket cortaban sin evento y la barra se
+    /// quedaba al 22 % para siempre. **Con la intención de adoptar cortan como antes, sin evento**, y es a propósito (lo cazó
+    /// una lente de la review): salir de un adopt deja a quien quería entrar en su cuenta en un teléfono vacío, con una
+    /// pantalla que solo ofrece «Migrar» y una puerta de identidad que lo para, mientras que su espera se cura sola cuando
+    /// vuelve la red. Su techo necesita otra salida y tiene ticket: `adopt-claim-stays-parked-with-no-ceiling`. El mismo
+    /// término vive en `ForwardCancelScope`, que no ofrece «Cancelar» en ese claim. `lastClaimBlocker` no cambia: sigue
+    /// describiendo el intento para la pantalla del adopt.
+    ///
+    /// Devuelve `false` para cortar el bucle (no-success bajo presupuesto), `true` si avanzó o salió.
     private func driveClaim() async throws -> Bool {
         let state = try loadState()
         if state.leaderDeviceID != deviceID {
@@ -1092,7 +1251,7 @@ final class MigrationRunner {
         }
         // La intención JOURNALEADA, no la de memoria: tras un relanzamiento es lo único que queda del intento.
         let intent = state.forwardClaimIntentRaw.flatMap(ForwardClaimIntent.init(rawValue:)) ?? .adoptIfExisting
-        switch await executor.performClaim() {
+        switch await executor.performClaim(marksMigrationAttempt: intent == .migrateOnly) {
         case let .success(claimState):
             lastClaimBlocker = nil
             if intent.refuses(claimState) {
@@ -1111,17 +1270,117 @@ final class MigrationRunner {
         case .sessionExpired:
             lastClaimBlocker = .sessionExpired
             CloudSyncBreadcrumb.migrationClaimNoSuccess(reason: "sessionExpired")
-            return false
+            // Dos productores con el mismo nombre: el token que no llega (sin red, o el SDK sin sesión) y el 401 de
+            // `/account/claim`, que no exige App Attest y por eso solo habla del JWT. Definitivo solo con la sesión BORRADA
+            // por el SDK, leído DESPUÉS del claim; con la sesión guardada espera el plazo largo, como en la subida.
+            guard intent == .migrateOnly else { return false }
+            return try await observeForwardStepStall(
+                .claim, blocker: executor.canRenewSession() ? nil : .sessionExpired)
         case .accountUnavailable:
             lastClaimBlocker = .accountUnavailable
             CloudSyncBreadcrumb.migrationAccountUnavailable()
-            return false
+            guard intent == .migrateOnly else { return false }
+            return try await observeForwardStepStall(.claim, blocker: .accountUnavailable)
         case .transient:
             // La red SÍ se reintenta: no es un bloqueo de cuenta y no debe apagar la barra de progreso.
             lastClaimBlocker = nil
             CloudSyncBreadcrumb.migrationClaimNoSuccess(reason: "transient")
-            return false
+            guard intent == .migrateOnly else { return false }
+            return try await observeForwardStepStall(.claim, blocker: nil)
         }
+    }
+
+    /// `assigningIdentity`. El único `throw` posible de `assignIdentity()` es el `context.save()` de la base local, y
+    /// esperar no lo arregla: elige el techo CORTO (ticket `forward-migration-steps-have-no-ceiling-and-no-exit`; hasta ese
+    /// ticket el `catch` hacía `return` y la barra se quedaba al 35 % para siempre). Devuelve `false` para cortar.
+    private func driveIdentity() async throws -> Bool {
+        do {
+            try await executor.assignIdentity()
+        } catch {
+            #if DEBUG
+            print("MigrationRunner: assignIdentity falló (retomable): \(error)")
+            #endif
+            return try await observeForwardStepStall(.identity, blocker: .localFailure)
+        }
+        try await handle(.identityAssigned)
+        return true
+    }
+
+    /// Una observación de uno de los TRES pasos sin cifra que baje —claim, identidad, `cutover(.pending)`— en una pasada
+    /// que no avanzó. Decide si el paso sigue esperando o sale a `failedRollback` (ticket
+    /// `forward-migration-steps-have-no-ceiling-and-no-exit`, decisiones de Jürgen del 2026-09-22: 15 min / 72 h por paso).
+    ///
+    /// **Molde de `observeSnapshotStall`, con una diferencia: aquí avanzar es cambiar de paso.** No hay página que re-selle
+    /// el reloj, así que la primera observación de un paso lo SELLA y el siguiente paso empieza sin él (`handle` borra los
+    /// dos relojes en cada cambio de `ForwardStepPhase`). El de AVANCE gobierna las 72 h con cualquier causa; el de CAUSA
+    /// (`CauseStallClock`) los 15 min, solo con un motivo que esperar no arregla. Un sello en el FUTURO es un reloj que iba
+    /// adelantado y ya se corrigió: se re-sella ahora.
+    ///
+    /// Devuelve `true` si el paso SALIÓ, para que `drive()` relea la fase y corte en el terminal.
+    private func observeForwardStepStall(_ step: ForwardStepPhase, blocker: ForwardStepBlocker?) async throws -> Bool {
+        let state = try loadState()
+        let observedAt = now()
+        let lastProgressAt: Date
+        if let sealed = state.forwardStepStallProgressAt, sealed <= observedAt {
+            lastProgressAt = sealed
+        } else {
+            lastProgressAt = observedAt                      // sin sello, o con un sello en el FUTURO
+        }
+        let stalled = observedAt.timeIntervalSince(lastProgressAt)
+        let cause: MarkerExportStall = blocker == nil ? .unknown : .definitive
+        let clock = CauseStallClock.observe(
+            sealedRaw: state.forwardStepStallCauseRaw,
+            sealedOpenSince: state.forwardStepStallCauseAt,
+            sealedAccrued: state.forwardStepStallCauseAccruedSeconds,
+            blockerRaw: blocker?.rawValue,
+            observedAt: observedAt)
+        CloudSyncBreadcrumb.forwardStepStalled(
+            step: step.rawValue, stalledSeconds: stalled, causeStalledSeconds: clock.stalled, blocker: blocker?.rawValue)
+        // En CADA observación, no solo al salir: un fallo sistémico —un gateway que rechaza el claim en toda la flota— se
+        // ve así mucho antes de que ningún teléfono agote sus 15 min o sus 72 h.
+        MetricsService.cloudForwardStepWaiting(
+            step: step.rawValue, stalledSeconds: stalled, causeStalledSeconds: clock.stalled,
+            blocker: blocker?.rawValue)
+        let reason = forwardStepExitReason(blocker: blocker, causeStalledSeconds: clock.stalled, cause: cause)
+        let current = state.readPhase().phase
+        var left = false
+        try await handle(.forwardStepStalled(
+            stalledSeconds: stalled, causeStalledSeconds: clock.stalled, cause: cause)) { state, next in
+            guard next != current else {
+                state.forwardStepStallProgressAt = lastProgressAt
+                // Los tres del reloj de causa se escriben SIEMPRE, también a `nil`: una observación sin motivo CIERRA el
+                // tramo abierto, y dejar la fecha puesta contaría el hueco como parada por una causa no observada.
+                state.forwardStepStallCauseRaw = clock.raw
+                state.forwardStepStallCauseAt = clock.accruedFrom
+                state.forwardStepStallCauseAccruedSeconds = clock.accrued
+                return
+            }
+            left = true
+            state.forwardStepExitReasonRaw = reason.rawValue
+            // Se cuenta AQUÍ, en el save que journalea la salida: lo que venga después puede no llegar a correr.
+            self.reportForwardStepExit(step, reason: reason.rawValue)
+        }
+        return left
+    }
+
+    /// El motivo que se journalea al salir de uno de los tres pasos, y **lo elige el techo que VENCIÓ**, no la última
+    /// observación (la regla de `snapshotExitReason` y de `reversePreMountExitReason`): tras 72 h en el claim sin red, un
+    /// 403 recién visto no puede decirle a la persona que su cuenta no lo permitió.
+    private func forwardStepExitReason(
+        blocker: ForwardStepBlocker?, causeStalledSeconds: Double, cause: MarkerExportStall
+    ) -> ForwardStepExitReason {
+        guard let blocker, policy.forwardStepCauseCeilingReached(
+            causeStalledSeconds: causeStalledSeconds, cause: cause) else {
+            return .stalled
+        }
+        return ForwardStepExitReason(blocker)
+    }
+
+    /// El rastro y el canario de una salida de los tres pasos: por su techo (`reason` = `ForwardStepExitReason.rawValue`) o
+    /// porque la persona canceló (`cancelled`).
+    private func reportForwardStepExit(_ step: ForwardStepPhase, reason: String) {
+        CloudSyncBreadcrumb.forwardStepExited(step: step.rawValue, reason: reason)
+        MetricsService.cloudForwardStepAborted(step: step.rawValue, reason: reason)
     }
 
     /// `uploadingSnapshot`. `pageConfirmed` journalea el cursor (no cambia de fase, re-loop); `completed`
@@ -1312,9 +1571,18 @@ final class MigrationRunner {
             // C-1: segunda puerta de la precondición — cubre el resume que entra directo aquí tras un kill
             // entre el verify y el cutover. Nada durable ha cambiado todavía en este sub-estado.
             if try await abortCutoverEntryIfChannelBroken() { return true }
-            guard await executor.confirmCutoverServer() else { return false }
-            try await handle(.serverConfirmedAck)
-            return true
+            // El no del servidor pasa por el TECHO del paso (ticket `forward-migration-steps-have-no-ceiling-and-no-exit`:
+            // hasta ese ticket era un `Bool` y su `false` cortaba sin evento, con la barra al 80 % para siempre). La
+            // puerta de arriba va primero en cada pasada, así que su salida y la del techo no se pisan.
+            switch await executor.confirmCutoverServer() {
+            case .confirmed:
+                try await handle(.serverConfirmedAck)
+                return true
+            case .transient:
+                return try await observeForwardStepStall(.cutoverPending, blocker: nil)
+            case let .blocked(blocker):
+                return try await observeForwardStepStall(.cutoverPending, blocker: blocker)
+            }
         case .serverConfirmed:
             guard await executor.persistLocalMode() else { return false }
             try await handle(.localModePersisted)          // efecto: startParallelHistoryCapture
@@ -1978,6 +2246,8 @@ final class MigrationRunner {
         state.clearReversePreMountCeiling()
         state.clearSnapshotStallCeiling()
         state.snapshotExitReasonRaw = nil
+        state.clearForwardStepStallCeiling()
+        state.forwardStepExitReasonRaw = nil
         state.setReverseOriginPendingEffects([])
         state.forwardClaimIntentRaw = nil
         state.startedAt = nil
@@ -2014,7 +2284,8 @@ final class MigrationRunner {
 
     private func pollLeaderInternal() async throws {
         guard try loadState().readPhase().phase == .waitingForLeader else { return }
-        switch await executor.performClaim() {
+        // El seguidor es el de un adopt (ver `ForwardClaimIntent`): su claim no es de «Migrar» y no deja marca.
+        switch await executor.performClaim(marksMigrationAttempt: false) {
         case .success(.existingStable):
             lastClaimBlocker = nil
             try await handle(.leaderCompleted)             // → notStarted + adoptBackendAccount

@@ -41,6 +41,18 @@ private final class FakeSession: CloudSyncSessionProviding {
     func attestToken() async throws -> String? { nil }
 }
 
+/// El SDK BORRA la sesión dentro de la renovación, antes de devolver `nil`: el testigo solo dice la verdad leído DESPUÉS
+/// de pedir el token. Con el `FakeSession` de arriba, leerlo antes o después da lo mismo y un mutante que lo adelanta
+/// sobrevive (lo cazó una lente de la review de `forward-migration-steps-have-no-ceiling-and-no-exit`).
+@MainActor
+private final class SessionRemovedWhileFetching: CloudSyncSessionProviding {
+    private var saved = true
+    var currentUserID: String? { "sub-1" }
+    func accessToken() async -> String? { saved = false; return nil }
+    var canRenewSession: Bool { saved }
+    func attestToken() async throws -> String? { nil }
+}
+
 /// Reloj MUTABLE para el test de throttle del heartbeat (I14-pre): avanzar `value` entre ticks sin recrear
 /// el executor. MainActor (se muta y lee solo desde el test MainActor).
 @MainActor
@@ -97,6 +109,9 @@ private final class RoutingStub: SyncHTTPSession, @unchecked Sendable {
     var claimBody = Data("{\"state\":\"created\"}".utf8)
     var claimStatus = 200
     private(set) var lastClaimBody: [String: Any]?
+    /// Se llama cuando el POST del claim LLEGA al stub, antes de la respuesta: es el instante de una respuesta perdida, y lo
+    /// que la marca del claim tiene que haber dejado escrito ya.
+    var onClaimRequest: (() -> Void)?
     var migrationBody = Data("{\"ok\":true}".utf8)
     var migrationStatus = 200
     private(set) var lastMigrationBody: [String: Any]?
@@ -134,6 +149,7 @@ private final class RoutingStub: SyncHTTPSession, @unchecked Sendable {
         }
         if path.contains("account/claim") {
             lastClaimBody = (try? JSONSerialization.jsonObject(with: request.httpBody ?? Data())) as? [String: Any]
+            onClaimRequest?()
             return (claimBody, resp(claimStatus))
         }
         if path.contains("sync/push") {
@@ -202,7 +218,7 @@ struct MigrationWorkExecutorTests {
 
     private func makeExecutor(
         _ context: ModelContext, _ engine: CloudSyncEngine, _ stub: RoutingStub,
-        _ session: FakeSession, _ beaconStore: FakeBeaconStore, personalStoreURL: URL,
+        _ session: CloudSyncSessionProviding, _ beaconStore: FakeBeaconStore, personalStoreURL: URL,
         storageDefaults: UserDefaults? = nil,
         now: (() -> Date)? = nil,
         heartbeatInterval: TimeInterval = 60,
@@ -358,28 +374,134 @@ struct MigrationWorkExecutorTests {
 
     // MARK: - Cutover (w6, §g.4)
 
-    @Test("confirmCutoverServer: migration_progress ok → true; other_leader → false")
-    func confirmCutoverServer_okAndOtherLeader() async throws {
+    /// El reparto del no del servidor para el techo de `cutover(.pending)` (ticket
+    /// `forward-migration-steps-have-no-ceiling-and-no-exit`): hasta ese ticket todo era un `false`, y sin separarlo no
+    /// había techo corto posible. `other_leader` y un `rejected` son definitivos; la red espera.
+    @Test("confirmCutoverServer: ok → confirmed · other_leader → otherDevice · rejected → refused · 5xx → transient")
+    func confirmCutoverServer_classifiesTheServerAnswer() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
         let session = FakeSession(token: "jwt", userID: "sub-1")
         let stub = RoutingStub()
         let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
                                     personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
-        #expect(await executor.confirmCutoverServer() == true)
+        #expect(await executor.confirmCutoverServer() == .confirmed)
 
         stub.migrationBody = Data("{\"ok\":false,\"reason\":\"other_leader\"}".utf8)
-        #expect(await executor.confirmCutoverServer() == false)
+        #expect(await executor.confirmCutoverServer() == .blocked(.otherDevice))
+
+        stub.migrationBody = Data("{\"ok\":false,\"reason\":\"not_in_progress\"}".utf8)
+        #expect(await executor.confirmCutoverServer() == .blocked(.refused))
+
+        stub.migrationStatus = 503
+        #expect(await executor.confirmCutoverServer() == .transient)
     }
 
-    @Test("confirmCutoverServer: sin JWT → false (sessionExpired)")
-    func confirmCutoverServer_noJWT_false() async throws {
+    /// Sin JWT, o con un 401: definitivo SOLO con la sesión borrada por el SDK. Con la sesión guardada —el token que no se
+    /// renueva sin red, el reloj atrasado— espera el plazo largo, que es la regla de la familia.
+    @Test("confirmCutoverServer: sin JWT o 401 → sessionExpired solo con la sesión borrada")
+    func confirmCutoverServer_sessionExpired_onlyWithTheSessionGone() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
-        let session = FakeSession(token: nil, userID: nil)
+        let gone = FakeSession(token: nil, userID: nil)
+        let executorGone = makeExecutor(context, CloudSyncEngine(), RoutingStub(), gone, FakeBeaconStore(),
+                                        personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        #expect(await executorGone.confirmCutoverServer() == .blocked(.sessionExpired))
+
+        let kept = FakeSession(token: nil, userID: "sub-1")
+        kept.canRenewSessionOverride = true
+        let executorKept = makeExecutor(context, CloudSyncEngine(), RoutingStub(), kept, FakeBeaconStore(),
+                                        personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        #expect(await executorKept.confirmCutoverServer() == .transient, "token nulo con la sesión guardada")
+
+        let stub401 = RoutingStub()
+        stub401.migrationStatus = 401
+        let withToken = FakeSession(token: "jwt", userID: "sub-1")
+        let executor401 = makeExecutor(context, CloudSyncEngine(), stub401, withToken, FakeBeaconStore(),
+                                       personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        #expect(await executor401.confirmCutoverServer() == .transient, "401 con la sesión guardada")
+        withToken.canRenewSessionOverride = false
+        #expect(await executor401.confirmCutoverServer() == .blocked(.sessionExpired), "401 con la sesión borrada")
+
+        // El SDK borra la sesión DENTRO de la renovación: leído antes de pedir el token, el testigo diría «guardada».
+        let removed = SessionRemovedWhileFetching()
+        let executorRemoved = makeExecutor(context, CloudSyncEngine(), RoutingStub(), removed, FakeBeaconStore(),
+                                           personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        #expect(await executorRemoved.confirmCutoverServer() == .blocked(.sessionExpired),
+                "el testigo se lee DESPUÉS de pedir el token")
+    }
+
+    /// La marca del claim sin respuesta: se escribe ANTES del POST —el stub la mira en el instante en que le llega la
+    /// petición, que es cuando se pierde una respuesta— y se borra con cualquier respuesta. Sin ella, un claim que crea la
+    /// cuenta y pierde la respuesta deja la cuenta `complete` sin sello, y tras el techo o «Cancelar» al 22 % la puerta de
+    /// «Migrar» la tomaba por una cuenta con datos ajenos.
+    @Test("performClaim de «Migrar»: la marca está puesta al llegar el POST, sobrevive sin respuesta y se borra con cualquiera")
+    func performClaim_attemptMark_survivesALostAnswer_andClearsWithAnyAnswer() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-mark")
+        let stub = RoutingStub()
+        let claimStore = CloudClaimActionStore(defaults: makeIsolatedDefaults(prefix: "mwe.claim.attempt"))
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    claimStore: claimStore)
+        var markedWhenThePostArrived: Bool?
+        stub.onClaimRequest = { markedWhenThePostArrived = claimStore.hasMigrationClaimAttempt(forUserID: "sub-mark") }
+
+        stub.claimStatus = 503
+        guard case .transient = await executor.performClaim(marksMigrationAttempt: true) else {
+            Issue.record("control del escenario: un 503 es `.transient`")
+            return
+        }
+        #expect(markedWhenThePostArrived == true, "la marca va ANTES del POST: un kill con la petición en vuelo la conserva")
+        #expect(claimStore.hasMigrationClaimAttempt(forUserID: "sub-mark"), "sin respuesta no se sabe: la marca se queda")
+        #expect(claimStore.action(forUserID: "sub-mark") == nil, "control: el sello solo llega con la respuesta")
+
+        for body in ["{\"state\":\"existing_stable\"}", "{\"state\":\"claiming_in_progress\"}",
+                     "{\"state\":\"created\"}"] {
+            claimStore.recordMigrationClaimAttempt(forUserID: "sub-mark")
+            stub.claimStatus = 200
+            stub.claimBody = Data(body.utf8)
+            _ = await executor.performClaim(marksMigrationAttempt: true)
+            #expect(!claimStore.hasMigrationClaimAttempt(forUserID: "sub-mark"), "con respuesta la marca sobra: \(body)")
+        }
+    }
+
+    /// Un claim que no es de «Migrar» (adopt, seguidor) no marca: la marca abre la puerta de «Migrar», y la de un adopt la
+    /// abriría a un teléfono que nunca lo pidió. Pero su respuesta SÍ borra una marca anterior de la misma cuenta.
+    @Test("performClaim de un adopt: no marca, y su respuesta borra una marca anterior")
+    func performClaim_notMigrate_doesNotMark_butItsAnswerClears() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-adopt-mark")
+        let stub = RoutingStub()
+        let claimStore = CloudClaimActionStore(defaults: makeIsolatedDefaults(prefix: "mwe.claim.adopt.mark"))
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    claimStore: claimStore)
+        stub.claimStatus = 503
+        _ = await executor.performClaim(marksMigrationAttempt: false)
+        #expect(!claimStore.hasMigrationClaimAttempt(forUserID: "sub-adopt-mark"))
+
+        claimStore.recordMigrationClaimAttempt(forUserID: "sub-adopt-mark")
+        stub.claimStatus = 200
+        stub.claimBody = Data("{\"state\":\"existing_stable\"}".utf8)
+        _ = await executor.performClaim(marksMigrationAttempt: false)
+        #expect(!claimStore.hasMigrationClaimAttempt(forUserID: "sub-adopt-mark"))
+    }
+
+    /// Sin JWT el claim ni sale: no hay POST, así que tampoco marca.
+    @Test("performClaim: sin JWT no marca nada")
+    func performClaim_noJWT_leavesNoAttemptMark() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: nil, userID: "sub-nojwt")
+        let claimStore = CloudClaimActionStore(defaults: makeIsolatedDefaults(prefix: "mwe.claim.nojwt"))
         let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
-                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
-        #expect(await executor.confirmCutoverServer() == false)
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    claimStore: claimStore)
+        _ = await executor.performClaim(marksMigrationAttempt: true)
+        #expect(!claimStore.hasMigrationClaimAttempt(forUserID: "sub-nojwt"))
     }
 
     @Test("persistLocalMode: escribe storageMode=.cloud en los defaults inyectados → true")

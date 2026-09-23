@@ -26,11 +26,12 @@ struct StorageMigrationIdentityGateLogicTests {
     private func check(_ discovery: Discovery, associated: Bool?,
                        state: CloudIdentityRoutingLogic.DeviceSessionState = .privateSession,
                        claimedHere: Bool = false,
+                       unansweredClaim: Bool = false,
                        freshStart: Bool = false,
                        openedHere: Bool = false) -> Logic.Check {
         Logic.check(answer: .discovered(discovery), deviceState: state, isAssociatedGroupsAccount: associated,
-                    claimedForMigrationHere: claimedHere, sessionOpenedByThisAttempt: openedHere,
-                    deviceSealedForFreshStart: freshStart)
+                    claimedForMigrationHere: claimedHere, hasUnansweredMigrationClaim: unansweredClaim,
+                    sessionOpenedByThisAttempt: openedHere, deviceSealedForFreshStart: freshStart)
     }
 
     // MARK: - La fila de Ajustes, de punta a punta
@@ -85,6 +86,7 @@ struct StorageMigrationIdentityGateLogicTests {
                         #expect(Logic.check(answer: .unavailable, deviceState: .privateSession,
                                             isAssociatedGroupsAccount: associated,
                                             claimedForMigrationHere: claimedHere,
+                                            hasUnansweredMigrationClaim: claimedHere,
                                             sessionOpenedByThisAttempt: openedHere,
                                             deviceSealedForFreshStart: freshStart) == .couldNotCheck)
                     }
@@ -212,6 +214,41 @@ struct StorageMigrationIdentityGateLogicTests {
         #expect(check(.complete, associated: nil, claimedHere: true, freshStart: true, openedHere: false) == .proceed)
         #expect(check(.complete, associated: false, claimedHere: true, freshStart: true, openedHere: false)
                 == .blocked(.anotherGroupsAccountAssociated))
+    }
+
+    // MARK: - El claim de «Migrar» que se quedó sin respuesta (ticket `forward-migration-steps-have-no-ceiling-and-no-exit`)
+
+    /// El bug que abrió el techo del 22 %: un claim que creó la cuenta y perdió la respuesta la deja `complete` sin sello.
+    /// Con la marca, el reintento llega al claim —que sigue decidiendo— en vez de pararse con un «ya tiene datos» falso.
+    /// CONTROL: sin marca y sin sello, la misma cuenta se sigue bloqueando.
+    @Test("cuenta completa con un claim de «Migrar» sin respuesta → sigue; sin la marca, bloqueo")
+    func completaConClaimSinRespuesta_sigue() {
+        #expect(check(.complete, associated: nil, unansweredClaim: true) == .proceed)
+        #expect(check(.complete, associated: true, unansweredClaim: true) == .proceed)
+        #expect(check(.complete, associated: nil) == .blocked(.accountHasPersonalData), "control del caso")
+    }
+
+    /// La marca abre lo mismo que el sello y nada más: ni otra asociada, ni fuera de `complete`.
+    @Test("la marca no abre otra asociada ni cambia las demás respuestas")
+    func marcaAcotada() {
+        #expect(check(.complete, associated: false, unansweredClaim: true) == .blocked(.anotherGroupsAccountAssociated))
+        #expect(check(.groupsOnly, associated: false, unansweredClaim: true) == .blocked(.anotherGroupsAccountAssociated))
+        #expect(check(.groupsOnly, associated: nil, unansweredClaim: true, freshStart: true, openedHere: false)
+                == .blocked(.sessionFromBeforeFreshStart))
+    }
+
+    /// **La diferencia con el sello, y es la decisión:** en un teléfono que empezó de cero, con una sesión que no abrió este
+    /// intento y sin asociada, la marca NO cuenta. Esa sesión puede ser de la persona anterior, y promoverla con el claim
+    /// del mismo líder subiría las finanzas de la nueva a su cuenta (lo cazaron dos lentes). El sello sí sigue, y ese es su
+    /// residual escrito; la marca no lo amplía. CONTROL: con la sesión abierta por el intento, o asociada, sí cuenta.
+    @Test("empezó de cero + sesión de antes sin asociada: la marca no abre una cuenta completa")
+    func empezoDeCero_marcaNoAbre() {
+        #expect(check(.complete, associated: nil, unansweredClaim: true, freshStart: true, openedHere: false)
+                == .blocked(.accountHasPersonalData))
+        #expect(check(.complete, associated: nil, unansweredClaim: true, freshStart: true, openedHere: true) == .proceed)
+        #expect(check(.complete, associated: true, unansweredClaim: true, freshStart: true, openedHere: false) == .proceed)
+        #expect(check(.complete, associated: nil, claimedHere: true, freshStart: true, openedHere: false) == .proceed,
+                "el sello conserva su «Reintentar»")
     }
 
     // MARK: - La parada en el claim

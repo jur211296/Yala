@@ -168,9 +168,9 @@ struct StorageSettingsView: View {
         .onChange(of: controller?.canCancelReverse) { _, cancellable in
             if cancellable != true { confirmCancelReverse = false }
         }
-        // Lo mismo para «Cancelar la activación»: si la subida termina o vence su techo con el diálogo abierto, no
-        // puede reaparecer en otra pantalla por un flag que nadie bajó.
-        .onChange(of: controller?.canCancelSnapshotUpload) { _, cancellable in
+        // Lo mismo para «Cancelar la activación»: si la activación sale de una fase que lo ofrece —avanza a una que no, o
+        // vence su techo— con el diálogo abierto, no puede reaparecer en otra pantalla por un flag que nadie bajó.
+        .onChange(of: controller?.canCancelMigration) { _, cancellable in
             if cancellable != true { confirmCancelMigration = false }
         }
     }
@@ -495,9 +495,10 @@ struct StorageSettingsView: View {
             if reverse && controller.canCancelReverse {
                 cancelReverseButton(controller)
             }
-            // Sin término `reverse`: la fase la decide el controller, y `uploadingSnapshot` solo se pinta en la ida.
-            // Repetirlo aquí sería la misma condición dos veces, y un mutante en la del controller saldría verde.
-            if controller.canCancelSnapshotUpload {
+            // Sin término `reverse`: la fase la decide el controller (`ForwardCancelScope`), y sus cuatro fases solo se
+            // pintan en la ida. Repetirlo aquí sería la misma condición dos veces, y un mutante en la del controller
+            // saldría verde.
+            if controller.canCancelMigration {
                 cancelMigrationButton(controller)
             }
         }
@@ -570,10 +571,12 @@ struct StorageSettingsView: View {
         }
     }
 
-    /// «Cancelar la activación» durante la subida del snapshot (ticket `snapshot-upload-has-no-ceiling-and-no-way-out`,
-    /// decisión de Jürgen del 2026-09-22). Pide confirmación porque abandona algo que la persona empezó, y el cuerpo dice
-    /// lo que se queda: sus datos siguen en el teléfono, y lo que ya subió se queda en su cuenta de la nube. Deshabilitado
-    /// con trabajo en vuelo, así que solo se toca con la subida aparcada.
+    /// «Cancelar la activación» durante la subida del snapshot (ticket `snapshot-upload-has-no-ceiling-and-no-way-out`) y,
+    /// desde `forward-migration-steps-have-no-ceiling-and-no-exit`, en los tres pasos parados al 22 %, 35 % y 80 %
+    /// (decisiones de Jürgen del 2026-09-22). Pide confirmación porque abandona algo que la persona empezó, y el cuerpo dice
+    /// lo que se queda: sus datos siguen en el teléfono, y lo que ya subió se queda en su cuenta de la nube —al 22 % y al
+    /// 35 % no subió nada todavía, y la frase sigue siendo verdad—. Deshabilitado con trabajo en vuelo, así que solo se
+    /// toca con la activación aparcada.
     private func cancelMigrationButton(_ controller: CloudMigrationController) -> some View {
         YalaSecondaryButton(L10n.Storage.Progress.cancelMigration, icon: "xmark.circle",
                             isDisabled: controller.isWorking) {
@@ -583,7 +586,7 @@ struct StorageSettingsView: View {
         .confirmationDialog(L10n.Storage.Confirm.cancelMigrationTitle,
                             isPresented: $confirmCancelMigration, titleVisibility: .visible) {
             Button(L10n.Storage.Confirm.cancelMigrationConfirm) {
-                Task { await controller.cancelSnapshotUpload() }
+                Task { await controller.cancelMigration() }
             }
             Button(L10n.Storage.Confirm.cancelMigrationKeep, role: .cancel) {}
         } message: {
@@ -665,7 +668,8 @@ struct StorageSettingsView: View {
         _ controller: CloudMigrationController, kind: CloudMigrationUIState.FailureKind
     ) -> String {
         StorageFailureCopyLogic.message(
-            kind: kind, snapshotExit: controller.snapshotExitReason, cutoverBlocker: controller.cutoverBlocker)
+            kind: kind, snapshotExit: controller.snapshotExitReason,
+            forwardStepExit: controller.forwardStepExitReason, cutoverBlocker: controller.cutoverBlocker)
     }
 
     // MARK: - Panel DEBUG (DEV_BUILD only)

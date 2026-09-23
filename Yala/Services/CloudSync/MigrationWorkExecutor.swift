@@ -295,17 +295,35 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     // MARK: - Claim (§f.1)
 
     /// `POST /account/claim` con el JWT vigente + el `device_id` del dispositivo + `provider`. Sin JWT →
-    /// `.sessionExpired` (el runner corta SIN evento, retomable; un re-login lo despierta). NUNCA lanza.
-    func performClaim() async -> ClaimOutcome {
+    /// `.sessionExpired` (el runner decide con `canRenewSession` si es definitivo). NUNCA lanza.
+    ///
+    /// El default `false` es solo para los tests del ejecutor, que lo llaman directo: el runner lo pasa SIEMPRE, por el
+    /// protocolo, que no tiene default.
+    func performClaim(marksMigrationAttempt: Bool = false) async -> ClaimOutcome {
         // Cada claim empieza sin nada que deshacer: `discardLastClaimStamp` solo repone lo de ESTE claim.
         lastClaimStampUndo = nil
         guard let jwt = await session.accessToken(), !jwt.isEmpty else {
             return .sessionExpired(detail: "no access token")
         }
+        // La MARCA del intento, ANTES del POST (ticket `forward-migration-steps-have-no-ceiling-and-no-exit`, decisión de
+        // Jürgen del 2026-09-22). Un claim que llega al servidor y pierde la respuesta deja la cuenta `complete` sin el sello
+        // de abajo, que solo se escribe con la respuesta en la mano. Hasta ese ticket no se notaba —el paso no salía nunca y
+        // el reintento del mismo líder acababa sellando—, pero con techo y «Cancelar» al 22 % la puerta de «Migrar» la leía
+        // como una cuenta con datos ajenos y ya no dejaba migrar a ella. La marca solo le dice a la puerta que pregunte al
+        // claim, que sigue decidiendo: el mismo líder recibe `created` y una cuenta ajena se para con su aviso.
+        // Se escribe solo en un claim de «Migrar», que es la única puerta que abre; se BORRA con la respuesta de cualquier
+        // claim de esta cuenta, porque cualquier respuesta dice ya cómo está el servidor.
+        let attemptUserID = session.currentUserID
+        if marksMigrationAttempt, let attemptUserID { claimStore.recordMigrationClaimAttempt(forUserID: attemptUserID) }
         // `migration: true` ES OBLIGATORIO (bug device 2026-07-10): arma `migration_in_progress=true` en
         // el INSERT atómico → el guard de `migration_progress('cutover')` (exige mip) pasa. Sin él, el
         // claim crea la fila con mip=false y el cutover se clava en `not_in_progress` para siempre.
         let outcome = await accountClient.claim(jwt: jwt, deviceID: deviceID, provider: provider(), migration: true)
+        // Con la respuesta en la mano el desenlace ya se sabe: `created` deja el sello (`.proceedMigration`), y cualquier
+        // otro dice que la cuenta no es de este intento. La marca sobra en los dos casos; sin respuesta, se queda.
+        if case .success = outcome, let attemptUserID {
+            claimStore.clearMigrationClaimAttempt(forUserID: attemptUserID)
+        }
         // P6: estampar el `AuthAction` resuelto en el claim-store (branch `.migration`) → el gate de
         // arranque del runtime (`LiveCloudSessionProvider.claimAction`) lo lee. El faro cloud + provider
         // no aplican a la rama migración (variante B es born-cloud/returning) → `false`/`true` neutros.
@@ -614,31 +632,44 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
 
     // MARK: - Cutover (w6, §g.4)
 
-    /// w6 paso 1: `migration_progress('cutover')` — estampa `profiles.migrated_at` (guard líder). `.ok`
-    /// → `true`; `.otherLeader` (usurpado) → `false` + breadcrumb (el runner corta retomable → follower);
-    /// cualquier otro (rejected/transient/sessionExpired) → `false` + breadcrumb (stop retomable). Sin JWT
-    /// → `false` (`.sessionExpired`; un re-login lo despierta). NUNCA lanza.
-    func confirmCutoverServer() async -> Bool {
+    /// ¿Conserva el SDK una sesión que renovar? (`MigrationWorkExecuting.canRenewSession`). El mismo testigo que ya usa la
+    /// subida del snapshot, y por la misma razón: el SDK borra la sesión antes de lanzar, así que se lee después.
+    func canRenewSession() -> Bool {
+        session.canRenewSession
+    }
+
+    /// w6 paso 1: `migration_progress('cutover')` — estampa `profiles.migrated_at` (guard líder). NUNCA lanza.
+    ///
+    /// Clasifica el no para el techo de `cutover(.pending)` (ticket `forward-migration-steps-have-no-ceiling-and-no-exit`;
+    /// hasta ese ticket devolvía un `Bool` y el runner cortaba sin evento en cualquier `false`):
+    ///  · `other_leader` → `.blocked(.otherDevice)`: otro dispositivo tomó el relevo del lease, y desde aquí no se vuelve.
+    ///    El comentario de antes decía «el runner corta retomable → follower», y no había follower: se quedaba al 80 %;
+    ///  · `rejected` (`not_in_progress`, `no_profile`, `bad_action`) → `.blocked(.refused)`;
+    ///  · sin JWT, o 401 → `.blocked(.sessionExpired)` solo con la sesión BORRADA por el SDK; con la sesión guardada es
+    ///    `.transient` —el token que no llega sin red, el reloj atrasado—, la regla del canal personal. `/account/migration`
+    ///    no exige App Attest, así que su 401 es siempre el JWT;
+    ///  · red/5xx → `.transient`.
+    func confirmCutoverServer() async -> CutoverServerOutcome {
         guard let jwt = await session.accessToken(), !jwt.isEmpty else {
             CloudSyncBreadcrumb.migrationCutoverRejected(reason: "sessionExpired")
-            return false
+            return session.canRenewSession ? .transient : .blocked(.sessionExpired)
         }
         switch await accountClient.migrationProgress(jwt: jwt, deviceID: deviceID, action: "cutover") {
         case .ok:
             CloudSyncBreadcrumb.migrationCutoverConfirmed()
-            return true
+            return .confirmed
         case .otherLeader:
             CloudSyncBreadcrumb.migrationCutoverOtherLeader()
-            return false
+            return .blocked(.otherDevice)
         case .rejected(let reason):
             CloudSyncBreadcrumb.migrationCutoverRejected(reason: reason)
-            return false
+            return .blocked(.refused)
         case .sessionExpired:
             CloudSyncBreadcrumb.migrationCutoverRejected(reason: "sessionExpired")
-            return false
+            return session.canRenewSession ? .transient : .blocked(.sessionExpired)
         case .transient:
             CloudSyncBreadcrumb.migrationCutoverRejected(reason: "transient")
-            return false
+            return .transient
         }
     }
 

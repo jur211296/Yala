@@ -7317,6 +7317,12 @@ enum L10n {
                 String(format: ls("storage.failed.snapshotAccountUnavailable", comment: ""), supportEmail)
             }
             static var snapshotLocalFailure: String { ls("storage.failed.snapshotLocalFailure", comment: "") }
+            // Uno de los tres pasos sin cifra que baje (22 %, 35 %, 80 %) que venció su techo (ticket
+            // `forward-migration-steps-have-no-ceiling-and-no-exit`). Las frases de la cuenta y del dispositivo se reusan
+            // de la subida; estas tres existen porque las de la subida hablan de subir los datos.
+            static var stepStalled: String { ls("storage.failed.stepStalled", comment: "") }
+            static var stepSessionExpired: String { ls("storage.failed.stepSessionExpired", comment: "") }
+            static var stepOtherDevice: String { ls("storage.failed.stepOtherDevice", comment: "") }
         }
 
         enum Confirm {

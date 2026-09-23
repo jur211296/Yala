@@ -48,7 +48,11 @@ private final class FakeExecutor: MigrationWorkExecuting {
     /// review del 2026-09-21.
     var verifyCallCount = 0
 
-    var confirmCutoverResult = true
+    /// El desenlace de `confirmCutoverServer()`. Era un `Bool` hasta `forward-migration-steps-have-no-ceiling-and-no-exit`.
+    var confirmCutoverOutcome: CutoverServerOutcome = .confirmed
+    /// `canRenewSession()`: `false` = el SDK borró la sesión. Lo lee el runner tras un claim `.sessionExpired`.
+    var canRenewSessionResult = false
+    func canRenewSession() -> Bool { canRenewSessionResult }
     var persistLocalModeResult = true
     /// C-1: los pasos 1 y 2 del cutover son los ÚNICOS que dejan huella durable antes del marcador
     /// (`migrated_at` en el backend y `storageMode = .cloud` en el device). Contarlos es lo que prueba que la
@@ -104,8 +108,17 @@ private final class FakeExecutor: MigrationWorkExecuting {
     var discardStampCallCount = 0
     func discardLastClaimStamp() { discardStampCallCount += 1 }
 
-    func performClaim() async -> ClaimOutcome {
+    /// Se llama DENTRO de cada `performClaim`, antes de devolver el outcome. Lo pide el techo de los tres pasos: monta la
+    /// sesión que el SDK borra durante el claim, y el «sí» de «Cancelar» que llega con el claim en vuelo.
+    var onPerformClaim: (() -> Void)?
+
+    /// Con qué `marksMigrationAttempt` pidió el runner cada claim. Solo «Migrar» marca.
+    var claimMarksSeen: [Bool] = []
+
+    func performClaim(marksMigrationAttempt: Bool) async -> ClaimOutcome {
         claimCallCount += 1
+        claimMarksSeen.append(marksMigrationAttempt)
+        onPerformClaim?()
         // Suspensión REAL: fuerza el interleaving que el guard de reentrada (S1) debe cortar — sin
         // esto, en MainActor la primera invocación correría a término antes de que arranque la segunda
         // y el test de reentrada pasaría trivialmente aun sin guard.
@@ -143,7 +156,13 @@ private final class FakeExecutor: MigrationWorkExecuting {
         return probe
     }
 
-    func confirmCutoverServer() async -> Bool { confirmCutoverCallCount += 1; return confirmCutoverResult }
+    /// Se llama DENTRO de cada `confirmCutoverServer`: el «sí» de «Cancelar» que llega con el cutover en vuelo.
+    var onConfirmCutover: (() -> Void)?
+    func confirmCutoverServer() async -> CutoverServerOutcome {
+        confirmCutoverCallCount += 1
+        onConfirmCutover?()
+        return confirmCutoverOutcome
+    }
     func persistLocalMode() async -> Bool { persistLocalModeCallCount += 1; return persistLocalModeResult }
 
     func execute(_ effect: MigrationEffect) async throws {
@@ -295,7 +314,11 @@ struct MigrationRunnerTests {
         // (ticket `snapshot-upload-has-no-ceiling-and-no-way-out`).
         snapshotStallProgressAt: Date? = nil, snapshotStallCauseRaw: String? = nil,
         snapshotStallCauseAt: Date? = nil, snapshotStallCauseAccruedSeconds: Double? = nil,
-        snapshotExitReasonRaw: String? = nil
+        snapshotExitReasonRaw: String? = nil,
+        // Techo de los tres pasos sin cifra que baje (ticket `forward-migration-steps-have-no-ceiling-and-no-exit`).
+        forwardStepStallProgressAt: Date? = nil, forwardStepStallCauseRaw: String? = nil,
+        forwardStepStallCauseAt: Date? = nil, forwardStepStallCauseAccruedSeconds: Double? = nil,
+        forwardStepExitReasonRaw: String? = nil
     ) throws -> MigrationState {
         let state = MigrationState()
         state.setPhase(phase)
@@ -321,6 +344,11 @@ struct MigrationRunnerTests {
         state.snapshotStallCauseAt = snapshotStallCauseAt
         state.snapshotStallCauseAccruedSeconds = snapshotStallCauseAccruedSeconds
         state.snapshotExitReasonRaw = snapshotExitReasonRaw
+        state.forwardStepStallProgressAt = forwardStepStallProgressAt
+        state.forwardStepStallCauseRaw = forwardStepStallCauseRaw
+        state.forwardStepStallCauseAt = forwardStepStallCauseAt
+        state.forwardStepStallCauseAccruedSeconds = forwardStepStallCauseAccruedSeconds
+        state.forwardStepExitReasonRaw = forwardStepExitReasonRaw
         state.startedAt = fixedNow
         state.updatedAt = fixedNow
         context.insert(state)
@@ -602,7 +630,7 @@ struct MigrationRunnerTests {
         let context = try makeContext(dir)
         let fake = FakeExecutor()
         fake.verifyProbes = [.newDeltaDetected, .match]
-        fake.confirmCutoverResult = false       // corta en cutover(.pending)
+        fake.confirmCutoverOutcome = .transient  // corta en cutover(.pending)
         try seedJournal(context, phase: .verifying)
 
         let runner = makeRunner(context, fake)
@@ -1689,7 +1717,7 @@ struct MigrationRunnerTests {
         let fake = FakeExecutor()
         fake.uploadOutcomes = [.pageConfirmed(cursor: "c1"), .pageConfirmed(cursor: "c2"), .completed]
         fake.verifyProbes = [.match]
-        fake.confirmCutoverResult = false            // corta en cutover(.pending) tras el upload
+        fake.confirmCutoverOutcome = .transient      // corta en cutover(.pending) tras el upload
         try seedJournal(context, phase: .uploadingSnapshot, leaderDeviceID: deviceID)
 
         await runner(context, fake).resume()
@@ -3551,7 +3579,7 @@ struct MigrationRunnerTests {
                         snapshotStallProgressAt: fixedNow, snapshotStallCauseRaw: "localFailure",
                         snapshotStallCauseAt: fixedNow, snapshotStallCauseAccruedSeconds: 10)
 
-        await makeRunner(context, fake).cancelSnapshotUpload()
+        await makeRunner(context, fake).cancelMigration()
         let j = try journal(context)
         #expect(j.readPhase().phase == .notStarted)
         #expect(j.readPendingEffects().isEmpty)
@@ -3574,7 +3602,7 @@ struct MigrationRunnerTests {
         fake.uploadOutcomes = [.pageConfirmed(cursor: "c1"), .pageConfirmed(cursor: "c2"), .completed]
         try seedJournal(context, phase: .uploadingSnapshot)
         let runner = makeRunner(context, fake)
-        fake.onUploadSnapshot = { index in if index == 1 { runner.requestSnapshotCancel() } }
+        fake.onUploadSnapshot = { index in if index == 1 { runner.requestMigrationCancel() } }
 
         await runner.resume()
         let j = try journal(context)
@@ -3593,7 +3621,7 @@ struct MigrationRunnerTests {
         fake.uploadOutcomes = [.transient]
         try seedJournal(context, phase: .verifying)
         let runner = makeRunner(context, fake)
-        runner.requestSnapshotCancel()
+        runner.requestMigrationCancel()
 
         await runner.resume()
         let j = try journal(context)
@@ -3611,9 +3639,9 @@ struct MigrationRunnerTests {
         try seedJournal(context, phase: .uploadingSnapshot)
         var quiescent = false
         let runner = makeRunner(context, fake, quiescence: { quiescent }, timeout: 0)
-        runner.requestSnapshotCancel()
+        runner.requestMigrationCancel()
 
-        await runner.cancelSnapshotUpload()
+        await runner.cancelMigration()
         #expect(try journal(context).readPhase().phase == .uploadingSnapshot, "sin quiescencia no se toca el journal")
 
         quiescent = true
@@ -3629,7 +3657,7 @@ struct MigrationRunnerTests {
         let fake = FakeExecutor()
         try seedJournal(context, phase: .verifying)
 
-        await makeRunner(context, fake).cancelSnapshotUpload()
+        await makeRunner(context, fake).cancelMigration()
         #expect(try journal(context).readPhase().phase == .verifying)
         #expect(fake.uploadCursorsSeen.isEmpty && fake.verifyCallCount == 0, "y no arranca trabajo")
     }
@@ -3667,5 +3695,398 @@ struct MigrationRunnerTests {
         #expect(j.snapshotStallCauseAt == nil)
         #expect(j.snapshotStallCauseAccruedSeconds == nil)
         #expect(j.snapshotExitReasonRaw == nil)
+    }
+
+    // MARK: - §15 · Techo y salida de los tres pasos sin cifra que baje (ticket `forward-migration-steps-have-no-ceiling-and-no-exit`)
+    //
+    // `claimingMigration` (22 %), `assigningIdentity` (35 %) y `cutover(.pending)` (80 %) cortaban sin evento ante un fallo
+    // persistente y la barra se quedaba quieta para siempre. Cada caso mide que la FASE CAMBIA —o que no cambia cuando no
+    // debe—, que es el criterio del ticket.
+
+    /// **El claim, por su causa más común: la red.** Un claim que devuelve `.transient` sin fin sale a las 72 h, clavado con
+    /// sus dos vecinos y con el motivo del techo LARGO.
+    @Test func forwardStepCeiling_claim_persistentNetwork_leavesAt72h() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.claimOutcomes = [.transient(detail: "5xx")]
+        let clock = MutableClock(fixedNow)
+        try seedJournal(context, phase: .claimingMigration, leaderDeviceID: deviceID, forwardClaimIntentRaw: "migrateOnly")
+
+        await makeRunner(context, fake, now: { clock.value }).resume()        // sella
+        var j = try journal(context)
+        #expect(j.readPhase().phase == .claimingMigration)
+        #expect(j.forwardStepStallProgressAt == fixedNow, "la primera observación sella el reloj de avance")
+        #expect(j.forwardStepStallCauseRaw == nil, "la red no trae motivo: no hay reloj de causa")
+
+        clock.value = fixedNow.addingTimeInterval(259_199)
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        #expect(try journal(context).readPhase().phase == .claimingMigration, "a 259 199 s todavía no")
+
+        clock.value = fixedNow.addingTimeInterval(259_200)
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        j = try journal(context)
+        #expect(j.readPhase().phase == .failedRollback, "a las 72 h en el claim, se rinde")
+        #expect(j.forwardStepExitReasonRaw == "stalled")
+        #expect(fake.count(.rollback) == 1)
+        #expect(j.forwardStepStallProgressAt == nil, "el reloj se va con la fase")
+        #expect(j.snapshotExitReasonRaw == nil, "no es la subida: el motivo va en su propio campo")
+        #expect(fake.claimMarksSeen == [true, true, true], "el claim de «Migrar» pide la marca del claim sin respuesta")
+    }
+
+    /// **El claim de un ADOPT conserva su espera de siempre** (hallazgo de la review): salir ahí deja a quien quería entrar
+    /// en su cuenta en un teléfono vacío y con una puerta que lo para, y su espera se cura sola al volver la red. Ni techo,
+    /// ni reloj, ni «Cancelar», ni marca. El que falta tiene ticket: `adopt-claim-stays-parked-with-no-ceiling`.
+    @Test func forwardStepCeiling_adoptClaim_keepsItsOldWait() async throws {
+        for intentRaw in ["adoptIfExisting", nil] as [String?] {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let context = try makeContext(dir)
+            let fake = FakeExecutor()
+            fake.claimOutcomes = [.accountUnavailable(detail: "403")]
+            try seedJournal(context, phase: .claimingMigration, leaderDeviceID: deviceID, forwardClaimIntentRaw: intentRaw)
+
+            await makeRunner(context, fake).resume()
+            await makeRunner(context, fake, now: { self.fixedNow.addingTimeInterval(300_000) }).resume()
+            var j = try journal(context)
+            #expect(j.readPhase().phase == .claimingMigration, "\(String(describing: intentRaw)): sin techo")
+            #expect(j.forwardStepStallProgressAt == nil, "ni reloj")
+            #expect(fake.claimMarksSeen.allSatisfy { !$0 }, "ni marca: su claim no es de «Migrar»")
+
+            await makeRunner(context, fake).cancelMigration()
+            j = try journal(context)
+            #expect(j.readPhase().phase == .claimingMigration, "ni «Cancelar»")
+        }
+    }
+
+    /// **La sesión que el SDK BORRA durante el claim** es definitiva: 900 s acumulados y sale con su nombre. El testigo se
+    /// lee DESPUÉS del claim: el fake lo apaga dentro de la llamada, como hace el SDK antes de lanzar.
+    @Test func forwardStepCeiling_claim_sessionGone_leavesAt900Seconds() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.claimOutcomes = [.sessionExpired(detail: "401")]
+        fake.canRenewSessionResult = true
+        fake.onPerformClaim = { fake.canRenewSessionResult = false }
+        let clock = MutableClock(fixedNow)
+        try seedJournal(context, phase: .claimingMigration, leaderDeviceID: deviceID, forwardClaimIntentRaw: "migrateOnly")
+
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        #expect(try journal(context).forwardStepStallCauseRaw == "sessionExpired")
+        clock.value = fixedNow.addingTimeInterval(899)
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        #expect(try journal(context).readPhase().phase == .claimingMigration, "a 899 s todavía no")
+
+        clock.value = fixedNow.addingTimeInterval(900)
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .failedRollback)
+        #expect(j.forwardStepExitReasonRaw == "sessionExpired")
+    }
+
+    /// **Un 401 con la sesión todavía GUARDADA no es definitivo**: el reloj atrasado del teléfono, o el token que no se
+    /// renueva sin red. Espera el plazo LARGO, como en la subida.
+    @Test func forwardStepCeiling_claim_sessionStillSaved_waitsTheLongCeiling() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.claimOutcomes = [.sessionExpired(detail: "401")]
+        fake.canRenewSessionResult = true
+        let clock = MutableClock(fixedNow)
+        try seedJournal(context, phase: .claimingMigration, leaderDeviceID: deviceID, forwardClaimIntentRaw: "migrateOnly")
+
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        #expect(try journal(context).forwardStepStallCauseRaw == nil)
+        clock.value = fixedNow.addingTimeInterval(10_800)
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        #expect(try journal(context).readPhase().phase == .claimingMigration, "tres horas y sigue esperando")
+
+        clock.value = fixedNow.addingTimeInterval(259_200)
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .failedRollback)
+        #expect(j.forwardStepExitReasonRaw == "stalled")
+    }
+
+    /// El 403 del claim sale a los 900 s con `accountUnavailable`, y `lastClaimBlocker` sigue diciéndoselo al adopt.
+    @Test func forwardStepCeiling_claim_accountUnavailable_leavesAt900Seconds() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.claimOutcomes = [.accountUnavailable(detail: "403")]
+        let clock = MutableClock(fixedNow)
+        try seedJournal(context, phase: .claimingMigration, leaderDeviceID: deviceID, forwardClaimIntentRaw: "migrateOnly")
+
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        clock.value = fixedNow.addingTimeInterval(900)
+        let runner = makeRunner(context, fake, now: { clock.value })
+        await runner.resume()
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .failedRollback)
+        #expect(j.forwardStepExitReasonRaw == "accountUnavailable")
+        #expect(runner.lastClaimBlocker == .accountUnavailable)
+    }
+
+    /// **La identidad, con su única causa: el `save()` local que lanza.** Sale a los 900 s con `localFailure`, clavado con
+    /// sus dos vecinos. Hasta el ticket el `catch` hacía `return` y la barra se quedaba al 35 %.
+    @Test func forwardStepCeiling_identity_persistentLocalFailure_leavesAt900Seconds() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.assignIdentityError = FakeError()
+        let clock = MutableClock(fixedNow)
+        try seedJournal(context, phase: .assigningIdentity, leaderDeviceID: deviceID)
+
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        #expect(try journal(context).forwardStepStallCauseRaw == "localFailure")
+        clock.value = fixedNow.addingTimeInterval(899)
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        #expect(try journal(context).readPhase().phase == .assigningIdentity, "a 899 s todavía no")
+
+        clock.value = fixedNow.addingTimeInterval(900)
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .failedRollback, "a 900 s del mismo fallo local, sale")
+        #expect(j.forwardStepExitReasonRaw == "localFailure")
+        #expect(fake.count(.rollback) == 1)
+        #expect(fake.uploadCursorsSeen.isEmpty, "control: no llegó a subir nada")
+    }
+
+    /// **El cutover `.pending`, por sus tres motivos definitivos.** Cada uno sale a los 900 s con su nombre: el texto de la
+    /// tarjeta depende de esto. Ninguno llega al paso 2 (`persistLocalMode`): el teléfono sigue en `.icloud`.
+    @Test func forwardStepCeiling_cutoverPending_definitiveAnswers_leaveWithTheirOwnReason() async throws {
+        for (blocker, raw) in [(ForwardStepBlocker.otherDevice, "otherDevice"), (.refused, "refused"),
+                               (.sessionExpired, "sessionExpired")] {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let context = try makeContext(dir)
+            let fake = FakeExecutor()
+            fake.confirmCutoverOutcome = .blocked(blocker)
+            let clock = MutableClock(fixedNow)
+            try seedJournal(context, phase: .cutover(.pending), leaderDeviceID: deviceID)
+
+            await makeRunner(context, fake, now: { clock.value }).resume()
+            #expect(try journal(context).readPhase().phase == .cutover(.pending), "\(blocker): la primera observación holdea")
+            clock.value = fixedNow.addingTimeInterval(900)
+            await makeRunner(context, fake, now: { clock.value }).resume()
+            let j = try journal(context)
+            #expect(j.readPhase().phase == .failedRollback, "\(blocker)")
+            #expect(j.forwardStepExitReasonRaw == raw)
+            #expect(fake.executedEffects == [.rollback], "\(blocker): solo `.rollback`, sin tocar el modo ni el marcador")
+            #expect(fake.persistLocalModeCallCount == 0)
+        }
+    }
+
+    /// El cutover `.pending` con la red caída sale a las 72 h con `stalled`.
+    @Test func forwardStepCeiling_cutoverPending_persistentNetwork_leavesAt72h() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.confirmCutoverOutcome = .transient
+        let clock = MutableClock(fixedNow)
+        try seedJournal(context, phase: .cutover(.pending), leaderDeviceID: deviceID)
+
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        clock.value = fixedNow.addingTimeInterval(259_199)
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        #expect(try journal(context).readPhase().phase == .cutover(.pending))
+        clock.value = fixedNow.addingTimeInterval(259_200)
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .failedRollback)
+        #expect(j.forwardStepExitReasonRaw == "stalled")
+    }
+
+    /// **La salida del canal iCloud sigue yendo primero y no se pisa con el techo.** Con un reloj del paso de hace días y el
+    /// canal sabido-roto, la pasada sale por la precondición: con su veredicto, sin motivo del techo y sin llamar al servidor.
+    @Test func forwardStepCeiling_cutoverPending_theICloudPreconditionStillGoesFirst() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.icloudVerdict = .quotaExceeded
+        fake.confirmCutoverOutcome = .transient
+        try seedJournal(context, phase: .cutover(.pending), leaderDeviceID: deviceID,
+                        forwardStepStallProgressAt: fixedNow.addingTimeInterval(-300_000))
+
+        await makeRunner(context, fake).resume()
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .failedRollback)
+        #expect(j.cutoverICloudVerdictRaw == ICloudChannelVerdict.quotaExceeded.rawValue)
+        #expect(j.forwardStepExitReasonRaw == nil, "salió por la puerta del canal, no por el techo")
+        #expect(fake.confirmCutoverCallCount == 0)
+    }
+
+    /// **Pasar de paso ES el avance, y la identidad no hereda el reloj del claim.** Journal en el claim con 72 h + 100 s de
+    /// parada y 950 s acumulados bajo `localFailure` (en pausa): el claim sale bien, la identidad falla en la misma pasada, y
+    /// su primera observación holdea con un reloj nuevo. Sin la limpieza de `handle` en el cambio de paso saldría en el acto,
+    /// por cualquiera de los dos relojes.
+    @Test func forwardStepCeiling_changingStep_restartsBothClocks() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.claimOutcomes = [.success(.created)]
+        fake.assignIdentityError = FakeError()
+        let now = fixedNow.addingTimeInterval(259_300)
+        try seedJournal(context, phase: .claimingMigration, leaderDeviceID: deviceID,
+                        forwardClaimIntentRaw: "migrateOnly",
+                        forwardStepStallProgressAt: fixedNow, forwardStepStallCauseRaw: "localFailure",
+                        forwardStepStallCauseAt: nil, forwardStepStallCauseAccruedSeconds: 950)
+
+        await makeRunner(context, fake, now: { now }).resume()
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .assigningIdentity, "el paso nuevo no hereda la parada del anterior")
+        #expect(fake.assignIdentityCallCount == 1, "control del escenario: el claim avanzó y la identidad se intentó")
+        #expect(j.forwardStepStallProgressAt == now, "el reloj de avance empieza en el paso nuevo")
+        #expect(j.forwardStepStallCauseAt == now)
+        #expect(j.forwardStepStallCauseAccruedSeconds == 0, "y el de causa empieza de cero")
+    }
+
+    /// **Una observación SIN motivo PAUSA el reloj de causa del paso.** Mismo guion que la subida, sobre el claim: 403 a t0 y
+    /// a 840 s · red a 850 s · 403 a 1000 s y a 1050 s (900 acumulados: sale). Mide los tres campos del reloj de causa.
+    @Test func forwardStepCeiling_anObservationWithoutACause_pausesInsteadOfResetting() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.claimOutcomes = [.accountUnavailable(detail: "403"), .accountUnavailable(detail: "403"),
+                              .transient(detail: "5xx"), .accountUnavailable(detail: "403"),
+                              .accountUnavailable(detail: "403")]
+        let clock = MutableClock(fixedNow)
+        try seedJournal(context, phase: .claimingMigration, leaderDeviceID: deviceID, forwardClaimIntentRaw: "migrateOnly")
+
+        for offset in [0.0, 840, 850, 1000] {
+            clock.value = fixedNow.addingTimeInterval(offset)
+            await makeRunner(context, fake, now: { clock.value }).resume()
+            #expect(try journal(context).readPhase().phase == .claimingMigration, "a \(offset) s todavía no")
+        }
+        #expect(try journal(context).forwardStepStallCauseAccruedSeconds == 850, "el hueco de la red no sumó")
+
+        clock.value = fixedNow.addingTimeInterval(1050)
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .failedRollback, "900 s acumulados bajo el 403")
+        #expect(j.forwardStepExitReasonRaw == "accountUnavailable")
+    }
+
+    /// **El motivo lo elige el techo que VENCIÓ.** A las 72 h en el claim, una pasada con un 403 recién visto sale con
+    /// `stalled`: el 403 tiene cero segundos.
+    @Test func forwardStepCeiling_theLongCeilingWithAFreshBlocker_leavesAsStalled() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.claimOutcomes = [.accountUnavailable(detail: "403")]
+        try seedJournal(context, phase: .claimingMigration, leaderDeviceID: deviceID,
+                        forwardClaimIntentRaw: "migrateOnly", forwardStepStallProgressAt: fixedNow)
+
+        await makeRunner(context, fake, now: { self.fixedNow.addingTimeInterval(259_200) }).resume()
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .failedRollback)
+        #expect(j.forwardStepExitReasonRaw == "stalled")
+    }
+
+    /// Un sello en el FUTURO —el reloj iba adelantado y ya se corrigió— se re-sella ahora.
+    @Test func forwardStepCeiling_aSealInTheFuture_isResealedNow() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.confirmCutoverOutcome = .transient
+        try seedJournal(context, phase: .cutover(.pending), leaderDeviceID: deviceID,
+                        forwardStepStallProgressAt: fixedNow.addingTimeInterval(86_400))
+
+        await makeRunner(context, fake).resume()
+        #expect(try journal(context).forwardStepStallProgressAt == fixedNow)
+    }
+
+    /// «Cancelar la activación» desde los tres pasos: a `notStarted`, sin efectos, sin motivo y sin relojes.
+    @Test func forwardStepCancel_fromEachStep_returnsToNotStarted_withNothingToExplain() async throws {
+        for phase in [Phase.claimingMigration, .assigningIdentity, .cutover(.pending)] {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let context = try makeContext(dir)
+            let fake = FakeExecutor()
+            try seedJournal(context, phase: phase, leaderDeviceID: deviceID, forwardClaimIntentRaw: "migrateOnly",
+                            forwardStepStallProgressAt: fixedNow, forwardStepStallCauseRaw: "localFailure",
+                            forwardStepStallCauseAt: fixedNow, forwardStepStallCauseAccruedSeconds: 10)
+
+            await makeRunner(context, fake).cancelMigration()
+            let j = try journal(context)
+            #expect(j.readPhase().phase == .notStarted, "\(phase)")
+            #expect(j.readPendingEffects().isEmpty)
+            #expect(fake.executedEffects.isEmpty, "\(phase): no hay nada que deshacer")
+            #expect(j.forwardStepExitReasonRaw == nil, "lo decidió la persona: no hay fallo que explicar")
+            #expect(j.forwardStepStallProgressAt == nil)
+            #expect(j.forwardStepStallCauseRaw == nil)
+            #expect(j.leaderDeviceID == nil, "el intento se cierra entero")
+            #expect(fake.claimCallCount == 0 && fake.assignIdentityCallCount == 0 && fake.confirmCutoverCallCount == 0,
+                    "\(phase): cancelar no arranca trabajo")
+        }
+    }
+
+    /// **El «sí» vale para la PASADA.** Llega con el claim en vuelo; el claim sale bien y la pasada se para en la identidad,
+    /// que también ofrece cancelar, antes de intentarla. Hasta el ticket el «sí» se tiraba al salir de la subida, y dado al
+    /// 22 % se habría perdido: la pasada seguía hasta el cutover.
+    @Test func forwardStepCancel_requestedDuringTheClaim_stopsAtTheNextStep() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.claimOutcomes = [.success(.created)]
+        try seedJournal(context, phase: .claimingMigration, leaderDeviceID: deviceID, forwardClaimIntentRaw: "migrateOnly")
+        let runner = makeRunner(context, fake)
+        fake.onPerformClaim = { runner.requestMigrationCancel() }
+
+        await runner.resume()
+        #expect(try journal(context).readPhase().phase == .notStarted, "la persona dijo que sí: la activación se para")
+        #expect(fake.claimCallCount == 1, "control: el claim estaba en vuelo y salió bien")
+        #expect(fake.assignIdentityCallCount == 0, "y la pasada se paró antes de la identidad")
+        #expect(fake.uploadCursorsSeen.isEmpty)
+    }
+
+    /// **Y se retira en la primera fase que no lo ofrece.** Un «sí» que llega con el cutover confirmándose en el servidor no
+    /// puede deshacer un cutover que ya pasó: desde `.serverConfirmed` manda «el cutover jamás hace rollback», y la pasada
+    /// sigue hasta el final.
+    @Test func forwardStepCancel_requestedWhileTheCutoverIsConfirmed_doesNotRollBackAConfirmedCutover() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.confirmCutoverOutcome = .confirmed
+        try seedJournal(context, phase: .cutover(.pending), leaderDeviceID: deviceID)
+        let runner = makeRunner(context, fake)
+        fake.onConfirmCutover = { runner.requestMigrationCancel() }
+
+        await runner.resume()
+        #expect(try journal(context).readPhase().phase == .done, "el cutover confirmado sigue hasta el final")
+        #expect(fake.persistLocalModeCallCount == 1, "control: pasó por el paso 2")
+        #expect(fake.count(.rollback) == 0)
+    }
+
+    /// «Reintentar» tras un paso que venció su techo: el intento nuevo no nace con el texto del anterior.
+    @Test func forwardStepExitReason_isClearedByTheRetry() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        try seedJournal(context, phase: .failedRollback, forwardStepExitReasonRaw: "otherDevice")
+
+        await makeRunner(context, fake).resetAfterRollback()
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .notStarted)
+        #expect(j.forwardStepExitReasonRaw == nil)
+    }
+
+    /// Un journal ilegible se normaliza entero, también los campos del techo de los tres pasos.
+    @Test func forwardStepCeiling_aCorruptJournal_isNormalizedWithTheWholeFamily() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        let state = try seedJournal(context, phase: .claimingMigration,
+                                    forwardStepStallProgressAt: fixedNow, forwardStepStallCauseRaw: "localFailure",
+                                    forwardStepStallCauseAt: fixedNow, forwardStepStallCauseAccruedSeconds: 10,
+                                    forwardStepExitReasonRaw: "stalled")
+        state.phaseData = Data("no-es-una-fase".utf8)
+        try context.save()
+
+        await makeRunner(context, fake).resume()
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .notStarted)
+        #expect(j.forwardStepStallProgressAt == nil)
+        #expect(j.forwardStepStallCauseRaw == nil)
+        #expect(j.forwardStepStallCauseAt == nil)
+        #expect(j.forwardStepStallCauseAccruedSeconds == nil)
+        #expect(j.forwardStepExitReasonRaw == nil)
     }
 }

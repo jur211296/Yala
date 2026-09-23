@@ -214,6 +214,19 @@ nonisolated enum MigrationEvent: Equatable {
     case snapshotUploadStalled(stalledSeconds: Double, causeStalledSeconds: Double, cause: MarkerExportStall)
     /// La persona cancela la activación de la nube desde la tarjeta de progreso de la subida.
     case snapshotUploadCancelled
+    /// Observación de uno de los TRES pasos de la ida sin cifra que baje —`claimingMigration` (22 %),
+    /// `assigningIdentity` (35 %) y `cutover(.pending)` (80 %)— en una pasada que no avanzó (ticket
+    /// `forward-migration-steps-have-no-ceiling-and-no-exit`). Hasta ese ticket los tres cortaban sin evento y la barra
+    /// se quedaba quieta para siempre. Bajo presupuesto HOLDEA en su propia fase, sin efectos. **Dos relojes**, molde de
+    /// `reversePreMountStalled`:
+    ///  · `stalledSeconds` es el de AVANCE —`now()` menos `MigrationState.forwardStepStallProgressAt`— y gobierna el
+    ///    presupuesto LARGO con cualquier causa. Aquí avanzar es CAMBIAR DE PASO: el runner lo sella en la primera
+    ///    observación del paso y `handle` lo borra en cada cambio de paso;
+    ///  · `causeStalledSeconds` es el de CAUSA —lo ACUMULADO bajo el mismo motivo— y gobierna el CORTO, solo con
+    ///    `cause == .definitive`.
+    case forwardStepStalled(stalledSeconds: Double, causeStalledSeconds: Double, cause: MarkerExportStall)
+    /// La persona cancela la activación desde uno de esos tres pasos. Misma salida que la cancelación de la subida.
+    case forwardStepCancelled
     case verifyOutcome(VerifyOutcome)
     /// Cutover step 1 acked: backend confirmed `profiles.migrated_at`. (Steps 1-2 carry no effect:
     /// the runtime performs the write and reports completion via this ack.)
@@ -484,6 +497,21 @@ nonisolated struct MigrationPolicy: Equatable {
         cause == .definitive && causeStalledSeconds >= snapshotCauseBudgetSeconds
     }
 
+    /// Techo de los TRES pasos de la ida sin cifra que baje (22 %, 35 %, 80 %) contra el reloj de la CAUSA, y solo cuando
+    /// esperar no la arregla: 15 min ACUMULADOS bajo ese motivo desde que empezó el paso. Decisión de Jürgen del
+    /// 2026-09-22 (ticket `forward-migration-steps-have-no-ceiling-and-no-exit`): el mismo número que la subida y la
+    /// vuelta. Antes del cutover el teléfono sigue intacto en iCloud, así que rendirse no rompe nada.
+    var forwardStepCauseBudgetSeconds: Double = 900
+    /// Techo de los mismos tres pasos contra el reloj de AVANCE, con CUALQUIER causa: 72 h en el mismo paso. Aquí cae
+    /// la red que no vuelve y el 401 con la sesión todavía guardada. Es también el suelo del mecanismo: con dos causas
+    /// definitivas alternándose, el reloj corto se reinicia en cada cambio y lo único que garantiza la salida es éste.
+    var forwardStepProgressBudgetSeconds: Double = 259_200
+
+    /// El predicado del techo CORTO de los tres pasos, en un solo sitio: lo consultan la máquina y el runner.
+    func forwardStepCauseCeilingReached(causeStalledSeconds: Double, cause: MarkerExportStall) -> Bool {
+        cause == .definitive && causeStalledSeconds >= forwardStepCauseBudgetSeconds
+    }
+
     /// **El predicado del techo CORTO, en UN solo sitio.** Lo consultan la máquina —para decidir si la vuelta sale—
     /// y el runner —para decidir QUÉ MOTIVO journalea—, y tenerlo dos veces escrito es precisamente la forma de que
     /// un día discrepen: el runner diría «la cuenta en la nube no lo permitió», con su correo de soporte, en una
@@ -506,7 +534,9 @@ nonisolated struct MigrationPolicy: Equatable {
         reversePreMountCauseBudgetSeconds: Double = 900,
         reversePreMountPhaseBudgetSeconds: Double = 259_200,
         snapshotCauseBudgetSeconds: Double = 900,
-        snapshotProgressBudgetSeconds: Double = 259_200
+        snapshotProgressBudgetSeconds: Double = 259_200,
+        forwardStepCauseBudgetSeconds: Double = 900,
+        forwardStepProgressBudgetSeconds: Double = 259_200
     ) {
         self.maxMismatchRetries = maxMismatchRetries
         self.maxNetworkRetries = maxNetworkRetries
@@ -518,6 +548,8 @@ nonisolated struct MigrationPolicy: Equatable {
         self.reversePreMountPhaseBudgetSeconds = reversePreMountPhaseBudgetSeconds
         self.snapshotCauseBudgetSeconds = snapshotCauseBudgetSeconds
         self.snapshotProgressBudgetSeconds = snapshotProgressBudgetSeconds
+        self.forwardStepCauseBudgetSeconds = forwardStepCauseBudgetSeconds
+        self.forwardStepProgressBudgetSeconds = forwardStepProgressBudgetSeconds
     }
 }
 
@@ -603,6 +635,37 @@ nonisolated enum MigrationStateMachine {
         // `consentDeclined` y `claimRefusedExistingAccount`: no queda nada local que deshacer, y lo que decidió la
         // persona no es un fallo que explicar. El backend queda como en la salida del techo.
         case (.uploadingSnapshot, .snapshotUploadCancelled):
+            return .transition(next: .notStarted, effects: [])
+
+        // Los TRES pasos de la ida sin cifra que baje · TECHO (ticket `forward-migration-steps-have-no-ceiling-and-no-exit`).
+        // `claimingMigration` (22 %), `assigningIdentity` (35 %) y `cutover(.pending)` (80 %) cortaban sin evento ante un
+        // fallo persistente, y ninguno tenía otra arista alcanzable: el `fatalError` de los dos primeros no lo emite nadie,
+        // y `.pending` solo sale por la precondición del canal iCloud.
+        //
+        // Bajo presupuesto HOLDEA en su propia fase y sin efectos. Al agotarlo sale a `failedRollback` con `[.rollback]`, la
+        // misma salida de la subida y de la precondición del canal iCloud: en los tres el teléfono sigue en `.icloud`, sin
+        // marcador y con el espejo vivo, y `.rollback` no toca la red. En `.pending` una respuesta perdida puede haber dejado
+        // `migrated_at` estampado en el servidor; el cliente no lo lee y el reintento del mismo líder converge (el claim
+        // contesta `created` y el `cutover` es idempotente), así que tampoco ahí hay nada que deshacer. Desde
+        // `.serverConfirmed` el evento es `.invalid` a propósito: ahí manda «el cutover jamás hace rollback».
+        //
+        // Sale con el PRIMERO de los dos techos que venza, igual que la subida y la vuelta.
+        case let (.claimingMigration, .forwardStepStalled(stalled, causeStalled, cause)),
+             let (.assigningIdentity, .forwardStepStalled(stalled, causeStalled, cause)),
+             let (.cutover(.pending), .forwardStepStalled(stalled, causeStalled, cause)):
+            let hitProgressCeiling = stalled >= policy.forwardStepProgressBudgetSeconds
+            let hitCauseCeiling = policy.forwardStepCauseCeilingReached(
+                causeStalledSeconds: causeStalled, cause: cause)
+            guard hitProgressCeiling || hitCauseCeiling else {
+                return .transition(next: phase, effects: [])
+            }
+            return .transition(next: .failedRollback, effects: [.rollback])
+
+        // Los mismos tres · SALIDA de la persona («Cancelar la activación»). A `notStarted` SIN efectos, como la cancelación
+        // de la subida: no queda nada local que deshacer, y lo que decidió la persona no es un fallo que explicar.
+        case (.claimingMigration, .forwardStepCancelled),
+             (.assigningIdentity, .forwardStepCancelled),
+             (.cutover(.pending), .forwardStepCancelled):
             return .transition(next: .notStarted, effects: [])
 
         // verifying — S9 split of "diverge" vs "couldn't verify".
