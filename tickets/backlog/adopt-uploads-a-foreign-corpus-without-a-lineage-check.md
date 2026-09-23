@@ -53,6 +53,16 @@ schema 6) y la fija `afterRelaunch_theJournaledIntentStillRefuses`.
    pararía**: el marcador sí está en local. No está medido si la fila del marcador sobrevive al borrado de la zona en el
    relevo. La sesión superviviente, entera, en `previous-person-cloud-session-survives-fresh-start-and-reinstall`.
 
+## La tarjeta de adopt la ve más gente desde el 2026-09-23
+
+`adopt-claim-stays-parked-with-no-ceiling` hizo que la tarjeta de adopt («Activar la nube en este dispositivo») salga
+también SIN marcador de CloudKit cuando el claim de un adopt anterior de este teléfono salió por su techo o por «Cancelar»
+(`MigrationState.adoptClaimExitRaw`, `CloudMigrationController.offersAdoptReentry`). Es la salida de ese adopt, y la
+tarjeta sigue sin pasar por la comprobación de identidad: con la sesión borrada la persona elige cuenta en el chooser, y
+si el claim contesta `created` o promueve una cuenta solo-grupos, la migración sigue sin la puerta de «Migrar». La marca
+solo la deja un adopt que este teléfono empezó (el Welcome, con su guard cross-cuenta; o la tarjeta con marcador), así
+que la población es la de quien ya intentaba entrar en su cuenta. Medido por lectura, no ejecutado.
+
 ## Opciones, sin decidir
 
 - **Guarda de linaje dentro del escritor** (`runAdoptFlow`): adoptar solo si el `CloudMigrationMarker` del líder está en
