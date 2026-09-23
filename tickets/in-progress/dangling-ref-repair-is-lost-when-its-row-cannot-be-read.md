@@ -1,10 +1,10 @@
 ---
 id: dangling-ref-repair-is-lost-when-its-row-cannot-be-read
-status: backlog
+status: in-progress
 priority: very-high
 area: "modo-nube, sync"
 created: 2026-09-22
-updated: 2026-09-22
+updated: 2026-09-23
 source: "review adversarial de `apply-overwrites-a-pending-local-write-without-its-guards` (2026-09-22), lente de instancias gemelas"
 ---
 

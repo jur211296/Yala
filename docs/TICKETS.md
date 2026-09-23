@@ -157,7 +157,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | csv-import-rows-fall-in-the-chat-sign-sweep | qa | tickets/qa/csv-import-rows-fall-in-the-chat-sign-sweep.md |
 | currency-change-asks-rates-for-the-old-currency | backlog | tickets/backlog/currency-change-asks-rates-for-the-old-currency.md |
 | currency-change-service-tests-mirror-the-logic | backlog | tickets/backlog/currency-change-service-tests-mirror-the-logic.md |
-| dangling-ref-repair-is-lost-when-its-row-cannot-be-read | backlog | tickets/backlog/dangling-ref-repair-is-lost-when-its-row-cannot-be-read.md |
+| dangling-ref-repair-is-lost-when-its-row-cannot-be-read | in-progress | tickets/in-progress/dangling-ref-repair-is-lost-when-its-row-cannot-be-read.md |
 | debounce-sync-imported-transactions | backlog | tickets/backlog/debounce-sync-imported-transactions.md |
 | debt-simplification-nondeterministic-ties | backlog | tickets/backlog/debt-simplification-nondeterministic-ties.md |
 | debt-tracking | backlog | tickets/backlog/debt-tracking.md |
