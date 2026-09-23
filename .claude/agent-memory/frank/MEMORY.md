@@ -15,6 +15,8 @@
 - [Un límite de plataforma se explica en la pregunta](feedback_un_limite_de_plataforma_se_explica_en_la_pregunta.md) — preguntó por qué Apple solo usa el Apple ID del teléfono y eligió levantarlo.
 
 ## Cómo mido y cómo entrego
+- [Un fail-closed sin reintento es permanente](feedback_un_fail_closed_sin_reintento_es_permanente.md) — el motor `.idle` que nadie re-evalúa: busca quién vuelve a preguntar.
+- [Un case nuevo hereda cada `!=` del repo](feedback_un_case_nuevo_hereda_cada_distinto_de.md) — `uiState != .idle` coló `.journalUnreadable` como «dentro».
 - [Tipar un desenlace despierta defensas DORMIDAS](feedback_tipar_un_desenlace_despierta_defensas_dormidas.md) — el Merkle llevaba meses sin `canRenewSession` y era inofensivo hasta que su 401…
 - [El copy lo elige quien PRODUJO el motivo](feedback_el_copy_lo_elige_quien_produjo_el_motivo.md) — y la clasificación también: `.sessionExpired` tenía dos productores y solo uno era definitivo.
 - [El estado compartido no es testigo de su rama](feedback_el_estado_compartido_no_es_testigo_de_su_rama.md) — un campo lo enciende 1 sitio y lo apagan 13; cuenta escritores antes de leer.
@@ -133,6 +135,7 @@
 - [«Cero warnings» se mide en TODOS los logs](feedback_cero_warnings_se_mide_en_todos_los_logs.md) — el gate no mira los tests y lee un build.
 
 ## Estado del trabajo
+- [Un journal ilegible ya no es «nunca empezó»](project_journal_ilegible_no_es_notstarted.md) — PR del 22-sep; la review cazó el motor `.idle` sin reintento.
 - [Los pasos del 22/35/80 % ya tienen techo y «Cancelar»](project_techo_de_los_tres_pasos_de_la_ida.md) — PR del 22-sep; el claim del adopt se quedó fuera a propósito.
 - [La subida al 55 % ya tiene techo y «Cancelar»](project_techo_de_la_subida_del_snapshot.md) — PR del 22-sep; tres lentes cazaron el 401 con la sesión guardada.
 - [Un fallo de una vez ya no cobra las horas de otra espera](project_reloj_por_causa_en_el_techo_pre_mount.md) — PR #210; la review cazó 6 defectos míos y cambió el diseño.
