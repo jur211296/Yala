@@ -43,3 +43,11 @@ son las que el ticket nombraba. Esta es la misma forma, en la fase de al lado.
 ## Relacionado
 
 - `reverse-before-mount-stays-stuck-with-an-expired-session` — las cuatro fases anteriores, ya cerradas.
+
+## Otra causa del mismo atasco (2026-09-22)
+
+Desde `apply-overwrites-a-pending-local-write-without-its-guards`, `sweepZombies` también devuelve `.transient`
+cuando una tabla no se deja leer (antes daba el barrido por hecho con los zombies vivos). `.deletingZombies`
+devuelve `false` sin techo ni `observeReversePreMountStall`, así que con una tabla ilegible para siempre la vuelta
+se queda parada en ese punto sin decir nada. Es la misma falta de salida que este ticket; el arreglo debería
+cubrir las dos causas.
