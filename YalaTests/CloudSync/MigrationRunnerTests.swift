@@ -1828,6 +1828,78 @@ struct MigrationRunnerTests {
         #expect(j.readPhase().phase == .done, "11 no es avance sobre un mínimo de 10: el techo vence")
     }
 
+    /// La muestra ilegible como PRIMERA observación del intento: sella el reloj como cualquier primera observación, pero no
+    /// inventa un mínimo. Con un mínimo de 0, ninguna cifra posterior contaría nunca como avance y el techo vencería
+    /// sobre una subida sana. Y cuando el motivo cambia entre observaciones, la pantalla dice el de ahora.
+    @Test func reverseUploadCeiling_unreadableFirstObservation_sealsClockButNoLowest() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.reverseBlocker = .icloudFull
+        let clock = MutableClock(fixedNow)
+        try seedJournal(context, phase: .reverseUpload, reverseOriginRaw: "done")
+        let r = makeRunner(context, fake, now: { clock.value })
+
+        fake.reverseUploadStatuses = [.unreadable]
+        await r.resume()
+        var j = try journal(context)
+        #expect(j.readPhase().phase == .reverseUpload)
+        #expect(j.reverseUploadLowestPending == nil, "sin cifra no hay mínimo que inventar")
+        #expect(j.reverseUploadProgressAt == fixedNow, "el reloj se sella como en cualquier primera observación")
+        #expect(r.lastReverseUploadSample == nil, "sin observación buena, la pantalla dice «subiendo»")
+
+        fake.reverseUploadStatuses = [.pending(count: 5)]
+        clock.value = fixedNow.addingTimeInterval(300)
+        await r.resume()
+        j = try journal(context)
+        #expect(j.reverseUploadLowestPending == 5, "la primera cifra buena fija el mínimo")
+        #expect(r.lastReverseUploadSample == ReverseUploadSample(pending: 5, blocker: .icloudFull))
+
+        fake.reverseBlocker = .unknown                          // la persona liberó espacio
+        fake.reverseUploadStatuses = [.unreadable]
+        clock.value = fixedNow.addingTimeInterval(400)
+        await r.resume()
+        #expect(r.lastReverseUploadSample == ReverseUploadSample(pending: 5, blocker: .unknown),
+                "la cifra es la última buena; el motivo, el de ahora")
+    }
+
+    /// Una muestra que no pudo leer una tabla (ticket `an-incomplete-inventory-reads-as-the-whole-corpus`). No cierra la
+    /// vuelta —sus filas pueden ser justo las pendientes— y NO es una cifra: una muestra parcial cuenta menos, y como
+    /// `.pending` más baja reiniciaba el reloj del techo. Se sigue esperando con el reloj y el mínimo que había, la
+    /// pantalla conserva la última observación buena, y el techo sigue venciendo: la avería no deja la vuelta colgada.
+    @Test func reverseUploadCeiling_unreadableSample_neitherClosesNorAdvances_ceilingStillApplies() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.reverseBlocker = .icloudFull                       // 900 s
+        let clock = MutableClock(fixedNow)
+        try seedJournal(context, phase: .reverseUpload, reverseOriginRaw: "done")
+        let r = makeRunner(context, fake, now: { clock.value })
+
+        fake.reverseUploadStatuses = [.pending(count: 10)]      // la observación buena: sella el reloj y la cifra
+        await r.resume()
+        #expect(r.lastReverseUploadSample == ReverseUploadSample(pending: 10, blocker: .icloudFull))
+
+        fake.reverseUploadStatuses = [.unreadable]
+        clock.value = fixedNow.addingTimeInterval(600)
+        await r.resume()
+        var j = try journal(context)
+        #expect(j.readPhase().phase == .reverseUpload, "ilegible no es drenado: la vuelta NO se cierra")
+        #expect(fake.executedEffects.isEmpty, "ni el cuarteto de cierre ni la salida")
+        #expect(j.reverseUploadLowestPending == 10, "no toca el mínimo: una muestra parcial no es una cifra")
+        #expect(j.reverseUploadProgressAt == fixedNow, "no es avance: el reloj del techo sigue donde estaba")
+        #expect(r.lastReverseUploadSample == ReverseUploadSample(pending: 10, blocker: .icloudFull),
+                "la pantalla conserva la última observación buena")
+        #expect(fake.heartbeatCallCount == 2, "sigue latiendo: la espera sigue viva")
+
+        // Y el techo no se suspende: con la avería persistente, a los 900 s del último avance la vuelta sale al origen.
+        clock.value = fixedNow.addingTimeInterval(900)
+        await r.resume()
+        j = try journal(context)
+        #expect(j.readPhase().phase == .done, "la avería persistente no deja la vuelta colgada")
+        #expect(fake.executedEffects == [.rearmMirrorOff, .reverseRollback])
+    }
+
     /// Techo agotado con la palabra de CloudKit: vuelta al ORIGEN, los dos efectos en orden, el motivo journaleado
     /// y el reloj, la cifra y el origen limpiados. Desde los dos orígenes: `notStarted` es la fase del adoptador y
     /// pasa por el bloque de limpieza de `handle`, así que su pata es la que caza que ese bloque borre también el

@@ -851,6 +851,23 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSyncOutbox fetchFailed step=\(step, privacy: .public) — no se decide nada con el outbox")
     }
 
+    /// Un inventario de la migración no pudo leer una de sus tablas (ticket
+    /// `an-incomplete-inventory-reads-as-the-whole-corpus`). Hasta ese ticket el `catch` saltaba la entidad bajo un
+    /// `print` de `#if DEBUG`, y el paso seguía como si la tabla estuviera vacía: el snapshot la daba por subida, el
+    /// adopt la contaba como «sin huérfanas» y la muestra de la vuelta como «nada pendiente». `step` dice qué
+    /// inventario (`snapshot`, `identity-capture`, `adopt-inventory`, `adopt-orphan-inputs`, `reverse-sample`,
+    /// `reverse-live-rows`) y `entity`, qué tabla. Sin PII.
+    static func migrationInventoryReadFailed(step: String, entity: String) {
+        logger.notice("CloudSyncMigration inventoryReadFailed step=\(step, privacy: .public) entity=\(entity, privacy: .public) — no se decide nada con ese inventario")
+    }
+
+    /// `SyncIdentityService.backfillIdentities` lanzó —un fetch o su `save()`— (ticket
+    /// `an-incomplete-inventory-reads-as-the-whole-corpus`). Hasta ese ticket se lo tragaba en silencio y la ida o el
+    /// adopt seguían con filas sin identidad. `errorType` = tipo del error (sin PII).
+    static func migrationIdentityBackfillFailed(errorType: String) {
+        logger.notice("CloudSyncMigration identityBackfillFailed errorType=\(errorType, privacy: .public) — la ida o el adopt no siguen")
+    }
+
     /// w5/w6/w8: un efecto/paso de la migración aún NO está cableado (cutover/reconcile/rollback/adopt) →
     /// el runner lo deja journaled (retomable). `step` = nombre del efecto/paso (sin PII).
     static func migrationExecutorNotWired(step: String) {
@@ -1048,7 +1065,8 @@ enum CloudSyncBreadcrumb {
 
     /// Techo de `reverseUpload`: cada observación de la espera, con el reloj del último avance. `advanced` = la
     /// cifra bajó de la más baja vista; `stalledSeconds` = tiempo SIN avanzar; `blocker` = por qué no drena, hasta
-    /// donde se sabe. Es lo que separa «va lento» de «no avanza» al leer un diagnóstico.
+    /// donde se sabe. Es lo que separa «va lento» de «no avanza» al leer un diagnóstico. `pending == -1` = la muestra no
+    /// pudo leer una tabla (`ReverseUploadStatus.unreadable`), que nunca cuenta como avance.
     static func reverseUploadObserved(pending: Int, stalledSeconds: Double, advanced: Bool, blocker: String) {
         logger.notice("CloudSyncReverse uploadObserved pending=\(pending, privacy: .public) stalledSeconds=\(Int(stalledSeconds), privacy: .public) advanced=\(advanced, privacy: .public) blocker=\(blocker, privacy: .public)")
     }
@@ -2706,6 +2724,11 @@ final class CloudSyncEngine {
             #if DEBUG
             print("CloudSyncEngine: rehydrate fetch(SyncOutbox) falló: \(error)")
             #endif
+            // Salir sin re-insertar es lo correcto —sin saber qué hay vivo, re-insertar duplicaría filas—, pero
+            // salir MUDO apagaba `cloudSyncOutboxMirrorDivergence`, el canario del fallo que ni el Merkle ve (ticket
+            // `an-incomplete-inventory-reads-as-the-whole-corpus`). El breadcrumb es del dispositivo; la métrica de flota
+            // sigue sin emitirse en esta rama. Lo reintenta el siguiente arranque.
+            CloudSyncBreadcrumb.outboxFetchFailed(step: "rehydrate-mirror")
             return
         }
 

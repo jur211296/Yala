@@ -198,7 +198,8 @@ nonisolated enum ForwardStepBlocker: String, Equatable, Sendable {
     /// `migration_progress('cutover')` contestó `other_leader`: otro dispositivo de la cuenta tomó el relevo del lease
     /// (este lleva más de 60 min sin latir). Desde aquí no se vuelve a liderar.
     case otherDevice
-    /// `assignIdentity()` lanzó: el único `throw` posible es el `context.save()` de la base local.
+    /// `assignIdentity()` lanzó: el `context.save()` de la base local o, desde `an-incomplete-inventory-reads-as-the-whole-corpus`,
+    /// una tabla del inventario de la captura que no se deja leer. Las dos son la base local.
     case localFailure
 }
 
@@ -367,10 +368,16 @@ nonisolated enum ZombieSweepOutcome: Equatable {
 }
 
 /// Estado del drenaje del store al mirror en `reverseUpload` (§h). `drained` = todo exportó (o hizo
-/// round-trip); `pending(count:)` = `count` filas aún sin metadata/export → retomable.
+/// round-trip); `pending(count:)` = `count` filas aún sin metadata/export → retomable; `unreadable` = la muestra no pudo
+/// leer una tabla → retomable, sin cifra.
 nonisolated enum ReverseUploadStatus: Equatable {
     case drained
     case pending(count: Int)
+    /// La muestra no pudo leer una de sus tablas (ticket `an-incomplete-inventory-reads-as-the-whole-corpus`). No es
+    /// `.drained` —sus filas pueden ser justo las pendientes— ni una cifra: una muestra parcial cuenta MENOS y el techo
+    /// lo leería como avance. El runner sigue esperando: no mueve un reloj ya sellado ni el mínimo (si es la primera
+    /// observación del intento, sella el reloj como cualquier otra).
+    case unreadable
 }
 
 /// Lo último que se vio de la espera de `reverseUpload` en ESTE proceso: cuántas filas faltan y por qué no drena.
@@ -551,7 +558,8 @@ protocol MigrationWorkExecuting: AnyObject {
     /// §h.3 `dedupHealed`: AUTO-CURA (I11-4) de copias idénticas de Account/Tag. Devuelve el nº de filas
     /// perdedoras fusionadas+borradas (idempotente: 2ª pasada → 0).
     func healDuplicates() -> Int
-    /// §h `reverseUpload`: muestreo CKIdentityCapture sobre las filas vivas → `.drained` / `.pending(count)`.
+    /// §h `reverseUpload`: muestreo CKIdentityCapture sobre las filas vivas → `.drained` / `.pending(count)` /
+    /// `.unreadable` (una tabla no se dejó leer).
     func reverseUploadStatus() -> ReverseUploadStatus
     /// Techo de `reverseUpload`: por qué no drena la subida, hasta donde se sabe. Read-only y SIN red. Elige el
     /// presupuesto (`stallCause`) y el copy de la espera. Default `.unknown` en la extension de abajo: un fake
@@ -1290,8 +1298,8 @@ final class MigrationRunner {
         }
     }
 
-    /// `assigningIdentity`. El único `throw` posible de `assignIdentity()` es el `context.save()` de la base local, y
-    /// esperar no lo arregla: elige el techo CORTO (ticket `forward-migration-steps-have-no-ceiling-and-no-exit`; hasta ese
+    /// `assigningIdentity`. Los `throw` de `assignIdentity()` son de la base local —el `context.save()` o, desde
+    /// `an-incomplete-inventory-reads-as-the-whole-corpus`, un fetch del inventario de la captura—, y esperar no lo arregla: elige el techo CORTO (ticket `forward-migration-steps-have-no-ceiling-and-no-exit`; hasta ese
     /// ticket el `catch` hacía `return` y la barra se quedaba al 35 % para siempre). Devuelve `false` para cortar.
     private func driveIdentity() async throws -> Bool {
         do {
@@ -1838,7 +1846,8 @@ final class MigrationRunner {
         }
     }
 
-    /// `reverseUpload`. `drained` → cierra a `icloudActive` (con el cuarteto de efectos); `pending(count)` →
+    /// `reverseUpload`. `drained` → cierra a `icloudActive` (con el cuarteto de efectos); `unreadable` → observa la espera
+    /// sin cifra ni avance; `pending(count)` →
     /// observa la espera contra su TECHO (ticket `reverse-upload-has-no-ceiling-and-no-exit`): bajo presupuesto
     /// corta retomable (el resume, el re-kick y el refresco de la pantalla re-sondean); agotado, la máquina vuelve
     /// al origen en modo nube y `drive()` sale por ahí.
@@ -1854,6 +1863,13 @@ final class MigrationRunner {
             // lease viva (el drenaje a CloudKit puede tardar).
             await executor.sendLeaseHeartbeatIfDue()
             return try await observeReverseUploadWait(pending: count)
+        case .unreadable:
+            // Ni se cierra ni se cuenta: una muestra que no leyó una tabla cuenta menos pendientes, y como cifra valía
+            // un avance falso que reiniciaba el reloj del techo (ticket `an-incomplete-inventory-reads-as-the-whole-corpus`).
+            // Se sigue esperando con el reloj que había; si la avería persiste, el techo saca la vuelta al origen en modo
+            // nube, con los datos a salvo en el backend. El rastro, con la tabla, ya lo dejó el executor.
+            await executor.sendLeaseHeartbeatIfDue()
+            return try await observeReverseUploadWait(pending: nil)
         }
     }
 
@@ -1865,13 +1881,27 @@ final class MigrationRunner {
     /// La primera observación —o la de un journal escrito antes de este campo— SELLA el reloj sin contarla como
     /// avance, y nunca lo sella hacia atrás: el presupuesto cuenta desde que se empezó a mirar. Devuelve `true` si
     /// la espera terminó (para que `drive()` relea la fase).
-    private func observeReverseUploadWait(pending count: Int) async throws -> Bool {
+    ///
+    /// `count == nil` es una muestra ILEGIBLE (`ReverseUploadStatus.unreadable`): nunca avanza, no toca la cifra más
+    /// baja y la pantalla conserva la última observación buena.
+    private func observeReverseUploadWait(pending count: Int?) async throws -> Bool {
         let blocker = executor.reverseUploadBlocker()
-        lastReverseUploadSample = ReverseUploadSample(pending: count, blocker: blocker)
+        if let count {
+            lastReverseUploadSample = ReverseUploadSample(pending: count, blocker: blocker)
+        } else if let last = lastReverseUploadSample {
+            // Sin cifra nueva, la pantalla conserva la última buena; el motivo sí es el de AHORA (lente de la review:
+            // congelado, seguía diciendo «iCloud lleno» después de liberar espacio).
+            lastReverseUploadSample = ReverseUploadSample(pending: last.pending, blocker: blocker)
+        }
         let state = try loadState()
         let observedAt = now()
         let lowest = state.reverseUploadLowestPending
-        let advanced = lowest.map { count < $0 } ?? false
+        let advanced: Bool
+        if let count, let lowest {
+            advanced = count < lowest
+        } else {
+            advanced = false
+        }
         let lastProgressAt: Date
         if advanced {
             lastProgressAt = observedAt
@@ -1884,7 +1914,7 @@ final class MigrationRunner {
         }
         let stalled = observedAt.timeIntervalSince(lastProgressAt)
         CloudSyncBreadcrumb.reverseUploadObserved(
-            pending: count, stalledSeconds: stalled, advanced: advanced, blocker: blocker.rawValue)
+            pending: count ?? -1, stalledSeconds: stalled, advanced: advanced, blocker: blocker.rawValue)
         // El canario se emite en CADA observación (dedupe por proceso dentro del helper): un atasco SISTÉMICO —un
         // mirror que no exporta para nadie— se ve en la flota mucho antes de que ningún teléfono agote el techo.
         MetricsService.cloudReverseUploadWaiting(
@@ -1893,7 +1923,7 @@ final class MigrationRunner {
         return try await journalReverseUploadStep(
             .reverseUploadStalled(stalledSeconds: stalled, cause: blocker.stallCause, returnTo: origin),
             exitReason: blocker.abortReason,
-            hold: (lowest: min(lowest ?? count, count), progressAt: lastProgressAt))
+            hold: (lowest: count.map { min(lowest ?? $0, $0) } ?? lowest, progressAt: lastProgressAt))
     }
 
     /// Journalea un paso de la espera de `reverseUpload` —una observación o la cancelación— y devuelve si la
@@ -1906,7 +1936,7 @@ final class MigrationRunner {
     private func journalReverseUploadStep(
         _ event: MigrationEvent,
         exitReason: ReverseAbortReason,
-        hold: (lowest: Int, progressAt: Date)?
+        hold: (lowest: Int?, progressAt: Date)?
     ) async throws -> Bool {
         var leftTheWait = false
         try await handle(event) { state, next in

@@ -2468,4 +2468,264 @@ struct MigrationWorkExecutorTests {
         #expect(drenado.reverseUploadStatus() == .drained, "con nombre de registro, la fila ya está en CloudKit")
         #expect(try context.fetchCount(FetchDescriptor<SyncIdentity>()) == 0)
     }
+
+    // MARK: - Un inventario que no pudo leer una tabla no es el corpus entero
+    // (ticket `an-incomplete-inventory-reads-as-the-whole-corpus`)
+    //
+    // Cada caso monta la avería con `_testInventoryFetchThrows` —que lanza un `CocoaError` dentro del `do` real— y lleva
+    // su control: el MISMO escenario sin la avería da el desenlace bueno. Sin el control, el desenlace de la avería podría
+    // venir de cualquier otra cosa del escenario.
+
+    /// La captura de identidad de la ida. Su llamador SÍ puede fallar —`driveIdentity` convierte el `throw` en
+    /// `.localFailure`— y la premisa del ticket, que decía lo contrario, era falsa. Antes la tabla se saltaba y la
+    /// captura corría sobre un inventario parcial, con el breadcrumb contando `captured: 0` como si no hubiera nada.
+    @Test("assignIdentity: una tabla ilegible en la captura lanza, no captura sobre un inventario parcial")
+    func assignIdentity_unreadableInventoryTable_throws() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        context.insert(Category(name: "food", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false))
+        try context.save()
+
+        // Control: sin la avería la captura termina.
+        let sano = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        try await sano.assignIdentity()
+
+        // Una tabla de negocio…
+        let enferma = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                   personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        enferma._testInventoryFetchThrows = { step, entity in step == "identity-capture" && entity == "Category" }
+        await #expect(throws: MigrationExecutorError.inventoryUnreadable(entity: "Category")) {
+            try await enferma.assignIdentity()
+        }
+
+        // …el backfill que corre antes, que se tragaba su error y dejaba filas sin identidad…
+        defer { SyncIdentityService._testThrowOnBackfillFetchOf = [] }
+        SyncIdentityService._testThrowOnBackfillFetchOf = ["Category"]
+        let sinBackfill = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                       personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        await #expect(throws: CocoaError.self) { try await sinBackfill.assignIdentity() }
+        SyncIdentityService._testThrowOnBackfillFetchOf = []
+
+        // …y la de testigos, que antes devolvía `[]` entera: cero pares y ni una coordenada capturada.
+        let sinTestigos = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                       personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        sinTestigos._testInventoryFetchThrows = { step, entity in step == "identity-capture" && entity == "SyncIdentity" }
+        await #expect(throws: MigrationExecutorError.inventoryUnreadable(entity: "SyncIdentity")) {
+            try await sinTestigos.assignIdentity()
+        }
+    }
+
+    /// El guard anti-fusión del adopt. Con el backend VACÍO y una huérfana local, el adopt tiene que abortar
+    /// (`.abortedEmptyBackend`); con la tabla ilegible el plan preliminar salía con `uploadCount == 0` y el guard, que
+    /// existe para no fusionar dos corpus, se apagaba. Y como el plan definitivo también salía vacío, el adopt se
+    /// declaraba completo.
+    @Test("runAdoptOrphanReconcile: un inventario ilegible no apaga el guard anti-fusión — transient, sin mutar")
+    func adoptReconcile_unreadablePrePlanInventory_isTransientNotCompleted() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        _ = makeCategory("orphan", syncID: UUID(), in: context)
+        try context.save()
+        stub.merkleBody = try makeMerkleBody([:])
+
+        // Control: sin la avería, backend vacío + huérfana ⇒ el guard aborta.
+        let sano = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                tombstoneSource: FakeTombstoneSource())
+        #expect(await sano.runAdoptOrphanReconcile() == .abortedEmptyBackend,
+                "control del escenario: con el inventario legible el guard SÍ salta")
+
+        let enfermo = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                   personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                   tombstoneSource: FakeTombstoneSource())
+        enfermo._testInventoryFetchThrows = { step, entity in step == "adopt-inventory" && entity == "Category" }
+        #expect(await enfermo.runAdoptOrphanReconcile() == .transient,
+                "ilegible no es «sin huérfanas»: se reintenta, no se cierra el adopt")
+        #expect(stub.pushedSyncIDs.isEmpty, "nada se sube")
+        #expect(try context.fetchCount(FetchDescriptor<SyncIdentity>()) == 0,
+                "corta ANTES del backfill: sin testigos, igual que el guard")
+    }
+
+    /// La SEGUNDA lectura del inventario del adopt, la de después del backfill, y la que cerraba el adopt en falso:
+    /// `guard !plan.orphans.isEmpty else { return .completed(uploaded: 0) }`, y el adopt no vuelve a pasar por ahí. El
+    /// closure del seam es lo que la hace alcanzable: la primera lectura pasa y la segunda lanza.
+    @Test("runAdoptOrphanReconcile: si el inventario post-backfill no se deja leer, el adopt no se da por completo")
+    func adoptReconcile_unreadableDefinitiveInventory_isTransientNotCompleted() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let knownID = UUID(); let orphanID = UUID()
+        _ = makeCategory("known", syncID: knownID, in: context)
+        _ = makeCategory("orphan", syncID: orphanID, in: context)
+        try context.save()
+        let source = FakeTombstoneSource()
+        source.pages = [PulledPage(deltas: [upsertDelta(table: "categories", syncID: knownID, seq: 1)], maxServerSeq: 1)]
+        stub.merkleBody = try makeMerkleBody(["categories": 1])
+
+        let enfermo = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                   personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                   tombstoneSource: source)
+        let lecturas = InventoryReadCounter()
+        enfermo._testInventoryFetchThrows = { step, entity in
+            guard step == "adopt-inventory", entity == "Category" else { return false }
+            lecturas.value += 1
+            return lecturas.value >= 2
+        }
+        #expect(await enfermo.runAdoptOrphanReconcile() == .transient,
+                "con el plan definitivo ilegible el adopt se reintenta: `completed(0)` lo cerraba con la huérfana fuera")
+        #expect(lecturas.value == 2, "control del seam: la primera lectura pasó y la segunda lanzó")
+        #expect(stub.pushedSyncIDs.isEmpty, "nada se sube a ciegas")
+
+        // Control: el mismo escenario, legible, sube la huérfana. Fuente nueva: la de arriba ya sirvió su página.
+        let fuente = FakeTombstoneSource()
+        fuente.pages = source.pages
+        let sano = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                tombstoneSource: fuente)
+        #expect(await sano.runAdoptOrphanReconcile() == .completed(uploaded: 1, identityAssigned: 0),
+                "control del escenario: sin la avería la huérfana SÍ se sube")
+        #expect(stub.pushedSyncIDs.map { $0.lowercased() } == [orphanID.uuidString.lowercased()])
+    }
+
+    /// El backfill entre los dos inventarios. Tragado, dejaba la fila SIN identidad, el diff la contaba como
+    /// `needsIdentity` y no como huérfana, y el adopt cerraba `completed(0, 1)` sin subirla.
+    @Test("runAdoptOrphanReconcile: si el backfill no termina, transient — no un adopt completo sin la fila")
+    func adoptReconcile_backfillFails_isTransientNotCompleted() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        context.insert(Category(name: "window-nil", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false))
+        try context.save()
+        func source() -> FakeTombstoneSource {
+            let s = FakeTombstoneSource()
+            s.pages = [PulledPage(deltas: [upsertDelta(table: "categories", syncID: UUID(), seq: 1)], maxServerSeq: 1)]
+            return s
+        }
+        stub.merkleBody = try makeMerkleBody(["categories": 1])
+
+        defer { SyncIdentityService._testThrowOnBackfillFetchOf = [] }
+        SyncIdentityService._testThrowOnBackfillFetchOf = ["Category"]
+        let enfermo = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                   personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                   tombstoneSource: source())
+        #expect(await enfermo.runAdoptOrphanReconcile() == .transient)
+        #expect(stub.pushedSyncIDs.isEmpty)
+
+        // Control: con el backfill sano, la misma fila recibe identidad y se sube.
+        SyncIdentityService._testThrowOnBackfillFetchOf = []
+        let sano = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                tombstoneSource: source())
+        #expect(await sano.runAdoptOrphanReconcile() == .completed(uploaded: 1, identityAssigned: 1))
+    }
+
+    /// El diff del panel DEBUG usa el mismo inventario: ilegible devuelve `nil` en vez de un diff parcial.
+    @Test("adoptOrphanDryRun: un inventario ilegible no pinta un diff parcial")
+    func adoptDryRun_unreadableInventory_isNil() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        _ = makeCategory("orphan", syncID: UUID(), in: context)
+        try context.save()
+        func source() -> FakeTombstoneSource {
+            let s = FakeTombstoneSource()
+            s.pages = [PulledPage(deltas: [upsertDelta(table: "categories", syncID: UUID(), seq: 1)], maxServerSeq: 1)]
+            return s
+        }
+        stub.merkleBody = try makeMerkleBody(["categories": 1])
+
+        let sano = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                personalStoreURL: dir.appendingPathComponent("personal.sqlite"), tombstoneSource: source())
+        #expect(await sano.adoptOrphanDryRun()?.uploadCount == 1, "control: legible, el diff ve la huérfana")
+
+        let enfermo = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                   personalStoreURL: dir.appendingPathComponent("personal.sqlite"), tombstoneSource: source())
+        enfermo._testInventoryFetchThrows = { step, entity in step == "adopt-inventory" && entity == "Category" }
+        #expect(await enfermo.adoptOrphanDryRun() == nil)
+    }
+
+    /// El fetch dirigido de las huérfanas. Saltar la tabla dejaba `inputs` sin sus filas, el outbox vivo vacío y el
+    /// adopt `completed(uploaded: 0)`: las huérfanas de esa tabla no llegaban nunca al backend.
+    @Test("runAdoptOrphanReconcile: si la tabla de las huérfanas no se deja leer al emitirlas, transient")
+    func adoptReconcile_unreadableOrphanInputs_isTransient() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let knownID = UUID()
+        _ = makeCategory("known", syncID: knownID, in: context)
+        _ = makeCategory("orphan", syncID: UUID(), in: context)
+        try context.save()
+        let source = FakeTombstoneSource()
+        source.pages = [PulledPage(deltas: [upsertDelta(table: "categories", syncID: knownID, seq: 1)], maxServerSeq: 1)]
+        stub.merkleBody = try makeMerkleBody(["categories": 1])
+
+        let enfermo = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                   personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                   tombstoneSource: source)
+        enfermo._testInventoryFetchThrows = { step, entity in step == "adopt-orphan-inputs" && entity == "Category" }
+        #expect(await enfermo.runAdoptOrphanReconcile() == .transient)
+        #expect(stub.pushedSyncIDs.isEmpty, "nada se sube")
+        let live = try context.fetch(FetchDescriptor<SyncOutbox>()).filter { $0.rejectedReason == nil }
+        #expect(live.isEmpty, "corta antes de encolar")
+    }
+
+    /// La muestra de la vuelta. Si la tabla ilegible era la de las filas pendientes, la muestra salía vacía y
+    /// `.drained` cerraba la vuelta a iCloud con esos datos sin llegar. El control es el test de D15 de arriba: la misma
+    /// fila, legible, cuenta como pendiente.
+    @Test("reverseUploadStatus: una tabla ilegible en la muestra es .unreadable, no .drained")
+    func reverseUploadStatus_unreadableTable_isUnreadableNotDrained() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let tx = TransactionItem(date: fixedNow, amount: -12.5, currencyCode: "USD")
+        context.insert(tx)
+        try context.save()
+        let zpk = try #require(CKIdentityCapture.entityAndPK(for: tx.persistentModelID)?.zpk)
+        let sinMetadata = makeReverseUploadFixture(dir, zpk: zpk, recordName: nil, withMetadata: false)
+
+        let sano = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                personalStoreURL: sinMetadata)
+        #expect(sano.reverseUploadStatus() == .pending(count: 1), "control del escenario: la fila está pendiente")
+
+        let enfermo = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                   personalStoreURL: sinMetadata)
+        enfermo._testInventoryFetchThrows = { step, entity in step == "reverse-sample" && entity == "TransactionItem" }
+        #expect(enfermo.reverseUploadStatus() == .unreadable,
+                "sin la tabla la muestra contaba cero pendientes y daba la vuelta por hecha")
+    }
+
+    /// El canario de metadata huérfana. Con el `Set` vacío de antes, toda la metadata de una tabla ilegible contaba como
+    /// huérfana; ahora la tabla se queda sin key y el escáner la ignora, como a una entidad no cableada.
+    @Test("collectLiveByEntityName: una tabla ilegible se queda SIN key, no con un Set vacío")
+    func collectLiveByEntityName_unreadableTable_hasNoKey() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        context.insert(Tag(name: "t"))
+        try context.save()
+
+        let sano = MigrationWorkExecutor.collectLiveByEntityName(context: context)
+        #expect(sano["Tag"]?.count == 1, "control: legible, la key está y trae la fila")
+        #expect(sano["Category"] == [], "control: sin filas, la key está con un Set vacío (contrato RP-4)")
+
+        let enfermo = MigrationWorkExecutor.collectLiveByEntityName(context: context, throwingOn: { $0 == "Tag" })
+        #expect(enfermo["Tag"] == nil, "ilegible: sin key, o toda su metadata contaría como huérfana")
+        #expect(enfermo["Category"] == [], "las demás tablas siguen con su key")
+        #expect(enfermo.count == sano.count - 1)
+    }
+}
+
+/// Caja para contar desde el closure del seam: el closure se guarda en el ejecutor y la cuenta tiene que sobrevivir a él.
+@MainActor
+private final class InventoryReadCounter {
+    var value = 0
 }

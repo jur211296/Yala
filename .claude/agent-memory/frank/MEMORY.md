@@ -42,6 +42,7 @@
 - [El predicado del ticket no es el criterio](feedback_el_predicado_del_ticket_no_es_el_criterio.md) — mide con qué predicado decide la superficie.
 - [Una key nueva está AUSENTE en todo el parque](feedback_una_key_nueva_esta_ausente_en_todo_el_parque.md) — «no hay marca» = «primera vez que corre.
 - [La premisa del ENCARGO también se mide](feedback_la_premisa_del_encargo_tambien_se_mide.md) — hereda los errores del ticket.
+- [El paso de ANTES también lee](feedback_el_paso_de_antes_tambien_lee.md) — cerré seis inventarios y el backfill que los alimenta tragaba igual.
 - [Una frase de alcance se cuenta por llamadores](feedback_una_frase_de_alcance_se_cuenta_por_llamadores.md) — «solo en carrera» cayó: la migración sube sin la puerta que yo miré.
 - [`-only-testing` filtra por TIPO, no por fichero](feedback_only_testing_filtra_por_tipo_no_por_fichero.md) — pedí 12 suites y corrieron 7. Cuenta pedidas vs. `Test run with`.
 - [El barrido de QA rinde por lotes](feedback_el_barrido_qa_rinde_por_lotes.md) — agrupa por estado de simulador; dos números que comparas.
@@ -140,19 +141,10 @@
 - [«Cero warnings» se mide en TODOS los logs](feedback_cero_warnings_se_mide_en_todos_los_logs.md) — el gate no mira los tests y lee un build.
 
 ## Estado del trabajo
+- [Un inventario incompleto ya no es el corpus entero](project_inventario_incompleto_no_es_el_corpus.md) — PR del 23-sep; la review cazó el backfill, tres tickets nuevos.
 - [El Merkle de grupos ya no lee una tabla ilegible como vacía](project_merkle_grupos_tabla_ilegible.md) — PR del 23-sep; queda el gemelo del mapa de cursores.
 - [El drain ya no duplica el reloj por unidad](project_drain_reloj_no_se_duplica.md) — PR del 23-sep; seis tickets nuevos de la review.
 - [Una ref colgada ilegible ya no se pierde](project_dangler_ilegible_no_es_rowgone.md) — PR del 23-sep; se tira la página, tres tickets nuevos de la review.
-- [En el apply «no pude leer» no es «no hay nada»](project_apply_no_pisa_sin_salvaguardas.md) — PR del 22-sep; el dangler ya salió, quedan dos residuales.
-- [Un journal ilegible ya no es «nunca empezó»](project_journal_ilegible_no_es_notstarted.md) — PR del 22-sep; la review cazó el motor `.idle` sin reintento.
-- [Los pasos del 22/35/80 % ya tienen techo y «Cancelar»](project_techo_de_los_tres_pasos_de_la_ida.md) — PR del 22-sep; el claim del adopt se quedó fuera a propósito.
-- [La subida al 55 % ya tiene techo y «Cancelar»](project_techo_de_la_subida_del_snapshot.md) — PR del 22-sep; tres lentes cazaron el 401 con la sesión guardada.
-- [Un fallo de una vez ya no cobra las horas de otra espera](project_reloj_por_causa_en_el_techo_pre_mount.md) — PR #210; la review cazó 6 defectos míos y cambió el diseño.
-- [Un «no» definitivo en la vuelta ya no espera 72 h](project_un_no_definitivo_en_la_vuelta_ya_no_espera_72h.md) — PR #209; la review cazó 7 defectos míos y dejó 2 residuales con ticket.
-- [El estado borrado ya no llega a la puerta con la ventana abierta](project_wiped_no_llega_con_la_ventana_abierta.md) — PR #207; la review cazó 8 defectos míos y dejó un residual con ticket.
-- [Volver de la puerta de descarte ya no estrena permiso](project_volver_de_la_puerta_no_estrena_permiso.md) — PR #205; la review cazó que MI fix dejaba al dueño sin salida.
-- [Salir y volver a Restaurar ya no renueva con una descarga vieja](project_salir_y_volver_no_renueva_con_descarga_vieja.md) — PR #204; en qa, y el techo con número se fue a ticket propio.
-- [El tope de 90 s ya no cierra la sesión con el import bajando](project_tope_90s_no_cierra_con_import_bajando.md) — PR #203; en qa con guion de 7 pasos y un residual con ticket propio.
 - [Rediseño de sesiones: dos ejes](project_rediseno_sesiones_dos_ejes.md) — ADR 9-sep + 13 tickets con orden; M1 retirada y «en la nube» RATIFICADOS.
 - [La frontera de la visita: SUPERADA](project_la_frontera_de_la_visita.md) — el ADR del 9-sep retira M1 y sus 12 tickets están descartados.
 - [Decisiones que esperan a Jürgen](project_decisiones_que_esperan_a_jurgen.md) — 19 contestadas el 6-sep; «¿queda alguna?» se responde LEYENDO los.

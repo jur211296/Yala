@@ -630,7 +630,7 @@ struct CloudSyncE2EStagingTests {
         try context.save()
 
         // Backfill de identidades (la migración lo hace ANTES del snapshot).
-        SyncIdentityService.backfillIdentities(context: context)
+        try SyncIdentityService.backfillIdentities(context: context)
 
         // Snapshot upload REAL, página a página hasta completar.
         let uploader = MigrationSnapshotUploader(engine: engine, pushClient: push, context: context)

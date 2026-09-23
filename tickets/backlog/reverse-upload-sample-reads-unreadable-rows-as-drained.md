@@ -4,6 +4,7 @@ status: backlog
 priority: medium
 area: "modo-nube, migración"
 created: 2026-09-16
+updated: 2026-09-23
 source: "medición de `reverse-upload-has-no-ceiling-and-no-exit` (2026-09-16)"
 ---
 
@@ -21,7 +22,9 @@ filas `failed` **no cuentan**, y quedan tres caminos que las producen o vacían 
 
 - `CKIdentityCapture.captureResolved`: si SQLite no abre, o no encuentra la tabla de metadata, o faltan las
   columnas, marca TODAS las filas `failed` ⇒ `pending == 0` ⇒ `.drained`.
-- `addReverseUploadPairs`: si el fetch de un tipo de entidad lanza, sus filas no entran en el muestreo.
+- ~~`addReverseUploadPairs`: si el fetch de un tipo de entidad lanza, sus filas no entran en el muestreo.~~
+  **Cerrado el 2026-09-23** en `an-incomplete-inventory-reads-as-the-whole-corpus`: ese fetch LANZA y la muestra sale
+  `.unreadable`, que ni cierra la vuelta ni cuenta como avance. Queda lo de las filas `failed`, que sigue pidiendo medir.
 - Fallos por fila (`no-zent`, `zone-fk-missing`…): no cuentan.
 
 **Ya NO es un camino (arreglado el 2026-09-16 en `reverse-upload-has-no-ceiling-and-no-exit`, D15):** las filas

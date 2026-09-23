@@ -79,17 +79,40 @@ struct SyncIdentityServiceTests {
         let c = makeTx(amount: 30, context: context)
         try context.save()
 
-        SyncIdentityService.backfillIdentities(context: context, now: now)
+        try SyncIdentityService.backfillIdentities(context: context, now: now)
         let id1 = a.syncID, id2 = b.syncID, id3 = c.syncID
         #expect(id1 != nil && id2 != nil && id3 != nil)
         #expect(try identityCount(context) == 3)
 
         // Segunda corrida: sin cambios, mismos syncIDs, sin filas nuevas.
-        SyncIdentityService.backfillIdentities(context: context, now: now)
+        try SyncIdentityService.backfillIdentities(context: context, now: now)
         #expect(a.syncID == id1)
         #expect(b.syncID == id2)
         #expect(c.syncID == id3)
         #expect(try identityCount(context) == 3)
+    }
+
+    /// Un fetch que lanza ya no se traga (ticket `an-incomplete-inventory-reads-as-the-whole-corpus`): el backfill
+    /// devolvía normal y sus dos llamadores de la migración seguían con filas sin identidad. El seam lanza un
+    /// `CocoaError` en el sitio del fetch real; es estático, así que se resetea en `defer`.
+    @Test func backfill_unreadableTable_throwsInsteadOfSwallowing() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        _ = makeTx(amount: 10, context: context)
+        try context.save()
+        defer { SyncIdentityService._testThrowOnBackfillFetchOf = [] }
+
+        SyncIdentityService._testThrowOnBackfillFetchOf = ["TransactionItem"]
+        #expect(throws: CocoaError.self) { try SyncIdentityService.backfillIdentities(context: context, now: now) }
+        SyncIdentityService._testThrowOnBackfillFetchOf = ["SyncIdentity"]
+        #expect(throws: CocoaError.self) { try SyncIdentityService.backfillIdentities(context: context, now: now) }
+        SyncIdentityService._testThrowOnBackfillFetchOf = ["Tag"]      // la rama de UUID estable (`backfillIdentityType`)
+        #expect(throws: CocoaError.self) { try SyncIdentityService.backfillIdentities(context: context, now: now) }
+
+        // Control: legible, el mismo store termina y acuña la identidad.
+        SyncIdentityService._testThrowOnBackfillFetchOf = []
+        try SyncIdentityService.backfillIdentities(context: context, now: now)
+        #expect(try identityCount(context) == 1)
     }
 
     // MARK: - No-colapso
@@ -102,7 +125,7 @@ struct SyncIdentityServiceTests {
         let b = makeTx(amount: 999, currency: "EUR", context: context)
         try context.save()
 
-        SyncIdentityService.backfillIdentities(context: context, now: now)
+        try SyncIdentityService.backfillIdentities(context: context, now: now)
         #expect(a.syncID != nil)
         #expect(b.syncID != nil)
         #expect(a.syncID != b.syncID)
@@ -124,7 +147,7 @@ struct SyncIdentityServiceTests {
         let b = makeTx(amount: 42, context: context)   // ancla IDÉNTICA (misma fecha fija + monto + cuenta)
         try context.save()
 
-        SyncIdentityService.backfillIdentities(context: context, now: now)
+        try SyncIdentityService.backfillIdentities(context: context, now: now)
 
         let idA = try #require(a.syncID)
         let idB = try #require(b.syncID)
@@ -145,7 +168,7 @@ struct SyncIdentityServiceTests {
         b.syncID = shared
         try context.save()
 
-        SyncIdentityService.backfillIdentities(context: context, now: now)
+        try SyncIdentityService.backfillIdentities(context: context, now: now)
 
         let idA = try #require(a.syncID)
         let idB = try #require(b.syncID)
@@ -159,7 +182,7 @@ struct SyncIdentityServiceTests {
 
         let original = makeTx(amount: 42, context: context)
         try context.save()
-        SyncIdentityService.backfillIdentities(context: context, now: now)
+        try SyncIdentityService.backfillIdentities(context: context, now: now)
         let originalID = try #require(original.syncID)
         #expect(try identityCount(context) == 1)
 
@@ -173,7 +196,7 @@ struct SyncIdentityServiceTests {
         try context.save()
 
         let rebindTime = Date(timeIntervalSince1970: 1_900_000_000)
-        SyncIdentityService.backfillIdentities(context: context, now: rebindTime)
+        try SyncIdentityService.backfillIdentities(context: context, now: rebindTime)
 
         // Rebind: reusa el syncID original, sin fila nueva, marca lastReboundAt.
         #expect(recreated.syncID == originalID)
@@ -194,7 +217,7 @@ struct SyncIdentityServiceTests {
         try context.save()
         #expect(try identityCount(context) == 0)
 
-        SyncIdentityService.backfillIdentities(context: context, now: now)
+        try SyncIdentityService.backfillIdentities(context: context, now: now)
 
         #expect(tx.syncID == preassigned)  // NO se regenera
         #expect(try identityCount(context) == 1)
@@ -250,7 +273,7 @@ struct SyncIdentityServiceTests {
         context.insert(merchant)
         try context.save()
 
-        SyncIdentityService.backfillIdentities(context: context, now: now)
+        try SyncIdentityService.backfillIdentities(context: context, now: now)
 
         #expect(tx.syncID != nil)
         #expect(category.syncID != nil)

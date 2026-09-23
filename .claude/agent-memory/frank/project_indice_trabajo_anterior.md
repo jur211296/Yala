@@ -10,6 +10,19 @@ metadata:
 Cada línea apunta a su memoria completa. Lo que sigue abierto vive en su ticket (`tickets/`), que es la fuente;
 aquí queda el porqué y el contexto de cada entrega.
 
+## PR #203 a #216 (22 sep) — salieron de `MEMORY.md` el 23-sep por el mismo motivo
+
+- [En el apply «no pude leer» no es «no hay nada»](project_apply_no_pisa_sin_salvaguardas.md) — PR del 22-sep; el dangler ya salió, quedan dos residuales.
+- [Un journal ilegible ya no es «nunca empezó»](project_journal_ilegible_no_es_notstarted.md) — PR del 22-sep; la review cazó el motor `.idle` sin reintento.
+- [Los pasos del 22/35/80 % ya tienen techo y «Cancelar»](project_techo_de_los_tres_pasos_de_la_ida.md) — PR del 22-sep; el claim del adopt se quedó fuera a propósito.
+- [La subida al 55 % ya tiene techo y «Cancelar»](project_techo_de_la_subida_del_snapshot.md) — PR del 22-sep; tres lentes cazaron el 401 con la sesión guardada.
+- [Un fallo de una vez ya no cobra las horas de otra espera](project_reloj_por_causa_en_el_techo_pre_mount.md) — PR #210; la review cazó 6 defectos míos y cambió el diseño.
+- [Un «no» definitivo en la vuelta ya no espera 72 h](project_un_no_definitivo_en_la_vuelta_ya_no_espera_72h.md) — PR #209; la review cazó 7 defectos míos y dejó 2 residuales con ticket.
+- [El estado borrado ya no llega a la puerta con la ventana abierta](project_wiped_no_llega_con_la_ventana_abierta.md) — PR #207; la review cazó 8 defectos míos y dejó un residual con ticket.
+- [Volver de la puerta de descarte ya no estrena permiso](project_volver_de_la_puerta_no_estrena_permiso.md) — PR #205; la review cazó que MI fix dejaba al dueño sin salida.
+- [Salir y volver a Restaurar ya no renueva con una descarga vieja](project_salir_y_volver_no_renueva_con_descarga_vieja.md) — PR #204; en qa, y el techo con número se fue a ticket propio.
+- [El tope de 90 s ya no cierra la sesión con el import bajando](project_tope_90s_no_cierra_con_import_bajando.md) — PR #203; en qa con guion de 7 pasos y un residual con ticket propio.
+
 ## PR #155 a #196 (15-22 sep) — salieron de `MEMORY.md` el 22-sep por el mismo motivo
 
 - [La vuelta a iCloud ya pide volver a entrar](project_vuelta_icloud_pide_volver_a_entrar.md) — PR #194; en qa con 8 pasos en iPhone.
