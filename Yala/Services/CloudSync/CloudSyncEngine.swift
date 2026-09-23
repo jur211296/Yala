@@ -1452,6 +1452,10 @@ final class CloudSyncEngine {
     /// commit) → simula un crash: nada se persiste, el cursor NO avanza (D-5, atomicidad). SOLO tests.
     var _testThrowOnApplySave = false
 
+    /// Cuando no es `nil`, esa lectura del apply LANZA como si la base no se dejara leer (ticket
+    /// `apply-overwrites-a-pending-local-write-without-its-guards`). SOLO tests.
+    var _testThrowOnApplyRead: ApplyGuardRead?
+
     /// DIFERIDOS #33 (T13): cuando `true`, el fetch por TOKEN del drain lanza — simula el token
     /// decodable cuyo `fetchHistory(predicate: token >)` revienta (migración destructiva). SOLO tests.
     var _testThrowOnTokenHistoryFetch = false

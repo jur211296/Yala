@@ -1164,6 +1164,7 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     /// → sin él un `drainOnce` futuro re-emitiría los deletes como tombstones al backend congelado. El mirror
     /// exporta el delete igual (NSPersistentCloudKitContainer no filtra por autor; solo nuestro drain).
     /// Caso normal (token vigente): 0 filas vivas tombstoneadas → no-op idempotente. Red del pull → `.transient`.
+    /// Una tabla que no se deja leer (o el save) → rollback + `.transient`: nunca «0 borradas» por avería.
     func sweepZombies(sinceSeq: Int64) async -> ZombieSweepOutcome {
         var tombstonesByTable: [String: Set<UUID>] = [:]
         var cursor = sinceSeq
@@ -1184,13 +1185,19 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         var totalDeleted = 0
         do {
             try engine.saveWithAuthor(context, CloudSyncEngine.outboxSaveAuthor) {
-                for (table, ids) in tombstonesByTable {
-                    totalDeleted += EntityApplyMap.deleteLiveRows(table: table, syncIDs: ids, context: context)
+                // Orden por tabla: determinista (si una tabla lanza, las anteriores son siempre las mismas).
+                for (table, ids) in tombstonesByTable.sorted(by: { $0.key < $1.key }) {
+                    totalDeleted += try EntityApplyMap.deleteLiveRows(table: table, syncIDs: ids, context: context)
                 }
             }
         } catch {
+            // Save fallido o tabla ilegible: nada del barrido cuenta. Rollback OBLIGATORIO — si lanzó a
+            // mitad, las tablas anteriores dejaron deletes dirty que un autosave flushearía bajo autor
+            // NO-motor (eco al outbox). `.transient` → el runner reintenta este sub-estado.
+            context.rollback()
+            CloudSyncBreadcrumb.applyPageFailed(reason: "sweepZombies:\(error)")
             #if DEBUG
-            print("MigrationWorkExecutor.sweepZombies: save del barrido falló: \(error)")
+            print("MigrationWorkExecutor.sweepZombies: barrido no hecho (rollback): \(error)")
             #endif
             return .transient
         }

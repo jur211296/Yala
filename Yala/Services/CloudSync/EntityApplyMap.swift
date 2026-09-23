@@ -52,7 +52,9 @@ struct EntityApply<Model: PersistentModel> {
     let entityTypeName: String
     let make: (ModelContext) -> Model
     let setSyncID: (Model, UUID) -> Void
-    let fetchBySyncID: (UUID, ModelContext) -> Model?
+    /// Búsqueda de la fila por su id de sync. LANZA si no se puede leer: en el apply «no pude buscar» no es
+    /// «no hay fila» (un tombstone se daría por hecho; un upsert crearía un duplicado).
+    let fetchBySyncID: (UUID, ModelContext) throws -> Model?
     let anchor: (Model) -> String
     let groupByColumn: [String: String]
     let appliers: [String: ColumnApplier<Model>]
@@ -143,7 +145,7 @@ enum EntityApplyMap {
             return m
         },
         setSyncID: { $0.syncID = $1 },
-        fetchBySyncID: { fetchTransactionItem(bySyncID: $0, context: $1) },
+        fetchBySyncID: { try findTransactionItem(bySyncID: $0, context: $1) },
         anchor: { m in
             SyncContentAnchor.transactionItem(
                 createdAt: m.createdAt, date: m.date, amount: m.amount,
@@ -203,7 +205,7 @@ enum EntityApplyMap {
         entityTypeName: SyncEntityType.inboxDraft,
         make: { ctx in let m = InboxDraft(); ctx.insert(m); return m },
         setSyncID: { $0.syncID = $1 },
-        fetchBySyncID: { fetchInboxDraft(bySyncID: $0, context: $1) },
+        fetchBySyncID: { try findInboxDraft(bySyncID: $0, context: $1) },
         anchor: { m in
             SyncContentAnchor.inboxDraft(
                 createdAt: m.createdAt, sourceTypeRaw: m.sourceTypeRaw, rawText: m.rawText
@@ -273,7 +275,7 @@ enum EntityApplyMap {
             return m
         },
         setSyncID: { $0.syncID = $1 },
-        fetchBySyncID: { fetchCategory(bySyncID: $0, context: $1) },
+        fetchBySyncID: { try findCategory(bySyncID: $0, context: $1) },
         anchor: { SyncContentAnchor.category(name: $0.name) },
         groupByColumn: EntityEmissionMap.category.groupByColumn,
         appliers: [
@@ -295,7 +297,7 @@ enum EntityApplyMap {
         entityTypeName: SyncEntityType.favoritePayment,
         make: { ctx in let m = FavoritePayment(name: ""); ctx.insert(m); return m },
         setSyncID: { $0.syncID = $1 },
-        fetchBySyncID: { fetchFavoritePayment(bySyncID: $0, context: $1) },
+        fetchBySyncID: { try findFavoritePayment(bySyncID: $0, context: $1) },
         anchor: { m in
             SyncContentAnchor.favoritePayment(
                 name: m.name, amount: m.amount, createdAt: m.createdAt, displayOrder: m.displayOrder
@@ -335,7 +337,7 @@ enum EntityApplyMap {
         entityTypeName: SyncEntityType.merchantMemory,
         make: { ctx in let m = MerchantMemory(merchantCanonical: ""); ctx.insert(m); return m },
         setSyncID: { $0.syncID = $1 },
-        fetchBySyncID: { fetchMerchantMemory(bySyncID: $0, context: $1) },
+        fetchBySyncID: { try findMerchantMemory(bySyncID: $0, context: $1) },
         anchor: { SyncContentAnchor.merchantMemory(merchantCanonical: $0.merchantCanonical) },
         groupByColumn: EntityEmissionMap.merchantMemory.groupByColumn,
         appliers: [
@@ -360,7 +362,7 @@ enum EntityApplyMap {
         entityTypeName: SyncEntityType.exchangeRate,
         make: { ctx in let m = ExchangeRate(dateKey: "", base: "USD", rates: Data()); ctx.insert(m); return m },
         setSyncID: { $0.syncID = $1 },
-        fetchBySyncID: { fetchExchangeRate(bySyncID: $0, context: $1) },
+        fetchBySyncID: { try findExchangeRate(bySyncID: $0, context: $1) },
         anchor: { SyncContentAnchor.exchangeRate(dateKey: $0.dateKey, base: $0.base) },
         groupByColumn: EntityEmissionMap.exchangeRate.groupByColumn,
         appliers: [
@@ -378,7 +380,7 @@ enum EntityApplyMap {
         entityTypeName: SyncEntityType.budget,
         make: { ctx in let m = Budget(currencyCode: "USD", limitAmount: 0); ctx.insert(m); return m },
         setSyncID: { $0.id = $1 },
-        fetchBySyncID: { fetchBudget(byID: $0, context: $1) },
+        fetchBySyncID: { try findBudget(byID: $0, context: $1) },
         anchor: { SyncContentAnchor.stableID($0.id) },
         groupByColumn: EntityEmissionMap.budget.groupByColumn,
         appliers: [
@@ -429,7 +431,7 @@ enum EntityApplyMap {
             return m
         },
         setSyncID: { $0.id = $1 },
-        fetchBySyncID: { fetchScheduledPayment(byID: $0, context: $1) },
+        fetchBySyncID: { try findScheduledPayment(byID: $0, context: $1) },
         anchor: { SyncContentAnchor.stableID($0.id) },
         groupByColumn: EntityEmissionMap.scheduledPayment.groupByColumn,
         appliers: [
@@ -491,7 +493,7 @@ enum EntityApplyMap {
             return m
         },
         setSyncID: { $0.shortcutID = $1 },
-        fetchBySyncID: { fetchAccount(byShortcutID: $0, context: $1) },
+        fetchBySyncID: { try findAccount(byShortcutID: $0, context: $1) },
         anchor: { SyncContentAnchor.stableID($0.shortcutID) },
         groupByColumn: EntityEmissionMap.account.groupByColumn,
         appliers: [
@@ -517,7 +519,7 @@ enum EntityApplyMap {
         entityTypeName: SyncEntityType.subcategory,
         make: { ctx in let m = Subcategory(name: "", category: nil); ctx.insert(m); return m },
         setSyncID: { $0.shortcutID = $1 },
-        fetchBySyncID: { fetchSubcategory(byShortcutID: $0, context: $1) },
+        fetchBySyncID: { try findSubcategory(byShortcutID: $0, context: $1) },
         anchor: { SyncContentAnchor.stableID($0.shortcutID) },
         groupByColumn: EntityEmissionMap.subcategory.groupByColumn,
         appliers: [
@@ -545,7 +547,7 @@ enum EntityApplyMap {
         entityTypeName: SyncEntityType.tag,
         make: { ctx in let m = Tag(name: ""); ctx.insert(m); return m },
         setSyncID: { $0.id = $1 },
-        fetchBySyncID: { fetchTag(byID: $0, context: $1) },
+        fetchBySyncID: { try findTag(byID: $0, context: $1) },
         anchor: { SyncContentAnchor.stableID($0.id) },
         groupByColumn: EntityEmissionMap.tag.groupByColumn,
         appliers: [
@@ -568,7 +570,7 @@ enum EntityApplyMap {
             return m
         },
         setSyncID: { $0.id = $1 },
-        fetchBySyncID: { fetchNotificationItem(byID: $0, context: $1) },
+        fetchBySyncID: { try findNotificationItem(byID: $0, context: $1) },
         anchor: { SyncContentAnchor.stableID($0.id) },
         groupByColumn: EntityEmissionMap.notificationItem.groupByColumn,
         appliers: [
@@ -604,7 +606,7 @@ enum EntityApplyMap {
         entityTypeName: SyncEntityType.cashFlowPlan,
         make: { ctx in let m = CashFlowPlan(); ctx.insert(m); return m },
         setSyncID: { $0.id = $1 },
-        fetchBySyncID: { fetchCashFlowPlan(byID: $0, context: $1) },
+        fetchBySyncID: { try findCashFlowPlan(byID: $0, context: $1) },
         anchor: { SyncContentAnchor.stableID($0.id) },
         groupByColumn: EntityEmissionMap.cashFlowPlan.groupByColumn,
         appliers: [
@@ -627,7 +629,7 @@ enum EntityApplyMap {
         entityTypeName: SyncEntityType.cashFlowLine,
         make: { ctx in let m = CashFlowLine(name: ""); ctx.insert(m); return m },
         setSyncID: { $0.id = $1 },
-        fetchBySyncID: { fetchCashFlowLine(byID: $0, context: $1) },
+        fetchBySyncID: { try findCashFlowLine(byID: $0, context: $1) },
         anchor: { SyncContentAnchor.stableID($0.id) },
         groupByColumn: EntityEmissionMap.cashFlowLine.groupByColumn,
         appliers: [
@@ -672,7 +674,7 @@ enum EntityApplyMap {
         entityTypeName: SyncEntityType.cashFlowOverride,
         make: { ctx in let m = CashFlowOverride(monthKey: "", amount: 0); ctx.insert(m); return m },
         setSyncID: { $0.id = $1 },
-        fetchBySyncID: { fetchCashFlowOverride(byID: $0, context: $1) },
+        fetchBySyncID: { try findCashFlowOverride(byID: $0, context: $1) },
         anchor: { SyncContentAnchor.stableID($0.id) },
         groupByColumn: EntityEmissionMap.cashFlowOverride.groupByColumn,
         appliers: [
@@ -697,7 +699,7 @@ enum EntityApplyMap {
         entityTypeName: SyncEntityType.groupBridgePreference,
         make: { ctx in let m = GroupBridgePreference(); ctx.insert(m); return m },
         setSyncID: { $0.id = $1 },
-        fetchBySyncID: { fetchGroupBridgePreference(byID: $0, context: $1) },
+        fetchBySyncID: { try findGroupBridgePreference(byID: $0, context: $1) },
         anchor: { SyncContentAnchor.stableID($0.id) },
         groupByColumn: EntityEmissionMap.groupBridgePreference.groupByColumn,
         appliers: [
@@ -981,49 +983,54 @@ enum EntityApplyMap {
     /// backend, BORRA las filas VIVAS que los porten. UN fetch por tabla (dispatch CONCRETO por tipo — regla
     /// inviolable `#Predicate`) + match EN MEMORIA; JAMÁS un fetch por tombstone. El `context.save()` lo hace
     /// el caller (bajo `outboxSaveAuthor` — el barrido ES semánticamente un apply de tombstones del backend →
-    /// sin eco al outbox). Devuelve el nº de filas borradas. Tabla desconocida → 0.
-    static func deleteLiveRows(table: String, syncIDs: Set<UUID>, context: ModelContext) -> Int {
+    /// sin eco al outbox). Devuelve el nº de filas borradas. Tabla desconocida → 0. LANZA si una tabla no se
+    /// puede leer: «no pude borrar» no es «no había nada que borrar», y el caller debe hacer rollback.
+    static func deleteLiveRows(table: String, syncIDs: Set<UUID>, context: ModelContext) throws -> Int {
         guard !syncIDs.isEmpty else { return 0 }
         switch table {
-        case transactionItem.table:   return deleteMatching(TransactionItem.self, id: { $0.syncID }, syncIDs, context)
-        case inboxDraft.table:        return deleteMatching(InboxDraft.self, id: { $0.syncID }, syncIDs, context)
-        case category.table:          return deleteMatching(Category.self, id: { $0.syncID }, syncIDs, context)
-        case favoritePayment.table:   return deleteMatching(FavoritePayment.self, id: { $0.syncID }, syncIDs, context)
-        case merchantMemory.table:    return deleteMatching(MerchantMemory.self, id: { $0.syncID }, syncIDs, context)
-        case exchangeRate.table:      return deleteMatching(ExchangeRate.self, id: { $0.syncID }, syncIDs, context)
-        case budget.table:            return deleteMatching(Budget.self, id: { $0.id }, syncIDs, context)
-        case scheduledPayment.table:  return deleteMatching(ScheduledPayment.self, id: { $0.id }, syncIDs, context)
-        case account.table:           return deleteMatching(Account.self, id: { $0.shortcutID }, syncIDs, context)
-        case subcategory.table:       return deleteMatching(Subcategory.self, id: { $0.shortcutID }, syncIDs, context)
-        case tag.table:               return deleteMatching(Tag.self, id: { $0.id }, syncIDs, context)
-        case notificationItem.table:  return deleteMatching(NotificationItem.self, id: { $0.id }, syncIDs, context)
-        case cashFlowPlan.table:      return deleteMatching(CashFlowPlan.self, id: { $0.id }, syncIDs, context)
-        case cashFlowLine.table:      return deleteMatching(CashFlowLine.self, id: { $0.id }, syncIDs, context)
-        case cashFlowOverride.table:  return deleteMatching(CashFlowOverride.self, id: { $0.id }, syncIDs, context)
-        case groupBridgePreference.table: return deleteMatching(GroupBridgePreference.self, id: { $0.id }, syncIDs, context)
+        case transactionItem.table:   return try deleteMatching(TransactionItem.self, id: { $0.syncID }, syncIDs, context)
+        case inboxDraft.table:        return try deleteMatching(InboxDraft.self, id: { $0.syncID }, syncIDs, context)
+        case category.table:          return try deleteMatching(Category.self, id: { $0.syncID }, syncIDs, context)
+        case favoritePayment.table:   return try deleteMatching(FavoritePayment.self, id: { $0.syncID }, syncIDs, context)
+        case merchantMemory.table:    return try deleteMatching(MerchantMemory.self, id: { $0.syncID }, syncIDs, context)
+        case exchangeRate.table:      return try deleteMatching(ExchangeRate.self, id: { $0.syncID }, syncIDs, context)
+        case budget.table:            return try deleteMatching(Budget.self, id: { $0.id }, syncIDs, context)
+        case scheduledPayment.table:  return try deleteMatching(ScheduledPayment.self, id: { $0.id }, syncIDs, context)
+        case account.table:           return try deleteMatching(Account.self, id: { $0.shortcutID }, syncIDs, context)
+        case subcategory.table:       return try deleteMatching(Subcategory.self, id: { $0.shortcutID }, syncIDs, context)
+        case tag.table:               return try deleteMatching(Tag.self, id: { $0.id }, syncIDs, context)
+        case notificationItem.table:  return try deleteMatching(NotificationItem.self, id: { $0.id }, syncIDs, context)
+        case cashFlowPlan.table:      return try deleteMatching(CashFlowPlan.self, id: { $0.id }, syncIDs, context)
+        case cashFlowLine.table:      return try deleteMatching(CashFlowLine.self, id: { $0.id }, syncIDs, context)
+        case cashFlowOverride.table:  return try deleteMatching(CashFlowOverride.self, id: { $0.id }, syncIDs, context)
+        case groupBridgePreference.table: return try deleteMatching(GroupBridgePreference.self, id: { $0.id }, syncIDs, context)
         default:                      return 0
         }
     }
 
     /// Fetch CONCRETO de TODAS las filas del tipo + delete de las que portan un `syncID` tombstoneado (match
-    /// en memoria). El caller saveea (bajo `outboxSaveAuthor`). Fetch fallido → 0 (no borra nada).
+    /// en memoria). El caller saveea (bajo `outboxSaveAuthor`). Fetch fallido → LANZA (antes devolvía `0`,
+    /// indistinguible de «no había nada» → el barrido se daba por hecho con los zombies vivos).
     private static func deleteMatching<M: PersistentModel>(
         _ type: M.Type, id identity: (M) -> UUID?, _ syncIDs: Set<UUID>, _ context: ModelContext
-    ) -> Int {
+    ) throws -> Int {
+        let models: [M]
         do {
-            var deleted = 0
-            for model in try context.fetch(FetchDescriptor<M>()) {
-                guard let sid = identity(model), syncIDs.contains(sid) else { continue }
-                context.delete(model)
-                deleted += 1
-            }
-            return deleted
+            if _testThrowOnFetchOf.contains(String(describing: M.self)) { throw EntityApplyFetchError.unreadable(String(describing: M.self)) }
+            models = try context.fetch(FetchDescriptor<M>())
         } catch {
             #if DEBUG
             print("EntityApplyMap.deleteMatching<\(M.self)> error: \(error)")
             #endif
-            return 0
+            throw error
         }
+        var deleted = 0
+        for model in models {
+            guard let sid = identity(model), syncIDs.contains(sid) else { continue }
+            context.delete(model)
+            deleted += 1
+        }
+        return deleted
     }
 
     /// §h.3 `rebindingUUIDs`: ¿existe una fila VIVA que porte `syncID` para el `entityTypeName` (nombre de
@@ -1053,52 +1060,100 @@ enum EntityApplyMap {
     // MARK: - Fetchers CONCRETOS por tipo (regla inviolable `#Predicate`: nunca genérico por protocolo)
 
     static func fetchTransactionItem(bySyncID id: UUID, context: ModelContext) -> TransactionItem? {
-        fetchFirst(FetchDescriptor<TransactionItem>(predicate: #Predicate { $0.syncID == id }), context)
+        lenient("TransactionItem") { try findTransactionItem(bySyncID: id, context: context) }
+    }
+    static func findTransactionItem(bySyncID id: UUID, context: ModelContext) throws -> TransactionItem? {
+        try fetchFirstOrThrow(FetchDescriptor<TransactionItem>(predicate: #Predicate { $0.syncID == id }), context)
     }
     static func fetchInboxDraft(bySyncID id: UUID, context: ModelContext) -> InboxDraft? {
-        fetchFirst(FetchDescriptor<InboxDraft>(predicate: #Predicate { $0.syncID == id }), context)
+        lenient("InboxDraft") { try findInboxDraft(bySyncID: id, context: context) }
+    }
+    static func findInboxDraft(bySyncID id: UUID, context: ModelContext) throws -> InboxDraft? {
+        try fetchFirstOrThrow(FetchDescriptor<InboxDraft>(predicate: #Predicate { $0.syncID == id }), context)
     }
     static func fetchCategory(bySyncID id: UUID, context: ModelContext) -> Category? {
-        fetchFirst(FetchDescriptor<Category>(predicate: #Predicate { $0.syncID == id }), context)
+        lenient("Category") { try findCategory(bySyncID: id, context: context) }
+    }
+    static func findCategory(bySyncID id: UUID, context: ModelContext) throws -> Category? {
+        try fetchFirstOrThrow(FetchDescriptor<Category>(predicate: #Predicate { $0.syncID == id }), context)
     }
     static func fetchFavoritePayment(bySyncID id: UUID, context: ModelContext) -> FavoritePayment? {
-        fetchFirst(FetchDescriptor<FavoritePayment>(predicate: #Predicate { $0.syncID == id }), context)
+        lenient("FavoritePayment") { try findFavoritePayment(bySyncID: id, context: context) }
+    }
+    static func findFavoritePayment(bySyncID id: UUID, context: ModelContext) throws -> FavoritePayment? {
+        try fetchFirstOrThrow(FetchDescriptor<FavoritePayment>(predicate: #Predicate { $0.syncID == id }), context)
     }
     static func fetchMerchantMemory(bySyncID id: UUID, context: ModelContext) -> MerchantMemory? {
-        fetchFirst(FetchDescriptor<MerchantMemory>(predicate: #Predicate { $0.syncID == id }), context)
+        lenient("MerchantMemory") { try findMerchantMemory(bySyncID: id, context: context) }
+    }
+    static func findMerchantMemory(bySyncID id: UUID, context: ModelContext) throws -> MerchantMemory? {
+        try fetchFirstOrThrow(FetchDescriptor<MerchantMemory>(predicate: #Predicate { $0.syncID == id }), context)
     }
     static func fetchExchangeRate(bySyncID id: UUID, context: ModelContext) -> ExchangeRate? {
-        fetchFirst(FetchDescriptor<ExchangeRate>(predicate: #Predicate { $0.syncID == id }), context)
+        lenient("ExchangeRate") { try findExchangeRate(bySyncID: id, context: context) }
+    }
+    static func findExchangeRate(bySyncID id: UUID, context: ModelContext) throws -> ExchangeRate? {
+        try fetchFirstOrThrow(FetchDescriptor<ExchangeRate>(predicate: #Predicate { $0.syncID == id }), context)
     }
     static func fetchAccount(byShortcutID id: UUID, context: ModelContext) -> Account? {
-        fetchFirst(FetchDescriptor<Account>(predicate: #Predicate { $0.shortcutID == id }), context)
+        lenient("Account") { try findAccount(byShortcutID: id, context: context) }
+    }
+    static func findAccount(byShortcutID id: UUID, context: ModelContext) throws -> Account? {
+        try fetchFirstOrThrow(FetchDescriptor<Account>(predicate: #Predicate { $0.shortcutID == id }), context)
     }
     static func fetchSubcategory(byShortcutID id: UUID, context: ModelContext) -> Subcategory? {
-        fetchFirst(FetchDescriptor<Subcategory>(predicate: #Predicate { $0.shortcutID == id }), context)
+        lenient("Subcategory") { try findSubcategory(byShortcutID: id, context: context) }
+    }
+    static func findSubcategory(byShortcutID id: UUID, context: ModelContext) throws -> Subcategory? {
+        try fetchFirstOrThrow(FetchDescriptor<Subcategory>(predicate: #Predicate { $0.shortcutID == id }), context)
     }
     static func fetchBudget(byID id: UUID, context: ModelContext) -> Budget? {
-        fetchFirst(FetchDescriptor<Budget>(predicate: #Predicate { $0.id == id }), context)
+        lenient("Budget") { try findBudget(byID: id, context: context) }
+    }
+    static func findBudget(byID id: UUID, context: ModelContext) throws -> Budget? {
+        try fetchFirstOrThrow(FetchDescriptor<Budget>(predicate: #Predicate { $0.id == id }), context)
     }
     static func fetchScheduledPayment(byID id: UUID, context: ModelContext) -> ScheduledPayment? {
-        fetchFirst(FetchDescriptor<ScheduledPayment>(predicate: #Predicate { $0.id == id }), context)
+        lenient("ScheduledPayment") { try findScheduledPayment(byID: id, context: context) }
+    }
+    static func findScheduledPayment(byID id: UUID, context: ModelContext) throws -> ScheduledPayment? {
+        try fetchFirstOrThrow(FetchDescriptor<ScheduledPayment>(predicate: #Predicate { $0.id == id }), context)
     }
     static func fetchTag(byID id: UUID, context: ModelContext) -> Tag? {
-        fetchFirst(FetchDescriptor<Tag>(predicate: #Predicate { $0.id == id }), context)
+        lenient("Tag") { try findTag(byID: id, context: context) }
+    }
+    static func findTag(byID id: UUID, context: ModelContext) throws -> Tag? {
+        try fetchFirstOrThrow(FetchDescriptor<Tag>(predicate: #Predicate { $0.id == id }), context)
     }
     static func fetchNotificationItem(byID id: UUID, context: ModelContext) -> NotificationItem? {
-        fetchFirst(FetchDescriptor<NotificationItem>(predicate: #Predicate { $0.id == id }), context)
+        lenient("NotificationItem") { try findNotificationItem(byID: id, context: context) }
+    }
+    static func findNotificationItem(byID id: UUID, context: ModelContext) throws -> NotificationItem? {
+        try fetchFirstOrThrow(FetchDescriptor<NotificationItem>(predicate: #Predicate { $0.id == id }), context)
     }
     static func fetchCashFlowPlan(byID id: UUID, context: ModelContext) -> CashFlowPlan? {
-        fetchFirst(FetchDescriptor<CashFlowPlan>(predicate: #Predicate { $0.id == id }), context)
+        lenient("CashFlowPlan") { try findCashFlowPlan(byID: id, context: context) }
+    }
+    static func findCashFlowPlan(byID id: UUID, context: ModelContext) throws -> CashFlowPlan? {
+        try fetchFirstOrThrow(FetchDescriptor<CashFlowPlan>(predicate: #Predicate { $0.id == id }), context)
     }
     static func fetchCashFlowLine(byID id: UUID, context: ModelContext) -> CashFlowLine? {
-        fetchFirst(FetchDescriptor<CashFlowLine>(predicate: #Predicate { $0.id == id }), context)
+        lenient("CashFlowLine") { try findCashFlowLine(byID: id, context: context) }
+    }
+    static func findCashFlowLine(byID id: UUID, context: ModelContext) throws -> CashFlowLine? {
+        try fetchFirstOrThrow(FetchDescriptor<CashFlowLine>(predicate: #Predicate { $0.id == id }), context)
     }
     static func fetchCashFlowOverride(byID id: UUID, context: ModelContext) -> CashFlowOverride? {
-        fetchFirst(FetchDescriptor<CashFlowOverride>(predicate: #Predicate { $0.id == id }), context)
+        lenient("CashFlowOverride") { try findCashFlowOverride(byID: id, context: context) }
+    }
+    static func findCashFlowOverride(byID id: UUID, context: ModelContext) throws -> CashFlowOverride? {
+        try fetchFirstOrThrow(FetchDescriptor<CashFlowOverride>(predicate: #Predicate { $0.id == id }), context)
     }
     static func fetchGroupBridgePreference(byID id: UUID, context: ModelContext) -> GroupBridgePreference? {
-        fetchFirst(FetchDescriptor<GroupBridgePreference>(predicate: #Predicate { $0.id == id }), context)
+        lenient("GroupBridgePreference") { try findGroupBridgePreference(byID: id, context: context) }
+    }
+    static func findGroupBridgePreference(byID id: UUID, context: ModelContext) throws -> GroupBridgePreference? {
+        try fetchFirstOrThrow(FetchDescriptor<GroupBridgePreference>(predicate: #Predicate { $0.id == id }), context)
     }
 
     /// `[Subcategory]` por sus `shortcutID` (CSV mirror de Budget). Fetch de TODAS + lookup en memoria
@@ -1136,7 +1191,10 @@ enum EntityApplyMap {
 
     /// `SyncIdentity` de un `syncID` (para el born-remote insert y el tombstone delete). Store sync-meta.
     static func fetchSyncIdentity(bySyncID id: UUID, context: ModelContext) -> SyncIdentity? {
-        fetchFirst(FetchDescriptor<SyncIdentity>(predicate: #Predicate { $0.syncID == id }), context)
+        lenient("SyncIdentity") { try findSyncIdentity(bySyncID: id, context: context) }
+    }
+    static func findSyncIdentity(bySyncID id: UUID, context: ModelContext) throws -> SyncIdentity? {
+        try fetchFirstOrThrow(FetchDescriptor<SyncIdentity>(predicate: #Predicate { $0.syncID == id }), context)
     }
 
     /// `[Tag]` por sus `id` (CSV mirror). Fetch de TODOS + lookup en memoria (los Tags son pocos; evita
@@ -1155,18 +1213,35 @@ enum EntityApplyMap {
         }
     }
 
-    private static func fetchFirst<T: PersistentModel>(
+    /// Primera fila del descriptor. LANZA si el fetch falla: el que decide qué significa un fallo es el
+    /// llamador (`find*` lo propaga; `fetch*` lo convierte en `nil` con `lenient`).
+    private static func fetchFirstOrThrow<T: PersistentModel>(
         _ descriptor: FetchDescriptor<T>, _ context: ModelContext
-    ) -> T? {
+    ) throws -> T? {
+        if _testThrowOnFetchOf.contains(String(describing: T.self)) { throw EntityApplyFetchError.unreadable(String(describing: T.self)) }
         var d = descriptor
         d.fetchLimit = 1
+        return try context.fetch(d).first
+    }
+
+    /// Semántica HISTÓRICA de los `fetch*`: un fetch fallido se lee `nil`. La conservan los llamadores que
+    /// no deciden sobre borrar/crear la fila del apply (resolución de refs, danglers, `liveRowExists`).
+    private static func lenient<T>(_ site: String, _ body: () throws -> T?) -> T? {
         do {
-            return try context.fetch(d).first
+            return try body()
         } catch {
             #if DEBUG
-            print("EntityApplyMap.fetchFirst<\(T.self)> error: \(error)")
+            print("EntityApplyMap.fetch\(site) error: \(error)")
             #endif
             return nil
         }
     }
+
+    /// Tipos (nombre de clase) cuyas búsquedas de fila del apply (`find*`) y cuyo barrido `deleteLiveRows`
+    /// LANZAN como si la base no se dejara leer. Vacío = nunca. SOLO tests (ticket
+    /// `apply-overwrites-a-pending-local-write-without-its-guards`).
+    static var _testThrowOnFetchOf: Set<String> = []
 }
+
+/// Una lectura de la que depende el apply (búsqueda de fila, barrido) lanzó. El payload es el tipo, sin PII.
+enum EntityApplyFetchError: Error { case unreadable(String) }

@@ -94,6 +94,35 @@ struct SyncQuarantineTests {
         #expect(quarantine(context).count == 1)  // dedup por serverSeq
     }
 
+    /// Ticket `apply-overwrites-a-pending-local-write-without-its-guards`: si las cuarentenas ya guardadas no se
+    /// dejan leer, el set de dedupe no se puede construir. Leerlo vacío re-insertaría la fila (y bumpearía el
+    /// testigo por ella); la página NO se aplica y el cursor no se mueve. Control positivo: con la lectura de
+    /// vuelta, el re-pull deduplica como siempre.
+    @Test func quarantineUnreadable_pageNotApplied_noDuplicate_thenDedupsWhenReadable() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = ModelContext(try makeContainer(dir))
+        let engine = CloudSyncEngine()
+
+        let page = try SyncPullClient.decodePage(Data(unwiredPage(sid: UUID(), serverSeq: 5).utf8))
+        #expect(engine.applyPage(page, context: context, now: applyNow))
+        let later = try SyncPullClient.decodePage(Data(unwiredPage(sid: UUID(), serverSeq: 6).utf8))
+        let replay = PulledPage(deltas: page.deltas + later.deltas, maxServerSeq: 6)
+
+        engine._testThrowOnApplyRead = .quarantineSeqs
+        #expect(engine.applyPage(replay, context: context, now: applyNow) == false)
+        #expect(context.hasChanges == false)
+        #expect(quarantine(context).count == 1)                   // sin duplicado
+        let cur = try #require(try context.fetch(FetchDescriptor<SyncCursor>()).first)
+        #expect(cur.serverSeqCursor == 5)                         // cursor quieto
+        #expect(cur.quarantinePendingCount == 1)                  // testigo quieto
+
+        engine._testThrowOnApplyRead = nil
+        #expect(engine.applyPage(replay, context: context, now: applyNow))
+        #expect(quarantine(context).count == 2)                   // el 5 deduplicado, el 6 nuevo
+        #expect(cur.serverSeqCursor == 6)
+        #expect(cur.quarantinePendingCount == 2)
+    }
+
     @Test func resetServerSeqCursor_forcesZero() throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = ModelContext(try makeContainer(dir))

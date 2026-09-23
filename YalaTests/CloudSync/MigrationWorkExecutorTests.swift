@@ -1117,6 +1117,45 @@ struct MigrationWorkExecutorTests {
         #expect(try context.fetchCount(FetchDescriptor<TransactionItem>()) == 1, "red → sin borrar nada")
     }
 
+    /// Ticket `apply-overwrites-a-pending-local-write-without-its-guards`: una tabla que no se deja leer ya no
+    /// cuenta como «0 zombies». Las tablas se barren en orden (`tags` antes que `tx_items`), así que `tags` ya
+    /// dejó su delete en el contexto cuando `tx_items` lanza: el rollback lo tira, nada se guarda y el runner
+    /// reintenta. Control positivo: con la lectura de vuelta, borra las dos.
+    @Test("sweepZombies: tabla ilegible → transient con rollback, sin dar el barrido por hecho")
+    func sweepZombies_unreadableTable_transientWithRollback() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        defer { EntityApplyMap._testThrowOnFetchOf = [] }
+        let tx = TransactionItem(date: fixedNow, amount: 1, currencyCode: "USD")
+        tx.syncID = UUID()
+        let tag = Yala.Tag(name: "Viaje")
+        context.insert(tx)
+        context.insert(tag)
+        try context.save()
+        let deltas = [tombstone(table: "tags", syncID: tag.id, seq: 1),
+                      tombstone(table: "tx_items", syncID: try #require(tx.syncID), seq: 2)]
+
+        func executor() -> MigrationWorkExecutor {
+            let source = FakeTombstoneSource()
+            source.pages = [PulledPage(deltas: deltas, maxServerSeq: 2)]
+            return makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                tombstoneSource: source)
+        }
+
+        EntityApplyMap._testThrowOnFetchOf = ["TransactionItem"]
+        #expect(await executor().sweepZombies(sinceSeq: 0) == .transient)
+        EntityApplyMap._testThrowOnFetchOf = []
+        #expect(context.hasChanges == false, "rollback: el delete de tags no queda dirty")
+        #expect(try context.fetchCount(FetchDescriptor<Yala.Tag>()) == 1)
+        #expect(try context.fetchCount(FetchDescriptor<TransactionItem>()) == 1)
+
+        #expect(await executor().sweepZombies(sinceSeq: 0) == .completed(deleted: 2))
+        #expect(try context.fetchCount(FetchDescriptor<Yala.Tag>()) == 0)
+        #expect(try context.fetchCount(FetchDescriptor<TransactionItem>()) == 0)
+    }
+
     @Test("execute(.mountMirrorAndRelaunch): DESARMA el flag mirror-off (el proceso NO se mata solo)")
     func execute_mountMirror_disarmsFlag() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
