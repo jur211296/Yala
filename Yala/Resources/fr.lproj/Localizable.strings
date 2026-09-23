@@ -6057,6 +6057,8 @@
 "storage.failed.adoptStalled" = "Nous n’avons pas pu te connecter à ton compte cloud : l’activation n’avance plus depuis des jours. Cet appareil n’a rien modifié de ce que tu as dans le cloud ; réessaie plus tard.";
 "storage.failed.adoptSessionExpired" = "Nous n’avons pas pu te connecter à ton compte cloud : ta session a expiré. Cet appareil n’a rien modifié de ce que tu as dans le cloud ; réessaie et reconnecte-toi avec ton compte.";
 "storage.failed.adoptAccountUnavailable" = "Nous n’avons pas pu te connecter à ton compte cloud : nous ne pouvons pas te donner accès à ce compte pour le moment. Écris-nous à %@ et nous regarderons cela avec toi.";
+"storage.failed.adoptEffectLocalFailure" = "Nous n’avons pas pu te connecter à ton compte cloud : cet appareil n’a pas pu lire tes données pour les réunir avec celles de ton compte. Ce que tu as sur cet appareil est toujours là ; réessaie dans un moment.";
+"storage.failed.adoptEffectStalled" = "Nous n’avons pas pu te connecter à ton compte cloud : l’activation n’arrive pas à se terminer depuis des jours. Ce que tu as sur cet appareil est toujours là ; réessaie plus tard.";
 /* Botón de la tarjeta de progreso: cancelar la activación de la nube */
 "storage.progress.cancelMigration" = "Annuler l’activation";
 /* Título de la confirmación de cancelar la activación */
@@ -6064,6 +6066,7 @@
 /* Cuerpo de la confirmación de cancelar la activación */
 "storage.confirm.cancelMigrationBody" = "Tes données restent sur cet appareil, comme avant. Ce qui a déjà été envoyé reste dans ton compte cloud. Tu peux réessayer quand tu veux.";
 "storage.confirm.cancelAdoptBody" = "Cet appareil n’a rien modifié de ce que tu as dans le cloud. Tu peux réactiver le cloud sur cet appareil depuis ici quand tu veux.";
+"storage.confirm.cancelAdoptEffectBody" = "Ce que tu as sur cet appareil est toujours là, comme avant. Tu peux réactiver le cloud sur cet appareil depuis ici quand tu veux.";
 /* Botón que confirma cancelar la activación */
 "storage.confirm.cancelMigrationConfirm" = "Oui, annuler";
 /* Botón que sigue con la activación */

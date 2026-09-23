@@ -234,6 +234,16 @@ nonisolated enum MigrationEvent: Equatable {
     case forwardStepStalled(stalledSeconds: Double, causeStalledSeconds: Double, cause: MarkerExportStall)
     /// La persona cancela la activación desde uno de esos tres pasos. Misma salida que la cancelación de la subida.
     case forwardStepCancelled
+    /// Observación del EFECTO del adopt (`.adoptBackendAccount` pendiente en `notStarted`) que venció su techo (ticket
+    /// `adopt-effect-retries-forever-with-no-ceiling`, decisión de Jürgen del 2026-09-23: 15 min / 72 h). **Solo sale; no
+    /// holdea**: bajo presupuesto el runner no emite nada y deja el efecto pendiente, porque una transición que lo repusiera
+    /// lo volvería a ejecutar en el mismo `handle`. Por eso aquí, bajo presupuesto, es `.invalid`. Dos relojes:
+    ///  · `stalledSeconds` —`now()` menos `MigrationState.adoptEffectStallProgressAt`, el primer intento fallido— gobierna
+    ///    las 72 h con cualquier causa;
+    ///  · `definitiveStalledSeconds` —lo ACUMULADO con un motivo que esperar no arregla, hoy la base local— los 15 min.
+    case adoptEffectStalled(stalledSeconds: Double, definitiveStalledSeconds: Double)
+    /// La persona cancela mientras el efecto del adopt se reintenta. A `notStarted` sin el pendiente.
+    case adoptEffectCancelled
     case verifyOutcome(VerifyOutcome)
     /// Cutover step 1 acked: backend confirmed `profiles.migrated_at`. (Steps 1-2 carry no effect:
     /// the runtime performs the write and reports completion via this ack.)
@@ -539,6 +549,25 @@ nonisolated struct MigrationPolicy: Equatable {
         cause == .definitive && causeStalledSeconds >= forwardStepCauseBudgetSeconds
     }
 
+    /// Techo del EFECTO del adopt contra el reloj de «cualquier motivo definitivo»: 15 min ACUMULADOS con la base local que
+    /// no se deja leer (ticket `adopt-effect-retries-forever-with-no-ceiling`, decisión de Jürgen del 2026-09-23). El mismo
+    /// número que la ida y la vuelta. Antes del paso 5 el teléfono sigue en iCloud, así que rendirse no rompe nada.
+    var adoptEffectDefinitiveBudgetSeconds: Double = 900
+    /// Techo del mismo efecto contra el reloj de AVANCE, con CUALQUIER causa: 72 h desde el primer intento fallido. Aquí
+    /// cae la red que no vuelve, la quiescencia del import que no llega y la sesión borrada en la enumeración.
+    var adoptEffectProgressBudgetSeconds: Double = 259_200
+
+    /// ¿Venció alguno de los dos techos del efecto del adopt? En un solo sitio: lo consultan la máquina —para salir— y el
+    /// runner —para decidir si emite el evento—.
+    func adoptEffectCeilingReached(stalledSeconds: Double, definitiveStalledSeconds: Double) -> Bool {
+        stalledSeconds >= adoptEffectProgressBudgetSeconds || adoptEffectDefinitiveCeilingReached(definitiveStalledSeconds)
+    }
+
+    /// ¿Venció el CORTO? Aparte porque el runner lo usa para elegir el motivo: lo elige el techo que VENCIÓ.
+    func adoptEffectDefinitiveCeilingReached(_ definitiveStalledSeconds: Double) -> Bool {
+        definitiveStalledSeconds >= adoptEffectDefinitiveBudgetSeconds
+    }
+
     /// **El predicado del techo CORTO, en UN solo sitio.** Lo consultan la máquina —para decidir si la vuelta sale—
     /// y el runner —para decidir QUÉ MOTIVO journalea—, y tenerlo dos veces escrito es precisamente la forma de que
     /// un día discrepen: el runner diría «la cuenta en la nube no lo permitió», con su correo de soporte, en una
@@ -700,6 +729,21 @@ nonisolated enum MigrationStateMachine {
         case (.claimingMigration, .forwardStepCancelled),
              (.assigningIdentity, .forwardStepCancelled),
              (.cutover(.pending), .forwardStepCancelled):
+            return .transition(next: .notStarted, effects: [])
+
+        // notStarted con `.adoptBackendAccount` pendiente · el EFECTO del adopt (ticket
+        // `adopt-effect-retries-forever-with-no-ceiling`). La salida del techo es la del claim del adopt: `failedRollback`
+        // con `[.rollback]`, que antes del paso 5 no toca nada (el teléfono sigue en `.icloud`; el runner no emite el evento
+        // si el modo ya es `.cloud`). Bajo presupuesto `.invalid`: la espera la hace el runner sin evento, con el efecto
+        // pendiente — una transición que lo repusiera lo ejecutaría otra vez en el mismo `handle`.
+        case let (.notStarted, .adoptEffectStalled(stalled, definitiveStalled)):
+            guard policy.adoptEffectCeilingReached(
+                stalledSeconds: stalled, definitiveStalledSeconds: definitiveStalled) else {
+                return .invalid(from: phase, event: event)
+            }
+            return .transition(next: .failedRollback, effects: [.rollback])
+        // La persona cancela: a `notStarted` SIN efectos, que retira el pendiente. Lo que decidió no es un fallo que explicar.
+        case (.notStarted, .adoptEffectCancelled):
             return .transition(next: .notStarted, effects: [])
 
         // verifying — S9 split of "diverge" vs "couldn't verify".

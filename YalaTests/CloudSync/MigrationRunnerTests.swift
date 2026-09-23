@@ -112,6 +112,15 @@ private final class FakeExecutor: MigrationWorkExecuting {
     var accountHash: String?
     func currentAccountHash() -> String? { accountHash }
 
+    /// `hasPersistedCloudMode()`: `true` = el paso 5 del adopt ya escribió `.cloud` (ticket
+    /// `adopt-effect-retries-forever-with-no-ceiling`).
+    var persistedCloudMode = false
+    func hasPersistedCloudMode() -> Bool { persistedCloudMode }
+
+    /// Se llama dentro de cada `execute`, antes de lanzar o no. Monta el «Cancelar» que llega con el efecto del adopt en
+    /// vuelo.
+    var onExecute: ((MigrationEffect) -> Void)?
+
     /// Se llama DENTRO de cada `performClaim`, antes de devolver el outcome. Lo pide el techo de los tres pasos: monta la
     /// sesión que el SDK borra durante el claim, y el «sí» de «Cancelar» que llega con el claim en vuelo.
     var onPerformClaim: (() -> Void)?
@@ -171,6 +180,7 @@ private final class FakeExecutor: MigrationWorkExecuting {
 
     func execute(_ effect: MigrationEffect) async throws {
         executeAttempts.append(effect)                        // se INTENTÓ, lance o no
+        onExecute?(effect)
         if let error = effectErrors[effect] { throw error }   // NO se marca ejecutado si lanza
         executedEffects.append(effect)
         if effect == .disableMirrorAndRelaunch, setMirrorOffOnDisable { mirrorOff = true }
@@ -330,7 +340,10 @@ struct MigrationRunnerTests {
         forwardStepStallCauseAt: Date? = nil, forwardStepStallCauseAccruedSeconds: Double? = nil,
         forwardStepExitReasonRaw: String? = nil,
         // La salida del claim de un adopt (ticket `adopt-claim-stays-parked-with-no-ceiling`).
-        adoptClaimExitRaw: String? = nil, adoptClaimAccountHash: String? = nil
+        adoptClaimExitRaw: String? = nil, adoptClaimAccountHash: String? = nil,
+        // Techo del efecto del adopt (ticket `adopt-effect-retries-forever-with-no-ceiling`).
+        adoptEffectStallProgressAt: Date? = nil, adoptEffectStallDefinitiveAt: Date? = nil,
+        adoptEffectStallDefinitiveAccruedSeconds: Double? = nil
     ) throws -> MigrationState {
         let state = MigrationState()
         state.setPhase(phase)
@@ -367,6 +380,9 @@ struct MigrationRunnerTests {
         state.forwardStepExitReasonRaw = forwardStepExitReasonRaw
         state.adoptClaimExitRaw = adoptClaimExitRaw
         state.adoptClaimAccountHash = adoptClaimAccountHash
+        state.adoptEffectStallProgressAt = adoptEffectStallProgressAt
+        state.adoptEffectStallDefinitiveAt = adoptEffectStallDefinitiveAt
+        state.adoptEffectStallDefinitiveAccruedSeconds = adoptEffectStallDefinitiveAccruedSeconds
         state.startedAt = fixedNow
         state.updatedAt = fixedNow
         context.insert(state)
@@ -4680,5 +4696,296 @@ struct MigrationRunnerTests {
         #expect(j.readPhase().phase == .notStarted, "la pasada siguiente honra el «sí» antes de volver a reclamar")
         #expect(fake.claimCallCount == 1, "sin un segundo claim")
         #expect(j.adoptClaimExitRaw == "cancelled")
+    }
+
+    // MARK: - §16 · Techo y salida del EFECTO del adopt (ticket `adopt-effect-retries-forever-with-no-ceiling`)
+    //
+    // El par `(notStarted, [.adoptBackendAccount])`: el claim ya contestó `existing_stable` y el reconcile de huérfanas no
+    // termina. Hasta ese ticket el runner lo reintentaba para siempre. Decisiones de Jürgen del 2026-09-23: 15 min
+    // acumulados con la base local que no se deja leer, 72 h con cualquier causa, la salida del claim del adopt.
+
+    private var adoptLocal: any Error { MigrationExecutorError.adoptLocalFailure }
+    private var adoptNetwork: any Error { MigrationExecutorError.adoptRetry(reason: "reconcileTransient") }
+
+    /// **La base local que no se deja leer** sale a los 900 s acumulados, clavado con sus dos vecinos, con la marca del
+    /// adopt que elige el texto de «este dispositivo no pudo leer tus datos».
+    @Test func adoptEffectCeiling_localFailure_leavesAt900Seconds_withTheMark() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.effectErrors[.adoptBackendAccount] = adoptLocal
+        let clock = MutableClock(fixedNow)
+        try seedJournal(context, phase: .notStarted, pending: [.adoptBackendAccount])
+
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        var j = try journal(context)
+        #expect(j.readPhase().phase == .notStarted)
+        #expect(j.readPendingEffects() == [.adoptBackendAccount], "bajo presupuesto el efecto sigue pendiente")
+        #expect(j.adoptEffectStallProgressAt == fixedNow, "la primera observación sella el reloj largo")
+        #expect(j.adoptEffectStallDefinitiveAt == fixedNow, "y abre el tramo del corto")
+
+        clock.value = fixedNow.addingTimeInterval(899)
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        j = try journal(context)
+        #expect(j.readPhase().phase == .notStarted, "a 899 s todavía no")
+        #expect(j.readPendingEffects() == [.adoptBackendAccount])
+
+        clock.value = fixedNow.addingTimeInterval(900)
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        j = try journal(context)
+        #expect(j.readPhase().phase == .failedRollback, "a los 900 s acumulados, se rinde")
+        #expect(j.readPendingEffects().isEmpty, "el adopt ya no está pendiente: no se reintenta más")
+        #expect(fake.count(.rollback) == 1)
+        #expect(j.adoptClaimExitRaw == "effectLocalFailure")
+        #expect(j.adoptEffectStallProgressAt == nil && j.adoptEffectStallDefinitiveAt == nil
+                && j.adoptEffectStallDefinitiveAccruedSeconds == nil, "el reloj se va con la salida")
+        #expect(j.forwardStepExitReasonRaw == nil && j.snapshotExitReasonRaw == nil, "el motivo va en la marca del adopt")
+    }
+
+    /// **La red PAUSA el reloj corto, no lo borra.** Con el re-kick de 30 s una racha consecutiva no llegaría nunca con
+    /// cobertura intermitente. 600 s de avería, una observación de red, y 300 s más de avería salen a los 900 acumulados;
+    /// con un reinicio harían falta 900 desde la última observación de red.
+    @Test func adoptEffectCeiling_networkPausesTheShortClock_doesNotResetIt() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        let clock = MutableClock(fixedNow)
+        try seedJournal(context, phase: .notStarted, pending: [.adoptBackendAccount])
+
+        fake.effectErrors[.adoptBackendAccount] = adoptLocal
+        await makeRunner(context, fake, now: { clock.value }).resume()                     // abre el tramo
+        clock.value = fixedNow.addingTimeInterval(600)
+        fake.effectErrors[.adoptBackendAccount] = adoptNetwork
+        await makeRunner(context, fake, now: { clock.value }).resume()                     // cierra: 600 acumulados
+        var j = try journal(context)
+        #expect(j.adoptEffectStallDefinitiveAccruedSeconds == 600)
+        #expect(j.adoptEffectStallDefinitiveAt == nil, "tramo cerrado")
+
+        fake.effectErrors[.adoptBackendAccount] = adoptLocal
+        clock.value = fixedNow.addingTimeInterval(1000)
+        await makeRunner(context, fake, now: { clock.value }).resume()                     // reabre sin sumar el hueco
+        clock.value = fixedNow.addingTimeInterval(1299)
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        #expect(try journal(context).readPhase().phase == .notStarted, "600 + 299 = 899: todavía no")
+
+        clock.value = fixedNow.addingTimeInterval(1300)
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        j = try journal(context)
+        #expect(j.readPhase().phase == .failedRollback, "600 + 300 = 900 acumulados")
+        #expect(j.adoptClaimExitRaw == "effectLocalFailure")
+    }
+
+    /// **La red que no vuelve** sale a las 72 h con el texto de «lleva días», clavado con sus dos vecinos. La pasada que
+    /// cruza el plazo trae la avería LOCAL a propósito: su texto sería el equivocado, y el motivo lo elige el techo que
+    /// venció, no la última observación.
+    @Test func adoptEffectCeiling_persistentNetwork_leavesAt72h_withTheStalledText() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.effectErrors[.adoptBackendAccount] = adoptNetwork
+        let clock = MutableClock(fixedNow)
+        try seedJournal(context, phase: .notStarted, pending: [.adoptBackendAccount])
+
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        var j = try journal(context)
+        #expect(j.adoptEffectStallProgressAt == fixedNow)
+        #expect(j.adoptEffectStallDefinitiveAt == nil && (j.adoptEffectStallDefinitiveAccruedSeconds ?? 0) == 0,
+                "la red no abre el reloj corto: sin tramo abierto y nada acumulado")
+
+        clock.value = fixedNow.addingTimeInterval(259_199)
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        #expect(try journal(context).readPhase().phase == .notStarted, "a 259 199 s todavía no")
+
+        clock.value = fixedNow.addingTimeInterval(259_200)
+        fake.effectErrors[.adoptBackendAccount] = adoptLocal
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        j = try journal(context)
+        #expect(j.readPhase().phase == .failedRollback, "a las 72 h, se rinde")
+        #expect(j.adoptClaimExitRaw == "effectStalled", "venció el largo: la avería recién vista no se lleva el texto")
+        #expect(fake.count(.rollback) == 1)
+    }
+
+    /// **El camino real: el claim que contesta `existing_stable` y el efecto que falla dentro del mismo `handle`.** La
+    /// observación corre ahí también, no solo en el `resume` del arranque.
+    @Test func adoptEffectCeiling_observesTheFailureRightAfterTheClaim() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.claimOutcomes = [.success(.existingStable)]
+        fake.effectErrors[.adoptBackendAccount] = adoptLocal
+        try seedJournal(context, phase: .claimingMigration, leaderDeviceID: deviceID,
+                        forwardClaimIntentRaw: "adoptIfExisting")
+
+        await makeRunner(context, fake).resume()
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .notStarted)
+        #expect(j.readPendingEffects() == [.adoptBackendAccount])
+        #expect(j.adoptEffectStallProgressAt == fixedNow, "el primer fallo del efecto ya sella el reloj")
+    }
+
+    /// **Un adopt nuevo no hereda el reloj del anterior.** Con un sello de hace 72 h y sin la limpieza de `handle`, el
+    /// primer fallo del intento nuevo saldría con cero segundos de parada real.
+    @Test func adoptEffectCeiling_aNewClaimRestartsTheClock() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.claimOutcomes = [.success(.existingStable)]
+        fake.effectErrors[.adoptBackendAccount] = adoptLocal
+        try seedJournal(context, phase: .claimingMigration, leaderDeviceID: deviceID,
+                        forwardClaimIntentRaw: "adoptIfExisting",
+                        adoptEffectStallProgressAt: fixedNow.addingTimeInterval(-259_200),
+                        adoptEffectStallDefinitiveAt: fixedNow.addingTimeInterval(-900),
+                        adoptEffectStallDefinitiveAccruedSeconds: 0)
+
+        await makeRunner(context, fake).resume()
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .notStarted, "el intento nuevo espera: el sello viejo no cuenta")
+        #expect(j.adoptEffectStallProgressAt == fixedNow)
+        #expect(j.adoptEffectStallDefinitiveAccruedSeconds == 0)
+        #expect(j.adoptClaimExitRaw == nil)
+    }
+
+    /// **El adopt que termina se lleva su reloj** en el mismo save que retira el efecto.
+    @Test func adoptEffectCeiling_success_clearsTheClock() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.effectErrors[.adoptBackendAccount] = adoptLocal
+        let clock = MutableClock(fixedNow)
+        try seedJournal(context, phase: .notStarted, pending: [.adoptBackendAccount])
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        #expect(try journal(context).adoptEffectStallProgressAt == fixedNow, "control: el fallo selló")
+
+        fake.effectErrors[.adoptBackendAccount] = nil
+        clock.value = fixedNow.addingTimeInterval(100)
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .notStarted)
+        #expect(j.readPendingEffects().isEmpty)
+        #expect(fake.count(.adoptBackendAccount) == 1)
+        #expect(j.adoptEffectStallProgressAt == nil && j.adoptEffectStallDefinitiveAt == nil
+                && j.adoptEffectStallDefinitiveAccruedSeconds == nil)
+        #expect(j.adoptClaimExitRaw == nil, "terminar no es una salida")
+    }
+
+    /// **Con `.cloud` ya persistido no hay techo.** Un kill tras el paso 5 relanza con el pendiente; salir de ahí a
+    /// `failedRollback` dejaría `.cloud` en un terminal de fallo. Se reintenta como antes y no se sella nada.
+    @Test func adoptEffectCeiling_withTheCloudModePersisted_neverLeaves() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.persistedCloudMode = true
+        fake.effectErrors[.adoptBackendAccount] = adoptLocal
+        let clock = MutableClock(fixedNow)
+        try seedJournal(context, phase: .notStarted, pending: [.adoptBackendAccount],
+                        adoptEffectStallProgressAt: fixedNow, adoptEffectStallDefinitiveAt: fixedNow,
+                        adoptEffectStallDefinitiveAccruedSeconds: 0)
+
+        clock.value = fixedNow.addingTimeInterval(259_200)
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .notStarted)
+        #expect(j.readPendingEffects() == [.adoptBackendAccount])
+        #expect(fake.count(.rollback) == 0)
+        #expect(j.adoptClaimExitRaw == nil)
+
+        // Y tampoco se cancela: el adopt ya hizo lo irreversible.
+        await makeRunner(context, fake, now: { clock.value }).cancelMigration()
+        #expect(try journal(context).readPendingEffects() == [.adoptBackendAccount])
+    }
+
+    /// **«Cancelar la activación» con el efecto del adopt pendiente**: a `notStarted` sin el pendiente, sin `.rollback` y
+    /// con la marca del adopt, que hace que Almacenamiento ofrezca «Activar la nube en este dispositivo».
+    @Test func adoptEffectCancel_dropsThePending_withTheMark() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        try seedJournal(context, phase: .notStarted, pending: [.adoptBackendAccount],
+                        adoptEffectStallProgressAt: fixedNow, adoptEffectStallDefinitiveAt: fixedNow,
+                        adoptEffectStallDefinitiveAccruedSeconds: 0)
+
+        await makeRunner(context, fake).cancelMigration()
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .notStarted)
+        #expect(j.readPendingEffects().isEmpty)
+        #expect(j.adoptClaimExitRaw == "cancelled")
+        #expect(fake.executeAttempts.isEmpty, "cancelar no ejecuta el adopt ni un rollback")
+        #expect(j.adoptEffectStallProgressAt == nil, "el reloj se va con la cancelación")
+    }
+
+    /// **Sin el pendiente no hay nada que cancelar**: `notStarted` a secas es el teléfono que nunca empezó.
+    @Test func adoptEffectCancel_withoutThePending_isANoOp() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        try seedJournal(context, phase: .notStarted)
+
+        await makeRunner(context, fake).cancelMigration()
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .notStarted)
+        #expect(j.adoptClaimExitRaw == nil, "no deja la marca: nadie estaba entrando en una cuenta")
+    }
+
+    /// **El «sí» que llega con el efecto en vuelo** se honra en la misma pasada, en cuanto el intento falla, en vez de
+    /// esperar al siguiente re-kick.
+    @Test func adoptEffectCancel_requestedDuringTheEffect_isHonoredInThePass() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.effectErrors[.adoptBackendAccount] = adoptNetwork
+        try seedJournal(context, phase: .notStarted, pending: [.adoptBackendAccount])
+        let runner = makeRunner(context, fake)
+        fake.onExecute = { effect in if effect == .adoptBackendAccount { runner.requestMigrationCancel() } }
+
+        await runner.resume()
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .notStarted)
+        #expect(j.readPendingEffects().isEmpty, "la pasada canceló en vez de dejarlo pendiente")
+        #expect(j.adoptClaimExitRaw == "cancelled")
+        #expect(fake.count(.rollback) == 0)
+    }
+
+    /// **Un sello del reloj largo en el FUTURO se re-sella ahora**: el reloj del teléfono iba adelantado y ya se corrigió.
+    /// Conservarlo aplazaría las 72 h hasta que el reloj real alcanzase aquella fecha.
+    @Test func adoptEffectCeiling_aFutureSeal_isResealedNow() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.effectErrors[.adoptBackendAccount] = adoptNetwork
+        let clock = MutableClock(fixedNow)
+        try seedJournal(context, phase: .notStarted, pending: [.adoptBackendAccount],
+                        adoptEffectStallProgressAt: fixedNow.addingTimeInterval(86_400))
+
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        #expect(try journal(context).adoptEffectStallProgressAt == fixedNow, "re-sellado a ahora")
+
+        clock.value = fixedNow.addingTimeInterval(259_200)
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        #expect(try journal(context).readPhase().phase == .failedRollback, "las 72 h cuentan desde el re-sellado")
+    }
+
+    /// **El «sí» apuntado ANTES de un intento que saldría bien** se honra antes de intentarlo: mirándolo solo al fallar, la
+    /// persona que confirmó «Cancelar» acababa adoptada (hallazgo de la review).
+    @Test func adoptEffectCancel_requestedBeforeASuccessfulAttempt_isHonoredFirst() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        try seedJournal(context, phase: .notStarted, pending: [.adoptBackendAccount])
+        let runner = makeRunner(context, fake)
+        runner.requestMigrationCancel()
+
+        await runner.resume()
+        let j = try journal(context)
+        #expect(fake.attempts(.adoptBackendAccount) == 0, "no se vuelve a intentar")
+        #expect(j.readPendingEffects().isEmpty)
+        #expect(j.adoptClaimExitRaw == "cancelled")
+
+        // Control: sin el «sí», el mismo resume adopta.
+        let dir2 = freshDir(); defer { cleanup(dir2) }
+        let context2 = try makeContext(dir2)
+        let fake2 = FakeExecutor()
+        try seedJournal(context2, phase: .notStarted, pending: [.adoptBackendAccount])
+        await makeRunner(context2, fake2).resume()
+        #expect(fake2.count(.adoptBackendAccount) == 1)
     }
 }

@@ -214,6 +214,9 @@ struct CloudSyncSchemaParityTests {
             "forwardStepExitReasonRaw",
             "adoptClaimExitRaw",
             "adoptClaimAccountHash",
+            "adoptEffectStallProgressAt",
+            "adoptEffectStallDefinitiveAt",
+            "adoptEffectStallDefinitiveAccruedSeconds",
             "startedAt",
             "updatedAt",
             "schemaVersion",
@@ -221,7 +224,7 @@ struct CloudSyncSchemaParityTests {
         #expect(propertyNames(MigrationState.self) == expected)
     }
 
-    @Test func migrationState_schemaVersion_isThirteen() {
+    @Test func migrationState_schemaVersion_isFourteen() {
         // Subió a 2 en I11-2 al añadir el campo aditivo `reverseOriginRaw`; a 3 en C-1 con
         // `markerWrittenSince` (reloj del tope del paso 4) + `cutoverICloudVerdictRaw` (veredicto del canal
         // iCloud), ambos ADITIVOS y opcionales → una fila escrita por un build v2 sigue abriéndose. A 4 con los
@@ -256,7 +259,32 @@ struct CloudSyncSchemaParityTests {
         // `snapshotStallDefinitiveAccruedSeconds`), opcionales: una fila v12 parada en la subida se abre sin nada
         // acumulado, y el reloj empieza con la primera observación con motivo (ticket
         // `snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling`).
-        #expect(CloudSyncSchemaVersions.migrationState == 13)
+        // A 14 con los TRES del techo del efecto del adopt (`adoptEffectStall*`), opcionales: una fila v13 con el adopt
+        // pendiente se abre sin reloj, y el primer fallo lo sella — el presupuesto le cuenta desde que este build la mira
+        // (ticket `adopt-effect-retries-forever-with-no-ceiling`).
+        #expect(CloudSyncSchemaVersions.migrationState == 14)
+    }
+
+    /// **Los TRES campos de los relojes del techo del efecto del adopt se limpian juntos**
+    /// (`clearAdoptEffectStallCeiling()`), con la familia derivada del SCHEMA por su prefijo. La marca de la salida
+    /// (`adoptClaimExitRaw`) queda FUERA a propósito: es el desenlace y sobrevive a `failedRollback` y a «Reintentar».
+    @Test func migrationState_clearAdoptEffectStallCeiling_clearsTheWholeFamily_andNotTheExit() {
+        let family = Set(propertyNames(MigrationState.self).filter { $0.hasPrefix("adoptEffectStall") })
+        let known: Set<String> = [
+            "adoptEffectStallProgressAt",
+            "adoptEffectStallDefinitiveAt",
+            "adoptEffectStallDefinitiveAccruedSeconds",
+        ]
+        #expect(family == known, "campo nuevo en la familia: añádelo a `clearAdoptEffectStallCeiling()` y a esta lista")
+
+        let state = MigrationState(
+            adoptClaimExitRaw: "effectLocalFailure", adoptEffectStallProgressAt: .now, adoptEffectStallDefinitiveAt: .now,
+            adoptEffectStallDefinitiveAccruedSeconds: 42)
+        state.clearAdoptEffectStallCeiling()
+        #expect(state.adoptEffectStallProgressAt == nil)
+        #expect(state.adoptEffectStallDefinitiveAt == nil)
+        #expect(state.adoptEffectStallDefinitiveAccruedSeconds == nil)
+        #expect(state.adoptClaimExitRaw == "effectLocalFailure", "la marca de la salida no es parte del reloj")
     }
 
     /// **Los CUATRO campos de los relojes del techo de los tres pasos se limpian juntos**

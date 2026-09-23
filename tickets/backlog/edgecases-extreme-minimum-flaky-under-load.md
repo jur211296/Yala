@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: testing
 created: 2026-09-05
-updated: 2026-09-21
+updated: 2026-09-23
 source: rojo clasificado en el gate de group-joiner-flag-consumers-still-narrow
 ---
 
@@ -211,3 +211,9 @@ antes de llamarlo flaky.
 El lote rojo tardó **249 s**; el verde, **195 s**. Encaja con la hipótesis de arriba: bajo carga el `waitForExistence`
 de la navegación se queda corto. Ahora son **dos** casos distintos, de dos suites distintas, con la misma forma — lo
 que refuerza que el sitio a mirar es el timeout compartido de los helpers de navegación, no cada caso.
+
+## Otra aparición · 2026-09-23 (gate de `adopt-effect-retries-forever-with-no-ceiling`)
+
+Lote de 9 suites (31 casos, `Yala Dev`, iPhone 17 Pro 26.5, centinela 0: solo durante toda la corrida): falló con el mismo
+mensaje (`transaction_success_accept` no apareció). `EdgeCasesUITests` sola, dos veces seguidas con el centinela a 0: 2/2
+verde las dos. El diff de esa sesión no toca el guardado de transacciones.

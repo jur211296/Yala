@@ -6068,6 +6068,8 @@
 "storage.failed.adoptStalled" = "We konden je niet aanmelden bij je cloudaccount: het inschakelen komt al dagen niet verder. Dit apparaat heeft niets veranderd aan wat je in de cloud hebt — probeer het later opnieuw.";
 "storage.failed.adoptSessionExpired" = "We konden je niet aanmelden bij je cloudaccount: je sessie is verlopen. Dit apparaat heeft niets veranderd aan wat je in de cloud hebt — probeer het opnieuw en meld je nog een keer aan met je account.";
 "storage.failed.adoptAccountUnavailable" = "We konden je niet aanmelden bij je cloudaccount: we kunnen je nu geen toegang geven tot dit account. Mail ons op %@ en we zoeken het samen uit.";
+"storage.failed.adoptEffectLocalFailure" = "We konden je niet aanmelden bij je cloudaccount: dit apparaat kon je gegevens niet lezen om ze samen te voegen met die van je account. Wat je op dit apparaat hebt, staat er nog — probeer het over een tijdje opnieuw.";
+"storage.failed.adoptEffectStalled" = "We konden je niet aanmelden bij je cloudaccount: het inschakelen kan al dagen niet worden afgerond. Wat je op dit apparaat hebt, staat er nog — probeer het later opnieuw.";
 /* Botón de la tarjeta de progreso: cancelar la activación de la nube */
 "storage.progress.cancelMigration" = "Inschakelen annuleren";
 /* Título de la confirmación de cancelar la activación */
@@ -6075,6 +6077,7 @@
 /* Cuerpo de la confirmación de cancelar la activación */
 "storage.confirm.cancelMigrationBody" = "Je gegevens blijven op dit apparaat, net als voorheen. Wat al geüpload is, blijft in je cloudaccount. Je kunt het opnieuw proberen wanneer je wilt.";
 "storage.confirm.cancelAdoptBody" = "Dit apparaat heeft niets veranderd aan wat je in de cloud hebt. Je kunt de cloud hier altijd opnieuw inschakelen op dit apparaat.";
+"storage.confirm.cancelAdoptEffectBody" = "Wat je op dit apparaat hebt, staat er nog, net als voorheen. Je kunt de cloud hier altijd opnieuw inschakelen op dit apparaat.";
 /* Botón que confirma cancelar la activación */
 "storage.confirm.cancelMigrationConfirm" = "Ja, annuleren";
 /* Botón que sigue con la activación */

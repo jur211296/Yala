@@ -40,6 +40,13 @@ enum StorageFailureCopyLogic {
     /// están a salvo en tu dispositivo»: hablan de lo que tiene en la nube, que el claim no tocó. Cuando salen, también
     /// está puesto `forwardStepExit` —es la misma salida—, y por eso se miran antes. `.cancelled` no llega a esta tarjeta
     /// (cancelar va a `notStarted`), y si llegara cae a los motivos de siempre.
+    ///
+    /// **El EFECTO del adopt sale por la misma marca, con dos frases propias** (ticket
+    /// `adopt-effect-retries-forever-with-no-ceiling`, textos de Jürgen del 2026-09-23): la base local que no se deja leer y
+    /// la activación que lleva días sin poder terminar. Tampoco dicen «no cambiamos nada en la nube»: el reconcile puede
+    /// haber subido algo de este teléfono antes de fallar. Y tampoco «tus datos siguen en este dispositivo», por la razón
+    /// del claim: en un teléfono recién instalado sus datos están en la nube (lo cazó la review; Jürgen eligió «lo que
+    /// tienes en este dispositivo sigue aquí», que es verdad en los dos teléfonos).
     static func message(
         kind: CloudMigrationUIState.FailureKind,
         snapshotExit: SnapshotExitReason?,
@@ -53,6 +60,8 @@ enum StorageFailureCopyLogic {
         case .stalled:            return L10n.Storage.Failed.adoptStalled
         case .sessionExpired:     return L10n.Storage.Failed.adoptSessionExpired
         case .accountUnavailable: return L10n.Storage.Failed.adoptAccountUnavailable(supportEmail)
+        case .effectStalled:      return L10n.Storage.Failed.adoptEffectStalled
+        case .effectLocalFailure: return L10n.Storage.Failed.adoptEffectLocalFailure
         case .cancelled, nil:     break
         }
         if let snapshotExit {

@@ -7348,6 +7348,10 @@ enum L10n {
             static func adoptAccountUnavailable(_ supportEmail: String) -> String {
                 String(format: ls("storage.failed.adoptAccountUnavailable", comment: ""), supportEmail)
             }
+            // El EFECTO del adopt —el reconcile, tras un claim que ya contestó— que venció su techo (ticket
+            // `adopt-effect-retries-forever-with-no-ceiling`, textos de Jürgen del 2026-09-23). No afirman nada de la nube.
+            static var adoptEffectLocalFailure: String { ls("storage.failed.adoptEffectLocalFailure", comment: "") }
+            static var adoptEffectStalled: String { ls("storage.failed.adoptEffectStalled", comment: "") }
         }
 
         enum Confirm {
@@ -7383,6 +7387,9 @@ enum L10n {
             /// El cuerpo del mismo diálogo en el claim de un ADOPT: nada de «tus datos siguen en este dispositivo» (ticket
             /// `adopt-claim-stays-parked-with-no-ceiling`).
             static var cancelAdoptBody: String { ls("storage.confirm.cancelAdoptBody", comment: "") }
+            /// El cuerpo en el EFECTO del adopt: el de arriba afirma que no cambió nada en la nube, y aquí el reconcile puede
+            /// haber subido algo (ticket `adopt-effect-retries-forever-with-no-ceiling`).
+            static var cancelAdoptEffectBody: String { ls("storage.confirm.cancelAdoptEffectBody", comment: "") }
             static var cancelMigrationConfirm: String { ls("storage.confirm.cancelMigrationConfirm", comment: "") }
             static var cancelMigrationKeep: String { ls("storage.confirm.cancelMigrationKeep", comment: "") }
         }

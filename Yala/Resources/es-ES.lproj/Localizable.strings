@@ -5340,6 +5340,8 @@
 "storage.failed.adoptStalled" = "No pudimos entrar en tu cuenta de la nube: la activación lleva días sin avanzar. Este dispositivo no cambió nada de lo que tienes en la nube; inténtalo de nuevo más tarde.";
 "storage.failed.adoptSessionExpired" = "No pudimos entrar en tu cuenta de la nube: tu sesión caducó. Este dispositivo no cambió nada de lo que tienes en la nube; inténtalo de nuevo y vuelve a entrar con tu cuenta.";
 "storage.failed.adoptAccountUnavailable" = "No pudimos entrar en tu cuenta de la nube: ahora mismo no podemos darte acceso a esta cuenta. Escríbenos a %@ y lo revisamos contigo.";
+"storage.failed.adoptEffectLocalFailure" = "No pudimos entrar en tu cuenta de la nube: este dispositivo no pudo leer tus datos para juntarlos con los de tu cuenta. Lo que tienes en este dispositivo sigue aquí; inténtalo de nuevo dentro de un rato.";
+"storage.failed.adoptEffectStalled" = "No pudimos entrar en tu cuenta de la nube: la activación lleva días sin poder terminar. Lo que tienes en este dispositivo sigue aquí; inténtalo de nuevo más tarde.";
 /* Botón de la tarjeta de progreso: cancelar la activación de la nube */
 "storage.progress.cancelMigration" = "Cancelar la activación";
 /* Título de la confirmación de cancelar la activación */
@@ -5347,6 +5349,7 @@
 /* Cuerpo de la confirmación de cancelar la activación */
 "storage.confirm.cancelMigrationBody" = "Tus datos siguen en este dispositivo, como hasta ahora. Lo que ya se subió se queda en tu cuenta de la nube. Puedes volver a intentarlo cuando quieras.";
 "storage.confirm.cancelAdoptBody" = "Este dispositivo no cambió nada de lo que tienes en la nube. Puedes volver a activar la nube en este dispositivo desde aquí cuando quieras.";
+"storage.confirm.cancelAdoptEffectBody" = "Lo que tienes en este dispositivo sigue aquí, como hasta ahora. Puedes volver a activar la nube en este dispositivo desde aquí cuando quieras.";
 /* Botón que confirma cancelar la activación */
 "storage.confirm.cancelMigrationConfirm" = "Sí, cancelar";
 /* Botón que sigue con la activación */

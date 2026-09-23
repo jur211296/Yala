@@ -1452,4 +1452,46 @@ struct MigrationStateMachineTests {
         #expect(MigrationPolicy.default.forwardStepCauseBudgetSeconds == 900)
         #expect(MigrationPolicy.default.forwardStepProgressBudgetSeconds == 259_200)
     }
+
+    // MARK: - El EFECTO del adopt (ticket `adopt-effect-retries-forever-with-no-ceiling`)
+
+    /// Sale a `failedRollback` con `[.rollback]` con el primero de los dos techos, clavado con sus vecinos.
+    @Test func adoptEffectStalled_leavesAtEitherCeiling() {
+        let bajo: Event = .adoptEffectStalled(stalledSeconds: 259_199, definitiveStalledSeconds: 899)
+        #expect(MigrationStateMachine.transition(from: .notStarted, event: bajo) == .invalid(from: .notStarted, event: bajo),
+                "bajo presupuesto no es una transición: la espera la hace el runner sin evento, con el efecto pendiente")
+        for event: Event in [
+            .adoptEffectStalled(stalledSeconds: 0, definitiveStalledSeconds: 900),
+            .adoptEffectStalled(stalledSeconds: 259_200, definitiveStalledSeconds: 0),
+        ] {
+            #expect(MigrationStateMachine.transition(from: .notStarted, event: event)
+                    == .transition(next: .failedRollback, effects: [.rollback]), "\(event)")
+        }
+    }
+
+    /// «Cancelar» desde el efecto pendiente: a `notStarted` sin efectos, que retira el pendiente.
+    @Test func adoptEffectCancelled_returnsToNotStarted_withNoEffects() {
+        #expect(MigrationStateMachine.transition(from: .notStarted, event: .adoptEffectCancelled)
+                == .transition(next: .notStarted, effects: []))
+    }
+
+    /// Los dos solo son legales desde `notStarted`, la fase que el adopt journalea antes de su efecto.
+    @Test func adoptEffectEvents_areInvalidOutsideNotStarted() {
+        let events: [Event] = [
+            .adoptEffectStalled(stalledSeconds: 10_000_000, definitiveStalledSeconds: 10_000_000),
+            .adoptEffectCancelled,
+        ]
+        for phase in Self.allPhases where phase != .notStarted {
+            for event in events {
+                #expect(MigrationStateMachine.transition(from: phase, event: event) == .invalid(from: phase, event: event),
+                        "\(phase) + \(event) debe ser inválido")
+            }
+        }
+    }
+
+    /// Los números son la decisión de Jürgen del 2026-09-23: 15 min / 72 h, como la ida y la vuelta.
+    @Test func adoptEffectBudgets_defaultsArePinnedProductDecision() {
+        #expect(MigrationPolicy.default.adoptEffectDefinitiveBudgetSeconds == 900)
+        #expect(MigrationPolicy.default.adoptEffectProgressBudgetSeconds == 259_200)
+    }
 }

@@ -1160,7 +1160,9 @@ struct WelcomeCloudSignInView: View {
     }
 
     /// Retomar manual (autos agotados). Espejo de `retryLeaderPoll`: cancela el poll viejo
-    /// (via launchFlow), conduce y re-pollea. Con el journal normalizado a `notStarted` sin
+    /// (via launchFlow), conduce y re-pollea. El efecto del adopt pendiente ya no es `.idle` (ticket
+    /// `adopt-effect-retries-forever-with-no-ceiling`): se pinta `.migrating` y aquí se REANUDA, sin reclamar
+    /// otra vez, que es lo que no reinicia su techo. Con el journal normalizado a `notStarted` sin
     /// efectos (`uiState == .idle`, adopt perdido antes del claim) `resumeIfNeeded` sería un
     /// no-op perpetuo → re-arranca el adopt con la sesión aún viva (este camino nunca la soltó);
     /// la decisión de RE-claimear queda detrás del gesto del usuario, jamás en el auto.

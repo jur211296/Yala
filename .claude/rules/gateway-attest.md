@@ -322,7 +322,9 @@ por adelantado), que hasta ese día vivía en `AttestSyncGate.shouldOfferCloudOn
   Jürgen porque sin token las dos acaban igual: el claim pasa sin attest —«Migrar» deja la cuenta creada— y lo que sube o
   baja después se reintenta sin fin. El término vive en `StorageRowGateLogic.offersCloudMigrationEntry` y **cierra la
   entrada, no el panel**, como el kill; la pantalla queda sin la card y sin copy nuevo. El panel es el del engaged: un
-  adopt pendiente tras el claim vuelve a `notStarted`, se pinta `.idle` y sigue reintentando sin card. **Su entrada es la
+  adopt pendiente tras el claim vuelve a `notStarted` y, desde el 2026-09-23, se pinta como progreso con «Cancelar» y
+  sale por su techo (`adopt-effect-retries-forever-with-no-ceiling`); hasta ese día se pintaba `.idle` y reintentaba sin
+  card. **Su entrada es la
   misma expresión que la de `WelcomeNewOptionsGate.live`**: si cambias una, cambia la otra, o se pone rojo el scan de
   paridad de `StorageRowGroupsAssociationWiringTests`, que además fija el `case .idle` entero.
 - **El simulador es un teléfono sin App Attest, y no se le exime.** Sin el secreto no ofrece la nube, a propósito: QA y

@@ -82,7 +82,10 @@ private final class FakeTombstoneSource: ReverseTombstoneSource {
     var pages: [PulledPage] = []
     var forced: PullOutcome?
     private var index = 0
+    /// Cuántas páginas se pidieron: el adopt con la base local ilegible no debe pedir ninguna.
+    private(set) var callCount = 0
     func pullPage(since: Int64, limit: Int) async -> PullOutcome {
+        callCount += 1
         if let forced { return forced }
         if index < pages.count { defer { index += 1 }; return .page(pages[index]) }
         return .page(PulledPage(deltas: [], maxServerSeq: 0))
@@ -1923,6 +1926,106 @@ struct MigrationWorkExecutorTests {
         }
     }
 
+    /// Ticket `adopt-effect-retries-forever-with-no-ceiling`: el runner cuenta para el techo CORTO solo lo que el
+    /// ejecutor tipa como avería local. La red tiene que seguir saliendo como `adoptRetry` —el plazo largo—, o una caída
+    /// de red de un cuarto de hora sacaría a la persona de la activación.
+    @Test("runAdoptFlow: la red del reconcile es adoptRetry y NO adoptLocalFailure")
+    func adoptFlow_networkReconcile_isAdoptRetryNotLocal() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        await #expect(throws: MigrationExecutorError.adoptRetry(reason: "reconcileTransient")) {
+            try await executor.runAdoptFlow()
+        }
+    }
+
+    @Test("runAdoptFlow: la base local ilegible en el reconcile es adoptLocalFailure, sin mutar el modo")
+    func adoptFlow_localReconcile_isAdoptLocalFailure() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        _ = makeCategory("orphan", syncID: UUID(), in: context)
+        try context.save()
+        let storageDefaults = makeIsolatedDefaults(prefix: "mwe.adopt.local")
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    storageDefaults: storageDefaults)
+        executor._testInventoryFetchThrows = { step, entity in step == "adopt-inventory" && entity == "Category" }
+        await #expect(throws: MigrationExecutorError.adoptLocalFailure) { try await executor.runAdoptFlow() }
+        #expect(StorageModePersistence.read(storageDefaults) == .icloud, "la avería corta ANTES del paso 5")
+        #expect(executor.hasPersistedCloudMode() == false)
+    }
+
+    /// El encolado de las huérfanas separa las dos familias de fallo como la subida del snapshot: la deriva del reloj
+    /// puede corregirse sola (`.transient`); cualquier otro error es la base local (`.localFailure`).
+    @Test("runAdoptOrphanReconcile: el encolado separa la deriva del reloj de la base local")
+    func adoptReconcile_enqueueFailure_splitsDriftFromLocal() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let knownID = UUID()
+        _ = makeCategory("known", syncID: knownID, in: context)
+        _ = makeCategory("orphan", syncID: UUID(), in: context)
+        try context.save()
+        func source() -> FakeTombstoneSource {
+            let s = FakeTombstoneSource()
+            s.pages = [PulledPage(deltas: [upsertDelta(table: "categories", syncID: knownID, seq: 1)], maxServerSeq: 1)]
+            return s
+        }
+        stub.merkleBody = try makeMerkleBody(["categories": 1])
+
+        let local = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                 personalStoreURL: dir.appendingPathComponent("personal.sqlite"), tombstoneSource: source())
+        local._testAdoptEnqueueError = CocoaError(.fileWriteUnknown)
+        #expect(await local.runAdoptOrphanReconcile() == .localFailure)
+
+        let deriva = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                  personalStoreURL: dir.appendingPathComponent("personal.sqlite"), tombstoneSource: source())
+        deriva._testAdoptEnqueueError = ClockDriftError.driftExceeded(driftMillis: 600_000)
+        #expect(await deriva.runAdoptOrphanReconcile() == .transient)
+
+        let canonica = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"), tombstoneSource: source())
+        canonica._testAdoptEnqueueError = CanonicalTimeError.yearOutOfRange(10_000)
+        #expect(await canonica.runAdoptOrphanReconcile() == .transient, "la otra familia de la deriva del reloj")
+        #expect(stub.pushedSyncIDs.isEmpty, "ninguno de los tres sube nada")
+    }
+
+    @Test("runAdoptOrphanReconcile: un outbox ilegible tras encolar es localFailure, no completed(0)")
+    func adoptReconcile_unreadableOutbox_isLocalFailure() async throws {
+        // Cada mitad en su propio store: la avería deja la huérfana ENCOLADA (a propósito: la pasada siguiente la sube), y
+        // un control sobre el mismo store la contaría dos veces.
+        func escenario() throws -> (URL, ModelContext, RoutingStub, MigrationWorkExecutor) {
+            let dir = freshDir()
+            let context = try makeContext(dir)
+            let stub = RoutingStub()
+            let knownID = UUID()
+            _ = makeCategory("known", syncID: knownID, in: context)
+            _ = makeCategory("orphan", syncID: UUID(), in: context)
+            try context.save()
+            let source = FakeTombstoneSource()
+            source.pages = [PulledPage(deltas: [upsertDelta(table: "categories", syncID: knownID, seq: 1)], maxServerSeq: 1)]
+            stub.merkleBody = try makeMerkleBody(["categories": 1])
+            let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                        FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                        tombstoneSource: source)
+            return (dir, context, stub, executor)
+        }
+
+        let (dirEnfermo, _, stubEnfermo, enfermo) = try escenario(); defer { cleanup(dirEnfermo) }
+        enfermo._testOutboxFetchThrowsFromCall = 1
+        #expect(await enfermo.runAdoptOrphanReconcile() == .localFailure)
+        #expect(stubEnfermo.pushedSyncIDs.isEmpty)
+
+        // Control: legible, el mismo escenario sube la huérfana — el `localFailure` de arriba lo produce el fetch.
+        let (dirSano, _, stubSano, sano) = try escenario(); defer { cleanup(dirSano) }
+        #expect(await sano.runAdoptOrphanReconcile() == .completed(uploaded: 1, identityAssigned: 0))
+        #expect(stubSano.pushedSyncIDs.count == 1)
+    }
+
     @Test("runAdoptFlow: no quiescente → THROW SIN mutar el modo (retomable)")
     func adoptFlow_notQuiescent_throwsWithoutMutating() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
@@ -1932,7 +2035,8 @@ struct MigrationWorkExecutorTests {
         let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
                                     personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
                                     storageDefaults: storageDefaults, adoptQuiescenceSignal: { false })
-        await #expect(throws: MigrationExecutorError.self) { try await executor.runAdoptFlow() }
+        // La quiescencia va al plazo LARGO (ticket `adopt-effect-retries-forever-with-no-ceiling`): el caso exacto.
+        await #expect(throws: MigrationExecutorError.adoptRetry(reason: "quiescence")) { try await executor.runAdoptFlow() }
         #expect(StorageModePersistence.read(storageDefaults) == .icloud, "no quiescente → NO persiste .cloud")
         #expect(storageDefaults.bool(forKey: MigrationWorkExecutor.relaunchRequestedKey) == false)
     }
@@ -1965,6 +2069,7 @@ struct MigrationWorkExecutorTests {
         try await executor.runAdoptFlow()
 
         #expect(StorageModePersistence.read(storageDefaults) == .cloud, "persiste el modo nube")
+        #expect(executor.hasPersistedCloudMode(), "el testigo del runner lee los mismos defaults que escribe el paso 5")
         #expect(storageDefaults.bool(forKey: MigrationWorkExecutor.relaunchRequestedKey) == true, "arma el mirror-off")
         #expect(claimStore.action(forUserID: "sub-adopt") == .routeReturningUser, "estampa el claim-store")
     }
@@ -2524,8 +2629,8 @@ struct MigrationWorkExecutorTests {
     /// (`.abortedEmptyBackend`); con la tabla ilegible el plan preliminar salía con `uploadCount == 0` y el guard, que
     /// existe para no fusionar dos corpus, se apagaba. Y como el plan definitivo también salía vacío, el adopt se
     /// declaraba completo.
-    @Test("runAdoptOrphanReconcile: un inventario ilegible no apaga el guard anti-fusión — transient, sin mutar")
-    func adoptReconcile_unreadablePrePlanInventory_isTransientNotCompleted() async throws {
+    @Test("runAdoptOrphanReconcile: un inventario ilegible no apaga el guard anti-fusión — localFailure, sin mutar ni tocar la red")
+    func adoptReconcile_unreadablePrePlanInventory_isLocalFailureNotCompleted() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
         let stub = RoutingStub()
@@ -2541,15 +2646,21 @@ struct MigrationWorkExecutorTests {
         #expect(await sano.runAdoptOrphanReconcile() == .abortedEmptyBackend,
                 "control del escenario: con el inventario legible el guard SÍ salta")
 
+        let merkleAntes = stub.merkleCallCount
+        let fuenteEnferma = FakeTombstoneSource()
         let enfermo = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
-                                   tombstoneSource: FakeTombstoneSource())
+                                   tombstoneSource: fuenteEnferma)
         enfermo._testInventoryFetchThrows = { step, entity in step == "adopt-inventory" && entity == "Category" }
-        #expect(await enfermo.runAdoptOrphanReconcile() == .transient,
-                "ilegible no es «sin huérfanas»: se reintenta, no se cierra el adopt")
+        #expect(await enfermo.runAdoptOrphanReconcile() == .localFailure,
+                "ilegible no es «sin huérfanas»: se reintenta con el motivo local, no se cierra el adopt")
         #expect(stub.pushedSyncIDs.isEmpty, "nada se sube")
         #expect(try context.fetchCount(FetchDescriptor<SyncIdentity>()) == 0,
                 "corta ANTES del backfill: sin testigos, igual que el guard")
+        // Ticket `adopt-effect-retries-forever-with-no-ceiling`: el inventario se lee ANTES de la red, así que una avería
+        // local no paga la enumeración ni el Merkle en cada reintento. El control de arriba sí los pagó.
+        #expect(fuenteEnferma.callCount == 0, "sin enumeración del backend")
+        #expect(stub.merkleCallCount == merkleAntes, "sin Merkle")
     }
 
     /// La SEGUNDA lectura del inventario del adopt, la de después del backfill, y la que cerraba el adopt en falso:
@@ -2576,11 +2687,13 @@ struct MigrationWorkExecutorTests {
         enfermo._testInventoryFetchThrows = { step, entity in
             guard step == "adopt-inventory", entity == "Category" else { return false }
             lecturas.value += 1
-            return lecturas.value >= 2
+            return lecturas.value >= 3
         }
-        #expect(await enfermo.runAdoptOrphanReconcile() == .transient,
+        #expect(await enfermo.runAdoptOrphanReconcile() == .localFailure,
                 "con el plan definitivo ilegible el adopt se reintenta: `completed(0)` lo cerraba con la huérfana fuera")
-        #expect(lecturas.value == 2, "control del seam: la primera lectura pasó y la segunda lanzó")
+        // Tres lecturas desde `adopt-effect-retries-forever-with-no-ceiling`: la puerta antes de la red, el plan preliminar
+        // DESPUÉS de la enumeración (lo que se creó mientras se enumeraba también cuenta para el guard) y el definitivo.
+        #expect(lecturas.value == 3, "control del seam: las dos primeras lecturas pasaron y la tercera lanzó")
         #expect(stub.pushedSyncIDs.isEmpty, "nada se sube a ciegas")
 
         // Control: el mismo escenario, legible, sube la huérfana. Fuente nueva: la de arriba ya sirvió su página.
@@ -2596,8 +2709,8 @@ struct MigrationWorkExecutorTests {
 
     /// El backfill entre los dos inventarios. Tragado, dejaba la fila SIN identidad, el diff la contaba como
     /// `needsIdentity` y no como huérfana, y el adopt cerraba `completed(0, 1)` sin subirla.
-    @Test("runAdoptOrphanReconcile: si el backfill no termina, transient — no un adopt completo sin la fila")
-    func adoptReconcile_backfillFails_isTransientNotCompleted() async throws {
+    @Test("runAdoptOrphanReconcile: si el backfill no termina, localFailure — no un adopt completo sin la fila")
+    func adoptReconcile_backfillFails_isLocalFailureNotCompleted() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
         let stub = RoutingStub()
@@ -2616,7 +2729,7 @@ struct MigrationWorkExecutorTests {
         let enfermo = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
                                    tombstoneSource: source())
-        #expect(await enfermo.runAdoptOrphanReconcile() == .transient)
+        #expect(await enfermo.runAdoptOrphanReconcile() == .localFailure)
         #expect(stub.pushedSyncIDs.isEmpty)
 
         // Control: con el backfill sano, la misma fila recibe identidad y se sube.
@@ -2655,8 +2768,8 @@ struct MigrationWorkExecutorTests {
 
     /// El fetch dirigido de las huérfanas. Saltar la tabla dejaba `inputs` sin sus filas, el outbox vivo vacío y el
     /// adopt `completed(uploaded: 0)`: las huérfanas de esa tabla no llegaban nunca al backend.
-    @Test("runAdoptOrphanReconcile: si la tabla de las huérfanas no se deja leer al emitirlas, transient")
-    func adoptReconcile_unreadableOrphanInputs_isTransient() async throws {
+    @Test("runAdoptOrphanReconcile: si la tabla de las huérfanas no se deja leer al emitirlas, localFailure")
+    func adoptReconcile_unreadableOrphanInputs_isLocalFailure() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
         let stub = RoutingStub()
@@ -2673,7 +2786,7 @@ struct MigrationWorkExecutorTests {
                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
                                    tombstoneSource: source)
         enfermo._testInventoryFetchThrows = { step, entity in step == "adopt-orphan-inputs" && entity == "Category" }
-        #expect(await enfermo.runAdoptOrphanReconcile() == .transient)
+        #expect(await enfermo.runAdoptOrphanReconcile() == .localFailure)
         #expect(stub.pushedSyncIDs.isEmpty, "nada se sube")
         let live = try context.fetch(FetchDescriptor<SyncOutbox>()).filter { $0.rejectedReason == nil }
         #expect(live.isEmpty, "corta antes de encolar")

@@ -67,3 +67,8 @@ del usuario); el encolado del snapshot no puede copiarlo tal cual por la razón 
 - `forward-migration-steps-have-no-ceiling-and-no-exit` — el techo de la identidad, que añade el segundo productor.
 
 - `snapshot-upload-has-no-ceiling-and-no-way-out` — el techo que lo destapa.
+
+- `adopt-effect-retries-forever-with-no-ceiling` (2026-09-23) — un tercer productor: el backfill y el encolado de las
+  huérfanas del adopt insertan antes de su `save()`. Si ese save lanza, el sello del reloj del efecto
+  (`observeAdoptEffectFailure`) y su salida vuelven a escribir lo mismo y fallan igual, así que ni los 15 min ni las 72 h
+  llegan a disco. Lo vio la lente de relojes; no se reprodujo.

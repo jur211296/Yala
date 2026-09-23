@@ -43,6 +43,10 @@ nonisolated enum MigrationExecutorError: Error, Equatable {
     /// vuelta. `entity` = nombre de clase. Hasta ese ticket esa tabla se saltaba y el inventario parcial se leía como
     /// el corpus entero.
     case inventoryUnreadable(entity: String)
+    /// El reconcile de huérfanas del adopt no pudo leer o escribir la base LOCAL (ticket
+    /// `adopt-effect-retries-forever-with-no-ceiling`). Esperar no lo arregla, y por eso tiene caso propio y no va dentro de
+    /// `adoptRetry`: el runner lo cuenta para el techo CORTO del efecto (15 min), y la red y la quiescencia para el largo.
+    case adoptLocalFailure
 }
 
 // MARK: - AdoptReconcileOutcome (DIFERIDOS #30, mecanismo v1 DARK)
@@ -56,9 +60,13 @@ nonisolated enum AdoptReconcileOutcome: Equatable {
     /// Guard defensivo anti mass-upload: la enumeración del backend llegó VACÍA teniendo huérfanas locales
     /// → NO se sube nada (un adopt legítimo implica backend POBLADO; enumeración vacía = página espuria/bug).
     case abortedEmptyBackend
-    /// Red caída en la enumeración o el push, o —desde `an-incomplete-inventory-reads-as-the-whole-corpus`— una tabla
-    /// local o el backfill que no se dejan leer → retomable (el re-run re-diffea; lo ya aplicado sale del diff).
+    /// Red caída en la enumeración, el Merkle o el push, o la deriva del reloj al encolar → retomable (el re-run re-diffea;
+    /// lo ya aplicado sale del diff). Esperar lo puede arreglar: techo LARGO del efecto.
     case transient
+    /// La base LOCAL no se dejó leer o escribir: el inventario, el backfill, el fetch de las huérfanas, su encolado o el
+    /// outbox. Retomable igual que `transient`, pero esperar NO lo arregla (ticket `adopt-effect-retries-forever-with-no-ceiling`;
+    /// hasta ese ticket iba dentro de `transient` y el efecto lo reintentaba para siempre).
+    case localFailure
 }
 
 // MARK: - ReverseTombstoneSource (§h.3, I11-2)
@@ -189,6 +197,10 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     /// primera corta y la segunda no se mide. Lanza un `CocoaError`, no el error propio, para que el test solo pase si
     /// el `catch` real lo convierte (ticket `an-incomplete-inventory-reads-as-the-whole-corpus`). SOLO tests.
     var _testInventoryFetchThrows: ((_ step: String, _ entity: String) -> Bool)?
+    /// El error que lanza el encolado de las huérfanas del adopt en vez de encolarlas. Va DENTRO del `do` real, molde de
+    /// `MigrationSnapshotUploader._testEnqueueError`: el test solo pasa si el `catch` separa la deriva del reloj de la base
+    /// local (ticket `adopt-effect-retries-forever-with-no-ceiling`). SOLO tests.
+    var _testAdoptEnqueueError: Error?
     private let uploader: MigrationSnapshotUploader
     /// Fuente de tombstones para el barrido de zombies (§h.3). Default = `pullClient`; inyectable para el
     /// golden §h.5 (enumeración PURA, sin applyPage/cursor/testigos).
@@ -672,6 +684,12 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     /// La cuenta de la sesión viva, con el hash del faro (`MigrationWorkExecuting.currentAccountHash`).
     func currentAccountHash() -> String? {
         session.currentUserID.map { CloudBeacon.hash($0) }
+    }
+
+    /// ¿Está ya persistido `.cloud`? (`MigrationWorkExecuting.hasPersistedCloudMode`). Lee los MISMOS defaults en los que
+    /// escribe el paso 5 del adopt (`writeCloudArmed(defaults: storageDefaults)`).
+    func hasPersistedCloudMode() -> Bool {
+        StorageModePersistence.read(storageDefaults) == .cloud
     }
 
     /// w6 paso 1: `migration_progress('cutover')` — estampa `profiles.migrated_at` (guard líder). NUNCA lanza.
@@ -1461,6 +1479,16 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     /// Idempotente/retomable: red → `.transient` sin marcar nada; una 2ª pasada re-diffea (lo aplicado sale
     /// del diff → `completed(0, 0)`).
     func runAdoptOrphanReconcile() async -> AdoptReconcileOutcome {
+        // Paso 0: una lectura del inventario local ANTES de tocar la red (ticket `adopt-effect-retries-forever-with-no-ceiling`).
+        // Una tabla que no se deja leer corta aquí con `.localFailure` sin pagar la enumeración entera del backend y el
+        // Merkle en cada reintento —el re-kick de Almacenamiento llega cada 30 s—. Solo es la puerta: el plan preliminar
+        // se vuelve a leer DESPUÉS de la enumeración, porque el guard de abajo compara el backend con lo que hay ahora, y
+        // lo creado o importado mientras se enumeraba también cuenta (hallazgo de la review).
+        do {
+            _ = try collectAdoptInventory()
+        } catch {
+            return .localFailure
+        }
         // Paso 1: enumerar el set de identidades del backend (upserts + tombstones) — read-only, idiom
         // `sweepZombies` (SIN applyPage, SIN avance de `SyncCursor`, SIN tocar testigos). Red → `.transient`.
         guard let enumeration = await enumerateBackendSyncIDs() else { return .transient }
@@ -1478,14 +1506,14 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         // Residual documentado: un líder con corpus 0 filas + huérfana real del 2º device queda excluido de la
         // auto-cura (sin datos en riesgo).
         //
-        // Un inventario que no pudo leer una tabla corta como la red, `.transient` retomable (ticket
-        // `an-incomplete-inventory-reads-as-the-whole-corpus`): sin sus filas `uploadCount` podía salir 0 y apagar
-        // justo este guard, el que existe para no fusionar dos corpus.
+        // Un inventario que no pudo leer una tabla corta con `.localFailure` retomable (tickets
+        // `an-incomplete-inventory-reads-as-the-whole-corpus` y `adopt-effect-retries-forever-with-no-ceiling`): sin sus
+        // filas `uploadCount` podía salir 0 y apagar justo este guard, el que existe para no fusionar dos corpus.
         let prePlan: AdoptOrphanDiff.Plan
         do {
             prePlan = AdoptOrphanDiff.compute(inventory: try collectAdoptInventory(), backendSyncIDs: backendSyncIDs)
         } catch {
-            return .transient
+            return .localFailure
         }
         if backendSyncIDs.isEmpty && (prePlan.uploadCount > 0 || prePlan.identityCount > 0) {
             CloudSyncBreadcrumb.adoptReconcileAbortedEmptyBackend(orphans: prePlan.uploadCount + prePlan.identityCount)
@@ -1499,14 +1527,14 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         // en el líder.
         let identityAssigned = prePlan.identityCount
         // Un backfill que no termina deja filas SIN identidad, y el diff las cuenta como `needsIdentity`, no como
-        // huérfanas: el adopt podía cerrarse sin subirlas. `.transient`, como el inventario ilegible.
+        // huérfanas: el adopt podía cerrarse sin subirlas. `.localFailure`, como el inventario ilegible.
         do {
             try SyncIdentityService.backfillIdentities(context: context, now: now())
         } catch {
-            return .transient
+            return .localFailure
         }
 
-        // Pasos 3-4: inventario local POST-backfill (sin nils) → diff definitivo. Ilegible → `.transient`, por lo
+        // Pasos 3-4: inventario local POST-backfill (sin nils) → diff definitivo. Ilegible → `.localFailure`, por lo
         // mismo que arriba y con más precio: el guard de abajo declaraba el adopt COMPLETO sin huérfanas, y el adopt
         // no vuelve a pasar por aquí. Lo que el backfill ya escribió se queda en el contexto: la pasada siguiente lo
         // encuentra y no lo repite, así que su `identityAssigned` sale más bajo (solo el rastro; las filas cuentan
@@ -1515,39 +1543,48 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         do {
             plan = AdoptOrphanDiff.compute(inventory: try collectAdoptInventory(), backendSyncIDs: backendSyncIDs)
         } catch {
-            return .transient
+            return .localFailure
         }
         guard !plan.orphans.isEmpty else { return .completed(uploaded: 0, identityAssigned: identityAssigned) }
 
         // Paso 6: fetch dirigido de EXACTAMENTE las huérfanas del plan → emisión fila-COMPLETA por el seam del
         // snapshot (reusa `MigrationSnapshotUploader.makeSnapshotRowInput` — misma emisión DeltaEmitter→codec).
-        // Ilegible → `.transient`: saltar la tabla subía las demás y cerraba el adopt con las suyas fuera.
+        // Ilegible → `.localFailure`: saltar la tabla subía las demás y cerraba el adopt con las suyas fuera.
         let inputs: [SnapshotRowInput]
         do {
             inputs = try buildOrphanRowInputs(plan.orphans)
         } catch {
-            return .transient
+            return .localFailure
         }
+        // Dos familias de fallo, la regla de la subida del snapshot (`MigrationSnapshotUploader`): la DERIVA del reloj
+        // (HLC) es `.transient` —el reloj puede corregirse solo—; cualquier otro error es un `fetch`/`save` LOCAL.
         do {
+            if let error = _testAdoptEnqueueError { throw error }
             try engine.enqueueSnapshotRows(inputs, context: context, now: now())
-        } catch {
+        } catch let error where error is ClockDriftError || error is CanonicalTimeError {
             #if DEBUG
             print("MigrationWorkExecutor.runAdoptOrphanReconcile: enqueueSnapshotRows lanzó (drift): \(error)")
             #endif
             return .transient
+        } catch {
+            #if DEBUG
+            print("MigrationWorkExecutor.runAdoptOrphanReconcile: enqueueSnapshotRows lanzó (local): \(error)")
+            #endif
+            return .localFailure
         }
         // Push con el idiom EXACTO del leader-reconcile: liveOutboxRows + partitionBuildable + deadLetterPoison
         // + push + applyResults. NO se drena la History (las huérfanas ya están en el outbox por el enqueue;
         // drenar re-emitiría el corpus importado — ver contrato).
-        // Ilegible → `.transient` (ticket `verify-reads-a-failed-local-fetch-as-an-empty-outbox`). Con `[]` el
-        // guard de abajo devolvía `.completed(uploaded: 0)`, o sea «no había huérfanas», y el adopt no vuelve a
-        // pasar por aquí: las filas que acababan de encolarse se quedaban fuera del backend para siempre.
+        // Ilegible → `.localFailure` (tickets `verify-reads-a-failed-local-fetch-as-an-empty-outbox` y
+        // `adopt-effect-retries-forever-with-no-ceiling`). Con `[]` el guard de abajo devolvía `.completed(uploaded: 0)`,
+        // o sea «no había huérfanas», y el adopt no vuelve a pasar por aquí: las filas que acababan de encolarse se
+        // quedaban fuera del backend para siempre.
         let residual: [SyncOutbox]
         do {
             residual = try liveOutboxRows()
         } catch {
             CloudSyncBreadcrumb.outboxFetchFailed(step: "adopt-orphan-reconcile")
-            return .transient
+            return .localFailure
         }
         let (buildable, poison) = pushClient.partitionBuildable(residual)
         engine.deadLetterPoison(poison, context: context, now: now())
@@ -1592,6 +1629,10 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         switch await runAdoptOrphanReconcile() {
         case .transient:
             throw MigrationExecutorError.adoptRetry(reason: "reconcileTransient")
+        case .localFailure:
+            // Caso propio y no `adoptRetry`: el runner lo cuenta para el techo CORTO del efecto (ticket
+            // `adopt-effect-retries-forever-with-no-ceiling`).
+            throw MigrationExecutorError.adoptLocalFailure
         case .completed, .abortedEmptyBackend:
             break
         }
