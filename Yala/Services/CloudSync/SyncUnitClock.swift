@@ -68,18 +68,28 @@ final class SyncUnitClock {
 @MainActor
 enum SyncUnitClockStore {
 
-    /// Fila de clock de un `syncID` (fetch concreto — regla inviolable `#Predicate`).
+    /// Fila de clock de un `syncID` (fetch concreto — regla inviolable `#Predicate`). Un fetch fallido se
+    /// lee `nil`: vale para LEER una señal (el reconciler toma su rama «sin señal»), no para decidir si
+    /// insertar o borrar — eso lo hacen `upsertChecked`/`deleteChecked` con `findRow`.
     static func row(syncID: UUID, context: ModelContext) -> SyncUnitClock? {
-        var d = FetchDescriptor<SyncUnitClock>(predicate: #Predicate { $0.syncID == syncID })
-        d.fetchLimit = 1
         do {
-            return try context.fetch(d).first
+            return try findRow(syncID: syncID, context: context)
         } catch {
             #if DEBUG
             print("SyncUnitClockStore.row fetch falló: \(error)")
             #endif
             return nil
         }
+    }
+
+    /// Como `row`, pero LANZA si el fetch falla: «no pude leer» no es «no hay fila».
+    static func findRow(syncID: UUID, context: ModelContext) throws -> SyncUnitClock? {
+        if EntityApplyMap._testThrowOnFetchOf.contains("SyncUnitClock") {
+            throw EntityApplyFetchError.unreadable("SyncUnitClock")
+        }
+        var d = FetchDescriptor<SyncUnitClock>(predicate: #Predicate { $0.syncID == syncID })
+        d.fetchLimit = 1
+        return try context.fetch(d).first
     }
 
     /// Upsert con merge MAX por unidad: cada unidad conserva el HLC MÁS RECIENTE entre el existente y
@@ -90,7 +100,27 @@ enum SyncUnitClockStore {
         now: Date = .now
     ) {
         guard !unitHlcs.isEmpty else { return }
-        let existing = row(syncID: syncID, context: context)
+        upsert(syncID: syncID, entityTable: entityTable, unitHlcs: unitHlcs, existing: row(syncID: syncID, context: context),
+               context: context, now: now)
+    }
+
+    /// `upsert` del APPLY (ticket `apply-overwrites-a-pending-local-write-without-its-guards`): LANZA si la fila
+    /// no se puede leer, en vez de insertar un SEGUNDO reloj para el mismo `syncID` (sin `.unique` por
+    /// CloudKit) que luego el reconciler de transferencias podría leer en lugar del bueno. El drain sigue con
+    /// `upsert` (ticket `drain-duplicates-the-unit-clock-when-its-row-cannot-be-read`).
+    static func upsertChecked(
+        syncID: UUID, entityTable: String, unitHlcs: [String: String], context: ModelContext,
+        now: Date = .now
+    ) throws {
+        guard !unitHlcs.isEmpty else { return }
+        upsert(syncID: syncID, entityTable: entityTable, unitHlcs: unitHlcs,
+               existing: try findRow(syncID: syncID, context: context), context: context, now: now)
+    }
+
+    private static func upsert(
+        syncID: UUID, entityTable: String, unitHlcs: [String: String], existing: SyncUnitClock?,
+        context: ModelContext, now: Date
+    ) {
         var merged = decodeMap(existing?.unitHlcsJSON)
         for (unit, newRaw) in unitHlcs {
             guard let newHLC = try? HLC.parse(newRaw) else {
@@ -128,6 +158,13 @@ enum SyncUnitClockStore {
     /// Borra la fila de clock de un `syncID` (higiene del tombstone — drain y apply). No-op si no existe.
     static func delete(syncID: UUID, context: ModelContext) {
         if let existing = row(syncID: syncID, context: context) {
+            context.delete(existing)
+        }
+    }
+
+    /// `delete` del APPLY: LANZA si la fila no se puede leer (si no, el tombstone deja el reloj vivo).
+    static func deleteChecked(syncID: UUID, context: ModelContext) throws {
+        if let existing = try findRow(syncID: syncID, context: context) {
             context.delete(existing)
         }
     }

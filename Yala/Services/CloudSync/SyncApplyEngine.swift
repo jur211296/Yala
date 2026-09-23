@@ -55,6 +55,18 @@ enum PullApplyOutcome: Equatable {
 /// Error del seam de test `_testThrowOnApplySave` (simula un crash antes del commit de una página).
 private enum ApplyTestCrash: Error { case suppressed }
 
+/// Lecturas locales de las que depende el apply para no pisar nada (ticket
+/// `apply-overwrites-a-pending-local-write-without-its-guards`). Seam `_testThrowOnApplyRead`: SOLO tests.
+enum ApplyGuardRead: Equatable {
+    /// El `SyncOutbox` vivo del que sale el guard LWW (D-1).
+    case pendingGuards
+    /// Los `serverSeq` ya cuarentenados (dedupe D-5/D-6).
+    case quarantineSeqs
+}
+
+/// Una lectura de la que depende el apply lanzó. Se propaga para que la página NO se aplique.
+enum ApplyGuardReadError: Error { case unreadable(ApplyGuardRead) }
+
 // MARK: - Guard de pendientes (D-1)
 
 /// Estado LWW derivado del `SyncOutbox` VIVO de UN `syncID`: el MAX HLC de sus upserts pendientes
@@ -158,7 +170,8 @@ extension CloudSyncEngine {
                 // de outbox queda escrita y el guard D-1 protege sus unidades del full-row remoto.
                 drainOnce(context: context)
                 guard applyPage(page, context: context, now: now) else {
-                    // F-3: el save de página falló (rollback ya hecho) → cortar; el cursor NO avanzó,
+                    // F-3: la página no se aplicó —falló su save o una lectura de la que depende (guard,
+                    // dedupe, búsqueda de fila)— y el rollback ya está hecho → cortar; el cursor NO avanzó,
                     // así que reintentar el mismo `since` en este loop podría girar hasta maxPages.
                     return (.transient(pagesApplied: pagesApplied), pagesApplied)
                 }
@@ -229,7 +242,8 @@ extension CloudSyncEngine {
 
     /// Aplica UNA página en UN `saveWithAuthor` (D-5, atómico): por cada delta → apply|quarantine +
     /// `receive` del reloj; al final avanza `serverSeqCursor` y persiste el reloj (D-3). Devuelve `false`
-    /// si el save falló — el contexto queda ROLLBACKEADO (F-3: sin rollback, el grafo remoto quedaría
+    /// si el save falló o si no se pudo leer algo de lo que depende para no pisar datos locales (guard
+    /// D-1, dedupe de cuarentena, búsqueda de la fila) — el contexto queda ROLLBACKEADO (F-3: sin rollback, el grafo remoto quedaría
     /// dirty y un autosave posterior lo flushearía bajo autor NO-motor → laundering) y el cursor NO
     /// avanza → el re-pull re-aplica idempotente.
     ///
@@ -242,8 +256,15 @@ extension CloudSyncEngine {
             let cursor = try loadOrCreateCursor(context)
             loadClock(from: cursor)  // D-3: reloj desde el estado durable antes de integrar remotos
 
-            let guards = buildPendingGuards(context)
-            var quarantineSeqs = existingQuarantineSeqs(context)
+            // Sin estas dos lecturas NO se aplica nada: un guard vacío o PARCIAL deja que un remoto pise
+            // una escritura local pendiente, y un dedupe vacío re-inserta cuarentenas. Lanzan → `catch` de
+            // abajo (rollback, `false`, cursor quieto) → el ciclo sale `.transient` y reintenta.
+            let guards = try buildPendingGuards(context)
+            // El dedupe solo se lee si la página trae algo que cuarentenar: hoy casi nunca (las 16 tablas
+            // están cableadas), así que ni cuesta una lectura en el camino caliente ni una cuarentena
+            // ilegible frena páginas que no la necesitan.
+            let needsQuarantine = page.deltas.contains { !EntityApplyMap.isWired(table: $0.entityType) }
+            var quarantineSeqs: Set<Int64> = needsQuarantine ? try existingQuarantineSeqs(context) : []
             var newQuarantineCount = 0
 
             try saveWithAuthor(context, Self.outboxSaveAuthor) {
@@ -253,7 +274,7 @@ extension CloudSyncEngine {
                         receiveRemoteClock(remote, now: now)
                     }
                     if EntityApplyMap.isWired(table: delta.entityType) {
-                        dispatchApply(delta, guard: guards[delta.syncID], context: context)
+                        try dispatchApply(delta, guard: guards[delta.syncID], context: context)
                     } else {
                         // §d.6/D-5: entity_type aún no materializable (10 de 16) → cuarentena (dedup seq).
                         if quarantineDelta(delta, existing: &quarantineSeqs, context: context) {
@@ -287,40 +308,40 @@ extension CloudSyncEngine {
 
     // MARK: - Dispatch concreto por tabla (nunca genérico por protocolo)
 
-    private func dispatchApply(_ delta: PulledDelta, guard g: PendingGuard?, context: ModelContext) {
+    private func dispatchApply(_ delta: PulledDelta, guard g: PendingGuard?, context: ModelContext) throws {
         switch delta.entityType {
         case EntityApplyMap.transactionItem.table:
-            applyToEntity(delta, EntityApplyMap.transactionItem, guard: g, context: context)
+            try applyToEntity(delta, EntityApplyMap.transactionItem, guard: g, context: context)
         case EntityApplyMap.inboxDraft.table:
-            applyToEntity(delta, EntityApplyMap.inboxDraft, guard: g, context: context)
+            try applyToEntity(delta, EntityApplyMap.inboxDraft, guard: g, context: context)
         case EntityApplyMap.category.table:
-            applyToEntity(delta, EntityApplyMap.category, guard: g, context: context)
+            try applyToEntity(delta, EntityApplyMap.category, guard: g, context: context)
         case EntityApplyMap.favoritePayment.table:
-            applyToEntity(delta, EntityApplyMap.favoritePayment, guard: g, context: context)
+            try applyToEntity(delta, EntityApplyMap.favoritePayment, guard: g, context: context)
         case EntityApplyMap.merchantMemory.table:
-            applyToEntity(delta, EntityApplyMap.merchantMemory, guard: g, context: context)
+            try applyToEntity(delta, EntityApplyMap.merchantMemory, guard: g, context: context)
         case EntityApplyMap.exchangeRate.table:
-            applyToEntity(delta, EntityApplyMap.exchangeRate, guard: g, context: context)
+            try applyToEntity(delta, EntityApplyMap.exchangeRate, guard: g, context: context)
         case EntityApplyMap.budget.table:
-            applyToEntity(delta, EntityApplyMap.budget, guard: g, context: context)
+            try applyToEntity(delta, EntityApplyMap.budget, guard: g, context: context)
         case EntityApplyMap.scheduledPayment.table:
-            applyToEntity(delta, EntityApplyMap.scheduledPayment, guard: g, context: context)
+            try applyToEntity(delta, EntityApplyMap.scheduledPayment, guard: g, context: context)
         case EntityApplyMap.account.table:
-            applyToEntity(delta, EntityApplyMap.account, guard: g, context: context)
+            try applyToEntity(delta, EntityApplyMap.account, guard: g, context: context)
         case EntityApplyMap.subcategory.table:
-            applyToEntity(delta, EntityApplyMap.subcategory, guard: g, context: context)
+            try applyToEntity(delta, EntityApplyMap.subcategory, guard: g, context: context)
         case EntityApplyMap.tag.table:
-            applyToEntity(delta, EntityApplyMap.tag, guard: g, context: context)
+            try applyToEntity(delta, EntityApplyMap.tag, guard: g, context: context)
         case EntityApplyMap.notificationItem.table:
-            applyToEntity(delta, EntityApplyMap.notificationItem, guard: g, context: context)
+            try applyToEntity(delta, EntityApplyMap.notificationItem, guard: g, context: context)
         case EntityApplyMap.cashFlowPlan.table:
-            applyToEntity(delta, EntityApplyMap.cashFlowPlan, guard: g, context: context)
+            try applyToEntity(delta, EntityApplyMap.cashFlowPlan, guard: g, context: context)
         case EntityApplyMap.cashFlowLine.table:
-            applyToEntity(delta, EntityApplyMap.cashFlowLine, guard: g, context: context)
+            try applyToEntity(delta, EntityApplyMap.cashFlowLine, guard: g, context: context)
         case EntityApplyMap.cashFlowOverride.table:
-            applyToEntity(delta, EntityApplyMap.cashFlowOverride, guard: g, context: context)
+            try applyToEntity(delta, EntityApplyMap.cashFlowOverride, guard: g, context: context)
         case EntityApplyMap.groupBridgePreference.table:
-            applyToEntity(delta, EntityApplyMap.groupBridgePreference, guard: g, context: context)
+            try applyToEntity(delta, EntityApplyMap.groupBridgePreference, guard: g, context: context)
         default:
             break  // isWired ya lo filtró; inalcanzable.
         }
@@ -334,7 +355,7 @@ extension CloudSyncEngine {
     /// fina cross-fila es I8f-2.
     private func applyToEntity<M: PersistentModel>(
         _ delta: PulledDelta, _ entry: EntityApply<M>, guard g: PendingGuard?, context: ModelContext
-    ) {
+    ) throws {
         switch delta.op {
         case .tombstone:
             // F-6d: un `deleted_hlc` malformado (nunca desde nuestro server) → NO borrar (skip; el
@@ -346,21 +367,24 @@ extension CloudSyncEngine {
                 return
             }
             // D-9: sin fila local → no-op (el cursor avanza igual). Con fila → borrar + matar la identidad.
-            guard let model = entry.fetchBySyncID(delta.syncID, context) else { return }
+            // La búsqueda LANZA si no se pudo leer: «no pude buscar» no es «no hay fila», y darlo por
+            // no-op avanzaría el cursor con el borrado sin hacer.
+            guard let model = try entry.fetchBySyncID(delta.syncID, context) else { return }
             context.delete(model)
-            if let identity = EntityApplyMap.fetchSyncIdentity(bySyncID: delta.syncID, context: context) {
+            if let identity = try EntityApplyMap.findSyncIdentity(bySyncID: delta.syncID, context: context) {
                 context.delete(identity)
             }
             // I8f-2 (D-A): higiene del clock por-unidad en el MISMO save de página (si el modelo
             // resucita por un upsert posterior, drain/apply lo re-pueblan).
-            SyncUnitClockStore.delete(syncID: delta.syncID, context: context)
+            try SyncUnitClockStore.deleteChecked(syncID: delta.syncID, context: context)
 
         case .upsert:
             // D-8: sin fila local → born-remote (crear + fijar syncID para que el sweep del drain no
             // re-acuñe otro). Con fila → materializar sobre ella.
             let model: M
             let isNew: Bool
-            if let existing = entry.fetchBySyncID(delta.syncID, context) {
+            // Lanza si no se pudo leer: tratarlo como «no existe» crearía un born-remote DUPLICADO.
+            if let existing = try entry.fetchBySyncID(delta.syncID, context) {
                 model = existing
                 isNew = false
             } else {
@@ -389,11 +413,11 @@ extension CloudSyncEngine {
                 }
             }
             if !appliedUnits.isEmpty {
-                SyncUnitClockStore.upsert(syncID: delta.syncID, entityTable: delta.entityType,
+                try SyncUnitClockStore.upsertChecked(syncID: delta.syncID, entityTable: delta.entityType,
                                           unitHlcs: appliedUnits, context: context)
             }
             if isNew {
-                ensureIdentity(for: model, entry: entry, syncID: delta.syncID, context: context)
+                try ensureIdentity(for: model, entry: entry, syncID: delta.syncID, context: context)
             }
         }
     }
@@ -414,8 +438,8 @@ extension CloudSyncEngine {
     /// si no existe — para que backfill/rebind (I10) no dupliquen. Idempotente.
     private func ensureIdentity<M: PersistentModel>(
         for model: M, entry: EntityApply<M>, syncID: UUID, context: ModelContext
-    ) {
-        guard EntityApplyMap.fetchSyncIdentity(bySyncID: syncID, context: context) == nil else { return }
+    ) throws {
+        guard try EntityApplyMap.findSyncIdentity(bySyncID: syncID, context: context) == nil else { return }
         let row = SyncIdentity(
             syncID: syncID,
             entityType: entry.entityTypeName,
@@ -484,14 +508,17 @@ extension CloudSyncEngine {
         return true
     }
 
-    private func existingQuarantineSeqs(_ context: ModelContext) -> Set<Int64> {
+    /// Set de DEDUPE de la cuarentena. LANZA si no se puede leer: un set vacío por error re-insertaría
+    /// duplicadas las filas ya cuarentenadas (y bumpearía el testigo lockstep por ellas).
+    private func existingQuarantineSeqs(_ context: ModelContext) throws -> Set<Int64> {
         do {
+            if _testThrowOnApplyRead == .quarantineSeqs { throw ApplyGuardReadError.unreadable(.quarantineSeqs) }
             return Set(try context.fetch(FetchDescriptor<SyncQuarantine>()).map(\.serverSeq))
         } catch {
             #if DEBUG
-            print("CloudSyncEngine.existingQuarantineSeqs: fetch falló: \(error)")
+            print("CloudSyncEngine.existingQuarantineSeqs: fetch falló (la página NO se aplica): \(error)")
             #endif
-            return []
+            throw ApplyGuardReadError.unreadable(.quarantineSeqs)
         }
     }
 
@@ -511,8 +538,8 @@ extension CloudSyncEngine {
     /// orden `serverSeq` ASC, integra el HLC de fila en el reloj (D-3), aplica con el guard D-1
     /// (`buildPendingGuards`), borra las filas consumidas y DECREMENTA el testigo lockstep — todo en UN
     /// `saveWithAuthor(outboxSaveAuthor)`. **NO toca `serverSeqCursor`** (esos `server_seq` ya pasaron —
-    /// avanzarlo re-saltaría deltas). Falla el save → rollback + las filas siguen (reintento al próximo
-    /// arranque). Después: `reresolveDanglingRefs` (los deltas re-aplicados pueden colgar refs).
+    /// avanzarlo re-saltaría deltas). Falla el save, el guard D-1 no se deja leer o una búsqueda de fila
+    /// lanza → rollback (o nada que deshacer) + las filas siguen (reintento al próximo arranque). Después: `reresolveDanglingRefs` (los deltas re-aplicados pueden colgar refs).
     func drainQuarantineOnce(context: ModelContext, now: Date = .now) {
         let rows: [SyncQuarantine]
         do {
@@ -538,7 +565,15 @@ extension CloudSyncEngine {
             #endif
             return
         }
-        let guards = buildPendingGuards(context)
+        // Guard ilegible → NO drenar (mismo motivo que `applyPage`): las filas siguen y se reintenta en el
+        // próximo arranque.
+        let guards: [UUID: PendingGuard]
+        do {
+            guards = try buildPendingGuards(context)
+        } catch {
+            CloudSyncBreadcrumb.applyPageFailed(reason: "drainQuarantine:\(error)")
+            return
+        }
         var consumed = 0
         do {
             try saveWithAuthor(context, Self.outboxSaveAuthor) {
@@ -558,7 +593,7 @@ extension CloudSyncEngine {
                     if let remote = parseHLC(delta.hlc, site: "drainQuarantine.rowHlc") {
                         receiveRemoteClock(remote, now: now)
                     }
-                    dispatchApply(delta, guard: guards[delta.syncID], context: context)
+                    try dispatchApply(delta, guard: guards[delta.syncID], context: context)
                     context.delete(row)
                     consumed += 1
                 }
@@ -606,9 +641,14 @@ extension CloudSyncEngine {
     /// dead-letter NUNCA llega al server → contarlo bloquearía la unidad remota para siempre (D-1
     /// exclusión). Solo los UPSERT pendientes cuentan para `maxUpsertHLC` (el árbitro de tombstone) y
     /// para las unidades (`fieldHlcsJSON`).
-    private func buildPendingGuards(_ context: ModelContext) -> [UUID: PendingGuard] {
+    ///
+    /// LANZA si el outbox no se puede leer. Un guard parcial es peor que ninguno porque parece uno: vacío,
+    /// cualquier remoto pisa una escritura local pendiente y el próximo drain la relee del modelo vivo bajo
+    /// un HLC fresco (laundering D-2) — el cambio del usuario se pierde para siempre.
+    private func buildPendingGuards(_ context: ModelContext) throws -> [UUID: PendingGuard] {
         var result: [UUID: PendingGuard] = [:]
         do {
+            if _testThrowOnApplyRead == .pendingGuards { throw ApplyGuardReadError.unreadable(.pendingGuards) }
             for row in try context.fetch(FetchDescriptor<SyncOutbox>()) {
                 guard row.rejectedReason == nil else { continue }  // dead-letter excluido
                 guard SyncOutboxOp(rawValue: row.opRaw) == .upsert else { continue }
@@ -630,8 +670,9 @@ extension CloudSyncEngine {
             }
         } catch {
             #if DEBUG
-            print("CloudSyncEngine.buildPendingGuards: fetch falló: \(error)")
+            print("CloudSyncEngine.buildPendingGuards: fetch falló (la página NO se aplica): \(error)")
             #endif
+            throw ApplyGuardReadError.unreadable(.pendingGuards)
         }
         return result
     }

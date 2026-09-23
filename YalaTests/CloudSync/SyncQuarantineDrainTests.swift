@@ -120,6 +120,38 @@ struct SyncQuarantineDrainTests {
         (try? c.fetch(FetchDescriptor<TransactionItem>())) ?? []
     }
 
+    // MARK: - Guard ilegible → NO drena (ticket apply-overwrites-a-pending-local-write-without-its-guards)
+
+    /// Si el outbox no se deja leer, el drenaje no puede construir el guard D-1: re-aplicar con un guard
+    /// vacío pisaría una escritura local pendiente. Las filas se quedan y el testigo no se mueve. Control
+    /// positivo: con la lectura de vuelta, drena como siempre.
+    @Test func drainQuarantine_guardUnreadable_drainsNothing_thenDrainsWhenReadable() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+
+        let sid = UUID()
+        let raw = rawDelta(entity: "tx_items", sid: sid, serverSeq: 42, h: hlc(1))
+        context.insert(SyncQuarantine(serverSeq: 42, entityType: "tx_items", syncID: sid, rawDelta: raw, hlc: hlc(1)))
+        let cur = try engine.loadOrCreateCursor(context)
+        cur.quarantinePendingCount = 1
+        try context.save()
+
+        engine._testThrowOnApplyRead = .pendingGuards
+        engine.drainOnce(context: context)
+        engine.drainQuarantineOnce(context: context, now: applyNow)
+        #expect(txItems(context).isEmpty)                         // nada re-aplicado sin guard
+        #expect(quarantine(context).count == 1)                   // la fila sigue → reintento
+        #expect(cursor(context)?.quarantinePendingCount == 1)     // testigo intacto
+        #expect(context.hasChanges == false)
+
+        engine._testThrowOnApplyRead = nil
+        engine.drainQuarantineOnce(context: context, now: applyNow)
+        #expect(txItems(context).count == 1)
+        #expect(quarantine(context).isEmpty)
+        #expect(cursor(context)?.quarantinePendingCount == 0)
+    }
+
     // MARK: - Testigo lockstep en el INSERT (apply de entidad no cableada)
 
     @Test func applyPage_unwiredEntity_bumpsWitnessLockstep() throws {

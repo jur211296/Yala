@@ -1,6 +1,6 @@
 ---
 id: apply-overwrites-a-pending-local-write-without-its-guards
-status: backlog
+status: done
 priority: very-high
 area: "modo-nube, sync"
 created: 2026-09-22
@@ -43,12 +43,34 @@ Los tres son mudos en producción (`print` bajo `#if DEBUG`).
 
 ## Criterios de aceptación
 
-- [ ] Un `fetch` que lanza al construir los guards NO deja aplicar la página con el guard a medias.
-- [ ] El cursor no avanza sobre una página que no se aplicó (atomicidad D-5 conservada).
-- [ ] Una cuarentena que no se puede leer no produce duplicados.
-- [ ] Un tombstone no se contabiliza aplicado cuando el borrado no se pudo hacer.
-- [ ] Tests con el fetch lanzando + control positivo por cada uno de los tres.
+- [x] Un `fetch` que lanza al construir los guards NO deja aplicar la página con el guard a medias.
+- [x] El cursor no avanza sobre una página que no se aplicó (atomicidad D-5 conservada).
+- [x] Una cuarentena que no se puede leer no produce duplicados.
+- [x] Un tombstone no se contabiliza aplicado cuando el borrado no se pudo hacer.
+- [x] Tests con el fetch lanzando + control positivo por cada uno de los tres.
 
 ## Relacionado
 
 - `verify-reads-a-failed-local-fetch-as-an-empty-outbox` — el mismo patrón sobre el fetch de `SyncOutbox`, cerrado.
+
+## Resultado (2026-09-22, commit 75585666)
+
+**Qué cambia para ti:** si el teléfono no consigue leer sus propias salvaguardas, lo que baja de la nube se
+queda esperando y se vuelve a intentar; ya no entra encima de un cambio tuyo sin subir, no duplica nada y no da
+por borrado lo que no borró.
+
+- Lanzan, y la página no se aplica: `buildPendingGuards`, `existingQuarantineSeqs` (solo se lee si la página trae
+  algo sin cablear), las búsquedas de fila `find*`/`findSyncIdentity` y el reloj por unidad
+  (`SyncUnitClockStore.upsertChecked`/`deleteChecked`). Rollback, cursor quieto, `.transient`.
+- `drainQuarantineOnce` no drena con el guard ilegible. `deleteLiveRows` lanza ⇒ `sweepZombies` hace rollback y
+  devuelve `.transient` (su llamador real; las líneas 988-1003 del ticket eran el dispatch).
+- Coste: ninguna lectura extra; la de cuarentena desaparece del camino caliente.
+- Tests: 8 casos nuevos en `SyncApplyEngineTests`, uno en `SyncQuarantineTests`, `SyncQuarantineDrainTests` y
+  `MigrationWorkExecutorTests`, todos con control positivo. 14 mutantes, 14 muertos. Gate: 7568 unit en 747
+  suites, 4 XCUITest.
+- Sin device-QA: el caso no se provoca en un iPhone.
+- Residuales con ticket: `dangling-ref-repair-is-lost-when-its-row-cannot-be-read`,
+  `drain-duplicates-the-unit-clock-when-its-row-cannot-be-read`,
+  `a-local-read-failure-in-the-migration-apply-reads-as-network`, y la nota nueva en
+  `reverse-zombie-sweep-reads-an-expired-session-as-network`.
+- Regla: `.claude/rules/swiftdata-cloudkit.md`, «En el apply del pull, "no pude leer" NUNCA es "no hay nada"».

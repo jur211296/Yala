@@ -560,6 +560,234 @@ struct SyncApplyEngineTests {
         #expect(txItems(context).isEmpty)
     }
 
+    // MARK: - Lecturas ilegibles: la página NO se aplica (ticket apply-overwrites-a-pending-local-write-without-its-guards)
+
+    /// Fila local sincronizada (money=100, note "old") + outbox pendiente money@H3, y una página remota
+    /// money@H2 / note@H4. Con el guard, money se salta y note se aplica.
+    private func seedPendingMoneyAndRemotePage(_ context: ModelContext) throws -> (UUID, PulledPage) {
+        let sid = UUID()
+        let tx = TransactionItem(date: epochDate, amount: 100, currencyCode: "USD", note: "old")
+        tx.syncID = sid
+        tx.amountInPreferredCurrency = 300
+        context.insert(tx)
+        context.insert(SyncOutbox(syncID: sid, entityType: SyncEntityType.transactionItem, op: .upsert,
+                                  hlc: hlc(3), fieldsJSON: "{}", fieldHlcsJSON: #"{"money":"\#(hlc(3))"}"#, author: ""))
+        try context.save()
+        let json = #"""
+        {"deltas":[{"entity_type":"tx_items","sync_id":"\#(sid.uuidString.lowercased())","op":"upsert",
+        "fields":{"amount":"55.0000","amount_in_preferred_currency":"200.0000","preferred_currency_code":"PEN",
+        "exchange_rate":"3.62000000","is_exchange_rate_provisional":false,"note":"new"},
+        "field_hlcs":{"money":"\#(hlc(2))","note":"\#(hlc(4))"},"hlc":"\#(hlc(4))","server_seq":8,"schema_version":1}],
+        "max_server_seq":8}
+        """#
+        return (sid, try decodePage(json))
+    }
+
+    @Test func apply_pendingGuardsUnreadable_pageNotApplied_localWriteSurvives_thenGuardedApply() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let container = try makeContainer(dir)
+        let context = ModelContext(container)
+        let engine = CloudSyncEngine()
+        let (sid, page) = try seedPendingMoneyAndRemotePage(context)
+
+        engine._testThrowOnApplyRead = .pendingGuards
+        #expect(engine.applyPage(page, context: context, now: applyNow) == false)
+        #expect(context.hasChanges == false)
+        let fresh = ModelContext(container)
+        let tx = try #require(txItems(fresh).first { $0.syncID == sid })
+        #expect(tx.amount == 100)                          // el remoto NO pisó la escritura pendiente
+        #expect(tx.note == "old")                          // ni siquiera la unidad sin guard: página entera fuera
+        #expect((cursor(fresh)?.serverSeqCursor ?? 0) == 0) // cursor quieto → re-pull
+
+        // Control positivo: la lectura vuelve → apply con guard (money se salta, note entra).
+        engine._testThrowOnApplyRead = nil
+        #expect(engine.applyPage(page, context: fresh, now: applyNow))
+        #expect(tx.amount == 100)
+        #expect(tx.amountInPreferredCurrency == 300)
+        #expect(tx.note == "new")
+        #expect(cursor(fresh)?.serverSeqCursor == 8)
+    }
+
+    @Test func pullAndApply_pendingGuardsUnreadable_returnsTransient_cursorStays() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = ModelContext(try makeContainer(dir))
+        let engine = CloudSyncEngine()
+        engine._testThrowOnApplyRead = .pendingGuards
+
+        let page = txPage(sid: UUID(), serverSeq: 3, h: hlc(1))
+        let client = SyncPullClient(baseURL: URL(string: "https://example.test")!,
+                                    tokenProvider: { "jwt" },
+                                    urlSession: OneShotSession(body: Data(page.utf8)))
+        let outcome = await engine.pullAndApplyOnce(using: client, context: context, now: applyNow)
+        #expect(outcome == .transient(pagesApplied: 0))
+        #expect(txItems(context).isEmpty)
+        #expect((cursor(context)?.serverSeqCursor ?? 0) == 0)
+
+        // Control positivo: MISMO cliente/fake, lectura de vuelta → la página entra (el fake no era el que fallaba).
+        engine._testThrowOnApplyRead = nil
+        let retry = await engine.pullAndApplyOnce(using: client, context: context, now: applyNow)
+        #expect(retry == .completed(pagesApplied: 1))
+        #expect(txItems(context).count == 1)
+        #expect(cursor(context)?.serverSeqCursor == 3)
+    }
+
+    @Test func apply_tombstone_rowLookupUnreadable_notCountedApplied_thenDeletes() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = ModelContext(try makeContainer(dir))
+        let engine = CloudSyncEngine()
+        defer { EntityApplyMap._testThrowOnFetchOf = [] }
+
+        let sid = UUID()
+        #expect(engine.applyPage(try decodePage(txPage(sid: sid, serverSeq: 1, h: hlc(1))), context: context, now: applyNow))
+        let tomb = try decodePage(#"""
+        {"deltas":[{"entity_type":"tx_items","sync_id":"\#(sid.uuidString.lowercased())","op":"tombstone",
+        "fields":{},"field_hlcs":{},"hlc":"\#(hlc(5))","server_seq":2,"schema_version":1}],"max_server_seq":2}
+        """#)
+
+        EntityApplyMap._testThrowOnFetchOf = ["TransactionItem"]
+        #expect(engine.applyPage(tomb, context: context, now: applyNow) == false)
+        EntityApplyMap._testThrowOnFetchOf = []
+        #expect(txItems(context).count == 1)                 // no se borró…
+        #expect(cursor(context)?.serverSeqCursor == 1)       // …y el cursor NO lo da por hecho
+
+        #expect(engine.applyPage(tomb, context: context, now: applyNow))   // control positivo
+        #expect(txItems(context).isEmpty)
+        #expect(identity(bySyncID: sid, context) == nil)
+        #expect(cursor(context)?.serverSeqCursor == 2)
+    }
+
+    @Test func apply_tombstone_identityLookupUnreadable_pageNotApplied() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = ModelContext(try makeContainer(dir))
+        let engine = CloudSyncEngine()
+        defer { EntityApplyMap._testThrowOnFetchOf = [] }
+
+        let sid = UUID()
+        #expect(engine.applyPage(try decodePage(txPage(sid: sid, serverSeq: 1, h: hlc(1))), context: context, now: applyNow))
+        let tomb = try decodePage(#"""
+        {"deltas":[{"entity_type":"tx_items","sync_id":"\#(sid.uuidString.lowercased())","op":"tombstone",
+        "fields":{},"field_hlcs":{},"hlc":"\#(hlc(5))","server_seq":2,"schema_version":1}],"max_server_seq":2}
+        """#)
+
+        EntityApplyMap._testThrowOnFetchOf = ["SyncIdentity"]
+        #expect(engine.applyPage(tomb, context: context, now: applyNow) == false)
+        EntityApplyMap._testThrowOnFetchOf = []
+        #expect(txItems(context).count == 1)                 // ni la fila ni…
+        #expect(identity(bySyncID: sid, context) != nil)     // …su identidad quedan a medias
+        #expect(cursor(context)?.serverSeqCursor == 1)
+
+        #expect(engine.applyPage(tomb, context: context, now: applyNow))   // control positivo
+        #expect(txItems(context).isEmpty)
+        #expect(identity(bySyncID: sid, context) == nil)
+    }
+
+    private func unitClocks(_ sid: UUID, _ context: ModelContext) -> [SyncUnitClock] {
+        ((try? context.fetch(FetchDescriptor<SyncUnitClock>())) ?? []).filter { $0.syncID == sid }
+    }
+
+    @Test func apply_upsert_unitClockUnreadable_noSecondClock_thenMerges() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = ModelContext(try makeContainer(dir))
+        let engine = CloudSyncEngine()
+        defer { EntityApplyMap._testThrowOnFetchOf = [] }
+
+        let sid = UUID()
+        #expect(engine.applyPage(try decodePage(txPage(sid: sid, serverSeq: 1, h: hlc(1))), context: context, now: applyNow))
+        #expect(unitClocks(sid, context).count == 1)
+        let update = try decodePage(txPage(sid: sid, serverSeq: 2, h: hlc(2), note: "editada"))
+
+        EntityApplyMap._testThrowOnFetchOf = ["SyncUnitClock"]
+        #expect(engine.applyPage(update, context: context, now: applyNow) == false)
+        EntityApplyMap._testThrowOnFetchOf = []
+        #expect(unitClocks(sid, context).count == 1)         // sin segundo reloj para el mismo syncID
+        #expect(txItems(context).first?.note == "hola")
+        #expect(cursor(context)?.serverSeqCursor == 1)
+
+        #expect(engine.applyPage(update, context: context, now: applyNow))  // control positivo
+        #expect(unitClocks(sid, context).count == 1)
+        #expect(txItems(context).first?.note == "editada")
+    }
+
+    @Test func apply_tombstone_unitClockUnreadable_pageNotApplied_thenCleansClock() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = ModelContext(try makeContainer(dir))
+        let engine = CloudSyncEngine()
+        defer { EntityApplyMap._testThrowOnFetchOf = [] }
+
+        let sid = UUID()
+        #expect(engine.applyPage(try decodePage(txPage(sid: sid, serverSeq: 1, h: hlc(1))), context: context, now: applyNow))
+        let tomb = try decodePage(#"""
+        {"deltas":[{"entity_type":"tx_items","sync_id":"\#(sid.uuidString.lowercased())","op":"tombstone",
+        "fields":{},"field_hlcs":{},"hlc":"\#(hlc(5))","server_seq":2,"schema_version":1}],"max_server_seq":2}
+        """#)
+
+        EntityApplyMap._testThrowOnFetchOf = ["SyncUnitClock"]
+        #expect(engine.applyPage(tomb, context: context, now: applyNow) == false)
+        EntityApplyMap._testThrowOnFetchOf = []
+        #expect(txItems(context).count == 1)
+        #expect(unitClocks(sid, context).count == 1)
+        #expect(cursor(context)?.serverSeqCursor == 1)
+
+        #expect(engine.applyPage(tomb, context: context, now: applyNow))   // control positivo
+        #expect(txItems(context).isEmpty)
+        #expect(unitClocks(sid, context).isEmpty)
+    }
+
+    /// El dedupe de cuarentena solo se lee si la página trae algo que cuarentenar: una cuarentena ilegible
+    /// no frena una página de tablas cableadas.
+    @Test func apply_wiredOnlyPage_quarantineUnreadable_stillApplies() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = ModelContext(try makeContainer(dir))
+        let engine = CloudSyncEngine()
+        engine._testThrowOnApplyRead = .quarantineSeqs
+
+        #expect(engine.applyPage(try decodePage(txPage(sid: UUID(), serverSeq: 4, h: hlc(1))), context: context, now: applyNow))
+        #expect(txItems(context).count == 1)
+        #expect(cursor(context)?.serverSeqCursor == 4)
+    }
+
+    @Test func apply_upsert_rowLookupUnreadable_noDuplicateBornRemote_thenUpdatesInPlace() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = ModelContext(try makeContainer(dir))
+        let engine = CloudSyncEngine()
+        defer { EntityApplyMap._testThrowOnFetchOf = [] }
+
+        let sid = UUID()
+        #expect(engine.applyPage(try decodePage(txPage(sid: sid, serverSeq: 1, h: hlc(1))), context: context, now: applyNow))
+        let update = try decodePage(txPage(sid: sid, serverSeq: 2, h: hlc(2), note: "editada"))
+
+        EntityApplyMap._testThrowOnFetchOf = ["TransactionItem"]
+        #expect(engine.applyPage(update, context: context, now: applyNow) == false)
+        EntityApplyMap._testThrowOnFetchOf = []
+        #expect(txItems(context).count == 1)                 // sin born-remote duplicado
+        #expect(txItems(context).first?.note == "hola")
+        #expect(cursor(context)?.serverSeqCursor == 1)
+
+        #expect(engine.applyPage(update, context: context, now: applyNow))  // control positivo
+        #expect(txItems(context).count == 1)
+        #expect(txItems(context).first?.note == "editada")
+    }
+
+    @Test func apply_bornRemote_identityLookupUnreadable_pageNotApplied() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = ModelContext(try makeContainer(dir))
+        let engine = CloudSyncEngine()
+        defer { EntityApplyMap._testThrowOnFetchOf = [] }
+
+        let sid = UUID()
+        let page = try decodePage(txPage(sid: sid, serverSeq: 1, h: hlc(1)))
+        EntityApplyMap._testThrowOnFetchOf = ["SyncIdentity"]
+        #expect(engine.applyPage(page, context: context, now: applyNow) == false)
+        EntityApplyMap._testThrowOnFetchOf = []
+        #expect(txItems(context).isEmpty)
+        #expect((cursor(context)?.serverSeqCursor ?? 0) == 0)
+
+        #expect(engine.applyPage(page, context: context, now: applyNow))    // control positivo
+        #expect(txItems(context).count == 1)
+        let identities = try context.fetch(FetchDescriptor<SyncIdentity>()).filter { $0.syncID == sid }
+        #expect(identities.count == 1)
+    }
+
     // MARK: - F-4. Born-remote con fila outbox HUÉRFANA → full-row remoto ÍNTEGRO (skip no aplica)
 
     @Test func apply_bornRemote_orphanOutboxRow_materializesFullRow() throws {
