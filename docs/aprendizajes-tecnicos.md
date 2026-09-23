@@ -16,9 +16,9 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (27 entradas)
+## Índice (28 entradas)
 
-> **No hace falta leer este fichero entero** — son 201 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 202 KB. Localiza la entrada
 > aquí y salta a ella.
 
 - `—` [Sync de Grupos (CKSyncEngine) NO debe arrancar/`save()` sobre el `mainContext` compartido antes](#sync-de-grupos-cksyncengine-no-debe-arrancarsave-sobre-el-maincontext-compartido-antes)
@@ -40,6 +40,7 @@
 - `—` [`accessibilityIdentifier` NO se propaga dentro de un `.alert` de SwiftUI: el botón existe en pantall](#accessibilityidentifier-no-se-propaga-dentro-de-un-alert-de-swiftui-el-botn-existe-en-pantalla-y-el-id-llega-vaco-al-rbol)
 - `—` [`xcodebuild test` REINSTALA la app del simulador: el QA que corres después del gate no mira tu](#xcodebuild-test-reinstala-la-app-del-simulador-el-qa-que-corres-despus-del-gate-no-mira-tu)
 - `—` [El árbol de accesibilidad del simulador se degrada tras muchos ciclos launch/stop y solo lo cura](#el-rbol-de-accesibilidad-del-simulador-se-degrada-tras-muchos-ciclos-launchstop-y-solo-lo-cura)
+- `2026-09-23` [Una tanda de mutantes: `-collect-test-diagnostics never`, o cada mutante muerto cuesta 10 min (2026-](#una-tanda-de-mutantes--collect-test-diagnostics-never-o-cada-mutante-muerto-cuesta-10-min-2026-09-23)
 - `2026-09-16` [Atajos en el simulador: la tarjeta de la app no corre, una acción añadida a mano sí (2026-09-16)](#atajos-en-el-simulador-la-tarjeta-de-la-app-no-corre-una-accin-aadida-a-mano-s-2026-09-16)
 - `2026-09-08` [Una corrida programada que no ocurre no deja rastro, y las dos formas obvias de buscarla mienten (20](#una-corrida-programada-que-no-ocurre-no-deja-rastro-y-las-dos-formas-obvias-de-buscarla-mienten-2026-09-08)
 - `2026-09-02` [Un helper de aislamiento puede vaciar 22 de 31 modelos y llamarse a sí mismo «borra todas las instan](#un-helper-de-aislamiento-puede-vaciar-22-de-31-modelos-y-llamarse-a-s-mismo-borra-todas-las-instancias-2026-09-02)
@@ -556,3 +557,12 @@ la app viva en segundo plano si lo estaba. Así se verificó el caso en caliente
 **Higiene:** «Simular Pro» persiste `dev.forceProTier` en el `UserDefaults` que comparte con el host de
 unit tests (ver «El gemelo del anterior», 2026-08-05). Después de usarlo, un arranque con `-uitest` purga
 las cuatro claves (`StoreKitManager.applyUITestProTier`). Medido: el plist las pierde a los pocos segundos.
+
+### Una tanda de mutantes: `-collect-test-diagnostics never`, o cada mutante muerto cuesta 10 min (2026-09-23)
+
+Con un test en rojo, `xcodebuild test` lanza `simctl diagnose` (timeout de 600 s) antes de salir. En una tanda de mutantes
+**cada mutante que muere es un rojo**, así que cada uno pagaba ~10 min recogiendo diagnósticos que nadie iba a leer: dos
+mutantes en 20 min, con el simulador tomado todo ese rato. Con `-collect-test-diagnostics never` la misma tanda (25
+mutantes, 7 suites, 437 casos cada una) tardó ~14 s por corrida de tests, y el build dominó el tiempo. **Solo para
+mutantes**: en una corrida normal esos diagnósticos son lo que explica un rojo inesperado. Y ojo al leer el proceso
+colgado: `simctl diagnose` vivo con la app a 0 % de CPU parece un test que se colgó, y es xcodebuild terminando.
