@@ -1,10 +1,10 @@
 ---
 id: groups-merkle-reads-an-unreadable-table-as-an-empty-one
-status: backlog
+status: in-progress
 priority: high
 area: "grupos, modo-nube"
 created: 2026-09-22
-updated: 2026-09-22
+updated: 2026-09-23
 source: "barrido del patrón durante `verify-reads-a-failed-local-fetch-as-an-empty-outbox` (2026-09-22)"
 ---
 
