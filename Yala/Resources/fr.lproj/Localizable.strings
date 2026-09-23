@@ -6059,3 +6059,12 @@
 "storage.confirm.cancelMigrationConfirm" = "Oui, annuler";
 /* Botón que sigue con la activación */
 "storage.confirm.cancelMigrationKeep" = "Continuer l’activation";
+
+/* Tarjeta de Almacenamiento cuando el registro de la migración no se deja leer */
+"storage.journalUnreadable.message" = "Nous n’avons pas pu vérifier où en sont tes données. Pour l’instant, tu ne peux ni les transférer vers le cloud ni les ramener dans iCloud. Nous continuons d’essayer ; si ça ne s’arrange pas, ferme Yala puis rouvre-la.";
+
+/* Sincronización parada hasta iniciar sesión, cuando no se pudo contar cuántos cambios faltan */
+"storage.sync.needsSignInUncounted" = "Connecte-toi pour envoyer tes modifications";
+
+/* Ver qué migraría: los conteos no se pudieron leer */
+"storage.migrate.previewUnreadable" = "Nous n’avons pas pu compter tes données. Réessaie dans un instant.";

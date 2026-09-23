@@ -1865,6 +1865,10 @@ final class AppBootstrapper {
             hasSeenInitialActive = true
         }
 
+        // La ventana de captura de identidad que el arranque no pudo derivar porque el journal no se dejó leer (un prewarm
+        // con el store aún protegido): se deriva ahora, antes de que la persona cree nada. Sin pendiente es un `Bool`.
+        MigrationPhaseStore.shared.deriveDeferredIdentityCaptureIfNeeded()
+
         // Apply any pending remote CloudKit changes on foreground resume
         sessionState.applyPendingChangesIfNeeded()
 

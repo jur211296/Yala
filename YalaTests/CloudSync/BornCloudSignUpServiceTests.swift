@@ -506,10 +506,10 @@ struct BornCloudStorageActivationTests {
         // estampado del claim (A2) + la fase estable + el par completo + el mount ya en `.cloud`. Si alguien
         // journalea una fase transicional aquí, el motor se queda esperando a un runner que nadie conduce.
         let (sut, _, _) = makeSUT()
-        let before = MigrationPhaseStore.shared.currentPhase
+        let before = MigrationPhaseStore.shared.currentPhaseRead
         _ = try activate(sut, mount: .iCloudMirror)
-        #expect(MigrationPhaseStore.shared.currentPhase == before)
-        #expect(MigrationRuntimeGate.isDomainStablePhase(MigrationPhaseStore.shared.currentPhase))
+        #expect(MigrationPhaseStore.shared.currentPhaseRead == before)
+        #expect(MigrationRuntimeGate.canRun(read: MigrationPhaseStore.shared.currentPhaseRead, cloudWithMirrorOn: false, personalMountMismatch: false))
     }
 
     @Test("el par NO se escribe por el mero hecho de construir el servicio ni de resolver un claim")

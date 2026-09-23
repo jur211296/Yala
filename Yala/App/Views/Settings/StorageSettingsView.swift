@@ -58,7 +58,8 @@ struct StorageSettingsView: View {
     /// One-shot de «Usar otra cuenta»: lo quema el botón y lo consume el `onDismiss` de la hoja, que abre la elección de
     /// Apple/Google con la hoja ya abajo. «Entendido» y el swipe no lo queman.
     @State private var migrationBlockUseAnotherAccount = false
-    @State private var dryRun: (transactions: Int, categories: Int, accounts: Int, budgets: Int)?
+    /// «Ver qué migraría»: `nil` hasta el toque; `.unreadable` si los conteos no se dejaron leer.
+    @State private var dryRun: MigrationDryRunPreview?
     /// Tick de refresco del journal vivo (el runner no es `@Observable`).
     @State private var refreshTick = false
     /// **El veredicto de App Attest de ESTE teléfono** (ticket
@@ -221,6 +222,11 @@ struct StorageSettingsView: View {
         case .failed(let kind):
             failedCard(controller, kind: kind)
             GroupsAssociationSection(onAssociate: onAssociateGroupsAccount)
+        case .journalUnreadable:
+            journalUnreadableCard()
+            // La sección de Grupos se queda, como en `.failed` y `.waitingForLeader`: un journal que no se deja leer puede
+            // durar, y ocultarla quitaría la única puerta para soltar esa cuenta. Soltarla no mueve los datos personales.
+            GroupsAssociationSection(onAssociate: onAssociateGroupsAccount)
         }
     }
 
@@ -291,11 +297,19 @@ struct StorageSettingsView: View {
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("storage_preview_button")
 
-                if let dryRun {
-                    Text(L10n.Storage.Migrate.previewResult(
-                        dryRun.transactions, dryRun.categories, dryRun.accounts, dryRun.budgets))
+                switch dryRun {
+                case let .counts(transactions, categories, accounts, budgets):
+                    Text(L10n.Storage.Migrate.previewResult(transactions, categories, accounts, budgets))
                         .font(DS.Typography.caption.monospaced())
                         .foregroundStyle(.tertiary)
+                case .unreadable:
+                    // Sin cifras: un cero sería inventado (ticket `an-unreadable-migration-journal-reads-as-never-started`).
+                    Text(L10n.Storage.Migrate.previewUnreadable)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                        .accessibilityIdentifier("storage_preview_unreadable")
+                case nil:
+                    EmptyView()
                 }
             }
 
@@ -402,9 +416,24 @@ struct StorageSettingsView: View {
             if CloudAttestNotice.isShowing(verdictIsTerminal: attestVerdictIsTerminal) {
                 CloudAttestNoticeBanner(accessibilityID: "storage_sync_attest_banner")
             } else if controller.syncNeedsSignIn {
-                Text(L10n.Storage.Sync.needsSignIn(controller.pendingUploadCount))
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(DS.Semantic.warningForeground)
+                // Sin cifra si la cola no se dejó contar: el motor sigue parado y firmar sigue siendo la salida (ticket
+                // `an-unreadable-migration-journal-reads-as-never-started`). Naranja solo el icono, como la nota de la
+                // vuelta de esta misma pantalla: como TEXTO, `warningForeground` sobre la tarjeta blanca no llega a AA.
+                Label {
+                    if let pending = controller.pendingUploadCount {
+                        Text(L10n.Storage.Sync.needsSignIn(pending))
+                    } else {
+                        Text(L10n.Storage.Sync.needsSignInUncounted)
+                    }
+                } icon: {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(DS.Semantic.warningForeground)
+                }
+                .font(DS.Typography.caption)
+                .foregroundStyle(.secondary)
+                .accessibilityElement(children: .combine)
+                .accessibilityIdentifier(controller.pendingUploadCount == nil
+                                         ? "storage_sync_needs_signin_uncounted" : "storage_sync_needs_signin_count")
                 YalaPrimaryButton(L10n.Storage.Sync.signInButton, icon: "person.crop.circle.badge.checkmark",
                                   isDisabled: controller.isWorking) {
                     Task { await controller.signInToResumeSync() }
@@ -641,6 +670,27 @@ struct StorageSettingsView: View {
         .storageCardStyle()
     }
 
+    // MARK: - Journal ilegible
+
+    /// El journal de la migración no se dejó leer (ticket `an-unreadable-migration-journal-reads-as-never-started`). No
+    /// ofrece ningún botón: migrar, volver, retomar o cancelar se decidirían con una fase que no se leyó. Lo reintenta el
+    /// refresco de esta pantalla, cada segundo, y la tarjeta desaparece sola en cuanto la lectura funciona.
+    private func journalUnreadableCard() -> some View {
+        HStack(alignment: .top, spacing: DS.Spacing.md) {
+            // Naranja solo el icono: como TEXTO, `warningForeground` sobre la tarjeta blanca no llega a AA.
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(DS.Semantic.warningForeground)
+            Text(L10n.Storage.journalUnreadableMessage)
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.primary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .storageCardStyle()
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("storage_journal_unreadable_card")
+    }
+
     // MARK: - Failed (rollback)
 
     private func failedCard(_ controller: CloudMigrationController, kind: CloudMigrationUIState.FailureKind) -> some View {
@@ -748,8 +798,8 @@ struct StorageSettingsView: View {
     private var offersCloudMigrationEntry: Bool {
         StorageRowGateLogic.offersCloudMigrationEntry(
             remoteEnabled: CloudRemoteFlags.cloudModeEnabled,
-            isEngaged: StorageModePersistence.read() == .cloud
-                || (controller?.uiState ?? .idle) != .idle,
+            isEngaged: StorageRowGateLogic.isEngaged(
+                persistedMode: StorageModePersistence.read(), uiState: controller?.uiState ?? .idle),
             isAttestSupported: UITestHooks.fakeAttestSupport || AppAttestClient.canObtainSessionToken)
     }
 

@@ -7050,6 +7050,8 @@ enum L10n {
     enum Storage {
         static var title: String { ls("storage.title", comment: "") }
         static var waitingForLeader: String { ls("storage.waitingForLeader", comment: "") }
+        /// El journal de la migración no se deja leer (ticket `an-unreadable-migration-journal-reads-as-never-started`).
+        static var journalUnreadableMessage: String { ls("storage.journalUnreadable.message", comment: "") }
 
         /// Paso 10 · la sección «Grupos»: qué cuenta usa esta sesión privada para grupos, y su desenlace.
         enum Groups {
@@ -7099,6 +7101,8 @@ enum L10n {
             static var body: String { ls("storage.migrate.body", comment: "") }
             static var button: String { ls("storage.migrate.button", comment: "") }
             static var previewButton: String { ls("storage.migrate.previewButton", comment: "") }
+            /// Los conteos de «Ver qué migraría» no se dejaron leer: sin cifras.
+            static var previewUnreadable: String { ls("storage.migrate.previewUnreadable", comment: "") }
             /// "%1$lld movimientos · %2$lld categorías · %3$lld cuentas · %4$lld presupuestos".
             static func previewResult(_ tx: Int, _ cat: Int, _ acc: Int, _ budgets: Int) -> String {
                 String(format: ls("storage.migrate.previewResult", comment: ""), tx, cat, acc, budgets)
@@ -7143,6 +7147,8 @@ enum L10n {
             static func needsSignIn(_ count: Int) -> String {
                 String(format: ls("storage.sync.needsSignIn", comment: ""), count)
             }
+            /// La sincronización espera a que inicies sesión y la cola no se dejó contar: sin cifra.
+            static var needsSignInUncounted: String { ls("storage.sync.needsSignInUncounted", comment: "") }
             static var signInButton: String { ls("storage.sync.signInButton", comment: "") }
         }
 

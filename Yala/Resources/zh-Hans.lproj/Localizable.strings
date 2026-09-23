@@ -6070,3 +6070,12 @@
 "storage.confirm.cancelMigrationConfirm" = "是，取消";
 /* Botón que sigue con la activación */
 "storage.confirm.cancelMigrationKeep" = "继续启用云端";
+
+/* Tarjeta de Almacenamiento cuando el registro de la migración no se deja leer */
+"storage.journalUnreadable.message" = "无法确认你的数据目前的状态。暂时无法将数据迁移到云端，也无法切回 iCloud。我们会继续尝试；如果一直这样，请关闭 Yala 后重新打开。";
+
+/* Sincronización parada hasta iniciar sesión, cuando no se pudo contar cuántos cambios faltan */
+"storage.sync.needsSignInUncounted" = "登录以上传你的更改";
+
+/* Ver qué migraría: los conteos no se pudieron leer */
+"storage.migrate.previewUnreadable" = "无法统计你的数据。请稍后重试。";

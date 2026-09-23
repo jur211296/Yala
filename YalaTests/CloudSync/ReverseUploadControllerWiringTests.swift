@@ -95,10 +95,13 @@ struct ReverseUploadControllerWiringTests {
         #expect(start.contains("if hasPendingReverseExit, MigrationRuntimeGate.isDomainStablePhase(journaledPhase) {"))
         #expect(!start.contains("pendingEffectCount"), "el recuento de pendientes no distingue la salida")
 
-        let snapshot = try Self.body(of: "private func readJournalSnapshot() -> (phase: MigrationPhase, pendingCount: Int) {")
-        #expect(snapshot.contains("hasPendingReverseExit = ReverseExitPending.isPending(pending)"))
-        #expect(Self.occurrences(of: "hasPendingReverseExit = false", in: snapshot) == 2,
-                "sin fila y con el fetch fallido no queda un aviso de la lectura anterior")
+        // Sin fila no queda aviso de una lectura anterior (`MigrationJournalSnapshot.empty`). Con el fetch FALLIDO el valor
+        // se conserva a propósito desde `an-unreadable-migration-journal-reads-as-never-started`: ponerlo a `false` era
+        // quitarle el freno a una vuelta nueva encima de una salida a medias. Lo mide `MigrationJournalUnreadableTests`.
+        #expect(try Self.controllerSource().contains("hasPendingReverseExit: ReverseExitPending.isPending(pending)"))
+        #expect(MigrationJournalSnapshot.empty.hasPendingReverseExit == false)
+        let apply = try Self.body(of: "private func readJournal() -> MigrationJournalRead {")
+        #expect(apply.contains("hasPendingReverseExit = snapshot.hasPendingReverseExit"))
     }
 
     /// La alerta de una salida del claim (ticket `reverse-claim-rejection-has-no-way-out-in-the-client`, D3 y D8) sale
@@ -120,7 +123,9 @@ struct ReverseUploadControllerWiringTests {
         let snapshot = try #require(start.range(of: "let claimExitBefore = r.lastReverseClaimExit"))
         let activated = try #require(start.range(of: "await r.submit(.reverseActivated)"))
         let confirmed = try #require(start.range(of: "await r.submit(.reverseConfirmed)"))
-        let refreshed = try #require(start.range(of: "refresh()"))
+        // El `refresh()` de DESPUÉS del claim: el guard del journal ilegible (ticket
+        // `an-unreadable-migration-journal-reads-as-never-started`) tiene otro, antes de tocar el runner.
+        let refreshed = try #require(start.range(of: "refresh()", range: confirmed.upperBound..<start.endIndex))
         let pendingNotice = try #require(start.range(
             of: "if hasPendingReverseExit, MigrationRuntimeGate.isDomainStablePhase(journaledPhase) {"))
         let otherwise = try #require(start.range(of: "} else {"))
@@ -206,6 +211,11 @@ struct ReverseUploadControllerWiringTests {
             "isWorking = true",
             "defer { isWorking = false }",
             "lastError = nil",
+            "guard readJournalDecisionInputs() != nil else {",
+            "lastError = L10n.Storage.journalUnreadableMessage",
+            "refresh()",
+            "return",
+            "}",
             "cancelReverseRequested = false",
             "let r = runner",
             "let claimExitBefore = r.lastReverseClaimExit",
@@ -406,7 +416,9 @@ struct ReverseUploadControllerWiringTests {
         let body = try Self.body(of: "var canCancelReverse: Bool {")
         let lines = body.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }
             .filter { !$0.isEmpty }
-        #expect(lines == ["journaledPhase == .reverseUpload || isBeforeReverseMount"])
+        // El primer término es del ticket `an-unreadable-migration-journal-reads-as-never-started`: con el journal ilegible
+        // `journaledPhase` es la última fase leída, no la de ahora.
+        #expect(lines == ["!isJournalUnreadable && (journaledPhase == .reverseUpload || isBeforeReverseMount)"])
         let beforeMount = try Self.body(of: "var isBeforeReverseMount: Bool {")
         #expect(beforeMount.trimmingCharacters(in: .whitespacesAndNewlines)
             == "ReversePreMountPhase(phase: journaledPhase) != nil")

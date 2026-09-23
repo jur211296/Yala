@@ -40,6 +40,17 @@ nonisolated enum PrefsCutoverDrain {
         }
     }
 
+    /// La misma pregunta con la LECTURA del journal. Un journal que no se deja leer no drena: el drenaje escribe en el
+    /// outbox, y su centinela solo se estampa tras drenar, así que el arranque siguiente lo reintenta.
+    static func isLeaderPostRelaunchPhase(_ read: JournaledPhaseRead) -> Bool {
+        switch read {
+        case .phase(let phase):
+            return isLeaderPostRelaunchPhase(phase)
+        case .unreadable:
+            return false
+        }
+    }
+
     /// Plan puro del drenaje: de `allKeys`, las que están PRESENTES en iKV (`presentInIKV`) y NO tienen
     /// ya una entry pendiente del owner en el outbox (`pendingInOutbox`). Orden estable (el de `allKeys`).
     static func plan(

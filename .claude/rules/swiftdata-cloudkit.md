@@ -40,64 +40,65 @@ paths:
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice de reglas (49)
+## Índice de reglas (50)
 
-> Este fichero son **105 KB en 49 reglas largas**. No lo leas entero: localiza la regla
+> Este fichero son **110 KB en 50 reglas largas**. No lo leas entero: localiza la regla
 > aquí y lee **solo su tramo** con `sed -n '<linea>,<linea+N>p'`.
 > Los números de línea se desplazan al editar — regenera con
 > `python3 scripts/indexar_doc.py <fichero> --apply`.
 
 | Línea | Regla | Peso |
 |---|---|---|
-| `L108` | CloudKit compat | 119 B |
-| `L110` | Schema del container de GRUPOS — campo nuevo = deploy a Production en el MISMO PR | 1.1 KB |
-| `L112` | `#Predicate` GENÉRICO-PROTOCOLO crashea (`DataUtilities.swift:85`) — usa concreto por tipo | 1.8 KB |
-| `L114` | Acciones post-accept de un CKShare = intent PERSISTENTE reconciliable, nunca one-shot (bug Pia 2026-07-11) | 1.3 KB |
-| `L116` | `context.hasChanges` y lo que llega al canal de sync NO son la misma señal, y confundirlas justifica guards por razones  | 2.1 KB |
-| `L122` | Lazy M2M con CloudKit — CSV mirror | 1020 B |
-| `L124` | CSV mirror — stale ≠ nil al regenerar un UUID de identidad (commit `899c1c25`) | 1.4 KB |
-| `L126` | Sync de Grupos (CKSyncEngine) NO debe arrancar/`save()` sobre el `mainContext` compartido antes de que el primer import  | 403 B |
-| `L128` | Lo que el gate de quiescencia DIFIERE solo se recupera solo si es un evento de CloudKit. Si es una INTENCIÓN, el diferid | 425 B |
-| `L130` | El guard G6-3 es TAMBIÉN lo que impide avisos DUPLICADOS mientras los dos canales conviven (Fase 2, 2026-07-29). No lo d | 1.9 KB |
-| `L132` | [STALE, medido 2026-08-03 — el código que describe ya NO EXISTE: `applyRemoteRecordIfAbsent` y `GroupPullRescueGate` dan | 555 B |
-| `L134` | `DefaultHistoryToken` es POR-STORE, y un drain que ancla su high-water en el store equivocado queda ciego al suyo PARA S | 444 B |
-| `L136` | Un borrado tiene DOS mitades y el camino remoto solo copió una: la fila del grupo se borra, el PUENTE personal se queda  | 398 B |
-| `L138` | Un gate por ZONA calculado sobre filas VIVAS es la herramienta equivocada para un tombstone por FILA — y con un duplicad | 510 B |
-| `L142` | El par que apaga el mirror NO se puede hacer atómico ni invertir: se enforcea en el CONSUMIDOR (C-1, commit `246a6939`). | 1.9 KB |
-| `L144` | Un terminal de fallo DENTRO del cutover tiene que devolver el modo a `.icloud` como PRIMER efecto, o es peor que el limb | 1.1 KB |
-| `L146` | `isMarkerExported()` es necesaria-no-suficiente y su espera necesita TOPE: no hay API de cuota de iCloud. | 1.6 KB |
-| `L148` | La subida del snapshot de la IDA también tiene techo y salida, con dos relojes (2026-09-22). | 3.4 KB |
-| `L182` | Y los otros tres pasos de la ida también: claim, identidad y `cutover(.pending)` (2026-09-22). | 4.8 KB |
-| `L227` | La espera de `reverseUpload` también lleva techo, y mide el tiempo SIN AVANZAR, no el total (2026-09-16). | 3.8 KB |
-| `L229` | El claim de la reversa tampoco puede quedarse sin salida: todo `.rejected` vuelve al origen (2026-09-16). | 3.4 KB |
-| `L231` | Y una sesión que caduca ANTES de montar el espejo tampoco puede dejar la barra muda (2026-09-17). | 3.2 KB |
-| `L254` | Y las cuatro fases previas al montaje también tienen techo y salida, con efectos CERO (2026-09-21). | 12.2 KB |
-| `L368` | «Migrar a la nube» nunca adopta, y hacen falta las dos capas que lo impiden (2026-09-16). | 5.1 KB |
-| `L370` | El faro de iCloud-KV (`CloudBeacon`) solo se limpia con PRUEBA de que su cuenta no existe, y «el backend dice que no exi | 4.1 KB |
-| `L397` | Al ELIMINAR una función, lista lo que hacía ADEMÁS de lo que la sustituye — un guard no viaja solo con el camino que pro | 1.5 KB |
-| `L399` | Un dominio de preferencias por SESIÓN es la parte fácil; el INVENTARIO es la difícil (`2a773ed3` → `d04fe0b6`, retirado  | 2.7 KB |
-| `L406` | Antes de sincronizar una preferencia, pregunta DE QUIÉN es el hecho (2026-09-13). | 842 B |
-| `L408` | Una caché compartida se protege con un SELLO, no con una purga — y al retirar el sello, dilo donde estaba (widget, 2026- | 689 B |
-| `L410` | El dominio Grupos pertenece al Apple ID, no al humano: toda frontera de «otro usuario en este device» tiene que SELLARLO | 429 B |
-| `L412` | EXCEPCIÓN al punto anterior, y las tres trampas que trae (C-3, 2026-07-27, `612b21ee`) | 2.9 KB |
-| `L414` | `isCurrentUser` es un flag del canal CloudKit y en el BACKEND nace APAGADO para casi todo el mundo — toda resolución de  | 2.4 KB |
-| `L416` | Duplicar un canal duplica sus ESCRITURAS; sus OBSERVACIONES se quedan atrás, y eso no lo caza ningún test de un canal so | 2.5 KB |
-| `L418` | Una señal puede viajar en NEGATIVO — y entonces el `return` que no deja rastro es un bug de LECTURA, no de escritura (S4 | 372 B |
-| `L420` | Un gate de feature NO puede decidir SI se PARSEA la entrada: solo QUÉ hacer con ella. Y «byte-idéntico al camino viejo»  | 435 B |
-| `L422` | En una frontera de USUARIO el outbox de Grupos y su cursor tienen signos OPUESTOS: uno hay que matarlo y el otro hay que | 3.1 KB |
-| `L424` | El cursor del pull de Grupos (`GroupSyncCursor.groupCursorsJSON`) NO se resetea para «forzar una re-entrega» — es dañino | 1.5 KB |
-| `L426` | Un CONSENT no es una preferencia, y por eso el de Grupos SALIÓ del canal de prefs (C1, 2026-08-11). | 1.8 KB |
-| `L428` | `PreferenceSyncService.remove/set` propaga a la CUENTA, no al device — NUNCA limpiar un consent desde un camino con `.cl | 1.7 KB |
-| `L430` | CARGAR una preferencia no puede ESCRIBIRLA — y el eco de eso convertía al receptor en autor LWW de algo que no escribió  | 373 B |
-| `L432` | El resolvedor canónico de identidad NO es un reemplazo mecánico del flag: contesta otra pregunta en DOS ejes (2026-09-05 | 3.7 KB |
-| `L434` | `ubiquityIdentityToken` mide iCloud DRIVE, no CloudKit — y `.localNoMirror` adjunta el espejo igual, así que usarlo como | 2.0 KB |
-| `L436` | El testigo del mount MIENTE en los hosts de test, y por eso `attachesCloudKitMirror` necesita un seam en cualquier gate  | 2.6 KB |
-| `L438` | Una salida que borra lo local con el espejo montado borra ARCHIVOS antes del mount, nunca FILAS, y solo después de confi | 1.7 KB |
-| `L440` | `CKDatabase.modifyRecordZones` solo LANZA por un fallo de la operación entera: los fallos por ZONA llegan dentro del tup | 1.1 KB |
-| `L442` | Un campo Codable NUEVO y no opcional en el snapshot del App Group apaga TODOS los widgets, y el DTO está DUPLICADO en do | 2.1 KB |
-| `L444` | «ARCHIVOS, nunca FILAS» es una regla sobre el ESPEJO, y el store de Grupos tiene otro camino de salida: su DRAIN. Ahí lo | 2.7 KB |
-| `L446` | Un token que no llega NO es una sesión caducada: pregúntale al SDK si la conserva (2026-09-15). | 2.4 KB |
-| `L448` | El canal personal separa lo mismo desde el 2026-09-16, y cada sitio decide por su cuenta | 2.9 KB |
+| `L109` | CloudKit compat | 119 B |
+| `L111` | Schema del container de GRUPOS — campo nuevo = deploy a Production en el MISMO PR | 1.1 KB |
+| `L113` | `#Predicate` GENÉRICO-PROTOCOLO crashea (`DataUtilities.swift:85`) — usa concreto por tipo | 1.8 KB |
+| `L115` | Acciones post-accept de un CKShare = intent PERSISTENTE reconciliable, nunca one-shot (bug Pia 2026-07-11) | 1.3 KB |
+| `L117` | `context.hasChanges` y lo que llega al canal de sync NO son la misma señal, y confundirlas justifica guards por razones  | 2.1 KB |
+| `L123` | Lazy M2M con CloudKit — CSV mirror | 1020 B |
+| `L125` | CSV mirror — stale ≠ nil al regenerar un UUID de identidad (commit `899c1c25`) | 1.4 KB |
+| `L127` | Sync de Grupos (CKSyncEngine) NO debe arrancar/`save()` sobre el `mainContext` compartido antes de que el primer import  | 403 B |
+| `L129` | Lo que el gate de quiescencia DIFIERE solo se recupera solo si es un evento de CloudKit. Si es una INTENCIÓN, el diferid | 425 B |
+| `L131` | El guard G6-3 es TAMBIÉN lo que impide avisos DUPLICADOS mientras los dos canales conviven (Fase 2, 2026-07-29). No lo d | 1.9 KB |
+| `L133` | [STALE, medido 2026-08-03 — el código que describe ya NO EXISTE: `applyRemoteRecordIfAbsent` y `GroupPullRescueGate` dan | 555 B |
+| `L135` | `DefaultHistoryToken` es POR-STORE, y un drain que ancla su high-water en el store equivocado queda ciego al suyo PARA S | 444 B |
+| `L137` | Un borrado tiene DOS mitades y el camino remoto solo copió una: la fila del grupo se borra, el PUENTE personal se queda  | 398 B |
+| `L139` | Un gate por ZONA calculado sobre filas VIVAS es la herramienta equivocada para un tombstone por FILA — y con un duplicad | 510 B |
+| `L143` | El par que apaga el mirror NO se puede hacer atómico ni invertir: se enforcea en el CONSUMIDOR (C-1, commit `246a6939`). | 2.0 KB |
+| `L145` | Un journal que no se deja leer NO es `notStarted`, y una lectura no escribe (2026-09-22). | 5.2 KB |
+| `L195` | Un terminal de fallo DENTRO del cutover tiene que devolver el modo a `.icloud` como PRIMER efecto, o es peor que el limb | 1.1 KB |
+| `L197` | `isMarkerExported()` es necesaria-no-suficiente y su espera necesita TOPE: no hay API de cuota de iCloud. | 1.6 KB |
+| `L199` | La subida del snapshot de la IDA también tiene techo y salida, con dos relojes (2026-09-22). | 3.4 KB |
+| `L233` | Y los otros tres pasos de la ida también: claim, identidad y `cutover(.pending)` (2026-09-22). | 4.8 KB |
+| `L278` | La espera de `reverseUpload` también lleva techo, y mide el tiempo SIN AVANZAR, no el total (2026-09-16). | 3.8 KB |
+| `L280` | El claim de la reversa tampoco puede quedarse sin salida: todo `.rejected` vuelve al origen (2026-09-16). | 3.4 KB |
+| `L282` | Y una sesión que caduca ANTES de montar el espejo tampoco puede dejar la barra muda (2026-09-17). | 3.2 KB |
+| `L305` | Y las cuatro fases previas al montaje también tienen techo y salida, con efectos CERO (2026-09-21). | 12.2 KB |
+| `L419` | «Migrar a la nube» nunca adopta, y hacen falta las dos capas que lo impiden (2026-09-16). | 5.1 KB |
+| `L421` | El faro de iCloud-KV (`CloudBeacon`) solo se limpia con PRUEBA de que su cuenta no existe, y «el backend dice que no exi | 4.1 KB |
+| `L448` | Al ELIMINAR una función, lista lo que hacía ADEMÁS de lo que la sustituye — un guard no viaja solo con el camino que pro | 1.5 KB |
+| `L450` | Un dominio de preferencias por SESIÓN es la parte fácil; el INVENTARIO es la difícil (`2a773ed3` → `d04fe0b6`, retirado  | 2.7 KB |
+| `L457` | Antes de sincronizar una preferencia, pregunta DE QUIÉN es el hecho (2026-09-13). | 842 B |
+| `L459` | Una caché compartida se protege con un SELLO, no con una purga — y al retirar el sello, dilo donde estaba (widget, 2026- | 689 B |
+| `L461` | El dominio Grupos pertenece al Apple ID, no al humano: toda frontera de «otro usuario en este device» tiene que SELLARLO | 429 B |
+| `L463` | EXCEPCIÓN al punto anterior, y las tres trampas que trae (C-3, 2026-07-27, `612b21ee`) | 2.9 KB |
+| `L465` | `isCurrentUser` es un flag del canal CloudKit y en el BACKEND nace APAGADO para casi todo el mundo — toda resolución de  | 2.4 KB |
+| `L467` | Duplicar un canal duplica sus ESCRITURAS; sus OBSERVACIONES se quedan atrás, y eso no lo caza ningún test de un canal so | 2.5 KB |
+| `L469` | Una señal puede viajar en NEGATIVO — y entonces el `return` que no deja rastro es un bug de LECTURA, no de escritura (S4 | 372 B |
+| `L471` | Un gate de feature NO puede decidir SI se PARSEA la entrada: solo QUÉ hacer con ella. Y «byte-idéntico al camino viejo»  | 435 B |
+| `L473` | En una frontera de USUARIO el outbox de Grupos y su cursor tienen signos OPUESTOS: uno hay que matarlo y el otro hay que | 3.1 KB |
+| `L475` | El cursor del pull de Grupos (`GroupSyncCursor.groupCursorsJSON`) NO se resetea para «forzar una re-entrega» — es dañino | 1.5 KB |
+| `L477` | Un CONSENT no es una preferencia, y por eso el de Grupos SALIÓ del canal de prefs (C1, 2026-08-11). | 1.8 KB |
+| `L479` | `PreferenceSyncService.remove/set` propaga a la CUENTA, no al device — NUNCA limpiar un consent desde un camino con `.cl | 1.7 KB |
+| `L481` | CARGAR una preferencia no puede ESCRIBIRLA — y el eco de eso convertía al receptor en autor LWW de algo que no escribió  | 373 B |
+| `L483` | El resolvedor canónico de identidad NO es un reemplazo mecánico del flag: contesta otra pregunta en DOS ejes (2026-09-05 | 3.7 KB |
+| `L485` | `ubiquityIdentityToken` mide iCloud DRIVE, no CloudKit — y `.localNoMirror` adjunta el espejo igual, así que usarlo como | 2.0 KB |
+| `L487` | El testigo del mount MIENTE en los hosts de test, y por eso `attachesCloudKitMirror` necesita un seam en cualquier gate  | 2.6 KB |
+| `L489` | Una salida que borra lo local con el espejo montado borra ARCHIVOS antes del mount, nunca FILAS, y solo después de confi | 1.7 KB |
+| `L491` | `CKDatabase.modifyRecordZones` solo LANZA por un fallo de la operación entera: los fallos por ZONA llegan dentro del tup | 1.1 KB |
+| `L493` | Un campo Codable NUEVO y no opcional en el snapshot del App Group apaga TODOS los widgets, y el DTO está DUPLICADO en do | 2.1 KB |
+| `L495` | «ARCHIVOS, nunca FILAS» es una regla sobre el ESPEJO, y el store de Grupos tiene otro camino de salida: su DRAIN. Ahí lo | 2.7 KB |
+| `L497` | Un token que no llega NO es una sesión caducada: pregúntale al SDK si la conserva (2026-09-15). | 2.4 KB |
+| `L499` | El canal personal separa lo mismo desde el 2026-09-16, y cada sitio decide por su cuenta | 2.9 KB |
 
 <!-- INDICE:fin -->
 
@@ -139,7 +140,57 @@ paths:
 
 ### Modo Nube · el par `.cloud` + `mirrorOffArmed`
 
-- **El par que apaga el mirror NO se puede hacer atómico ni invertir: se enforcea en el CONSUMIDOR (C-1, commit `246a6939`).** `SwiftDataConfiguration.personalStoreDecision` monta el store personal mirror-OFF solo con el par COMPLETO (`storageMode == .cloud` **Y** `mirrorOffArmed`), y ese diseño es correcto: armar antes de que el `CloudMigrationMarker` exporte relanzaría con el mirror OFF y el marcador **jamás** llegaría a CloudKit (migración irrecuperable, SERIO-1). Tres salidas que parecen obvias y **están cerradas**: (1) **invertir el orden** deja la mitad `armado + .icloud`, y `CloudMigrationUIStateDeriver.derive` la lee como `needsRelaunch(.toCloud)` **sin mirar `storageMode`** ⇒ tras el relanzamiento el modo sigue `.icloud` ⇒ tarjeta «cierra y vuelve a abrir» **en bucle sin salida**; (2) **transaccionalidad**: `UserDefaults` no la tiene, dos `set` consecutivos nunca son atómicos; (3) **un tercer estado durable** («grant») convierte un estado sucio preexistente en uno *legal-looking*. ⇒ **El invariante real es operativo, no de escritura**: ningún estado durable puede tener `.cloud` + mirror-off SIN armar **en una fase journaleada ESTABLE**. Lo enforcea `MigrationRuntimeGate.canRun(phase:cloudWithMirrorOn:personalMountMismatch:)` (consumido por `CloudSyncRuntime.canRunDomain`), con `StorageModePersistence.isCloudWithMirrorOn` como aserción y `writeCloudArmed` como escritor único del par. **Por qué importa y dónde muerde: `notStarted` ES fase estable** (device ADOPTADO, #30), así que un par a medio escribir —kill entre las dos keys del adopt (`runAdoptFlow`), o cierre de reversa a medias— dejaba pasar el gate con el mirror MONTADO ⇒ **motor de sync Y espejo de CloudKit escribiendo el mismo store**, sin ningún gate de fase que lo notara. En `.icloud` el predicado es `false` por construcción ⇒ inerte para el 99 % de usuarios de 2.x (pinneado en ambos valores del flag por `StorageModePersistenceTests`).
+- **El par que apaga el mirror NO se puede hacer atómico ni invertir: se enforcea en el CONSUMIDOR (C-1, commit `246a6939`).** `SwiftDataConfiguration.personalStoreDecision` monta el store personal mirror-OFF solo con el par COMPLETO (`storageMode == .cloud` **Y** `mirrorOffArmed`), y ese diseño es correcto: armar antes de que el `CloudMigrationMarker` exporte relanzaría con el mirror OFF y el marcador **jamás** llegaría a CloudKit (migración irrecuperable, SERIO-1). Tres salidas que parecen obvias y **están cerradas**: (1) **invertir el orden** deja la mitad `armado + .icloud`, y `CloudMigrationUIStateDeriver.derive` la lee como `needsRelaunch(.toCloud)` **sin mirar `storageMode`** ⇒ tras el relanzamiento el modo sigue `.icloud` ⇒ tarjeta «cierra y vuelve a abrir» **en bucle sin salida**; (2) **transaccionalidad**: `UserDefaults` no la tiene, dos `set` consecutivos nunca son atómicos; (3) **un tercer estado durable** («grant») convierte un estado sucio preexistente en uno *legal-looking*. ⇒ **El invariante real es operativo, no de escritura**: ningún estado durable puede tener `.cloud` + mirror-off SIN armar **en una fase journaleada ESTABLE**. Lo enforcea `MigrationRuntimeGate.canRun(phase:cloudWithMirrorOn:personalMountMismatch:)` (consumido por `CloudSyncRuntime.canRunDomain` a través de su variante `canRun(read:…)`, que con el journal ilegible no arranca — regla siguiente), con `StorageModePersistence.isCloudWithMirrorOn` como aserción y `writeCloudArmed` como escritor único del par. **Por qué importa y dónde muerde: `notStarted` ES fase estable** (device ADOPTADO, #30), así que un par a medio escribir —kill entre las dos keys del adopt (`runAdoptFlow`), o cierre de reversa a medias— dejaba pasar el gate con el mirror MONTADO ⇒ **motor de sync Y espejo de CloudKit escribiendo el mismo store**, sin ningún gate de fase que lo notara. En `.icloud` el predicado es `false` por construcción ⇒ inerte para el 99 % de usuarios de 2.x (pinneado en ambos valores del flag por `StorageModePersistenceTests`).
+
+- **Un journal que no se deja leer NO es `notStarted`, y una lectura no escribe (2026-09-22).** Ticket
+  `an-unreadable-migration-journal-reads-as-never-started`. Hasta ese día el `catch` del `fetch` de `MigrationState`
+  devolvía `notStarted` en los DOS lectores (`MigrationPhaseStore`, `CloudMigrationController`), y `notStarted` es la fase
+  estable más ancha: motor en marcha, BGTasks sin gate, remap emitido. El del controller además ponía a cero los seis
+  motivos de la tarjeta —y `hasPendingReverseExit`, el freno de una vuelta nueva encima de una salida a medias—. Seis
+  cosas que no se tocan sin romperlo:
+  (1) **la lectura fallida es `JournaledPhaseRead.unreadable`, no un case de `MigrationPhase`**: ese enum se journalea con
+  fixtures APPEND-ONLY y sus `switch` clasifican fases por las que la máquina PASA. Sin fila sigue siendo
+  `.phase(.notStarted)`, que ahí sí es verdad;
+  (2) **`MigrationPhaseStore.currentPhaseRead` devuelve la LECTURA**, y el nombre viejo (`currentPhase`) no existe a
+  propósito: un getter de `MigrationPhase` al lado es la trampa puesta para el consumidor siguiente. Los siete deciden
+  hacia el lado que no concede, cada uno con su variante `read:` pura — BGTasks con la disciplina TRANSITORIA
+  (`BGTaskMigrationGate.decide(read:)`: el lector suspende y el escritor exige quiescencia, así que con quiescencia
+  CORRE), motor parado (`MigrationRuntimeGate.canRun(read:)`), remap bloqueado, drenaje iKV sin drenar
+  (`PrefsCutoverDrain.isLeaderPostRelaunchPhase(_ read:)`);
+  (3) **la ventana de captura de identidad se APLAZA, no se decide** (`identityCaptureDerivationPending`): encenderla por
+  las dudas contradice «no se enciende globalmente» y un prewarm la encendería en medio parque; dejarla apagada pierde la
+  identidad de lo creado en la ventana, porque el flag vive en memoria y solo se deriva en `configure`. La primera lectura
+  buena de `currentPhaseRead` hace la derivación, **y cada primer plano la provoca**
+  (`deriveDeferredIdentityCaptureIfNeeded`, desde `AppBootstrapper.handleBecameActive`): en `.icloud` —casi toda la
+  ventana— ni el motor ni el remap ni el drenaje llegan a leer la fase, y sin ese hook la lectura buena esperaba a un
+  BGTask. El swap de persona suelta el pendiente;
+  (4) **el controller tiene UN lector** (`readJournal()`) sobre una función pura (`MigrationJournalRead.read`) cuyo caso
+  `.unreadable` no lleva valores: la rama ilegible solo marca `isJournalUnreadable` —rastro en la TRANSICIÓN, porque la
+  pantalla lee cada segundo— y los seis motivos conservan el último valor leído. `readJournalDecisionInputs()` devuelve
+  `nil` y `resumeIfNeeded`, `rekickIfParked` y `startRuntimeIfStable` no deciden nada, y `startMigration`/`startReverse`
+  vuelven a leer antes de empezar (sus confirmaciones cuelgan de la RAÍZ de la pantalla y sobreviven al cambio de
+  estado). **El re-kick de cada primer plano refresca** una pantalla que se quedó en `.journalUnreadable` y ya lee, **y
+  arranca el motor si quedó `.idle` con la fase estable**: un arranque ilegible deja `CloudSyncRuntime` en `.idle`, que
+  ni `handleBecameActive` re-evalúa ni el boot vuelve a mirar, así que un teléfono en la nube se quedaba sin sincronizar
+  hasta relanzar, con «Todo sincronizado» en pantalla (lo cazaron dos lentes de la review). Solo `.idle`: `startShared`
+  re-arranca todo lo que no sea `.running`, y un `.stoppedUntilRelaunch` no se toca;
+  (5) **la pantalla tiene su estado, `CloudMigrationUIState.journalUnreadable`**: tarjeta honesta, ningún botón que mueva
+  los datos y la sección de Grupos conservada (como `.failed`: puede durar). El relanzamiento de IDA sigue ganando porque
+  no mira la fase (`needsForwardRelaunch`, un solo sitio para las dos derivaciones). `canCancelMigration` y
+  `canCancelReverse` dan `false` mientras dure: `journaledPhase` es la última fase LEÍDA y sin ese término el `.onChange`
+  no bajaría un diálogo abierto. **No cuenta como `isEngaged`** (`StorageRowGateLogic.isEngaged`, `switch` exhaustivo,
+  el único sitio de ese término): con el `!= .idle` de antes abría la fila bajo el kill a quien nunca empezó y apagaba
+  `abortIfCloudEntryClosed`. **El Welcome lo lee como «sin dato en este tick»** (`CloudWelcomeSignInFlow.phase` devuelve
+  `nil` y la pantalla se queda como estaba): un `.error` ofrecía volver al chooser con el adopt quizá aparcado y un
+  «Reintentar» que repetía el sign-in entero; el `claimBlocker` del runner sí gana;
+  (6) **los cuatro `try?` de la pantalla, uno a uno**: la cola que no se cuenta ofrece firmar SIN cifra
+  (`pendingUploadCount == nil`), el mapa que no se cuenta es `ReverseEligibility.mapUnreadable` (el born-cloud de este
+  dispositivo sigue elegible: no necesita el mapa), «Ver qué migraría» no enseña ceros inventados
+  (`MigrationDryRunPreview.unreadable`) y el marcador que no se cuenta se lee «no hay», que es el lado seguro por la regla
+  de las dos capas de «Migrar». Lo fija `MigrationJournalUnreadableTests` (lógica pura con control positivo y el cuerpo
+  entero de cada rama) y el XCUITest `StorageJournalUnreadableUITests` (seam `-uitest-migration-journal-unreadable`).
+  Residual con ticket: un `phaseData` presente que no decodifica sigue leyéndose `notStarted`
+  (`an-undecodable-migration-phase-reads-as-never-started`).
 
 - **Un terminal de fallo DENTRO del cutover tiene que devolver el modo a `.icloud` como PRIMER efecto, o es peor que el limbo que arregla.** `failedRollback` «pelado» deja `.cloud` persistido, y `MigrationRunner.resetAfterRollback` (el botón «Reintentar» de la UI) journalea `notStarted` — **fase estable** — y además hacía `setPendingEffects([])`, tirando el efecto que iba a reparar el modo. Resultado: motor + mirror sin gate. ⇒ el abort emite `[.persistICloudMode, .deleteCloudKitMarker, .rollback]` **en ese orden** (`.persistICloudMode` es el ÚNICO que no puede lanzar — `UserDefaults` puro — así que la mitad peligrosa se deshace antes de que corra nada que falle; `.deleteCloudKitMarker` sí relanza a propósito y queda journaled-pendiente), y `resetAfterRollback` **drena los pendientes ANTES de limpiar el journal**. Corolario para efectos nuevos de cierre: ordénalos por «qué pasa si el siguiente lanza», no por afinidad temática. El cuarteto de la reversa (§h.4) tiene el orden INVERSO y por eso conserva el mismo bug-class (residual documentado, ticket aparte).
 

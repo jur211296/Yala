@@ -6070,3 +6070,12 @@
 "storage.confirm.cancelMigrationConfirm" = "キャンセルする";
 /* Botón que sigue con la activación */
 "storage.confirm.cancelMigrationKeep" = "有効化を続ける";
+
+/* Tarjeta de Almacenamiento cuando el registro de la migración no se deja leer */
+"storage.journalUnreadable.message" = "データの状態を確認できませんでした。今はクラウドへの移行も iCloud への切り戻しもできません。引き続き確認します。解決しない場合は、Yala を終了してもう一度開いてください。";
+
+/* Sincronización parada hasta iniciar sesión, cuando no se pudo contar cuántos cambios faltan */
+"storage.sync.needsSignInUncounted" = "サインインして変更をアップロード";
+
+/* Ver qué migraría: los conteos no se pudieron leer */
+"storage.migrate.previewUnreadable" = "データを数えられませんでした。少し待ってからもう一度お試しください。";

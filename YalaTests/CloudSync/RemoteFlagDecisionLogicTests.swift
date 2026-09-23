@@ -364,8 +364,8 @@ struct StorageRowGroupsAssociationWiringTests {
             "private var offersCloudMigrationEntry: Bool { "
             + "StorageRowGateLogic.offersCloudMigrationEntry( "
             + "remoteEnabled: CloudRemoteFlags.cloudModeEnabled, "
-            + "isEngaged: StorageModePersistence.read() == .cloud "
-            + "|| (controller?.uiState ?? .idle) != .idle, "
+            + "isEngaged: StorageRowGateLogic.isEngaged( "
+            + "persistedMode: StorageModePersistence.read(), uiState: controller?.uiState ?? .idle), "
             + "isAttestSupported: \(Self.attestCapability)) }")
         #expect(termIsIntact, """
             el término de la entrada cambió de forma. Se fija entero porque es el único candado de la \

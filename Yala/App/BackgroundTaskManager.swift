@@ -155,7 +155,7 @@ final class BackgroundTaskManager {
         // reabre el SIGTRAP de la saga de Grupos). El re-scheduling de arriba hace que iOS lo reintente.
         // HOY la fase real es SIEMPRE .notStarted → .run: comportamiento IDÉNTICO al actual hasta I10-wiring.
         let gateDecision = BGTaskMigrationGate.decide(
-            phase: MigrationPhaseStore.shared.currentPhase,
+            read: MigrationPhaseStore.shared.currentPhaseRead,
             isImportQuiescent: iCloudSyncService.shared.isImportQuiescent,
             role: .reader
         )
@@ -208,7 +208,7 @@ final class BackgroundTaskManager {
         // (re-programado arriba) si aún no la hay → nunca un save() sobre grafo a medio hidratar. HOY la
         // fase real es SIEMPRE .notStarted → .run: comportamiento IDÉNTICO al actual hasta I10-wiring.
         let gateDecision = BGTaskMigrationGate.decide(
-            phase: MigrationPhaseStore.shared.currentPhase,
+            read: MigrationPhaseStore.shared.currentPhaseRead,
             isImportQuiescent: iCloudSyncService.shared.isImportQuiescent,
             role: .writer
         )
@@ -447,7 +447,7 @@ final class BackgroundTaskManager {
     /// handlers de arriba (se retiran junto al resto del harness al cerrar I11).
     func spikeS7RunWidgetPath() {
         let gateDecision = BGTaskMigrationGate.decide(
-            phase: MigrationPhaseStore.shared.currentPhase,
+            read: MigrationPhaseStore.shared.currentPhaseRead,
             isImportQuiescent: iCloudSyncService.shared.isImportQuiescent,
             role: .reader
         )
@@ -465,7 +465,7 @@ final class BackgroundTaskManager {
 
     func spikeS7RunReportPath() {
         let gateDecision = BGTaskMigrationGate.decide(
-            phase: MigrationPhaseStore.shared.currentPhase,
+            read: MigrationPhaseStore.shared.currentPhaseRead,
             isImportQuiescent: iCloudSyncService.shared.isImportQuiescent,
             role: .writer
         )

@@ -50,7 +50,7 @@ struct PersonalMountMismatchGuardTests {
 
         // Premisas explícitas: si alguna dejara de cumplirse, este test pasaría por la razón equivocada.
         #expect(SwiftDataConfiguration.personalStoreMountedDecision.attachesCloudKitMirror)
-        #expect(MigrationRuntimeGate.isDomainStablePhase(MigrationPhaseStore.shared.currentPhase),
+        #expect(MigrationRuntimeGate.canRun(read: MigrationPhaseStore.shared.currentPhaseRead, cloudWithMirrorOn: false, personalMountMismatch: false),
                 "la fase tiene que ser ESTABLE: si no, bloquearía el término de fase y no el nuevo")
 
         #expect(CloudSyncRuntime.canRunDomain() == false)

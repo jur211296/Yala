@@ -731,6 +731,16 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSyncMigration phaseDecodeFailed — journal ilegible, fallback notStarted (gate §i.9 leería estable)")
     }
 
+    /// El `fetch` de `MigrationState` lanzó (ticket `an-unreadable-migration-journal-reads-as-never-started`). `reader`
+    /// dice quién leía: `phase-store` (`MigrationPhaseStore`, lo que consultan el motor, los BGTasks, el remap y el
+    /// drenaje de preferencias; una línea por lectura, porque sus consumidores son discretos) o `controller`
+    /// (`CloudMigrationController`, la pantalla y el coordinador de arranque; una línea por TRANSICIÓN a ilegible, porque
+    /// la pantalla lee cada segundo). Hasta ese ticket este fallo se leía como `notStarted` y solo dejaba un `print` de
+    /// `#if DEBUG`. Sin PII.
+    static func migrationJournalUnreadable(reader: String) {
+        logger.notice("CloudSyncMigration journalUnreadable reader=\(reader, privacy: .public) — no se decide nada con la fase")
+    }
+
     /// El `POST /account/claim` devolvió un outcome NO-success (sessionExpired/transient) → stop retomable; un `resume()`
     /// re-claima idempotente. JAMÁS `fatalError`. Desde el 2026-09-22, con «Migrar a la nube» el stop pasa por el techo del
     /// paso (`forwardStepStalled`, ticket `forward-migration-steps-have-no-ceiling-and-no-exit`) y puede terminar en
@@ -1451,7 +1461,7 @@ final class CloudSyncEngine {
     var _testThrowOnBoundedHistoryFetch = false
 
     /// DIFERIDOS #29 (SERIO 3): override de la fase de migración que consulta el guard de `emitIdentityRemap`
-    /// (default `nil` → `MigrationPhaseStore.shared.currentPhase`, el SSOT real). SOLO para tests (simular una
+    /// (default `nil` → `MigrationPhaseStore.shared.currentPhaseRead`, el SSOT real). SOLO para tests (simular una
     /// migración/reversa EN CURSO sin journal real).
     var _testMigrationPhaseOverride: MigrationPhase?
 
@@ -2963,12 +2973,14 @@ extension CloudSyncEngine {
     /// → el remap NO debe emitirse (el journal/lease posee el outbox en esa ventana). Predicado CANÓNICO
     /// reusado, NO inventado: la clasificación estable/transitoria EXHAUSTIVA de `BGTaskMigrationGate.decide`
     /// (rol `.reader`, quiescencia irrelevante — las fases estables devuelven `.run` incondicional) sobre la
-    /// fase SSOT (`MigrationPhaseStore.shared.currentPhase`, el mismo journal que consultan los BGTasks §i.9).
+    /// fase SSOT (`MigrationPhaseStore.shared.currentPhaseRead`, el mismo journal que consultan los BGTasks §i.9).
     /// El reparador lo PRE-consulta antes de mutar dominio (así el defer no necesita rollback); `emitIdentityRemap`
     /// lo re-verifica como defensa en profundidad.
     var isIdentityRemapBlockedByMigration: Bool {
-        let phase = _testMigrationPhaseOverride ?? MigrationPhaseStore.shared.currentPhase
-        return BGTaskMigrationGate.decide(phase: phase, isImportQuiescent: false, role: .reader) != .run
+        // Con la LECTURA: un journal que no se deja leer bloquea el remap (ticket
+        // `an-unreadable-migration-journal-reads-as-never-started`), porque no se sabe si el journal posee el outbox.
+        let read = _testMigrationPhaseOverride.map(JournaledPhaseRead.phase) ?? MigrationPhaseStore.shared.currentPhaseRead
+        return BGTaskMigrationGate.decide(read: read, isImportQuiescent: false, role: .reader) != .run
     }
 
     /// Emite el trío de identidad de §b.4 para cada `pair` regenerado, ENCOLÁNDOLO en `context` **SIN save** (el

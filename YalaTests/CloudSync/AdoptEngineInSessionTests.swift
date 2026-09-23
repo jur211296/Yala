@@ -134,9 +134,9 @@ struct AdoptEngineInSessionTests {
     /// fase, este test lo dice antes de que el guard se quede sin su término.
     @Test("El journal expone los pendientes: descartarlos era una decisión, no una carencia")
     func journalAlwaysExposedThePendingFlag() throws {
-        let reader = try Self.body(of: "private func readJournalDecisionInputs() -> (phase: MigrationPhase, hasPending: Bool) {",
+        let reader = try Self.body(of: "private func readJournalDecisionInputs() -> (phase: MigrationPhase, hasPending: Bool)? {",
                                    in: try Self.controllerSource())
-        #expect(reader.contains("count > 0"),
+        #expect(reader.contains("snapshot.pendingCount > 0"),
                 "`hasPending` sale del conteo de efectos del journal")
     }
 

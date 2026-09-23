@@ -114,11 +114,16 @@ nonisolated enum ReverseEligibility {
         case degradedNoMap
         /// Ya en un terminal de la reversa (`icloudActive`/`reverseFailedRollback`) → nada que revertir.
         case reverseAlreadyTerminal
+        /// Modo nube, sin constancia de haber nacido en la nube aquí, y los testigos del mapa no se dejaron contar
+        /// (ticket `an-unreadable-migration-journal-reads-as-never-started`) → NO elegible AHORA: no se concede la vuelta
+        /// con un dato que no se leyó. No es `degradedNoMap`: el mapa puede existir, y la pantalla lo vuelve a mirar.
+        case mapUnreadable
     }
 
+    /// - Parameter hasCKMap: `nil` = los testigos con `ckRecordName` no se dejaron contar.
     static func decide(
         storageMode: StorageMode,
-        hasCKMap: Bool,
+        hasCKMap: Bool?,
         isBornCloud: Bool,
         journaledPhase: MigrationPhase
     ) -> Decision {
@@ -131,8 +136,10 @@ nonisolated enum ReverseEligibility {
         }
         // El mapa se exige salvo que sepamos que la cuenta nació en la nube AQUÍ. Sin zona CloudKit previa
         // no hay resurrección posible: el mirror que se monta al revertir SUBE, no baja.
-        guard hasCKMap || isBornCloud else { return .degradedNoMap }
-        return .eligible
+        // Un born-cloud de este dispositivo no necesita el mapa, así que tampoco necesita haberlo leído.
+        if isBornCloud { return .eligible }
+        guard let hasCKMap else { return .mapUnreadable }
+        return hasCKMap ? .eligible : .degradedNoMap
     }
 }
 

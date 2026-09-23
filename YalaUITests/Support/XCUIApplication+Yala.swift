@@ -43,6 +43,7 @@ extension XCUIApplication {
         fakeAttestSupport: Bool = false,
         fakeMigrationIdentity: String? = nil,
         pendingMigrationBlock: String? = nil,
+        migrationJournalUnreadable: Bool = false,
         extraArguments: [String] = []
     ) -> XCUIApplication {
         var args = ["-uitest"]
@@ -143,6 +144,11 @@ extension XCUIApplication {
             args.append("-uitest-pending-migration-block")
             args.append(pendingMigrationBlock)
         }
+        // El fetch del journal de la migración que hace el controller LANZA: la pantalla de Almacenamiento con el journal
+        // ilegible. NOMBRADO por lo mismo que sus vecinos: un typo dejaría el journal legible y el caso positivo caería
+        // culpando a la pantalla. Su nombre lo fija un test de paridad con `UITestHooks`
+        // (`MigrationJournalUnreadableWiringTests`).
+        if migrationJournalUnreadable { args.append("-uitest-migration-journal-unreadable") }
         // Args crudos adicionales (aditivo — p.ej. "-uitest-cloud-chooser").
         args.append(contentsOf: extraArguments)
         // Idioma FIJO para toda la suite. Los seeds nombran sus datos con copy localizado

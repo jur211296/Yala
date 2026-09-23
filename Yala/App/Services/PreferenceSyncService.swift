@@ -243,7 +243,8 @@ final class PreferenceSyncService {
         // presente es el del DUEÑO — drenarlo al outbox de la invitada subiría SUS valores a la
         // cuenta de ella. Solo el `.cloud` real (sin descriptor) drena.
         guard behavior == .cloudOutbox else { return }
-        guard PrefsCutoverDrain.isLeaderPostRelaunchPhase(MigrationPhaseStore.shared.currentPhase) else { return }
+        // Con la LECTURA: un journal que no se deja leer no drena (el centinela no se estampa, reintenta al arrancar).
+        guard PrefsCutoverDrain.isLeaderPostRelaunchPhase(MigrationPhaseStore.shared.currentPhaseRead) else { return }
         guard let userID = cloudUserIDProvider() else { return }
         let sentinelKey = Self.ikvDrainSentinelPrefix + userID
         guard !sentinelDefaults.bool(forKey: sentinelKey) else { return }

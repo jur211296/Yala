@@ -16,7 +16,7 @@
 //  (comportamiento de producción). SOLO el panel S7 escribe el override.
 //
 //  I10-wiring (w6): `configure(container:)` conecta el journal REAL (`MigrationState`, store sync-meta) →
-//  `currentPhase` ya NO es una constante. Precedencia: override DEBUG (S7) > journal real > `.notStarted`.
+//  `currentPhaseRead` ya NO es una constante. Precedencia: override DEBUG (S7) > journal real > `.notStarted`.
 //  Los estados de REVERSA (I11) entran al MISMO enum/gate cuando existan (sin tocar el gate — solo la
 //  lectura del journal).
 //
@@ -49,11 +49,16 @@ final class MigrationPhaseStore {
     /// fase journaleada está en la ventana de captura (≥ `assigningIdentity`, no terminal), enciende
     /// `identityCaptureEnabled` para que sobreviva al relaunch (todo save nuevo acuña `syncID`). Llamado
     /// desde `BackgroundTaskManager.setModelContainer` (SIN tocar AppBootstrapper).
+    ///
+    /// **Un journal que no se deja leer no decide la ventana, ni hacia un lado ni hacia el otro** (ticket
+    /// `an-unreadable-migration-journal-reads-as-never-started`). Encender la captura «por si acaso» contradice que no se
+    /// enciende globalmente (I14), y un arranque prewarm —el store aún protegido— la encendería en medio parque. Dejarla
+    /// apagada pierde la identidad de lo que se cree dentro de la ventana, porque el flag vive en memoria y solo se deriva
+    /// aquí. Así que se APLAZA: la primera lectura buena de `currentPhaseRead` hace la derivación que aquí no se pudo, y
+    /// cada primer plano la provoca (`deriveDeferredIdentityCaptureIfNeeded`).
     func configure(container: ModelContainer) {
         self.container = container
-        if Self.isIdentityCaptureWindow(journaledPhase(container: container)) {
-            CloudSyncFlags.identityCaptureEnabled = true
-        }
+        deriveIdentityCapture(from: journaledPhaseRead(container: container))
         // w8 (DIFERIDOS #30): el drenaje único iKV→outbox del cutover se dispara AQUÍ porque configure
         // corre post-journal (el gate líder-only necesita la fase real) y antes de cualquier ciclo de
         // prefs del runtime. Internamente re-verifica todo (storageMode/fase/userID/sentinel) → no-op
@@ -71,6 +76,34 @@ final class MigrationPhaseStore {
     /// journal nuevo (vacío ⇒ `notStarted` ⇒ fuera de la ventana), que es la única fuente legítima.
     func releaseContainerForSwap() {
         container = nil
+        identityCaptureDerivationPending = false
+    }
+
+    /// `configure` no pudo leer el journal y la ventana de captura quedó sin derivar. Lo consume la primera lectura buena.
+    private(set) var identityCaptureDerivationPending = false
+
+    /// Reintenta la derivación que `configure` no pudo hacer, si quedó alguna. Lo llama cada primer plano
+    /// (`AppBootstrapper.handleBecameActive`), y no es un cinturón: en `.icloud` —toda la ventana de captura salvo el
+    /// final del cutover— el motor, el remap y el drenaje de preferencias no llegan a leer la fase, así que sin esto la
+    /// «primera lectura buena» esperaba a que iOS programara un BGTask (lo cazaron dos lentes de la review). Un prewarm con
+    /// el store aún protegido deja el pendiente, y el primer `.active` lo resuelve antes de que la persona cree nada.
+    func deriveDeferredIdentityCaptureIfNeeded() {
+        guard identityCaptureDerivationPending else { return }
+        _ = currentPhaseRead
+    }
+
+    /// Deriva el gate de captura de identidad de una lectura del journal, o lo aplaza si no se pudo leer. Solo ENCIENDE:
+    /// apagarlo no es de esta función (ver la asimetría de `releaseContainerForSwap`).
+    private func deriveIdentityCapture(from read: JournaledPhaseRead) {
+        switch read {
+        case .phase(let phase):
+            identityCaptureDerivationPending = false
+            if Self.isIdentityCaptureWindow(phase) {
+                CloudSyncFlags.identityCaptureEnabled = true
+            }
+        case .unreadable:
+            identityCaptureDerivationPending = true
+        }
     }
 
     /// La ventana en que el gate permanente de captura de identidad debe estar ON (§g.3): desde que se
@@ -94,35 +127,59 @@ final class MigrationPhaseStore {
 
     // MARK: - SSOT de fase
 
-    /// La fase que consultan los gates. Precedencia: override DEBUG (S7) > journal real (`MigrationState`,
-    /// sync-meta) > `.notStarted`. Sin `configure` (tests puros / pre-boot) → override DEBUG o `.notStarted`.
-    var currentPhase: MigrationPhase {
+    /// La fase que consultan los gates, como LECTURA: `.unreadable` si el journal no se deja leer. Precedencia:
+    /// override DEBUG (S7) > journal real (`MigrationState`, sync-meta) > `.notStarted`. Sin `configure` (tests puros /
+    /// pre-boot) → override DEBUG o `.notStarted`.
+    ///
+    /// **Devuelve una lectura y no una `MigrationPhase` a propósito** (ticket
+    /// `an-unreadable-migration-journal-reads-as-never-started`). Hasta ese ticket se llamaba `currentPhase` y el
+    /// `catch` del fetch devolvía `.notStarted`, fase ESTABLE: el motor arrancaba, los BGTasks corrían sin gate y el
+    /// remap de identidad se emitía, todo sobre un journal que no se había leído. Con el tipo nuevo cada consumidor
+    /// está obligado por el compilador a decidir qué hace sin fase, y los siete deciden hacia el lado que no concede.
+    var currentPhaseRead: JournaledPhaseRead {
         #if DEBUG
-        if let simulated = simulatedPhase?.migrationPhase { return simulated }
+        if let simulated = simulatedPhase?.migrationPhase { return .phase(simulated) }
         #endif
-        guard let container else { return .notStarted }
-        return journaledPhase(container: container)
+        guard let container else { return .phase(.notStarted) }
+        let read = journaledPhaseRead(container: container)
+        if identityCaptureDerivationPending { deriveIdentityCapture(from: read) }
+        return read
     }
 
     /// Lee la fase journaleada single-row del store sync-meta (lectura barata — sin import CloudKit).
-    /// SOLO lectura: NO crea la fila (a diferencia de `loadOrCreate`). Sin fila / decode-fallback →
-    /// `.notStarted` (+ breadcrumb RUIDOSO en el decode-fallback, coherente con el runner).
-    private func journaledPhase(container: ModelContainer) -> MigrationPhase {
+    /// SOLO lectura: NO crea la fila (a diferencia de `loadOrCreate`).
+    private func journaledPhaseRead(container: ModelContainer) -> JournaledPhaseRead {
         let context = ModelContext(container)
-        var descriptor = FetchDescriptor<MigrationState>()
-        descriptor.fetchLimit = 1
+        return Self.phaseRead {
+            if _testJournalFetchThrows { throw MigrationJournalSeamError.fetchFailed }
+            var descriptor = FetchDescriptor<MigrationState>()
+            descriptor.fetchLimit = 1
+            return try context.fetch(descriptor).first
+        }
+    }
+
+    /// El núcleo de la lectura, separado del `ModelContext` para poder medir su `catch`: `ModelContext` es una
+    /// `final class` de SwiftData sin protocolo detrás. Sin fila → `.phase(.notStarted)`. Un `phaseData` que no
+    /// decodifica → `.notStarted` + breadcrumb RUIDOSO, coherente con el runner (ese camino tiene su ticket). Un fetch
+    /// que lanza → `.unreadable` + breadcrumb, **nunca `.notStarted`**.
+    static func phaseRead(fetch: () throws -> MigrationState?) -> JournaledPhaseRead {
         do {
-            guard let state = try context.fetch(descriptor).first else { return .notStarted }
+            guard let state = try fetch() else { return .phase(.notStarted) }
             let (phase, decodeFailed) = state.readPhase()
             if decodeFailed { CloudSyncBreadcrumb.migrationPhaseDecodeFailed() }
-            return phase
+            return .phase(phase)
         } catch {
             #if DEBUG
             print("MigrationPhaseStore: fetch(MigrationState) falló: \(error)")
             #endif
-            return .notStarted
+            CloudSyncBreadcrumb.migrationJournalUnreadable(reader: "phase-store")
+            return .unreadable
         }
     }
+
+    /// Hace que el fetch del journal LANCE — monta «el journal no se deja leer» sin tocar el store (molde de
+    /// `MigrationWorkExecutor._testOutboxFetchThrowsFromCall`). SOLO tests.
+    var _testJournalFetchThrows = false
 
     // MARK: - Override DEBUG (spike S7)
 
@@ -180,4 +237,10 @@ final class MigrationPhaseStore {
     }
 
     #endif
+}
+
+/// El error que lanzan los dos seams del fetch del journal: `MigrationPhaseStore._testJournalFetchThrows` (unit) y
+/// `UITestHooks.migrationJournalUnreadable` (XCUITest, en `CloudMigrationController`). SOLO tests.
+nonisolated enum MigrationJournalSeamError: Error {
+    case fetchFailed
 }
