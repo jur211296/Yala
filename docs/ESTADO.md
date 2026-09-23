@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-22 (Lima)
 
-**Rama** `2.1` — Merge #214: **Los pasos del 22, 35 y 80 % al activar la nube ya no se quedan parados para siempre.**
+**Rama** `2.1` — Merge #215: **Un registro de la migración que no se deja leer ya no dice que nunca empezó.**
 TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,36 @@ TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#214 · los pasos del 22, 35 y 80 % al activar la nube ya no se quedan parados para siempre)
+## Esta sesión (#215 · un registro de la migración que no se deja leer ya no dice que nunca empezó)
+
+**Si el registro del paso de los datos a la nube (o de la vuelta a iCloud) no se deja leer, «¿Dónde viven tus datos?»
+ya no dice que nunca empezó**: dice que no pudo comprobarlo, que por ahora no se pueden mover y que lo sigue intentando.
+No borra el motivo de la última parada, y en cuanto la lectura vuelve la pantalla es la de siempre. Por detrás, con el
+registro ilegible la app ya no arranca la sincronización, no corre tareas en segundo plano sobre datos a medio cargar, no
+retoma una migración a ciegas y no empieza una nueva. Sin decisiones de Jürgen: todas eran técnicas (Paso 0 del encargo).
+
+**Lo que cazó la review (cuatro lentes), y es lo que no se toca sin romperlo:** con el journal ilegible al arrancar, el
+motor de la nube se quedaba `.idle` hasta relanzar —nadie re-evalúa `.idle`— y ahora lo arranca el re-kick de cada primer
+plano; y el estado nuevo contaba como «dentro» por un `uiState != .idle`, que abría la fila bajo el kill-switch. El
+término vive ahora en `StorageRowGateLogic.isEngaged`, con `switch` exhaustivo. La regla está en
+`.claude/rules/swiftdata-cloudkit.md`, bullet «Un journal que no se deja leer NO es `notStarted`…».
+
+`MigrationPhaseStore.currentPhase` pasa a **`currentPhaseRead`** (`JournaledPhaseRead`), y la captura de identidad se
+aplaza si el arranque no pudo leer. Rastro nuevo: `migrationJournalUnreadable(reader:)`. Seam de XCUITest:
+`-uitest-migration-journal-unreadable`.
+
+Gate: 7556 unit en 747 suites y 17 XCUITest en 6 suites, verdes. 33 mutantes uno a uno, todos muertos.
+
+### Lo que espera de Jürgen
+
+- **Nada.** El ticket va a `done` sin device-QA: el caso no tiene guion razonable en un iPhone y lo cubre el XCUITest
+  con seam. Único cambio visible en condiciones normales: el aviso «Inicia sesión para subir N cambios» lleva el icono
+  naranja y el texto en gris (el naranja como texto no llegaba a AA).
+- Tickets nuevos en `backlog`: `an-undecodable-migration-phase-reads-as-never-started` (un `phaseData` que no decodifica
+  sigue siendo `notStarted`) y `apple-id-change-boot-check-runs-before-the-migration-guard-can-see` (previo a este PR). Y
+  ampliado `cloud-sync-status-says-all-synced-with-changes-still-pending` con el motor `.idle`.
+
+## Sesión anterior (#214 · los pasos del 22, 35 y 80 % al activar la nube ya no se quedan parados para siempre)
 
 **Al activar la nube, la barra ya no se puede quedar quieta para siempre al 22 % (reservar la cuenta), al 35 %
 (preparar los datos) ni al 80 % (confirmar el cambio con el servidor).** Es el arreglo de #212 para el 55 %, en los
