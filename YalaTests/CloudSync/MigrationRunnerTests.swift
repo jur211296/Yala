@@ -108,6 +108,10 @@ private final class FakeExecutor: MigrationWorkExecuting {
     var discardStampCallCount = 0
     func discardLastClaimStamp() { discardStampCallCount += 1 }
 
+    /// La cuenta de la sesión viva, con el hash del faro. `nil` = sin sesión.
+    var accountHash: String?
+    func currentAccountHash() -> String? { accountHash }
+
     /// Se llama DENTRO de cada `performClaim`, antes de devolver el outcome. Lo pide el techo de los tres pasos: monta la
     /// sesión que el SDK borra durante el claim, y el «sí» de «Cancelar» que llega con el claim en vuelo.
     var onPerformClaim: (() -> Void)?
@@ -318,7 +322,9 @@ struct MigrationRunnerTests {
         // Techo de los tres pasos sin cifra que baje (ticket `forward-migration-steps-have-no-ceiling-and-no-exit`).
         forwardStepStallProgressAt: Date? = nil, forwardStepStallCauseRaw: String? = nil,
         forwardStepStallCauseAt: Date? = nil, forwardStepStallCauseAccruedSeconds: Double? = nil,
-        forwardStepExitReasonRaw: String? = nil
+        forwardStepExitReasonRaw: String? = nil,
+        // La salida del claim de un adopt (ticket `adopt-claim-stays-parked-with-no-ceiling`).
+        adoptClaimExitRaw: String? = nil, adoptClaimAccountHash: String? = nil
     ) throws -> MigrationState {
         let state = MigrationState()
         state.setPhase(phase)
@@ -349,6 +355,8 @@ struct MigrationRunnerTests {
         state.forwardStepStallCauseAt = forwardStepStallCauseAt
         state.forwardStepStallCauseAccruedSeconds = forwardStepStallCauseAccruedSeconds
         state.forwardStepExitReasonRaw = forwardStepExitReasonRaw
+        state.adoptClaimExitRaw = adoptClaimExitRaw
+        state.adoptClaimAccountHash = adoptClaimAccountHash
         state.startedAt = fixedNow
         state.updatedAt = fixedNow
         context.insert(state)
@@ -1369,7 +1377,7 @@ struct MigrationRunnerTests {
         fake.setMirrorOnOnMount = true               // ejecutar el efecto monta el mirror → drive avanza
         fake.sweepOutcome = .completed(deleted: 0)
         fake.reverseUploadStatuses = [.drained]
-        try seedJournal(context, phase: .done)
+        try seedJournal(context, phase: .done, adoptClaimExitRaw: "cancelled", adoptClaimAccountHash: "cuenta-a")
 
         await runner(context, fake).submit(.reverseActivated)
         #expect(try journal(context).readPhase().phase == .reverseConfirm(.done))
@@ -1379,6 +1387,8 @@ struct MigrationRunnerTests {
         #expect(final.readPhase().phase == .icloudActive)
         #expect(final.readPendingEffects().isEmpty)
         #expect(final.reverseOriginRaw == nil, "icloudActive limpia reverseOriginRaw (S2-cleanup extendido)")
+        #expect(final.adoptClaimExitRaw == nil && final.adoptClaimAccountHash == nil,
+                "de vuelta en iCloud, la salida de un adopt anterior ya no abre su tarjeta (adopt-claim-stays-parked-with-no-ceiling)")
         #expect(fake.executedEffects == [
             .mountMirrorAndRelaunch,
             .deleteCloudKitMarker, .clearCloudBeacon, .persistICloudMode, .completeReverseServer,
@@ -3804,30 +3814,7 @@ struct MigrationRunnerTests {
         #expect(j.forwardStepStallProgressAt == nil, "el reloj se va con la fase")
         #expect(j.snapshotExitReasonRaw == nil, "no es la subida: el motivo va en su propio campo")
         #expect(fake.claimMarksSeen == [true, true, true], "el claim de «Migrar» pide la marca del claim sin respuesta")
-    }
-
-    /// **El claim de un ADOPT conserva su espera de siempre** (hallazgo de la review): salir ahí deja a quien quería entrar
-    /// en su cuenta en un teléfono vacío y con una puerta que lo para, y su espera se cura sola al volver la red. Ni techo,
-    /// ni reloj, ni «Cancelar», ni marca. El que falta tiene ticket: `adopt-claim-stays-parked-with-no-ceiling`.
-    @Test func forwardStepCeiling_adoptClaim_keepsItsOldWait() async throws {
-        for intentRaw in ["adoptIfExisting", nil] as [String?] {
-            let dir = freshDir(); defer { cleanup(dir) }
-            let context = try makeContext(dir)
-            let fake = FakeExecutor()
-            fake.claimOutcomes = [.accountUnavailable(detail: "403")]
-            try seedJournal(context, phase: .claimingMigration, leaderDeviceID: deviceID, forwardClaimIntentRaw: intentRaw)
-
-            await makeRunner(context, fake).resume()
-            await makeRunner(context, fake, now: { self.fixedNow.addingTimeInterval(300_000) }).resume()
-            var j = try journal(context)
-            #expect(j.readPhase().phase == .claimingMigration, "\(String(describing: intentRaw)): sin techo")
-            #expect(j.forwardStepStallProgressAt == nil, "ni reloj")
-            #expect(fake.claimMarksSeen.allSatisfy { !$0 }, "ni marca: su claim no es de «Migrar»")
-
-            await makeRunner(context, fake).cancelMigration()
-            j = try journal(context)
-            #expect(j.readPhase().phase == .claimingMigration, "ni «Cancelar»")
-        }
+        #expect(j.adoptClaimExitRaw == nil, "la salida de «Migrar» no es la de un adopt: la pantalla vuelve a «Migrar»")
     }
 
     /// **La sesión que el SDK BORRA durante el claim** es definitiva: 900 s acumulados y sale con su nombre. El testigo se
@@ -4160,5 +4147,239 @@ struct MigrationRunnerTests {
         #expect(j.forwardStepStallCauseAt == nil)
         #expect(j.forwardStepStallCauseAccruedSeconds == nil)
         #expect(j.forwardStepExitReasonRaw == nil)
+    }
+
+    // MARK: - §16 · El claim de un ADOPT también tiene techo y salida (ticket `adopt-claim-stays-parked-with-no-ceiling`)
+    //
+    // Hasta este ticket el claim de «Ya tengo una cuenta» / «Activar la nube en este dispositivo» cortaba sin evento y la
+    // barra se quedaba al 22 % para siempre con una sesión borrada o un 403. Cada caso mide que la FASE cambia y que la
+    // salida deja la marca que hace que la pantalla ofrezca volver a entrar en la cuenta.
+
+    /// **El 403 de un adopt**, con la intención journaleada y con una fila sin intención (anterior a la v6, que se lee como
+    /// adopt): a 899 s sigue, a 900 s sale con su motivo y deja la marca. Sin marca de «Migrar»: su claim no la pide.
+    @Test func adoptClaimCeiling_accountUnavailable_leavesAt900Seconds_withTheMark() async throws {
+        for intentRaw in ["adoptIfExisting", nil] as [String?] {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let context = try makeContext(dir)
+            let fake = FakeExecutor()
+            fake.claimOutcomes = [.accountUnavailable(detail: "403")]
+            let clock = MutableClock(fixedNow)
+            try seedJournal(context, phase: .claimingMigration, leaderDeviceID: deviceID, forwardClaimIntentRaw: intentRaw)
+            let label = String(describing: intentRaw)
+
+            await makeRunner(context, fake, now: { clock.value }).resume()
+            var j = try journal(context)
+            #expect(j.forwardStepStallCauseRaw == "accountUnavailable", "\(label): el reloj de causa arranca")
+            #expect(j.adoptClaimExitRaw == nil, "\(label): esperar todavía no es salir")
+            clock.value = fixedNow.addingTimeInterval(899)
+            await makeRunner(context, fake, now: { clock.value }).resume()
+            #expect(try journal(context).readPhase().phase == .claimingMigration, "\(label): a 899 s todavía no")
+
+            clock.value = fixedNow.addingTimeInterval(900)
+            let runner = makeRunner(context, fake, now: { clock.value })
+            await runner.resume()
+            j = try journal(context)
+            #expect(j.readPhase().phase == .failedRollback, "\(label): a los 900 s sale")
+            #expect(j.forwardStepExitReasonRaw == "accountUnavailable")
+            #expect(j.adoptClaimExitRaw == "accountUnavailable", "\(label): la salida de un adopt deja su marca")
+            #expect(fake.count(.rollback) == 1)
+            #expect(fake.claimMarksSeen.allSatisfy { !$0 }, "\(label): la marca de «Migrar» sigue siendo solo de «Migrar»")
+            #expect(runner.lastClaimBlocker == .accountUnavailable, "el Welcome lo sigue leyendo")
+        }
+    }
+
+    /// **La sesión que el SDK borra durante el claim de un adopt**: 900 s y sale como `sessionExpired`, que pide volver a
+    /// entrar.
+    @Test func adoptClaimCeiling_sessionGone_leavesAt900Seconds() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.claimOutcomes = [.sessionExpired(detail: "401")]
+        fake.canRenewSessionResult = true
+        fake.onPerformClaim = { fake.canRenewSessionResult = false }
+        let clock = MutableClock(fixedNow)
+        try seedJournal(context, phase: .claimingMigration, leaderDeviceID: deviceID,
+                        forwardClaimIntentRaw: "adoptIfExisting")
+
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        clock.value = fixedNow.addingTimeInterval(899)
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        #expect(try journal(context).readPhase().phase == .claimingMigration)
+        clock.value = fixedNow.addingTimeInterval(900)
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .failedRollback)
+        #expect(j.adoptClaimExitRaw == "sessionExpired")
+    }
+
+    /// **La red en un adopt espera el plazo LARGO**: su espera suele curarse sola, así que tres horas no son nada. A las
+    /// 72 h sin avanzar sale con `stalled`, que no acusa a nadie.
+    @Test func adoptClaimCeiling_persistentNetwork_leavesAt72h() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.claimOutcomes = [.transient(detail: "5xx")]
+        let clock = MutableClock(fixedNow)
+        try seedJournal(context, phase: .claimingMigration, leaderDeviceID: deviceID,
+                        forwardClaimIntentRaw: "adoptIfExisting")
+
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        clock.value = fixedNow.addingTimeInterval(259_199)
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        #expect(try journal(context).readPhase().phase == .claimingMigration, "a 259 199 s todavía no")
+        clock.value = fixedNow.addingTimeInterval(259_200)
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .failedRollback)
+        #expect(j.forwardStepExitReasonRaw == "stalled")
+        #expect(j.adoptClaimExitRaw == "stalled")
+    }
+
+    /// **«Cancelar la activación» en el claim de un adopt**: va a `notStarted`, sin efectos, con la marca `cancelled`. Es
+    /// lo que hace que Almacenamiento ofrezca «Activar la nube en este dispositivo» en vez de «Migrar».
+    @Test func adoptClaimCancel_goesToNotStarted_withTheMark() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        try seedJournal(context, phase: .claimingMigration, leaderDeviceID: deviceID,
+                        forwardClaimIntentRaw: "adoptIfExisting")
+
+        await makeRunner(context, fake).cancelMigration()
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .notStarted)
+        #expect(j.readPendingEffects().isEmpty)
+        #expect(j.adoptClaimExitRaw == "cancelled")
+        #expect(j.forwardClaimIntentRaw == nil, "la intención es del intento que se cierra")
+    }
+
+    /// «Cancelar» en el claim de «Migrar» no deja la marca del adopt: su pantalla sigue siendo «Migrar».
+    @Test func migrateClaimCancel_doesNotLeaveTheAdoptMark() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        try seedJournal(context, phase: .claimingMigration, leaderDeviceID: deviceID, forwardClaimIntentRaw: "migrateOnly")
+
+        await makeRunner(context, fake).cancelMigration()
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .notStarted)
+        #expect(j.adoptClaimExitRaw == nil)
+    }
+
+    /// **La marca sobrevive a «Reintentar»** —es la salida hacia delante de la tarjeta de fallo— **y se va cuando otro claim
+    /// empieza**: desde ahí manda el desenlace del intento nuevo.
+    @Test func adoptClaimMark_survivesTheRetry_andGoesWhenTheNextClaimStarts() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.claimOutcomes = [.transient(detail: "5xx")]
+        try seedJournal(context, phase: .failedRollback, forwardStepExitReasonRaw: "accountUnavailable",
+                        adoptClaimExitRaw: "accountUnavailable")
+
+        let runner = makeRunner(context, fake)
+        await runner.resetAfterRollback()
+        var j = try journal(context)
+        #expect(j.readPhase().phase == .notStarted)
+        #expect(j.forwardStepExitReasonRaw == nil, "el motivo de la tarjeta se va con «Reintentar»")
+        #expect(j.adoptClaimExitRaw == "accountUnavailable", "la marca no: es lo que abre la tarjeta de adopt")
+
+        // Un intento que no llega al claim —la persona cancela el inicio de sesión— tampoco la toca.
+        await runner.startMigration(dryRun: false)
+        await runner.submit(.consentAccepted)
+        await runner.submit(.signInFailed)
+        j = try journal(context)
+        #expect(j.readPhase().phase == .notStarted)
+        #expect(j.adoptClaimExitRaw == "accountUnavailable", "sin claim, la salida hacia delante sigue abierta")
+
+        fake.accountHash = "cuenta-b"
+        runner.setForwardClaimIntent(.adoptIfExisting)
+        await runner.startMigration(dryRun: false)
+        await runner.submit(.consentAccepted)
+        j = try journal(context)
+        #expect(j.adoptClaimExitRaw == "accountUnavailable", "antes del claim todavía no ha empezado nada")
+        await runner.submit(.signInSucceeded)
+        j = try journal(context)
+        #expect(j.readPhase().phase == .claimingMigration, "el claim nuevo se aparca por la red")
+        #expect(j.adoptClaimExitRaw == nil, "y la marca del intento anterior ya no manda")
+        #expect(j.adoptClaimAccountHash == "cuenta-b", "la cuenta del intento se apunta al entrar en el claim")
+    }
+
+    /// **La cuenta del intento se lee al ENTRAR, no al salir**: la salida definitiva más común es la sesión borrada, y
+    /// re-leerla en cada observación dejaría la marca sin cuenta. El claim aparcado con la sesión ya sin cuenta conserva la
+    /// que tenía al entrar, y la salida la deja junto a la marca.
+    @Test func adoptClaimAccount_isTheOneAtEntry_notReReadWhileParked() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.claimOutcomes = [.sessionExpired(detail: "401")]
+        fake.canRenewSessionResult = false
+        fake.accountHash = "cuenta-a"
+        let clock = MutableClock(fixedNow)
+        try seedJournal(context, phase: .notStarted)
+        let runner = makeRunner(context, fake, now: { clock.value })
+        runner.setForwardClaimIntent(.adoptIfExisting)
+        await runner.startMigration(dryRun: false)
+        await runner.submit(.consentAccepted)
+        await runner.submit(.signInSucceeded)
+        #expect(try journal(context).adoptClaimAccountHash == "cuenta-a")
+
+        fake.accountHash = nil                       // el SDK borró la sesión
+        clock.value = fixedNow.addingTimeInterval(900)
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .failedRollback)
+        #expect(j.adoptClaimExitRaw == "sessionExpired")
+        #expect(j.adoptClaimAccountHash == "cuenta-a", "la marca queda atada a la cuenta del intento")
+    }
+
+    /// **Lo que vio el último claim**, para el aviso del 22 %: el 403 y la sesión borrada se ven; la red y el 401 con la
+    /// sesión guardada, no, y un claim que falla por la red DESPUÉS de un 403 deja de decirlo (el reloj journaleado lo
+    /// conservaría: por eso el aviso no lo lee).
+    @Test func lastClaimDefinitiveCause_isWhatTheLastClaimSaw() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        try seedJournal(context, phase: .claimingMigration, leaderDeviceID: deviceID,
+                        forwardClaimIntentRaw: "adoptIfExisting")
+        let runner = makeRunner(context, fake)
+
+        fake.claimOutcomes = [.accountUnavailable(detail: "403")]
+        await runner.resume()
+        #expect(runner.lastClaimDefinitiveCause == .accountUnavailable)
+        #expect(try journal(context).forwardStepStallCauseRaw == "accountUnavailable", "control: el reloj también lo vio")
+
+        fake.claimOutcomes = [.transient(detail: "5xx")]
+        await runner.resume()
+        #expect(runner.lastClaimDefinitiveCause == nil, "la red no confirma el 403: el aviso calla")
+        #expect(try journal(context).forwardStepStallCauseRaw == "accountUnavailable", "y el reloj lo conserva, pausado")
+
+        fake.claimOutcomes = [.sessionExpired(detail: "401")]
+        fake.canRenewSessionResult = true
+        await runner.resume()
+        #expect(runner.lastClaimDefinitiveCause == nil, "un 401 con la sesión guardada no es definitivo")
+
+        fake.canRenewSessionResult = false
+        await runner.resume()
+        #expect(runner.lastClaimDefinitiveCause == .sessionExpired)
+    }
+
+    /// **El «sí» apuntado en el claim de un adopt** se honra en la próxima pasada y deja la marca, igual que el toque.
+    @Test func adoptClaimCancel_requestedDuringTheClaim_isHonoredWithTheMark() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.claimOutcomes = [.transient(detail: "5xx")]
+        try seedJournal(context, phase: .claimingMigration, leaderDeviceID: deviceID,
+                        forwardClaimIntentRaw: "adoptIfExisting")
+        let runner = makeRunner(context, fake)
+        fake.onPerformClaim = { runner.requestMigrationCancel() }
+
+        await runner.resume()
+        #expect(try journal(context).readPhase().phase == .claimingMigration, "la pasada en vuelo se aparca")
+        fake.onPerformClaim = nil
+        await runner.resume()
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .notStarted, "la pasada siguiente honra el «sí» antes de volver a reclamar")
+        #expect(fake.claimCallCount == 1, "sin un segundo claim")
+        #expect(j.adoptClaimExitRaw == "cancelled")
     }
 }

@@ -93,13 +93,25 @@ struct MigrationIdentityGateWiringTests {
 
     /// El orden es el bug: la comprobación ANTES del claim, con el runner en `authenticating` (no durable); al parar, la
     /// sesión del intento se cierra ANTES de devolver el runner al inicio, que espera quiescencia; al seguir, la intención
-    /// de migrar puesta ANTES del `submit`, y un `submit` que no llega al claim también es una parada.
+    /// de migrar puesta ANTES del `submit`, y un `submit` que no llega al claim también es una parada. El adopt, desde
+    /// `adopt-claim-stays-parked-with-no-ceiling`, no entra en OTRA cuenta que la del adopt que salió (la tarjeta que abre
+    /// esa marca no pasa por la puerta): para como la puerta, cerrando la sesión que abrió y sin claim.
     @Test func continueToClaim_wholeBodyIsPinned() throws {
         let body = try Self.body(
             of: "sessionOpenedByThisAttempt openedSession: Bool\n    ) async {", in: Self.controllerPath)
         #expect(Self.lines(body) == [
             "guard consentPath == .migration else {",
             "migrationAttempt = nil",
+            "if AdoptClaimScope.blocksReentry(",
+            "exit: adoptClaimExit, attemptAccountHash: adoptClaimAccountHash,",
+            "sessionAccountHash: CloudAuthService.shared.currentUserID.map { CloudBeacon.hash($0) }) {",
+            "_ = await closeSessionIfOpened(openedSession)",
+            "await r.submit(.signInFailed)",
+            "lastError = L10n.Storage.Errors.adoptOtherAccount",
+            "CloudSyncBreadcrumb.migrationIdentityBlocked(reason: \"adopt_other_account\", stage: \"gate\")",
+            "MetricsService.cloudMigrationExistingAccountBlocked(reason: \"adopt_other_account\", stage: \"gate\")",
+            "return",
+            "}",
             "r.setForwardClaimIntent(.adoptIfExisting)",
             "await r.submit(.signInSucceeded)",
             "return",

@@ -76,6 +76,7 @@
 - [Ticket nuevo: busca el duplicado primero](feedback_ticket_nuevo_busca_el_duplicado_primero.md) — dos de tres ya existían el 10-sep.
 - [Ramas aparcadas tocan tu ticket](feedback_ramas_aparcadas_tocan_tu_ticket.md) — `git log --all -- 'tickets/*/<id>.md'` antes de diseñar.
 - [El mecanismo que existe se probó con OTRO corpus](feedback_el_mecanismo_existente_se_probo_con_otro_corpus.md) — reusar un barrido sobre un corpus nuevo puede destruir datos buenos; el AC dice QUÉ, no…
+- [Una marca que abre una entrada se ata a quien la ganó](feedback_una_marca_que_abre_una_entrada_se_ata_a_quien_la_gano.md) — la tarjeta de adopt sin puerta adoptaba la cuenta de Grupos.
 - [Mi salida nueva es un camino muerto](feedback_mi_salida_nueva_es_un_camino_muerto.md) — antes de cambiar «sigue» por «vuelve»; y cuenta QUIÉN conduce la fase (el claim del adopt).
 - [El otro control va al mismo sitio](feedback_el_otro_control_va_al_mismo_sitio.md) — el chevron salía sin retirar el arm que su botón vecino sí.
 - [Mi arreglo abre un camino INALCANZABLE](feedback_mi_arreglo_abre_un_camino_inalcanzable.md) — quitar un efecto vuelve alcanzable código que nunca.
@@ -141,6 +142,7 @@
 - [«Cero warnings» se mide en TODOS los logs](feedback_cero_warnings_se_mide_en_todos_los_logs.md) — el gate no mira los tests y lee un build.
 
 ## Estado del trabajo
+- [El claim del adopt tiene techo y salida](project_adopt_claim_techo_y_salida.md) — PR del 23-sep; dos tickets nuevos, device-QA en `qa`.
 - [Un inventario incompleto ya no es el corpus entero](project_inventario_incompleto_no_es_el_corpus.md) — PR del 23-sep; la review cazó el backfill, tres tickets nuevos.
 - [El Merkle de grupos ya no lee una tabla ilegible como vacía](project_merkle_grupos_tabla_ilegible.md) — PR del 23-sep; queda el gemelo del mapa de cursores.
 - [El drain ya no duplica el reloj por unidad](project_drain_reloj_no_se_duplica.md) — PR del 23-sep; seis tickets nuevos de la review.

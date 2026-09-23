@@ -4679,6 +4679,7 @@
 "storage.confirm.revert2Confirm" = "Sì, torna a iCloud";
 "storage.errors.title" = "Qualcosa è andato storto";
 "storage.errors.generic" = "Qualcosa non ha funzionato. Riprova.";
+"storage.errors.adoptOtherAccount" = "Questo non è l’account che stavi attivando su questo dispositivo. Riprova con lo stesso account.";
 "storage.errors.signIn" = "Non siamo riusciti ad accedere. Riprova.";
 "storage.consent.title" = "I tuoi dati nel cloud di Yala";
 "storage.consent.pointServers" = "I tuoi dati sono conservati sui server di Yala e il nostro team può vederli per darti assistenza e funzioni intelligenti. Non usiamo la crittografia end-to-end.";
@@ -6018,6 +6019,8 @@
 
 /* Caption de la tarjeta de progreso de la vuelta a iCloud cuando la sesión de la nube ya no vale */
 "storage.progress.reverseNeedsSignIn" = "La tua sessione è scaduta. Accedi di nuovo per completare il ritorno a iCloud.";
+"storage.progress.adoptSessionExpired" = "La tua sessione nel cloud non è più valida. Annulla l’attivazione e accedi di nuovo con il tuo account.";
+"storage.progress.adoptAccountUnavailable" = "Al momento non possiamo darti accesso a questo account. Scrivici a %@ e lo verifichiamo insieme.";
 
 /* Aviso cuando el sign-in para retomar la vuelta a iCloud trae una cuenta distinta */
 "storage.errors.reverseSignInOtherAccount" = "Hai effettuato l'accesso con un altro account. Accedi con l'account da cui hai avviato il ritorno a iCloud.";
@@ -6058,12 +6061,16 @@
 "storage.failed.stepSessionExpired" = "Non siamo riusciti ad attivare il cloud: la tua sessione è scaduta prima che finissimo. I tuoi dati sono al sicuro sul dispositivo; riprova ed effettua di nuovo l’accesso.";
 /* Fallo de la activación en el cutover: otro dispositivo de la misma cuenta tomó el relevo de la migración */
 "storage.failed.stepOtherDevice" = "Non siamo riusciti ad attivare il cloud da questo dispositivo: un altro dispositivo con il tuo account ha preso il suo posto. I tuoi dati sono ancora qui, senza modifiche.";
+"storage.failed.adoptStalled" = "Non siamo riusciti a farti accedere al tuo account nel cloud: l’attivazione non avanza da giorni. Questo dispositivo non ha modificato nulla di ciò che hai nel cloud; riprova più tardi.";
+"storage.failed.adoptSessionExpired" = "Non siamo riusciti a farti accedere al tuo account nel cloud: la tua sessione è scaduta. Questo dispositivo non ha modificato nulla di ciò che hai nel cloud; riprova ed effettua di nuovo l’accesso con il tuo account.";
+"storage.failed.adoptAccountUnavailable" = "Non siamo riusciti a farti accedere al tuo account nel cloud: al momento non possiamo darti accesso a questo account. Scrivici a %@ e lo verifichiamo insieme.";
 /* Botón de la tarjeta de progreso: cancelar la activación de la nube */
 "storage.progress.cancelMigration" = "Annulla l’attivazione";
 /* Título de la confirmación de cancelar la activación */
 "storage.confirm.cancelMigrationTitle" = "Annullare l’attivazione del cloud?";
 /* Cuerpo de la confirmación de cancelar la activación */
 "storage.confirm.cancelMigrationBody" = "I tuoi dati restano su questo dispositivo, come prima. Ciò che è già stato caricato resta nel tuo account nel cloud. Puoi riprovare quando vuoi.";
+"storage.confirm.cancelAdoptBody" = "Questo dispositivo non ha modificato nulla di ciò che hai nel cloud. Puoi riattivare il cloud su questo dispositivo da qui quando vuoi.";
 /* Botón que confirma cancelar la activación */
 "storage.confirm.cancelMigrationConfirm" = "Sì, annulla";
 /* Botón que sigue con la activación */

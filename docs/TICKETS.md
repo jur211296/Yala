@@ -60,8 +60,9 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | activation-discard-loses-the-group-history-question | backlog | tickets/backlog/activation-discard-loses-the-group-history-question.md |
 | activation-restore-start-fresh-keeps-the-imported-rows | done | tickets/done/activation-restore-start-fresh-keeps-the-imported-rows.md |
 | activation-resume-returns-to-restore-on-an-emptied-zone | backlog | tickets/backlog/activation-resume-returns-to-restore-on-an-emptied-zone.md |
-| adopt-claim-stays-parked-with-no-ceiling | backlog | tickets/backlog/adopt-claim-stays-parked-with-no-ceiling.md |
+| adopt-claim-stays-parked-with-no-ceiling | qa | tickets/qa/adopt-claim-stays-parked-with-no-ceiling.md |
 | adopt-effect-retries-forever-with-no-ceiling | backlog | tickets/backlog/adopt-effect-retries-forever-with-no-ceiling.md |
+| adopt-follower-waits-for-the-leader-with-no-ceiling | backlog | tickets/backlog/adopt-follower-waits-for-the-leader-with-no-ceiling.md |
 | adopt-terminal-claims-ready-without-checking-engine | backlog | tickets/backlog/adopt-terminal-claims-ready-without-checking-engine.md |
 | adopt-uploads-a-foreign-corpus-without-a-lineage-check | backlog | tickets/backlog/adopt-uploads-a-foreign-corpus-without-a-lineage-check.md |
 | adr-013-does-not-know-yala-has-its-own-commit-msg | backlog | tickets/backlog/adr-013-does-not-know-yala-has-its-own-commit-msg.md |
@@ -355,6 +356,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | migrate-attempt-session-survives-a-relaunch-mid-attempt | backlog | tickets/backlog/migrate-attempt-session-survives-a-relaunch-mid-attempt.md |
 | migrate-before-the-groups-association-arrives-splits-the-accounts | backlog | tickets/backlog/migrate-before-the-groups-association-arrives-splits-the-accounts.md |
 | migrate-card-keeps-promising-an-account-the-check-refused | backlog | tickets/backlog/migrate-card-keeps-promising-an-account-the-check-refused.md |
+| migrate-claim-does-not-announce-a-definitive-cause-before-its-ceiling | backlog | tickets/backlog/migrate-claim-does-not-announce-a-definitive-cause-before-its-ceiling.md |
 | migration-activation-drops-pending-effects-it-never-restores | backlog | tickets/backlog/migration-activation-drops-pending-effects-it-never-restores.md |
 | more-tab-missing-profile-button | backlog | tickets/backlog/more-tab-missing-profile-button.md |
 | multi-currency-accounts | backlog | tickets/backlog/multi-currency-accounts.md |

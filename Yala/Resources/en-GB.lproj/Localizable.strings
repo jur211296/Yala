@@ -3934,6 +3934,7 @@
 "storage.confirm.revert2Confirm" = "Yes, go back to iCloud";
 "storage.errors.title" = "Something went wrong";
 "storage.errors.generic" = "Something didn’t work. Please try again.";
+"storage.errors.adoptOtherAccount" = "That isn’t the account you were turning on for this device. Try again with the same account.";
 "storage.errors.signIn" = "We couldn’t sign you in. Please try again.";
 "storage.consent.title" = "Your data in Yala's cloud";
 "storage.consent.pointServers" = "Your data is stored on Yala's servers, and our team can see it to give you support and smart features. We don't use end-to-end encryption.";
@@ -5276,6 +5277,8 @@
 
 /* Caption de la tarjeta de progreso de la vuelta a iCloud cuando la sesión de la nube ya no vale */
 "storage.progress.reverseNeedsSignIn" = "Your session expired. Sign in again to finish going back to iCloud.";
+"storage.progress.adoptSessionExpired" = "Your cloud session is no longer valid. Cancel turning on the cloud and sign in with your account again.";
+"storage.progress.adoptAccountUnavailable" = "We can’t give you access to this account right now. Write to us at %@ and we’ll look into it with you.";
 
 /* Aviso cuando el sign-in para retomar la vuelta a iCloud trae una cuenta distinta */
 "storage.errors.reverseSignInOtherAccount" = "You signed in with a different account. Sign in with the account you started going back to iCloud from.";
@@ -5316,12 +5319,16 @@
 "storage.failed.stepSessionExpired" = "We couldn’t turn on the cloud: your session expired before we could finish. Your data is safe on your device — try again and sign in once more.";
 /* Fallo de la activación en el cutover: otro dispositivo de la misma cuenta tomó el relevo de la migración */
 "storage.failed.stepOtherDevice" = "We couldn’t turn on the cloud from this device: another device on your account took over. Your data is still here, unchanged.";
+"storage.failed.adoptStalled" = "We couldn’t sign you in to your cloud account: turning on the cloud hasn’t moved forward in days. This device didn’t change anything you have in the cloud — try again later.";
+"storage.failed.adoptSessionExpired" = "We couldn’t sign you in to your cloud account: your session expired. This device didn’t change anything you have in the cloud — try again and sign in with your account once more.";
+"storage.failed.adoptAccountUnavailable" = "We couldn’t sign you in to your cloud account: we can’t give you access to this account right now. Write to us at %@ and we’ll look into it with you.";
 /* Botón de la tarjeta de progreso: cancelar la activación de la nube */
 "storage.progress.cancelMigration" = "Cancel turning on the cloud";
 /* Título de la confirmación de cancelar la activación */
 "storage.confirm.cancelMigrationTitle" = "Cancel turning on the cloud?";
 /* Cuerpo de la confirmación de cancelar la activación */
 "storage.confirm.cancelMigrationBody" = "Your data stays on this device, just as before. What was already uploaded stays in your cloud account. You can try again whenever you like.";
+"storage.confirm.cancelAdoptBody" = "This device didn’t change anything you have in the cloud. You can turn on the cloud for this device again from here whenever you like.";
 /* Botón que confirma cancelar la activación */
 "storage.confirm.cancelMigrationConfirm" = "Yes, cancel";
 /* Botón que sigue con la activación */

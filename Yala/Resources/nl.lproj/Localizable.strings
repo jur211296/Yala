@@ -4681,6 +4681,7 @@
 "storage.confirm.revert2Confirm" = "Ja, terug naar iCloud";
 "storage.errors.title" = "Er ging iets mis";
 "storage.errors.generic" = "Er ging iets niet goed. Probeer het opnieuw.";
+"storage.errors.adoptOtherAccount" = "Dit is niet het account dat je op dit apparaat aan het inschakelen was. Probeer het opnieuw met hetzelfde account.";
 "storage.errors.signIn" = "We konden je niet aanmelden. Probeer het opnieuw.";
 "storage.consent.title" = "Je gegevens in de Yala-cloud";
 "storage.consent.pointServers" = "Je gegevens worden opgeslagen op de servers van Yala en ons team kan ze inzien om je ondersteuning en slimme functies te bieden. We gebruiken geen eind-tot-eindversleuteling.";
@@ -6020,6 +6021,8 @@
 
 /* Caption de la tarjeta de progreso de la vuelta a iCloud cuando la sesión de la nube ya no vale */
 "storage.progress.reverseNeedsSignIn" = "Je sessie is verlopen. Meld je opnieuw aan om terug te gaan naar iCloud.";
+"storage.progress.adoptSessionExpired" = "Je cloudsessie is niet meer geldig. Annuleer het inschakelen en meld je opnieuw aan met je account.";
+"storage.progress.adoptAccountUnavailable" = "We kunnen je nu geen toegang geven tot dit account. Mail ons op %@ en we zoeken het samen uit.";
 
 /* Aviso cuando el sign-in para retomar la vuelta a iCloud trae una cuenta distinta */
 "storage.errors.reverseSignInOtherAccount" = "Je bent met een ander account aangemeld. Meld je aan met het account waarmee je terug naar iCloud bent gegaan.";
@@ -6060,12 +6063,16 @@
 "storage.failed.stepSessionExpired" = "We konden de cloud niet inschakelen: je sessie is verlopen voordat we klaar waren. Je gegevens staan veilig op je apparaat — probeer het opnieuw en log nog een keer in.";
 /* Fallo de la activación en el cutover: otro dispositivo de la misma cuenta tomó el relevo de la migración */
 "storage.failed.stepOtherDevice" = "We konden de cloud op dit apparaat niet inschakelen: een ander apparaat met je account heeft het overgenomen. Je gegevens staan hier nog, ongewijzigd.";
+"storage.failed.adoptStalled" = "We konden je niet aanmelden bij je cloudaccount: het inschakelen komt al dagen niet verder. Dit apparaat heeft niets veranderd aan wat je in de cloud hebt — probeer het later opnieuw.";
+"storage.failed.adoptSessionExpired" = "We konden je niet aanmelden bij je cloudaccount: je sessie is verlopen. Dit apparaat heeft niets veranderd aan wat je in de cloud hebt — probeer het opnieuw en meld je nog een keer aan met je account.";
+"storage.failed.adoptAccountUnavailable" = "We konden je niet aanmelden bij je cloudaccount: we kunnen je nu geen toegang geven tot dit account. Mail ons op %@ en we zoeken het samen uit.";
 /* Botón de la tarjeta de progreso: cancelar la activación de la nube */
 "storage.progress.cancelMigration" = "Inschakelen annuleren";
 /* Título de la confirmación de cancelar la activación */
 "storage.confirm.cancelMigrationTitle" = "Inschakelen van de cloud annuleren?";
 /* Cuerpo de la confirmación de cancelar la activación */
 "storage.confirm.cancelMigrationBody" = "Je gegevens blijven op dit apparaat, net als voorheen. Wat al geüpload is, blijft in je cloudaccount. Je kunt het opnieuw proberen wanneer je wilt.";
+"storage.confirm.cancelAdoptBody" = "Dit apparaat heeft niets veranderd aan wat je in de cloud hebt. Je kunt de cloud hier altijd opnieuw inschakelen op dit apparaat.";
 /* Botón que confirma cancelar la activación */
 "storage.confirm.cancelMigrationConfirm" = "Ja, annuleren";
 /* Botón que sigue con la activación */

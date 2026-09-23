@@ -48,7 +48,10 @@ extension CloudSyncSchemaVersions {
     /// Subió a 10 con los CINCO campos del techo de los tres pasos de la ida sin cifra que baje —`claimingMigration`,
     /// `assigningIdentity` y `cutover(.pending)`— (ticket `forward-migration-steps-have-no-ceiling-and-no-exit`): los
     /// cuatro `forwardStepStall*` de sus dos relojes y el motivo de la salida (`forwardStepExitReasonRaw`).
-    static let migrationState = 10
+    /// Subió a 11 con `adoptClaimExitRaw` y `adoptClaimAccountHash`: el claim de un ADOPT salió —por su techo o por
+    /// «Cancelar»— y la pantalla tiene que ofrecer volver a entrar en ESA cuenta, no «Migrar» (ticket
+    /// `adopt-claim-stays-parked-with-no-ceiling`).
+    static let migrationState = 11
 }
 
 /// Journal single-row de la migración. Debe existir a lo sumo UNA fila (el runner la crea
@@ -238,6 +241,24 @@ final class MigrationState {
     /// normalización de un journal ilegible, que son las dos salidas de esa fase. `nil` = el fallo no vino de estos pasos.
     var forwardStepExitReasonRaw: String?
 
+    /// `AdoptClaimExit.rawValue`: el claim de un ADOPT —«Ya tengo una cuenta», «Activar la nube en este dispositivo»—
+    /// salió por su techo o porque la persona canceló (ticket `adopt-claim-stays-parked-with-no-ceiling`). Hace dos cosas:
+    /// elige el texto de la tarjeta de fallo, que no puede decir «tus datos siguen en este dispositivo» en un teléfono
+    /// recién instalado, y hace que Almacenamiento ofrezca «Activar la nube en este dispositivo» aunque no haya marcador
+    /// de CloudKit: sin esto, «Reintentar» llevaba a «Migrar a la nube», que la puerta de identidad para con esa cuenta.
+    ///
+    /// **Sobrevive a `failedRollback`, a «Reintentar» y a `notStarted` a propósito**: es la salida hacia delante de esa
+    /// pantalla. Lo borra el `handle` que ENTRA en `claimingMigration` —otro intento empezó, y su desenlace manda— y el que
+    /// llega a `icloudActive`. La normalización de un journal con la fase ilegible la conserva: la fila se leyó, y la
+    /// marca es lo que la pantalla ofrecerá en `.idle`. `nil` = ningún adopt salió desde el último claim.
+    var adoptClaimExitRaw: String?
+
+    /// `CloudBeacon.hash` de la cuenta con la que el último claim ENTRÓ en `claimingMigration`. Ata la marca de arriba a
+    /// UNA cuenta: Almacenamiento solo ofrece volver a entrar sin sesión o con la sesión de esa cuenta, y tras firmar no
+    /// adopta otra (`AdoptClaimScope`). Lo escribe el `handle` que entra en el claim; se va con la marca al volver a
+    /// iCloud. `nil` = no se sabe, y entonces la marca no abre nada con una sesión puesta.
+    var adoptClaimAccountHash: String?
+
     /// Cuándo empezó la migración (el runner lo estampa con el `now` INYECTADO al arrancar). `nil` = no
     /// iniciada.
     var startedAt: Date?
@@ -280,6 +301,8 @@ final class MigrationState {
         forwardStepStallCauseAt: Date? = nil,
         forwardStepStallCauseAccruedSeconds: Double? = nil,
         forwardStepExitReasonRaw: String? = nil,
+        adoptClaimExitRaw: String? = nil,
+        adoptClaimAccountHash: String? = nil,
         startedAt: Date? = nil,
         updatedAt: Date = Date.now,
         schemaVersion: Int = CloudSyncSchemaVersions.migrationState
@@ -314,6 +337,8 @@ final class MigrationState {
         self.forwardStepStallCauseAt = forwardStepStallCauseAt
         self.forwardStepStallCauseAccruedSeconds = forwardStepStallCauseAccruedSeconds
         self.forwardStepExitReasonRaw = forwardStepExitReasonRaw
+        self.adoptClaimExitRaw = adoptClaimExitRaw
+        self.adoptClaimAccountHash = adoptClaimAccountHash
         self.startedAt = startedAt
         self.updatedAt = updatedAt
         self.schemaVersion = schemaVersion

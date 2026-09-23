@@ -4681,6 +4681,7 @@
 "storage.confirm.revert2Confirm" = "はい、iCloud に戻す";
 "storage.errors.title" = "問題が発生しました";
 "storage.errors.generic" = "うまくいきませんでした。もう一度お試しください。";
+"storage.errors.adoptOtherAccount" = "この端末で有効化しようとしていたアカウントではありません。同じアカウントでもう一度お試しください。";
 "storage.errors.signIn" = "サインインできませんでした。もう一度お試しください。";
 "storage.consent.title" = "Yala のクラウドにあるあなたのデータ";
 "storage.consent.pointServers" = "データは Yala のサーバーに保存され、サポートやスマート機能を提供するために私たちのチームが見ることがあります。エンドツーエンドの暗号化は使用していません。";
@@ -6020,6 +6021,8 @@
 
 /* Caption de la tarjeta de progreso de la vuelta a iCloud cuando la sesión de la nube ya no vale */
 "storage.progress.reverseNeedsSignIn" = "セッションの有効期限が切れました。iCloud に戻す作業を続けるには、もう一度サインインしてください。";
+"storage.progress.adoptSessionExpired" = "クラウドのセッションが無効になりました。有効化をキャンセルして、アカウントで再度サインインしてください。";
+"storage.progress.adoptAccountUnavailable" = "今このアカウントにはアクセスできません。%@ までご連絡ください。一緒に確認します。";
 
 /* Aviso cuando el sign-in para retomar la vuelta a iCloud trae una cuenta distinta */
 "storage.errors.reverseSignInOtherAccount" = "別のアカウントでサインインしました。iCloud に戻す操作を始めたアカウントでサインインしてください。";
@@ -6060,12 +6063,16 @@
 "storage.failed.stepSessionExpired" = "クラウドを有効化できませんでした。完了する前にセッションの有効期限が切れました。データはデバイスに安全に残っています。もう一度お試しいただき、再度サインインしてください。";
 /* Fallo de la activación en el cutover: otro dispositivo de la misma cuenta tomó el relevo de la migración */
 "storage.failed.stepOtherDevice" = "このデバイスではクラウドを有効化できませんでした。同じアカウントの別のデバイスが処理を引き継ぎました。データは変更されずにここに残っています。";
+"storage.failed.adoptStalled" = "クラウドのアカウントにサインインできませんでした。有効化が数日間進んでいません。この端末はクラウドのデータを何も変更していません。後でもう一度お試しください。";
+"storage.failed.adoptSessionExpired" = "クラウドのアカウントにサインインできませんでした。セッションの有効期限が切れました。この端末はクラウドのデータを何も変更していません。もう一度お試しいただき、アカウントで再度サインインしてください。";
+"storage.failed.adoptAccountUnavailable" = "クラウドのアカウントにサインインできませんでした。今このアカウントにはアクセスできません。%@ までご連絡ください。一緒に確認します。";
 /* Botón de la tarjeta de progreso: cancelar la activación de la nube */
 "storage.progress.cancelMigration" = "有効化をキャンセル";
 /* Título de la confirmación de cancelar la activación */
 "storage.confirm.cancelMigrationTitle" = "クラウドの有効化をキャンセルしますか？";
 /* Cuerpo de la confirmación de cancelar la activación */
 "storage.confirm.cancelMigrationBody" = "データはこれまでどおりこのデバイスに残ります。すでにアップロードされたものは、クラウドのアカウントに残ります。いつでもやり直せます。";
+"storage.confirm.cancelAdoptBody" = "この端末はクラウドのデータを何も変更していません。いつでもここから、この端末でクラウドを再度有効化できます。";
 /* Botón que confirma cancelar la activación */
 "storage.confirm.cancelMigrationConfirm" = "キャンセルする";
 /* Botón que sigue con la activación */

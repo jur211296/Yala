@@ -4686,6 +4686,7 @@
 "storage.confirm.revert2Confirm" = "Sí, volver a iCloud";
 "storage.errors.title" = "Algo salió mal";
 "storage.errors.generic" = "Algo no salió bien. Inténtalo de nuevo.";
+"storage.errors.adoptOtherAccount" = "Esa no es la cuenta que estabas activando en este dispositivo. Vuelve a intentarlo con la misma cuenta.";
 "storage.errors.signIn" = "No pudimos iniciar sesión. Inténtalo de nuevo.";
 "storage.consent.title" = "Tus datos en la nube de Yala";
 "storage.consent.pointServers" = "Tus datos se guardan en los servidores de Yala y nuestro equipo puede verlos para darte soporte y funciones inteligentes. No usamos cifrado de extremo a extremo.";
@@ -6034,6 +6035,8 @@
 
 /* Caption de la tarjeta de progreso de la vuelta a iCloud cuando la sesión de la nube ya no vale */
 "storage.progress.reverseNeedsSignIn" = "Tu sesión caducó. Vuelve a entrar para terminar de volver a iCloud.";
+"storage.progress.adoptSessionExpired" = "Tu sesión en la nube ya no es válida. Cancela la activación y vuelve a entrar con tu cuenta.";
+"storage.progress.adoptAccountUnavailable" = "Ahora mismo no podemos darte acceso a esta cuenta. Escríbenos a %@ y lo revisamos contigo.";
 
 /* Aviso cuando el sign-in para retomar la vuelta a iCloud trae una cuenta distinta */
 "storage.errors.reverseSignInOtherAccount" = "Entraste con otra cuenta. Vuelve a entrar con la cuenta desde la que empezaste a volver a iCloud.";
@@ -6074,12 +6077,16 @@
 "storage.failed.stepSessionExpired" = "No pudimos activar la nube: tu sesión caducó antes de terminar. Tus datos están a salvo en tu dispositivo; vuelve a intentarlo y entra otra vez con tu cuenta.";
 /* Fallo de la activación en el cutover: otro dispositivo de la misma cuenta tomó el relevo de la migración */
 "storage.failed.stepOtherDevice" = "No pudimos activar la nube desde este dispositivo: otro dispositivo con tu cuenta tomó el relevo. Tus datos siguen aquí, sin cambios.";
+"storage.failed.adoptStalled" = "No pudimos entrar en tu cuenta de la nube: la activación lleva días sin avanzar. Este dispositivo no cambió nada de lo que tienes en la nube; vuelve a intentarlo más tarde.";
+"storage.failed.adoptSessionExpired" = "No pudimos entrar en tu cuenta de la nube: tu sesión caducó. Este dispositivo no cambió nada de lo que tienes en la nube; vuelve a intentarlo y entra otra vez con tu cuenta.";
+"storage.failed.adoptAccountUnavailable" = "No pudimos entrar en tu cuenta de la nube: ahora mismo no podemos darte acceso a esta cuenta. Escríbenos a %@ y lo revisamos contigo.";
 /* Botón de la tarjeta de progreso: cancelar la activación de la nube */
 "storage.progress.cancelMigration" = "Cancelar la activación";
 /* Título de la confirmación de cancelar la activación */
 "storage.confirm.cancelMigrationTitle" = "¿Cancelar la activación de la nube?";
 /* Cuerpo de la confirmación de cancelar la activación */
 "storage.confirm.cancelMigrationBody" = "Tus datos siguen en este dispositivo, como hasta ahora. Lo que ya se subió se queda en tu cuenta de la nube. Puedes volver a intentarlo cuando quieras.";
+"storage.confirm.cancelAdoptBody" = "Este dispositivo no cambió nada de lo que tienes en la nube. Puedes volver a activar la nube en este dispositivo desde aquí cuando quieras.";
 /* Botón que confirma cancelar la activación */
 "storage.confirm.cancelMigrationConfirm" = "Sí, cancelar";
 /* Botón que sigue con la activación */
