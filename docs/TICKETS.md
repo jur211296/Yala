@@ -261,6 +261,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-cloud-mode-hardening-v1 | discarded | tickets/discarded/groups-cloud-mode-hardening-v1.md |
 | groups-consent-door-spec | qa | tickets/qa/groups-consent-door-spec.md |
 | groups-create-approve-remove-show-a-raw-rpc-error | backlog | tickets/backlog/groups-create-approve-remove-show-a-raw-rpc-error.md |
+| groups-cursor-map-reads-an-undecodable-json-as-no-cursors | backlog | tickets/backlog/groups-cursor-map-reads-an-undecodable-json-as-no-cursors.md |
 | groups-deleted-group-detail-stays-open | done | tickets/done/groups-deleted-group-detail-stays-open.md |
 | groups-detach-ledger-has-no-exit | backlog | tickets/backlog/groups-detach-ledger-has-no-exit.md |
 | groups-detach-save-breadcrumb-never-closes-on-throw | backlog | tickets/backlog/groups-detach-save-breadcrumb-never-closes-on-throw.md |
@@ -286,7 +287,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-log-expense-via-chat-voice | backlog | tickets/backlog/groups-log-expense-via-chat-voice.md |
 | groups-loop-in-backoff-ignores-the-return-to-foreground | done | tickets/done/groups-loop-in-backoff-ignores-the-return-to-foreground.md |
 | groups-loop-restart-docs-cite-a-retired-mount-guard | backlog | tickets/backlog/groups-loop-restart-docs-cite-a-retired-mount-guard.md |
-| groups-merkle-reads-an-unreadable-table-as-an-empty-one | in-progress | tickets/in-progress/groups-merkle-reads-an-unreadable-table-as-an-empty-one.md |
+| groups-merkle-reads-an-unreadable-table-as-an-empty-one | done | tickets/done/groups-merkle-reads-an-unreadable-table-as-an-empty-one.md |
 | groups-only-account-deletion-skips-export-wait | backlog | tickets/backlog/groups-only-account-deletion-skips-export-wait.md |
 | groups-only-private-restart-skips-the-wipe-alert | done | tickets/done/groups-only-private-restart-skips-the-wipe-alert.md |
 | groups-only-second-launch-mounts-icloud-mirror | qa | tickets/qa/groups-only-second-launch-mounts-icloud-mirror.md |

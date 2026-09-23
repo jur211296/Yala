@@ -46,6 +46,7 @@
 - [`-only-testing` filtra por TIPO, no por fichero](feedback_only_testing_filtra_por_tipo_no_por_fichero.md) — pedí 12 suites y corrieron 7. Cuenta pedidas vs. `Test run with`.
 - [El barrido de QA rinde por lotes](feedback_el_barrido_qa_rinde_por_lotes.md) — agrupa por estado de simulador; dos números que comparas.
 - [Instrumentar gana a razonar](feedback_instrumentar_gana_a_razonar.md) — a la tercera hipótesis caída, cuenta en vez de deducir.
+- [El seam que lanza lo mismo no prueba el `catch`](feedback_el_seam_que_lanza_lo_mismo_no_prueba_el_catch.md) — que lance un `CocoaError`; si no, «seam fuera del `do`» sobrevive.
 - [El oráculo del mutante es el efecto que produce](feedback_el_oraculo_del_mutante_es_el_efecto_que_produce.md) — un mutante que SOBREVIVE puede estar midiendo la pantalla mientras el código cambia el…
 - [El CI se verifica en LOCAL](feedback_el_ci_se_verifica_en_local.md) — el `run:` se extrae del YAML y se corre con matriz.
 - [El paso 3 del gate no detecta cero casos](feedback_gate_paso3_no_detecta_cero_casos.md) — XCUITest es XCTest: cuenta «Test Suite» y «Executed».
@@ -139,6 +140,7 @@
 - [«Cero warnings» se mide en TODOS los logs](feedback_cero_warnings_se_mide_en_todos_los_logs.md) — el gate no mira los tests y lee un build.
 
 ## Estado del trabajo
+- [El Merkle de grupos ya no lee una tabla ilegible como vacía](project_merkle_grupos_tabla_ilegible.md) — PR del 23-sep; queda el gemelo del mapa de cursores.
 - [El drain ya no duplica el reloj por unidad](project_drain_reloj_no_se_duplica.md) — PR del 23-sep; seis tickets nuevos de la review.
 - [Una ref colgada ilegible ya no se pierde](project_dangler_ilegible_no_es_rowgone.md) — PR del 23-sep; se tira la página, tres tickets nuevos de la review.
 - [En el apply «no pude leer» no es «no hay nada»](project_apply_no_pisa_sin_salvaguardas.md) — PR del 22-sep; el dangler ya salió, quedan dos residuales.
