@@ -1,6 +1,6 @@
 ---
 id: an-incomplete-inventory-reads-as-the-whole-corpus
-status: in-progress
+status: done
 priority: high
 area: "modo-nube, migración"
 created: 2026-09-22
@@ -60,10 +60,10 @@ haga dos veces ni se olvide.
 
 ## Criterios de aceptación
 
-- [ ] Un `fetch` que lanza en el barrido del snapshot NO deja la entidad marcada como subida.
-- [ ] Un inventario incompleto del adopt no apaga el guard anti-fusión ni cierra el adopt con `uploaded: 0`.
-- [ ] Rastro en producción de la avería (hoy es un `print` de `#if DEBUG` en los seis).
-- [ ] Tests con el fetch lanzando + control positivo por cada desenlace tocado.
+- [x] Un `fetch` que lanza en el barrido del snapshot NO deja la entidad marcada como subida.
+- [x] Un inventario incompleto del adopt no apaga el guard anti-fusión ni cierra el adopt con `uploaded: 0`.
+- [x] Rastro en producción de la avería (hoy es un `print` de `#if DEBUG` en los seis).
+- [x] Tests con el fetch lanzando + control positivo por cada desenlace tocado.
 
 ## Relacionado
 
@@ -77,3 +77,69 @@ La fila de `MigrationSnapshotUploader.makeSpec` tiene desde ese ticket un desenl
 tarjeta de fallo con el texto «este dispositivo no pudo preparar tus datos». Antes, cortar ahí habría dejado la barra
 al 55 % para siempre; ahora cortar es seguro. Lo que sigue abierto es que el `catch` de `makeSpec` todavía no corta:
 salta la tabla.
+
+## Paso 0 (2026-09-23, cola A nocturna — decisiones auto-contestadas)
+
+Medido en este árbol antes de decidir. Las coordenadas del ticket ya no casan (el fichero creció): se citan por nombre.
+
+- **Premisa corregida.** «`collectIdentityPairs` no tiene desenlace (su caller no puede fallar)» es FALSA:
+  `assignIdentity()` es `async throws` y `MigrationRunner.driveIdentity` ya convierte cualquier `throw` en
+  `.localFailure` con el techo CORTO. Así que la decisión 1 del ticket se contesta sola para ese sitio.
+- **D1 · ¿Corta o reintenta?** Cada sitio usa el desenlace que su camino YA tiene para «avería local», sin inventar
+  vocabulario:
+  - Snapshot (`makeSpec`): el paginador LANZA, `nextPage` LANZA, `uploadPage` → `.blocked(.localFailure)` (techo
+    corto de 15 min y la tarjeta «este dispositivo no pudo preparar tus datos», lista desde
+    `snapshot-upload-has-no-ceiling-and-no-way-out`). El cursor no avanza. Antes, con TODAS las tablas restantes
+    ilegibles, `nextPage` devolvía `nil` y la pasada cerraba con `.completed`.
+  - Identidad (`collectIdentityPairs` + `addPairs`): LANZAN → `assignIdentity` lanza → `.localFailure` del runner.
+  - Adopt (`collectAdoptInventory` en el plan preliminar y en el definitivo, y `buildOrphanRowInputs`): LANZAN →
+    `runAdoptOrphanReconcile` → `.transient`, que `runAdoptFlow` ya convierte en `adoptRetry` retomable. Es el mismo
+    trato que la red en ese camino. El guard anti-fusión y el «sin huérfanas → completed» ya no ven un inventario
+    parcial.
+  - Vuelta (`addReverseUploadPairs`): caso NUEVO `ReverseUploadStatus.unreadable`. El runner no cierra la vuelta ni
+    cuenta la observación como avance (una muestra parcial baja la cifra y reseteaba el reloj del techo); sigue
+    esperando y, si la avería persiste, el techo que elija `reverseUploadBlocker` —el largo, salvo que CloudKit tenga un
+    error vigente— la saca al origen en modo nube, con los datos a salvo en el backend. La pantalla conserva la cifra
+    de la última observación buena, con el motivo de la actual.
+- **D2 · ¿Un helper para los seis?** Para la LECTURA sí (`MigrationWorkExecutor.fetchInventory`: fetch, rastro y error
+  propio); para el desenlace no, cada llamador conserva el suyo. El seam es de instancia y lanza un `CocoaError` dentro
+  del `do` real: en el uploader un `Set<String>` de clases; en el ejecutor un closure `(paso, entidad)`, porque el adopt
+  lee su inventario dos veces con el mismo paso y con un conjunto la segunda lectura era inalcanzable (corregido a mitad
+  de implementación, al escribir su test).
+- **D3 · Rastro.** Breadcrumb nuevo `CloudSyncBreadcrumb.migrationInventoryReadFailed(step:entity:)`, uno por sitio
+  (`snapshot`, `identity-capture`, `adopt-inventory`, `adopt-orphan-inputs`, `reverse-sample`, `reverse-live-rows`).
+- **D4 · Gemelos medidos en la familia.**
+  - `collectLiveByEntityName`/`addLiveRows` (canario de metadata huérfana de la vuelta): con el fetch fallido dejaba
+    la key con un `Set` vacío, así que TODA la metadata de esa entidad contaba como huérfana (canario inflado). Ahora
+    omite la key (el contrato ya dice que una key ausente se ignora) y deja rastro.
+  - `CloudSyncEngine.rehydrateOutboxFromMirror`: el `return` se queda (re-insertar sin saber qué hay duplicaría
+    filas); se añade `outboxFetchFailed(step: "rehydrate-mirror")`, que es lo que faltaba. Reintento: el siguiente
+    arranque.
+- **Fuera, a ticket propio:** el `try?` del marcador en `runAdoptFlow` (una lectura fallida sale como «marker absent»)
+  y el `rehydrateOutboxFromMirror` de Grupos, que tampoco deja rastro → `two-silent-local-reads-leave-a-false-or-no-trace`.
+  Y la vuelta con la base ilegible espera el techo LARGO: no hay motivo «avería local» en su vocabulario, y dárselo es
+  producto (texto de la salida) → `reverse-upload-unreadable-sample-waits-the-long-ceiling`.
+- **Asumido:** `reverse-upload-sample-reads-unreadable-rows-as-drained` conserva su mitad de las filas `failed`, que
+  pide medir en device; aquí solo se cierra el fetch que lanza.
+
+## Resultado (2026-09-23)
+
+**Para quien usa la app:** si al pasar tus datos a la nube, al entrar en una cuenta que ya existe o al volver a iCloud
+el teléfono no consigue leer una de tus tablas, la app ya no la da por hecha: se para con el motivo «este dispositivo»
+(la ida), lo reintenta (el adopt) o sigue esperando sin darse por terminada (la vuelta). Antes seguía como si esa tabla
+estuviera vacía y cerraba el paso sin sus datos.
+
+- Los seis inventarios del ticket, más el **backfill de identidades** que corre antes de dos de ellos
+  (`SyncIdentityService.backfillIdentities`, gemelo que cazó la review: tragaba su error y el adopt podía cerrarse con
+  las filas sin identidad contadas como `needsIdentity`, no como huérfanas).
+- Rastro en producción: `migrationInventoryReadFailed(step:entity:)`, `migrationIdentityBackfillFailed(errorType:)` y
+  `outboxFetchFailed(step: "rehydrate-mirror")`. Ningún test los fija: el `Logger` no tiene sink.
+- Mutantes: 19 en la primera tanda y 6 en la segunda (backfill, motivo de la pantalla, mínimo inventado, dry-run).
+- Review de tres lentes. Sin defectos altos en el fix. Corregido por ella: el backfill (arriba), el motivo congelado de
+  la pantalla en la muestra ilegible, la primera observación ilegible sin test, y nueve docblocks o frases que decían de
+  más («no toca el reloj», «no llegaban nunca», la key «SIEMPRE» presente…).
+- Tickets nuevos: `adopt-effect-retries-forever-with-no-ceiling` (el adopt, por red o ahora por avería local, se
+  reintenta sin techo ni tarjeta), `reverse-upload-unreadable-sample-waits-the-long-ceiling` (plazo y texto de la vuelta
+  con la base ilegible: producto) y `two-silent-local-reads-leave-a-false-or-no-trace` (cinco lecturas que solo fallan
+  en el rastro).
+- Sin device-QA: una base local ilegible no se provoca en un iPhone.

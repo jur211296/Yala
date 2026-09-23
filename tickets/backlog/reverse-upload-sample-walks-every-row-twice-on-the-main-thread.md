@@ -31,7 +31,7 @@ nacida en la nube, que antes salía sin abrir SQLite.
 ## Arreglo propuesto
 
 Construir `liveByEntityName` desde los `persistentModelID` de la primera pasada, manteniendo las 16 claves aunque
-vengan vacías (contrato RP-4 de `collectLiveByEntityName`). `collectLiveByEntityName` se queda para el panel
+vengan vacías (contrato RP-4 de `collectLiveByEntityName`; **salvo la tabla que no se deja leer, que se queda sin key** desde `an-incomplete-inventory-reads-as-the-whole-corpus` — no reintroducir el `Set` vacío ahí). `collectLiveByEntityName` se queda para el panel
 DEBUG. Un test de paridad entre las dos construcciones fija que cuentan lo mismo.
 
 ## Criterios de aceptación
