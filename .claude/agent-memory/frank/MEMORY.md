@@ -99,6 +99,7 @@
 - [Mi refutación falla ABIERTO](feedback_mi_refutacion_falla_abierto.md) — 33 de 45 hallazgos salieron «refutados» sin que nadie los juzgara.
 - [Tras la puerta, el error es otro](feedback_tras_la_puerta_el_error_es_otro.md) — copié «el 401 del attest suma a la racha» de Grupos al personal.
 - [El guion de QA tiene que distinguir builds](feedback_el_guion_de_qa_tiene_que_distinguir_builds.md) — sin red la puerta de attest salía antes del.
+- [El genérico del molde no es genérico aquí](feedback_el_generico_del_molde_no_es_generico_aqui.md) — `stalled` decía «días» y salía a los 15 min.
 - [El molde no traslada sus precondiciones](feedback_el_molde_no_traslada_sus_precondiciones.md) — copiar «con el molde de X» hereda la forma.
 - [El tope del test de cancelación es PROPIO](feedback_el_tope_del_test_de_cancelacion_es_propio.md) — el mutante que deja la espera sin resolver la hace COLGAR, no fallar.
 - [Mi arreglo cumple una premisa que era FALSA](feedback_mi_arreglo_cumple_una_premisa_que_era_falsa.md) — busca quién dependía de que no se cumpliera.
@@ -142,7 +143,7 @@
 - [«Cero warnings» se mide en TODOS los logs](feedback_cero_warnings_se_mide_en_todos_los_logs.md) — el gate no mira los tests y lee un build.
 
 ## Estado del trabajo
-- [Tercer reloj: cualquier motivo definitivo](project_tercer_reloj_definitivo_pre_mount.md) — 23-sep; el corto ya no se reinicia al turnarse motivos; queda el gemelo del snapshot.
+- [Tercer reloj: cualquier motivo definitivo](project_tercer_reloj_definitivo_pre_mount.md) — 23-sep; vuelta y subida cerradas; la subida sale con `mixedCauses`.
 - [El claim del adopt tiene techo y salida](project_adopt_claim_techo_y_salida.md) — PR del 23-sep; dos tickets nuevos, device-QA en `qa`.
 - [Un inventario incompleto ya no es el corpus entero](project_inventario_incompleto_no_es_el_corpus.md) — PR del 23-sep; la review cazó el backfill, tres tickets nuevos.
 - [El Merkle de grupos ya no lee una tabla ilegible como vacía](project_merkle_grupos_tabla_ilegible.md) — PR del 23-sep; queda el gemelo del mapa de cursores.

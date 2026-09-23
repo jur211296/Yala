@@ -646,6 +646,9 @@ extension MetricsService {
     }
 
     /// Una subida del snapshot de la ida salió de su fase (ticket `snapshot-upload-has-no-ceiling-and-no-way-out`).
+    /// Desde `snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling` la serie gana un valor,
+    /// `mixedCauses`: el techo corto con motivos turnándose. Tiene su propio valor para que `stalled` siga significando
+    /// solo las 72 h sin avanzar.
     static func cloudSnapshotUploadAborted(reason: String) {
         canary(.cloudSnapshotUploadAborted, detail: reason)
     }
@@ -654,6 +657,12 @@ extension MetricsService {
     /// la forma de `cloudReversePreMountWaiting` sin la fase (aquí solo hay una): `-` en el tramo de causa cuando la
     /// observación no trae motivo, y `stop_<blocker>` o `waiting` en la causa. Los tramos son los mismos, porque los
     /// techos son los mismos números. Dedupe por PROCESO y por `detail`, por el re-kick de 30 s de la pantalla.
+    ///
+    /// **Desde `snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling` los 15 min ya no corren
+    /// contra el tramo de causa**, sino contra el reloj de «cualquier motivo definitivo», que no se reinicia al cambiar de
+    /// motivo. La serie sigue publicando el de causa a propósito, como `cloudReversePreMountWaiting`: es el que deja
+    /// reconocer en la flota la alternancia —avance creciendo y causa siempre en `lt_15m`—, y cambiarle el significado a
+    /// un segmento rompería la lectura de la serie.
     static func cloudSnapshotUploadWaiting(stalledSeconds: Double, causeStalledSeconds: Double, blocker: String?) {
         let detail = snapshotUploadWaitingDetail(
             stalledSeconds: stalledSeconds, causeStalledSeconds: causeStalledSeconds, blocker: blocker)

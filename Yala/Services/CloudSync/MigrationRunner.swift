@@ -114,11 +114,17 @@ nonisolated enum SnapshotStallBlocker: String, Equatable, Sendable {
 /// **Lo elige el techo que VENCIÓ, no la última observación** (`MigrationRunner.snapshotExitReason`): tras 72 h sin red,
 /// una pasada que traiga un 403 recién visto no puede decirle a la persona que su cuenta no lo permitió.
 nonisolated enum SnapshotExitReason: String, Equatable, Sendable {
-    /// Venció el techo LARGO: 72 h sin confirmar una sola página, con la causa que fuera.
+    /// Venció el techo LARGO: 72 h sin confirmar una sola página, con la causa que fuera. Su texto dice «lleva días», y
+    /// solo aquí es verdad.
     case stalled
     case sessionExpired
     case accountUnavailable
     case localFailure
+    /// Venció el techo CORTO con motivos definitivos turnándose, y ninguno llegó SOLO a los 900 s (ticket
+    /// `snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling`, decisión de Jürgen del 2026-09-23:
+    /// motivo propio). Ninguno de los textos específicos es verdad entero, y el de `stalled` tampoco: afirma días y esta
+    /// salida llega a los 15 min. Su texto no nombra motivo ni plazo.
+    case mixedCauses
 
     init(_ blocker: SnapshotStallBlocker) {
         switch blocker {
@@ -369,6 +375,37 @@ nonisolated enum CauseStallClock {
         let carried = sealedAccrued ?? 0
         return Reading(stalled: carried + openTramo, raw: blockerRaw, accruedFrom: openSince ?? observedAt,
                        accrued: carried)
+    }
+
+    /// El reloj de «CUALQUIER motivo definitivo»: el mismo reloj con UNA sola clave para todo lo que esperar no
+    /// arregla. Así hereda sus reglas menos una —la del cambio de causa no puede darse—: suma, se PAUSA con una
+    /// observación sin motivo y re-ancla un tramo abierto en el futuro. Es el que decide el techo CORTO en las dos
+    /// etapas (tickets `alternating-definitive-causes-never-reach-the-short-ceiling` en la vuelta y
+    /// `snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling` en la subida): con el de causa,
+    /// dos motivos turnándose lo reiniciaban en cada observación y la salida se iba a las 72 h.
+    ///
+    /// Está aquí, y no en cada etapa, por la misma razón que `observe`: dos copias divergen.
+    ///
+    /// No se guarda la clave, porque solo hay una: se le pasa siempre como sellada. Con nada acumulado da lo mismo —la
+    /// regla de «misma causa» sobre un reloj vacío devuelve lo que devolvería la de «primera vez»—, así que derivarla de
+    /// los campos sería una condición que no cambia ningún resultado.
+    ///
+    /// `isDefinitive` lo decide cada etapa con SU clasificador: una observación sin motivo, o con un motivo que esperar
+    /// sí arreglase, pausa.
+    static func observeAnyDefinitive(
+        sealedOpenSince: Date?,
+        sealedAccrued: Double?,
+        isDefinitive: Bool,
+        observedAt: Date
+    ) -> (stalled: Double, accruedFrom: Date?, accrued: Double?) {
+        let key = "definitive"
+        let reading = observe(
+            sealedRaw: key,
+            sealedOpenSince: sealedOpenSince,
+            sealedAccrued: sealedAccrued,
+            blockerRaw: isDefinitive ? key : nil,
+            observedAt: observedAt)
+        return (reading.stalled, reading.accruedFrom, reading.accrued)
     }
 }
 
@@ -1548,10 +1585,21 @@ final class MigrationRunner {
     /// Una observación de `uploadingSnapshot` en una pasada que no confirmó ninguna página. Decide si la subida sigue
     /// esperando o sale a `failedRollback` (ticket `snapshot-upload-has-no-ceiling-and-no-way-out`).
     ///
-    /// **Dos relojes, molde de `observeReversePreMountStall`.** El de AVANCE mide desde la última página confirmada
-    /// (`snapshotStallProgressAt`) y gobierna las 72 h con cualquier causa. El de CAUSA mide lo acumulado bajo el mismo
-    /// motivo desde el último avance (`CauseStallClock`) y gobierna los 15 min, solo con un motivo que esperar no
-    /// arregla. Con uno solo, un fallo local aislado tras horas sin red se cobraría las horas contra sus 15 min.
+    /// **Tres relojes, molde de `observeReversePreMountStall`.** El de AVANCE mide desde la última página confirmada
+    /// (`snapshotStallProgressAt`) y gobierna las 72 h con cualquier causa. El de «CUALQUIER motivo DEFINITIVO» mide lo
+    /// acumulado bajo motivos que esperar no arregla desde el último avance, sean el mismo o se turnen
+    /// (`CauseStallClock.observeAnyDefinitive`), y gobierna los 15 min. El de CAUSA mide lo acumulado bajo UN motivo
+    /// (`CauseStallClock.observe`) y solo elige el copy de la salida (`snapshotExitReason`). Con uno solo de avance, un
+    /// fallo local aislado tras horas sin red se cobraría las horas contra sus 15 min; los dos acumulados lo evitan
+    /// porque la red no trae motivo y los PAUSA.
+    ///
+    /// **Hasta `snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling` los 15 min los medía el de
+    /// CAUSA**, y dos motivos turnándose lo reiniciaban en cada observación: los productores de `localFailure`
+    /// (`nextPage`, el encolado, el drenaje, el `fetch` del outbox) saltan ANTES del push y `accountUnavailable` sale DEL
+    /// push, así que una pasada falla al leer y la siguiente lee bien y recibe el 409. Con el re-kick de 30 s el reloj de
+    /// causa no pasaba de cero y la salida se iba a las 72 h. Lo que suma el reloj nuevo entre motivos es a propósito:
+    /// los dos eran esperas que esperar no arregla — incluido un hueco SIN observaciones entre dos motivos distintos, la
+    /// misma regla que el de causa ya aplicaba a uno solo.
     ///
     /// La primera observación de una visita a la fase SELLA el reloj de avance sin contarla como parada, y nunca lo sella
     /// hacia atrás: un sello en el FUTURO es un reloj que iba adelantado y ya se corrigió, y conservarlo aplazaría el
@@ -1573,16 +1621,27 @@ final class MigrationRunner {
             sealedAccrued: state.snapshotStallCauseAccruedSeconds,
             blockerRaw: blocker?.rawValue,
             observedAt: observedAt)
+        // El filtro es el MISMO `cause` que recibe la máquina, no «hay blocker» escrito otra vez: hoy coinciden (los tres
+        // `SnapshotStallBlocker` son definitivos), y derivarlos de la misma variable impide que diverjan el día que no.
+        let definitive = CauseStallClock.observeAnyDefinitive(
+            sealedOpenSince: state.snapshotStallDefinitiveAt,
+            sealedAccrued: state.snapshotStallDefinitiveAccruedSeconds,
+            isDefinitive: cause == .definitive,
+            observedAt: observedAt)
         CloudSyncBreadcrumb.snapshotUploadStalled(
-            stalledSeconds: stalled, causeStalledSeconds: clock.stalled, blocker: blocker?.rawValue)
+            stalledSeconds: stalled, causeStalledSeconds: clock.stalled,
+            definitiveStalledSeconds: definitive.stalled, blocker: blocker?.rawValue)
         // En CADA observación, no solo al salir: un fallo sistémico —un 403 en toda la flota, un build que rompe el
-        // push— se ve así mucho antes de que ningún teléfono agote sus 15 min o sus 72 h.
+        // push— se ve así mucho antes de que ningún teléfono agote sus 15 min o sus 72 h. Sigue publicando el tramo de
+        // CAUSA aunque los 15 min ya no corran contra él, a propósito y como en la vuelta: es el que deja reconocer la
+        // alternancia en la flota (avance creciendo, causa siempre en el tramo bajo).
         MetricsService.cloudSnapshotUploadWaiting(
             stalledSeconds: stalled, causeStalledSeconds: clock.stalled, blocker: blocker?.rawValue)
-        let reason = snapshotExitReason(blocker: blocker, causeStalledSeconds: clock.stalled, cause: cause)
+        let reason = snapshotExitReason(
+            blocker: blocker, causeStalledSeconds: clock.stalled, progressStalledSeconds: stalled, cause: cause)
         var left = false
         try await handle(.snapshotUploadStalled(
-            stalledSeconds: stalled, causeStalledSeconds: clock.stalled, cause: cause)) { state, next in
+            stalledSeconds: stalled, definitiveStalledSeconds: definitive.stalled, cause: cause)) { state, next in
             guard next != .uploadingSnapshot else {
                 state.snapshotStallProgressAt = lastProgressAt
                 // Los tres del reloj de causa se escriben SIEMPRE, también a `nil`: una observación sin motivo CIERRA
@@ -1590,6 +1649,9 @@ final class MigrationRunner {
                 state.snapshotStallCauseRaw = clock.raw
                 state.snapshotStallCauseAt = clock.accruedFrom
                 state.snapshotStallCauseAccruedSeconds = clock.accrued
+                // Los dos del reloj de lo definitivo, igual: SIEMPRE, también a `nil`, por la misma razón.
+                state.snapshotStallDefinitiveAt = definitive.accruedFrom
+                state.snapshotStallDefinitiveAccruedSeconds = definitive.accrued
                 return
             }
             left = true
@@ -1605,14 +1667,29 @@ final class MigrationRunner {
     /// (la misma regla que `reversePreMountExitReason`). Tras 72 h sin avanzar, una pasada que traiga un 403 recién
     /// visto sale con «dejó de avanzar»: decirle «tu cuenta no lo permitió» a quien llevaba tres días sin red la
     /// mandaría a soporte por nada. Si el 403 es real, el reintento sale a los 15 min con el motivo bueno.
+    ///
+    /// **Se mide contra el reloj de la CAUSA, no contra el de «cualquier motivo definitivo» que saca de la subida**
+    /// (ticket `snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling`), la regla de la vuelta:
+    /// si el corto venció con motivos mezclados —diez minutos de 409 y cinco de un store que falla—, ninguno de los
+    /// textos específicos es verdad entero, y sale `mixedCauses`. **No `stalled`**, que era el primer diseño y lo cazaron
+    /// dos lentes de la review: su texto dice «lleva días sin avanzar», y esta salida llega a los 15 min. Así que, si
+    /// ningún motivo llegó solo, el techo que venció decide entre los dos genéricos: las 72 h de avance dan `stalled`, y
+    /// si no fueron ellas, lo que sacó de la subida fue el corto —la máquina no sale por otra cosa—. El específico sale cuando UN motivo solo
+    /// agotó el plazo, y entonces los dos relojes vencen en la misma observación: abren tramo con la misma observación
+    /// y solo el de causa se reinicia al cambiar de motivo. **Con una excepción, y de una vez**: una fila de un build
+    /// anterior a la v13 parada a mitad de la subida trae el de causa acumulado y el definitivo a `nil`; la salida
+    /// llega hasta un plazo corto después, con el texto específico, que entonces es verdad.
+    ///
+    /// Se calcula en cada observación y solo se journalea si la máquina saca de la fase; por eso la última rama no mira
+    /// el reloj de lo definitivo: en una pasada que HOLDEA el valor se tira.
     private func snapshotExitReason(
-        blocker: SnapshotStallBlocker?, causeStalledSeconds: Double, cause: MarkerExportStall
+        blocker: SnapshotStallBlocker?, causeStalledSeconds: Double, progressStalledSeconds: Double,
+        cause: MarkerExportStall
     ) -> SnapshotExitReason {
-        guard let blocker, policy.snapshotCauseCeilingReached(
-            causeStalledSeconds: causeStalledSeconds, cause: cause) else {
-            return .stalled
+        if let blocker, policy.snapshotCauseCeilingReached(stalledSeconds: causeStalledSeconds, cause: cause) {
+            return SnapshotExitReason(blocker)
         }
-        return SnapshotExitReason(blocker)
+        return progressStalledSeconds >= policy.snapshotProgressBudgetSeconds ? .stalled : .mixedCauses
     }
 
     /// `verifying` (S9). Inyecta el `retriesSoFar` desde el journal; incrementa el contador correcto en el
@@ -2219,14 +2296,9 @@ final class MigrationRunner {
         return (reading.stalled, reading.raw, reading.accruedFrom, reading.accrued)
     }
 
-    /// El reloj de «CUALQUIER motivo definitivo» (ticket `alternating-definitive-causes-never-reach-the-short-ceiling`):
-    /// el mismo `CauseStallClock`, con una sola clave para todos los motivos que esperar no arregla. Así hereda sus
-    /// tres reglas menos una —la del cambio de causa no puede darse—: suma, se PAUSA con una observación sin motivo y
-    /// re-ancla un tramo abierto en el futuro.
-    ///
-    /// No se guarda la clave, porque solo hay una: se le pasa siempre como sellada. Con nada acumulado da lo mismo
-    /// —la regla de «misma causa» sobre un reloj vacío devuelve lo que devolvería la de «primera vez»—, así que
-    /// derivarla de los campos sería una condición que no cambia ningún resultado.
+    /// El reloj de «CUALQUIER motivo definitivo» (ticket `alternating-definitive-causes-never-reach-the-short-ceiling`),
+    /// leído del journal. Las reglas viven en `CauseStallClock.observeAnyDefinitive`, que comparte con la subida del
+    /// snapshot.
     ///
     /// El filtro es por `stallCause` y no por «hay blocker»: hoy los cinco motivos son definitivos y da lo mismo, pero
     /// un motivo nuevo que esperar SÍ arreglase no debe sumar aquí, y ese `switch` exhaustivo es donde el compilador
@@ -2236,14 +2308,11 @@ final class MigrationRunner {
         blocker: ReversePreMountBlocker?,
         observedAt: Date
     ) -> (stalled: Double, accruedFrom: Date?, accrued: Double?) {
-        let key = "definitive"
-        let reading = CauseStallClock.observe(
-            sealedRaw: key,
+        CauseStallClock.observeAnyDefinitive(
             sealedOpenSince: state.reversePreMountDefinitiveAt,
             sealedAccrued: state.reversePreMountDefinitiveAccruedSeconds,
-            blockerRaw: blocker?.stallCause == .definitive ? key : nil,
+            isDefinitive: blocker?.stallCause == .definitive,
             observedAt: observedAt)
-        return (reading.stalled, reading.accruedFrom, reading.accrued)
     }
 
     /// El motivo que se journalea al salir, y **lo elige el techo que VENCIÓ, no la última observación**.

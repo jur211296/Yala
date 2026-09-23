@@ -1312,41 +1312,43 @@ struct MigrationStateMachineTests {
     @Test func snapshotUploadStalled_belowBothBudgets_holdsWithNoEffects() {
         for cause in [MarkerExportStall.unknown, .definitive] {
             let r = step(.uploadingSnapshot,
-                         .snapshotUploadStalled(stalledSeconds: 259_199, causeStalledSeconds: 899, cause: cause))
+                         .snapshotUploadStalled(stalledSeconds: 259_199, definitiveStalledSeconds: 899, cause: cause))
             #expect(r.next == .uploadingSnapshot, "\(cause)")
             #expect(r.effects.isEmpty, "\(cause)")
         }
     }
 
     /// El techo LARGO vale con CUALQUIER causa, clavado con sus dos vecinos. Con `.definitive` también: es el suelo del
-    /// mecanismo cuando dos causas definitivas se alternan y el reloj corto no llega nunca.
+    /// mecanismo (hasta `snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling`, además, lo único
+    /// que sacaba de la subida con dos causas definitivas turnándose).
     @Test func snapshotUploadStalled_progressCeiling_appliesWithAnyCause() {
         for cause in [MarkerExportStall.unknown, .definitive] {
             #expect(step(.uploadingSnapshot,
-                         .snapshotUploadStalled(stalledSeconds: 259_199, causeStalledSeconds: 0, cause: cause)).next
+                         .snapshotUploadStalled(stalledSeconds: 259_199, definitiveStalledSeconds: 0, cause: cause)).next
                 == .uploadingSnapshot, "\(cause) a 259 199 s todavía no")
             let out = step(.uploadingSnapshot,
-                           .snapshotUploadStalled(stalledSeconds: 259_200, causeStalledSeconds: 0, cause: cause))
+                           .snapshotUploadStalled(stalledSeconds: 259_200, definitiveStalledSeconds: 0, cause: cause))
             #expect(out.next == .failedRollback, "\(cause) a 259 200 s sale")
             #expect(out.effects == [.rollback], "la misma salida que `verifying` al agotar sus reintentos")
         }
     }
 
-    /// El techo CORTO: solo con `.definitive` y contra el reloj de CAUSA, no el de avance.
+    /// El techo CORTO: solo con `.definitive` y contra el reloj de lo DEFINITIVO (hasta
+    /// `snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling`, el de UNA causa), no el de avance.
     @Test func snapshotUploadStalled_causeCeiling_onlyWithADefinitiveCause() {
         #expect(step(.uploadingSnapshot,
-                     .snapshotUploadStalled(stalledSeconds: 0, causeStalledSeconds: 899, cause: .definitive)).next
+                     .snapshotUploadStalled(stalledSeconds: 0, definitiveStalledSeconds: 899, cause: .definitive)).next
             == .uploadingSnapshot)
         #expect(step(.uploadingSnapshot,
-                     .snapshotUploadStalled(stalledSeconds: 0, causeStalledSeconds: 900, cause: .definitive)).next
+                     .snapshotUploadStalled(stalledSeconds: 0, definitiveStalledSeconds: 900, cause: .definitive)).next
             == .failedRollback)
-        // Con `.unknown`, el reloj de causa no manda aunque venga enorme: la red solo tiene el largo.
+        // Con `.unknown`, el reloj de lo definitivo no manda aunque venga enorme: la red solo tiene el largo.
         #expect(step(.uploadingSnapshot,
-                     .snapshotUploadStalled(stalledSeconds: 0, causeStalledSeconds: 100_000, cause: .unknown)).next
+                     .snapshotUploadStalled(stalledSeconds: 0, definitiveStalledSeconds: 100_000, cause: .unknown)).next
             == .uploadingSnapshot)
         // Y el corto no se mide contra el reloj de AVANCE: tres horas sin avanzar con una causa recién vista holdean.
         #expect(step(.uploadingSnapshot,
-                     .snapshotUploadStalled(stalledSeconds: 10_800, causeStalledSeconds: 0, cause: .definitive)).next
+                     .snapshotUploadStalled(stalledSeconds: 10_800, definitiveStalledSeconds: 0, cause: .definitive)).next
             == .uploadingSnapshot)
     }
 
@@ -1361,7 +1363,7 @@ struct MigrationStateMachineTests {
     /// pueden sacar a nadie de ella.
     @Test func snapshotUploadEvents_areInvalidOutsideTheirPhase() {
         let events: [Event] = [
-            .snapshotUploadStalled(stalledSeconds: 10_000_000, causeStalledSeconds: 10_000_000, cause: .definitive),
+            .snapshotUploadStalled(stalledSeconds: 10_000_000, definitiveStalledSeconds: 10_000_000, cause: .definitive),
             .snapshotUploadCancelled,
         ]
         for phase in Self.allPhases where phase != .uploadingSnapshot {

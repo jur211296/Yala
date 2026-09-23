@@ -7324,6 +7324,10 @@ enum L10n {
             // Una subida del snapshot que venció su techo, por MOTIVO (ticket
             // `snapshot-upload-has-no-ceiling-and-no-way-out`, decisión de Jürgen: texto por motivo, no el genérico).
             static var snapshotStalled: String { ls("storage.failed.snapshotStalled", comment: "") }
+            /// El techo corto venció con motivos definitivos turnándose y ninguno llegó solo al plazo (ticket
+            /// `snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling`, decisión de Jürgen: motivo
+            /// propio, sin plazo). `snapshotStalled` dice «lleva días», y esta salida llega a los 15 min.
+            static var snapshotMixedCauses: String { ls("storage.failed.snapshotMixedCauses", comment: "") }
             static var snapshotSessionExpired: String { ls("storage.failed.snapshotSessionExpired", comment: "") }
             /// Con el correo de soporte (`AppConstants.supportEmail`): reintentar no despierta una cuenta suspendida.
             static func snapshotAccountUnavailable(_ supportEmail: String) -> String {

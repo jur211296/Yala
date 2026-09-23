@@ -23,7 +23,9 @@ enum StorageFailureCopyLogic {
     /// correo de soporte —en `/sync/push` es el 409 de una cuenta congelada porque otro dispositivo la está devolviendo a
     /// iCloud, o un 403 si la ruta llega a emitirlo—; `sessionExpired` pide volver a entrar, y solo sale con la sesión ya
     /// borrada, que es cuando «Migrar» de verdad lo pide; el fallo local habla del dispositivo; y el techo largo —72 h sin
-    /// avanzar, con la causa que fuera— no acusa a nadie, ni siquiera a la red.
+    /// avanzar, con la causa que fuera— no acusa a nadie, ni siquiera a la red. El techo corto con motivos turnándose
+    /// (`mixedCauses`, ticket `snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling`) tampoco: no
+    /// nombra motivo ni plazo, porque ninguno de los dos llegó solo y la salida llega a los 15 min, no a los días.
     ///
     /// **Los tres pasos sin cifra que baje —22 %, 35 %, 80 %— van después de la subida** (ticket
     /// `forward-migration-steps-have-no-ceiling-and-no-exit`, decisión de Jürgen: texto por motivo también aquí). Tampoco
@@ -59,6 +61,7 @@ enum StorageFailureCopyLogic {
             case .sessionExpired:     return L10n.Storage.Failed.snapshotSessionExpired
             case .accountUnavailable: return L10n.Storage.Failed.snapshotAccountUnavailable(supportEmail)
             case .localFailure:       return L10n.Storage.Failed.snapshotLocalFailure
+            case .mixedCauses:        return L10n.Storage.Failed.snapshotMixedCauses
             }
         }
         if let forwardStepExit {

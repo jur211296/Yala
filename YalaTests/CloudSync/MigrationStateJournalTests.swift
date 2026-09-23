@@ -409,6 +409,69 @@ struct MigrationStateJournalTests {
         #expect(recleared.reversePreMountDefinitiveAccruedSeconds == nil)
     }
 
+    // MARK: - (d·SU) Techo de la subida del snapshot: los SEIS campos de sus relojes sobreviven al kill
+
+    /// **Mismo modo de fallo silencioso que los de la vuelta, en la ida.** La familia `snapshotStall*` llevaba sin este
+    /// caso desde que entró (ticket `snapshot-upload-has-no-ceiling-and-no-way-out`), y entra con los dos del reloj de
+    /// «cualquier motivo definitivo» (ticket `snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling`):
+    /// si ese par no persiste, `definitiveStalled` es 0 en cada pasada, el techo de 15 min no vence jamás y la subida
+    /// espera las 72 h, que es justo el bug de ese ticket. La app «espera bien» y ningún test de lógica lo vería.
+    ///
+    /// Tres lecturas, como su hermano de arriba: `nil` por defecto, valor tras re-fetch, y vuelta a `nil` DURABLE. Y el
+    /// motivo de la salida SOBREVIVE a la limpieza: es el desenlace, no el reloj.
+    @Test func snapshotStallCeilingFields_roundTripAcrossSaveAndRefetch_includingNil() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        let progressAt = Date(timeIntervalSince1970: 1_700_000_900)
+        let causeAt = Date(timeIntervalSince1970: 1_700_003_400)
+        let definitiveAt = Date(timeIntervalSince1970: 1_700_002_100)
+        let state = try MigrationState.loadOrCreate(in: context)
+        #expect(state.snapshotStallProgressAt == nil)
+        #expect(state.snapshotStallCauseRaw == nil)
+        #expect(state.snapshotStallCauseAt == nil)
+        #expect(state.snapshotStallCauseAccruedSeconds == nil)
+        #expect(state.snapshotStallDefinitiveAt == nil)
+        #expect(state.snapshotStallDefinitiveAccruedSeconds == nil)
+
+        state.setPhase(.uploadingSnapshot)
+        state.snapshotStallProgressAt = progressAt
+        state.snapshotStallCauseRaw = SnapshotStallBlocker.accountUnavailable.rawValue
+        state.snapshotStallCauseAt = causeAt
+        state.snapshotStallCauseAccruedSeconds = 612.5
+        state.snapshotStallDefinitiveAt = definitiveAt
+        state.snapshotStallDefinitiveAccruedSeconds = 740.25
+        state.snapshotExitReasonRaw = SnapshotExitReason.stalled.rawValue
+        try context.save()
+
+        var descriptor = FetchDescriptor<MigrationState>()
+        descriptor.fetchLimit = 1
+        let context2 = ModelContext(context.container)
+        let reloaded = try #require(try context2.fetch(descriptor).first)
+        #expect(reloaded.readPhase().phase == .uploadingSnapshot)
+        #expect(reloaded.snapshotStallProgressAt == progressAt)
+        // El rawValue tiene que RECONSTRUIR su tipo: renombrar un case dejaría el reloj de causa sin causa.
+        #expect(SnapshotStallBlocker(rawValue: reloaded.snapshotStallCauseRaw ?? "") == .accountUnavailable)
+        #expect(reloaded.snapshotStallCauseAt == causeAt)
+        #expect(reloaded.snapshotStallCauseAccruedSeconds == 612.5,
+                "y el acumulado con sus decimales: truncarlo movería el techo")
+        #expect(reloaded.snapshotStallDefinitiveAt == definitiveAt)
+        #expect(reloaded.snapshotStallDefinitiveAccruedSeconds == 740.25)
+
+        reloaded.clearSnapshotStallCeiling()
+        try context2.save()
+
+        let context3 = ModelContext(context.container)
+        let recleared = try #require(try context3.fetch(descriptor).first)
+        #expect(recleared.snapshotStallProgressAt == nil)
+        #expect(recleared.snapshotStallCauseRaw == nil)
+        #expect(recleared.snapshotStallCauseAt == nil)
+        #expect(recleared.snapshotStallCauseAccruedSeconds == nil)
+        #expect(recleared.snapshotStallDefinitiveAt == nil)
+        #expect(recleared.snapshotStallDefinitiveAccruedSeconds == nil)
+        #expect(recleared.snapshotExitReasonRaw == "stalled", "el motivo de la salida no es parte del reloj")
+    }
+
     /// Los pendientes del origen que la vuelta reemplaza (ticket `reverse-claim-rejection-has-no-way-out-in-the-client`)
     /// tienen que sobrevivir a un kill en `reverseClaimLeader`: un rechazo que llega tras relanzar los repone. Y vacío es
     /// `nil`, no un `[]` codificado: sin nada que reponer no queda rastro en la fila.

@@ -332,11 +332,22 @@ paths:
   no arregla, 72 h sin confirmar una sola página con cualquier causa, texto por motivo en la tarjeta de fallo y
   «Cancelar la activación» con confirmación. Hasta ese día `uploadingSnapshot` cortaba sin evento ante cualquier
   fallo y la barra se quedaba al 55 % para siempre. Seis cosas que no se tocan sin romperlo:
-  (1) **avanzar es `pageConfirmed`**, y reinicia LOS DOS relojes en el mismo save que el cursor: una página confirmada
+  (1) **avanzar es `pageConfirmed`**, y reinicia LOS relojes en el mismo save que el cursor: una página confirmada
   prueba que la sesión, la cuenta y la lectura local funcionaron. Sin ese reinicio, un corpus grande que sube despacio
   agotaría el techo mientras avanza;
   (2) **el reloj por causa es `CauseStallClock`, compartido con el techo previo al montaje de la vuelta**: causa
-  distinta empieza de cero, misma causa suma, observación sin causa PAUSA. No lo copies a una tercera etapa: llámalo;
+  distinta empieza de cero, misma causa suma, observación sin causa PAUSA. No lo copies a una tercera etapa: llámalo.
+  **Y desde el 2026-09-23 son TRES relojes, como en la vuelta** (ticket
+  `snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling`, schema **12 → 13**:
+  `snapshotStallDefinitiveAt` + `snapshotStallDefinitiveAccruedSeconds`). Los 15 min los decide el de «CUALQUIER motivo
+  definitivo» (`CauseStallClock.observeAnyDefinitive`, el MISMO helper que usa la vuelta: una sola clave, suma entre
+  motivos, la red lo pausa); el de causa ya solo elige el copy. Hasta ese día un fallo local al leer —salta ANTES del
+  push— y el 409 del push se turnaban pasada a pasada, el de causa no pasaba de cero con el re-kick de 30 s y la salida
+  se iba a las 72 h. Las dos consecuencias decididas en la vuelta valen igual aquí, fijadas con test: un hueco SIN
+  observaciones entre dos motivos distintos cuenta (`snapshotDefinitiveClock_anUnobservedGapBetweenTwoCauses_counts`),
+  y una fila v12 parada a mitad de la subida sale como mucho un plazo corto después
+  (`snapshotDefinitiveClock_aRowFromBeforeV13_leavesOneShortCeilingLater`). El canario `cloudSnapshotUploadWaiting` NO
+  cambia: su segundo segmento sigue siendo el tramo de causa, que es el que deja ver la alternancia en la flota;
   (3) **los motivos definitivos los tipa el uploader** (`SnapshotStepOutcome.blocked`): el 401 que no es de attest
   (`sessionExpired`), el 403 y el 409 de congelado (`accountUnavailable`) y un `fetch`/`save` local que lanza
   (`localFailure`). La DERIVA del HLC (`ClockDriftError`/`CanonicalTimeError`) va como `.transient`, a propósito: el
@@ -353,9 +364,14 @@ paths:
   abort de la ida) y el siguiente intento lo re-sube por LWW;
   (5) **el motivo lo elige el techo que VENCIÓ** (`MigrationRunner.snapshotExitReason`, con el predicado en
   `MigrationPolicy.snapshotCauseCeilingReached`): las 72 h salen con `stalled` aunque la pasada traiga un 403 recién
-  visto. `snapshotExitReasonRaw` sobrevive a `failedRollback` —lo lee `StorageFailureCopyLogic`— y solo lo limpian
+  visto. **Desde el 2026-09-23 el texto específico se mide contra el reloj de CAUSA y la salida contra el de lo
+  definitivo**: con uno solo que agotó el plazo, los dos vencen en la misma observación y sale su texto; con motivos
+  mezclados sale **`mixedCauses`**, un motivo propio (decisión de Jürgen del 23), y **no `stalled`**: el texto de
+  `stalled` dice «lleva días sin avanzar», así que solo vale para las 72 h. Lo cazaron dos lentes: en la vuelta el
+  genérico no afirma plazo y el molde no lo traía. **Si copias este reloj a otra etapa, mira qué dice su genérico.**
+  El canario `cloudSnapshotUploadAborted` gana el valor `mixedCauses` y `stalled` sigue siendo solo el techo largo. `snapshotExitReasonRaw` sobrevive a `failedRollback` —lo lee `StorageFailureCopyLogic`— y solo lo limpian
   `resetAfterRollback` y la normalización de un journal ilegible, que son las dos salidas de esa fase;
-  (6) **los cuatro `snapshotStall*` solo existen dentro de la fase**: `handle` los limpia al ENTRAR y al SALIR
+  (6) **los seis `snapshotStall*` solo existen dentro de la fase**: `handle` los limpia al ENTRAR y al SALIR
   (`clearSnapshotStallCeiling()`), así que la vuelta desde `verifying` por mismatch no hereda el reloj.
   «Cancelar» va a `notStarted` sin efectos, que es el mismo estado al que ya llega «Reintentar»: deja la sesión de la
   nube puesta. Los otros tres pasos de la ida con el mismo agujero (22 %, 35 % y 80 %) se cerraron el mismo día: regla
@@ -474,10 +490,10 @@ paths:
   de causa ya aplicaba a un solo motivo, y está fijada con test
   (`reversePreMountDefinitiveClock_anUnobservedGapBetweenTwoCauses_counts`). La máquina no mira el de causa: todo lo
   que acumula un motivo lo acumula también el de lo definitivo —salvo una fila v11 parada a mitad de fase, que trae el
-  de causa lleno y el nuevo vacío y sale como mucho un plazo corto después—, así que como término de salida sobraba. **Y el mismo agujero sigue abierto en la subida del snapshot** —su reloj por causa se reinicia igual y los
-  fallos locales y el 403 del push se turnan pasada a pasada—: ticket
-  `snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling`. En la ida sin cifra se midió y no es
-  alcanzable de forma sostenida.
+  de causa lleno y el nuevo vacío y sale como mucho un plazo corto después—, así que como término de salida sobraba. **El mismo agujero en la subida del snapshot se cerró el mismo día con el
+  mismo reloj** (`snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling`; regla de la subida,
+  punto 2), y los dos llaman a `CauseStallClock.observeAnyDefinitive`. En la ida sin cifra se midió y no es alcanzable
+  de forma sostenida.
   Cuatro cosas del reloj de causa, y las cuatro son la decisión: **(a)** la clave es el `rawValue` del blocker y no su
   `abortReason` —`accountUnavailable` y `refused` comparten copy, y fundirlos sumaría dos causas como si fueran una; hoy
   eso decide el copy y el canario, no la salida—;

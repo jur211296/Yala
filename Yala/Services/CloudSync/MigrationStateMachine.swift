@@ -207,11 +207,18 @@ nonisolated enum MigrationEvent: Equatable {
     /// de `reversePreMountStalled`:
     ///  · `stalledSeconds` es el de AVANCE —`now()` menos `MigrationState.snapshotStallProgressAt`, la última página
     ///    confirmada— y gobierna el presupuesto LARGO, con cualquier causa;
-    ///  · `causeStalledSeconds` es el de CAUSA —lo ACUMULADO bajo el mismo motivo desde el último avance— y gobierna
-    ///    el CORTO, que solo aplica con `cause == .definitive`.
+    ///  · `definitiveStalledSeconds` es el de «CUALQUIER motivo definitivo» —lo ACUMULADO desde el último avance bajo
+    ///    motivos que esperar no arregla, sean el mismo o distintos; una observación sin motivo lo pausa— y gobierna el
+    ///    CORTO, que solo aplica con `cause == .definitive`.
+    /// **Hasta `snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling` el corto se medía contra el
+    /// reloj de UNA causa**, que se reinicia al cambiar de motivo: con un fallo local al leer y el 409 del push
+    /// turnándose no pasaba nunca de una observación, y la salida se iba a las 72 h. El reloj por causa sigue en el
+    /// runner, solo para elegir el COPY de la salida; la máquina no lo necesita, porque todo lo que acumula un motivo lo
+    /// acumula también éste (salvo en una fila anterior a la v13, que trae el de causa acumulado y éste vacío: ahí la
+    /// salida llega, como mucho, un plazo corto después).
     /// Aquí avanzar SÍ es una cifra: la subida confirma páginas, así que un corpus grande que sube despacio re-sella
-    /// los dos relojes en cada página y no agota nunca ninguno.
-    case snapshotUploadStalled(stalledSeconds: Double, causeStalledSeconds: Double, cause: MarkerExportStall)
+    /// los relojes en cada página y no agota nunca ninguno.
+    case snapshotUploadStalled(stalledSeconds: Double, definitiveStalledSeconds: Double, cause: MarkerExportStall)
     /// La persona cancela la activación de la nube desde la tarjeta de progreso de la subida.
     case snapshotUploadCancelled
     /// Observación de uno de los TRES pasos de la ida sin cifra que baje —`claimingMigration` (22 %),
@@ -491,21 +498,30 @@ nonisolated struct MigrationPolicy: Equatable {
     /// invitaba a bajarlo creyendo que solo tocaba lo desconocido.
     var reversePreMountPhaseBudgetSeconds: Double = 259_200
 
-    /// Techo de `uploadingSnapshot` contra el reloj de la CAUSA, y solo cuando esperar no la arregla (sesión caducada,
-    /// cuenta suspendida, fallo local): 15 min ACUMULADOS bajo ese motivo desde la última página confirmada. Decisión
-    /// de Jürgen del 2026-09-22 (ticket `snapshot-upload-has-no-ceiling-and-no-way-out`): el mismo número que el resto
-    /// de techos cortos de la familia. Aquí rendirse no rompe nada —el teléfono sigue intacto en iCloud—, así que no
-    /// hay nada que proteger esperando más.
+    /// Techo de `uploadingSnapshot` contra el reloj de lo DEFINITIVO, y solo cuando el motivo de la observación lo es
+    /// —esperar no lo arregla: sesión caducada, cuenta suspendida o congelada, fallo local—: 15 min ACUMULADOS desde la
+    /// última página confirmada bajo motivos definitivos, sean el mismo o se turnen. Las horas de red no cuentan.
+    /// Decisión de Jürgen del 2026-09-22 (ticket `snapshot-upload-has-no-ceiling-and-no-way-out`): el mismo número que el
+    /// resto de techos cortos de la familia. Aquí rendirse no rompe nada —el teléfono sigue intacto en iCloud—, así que
+    /// no hay nada que proteger esperando más. Que el reloj no se reinicie al cambiar de motivo es de
+    /// `snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling`.
+    ///
+    /// El mismo número decide también el COPY, contra el reloj de UNA causa: si un solo motivo llegó a él, la salida
+    /// lleva su texto; si no, `stalled` (`MigrationRunner.snapshotExitReason`).
     var snapshotCauseBudgetSeconds: Double = 900
     /// Techo de la misma fase contra el reloj de AVANCE, con CUALQUIER causa: 72 h sin confirmar una sola página. Aquí
-    /// cae la red que no vuelve. Es también el suelo del mecanismo: con dos causas definitivas alternándose el reloj
-    /// corto se reinicia en cada cambio, y lo único que garantiza que la espera termine es éste.
+    /// cae la red que no vuelve. Es también el suelo del mecanismo: con un motivo definitivo también aplica. Hasta
+    /// `snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling` era lo único que sacaba de la espera
+    /// con dos motivos definitivos turnándose; desde ese ticket los saca el corto.
     var snapshotProgressBudgetSeconds: Double = 259_200
 
     /// El predicado del techo CORTO de la subida, en un solo sitio por la misma razón que el de la vuelta: lo
-    /// consultan la máquina (para salir) y el runner (para elegir el motivo que journalea).
-    func snapshotCauseCeilingReached(causeStalledSeconds: Double, cause: MarkerExportStall) -> Bool {
-        cause == .definitive && causeStalledSeconds >= snapshotCauseBudgetSeconds
+    /// consultan la máquina (para salir) y el runner (para elegir el motivo que journalea). Desde
+    /// `snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling` los dos lo aplican a relojes
+    /// DISTINTOS, y por eso el parámetro no nombra ninguno: la máquina, al de «cualquier motivo definitivo» (¿sale?); el
+    /// runner, al de la causa de esta observación (¿fue ESTE motivo solo el que agotó el plazo?).
+    func snapshotCauseCeilingReached(stalledSeconds: Double, cause: MarkerExportStall) -> Bool {
+        cause == .definitive && stalledSeconds >= snapshotCauseBudgetSeconds
     }
 
     /// Techo de los TRES pasos de la ida sin cifra que baje (22 %, 35 %, 80 %) contra el reloj de la CAUSA, y solo cuando
@@ -637,10 +653,13 @@ nonisolated enum MigrationStateMachine {
         // queda en el backend —no existe RPC de abort de la ida— y el siguiente intento lo re-sube y converge por LWW.
         //
         // Sale con el PRIMERO de los dos techos que venza, igual que la vuelta: el largo contra el reloj de AVANCE con
-        // cualquier causa, el corto contra el de CAUSA solo con `.definitive`.
-        case let (.uploadingSnapshot, .snapshotUploadStalled(stalled, causeStalled, cause)):
+        // cualquier causa, el corto contra el de lo DEFINITIVO solo con `.definitive`. Ese reloj no se reinicia al
+        // cambiar de motivo: medirlo por causa era el bug de
+        // `snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling`, donde un fallo local al leer y el
+        // 409 del push turnándose dejaban la salida en manos del LARGO.
+        case let (.uploadingSnapshot, .snapshotUploadStalled(stalled, definitiveStalled, cause)):
             let hitProgressCeiling = stalled >= policy.snapshotProgressBudgetSeconds
-            let hitCauseCeiling = policy.snapshotCauseCeilingReached(causeStalledSeconds: causeStalled, cause: cause)
+            let hitCauseCeiling = policy.snapshotCauseCeilingReached(stalledSeconds: definitiveStalled, cause: cause)
             guard hitProgressCeiling || hitCauseCeiling else {
                 return .transition(next: .uploadingSnapshot, effects: [])
             }
