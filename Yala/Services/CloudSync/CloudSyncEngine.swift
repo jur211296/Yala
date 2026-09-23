@@ -59,6 +59,15 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSync drain seq=\(seq, privacy: .public) pending=\(pending, privacy: .public)")
     }
 
+    /// La vuelta del drain ABORTÓ (ticket `drain-duplicates-the-unit-clock-when-its-row-cannot-be-read`): una
+    /// lectura que lanzó (History, outbox, reloj por unidad), el save del barrido, del outbox o del cursor, o un
+    /// token que no se codifica. Token sin mover: la vuelta siguiente re-traduce la misma ventana. Repetido en cada
+    /// vuelta = una tabla que nunca se deja leer, y los cambios locales sin subir. `errorType` es el tipo, sin el
+    /// mensaje (sin PII).
+    static func drainAborted(errorType: String) {
+        logger.notice("CloudSync drainAborted error=\(errorType, privacy: .public)")
+    }
+
     /// Un delete llegó sin `syncID` preservado en el tombstone → no se pudo emitir el tombstone.
     static func identityGap(entityType: String, reason: String) {
         logger.notice("CloudSyncIdentityGap \(entityType, privacy: .public) reason=\(reason, privacy: .public)")
@@ -1463,6 +1472,14 @@ final class CloudSyncEngine {
     /// `apply-overwrites-a-pending-local-write-without-its-guards`). SOLO tests.
     var _testThrowOnApplyRead: ApplyGuardRead?
 
+    /// Cuando `true`, el save del outbox del drain LANZA tras insertar las filas y los relojes, antes del
+    /// commit (ticket `drain-duplicates-the-unit-clock-when-its-row-cannot-be-read`: el rollback). SOLO tests.
+    var _testThrowOnDrainOutboxSave = false
+
+    /// Cuando `true`, el save del CURSOR del drain (avance normal del token, paso 7) LANZA tras mutar el cursor,
+    /// con las filas del outbox ya en disco. SOLO tests.
+    var _testThrowOnDrainCursorSave = false
+
     /// DIFERIDOS #33 (T13): cuando `true`, el fetch por TOKEN del drain lanza — simula el token
     /// decodable cuyo `fetchHistory(predicate: token >)` revienta (migración destructiva). SOLO tests.
     var _testThrowOnTokenHistoryFetch = false
@@ -1487,22 +1504,32 @@ final class CloudSyncEngine {
     /// Ejecuta UNA vuelta de captura. Re-entrante: si ya hay una vuelta en curso, marca una pendiente
     /// (a lo sumo una) y retorna; la vuelta en curso la ejecuta al terminar (§a.4). Bajo `@MainActor`
     /// síncrono la re-entrada real no ocurre hoy, pero el patrón queda listo para el wiring de I9/I12.
-    func drainOnce(context: ModelContext) {
+    ///
+    /// Devuelve si la vuelta TERMINÓ: `false` = abortó (rollback hecho, token sin mover) y hay cambios locales que
+    /// quizá no estén en el outbox (ticket `drain-duplicates-the-unit-clock-when-its-row-cannot-be-read`). Quien
+    /// lea el outbox para decidir algo —el guard D-1 de `applyPage`, «no queda nada que subir» de la migración—
+    /// no puede seguir con `false`: con el rollback, las filas de esta vuelta ya no están ni sucias en el contexto.
+    /// Una llamada re-entrante devuelve `false` (no drenó ella). `true` no cubre la traducción cortada por
+    /// deriva del reloj (`translationAborted`): esa vuelta persiste lo que tradujo y es la que ya existía.
+    @discardableResult
+    func drainOnce(context: ModelContext) -> Bool {
         guard !isDraining else {
             pendingDrain = true
-            return
+            return false
         }
         isDraining = true
         defer { isDraining = false }
+        var completed = false
         repeat {
             pendingDrain = false
-            performDrain(context: context)
+            completed = performDrain(context: context)
         } while pendingDrain
+        return completed
     }
 
     // MARK: - Núcleo del drain
 
-    private func performDrain(context: ModelContext) {
+    private func performDrain(context: ModelContext) -> Bool {
         drainSeq += 1
         do {
             // 1) Cursor + token persistido. D-3: cargar el reloj persistido (send parte del estado
@@ -1630,83 +1657,106 @@ final class CloudSyncEngine {
             //    A1 (§d.5): el espejo App Group `.atomic` va AQUÍ, ANTES del insert+save, en el MISMO
             //    cuerpo síncrono sin `await` (regla Q3 del spike S-A1) — así autosave no puede invertir
             //    el orden fila-durable-sin-espejo.
-            if !rows.isEmpty {
-                // (1) ESPEJO PRIMERO (best-effort, per-fila, síncrono): si falla, la History es backup
-                //     redundante y el canario de divergencia lo delata → NO abortamos el drain. Requiere
-                //     `outboxMirror` + `currentUserID` (nil en I8d DARK → no-op).
-                writeMirror(rows: rows)
-                // (2) insertar (3) save. I8f-2 (D-A): el `SyncUnitClock` se actualiza en el MISMO save
-                //     que la fila de outbox (upsert = unidades emitidas → HLC acuñado; tombstone =
-                //     borrar la fila de clock — higiene) → crash-atómico con la cola.
-                try saveWithAuthor(context, Self.outboxSaveAuthor) {
-                    for row in rows {
-                        context.insert(row.makeModel())
-                        updateUnitClock(for: row, context: context)
+            //    ROLLBACK (ticket `drain-duplicates-the-unit-clock-when-its-row-cannot-be-read`): si el save
+            //    del outbox o el del cursor (paso 7) lanzan, sus filas y el cursor se quedaban sucios en el
+            //    contexto y un autosave posterior los flusheaba bajo el autor por DEFECTO. Se deshacen aquí y
+            //    NO en el `catch` general: desde el barrido del paso 2 —que guarda todo lo pendiente— lo único
+            //    sucio en el contexto es de este drain, mientras que un rollback por un fallo del propio
+            //    barrido borraría ediciones del usuario sin guardar. El token no avanza (el paso 7 no llegó a
+            //    commitear) y el próximo drain re-traduce la misma ventana.
+            do {
+                if !rows.isEmpty {
+                    // (0) LEER los relojes ANTES de mutar nada: si no se dejan leer, el drain se corta aquí,
+                    //     sin espejo, sin filas y con el token donde estaba.
+                    let unitClocks = try prepareUnitClocks(for: rows, context: context)
+                    // (1) ESPEJO PRIMERO (best-effort, per-fila, síncrono): si falla, la History es backup
+                    //     redundante y el canario de divergencia lo delata → NO abortamos el drain. Requiere
+                    //     `outboxMirror` + `currentUserID` (nil en I8d DARK → no-op).
+                    writeMirror(rows: rows)
+                    // (2) insertar (3) save. I8f-2 (D-A): el `SyncUnitClock` se actualiza en el MISMO save
+                    //     que la fila de outbox (upsert = unidades emitidas → HLC acuñado; tombstone =
+                    //     borrar la fila de clock — higiene) → crash-atómico con la cola.
+                    do {
+                        try saveWithAuthor(context, Self.outboxSaveAuthor) {
+                            for row in rows { context.insert(row.makeModel()) }
+                            unitClocks.apply(context: context)
+                            if _testThrowOnDrainOutboxSave { throw DrainTestCrash.outboxSave }
+                        }
+                    } catch {
+                        // Estas filas no llegaron a disco: su espejo tampoco puede quedarse, o
+                        // `rehydrateOutboxFromMirror` (diff incondicional en cada arranque) las re-insertaría y
+                        // subiría. SOLO aquí: si lo que falla es el save del cursor, las filas ya están en disco.
+                        unwriteMirror(rows: rows)
+                        throw error
                     }
                 }
-            }
 
-            // 7) Avanzar el token SOLO tras persistir el outbox (crash entre 6 y 7 → el re-drain re-crea
-            //    idempotente por el dedup). El save del cursor lleva `outboxSaveAuthor` → no se re-lee.
-            //    Suprimible en tests (kill). D-3: el reloj se PERSISTE en el MISMO save que avanza el token
-            //    (crash → ambos revierten juntos → replay determinista). HALLAZGO 2: `lastDrainedTxAt` se
-            //    persiste ATÓMICAMENTE con el token (misma transacción) → el ancla comparable cross-mount
-            //    nunca queda desincronizada del token.
-            //    SERIO 1 del review adversarial #33 (aplica a AMBOS re-anclajes — el gemelo del guard
-            //    tenía el mismo defecto latente): los reanchor apuntan a la última tx de la ventana/unión
-            //    CRUDA, calculada ANTES de traducir — con `translationAborted` (clock.send lanzó a mitad),
-            //    re-anclar saltaría las txs externas entre el break y el final SIN haberlas emitido →
-            //    quedarían con timestamp ≤ ancla nueva, invisibles para siempre (token-fetch, fallback Y
-            //    guard) = pérdida silenciosa. En abort se cae al avance normal (última tx CONSUMIDA — el
-            //    punto de retry del invariante de drift); si nada se consumió, no se guarda nada y el
-            //    próximo drain reintenta entero.
-            if !_testSuppressTokenAdvance {
-                if let reanchor = tokenGuard.reanchor, !translationAborted {
-                    // RECOVERY: el token era no-comparable cross-mount → re-anclar a la última tx de la
-                    //    UNIÓN **del store personal**, AUNQUE sea del motor (`author == outboxSaveAuthor`):
-                    //    para re-anclar basta un token del mount ACTUAL, y el filtro de emisión —que sí
-                    //    descarta el motor— es independiente del avance del cursor. Sin esto el token quedaría
-                    //    en el mount viejo. Lo que NO es independiente es el STORE: el ancla la acota
-                    //    `recoverIfHistoryTokenIncomparable` (el token es por-store; anclar en `syncMeta`
-                    //    reintroduce el punto fijo que este guard deshace) ⇒ mismo criterio que el paso 5.
-                    try saveWithAuthor(context, Self.outboxSaveAuthor) {
-                        cursor.historyTokenData = try encodeToken(reanchor.token)
-                        cursor.lastDrainedTxAt = reanchor.txAt
-                        cursor.clockLatestHLC = clock.latest?.description
+                // 7) Avanzar el token SOLO tras persistir el outbox (crash entre 6 y 7 → el re-drain re-crea
+                //    idempotente por el dedup). El save del cursor lleva `outboxSaveAuthor` → no se re-lee.
+                //    Suprimible en tests (kill). D-3: el reloj se PERSISTE en el MISMO save que avanza el token
+                //    (crash → ambos revierten juntos → replay determinista). HALLAZGO 2: `lastDrainedTxAt` se
+                //    persiste ATÓMICAMENTE con el token (misma transacción) → el ancla comparable cross-mount
+                //    nunca queda desincronizada del token.
+                //    SERIO 1 del review adversarial #33 (aplica a AMBOS re-anclajes — el gemelo del guard
+                //    tenía el mismo defecto latente): los reanchor apuntan a la última tx de la ventana/unión
+                //    CRUDA, calculada ANTES de traducir — con `translationAborted` (clock.send lanzó a mitad),
+                //    re-anclar saltaría las txs externas entre el break y el final SIN haberlas emitido →
+                //    quedarían con timestamp ≤ ancla nueva, invisibles para siempre (token-fetch, fallback Y
+                //    guard) = pérdida silenciosa. En abort se cae al avance normal (última tx CONSUMIDA — el
+                //    punto de retry del invariante de drift); si nada se consumió, no se guarda nada y el
+                //    próximo drain reintenta entero.
+                if !_testSuppressTokenAdvance {
+                    if let reanchor = tokenGuard.reanchor, !translationAborted {
+                        // RECOVERY: el token era no-comparable cross-mount → re-anclar a la última tx de la
+                        //    UNIÓN **del store personal**, AUNQUE sea del motor (`author == outboxSaveAuthor`):
+                        //    para re-anclar basta un token del mount ACTUAL, y el filtro de emisión —que sí
+                        //    descarta el motor— es independiente del avance del cursor. Sin esto el token quedaría
+                        //    en el mount viejo. Lo que NO es independiente es el STORE: el ancla la acota
+                        //    `recoverIfHistoryTokenIncomparable` (el token es por-store; anclar en `syncMeta`
+                        //    reintroduce el punto fijo que este guard deshace) ⇒ mismo criterio que el paso 5.
+                        try saveWithAuthor(context, Self.outboxSaveAuthor) {
+                            cursor.historyTokenData = try encodeToken(reanchor.token)
+                            cursor.lastDrainedTxAt = reanchor.txAt
+                            cursor.clockLatestHLC = clock.latest?.description
+                        }
+                        historyTokenValidated = true
+                        historyTokenRecoveredCount += 1
+                        CloudSyncBreadcrumb.historyTokenRecovered()
+                    } else if let reanchor = fetchOutcome.brokenReanchor, !translationAborted {
+                        // DIFERIDOS #33: el token estaba ROTO y la rama acotada trajo ventana con ≥1 tx del
+                        //    store personal → re-anclar a la ÚLTIMA de ellas (motor incluido — misma
+                        //    justificación que el reanchor del guard: para sanar basta un token del mount
+                        //    actual; el filtro de emisión del paso 5 es independiente, el de STORE no —lo
+                        //    acota `executeBrokenTokenBranch`, porque ese fetch es por TIMESTAMP y por tanto
+                        //    cross-store). Precede a `advancedToken` a propósito: anclar más atrás dejaría
+                        //    transacciones por delante que cada drain re-leería. Atomicidad token+ancla+reloj
+                        //    idéntica a las otras dos ramas.
+                        try saveWithAuthor(context, Self.outboxSaveAuthor) {
+                            cursor.historyTokenData = try encodeToken(reanchor.token)
+                            cursor.lastDrainedTxAt = reanchor.txAt
+                            cursor.clockLatestHLC = clock.latest?.description
+                        }
+                        historyTokenValidated = true
+                        historyTokenBrokenReanchoredCount += 1
+                        CloudSyncBreadcrumb.historyTokenBrokenReanchored()
+                    } else if let advancedToken {
+                        //    Avance normal: SOLO si se consumió ≥1 transacción del STORE PERSONAL (eco incluido —
+                        //    ver el bloque del paso 5). Bundling seguro: todo `clock.send` de esta vuelta ocurrió
+                        //    al traducir una tx externa, y toda tx traducida es de ese store (muro anti-fuga
+                        //    `personalEntityNames` ⊂ `personalStoreEntityNames`) ⇒ también fijó `advancedToken`.
+                        try saveWithAuthor(context, Self.outboxSaveAuthor) {
+                            cursor.historyTokenData = try encodeToken(advancedToken)
+                            cursor.lastDrainedTxAt = advancedTxAt
+                            cursor.clockLatestHLC = clock.latest?.description
+                            if _testThrowOnDrainCursorSave { throw DrainTestCrash.cursorSave }
+                        }
+                        // Outcome (b): consumir ≥1 tx externa re-ancla el token al mount actual → validado.
+                        historyTokenValidated = true
                     }
-                    historyTokenValidated = true
-                    historyTokenRecoveredCount += 1
-                    CloudSyncBreadcrumb.historyTokenRecovered()
-                } else if let reanchor = fetchOutcome.brokenReanchor, !translationAborted {
-                    // DIFERIDOS #33: el token estaba ROTO y la rama acotada trajo ventana con ≥1 tx del
-                    //    store personal → re-anclar a la ÚLTIMA de ellas (motor incluido — misma
-                    //    justificación que el reanchor del guard: para sanar basta un token del mount
-                    //    actual; el filtro de emisión del paso 5 es independiente, el de STORE no —lo
-                    //    acota `executeBrokenTokenBranch`, porque ese fetch es por TIMESTAMP y por tanto
-                    //    cross-store). Precede a `advancedToken` a propósito: anclar más atrás dejaría
-                    //    transacciones por delante que cada drain re-leería. Atomicidad token+ancla+reloj
-                    //    idéntica a las otras dos ramas.
-                    try saveWithAuthor(context, Self.outboxSaveAuthor) {
-                        cursor.historyTokenData = try encodeToken(reanchor.token)
-                        cursor.lastDrainedTxAt = reanchor.txAt
-                        cursor.clockLatestHLC = clock.latest?.description
-                    }
-                    historyTokenValidated = true
-                    historyTokenBrokenReanchoredCount += 1
-                    CloudSyncBreadcrumb.historyTokenBrokenReanchored()
-                } else if let advancedToken {
-                    //    Avance normal: SOLO si se consumió ≥1 transacción del STORE PERSONAL (eco incluido —
-                    //    ver el bloque del paso 5). Bundling seguro: todo `clock.send` de esta vuelta ocurrió
-                    //    al traducir una tx externa, y toda tx traducida es de ese store (muro anti-fuga
-                    //    `personalEntityNames` ⊂ `personalStoreEntityNames`) ⇒ también fijó `advancedToken`.
-                    try saveWithAuthor(context, Self.outboxSaveAuthor) {
-                        cursor.historyTokenData = try encodeToken(advancedToken)
-                        cursor.lastDrainedTxAt = advancedTxAt
-                        cursor.clockLatestHLC = clock.latest?.description
-                    }
-                    // Outcome (b): consumir ≥1 tx externa re-ancla el token al mount actual → validado.
-                    historyTokenValidated = true
                 }
+            } catch {
+                context.rollback()
+                throw error
             }
 
             // Count SOLO para el breadcrumb de diagnóstico. Sin `try?` que silencie (regla inviolable):
@@ -1721,10 +1771,13 @@ final class CloudSyncEngine {
                 pending = rows.count
             }
             CloudSyncBreadcrumb.drain(seq: drainSeq, pending: pending)
+            return true
         } catch {
+            CloudSyncBreadcrumb.drainAborted(errorType: String(describing: type(of: error)))
             #if DEBUG
             print("CloudSyncEngine: drain error: \(error)")
             #endif
+            return false
         }
     }
 
@@ -2568,27 +2621,37 @@ final class CloudSyncEngine {
 
     // MARK: - SyncUnitClock (I8f-2, D-A) — hook del drain
 
-    /// Actualiza el `SyncUnitClock` para UNA fila nueva de outbox, DENTRO del save del outbox (el
-    /// caller garantiza la atomicidad). Upsert → merge MAX de las unidades emitidas (el `fieldHlcsJSON`
-    /// de la fila ES la verdad de qué unidades viajaron con qué HLC). Tombstone → borrar la fila de
-    /// clock (higiene del review; si el modelo resucita, drain/apply la re-pueblan).
-    private func updateUnitClock(for row: PendingOutboxRow, context: ModelContext) {
-        switch row.op {
-        case .tombstone:
-            SyncUnitClockStore.delete(syncID: row.syncID, context: context)
-        case .upsert:
-            // `entityType` de la fila es NOMBRE DE CLASE; el clock coordina por TABLA (como el wire).
-            guard let table = EntityEmissionMap.table(forClass: row.entityType) else {
-                #if DEBUG
-                print("CloudSyncEngine.updateUnitClock: clase sin tabla \(row.entityType) — clock omitido")
-                #endif
-                return
+    /// Lee los `SyncUnitClock` que tocan las filas nuevas de outbox, ANTES de insertar nada: devuelve las
+    /// escrituras ya leídas, que el caller aplica DENTRO del save del outbox (él garantiza la atomicidad).
+    /// Upsert → merge MAX de las unidades emitidas (el `fieldHlcsJSON` de la fila ES la verdad de qué
+    /// unidades viajaron con qué HLC). Tombstone → borrar la fila de clock (higiene del review; si el
+    /// modelo resucita, drain/apply la re-pueblan).
+    ///
+    /// LANZA si una fila de reloj no se deja leer (ticket `drain-duplicates-the-unit-clock-when-its-row-
+    /// cannot-be-read`): leída como «no hay», el upsert insertaba un SEGUNDO reloj para el mismo `syncID` que
+    /// el reconciler de transferencias podía leer en lugar del bueno, y el tombstone dejaba el viejo vivo.
+    /// Se llama antes de la primera mutación, así que el fallo no deja nada a medias en el contexto.
+    private func prepareUnitClocks(for rows: [PendingOutboxRow], context: ModelContext) throws
+        -> SyncUnitClockStore.PreparedWrites {
+        var writes: [SyncUnitClockStore.Write] = []
+        for row in rows {
+            switch row.op {
+            case .tombstone:
+                writes.append(.delete(syncID: row.syncID))
+            case .upsert:
+                // `entityType` de la fila es NOMBRE DE CLASE; el clock coordina por TABLA (como el wire).
+                guard let table = EntityEmissionMap.table(forClass: row.entityType) else {
+                    #if DEBUG
+                    print("CloudSyncEngine.prepareUnitClocks: clase sin tabla \(row.entityType) — clock omitido")
+                    #endif
+                    continue
+                }
+                guard let json = row.fieldHlcsJSON else { continue }  // sin unidades (no ocurre en upserts)
+                writes.append(.upsert(syncID: row.syncID, entityTable: table,
+                                      unitHlcs: SyncUnitClockStore.decodeMap(json)))
             }
-            guard let json = row.fieldHlcsJSON else { return }  // sin unidades (no ocurre en upserts)
-            let units = SyncUnitClockStore.decodeMap(json)
-            SyncUnitClockStore.upsert(syncID: row.syncID, entityTable: table,
-                                      unitHlcs: units, context: context)
         }
+        return try SyncUnitClockStore.prepareWrites(writes, context: context)
     }
 
     // MARK: - Espejo del outbox (A1, §d.5)
@@ -2607,6 +2670,13 @@ final class CloudSyncEngine {
                 #endif
             }
         }
+    }
+
+    /// Deshace `writeMirror` para unas filas cuyo save falló (ticket `drain-duplicates-the-unit-clock-when-its-row-
+    /// cannot-be-read`). Mismo no-op sin `outboxMirror` + `currentUserID`; borrar una entry ausente no hace nada.
+    private func unwriteMirror(rows: [PendingOutboxRow]) {
+        guard let mirror = outboxMirror, currentUserID != nil else { return }
+        for row in rows { mirror.remove(syncID: row.syncID, hlc: row.hlc) }
     }
 
     /// Re-hidrata el outbox desde el espejo App Group tras una lightweight migration que recreó la tabla
@@ -2865,7 +2935,7 @@ final class CloudSyncEngine {
     }
 
     /// Encola una página de filas de snapshot (op `.upsert` full-row) reusando la disciplina PRIVADA del
-    /// drain (`PendingOutboxRow` + `updateUnitClock` + persistencia del reloj) sin duplicarla (seam w4).
+    /// drain (`PendingOutboxRow` + `prepareUnitClocks` + persistencia del reloj) sin duplicarla (seam w4).
     ///
     /// El motor acuña el HLC por fila (`clock.send`, ÚNICO punto de advance) y llama `input.makePayload(hlc)`
     /// — que construye `(fieldsJSON, fieldHlcsJSON)` con ese HLC en `field_hlcs`; `nil` = el codec c1 rechazó
@@ -2899,13 +2969,16 @@ final class CloudSyncEngine {
                 clientMutationID: UUID(), fieldsJSON: payload.fieldsJSON, fieldHlcsJSON: payload.fieldHlcsJSON,
                 author: Self.outboxSaveAuthor, tombstoneReason: nil, createdAt: now))
         }
+        // Los relojes se LEEN antes de insertar (ticket `drain-duplicates-the-unit-clock-when-its-row-cannot-
+        // be-read`): si no se dejan leer, se lanza sin haber insertado nada — los llamadores no hacen rollback, y
+        // el suyo puede llevar ediciones del usuario sin guardar. (Lo que ya pasó antes sigue pasado: el cursor
+        // recién creado de `loadOrCreateCursor` está guardado y el reloj en memoria avanzó con `clock.send`.)
+        let unitClocks = try prepareUnitClocks(for: rows, context: context)
         // Filas + SyncUnitClock + reloj en UN save (lockstep D-3). Aunque `rows` quede vacío (todo
         // deduplicado), persistir el avance del reloj es benigno e idempotente.
         try saveWithAuthor(context, Self.outboxSaveAuthor) {
-            for row in rows {
-                context.insert(row.makeModel())
-                updateUnitClock(for: row, context: context)
-            }
+            for row in rows { context.insert(row.makeModel()) }
+            unitClocks.apply(context: context)
             cursor.clockLatestHLC = clock.latest?.description
         }
     }
@@ -3010,7 +3083,7 @@ extension CloudSyncEngine {
     ///
     /// + HLCs acuñados vía la MISMA `clock.send` (lockstep §d.5) + persistencia del reloj (`clockLatestHLC`) EN
     ///   el contexto (lo comitea el save del llamador). La limpieza de los `SyncUnitClock` del `oldID` la hace
-    ///   `updateUnitClock` al insertar el tombstone (higiene; espeja el applier de un tombstone remoto).
+    ///   `prepareUnitClocks` al insertar el tombstone (higiene; espeja el applier de un tombstone remoto).
     ///
     /// ESPEJO App Group **DIFERIDO** (SERIO 2 del review): esta función NO espeja — devuelve las filas en el
     /// `IdentityRemapEmission` y el llamador invoca `mirrorRemapRows(_:)` DESPUÉS de su `try context.save()`
@@ -3126,11 +3199,11 @@ extension CloudSyncEngine {
 
         // Insertar + `SyncUnitClock`, SIN save (el llamador comitea en la MISMA transacción) y SIN espejo
         // (SERIO 2: diferido a `mirrorRemapRows` post-save). El tombstone borra el `SyncUnitClock` del `oldID`
-        // vía `updateUnitClock` (higiene — espeja el applier de un tombstone remoto).
-        for row in rows {
-            context.insert(row.makeModel())
-            updateUnitClock(for: row, context: context)
-        }
+        // (higiene — espeja el applier de un tombstone remoto). Los relojes se LEEN antes de insertar: si no
+        // se dejan leer, se lanza y el llamador hace rollback de lo que el reparador ya mutó.
+        let unitClocks = try prepareUnitClocks(for: rows, context: context)
+        for row in rows { context.insert(row.makeModel()) }
+        unitClocks.apply(context: context)
         cursor.clockLatestHLC = clock.latest?.description
 
         for (entity, count) in perEntityCount {
@@ -3226,6 +3299,10 @@ struct SnapshotRowInput {
     let entityType: String
     let makePayload: (String) -> (fieldsJSON: String, fieldHlcsJSON: String?)?
 }
+
+/// Error de los seams `_testThrowOnDrainOutboxSave`/`_testThrowOnDrainCursorSave` (un save del drain que falla tras
+/// mutar). SOLO tests.
+private enum DrainTestCrash: Error { case outboxSave, cursorSave }
 
 // MARK: - PendingOutboxRow
 

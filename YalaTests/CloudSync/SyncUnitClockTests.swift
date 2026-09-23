@@ -120,17 +120,17 @@ struct SyncUnitClockTests {
         let context = try makeContext(dir)
         let sid = UUID()
 
-        SyncUnitClockStore.upsert(syncID: sid, entityTable: "tx_items",
+        try SyncUnitClockStore.upsertChecked(syncID: sid, entityTable: "tx_items",
                                   unitHlcs: ["money": hlc(2)], context: context)
         try context.save()
         // Más viejo → NO retrocede.
-        SyncUnitClockStore.upsert(syncID: sid, entityTable: "tx_items",
+        try SyncUnitClockStore.upsertChecked(syncID: sid, entityTable: "tx_items",
                                   unitHlcs: ["money": hlc(1)], context: context)
         try context.save()
         var map = SyncUnitClockStore.decodeMap(clockRow(sid, context)?.unitHlcsJSON)
         #expect(map["money"] == hlc(2))
         // Más nuevo → avanza; unidad nueva se añade sin tocar la existente.
-        SyncUnitClockStore.upsert(syncID: sid, entityTable: "tx_items",
+        try SyncUnitClockStore.upsertChecked(syncID: sid, entityTable: "tx_items",
                                   unitHlcs: ["money": hlc(3), "note": hlc(1)], context: context)
         try context.save()
         map = SyncUnitClockStore.decodeMap(clockRow(sid, context)?.unitHlcsJSON)

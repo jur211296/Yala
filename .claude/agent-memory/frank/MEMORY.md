@@ -20,6 +20,7 @@
 - [Tipar un desenlace despierta defensas DORMIDAS](feedback_tipar_un_desenlace_despierta_defensas_dormidas.md) — el Merkle llevaba meses sin `canRenewSession` y era inofensivo hasta que su 401…
 - [El copy lo elige quien PRODUJO el motivo](feedback_el_copy_lo_elige_quien_produjo_el_motivo.md) — y la clasificación también: `.sessionExpired` tenía dos productores y solo uno era definitivo.
 - [El estado compartido no es testigo de su rama](feedback_el_estado_compartido_no_es_testigo_de_su_rama.md) — un campo lo enciende 1 sitio y lo apagan 13; cuenta escritores antes de leer.
+- [Mi rollback quita lo que otros leían](feedback_mi_rollback_quita_lo_que_otros_leian.md) — un fetch ve lo sucio; deshacerlo cegó al guard D-1 del pull.
 - [Mi arreglo quita la SALIDA que había](feedback_mi_arreglo_quita_la_salida_que_habia.md) — cerrar un abuso puede dejar sin puerta al dueño legítimo; enumera quién salía por ahí.
 - [La limpieza «por si acaso» enmascara mutantes](feedback_la_limpieza_por_si_acaso_enmascara_mutantes.md) — una línea inalcanzable recoge lo que el camino bueno deja pasar.
 - [Fundir una entrada nueva hereda sus excepciones](feedback_fundir_una_entrada_nueva_hereda_sus_excepciones.md) — un `||` en el parámetro de la puerta le regaló a la marca el atajo del sello.
@@ -138,6 +139,7 @@
 - [«Cero warnings» se mide en TODOS los logs](feedback_cero_warnings_se_mide_en_todos_los_logs.md) — el gate no mira los tests y lee un build.
 
 ## Estado del trabajo
+- [El drain ya no duplica el reloj por unidad](project_drain_reloj_no_se_duplica.md) — PR del 23-sep; seis tickets nuevos de la review.
 - [Una ref colgada ilegible ya no se pierde](project_dangler_ilegible_no_es_rowgone.md) — PR del 23-sep; se tira la página, tres tickets nuevos de la review.
 - [En el apply «no pude leer» no es «no hay nada»](project_apply_no_pisa_sin_salvaguardas.md) — PR del 22-sep; el dangler ya salió, quedan dos residuales.
 - [Un journal ilegible ya no es «nunca empezó»](project_journal_ilegible_no_es_notstarted.md) — PR del 22-sep; la review cazó el motor `.idle` sin reintento.

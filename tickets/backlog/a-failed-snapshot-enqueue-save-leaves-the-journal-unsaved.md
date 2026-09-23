@@ -4,7 +4,7 @@ status: backlog
 priority: medium
 area: "modo-nube, migración"
 created: 2026-09-22
-updated: 2026-09-22
+updated: 2026-09-23
 source: "review adversarial de `snapshot-upload-has-no-ceiling-and-no-way-out` (2026-09-22), lente de lógica del techo"
 ---
 
@@ -54,6 +54,13 @@ No se decidió allí por la misma razón que aquí: la salida obvia es un `rollb
 `SyncApplyEngine` ya lo hace tras sus propios saves fallidos, que es un precedente, pero el alcance sigue sin decidir.
 Con el disco lleno, además, ningún `save()` pasa y no hay nada que decidir. **Al cerrar este ticket, mide también este
 camino.**
+
+## Lo que ya no entra por aquí, desde el 2026-09-23
+
+`drain-duplicates-the-unit-clock-when-its-row-cannot-be-read` hizo que `enqueueSnapshotRows` lea los relojes por unidad
+ANTES de insertar nada: si esa lectura falla, lanza con el contexto limpio. Queda solo el `save()` que falla, que es lo
+que este ticket describe. El drain sí hace ya rollback de su propio save (el barrido previo deja el contexto sin nada
+del usuario); el encolado del snapshot no puede copiarlo tal cual por la razón de arriba.
 
 ## Relacionado
 

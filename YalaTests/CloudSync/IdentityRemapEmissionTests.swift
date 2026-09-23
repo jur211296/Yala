@@ -315,7 +315,7 @@ struct IdentityRemapEmissionTests {
         try context.save()
 
         // Sembrar un SyncUnitClock para el sync_id VIEJO X (el tombstone debe barrerlo).
-        SyncUnitClockStore.upsert(syncID: x, entityTable: "tags",
+        try SyncUnitClockStore.upsertChecked(syncID: x, entityTable: "tags",
                                   unitHlcs: ["name": "2023-11-14T22:13:20.000Z-0001-0123456789abcdef"],
                                   context: context, now: now)
         try context.save()
@@ -336,6 +336,38 @@ struct IdentityRemapEmissionTests {
             #expect(Set(upserts(rows, SyncEntityType.tag).map(\.syncID)) == [a, b])
             // El tombstone barrió el SyncUnitClock del sync_id viejo (higiene, updateUnitClock).
             #expect(SyncUnitClockStore.row(syncID: x, context: context) == nil)
+        }
+    }
+
+    /// Ticket `drain-duplicates-the-unit-clock-when-its-row-cannot-be-read`: con el reloj ilegible, el remap lanza
+    /// ANTES de insertar sus filas (el llamador hace rollback de lo que el reparador mutó) y el reloj del `oldID`
+    /// sigue ahí para el reintento. Control positivo: el caso 7, sin el seam, lo barre.
+    @Test("remap con el reloj ilegible: lanza sin insertar filas ni tocar el reloj del sync_id viejo")
+    func emit_unreadableUnitClock_throwsBeforeInsertingRows() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        defer { EntityApplyMap._testThrowOnFetchOf = [] }
+        let x = UUID()
+        let tag = makeTag(context, name: "A"); tag.id = x
+        try context.save()
+        try SyncUnitClockStore.upsertChecked(syncID: x, entityTable: "tags",
+                                             unitHlcs: ["name": "2023-11-14T22:13:20.000Z-0001-0123456789abcdef"],
+                                             context: context, now: now)
+        try context.save()
+
+        try withStorageMode(.cloud) { () throws -> Void in
+            let engine = CloudSyncEngine(nodeID: NodeID.generate())
+            let a = UUID()
+            tag.id = a
+            EntityApplyMap._testThrowOnFetchOf = ["SyncUnitClock"]
+            #expect(throws: EntityApplyFetchError.self) {
+                try engine.emitIdentityRemap(pairs: [
+                    IdentityRemapPair(entityType: SyncEntityType.tag, oldID: x, newID: a),
+                ], in: context, now: now)
+            }
+            EntityApplyMap._testThrowOnFetchOf = []
+            #expect(try outbox(context).isEmpty)
+            #expect(try context.fetch(FetchDescriptor<SyncUnitClock>()).map(\.syncID) == [x])
         }
     }
 
