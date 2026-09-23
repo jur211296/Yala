@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-23 (Lima)
 
-**Rama** `2.1` — Merge #223: **Al activar la nube, dos motivos que no se arreglan esperando ya no alargan la espera a tres días.**
+**Rama** `2.1` — Merge #224: **La cola de device-QA baja de 80 a 21, con el guion del día en `qa/guion-tanda.md`.**
 TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,30 @@ TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#223 · lo mismo en la subida al activar la nube, con texto propio)
+## Esta sesión (#224 · barrido de la cola de device-QA: de 80 a 21)
+
+**Lo que tienes que probar en el iPhone es ahora una lista de 21, con guion.** Por orden de Jürgen se dejó la cola A y
+se saneó `tickets/qa/`: **59 tickets a `done` sin device-QA** (57 `not-replicable`, 2 `absorbed`), cada uno con su
+sección «Barrido de `qa` · 2026-09-23» que dice por qué y qué test lo cubre. Salieron los que pedían dos teléfonos, SQL
+en staging, un teléfono sin App Attest o esperas de horas. Ninguno volvió a `backlog`: los 80 tenían el código en HEAD.
+
+**`qa/guion-tanda.md` reescrito** con la lista corta arriba y el guion en cinco bloques (A–E), ordenados para que una
+reinstalación sirva a varios tickets. Dos hechos medidos que lo condicionan: el **TestFlight 13 es `039a12ed`, del
+9-sep**, y no lleva casi nada de la lista, así que todo va con **Yala Dev compilado desde `2.1`**; y Yala Dev usa **su
+propio iCloud** (`iCloud.com.jurgenschmidt.yala.dev`), así que los «datos previos en iCloud» los crea el bloque A.
+
+**Los «Device-QA de …» que piden los bloques de más abajo están superados por el guion**: si un ticket no está hoy en
+`tickets/qa/`, ya no se prueba a mano.
+
+### Lo que espera de Jürgen
+
+- **El guion de `qa/guion-tanda.md`**, unas 4 h entero. Con hora y media: el bloque D (los dos «muy alto») y el B.
+  Basta con pasar «paso · PASA/FALLA».
+- `previous-person-cloud-session-survives-fresh-start-and-reinstall` no se cierra hoy: su paso 4 es instalar el
+  **próximo TestFlight encima del 13** sin borrar.
+- Ticket nuevo (very-low): `qa-folder-keeps-evidence-of-tickets-that-already-left`.
+
+## Sesión anterior (#223 · lo mismo en la subida al activar la nube, con texto propio)
 
 **Al activar la nube, si el teléfono falla a ratos al leer su base de datos y además la cuenta está congelada o la
 sesión se borró, la subida se rinde a los 15 minutos acumulados**, no a las 72 h. Es el gemelo de #222 en la ida, con el
@@ -41,7 +64,7 @@ consumidores limpios; cazó el «lleva días» y dos tests flojos, arreglados.
 - Ticket nuevo (low): `stall-canaries-have-no-test-for-which-clock-they-publish` — ningún test fija qué reloj publica
   el canario de espera, en la subida ni en la vuelta.
 
-## Sesión anterior (#222 · dos motivos definitivos alternándose ya no esquivan el techo corto)
+## Sesión del #222 (dos motivos definitivos alternándose ya no esquivan el techo corto)
 
 **Al volver a iCloud, si la cuenta está suspendida y además el teléfono falla a ratos al leer su base de datos, la vuelta
 se rinde a los 15 minutos acumulados**, que es lo que promete el techo corto. Antes los dos motivos se turnaban, el
