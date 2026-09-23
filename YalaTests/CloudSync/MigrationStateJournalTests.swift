@@ -364,6 +364,8 @@ struct MigrationStateJournalTests {
         #expect(state.reversePreMountCauseRaw == nil)
         #expect(state.reversePreMountCauseAt == nil)
         #expect(state.reversePreMountCauseAccruedSeconds == nil)
+        #expect(state.reversePreMountDefinitiveAt == nil)
+        #expect(state.reversePreMountDefinitiveAccruedSeconds == nil)
 
         state.setPhase(.reverseVerify)
         state.reversePreMountProgressAt = progressAt
@@ -371,6 +373,10 @@ struct MigrationStateJournalTests {
         state.reversePreMountCauseRaw = ReversePreMountBlocker.accountUnavailable.rawValue
         state.reversePreMountCauseAt = causeAt
         state.reversePreMountCauseAccruedSeconds = 612.5
+        // Los dos del reloj de lo definitivo (ticket `alternating-definitive-causes-never-reach-the-short-ceiling`):
+        // si no persisten, el techo corto vuelve a no vencer nunca, que es justo el bug de ese ticket.
+        state.reversePreMountDefinitiveAt = progressAt
+        state.reversePreMountDefinitiveAccruedSeconds = 740.25
         try context.save()
 
         var descriptor = FetchDescriptor<MigrationState>()
@@ -386,6 +392,8 @@ struct MigrationStateJournalTests {
         #expect(reloaded.reversePreMountCauseAt == causeAt)
         #expect(reloaded.reversePreMountCauseAccruedSeconds == 612.5,
                 "y el acumulado con sus decimales: truncarlo movería el techo")
+        #expect(reloaded.reversePreMountDefinitiveAt == progressAt)
+        #expect(reloaded.reversePreMountDefinitiveAccruedSeconds == 740.25)
 
         reloaded.clearReversePreMountCeiling()
         try context2.save()
@@ -397,6 +405,8 @@ struct MigrationStateJournalTests {
         #expect(recleared.reversePreMountCauseRaw == nil)
         #expect(recleared.reversePreMountCauseAt == nil)
         #expect(recleared.reversePreMountCauseAccruedSeconds == nil)
+        #expect(recleared.reversePreMountDefinitiveAt == nil)
+        #expect(recleared.reversePreMountDefinitiveAccruedSeconds == nil)
     }
 
     /// Los pendientes del origen que la vuelta reemplaza (ticket `reverse-claim-rejection-has-no-way-out-in-the-client`)

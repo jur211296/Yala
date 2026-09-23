@@ -454,23 +454,40 @@ paths:
   `reverse-before-mount-has-no-way-to-abandon-the-return`. Hasta ese día `reverseClaimLeader`, `reverseDrainAll`,
   `reverseVerify` y `reverseFreezeBackend` podían quedarse paradas para siempre, y ninguna es estable: el teléfono deja
   de sincronizar, no solo se queda la barra al 15/30/50/62 %. Nueve cosas que no se tocan sin romperlo:
-  (1) **Son DOS relojes, y cada uno gobierna un techo** (`MigrationState`, CINCO campos aditivos, schema **6 → 8**:
-  `reversePreMountProgressAt` + `reversePreMountPhaseRaw` para el de FASE, y `reversePreMountCauseRaw` +
-  `reversePreMountCauseAt` + `reversePreMountCauseAccruedSeconds` para el de CAUSA, que entró el 2026-09-22 con
-  `reverse-pre-mount-ceiling-charges-a-stall-to-whoever-stops-it-last`; una fila vieja los lee `nil` y el presupuesto
-  le empieza a contar desde que este build la mira). El de FASE mide el tiempo desde el último CAMBIO DE FASE —aquí no
-  hay cifra que baje, así que avanzar es pasar de fase— y gobierna el techo LARGO. El de CAUSA mide el tiempo
-  ACUMULADO bajo un mismo motivo y gobierna el CORTO. **Se sale con el primero de los dos que venza**, y que el largo
-  siga aplicando con cualquier causa no es redundancia: sin él, dos motivos definitivos alternándose reinician el
-  reloj corto en cada observación y la espera vuelve a no tener techo.
+  (1) **Son TRES relojes: el de fase y el de lo definitivo deciden la salida, y el de causa el copy** (`MigrationState`, SIETE campos aditivos,
+  schema **6 → 8 → 12**: `reversePreMountProgressAt` + `reversePreMountPhaseRaw` para el de FASE;
+  `reversePreMountCauseRaw` + `reversePreMountCauseAt` + `reversePreMountCauseAccruedSeconds` para el de CAUSA, que
+  entró el 2026-09-22 con `reverse-pre-mount-ceiling-charges-a-stall-to-whoever-stops-it-last`; y
+  `reversePreMountDefinitiveAt` + `reversePreMountDefinitiveAccruedSeconds` para el de «CUALQUIER motivo definitivo»,
+  que entró el 2026-09-23 con `alternating-definitive-causes-never-reach-the-short-ceiling`; una fila vieja los lee
+  `nil` y el presupuesto le empieza a contar desde que este build la mira). El de FASE mide el tiempo desde el último
+  CAMBIO DE FASE —aquí no hay cifra que baje, así que avanzar es pasar de fase— y gobierna el techo LARGO. El de lo
+  DEFINITIVO mide el tiempo ACUMULADO bajo motivos que esperar no arregla, **sean el mismo o se turnen**, y gobierna el
+  CORTO. **Se sale con el primero de los dos que venza.** El de CAUSA ya no decide la salida: decide el COPY (1-bis).
+  **Hasta el 2026-09-23 el corto se medía contra el de CAUSA**, y dos motivos turnándose —un 403 y un store que falla a
+  ratos, alcanzable en el drenaje desde `verify-reads-a-failed-local-fetch-as-an-empty-outbox`— lo reiniciaban en cada
+  observación: con el re-kick de 30 s no pasaba nunca de cero y la salida se iba al largo, 72 h. El de lo definitivo es
+  `CauseStallClock` con una sola clave para todo lo definitivo, así que **conserva el criterio del de causa por la
+  pausa**: la red no trae motivo, las horas de red no las acumula nadie, y un `localFailure` aislado tras ellas empieza
+  en cero. Lo que SÍ suma entre motivos es el tiempo bajo otro motivo definitivo, y es a propósito — **incluido un hueco
+  SIN observaciones** entre dos motivos distintos (un 403, la app cerrada, un fallo local al volver): es la regla que el
+  de causa ya aplicaba a un solo motivo, y está fijada con test
+  (`reversePreMountDefinitiveClock_anUnobservedGapBetweenTwoCauses_counts`). La máquina no mira el de causa: todo lo
+  que acumula un motivo lo acumula también el de lo definitivo —salvo una fila v11 parada a mitad de fase, que trae el
+  de causa lleno y el nuevo vacío y sale como mucho un plazo corto después—, así que como término de salida sobraba. **Y el mismo agujero sigue abierto en la subida del snapshot** —su reloj por causa se reinicia igual y los
+  fallos locales y el 403 del push se turnan pasada a pasada—: ticket
+  `snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling`. En la ida sin cifra se midió y no es
+  alcanzable de forma sostenida.
   Cuatro cosas del reloj de causa, y las cuatro son la decisión: **(a)** la clave es el `rawValue` del blocker y no su
-  `abortReason` —`accountUnavailable` y `refused` comparten copy, y fundirlos sumaría dos causas como si fueran una—;
+  `abortReason` —`accountUnavailable` y `refused` comparten copy, y fundirlos sumaría dos causas como si fueran una; hoy
+  eso decide el copy y el canario, no la salida—;
   **(b)** una observación SIN motivo lo **PAUSA**, no lo borra: la pantalla de Almacenamiento re-kickea cada 30 s, así
   que con una racha consecutiva bastaba un timeout de red cada quince minutos para que los 900 s no llegaran nunca y
   el desenlace pasara de 15 min a 72 h (lo cazaron dos lentes de review); un hueco no prueba que el motivo se fuera,
-  solo que no se pudo preguntar, así que no cuenta ni a favor ni en contra; **(c)** un cambio de CAUSA sí tira lo
+  solo que no se pudo preguntar, así que no cuenta ni a favor ni en contra (ojo: habla de un hueco en el que se
+  OBSERVÓ red; uno sin ninguna observación deja el tramo abierto y sí cuenta); **(c)** un cambio de CAUSA sí tira lo
   acumulado del motivo anterior; **(d)** un sello del tramo abierto en el FUTURO se re-ancla conservando lo acumulado.
-  Los cinco campos se limpian SIEMPRE juntos, con `MigrationState.clearReversePreMountCeiling()`, en seis sitios: una
+  Los siete campos se limpian SIEMPRE juntos, con `MigrationState.clearReversePreMountCeiling()`, en seis sitios: una
   vuelta nueva los limpia en el cruce a `reverseClaimLeader` —o la primera observación daría un `stalled` de días—,
   los tres cierres de intento, el reset tras rollback y la normalización de un journal ilegible. **Y el cambio de fase
   los limpia en `handle`, no solo la observación al ver otra fase**: `reverseVerify` vuelve a `reverseDrainAll` por
@@ -481,7 +498,12 @@ paths:
   `MigrationPolicy.reversePreMountCauseCeilingReached`, porque lo consultan la máquina y el runner). Con dos relojes,
   la vuelta puede salir por el de FASE en una pasada que casualmente traiga un motivo recién visto: journalear ese
   blocker le diría «tu cuenta en la nube no lo permitió», con el correo de soporte, a quien llevaba tres días sin red.
-  Si el 403 es real no se pierde nada — la persona reintenta y a los 15 min sale con el motivo bueno.
+  Si el 403 es real no se pierde nada — la persona reintenta y a los 15 min sale con el motivo bueno. **Desde el
+  2026-09-23 el texto específico se mide contra el reloj de CAUSA y la salida contra el de lo definitivo**: si el corto
+  venció con motivos mezclados, ninguno de los textos específicos es verdad entero y sale `preMountStalled`; si un
+  motivo solo agotó el plazo, los dos relojes vencen en la misma observación y sale su texto. Límite aceptado: la clave
+  del de causa es el `rawValue`, así que `accountUnavailable` y `refused` turnándose salen con el genérico aunque los dos
+  digan lo mismo — no miente, y cambiar la clave le cambiaría el significado al tramo del canario.
   (2) **Solo acorta lo que no se arregla esperando** (`ReversePreMountBlocker`: el 403 `accountUnavailable` del drenaje
   y del verify, el `other_leader` y el `rejected` del congelado; desde el 2026-09-22 también `localFailure` —un `fetch`
   de SwiftData que lanzó— y `unknownVerdict` —un veredicto con un motivo que este build no
@@ -491,15 +513,15 @@ paths:
   `verify()` hace antes de preguntarle nada al Merkle. ⇒ **la fase `drain` pasó de tener UN motivo definitivo a
   tener DOS**, y con la regla «causa distinta ⇒ el reloj corto empieza de cero» eso las hace mutuamente
   cancelatorias: una cuenta suspendida **y** un store que falla a ratos alternan `accountUnavailable`/`localFailure`
-  en cada observación, el reloj corto se re-sella siempre y los 900 s no vencen nunca — la salida se va al reloj de
-  FASE, 72 h. `reverseVerify` ya tenía tres motivos y por tanto ya era alcanzable ahí; el agujero está admitido en el
-  docblock de la máquina. Ticket: `alternating-definitive-causes-never-reach-the-short-ceiling`. **Hasta ese día la regla
+  en cada observación, el reloj corto se re-sellaba siempre y los 900 s no vencían nunca — la salida se iba al reloj de
+  FASE, 72 h. `reverseVerify` ya tenía tres motivos y por tanto ya era alcanzable ahí. **Cerrado el 2026-09-23** con el
+  reloj de lo definitivo (punto 1): `alternating-definitive-causes-never-reach-the-short-ceiling`. **Hasta ese día la regla
   decía «solo la palabra del SERVIDOR» y dejó de ser cierta**: los dos nuevos no son una respuesta de nadie. Los dos
   salen con `preMountStalled` y NO con `preMountRefused`, porque ese copy acusa a la cuenta en la nube y da el correo
   de soporte — y ahí no habló ninguna cuenta; lo cazaron dos lentes de la review. El canario de la espera renombró su
   prefijo de `server_` a `stop_` por lo mismo, así que la serie `cloudReversePreMountWaiting` cambia de valores con ese
-  build. **Y esos 900 s son del reloj de CAUSA desde el 2026-09-22** —parada ACUMULADA bajo ese mismo motivo, no
-  parada de la fase—, que es lo que cerró
+  build. **Y esos 900 s son del reloj de lo DEFINITIVO desde el 2026-09-23** (del de CAUSA entre el 22 y el 23) —parada
+  ACUMULADA bajo motivos definitivos, no parada de la fase—, que es lo que cerró
   `reverse-pre-mount-ceiling-charges-a-stall-to-whoever-stops-it-last`: hasta ese día un `localFailure` aislado tras
   horas de espera por red se cobraba las horas y sacaba en el acto, sin un reintento. La red y la sesión caducada van al largo, 259 200 s —
   esa segunda mitad es la que cubre «una cuenta a la que ya no se puede entrar». Es lo CONTRARIO del fail-open de
@@ -539,7 +561,9 @@ paths:
   dejaba ciega la mitad del mecanismo** en las dos direcciones —solo el de fase leería «tres horas de avería local»
   por un fallo de doce segundos; solo el de causa dejaría un teléfono con dos motivos alternándose 72 h publicando
   `lt_15m` y, con el dedupe por proceso, la flota vería UN evento diciendo que no pasa nada—. La serie cambió de
-  valores dos días seguidos (21 y 22 de septiembre).
+  valores dos días seguidos (21 y 22 de septiembre). **El 23 NO cambió**, aunque el corto pasó a medirse contra el
+  reloj de lo definitivo: el tercer segmento sigue siendo el tramo de CAUSA, que es el que deja reconocer la alternancia
+  en la flota (fase creciendo, causa siempre en `lt_15m`), y cambiarle el significado por tercera vez rompería la serie.
   (9) **La red PURA del verify entró al techo el 2026-09-21, y la salida AVISA en el momento** (ticket
   `reverse-pre-mount-ceiling-has-no-alert-and-leaves-network-verify-out`: los dos residuales que este dejó, los dos
   decididos por Jürgen). Eran las dos mitades que faltaban. `reverseVerify` + red era la única de las OCHO

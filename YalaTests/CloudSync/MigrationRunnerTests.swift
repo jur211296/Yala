@@ -312,6 +312,9 @@ struct MigrationRunnerTests {
         reversePreMountProgressAt: Date? = nil, reversePreMountPhaseRaw: String? = nil,
         reversePreMountCauseRaw: String? = nil, reversePreMountCauseAt: Date? = nil,
         reversePreMountCauseAccruedSeconds: Double? = nil,
+        // Y los dos del reloj de «cualquier motivo definitivo» (ticket
+        // `alternating-definitive-causes-never-reach-the-short-ceiling`).
+        reversePreMountDefinitiveAt: Date? = nil, reversePreMountDefinitiveAccruedSeconds: Double? = nil,
         // La intención del claim de la ida (ticket `settings-migrate-to-cloud-adopts-silently-instead-of-migrating`).
         forwardClaimIntentRaw: String? = nil,
         // Techo de `uploadingSnapshot`: los dos relojes y el motivo de la salida
@@ -344,6 +347,8 @@ struct MigrationRunnerTests {
         state.reversePreMountCauseRaw = reversePreMountCauseRaw
         state.reversePreMountCauseAt = reversePreMountCauseAt
         state.reversePreMountCauseAccruedSeconds = reversePreMountCauseAccruedSeconds
+        state.reversePreMountDefinitiveAt = reversePreMountDefinitiveAt
+        state.reversePreMountDefinitiveAccruedSeconds = reversePreMountDefinitiveAccruedSeconds
         state.forwardClaimIntentRaw = forwardClaimIntentRaw
         state.snapshotStallProgressAt = snapshotStallProgressAt
         state.snapshotStallCauseRaw = snapshotStallCauseRaw
@@ -2591,6 +2596,10 @@ struct MigrationRunnerTests {
         #expect(j.reversePreMountProgressAt == fixedNow, "el reloj de la FASE sigue midiendo las tres horas")
         #expect(j.reversePreMountCauseAt == threeHours, "y el de la CAUSA empieza AHORA, que es cuando apareció")
         #expect(j.reversePreMountCauseRaw == "localFailure")
+        // Y el de lo DEFINITIVO, que es el que hoy decide el techo corto, también: las tres horas de red no traían
+        // motivo, así que no las acumuló (ticket `alternating-definitive-causes-never-reach-the-short-ceiling`).
+        #expect(j.reversePreMountDefinitiveAt == threeHours, "el reloj de lo definitivo también empieza AHORA")
+        #expect(j.reversePreMountDefinitiveAccruedSeconds == 0, "sin nada cerrado que cobrarle")
 
         // Y REINTENTA de verdad: la pasada siguiente vuelve a llamar al verify, que es lo que el ticket pide.
         let callsAfterFirst = fake.verifyCallCount
@@ -2682,32 +2691,39 @@ struct MigrationRunnerTests {
                 "900 s ACUMULADOS bajo el 403 sí agotan su techo, aunque vinieran en dos tramos")
     }
 
-    /// **La clave de la causa es su `rawValue`, no el texto que se le enseña a la persona.**
+    /// **La clave del reloj de CAUSA es su `rawValue`, no el texto que se le enseña a la persona.**
     /// `accountUnavailable` y `refused` COMPARTEN `abortReason` (`preMountRefused`), así que un mecanismo que
-    /// sellara por el motivo journaleado fundiría sus dos relojes y sumaría dos causas distintas como si fueran
-    /// una. Es el único caso que distingue las dos claves: con cualquier otro par, los `abortReason` ya difieren
-    /// y el mutante pasaría verde.
+    /// sellara por el motivo journaleado fundiría sus dos relojes y sumaría dos causas como si fueran una. Desde
+    /// `alternating-definitive-causes-never-reach-the-short-ceiling` eso ya no decide CUÁNDO se sale —lo decide el
+    /// reloj de lo definitivo, que suma los dos a propósito— sino QUÉ se le dice a la persona y qué publica el
+    /// canario. Por eso el caso mide las dos cosas: sale a los 900 s de la suma, y con el copy genérico, porque
+    /// ninguna de las dos causas llegó sola.
     @Test func reversePreMountCauseClock_twoCausesSharingTheirCopy_keepSeparateClocks() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
         let fake = FakeExecutor()
         // 403 (drain) y rechazo (freeze) no comparten fase, así que los dos se observan en `verify` desde el
-        // mismo sitio: alternándolos, ninguno acumula y el techo corto no puede vencer.
-        fake.verifyProbes = [.blocked(.accountUnavailable), .blocked(.refused),
-                             .blocked(.accountUnavailable), .blocked(.refused)]
+        // mismo sitio.
+        fake.verifyProbes = [.blocked(.accountUnavailable), .blocked(.refused), .blocked(.accountUnavailable)]
         let clock = MutableClock(fixedNow)
         try seedJournal(context, phase: .reverseVerify, reverseOriginRaw: "done",
                         reversePreMountProgressAt: fixedNow, reversePreMountPhaseRaw: "verify")
 
-        for offset in [0.0, 900, 1_800, 2_700] {
+        for offset in [0.0, 450] {
             clock.value = fixedNow.addingTimeInterval(offset)
             await makeRunner(context, fake, now: { clock.value }).resume()
             let j = try journal(context)
-            #expect(j.readPhase().phase == .reverseVerify,
-                    "en \(offset)s: dos motivos con el MISMO copy siguen siendo dos relojes")
-            #expect(j.reversePreMountCauseAccruedSeconds == 0,
-                    "en \(offset)s: cada cambio de causa tira lo acumulado del anterior")
+            #expect(j.readPhase().phase == .reverseVerify, "en \(offset)s: todavía no son 900 s de nada")
+            #expect(j.reversePreMountCauseAt == clock.value,
+                    "en \(offset)s: dos motivos con el MISMO copy siguen siendo dos relojes de causa — el tramo se reabre")
         }
+
+        clock.value = fixedNow.addingTimeInterval(900)
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .done, "900 s bajo motivos definitivos, aunque se turnen, sacan de la vuelta")
+        #expect(j.reverseAbortReasonRaw == "preMountStalled",
+                "el reloj de causa se reinició en cada cambio, así que ninguno de los dos se ganó su texto")
     }
 
     /// **El cambio de fase reinicia el reloj de causa**, y quien lo garantiza es el `clearReversePreMountCeiling()`
@@ -2728,7 +2744,8 @@ struct MigrationRunnerTests {
         try seedJournal(context, phase: .reverseVerify, reverseOriginRaw: "done",
                         reversePreMountProgressAt: fixedNow, reversePreMountPhaseRaw: "verify",
                         reversePreMountCauseRaw: "accountUnavailable",
-                        reversePreMountCauseAt: nil, reversePreMountCauseAccruedSeconds: 880)
+                        reversePreMountCauseAt: nil, reversePreMountCauseAccruedSeconds: 880,
+                        reversePreMountDefinitiveAt: nil, reversePreMountDefinitiveAccruedSeconds: 880)
 
         await makeRunner(context, fake, now: { clock.value }).resume()
 
@@ -2736,6 +2753,8 @@ struct MigrationRunnerTests {
         #expect(j.readPhase().phase == .reverseDrainAll, "el mismatch la devuelve al drenaje")
         #expect(j.reversePreMountCauseAccruedSeconds == 0,
                 "y los 880 s del 403 en `verify` NO viajan con ella: en el drenaje empieza de cero")
+        #expect(j.reversePreMountDefinitiveAccruedSeconds == 0,
+                "tampoco en el reloj de lo definitivo, que es el que decide la salida")
 
         // 30 s después, con el mismo 403 en la fase nueva: si hubiera heredado los 880, ya habría salido.
         clock.value = fixedNow.addingTimeInterval(30)
@@ -2760,13 +2779,17 @@ struct MigrationRunnerTests {
                         reversePreMountProgressAt: fixedNow, reversePreMountPhaseRaw: "verify",
                         reversePreMountCauseRaw: "accountUnavailable",
                         reversePreMountCauseAt: fixedNow.addingTimeInterval(100_000),
-                        reversePreMountCauseAccruedSeconds: 400)
+                        reversePreMountCauseAccruedSeconds: 400,
+                        reversePreMountDefinitiveAt: fixedNow.addingTimeInterval(100_000),
+                        reversePreMountDefinitiveAccruedSeconds: 400)
 
         await makeRunner(context, fake, now: { clock.value }).resume()
         let j = try journal(context)
         #expect(j.readPhase().phase == .reverseVerify, "el sello futuro no saca a nadie, ni aplaza el techo")
         #expect(j.reversePreMountCauseAt == fixedNow, "el tramo se re-ancla AHORA")
         #expect(j.reversePreMountCauseAccruedSeconds == 400, "y lo ya acumulado se conserva")
+        #expect(j.reversePreMountDefinitiveAt == fixedNow, "el reloj de lo definitivo se re-ancla igual")
+        #expect(j.reversePreMountDefinitiveAccruedSeconds == 400)
 
         // 500 s después: 400 acumulados + 500 del tramo re-anclado = 900. Sale.
         clock.value = fixedNow.addingTimeInterval(500)
@@ -2805,34 +2828,130 @@ struct MigrationRunnerTests {
     }
 
 
-    /// **El techo de la FASE sigue por encima con CUALQUIER causa, y es el suelo del mecanismo.** Sin él, dos
-    /// motivos definitivos que se alternen re-sellan el reloj corto en cada observación y la vuelta se queda
-    /// parada para siempre: exactamente la espera sin techo que esta familia de tickets existe para cerrar,
-    /// reintroducida por la puerta de al lado.
+    // MARK: - El reloj de «CUALQUIER motivo definitivo»
+    // (ticket `alternating-definitive-causes-never-reach-the-short-ceiling`)
+
+    /// **EL caso del ticket.** Una cuenta suspendida (403 del push) y un store que falla a ratos (el `fetch` del
+    /// outbox lanza) se turnan en el DRENAJE, que desde `verify-reads-a-failed-local-fetch-as-an-empty-outbox` tiene
+    /// los dos motivos. Con el reloj por causa, cada cambio reiniciaba el corto y la salida se iba a las 72 h. La
+    /// cadencia es la real: la pantalla de Almacenamiento re-kickea cada 30 s, así que el motivo cambia en CADA
+    /// observación y el reloj de causa no pasa nunca de cero.
     ///
-    /// El guion alterna 403 y fallo local en cada pasada —así el reloj de causa nunca pasa de una pasada— y
-    /// comprueba que a las 72 h de fase parada sale igual.
-    @Test func reversePreMountCauseClock_alternatingCauses_stillHitThePhaseCeiling() async throws {
+    /// Se clava con sus dos vecinos —899 s holdea, 900 s sale— porque es un plazo y un `>=` cambiado por `>` no se
+    /// ve de otra forma. Y el motivo es el genérico: ninguno de los dos llegó solo a los 900 s.
+    @Test func reversePreMountDefinitiveClock_alternatingCauses_leaveAtTheShortCeiling() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
         let fake = FakeExecutor()
-        fake.verifyProbes = [.blocked(.accountUnavailable), .blocked(.localFailure),
-                             .blocked(.accountUnavailable), .blocked(.localFailure)]
+        let offsets = Array(stride(from: 0.0, through: 870, by: 30)) + [899, 900]
+        fake.reverseDrainOutcomes = offsets.indices.map {
+            // Empieza por el fallo local para que la pasada que cruza el plazo traiga el 403: es la que tentaría a
+            // journalear «tu cuenta en la nube no lo permitió» por un plazo que solo fue suyo a medias.
+            $0.isMultiple(of: 2) ? .blocked(.localFailure) : .blocked(.accountUnavailable)
+        }
+        #expect(fake.reverseDrainOutcomes.last == .blocked(.accountUnavailable), "control del guion")
+        let clock = MutableClock(fixedNow)
+        try seedJournal(context, phase: .reverseDrainAll, reverseOriginRaw: "done",
+                        reversePreMountProgressAt: fixedNow, reversePreMountPhaseRaw: "drain")
+
+        for offset in offsets.dropLast() {
+            clock.value = fixedNow.addingTimeInterval(offset)
+            await makeRunner(context, fake, now: { clock.value }).resume()
+            let j = try journal(context)
+            #expect(j.readPhase().phase == .reverseDrainAll, "en \(offset)s todavía no son 900 s")
+            #expect(j.reversePreMountCauseAt == clock.value,
+                    "en \(offset)s: el reloj de CAUSA se reinicia en cada observación — por sí solo no vencería nunca")
+        }
+        #expect(fake.reverseDrainCallCount == offsets.count - 1, "una observación por pasada, alternando")
+        #expect(fake.count(.reverseRollback) == 0)
+
+        clock.value = fixedNow.addingTimeInterval(900)
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .done, "a los 15 min bajo motivos definitivos sale, no a las 72 h")
+        #expect(j.reverseAbortReasonRaw == "preMountStalled",
+                "con motivos mezclados ningún texto específico es verdad entero: «no llegó a completarse»")
+        #expect(j.reverseAbortReasonRaw != "preMountRefused",
+                "aunque la pasada que cruzó el plazo trajera el 403")
+        #expect(fake.count(.reverseRollback) == 1, "el abort best-effort, una vez")
+    }
+
+    /// **La otra mitad del ticket: el reloj nuevo no reintroduce lo que el de causa cerró.** Diez minutos de 403,
+    /// tres horas sin cobertura y, al volver el wifi, un `fetch` local que falla (y luego el 403 otra vez). El reloj
+    /// de lo definitivo SUMA los diez minutos del 403 a lo que venga después —los dos eran esperas que esperar no
+    /// arregla— pero NO las tres horas de red: la red no trae motivo y lo pausa. Así que quedan cinco minutos, no cero
+    /// ni tres horas.
+    ///
+    /// Los dos mutantes que este caso mata: uno que no pausara (las tres horas contarían y saldría al volver el
+    /// wifi, en la misma pasada del fallo) y uno que reiniciara con la red o con el cambio de causa (a 600 + 300
+    /// seguiría esperando).
+    @Test func reversePreMountDefinitiveClock_networkHoursBetweenTwoCauses_areNotCharged() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        // 403 · 403 · red · (tres horas) · fallo local · 403 · 403. Las dos últimas son 403 a propósito: la pasada
+        // que cruza el plazo trae el motivo cuyo texto acusa a la cuenta, y el copy tiene que seguir siendo el
+        // genérico porque el 403 no llegó solo a los 900 s. Con un fallo local al final esa aserción no podría fallar
+        // (su texto ya es el genérico).
+        fake.verifyProbes = [.blocked(.accountUnavailable), .blocked(.accountUnavailable), .networkTimeout,
+                             .blocked(.localFailure), .blocked(.accountUnavailable)]
         let clock = MutableClock(fixedNow)
         try seedJournal(context, phase: .reverseVerify, reverseOriginRaw: "done",
                         reversePreMountProgressAt: fixedNow, reversePreMountPhaseRaw: "verify")
 
-        for offset in [0.0, 86_400, 172_800] {                 // t=0, 24 h, 48 h: alternando, nunca vence el corto
-            clock.value = fixedNow.addingTimeInterval(offset)
-            await makeRunner(context, fake, now: { clock.value }).resume()
-            #expect(try journal(context).readPhase().phase == .reverseVerify,
-                    "con la causa cambiando en cada pasada el techo corto no llega a vencer nunca")
-        }
+        await makeRunner(context, fake, now: { clock.value }).resume()          // t=0    abre el 403
+        clock.value = fixedNow.addingTimeInterval(570)
+        await makeRunner(context, fake, now: { clock.value }).resume()          // t=570  sigue el 403
+        clock.value = fixedNow.addingTimeInterval(600)
+        await makeRunner(context, fake, now: { clock.value }).resume()          // t=600  se cae la red: pausa
+        let paused = try journal(context)
+        #expect(paused.reversePreMountDefinitiveAt == nil, "la red cierra el tramo")
+        #expect(paused.reversePreMountDefinitiveAccruedSeconds == 600, "con los diez minutos del 403 dentro")
 
-        clock.value = fixedNow.addingTimeInterval(259_200)     // 72 h de FASE parada
+        let back = fixedNow.addingTimeInterval(600 + 10_800)                    // tres horas después, vuelve el wifi
+        clock.value = back
         await makeRunner(context, fake, now: { clock.value }).resume()
-        #expect(try journal(context).readPhase().phase == .done,
-                "pero el techo de la fase no depende de la causa: a las 72 h la vuelta termina")
+        let first = try journal(context)
+        #expect(first.readPhase().phase == .reverseVerify,
+                "el primer fallo local tras tres horas de red no sale: las horas de red no se le cobran")
+        #expect(first.reversePreMountCauseAccruedSeconds == 0, "y para su reloj de causa es la primera vez")
+
+        clock.value = back.addingTimeInterval(299)
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        #expect(try journal(context).readPhase().phase == .reverseVerify, "600 + 299: todavía no")
+
+        clock.value = back.addingTimeInterval(300)
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .done, "600 del 403 + 299 del fallo local + 1 del 403 = 900 bajo motivos definitivos")
+        #expect(j.reverseAbortReasonRaw == "preMountStalled",
+                "el 403 de esta pasada lleva 1 s en su reloj de causa: no se ganó «tu cuenta en la nube no lo permitió»")
+    }
+
+    /// **Decisión, no accidente: un hueco SIN observaciones entre dos motivos definitivos distintos cuenta.** Un 403,
+    /// la app cerrada veinte minutos (nadie observa nada: el tramo sigue abierto) y, al volver, un fallo local. El
+    /// reloj de lo definitivo lleva 1 200 s y la vuelta sale en esa pasada, con el copy genérico. Es la regla que el
+    /// reloj por causa ya aplicaba a un solo motivo —un 403, veinte minutos cerrada y otro 403 salen igual—, ahora
+    /// entre motivos: lo último que se vio antes del hueco y lo primero que se ve después son esperas que esperar no
+    /// arregla. Lo que NO cuenta es un hueco en el que se observó red (`networkHoursBetweenTwoCauses_areNotCharged`).
+    /// Lo sacaron dos lentes de la review del 2026-09-23; queda fijado para que cambiarlo sea deliberado.
+    @Test func reversePreMountDefinitiveClock_anUnobservedGapBetweenTwoCauses_counts() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.verifyProbes = [.blocked(.accountUnavailable), .blocked(.localFailure)]
+        let clock = MutableClock(fixedNow)
+        try seedJournal(context, phase: .reverseVerify, reverseOriginRaw: "done",
+                        reversePreMountProgressAt: fixedNow, reversePreMountPhaseRaw: "verify")
+
+        await makeRunner(context, fake, now: { clock.value }).resume()          // t=0: 403, y la app se cierra
+        #expect(try journal(context).readPhase().phase == .reverseVerify)
+
+        clock.value = fixedNow.addingTimeInterval(1_200)                        // t=20 min: vuelve, fallo local
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .done, "veinte minutos entre dos motivos definitivos, sin nada observado en medio")
+        #expect(j.reverseAbortReasonRaw == "preMountStalled", "ninguno de los dos llegó solo al plazo")
     }
 
     /// El 403 de la verificación NO gasta `verifyNetworkRetries`. Ese camino acaba en `reverseFailedRollback` con

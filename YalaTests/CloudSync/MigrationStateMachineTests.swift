@@ -1162,7 +1162,7 @@ struct MigrationStateMachineTests {
                     for stalled in below {
                         let r = step(
                             phase,
-                            .reversePreMountStalled(stalledSeconds: stalled, causeStalledSeconds: stalled,
+                            .reversePreMountStalled(stalledSeconds: stalled, definitiveStalledSeconds: stalled,
                                                     cause: cause, returnTo: origin),
                             policy: policy)
                         #expect(r.next == phase, "\(phase): \(stalled)s (\(cause), \(origin)) se queda donde está")
@@ -1188,7 +1188,7 @@ struct MigrationStateMachineTests {
                 for stalled in [budget, budget + 1, budget * 100] {
                     let r = step(
                         phase,
-                        .reversePreMountStalled(stalledSeconds: stalled, causeStalledSeconds: stalled,
+                        .reversePreMountStalled(stalledSeconds: stalled, definitiveStalledSeconds: stalled,
                                                 cause: .definitive, returnTo: origin),
                         policy: policy)
                     #expect(r.next == originPhase, "\(phase): \(stalled)s >= \(budget)s vuelve a \(originPhase)")
@@ -1207,16 +1207,16 @@ struct MigrationStateMachineTests {
         let longBudget = policy.reversePreMountPhaseBudgetSeconds
         for phase in Self.preMountPhases {
             #expect(step(phase,
-                         .reversePreMountStalled(stalledSeconds: shortBudget, causeStalledSeconds: shortBudget,
+                         .reversePreMountStalled(stalledSeconds: shortBudget, definitiveStalledSeconds: shortBudget,
                                                  cause: .definitive, returnTo: .done),
                          policy: policy).next == .done)
             #expect(step(phase,
-                         .reversePreMountStalled(stalledSeconds: shortBudget, causeStalledSeconds: shortBudget,
+                         .reversePreMountStalled(stalledSeconds: shortBudget, definitiveStalledSeconds: shortBudget,
                                                  cause: .unknown, returnTo: .done),
                          policy: policy).next == phase,
                     "\(phase): sin un motivo que no se arregle esperando, el techo corto no aplica")
             #expect(step(phase,
-                         .reversePreMountStalled(stalledSeconds: longBudget, causeStalledSeconds: 0,
+                         .reversePreMountStalled(stalledSeconds: longBudget, definitiveStalledSeconds: 0,
                                                  cause: .unknown, returnTo: .done),
                          policy: policy).next == .done,
                     "\(phase): pero el largo tampoco es infinito")
@@ -1224,7 +1224,8 @@ struct MigrationStateMachineTests {
     }
 
     /// **EL test del ticket `…charges-a-stall-to-whoever-stops-it-last`, en la máquina.** El techo corto se mide
-    /// contra el reloj de la CAUSA, no contra el de la fase: una fase que lleva parada casi el presupuesto largo
+    /// contra el reloj de lo DEFINITIVO (hasta `alternating-definitive-causes-never-reach-the-short-ceiling`, el de
+    /// UNA causa), no contra el de la fase: una fase que lleva parada casi el presupuesto largo
     /// por otra cosa, y que en ESTA pasada tropieza con un motivo definitivo, tiene que HOLDEAR. Hasta este ticket
     /// la máquina recibía un solo reloj y `10 800 >= 900` salía a la primera: un `fetch` local que falló una vez
     /// sacaba de la vuelta sin un solo reintento.
@@ -1233,27 +1234,26 @@ struct MigrationStateMachineTests {
     /// sus vecinos (`corto - 1` vs `corto`, con el largo sin alcanzar en ambos) para que ningún `>=` se pueda
     /// cambiar por `>` sin que muera algo:
     ///  1. ninguno de los dos vencido → holdea;
-    ///  2. vencido el de CAUSA con el de fase todavía por debajo del largo → sale;
-    ///  3. vencido el de FASE con el de causa recién empezado → sale igual, **y con causa definitiva**. Es la
-    ///     mitad que impide el techo infinito: sin ella, dos motivos definitivos que se alternen re-sellan el
-    ///     reloj de causa en cada observación y la espera vuelve a no tener fin.
-    @Test func reversePreMountStalled_theShortCeilingMeasuresTheCauseClock() {
+    ///  2. vencido el de lo DEFINITIVO con el de fase todavía por debajo del largo → sale;
+    ///  3. vencido el de FASE con el de lo definitivo recién empezado → sale igual, **y con causa definitiva**: el
+    ///     largo aplica con cualquier causa.
+    @Test func reversePreMountStalled_theShortCeilingMeasuresTheDefinitiveClock() {
         let policy = Self.preMountPolicy
         let short = policy.reversePreMountCauseBudgetSeconds       // 60
         let long = policy.reversePreMountPhaseBudgetSeconds           // 600
         for phase in Self.preMountPhases {
             #expect(step(phase,
-                         .reversePreMountStalled(stalledSeconds: long - 1, causeStalledSeconds: short - 1,
+                         .reversePreMountStalled(stalledSeconds: long - 1, definitiveStalledSeconds: short - 1,
                                                  cause: .definitive, returnTo: .done),
                          policy: policy).next == phase,
                     "\(phase): la espera larga era de OTRA causa — este motivo aún no ha gastado lo suyo")
             #expect(step(phase,
-                         .reversePreMountStalled(stalledSeconds: long - 1, causeStalledSeconds: short,
+                         .reversePreMountStalled(stalledSeconds: long - 1, definitiveStalledSeconds: short,
                                                  cause: .definitive, returnTo: .done),
                          policy: policy).next == .done,
                     "\(phase): con su propio reloj cumplido sale, y no hizo falta el largo")
             #expect(step(phase,
-                         .reversePreMountStalled(stalledSeconds: long, causeStalledSeconds: 0,
+                         .reversePreMountStalled(stalledSeconds: long, definitiveStalledSeconds: 0,
                                                  cause: .definitive, returnTo: .done),
                          policy: policy).next == .done,
                     "\(phase): el techo de la FASE aplica con cualquier causa — es el suelo del mecanismo")
@@ -1276,7 +1276,7 @@ struct MigrationStateMachineTests {
     /// Tiempo parado absurdo: si alguna arista existiera de más, saldría por ella.
     @Test func reversePreMountExitEvents_outsideTheFourPhases_areInvalid() {
         let events: [Event] = [
-            .reversePreMountStalled(stalledSeconds: 10_000_000, causeStalledSeconds: 10_000_000,
+            .reversePreMountStalled(stalledSeconds: 10_000_000, definitiveStalledSeconds: 10_000_000,
                                     cause: .definitive, returnTo: .done),
             .reversePreMountCancelled(returnTo: .done),
         ]
@@ -1296,11 +1296,11 @@ struct MigrationStateMachineTests {
         #expect(MigrationPolicy.default.reversePreMountCauseBudgetSeconds == 900)      // 15 min
         #expect(MigrationPolicy.default.reversePreMountPhaseBudgetSeconds == 259_200)     // 72 h
         #expect(step(.reverseDrainAll,
-                     .reversePreMountStalled(stalledSeconds: 900, causeStalledSeconds: 900,
+                     .reversePreMountStalled(stalledSeconds: 900, definitiveStalledSeconds: 900,
                                              cause: .definitive, returnTo: .done)).next
             == .done)
         #expect(step(.reverseDrainAll,
-                     .reversePreMountStalled(stalledSeconds: 900, causeStalledSeconds: 900,
+                     .reversePreMountStalled(stalledSeconds: 900, definitiveStalledSeconds: 900,
                                              cause: .unknown, returnTo: .done)).next
             == .reverseDrainAll)
     }

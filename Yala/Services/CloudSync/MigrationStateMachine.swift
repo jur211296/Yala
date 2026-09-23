@@ -338,20 +338,25 @@ nonisolated enum MigrationEvent: Equatable {
     /// `reverse-pre-mount-ceiling-charges-a-stall-to-whoever-stops-it-last`):
     ///  · `stalledSeconds` es el de la FASE —`now()` menos `MigrationState.reversePreMountProgressAt`, el instante
     ///    del último CAMBIO de fase journaleado— y gobierna el presupuesto LARGO;
-    ///  · `causeStalledSeconds` es el de la CAUSA —lo que la fase lleva parada seguida por el mismo motivo— y
-    ///    gobierna el CORTO, que solo se aplica cuando `cause == .definitive`.
+    ///  · `definitiveStalledSeconds` es el de «CUALQUIER motivo definitivo» —lo ACUMULADO parado bajo motivos que
+    ///    esperar no arregla, sean el mismo o distintos; una observación sin motivo lo pausa— y gobierna el CORTO,
+    ///    que solo se aplica cuando `cause == .definitive`.
     ///
-    /// Hasta este ticket venía uno solo y el corto se aplicaba a él: una espera larga por otra causa se cobraba
+    /// Hasta ese ticket venía uno solo y el corto se aplicaba a él: una espera larga por otra causa se cobraba
     /// entera contra el presupuesto de la causa de esta observación, y un fallo aislado sacaba de la vuelta en el
-    /// acto. Que el largo siga aplicando POR ENCIMA no es redundancia: sin él, dos causas definitivas que se
-    /// alternasen re-sellarían el reloj corto indefinidamente y la espera volvería a no tener techo.
+    /// acto. **Y hasta `alternating-definitive-causes-never-reach-the-short-ceiling` el corto se medía contra el
+    /// reloj de UNA causa**, que se reinicia al cambiar de motivo: con dos motivos definitivos turnándose —una cuenta
+    /// suspendida y un store que falla a ratos— no pasaba nunca de una observación, y la salida se iba a las 72 h.
+    /// El reloj por causa sigue existiendo, pero en el runner y solo para elegir el COPY de la salida; la máquina no
+    /// lo necesita, porque todo lo que acumula un motivo lo acumula también éste (salvo en una fila anterior a la
+    /// v12, que trae el de causa acumulado y éste vacío: ahí la salida llega, como mucho, un plazo corto después).
     ///
     /// Aquí «avanzar» no es una cifra que baje sino cambiar de fase: el drenaje no expone un pendiente comparable, la
     /// verificación es un veredicto y el congelado es una sola llamada. El único bucle posible
     /// (`reverseVerify ⇄ reverseDrainAll` por mismatch) lo acota `maxMismatchRetries`, así que no puede re-sellar el
     /// reloj para siempre.
     case reversePreMountStalled(
-        stalledSeconds: Double, causeStalledSeconds: Double,
+        stalledSeconds: Double, definitiveStalledSeconds: Double,
         cause: MarkerExportStall, returnTo: ReverseOrigin)
     /// La persona cancela la vuelta desde una de las cuatro fases previas al montaje. Misma salida que su techo, sin
     /// esperar a que venza.
@@ -460,12 +465,17 @@ nonisolated struct MigrationPolicy: Equatable {
     /// el del ÚLTIMO avance, no el del inicio, así que un corpus grande que sube despacio nunca lo agota.
     var reverseUploadUnknownBudgetSeconds: Double = 259_200
 
-    /// Techo de las CUATRO fases previas al montaje del espejo contra el reloj de la CAUSA, y solo cuando el
-    /// motivo es DEFINITIVO —esperar no lo arregla—: 15 min de parada ACUMULADA bajo ese mismo motivo, que no es
-    /// lo mismo que 15 min de fase parada. Ticket `reverse-before-mount-has-no-way-to-abandon-the-return` para el
-    /// número, que es el mismo que el resto de techos de esta familia y no hay medición que justifique otro;
-    /// `reverse-pre-mount-ceiling-charges-a-stall-to-whoever-stops-it-last` para el reloj contra el que se mide.
-    /// Mientras tanto el teléfono NO sincroniza: ninguna de las cuatro fases es estable.
+    /// Techo de las CUATRO fases previas al montaje del espejo contra el reloj de lo DEFINITIVO, y solo cuando el
+    /// motivo de la observación lo es —esperar no lo arregla—: 15 min de parada ACUMULADA bajo motivos definitivos,
+    /// sean el mismo o se turnen, que no es lo mismo que 15 min de fase parada: las horas de red no cuentan. Ticket
+    /// `reverse-before-mount-has-no-way-to-abandon-the-return` para el número, que es el mismo que el resto de techos
+    /// de esta familia y no hay medición que justifique otro; `reverse-pre-mount-ceiling-charges-a-stall-to-whoever-
+    /// stops-it-last` para el reloj acumulado con pausa, y `alternating-definitive-causes-never-reach-the-short-ceiling`
+    /// para que ese reloj no se reinicie al cambiar de motivo. Mientras tanto el teléfono NO sincroniza: ninguna de
+    /// las cuatro fases es estable.
+    ///
+    /// El mismo número decide también el COPY, contra el reloj de UNA causa: si un solo motivo llegó a él, la salida
+    /// lleva su texto; si no, el genérico (`MigrationRunner.reversePreMountExitReason`).
     ///
     /// **Se llamaba `…DefinitiveBudgetSeconds` hasta el 2026-09-22.** El nombre nuevo dice contra QUÉ RELOJ se
     /// mide, que es lo que cambió; el de al lado se renombró por lo contrario —dejó de ser «el de lo desconocido»
@@ -474,7 +484,8 @@ nonisolated struct MigrationPolicy: Equatable {
     /// Techo de las mismas cuatro fases contra el reloj de la FASE, con CUALQUIER causa: 72 h. Aquí caen la red que
     /// no vuelve y la sesión que nadie renueva —incluida la cuenta a la que ya no se puede entrar—, y las dos tienen
     /// su aviso y su botón mucho antes de llegar a esto. Es además el suelo del mecanismo entero: con un motivo
-    /// definitivo también aplica, y es lo único que garantiza que la espera termine cuando las causas se alternan.
+    /// definitivo también aplica. Hasta `alternating-definitive-causes-never-reach-the-short-ceiling` era lo único que
+    /// sacaba de la espera con dos motivos definitivos turnándose; desde ese ticket los saca el corto.
     ///
     /// **Se llamaba `…UnknownBudgetSeconds`**, y desde que aplica también a las causas definitivas ese nombre
     /// invitaba a bajarlo creyendo que solo tocaba lo desconocido.
@@ -516,10 +527,14 @@ nonisolated struct MigrationPolicy: Equatable {
     /// y el runner —para decidir QUÉ MOTIVO journalea—, y tenerlo dos veces escrito es precisamente la forma de que
     /// un día discrepen: el runner diría «la cuenta en la nube no lo permitió», con su correo de soporte, en una
     /// salida que en realidad produjo el techo de las 72 h.
+    ///
+    /// Desde `alternating-definitive-causes-never-reach-the-short-ceiling` los dos lo aplican a relojes DISTINTOS, y
+    /// por eso el parámetro no nombra ninguno: la máquina, al de «cualquier motivo definitivo» (¿sale?); el runner, al
+    /// de la causa de esta observación (¿fue ESTE motivo solo el que agotó el plazo?).
     func reversePreMountCauseCeilingReached(
-        causeStalledSeconds: Double, cause: MarkerExportStall
+        stalledSeconds: Double, cause: MarkerExportStall
     ) -> Bool {
-        cause == .definitive && causeStalledSeconds >= reversePreMountCauseBudgetSeconds
+        cause == .definitive && stalledSeconds >= reversePreMountCauseBudgetSeconds
     }
 
     static let `default` = MigrationPolicy()
@@ -866,18 +881,20 @@ nonisolated enum MigrationStateMachine {
         // **Sale con el PRIMERO de los dos techos que venza**, y son de relojes distintos (ticket
         // `reverse-pre-mount-ceiling-charges-a-stall-to-whoever-stops-it-last`):
         //   · el LARGO, contra el reloj de la FASE, aplica con cualquier causa. Es el que impide que la espera sea
-        //     eterna, y por eso no está dentro del `else` de la causa: si solo se midiera cuando la causa es
-        //     `.unknown`, dos motivos definitivos alternándose re-sellarían el reloj corto en cada observación y no
-        //     vencería ninguno de los dos.
-        //   · el CORTO, contra el reloj de la CAUSA, solo con `.definitive`. Mide lo que la fase lleva parada
-        //     SEGUIDA por ese mismo motivo, no lo que lleva parada en total: esa confusión es el bug del ticket.
-        case let (.reverseClaimLeader, .reversePreMountStalled(stalled, causeStalled, cause, origin)),
-             let (.reverseDrainAll, .reversePreMountStalled(stalled, causeStalled, cause, origin)),
-             let (.reverseVerify, .reversePreMountStalled(stalled, causeStalled, cause, origin)),
-             let (.reverseFreezeBackend, .reversePreMountStalled(stalled, causeStalled, cause, origin)):
+        //     eterna, y por eso no está dentro del `else` de la causa: la red que no vuelve y la sesión que nadie
+        //     renueva solo tienen éste.
+        //   · el CORTO, contra el reloj de lo DEFINITIVO, solo con `.definitive`. Mide lo que la fase lleva parada
+        //     bajo motivos que esperar no arregla, no lo que lleva parada en total: esa confusión es el bug de
+        //     `…charges-a-stall-to-whoever-stops-it-last`. Y no se reinicia al cambiar de motivo: medirlo por causa
+        //     era el de `alternating-definitive-causes-never-reach-the-short-ceiling`, donde dos motivos turnándose
+        //     dejaban la salida en manos del LARGO.
+        case let (.reverseClaimLeader, .reversePreMountStalled(stalled, definitiveStalled, cause, origin)),
+             let (.reverseDrainAll, .reversePreMountStalled(stalled, definitiveStalled, cause, origin)),
+             let (.reverseVerify, .reversePreMountStalled(stalled, definitiveStalled, cause, origin)),
+             let (.reverseFreezeBackend, .reversePreMountStalled(stalled, definitiveStalled, cause, origin)):
             let hitPhaseCeiling = stalled >= policy.reversePreMountPhaseBudgetSeconds
             let hitCauseCeiling = policy.reversePreMountCauseCeilingReached(
-                causeStalledSeconds: causeStalled, cause: cause)
+                stalledSeconds: definitiveStalled, cause: cause)
             guard hitPhaseCeiling || hitCauseCeiling else {
                 return .transition(next: phase, effects: [])
             }

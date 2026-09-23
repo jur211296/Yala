@@ -51,7 +51,11 @@ extension CloudSyncSchemaVersions {
     /// Subió a 11 con `adoptClaimExitRaw` y `adoptClaimAccountHash`: el claim de un ADOPT salió —por su techo o por
     /// «Cancelar»— y la pantalla tiene que ofrecer volver a entrar en ESA cuenta, no «Migrar» (ticket
     /// `adopt-claim-stays-parked-with-no-ceiling`).
-    static let migrationState = 11
+    /// Subió a 12 con los DOS campos del reloj de «cualquier motivo definitivo» del techo previo al montaje de la vuelta
+    /// (`reversePreMountDefinitiveAt`, `reversePreMountDefinitiveAccruedSeconds`): con dos motivos definitivos
+    /// alternándose el reloj por causa se reiniciaba en cada observación y el techo corto no vencía nunca (ticket
+    /// `alternating-definitive-causes-never-reach-the-short-ceiling`).
+    static let migrationState = 12
 }
 
 /// Journal single-row de la migración. Debe existir a lo sumo UNA fila (el runner la crea
@@ -183,6 +187,22 @@ final class MigrationState {
     /// causa nunca ha tenido un tramo cerrado, o la fila viene de un build anterior a la v8.
     var reversePreMountCauseAccruedSeconds: Double?
 
+    /// **El TERCER reloj de ese techo, en DOS campos** (ticket
+    /// `alternating-definitive-causes-never-reach-the-short-ceiling`): el tiempo ACUMULADO parado bajo CUALQUIER motivo
+    /// definitivo, que es el que gobierna hoy el techo CORTO. El de causa de arriba se reinicia al cambiar de motivo, y
+    /// con dos motivos turnándose —una cuenta suspendida y un store que falla a ratos— no pasaba nunca de una
+    /// observación: la salida se iba a las 72 h. Éste no se reinicia al cambiar de causa; como el de causa, una
+    /// observación SIN motivo lo PAUSA, y eso es lo que impide que las horas de red se le cobren a un fallo aislado.
+    ///
+    /// Desde cuándo corre el tramo ABIERTO, con el `now` INYECTADO. `nil` con el acumulado puesto = tramo cerrado (la
+    /// última observación no traía motivo).
+    var reversePreMountDefinitiveAt: Date?
+
+    /// Lo acumulado en tramos CERRADOS. No hay campo de clave: la clave es una sola («algún motivo definitivo»). `nil` =
+    /// la fase no se ha observado parada todavía, o la fila viene de un build anterior a la v12: el reloj empieza cuando
+    /// este build la mira.
+    var reversePreMountDefinitiveAccruedSeconds: Double?
+
     // MARK: Techo de `uploadingSnapshot` (ticket `snapshot-upload-has-no-ceiling-and-no-way-out`)
     //
     // Dos relojes, molde del techo previo al montaje de la vuelta: el de AVANCE gobierna las 72 h y el de CAUSA los
@@ -291,6 +311,8 @@ final class MigrationState {
         reversePreMountCauseRaw: String? = nil,
         reversePreMountCauseAt: Date? = nil,
         reversePreMountCauseAccruedSeconds: Double? = nil,
+        reversePreMountDefinitiveAt: Date? = nil,
+        reversePreMountDefinitiveAccruedSeconds: Double? = nil,
         snapshotStallProgressAt: Date? = nil,
         snapshotStallCauseRaw: String? = nil,
         snapshotStallCauseAt: Date? = nil,
@@ -327,6 +349,8 @@ final class MigrationState {
         self.reversePreMountCauseRaw = reversePreMountCauseRaw
         self.reversePreMountCauseAt = reversePreMountCauseAt
         self.reversePreMountCauseAccruedSeconds = reversePreMountCauseAccruedSeconds
+        self.reversePreMountDefinitiveAt = reversePreMountDefinitiveAt
+        self.reversePreMountDefinitiveAccruedSeconds = reversePreMountDefinitiveAccruedSeconds
         self.snapshotStallProgressAt = snapshotStallProgressAt
         self.snapshotStallCauseRaw = snapshotStallCauseRaw
         self.snapshotStallCauseAt = snapshotStallCauseAt
@@ -349,8 +373,8 @@ final class MigrationState {
 
 extension MigrationState {
 
-    /// Borra los CINCO campos del techo de las fases previas al montaje: el reloj de fase con su sello, y los tres
-    /// del reloj por causa. Existe porque se limpian SIEMPRE juntos y en seis sitios distintos —el reset tras
+    /// Borra los SIETE campos del techo de las fases previas al montaje: el reloj de fase con su sello, los tres del
+    /// reloj por causa y los dos del de «cualquier motivo definitivo». Existe porque se limpian SIEMPRE juntos y en seis sitios distintos —el reset tras
     /// rollback, el arranque de una vuelta nueva, los tres cierres de intento, el cambio de fase, la salida del
     /// techo y la normalización de un journal ilegible—, y un campo que se olvide en uno solo de ellos no deja la
     /// fila fea: deja el techo venciendo con cero segundos de parada real en el intento siguiente, que es el bug
@@ -358,7 +382,7 @@ extension MigrationState {
     ///
     /// **Lo que garantiza que no se olvide un campo NUEVO no es este método, es su test**
     /// (`CloudSyncSchemaParityTests`), y solo porque ese test fija el CONJUNTO de campos `reversePreMount*` del
-    /// schema además de comprobar que quedan a `nil`: enumerar aquí los cinco que hay deja verde un sexto. Lo que
+    /// schema además de comprobar que quedan a `nil`: enumerar aquí los siete que hay deja verde un octavo. Lo que
     /// este método garantiza es que los seis sitios no diverjan entre sí, que es el otro fallo.
     func clearReversePreMountCeiling() {
         reversePreMountProgressAt = nil
@@ -366,6 +390,8 @@ extension MigrationState {
         reversePreMountCauseRaw = nil
         reversePreMountCauseAt = nil
         reversePreMountCauseAccruedSeconds = nil
+        reversePreMountDefinitiveAt = nil
+        reversePreMountDefinitiveAccruedSeconds = nil
     }
 }
 

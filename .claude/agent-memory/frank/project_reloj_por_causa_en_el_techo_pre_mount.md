@@ -16,9 +16,11 @@ outbox fuera de este encargo.
 
 **How to apply:**
 
-- **El techo largo aplica con CUALQUIER causa, y es el suelo del mecanismo.** No es redundancia: sin él, dos motivos
-  definitivos alternándose reinician el corto en cada observación y la espera vuelve a no tener techo. Si alguien
-  propone «el largo solo para lo desconocido», eso reabre el bug-class de la familia.
+- **El techo largo aplica con CUALQUIER causa, y es el suelo del mecanismo.** Si alguien propone «el largo solo para
+  lo desconocido», eso reabre el bug-class de la familia. **CADUCADO en parte el 2026-09-23**: esta línea decía que el
+  largo era lo único que acotaba dos motivos alternándose, y eso era el agujero de
+  `alternating-definitive-causes-never-reach-the-short-ceiling`. Hoy el corto se mide contra un tercer reloj de
+  «cualquier motivo definitivo» y el de causa solo elige el copy.
 - **Los presupuestos se llaman `reversePreMountCauseBudgetSeconds` y `reversePreMountPhaseBudgetSeconds`** desde este
   PR. Los nombres viejos (`Definitive`/`Unknown`) ya mentían.
 - **El predicado del techo corto vive en `MigrationPolicy.reversePreMountCauseCeilingReached`**, y lo consultan la

@@ -69,7 +69,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | after-session-redesign-review-widgets-siri-applepay-and-web-copy | backlog | tickets/backlog/after-session-redesign-review-widgets-siri-applepay-and-web-copy.md |
 | ai-chat-reads-heavier-than-a-messaging-app | backlog | tickets/backlog/ai-chat-reads-heavier-than-a-messaging-app.md |
 | ai-recommended-budgets | backlog | tickets/backlog/ai-recommended-budgets.md |
-| alternating-definitive-causes-never-reach-the-short-ceiling | backlog | tickets/backlog/alternating-definitive-causes-never-reach-the-short-ceiling.md |
+| alternating-definitive-causes-never-reach-the-short-ceiling | done | tickets/done/alternating-definitive-causes-never-reach-the-short-ceiling.md |
 | an-incomplete-inventory-reads-as-the-whole-corpus | done | tickets/done/an-incomplete-inventory-reads-as-the-whole-corpus.md |
 | an-undecodable-migration-phase-reads-as-never-started | backlog | tickets/backlog/an-undecodable-migration-phase-reads-as-never-started.md |
 | an-unreadable-migration-journal-reads-as-never-started | done | tickets/done/an-unreadable-migration-journal-reads-as-never-started.md |
@@ -506,6 +506,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | siri-intent-dual-container | done | tickets/done/siri-intent-dual-container.md |
 | siri-shortcut-error-replies-speak-english-on-a-spanish-iphone | backlog | tickets/backlog/siri-shortcut-error-replies-speak-english-on-a-spanish-iphone.md |
 | smart-ai-notifications | backlog | tickets/backlog/smart-ai-notifications.md |
+| snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling | backlog | tickets/backlog/snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling.md |
 | snapshot-upload-has-no-ceiling-and-no-way-out | qa | tickets/qa/snapshot-upload-has-no-ceiling-and-no-way-out.md |
 | spike-r3-eje-4b-flaky-en-suite-completa | backlog | tickets/backlog/spike-r3-eje-4b-flaky-en-suite-completa.md |
 | staging-test-credentials-in-public-repo | done | tickets/done/staging-test-credentials-in-public-repo.md |
