@@ -415,6 +415,60 @@ struct MigrationSnapshotUploaderTests {
                 "y con el outbox ilegible NO se cierra: el runner reintenta antes de avanzar, con el motivo")
     }
 
+    /// Una tabla que no se deja leer NO es una tabla agotada (ticket `an-incomplete-inventory-reads-as-the-whole-corpus`).
+    /// El paginador devolvía `([], nil, false)`, `nextPage` la saltaba y, siendo la última tabla con filas, la pasada
+    /// CERRABA con `.completed`: esas filas no llegaban nunca a la nube y el paso no vuelve a pasar por ahí. El seam
+    /// lanza un `CocoaError` dentro del `do` real, así que el test solo pasa si ese `catch` lo convierte.
+    @Test("uploadPage: una tabla ilegible no se da por subida — .blocked(.localFailure), nunca .completed")
+    func unreadableTable_isBlockedNotSkipped() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        let stub = ApplyingStubSession()
+
+        let cat = Category(name: "food", colorHex: "#111111", isIncome: false, isDefaultSeed: false)
+        cat.syncID = UUID()
+        context.insert(cat)
+        let tag = Tag(name: "viaje")
+        context.insert(tag)
+        try context.save()
+
+        // `categories` va antes que `tags` (UTF-8 asc): la primera página se sube y la avería llega en la última tabla.
+        let sick = makeUploader(context, engine, stub, pageSize: 10)
+        sick._testThrowOnInventoryFetchOf = ["Tag"]
+        guard case let .pageConfirmed(cursor) = await sick.uploadPage(cursor: nil) else {
+            Issue.record("control del escenario: la tabla legible de antes tiene que subirse")
+            return
+        }
+        #expect(await sick.uploadPage(cursor: cursor) == .blocked(.localFailure),
+                "la tabla ilegible corta con el motivo local: saltarla cerraba la pasada como completa")
+        #expect(!stub.pushedSyncIDs.contains(tag.id.uuidString.lowercased()), "la fila de la tabla ilegible no se inventa")
+
+        // Control: legible, la misma pasada sube la fila y cierra.
+        let healthy = makeUploader(context, engine, stub, pageSize: 10)
+        #expect(await healthy.uploadPage(cursor: cursor) != .blocked(.localFailure))
+        _ = await runToCompletion(healthy)
+        #expect(stub.pushedSyncIDs.contains(tag.id.uuidString.lowercased()),
+                "control del escenario: sin la avería esa fila SÍ se sube")
+    }
+
+    /// El caso extremo: la única tabla con filas es la ilegible. `nextPage` devolvía `nil` al PRIMER intento y la pasada
+    /// entera se daba por completa sin subir nada.
+    @Test("uploadPage: con la única tabla con filas ilegible, la pasada no cierra vacía")
+    func onlyTableUnreadable_isBlockedNotCompleted() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        let stub = ApplyingStubSession()
+        context.insert(Tag(name: "viaje"))
+        try context.save()
+
+        let sick = makeUploader(context, engine, stub, pageSize: 10)
+        sick._testThrowOnInventoryFetchOf = ["Tag"]
+        #expect(await sick.uploadPage(cursor: nil) == .blocked(.localFailure))
+        #expect(stub.pushedSyncIDs.isEmpty)
+    }
+
     // MARK: - Qué motivo lleva cada corte (`snapshot-upload-has-no-ceiling-and-no-way-out`)
     //
     // Hasta este ticket los cuatro cortes de abajo salían como `.transient`, y sin separarlos el techo de la fase no

@@ -65,6 +65,12 @@ final class MigrationSnapshotUploader {
     /// de verdad —la deriva del reloj y el fallo local— sin tener que romper el store. SOLO tests.
     var _testEnqueueError: (any Error)?
 
+    /// Las entidades (nombre de clase) cuyo `fetch` del barrido LANZA. Un CONJUNTO y no un `Bool` por lo mismo que el
+    /// contador del outbox: con un `Bool` la primera tabla corta y las otras quince no se miden. Lanza un `CocoaError`,
+    /// no el error propio, para que el test solo pase si el `catch` real lo convierte (ticket
+    /// `an-incomplete-inventory-reads-as-the-whole-corpus`). SOLO tests.
+    var _testThrowOnInventoryFetchOf: Set<String> = []
+
     /// Especificaciones de las 16 entidades, en orden de tabla UTF-8 asc (fijado en `init`).
     private lazy var specs: [SnapshotEntitySpec] = buildSpecs()
 
@@ -136,7 +142,17 @@ final class MigrationSnapshotUploader {
         }
 
         let (startIndex, afterSyncID) = resolveStart(decoded)
-        let page = nextPage(fromTableIndex: startIndex, afterSyncID: afterSyncID, limit: pageSize)
+        // Una tabla que no se deja leer NO es una tabla agotada (ticket `an-incomplete-inventory-reads-as-the-whole-corpus`).
+        // Hasta ese ticket el paginador devolvía `([], nil, false)`, `nextPage` la saltaba como vacía, y con todas las
+        // tablas restantes ilegibles la pasada cerraba con `.completed` sin subirlas (lo cazaba después el Merkle del
+        // verify, con reintentos y al final `failedRollback`: una avería local cobrada como divergencia). Es una
+        // avería LOCAL y elige el techo corto, como el outbox ilegible. El rastro lo deja el paginador, con la tabla.
+        let page: BuiltPage?
+        do {
+            page = try nextPage(fromTableIndex: startIndex, afterSyncID: afterSyncID, limit: pageSize)
+        } catch {
+            return .blocked(.localFailure)
+        }
 
         guard let page else {
             // No quedan páginas → drenar y subir el residual (incrementales tardíos) y cerrar.
@@ -205,12 +221,13 @@ final class MigrationSnapshotUploader {
     }
 
     /// Primera página NO vacía desde `fromTableIndex`/`afterSyncID`, saltando tablas agotadas. `nil` = no
-    /// quedan filas en ninguna tabla (snapshot completo).
-    private func nextPage(fromTableIndex: Int, afterSyncID: UUID?, limit: Int) -> BuiltPage? {
+    /// quedan filas en ninguna tabla (snapshot completo). LANZA si una tabla no se deja leer: saltarla la daba por
+    /// subida.
+    private func nextPage(fromTableIndex: Int, afterSyncID: UUID?, limit: Int) throws -> BuiltPage? {
         var idx = fromTableIndex
         var after = afterSyncID
         while idx < specs.count {
-            let result = specs[idx].page(after, limit)
+            let result = try specs[idx].page(after, limit)
             if result.inputs.isEmpty {
                 idx += 1
                 after = nil
@@ -355,8 +372,8 @@ final class MigrationSnapshotUploader {
     /// identidad y construye los `SnapshotRowInput` de la página.
     private struct SnapshotEntitySpec {
         let table: String
-        /// `(afterSyncID, limit) -> (inputs, lastSyncID de la página, hasMore)`.
-        let page: (UUID?, Int) -> (inputs: [SnapshotRowInput], lastSyncID: UUID?, hasMore: Bool)
+        /// `(afterSyncID, limit) -> (inputs, lastSyncID de la página, hasMore)`. LANZA si el `fetch` de la tabla falla.
+        let page: (UUID?, Int) throws -> (inputs: [SnapshotRowInput], lastSyncID: UUID?, hasMore: Bool)
     }
 
     /// Las 16 especificaciones en orden de tabla UTF-8 asc (mismo criterio que Merkle A-4).
@@ -407,15 +424,20 @@ final class MigrationSnapshotUploader {
         className: String,
         identity: @escaping (M) -> UUID?
     ) -> SnapshotEntitySpec {
-        SnapshotEntitySpec(table: emission.table) { [context, calendar] afterSyncID, limit in
+        // `weak`: las specs viven en `self`, y el seam se lee en cada llamada, no al construirlas.
+        SnapshotEntitySpec(table: emission.table) { [weak self, context, calendar] afterSyncID, limit in
+            let entity = String(describing: M.self)
             let models: [M]
             do {
+                // El seam va DENTRO del `do`: el camino que recorre el test es el `catch` real.
+                if self?._testThrowOnInventoryFetchOf.contains(entity) == true { throw CocoaError(.fileReadCorruptFile) }
                 models = try context.fetch(FetchDescriptor<M>())
             } catch {
                 #if DEBUG
                 print("MigrationSnapshotUploader: fetch(\(M.self)) falló: \(error)")
                 #endif
-                return ([], nil, false)
+                CloudSyncBreadcrumb.migrationInventoryReadFailed(step: "snapshot", entity: entity)
+                throw MigrationExecutorError.inventoryUnreadable(entity: entity)
             }
             // (identidad, modelo) ordenados por identidad asc; keyset por afterSyncID. Fila sin identidad
             // (no debe ocurrir post-backfill) → se SALTA con canario.

@@ -38,6 +38,11 @@ nonisolated enum MigrationExecutorError: Error, Equatable {
     /// deja escapar el error de SwiftData tal cual: que tenga un caso PROPIO es lo que permite a cada llamador
     /// distinguir «no pude leer la cola» de cualquier otro fallo, y a un test afirmarlo sin mirar un string.
     case outboxUnreadable
+    /// El `fetch` de una tabla de un inventario de la migración lanzó (ticket
+    /// `an-incomplete-inventory-reads-as-the-whole-corpus`): snapshot, captura de identidad, adopt o muestra de la
+    /// vuelta. `entity` = nombre de clase. Hasta ese ticket esa tabla se saltaba y el inventario parcial se leía como
+    /// el corpus entero.
+    case inventoryUnreadable(entity: String)
 }
 
 // MARK: - AdoptReconcileOutcome (DIFERIDOS #30, mecanismo v1 DARK)
@@ -51,7 +56,8 @@ nonisolated enum AdoptReconcileOutcome: Equatable {
     /// Guard defensivo anti mass-upload: la enumeración del backend llegó VACÍA teniendo huérfanas locales
     /// → NO se sube nada (un adopt legítimo implica backend POBLADO; enumeración vacía = página espuria/bug).
     case abortedEmptyBackend
-    /// Red caída en la enumeración o el push → retomable (el re-run re-diffea; lo ya aplicado sale del diff).
+    /// Red caída en la enumeración o el push, o —desde `an-incomplete-inventory-reads-as-the-whole-corpus`— una tabla
+    /// local o el backfill que no se dejan leer → retomable (el re-run re-diffea; lo ya aplicado sale del diff).
     case transient
 }
 
@@ -176,6 +182,13 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     /// antes— y su rama quedaría sin medir. SOLO tests.
     var _testOutboxFetchThrowsFromCall: Int?
     private var _testOutboxFetchCount = 0
+    /// `(paso, entidad) -> ¿lanza?` para cada `fetch` de inventario: captura de identidad, adopt, muestra de la vuelta y
+    /// canario de metadata huérfana (`step` = el de `migrationInventoryReadFailed`, `entity` = nombre de clase). Es un
+    /// closure y no un `Bool` ni un conjunto por lo mismo que el contador de arriba: el adopt lee su inventario DOS
+    /// veces con el mismo paso —antes y después del backfill— y cada lectura tiene su desenlace; con un conjunto la
+    /// primera corta y la segunda no se mide. Lanza un `CocoaError`, no el error propio, para que el test solo pase si
+    /// el `catch` real lo convierte (ticket `an-incomplete-inventory-reads-as-the-whole-corpus`). SOLO tests.
+    var _testInventoryFetchThrows: ((_ step: String, _ entity: String) -> Bool)?
     private let uploader: MigrationSnapshotUploader
     /// Fuente de tombstones para el barrido de zombies (§h.3). Default = `pullClient`; inyectable para el
     /// golden §h.5 (enumeración PURA, sin applyPage/cursor/testigos).
@@ -380,14 +393,18 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     /// derivación persistente al boot (journal ≥ `assigningIdentity` → flag ON) llega en w6 con
     /// `MigrationPhaseStore`. HOY el runner lo re-flipea en cada `assignIdentity` (idempotente/re-ejecutable).
     func assignIdentity() async throws {
-        // 1. Backfill (la quiescencia ya la garantizó el runner).
-        SyncIdentityService.backfillIdentities(context: context, now: now())
+        // 1. Backfill (la quiescencia ya la garantizó el runner). LANZA desde `an-incomplete-inventory-reads-as-the-whole-corpus`:
+        //    tragado, dejaba filas sin identidad que el snapshot saltaba después.
+        try SyncIdentityService.backfillIdentities(context: context, now: now())
 
         // 2. Gate PERMANENTE (§g.3): todo save nuevo acuña syncID. In-memory hoy (persistencia en w6).
         CloudSyncFlags.identityCaptureEnabled = true
 
-        // 3. Captura CloudKit sobre las 16 entidades (mirror vivo).
-        let pairs = collectIdentityPairs()
+        // 3. Captura CloudKit sobre las 16 entidades (mirror vivo). Una tabla ilegible LANZA: capturar sobre un
+        //    inventario parcial dejaba esas filas sin coordenadas y el breadcrumb contaba `captured: 0` como si no
+        //    hubiera nada (ticket `an-incomplete-inventory-reads-as-the-whole-corpus`). El runner lo convierte en
+        //    `.localFailure`, con el techo corto.
+        let pairs = try collectIdentityPairs()
         let report = CKIdentityCapture.capture(pairs, storeURL: personalStoreURL)
 
         // 4. Save (la captura escribió las coordenadas en las filas testigo; aquí se persisten).
@@ -400,37 +417,31 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     }
 
     /// Correlaciona cada fila de negocio (por su identidad de sync) con su testigo `SyncIdentity` → pares
-    /// `(PersistentIdentifier, SyncIdentity)` para `CKIdentityCapture`. Las 16 entidades.
-    private func collectIdentityPairs() -> [(id: PersistentIdentifier, row: SyncIdentity)] {
+    /// `(PersistentIdentifier, SyncIdentity)` para `CKIdentityCapture`. Las 16 entidades. LANZA si una tabla —la de
+    /// testigos incluida— no se deja leer.
+    private func collectIdentityPairs() throws -> [(id: PersistentIdentifier, row: SyncIdentity)] {
         var rowsBySyncID: [UUID: SyncIdentity] = [:]
-        do {
-            for row in try context.fetch(FetchDescriptor<SyncIdentity>()) {
-                rowsBySyncID[row.syncID] = row
-            }
-        } catch {
-            #if DEBUG
-            print("MigrationWorkExecutor: fetch(SyncIdentity) falló: \(error)")
-            #endif
-            return []
+        for row in try fetchInventory(SyncIdentity.self, step: "identity-capture") {
+            rowsBySyncID[row.syncID] = row
         }
 
         var pairs: [(id: PersistentIdentifier, row: SyncIdentity)] = []
-        addPairs(TransactionItem.self, identity: { $0.syncID }, into: &pairs, rowsBySyncID: rowsBySyncID)
-        addPairs(InboxDraft.self, identity: { $0.syncID }, into: &pairs, rowsBySyncID: rowsBySyncID)
-        addPairs(Category.self, identity: { $0.syncID }, into: &pairs, rowsBySyncID: rowsBySyncID)
-        addPairs(FavoritePayment.self, identity: { $0.syncID }, into: &pairs, rowsBySyncID: rowsBySyncID)
-        addPairs(MerchantMemory.self, identity: { $0.syncID }, into: &pairs, rowsBySyncID: rowsBySyncID)
-        addPairs(ExchangeRate.self, identity: { $0.syncID }, into: &pairs, rowsBySyncID: rowsBySyncID)
-        addPairs(Budget.self, identity: { $0.id }, into: &pairs, rowsBySyncID: rowsBySyncID)
-        addPairs(ScheduledPayment.self, identity: { $0.id }, into: &pairs, rowsBySyncID: rowsBySyncID)
-        addPairs(Account.self, identity: { $0.shortcutID }, into: &pairs, rowsBySyncID: rowsBySyncID)
-        addPairs(Subcategory.self, identity: { $0.shortcutID }, into: &pairs, rowsBySyncID: rowsBySyncID)
-        addPairs(Tag.self, identity: { $0.id }, into: &pairs, rowsBySyncID: rowsBySyncID)
-        addPairs(NotificationItem.self, identity: { $0.id }, into: &pairs, rowsBySyncID: rowsBySyncID)
-        addPairs(CashFlowPlan.self, identity: { $0.id }, into: &pairs, rowsBySyncID: rowsBySyncID)
-        addPairs(CashFlowLine.self, identity: { $0.id }, into: &pairs, rowsBySyncID: rowsBySyncID)
-        addPairs(CashFlowOverride.self, identity: { $0.id }, into: &pairs, rowsBySyncID: rowsBySyncID)
-        addPairs(GroupBridgePreference.self, identity: { $0.id }, into: &pairs, rowsBySyncID: rowsBySyncID)
+        try addPairs(TransactionItem.self, identity: { $0.syncID }, into: &pairs, rowsBySyncID: rowsBySyncID)
+        try addPairs(InboxDraft.self, identity: { $0.syncID }, into: &pairs, rowsBySyncID: rowsBySyncID)
+        try addPairs(Category.self, identity: { $0.syncID }, into: &pairs, rowsBySyncID: rowsBySyncID)
+        try addPairs(FavoritePayment.self, identity: { $0.syncID }, into: &pairs, rowsBySyncID: rowsBySyncID)
+        try addPairs(MerchantMemory.self, identity: { $0.syncID }, into: &pairs, rowsBySyncID: rowsBySyncID)
+        try addPairs(ExchangeRate.self, identity: { $0.syncID }, into: &pairs, rowsBySyncID: rowsBySyncID)
+        try addPairs(Budget.self, identity: { $0.id }, into: &pairs, rowsBySyncID: rowsBySyncID)
+        try addPairs(ScheduledPayment.self, identity: { $0.id }, into: &pairs, rowsBySyncID: rowsBySyncID)
+        try addPairs(Account.self, identity: { $0.shortcutID }, into: &pairs, rowsBySyncID: rowsBySyncID)
+        try addPairs(Subcategory.self, identity: { $0.shortcutID }, into: &pairs, rowsBySyncID: rowsBySyncID)
+        try addPairs(Tag.self, identity: { $0.id }, into: &pairs, rowsBySyncID: rowsBySyncID)
+        try addPairs(NotificationItem.self, identity: { $0.id }, into: &pairs, rowsBySyncID: rowsBySyncID)
+        try addPairs(CashFlowPlan.self, identity: { $0.id }, into: &pairs, rowsBySyncID: rowsBySyncID)
+        try addPairs(CashFlowLine.self, identity: { $0.id }, into: &pairs, rowsBySyncID: rowsBySyncID)
+        try addPairs(CashFlowOverride.self, identity: { $0.id }, into: &pairs, rowsBySyncID: rowsBySyncID)
+        try addPairs(GroupBridgePreference.self, identity: { $0.id }, into: &pairs, rowsBySyncID: rowsBySyncID)
         return pairs
     }
 
@@ -446,7 +457,11 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     /// NO sustituye a `collectIdentityPairs`: la ida captura coordenadas para persistirlas y ahí un testigo scratch no
     /// sirve. Si el fetch de testigos falla, todas las filas van con testigo scratch: el muestreo sigue leyendo el
     /// SQLite y lo que no haya exportado cuenta como pendiente, en vez de devolver cero pares.
-    private func collectReverseUploadPairs() -> [(id: PersistentIdentifier, row: SyncIdentity)] {
+    ///
+    /// Una tabla de NEGOCIO que no se deja leer, en cambio, LANZA (ticket `an-incomplete-inventory-reads-as-the-whole-corpus`):
+    /// sin sus filas la muestra cuenta menos pendientes, y eso es un «avance» falso para el techo o, si eran todas las
+    /// pendientes, un `.drained` que cierra la vuelta sin que sus datos hayan llegado a iCloud.
+    private func collectReverseUploadPairs() throws -> [(id: PersistentIdentifier, row: SyncIdentity)] {
         var rowsBySyncID: [UUID: SyncIdentity] = [:]
         do {
             for row in try context.fetch(FetchDescriptor<SyncIdentity>()) {
@@ -458,22 +473,22 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
             #endif
         }
         var pairs: [(id: PersistentIdentifier, row: SyncIdentity)] = []
-        addReverseUploadPairs(TransactionItem.self, identity: { $0.syncID }, into: &pairs, rowsBySyncID: rowsBySyncID)
-        addReverseUploadPairs(InboxDraft.self, identity: { $0.syncID }, into: &pairs, rowsBySyncID: rowsBySyncID)
-        addReverseUploadPairs(Category.self, identity: { $0.syncID }, into: &pairs, rowsBySyncID: rowsBySyncID)
-        addReverseUploadPairs(FavoritePayment.self, identity: { $0.syncID }, into: &pairs, rowsBySyncID: rowsBySyncID)
-        addReverseUploadPairs(MerchantMemory.self, identity: { $0.syncID }, into: &pairs, rowsBySyncID: rowsBySyncID)
-        addReverseUploadPairs(ExchangeRate.self, identity: { $0.syncID }, into: &pairs, rowsBySyncID: rowsBySyncID)
-        addReverseUploadPairs(Budget.self, identity: { $0.id }, into: &pairs, rowsBySyncID: rowsBySyncID)
-        addReverseUploadPairs(ScheduledPayment.self, identity: { $0.id }, into: &pairs, rowsBySyncID: rowsBySyncID)
-        addReverseUploadPairs(Account.self, identity: { $0.shortcutID }, into: &pairs, rowsBySyncID: rowsBySyncID)
-        addReverseUploadPairs(Subcategory.self, identity: { $0.shortcutID }, into: &pairs, rowsBySyncID: rowsBySyncID)
-        addReverseUploadPairs(Tag.self, identity: { $0.id }, into: &pairs, rowsBySyncID: rowsBySyncID)
-        addReverseUploadPairs(NotificationItem.self, identity: { $0.id }, into: &pairs, rowsBySyncID: rowsBySyncID)
-        addReverseUploadPairs(CashFlowPlan.self, identity: { $0.id }, into: &pairs, rowsBySyncID: rowsBySyncID)
-        addReverseUploadPairs(CashFlowLine.self, identity: { $0.id }, into: &pairs, rowsBySyncID: rowsBySyncID)
-        addReverseUploadPairs(CashFlowOverride.self, identity: { $0.id }, into: &pairs, rowsBySyncID: rowsBySyncID)
-        addReverseUploadPairs(GroupBridgePreference.self, identity: { $0.id }, into: &pairs, rowsBySyncID: rowsBySyncID)
+        try addReverseUploadPairs(TransactionItem.self, identity: { $0.syncID }, into: &pairs, rowsBySyncID: rowsBySyncID)
+        try addReverseUploadPairs(InboxDraft.self, identity: { $0.syncID }, into: &pairs, rowsBySyncID: rowsBySyncID)
+        try addReverseUploadPairs(Category.self, identity: { $0.syncID }, into: &pairs, rowsBySyncID: rowsBySyncID)
+        try addReverseUploadPairs(FavoritePayment.self, identity: { $0.syncID }, into: &pairs, rowsBySyncID: rowsBySyncID)
+        try addReverseUploadPairs(MerchantMemory.self, identity: { $0.syncID }, into: &pairs, rowsBySyncID: rowsBySyncID)
+        try addReverseUploadPairs(ExchangeRate.self, identity: { $0.syncID }, into: &pairs, rowsBySyncID: rowsBySyncID)
+        try addReverseUploadPairs(Budget.self, identity: { $0.id }, into: &pairs, rowsBySyncID: rowsBySyncID)
+        try addReverseUploadPairs(ScheduledPayment.self, identity: { $0.id }, into: &pairs, rowsBySyncID: rowsBySyncID)
+        try addReverseUploadPairs(Account.self, identity: { $0.shortcutID }, into: &pairs, rowsBySyncID: rowsBySyncID)
+        try addReverseUploadPairs(Subcategory.self, identity: { $0.shortcutID }, into: &pairs, rowsBySyncID: rowsBySyncID)
+        try addReverseUploadPairs(Tag.self, identity: { $0.id }, into: &pairs, rowsBySyncID: rowsBySyncID)
+        try addReverseUploadPairs(NotificationItem.self, identity: { $0.id }, into: &pairs, rowsBySyncID: rowsBySyncID)
+        try addReverseUploadPairs(CashFlowPlan.self, identity: { $0.id }, into: &pairs, rowsBySyncID: rowsBySyncID)
+        try addReverseUploadPairs(CashFlowLine.self, identity: { $0.id }, into: &pairs, rowsBySyncID: rowsBySyncID)
+        try addReverseUploadPairs(CashFlowOverride.self, identity: { $0.id }, into: &pairs, rowsBySyncID: rowsBySyncID)
+        try addReverseUploadPairs(GroupBridgePreference.self, identity: { $0.id }, into: &pairs, rowsBySyncID: rowsBySyncID)
         return pairs
     }
 
@@ -483,21 +498,15 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         _ type: M.Type, identity: (M) -> UUID?,
         into pairs: inout [(id: PersistentIdentifier, row: SyncIdentity)],
         rowsBySyncID: [UUID: SyncIdentity]
-    ) {
-        do {
-            for model in try context.fetch(FetchDescriptor<M>()) {
-                if let sid = identity(model), let row = rowsBySyncID[sid] {
-                    pairs.append((model.persistentModelID, row))
-                } else {
-                    let scratch = SyncIdentity(
-                        syncID: identity(model) ?? UUID(), entityType: String(describing: M.self), localAnchor: "")
-                    pairs.append((model.persistentModelID, scratch))
-                }
+    ) throws {
+        for model in try fetchInventory(M.self, step: "reverse-sample") {
+            if let sid = identity(model), let row = rowsBySyncID[sid] {
+                pairs.append((model.persistentModelID, row))
+            } else {
+                let scratch = SyncIdentity(
+                    syncID: identity(model) ?? UUID(), entityType: String(describing: M.self), localAnchor: "")
+                pairs.append((model.persistentModelID, scratch))
             }
-        } catch {
-            #if DEBUG
-            print("MigrationWorkExecutor.addReverseUploadPairs: fetch(\(M.self)) falló: \(error)")
-            #endif
         }
     }
 
@@ -507,16 +516,29 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         _ type: M.Type, identity: (M) -> UUID?,
         into pairs: inout [(id: PersistentIdentifier, row: SyncIdentity)],
         rowsBySyncID: [UUID: SyncIdentity]
-    ) {
+    ) throws {
+        for model in try fetchInventory(M.self, step: "identity-capture") {
+            guard let sid = identity(model), let row = rowsBySyncID[sid] else { continue }
+            pairs.append((model.persistentModelID, row))
+        }
+    }
+
+    /// El `fetch` de UNA tabla de un inventario de la migración. LANZA `inventoryUnreadable` con rastro en producción
+    /// (ticket `an-incomplete-inventory-reads-as-the-whole-corpus`): hasta ese ticket cada uno de los seis inventarios
+    /// saltaba la tabla bajo un `print` de `#if DEBUG` y seguía como si estuviera vacía. Lo que se comparte es la
+    /// lectura y el rastro; el desenlace lo elige cada llamador. Fetch CONCRETO por tipo (regla de `#Predicate`).
+    private func fetchInventory<M: PersistentModel>(_ type: M.Type, step: String) throws -> [M] {
+        let entity = String(describing: M.self)
         do {
-            for model in try context.fetch(FetchDescriptor<M>()) {
-                guard let sid = identity(model), let row = rowsBySyncID[sid] else { continue }
-                pairs.append((model.persistentModelID, row))
-            }
+            // El seam va DENTRO del `do`: el camino que recorre el test es el `catch` real.
+            if _testInventoryFetchThrows?(step, entity) == true { throw CocoaError(.fileReadCorruptFile) }
+            return try context.fetch(FetchDescriptor<M>())
         } catch {
             #if DEBUG
-            print("MigrationWorkExecutor: fetch(\(M.self)) para captura falló: \(error)")
+            print("MigrationWorkExecutor: fetch(\(entity)) del inventario \(step) falló: \(error)")
             #endif
+            CloudSyncBreadcrumb.migrationInventoryReadFailed(step: step, entity: entity)
+            throw MigrationExecutorError.inventoryUnreadable(entity: entity)
         }
     }
 
@@ -1263,8 +1285,16 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     /// procesó); si no, `.pending(count)`. §h.6 pto 3: `capture` MUTA los testigos `.captured` con las
     /// coordenadas frescas — eso ES "los SyncIdentity se ACTUALIZAN durante reverseUpload" (una futura 2ª
     /// reversa ya es variante migrado con mapa poblado) → se PERSISTE (quiescencia garantizada por el runner).
+    ///
+    /// Una muestra que no pudo leer una tabla es `.unreadable`: ni cierra la vuelta ni vale como avance (ticket
+    /// `an-incomplete-inventory-reads-as-the-whole-corpus`). Sale antes del canario de huérfanas, que es informativo.
     func reverseUploadStatus() -> ReverseUploadStatus {
-        let pairs = collectReverseUploadPairs()
+        let pairs: [(id: PersistentIdentifier, row: SyncIdentity)]
+        do {
+            pairs = try collectReverseUploadPairs()
+        } catch {
+            return .unreadable
+        }
         let report = CKIdentityCapture.capture(pairs, storeURL: personalStoreURL)
         if context.hasChanges {
             do {
@@ -1279,7 +1309,9 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         // purgada). SOLO informativo — NO altera `.drained`/`.pending`. Abre una 2ª conexión SQLite read-only
         // (aceptable en la reversa; NO se refactoriza la conexión compartida en este incremento).
         let orphanReport = CKIdentityCapture.scanOrphanMetadata(
-            liveByEntityName: Self.collectLiveByEntityName(context: context), storeURL: personalStoreURL)
+            liveByEntityName: Self.collectLiveByEntityName(
+                context: context, throwingOn: { [weak self] in self?._testInventoryFetchThrows?("reverse-live-rows", $0) == true }),
+            storeURL: personalStoreURL)
         CloudSyncBreadcrumb.reverseOrphanMetadata(count: orphanReport.orphans)
         let pending = report.exportPending + report.noMetadata
         return pending == 0 ? .drained : .pending(count: pending)
@@ -1291,36 +1323,46 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     /// (p.ej. `CloudMigrationMarker`) se ignora por key AUSENTE. VIVOS = TODAS las filas vivas del store (NO se
     /// reusa `collectIdentityPairs`: ese empareja por testigo `SyncIdentity` y una fila viva sin syncID contaría
     /// como huérfana → falso positivo R6). `static` para que el panel DEBUG (I11-5) lo reuse.
-    static func collectLiveByEntityName(context: ModelContext) -> [String: Set<Int64>] {
+    ///
+    /// **Excepción al contrato, desde `an-incomplete-inventory-reads-as-the-whole-corpus`:** una tabla que no se deja
+    /// leer se queda SIN key. Con el `Set` vacío de antes, toda su metadata contaba como huérfana y el canario se
+    /// inflaba con una avería de lectura; sin key se ignora, que es lo honesto cuando no se sabe qué está vivo.
+    /// `throwingOn` es el seam de tests del ejecutor (nombre de clase → ¿su fetch lanza?); producción no lo pasa.
+    static func collectLiveByEntityName(
+        context: ModelContext, throwingOn: (String) -> Bool = { _ in false }
+    ) -> [String: Set<Int64>] {
         var out: [String: Set<Int64>] = [:]
-        addLiveRows(TransactionItem.self, into: &out, context: context)
-        addLiveRows(InboxDraft.self, into: &out, context: context)
-        addLiveRows(Category.self, into: &out, context: context)
-        addLiveRows(FavoritePayment.self, into: &out, context: context)
-        addLiveRows(MerchantMemory.self, into: &out, context: context)
-        addLiveRows(ExchangeRate.self, into: &out, context: context)
-        addLiveRows(Budget.self, into: &out, context: context)
-        addLiveRows(ScheduledPayment.self, into: &out, context: context)
-        addLiveRows(Account.self, into: &out, context: context)
-        addLiveRows(Subcategory.self, into: &out, context: context)
-        addLiveRows(Tag.self, into: &out, context: context)
-        addLiveRows(NotificationItem.self, into: &out, context: context)
-        addLiveRows(CashFlowPlan.self, into: &out, context: context)
-        addLiveRows(CashFlowLine.self, into: &out, context: context)
-        addLiveRows(CashFlowOverride.self, into: &out, context: context)
-        addLiveRows(GroupBridgePreference.self, into: &out, context: context)
+        addLiveRows(TransactionItem.self, into: &out, context: context, throwingOn: throwingOn)
+        addLiveRows(InboxDraft.self, into: &out, context: context, throwingOn: throwingOn)
+        addLiveRows(Category.self, into: &out, context: context, throwingOn: throwingOn)
+        addLiveRows(FavoritePayment.self, into: &out, context: context, throwingOn: throwingOn)
+        addLiveRows(MerchantMemory.self, into: &out, context: context, throwingOn: throwingOn)
+        addLiveRows(ExchangeRate.self, into: &out, context: context, throwingOn: throwingOn)
+        addLiveRows(Budget.self, into: &out, context: context, throwingOn: throwingOn)
+        addLiveRows(ScheduledPayment.self, into: &out, context: context, throwingOn: throwingOn)
+        addLiveRows(Account.self, into: &out, context: context, throwingOn: throwingOn)
+        addLiveRows(Subcategory.self, into: &out, context: context, throwingOn: throwingOn)
+        addLiveRows(Tag.self, into: &out, context: context, throwingOn: throwingOn)
+        addLiveRows(NotificationItem.self, into: &out, context: context, throwingOn: throwingOn)
+        addLiveRows(CashFlowPlan.self, into: &out, context: context, throwingOn: throwingOn)
+        addLiveRows(CashFlowLine.self, into: &out, context: context, throwingOn: throwingOn)
+        addLiveRows(CashFlowOverride.self, into: &out, context: context, throwingOn: throwingOn)
+        addLiveRows(GroupBridgePreference.self, into: &out, context: context, throwingOn: throwingOn)
         return out
     }
 
     /// Fetch CONCRETO por tipo (regla `#Predicate`). La key es el nombre de entidad Core Data (= nombre de
-    /// clase `@Model`) y SIEMPRE se inserta (Set vacío si 0 filas) para honrar el contrato de RP-4. El `Z_PK`
+    /// clase `@Model`) y se inserta siempre que la tabla se leyó (Set vacío si 0 filas), por el contrato de RP-4; la
+    /// tabla ilegible se queda sin key (ver `collectLiveByEntityName`). El `Z_PK`
     /// se extrae del `PersistentIdentifier` (URI → parse), consistente con el camino de captura.
     private static func addLiveRows<M: PersistentModel>(
-        _ type: M.Type, into out: inout [String: Set<Int64>], context: ModelContext
+        _ type: M.Type, into out: inout [String: Set<Int64>], context: ModelContext, throwingOn: (String) -> Bool
     ) {
         let name = String(describing: M.self)
         var set = out[name] ?? []
         do {
+            // El seam va DENTRO del `do`: el camino que recorre el test es el `catch` real.
+            if throwingOn(name) { throw CocoaError(.fileReadCorruptFile) }
             for model in try context.fetch(FetchDescriptor<M>()) {
                 if let zpk = CKIdentityCapture.entityAndPK(for: model.persistentModelID)?.zpk {
                     set.insert(zpk)
@@ -1330,8 +1372,10 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
             #if DEBUG
             print("MigrationWorkExecutor.collectLiveByEntityName: fetch(\(M.self)) falló: \(error)")
             #endif
+            CloudSyncBreadcrumb.migrationInventoryReadFailed(step: "reverse-live-rows", entity: name)
+            return  // SIN key: ilegible no es «sin filas vivas» (ver el docblock de `collectLiveByEntityName`)
         }
-        out[name] = set  // key SIEMPRE presente (contrato RP-4)
+        out[name] = set  // key presente siempre que se leyó (contrato RP-4)
     }
 
     // MARK: - Heartbeat del lease (I14-pre, residual pendiente #3)
@@ -1428,7 +1472,16 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         // un local poblado contra una cuenta nube VACÍA es decisión de producto de I14, no de esta pieza.
         // Residual documentado: un líder con corpus 0 filas + huérfana real del 2º device queda excluido de la
         // auto-cura (sin datos en riesgo).
-        let prePlan = AdoptOrphanDiff.compute(inventory: collectAdoptInventory(), backendSyncIDs: backendSyncIDs)
+        //
+        // Un inventario que no pudo leer una tabla corta como la red, `.transient` retomable (ticket
+        // `an-incomplete-inventory-reads-as-the-whole-corpus`): sin sus filas `uploadCount` podía salir 0 y apagar
+        // justo este guard, el que existe para no fusionar dos corpus.
+        let prePlan: AdoptOrphanDiff.Plan
+        do {
+            prePlan = AdoptOrphanDiff.compute(inventory: try collectAdoptInventory(), backendSyncIDs: backendSyncIDs)
+        } catch {
+            return .transient
+        }
         if backendSyncIDs.isEmpty && (prePlan.uploadCount > 0 || prePlan.identityCount > 0) {
             CloudSyncBreadcrumb.adoptReconcileAbortedEmptyBackend(orphans: prePlan.uploadCount + prePlan.identityCount)
             return .abortedEmptyBackend
@@ -1440,16 +1493,36 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         // SyncIdentity). El eco del drain lo previene el contrato de baseline de I14 (punto ii) — igual que
         // en el líder.
         let identityAssigned = prePlan.identityCount
-        SyncIdentityService.backfillIdentities(context: context, now: now())
+        // Un backfill que no termina deja filas SIN identidad, y el diff las cuenta como `needsIdentity`, no como
+        // huérfanas: el adopt podía cerrarse sin subirlas. `.transient`, como el inventario ilegible.
+        do {
+            try SyncIdentityService.backfillIdentities(context: context, now: now())
+        } catch {
+            return .transient
+        }
 
-        // Pasos 3-4: inventario local POST-backfill (sin nils) → diff definitivo.
-        let inventory = collectAdoptInventory()
-        let plan = AdoptOrphanDiff.compute(inventory: inventory, backendSyncIDs: backendSyncIDs)
+        // Pasos 3-4: inventario local POST-backfill (sin nils) → diff definitivo. Ilegible → `.transient`, por lo
+        // mismo que arriba y con más precio: el guard de abajo declaraba el adopt COMPLETO sin huérfanas, y el adopt
+        // no vuelve a pasar por aquí. Lo que el backfill ya escribió se queda en el contexto: la pasada siguiente lo
+        // encuentra y no lo repite, así que su `identityAssigned` sale más bajo (solo el rastro; las filas cuentan
+        // como huérfanas igual).
+        let plan: AdoptOrphanDiff.Plan
+        do {
+            plan = AdoptOrphanDiff.compute(inventory: try collectAdoptInventory(), backendSyncIDs: backendSyncIDs)
+        } catch {
+            return .transient
+        }
         guard !plan.orphans.isEmpty else { return .completed(uploaded: 0, identityAssigned: identityAssigned) }
 
         // Paso 6: fetch dirigido de EXACTAMENTE las huérfanas del plan → emisión fila-COMPLETA por el seam del
         // snapshot (reusa `MigrationSnapshotUploader.makeSnapshotRowInput` — misma emisión DeltaEmitter→codec).
-        let inputs = buildOrphanRowInputs(plan.orphans)
+        // Ilegible → `.transient`: saltar la tabla subía las demás y cerraba el adopt con las suyas fuera.
+        let inputs: [SnapshotRowInput]
+        do {
+            inputs = try buildOrphanRowInputs(plan.orphans)
+        } catch {
+            return .transient
+        }
         do {
             try engine.enqueueSnapshotRows(inputs, context: context, now: now())
         } catch {
@@ -1496,7 +1569,7 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     /// relaunch asistido NO se hace aquí: la UI lo deriva del par persistido (`mirrorOffArmed` + mount
     /// `.icloud` → `needsRelaunch(.toCloud)`). Post-relaunch el runtime arranca en `.cloud`+`notStarted`.
     ///
-    /// Todo fallo (quiescencia no alcanzada / red del reconcile) → THROW → el runner lo deja journaled
+    /// Todo fallo (quiescencia no alcanzada / red o base local ilegible en el reconcile) → THROW → el runner lo deja journaled
     /// pendiente y el próximo `resume()` lo reintenta (tras su propia espera de quiescencia). Idempotente:
     /// una 2ª pasada re-diffea (lo aplicado sale del diff) y re-persiste (LWW/no-op).
     func runAdoptFlow() async throws {
@@ -1570,11 +1643,16 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     /// DRY-RUN read-only (panel DEBUG, §3.4): pasos 1,3,4 SIN backfill (paso 2) NI upload (paso 6). Enumera el
     /// backend (MISMO camino verificado contra merkle que el reconcile — SERIO 1), inventario local (con nils
     /// visibles — sin backfill materializa `needsIdentity` por tabla) y diffea. NO muta nada (molde
-    /// `scanOrphanMetadata`/`computeDryRun`). `nil` = red (transient) al enumerar O enumeración incompleta.
+    /// `scanOrphanMetadata`/`computeDryRun`). `nil` = red (transient) al enumerar, enumeración incompleta O inventario
+    /// local ilegible.
     func adoptOrphanDryRun() async -> AdoptOrphanDiff.Plan? {
         guard let enumeration = await enumerateBackendSyncIDs() else { return nil }
         guard await verifyEnumerationComplete(enumeration) else { return nil }
-        return AdoptOrphanDiff.compute(inventory: collectAdoptInventory(), backendSyncIDs: enumeration.known)
+        do {
+            return AdoptOrphanDiff.compute(inventory: try collectAdoptInventory(), backendSyncIDs: enumeration.known)
+        } catch {
+            return nil  // inventario ilegible: un diff parcial mentiría en el panel igual que en el reconcile
+        }
     }
 
     /// Enumeración del backend: `known` = TODAS las identidades (upserts Y tombstones — para el diff);
@@ -1636,83 +1714,72 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
 
     /// Inventario `(table, syncID?)` de TODAS las filas VIVAS de las 16 entidades (manifest I12), por los
     /// accessors de identidad existentes. La `table` es el nombre Postgres (`EntityEmission.table`), la clave
-    /// del diff contra `PulledDelta.entityType`. Fetch CONCRETO por tipo (regla `#Predicate`).
-    private func collectAdoptInventory() -> [(table: String, syncID: UUID?)] {
+    /// del diff contra `PulledDelta.entityType`. Fetch CONCRETO por tipo (regla `#Predicate`). LANZA si una tabla no
+    /// se deja leer.
+    private func collectAdoptInventory() throws -> [(table: String, syncID: UUID?)] {
         var out: [(table: String, syncID: UUID?)] = []
-        addAdoptInventory(TransactionItem.self, emission: EntityEmissionMap.transactionItem, identity: { $0.syncID }, into: &out)
-        addAdoptInventory(InboxDraft.self, emission: EntityEmissionMap.inboxDraft, identity: { $0.syncID }, into: &out)
-        addAdoptInventory(Category.self, emission: EntityEmissionMap.category, identity: { $0.syncID }, into: &out)
-        addAdoptInventory(FavoritePayment.self, emission: EntityEmissionMap.favoritePayment, identity: { $0.syncID }, into: &out)
-        addAdoptInventory(MerchantMemory.self, emission: EntityEmissionMap.merchantMemory, identity: { $0.syncID }, into: &out)
-        addAdoptInventory(ExchangeRate.self, emission: EntityEmissionMap.exchangeRate, identity: { $0.syncID }, into: &out)
-        addAdoptInventory(Budget.self, emission: EntityEmissionMap.budget, identity: { $0.id }, into: &out)
-        addAdoptInventory(ScheduledPayment.self, emission: EntityEmissionMap.scheduledPayment, identity: { $0.id }, into: &out)
-        addAdoptInventory(Account.self, emission: EntityEmissionMap.account, identity: { $0.shortcutID }, into: &out)
-        addAdoptInventory(Subcategory.self, emission: EntityEmissionMap.subcategory, identity: { $0.shortcutID }, into: &out)
-        addAdoptInventory(Tag.self, emission: EntityEmissionMap.tag, identity: { $0.id }, into: &out)
-        addAdoptInventory(NotificationItem.self, emission: EntityEmissionMap.notificationItem, identity: { $0.id }, into: &out)
-        addAdoptInventory(CashFlowPlan.self, emission: EntityEmissionMap.cashFlowPlan, identity: { $0.id }, into: &out)
-        addAdoptInventory(CashFlowLine.self, emission: EntityEmissionMap.cashFlowLine, identity: { $0.id }, into: &out)
-        addAdoptInventory(CashFlowOverride.self, emission: EntityEmissionMap.cashFlowOverride, identity: { $0.id }, into: &out)
-        addAdoptInventory(GroupBridgePreference.self, emission: EntityEmissionMap.groupBridgePreference, identity: { $0.id }, into: &out)
+        try addAdoptInventory(TransactionItem.self, emission: EntityEmissionMap.transactionItem, identity: { $0.syncID }, into: &out)
+        try addAdoptInventory(InboxDraft.self, emission: EntityEmissionMap.inboxDraft, identity: { $0.syncID }, into: &out)
+        try addAdoptInventory(Category.self, emission: EntityEmissionMap.category, identity: { $0.syncID }, into: &out)
+        try addAdoptInventory(FavoritePayment.self, emission: EntityEmissionMap.favoritePayment, identity: { $0.syncID }, into: &out)
+        try addAdoptInventory(MerchantMemory.self, emission: EntityEmissionMap.merchantMemory, identity: { $0.syncID }, into: &out)
+        try addAdoptInventory(ExchangeRate.self, emission: EntityEmissionMap.exchangeRate, identity: { $0.syncID }, into: &out)
+        try addAdoptInventory(Budget.self, emission: EntityEmissionMap.budget, identity: { $0.id }, into: &out)
+        try addAdoptInventory(ScheduledPayment.self, emission: EntityEmissionMap.scheduledPayment, identity: { $0.id }, into: &out)
+        try addAdoptInventory(Account.self, emission: EntityEmissionMap.account, identity: { $0.shortcutID }, into: &out)
+        try addAdoptInventory(Subcategory.self, emission: EntityEmissionMap.subcategory, identity: { $0.shortcutID }, into: &out)
+        try addAdoptInventory(Tag.self, emission: EntityEmissionMap.tag, identity: { $0.id }, into: &out)
+        try addAdoptInventory(NotificationItem.self, emission: EntityEmissionMap.notificationItem, identity: { $0.id }, into: &out)
+        try addAdoptInventory(CashFlowPlan.self, emission: EntityEmissionMap.cashFlowPlan, identity: { $0.id }, into: &out)
+        try addAdoptInventory(CashFlowLine.self, emission: EntityEmissionMap.cashFlowLine, identity: { $0.id }, into: &out)
+        try addAdoptInventory(CashFlowOverride.self, emission: EntityEmissionMap.cashFlowOverride, identity: { $0.id }, into: &out)
+        try addAdoptInventory(GroupBridgePreference.self, emission: EntityEmissionMap.groupBridgePreference, identity: { $0.id }, into: &out)
         return out
     }
 
     private func addAdoptInventory<M: PersistentModel>(
         _ type: M.Type, emission: EntityEmission<M>, identity: (M) -> UUID?,
         into out: inout [(table: String, syncID: UUID?)]
-    ) {
-        do {
-            for model in try context.fetch(FetchDescriptor<M>()) {
-                out.append((emission.table, identity(model)))
-            }
-        } catch {
-            #if DEBUG
-            print("MigrationWorkExecutor.collectAdoptInventory: fetch(\(M.self)) falló: \(error)")
-            #endif
+    ) throws {
+        for model in try fetchInventory(M.self, step: "adopt-inventory") {
+            out.append((emission.table, identity(model)))
         }
     }
 
     /// Construye los `SnapshotRowInput` full-row de EXACTAMENTE las filas huérfanas del plan (fetch dirigido +
     /// filtro por el set de identidades objetivo, por tabla). Reusa el builder per-row del uploader (misma
-    /// emisión). Fetch CONCRETO por tipo (regla `#Predicate`).
-    private func buildOrphanRowInputs(_ orphans: [String: [UUID]]) -> [SnapshotRowInput] {
+    /// emisión). Fetch CONCRETO por tipo (regla `#Predicate`). LANZA si una tabla con huérfanas no se deja leer.
+    private func buildOrphanRowInputs(_ orphans: [String: [UUID]]) throws -> [SnapshotRowInput] {
         var inputs: [SnapshotRowInput] = []
-        addOrphanInputs(TransactionItem.self, emission: EntityEmissionMap.transactionItem, className: SyncEntityType.transactionItem, identity: { $0.syncID }, orphans: orphans, into: &inputs)
-        addOrphanInputs(InboxDraft.self, emission: EntityEmissionMap.inboxDraft, className: SyncEntityType.inboxDraft, identity: { $0.syncID }, orphans: orphans, into: &inputs)
-        addOrphanInputs(Category.self, emission: EntityEmissionMap.category, className: SyncEntityType.category, identity: { $0.syncID }, orphans: orphans, into: &inputs)
-        addOrphanInputs(FavoritePayment.self, emission: EntityEmissionMap.favoritePayment, className: SyncEntityType.favoritePayment, identity: { $0.syncID }, orphans: orphans, into: &inputs)
-        addOrphanInputs(MerchantMemory.self, emission: EntityEmissionMap.merchantMemory, className: SyncEntityType.merchantMemory, identity: { $0.syncID }, orphans: orphans, into: &inputs)
-        addOrphanInputs(ExchangeRate.self, emission: EntityEmissionMap.exchangeRate, className: SyncEntityType.exchangeRate, identity: { $0.syncID }, orphans: orphans, into: &inputs)
-        addOrphanInputs(Budget.self, emission: EntityEmissionMap.budget, className: SyncEntityType.budget, identity: { $0.id }, orphans: orphans, into: &inputs)
-        addOrphanInputs(ScheduledPayment.self, emission: EntityEmissionMap.scheduledPayment, className: SyncEntityType.scheduledPayment, identity: { $0.id }, orphans: orphans, into: &inputs)
-        addOrphanInputs(Account.self, emission: EntityEmissionMap.account, className: SyncEntityType.account, identity: { $0.shortcutID }, orphans: orphans, into: &inputs)
-        addOrphanInputs(Subcategory.self, emission: EntityEmissionMap.subcategory, className: SyncEntityType.subcategory, identity: { $0.shortcutID }, orphans: orphans, into: &inputs)
-        addOrphanInputs(Tag.self, emission: EntityEmissionMap.tag, className: SyncEntityType.tag, identity: { $0.id }, orphans: orphans, into: &inputs)
-        addOrphanInputs(NotificationItem.self, emission: EntityEmissionMap.notificationItem, className: SyncEntityType.notificationItem, identity: { $0.id }, orphans: orphans, into: &inputs)
-        addOrphanInputs(CashFlowPlan.self, emission: EntityEmissionMap.cashFlowPlan, className: SyncEntityType.cashFlowPlan, identity: { $0.id }, orphans: orphans, into: &inputs)
-        addOrphanInputs(CashFlowLine.self, emission: EntityEmissionMap.cashFlowLine, className: SyncEntityType.cashFlowLine, identity: { $0.id }, orphans: orphans, into: &inputs)
-        addOrphanInputs(CashFlowOverride.self, emission: EntityEmissionMap.cashFlowOverride, className: SyncEntityType.cashFlowOverride, identity: { $0.id }, orphans: orphans, into: &inputs)
-        addOrphanInputs(GroupBridgePreference.self, emission: EntityEmissionMap.groupBridgePreference, className: SyncEntityType.groupBridgePreference, identity: { $0.id }, orphans: orphans, into: &inputs)
+        try addOrphanInputs(TransactionItem.self, emission: EntityEmissionMap.transactionItem, className: SyncEntityType.transactionItem, identity: { $0.syncID }, orphans: orphans, into: &inputs)
+        try addOrphanInputs(InboxDraft.self, emission: EntityEmissionMap.inboxDraft, className: SyncEntityType.inboxDraft, identity: { $0.syncID }, orphans: orphans, into: &inputs)
+        try addOrphanInputs(Category.self, emission: EntityEmissionMap.category, className: SyncEntityType.category, identity: { $0.syncID }, orphans: orphans, into: &inputs)
+        try addOrphanInputs(FavoritePayment.self, emission: EntityEmissionMap.favoritePayment, className: SyncEntityType.favoritePayment, identity: { $0.syncID }, orphans: orphans, into: &inputs)
+        try addOrphanInputs(MerchantMemory.self, emission: EntityEmissionMap.merchantMemory, className: SyncEntityType.merchantMemory, identity: { $0.syncID }, orphans: orphans, into: &inputs)
+        try addOrphanInputs(ExchangeRate.self, emission: EntityEmissionMap.exchangeRate, className: SyncEntityType.exchangeRate, identity: { $0.syncID }, orphans: orphans, into: &inputs)
+        try addOrphanInputs(Budget.self, emission: EntityEmissionMap.budget, className: SyncEntityType.budget, identity: { $0.id }, orphans: orphans, into: &inputs)
+        try addOrphanInputs(ScheduledPayment.self, emission: EntityEmissionMap.scheduledPayment, className: SyncEntityType.scheduledPayment, identity: { $0.id }, orphans: orphans, into: &inputs)
+        try addOrphanInputs(Account.self, emission: EntityEmissionMap.account, className: SyncEntityType.account, identity: { $0.shortcutID }, orphans: orphans, into: &inputs)
+        try addOrphanInputs(Subcategory.self, emission: EntityEmissionMap.subcategory, className: SyncEntityType.subcategory, identity: { $0.shortcutID }, orphans: orphans, into: &inputs)
+        try addOrphanInputs(Tag.self, emission: EntityEmissionMap.tag, className: SyncEntityType.tag, identity: { $0.id }, orphans: orphans, into: &inputs)
+        try addOrphanInputs(NotificationItem.self, emission: EntityEmissionMap.notificationItem, className: SyncEntityType.notificationItem, identity: { $0.id }, orphans: orphans, into: &inputs)
+        try addOrphanInputs(CashFlowPlan.self, emission: EntityEmissionMap.cashFlowPlan, className: SyncEntityType.cashFlowPlan, identity: { $0.id }, orphans: orphans, into: &inputs)
+        try addOrphanInputs(CashFlowLine.self, emission: EntityEmissionMap.cashFlowLine, className: SyncEntityType.cashFlowLine, identity: { $0.id }, orphans: orphans, into: &inputs)
+        try addOrphanInputs(CashFlowOverride.self, emission: EntityEmissionMap.cashFlowOverride, className: SyncEntityType.cashFlowOverride, identity: { $0.id }, orphans: orphans, into: &inputs)
+        try addOrphanInputs(GroupBridgePreference.self, emission: EntityEmissionMap.groupBridgePreference, className: SyncEntityType.groupBridgePreference, identity: { $0.id }, orphans: orphans, into: &inputs)
         return inputs
     }
 
     private func addOrphanInputs<M: PersistentModel>(
         _ type: M.Type, emission: EntityEmission<M>, className: String, identity: (M) -> UUID?,
         orphans: [String: [UUID]], into inputs: inout [SnapshotRowInput]
-    ) {
+    ) throws {
         guard let ids = orphans[emission.table], !ids.isEmpty else { return }
         let targetSet = Set(ids)
-        do {
-            for model in try context.fetch(FetchDescriptor<M>()) {
-                guard let sid = identity(model), targetSet.contains(sid) else { continue }
-                inputs.append(MigrationSnapshotUploader.makeSnapshotRowInput(
-                    model: model, syncID: sid, emission: emission, className: className, calendar: calendar))
-            }
-        } catch {
-            #if DEBUG
-            print("MigrationWorkExecutor.buildOrphanRowInputs: fetch(\(M.self)) falló: \(error)")
-            #endif
+        for model in try fetchInventory(M.self, step: "adopt-orphan-inputs") {
+            guard let sid = identity(model), targetSet.contains(sid) else { continue }
+            inputs.append(MigrationSnapshotUploader.makeSnapshotRowInput(
+                model: model, syncID: sid, emission: emission, className: className, calendar: calendar))
         }
     }
 }

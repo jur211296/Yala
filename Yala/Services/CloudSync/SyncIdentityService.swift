@@ -45,6 +45,11 @@ extension ExchangeRate: SyncIdentifiable {}
 @MainActor
 enum SyncIdentityService {
 
+    /// Entidades (nombre de clase, `SyncIdentity` incluida) cuyo `fetch` del backfill LANZA. Lanza un `CocoaError` en el
+    /// mismo punto que el fetch real, así que el camino que recorre el test es el `catch` de producción. ESTÁTICO:
+    /// resetéalo en `defer`. SOLO tests (ticket `an-incomplete-inventory-reads-as-the-whole-corpus`).
+    static var _testThrowOnBackfillFetchOf: Set<String> = []
+
     // MARK: Born-cloud (hubs de creación)
 
     /// Asigna un `syncID` (UUIDv4) si la fila aún no tiene. Idempotente: una segunda llamada no
@@ -68,10 +73,16 @@ enum SyncIdentityService {
     /// Recorre las 6 entidades sincronizables y garantiza que cada fila tenga `syncID` + su fila
     /// testigo `SyncIdentity`, con REBIND por ancla de contenido. Idempotente y resumible.
     ///
+    /// **LANZA desde el 2026-09-23** (ticket `an-incomplete-inventory-reads-as-the-whole-corpus`). Tragaba su error bajo
+    /// un `print` de `#if DEBUG`, y sus dos llamadores —la captura de identidad de la ida y el adopt— seguían con filas
+    /// sin identidad: el snapshot las saltaba (`identityGap`) y el adopt las contaba como `needsIdentity` y no como
+    /// huérfanas, así que podía cerrarse sin subirlas. Si lanza a mitad, lo ya escrito queda sucio en el contexto (no
+    /// hay `rollback`: el contexto es compartido) y la pasada siguiente lo reescribe igual.
+    ///
     /// - Parameters:
     ///   - context: contexto sobre el que fetchear/insertar (el mismo de la migración).
     ///   - now: inyectable para determinismo en tests (marca `createdAt`/`lastReboundAt`).
-    static func backfillIdentities(context: ModelContext, now: Date = .now) {
+    static func backfillIdentities(context: ModelContext, now: Date = .now) throws {
         do {
             // Índice de identidades existentes por (entityType + ancla) para el rebind, y set de
             // syncIDs ya cubiertos por una fila testigo (para detectar filas con id pero sin testigo).
@@ -84,6 +95,7 @@ enum SyncIdentityService {
             // los topes. Regla: el rebind es para "borrada y RECREADA" — jamás para dos filas vivas.
             var liveSyncIDs: Set<UUID> = []
             var healedCollisions = 0
+            if _testThrowOnBackfillFetchOf.contains("SyncIdentity") { throw CocoaError(.fileReadCorruptFile) }
             let existingRows = try context.fetch(FetchDescriptor<SyncIdentity>())
             for row in existingRows {
                 rowsByKey[key(row.entityType, row.localAnchor)] = row
@@ -183,6 +195,8 @@ enum SyncIdentityService {
             #if DEBUG
             print("SyncIdentityService: backfill error: \(error)")
             #endif
+            CloudSyncBreadcrumb.migrationIdentityBackfillFailed(errorType: String(describing: type(of: error)))
+            throw error
         }
     }
 
@@ -201,6 +215,7 @@ enum SyncIdentityService {
         liveSyncIDs: inout Set<UUID>,
         healedCollisions: inout Int
     ) throws {
+        if _testThrowOnBackfillFetchOf.contains(String(describing: T.self)) { throw CocoaError(.fileReadCorruptFile) }
         let models = try context.fetch(FetchDescriptor<T>())
         for model in models {
             let contentAnchor = anchor(model)
@@ -270,6 +285,7 @@ enum SyncIdentityService {
         now: Date,
         knownSyncIDs: inout Set<UUID>
     ) throws {
+        if _testThrowOnBackfillFetchOf.contains(String(describing: T.self)) { throw CocoaError(.fileReadCorruptFile) }
         let models = try context.fetch(FetchDescriptor<T>())
         for model in models {
             let sid = id(model)
