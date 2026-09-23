@@ -5,8 +5,8 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-23 (Lima)
 
-**Rama** `2.1` — Merge #224: **La cola de device-QA baja de 80 a 21, con el guion del día en `qa/guion-tanda.md`.**
-TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
+**Rama** `2.1` — Merge #225: **TestFlight 14 (2.1) subido desde `2.1` de hoy, `VALID` e instalable por el grupo interno.**
+TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
 > `-destination 'platform=iOS Simulator,name=iPhone 17 Pro'` sin `OS=` significa `OS:latest` = **iOS 27.0**, y no
@@ -20,7 +20,14 @@ TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#224 · barrido de la cola de device-QA: de 80 a 21)
+## Esta sesión (#225 · TestFlight 14)
+
+**Hay un TestFlight nuevo, el 14 (2.1), con todo `2.1` hasta `f8dd3d36`.** Subido con `asc` desde la Mini (Xcode 27.0
+GA), `VALID` en ~8 min y `IN_BETA_TESTING` para el grupo interno. El externo («Testers Yala») no lo ve sin beta
+review, que no se pidió. El guion sigue pidiendo **Yala Dev** para los bloques contra staging; el 14 sirve para
+lo que se prueba en la app de producción y para el paso 4 del relevo de sesión.
+
+## Sesión anterior (#224 · barrido de la cola de device-QA: de 80 a 21)
 
 **Lo que tienes que probar en el iPhone es ahora una lista de 21, con guion.** Por orden de Jürgen se dejó la cola A y
 se saneó `tickets/qa/`: **59 tickets a `done` sin device-QA** (57 `not-replicable`, 2 `absorbed`), cada uno con su
@@ -39,11 +46,12 @@ propio iCloud** (`iCloud.com.jurgenschmidt.yala.dev`), así que los «datos prev
 
 - **El guion de `qa/guion-tanda.md`**, unas 4 h entero. Con hora y media: el bloque D (los dos «muy alto») y el B.
   Basta con pasar «paso · PASA/FALLA».
-- `previous-person-cloud-session-survives-fresh-start-and-reinstall` no se cierra hoy: su paso 4 es instalar el
-  **próximo TestFlight encima del 13** sin borrar.
+- `previous-person-cloud-session-survives-fresh-start-and-reinstall`: su paso 4 (instalar un TestFlight **encima
+  del 13** sin borrar) ya tiene build, el **14**. Primero la sesión de A abierta en el 13 (TestFlight → Yala →
+  «Versiones anteriores» si ya actualizaste) y después «Actualizar».
 - Ticket nuevo (very-low): `qa-folder-keeps-evidence-of-tickets-that-already-left`.
 
-## Sesión anterior (#223 · lo mismo en la subida al activar la nube, con texto propio)
+## Antes (#223 · lo mismo en la subida al activar la nube, con texto propio)
 
 **Al activar la nube, si el teléfono falla a ratos al leer su base de datos y además la cuenta está congelada o la
 sesión se borró, la subida se rinde a los 15 minutos acumulados**, no a las 72 h. Es el gemelo de #222 en la ida, con el
