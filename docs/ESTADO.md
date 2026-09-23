@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-23 (Lima)
 
-**Rama** `2.1` — Merge #222: **Al volver a iCloud, dos motivos que no se arreglan esperando ya no alargan la espera a tres días.**
+**Rama** `2.1` — Merge #223: **Al activar la nube, dos motivos que no se arreglan esperando ya no alargan la espera a tres días.**
 TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,28 @@ TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#222 · dos motivos definitivos alternándose ya no esquivan el techo corto)
+## Esta sesión (#223 · lo mismo en la subida al activar la nube, con texto propio)
+
+**Al activar la nube, si el teléfono falla a ratos al leer su base de datos y además la cuenta está congelada o la
+sesión se borró, la subida se rinde a los 15 minutos acumulados**, no a las 72 h. Es el gemelo de #222 en la ida, con el
+mismo reloj: `CauseStallClock.observeAnyDefinitive`, ahora compartido por las dos etapas (`snapshotStallDefinitiveAt` +
+`snapshotStallDefinitiveAccruedSeconds`, `MigrationState` schema 13). Con un solo motivo sostenido todo queda igual.
+
+**El texto, decidido por Jürgen a mitad de sesión.** El «genérico» de la subida (`stalled`) dice «lleva días sin
+avanzar», falso a los 15 min; lo cazaron dos lentes. Los motivos mezclados salen ahora con uno propio, `mixedCauses`
+(«la subida de tus datos se atascó por algo que esperar no iba a arreglar», 16 locales), y `stalled` queda para las
+72 h. El canario de salidas gana ese valor; el de espera no cambia.
+
+Gate: 7636 unit en 748 suites y 12 XCUITest (5 suites). 15 mutantes, todos muertos. Review de tres lentes: semántica y
+consumidores limpios; cazó el «lleva días» y dos tests flojos, arreglados.
+
+### Lo que espera de Jürgen
+
+- **Nada.** Ticket a `done` sin device-QA.
+- Ticket nuevo (low): `stall-canaries-have-no-test-for-which-clock-they-publish` — ningún test fija qué reloj publica
+  el canario de espera, en la subida ni en la vuelta.
+
+## Sesión anterior (#222 · dos motivos definitivos alternándose ya no esquivan el techo corto)
 
 **Al volver a iCloud, si la cuenta está suspendida y además el teléfono falla a ratos al leer su base de datos, la vuelta
 se rinde a los 15 minutos acumulados**, que es lo que promete el techo corto. Antes los dos motivos se turnaban, el
@@ -40,10 +61,9 @@ turnándose salen con el texto genérico.
 ### Lo que espera de Jürgen
 
 - **Nada.** Ticket a `done` sin device-QA: el escenario no se monta a voluntad en un iPhone.
-- Ticket nuevo: `snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling` (high) — el mismo agujero en
-  la subida del snapshot de la ida, con el molde de este cambio. En la ida sin cifra se midió y no es alcanzable.
+- Ticket nuevo: `snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling` (high) — cerrado en #223.
 
-## Sesión anterior (#221 · el claim del adopt tiene techo y salida)
+## Sesión del #221 (el claim del adopt tiene techo y salida)
 
 **Al entrar en una cuenta de la nube que ya existe** («Ya tengo una cuenta» en la bienvenida, o «Activar la nube en este
 dispositivo»), **el paso del 22 % ya no se puede quedar parado para siempre**: con la sesión borrada o un 403 la tarjeta
