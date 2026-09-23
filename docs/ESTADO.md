@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-23 (Lima)
 
-**Rama** `2.1` — Merge #218: **Si la app no puede leer su reloj interno al guardar un cambio tuyo, ya no lo duplica.**
+**Rama** `2.1` — Merge #219: **Si una tabla de un grupo no se deja leer, la app ya no se cree que el grupo está vacío y se lo baja entero.**
 TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,27 @@ TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#218 · el drain ya no duplica el reloj por unidad cuando no puede leerlo)
+## Esta sesión (#219 · el Merkle de grupos ya no lee una tabla ilegible como vacía)
+
+**Si en la comprobación periódica de un grupo el teléfono no consigue leer una de sus tablas, la app ya no da el grupo
+por vacío ni se lo vuelve a bajar entero**: se salta esa comprobación, deja rastro y lo intenta en la siguiente. Antes,
+esa avería acababa en «no coincide con el servidor» —cursor a 0 y el grupo entero de vuelta— y, con el servidor vacío,
+en un «todo bien» que no se había comprobado.
+
+`GroupMerkleProjection.computeLocalMerkle`, `collectLeaves` y `collectMemberLeaves` LANZAN; `verifyGroupIntegrity` lo
+convierte en `.skipped(local-merkle-fetch-failed)` y todos sus motivos salen de `GroupMerkleSkipReason` (no de
+`MerkleSkipReason`, cuyo `all` es el canario del canal personal). Breadcrumb `groupsMerkleLocalReadFailed(table:)`.
+Regla: `.claude/rules/swiftdata-cloudkit.md`, «Y el Merkle tampoco».
+
+Gate: 7599 unit en 748 suites y 8 XCUITest. 9 mutantes, todos muertos. Review de tres lentes: sin defectos de
+comportamiento en el fix; endureció los tests (el seam lanza un `CocoaError`) y cazó un gemelo fuera del alcance.
+
+### Lo que espera de Jürgen
+
+- **Nada.** A `done` sin device-QA: una base local ilegible no se provoca en un iPhone.
+- Ticket nuevo en `backlog`: `groups-cursor-map-reads-an-undecodable-json-as-no-cursors` (medium).
+
+## Sesión anterior (#218 · el drain ya no duplica el reloj por unidad cuando no puede leerlo)
 
 **Si al capturar un cambio tuyo la app no consigue leer el registro de cuándo se tocó cada parte, ya no crea otro al
 lado** —con dos, podía leer el viejo, dar por buena la pata equivocada de una transferencia y pisar su importe—: esa
@@ -48,7 +68,7 @@ gemelos fuera del alcance (a ticket).
   `groups-drain-has-no-rollback-and-keeps-the-mirror-of-a-failed-save` (low los cuatro). Nota nueva en
   `a-failed-snapshot-enqueue-save-leaves-the-journal-unsaved`.
 
-## Sesión anterior (#217 · una ref colgada con la fila o el destino ilegible ya no se pierde)
+## Sesión del #217 ( una ref colgada con la fila o el destino ilegible ya no se pierde)
 
 **Si el teléfono no consigue leer un movimiento, o la categoría, la cuenta o las etiquetas a las que apunta, mientras
 sincroniza, ya no pierde a qué apuntaba ni deja la relación vacía**: espera y lo completa en la siguiente
