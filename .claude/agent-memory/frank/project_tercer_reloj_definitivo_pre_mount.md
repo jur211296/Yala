@@ -1,6 +1,6 @@
 ---
 name: tercer-reloj-definitivo-pre-mount
-description: 2026-09-23 — el techo corto de la vuelta pre-montaje se mide contra un reloj de «cualquier motivo definitivo»; el de causa solo elige el copy. Deja el gemelo de la subida del snapshot con ticket.
+description: 2026-09-23 — el techo corto de la vuelta pre-montaje se mide contra un reloj de «cualquier motivo definitivo»; el de causa solo elige el copy. El gemelo de la subida, cerrado el mismo día.
 metadata:
   type: project
 ---
@@ -14,8 +14,9 @@ no se monta en un iPhone a voluntad).
 re-kick de 30 s y la salida se iba a 72 h. Decisión tomada en el encargo, sin preguntar.
 
 **How to apply:**
-- Lo que espera: `snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling` (el mismo agujero en
-  la subida; en la ida sin cifra se midió y no es alcanzable sostenido). Es el molde exacto de este cambio.
+- El gemelo de la subida se cerró el mismo día (`snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling`):
+  los dos llaman a `CauseStallClock.observeAnyDefinitive`. Allí los mezclados salen con `mixedCauses`, no con
+  `stalled`, porque el `stalled` de la subida dice «días». Queda `stall-canaries-have-no-test-for-which-clock-they-publish` (low).
 - Dos consecuencias DECIDIDAS que una review futura volverá a sacar: un hueco sin observaciones entre dos motivos
   distintos cuenta (fijado con test), y 403 + `refused` turnándose salen con el copy genérico.
 - En la review, tres lentes cazaron dos aserciones de copy que no podían fallar: el motivo de la última pasada

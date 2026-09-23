@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (516)
+## Index (530)
 
 | id | status | path |
 |---|---|---|
@@ -506,11 +506,12 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | siri-intent-dual-container | done | tickets/done/siri-intent-dual-container.md |
 | siri-shortcut-error-replies-speak-english-on-a-spanish-iphone | backlog | tickets/backlog/siri-shortcut-error-replies-speak-english-on-a-spanish-iphone.md |
 | smart-ai-notifications | backlog | tickets/backlog/smart-ai-notifications.md |
-| snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling | backlog | tickets/backlog/snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling.md |
+| snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling | done | tickets/done/snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling.md |
 | snapshot-upload-has-no-ceiling-and-no-way-out | qa | tickets/qa/snapshot-upload-has-no-ceiling-and-no-way-out.md |
 | spike-r3-eje-4b-flaky-en-suite-completa | backlog | tickets/backlog/spike-r3-eje-4b-flaky-en-suite-completa.md |
 | staging-test-credentials-in-public-repo | done | tickets/done/staging-test-credentials-in-public-repo.md |
 | staging-test-user-c-does-not-exist | backlog | tickets/backlog/staging-test-user-c-does-not-exist.md |
+| stall-canaries-have-no-test-for-which-clock-they-publish | backlog | tickets/backlog/stall-canaries-have-no-test-for-which-clock-they-publish.md |
 | start-fresh-dialog-promises-what-the-gate-undoes | backlog | tickets/backlog/start-fresh-dialog-promises-what-the-gate-undoes.md |
 | stats-filter-segment-tap-should-ask-include-or-exclude | backlog | tickets/backlog/stats-filter-segment-tap-should-ask-include-or-exclude.md |
 | stats-per-account-branch-keeps-stale-live-anchor | backlog | tickets/backlog/stats-per-account-branch-keeps-stale-live-anchor.md |
