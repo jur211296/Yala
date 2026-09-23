@@ -2091,9 +2091,9 @@ final class MigrationRunner {
     // MARK: - Techo y salida de las CUATRO fases previas al montaje
     // (ticket `reverse-before-mount-has-no-way-to-abandon-the-return`)
 
-    /// Lo que se re-sella en el journal cuando una observación HOLDEA: el reloj de fase con su sello, y los tres
-    /// campos del reloj por causa. Struct y no tupla porque son cinco y tres opcionales — una tupla así se lee al
-    /// revés con una facilidad que no compensa lo que ahorra.
+    /// Lo que se re-sella en el journal cuando una observación HOLDEA: el reloj de fase con su sello, los tres
+    /// campos del reloj por causa y los dos del de «cualquier motivo definitivo». Struct y no tupla porque son siete
+    /// y cinco opcionales — una tupla así se lee al revés con una facilidad que no compensa lo que ahorra.
     private struct ReversePreMountHold {
         /// La fase en la que se sella el reloj de fase.
         let phase: ReversePreMountPhase
@@ -2107,6 +2107,11 @@ final class MigrationRunner {
         let causeAccruedFrom: Date?
         /// Lo que esa causa lleva acumulado en tramos ya CERRADOS.
         let causeAccrued: Double?
+        /// El tramo ABIERTO del reloj de «cualquier motivo definitivo». Mismas reglas que el de causa, salvo que un
+        /// cambio de motivo no lo reinicia.
+        let definitiveAccruedFrom: Date?
+        /// Lo que ese reloj lleva acumulado en tramos CERRADOS.
+        let definitiveAccrued: Double?
     }
 
     /// Una observación de una fase PREVIA al montaje que no avanzó en esta pasada. Se llama desde los cortes de las
@@ -2138,9 +2143,18 @@ final class MigrationRunner {
     ///
     /// El reloj de causa es un ACUMULADO con pausa (`CauseStallClock`): lo reinicia un cambio de causa, y una
     /// observación SIN causa (la red llega así) lo pausa en vez de borrarlo. Esta frase decía «racha» hasta el
-    /// 2026-09-22, que es lo que se descartó en la review de #210; lo que impide que se vuelva eterno con dos causas
-    /// alternándose es que el techo largo de la fase sigue por encima con cualquier causa — la máquina sale con el
-    /// primero de los dos que venza.
+    /// 2026-09-22, que es lo que se descartó en la review de #210.
+    ///
+    /// **Y hay un TERCER reloj, y es el que decide el techo corto** (ticket
+    /// `alternating-definitive-causes-never-reach-the-short-ceiling`): el de «cualquier motivo definitivo», el mismo
+    /// `CauseStallClock` con una clave única para todo lo definitivo. Con el de causa, dos motivos turnándose —una
+    /// cuenta suspendida y un store que falla a ratos, que desde `verify-reads-a-failed-local-fetch-as-an-empty-outbox`
+    /// es alcanzable en el drenaje— reiniciaban el corto en cada observación, y la persona esperaba 72 h en vez de
+    /// 15 min. Éste suma entre motivos, y **conserva el criterio del de causa por la pausa**: la red no trae motivo,
+    /// así que las horas de red no las acumula ninguno de los dos, y un `localFailure` aislado tras ellas empieza en
+    /// cero igual que antes. Lo que SÍ cuenta es el tiempo bajo otro motivo definitivo, y es a propósito: los dos
+    /// eran esperas que esperar no arregla. El de causa se queda para elegir el copy de la salida
+    /// (`reversePreMountExitReason`).
     ///
     /// Devuelve `true` si la vuelta SALIÓ. Los llamadores lo DESCARTAN y cortan la pasada, como hace la salida del
     /// claim: el origen es `.done` o `.notStarted`, donde `drive()` corta igual, así que releer la fase no ganaría
@@ -2164,9 +2178,11 @@ final class MigrationRunner {
         let stalled = observedAt.timeIntervalSince(lastProgressAt)
         let cause = blocker?.stallCause ?? .unknown
         let clock = reversePreMountCauseClock(state, blocker: blocker, observedAt: observedAt)
+        let definitive = reversePreMountDefinitiveClock(state, blocker: blocker, observedAt: observedAt)
         CloudSyncBreadcrumb.reversePreMountStalled(
             phase: phase.rawValue, stalledSeconds: stalled,
-            causeStalledSeconds: clock.stalled, blocker: blocker?.rawValue)
+            causeStalledSeconds: clock.stalled, definitiveStalledSeconds: definitive.stalled,
+            blocker: blocker?.rawValue)
         // En CADA observación, no solo al salir: es lo que deja ver un atasco sistémico —un 403 en toda la flota—
         // antes de que ningún teléfono agote sus 15 min o sus 72 h. Es la regla de la familia
         // (`.claude/rules/swiftdata-cloudkit.md`, el canario del marcador) y esta etapa era la única sin cumplirla.
@@ -2175,14 +2191,15 @@ final class MigrationRunner {
             causeStalledSeconds: clock.stalled, blocker: blocker?.rawValue)
         let origin = try originFromJournal()
         return try await leaveReversePreMount(
-            .reversePreMountStalled(stalledSeconds: stalled, causeStalledSeconds: clock.stalled,
+            .reversePreMountStalled(stalledSeconds: stalled, definitiveStalledSeconds: definitive.stalled,
                                     cause: cause, returnTo: origin),
             phase: phase,
             exitReason: reversePreMountExitReason(
                 blocker: blocker, causeStalledSeconds: clock.stalled, cause: cause),
             hold: ReversePreMountHold(
                 phase: phase, progressAt: lastProgressAt,
-                causeRaw: clock.raw, causeAccruedFrom: clock.accruedFrom, causeAccrued: clock.accrued))
+                causeRaw: clock.raw, causeAccruedFrom: clock.accruedFrom, causeAccrued: clock.accrued,
+                definitiveAccruedFrom: definitive.accruedFrom, definitiveAccrued: definitive.accrued))
     }
 
     /// El reloj por CAUSA, leído del journal y devuelto con lo que hay que volver a sellar
@@ -2202,6 +2219,33 @@ final class MigrationRunner {
         return (reading.stalled, reading.raw, reading.accruedFrom, reading.accrued)
     }
 
+    /// El reloj de «CUALQUIER motivo definitivo» (ticket `alternating-definitive-causes-never-reach-the-short-ceiling`):
+    /// el mismo `CauseStallClock`, con una sola clave para todos los motivos que esperar no arregla. Así hereda sus
+    /// tres reglas menos una —la del cambio de causa no puede darse—: suma, se PAUSA con una observación sin motivo y
+    /// re-ancla un tramo abierto en el futuro.
+    ///
+    /// No se guarda la clave, porque solo hay una: se le pasa siempre como sellada. Con nada acumulado da lo mismo
+    /// —la regla de «misma causa» sobre un reloj vacío devuelve lo que devolvería la de «primera vez»—, así que
+    /// derivarla de los campos sería una condición que no cambia ningún resultado.
+    ///
+    /// El filtro es por `stallCause` y no por «hay blocker»: hoy los cinco motivos son definitivos y da lo mismo, pero
+    /// un motivo nuevo que esperar SÍ arreglase no debe sumar aquí, y ese `switch` exhaustivo es donde el compilador
+    /// obliga a decidirlo.
+    private func reversePreMountDefinitiveClock(
+        _ state: MigrationState,
+        blocker: ReversePreMountBlocker?,
+        observedAt: Date
+    ) -> (stalled: Double, accruedFrom: Date?, accrued: Double?) {
+        let key = "definitive"
+        let reading = CauseStallClock.observe(
+            sealedRaw: key,
+            sealedOpenSince: state.reversePreMountDefinitiveAt,
+            sealedAccrued: state.reversePreMountDefinitiveAccruedSeconds,
+            blockerRaw: blocker?.stallCause == .definitive ? key : nil,
+            observedAt: observedAt)
+        return (reading.stalled, reading.accruedFrom, reading.accrued)
+    }
+
     /// El motivo que se journalea al salir, y **lo elige el techo que VENCIÓ, no la última observación**.
     ///
     /// Con el reloj por causa la vuelta puede salir por el techo de la FASE —72 h sin cobertura— en una pasada que
@@ -2214,13 +2258,27 @@ final class MigrationRunner {
     /// Si el 403 es real, no se pierde nada: la vuelta sale con `preMountStalled` («no llegó a completarse»), la
     /// persona lo reintenta, y a los 15 min de 403 sostenido sale con `preMountRefused` y su correo, que entonces
     /// sí es verdad.
+    ///
+    /// **Se mide contra el reloj de la CAUSA, no contra el de «cualquier motivo definitivo» que saca de la vuelta**
+    /// (ticket `alternating-definitive-causes-never-reach-the-short-ceiling`), y es la misma regla aplicada a un reloj
+    /// más: si el corto venció con motivos mezclados —diez minutos de 403 y cinco de un store que falla—, ninguno de
+    /// los dos textos específicos es verdad entero, y el genérico sí. El texto específico sale cuando UN motivo solo
+    /// agotó el plazo, y entonces los dos relojes vencen en la misma observación: el definitivo no va por detrás del de
+    /// causa, porque abren tramo con la misma observación y solo el de causa se reinicia al cambiar de motivo. **Con
+    /// una excepción, y de una vez**: una fila de un build anterior a la v12 parada a mitad de fase trae el de causa
+    /// acumulado y el definitivo a `nil`. Ahí el de causa llega antes, la máquina todavía no sale (la decide el
+    /// definitivo), y la salida llega hasta un plazo corto después, con el texto específico, que entonces es verdad.
+    ///
+    /// **Límite aceptado**: la clave del de causa es el `rawValue`, no el texto, así que `accountUnavailable` y
+    /// `refused` turnándose salen con el genérico aunque los dos digan lo mismo. No miente, solo es menos concreto, y
+    /// cambiar la clave le cambiaría el significado al tramo que publica el canario.
     private func reversePreMountExitReason(
         blocker: ReversePreMountBlocker?,
         causeStalledSeconds: Double,
         cause: MarkerExportStall
     ) -> ReverseAbortReason {
         guard let blocker, policy.reversePreMountCauseCeilingReached(
-            causeStalledSeconds: causeStalledSeconds, cause: cause) else {
+            stalledSeconds: causeStalledSeconds, cause: cause) else {
             return .preMountStalled
         }
         return blocker.abortReason
@@ -2280,6 +2338,9 @@ final class MigrationRunner {
                     state.reversePreMountCauseRaw = hold.causeRaw
                     state.reversePreMountCauseAt = hold.causeAccruedFrom
                     state.reversePreMountCauseAccruedSeconds = hold.causeAccrued
+                    // Los dos del reloj de lo definitivo, igual: SIEMPRE, también a `nil`, por la misma razón.
+                    state.reversePreMountDefinitiveAt = hold.definitiveAccruedFrom
+                    state.reversePreMountDefinitiveAccruedSeconds = hold.definitiveAccrued
                 }
                 return
             }

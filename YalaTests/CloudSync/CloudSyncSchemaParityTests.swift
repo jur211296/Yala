@@ -198,6 +198,8 @@ struct CloudSyncSchemaParityTests {
             "reversePreMountCauseRaw",
             "reversePreMountCauseAt",
             "reversePreMountCauseAccruedSeconds",
+            "reversePreMountDefinitiveAt",
+            "reversePreMountDefinitiveAccruedSeconds",
             "snapshotStallProgressAt",
             "snapshotStallCauseRaw",
             "snapshotStallCauseAt",
@@ -217,7 +219,7 @@ struct CloudSyncSchemaParityTests {
         #expect(propertyNames(MigrationState.self) == expected)
     }
 
-    @Test func migrationState_schemaVersion_isEleven() {
+    @Test func migrationState_schemaVersion_isTwelve() {
         // Subió a 2 en I11-2 al añadir el campo aditivo `reverseOriginRaw`; a 3 en C-1 con
         // `markerWrittenSince` (reloj del tope del paso 4) + `cutoverICloudVerdictRaw` (veredicto del canal
         // iCloud), ambos ADITIVOS y opcionales → una fila escrita por un build v2 sigue abriéndose. A 4 con los
@@ -244,7 +246,11 @@ struct CloudSyncSchemaParityTests {
         // observación lo sella (ticket `forward-migration-steps-have-no-ceiling-and-no-exit`).
         // A 11 con `adoptClaimExitRaw` y `adoptClaimAccountHash` (la salida del claim de un adopt y su cuenta), opcionales: una fila v10 se abre sin marca y la
         // pantalla ofrece lo de siempre (ticket `adopt-claim-stays-parked-with-no-ceiling`).
-        #expect(CloudSyncSchemaVersions.migrationState == 11)
+        // A 12 con el par del reloj de «cualquier motivo definitivo» del techo previo al montaje
+        // (`reversePreMountDefinitiveAt`, `reversePreMountDefinitiveAccruedSeconds`), opcionales: una fila v11 parada
+        // en una de esas cuatro fases se abre sin nada acumulado, y el reloj empieza con la primera observación con
+        // motivo (ticket `alternating-definitive-causes-never-reach-the-short-ceiling`).
+        #expect(CloudSyncSchemaVersions.migrationState == 12)
     }
 
     /// **Los CUATRO campos de los relojes del techo de los tres pasos se limpian juntos**
@@ -296,7 +302,7 @@ struct CloudSyncSchemaParityTests {
         #expect(state.snapshotExitReasonRaw == "stalled", "el motivo de la salida no es parte del reloj")
     }
 
-    /// **Los CINCO campos del techo previo al montaje se limpian juntos**, y `clearReversePreMountCeiling()` es lo
+    /// **Los SIETE campos del techo previo al montaje se limpian juntos**, y `clearReversePreMountCeiling()` es lo
     /// que lo garantiza en los seis sitios que lo hacen.
     ///
     /// **La primera versión de este caso enumeraba los campos a mano y prometía cazar un campo NUEVO que se
@@ -312,6 +318,8 @@ struct CloudSyncSchemaParityTests {
             "reversePreMountCauseRaw",
             "reversePreMountCauseAt",
             "reversePreMountCauseAccruedSeconds",
+            "reversePreMountDefinitiveAt",
+            "reversePreMountDefinitiveAccruedSeconds",
         ]
         #expect(family == known,
                 "campo nuevo en la familia: añádelo a `clearReversePreMountCeiling()` y a esta lista")
@@ -319,13 +327,16 @@ struct CloudSyncSchemaParityTests {
         let state = MigrationState(
             reversePreMountProgressAt: .now, reversePreMountPhaseRaw: "verify",
             reversePreMountCauseRaw: "localFailure", reversePreMountCauseAt: .now,
-            reversePreMountCauseAccruedSeconds: 42)
+            reversePreMountCauseAccruedSeconds: 42,
+            reversePreMountDefinitiveAt: .now, reversePreMountDefinitiveAccruedSeconds: 42)
         state.clearReversePreMountCeiling()
         #expect(state.reversePreMountProgressAt == nil)
         #expect(state.reversePreMountPhaseRaw == nil)
         #expect(state.reversePreMountCauseRaw == nil)
         #expect(state.reversePreMountCauseAt == nil)
         #expect(state.reversePreMountCauseAccruedSeconds == nil)
+        #expect(state.reversePreMountDefinitiveAt == nil)
+        #expect(state.reversePreMountDefinitiveAccruedSeconds == nil)
     }
 
     // MARK: - (b·G2) GroupSyncOutbox / GroupSyncCursor (canal de Grupos → backend)

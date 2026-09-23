@@ -1160,19 +1160,24 @@ enum CloudSyncBreadcrumb {
     /// `reverse-before-mount-has-no-way-to-abandon-the-return`). `blocker` es el motivo que no se arregla
     /// esperando, si lo hay —y solo entonces entra el presupuesto corto—; `nil` = red o sesión.
     ///
-    /// **Los DOS relojes van en el rastro**, y el segundo es lo que deja leer un techo que venció: `cause` es lo
-    /// que la fase lleva parada SEGUIDA por ese mismo motivo, y es contra el que se mide el corto (ticket
-    /// `reverse-pre-mount-ceiling-charges-a-stall-to-whoever-stops-it-last`). Con una sola cifra, una salida a las
+    /// **Los TRES relojes van en el rastro**, y los dos últimos son lo que deja leer un techo que venció: `cause` es
+    /// lo que la fase lleva parada bajo ese mismo motivo (ticket
+    /// `reverse-pre-mount-ceiling-charges-a-stall-to-whoever-stops-it-last`), y `definitive` lo que lleva parada bajo
+    /// CUALQUIER motivo definitivo, que es contra el que se mide el corto desde
+    /// `alternating-definitive-causes-never-reach-the-short-ceiling`. Sin él, dos motivos turnándose dejaban en el log
+    /// `cause=30s` seguido de una salida, sin nada que dijera por qué salió. Con una sola cifra, una salida a las
     /// tres horas no dejaba distinguir «tres horas de 403» de «tres horas sin cobertura y un fallo local al
     /// final», que es exactamente lo que ese ticket vino a separar. Sin PII: los cuatro son códigos y números del
     /// build.
     static func reversePreMountStalled(
-        phase: String, stalledSeconds: Double, causeStalledSeconds: Double, blocker: String?
+        phase: String, stalledSeconds: Double, causeStalledSeconds: Double, definitiveStalledSeconds: Double,
+        blocker: String?
     ) {
         let seconds = Int(stalledSeconds)
         let causeSeconds = Int(causeStalledSeconds)
+        let definitiveSeconds = Int(definitiveStalledSeconds)
         logger.notice(
-            "CloudSyncReverse preMountStalled phase=\(phase, privacy: .public) stalled=\(seconds, privacy: .public)s cause=\(causeSeconds, privacy: .public)s blocker=\(blocker ?? "-", privacy: .public)")
+            "CloudSyncReverse preMountStalled phase=\(phase, privacy: .public) stalled=\(seconds, privacy: .public)s cause=\(causeSeconds, privacy: .public)s definitive=\(definitiveSeconds, privacy: .public)s blocker=\(blocker ?? "-", privacy: .public)")
     }
 
     /// La vuelta salió de una fase previa al montaje y volvió a su origen en modo nube: por su techo o porque la

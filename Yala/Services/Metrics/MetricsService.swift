@@ -607,13 +607,19 @@ extension MetricsService {
     ///
     /// **Desde el 2026-09-22 son DOS tramos, porque son dos relojes y cada uno gobierna un techo** (ticket
     /// `reverse-pre-mount-ceiling-charges-a-stall-to-whoever-stops-it-last`): el de la FASE, contra el que corren
-    /// las 72 h, y el de la CAUSA, contra el que corren los 15 min. **Publicar uno solo dejaba ciega la mitad del
-    /// mecanismo**, y las dos mitades se miden:
+    /// las 72 h, y el de la CAUSA. **Publicar uno solo dejaba ciega la mitad del mecanismo**, y las dos mitades se
+    /// miden:
     ///  · con solo el de la fase, `stop_localFailure|1h_24h` se leería como tres horas de avería local cuando la
     ///    avería lleva doce segundos y las tres horas eran de red;
-    ///  · con solo el de la causa, un teléfono con dos motivos alternándose 72 h publica `lt_15m` en cada
-    ///    observación y, con el dedupe por proceso, la flota ve **un** evento diciendo que no pasa nada — justo el
-    ///    atasco sistémico que esta serie existe para enseñar antes de que nadie agote su techo.
+    ///  · con solo el de la causa, un teléfono con dos motivos alternándose publica `lt_15m` en cada observación y,
+    ///    con el dedupe por proceso, la flota ve **un** evento diciendo que no pasa nada — justo el atasco sistémico
+    ///    que esta serie existe para enseñar antes de que nadie agote su techo.
+    ///
+    /// **Desde `alternating-definitive-causes-never-reach-the-short-ceiling` los 15 min ya no corren contra el
+    /// tramo de causa**, sino contra un tercer reloj, el de «cualquier motivo definitivo», que no se reinicia al
+    /// cambiar de motivo. La serie sigue publicando el de causa a propósito: es el que deja reconocer en la flota la
+    /// alternancia —tramo de fase creciendo y de causa siempre en `lt_15m`—, y cambiarle el significado a un segmento
+    /// por tercera vez en tres días rompería la lectura de la serie.
     ///
     /// El tramo de causa es `-` cuando la observación no trae motivo: ahí no hay reloj de causa que contar, y un
     /// `lt_15m` constante sería ruido que se lee como dato. La forma es fija de cuatro segmentos para que se pueda
