@@ -5,6 +5,7 @@ priority: high
 area: "onboarding, modo-nube"
 created: 2026-09-09
 source: "device-QA guiado por Jürgen (2026-09-09) · ADR 2026-09-09 «Sesiones — dos ejes» §9"
+updated: 2026-09-23
 ---
 
 # «Primera vez → privado» en una instalación fresca no valida iCloud: reinicia y hace el onboarding encima de los datos viejos
@@ -421,3 +422,7 @@ Matar la app entre el borrado de la zona y el borrado local, **en el camino tard
 local intacto con el espejo vivo: al reabrir puede re-exportarse a la zona recién vaciada. Es
 reaparición, no pérdida, y la persona puede repetir el borrado. Ticket:
 `late-icloud-wipe-can-re-export-between-its-two-halves`.
+
+## Barrido de `qa` · 2026-09-23 · se queda para el iPhone
+
+Está en la lista corta de device-QA del 2026-09-23 (`qa/guion-tanda.md`). Se prueba con **Yala Dev compilado desde `2.1`**: el TestFlight 13 es del 9-sep y no lleva los arreglos posteriores. Para cerrarlo basta con los recorridos 1 y 3. Los que borran iCloud o piden otro Apple ID quedan cubiertos por los tests.

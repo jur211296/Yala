@@ -4,7 +4,7 @@ status: qa
 priority: high
 area: "modo-nube, gateway, onboarding"
 created: 2026-09-10
-updated: 2026-09-10
+updated: 2026-09-23
 source: "review adversarial de `backend-account-kind-complete-or-groups-only` (2026-09-10) — hallazgo B4"
 ---
 
@@ -307,3 +307,7 @@ poder escribir a la nube tampoco.
 ⇒ **Si eso pasa, no lo dejes ahí:** el panel DEBUG tiene la salida (`reverse_abort` / escape hatch), y
 el caso merece ticket propio con el número de filas y el tiempo esperado. Sería el hallazgo más
 valioso de esta corrida.
+
+## Barrido de `qa` · 2026-09-23 · se queda para el iPhone
+
+Está en la lista corta de device-QA del 2026-09-23 (`qa/guion-tanda.md`). Se prueba con **Yala Dev compilado desde `2.1`**: el TestFlight 13 es del 9-sep y no lleva los arreglos posteriores. Para cerrarlo basta con el guion entero del ticket (bloque E).

@@ -4,7 +4,7 @@ status: qa
 priority: high
 area: "accounts, currency, fx"
 created: 2026-09-08
-updated: 2026-09-16
+updated: 2026-09-23
 source: barrido de chat-draft-stamps-its-own-currency-not-the-account (2026-09-08)
 ---
 
@@ -210,3 +210,7 @@ Captura: [divisa bloqueada](../../qa/evidencia-barrido-20260916/32-divisa-bloque
 sintético ni a touch down/up (quinta técnica medida). Montaje para quien lo haga con el dedo, ~5 min: el
 mismo lanzamiento, y en «QA FX» (movimientos corrientes) los pasos 1 y 2 del guion de arriba; para el
 paso 4, una cuenta nueva sin movimientos.
+
+## Barrido de `qa` · 2026-09-23 · se queda para el iPhone
+
+Está en la lista corta de device-QA del 2026-09-23 (`qa/guion-tanda.md`). Se prueba con **Yala Dev compilado desde `2.1`**: el TestFlight 13 es del 9-sep y no lleva los arreglos posteriores. Para cerrarlo basta con los pasos 1, 2 y 4 de «Qué mirar en device-QA».

@@ -4,7 +4,7 @@ status: qa
 priority: low
 area: "modo-nube, attest, onboarding"
 created: 2026-09-15
-updated: 2026-09-16
+updated: 2026-09-23
 source: "hallazgo de `cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes` (2026-09-15)"
 ---
 
@@ -111,3 +111,7 @@ tiene el mismo montaje.
    - Si sale otra pantalla (por ejemplo, la comprobación de iCloud): repite desde el paso 1 una vez más. Si vuelve a pasar,
      **FAIL**: este iPhone no está ofreciendo la nube.
 4. No hace falta elegir nada. Cierra la app.
+
+## Barrido de `qa` · 2026-09-23 · se queda para el iPhone
+
+Está en la lista corta de device-QA del 2026-09-23 (`qa/guion-tanda.md`). Se prueba con **Yala Dev compilado desde `2.1`**: el TestFlight 13 es del 9-sep y no lleva los arreglos posteriores. Para cerrarlo basta con el único paso del guion.

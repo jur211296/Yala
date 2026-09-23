@@ -5,6 +5,7 @@ priority: high
 area: "settings, modo-nube, groups"
 created: 2026-09-09
 source: "ADR 2026-09-09 «Sesiones — dos ejes» §5-6"
+updated: 2026-09-23
 ---
 
 # Cierres de sesión: dos botones («Cerrar sesión», «Vaciar datos»), un verbo por sesión, y la sesión privada que sale borra lo local
@@ -400,3 +401,7 @@ pantalla, pero si alguno diera un resultado distinto al esperado, **mira el eje 
 
 Nada de esto es simulable: el simulador no tiene sesión de nube y las dos celdas piden dos
 dispositivos del mismo Apple ID.
+
+## Barrido de `qa` · 2026-09-23 · se queda para el iPhone
+
+Está en la lista corta de device-QA del 2026-09-23 (`qa/guion-tanda.md`). Se prueba con **Yala Dev compilado desde `2.1`**: el TestFlight 13 es del 9-sep y no lleva los arreglos posteriores. Para cerrarlo basta con los recorridos C1, C2 y C3 (sesión privada). D y F, que piden otra persona, quedan cubiertos por los tests.

@@ -5,6 +5,7 @@ priority: high
 area: "chat, accounts"
 created: 2026-09-08
 source: hallazgo de camino en chat-assistant-plants-exchange-rate-one (review adversarial, 2026-09-08)
+updated: 2026-09-23
 ---
 
 # Un gasto guardado desde el chat SUMA al saldo de la cuenta
@@ -136,3 +137,7 @@ saliendo positiva. Firmar una sola de las dos habría dejado la tasa negativa y 
 - [x] Comprobar qué pasa con las filas ya guardadas: hay corpus afectado (ventana de cuatro meses y
       medio, desde `52d2ad6b` el 2026-04-27) y **la migración necesita decisión** — sale del alcance
       de este ticket con el suyo propio.
+
+## Barrido de `qa` · 2026-09-23 · se queda para el iPhone
+
+Está en la lista corta de device-QA del 2026-09-23 (`qa/guion-tanda.md`). Se prueba con **Yala Dev compilado desde `2.1`**: el TestFlight 13 es del 9-sep y no lleva los arreglos posteriores. Para cerrarlo basta con el bloque A del guion (dictar un gasto y ver bajar el saldo).

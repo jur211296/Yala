@@ -5,7 +5,7 @@ priority: high
 area: "modo-nube, onboarding, groups"
 created: 2026-09-09
 source: "ADR 2026-09-09 «Sesiones — dos ejes» §7 — el bloque [I]"
-updated: 2026-09-16
+updated: 2026-09-23
 ---
 
 # Un solo bloque de identidad en la nube: todo sign-in descubre si la cuenta es nueva, completa o solo grupos, y rutea
@@ -366,3 +366,7 @@ al 2026-09-10, ésa es la causa probable.
 **«Qué mirar», el 1 (:357)** — «Salir de Yala en este dispositivo» ya no existe en la app: su texto no
 está en `Localizable.strings` (solo quedan comentarios huérfanos). El verbo de hoy es **«Cerrar sesión»**
 (`settings.signOut`). El resto de esa comprobación no cambia.
+
+## Barrido de `qa` · 2026-09-23 · se queda para el iPhone
+
+Está en la lista corta de device-QA del 2026-09-23 (`qa/guion-tanda.md`). Se prueba con **Yala Dev compilado desde `2.1`**: el TestFlight 13 es del 9-sep y no lleva los arreglos posteriores. Para cerrarlo basta con los recorridos 1 y 2. El 3 y el 4 quedan cubiertos por `CloudIdentityRoutingLogicTests`.

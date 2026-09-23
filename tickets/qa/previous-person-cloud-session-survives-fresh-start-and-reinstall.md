@@ -4,7 +4,7 @@ status: qa
 priority: high
 area: "modo-nube, handover, sesiones"
 created: 2026-09-17
-updated: 2026-09-17
+updated: 2026-09-23
 source: "review adversarial de `fresh-start-keeps-a-groups-session-that-migrate-promotes` (lentes de identidad y de puertas), 2026-09-17"
 ---
 
@@ -207,3 +207,7 @@ se pueden crear cuentas, y el llavero del simulador no reproduce la supervivenci
 **Lo que NO se puede montar aquí:** que el `SecItemDelete` del llavero falle (`errSecInteractionNotAllowed`
 pide un arranque en background antes del primer desbloqueo) y que el auto-refresh del SDK reponga la sesión
 justo entre la purga y la relectura. Los dos van por unit test con sus mutantes.
+
+## Barrido de `qa` · 2026-09-23 · se queda para el iPhone
+
+Está en la lista corta de device-QA del 2026-09-23 (`qa/guion-tanda.md`). Se prueba con **Yala Dev compilado desde `2.1`**: el TestFlight 13 es del 9-sep y no lleva los arreglos posteriores. Para cerrarlo basta con el paso 3 hoy (sale gratis en el bloque D: tras reinstalar, «Ya tengo una cuenta» pide elegir y no entra solo) y el paso 4 (actualizar sin borrar no cierra la sesión) al instalar el próximo TestFlight encima del 13; hasta entonces el ticket sigue en `qa`. Los pasos 5 a 8 quedan cubiertos por `CloudSessionRetirementTests` y sus mutantes.
