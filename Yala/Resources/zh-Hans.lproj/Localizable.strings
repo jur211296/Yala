@@ -4681,6 +4681,7 @@
 "storage.confirm.revert2Confirm" = "是，返回 iCloud";
 "storage.errors.title" = "出了点问题";
 "storage.errors.generic" = "操作未成功。请重试。";
+"storage.errors.adoptOtherAccount" = "这不是您在此设备上正在启用的账户。请用同一个账户重试。";
 "storage.errors.signIn" = "无法登录。请重试。";
 "storage.consent.title" = "您在 Yala 云端的数据";
 "storage.consent.pointServers" = "您的数据保存在 Yala 的服务器上，我们的团队可以查看这些数据，以便为您提供支持和智能功能。我们不使用端到端加密。";
@@ -6020,6 +6021,8 @@
 
 /* Caption de la tarjeta de progreso de la vuelta a iCloud cuando la sesión de la nube ya no vale */
 "storage.progress.reverseNeedsSignIn" = "你的登录已过期。请重新登录以完成返回 iCloud。";
+"storage.progress.adoptSessionExpired" = "您的云端登录已失效。请取消启用，然后用您的账户重新登录。";
+"storage.progress.adoptAccountUnavailable" = "我们暂时无法让您访问这个账户。请发邮件到 %@，我们会和您一起查看。";
 
 /* Aviso cuando el sign-in para retomar la vuelta a iCloud trae una cuenta distinta */
 "storage.errors.reverseSignInOtherAccount" = "你登录的是另一个账户。请使用开始返回 iCloud 时所用的账户登录。";
@@ -6060,12 +6063,16 @@
 "storage.failed.stepSessionExpired" = "无法启用云端：完成之前您的登录已过期。您的数据仍安全保存在设备上，请重试并重新登录。";
 /* Fallo de la activación en el cutover: otro dispositivo de la misma cuenta tomó el relevo de la migración */
 "storage.failed.stepOtherDevice" = "无法在这台设备上启用云端：使用您账户的另一台设备接手了。您的数据仍在这里，没有任何改动。";
+"storage.failed.adoptStalled" = "无法登录您的云端账户：启用已经好几天没有进展。此设备没有更改您在云端的任何内容；请稍后重试。";
+"storage.failed.adoptSessionExpired" = "无法登录您的云端账户：您的登录已过期。此设备没有更改您在云端的任何内容；请重试并用您的账户重新登录。";
+"storage.failed.adoptAccountUnavailable" = "无法登录您的云端账户：我们暂时无法让您访问这个账户。请发邮件到 %@，我们会和您一起查看。";
 /* Botón de la tarjeta de progreso: cancelar la activación de la nube */
 "storage.progress.cancelMigration" = "取消启用";
 /* Título de la confirmación de cancelar la activación */
 "storage.confirm.cancelMigrationTitle" = "要取消启用云端吗？";
 /* Cuerpo de la confirmación de cancelar la activación */
 "storage.confirm.cancelMigrationBody" = "您的数据会像以前一样保留在这台设备上。已上传的内容会保留在您的云端账户中。随时可以重试。";
+"storage.confirm.cancelAdoptBody" = "此设备没有更改您在云端的任何内容。您可以随时从这里在此设备上重新启用云端。";
 /* Botón que confirma cancelar la activación */
 "storage.confirm.cancelMigrationConfirm" = "是，取消";
 /* Botón que sigue con la activación */

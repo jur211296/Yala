@@ -156,27 +156,107 @@ nonisolated enum ForwardStepPhase: String, Equatable, Sendable {
 /// y los tres pasos sin cifra que baje (`forward-migration-steps-have-no-ceiling-and-no-exit`). Decisiones de Jürgen del
 /// 2026-09-22.
 ///
-/// **El claim, solo con «Migrar a la nube»** (`ForwardClaimIntent.migrateOnly`; lo cazó una lente de la review). El mismo
-/// claim lo conducen el adopt —«Ya tengo una cuenta» del Welcome, «Activar la nube en este dispositivo»— y el seguidor, y
-/// ahí salir es un callejón: la persona quería ENTRAR en una cuenta con datos, «Tus datos siguen en este dispositivo» es
-/// falso en un teléfono recién instalado, y tras cancelar la pantalla solo ofrece «Migrar», que la puerta de identidad para
-/// con esa cuenta. Además su espera se cura sola: el re-kick reclama en cuanto vuelve la red. El techo del claim tampoco
-/// aplica ahí (`MigrationRunner.driveClaim`), y lo que falta tiene ticket: `adopt-claim-stays-parked-with-no-ceiling`.
-/// Desde la identidad en adelante el claim ya contestó `created` —una migración de verdad, venga de donde venga—, y la
-/// salida vale igual.
+/// **El claim, con las DOS intenciones** desde `adopt-claim-stays-parked-with-no-ceiling`. Hasta ese ticket solo con
+/// «Migrar»: en un adopt salir era un callejón —la pantalla solo ofrecía «Migrar», que la puerta de identidad para con esa
+/// cuenta, y el texto decía «tus datos siguen en este dispositivo» en un teléfono recién instalado—. Ahora la salida del
+/// adopt deja `MigrationState.adoptClaimExitRaw`, Almacenamiento ofrece «Activar la nube en este dispositivo» y el
+/// diálogo tiene su propio cuerpo (`AdoptClaimScope`). Desde la identidad en adelante el claim ya contestó `created` —una
+/// migración de verdad, venga de donde venga—, y la salida vale igual.
 ///
 /// **Un solo predicado, y en POSITIVO**: lo consultan el runner —para honrar un «sí» apuntado— y el controller —para
 /// pintar el botón—, y escrito dos veces un día discrepan. «¿No es el cutover confirmado?» fallaría abierto con cualquier
 /// fase nueva.
 nonisolated enum ForwardCancelScope {
-    static func offersCancel(_ phase: MigrationPhase, claimIntent: ForwardClaimIntent) -> Bool {
+    static func offersCancel(_ phase: MigrationPhase) -> Bool {
         switch phase {
-        case .uploadingSnapshot, .assigningIdentity, .cutover(.pending):
+        case .uploadingSnapshot, .claimingMigration, .assigningIdentity, .cutover(.pending):
             return true
-        case .claimingMigration:
-            return claimIntent == .migrateOnly
         default:
             return false
+        }
+    }
+}
+
+/// ¿Es ESTE el claim de un adopt? La fase `claimingMigration` con la intención journaleada de entrar en una cuenta que ya
+/// existe (`ForwardClaimIntent.adoptIfExisting`, también una fila sin intención). Lo preguntan el runner, que en su salida
+/// —techo o «Cancelar»— deja `MigrationState.adoptClaimExitRaw`, y el controller, que elige el cuerpo del diálogo de
+/// cancelar y el aviso del 22 % (ticket `adopt-claim-stays-parked-with-no-ceiling`).
+///
+/// El seguidor (`waitingForLeader`) también reclama para un adopt, pero su fase es otra y no entra.
+nonisolated enum AdoptClaimScope {
+    static func isAdoptClaim(_ phase: MigrationPhase, claimIntent: ForwardClaimIntent) -> Bool {
+        phase == .claimingMigration && claimIntent == .adoptIfExisting
+    }
+
+    /// El aviso de la tarjeta de progreso mientras el claim de un adopt sigue aparcado. `observedCause` es lo que vio el
+    /// ÚLTIMO claim de este proceso (`MigrationRunner.lastClaimDefinitiveCause`), no el reloj de causa journaleado: ese
+    /// reloj se PAUSA sin borrar la causa cuando una observación no trae motivo, así que un aviso leído de él seguía
+    /// diciendo «tu sesión ya no es válida» con la sesión recuperada y la red caída (lo cazaron dos lentes de la review).
+    /// El aviso dice lo que se vio; si la última observación no vio nada definitivo, calla.
+    static func notice(
+        phase: MigrationPhase, claimIntent: ForwardClaimIntent, observedCause: ForwardStepBlocker?
+    ) -> AdoptClaimNotice? {
+        guard isAdoptClaim(phase, claimIntent: claimIntent) else { return nil }
+        switch observedCause {
+        case .sessionExpired:     return .sessionExpired
+        case .accountUnavailable: return .accountUnavailable
+        case .refused, .otherDevice, .localFailure, nil:
+            // Los tres primeros no los produce el claim.
+            return nil
+        }
+    }
+
+    /// ¿Ofrece Almacenamiento «Activar la nube en este dispositivo» por la marca de un adopt que salió? La marca es de
+    /// UNA cuenta: la del intento (`MigrationState.adoptClaimAccountHash`). Sin atarla, la tarjeta —que no pasa por la
+    /// puerta de identidad de «Migrar»— adoptaba con la sesión que hubiera, también la de OTRA cuenta (la de Grupos), y
+    /// le subía lo local (lo cazó la lente de consumidores). Tres casos:
+    ///  · sin sesión: sí. Es la salida de la sesión borrada, y la cuenta la comprueba `blocksReentry` después de firmar;
+    ///  · con la sesión de esa cuenta: sí;
+    ///  · con otra sesión, o sin saber de qué cuenta era el intento: no, y la pantalla vuelve a lo de siempre.
+    static func offersReentry(
+        exit: AdoptClaimExit?, attemptAccountHash: String?, hasSession: Bool, sessionAccountHash: String?
+    ) -> Bool {
+        guard exit != nil else { return false }
+        guard hasSession else { return true }
+        guard let attemptAccountHash else { return false }
+        return sessionAccountHash == attemptAccountHash
+    }
+
+    /// Tras firmar desde esa tarjeta, ¿la cuenta NO es la del intento? Entonces no se adopta: la persona eligió otra en el
+    /// chooser, y adoptarla le subiría lo local (el caso que `offersReentry` no puede ver, porque sin sesión no hay cuenta
+    /// que comparar). Sin marca, o sin saber de qué cuenta era el intento, no bloquea: es la tarjeta de siempre.
+    static func blocksReentry(exit: AdoptClaimExit?, attemptAccountHash: String?, sessionAccountHash: String?) -> Bool {
+        guard exit != nil, let attemptAccountHash else { return false }
+        return sessionAccountHash != attemptAccountHash
+    }
+}
+
+/// Qué avisa la tarjeta del 22 % en el claim de un adopt (`AdoptClaimScope.notice`). Solo los dos motivos que el claim
+/// produce y que esperar no arregla.
+nonisolated enum AdoptClaimNotice: Equatable, Sendable {
+    case sessionExpired
+    case accountUnavailable
+}
+
+/// Cómo salió el claim de un ADOPT (`MigrationState.adoptClaimExitRaw`, ticket `adopt-claim-stays-parked-with-no-ceiling`).
+/// El `rawValue` va al journal: WIRE, no se renombra.
+nonisolated enum AdoptClaimExit: String, Equatable, Sendable {
+    /// 72 h sin avanzar, con la causa que fuera.
+    case stalled
+    /// El SDK borró la sesión: 15 min acumulados.
+    case sessionExpired
+    /// El claim contestó 403: 15 min acumulados.
+    case accountUnavailable
+    /// La persona tocó «Cancelar la activación». No hay tarjeta de fallo: la fase va a `notStarted`.
+    case cancelled
+
+    /// El motivo del techo que venció, en el claim. `refused`, `otherDevice` y `localFailure` no los produce el claim (son
+    /// del cutover y de la identidad); si uno llegara, la salida se cuenta como el techo largo, que no acusa a nadie.
+    init(_ reason: ForwardStepExitReason) {
+        switch reason {
+        case .sessionExpired:                           self = .sessionExpired
+        case .accountUnavailable:                       self = .accountUnavailable
+        case .stalled, .refused, .otherDevice, .localFailure: self = .stalled
         }
     }
 }
@@ -511,6 +591,11 @@ protocol MigrationWorkExecuting: AnyObject {
     /// de `claiming_in_progress` es `.waitForLeader`, de un seguidor que no llegó a serlo. El Welcome lee el sello para
     /// dejar re-entrar libre a «la misma cuenta» (`CrossAccountEntryGuardLogic`). Default no-op en la extension de abajo.
     func discardLastClaimStamp()
+    /// `CloudBeacon.hash` de la cuenta de la sesión viva, o `nil` sin sesión. Lo journalea el runner al ENTRAR en
+    /// `claimingMigration` (`MigrationState.adoptClaimAccountHash`): es la cuenta a la que queda atada la marca de un adopt
+    /// que sale (ticket `adopt-claim-stays-parked-with-no-ceiling`). Se lee al entrar y no al salir porque la salida más
+    /// común de las definitivas es justo la sesión borrada. Default `nil` en la extension de abajo.
+    func currentAccountHash() -> String?
     /// w3: backfill de `syncID` (gate permanente) + captura `(ckRecordName, ckZoneName)` con el mirror vivo.
     func assignIdentity() async throws
     /// w4: sube el snapshot completo en batches idempotentes. `cursor` = última página confirmada (journal).
@@ -600,6 +685,9 @@ extension MigrationWorkExecuting {
 
     /// Default: un conformador que no sella nada no tiene nada que deshacer.
     func discardLastClaimStamp() {}
+
+    /// Default: sin sesión que describir, no se sabe de qué cuenta es el intento.
+    func currentAccountHash() -> String? { nil }
 }
 
 // MARK: - Runner
@@ -640,6 +728,13 @@ final class MigrationRunner {
     /// limpia. Lo lee `CloudMigrationController.refresh()` para que la pantalla de adopt deje de
     /// enseñar «Conectando con tu cuenta…» ante un fallo que esperar no arregla.
     private(set) var lastClaimBlocker: ClaimBlocker?
+
+    /// El motivo DEFINITIVO que vio el último claim de la ida en este proceso —la sesión borrada por el SDK, el 403—, con
+    /// la misma clasificación que el techo (`observeForwardStepStall`). `nil` tras un claim que contestó, que falló por la
+    /// red o por un 401 con la sesión guardada. Lo lee el aviso del 22 % (`AdoptClaimScope.notice`): describe la
+    /// OBSERVACIÓN, como `lastClaimBlocker`, y por eso no lo sirve el reloj de causa, que al pausar conserva el motivo
+    /// (ticket `adopt-claim-stays-parked-with-no-ceiling`).
+    private(set) var lastClaimDefinitiveCause: ForwardStepBlocker?
 
     /// La última observación de la espera de `reverseUpload` (`nil` = ninguna en este proceso, o la espera ya
     /// terminó). La lee `CloudMigrationController.refresh()` para decir cuántas filas faltan, o que iCloud no
@@ -912,7 +1007,7 @@ final class MigrationRunner {
         let state = try loadState()
         let phase = state.readPhase().phase
         let claimIntent = state.forwardClaimIntentRaw.flatMap(ForwardClaimIntent.init(rawValue:)) ?? .adoptIfExisting
-        guard ForwardCancelScope.offersCancel(phase, claimIntent: claimIntent) else { return false }
+        guard ForwardCancelScope.offersCancel(phase) else { return false }
         if phase == .uploadingSnapshot {
             try await handle(.snapshotUploadCancelled) { _, _ in
                 CloudSyncBreadcrumb.snapshotUploadExited(reason: "cancelled")
@@ -921,7 +1016,12 @@ final class MigrationRunner {
             return true
         }
         let step = ForwardStepPhase(phase: phase)
-        try await handle(.forwardStepCancelled) { _, _ in
+        // La intención se lee ANTES del `handle`: el cierre a `notStarted` la borra en el mismo save.
+        let isAdoptClaim = AdoptClaimScope.isAdoptClaim(phase, claimIntent: claimIntent)
+        try await handle(.forwardStepCancelled) { state, _ in
+            // El adopt cancelado deja su marca en el MISMO save: sin ella, Almacenamiento ofrecería «Migrar», que la
+            // puerta de identidad para con esa cuenta (ticket `adopt-claim-stays-parked-with-no-ceiling`).
+            if isAdoptClaim { state.adoptClaimExitRaw = AdoptClaimExit.cancelled.rawValue }
             guard let step else { return }
             self.reportForwardStepExit(step, reason: "cancelled")
         }
@@ -997,6 +1097,15 @@ final class MigrationRunner {
             if event == .signInSucceeded, next == .claimingMigration {
                 state.forwardClaimIntentRaw = forwardClaimIntent.rawValue
             }
+            // Un claim que EMPIEZA —el toque de la persona, o el seguidor que vuelve a reclamar— retira la marca de un adopt
+            // que salió antes: desde aquí manda el desenlace de este intento, que dejará la suya si vuelve a salir. Y apunta
+            // la cuenta del intento, a la que quedará atada esa marca (ticket `adopt-claim-stays-parked-with-no-ceiling`).
+            // Solo al ENTRAR: en el self-hold del techo la sesión puede estar ya borrada, y re-leerla perdería la cuenta.
+            if next == .claimingMigration, current != .claimingMigration {
+                state.adoptClaimExitRaw = nil
+                state.adoptClaimAccountHash = executor.currentAccountHash()
+                lastClaimDefinitiveCause = nil
+            }
             // I11-2: al CRUZAR reverseConfirm(origin) → reverseClaimLeader, journalar el ORIGIN (la máquina
             // no lo propaga) + resetear los contadores S9 (pueden traer gasto del verify forward — el
             // S2-cleanup solo resetea en notStarted/failedRollback). En el MISMO save de la transición (N1).
@@ -1046,7 +1155,14 @@ final class MigrationRunner {
                 // lee tras relanzar— y solo se va cuando la vuelta SÍ llegó a iCloud.
                 state.reverseUploadLowestPending = nil
                 state.reverseUploadProgressAt = nil
-                if next == .icloudActive { state.reverseAbortReasonRaw = nil }
+                if next == .icloudActive {
+                    state.reverseAbortReasonRaw = nil
+                    // La nube se usó y se devolvió a iCloud: la salida de un adopt anterior ya no describe este
+                    // teléfono, y ofrecer su tarjeta aquí sería adoptar una cuenta que volvió a iCloud, que es lo que
+                    // «Migrar» para en su claim (lo cazó la lente de consumidores).
+                    state.adoptClaimExitRaw = nil
+                    state.adoptClaimAccountHash = nil
+                }
                 state.clearReversePreMountCeiling()
                 // Los pendientes guardados de una vuelta ya se repusieron arriba si tocaba; en un cierre no queda nada
                 // que reponer.
@@ -1240,14 +1356,13 @@ final class MigrationRunner {
     /// `claimingInProgress + sameDeviceReclaim=true` de la máquina queda intencionalmente
     /// INALCANZABLE desde este runner.
     ///
-    /// Con «Migrar a la nube» (`migrateOnly`), los tres no-éxitos pasan por el TECHO del paso (`observeForwardStepStall`,
-    /// ticket `forward-migration-steps-have-no-ceiling-and-no-exit`): hasta ese ticket cortaban sin evento y la barra se
-    /// quedaba al 22 % para siempre. **Con la intención de adoptar cortan como antes, sin evento**, y es a propósito (lo cazó
-    /// una lente de la review): salir de un adopt deja a quien quería entrar en su cuenta en un teléfono vacío, con una
-    /// pantalla que solo ofrece «Migrar» y una puerta de identidad que lo para, mientras que su espera se cura sola cuando
-    /// vuelve la red. Su techo necesita otra salida y tiene ticket: `adopt-claim-stays-parked-with-no-ceiling`. El mismo
-    /// término vive en `ForwardCancelScope`, que no ofrece «Cancelar» en ese claim. `lastClaimBlocker` no cambia: sigue
-    /// describiendo el intento para la pantalla del adopt.
+    /// Los tres no-éxitos pasan por el TECHO del paso (`observeForwardStepStall`, ticket
+    /// `forward-migration-steps-have-no-ceiling-and-no-exit`): hasta ese ticket cortaban sin evento y la barra se quedaba al
+    /// 22 % para siempre. **Con las DOS intenciones** desde `adopt-claim-stays-parked-with-no-ceiling`: hasta ese ticket el
+    /// adopt conservaba su espera sin techo, porque su salida era un callejón (la pantalla solo ofrecía «Migrar», que la
+    /// puerta de identidad para con esa cuenta). Ahora la salida del adopt deja `MigrationState.adoptClaimExitRaw` y la
+    /// pantalla ofrece volver a entrar en la cuenta. `lastClaimBlocker` no cambia: sigue describiendo el intento para la
+    /// pantalla del Welcome.
     ///
     /// Devuelve `false` para cortar el bucle (no-success bajo presupuesto), `true` si avanzó o salió.
     private func driveClaim() async throws -> Bool {
@@ -1262,6 +1377,7 @@ final class MigrationRunner {
         switch await executor.performClaim(marksMigrationAttempt: intent == .migrateOnly) {
         case let .success(claimState):
             lastClaimBlocker = nil
+            lastClaimDefinitiveCause = nil
             if intent.refuses(claimState) {
                 // «Migrar a la nube» sobre una cuenta que ya tiene lo personal, o que otro dispositivo está migrando: al
                 // inicio, sin adopt ni seguidor, y sin el sello que el claim acaba de dejar. Primero el sello: si Yala muere
@@ -1281,19 +1397,19 @@ final class MigrationRunner {
             // Dos productores con el mismo nombre: el token que no llega (sin red, o el SDK sin sesión) y el 401 de
             // `/account/claim`, que no exige App Attest y por eso solo habla del JWT. Definitivo solo con la sesión BORRADA
             // por el SDK, leído DESPUÉS del claim; con la sesión guardada espera el plazo largo, como en la subida.
-            guard intent == .migrateOnly else { return false }
-            return try await observeForwardStepStall(
-                .claim, blocker: executor.canRenewSession() ? nil : .sessionExpired)
+            let blocker: ForwardStepBlocker? = executor.canRenewSession() ? nil : .sessionExpired
+            lastClaimDefinitiveCause = blocker
+            return try await observeForwardStepStall(.claim, blocker: blocker)
         case .accountUnavailable:
             lastClaimBlocker = .accountUnavailable
             CloudSyncBreadcrumb.migrationAccountUnavailable()
-            guard intent == .migrateOnly else { return false }
+            lastClaimDefinitiveCause = .accountUnavailable
             return try await observeForwardStepStall(.claim, blocker: .accountUnavailable)
         case .transient:
             // La red SÍ se reintenta: no es un bloqueo de cuenta y no debe apagar la barra de progreso.
             lastClaimBlocker = nil
             CloudSyncBreadcrumb.migrationClaimNoSuccess(reason: "transient")
-            guard intent == .migrateOnly else { return false }
+            lastClaimDefinitiveCause = nil
             return try await observeForwardStepStall(.claim, blocker: nil)
         }
     }
@@ -1351,6 +1467,9 @@ final class MigrationRunner {
             blocker: blocker?.rawValue)
         let reason = forwardStepExitReason(blocker: blocker, causeStalledSeconds: clock.stalled, cause: cause)
         let current = state.readPhase().phase
+        // La intención se lee ANTES del `handle`: el cierre a `failedRollback` la borra en el mismo save.
+        let isAdoptClaim = AdoptClaimScope.isAdoptClaim(
+            current, claimIntent: state.forwardClaimIntentRaw.flatMap(ForwardClaimIntent.init(rawValue:)) ?? .adoptIfExisting)
         var left = false
         try await handle(.forwardStepStalled(
             stalledSeconds: stalled, causeStalledSeconds: clock.stalled, cause: cause)) { state, next in
@@ -1365,6 +1484,9 @@ final class MigrationRunner {
             }
             left = true
             state.forwardStepExitReasonRaw = reason.rawValue
+            // El adopt que se rinde deja su marca en el MISMO save (ticket `adopt-claim-stays-parked-with-no-ceiling`):
+            // elige el texto de la tarjeta y hace que «Reintentar» lleve a «Activar la nube en este dispositivo».
+            if isAdoptClaim { state.adoptClaimExitRaw = AdoptClaimExit(reason).rawValue }
             // Se cuenta AQUÍ, en el save que journalea la salida: lo que venga después puede no llegar a correr.
             self.reportForwardStepExit(step, reason: reason.rawValue)
         }

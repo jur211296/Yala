@@ -7178,6 +7178,13 @@ enum L10n {
             /// `Storage.Sync.signInButton`: es el mismo gesto que ya pide el banner hermano de esta pantalla, y dos
             /// literales para un mismo botón acaban divergiendo.
             static var reverseNeedsSignIn: String { ls("storage.progress.reverseNeedsSignIn", comment: "") }
+            // El claim de un ADOPT aparcado por un motivo que esperar no arregla, dicho antes del techo (ticket
+            // `adopt-claim-stays-parked-with-no-ceiling`).
+            static var adoptSessionExpired: String { ls("storage.progress.adoptSessionExpired", comment: "") }
+            /// Con el correo de soporte (`AppConstants.supportEmail`): esperar no despierta una cuenta que no deja entrar.
+            static func adoptAccountUnavailable(_ supportEmail: String) -> String {
+                String(format: ls("storage.progress.adoptAccountUnavailable", comment: ""), supportEmail)
+            }
         }
 
         /// Después de que la vuelta a iCloud termine sin llegar —por la espera o porque el servidor no dejó empezar—:
@@ -7329,6 +7336,14 @@ enum L10n {
             static var stepStalled: String { ls("storage.failed.stepStalled", comment: "") }
             static var stepSessionExpired: String { ls("storage.failed.stepSessionExpired", comment: "") }
             static var stepOtherDevice: String { ls("storage.failed.stepOtherDevice", comment: "") }
+            // El claim de un ADOPT que venció su techo (ticket `adopt-claim-stays-parked-with-no-ceiling`). Frases propias:
+            // quien entraba en su cuenta puede estar en un teléfono recién instalado, y las de la ida hablan de sus datos
+            // en el dispositivo.
+            static var adoptStalled: String { ls("storage.failed.adoptStalled", comment: "") }
+            static var adoptSessionExpired: String { ls("storage.failed.adoptSessionExpired", comment: "") }
+            static func adoptAccountUnavailable(_ supportEmail: String) -> String {
+                String(format: ls("storage.failed.adoptAccountUnavailable", comment: ""), supportEmail)
+            }
         }
 
         enum Confirm {
@@ -7361,6 +7376,9 @@ enum L10n {
             // «Cancelar la activación» de la ida, durante la subida del snapshot.
             static var cancelMigrationTitle: String { ls("storage.confirm.cancelMigrationTitle", comment: "") }
             static var cancelMigrationBody: String { ls("storage.confirm.cancelMigrationBody", comment: "") }
+            /// El cuerpo del mismo diálogo en el claim de un ADOPT: nada de «tus datos siguen en este dispositivo» (ticket
+            /// `adopt-claim-stays-parked-with-no-ceiling`).
+            static var cancelAdoptBody: String { ls("storage.confirm.cancelAdoptBody", comment: "") }
             static var cancelMigrationConfirm: String { ls("storage.confirm.cancelMigrationConfirm", comment: "") }
             static var cancelMigrationKeep: String { ls("storage.confirm.cancelMigrationKeep", comment: "") }
         }
@@ -7368,6 +7386,9 @@ enum L10n {
         enum Errors {
             static var title: String { ls("storage.errors.title", comment: "") }
             static var generic: String { ls("storage.errors.generic", comment: "") }
+            /// La tarjeta de adopt que abrió la salida de un adopt anterior, firmada con OTRA cuenta (ticket
+            /// `adopt-claim-stays-parked-with-no-ceiling`): no se adopta.
+            static var adoptOtherAccount: String { ls("storage.errors.adoptOtherAccount", comment: "") }
             static var signIn: String { ls("storage.errors.signIn", comment: "") }
             /// «Volver a iCloud» con la salida anterior de la espera todavía a medias (`reverse_abort` pendiente).
             static var reversePendingExit: String { ls("storage.errors.reversePendingExit", comment: "") }

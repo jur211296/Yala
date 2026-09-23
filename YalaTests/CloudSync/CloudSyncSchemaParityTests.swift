@@ -208,6 +208,8 @@ struct CloudSyncSchemaParityTests {
             "forwardStepStallCauseAt",
             "forwardStepStallCauseAccruedSeconds",
             "forwardStepExitReasonRaw",
+            "adoptClaimExitRaw",
+            "adoptClaimAccountHash",
             "startedAt",
             "updatedAt",
             "schemaVersion",
@@ -215,7 +217,7 @@ struct CloudSyncSchemaParityTests {
         #expect(propertyNames(MigrationState.self) == expected)
     }
 
-    @Test func migrationState_schemaVersion_isTen() {
+    @Test func migrationState_schemaVersion_isEleven() {
         // Subió a 2 en I11-2 al añadir el campo aditivo `reverseOriginRaw`; a 3 en C-1 con
         // `markerWrittenSince` (reloj del tope del paso 4) + `cutoverICloudVerdictRaw` (veredicto del canal
         // iCloud), ambos ADITIVOS y opcionales → una fila escrita por un build v2 sigue abriéndose. A 4 con los
@@ -240,7 +242,9 @@ struct CloudSyncSchemaParityTests {
         // A 10 con los CINCO del techo de los tres pasos sin cifra que baje (los cuatro `forwardStepStall*` y
         // `forwardStepExitReasonRaw`), opcionales: una fila v9 parada al 22, 35 u 80 % se abre sin reloj, y la primera
         // observación lo sella (ticket `forward-migration-steps-have-no-ceiling-and-no-exit`).
-        #expect(CloudSyncSchemaVersions.migrationState == 10)
+        // A 11 con `adoptClaimExitRaw` y `adoptClaimAccountHash` (la salida del claim de un adopt y su cuenta), opcionales: una fila v10 se abre sin marca y la
+        // pantalla ofrece lo de siempre (ticket `adopt-claim-stays-parked-with-no-ceiling`).
+        #expect(CloudSyncSchemaVersions.migrationState == 11)
     }
 
     /// **Los CUATRO campos de los relojes del techo de los tres pasos se limpian juntos**

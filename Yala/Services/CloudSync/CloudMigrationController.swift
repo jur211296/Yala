@@ -189,6 +189,11 @@ nonisolated struct MigrationJournalSnapshot: Equatable {
     let claimIntent: ForwardClaimIntent
     let reverseAbortReason: ReverseAbortReason?
     let hasPendingReverseExit: Bool
+    /// Cómo salió el claim de un adopt (`MigrationState.adoptClaimExitRaw`, ticket `adopt-claim-stays-parked-with-no-ceiling`).
+    /// Con default, como el siguiente: las lecturas escritas antes de estos campos no los nombran.
+    var adoptClaimExit: AdoptClaimExit? = nil
+    /// La cuenta a la que está atada esa marca (`MigrationState.adoptClaimAccountHash`).
+    var adoptClaimAccountHash: String? = nil
 
     /// Journal sin fila: el dispositivo nunca empezó. Una fila sin intención se lee `adoptIfExisting`, como en el runner.
     static let empty = MigrationJournalSnapshot(
@@ -230,7 +235,9 @@ nonisolated enum MigrationJournalRead: Equatable {
                 forwardStepExitReason: state.forwardStepExitReasonRaw.flatMap(ForwardStepExitReason.init(rawValue:)),
                 claimIntent: state.forwardClaimIntentRaw.flatMap(ForwardClaimIntent.init(rawValue:)) ?? .adoptIfExisting,
                 reverseAbortReason: state.reverseAbortReasonRaw.flatMap(ReverseAbortReason.init(rawValue:)),
-                hasPendingReverseExit: ReverseExitPending.isPending(pending)))
+                hasPendingReverseExit: ReverseExitPending.isPending(pending),
+                adoptClaimExit: state.adoptClaimExitRaw.flatMap(AdoptClaimExit.init(rawValue:)),
+                adoptClaimAccountHash: state.adoptClaimAccountHash))
         } catch {
             #if DEBUG
             print("CloudMigrationController.readJournal: fetch(MigrationState) falló: \(error)")
@@ -359,13 +366,50 @@ final class CloudMigrationController {
     /// Con el journal ilegible es `false`: `journaledPhase` es entonces la última fase leída, no la de ahora, y el
     /// `.onChange` de la pantalla usa este getter para bajar un diálogo que ya no aplica.
     var canCancelMigration: Bool {
-        !isJournalUnreadable && ForwardCancelScope.offersCancel(journaledPhase, claimIntent: journaledClaimIntent)
+        !isJournalUnreadable && ForwardCancelScope.offersCancel(journaledPhase)
     }
 
     /// La intención journaleada del claim de la ida (`MigrationState.forwardClaimIntentRaw`), la misma que lee
-    /// `MigrationRunner.driveClaim`: en el claim, «Cancelar» solo se ofrece con «Migrar» (`ForwardCancelScope`). Una fila sin
-    /// intención se lee como `adoptIfExisting`, igual que allí.
+    /// `MigrationRunner.driveClaim`. Una fila sin intención se lee como `adoptIfExisting`, igual que allí.
     private(set) var journaledClaimIntent: ForwardClaimIntent = .adoptIfExisting
+
+    /// El motivo definitivo que vio el último claim de este proceso (`MigrationRunner.lastClaimDefinitiveCause`). Solo lo
+    /// lee `adoptClaimNotice`.
+    private var claimDefinitiveCause: ForwardStepBlocker?
+
+    /// Cómo salió el último claim de un adopt (`MigrationState.adoptClaimExitRaw`). Del JOURNAL, como
+    /// `forwardStepExitReason`: la persona lo lee tras relanzar. `nil` = ningún adopt salió desde el último claim.
+    private(set) var adoptClaimExit: AdoptClaimExit?
+
+    /// La cuenta a la que está atada esa marca (`MigrationState.adoptClaimAccountHash`), con el hash del faro.
+    private var adoptClaimAccountHash: String?
+
+    /// ¿La activación parada es el claim de un ADOPT? Elige el cuerpo del diálogo de «Cancelar la activación»: el de
+    /// «Migrar» dice «tus datos siguen en este dispositivo», que en un teléfono recién instalado es falso (ticket
+    /// `adopt-claim-stays-parked-with-no-ceiling`). El predicado es el mismo que usa el runner para dejar la marca.
+    var isAdoptClaim: Bool {
+        !isJournalUnreadable && AdoptClaimScope.isAdoptClaim(journaledPhase, claimIntent: journaledClaimIntent)
+    }
+
+    /// El motivo que esperar no arregla —la sesión borrada, el 403— mientras el claim de un adopt sigue aparcado, para
+    /// avisarlo en la tarjeta ANTES de que venza el techo, como hace el Welcome mientras está delante. `nil` = nada que
+    /// avisar. Con el journal ilegible, nada: la fase sería la última leída.
+    var adoptClaimNotice: AdoptClaimNotice? {
+        guard !isJournalUnreadable else { return nil }
+        return AdoptClaimScope.notice(
+            phase: journaledPhase, claimIntent: journaledClaimIntent, observedCause: claimDefinitiveCause)
+    }
+
+    /// ¿Almacenamiento ofrece «Activar la nube en este dispositivo» aunque no haya marcador de CloudKit? Cuando el claim de
+    /// un adopt salió —por su techo o por «Cancelar»—, sin sesión o con la de la cuenta de ese intento: la persona quería
+    /// ENTRAR en esa cuenta, y «Migrar a la nube» la para la puerta de identidad (ticket
+    /// `adopt-claim-stays-parked-with-no-ceiling`). La sesión se lee en vivo, como hace la tarjeta con el faro.
+    var offersAdoptReentry: Bool {
+        AdoptClaimScope.offersReentry(
+            exit: adoptClaimExit, attemptAccountHash: adoptClaimAccountHash,
+            hasSession: CloudAuthService.shared.hasSession,
+            sessionAccountHash: CloudAuthService.shared.currentUserID.map { CloudBeacon.hash($0) })
+    }
 
     /// C-1: el cutover está en el paso 4 esperando que iCloud confirme el marcador. Es el estado que antes
     /// se mostraba como un 89 % mudo, sin decir a qué se esperaba.
@@ -655,6 +699,19 @@ final class CloudMigrationController {
     ) async {
         guard consentPath == .migration else {
             migrationAttempt = nil
+            // La tarjeta de adopt que abrió la marca de un adopt anterior solo entra en ESA cuenta (ticket
+            // `adopt-claim-stays-parked-with-no-ceiling`): sin sesión, la persona puede haber elegido otra en el chooser, y
+            // adoptarla le subiría lo local sin la puerta de «Migrar». Sin claim y sin escribir nada, como la puerta.
+            if AdoptClaimScope.blocksReentry(
+                exit: adoptClaimExit, attemptAccountHash: adoptClaimAccountHash,
+                sessionAccountHash: CloudAuthService.shared.currentUserID.map { CloudBeacon.hash($0) }) {
+                _ = await closeSessionIfOpened(openedSession)
+                await r.submit(.signInFailed)    // authenticating → notStarted, sin efectos
+                lastError = L10n.Storage.Errors.adoptOtherAccount
+                CloudSyncBreadcrumb.migrationIdentityBlocked(reason: "adopt_other_account", stage: "gate")
+                MetricsService.cloudMigrationExistingAccountBlocked(reason: "adopt_other_account", stage: "gate")
+                return
+            }
             r.setForwardClaimIntent(.adoptIfExisting)
             await r.submit(.signInSucceeded)     // authenticating → claimingMigration → drive
             return
@@ -1398,6 +1455,7 @@ final class CloudMigrationController {
         // clients) — `refresh()` corre desde el `init` y desde el poll de la pantalla de adopt, y no
         // es sitio para eso. Sin runner vivo no hay claim aparcado que reportar.
         claimBlocker = _runner?.lastClaimBlocker
+        claimDefinitiveCause = _runner?.lastClaimDefinitiveCause
         reverseUploadSample = _runner?.lastReverseUploadSample
         reverseSessionExpiry = _runner?.lastReverseSessionExpiry
 
@@ -1491,6 +1549,8 @@ final class CloudMigrationController {
             snapshotExitReason = snapshot.snapshotExitReason
             forwardStepExitReason = snapshot.forwardStepExitReason
             journaledClaimIntent = snapshot.claimIntent
+            adoptClaimExit = snapshot.adoptClaimExit
+            adoptClaimAccountHash = snapshot.adoptClaimAccountHash
             reverseAbortReason = snapshot.reverseAbortReason
             hasPendingReverseExit = snapshot.hasPendingReverseExit
         case .unreadable:

@@ -56,12 +56,14 @@ struct MigrationJournalUnreadableReadTests {
         state.forwardStepExitReasonRaw = ForwardStepExitReason.otherDevice.rawValue
         state.forwardClaimIntentRaw = ForwardClaimIntent.migrateOnly.rawValue
         state.reverseAbortReasonRaw = ReverseAbortReason.icloudFull.rawValue
+        state.adoptClaimExitRaw = AdoptClaimExit.cancelled.rawValue
+        state.adoptClaimAccountHash = "cuenta-a"
 
         let read = MigrationJournalRead.read { state }
         #expect(read == .read(MigrationJournalSnapshot(
             phase: .done, pendingCount: 1, cutoverBlocker: .noChannelNoFootprint, snapshotExitReason: .localFailure,
             forwardStepExitReason: .otherDevice, claimIntent: .migrateOnly, reverseAbortReason: .icloudFull,
-            hasPendingReverseExit: true)))
+            hasPendingReverseExit: true, adoptClaimExit: .cancelled, adoptClaimAccountHash: "cuenta-a")))
         #expect(read.phaseRead == .phase(.done))
     }
 
@@ -436,6 +438,8 @@ struct MigrationJournalUnreadableWiringTests {
             "snapshotExitReason = snapshot.snapshotExitReason",
             "forwardStepExitReason = snapshot.forwardStepExitReason",
             "journaledClaimIntent = snapshot.claimIntent",
+            "adoptClaimExit = snapshot.adoptClaimExit",
+            "adoptClaimAccountHash = snapshot.adoptClaimAccountHash",
             "reverseAbortReason = snapshot.reverseAbortReason",
             "hasPendingReverseExit = snapshot.hasPendingReverseExit",
             "case .unreadable:",
@@ -570,6 +574,7 @@ struct MigrationJournalUnreadableWiringTests {
             "mirrorOffArmed: mirrorOffArmed,",
             "mountedDecision: mountedDecision)",
             "claimBlocker = _runner?.lastClaimBlocker",
+            "claimDefinitiveCause = _runner?.lastClaimDefinitiveCause",
             "reverseUploadSample = _runner?.lastReverseUploadSample",
             "reverseSessionExpiry = _runner?.lastReverseSessionExpiry",
             "refreshSyncBanner()",
@@ -581,7 +586,7 @@ struct MigrationJournalUnreadableWiringTests {
     @Test func cancelGetters_areOffWhileUnreadable() throws {
         let migration = Self.lines(try Self.body(of: "var canCancelMigration: Bool {", in: Self.controllerPath))
         #expect(migration == [
-            "!isJournalUnreadable && ForwardCancelScope.offersCancel(journaledPhase, claimIntent: journaledClaimIntent)"])
+            "!isJournalUnreadable && ForwardCancelScope.offersCancel(journaledPhase)"])
         let reverse = Self.lines(try Self.body(of: "var canCancelReverse: Bool {", in: Self.controllerPath))
         #expect(reverse == ["!isJournalUnreadable && (journaledPhase == .reverseUpload || isBeforeReverseMount)"])
     }

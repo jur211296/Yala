@@ -173,7 +173,7 @@ struct SnapshotUploadCeilingLogicTests {
     @Test func controller_readsThePhaseAndTheReasonFromTheJournal() throws {
         let controller = "Yala/Services/CloudSync/CloudMigrationController.swift"
         let src = try Self.source(controller)
-        #expect(src.contains("ForwardCancelScope.offersCancel(journaledPhase, claimIntent: journaledClaimIntent)"))
+        #expect(src.contains("ForwardCancelScope.offersCancel(journaledPhase)"))
         #expect(src.contains(
             "snapshotExitReason: state.snapshotExitReasonRaw.flatMap(SnapshotExitReason.init(rawValue:))"))
         let cancel = try Self.body(of: "func cancelMigration() async", in: controller)

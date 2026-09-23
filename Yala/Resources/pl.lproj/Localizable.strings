@@ -4681,6 +4681,7 @@
 "storage.confirm.revert2Confirm" = "Tak, wróć do iCloud";
 "storage.errors.title" = "Coś poszło nie tak";
 "storage.errors.generic" = "Coś nie zadziałało. Spróbuj ponownie.";
+"storage.errors.adoptOtherAccount" = "To nie jest konto, dla którego włączano chmurę na tym urządzeniu. Spróbuj ponownie z tym samym kontem.";
 "storage.errors.signIn" = "Nie udało się zalogować. Spróbuj ponownie.";
 "storage.consent.title" = "Twoje dane w chmurze Yala";
 "storage.consent.pointServers" = "Twoje dane są przechowywane na serwerach Yala, a nasz zespół może je zobaczyć, żeby udzielić Ci wsparcia i dodawać inteligentne funkcje. Nie stosujemy szyfrowania end-to-end.";
@@ -6020,6 +6021,8 @@
 
 /* Caption de la tarjeta de progreso de la vuelta a iCloud cuando la sesión de la nube ya no vale */
 "storage.progress.reverseNeedsSignIn" = "Twoja sesja wygasła. Zaloguj się ponownie, aby dokończyć powrót do iCloud.";
+"storage.progress.adoptSessionExpired" = "Twoja sesja w chmurze jest już nieważna. Anuluj włączanie i zaloguj się ponownie na swoje konto.";
+"storage.progress.adoptAccountUnavailable" = "W tej chwili nie możemy dać Ci dostępu do tego konta. Napisz do nas na %@, a sprawdzimy to razem.";
 
 /* Aviso cuando el sign-in para retomar la vuelta a iCloud trae una cuenta distinta */
 "storage.errors.reverseSignInOtherAccount" = "Zalogowano się na inne konto. Zaloguj się na konto, z którego rozpoczął się powrót do iCloud.";
@@ -6060,12 +6063,16 @@
 "storage.failed.stepSessionExpired" = "Nie udało się włączyć chmury: Twoja sesja wygasła, zanim skończyliśmy. Twoje dane są bezpieczne na urządzeniu — spróbuj ponownie i zaloguj się jeszcze raz.";
 /* Fallo de la activación en el cutover: otro dispositivo de la misma cuenta tomó el relevo de la migración */
 "storage.failed.stepOtherDevice" = "Nie udało się włączyć chmury na tym urządzeniu: przejęło to inne urządzenie z Twoim kontem. Twoje dane są tutaj, bez zmian.";
+"storage.failed.adoptStalled" = "Nie udało się zalogować Cię do konta w chmurze: włączanie od kilku dni nie postępuje. To urządzenie niczego nie zmieniło w tym, co masz w chmurze — spróbuj ponownie później.";
+"storage.failed.adoptSessionExpired" = "Nie udało się zalogować Cię do konta w chmurze: Twoja sesja wygasła. To urządzenie niczego nie zmieniło w tym, co masz w chmurze — spróbuj ponownie i zaloguj się jeszcze raz na swoje konto.";
+"storage.failed.adoptAccountUnavailable" = "Nie udało się zalogować Cię do konta w chmurze: w tej chwili nie możemy dać Ci dostępu do tego konta. Napisz do nas na %@, a sprawdzimy to razem.";
 /* Botón de la tarjeta de progreso: cancelar la activación de la nube */
 "storage.progress.cancelMigration" = "Anuluj włączanie";
 /* Título de la confirmación de cancelar la activación */
 "storage.confirm.cancelMigrationTitle" = "Anulować włączanie chmury?";
 /* Cuerpo de la confirmación de cancelar la activación */
 "storage.confirm.cancelMigrationBody" = "Twoje dane zostają na tym urządzeniu, tak jak dotąd. To, co już przesłano, zostaje na Twoim koncie w chmurze. Możesz spróbować ponownie, kiedy zechcesz.";
+"storage.confirm.cancelAdoptBody" = "To urządzenie niczego nie zmieniło w tym, co masz w chmurze. Możesz tu ponownie włączyć chmurę na tym urządzeniu, kiedy zechcesz.";
 /* Botón que confirma cancelar la activación */
 "storage.confirm.cancelMigrationConfirm" = "Tak, anuluj";
 /* Botón que sigue con la activación */

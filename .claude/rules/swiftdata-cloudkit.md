@@ -380,12 +380,28 @@ paths:
   la identidad (`localFailure`: el `save()`, o desde 2026-09-23 el backfill o un inventario de la captura que no se deja
   leer). La red y el 401 con la sesión guardada van al LARGO. `confirmCutoverServer` dejó de ser un
   `Bool` (`CutoverServerOutcome`): su `false` único metía los cinco casos en el mismo saco;
-  (4) **en el claim, techo y «Cancelar» SOLO con «Migrar a la nube»** (`ForwardClaimIntent.migrateOnly`; lo cazó una
-  lente). El mismo claim lo conducen el adopt y el seguidor, y ahí salir es un callejón: quien quería entrar en su cuenta
-  queda en un teléfono vacío, con una pantalla que solo ofrece «Migrar» y una puerta de identidad que lo para, mientras que
-  su espera se cura sola con la red. El término vive en `ForwardCancelScope.offersCancel(_:claimIntent:)`, que consultan
-  el controller (el botón) y el runner (`journalMigrationCancel`, el ÚNICO sitio que journalea una cancelación). Desde la
-  identidad el claim ya contestó `created` y la salida vale con cualquier intención;
+  (4) **en el claim, techo y «Cancelar» con las DOS intenciones, pero la salida del ADOPT deja marca** (desde
+  2026-09-23, ticket `adopt-claim-stays-parked-with-no-ceiling`; hasta ese día solo con «Migrar», porque la salida del
+  adopt era un callejón: la pantalla solo ofrecía «Migrar», que la puerta de identidad para con esa cuenta, y el texto
+  decía «tus datos siguen en este dispositivo» en un teléfono recién instalado). La marca es
+  `MigrationState.adoptClaimExitRaw` (schema 11), escrita en el MISMO save de la salida —techo o cancelación— cuando
+  `AdoptClaimScope.isAdoptClaim` (claim + intención `adoptIfExisting`, que incluye la fila sin intención). **Sobrevive a
+  `failedRollback`, a «Reintentar» y a `notStarted` a propósito** —es lo que hace que la tarjeta de `.idle` ofrezca
+  «Activar la nube en este dispositivo» sin marcador (`offersAdoptReentry`)— y la borra `handle` al ENTRAR en
+  `claimingMigration` (otro intento empezó y manda su desenlace) y al llegar a `icloudActive`. **Va atada a UNA cuenta**,
+  `adoptClaimAccountHash`, que `handle` apunta al ENTRAR en el claim (no en el self-hold: la sesión puede estar ya
+  borrada): la tarjeta de adopt no pasa por la puerta de «Migrar», así que con otra sesión no se ofrece, y tras firmar
+  otra cuenta en el chooser `continueToClaim` para sin claim (`AdoptClaimScope.blocksReentry`). Sin atarla, la sesión de
+  Grupos de otra cuenta adoptaba esa y le subía lo local (lo cazó la lente de consumidores). La intención se lee ANTES
+  del `handle`, porque el cierre del intento la borra en ese mismo save. El texto de la tarjeta de fallo
+  (`StorageFailureCopyLogic`, el adopt primero), el cuerpo del diálogo (`isAdoptClaim`) y el aviso del 22 %
+  (`AdoptClaimScope.notice`) son del adopt. **El aviso lee lo que vio el último claim** (`lastClaimDefinitiveCause`, en
+  memoria), no el reloj de causa: el reloj PAUSA sin borrar la causa, y un aviso leído de él seguía diciendo «tu sesión ya
+  no es válida» con la sesión recuperada y la red caída. Tampoco `lastClaimBlocker`, cuyo `.sessionExpired` incluye el
+  401 con la sesión guardada. El
+  alcance de «Cancelar» vive en `ForwardCancelScope.offersCancel(_:)`, que consultan el controller (el botón) y el runner
+  (`journalMigrationCancel`, el ÚNICO sitio que journalea una cancelación). El seguidor (`waitingForLeader`) no entra:
+  ticket `adopt-follower-waits-for-the-leader-with-no-ceiling`;
   (5) **el «sí» de Cancelar vale para la PASADA**: se honra en la próxima fase que lo ofrece y se retira en la primera que
   no (verificación, cutover confirmado). Con el botón al 22 %, retirarlo al salir de la subida —como hacía #212— perdía un
   «sí» dado con el claim en vuelo y la pasada seguía hasta el cutover. El controller, además, cancela donde la pasada se
@@ -402,8 +418,8 @@ paths:
   (7) **salida a `failedRollback` con `[.rollback]`, «Cancelar» a `notStarted` sin efectos**, desde los tres; desde
   `cutover(.serverConfirmed)` los dos eventos son `.invalid`. En `.pending` una respuesta perdida puede dejar `migrated_at`
   estampado: el cliente no lo lee y el reintento del mismo líder converge (claim `created`, `cutover` idempotente), y la
-  precondición del canal iCloud sigue yendo antes que el techo en cada pasada. `MigrationState` schema 9 → 10. Residuales
-  con ticket: `adopt-claim-stays-parked-with-no-ceiling` (el claim del adopt conserva su espera sin techo) y la identidad
+  precondición del canal iCloud sigue yendo antes que el techo en cada pasada. `MigrationState` schema 9 → 10. Residual
+  con ticket: la identidad
   cuyo `save()` falla deja sucio el contexto compartido, así que su salida no llega a disco — la misma clase que
   `a-failed-snapshot-enqueue-save-leaves-the-journal-unsaved`, que la recoge.
 

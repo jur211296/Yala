@@ -32,14 +32,27 @@ enum StorageFailureCopyLogic {
     /// el dispositivo que no pudo preparar los datos— y tienen tres propias, porque las de la subida hablan de «subir tus
     /// datos» y al 22 % todavía no se ha subido nada: la activación que lleva días sin avanzar, la sesión que caducó antes
     /// de terminar y otro dispositivo de la cuenta que tomó el relevo. Ninguna de esas tres da el correo.
+    ///
+    /// **El claim de un ADOPT va primero, y con frases propias** (ticket `adopt-claim-stays-parked-with-no-ceiling`). Quien
+    /// entraba en una cuenta que ya existe puede estar en un teléfono recién instalado, así que ninguna dice «tus datos
+    /// están a salvo en tu dispositivo»: hablan de lo que tiene en la nube, que el claim no tocó. Cuando salen, también
+    /// está puesto `forwardStepExit` —es la misma salida—, y por eso se miran antes. `.cancelled` no llega a esta tarjeta
+    /// (cancelar va a `notStarted`), y si llegara cae a los motivos de siempre.
     static func message(
         kind: CloudMigrationUIState.FailureKind,
         snapshotExit: SnapshotExitReason?,
         forwardStepExit: ForwardStepExitReason? = nil,
+        adoptClaimExit: AdoptClaimExit? = nil,
         cutoverBlocker: ICloudChannelVerdict?,
         supportEmail: String = AppConstants.supportEmail
     ) -> String {
         guard kind == .migration else { return L10n.Storage.Failed.reverse }
+        switch adoptClaimExit {
+        case .stalled:            return L10n.Storage.Failed.adoptStalled
+        case .sessionExpired:     return L10n.Storage.Failed.adoptSessionExpired
+        case .accountUnavailable: return L10n.Storage.Failed.adoptAccountUnavailable(supportEmail)
+        case .cancelled, nil:     break
+        }
         if let snapshotExit {
             switch snapshotExit {
             case .stalled:            return L10n.Storage.Failed.snapshotStalled

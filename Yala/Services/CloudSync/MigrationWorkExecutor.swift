@@ -669,6 +669,11 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         session.canRenewSession
     }
 
+    /// La cuenta de la sesión viva, con el hash del faro (`MigrationWorkExecuting.currentAccountHash`).
+    func currentAccountHash() -> String? {
+        session.currentUserID.map { CloudBeacon.hash($0) }
+    }
+
     /// w6 paso 1: `migration_progress('cutover')` — estampa `profiles.migrated_at` (guard líder). NUNCA lanza.
     ///
     /// Clasifica el no para el techo de `cutover(.pending)` (ticket `forward-migration-steps-have-no-ceiling-and-no-exit`;

@@ -255,8 +255,10 @@ struct StorageSettingsView: View {
     // MARK: - Migrate / Adopt card
 
     private func migrateCard(_ controller: CloudMigrationController) -> some View {
-        // El marcador de un líder en el mirror → copy de ADOPT (evita el falso "migrar" sobre cuenta poblada).
-        let isAdopt = (controller.markerDecision() == .secondaryDeviceCloudLogin)
+        // El marcador de un líder en el mirror → copy de ADOPT (evita el falso "migrar" sobre cuenta poblada). Y desde
+        // `adopt-claim-stays-parked-with-no-ceiling`, también tras un adopt que salió por su techo o por «Cancelar»: la
+        // persona quería ENTRAR en esa cuenta, y «Migrar» la para la puerta de identidad. Esta tarjeta es su salida.
+        let isAdopt = controller.offersAdoptReentry || controller.markerDecision() == .secondaryDeviceCloudLogin
         let decision = signInDecision(isAdopt: isAdopt)
         return VStack(alignment: .leading, spacing: DS.Spacing.md) {
             Text(isAdopt ? L10n.Storage.Adopt.title : L10n.Storage.Migrate.title)
@@ -482,6 +484,16 @@ struct StorageSettingsView: View {
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .accessibilityIdentifier("storage_reverse_needs_signin_caption")
+            } else if let notice = controller.adoptClaimNotice {
+                // El claim de un adopt aparcado por un motivo que esperar no arregla (ticket
+                // `adopt-claim-stays-parked-with-no-ceiling`): se dice YA, como hace el Welcome, y no a los 15 min del
+                // techo. Va antes que la espera del import por lo mismo que la sesión de la vuelta: de las dos cosas
+                // ciertas a la vez, manda la que la persona puede desatascar, y aquí la salida es «Cancelar».
+                Text(adoptClaimNoticeText(notice))
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .accessibilityIdentifier("storage_adopt_claim_notice")
             } else if controller.resumeWaitingForImport {
                 Text(L10n.Storage.Progress.waitingImport)
                     .font(DS.Typography.caption)
@@ -534,6 +546,14 @@ struct StorageSettingsView: View {
         .frame(maxWidth: .infinity)
         .storageCardStyle()
         .accessibilityIdentifier("storage_progress_card")
+    }
+
+    /// El aviso del claim de un adopt aparcado (`AdoptClaimScope.notice`).
+    private func adoptClaimNoticeText(_ notice: AdoptClaimNotice) -> String {
+        switch notice {
+        case .sessionExpired:     return L10n.Storage.Progress.adoptSessionExpired
+        case .accountUnavailable: return L10n.Storage.Progress.adoptAccountUnavailable(AppConstants.supportEmail)
+        }
     }
 
     /// El texto de la espera de la vuelta a iCloud (`ReverseUploadWaitingCopyLogic`): el mensaje y, si ya se observó,
@@ -619,7 +639,11 @@ struct StorageSettingsView: View {
             }
             Button(L10n.Storage.Confirm.cancelMigrationKeep, role: .cancel) {}
         } message: {
-            Text(L10n.Storage.Confirm.cancelMigrationBody)
+            // En el claim de un ADOPT el cuerpo es otro: quien entraba en su cuenta puede estar en un teléfono recién
+            // instalado, y «tus datos siguen en este dispositivo» sería falso (ticket `adopt-claim-stays-parked-with-no-ceiling`).
+            Text(controller.isAdoptClaim
+                 ? L10n.Storage.Confirm.cancelAdoptBody
+                 : L10n.Storage.Confirm.cancelMigrationBody)
         }
     }
 
@@ -719,7 +743,8 @@ struct StorageSettingsView: View {
     ) -> String {
         StorageFailureCopyLogic.message(
             kind: kind, snapshotExit: controller.snapshotExitReason,
-            forwardStepExit: controller.forwardStepExitReason, cutoverBlocker: controller.cutoverBlocker)
+            forwardStepExit: controller.forwardStepExitReason, adoptClaimExit: controller.adoptClaimExit,
+            cutoverBlocker: controller.cutoverBlocker)
     }
 
     // MARK: - Panel DEBUG (DEV_BUILD only)
