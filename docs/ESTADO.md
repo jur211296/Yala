@@ -3,9 +3,9 @@ updated: 2026-09-23
 tags: [now, punto-de-retomada]
 ---
 
-# NOW — 2026-09-22 (Lima)
+# NOW — 2026-09-23 (Lima)
 
-**Rama** `2.1` — Merge #216: **Si la app no puede leer sus salvaguardas, lo que baja de la nube ya no pisa un cambio tuyo sin subir.**
+**Rama** `2.1` — Merge #217: **Si la app no puede leer un movimiento o a qué apunta, ya no pierde su categoría o su cuenta.**
 TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,34 @@ TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#216 · lo que baja de la nube ya no pisa un cambio sin subir si la app no puede leer sus salvaguardas)
+## Esta sesión (#217 · una ref colgada con la fila o el destino ilegible ya no se pierde)
+
+**Si el teléfono no consigue leer un movimiento, o la categoría, la cuenta o las etiquetas a las que apunta, mientras
+sincroniza, ya no pierde a qué apuntaba ni deja la relación vacía**: espera y lo completa en la siguiente
+sincronización, cuando la lectura vuelve. Antes, un movimiento que bajaba antes que su categoría podía quedarse sin
+ella para siempre.
+
+El pase final de refs colgadas devuelve `DanglerOutcome.unreadable` (lecturas `find*` de fila y destino) y CONSERVA la
+nota, en vez de leer la fila ilegible como `.rowGone` y borrarla; uno ilegible no frena a los demás. Los appliers
+lanzan (`ColumnApplier.apply` es `throws`): `resolveRef`, `clearDangler`/`registerDangler` y las lecturas M2M tiran la
+página —medido que solo corren dentro de `applyPage` y `drainQuarantineOnce`, los dos con rollback—. Breadcrumb propio
+`danglersUnreadable(count:)`. Regla: `.claude/rules/swiftdata-cloudkit.md`, «Y las refs colgadas tampoco (2026-09-23)».
+
+Gate: 7582 unit en 747 suites y 4 XCUITest. 17 mutantes, todos muertos (incluidas las 18 ramas del pase y los 25
+appliers que leen, uno a uno y con scan). Review de tres lentes: sin defectos altos ni medios en lo cambiado; cazó
+que los tests cubrían 1 de 18 ramas (entró) y tres gemelos fuera del alcance (a ticket).
+
+### Lo que espera de Jürgen
+
+- **Nada.** A `done` sin device-QA: una base local ilegible no se provoca en un iPhone.
+- Intercambio aceptado, el de #216: una tabla que nunca se deja leer deja el pull en `.transient` (backoff) en vez de
+  avanzar degradado.
+- Tickets nuevos en `backlog`: `dangling-ref-pass-overwrites-a-pending-local-edit` (low),
+  `post-pull-reconcilers-read-an-unreadable-table-as-nothing-to-repair` (low), `a-malformed-ref-leaves-a-stale-dangler`
+  (very-low) y `the-gate-stamp-hides-the-deleted-side-of-a-staged-rename` (low, el sello del gate). Nota nueva en
+  `a-local-read-failure-in-the-migration-apply-reads-as-network`.
+
+## Sesión anterior (#216 · lo que baja de la nube ya no pisa un cambio sin subir si la app no puede leer sus salvaguardas)
 
 **Si el teléfono no consigue leer sus propias salvaguardas mientras baja algo de la nube, ese cambio espera y se
 reintenta**: ya no entra encima de un cambio tuyo que no había subido, no duplica nada en cuarentena y no da por borrado
@@ -44,7 +71,7 @@ cambiado; cazó el reloj por unidad (entró) y los gemelos de fuera del save (a 
   `a-local-read-failure-in-the-migration-apply-reads-as-network` (low). Nota nueva en
   `reverse-zombie-sweep-reads-an-expired-session-as-network`.
 
-## Sesión anterior (#215 · un registro de la migración que no se deja leer ya no dice que nunca empezó)
+## Sesión del #215 (un registro de la migración que no se deja leer ya no dice que nunca empezó)
 
 **Si el registro del paso de los datos a la nube (o de la vuelta a iCloud) no se deja leer, «¿Dónde viven tus datos?»
 ya no dice que nunca empezó**: dice que no pudo comprobarlo, que por ahora no se pueden mover y que lo sigue intentando.
