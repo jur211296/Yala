@@ -6052,6 +6052,12 @@
 "storage.failed.snapshotAccountUnavailable" = "Non siamo riusciti ad attivare il cloud: il tuo account nel cloud non l’ha permesso. I tuoi dati sono al sicuro sul dispositivo. Scrivici a %@ e lo verifichiamo insieme.";
 /* Fallo de la activación: el dispositivo no pudo preparar los datos */
 "storage.failed.snapshotLocalFailure" = "Non siamo riusciti ad attivare il cloud: questo dispositivo non è riuscito a preparare i tuoi dati per il caricamento. I tuoi dati sono ancora qui, invariati; riprova tra poco.";
+/* Fallo de la activación en el claim, la identidad o el cutover: días sin avanzar, con cualquier causa (techo largo): no acusa a nadie */
+"storage.failed.stepStalled" = "Non siamo riusciti ad attivare il cloud: l’attivazione non avanza da giorni. I tuoi dati sono al sicuro sul dispositivo; riprova più tardi.";
+/* Fallo de la activación en el claim o el cutover: la sesión caducó (sin hablar de la subida) */
+"storage.failed.stepSessionExpired" = "Non siamo riusciti ad attivare il cloud: la tua sessione è scaduta prima che finissimo. I tuoi dati sono al sicuro sul dispositivo; riprova ed effettua di nuovo l’accesso.";
+/* Fallo de la activación en el cutover: otro dispositivo de la misma cuenta tomó el relevo de la migración */
+"storage.failed.stepOtherDevice" = "Non siamo riusciti ad attivare il cloud da questo dispositivo: un altro dispositivo con il tuo account ha preso il suo posto. I tuoi dati sono ancora qui, senza modifiche.";
 /* Botón de la tarjeta de progreso: cancelar la activación de la nube */
 "storage.progress.cancelMigration" = "Annulla l’attivazione";
 /* Título de la confirmación de cancelar la activación */

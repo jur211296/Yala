@@ -24,9 +24,18 @@ enum StorageFailureCopyLogic {
     /// iCloud, o un 403 si la ruta llega a emitirlo—; `sessionExpired` pide volver a entrar, y solo sale con la sesión ya
     /// borrada, que es cuando «Migrar» de verdad lo pide; el fallo local habla del dispositivo; y el techo largo —72 h sin
     /// avanzar, con la causa que fuera— no acusa a nadie, ni siquiera a la red.
+    ///
+    /// **Los tres pasos sin cifra que baje —22 %, 35 %, 80 %— van después de la subida** (ticket
+    /// `forward-migration-steps-have-no-ceiling-and-no-exit`, decisión de Jürgen: texto por motivo también aquí). Tampoco
+    /// pueden coincidir con ella: cada motivo solo lo escribe la salida de su techo, y «Reintentar» limpia los dos. Reusan
+    /// las dos frases de la subida que siguen siendo verdad fuera de ella —la cuenta que no lo permitió, que da el correo, y
+    /// el dispositivo que no pudo preparar los datos— y tienen tres propias, porque las de la subida hablan de «subir tus
+    /// datos» y al 22 % todavía no se ha subido nada: la activación que lleva días sin avanzar, la sesión que caducó antes
+    /// de terminar y otro dispositivo de la cuenta que tomó el relevo. Ninguna de esas tres da el correo.
     static func message(
         kind: CloudMigrationUIState.FailureKind,
         snapshotExit: SnapshotExitReason?,
+        forwardStepExit: ForwardStepExitReason? = nil,
         cutoverBlocker: ICloudChannelVerdict?,
         supportEmail: String = AppConstants.supportEmail
     ) -> String {
@@ -37,6 +46,15 @@ enum StorageFailureCopyLogic {
             case .sessionExpired:     return L10n.Storage.Failed.snapshotSessionExpired
             case .accountUnavailable: return L10n.Storage.Failed.snapshotAccountUnavailable(supportEmail)
             case .localFailure:       return L10n.Storage.Failed.snapshotLocalFailure
+            }
+        }
+        if let forwardStepExit {
+            switch forwardStepExit {
+            case .stalled:                       return L10n.Storage.Failed.stepStalled
+            case .sessionExpired:                return L10n.Storage.Failed.stepSessionExpired
+            case .accountUnavailable, .refused:  return L10n.Storage.Failed.snapshotAccountUnavailable(supportEmail)
+            case .otherDevice:                   return L10n.Storage.Failed.stepOtherDevice
+            case .localFailure:                  return L10n.Storage.Failed.snapshotLocalFailure
             }
         }
         // C-1: copy del fallo por MOTIVO. El veredicto del canal iCloud sobrevive en el journal a `failedRollback`

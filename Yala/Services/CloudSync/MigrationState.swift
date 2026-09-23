@@ -45,7 +45,10 @@ extension CloudSyncSchemaVersions {
     /// `snapshot-upload-has-no-ceiling-and-no-way-out`): los cuatro de sus dos relojes (`snapshotStallProgressAt`,
     /// `snapshotStallCauseRaw`, `snapshotStallCauseAt`, `snapshotStallCauseAccruedSeconds`) y el motivo de la salida
     /// (`snapshotExitReasonRaw`).
-    static let migrationState = 9
+    /// Subió a 10 con los CINCO campos del techo de los tres pasos de la ida sin cifra que baje —`claimingMigration`,
+    /// `assigningIdentity` y `cutover(.pending)`— (ticket `forward-migration-steps-have-no-ceiling-and-no-exit`): los
+    /// cuatro `forwardStepStall*` de sus dos relojes y el motivo de la salida (`forwardStepExitReasonRaw`).
+    static let migrationState = 10
 }
 
 /// Journal single-row de la migración. Debe existir a lo sumo UNA fila (el runner la crea
@@ -209,6 +212,32 @@ final class MigrationState {
     /// nada que explicar, o un fallo que no vino de la subida.
     var snapshotExitReasonRaw: String?
 
+    // MARK: Techo de los tres pasos de la ida sin cifra que baje (ticket `forward-migration-steps-have-no-ceiling-and-no-exit`)
+    //
+    // `claimingMigration` (22 %), `assigningIdentity` (35 %) y `cutover(.pending)` (80 %). Un solo juego de campos para
+    // los tres, y **sin campo de paso**: `handle` los limpia en CADA cambio de paso (`clearForwardStepStallCeiling()`), así
+    // que solo pueden estar puestos con la fase en uno de los tres y describen siempre ESE. Pasar de paso es el avance.
+
+    /// El instante del último AVANCE del paso —su primera observación sin avanzar—, con el `now` INYECTADO. Gobierna las
+    /// 72 h. `nil` = el paso aún no se ha observado parado, o la fila viene de un build anterior a la v10: el presupuesto le
+    /// empieza a contar desde que este build la mira.
+    var forwardStepStallProgressAt: Date?
+
+    /// Qué causa DEFINITIVA se está midiendo (`ForwardStepBlocker.rawValue`). `nil` = ninguna observada en este paso.
+    var forwardStepStallCauseRaw: String?
+
+    /// Desde cuándo corre el tramo ABIERTO de esa causa. `nil` con la causa presente = tramo CERRADO: la última
+    /// observación no traía motivo y el reloj quedó en PAUSA, no borrado.
+    var forwardStepStallCauseAt: Date?
+
+    /// Lo que esa causa acumuló en tramos CERRADOS. Un acumulado y no una racha, por el re-kick de 30 s de Almacenamiento.
+    var forwardStepStallCauseAccruedSeconds: Double?
+
+    /// `ForwardStepExitReason.rawValue` del paso que venció su techo. Elige el texto de la tarjeta de fallo y por eso
+    /// **sobrevive a `failedRollback`**, como `snapshotExitReasonRaw`. Lo limpian `resetAfterRollback` («Reintentar») y la
+    /// normalización de un journal ilegible, que son las dos salidas de esa fase. `nil` = el fallo no vino de estos pasos.
+    var forwardStepExitReasonRaw: String?
+
     /// Cuándo empezó la migración (el runner lo estampa con el `now` INYECTADO al arrancar). `nil` = no
     /// iniciada.
     var startedAt: Date?
@@ -246,6 +275,11 @@ final class MigrationState {
         snapshotStallCauseAt: Date? = nil,
         snapshotStallCauseAccruedSeconds: Double? = nil,
         snapshotExitReasonRaw: String? = nil,
+        forwardStepStallProgressAt: Date? = nil,
+        forwardStepStallCauseRaw: String? = nil,
+        forwardStepStallCauseAt: Date? = nil,
+        forwardStepStallCauseAccruedSeconds: Double? = nil,
+        forwardStepExitReasonRaw: String? = nil,
         startedAt: Date? = nil,
         updatedAt: Date = Date.now,
         schemaVersion: Int = CloudSyncSchemaVersions.migrationState
@@ -275,6 +309,11 @@ final class MigrationState {
         self.snapshotStallCauseAt = snapshotStallCauseAt
         self.snapshotStallCauseAccruedSeconds = snapshotStallCauseAccruedSeconds
         self.snapshotExitReasonRaw = snapshotExitReasonRaw
+        self.forwardStepStallProgressAt = forwardStepStallProgressAt
+        self.forwardStepStallCauseRaw = forwardStepStallCauseRaw
+        self.forwardStepStallCauseAt = forwardStepStallCauseAt
+        self.forwardStepStallCauseAccruedSeconds = forwardStepStallCauseAccruedSeconds
+        self.forwardStepExitReasonRaw = forwardStepExitReasonRaw
         self.startedAt = startedAt
         self.updatedAt = updatedAt
         self.schemaVersion = schemaVersion
@@ -319,6 +358,22 @@ extension MigrationState {
         snapshotStallCauseRaw = nil
         snapshotStallCauseAt = nil
         snapshotStallCauseAccruedSeconds = nil
+    }
+}
+
+// MARK: - Techo de los tres pasos de la ida sin cifra que baje
+
+extension MigrationState {
+
+    /// Borra los CUATRO campos de los dos relojes del techo de `claimingMigration`, `assigningIdentity` y
+    /// `cutover(.pending)`. Juntos siempre, por lo mismo que la subida. NO toca `forwardStepExitReasonRaw`, que es el
+    /// desenlace y no el reloj. Lo que garantiza que un campo NUEVO de la familia no se quede fuera es
+    /// `CloudSyncSchemaParityTests`, que deriva la familia del schema por su prefijo `forwardStepStall`.
+    func clearForwardStepStallCeiling() {
+        forwardStepStallProgressAt = nil
+        forwardStepStallCauseRaw = nil
+        forwardStepStallCauseAt = nil
+        forwardStepStallCauseAccruedSeconds = nil
     }
 }
 

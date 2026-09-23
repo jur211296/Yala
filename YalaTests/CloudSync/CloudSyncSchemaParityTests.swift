@@ -203,6 +203,11 @@ struct CloudSyncSchemaParityTests {
             "snapshotStallCauseAt",
             "snapshotStallCauseAccruedSeconds",
             "snapshotExitReasonRaw",
+            "forwardStepStallProgressAt",
+            "forwardStepStallCauseRaw",
+            "forwardStepStallCauseAt",
+            "forwardStepStallCauseAccruedSeconds",
+            "forwardStepExitReasonRaw",
             "startedAt",
             "updatedAt",
             "schemaVersion",
@@ -210,7 +215,7 @@ struct CloudSyncSchemaParityTests {
         #expect(propertyNames(MigrationState.self) == expected)
     }
 
-    @Test func migrationState_schemaVersion_isNine() {
+    @Test func migrationState_schemaVersion_isTen() {
         // Subió a 2 en I11-2 al añadir el campo aditivo `reverseOriginRaw`; a 3 en C-1 con
         // `markerWrittenSince` (reloj del tope del paso 4) + `cutoverICloudVerdictRaw` (veredicto del canal
         // iCloud), ambos ADITIVOS y opcionales → una fila escrita por un build v2 sigue abriéndose. A 4 con los
@@ -232,7 +237,34 @@ struct CloudSyncSchemaParityTests {
         // `snapshotExitReasonRaw`), opcionales: una fila v8 parada en la subida se abre sin reloj, y la primera
         // observación lo sella — el presupuesto le cuenta desde que este build la mira (ticket
         // `snapshot-upload-has-no-ceiling-and-no-way-out`).
-        #expect(CloudSyncSchemaVersions.migrationState == 9)
+        // A 10 con los CINCO del techo de los tres pasos sin cifra que baje (los cuatro `forwardStepStall*` y
+        // `forwardStepExitReasonRaw`), opcionales: una fila v9 parada al 22, 35 u 80 % se abre sin reloj, y la primera
+        // observación lo sella (ticket `forward-migration-steps-have-no-ceiling-and-no-exit`).
+        #expect(CloudSyncSchemaVersions.migrationState == 10)
+    }
+
+    /// **Los CUATRO campos de los relojes del techo de los tres pasos se limpian juntos**
+    /// (`clearForwardStepStallCeiling()`), con la familia derivada del SCHEMA por su prefijo. El motivo de la salida
+    /// (`forwardStepExitReasonRaw`) queda FUERA a propósito: es el desenlace y sobrevive a `failedRollback`.
+    @Test func migrationState_clearForwardStepStallCeiling_clearsTheWholeFamily_andNotTheExitReason() {
+        let family = Set(propertyNames(MigrationState.self).filter { $0.hasPrefix("forwardStepStall") })
+        let known: Set<String> = [
+            "forwardStepStallProgressAt",
+            "forwardStepStallCauseRaw",
+            "forwardStepStallCauseAt",
+            "forwardStepStallCauseAccruedSeconds",
+        ]
+        #expect(family == known, "campo nuevo en la familia: añádelo a `clearForwardStepStallCeiling()` y a esta lista")
+
+        let state = MigrationState(
+            forwardStepStallProgressAt: .now, forwardStepStallCauseRaw: "localFailure", forwardStepStallCauseAt: .now,
+            forwardStepStallCauseAccruedSeconds: 42, forwardStepExitReasonRaw: "stalled")
+        state.clearForwardStepStallCeiling()
+        #expect(state.forwardStepStallProgressAt == nil)
+        #expect(state.forwardStepStallCauseRaw == nil)
+        #expect(state.forwardStepStallCauseAt == nil)
+        #expect(state.forwardStepStallCauseAccruedSeconds == nil)
+        #expect(state.forwardStepExitReasonRaw == "stalled", "el motivo de la salida no es parte del reloj")
     }
 
     /// **Los CUATRO campos de los relojes del techo de la subida se limpian juntos** (`clearSnapshotStallCeiling()`),

@@ -230,10 +230,23 @@ final class CloudMigrationController {
     /// fallo se lee también tras relanzar. `nil` = el fallo no vino de la subida.
     private(set) var snapshotExitReason: SnapshotExitReason?
 
-    /// ¿Se puede cancelar la activación ahora mismo? Solo con la subida del snapshot journaleada: es la única fase de la
-    /// ida que ofrece la salida (decisión de Jürgen del 2026-09-22). El botón además se deshabilita con trabajo en vuelo,
-    /// así que en la práctica solo se toca con la subida aparcada.
-    var canCancelSnapshotUpload: Bool { journaledPhase == .uploadingSnapshot }
+    /// Por qué venció el techo de uno de los tres pasos sin cifra que baje —claim, identidad, `cutover(.pending)`—
+    /// (`MigrationState.forwardStepExitReasonRaw`, ticket `forward-migration-steps-have-no-ceiling-and-no-exit`). Del
+    /// JOURNAL, como `snapshotExitReason`. `nil` = el fallo no vino de esos pasos.
+    private(set) var forwardStepExitReason: ForwardStepExitReason?
+
+    /// ¿Se puede cancelar la activación ahora mismo? En las cuatro fases de la ida que lo ofrecen: la subida del snapshot y
+    /// los tres pasos sin cifra que baje (decisiones de Jürgen del 2026-09-22). El predicado vive en `ForwardCancelScope`,
+    /// que es el mismo que honra un «sí» apuntado en el runner. El botón además se deshabilita con trabajo en vuelo, así que
+    /// en la práctica solo se toca con la activación aparcada.
+    var canCancelMigration: Bool {
+        ForwardCancelScope.offersCancel(journaledPhase, claimIntent: journaledClaimIntent)
+    }
+
+    /// La intención journaleada del claim de la ida (`MigrationState.forwardClaimIntentRaw`), la misma que lee
+    /// `MigrationRunner.driveClaim`: en el claim, «Cancelar» solo se ofrece con «Migrar» (`ForwardCancelScope`). Una fila sin
+    /// intención se lee como `adoptIfExisting`, igual que allí.
+    private(set) var journaledClaimIntent: ForwardClaimIntent = .adoptIfExisting
 
     /// C-1: el cutover está en el paso 4 esperando que iCloud confirme el marcador. Es el estado que antes
     /// se mostraba como un 89 % mudo, sin decir a qué se esperaba.
@@ -585,6 +598,12 @@ final class CloudMigrationController {
         let claimedForMigrationHere = userID.map {
             CloudClaimActionStore.shared.action(forUserID: $0) == .proceedMigration
         } ?? false
+        // La marca de un claim de «Migrar» que se quedó sin respuesta (ticket
+        // `forward-migration-steps-have-no-ceiling-and-no-exit`): pudo dejar la cuenta `complete` sin sello. Qué abre, y qué
+        // no, lo decide `check`, no esta línea.
+        let hasUnansweredMigrationClaim = userID.map {
+            CloudClaimActionStore.shared.hasMigrationClaimAttempt(forUserID: $0)
+        } ?? false
         let check = StorageMigrationIdentityGateLogic.check(
             answer: answer,
             // La fila de Ajustes no lee el eje (`ejeNoDecideEnLasPuertasQueNoLoUsan`): se pasa el estado desde el que se
@@ -592,6 +611,7 @@ final class CloudMigrationController {
             deviceState: .privateSession,
             isAssociatedGroupsAccount: GroupsAccountAssociation.shared.isAssociated(sub: userID),
             claimedForMigrationHere: claimedForMigrationHere,
+            hasUnansweredMigrationClaim: hasUnansweredMigrationClaim,
             sessionOpenedByThisAttempt: sessionOpenedByThisAttempt,
             // El sello de «Empezar desde cero», del mismo dominio en el que lo leen `GroupsAccountAssociation` y el bridge.
             deviceSealedForFreshStart: UserDefaults.standard.bool(
@@ -977,22 +997,23 @@ final class CloudMigrationController {
         await resume()
     }
 
-    /// «Cancelar la activación» durante la subida del snapshot (`canCancelSnapshotUpload`, ticket
-    /// `snapshot-upload-has-no-ceiling-and-no-way-out`). Vuelve a «Migrar a la nube» sin aviso de fallo.
+    /// «Cancelar la activación» en cualquiera de las cuatro fases de la ida que lo ofrecen (`canCancelMigration`): la
+    /// subida del snapshot (ticket `snapshot-upload-has-no-ceiling-and-no-way-out`) y los tres pasos sin cifra que baje
+    /// (`forward-migration-steps-have-no-ceiling-and-no-exit`). Vuelve a «Migrar a la nube» sin aviso de fallo.
     ///
-    /// **El «sí» se apunta en el runner ANTES de esperar** (`requestSnapshotCancel`), y la pasada en vuelo lo ve antes
-    /// de su próxima página. El re-kick de 30 s puede arrancar con el diálogo abierto, y con la red de vuelta esa pasada
-    /// subía todo y seguía hasta el cutover: el «sí» llegaba tarde y la persona confirmaba cancelar para encontrarse la
-    /// migración terminada (hallazgo de la review). Luego espera a que suelte el trabajo y cancela, que es lo que pasa
-    /// cuando no había nada en vuelo. Si la pre-espera del import vence, el «sí» sigue apuntado y lo ejecuta la próxima
-    /// pasada que llegue a la subida.
+    /// **El «sí» se apunta en el runner ANTES de esperar** (`requestMigrationCancel`), y la pasada en vuelo lo ve en su
+    /// próxima vuelta. El re-kick de 30 s puede arrancar con el diálogo abierto, y con la red de vuelta esa pasada subía
+    /// todo y seguía hasta el cutover: el «sí» llegaba tarde y la persona confirmaba cancelar para encontrarse la migración
+    /// terminada (hallazgo de la review). Luego espera a que suelte el trabajo y cancela, que es lo que pasa cuando no había
+    /// nada en vuelo. Si la pre-espera del import vence, el «sí» sigue apuntado y lo ejecuta la próxima pasada que llegue a
+    /// una fase que lo ofrezca.
     ///
     /// **Y cierra la sesión que abrió ESTE intento**, molde de la parada del claim (`closeSessionIfOpened`): una sesión
     /// viva en un teléfono con sesión privada la registra `GroupsAssociationRegistrar` como cuenta de grupos en el
     /// siguiente arranque, y quien cancela no pidió eso. Tras un relanzamiento ya no se sabe quién la abrió
     /// (`migrationAttempt` vive en memoria), así que no se cierra, igual que allí.
-    func cancelSnapshotUpload() async {
-        runner.requestSnapshotCancel()
+    func cancelMigration() async {
+        runner.requestMigrationCancel()
         while isWorking {
             do {
                 try await Task.sleep(for: .milliseconds(200))
@@ -1010,10 +1031,12 @@ final class CloudMigrationController {
             refresh()
             return
         }
-        await runner.cancelSnapshotUpload()
+        await runner.cancelMigration()
         refresh()
-        // `notStarted` solo puede venir de la cancelación: desde la subida no hay otra arista que lleve ahí. Si el toque
-        // llegó tarde y la migración avanzó, la sesión es la de una migración que sigue, y no se toca.
+        // `notStarted` solo puede venir de la cancelación: desde las cuatro fases no hay otra arista que lleve ahí sin
+        // cerrar la sesión por su cuenta (la del claim devuelto por «Migrar» la cierra `announceForwardClaimRefusal`, y
+        // limpia `migrationAttempt`). Si el toque llegó tarde y la migración avanzó, la sesión es la de una migración que
+        // sigue, y no se toca.
         if journaledPhase == .notStarted, let attempt = migrationAttempt {
             migrationAttempt = nil
             _ = await closeSessionIfOpened(attempt.sessionOpenedByThisAttempt)
@@ -1270,6 +1293,8 @@ final class CloudMigrationController {
             guard let state = try context.fetch(descriptor).first else {
                 cutoverBlocker = nil
                 snapshotExitReason = nil
+                forwardStepExitReason = nil
+                journaledClaimIntent = .adoptIfExisting
                 reverseAbortReason = nil
                 hasPendingReverseExit = false
                 return (.notStarted, 0)
@@ -1278,6 +1303,8 @@ final class CloudMigrationController {
             // esto) → la card de fallo puede nombrar la causa real.
             cutoverBlocker = state.cutoverICloudVerdictRaw.flatMap(ICloudChannelVerdict.init(rawValue:))
             snapshotExitReason = state.snapshotExitReasonRaw.flatMap(SnapshotExitReason.init(rawValue:))
+            forwardStepExitReason = state.forwardStepExitReasonRaw.flatMap(ForwardStepExitReason.init(rawValue:))
+            journaledClaimIntent = state.forwardClaimIntentRaw.flatMap(ForwardClaimIntent.init(rawValue:)) ?? .adoptIfExisting
             reverseAbortReason = state.reverseAbortReasonRaw.flatMap(ReverseAbortReason.init(rawValue:))
             let pending = state.readPendingEffects()
             hasPendingReverseExit = ReverseExitPending.isPending(pending)
@@ -1288,6 +1315,8 @@ final class CloudMigrationController {
             #endif
             cutoverBlocker = nil
             snapshotExitReason = nil
+            forwardStepExitReason = nil
+            journaledClaimIntent = .adoptIfExisting
             reverseAbortReason = nil
             hasPendingReverseExit = false
             return (.notStarted, 0)

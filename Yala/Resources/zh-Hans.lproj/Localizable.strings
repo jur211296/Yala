@@ -6054,6 +6054,12 @@
 "storage.failed.snapshotAccountUnavailable" = "无法启用云端：您的云端账户不允许此操作。您的数据仍安全保存在设备上。请发邮件到 %@，我们会和您一起查看。";
 /* Fallo de la activación: el dispositivo no pudo preparar los datos */
 "storage.failed.snapshotLocalFailure" = "无法启用云端：这台设备无法准备要上传的数据。您的数据仍在这里，没有任何改动，请稍后重试。";
+/* Fallo de la activación en el claim, la identidad o el cutover: días sin avanzar, con cualquier causa (techo largo): no acusa a nadie */
+"storage.failed.stepStalled" = "无法启用云端：启用过程已经好几天没有进展。您的数据仍安全保存在设备上，请稍后重试。";
+/* Fallo de la activación en el claim o el cutover: la sesión caducó (sin hablar de la subida) */
+"storage.failed.stepSessionExpired" = "无法启用云端：完成之前您的登录已过期。您的数据仍安全保存在设备上，请重试并重新登录。";
+/* Fallo de la activación en el cutover: otro dispositivo de la misma cuenta tomó el relevo de la migración */
+"storage.failed.stepOtherDevice" = "无法在这台设备上启用云端：使用您账户的另一台设备接手了。您的数据仍在这里，没有任何改动。";
 /* Botón de la tarjeta de progreso: cancelar la activación de la nube */
 "storage.progress.cancelMigration" = "取消启用";
 /* Título de la confirmación de cancelar la activación */

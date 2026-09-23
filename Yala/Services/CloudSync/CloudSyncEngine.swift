@@ -731,10 +731,12 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSyncMigration phaseDecodeFailed — journal ilegible, fallback notStarted (gate §i.9 leería estable)")
     }
 
-    /// El `POST /account/claim` devolvió un outcome NO-success recuperable (sessionExpired/transient) →
-    /// stop SIN evento (journal en `claimingMigration`); un `resume()` re-claima idempotente. JAMÁS rollback.
+    /// El `POST /account/claim` devolvió un outcome NO-success (sessionExpired/transient) → stop retomable; un `resume()`
+    /// re-claima idempotente. JAMÁS `fatalError`. Desde el 2026-09-22, con «Migrar a la nube» el stop pasa por el techo del
+    /// paso (`forwardStepStalled`, ticket `forward-migration-steps-have-no-ceiling-and-no-exit`) y puede terminar en
+    /// `failedRollback`; con un adopt sigue siendo sin evento. El rastro de la observación es `forwardStepStalled`.
     static func migrationClaimNoSuccess(reason: String) {
-        logger.notice("CloudSyncMigration claimNoSuccess reason=\(reason, privacy: .public) — stop sin evento (retomable)")
+        logger.notice("CloudSyncMigration claimNoSuccess reason=\(reason, privacy: .public) — stop retomable (con «Migrar», bajo el techo del paso)")
     }
 
     /// «Migrar a la nube» y el claim contestó `existing_stable` → vuelve al inicio sin adoptar (`ForwardClaimIntent`).
@@ -747,9 +749,10 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSyncMigration identityBlocked reason=\(reason, privacy: .public) stage=\(stage, privacy: .public) — sin escrituras")
     }
 
-    /// El claim devolvió 403 (cuenta suspendida) → stop SIN evento (breadcrumb dedicado, ≠401).
+    /// El claim devolvió 403 (cuenta suspendida) → stop retomable (breadcrumb dedicado, ≠401). Con «Migrar», bajo el techo
+    /// del paso: a los 15 min sale a `failedRollback` (ticket `forward-migration-steps-have-no-ceiling-and-no-exit`).
     static func migrationAccountUnavailable() {
-        logger.notice("CloudSyncMigration accountUnavailable (403) — stop sin evento (retomable)")
+        logger.notice("CloudSyncMigration accountUnavailable (403) — stop retomable (con «Migrar», bajo el techo del paso)")
     }
 
     /// Un efecto declarativo lanzó al ejecutarse → queda journaled en `pendingEffectsData` + stop; un
@@ -846,14 +849,15 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSyncMigration cutoverConfirmed — profiles.migrated_at estampado (guard líder OK)")
     }
 
-    /// w6 paso 1: el guard líder rechazó (`other_leader`) → este device fue USURPADO (lease-takeover) →
-    /// el runner corta retomable y converge a follower.
+    /// w6 paso 1: el guard líder rechazó (`other_leader`) → este device fue USURPADO (lease-takeover). Decía «converge a
+    /// follower», y no había follower: la barra se quedaba al 80 %. Desde el 2026-09-22 es un motivo DEFINITIVO del techo
+    /// de `cutover(.pending)` (`ForwardStepBlocker.otherDevice`): a los 15 min sale a `failedRollback`.
     static func migrationCutoverOtherLeader() {
-        logger.notice("CloudSyncMigration cutoverOtherLeader — usurpado, corta retomable → follower")
+        logger.notice("CloudSyncMigration cutoverOtherLeader — usurpado, bajo el techo del paso (otherDevice)")
     }
 
     /// w6 paso 1: `migration_progress` devolvió otro `ok:false` (no_profile/not_in_progress/bad_action) o
-    /// transient/401 → stop retomable. `reason` sin PII.
+    /// transient/401 → stop retomable, bajo el techo de `cutover(.pending)` desde el 2026-09-22. `reason` sin PII.
     static func migrationCutoverRejected(reason: String) {
         logger.notice("CloudSyncMigration cutoverRejected reason=\(reason, privacy: .public) — stop retomable")
     }
@@ -1148,6 +1152,22 @@ enum CloudSyncBreadcrumb {
     static func snapshotUploadExited(reason: String) {
         logger.notice(
             "CloudSyncMigration snapshotExited reason=\(reason, privacy: .public) — el teléfono sigue intacto en iCloud")
+    }
+
+    /// Uno de los tres pasos de la ida sin cifra que baje (`claim`, `identity`, `cutoverPending`) no avanzó en esta pasada
+    /// (ticket `forward-migration-steps-have-no-ceiling-and-no-exit`). Los dos relojes del techo, en segundos.
+    static func forwardStepStalled(step: String, stalledSeconds: Double, causeStalledSeconds: Double, blocker: String?) {
+        let seconds = Int(stalledSeconds)
+        let causeSeconds = Int(causeStalledSeconds)
+        logger.notice(
+            "CloudSyncMigration forwardStepStalled step=\(step, privacy: .public) stalled=\(seconds, privacy: .public)s cause=\(causeSeconds, privacy: .public)s blocker=\(blocker ?? "-", privacy: .public)")
+    }
+
+    /// Uno de esos tres pasos salió: por su techo (a `failedRollback`) o porque la persona canceló (a `notStarted`,
+    /// `reason=cancelled`).
+    static func forwardStepExited(step: String, reason: String) {
+        logger.notice(
+            "CloudSyncMigration forwardStepExited step=\(step, privacy: .public) reason=\(reason, privacy: .public) — el teléfono sigue intacto en iCloud")
     }
 
     /// El `reverse_abort` best-effort de una salida previa al montaje no salió. La salida SIGUE EN PIE —está

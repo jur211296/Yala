@@ -6054,6 +6054,12 @@
 "storage.failed.snapshotAccountUnavailable" = "We konden de cloud niet inschakelen: je cloudaccount stond het niet toe. Je gegevens staan veilig op je apparaat. Mail ons op %@ en we zoeken het samen uit.";
 /* Fallo de la activación: el dispositivo no pudo preparar los datos */
 "storage.failed.snapshotLocalFailure" = "We konden de cloud niet inschakelen: dit apparaat kon je gegevens niet klaarzetten voor het uploaden. Je gegevens staan hier nog, ongewijzigd — probeer het over een tijdje opnieuw.";
+/* Fallo de la activación en el claim, la identidad o el cutover: días sin avanzar, con cualquier causa (techo largo): no acusa a nadie */
+"storage.failed.stepStalled" = "We konden de cloud niet inschakelen: het inschakelen komt al dagen niet vooruit. Je gegevens staan veilig op je apparaat — probeer het later opnieuw.";
+/* Fallo de la activación en el claim o el cutover: la sesión caducó (sin hablar de la subida) */
+"storage.failed.stepSessionExpired" = "We konden de cloud niet inschakelen: je sessie is verlopen voordat we klaar waren. Je gegevens staan veilig op je apparaat — probeer het opnieuw en log nog een keer in.";
+/* Fallo de la activación en el cutover: otro dispositivo de la misma cuenta tomó el relevo de la migración */
+"storage.failed.stepOtherDevice" = "We konden de cloud op dit apparaat niet inschakelen: een ander apparaat met je account heeft het overgenomen. Je gegevens staan hier nog, ongewijzigd.";
 /* Botón de la tarjeta de progreso: cancelar la activación de la nube */
 "storage.progress.cancelMigration" = "Inschakelen annuleren";
 /* Título de la confirmación de cancelar la activación */

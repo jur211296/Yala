@@ -159,28 +159,29 @@ struct SnapshotUploadCeilingLogicTests {
     @Test func progressCard_offersCancel_onlyWhereTheControllerSays() throws {
         let view = "Yala/App/Views/Settings/StorageSettingsView.swift"
         let card = try Self.body(of: "private func progressCard(", in: view)
-        #expect(card.contains("if controller.canCancelSnapshotUpload {\n                cancelMigrationButton(controller)"))
+        #expect(card.contains("if controller.canCancelMigration {\n                cancelMigrationButton(controller)"))
         let button = try Self.body(of: "private func cancelMigrationButton(", in: view)
-        #expect(button.contains("Task { await controller.cancelSnapshotUpload() }"))
+        #expect(button.contains("Task { await controller.cancelMigration() }"))
         #expect(button.contains("isDisabled: controller.isWorking"),
                 "con una pasada en vuelo el botón no se toca: la cancelación es de la subida APARCADA")
         let failure = try Self.body(of: "private func failureMessage(", in: view)
         #expect(failure.contains("snapshotExit: controller.snapshotExitReason"))
     }
 
-    /// El controller ofrece la salida solo en `uploadingSnapshot`, y la lee del journal.
+    /// El controller ofrece la salida donde dice `ForwardCancelScope` —la subida y, desde
+    /// `forward-migration-steps-have-no-ceiling-and-no-exit`, los tres pasos sin cifra que baje—, y lee el motivo del journal.
     @Test func controller_readsThePhaseAndTheReasonFromTheJournal() throws {
         let controller = "Yala/Services/CloudSync/CloudMigrationController.swift"
         let src = try Self.source(controller)
-        #expect(src.contains("var canCancelSnapshotUpload: Bool { journaledPhase == .uploadingSnapshot }"))
+        #expect(src.contains("ForwardCancelScope.offersCancel(journaledPhase, claimIntent: journaledClaimIntent)"))
         #expect(src.contains(
             "snapshotExitReason = state.snapshotExitReasonRaw.flatMap(SnapshotExitReason.init(rawValue:))"))
-        let cancel = try Self.body(of: "func cancelSnapshotUpload() async", in: controller)
-        #expect(cancel.contains("await runner.cancelSnapshotUpload()"))
+        let cancel = try Self.body(of: "func cancelMigration() async", in: controller)
+        #expect(cancel.contains("await runner.cancelMigration()"))
         // El «sí» se apunta ANTES de esperar a la pasada en vuelo: después llegaría tarde (hallazgo de la review).
         let statements = cancel.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }
             .filter { !$0.isEmpty && $0 != "{" }
-        #expect(statements.first == "runner.requestSnapshotCancel()")
+        #expect(statements.first == "runner.requestMigrationCancel()")
         // Y cierra la sesión que abrió el intento, solo si la subida se canceló de verdad.
         let guardLine = "if journaledPhase == .notStarted, let attempt = migrationAttempt {"
         let closeLine = "_ = await closeSessionIfOpened(attempt.sessionOpenedByThisAttempt)"

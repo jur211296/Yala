@@ -1377,4 +1377,77 @@ struct MigrationStateMachineTests {
         #expect(MigrationPolicy.default.snapshotCauseBudgetSeconds == 900)          // 15 min
         #expect(MigrationPolicy.default.snapshotProgressBudgetSeconds == 259_200)   // 72 h
     }
+
+    // MARK: - Techo y salida de los tres pasos sin cifra que baje (ticket `forward-migration-steps-have-no-ceiling-and-no-exit`)
+
+    /// Los tres pasos: claim (22 %), identidad (35 %) y `cutover(.pending)` (80 %).
+    static let forwardStepPhases: [Phase] = [.claimingMigration, .assigningIdentity, .cutover(.pending)]
+
+    /// Bajo los dos presupuestos holdea en su PROPIA fase y sin efectos, con cualquier causa.
+    @Test func forwardStepStalled_belowBothBudgets_holdsInItsOwnPhase() {
+        for phase in Self.forwardStepPhases {
+            for cause in [MarkerExportStall.unknown, .definitive] {
+                let out = step(phase, .forwardStepStalled(stalledSeconds: 259_199, causeStalledSeconds: 899, cause: cause))
+                #expect(out.next == phase, "\(phase) · \(cause)")
+                #expect(out.effects.isEmpty)
+            }
+        }
+    }
+
+    /// El techo LARGO aplica con cualquier causa, clavado con sus dos vecinos, y sale a `failedRollback` con `.rollback`.
+    @Test func forwardStepStalled_progressCeiling_appliesWithAnyCause() {
+        for phase in Self.forwardStepPhases {
+            for cause in [MarkerExportStall.unknown, .definitive] {
+                #expect(step(phase, .forwardStepStalled(stalledSeconds: 259_199, causeStalledSeconds: 0, cause: cause)).next
+                    == phase)
+                let out = step(phase, .forwardStepStalled(stalledSeconds: 259_200, causeStalledSeconds: 0, cause: cause))
+                #expect(out.next == .failedRollback, "\(phase) · \(cause)")
+                #expect(out.effects == [.rollback], "antes del cutover el teléfono está intacto: solo `.rollback`")
+            }
+        }
+    }
+
+    /// El techo CORTO solo con una causa definitiva, y contra el reloj de la CAUSA, no el de avance.
+    @Test func forwardStepStalled_causeCeiling_onlyWithADefinitiveCause() {
+        for phase in Self.forwardStepPhases {
+            #expect(step(phase, .forwardStepStalled(stalledSeconds: 0, causeStalledSeconds: 899, cause: .definitive)).next
+                == phase)
+            #expect(step(phase, .forwardStepStalled(stalledSeconds: 0, causeStalledSeconds: 900, cause: .definitive)).next
+                == .failedRollback)
+            #expect(step(phase, .forwardStepStalled(stalledSeconds: 0, causeStalledSeconds: 100_000, cause: .unknown)).next
+                == phase, "sin causa definitiva no hay techo corto")
+            #expect(step(phase, .forwardStepStalled(stalledSeconds: 10_800, causeStalledSeconds: 0, cause: .definitive)).next
+                == phase, "tres horas de paso parado no se cobran contra el reloj de la causa")
+        }
+    }
+
+    /// «Cancelar la activación» desde los tres: a `notStarted`, sin efectos.
+    @Test func forwardStepCancelled_returnsToNotStarted_withNoEffects() {
+        for phase in Self.forwardStepPhases {
+            let out = step(phase, .forwardStepCancelled)
+            #expect(out.next == .notStarted, "\(phase)")
+            #expect(out.effects.isEmpty)
+        }
+    }
+
+    /// Los dos eventos solo son legales desde los tres pasos. Desde `cutover(.serverConfirmed)` en adelante es a
+    /// propósito: el backend ya estampó `migrated_at` y «el cutover jamás hace rollback».
+    @Test func forwardStepEvents_areInvalidOutsideTheThreeSteps() {
+        let events: [Event] = [
+            .forwardStepStalled(stalledSeconds: 10_000_000, causeStalledSeconds: 10_000_000, cause: .definitive),
+            .forwardStepCancelled,
+        ]
+        for phase in Self.allPhases where !Self.forwardStepPhases.contains(phase) {
+            for event in events {
+                #expect(MigrationStateMachine.transition(from: phase, event: event) == .invalid(from: phase, event: event),
+                        "\(phase) + \(event) debe ser inválido")
+            }
+        }
+    }
+
+    /// Los números son la decisión de Jürgen del 2026-09-22: 15 min / 72 h, como la subida y la vuelta.
+    @Test func forwardStepBudgets_defaultsArePinnedProductDecision() {
+        #expect(MigrationPolicy.default.forwardStepCauseBudgetSeconds == 900)
+        #expect(MigrationPolicy.default.forwardStepProgressBudgetSeconds == 259_200)
+    }
 }

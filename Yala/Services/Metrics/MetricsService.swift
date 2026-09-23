@@ -171,6 +171,13 @@ enum MetricsCanary: String {
     /// Una observación de la subida del snapshot que no confirmó ninguna página. Deja ver un atasco SISTÉMICO antes de
     /// que ningún teléfono llegue a sus 15 min o sus 72 h.
     case cloudSnapshotUploadWaiting
+    /// Uno de los tres pasos de la ida sin cifra que baje —claim (22 %), identidad (35 %), `cutover(.pending)` (80 %)—
+    /// salió: por su techo o porque la persona canceló (ticket `forward-migration-steps-have-no-ceiling-and-no-exit`).
+    /// `detail` = `<paso>|<ForwardStepExitReason.rawValue o cancelled>`.
+    case cloudForwardStepAborted
+    /// Una observación de uno de esos tres pasos que no avanzó. Deja ver un atasco SISTÉMICO antes de que ningún teléfono
+    /// llegue a sus 15 min o sus 72 h.
+    case cloudForwardStepWaiting
     /// «Migrar a la nube» se paró sin escribir nada porque la cuenta elegida no puede recibir la migración (ticket
     /// `settings-migrate-to-cloud-adopts-silently-instead-of-migrating`). `detail` = `<motivo>@<dónde>`: el motivo es
     /// `personal_data`, `other_groups_account`, `returned_to_icloud`, `fresh_start_session` o `unchecked`, y el sitio
@@ -652,6 +659,29 @@ extension MetricsService {
     ) -> String {
         let causeBucket = blocker == nil ? "-" : reversePreMountBucket(causeStalledSeconds)
         return "\(reversePreMountBucket(stalledSeconds))|\(causeBucket)|\(blocker.map { "stop_\($0)" } ?? "waiting")"
+    }
+
+    /// La salida de uno de los tres pasos de la ida sin cifra que baje. `detail` = `<paso>|<motivo>`.
+    static func cloudForwardStepAborted(step: String, reason: String) {
+        canary(.cloudForwardStepAborted, detail: "\(step)|\(reason)")
+    }
+
+    /// Una observación de uno de esos tres pasos que no avanzó. `detail` = `<paso>|<tramo de avance>|<tramo de causa>|<causa>`,
+    /// la forma de `cloudReversePreMountWaiting` con el paso de la ida: `-` en el tramo de causa cuando la observación no
+    /// trae motivo, y `stop_<blocker>` o `waiting` en la causa. Dedupe por PROCESO y por `detail`, por el re-kick de 30 s.
+    static func cloudForwardStepWaiting(
+        step: String, stalledSeconds: Double, causeStalledSeconds: Double, blocker: String?
+    ) {
+        let detail = forwardStepWaitingDetail(
+            step: step, stalledSeconds: stalledSeconds, causeStalledSeconds: causeStalledSeconds, blocker: blocker)
+        canaryOnce(.cloudForwardStepWaiting, key: detail, detail: detail)
+    }
+
+    nonisolated static func forwardStepWaitingDetail(
+        step: String, stalledSeconds: Double, causeStalledSeconds: Double, blocker: String?
+    ) -> String {
+        "\(step)|" + snapshotUploadWaitingDetail(
+            stalledSeconds: stalledSeconds, causeStalledSeconds: causeStalledSeconds, blocker: blocker)
     }
 
     /// El motivo del servidor tal cual si tiene forma de código; si no, `other`. El gateway rechaza el LOTE entero de

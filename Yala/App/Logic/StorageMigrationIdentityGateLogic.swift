@@ -92,6 +92,24 @@ nonisolated enum StorageMigrationIdentityGateLogic {
     ///     (`ForwardClaimIntent`), y otra cuenta asociada sigue mandando. Tampoco vale para siempre: al confirmar `complete`,
     ///     el líder cambia el sello por `.routeReturningUser` (`MigrationWorkExecutor`, efecto
     ///     `.runLeaderReconcileFromFrozenCloudKit`), así que la cuenta de una migración TERMINADA se para aquí.
+    ///   - hasUnansweredMigrationClaim: este dispositivo mandó un claim de «Migrar» para esta cuenta y se quedó sin respuesta
+    ///     (`CloudClaimActionStore.hasMigrationClaimAttempt`, ticket `forward-migration-steps-have-no-ceiling-and-no-exit`,
+    ///     decisión de Jürgen del 2026-09-22). Ese claim pudo crear o promover la cuenta —queda `complete`, con este dispositivo
+    ///     de líder— sin dejar el sello, que solo se escribe con la respuesta. Hasta ese ticket no se notaba porque el paso no
+    ///     salía nunca; con techo y «Cancelar» al 22 %, el reintento se paraba aquí con un «ya tiene datos» falso. Abre lo
+    ///     mismo que el sello —solo una `complete`, solo hasta el claim, que sigue decidiendo— con UNA diferencia: **no se
+    ///     salta la red de «Empezar desde cero»**. Con el sello de ese caso, la sesión que no abrió este intento y no está
+    ///     asociada puede ser de la persona anterior, y la marca no la ha visto contestar nunca. El sello sí se la salta, y es
+    ///     el residual escrito abajo; la marca no lo amplía (lo cazaron dos lentes de la review).
+    ///
+    ///     **Y deja pasar un poco más que el sello, medido:** el sello solo existe si este dispositivo recibió `created`. La
+    ///     marca se queda también con un `claiming_in_progress` cuya respuesta se perdió, y si ese otro dispositivo abandona
+    ///     su migración más de 60 min, el claim siguiente de este hace el relevo y contesta `created`. Es la clase de hueco
+    ///     que ya tiene cualquier «Migrar» sobre una cuenta nueva o solo-grupos (el relevo no se distingue desde el cliente),
+    ///     y aquí pide además una carrera entre la comprobación y el claim y una respuesta perdida. **Ni se retira cuando otro
+    ///     dispositivo termina la migración** (al sello lo cambia el `complete` del líder; a la marca, solo un claim de este
+    ///     con respuesta): «Migrar» pasa entonces la comprobación y la para el claim, después del consentimiento. Aceptado:
+    ///     pide la misma respuesta perdida, y el aviso que sale es el correcto.
     ///   - sessionOpenedByThisAttempt: la sesión la abrió este intento, en la elección de Apple o Google, así que la persona
     ///     eligió la cuenta. `false` con la sesión que ya había al tocar «Activar la nube».
     ///   - deviceSealedForFreshStart: este teléfono pasó por «Empezar desde cero» (`groupsDomainSealedForFreshStart`).
@@ -116,11 +134,16 @@ nonisolated enum StorageMigrationIdentityGateLogic {
         deviceState: CloudIdentityRoutingLogic.DeviceSessionState,
         isAssociatedGroupsAccount: Bool?,
         claimedForMigrationHere: Bool,
+        hasUnansweredMigrationClaim: Bool,
         sessionOpenedByThisAttempt: Bool,
         deviceSealedForFreshStart: Bool
     ) -> Check {
         guard case let .discovered(discovery) = answer else { return .couldNotCheck }
-        if discovery == .complete, claimedForMigrationHere {
+        // La sesión puede ser de la persona anterior: el mismo predicado que retira el `.proceed` de más abajo.
+        let sessionMayBeFromBeforeFreshStart = deviceSealedForFreshStart && isAssociatedGroupsAccount == nil
+            && !sessionOpenedByThisAttempt
+        let unansweredClaimCounts = hasUnansweredMigrationClaim && !sessionMayBeFromBeforeFreshStart
+        if discovery == .complete, claimedForMigrationHere || unansweredClaimCounts {
             return isAssociatedGroupsAccount == false ? .blocked(.anotherGroupsAccountAssociated) : .proceed
         }
         let destination = CloudIdentityRoutingLogic.destination(
@@ -130,7 +153,7 @@ nonisolated enum StorageMigrationIdentityGateLogic {
             isAssociatedGroupsAccount: isAssociatedGroupsAccount)
         switch destination {
         case .cutoverPrivateToCloud, .promoteAssociatedAccountThenCutover:
-            if deviceSealedForFreshStart, isAssociatedGroupsAccount == nil, !sessionOpenedByThisAttempt {
+            if sessionMayBeFromBeforeFreshStart {
                 return .blocked(.sessionFromBeforeFreshStart)
             }
             return .proceed

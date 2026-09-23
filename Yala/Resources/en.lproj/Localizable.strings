@@ -6048,6 +6048,12 @@
 "storage.failed.snapshotAccountUnavailable" = "We couldn’t turn on the cloud: your cloud account didn’t allow it. Your data is safe on your device. Write to us at %@ and we’ll look into it with you.";
 /* Fallo de la activación: el dispositivo no pudo preparar los datos */
 "storage.failed.snapshotLocalFailure" = "We couldn’t turn on the cloud: this device couldn’t prepare your data for upload. Your data is still here, unchanged — try again in a little while.";
+/* Fallo de la activación en el claim, la identidad o el cutover: días sin avanzar, con cualquier causa (techo largo): no acusa a nadie */
+"storage.failed.stepStalled" = "We couldn’t turn on the cloud: the activation hasn’t made progress for days. Your data is safe on your device — try again later.";
+/* Fallo de la activación en el claim o el cutover: la sesión caducó (sin hablar de la subida) */
+"storage.failed.stepSessionExpired" = "We couldn’t turn on the cloud: your session expired before we could finish. Your data is safe on your device — try again and sign in once more.";
+/* Fallo de la activación en el cutover: otro dispositivo de la misma cuenta tomó el relevo de la migración */
+"storage.failed.stepOtherDevice" = "We couldn’t turn on the cloud from this device: another device on your account took over. Your data is still here, unchanged.";
 /* Botón de la tarjeta de progreso: cancelar la activación de la nube */
 "storage.progress.cancelMigration" = "Cancel turning on the cloud";
 /* Título de la confirmación de cancelar la activación */

@@ -41,6 +41,22 @@ al cerrar y volver a abrir Yala, la barra vuelve a estar en 55 % como si nada. Y
       cualquier `save` (disco lleno)? Si es lo segundo, el ticket se cierra: no hay nada que la app pueda guardar.
 - [ ] Si es lo primero: un `save` fallido del encolado no deja el contexto compartido sin poder guardar el journal.
 
+## Un segundo productor de la misma clase: la identidad (35 %), desde el 2026-09-22
+
+Lo cazó una lente de la review de `forward-migration-steps-have-no-ceiling-and-no-exit`, que le dio techo al paso
+`assigningIdentity`. **Medido**: `MigrationWorkExecutor.assignIdentity` mete filas `SyncIdentity` y coordenadas en el
+mismo `ModelContext` que el runner, y si su `context.save()` lanza nadie hace `rollback()`. El techo journalea con
+`handle`, cuyo `save()` arrastra esos cambios. **Inferido** (semántica de Core Data): si el fallo era por esas filas, la
+salida a `failedRollback` —con su motivo `localFailure`— se queda en memoria, la tarjeta de fallo sale igual (el
+controller lee el mismo contexto), «Reintentar» tampoco se guarda y al relanzar vuelve a estar al 35 %.
+
+No se decidió allí por la misma razón que aquí: la salida obvia es un `rollback()` sobre el `mainContext`. El
+`SyncApplyEngine` ya lo hace tras sus propios saves fallidos, que es un precedente, pero el alcance sigue sin decidir.
+Con el disco lleno, además, ningún `save()` pasa y no hay nada que decidir. **Al cerrar este ticket, mide también este
+camino.**
+
 ## Relacionado
+
+- `forward-migration-steps-have-no-ceiling-and-no-exit` — el techo de la identidad, que añade el segundo productor.
 
 - `snapshot-upload-has-no-ceiling-and-no-way-out` — el techo que lo destapa.

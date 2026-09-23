@@ -20,6 +20,13 @@
 //  `settings-migrate-to-cloud-adopts-silently-instead-of-migrating`). `signOut` NO borra los registros
 //  (keyed por userID → el re-sign-in del MISMO usuario no se bloquea; AJUSTE review #1).
 //
+//  Y una segunda familia de claves, que NO es un `AuthAction`: la marca del claim de «Migrar» que se quedó sin respuesta
+//  (`recordMigrationClaimAttempt`, ticket `forward-migration-steps-have-no-ceiling-and-no-exit`). La escribe
+//  `MigrationWorkExecutor.performClaim` antes del POST, solo en un claim de «Migrar», y la borra la respuesta de cualquier
+//  claim de esa cuenta. La lee SOLO la puerta de «Migrar» (`StorageMigrationIdentityGateLogic.check`, parámetro
+//  `hasUnansweredMigrationClaim`), que la trata distinto del sello. Sobrevive a `signOut` y a «Empezar desde cero» igual
+//  que el sello; lo que evita que abra la cuenta de la persona anterior es esa puerta, no un borrado.
+//
 //  `@MainActor`: la sesión (`CloudAuthService`) que lo alimenta es main-actor-aislada.
 //
 
@@ -55,6 +62,29 @@ final class CloudClaimActionStore {
     /// al inicio cuando antes no había ninguno.
     func clear(forUserID userID: String) {
         defaults.removeObject(forKey: Self.prefix + userID)
+    }
+
+    // MARK: - La marca del claim sin respuesta (ticket `forward-migration-steps-have-no-ceiling-and-no-exit`)
+
+    /// Clave PROPIA y no un `AuthAction` más: el sello de arriba lo leen el gate de arranque del runtime y el Welcome
+    /// (`CrossAccountEntryGuardLogic`), y un «intentado» ahí les afirmaría un claim que quizá nunca llegó. Esta marca la
+    /// lee solo la puerta de «Migrar a la nube» (`CloudMigrationController.checkMigrationIdentity`).
+    private static let attemptPrefix = "cloudSync.migrationClaimAttempt."
+
+    /// Este dispositivo va a mandar un claim de migración para `userID` y todavía no sabe cómo acaba. La escribe
+    /// `MigrationWorkExecutor.performClaim` ANTES del POST.
+    func recordMigrationClaimAttempt(forUserID userID: String) {
+        defaults.set(true, forKey: Self.attemptPrefix + userID)
+    }
+
+    /// ¿Quedó un claim de migración de este dispositivo sin respuesta para `userID`?
+    func hasMigrationClaimAttempt(forUserID userID: String) -> Bool {
+        defaults.bool(forKey: Self.attemptPrefix + userID)
+    }
+
+    /// El claim contestó: el desenlace ya se sabe y la marca sobra. La borra `performClaim` con cualquier `.success`.
+    func clearMigrationClaimAttempt(forUserID userID: String) {
+        defaults.removeObject(forKey: Self.attemptPrefix + userID)
     }
 
     // MARK: - Codec estable (rawValue WIRE-STABLE — persiste entre lanzamientos)

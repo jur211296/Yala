@@ -6054,6 +6054,12 @@
 "storage.failed.snapshotAccountUnavailable" = "クラウドを有効化できませんでした。クラウドのアカウントが許可しませんでした。データはデバイスに安全に残っています。%@ までご連絡ください。一緒に確認します。";
 /* Fallo de la activación: el dispositivo no pudo preparar los datos */
 "storage.failed.snapshotLocalFailure" = "クラウドを有効化できませんでした。このデバイスでアップロード用のデータを準備できませんでした。データは変更されずにここに残っています。しばらくしてから、もう一度お試しください。";
+/* Fallo de la activación en el claim, la identidad o el cutover: días sin avanzar, con cualquier causa (techo largo): no acusa a nadie */
+"storage.failed.stepStalled" = "クラウドを有効化できませんでした。有効化の処理が数日間進んでいません。データはデバイスに安全に残っています。時間をおいて、もう一度お試しください。";
+/* Fallo de la activación en el claim o el cutover: la sesión caducó (sin hablar de la subida) */
+"storage.failed.stepSessionExpired" = "クラウドを有効化できませんでした。完了する前にセッションの有効期限が切れました。データはデバイスに安全に残っています。もう一度お試しいただき、再度サインインしてください。";
+/* Fallo de la activación en el cutover: otro dispositivo de la misma cuenta tomó el relevo de la migración */
+"storage.failed.stepOtherDevice" = "このデバイスではクラウドを有効化できませんでした。同じアカウントの別のデバイスが処理を引き継ぎました。データは変更されずにここに残っています。";
 /* Botón de la tarjeta de progreso: cancelar la activación de la nube */
 "storage.progress.cancelMigration" = "有効化をキャンセル";
 /* Título de la confirmación de cancelar la activación */
