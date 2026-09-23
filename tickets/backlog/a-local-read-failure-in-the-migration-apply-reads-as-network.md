@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, migración"
 created: 2026-09-22
-updated: 2026-09-22
+updated: 2026-09-23
 source: "review adversarial de `apply-overwrites-a-pending-local-write-without-its-guards` (2026-09-22), lente de atomicidad — hallazgo 1"
 ---
 
@@ -24,6 +24,11 @@ que un save fallido (que ya caía en el mismo saco). En la migración, `Migratio
 `:594-603` aprox., drain de la vuelta `:1095-1104`) lo mapea a `.networkTimeout`/`.transient`.
 `verify-reads-a-failed-local-fetch-as-an-empty-outbox` ya trata el caso hermano (outbox) como
 `.blocked(.localFailure)`.
+
+**Nota 2026-09-23 (`dangling-ref-repair-is-lost-when-its-row-cannot-be-read`):** el saco creció. Desde ese ticket
+también lanzan dentro de `applyPage` —y acaban en el mismo `.transient` ⇒ `.networkTimeout`— la lectura del destino
+de una ref singular, la del registro `SyncDanglingRef` (en cada columna ref, también con `null`) y las de las tablas
+M2M (`Tag`, `Account`, `Subcategory`). El caso local a distinguir es el mismo.
 
 ## Qué habría que decidir
 

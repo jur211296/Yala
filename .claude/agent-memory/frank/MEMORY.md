@@ -66,6 +66,7 @@
 - [Dos getters que parecen sinónimos](feedback_dos_getters_que_parecen_sinonimos.md) — el compuesto era fail-closed.
 - [Mi arreglo empeora un ticket HERMANO](feedback_mi_arreglo_empeora_un_ticket_hermano.md) — el colateral pasó de neutro a nombrar un gesto ajeno.
 - [El gemelo vive en el mismo save](feedback_el_gemelo_vive_en_el_mismo_save.md) — el alcance lo decide la transacción, no la lista del ticket.
+- [Un arreglo en N sitios se prueba en los N](feedback_un_arreglo_en_n_sitios_se_prueba_en_los_n.md) — 1 test para 18 ramas dejó 34 sitios en verde con el gemelo tolerante vivo.
 - [El sello cubre el encargo](feedback_el_sello_cubre_el_encargo.md) — Paso 0 antes de `/gate`; heredoc con markdown, siempre `<<'EOF'`.
 - [El copy caduca por un cambio AJENO](feedback_el_copy_caduca_por_un_cambio_ajeno.md) — la frase era cierta por la mañana.
 - [La tabla del ticket nombra un sitio por pantalla](feedback_la_tabla_del_ticket_nombra_un_sitio_por_pantalla.md) — 7 superficies eran 21.
@@ -137,7 +138,8 @@
 - [«Cero warnings» se mide en TODOS los logs](feedback_cero_warnings_se_mide_en_todos_los_logs.md) — el gate no mira los tests y lee un build.
 
 ## Estado del trabajo
-- [En el apply «no pude leer» no es «no hay nada»](project_apply_no_pisa_sin_salvaguardas.md) — PR del 22-sep; tres residuales con ticket, el dangler es el siguiente.
+- [Una ref colgada ilegible ya no se pierde](project_dangler_ilegible_no_es_rowgone.md) — PR del 23-sep; se tira la página, tres tickets nuevos de la review.
+- [En el apply «no pude leer» no es «no hay nada»](project_apply_no_pisa_sin_salvaguardas.md) — PR del 22-sep; el dangler ya salió, quedan dos residuales.
 - [Un journal ilegible ya no es «nunca empezó»](project_journal_ilegible_no_es_notstarted.md) — PR del 22-sep; la review cazó el motor `.idle` sin reintento.
 - [Los pasos del 22/35/80 % ya tienen techo y «Cancelar»](project_techo_de_los_tres_pasos_de_la_ida.md) — PR del 22-sep; el claim del adopt se quedó fuera a propósito.
 - [La subida al 55 % ya tiene techo y «Cancelar»](project_techo_de_la_subida_del_snapshot.md) — PR del 22-sep; tres lentes cazaron el 401 con la sesión guardada.
@@ -165,4 +167,4 @@
 - [El hook de /cerrar salta con «cerramos»](hook_cerrar_disparador_substring.md) — verifica la premisa contra su mensaje.
 - [DNS de yala-app.pe](reference_dns_yala_app_pe.md) — el correo autentica desde el 8-sep; qué leer en la cabecera además de los tres `pass`.
 
-- [El disco: los GB están DENTRO del simulador](reference_disco_cache_simulador.md) — coresymbolicationd + containermanagerd ≈ 7,6 GB regenerables.
+- [El disco: los GB están DENTRO del simulador](reference_disco_cache_simulador.md) — cachés regenerables del device; tras mutantes, containermanagerd llegó a 8,4 GB.

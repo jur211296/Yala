@@ -43,12 +43,13 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (507)
+## Index (516)
 
 | id | status | path |
 |---|---|---|
 | a-failed-snapshot-enqueue-save-leaves-the-journal-unsaved | backlog | tickets/backlog/a-failed-snapshot-enqueue-save-leaves-the-journal-unsaved.md |
 | a-local-read-failure-in-the-migration-apply-reads-as-network | backlog | tickets/backlog/a-local-read-failure-in-the-migration-apply-reads-as-network.md |
+| a-malformed-ref-leaves-a-stale-dangler | backlog | tickets/backlog/a-malformed-ref-leaves-a-stale-dangler.md |
 | abandoned-restore-no-longer-clears-the-session-window-clock | qa | tickets/qa/abandoned-restore-no-longer-clears-the-session-window-clock.md |
 | account-currency-change-leaves-scheduled-and-favorites-stale | backlog | tickets/backlog/account-currency-change-leaves-scheduled-and-favorites-stale.md |
 | account-currency-conversion-overlay-has-no-ceiling | backlog | tickets/backlog/account-currency-conversion-overlay-has-no-ceiling.md |
@@ -157,7 +158,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | csv-import-rows-fall-in-the-chat-sign-sweep | qa | tickets/qa/csv-import-rows-fall-in-the-chat-sign-sweep.md |
 | currency-change-asks-rates-for-the-old-currency | backlog | tickets/backlog/currency-change-asks-rates-for-the-old-currency.md |
 | currency-change-service-tests-mirror-the-logic | backlog | tickets/backlog/currency-change-service-tests-mirror-the-logic.md |
-| dangling-ref-repair-is-lost-when-its-row-cannot-be-read | in-progress | tickets/in-progress/dangling-ref-repair-is-lost-when-its-row-cannot-be-read.md |
+| dangling-ref-pass-overwrites-a-pending-local-edit | backlog | tickets/backlog/dangling-ref-pass-overwrites-a-pending-local-edit.md |
+| dangling-ref-repair-is-lost-when-its-row-cannot-be-read | done | tickets/done/dangling-ref-repair-is-lost-when-its-row-cannot-be-read.md |
 | debounce-sync-imported-transactions | backlog | tickets/backlog/debounce-sync-imported-transactions.md |
 | debt-simplification-nondeterministic-ties | backlog | tickets/backlog/debt-simplification-nondeterministic-ties.md |
 | debt-tracking | backlog | tickets/backlog/debt-tracking.md |
@@ -371,6 +373,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | personal-sync-does-not-retry-a-401-with-a-forced-token-refresh | backlog | tickets/backlog/personal-sync-does-not-retry-a-401-with-a-forced-token-refresh.md |
 | personal-sync-reads-an-offline-token-refresh-as-a-session-expiry | qa | tickets/qa/personal-sync-reads-an-offline-token-refresh-as-a-session-expiry.md |
 | pie-header-total-unmarked | backlog | tickets/backlog/pie-header-total-unmarked.md |
+| post-pull-reconcilers-read-an-unreadable-table-as-nothing-to-repair | backlog | tickets/backlog/post-pull-reconcilers-read-an-unreadable-table-as-nothing-to-repair.md |
 | preferred-currency-has-three-different-defaults | backlog | tickets/backlog/preferred-currency-has-three-different-defaults.md |
 | prefs-domain-per-secondary-session | discarded | tickets/discarded/prefs-domain-per-secondary-session.md |
 | prefs-synced-keys-upload-not-download | backlog | tickets/backlog/prefs-synced-keys-upload-not-download.md |
@@ -513,6 +516,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | synced-prefs-outside-prefsynckey | discarded | tickets/discarded/synced-prefs-outside-prefsynckey.md |
 | tests-borran-el-store-sqlite-abierto | backlog | tickets/backlog/tests-borran-el-store-sqlite-abierto.md |
 | the-gate-destination-no-longer-resolves-on-this-mac | backlog | tickets/backlog/the-gate-destination-no-longer-resolves-on-this-mac.md |
+| the-gate-stamp-hides-the-deleted-side-of-a-staged-rename | backlog | tickets/backlog/the-gate-stamp-hides-the-deleted-side-of-a-staged-rename.md |
 | transaction-save-helper-flake-one-per-suite | backlog | tickets/backlog/transaction-save-helper-flake-one-per-suite.md |
 | transaction-service-bulk-block-is-dead-code | backlog | tickets/backlog/transaction-service-bulk-block-is-dead-code.md |
 | trends-comparison-kpi-vs-curve | done | tickets/done/trends-comparison-kpi-vs-curve.md |
