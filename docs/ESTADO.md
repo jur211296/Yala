@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-23 (Lima)
 
-**Rama** `2.1` — Merge #221: **Al entrar en tu cuenta de la nube, el paso del 22 % ya no se queda parado para siempre.**
+**Rama** `2.1` — Merge #222: **Al volver a iCloud, dos motivos que no se arreglan esperando ya no alargan la espera a tres días.**
 TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,30 @@ TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#221 · el claim del adopt tiene techo y salida)
+## Esta sesión (#222 · dos motivos definitivos alternándose ya no esquivan el techo corto)
+
+**Al volver a iCloud, si la cuenta está suspendida y además el teléfono falla a ratos al leer su base de datos, la vuelta
+se rinde a los 15 minutos acumulados**, que es lo que promete el techo corto. Antes los dos motivos se turnaban, el
+plazo corto volvía a cero en cada observación y la persona esperaba 72 h con el teléfono sin sincronizar. Sale con el
+texto genérico («no llegó a completarse»); con un solo motivo sostenido todo queda igual.
+
+Un tercer reloj de «cualquier motivo definitivo» (`reversePreMountDefinitiveAt` + `reversePreMountDefinitiveAccruedSeconds`,
+`MigrationState` schema 12): suma entre motivos, se pausa con la red. La máquina decide el corto con él; el reloj por
+causa solo elige el copy. Canario sin cambios. Regla: `.claude/rules/swiftdata-cloudkit.md`, punto (1) de las fases
+previas al montaje.
+
+Gate: 7631 unit en 748 suites y 4 XCUITest. 11 mutantes, todos muertos. Review de tres lentes: cazó el breadcrumb sin el
+reloj que decide, dos aserciones que no podían fallar y el round-trip del journal sin los campos nuevos; todo arreglado.
+Dos consecuencias decididas y fijadas: un hueco sin observaciones entre dos motivos distintos cuenta, y 403 + rechazo
+turnándose salen con el texto genérico.
+
+### Lo que espera de Jürgen
+
+- **Nada.** Ticket a `done` sin device-QA: el escenario no se monta a voluntad en un iPhone.
+- Ticket nuevo: `snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling` (high) — el mismo agujero en
+  la subida del snapshot de la ida, con el molde de este cambio. En la ida sin cifra se midió y no es alcanzable.
+
+## Sesión anterior (#221 · el claim del adopt tiene techo y salida)
 
 **Al entrar en una cuenta de la nube que ya existe** («Ya tengo una cuenta» en la bienvenida, o «Activar la nube en este
 dispositivo»), **el paso del 22 % ya no se puede quedar parado para siempre**: con la sesión borrada o un 403 la tarjeta
@@ -47,7 +70,7 @@ relanzar.
 - Dos tickets nuevos de producto: `adopt-follower-waits-for-the-leader-with-no-ceiling` (medium: el seguidor sin techo, y
   un «Cancelar» que se pierde) y `migrate-claim-does-not-announce-a-definitive-cause-before-its-ceiling` (low).
 
-## Sesión anterior (#220 · un inventario incompleto de la migración ya no se lee como el corpus entero)
+## Sesión del #220 (un inventario incompleto de la migración ya no se lee como el corpus entero)
 
 **Si al pasar tus datos a la nube, al entrar en una cuenta que ya existe o al volver a iCloud el teléfono no consigue
 leer una de tus tablas, la app ya no la da por hecha**: la ida se para con «este dispositivo no pudo preparar tus
