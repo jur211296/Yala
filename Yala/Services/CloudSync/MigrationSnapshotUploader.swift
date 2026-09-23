@@ -229,7 +229,9 @@ final class MigrationSnapshotUploader {
     /// vivo quedó VACÍO tras el push (página confirmada); `.notConfirmed` si quedan filas vivas o el push falló por
     /// red; `.blocked` si esperar no lo arregla.
     private func drainPushConfirm() async -> PushConfirmation {
-        engine.drainOnce(context: context)
+        // Un drain que no terminó deja cambios fuera del outbox: «vacío» no probaría nada (ticket
+        // `drain-duplicates-the-unit-clock-when-its-row-cannot-be-read`). Es una avería LOCAL, como el outbox ilegible.
+        guard engine.drainOnce(context: context) else { return .blocked(.localFailure) }
         // Un outbox ilegible NUNCA confirma (ticket `verify-reads-a-failed-local-fetch-as-an-empty-outbox`):
         // `.confirmed` avanza el cursor, y con `[]` una avería de lectura daba por subida una página que no se subió.
         // Desde `snapshot-upload-has-no-ceiling-and-no-way-out` además dice POR QUÉ, para que el techo corto lo vea.
@@ -269,7 +271,7 @@ final class MigrationSnapshotUploader {
     /// outbox vivo queda vacío; `.transient` o `.blocked` si algo quedó pendiente (el runner reintenta antes de
     /// avanzar).
     private func finishResidual() async -> SnapshotStepOutcome {
-        engine.drainOnce(context: context)
+        guard engine.drainOnce(context: context) else { return .blocked(.localFailure) }  // mismo porqué que arriba
         // Ilegible → nunca `.completed` (mismo ticket y mismo porqué que en `drainPushConfirm`): el runner reintenta
         // la pasada antes de avanzar, que es exactamente lo que hace falta cuando no se sabe si quedó algo pendiente.
         let live: [SyncOutbox]

@@ -542,6 +542,47 @@ struct SyncApplyEngineTests {
         #expect(!pushed.fieldsJSON.contains("50"))
     }
 
+    /// Gemelo del anterior con el re-drain ABORTADO (ticket `drain-duplicates-the-unit-clock-when-its-row-cannot-be-
+    /// read`): su rollback deja la edición fuera del outbox, así que aplicar la página la pisaría con el guard D-1
+    /// vacío. El pull corta sin aplicar y el cursor no avanza. Control positivo: el caso de arriba.
+    @Test func pullAndApply_editDuringPullSuspension_drainAborts_pageIsNotApplied() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = ModelContext(try makeContainer(dir))
+        let engine = CloudSyncEngine()
+
+        let sid = UUID()
+        let tx = TransactionItem(date: epochDate, amount: 10, currencyCode: "USD")
+        tx.syncID = sid
+        tx.createdAt = epochDate
+        context.insert(tx)
+        try context.save()
+        engine.drainOnce(context: context)
+        for row in outbox(context) { context.delete(row) }
+        try context.save()
+
+        let page = txPage(sid: sid, serverSeq: 7, h: hlc(2), amount: "50.0000")
+        let session = EditingStubSession(body: Data(page.utf8)) { @MainActor in
+            tx.amount = 99
+            do { try context.save() } catch {
+                Issue.record("save de la edición falló: \(error)")
+            }
+            engine._testThrowOnDrainOutboxSave = true  // el re-drain previo al apply aborta
+        }
+        let client = SyncPullClient(baseURL: URL(string: "https://example.test")!,
+                                    tokenProvider: { "jwt" }, urlSession: session)
+        let outcome = await engine.pullAndApplyOnce(using: client, context: context, now: applyNow)
+
+        #expect(outcome == .transient(pagesApplied: 0))
+        let stored = try ModelContext(context.container).fetch(FetchDescriptor<TransactionItem>())
+        #expect(stored.first { $0.syncID == sid }?.amount == 99)
+        #expect(cursor(context)?.serverSeqCursor == 0)
+
+        // Y la vuelta siguiente, con el drain sano, sube la edición (no la pierde).
+        engine._testThrowOnDrainOutboxSave = false
+        #expect(engine.drainOnce(context: context))
+        #expect(outbox(context).first { $0.syncID == sid }?.fieldsJSON.contains("99") == true)
+    }
+
     // MARK: - F-3. Save de página falla → outcome .transient con conteo real
 
     @Test func pullAndApply_pageSaveFails_returnsTransientWithRealCount() async throws {

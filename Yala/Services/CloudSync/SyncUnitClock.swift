@@ -6,7 +6,8 @@
 //  descartaba los unit-HLCs remotos tras usarlos y el outbox solo conserva los HLCs de lo PENDIENTE →
 //  no existía la señal que el desempate del transfer-pair (SERIO 4) necesita: "¿qué lado editó `money`
 //  más recientemente?". Esta tabla la materializa:
-//   - **DRAIN** (`appendUpsert`, MISMO save que la fila de outbox): unidades emitidas → HLC acuñado.
+//   - **DRAIN** (`prepareUnitClocks` + `PreparedWrites.apply`, MISMO save que la fila de outbox; también el
+//     snapshot y el remap): unidades emitidas → HLC acuñado.
 //   - **APPLY** (`applyToEntity`, MISMO save de página): unidades APLICADAS (no las saltadas por el
 //     guard D-1 — la saltada conserva el HLC local pendiente que el drain ya escribió) → HLC remoto.
 //   - **Tombstone** (drain Y apply): la fila de clock de ese syncID se BORRA (higiene; si el modelo
@@ -70,7 +71,7 @@ enum SyncUnitClockStore {
 
     /// Fila de clock de un `syncID` (fetch concreto — regla inviolable `#Predicate`). Un fetch fallido se
     /// lee `nil`: vale para LEER una señal (el reconciler toma su rama «sin señal»), no para decidir si
-    /// insertar o borrar — eso lo hacen `upsertChecked`/`deleteChecked` con `findRow`.
+    /// insertar o borrar — eso lo hacen `upsertChecked`/`deleteChecked` y `prepareWrites` con `findRow`.
     static func row(syncID: UUID, context: ModelContext) -> SyncUnitClock? {
         do {
             return try findRow(syncID: syncID, context: context)
@@ -95,19 +96,11 @@ enum SyncUnitClockStore {
     /// Upsert con merge MAX por unidad: cada unidad conserva el HLC MÁS RECIENTE entre el existente y
     /// el nuevo (comparación estructurada). Un HLC nuevo no parseable se ignora (con rastro); uno
     /// existente no parseable se reemplaza por el nuevo (auto-cura de una fila corrupta).
-    static func upsert(
-        syncID: UUID, entityTable: String, unitHlcs: [String: String], context: ModelContext,
-        now: Date = .now
-    ) {
-        guard !unitHlcs.isEmpty else { return }
-        upsert(syncID: syncID, entityTable: entityTable, unitHlcs: unitHlcs, existing: row(syncID: syncID, context: context),
-               context: context, now: now)
-    }
-
-    /// `upsert` del APPLY (ticket `apply-overwrites-a-pending-local-write-without-its-guards`): LANZA si la fila
-    /// no se puede leer, en vez de insertar un SEGUNDO reloj para el mismo `syncID` (sin `.unique` por
-    /// CloudKit) que luego el reconciler de transferencias podría leer en lugar del bueno. El drain sigue con
-    /// `upsert` (ticket `drain-duplicates-the-unit-clock-when-its-row-cannot-be-read`).
+    ///
+    /// LANZA si la fila no se puede leer, en vez de insertar un SEGUNDO reloj para el mismo `syncID` (sin
+    /// `.unique` por CloudKit) que luego el reconciler de transferencias podría leer en lugar del bueno
+    /// (ticket `apply-overwrites-a-pending-local-write-without-its-guards`). No hay variante que trague el
+    /// error: el drain la tenía y duplicaba (ticket `drain-duplicates-the-unit-clock-when-its-row-cannot-be-read`).
     static func upsertChecked(
         syncID: UUID, entityTable: String, unitHlcs: [String: String], context: ModelContext,
         now: Date = .now
@@ -117,10 +110,13 @@ enum SyncUnitClockStore {
                existing: try findRow(syncID: syncID, context: context), context: context, now: now)
     }
 
+    /// Devuelve la fila resultante (la existente actualizada o la recién insertada): el lote del drain la
+    /// recuerda para que una segunda escritura del mismo `syncID` la encuentre sin volver a leer.
+    @discardableResult
     private static func upsert(
         syncID: UUID, entityTable: String, unitHlcs: [String: String], existing: SyncUnitClock?,
         context: ModelContext, now: Date
-    ) {
+    ) -> SyncUnitClock {
         var merged = decodeMap(existing?.unitHlcsJSON)
         for (unit, newRaw) in unitHlcs {
             guard let newHLC = try? HLC.parse(newRaw) else {
@@ -149,24 +145,75 @@ enum SyncUnitClockStore {
             existing.entityTable = entityTable
             existing.unitHlcsJSON = json
             existing.updatedAt = now
-        } else {
-            context.insert(SyncUnitClock(syncID: syncID, entityTable: entityTable,
-                                         unitHlcsJSON: json, updatedAt: now))
+            return existing
         }
+        let inserted = SyncUnitClock(syncID: syncID, entityTable: entityTable, unitHlcsJSON: json, updatedAt: now)
+        context.insert(inserted)
+        return inserted
     }
 
-    /// Borra la fila de clock de un `syncID` (higiene del tombstone — drain y apply). No-op si no existe.
-    static func delete(syncID: UUID, context: ModelContext) {
-        if let existing = row(syncID: syncID, context: context) {
-            context.delete(existing)
-        }
-    }
-
-    /// `delete` del APPLY: LANZA si la fila no se puede leer (si no, el tombstone deja el reloj vivo).
+    /// Borra la fila de clock de un `syncID` (higiene del tombstone). No-op si no existe; LANZA si la fila no
+    /// se puede leer (si no, el tombstone deja el reloj vivo).
     static func deleteChecked(syncID: UUID, context: ModelContext) throws {
         if let existing = try findRow(syncID: syncID, context: context) {
             context.delete(existing)
         }
+    }
+
+    // MARK: Lote de escrituras (drain, snapshot, remap)
+
+    /// Una escritura de reloj que el lote aplica en orden.
+    enum Write {
+        case upsert(syncID: UUID, entityTable: String, unitHlcs: [String: String])
+        case delete(syncID: UUID)
+
+        var syncID: UUID {
+            switch self {
+            case let .upsert(syncID, _, _), let .delete(syncID): syncID
+            }
+        }
+    }
+
+    /// Escrituras ya LEÍDAS: `apply` no lee ni lanza. Solo lo construye `prepareWrites`.
+    struct PreparedWrites {
+        fileprivate let writes: [Write]
+        fileprivate let existing: [UUID: SyncUnitClock]
+
+        /// Aplica las escrituras en orden sobre las filas leídas por `prepareWrites`. Una escritura posterior
+        /// del mismo `syncID` ve la anterior (la fila insertada, o su ausencia tras un borrado) — lo mismo
+        /// que vería un fetch del contexto con los cambios pendientes, sin volver a leer.
+        func apply(context: ModelContext, now: Date = .now) {
+            var rows = existing
+            for write in writes {
+                switch write {
+                case let .delete(syncID):
+                    if let row = rows.removeValue(forKey: syncID) { context.delete(row) }
+                case let .upsert(syncID, entityTable, unitHlcs):
+                    rows[syncID] = SyncUnitClockStore.upsert(
+                        syncID: syncID, entityTable: entityTable, unitHlcs: unitHlcs,
+                        existing: rows[syncID], context: context, now: now)
+                }
+            }
+        }
+    }
+
+    /// Lee la fila de reloj de cada `syncID` del lote ANTES de que el llamador mute nada (ticket
+    /// `drain-duplicates-the-unit-clock-when-its-row-cannot-be-read`). LANZA si una lectura falla: «no pude
+    /// leer» no es «no hay fila» — leído como `nil`, el upsert insertaba un SEGUNDO reloj y el tombstone lo
+    /// dejaba vivo. Leer primero hace que el fallo llegue antes de la primera inserción, así que no queda
+    /// nada a medias en el contexto aunque el llamador no haga rollback. Un upsert sin unidades no se
+    /// escribe (tampoco se lee).
+    static func prepareWrites(_ writes: [Write], context: ModelContext) throws -> PreparedWrites {
+        let effective = writes.filter {
+            if case let .upsert(_, _, unitHlcs) = $0 { return !unitHlcs.isEmpty }
+            return true
+        }
+        var existing: [UUID: SyncUnitClock] = [:]
+        var read: Set<UUID> = []
+        for write in effective where read.insert(write.syncID).inserted {
+            if let row = try findRow(syncID: write.syncID, context: context) { existing[write.syncID] = row }
+        }
+        return PreparedWrites(writes: effective, existing: existing)
     }
 
     /// HLC de UNA unidad, parseado. `nil` = sin fila / unidad ausente / no parseable → el reconciler

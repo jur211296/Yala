@@ -548,7 +548,9 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         // fix del review adversarial — simetría con el uploader): una fila no-construible se AÍSLA como
         // dead-letter (el mismatch que provoca consume presupuesto de MISMATCH → degrada honesto a
         // failedRollback) en vez de hacer fallar el push entero consumiendo presupuesto de RED.
-        engine.drainOnce(context: context)
+        // Un drain que no terminó deja cambios fuera del outbox: con él, «no queda nada» no probaría nada (ticket
+        // `drain-duplicates-the-unit-clock-when-its-row-cannot-be-read`). Avería LOCAL, como el outbox ilegible.
+        guard engine.drainOnce(context: context) else { return .blocked(.localFailure) }
         // El outbox que no se deja leer NO es un outbox vacío, y este es el sitio donde esa diferencia se paga
         // (ticket `verify-reads-a-failed-local-fetch-as-an-empty-outbox`). Hasta el 2026-09-22 el `catch` del
         // helper devolvía `[]`, así que la misma avería se leía aquí como «no hay nada que subir» —saltándose un
@@ -745,7 +747,10 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
             // físicamente y una adopción tardía la rescata — el diff no caduca). También v1: borrados de
             // ventana (resurrección benigna) + import-lag (duplicado curable). Candidato v2 (device que jamás
             // adopta) = lectura directa del CloudKit congelado por el líder (opción C, descartada v1).
-            engine.drainOnce(context: context)
+            // Un drain que no terminó tampoco manda el 'complete' (mismo molde retomable que el outbox ilegible).
+            guard engine.drainOnce(context: context) else {
+                throw MigrationExecutorError.notWired(effect: "runLeaderReconcile: drainAborted")
+            }
             // Un outbox ilegible PROPAGA (ticket `verify-reads-a-failed-local-fetch-as-an-empty-outbox`): con `[]`
             // el barrido salía vacío y el `migration_progress('complete')` de abajo se mandaba igual, cerrando la
             // migración de la cuenta con filas del líder sin subir. El molde retomable es el que este bloque ya
@@ -1066,7 +1071,9 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     /// que renovar— pero ya no se confunde con la red, porque es lo que elige el techo CORTO de esta etapa. Hasta ese
     /// día se quedaba en `.transient` y la vuelta se paraba aquí sin salida.
     func reverseDrainOnce() async -> ReverseStepOutcome {
-        engine.drainOnce(context: context)
+        // Sin drain completo no se da por drenado: lo siguiente es CONGELAR el backend (mismo porqué que el outbox
+        // ilegible de abajo; ticket `drain-duplicates-the-unit-clock-when-its-row-cannot-be-read`).
+        guard engine.drainOnce(context: context) else { return .blocked(.localFailure) }
         // Igual que en `verify()`, y aquí el precio es mayor: con `[]` esta fase podía devolver `.completed` sin
         // haber subido nada, y lo siguiente que hace la vuelta es CONGELAR el backend. O sea, dar por drenado un
         // outbox que nadie pudo leer y cerrar la puerta detrás (ticket

@@ -170,7 +170,12 @@ extension CloudSyncEngine {
                 // F-1: RE-drenar SÍNCRONO inmediatamente antes del apply — sin `await` entre medio.
                 // Cubre toda edición local que aterrizó durante la suspensión del `await pull`: su fila
                 // de outbox queda escrita y el guard D-1 protege sus unidades del full-row remoto.
-                drainOnce(context: context)
+                // Un drain que NO terminó hizo rollback: la edición de la suspensión no está en el outbox, ni
+                // siquiera sucia en el contexto, así que el guard D-1 no la vería y la página la pisaría (y el
+                // drain siguiente la releería ya pisada). Cortar como con un apply fallido: el cursor no se mueve.
+                guard drainOnce(context: context) else {
+                    return (.transient(pagesApplied: pagesApplied), pagesApplied)
+                }
                 guard applyPage(page, context: context, now: now) else {
                     // F-3: la página no se aplicó —falló su save o una lectura de la que depende (guard,
                     // dedupe, búsqueda de fila)— y el rollback ya está hecho → cortar; el cursor NO avanzó,

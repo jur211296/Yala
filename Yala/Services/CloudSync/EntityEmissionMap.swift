@@ -766,7 +766,7 @@ enum EntityEmissionMap {
         case SyncEntityType.favoritePayment: return favoritePayment.table
         case SyncEntityType.merchantMemory: return merchantMemory.table
         case SyncEntityType.exchangeRate: return exchangeRate.table
-        // I12: las 10 restantes ya mapean a su tabla (el sender/updateUnitClock las necesita).
+        // I12: las 10 restantes ya mapean a su tabla (el sender y el reloj por unidad del drain las necesitan).
         case SyncEntityType.scheduledPayment: return scheduledPayment.table
         case SyncEntityType.budget: return budget.table
         case SyncEntityType.account: return account.table

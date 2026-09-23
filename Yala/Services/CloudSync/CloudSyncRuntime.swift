@@ -407,8 +407,12 @@ final class CloudSyncRuntime {
         // de cuarentena (F-8 exige el drain síncrono inmediatamente antes) → reconcilers de arranque.
         engine.recoverIfQuarantineRecreated(context: context)
         engine.rehydrateOutboxFromMirror(userID: userID, context: context)
-        engine.drainOnce(context: context)
-        engine.drainQuarantineOnce(context: context)
+        // Un drain que no terminó hizo rollback: una edición local sin capturar no está en el outbox y el guard D-1
+        // del drenaje de cuarentena no la vería (F-8). La cuarentena es durable: espera al próximo arranque (ticket
+        // `drain-duplicates-the-unit-clock-when-its-row-cannot-be-read`).
+        if engine.drainOnce(context: context) {
+            engine.drainQuarantineOnce(context: context)
+        }
         engine.runStartupReconcilersIfQuiescent(context: context)
 
         CloudSyncBreadcrumb.runtimeStarted()
