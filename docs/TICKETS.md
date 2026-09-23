@@ -67,7 +67,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | ai-recommended-budgets | backlog | tickets/backlog/ai-recommended-budgets.md |
 | alternating-definitive-causes-never-reach-the-short-ceiling | backlog | tickets/backlog/alternating-definitive-causes-never-reach-the-short-ceiling.md |
 | an-incomplete-inventory-reads-as-the-whole-corpus | backlog | tickets/backlog/an-incomplete-inventory-reads-as-the-whole-corpus.md |
-| an-unreadable-migration-journal-reads-as-never-started | backlog | tickets/backlog/an-unreadable-migration-journal-reads-as-never-started.md |
+| an-unreadable-migration-journal-reads-as-never-started | in-progress | tickets/in-progress/an-unreadable-migration-journal-reads-as-never-started.md |
 | apple-id-change-should-close-the-private-session | done | tickets/done/apple-id-change-should-close-the-private-session.md |
 | apple-id-close-blocked-has-no-visible-outcome | done | tickets/done/apple-id-close-blocked-has-no-visible-outcome.md |
 | apple-id-close-notice-does-not-say-what-else-the-close-does | backlog | tickets/backlog/apple-id-close-notice-does-not-say-what-else-the-close-does.md |

@@ -1,6 +1,6 @@
 ---
 id: an-unreadable-migration-journal-reads-as-never-started
-status: backlog
+status: in-progress
 priority: very-high
 area: "modo-nube, migración"
 created: 2026-09-22
