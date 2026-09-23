@@ -6051,6 +6051,8 @@
 /* Techo y cancelación de la subida al activar la nube (ticket snapshot-upload-has-no-ceiling-and-no-way-out) */
 /* Fallo de la activación: 72 h sin subir nada, con cualquier causa (techo largo): no acusa a nadie */
 "storage.failed.snapshotStalled" = "クラウドを有効化できませんでした。データのアップロードが数日間進んでいません。データはデバイスに安全に残っています。時間をおいて、もう一度お試しください。";
+/* Fallo de la activación: el techo corto venció con motivos definitivos turnándose y ninguno llegó solo al plazo (ticket snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling): no nombra un motivo ni un plazo */
+"storage.failed.snapshotMixedCauses" = "クラウドを有効化できませんでした。待っても解決しない問題で、データのアップロードが止まりました。データはデバイスに安全に残っています。もう一度お試しください。";
 /* Fallo de la activación: la sesión caducó durante la subida */
 "storage.failed.snapshotSessionExpired" = "クラウドを有効化できませんでした。データのアップロード中にセッションの有効期限が切れました。データはデバイスに安全に残っています。もう一度お試しいただき、再度サインインしてください。";
 /* Fallo de la activación: la cuenta en la nube no lo permitió (%@ = correo de soporte) */

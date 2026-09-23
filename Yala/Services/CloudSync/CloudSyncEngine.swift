@@ -1188,12 +1188,18 @@ enum CloudSyncBreadcrumb {
     }
 
     /// La subida del snapshot de la ida no confirmó ninguna página en esta pasada (ticket
-    /// `snapshot-upload-has-no-ceiling-and-no-way-out`). `stalled` = reloj de AVANCE, `cause` = reloj de CAUSA.
-    static func snapshotUploadStalled(stalledSeconds: Double, causeStalledSeconds: Double, blocker: String?) {
+    /// `snapshot-upload-has-no-ceiling-and-no-way-out`). `stalled` = reloj de AVANCE, `cause` = reloj de CAUSA (elige el
+    /// copy), `definitive` = reloj de «cualquier motivo definitivo», el que decide los 15 min desde
+    /// `snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling`. Sin él, dos motivos turnándose
+    /// dejaban en el log `cause=30s` seguido de una salida, sin nada que dijera por qué salió.
+    static func snapshotUploadStalled(
+        stalledSeconds: Double, causeStalledSeconds: Double, definitiveStalledSeconds: Double, blocker: String?
+    ) {
         let seconds = Int(stalledSeconds)
         let causeSeconds = Int(causeStalledSeconds)
+        let definitiveSeconds = Int(definitiveStalledSeconds)
         logger.notice(
-            "CloudSyncMigration snapshotStalled stalled=\(seconds, privacy: .public)s cause=\(causeSeconds, privacy: .public)s blocker=\(blocker ?? "-", privacy: .public)")
+            "CloudSyncMigration snapshotStalled stalled=\(seconds, privacy: .public)s cause=\(causeSeconds, privacy: .public)s definitive=\(definitiveSeconds, privacy: .public)s blocker=\(blocker ?? "-", privacy: .public)")
     }
 
     /// La subida del snapshot salió de su fase: por su techo (a `failedRollback`) o porque la persona canceló (a

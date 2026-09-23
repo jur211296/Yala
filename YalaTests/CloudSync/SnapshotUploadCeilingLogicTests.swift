@@ -33,8 +33,13 @@ struct SnapshotUploadCeilingLogicTests {
         #expect(message(.sessionExpired) == L10n.Storage.Failed.snapshotSessionExpired)
         #expect(message(.accountUnavailable) == L10n.Storage.Failed.snapshotAccountUnavailable(supportEmail))
         #expect(message(.localFailure) == L10n.Storage.Failed.snapshotLocalFailure)
-        let texts = [SnapshotExitReason.stalled, .sessionExpired, .accountUnavailable, .localFailure].map { message($0) }
-        #expect(Set(texts).count == 4, "cuatro motivos, cuatro frases")
+        // El techo corto con motivos turnándose tiene frase propia (ticket
+        // `snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling`): la de `stalled` dice «lleva
+        // días» y esta salida llega a los 15 min.
+        #expect(message(.mixedCauses) == L10n.Storage.Failed.snapshotMixedCauses)
+        let texts = [SnapshotExitReason.stalled, .sessionExpired, .accountUnavailable, .localFailure, .mixedCauses]
+            .map { message($0) }
+        #expect(Set(texts).count == 5, "cinco motivos, cinco frases")
         #expect(!texts.contains(L10n.Storage.Failed.migration), "ninguno cae al genérico: esa fue la decisión")
         // Comparar L10n con L10n no ve una clave que falte: los dos lados devolverían la clave cruda. Esto sí (lo cazó
         // la review). Y va para los nueve textos nuevos, los del diálogo incluidos.
@@ -51,7 +56,7 @@ struct SnapshotUploadCeilingLogicTests {
     /// soporte sería mandar a alguien por nada.
     @Test func onlyTheAccountRefusal_givesTheSupportEmail() {
         #expect(message(.accountUnavailable).contains(supportEmail))
-        for exit in [SnapshotExitReason.stalled, .sessionExpired, .localFailure] {
+        for exit in [SnapshotExitReason.stalled, .sessionExpired, .localFailure, .mixedCauses] {
             #expect(!message(exit).contains(supportEmail), "\(exit)")
         }
     }
@@ -79,8 +84,9 @@ struct SnapshotUploadCeilingLogicTests {
     @Test func rawValues_areWire() {
         #expect([SnapshotStallBlocker.sessionExpired, .accountUnavailable, .localFailure].map(\.rawValue)
             == ["sessionExpired", "accountUnavailable", "localFailure"])
-        #expect([SnapshotExitReason.stalled, .sessionExpired, .accountUnavailable, .localFailure].map(\.rawValue)
-            == ["stalled", "sessionExpired", "accountUnavailable", "localFailure"])
+        #expect([SnapshotExitReason.stalled, .sessionExpired, .accountUnavailable, .localFailure, .mixedCauses]
+            .map(\.rawValue)
+            == ["stalled", "sessionExpired", "accountUnavailable", "localFailure", "mixedCauses"])
         #expect(SnapshotExitReason(.localFailure) == .localFailure)
         #expect(SnapshotExitReason(.sessionExpired) == .sessionExpired)
         #expect(SnapshotExitReason(.accountUnavailable) == .accountUnavailable)

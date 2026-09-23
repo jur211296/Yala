@@ -6039,6 +6039,8 @@
 /* Techo y cancelación de la subida al activar la nube (ticket snapshot-upload-has-no-ceiling-and-no-way-out) */
 /* Fallo de la activación: 72 h sin subir nada, con cualquier causa (techo largo): no acusa a nadie */
 "storage.failed.snapshotStalled" = "Wir konnten die Cloud nicht aktivieren: Das Hochladen deiner Daten kommt seit Tagen nicht voran. Deine Daten sind sicher auf deinem Gerät – versuche es später erneut.";
+/* Fallo de la activación: el techo corto venció con motivos definitivos turnándose y ninguno llegó solo al plazo (ticket snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling): no nombra un motivo ni un plazo */
+"storage.failed.snapshotMixedCauses" = "Wir konnten die Cloud nicht aktivieren: Das Hochladen deiner Daten ist an etwas hängen geblieben, das sich durch Warten nicht lösen ließ. Deine Daten sind sicher auf deinem Gerät – versuche es erneut.";
 /* Fallo de la activación: la sesión caducó durante la subida */
 "storage.failed.snapshotSessionExpired" = "Wir konnten die Cloud nicht aktivieren: Deine Sitzung ist abgelaufen, während wir deine Daten hochgeladen haben. Deine Daten sind sicher auf deinem Gerät – versuche es erneut und melde dich noch einmal an.";
 /* Fallo de la activación: la cuenta en la nube no lo permitió (%@ = correo de soporte) */

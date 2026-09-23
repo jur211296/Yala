@@ -204,6 +204,8 @@ struct CloudSyncSchemaParityTests {
             "snapshotStallCauseRaw",
             "snapshotStallCauseAt",
             "snapshotStallCauseAccruedSeconds",
+            "snapshotStallDefinitiveAt",
+            "snapshotStallDefinitiveAccruedSeconds",
             "snapshotExitReasonRaw",
             "forwardStepStallProgressAt",
             "forwardStepStallCauseRaw",
@@ -219,7 +221,7 @@ struct CloudSyncSchemaParityTests {
         #expect(propertyNames(MigrationState.self) == expected)
     }
 
-    @Test func migrationState_schemaVersion_isTwelve() {
+    @Test func migrationState_schemaVersion_isThirteen() {
         // Subió a 2 en I11-2 al añadir el campo aditivo `reverseOriginRaw`; a 3 en C-1 con
         // `markerWrittenSince` (reloj del tope del paso 4) + `cutoverICloudVerdictRaw` (veredicto del canal
         // iCloud), ambos ADITIVOS y opcionales → una fila escrita por un build v2 sigue abriéndose. A 4 con los
@@ -250,7 +252,11 @@ struct CloudSyncSchemaParityTests {
         // (`reversePreMountDefinitiveAt`, `reversePreMountDefinitiveAccruedSeconds`), opcionales: una fila v11 parada
         // en una de esas cuatro fases se abre sin nada acumulado, y el reloj empieza con la primera observación con
         // motivo (ticket `alternating-definitive-causes-never-reach-the-short-ceiling`).
-        #expect(CloudSyncSchemaVersions.migrationState == 12)
+        // A 13 con el mismo par en la subida del snapshot (`snapshotStallDefinitiveAt`,
+        // `snapshotStallDefinitiveAccruedSeconds`), opcionales: una fila v12 parada en la subida se abre sin nada
+        // acumulado, y el reloj empieza con la primera observación con motivo (ticket
+        // `snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling`).
+        #expect(CloudSyncSchemaVersions.migrationState == 13)
     }
 
     /// **Los CUATRO campos de los relojes del techo de los tres pasos se limpian juntos**
@@ -277,8 +283,8 @@ struct CloudSyncSchemaParityTests {
         #expect(state.forwardStepExitReasonRaw == "stalled", "el motivo de la salida no es parte del reloj")
     }
 
-    /// **Los CUATRO campos de los relojes del techo de la subida se limpian juntos** (`clearSnapshotStallCeiling()`),
-    /// con la familia derivada del SCHEMA por su prefijo, como la de arriba: un quinto campo `snapshotStall*` rompe
+    /// **Los SEIS campos de los relojes del techo de la subida se limpian juntos** (`clearSnapshotStallCeiling()`),
+    /// con la familia derivada del SCHEMA por su prefijo, como la de arriba: un séptimo campo `snapshotStall*` rompe
     /// la igualdad y obliga a pasar por aquí. El motivo de la salida (`snapshotExitReasonRaw`) queda FUERA a propósito:
     /// es el desenlace, sobrevive a `failedRollback`, y el helper no puede tocarlo.
     @Test func migrationState_clearSnapshotStallCeiling_clearsTheWholeFamily_andNotTheExitReason() {
@@ -288,17 +294,22 @@ struct CloudSyncSchemaParityTests {
             "snapshotStallCauseRaw",
             "snapshotStallCauseAt",
             "snapshotStallCauseAccruedSeconds",
+            "snapshotStallDefinitiveAt",
+            "snapshotStallDefinitiveAccruedSeconds",
         ]
         #expect(family == known, "campo nuevo en la familia: añádelo a `clearSnapshotStallCeiling()` y a esta lista")
 
         let state = MigrationState(
             snapshotStallProgressAt: .now, snapshotStallCauseRaw: "localFailure", snapshotStallCauseAt: .now,
-            snapshotStallCauseAccruedSeconds: 42, snapshotExitReasonRaw: "stalled")
+            snapshotStallCauseAccruedSeconds: 42, snapshotStallDefinitiveAt: .now,
+            snapshotStallDefinitiveAccruedSeconds: 42, snapshotExitReasonRaw: "stalled")
         state.clearSnapshotStallCeiling()
         #expect(state.snapshotStallProgressAt == nil)
         #expect(state.snapshotStallCauseRaw == nil)
         #expect(state.snapshotStallCauseAt == nil)
         #expect(state.snapshotStallCauseAccruedSeconds == nil)
+        #expect(state.snapshotStallDefinitiveAt == nil)
+        #expect(state.snapshotStallDefinitiveAccruedSeconds == nil)
         #expect(state.snapshotExitReasonRaw == "stalled", "el motivo de la salida no es parte del reloj")
     }
 

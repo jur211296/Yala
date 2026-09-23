@@ -321,6 +321,9 @@ struct MigrationRunnerTests {
         // (ticket `snapshot-upload-has-no-ceiling-and-no-way-out`).
         snapshotStallProgressAt: Date? = nil, snapshotStallCauseRaw: String? = nil,
         snapshotStallCauseAt: Date? = nil, snapshotStallCauseAccruedSeconds: Double? = nil,
+        // Y los dos del reloj de «cualquier motivo definitivo» de la subida (ticket
+        // `snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling`).
+        snapshotStallDefinitiveAt: Date? = nil, snapshotStallDefinitiveAccruedSeconds: Double? = nil,
         snapshotExitReasonRaw: String? = nil,
         // Techo de los tres pasos sin cifra que baje (ticket `forward-migration-steps-have-no-ceiling-and-no-exit`).
         forwardStepStallProgressAt: Date? = nil, forwardStepStallCauseRaw: String? = nil,
@@ -354,6 +357,8 @@ struct MigrationRunnerTests {
         state.snapshotStallCauseRaw = snapshotStallCauseRaw
         state.snapshotStallCauseAt = snapshotStallCauseAt
         state.snapshotStallCauseAccruedSeconds = snapshotStallCauseAccruedSeconds
+        state.snapshotStallDefinitiveAt = snapshotStallDefinitiveAt
+        state.snapshotStallDefinitiveAccruedSeconds = snapshotStallDefinitiveAccruedSeconds
         state.snapshotExitReasonRaw = snapshotExitReasonRaw
         state.forwardStepStallProgressAt = forwardStepStallProgressAt
         state.forwardStepStallCauseRaw = forwardStepStallCauseRaw
@@ -3603,9 +3608,11 @@ struct MigrationRunnerTests {
         }
     }
 
-    /// **Una página confirmada reinicia LOS DOS relojes.** Sin esto, un corpus grande que sube despacio agotaría el
+    /// **Una página confirmada reinicia LOS relojes.** Sin esto, un corpus grande que sube despacio agotaría el
     /// techo mientras avanza. El guion: 71 h 58 min sin avanzar y 800 s de fallo local acumulados; en la pasada, una
-    /// página sube y la siguiente choca con el mismo fallo. La fase no sale, y los dos relojes empiezan AHORA.
+    /// página sube y la siguiente choca con el mismo fallo. La fase no sale, y los relojes empiezan AHORA — también el
+    /// de lo definitivo, que es el que decide los 15 min (ticket
+    /// `snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling`).
     @Test func snapshotCeiling_aConfirmedPageRestartsBothClocks() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
@@ -3615,7 +3622,9 @@ struct MigrationRunnerTests {
         let clock = MutableClock(now)
         try seedJournal(context, phase: .uploadingSnapshot,
                         snapshotStallProgressAt: fixedNow, snapshotStallCauseRaw: "localFailure",
-                        snapshotStallCauseAt: fixedNow.addingTimeInterval(258_280), snapshotStallCauseAccruedSeconds: 0)
+                        snapshotStallCauseAt: fixedNow.addingTimeInterval(258_280), snapshotStallCauseAccruedSeconds: 0,
+                        snapshotStallDefinitiveAt: fixedNow.addingTimeInterval(258_280),
+                        snapshotStallDefinitiveAccruedSeconds: 0)
 
         await makeRunner(context, fake, now: { clock.value }).resume()
         var j = try journal(context)
@@ -3624,6 +3633,8 @@ struct MigrationRunnerTests {
         #expect(j.snapshotStallProgressAt == now, "el reloj de avance empieza en la página confirmada")
         #expect(j.snapshotStallCauseAt == now, "y el de causa empieza de cero en el fallo de después")
         #expect(j.snapshotStallCauseAccruedSeconds == 0)
+        #expect(j.snapshotStallDefinitiveAt == now, "y el de lo definitivo, igual")
+        #expect(j.snapshotStallDefinitiveAccruedSeconds == 0)
 
         // Y de verdad empieza de cero: a 899 s del fallo nuevo sigue esperando.
         clock.value = now.addingTimeInterval(899)
@@ -3669,6 +3680,10 @@ struct MigrationRunnerTests {
         #expect(j.snapshotExitReasonRaw == nil)
         #expect(j.snapshotStallProgressAt == fixedNow, "el reloj de avance sigue midiendo las tres horas")
         #expect(j.snapshotStallCauseAt == threeHours, "y el de causa empieza ahora, que es cuando apareció")
+        // Y el de lo DEFINITIVO, que es el que hoy decide el techo corto, también: las tres horas de red no traían
+        // motivo, así que no las acumuló (ticket `snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling`).
+        #expect(j.snapshotStallDefinitiveAt == threeHours, "el reloj de lo definitivo también empieza AHORA")
+        #expect(j.snapshotStallDefinitiveAccruedSeconds == 0, "sin nada cerrado que cobrarle")
     }
 
     /// **Una observación SIN motivo PAUSA el reloj de causa; no lo borra ni lo cuenta.** Con el re-kick de 30 s, una
@@ -3690,6 +3705,8 @@ struct MigrationRunnerTests {
             #expect(try journal(context).readPhase().phase == .uploadingSnapshot, "a \(offset) s todavía no")
         }
         #expect(try journal(context).snapshotStallCauseAccruedSeconds == 850, "el hueco de la red no sumó")
+        #expect(try journal(context).snapshotStallDefinitiveAccruedSeconds == 850,
+                "tampoco en el reloj de lo definitivo, que es el que decide la salida")
 
         clock.value = fixedNow.addingTimeInterval(1050)
         await makeRunner(context, fake, now: { clock.value }).resume()
@@ -3698,7 +3715,12 @@ struct MigrationRunnerTests {
         #expect(j.snapshotExitReasonRaw == "accountUnavailable")
     }
 
-    /// **Una causa DISTINTA empieza de cero**: lo acumulado bajo un motivo no se le regala a otro.
+    /// **Una causa DISTINTA empieza de cero en el reloj de CAUSA**: lo acumulado bajo un motivo no se le regala a otro.
+    /// Desde `snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling` eso ya no decide CUÁNDO se
+    /// sale —lo decide el reloj de lo definitivo, que suma los dos a propósito— sino QUÉ se le dice a la persona. Por eso
+    /// el caso mide las dos cosas: 800 s de 409 y luego la sesión caducada salen a los 900 s de la SUMA, y con el
+    /// motivo de los mezclados (`mixedCauses`), porque la sesión solo lleva 90 s en su reloj. Hasta ese ticket esperaba a 1 710 s y salía con
+    /// «la sesión caducó».
     @Test func snapshotCeiling_aDifferentCause_startsItsOwnClock() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
@@ -3708,16 +3730,19 @@ struct MigrationRunnerTests {
         let clock = MutableClock(fixedNow)
         try seedJournal(context, phase: .uploadingSnapshot)
 
-        for offset in [0.0, 800, 810, 1709] {
+        for offset in [0.0, 800, 810, 899] {
             clock.value = fixedNow.addingTimeInterval(offset)
             await makeRunner(context, fake, now: { clock.value }).resume()
             #expect(try journal(context).readPhase().phase == .uploadingSnapshot, "a \(offset) s todavía no")
         }
-        clock.value = fixedNow.addingTimeInterval(1710)
+        #expect(try journal(context).snapshotStallCauseAt == fixedNow.addingTimeInterval(810),
+                "el reloj de CAUSA de la sesión empezó cuando apareció")
+        clock.value = fixedNow.addingTimeInterval(900)
         await makeRunner(context, fake, now: { clock.value }).resume()
         let j = try journal(context)
-        #expect(j.readPhase().phase == .failedRollback, "900 s de la sesión caducada, contados desde que apareció")
-        #expect(j.snapshotExitReasonRaw == "sessionExpired")
+        #expect(j.readPhase().phase == .failedRollback, "900 s bajo motivos definitivos, aunque fueran dos")
+        #expect(j.snapshotExitReasonRaw == "mixedCauses",
+                "la sesión lleva 90 s en su reloj: no se ganó «la sesión caducó», ni el 409 «tu cuenta no lo permitió»")
     }
 
     /// **El motivo lo elige el techo que VENCIÓ.** A las 72 h sin avanzar, una pasada que trae un 403 recién visto sale
@@ -3733,6 +3758,161 @@ struct MigrationRunnerTests {
         let j = try journal(context)
         #expect(j.readPhase().phase == .failedRollback)
         #expect(j.snapshotExitReasonRaw == "stalled", "el 403 tiene cero segundos: no fue él quien terminó esto")
+    }
+
+    // MARK: §14-bis · El reloj de «CUALQUIER motivo definitivo» de la subida
+    // (ticket `snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling`)
+
+    /// **EL caso del ticket.** Un store que falla a ratos al leer —`localFailure` salta ANTES del push— y una cuenta
+    /// congelada —el 409 `yala_account_reverting` sale DEL push como `accountUnavailable`— se turnan pasada a pasada.
+    /// Con el reloj por causa, cada cambio reiniciaba el corto y la salida se iba a las 72 h. La cadencia es la real: la
+    /// pantalla de Almacenamiento re-kickea cada 30 s, así que el motivo cambia en CADA observación y el reloj de causa
+    /// no pasa nunca de cero.
+    ///
+    /// Se clava con sus dos vecinos —899 s holdea, 900 s sale— porque es un plazo y un `>=` cambiado por `>` no se ve de
+    /// otra forma. Y el motivo es `mixedCauses`: ninguno de los dos llegó solo a los 900 s, y `stalled` diría «lleva
+    /// días» a los quince minutos (lo cazaron dos lentes de la review).
+    @Test func snapshotDefinitiveClock_alternatingCauses_leaveAtTheShortCeiling() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        let offsets = Array(stride(from: 0.0, through: 870, by: 30)) + [899, 900]
+        fake.uploadOutcomes = offsets.indices.map {
+            // Empieza por el fallo local para que la pasada que cruza el plazo traiga el 409: es la que tentaría a
+            // journalear «tu cuenta no lo permitió» por un plazo que solo fue suyo a medias.
+            $0.isMultiple(of: 2) ? .blocked(.localFailure) : .blocked(.accountUnavailable)
+        }
+        #expect(fake.uploadOutcomes.last == .blocked(.accountUnavailable), "control del guion")
+        let clock = MutableClock(fixedNow)
+        try seedJournal(context, phase: .uploadingSnapshot)
+
+        for offset in offsets.dropLast() {
+            clock.value = fixedNow.addingTimeInterval(offset)
+            await makeRunner(context, fake, now: { clock.value }).resume()
+            let j = try journal(context)
+            #expect(j.readPhase().phase == .uploadingSnapshot, "en \(offset)s todavía no son 900 s")
+            #expect(j.snapshotStallCauseAt == clock.value,
+                    "en \(offset)s: el reloj de CAUSA se reinicia en cada observación — por sí solo no vencería nunca")
+        }
+        #expect(fake.uploadCursorsSeen.count == offsets.count - 1, "una observación por pasada, alternando")
+        #expect(fake.count(.rollback) == 0)
+
+        clock.value = fixedNow.addingTimeInterval(900)
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .failedRollback, "a los 15 min bajo motivos definitivos sale, no a las 72 h")
+        #expect(j.snapshotExitReasonRaw == "mixedCauses",
+                "con motivos mezclados ningún texto específico es verdad entero, aunque la pasada que cruzó el plazo trajera el 409; y `stalled` diría «días»")
+        #expect(fake.count(.rollback) == 1)
+    }
+
+    /// **La otra mitad del ticket: el reloj nuevo no reintroduce lo que el de causa cerró.** Diez minutos de 409, tres
+    /// horas sin cobertura y, al volver el wifi, un fallo local al leer (y luego el 409 otra vez). El reloj de lo
+    /// definitivo SUMA los diez minutos del 409 a lo que venga después —los dos eran esperas que esperar no arregla—
+    /// pero NO las tres horas de red: la red no trae motivo y lo pausa. Así que quedan cinco minutos, no cero ni tres
+    /// horas.
+    ///
+    /// Los dos mutantes que este caso mata: uno que no pausara (las tres horas contarían y saldría al volver el wifi, en
+    /// la misma pasada del fallo) y uno que reiniciara con la red o con el cambio de causa (a 600 + 300 seguiría
+    /// esperando).
+    @Test func snapshotDefinitiveClock_networkHoursBetweenTwoCauses_areNotCharged() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        // 409 · 409 · red · (tres horas) · fallo local · 409 · 409. Las dos últimas son 409 a propósito: la pasada que
+        // cruza el plazo trae el motivo cuyo texto acusa a la cuenta, y el copy tiene que seguir siendo el genérico
+        // porque el 409 no llegó solo a los 900 s. Con un fallo local al final esa aserción seguiría pudiendo fallar,
+        // pero con el motivo que más duele equivocarse.
+        fake.uploadOutcomes = [.blocked(.accountUnavailable), .blocked(.accountUnavailable), .transient,
+                               .blocked(.localFailure), .blocked(.accountUnavailable)]
+        let clock = MutableClock(fixedNow)
+        try seedJournal(context, phase: .uploadingSnapshot)
+
+        await makeRunner(context, fake, now: { clock.value }).resume()          // t=0    abre el 409
+        clock.value = fixedNow.addingTimeInterval(570)
+        await makeRunner(context, fake, now: { clock.value }).resume()          // t=570  sigue el 409
+        clock.value = fixedNow.addingTimeInterval(600)
+        await makeRunner(context, fake, now: { clock.value }).resume()          // t=600  se cae la red: pausa
+        let paused = try journal(context)
+        #expect(paused.snapshotStallDefinitiveAt == nil, "la red cierra el tramo")
+        #expect(paused.snapshotStallDefinitiveAccruedSeconds == 600, "con los diez minutos del 409 dentro")
+
+        let back = fixedNow.addingTimeInterval(600 + 10_800)                    // tres horas después, vuelve el wifi
+        clock.value = back
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        let first = try journal(context)
+        #expect(first.readPhase().phase == .uploadingSnapshot,
+                "el primer fallo local tras tres horas de red no sale: las horas de red no se le cobran")
+        #expect(first.snapshotStallCauseAccruedSeconds == 0, "y para su reloj de causa es la primera vez")
+
+        clock.value = back.addingTimeInterval(299)
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        #expect(try journal(context).readPhase().phase == .uploadingSnapshot, "600 + 299: todavía no")
+
+        clock.value = back.addingTimeInterval(300)
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .failedRollback,
+                "600 del 409 + 299 del fallo local + 1 del 409 = 900 bajo motivos definitivos")
+        #expect(j.snapshotExitReasonRaw == "mixedCauses",
+                "el 409 de esta pasada lleva 1 s en su reloj de causa: no se ganó «tu cuenta no lo permitió»")
+    }
+
+    /// **Decisión, no accidente: un hueco SIN observaciones entre dos motivos definitivos distintos cuenta.** La sesión
+    /// borrada, la app cerrada veinte minutos (nadie observa nada: el tramo sigue abierto) y, al volver, un fallo local.
+    /// El reloj de lo definitivo lleva 1 200 s y la subida sale en esa pasada, con `mixedCauses`. Es la regla que el
+    /// reloj por causa ya aplicaba a un solo motivo, y la que la vuelta decidió el mismo día
+    /// (`reversePreMountDefinitiveClock_anUnobservedGapBetweenTwoCauses_counts`). Lo que NO cuenta es un hueco en el
+    /// que se observó red (`networkHoursBetweenTwoCauses_areNotCharged`).
+    @Test func snapshotDefinitiveClock_anUnobservedGapBetweenTwoCauses_counts() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.uploadOutcomes = [.blocked(.sessionExpired), .blocked(.localFailure)]
+        let clock = MutableClock(fixedNow)
+        try seedJournal(context, phase: .uploadingSnapshot)
+
+        await makeRunner(context, fake, now: { clock.value }).resume()          // t=0: sesión borrada, y se cierra
+        #expect(try journal(context).readPhase().phase == .uploadingSnapshot)
+
+        clock.value = fixedNow.addingTimeInterval(1_200)                        // t=20 min: vuelve, fallo local
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .failedRollback,
+                "veinte minutos entre dos motivos definitivos, sin nada observado en medio")
+        #expect(j.snapshotExitReasonRaw == "mixedCauses", "ninguno de los dos llegó solo al plazo")
+    }
+
+    /// **La excepción de una vez que dicen los docblocks, medida**: una fila de un build anterior a la v13 parada a
+    /// mitad de la subida trae el reloj de CAUSA lleno y el de lo definitivo a `nil`. No sale en el acto aunque la causa
+    /// ya pase de 900 s —la salida la decide el reloj nuevo, que empieza ahora—, y sale un plazo corto después con el
+    /// texto específico, que entonces es verdad: el mismo motivo lleva más de 900 s él solo. El acumulado sembrado
+    /// (950) ya pasa del plazo, así que la primera pasada prueba el «no en el acto» al pie de la letra.
+    @Test func snapshotDefinitiveClock_aRowFromBeforeV13_leavesOneShortCeilingLater() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.uploadOutcomes = [.blocked(.accountUnavailable)]
+        let clock = MutableClock(fixedNow)
+        try seedJournal(context, phase: .uploadingSnapshot,
+                        snapshotStallProgressAt: fixedNow, snapshotStallCauseRaw: "accountUnavailable",
+                        snapshotStallCauseAt: nil, snapshotStallCauseAccruedSeconds: 950)
+
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        #expect(try journal(context).readPhase().phase == .uploadingSnapshot,
+                "la causa ya trae 950 s, pero el reloj que decide empieza con este build: no sale en el acto")
+        clock.value = fixedNow.addingTimeInterval(899)
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        var j = try journal(context)
+        #expect(j.readPhase().phase == .uploadingSnapshot,
+                "la causa ya lleva 1 849 s, pero el reloj que decide lleva 899 s")
+        #expect(j.snapshotStallCauseAccruedSeconds == 950, "control: el de causa sí traía lo suyo")
+
+        clock.value = fixedNow.addingTimeInterval(900)
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        j = try journal(context)
+        #expect(j.readPhase().phase == .failedRollback)
+        #expect(j.snapshotExitReasonRaw == "accountUnavailable", "un solo motivo, y llegó solo al plazo")
     }
 
     /// **Volver a la fase desde `verifying` por mismatch empieza sin reloj.** Journal con un reloj de hace más de 72 h:
