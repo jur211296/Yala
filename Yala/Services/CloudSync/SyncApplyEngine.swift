@@ -48,7 +48,9 @@ enum PullApplyOutcome: Equatable {
     case sessionExpired
     /// 403 (cuenta suspendida/deshabilitada).
     case accountUnavailable
-    /// Fallo transitorio (red/HTTP/decode/save de página) → reintentar con backoff.
+    /// Fallo transitorio (red/HTTP/decode/save de página, o una lectura LOCAL de la que depende el apply que no se
+    /// dejó leer) → reintentar con backoff. Que lo local caiga aquí es el ticket
+    /// `a-local-read-failure-in-the-migration-apply-reads-as-network`.
     case transient(pagesApplied: Int)
 }
 
@@ -407,7 +409,9 @@ extension CloudSyncEngine {
                 if !isNew {
                     if shouldSkipUnit(unit, remoteFieldHlcs: delta.fieldHlcs, guard: g) { continue }  // D-1
                 }
-                applier.apply(model, value, context)
+                // Lanza si el destino de una ref, su registro de dangler o los destinos M2M no se dejan leer:
+                // escribir el `nil`/`[]` de la avería pisaría una relación buena (se tira la página entera).
+                try applier.apply(model, value, context)
                 if let remoteUnitHLC = delta.fieldHlcs[unit] {
                     appliedUnits[unit] = remoteUnitHLC
                 }
@@ -452,8 +456,11 @@ extension CloudSyncEngine {
 
     /// Pase final de `pullAndApplyOnce`: intenta re-resolver cada `SyncDanglingRef` (el destino pudo
     /// llegar en una página posterior del MISMO ciclo). Resuelto o fila-origen-borrada → borra el
-    /// dangler; target aún ausente → lo conserva (reintento en el próximo ciclo). Save propio bajo
-    /// `outboxSaveAuthor` (el drain NO re-captura estos sets — echo-suppression D-4).
+    /// dangler; target aún ausente o una lectura ilegible → lo conserva (reintento en el próximo ciclo). Save
+    /// propio bajo `outboxSaveAuthor` (el drain NO re-captura estos sets — echo-suppression D-4).
+    ///
+    /// Un dangler ilegible NO frena a los demás: son independientes (una fila, una columna), así que los que sí se
+    /// resuelven entran en este mismo save.
     func reresolveDanglingRefs(context: ModelContext) {
         let danglers: [SyncDanglingRef]
         do {
@@ -465,6 +472,7 @@ extension CloudSyncEngine {
             return
         }
         guard !danglers.isEmpty else { return }
+        var unreadable = 0
         do {
             try saveWithAuthor(context, Self.outboxSaveAuthor) {
                 for dangler in danglers {
@@ -473,8 +481,15 @@ extension CloudSyncEngine {
                         context.delete(dangler)
                     case .targetMissing:
                         break  // se conserva; reintento en el próximo ciclo
+                    case .unreadable:
+                        // «No pude leer la fila» no es «la fila ya no existe»: el dangler es el único sitio con el
+                        // UUID del destino. Se conserva y el próximo ciclo lo reintenta.
+                        unreadable += 1
                     }
                 }
+            }
+            if unreadable > 0 {
+                CloudSyncBreadcrumb.danglersUnreadable(count: unreadable)
             }
         } catch {
             // Sin rollback aquí: los sets de relaciones son idempotentes y el próximo ciclo re-intenta;

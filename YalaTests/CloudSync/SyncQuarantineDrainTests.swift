@@ -152,6 +152,42 @@ struct SyncQuarantineDrainTests {
         #expect(cursor(context)?.quarantinePendingCount == 0)
     }
 
+    /// Un applier que lanza DENTRO del drenaje (ticket `dangling-ref-repair-is-lost-when-its-row-cannot-be-read`): es
+    /// el segundo llamador de los appliers, y sin rollback la fila de cuarentena se borraría con el delta a medias —y
+    /// ese delta no vuelve, porque el cursor ya pasó. Control positivo con la lectura de vuelta.
+    @Test func drainQuarantine_applierReadUnreadable_drainsNothing_thenDrains() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        defer { EntityApplyMap._testThrowOnFetchOf = [] }
+
+        let sid = UUID()
+        let tagID = UUID()
+        let json = page(entity: "tx_items", sid: sid, serverSeq: 42, h: hlc(1))
+            .replacingOccurrences(of: #""tag_refs":[]"#, with: #""tag_refs":["\#(tagID.uuidString.lowercased())"]"#)
+        #expect(json.contains(tagID.uuidString.lowercased()))
+        let raw = try SyncPullClient.decodePage(Data(json.utf8)).deltas[0].rawDelta
+        context.insert(SyncQuarantine(serverSeq: 42, entityType: "tx_items", syncID: sid, rawDelta: raw, hlc: hlc(1)))
+        let cur = try engine.loadOrCreateCursor(context)
+        cur.quarantinePendingCount = 1
+        try context.save()
+
+        engine.drainOnce(context: context)
+        EntityApplyMap._testThrowOnFetchOf = ["Tag"]
+        engine.drainQuarantineOnce(context: context, now: applyNow)
+        EntityApplyMap._testThrowOnFetchOf = []
+        #expect(txItems(context).isEmpty)                         // nada a medias…
+        #expect(quarantine(context).count == 1)                   // …y la fila sigue → reintento
+        #expect(cursor(context)?.quarantinePendingCount == 1)
+        #expect(context.hasChanges == false)
+
+        engine.drainQuarantineOnce(context: context, now: applyNow)   // control positivo
+        #expect(txItems(context).count == 1)
+        #expect(txItems(context).first?.tagIDsSet == [tagID])
+        #expect(quarantine(context).isEmpty)
+        #expect(cursor(context)?.quarantinePendingCount == 0)
+    }
+
     // MARK: - Testigo lockstep en el INSERT (apply de entidad no cableada)
 
     @Test func applyPage_unwiredEntity_bumpsWitnessLockstep() throws {

@@ -262,6 +262,13 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSyncApply pageFailed reason=\(reason, privacy: .public)")
     }
 
+    /// El pase final de refs colgadas CONSERVÓ `count` danglers porque su fila o su destino no se dejaron leer (ticket
+    /// `dangling-ref-repair-is-lost-when-its-row-cannot-be-read`). No es un `pageFailed`: el pase guardó y el cursor no
+    /// está atascado; se reintentan en el próximo ciclo. Repetido en cada ciclo = una tabla que nunca se deja leer.
+    static func danglersUnreadable(count: Int) {
+        logger.notice("CloudSyncApply danglersUnreadable count=\(count, privacy: .public)")
+    }
+
     /// F-6c: un HLC del pipeline del apply (wire u outbox) NO parsea — no debe ocurrir desde nuestro
     /// server/drain. `site` nombra el punto exacto (sin PII). El caller toma la rama conservadora.
     static func hlcUnparseable(site: String) {

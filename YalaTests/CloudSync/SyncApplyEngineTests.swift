@@ -986,6 +986,394 @@ struct SyncApplyEngineTests {
         engine.drainOnce(context: context)
         #expect(outbox(context).isEmpty)
     }
+
+    // MARK: - Refs colgadas con la base ILEGIBLE (ticket dangling-ref-repair-is-lost-when-its-row-cannot-be-read)
+    //
+    // «No pude leer» nunca es «no hay»: ni la fila origen del pase final (`.rowGone` borraba la única nota del
+    // destino), ni el registro `SyncDanglingRef` (tragado, perdía la nota nueva o dejaba viva la vieja), ni el
+    // destino de una ref (leído `nil`, pisaba una ref local buena). Cada caso lleva su control positivo con la
+    // lectura de vuelta: sin él, un fake roto pasaría por comportamiento correcto.
+
+    private func pageJSON(_ deltas: [String], maxSeq: Int) -> String {
+        "{\"deltas\":[\(deltas.joined(separator: ","))],\"max_server_seq\":\(maxSeq)}"
+    }
+    /// Un delta de `tx_items` (el cuerpo de `txWithCategoryPage`, sin la envoltura de página).
+    private func txCategoryDeltaJSON(sid: UUID, catUUID: UUID, serverSeq: Int, h: String) -> String {
+        #"""
+        {"entity_type":"tx_items","sync_id":"\#(sid.uuidString.lowercased())","op":"upsert",
+        "fields":{"date":"\#(epochTS)","amount":"5.0000","currency_code":"USD",
+        "amount_in_preferred_currency":"5.0000","preferred_currency_code":"USD","exchange_rate":"1.00000000",
+        "is_exchange_rate_provisional":false,"created_at":"\#(epochTS)",
+        "category_ref":"\#(catUUID.uuidString.lowercased())"},
+        "field_hlcs":{"money":"\#(h)","category_ref":"\#(h)"},
+        "hlc":"\#(h)","server_seq":\#(serverSeq),"schema_version":1}
+        """#
+    }
+    private func subcategoryDeltaJSON(shortcut: UUID, catUUID: UUID, seq: Int) -> String {
+        #"""
+        {"entity_type":"subcategories","sync_id":"\#(shortcut.uuidString.lowercased())","op":"upsert",
+        "fields":{"name":"Cafés","color_hex":null,"is_default_seed":false,"is_visible":true,"sort_order":0,
+        "nature_raw_value":null,"icon_name":null,"is_system":false,
+        "category_ref":"\#(catUUID.uuidString.lowercased())"},
+        "field_hlcs":{"name":"\#(hlc(seq))","category_ref":"\#(hlc(seq))"},
+        "hlc":"\#(hlc(seq))","server_seq":\#(seq),"schema_version":1}
+        """#
+    }
+    private func subcategory(_ shortcut: UUID, _ context: ModelContext) throws -> Subcategory? {
+        try context.fetch(FetchDescriptor<Subcategory>()).first { $0.shortcutID == shortcut }
+    }
+
+    @Test func reresolve_rowUnreadable_keepsDangler_thenResolves() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = ModelContext(try makeContainer(dir))
+        let engine = CloudSyncEngine()
+        defer { EntityApplyMap._testThrowOnFetchOf = [] }
+
+        let sid = UUID()
+        let catUUID = UUID()
+        #expect(engine.applyPage(try decodePage(txWithCategoryPage(sid: sid, catUUID: catUUID, serverSeq: 1, h: hlc(1))),
+                                 context: context, now: applyNow))
+        #expect(engine.applyPage(try decodePage(pageJSON([catDeltaJSON(catUUID, seq: 2, name: "Food")], maxSeq: 2)),
+                                 context: context, now: applyNow))
+        let dangler = try #require(danglers(context).first)
+
+        EntityApplyMap._testThrowOnFetchOf = ["TransactionItem"]
+        #expect(EntityApplyMap.reresolveDangler(dangler, context: context) == .unreadable)
+        engine.reresolveDanglingRefs(context: context)
+        EntityApplyMap._testThrowOnFetchOf = []
+        #expect(danglers(context).count == 1)                   // la nota del destino sobrevive…
+        #expect(danglers(context).first?.targetUUID == catUUID)
+        #expect(txItems(context).first?.category == nil)        // …y la fila sigue esperando
+
+        engine.reresolveDanglingRefs(context: context)          // control positivo: la lectura vuelve
+        #expect(txItems(context).first?.category?.syncID == catUUID)
+        #expect(danglers(context).isEmpty)
+    }
+
+    /// El destino ilegible ya conservaba el dangler por accidente (el `nil` tolerante caía en `.targetMissing`); ahora
+    /// lo dice el desenlace, que es lo que impide que un cambio futuro lo trate como ausencia.
+    @Test func reresolve_targetUnreadable_isUnreadable_keepsDangler_thenResolves() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = ModelContext(try makeContainer(dir))
+        let engine = CloudSyncEngine()
+        defer { EntityApplyMap._testThrowOnFetchOf = [] }
+
+        let sid = UUID()
+        let catUUID = UUID()
+        #expect(engine.applyPage(try decodePage(txWithCategoryPage(sid: sid, catUUID: catUUID, serverSeq: 1, h: hlc(1))),
+                                 context: context, now: applyNow))
+        #expect(engine.applyPage(try decodePage(pageJSON([catDeltaJSON(catUUID, seq: 2, name: "Food")], maxSeq: 2)),
+                                 context: context, now: applyNow))
+        let dangler = try #require(danglers(context).first)
+
+        EntityApplyMap._testThrowOnFetchOf = ["Category"]
+        #expect(EntityApplyMap.reresolveDangler(dangler, context: context) == .unreadable)
+        engine.reresolveDanglingRefs(context: context)
+        EntityApplyMap._testThrowOnFetchOf = []
+        #expect(danglers(context).count == 1)
+        #expect(txItems(context).first?.category == nil)
+
+        engine.reresolveDanglingRefs(context: context)          // control positivo
+        #expect(txItems(context).first?.category?.syncID == catUUID)
+        #expect(danglers(context).isEmpty)
+    }
+
+    /// Un dangler ilegible no frena a los demás del mismo pase: son independientes. El ilegible va EN MEDIO de dos
+    /// legibles: el fetch de los danglers no lleva orden, así que un corte al primer ilegible deja uno sin resolver
+    /// salga en el orden que salga.
+    @Test func reresolve_oneUnreadable_theOthersStillResolve() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = ModelContext(try makeContainer(dir))
+        let engine = CloudSyncEngine()
+        defer { EntityApplyMap._testThrowOnFetchOf = [] }
+
+        let sid = UUID()
+        let subBefore = UUID()
+        let subAfter = UUID()
+        let catUUID = UUID()
+        // TX y dos Subcategory llegan ANTES que su Category → tres danglers; la Category llega en la misma página.
+        let page = pageJSON([subcategoryDeltaJSON(shortcut: subBefore, catUUID: catUUID, seq: 1),
+                             txCategoryDeltaJSON(sid: sid, catUUID: catUUID, serverSeq: 2, h: hlc(2)),
+                             subcategoryDeltaJSON(shortcut: subAfter, catUUID: catUUID, seq: 3),
+                             catDeltaJSON(catUUID, seq: 4, name: "Comida")], maxSeq: 4)
+        #expect(engine.applyPage(try decodePage(page), context: context, now: applyNow))
+        #expect(danglers(context).count == 3)
+
+        EntityApplyMap._testThrowOnFetchOf = ["TransactionItem"]
+        engine.reresolveDanglingRefs(context: context)
+        EntityApplyMap._testThrowOnFetchOf = []
+        #expect(try subcategory(subBefore, context)?.category?.syncID == catUUID)   // los legibles se resolvieron…
+        #expect(try subcategory(subAfter, context)?.category?.syncID == catUUID)
+        #expect(danglers(context).map(\.rowSyncID) == [sid])                    // …y solo queda el ilegible
+        #expect(txItems(context).first?.category == nil)
+
+        engine.reresolveDanglingRefs(context: context)                    // control positivo
+        #expect(txItems(context).first?.category?.syncID == catUUID)
+        #expect(danglers(context).isEmpty)
+    }
+
+    private static var repoRoot: URL {
+        URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()  // YalaTests/CloudSync/
+            .deletingLastPathComponent()  // YalaTests/
+            .deletingLastPathComponent()  // repo root
+    }
+    private func entityApplyMapSource() throws -> String {
+        try String(contentsOf: Self.repoRoot.appendingPathComponent("Yala/Services/CloudSync/EntityApplyMap.swift"),
+                   encoding: .utf8)
+    }
+    private func occurrences(_ pattern: String, in text: Substring) throws -> Int {
+        try NSRegularExpression(pattern: pattern).numberOfMatches(in: String(text),
+                                                                  range: NSRange(text.startIndex..., in: text))
+    }
+
+    /// Las 18 ramas del pase final, UNA A UNA: con la fila ilegible, `.unreadable`; sin seam, la fila no existe y es
+    /// `.rowGone` (control). Un `fetch*` tolerante que vuelva a CUALQUIER rama compila limpio —los `fetch*` siguen
+    /// vivos para `liveRowExists`— y solo esto lo pone en rojo. El scan fija además que no quede ninguno y que la
+    /// lista de aquí tenga tantas ramas como el switch: una rama nueva sin su fila en la lista, también en rojo.
+    @Test func reresolve_everyBranch_rowUnreadable_isUnreadable_rowAbsent_isRowGone() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = ModelContext(try makeContainer(dir))
+        defer { EntityApplyMap._testThrowOnFetchOf = [] }
+
+        let branches: [(table: String, column: String, rowType: String)] = [
+            (EntityApplyMap.transactionItem.table, "category_ref", "TransactionItem"),
+            (EntityApplyMap.transactionItem.table, "subcategory_ref", "TransactionItem"),
+            (EntityApplyMap.transactionItem.table, "account_ref", "TransactionItem"),
+            (EntityApplyMap.inboxDraft.table, "account_ref", "InboxDraft"),
+            (EntityApplyMap.inboxDraft.table, "subcategory_ref", "InboxDraft"),
+            (EntityApplyMap.inboxDraft.table, "approved_transaction_ref", "InboxDraft"),
+            (EntityApplyMap.favoritePayment.table, "account_ref", "FavoritePayment"),
+            (EntityApplyMap.favoritePayment.table, "subcategory_ref", "FavoritePayment"),
+            (EntityApplyMap.merchantMemory.table, "subcategory_ref", "MerchantMemory"),
+            (EntityApplyMap.budget.table, "category_id", "Budget"),
+            (EntityApplyMap.scheduledPayment.table, "account_ref", "ScheduledPayment"),
+            (EntityApplyMap.scheduledPayment.table, "subcategory_ref", "ScheduledPayment"),
+            (EntityApplyMap.subcategory.table, "category_ref", "Subcategory"),
+            (EntityApplyMap.cashFlowLine.table, "category_ref", "CashFlowLine"),
+            (EntityApplyMap.cashFlowLine.table, "subcategory_ref", "CashFlowLine"),
+            (EntityApplyMap.cashFlowLine.table, "scheduled_payment_ref", "CashFlowLine"),
+            (EntityApplyMap.cashFlowLine.table, "plan_ref", "CashFlowLine"),
+            (EntityApplyMap.cashFlowOverride.table, "line_ref", "CashFlowOverride"),
+        ]
+        for b in branches {
+            let d = SyncDanglingRef(entityTable: b.table, rowSyncID: UUID(), column: b.column, targetUUID: UUID())
+            EntityApplyMap._testThrowOnFetchOf = [b.rowType]
+            #expect(EntityApplyMap.reresolveDangler(d, context: context) == .unreadable, "\(b.table).\(b.column)")
+            EntityApplyMap._testThrowOnFetchOf = []
+            #expect(EntityApplyMap.reresolveDangler(d, context: context) == .rowGone, "\(b.table).\(b.column)")
+        }
+
+        let src = try entityApplyMapSource()
+        let start = try #require(src.range(of: "private static func reresolveDanglerReadingStrictly("))
+        let end = try #require(src.range(of: "/// Aplica `tag_refs`", range: start.upperBound..<src.endIndex))
+        let body = src[start.upperBound..<end.lowerBound]
+        #expect(try occurrences(#"\bcase \("#, in: body) == branches.count)
+        #expect(try occurrences(#"guard let row = try find[A-Z]"#, in: body) == branches.count)
+        #expect(try occurrences(#"guard let t = try find[A-Z]"#, in: body) == branches.count)
+        #expect(try occurrences(#"\bfetch[A-Z]"#, in: body) == 0)
+    }
+
+    /// Los 25 appliers que leen algo —18 refs singulares y 7 M2M—, UNO A UNO: con el destino ilegible LANZAN (la
+    /// página se tira). Un closure tolerante (`{ fetchSubcategory(…) }`) encaja en `(UUID) throws -> T?` sin un aviso
+    /// del compilador; solo esto lo pone en rojo. El scan fija que la zona de los appliers no tenga ninguna lectura
+    /// tolerante y que el recuento de `resolveRef` cuadre con la lista.
+    @Test func everyReadingApplier_targetUnreadable_throws() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = ModelContext(try makeContainer(dir))
+        defer { EntityApplyMap._testThrowOnFetchOf = [] }
+
+        let ref = WireValue.string(UUID().uuidString.lowercased())
+        let refs = WireValue.array([ref])
+        var singular = 0
+        var many = 0
+        func expectThrows<M: PersistentModel>(_ entry: EntityApply<M>, _ column: String, reading targetType: String, _ value: WireValue) {
+            guard let applier = entry.appliers[column] else {
+                Issue.record("sin applier \(entry.table).\(column)")
+                return
+            }
+            let model = entry.make(context)
+            EntityApplyMap._testThrowOnFetchOf = [targetType]
+            #expect(throws: EntityApplyFetchError.self, "\(entry.table).\(column)") {
+                try applier.apply(model, value, context)
+            }
+            EntityApplyMap._testThrowOnFetchOf = []
+            if case .array = value { many += 1 } else { singular += 1 }
+        }
+        expectThrows(EntityApplyMap.transactionItem, "category_ref", reading: "Category", ref)
+        expectThrows(EntityApplyMap.transactionItem, "subcategory_ref", reading: "Subcategory", ref)
+        expectThrows(EntityApplyMap.transactionItem, "account_ref", reading: "Account", ref)
+        expectThrows(EntityApplyMap.transactionItem, "tag_refs", reading: "Tag", refs)
+        expectThrows(EntityApplyMap.inboxDraft, "account_ref", reading: "Account", ref)
+        expectThrows(EntityApplyMap.inboxDraft, "subcategory_ref", reading: "Subcategory", ref)
+        expectThrows(EntityApplyMap.inboxDraft, "approved_transaction_ref", reading: "TransactionItem", ref)
+        expectThrows(EntityApplyMap.inboxDraft, "tag_refs", reading: "Tag", refs)
+        expectThrows(EntityApplyMap.favoritePayment, "account_ref", reading: "Account", ref)
+        expectThrows(EntityApplyMap.favoritePayment, "subcategory_ref", reading: "Subcategory", ref)
+        expectThrows(EntityApplyMap.favoritePayment, "tag_refs", reading: "Tag", refs)
+        expectThrows(EntityApplyMap.merchantMemory, "subcategory_ref", reading: "Subcategory", ref)
+        expectThrows(EntityApplyMap.budget, "category_id", reading: "Category", ref)
+        expectThrows(EntityApplyMap.budget, "subcategory_ids", reading: "Subcategory", refs)
+        expectThrows(EntityApplyMap.budget, "account_ids", reading: "Account", refs)
+        expectThrows(EntityApplyMap.budget, "tag_refs", reading: "Tag", refs)
+        expectThrows(EntityApplyMap.scheduledPayment, "account_ref", reading: "Account", ref)
+        expectThrows(EntityApplyMap.scheduledPayment, "subcategory_ref", reading: "Subcategory", ref)
+        expectThrows(EntityApplyMap.scheduledPayment, "tag_refs", reading: "Tag", refs)
+        expectThrows(EntityApplyMap.subcategory, "category_ref", reading: "Category", ref)
+        expectThrows(EntityApplyMap.cashFlowLine, "category_ref", reading: "Category", ref)
+        expectThrows(EntityApplyMap.cashFlowLine, "subcategory_ref", reading: "Subcategory", ref)
+        expectThrows(EntityApplyMap.cashFlowLine, "scheduled_payment_ref", reading: "ScheduledPayment", ref)
+        expectThrows(EntityApplyMap.cashFlowLine, "plan_ref", reading: "CashFlowPlan", ref)
+        expectThrows(EntityApplyMap.cashFlowOverride, "line_ref", reading: "CashFlowLine", ref)
+        context.rollback()
+
+        let src = try entityApplyMapSource()
+        let end = try #require(src.range(of: "// MARK: - Resolución de un `_ref`"))
+        let appliersZone = src[src.startIndex..<end.lowerBound]
+        #expect(try occurrences(#"= try resolveRef\("#, in: appliersZone) == singular)
+        #expect(try occurrences(#"try apply(TagRefs|UUIDArrayRefs)\("#, in: appliersZone) == many)
+        #expect(try occurrences(#"\bfetch(?!BySyncID)[A-Z]\w*\("#, in: appliersZone) == 0)
+        #expect(singular == 18)
+        #expect(many == 7)
+    }
+
+    @Test func apply_danglingRef_registryUnreadable_pageNotApplied_thenRegisters() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = ModelContext(try makeContainer(dir))
+        let engine = CloudSyncEngine()
+        defer { EntityApplyMap._testThrowOnFetchOf = [] }
+
+        let sid = UUID()
+        let catUUID = UUID()  // no local → la ref cuelga y hay que apuntarla
+        let page = try decodePage(txWithCategoryPage(sid: sid, catUUID: catUUID, serverSeq: 1, h: hlc(1)))
+
+        EntityApplyMap._testThrowOnFetchOf = ["SyncDanglingRef"]
+        #expect(engine.applyPage(page, context: context, now: applyNow) == false)
+        EntityApplyMap._testThrowOnFetchOf = []
+        #expect(txItems(context).isEmpty)                       // ni fila sin ref…
+        #expect(danglers(context).isEmpty)                      // …ni nota a medias
+        #expect((cursor(context)?.serverSeqCursor ?? 0) == 0)
+
+        #expect(engine.applyPage(page, context: context, now: applyNow))   // control positivo
+        #expect(txItems(context).count == 1)
+        #expect(danglers(context).map(\.targetUUID) == [catUUID])
+        #expect(cursor(context)?.serverSeqCursor == 1)
+    }
+
+    @Test func apply_retargetedDanglingRef_registryUnreadable_noSecondDangler_thenRetargets() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = ModelContext(try makeContainer(dir))
+        let engine = CloudSyncEngine()
+        defer { EntityApplyMap._testThrowOnFetchOf = [] }
+
+        let sid = UUID()
+        let catA = UUID()
+        let catB = UUID()  // ninguna de las dos es local
+        #expect(engine.applyPage(try decodePage(txWithCategoryPage(sid: sid, catUUID: catA, serverSeq: 1, h: hlc(1))),
+                                 context: context, now: applyNow))
+        let retarget = try decodePage(txWithCategoryPage(sid: sid, catUUID: catB, serverSeq: 2, h: hlc(2)))
+
+        EntityApplyMap._testThrowOnFetchOf = ["SyncDanglingRef"]
+        #expect(engine.applyPage(retarget, context: context, now: applyNow) == false)
+        EntityApplyMap._testThrowOnFetchOf = []
+        #expect(danglers(context).map(\.targetUUID) == [catA])  // sin duplicado y sin perder la vieja
+        #expect(cursor(context)?.serverSeqCursor == 1)
+
+        #expect(engine.applyPage(retarget, context: context, now: applyNow))   // control positivo
+        #expect(danglers(context).map(\.targetUUID) == [catB])  // UNO, reapuntado
+        #expect(cursor(context)?.serverSeqCursor == 2)
+    }
+
+    @Test func apply_nulledRef_registryUnreadable_pageNotApplied_thenClears() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = ModelContext(try makeContainer(dir))
+        let engine = CloudSyncEngine()
+        defer { EntityApplyMap._testThrowOnFetchOf = [] }
+
+        let sid = UUID()
+        let catUUID = UUID()
+        #expect(engine.applyPage(try decodePage(txWithCategoryPage(sid: sid, catUUID: catUUID, serverSeq: 1, h: hlc(1))),
+                                 context: context, now: applyNow))
+        let nulled = try decodePage(#"""
+        {"deltas":[{"entity_type":"tx_items","sync_id":"\#(sid.uuidString.lowercased())","op":"upsert",
+        "fields":{"category_ref":null},"field_hlcs":{"category_ref":"\#(hlc(2))"},
+        "hlc":"\#(hlc(2))","server_seq":2,"schema_version":1}],"max_server_seq":2}
+        """#)
+
+        EntityApplyMap._testThrowOnFetchOf = ["SyncDanglingRef"]
+        #expect(engine.applyPage(nulled, context: context, now: applyNow) == false)
+        EntityApplyMap._testThrowOnFetchOf = []
+        #expect(danglers(context).count == 1)                   // el NULL no se da por aplicado…
+        #expect(cursor(context)?.serverSeqCursor == 1)          // …con la nota vieja viva
+
+        #expect(engine.applyPage(nulled, context: context, now: applyNow))     // control positivo
+        #expect(danglers(context).isEmpty)
+        #expect(cursor(context)?.serverSeqCursor == 2)
+    }
+
+    /// La ref resuelve en caliente y deja OBSOLETO el dangler viejo: si ese borrado se tragara, el dangler viejo
+    /// seguiría vivo y, al llegar su destino, el pase final pisaría la ref buena con la relación que el wire ya cambió.
+    @Test func apply_hotResolvedRef_registryUnreadable_pageNotApplied_thenClearsStaleDangler() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = ModelContext(try makeContainer(dir))
+        let engine = CloudSyncEngine()
+        defer { EntityApplyMap._testThrowOnFetchOf = [] }
+
+        let sid = UUID()
+        let catA = UUID()  // no local todavía → dangler
+        let catB = UUID()  // local
+        #expect(engine.applyPage(try decodePage(pageJSON([catDeltaJSON(catB, seq: 1, name: "Viaje"),
+                                                          txCategoryDeltaJSON(sid: sid, catUUID: catA, serverSeq: 2, h: hlc(2))],
+                                                         maxSeq: 2)),
+                                 context: context, now: applyNow))
+        #expect(danglers(context).map(\.targetUUID) == [catA])
+        let retarget = try decodePage(txWithCategoryPage(sid: sid, catUUID: catB, serverSeq: 3, h: hlc(3)))
+
+        EntityApplyMap._testThrowOnFetchOf = ["SyncDanglingRef"]
+        #expect(engine.applyPage(retarget, context: context, now: applyNow) == false)
+        EntityApplyMap._testThrowOnFetchOf = []
+        #expect(txItems(context).first?.category == nil)
+        #expect(cursor(context)?.serverSeqCursor == 2)
+
+        #expect(engine.applyPage(retarget, context: context, now: applyNow))  // control positivo
+        #expect(txItems(context).first?.category?.syncID == catB)
+        #expect(danglers(context).isEmpty)                                    // el viejo ya no puede volver
+        // Llega el destino VIEJO: sin dangler, el pase final no tiene nada que re-adjuntar.
+        #expect(engine.applyPage(try decodePage(pageJSON([catDeltaJSON(catA, seq: 4, name: "Casa")], maxSeq: 4)),
+                                 context: context, now: applyNow))
+        engine.reresolveDanglingRefs(context: context)
+        #expect(txItems(context).first?.category?.syncID == catB)
+    }
+
+    @Test func apply_ref_targetUnreadable_keepsGoodLocalRef_thenApplies() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = ModelContext(try makeContainer(dir))
+        let engine = CloudSyncEngine()
+        defer { EntityApplyMap._testThrowOnFetchOf = [] }
+
+        let sid = UUID()
+        let catA = UUID()
+        let catB = UUID()
+        // Las dos Category llegan ANTES que la TX → la ref resuelve en caliente, sin dangler.
+        let first = pageJSON([catDeltaJSON(catA, seq: 1, name: "Casa"), catDeltaJSON(catB, seq: 2, name: "Viaje"),
+                              txCategoryDeltaJSON(sid: sid, catUUID: catA, serverSeq: 3, h: hlc(3))], maxSeq: 3)
+        #expect(engine.applyPage(try decodePage(first), context: context, now: applyNow))
+        #expect(txItems(context).first?.category?.syncID == catA)
+        #expect(danglers(context).isEmpty)
+        let retarget = try decodePage(txWithCategoryPage(sid: sid, catUUID: catB, serverSeq: 4, h: hlc(4)))
+
+        EntityApplyMap._testThrowOnFetchOf = ["Category"]
+        #expect(engine.applyPage(retarget, context: context, now: applyNow) == false)
+        EntityApplyMap._testThrowOnFetchOf = []
+        #expect(txItems(context).first?.category?.syncID == catA)   // la ref buena no se pisa con nil…
+        #expect(danglers(context).isEmpty)                          // …ni se apunta un dangler falso
+        #expect(cursor(context)?.serverSeqCursor == 3)
+
+        #expect(engine.applyPage(retarget, context: context, now: applyNow))  // control positivo
+        #expect(txItems(context).first?.category?.syncID == catB)
+        #expect(danglers(context).isEmpty)
+        #expect(cursor(context)?.serverSeqCursor == 4)
+    }
 }
 
 // MARK: - Stubs

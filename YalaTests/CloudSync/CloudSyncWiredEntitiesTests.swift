@@ -632,4 +632,148 @@ struct CloudSyncWiredEntitiesTests {
         #expect(emitter(EntityEmissionMap.cashFlowLine, "custom_months_raw").build(l, cal)
                 == Emit.csvTextArray("2026-01,2026-02"))
     }
+
+    // MARK: - Destinos M2M ilegibles (ticket dangling-ref-repair-is-lost-when-its-row-cannot-be-read)
+    //
+    // Un `[]` por avería vaciaba la relación de una fila que sí tenía sus tags, cuentas o subcategorías (el CSV la
+    // salvaba, la relación no). La lectura lanza y la página no se aplica. Control positivo en cada caso.
+
+    private func decoded(_ json: String) throws -> PulledPage { try SyncPullClient.decodePage(Data(json.utf8)) }
+
+    private func budgetFields(accounts: [UUID], subcategories: [UUID]) -> String {
+        let a = accounts.map { "\"\($0.uuidString.lowercased())\"" }.joined(separator: ",")
+        let sc = subcategories.map { "\"\($0.uuidString.lowercased())\"" }.joined(separator: ",")
+        return """
+        {"name":"Ocio","currency_code":"USD","limit_amount":"250.0000","period_type":"monthly",
+        "category_id":null,"is_active":true,"created_at":"\(epochTS)","is_favorite":false,
+        "favorite_order":0,"alert_enabled":false,"include_shared_expenses":true,
+        "subcategory_ids":[\(sc)],"account_ids":[\(a)],"tag_refs":[]}
+        """
+    }
+    private var budgetHlcs: String {
+        """
+        {"budget":"\(hlc(1))","name":"\(hlc(1))","period_type":"\(hlc(1))","is_active":"\(hlc(1))",
+        "created_at":"\(hlc(1))","is_favorite":"\(hlc(1))","favorite_order":"\(hlc(1))",
+        "alert_enabled":"\(hlc(1))","include_shared_expenses":"\(hlc(1))"}
+        """
+    }
+    private func budget(_ id: UUID, _ context: ModelContext) throws -> Budget? {
+        try context.fetch(FetchDescriptor<Budget>()).first { $0.id == id }
+    }
+
+    @Test func tagRefs_tagTableUnreadable_pageNotApplied_keepsTheRelation() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        defer { EntityApplyMap._testThrowOnFetchOf = [] }
+        let txSID = UUID()
+        let tagID = UUID()
+        let tag2 = UUID()
+
+        for (id, seq) in [(tagID, 1), (tag2, 4)] {
+            try applyPage(page(entity: "tags", sid: id,
+                               fields: """
+                               {"name":"Viaje","color_hex":"#FF9F0A","icon_name":"tag.fill","is_active":true,"created_at":"\(epochTS)"}
+                               """,
+                               fieldHlcs: "{\"name\":\"\(hlc(1))\",\"created_at\":\"\(hlc(1))\"}", serverSeq: seq),
+                          engine: engine, context: context)
+        }
+        let txFields = """
+        {"date":"\(epochTS)","amount":"-5.0000","currency_code":"PEN",
+        "amount_in_preferred_currency":"-5.0000","preferred_currency_code":"PEN","exchange_rate":"1.00000000",
+        "is_exchange_rate_provisional":false,"created_at":"\(epochTS)","tag_refs":["\(tagID.uuidString.lowercased())"]}
+        """
+        let txHlcs = "{\"money\":\"\(hlc(1))\",\"tag_refs\":\"\(hlc(1))\",\"created_at\":\"\(hlc(1))\"}"
+        try applyPage(page(entity: "tx_items", sid: txSID, fields: txFields, fieldHlcs: txHlcs, serverSeq: 2),
+                      engine: engine, context: context)
+        let tx = try #require(try context.fetch(FetchDescriptor<TransactionItem>()).first { $0.syncID == txSID })
+        #expect((tx.tags ?? []).map(\.id) == [tagID])
+        let bothTags = txFields.replacingOccurrences(
+            of: "\"tag_refs\":[\"\(tagID.uuidString.lowercased())\"]",
+            with: "\"tag_refs\":[\"\(tagID.uuidString.lowercased())\",\"\(tag2.uuidString.lowercased())\"]")
+        #expect(bothTags != txFields)
+        let again = try decoded(page(entity: "tx_items", sid: txSID, fields: bothTags, fieldHlcs: txHlcs, serverSeq: 5))
+
+        EntityApplyMap._testThrowOnFetchOf = ["Tag"]
+        #expect(engine.applyPage(again, context: context, now: applyNow) == false)
+        EntityApplyMap._testThrowOnFetchOf = []
+        #expect((tx.tags ?? []).map(\.id) == [tagID])
+
+        #expect(engine.applyPage(again, context: context, now: applyNow))   // control positivo: el applier ESCRIBE
+        #expect(Set((tx.tags ?? []).map(\.id)) == [tagID, tag2])
+    }
+
+    @Test func budgetAccountIDs_accountTableUnreadable_pageNotApplied_keepsTheRelation() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        defer { EntityApplyMap._testThrowOnFetchOf = [] }
+        let accID = UUID()
+        let acc2 = UUID()
+        let budgetID = UUID()
+
+        for (id, seq) in [(accID, 1), (acc2, 4)] {
+            try applyPage(page(entity: "accounts", sid: id,
+                               fields: """
+                               {"name":"BCP","currency_code":"PEN","color_hex":"#111111","icon_name":"creditcard","type":"checking",
+                               "account_number":null,"adjustment_mode":"manual","exclude_from_statistics":false,"is_archived":false,
+                               "is_system_account":false,"credit_card_payment_reminder":false,"credit_card_payment_day":1}
+                               """,
+                               fieldHlcs: "{\"name\":\"\(hlc(1))\",\"currency_code\":\"\(hlc(1))\",\"type\":\"\(hlc(1))\"}",
+                               serverSeq: seq),
+                          engine: engine, context: context)
+        }
+        let fields = budgetFields(accounts: [accID], subcategories: [])
+        try applyPage(page(entity: "budgets", sid: budgetID, fields: fields, fieldHlcs: budgetHlcs, serverSeq: 2),
+                      engine: engine, context: context)
+        let b = try #require(try budget(budgetID, context))
+        #expect((b.accounts ?? []).map(\.shortcutID) == [accID])
+        let again = try decoded(page(entity: "budgets", sid: budgetID,
+                                     fields: budgetFields(accounts: [accID, acc2], subcategories: []),
+                                     fieldHlcs: budgetHlcs, serverSeq: 5))
+
+        EntityApplyMap._testThrowOnFetchOf = ["Account"]
+        #expect(engine.applyPage(again, context: context, now: applyNow) == false)
+        EntityApplyMap._testThrowOnFetchOf = []
+        #expect((b.accounts ?? []).map(\.shortcutID) == [accID])
+
+        #expect(engine.applyPage(again, context: context, now: applyNow))   // control positivo: el applier ESCRIBE
+        #expect(Set((b.accounts ?? []).map(\.shortcutID)) == [accID, acc2])
+    }
+
+    @Test func budgetSubcategoryIDs_subcategoryTableUnreadable_pageNotApplied_keepsTheRelation() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        defer { EntityApplyMap._testThrowOnFetchOf = [] }
+        let subID = UUID()
+        let sub2 = UUID()
+        let budgetID = UUID()
+
+        for (id, seq) in [(subID, 1), (sub2, 4)] {
+            try applyPage(page(entity: "subcategories", sid: id,
+                               fields: """
+                               {"name":"Cafés","color_hex":null,"is_default_seed":false,"is_visible":true,"sort_order":0,
+                               "nature_raw_value":null,"icon_name":null,"is_system":false,"category_ref":null}
+                               """,
+                               fieldHlcs: "{\"name\":\"\(hlc(1))\",\"category_ref\":\"\(hlc(1))\"}", serverSeq: seq),
+                          engine: engine, context: context)
+        }
+        let fields = budgetFields(accounts: [], subcategories: [subID])
+        try applyPage(page(entity: "budgets", sid: budgetID, fields: fields, fieldHlcs: budgetHlcs, serverSeq: 2),
+                      engine: engine, context: context)
+        let b = try #require(try budget(budgetID, context))
+        #expect((b.subcategories ?? []).map(\.shortcutID) == [subID])
+        let again = try decoded(page(entity: "budgets", sid: budgetID,
+                                     fields: budgetFields(accounts: [], subcategories: [subID, sub2]),
+                                     fieldHlcs: budgetHlcs, serverSeq: 5))
+
+        EntityApplyMap._testThrowOnFetchOf = ["Subcategory"]
+        #expect(engine.applyPage(again, context: context, now: applyNow) == false)
+        EntityApplyMap._testThrowOnFetchOf = []
+        #expect((b.subcategories ?? []).map(\.shortcutID) == [subID])
+
+        #expect(engine.applyPage(again, context: context, now: applyNow))   // control positivo: el applier ESCRIBE
+        #expect(Set((b.subcategories ?? []).map(\.shortcutID)) == [subID, sub2])
+    }
 }
