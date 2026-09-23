@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-22 (Lima)
 
-**Rama** `2.1` — Merge #213: **En MODO AUTÓNOMO la sesión ya no pregunta «¿Sigo?» ni deja el merge a Jürgen.**
+**Rama** `2.1` — Merge #214: **Los pasos del 22, 35 y 80 % al activar la nube ya no se quedan parados para siempre.**
 TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,40 @@ TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#213 · en MODO AUTÓNOMO la sesión ya no pregunta «¿Sigo?» ni deja el merge a Jürgen)
+## Esta sesión (#214 · los pasos del 22, 35 y 80 % al activar la nube ya no se quedan parados para siempre)
+
+**Al activar la nube, la barra ya no se puede quedar quieta para siempre al 22 % (reservar la cuenta), al 35 %
+(preparar los datos) ni al 80 % (confirmar el cambio con el servidor).** Es el arreglo de #212 para el 55 %, en los
+otros tres pasos: se rinde a los **15 min** si el motivo es de los que esperar no arregla (la sesión ya borrada, la
+cuenta que lo rechaza, otro dispositivo de la cuenta que tomó el relevo, el teléfono que no pudo preparar sus datos) y
+a las **72 h** en el mismo paso con cualquier causa; pasar al paso siguiente reinicia la cuenta. Sale la tarjeta de
+fallo con **un texto por motivo** (dos frases reusadas de la subida y tres nuevas en los 16 idiomas) y hay **«Cancelar
+la activación»** también en esos tres pasos. Un «Migrar» cuyo claim perdió la respuesta ya no deja la cuenta bloqueada
+con un «ya tiene datos» falso al reintentar.
+
+Decisiones de Jürgen (22-sep, sesión de día, las cuatro con la recomendada): 15 min / 72 h por paso, «Cancelar» en los
+tres, texto por motivo y cerrar en el mismo PR la trampa del claim sin respuesta.
+
+**Lo que cazó la review, y es lo que no se toca sin romperlo:** el claim del 22 % lo conducen también el adopt («Ya
+tengo una cuenta», «Activar la nube en este dispositivo») y el seguidor, y ahí rendirse era un callejón; el techo y el
+botón del claim son **solo de «Migrar»**. Y la marca del claim sin respuesta entra en la puerta de identidad como
+parámetro propio, sin saltarse la red de «Empezar desde cero». La regla vive en `.claude/rules/swiftdata-cloudkit.md`,
+bullet «Y los otros tres pasos de la ida también…».
+
+`MigrationState` sube a **v10** (cinco campos opcionales). Canarios nuevos: `cloudForwardStepWaiting` (por
+observación) y `cloudForwardStepAborted` (salida y cancelación). `confirmCutoverServer` deja de ser un `Bool`.
+
+Gate: 7518 unit en 743 suites y 10 XCUITest en 4 suites, verdes con el destino por `id=`. 22 mutantes, todos muertos.
+
+### Lo que espera de Jürgen
+
+- **Device-QA** del ticket `forward-migration-steps-have-no-ceiling-and-no-exit` (en `qa`): guion de regresión con
+  **Yala Dev** (el 22 % no se puede aparcar a mano; el 80 %, con modo avión y suerte). Se mergeó sin esperarlo (cola
+  autónoma).
+- Dos tickets nuevos o ampliados en `backlog`: `adopt-claim-stays-parked-with-no-ceiling` (el claim del adopt sin techo)
+  y `a-failed-snapshot-enqueue-save-leaves-the-journal-unsaved` (ahora también la identidad del 35 %).
+
+## Sesión anterior (#213 · en MODO AUTÓNOMO la sesión ya no pregunta «¿Sigo?» ni deja el merge a Jürgen)
 
 **Una sesión de la cola autónoma ya no se para a preguntar «¿Sigo?» tras listar el plan, ni deja el PR abierto para
 que lo mergee Jürgen.** Sigue hasta `/cerrar-total`: gate, commit, PR, CI, merge y board. El device-QA de iPhone deja
