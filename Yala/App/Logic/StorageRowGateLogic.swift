@@ -80,6 +80,26 @@ nonisolated enum StorageRowGateLogic {
         return remoteEnabled || isEngaged || hasGroupsAccountToDetach
     }
 
+    /// ¿La persona ya está DENTRO de la nube en este dispositivo? El término `isEngaged` de `isVisible` y de
+    /// `offersCloudMigrationEntry`, en UN sitio: lo pasan `ProfileView` (la fila) y `StorageSettingsView` (la entrada), que
+    /// antes escribían cada uno `uiState != .idle`.
+    ///
+    /// **`.journalUnreadable` NO cuenta** (ticket `an-unreadable-migration-journal-reads-as-never-started`): no se sabe si
+    /// hay una travesía, y con el `!= .idle` de antes contaba como dentro. Eso abría la fila bajo el kill a quien nunca
+    /// empezó —en producción el controller existe para todo el parque— y apagaba `abortIfCloudEntryClosed`, la re-medición
+    /// del kill antes del punto de no retorno. El modo persistido `.cloud` sigue contando sin mirar el journal.
+    ///
+    /// `switch` exhaustivo a propósito: un estado nuevo tiene que decidir si es «dentro», y un `!=` lo decidía solo.
+    static func isEngaged(persistedMode: StorageMode, uiState: CloudMigrationUIState) -> Bool {
+        if persistedMode == .cloud { return true }
+        switch uiState {
+        case .idle, .journalUnreadable:
+            return false
+        case .migrating, .reverting, .needsRelaunch, .cloudActive, .waitingForLeader, .failed:
+            return true
+        }
+    }
+
     /// ¿Ofrece la pantalla la ENTRADA personal a la nube («Migrar a la nube» / «Adoptar»)?
     ///
     /// **Es el gate que antes hacía `isVisible` sin querer.** Mientras la fila solo hablaba del

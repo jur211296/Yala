@@ -260,7 +260,14 @@ final class CloudSyncRuntime {
     /// completo.
     static func canRunDomain() -> Bool {
         guard CloudSyncFlags.storageMode == .cloud else { return false }
-        let phase = MigrationPhaseStore.shared.currentPhase
+        // Un journal que no se deja leer no arranca el motor (`canRun(read:)`, ticket
+        // `an-unreadable-migration-journal-reads-as-never-started`): hasta ese ticket se leía `notStarted`, estable.
+        let read = MigrationPhaseStore.shared.currentPhaseRead
+        let phaseLabel: String
+        switch read {
+        case .phase(let phase): phaseLabel = "\(phase)"
+        case .unreadable: phaseLabel = "unreadable"
+        }
         // C-1: `.cloud` + mirror-off SIN armar = el mirror de CloudKit sigue montado. Es legítimo mientras el
         // cutover o la reversa están en vuelo (fases NO estables, ya bloqueadas por el término de fase), y es
         // el estado PROHIBIDO en una fase estable: ahí significaría motor + mirror sobre el mismo store.
@@ -268,8 +275,9 @@ final class CloudSyncRuntime {
         // reversa a medias. No lo curamos aquí — el journal lo auto-cura por su efecto pendiente; aquí solo
         // NO arrancamos, y dejamos rastro para saber que ocurrió.
         let cloudWithMirrorOn = StorageModePersistence.isCloudWithMirrorOn()
-        if cloudWithMirrorOn, MigrationRuntimeGate.isDomainStablePhase(phase) {
-            CloudSyncBreadcrumb.storageModePairViolation(phase: "\(phase)")
+        // Solo con una fase LEÍDA y estable: sin journal no se sabe si el par a medias es el legítimo de un cutover.
+        if cloudWithMirrorOn, case .phase(let phase) = read, MigrationRuntimeGate.isDomainStablePhase(phase) {
+            CloudSyncBreadcrumb.storageModePairViolation(phase: phaseLabel)
             if !pairViolationCanaryFired {
                 pairViolationCanaryFired = true
                 MetricsService.cloudStorageModePairViolation()
@@ -283,9 +291,9 @@ final class CloudSyncRuntime {
             persistedMode: CloudSyncFlags.storageMode,
             mountedDecision: SwiftDataConfiguration.personalStoreMountedDecision)
         if personalMountMismatch {
-            CloudSyncBreadcrumb.runtimeBlockedByPersonalMountMismatch(phase: "\(phase)")
+            CloudSyncBreadcrumb.runtimeBlockedByPersonalMountMismatch(phase: phaseLabel)
         }
-        return MigrationRuntimeGate.canRun(phase: phase,
+        return MigrationRuntimeGate.canRun(read: read,
                                            cloudWithMirrorOn: cloudWithMirrorOn,
                                            personalMountMismatch: personalMountMismatch)
     }

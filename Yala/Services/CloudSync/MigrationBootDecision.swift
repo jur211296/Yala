@@ -22,6 +22,24 @@
 
 import Foundation
 
+// MARK: - Lectura de la fase journaleada
+
+/// Lo que devuelve leer la fase del journal (`MigrationState`, store sync-meta). **`unreadable` NO es `notStarted`**
+/// (ticket `an-unreadable-migration-journal-reads-as-never-started`): hasta ese ticket el `catch` del fetch devolvía
+/// `notStarted`, que es fase ESTABLE —la de un dispositivo adoptado, la que deja pasar al motor, a los BGTasks y al
+/// remap— así que una lectura fallida se leía como el permiso más ancho que tiene la máquina.
+///
+/// No es un case de `MigrationPhase` a propósito: ese enum se journalea (fixtures APPEND-ONLY) y sus `switch`
+/// exhaustivos clasifican fases por las que la máquina PASA. «No pude leerlo» no es una de ellas, y cada consumidor
+/// tiene que decidir qué hace con ella, hacia el lado que no concede.
+///
+/// Sin fila (journal vacío) NO es `unreadable`: es `.phase(.notStarted)`, la fase de todo dispositivo que nunca empezó.
+nonisolated enum JournaledPhaseRead: Equatable {
+    case phase(MigrationPhase)
+    /// El `fetch` de `MigrationState` lanzó.
+    case unreadable
+}
+
 // MARK: - Gate de fase del runtime del dominio (P0)
 
 /// El gate PURO de "¿puede el runtime del dominio correr en esta fase?" que `CloudSyncRuntime.start()`
@@ -54,6 +72,17 @@ nonisolated enum MigrationRuntimeGate {
     /// cualquier consumidor futuro está obligado por el compilador a pronunciarse sobre el mount.
     static func canRun(phase: MigrationPhase, cloudWithMirrorOn: Bool, personalMountMismatch: Bool) -> Bool {
         !personalMountMismatch && !cloudWithMirrorOn && isDomainStablePhase(phase)
+    }
+
+    /// La misma pregunta con la LECTURA del journal: un journal que no se deja leer no arranca el motor. No se sabe si
+    /// hay una migración o una vuelta en vuelo, y en ellas quien conduce es el `MigrationRunner` (P0).
+    static func canRun(read: JournaledPhaseRead, cloudWithMirrorOn: Bool, personalMountMismatch: Bool) -> Bool {
+        switch read {
+        case .phase(let phase):
+            return canRun(phase: phase, cloudWithMirrorOn: cloudWithMirrorOn, personalMountMismatch: personalMountMismatch)
+        case .unreadable:
+            return false
+        }
     }
 
     /// A3 (D-A7): ¿el modo EFECTIVO dice nube pero este proceso montó el store personal en `.icloud`?

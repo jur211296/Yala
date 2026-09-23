@@ -31,6 +31,11 @@ sección de sincronización enseña un check verde con «Todo sincronizado». Mi
   que no manda la cabecera, el reloj atrasado, el servidor). Desde el mismo día ese 401 es pasajero y tampoco para el
   motor. **Ahí no se cura al volver la red**, porque la red funciona: dura lo que dure la causa. Lo encontró la review
   adversarial y es lo que sube la prioridad a `medium`.
+- **Y el motor `.idle`** (añadido el 2026-09-22, review de `an-unreadable-migration-journal-reads-as-never-started`):
+  `refreshSyncBanner` solo mira `.stoppedUntilSignIn`, así que un `CloudSyncRuntime` que se quedó `.idle` por el gate de
+  dominio (`canRunDomain` en `false`: fase no estable, par a medias, mount del espejo, o un journal que no se dejó leer al
+  arrancar) cae también al check verde. El caso del journal ilegible lo acota ese ticket —el re-kick de cada primer plano
+  arranca el motor `.idle` en cuanto la fase es estable—; los demás siguen aquí.
 - Sin red, en cambio, se cura solo: con la red de vuelta el siguiente ciclo sube y el check vuelve a ser cierto.
 - Familia del mismo `else`: `reverse-abort-rejected-leaves-a-frozen-cloud-saying-up-to-date` (la nube congelada) y
   `cloud-tab-does-not-say-this-phone-cannot-sync-personal-data` (el attest, ya cerrado).

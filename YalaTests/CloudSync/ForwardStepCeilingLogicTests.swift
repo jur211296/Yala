@@ -173,14 +173,20 @@ struct ForwardStepCeilingLogicTests {
                                     in: "Yala/App/Views/Settings/StorageSettingsView.swift")
         #expect(failure.contains("forwardStepExit: controller.forwardStepExitReason"))
         let controller = "Yala/Services/CloudSync/CloudMigrationController.swift"
-        #expect(try Self.source(controller).contains(
-            "forwardStepExitReason = state.forwardStepExitReasonRaw.flatMap(ForwardStepExitReason.init(rawValue:))"))
-        let snapshot = try Self.body(of: "private func readJournalSnapshot()", in: controller)
-        #expect(snapshot.components(separatedBy: "forwardStepExitReason = nil").count - 1 == 2)
+        let src = try Self.source(controller)
+        // Desde `an-unreadable-migration-journal-reads-as-never-started` la lectura es una función pura
+        // (`MigrationJournalRead.read`) y el controller solo aplica su snapshot: sin fila, el motivo es `nil`
+        // (`MigrationJournalSnapshot.empty`); con el fetch fallido NO se toca, y eso lo mide `MigrationJournalUnreadableTests`.
+        #expect(src.contains(
+            "forwardStepExitReason: state.forwardStepExitReasonRaw.flatMap(ForwardStepExitReason.init(rawValue:))"))
+        let apply = try Self.body(of: "private func readJournal() -> MigrationJournalRead", in: controller)
+        #expect(apply.contains("forwardStepExitReason = snapshot.forwardStepExitReason"))
         // La intención del claim, del journal y con el mismo default que el runner: sin ella, el botón saldría en el claim
         // de un adopt.
-        #expect(snapshot.contains(
-            "journaledClaimIntent = state.forwardClaimIntentRaw.flatMap(ForwardClaimIntent.init(rawValue:)) ?? .adoptIfExisting"))
-        #expect(snapshot.components(separatedBy: "journaledClaimIntent = .adoptIfExisting").count - 1 == 2)
+        #expect(src.contains(
+            "claimIntent: state.forwardClaimIntentRaw.flatMap(ForwardClaimIntent.init(rawValue:)) ?? .adoptIfExisting"))
+        #expect(apply.contains("journaledClaimIntent = snapshot.claimIntent"))
+        #expect(MigrationJournalSnapshot.empty.forwardStepExitReason == nil)
+        #expect(MigrationJournalSnapshot.empty.claimIntent == .adoptIfExisting)
     }
 }

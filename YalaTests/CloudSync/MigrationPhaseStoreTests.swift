@@ -20,7 +20,7 @@ struct MigrationPhaseStoreTests {
     @Test func noOverride_isNotStarted() {
         let store = MigrationPhaseStore(defaults: makeIsolatedDefaults(prefix: "s7.none"))
         #expect(store.simulatedPhase == nil)
-        #expect(store.currentPhase == .notStarted)
+        #expect(store.currentPhaseRead == .phase(.notStarted))
     }
 
     @Test func override_mapsToPhase_andPersists() {
@@ -29,20 +29,20 @@ struct MigrationPhaseStoreTests {
 
         store.setSimulatedPhase(.cutoverLocalModeSet)
         #expect(store.simulatedPhase == .cutoverLocalModeSet)
-        #expect(store.currentPhase == .cutover(.localModeSet))
+        #expect(store.currentPhaseRead == .phase(.cutover(.localModeSet)))
 
         // Round-trip: un store nuevo sobre los MISMOS defaults recupera el override persistido.
         let reopened = MigrationPhaseStore(defaults: defaults)
-        #expect(reopened.currentPhase == .cutover(.localModeSet))
+        #expect(reopened.currentPhaseRead == .phase(.cutover(.localModeSet)))
     }
 
     @Test func clearOverride_returnsToNotStarted() {
         let store = MigrationPhaseStore(defaults: makeIsolatedDefaults(prefix: "s7.clear"))
         store.setSimulatedPhase(.verifying)
-        #expect(store.currentPhase == .verifying)
+        #expect(store.currentPhaseRead == .phase(.verifying))
         store.setSimulatedPhase(nil)
         #expect(store.simulatedPhase == nil)
-        #expect(store.currentPhase == .notStarted)
+        #expect(store.currentPhaseRead == .phase(.notStarted))
     }
 
     @Test func everySimulatedPhase_mapsToExpectedMigrationPhase() {
@@ -64,7 +64,7 @@ struct MigrationPhaseStoreTests {
 
 // MARK: - Journal-backed (I10-wiring w6)
 
-/// `configure(container:)` conecta el journal REAL: `currentPhase` refleja la fase journaleada y la
+/// `configure(container:)` conecta el journal REAL: `currentPhaseRead` refleja la fase journaleada y la
 /// derivación al boot enciende `identityCaptureEnabled` en la ventana de captura. Toca ese flag global →
 /// `.serialized` + `defer { restore }`.
 @MainActor
@@ -106,7 +106,7 @@ struct MigrationPhaseStoreJournalTests {
     }
 
     @Test func noConfigure_isNotStarted() {
-        #expect(makeStore().currentPhase == .notStarted)
+        #expect(makeStore().currentPhaseRead == .phase(.notStarted))
     }
 
     @Test func journalTransitory_reflectsPhase_andGateSuspendsWriter() throws {
@@ -116,11 +116,11 @@ struct MigrationPhaseStoreJournalTests {
         let store = makeStore()
         store.configure(container: container)
 
-        #expect(store.currentPhase == .verifying)
+        #expect(store.currentPhaseRead == .phase(.verifying))
         // El gate §i.9 con esta fase transitoria SUSPENDE al lector y difiere al escritor sin quiescencia.
-        #expect(BGTaskMigrationGate.decide(phase: store.currentPhase, isImportQuiescent: false, role: .reader)
+        #expect(BGTaskMigrationGate.decide(read: store.currentPhaseRead, isImportQuiescent: false, role: .reader)
                 == .suspendAndReschedule)
-        #expect(BGTaskMigrationGate.decide(phase: store.currentPhase, isImportQuiescent: false, role: .writer)
+        #expect(BGTaskMigrationGate.decide(read: store.currentPhaseRead, isImportQuiescent: false, role: .writer)
                 == .deferAndReschedule)
     }
 
@@ -131,8 +131,8 @@ struct MigrationPhaseStoreJournalTests {
         let store = makeStore()
         store.configure(container: container)
 
-        #expect(store.currentPhase == .done)
-        #expect(BGTaskMigrationGate.decide(phase: store.currentPhase, isImportQuiescent: false, role: .reader) == .run)
+        #expect(store.currentPhaseRead == .phase(.done))
+        #expect(BGTaskMigrationGate.decide(read: store.currentPhaseRead, isImportQuiescent: false, role: .reader) == .run)
     }
 
     @Test func journalEmpty_isNotStarted() throws {
@@ -140,7 +140,7 @@ struct MigrationPhaseStoreJournalTests {
         let container = try makeContainer(dir)          // sin fila de journal
         let store = makeStore()
         store.configure(container: container)
-        #expect(store.currentPhase == .notStarted)
+        #expect(store.currentPhaseRead == .phase(.notStarted))
     }
 
     @Test func configure_derivesIdentityCaptureEnabled_inWindow() throws {

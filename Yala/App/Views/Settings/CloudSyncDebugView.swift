@@ -414,6 +414,8 @@ final class CloudSyncMigrationPanelModel {
             reverseEligibilityLabel = "degradedNoMap ⚠️ · \(ckMapCount) testigos con ckRecordName y sin marca born-cloud → posible MIGRADO sin mapa: riesgo de resurrección de borrados, §h.6-A1"
         case .reverseAlreadyTerminal:
             reverseEligibilityLabel = "reverseAlreadyTerminal · ya en icloudActive/reverseFailedRollback (nada que revertir)"
+        case .mapUnreadable:
+            reverseEligibilityLabel = "mapUnreadable · los testigos con ckRecordName no se dejaron contar (no elegible ahora)"
         }
     }
 
@@ -975,7 +977,7 @@ struct CloudSyncDebugView: View {
 
     // MARK: - Spike S7 (gate §i.9 de los 3 BGTasks + fase simulada)
 
-    /// La `MigrationPhase` que el gate verá (= exactamente lo que `MigrationPhaseStore.currentPhase`
+    /// La `MigrationPhase` que el gate verá (= exactamente lo que `MigrationPhaseStore.currentPhaseRead`
     /// devuelve con este override; nil = producción `.notStarted`).
     private var s7CurrentPhase: MigrationPhase {
         selectedS7Phase?.migrationPhase ?? .notStarted

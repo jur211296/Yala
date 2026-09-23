@@ -6058,3 +6058,12 @@
 "storage.confirm.cancelMigrationConfirm" = "Sim, cancelar";
 /* Botón que sigue con la activación */
 "storage.confirm.cancelMigrationKeep" = "Continuar ativando a nuvem";
+
+/* Tarjeta de Almacenamiento cuando el registro de la migración no se deja leer */
+"storage.journalUnreadable.message" = "Não conseguimos verificar em que ponto estão seus dados. Por enquanto, você não pode passá-los para a nuvem nem devolvê-los ao iCloud. Seguimos tentando; se não se resolver, feche o Yala e abra novamente.";
+
+/* Sincronización parada hasta iniciar sesión, cuando no se pudo contar cuántos cambios faltan */
+"storage.sync.needsSignInUncounted" = "Entre para enviar suas alterações";
+
+/* Ver qué migraría: los conteos no se pudieron leer */
+"storage.migrate.previewUnreadable" = "Não conseguimos contar seus dados. Tente de novo daqui a pouco.";

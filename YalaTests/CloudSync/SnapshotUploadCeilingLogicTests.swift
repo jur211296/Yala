@@ -175,7 +175,7 @@ struct SnapshotUploadCeilingLogicTests {
         let src = try Self.source(controller)
         #expect(src.contains("ForwardCancelScope.offersCancel(journaledPhase, claimIntent: journaledClaimIntent)"))
         #expect(src.contains(
-            "snapshotExitReason = state.snapshotExitReasonRaw.flatMap(SnapshotExitReason.init(rawValue:))"))
+            "snapshotExitReason: state.snapshotExitReasonRaw.flatMap(SnapshotExitReason.init(rawValue:))"))
         let cancel = try Self.body(of: "func cancelMigration() async", in: controller)
         #expect(cancel.contains("await runner.cancelMigration()"))
         // El «sí» se apunta ANTES de esperar a la pasada en vuelo: después llegaría tarde (hallazgo de la review).
@@ -187,8 +187,10 @@ struct SnapshotUploadCeilingLogicTests {
         let closeLine = "_ = await closeSessionIfOpened(attempt.sessionOpenedByThisAttempt)"
         let guardIndex = try #require(statements.firstIndex(of: guardLine))
         #expect(statements.firstIndex(of: closeLine).map { $0 > guardIndex } == true)
-        // El motivo se vuelve a `nil` en las dos ramas sin fila legible, no solo se lee en la buena.
-        let snapshot = try Self.body(of: "private func readJournalSnapshot()", in: controller)
-        #expect(snapshot.components(separatedBy: "snapshotExitReason = nil").count - 1 == 2)
+        // Sin fila el motivo es `nil`, y se aplica desde el snapshot. Con el fetch fallido NO se toca (ticket
+        // `an-unreadable-migration-journal-reads-as-never-started`): lo mide `MigrationJournalUnreadableTests`.
+        #expect(MigrationJournalSnapshot.empty.snapshotExitReason == nil)
+        let apply = try Self.body(of: "private func readJournal() -> MigrationJournalRead", in: controller)
+        #expect(apply.contains("snapshotExitReason = snapshot.snapshotExitReason"))
     }
 }

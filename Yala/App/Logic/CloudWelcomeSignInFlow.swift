@@ -119,15 +119,22 @@ nonisolated enum CloudWelcomeSignInFlow {
     ///
     /// **No gana sobre los terminales de éxito**: si el adopt llegó a `needsRelaunch`/`cloudActive`,
     /// un bloqueo viejo de un intento anterior no debe tapar un final que ya ocurrió.
+    ///
+    /// **`nil` = sin dato en este tick: la pantalla se queda como estaba** (ticket
+    /// `an-unreadable-migration-journal-reads-as-never-started`). Es lo que devuelve `.journalUnreadable`, y no un
+    /// `.error`: ese error ofrece volver al chooser con el adopt quizá aparcado —el re-kick lo retomaría a su espalda— y
+    /// un «Reintentar» que repite el sign-in entero bajo un «Revisa tu conexión» que aquí no es verdad (lo cazaron dos
+    /// lentes de la review). Tampoco `.adopting(0)`, que era lo que salía antes por el `.idle`: una barra que salta a
+    /// cero es progreso inventado. El `claimBlocker` sí gana, porque viene del runner y no del journal.
     static func phase(
         for uiState: CloudMigrationUIState,
         claimBlocker: ClaimBlocker? = nil
-    ) -> CloudWelcomeSignInPhase {
+    ) -> CloudWelcomeSignInPhase? {
         if let claimBlocker {
             switch uiState {
             case .needsRelaunch, .cloudActive:
                 break                          // ya terminó: el bloqueo es de un intento superado
-            case .idle, .migrating, .reverting, .waitingForLeader, .failed:
+            case .idle, .migrating, .reverting, .waitingForLeader, .failed, .journalUnreadable:
                 switch claimBlocker {
                 case .accountUnavailable:
                     return .accountBlocked
@@ -173,6 +180,9 @@ nonisolated enum CloudWelcomeSignInFlow {
             return .waitingLeader
         case .failed:
             return .error(retryable: true)
+        case .journalUnreadable:
+            // Sin dato: ni progreso ni final (ver el docblock).
+            return nil
         case .reverting, .needsRelaunch(.toICloud):
             // Imposibles en un adopt desde Welcome; jamás presentar UI de reversa.
             return .error(retryable: false)

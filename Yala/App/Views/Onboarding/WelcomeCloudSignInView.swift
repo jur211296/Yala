@@ -1090,9 +1090,20 @@ struct WelcomeCloudSignInView: View {
         }
         while true {
             controller.refresh()
-            let next = CloudWelcomeSignInFlow.phase(
+            // `nil` = el journal no se dejó leer en este tick: la pantalla se queda como estaba y el poll sigue. El
+            // detector de aparcada corre igual, con la fase que se está pintando; su `resumeIfNeeded` no decide nada sin
+            // journal.
+            guard let next = CloudWelcomeSignInFlow.phase(
                 for: controller.uiState,
-                claimBlocker: controller.claimBlocker)
+                claimBlocker: controller.claimBlocker) else {
+                await evaluateAutoResume(controller: controller, screenPhase: phase)
+                do {
+                    try await Task.sleep(for: .seconds(1))
+                } catch {
+                    return  // task cancelada (view desmontada)
+                }
+                continue
+            }
             phase = next
             switch next {
             case .relaunch, .error:

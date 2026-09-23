@@ -43,6 +43,10 @@ nonisolated enum CloudMigrationUIState: Equatable {
     case waitingForLeader
     /// Un terminal de FALLO (rollback) — ofrecer "Reintentar" con mensaje honesto.
     case failed(FailureKind)
+    /// El journal no se deja leer (ticket `an-unreadable-migration-journal-reads-as-never-started`): no se sabe en qué punto
+    /// está el paso de los datos, así que la pantalla lo dice y no ofrece nada que lo mueva. Hasta ese ticket esto se
+    /// pintaba como `.idle`/`.cloudActive`, las pantallas de «nunca empezó».
+    case journalUnreadable
 
     enum RelaunchDirection: Equatable {
         /// Ida/adopt: apagar el mirror (montar el store en modo `.cloud`).
@@ -78,7 +82,7 @@ nonisolated enum CloudMigrationUIStateDeriver {
         // 1) Relanzamiento de IDA/adopt: el mirror-off está ARMADO pero este proceso montó CON mirror (sigue
         //    vivo) → hay que MATAR Y REABRIR para montar sin él. Cubre el cutover (`cutover(.mirrorOff)`) y
         //    el adopt (`notStarted` + `.cloud` armado, #30).
-        if mirrorOffArmed && mirrorStillAttached {
+        if needsForwardRelaunch(mirrorOffArmed: mirrorOffArmed, mountedDecision: mountedDecision) {
             return .needsRelaunch(.toCloud)
         }
         // 2) Relanzamiento de REVERSA: la máquina está en `reverseMountMirror` pero este proceso montó SIN
@@ -113,6 +117,35 @@ nonisolated enum CloudMigrationUIStateDeriver {
         }
     }
 
+    /// La misma derivación con la LECTURA del journal. Un journal ilegible es `.journalUnreadable`, salvo el relanzamiento
+    /// de IDA (regla 1 de arriba), que no mira la fase: el mirror-off armado con el espejo aún montado pide relanzar sea
+    /// cual sea la fase, y relanzar es además lo que cura una lectura que falla en este proceso. El de REVERSA sí necesita
+    /// la fase, así que con el journal ilegible no se puede afirmar.
+    static func derive(
+        storageMode: StorageMode,
+        read: JournaledPhaseRead,
+        mirrorOffArmed: Bool,
+        mountedDecision: SwiftDataConfiguration.PersonalStoreDecision
+    ) -> CloudMigrationUIState {
+        switch read {
+        case .phase(let phase):
+            return derive(storageMode: storageMode, phase: phase, mirrorOffArmed: mirrorOffArmed,
+                          mountedDecision: mountedDecision)
+        case .unreadable:
+            if needsForwardRelaunch(mirrorOffArmed: mirrorOffArmed, mountedDecision: mountedDecision) {
+                return .needsRelaunch(.toCloud)
+            }
+            return .journalUnreadable
+        }
+    }
+
+    /// La regla 1, en un solo sitio para las dos derivaciones: el mirror-off armado con el espejo aún montado.
+    private static func needsForwardRelaunch(
+        mirrorOffArmed: Bool, mountedDecision: SwiftDataConfiguration.PersonalStoreDecision
+    ) -> Bool {
+        mirrorOffArmed && mountedDecision.attachesCloudKitMirror
+    }
+
     /// Fracción de progreso (0…1) por fase, para la barra. Aproximada (no lineal en el tiempo real).
     static func fraction(for phase: MigrationPhase) -> Double {
         switch phase {
@@ -141,6 +174,77 @@ nonisolated enum CloudMigrationUIStateDeriver {
         case .reverseFailedRollback:    return 0
         }
     }
+}
+
+// MARK: - Lectura del journal (PURA, testeable)
+
+/// Lo que la pantalla de Almacenamiento lee del journal en una pasada: la fase, los efectos pendientes y los seis motivos
+/// que la tarjeta necesita para explicar una parada. Sale de la fila entera o no sale.
+nonisolated struct MigrationJournalSnapshot: Equatable {
+    let phase: MigrationPhase
+    let pendingCount: Int
+    let cutoverBlocker: ICloudChannelVerdict?
+    let snapshotExitReason: SnapshotExitReason?
+    let forwardStepExitReason: ForwardStepExitReason?
+    let claimIntent: ForwardClaimIntent
+    let reverseAbortReason: ReverseAbortReason?
+    let hasPendingReverseExit: Bool
+
+    /// Journal sin fila: el dispositivo nunca empezó. Una fila sin intención se lee `adoptIfExisting`, como en el runner.
+    static let empty = MigrationJournalSnapshot(
+        phase: .notStarted, pendingCount: 0, cutoverBlocker: nil, snapshotExitReason: nil, forwardStepExitReason: nil,
+        claimIntent: .adoptIfExisting, reverseAbortReason: nil, hasPendingReverseExit: false)
+}
+
+/// Una lectura del journal para el controller. **`unreadable` no lleva valores a propósito** (ticket
+/// `an-unreadable-migration-journal-reads-as-never-started`): hasta ese ticket el `catch` del fetch devolvía `notStarted` Y
+/// ponía a cero los seis motivos, así que una lectura fallida borraba la explicación de la parada y, con
+/// `hasPendingReverseExit`, el freno de una vuelta nueva encima de una salida a medias. Sin valores que asignar, el
+/// controller no tiene nada que escribir cuando no pudo leer.
+nonisolated enum MigrationJournalRead: Equatable {
+    case read(MigrationJournalSnapshot)
+    case unreadable
+
+    /// La fase de esta lectura, para los derivados que solo necesitan eso.
+    var phaseRead: JournaledPhaseRead {
+        switch self {
+        case .read(let snapshot): return .phase(snapshot.phase)
+        case .unreadable: return .unreadable
+        }
+    }
+
+    /// Lee el journal con `fetch`, que en producción es el `fetch` de `MigrationState` del controller. Separado del
+    /// `ModelContext` para poder medir su `catch`: `ModelContext` es una `final class` de SwiftData sin protocolo detrás.
+    @MainActor
+    static func read(fetch: () throws -> MigrationState?) -> MigrationJournalRead {
+        do {
+            guard let state = try fetch() else { return .read(.empty) }
+            let pending = state.readPendingEffects()
+            return .read(MigrationJournalSnapshot(
+                phase: state.readPhase().phase,
+                pendingCount: pending.count,
+                // C-1: el veredicto del canal iCloud viaja con el journal (sobrevive a `failedRollback` justo para esto) →
+                // la card de fallo puede nombrar la causa real.
+                cutoverBlocker: state.cutoverICloudVerdictRaw.flatMap(ICloudChannelVerdict.init(rawValue:)),
+                snapshotExitReason: state.snapshotExitReasonRaw.flatMap(SnapshotExitReason.init(rawValue:)),
+                forwardStepExitReason: state.forwardStepExitReasonRaw.flatMap(ForwardStepExitReason.init(rawValue:)),
+                claimIntent: state.forwardClaimIntentRaw.flatMap(ForwardClaimIntent.init(rawValue:)) ?? .adoptIfExisting,
+                reverseAbortReason: state.reverseAbortReasonRaw.flatMap(ReverseAbortReason.init(rawValue:)),
+                hasPendingReverseExit: ReverseExitPending.isPending(pending)))
+        } catch {
+            #if DEBUG
+            print("CloudMigrationController.readJournal: fetch(MigrationState) falló: \(error)")
+            #endif
+            return .unreadable
+        }
+    }
+}
+
+/// «Ver qué migraría» (dry-run §g.5). `unreadable` si alguno de los cuatro conteos lanzó: la pantalla no enseña ninguna
+/// cifra, porque un cero sería inventado (ticket `an-unreadable-migration-journal-reads-as-never-started`).
+nonisolated enum MigrationDryRunPreview: Equatable {
+    case counts(transactions: Int, categories: Int, accounts: Int, budgets: Int)
+    case unreadable
 }
 
 // MARK: - Aviso de la puerta de «Migrar a la nube»
@@ -210,9 +314,21 @@ final class CloudMigrationController {
     /// Mensaje de error localizado (para el `.alert` de la vista). `nil` = sin error.
     var lastError: String?
 
-    /// Snapshot del journal (para labels/diagnóstico de la vista).
+    /// Snapshot del journal (para labels/diagnóstico de la vista). Es la ÚLTIMA fase LEÍDA: con el journal ilegible
+    /// conserva su valor, y lo que se pinta lo decide `isJournalUnreadable`.
     private(set) var journaledPhase: MigrationPhase = .notStarted
     private(set) var pendingEffectCount = 0
+
+    /// La última lectura del journal falló (ticket `an-unreadable-migration-journal-reads-as-never-started`). Lo pone y lo
+    /// quita `readJournal()`, el único lector. Lo que cuelga de él:
+    /// · `uiState` pasa a `.journalUnreadable` en el siguiente `refresh()` (salvo el relanzamiento de ida, que no mira la
+    ///   fase);
+    /// · el arranque, el re-kick y el arranque del motor no deciden nada con esa lectura (`readJournalDecisionInputs()`
+    ///   devuelve `nil`), y `startMigration`/`startReverse` vuelven a leer antes de empezar;
+    /// · `canCancelMigration` y `canCancelReverse` dan `false`.
+    /// Las acciones que ya estaban en vuelo (`resume`, `pollLeader`, los `cancel*`) no lo miran: decide el runner, cuyas
+    /// lecturas del journal lanzan y fallan cerradas.
+    private(set) var isJournalUnreadable = false
     private(set) var isQuiescent = false
 
     /// #36 (H1): el resume está esperando a que el import de CloudKit quede quiescente (pre-espera de
@@ -239,8 +355,11 @@ final class CloudMigrationController {
     /// los tres pasos sin cifra que baje (decisiones de Jürgen del 2026-09-22). El predicado vive en `ForwardCancelScope`,
     /// que es el mismo que honra un «sí» apuntado en el runner. El botón además se deshabilita con trabajo en vuelo, así que
     /// en la práctica solo se toca con la activación aparcada.
+    ///
+    /// Con el journal ilegible es `false`: `journaledPhase` es entonces la última fase leída, no la de ahora, y el
+    /// `.onChange` de la pantalla usa este getter para bajar un diálogo que ya no aplica.
     var canCancelMigration: Bool {
-        ForwardCancelScope.offersCancel(journaledPhase, claimIntent: journaledClaimIntent)
+        !isJournalUnreadable && ForwardCancelScope.offersCancel(journaledPhase, claimIntent: journaledClaimIntent)
     }
 
     /// La intención journaleada del claim de la ida (`MigrationState.forwardClaimIntentRaw`), la misma que lee
@@ -262,8 +381,10 @@ final class CloudMigrationController {
     ///
     /// Va por la FASE journaleada y no por lo que se esté pintando: la tarjeta de progreso sale también en fases
     /// posteriores al montaje, donde el espejo ya está vivo y no hay salida que ofrecer.
+    ///
+    /// Con el journal ilegible es `false`, por lo mismo que `canCancelMigration`.
     var canCancelReverse: Bool {
-        journaledPhase == .reverseUpload || isBeforeReverseMount
+        !isJournalUnreadable && (journaledPhase == .reverseUpload || isBeforeReverseMount)
     }
 
     /// ¿La vuelta está en una de las cuatro fases ANTERIORES al montaje del espejo? Lo lee el cuerpo de la
@@ -318,7 +439,8 @@ final class CloudMigrationController {
 
     /// Banner S11 (D5): el runtime del dominio se detuvo por sesión expirada con cambios pendientes.
     private(set) var syncNeedsSignIn = false
-    private(set) var pendingUploadCount = 0
+    /// Cuántos cambios faltan por subir. `nil` = la cola no se dejó contar: la pantalla ofrece firmar sin cifra.
+    private(set) var pendingUploadCount: Int? = 0
 
     /// El aviso de un «Migrar a la nube» que se paró sin escribir nada (ticket
     /// `settings-migrate-to-cloud-adopts-silently-instead-of-migrating`). Lo consume la pantalla de Almacenamiento, que
@@ -449,6 +571,14 @@ final class CloudMigrationController {
         isWorking = true
         defer { isWorking = false }
         lastError = nil
+        // Las dos confirmaciones y la hoja de consentimiento cuelgan de la RAÍZ de la pantalla, no de la tarjeta, así que
+        // sobreviven a un `.journalUnreadable` que llegue con ellas abiertas. Sin journal no se empieza nada: ni se firma
+        // ni se toca el runner (ticket `an-unreadable-migration-journal-reads-as-never-started`).
+        guard readJournalDecisionInputs() != nil else {
+            lastError = L10n.Storage.journalUnreadableMessage
+            refresh()
+            return
+        }
         let r = runner
         await r.startMigration(dryRun: false)   // notStarted → consent
         await r.submit(.consentAccepted)         // consent → authenticating
@@ -819,6 +949,12 @@ final class CloudMigrationController {
         isWorking = true
         defer { isWorking = false }
         lastError = nil
+        // Mismo guard que `startMigration`: su doble confirmación cuelga de la raíz de la pantalla.
+        guard readJournalDecisionInputs() != nil else {
+            lastError = L10n.Storage.journalUnreadableMessage
+            refresh()
+            return
+        }
         cancelReverseRequested = false
         let r = runner
         let claimExitBefore = r.lastReverseClaimExit
@@ -1112,8 +1248,17 @@ final class CloudMigrationController {
     /// `MigrationBootDecision`. Retoma (`resume`) una migración transicional / con efectos pendientes,
     /// sondea al líder (`pollLeader`), o no hace nada. Al quedar la fase estable, re-arranca el runtime del
     /// dominio (el paso 14.7 pudo haberse cortado por P0 mientras la fase era transicional).
+    ///
+    /// **Con el journal ilegible no decide nada** (ticket `an-unreadable-migration-journal-reads-as-never-started`): ni
+    /// retoma, ni sondea, ni arranca el motor. Hasta ese ticket la lectura fallida era `(notStarted, sin pendientes)` ⇒
+    /// `.none` ⇒ `startRuntimeIfStable`, o sea el motor arrancando sobre un journal que no se había leído. Lo reintenta el
+    /// re-kick de cada primer plano —que además arranca el motor si se quedó `.idle`— y el de la pantalla, cada 30 s.
     func resumeIfNeeded(clearingError: Bool = true) async {
-        let (phase, hasPending) = readJournalDecisionInputs()
+        guard let inputs = readJournalDecisionInputs() else {
+            refresh()
+            return
+        }
+        let (phase, hasPending) = inputs
         journaledPhase = phase
         switch MigrationBootDecision.decide(phase: phase, hasPendingEffects: hasPending) {
         case .resume:
@@ -1168,11 +1313,33 @@ final class CloudMigrationController {
     /// suspensión a mitad de página (push muere transient) y reintenta un defer previo de la
     /// pre-espera. Belt de wipe armado (el freeze de `handleBecameActive` ya corta antes — defensa en
     /// profundidad por si gana otro call-site).
+    ///
+    /// Con el journal ilegible no re-kickea. Y si la pantalla se había quedado en `.journalUnreadable` y ahora SÍ lee, la
+    /// refresca aunque no haya nada aparcado: este es el único lector que corre en cada primer plano para todo el parque, y
+    /// sin él un arranque cuya lectura falló (un prewarm con el store aún protegido) dejaba `.journalUnreadable` puesto todo
+    /// el proceso — la fila de Ajustes abierta por `isEngaged` y la comprobación del Apple ID apagada.
+    ///
+    /// **Y arranca el motor si se quedó `.idle` con la fase estable** (lo cazaron dos lentes de la review). Un arranque que no
+    /// pudo leer el journal deja `CloudSyncRuntime` en `.idle` —`canRunDomain` no concede sin fase—, y ni
+    /// `CloudSyncRuntime.handleBecameActive` re-evalúa `.idle` ni el boot vuelve a pasar por `startRuntimeIfStable`: sin esto,
+    /// un teléfono en la nube se quedaba sin sincronizar hasta relanzar, con «Todo sincronizado» en pantalla. Solo `.idle`:
+    /// `startShared` re-arranca cualquier estado que no sea `.running`, y un `.stoppedUntilRelaunch` no se toca. Cubre
+    /// también el caso en que falló solo la lectura de `MigrationPhaseStore` y la del controller no.
     func rekickIfParked() async {
         guard !StorageModePersistence.isSignOutWipeArmed() else { return }
-        let (phase, hasPending) = readJournalDecisionInputs()
+        let wasUnreadable = uiState == .journalUnreadable
+        guard let inputs = readJournalDecisionInputs() else {
+            // Sin journal no se re-kickea; la pantalla sí se entera ya, no en el siguiente `refresh()`.
+            refresh()
+            return
+        }
+        let (phase, hasPending) = inputs
+        if wasUnreadable { refresh() }
         guard MigrationForegroundRekick.shouldRekick(
-            phase: phase, hasPendingEffects: hasPending, isWorking: isWorking) else { return }
+            phase: phase, hasPendingEffects: hasPending, isWorking: isWorking) else {
+            if CloudSyncRuntime.shared?.state == .idle { startRuntimeIfStable() }
+            return
+        }
         CloudSyncBreadcrumb.migrationForegroundRekick(phase: "\(phase)")
         // Sin tocar `lastError`: un re-kick en segundo plano no cierra un aviso que la persona no ha leído
         // (`resume(clearingError:)`).
@@ -1194,8 +1361,11 @@ final class CloudMigrationController {
     /// `.resume` aunque la fase sea estable (AJUSTE review #3)»—, y hasta hoy esta función era el único
     /// consumidor de la fase que no la respetaba. No se notaba porque sus tres call-sites llamaban justo
     /// después de drenar; el cuarto (`startAdoptWithExistingSession`) no tiene esa garantía.
+    ///
+    /// Con el journal ilegible no arranca: no se sabe si la fase es estable.
     private func startRuntimeIfStable() {
-        let (phase, hasPending) = readJournalDecisionInputs()
+        guard let inputs = readJournalDecisionInputs() else { return }
+        let (phase, hasPending) = inputs
         guard CloudSyncFlags.storageMode == .cloud,
               !hasPending,
               MigrationRuntimeGate.isDomainStablePhase(phase) else { return }
@@ -1208,9 +1378,11 @@ final class CloudMigrationController {
     /// Re-lee el journal + testigos de mount (sin mutar) y recalcula `uiState`. Molde del panel DEBUG.
     func refresh() {
         isQuiescent = iCloudSyncService.shared.isImportQuiescent
-        let (phase, pendingCount) = readJournalSnapshot()
-        journaledPhase = phase
-        pendingEffectCount = pendingCount
+        let read = readJournal()
+        if case .read(let snapshot) = read {
+            journaledPhase = snapshot.phase
+            pendingEffectCount = snapshot.pendingCount
+        }
 
         let mountedDecision = SwiftDataConfiguration.personalStoreMountedDecision
         let mirrorOffArmed = StorageModePersistence.isMirrorOffArmed()
@@ -1218,7 +1390,7 @@ final class CloudMigrationController {
             // M1: modo PERSISTIDO del dueño, no el efectivo — la UI de migración describe la
             // travesía del DEVICE (un `.cloud` efectivo espurio de una sesión secundaria mentiría).
             storageMode: StorageModePersistence.read(),
-            phase: phase,
+            read: read.phaseRead,
             mirrorOffArmed: mirrorOffArmed,
             mountedDecision: mountedDecision)
 
@@ -1240,10 +1412,22 @@ final class CloudMigrationController {
             pendingUploadCount = 0
             return
         }
-        let live = (try? context.fetch(FetchDescriptor<SyncOutbox>())
-            .filter { $0.rejectedReason == nil }.count) ?? 0
-        syncNeedsSignIn = live > 0
-        pendingUploadCount = live
+        // **Si la cola no se deja contar, se ofrece firmar SIN cifra** (ticket
+        // `an-unreadable-migration-journal-reads-as-never-started`). El motor ya está parado hasta firmar, y firmar es
+        // inofensivo; el `try? … ?? 0` de antes daba `syncNeedsSignIn = false` y la sección pintaba «Todo sincronizado»
+        // con el motor parado. La cifra no se inventa: `pendingUploadCount` queda en `nil`.
+        do {
+            let live = try context.fetch(FetchDescriptor<SyncOutbox>())
+                .filter { $0.rejectedReason == nil }.count
+            syncNeedsSignIn = live > 0
+            pendingUploadCount = live
+        } catch {
+            #if DEBUG
+            print("CloudMigrationController.refreshSyncBanner: fetch(SyncOutbox) falló: \(error)")
+            #endif
+            syncNeedsSignIn = true
+            pendingUploadCount = nil
+        }
     }
 
     /// Re-firma para reanudar el sync detenido (banner S11). El método NO se elige: es determinista —
@@ -1281,54 +1465,58 @@ final class CloudMigrationController {
 
     // MARK: - Journal helpers (lectura pura, NO crean la fila)
 
-    private func readJournalDecisionInputs() -> (phase: MigrationPhase, hasPending: Bool) {
-        let (phase, count) = readJournalSnapshot()
-        return (phase, count > 0)
+    /// `nil` = el journal no se dejó leer, y quien pregunta no decide nada.
+    private func readJournalDecisionInputs() -> (phase: MigrationPhase, hasPending: Bool)? {
+        guard case .read(let snapshot) = readJournal() else { return nil }
+        return (snapshot.phase, snapshot.pendingCount > 0)
     }
 
-    private func readJournalSnapshot() -> (phase: MigrationPhase, pendingCount: Int) {
-        var descriptor = FetchDescriptor<MigrationState>()
-        descriptor.fetchLimit = 1
-        do {
-            guard let state = try context.fetch(descriptor).first else {
-                cutoverBlocker = nil
-                snapshotExitReason = nil
-                forwardStepExitReason = nil
-                journaledClaimIntent = .adoptIfExisting
-                reverseAbortReason = nil
-                hasPendingReverseExit = false
-                return (.notStarted, 0)
-            }
-            // C-1: el veredicto del canal iCloud viaja con el journal (sobrevive a `failedRollback` justo para
-            // esto) → la card de fallo puede nombrar la causa real.
-            cutoverBlocker = state.cutoverICloudVerdictRaw.flatMap(ICloudChannelVerdict.init(rawValue:))
-            snapshotExitReason = state.snapshotExitReasonRaw.flatMap(SnapshotExitReason.init(rawValue:))
-            forwardStepExitReason = state.forwardStepExitReasonRaw.flatMap(ForwardStepExitReason.init(rawValue:))
-            journaledClaimIntent = state.forwardClaimIntentRaw.flatMap(ForwardClaimIntent.init(rawValue:)) ?? .adoptIfExisting
-            reverseAbortReason = state.reverseAbortReasonRaw.flatMap(ReverseAbortReason.init(rawValue:))
-            let pending = state.readPendingEffects()
-            hasPendingReverseExit = ReverseExitPending.isPending(pending)
-            return (state.readPhase().phase, pending.count)
-        } catch {
+    /// El ÚNICO lector del journal del controller. Con una lectura buena aplica los seis motivos; con una ilegible **no
+    /// escribe ninguno** —conservan el último valor leído— y solo marca `isJournalUnreadable`, con rastro en la
+    /// TRANSICIÓN: la pantalla lee cada segundo.
+    private func readJournal() -> MigrationJournalRead {
+        let context = self.context
+        let read = MigrationJournalRead.read {
             #if DEBUG
-            print("CloudMigrationController.readJournalSnapshot: fetch(MigrationState) falló: \(error)")
+            if UITestHooks.migrationJournalUnreadable { throw MigrationJournalSeamError.fetchFailed }
             #endif
-            cutoverBlocker = nil
-            snapshotExitReason = nil
-            forwardStepExitReason = nil
-            journaledClaimIntent = .adoptIfExisting
-            reverseAbortReason = nil
-            hasPendingReverseExit = false
-            return (.notStarted, 0)
+            var descriptor = FetchDescriptor<MigrationState>()
+            descriptor.fetchLimit = 1
+            return try context.fetch(descriptor).first
         }
+        switch read {
+        case .read(let snapshot):
+            isJournalUnreadable = false
+            cutoverBlocker = snapshot.cutoverBlocker
+            snapshotExitReason = snapshot.snapshotExitReason
+            forwardStepExitReason = snapshot.forwardStepExitReason
+            journaledClaimIntent = snapshot.claimIntent
+            reverseAbortReason = snapshot.reverseAbortReason
+            hasPendingReverseExit = snapshot.hasPendingReverseExit
+        case .unreadable:
+            if !isJournalUnreadable { CloudSyncBreadcrumb.migrationJournalUnreadable(reader: "controller") }
+            isJournalUnreadable = true
+        }
+        return read
     }
 
     // MARK: - Elegibilidad de reversa (para la vista)
 
     /// Veredicto `ReverseEligibility` + conteo de testigos con `ckRecordName` (para el copy). Lectura pura.
+    ///
+    /// Si los testigos no se dejan contar, `hasCKMap` es `nil` y la decisión es `mapUnreadable`: no se concede la vuelta
+    /// con un dato que no se leyó (ticket `an-unreadable-migration-journal-reads-as-never-started`).
     func reverseEligibility() -> ReverseEligibility.Decision {
-        let hasCKMap = ((try? context.fetchCount(
-            FetchDescriptor<SyncIdentity>(predicate: #Predicate { $0.ckRecordName != nil }))) ?? 0) > 0
+        let hasCKMap: Bool?
+        do {
+            hasCKMap = try context.fetchCount(
+                FetchDescriptor<SyncIdentity>(predicate: #Predicate { $0.ckRecordName != nil })) > 0
+        } catch {
+            #if DEBUG
+            print("CloudMigrationController.reverseEligibility: fetchCount(SyncIdentity) falló: \(error)")
+            #endif
+            hasCKMap = nil
+        }
         return ReverseEligibility.decide(
             // M1: modo PERSISTIDO del dueño — la reversa es SU travesía; una sesión secundaria
             // jamás debe volverse elegible por el `.cloud` efectivo derivado del descriptor.
@@ -1343,17 +1531,39 @@ final class CloudMigrationController {
 
     /// ¿El mirror local trae el marcador del líder? (P6: la card de `.icloud`+notStarted cambia a copy de
     /// adopt vía `markerReconciliation` cuando hay marcador). Lectura pura.
+    ///
+    /// **Si el marcador no se deja contar, se lee «no hay»**, y es el lado seguro (ticket
+    /// `an-unreadable-migration-journal-reads-as-never-started`): la card dice «Migrar a la nube», y «Migrar» nunca adopta
+    /// —lo impiden las dos capas de `StorageMigrationIdentityGateLogic` y `ForwardClaimIntent.migrateOnly`—, así que con
+    /// una cuenta que ya tiene datos acaba en el aviso de la puerta. El contrario ofrecería adoptar sin saber si hay algo.
     func markerDecision() -> MarkerDecision {
-        let markerFound = ((try? context.fetchCount(FetchDescriptor<CloudMigrationMarker>())) ?? 0) > 0
+        let markerFound: Bool
+        do {
+            markerFound = try context.fetchCount(FetchDescriptor<CloudMigrationMarker>()) > 0
+        } catch {
+            #if DEBUG
+            print("CloudMigrationController.markerDecision: fetchCount(CloudMigrationMarker) falló: \(error)")
+            #endif
+            markerFound = false
+        }
         return MigrationStateMachine.markerReconciliation(
             markerFound: markerFound, journaledPhase: journaledPhase)
     }
 
-    /// Dry-run §g.5: conteos EN MEMORIA de lo que migraría (read-only, para "Ver qué migraría").
-    func dryRunCounts() -> (transactions: Int, categories: Int, accounts: Int, budgets: Int) {
-        func count<M: PersistentModel>(_ type: M.Type) -> Int {
-            (try? context.fetchCount(FetchDescriptor<M>())) ?? 0
+    /// Dry-run §g.5: conteos EN MEMORIA de lo que migraría (read-only, para "Ver qué migraría"). Si uno solo de los cuatro
+    /// lanza, no se enseña ninguno: el `try? … ?? 0` de antes decía «0 movimientos» de una tabla que no se leyó.
+    func dryRunCounts() -> MigrationDryRunPreview {
+        do {
+            return .counts(
+                transactions: try context.fetchCount(FetchDescriptor<TransactionItem>()),
+                categories: try context.fetchCount(FetchDescriptor<Category>()),
+                accounts: try context.fetchCount(FetchDescriptor<Account>()),
+                budgets: try context.fetchCount(FetchDescriptor<Budget>()))
+        } catch {
+            #if DEBUG
+            print("CloudMigrationController.dryRunCounts: fetchCount falló: \(error)")
+            #endif
+            return .unreadable
         }
-        return (count(TransactionItem.self), count(Category.self), count(Account.self), count(Budget.self))
     }
 }

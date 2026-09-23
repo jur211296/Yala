@@ -164,6 +164,13 @@ final class UITestHooks {
         #endif
     }
 
+    /// `-uitest-migration-journal-unreadable`: el fetch del journal de la migración que hace `CloudMigrationController` LANZA
+    /// (ticket `an-unreadable-migration-journal-reads-as-never-started`). Existe para el XCUITest de la pantalla de
+    /// Almacenamiento con el journal ilegible: con un `ModelContext` real no hay forma de hacer fallar esa lectura desde
+    /// fuera. **Finge la ENTRADA, no la decisión**: lo que la pantalla pinta con ella lo sigue decidiendo el controller. No
+    /// toca `MigrationPhaseStore`, que tiene su propio seam de tests. Solo DEBUG.
+    nonisolated static var migrationJournalUnreadable: Bool { hasArg("-uitest-migration-journal-unreadable") }
+
     /// `-uitest-icloud-identity`: siembra la identidad iCloud de Grupos con un recordName fijo
     /// (`uitestICloudRecordName`), síncrono y SIN red — `GroupICloudIdentitySeed.adopt` no toca
     /// CloudKit.

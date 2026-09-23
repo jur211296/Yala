@@ -1220,8 +1220,9 @@ struct ProfileView: View {
                 if StorageRowGateLogic.isVisible(
                     isConfigured: CloudBackendConfig.isConfigured,
                     remoteEnabled: CloudRemoteFlags.cloudModeEnabled,
-                    isEngaged: StorageModePersistence.read() == .cloud
-                        || (CloudMigrationController.shared?.uiState ?? .idle) != .idle,
+                    isEngaged: StorageRowGateLogic.isEngaged(
+                        persistedMode: StorageModePersistence.read(),
+                        uiState: CloudMigrationController.shared?.uiState ?? .idle),
                     hasGroupsAccountToDetach: GroupsAssociationPresence.offersDetach(
                         hasCompletedOnboarding: appPreferences.hasCompletedOnboarding)
                 ) {

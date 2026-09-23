@@ -79,14 +79,31 @@ nonisolated enum BGTaskMigrationGate {
              .verifying, .cutover,
              .reverseConfirm, .reverseClaimLeader, .reverseDrainAll, .reverseVerify,
              .reverseFreezeBackend, .reverseMountMirror, .reverseReconcile, .reverseUpload:
-            switch role {
-            case .reader:
-                // Solo-lectura → suspende siempre (el cache viejo es aceptable en la ventana transitoria).
-                return .suspendAndReschedule
-            case .writer:
-                // Escritor → exige quiescencia antes de tocar/escribir el `mainContext`; si no, difiere.
-                return isImportQuiescent ? .run : .deferAndReschedule
-            }
+            return decideTransitional(isImportQuiescent: isImportQuiescent, role: role)
+        }
+    }
+
+    /// La misma decisión con la LECTURA del journal (`MigrationPhaseStore.currentPhaseRead`). Un journal que no se deja
+    /// leer recibe la disciplina de las fases TRANSITORIAS: no se sabe si hay una migración en vuelo, y las fases
+    /// estables son justo las que corren sin mirar nada. El lector suspende y el escritor exige quiescencia.
+    static func decide(read: JournaledPhaseRead, isImportQuiescent: Bool, role: Role) -> Decision {
+        switch read {
+        case .phase(let phase):
+            return decide(phase: phase, isImportQuiescent: isImportQuiescent, role: role)
+        case .unreadable:
+            return decideTransitional(isImportQuiescent: isImportQuiescent, role: role)
+        }
+    }
+
+    /// El gate por rol de una fase transitoria (o de una que no se pudo leer).
+    private static func decideTransitional(isImportQuiescent: Bool, role: Role) -> Decision {
+        switch role {
+        case .reader:
+            // Solo-lectura → suspende siempre (el cache viejo es aceptable en la ventana transitoria).
+            return .suspendAndReschedule
+        case .writer:
+            // Escritor → exige quiescencia antes de tocar/escribir el `mainContext`; si no, difiere.
+            return isImportQuiescent ? .run : .deferAndReschedule
         }
     }
 }
