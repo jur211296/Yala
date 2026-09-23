@@ -44,3 +44,8 @@ no de Time Machine.
 
 Relacionado: [[project_hipotesis_lista_negra_recomprobadas]] — el snapshot de Time Machine que
 hacía inútil liberar disco no aplicaba aquí.
+
+**2026-09-23, otra vez y con otro reparto:** una tanda de 17 mutantes + corridas de suites (unas 20 reinstalaciones
+de la app) bajó el disco de 24 a 13 GB en una hora. Esta vez el grueso era `com.apple.containermanagerd` (**8,4 GB**) y
+`coresymbolicationd` solo 0,9 GB. La misma receta, dentro de `sim-lock.sh -- bash -c '…'` para que nadie arranque el
+simulador mientras se vacía, devolvió 10 GB (13 → 23). ⇒ después de una batería de mutantes, limpia ANTES del gate.

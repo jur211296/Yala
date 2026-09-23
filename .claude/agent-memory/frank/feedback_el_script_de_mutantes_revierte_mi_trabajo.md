@@ -27,3 +27,9 @@ iba **dentro de un script**: el bucle lo repite sin que nadie lo lea otra vez.
   `grep -o '✘ Test "[^"]*"'` — con el patrón sin comillas salen truncados a `✘ Test` y no dicen nada.
 - Y mide el **control positivo** al final: el árbol restaurado tiene que volver a dar verde. Si no,
   la tanda te dejó un mutante puesto.
+
+**Dos más del 2026-09-23, del mismo runner:**
+- Si entre tandas cambias un fichero de producción, **refresca la copia pristine** antes de la segunda tanda: el runner
+  restaura desde ella y se llevaría el cambio nuevo igual que `git checkout --`.
+- Un `xcodebuild test` puede **no salir** después de imprimir `Test run with … failed` (6 min colgado en un mutante).
+  El veredicto ya está en su log: mátalo por su PID y el runner sigue. Mejor aún, dale un techo en el propio runner.

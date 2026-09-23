@@ -19,7 +19,8 @@
 //   - **refs**: `category_ref`/`approved_transaction_ref` → por `syncID`; `account_ref`/`subcategory_ref`
 //     → por `shortcutID`; `scheduled_payment_ref` → `scheduledPaymentID` (String local, uppercase). Ref
 //     que NO resuelve → `nil` + breadcrumb `applyDanglingRef` (NO canario: esperado con 6 entidades
-//     cableadas; el CSV mirror preserva). Fetchers CONCRETOS por tipo (regla inviolable `#Predicate`).
+//     cableadas; el CSV mirror preserva). Fetchers CONCRETOS por tipo (regla inviolable `#Predicate`). Un
+//     destino que NO SE DEJA LEER no es un destino que no está: la lectura lanza y la página no se aplica.
 //   - **tag_refs**: `[UUID]` del wire → `[Tag]` locales (`setTags`, dual-write M2M+CSV) y LUEGO el CSV se
 //     sobrescribe con los UUIDs del WIRE COMPLETOS (no el subset resuelto) — CSV-first auto-cura cuando
 //     el Tag llegue (gotcha CSV-stale del repo: el wire ES la verdad).
@@ -34,11 +35,14 @@ import SwiftData
 
 // MARK: - ColumnApplier / EntityApply
 
-/// Aplicador de UNA columna: decodifica el `WireValue` y lo setea en el `@Model`.
+/// Aplicador de UNA columna: decodifica el `WireValue` y lo setea en el `@Model`. LANZA si una lectura de la que
+/// depende (el destino de una ref, su registro `SyncDanglingRef`, los destinos M2M) no se deja leer: la página entera
+/// no se aplica (rollback en `applyPage`/`drainQuarantineOnce`, los dos únicos llamadores) en vez de escribir un `nil`
+/// o un `[]` que no es verdad.
 @MainActor
 struct ColumnApplier<Model: AnyObject> {
-    let apply: (Model, WireValue, ModelContext) -> Void
-    init(_ apply: @escaping (Model, WireValue, ModelContext) -> Void) { self.apply = apply }
+    let apply: (Model, WireValue, ModelContext) throws -> Void
+    init(_ apply: @escaping (Model, WireValue, ModelContext) throws -> Void) { self.apply = apply }
 }
 
 /// Proyección inversa de una entidad cableada: tabla, factory born-remote, setter de `syncID`, fetch por
@@ -160,24 +164,24 @@ enum EntityApplyMap {
             "currency_code": Apply.stringReq(\.currencyCode),
             "note": Apply.textOpt(\.note),
             "category_ref": ColumnApplier { m, v, ctx in
-                m.category = resolveRef(v, entity: "tx_items", column: "category_ref",
+                m.category = try resolveRef(v, entity: "tx_items", column: "category_ref",
                                         rowSyncID: m.syncID, context: ctx) {
-                    fetchCategory(bySyncID: $0, context: ctx)
+                    try findCategory(bySyncID: $0, context: ctx)
                 }
             },
             "subcategory_ref": ColumnApplier { m, v, ctx in
-                m.subcategory = resolveRef(v, entity: "tx_items", column: "subcategory_ref",
+                m.subcategory = try resolveRef(v, entity: "tx_items", column: "subcategory_ref",
                                            rowSyncID: m.syncID, context: ctx) {
-                    fetchSubcategory(byShortcutID: $0, context: ctx)
+                    try findSubcategory(byShortcutID: $0, context: ctx)
                 }
             },
             "account_ref": ColumnApplier { m, v, ctx in
-                m.account = resolveRef(v, entity: "tx_items", column: "account_ref",
+                m.account = try resolveRef(v, entity: "tx_items", column: "account_ref",
                                        rowSyncID: m.syncID, context: ctx) {
-                    fetchAccount(byShortcutID: $0, context: ctx)
+                    try findAccount(byShortcutID: $0, context: ctx)
                 }
             },
-            "tag_refs": ColumnApplier { m, v, ctx in applyTagRefs(v, into: m, setter: { m.setTags(from: $0) },
+            "tag_refs": ColumnApplier { m, v, ctx in try applyTagRefs(v, into: m, setter: { m.setTags(from: $0) },
                                                                   csv: { m.tagIDs = $0 }, context: ctx) },
             "amount_in_preferred_currency": Apply.moneyReq(\.amountInPreferredCurrency),
             "preferred_currency_code": Apply.stringReq(\.preferredCurrencyCode),
@@ -217,23 +221,23 @@ enum EntityApplyMap {
             "amount": Apply.moneyOpt(\.amount),
             "date": Apply.dateOpt(\.date),
             "account_ref": ColumnApplier { m, v, ctx in
-                m.account = resolveRef(v, entity: "inbox_drafts", column: "account_ref",
+                m.account = try resolveRef(v, entity: "inbox_drafts", column: "account_ref",
                                        rowSyncID: m.syncID, context: ctx) {
-                    fetchAccount(byShortcutID: $0, context: ctx)
+                    try findAccount(byShortcutID: $0, context: ctx)
                 }
             },
             "subcategory_ref": ColumnApplier { m, v, ctx in
-                m.subcategory = resolveRef(v, entity: "inbox_drafts", column: "subcategory_ref",
+                m.subcategory = try resolveRef(v, entity: "inbox_drafts", column: "subcategory_ref",
                                            rowSyncID: m.syncID, context: ctx) {
-                    fetchSubcategory(byShortcutID: $0, context: ctx)
+                    try findSubcategory(byShortcutID: $0, context: ctx)
                 }
             },
-            "tag_refs": ColumnApplier { m, v, ctx in applyTagRefs(v, into: m, setter: { m.setTags(from: $0) },
+            "tag_refs": ColumnApplier { m, v, ctx in try applyTagRefs(v, into: m, setter: { m.setTags(from: $0) },
                                                                   csv: { m.tagIDs = $0 }, context: ctx) },
             "approved_transaction_ref": ColumnApplier { m, v, ctx in
-                m.approvedTransaction = resolveRef(v, entity: "inbox_drafts", column: "approved_transaction_ref",
+                m.approvedTransaction = try resolveRef(v, entity: "inbox_drafts", column: "approved_transaction_ref",
                                                    rowSyncID: m.syncID, context: ctx) {
-                    fetchTransactionItem(bySyncID: $0, context: ctx)
+                    try findTransactionItem(bySyncID: $0, context: ctx)
                 }
             },
             "source_type_raw": Apply.stringReq(\.sourceTypeRaw),
@@ -310,18 +314,18 @@ enum EntityApplyMap {
             "amount": Apply.moneyOpt(\.amount),
             "note": Apply.textOpt(\.note),
             "account_ref": ColumnApplier { m, v, ctx in
-                m.account = resolveRef(v, entity: "favorite_payments", column: "account_ref",
+                m.account = try resolveRef(v, entity: "favorite_payments", column: "account_ref",
                                        rowSyncID: m.syncID, context: ctx) {
-                    fetchAccount(byShortcutID: $0, context: ctx)
+                    try findAccount(byShortcutID: $0, context: ctx)
                 }
             },
             "subcategory_ref": ColumnApplier { m, v, ctx in
-                m.subcategory = resolveRef(v, entity: "favorite_payments", column: "subcategory_ref",
+                m.subcategory = try resolveRef(v, entity: "favorite_payments", column: "subcategory_ref",
                                            rowSyncID: m.syncID, context: ctx) {
-                    fetchSubcategory(byShortcutID: $0, context: ctx)
+                    try findSubcategory(byShortcutID: $0, context: ctx)
                 }
             },
-            "tag_refs": ColumnApplier { m, v, ctx in applyTagRefs(v, into: m, setter: { m.setTags(from: $0) },
+            "tag_refs": ColumnApplier { m, v, ctx in try applyTagRefs(v, into: m, setter: { m.setTags(from: $0) },
                                                                   csv: { m.tagIDs = $0 }, context: ctx) },
             "need_override": Apply.textOpt(\.needOverride),
             "currency_code": Apply.textOpt(\.currencyCode),
@@ -343,9 +347,9 @@ enum EntityApplyMap {
         appliers: [
             "merchant_canonical": Apply.stringReq(\.merchantCanonical),
             "subcategory_ref": ColumnApplier { m, v, ctx in
-                m.subcategory = resolveRef(v, entity: "merchant_memory", column: "subcategory_ref",
+                m.subcategory = try resolveRef(v, entity: "merchant_memory", column: "subcategory_ref",
                                            rowSyncID: m.syncID, context: ctx) {
-                    fetchSubcategory(byShortcutID: $0, context: ctx)
+                    try findSubcategory(byShortcutID: $0, context: ctx)
                 }
             },
             "count_approved": Apply.intReq(\.countApproved),
@@ -388,9 +392,9 @@ enum EntityApplyMap {
             "currency_code": Apply.stringReq(\.currencyCode),
             "limit_amount": Apply.moneyReq(\.limitAmount),
             "category_id": ColumnApplier { m, v, ctx in
-                m.category = resolveRef(v, entity: "budgets", column: "category_id",
+                m.category = try resolveRef(v, entity: "budgets", column: "category_id",
                                         rowSyncID: m.id, context: ctx) {
-                    fetchCategory(bySyncID: $0, context: ctx)
+                    try findCategory(bySyncID: $0, context: ctx)
                 }
             },
             "period_type": Apply.stringReq(\.periodType),
@@ -400,15 +404,15 @@ enum EntityApplyMap {
             // uuid[] M2M mirrors: resuelve por `shortcutID` (subcat/account) o `id` (tags) → M2M para el
             // cascade .nullify + CSV = wire COMPLETO (SSOT; CSV-first auto-cura cuando el destino llegue).
             "subcategory_ids": ColumnApplier { m, v, ctx in
-                applyUUIDArrayRefs(v, fetch: { fetchSubcategories(byShortcutIDs: $0, context: $1) },
+                try applyUUIDArrayRefs(v, fetch: { try findSubcategories(byShortcutIDs: $0, context: $1) },
                                    setM2M: { m.subcategories = $0 }, csv: { m.subcategoryIDs = $0 }, context: ctx)
             },
             "account_ids": ColumnApplier { m, v, ctx in
-                applyUUIDArrayRefs(v, fetch: { fetchAccounts(byShortcutIDs: $0, context: $1) },
+                try applyUUIDArrayRefs(v, fetch: { try findAccounts(byShortcutIDs: $0, context: $1) },
                                    setM2M: { m.accounts = $0 }, csv: { m.accountIDs = $0 }, context: ctx)
             },
             "tag_refs": ColumnApplier { m, v, ctx in
-                applyTagRefs(v, into: m, setter: { m.tags = $0 }, csv: { m.tagIDs = $0 }, context: ctx)
+                try applyTagRefs(v, into: m, setter: { m.tags = $0 }, csv: { m.tagIDs = $0 }, context: ctx)
             },
             "is_active": Apply.boolReq(\.isActive),
             "created_at": Apply.dateReq(\.createdAt),
@@ -442,19 +446,19 @@ enum EntityApplyMap {
             "is_variable_amount": Apply.boolReq(\.isVariableAmount),
             "transaction_type": Apply.stringReq(\.transactionType),
             "account_ref": ColumnApplier { m, v, ctx in
-                m.account = resolveRef(v, entity: "scheduled_payments", column: "account_ref",
+                m.account = try resolveRef(v, entity: "scheduled_payments", column: "account_ref",
                                        rowSyncID: m.id, context: ctx) {
-                    fetchAccount(byShortcutID: $0, context: ctx)
+                    try findAccount(byShortcutID: $0, context: ctx)
                 }
             },
             "subcategory_ref": ColumnApplier { m, v, ctx in
-                m.subcategory = resolveRef(v, entity: "scheduled_payments", column: "subcategory_ref",
+                m.subcategory = try resolveRef(v, entity: "scheduled_payments", column: "subcategory_ref",
                                            rowSyncID: m.id, context: ctx) {
-                    fetchSubcategory(byShortcutID: $0, context: ctx)
+                    try findSubcategory(byShortcutID: $0, context: ctx)
                 }
             },
             "tag_refs": ColumnApplier { m, v, ctx in
-                applyTagRefs(v, into: m, setter: { m.setTags(from: $0) }, csv: { m.tagIDs = $0 }, context: ctx)
+                try applyTagRefs(v, into: m, setter: { m.setTags(from: $0) }, csv: { m.tagIDs = $0 }, context: ctx)
             },
             "need_override": Apply.textOpt(\.needOverride),
             "is_recurring": Apply.boolReq(\.isRecurring),
@@ -532,9 +536,9 @@ enum EntityApplyMap {
             "icon_name": Apply.textOpt(\.iconName),
             "is_system": Apply.boolReq(\.isSystem),
             "category_ref": ColumnApplier { m, v, ctx in
-                m.category = resolveRef(v, entity: "subcategories", column: "category_ref",
+                m.category = try resolveRef(v, entity: "subcategories", column: "category_ref",
                                         rowSyncID: m.shortcutID, context: ctx) {
-                    fetchCategory(bySyncID: $0, context: ctx)
+                    try findCategory(bySyncID: $0, context: ctx)
                 }
             },
         ]
@@ -641,27 +645,27 @@ enum EntityApplyMap {
             "manual_amount": Apply.moneyOpt(\.manualAmount),
             "custom_months_raw": Apply.csvOpt(\.customMonthsRaw),
             "category_ref": ColumnApplier { m, v, ctx in
-                m.category = resolveRef(v, entity: "cashflow_lines", column: "category_ref",
+                m.category = try resolveRef(v, entity: "cashflow_lines", column: "category_ref",
                                         rowSyncID: m.id, context: ctx) {
-                    fetchCategory(bySyncID: $0, context: ctx)
+                    try findCategory(bySyncID: $0, context: ctx)
                 }
             },
             "subcategory_ref": ColumnApplier { m, v, ctx in
-                m.subcategory = resolveRef(v, entity: "cashflow_lines", column: "subcategory_ref",
+                m.subcategory = try resolveRef(v, entity: "cashflow_lines", column: "subcategory_ref",
                                            rowSyncID: m.id, context: ctx) {
-                    fetchSubcategory(byShortcutID: $0, context: ctx)
+                    try findSubcategory(byShortcutID: $0, context: ctx)
                 }
             },
             "scheduled_payment_ref": ColumnApplier { m, v, ctx in
-                m.scheduledPayment = resolveRef(v, entity: "cashflow_lines", column: "scheduled_payment_ref",
+                m.scheduledPayment = try resolveRef(v, entity: "cashflow_lines", column: "scheduled_payment_ref",
                                                 rowSyncID: m.id, context: ctx) {
-                    fetchScheduledPayment(byID: $0, context: ctx)
+                    try findScheduledPayment(byID: $0, context: ctx)
                 }
             },
             "plan_ref": ColumnApplier { m, v, ctx in
-                m.plan = resolveRef(v, entity: "cashflow_lines", column: "plan_ref",
+                m.plan = try resolveRef(v, entity: "cashflow_lines", column: "plan_ref",
                                     rowSyncID: m.id, context: ctx) {
-                    fetchCashFlowPlan(byID: $0, context: ctx)
+                    try findCashFlowPlan(byID: $0, context: ctx)
                 }
             },
         ]
@@ -682,9 +686,9 @@ enum EntityApplyMap {
             "amount": Apply.moneyReq(\.amount),
             "note": Apply.stringReq(\.note),
             "line_ref": ColumnApplier { m, v, ctx in
-                m.line = resolveRef(v, entity: "cashflow_overrides", column: "line_ref",
+                m.line = try resolveRef(v, entity: "cashflow_overrides", column: "line_ref",
                                     rowSyncID: m.id, context: ctx) {
-                    fetchCashFlowLine(byID: $0, context: ctx)
+                    try findCashFlowLine(byID: $0, context: ctx)
                 }
             },
         ]
@@ -717,29 +721,36 @@ enum EntityApplyMap {
     /// el orden por `server_seq` NO es causal (el destino puede llegar en una página POSTERIOR — una
     /// Category editada re-estampa un seq MAYOR que la TX que la referencia) y un crash entre páginas
     /// haría el huérfano PERMANENTE. El pase de re-resolución al final de `pullAndApplyOnce` lo cura.
+    ///
+    /// LANZA si no se deja leer el destino o el registro del dangler (ticket
+    /// `dangling-ref-repair-is-lost-when-its-row-cannot-be-read`). «No pude leer el destino» no es «no está»: leído
+    /// como `nil`, pisaba una ref local buena y registraba un dangler que no hacía falta. Y «no pude leer el
+    /// registro» no es «no hay registro»: tragado, perdía la nota nueva (la fila se quedaba sin ref y sin rastro del
+    /// destino) o dejaba viva la vieja, que al llegar su destino re-adjuntaba una relación que el wire ya había
+    /// cambiado. El throw cae en el rollback de la página: cursor quieto y reintento.
     private static func resolveRef<T>(
         _ value: WireValue, entity: String, column: String, rowSyncID: UUID?,
-        context: ModelContext, fetch: (UUID) -> T?
-    ) -> T? {
+        context: ModelContext, fetch: (UUID) throws -> T?
+    ) throws -> T? {
         switch value {
         case .null:
             // El wire puso el vínculo a NULL → un dangler previo de esta (fila, columna) queda OBSOLETO
             // y DEBE borrarse (dejarlo re-adjuntaría una relación stale en la re-resolución y el Merkle
             // usaría un target que el server ya no tiene).
-            if let rowSyncID { clearDangler(rowSyncID: rowSyncID, column: column, context: context) }
+            if let rowSyncID { try clearDangler(rowSyncID: rowSyncID, column: column, context: context) }
             return nil
         case .string(let s):
             guard let id = UUID(uuidString: s) else { return nil }
-            let resolved = fetch(id)
+            let resolved = try fetch(id)
             if resolved == nil {
                 CloudSyncBreadcrumb.applyDanglingRef(entity: entity, column: column)
                 if let rowSyncID {
-                    registerDangler(entityTable: entity, rowSyncID: rowSyncID, column: column,
-                                    targetUUID: id, context: context)
+                    try registerDangler(entityTable: entity, rowSyncID: rowSyncID, column: column,
+                                        targetUUID: id, context: context)
                 }
             } else if let rowSyncID {
                 // Resolvió en caliente → un dangler previo queda obsoleto (higiene simétrica).
-                clearDangler(rowSyncID: rowSyncID, column: column, context: context)
+                try clearDangler(rowSyncID: rowSyncID, column: column, context: context)
             }
             return resolved
         default:
@@ -747,45 +758,33 @@ enum EntityApplyMap {
         }
     }
 
+    /// El dangler de una (fila, columna), si existe. LANZA si no se puede leer: el que llama decide sobre ese
+    /// registro (borrarlo, reapuntarlo o crear uno), y un `nil` por avería sería un duplicado o una nota perdida.
+    private static func findDangler(rowSyncID: UUID, column: String, context: ModelContext) throws -> SyncDanglingRef? {
+        try fetchFirstOrThrow(FetchDescriptor<SyncDanglingRef>(
+            predicate: #Predicate { $0.rowSyncID == rowSyncID && $0.column == column }
+        ), context)
+    }
+
     /// Borra el dangler de una (fila, columna) si existe — el wire lo dejó obsoleto (NULL explícito o
-    /// resolución en caliente). No-op si no hay.
-    private static func clearDangler(rowSyncID: UUID, column: String, context: ModelContext) {
-        do {
-            var d = FetchDescriptor<SyncDanglingRef>(
-                predicate: #Predicate { $0.rowSyncID == rowSyncID && $0.column == column }
-            )
-            d.fetchLimit = 1
-            if let existing = try context.fetch(d).first {
-                context.delete(existing)
-            }
-        } catch {
-            #if DEBUG
-            print("EntityApplyMap.clearDangler error: \(error)")
-            #endif
+    /// resolución en caliente). No-op si no hay. LANZA si no se puede leer (ver `resolveRef`).
+    private static func clearDangler(rowSyncID: UUID, column: String, context: ModelContext) throws {
+        if let existing = try findDangler(rowSyncID: rowSyncID, column: column, context: context) {
+            context.delete(existing)
         }
     }
 
     /// Inserta/actualiza el registro durable de un ref colgado. Dedup por `(rowSyncID, column)`: si ya
     /// existe, REEMPLAZA el `targetUUID` (el delta más nuevo manda). El insert ocurre dentro del save de
-    /// página del apply (autor del motor) → atómico con el cursor.
+    /// página del apply (autor del motor) → atómico con el cursor. LANZA si no se puede leer (ver `resolveRef`).
     private static func registerDangler(
         entityTable: String, rowSyncID: UUID, column: String, targetUUID: UUID, context: ModelContext
-    ) {
-        do {
-            var d = FetchDescriptor<SyncDanglingRef>(
-                predicate: #Predicate { $0.rowSyncID == rowSyncID && $0.column == column }
-            )
-            d.fetchLimit = 1
-            if let existing = try context.fetch(d).first {
-                existing.targetUUID = targetUUID
-            } else {
-                context.insert(SyncDanglingRef(entityTable: entityTable, rowSyncID: rowSyncID,
-                                               column: column, targetUUID: targetUUID))
-            }
-        } catch {
-            #if DEBUG
-            print("EntityApplyMap.registerDangler error: \(error)")
-            #endif
+    ) throws {
+        if let existing = try findDangler(rowSyncID: rowSyncID, column: column, context: context) {
+            existing.targetUUID = targetUUID
+        } else {
+            context.insert(SyncDanglingRef(entityTable: entityTable, rowSyncID: rowSyncID,
+                                           column: column, targetUUID: targetUUID))
         }
     }
 
@@ -799,6 +798,11 @@ enum EntityApplyMap {
         case rowGone
         /// El destino sigue sin existir → conservar el dangler (reintento en el próximo ciclo).
         case targetMissing
+        /// La fila origen o el destino NO se dejaron leer → conservar el dangler (reintento en el próximo ciclo).
+        /// No es `.rowGone`: el dangler es el ÚNICO sitio con el UUID del destino (las refs singulares no tienen
+        /// espejo CSV), así que borrarlo por una avería dejaba la fila sin su categoría o su cuenta para siempre
+        /// (ticket `dangling-ref-repair-is-lost-when-its-row-cannot-be-read`).
+        case unreadable
     }
 
     /// Intenta re-resolver UNA referencia colgada: fetch de la fila origen (dispatch concreto por tabla)
@@ -806,98 +810,114 @@ enum EntityApplyMap {
     /// de las 16 entidades cableadas (`tag_refs`/`subcategory_ids`/`account_ids` se auto-curan vía CSV
     /// mirror y NUNCA se registran). Matiz `scheduled_payment_ref`: en TX/InboxDraft es String plano
     /// (sin relación que colgar, no se registra); en `cashflow_lines` SÍ es `@Relationship` → tiene caso.
+    ///
+    /// Las dos lecturas son ESTRICTAS (`find*`): una que lanza devuelve `.unreadable`, nunca `.rowGone` ni
+    /// `.targetMissing` — «no pude leer la fila» no es «la fila ya no existe».
     static func reresolveDangler(_ dangler: SyncDanglingRef, context: ModelContext) -> DanglerOutcome {
+        do {
+            return try reresolveDanglerReadingStrictly(dangler, context: context)
+        } catch {
+            #if DEBUG
+            print("EntityApplyMap.reresolveDangler: lectura ilegible (\(dangler.entityTable).\(dangler.column)): \(error)")
+            #endif
+            return .unreadable
+        }
+    }
+
+    private static func reresolveDanglerReadingStrictly(
+        _ dangler: SyncDanglingRef, context: ModelContext
+    ) throws -> DanglerOutcome {
         let target = dangler.targetUUID
         switch (dangler.entityTable, dangler.column) {
         case (transactionItem.table, "category_ref"):
-            guard let row = fetchTransactionItem(bySyncID: dangler.rowSyncID, context: context) else { return .rowGone }
-            guard let t = fetchCategory(bySyncID: target, context: context) else { return .targetMissing }
+            guard let row = try findTransactionItem(bySyncID: dangler.rowSyncID, context: context) else { return .rowGone }
+            guard let t = try findCategory(bySyncID: target, context: context) else { return .targetMissing }
             row.category = t
             return .resolved
         case (transactionItem.table, "subcategory_ref"):
-            guard let row = fetchTransactionItem(bySyncID: dangler.rowSyncID, context: context) else { return .rowGone }
-            guard let t = fetchSubcategory(byShortcutID: target, context: context) else { return .targetMissing }
+            guard let row = try findTransactionItem(bySyncID: dangler.rowSyncID, context: context) else { return .rowGone }
+            guard let t = try findSubcategory(byShortcutID: target, context: context) else { return .targetMissing }
             row.subcategory = t
             return .resolved
         case (transactionItem.table, "account_ref"):
-            guard let row = fetchTransactionItem(bySyncID: dangler.rowSyncID, context: context) else { return .rowGone }
-            guard let t = fetchAccount(byShortcutID: target, context: context) else { return .targetMissing }
+            guard let row = try findTransactionItem(bySyncID: dangler.rowSyncID, context: context) else { return .rowGone }
+            guard let t = try findAccount(byShortcutID: target, context: context) else { return .targetMissing }
             row.account = t
             return .resolved
         case (inboxDraft.table, "account_ref"):
-            guard let row = fetchInboxDraft(bySyncID: dangler.rowSyncID, context: context) else { return .rowGone }
-            guard let t = fetchAccount(byShortcutID: target, context: context) else { return .targetMissing }
+            guard let row = try findInboxDraft(bySyncID: dangler.rowSyncID, context: context) else { return .rowGone }
+            guard let t = try findAccount(byShortcutID: target, context: context) else { return .targetMissing }
             row.account = t
             return .resolved
         case (inboxDraft.table, "subcategory_ref"):
-            guard let row = fetchInboxDraft(bySyncID: dangler.rowSyncID, context: context) else { return .rowGone }
-            guard let t = fetchSubcategory(byShortcutID: target, context: context) else { return .targetMissing }
+            guard let row = try findInboxDraft(bySyncID: dangler.rowSyncID, context: context) else { return .rowGone }
+            guard let t = try findSubcategory(byShortcutID: target, context: context) else { return .targetMissing }
             row.subcategory = t
             return .resolved
         case (inboxDraft.table, "approved_transaction_ref"):
-            guard let row = fetchInboxDraft(bySyncID: dangler.rowSyncID, context: context) else { return .rowGone }
-            guard let t = fetchTransactionItem(bySyncID: target, context: context) else { return .targetMissing }
+            guard let row = try findInboxDraft(bySyncID: dangler.rowSyncID, context: context) else { return .rowGone }
+            guard let t = try findTransactionItem(bySyncID: target, context: context) else { return .targetMissing }
             row.approvedTransaction = t
             return .resolved
         case (favoritePayment.table, "account_ref"):
-            guard let row = fetchFavoritePayment(bySyncID: dangler.rowSyncID, context: context) else { return .rowGone }
-            guard let t = fetchAccount(byShortcutID: target, context: context) else { return .targetMissing }
+            guard let row = try findFavoritePayment(bySyncID: dangler.rowSyncID, context: context) else { return .rowGone }
+            guard let t = try findAccount(byShortcutID: target, context: context) else { return .targetMissing }
             row.account = t
             return .resolved
         case (favoritePayment.table, "subcategory_ref"):
-            guard let row = fetchFavoritePayment(bySyncID: dangler.rowSyncID, context: context) else { return .rowGone }
-            guard let t = fetchSubcategory(byShortcutID: target, context: context) else { return .targetMissing }
+            guard let row = try findFavoritePayment(bySyncID: dangler.rowSyncID, context: context) else { return .rowGone }
+            guard let t = try findSubcategory(byShortcutID: target, context: context) else { return .targetMissing }
             row.subcategory = t
             return .resolved
         case (merchantMemory.table, "subcategory_ref"):
-            guard let row = fetchMerchantMemory(bySyncID: dangler.rowSyncID, context: context) else { return .rowGone }
-            guard let t = fetchSubcategory(byShortcutID: target, context: context) else { return .targetMissing }
+            guard let row = try findMerchantMemory(bySyncID: dangler.rowSyncID, context: context) else { return .rowGone }
+            guard let t = try findSubcategory(byShortcutID: target, context: context) else { return .targetMissing }
             row.subcategory = t
             return .resolved
         case (budget.table, "category_id"):
-            guard let row = fetchBudget(byID: dangler.rowSyncID, context: context) else { return .rowGone }
-            guard let t = fetchCategory(bySyncID: target, context: context) else { return .targetMissing }
+            guard let row = try findBudget(byID: dangler.rowSyncID, context: context) else { return .rowGone }
+            guard let t = try findCategory(bySyncID: target, context: context) else { return .targetMissing }
             row.category = t
             return .resolved
         case (scheduledPayment.table, "account_ref"):
-            guard let row = fetchScheduledPayment(byID: dangler.rowSyncID, context: context) else { return .rowGone }
-            guard let t = fetchAccount(byShortcutID: target, context: context) else { return .targetMissing }
+            guard let row = try findScheduledPayment(byID: dangler.rowSyncID, context: context) else { return .rowGone }
+            guard let t = try findAccount(byShortcutID: target, context: context) else { return .targetMissing }
             row.account = t
             return .resolved
         case (scheduledPayment.table, "subcategory_ref"):
-            guard let row = fetchScheduledPayment(byID: dangler.rowSyncID, context: context) else { return .rowGone }
-            guard let t = fetchSubcategory(byShortcutID: target, context: context) else { return .targetMissing }
+            guard let row = try findScheduledPayment(byID: dangler.rowSyncID, context: context) else { return .rowGone }
+            guard let t = try findSubcategory(byShortcutID: target, context: context) else { return .targetMissing }
             row.subcategory = t
             return .resolved
         // I12 commit B: refs singulares de las nuevas entidades.
         case (subcategory.table, "category_ref"):
-            guard let row = fetchSubcategory(byShortcutID: dangler.rowSyncID, context: context) else { return .rowGone }
-            guard let t = fetchCategory(bySyncID: target, context: context) else { return .targetMissing }
+            guard let row = try findSubcategory(byShortcutID: dangler.rowSyncID, context: context) else { return .rowGone }
+            guard let t = try findCategory(bySyncID: target, context: context) else { return .targetMissing }
             row.category = t
             return .resolved
         case (cashFlowLine.table, "category_ref"):
-            guard let row = fetchCashFlowLine(byID: dangler.rowSyncID, context: context) else { return .rowGone }
-            guard let t = fetchCategory(bySyncID: target, context: context) else { return .targetMissing }
+            guard let row = try findCashFlowLine(byID: dangler.rowSyncID, context: context) else { return .rowGone }
+            guard let t = try findCategory(bySyncID: target, context: context) else { return .targetMissing }
             row.category = t
             return .resolved
         case (cashFlowLine.table, "subcategory_ref"):
-            guard let row = fetchCashFlowLine(byID: dangler.rowSyncID, context: context) else { return .rowGone }
-            guard let t = fetchSubcategory(byShortcutID: target, context: context) else { return .targetMissing }
+            guard let row = try findCashFlowLine(byID: dangler.rowSyncID, context: context) else { return .rowGone }
+            guard let t = try findSubcategory(byShortcutID: target, context: context) else { return .targetMissing }
             row.subcategory = t
             return .resolved
         case (cashFlowLine.table, "scheduled_payment_ref"):
-            guard let row = fetchCashFlowLine(byID: dangler.rowSyncID, context: context) else { return .rowGone }
-            guard let t = fetchScheduledPayment(byID: target, context: context) else { return .targetMissing }
+            guard let row = try findCashFlowLine(byID: dangler.rowSyncID, context: context) else { return .rowGone }
+            guard let t = try findScheduledPayment(byID: target, context: context) else { return .targetMissing }
             row.scheduledPayment = t
             return .resolved
         case (cashFlowLine.table, "plan_ref"):
-            guard let row = fetchCashFlowLine(byID: dangler.rowSyncID, context: context) else { return .rowGone }
-            guard let t = fetchCashFlowPlan(byID: target, context: context) else { return .targetMissing }
+            guard let row = try findCashFlowLine(byID: dangler.rowSyncID, context: context) else { return .rowGone }
+            guard let t = try findCashFlowPlan(byID: target, context: context) else { return .targetMissing }
             row.plan = t
             return .resolved
         case (cashFlowOverride.table, "line_ref"):
-            guard let row = fetchCashFlowOverride(byID: dangler.rowSyncID, context: context) else { return .rowGone }
-            guard let t = fetchCashFlowLine(byID: target, context: context) else { return .targetMissing }
+            guard let row = try findCashFlowOverride(byID: dangler.rowSyncID, context: context) else { return .rowGone }
+            guard let t = try findCashFlowLine(byID: target, context: context) else { return .targetMissing }
             row.line = t
             return .resolved
         default:
@@ -908,12 +928,13 @@ enum EntityApplyMap {
 
     /// Aplica `tag_refs`: resuelve los `[UUID]` del wire a `[Tag]` locales (dual-write M2M+CSV vía
     /// `setter`) y LUEGO sobrescribe el CSV mirror con los UUIDs del WIRE COMPLETOS (`csv`) — preserva
-    /// refs a tags aún no locales (CSV-first auto-cura; gotcha CSV-stale). `null` → sin tags.
+    /// refs a tags aún no locales (CSV-first auto-cura; gotcha CSV-stale). `null` → sin tags. LANZA si la tabla de
+    /// tags no se deja leer: un `[]` por avería vaciaba la relación de una fila que sí tenía sus tags.
     private static func applyTagRefs<M>(
         _ value: WireValue, into _: M, setter: ([Tag]) -> Void, csv: (String?) -> Void, context: ModelContext
-    ) {
+    ) throws {
         let wireUUIDs = WireValueDecoder.uuidArray(value) ?? []
-        let tags = fetchTags(byIDs: wireUUIDs, context: context)
+        let tags = try findTags(byIDs: wireUUIDs, context: context)
         setter(tags)                                   // dual-write M2M + CSV (subset resuelto)
         csv(CSVMirrorCodec.encode(wireUUIDs))          // CSV = wire COMPLETO (SSOT; preserva no-locales)
     }
@@ -925,11 +946,11 @@ enum EntityApplyMap {
     /// CSV-stale). `null` → sin refs (`[]`/`""`). El orden del CSV lo canonicaliza `CSVMirrorCodec`.
     private static func applyUUIDArrayRefs<T: PersistentModel>(
         _ value: WireValue,
-        fetch: ([UUID], ModelContext) -> [T],
+        fetch: ([UUID], ModelContext) throws -> [T],
         setM2M: ([T]) -> Void, csv: (String?) -> Void, context: ModelContext
-    ) {
+    ) throws {
         let wireUUIDs = WireValueDecoder.uuidArray(value) ?? []
-        setM2M(fetch(wireUUIDs, context))
+        setM2M(try fetch(wireUUIDs, context))
         csv(CSVMirrorCodec.encode(wireUUIDs))
     }
 
@@ -1157,36 +1178,25 @@ enum EntityApplyMap {
     }
 
     /// `[Subcategory]` por sus `shortcutID` (CSV mirror de Budget). Fetch de TODAS + lookup en memoria
-    /// (patrón `fetchTags`; tolera ids duplicados quedándose con la primera). Orden = el de `ids` (wire).
-    static func fetchSubcategories(byShortcutIDs ids: [UUID], context: ModelContext) -> [Subcategory] {
+    /// (patrón `findTags`; tolera ids duplicados quedándose con la primera). Orden = el de `ids` (wire).
+    /// LANZA si no se puede leer (solo la llaman los appliers, que tiran la página).
+    static func findSubcategories(byShortcutIDs ids: [UUID], context: ModelContext) throws -> [Subcategory] {
         guard !ids.isEmpty else { return [] }
-        do {
-            let all = try context.fetch(FetchDescriptor<Subcategory>())
-            var lookup: [UUID: Subcategory] = [:]
-            for s in all where lookup[s.shortcutID] == nil { lookup[s.shortcutID] = s }
-            return ids.compactMap { lookup[$0] }
-        } catch {
-            #if DEBUG
-            print("EntityApplyMap.fetchSubcategories error: \(error)")
-            #endif
-            return []
+        var lookup: [UUID: Subcategory] = [:]
+        for s in try fetchAllOrThrow(FetchDescriptor<Subcategory>(), context) where lookup[s.shortcutID] == nil {
+            lookup[s.shortcutID] = s
         }
+        return ids.compactMap { lookup[$0] }
     }
 
-    /// `[Account]` por sus `shortcutID` (CSV mirror de Budget).
-    static func fetchAccounts(byShortcutIDs ids: [UUID], context: ModelContext) -> [Account] {
+    /// `[Account]` por sus `shortcutID` (CSV mirror de Budget). LANZA si no se puede leer.
+    static func findAccounts(byShortcutIDs ids: [UUID], context: ModelContext) throws -> [Account] {
         guard !ids.isEmpty else { return [] }
-        do {
-            let all = try context.fetch(FetchDescriptor<Account>())
-            var lookup: [UUID: Account] = [:]
-            for a in all where lookup[a.shortcutID] == nil { lookup[a.shortcutID] = a }
-            return ids.compactMap { lookup[$0] }
-        } catch {
-            #if DEBUG
-            print("EntityApplyMap.fetchAccounts error: \(error)")
-            #endif
-            return []
+        var lookup: [UUID: Account] = [:]
+        for a in try fetchAllOrThrow(FetchDescriptor<Account>(), context) where lookup[a.shortcutID] == nil {
+            lookup[a.shortcutID] = a
         }
+        return ids.compactMap { lookup[$0] }
     }
 
     /// `SyncIdentity` de un `syncID` (para el born-remote insert y el tombstone delete). Store sync-meta.
@@ -1198,19 +1208,12 @@ enum EntityApplyMap {
     }
 
     /// `[Tag]` por sus `id` (CSV mirror). Fetch de TODOS + lookup en memoria (los Tags son pocos; evita
-    /// las esquinas de `Array.contains` en `#Predicate`). Tolera ids duplicados (`Tag.byIDLookup`).
-    static func fetchTags(byIDs ids: [UUID], context: ModelContext) -> [Tag] {
+    /// las esquinas de `Array.contains` en `#Predicate`). Tolera ids duplicados (`Tag.byIDLookup`). LANZA si no se
+    /// puede leer.
+    static func findTags(byIDs ids: [UUID], context: ModelContext) throws -> [Tag] {
         guard !ids.isEmpty else { return [] }
-        do {
-            let all = try context.fetch(FetchDescriptor<Tag>())
-            let lookup = Tag.byIDLookup(all)
-            return ids.compactMap { lookup[$0] }
-        } catch {
-            #if DEBUG
-            print("EntityApplyMap.fetchTags error: \(error)")
-            #endif
-            return []
-        }
+        let lookup = Tag.byIDLookup(try fetchAllOrThrow(FetchDescriptor<Tag>(), context))
+        return ids.compactMap { lookup[$0] }
     }
 
     /// Primera fila del descriptor. LANZA si el fetch falla: el que decide qué significa un fallo es el
@@ -1224,8 +1227,17 @@ enum EntityApplyMap {
         return try context.fetch(d).first
     }
 
-    /// Semántica HISTÓRICA de los `fetch*`: un fetch fallido se lee `nil`. La conservan los llamadores que
-    /// no deciden sobre borrar/crear la fila del apply (resolución de refs, danglers, `liveRowExists`).
+    /// Todas las filas del descriptor, con el mismo seam que `fetchFirstOrThrow`. LANZA si el fetch falla.
+    private static func fetchAllOrThrow<T: PersistentModel>(
+        _ descriptor: FetchDescriptor<T>, _ context: ModelContext
+    ) throws -> [T] {
+        if _testThrowOnFetchOf.contains(String(describing: T.self)) { throw EntityApplyFetchError.unreadable(String(describing: T.self)) }
+        return try context.fetch(descriptor)
+    }
+
+    /// Semántica HISTÓRICA de los `fetch*`: un fetch fallido se lee `nil`. La conservan los llamadores que leen una
+    /// señal y no deciden sobre ningún dato (`liveRowExists`). La resolución de refs y el pase de danglers usan
+    /// `find*` desde el ticket `dangling-ref-repair-is-lost-when-its-row-cannot-be-read`.
     private static func lenient<T>(_ site: String, _ body: () throws -> T?) -> T? {
         do {
             return try body()
@@ -1237,9 +1249,10 @@ enum EntityApplyMap {
         }
     }
 
-    /// Tipos (nombre de clase) cuyas búsquedas de fila del apply (`find*`) y cuyo barrido `deleteLiveRows`
-    /// LANZAN como si la base no se dejara leer. Vacío = nunca. SOLO tests (ticket
-    /// `apply-overwrites-a-pending-local-write-without-its-guards`).
+    /// Tipos (nombre de clase) cuyas lecturas estrictas (`find*`, `fetchAllOrThrow` de los M2M, el registro
+    /// `SyncDanglingRef`) y cuyo barrido `deleteLiveRows` LANZAN como si la base no se dejara leer. Vacío = nunca.
+    /// SOLO tests (tickets `apply-overwrites-a-pending-local-write-without-its-guards` y
+    /// `dangling-ref-repair-is-lost-when-its-row-cannot-be-read`).
     static var _testThrowOnFetchOf: Set<String> = []
 }
 

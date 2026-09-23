@@ -33,3 +33,9 @@ primer sellado de la sesión.
 
 Relacionado: [[mis-mediciones-fallan-por-el-filtro]] (el caso 12: el PR nace `DIRTY` y el CI ni
 arranca, que es el otro efecto de que `2.1` avance mientras trabajas).
+
+**2026-09-23: y un renombrado en el ÍNDICE también la mueve, aunque el disco no cambie** (bug del script, ticket
+`the-gate-stamp-hides-the-deleted-side-of-a-staged-rename`). `git diff HEAD --name-only` detecta el rename y solo lista
+el lado nuevo, así que sellar con un `git mv` en el índice y luego sacarlo con `git restore --staged` da «el código
+cambió». Si el disco no cambió —compruébalo volviendo a poner el rename en el índice: la huella tiene que volver—,
+re-sellar es legítimo. Mejor: haz el `git mv` DESPUÉS del commit de código, o no lo toques del índice.
