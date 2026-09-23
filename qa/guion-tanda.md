@@ -239,8 +239,10 @@ Necesita **G1**, que tras el bloque C ya es una cuenta solo de grupos.
   **FAIL** → `tickets/in-progress/` con `qa-status: failed` y lo que viste.
 - Basta con que me pases el número del paso y PASA/FALLA («B2 pasa, C5 falla: salió X»). El board lo
   muevo yo.
-- `previous-person-cloud-session-survives-fresh-start-and-reinstall` **no se cierra hoy**: le falta el
-  paso 4, que es instalar el próximo TestFlight **encima** del 13 sin borrar y comprobar que la sesión de
-  la nube sigue abierta.
+- `previous-person-cloud-session-survives-fresh-start-and-reinstall`: su paso 4 es instalar un TestFlight
+  **encima** del 13 sin borrar y comprobar que la sesión de la nube sigue abierta. **El TestFlight 14
+  (2.1, desde `2.1` del 23-sep) ya está en el grupo interno.** Orden: primero deja la sesión de A abierta
+  en el **13** (si ya actualizaste, TestFlight → Yala → «Versiones anteriores» → 13), y solo entonces
+  pulsa «Actualizar» al 14.
 - Actualiza `docs/TICKETS.md` (la fila y el conteo) y este guion. El índice se comprueba con un diff
   contra el disco, no a ojo.
