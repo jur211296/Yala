@@ -5,6 +5,7 @@ priority: high
 area: "modo-nube, sesiones, swiftdata"
 created: 2026-09-14
 source: "device-QA del PR de `apple-id-change-should-close-the-private-session` (2026-09-14)"
+updated: 2026-09-23
 ---
 
 # Device-QA · Cambiar el Apple ID del teléfono cierra la sesión privada
@@ -147,3 +148,7 @@ notificación puede no llegar nunca, y entonces la única red es la comprobació
 - [ ] Recorrido 4: una sesión solo-grupos no ve nada.
 - [ ] Recorrido 5: sin red, la hoja enseña el bloqueo con «Reintentar» y «Ahora no», y Ajustes no queda
       tapiado; con red, lo que quedaba sin subir sube antes de borrar.
+
+## Barrido de `qa` · 2026-09-23 · se queda para el iPhone
+
+Está en la lista corta de device-QA del 2026-09-23 (`qa/guion-tanda.md`). Se prueba con **Yala Dev compilado desde `2.1`**: el TestFlight 13 es del 9-sep y no lleva los arreglos posteriores. Para cerrarlo basta con solo el recorrido 2: apagar iCloud Drive NO debe sacar el aviso de cambio de Apple ID. El resto pide un segundo Apple ID.

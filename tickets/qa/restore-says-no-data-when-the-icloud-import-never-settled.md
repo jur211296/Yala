@@ -4,7 +4,7 @@ status: qa
 priority: high
 area: "welcome, icloud, restore"
 created: 2026-09-17
-updated: 2026-09-20
+updated: 2026-09-23
 source: "review adversarial de `reinstall-without-network-has-no-cloud-door` (lente de poblaciones), 2026-09-17"
 ---
 
@@ -219,3 +219,7 @@ con dos Apple ID: **A** con histórico grande de Yala en iCloud, **B** sin nada 
 **Lo que este guion NO cubre y se dice para que nadie lo lea de más:** que el import termine de
 verdad tras el «Reintentar» depende de la cuota y la velocidad de CloudKit ese día; y el paso 5
 fuerza un error de red, no uno terminal de cuota o cuenta gestionada, que no se pueden montar.
+
+## Barrido de `qa` · 2026-09-23 · se queda para el iPhone
+
+Está en la lista corta de device-QA del 2026-09-23 (`qa/guion-tanda.md`). Se prueba con **Yala Dev compilado desde `2.1`**: el TestFlight 13 es del 9-sep y no lleva los arreglos posteriores. Para cerrarlo basta con los pasos 1 y 2 con el Network Link Conditioner (paso B2 del guion). El paso 3 se intenta al principio del bloque A, antes de crear datos, si el iCloud de Yala Dev está vacío; si no lo está, lo cubre `RestoreStartFreshGateTests`.

@@ -5,6 +5,7 @@ priority: high
 area: "modo-nube, groups"
 created: 2026-09-10
 source: "mitad 2 de `groups-only-second-launch-mounts-icloud-mirror`, separada por decisión de Jürgen (2026-09-10) tras medir que el desmontaje en caliente no es viable"
+updated: 2026-09-23
 ---
 
 # «Vengo por un grupo» sobre un store que ya lleva espejo sigue bloqueando al dueño de los datos
@@ -274,3 +275,7 @@ está en los unit y el XCUITest.
 
 **Si algo falla, captura:** el panel DEBUG con `personalStoreMountedDecision` (tiene que decir un mount
 **sin espejo** después del relanzamiento) y la pantalla donde se rompió.
+
+## Barrido de `qa` · 2026-09-23 · se queda para el iPhone
+
+Está en la lista corta de device-QA del 2026-09-23 (`qa/guion-tanda.md`). Se prueba con **Yala Dev compilado desde `2.1`**: el TestFlight 13 es del 9-sep y no lleva los arreglos posteriores. Para cerrarlo basta con los recorridos 1 y 2. El 4 pide un aparato sin iCloud.

@@ -35,7 +35,7 @@
 id: groups-consent-door-spec
 status: qa
 created: 2026-08-11
-updated: 2026-09-16
+updated: 2026-09-23
 source: YalaWiki/Backlog/modo-nube/qa_MODO-NUBE-SPEC-CONSENT-GRUPOS.md
 ---
 
@@ -1251,3 +1251,7 @@ depende de él:** es el login normal de una cuenta, en uno o dos aparatos. Pide 
 consentimiento al drenar (`ContentView.swift:1232`), y la lectura del servidor va en una tarea que nadie
 espera (`GroupsBackendInviteModifier.swift:168`). Si la pantalla sale en el segundo login, lo más probable es
 esa carrera.
+
+## Barrido de `qa` · 2026-09-23 · se queda para el iPhone
+
+Está en la lista corta de device-QA del 2026-09-23 (`qa/guion-tanda.md`). Se prueba con **Yala Dev compilado desde `2.1`**: el TestFlight 13 es del 9-sep y no lleva los arreglos posteriores. Para cerrarlo basta con el paso del consentimiento y el SELECT en staging del bloque C (una sola fila, y no vuelve a salir).

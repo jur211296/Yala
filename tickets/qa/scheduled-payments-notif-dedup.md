@@ -2,7 +2,7 @@
 id: scheduled-payments-notif-dedup
 status: qa
 created: 2026-07-22
-updated: 2026-09-16
+updated: 2026-09-23
 source: YalaWiki/Bugs/qa_pagos-planificados-notifs-incoherentes-y-dedup-sin-entrega.md
 ---
 
@@ -204,3 +204,7 @@ Captura: [aviso tras conceder permiso](../../qa/evidencia-barrido-20260916/30-pa
 **Lo que falta depende del reloj real y se prueba en el iPhone a lo largo de un día:** la fase 2
 (resumen a su hora **sin abrir la app**), la fase 4 (abrir antes de la hora configurada no avisa;
 después, sí) y la fase 6, opcional (más de 5 vencidos). El guion de arriba sigue valiendo.
+
+## Barrido de `qa` · 2026-09-23 · se queda para el iPhone
+
+Está en la lista corta de device-QA del 2026-09-23 (`qa/guion-tanda.md`). Se prueba con **Yala Dev compilado desde `2.1`**: el TestFlight 13 es del 9-sep y no lleva los arreglos posteriores. Para cerrarlo basta con la fase 2 del guion (el resumen llega a su hora con la app cerrada, y una sola vez). Ojo al crear los pagos: recurrencia «Una sola vez», o el editor los fecha el día 1 del mes siguiente. La fase 3 necesita que pase la hora sin permiso y choca con la 2 el mismo día; la 3 y la 4 quedan cubiertas por `ScheduledPaymentNotificationGateLogicTests`.

@@ -2,7 +2,7 @@
 id: reentry-counts-as-fresh-install
 status: qa
 created: 2026-08-12
-updated: 2026-09-16
+updated: 2026-09-23
 source: YalaWiki/Bugs/reentrada-la-vuelta-cuenta-como-instalacion-nueva.md
 ---
 
@@ -233,3 +233,7 @@ nube con varias transacciones):
 
 Coordenadas que derivaron: `completeOnboardingAsRestoreSkip()` tiene hoy **dos** llamadas, no tres
 (`ContentView.swift:853` y `:2419`), aunque su docblock (`:2747-2750`) diga tres.
+
+## Barrido de `qa` · 2026-09-23 · se queda para el iPhone
+
+Está en la lista corta de device-QA del 2026-09-23 (`qa/guion-tanda.md`). Se prueba con **Yala Dev compilado desde `2.1`**: el TestFlight 13 es del 9-sep y no lleva los arreglos posteriores. Para cerrarlo basta con el bloque D: volver a tu cuenta tras reinstalar.

@@ -4,7 +4,7 @@ status: qa
 priority: very-high
 area: "modo-nube, migración"
 created: 2026-09-22
-updated: 2026-09-22
+updated: 2026-09-23
 source: "Paso 0 de `snapshot-upload-has-no-ceiling-and-no-way-out` (2026-09-22): barrido del mismo patrón en la ida"
 ---
 
@@ -155,3 +155,7 @@ comprueba en el teléfono es que nada se rompe y, con suerte, el 80 %:
    Si se queda en **80 %**: aparece «Cancelar la activación»; «Seguir activando la nube» no cambia nada; quita el modo
    avión y toca «Retomar» → la migración termina normal. Si la barra se queda en 75 %, el corte llegó antes (verificación):
    no es este paso y no cuenta como fallo.
+
+## Barrido de `qa` · 2026-09-23 · se queda para el iPhone
+
+Está en la lista corta de device-QA del 2026-09-23 (`qa/guion-tanda.md`). Se prueba con **Yala Dev compilado desde `2.1`**: el TestFlight 13 es del 9-sep y no lleva los arreglos posteriores. Para cerrarlo basta con los pasos 3 y 4 del guion, en la misma pasada que la subida.

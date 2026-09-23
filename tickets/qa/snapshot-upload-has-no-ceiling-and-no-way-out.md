@@ -4,7 +4,7 @@ status: qa
 priority: very-high
 area: "modo-nube, migración"
 created: 2026-09-22
-updated: 2026-09-22
+updated: 2026-09-23
 source: "review adversarial de `verify-reads-a-failed-local-fetch-as-an-empty-outbox` (2026-09-22), lente de consumidores"
 ---
 
@@ -202,3 +202,7 @@ comprueba en el teléfono es la cancelación y que nada se rompe:
   tarda hasta 60 s y el botón solo se toca entre intentos.
 
 **Con ticket propio:** `a-failed-snapshot-enqueue-save-leaves-the-journal-unsaved` (inferido por una lente, no medido).
+
+## Barrido de `qa` · 2026-09-23 · se queda para el iPhone
+
+Está en la lista corta de device-QA del 2026-09-23 (`qa/guion-tanda.md`). Se prueba con **Yala Dev compilado desde `2.1`**: el TestFlight 13 es del 9-sep y no lleva los arreglos posteriores. Para cerrarlo basta con el guion del bloque D (modo avión al 55 % y «Cancelar la activación»).

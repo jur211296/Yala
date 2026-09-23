@@ -4,7 +4,7 @@ status: qa
 priority: medium
 area: "chat, currency"
 created: 2026-09-08
-updated: 2026-09-08
+updated: 2026-09-23
 source: review adversarial de chat-draft-drops-the-expense-sign (2026-09-08)
 ---
 
@@ -146,3 +146,7 @@ cuenta cambia la etiqueta del monto **a la vista**, antes de guardar.
   primera versión de este ticket y de los comentarios decía lo otro.
 - La tarjeta del chat **no tiene un solo `accessibilityIdentifier`**, así que ningún XCUITest puede
   afirmar sobre ella. La red de esta ruta es unit, y conviene saberlo antes de confiar en el gate.
+
+## Barrido de `qa` · 2026-09-23 · se queda para el iPhone
+
+Está en la lista corta de device-QA del 2026-09-23 (`qa/guion-tanda.md`). Se prueba con **Yala Dev compilado desde `2.1`**: el TestFlight 13 es del 9-sep y no lleva los arreglos posteriores. Para cerrarlo basta con el bloque A del guion (dictar en dólares sobre una cuenta en soles).

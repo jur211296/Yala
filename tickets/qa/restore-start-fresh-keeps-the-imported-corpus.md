@@ -5,6 +5,7 @@ priority: high
 area: "onboarding, modo-nube"
 created: 2026-09-11
 source: "medido leyendo el código durante el paso 8 del rediseño de sesiones; NO reproducido en device"
+updated: 2026-09-23
 ---
 
 # «Empezar desde cero» en Restaurar promete «sin tus datos previos» y los deja bajando
@@ -344,3 +345,7 @@ Apagar iCloud, instalación fresca, Restaurar → «Activa iCloud para continuar
 El recorrido desde «Activar Yala completo → privado → Restaurar»: ahí el botón **no cambia** en este PR.
 Su hueco lo cerró el suyo el 2026-09-14 (`activation-restore-start-fresh-keeps-the-imported-rows`), y su
 device-QA vive aparte: `tickets/qa/device-qa-activation-restore-start-fresh.md`.
+
+## Barrido de `qa` · 2026-09-23 · se queda para el iPhone
+
+Está en la lista corta de device-QA del 2026-09-23 (`qa/guion-tanda.md`). Se prueba con **Yala Dev compilado desde `2.1`**: el TestFlight 13 es del 9-sep y no lleva los arreglos posteriores. Para cerrarlo basta con los recorridos 1 y 3, que no borran nada.

@@ -143,6 +143,7 @@
 - [«Cero warnings» se mide en TODOS los logs](feedback_cero_warnings_se_mide_en_todos_los_logs.md) — el gate no mira los tests y lee un build.
 
 ## Estado del trabajo
+- [Barrido de qa del 23-sep](project_barrido_qa_23_sep.md) — 80 → 21; los 59 cerrados no se le piden; guion por bloques en qa/guion-tanda.md.
 - [Tercer reloj: cualquier motivo definitivo](project_tercer_reloj_definitivo_pre_mount.md) — 23-sep; vuelta y subida cerradas; la subida sale con `mixedCauses`.
 - [El claim del adopt tiene techo y salida](project_adopt_claim_techo_y_salida.md) — PR del 23-sep; dos tickets nuevos, device-QA en `qa`.
 - [Un inventario incompleto ya no es el corpus entero](project_inventario_incompleto_no_es_el_corpus.md) — PR del 23-sep; la review cazó el backfill, tres tickets nuevos.
