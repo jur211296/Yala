@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-23 (Lima)
 
-**Rama** `2.1` — Merge #219: **Si una tabla de un grupo no se deja leer, la app ya no se cree que el grupo está vacío y se lo baja entero.**
+**Rama** `2.1` — Merge #220: **Si al subir a la nube una tabla no se deja leer, la app ya no la da por subida ni sigue.**
 TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,30 @@ TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#219 · el Merkle de grupos ya no lee una tabla ilegible como vacía)
+## Esta sesión (#220 · un inventario incompleto de la migración ya no se lee como el corpus entero)
+
+**Si al pasar tus datos a la nube, al entrar en una cuenta que ya existe o al volver a iCloud el teléfono no consigue
+leer una de tus tablas, la app ya no la da por hecha**: la ida se para con «este dispositivo no pudo preparar tus
+datos», el adopt lo reintenta y la vuelta sigue esperando sin darse por terminada ni contar avance. Antes seguía como si
+esa tabla estuviera vacía: la subida cerraba sin ella, el adopt podía apagar su guard anti-fusión y darse por completo,
+y la vuelta podía cerrarse sin esos datos en iCloud.
+
+Los seis inventarios lanzan (`MigrationWorkExecutor.fetchInventory` y el paginador del uploader); caso nuevo
+`ReverseUploadStatus.unreadable`; `SyncIdentityService.backfillIdentities` también lanza (gemelo que cazó la review).
+Rastro: `migrationInventoryReadFailed`, `migrationIdentityBackfillFailed`, `outboxFetchFailed(rehydrate-mirror)`.
+Regla: `.claude/rules/swiftdata-cloudkit.md`, «Y los inventarios de la migración tampoco».
+
+Gate: 7612 unit en 748 suites y 4 XCUITest. 25 mutantes, todos muertos. Review de tres lentes: sin defectos altos en el
+fix; cazó el backfill, el motivo congelado de la pantalla y nueve frases que decían de más.
+
+### Lo que espera de Jürgen
+
+- **Nada ahora.** A `done` sin device-QA: una base local ilegible no se provoca en un iPhone.
+- Dos tickets nuevos piden una decisión de producto cuando toque: `adopt-effect-retries-forever-with-no-ceiling`
+  (medium: el adopt en `.transient` no tiene techo ni tarjeta) y `reverse-upload-unreadable-sample-waits-the-long-ceiling`
+  (low: plazo y texto de la vuelta con la base ilegible). Y uno técnico: `two-silent-local-reads-leave-a-false-or-no-trace`.
+
+## Sesión anterior (#219 · el Merkle de grupos ya no lee una tabla ilegible como vacía)
 
 **Si en la comprobación periódica de un grupo el teléfono no consigue leer una de sus tablas, la app ya no da el grupo
 por vacío ni se lo vuelve a bajar entero**: se salta esa comprobación, deja rastro y lo intenta en la siguiente. Antes,
@@ -40,7 +63,7 @@ comportamiento en el fix; endureció los tests (el seam lanza un `CocoaError`) y
 - **Nada.** A `done` sin device-QA: una base local ilegible no se provoca en un iPhone.
 - Ticket nuevo en `backlog`: `groups-cursor-map-reads-an-undecodable-json-as-no-cursors` (medium).
 
-## Sesión anterior (#218 · el drain ya no duplica el reloj por unidad cuando no puede leerlo)
+## Sesión del #218 (el drain ya no duplica el reloj por unidad cuando no puede leerlo)
 
 **Si al capturar un cambio tuyo la app no consigue leer el registro de cuándo se tocó cada parte, ya no crea otro al
 lado** —con dos, podía leer el viejo, dar por buena la pata equivocada de una transferencia y pisar su importe—: esa
