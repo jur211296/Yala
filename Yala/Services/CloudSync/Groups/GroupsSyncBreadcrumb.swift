@@ -92,10 +92,19 @@ enum GroupsSyncBreadcrumb {
     }
 
     /// La verificación Merkle de un grupo se SALTÓ por una precondición no satisfecha (outbox vivo, dead-
-    /// letters, sin pull completado, canon-mismatch, sin sesión, 401/403). `reason` = slug (puede llevar un
+    /// letters, sin pull completado, canon-mismatch, sin sesión, 401/403, árbol local ilegible). `reason` = slug (puede llevar un
     /// count, `outbox-pending:N`), JAMÁS el group_id. NUNCA canario.
     static func groupsMerkleSkipped(reason: String) {
         logger.notice("GroupsSync merkleSkipped reason=\(reason, privacy: .public)")
+    }
+
+    /// El árbol Merkle LOCAL de un grupo no se pudo computar: el fetch de `table` lanzó (ticket
+    /// `groups-merkle-reads-an-unreadable-table-as-an-empty-one`). La verificación de ESE grupo se salta —no se
+    /// compara, no se remedia, no hay canario—, y la próxima cadencia lo vuelve a intentar. **Es una avería del
+    /// teléfono, no una pérdida de integridad**: hasta ese ticket esta misma avería salía como divergencia y le
+    /// reseteaba el cursor al grupo. `table` = nombre de tabla del manifest; JAMÁS el group_id. Sin PII.
+    static func groupsMerkleLocalReadFailed(table: String) {
+        logger.notice("GroupsSync merkleLocalReadFailed table=\(table, privacy: .public) — no se compara nada")
     }
 
     /// [R4] El root remoto de un grupo es el de un corpus VACÍO (todas las entities count 0) mientras el

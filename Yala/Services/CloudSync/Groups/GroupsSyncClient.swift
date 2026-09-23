@@ -3211,6 +3211,35 @@ final class GroupsSyncClient {
 
 // MARK: - Merkle client-side (endurecimiento B1)
 
+/// Los `reason` de `.skipped` que produce `verifyGroupIntegrity`, en UN solo sitio (ticket
+/// `groups-merkle-reads-an-unreadable-table-as-an-empty-one`).
+///
+/// **No viven en `MerkleSkipReason` a propósito.** Aquél es del canal PERSONAL y su `all` es el canario de «motivo
+/// desconocido» de `VerifyProbeMapping`, que decide techos y copy de la vuelta a iCloud: meter aquí los de Grupos lo
+/// ensancharía para un canal que no pasa por ese mapping. Los dos comparten solo el tipo del veredicto. Algunos
+/// valores coinciden byte a byte con los personales (`outbox-pending`, `fetch-failed`…) y eso no los acopla: nadie
+/// consume un veredicto de Grupos por su literal fuera de este fichero y sus tests.
+nonisolated enum GroupMerkleSkipReason {
+    static let outboxFetchFailed = "outbox-fetch-failed"
+    static let outboxPending = "outbox-pending"
+    static let deadLetterFetchFailed = "dead-letter-fetch-failed"
+    static let deadLetters = "dead-letters"
+    static let noCompletedPull = "no-completed-pull"
+    static let fetchFailed = "fetch-failed"
+    static let canonVersionMismatch = "canon-version-mismatch"
+    /// El árbol LOCAL del grupo no se pudo computar: una de sus tablas no se dejó leer. Hasta el 2026-09-23 esa
+    /// tabla se hasheaba como VACÍA y el grupo salía `.diverged` —cursor a 0 y el grupo entero de vuelta—.
+    static let localMerkleFetchFailed = "local-merkle-fetch-failed"
+    static let emptyRemote = "empty-remote"
+
+    /// Los NUEVE, para que un test pueda exigir que no se repitan: dos motivos con el mismo texto se leerían como uno
+    /// en el rastro, y la avería local volvería a confundirse con la red.
+    static let all: [String] = [
+        outboxFetchFailed, outboxPending, deadLetterFetchFailed, deadLetters, noCompletedPull, fetchFailed,
+        canonVersionMismatch, localMerkleFetchFailed, emptyRemote,
+    ]
+}
+
 extension GroupsSyncClient {
 
     /// Verifica la integridad Merkle de TODOS los grupos con cursor y, si hay divergencia, emite UNA señal
@@ -3273,36 +3302,37 @@ extension GroupsSyncClient {
     /// adaptado por-grupo): (1) outbox VIVO del grupo == 0; (2) dead-letters del grupo == 0 ([R7]: un
     /// dead-letter PERMANENTE deshabilita el Merkle de ESE grupo para siempre — aceptado; solo
     /// `yala_not_authorized` revive vía re-drive al aprobar al member); (3) último pull del canal completado;
-    /// (4) canon `c1`; ([R4]) corpus-vacío-remoto + local no-vacío → remoción de membership (skip, sin
-    /// canario). Divergencia real → `.diverged` (el canario/remediación los agrega el caller).
+    /// (4) canon `c2`; (5) árbol LOCAL legible — una tabla que no se deja leer es skip, nunca tabla vacía;
+    /// ([R4]) corpus-vacío-remoto + local no-vacío → remoción de membership (skip, sin canario). Divergencia real →
+    /// `.diverged` (el canario/remediación los agrega el caller). Los `reason` salen de `GroupMerkleSkipReason`.
     func verifyGroupIntegrity(groupID gid: String, context: ModelContext) async -> MerkleVerdict {
         // (1) outbox VIVO del grupo.
         let liveOutbox: Int
         do { liveOutbox = try liveOutboxCount(groupID: gid, context: context) }
-        catch { return .skipped(reason: "outbox-fetch-failed") }
+        catch { return .skipped(reason: GroupMerkleSkipReason.outboxFetchFailed) }
         guard liveOutbox == 0 else {
             GroupsSyncBreadcrumb.groupsMerkleSkipped(reason: "outbox-pending:\(liveOutbox)")
-            return .skipped(reason: "outbox-pending")
+            return .skipped(reason: GroupMerkleSkipReason.outboxPending)
         }
         // (2) dead-letters del grupo ([R7]).
         let deadLetters: Int
         do { deadLetters = try groupDeadLetteredCount(groupID: gid, context: context) }
-        catch { return .skipped(reason: "dead-letter-fetch-failed") }
+        catch { return .skipped(reason: GroupMerkleSkipReason.deadLetterFetchFailed) }
         guard deadLetters == 0 else {
             GroupsSyncBreadcrumb.groupsMerkleSkipped(reason: "dead-letters:\(deadLetters)")
-            return .skipped(reason: "dead-letters")
+            return .skipped(reason: GroupMerkleSkipReason.deadLetters)
         }
         // (3) último pull del canal completado.
         guard lastPullCycleCompleted else {
-            GroupsSyncBreadcrumb.groupsMerkleSkipped(reason: "no-completed-pull")
-            return .skipped(reason: "no-completed-pull")
+            GroupsSyncBreadcrumb.groupsMerkleSkipped(reason: GroupMerkleSkipReason.noCompletedPull)
+            return .skipped(reason: GroupMerkleSkipReason.noCompletedPull)
         }
 
         // Snapshot remoto.
         let outcome = await merkleClient.fetchMerkle(groupID: gid)
         guard case .snapshot(let remote) = outcome else {
             GroupsSyncBreadcrumb.groupsMerkleSkipped(reason: "fetch:\(outcome)")
-            return .skipped(reason: "fetch-failed")
+            return .skipped(reason: GroupMerkleSkipReason.fetchFailed)
         }
         // (4) canon (nunca comparar contratos distintos — divergencia FALSA permanente).
         // G14: `c2` desde el 2026-09-07. Lo que versiona este campo es el CONTRATO DE COLUMNAS, no el
@@ -3315,10 +3345,24 @@ extension GroupsSyncClient {
         // truco porque manda `X-Yala-Capability-Set` y el server le poda las columnas que no conoce.
         guard remote.canonVersion == "c2" else {
             GroupsSyncBreadcrumb.groupsMerkleSkipped(reason: "canon:\(remote.canonVersion)")
-            return .skipped(reason: "canon-version-mismatch")
+            return .skipped(reason: GroupMerkleSkipReason.canonVersionMismatch)
         }
 
-        let local = GroupMerkleProjection.computeLocalMerkle(groupID: gid, context: context)
+        // El cómputo local LANZA desde el 2026-09-23 (ticket `groups-merkle-reads-an-unreadable-table-as-an-empty-one`):
+        // hasta ese día una tabla que no se dejaba leer entraba con el hash de una tabla VACÍA. Con el remoto poblado
+        // eso salía de aquí como `.diverged` —y el caller le reseteaba el cursor al grupo y lo bajaba entero, sobre una
+        // avería del teléfono—; con el remoto vacío, `.converged` en falso. Y el guard [R4] de abajo no lo paraba,
+        // porque exige `!localEmpty`. El rastro por tabla lo deja `collectLeaves`; aquí, el del veredicto.
+        let local: GroupMerkleProjection.LocalGroupMerkle
+        do {
+            local = try GroupMerkleProjection.computeLocalMerkle(groupID: gid, context: context)
+        } catch {
+            #if DEBUG
+            print("GroupsSyncClient.verifyGroupIntegrity: cómputo del árbol local falló: \(error)")
+            #endif
+            GroupsSyncBreadcrumb.groupsMerkleSkipped(reason: GroupMerkleSkipReason.localMerkleFetchFailed)
+            return .skipped(reason: GroupMerkleSkipReason.localMerkleFetchFailed)
+        }
 
         // [R4] Política remoto-vacío: root remoto de corpus VACÍO (todas las entities count 0) + local no
         // vacío → NO es divergencia, es la firma de remoción de membership vía RLS (el server responde tablas
@@ -3334,7 +3378,7 @@ extension GroupsSyncClient {
         let localEmpty = local.entities.values.allSatisfy { $0.count == 0 }
         if remoteEmpty && !localEmpty {
             GroupsSyncBreadcrumb.groupsMerkleEmptyRemote()
-            return .skipped(reason: "empty-remote")
+            return .skipped(reason: GroupMerkleSkipReason.emptyRemote)
         }
 
         // Comparación por entidad (las 5 SIEMPRE — grupos no tiene cuarentena ni tablas sin cablear) + root.
