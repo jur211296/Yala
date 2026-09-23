@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-23 (Lima)
 
-**Rama** `2.1` — Merge #220: **Si al subir a la nube una tabla no se deja leer, la app ya no la da por subida ni sigue.**
+**Rama** `2.1` — Merge #221: **Al entrar en tu cuenta de la nube, el paso del 22 % ya no se queda parado para siempre.**
 TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,34 @@ TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#220 · un inventario incompleto de la migración ya no se lee como el corpus entero)
+## Esta sesión (#221 · el claim del adopt tiene techo y salida)
+
+**Al entrar en una cuenta de la nube que ya existe** («Ya tengo una cuenta» en la bienvenida, o «Activar la nube en este
+dispositivo»), **el paso del 22 % ya no se puede quedar parado para siempre**: con la sesión borrada o un 403 la tarjeta
+lo avisa en cuanto lo ve y a los 15 min se rinde con su motivo; sin red espera, y a las 72 h también se rinde. Hay
+«Cancelar la activación», y ningún texto dice que los datos siguen en el teléfono. La salida lleva a «Activar la nube en
+este dispositivo» —antes caía en «Migrar», que la puerta de identidad para con esa cuenta—, y solo para la cuenta del
+intento: con otra sesión no sale, y tras firmar otra cuenta no se adopta.
+
+Techo del claim con las dos intenciones (`driveClaim`, `ForwardCancelScope.offersCancel(_:)`); `AdoptClaimScope`;
+`MigrationState` schema 11 (`adoptClaimExitRaw` + `adoptClaimAccountHash`, apuntada al entrar en el claim); el aviso lee
+`MigrationRunner.lastClaimDefinitiveCause`. Siete claves nuevas en 16 idiomas. Regla: `.claude/rules/swiftdata-cloudkit.md`,
+punto (4) de «los otros tres pasos de la ida».
+
+Gate: 7629 unit en 748 suites y 8 XCUITest (Almacenamiento). 14 mutantes, todos muertos. Review de tres lentes: cazó
+cuatro defectos medios, todos arreglados — la marca sin cuenta (la sesión de Grupos de otra cuenta se adoptaba), la marca
+que sobrevivía a volver a iCloud, el aviso obsoleto y un «sin cambios» que afirmaba el estado del servidor. El CI cayó
+una vez por el runner sin simulador (ya tiene ticket: `ci-destination-assumes-a-simulator-that-may-not-exist`); verde al
+relanzar.
+
+### Lo que espera de Jürgen
+
+- **Device-QA** de `adopt-claim-stays-parked-with-no-ceiling` (en `qa`, con guion): aparcar el claim del adopt sin red en
+  un segundo iPhone, cancelarlo y volver a entrar.
+- Dos tickets nuevos de producto: `adopt-follower-waits-for-the-leader-with-no-ceiling` (medium: el seguidor sin techo, y
+  un «Cancelar» que se pierde) y `migrate-claim-does-not-announce-a-definitive-cause-before-its-ceiling` (low).
+
+## Sesión anterior (#220 · un inventario incompleto de la migración ya no se lee como el corpus entero)
 
 **Si al pasar tus datos a la nube, al entrar en una cuenta que ya existe o al volver a iCloud el teléfono no consigue
 leer una de tus tablas, la app ya no la da por hecha**: la ida se para con «este dispositivo no pudo preparar tus
@@ -43,7 +70,7 @@ fix; cazó el backfill, el motivo congelado de la pantalla y nueve frases que de
   (medium: el adopt en `.transient` no tiene techo ni tarjeta) y `reverse-upload-unreadable-sample-waits-the-long-ceiling`
   (low: plazo y texto de la vuelta con la base ilegible). Y uno técnico: `two-silent-local-reads-leave-a-false-or-no-trace`.
 
-## Sesión anterior (#219 · el Merkle de grupos ya no lee una tabla ilegible como vacía)
+## Sesión del #219 (el Merkle de grupos ya no lee una tabla ilegible como vacía)
 
 **Si en la comprobación periódica de un grupo el teléfono no consigue leer una de sus tablas, la app ya no da el grupo
 por vacío ni se lo vuelve a bajar entero**: se salta esa comprobación, deja rastro y lo intenta en la siguiente. Antes,
