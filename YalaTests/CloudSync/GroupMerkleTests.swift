@@ -11,7 +11,9 @@
 //   (4) `computeLocalMerkle` (store vacío → root vacío, identidad lowercased, member_key nil → skip);
 //   (5) guards EN ORDEN de `verifyGroupIntegrity` (outbox/dead-letter/no-pull/remoto-vacío → skip);
 //   (6) remediación una-vez-por-sesión (reset cursor + re-pull) + verdict diverged;
-//   (7) wiring de cadencia (`SyncCadencePolicy.shouldRunMerkle` → verifica tras N pulls completos).
+//   (7) wiring de cadencia (`SyncCadencePolicy.shouldRunMerkle` → verifica tras N pulls completos);
+//   (8) una tabla local que no se deja leer NO es una tabla vacía: lanza, el veredicto es skip y el caller ni
+//       resetea el cursor ni re-baja el grupo (ticket `groups-merkle-reads-an-unreadable-table-as-an-empty-one`).
 //  Container ON-DISK temp con los 3 stores (`.none`). `.serialized` + containers propios por test.
 //
 
@@ -304,7 +306,7 @@ struct GroupMerkleTests {
         let fixture = try loadFixture()
         let expectedEmptyRoot = try #require(fixture["empty_root_hex"] as? String)
 
-        let local = GroupMerkleProjection.computeLocalMerkle(groupID: "SplitGroup-Empty", context: context)
+        let local = try GroupMerkleProjection.computeLocalMerkle(groupID: "SplitGroup-Empty", context: context)
         #expect(local.entities.count == 5)
         for (_, s) in local.entities { #expect(s.count == 0) }
         #expect(local.rootHex == expectedEmptyRoot)
@@ -322,7 +324,7 @@ struct GroupMerkleTests {
         context.insert(m1); context.insert(m2)
         try context.save()
 
-        let local = GroupMerkleProjection.computeLocalMerkle(groupID: gid, context: context)
+        let local = try GroupMerkleProjection.computeLocalMerkle(groupID: gid, context: context)
         #expect(local.entities["group_members"]?.count == 1)  // solo el que tiene memberKey
 
         // El leaf usa la identidad LOWERCASED — reproducir el árbol con la identidad en minúsculas.
@@ -386,7 +388,7 @@ struct GroupMerkleTests {
         let context = try makeContext(dir)
         let gid = "SplitGroup-A"  // store vacío → local = corpus vacío
 
-        let local = GroupMerkleProjection.computeLocalMerkle(groupID: gid, context: context)
+        let local = try GroupMerkleProjection.computeLocalMerkle(groupID: gid, context: context)
         let emptyHash = try #require(local.entities["split_groups"]?.hashHex)
         let remote = merkleJSON(root: local.rootHex, entities: [
             "split_groups": (0, emptyHash), "group_members": (0, emptyHash), "split_expenses": (0, emptyHash),
@@ -464,7 +466,7 @@ struct GroupMerkleTests {
         let gid = "SplitGroup-A"
 
         // Merkle stub: corpus vacío-idéntico al local (converge). Cuenta las llamadas al endpoint merkle.
-        let localEmpty = GroupMerkleProjection.computeLocalMerkle(groupID: gid, context: context)
+        let localEmpty = try GroupMerkleProjection.computeLocalMerkle(groupID: gid, context: context)
         let emptyHash = try #require(localEmpty.entities["split_groups"]?.hashHex)
         let merkleStub = StubSession(merkleJSON(root: localEmpty.rootHex, entities: [
             "split_groups": (0, emptyHash), "group_members": (0, emptyHash), "split_expenses": (0, emptyHash),
@@ -491,6 +493,133 @@ struct GroupMerkleTests {
         #expect(merkleStub.callCount == 1)
         #expect(client.completedPullsSinceMerkle == 0)
         #expect(client.lastMerkleAt != nil)
+    }
+
+    // MARK: - (8) Una tabla ilegible NO es una tabla vacía
+
+    /// Remoto POBLADO con hashes que no casan con nada local: sin el arreglo, una tabla ilegible entraba con el hash de
+    /// una tabla vacía y el grupo salía `.diverged`. Así cualquier `return []` en el `catch` de un fetch se ve.
+    private func populatedBogusRemote() -> String {
+        merkleJSON(root: "bb", entities: [
+            "split_groups": (1, "aaaa0001"), "group_members": (1, "aaaa0002"),
+            "split_expenses": (1, "aaaa0003"), "split_shares": (1, "aaaa0004"), "split_settlements": (1, "aaaa0005"),
+        ])
+    }
+
+    /// Los CINCO fetch, uno a uno: con el seam en una sola tabla, las otras cuatro se leen de verdad, así que el `catch`
+    /// que se recorre es el de ESA tabla. Control en el mismo caso: sin el seam, el cómputo no lanza.
+    @Test(arguments: GroupMerkleProjection.entityTables)
+    func computeLocalMerkle_unreadableTable_throwsInsteadOfHashingItEmpty(table: String) throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let gid = "SplitGroup-A"
+        _ = makeExpense(gid, context: context); try context.save()
+
+        GroupMerkleProjection._testThrowOnLeafFetchOf = [table]
+        defer { GroupMerkleProjection._testThrowOnLeafFetchOf = [] }
+        #expect(throws: GroupMerkleLocalReadError.leafFetchFailed(table: table)) {
+            _ = try GroupMerkleProjection.computeLocalMerkle(groupID: gid, context: context)
+        }
+
+        GroupMerkleProjection._testThrowOnLeafFetchOf = []
+        let local = try GroupMerkleProjection.computeLocalMerkle(groupID: gid, context: context)
+        #expect(local.entities.count == 5)
+        #expect(local.entities["split_expenses"]?.count == 1)
+    }
+
+    /// Los motivos de skip de Grupos no se repiten, y el nuevo tiene su texto propio: si valiera `"fetch-failed"`, los
+    /// tests que comparan contra la constante seguirían verdes y el rastro no separaría la avería local de la red.
+    @Test func groupSkipReasons_areDistinct_andTheLocalOneHasItsOwnText() {
+        #expect(Set(GroupMerkleSkipReason.all).count == GroupMerkleSkipReason.all.count)
+        #expect(GroupMerkleSkipReason.all.count == 9)
+        #expect(GroupMerkleSkipReason.localMerkleFetchFailed == "local-merkle-fetch-failed")
+    }
+
+    /// El veredicto: una tabla ilegible es `.skipped(local-merkle-fetch-failed)`, nunca `.diverged`. Control en la
+    /// dirección contraria con el MISMO remoto: legible, la divergencia real se sigue detectando.
+    @Test(arguments: GroupMerkleProjection.entityTables)
+    func verify_unreadableLocalTable_skipsInsteadOfDiverging(table: String) async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let gid = "SplitGroup-A"
+        _ = makeExpense(gid, context: context); try context.save()
+        let client = GroupsSyncClient(
+            tokenProvider: { "jwt" }, urlSession: StubSession(emptyPageJSON),
+            merkleClient: GroupsMerkleClient(tokenProvider: { "jwt" }, urlSession: StubSession(populatedBogusRemote())))
+        client._testMarkPullCompleted()
+
+        GroupMerkleProjection._testThrowOnLeafFetchOf = [table]
+        defer { GroupMerkleProjection._testThrowOnLeafFetchOf = [] }
+        let unreadable = await client.verifyGroupIntegrity(groupID: gid, context: context)
+        #expect(unreadable == .skipped(reason: GroupMerkleSkipReason.localMerkleFetchFailed))
+
+        GroupMerkleProjection._testThrowOnLeafFetchOf = []
+        let readable = await client.verifyGroupIntegrity(groupID: gid, context: context)
+        #expect(readable == .diverged(entities: GroupMerkleProjection.entityTables.sorted()))
+    }
+
+    /// La otra cara del bug: con el remoto VACÍO, un local ilegible que se hashea vacío CONVERGE en falso. Control: el
+    /// mismo par, legible, converge de verdad.
+    @Test func verify_unreadableLocal_againstEmptyRemote_doesNotConvergeFalsely() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let gid = "SplitGroup-A"  // store vacío → el local legible es el corpus vacío
+        let empty = try GroupMerkleProjection.computeLocalMerkle(groupID: gid, context: context)
+        let emptyHash = try #require(empty.entities["split_groups"]?.hashHex)
+        let remote = merkleJSON(root: empty.rootHex, entities: [
+            "split_groups": (0, emptyHash), "group_members": (0, emptyHash), "split_expenses": (0, emptyHash),
+            "split_shares": (0, emptyHash), "split_settlements": (0, emptyHash),
+        ])
+        let client = GroupsSyncClient(
+            tokenProvider: { "jwt" }, urlSession: StubSession(emptyPageJSON),
+            merkleClient: GroupsMerkleClient(tokenProvider: { "jwt" }, urlSession: StubSession(remote)))
+        client._testMarkPullCompleted()
+
+        GroupMerkleProjection._testThrowOnLeafFetchOf = Set(GroupMerkleProjection.entityTables)
+        defer { GroupMerkleProjection._testThrowOnLeafFetchOf = [] }
+        let unreadable = await client.verifyGroupIntegrity(groupID: gid, context: context)
+        #expect(unreadable == .skipped(reason: GroupMerkleSkipReason.localMerkleFetchFailed))
+
+        GroupMerkleProjection._testThrowOnLeafFetchOf = []
+        let readable = await client.verifyGroupIntegrity(groupID: gid, context: context)
+        #expect(readable == .converged)
+    }
+
+    /// El caller: con la tabla ilegible NO resetea el cursor, NO re-baja el grupo y NO gasta la remediación de la
+    /// sesión; sí re-arma la cadencia, así que la próxima verificación lo vuelve a intentar. Control: legible, el
+    /// mismo grupo SÍ se remedia (el cursor baja a 0).
+    @Test func runVerification_unreadableLocalTable_neitherResetsTheCursorNorRepulls() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let gid = "SplitGroup-A"
+        _ = makeExpense(gid, context: context)
+        let pullStub = StubSession(emptyPageJSON)
+        let client = GroupsSyncClient(
+            tokenProvider: { "jwt" }, urlSession: pullStub,
+            merkleClient: GroupsMerkleClient(tokenProvider: { "jwt" }, urlSession: StubSession(populatedBogusRemote())))
+        let cursor = try client.loadOrCreateCursor(context)
+        cursor.groupCursorsJSON = "{\"\(gid)\":5}"
+        try context.save()
+        client._testMarkPullCompleted()
+
+        GroupMerkleProjection._testThrowOnLeafFetchOf = ["split_expenses"]
+        defer { GroupMerkleProjection._testThrowOnLeafFetchOf = [] }
+        await client.runGroupMerkleVerification(context: context, now: .now)
+        let afterSkip = try JSONDecoder().decode(
+            [String: Int64].self, from: Data(client.loadOrCreateCursor(context).groupCursorsJSON.utf8))
+        #expect(afterSkip[gid] == 5)                          // cursor intacto
+        #expect(!client.didRemediateGroupMerkleThisSession)   // la remediación de la sesión sigue disponible
+        #expect(pullStub.callCount == 0)                      // no hubo re-pull
+        #expect(client.lastMerkleAt != nil)                   // cadencia re-armada: se reintenta
+
+        GroupMerkleProjection._testThrowOnLeafFetchOf = []
+        client._testMarkPullCompleted()
+        await client.runGroupMerkleVerification(context: context, now: .now)
+        let afterReadable = try JSONDecoder().decode(
+            [String: Int64].self, from: Data(client.loadOrCreateCursor(context).groupCursorsJSON.utf8))
+        #expect(client.didRemediateGroupMerkleThisSession)
+        #expect(afterReadable[gid] == 0)
+        #expect(pullStub.callCount > 0)
     }
 
     // MARK: - Helpers

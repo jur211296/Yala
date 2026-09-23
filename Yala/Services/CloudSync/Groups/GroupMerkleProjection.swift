@@ -35,8 +35,26 @@ import CryptoKit
 import Foundation
 import SwiftData
 
+/// El árbol local de un grupo no se pudo computar porque una de sus tablas no se dejó leer (ticket
+/// `groups-merkle-reads-an-unreadable-table-as-an-empty-one`). `table` es el nombre de tabla del manifest (sin PII).
+enum GroupMerkleLocalReadError: Error, Equatable {
+    case leafFetchFailed(table: String)
+}
+
 @MainActor
 enum GroupMerkleProjection {
+
+    /// Seam para montar «esta tabla del grupo no se deja leer» sin tocar el store (`ModelContext` es una `final
+    /// class` sin protocolo detrás). Molde de `SyncMerkle._testThrowOnLeafFetch`. SOLO tests.
+    ///
+    /// **Es un conjunto de tablas y no un `Bool`**: los cinco fetch de `computeLocalMerkle` corren en fila, así que
+    /// con un `Bool` el primero cortaría siempre y los otros cuatro `catch` serían inalcanzables — un mutante que
+    /// devolviera `return []` en cualquiera de ellos pasaría en verde. ESTÁTICO: resetéalo en `defer`.
+    ///
+    /// **Lanza un error de SwiftData/Foundation, no `GroupMerkleLocalReadError`**: así el test solo ve
+    /// `.leafFetchFailed(table:)` si el `catch` REAL lo convirtió. Con el mismo error, sacar el seam fuera del `do` o
+    /// dejar el `catch` en `throw error` pasaban en verde (lo cazó una lente de la review del 2026-09-23).
+    static var _testThrowOnLeafFetchOf: Set<String> = []
 
     // MARK: - Nombres de tabla (las 5, orden irrelevante — el ensamblado ordena por UTF-8)
 
@@ -143,28 +161,32 @@ enum GroupMerkleProjection {
     /// Computa el árbol Merkle local (Canal 1) del grupo `groupID`: para cada una de las 5 tablas, las filas
     /// VIVAS de ESE grupo → proyección FULL → leaf (identidad lowercased por-entidad); entityHash + root con
     /// las primitivas A-4 de `SyncMerkle`. Fetches CONCRETOS por tipo (regla `#Predicate`).
-    static func computeLocalMerkle(groupID gid: String, context: ModelContext) -> LocalGroupMerkle {
+    ///
+    /// **`throws` desde el 2026-09-23** (ticket `groups-merkle-reads-an-unreadable-table-as-an-empty-one`): una tabla
+    /// que no se deja leer ya no se ensambla como una tabla vacía. El único consumidor de producción es
+    /// `GroupsSyncClient.verifyGroupIntegrity`, que lo convierte en `.skipped(GroupMerkleSkipReason.localMerkleFetchFailed)`.
+    static func computeLocalMerkle(groupID gid: String, context: ModelContext) throws -> LocalGroupMerkle {
         var digests: [String: Data] = [:]
         var entities: [String: EntitySummary] = [:]
 
-        let expenseLeaves = collectLeaves(
+        let expenseLeaves = try collectLeaves(
             SplitExpense.self, emission: splitExpense, groupID: gid,
             groupFilter: #Predicate { $0.groupZoneID == gid }, identity: { $0.id.uuidString.lowercased() },
             context: context)
-        let shareLeaves = collectLeaves(
+        let shareLeaves = try collectLeaves(
             SplitShare.self, emission: splitShare, groupID: gid,
             groupFilter: #Predicate { $0.groupZoneID == gid }, identity: { $0.id.uuidString.lowercased() },
             context: context)
-        let settlementLeaves = collectLeaves(
+        let settlementLeaves = try collectLeaves(
             SplitSettlement.self, emission: splitSettlement, groupID: gid,
             groupFilter: #Predicate { $0.groupZoneID == gid }, identity: { $0.id.uuidString.lowercased() },
             context: context)
-        let groupLeaves = collectLeaves(
+        let groupLeaves = try collectLeaves(
             SplitGroup.self, emission: splitGroup, groupID: gid,
             groupFilter: #Predicate { $0.cloudKitZoneID == gid }, identity: { $0.cloudKitZoneID.lowercased() },
             context: context)
         // group_members: identidad = member_key OPCIONAL; nil → SKIP con breadcrumb (jamás keyea un leaf).
-        let memberLeaves = collectMemberLeaves(groupID: gid, context: context)
+        let memberLeaves = try collectMemberLeaves(groupID: gid, context: context)
 
         let computed: [(String, [(String, Data)])] = [
             (splitExpense.table, expenseLeaves),
@@ -185,18 +207,27 @@ enum GroupMerkleProjection {
     /// Leaves de UNA entidad de contenido/meta del grupo. Una fila cuyo payload el codec rechaza se SALTA con
     /// rastro (mejor una divergencia detectable que un crash del verificador — hueco documentado, molde
     /// `SyncMerkle.collectLeaves`).
+    ///
+    /// **El fetch que lanza NO se salta: LANZA.** Hasta el 2026-09-23 devolvía `[]`, y el ensamblado lo hasheaba con
+    /// `sha256("")` —byte a byte el hash de una tabla sin filas—, así que con el servidor poblado el grupo salía
+    /// `.diverged` y la remediación le reseteaba el cursor y lo bajaba entero; con el servidor vacío, convergía en
+    /// falso. La fila que no canonicaliza se salta porque el resto de la tabla SÍ se leyó; la tabla que no se pudo
+    /// leer no deja nada que comparar.
     private static func collectLeaves<M: PersistentModel>(
         _ type: M.Type, emission: EntityEmission<M>, groupID: String,
         groupFilter: Predicate<M>, identity: (M) -> String, context: ModelContext
-    ) -> [(String, Data)] {
+    ) throws -> [(String, Data)] {
         let models: [M]
+        // El seam va DENTRO del `do`: el camino de error que recorre un test es el `catch` REAL del fetch.
         do {
+            if _testThrowOnLeafFetchOf.contains(emission.table) { throw CocoaError(.fileReadCorruptFile) }
             models = try context.fetch(FetchDescriptor<M>(predicate: groupFilter))
         } catch {
             #if DEBUG
             print("GroupMerkleProjection.collectLeaves<\(M.self)> fetch falló: \(error)")
             #endif
-            return []
+            GroupsSyncBreadcrumb.groupsMerkleLocalReadFailed(table: emission.table)
+            throw GroupMerkleLocalReadError.leafFetchFailed(table: emission.table)
         }
         var leaves: [(String, Data)] = []
         for model in models {
@@ -217,15 +248,18 @@ enum GroupMerkleProjection {
     /// Leaves de `group_members` (pull-only): identidad = `SplitMember.memberKey` (OPCIONAL). Una fila SIN
     /// `memberKey` (member CloudKit preexistente no adoptado — mundo born-backend DARK no lo produce) NO puede
     /// keyear su leaf → SKIP con breadcrumb `memberKeyMissing` (jamás crash). Residual G6 (grupos migrados).
-    private static func collectMemberLeaves(groupID gid: String, context: ModelContext) -> [(String, Data)] {
+    /// Su fetch LANZA como el de `collectLeaves`, y por lo mismo.
+    private static func collectMemberLeaves(groupID gid: String, context: ModelContext) throws -> [(String, Data)] {
         let models: [SplitMember]
         do {
+            if _testThrowOnLeafFetchOf.contains(groupMember.table) { throw CocoaError(.fileReadCorruptFile) }
             models = try context.fetch(FetchDescriptor<SplitMember>(predicate: #Predicate { $0.groupZoneID == gid }))
         } catch {
             #if DEBUG
             print("GroupMerkleProjection.collectMemberLeaves fetch falló: \(error)")
             #endif
-            return []
+            GroupsSyncBreadcrumb.groupsMerkleLocalReadFailed(table: groupMember.table)
+            throw GroupMerkleLocalReadError.leafFetchFailed(table: groupMember.table)
         }
         var leaves: [(String, Data)] = []
         for model in models {

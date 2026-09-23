@@ -1,10 +1,10 @@
 ---
 id: groups-merkle-reads-an-unreadable-table-as-an-empty-one
-status: backlog
+status: done
 priority: high
 area: "grupos, modo-nube"
 created: 2026-09-22
-updated: 2026-09-22
+updated: 2026-09-23
 source: "barrido del patrón durante `verify-reads-a-failed-local-fetch-as-an-empty-outbox` (2026-09-22)"
 ---
 
@@ -52,11 +52,31 @@ un `print` bajo `#if DEBUG`, mudo en producción.
 
 ## Criterios de aceptación
 
-- [ ] Un `fetch` que lanza en el cómputo del árbol local de un grupo NO se hashea como tabla vacía.
-- [ ] `verifyGroupIntegrity` no devuelve `.diverged` por una lectura local que falló, y por tanto no resetea
+- [x] Un `fetch` que lanza en el cómputo del árbol local de un grupo NO se hashea como tabla vacía.
+- [x] `verifyGroupIntegrity` no devuelve `.diverged` por una lectura local que falló, y por tanto no resetea
       cursores ni re-baja el grupo.
-- [ ] Hay rastro en producción de esa avería (hoy no lo hay).
-- [ ] Test con el fetch lanzando + control en la dirección contraria (una divergencia REAL se sigue detectando).
+- [x] Hay rastro en producción de esa avería (hoy no lo hay).
+- [x] Test con el fetch lanzando + control en la dirección contraria (una divergencia REAL se sigue detectando).
+
+## Resuelto (2026-09-23)
+
+- **El árbol local lanza.** `GroupMerkleProjection.computeLocalMerkle`, `collectLeaves` y `collectMemberLeaves` son
+  `throws` (`GroupMerkleLocalReadError.leafFetchFailed(table:)`); la fila que no canonicaliza se sigue saltando.
+- **Veredicto propio.** `verifyGroupIntegrity` devuelve `.skipped(GroupMerkleSkipReason.localMerkleFetchFailed)`. Todos
+  sus motivos salen ahora de `GroupMerkleSkipReason` (mismos valores); **no** de `MerkleSkipReason`, cuyo `all` es el
+  canario del canal personal.
+- **Caller sin cambios, ahora fijado**: un skip no cuenta, no remedia, no gasta la remediación de la sesión y re-arma la
+  cadencia (vuelve a intentarlo como mucho cada 30 min).
+- **Rastro en producción**: `GroupsSyncBreadcrumb.groupsMerkleLocalReadFailed(table:)` + `groupsMerkleSkipped`. Este
+  criterio se verificó LEYENDO el código: el `Logger` no tiene sink que un test pueda leer.
+- A `done` sin device-QA: una base local ilegible no se provoca en un iPhone.
+- Tests: bloque (8) de `GroupMerkleTests` (las 5 tablas una a una con control positivo, falso converge contra remoto
+  vacío, caller, unicidad de motivos). 9 mutantes, todos muertos (dos de ellos los propuso la review: el seam ahora
+  lanza un `CocoaError` para que solo pase si el `catch` real lo convierte). Regla: `.claude/rules/swiftdata-cloudkit.md`,
+  «Y el Merkle tampoco».
+- Review de tres lentes: ningún defecto de comportamiento en el fix. Ticket nuevo:
+  `groups-cursor-map-reads-an-undecodable-json-as-no-cursors`. Descartado sin ticket: un remoto con `entities: {}`
+  contaría como «remoto vacío» — inferido, y el servidor emite siempre las cinco tablas del manifest.
 
 ## Relacionado
 
