@@ -6062,6 +6062,8 @@
 "storage.failed.adoptStalled" = "We couldn’t sign you in to your cloud account: turning on the cloud hasn’t moved forward in days. This device didn’t change anything you have in the cloud — try again later.";
 "storage.failed.adoptSessionExpired" = "We couldn’t sign you in to your cloud account: your session expired. This device didn’t change anything you have in the cloud — try again and sign in with your account once more.";
 "storage.failed.adoptAccountUnavailable" = "We couldn’t sign you in to your cloud account: we can’t give you access to this account right now. Write to us at %@ and we’ll look into it with you.";
+"storage.failed.adoptEffectLocalFailure" = "We couldn’t sign you in to your cloud account: this device couldn’t read your data to combine it with your account’s. What you have on this device is still here — try again in a little while.";
+"storage.failed.adoptEffectStalled" = "We couldn’t sign you in to your cloud account: turning on the cloud hasn’t been able to finish in days. What you have on this device is still here — try again later.";
 /* Botón de la tarjeta de progreso: cancelar la activación de la nube */
 "storage.progress.cancelMigration" = "Cancel turning on the cloud";
 /* Título de la confirmación de cancelar la activación */
@@ -6069,6 +6071,7 @@
 /* Cuerpo de la confirmación de cancelar la activación */
 "storage.confirm.cancelMigrationBody" = "Your data stays on this device, just as before. What was already uploaded stays in your cloud account. You can try again whenever you like.";
 "storage.confirm.cancelAdoptBody" = "This device didn’t change anything you have in the cloud. You can turn on the cloud for this device again from here whenever you like.";
+"storage.confirm.cancelAdoptEffectBody" = "What you have on this device is still here, as before. You can turn on the cloud for this device again from here whenever you like.";
 /* Botón que confirma cancelar la activación */
 "storage.confirm.cancelMigrationConfirm" = "Yes, cancel";
 /* Botón que sigue con la activación */

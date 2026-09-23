@@ -5333,6 +5333,8 @@
 "storage.failed.adoptStalled" = "No pudimos entrar en tu cuenta de la nube: la activación lleva días sin avanzar. Este dispositivo no cambió nada de lo que tenés en la nube; volvé a intentarlo más tarde.";
 "storage.failed.adoptSessionExpired" = "No pudimos entrar en tu cuenta de la nube: tu sesión caducó. Este dispositivo no cambió nada de lo que tenés en la nube; volvé a intentarlo y entrá otra vez con tu cuenta.";
 "storage.failed.adoptAccountUnavailable" = "No pudimos entrar en tu cuenta de la nube: ahora mismo no podemos darte acceso a esta cuenta. Escribinos a %@ y lo revisamos con vos.";
+"storage.failed.adoptEffectLocalFailure" = "No pudimos entrar en tu cuenta de la nube: este dispositivo no pudo leer tus datos para juntarlos con los de tu cuenta. Lo que tenés en este dispositivo sigue acá; volvé a intentarlo en un rato.";
+"storage.failed.adoptEffectStalled" = "No pudimos entrar en tu cuenta de la nube: la activación lleva días sin poder terminar. Lo que tenés en este dispositivo sigue acá; volvé a intentarlo más tarde.";
 /* Botón de la tarjeta de progreso: cancelar la activación de la nube */
 "storage.progress.cancelMigration" = "Cancelar la activación";
 /* Título de la confirmación de cancelar la activación */
@@ -5340,6 +5342,7 @@
 /* Cuerpo de la confirmación de cancelar la activación */
 "storage.confirm.cancelMigrationBody" = "Tus datos siguen en este dispositivo, como hasta ahora. Lo que ya se subió se queda en tu cuenta de la nube. Podés volver a intentarlo cuando quieras.";
 "storage.confirm.cancelAdoptBody" = "Este dispositivo no cambió nada de lo que tenés en la nube. Podés volver a activar la nube en este dispositivo desde acá cuando quieras.";
+"storage.confirm.cancelAdoptEffectBody" = "Lo que tenés en este dispositivo sigue acá, como hasta ahora. Podés volver a activar la nube en este dispositivo desde acá cuando quieras.";
 /* Botón que confirma cancelar la activación */
 "storage.confirm.cancelMigrationConfirm" = "Sí, cancelar";
 /* Botón que sigue con la activación */

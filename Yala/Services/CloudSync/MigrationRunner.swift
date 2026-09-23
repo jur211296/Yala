@@ -181,6 +181,37 @@ nonisolated enum ForwardCancelScope {
             return false
         }
     }
+
+    /// Lo mismo, más el EFECTO del adopt que se reintenta (`AdoptEffectScope`, ticket
+    /// `adopt-effect-retries-forever-with-no-ceiling`): su fase es `notStarted`, que no puede entrar en el `switch` de arriba
+    /// porque es también la del teléfono que nunca empezó y la del adoptado estable. Es la que consultan el runner y el
+    /// controller; la de arriba queda como la parte que decide la FASE.
+    static func offersCancel(_ phase: MigrationPhase, adoptEffectPending: Bool) -> Bool {
+        offersCancel(phase) || adoptEffectPending
+    }
+}
+
+/// ¿Se está reintentando el EFECTO del adopt? El par `(notStarted, [.adoptBackendAccount])` que deja un claim que ya
+/// contestó `existing_stable` cuando el reconcile de huérfanas no termina (ticket `adopt-effect-retries-forever-with-no-ceiling`).
+/// Hasta ese ticket Almacenamiento lo pintaba como `.idle` —como si nunca hubiera empezado— y el runner lo reintentaba para
+/// siempre, sin techo ni salida.
+///
+/// **`persistedCloudMode` es un término, no un detalle**: un kill entre el paso 5 del adopt (`writeCloudArmed`) y el save que
+/// retira el pendiente relanza con `.cloud` + el pendiente. Ahí el adopt ya hizo lo irreversible, así que ni se cancela ni
+/// sale a `failedRollback` (dejaría `.cloud` en un terminal de fallo): se reintenta como siempre.
+nonisolated enum AdoptEffectScope {
+    /// `adoptEffectJournaled` = `.adoptBackendAccount` está entre los efectos pendientes del journal.
+    static func isPending(_ phase: MigrationPhase, adoptEffectJournaled: Bool, persistedCloudMode: Bool) -> Bool {
+        phase == .notStarted && adoptEffectJournaled && !persistedCloudMode
+    }
+}
+
+/// Por qué no termina el efecto del adopt cuando la causa es de las que esperar NO arregla. El `rawValue` es el detalle del
+/// canario (`cloudForwardStepWaiting` con `step=adopt`): WIRE, no se renombra. La red, la quiescencia del import y la
+/// sesión borrada en la enumeración no llegan aquí: van al plazo largo.
+nonisolated enum AdoptEffectBlocker: String, Equatable, Sendable {
+    /// El reconcile no pudo leer o escribir la base LOCAL (`MigrationExecutorError.adoptLocalFailure`).
+    case localFailure
 }
 
 /// ¿Es ESTE el claim de un adopt? La fase `claimingMigration` con la intención journaleada de entrar en una cuenta que ya
@@ -244,8 +275,9 @@ nonisolated enum AdoptClaimNotice: Equatable, Sendable {
     case accountUnavailable
 }
 
-/// Cómo salió el claim de un ADOPT (`MigrationState.adoptClaimExitRaw`, ticket `adopt-claim-stays-parked-with-no-ceiling`).
-/// El `rawValue` va al journal: WIRE, no se renombra.
+/// Cómo salió el claim de un ADOPT (`MigrationState.adoptClaimExitRaw`, ticket `adopt-claim-stays-parked-with-no-ceiling`),
+/// o desde `adopt-effect-retries-forever-with-no-ceiling` su EFECTO. El nombre se queda —es WIRE y lo leen la tarjeta y la
+/// cuenta atada—: los dos son el mismo adopt que sale de la misma pantalla. El `rawValue` va al journal: no se renombra.
 nonisolated enum AdoptClaimExit: String, Equatable, Sendable {
     /// 72 h sin avanzar, con la causa que fuera.
     case stalled
@@ -253,8 +285,14 @@ nonisolated enum AdoptClaimExit: String, Equatable, Sendable {
     case sessionExpired
     /// El claim contestó 403: 15 min acumulados.
     case accountUnavailable
-    /// La persona tocó «Cancelar la activación». No hay tarjeta de fallo: la fase va a `notStarted`.
+    /// La persona tocó «Cancelar la activación». No hay tarjeta de fallo: la fase va a `notStarted`. Vale para el claim y
+    /// para el efecto.
     case cancelled
+    /// El EFECTO del adopt —el reconcile de huérfanas, tras un claim que ya contestó— lleva 72 h sin terminar, con la causa
+    /// que fuera (ticket `adopt-effect-retries-forever-with-no-ceiling`).
+    case effectStalled
+    /// El efecto del adopt no pudo leer la base local durante 15 min acumulados.
+    case effectLocalFailure
 
     /// El motivo del techo que venció, en el claim. `refused`, `otherDevice` y `localFailure` no los produce el claim (son
     /// del cutover y de la identidad); si uno llegara, la salida se cuenta como el techo largo, que no acusa a nadie.
@@ -633,6 +671,11 @@ protocol MigrationWorkExecuting: AnyObject {
     /// que sale (ticket `adopt-claim-stays-parked-with-no-ceiling`). Se lee al entrar y no al salir porque la salida más
     /// común de las definitivas es justo la sesión borrada. Default `nil` en la extension de abajo.
     func currentAccountHash() -> String?
+    /// ¿Está ya persistido `storageMode == .cloud`? Lo pregunta el runner antes de contar un fallo del adopt para su techo
+    /// (ticket `adopt-effect-retries-forever-with-no-ceiling`): un adopt que ya escribió el par `.cloud` —un kill entre el
+    /// paso 5 y el borrado del pendiente— no puede salir a `failedRollback`, que dejaría `.cloud` persistido en un terminal
+    /// de fallo. Default `false` en la extension de abajo.
+    func hasPersistedCloudMode() -> Bool
     /// w3: backfill de `syncID` (gate permanente) + captura `(ckRecordName, ckZoneName)` con el mirror vivo.
     func assignIdentity() async throws
     /// w4: sube el snapshot completo en batches idempotentes. `cursor` = última página confirmada (journal).
@@ -725,6 +768,9 @@ extension MigrationWorkExecuting {
 
     /// Default: sin sesión que describir, no se sabe de qué cuenta es el intento.
     func currentAccountHash() -> String? { nil }
+
+    /// Default: el modo sigue en iCloud, que es lo que un fake que no lo guiona describe.
+    func hasPersistedCloudMode() -> Bool { false }
 }
 
 // MARK: - Runner
@@ -961,6 +1007,9 @@ final class MigrationRunner {
             state.snapshotExitReasonRaw = nil
             // Lo mismo para los tres pasos sin cifra que baje (22 %, 35 %, 80 %).
             state.forwardStepExitReasonRaw = nil
+            // El reloj del efecto del adopt ya salió a `nil` en el `handle` de la salida; se borra también aquí porque este
+            // save escribe la fase sin pasar por `handle`.
+            state.clearAdoptEffectStallCeiling()
             if target == .notStarted { state.startedAt = nil }
             state.updatedAt = self.now()
             try self.context.save()
@@ -1044,7 +1093,20 @@ final class MigrationRunner {
         let state = try loadState()
         let phase = state.readPhase().phase
         let claimIntent = state.forwardClaimIntentRaw.flatMap(ForwardClaimIntent.init(rawValue:)) ?? .adoptIfExisting
-        guard ForwardCancelScope.offersCancel(phase) else { return false }
+        let adoptEffectPending = AdoptEffectScope.isPending(
+            phase, adoptEffectJournaled: state.readPendingEffects().contains(.adoptBackendAccount),
+            persistedCloudMode: executor.hasPersistedCloudMode())
+        guard ForwardCancelScope.offersCancel(phase, adoptEffectPending: adoptEffectPending) else { return false }
+        if adoptEffectPending {
+            // El efecto del adopt que se reintenta (ticket `adopt-effect-retries-forever-with-no-ceiling`): sale sin el
+            // pendiente y deja la marca del adopt en el MISMO save, como la cancelación del claim. Sin ella Almacenamiento
+            // ofrecería «Migrar», que la puerta de identidad para con esa cuenta.
+            try await handle(.adoptEffectCancelled) { state, _ in
+                state.adoptClaimExitRaw = AdoptClaimExit.cancelled.rawValue
+                self.reportAdoptEffectExit(reason: "cancelled")
+            }
+            return true
+        }
         if phase == .uploadingSnapshot {
             try await handle(.snapshotUploadCancelled) { _, _ in
                 CloudSyncBreadcrumb.snapshotUploadExited(reason: "cancelled")
@@ -1229,6 +1291,12 @@ final class MigrationRunner {
             if ForwardStepPhase(phase: next) != ForwardStepPhase(phase: current) {
                 state.clearForwardStepStallCeiling()
             }
+            // Techo del EFECTO del adopt: CUALQUIER transición lo invalida (ticket
+            // `adopt-effect-retries-forever-with-no-ceiling`). El efecto solo se espera sin evento —la observación que no
+            // vence no pasa por aquí—, así que toda transición es un desenlace o un intento nuevo: el claim que vuelve a
+            // emitir `.adoptBackendAccount`, la cancelación, la salida, o un «Migrar» que reemplaza el pendiente. Sin esto el
+            // adopt siguiente heredaría el sello y saldría con cero segundos de parada real.
+            state.clearAdoptEffectStallCeiling()
             mutate(state, next)
             state.updatedAt = now()
             try context.save()
@@ -1258,15 +1326,101 @@ final class MigrationRunner {
                 try await handle(.reverseMirrorMounted)
                 return
             }
+            // Un «Cancelar» apuntado con el efecto del adopt pendiente se honra ANTES de intentarlo otra vez (hallazgo de la
+            // review de `adopt-effect-retries-forever-with-no-ceiling`): mirándolo solo al fallar, un intento que saliera
+            // bien adoptaba a quien acababa de confirmar que cancelaba. Un intento que ya está dentro del efecto no se para:
+            // eso lo recoge el `catch` de abajo si falla.
+            if effect == .adoptBackendAccount, migrationCancelRequested, try await journalMigrationCancel() { return }
             do {
                 try await executor.execute(effect)
             } catch {
                 CloudSyncBreadcrumb.migrationEffectFailed(effect: effect.rawValue, reason: "\(error)")
+                // El efecto del adopt tiene techo y salida (ticket `adopt-effect-retries-forever-with-no-ceiling`): si la
+                // observación sale —por el techo o por un «Cancelar» apuntado—, la pasada termina sin parada retomable.
+                if effect == .adoptBackendAccount, try await observeAdoptEffectFailure(error) { return }
                 throw Stop.effectFailed
             }
             removeFirstPending(state)
+            // El adopt terminó: su reloj se va en el MISMO save que retira el efecto, para que un kill no deje un sello
+            // huérfano que el adopt siguiente heredaría.
+            if effect == .adoptBackendAccount { state.clearAdoptEffectStallCeiling() }
             try context.save()
         }
+    }
+
+    /// Un intento fallido del EFECTO del adopt (`.adoptBackendAccount` pendiente en `notStarted`). Decide si sigue esperando
+    /// —el efecto se queda pendiente y el próximo `resume()` lo reintenta, como siempre— o sale a `failedRollback` con la
+    /// marca del adopt (ticket `adopt-effect-retries-forever-with-no-ceiling`, decisiones de Jürgen del 2026-09-23: 15 min
+    /// acumulados con la base local que no se deja leer, 72 h con cualquier causa, la misma salida que el claim del adopt).
+    ///
+    /// **Molde de `observeForwardStepStall`, con dos diferencias.** Una: la espera NO pasa por `handle` —una transición que
+    /// repusiera el pendiente lo ejecutaría otra vez dentro del mismo `handle`—, así que la observación bajo presupuesto
+    /// sella el reloj con su propio save, y solo la salida es un evento. Dos: el corto usa el reloj de «cualquier motivo
+    /// definitivo» (`CauseStallClock.observeAnyDefinitive`) y no el de causa, porque hoy hay un solo motivo y un reloj que
+    /// ya suma entre motivos no hace falta rehacerlo el día que haya dos. La red lo PAUSA, no lo borra: el re-kick de
+    /// Almacenamiento llega cada 30 s.
+    ///
+    /// Antes de contar, dos salidas que no son el techo: el «sí» de «Cancelar» apuntado por la pasada en vuelo, y el modo ya
+    /// persistido a `.cloud` —un kill tras el paso 5—, que no puede salir a un terminal de fallo y se reintenta como antes.
+    ///
+    /// Devuelve `true` si la pasada terminó (canceló o salió).
+    private func observeAdoptEffectFailure(_ error: Error) async throws -> Bool {
+        if migrationCancelRequested, try await journalMigrationCancel() { return true }
+        guard !executor.hasPersistedCloudMode() else { return false }
+        let blocker: AdoptEffectBlocker? =
+            (error as? MigrationExecutorError) == .adoptLocalFailure ? .localFailure : nil
+        let state = try loadState()
+        let observedAt = now()
+        let lastProgressAt: Date
+        if let sealed = state.adoptEffectStallProgressAt, sealed <= observedAt {
+            lastProgressAt = sealed
+        } else {
+            lastProgressAt = observedAt                      // sin sello, o con un sello en el FUTURO
+        }
+        let stalled = observedAt.timeIntervalSince(lastProgressAt)
+        let clock = CauseStallClock.observeAnyDefinitive(
+            sealedOpenSince: state.adoptEffectStallDefinitiveAt,
+            sealedAccrued: state.adoptEffectStallDefinitiveAccruedSeconds,
+            isDefinitive: blocker != nil,
+            observedAt: observedAt)
+        // El rastro y el canario de los pasos de la ida, con `step=adopt`: la misma serie en el dashboard, en CADA
+        // observación, para ver un fallo sistémico antes de que ningún teléfono agote su plazo.
+        CloudSyncBreadcrumb.forwardStepStalled(
+            step: Self.adoptEffectStep, stalledSeconds: stalled, causeStalledSeconds: clock.stalled,
+            blocker: blocker?.rawValue)
+        MetricsService.cloudForwardStepWaiting(
+            step: Self.adoptEffectStep, stalledSeconds: stalled, causeStalledSeconds: clock.stalled,
+            blocker: blocker?.rawValue)
+        guard policy.adoptEffectCeilingReached(stalledSeconds: stalled, definitiveStalledSeconds: clock.stalled) else {
+            // Bajo presupuesto: se sella y se sigue esperando. Los dos del reloj definitivo se escriben SIEMPRE, también a
+            // `nil`: una observación sin motivo CIERRA el tramo abierto, y dejar la fecha puesta contaría el hueco.
+            state.adoptEffectStallProgressAt = lastProgressAt
+            state.adoptEffectStallDefinitiveAt = clock.accruedFrom
+            state.adoptEffectStallDefinitiveAccruedSeconds = clock.accrued
+            state.updatedAt = observedAt
+            try context.save()
+            return false
+        }
+        // Lo elige el techo que VENCIÓ: el corto solo puede vencer en una observación con el motivo (sin él el reloj
+        // definitivo devuelve 0), así que tras 72 h de red un fallo local recién visto no se lleva el texto de «este
+        // dispositivo no pudo leer tus datos».
+        let exit: AdoptClaimExit = policy.adoptEffectDefinitiveCeilingReached(clock.stalled)
+            ? .effectLocalFailure : .effectStalled
+        try await handle(.adoptEffectStalled(stalledSeconds: stalled, definitiveStalledSeconds: clock.stalled)) { state, _ in
+            state.adoptClaimExitRaw = exit.rawValue
+            // Se cuenta AQUÍ, en el save que journalea la salida: lo que venga después puede no llegar a correr.
+            self.reportAdoptEffectExit(reason: exit.rawValue)
+        }
+        return true
+    }
+
+    /// El `step` del rastro y del canario de los pasos de la ida para el efecto del adopt. WIRE: no se renombra.
+    static let adoptEffectStep = "adopt"
+
+    /// El rastro y el canario de una salida del efecto del adopt: por su techo o porque la persona canceló.
+    private func reportAdoptEffectExit(reason: String) {
+        CloudSyncBreadcrumb.forwardStepExited(step: Self.adoptEffectStep, reason: reason)
+        MetricsService.cloudForwardStepAborted(step: Self.adoptEffectStep, reason: reason)
     }
 
     private func removeFirstPending(_ state: MigrationState) {
@@ -2530,6 +2684,7 @@ final class MigrationRunner {
         state.snapshotExitReasonRaw = nil
         state.clearForwardStepStallCeiling()
         state.forwardStepExitReasonRaw = nil
+        state.clearAdoptEffectStallCeiling()
         state.setReverseOriginPendingEffects([])
         state.forwardClaimIntentRaw = nil
         state.startedAt = nil

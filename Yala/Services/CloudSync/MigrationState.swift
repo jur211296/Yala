@@ -58,7 +58,10 @@ extension CloudSyncSchemaVersions {
     /// Subió a 13 con el mismo par en la subida del snapshot de la ida (`snapshotStallDefinitiveAt`,
     /// `snapshotStallDefinitiveAccruedSeconds`): el agujero era el mismo —un fallo local al leer y el 403/409 del push
     /// se turnan pasada a pasada— (ticket `snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling`).
-    static let migrationState = 13
+    /// Subió a 14 con los TRES campos del techo del EFECTO del adopt (`adoptEffectStallProgressAt`,
+    /// `adoptEffectStallDefinitiveAt`, `adoptEffectStallDefinitiveAccruedSeconds`): el reconcile de huérfanas que no puede
+    /// terminar se reintentaba para siempre (ticket `adopt-effect-retries-forever-with-no-ceiling`).
+    static let migrationState = 14
 }
 
 /// Journal single-row de la migración. Debe existir a lo sumo UNA fila (el runner la crea
@@ -284,7 +287,9 @@ final class MigrationState {
     var forwardStepExitReasonRaw: String?
 
     /// `AdoptClaimExit.rawValue`: el claim de un ADOPT —«Ya tengo una cuenta», «Activar la nube en este dispositivo»—
-    /// salió por su techo o porque la persona canceló (ticket `adopt-claim-stays-parked-with-no-ceiling`). Hace dos cosas:
+    /// salió por su techo o porque la persona canceló (ticket `adopt-claim-stays-parked-with-no-ceiling`). Desde
+    /// `adopt-effect-retries-forever-with-no-ceiling` lo escribe también la salida del EFECTO del adopt —el reconcile que no
+    /// termina, tras un claim que ya contestó—: la misma pantalla, la misma cuenta, la misma salida. Hace dos cosas:
     /// elige el texto de la tarjeta de fallo, que no puede decir «tus datos siguen en este dispositivo» en un teléfono
     /// recién instalado, y hace que Almacenamiento ofrezca «Activar la nube en este dispositivo» aunque no haya marcador
     /// de CloudKit: sin esto, «Reintentar» llevaba a «Migrar a la nube», que la puerta de identidad para con esa cuenta.
@@ -300,6 +305,25 @@ final class MigrationState {
     /// adopta otra (`AdoptClaimScope`). Lo escribe el `handle` que entra en el claim; se va con la marca al volver a
     /// iCloud. `nil` = no se sabe, y entonces la marca no abre nada con una sesión puesta.
     var adoptClaimAccountHash: String?
+
+    // MARK: Techo del EFECTO del adopt (ticket `adopt-effect-retries-forever-with-no-ceiling`)
+    //
+    // El par `(notStarted, [.adoptBackendAccount])`: el claim ya contestó `existing_stable` y el reconcile de huérfanas no
+    // termina. Solo están puestos con ese efecto pendiente: los borra cualquier `handle` —un claim nuevo, la cancelación,
+    // la salida— y el save que retira el efecto cuando el adopt termina (`clearAdoptEffectStallCeiling()`).
+
+    /// El primer intento fallido del efecto, con el `now` INYECTADO. Gobierna las 72 h con cualquier causa. `nil` = el
+    /// efecto aún no ha fallado, o la fila viene de un build anterior a la v14: el presupuesto le empieza a contar desde que
+    /// este build la mira.
+    var adoptEffectStallProgressAt: Date?
+
+    /// Desde cuándo corre el tramo ABIERTO del reloj de «cualquier motivo definitivo» (`CauseStallClock.observeAnyDefinitive`).
+    /// Hoy el único motivo definitivo del efecto es la base local. `nil` = tramo cerrado o nunca abierto.
+    var adoptEffectStallDefinitiveAt: Date?
+
+    /// Lo que ese reloj acumuló en tramos CERRADOS. Un acumulado y no una racha: la red lo PAUSA, no lo borra, y el re-kick
+    /// de Almacenamiento llega cada 30 s.
+    var adoptEffectStallDefinitiveAccruedSeconds: Double?
 
     /// Cuándo empezó la migración (el runner lo estampa con el `now` INYECTADO al arrancar). `nil` = no
     /// iniciada.
@@ -349,6 +373,9 @@ final class MigrationState {
         forwardStepExitReasonRaw: String? = nil,
         adoptClaimExitRaw: String? = nil,
         adoptClaimAccountHash: String? = nil,
+        adoptEffectStallProgressAt: Date? = nil,
+        adoptEffectStallDefinitiveAt: Date? = nil,
+        adoptEffectStallDefinitiveAccruedSeconds: Double? = nil,
         startedAt: Date? = nil,
         updatedAt: Date = Date.now,
         schemaVersion: Int = CloudSyncSchemaVersions.migrationState
@@ -389,6 +416,9 @@ final class MigrationState {
         self.forwardStepExitReasonRaw = forwardStepExitReasonRaw
         self.adoptClaimExitRaw = adoptClaimExitRaw
         self.adoptClaimAccountHash = adoptClaimAccountHash
+        self.adoptEffectStallProgressAt = adoptEffectStallProgressAt
+        self.adoptEffectStallDefinitiveAt = adoptEffectStallDefinitiveAt
+        self.adoptEffectStallDefinitiveAccruedSeconds = adoptEffectStallDefinitiveAccruedSeconds
         self.startedAt = startedAt
         self.updatedAt = updatedAt
         self.schemaVersion = schemaVersion
@@ -453,6 +483,21 @@ extension MigrationState {
         forwardStepStallCauseRaw = nil
         forwardStepStallCauseAt = nil
         forwardStepStallCauseAccruedSeconds = nil
+    }
+}
+
+// MARK: - Techo del efecto del adopt
+
+extension MigrationState {
+
+    /// Borra los TRES campos de los dos relojes del techo del efecto del adopt. Juntos siempre: un campo que sobreviva al
+    /// intento deja el techo venciendo con cero segundos de parada real en el siguiente adopt. NO toca `adoptClaimExitRaw`,
+    /// que es el desenlace y no el reloj. Lo que garantiza que un campo NUEVO de la familia no se quede fuera es
+    /// `CloudSyncSchemaParityTests`, que deriva la familia del schema por su prefijo `adoptEffectStall`.
+    func clearAdoptEffectStallCeiling() {
+        adoptEffectStallProgressAt = nil
+        adoptEffectStallDefinitiveAt = nil
+        adoptEffectStallDefinitiveAccruedSeconds = nil
     }
 }
 

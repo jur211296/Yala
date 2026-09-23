@@ -6056,6 +6056,8 @@
 "storage.failed.adoptStalled" = "Wir konnten dich nicht bei deinem Cloud-Konto anmelden: Die Aktivierung kommt seit Tagen nicht voran. Dieses Gerät hat nichts an deinen Daten in der Cloud geändert – versuche es später erneut.";
 "storage.failed.adoptSessionExpired" = "Wir konnten dich nicht bei deinem Cloud-Konto anmelden: Deine Sitzung ist abgelaufen. Dieses Gerät hat nichts an deinen Daten in der Cloud geändert – versuche es erneut und melde dich noch einmal mit deinem Konto an.";
 "storage.failed.adoptAccountUnavailable" = "Wir konnten dich nicht bei deinem Cloud-Konto anmelden: Wir können dir gerade keinen Zugriff auf dieses Konto geben. Schreib uns an %@, dann sehen wir es uns gemeinsam an.";
+"storage.failed.adoptEffectLocalFailure" = "Wir konnten dich nicht bei deinem Cloud-Konto anmelden: Dieses Gerät konnte deine Daten nicht lesen, um sie mit denen deines Kontos zusammenzuführen. Was du auf diesem Gerät hast, ist weiterhin hier – versuche es in einer Weile erneut.";
+"storage.failed.adoptEffectStalled" = "Wir konnten dich nicht bei deinem Cloud-Konto anmelden: Die Aktivierung kann seit Tagen nicht abgeschlossen werden. Was du auf diesem Gerät hast, ist weiterhin hier – versuche es später erneut.";
 /* Botón de la tarjeta de progreso: cancelar la activación de la nube */
 "storage.progress.cancelMigration" = "Aktivierung abbrechen";
 /* Título de la confirmación de cancelar la activación */
@@ -6063,6 +6065,7 @@
 /* Cuerpo de la confirmación de cancelar la activación */
 "storage.confirm.cancelMigrationBody" = "Deine Daten bleiben wie bisher auf diesem Gerät. Was schon hochgeladen wurde, bleibt in deinem Cloud-Konto. Du kannst es jederzeit erneut versuchen.";
 "storage.confirm.cancelAdoptBody" = "Dieses Gerät hat nichts an deinen Daten in der Cloud geändert. Du kannst die Cloud jederzeit von hier aus wieder auf diesem Gerät aktivieren.";
+"storage.confirm.cancelAdoptEffectBody" = "Was du auf diesem Gerät hast, ist weiterhin hier, wie bisher. Du kannst die Cloud jederzeit von hier aus wieder auf diesem Gerät aktivieren.";
 /* Botón que confirma cancelar la activación */
 "storage.confirm.cancelMigrationConfirm" = "Ja, abbrechen";
 /* Botón que sigue con la activación */

@@ -440,6 +440,7 @@ struct MigrationJournalUnreadableWiringTests {
             "journaledClaimIntent = snapshot.claimIntent",
             "adoptClaimExit = snapshot.adoptClaimExit",
             "adoptClaimAccountHash = snapshot.adoptClaimAccountHash",
+            "adoptEffectJournaled = snapshot.adoptEffectJournaled",
             "reverseAbortReason = snapshot.reverseAbortReason",
             "hasPendingReverseExit = snapshot.hasPendingReverseExit",
             "case .unreadable:",
@@ -572,7 +573,8 @@ struct MigrationJournalUnreadableWiringTests {
             "storageMode: StorageModePersistence.read(),",
             "read: read.phaseRead,",
             "mirrorOffArmed: mirrorOffArmed,",
-            "mountedDecision: mountedDecision)",
+            "mountedDecision: mountedDecision,",
+            "adoptEffectJournaled: adoptEffectJournaled)",
             "claimBlocker = _runner?.lastClaimBlocker",
             "claimDefinitiveCause = _runner?.lastClaimDefinitiveCause",
             "reverseUploadSample = _runner?.lastReverseUploadSample",
@@ -586,7 +588,13 @@ struct MigrationJournalUnreadableWiringTests {
     @Test func cancelGetters_areOffWhileUnreadable() throws {
         let migration = Self.lines(try Self.body(of: "var canCancelMigration: Bool {", in: Self.controllerPath))
         #expect(migration == [
-            "!isJournalUnreadable && ForwardCancelScope.offersCancel(journaledPhase)"])
+            "!isJournalUnreadable && ForwardCancelScope.offersCancel(journaledPhase, adoptEffectPending: isAdoptEffectPending)"])
+        // Y el término del efecto del adopt también se apaga (ticket `adopt-effect-retries-forever-with-no-ceiling`).
+        let adoptEffect = Self.lines(try Self.body(of: "var isAdoptEffectPending: Bool {", in: Self.controllerPath))
+        #expect(adoptEffect == [
+            "!isJournalUnreadable && AdoptEffectScope.isPending(",
+            "journaledPhase, adoptEffectJournaled: adoptEffectJournaled,",
+            "persistedCloudMode: StorageModePersistence.read() == .cloud)"])
         let reverse = Self.lines(try Self.body(of: "var canCancelReverse: Bool {", in: Self.controllerPath))
         #expect(reverse == ["!isJournalUnreadable && (journaledPhase == .reverseUpload || isBeforeReverseMount)"])
     }

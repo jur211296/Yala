@@ -6056,6 +6056,8 @@
 "storage.failed.adoptStalled" = "Não conseguimos entrar na sua conta na nuvem: a ativação não avança há dias. Este dispositivo não mudou nada do que você tem na nuvem; tente de novo mais tarde.";
 "storage.failed.adoptSessionExpired" = "Não conseguimos entrar na sua conta na nuvem: sua sessão expirou. Este dispositivo não mudou nada do que você tem na nuvem; tente de novo e entre outra vez com a sua conta.";
 "storage.failed.adoptAccountUnavailable" = "Não conseguimos entrar na sua conta na nuvem: no momento não conseguimos dar acesso a esta conta. Escreva para %@ e vamos verificar junto com você.";
+"storage.failed.adoptEffectLocalFailure" = "Não conseguimos entrar na sua conta na nuvem: este dispositivo não conseguiu ler seus dados para juntá-los aos da sua conta. O que você tem neste dispositivo continua aqui; tente de novo daqui a pouco.";
+"storage.failed.adoptEffectStalled" = "Não conseguimos entrar na sua conta na nuvem: a ativação não consegue terminar há dias. O que você tem neste dispositivo continua aqui; tente de novo mais tarde.";
 /* Botón de la tarjeta de progreso: cancelar la activación de la nube */
 "storage.progress.cancelMigration" = "Cancelar a ativação";
 /* Título de la confirmación de cancelar la activación */
@@ -6063,6 +6065,7 @@
 /* Cuerpo de la confirmación de cancelar la activación */
 "storage.confirm.cancelMigrationBody" = "Seus dados continuam neste dispositivo, como antes. O que já foi enviado fica na sua conta na nuvem. Você pode tentar de novo quando quiser.";
 "storage.confirm.cancelAdoptBody" = "Este dispositivo não mudou nada do que você tem na nuvem. Você pode ativar a nuvem neste dispositivo de novo por aqui quando quiser.";
+"storage.confirm.cancelAdoptEffectBody" = "O que você tem neste dispositivo continua aqui, como até agora. Você pode ativar a nuvem neste dispositivo de novo por aqui quando quiser.";
 /* Botón que confirma cancelar la activación */
 "storage.confirm.cancelMigrationConfirm" = "Sim, cancelar";
 /* Botón que sigue con la activación */

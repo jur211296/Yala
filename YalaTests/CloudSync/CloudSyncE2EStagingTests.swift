@@ -943,6 +943,8 @@ struct CloudSyncE2EStagingTests {
                 throw AdoptReconcileNotCompleted(outcome: "abortedEmptyBackend")
             case .transient:
                 throw AdoptReconcileNotCompleted(outcome: "transient")
+            case .localFailure:
+                throw AdoptReconcileNotCompleted(outcome: "localFailure")
             }
 
             // Wire (read-only): el backend GANÓ la huérfana → 2 cuentas del run.

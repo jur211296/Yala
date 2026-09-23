@@ -72,11 +72,17 @@ nonisolated enum CloudMigrationUIStateDeriver {
     /// enum de dos valores no podía responderlas para un mount que no fuera ninguna de las dos decisiones
     /// nube. La tabla de estados de UI no se mueve: `localNoMirror` lleva mirror adjunto (MEDIDO), así que
     /// cae del mismo lado que antes en los dos términos.
+    ///
+    /// `adoptEffectJournaled` = el journal lleva `.adoptBackendAccount` pendiente (ticket
+    /// `adopt-effect-retries-forever-with-no-ceiling`). Con `notStarted` y el modo aún en iCloud es el adopt que se reintenta,
+    /// y se pinta como progreso —con «Retomar» y «Cancelar»—, no como `.idle`: hasta ese ticket la pantalla se quedaba como
+    /// si nunca hubiera empezado. Default `false`: los llamadores que no lo leen describen el mismo teléfono que antes.
     static func derive(
         storageMode: StorageMode,
         phase: MigrationPhase,
         mirrorOffArmed: Bool,
-        mountedDecision: SwiftDataConfiguration.PersonalStoreDecision
+        mountedDecision: SwiftDataConfiguration.PersonalStoreDecision,
+        adoptEffectJournaled: Bool = false
     ) -> CloudMigrationUIState {
         let mirrorStillAttached = mountedDecision.attachesCloudKitMirror
         // 1) Relanzamiento de IDA/adopt: el mirror-off está ARMADO pero este proceso montó CON mirror (sigue
@@ -112,10 +118,18 @@ nonisolated enum CloudMigrationUIStateDeriver {
             // Terminal de la reversa: el device volvió a iCloud → ofrecer migrar de nuevo.
             return .idle
         case .notStarted:
-            // `.cloud` + notStarted = device ADOPTADO estable (#30) → cloudActive; si no, iCloud idle.
-            return storageMode == .cloud ? .cloudActive : .idle
+            // `.cloud` + notStarted = device ADOPTADO estable (#30) → cloudActive. En iCloud con el efecto del adopt
+            // pendiente, el adopt que se reintenta → progreso con la fase journaleada (la tarjeta no la nombra). Si no, idle.
+            if storageMode == .cloud { return .cloudActive }
+            if AdoptEffectScope.isPending(phase, adoptEffectJournaled: adoptEffectJournaled, persistedCloudMode: false) {
+                return .migrating(MigrationUIStep(fraction: adoptEffectFraction, phase: phase))
+            }
+            return .idle
         }
     }
+
+    /// Dónde va la barra mientras el efecto del adopt se reintenta: después del claim (22 %) y antes del relanzamiento.
+    static let adoptEffectFraction = 0.6
 
     /// La misma derivación con la LECTURA del journal. Un journal ilegible es `.journalUnreadable`, salvo el relanzamiento
     /// de IDA (regla 1 de arriba), que no mira la fase: el mirror-off armado con el espejo aún montado pide relanzar sea
@@ -125,12 +139,13 @@ nonisolated enum CloudMigrationUIStateDeriver {
         storageMode: StorageMode,
         read: JournaledPhaseRead,
         mirrorOffArmed: Bool,
-        mountedDecision: SwiftDataConfiguration.PersonalStoreDecision
+        mountedDecision: SwiftDataConfiguration.PersonalStoreDecision,
+        adoptEffectJournaled: Bool = false
     ) -> CloudMigrationUIState {
         switch read {
         case .phase(let phase):
             return derive(storageMode: storageMode, phase: phase, mirrorOffArmed: mirrorOffArmed,
-                          mountedDecision: mountedDecision)
+                          mountedDecision: mountedDecision, adoptEffectJournaled: adoptEffectJournaled)
         case .unreadable:
             if needsForwardRelaunch(mirrorOffArmed: mirrorOffArmed, mountedDecision: mountedDecision) {
                 return .needsRelaunch(.toCloud)
@@ -194,6 +209,8 @@ nonisolated struct MigrationJournalSnapshot: Equatable {
     var adoptClaimExit: AdoptClaimExit? = nil
     /// La cuenta a la que está atada esa marca (`MigrationState.adoptClaimAccountHash`).
     var adoptClaimAccountHash: String? = nil
+    /// `.adoptBackendAccount` está entre los pendientes (ticket `adopt-effect-retries-forever-with-no-ceiling`).
+    var adoptEffectJournaled: Bool = false
 
     /// Journal sin fila: el dispositivo nunca empezó. Una fila sin intención se lee `adoptIfExisting`, como en el runner.
     static let empty = MigrationJournalSnapshot(
@@ -237,7 +254,8 @@ nonisolated enum MigrationJournalRead: Equatable {
                 reverseAbortReason: state.reverseAbortReasonRaw.flatMap(ReverseAbortReason.init(rawValue:)),
                 hasPendingReverseExit: ReverseExitPending.isPending(pending),
                 adoptClaimExit: state.adoptClaimExitRaw.flatMap(AdoptClaimExit.init(rawValue:)),
-                adoptClaimAccountHash: state.adoptClaimAccountHash))
+                adoptClaimAccountHash: state.adoptClaimAccountHash,
+                adoptEffectJournaled: pending.contains(.adoptBackendAccount)))
         } catch {
             #if DEBUG
             print("CloudMigrationController.readJournal: fetch(MigrationState) falló: \(error)")
@@ -366,7 +384,19 @@ final class CloudMigrationController {
     /// Con el journal ilegible es `false`: `journaledPhase` es entonces la última fase leída, no la de ahora, y el
     /// `.onChange` de la pantalla usa este getter para bajar un diálogo que ya no aplica.
     var canCancelMigration: Bool {
-        !isJournalUnreadable && ForwardCancelScope.offersCancel(journaledPhase)
+        !isJournalUnreadable && ForwardCancelScope.offersCancel(journaledPhase, adoptEffectPending: isAdoptEffectPending)
+    }
+
+    /// `.adoptBackendAccount` pendiente en el journal (`MigrationJournalSnapshot.adoptEffectJournaled`).
+    private(set) var adoptEffectJournaled = false
+
+    /// ¿Se está reintentando el EFECTO del adopt? (ticket `adopt-effect-retries-forever-with-no-ceiling`). El predicado es el
+    /// del runner (`AdoptEffectScope`), con el modo PERSISTIDO, que es el que escribe el paso 5 del adopt. Abre «Cancelar»
+    /// en la tarjeta de progreso y elige su cuerpo. Con el journal ilegible es `false`, por lo mismo que `canCancelMigration`.
+    var isAdoptEffectPending: Bool {
+        !isJournalUnreadable && AdoptEffectScope.isPending(
+            journaledPhase, adoptEffectJournaled: adoptEffectJournaled,
+            persistedCloudMode: StorageModePersistence.read() == .cloud)
     }
 
     /// La intención journaleada del claim de la ida (`MigrationState.forwardClaimIntentRaw`), la misma que lee
@@ -1449,7 +1479,9 @@ final class CloudMigrationController {
             storageMode: StorageModePersistence.read(),
             read: read.phaseRead,
             mirrorOffArmed: mirrorOffArmed,
-            mountedDecision: mountedDecision)
+            mountedDecision: mountedDecision,
+            // La última lectura buena: con el journal ilegible la fase no se usa (`.journalUnreadable`).
+            adoptEffectJournaled: adoptEffectJournaled)
 
         // `_runner` y NO `runner`: la property lazy CONSTRUIRÍA el runner y su executor (red, sesión,
         // clients) — `refresh()` corre desde el `init` y desde el poll de la pantalla de adopt, y no
@@ -1551,6 +1583,7 @@ final class CloudMigrationController {
             journaledClaimIntent = snapshot.claimIntent
             adoptClaimExit = snapshot.adoptClaimExit
             adoptClaimAccountHash = snapshot.adoptClaimAccountHash
+            adoptEffectJournaled = snapshot.adoptEffectJournaled
             reverseAbortReason = snapshot.reverseAbortReason
             hasPendingReverseExit = snapshot.hasPendingReverseExit
         case .unreadable:

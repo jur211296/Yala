@@ -208,6 +208,13 @@ struct StorageSettingsView: View {
             revertCard(controller)
         case .migrating(let step):
             progressCard(controller, step: step, reverse: false)
+            // El efecto del adopt que se reintenta sale del journal y puede durar hasta su techo de 72 h (ticket
+            // `adopt-effect-retries-forever-with-no-ceiling`): como `.waitingForLeader` y `.failed`, conserva la sección, o
+            // quien quiera soltar su cuenta de grupos se quedaría sin puerta todo ese tiempo. Los demás `.migrating` son
+            // tránsitos y la siguen ocultando.
+            if controller.isAdoptEffectPending {
+                GroupsAssociationSection(onAssociate: onAssociateGroupsAccount)
+            }
         case .reverting(let step):
             progressCard(controller, step: step, reverse: true)
         case .needsRelaunch(let direction):
@@ -641,9 +648,13 @@ struct StorageSettingsView: View {
         } message: {
             // En el claim de un ADOPT el cuerpo es otro: quien entraba en su cuenta puede estar en un teléfono recién
             // instalado, y «tus datos siguen en este dispositivo» sería falso (ticket `adopt-claim-stays-parked-with-no-ceiling`).
+            // En el EFECTO del adopt, un tercero: el de arriba afirma que este dispositivo no cambió nada en la nube, y el
+            // reconcile puede haber subido algo antes de fallar (ticket `adopt-effect-retries-forever-with-no-ceiling`).
             Text(controller.isAdoptClaim
                  ? L10n.Storage.Confirm.cancelAdoptBody
-                 : L10n.Storage.Confirm.cancelMigrationBody)
+                 : controller.isAdoptEffectPending
+                    ? L10n.Storage.Confirm.cancelAdoptEffectBody
+                    : L10n.Storage.Confirm.cancelMigrationBody)
         }
     }
 

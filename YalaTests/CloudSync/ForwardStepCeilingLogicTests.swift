@@ -184,6 +184,11 @@ struct ForwardStepCeilingLogicTests {
     @Test func adoptClaimExit_rawValuesAreWire_andMapFromTheCeiling() {
         #expect([AdoptClaimExit.stalled, .sessionExpired, .accountUnavailable, .cancelled].map(\.rawValue)
             == ["stalled", "sessionExpired", "accountUnavailable", "cancelled"])
+        // Las dos del EFECTO (ticket `adopt-effect-retries-forever-with-no-ceiling`) no salen nunca del claim.
+        for reason in [ForwardStepExitReason.stalled, .sessionExpired, .accountUnavailable, .refused, .otherDevice,
+                       .localFailure] {
+            #expect(![AdoptClaimExit.effectStalled, .effectLocalFailure].contains(AdoptClaimExit(reason)), "\(reason)")
+        }
         #expect(AdoptClaimExit(.stalled) == .stalled)
         #expect(AdoptClaimExit(.sessionExpired) == .sessionExpired)
         #expect(AdoptClaimExit(.accountUnavailable) == .accountUnavailable)
@@ -337,10 +342,13 @@ struct ForwardStepCeilingLogicTests {
         #expect(migrate.contains(
             "let isAdopt = controller.offersAdoptReentry || controller.markerDecision() == .secondaryDeviceCloudLogin"))
         let cancel = try Self.body(of: "private func cancelMigrationButton(", in: view)
+        // Desde `adopt-effect-retries-forever-with-no-ceiling` con un tercer cuerpo para el efecto del adopt.
         #expect(cancel.contains("""
             Text(controller.isAdoptClaim
                              ? L10n.Storage.Confirm.cancelAdoptBody
-                             : L10n.Storage.Confirm.cancelMigrationBody)
+                             : controller.isAdoptEffectPending
+                                ? L10n.Storage.Confirm.cancelAdoptEffectBody
+                                : L10n.Storage.Confirm.cancelMigrationBody)
             """))
         let card = try Self.body(of: "private func progressCard(", in: view)
         #expect(card.contains("} else if let notice = controller.adoptClaimNotice {"))

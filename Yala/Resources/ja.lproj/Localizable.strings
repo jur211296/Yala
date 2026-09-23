@@ -6068,6 +6068,8 @@
 "storage.failed.adoptStalled" = "クラウドのアカウントにサインインできませんでした。有効化が数日間進んでいません。この端末はクラウドのデータを何も変更していません。後でもう一度お試しください。";
 "storage.failed.adoptSessionExpired" = "クラウドのアカウントにサインインできませんでした。セッションの有効期限が切れました。この端末はクラウドのデータを何も変更していません。もう一度お試しいただき、アカウントで再度サインインしてください。";
 "storage.failed.adoptAccountUnavailable" = "クラウドのアカウントにサインインできませんでした。今このアカウントにはアクセスできません。%@ までご連絡ください。一緒に確認します。";
+"storage.failed.adoptEffectLocalFailure" = "クラウドのアカウントにサインインできませんでした。この端末でデータを読み込めず、アカウントのデータとまとめられませんでした。この端末のデータはこれまでどおり残っています。しばらくしてから、もう一度お試しください。";
+"storage.failed.adoptEffectStalled" = "クラウドのアカウントにサインインできませんでした。有効化が数日間完了していません。この端末のデータはこれまでどおり残っています。後でもう一度お試しください。";
 /* Botón de la tarjeta de progreso: cancelar la activación de la nube */
 "storage.progress.cancelMigration" = "有効化をキャンセル";
 /* Título de la confirmación de cancelar la activación */
@@ -6075,6 +6077,7 @@
 /* Cuerpo de la confirmación de cancelar la activación */
 "storage.confirm.cancelMigrationBody" = "データはこれまでどおりこのデバイスに残ります。すでにアップロードされたものは、クラウドのアカウントに残ります。いつでもやり直せます。";
 "storage.confirm.cancelAdoptBody" = "この端末はクラウドのデータを何も変更していません。いつでもここから、この端末でクラウドを再度有効化できます。";
+"storage.confirm.cancelAdoptEffectBody" = "この端末のデータはこれまでどおり残っています。いつでもここから、この端末でクラウドを再度有効化できます。";
 /* Botón que confirma cancelar la activación */
 "storage.confirm.cancelMigrationConfirm" = "キャンセルする";
 /* Botón que sigue con la activación */
