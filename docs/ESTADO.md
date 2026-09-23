@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-23 (Lima)
 
-**Rama** `2.1` — Merge #217: **Si la app no puede leer un movimiento o a qué apunta, ya no pierde su categoría o su cuenta.**
+**Rama** `2.1` — Merge #218: **Si la app no puede leer su reloj interno al guardar un cambio tuyo, ya no lo duplica.**
 TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,35 @@ TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#217 · una ref colgada con la fila o el destino ilegible ya no se pierde)
+## Esta sesión (#218 · el drain ya no duplica el reloj por unidad cuando no puede leerlo)
+
+**Si al capturar un cambio tuyo la app no consigue leer el registro de cuándo se tocó cada parte, ya no crea otro al
+lado** —con dos, podía leer el viejo, dar por buena la pata equivocada de una transferencia y pisar su importe—: esa
+vuelta no captura nada y la siguiente lo hace entera. Y si la captura se queda a medias, la app ya no aplica encima lo
+que baja de tus otros dispositivos.
+
+El drain, la subida del snapshot y el remap LEEN los relojes del lote antes de escribir (`SyncUnitClockStore.
+prepareWrites`, que lanza); se retiran `upsert`/`delete` tolerantes. El drain hace rollback de los pasos 6-7 (no del
+barrido, que guarda lo del usuario) y retira el espejo si falla el save del outbox. `drainOnce` devuelve si terminó, y
+el pull, la cuarentena del arranque, la verificación, el líder, el drenaje de la vuelta y el snapshot no siguen si no.
+Regla: `.claude/rules/swiftdata-cloudkit.md`, «Y el drain tampoco (2026-09-23)».
+
+Gate: 7594 unit en 748 suites y 5 XCUITest. 15 mutantes, todos muertos. Review de tres lentes: cazó un defecto MEDIO en
+el propio fix —con el rollback, el pull aplicaba sobre una edición que el drain abortado no capturó— (entró) y seis
+gemelos fuera del alcance (a ticket).
+
+### Lo que espera de Jürgen
+
+- **Nada.** A `done` sin device-QA: una base local ilegible no se provoca en un iPhone.
+- Intercambio aceptado, el de #216 extendido al drain: un drain que aborta deja el pull en `.transient`.
+- Tickets nuevos en `backlog`: `identity-uuid-repair-can-commit-half-done-after-a-read-failure` (medium),
+  `prefs-outbox-reads-an-unreadable-file-as-corrupt-and-overwrites-it` (medium),
+  `unit-clocks-duplicated-before-the-fix-are-never-merged`, `clock-drift-aborted-drain-lets-the-pull-overwrite-untranslated-edits`,
+  `first-drain-cursor-creation-saves-pending-edits-under-the-engine-author` y
+  `groups-drain-has-no-rollback-and-keeps-the-mirror-of-a-failed-save` (low los cuatro). Nota nueva en
+  `a-failed-snapshot-enqueue-save-leaves-the-journal-unsaved`.
+
+## Sesión anterior (#217 · una ref colgada con la fila o el destino ilegible ya no se pierde)
 
 **Si el teléfono no consigue leer un movimiento, o la categoría, la cuenta o las etiquetas a las que apunta, mientras
 sincroniza, ya no pierde a qué apuntaba ni deja la relación vacía**: espera y lo completa en la siguiente
@@ -47,7 +75,7 @@ que los tests cubrían 1 de 18 ramas (entró) y tres gemelos fuera del alcance (
   (very-low) y `the-gate-stamp-hides-the-deleted-side-of-a-staged-rename` (low, el sello del gate). Nota nueva en
   `a-local-read-failure-in-the-migration-apply-reads-as-network`.
 
-## Sesión anterior (#216 · lo que baja de la nube ya no pisa un cambio sin subir si la app no puede leer sus salvaguardas)
+## Sesión del #216 ( lo que baja de la nube ya no pisa un cambio sin subir si la app no puede leer sus salvaguardas)
 
 **Si el teléfono no consigue leer sus propias salvaguardas mientras baja algo de la nube, ese cambio espera y se
 reintenta**: ya no entra encima de un cambio tuyo que no había subido, no duplica nada en cuarentena y no da por borrado
