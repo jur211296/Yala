@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (557)
+## Index (560)
 
 | id | status | path |
 |---|---|---|
@@ -131,7 +131,10 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | ci-verde-con-la-suite-en-rojo | done | tickets/done/ci-verde-con-la-suite-en-rojo.md |
 | ci-warns-but-does-not-block | backlog | tickets/backlog/ci-warns-but-does-not-block.md |
 | ci-workflow-cites-missing-testing-strategy | backlog | tickets/backlog/ci-workflow-cites-missing-testing-strategy.md |
-| claim-grants-a-takeover-after-the-leader-passed-the-cutover | backlog | tickets/backlog/claim-grants-a-takeover-after-the-leader-passed-the-cutover.md |
+| claim-grants-a-takeover-after-the-leader-passed-the-cutover | qa | tickets/qa/claim-grants-a-takeover-after-the-leader-passed-the-cutover.md |
+| claim-takeover-races-the-leader-cutover-without-cas | backlog | tickets/backlog/claim-takeover-races-the-leader-cutover-without-cas.md |
+| adopt-after-the-cutover-needs-a-marker-the-leader-never-exported | backlog | tickets/backlog/adopt-after-the-cutover-needs-a-marker-the-leader-never-exported.md |
+| adopt-orphan-with-a-fresh-hlc-beats-the-absent-leaders-edit | backlog | tickets/backlog/adopt-orphan-with-a-fresh-hlc-beats-the-absent-leaders-edit.md |
 | claim-promotion-lost-response-blocks-the-retry | done | tickets/done/claim-promotion-lost-response-blocks-the-retry.md |
 | claim-replay-after-a-kill-mid-commit-can-duplicate-the-onboarding | backlog | tickets/backlog/claim-replay-after-a-kill-mid-commit-can-duplicate-the-onboarding.md |
 | claim-replay-can-seed-beside-a-phone-that-adopted-silently | done | tickets/done/claim-replay-can-seed-beside-a-phone-that-adopted-silently.md |
