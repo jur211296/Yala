@@ -91,12 +91,14 @@ struct MigrationSnapshotUploaderTests {
 
     private func makeUploader(_ context: ModelContext, _ engine: CloudSyncEngine,
                               _ stub: ApplyingStubSession, pageSize: Int,
-                              canRenewSession: Bool = false) -> MigrationSnapshotUploader {
+                              canRenewSession: Bool = false,
+                              leaseStillConfirmed: @escaping @MainActor () -> Bool = { true }) -> MigrationSnapshotUploader {
         let push = SyncPushClient(baseURL: workerURL, tokenProvider: { "jwt" }, urlSession: stub)
         return MigrationSnapshotUploader(engine: engine, pushClient: push, context: context,
                                          calendar: Calendar(identifier: .gregorian),
                                          now: { self.fixedNow }, pageSize: pageSize,
-                                         canRenewSession: { canRenewSession })
+                                         canRenewSession: { canRenewSession },
+                                         leaseStillConfirmed: leaseStillConfirmed)
     }
 
     private func liveOutbox(_ context: ModelContext) throws -> [SyncOutbox] {
@@ -603,6 +605,38 @@ struct MigrationSnapshotUploaderTests {
             #expect(await uploader.uploadPage(cursor: cursor) == expected, "status \(status)")
             #expect(try !liveOutbox(context).isEmpty, "control: el residual tenía una fila viva que subir")
         }
+    }
+
+    /// Los DOS push de la subida —el de la página y el del residual— preguntan por la confirmación del lease antes de
+    /// cada trozo (ticket `displaced-migration-leader-keeps-uploading-after-a-takeover`). Sin ella no sale nada y la
+    /// pasada es `.transient`: la puerta del runner vuelve a preguntar en la siguiente.
+    @Test("uploadPage: sin la confirmación del lease no sube ni la página ni el residual")
+    func leaseStillConfirmed_gatesThePageAndTheResidualPush() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        let stub = ApplyingStubSession()
+        let cat = Category(name: "food", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+        cat.syncID = UUID()
+        context.insert(cat)
+        try context.save()
+        var confirmed = false
+        let uploader = makeUploader(context, engine, stub, pageSize: 10, leaseStillConfirmed: { confirmed })
+
+        #expect(await uploader.uploadPage(cursor: nil) == .transient, "página")
+        #expect(stub.pushedSyncIDs.isEmpty, "la página no sale")
+
+        confirmed = true
+        guard case let .pageConfirmed(cursor) = await uploader.uploadPage(cursor: nil) else {
+            Issue.record("control del escenario: con la confirmación la página se confirma"); return
+        }
+        cat.name = "food-edited"
+        try context.save()
+        stub.resetCapture()
+        confirmed = false
+        #expect(await uploader.uploadPage(cursor: cursor) == .transient, "residual")
+        #expect(stub.pushedSyncIDs.isEmpty, "el residual no sale")
+        #expect(try !liveOutbox(context).isEmpty, "control: el residual tenía una fila viva que subir")
     }
 
     /// La DERIVA del reloj (HLC por delante del reloj de pared más de 5 min) va como `.transient`, no como fallo

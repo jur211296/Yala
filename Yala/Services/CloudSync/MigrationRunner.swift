@@ -372,7 +372,9 @@ nonisolated enum ForwardStepBlocker: String, Equatable, Sendable {
 /// (`MigrationState.forwardStepExitReasonRaw`) y elige el texto de la tarjeta de fallo: WIRE.
 ///
 /// **Lo elige el techo que VENCIÓ** (`MigrationRunner.forwardStepExitReason`), como en la subida: tras 72 h sin avanzar,
-/// una pasada con un motivo recién visto sale con `stalled`.
+/// una pasada con un motivo recién visto sale con `stalled`. **Una excepción sin techo**: `otherDevice` lo journalea también
+/// la salida del lease perdido en la subida o la verificación (`leaveOnLostLease`, ticket
+/// `displaced-migration-leader-keeps-uploading-after-a-takeover`).
 nonisolated enum ForwardStepExitReason: String, Equatable, Sendable {
     /// Venció el techo LARGO: 72 h en el mismo paso, con la causa que fuera.
     case stalled
@@ -404,6 +406,32 @@ nonisolated enum CutoverServerOutcome: Equatable {
     /// Red, 5xx, o un 401/token nulo con la sesión todavía guardada: esperar lo puede arreglar.
     case transient
     case blocked(ForwardStepBlocker)
+}
+
+/// ¿Sigue este teléfono liderando la migración? Lo contesta `MigrationWorkExecuting.confirmMigrationLease()` justo antes de
+/// cada página de la subida y de cada verificación de la ida (ticket `displaced-migration-leader-keeps-uploading-after-a-takeover`).
+/// Hasta ese ticket el líder que perdía el lease por 60 min de silencio volvía y seguía subiendo encima de lo que subía
+/// quien tomó el relevo: el latido que recibía `other_leader` solo dejaba rastro.
+///
+/// **Solo `held` deja subir.** Los otros tres paran la pasada sin mover datos; la puerta falla CERRADA, y vuelve a
+/// preguntar en la pasada siguiente.
+nonisolated enum MigrationLeaseCheck: Equatable, Sendable {
+    /// El servidor confirmó el lease hace menos de una ventana (`heartbeatInterval`, 60 s), o acaba de confirmarlo.
+    case held
+    /// El servidor dijo que lidera OTRO: `other_leader`, o `not_in_progress` —el RPC mira «¿hay migración en curso?» antes
+    /// que «¿quién lidera?», así que es lo que ve este teléfono cuando quien tomó el relevo ya terminó—. Definitivo.
+    case lost
+    /// No se pudo preguntar, o la respuesta no prueba nada: red, 5xx, un token que no llega con la sesión todavía guardada,
+    /// o un rechazo que no habla del líder (`no_profile`, `bad_action`). Esperar puede arreglarlo.
+    case unconfirmed
+    /// Sin token y el SDK ya no conserva una sesión que renovar: lo mismo que el push llama `sessionExpired`.
+    case sessionExpired
+}
+
+/// Dónde se vio el lease perdido: el detalle del rastro y del canario de la salida. WIRE, no se renombra.
+nonisolated enum MigrationLeaseStep: String, Sendable {
+    case upload
+    case verify
 }
 
 /// El reloj por CAUSA de un techo con dos relojes, PURO. Lo comparten las dos etapas que lo tienen: las cuatro fases
@@ -732,8 +760,10 @@ protocol MigrationWorkExecuting: AnyObject {
     func assignIdentity() async throws
     /// w4: sube el snapshot completo en batches idempotentes. `cursor` = última página confirmada (journal).
     func uploadSnapshot(cursor: String?) async -> SnapshotStepOutcome
-    /// w5: cuenta + checksum Merkle local vs backend, confirmado server-side.
-    func verify() async -> VerifyProbe
+    /// w5: cuenta + checksum Merkle local vs backend, confirmado server-side. `underMigrationLease` = la ida: el push y el
+    /// pull se cortan si la confirmación del lease que dio la puerta ya no vale (ticket
+    /// `displaced-migration-leader-keeps-uploading-after-a-takeover`). La vuelta a iCloud pasa `false`.
+    func verify(underMigrationLease: Bool) async -> VerifyProbe
     /// ¿Conserva el SDK una sesión que renovar? `false` solo cuando la BORRÓ. Lo lee el runner DESPUÉS de un claim que
     /// contestó `.sessionExpired` (el SDK borra la sesión antes de lanzar), para separar la sesión caducada de verdad del
     /// token que no llega sin red y del 401 con la sesión guardada (ticket `forward-migration-steps-have-no-ceiling-and-no-exit`).
@@ -790,6 +820,13 @@ protocol MigrationWorkExecuting: AnyObject {
     /// THROTTLE (a lo sumo una vez por ventana) y NUNCA lanza ni altera el outcome del paso. Default no-op
     /// en la extension de abajo → los fakes/ejecutores que no laten heredan sin cambios.
     func sendLeaseHeartbeatIfDue() async
+
+    /// La PUERTA del lease de la ida (ticket `displaced-migration-leader-keeps-uploading-after-a-takeover`): ¿sigue este
+    /// teléfono liderando? El runner la llama antes de cada página de la subida y de cada verificación, y solo sube con
+    /// `.held`. A diferencia de `sendLeaseHeartbeatIfDue`, no es best-effort ni tiene throttle de intentos: sin una
+    /// confirmación reciente pregunta en el acto. **Sin default a propósito**: un `.held` heredado sería una puerta que
+    /// falla abierta en el conformador que se olvidara de implementarla.
+    func confirmMigrationLease() async -> MigrationLeaseCheck
 
     // MARK: Canal iCloud (C-1)
 
@@ -1805,6 +1842,19 @@ final class MigrationRunner {
     /// avanza; `transient` y `blocked` pasan por el TECHO de la fase y cortan retomables mientras no venza (ticket
     /// `snapshot-upload-has-no-ceiling-and-no-way-out`: hasta ese ticket cortaban sin evento y la fase no salía nunca).
     private func driveUpload() async throws -> Bool {
+        // La PUERTA del lease, antes de CADA página y no solo de cada pasada (ticket
+        // `displaced-migration-leader-keeps-uploading-after-a-takeover`): una pasada suspendida más de 60 min se reanuda a
+        // mitad, y la página siguiente saldría sin que nadie volviera a preguntar. Lo que no es `held` no sube.
+        switch await executor.confirmMigrationLease() {
+        case .held:
+            break
+        case .lost:
+            return try await leaveOnLostLease(step: .upload)
+        case .unconfirmed:
+            return try await observeSnapshotStall(blocker: nil)
+        case .sessionExpired:
+            return try await observeSnapshotStall(blocker: .sessionExpired)
+        }
         let cursor = try loadState().snapshotCursorJSON
         switch await executor.uploadSnapshot(cursor: cursor) {
         case .completed:
@@ -1820,9 +1870,9 @@ final class MigrationRunner {
             state.snapshotStallProgressAt = now()
             state.updatedAt = now()
             try context.save()
-            // Heartbeat (I14-pre): el snapshot de un corpus 10k+ podría superar los 60 min del lease — late
-            // por página confirmada (el throttle del executor lo capa a 1/min) para mantenerlo vivo.
-            await executor.sendLeaseHeartbeatIfDue()
+            // Aquí latía `sendLeaseHeartbeatIfDue` (I14-pre) para que un corpus 10k+ no dejara caducar el lease. Lo hace
+            // ahora la puerta de arriba (≤ 1 por minuto) y leyendo la respuesta. Late también en las pasadas que NO
+            // confirman página, así que el lease dice «el líder está vivo», no «el líder avanza» (regla del área).
             return true                       // re-loop: sigue subiendo desde el cursor confirmado
         case .transient:
             // Sin retry-loop de red aquí: bajo presupuesto se corta y el reintento llega por el próximo resume. Si el
@@ -1831,6 +1881,21 @@ final class MigrationRunner {
         case let .blocked(blocker):
             return try await observeSnapshotStall(blocker: blocker)
         }
+    }
+
+    /// La salida del líder DESPLAZADO (ticket `displaced-migration-leader-keeps-uploading-after-a-takeover`): el latido
+    /// dijo que lidera otro. Sale en el acto a `failedRollback` y apunta `otherDevice`, el motivo que el `cutover` ya
+    /// journaleaba para la misma respuesta, así que la tarjeta dice «otro dispositivo con tu cuenta tomó el relevo». Rastro y
+    /// canario en el MISMO save, como las otras salidas. Devuelve `true` para que `drive()` relea la fase y salga por el
+    /// terminal: la máquina solo acepta el evento en las dos fases que llaman aquí.
+    private func leaveOnLostLease(step: MigrationLeaseStep) async throws -> Bool {
+        try await handle(.migrationLeaseLost) { state, next in
+            guard next == .failedRollback else { return }
+            state.forwardStepExitReasonRaw = ForwardStepExitReason.otherDevice.rawValue
+            CloudSyncBreadcrumb.migrationLeaseLost(step: step.rawValue)
+            MetricsService.cloudForwardStepAborted(step: step.rawValue, reason: ForwardStepExitReason.otherDevice.rawValue)
+        }
+        return true
     }
 
     /// Una observación de `uploadingSnapshot` en una pasada que no confirmó ninguna página. Decide si la subida sigue
@@ -1951,7 +2016,20 @@ final class MigrationRunner {
     /// llega por el próximo resume()/submit externo, que da el pacing natural). `newDeltaDetected` SÍ
     /// re-verifica inmediato (hay trabajo real que empujar; acotado por actividad del usuario).
     private func driveVerify() async throws -> Bool {
-        let probe = await executor.verify()
+        // La misma PUERTA que la subida: `verify()` empuja el outbox y trae el corpus de la cuenta, así que el líder
+        // desplazado que vuelve con el journal aquí subiría y mezclaría igual. Sin lease confirmado no se llama; la red y la
+        // sesión siguen el trato que `verify()` les daría a las suyas.
+        let probe: VerifyProbe
+        switch await executor.confirmMigrationLease() {
+        case .held:
+            probe = await executor.verify(underMigrationLease: true)
+        case .lost:
+            return try await leaveOnLostLease(step: .verify)
+        case .unconfirmed:
+            probe = .networkTimeout
+        case .sessionExpired:
+            probe = .sessionExpired
+        }
         switch probe {
         case .match:
             // C-1: precondición del canal iCloud ANTES de journalear `cutover(.pending)`. Aquí no hay claim
@@ -2199,7 +2277,7 @@ final class MigrationRunner {
     /// fases previas al montaje. `verifyNetworkRetries` ya NO se gasta en la vuelta, y por eso
     /// `reverseVerifyOutcome(.networkTimeout)` dejó de ser un par legal de la máquina desde `reverseVerify`.
     private func driveReverseVerify() async throws -> Bool {
-        switch await executor.verify() {
+        switch await executor.verify(underMigrationLease: false) {
         case .sessionExpired:
             // NO gasta `verifyNetworkRetries` ni degrada, que es lo que cumple el criterio del ticket hermano: el
             // `networkTimeout` que este caso tenía antes acababa en `reverseFailedRollback` con `.reverseRollback`

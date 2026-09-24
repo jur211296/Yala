@@ -53,6 +53,14 @@ private final class SessionRemovedWhileFetching: CloudSyncSessionProviding {
     func attestToken() async throws -> String? { nil }
 }
 
+/// Reloj MONOTÓNICO mutable para la puerta del lease (ticket `displaced-migration-leader-keeps-uploading-after-a-takeover`):
+/// el ejecutor mide la confirmación con `ContinuousClock`, y un `Instant` solo se construye avanzando otro.
+private final class MutableLeaseClock: @unchecked Sendable {
+    private let base = ContinuousClock.now
+    var offset: Duration = .zero
+    var now: ContinuousClock.Instant { base.advanced(by: offset) }
+}
+
 /// Reloj MUTABLE para el test de throttle del heartbeat (I14-pre): avanzar `value` entre ticks sin recrear
 /// el executor. MainActor (se muta y lee solo desde el test MainActor).
 @MainActor
@@ -119,6 +127,9 @@ private final class RoutingStub: SyncHTTPSession, @unchecked Sendable {
     var migrationStatus = 200
     private(set) var lastMigrationBody: [String: Any]?
     private(set) var migrationCallCount = 0
+    /// Se llama cuando el POST de `/account/migration` LLEGA al stub, antes de la respuesta: deja avanzar un reloj
+    /// DURANTE la pregunta (la puerta del lease cuenta la confirmación desde que preguntó, no desde que le contestaron).
+    var onMigrationRequest: (() -> Void)?
     var pushStatus = 200
     /// 401 aquí = sesión caducada del pull, que es la mitad que `reverseDrainOnce` y `verify` no podían separar
     /// hasta el ticket `reverse-before-mount-stays-stuck-with-an-expired-session`.
@@ -148,6 +159,7 @@ private final class RoutingStub: SyncHTTPSession, @unchecked Sendable {
         if path.contains("account/migration") {
             migrationCallCount += 1
             lastMigrationBody = (try? JSONSerialization.jsonObject(with: request.httpBody ?? Data())) as? [String: Any]
+            onMigrationRequest?()
             return (migrationBody, resp(migrationStatus))
         }
         if path.contains("account/claim") {
@@ -225,6 +237,7 @@ struct MigrationWorkExecutorTests {
         storageDefaults: UserDefaults? = nil,
         now: (() -> Date)? = nil,
         heartbeatInterval: TimeInterval = 60,
+        leaseClock: MutableLeaseClock? = nil,
         tombstoneSource: ReverseTombstoneSource? = nil,
         adoptQuiescenceSignal: @escaping () -> Bool = { true },
         claimStore: CloudClaimActionStore? = nil,
@@ -248,6 +261,7 @@ struct MigrationWorkExecutorTests {
             personalStoreURL: personalStoreURL,
             storageDefaults: storageDefaults ?? makeIsolatedDefaults(prefix: "mwe.storage"),
             snapshotPageSize: 200, heartbeatInterval: heartbeatInterval,
+            leaseClock: leaseClock.map { clock in { clock.now } } ?? { ContinuousClock.now },
             reverseTombstoneSource: tombstoneSource,
             adoptQuiescenceSignal: adoptQuiescenceSignal,
             claimStore: claimStore,
@@ -1590,6 +1604,194 @@ struct MigrationWorkExecutorTests {
                                     personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
         await executor.sendLeaseHeartbeatIfDue()
         #expect(stub.migrationCallCount == 0)
+    }
+
+    // MARK: - La puerta del lease de la ida (ticket `displaced-migration-leader-keeps-uploading-after-a-takeover`)
+
+    private func leaseExecutor(
+        _ stub: RoutingStub, session: CloudSyncSessionProviding? = nil,
+        clock: MutableLeaseClock = MutableLeaseClock()
+    ) throws -> (MigrationWorkExecutor, URL) {
+        let session = session ?? FakeSession(token: "jwt", userID: "sub-1")
+        let dir = freshDir()
+        let context = try makeContext(dir)
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    heartbeatInterval: 60, leaseClock: clock)
+        return (executor, dir)
+    }
+
+    @Test("confirmMigrationLease: pregunta con el latido de siempre, BODY exacto, y un ok es `.held`")
+    func lease_asksWithTheHeartbeatBody_andOkIsHeld() async throws {
+        let stub = RoutingStub()
+        let (executor, dir) = try leaseExecutor(stub); defer { cleanup(dir) }
+        #expect(await executor.confirmMigrationLease() == .held)
+        #expect(stub.migrationCallCount == 1)
+        #expect(stub.lastMigrationBody?["device_id"] as? String == "device-1")
+        #expect(stub.lastMigrationBody?["action"] as? String == "heartbeat")
+    }
+
+    @Test("confirmMigrationLease: una confirmación vale 60 s — a los 59 no pregunta, a los 60 sí")
+    func lease_confirmationLastsOneWindow_59And60() async throws {
+        let stub = RoutingStub()
+        let clock = MutableLeaseClock()
+        let (executor, dir) = try leaseExecutor(stub, clock: clock); defer { cleanup(dir) }
+        #expect(await executor.confirmMigrationLease() == .held)
+        clock.offset = .seconds(59)
+        #expect(await executor.confirmMigrationLease() == .held)
+        #expect(stub.migrationCallCount == 1, "dentro de la ventana no pregunta")
+        clock.offset = .seconds(60)
+        #expect(await executor.confirmMigrationLease() == .held)
+        #expect(stub.migrationCallCount == 2, "a los 60 s la confirmación ya no vale")
+    }
+
+    @Test("confirmMigrationLease: la ventana cuenta desde que PREGUNTÓ, no desde que le contestaron")
+    func lease_windowCountsFromTheQuestion() async throws {
+        let stub = RoutingStub()
+        let clock = MutableLeaseClock()
+        stub.onMigrationRequest = { clock.offset += .seconds(50) }   // la respuesta tarda 50 s
+        let (executor, dir) = try leaseExecutor(stub, clock: clock); defer { cleanup(dir) }
+        #expect(await executor.confirmMigrationLease() == .held)
+        stub.onMigrationRequest = nil
+        clock.offset = .seconds(61)                                   // 61 s desde la pregunta, 11 desde la respuesta
+        _ = await executor.confirmMigrationLease()
+        #expect(stub.migrationCallCount == 2)
+    }
+
+    @Test("confirmMigrationLease: `other_leader` y `not_in_progress` son `.lost`")
+    func lease_otherLeaderAndNotInProgress_areLost() async throws {
+        for reason in ["other_leader", "not_in_progress"] {
+            let stub = RoutingStub()
+            stub.migrationBody = Data("{\"ok\":false,\"reason\":\"\(reason)\"}".utf8)
+            let (executor, dir) = try leaseExecutor(stub); defer { cleanup(dir) }
+            #expect(await executor.confirmMigrationLease() == .lost, "\(reason)")
+        }
+    }
+
+    @Test("confirmMigrationLease: un rechazo que no habla del líder, un 5xx o una respuesta ilegible no prueban nada")
+    func lease_otherRejectionsAndServerErrors_areUnconfirmed() async throws {
+        for (status, body) in [(200, "{\"ok\":false,\"reason\":\"no_profile\"}"),
+                               (200, "{\"ok\":false,\"reason\":\"bad_action\"}"),
+                               (500, "{}"), (400, "{}"), (200, "no-es-json")] {
+            let stub = RoutingStub()
+            stub.migrationStatus = status
+            stub.migrationBody = Data(body.utf8)
+            let (executor, dir) = try leaseExecutor(stub); defer { cleanup(dir) }
+            #expect(await executor.confirmMigrationLease() == .unconfirmed, "\(status) \(body)")
+        }
+    }
+
+    @Test("confirmMigrationLease: sin throttle de intentos — un rechazo o una red caída no silencian la pregunta siguiente")
+    func lease_aFailedQuestionConfirmsNothing_andTheNextOneAsksAgain() async throws {
+        let stub = RoutingStub()
+        stub.migrationBody = Data("{\"ok\":false,\"reason\":\"other_leader\"}".utf8)
+        let (executor, dir) = try leaseExecutor(stub); defer { cleanup(dir) }
+        #expect(await executor.confirmMigrationLease() == .lost)
+        #expect(await executor.confirmMigrationLease() == .lost)
+        #expect(stub.migrationCallCount == 2, "un «otro lidera» no arma ningún throttle: la siguiente vuelve a preguntar")
+        stub.migrationStatus = 500
+        #expect(await executor.confirmMigrationLease() == .unconfirmed)
+        #expect(await executor.confirmMigrationLease() == .unconfirmed)
+        #expect(stub.migrationCallCount == 4, "la red caída tampoco")
+        // Y el mismo teléfono puede volver a liderar (tras «Reintentar», un claim `created`): nada queda cacheado.
+        stub.migrationStatus = 200
+        stub.migrationBody = Data("{\"ok\":true}".utf8)
+        #expect(await executor.confirmMigrationLease() == .held)
+    }
+
+    @Test("confirmMigrationLease: sin token — con sesión que renovar espera como la red; sin ella es `.sessionExpired`")
+    func lease_noToken_dependsOnWhetherTheSessionSurvives() async throws {
+        let stub = RoutingStub()
+        let kept = FakeSession(token: nil, userID: "sub-1")
+        kept.canRenewSessionOverride = true
+        let (a, dirA) = try leaseExecutor(stub, session: kept); defer { cleanup(dirA) }
+        #expect(await a.confirmMigrationLease() == .unconfirmed)
+        let gone = FakeSession(token: nil, userID: nil)
+        let (b, dirB) = try leaseExecutor(stub, session: gone); defer { cleanup(dirB) }
+        #expect(await b.confirmMigrationLease() == .sessionExpired)
+        // El SDK borra la sesión DENTRO de la renovación: el testigo se lee después de pedir el token.
+        let (c, dirC) = try leaseExecutor(stub, session: SessionRemovedWhileFetching()); defer { cleanup(dirC) }
+        #expect(await c.confirmMigrationLease() == .sessionExpired)
+        #expect(stub.migrationCallCount == 0, "sin token no hay pregunta")
+    }
+
+    @Test("confirmMigrationLease: un 401 con la sesión guardada espera; con la sesión borrada es `.sessionExpired`")
+    func lease_http401_dependsOnWhetherTheSessionSurvives() async throws {
+        let stub = RoutingStub()
+        stub.migrationStatus = 401
+        let kept = FakeSession(token: "jwt", userID: "sub-1")
+        let (a, dirA) = try leaseExecutor(stub, session: kept); defer { cleanup(dirA) }
+        #expect(await a.confirmMigrationLease() == .unconfirmed)
+        let gone = FakeSession(token: "jwt", userID: "sub-1")
+        gone.canRenewSessionOverride = false
+        let (b, dirB) = try leaseExecutor(stub, session: gone); defer { cleanup(dirB) }
+        #expect(await b.confirmMigrationLease() == .sessionExpired)
+    }
+
+    // La confirmación caduca también a MEDIA página: el push y el pull de la ida no salen con una confirmación de más de
+    // `leaseInFlightBudget` (la app congelada entre dos trozos). Lo cazó la review del ticket.
+
+    private func leaseExecutorWithContext(
+        _ stub: RoutingStub, clock: MutableLeaseClock
+    ) throws -> (MigrationWorkExecutor, ModelContext, URL) {
+        let dir = freshDir()
+        let context = try makeContext(dir)
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    heartbeatInterval: 60, leaseClock: clock)
+        return (executor, context, dir)
+    }
+
+    @Test("verify de la ida: sin confirmación del lease no sube ni trae nada; la vuelta sí corre")
+    func leaseInFlight_forwardVerifyWithoutConfirmation_neitherPushesNorPulls() async throws {
+        let stub = RoutingStub()
+        let clock = MutableLeaseClock()
+        let (executor, context, dir) = try leaseExecutorWithContext(stub, clock: clock); defer { cleanup(dir) }
+        context.insert(Category(name: "food", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false))
+        try context.save()
+
+        #expect(await executor.verify(underMigrationLease: true) == .networkTimeout)
+        #expect(stub.pushedSyncIDs.isEmpty, "ni un trozo del push")
+        #expect(stub.pullCallCount == 0)
+
+        // Control: la vuelta a iCloud no depende de este lease y el mismo outbox sí sube.
+        _ = await executor.verify(underMigrationLease: false)
+        #expect(!stub.pushedSyncIDs.isEmpty, "control del escenario: la fila existe y la vuelta la sube")
+    }
+
+    @Test("verify de la ida: el pull no se pide con la confirmación caducada, aunque no haya nada que subir")
+    func leaseInFlight_forwardVerifyStaleConfirmation_skipsThePull_1799And1800() async throws {
+        let stub = RoutingStub()
+        let clock = MutableLeaseClock()
+        let (executor, _, dir) = try leaseExecutorWithContext(stub, clock: clock); defer { cleanup(dir) }
+        #expect(await executor.confirmMigrationLease() == .held)
+
+        clock.offset = .seconds(1799)
+        _ = await executor.verify(underMigrationLease: true)
+        #expect(stub.pullCallCount == 1, "a los 1799 s la confirmación todavía vale")
+
+        clock.offset = .seconds(1800)
+        #expect(await executor.verify(underMigrationLease: true) == .networkTimeout)
+        #expect(stub.pullCallCount == 1, "a los 1800 s ya no: el pull no se pide")
+    }
+
+    @Test("uploadSnapshot: sin confirmación del lease la página no sube; confirmada, sí")
+    func leaseInFlight_snapshotPageWithoutConfirmation_pushesNothing() async throws {
+        let stub = RoutingStub()
+        let clock = MutableLeaseClock()
+        let (executor, context, dir) = try leaseExecutorWithContext(stub, clock: clock); defer { cleanup(dir) }
+        context.insert(Category(name: "food", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false))
+        try context.save()
+        try SyncIdentityService.backfillIdentities(context: context)
+
+        let sinLease = await executor.uploadSnapshot(cursor: nil)
+        #expect(stub.pushedSyncIDs.isEmpty, "ni un trozo sin confirmación")
+        #expect(sinLease != .completed)
+
+        #expect(await executor.confirmMigrationLease() == .held)
+        _ = await executor.uploadSnapshot(cursor: nil)
+        #expect(!stub.pushedSyncIDs.isEmpty, "control: con la confirmación la página sube")
     }
 
     // MARK: - Adopt-reconcile (DIFERIDOS #30, mecanismo v1 DARK)

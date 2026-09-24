@@ -172,14 +172,19 @@ private final class FakeExecutor: MigrationWorkExecuting {
     func uploadSnapshot(cursor: String?) async -> SnapshotStepOutcome {
         onUploadSnapshot?(uploadIndex)
         uploadCursorsSeen.append(cursor)
+        leaseCallLog.append("upload")
         guard !uploadOutcomes.isEmpty else { return .transient }   // M3: guion vacío no trapea
         let outcome = uploadOutcomes[min(uploadIndex, uploadOutcomes.count - 1)]
         uploadIndex += 1
         return outcome
     }
 
-    func verify() async -> VerifyProbe {
+    /// Con qué bandera pidió el runner cada verificación: la ida `true`, la vuelta `false`.
+    var verifyLeaseFlags: [Bool] = []
+    func verify(underMigrationLease: Bool) async -> VerifyProbe {
         verifyCallCount += 1
+        verifyLeaseFlags.append(underMigrationLease)
+        leaseCallLog.append("verify")
         guard !verifyProbes.isEmpty else { return .networkTimeout }   // M3: guion vacío no trapea
         let probe = verifyProbes[min(verifyIndex, verifyProbes.count - 1)]
         verifyIndex += 1
@@ -253,6 +258,21 @@ private final class FakeExecutor: MigrationWorkExecuting {
     // (MigrationWorkExecutorTests), así que aquí cada invocación cuenta 1:1 (el runner es el dueño del pacing).
     var heartbeatCallCount = 0
     func sendLeaseHeartbeatIfDue() async { heartbeatCallCount += 1 }
+
+    // Puerta del lease de la ida (ticket `displaced-migration-leader-keeps-uploading-after-a-takeover`): cola, el último se
+    // repite. `leaseCallLog` apunta cada pregunta y cada llamada de trabajo en ORDEN, para probar que la puerta va DELANTE.
+    var leaseChecks: [MigrationLeaseCheck] = [.held]
+    private var leaseIndex = 0
+    var leaseCheckCallCount = 0
+    var leaseCallLog: [String] = []
+    func confirmMigrationLease() async -> MigrationLeaseCheck {
+        leaseCheckCallCount += 1
+        leaseCallLog.append("lease")
+        guard !leaseChecks.isEmpty else { return .held }
+        let check = leaseChecks[min(leaseIndex, leaseChecks.count - 1)]
+        leaseIndex += 1
+        return check
+    }
 
     func count(_ effect: MigrationEffect) -> Int { executedEffects.filter { $0 == effect }.count }
     func attempts(_ effect: MigrationEffect) -> Int { executeAttempts.filter { $0 == effect }.count }
@@ -1773,8 +1793,10 @@ struct MigrationRunnerTests {
 
     // MARK: - 12. Heartbeat del lease (I14-pre, residual pendiente #3) — pacing del runner
 
-    /// El runner late tras CADA página confirmada del snapshot (el throttle vive en el executor real, no aquí).
-    @Test func heartbeat_uploadPageConfirmed_ticksPerPage() async throws {
+    /// La subida ya no late a ciegas tras cada página: pregunta por el lease ANTES de cada una y lee la respuesta (ticket
+    /// `displaced-migration-leader-keeps-uploading-after-a-takeover`). Hasta ese ticket este test fijaba el latido tras
+    /// cada `pageConfirmed`, cuya respuesta se tiraba. Tres pasadas de subida y una verificación: cuatro preguntas.
+    @Test func heartbeat_uploadAsksForTheLeaseBeforeEveryPage_insteadOfABlindHeartbeat() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
         let fake = FakeExecutor()
@@ -1785,7 +1807,9 @@ struct MigrationRunnerTests {
 
         await runner(context, fake).resume()
 
-        #expect(fake.heartbeatCallCount == 2, "heartbeat tras CADA pageConfirmed; NUNCA en .completed")
+        #expect(fake.heartbeatCallCount == 0, "la subida ya no late a ciegas: la puerta la sustituye")
+        #expect(fake.leaseCheckCallCount == 4, "una pregunta por pasada de subida (3) y otra por la verificación")
+        #expect(fake.uploadCursorsSeen == [nil, "c1", "c2"])
     }
 
     /// El runner late en `reverseUpload` pendiente (cada re-poll mantiene la lease viva mientras exporta el mirror).
@@ -5937,5 +5961,185 @@ struct MigrationRunnerTests {
         #expect(fake.lineageCallCount == 1, "probado una vez, no se vuelve a enumerar")
         #expect(fake.assignIdentityCallCount == 2)
         #expect(try journal(context).readPhase().phase == .done)
+    }
+
+    // MARK: - El líder DESPLAZADO no sube nada más (ticket `displaced-migration-leader-keeps-uploading-after-a-takeover`)
+
+    /// El teléfono vuelve tras más de 60 min sin latir y otro ya lidera: no sube ni una página, y sale en el acto con el
+    /// motivo que elige «otro dispositivo con tu cuenta tomó el relevo». Sin techo: la primera pasada ya sale.
+    @Test func displacedLeader_upload_lostLease_uploadsNothingAndLeavesAtOnce() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.leaseChecks = [.lost]
+        fake.uploadOutcomes = [.pageConfirmed(cursor: "c2")]
+        try seedJournal(context, phase: .uploadingSnapshot, leaderDeviceID: deviceID, snapshotCursor: "c1")
+
+        await runner(context, fake).resume()
+
+        let j = try journal(context)
+        #expect(fake.uploadCursorsSeen.isEmpty, "ni una página más")
+        #expect(j.readPhase().phase == .failedRollback)
+        #expect(j.forwardStepExitReasonRaw == "otherDevice")
+        #expect(j.snapshotExitReasonRaw == nil, "no es el techo de la subida: su texto taparía el del relevo")
+        #expect(fake.count(.rollback) == 1)
+        #expect(fake.verifyCallCount == 0)
+    }
+
+    /// La puerta va delante de CADA página, no de cada pasada: una pasada suspendida más de 60 min se reanuda a mitad. La
+    /// primera página sube con el lease confirmado; la segunda pregunta, recibe «otro lidera» y no sale.
+    @Test func displacedLeader_upload_losesTheLeaseMidUpload_stopsBeforeTheNextPage() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.leaseChecks = [.held, .lost]
+        fake.uploadOutcomes = [.pageConfirmed(cursor: "c1"), .pageConfirmed(cursor: "c2"), .completed]
+        try seedJournal(context, phase: .uploadingSnapshot, leaderDeviceID: deviceID)
+
+        await runner(context, fake).resume()
+
+        #expect(fake.leaseCallLog == ["lease", "upload", "lease"], "la pregunta va DELANTE de cada página")
+        #expect(fake.uploadCursorsSeen == [nil])
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .failedRollback)
+        #expect(j.forwardStepExitReasonRaw == "otherDevice")
+    }
+
+    /// Sin poder preguntar —red, 5xx— no sube, pero tampoco sale: la pasada cuenta como una espera de red de la subida,
+    /// con su reloj largo y sin motivo. La siguiente pasada vuelve a preguntar.
+    @Test func displacedLeader_upload_unconfirmed_uploadsNothingAndWaitsLikeTheNetwork() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.leaseChecks = [.unconfirmed]
+        try seedJournal(context, phase: .uploadingSnapshot, leaderDeviceID: deviceID, snapshotCursor: "c1")
+        let r = runner(context, fake)
+
+        await r.resume()
+        var j = try journal(context)
+        #expect(fake.uploadCursorsSeen.isEmpty)
+        #expect(j.readPhase().phase == .uploadingSnapshot)
+        #expect(j.snapshotStallProgressAt == fixedNow, "la observación sella el reloj de la subida")
+        #expect(j.snapshotStallCauseRaw == nil, "sin motivo: es una espera de red")
+        #expect(j.snapshotCursorJSON == "c1", "el cursor no se toca")
+        #expect(j.forwardStepExitReasonRaw == nil)
+
+        fake.leaseChecks = [.held]
+        await r.resume()
+        j = try journal(context)
+        #expect(fake.leaseCheckCallCount == 3, "no se cachea: la pasada siguiente vuelve a preguntar (y otra vez al verificar)")
+        #expect(fake.uploadCursorsSeen.first == "c1", "con el lease confirmado sigue desde su cursor")
+    }
+
+    /// Sin token y sin sesión que renovar: el mismo motivo que el push le daría a esa página.
+    @Test func displacedLeader_upload_sessionExpired_waitsWithTheSessionMotive() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.leaseChecks = [.sessionExpired]
+        try seedJournal(context, phase: .uploadingSnapshot, leaderDeviceID: deviceID)
+
+        await runner(context, fake).resume()
+
+        let j = try journal(context)
+        #expect(fake.uploadCursorsSeen.isEmpty)
+        #expect(j.readPhase().phase == .uploadingSnapshot)
+        #expect(j.snapshotStallCauseRaw == "sessionExpired")
+    }
+
+    /// La verificación empuja el outbox y trae el corpus de la cuenta: el líder desplazado que vuelve con el journal aquí
+    /// tampoco la corre, y sale con el mismo motivo.
+    @Test func displacedLeader_verify_lostLease_neitherPushesNorPulls_andLeavesAtOnce() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.leaseChecks = [.lost]
+        try seedJournal(context, phase: .verifying, leaderDeviceID: deviceID)
+
+        await runner(context, fake).resume()
+
+        let j = try journal(context)
+        #expect(fake.verifyCallCount == 0, "ni push ni pull")
+        #expect(j.readPhase().phase == .failedRollback)
+        #expect(j.forwardStepExitReasonRaw == "otherDevice")
+        #expect(fake.count(.rollback) == 1)
+        #expect(fake.confirmCutoverCallCount == 0)
+    }
+
+    /// Sin poder confirmar el lease, la verificación no corre y la pasada gasta un reintento de red, lo que `verify()`
+    /// haría con su propia red. La sesión borrada, igual: en la ida se lee como red.
+    @Test func displacedLeader_verify_unconfirmedOrSessionExpired_spendsANetworkRetryWithoutVerifying() async throws {
+        for check in [MigrationLeaseCheck.unconfirmed, .sessionExpired] {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let context = try makeContext(dir)
+            let fake = FakeExecutor()
+            fake.leaseChecks = [check]
+            try seedJournal(context, phase: .verifying, leaderDeviceID: deviceID, networkRetries: 2)
+
+            await runner(context, fake).resume()
+
+            let j = try journal(context)
+            #expect(fake.verifyCallCount == 0, "\(check)")
+            #expect(j.readPhase().phase == .verifying, "\(check)")
+            #expect(j.verifyNetworkRetries == 3, "\(check)")
+            #expect(j.forwardStepExitReasonRaw == nil, "\(check)")
+        }
+    }
+
+    /// Con el lease confirmado la verificación corre como siempre, y la pregunta va delante.
+    @Test func displacedLeader_verify_heldLease_verifiesAfterAsking() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.verifyProbes = [.match]
+        fake.confirmCutoverOutcome = .transient
+        try seedJournal(context, phase: .verifying, leaderDeviceID: deviceID)
+
+        await runner(context, fake).resume()
+
+        #expect(Array(fake.leaseCallLog.prefix(2)) == ["lease", "verify"])
+        #expect(fake.verifyLeaseFlags == [true], "la ida verifica bajo el lease")
+        #expect(try journal(context).readPhase().phase == .cutover(.pending))
+    }
+
+    /// La salida del relevo se lee en la tarjeta como el relevo, y «Reintentar» la limpia: el intento siguiente vuelve a
+    /// reclamar y el claim decide si este teléfono sigue o lidera.
+    @Test func displacedLeader_exitReadsAsTheTakeover_andTheRetryClearsIt() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.leaseChecks = [.lost]
+        try seedJournal(context, phase: .uploadingSnapshot, leaderDeviceID: deviceID)
+        let r = runner(context, fake)
+
+        await r.resume()
+        var j = try journal(context)
+        let text = StorageFailureCopyLogic.message(
+            kind: .migration,
+            snapshotExit: j.snapshotExitReasonRaw.flatMap(SnapshotExitReason.init(rawValue:)),
+            forwardStepExit: j.forwardStepExitReasonRaw.flatMap(ForwardStepExitReason.init(rawValue:)),
+            cutoverBlocker: nil)
+        #expect(text == L10n.Storage.Failed.stepOtherDevice)
+
+        await r.resetAfterRollback()
+        j = try journal(context)
+        #expect(j.readPhase().phase == .notStarted)
+        #expect(j.forwardStepExitReasonRaw == nil)
+    }
+
+    /// La vuelta a iCloud no pasa por la puerta de la ida: ni pregunta por su lease ni verifica bajo él.
+    @Test func displacedLeader_reverseVerify_neitherAsksNorVerifiesUnderTheForwardLease() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.leaseChecks = [.lost]
+        fake.verifyProbes = [.networkTimeout]
+        try seedJournal(context, phase: .reverseVerify, reverseOriginRaw: "done")
+
+        await runner(context, fake).resume()
+
+        #expect(fake.leaseCheckCallCount == 0)
+        #expect(fake.verifyLeaseFlags == [false])
+        #expect(try journal(context).readPhase().phase == .reverseVerify)
     }
 }

@@ -173,7 +173,9 @@ enum MetricsCanary: String {
     case cloudSnapshotUploadWaiting
     /// Uno de los tres pasos de la ida sin cifra que baje —claim (22 %), identidad (35 %), `cutover(.pending)` (80 %)—
     /// salió: por su techo o porque la persona canceló (ticket `forward-migration-steps-have-no-ceiling-and-no-exit`).
-    /// `detail` = `<paso>|<ForwardStepExitReason.rawValue o cancelled>`.
+    /// `detail` = `<paso>|<ForwardStepExitReason.rawValue o cancelled>`. Desde
+    /// `displaced-migration-leader-keeps-uploading-after-a-takeover` también `upload|otherDevice` y `verify|otherDevice`:
+    /// la salida del líder que perdió el lease en la subida o en la verificación.
     case cloudForwardStepAborted
     /// Una observación de uno de esos tres pasos que no avanzó. Deja ver un atasco SISTÉMICO antes de que ningún teléfono
     /// llegue a sus 15 min o sus 72 h.
@@ -685,7 +687,8 @@ extension MetricsService {
         return "\(reversePreMountBucket(stalledSeconds))|\(causeBucket)|\(blocker.map { "stop_\($0)" } ?? "waiting")"
     }
 
-    /// La salida de uno de los tres pasos de la ida sin cifra que baje. `detail` = `<paso>|<motivo>`.
+    /// La salida de uno de los tres pasos de la ida sin cifra que baje, o del lease perdido (`upload`/`verify`).
+    /// `detail` = `<paso>|<motivo>`.
     static func cloudForwardStepAborted(step: String, reason: String) {
         canary(.cloudForwardStepAborted, detail: "\(step)|\(reason)")
     }

@@ -373,7 +373,8 @@ final class CloudMigrationController {
 
     /// Por qué venció el techo de uno de los tres pasos sin cifra que baje —claim, identidad, `cutover(.pending)`—
     /// (`MigrationState.forwardStepExitReasonRaw`, ticket `forward-migration-steps-have-no-ceiling-and-no-exit`). Del
-    /// JOURNAL, como `snapshotExitReason`. `nil` = el fallo no vino de esos pasos.
+    /// JOURNAL, como `snapshotExitReason`. `nil` = el fallo no vino de esos pasos. También `otherDevice` cuando la subida
+    /// o la verificación salen porque otro dispositivo tomó el relevo (`displaced-migration-leader-keeps-uploading-after-a-takeover`).
     private(set) var forwardStepExitReason: ForwardStepExitReason?
 
     /// ¿Se puede cancelar la activación ahora mismo? En las fases de la ida que lo ofrecen: la subida del snapshot, los tres

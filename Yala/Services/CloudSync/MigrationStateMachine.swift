@@ -221,6 +221,12 @@ nonisolated enum MigrationEvent: Equatable {
     case snapshotUploadStalled(stalledSeconds: Double, definitiveStalledSeconds: Double, cause: MarkerExportStall)
     /// La persona cancela la activación de la nube desde la tarjeta de progreso de la subida.
     case snapshotUploadCancelled
+    /// El servidor dijo que este teléfono YA NO lidera la migración (ticket
+    /// `displaced-migration-leader-keeps-uploading-after-a-takeover`): el latido del lease contestó `other_leader` o
+    /// `not_in_progress` justo antes de subir una página (`uploadingSnapshot`) o de verificar (`verifying`). Otro
+    /// dispositivo tomó el relevo tras 60 min de silencio de éste, y desde aquí no se vuelve a liderar. Sale EN EL ACTO,
+    /// sin techo: esperar no devuelve el lease, y la puerta ya impidió subir nada.
+    case migrationLeaseLost
     /// Observación de uno de los TRES pasos de la ida sin cifra que baje —`claimingMigration` (22 %),
     /// `assigningIdentity` (35 %) y `cutover(.pending)` (80 %)— en una pasada que no avanzó (ticket
     /// `forward-migration-steps-have-no-ceiling-and-no-exit`). Hasta ese ticket los tres cortaban sin evento y la barra
@@ -729,6 +735,17 @@ nonisolated enum MigrationStateMachine {
         // persona no es un fallo que explicar. El backend queda como en la salida del techo.
         case (.uploadingSnapshot, .snapshotUploadCancelled):
             return .transition(next: .notStarted, effects: [])
+
+        // uploadingSnapshot / verifying · el LEASE se perdió (ticket
+        // `displaced-migration-leader-keeps-uploading-after-a-takeover`). Hasta ese ticket el líder desplazado seguía
+        // subiendo páginas encima de lo que subía quien tomó el relevo, y solo paraba en `cutover(.pending)`. Sale a
+        // `failedRollback` con `[.rollback]`, la salida del techo de la subida y del de la verificación: antes del cutover
+        // el teléfono está intacto y `.rollback` no toca la red. SIN techo, a diferencia del cutover: ninguna espera
+        // devuelve el lease, y lo que el techo protegería —no subir— ya lo hizo la puerta. El cutover no pasa por aquí:
+        // su `other_leader` sigue con el techo de su paso.
+        case (.uploadingSnapshot, .migrationLeaseLost),
+             (.verifying, .migrationLeaseLost):
+            return .transition(next: .failedRollback, effects: [.rollback])
 
         // Los TRES pasos de la ida sin cifra que baje · TECHO (ticket `forward-migration-steps-have-no-ceiling-and-no-exit`).
         // `claimingMigration` (22 %), `assigningIdentity` (35 %) y `cutover(.pending)` (80 %) cortaban sin evento ante un

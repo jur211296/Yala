@@ -475,6 +475,43 @@ struct SyncPushClientTests {
         #expect(session.requests.count == 2)              // no siguió empujando tras el fallo
     }
 
+    /// `continueWhile` se pregunta ANTES de cada chunk (ticket `displaced-migration-leader-keeps-uploading-after-a-takeover`):
+    /// con `false` tras el primero, el segundo no sale y lo confirmado se entrega. El control con `true` sube los tres.
+    @Test func push_continueWhile_isAskedBeforeEveryChunk() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let rows = makeRows(5, context: context)
+        let session = SequencedHTTPSession([
+            .init(status: 200, body: okBody(2), error: nil),
+            .init(status: 200, body: okBody(2), error: nil),
+            .init(status: 200, body: okBody(1), error: nil),
+        ])
+        let client = SyncPushClient(
+            baseURL: URL(string: "https://example.test")!,
+            tokenProvider: { "jwt" }, urlSession: session, pushChunkSize: 2)
+        var asked = 0
+        let outcome = await client.push(rows, continueWhile: { asked += 1; return asked == 1 })
+        guard case .completed(let results) = outcome else {
+            Issue.record("expected .completed(parciales), got \(outcome)"); return
+        }
+        #expect(results.count == 2, "solo el primer chunk")
+        #expect(session.requests.count == 1, "el segundo chunk no sale")
+        #expect(asked == 2)
+    }
+
+    /// Con `false` desde el principio no sale nada y es `.transient`, como un primer chunk fallido.
+    @Test func push_continueWhileFalseFromTheStart_sendsNothing() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let rows = makeRows(3, context: context)
+        let session = SequencedHTTPSession([.init(status: 200, body: okBody(2), error: nil)])
+        let client = SyncPushClient(
+            baseURL: URL(string: "https://example.test")!,
+            tokenProvider: { "jwt" }, urlSession: session, pushChunkSize: 2)
+        #expect(await client.push(rows, continueWhile: { false }) == .transient)
+        #expect(session.requests.isEmpty)
+    }
+
     /// Primer chunk falla → el outcome del fallo sube TAL CUAL (conserva la clasificación).
     @Test func push_firstChunkFails_preservesOutcome() async throws {
         let dir = freshDir(); defer { cleanup(dir) }

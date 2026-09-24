@@ -29,7 +29,8 @@ enum StorageFailureCopyLogic {
     ///
     /// **Los tres pasos sin cifra que baje —22 %, 35 %, 80 %— van después de la subida** (ticket
     /// `forward-migration-steps-have-no-ceiling-and-no-exit`, decisión de Jürgen: texto por motivo también aquí). Tampoco
-    /// pueden coincidir con ella: cada motivo solo lo escribe la salida de su techo, y «Reintentar» limpia los dos. Reusan
+    /// pueden coincidir con ella: cada motivo solo lo escribe la salida de su techo —o, `otherDevice`, la del lease perdido
+    /// en la subida o la verificación, que no pone el de la subida—, y «Reintentar» limpia los dos. Reusan
     /// las dos frases de la subida que siguen siendo verdad fuera de ella —la cuenta que no lo permitió, que da el correo, y
     /// el dispositivo que no pudo preparar los datos— y tienen tres propias, porque las de la subida hablan de «subir tus
     /// datos» y al 22 % todavía no se ha subido nada: la activación que lleva días sin avanzar, la sesión que caducó antes

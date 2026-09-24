@@ -269,7 +269,12 @@ final class SyncPushClient {
     /// transient y reintenta con backlog MENOR → converge). Un outcome TERMINAL (401/403/409-reverting)
     /// en un chunk tardío resurfacea en el PRIMER chunk del próximo intento — la semántica de STOP se
     /// conserva con un ciclo de retraso, sin perder el progreso ya aplicado.
-    func push(_ rows: [SyncOutbox]) async -> PushOutcome {
+    ///
+    /// **`continueWhile` se pregunta antes de CADA chunk** (ticket `displaced-migration-leader-keeps-uploading-after-a-takeover`):
+    /// la migración lo usa para no mandar un trozo más si la confirmación del lease ya no vale —la app congelada entre dos
+    /// trozos más de lo que dura el lease—. Con `false` corta igual que un chunk fallido: lo confirmado se entrega, y sin nada
+    /// confirmado es `.transient`. `nil` (el motor normal) no corta nunca.
+    func push(_ rows: [SyncOutbox], continueWhile: (@MainActor () -> Bool)? = nil) async -> PushOutcome {
         guard !rows.isEmpty else { return .completed([]) }
 
         // Sin token no se sube (los datos están a salvo en local), y el porqué lo dice el SDK: si CONSERVA la sesión, la
@@ -304,6 +309,10 @@ final class SyncPushClient {
         var confirmed: [SyncDeltaResult] = []
         var index = 0
         while index < deltas.count {
+            if let continueWhile, !continueWhile() {
+                CloudSyncBreadcrumb.pushStoppedBeforeChunk(sent: index, pending: deltas.count)
+                return confirmed.isEmpty ? .transient : .completed(confirmed)
+            }
             let upper = min(index + pushChunkSize, deltas.count)
             let outcome = await pushBatch(
                 Array(deltas[index..<upper]), token: token, attest: attest, totalPending: rows.count)
