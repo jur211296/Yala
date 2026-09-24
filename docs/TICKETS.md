@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (554)
+## Index (556)
 
 | id | status | path |
 |---|---|---|
@@ -191,7 +191,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | diez-worktrees-comparten-un-simulador | done | tickets/done/diez-worktrees-comparten-un-simulador.md |
 | discard-gate-cannot-close-an-orphan-session-window | done | tickets/done/discard-gate-cannot-close-an-orphan-session-window.md |
 | discard-gate-proceed-leaves-the-imported-rows-behind | backlog | tickets/backlog/discard-gate-proceed-leaves-the-imported-rows-behind.md |
-| displaced-migration-leader-keeps-uploading-after-a-takeover | backlog | tickets/backlog/displaced-migration-leader-keeps-uploading-after-a-takeover.md |
+| displaced-migration-leader-keeps-uploading-after-a-takeover | qa | tickets/qa/displaced-migration-leader-keeps-uploading-after-a-takeover.md |
 | distribucion-recalcula-dos-veces-por-toque-y-sin-debounce | backlog | tickets/backlog/distribucion-recalcula-dos-veces-por-toque-y-sin-debounce.md |
 | distribution-balance-kpi-skips-fx | done | tickets/done/distribution-balance-kpi-skips-fx.md |
 | distribution-default-should-be-detail-not-charts | backlog | tickets/backlog/distribution-default-should-be-detail-not-charts.md |
@@ -361,6 +361,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | la-nocturna-de-ui-no-ha-disparado-ni-una-vez | done | tickets/done/la-nocturna-de-ui-no-ha-disparado-ni-una-vez.md |
 | language-override-bypasses-the-cloud-prefs-channel | backlog | tickets/backlog/language-override-bypasses-the-cloud-prefs-channel.md |
 | late-icloud-wipe-can-re-export-between-its-two-halves | backlog | tickets/backlog/late-icloud-wipe-can-re-export-between-its-two-halves.md |
+| leader-displaced-after-the-cutover-pushes-its-residual-in-the-reconcile | backlog | tickets/backlog/leader-displaced-after-the-cutover-pushes-its-residual-in-the-reconcile.md |
 | leaving-and-reentering-restore-renews-the-hard-cap | done | tickets/done/leaving-and-reentering-restore-renews-the-hard-cap.md |
 | live-anchor-breakdown-doubles-the-approximate-glyph | backlog | tickets/backlog/live-anchor-breakdown-doubles-the-approximate-glyph.md |
 | lost-cloud-signup-then-private-leaves-migrate-blocked | backlog | tickets/backlog/lost-cloud-signup-then-private-leaves-migrate-blocked.md |
@@ -586,6 +587,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | welcome-privacy-branch-has-no-secondary-door | discarded | tickets/discarded/welcome-privacy-branch-has-no-secondary-door.md |
 | welcome-private-card-promises-icloud-in-visit | discarded | tickets/discarded/welcome-private-card-promises-icloud-in-visit.md |
 | welcome-private-fresh-start-skips-icloud-check | qa | tickets/qa/welcome-private-fresh-start-skips-icloud-check.md |
+| welcome-shows-a-takeover-exit-as-a-connection-error | backlog | tickets/backlog/welcome-shows-a-takeover-exit-as-a-connection-error.md |
 | welcome-start-fresh-wipes-before-ask | done | tickets/done/welcome-start-fresh-wipes-before-ask.md |
 | widget-de-tc-no-localiza-separadores | backlog | tickets/backlog/widget-de-tc-no-localiza-separadores.md |
 | widget-fallback-summary-uses-ten-rows | backlog | tickets/backlog/widget-fallback-summary-uses-ten-rows.md |
