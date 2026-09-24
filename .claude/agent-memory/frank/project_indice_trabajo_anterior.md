@@ -101,3 +101,4 @@ aquí queda el porqué y el contexto de cada entrega.
 - [Una ref colgada ilegible ya no se pierde](project_dangler_ilegible_no_es_rowgone.md) — PR del 23-sep; se tira la página, tres tickets nuevos de la review.
 - PR #232 (24-sep) — el reintento del claim del mismo teléfono termina el alta (`g16_01`, solo SQL, en producción; staging pendiente). Cinco tickets de la review.
 - g16_02 (24-sep, PR tras #233) — el reintento del alta ya no siembra al lado de un teléfono que entró; sello `personal_adopted_at` solo con `migration`. Staging y producción.
+- PR #238 (24-sep) — el líder desplazado DESPUÉS del cutover ya no sube su residual: espera, se une o recupera el relevo (sin salir a iCloud). Ticket de servidor aparte: `claim-grants-a-takeover-after-the-leader-passed-the-cutover`.

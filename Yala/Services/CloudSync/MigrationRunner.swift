@@ -1019,8 +1019,9 @@ final class MigrationRunner {
             //
             // SOLO si lo pendiente es esa salida. Otro pendiente en fase estable (`.runLeaderReconcileFromFrozenCloudKit`
             // en `done`, `.adoptBackendAccount` en `notStarted`) se reemplaza como siempre: el reconcile de un líder
-            // al que otro dispositivo le quitó la lease lanza `other_leader` en cada intento, y drenarlo cerraba la
-            // única salida de ese estado, que es justo esta vuelta.
+            // al que otro dispositivo le quitó la lease lanza mientras el otro lidera (desde
+            // `leader-displaced-after-the-cutover-pushes-its-residual-in-the-reconcile` espera sin subir, y se une o vuelve a
+            // liderar cuando el otro termina o lo suelta), y drenarlo aquí bloquearía esta vuelta mientras tanto.
             if event == .reverseActivated, try ReverseExitPending.isPending(self.loadState().readPendingEffects()) {
                 try await self.drainPendingEffects(isResume: true)
             }

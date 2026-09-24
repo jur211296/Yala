@@ -1301,6 +1301,13 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSyncMigration leaseLost step=\(step, privacy: .public) — otro dispositivo lidera, sale a failedRollback")
     }
 
+    /// El líder volvió al reconcile de `done` sin el lease y averiguó quién lleva la migración (ticket
+    /// `leader-displaced-after-the-cutover-pushes-its-residual-in-the-reconcile`). `outcome` = `finishedHere` |
+    /// `finishedElsewhere` | `otherLeads` | `retaken`. En ninguno sube nada sin el lease.
+    static func migrationPostCutoverLeaseResolved(outcome: String) {
+        logger.notice("CloudSyncMigration postCutoverLease outcome=\(outcome, privacy: .public)")
+    }
+
     // MARK: Adopt-reconcile (DIFERIDOS #30, mecanismo v1 DARK) — sin PII (solo conteos)
 
     /// DIFERIDOS #30: el adopt de un device `.icloud`→`.cloud` rescató `count` filas huérfanas de la ventana

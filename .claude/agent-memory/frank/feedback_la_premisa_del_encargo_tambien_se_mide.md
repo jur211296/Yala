@@ -264,3 +264,12 @@ memoria en vez de por el encargo.
 **How to apply:** antes de bajar la prioridad de algo porque «no le llega a nadie», busca la PALANCA que lo enciende
 —el flag compilado y el percent remoto— y lee qué dice hoy. Una memoria que diga «X está apagado» es una afirmación
 con fecha, y los percents se mueven sin tocar el código.
+
+## Tercer caso (2026-09-24): el encargo prescribía la SALIDA equivocada
+
+El encargo de `leader-displaced-after-the-cutover-pushes-its-residual-in-the-reconcile` pedía que el
+teléfono desplazado «pare y salga con el texto del relevo, misma familia que #237». Después del cutover
+esa salida no existe sin romper «el cutover jamás hace rollback»: el marcador ya se exportó. El ticket sí
+admitía «sale **o se recupera**», y la recuperación (esperar sin subir, unirse cuando el otro cierra) era
+lo correcto. **How to apply:** cuando el encargo diga *cómo* arreglarlo, comprueba que ese cómo es legal en
+la fase del caso, no solo en la del ticket hermano del que copia el molde; y déjalo por escrito en el Paso 0.

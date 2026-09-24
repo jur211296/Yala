@@ -860,6 +860,38 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
             // físicamente y una adopción tardía la rescata — el diff no caduca). También v1: borrados de
             // ventana (resurrección benigna) + import-lag (duplicado curable). Candidato v2 (device que jamás
             // adopta) = lectura directa del CloudKit congelado por el líder (opción C, descartada v1).
+            //
+            // La PUERTA del lease va DELANTE de todo (ticket
+            // `leader-displaced-after-the-cutover-pushes-its-residual-in-the-reconcile`). El lease puede caducar esperando el
+            // marcador o el relanzamiento, y `claim_account` da el relevo sin mirar `migrated_at`: el teléfono desplazado
+            // empujaba aquí su residual encima de la migración de otro y reintentaba el efecto —y el `complete`, con su
+            // `other_leader`— en cada arranque, con el runtime sin arrancar para siempre. Solo sube con el lease confirmado;
+            // si lo perdió, `resolvePostCutoverLease` averigua quién cerró la migración sin subir nada. Salir a iCloud, como
+            // antes del cutover, no es una opción: el marcador ya se exportó y el corpus de este teléfono ya está en la cuenta.
+            switch await resolvePostCutoverLease() {
+            case .leads:
+                break
+            case .finishedHere:
+                // Su propio `complete` llegó y se perdió la respuesta: la migración está cerrada por ESTE teléfono.
+                CloudSyncBreadcrumb.migrationPostCutoverLeaseResolved(outcome: "finishedHere")
+                stampMigrationFinished()
+                return
+            case .finishedElsewhere:
+                // Otro dispositivo cerró la migración (o la cuenta vuelve a iCloud): este teléfono se une como uno más. Su
+                // residual se queda en el outbox y lo sube el sync normal, con la migración ya cerrada.
+                CloudSyncBreadcrumb.migrationPostCutoverLeaseResolved(outcome: "finishedElsewhere")
+                MetricsService.cloudPostCutoverLeaseLost(outcome: "joined")
+                stampMigrationFinished()
+                return
+            case .otherLeads:
+                // Sin canario: el re-kick de 30 s lo dispararía en cada vuelta mientras el otro lidera.
+                CloudSyncBreadcrumb.migrationPostCutoverLeaseResolved(outcome: "otherLeads")
+                throw MigrationExecutorError.notWired(effect: "runLeaderReconcile: otherLeaderActive")
+            case .unconfirmed:
+                throw MigrationExecutorError.notWired(effect: "runLeaderReconcile: leaseUnconfirmed")
+            case .sessionExpired:
+                throw MigrationExecutorError.notWired(effect: "runLeaderReconcile: sessionExpired")
+            }
             // Un drain que no terminó tampoco manda el 'complete' (mismo molde retomable que el outbox ilegible).
             guard engine.drainOnce(context: context) else {
                 throw MigrationExecutorError.notWired(effect: "runLeaderReconcile: drainAborted")
@@ -878,7 +910,13 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
             let (buildable, poison) = pushClient.partitionBuildable(residual)
             engine.deadLetterPoison(poison, context: context, now: now())
             if !buildable.isEmpty {
-                guard case .completed(let results) = await pushClient.push(buildable) else {
+                // Los trozos del push cortan si la confirmación tiene más de `leaseInFlightBudget`: la app congelada a mitad
+                // del barrido no puede seguir subiendo con un lease que ya pudo perder.
+                let leaseStillConfirmed: @MainActor () -> Bool = { [leaseWitness] in
+                    leaseWitness.isConfirmed(within: MigrationWorkExecutor.leaseInFlightBudget)
+                }
+                guard case .completed(let results) = await pushClient.push(
+                    buildable, continueWhile: leaseStillConfirmed) else {
                     // Red → retomable: el 'complete' NO se marca; el resume re-corre este efecto entero
                     // (drain/push idempotentes por LWW + confirmUploaded).
                     throw MigrationExecutorError.notWired(effect: "runLeaderReconcile: sweepTransient")
@@ -888,6 +926,13 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
                 if rescued > 0 {
                     CloudSyncBreadcrumb.migrationLeaderOrphanReconciled(count: rescued)
                     MetricsService.cloudCutoverLeaderOrphanReconciled(count: rescued)
+                }
+                // Un push que entregó MENOS resultados que filas cortó a mitad: un trozo falló tras otros confirmados, o la
+                // confirmación del lease caducó entre dos. Lo confirmado ya se purgó; el resto espera al resume, y el
+                // `complete` no sale con trozos sin enviar. (Una fila que el servidor contestó y no aplicó —un `rejected`
+                // de upstream— sí cuenta como contestada y la reintenta el runtime tras el cierre, como antes.)
+                guard results.count >= buildable.count else {
+                    throw MigrationExecutorError.notWired(effect: "runLeaderReconcile: sweepTransient")
                 }
             }
             // `migration_progress('complete')` (líder) — SOLO tras el barrido (un kill entre ambos re-corre
@@ -899,13 +944,7 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
             switch await accountClient.migrationProgress(jwt: jwt, deviceID: deviceID, action: "complete") {
             case .ok:
                 CloudSyncBreadcrumb.migrationReconcileDeferred()
-                // La migración de esta cuenta ya no está a medias: el sello pasa a `.routeReturningUser`, el de quien ya
-                // tiene la cuenta. `.proceedMigration` es lo que deja a «Migrar a la nube» reintentar un intento que falló
-                // (`StorageMigrationIdentityGateLogic.check`), y con una migración TERMINADA dejaba pasar la comprobación
-                // hasta el claim, que la paraba igual pero tras el consentimiento. El runtime arranca con los dos.
-                if let userID = session.currentUserID {
-                    claimStore.record(.routeReturningUser, forUserID: userID)
-                }
+                stampMigrationFinished()
             case .otherLeader:
                 CloudSyncBreadcrumb.migrationCutoverOtherLeader()
                 throw MigrationExecutorError.notWired(effect: "runLeaderReconcile: otherLeader")
@@ -1549,6 +1588,91 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         case .transient:
             CloudSyncBreadcrumb.migrationLeaseUnconfirmed(reason: "transient")
             return .unconfirmed
+        }
+    }
+
+    // MARK: - El lease después del cutover
+
+    /// Quién lleva la migración cuando el líder vuelve al reconcile de `done` (ticket
+    /// `leader-displaced-after-the-cutover-pushes-its-residual-in-the-reconcile`).
+    enum PostCutoverLease: Equatable {
+        /// Este teléfono sigue liderando, con el lease recién confirmado: sube su residual y manda `complete`.
+        case leads
+        /// La migración la cerró ESTE teléfono: su `complete` llegó y se perdió la respuesta.
+        case finishedHere
+        /// La migración la cerró OTRO dispositivo, o la cuenta volvió a iCloud: este teléfono se une como uno más.
+        case finishedElsewhere
+        /// Otro dispositivo lidera con el lease vivo: se espera sin subir nada.
+        case otherLeads
+        /// No se pudo saber: red, 5xx, un 401 con la sesión guardada o un rechazo que no habla del líder.
+        case unconfirmed
+        /// Sin token y el SDK ya no conserva una sesión que renovar.
+        case sessionExpired
+    }
+
+    /// La pregunta que el reconcile de `done` hace antes de subir nada. Sin el lease confirmado, averigua quién cerró la
+    /// migración SIN subir nada, en tres pasos, porque el latido no los distingue. Lo único que escribe en el servidor es lo
+    /// que escribe un claim: con `existing_stable`, `personal_adopted_at` (g16_02), que es verdad —este teléfono entra en la
+    /// cuenta—:
+    ///  1. `heartbeat` (`confirmMigrationLease`). `ok` → `.leads`. Su `.lost` junta `other_leader` y `not_in_progress`,
+    ///     y ese segundo es AMBIGUO aquí: también lo recibe este teléfono si su propio `complete` llegó y la respuesta se
+    ///     perdió. Por eso no sale nada todavía;
+    ///  2. `complete`: el RPC mira el líder antes que nada y es idempotente para él, así que `ok` solo lo contesta si este
+    ///     teléfono sigue siendo el líder de una migración cerrada → `.finishedHere`. `other_leader` → sigue;
+    ///  3. `claim` con `migration: true`, DIRECTO al cliente y no por `performClaim`, que estamparía el sello del claim:
+    ///     `created` → quien tomó el relevo lo dejó caducar y este teléfono vuelve a liderar, el mismo relevo que se le dio
+    ///     a él (se confirma con otro latido, que arma el testigo de los trozos del push); `claiming_in_progress` → el otro
+    ///     sigue vivo → `.otherLeads`; `existing_stable` → la migración ya no está en curso: la cerró otro, o la cuenta
+    ///     vuelve o volvió a iCloud (el push del runtime recibirá entonces el 409 de cuenta revirtiendo, como cualquier
+    ///     otro dispositivo) → `.finishedElsewhere`. Que `complete` de quien no lidera conteste `other_leader` aunque la
+    ///     migración esté cerrada está medido en el cuerpo vivo (md5 `14fc5e2c…`: la ida mira el líder antes que nada).
+    /// La sesión se lee DESPUÉS de cada petición, como en el resto del ejecutor.
+    func resolvePostCutoverLease() async -> PostCutoverLease {
+        switch await confirmMigrationLease() {
+        case .held: return .leads
+        case .unconfirmed: return .unconfirmed
+        case .sessionExpired: return .sessionExpired
+        case .lost: break
+        }
+        guard let jwt = await session.accessToken(), !jwt.isEmpty else {
+            return session.canRenewSession ? .unconfirmed : .sessionExpired
+        }
+        switch await accountClient.migrationProgress(jwt: jwt, deviceID: deviceID, action: "complete") {
+        case .ok:
+            return .finishedHere
+        case .otherLeader:
+            break
+        case .rejected(let reason):
+            CloudSyncBreadcrumb.migrationCutoverRejected(reason: "postCutoverComplete: \(reason)")
+            return .unconfirmed
+        case .sessionExpired:
+            return session.canRenewSession ? .unconfirmed : .sessionExpired
+        case .transient:
+            return .unconfirmed
+        }
+        switch await accountClient.claim(jwt: jwt, deviceID: deviceID, provider: provider(), migration: true) {
+        case .success(.created):
+            CloudSyncBreadcrumb.migrationPostCutoverLeaseResolved(outcome: "retaken")
+            MetricsService.cloudPostCutoverLeaseLost(outcome: "retaken")
+            return await confirmMigrationLease() == .held ? .leads : .unconfirmed
+        case .success(.claimingInProgress):
+            return .otherLeads
+        case .success(.existingStable):
+            return .finishedElsewhere
+        case .sessionExpired:
+            return session.canRenewSession ? .unconfirmed : .sessionExpired
+        case .accountUnavailable, .transient:
+            return .unconfirmed
+        }
+    }
+
+    /// La migración de esta cuenta ya no está a medias: el sello pasa a `.routeReturningUser`, el de quien ya tiene la
+    /// cuenta. `.proceedMigration` es lo que deja a «Migrar a la nube» reintentar un intento que falló
+    /// (`StorageMigrationIdentityGateLogic.check`), y con una migración TERMINADA dejaba pasar la comprobación hasta el
+    /// claim, que la paraba igual pero tras el consentimiento. El runtime arranca con los dos.
+    private func stampMigrationFinished() {
+        if let userID = session.currentUserID {
+            claimStore.record(.routeReturningUser, forUserID: userID)
         }
     }
 

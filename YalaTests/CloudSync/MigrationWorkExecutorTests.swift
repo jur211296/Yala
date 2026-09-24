@@ -115,6 +115,13 @@ private func upsertDelta(table: String, syncID: UUID, seq: Int64) -> PulledDelta
                 hlc: "hlc", serverSeq: seq, schemaVersion: 1, rawDelta: "{}")
 }
 
+/// El endpoint de métricas caído: el canario se queda en el spool, donde el test lo lee.
+private final class MetricsDown: SyncHTTPSession, @unchecked Sendable {
+    func data(for request: URLRequest) async throws -> (Data, URLResponse) {
+        (Data(), HTTPURLResponse(url: request.url!, statusCode: 500, httpVersion: nil, headerFields: nil)!)
+    }
+}
+
 /// Enruta por path: claim / push (ecoa applied) / pull (página vacía) / merkle (body configurable).
 private final class RoutingStub: SyncHTTPSession, @unchecked Sendable {
     var claimBody = Data("{\"state\":\"created\"}".utf8)
@@ -130,6 +137,18 @@ private final class RoutingStub: SyncHTTPSession, @unchecked Sendable {
     /// Se llama cuando el POST de `/account/migration` LLEGA al stub, antes de la respuesta: deja avanzar un reloj
     /// DURANTE la pregunta (la puerta del lease cuenta la confirmación desde que preguntó, no desde que le contestaron).
     var onMigrationRequest: (() -> Void)?
+    /// Respuesta de `/account/migration` POR ACCIÓN (`heartbeat`, `complete`…), por delante de `migrationBody`. El reconcile
+    /// de `done` pregunta el latido, `complete` y el claim en la misma pasada, y cada uno contesta otra cosa (ticket
+    /// `leader-displaced-after-the-cutover-pushes-its-residual-in-the-reconcile`). Una cola por acción: se consume en orden
+    /// y su última respuesta se repite.
+    var migrationBodiesByAction: [String: [Data]] = [:]
+    /// Las acciones de `/account/migration`, en el orden en que llegaron.
+    private(set) var migrationActions: [String] = []
+    /// Cuántos claims llegaron.
+    private(set) var claimCallCount = 0
+    /// Se llama cuando llega cada POST de `/sync/push`, antes de la respuesta.
+    var onPushRequest: (() -> Void)?
+    private(set) var pushCallCount = 0
     var pushStatus = 200
     /// 401 aquí = sesión caducada del pull, que es la mitad que `reverseDrainOnce` y `verify` no podían separar
     /// hasta el ticket `reverse-before-mount-stays-stuck-with-an-expired-session`.
@@ -159,15 +178,24 @@ private final class RoutingStub: SyncHTTPSession, @unchecked Sendable {
         if path.contains("account/migration") {
             migrationCallCount += 1
             lastMigrationBody = (try? JSONSerialization.jsonObject(with: request.httpBody ?? Data())) as? [String: Any]
+            let action = lastMigrationBody?["action"] as? String ?? ""
+            migrationActions.append(action)
             onMigrationRequest?()
+            if var queue = migrationBodiesByAction[action], let first = queue.first {
+                if queue.count > 1 { queue.removeFirst(); migrationBodiesByAction[action] = queue }
+                return (first, resp(migrationStatus))
+            }
             return (migrationBody, resp(migrationStatus))
         }
         if path.contains("account/claim") {
+            claimCallCount += 1
             lastClaimBody = (try? JSONSerialization.jsonObject(with: request.httpBody ?? Data())) as? [String: Any]
             onClaimRequest?()
             return (claimBody, resp(claimStatus))
         }
         if path.contains("sync/push") {
+            pushCallCount += 1
+            onPushRequest?()
             if pushStatus != 200 { return (Data(), resp(pushStatus)) }
             var results: [[String: Any]] = []
             if let json = try? JSONSerialization.jsonObject(with: request.httpBody ?? Data()) as? [String: Any],
@@ -608,12 +636,21 @@ struct MigrationWorkExecutorTests {
                                     personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
                                     claimStore: claimStore)
 
-        stub.migrationBody = Data("{\"ok\":false,\"reason\":\"other_leader\"}".utf8)
-        await #expect(throws: MigrationExecutorError.self) {
-            try await executor.execute(.runLeaderReconcileFromFrozenCloudKit)
+        // El lease confirmado y el `complete` rechazado: la carrera entre la puerta y el cierre. Cada rechazo con su
+        // `effect` EXACTO — con `MigrationExecutorError.self` a secas pasaba también la resolución del lease perdido.
+        for (completeBody, effect) in [
+            (Data("{\"ok\":false,\"reason\":\"other_leader\"}".utf8), "runLeaderReconcile: otherLeader"),
+            (Data("{\"ok\":false,\"reason\":\"no_profile\"}".utf8), "runLeaderReconcile: no_profile"),
+        ] {
+            stub.migrationBodiesByAction = ["heartbeat": [Data("{\"ok\":true}".utf8)], "complete": [completeBody]]
+            await #expect(throws: MigrationExecutorError.notWired(effect: effect)) {
+                try await executor.execute(.runLeaderReconcileFromFrozenCloudKit)
+            }
+            #expect(claimStore.action(forUserID: "sub-leader") == .proceedMigration, "sin complete, el intento sigue a medias")
         }
-        #expect(claimStore.action(forUserID: "sub-leader") == .proceedMigration, "sin complete, el intento sigue a medias")
+        #expect(stub.claimCallCount == 0, "con el lease confirmado no se reclama nada")
 
+        stub.migrationBodiesByAction = [:]
         stub.migrationBody = Data("{\"ok\":true}".utf8)
         try await executor.execute(.runLeaderReconcileFromFrozenCloudKit)
         #expect(claimStore.action(forUserID: "sub-leader") == .routeReturningUser)
@@ -662,6 +699,264 @@ struct MigrationWorkExecutorTests {
         // El residual sigue VIVO (nada se perdió) → el resume re-corre el efecto entero.
         let live = try context.fetch(FetchDescriptor<SyncOutbox>()).filter { $0.rejectedReason == nil }
         #expect(!live.isEmpty, "con red caída el residual queda vivo, retomable")
+    }
+
+    // MARK: - El lease después del cutover (ticket `leader-displaced-after-the-cutover-pushes-its-residual-in-the-reconcile`)
+
+    private static let okBody = Data("{\"ok\":true}".utf8)
+    private static let otherLeaderBody = Data("{\"ok\":false,\"reason\":\"other_leader\"}".utf8)
+    private static let notInProgressBody = Data("{\"ok\":false,\"reason\":\"not_in_progress\"}".utf8)
+    private static func claimBody(_ state: String) -> Data { Data("{\"state\":\"\(state)\"}".utf8) }
+
+    /// El escenario común: el líder en `done` con un write de la ventana del cutover sin subir y el sello del intento.
+    private func postCutoverLeader(
+        _ dir: URL, stub: RoutingStub, session: CloudSyncSessionProviding? = nil, leaseClock: MutableLeaseClock? = nil,
+        residualRows: Int = 1
+    ) throws -> (MigrationWorkExecutor, ModelContext, CloudClaimActionStore) {
+        let context = try makeContext(dir)
+        let claimStore = CloudClaimActionStore(defaults: makeIsolatedDefaults(prefix: "mwe.postcutover"))
+        claimStore.record(.proceedMigration, forUserID: "sub-leader")
+        let executor = makeExecutor(context, CloudSyncEngine(), stub,
+                                    session ?? FakeSession(token: "jwt", userID: "sub-leader"), FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    leaseClock: leaseClock, claimStore: claimStore)
+        for index in 0..<residualRows {
+            context.insert(Category(name: "window-\(index)", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false))
+        }
+        try context.save()
+        return (executor, context, claimStore)
+    }
+
+    private func liveOutboxCount(_ context: ModelContext) throws -> Int {
+        try context.fetch(FetchDescriptor<SyncOutbox>()).filter { $0.rejectedReason == nil }.count
+    }
+
+    @Test("reconcile post-cutover: con el lease confirmado pregunta el latido ANTES de subir, y sube y cierra como siempre")
+    func postCutover_leaseHeld_pushesThenCompletes() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let stub = RoutingStub()
+        var pushesSeenAtFirstHeartbeat: Int?
+        stub.onMigrationRequest = { if pushesSeenAtFirstHeartbeat == nil { pushesSeenAtFirstHeartbeat = stub.pushCallCount } }
+        let (executor, context, claimStore) = try postCutoverLeader(dir, stub: stub)
+
+        try await executor.execute(.runLeaderReconcileFromFrozenCloudKit)
+
+        #expect(stub.migrationActions == ["heartbeat", "complete"])
+        #expect(pushesSeenAtFirstHeartbeat == 0, "la puerta va delante del push")
+        #expect(!stub.pushedSyncIDs.isEmpty, "con el lease, el residual sube")
+        #expect(try liveOutboxCount(context) == 0)
+        #expect(stub.claimCallCount == 0)
+        #expect(claimStore.action(forUserID: "sub-leader") == .routeReturningUser)
+    }
+
+    /// EL BUG. Otro dispositivo tomó el relevo después del cutover y sigue liderando: hasta el ticket este teléfono subía
+    /// su residual encima y reintentaba en cada arranque. Ahora no sube nada, no toca el sello y espera.
+    @Test("reconcile post-cutover: otro lidera con el lease vivo → no sube NADA, no cierra y espera")
+    func postCutover_otherLeaderAlive_pushesNothingAndWaits() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let stub = RoutingStub()
+        stub.migrationBodiesByAction = ["heartbeat": [Self.otherLeaderBody], "complete": [Self.otherLeaderBody]]
+        stub.claimBody = Self.claimBody("claiming_in_progress")
+        let (executor, context, claimStore) = try postCutoverLeader(dir, stub: stub)
+
+        await #expect(throws: MigrationExecutorError.notWired(effect: "runLeaderReconcile: otherLeaderActive")) {
+            try await executor.execute(.runLeaderReconcileFromFrozenCloudKit)
+        }
+        #expect(stub.pushCallCount == 0, "el desplazado no sube su residual encima de la migración del otro")
+        #expect(stub.pullCallCount == 0)
+        #expect(stub.migrationActions == ["heartbeat", "complete"])
+        #expect(stub.lastClaimBody?["migration"] as? Bool == true, "solo un claim de migración puede volver a liderar")
+        #expect(claimStore.action(forUserID: "sub-leader") == .proceedMigration,
+                "el claim va directo al cliente: `claiming_in_progress` no puede cambiar el sello")
+        _ = try? context.fetch(FetchDescriptor<SyncOutbox>())
+    }
+
+    /// Otro dispositivo terminó la migración: este teléfono se une como uno más. El efecto termina (el runtime arranca y el
+    /// residual viaja por el sync normal, con la migración ya cerrada), y no sube nada desde aquí.
+    @Test("reconcile post-cutover: el otro ya cerró la migración → se une sin subir nada desde el reconcile")
+    func postCutover_otherFinished_joinsWithoutPushing() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let stub = RoutingStub()
+        stub.migrationBodiesByAction = ["heartbeat": [Self.notInProgressBody], "complete": [Self.otherLeaderBody]]
+        stub.claimBody = Self.claimBody("existing_stable")
+        let (executor, _, claimStore) = try postCutoverLeader(dir, stub: stub)
+
+        try await executor.execute(.runLeaderReconcileFromFrozenCloudKit)
+
+        #expect(stub.pushCallCount == 0)
+        #expect(stub.claimCallCount == 1)
+        #expect(stub.migrationActions == ["heartbeat", "complete"])
+        #expect(claimStore.action(forUserID: "sub-leader") == .routeReturningUser, "la migración está cerrada: se une")
+    }
+
+    /// `not_in_progress` es AMBIGUO después del cutover: también lo recibe el líder cuyo `complete` llegó y perdió la
+    /// respuesta. `complete` lo desempata (idempotente para el líder), sin claim.
+    @Test("reconcile post-cutover: su propio complete ya había llegado → termina sin claim y sin subir")
+    func postCutover_ownCompleteLanded_finishes() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let stub = RoutingStub()
+        stub.migrationBodiesByAction = ["heartbeat": [Self.notInProgressBody], "complete": [Self.okBody]]
+        let (executor, _, claimStore) = try postCutoverLeader(dir, stub: stub)
+
+        try await executor.execute(.runLeaderReconcileFromFrozenCloudKit)
+
+        #expect(stub.claimCallCount == 0, "sin claim: la migración la cerró este mismo teléfono")
+        #expect(stub.pushCallCount == 0)
+        #expect(claimStore.action(forUserID: "sub-leader") == .routeReturningUser)
+    }
+
+    /// Quien tomó el relevo lo dejó caducar: el claim de migración le devuelve el relevo a este teléfono, que lo confirma
+    /// con otro latido y termina como líder.
+    @Test("reconcile post-cutover: el otro soltó el lease → vuelve a liderar, confirma y entonces sube y cierra")
+    func postCutover_otherAbandoned_retakesThenPushes() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let stub = RoutingStub()
+        stub.migrationBodiesByAction = [
+            "heartbeat": [Self.otherLeaderBody, Self.okBody],
+            "complete": [Self.otherLeaderBody, Self.okBody],
+        ]
+        var pushesSeenAtClaim: Int?
+        stub.onClaimRequest = { pushesSeenAtClaim = stub.pushCallCount }
+        let (executor, context, claimStore) = try postCutoverLeader(dir, stub: stub)
+
+        try await executor.execute(.runLeaderReconcileFromFrozenCloudKit)
+
+        #expect(stub.migrationActions == ["heartbeat", "complete", "heartbeat", "complete"])
+        #expect(pushesSeenAtClaim == 0, "nada sube antes de recuperar el relevo")
+        #expect(!stub.pushedSyncIDs.isEmpty)
+        #expect(try liveOutboxCount(context) == 0)
+        #expect(claimStore.action(forUserID: "sub-leader") == .routeReturningUser)
+    }
+
+    @Test("reconcile post-cutover: el claim devuelve el relevo pero el latido no lo confirma → no sube")
+    func postCutover_retakeNotConfirmed_pushesNothing() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let stub = RoutingStub()
+        stub.migrationBodiesByAction = ["heartbeat": [Self.otherLeaderBody], "complete": [Self.otherLeaderBody]]
+        let (executor, _, _) = try postCutoverLeader(dir, stub: stub)
+
+        await #expect(throws: MigrationExecutorError.notWired(effect: "runLeaderReconcile: leaseUnconfirmed")) {
+            try await executor.execute(.runLeaderReconcileFromFrozenCloudKit)
+        }
+        #expect(stub.migrationActions == ["heartbeat", "complete", "heartbeat"])
+        #expect(stub.pushCallCount == 0)
+    }
+
+    @Test("reconcile post-cutover: sin poder confirmar el lease (red) no sube, no cierra y no reclama")
+    func postCutover_leaseUnconfirmed_pushesNothing() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let stub = RoutingStub()
+        stub.migrationStatus = 503
+        let (executor, context, claimStore) = try postCutoverLeader(dir, stub: stub)
+
+        await #expect(throws: MigrationExecutorError.notWired(effect: "runLeaderReconcile: leaseUnconfirmed")) {
+            try await executor.execute(.runLeaderReconcileFromFrozenCloudKit)
+        }
+        #expect(stub.migrationActions == ["heartbeat"])
+        #expect(stub.pushCallCount == 0)
+        #expect(stub.claimCallCount == 0)
+        #expect(claimStore.action(forUserID: "sub-leader") == .proceedMigration)
+        _ = context
+    }
+
+    @Test("reconcile post-cutover: un complete o un claim que no contestan → espera, sin subir")
+    func postCutover_resolutionUnconfirmed_pushesNothing() async throws {
+        for (completeBody, claimStatus) in [(Data("{\"ok\":false,\"reason\":\"no_profile\"}".utf8), 200),
+                                            (Self.otherLeaderBody, 503)] {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let stub = RoutingStub()
+            stub.migrationBodiesByAction = ["heartbeat": [Self.otherLeaderBody], "complete": [completeBody]]
+            stub.claimStatus = claimStatus
+            let (executor, _, claimStore) = try postCutoverLeader(dir, stub: stub)
+
+            await #expect(throws: MigrationExecutorError.notWired(effect: "runLeaderReconcile: leaseUnconfirmed")) {
+                try await executor.execute(.runLeaderReconcileFromFrozenCloudKit)
+            }
+            #expect(stub.pushCallCount == 0)
+            #expect(claimStore.action(forUserID: "sub-leader") == .proceedMigration)
+        }
+    }
+
+    @Test("reconcile post-cutover: sin token — con sesión que renovar espera; sin ella es sesión caducada")
+    func postCutover_noToken() async throws {
+        let dirA = freshDir(); defer { cleanup(dirA) }
+        let renewable = FakeSession(token: nil, userID: "sub-leader")
+        renewable.canRenewSessionOverride = true
+        let (a, _, _) = try postCutoverLeader(dirA, stub: RoutingStub(), session: renewable)
+        await #expect(throws: MigrationExecutorError.notWired(effect: "runLeaderReconcile: leaseUnconfirmed")) {
+            try await a.execute(.runLeaderReconcileFromFrozenCloudKit)
+        }
+        let dirB = freshDir(); defer { cleanup(dirB) }
+        let (b, _, _) = try postCutoverLeader(dirB, stub: RoutingStub(), session: FakeSession(token: nil, userID: "sub-leader"))
+        await #expect(throws: MigrationExecutorError.notWired(effect: "runLeaderReconcile: sessionExpired")) {
+            try await b.execute(.runLeaderReconcileFromFrozenCloudKit)
+        }
+    }
+
+    /// La sesión que el SDK borra DENTRO de la renovación del `complete` de desempate: leída antes del `await` se leería
+    /// guardada. Sin red ni sesión, este teléfono no puede preguntar nada más.
+    @Test("reconcile post-cutover: la sesión borrada al pedir el token del desempate es sesión caducada")
+    func postCutover_sessionRemovedDuringResolution() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let (executor, _, _) = try postCutoverLeader(dir, stub: RoutingStub(), session: SessionRemovedWhileFetching())
+        await #expect(throws: MigrationExecutorError.notWired(effect: "runLeaderReconcile: sessionExpired")) {
+            try await executor.execute(.runLeaderReconcileFromFrozenCloudKit)
+        }
+    }
+
+    /// El canario dice que el relevo tras el cutover PASÓ: sale al unirse y al volver a liderar, y NO cuando la migración
+    /// la cerró este mismo teléfono (su `complete` perdido no es un lease perdido). Las dos ramas de «terminar» hacen lo
+    /// mismo con el efecto; lo único que las separa es esto, y sin la aserción confundirlas pasaba en verde.
+    @Test("reconcile post-cutover: el canario sale al unirse y al volver a liderar, no con su propio complete")
+    func postCutover_canaryOnlyWhenTheLeaseWasReallyLost() async throws {
+        let defaults = makeIsolatedDefaults(prefix: "mwe.postcutover.metrics")
+        MetricsService._testReset()
+        MetricsService.start(
+            client: MetricsClient(baseURL: URL(string: "https://gw.test")!, urlSession: MetricsDown()),
+            defaults: defaults)
+        defer { MetricsService._testReset() }
+        func canaries() -> [String?] {
+            MetricsSpool.pending(defaults).filter { $0.e == "canary" && $0.n == "cloudPostCutoverLeaseLost" }.map(\.d)
+        }
+
+        let dirOwn = freshDir(); defer { cleanup(dirOwn) }
+        let own = RoutingStub()
+        own.migrationBodiesByAction = ["heartbeat": [Self.notInProgressBody], "complete": [Self.okBody]]
+        try await postCutoverLeader(dirOwn, stub: own).0.execute(.runLeaderReconcileFromFrozenCloudKit)
+        #expect(canaries().isEmpty, "su propio complete no es un relevo")
+
+        let dirJoin = freshDir(); defer { cleanup(dirJoin) }
+        let join = RoutingStub()
+        join.migrationBodiesByAction = ["heartbeat": [Self.notInProgressBody], "complete": [Self.otherLeaderBody]]
+        join.claimBody = Self.claimBody("existing_stable")
+        try await postCutoverLeader(dirJoin, stub: join).0.execute(.runLeaderReconcileFromFrozenCloudKit)
+        #expect(canaries() == ["joined"])
+
+        let dirRetake = freshDir(); defer { cleanup(dirRetake) }
+        let retake = RoutingStub()
+        retake.migrationBodiesByAction = [
+            "heartbeat": [Self.otherLeaderBody, Self.okBody], "complete": [Self.otherLeaderBody, Self.okBody],
+        ]
+        try await postCutoverLeader(dirRetake, stub: retake).0.execute(.runLeaderReconcileFromFrozenCloudKit)
+        #expect(canaries() == ["joined", "retaken"])
+    }
+
+    /// Una pasada con el lease confirmado pero congelada a mitad del barrido: los trozos del push cortan cuando la
+    /// confirmación pasa de `leaseInFlightBudget`, como en la subida del snapshot.
+    @Test("reconcile post-cutover: la confirmación que caduca a mitad del barrido corta los trozos del push")
+    func postCutover_leaseExpiresMidSweep_stopsChunks() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let stub = RoutingStub()
+        let clock = MutableLeaseClock()
+        stub.onPushRequest = { clock.offset += .seconds(1801) }
+        let (executor, context, _) = try postCutoverLeader(dir, stub: stub, leaseClock: clock, residualRows: 60)
+
+        await #expect(throws: MigrationExecutorError.notWired(effect: "runLeaderReconcile: sweepTransient")) {
+            try await executor.execute(.runLeaderReconcileFromFrozenCloudKit)
+        }
+        #expect(stub.pushCallCount == 1, "el segundo trozo no sale con la confirmación caducada")
+        #expect(!stub.migrationActions.contains("complete"))
+        #expect(try liveOutboxCount(context) > 0)
     }
 
     // MARK: - Verify
@@ -898,7 +1193,8 @@ struct MigrationWorkExecutorTests {
                                 FakeSession(token: "jwt", userID: "sub-1"), FakeBeaconStore(),
                                 personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
         try await sano.execute(.runLeaderReconcileFromFrozenCloudKit)
-        #expect(stub.migrationCallCount == 1, "control del escenario: sin la avería SÍ se manda `complete`")
+        #expect(stub.migrationActions.filter { $0 == "complete" }.count == 1,
+                "control del escenario: sin la avería SÍ se manda `complete`")
 
         executor._testOutboxFetchThrowsFromCall = 1
         // El `effect` EXACTO, no el tipo: `notWired` es el mismo case que usan `sweepTransient`,
@@ -907,7 +1203,7 @@ struct MigrationWorkExecutorTests {
         await #expect(throws: MigrationExecutorError.notWired(effect: "runLeaderReconcile: outboxUnreadable")) {
             try await executor.execute(.runLeaderReconcileFromFrozenCloudKit)
         }
-        #expect(stub.migrationCallCount == 1,
+        #expect(stub.migrationActions.filter { $0 == "complete" }.count == 1,
                 "el `complete` NO se manda otra vez: cerraría la migración con filas del líder sin subir")
     }
 
