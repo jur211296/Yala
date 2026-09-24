@@ -2,9 +2,9 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (30 entradas)
+## Índice (31 entradas)
 
-> **No hace falta leer este fichero entero** — son 122 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 128 KB. Localiza la entrada
 > aquí y salta a ella.
 
 - `—` [Running the RLS gate](#running-the-rls-gate)
@@ -28,6 +28,7 @@
 - `—` [I14 — UI real de migración + consent + claimAction + relaunch asistido + encendido de flags](#i14--ui-real-de-migracin--consent--claimaction--relaunch-asistido--encendido-de-flags)
 - `—` [transfer_group_ownership (G10 / D10) — batch "salir de todos mis grupos" — APLICADA EN AMBOS ENVS ✅](#transfergroupownership-g10--d10--batch-salir-de-todos-mis-grupos--aplicada-en-ambos-envs)
 - `—` [G7 — cifrado pgcrypto de columnas † de grupos (data-at-rest)](#g7--cifrado-pgcrypto-de-columnas--de-grupos-data-at-rest)
+- `2026-09-24` [g16_01 — el reintento del mismo teléfono termina el alta si se perdió la respuesta (2026-09-24)](#g1601--el-reintento-del-mismo-telfono-termina-el-alta-si-se-perdi-la-respuesta-2026-09-24)
 - `2026-09-10` [g15_01 — el tipo de cuenta: `complete` o `groups_only` (2026-09-10)](#g1501--el-tipo-de-cuenta-complete-o-groupsonly-2026-09-10)
 - `2026-09-07` [g14_01 — presupuesto de grupo: UN límite por grupo (2026-09-07)](#g1401--presupuesto-de-grupo-un-lmite-por-grupo-2026-09-07)
 - `2026-07-28` [Addendum 2026-07-28 — `migrate_group` queda INERTE (Fase 1 de simplificación de Grupos)](#addendum-2026-07-28--migrategroup-queda-inerte-fase-1-de-simplificacin-de-grupos)
@@ -1692,3 +1693,58 @@ querying schema»**. El golden 28 hace `ctx.skip()` si `profiles[subC]` ya exist
 ```sql
 delete from public.profiles where id = (select id from auth.users where email='i5-user-c@test.yala');
 ```
+
+## g16_01 — el reintento del mismo teléfono termina el alta si se perdió la respuesta (2026-09-24)
+
+**Aplicada en PRODUCCIÓN el 2026-09-24. En STAGING NO** — el conector MCP daba «Connection terminated due to
+connection timeout» a `execute_sql` y a `apply_migration` toda la sesión (la REST de staging sí contestaba).
+Queda en el ticket `g16-01-is-not-applied-on-staging`. Fichero: `qa/cloud/g16_01_claim_replays_for_the_same_device.sql`.
+Ticket: `claim-promotion-lost-response-blocks-the-retry` (su Paso 0 tiene las decisiones).
+
+Qué cambia: `claim_account` gana una rama. Un claim sin `migration` del MISMO `device_id` que creó o
+promocionó una cuenta `complete` —sin migración ni vuelta a iCloud en curso— sobre la que **nadie ha escrito
+nada personal** (sin fila en `sync_seq_counters`) contesta `created` en vez de `existing_stable`. Es el
+reintento tras una respuesta perdida: «Activar Yala completo → nube» y el alta born-cloud del Welcome dejan de
+bloquearse o de adoptar una cuenta vacía. La firma no cambia: sin `drop`, sin grants, **sin deploy del Worker**.
+
+**md5 de `claim_account`**: partida `8668a13c3d452fd5f192a192dd415bbd` (g15_01, igual en los dos entornos) ·
+llegada en producción `e7f8bec957091abaa126d8100a3a53bd`. La migración se aplicó con la cabecera de comentarios
+recortada; lo que va fuera del `$…$` de la función no entra en `prosrc`, y los dos bloques de la sustitución son
+los del fichero, así que desde el mismo cuerpo de partida el fichero da ese md5 (razonado, no re-medido).
+
+**Por qué el contador y no las 16 tablas**: `stamp_server_seq` está en las **17** tablas del canal personal (16 de
+dominio + `user_preferences`, medido). Una fila en `sync_seq_counters` = «alguna vez se escribió algo personal»;
+sobrevive a los borrados y una tabla futura la hereda. La lee el RPC (SECURITY INVOKER) gracias a la policy
+`seq_select`; si RLS la escondiera la rama fallaría ABIERTA, y por eso la sonda la ejerce con el rol
+`authenticated` y el golden g3_02 la lee por el wire.
+
+**Verificación antes de aplicar** — banco transaccional contra el motor de producción, cerrado con una excepción
+(cero rastro: md5, usuarios sintéticos e historial comprobados después). Los 12 escenarios del §3 con la función
+VIVA, la NUEVA y un mutante por término (entonces eran 12; el 13.º entró con la review):
+
+```
+LIVE                        XXX.........   ← el bug medido: los 3 de respuesta perdida bloquean
+NEW                         ............
+M1 sin not p_migration      ........X...
+M2 sin mismo dispositivo    ....X.......
+M3 sin kind complete        .........X..
+M4 sin not v_reverse        ..........X.
+M5 sin contador             .....XXX....
+```
+
+**El §3 corre en cada aplicación** (también en la no-op) y aborta la migración entera si un escenario falla. Cada
+escenario vive en su propio savepoint, así que no deja filas —tampoco las que crean los triggers—.
+
+**Endurecido tras la review adversarial, el mismo día** (el fichero del repo es esa versión; producción ya tenía
+el cuerpo final y lo que cambió va fuera de la función): la guarda acepta como «ya aplicada» solo el md5 final
+—no cualquier cuerpo con la marca—; el §2 exige `SECURITY INVOKER` + `search_path=public` y que TODA tabla del
+canal personal (`user_id` + `server_seq`, sin `group_id`) lleve `stamp_server_seq`; y la sonda gana el caso de
+una cuenta completa sin líder (13 escenarios). El control negativo de esa comprobación —una tabla falsa sin el
+trigger— la hizo fallar con `group_members`, que usa el contador de Grupos: de ahí la exclusión por `group_id`.
+El fichero final se ejecutó entero contra producción en sandbox (13/13, sin rastro).
+
+**Goldens** (`gateway/test/account.goldens.test.ts`): el 28 (usuario C, el ciclo de la fila ligera) gana los pasos
+4-6 — otro dispositivo bloquea, el mismo repite `created`, una migración no replica—; su paso 4 viejo esperaba
+`existing_stable` del mismo dispositivo, que era el bug escrito como contrato. El 1 pasa a probar la exclusión
+mutua con dos dispositivos. El de g3_02 comprueba por el wire que A tiene fila en el contador. **No se han corrido
+contra staging**: sin g16_01 allí, el 28 fallaría en el paso 5.

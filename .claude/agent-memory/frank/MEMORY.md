@@ -52,6 +52,7 @@
 - [Instrumentar gana a razonar](feedback_instrumentar_gana_a_razonar.md) — a la tercera hipótesis caída, cuenta en vez de deducir.
 - [El seam que lanza lo mismo no prueba el `catch`](feedback_el_seam_que_lanza_lo_mismo_no_prueba_el_catch.md) — que lance un `CocoaError`; si no, «seam fuera del `do`» sobrevive.
 - [El oráculo del mutante es el efecto que produce](feedback_el_oraculo_del_mutante_es_el_efecto_que_produce.md) — mide el efecto, no la pantalla.
+- [El test fija el bug como contrato](feedback_el_test_fija_el_bug_como_contrato.md) — grep del valor viejo en los tests antes de cambiar un contrato.
 - [El CI se verifica en LOCAL](feedback_el_ci_se_verifica_en_local.md) — el `run:` se extrae del YAML y se corre con matriz.
 - [El paso 3 del gate no detecta cero casos](feedback_gate_paso3_no_detecta_cero_casos.md) — XCUITest es XCTest: cuenta «Test Suite» y «Executed».
 - [Mi docblock también es una premisa](feedback_mi_docblock_tambien_es_una_premisa.md) — describo la intención como si fuera el comportamiento.

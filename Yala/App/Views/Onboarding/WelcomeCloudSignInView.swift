@@ -18,7 +18,8 @@
 //
 //  POR QUÉ UNA VISTA PARAMETRIZADA Y NO UNA HERMANA (decisión de A5, y su razón principal no es
 //  ahorrar código): el claim del alta puede devolver `existing_stable` —2º device del mismo Apple ID,
-//  o un reintento tras un `created` previo— y entonces el contrato es «encamina al returning-user que
+//  o una cuenta que ya tiene algo personal escrito (el reintento de ESTE device tras un `created`
+//  perdido, con la cuenta vacía, recibe `created` desde `qa/cloud/g16_01_…`)— y entonces el contrato es «encamina al returning-user que
 //  ya existe, JAMÁS siembres». Aquí eso es una transición de FASE con la sesión ya viva
 //  (`runSignInFlow` salta el sign-in cuando `hasSession`); con una vista hermana sería un segundo
 //  anchor presentando mientras el primero se desmonta, que es la carrera de reconciliación de la

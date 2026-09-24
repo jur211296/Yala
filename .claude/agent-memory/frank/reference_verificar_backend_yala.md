@@ -64,6 +64,12 @@ cabecera de esta ficha. Se conserva porque la receta de goldens y sus trampas si
 
 **2026-09-16: staging no contestó por el conector.** `list_projects` lo daba `ACTIVE_HEALTHY`, pero `execute_sql` devolvió «Connection terminated due to connection timeout» tres veces, también con `select 1`. No es falta de permisos: es el conector. Si pasa, anótalo como «no medido» y no lo reintentes en bucle.
 
+**2026-09-24: otra vez, y toda la sesión** (execute_sql ×4 y apply_migration ×1). La REST de staging sí contestaba
+(login de A/B/C 200), así que los goldens por el wire sí corren. Producción, en cambio, entró sin problema: lectura
+por `execute_sql` y escritura por `apply_migration`, que además sirve de **sandbox** acabando el cuerpo en
+`raise exception '<MARCADOR>%', resultados` — el mensaje vuelve en el error y la transacción entera se deshace
+(verificado: md5, usuarios sintéticos, tablas e historial sin rastro). Producción tenía **0 cuentas** ese día.
+
 ## La vía que sí verifica: sandbox transaccional contra producción
 
 Postgres tiene **DDL transaccional**, así que `create or replace function` dentro de `begin … rollback`
