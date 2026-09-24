@@ -227,8 +227,9 @@ nonisolated enum AdoptEffectScope {
 nonisolated enum AdoptEffectBlocker: String, Equatable, Sendable {
     /// El reconcile no pudo leer o escribir la base LOCAL (`MigrationExecutorError.adoptLocalFailure`).
     case localFailure
-    /// Había filas que subir y este dispositivo no tiene el marcador de la cuenta (`MigrationExecutorError.adoptLineageUnproven`,
-    /// ticket `adopt-uploads-a-foreign-corpus-without-a-lineage-check`): no demuestra que su corpus sea el de esa cuenta.
+    /// Había filas que subir y este dispositivo no tiene ni el marcador de la cuenta ni filas suyas
+    /// (`MigrationExecutorError.adoptLineageUnproven`, ticket `adopt-uploads-a-foreign-corpus-without-a-lineage-check`): no
+    /// demuestra que su corpus sea el de esa cuenta.
     case lineageUnproven
 
     /// La clasificación del error del efecto. `nil` = lo que esperar sí puede arreglar (red, quiescencia): plazo largo.
@@ -325,8 +326,8 @@ nonisolated enum AdoptClaimExit: String, Equatable, Sendable {
     case effectStalled
     /// El efecto del adopt no pudo leer la base local durante 15 min acumulados.
     case effectLocalFailure
-    /// El efecto del adopt tenía filas de este dispositivo que subir y no pudo comprobar que vinieran de esa cuenta —falta su
-    /// marcador en el store local— durante 15 min acumulados (ticket `adopt-uploads-a-foreign-corpus-without-a-lineage-check`).
+    /// El efecto del adopt tenía filas de este dispositivo que subir y no pudo comprobar que vinieran de esa cuenta —no están
+    /// ni su marcador ni filas suyas en el store local— durante 15 min acumulados (ticket `adopt-uploads-a-foreign-corpus-without-a-lineage-check`).
     /// No subió nada.
     case effectLineageUnproven
 

@@ -48,7 +48,8 @@ nonisolated enum MigrationExecutorError: Error, Equatable {
     /// `adoptRetry`: el runner lo cuenta para el techo CORTO del efecto (15 min), y la red y la quiescencia para el largo.
     case adoptLocalFailure
     /// El reconcile tenía filas que subir y este dispositivo no demuestra que su corpus descienda de la cuenta: no hay
-    /// `CloudMigrationMarker` de ESA cuenta en el store local (ticket `adopt-uploads-a-foreign-corpus-without-a-lineage-check`).
+    /// `CloudMigrationMarker` de ESA cuenta en el store local ni ninguna fila viva suya (tickets
+    /// `adopt-uploads-a-foreign-corpus-without-a-lineage-check` y `adopt-after-the-cutover-needs-a-marker-the-leader-never-exported`).
     /// Caso propio por lo mismo que `adoptLocalFailure`: esperar no arregla un corpus ajeno, así que cuenta para el techo
     /// CORTO. La espera legítima —el marcador que aún se importa— la para antes la quiescencia, que es `adoptRetry`.
     case adoptLineageUnproven
@@ -72,9 +73,10 @@ nonisolated enum AdoptReconcileOutcome: Equatable {
     /// outbox. Retomable igual que `transient`, pero esperar NO lo arregla (ticket `adopt-effect-retries-forever-with-no-ceiling`;
     /// hasta ese ticket iba dentro de `transient` y el efecto lo reintentaba para siempre).
     case localFailure
-    /// Había filas que subir y el store local no tiene el marcador de ESTA cuenta (`CloudMigrationMarker` con su
-    /// `accountHash`), que es la única prueba de que este dispositivo espeja el corpus del líder (ticket
-    /// `adopt-uploads-a-foreign-corpus-without-a-lineage-check`). No se toca nada: ni backfill, ni encolado, ni red.
+    /// Había filas que subir y el store local no demuestra que espeje el corpus de ESTA cuenta: ni tiene su marcador
+    /// (`CloudMigrationMarker` con su `accountHash`) ni ninguna de sus filas vivas (tickets
+    /// `adopt-uploads-a-foreign-corpus-without-a-lineage-check` y `adopt-after-the-cutover-needs-a-marker-the-leader-never-exported`).
+    /// No se toca nada: ni backfill, ni encolado, ni red.
     case lineageUnproven
 }
 
@@ -1692,7 +1694,7 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     ///
     /// **Que el corpus local sea del mismo Apple ID no lo supone: lo comprueba** (ticket
     /// `adopt-uploads-a-foreign-corpus-without-a-lineage-check`). Con algo que subir, exige el marcador de ESA cuenta en el
-    /// store local (`adoptLineageProven`) y sin él devuelve `.lineageUnproven` sin tocar nada. Hasta ese ticket subía como
+    /// store local o una fila viva suya (`adoptLineageGate`) y sin ninguna devuelve `.lineageUnproven` sin tocar nada. Hasta ese ticket subía como
     /// huérfano cualquier corpus que llegara aquí —el de un seguidor con otro iCloud, por ejemplo— y lo mezclaba con el de
     /// la cuenta.
     ///
@@ -1759,24 +1761,27 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         // Un inventario que no pudo leer una tabla corta con `.localFailure` retomable (tickets
         // `an-incomplete-inventory-reads-as-the-whole-corpus` y `adopt-effect-retries-forever-with-no-ceiling`): sin sus
         // filas `uploadCount` podía salir 0 y apagar justo este guard, el que existe para no fusionar dos corpus.
-        let prePlan: AdoptOrphanDiff.Plan
+        let preInventory: [(table: String, syncID: UUID?)]
         do {
-            prePlan = AdoptOrphanDiff.compute(inventory: try collectAdoptInventory(), backendSyncIDs: backendSyncIDs)
+            preInventory = try collectAdoptInventory()
         } catch {
             return .localFailure
         }
+        let prePlan = AdoptOrphanDiff.compute(inventory: preInventory, backendSyncIDs: backendSyncIDs)
         let pendingUploads = prePlan.uploadCount + prePlan.identityCount
 
         // Guarda de LINAJE (ticket `adopt-uploads-a-foreign-corpus-without-a-lineage-check`): lo que el backend no conoce
-        // solo sube si este dispositivo demuestra que su corpus desciende de ESTA cuenta, o sea que el marcador que su
-        // líder escribió en CloudKit está en el store local. El diff solo sabe «el backend no la conoce», y eso es igual de
-        // cierto para la huérfana de la ventana del cutover que para el corpus entero de otra persona o de otro iCloud.
+        // solo sube si este dispositivo demuestra que su corpus desciende de ESTA cuenta: el marcador que su líder escribió
+        // en CloudKit está en el store local, o alguna fila viva de la cuenta lo está (ticket
+        // `adopt-after-the-cutover-needs-a-marker-the-leader-never-exported`). El diff solo sabe «el backend no la
+        // conoce», y eso es igual de cierto para la huérfana de la ventana del cutover que para el corpus entero de otra
+        // persona o de otro iCloud.
         //
         // Solo con algo que subir: el 2.º dispositivo de una cuenta NACIDA en la nube entra por este mismo adopt y no
         // puede tener marcador nunca (no hay corpus de esa cuenta en CloudKit); sin filas que subir, no hay nada que mezclar.
         // Y ANTES del guard de backend vacío: ese guard sigue el adopt —cambia el modo— y con un corpus ajeno en local eso
         // lo deja dentro de una cuenta que no es suya, listo para subir en la primera edición.
-        if let blocked = adoptLineageGate(prePlan) { return blocked }
+        if let blocked = adoptLineageGate(prePlan, inventory: preInventory, enumeration: enumeration) { return blocked }
 
         if backendSyncIDs.isEmpty && pendingUploads > 0 {
             CloudSyncBreadcrumb.adoptReconcileAbortedEmptyBackend(orphans: pendingUploads)
@@ -1802,16 +1807,17 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         // no vuelve a pasar por aquí. Lo que el backfill ya escribió se queda en el contexto: la pasada siguiente lo
         // encuentra y no lo repite, así que su `identityAssigned` sale más bajo (solo el rastro; las filas cuentan
         // como huérfanas igual).
-        let plan: AdoptOrphanDiff.Plan
+        let inventory: [(table: String, syncID: UUID?)]
         do {
-            plan = AdoptOrphanDiff.compute(inventory: try collectAdoptInventory(), backendSyncIDs: backendSyncIDs)
+            inventory = try collectAdoptInventory()
         } catch {
             return .localFailure
         }
+        let plan = AdoptOrphanDiff.compute(inventory: inventory, backendSyncIDs: backendSyncIDs)
         // Y otra vez sobre el plan DEFINITIVO, que es el que sube (hallazgo de la review): una fila que el import confirme
         // entre las dos lecturas no estaba en el preliminar, y con un preliminar sin nada que subir la guarda no había
         // pedido prueba. El backfill ya corrió, pero solo acuña identidades locales: no sube nada.
-        if let blocked = adoptLineageGate(plan) { return blocked }
+        if let blocked = adoptLineageGate(plan, inventory: inventory, enumeration: enumeration) { return blocked }
         guard !plan.orphans.isEmpty else { return .completed(uploaded: 0, identityAssigned: identityAssigned) }
 
         // Paso 6: fetch dirigido de EXACTAMENTE las huérfanas del plan → emisión fila-COMPLETA por el seam del
@@ -1912,9 +1918,10 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         //    el corpus ENTERO importado de CloudKit como deltas (contrato (ii)).
         engine.fastForwardHistoryBaseline(context: context)
 
-        // 4) Belt: el marcador del líder debe haber llegado por el mirror. Ausente = no bloquea (solo diagnóstico): si
-        //    hubiera algo que subir, la guarda de linaje del paso 2 ya habría parado; sin nada que subir el adopt es
-        //    legítimo sin marcador (el 2.º dispositivo de una cuenta nacida en la nube no lo tiene nunca).
+        // 4) Belt: el marcador del líder debe haber llegado por el mirror. Ausente = no bloquea (solo diagnóstico): con
+        //    algo que subir, la guarda de linaje del paso 2 ya exigió el marcador o filas de la cuenta en local (el líder
+        //    puede haber pasado el cutover del servidor sin exportarlo aún); sin nada que subir el adopt es legítimo sin
+        //    marcador (el 2.º dispositivo de una cuenta nacida en la nube no lo tiene nunca).
         let markerCount = (try? context.fetchCount(FetchDescriptor<CloudMigrationMarker>())) ?? 0
         if markerCount == 0 {
             CloudSyncBreadcrumb.migrationEffectFailed(effect: "adoptBackendAccount", reason: "marker absent (belt)")
@@ -1971,23 +1978,92 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         return orphans + needsIdentity
     }
 
-    /// La guarda de linaje sobre un plan: `nil` = puede seguir. Con filas que la piden y sin el marcador de la cuenta,
-    /// `.lineageUnproven`; con la tabla del marcador ilegible, `.localFailure` —nunca «probado»—.
-    private func adoptLineageGate(_ plan: AdoptOrphanDiff.Plan) -> AdoptReconcileOutcome? {
+    /// La guarda de linaje sobre un plan: `nil` = puede seguir. Con filas que la piden, vale una de dos pruebas: el marcador
+    /// de la cuenta (`adoptLineageProven`) o las filas de la cuenta en el `inventory` del que sale ese plan
+    /// (`adoptSharedRowsProof`). Sin ninguna, `.lineageUnproven`. El marcador se mira primero: con su tabla ilegible,
+    /// `.localFailure` —nunca «probado»—.
+    ///
+    /// **Por qué la segunda prueba** (ticket `adopt-after-the-cutover-needs-a-marker-the-leader-never-exported`): desde g16_04
+    /// el claim da `existing_stable` a quien llega después del cutover del SERVIDOR, y el líder estampa `migrated_at` ANTES de
+    /// escribir y exportar el marcador. Un líder dormido en `cutover(.markerWritten)`, o que agotó el tope del marcador y lo
+    /// borró al volver a iCloud, dejaba fuera para siempre al 2.º teléfono del mismo iCloud con algo que subir. Una fila de
+    /// la cuenta solo llega a este store por su CloudKit o por un pull de esa cuenta, y ninguna tabla personal tiene
+    /// identidades fijas entre teléfonos, así que un corpus de otro iCloud no la tiene. La enumeración ya viene verificada
+    /// contra el Merkle, así que «no comparte ninguna» es una respuesta completa.
+    ///
+    /// **Y una fila compartida no basta: tienen que haber llegado TODAS las de las tablas que suben** (review adversarial del
+    /// mismo ticket). El marcador se exporta DESPUÉS de las identidades que el líder asignó (`assignIdentity`), así que traerlo
+    /// implicaba traerlas. Sin él, la exportación del líder puede estar parada —es justo por qué el marcador no llegó—: la
+    /// cuenta (`Account.shortcutID`, que nace con la fila) se comparte, pero los movimientos y categorías del líder siguen aquí
+    /// sin `syncID`, el backfill les acuñaría una identidad fresca y el adopt SUBIRÍA EL LIBRO ENTERO DUPLICADO. Por eso,
+    /// en cada tabla con algo que subir, toda fila viva del backend tiene que estar ya en local.
+    private func adoptLineageGate(_ plan: AdoptOrphanDiff.Plan,
+                                  inventory: [(table: String, syncID: UUID?)],
+                                  enumeration: BackendEnumeration) -> AdoptReconcileOutcome? {
         let relevant = Self.adoptLineageRelevantCount(plan)
         guard relevant > 0 else { return nil }
         do {
-            guard try adoptLineageProven() else {
-                CloudSyncBreadcrumb.adoptReconcileLineageUnproven(pending: relevant)
-                return .lineageUnproven
-            }
-            return nil
+            if try adoptLineageProven() { return nil }
         } catch {
             return .localFailure
         }
+        switch Self.adoptSharedRowsProof(plan: plan, inventory: inventory, liveByTable: enumeration.liveByTable) {
+        case .proven(let shared):
+            CloudSyncBreadcrumb.adoptReconcileLineageProvenBySharedRows(sharedRows: shared, pending: relevant)
+            return nil
+        case .noSharedRows:
+            CloudSyncBreadcrumb.adoptReconcileLineageUnproven(pending: relevant)
+            return .lineageUnproven
+        case .accountRowsMissing(let table, let missing):
+            CloudSyncBreadcrumb.adoptReconcileAccountRowsMissing(table: table, missing: missing, pending: relevant)
+            return .lineageUnproven
+        }
     }
 
-    /// ¿Demuestra el store local que este corpus desciende de la cuenta de la sesión? Sí si hay una fila
+    /// Veredicto de la prueba del adopt por filas de la cuenta (sin marcador). `nonisolated`: la compara la lógica de tests.
+    nonisolated enum AdoptSharedRowsProof: Equatable {
+        /// Comparte filas vivas con la cuenta y, en cada tabla con algo que subir, tiene ya todas las de la cuenta.
+        case proven(sharedRows: Int)
+        /// No comparte ninguna fila viva: el corpus no es de esta cuenta (o aún no llegó nada).
+        case noSharedRows
+        /// Comparte, pero a `table` —que tiene algo que subir— le faltan `missing` filas vivas de la cuenta: sus identidades
+        /// no llegaron, y lo que sube podría ser la misma fila con otra identidad. Primera tabla en orden alfabético.
+        case accountRowsMissing(table: String, missing: Int)
+    }
+
+    /// La prueba del adopt SIN marcador (ver `adoptLineageGate`): alguna fila VIVA del backend en local
+    /// (`lineageSharedLiveRows`, la de la ida) Y, en cada tabla del `plan` con algo que subir (huérfanas o filas sin
+    /// identidad, fuera de las exentas), TODAS las filas vivas del backend ya en local. La cobertura se pide también en las
+    /// tablas de identidad propia, aunque ahí una fila no puede duplicarse: es la misma condición que el marcador daba por
+    /// hecho —«llegó todo»— y no depende de saber qué tabla acuña qué.
+    static func adoptSharedRowsProof(plan: AdoptOrphanDiff.Plan,
+                                     inventory: [(table: String, syncID: UUID?)],
+                                     liveByTable: [String: Set<UUID>]) -> AdoptSharedRowsProof {
+        let shared = lineageSharedLiveRows(inventory: inventory, liveByTable: liveByTable)
+        guard shared > 0 else { return .noSharedRows }
+        let local = Dictionary(grouping: inventory, by: \.table).mapValues { Set($0.compactMap(\.syncID)) }
+        let uploading = Set(plan.orphans.filter { !$0.value.isEmpty }.keys)
+            .union(plan.needsIdentity.filter { $0.value > 0 }.keys)
+            .subtracting(adoptLineageExemptTables)
+        for table in uploading.sorted() {
+            let missing = (liveByTable[table] ?? []).subtracting(local[table] ?? []).count
+            if missing > 0 { return .accountRowsMissing(table: table, missing: missing) }
+        }
+        return .proven(sharedRows: shared)
+    }
+
+    /// Cuántas filas VIVAS del backend están en el inventario local, cada una en su tabla y fuera de `adoptLineageExemptTables`.
+    /// Es la prueba de linaje por identidad compartida, la misma para la ida (`checkForwardLineage`) y para el adopt
+    /// (`adoptLineageGate`). Un tombstone no cuenta: dice que la fila existió, no que el corpus la siga teniendo.
+    static func lineageSharedLiveRows(inventory: [(table: String, syncID: UUID?)],
+                                      liveByTable: [String: Set<UUID>]) -> Int {
+        let local = Dictionary(grouping: inventory, by: \.table).mapValues { Set($0.compactMap(\.syncID)) }
+        return liveByTable
+            .filter { !adoptLineageExemptTables.contains($0.key) }
+            .reduce(0) { $0 + $1.value.intersection(local[$1.key] ?? []).count }
+    }
+
+    /// ¿Demuestra el MARCADOR que este corpus desciende de la cuenta de la sesión? Sí si hay una fila
     /// `CloudMigrationMarker` cuyo `accountHash` es el de esa cuenta (ticket
     /// `adopt-uploads-a-foreign-corpus-without-a-lineage-check`). El marcador lo escribe el líder en SU CloudKit en el
     /// cutover, así que solo está aquí si este dispositivo espeja ese corpus. Vale cualquier fila que case: un marcador
@@ -2019,15 +2095,15 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     /// nada» o «no comparte nada», en cambio, el Merkle tiene que darla por completa (sesgo a esperar, jamás a proceder ni a
     /// bloquear por una página que faltó). No muta nada.
     func checkForwardLineage() async -> ForwardLineageOutcome {
-        let local: [String: Set<UUID>]
+        let inventory: [(table: String, syncID: UUID?)]
         do {
-            local = Dictionary(grouping: try collectAdoptInventory(), by: \.table).mapValues { Set($0.compactMap(\.syncID)) }
+            inventory = try collectAdoptInventory()
         } catch {
             return .localFailure
         }
         guard let enumeration = await enumerateBackendSyncIDs() else { return .transient }
         let live = enumeration.liveByTable.filter { !Self.adoptLineageExemptTables.contains($0.key) }
-        let shared = live.reduce(0) { $0 + $1.value.intersection(local[$1.key] ?? []).count }
+        let shared = Self.lineageSharedLiveRows(inventory: inventory, liveByTable: enumeration.liveByTable)
         if shared > 0 {
             CloudSyncBreadcrumb.forwardLineageChecked(verdict: "proven", liveRows: live.values.reduce(0) { $0 + $1.count }, sharedRows: shared)
             return .proven(sharedRows: shared)

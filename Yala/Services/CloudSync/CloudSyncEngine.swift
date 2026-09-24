@@ -1318,10 +1318,24 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSyncAdopt orphanReconciled count=\(count, privacy: .public) identityAssigned=\(identityAssigned, privacy: .public) — el adoptador rescató writes de la ventana de cutover")
     }
 
-    /// El adopt tenía filas que subir y el store local no tiene el marcador de esa cuenta: no sube nada (ticket
+    /// El adopt tenía filas que subir y el store local no tiene ni el marcador de esa cuenta ni filas suyas: no sube nada (ticket
     /// `adopt-uploads-a-foreign-corpus-without-a-lineage-check`). Sin PII: solo el conteo.
     static func adoptReconcileLineageUnproven(pending: Int) {
-        logger.notice("CloudSyncAdopt reconcileLineageUnproven pending=\(pending, privacy: .public) — sin marcador de la cuenta en local; upload bloqueado (linaje)")
+        logger.notice("CloudSyncAdopt reconcileLineageUnproven pending=\(pending, privacy: .public) — sin marcador de la cuenta ni filas suyas en local; upload bloqueado (linaje)")
+    }
+
+    /// El adopt comparte filas con la cuenta pero a una tabla que sube le faltan filas vivas de la cuenta: las identidades
+    /// del líder no llegaron y subir podría duplicar (ticket `adopt-after-the-cutover-needs-a-marker-the-leader-never-exported`).
+    /// Sin PII: nombre de tabla y conteos.
+    static func adoptReconcileAccountRowsMissing(table: String, missing: Int, pending: Int) {
+        logger.notice("CloudSyncAdopt reconcileAccountRowsMissing table=\(table, privacy: .public) missing=\(missing, privacy: .public) pending=\(pending, privacy: .public) — sin marcador; faltan filas de la cuenta, upload bloqueado (linaje)")
+    }
+
+    /// El adopt probó el linaje sin marcador, por filas vivas de la cuenta que ya están en local (ticket
+    /// `adopt-after-the-cutover-needs-a-marker-the-leader-never-exported`): el líder pasó el cutover del servidor y aún no
+    /// exportó su marcador, o lo escribió sin sesión. Solo conteos, sin PII.
+    static func adoptReconcileLineageProvenBySharedRows(sharedRows: Int, pending: Int) {
+        logger.notice("CloudSyncAdopt reconcileLineageProvenBySharedRows shared=\(sharedRows, privacy: .public) pending=\(pending, privacy: .public) — sin marcador; linaje por filas compartidas")
     }
 
     /// La comprobación de linaje de la IDA (ticket `migration-takeover-uploads-without-a-lineage-check`): un claim `created`
