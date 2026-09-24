@@ -978,6 +978,15 @@ describe("g15_01 goldens · kind de la cuenta (staging real)", () => {
     return (await res.json()) as { exists: boolean; kind?: string };
   }
 
+  /** El sello de g16_02: cuándo entró por primera vez en lo personal un dispositivo que no es el líder. */
+  async function adoptedAt(jwt: string): Promise<string | null> {
+    const res = await fetch(`${URL}/rest/v1/profiles?id=eq.${decodeSub(jwt)}&select=personal_adopted_at`, {
+      headers: { apikey: ANON, Authorization: `Bearer ${jwt}` },
+    });
+    expect(res.status).toBe(200);
+    return ((await res.json()) as { personal_adopted_at: string | null }[])[0].personal_adopted_at;
+  }
+
   it("28. el ciclo entero por el wire: no existe → alta de grupos (groups_only) → promoción (complete)", async (ctx) => {
     if (await exists(jwtC)) {
       console.warn("[account.goldens] golden 28 SKIP: profiles[subC] existe — resetea con el delete del comentario de arriba");
@@ -1013,17 +1022,17 @@ describe("g15_01 goldens · kind de la cuenta (staging real)", () => {
     expect((promo.body as { kind?: string }).kind).toBe("complete");
     expect(await existsFull(jwtC)).toEqual({ exists: true, kind: "complete" });
 
-    // (4) Otro dispositivo sobre la cuenta recién promovida: bloquea aunque no tenga nada escrito todavía
-    //     —su alta está en curso y sembrar encima sería la fusión que el ADR descartó—.
-    const otra = await claim(jwtC, { device_id: "g15-c-otro", provider: "google", kind: "complete" });
-    expect(otra.status).toBe(200);
-    expect(otra.body.state).toBe("existing_stable");
-    expect((otra.body as { kind?: string }).kind).toBe("complete");
+    // (4) Otro dispositivo que solo se une por GRUPOS no entra en lo personal: el claim `groups_only` sobre una
+    //     cuenta que ya existe solo clasifica, y no deja el sello de g16_02.
+    const grupos = await claim(jwtC, { device_id: "g15-c-otro", provider: "google", kind: "groups_only" });
+    expect(grupos.status).toBe(200);
+    expect(grupos.body.state).toBe("existing_stable");
+    expect(await adoptedAt(jwtC)).toBeNull();
 
     // (5) g16_01 · el MISMO dispositivo repite la promoción —el reintento tras una respuesta perdida— y la
-    //     cuenta no tiene ninguna escritura personal: es el mismo alta y contesta `created`. Hasta el
-    //     2026-09-24 este paso esperaba `existing_stable`, y eso era el bug: «Reintentar» bloqueaba con «Tu
-    //     cuenta ya tiene finanzas personales» a quien no las tenía (`claim-promotion-lost-response-blocks-the-retry`).
+    //     cuenta no tiene ninguna escritura personal ni nadie más dentro: es el mismo alta y contesta `created`.
+    //     Hasta el 2026-09-24 este paso esperaba `existing_stable`, y eso era el bug: «Reintentar» bloqueaba con
+    //     «Tu cuenta ya tiene finanzas personales» a quien no las tenía (`claim-promotion-lost-response-blocks-the-retry`).
     expect(await seqCounterRows(jwtC)).toBe(0);
     const reintento = await claim(jwtC, { device_id: "g15-c", provider: "google", kind: "complete" });
     expect(reintento.status).toBe(200);
@@ -1031,11 +1040,27 @@ describe("g15_01 goldens · kind de la cuenta (staging real)", () => {
     expect((reintento.body as { kind?: string }).kind).toBe("complete");
     expect(await existsFull(jwtC)).toEqual({ exists: true, kind: "complete" }); // no escribió nada nuevo
 
-    // (6) Y una migración del mismo dispositivo sobre esa cuenta NO la replica: `created` con `migration`
-    //     conduciría una máquina sin lease.
+    // (6) Una migración del mismo dispositivo sobre esa cuenta NO la replica —`created` con `migration`
+    //     conduciría una máquina sin lease— y, por ser el líder, tampoco la sella.
     const migra = await claim(jwtC, { device_id: "g15-c", provider: "google", kind: "complete", migration: true });
     expect(migra.status).toBe(200);
     expect(migra.body.state).toBe("existing_stable");
+    expect(await adoptedAt(jwtC)).toBeNull();
+
+    // (7) g16_02 · OTRO dispositivo entra por el adopt («Ya tengo cuenta»: claim personal con `migration`). Ve la
+    //     cuenta ya estable y el servidor deja constancia, aunque no haya subido nada.
+    const otra = await claim(jwtC, { device_id: "g15-c-otro", provider: "google", kind: "complete", migration: true });
+    expect(otra.status).toBe(200);
+    expect(otra.body.state).toBe("existing_stable");
+    expect((otra.body as { kind?: string }).kind).toBe("complete");
+    expect(await adoptedAt(jwtC)).not.toBeNull();
+    expect(await seqCounterRows(jwtC)).toBe(0); // la huella es el sello, no una subida
+
+    // (8) Y el reintento del primero ya NO siembra a su lado (`claim-replay-can-seed-beside-a-phone-that-adopted-silently`):
+    //     hasta g16_02 contestaba `created` y la cuenta acababa con dos juegos de cuentas y categorías.
+    const tardio = await claim(jwtC, { device_id: "g15-c", provider: "google", kind: "complete" });
+    expect(tardio.status).toBe(200);
+    expect(tardio.body.state).toBe("existing_stable");
   });
 
   it("29. una cuenta COMPLETA declara kind='complete' (el usuario A, sin tocarle nada)", async () => {

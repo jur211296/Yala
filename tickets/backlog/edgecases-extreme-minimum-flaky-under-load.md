@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: testing
 created: 2026-09-05
-updated: 2026-09-23
+updated: 2026-09-24
 source: rojo clasificado en el gate de group-joiner-flag-consumers-still-narrow
 ---
 
@@ -217,3 +217,9 @@ que refuerza que el sitio a mirar es el timeout compartido de los helpers de nav
 Lote de 9 suites (31 casos, `Yala Dev`, iPhone 17 Pro 26.5, centinela 0: solo durante toda la corrida): falló con el mismo
 mensaje (`transaction_success_accept` no apareció). `EdgeCasesUITests` sola, dos veces seguidas con el centinela a 0: 2/2
 verde las dos. El diff de esa sesión no toca el guardado de transacciones.
+
+## Otra vez el 2026-09-24 (gate de `claim-replay-can-seed-beside-a-phone-that-adopted-silently`)
+
+Lote de 9 suites (28 tests) con el centinela a 0 (solo en el simulador): 27/28, este el único rojo, con la misma línea
+(`XCUIApplication+Yala.swift:264`, sin `transaction_success_accept`). Aislado, `EdgeCasesUITests` 2/2 (32.0 s). El diff
+Swift de esa sesión eran solo comentarios, así que el binario no cambió de comportamiento.

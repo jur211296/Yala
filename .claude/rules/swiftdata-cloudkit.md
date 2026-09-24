@@ -724,7 +724,15 @@ paths:
   el cursor del pull ANTES que esto; (2) **el RPC es SECURITY INVOKER y lee el contador por RLS** (`seq_select`): una
   policy que se lo escondiera haría fallar la rama ABIERTA —una cuenta con datos leída como vacía—; la sonda de la
   migración lo ejerce con el rol `authenticated` y el golden g3_02 por el wire; (3) **otro dispositivo sigue recibiendo
-  `existing_stable` aunque la cuenta esté vacía**: su alta puede estar en curso, sin nada escrito todavía. Cliente sin
+  `existing_stable` aunque la cuenta esté vacía**: su alta puede estar en curso, sin nada escrito todavía; (4) **y si
+  otro dispositivo ya ENTRÓ, el reintento tampoco repite** (`qa/cloud/g16_02_…`, ticket
+  `claim-replay-can-seed-beside-a-phone-that-adopted-silently`): el adopt no sube nada hasta que el usuario crea algo, así
+  que el contador no lo ve; lo ve `profiles.personal_adopted_at`, que estampa el claim **con `migration`** de un
+  dispositivo que no es el líder al recibir `existing_stable`. Solo con `migration`, porque es el claim con el que se
+  ENTRA —toda entrada acaba en `performClaim`, «Soy nuevo → nube» incluida—; un claim sin ella que choca y se queda fuera
+  («Activar Yala completo» desde otro teléfono) no sella, o bloquearía a los dos sobre una cuenta vacía. Si algún día un
+  camino nuevo entra en la cuenta personal SIN pasar por el claim del adopt, o el cliente empieza a mandar `migration`
+  en un claim que no entra, este sello deja de decir la verdad. Cliente sin
   cambios: `.seeded` ya lleva al commit en los dos llamadores, y el `device_id` es `identifierForVendor` (con él `nil`
   sale un UUID por llamada y el reintento vuelve a bloquear, el lado seguro). Residual aceptado: un kill DESPUÉS de que el
   motor suba algo —preferencias o lo puenteado— sigue bloqueando: nadie ha medido que re-ejecutar el commit local (persistir [P] otra vez) sea idempotente, y bloquear no escribe nada.

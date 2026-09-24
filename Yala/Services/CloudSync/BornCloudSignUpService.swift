@@ -56,7 +56,8 @@ enum BornCloudSignUpOutcome: Equatable {
     /// La cuenta ya existía y está estable: la creó o promocionó OTRO dispositivo, o ya tiene algo personal
     /// escrito. **NO se siembra**: el llamador encamina al returning-user que ya existe (§k.4). El reintento de
     /// ESTE dispositivo tras un `created` cuya respuesta se perdió ya no llega aquí mientras la cuenta siga
-    /// vacía: el servidor lo repite como `created` (`qa/cloud/g16_01_…`, 2026-09-24).
+    /// vacía y nadie más haya entrado: el servidor lo repite como `created` (`qa/cloud/g16_01_…`, 2026-09-24). Si
+    /// otro teléfono entró entretanto por el adopt, sí llega (`qa/cloud/g16_02_…`).
     case routeReturningUser
     /// Otro device lidera una migración en curso → seguidor: esperar (§g.6). No sembrar, no adoptar.
     case waitForLeader
@@ -72,7 +73,8 @@ enum BornCloudSignUpOutcome: Equatable {
     /// Red caída / 5xx / respuesta indescifrable, o sin JWT con la sesión GUARDADA (la renovación no volvió, 2026-09-16)
     /// → reintentable. El claim es idempotente por contrato (§f.1: el re-claim del MISMO device colapsa a `created`),
     /// así que reintentar es seguro. Hasta el 2026-09-24 el servidor solo lo cumplía con una migración en curso;
-    /// desde `qa/cloud/g16_01_…` también en el alta y la promoción, mientras la cuenta no tenga nada personal.
+    /// desde `qa/cloud/g16_01_…` también en el alta y la promoción, mientras la cuenta no tenga nada personal ni
+    /// otro teléfono haya entrado en ella (`qa/cloud/g16_02_…`).
     case transient(detail: String)
 }
 

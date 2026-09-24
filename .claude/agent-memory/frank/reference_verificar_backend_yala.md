@@ -70,6 +70,9 @@ por `execute_sql` y escritura por `apply_migration`, que además sirve de **sand
 `raise exception '<MARCADOR>%', resultados` — el mensaje vuelve en el error y la transacción entera se deshace
 (verificado: md5, usuarios sintéticos, tablas e historial sin rastro). Producción tenía **0 cuentas** ese día.
 
+**2026-09-24, 3.ª sesión: staging SÍ contestó** (`execute_sql` como `postgres`, `apply_migration` escribe). El «no contesta»
+de la mañana era del conector, no permanente: vuelve a probar antes de heredarlo.
+
 ## La vía que sí verifica: sandbox transaccional contra producción
 
 Postgres tiene **DDL transaccional**, así que `create or replace function` dentro de `begin … rollback`
