@@ -245,7 +245,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | fx-repair-sweep-seals-on-a-partially-restored-store | backlog | tickets/backlog/fx-repair-sweep-seals-on-a-partially-restored-store.md |
 | fx-unknown-currency-code-collapses-to-usd | backlog | tickets/backlog/fx-unknown-currency-code-collapses-to-usd.md |
 | fx-widget-drops-missing-currency | backlog | tickets/backlog/fx-widget-drops-missing-currency.md |
-| g16-01-is-not-applied-on-staging | backlog | tickets/backlog/g16-01-is-not-applied-on-staging.md |
+| g16-01-is-not-applied-on-staging | done | tickets/done/g16-01-is-not-applied-on-staging.md |
 | gate-doc-says-swift-testing-only | backlog | tickets/backlog/gate-doc-says-swift-testing-only.md |
 | gate-never-reads-test-file-warnings | backlog | tickets/backlog/gate-never-reads-test-file-warnings.md |
 | gateway-has-no-telemetry | backlog | tickets/backlog/gateway-has-no-telemetry.md |
