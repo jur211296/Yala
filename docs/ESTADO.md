@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-23 (Lima)
 
-**Rama** `2.1` — Merge #226: **Entrar en tu cuenta de la nube desde un segundo teléfono ya no se reintenta para siempre si no puede terminar.**
+**Rama** `2.1` — Merge #227: **Volviendo a iCloud, un fallo de iCloud de una sola pasada ya no cancela la vuelta por las horas que llevaba esperando por otra cosa.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,28 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#226 · el efecto del adopt tiene techo, texto y salida)
+## Esta sesión (#227 · la espera de subida de la vuelta ya no cobra una espera ajena)
+
+**Si la vuelta a iCloud llevaba horas esperando porque el teléfono no tenía cuenta de iCloud, entrar a iCloud ya no la
+cancela.** CloudKit suele contestar «no autenticado» en la primera pasada tras entrar, y hasta hoy esa pasada se cobraba
+las horas anteriores contra el plazo de 15 min y sacaba de la vuelta en el acto. Ahora reintenta y solo sale si el
+problema dura 15 min de verdad; iCloud lleno sigue saliendo a los 15 min y sin cuenta sigue habiendo 72 h. Es el
+mecanismo de tres relojes de la vuelta previa al montaje y de la subida del snapshot. `MigrationState` schema 15.
+Ticket `reverse-upload-ceiling-charges-a-wait-to-whoever-stops-it-last` a `done` sin device-QA (no se monta a
+voluntad). Review de 4 lentes; 20 mutantes, 19 muertos y 1 equivalente; CI verde. **Los canarios
+`cloudReverseUploadWaiting` y `cloudReverseUploadAborted` cambian de valores con este build** (cuatro segmentos;
+`mixedCauses` aparte de `stalled`).
+
+### Lo que espera de Jürgen
+
+- Nada de producto. Un ticket nuevo de la review, `stall-clock-charges-a-closed-app-gap-to-a-one-off-cause` (low):
+  un tramo abierto sigue contando con la app cerrada en las cinco etapas del mismo reloj; decidirlo es de la familia.
+- **El árbol principal (`~/Yala`) tiene un commit local sin pushear, `17dc1e2d`** (tus decisiones sobre los dos tickets
+  de producto de #226), que además movía este ticket a `in-progress`, y un cambio sin commitear en ese mismo ticket.
+  No lo toqué: al rebasarlo sobre `origin/2.1` chocará en ese fichero, que ahora está en `done`. Hay que quedarse con
+  `done` y descartar el cambio sin commitear.
+
+## Sesión anterior (#226 · el efecto del adopt tiene techo, texto y salida)
 
 **Al activar la nube en un segundo teléfono con una cuenta que ya existe, el último paso ya no se reintenta en silencio
 para siempre.** Mientras reintenta, Almacenamiento enseña la barra con «Retomar» y «Cancelar la activación» (antes se veía
@@ -29,13 +50,13 @@ con la red; la tarjeta de fallo dice el motivo y «Reintentar» lleva a «Activa
 decisiones las tomó Jürgen hoy, la última (el texto) tras la review. Ticket `adopt-effect-retries-forever-with-no-ceiling`
 a `done` sin device-QA: no se monta a voluntad en un iPhone. 25 mutantes muertos; CI verde.
 
-### Lo que espera de Jürgen
+### Lo que esperaba de Jürgen
 
-- Dos tickets nuevos de la review piden producto: `welcome-adopt-effect-failure-has-no-reason-and-no-cancel` (en la
+- Dos tickets nuevos de la review piden producto (decididos el 23-sep según el commit local `17dc1e2d`, aún sin pushear): `welcome-adopt-effect-failure-has-no-reason-and-no-cancel` (en la
   bienvenida el fallo dice «revisa tu conexión» y no hay «Cancelar») y `adopt-exit-keeps-the-session-it-opened` (salir
   del adopt no cierra la sesión que abrió, tampoco en el claim de #221).
 
-## Sesión anterior (#225 · TestFlight 14)
+## Antes (#225 · TestFlight 14)
 
 **Hay un TestFlight nuevo, el 14 (2.1), con todo `2.1` hasta `f8dd3d36`.** Subido con `asc` desde la Mini (Xcode 27.0
 GA), `VALID` en ~8 min y `IN_BETA_TESTING` para el grupo interno. El externo («Testers Yala») no lo ve sin beta
