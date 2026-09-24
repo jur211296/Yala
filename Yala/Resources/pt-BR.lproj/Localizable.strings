@@ -4670,6 +4670,7 @@
 "storage.errors.title" = "Algo deu errado";
 "storage.errors.generic" = "Algo não funcionou. Tente de novo.";
 "storage.errors.adoptOtherAccount" = "Essa não é a conta que você estava ativando neste dispositivo. Tente de novo com a mesma conta.";
+"storage.errors.adoptICloudNotSettled" = "Não conseguimos começar a ativar a nuvem: o iCloud ainda está trazendo dados para este dispositivo. Tente de novo em alguns minutos.";
 "storage.errors.signIn" = "Não conseguimos fazer login. Tente de novo.";
 "storage.consent.title" = "Seus dados na nuvem da Yala";
 "storage.consent.pointServers" = "Seus dados ficam guardados nos servidores da Yala e nosso time pode vê-los para te dar suporte e recursos inteligentes. Não usamos criptografia de ponta a ponta.";

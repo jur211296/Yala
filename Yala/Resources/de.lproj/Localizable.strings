@@ -4670,6 +4670,7 @@
 "storage.errors.title" = "Etwas ist schiefgelaufen";
 "storage.errors.generic" = "Etwas hat nicht geklappt. Bitte versuche es erneut.";
 "storage.errors.adoptOtherAccount" = "Das ist nicht das Konto, das du auf diesem Gerät aktivieren wolltest. Versuche es mit demselben Konto erneut.";
+"storage.errors.adoptICloudNotSettled" = "Wir konnten die Cloud nicht aktivieren: iCloud lädt noch Daten auf dieses Gerät. Versuche es in ein paar Minuten erneut.";
 "storage.errors.signIn" = "Wir konnten dich nicht anmelden. Bitte versuche es erneut.";
 "storage.consent.title" = "Deine Daten in der Yala-Cloud";
 "storage.consent.pointServers" = "Deine Daten werden auf den Servern von Yala gespeichert, und unser Team kann sie einsehen, um dir Support und intelligente Funktionen zu bieten. Wir verwenden keine Ende-zu-Ende-Verschlüsselung.";

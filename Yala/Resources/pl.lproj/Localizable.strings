@@ -4682,6 +4682,7 @@
 "storage.errors.title" = "Coś poszło nie tak";
 "storage.errors.generic" = "Coś nie zadziałało. Spróbuj ponownie.";
 "storage.errors.adoptOtherAccount" = "To nie jest konto, dla którego włączano chmurę na tym urządzeniu. Spróbuj ponownie z tym samym kontem.";
+"storage.errors.adoptICloudNotSettled" = "Nie udało się rozpocząć włączania chmury: iCloud wciąż przesyła dane na to urządzenie. Spróbuj ponownie za kilka minut.";
 "storage.errors.signIn" = "Nie udało się zalogować. Spróbuj ponownie.";
 "storage.consent.title" = "Twoje dane w chmurze Yala";
 "storage.consent.pointServers" = "Twoje dane są przechowywane na serwerach Yala, a nasz zespół może je zobaczyć, żeby udzielić Ci wsparcia i dodawać inteligentne funkcje. Nie stosujemy szyfrowania end-to-end.";

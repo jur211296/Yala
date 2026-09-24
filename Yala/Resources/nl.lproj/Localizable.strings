@@ -4682,6 +4682,7 @@
 "storage.errors.title" = "Er ging iets mis";
 "storage.errors.generic" = "Er ging iets niet goed. Probeer het opnieuw.";
 "storage.errors.adoptOtherAccount" = "Dit is niet het account dat je op dit apparaat aan het inschakelen was. Probeer het opnieuw met hetzelfde account.";
+"storage.errors.adoptICloudNotSettled" = "We konden de cloud niet inschakelen: iCloud zet nog gegevens over naar dit apparaat. Probeer het over een paar minuten opnieuw.";
 "storage.errors.signIn" = "We konden je niet aanmelden. Probeer het opnieuw.";
 "storage.consent.title" = "Je gegevens in de Yala-cloud";
 "storage.consent.pointServers" = "Je gegevens worden opgeslagen op de servers van Yala en ons team kan ze inzien om je ondersteuning en slimme functies te bieden. We gebruiken geen eind-tot-eindversleuteling.";

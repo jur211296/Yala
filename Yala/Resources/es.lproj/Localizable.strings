@@ -4687,6 +4687,7 @@
 "storage.errors.title" = "Algo salió mal";
 "storage.errors.generic" = "Algo no salió bien. Inténtalo de nuevo.";
 "storage.errors.adoptOtherAccount" = "Esa no es la cuenta que estabas activando en este dispositivo. Vuelve a intentarlo con la misma cuenta.";
+"storage.errors.adoptICloudNotSettled" = "No pudimos empezar a activar la nube: iCloud sigue trayendo datos a este dispositivo. Vuelve a intentarlo en unos minutos.";
 "storage.errors.signIn" = "No pudimos iniciar sesión. Inténtalo de nuevo.";
 "storage.consent.title" = "Tus datos en la nube de Yala";
 "storage.consent.pointServers" = "Tus datos se guardan en los servidores de Yala y nuestro equipo puede verlos para darte soporte y funciones inteligentes. No usamos cifrado de extremo a extremo.";

@@ -293,15 +293,34 @@ struct AdoptSessionOwnershipWiringTests {
     }
 
     /// Se retira tras un `refresh()` —la fase de DESPUÉS del `submit`— y solo si la llamada no entró en el claim.
+    /// Devuelve si paró antes del claim, que es lo que lee el adopt de Ajustes para cerrar la sesión: con el journal
+    /// ilegible, `false` (no decide), y solo `true` en el camino que retira la marca.
     @Test func withdrawAdoptSessionOwnershipIfNotStarted_wholeBodyIsPinned() throws {
-        let body = try Self.body(of: "private func withdrawAdoptSessionOwnershipIfNotStarted() {", in: Self.controllerPath)
+        let body = try Self.body(
+            of: "private func withdrawAdoptSessionOwnershipIfNotStarted() -> Bool {", in: Self.controllerPath)
         #expect(Self.lines(body) == [
             "refresh()",
             "guard !isJournalUnreadable, AdoptSessionOwnership.stoppedBeforeTheClaim(",
             "phase: journaledPhase, adoptEffectPending: isAdoptEffectPending,",
-            "persistedCloudMode: StorageModePersistence.read() == .cloud) else { return }",
+            "persistedCloudMode: StorageModePersistence.read() == .cloud) else { return false }",
             "AdoptSessionOwnership.record(nil)",
+            "return true",
         ])
+    }
+
+    /// Ticket `settings-adopt-stalled-before-the-claim-keeps-the-session`: la parada antes del claim cierra la sesión SOLO en
+    /// Ajustes. La bienvenida descarta lo que devuelve la retirada y no cierra nada ni avisa: su «Retomar» reusa la sesión.
+    @Test func welcomeAdopt_keepsTheSessionWhenItStopsBeforeTheClaim() throws {
+        let adopt = Self.lines(try Self.body(
+            of: "func startAdoptWithExistingSession(sessionOpenedByThisAttempt: Bool) async {", in: Self.controllerPath))
+        let submit = try #require(adopt.firstIndex(of: "await r.submit(.signInSucceeded)"))
+        #expect(adopt[submit + 1] == "withdrawAdoptSessionOwnershipIfNotStarted()")
+        #expect(!adopt.contains { $0.contains("closeSessionIfOpened") })
+        #expect(!adopt.contains { $0.contains("signOut") })
+        #expect(!adopt.contains { $0.contains("settingsAdoptStoppedBeforeTheClaim") })
+        let code = try Self.source(Self.controllerPath)
+        #expect(Self.occurrences(of: "StorageFailureCopyLogic.settingsAdoptStoppedBeforeTheClaim(", in: code) == 1,
+                "solo el adopt de Ajustes avisa de esta parada")
     }
 
     /// El adopt de la bienvenida la apunta ANTES de conducir —un kill en la primera pasada la perdía (lo cazaron las dos

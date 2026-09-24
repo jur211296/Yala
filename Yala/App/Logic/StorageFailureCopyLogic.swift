@@ -108,6 +108,14 @@ enum StorageFailureCopyLogic {
         }
     }
 
+    /// El aviso del adopt de Almacenamiento que paró antes del claim (ticket
+    /// `settings-adopt-stalled-before-the-claim-keeps-the-session`). Casi siempre es la espera de iCloud, que venció, y
+    /// entonces lo dice: la pregunta la contesta la misma señal que hizo esperar al runner. Si no, el genérico de la
+    /// pantalla. Ninguno habla de la sesión: el aviso sale también cuando no la abrió este intento y no se cerró.
+    static func settingsAdoptStoppedBeforeTheClaim(importIsQuiescent: Bool) -> String {
+        importIsQuiescent ? L10n.Storage.Errors.generic : L10n.Storage.Errors.adoptICloudNotSettled
+    }
+
     /// El cuerpo del diálogo de «Cancelar la activación», por fase. Lo leen Almacenamiento y, desde el ticket
     /// `welcome-adopt-effect-failure-has-no-reason-and-no-cancel`, la barra del adopt en la bienvenida: el mismo gesto
     /// tiene que decir lo mismo en las dos. En el claim de un ADOPT, el suyo —quien entraba en su cuenta puede estar en un

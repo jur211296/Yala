@@ -4671,6 +4671,7 @@
 "storage.errors.title" = "Une erreur s’est produite";
 "storage.errors.generic" = "Quelque chose n’a pas fonctionné. Réessaie.";
 "storage.errors.adoptOtherAccount" = "Ce n’est pas le compte que tu activais sur cet appareil. Réessaie avec le même compte.";
+"storage.errors.adoptICloudNotSettled" = "Nous n’avons pas pu commencer à activer le cloud : iCloud transfère encore des données vers cet appareil. Réessaie dans quelques minutes.";
 "storage.errors.signIn" = "Nous n’avons pas pu te connecter. Réessaie.";
 "storage.consent.title" = "Tes données dans le cloud Yala";
 "storage.consent.pointServers" = "Tes données sont conservées sur les serveurs de Yala et notre équipe peut les consulter pour t'offrir de l'assistance et des fonctions intelligentes. Nous n'utilisons pas de chiffrement de bout en bout.";

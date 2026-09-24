@@ -93,6 +93,17 @@ struct WelcomeAdoptExitTests {
         #expect(StorageFailureCopyLogic.adoptExitMessage(.cancelled) == nil)
     }
 
+    /// El adopt de Almacenamiento que paró antes del claim (ticket `settings-adopt-stalled-before-the-claim-keeps-the-session`):
+    /// nombra iCloud solo si el import sigue sin asentar, que es la señal que hizo esperar al runner; si no, el genérico.
+    @Test func settingsAdoptStoppedBeforeTheClaim_namesICloudOnlyWhileItIsImporting() {
+        #expect(StorageFailureCopyLogic.settingsAdoptStoppedBeforeTheClaim(importIsQuiescent: false)
+                == L10n.Storage.Errors.adoptICloudNotSettled)
+        #expect(StorageFailureCopyLogic.settingsAdoptStoppedBeforeTheClaim(importIsQuiescent: true)
+                == L10n.Storage.Errors.generic)
+        #expect(L10n.Storage.Errors.adoptICloudNotSettled != L10n.Storage.Errors.generic)
+        #expect(L10n.Storage.Errors.adoptICloudNotSettled != "storage.errors.adoptICloudNotSettled", "clave cruda")
+    }
+
     /// El cuerpo del diálogo de cancelar, por fase, compartido por las dos pantallas.
     @Test func cancelBody_perPhase() {
         #expect(StorageFailureCopyLogic.cancelMigrationBody(isAdoptClaim: true, isAdoptEffectPending: false)
