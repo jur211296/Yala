@@ -141,25 +141,60 @@ struct ReverseUploadCeilingLogicTests {
     // MARK: - Canario
 
     @Test func canaryDetail_advancingCarriesOnlyTheCause() {
-        #expect(MetricsService.reverseUploadWaitingDetail(advancing: true, stalledSeconds: 99_999, blocker: "unknown")
-            == "advancing|unknown")
+        #expect(MetricsService.reverseUploadWaitingDetail(
+            advancing: true, stalledSeconds: 99_999, causeStalledSeconds: 99_999, blocker: "icloudFull")
+            == "advancing|icloudFull")
     }
 
-    /// Los bordes de los tramos son los dos techos: 15 min y 72 h. `stalled|gte_72h` solo sale en la observación que
-    /// SALE por el techo largo, así que cuenta salidas, no teléfonos atascados; un `stalled|24h_72h` sostenido en
-    /// muchos teléfonos es el que delata un mirror que no exporta para nadie.
+    /// Los bordes de los tramos son los dos techos: 15 min y 72 h. `stalled|gte_72h|…` solo sale en la observación que
+    /// SALE por el techo largo, así que cuenta salidas, no teléfonos atascados; un `stalled|24h_72h|…` sostenido en
+    /// muchos teléfonos es el que delata un mirror que no exporta para nadie. Sin motivo definitivo, el tramo de causa es
+    /// `-`: ahí no corre ningún reloj de causa.
     @Test func canaryDetail_stalledBuckets_edgesAreTheBudgets() {
         func detail(_ seconds: Double) -> String {
-            MetricsService.reverseUploadWaitingDetail(advancing: false, stalledSeconds: seconds, blocker: "icloudOff")
+            MetricsService.reverseUploadWaitingDetail(
+                advancing: false, stalledSeconds: seconds, causeStalledSeconds: nil, blocker: "icloudOff")
         }
-        #expect(detail(0) == "stalled|lt_15m|icloudOff")
-        #expect(detail(899) == "stalled|lt_15m|icloudOff")
-        #expect(detail(900) == "stalled|15m_1h|icloudOff")
-        #expect(detail(3_599) == "stalled|15m_1h|icloudOff")
-        #expect(detail(3_600) == "stalled|1h_24h|icloudOff")
-        #expect(detail(86_399) == "stalled|1h_24h|icloudOff")
-        #expect(detail(86_400) == "stalled|24h_72h|icloudOff")
-        #expect(detail(259_199) == "stalled|24h_72h|icloudOff")
-        #expect(detail(259_200) == "stalled|gte_72h|icloudOff")
+        #expect(detail(0) == "stalled|lt_15m|-|icloudOff")
+        #expect(detail(899) == "stalled|lt_15m|-|icloudOff")
+        #expect(detail(900) == "stalled|15m_1h|-|icloudOff")
+        #expect(detail(3_599) == "stalled|15m_1h|-|icloudOff")
+        #expect(detail(3_600) == "stalled|1h_24h|-|icloudOff")
+        #expect(detail(86_399) == "stalled|1h_24h|-|icloudOff")
+        #expect(detail(86_400) == "stalled|24h_72h|-|icloudOff")
+        #expect(detail(259_199) == "stalled|24h_72h|-|icloudOff")
+        #expect(detail(259_200) == "stalled|gte_72h|-|icloudOff")
+    }
+
+    /// EL caso del ticket en la flota: horas de espera y un motivo definitivo recién visto. Con un solo tramo se leía
+    /// como horas con la cuenta inutilizable; con dos, el de causa dice que el motivo lleva segundos. Y el tramo de causa
+    /// tiene sus propios bordes en el techo corto.
+    @Test func canaryDetail_causeBucket_separatesAFreshCauseFromTheLongWait() {
+        func detail(_ stalled: Double, _ cause: Double) -> String {
+            MetricsService.reverseUploadWaitingDetail(
+                advancing: false, stalledSeconds: stalled, causeStalledSeconds: cause, blocker: "icloudUnusable")
+        }
+        #expect(detail(10_800, 12) == "stalled|1h_24h|lt_15m|icloudUnusable")
+        #expect(detail(10_800, 899) == "stalled|1h_24h|lt_15m|icloudUnusable")
+        #expect(detail(10_800, 900) == "stalled|1h_24h|15m_1h|icloudUnusable")
+        // El peor caso cabe de sobra en los 128 caracteres que admite el gateway.
+        #expect(detail(259_200, 259_200).count <= 128)
+    }
+
+    // MARK: - Detalle de la salida (lente de telemetría de `reverse-upload-ceiling-charges-a-wait-to-whoever-stops-it-last`)
+
+    /// `stalled` en el journal cubre dos salidas; en la flota se separan. Antes de las 72 h, un `stalled` solo puede
+    /// venir del corto con motivos turnándose: `mixedCauses`. Desde las 72 h, `stalled`. El resto de motivos, tal cual.
+    @Test func exitDetail_splitsTheTwoStalledExits_andKeepsTheRest() {
+        let policy = MigrationPolicy.default
+        func detail(_ reason: ReverseAbortReason, _ stalled: Double) -> String {
+            MigrationRunner.reverseUploadExitDetail(reason: reason, progressStalledSeconds: stalled, policy: policy)
+        }
+        #expect(detail(.stalled, 900) == "mixedCauses")
+        #expect(detail(.stalled, 259_199) == "mixedCauses")
+        #expect(detail(.stalled, 259_200) == "stalled")
+        #expect(detail(.icloudFull, 900) == "icloudFull")
+        #expect(detail(.icloudUnavailable, 259_200) == "icloudUnavailable")
+        #expect(detail(.cancelled, 10) == "cancelled")
     }
 }

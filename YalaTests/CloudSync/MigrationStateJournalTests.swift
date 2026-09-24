@@ -409,6 +409,72 @@ struct MigrationStateJournalTests {
         #expect(recleared.reversePreMountDefinitiveAccruedSeconds == nil)
     }
 
+    // MARK: - (d·RU2) Techo de la espera de `reverseUpload`: los SIETE campos sobreviven al kill
+
+    /// **Mismo modo de fallo silencioso que las otras familias.** Si los cinco campos de los dos acumulados no persisten
+    /// (ticket `reverse-upload-ceiling-charges-a-wait-to-whoever-stops-it-last`), el reloj de lo definitivo es 0 en cada
+    /// pasada —cada resume es un proceso o un `ModelContext` distinto—, el techo de 15 min no vence jamás y la espera se va
+    /// a las 72 h aunque iCloud lleve horas lleno. La app «espera bien» y ningún test de lógica lo vería.
+    ///
+    /// Tres lecturas: `nil` por defecto, valor tras re-fetch, y vuelta a `nil` DURABLE. El motivo de la salida SOBREVIVE a
+    /// la limpieza: es el desenlace, no el reloj.
+    @Test func reverseUploadCeilingFields_roundTripAcrossSaveAndRefetch_includingNil() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        let progressAt = Date(timeIntervalSince1970: 1_700_000_900)
+        let causeAt = Date(timeIntervalSince1970: 1_700_003_400)
+        let definitiveAt = Date(timeIntervalSince1970: 1_700_002_100)
+        let state = try MigrationState.loadOrCreate(in: context)
+        #expect(state.reverseUploadLowestPending == nil)
+        #expect(state.reverseUploadProgressAt == nil)
+        #expect(state.reverseUploadCauseRaw == nil)
+        #expect(state.reverseUploadCauseAt == nil)
+        #expect(state.reverseUploadCauseAccruedSeconds == nil)
+        #expect(state.reverseUploadDefinitiveAt == nil)
+        #expect(state.reverseUploadDefinitiveAccruedSeconds == nil)
+
+        state.setPhase(.reverseUpload)
+        state.reverseUploadLowestPending = 12
+        state.reverseUploadProgressAt = progressAt
+        state.reverseUploadCauseRaw = ReverseUploadBlocker.icloudUnusable.rawValue
+        state.reverseUploadCauseAt = causeAt
+        state.reverseUploadCauseAccruedSeconds = 612.5
+        state.reverseUploadDefinitiveAt = definitiveAt
+        state.reverseUploadDefinitiveAccruedSeconds = 740.25
+        state.reverseAbortReasonRaw = ReverseAbortReason.stalled.rawValue
+        try context.save()
+
+        var descriptor = FetchDescriptor<MigrationState>()
+        descriptor.fetchLimit = 1
+        let context2 = ModelContext(context.container)
+        let reloaded = try #require(try context2.fetch(descriptor).first)
+        #expect(reloaded.readPhase().phase == .reverseUpload)
+        #expect(reloaded.reverseUploadLowestPending == 12)
+        #expect(reloaded.reverseUploadProgressAt == progressAt)
+        // El rawValue tiene que RECONSTRUIR su tipo: renombrar un case dejaría el reloj de causa sin causa.
+        #expect(ReverseUploadBlocker(rawValue: reloaded.reverseUploadCauseRaw ?? "") == .icloudUnusable)
+        #expect(reloaded.reverseUploadCauseAt == causeAt)
+        #expect(reloaded.reverseUploadCauseAccruedSeconds == 612.5,
+                "y el acumulado con sus decimales: truncarlo movería el techo")
+        #expect(reloaded.reverseUploadDefinitiveAt == definitiveAt)
+        #expect(reloaded.reverseUploadDefinitiveAccruedSeconds == 740.25)
+
+        reloaded.clearReverseUploadCeiling()
+        try context2.save()
+
+        let context3 = ModelContext(context.container)
+        let recleared = try #require(try context3.fetch(descriptor).first)
+        #expect(recleared.reverseUploadLowestPending == nil)
+        #expect(recleared.reverseUploadProgressAt == nil)
+        #expect(recleared.reverseUploadCauseRaw == nil)
+        #expect(recleared.reverseUploadCauseAt == nil)
+        #expect(recleared.reverseUploadCauseAccruedSeconds == nil)
+        #expect(recleared.reverseUploadDefinitiveAt == nil)
+        #expect(recleared.reverseUploadDefinitiveAccruedSeconds == nil)
+        #expect(recleared.reverseAbortReasonRaw == "stalled", "el motivo de la salida no es parte del reloj")
+    }
+
     // MARK: - (d·SU) Techo de la subida del snapshot: los SEIS campos de sus relojes sobreviven al kill
 
     /// **Mismo modo de fallo silencioso que los de la vuelta, en la ida.** La familia `snapshotStall*` llevaba sin este

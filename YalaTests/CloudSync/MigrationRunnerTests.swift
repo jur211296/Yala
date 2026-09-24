@@ -316,6 +316,11 @@ struct MigrationRunnerTests {
         markerWrittenSince: Date? = nil, cutoverICloudVerdictRaw: String? = nil,
         // Techo de `reverseUpload`: cifra más baja, reloj del último avance y motivo de la última salida.
         reverseUploadLowestPending: Int? = nil, reverseUploadProgressAt: Date? = nil,
+        // Y los dos acumulados de la espera: el de causa y el de «cualquier motivo definitivo» (ticket
+        // `reverse-upload-ceiling-charges-a-wait-to-whoever-stops-it-last`).
+        reverseUploadCauseRaw: String? = nil, reverseUploadCauseAt: Date? = nil,
+        reverseUploadCauseAccruedSeconds: Double? = nil,
+        reverseUploadDefinitiveAt: Date? = nil, reverseUploadDefinitiveAccruedSeconds: Double? = nil,
         reverseAbortReasonRaw: String? = nil,
         // Techo de las cuatro fases previas al montaje: el reloj de FASE con la fase en la que se selló, y los
         // tres del reloj de CAUSA (ticket `…charges-a-stall-to-whoever-stops-it-last`).
@@ -357,6 +362,11 @@ struct MigrationRunnerTests {
         state.cutoverICloudVerdictRaw = cutoverICloudVerdictRaw
         state.reverseUploadLowestPending = reverseUploadLowestPending
         state.reverseUploadProgressAt = reverseUploadProgressAt
+        state.reverseUploadCauseRaw = reverseUploadCauseRaw
+        state.reverseUploadCauseAt = reverseUploadCauseAt
+        state.reverseUploadCauseAccruedSeconds = reverseUploadCauseAccruedSeconds
+        state.reverseUploadDefinitiveAt = reverseUploadDefinitiveAt
+        state.reverseUploadDefinitiveAccruedSeconds = reverseUploadDefinitiveAccruedSeconds
         state.reverseAbortReasonRaw = reverseAbortReasonRaw
         state.reversePreMountProgressAt = reversePreMountProgressAt
         state.reversePreMountPhaseRaw = reversePreMountPhaseRaw
@@ -1847,8 +1857,11 @@ struct MigrationRunnerTests {
         let fake = FakeExecutor()
         fake.reverseBlocker = .icloudFull
         let clock = MutableClock(fixedNow.addingTimeInterval(600))
+        // Los dos acumulados sellados con el reloj de avance: iCloud lleno desde el principio.
         try seedJournal(context, phase: .reverseUpload, reverseOriginRaw: "done",
-                        reverseUploadLowestPending: 10, reverseUploadProgressAt: fixedNow)
+                        reverseUploadLowestPending: 10, reverseUploadProgressAt: fixedNow,
+                        reverseUploadCauseRaw: "icloudFull", reverseUploadCauseAt: fixedNow,
+                        reverseUploadDefinitiveAt: fixedNow)
 
         fake.reverseUploadStatuses = [.pending(count: 12)]        // la persona anotó dos gastos
         await makeRunner(context, fake, now: { clock.value }).resume()
@@ -1949,7 +1962,9 @@ struct MigrationRunnerTests {
             fake.reverseBlocker = .icloudFull
             let clock = MutableClock(fixedNow.addingTimeInterval(900))
             try seedJournal(context, phase: .reverseUpload, reverseOriginRaw: originRaw,
-                            reverseUploadLowestPending: 5, reverseUploadProgressAt: fixedNow)
+                            reverseUploadLowestPending: 5, reverseUploadProgressAt: fixedNow,
+                            reverseUploadCauseRaw: "icloudFull", reverseUploadCauseAt: fixedNow,
+                            reverseUploadDefinitiveAt: fixedNow)
 
             let r = makeRunner(context, fake, now: { clock.value })
             await r.resume()
@@ -1962,6 +1977,11 @@ struct MigrationRunnerTests {
             #expect(j.reverseAbortReasonRaw == "icloudFull", "el porqué sobrevive a la vuelta (\(originRaw))")
             #expect(j.reverseUploadLowestPending == nil)
             #expect(j.reverseUploadProgressAt == nil)
+            #expect(j.reverseUploadCauseRaw == nil, "los dos acumulados se van con el intento (\(originRaw))")
+            #expect(j.reverseUploadCauseAt == nil)
+            #expect(j.reverseUploadCauseAccruedSeconds == nil)
+            #expect(j.reverseUploadDefinitiveAt == nil)
+            #expect(j.reverseUploadDefinitiveAccruedSeconds == nil)
             #expect(j.reverseOriginRaw == nil)
             #expect(fake.count(.persistICloudMode) == 0, "la salida NO completa la vuelta a iCloud")
             #expect(fake.count(.completeReverseServer) == 0)
@@ -2004,7 +2024,9 @@ struct MigrationRunnerTests {
         fake.effectErrors[.reverseRollback] = FakeError()
         let clock = MutableClock(fixedNow.addingTimeInterval(900))
         try seedJournal(context, phase: .reverseUpload, reverseOriginRaw: "done",
-                        reverseUploadLowestPending: 3, reverseUploadProgressAt: fixedNow)
+                        reverseUploadLowestPending: 3, reverseUploadProgressAt: fixedNow,
+                        reverseUploadCauseRaw: "icloudFull", reverseUploadCauseAt: fixedNow,
+                        reverseUploadDefinitiveAt: fixedNow)
 
         let offline = makeRunner(context, fake, now: { clock.value })
         await offline.resume()
@@ -2026,7 +2048,9 @@ struct MigrationRunnerTests {
 
     /// Un reloj ADELANTADO al sellar y corregido después dejaba un sello en el futuro: cada observación daba 0 s sin
     /// avanzar y el techo quedaba aplazado hasta que el reloj real alcanzara aquella fecha. Ahora un sello futuro se
-    /// re-sella con la observación, y el techo cuenta desde ahí.
+    /// re-sella con la observación, y el techo cuenta desde ahí. **Lo mide la primera aserción**: desde
+    /// `reverse-upload-ceiling-charges-a-wait-to-whoever-stops-it-last` la salida a los 900 s la decide el reloj de lo
+    /// definitivo, que se abre en la primera observación; el re-sellado del de avance lo fija `progressAt == fixedNow`.
     @Test func reverseUploadCeiling_clockSetBack_resealsInsteadOfPostponingTheCeiling() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
@@ -2047,6 +2071,351 @@ struct MigrationRunnerTests {
         await makeRunner(context, fake, now: { clock.value }).resume()
         j = try journal(context)
         #expect(j.readPhase().phase == .done, "el techo cuenta desde el re-sellado, no desde la fecha futura")
+    }
+
+    // MARK: - 13-bis. Los tres relojes de la espera (ticket `reverse-upload-ceiling-charges-a-wait-to-whoever-stops-it-last`)
+
+    /// Una observación de la espera en el segundo `at` desde `fixedNow`, con su motivo y su cifra. Cada una en un runner
+    /// NUEVO: es lo que pasa en la realidad (un resume por re-kick o arranque) y obliga a que todo reloj viva en el
+    /// journal, no en memoria.
+    private func observeUpload(
+        _ context: ModelContext, _ fake: FakeExecutor, at seconds: Double,
+        _ blocker: ReverseUploadBlocker, pending: Int = 10
+    ) async throws -> MigrationState {
+        fake.reverseBlocker = blocker
+        fake.reverseUploadStatuses = [.pending(count: pending)]
+        let at = fixedNow.addingTimeInterval(seconds)
+        await makeRunner(context, fake, now: { at }).resume()
+        return try journal(context)
+    }
+
+    /// **EL test del ticket.** Tres horas esperando sin cuenta de iCloud —la espera observada, no sembrada— y el
+    /// `notAuthenticated` que CloudKit suelta en la primera pasada al entrar. Hasta este ticket, la vuelta se cancelaba en
+    /// ESA pasada: los 900 s del motivo nuevo se medían contra las tres horas sin avanzar. Ahora reintenta, y si el motivo
+    /// sigue, sale a los 900 s de ESE motivo, con su texto.
+    @Test func reverseUploadClocks_anIsolatedUnusableAfterHoursWithoutAccount_retriesInsteadOfLeaving() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        try seedJournal(context, phase: .reverseUpload, reverseOriginRaw: "done")
+
+        _ = try await observeUpload(context, fake, at: 0, .icloudOff)
+        _ = try await observeUpload(context, fake, at: 5_400, .icloudOff)
+        var j = try await observeUpload(context, fake, at: 10_800, .icloudUnusable)
+        #expect(j.readPhase().phase == .reverseUpload, "el primer fallo tras tres horas sin cuenta NO saca de la vuelta")
+        #expect(fake.executedEffects.isEmpty)
+        #expect(j.reverseUploadProgressAt == fixedNow, "el reloj de avance sigue contando las tres horas: son del largo")
+        #expect(j.reverseUploadDefinitiveAt == fixedNow.addingTimeInterval(10_800),
+                "el de lo definitivo empieza AHORA: las horas sin cuenta no las acumuló")
+
+        j = try await observeUpload(context, fake, at: 10_800 + 899, .icloudUnusable)
+        #expect(j.readPhase().phase == .reverseUpload, "reintenta: 899 s de cuenta inutilizable no son 900")
+        #expect(fake.executedEffects.isEmpty)
+
+        j = try await observeUpload(context, fake, at: 10_800 + 900, .icloudUnusable)
+        #expect(j.readPhase().phase == .done, "sostenido 900 s, sale")
+        #expect(fake.executedEffects == [.rearmMirrorOff, .reverseRollback])
+        #expect(j.reverseAbortReasonRaw == "icloudUnavailable", "un solo motivo agotó el plazo: lleva su texto")
+    }
+
+    /// El otro lado del criterio: iCloud lleno, observado desde el principio con la cadencia del re-kick, sigue saliendo
+    /// a los 900 s de espera REAL con ese motivo. Si el reloj de lo definitivo no persistiera entre pasadas, esto no
+    /// terminaría nunca por el corto.
+    @Test func reverseUploadClocks_aRepeatedFullStillLeavesAt900SecondsOfItsOwn() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        try seedJournal(context, phase: .reverseUpload, reverseOriginRaw: "done")
+
+        for at in stride(from: 0.0, through: 870, by: 30) {
+            let j = try await observeUpload(context, fake, at: at, .icloudFull)
+            #expect(j.readPhase().phase == .reverseUpload, "\(at) s: espera")
+        }
+        var j = try await observeUpload(context, fake, at: 899, .icloudFull)
+        #expect(j.readPhase().phase == .reverseUpload)
+        #expect(j.reverseUploadDefinitiveAt == fixedNow, "el tramo sigue abierto desde la primera observación")
+
+        j = try await observeUpload(context, fake, at: 900, .icloudFull)
+        #expect(j.readPhase().phase == .done)
+        #expect(j.reverseAbortReasonRaw == "icloudFull")
+    }
+
+    /// Un rato sin cuenta de iCloud entre dos tramos de iCloud lleno PAUSA los dos acumulados, no los borra: 610 s
+    /// antes, tres horas sin cuenta que no cuentan, y 290 s después hacen los 900. El texto sigue siendo el de iCloud
+    /// lleno: el reloj de causa también pausó, porque `icloudOff` no es otro motivo definitivo sino la ausencia de uno.
+    @Test func reverseUploadClocks_aWaitWithoutAccount_pausesInsteadOfResetting() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        try seedJournal(context, phase: .reverseUpload, reverseOriginRaw: "done")
+
+        _ = try await observeUpload(context, fake, at: 0, .icloudFull)
+        _ = try await observeUpload(context, fake, at: 600, .icloudFull)
+        var j = try await observeUpload(context, fake, at: 610, .icloudOff)
+        #expect(j.reverseUploadDefinitiveAt == nil, "sin motivo definitivo el tramo se CIERRA")
+        #expect(j.reverseUploadDefinitiveAccruedSeconds == 610, "y lo acumulado se conserva")
+        #expect(j.reverseUploadCauseRaw == "icloudFull", "la causa sigue puesta: pausada, no borrada")
+
+        j = try await observeUpload(context, fake, at: 10_800, .icloudOff)
+        #expect(j.readPhase().phase == .reverseUpload)
+        #expect(j.reverseUploadDefinitiveAccruedSeconds == 610, "tres horas sin cuenta no suman nada")
+
+        j = try await observeUpload(context, fake, at: 10_810, .icloudFull)
+        #expect(j.readPhase().phase == .reverseUpload, "vuelve el motivo: reabre el tramo con 610 s")
+        j = try await observeUpload(context, fake, at: 10_810 + 289, .icloudFull)
+        #expect(j.readPhase().phase == .reverseUpload, "610 + 289 = 899")
+        j = try await observeUpload(context, fake, at: 10_810 + 290, .icloudFull)
+        #expect(j.readPhase().phase == .done, "610 + 290 = 900")
+        #expect(j.reverseAbortReasonRaw == "icloudFull", "el de causa también sumó a través de la pausa")
+    }
+
+    /// Un AVANCE reinicia los dos acumulados: si la cifra bajó, algo subió, y lo acumulado antes describía otra espera.
+    /// 800 s de iCloud lleno, la cifra baja, y hacen falta otros 900 s para salir.
+    @Test func reverseUploadClocks_anAdvance_resetsBothAccruedClocks() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        try seedJournal(context, phase: .reverseUpload, reverseOriginRaw: "done")
+
+        _ = try await observeUpload(context, fake, at: 0, .icloudFull, pending: 10)
+        _ = try await observeUpload(context, fake, at: 800, .icloudFull, pending: 10)
+        var j = try await observeUpload(context, fake, at: 850, .icloudFull, pending: 9)
+        #expect(j.reverseUploadProgressAt == fixedNow.addingTimeInterval(850), "avanzó: re-sella el de avance")
+        #expect(j.reverseUploadDefinitiveAt == fixedNow.addingTimeInterval(850), "y el definitivo empieza de cero")
+        #expect(j.reverseUploadDefinitiveAccruedSeconds == 0)
+
+        j = try await observeUpload(context, fake, at: 850 + 899, .icloudFull, pending: 9)
+        #expect(j.readPhase().phase == .reverseUpload, "con lo de antes serían 1749 s y habría salido")
+        j = try await observeUpload(context, fake, at: 850 + 900, .icloudFull, pending: 9)
+        #expect(j.readPhase().phase == .done)
+    }
+
+    /// El reloj de CAUSA también se reinicia con el avance, y se ve en el TEXTO: 900 s de iCloud lleno repartidos a los dos
+    /// lados de un avance no son un motivo que agotó solo su plazo. La salida llega después por las 72 h, y tiene que
+    /// decir `stalled`: arrastrar lo de antes del avance le diría «iCloud está lleno» a quien lleva tres días sin cuenta.
+    @Test func reverseUploadClocks_anAdvance_resetsTheCauseClockToo_theTextSaysStalled() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        try seedJournal(context, phase: .reverseUpload, reverseOriginRaw: "done")
+
+        _ = try await observeUpload(context, fake, at: 0, .icloudFull, pending: 10)
+        _ = try await observeUpload(context, fake, at: 899, .icloudFull, pending: 10)
+        _ = try await observeUpload(context, fake, at: 900, .icloudFull, pending: 9)       // avance
+        var j = try await observeUpload(context, fake, at: 910, .icloudOff, pending: 9)
+        #expect(j.reverseUploadCauseAccruedSeconds == 10, "tras el avance la causa lleva 10 s, no 910")
+
+        j = try await observeUpload(context, fake, at: 900 + 259_200, .icloudFull, pending: 9)
+        #expect(j.readPhase().phase == .done, "las 72 h sin avanzar vencen")
+        #expect(j.reverseAbortReasonRaw == "stalled")
+    }
+
+    /// Los dos motivos definitivos turnándose SUMAN en el reloj de lo definitivo: sin eso, cada cambio lo reiniciaría y,
+    /// con el re-kick de 30 s, la salida se iría a las 72 h (el agujero de
+    /// `alternating-definitive-causes-never-reach-the-short-ceiling`). Salen a los 900 s, y con `stalled`: ninguno de los
+    /// dos textos es verdad entero.
+    @Test func reverseUploadClocks_alternatingDefinitiveCauses_leaveAtTheShortCeiling_withTheGenericText() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        try seedJournal(context, phase: .reverseUpload, reverseOriginRaw: "done")
+
+        var at = 0.0
+        var full = true
+        while at < 899 {
+            let j = try await observeUpload(context, fake, at: at, full ? .icloudFull : .icloudUnusable)
+            #expect(j.readPhase().phase == .reverseUpload, "\(at) s: espera")
+            at += 30
+            full.toggle()
+        }
+        var j = try await observeUpload(context, fake, at: 899, .icloudFull)
+        #expect(j.readPhase().phase == .reverseUpload)
+        j = try await observeUpload(context, fake, at: 900, .icloudUnusable)
+        #expect(j.readPhase().phase == .done, "900 s bajo motivos definitivos, aunque turnándose")
+        #expect(j.reverseAbortReasonRaw == "stalled", "ninguno de los dos motivos agotó SOLO el plazo")
+    }
+
+    /// El techo LARGO sigue por encima con cualquier motivo, y el texto lo elige el techo que VENCIÓ: 72 h sin avanzar,
+    /// casi todas sin cuenta, y la pasada que las cruza trae un iCloud lleno recién visto. Sale —el largo no depende del
+    /// motivo— y con `stalled`, no con «iCloud está lleno».
+    @Test func reverseUploadClocks_theLongCeiling_leavesWithAnyCause_andTheTextIsStalled() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        try seedJournal(context, phase: .reverseUpload, reverseOriginRaw: "done")
+
+        _ = try await observeUpload(context, fake, at: 0, .icloudFull)
+        _ = try await observeUpload(context, fake, at: 600, .icloudOff)
+        var j = try await observeUpload(context, fake, at: 259_199, .icloudFull)
+        #expect(j.readPhase().phase == .reverseUpload, "un segundo antes de las 72 h, y con 600 s definitivos: espera")
+        j = try await observeUpload(context, fake, at: 259_200, .icloudFull)
+        #expect(j.readPhase().phase == .done, "a las 72 h sale, traiga el motivo que traiga")
+        #expect(fake.executedEffects == [.rearmMirrorOff, .reverseRollback])
+        #expect(j.reverseAbortReasonRaw == "stalled", "venció el largo: el texto no acusa a iCloud")
+    }
+
+    /// **Un solo cambio de motivo, y luego sostenido** (lente de tests de la review): 600 s de iCloud lleno y 300 s de
+    /// cuenta inutilizable hacen los 900 s del reloj de lo definitivo, pero NINGUNO de los dos agotó solo el plazo. La
+    /// salida lleva `stalled`. Es el único caso que separa el reloj de causa del de lo definitivo cuando el motivo no
+    /// cambia en cada pasada: con los dos relojes confundidos, la salida diría «cuenta no disponible».
+    @Test func reverseUploadClocks_oneSwitchOfCause_thenSustained_leavesWithTheGenericText() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        try seedJournal(context, phase: .reverseUpload, reverseOriginRaw: "done")
+
+        for at in stride(from: 0.0, through: 600, by: 30) {
+            _ = try await observeUpload(context, fake, at: at, .icloudFull)
+        }
+        for at in stride(from: 630.0, through: 870, by: 30) {
+            _ = try await observeUpload(context, fake, at: at, .icloudUnusable)
+        }
+        var j = try await observeUpload(context, fake, at: 899, .icloudUnusable)
+        #expect(j.readPhase().phase == .reverseUpload)
+        #expect(j.reverseUploadCauseAt == fixedNow.addingTimeInterval(630), "el de causa empezó con el cambio de motivo")
+        #expect(j.reverseUploadDefinitiveAt == fixedNow, "el de lo definitivo no se reinició")
+
+        j = try await observeUpload(context, fake, at: 900, .icloudUnusable)
+        #expect(j.readPhase().phase == .done, "900 s bajo motivos definitivos")
+        #expect(j.reverseAbortReasonRaw == "stalled", "la cuenta solo llevaba 270 s: su texto no sería verdad")
+    }
+
+    /// Un avance reinicia también lo acumulado en tramos CERRADOS, no solo el tramo abierto: 610 s de iCloud lleno, una
+    /// pausa, y un avance a los 700. Lo correcto es salir a los 900 s del avance (1600); arrastrar los 610 s haría salir a
+    /// los 990.
+    @Test func reverseUploadClocks_anAdvanceAfterAPause_dropsWhatWasAccrued() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        try seedJournal(context, phase: .reverseUpload, reverseOriginRaw: "done")
+
+        _ = try await observeUpload(context, fake, at: 0, .icloudFull, pending: 10)
+        _ = try await observeUpload(context, fake, at: 610, .icloudOff, pending: 10)
+        var j = try await observeUpload(context, fake, at: 700, .icloudFull, pending: 9)     // avance
+        #expect(j.reverseUploadDefinitiveAccruedSeconds == 0, "lo cerrado antes del avance no se arrastra")
+        #expect(j.reverseUploadCauseAccruedSeconds == 0)
+
+        j = try await observeUpload(context, fake, at: 990, .icloudFull, pending: 9)
+        #expect(j.readPhase().phase == .reverseUpload, "con los 610 s arrastrados habría salido aquí")
+        j = try await observeUpload(context, fake, at: 1_599, .icloudFull, pending: 9)
+        #expect(j.readPhase().phase == .reverseUpload)
+        j = try await observeUpload(context, fake, at: 1_600, .icloudFull, pending: 9)
+        #expect(j.readPhase().phase == .done)
+        #expect(j.reverseAbortReasonRaw == "icloudFull")
+    }
+
+    /// Una muestra ILEGIBLE no es avance, y el motivo definitivo que trae SÍ acumula: la avería de la muestra no puede
+    /// suspender el techo corto. Sin cifra buena desde el principio, los 900 s de iCloud lleno siguen sacando.
+    @Test func reverseUploadClocks_anUnreadableSample_stillAccruesItsDefinitiveCause() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        try seedJournal(context, phase: .reverseUpload, reverseOriginRaw: "done")
+        fake.reverseBlocker = .icloudFull
+        fake.reverseUploadStatuses = [.unreadable]
+
+        await makeRunner(context, fake, now: { self.fixedNow }).resume()
+        await makeRunner(context, fake, now: { self.fixedNow.addingTimeInterval(899) }).resume()
+        var j = try journal(context)
+        #expect(j.readPhase().phase == .reverseUpload)
+        #expect(j.reverseUploadDefinitiveAt == fixedNow)
+        #expect(j.reverseUploadLowestPending == nil, "sin cifra no hay mínimo")
+
+        await makeRunner(context, fake, now: { self.fixedNow.addingTimeInterval(900) }).resume()
+        j = try journal(context)
+        #expect(j.readPhase().phase == .done)
+        #expect(j.reverseAbortReasonRaw == "icloudFull")
+    }
+
+    /// **Una fila de un build anterior (v14) a mitad de espera**, SEMBRADA como la deja ese build: tres horas de reloj de
+    /// avance y ningún campo de los acumulados. La primera pasada con iCloud lleno no sale: el corto le cuenta desde que
+    /// este build la mira. Y el largo conserva sus tres horas.
+    @Test func reverseUploadClocks_aV14RowMidWait_startsTheShortCeilingNow() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        try seedJournal(context, phase: .reverseUpload, reverseOriginRaw: "done",
+                        reverseUploadLowestPending: 10, reverseUploadProgressAt: fixedNow)
+
+        var j = try await observeUpload(context, fake, at: 10_800, .icloudFull)
+        #expect(j.readPhase().phase == .reverseUpload, "tres horas de avance no son tres horas de iCloud lleno")
+        #expect(j.reverseUploadProgressAt == fixedNow, "el largo sigue contando desde su sello")
+        #expect(j.reverseUploadDefinitiveAt == fixedNow.addingTimeInterval(10_800))
+        j = try await observeUpload(context, fake, at: 10_800 + 900, .icloudFull)
+        #expect(j.readPhase().phase == .done)
+    }
+
+    /// Un tramo definitivo sellado en el FUTURO —el reloj iba adelantado y ya se corrigió— se re-ancla AHORA en vez de
+    /// aplazar el techo corto diez días, y conserva lo acumulado en tramos cerrados.
+    @Test func reverseUploadClocks_aFutureOpenTramo_isReAnchoredKeepingWhatWasAccrued() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        let future = fixedNow.addingTimeInterval(10 * 86_400)
+        try seedJournal(context, phase: .reverseUpload, reverseOriginRaw: "done",
+                        reverseUploadLowestPending: 10, reverseUploadProgressAt: fixedNow,
+                        reverseUploadCauseRaw: "icloudFull", reverseUploadCauseAt: future,
+                        reverseUploadCauseAccruedSeconds: 300,
+                        reverseUploadDefinitiveAt: future, reverseUploadDefinitiveAccruedSeconds: 300)
+
+        var j = try await observeUpload(context, fake, at: 100, .icloudFull)
+        #expect(j.readPhase().phase == .reverseUpload)
+        #expect(j.reverseUploadDefinitiveAt == fixedNow.addingTimeInterval(100), "re-anclado a la observación")
+        #expect(j.reverseUploadDefinitiveAccruedSeconds == 300, "lo cerrado se conserva")
+        j = try await observeUpload(context, fake, at: 699, .icloudFull)
+        #expect(j.readPhase().phase == .reverseUpload, "300 + 599")
+        j = try await observeUpload(context, fake, at: 700, .icloudFull)
+        #expect(j.readPhase().phase == .done, "300 + 600 = 900, no diez días después")
+        #expect(j.reverseAbortReasonRaw == "icloudFull")
+    }
+
+    /// **El hueco SIN observaciones cuenta**, la regla de la familia (`reversePreMountDefinitiveClock_anUnobservedGapBetweenTwoCauses_counts`):
+    /// un tramo abierto sigue abierto con la app cerrada, porque no se pudo preguntar si el motivo se fue. Fijado aquí
+    /// también para que cambiarlo sea una decisión de las cinco etapas a la vez, con su ticket
+    /// (`stall-clock-charges-a-closed-app-gap-to-a-one-off-cause`), y no un efecto lateral.
+    @Test func reverseUploadClocks_anUnobservedGap_counts() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        try seedJournal(context, phase: .reverseUpload, reverseOriginRaw: "done")
+
+        _ = try await observeUpload(context, fake, at: 0, .icloudFull)
+        // Yala cerrada 20 min; al volver, el mismo motivo.
+        let j = try await observeUpload(context, fake, at: 1_200, .icloudFull)
+        #expect(j.readPhase().phase == .done, "el tramo siguió abierto los 1200 s")
+        #expect(j.reverseAbortReasonRaw == "icloudFull")
+    }
+
+    /// Los dos sitios de limpieza que ningún otro test recorría (lente de tests): el reset tras un rollback y la
+    /// normalización de un journal ilegible. Sembrados a mano, o «nil al final» no mediría nada.
+    @Test func reverseUploadCeiling_resetAfterRollback_andACorruptJournal_clearTheWholeFamily() async throws {
+        for corrupt in [false, true] {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let context = try makeContext(dir)
+            let fake = FakeExecutor()
+            let state = try seedJournal(
+                context, phase: corrupt ? .reverseUpload : .failedRollback, reverseOriginRaw: "done",
+                reverseUploadLowestPending: 4, reverseUploadProgressAt: fixedNow,
+                reverseUploadCauseRaw: "icloudFull", reverseUploadCauseAt: fixedNow,
+                reverseUploadCauseAccruedSeconds: 800, reverseUploadDefinitiveAt: fixedNow,
+                reverseUploadDefinitiveAccruedSeconds: 800)
+            if corrupt {
+                state.phaseData = Data("no-es-una-fase".utf8)
+                try context.save()
+                await makeRunner(context, fake).resume()
+            } else {
+                await makeRunner(context, fake).resetAfterRollback()
+            }
+            let j = try journal(context)
+            #expect(j.readPhase().phase == .notStarted, "corrupt=\(corrupt)")
+            #expect(j.reverseUploadLowestPending == nil, "corrupt=\(corrupt)")
+            #expect(j.reverseUploadProgressAt == nil, "corrupt=\(corrupt)")
+            #expect(j.reverseUploadCauseRaw == nil, "corrupt=\(corrupt)")
+            #expect(j.reverseUploadCauseAt == nil, "corrupt=\(corrupt)")
+            #expect(j.reverseUploadCauseAccruedSeconds == nil, "corrupt=\(corrupt)")
+            #expect(j.reverseUploadDefinitiveAt == nil, "corrupt=\(corrupt)")
+            #expect(j.reverseUploadDefinitiveAccruedSeconds == nil, "corrupt=\(corrupt)")
+        }
     }
 
     /// EL test del hallazgo de la review: tras una salida sin red el journal queda `done` + `[.reverseRollback]`, y
@@ -2148,13 +2517,25 @@ struct MigrationRunnerTests {
         let context = try makeContext(dir)
         let fake = FakeExecutor()
         fake.reverseClaimOutcomes = [.transient]                 // corta en reverseClaimLeader
-        try seedJournal(context, phase: .reverseConfirm(.done), reverseAbortReasonRaw: "stalled")
+        // Los relojes de la espera sembrados a mano, como el motivo: sin ellos, «nil al final» no mediría la limpieza.
+        try seedJournal(context, phase: .reverseConfirm(.done),
+                        reverseUploadLowestPending: 4, reverseUploadProgressAt: fixedNow,
+                        reverseUploadCauseRaw: "icloudFull", reverseUploadCauseAt: fixedNow,
+                        reverseUploadCauseAccruedSeconds: 800, reverseUploadDefinitiveAt: fixedNow,
+                        reverseUploadDefinitiveAccruedSeconds: 800, reverseAbortReasonRaw: "stalled")
 
         await runner(context, fake).submit(.reverseConfirmed)
 
         let j = try journal(context)
         #expect(j.readPhase().phase == .reverseClaimLeader)
         #expect(j.reverseAbortReasonRaw == nil)
+        // Una vuelta nueva no hereda lo acumulado por la anterior: con 800 s heredados, el techo corto de la espera
+        // nueva vencería a los 100 s.
+        #expect(j.reverseUploadCauseRaw == nil)
+        #expect(j.reverseUploadCauseAt == nil)
+        #expect(j.reverseUploadCauseAccruedSeconds == nil)
+        #expect(j.reverseUploadDefinitiveAt == nil)
+        #expect(j.reverseUploadDefinitiveAccruedSeconds == nil)
     }
 
     /// Una vuelta que SÍ drena cierra en `icloudActive` sin reloj, sin cifra y sin nota.
@@ -2167,7 +2548,9 @@ struct MigrationRunnerTests {
         // de abajo pueda fallar: sin él, «nil al final» se cumpliría sin limpiar nada.
         try seedJournal(context, phase: .reverseUpload, reverseOriginRaw: "done",
                         reverseUploadLowestPending: 2, reverseUploadProgressAt: fixedNow,
-                        reverseAbortReasonRaw: "stalled")
+                        reverseUploadCauseRaw: "icloudUnusable", reverseUploadCauseAt: fixedNow,
+                        reverseUploadCauseAccruedSeconds: 30, reverseUploadDefinitiveAt: fixedNow,
+                        reverseUploadDefinitiveAccruedSeconds: 30, reverseAbortReasonRaw: "stalled")
 
         let r = runner(context, fake)
         await r.resume()
@@ -2176,6 +2559,11 @@ struct MigrationRunnerTests {
         #expect(j.readPhase().phase == .icloudActive)
         #expect(j.reverseUploadLowestPending == nil)
         #expect(j.reverseUploadProgressAt == nil)
+        #expect(j.reverseUploadCauseRaw == nil)
+        #expect(j.reverseUploadCauseAt == nil)
+        #expect(j.reverseUploadCauseAccruedSeconds == nil)
+        #expect(j.reverseUploadDefinitiveAt == nil)
+        #expect(j.reverseUploadDefinitiveAccruedSeconds == nil)
         #expect(j.reverseAbortReasonRaw == nil)
         #expect(r.lastReverseUploadSample == nil)
     }

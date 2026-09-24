@@ -190,6 +190,11 @@ struct CloudSyncSchemaParityTests {
             "cutoverICloudVerdictRaw",
             "reverseUploadLowestPending",
             "reverseUploadProgressAt",
+            "reverseUploadCauseRaw",
+            "reverseUploadCauseAt",
+            "reverseUploadCauseAccruedSeconds",
+            "reverseUploadDefinitiveAt",
+            "reverseUploadDefinitiveAccruedSeconds",
             "reverseAbortReasonRaw",
             "reverseOriginPendingEffectsData",
             "forwardClaimIntentRaw",
@@ -224,7 +229,7 @@ struct CloudSyncSchemaParityTests {
         #expect(propertyNames(MigrationState.self) == expected)
     }
 
-    @Test func migrationState_schemaVersion_isFourteen() {
+    @Test func migrationState_schemaVersion_isFifteen() {
         // Subió a 2 en I11-2 al añadir el campo aditivo `reverseOriginRaw`; a 3 en C-1 con
         // `markerWrittenSince` (reloj del tope del paso 4) + `cutoverICloudVerdictRaw` (veredicto del canal
         // iCloud), ambos ADITIVOS y opcionales → una fila escrita por un build v2 sigue abriéndose. A 4 con los
@@ -262,7 +267,43 @@ struct CloudSyncSchemaParityTests {
         // A 14 con los TRES del techo del efecto del adopt (`adoptEffectStall*`), opcionales: una fila v13 con el adopt
         // pendiente se abre sin reloj, y el primer fallo lo sella — el presupuesto le cuenta desde que este build la mira
         // (ticket `adopt-effect-retries-forever-with-no-ceiling`).
-        #expect(CloudSyncSchemaVersions.migrationState == 14)
+        // A 15 con los CINCO de los dos relojes que le faltaban al techo de `reverseUpload` (los tres de causa y los dos
+        // de «cualquier motivo definitivo»), opcionales: una fila v14 a mitad de espera se abre sin nada acumulado, y el
+        // techo corto le cuenta desde la primera observación de este build con un motivo definitivo (ticket
+        // `reverse-upload-ceiling-charges-a-wait-to-whoever-stops-it-last`).
+        #expect(CloudSyncSchemaVersions.migrationState == 15)
+    }
+
+    /// **Los SIETE campos del techo de `reverseUpload` se limpian juntos** (`clearReverseUploadCeiling()`), con la
+    /// familia derivada del SCHEMA por su prefijo: un octavo campo `reverseUpload*` rompe la igualdad y obliga a pasar por
+    /// aquí. El motivo de la salida (`reverseAbortReasonRaw`) queda FUERA a propósito: es el desenlace y sobrevive a la
+    /// vuelta al origen, que es donde la persona lo lee.
+    @Test func migrationState_clearReverseUploadCeiling_clearsTheWholeFamily_andNotTheExitReason() {
+        let family = Set(propertyNames(MigrationState.self).filter { $0.hasPrefix("reverseUpload") })
+        let known: Set<String> = [
+            "reverseUploadLowestPending",
+            "reverseUploadProgressAt",
+            "reverseUploadCauseRaw",
+            "reverseUploadCauseAt",
+            "reverseUploadCauseAccruedSeconds",
+            "reverseUploadDefinitiveAt",
+            "reverseUploadDefinitiveAccruedSeconds",
+        ]
+        #expect(family == known, "campo nuevo en la familia: añádelo a `clearReverseUploadCeiling()` y a esta lista")
+
+        let state = MigrationState(
+            reverseUploadLowestPending: 7, reverseUploadProgressAt: .now, reverseUploadCauseRaw: "icloudFull",
+            reverseUploadCauseAt: .now, reverseUploadCauseAccruedSeconds: 42, reverseUploadDefinitiveAt: .now,
+            reverseUploadDefinitiveAccruedSeconds: 42, reverseAbortReasonRaw: "icloudFull")
+        state.clearReverseUploadCeiling()
+        #expect(state.reverseUploadLowestPending == nil)
+        #expect(state.reverseUploadProgressAt == nil)
+        #expect(state.reverseUploadCauseRaw == nil)
+        #expect(state.reverseUploadCauseAt == nil)
+        #expect(state.reverseUploadCauseAccruedSeconds == nil)
+        #expect(state.reverseUploadDefinitiveAt == nil)
+        #expect(state.reverseUploadDefinitiveAccruedSeconds == nil)
+        #expect(state.reverseAbortReasonRaw == "icloudFull", "el motivo de la salida no es parte del reloj")
     }
 
     /// **Los TRES campos de los relojes del techo del efecto del adopt se limpian juntos**

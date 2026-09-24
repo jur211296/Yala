@@ -332,13 +332,24 @@ nonisolated enum MigrationEvent: Equatable {
 
     // MARK: Techo y salida de `reverseUpload` (ticket `reverse-upload-has-no-ceiling-and-no-exit`)
 
-    /// Observación de la espera de `reverseUpload`: el mirror aún no drena. `stalledSeconds` lo mide el RUNNER
-    /// —`now()` menos el instante del ÚLTIMO AVANCE journaleado (`MigrationState.reverseUploadProgressAt`)—, no
-    /// desde que empezó la espera: un corpus grande que sube despacio avanza y nunca agota el presupuesto; el
-    /// que se clava sí. `cause` elige el presupuesto (`MigrationPolicy.reverseUpload*BudgetSeconds`) y
-    /// `returnTo` lo inyecta el runner desde `reverseOriginRaw`, como en `reverseOtherLeader`: la máquina no
-    /// propaga el origen más allá de `reverseConfirm`.
-    case reverseUploadStalled(stalledSeconds: Double, cause: MarkerExportStall, returnTo: ReverseOrigin)
+    /// Observación de la espera de `reverseUpload`: el mirror aún no drena. `returnTo` lo inyecta el runner desde
+    /// `reverseOriginRaw`, como en `reverseOtherLeader`: la máquina no propaga el origen más allá de `reverseConfirm`.
+    ///
+    /// **Trae DOS relojes, y cada uno gobierna un techo** (ticket
+    /// `reverse-upload-ceiling-charges-a-wait-to-whoever-stops-it-last`, molde de `reversePreMountStalled`):
+    ///  · `stalledSeconds` es el de AVANCE —`now()` menos el instante del ÚLTIMO AVANCE journaleado
+    ///    (`MigrationState.reverseUploadProgressAt`)—, no desde que empezó la espera: un corpus grande que sube despacio
+    ///    avanza y nunca lo agota. Gobierna el LARGO, con cualquier motivo;
+    ///  · `definitiveStalledSeconds` es el de «cualquier motivo definitivo» —lo ACUMULADO desde el último avance bajo
+    ///    `icloudFull` o `icloudUnusable`, sean el mismo o se turnen; `icloudOff` y `unknown` lo pausan— y gobierna el
+    ///    CORTO, que solo se aplica cuando `cause == .definitive`.
+    ///
+    /// Hasta ese ticket venía uno solo y el corto se aplicaba a él: tres horas sin cuenta de iCloud y un
+    /// `notAuthenticated` de una pasada al entrar —lo habitual— sacaban de la vuelta en ese mismo instante, sin un
+    /// reintento.
+    case reverseUploadStalled(
+        stalledSeconds: Double, definitiveStalledSeconds: Double,
+        cause: MarkerExportStall, returnTo: ReverseOrigin)
     /// La persona cancela la vuelta desde la pantalla de espera («Cancelar y seguir en la nube»). Misma salida
     /// que el tope, sin esperar a que venza.
     case reverseUploadCancelled(returnTo: ReverseOrigin)
@@ -474,13 +485,29 @@ nonisolated struct MigrationPolicy: Equatable {
     /// CloudKit Production— se ve en el dashboard mucho antes de que ningún device degrade.
     var markerExportUnknownBudgetSeconds: Double = 259_200
 
-    /// Techo de la espera de `reverseUpload` cuando CloudKit YA dijo que no entra (iCloud lleno, cuenta
-    /// inutilizable): 15 min SIN avanzar. Decisión de Jürgen (2026-09-16). Mientras tanto la nube de Yala está
-    /// congelada y lo que la persona escribe vive solo en el teléfono.
+    /// Techo de la espera de `reverseUpload` contra el reloj de lo DEFINITIVO, y solo cuando CloudKit YA dijo que no
+    /// entra (iCloud lleno, cuenta inutilizable): 15 min ACUMULADOS desde el último avance bajo esos motivos, sean el
+    /// mismo o se turnen. Las horas sin cuenta de iCloud (`icloudOff`) o sin saber por qué (`unknown`) no cuentan.
+    /// Decisión de Jürgen (2026-09-16) para el número; `reverse-upload-ceiling-charges-a-wait-to-whoever-stops-it-last`
+    /// para el reloj. Mientras tanto la nube de Yala está congelada y lo que la persona escribe vive solo en el teléfono.
+    ///
+    /// El mismo número decide también el TEXTO, contra el reloj de UNA causa: si un solo motivo llegó a él, la salida
+    /// lleva el suyo; si no, `stalled` (`MigrationRunner.reverseUploadExitReason`).
     var reverseUploadDefinitiveBudgetSeconds: Double = 900
-    /// Techo de la espera de `reverseUpload` cuando no se sabe por qué no drena: 72 h SIN avanzar. El reloj es
-    /// el del ÚLTIMO avance, no el del inicio, así que un corpus grande que sube despacio nunca lo agota.
-    var reverseUploadUnknownBudgetSeconds: Double = 259_200
+    /// Techo de la espera de `reverseUpload` contra el reloj de AVANCE, con CUALQUIER motivo: 72 h SIN avanzar. El
+    /// reloj es el del ÚLTIMO avance, no el del inicio, así que un corpus grande que sube despacio nunca lo agota. Es el
+    /// suelo del mecanismo: con un motivo definitivo también aplica.
+    ///
+    /// **Se llamaba `…UnknownBudgetSeconds` hasta el 2026-09-23**, y desde que aplica con cualquier motivo ese nombre
+    /// invitaba a bajarlo creyendo que solo tocaba lo desconocido (el renombrado del gemelo previo al montaje).
+    var reverseUploadProgressBudgetSeconds: Double = 259_200
+
+    /// El predicado del techo CORTO de la espera de subida, en UN solo sitio: lo consultan la máquina —al reloj de
+    /// «cualquier motivo definitivo», para salir— y el runner —al de la causa de esta observación, para elegir el
+    /// texto—. Por eso el parámetro no nombra ningún reloj.
+    func reverseUploadDefinitiveCeilingReached(stalledSeconds: Double, cause: MarkerExportStall) -> Bool {
+        cause == .definitive && stalledSeconds >= reverseUploadDefinitiveBudgetSeconds
+    }
 
     /// Techo de las CUATRO fases previas al montaje del espejo contra el reloj de lo DEFINITIVO, y solo cuando el
     /// motivo de la observación lo es —esperar no lo arregla—: 15 min de parada ACUMULADA bajo motivos definitivos,
@@ -590,7 +617,7 @@ nonisolated struct MigrationPolicy: Equatable {
         markerExportDefinitiveBudgetSeconds: Double = 900,
         markerExportUnknownBudgetSeconds: Double = 259_200,
         reverseUploadDefinitiveBudgetSeconds: Double = 900,
-        reverseUploadUnknownBudgetSeconds: Double = 259_200,
+        reverseUploadProgressBudgetSeconds: Double = 259_200,
         reversePreMountCauseBudgetSeconds: Double = 900,
         reversePreMountPhaseBudgetSeconds: Double = 259_200,
         snapshotCauseBudgetSeconds: Double = 900,
@@ -603,7 +630,7 @@ nonisolated struct MigrationPolicy: Equatable {
         self.markerExportDefinitiveBudgetSeconds = markerExportDefinitiveBudgetSeconds
         self.markerExportUnknownBudgetSeconds = markerExportUnknownBudgetSeconds
         self.reverseUploadDefinitiveBudgetSeconds = reverseUploadDefinitiveBudgetSeconds
-        self.reverseUploadUnknownBudgetSeconds = reverseUploadUnknownBudgetSeconds
+        self.reverseUploadProgressBudgetSeconds = reverseUploadProgressBudgetSeconds
         self.reversePreMountCauseBudgetSeconds = reversePreMountCauseBudgetSeconds
         self.reversePreMountPhaseBudgetSeconds = reversePreMountPhaseBudgetSeconds
         self.snapshotCauseBudgetSeconds = snapshotCauseBudgetSeconds
@@ -913,11 +940,16 @@ nonisolated enum MigrationStateMachine {
         // Al revés, un `reverse_abort` fallido dejaría `.cloud` + mirror vivo en una fase ESTABLE: el estado
         // prohibido de `isCloudWithMirrorOn`, con la pantalla diciendo «en la nube».
         // No se borra el marcador ni el faro: la cuenta sigue en la nube, que es donde vuelve.
-        case let (.reverseUpload, .reverseUploadStalled(stalled, cause, origin)):
-            let budget = cause == .definitive
-                ? policy.reverseUploadDefinitiveBudgetSeconds
-                : policy.reverseUploadUnknownBudgetSeconds
-            guard stalled >= budget else {
+        //
+        // **Sale con el PRIMERO de los dos techos que venza**, y son de relojes distintos (ticket
+        // `reverse-upload-ceiling-charges-a-wait-to-whoever-stops-it-last`): el LARGO contra el de AVANCE, con cualquier
+        // motivo, y el CORTO contra el de «cualquier motivo definitivo». El largo no está en el `else` del motivo: es el
+        // que garantiza que la espera termine pase lo que pase.
+        case let (.reverseUpload, .reverseUploadStalled(stalled, definitiveStalled, cause, origin)):
+            let hitProgressCeiling = stalled >= policy.reverseUploadProgressBudgetSeconds
+            let hitDefinitiveCeiling = policy.reverseUploadDefinitiveCeilingReached(
+                stalledSeconds: definitiveStalled, cause: cause)
+            guard hitProgressCeiling || hitDefinitiveCeiling else {
                 return .transition(next: .reverseUpload, effects: [])
             }
             return .transition(next: reverseOriginPhase(origin), effects: [.rearmMirrorOff, .reverseRollback])

@@ -996,8 +996,7 @@ final class MigrationRunner {
             state.reverseOriginRaw = nil
             state.markerWrittenSince = nil
             state.cutoverICloudVerdictRaw = nil
-            state.reverseUploadLowestPending = nil
-            state.reverseUploadProgressAt = nil
+            state.clearReverseUploadCeiling()
             state.reverseAbortReasonRaw = nil
             state.clearReversePreMountCeiling()
             state.setReverseOriginPendingEffects([])
@@ -1219,8 +1218,7 @@ final class MigrationRunner {
                 state.cutoverICloudVerdictRaw = nil
                 // Techo de `reverseUpload`: una vuelta nueva empieza sin reloj ni cifra, y el porqué de la salida
                 // anterior deja de ser verdad.
-                state.reverseUploadLowestPending = nil
-                state.reverseUploadProgressAt = nil
+                state.clearReverseUploadCeiling()
                 state.reverseAbortReasonRaw = nil
                 // Techo de las fases previas al montaje: lo MISMO, y aquí no es higiene sino corrección. El reloj de
                 // esta etapa se compara por FASE, así que un sello de un intento anterior en la misma fase daría un
@@ -1252,8 +1250,7 @@ final class MigrationRunner {
                 // Techo de `reverseUpload`: el reloj y la cifra son del intento. El porqué de una salida de la
                 // espera, en cambio, SOBREVIVE a `notStarted` —es la fase origen de un adoptador y la persona lo
                 // lee tras relanzar— y solo se va cuando la vuelta SÍ llegó a iCloud.
-                state.reverseUploadLowestPending = nil
-                state.reverseUploadProgressAt = nil
+                state.clearReverseUploadCeiling()
                 if next == .icloudActive {
                     state.reverseAbortReasonRaw = nil
                     // La nube se usó y se devolvió a iCloud: la salida de un adopt anterior ya no describe este
@@ -2237,6 +2234,21 @@ final class MigrationRunner {
     ///
     /// `count == nil` es una muestra ILEGIBLE (`ReverseUploadStatus.unreadable`): nunca avanza, no toca la cifra más
     /// baja y la pantalla conserva la última observación buena.
+    ///
+    /// **Tres relojes, molde de `observeReversePreMountStall` y `observeSnapshotStall`** (ticket
+    /// `reverse-upload-ceiling-charges-a-wait-to-whoever-stops-it-last`). El de AVANCE —el de arriba— gobierna las 72 h
+    /// con cualquier motivo. El de «CUALQUIER motivo DEFINITIVO» acumula desde el último avance lo que la espera lleva
+    /// bajo `icloudFull` o `icloudUnusable`, sean el mismo o se turnen, y gobierna los 15 min. El de CAUSA acumula bajo
+    /// UN motivo y solo elige el texto de la salida (`reverseUploadExitReason`). Con uno solo de avance —lo que había—,
+    /// tres horas sin cuenta de iCloud y el `notAuthenticated` de una pasada que CloudKit suelta justo al entrar sacaban
+    /// de la vuelta en ese mismo instante: se cobraban las tres horas contra los 15 min del motivo de la última pasada.
+    ///
+    /// **`icloudOff` y `unknown` PAUSAN los dos acumulados**, no los borran: son la «red» de esta espera —esperar sí
+    /// puede arreglarlas— y un hueco así no prueba que el motivo definitivo se fuera. El filtro es `stallCause`, el mismo
+    /// que elige el presupuesto, para que los dos no diverjan el día que entre un motivo nuevo.
+    ///
+    /// **Un AVANCE reinicia los dos acumulados**: la cifra bajó, así que algo subió, y lo acumulado antes describía una
+    /// espera que ya no es la de ahora. La misma observación abre el tramo nuevo desde cero si trae motivo definitivo.
     private func observeReverseUploadWait(pending count: Int?) async throws -> Bool {
         let blocker = executor.reverseUploadBlocker()
         if let count {
@@ -2266,17 +2278,99 @@ final class MigrationRunner {
             lastProgressAt = observedAt
         }
         let stalled = observedAt.timeIntervalSince(lastProgressAt)
+        let cause = blocker.stallCause
+        // Solo un motivo DEFINITIVO entra en los dos acumulados; el resto pausa. Derivado del MISMO `cause` que recibe la
+        // máquina, no de una lista de casos escrita otra vez aquí.
+        let definitiveRaw: String? = cause == .definitive ? blocker.rawValue : nil
+        // Tras un AVANCE los dos acumulados empiezan de cero: se leen como si el journal no trajera nada.
+        let clock = CauseStallClock.observe(
+            sealedRaw: advanced ? nil : state.reverseUploadCauseRaw,
+            sealedOpenSince: advanced ? nil : state.reverseUploadCauseAt,
+            sealedAccrued: advanced ? nil : state.reverseUploadCauseAccruedSeconds,
+            blockerRaw: definitiveRaw,
+            observedAt: observedAt)
+        let definitive = CauseStallClock.observeAnyDefinitive(
+            sealedOpenSince: advanced ? nil : state.reverseUploadDefinitiveAt,
+            sealedAccrued: advanced ? nil : state.reverseUploadDefinitiveAccruedSeconds,
+            isDefinitive: cause == .definitive,
+            observedAt: observedAt)
         CloudSyncBreadcrumb.reverseUploadObserved(
-            pending: count ?? -1, stalledSeconds: stalled, advanced: advanced, blocker: blocker.rawValue)
+            pending: count ?? -1, stalledSeconds: stalled, causeStalledSeconds: clock.stalled,
+            definitiveStalledSeconds: definitive.stalled, advanced: advanced, blocker: blocker.rawValue)
         // El canario se emite en CADA observación (dedupe por proceso dentro del helper): un atasco SISTÉMICO —un
-        // mirror que no exporta para nadie— se ve en la flota mucho antes de que ningún teléfono agote el techo.
+        // mirror que no exporta para nadie— se ve en la flota mucho antes de que ningún teléfono agote el techo. Publica
+        // el tramo de CAUSA aunque los 15 min ya no corran contra él, como la vuelta previa al montaje y la subida: es el
+        // que deja reconocer en la flota un motivo recién visto tras horas de espera por otra cosa.
         MetricsService.cloudReverseUploadWaiting(
-            advancing: advanced, stalledSeconds: stalled, blocker: blocker.rawValue)
+            advancing: advanced, stalledSeconds: stalled,
+            causeStalledSeconds: definitiveRaw == nil ? nil : clock.stalled, blocker: blocker.rawValue)
         let origin = try originFromJournal()
+        let exitReason = reverseUploadExitReason(blocker: blocker, causeStalledSeconds: clock.stalled)
         return try await journalReverseUploadStep(
-            .reverseUploadStalled(stalledSeconds: stalled, cause: blocker.stallCause, returnTo: origin),
-            exitReason: blocker.abortReason,
-            hold: (lowest: count.map { min(lowest ?? $0, $0) } ?? lowest, progressAt: lastProgressAt))
+            .reverseUploadStalled(stalledSeconds: stalled, definitiveStalledSeconds: definitive.stalled,
+                                  cause: cause, returnTo: origin),
+            exitReason: exitReason,
+            exitDetail: Self.reverseUploadExitDetail(
+                reason: exitReason, progressStalledSeconds: stalled, policy: policy),
+            hold: ReverseUploadHold(
+                lowest: count.map { min(lowest ?? $0, $0) } ?? lowest, progressAt: lastProgressAt,
+                causeRaw: clock.raw, causeAccruedFrom: clock.accruedFrom, causeAccrued: clock.accrued,
+                definitiveAccruedFrom: definitive.accruedFrom, definitiveAccrued: definitive.accrued))
+    }
+
+    /// Lo que se re-sella en el journal cuando una observación de la espera HOLDEA: la cifra más baja y el reloj de
+    /// avance, los tres del reloj de causa y los dos del de «cualquier motivo definitivo». Struct y no tupla por lo mismo
+    /// que `ReversePreMountHold`: son siete y seis opcionales.
+    private struct ReverseUploadHold {
+        let lowest: Int?
+        let progressAt: Date
+        let causeRaw: String?
+        let causeAccruedFrom: Date?
+        let causeAccrued: Double?
+        let definitiveAccruedFrom: Date?
+        let definitiveAccrued: Double?
+    }
+
+    /// El motivo que se journalea si la espera sale, y **lo elige el techo que VENCIÓ, no la última observación**
+    /// (la regla de `reversePreMountExitReason` y `snapshotExitReason`).
+    ///
+    /// El específico —`icloudFull`, `icloudUnavailable`— solo sale cuando UN motivo agotó SOLO el plazo corto, medido
+    /// contra su reloj de CAUSA. Si no, `stalled`, en los dos casos que quedan: las 72 h de avance vencidas en una pasada
+    /// que casualmente trae un motivo recién visto —decirle «iCloud está lleno» a quien llevaba tres días sin red sería
+    /// contarle una causa que no terminó nada—, y el corto vencido con los dos motivos turnándose, donde ninguno de los
+    /// dos textos es verdad entero. **`stalled` vale para los dos sin texto nuevo**, y está medido: dice «iCloud no
+    /// recibió todos tus datos» y pide revisar iCloud y la conexión, sin afirmar días ni motivo (a diferencia del
+    /// `stalled` de la subida del snapshot, que dice «días» y por eso allí hizo falta `mixedCauses`).
+    ///
+    /// Si el motivo es real no se pierde nada: la persona lo reintenta y, sostenido 15 min, sale con su texto.
+    ///
+    /// Se calcula en cada observación y solo se journalea si la máquina saca de la espera.
+    private func reverseUploadExitReason(
+        blocker: ReverseUploadBlocker, causeStalledSeconds: Double
+    ) -> ReverseAbortReason {
+        guard policy.reverseUploadDefinitiveCeilingReached(
+            stalledSeconds: causeStalledSeconds, cause: blocker.stallCause) else {
+            return .stalled
+        }
+        return blocker.abortReason
+    }
+
+    /// El detalle del rastro y del canario de una salida de la espera, que NO siempre es el motivo journaleado (lente de
+    /// telemetría de la review de `reverse-upload-ceiling-charges-a-wait-to-whoever-stops-it-last`). Desde ese ticket
+    /// `stalled` cubre dos salidas distintas: las 72 h sin avanzar y los 15 min con motivos definitivos turnándose. A la
+    /// persona le vale el mismo texto para las dos, y por eso se journalea uno solo; a la flota no, porque un pico de
+    /// `stalled` tiene que decir si es un mirror que no exporta en días o dos motivos que se turnan. La segunda sale
+    /// como `mixedCauses`, el nombre que la subida del snapshot ya usa para lo mismo.
+    ///
+    /// Se distingue por el reloj de avance: con `stalled` y sin haber llegado a las 72 h, lo único que puede haber sacado
+    /// de la espera es el corto, y si el motivo journaleado no es el específico es que ninguno lo agotó solo.
+    nonisolated static func reverseUploadExitDetail(
+        reason: ReverseAbortReason, progressStalledSeconds: Double, policy: MigrationPolicy
+    ) -> String {
+        guard reason == .stalled, progressStalledSeconds < policy.reverseUploadProgressBudgetSeconds else {
+            return reason.rawValue
+        }
+        return "mixedCauses"
     }
 
     /// Journalea un paso de la espera de `reverseUpload` —una observación o la cancelación— y devuelve si la
@@ -2289,7 +2383,8 @@ final class MigrationRunner {
     private func journalReverseUploadStep(
         _ event: MigrationEvent,
         exitReason: ReverseAbortReason,
-        hold: (lowest: Int?, progressAt: Date)?
+        exitDetail: String? = nil,
+        hold: ReverseUploadHold?
     ) async throws -> Bool {
         var leftTheWait = false
         try await handle(event) { state, next in
@@ -2297,26 +2392,33 @@ final class MigrationRunner {
                 if let hold {
                     state.reverseUploadLowestPending = hold.lowest
                     state.reverseUploadProgressAt = hold.progressAt
+                    // Los cinco de los dos acumulados se escriben SIEMPRE, también a `nil`: una observación sin motivo
+                    // definitivo CIERRA el tramo abierto, y dejar la fecha puesta contaría el hueco como espera bajo un
+                    // motivo que en ese rato nadie observó.
+                    state.reverseUploadCauseRaw = hold.causeRaw
+                    state.reverseUploadCauseAt = hold.causeAccruedFrom
+                    state.reverseUploadCauseAccruedSeconds = hold.causeAccrued
+                    state.reverseUploadDefinitiveAt = hold.definitiveAccruedFrom
+                    state.reverseUploadDefinitiveAccruedSeconds = hold.definitiveAccrued
                 }
                 return
             }
             leftTheWait = true
             state.reverseAbortReasonRaw = exitReason.rawValue
-            state.reverseUploadLowestPending = nil
-            state.reverseUploadProgressAt = nil
+            state.clearReverseUploadCeiling()
             state.reverseOriginRaw = nil
             // Se cuenta AQUÍ, en el paso que journalea la salida y antes de drenar sus efectos: la tarjeta de relanzar
             // aparece en cuanto `.rearmMirrorOff` arma el par, `reverse_abort` puede tardar, y quien obedece y cierra
             // Yala mataría el proceso antes de contarla.
-            self.reportReverseUploadExit(exitReason)
+            self.reportReverseUploadExit(detail: exitDetail ?? exitReason.rawValue)
         }
         return leftTheWait
     }
 
-    private func reportReverseUploadExit(_ reason: ReverseAbortReason) {
+    private func reportReverseUploadExit(detail: String) {
         lastReverseUploadSample = nil
-        CloudSyncBreadcrumb.reverseUploadExited(reason: reason.rawValue)
-        MetricsService.cloudReverseUploadAborted(reason: reason.rawValue)
+        CloudSyncBreadcrumb.reverseUploadExited(reason: detail)
+        MetricsService.cloudReverseUploadAborted(reason: detail)
     }
 
     // MARK: - Techo y salida de las CUATRO fases previas al montaje
@@ -2676,8 +2778,7 @@ final class MigrationRunner {
         state.snapshotCursorJSON = nil
         state.markerWrittenSince = nil
         state.cutoverICloudVerdictRaw = nil
-        state.reverseUploadLowestPending = nil
-        state.reverseUploadProgressAt = nil
+        state.clearReverseUploadCeiling()
         state.reverseAbortReasonRaw = nil
         state.clearReversePreMountCeiling()
         state.clearSnapshotStallCeiling()

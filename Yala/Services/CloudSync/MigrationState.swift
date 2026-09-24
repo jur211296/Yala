@@ -61,7 +61,12 @@ extension CloudSyncSchemaVersions {
     /// Subió a 14 con los TRES campos del techo del EFECTO del adopt (`adoptEffectStallProgressAt`,
     /// `adoptEffectStallDefinitiveAt`, `adoptEffectStallDefinitiveAccruedSeconds`): el reconcile de huérfanas que no puede
     /// terminar se reintentaba para siempre (ticket `adopt-effect-retries-forever-with-no-ceiling`).
-    static let migrationState = 14
+    /// Subió a 15 con los CINCO campos de los dos relojes que le faltaban al techo de `reverseUpload`: los tres del de
+    /// CAUSA (`reverseUploadCauseRaw`, `reverseUploadCauseAt`, `reverseUploadCauseAccruedSeconds`) y los dos del de
+    /// «cualquier motivo definitivo» (`reverseUploadDefinitiveAt`, `reverseUploadDefinitiveAccruedSeconds`). Con un solo
+    /// reloj, un `icloudUnusable` de una pasada cobraba las horas que la espera llevaba sin cuenta de iCloud (ticket
+    /// `reverse-upload-ceiling-charges-a-wait-to-whoever-stops-it-last`).
+    static let migrationState = 15
 }
 
 /// Journal single-row de la migración. Debe existir a lo sumo UNA fila (el runner la crea
@@ -126,7 +131,36 @@ final class MigrationState {
     /// Techo de `reverseUpload`: el instante del ÚLTIMO avance, con el `now` INYECTADO. Es el reloj del techo. Lo
     /// sella la primera observación y lo re-sella SOLO un avance: re-sellarlo en cada resume haría eterna la
     /// espera, que es el bug. `nil` = sin observar.
+    ///
+    /// **Desde la v15 gobierna solo el techo LARGO** (72 h, con cualquier motivo). El corto se mide contra el reloj de
+    /// «cualquier motivo definitivo» de abajo: con este solo, un `icloudUnusable` de una pasada cobraba las horas que la
+    /// espera llevaba sin cuenta de iCloud (ticket `reverse-upload-ceiling-charges-a-wait-to-whoever-stops-it-last`).
     var reverseUploadProgressAt: Date?
+
+    /// **El reloj de CAUSA de la espera, en TRES campos** (ticket
+    /// `reverse-upload-ceiling-charges-a-wait-to-whoever-stops-it-last`), el mismo `CauseStallClock` que la vuelta
+    /// previa al montaje y la subida del snapshot. No decide la salida: decide su TEXTO, que solo es el específico si UN
+    /// motivo agotó solo el plazo corto. Qué motivo se mide (`ReverseUploadBlocker.rawValue`, solo los definitivos).
+    /// `nil` = ninguno desde el último avance.
+    var reverseUploadCauseRaw: String?
+
+    /// Desde cuándo corre el tramo ABIERTO de esa causa. `nil` con la causa puesta = tramo CERRADO: la última
+    /// observación no traía motivo definitivo y el reloj quedó en pausa, no borrado.
+    var reverseUploadCauseAt: Date?
+
+    /// Lo que esa causa acumuló en tramos CERRADOS. Un acumulado y no una racha: el re-kick de 30 s de Almacenamiento
+    /// volvería inalcanzable una racha de 900 s.
+    var reverseUploadCauseAccruedSeconds: Double?
+
+    /// Desde cuándo corre el tramo ABIERTO del reloj de «cualquier motivo definitivo»
+    /// (`CauseStallClock.observeAnyDefinitive`): el que decide el techo CORTO. Suma `icloudFull` e `icloudUnusable`
+    /// aunque se turnen; `icloudOff` y `unknown` lo PAUSAN, así que las horas sin cuenta no se las cobra nadie. `nil` =
+    /// tramo cerrado o nunca abierto, o una fila de un build anterior a la v15: el corto le cuenta desde que este build
+    /// la mira.
+    var reverseUploadDefinitiveAt: Date?
+
+    /// Lo que ese reloj acumuló en tramos CERRADOS.
+    var reverseUploadDefinitiveAccruedSeconds: Double?
 
     /// `ReverseAbortReason.rawValue` de la última vuelta a iCloud que terminó sin llegar: por la espera de
     /// `reverseUpload` o porque el servidor no concedió el claim. SOBREVIVE a la vuelta a la fase origen a propósito: la
@@ -349,6 +383,11 @@ final class MigrationState {
         cutoverICloudVerdictRaw: String? = nil,
         reverseUploadLowestPending: Int? = nil,
         reverseUploadProgressAt: Date? = nil,
+        reverseUploadCauseRaw: String? = nil,
+        reverseUploadCauseAt: Date? = nil,
+        reverseUploadCauseAccruedSeconds: Double? = nil,
+        reverseUploadDefinitiveAt: Date? = nil,
+        reverseUploadDefinitiveAccruedSeconds: Double? = nil,
         reverseAbortReasonRaw: String? = nil,
         reverseOriginPendingEffectsData: Data? = nil,
         forwardClaimIntentRaw: String? = nil,
@@ -392,6 +431,11 @@ final class MigrationState {
         self.cutoverICloudVerdictRaw = cutoverICloudVerdictRaw
         self.reverseUploadLowestPending = reverseUploadLowestPending
         self.reverseUploadProgressAt = reverseUploadProgressAt
+        self.reverseUploadCauseRaw = reverseUploadCauseRaw
+        self.reverseUploadCauseAt = reverseUploadCauseAt
+        self.reverseUploadCauseAccruedSeconds = reverseUploadCauseAccruedSeconds
+        self.reverseUploadDefinitiveAt = reverseUploadDefinitiveAt
+        self.reverseUploadDefinitiveAccruedSeconds = reverseUploadDefinitiveAccruedSeconds
         self.reverseAbortReasonRaw = reverseAbortReasonRaw
         self.reverseOriginPendingEffectsData = reverseOriginPendingEffectsData
         self.forwardClaimIntentRaw = forwardClaimIntentRaw
@@ -422,6 +466,28 @@ final class MigrationState {
         self.startedAt = startedAt
         self.updatedAt = updatedAt
         self.schemaVersion = schemaVersion
+    }
+}
+
+// MARK: - Techo de la espera de `reverseUpload`
+
+extension MigrationState {
+
+    /// Borra los SIETE campos del techo de `reverseUpload`: la cifra más baja y el reloj de avance, los tres del de
+    /// causa y los dos del de «cualquier motivo definitivo». Juntos siempre y en cinco sitios —el reset tras rollback,
+    /// el arranque de una vuelta nueva, los cierres de intento, la salida de la espera y la normalización de un journal
+    /// ilegible—: un campo que sobreviva al intento deja el techo venciendo con cero segundos de espera real en el
+    /// siguiente. NO toca `reverseAbortReasonRaw`, que es el desenlace y sobrevive a la salida a propósito. Lo que
+    /// garantiza que un campo NUEVO de la familia no se quede fuera es `CloudSyncSchemaParityTests`, que la deriva del
+    /// schema por su prefijo `reverseUpload`.
+    func clearReverseUploadCeiling() {
+        reverseUploadLowestPending = nil
+        reverseUploadProgressAt = nil
+        reverseUploadCauseRaw = nil
+        reverseUploadCauseAt = nil
+        reverseUploadCauseAccruedSeconds = nil
+        reverseUploadDefinitiveAt = nil
+        reverseUploadDefinitiveAccruedSeconds = nil
     }
 }
 

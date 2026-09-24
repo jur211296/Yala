@@ -1067,8 +1067,16 @@ enum CloudSyncBreadcrumb {
     /// cifra bajó de la más baja vista; `stalledSeconds` = tiempo SIN avanzar; `blocker` = por qué no drena, hasta
     /// donde se sabe. Es lo que separa «va lento» de «no avanza» al leer un diagnóstico. `pending == -1` = la muestra no
     /// pudo leer una tabla (`ReverseUploadStatus.unreadable`), que nunca cuenta como avance.
-    static func reverseUploadObserved(pending: Int, stalledSeconds: Double, advanced: Bool, blocker: String) {
-        logger.notice("CloudSyncReverse uploadObserved pending=\(pending, privacy: .public) stalledSeconds=\(Int(stalledSeconds), privacy: .public) advanced=\(advanced, privacy: .public) blocker=\(blocker, privacy: .public)")
+    ///
+    /// **Los TRES relojes van en el rastro** (ticket `reverse-upload-ceiling-charges-a-wait-to-whoever-stops-it-last`):
+    /// `definitive` es el que decide los 15 min y `cause` el que elige el texto de la salida. Con una sola cifra, una
+    /// salida no dejaba distinguir «tres horas con iCloud lleno» de «tres horas sin cuenta y un fallo al entrar», que es
+    /// justo lo que ese ticket vino a separar.
+    static func reverseUploadObserved(
+        pending: Int, stalledSeconds: Double, causeStalledSeconds: Double, definitiveStalledSeconds: Double,
+        advanced: Bool, blocker: String
+    ) {
+        logger.notice("CloudSyncReverse uploadObserved pending=\(pending, privacy: .public) stalledSeconds=\(Int(stalledSeconds), privacy: .public) cause=\(Int(causeStalledSeconds), privacy: .public)s definitive=\(Int(definitiveStalledSeconds), privacy: .public)s advanced=\(advanced, privacy: .public) blocker=\(blocker, privacy: .public)")
     }
 
     /// Techo de `reverseUpload`: la espera terminó SIN llegar a iCloud y la reversa vuelve al origen en modo nube.
