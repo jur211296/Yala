@@ -177,6 +177,11 @@ enum MetricsCanary: String {
     /// `displaced-migration-leader-keeps-uploading-after-a-takeover` también `upload|otherDevice` y `verify|otherDevice`:
     /// la salida del líder que perdió el lease en la subida o en la verificación.
     case cloudForwardStepAborted
+    /// El líder volvió al reconcile de `done` —después del cutover— y el lease ya era de otro dispositivo (ticket
+    /// `leader-displaced-after-the-cutover-pushes-its-residual-in-the-reconcile`). `detail` = `joined` (el otro cerró la
+    /// migración y este teléfono se une) o `retaken` (el otro dejó caducar el lease y este vuelve a liderar). La espera
+    /// mientras el otro lidera no tiene canario: se repetiría en cada re-kick. Distinto de cero dice que el relevo tras el cutover pasa de verdad.
+    case cloudPostCutoverLeaseLost
     /// Una observación de uno de esos tres pasos que no avanzó. Deja ver un atasco SISTÉMICO antes de que ningún teléfono
     /// llegue a sus 15 min o sus 72 h.
     case cloudForwardStepWaiting
@@ -691,6 +696,11 @@ extension MetricsService {
     /// `detail` = `<paso>|<motivo>`.
     static func cloudForwardStepAborted(step: String, reason: String) {
         canary(.cloudForwardStepAborted, detail: "\(step)|\(reason)")
+    }
+
+    /// El reconcile de `done` sin el lease. `detail` = `joined` | `retaken`.
+    static func cloudPostCutoverLeaseLost(outcome: String) {
+        canary(.cloudPostCutoverLeaseLost, detail: outcome)
     }
 
     /// Una observación de uno de esos tres pasos que no avanzó. `detail` = `<paso>|<tramo de avance>|<tramo de causa>|<causa>`,
