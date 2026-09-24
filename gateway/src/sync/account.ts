@@ -76,6 +76,11 @@ export async function requireUser(c: Ctx): Promise<AuthedUser | Response> {
  * es el reintento tras una respuesta perdida. Desde g16_02 deja de hacerlo si otro dispositivo ya entró: el
  * claim con `migration` (el adopt) de un dispositivo que no es el líder que recibe `existing_stable` estampa
  * `profiles.personal_adopted_at`. Vive entera en el RPC; este handler no cambia.
+ *
+ * Sin relevo tras el cutover (g16_04, 2026-09-24): con `migrated_at` puesto y el lease del líder vencido, el claim
+ * de otro dispositivo —con o sin `migration`— recibe `existing_stable` y el líder no cambia. El corpus del líder ya
+ * está verificado en la cuenta, así que quien llega entra en ella (adopt) en vez de subir el suyo encima o esperar a
+ * un líder que puede no volver. Ticket `claim-grants-a-takeover-after-the-leader-passed-the-cutover`.
  */
 export async function handleAccountClaim(c: Ctx): Promise<Response> {
   const auth = await requireUser(c);

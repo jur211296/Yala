@@ -272,8 +272,16 @@ describe("I7a goldens · /account/* contra staging real", () => {
   });
 
   it("3. claim con migration_in_progress + leader DISTINTO → 'claiming_in_progress' (sub B ya existe)", async () => {
-    // Fija el estado in-progress con un líder AJENO por PATCH directo (dueño = B).
-    expect(await patchProfile(jwtB, { migration_in_progress: true, leader_device_id: DEV_OTHER })).toBeLessThan(300);
+    // Fija el estado in-progress con un líder AJENO por PATCH directo (dueño = B), con el lease VIGENTE: el líder está
+    // vivo. Heredar el lease de la corrida anterior (vencido, con `migrated_at` puesto por los goldens 6-9) es desde
+    // g16_04 el caso en que quien llega entra en la cuenta (golden 9-quater), no el de este golden.
+    expect(
+      await patchProfile(jwtB, {
+        migration_in_progress: true,
+        leader_device_id: DEV_OTHER,
+        migration_updated_at: new Date().toISOString(),
+      }),
+    ).toBeLessThan(300);
     const r = await claim(jwtB, { device_id: "device-B-02", provider: "google" });
     expect(r.body.state).toBe("claiming_in_progress");
     // Limpia el estado para no contaminar corridas siguientes.
@@ -350,12 +358,15 @@ describe("I10 goldens · /account/migration + lease (staging real)", () => {
     await patchProfile(jwtB, { migration_in_progress: false, leader_device_id: null });
   });
 
-  it("9. lease expiry: claim(migration) con líder ANTIGUO (>60min) → 'created' (takeover)", async () => {
+  it("9. lease expiry ANTES del cutover: claim(migration) con líder ANTIGUO (>60min) → 'created' (takeover)", async () => {
+    // `migrated_at: null` a propósito: el golden 6 lo dejó estampado, y desde g16_04 un relevo DESPUÉS del cutover ya
+    // no existe (golden 9-ter). Heredarlo convertía este golden en el contrato del bug.
     expect(
       await patchProfile(jwtB, {
         migration_in_progress: true,
         leader_device_id: "device-stale-leader",
         migration_updated_at: "2000-01-01T00:00:00Z", // heartbeat vencido
+        migrated_at: null,
       }),
     ).toBeLessThan(300);
     const r = await claim(jwtB, { device_id: DEV_LEADER, provider: "google", migration: true });
@@ -375,6 +386,7 @@ describe("I10 goldens · /account/migration + lease (staging real)", () => {
         migration_in_progress: true,
         leader_device_id: "device-stale-leader",
         migration_updated_at: "2000-01-01T00:00:00Z", // heartbeat vencido
+        migrated_at: null, // antes del cutover (ver el golden 9)
       }),
     ).toBeLessThan(300);
     const r = await claim(jwtB, { device_id: DEV_LEADER, provider: "google" }); // SIN migration
@@ -382,6 +394,68 @@ describe("I10 goldens · /account/migration + lease (staging real)", () => {
     expect((await readProfile(jwtB))?.leader_device_id).toBe("device-stale-leader"); // líder intacto
     // Limpia el estado in-progress.
     await patchProfile(jwtB, { migration_in_progress: false, leader_device_id: null });
+  });
+
+  it("9-ter. DESPUÉS del cutover no hay relevo: claim(migration) sobre lease vencida → 'existing_stable', líder intacto, sello (g16_04)", async () => {
+    // El líder llegó al cutover —su corpus ya está verificado en la cuenta— y se quedó esperando al relanzamiento más de
+    // 60 min. Hasta g16_04 otro teléfono recibía 'created' y volvía a subir su corpus encima; ahora entra en la cuenta
+    // (adopt). El líder NO cambia: si vuelve, cierra con su `complete`. Ticket
+    // `claim-grants-a-takeover-after-the-leader-passed-the-cutover`.
+    expect(
+      await patchProfile(jwtB, {
+        migration_in_progress: true,
+        leader_device_id: "device-stale-leader",
+        migration_updated_at: "2000-01-01T00:00:00Z", // heartbeat vencido
+        migrated_at: "2000-01-01T00:00:00Z", // el líder pasó el cutover
+        personal_adopted_at: null,
+      }),
+    ).toBeLessThan(300);
+    const r = await claim(jwtB, { device_id: DEV_LEADER, provider: "google", migration: true });
+    expect(r.status).toBe(200);
+    expect(r.body.state).toBe("existing_stable");
+    expect("has_personal_writes" in r.body).toBe(false); // la pista de g16_03 es solo de `created`
+    // El `profile` de la rama nueva dice la verdad de la fila: la migración sigue abierta, con su cutover.
+    expect(r.body.profile?.migration_in_progress).toBe(true);
+    expect(r.body.profile?.migrated_at).not.toBeNull();
+    expect((r.body as Record<string, unknown>).kind).toBe("complete");
+    const p = await readProfile(jwtB);
+    expect(p?.leader_device_id).toBe("device-stale-leader"); // sin relevo
+    expect(p?.migration_in_progress).toBe(true); // la migración sigue siendo del líder
+    const sealed = await fetch(`${URL}/rest/v1/profiles?id=eq.${subB}&select=personal_adopted_at`, {
+      headers: { apikey: ANON, Authorization: `Bearer ${jwtB}` },
+    });
+    expect(((await sealed.json()) as { personal_adopted_at: string | null }[])[0].personal_adopted_at).not.toBeNull();
+    // El mismo líder, en cambio, sigue siendo el líder: su re-claim colapsa a 'created' como siempre.
+    const self = await claim(jwtB, { device_id: "device-stale-leader", provider: "google", migration: true });
+    expect(self.body.state).toBe("created");
+    // Limpia el estado in-progress (y el sello, que el golden 28 no mira en sub B).
+    await patchProfile(jwtB, { migration_in_progress: false, leader_device_id: null, personal_adopted_at: null });
+  });
+
+  it("9-quater. DESPUÉS del cutover, sin migration: lease vencida → 'existing_stable' sin sello; lease vigente → espera (g16_04)", async () => {
+    expect(
+      await patchProfile(jwtB, {
+        migration_in_progress: true,
+        leader_device_id: "device-stale-leader",
+        migration_updated_at: "2000-01-01T00:00:00Z",
+        migrated_at: "2000-01-01T00:00:00Z",
+        personal_adopted_at: null,
+      }),
+    ).toBeLessThan(300);
+    const r = await claim(jwtB, { device_id: DEV_LEADER, provider: "google" }); // SIN migration: «Soy nuevo → nube»
+    expect(r.body.state).toBe("existing_stable"); // ya no espera a un líder que puede no volver
+    const sealed = await fetch(`${URL}/rest/v1/profiles?id=eq.${subB}&select=personal_adopted_at`, {
+      headers: { apikey: ANON, Authorization: `Bearer ${jwtB}` },
+    });
+    expect(((await sealed.json()) as { personal_adopted_at: string | null }[])[0].personal_adopted_at).toBeNull();
+
+    // Con el lease VIGENTE el líder está vivo y cierra enseguida: se espera, con o sin migration.
+    expect(await patchProfile(jwtB, { migration_updated_at: new Date().toISOString() })).toBeLessThan(300);
+    expect((await claim(jwtB, { device_id: DEV_LEADER, provider: "google", migration: true })).body.state).toBe(
+      "claiming_in_progress",
+    );
+    expect((await readProfile(jwtB))?.leader_device_id).toBe("device-stale-leader");
+    await patchProfile(jwtB, { migration_in_progress: false, leader_device_id: null, personal_adopted_at: null });
   });
 
   it("10. claim(migration) sobre fila EXISTENTE estable → 'existing_stable' (el mip se arma solo en el INSERT)", async () => {

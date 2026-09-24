@@ -62,6 +62,11 @@ Regla del área: «Y después del cutover el líder desplazado no sube, no sale�
 **Verificado:** 12 tests nuevos en `MigrationWorkExecutorTests` (`postCutover_*`) y uno reparado que se había quedado
 vacío; 10 mutantes muertos; review de dos lentes (servidor/carreras y consumidores), sin hallazgos que suban nada.
 
+> **2026-09-24, g16_04: este guion ya no se puede montar contra producción.** Desde
+> `claim-grants-a-takeover-after-the-leader-passed-the-cutover` el servidor no da el relevo después del cutover: en el paso
+> 3, B entra en la cuenta en vez de tomar el relevo, y A, al volver, sigue siendo el líder y cierra (sin subir nada encima
+> de nadie). El guion que lo sustituye está en ese ticket; correrlo cubre también lo que A hace al volver.
+
 ## Guion de device-QA (dos iPhone, misma cuenta, build de TestFlight)
 
 1. iPhone A en iCloud con datos. Ajustes → Almacenamiento → «Migrar a la nube», iniciar sesión y dejar que llegue al
