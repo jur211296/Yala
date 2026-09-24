@@ -10,6 +10,12 @@ mutación demuestra que **el caso** caza el bug; no que cada `#expect` de dentro
 sola aserción del caso es sensible al mutante, el caso entero sale rojo — y las demás pasan la
 inspección de rebote.
 
+**Y lo mismo con el subcaso que dice cazar al mutante** (2026-09-24, PR #240): lee QUÉ test lo mató. El
+mutante «los tombstones cuentan» murió, pero por otro test: una condición nueva (la cobertura) tapaba el
+subcaso del tombstone, y además el mutante estaba mal modelado (solo tocaba tablas que ya existían). Se
+rehízo el subcaso para que el tombstone fuera la única coincidencia posible y el mutante fiel —la
+enumeración contando el tombstone como vivo— murió en él.
+
 **Why:** el 2026-09-08, en `chat-draft-drops-the-expense-sign`, escribí un tercer caso de test con
 cuatro aserciones para vigilar que no se firmara **una sola** de las dos columnas de dinero. Corrí el
 mutante, el caso salió rojo, lo di por bueno. Una lente adversarial midió después que:
