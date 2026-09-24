@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (556)
+## Index (557)
 
 | id | status | path |
 |---|---|---|
@@ -131,6 +131,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | ci-verde-con-la-suite-en-rojo | done | tickets/done/ci-verde-con-la-suite-en-rojo.md |
 | ci-warns-but-does-not-block | backlog | tickets/backlog/ci-warns-but-does-not-block.md |
 | ci-workflow-cites-missing-testing-strategy | backlog | tickets/backlog/ci-workflow-cites-missing-testing-strategy.md |
+| claim-grants-a-takeover-after-the-leader-passed-the-cutover | backlog | tickets/backlog/claim-grants-a-takeover-after-the-leader-passed-the-cutover.md |
 | claim-promotion-lost-response-blocks-the-retry | done | tickets/done/claim-promotion-lost-response-blocks-the-retry.md |
 | claim-replay-after-a-kill-mid-commit-can-duplicate-the-onboarding | backlog | tickets/backlog/claim-replay-after-a-kill-mid-commit-can-duplicate-the-onboarding.md |
 | claim-replay-can-seed-beside-a-phone-that-adopted-silently | done | tickets/done/claim-replay-can-seed-beside-a-phone-that-adopted-silently.md |
@@ -361,7 +362,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | la-nocturna-de-ui-no-ha-disparado-ni-una-vez | done | tickets/done/la-nocturna-de-ui-no-ha-disparado-ni-una-vez.md |
 | language-override-bypasses-the-cloud-prefs-channel | backlog | tickets/backlog/language-override-bypasses-the-cloud-prefs-channel.md |
 | late-icloud-wipe-can-re-export-between-its-two-halves | backlog | tickets/backlog/late-icloud-wipe-can-re-export-between-its-two-halves.md |
-| leader-displaced-after-the-cutover-pushes-its-residual-in-the-reconcile | backlog | tickets/backlog/leader-displaced-after-the-cutover-pushes-its-residual-in-the-reconcile.md |
+| leader-displaced-after-the-cutover-pushes-its-residual-in-the-reconcile | qa | tickets/qa/leader-displaced-after-the-cutover-pushes-its-residual-in-the-reconcile.md |
 | leaving-and-reentering-restore-renews-the-hard-cap | done | tickets/done/leaving-and-reentering-restore-renews-the-hard-cap.md |
 | live-anchor-breakdown-doubles-the-approximate-glyph | backlog | tickets/backlog/live-anchor-breakdown-doubles-the-approximate-glyph.md |
 | lost-cloud-signup-then-private-leaves-migrate-blocked | backlog | tickets/backlog/lost-cloud-signup-then-private-leaves-migrate-blocked.md |
