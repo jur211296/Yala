@@ -6065,6 +6065,7 @@
 "storage.failed.adoptAccountUnavailable" = "We couldn’t sign you in to your cloud account: we can’t give you access to this account right now. Write to us at %@ and we’ll look into it with you.";
 "storage.failed.adoptEffectLocalFailure" = "We couldn’t sign you in to your cloud account: this device couldn’t read your data to combine it with your account’s. What you have on this device is still here — try again in a little while.";
 "storage.failed.adoptEffectStalled" = "We couldn’t sign you in to your cloud account: turning on the cloud hasn’t been able to finish in days. What you have on this device is still here — try again later.";
+"storage.failed.adoptEffectLineageUnproven" = "We couldn’t sign you in to your cloud account: this device has data that account doesn’t have, and we couldn’t confirm it comes from it, so we didn’t combine them. What you have on this device is still here. If you moved this iCloud’s data to the cloud from another device, check that you’re signing in with that same account and wait for iCloud to finish bringing it over before trying again.";
 /* Botón de la tarjeta de progreso: cancelar la activación de la nube */
 "storage.progress.cancelMigration" = "Cancel turning on the cloud";
 /* Título de la confirmación de cancelar la activación */

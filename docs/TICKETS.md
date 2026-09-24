@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (544)
+## Index (547)
 
 | id | status | path |
 |---|---|---|
@@ -66,9 +66,10 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | adopt-effect-retries-forever-with-no-ceiling | done | tickets/done/adopt-effect-retries-forever-with-no-ceiling.md |
 | adopt-exit-keeps-the-session-it-opened | done | tickets/done/adopt-exit-keeps-the-session-it-opened.md |
 | adopt-follower-waits-for-the-leader-with-no-ceiling | done | tickets/done/adopt-follower-waits-for-the-leader-with-no-ceiling.md |
+| adopt-on-an-empty-store-uploads-what-the-mirror-imports-before-the-relaunch | backlog | tickets/backlog/adopt-on-an-empty-store-uploads-what-the-mirror-imports-before-the-relaunch.md |
 | adopt-session-close-drops-the-mark-before-the-sign-out-lands | backlog | tickets/backlog/adopt-session-close-drops-the-mark-before-the-sign-out-lands.md |
 | adopt-terminal-claims-ready-without-checking-engine | backlog | tickets/backlog/adopt-terminal-claims-ready-without-checking-engine.md |
-| adopt-uploads-a-foreign-corpus-without-a-lineage-check | backlog | tickets/backlog/adopt-uploads-a-foreign-corpus-without-a-lineage-check.md |
+| adopt-uploads-a-foreign-corpus-without-a-lineage-check | qa | tickets/qa/adopt-uploads-a-foreign-corpus-without-a-lineage-check.md |
 | adr-013-does-not-know-yala-has-its-own-commit-msg | backlog | tickets/backlog/adr-013-does-not-know-yala-has-its-own-commit-msg.md |
 | after-session-redesign-review-widgets-siri-applepay-and-web-copy | backlog | tickets/backlog/after-session-redesign-review-widgets-siri-applepay-and-web-copy.md |
 | ai-chat-reads-heavier-than-a-messaging-app | backlog | tickets/backlog/ai-chat-reads-heavier-than-a-messaging-app.md |
@@ -167,6 +168,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | csv-import-rows-fall-in-the-chat-sign-sweep | done | tickets/done/csv-import-rows-fall-in-the-chat-sign-sweep.md |
 | currency-change-asks-rates-for-the-old-currency | backlog | tickets/backlog/currency-change-asks-rates-for-the-old-currency.md |
 | currency-change-service-tests-mirror-the-logic | backlog | tickets/backlog/currency-change-service-tests-mirror-the-logic.md |
+| cutover-marker-without-a-session-locks-out-the-second-device | backlog | tickets/backlog/cutover-marker-without-a-session-locks-out-the-second-device.md |
 | dangling-ref-pass-overwrites-a-pending-local-edit | backlog | tickets/backlog/dangling-ref-pass-overwrites-a-pending-local-edit.md |
 | dangling-ref-repair-is-lost-when-its-row-cannot-be-read | done | tickets/done/dangling-ref-repair-is-lost-when-its-row-cannot-be-read.md |
 | debounce-sync-imported-transactions | backlog | tickets/backlog/debounce-sync-imported-transactions.md |
@@ -368,6 +370,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | migrate-card-keeps-promising-an-account-the-check-refused | backlog | tickets/backlog/migrate-card-keeps-promising-an-account-the-check-refused.md |
 | migrate-claim-does-not-announce-a-definitive-cause-before-its-ceiling | backlog | tickets/backlog/migrate-claim-does-not-announce-a-definitive-cause-before-its-ceiling.md |
 | migration-activation-drops-pending-effects-it-never-restores | backlog | tickets/backlog/migration-activation-drops-pending-effects-it-never-restores.md |
+| migration-takeover-uploads-without-a-lineage-check | backlog | tickets/backlog/migration-takeover-uploads-without-a-lineage-check.md |
 | more-tab-missing-profile-button | backlog | tickets/backlog/more-tab-missing-profile-button.md |
 | multi-currency-accounts | backlog | tickets/backlog/multi-currency-accounts.md |
 | needsrelaunch-hides-the-groups-section | backlog | tickets/backlog/needsrelaunch-hides-the-groups-section.md |

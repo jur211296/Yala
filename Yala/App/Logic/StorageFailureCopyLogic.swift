@@ -104,6 +104,7 @@ enum StorageFailureCopyLogic {
         case .accountUnavailable: return L10n.Storage.Failed.adoptAccountUnavailable(supportEmail)
         case .effectStalled:      return L10n.Storage.Failed.adoptEffectStalled
         case .effectLocalFailure: return L10n.Storage.Failed.adoptEffectLocalFailure
+        case .effectLineageUnproven: return L10n.Storage.Failed.adoptEffectLineageUnproven
         case .cancelled:          return nil
         }
     }

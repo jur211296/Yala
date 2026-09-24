@@ -6071,6 +6071,7 @@
 "storage.failed.adoptAccountUnavailable" = "クラウドのアカウントにサインインできませんでした。今このアカウントにはアクセスできません。%@ までご連絡ください。一緒に確認します。";
 "storage.failed.adoptEffectLocalFailure" = "クラウドのアカウントにサインインできませんでした。この端末でデータを読み込めず、アカウントのデータとまとめられませんでした。この端末のデータはこれまでどおり残っています。しばらくしてから、もう一度お試しください。";
 "storage.failed.adoptEffectStalled" = "クラウドのアカウントにサインインできませんでした。有効化が数日間完了していません。この端末のデータはこれまでどおり残っています。後でもう一度お試しください。";
+"storage.failed.adoptEffectLineageUnproven" = "クラウドのアカウントにサインインできませんでした。この端末には、そのアカウントにないデータがあり、そのアカウントのものか確認できなかったため、まとめませんでした。この端末のデータはこれまでどおり残っています。別の端末でこのiCloudのデータをクラウドに移した場合は、同じアカウントでサインインしているか確認し、iCloudがデータを取り込み終えるまで待ってから、もう一度お試しください。";
 /* Botón de la tarjeta de progreso: cancelar la activación de la nube */
 "storage.progress.cancelMigration" = "有効化をキャンセル";
 /* Título de la confirmación de cancelar la activación */

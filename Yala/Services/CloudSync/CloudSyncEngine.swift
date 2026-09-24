@@ -1293,6 +1293,12 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSyncAdopt orphanReconciled count=\(count, privacy: .public) identityAssigned=\(identityAssigned, privacy: .public) — el adoptador rescató writes de la ventana de cutover")
     }
 
+    /// El adopt tenía filas que subir y el store local no tiene el marcador de esa cuenta: no sube nada (ticket
+    /// `adopt-uploads-a-foreign-corpus-without-a-lineage-check`). Sin PII: solo el conteo.
+    static func adoptReconcileLineageUnproven(pending: Int) {
+        logger.notice("CloudSyncAdopt reconcileLineageUnproven pending=\(pending, privacy: .public) — sin marcador de la cuenta en local; upload bloqueado (linaje)")
+    }
+
     /// DIFERIDOS #30 (guard anti mass-upload): la enumeración del backend llegó VACÍA (verificada completa
     /// contra merkle) teniendo el device huérfanas locales y/o filas sin identidad → NO se sube ni se muta
     /// nada — el guard corre ANTES del backfill (un adopt legítimo `existing_stable` implica backend POBLADO;

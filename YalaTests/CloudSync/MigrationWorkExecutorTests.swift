@@ -1616,6 +1616,9 @@ struct MigrationWorkExecutorTests {
     func adoptReconcile_uploadsOnlyOrphanFullRow() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
+        // El 2.º dispositivo del mismo Apple ID: su espejo trajo el marcador del líder (guarda de linaje, ticket
+        // `adopt-uploads-a-foreign-corpus-without-a-lineage-check`). Sin él no subiría nada.
+        try seedLeaderMarker(for: "sub-1", in: context)
         let engine = CloudSyncEngine()
         let stub = RoutingStub()
         let session = FakeSession(token: "jwt", userID: "sub-1")
@@ -1664,6 +1667,9 @@ struct MigrationWorkExecutorTests {
     func adoptReconcile_nilIdentity_backfilledAndUploaded() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
+        // El 2.º dispositivo del mismo Apple ID: su espejo trajo el marcador del líder (guarda de linaje, ticket
+        // `adopt-uploads-a-foreign-corpus-without-a-lineage-check`). Sin él no subiría nada.
+        try seedLeaderMarker(for: "sub-1", in: context)
         let engine = CloudSyncEngine()
         let stub = RoutingStub()
         let session = FakeSession(token: "jwt", userID: "sub-1")
@@ -1698,6 +1704,286 @@ struct MigrationWorkExecutorTests {
         #expect(!fields.isEmpty, "fila full-row (fieldsJSON poblado)")
     }
 
+    // MARK: - La guarda de linaje del adopt (ticket `adopt-uploads-a-foreign-corpus-without-a-lineage-check`)
+
+    /// El marcador que el líder de `userID` escribió en SU CloudKit en el cutover, tal como llega por el espejo al store del
+    /// 2.º dispositivo del mismo Apple ID. Es la prueba de linaje que la guarda exige para subir.
+    private func seedLeaderMarker(for userID: String, in context: ModelContext) throws {
+        context.insert(CloudMigrationMarker(accountHash: CloudBeacon.hash(userID), writerDeviceID: "leader"))
+        try context.save()
+    }
+
+    /// Un teléfono con una huérfana conocida por el backend al lado y otra sin identidad, contra un backend poblado. Es el
+    /// mismo inventario para el corpus AJENO y para el 2.º dispositivo: lo único que los separa es el marcador.
+    /// Devuelve una FÁBRICA del backend y no la fuente: `FakeTombstoneSource` se consume al paginar, y cada executor enumera
+    /// desde cero.
+    private func seedWindowCorpus(in context: ModelContext) throws -> (backend: () -> FakeTombstoneSource, orphanID: UUID, nilRow: Yala.Category) {
+        let knownID = UUID(); let orphanID = UUID()
+        _ = makeCategory("known", syncID: knownID, in: context)
+        _ = makeCategory("orphan", syncID: orphanID, in: context)
+        let nilRow = Category(name: "sin-identidad", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+        context.insert(nilRow)
+        try context.save()
+        let backend = {
+            let source = FakeTombstoneSource()
+            source.pages = [PulledPage(deltas: [upsertDelta(table: "categories", syncID: knownID, seq: 1)], maxServerSeq: 1)]
+            return source
+        }
+        return (backend, orphanID, nilRow)
+    }
+
+    /// **El criterio 1 y el 2 en el MISMO inventario.** Sin el marcador de la cuenta —un seguidor con otro iCloud, un
+    /// teléfono con el corpus de otra persona— no sube NADA y no toca nada: ni push, ni encolado, ni backfill. Con el
+    /// marcador —el 2.º dispositivo del mismo Apple ID— sube sus huérfanas de la ventana, las dos.
+    @Test("runAdoptOrphanReconcile: sin el marcador de la cuenta no sube nada; con él, sube las huérfanas de la ventana")
+    func adoptReconcile_lineage_foreignCorpusStays_secondDeviceUploads() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        stub.merkleBody = try makeMerkleBody(["categories": 1])
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let (backend, orphanID, nilRow) = try seedWindowCorpus(in: context)
+
+        let foreign = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                   personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                   tombstoneSource: backend())
+        let foreignOutcome = await foreign.runAdoptOrphanReconcile()
+        #expect(foreignOutcome == .lineageUnproven)
+        #expect(stub.pushedSyncIDs.isEmpty, "el corpus sin linaje no viaja")
+        #expect(nilRow.syncID == nil, "ni el backfill corre: la guarda va ANTES de toda mutación")
+        #expect(try context.fetch(FetchDescriptor<SyncOutbox>()).isEmpty, "ni se encola")
+        #expect(try context.fetch(FetchDescriptor<SyncIdentity>()).isEmpty, "ni se acuñan testigos")
+
+        try seedLeaderMarker(for: "sub-1", in: context)
+        let secondDevice = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                        personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                        tombstoneSource: backend())
+        let secondOutcome = await secondDevice.runAdoptOrphanReconcile()
+        #expect(secondOutcome == .completed(uploaded: 2, identityAssigned: 1))
+        let freshID = try #require(nilRow.syncID)
+        #expect(Set(stub.pushedSyncIDs.map { $0.lowercased() })
+                == [orphanID.uuidString.lowercased(), freshID.uuidString.lowercased()],
+                "las dos huérfanas de la ventana, y solo ellas")
+    }
+
+    /// **Un marcador que no es de ESTA cuenta no prueba nada**: uno de otra cuenta —una migración anterior de este iCloud—
+    /// y uno con el hash vacío. Tampoco sin sesión, porque entonces no hay cuenta con la que comparar.
+    @Test("runAdoptOrphanReconcile: marcador de otra cuenta, marcador sin hash o sin sesión → lineageUnproven")
+    func adoptReconcile_lineage_onlyTheAccountsOwnMarkerCounts() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        stub.merkleBody = try makeMerkleBody(["categories": 1])
+        let (backend, _, _) = try seedWindowCorpus(in: context)
+        try seedLeaderMarker(for: "otra-cuenta", in: context)
+        context.insert(CloudMigrationMarker(accountHash: ""))
+        try context.save()
+
+        let other = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                 FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                 tombstoneSource: backend())
+        let otherOutcome = await other.runAdoptOrphanReconcile()
+        #expect(otherOutcome == .lineageUnproven)
+
+        // Sin sesión, ni el marcador de la cuenta que la tenía vale: no hay con quién compararlo.
+        try seedLeaderMarker(for: "sub-1", in: context)
+        let noSession = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: nil),
+                                     FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                     tombstoneSource: backend())
+        let noSessionOutcome = await noSession.runAdoptOrphanReconcile()
+        #expect(noSessionOutcome == .lineageUnproven)
+        #expect(stub.pushedSyncIDs.isEmpty)
+
+        // Control positivo en el mismo store: con la sesión de la cuenta del marcador, pasa.
+        let owner = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                 FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                 tombstoneSource: backend())
+        guard case .completed(let uploaded, _) = await owner.runAdoptOrphanReconcile() else {
+            Issue.record("el marcador de la cuenta debía bastar"); return
+        }
+        #expect(uploaded == 2)
+    }
+
+    /// **Sin nada que subir no hace falta marcador** (Paso 0, D2). Es el 2.º dispositivo de una cuenta NACIDA en la nube
+    /// —que nunca puede tenerlo—, o un teléfono cuyo corpus el backend ya conoce entero. El adopt sigue como siempre.
+    @Test("runAdoptOrphanReconcile: sin huérfanas ni filas sin identidad, adopta sin marcador")
+    func adoptReconcile_lineage_nothingToUpload_needsNoMarker() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let knownID = UUID()
+        _ = makeCategory("known", syncID: knownID, in: context)
+        try context.save()
+        let source = FakeTombstoneSource()
+        source.pages = [PulledPage(deltas: [upsertDelta(table: "categories", syncID: knownID, seq: 1)], maxServerSeq: 1)]
+        stub.merkleBody = try makeMerkleBody(["categories": 1])
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source)
+        #expect(await executor.runAdoptOrphanReconcile() == .completed(uploaded: 0, identityAssigned: 0))
+        #expect(stub.pushedSyncIDs.isEmpty)
+    }
+
+    /// **Una fila SIN identidad también es algo que subir.** Es la del retraso de importación —su `CD_syncID` aún no llegó—
+    /// o la de un corpus que nunca migró; el backfill le acuñaría una identidad fresca y subiría. Sin marcador, nada.
+    @Test("runAdoptOrphanReconcile: solo filas sin identidad y sin marcador → lineageUnproven, sin backfill")
+    func adoptReconcile_lineage_rowsWithoutIdentityAlsoNeedIt() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        stub.merkleBody = try makeMerkleBody(["categories": 1])
+        let nilRow = Category(name: "sin-identidad", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+        context.insert(nilRow)
+        try context.save()
+        let source = FakeTombstoneSource()
+        source.pages = [PulledPage(deltas: [upsertDelta(table: "categories", syncID: UUID(), seq: 1)], maxServerSeq: 1)]
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source)
+        let outcome = await executor.runAdoptOrphanReconcile()
+        #expect(outcome == .lineageUnproven)
+        #expect(nilRow.syncID == nil)
+        #expect(stub.pushedSyncIDs.isEmpty)
+    }
+
+    /// **Un marcador que no se deja leer es la base local, no «probado» ni «la red»**: `.localFailure`, que cuenta para el
+    /// techo corto, y sin subir nada. Control en el mismo store: con la lectura sana, sube.
+    @Test("runAdoptOrphanReconcile: la tabla del marcador ilegible → localFailure, sin subir")
+    func adoptReconcile_lineage_unreadableMarkerIsALocalFailure() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        stub.merkleBody = try makeMerkleBody(["categories": 1])
+        let (backend, _, _) = try seedWindowCorpus(in: context)
+        try seedLeaderMarker(for: "sub-1", in: context)
+        let sick = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                tombstoneSource: backend())
+        sick._testInventoryFetchThrows = { step, entity in step == "adopt-lineage" && entity == "CloudMigrationMarker" }
+        let sickOutcome = await sick.runAdoptOrphanReconcile()
+        #expect(sickOutcome == .localFailure)
+        #expect(stub.pushedSyncIDs.isEmpty)
+
+        let healthy = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                   FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                   tombstoneSource: backend())
+        guard case .completed(let uploaded, _) = await healthy.runAdoptOrphanReconcile() else {
+            Issue.record("con la lectura sana debía subir"); return
+        }
+        #expect(uploaded == 2)
+    }
+
+    /// **Los tipos de cambio que siembra el arranque no piden marcador** (hallazgo de la review). Un teléfono recién instalado
+    /// nunca llega al adopt con el store vacío: `AppBootstrapper.loadExchangeRates` guarda los del día y 12 meses ANTES del
+    /// Welcome, sin identidad. Sin la excepción, el 2.º dispositivo de una cuenta nacida en la nube —sin marcador posible—
+    /// no entraba jamás. Suben como antes. Y la excepción no diluye la guarda: con una fila de usuario al lado, bloquea.
+    @Test("runAdoptOrphanReconcile: solo tipos de cambio sin identidad → adopta sin marcador; con una fila de usuario, no")
+    func adoptReconcile_lineage_exchangeRatesAloneNeedNoMarker() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        stub.merkleBody = try makeMerkleBody(["categories": 1])
+        for day in ["2026-09-23", "2026-09-24"] {
+            context.insert(try ExchangeRate(dateKey: day, base: "USD", ratesDictionary: ["PEN": 3.7]))
+        }
+        try context.save()
+        let backend = {
+            let source = FakeTombstoneSource()
+            source.pages = [PulledPage(deltas: [upsertDelta(table: "categories", syncID: UUID(), seq: 1)], maxServerSeq: 1)]
+            return source
+        }
+        #expect(MigrationWorkExecutor.adoptLineageExemptTables == [EntityEmissionMap.exchangeRate.table])
+
+        let freshPhone = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                      FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                      tombstoneSource: backend())
+        let freshOutcome = await freshPhone.runAdoptOrphanReconcile()
+        #expect(freshOutcome == .completed(uploaded: 2, identityAssigned: 2), "suben como antes, sin pedir marcador")
+
+        _ = makeCategory("de-otra-persona", syncID: UUID(), in: context)
+        try context.save()
+        let withUserRow = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                       FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                       tombstoneSource: backend())
+        let userRowOutcome = await withUserRow.runAdoptOrphanReconcile()
+        #expect(userRowOutcome == .lineageUnproven)
+    }
+
+    /// **La guarda mira también el plan DEFINITIVO, que es el que sube** (hallazgo de la review). Una fila que el import
+    /// confirma entre el plan preliminar —vacío: no pidió prueba— y el definitivo no puede subir sin marcador. Se simula con
+    /// el seam del inventario: en la TERCERA lectura (la del definitivo) aparece una categoría del corpus de otro iCloud.
+    @Test("runAdoptOrphanReconcile: una fila que llega entre los dos planes también pide el marcador")
+    func adoptReconcile_lineage_rowArrivingBetweenThePlansNeedsItToo() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        stub.merkleBody = try makeMerkleBody(["categories": 1])
+        let source = FakeTombstoneSource()
+        source.pages = [PulledPage(deltas: [upsertDelta(table: "categories", syncID: UUID(), seq: 1)], maxServerSeq: 1)]
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source)
+        var inventoryReads = 0
+        executor._testInventoryFetchThrows = { step, entity in
+            guard step == "adopt-inventory", entity == "TransactionItem" else { return false }
+            inventoryReads += 1
+            if inventoryReads == 3 {
+                let late = Category(name: "llegó-tarde", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+                late.syncID = UUID()
+                context.insert(late)
+            }
+            return false
+        }
+        let outcome = await executor.runAdoptOrphanReconcile()
+        #expect(inventoryReads == 3, "control: el paso 0, el preliminar y el definitivo")
+        #expect(outcome == .lineageUnproven)
+        #expect(stub.pushedSyncIDs.isEmpty)
+    }
+
+    /// **La guarda va ANTES del guard de backend vacío** (Paso 0, D3). Ese guard SIGUE el adopt —cambia el modo—, así que
+    /// sin linaje dejaría un corpus ajeno dentro de la cuenta. Con el marcador, el guard de siempre.
+    @Test("runAdoptOrphanReconcile: backend vacío sin marcador → lineageUnproven; con marcador → abortedEmptyBackend")
+    func adoptReconcile_lineage_precedesTheEmptyBackendGuard() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        stub.merkleBody = try makeMerkleBody([:])
+        _ = makeCategory("local", syncID: UUID(), in: context)
+        try context.save()
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let noMarker = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: FakeTombstoneSource())
+        #expect(await noMarker.runAdoptOrphanReconcile() == .lineageUnproven)
+
+        try seedLeaderMarker(for: "sub-1", in: context)
+        let withMarker = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                      personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                      tombstoneSource: FakeTombstoneSource())
+        #expect(await withMarker.runAdoptOrphanReconcile() == .abortedEmptyBackend)
+    }
+
+    /// **`runAdoptFlow` no adopta sin linaje**: lanza su error propio —que el runner cuenta para el techo CORTO— y no toca
+    /// el modo, el sello del claim ni el consent. El teléfono sigue en iCloud con lo suyo.
+    @Test("runAdoptFlow: sin linaje lanza adoptLineageUnproven y NO persiste el modo nube")
+    func adoptFlow_lineageUnproven_throwsWithoutSwitchingMode() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        stub.merkleBody = try makeMerkleBody(["categories": 1])
+        let (backend, _, _) = try seedWindowCorpus(in: context)
+        let storageDefaults = makeIsolatedDefaults(prefix: "mwe.adopt.lineage")
+        let claimStore = CloudClaimActionStore(defaults: makeIsolatedDefaults(prefix: "mwe.adopt.lineage.claim"))
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    storageDefaults: storageDefaults, tombstoneSource: backend(), claimStore: claimStore)
+        await #expect(throws: MigrationExecutorError.adoptLineageUnproven) { try await executor.runAdoptFlow() }
+        #expect(StorageModePersistence.read(storageDefaults) == .icloud, "la guarda corta ANTES del paso 5")
+        #expect(executor.hasPersistedCloudMode() == false)
+        #expect(claimStore.action(forUserID: "sub-1") == nil, "sin sello del claim: no entró")
+        #expect(stub.pushedSyncIDs.isEmpty)
+    }
+
     @Test("runAdoptOrphanReconcile: red en el PULL (enumeración) → transient SIN mutación (backfill no corre)")
     func adoptReconcile_pullTransient_noMutation() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
@@ -1726,6 +2012,9 @@ struct MigrationWorkExecutorTests {
     func adoptReconcile_pushTransient_thenResumes() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
+        // El 2.º dispositivo del mismo Apple ID: su espejo trajo el marcador del líder (guarda de linaje, ticket
+        // `adopt-uploads-a-foreign-corpus-without-a-lineage-check`). Sin él no subiría nada.
+        try seedLeaderMarker(for: "sub-1", in: context)
         let engine = CloudSyncEngine()
         let stub = RoutingStub()
         let session = FakeSession(token: "jwt", userID: "sub-1")
@@ -1765,6 +2054,9 @@ struct MigrationWorkExecutorTests {
     func adoptReconcile_secondPass_noop() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
+        // El 2.º dispositivo del mismo Apple ID: su espejo trajo el marcador del líder (guarda de linaje, ticket
+        // `adopt-uploads-a-foreign-corpus-without-a-lineage-check`). Sin él no subiría nada.
+        try seedLeaderMarker(for: "sub-1", in: context)
         let engine = CloudSyncEngine()
         let stub = RoutingStub()
         let session = FakeSession(token: "jwt", userID: "sub-1")
@@ -1798,6 +2090,9 @@ struct MigrationWorkExecutorTests {
     func adoptReconcile_emptyBackend_aborts() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
+        // El 2.º dispositivo del mismo Apple ID: su espejo trajo el marcador del líder (guarda de linaje, ticket
+        // `adopt-uploads-a-foreign-corpus-without-a-lineage-check`). Sin él no subiría nada.
+        try seedLeaderMarker(for: "sub-1", in: context)
         let engine = CloudSyncEngine()
         let stub = RoutingStub()
         let session = FakeSession(token: "jwt", userID: "sub-1")
@@ -1964,6 +2259,9 @@ struct MigrationWorkExecutorTests {
     func adoptReconcile_enqueueFailure_splitsDriftFromLocal() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
+        // El 2.º dispositivo del mismo Apple ID: su espejo trajo el marcador del líder (guarda de linaje, ticket
+        // `adopt-uploads-a-foreign-corpus-without-a-lineage-check`). Sin él no subiría nada.
+        try seedLeaderMarker(for: "sub-1", in: context)
         let stub = RoutingStub()
         let session = FakeSession(token: "jwt", userID: "sub-1")
         let knownID = UUID()
@@ -2001,6 +2299,9 @@ struct MigrationWorkExecutorTests {
         func escenario() throws -> (URL, ModelContext, RoutingStub, MigrationWorkExecutor) {
             let dir = freshDir()
             let context = try makeContext(dir)
+        // El 2.º dispositivo del mismo Apple ID: su espejo trajo el marcador del líder (guarda de linaje, ticket
+        // `adopt-uploads-a-foreign-corpus-without-a-lineage-check`). Sin él no subiría nada.
+        try seedLeaderMarker(for: "sub-1", in: context)
             let stub = RoutingStub()
             let knownID = UUID()
             _ = makeCategory("known", syncID: knownID, in: context)
@@ -2633,6 +2934,9 @@ struct MigrationWorkExecutorTests {
     func adoptReconcile_unreadablePrePlanInventory_isLocalFailureNotCompleted() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
+        // El 2.º dispositivo del mismo Apple ID: su espejo trajo el marcador del líder (guarda de linaje, ticket
+        // `adopt-uploads-a-foreign-corpus-without-a-lineage-check`). Sin él no subiría nada.
+        try seedLeaderMarker(for: "sub-1", in: context)
         let stub = RoutingStub()
         let session = FakeSession(token: "jwt", userID: "sub-1")
         _ = makeCategory("orphan", syncID: UUID(), in: context)
@@ -2670,6 +2974,9 @@ struct MigrationWorkExecutorTests {
     func adoptReconcile_unreadableDefinitiveInventory_isTransientNotCompleted() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
+        // El 2.º dispositivo del mismo Apple ID: su espejo trajo el marcador del líder (guarda de linaje, ticket
+        // `adopt-uploads-a-foreign-corpus-without-a-lineage-check`). Sin él no subiría nada.
+        try seedLeaderMarker(for: "sub-1", in: context)
         let stub = RoutingStub()
         let session = FakeSession(token: "jwt", userID: "sub-1")
         let knownID = UUID(); let orphanID = UUID()
@@ -2713,6 +3020,9 @@ struct MigrationWorkExecutorTests {
     func adoptReconcile_backfillFails_isLocalFailureNotCompleted() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
+        // El 2.º dispositivo del mismo Apple ID: su espejo trajo el marcador del líder (guarda de linaje, ticket
+        // `adopt-uploads-a-foreign-corpus-without-a-lineage-check`). Sin él no subiría nada.
+        try seedLeaderMarker(for: "sub-1", in: context)
         let stub = RoutingStub()
         let session = FakeSession(token: "jwt", userID: "sub-1")
         context.insert(Category(name: "window-nil", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false))
@@ -2772,6 +3082,9 @@ struct MigrationWorkExecutorTests {
     func adoptReconcile_unreadableOrphanInputs_isLocalFailure() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
+        // El 2.º dispositivo del mismo Apple ID: su espejo trajo el marcador del líder (guarda de linaje, ticket
+        // `adopt-uploads-a-foreign-corpus-without-a-lineage-check`). Sin él no subiría nada.
+        try seedLeaderMarker(for: "sub-1", in: context)
         let stub = RoutingStub()
         let session = FakeSession(token: "jwt", userID: "sub-1")
         let knownID = UUID()

@@ -6071,6 +6071,7 @@
 "storage.failed.adoptAccountUnavailable" = "无法登录您的云端账户：我们暂时无法让您访问这个账户。请发邮件到 %@，我们会和您一起查看。";
 "storage.failed.adoptEffectLocalFailure" = "无法登录您的云端账户：此设备无法读取您的数据，因而无法与账户中的数据合并。此设备上的内容仍在这里；请稍后重试。";
 "storage.failed.adoptEffectStalled" = "无法登录您的云端账户：启用已经好几天都无法完成。此设备上的内容仍在这里；请稍后重试。";
+"storage.failed.adoptEffectLineageUnproven" = "无法登录您的云端账户：此设备上有该账户中没有的数据，且无法确认这些数据来自该账户，因此没有合并。此设备上的内容仍在这里。如果您曾在另一台设备上将此 iCloud 的数据迁移到云端，请确认使用的是同一个账户登录，并等待 iCloud 完成数据同步后再试。";
 /* Botón de la tarjeta de progreso: cancelar la activación de la nube */
 "storage.progress.cancelMigration" = "取消启用";
 /* Título de la confirmación de cancelar la activación */

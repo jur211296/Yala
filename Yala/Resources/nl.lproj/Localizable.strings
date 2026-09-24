@@ -6071,6 +6071,7 @@
 "storage.failed.adoptAccountUnavailable" = "We konden je niet aanmelden bij je cloudaccount: we kunnen je nu geen toegang geven tot dit account. Mail ons op %@ en we zoeken het samen uit.";
 "storage.failed.adoptEffectLocalFailure" = "We konden je niet aanmelden bij je cloudaccount: dit apparaat kon je gegevens niet lezen om ze samen te voegen met die van je account. Wat je op dit apparaat hebt, staat er nog — probeer het over een tijdje opnieuw.";
 "storage.failed.adoptEffectStalled" = "We konden je niet aanmelden bij je cloudaccount: het inschakelen kan al dagen niet worden afgerond. Wat je op dit apparaat hebt, staat er nog — probeer het later opnieuw.";
+"storage.failed.adoptEffectLineageUnproven" = "We konden je niet aanmelden bij je cloudaccount: dit apparaat heeft gegevens die dat account niet heeft, en we konden niet bevestigen dat ze ervan afkomstig zijn, dus we hebben ze niet samengevoegd. Wat je op dit apparaat hebt, staat er nog. Als je de gegevens van deze iCloud vanaf een ander apparaat naar de cloud hebt overgezet, controleer dan of je je aanmeldt met datzelfde account en wacht tot iCloud ze heeft binnengehaald voordat je het opnieuw probeert.";
 /* Botón de la tarjeta de progreso: cancelar la activación de la nube */
 "storage.progress.cancelMigration" = "Inschakelen annuleren";
 /* Título de la confirmación de cancelar la activación */
