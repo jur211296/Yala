@@ -67,3 +67,14 @@ cuenta, y también lo escribe el alta born-cloud, que no tiene corpus en CloudKi
       personales», o el caso se decide y se documenta como aceptado.
 - [ ] Una cuenta con finanzas de otra persona sigue sin poder recibir la migración.
 - [ ] Una migración abandonada por su líder, o por el mismo iPhone tras reinstalar, tiene una salida que el aviso nombra.
+
+## Nota (2026-09-24)
+
+La «guarda de linaje del ticket hermano» existe ya, con dos pruebas: el marcador de la cuenta o una fila viva de la cuenta
+en el store local (`MigrationWorkExecutor.lineageSharedLiveRows`, la de la ida y la del adopt desde
+`adopt-after-the-cutover-needs-a-marker-the-leader-never-exported`). Es candidata para distinguir aquí «es mi otro iPhone»
+de «es la cuenta de otra persona»; no se ha tocado esta puerta. Ojo al reusarla: sin marcador, una fila compartida sola no
+basta —`adoptSharedRowsProof` exige además que en cada tabla que sube estén ya todas las filas de la cuenta, o se
+duplicarían—. Y este es ahora el hueco que queda del escenario de ese ticket: el segundo teléfono que YA tenía Yala, con
+el líder parado tras el cutover del servidor, no llega al adopt desde Ajustes.
+

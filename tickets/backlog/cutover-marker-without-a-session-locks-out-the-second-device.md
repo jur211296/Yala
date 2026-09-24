@@ -32,3 +32,11 @@ activar la nube en él, nunca entra, y cada intento acaba en «no pudimos compro
 ## Criterios de aceptación
 
 - [ ] El marcador del cutover siempre lleva el hash de la cuenta que migró, haya sesión o no en ese instante.
+
+## Actualización (2026-09-24, `adopt-after-the-cutover-needs-a-marker-the-leader-never-exported`)
+
+El bloqueo del segundo dispositivo ya no depende de este marcador: desde ese ticket el adopt acepta también como prueba de
+linaje una fila VIVA de la cuenta en el store local, y el segundo dispositivo del mismo iCloud siempre tiene las cuentas y
+movimientos que el líder subió. Un marcador con el hash vacío ya no deja fuera a nadie que comparta datos con la cuenta.
+Queda el criterio de abajo como higiene del marcador (sigue siendo la primera prueba que se mira).
+
