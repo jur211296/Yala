@@ -770,6 +770,12 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSyncMigration claimRefused existing_stable con intención de migrar — notStarted, sin adopt")
     }
 
+    /// Un adopt que abrió su sesión salió —techo, «Cancelar» o «Dejar de esperar»— y la sesión se cierra (ticket
+    /// `adopt-exit-keeps-the-session-it-opened`). El `signOut` deja además su propio `authSignedOut`.
+    static func adoptExitClosedSession() {
+        logger.notice("CloudSyncMigration adoptExit closedSession — la sesión que abrió el adopt")
+    }
+
     /// «Migrar a la nube» se paró sin escribir nada. `reason` y `stage` (`gate` antes del claim, `claim` después) sin PII.
     static func migrationIdentityBlocked(reason: String, stage: String) {
         logger.notice("CloudSyncMigration identityBlocked reason=\(reason, privacy: .public) stage=\(stage, privacy: .public) — sin escrituras")

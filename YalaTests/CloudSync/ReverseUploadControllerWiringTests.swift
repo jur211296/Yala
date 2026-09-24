@@ -255,6 +255,8 @@ struct ReverseUploadControllerWiringTests {
             // Ticket `settings-migrate-to-cloud-adopts-silently-instead-of-migrating`: un claim de «Migrar» aparcado por
             // la red puede contestar `existing_stable` al retomar. Su aviso lo fija `MigrationIdentityGateWiringTests`.
             "await announceForwardClaimRefusal(since: forwardRefusalBefore)",
+            // Ticket `adopt-exit-keeps-the-session-it-opened`: la salida de un adopt cierra la sesión que abrió.
+            "await closeSessionOfExitedAdopt()",
             "startRuntimeIfStable()",
         ])
     }

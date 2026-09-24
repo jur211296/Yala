@@ -752,9 +752,13 @@ final class CloudMigrationController {
                 return
             }
             r.setForwardClaimIntent(.adoptIfExisting)
+            recordAdoptSessionOwnership(sessionOpenedByThisAttempt: openedSession)
             await r.submit(.signInSucceeded)     // authenticating → claimingMigration → drive
+            withdrawAdoptSessionOwnershipIfNotStarted()
             return
         }
+        // «Migrar» nunca abre la sesión de un adopt: una marca vieja no se hereda.
+        AdoptSessionOwnership.record(nil)
         let (check, discovery) = await checkMigrationIdentity(sessionOpenedByThisAttempt: openedSession)
         guard check == .proceed else {
             let rejectedProvider = await closeSessionIfOpened(openedSession)
@@ -854,6 +858,53 @@ final class CloudMigrationController {
         return provider
     }
 
+    // MARK: - La sesión que abrió un adopt
+
+    /// Apunta de quién es la sesión del adopt que EMPIEZA (ticket `adopt-exit-keeps-the-session-it-opened`), antes de
+    /// conducir el runner: la primera pasada puede hacer el claim y el efecto dentro de un solo `submit`, y un kill ahí
+    /// dejaba el adopt sin marca. Qué se apunta lo decide `AdoptSessionOwnership.markToRecord`.
+    private func recordAdoptSessionOwnership(sessionOpenedByThisAttempt openedSession: Bool) {
+        AdoptSessionOwnership.record(AdoptSessionOwnership.markToRecord(
+            sessionOpenedByThisAttempt: openedSession,
+            sessionAccountHash: CloudAuthService.shared.currentUserID.map { CloudBeacon.hash($0) },
+            current: AdoptSessionOwnership.read()))
+    }
+
+    /// Retira la marca si la llamada volvió sin entrar en el claim: el intento no empezó, y su `authenticating` normalizado
+    /// se leería como salida. La sesión se queda, que es lo que reusa el «Retomar» de la bienvenida.
+    private func withdrawAdoptSessionOwnershipIfNotStarted() {
+        refresh()
+        guard !isJournalUnreadable, AdoptSessionOwnership.stoppedBeforeTheClaim(
+            phase: journaledPhase, adoptEffectPending: isAdoptEffectPending,
+            persistedCloudMode: StorageModePersistence.read() == .cloud) else { return }
+        AdoptSessionOwnership.record(nil)
+    }
+
+    /// Si el adopt que abrió la sesión ya salió —su techo, «Cancelar» o «Dejar de esperar»—, la cierra (decisión A de
+    /// Jürgen, 2026-09-23). Se mira por NIVEL tras cada llamada que conduce el runner y al empezar `resumeIfNeeded`, que es el
+    /// arranque y el re-kick: así da igual qué pasada produjo la salida, también una que un kill dejó sin cerrar.
+    ///
+    /// Solo cierra la sesión de ESA cuenta: con otra viva —la persona entró después por Grupos— borra la marca y no toca
+    /// nada. Con el journal ilegible no decide.
+    private func closeSessionOfExitedAdopt() async {
+        guard !isJournalUnreadable else { return }
+        let owned = AdoptSessionOwnership.read()
+        switch AdoptSessionOwnership.decide(
+            ownedAccountHash: owned,
+            sessionAccountHash: CloudAuthService.shared.currentUserID.map { CloudBeacon.hash($0) },
+            phase: journaledPhase, adoptEffectPending: isAdoptEffectPending,
+            persistedCloudMode: StorageModePersistence.read() == .cloud) {
+        case .keep:
+            return
+        case .forget:
+            AdoptSessionOwnership.record(nil)
+        case .closeSession:
+            AdoptSessionOwnership.record(nil)
+            CloudSyncBreadcrumb.adoptExitClosedSession()
+            _ = await closeSessionIfOpened(true)
+        }
+    }
+
     /// Avisa de un claim que la intención de migrar devolvió al inicio en la llamada en curso: `before` es la foto de
     /// `lastForwardClaimRefusal` tomada antes de llamar al runner (molde de `announceReverseClaimExit`). Vale para el toque
     /// y para `resume()`: un claim que se aparcó por la red puede contestar `existing_stable` al retomar. Tras un
@@ -914,7 +965,10 @@ final class CloudMigrationController {
     /// así que NO se re-lanza SIWA (evita el doble Face ID). Las fases `consent`/`authenticating` son
     /// no-durables: un kill entre submits normaliza a `notStarted` vía `resume` sin riesgo.
     /// Precondición: `CloudAuthService.shared.hasSession`.
-    func startAdoptWithExistingSession() async {
+    ///
+    /// - Parameter sessionOpenedByThisAttempt: la sesión la firmó la bienvenida que llama (también en un «Retomar» de esa
+    ///   misma pantalla). `false` con la sesión que ya traía la puerta de Grupos: esa no se cierra al salir.
+    func startAdoptWithExistingSession(sessionOpenedByThisAttempt: Bool) async {
         isWorking = true
         defer { isWorking = false }
         lastError = nil
@@ -929,9 +983,11 @@ final class CloudMigrationController {
         // Entrar en una cuenta que ya existe ES adoptarla: la intención de «Migrar» no aplica aquí.
         migrationAttempt = nil
         r.setForwardClaimIntent(.adoptIfExisting)
+        recordAdoptSessionOwnership(sessionOpenedByThisAttempt: sessionOpenedByThisAttempt)
         await r.startMigration(dryRun: false)   // notStarted → consent
         await r.submit(.consentAccepted)         // consent → authenticating
         await r.submit(.signInSucceeded)         // authenticating → claimingMigration → drive
+        withdrawAdoptSessionOwnershipIfNotStarted()
         refresh()
         // Decisión owner (2026-09-06): el motor arranca EN SESIÓN también en la re-entrada, como ya
         // hacía el alta (`BornCloudSignUpService.activateBornCloudStorage`). Dos caminos que montan el
@@ -1147,6 +1203,7 @@ final class CloudMigrationController {
         announceReverseClaimExit(since: claimExitBefore)
         announceReversePreMountExit(since: preMountExitBefore)
         await announceForwardClaimRefusal(since: forwardRefusalBefore)
+        await closeSessionOfExitedAdopt()
         startRuntimeIfStable()
     }
 
@@ -1244,7 +1301,8 @@ final class CloudMigrationController {
     /// **Y cierra la sesión que abrió ESTE intento**, molde de la parada del claim (`closeSessionIfOpened`): una sesión
     /// viva en un teléfono con sesión privada la registra `GroupsAssociationRegistrar` como cuenta de grupos en el
     /// siguiente arranque, y quien cancela no pidió eso. Tras un relanzamiento ya no se sabe quién la abrió
-    /// (`migrationAttempt` vive en memoria), así que no se cierra, igual que allí.
+    /// (`migrationAttempt` vive en memoria), así que no se cierra, igual que allí. **La de un adopt sí**: su marca vive en
+    /// `UserDefaults` (`closeSessionOfExitedAdopt`, ticket `adopt-exit-keeps-the-session-it-opened`).
     func cancelMigration() async {
         runner.requestMigrationCancel()
         while isWorking {
@@ -1275,6 +1333,8 @@ final class CloudMigrationController {
             migrationAttempt = nil
             _ = await closeSessionIfOpened(attempt.sessionOpenedByThisAttempt)
         }
+        // La de un adopt la cierra su propia marca, que sobrevive a relanzar.
+        await closeSessionOfExitedAdopt()
     }
 
     /// «Cancelar y seguir en la nube», en cualquiera de las cinco fases que lo ofrecen (`canCancelReverse`).
@@ -1337,6 +1397,7 @@ final class CloudMigrationController {
         }
         await runner.pollLeader()
         refresh()
+        await closeSessionOfExitedAdopt()
         startRuntimeIfStable()
     }
 
@@ -1358,6 +1419,9 @@ final class CloudMigrationController {
         }
         let (phase, hasPending) = inputs
         journaledPhase = phase
+        // Antes de retomar nada: recoge la salida de un adopt que un kill dejó con la sesión abierta, y en el arranque va por
+        // delante del registrador de Grupos, que primero pregunta a la red (`AppBootstrapper`).
+        await closeSessionOfExitedAdopt()
         switch MigrationBootDecision.decide(phase: phase, hasPendingEffects: hasPending) {
         case .resume:
             await resume(clearingError: clearingError)

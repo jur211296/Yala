@@ -64,7 +64,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | adopt-effect-after-the-cloud-mode-retries-silently | backlog | tickets/backlog/adopt-effect-after-the-cloud-mode-retries-silently.md |
 | adopt-effect-ceiling-never-sees-an-import-that-never-settles | backlog | tickets/backlog/adopt-effect-ceiling-never-sees-an-import-that-never-settles.md |
 | adopt-effect-retries-forever-with-no-ceiling | done | tickets/done/adopt-effect-retries-forever-with-no-ceiling.md |
-| adopt-exit-keeps-the-session-it-opened | backlog | tickets/backlog/adopt-exit-keeps-the-session-it-opened.md |
+| adopt-exit-keeps-the-session-it-opened | done | tickets/done/adopt-exit-keeps-the-session-it-opened.md |
 | adopt-follower-waits-for-the-leader-with-no-ceiling | done | tickets/done/adopt-follower-waits-for-the-leader-with-no-ceiling.md |
 | adopt-terminal-claims-ready-without-checking-engine | backlog | tickets/backlog/adopt-terminal-claims-ready-without-checking-engine.md |
 | adopt-uploads-a-foreign-corpus-without-a-lineage-check | backlog | tickets/backlog/adopt-uploads-a-foreign-corpus-without-a-lineage-check.md |
@@ -495,6 +495,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | session-exits-one-verb-per-session | qa | tickets/qa/session-exits-one-verb-per-session.md |
 | session-redesign-implementation-order | backlog | tickets/backlog/session-redesign-implementation-order.md |
 | session-redesign-web-and-store-copy | backlog | tickets/backlog/session-redesign-web-and-store-copy.md |
+| settings-adopt-stalled-before-the-claim-keeps-the-session | backlog | tickets/backlog/settings-adopt-stalled-before-the-claim-keeps-the-session.md |
 | settings-migrate-blocks-a-second-device-before-its-marker | backlog | tickets/backlog/settings-migrate-blocks-a-second-device-before-its-marker.md |
 | settings-migrate-to-cloud-adopts-silently-instead-of-migrating | done | tickets/done/settings-migrate-to-cloud-adopts-silently-instead-of-migrating.md |
 | settings-redesign-as-grouped-lists-like-ios | backlog | tickets/backlog/settings-redesign-as-grouped-lists-like-ios.md |

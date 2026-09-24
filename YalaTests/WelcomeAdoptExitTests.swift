@@ -264,7 +264,7 @@ struct WelcomeAdoptExitTests {
         #expect(retry.contains("if case .idle = controller.uiState, !cancelRequested {"))
         let src = try Self.flat(Self.source(Self.view))
         #expect(src.contains(
-            "lastObservedPhase = nil cancelRequested = false await CloudMigrationController.shared?.startAdoptWithExistingSession()"))
+            "lastObservedPhase = nil cancelRequested = false await CloudMigrationController.shared?.startAdoptWithExistingSession( sessionOpenedByThisAttempt: sessionOpenedHere)"))
     }
 
     /// El cuerpo ENTERO: una sentencia antepuesta (un `onBack()` antes de cancelar, un `return`) pasaría un `contains`.
