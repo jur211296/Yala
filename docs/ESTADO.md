@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-24 (Lima)
 
-**Rama** `2.1` — Merge #234: **El «Reintentar» de un alta en la nube ya no siembra al lado de un teléfono que entró en la cuenta.**
+**Rama** `2.1` — Merge #235: **El adopt ya no sube a una cuenta un corpus que no demuestra venir de ella.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,25 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#233 + #234 · g16_01 en staging, y el reintento ya no siembra al lado de otro teléfono)
+## Esta sesión (#235 · el adopt no sube un corpus sin prueba de linaje)
+
+**Un teléfono cuyos datos no vienen de una cuenta en la nube ya no los sube a ella al activar la nube.** Con algo que
+subir, el adopt exige en local el `CloudMigrationMarker` de la cuenta de la sesión; sin él no toca nada y a los 15 min sale
+con texto propio (`effectLineageUnproven`, 16 locales), dejando la marca sin cuenta para reintentar con la buena. Siguen
+entrando el 2.º dispositivo del mismo iCloud (con sus huérfanas de la ventana) y el de una cuenta nacida en la nube: sin
+nada que subir no se pide marcador, y los tipos de cambio que siembra el arranque no cuentan. Gate completo (7768 unit,
+12 XCUITest en 5 suites), 12 mutantes muertos, review de 3 lentes (3 hallazgos arreglados aquí). Ticket
+`adopt-uploads-a-foreign-corpus-without-a-lineage-check` a `qa` con guion de dos casos.
+
+### Lo que espera de Jürgen
+
+- **Device-QA** del ticket: 2.º iPhone del mismo iCloud entra con un gasto de la ventana; opcional, 2.º dispositivo de
+  una cuenta nacida en la nube.
+- Nada que decidir. Tickets nuevos: `migration-takeover-uploads-without-a-lineage-check` (medium, el relevo de un líder
+  callado, camino 2), `adopt-on-an-empty-store-uploads-what-the-mirror-imports-before-the-relaunch` (medium) y
+  `cutover-marker-without-a-session-locks-out-the-second-device` (low).
+
+## Sesión anterior (#233 + #234 · g16_01 en staging, y el reintento ya no siembra al lado de otro teléfono)
 
 **Si activas la nube en un teléfono, se corta la red al final y mientras tanto entras con la misma cuenta en otro,
 «Reintentar» en el primero ya no crea un segundo juego de cuentas y categorías: entra en la cuenta como cualquier
@@ -44,7 +62,7 @@ staging y dejó los goldens del claim en verde (`g16-01-is-not-applied-on-stagin
 - Siguen los tres low de #232: `claim-replay-after-a-kill-mid-commit-can-duplicate-the-onboarding`,
   `lost-cloud-signup-then-private-leaves-migrate-blocked` y `welcome-cloud-replay-marks-born-cloud-without-the-guard`.
 
-## Sesión anterior (#232 · si se pierde la respuesta al activar la nube, «Reintentar» la termina)
+## Antes (#232 · si se pierde la respuesta al activar la nube, «Reintentar» la termina)
 
 **Si al activar Yala completo → «Tu cuenta en la nube» se corta la red justo cuando el servidor ya promocionó la cuenta,
 «Reintentar» termina la activación.** Hasta hoy decía «Tu cuenta ya tiene finanzas personales» sin tenerlas y no había
