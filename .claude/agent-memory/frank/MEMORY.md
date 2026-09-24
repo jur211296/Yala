@@ -35,6 +35,8 @@
 - [Dos derivados del mismo enum no son independientes](feedback_dos_derivados_del_mismo_enum_no_son_independientes.md) — comparten su forma de AGRUPAR; defenderlo por escrito no los separa.
 - [El scan de un modifier no ancla a QUÉ vista cuelga](feedback_el_scan_de_un_modifier_no_ancla_a_que_vista_cuelga.md) — moverlo un nivel hacia dentro reabre el ticket en verde.
 - [Al quitar un apagado incondicional, busca quién lo usaba](feedback_al_quitar_un_apagado_incondicional_busca_quien_lo_usaba.md) — condicionar un efecto se lo quita a caminos que nadie enumeró.
+- [La puerta de la unidad no cubre sus peticiones](feedback_la_puerta_de_la_unidad_no_cubre_sus_peticiones.md) — «antes de cada página» no cubre los trozos de dentro.
+- [Sustituir un latido cambia qué significa el lease](feedback_sustituir_un_latido_cambia_que_significa_el_lease.md) — «misma cadencia» ignora la CONDICIÓN del viejo.
 - [El reintento de fuera multiplica el de dentro](feedback_el_reintento_de_fuera_multiplica_el_de_dentro.md) — el SDK ya reintentaba: mi coste era falso por 3x y tapaba un mutante.
 - [El orden hace INVISIBLE al segundo término](feedback_el_orden_hace_invisible_al_segundo_termino.md) — «A implica B por el orden» puede significar.
 - [El mutante muere y el término sobra](feedback_el_mutante_muere_y_el_termino_sobra.md) — 5 mutantes muertos y la rama solo la alcanzaba gente con.
