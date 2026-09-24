@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-24 (Lima)
 
-**Rama** `2.1` — Merge #230: **Si cancelas la entrada en tu cuenta de la nube, o se rinde, la sesión que se abrió para eso se cierra.**
+**Rama** `2.1` — Merge #231: **Si Almacenamiento se queda esperando a iCloud antes de empezar a activar la nube, cierra la sesión que abrió.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,25 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#230 · la salida del adopt cierra la sesión que abrió)
+## Esta sesión (#231 · si Almacenamiento se queda esperando a iCloud antes de empezar, cierra la sesión que abrió)
+
+**En Almacenamiento, si «Activar la nube en este dispositivo» no llega a empezar porque iCloud sigue trayendo datos (la
+espera vence a los 120 s), la sesión con la que acabas de entrar se cierra y un aviso lo dice.** Hasta hoy la tarjeta
+volvía atrás con la sesión puesta, y el arranque siguiente podía registrarla como tu cuenta de Grupos; «Migrar» ya la
+cerraba. La bienvenida no cambia: su «Retomar» reusa la sesión. Cómo: la rama adopt de `continueToClaim` (solo Ajustes)
+cierra la sesión que abrió el intento con el mismo predicado que retira la marca; el aviso nombra iCloud solo con el import
+sin asentar, leído antes del cierre (clave nueva en 16 idiomas). Ticket `settings-adopt-stalled-before-the-claim-keeps-the-session`
+a `done` sin device-QA. Review de 2 lentes, sin bloqueantes. 13 mutantes muertos; gate completo (7756 unit, 12 XCUITest);
+CI verde.
+
+### Lo que espera de Jürgen
+
+- Nada nuevo. Dos low técnicos de la review: `adopt-session-close-drops-the-mark-before-the-sign-out-lands` y
+  `welcome-adopt-stalled-session-is-kept-when-settings-reuses-it` (primero medir si ese camino existe).
+- Siguen los dos low de #229: `welcome-adopt-cancel-dialog-says-from-here` (copy) y
+  `welcome-adopt-exit-offers-retry-on-a-blocked-account`.
+
+## Sesión anterior (#230 · la salida del adopt cierra la sesión que abrió)
 
 **Si entras en tu cuenta de la nube y la activación se cancela o se rinde, la sesión que se abrió para eso se cierra.**
 Vale para «Cancelar la activación» (Almacenamiento y bienvenida), «Dejar de esperar» y los techos. Hasta hoy la sesión se
@@ -31,13 +49,13 @@ asocia esa sesión. Ticket `adopt-exit-keeps-the-session-it-opened` a `done` sin
 versión apuntaba la marca tarde (un kill en la primera pasada la perdía) y la ataba a la cuenta, no a la sesión. 18
 mutantes muertos; gate completo (7754 unit, 31 XCUITest); CI verde.
 
-### Lo que espera de Jürgen
+### Lo que esperaba de Jürgen
 
 - Nada nuevo. Un ticket nuevo, low y técnico: `settings-adopt-stalled-before-the-claim-keeps-the-session`.
 - Siguen los dos low de #229: `welcome-adopt-cancel-dialog-says-from-here` (copy) y
   `welcome-adopt-exit-offers-retry-on-a-blocked-account`.
 
-## Sesión anterior (#229 · la bienvenida del adopt dice el motivo y deja cancelar)
+## Antes (#229 · la bienvenida del adopt dice el motivo y deja cancelar)
 
 **Si entrar en tu cuenta de la nube falla desde la bienvenida, la pantalla ya no culpa a tu conexión.** Dice el motivo con
 las mismas frases que Almacenamiento: el teléfono que no pudo leer sus datos, la activación que lleva días sin terminar, y
@@ -129,7 +147,7 @@ propio iCloud** (`iCloud.com.jurgenschmidt.yala.dev`), así que los «datos prev
 **Los «Device-QA de …» que piden los bloques de más abajo están superados por el guion**: si un ticket no está hoy en
 `tickets/qa/`, ya no se prueba a mano.
 
-### Lo que espera de Jürgen
+### Lo que esperaba de Jürgen
 
 - **El guion de `qa/guion-tanda.md`**, unas 4 h entero. Con hora y media: el bloque D (los dos «muy alto») y el B.
   Basta con pasar «paso · PASA/FALLA».
