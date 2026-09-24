@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-24 (Lima)
 
-**Rama** `2.1` — Merge #236: **El relevo de una activación abandonada ya no sube un corpus sin linaje con lo que la cuenta tiene.**
+**Rama** `2.1` — Merge #237: **El teléfono que perdió el relevo de una activación ya no sube nada más a la cuenta.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,27 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#236 · el relevo de una activación abandonada no sube un corpus sin linaje)
+## Esta sesión (#237 · el teléfono que perdió el relevo ya no sube nada más)
+
+**El teléfono que empezó a activar la nube, se quedó más de una hora sin conexión y perdió el relevo ya no sube sus datos
+encima de los del dispositivo que tomó el relevo.** Sale enseguida con «otro dispositivo con tu cuenta tomó el relevo».
+Cliente solo: una puerta del lease (`confirmMigrationLease`, la acción `heartbeat` que ya existía, sin throttle) antes de
+cada página de la subida y de cada verificación; `other_leader`/`not_in_progress` salen en el acto (`migrationLeaseLost`);
+la confirmación vale 60 s para empezar una página y 30 min para cada trozo de dentro (la app congelada a media página). El
+lease pasa a decir «el líder está vivo», no «el líder avanza» (regla del área). Worker de producción y staging medidos:
+aceptan `heartbeat`. Gate (7814 unit, 8 XCUITest de Almacenamiento), 23 mutantes muertos, review de 3 lentes (2 arreglos,
+1 refutado por medida). Ticket `displaced-migration-leader-keeps-uploading-after-a-takeover` a `qa`.
+
+### Lo que espera de Jürgen
+
+- **Device-QA** de este ticket: dos iPhone con la misma cuenta, el primero 61 min en modo avión a media subida; al volver
+  no avanza y sale con el texto del relevo (guion en el ticket).
+- **Device-QA** de #236 sigue pendiente (el relevo legítimo del mismo iCloud termina).
+- Nada que decidir. Tickets nuevos: `leader-displaced-after-the-cutover-pushes-its-residual-in-the-reconcile` (medium,
+  previo: el que pierde el lease después del cutover sube su residual) y `welcome-shows-a-takeover-exit-as-a-connection-error`
+  (low).
+
+## Sesión anterior (#236 · el relevo de una activación abandonada no sube un corpus sin linaje)
 
 **Un teléfono que toma el relevo de una activación de la nube a medias ya no sube sus datos encima de los que otro
 dispositivo empezó a subir, si no casan con ellos.** Servidor: `claim_account` dice en todo `created` si la cuenta ya
@@ -39,7 +59,7 @@ retirada del sello, que dejaba sin salida al legítimo). Ticket `migration-takeo
   teléfono, al volver, sigue subiendo encima del relevo; previo a este PR) y
   `welcome-cancel-during-the-identity-step-does-not-return-to-the-chooser` (low).
 
-## Sesión anterior (#235 · el adopt no sube un corpus sin prueba de linaje)
+## Antes (#235 · el adopt no sube un corpus sin prueba de linaje)
 
 **Un teléfono cuyos datos no vienen de una cuenta en la nube ya no los sube a ella al activar la nube.** Con algo que
 subir, el adopt exige en local el `CloudMigrationMarker` de la cuenta de la sesión; sin él no toca nada y a los 15 min sale
