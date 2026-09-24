@@ -514,33 +514,42 @@ extension MetricsService {
     // MARK: Techo de `reverseUpload` (ticket `reverse-upload-has-no-ceiling-and-no-exit`)
 
     /// Una observación de la espera de «Volver a iCloud». `detail` separa «va lento» de «no avanza»:
-    /// `advancing|<causa>` cuando la cifra de pendientes acaba de bajar, `stalled|<tramo sin avanzar>|<causa>` cuando
-    /// no. Un `stalled` sostenido en tramos largos en muchos teléfonos es un mirror que no exporta para nadie.
+    /// `advancing|<causa>` cuando la cifra de pendientes acaba de bajar, y
+    /// `stalled|<tramo sin avanzar>|<tramo de la causa>|<causa>` cuando no. Un `stalled` sostenido en tramos largos en
+    /// muchos teléfonos es un mirror que no exporta para nadie.
     ///
     /// Dedupe por PROCESO y por `detail` (`canaryOnce`): la pantalla re-observa cada 30 s y el spool guarda 50
     /// eventos FIFO, así que emitirlo en cada observación —como `cloudCutoverMarkerStalled`— tiraría el resto.
-    static func cloudReverseUploadWaiting(advancing: Bool, stalledSeconds: Double, blocker: String) {
-        let detail = reverseUploadWaitingDetail(advancing: advancing, stalledSeconds: stalledSeconds, blocker: blocker)
+    static func cloudReverseUploadWaiting(
+        advancing: Bool, stalledSeconds: Double, causeStalledSeconds: Double?, blocker: String
+    ) {
+        let detail = reverseUploadWaitingDetail(
+            advancing: advancing, stalledSeconds: stalledSeconds, causeStalledSeconds: causeStalledSeconds,
+            blocker: blocker)
         canaryOnce(.cloudReverseUploadWaiting, key: detail, detail: detail)
     }
 
     /// Detalle del canario de la espera. Tramos cerrados por arriba y por el presupuesto: los 15 min del techo
     /// corto y las 72 h del largo son sus bordes.
-    nonisolated static func reverseUploadWaitingDetail(advancing: Bool, stalledSeconds: Double, blocker: String) -> String {
+    ///
+    /// **Desde el 2026-09-23 son DOS tramos** (ticket `reverse-upload-ceiling-charges-a-wait-to-whoever-stops-it-last`,
+    /// la forma de `cloudReversePreMountWaiting`): el de AVANCE y el de la CAUSA. Con solo el de avance,
+    /// `stalled|1h_24h|icloudUnusable` se leería como horas con la cuenta inutilizable cuando el motivo lleva doce segundos
+    /// y las horas eran sin cuenta — exactamente lo que ese ticket separa. El tramo de causa es `-` cuando el motivo no es
+    /// definitivo (`icloudOff`, `unknown`): ahí no corre ningún reloj de causa. **La serie cambia de valores con este
+    /// build**: `stalled|<tramo>|<causa>` pasa a tener cuatro segmentos.
+    nonisolated static func reverseUploadWaitingDetail(
+        advancing: Bool, stalledSeconds: Double, causeStalledSeconds: Double?, blocker: String
+    ) -> String {
         guard !advancing else { return "advancing|\(blocker)" }
-        let bucket: String
-        switch stalledSeconds {
-        case ..<900: bucket = "lt_15m"
-        case ..<3_600: bucket = "15m_1h"
-        case ..<86_400: bucket = "1h_24h"
-        case ..<259_200: bucket = "24h_72h"
-        default: bucket = "gte_72h"
-        }
-        return "stalled|\(bucket)|\(blocker)"
+        let causeBucket = causeStalledSeconds.map(reversePreMountBucket) ?? "-"
+        return "stalled|\(reversePreMountBucket(stalledSeconds))|\(causeBucket)|\(blocker)"
     }
 
     /// La espera de «Volver a iCloud» terminó sin llegar a iCloud y la reversa volvió a la nube.
-    /// `detail` = `ReverseAbortReason.rawValue`: `cancelled` lo pidió la persona; el resto, el techo.
+    /// `detail` = `ReverseAbortReason.rawValue`: `cancelled` lo pidió la persona; el resto, el techo. Con una excepción
+    /// desde el 2026-09-23: una salida journaleada como `stalled` por el techo CORTO, con motivos definitivos turnándose,
+    /// sale como `mixedCauses` (`MigrationRunner.reverseUploadExitDetail`), así que `stalled` sigue siendo solo las 72 h.
     static func cloudReverseUploadAborted(reason: String) {
         canary(.cloudReverseUploadAborted, detail: reason)
     }

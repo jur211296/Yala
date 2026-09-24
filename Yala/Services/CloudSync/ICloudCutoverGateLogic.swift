@@ -135,9 +135,12 @@ nonisolated enum ReverseUploadBlocker: String, Equatable, Sendable {
         }
     }
 
-    /// El motivo que se journalea si la espera agota su techo con esta causa. `icloudOff` cae en `stalled`, no en
-    /// `icloudUnavailable`: la nota sobrevive al relanzamiento, y «iCloud no estaba disponible» sería falso para
-    /// quien tenía iCloud y solo Drive apagado.
+    /// El motivo ESPECÍFICO de esta causa. `icloudOff` cae en `stalled`, no en `icloudUnavailable`: la nota sobrevive al
+    /// relanzamiento, y «iCloud no estaba disponible» sería falso para quien tenía iCloud y solo Drive apagado.
+    ///
+    /// **No es lo que se journalea al salir, desde el 2026-09-23**: eso lo decide `MigrationRunner.reverseUploadExitReason`
+    /// según el techo que VENCIÓ, y este valor solo sale cuando esta causa agotó SOLA los 15 min (ticket
+    /// `reverse-upload-ceiling-charges-a-wait-to-whoever-stops-it-last`).
     var abortReason: ReverseAbortReason {
         switch self {
         case .icloudFull:
@@ -165,7 +168,10 @@ nonisolated enum ReverseAbortReason: String, Equatable, Sendable {
     case icloudFull
     /// CloudKit dijo que la cuenta de iCloud no sirve en este dispositivo.
     case icloudUnavailable
-    /// El techo largo sin avanzar, sin que CloudKit dijera por qué (también sin token de iCloud Drive).
+    /// La espera terminó por su techo sin que UN motivo concreto lo explique entero: las 72 h sin avanzar (con cualquier
+    /// motivo, también sin token de iCloud Drive) o los 15 min con `icloudFull` e `icloudUnusable` turnándose (ticket
+    /// `reverse-upload-ceiling-charges-a-wait-to-whoever-stops-it-last`). **Su texto no puede afirmar días ni motivo**:
+    /// también sale a los 15 min, y ningún motivo solo es verdad entero.
     case stalled
 
     // MARK: Salidas del claim (`reverseClaimLeader`)

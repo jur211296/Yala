@@ -1032,23 +1032,30 @@ struct MigrationStateMachineTests {
     /// pinnean aparte en `reverseUploadBudgets_defaultsArePinnedProductDecision`.
     private static let reverseUploadPolicy = MigrationPolicy(
         reverseUploadDefinitiveBudgetSeconds: 60,
-        reverseUploadUnknownBudgetSeconds: 600
+        reverseUploadProgressBudgetSeconds: 600
     )
 
     private static let origins: [(ReverseOrigin, Phase)] = [(.done, .done), (.notStarted, .notStarted)]
 
-    /// Bajo presupuesto la espera HOLDEA sin efectos: el runner corta retomable y vuelve a observar. Sin efectos
-    /// significa que ni se re-arma el apagado del mirror ni se descongela el backend en cada observación.
+    /// Atajo: una observación de la espera con sus DOS relojes (ticket
+    /// `reverse-upload-ceiling-charges-a-wait-to-whoever-stops-it-last`).
+    private func uploadStalled(
+        _ stalled: Double, definitive: Double, _ cause: MarkerExportStall, _ origin: ReverseOrigin = .done
+    ) -> Event {
+        .reverseUploadStalled(stalledSeconds: stalled, definitiveStalledSeconds: definitive, cause: cause,
+                              returnTo: origin)
+    }
+
+    /// Bajo los dos presupuestos la espera HOLDEA sin efectos: el runner corta retomable y vuelve a observar. Sin
+    /// efectos significa que ni se re-arma el apagado del mirror ni se descongela el backend en cada observación.
     @Test func reverseUploadStalled_belowBudget_holdsReverseUpload_noEffects() {
         let policy = Self.reverseUploadPolicy
         let belowBoth: [Double] = [0, 1, policy.reverseUploadDefinitiveBudgetSeconds - 1]
         for (origin, _) in Self.origins {
             for cause in [MarkerExportStall.definitive, .unknown] {
                 for stalled in belowBoth {
-                    let r = step(
-                        .reverseUpload,
-                        .reverseUploadStalled(stalledSeconds: stalled, cause: cause, returnTo: origin),
-                        policy: policy)
+                    let r = step(.reverseUpload, uploadStalled(stalled, definitive: stalled, cause, origin),
+                                 policy: policy)
                     #expect(r.next == .reverseUpload, "\(stalled)s sin avanzar (\(cause), \(origin)) holdea")
                     #expect(r.effects.isEmpty)
                 }
@@ -1056,21 +1063,18 @@ struct MigrationStateMachineTests {
         }
     }
 
-    /// EL test del ticket: al agotar el techo (`>=`) la reversa VUELVE al origen en modo nube. El array de
-    /// efectos se afirma entero porque el ORDEN es el contrato: `.rearmMirrorOff` primero (no puede lanzar y deja
-    /// hecha la mitad local), `.reverseRollback` después (red). Y que el destino sea el ORIGEN, no
-    /// `reverseFailedRollback`: ahí el motor de la nube no arranca hasta que alguien toca «Reintentar», y el techo
-    /// salta con la persona ausente.
+    /// Al agotar el techo corto (`>=`) la reversa VUELVE al origen en modo nube. El array de efectos se afirma entero
+    /// porque el ORDEN es el contrato: `.rearmMirrorOff` primero (no puede lanzar y deja hecha la mitad local),
+    /// `.reverseRollback` después (red). Y que el destino sea el ORIGEN, no `reverseFailedRollback`: ahí el motor de la
+    /// nube no arranca hasta que alguien toca «Reintentar», y el techo salta con la persona ausente.
     @Test func reverseUploadStalled_definitiveAtOrPastBudget_returnsToOrigin_rearmThenAbort() {
         let policy = Self.reverseUploadPolicy
         let budget = policy.reverseUploadDefinitiveBudgetSeconds
         for (origin, originPhase) in Self.origins {
-            for stalled in [budget, budget + 1, budget * 100] {
-                let r = step(
-                    .reverseUpload,
-                    .reverseUploadStalled(stalledSeconds: stalled, cause: .definitive, returnTo: origin),
-                    policy: policy)
-                #expect(r.next == originPhase, "\(stalled)s >= \(budget)s vuelve a \(originPhase)")
+            for definitive in [budget, budget + 1, budget * 5] {
+                let r = step(.reverseUpload, uploadStalled(definitive, definitive: definitive, .definitive, origin),
+                             policy: policy)
+                #expect(r.next == originPhase, "\(definitive)s >= \(budget)s vuelve a \(originPhase)")
                 #expect(r.effects == [.rearmMirrorOff, .reverseRollback])
                 #expect(r.next != .reverseFailedRollback)
                 #expect(r.next != .icloudActive, "la salida NO completa la vuelta a iCloud")
@@ -1078,26 +1082,55 @@ struct MigrationStateMachineTests {
         }
     }
 
-    /// La causa elige el techo: el mismo tiempo sin avanzar que hace salir con `.definitive` (iCloud ya dijo que
-    /// no) sigue esperando con `.unknown`. Y `.unknown` tampoco es infinito.
-    @Test func reverseUploadStalled_unknownUsesTheLongBudget_sameStallStillHolds() {
+    /// EL test de la máquina del ticket: el corto se mide contra el reloj de LO DEFINITIVO, no contra el de avance.
+    /// Horas sin avanzar por otra cosa (sin cuenta de iCloud) y el primer `icloudUnusable` visto hace nada: holdea. Hasta
+    /// este ticket la máquina recibía un solo reloj y salía en el acto.
+    @Test func reverseUploadStalled_shortCeiling_readsTheDefinitiveClock_notTheProgressOne() {
         let policy = Self.reverseUploadPolicy
-        let shortBudget = policy.reverseUploadDefinitiveBudgetSeconds
-        #expect(step(.reverseUpload,
-                     .reverseUploadStalled(stalledSeconds: shortBudget, cause: .definitive, returnTo: .done),
+        let short = policy.reverseUploadDefinitiveBudgetSeconds
+        let long = policy.reverseUploadProgressBudgetSeconds
+        let held = step(.reverseUpload, uploadStalled(long - 1, definitive: 0, .definitive), policy: policy)
+        #expect(held.next == .reverseUpload, "horas por otra causa no se cobran al motivo recién visto")
+        #expect(held.effects.isEmpty)
+        #expect(step(.reverseUpload, uploadStalled(long - 1, definitive: short - 1, .definitive),
+                     policy: policy).next == .reverseUpload)
+        #expect(step(.reverseUpload, uploadStalled(long - 1, definitive: short, .definitive),
                      policy: policy).next == .done)
-        let held = step(.reverseUpload,
-                        .reverseUploadStalled(stalledSeconds: shortBudget, cause: .unknown, returnTo: .done),
-                        policy: policy)
+    }
+
+    /// El corto solo aplica con un motivo DEFINITIVO: el mismo reloj de lo definitivo lleno con `.unknown` holdea (el
+    /// runner no lo llena nunca con `.unknown`, porque lo pausa; esto fija que la máquina tampoco lo leería).
+    @Test func reverseUploadStalled_shortCeiling_needsADefinitiveCause() {
+        let policy = Self.reverseUploadPolicy
+        let short = policy.reverseUploadDefinitiveBudgetSeconds
+        let held = step(.reverseUpload, uploadStalled(short, definitive: short * 5, .unknown), policy: policy)
         #expect(held.next == .reverseUpload)
         #expect(held.effects.isEmpty)
-        let capped = step(
-            .reverseUpload,
-            .reverseUploadStalled(
-                stalledSeconds: policy.reverseUploadUnknownBudgetSeconds, cause: .unknown, returnTo: .done),
-            policy: policy)
-        #expect(capped.next == .done)
-        #expect(capped.effects == [.rearmMirrorOff, .reverseRollback])
+    }
+
+    /// El LARGO aplica con CUALQUIER motivo, también con uno definitivo cuyo reloj propio está lejos de vencer: es el
+    /// suelo que garantiza que la espera termine. Sin esta mitad, un motivo definitivo que se va y vuelve —siempre
+    /// por debajo de su plazo— dejaría la espera sin techo.
+    @Test func reverseUploadStalled_longCeiling_appliesWithAnyCause() {
+        let policy = Self.reverseUploadPolicy
+        let long = policy.reverseUploadProgressBudgetSeconds
+        for cause in [MarkerExportStall.definitive, .unknown] {
+            #expect(step(.reverseUpload, uploadStalled(long - 1, definitive: 0, cause), policy: policy).next
+                == .reverseUpload, "\(cause): un segundo antes del largo, espera")
+            let capped = step(.reverseUpload, uploadStalled(long, definitive: 0, cause), policy: policy)
+            #expect(capped.next == .done, "\(cause): el largo vence aunque el definitivo esté a cero")
+            #expect(capped.effects == [.rearmMirrorOff, .reverseRollback])
+        }
+    }
+
+    /// El predicado del corto vive en la policy y lo comparten la máquina y el runner: sus dos vecinos, y su condición
+    /// de causa.
+    @Test func reverseUploadDefinitiveCeilingReached_edgesAndCause() {
+        let policy = Self.reverseUploadPolicy
+        let short = policy.reverseUploadDefinitiveBudgetSeconds
+        #expect(!policy.reverseUploadDefinitiveCeilingReached(stalledSeconds: short - 1, cause: .definitive))
+        #expect(policy.reverseUploadDefinitiveCeilingReached(stalledSeconds: short, cause: .definitive))
+        #expect(!policy.reverseUploadDefinitiveCeilingReached(stalledSeconds: short, cause: .unknown))
     }
 
     /// «Cancelar y seguir en la nube»: la misma vuelta que el techo, sin esperar a que venza, desde los dos orígenes.
@@ -1114,7 +1147,8 @@ struct MigrationStateMachineTests {
     /// avanzar absurdo: si alguna arista existiera, saldría.
     @Test func reverseUploadExitEvents_outsideReverseUpload_areInvalid() {
         let events: [Event] = [
-            .reverseUploadStalled(stalledSeconds: 10_000_000, cause: .definitive, returnTo: .done),
+            .reverseUploadStalled(stalledSeconds: 10_000_000, definitiveStalledSeconds: 10_000_000,
+                                  cause: .definitive, returnTo: .done),
             .reverseUploadCancelled(returnTo: .done),
         ]
         for phase in Self.allPhases where phase != .reverseUpload {
@@ -1127,16 +1161,16 @@ struct MigrationStateMachineTests {
         }
     }
 
-    /// Los techos por defecto son la decisión de Jürgen del 2026-09-16: 15 min SIN avanzar si iCloud ya dijo que
-    /// no, 72 h si no se sabe. Cambiarlos tiene que ser deliberado.
+    /// Los techos por defecto son la decisión de Jürgen del 2026-09-16: 15 min si iCloud ya dijo que no, 72 h sin
+    /// avanzar con cualquier motivo. Cambiarlos tiene que ser deliberado.
     @Test func reverseUploadBudgets_defaultsArePinnedProductDecision() {
         #expect(MigrationPolicy.default.reverseUploadDefinitiveBudgetSeconds == 900)       // 15 min
-        #expect(MigrationPolicy.default.reverseUploadUnknownBudgetSeconds == 259_200)      // 72 h
-        #expect(step(.reverseUpload,
-                     .reverseUploadStalled(stalledSeconds: 900, cause: .definitive, returnTo: .done)).next == .done)
-        #expect(step(.reverseUpload,
-                     .reverseUploadStalled(stalledSeconds: 900, cause: .unknown, returnTo: .done)).next
-            == .reverseUpload)
+        #expect(MigrationPolicy.default.reverseUploadProgressBudgetSeconds == 259_200)     // 72 h
+        #expect(step(.reverseUpload, uploadStalled(900, definitive: 900, .definitive)).next == .done)
+        #expect(step(.reverseUpload, uploadStalled(900, definitive: 899, .definitive)).next == .reverseUpload)
+        #expect(step(.reverseUpload, uploadStalled(900, definitive: 0, .unknown)).next == .reverseUpload)
+        #expect(step(.reverseUpload, uploadStalled(259_199, definitive: 0, .unknown)).next == .reverseUpload)
+        #expect(step(.reverseUpload, uploadStalled(259_200, definitive: 0, .unknown)).next == .done)
     }
     // MARK: - Techo y salida de las CUATRO fases previas al montaje
     // (ticket `reverse-before-mount-has-no-way-to-abandon-the-return`)
