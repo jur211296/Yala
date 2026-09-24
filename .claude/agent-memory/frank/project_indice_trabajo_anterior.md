@@ -90,3 +90,12 @@ aquí queda el porqué y el contexto de cada entrega.
 - [Web: lo que Jürgen decidió, y lo que no](project_web_pr62_espera_a_jurgen.md) — PR #62 mergeado el 4-sep; siguen abiertas dos suyas: legal de Grupos y autoalojar fuentes.
 - [El cron de Actions estuvo muerto y revivió](project_cron_de_actions_no_dispara.md) — disparó el 8-sep con 4h35 de retraso.
 - [Hipótesis de la Lista Negra, re-comprobadas](project_hipotesis_lista_negra_recomprobadas.md) — el runner de XCUITest; el CI y sus pasos ADVISORY.
+
+## Del 23-sep (movido del índice el 24-sep)
+- [La espera del seguidor tiene techo y salida](project_adopt_follower_techo_y_salida.md) — 23-sep; «Dejar de esperar», tres tickets low.
+- [Tercer reloj: cualquier motivo definitivo](project_tercer_reloj_definitivo_pre_mount.md) — 23-sep; vuelta y subida cerradas; la subida sale con `mixedCauses`.
+- [El claim del adopt tiene techo y salida](project_adopt_claim_techo_y_salida.md) — PR del 23-sep; dos tickets nuevos, device-QA en `qa`.
+- [Un inventario incompleto ya no es el corpus entero](project_inventario_incompleto_no_es_el_corpus.md) — PR del 23-sep; la review cazó el backfill, tres tickets nuevos.
+- [El Merkle de grupos ya no lee una tabla ilegible como vacía](project_merkle_grupos_tabla_ilegible.md) — PR del 23-sep; queda el gemelo del mapa de cursores.
+- [El drain ya no duplica el reloj por unidad](project_drain_reloj_no_se_duplica.md) — PR del 23-sep; seis tickets nuevos de la review.
+- [Una ref colgada ilegible ya no se pierde](project_dangler_ilegible_no_es_rowgone.md) — PR del 23-sep; se tira la página, tres tickets nuevos de la review.
