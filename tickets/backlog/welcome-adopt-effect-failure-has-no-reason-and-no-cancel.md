@@ -32,3 +32,7 @@ existe solo en Ajustes.
 ## Relacionado
 
 - `adopt-effect-retries-forever-with-no-ceiling`, `adopt-claim-stays-parked-with-no-ceiling`.
+
+## Decisión (Jürgen 2026-09-23)
+
+**A:** mismos textos por motivo que en Almacenamiento (`adoptEffectLocalFailure` / `adoptEffectStalled`), más Cancelar o flecha atrás durante el efecto en la bienvenida.

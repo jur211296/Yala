@@ -31,3 +31,7 @@ registra esa cuenta en el arranque siguiente.
 ## Relacionado
 
 - `migrate-attempt-session-survives-a-relaunch-mid-attempt`, `adopt-effect-retries-forever-with-no-ceiling`.
+
+## Decisión (Jürgen 2026-09-23)
+
+**A:** sí — al cancelar o al rendirse el techo, cerrar la sesión que abrió el adopt (alineado con Migrar / `closeSessionIfOpened`). La reentrada por la marca sigue disponible.
