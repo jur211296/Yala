@@ -4676,6 +4676,7 @@
 "storage.errors.title" = "Something went wrong";
 "storage.errors.generic" = "Something didn’t work. Please try again.";
 "storage.errors.adoptOtherAccount" = "That isn’t the account you were turning on for this device. Try again with the same account.";
+"storage.errors.adoptICloudNotSettled" = "We couldn’t start turning on the cloud: iCloud is still sending data to this device. Try again in a few minutes.";
 "storage.errors.signIn" = "We couldn’t sign you in. Please try again.";
 "storage.consent.title" = "Your data in Yala's cloud";
 "storage.consent.pointServers" = "Your data is stored on Yala's servers, and our team can see it to give you support and smart features. We don't use end-to-end encryption.";

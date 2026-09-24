@@ -7412,6 +7412,9 @@ enum L10n {
             /// La tarjeta de adopt que abrió la salida de un adopt anterior, firmada con OTRA cuenta (ticket
             /// `adopt-claim-stays-parked-with-no-ceiling`): no se adopta.
             static var adoptOtherAccount: String { ls("storage.errors.adoptOtherAccount", comment: "") }
+            /// El adopt de Almacenamiento no llegó a empezar porque iCloud seguía trayendo datos (ticket
+            /// `settings-adopt-stalled-before-the-claim-keeps-the-session`).
+            static var adoptICloudNotSettled: String { ls("storage.errors.adoptICloudNotSettled", comment: "") }
             static var signIn: String { ls("storage.errors.signIn", comment: "") }
             /// «Volver a iCloud» con la salida anterior de la espera todavía a medias (`reverse_abort` pendiente).
             static var reversePendingExit: String { ls("storage.errors.reversePendingExit", comment: "") }

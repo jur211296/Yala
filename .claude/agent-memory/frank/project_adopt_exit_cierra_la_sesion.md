@@ -1,6 +1,6 @@
 ---
 name: adopt-exit-cierra-la-sesion
-description: 2026-09-24 — la salida del adopt cierra la sesión que abrió (PR #230); qué quedó en ticket
+description: 2026-09-24 — la salida del adopt cierra su sesión (#230) y la parada de Ajustes antes del claim también (#231); qué quedó en ticket
 metadata:
   type: project
 ---
@@ -11,7 +11,9 @@ device-QA. La decisión A ya estaba tomada; no hubo preguntas a Jürgen.
 **Why:** cerraba el último cabo de la serie del adopt (#221, #226, #228, #229): salir dejaba la sesión puesta y el
 arranque la registraba como cuenta de Grupos.
 
-**How to apply:** queda `settings-adopt-stalled-before-the-claim-keeps-the-session` (low, ya existía). El diseño está en la
+**How to apply:** `settings-adopt-stalled-before-the-claim-keeps-the-session` se cerró el 2026-09-24 (PR #231, solo Ajustes;
+la bienvenida conserva la sesión). De su review quedan dos low: `adopt-session-close-drops-the-mark-before-the-sign-out-lands`
+y `welcome-adopt-stalled-session-is-kept-when-settings-reuses-it` (este, primero medir si el camino existe). El diseño está en la
 regla «Y la sesión que abrió el adopt» de `swiftdata-cloudkit.md`. Siguen esperando producto los dos low de #229:
 `welcome-adopt-cancel-dialog-says-from-here` y `welcome-adopt-exit-offers-retry-on-a-blocked-account`.
 Relacionado: [[adopt-effect-techo-y-salida]].

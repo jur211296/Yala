@@ -117,7 +117,13 @@ struct MigrationIdentityGateWiringTests {
             // primera pasada la perdía), y retirada si la llamada no llegó al claim.
             "recordAdoptSessionOwnership(sessionOpenedByThisAttempt: openedSession)",
             "await r.submit(.signInSucceeded)",
-            "withdrawAdoptSessionOwnershipIfNotStarted()",
+            // Ticket `settings-adopt-stalled-before-the-claim-keeps-the-session`: si no llegó al claim, como «Migrar»,
+            // cierra la sesión que abrió el intento y avisa. Solo aquí: la bienvenida no pasa por `continueToClaim`.
+            "guard withdrawAdoptSessionOwnershipIfNotStarted() else { return }",
+            // La señal, antes del cierre: `signOut` espera, y un import recién asentado deja de contar a los 8 s.
+            "let importIsQuiescent = iCloudSyncService.shared.isImportQuiescent",
+            "_ = await closeSessionIfOpened(openedSession)",
+            "lastError = StorageFailureCopyLogic.settingsAdoptStoppedBeforeTheClaim(importIsQuiescent: importIsQuiescent)",
             "return",
             "}",
             // Y «Migrar» no hereda la marca de un adopt anterior.

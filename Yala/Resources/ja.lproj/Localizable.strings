@@ -4682,6 +4682,7 @@
 "storage.errors.title" = "問題が発生しました";
 "storage.errors.generic" = "うまくいきませんでした。もう一度お試しください。";
 "storage.errors.adoptOtherAccount" = "この端末で有効化しようとしていたアカウントではありません。同じアカウントでもう一度お試しください。";
+"storage.errors.adoptICloudNotSettled" = "クラウドの有効化を開始できませんでした。iCloudがまだこの端末にデータを取り込んでいます。数分後にもう一度お試しください。";
 "storage.errors.signIn" = "サインインできませんでした。もう一度お試しください。";
 "storage.consent.title" = "Yala のクラウドにあるあなたのデータ";
 "storage.consent.pointServers" = "データは Yala のサーバーに保存され、サポートやスマート機能を提供するために私たちのチームが見ることがあります。エンドツーエンドの暗号化は使用していません。";

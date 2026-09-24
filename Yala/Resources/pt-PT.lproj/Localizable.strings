@@ -3940,6 +3940,7 @@
 "storage.errors.title" = "Algo correu mal";
 "storage.errors.generic" = "Algo não correu bem. Tente novamente.";
 "storage.errors.adoptOtherAccount" = "Essa não é a conta que estava a ativar neste dispositivo. Tente novamente com a mesma conta.";
+"storage.errors.adoptICloudNotSettled" = "Não conseguimos começar a ativar a nuvem: o iCloud ainda está a transferir dados para este dispositivo. Tente novamente dentro de alguns minutos.";
 "storage.errors.signIn" = "Não conseguimos iniciar sessão. Tente novamente.";
 "storage.consent.title" = "Os seus dados na nuvem da Yala";
 "storage.consent.pointServers" = "Os seus dados ficam guardados nos servidores da Yala e a nossa equipa pode vê-los para lhe dar apoio e funcionalidades inteligentes. Não usamos encriptação ponto a ponto.";

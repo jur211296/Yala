@@ -754,7 +754,15 @@ final class CloudMigrationController {
             r.setForwardClaimIntent(.adoptIfExisting)
             recordAdoptSessionOwnership(sessionOpenedByThisAttempt: openedSession)
             await r.submit(.signInSucceeded)     // authenticating → claimingMigration → drive
-            withdrawAdoptSessionOwnershipIfNotStarted()
+            guard withdrawAdoptSessionOwnershipIfNotStarted() else { return }
+            // No llegó al claim —casi siempre, la espera de iCloud venció—: como «Migrar», se cierra la sesión que abrió este
+            // intento (ticket `settings-adopt-stalled-before-the-claim-keeps-the-session`). Ajustes no tiene un «Retomar» que
+            // la reuse, y viva la registraría Grupos en el arranque siguiente. La bienvenida no pasa por aquí. La señal del
+            // texto se lee ANTES de cerrar: el import que acaba de asentar solo cuenta como «en curso» 8 s más, y `signOut`
+            // espera.
+            let importIsQuiescent = iCloudSyncService.shared.isImportQuiescent
+            _ = await closeSessionIfOpened(openedSession)
+            lastError = StorageFailureCopyLogic.settingsAdoptStoppedBeforeTheClaim(importIsQuiescent: importIsQuiescent)
             return
         }
         // «Migrar» nunca abre la sesión de un adopt: una marca vieja no se hereda.
@@ -871,13 +879,18 @@ final class CloudMigrationController {
     }
 
     /// Retira la marca si la llamada volvió sin entrar en el claim: el intento no empezó, y su `authenticating` normalizado
-    /// se leería como salida. La sesión se queda, que es lo que reusa el «Retomar» de la bienvenida.
-    private func withdrawAdoptSessionOwnershipIfNotStarted() {
+    /// se leería como salida. La sesión se queda, que es lo que reusa el «Retomar» de la bienvenida; el adopt de Ajustes, que
+    /// no tiene «Retomar», la cierra con lo que esto devuelve.
+    ///
+    /// - Returns: `true` si la llamada paró antes del claim. Con el journal ilegible, `false`: no se decide.
+    @discardableResult
+    private func withdrawAdoptSessionOwnershipIfNotStarted() -> Bool {
         refresh()
         guard !isJournalUnreadable, AdoptSessionOwnership.stoppedBeforeTheClaim(
             phase: journaledPhase, adoptEffectPending: isAdoptEffectPending,
-            persistedCloudMode: StorageModePersistence.read() == .cloud) else { return }
+            persistedCloudMode: StorageModePersistence.read() == .cloud) else { return false }
         AdoptSessionOwnership.record(nil)
+        return true
     }
 
     /// Si el adopt que abrió la sesión ya salió —su techo, «Cancelar» o «Dejar de esperar»—, la cierra (decisión A de
