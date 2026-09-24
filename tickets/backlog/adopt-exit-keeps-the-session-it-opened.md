@@ -35,3 +35,8 @@ registra esa cuenta en el arranque siguiente.
 ## Decisión (Jürgen 2026-09-23)
 
 **A:** sí — al cancelar o al rendirse el techo, cerrar la sesión que abrió el adopt (alineado con Migrar / `closeSessionIfOpened`). La reentrada por la marca sigue disponible.
+
+## Nota (2026-09-23, `welcome-adopt-effect-failure-has-no-reason-and-no-cancel`)
+
+Desde ese ticket la bienvenida tiene «Cancelar la activación» durante el adopt, y al cancelar vuelve al chooser con la
+sesión todavía abierta: el mismo estado que ya dejaba la flecha desde el error. Este ticket lo cubre también.
