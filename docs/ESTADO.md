@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-24 (Lima)
 
-**Rama** `2.1` — Merge #235: **El adopt ya no sube a una cuenta un corpus que no demuestra venir de ella.**
+**Rama** `2.1` — Merge #236: **El relevo de una activación abandonada ya no sube un corpus sin linaje con lo que la cuenta tiene.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,26 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#235 · el adopt no sube un corpus sin prueba de linaje)
+## Esta sesión (#236 · el relevo de una activación abandonada no sube un corpus sin linaje)
+
+**Un teléfono que toma el relevo de una activación de la nube a medias ya no sube sus datos encima de los que otro
+dispositivo empezó a subir, si no casan con ellos.** Servidor: `claim_account` dice en todo `created` si la cuenta ya
+recibió datos personales (`has_personal_writes`, `qa/cloud/g16_03_…`, **aplicada en staging y producción**). Cliente: con
+datos (o sin la pista), la identidad cruza filas vivas del backend con el store local ANTES de tocar nada; sin ninguna en
+común no sube y a los 15 min sale con texto propio (`stepLineageUnproven`, 16 locales, Almacenamiento y bienvenida);
+«Reintentar» vuelve a comprobar. El relevo del mismo iCloud y el alta normal no cambian. Gate (7789 unit, 26 XCUITest en 8
+suites: el único rojo, el flaky con ticket), 13 mutantes muertos, review de 3 lentes (3 arreglos, entre ellos quitar la
+retirada del sello, que dejaba sin salida al legítimo). Ticket `migration-takeover-uploads-without-a-lineage-check` a `qa`.
+
+### Lo que espera de Jürgen
+
+- **Device-QA** del ticket: el relevo legítimo del mismo iCloud termina (dos dispositivos con el mismo Apple ID, 61 min
+  de espera; guion en el ticket).
+- Nada que decidir. Tickets nuevos: `displaced-migration-leader-keeps-uploading-after-a-takeover` (medium: el primer
+  teléfono, al volver, sigue subiendo encima del relevo; previo a este PR) y
+  `welcome-cancel-during-the-identity-step-does-not-return-to-the-chooser` (low).
+
+## Sesión anterior (#235 · el adopt no sube un corpus sin prueba de linaje)
 
 **Un teléfono cuyos datos no vienen de una cuenta en la nube ya no los sube a ella al activar la nube.** Con algo que
 subir, el adopt exige en local el `CloudMigrationMarker` de la cuenta de la sesión; sin él no toca nada y a los 15 min sale
@@ -38,7 +57,7 @@ nada que subir no se pide marcador, y los tipos de cambio que siembra el arranqu
   callado, camino 2), `adopt-on-an-empty-store-uploads-what-the-mirror-imports-before-the-relaunch` (medium) y
   `cutover-marker-without-a-session-locks-out-the-second-device` (low).
 
-## Sesión anterior (#233 + #234 · g16_01 en staging, y el reintento ya no siembra al lado de otro teléfono)
+## Antes (#233 + #234 · g16_01 en staging, y el reintento ya no siembra al lado de otro teléfono)
 
 **Si activas la nube en un teléfono, se corta la red al final y mientras tanto entras con la misma cuenta en otro,
 «Reintentar» en el primero ya no crea un segundo juego de cuentas y categorías: entra en la cuenta como cualquier
