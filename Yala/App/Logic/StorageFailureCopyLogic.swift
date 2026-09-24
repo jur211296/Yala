@@ -56,13 +56,8 @@ enum StorageFailureCopyLogic {
         supportEmail: String = AppConstants.supportEmail
     ) -> String {
         guard kind == .migration else { return L10n.Storage.Failed.reverse }
-        switch adoptClaimExit {
-        case .stalled:            return L10n.Storage.Failed.adoptStalled
-        case .sessionExpired:     return L10n.Storage.Failed.adoptSessionExpired
-        case .accountUnavailable: return L10n.Storage.Failed.adoptAccountUnavailable(supportEmail)
-        case .effectStalled:      return L10n.Storage.Failed.adoptEffectStalled
-        case .effectLocalFailure: return L10n.Storage.Failed.adoptEffectLocalFailure
-        case .cancelled, nil:     break
+        if let adoptClaimExit, let text = adoptExitMessage(adoptClaimExit, supportEmail: supportEmail) {
+            return text
         }
         if let snapshotExit {
             switch snapshotExit {
@@ -96,5 +91,31 @@ enum StorageFailureCopyLogic {
         case nil:
             return L10n.Storage.Failed.migration
         }
+    }
+
+    /// El texto de la salida de un ADOPT, por motivo. Vive aparte porque lo leen DOS pantallas: esta tarjeta y el error de
+    /// la bienvenida (`CloudWelcomeSignInPhase.adoptExit`, ticket `welcome-adopt-effect-failure-has-no-reason-and-no-cancel`,
+    /// decisión de Jürgen del 2026-09-23: «mismos textos por motivo que en Almacenamiento»). Una sola función es lo que
+    /// impide que diverjan. `nil` = `.cancelled`, que no es un fallo que explicar.
+    static func adoptExitMessage(_ exit: AdoptClaimExit, supportEmail: String = AppConstants.supportEmail) -> String? {
+        switch exit {
+        case .stalled:            return L10n.Storage.Failed.adoptStalled
+        case .sessionExpired:     return L10n.Storage.Failed.adoptSessionExpired
+        case .accountUnavailable: return L10n.Storage.Failed.adoptAccountUnavailable(supportEmail)
+        case .effectStalled:      return L10n.Storage.Failed.adoptEffectStalled
+        case .effectLocalFailure: return L10n.Storage.Failed.adoptEffectLocalFailure
+        case .cancelled:          return nil
+        }
+    }
+
+    /// El cuerpo del diálogo de «Cancelar la activación», por fase. Lo leen Almacenamiento y, desde el ticket
+    /// `welcome-adopt-effect-failure-has-no-reason-and-no-cancel`, la barra del adopt en la bienvenida: el mismo gesto
+    /// tiene que decir lo mismo en las dos. En el claim de un ADOPT, el suyo —quien entraba en su cuenta puede estar en un
+    /// teléfono recién instalado, y «tus datos siguen en este dispositivo» sería falso—; en el EFECTO, otro —el del claim
+    /// afirma que este dispositivo no cambió nada en la nube, y el reconcile puede haber subido algo antes de fallar—.
+    static func cancelMigrationBody(isAdoptClaim: Bool, isAdoptEffectPending: Bool) -> String {
+        if isAdoptClaim { return L10n.Storage.Confirm.cancelAdoptBody }
+        if isAdoptEffectPending { return L10n.Storage.Confirm.cancelAdoptEffectBody }
+        return L10n.Storage.Confirm.cancelMigrationBody
     }
 }

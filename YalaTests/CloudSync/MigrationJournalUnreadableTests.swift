@@ -757,15 +757,17 @@ struct MigrationJournalUnreadableWiringTests {
     }
 
     /// El poll del adopt del Welcome no pinta nada con `nil` (el journal no se dejó leer en ese tick), y el reintento
-    /// manual solo re-arranca el adopt desde `.idle`.
+    /// manual solo re-arranca el adopt desde `.idle` — y desde `welcome-adopt-effect-failure-has-no-reason-and-no-cancel`,
+    /// sin una cancelación pedida. El mapeo recibe además la marca del adopt, que elige el texto del fallo.
     @Test func welcomeAdopt_pollKeepsTheScreenOnAnUnreadableTick() throws {
         let view = "Yala/App/Views/Onboarding/WelcomeCloudSignInView.swift"
         let poll = Self.lines(try Self.body(of: "private func pollAdoptProgress() async {", in: view))
         let start = try #require(poll.firstIndex(of: "guard let next = CloudWelcomeSignInFlow.phase("))
-        #expect(Array(poll[start..<(start + 11)]) == [
+        #expect(Array(poll[start..<(start + 12)]) == [
             "guard let next = CloudWelcomeSignInFlow.phase(",
             "for: controller.uiState,",
-            "claimBlocker: controller.claimBlocker) else {",
+            "claimBlocker: controller.claimBlocker,",
+            "adoptClaimExit: controller.adoptClaimExit) else {",
             "await evaluateAutoResume(controller: controller, screenPhase: phase)",
             "do {",
             "try await Task.sleep(for: .seconds(1))",
@@ -775,9 +777,9 @@ struct MigrationJournalUnreadableWiringTests {
             "continue",
             "}",
         ])
-        #expect(poll[start + 11] == "phase = next")
+        #expect(poll[start + 12] == "phase = next")
         let retry = Self.lines(try Self.body(of: "private func retryAdoptResume() async {", in: view))
-        #expect(retry.contains("if case .idle = controller.uiState {"))
+        #expect(retry.contains("if case .idle = controller.uiState, !cancelRequested {"))
     }
 
     /// La pantalla con el journal ilegible pinta la tarjeta honesta y la sección de Grupos, y NADA que mueva los datos.

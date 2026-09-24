@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (535)
+## Index (541)
 
 | id | status | path |
 |---|---|---|
@@ -559,7 +559,9 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | waiting-card-disables-stop-waiting-without-saying-why | backlog | tickets/backlog/waiting-card-disables-stop-waiting-without-saying-why.md |
 | web-domain-has-no-spf-dkim-dmarc | done | tickets/done/web-domain-has-no-spf-dkim-dmarc.md |
 | weekday-bar-daily-average-unmarked | backlog | tickets/backlog/weekday-bar-daily-average-unmarked.md |
-| welcome-adopt-effect-failure-has-no-reason-and-no-cancel | backlog | tickets/backlog/welcome-adopt-effect-failure-has-no-reason-and-no-cancel.md |
+| welcome-adopt-cancel-dialog-says-from-here | backlog | tickets/backlog/welcome-adopt-cancel-dialog-says-from-here.md |
+| welcome-adopt-effect-failure-has-no-reason-and-no-cancel | done | tickets/done/welcome-adopt-effect-failure-has-no-reason-and-no-cancel.md |
+| welcome-adopt-exit-offers-retry-on-a-blocked-account | backlog | tickets/backlog/welcome-adopt-exit-offers-retry-on-a-blocked-account.md |
 | welcome-beacon-origin-contradicts-not-found-copy | backlog | tickets/backlog/welcome-beacon-origin-contradicts-not-found-copy.md |
 | welcome-beacon-reads-owner-icloud-in-secondary | discarded | tickets/discarded/welcome-beacon-reads-owner-icloud-in-secondary.md |
 | welcome-chooser-uitests-cannot-reach-the-chooser | discarded | tickets/discarded/welcome-chooser-uitests-cannot-reach-the-chooser.md |

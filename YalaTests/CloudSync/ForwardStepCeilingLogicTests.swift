@@ -379,13 +379,12 @@ struct ForwardStepCeilingLogicTests {
         #expect(migrate.contains(
             "let isAdopt = controller.offersAdoptReentry || controller.markerDecision() == .secondaryDeviceCloudLogin"))
         let cancel = try Self.body(of: "private func cancelMigrationButton(", in: view)
-        // Desde `adopt-effect-retries-forever-with-no-ceiling` con un tercer cuerpo para el efecto del adopt.
+        // Desde `adopt-effect-retries-forever-with-no-ceiling` con un tercer cuerpo para el efecto del adopt. Desde
+        // `welcome-adopt-effect-failure-has-no-reason-and-no-cancel` lo elige una función que comparte con la bienvenida;
+        // sus tres ramas las fija `WelcomeAdoptExitTests.cancelBody_perPhase`.
         #expect(cancel.contains("""
-            Text(controller.isAdoptClaim
-                             ? L10n.Storage.Confirm.cancelAdoptBody
-                             : controller.isAdoptEffectPending
-                                ? L10n.Storage.Confirm.cancelAdoptEffectBody
-                                : L10n.Storage.Confirm.cancelMigrationBody)
+            Text(StorageFailureCopyLogic.cancelMigrationBody(
+                            isAdoptClaim: controller.isAdoptClaim, isAdoptEffectPending: controller.isAdoptEffectPending))
             """))
         let card = try Self.body(of: "private func progressCard(", in: view)
         #expect(card.contains("} else if let notice = controller.adoptClaimNotice {"))
