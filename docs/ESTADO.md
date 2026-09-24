@@ -1,11 +1,11 @@
 ---
-updated: 2026-09-23
+updated: 2026-09-24
 tags: [now, punto-de-retomada]
 ---
 
-# NOW — 2026-09-23 (Lima)
+# NOW — 2026-09-24 (Lima)
 
-**Rama** `2.1` — Merge #229: **Si entrar en tu cuenta de la nube falla desde la bienvenida, la pantalla dice el motivo, y mientras la barra avanza hay «Cancelar la activación».**
+**Rama** `2.1` — Merge #230: **Si cancelas la entrada en tu cuenta de la nube, o se rinde, la sesión que se abrió para eso se cierra.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,24 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#229 · la bienvenida del adopt dice el motivo y deja cancelar)
+## Esta sesión (#230 · la salida del adopt cierra la sesión que abrió)
+
+**Si entras en tu cuenta de la nube y la activación se cancela o se rinde, la sesión que se abrió para eso se cierra.**
+Vale para «Cancelar la activación» (Almacenamiento y bienvenida), «Dejar de esperar» y los techos. Hasta hoy la sesión se
+quedaba puesta y el arranque siguiente la registraba como tu cuenta de Grupos. La sesión de Grupos que ya tuvieras antes no
+se toca, y la reentrada por la marca sigue sin sesión. Decisión A de Jürgen. Cómo: una marca durable en `UserDefaults` (sin
+schema) con la cuenta que abrió el adopt, mirada por nivel tras cada pasada y al arrancar; el registrador de Grupos no
+asocia esa sesión. Ticket `adopt-exit-keeps-the-session-it-opened` a `done` sin device-QA. Review de 2 lentes: la primera
+versión apuntaba la marca tarde (un kill en la primera pasada la perdía) y la ataba a la cuenta, no a la sesión. 18
+mutantes muertos; gate completo (7754 unit, 31 XCUITest); CI verde.
+
+### Lo que espera de Jürgen
+
+- Nada nuevo. Un ticket nuevo, low y técnico: `settings-adopt-stalled-before-the-claim-keeps-the-session`.
+- Siguen los dos low de #229: `welcome-adopt-cancel-dialog-says-from-here` (copy) y
+  `welcome-adopt-exit-offers-retry-on-a-blocked-account`.
+
+## Sesión anterior (#229 · la bienvenida del adopt dice el motivo y deja cancelar)
 
 **Si entrar en tu cuenta de la nube falla desde la bienvenida, la pantalla ya no culpa a tu conexión.** Dice el motivo con
 las mismas frases que Almacenamiento: el teléfono que no pudo leer sus datos, la activación que lleva días sin terminar, y
@@ -32,14 +49,14 @@ device-QA. Review de 2 lentes: cazó que la primera versión salía mirando solo
 cancelar y el adopt terminado) y una cancelación diferida que dejaba la barra en 0 % con un «Retomar» que re-reclamaba.
 24 mutantes muertos; CI verde.
 
-### Lo que espera de Jürgen
+### Lo que esperaba de Jürgen
 
 - Una decisión de copy, low y sin prisa: `welcome-adopt-cancel-dialog-says-from-here` — el diálogo reusado dice «desde
   aquí» y la bienvenida te saca a la pantalla de elegir. ¿Se deja o lleva cuerpo propio?
 - Técnico, low: `welcome-adopt-exit-offers-retry-on-a-blocked-account`. Y `adopt-exit-keeps-the-session-it-opened` ahora
   también lo alcanza el «Cancelar» de la bienvenida (anotado).
 
-## Sesión anterior (#228 · la espera del seguidor tiene techo, aviso y «Dejar de esperar»)
+## Antes (#228 · la espera del seguidor tiene techo, aviso y «Dejar de esperar»)
 
 **Si entras en tu cuenta de la nube en un segundo teléfono mientras el primero la activa, la espera ya no es infinita.**
 Hasta hoy, con la sesión borrada o un 403 esa espera («Otro de tus dispositivos está activando la nube…») no terminaba
