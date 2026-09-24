@@ -522,7 +522,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | snapshot-upload-has-no-ceiling-and-no-way-out | qa | tickets/qa/snapshot-upload-has-no-ceiling-and-no-way-out.md |
 | spike-r3-eje-4b-flaky-en-suite-completa | backlog | tickets/backlog/spike-r3-eje-4b-flaky-en-suite-completa.md |
 | staging-test-credentials-in-public-repo | done | tickets/done/staging-test-credentials-in-public-repo.md |
-| staging-test-user-c-does-not-exist | backlog | tickets/backlog/staging-test-user-c-does-not-exist.md |
+| staging-test-user-c-does-not-exist | discarded | tickets/discarded/staging-test-user-c-does-not-exist.md |
 | stall-canaries-have-no-test-for-which-clock-they-publish | backlog | tickets/backlog/stall-canaries-have-no-test-for-which-clock-they-publish.md |
 | stall-clock-charges-a-closed-app-gap-to-a-one-off-cause | backlog | tickets/backlog/stall-clock-charges-a-closed-app-gap-to-a-one-off-cause.md |
 | start-fresh-dialog-promises-what-the-gate-undoes | backlog | tickets/backlog/start-fresh-dialog-promises-what-the-gate-undoes.md |
