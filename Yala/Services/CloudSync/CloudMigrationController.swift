@@ -376,8 +376,9 @@ final class CloudMigrationController {
     /// JOURNAL, como `snapshotExitReason`. `nil` = el fallo no vino de esos pasos.
     private(set) var forwardStepExitReason: ForwardStepExitReason?
 
-    /// ¿Se puede cancelar la activación ahora mismo? En las cuatro fases de la ida que lo ofrecen: la subida del snapshot y
-    /// los tres pasos sin cifra que baje (decisiones de Jürgen del 2026-09-22). El predicado vive en `ForwardCancelScope`,
+    /// ¿Se puede cancelar la activación ahora mismo? En las fases de la ida que lo ofrecen: la subida del snapshot, los tres
+    /// pasos sin cifra que baje (decisiones de Jürgen del 2026-09-22) y, desde el 2026-09-23, la espera del seguidor
+    /// (`adopt-follower-waits-for-the-leader-with-no-ceiling`). El predicado vive en `ForwardCancelScope`,
     /// que es el mismo que honra un «sí» apuntado en el runner. El botón además se deshabilita con trabajo en vuelo, así que
     /// en la práctica solo se toca con la activación aparcada.
     ///
@@ -385,6 +386,14 @@ final class CloudMigrationController {
     /// `.onChange` de la pantalla usa este getter para bajar un diálogo que ya no aplica.
     var canCancelMigration: Bool {
         !isJournalUnreadable && ForwardCancelScope.offersCancel(journaledPhase, adoptEffectPending: isAdoptEffectPending)
+    }
+
+    /// La misma salida en la espera del seguidor, con otro nombre: «Dejar de esperar» (ticket
+    /// `adopt-follower-waits-for-the-leader-with-no-ceiling`, texto de Jürgen del 2026-09-23). La pinta la tarjeta de espera
+    /// y la usa su `.onChange` para bajar el diálogo si la fase sale de la espera con él abierto —al relevo del líder, a su
+    /// adopt o por el techo—: el diálogo habla de un teléfono que espera, y en otra fase no sería verdad.
+    var canStopWaitingForLeader: Bool {
+        canCancelMigration && journaledPhase == .waitingForLeader
     }
 
     /// `.adoptBackendAccount` pendiente en el journal (`MigrationJournalSnapshot.adoptEffectJournaled`).
@@ -1220,9 +1229,10 @@ final class CloudMigrationController {
         await resume()
     }
 
-    /// «Cancelar la activación» en cualquiera de las cuatro fases de la ida que lo ofrecen (`canCancelMigration`): la
-    /// subida del snapshot (ticket `snapshot-upload-has-no-ceiling-and-no-way-out`) y los tres pasos sin cifra que baje
-    /// (`forward-migration-steps-have-no-ceiling-and-no-exit`). Vuelve a «Migrar a la nube» sin aviso de fallo.
+    /// «Cancelar la activación» en cualquiera de las fases de la ida que lo ofrecen (`canCancelMigration`): la
+    /// subida del snapshot (ticket `snapshot-upload-has-no-ceiling-and-no-way-out`), los tres pasos sin cifra que baje
+    /// (`forward-migration-steps-have-no-ceiling-and-no-exit`) y la espera del seguidor, donde se llama «Dejar de esperar»
+    /// (`adopt-follower-waits-for-the-leader-with-no-ceiling`). Vuelve a «Migrar a la nube» sin aviso de fallo.
     ///
     /// **El «sí» se apunta en el runner ANTES de esperar** (`requestMigrationCancel`), y la pasada en vuelo lo ve en su
     /// próxima vuelta. El re-kick de 30 s puede arrancar con el diálogo abierto, y con la red de vuelta esa pasada subía
@@ -1256,9 +1266,10 @@ final class CloudMigrationController {
         }
         await runner.cancelMigration()
         refresh()
-        // `notStarted` solo puede venir de la cancelación: desde las cuatro fases no hay otra arista que lleve ahí sin
-        // cerrar la sesión por su cuenta (la del claim devuelto por «Migrar» la cierra `announceForwardClaimRefusal`, y
-        // limpia `migrationAttempt`). Si el toque llegó tarde y la migración avanzó, la sesión es la de una migración que
+        // `notStarted` solo puede venir de la cancelación en un intento de «Migrar», el único que apunta
+        // `migrationAttempt`: la otra arista que lleva ahí, el claim devuelto, cierra la sesión por su cuenta
+        // (`announceForwardClaimRefusal`, que limpia `migrationAttempt`). Las de un adopt —`existing_stable`, el líder que
+        // termina— no llegan con `migrationAttempt` puesto. Si el toque llegó tarde y la migración avanzó, la sesión es la de una migración que
         // sigue, y no se toca.
         if journaledPhase == .notStarted, let attempt = migrationAttempt {
             migrationAttempt = nil

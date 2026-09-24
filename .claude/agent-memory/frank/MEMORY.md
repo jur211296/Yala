@@ -25,6 +25,7 @@
 - [La limpieza «por si acaso» enmascara mutantes](feedback_la_limpieza_por_si_acaso_enmascara_mutantes.md) — una línea inalcanzable recoge lo que el camino bueno deja pasar.
 - [Fundir una entrada nueva hereda sus excepciones](feedback_fundir_una_entrada_nueva_hereda_sus_excepciones.md) — un `||` en el parámetro de la puerta le regaló a la marca el atajo del sello.
 - [Un verbo nuevo hereda las PROHIBICIONES del viejo](feedback_un_verbo_nuevo_hereda_las_prohibiciones_del_viejo.md) — los negativos se anclan al nombre y el gemelo pasa en verde.
+- [Sellar en la buena noticia cobra la app cerrada](feedback_sellar_en_la_buena_noticia_cobra_la_app_cerrada.md) — el seguidor sellado al entrar salía con un poll sin red.
 - [Un reinicio se mide contra su CADENCIA](feedback_un_reinicio_se_mide_contra_su_cadencia.md) — racha vs. acumulado: con el re-kick de 30 s, 900 s eran 30 observaciones sin un hueco.
 - [El techo que se resetea no es un techo](feedback_el_techo_que_se_resetea_no_es_un_techo.md) — enumera quién lo reinicia y a quién muerde; con las dos en contra, se retira.
 - [Un plazo nuevo se clava con sus dos vecinos](feedback_un_plazo_nuevo_se_clava_con_sus_dos_vecinos.md) — 599 y 600, y de dónde sale el número.
@@ -146,6 +147,7 @@
 
 ## Estado del trabajo
 - [Barrido de qa del 23-sep](project_barrido_qa_23_sep.md) — 80 → 21; los 59 cerrados no se le piden; guion por bloques en qa/guion-tanda.md.
+- [La espera del seguidor tiene techo y salida](project_adopt_follower_techo_y_salida.md) — 23-sep; «Dejar de esperar», tres tickets low.
 - [Tercer reloj: cualquier motivo definitivo](project_tercer_reloj_definitivo_pre_mount.md) — 23-sep; vuelta y subida cerradas; la subida sale con `mixedCauses`.
 - [El efecto del adopt tiene techo y salida](project_adopt_effect_techo_y_salida.md) — 23-sep; cuatro tickets de la review, dos esperan producto.
 - [El claim del adopt tiene techo y salida](project_adopt_claim_techo_y_salida.md) — PR del 23-sep; dos tickets nuevos, device-QA en `qa`.

@@ -6078,6 +6078,12 @@
 "storage.confirm.cancelMigrationBody" = "Twoje dane zostają na tym urządzeniu, tak jak dotąd. To, co już przesłano, zostaje na Twoim koncie w chmurze. Możesz spróbować ponownie, kiedy zechcesz.";
 "storage.confirm.cancelAdoptBody" = "To urządzenie niczego nie zmieniło w tym, co masz w chmurze. Możesz tu ponownie włączyć chmurę na tym urządzeniu, kiedy zechcesz.";
 "storage.confirm.cancelAdoptEffectBody" = "To, co masz na tym urządzeniu, nadal tu jest, tak jak dotąd. Możesz tu ponownie włączyć chmurę na tym urządzeniu, kiedy zechcesz.";
+"storage.waiting.stopWaiting" = "Przestań czekać";
+"storage.confirm.stopWaitingTitle" = "Przestać czekać?";
+"storage.confirm.stopWaitingBody" = "Twoje drugie urządzenie nadal włącza chmurę. To urządzenie przestaje czekać i niczego nie zmienia w tym, co masz w chmurze. Możesz tu ponownie włączyć chmurę na tym urządzeniu, kiedy zechcesz.";
+"storage.confirm.stopWaitingConfirm" = "Tak, przestań czekać";
+"storage.confirm.stopWaitingKeep" = "Czekaj dalej";
+"storage.progress.followerSessionExpired" = "Twoja sesja w chmurze jest już nieważna. Przestań czekać i zaloguj się ponownie na swoje konto.";
 /* Botón que confirma cancelar la activación */
 "storage.confirm.cancelMigrationConfirm" = "Tak, anuluj";
 /* Botón que sigue con la activación */

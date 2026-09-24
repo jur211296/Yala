@@ -1416,8 +1416,9 @@ struct MigrationStateMachineTests {
 
     // MARK: - Techo y salida de los tres pasos sin cifra que baje (ticket `forward-migration-steps-have-no-ceiling-and-no-exit`)
 
-    /// Los tres pasos: claim (22 %), identidad (35 %) y `cutover(.pending)` (80 %).
-    static let forwardStepPhases: [Phase] = [.claimingMigration, .assigningIdentity, .cutover(.pending)]
+    /// Los tres pasos: claim (22 %), identidad (35 %) y `cutover(.pending)` (80 %). Y desde
+    /// `adopt-follower-waits-for-the-leader-with-no-ceiling` la espera del seguidor, que comparte las dos aristas.
+    static let forwardStepPhases: [Phase] = [.claimingMigration, .assigningIdentity, .cutover(.pending), .waitingForLeader]
 
     /// Bajo los dos presupuestos holdea en su PROPIA fase y sin efectos, con cualquier causa.
     @Test func forwardStepStalled_belowBothBudgets_holdsInItsOwnPhase() {

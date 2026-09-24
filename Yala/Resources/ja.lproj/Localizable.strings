@@ -6078,6 +6078,12 @@
 "storage.confirm.cancelMigrationBody" = "データはこれまでどおりこのデバイスに残ります。すでにアップロードされたものは、クラウドのアカウントに残ります。いつでもやり直せます。";
 "storage.confirm.cancelAdoptBody" = "この端末はクラウドのデータを何も変更していません。いつでもここから、この端末でクラウドを再度有効化できます。";
 "storage.confirm.cancelAdoptEffectBody" = "この端末のデータはこれまでどおり残っています。いつでもここから、この端末でクラウドを再度有効化できます。";
+"storage.waiting.stopWaiting" = "待つのをやめる";
+"storage.confirm.stopWaitingTitle" = "待つのをやめますか？";
+"storage.confirm.stopWaitingBody" = "もう一方のデバイスはクラウドの有効化を続けます。この端末は待つのをやめ、クラウドのデータは何も変更しません。いつでもここから、この端末でクラウドを再度有効化できます。";
+"storage.confirm.stopWaitingConfirm" = "やめる";
+"storage.confirm.stopWaitingKeep" = "このまま待つ";
+"storage.progress.followerSessionExpired" = "クラウドのセッションが無効になりました。待つのをやめて、アカウントで再度サインインしてください。";
 /* Botón que confirma cancelar la activación */
 "storage.confirm.cancelMigrationConfirm" = "キャンセルする";
 /* Botón que sigue con la activación */

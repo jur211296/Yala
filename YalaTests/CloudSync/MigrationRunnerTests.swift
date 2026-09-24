@@ -5086,6 +5086,331 @@ struct MigrationRunnerTests {
         #expect(j.adoptClaimExitRaw == "cancelled")
     }
 
+    // MARK: - §16-bis · La espera del SEGUIDOR también tiene techo y salida (ticket `adopt-follower-waits-for-the-leader-with-no-ceiling`)
+    //
+    // Hasta este ticket `pollLeaderInternal` solo apuntaba `lastClaimBlocker` con la sesión borrada o un 403 y devolvía sin
+    // evento: «esperando a otro dispositivo» para siempre. Decisiones de Jürgen del 2026-09-23: el techo del 22 % (15 min
+    // acumulados con un motivo definitivo, 72 h sin noticias del líder), cada `claiming_in_progress` es avance, y
+    // «Cancelar la activación» con la salida del adopt. Cada caso mide que la FASE cambia, o que no cambia cuando no toca.
+
+    /// **El 403 persistente en la espera**, con la intención journaleada y con una fila sin intención: a 899 s sigue
+    /// esperando, a 900 s sale con su motivo y la marca del adopt.
+    @Test func followerCeiling_accountUnavailable_leavesAt900Seconds_withTheMark() async throws {
+        for intentRaw in ["adoptIfExisting", nil] as [String?] {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let context = try makeContext(dir)
+            let fake = FakeExecutor()
+            fake.claimOutcomes = [.accountUnavailable(detail: "403")]
+            let clock = MutableClock(fixedNow)
+            try seedJournal(context, phase: .waitingForLeader, forwardClaimIntentRaw: intentRaw)
+            let label = String(describing: intentRaw)
+
+            await makeRunner(context, fake, now: { clock.value }).pollLeader()
+            var j = try journal(context)
+            #expect(j.readPhase().phase == .waitingForLeader, "\(label)")
+            #expect(j.forwardStepStallCauseRaw == "accountUnavailable", "\(label): el reloj de causa arranca")
+            clock.value = fixedNow.addingTimeInterval(899)
+            await makeRunner(context, fake, now: { clock.value }).pollLeader()
+            #expect(try journal(context).readPhase().phase == .waitingForLeader, "\(label): a 899 s todavía no")
+
+            clock.value = fixedNow.addingTimeInterval(900)
+            await makeRunner(context, fake, now: { clock.value }).pollLeader()
+            j = try journal(context)
+            #expect(j.readPhase().phase == .failedRollback, "\(label): a los 900 s sale")
+            #expect(j.forwardStepExitReasonRaw == "accountUnavailable")
+            #expect(j.adoptClaimExitRaw == "accountUnavailable", "\(label): la salida del seguidor deja la marca del adopt")
+            #expect(fake.count(.rollback) == 1)
+            #expect(fake.claimMarksSeen.allSatisfy { !$0 }, "el seguidor no pide la marca de «Migrar»")
+        }
+    }
+
+    /// **La sesión que el SDK BORRA durante la espera**: 900 s y sale como `sessionExpired`. Con la sesión todavía guardada
+    /// (un 401 que el SDK puede curar) no hay techo corto: sigue hasta el largo.
+    @Test func followerCeiling_sessionGone_leavesAt900Seconds_butAStoredSessionWaitsTheLongOne() async throws {
+        for renewable in [false, true] {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let context = try makeContext(dir)
+            let fake = FakeExecutor()
+            fake.claimOutcomes = [.sessionExpired(detail: "401")]
+            fake.canRenewSessionResult = renewable
+            let clock = MutableClock(fixedNow)
+            try seedJournal(context, phase: .waitingForLeader, forwardClaimIntentRaw: "adoptIfExisting")
+
+            await makeRunner(context, fake, now: { clock.value }).pollLeader()
+            clock.value = fixedNow.addingTimeInterval(900)
+            await makeRunner(context, fake, now: { clock.value }).pollLeader()
+            let j = try journal(context)
+            if renewable {
+                #expect(j.readPhase().phase == .waitingForLeader, "con la sesión guardada, 15 min no bastan")
+                #expect(j.forwardStepStallCauseRaw == nil, "y el reloj de causa ni arranca")
+            } else {
+                #expect(j.readPhase().phase == .failedRollback)
+                #expect(j.forwardStepExitReasonRaw == "sessionExpired")
+                #expect(j.adoptClaimExitRaw == "sessionExpired")
+            }
+        }
+    }
+
+    /// **La red en la espera**: plazo largo. A las 72 h sin noticias del líder sale con `stalled`, que no acusa a nadie.
+    @Test func followerCeiling_persistentNetwork_leavesAt72h() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.claimOutcomes = [.transient(detail: "5xx")]
+        let clock = MutableClock(fixedNow)
+        try seedJournal(context, phase: .waitingForLeader, forwardClaimIntentRaw: "adoptIfExisting")
+
+        await makeRunner(context, fake, now: { clock.value }).pollLeader()
+        #expect(try journal(context).forwardStepStallProgressAt == fixedNow, "la primera observación sella el reloj")
+        clock.value = fixedNow.addingTimeInterval(259_199)
+        await makeRunner(context, fake, now: { clock.value }).pollLeader()
+        #expect(try journal(context).readPhase().phase == .waitingForLeader, "a 259 199 s todavía no")
+        clock.value = fixedNow.addingTimeInterval(259_200)
+        await makeRunner(context, fake, now: { clock.value }).pollLeader()
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .failedRollback)
+        #expect(j.forwardStepExitReasonRaw == "stalled")
+        #expect(j.adoptClaimExitRaw == "stalled")
+    }
+
+    /// **Cada `claiming_in_progress` es AVANCE** (decisión de Jürgen): el líder latió en la última hora, así que las 72 h
+    /// vuelven a empezar. Borra los relojes y los sella la siguiente observación que no avanza, como en los otros tres pasos.
+    @Test func followerCeiling_leaderAlive_restartsTheLongClock() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        let clock = MutableClock(fixedNow)
+        try seedJournal(context, phase: .waitingForLeader, forwardClaimIntentRaw: "adoptIfExisting")
+
+        fake.claimOutcomes = [.transient(detail: "5xx")]
+        await makeRunner(context, fake, now: { clock.value }).pollLeader()
+        #expect(try journal(context).forwardStepStallProgressAt == fixedNow)
+        clock.value = fixedNow.addingTimeInterval(200_000)
+        fake.claimOutcomes = [.success(.claimingInProgress)]
+        await makeRunner(context, fake, now: { clock.value }).pollLeader()
+        #expect(try journal(context).forwardStepStallProgressAt == nil, "el líder vivo borra el reloj")
+
+        fake.claimOutcomes = [.transient(detail: "5xx")]
+        let resealedAt = fixedNow.addingTimeInterval(259_200)
+        clock.value = resealedAt
+        await makeRunner(context, fake, now: { clock.value }).pollLeader()
+        var j = try journal(context)
+        #expect(j.readPhase().phase == .waitingForLeader,
+                "72 h desde la primera observación, pero el líder contestó en medio")
+        #expect(j.forwardStepStallProgressAt == resealedAt, "la primera observación sin noticias vuelve a sellar")
+        clock.value = resealedAt.addingTimeInterval(259_199)
+        await makeRunner(context, fake, now: { clock.value }).pollLeader()
+        #expect(try journal(context).readPhase().phase == .waitingForLeader)
+        clock.value = resealedAt.addingTimeInterval(259_200)
+        await makeRunner(context, fake, now: { clock.value }).pollLeader()
+        j = try journal(context)
+        #expect(j.readPhase().phase == .failedRollback, "72 h seguidas sin noticias del líder")
+        #expect(j.adoptClaimExitRaw == "stalled")
+    }
+
+    /// **El avance borra también el reloj de CAUSA**: una respuesta del claim prueba que la sesión y la cuenta funcionaron,
+    /// así que un 403 anterior no se le suma al siguiente.
+    @Test func followerCeiling_leaderAlive_restartsTheCauseClock() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        let clock = MutableClock(fixedNow)
+        try seedJournal(context, phase: .waitingForLeader, forwardClaimIntentRaw: "adoptIfExisting")
+
+        fake.claimOutcomes = [.accountUnavailable(detail: "403")]
+        await makeRunner(context, fake, now: { clock.value }).pollLeader()
+        clock.value = fixedNow.addingTimeInterval(800)
+        await makeRunner(context, fake, now: { clock.value }).pollLeader()
+        clock.value = fixedNow.addingTimeInterval(850)
+        fake.claimOutcomes = [.success(.claimingInProgress)]
+        await makeRunner(context, fake, now: { clock.value }).pollLeader()
+        var j = try journal(context)
+        #expect(j.forwardStepStallCauseRaw == nil && j.forwardStepStallCauseAccruedSeconds == nil)
+
+        fake.claimOutcomes = [.accountUnavailable(detail: "403")]
+        clock.value = fixedNow.addingTimeInterval(900)
+        await makeRunner(context, fake, now: { clock.value }).pollLeader()
+        clock.value = fixedNow.addingTimeInterval(1_799)
+        await makeRunner(context, fake, now: { clock.value }).pollLeader()
+        #expect(try journal(context).readPhase().phase == .waitingForLeader, "899 s desde que el 403 volvió")
+        clock.value = fixedNow.addingTimeInterval(1_800)
+        await makeRunner(context, fake, now: { clock.value }).pollLeader()
+        j = try journal(context)
+        #expect(j.readPhase().phase == .failedRollback)
+        #expect(j.adoptClaimExitRaw == "accountUnavailable")
+    }
+
+    /// **Ni entrar en la espera ni una respuesta del líder sellan el reloj** (hallazgo de la review): el seguidor es quien
+    /// cierra Yala mientras espera. Si vuelve días después sin red, el primer poll SELLA, no sale: su líder pudo terminar, y
+    /// un solo poll con red lo adoptaría. Con el sello en la entrada salía aquí con «lleva días sin avanzar».
+    @Test func followerClock_isNotSealedByGoodNews_soAFirstOfflinePollDaysLaterWaits() async throws {
+        for entersByTheClaim in [true, false] {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let context = try makeContext(dir)
+            let fake = FakeExecutor()
+            fake.claimOutcomes = [.success(.claimingInProgress)]
+            let clock = MutableClock(fixedNow)
+            if entersByTheClaim {
+                try seedJournal(context, phase: .claimingMigration, leaderDeviceID: deviceID,
+                                forwardClaimIntentRaw: "adoptIfExisting")
+                await makeRunner(context, fake, now: { clock.value }).resume()
+            } else {
+                try seedJournal(context, phase: .waitingForLeader, forwardClaimIntentRaw: "adoptIfExisting",
+                                forwardStepStallProgressAt: fixedNow.addingTimeInterval(-100))
+                await makeRunner(context, fake, now: { clock.value }).pollLeader()
+            }
+            let label = entersByTheClaim ? "al entrar" : "tras un líder vivo"
+            var j = try journal(context)
+            #expect(j.readPhase().phase == .waitingForLeader, "\(label)")
+            #expect(j.forwardStepStallProgressAt == nil, "\(label): la buena noticia no sella")
+
+            fake.claimOutcomes = [.transient(detail: "sin red")]
+            clock.value = fixedNow.addingTimeInterval(4 * 86_400)
+            await makeRunner(context, fake, now: { clock.value }).pollLeader()
+            j = try journal(context)
+            #expect(j.readPhase().phase == .waitingForLeader, "\(label): cuatro días después, el primer poll sin red espera")
+            #expect(j.forwardStepStallProgressAt == clock.value, "\(label): y sella")
+        }
+    }
+
+    /// **«Cancelar la activación» en la espera**: a `notStarted`, sin efectos, con la marca `cancelled`, que hace que
+    /// Almacenamiento ofrezca «Activar la nube en este dispositivo».
+    @Test func followerCancel_goesToNotStarted_withTheMark() async throws {
+        for intentRaw in ["adoptIfExisting", nil] as [String?] {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let context = try makeContext(dir)
+            let fake = FakeExecutor()
+            try seedJournal(context, phase: .waitingForLeader, forwardClaimIntentRaw: intentRaw)
+
+            await makeRunner(context, fake).cancelMigration()
+            let j = try journal(context)
+            #expect(j.readPhase().phase == .notStarted, "\(String(describing: intentRaw))")
+            #expect(j.readPendingEffects().isEmpty)
+            #expect(j.adoptClaimExitRaw == "cancelled")
+            #expect(fake.claimCallCount == 0, "cancelar no pregunta al servidor")
+        }
+    }
+
+    /// **El «sí» que se perdía** (el hallazgo de la review de #221): confirmado con el claim del adopt en vuelo, y el claim
+    /// contesta `claiming_in_progress`. Antes la fase pasaba a la espera, que no ofrecía cancelar, y el «sí» se retiraba: la
+    /// persona aterrizaba en la tarjeta sin botón. Ahora la misma pasada cancela.
+    @Test func adoptClaimCancel_requestedDuringAClaimThatAnswersInProgress_cancels() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.claimOutcomes = [.success(.claimingInProgress)]
+        try seedJournal(context, phase: .claimingMigration, leaderDeviceID: deviceID,
+                        forwardClaimIntentRaw: "adoptIfExisting")
+        let runner = makeRunner(context, fake)
+        fake.onPerformClaim = { runner.requestMigrationCancel() }
+
+        await runner.resume()
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .notStarted, "no aterriza en la espera")
+        #expect(j.adoptClaimExitRaw == "cancelled")
+        #expect(fake.claimCallCount == 1)
+    }
+
+    /// El «sí» dado con el POLL en vuelo, cuando el líder sigue trabajando: se honra en esa misma pasada, sin otro claim.
+    @Test func followerCancel_requestedDuringThePoll_isHonoredInThatPass() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.claimOutcomes = [.success(.claimingInProgress)]
+        try seedJournal(context, phase: .waitingForLeader, forwardClaimIntentRaw: "adoptIfExisting")
+        let runner = makeRunner(context, fake)
+        fake.onPerformClaim = { runner.requestMigrationCancel() }
+
+        await runner.pollLeader()
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .notStarted)
+        #expect(j.adoptClaimExitRaw == "cancelled")
+        #expect(fake.claimCallCount == 1)
+    }
+
+    /// El «sí» dado con el poll en vuelo cuando el líder se ESFUMÓ (`created`): se honra desde la espera, con la marca del
+    /// adopt y sin tomar el relevo. Traducido primero, el relevo escribía el faro y cancelaba ya en la identidad, sin marca:
+    /// Almacenamiento ofrecía «Migrar» a quien confirmó dejar de esperar (lo cazaron dos lentes de la review).
+    @Test func followerCancel_requestedWhenTheLeaderVanished_doesNotTakeOver() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.claimOutcomes = [.success(.created)]
+        try seedJournal(context, phase: .waitingForLeader, forwardClaimIntentRaw: "adoptIfExisting")
+        let runner = makeRunner(context, fake)
+        fake.onPerformClaim = { runner.requestMigrationCancel() }
+
+        await runner.pollLeader()
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .notStarted)
+        #expect(j.adoptClaimExitRaw == "cancelled", "sale con la marca del adopt")
+        #expect(fake.count(.writeBeacon) == 0, "sin faro: no tomó el relevo")
+        #expect(fake.assignIdentityCallCount == 0)
+    }
+
+    /// Un «sí» que ya estaba apuntado se honra ANTES de volver a reclamar: reclamar otra vez podría adoptar a quien ya dijo
+    /// que cancelaba.
+    @Test func followerCancel_pendingYes_isHonoredBeforeClaimingAgain() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.claimOutcomes = [.success(.existingStable)]
+        try seedJournal(context, phase: .waitingForLeader, forwardClaimIntentRaw: "adoptIfExisting")
+        let runner = makeRunner(context, fake)
+        runner.requestMigrationCancel()
+
+        await runner.pollLeader()
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .notStarted)
+        #expect(j.adoptClaimExitRaw == "cancelled")
+        #expect(fake.claimCallCount == 0, "sin claim: el líder podía haber terminado y se habría adoptado")
+        #expect(fake.count(.adoptBackendAccount) == 0)
+    }
+
+    /// El «sí» dado con el poll en vuelo cuando el líder TERMINA: el adopt no corre (lo para la comprobación previa al
+    /// efecto, `adopt-effect-retries-forever-with-no-ceiling`) y sale con la marca.
+    @Test func followerCancel_requestedWhenTheLeaderFinishes_doesNotAdopt() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.claimOutcomes = [.success(.existingStable)]
+        try seedJournal(context, phase: .waitingForLeader, forwardClaimIntentRaw: "adoptIfExisting")
+        let runner = makeRunner(context, fake)
+        fake.onPerformClaim = { runner.requestMigrationCancel() }
+
+        await runner.pollLeader()
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .notStarted)
+        #expect(j.readPendingEffects().isEmpty)
+        #expect(fake.attempts(.adoptBackendAccount) == 0)
+        #expect(j.adoptClaimExitRaw == "cancelled")
+    }
+
+    /// **Lo que vio el último poll**, para el aviso de la tarjeta de espera: el 403 y la sesión borrada se ven; la red y el
+    /// líder vivo lo apagan.
+    @Test func follower_lastClaimDefinitiveCause_isWhatTheLastPollSaw() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        try seedJournal(context, phase: .waitingForLeader, forwardClaimIntentRaw: "adoptIfExisting")
+        let runner = makeRunner(context, fake)
+
+        fake.claimOutcomes = [.accountUnavailable(detail: "403")]
+        await runner.pollLeader()
+        #expect(runner.lastClaimDefinitiveCause == .accountUnavailable)
+        fake.claimOutcomes = [.success(.claimingInProgress)]
+        await runner.pollLeader()
+        #expect(runner.lastClaimDefinitiveCause == nil, "el líder vivo: la cuenta contestó")
+        fake.claimOutcomes = [.sessionExpired(detail: "401")]
+        fake.canRenewSessionResult = false
+        await runner.pollLeader()
+        #expect(runner.lastClaimDefinitiveCause == .sessionExpired)
+        fake.claimOutcomes = [.transient(detail: "5xx")]
+        await runner.pollLeader()
+        #expect(runner.lastClaimDefinitiveCause == nil, "la red no confirma nada")
+        #expect(try journal(context).readPhase().phase == .waitingForLeader, "control: nada de esto salió")
+    }
+
     // MARK: - §16 · Techo y salida del EFECTO del adopt (ticket `adopt-effect-retries-forever-with-no-ceiling`)
     //
     // El par `(notStarted, [.adoptBackendAccount])`: el claim ya contestó `existing_stable` y el reconcile de huérfanas no

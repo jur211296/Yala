@@ -6078,6 +6078,12 @@
 "storage.confirm.cancelMigrationBody" = "Je gegevens blijven op dit apparaat, net als voorheen. Wat al geüpload is, blijft in je cloudaccount. Je kunt het opnieuw proberen wanneer je wilt.";
 "storage.confirm.cancelAdoptBody" = "Dit apparaat heeft niets veranderd aan wat je in de cloud hebt. Je kunt de cloud hier altijd opnieuw inschakelen op dit apparaat.";
 "storage.confirm.cancelAdoptEffectBody" = "Wat je op dit apparaat hebt, staat er nog, net als voorheen. Je kunt de cloud hier altijd opnieuw inschakelen op dit apparaat.";
+"storage.waiting.stopWaiting" = "Stoppen met wachten";
+"storage.confirm.stopWaitingTitle" = "Stoppen met wachten?";
+"storage.confirm.stopWaitingBody" = "Je andere apparaat blijft de cloud inschakelen. Dit apparaat stopt met wachten zonder iets te veranderen aan wat je in de cloud hebt. Je kunt de cloud hier altijd opnieuw inschakelen op dit apparaat.";
+"storage.confirm.stopWaitingConfirm" = "Ja, stoppen met wachten";
+"storage.confirm.stopWaitingKeep" = "Blijven wachten";
+"storage.progress.followerSessionExpired" = "Je cloudsessie is niet meer geldig. Stop met wachten en meld je opnieuw aan met je account.";
 /* Botón que confirma cancelar la activación */
 "storage.confirm.cancelMigrationConfirm" = "Ja, annuleren";
 /* Botón que sigue con la activación */

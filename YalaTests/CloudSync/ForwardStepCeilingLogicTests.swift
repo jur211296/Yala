@@ -90,8 +90,8 @@ struct ForwardStepCeilingLogicTests {
 
     /// Los `rawValue` viajan en el journal, en la clave del reloj de causa y en el canario: letra a letra.
     @Test func rawValues_areWire() {
-        #expect([ForwardStepPhase.claim, .identity, .cutoverPending].map(\.rawValue)
-            == ["claim", "identity", "cutoverPending"])
+        #expect([ForwardStepPhase.claim, .identity, .cutoverPending, .waitingForLeader].map(\.rawValue)
+            == ["claim", "identity", "cutoverPending", "waitingForLeader"])
         #expect([ForwardStepBlocker.sessionExpired, .accountUnavailable, .refused, .otherDevice, .localFailure]
             .map(\.rawValue) == ["sessionExpired", "accountUnavailable", "refused", "otherDevice", "localFailure"])
         #expect(Self.allReasons.map(\.rawValue)
@@ -101,22 +101,28 @@ struct ForwardStepCeilingLogicTests {
         }
     }
 
-    /// Los tres pasos, y solo esos: la subida tiene su techo y el cutover confirmado no puede hacer rollback.
-    @Test func forwardStepPhase_coversExactlyTheThreeSteps() {
+    /// Los tres pasos y la espera del seguidor (ticket `adopt-follower-waits-for-the-leader-with-no-ceiling`), y solo esos:
+    /// la subida tiene su techo y el cutover confirmado no puede hacer rollback.
+    @Test func forwardStepPhase_coversTheThreeStepsAndTheFollower() {
         #expect(ForwardStepPhase(phase: .claimingMigration) == .claim)
         #expect(ForwardStepPhase(phase: .assigningIdentity) == .identity)
         #expect(ForwardStepPhase(phase: .cutover(.pending)) == .cutoverPending)
+        #expect(ForwardStepPhase(phase: .waitingForLeader) == .waitingForLeader)
         for phase in MigrationStateMachineTests.allPhases
-        where ![MigrationPhase.claimingMigration, .assigningIdentity, .cutover(.pending)].contains(phase) {
+        where ![MigrationPhase.claimingMigration, .assigningIdentity, .cutover(.pending), .waitingForLeader]
+            .contains(phase) {
             #expect(ForwardStepPhase(phase: phase) == nil, "\(phase)")
         }
     }
 
     /// «Cancelar la activación» se ofrece en las cuatro fases en las que el teléfono sigue intacto y la fase puede
     /// quedarse parada, y en ninguna otra. En positivo: una fase nueva no lo gana por omisión. **El claim, con las dos
-    /// intenciones** desde `adopt-claim-stays-parked-with-no-ceiling`: la salida del adopt ya lleva a volver a entrar.
-    @Test func cancelScope_isTheSnapshotAndTheThreeSteps() {
-        let offering: [MigrationPhase] = [.claimingMigration, .assigningIdentity, .uploadingSnapshot, .cutover(.pending)]
+    /// intenciones** desde `adopt-claim-stays-parked-with-no-ceiling`: la salida del adopt ya lleva a volver a entrar. **Y la
+    /// espera del seguidor** desde `adopt-follower-waits-for-the-leader-with-no-ceiling`: sin ella, un «sí» dado con el claim
+    /// en vuelo se perdía si el claim contestaba `claiming_in_progress`.
+    @Test func cancelScope_isTheSnapshotTheThreeStepsAndTheFollower() {
+        let offering: [MigrationPhase] = [.claimingMigration, .assigningIdentity, .uploadingSnapshot, .cutover(.pending),
+                                          .waitingForLeader]
         for phase in MigrationStateMachineTests.allPhases {
             #expect(ForwardCancelScope.offersCancel(phase) == offering.contains(phase), "\(phase)")
         }
@@ -124,11 +130,13 @@ struct ForwardStepCeilingLogicTests {
 
     // MARK: - El claim de un ADOPT (ticket `adopt-claim-stays-parked-with-no-ceiling`)
 
-    /// Solo el claim, y solo con la intención de adoptar (una fila sin intención se lee así en el runner y el controller).
-    @Test func adoptClaimScope_isTheClaimWithTheAdoptIntent() {
+    /// Solo el claim y la espera del seguidor, y solo con la intención de adoptar (una fila sin intención se lee así en el
+    /// runner y el controller). El seguidor entra desde `adopt-follower-waits-for-the-leader-with-no-ceiling`: sale igual y
+    /// deja la misma marca.
+    @Test func adoptClaimScope_isTheClaimOrTheFollowerWithTheAdoptIntent() {
         for phase in MigrationStateMachineTests.allPhases {
-            #expect(AdoptClaimScope.isAdoptClaim(phase, claimIntent: .adoptIfExisting) == (phase == .claimingMigration),
-                    "\(phase)")
+            #expect(AdoptClaimScope.isAdoptClaim(phase, claimIntent: .adoptIfExisting)
+                    == (phase == .claimingMigration || phase == .waitingForLeader), "\(phase)")
             #expect(!AdoptClaimScope.isAdoptClaim(phase, claimIntent: .migrateOnly), "\(phase) · migrar")
         }
     }
@@ -141,6 +149,8 @@ struct ForwardStepCeilingLogicTests {
         for (cause, notice) in pairs {
             #expect(AdoptClaimScope.notice(phase: .claimingMigration, claimIntent: .adoptIfExisting, observedCause: cause)
                     == notice)
+            #expect(AdoptClaimScope.notice(phase: .waitingForLeader, claimIntent: .adoptIfExisting, observedCause: cause)
+                    == notice, "la espera del seguidor avisa igual")
             #expect(AdoptClaimScope.notice(phase: .claimingMigration, claimIntent: .migrateOnly, observedCause: cause)
                     == nil, "«Migrar» no está en el ticket")
             #expect(AdoptClaimScope.notice(phase: .assigningIdentity, claimIntent: .adoptIfExisting, observedCause: cause)
@@ -259,6 +269,33 @@ struct ForwardStepCeilingLogicTests {
     }
 
 
+    /// **Los textos de la espera del seguidor, en los 16 idiomas** (ticket `adopt-follower-waits-for-the-leader-with-no-ceiling`,
+    /// decisión de Jürgen): propios, traducidos, y ninguno repite el del 22 %, que se leía como parar el otro teléfono.
+    @Test func followerTexts_inEveryLocale_areTheirOwn() throws {
+        let pairs: [(String, String)] = [
+            ("storage.waiting.stopWaiting", "storage.progress.cancelMigration"),
+            ("storage.confirm.stopWaitingTitle", "storage.confirm.cancelMigrationTitle"),
+            ("storage.confirm.stopWaitingBody", "storage.confirm.cancelAdoptBody"),
+            ("storage.confirm.stopWaitingConfirm", "storage.confirm.cancelMigrationConfirm"),
+            ("storage.confirm.stopWaitingKeep", "storage.confirm.cancelMigrationKeep"),
+            ("storage.progress.followerSessionExpired", "storage.progress.adoptSessionExpired"),
+        ]
+        let resources = Self.repoRoot.appendingPathComponent("Yala/Resources")
+        let locales = try FileManager.default.contentsOfDirectory(atPath: resources.path).filter { $0.hasSuffix(".lproj") }
+        #expect(locales.count == 16)
+        for locale in locales {
+            let url = resources.appendingPathComponent("\(locale)/Localizable.strings")
+            let table = try #require(NSDictionary(contentsOf: url) as? [String: String], "\(locale)")
+            for (key, twentyTwo) in pairs {
+                let value = try #require(table[key], "\(locale) · \(key)")
+                #expect(!value.isEmpty && !value.contains("NEEDS_TRANSLATION"), "\(locale) · \(key)")
+                #expect(value != table[twentyTwo], "\(locale) · \(key) repite el texto del 22 %")
+            }
+        }
+        #expect(!L10n.Storage.stopWaiting.hasPrefix("storage."), "clave sin traducir en la corrida")
+        #expect(!L10n.Storage.Progress.followerSessionExpired.hasPrefix("storage."))
+    }
+
     /// El detalle del canario: el paso delante y los dos tramos detrás, con la forma de la subida.
     @Test func waitingCanaryDetail_hasTheStepAndBothClocks() {
         #expect(MetricsService.forwardStepWaitingDetail(
@@ -353,6 +390,27 @@ struct ForwardStepCeilingLogicTests {
         let card = try Self.body(of: "private func progressCard(", in: view)
         #expect(card.contains("} else if let notice = controller.adoptClaimNotice {"))
         #expect(card.contains("Text(adoptClaimNoticeText(notice))"))
+        // La espera del seguidor lleva el mismo aviso y la misma salida con sus palabras (ticket
+        // `adopt-follower-waits-for-the-leader-with-no-ceiling`), y la tarjeta recibe el controller.
+        let waiting = try Self.body(of: "private func waitingCard(", in: view)
+        #expect(waiting.contains("if let notice = controller.adoptClaimNotice {\n                Text(followerNoticeText(notice))"))
+        #expect(waiting.contains("if controller.canStopWaitingForLeader {\n                stopWaitingButton(controller)"))
+        #expect(!waiting.contains("cancelMigrationButton"), "«Cancelar la activación» se leía como parar el otro teléfono")
+        #expect(try Self.source(view).contains("case .waitingForLeader:\n            waitingCard(controller)"))
+        let stop = try Self.body(of: "private func stopWaitingButton(", in: view)
+        for needle in ["YalaSecondaryButton(L10n.Storage.stopWaiting,", "confirmStopWaiting = true",
+                       "isPresented: $confirmStopWaiting", "Button(L10n.Storage.Confirm.stopWaitingConfirm) {",
+                       "Task { await controller.cancelMigration() }",
+                       "Button(L10n.Storage.Confirm.stopWaitingKeep, role: .cancel) {}",
+                       "Text(L10n.Storage.Confirm.stopWaitingBody)"] {
+            #expect(stop.contains(needle), "\(needle)")
+        }
+        let followerNotice = try Self.body(of: "private func followerNoticeText(", in: view)
+        #expect(followerNotice.contains("case .sessionExpired:     return L10n.Storage.Progress.followerSessionExpired"))
+        #expect(try Self.source(view).contains("""
+            .onChange(of: controller?.canStopWaitingForLeader) { _, waiting in
+                        if waiting != true { confirmStopWaiting = false }
+            """))
         let controller = "Yala/Services/CloudSync/CloudMigrationController.swift"
         let reentry = try Self.body(of: "var offersAdoptReentry: Bool", in: controller)
         #expect(reentry.contains("exit: adoptClaimExit, attemptAccountHash: adoptClaimAccountHash,"))
@@ -376,6 +434,8 @@ struct ForwardStepCeilingLogicTests {
         let isAdopt = try Self.body(of: "var isAdoptClaim: Bool", in: controller)
         #expect(isAdopt.contains(
             "!isJournalUnreadable && AdoptClaimScope.isAdoptClaim(journaledPhase, claimIntent: journaledClaimIntent)"))
+        let stopWaiting = try Self.body(of: "var canStopWaitingForLeader: Bool", in: controller)
+        #expect(stopWaiting.contains("canCancelMigration && journaledPhase == .waitingForLeader"))
         let notice = try Self.body(of: "var adoptClaimNotice: AdoptClaimNotice?", in: controller)
         #expect(notice.contains("guard !isJournalUnreadable else { return nil }"))
         #expect(notice.contains(

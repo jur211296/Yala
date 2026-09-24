@@ -50,6 +50,9 @@ struct StorageSettingsView: View {
     @State private var confirmCancelReverse = false
     /// Confirmación de «Cancelar la activación» durante la subida del snapshot de la ida. Mismo molde que la de arriba.
     @State private var confirmCancelMigration = false
+    /// La de «Dejar de esperar», en la espera del seguidor. Aparte de la de arriba: su diálogo dice otra cosa, y con un solo
+    /// flag un diálogo abierto en la espera podía reaparecer en la tarjeta de progreso con el cuerpo de otra fase.
+    @State private var confirmStopWaiting = false
     @State private var showError = false
     /// El aviso de un «Migrar a la nube» que se paró (`CloudMigrationController.migrationIdentityBlock`), copiado para
     /// presentarlo: la hoja no se queda vacía si el controller lo suelta mientras está arriba. El controller lo suelta
@@ -174,6 +177,9 @@ struct StorageSettingsView: View {
         .onChange(of: controller?.canCancelMigration) { _, cancellable in
             if cancellable != true { confirmCancelMigration = false }
         }
+        .onChange(of: controller?.canStopWaitingForLeader) { _, waiting in
+            if waiting != true { confirmStopWaiting = false }
+        }
     }
 
     // MARK: - Contenido por estado
@@ -220,7 +226,7 @@ struct StorageSettingsView: View {
         case .needsRelaunch(let direction):
             relaunchCard(controller, direction)
         case .waitingForLeader:
-            waitingCard()
+            waitingCard(controller)
             // `.waitingForLeader` y `.failed` salen del journal PERSISTIDO: sobreviven al relanzamiento y
             // solo los cierra un reintento con éxito. No son tránsitos como `.migrating`, así que ocultar
             // aquí la sección dejaría sin poder desasociar —indefinidamente— a quien deja una migración
@@ -694,15 +700,57 @@ struct StorageSettingsView: View {
 
     // MARK: - Waiting for leader
 
-    private func waitingCard() -> some View {
-        HStack(spacing: DS.Spacing.lg) {
-            ProgressView()
-            Text(L10n.Storage.waitingForLeader)
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.secondary)
-            Spacer()
+    /// La espera del seguidor: otro dispositivo está activando la nube para esta cuenta. Desde
+    /// `adopt-follower-waits-for-the-leader-with-no-ceiling` (decisiones de Jürgen del 2026-09-23) lleva la salida del 22 %
+    /// del adopt con sus propias palabras: el aviso de la sesión borrada o del 403 en cuanto se ven (`adoptClaimNotice`) y
+    /// «Dejar de esperar». Hasta ese ticket no tenía botones, y con esos dos motivos esperaba para siempre.
+    private func waitingCard(_ controller: CloudMigrationController) -> some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.lg) {
+            HStack(spacing: DS.Spacing.lg) {
+                ProgressView()
+                Text(L10n.Storage.waitingForLeader)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.secondary)
+                Spacer()
+            }
+            if let notice = controller.adoptClaimNotice {
+                Text(followerNoticeText(notice))
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("storage_adopt_claim_notice")
+            }
+            if controller.canStopWaitingForLeader {
+                stopWaitingButton(controller)
+            }
         }
         .storageCardStyle()
+        .accessibilityIdentifier("storage_waiting_leader_card")
+    }
+
+    /// El aviso en la espera: el de la sesión borrada nombra el botón de esta tarjeta («Deja de esperar»), no el del 22 %.
+    private func followerNoticeText(_ notice: AdoptClaimNotice) -> String {
+        switch notice {
+        case .sessionExpired:     return L10n.Storage.Progress.followerSessionExpired
+        case .accountUnavailable: return L10n.Storage.Progress.adoptAccountUnavailable(AppConstants.supportEmail)
+        }
+    }
+
+    /// «Dejar de esperar»: la salida del adopt (`controller.cancelMigration()`, marca `cancelled`) con palabras que son
+    /// verdad para un teléfono que solo espera. El otro dispositivo sigue a lo suyo, y eso lo dice el cuerpo.
+    private func stopWaitingButton(_ controller: CloudMigrationController) -> some View {
+        YalaSecondaryButton(L10n.Storage.stopWaiting, icon: "xmark.circle", isDisabled: controller.isWorking) {
+            confirmStopWaiting = true
+        }
+        .accessibilityIdentifier("storage_stop_waiting_button")
+        .confirmationDialog(L10n.Storage.Confirm.stopWaitingTitle,
+                            isPresented: $confirmStopWaiting, titleVisibility: .visible) {
+            Button(L10n.Storage.Confirm.stopWaitingConfirm) {
+                Task { await controller.cancelMigration() }
+            }
+            Button(L10n.Storage.Confirm.stopWaitingKeep, role: .cancel) {}
+        } message: {
+            Text(L10n.Storage.Confirm.stopWaitingBody)
+        }
     }
 
     // MARK: - Journal ilegible

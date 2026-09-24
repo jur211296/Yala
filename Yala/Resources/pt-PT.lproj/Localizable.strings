@@ -5339,6 +5339,12 @@
 "storage.confirm.cancelMigrationBody" = "Os seus dados continuam neste dispositivo, como até agora. O que já foi enviado fica na sua conta na nuvem. Pode tentar novamente quando quiser.";
 "storage.confirm.cancelAdoptBody" = "Este dispositivo não alterou nada do que tem na nuvem. Pode voltar a ativar a nuvem neste dispositivo a partir daqui quando quiser.";
 "storage.confirm.cancelAdoptEffectBody" = "O que tem neste dispositivo continua aqui, como até agora. Pode voltar a ativar a nuvem neste dispositivo a partir daqui quando quiser.";
+"storage.waiting.stopWaiting" = "Deixar de esperar";
+"storage.confirm.stopWaitingTitle" = "Deixar de esperar?";
+"storage.confirm.stopWaitingBody" = "O seu outro dispositivo continua a ativar a nuvem. Este deixa de esperar sem alterar nada do que tem na nuvem, e pode voltar a ativar a nuvem neste dispositivo a partir daqui quando quiser.";
+"storage.confirm.stopWaitingConfirm" = "Sim, deixar de esperar";
+"storage.confirm.stopWaitingKeep" = "Continuar à espera";
+"storage.progress.followerSessionExpired" = "A sua sessão na nuvem já não é válida. Deixe de esperar e volte a iniciar sessão com a sua conta.";
 /* Botón que confirma cancelar la activación */
 "storage.confirm.cancelMigrationConfirm" = "Sim, cancelar";
 /* Botón que sigue con la activación */
