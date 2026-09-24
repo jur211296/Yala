@@ -75,6 +75,7 @@ enum StorageFailureCopyLogic {
             case .accountUnavailable, .refused:  return L10n.Storage.Failed.snapshotAccountUnavailable(supportEmail)
             case .otherDevice:                   return L10n.Storage.Failed.stepOtherDevice
             case .localFailure:                  return L10n.Storage.Failed.snapshotLocalFailure
+            case .lineageUnproven:               return forwardLineageMessage
             }
         }
         // C-1: copy del fallo por MOTIVO. El veredicto del canal iCloud sobrevive en el journal a `failedRollback`
@@ -108,6 +109,17 @@ enum StorageFailureCopyLogic {
         case .cancelled:          return nil
         }
     }
+
+    /// El texto de la salida por LINAJE de la ida (ticket `migration-takeover-uploads-without-a-lineage-check`): un relevo
+    /// cuyo corpus no comparte ninguna fila con lo que otro dispositivo ya subió a esa cuenta. Vive aparte por lo mismo que
+    /// `adoptExitMessage`: lo leen esta tarjeta y la bienvenida, a la que se llega por el claim de un adopt que recibe el
+    /// relevo. Dice «lo que tienes en este dispositivo sigue aquí», no «tus datos siguen aquí»: en la bienvenida el
+    /// teléfono puede estar recién instalado. No culpa a «otro dispositivo»: los datos de la cuenta pueden ser de un intento
+    /// anterior de este mismo. Las dos acciones que nombra se pueden recorrer: comprobar con qué cuenta se entra, y esperar a
+    /// iCloud y reintentar, que vuelve a comprobar el linaje —el teléfono del mismo iCloud cuyos datos aún no habían llegado
+    /// pasa entonces—. No promete «termínala desde
+    /// el otro dispositivo», que pasa por el lease de éste y por un «otro dispositivo tomó el relevo» en aquél.
+    static var forwardLineageMessage: String { L10n.Storage.Failed.stepLineageUnproven }
 
     /// El aviso del adopt de Almacenamiento que paró antes del claim (ticket
     /// `settings-adopt-stalled-before-the-claim-keeps-the-session`). Casi siempre es la espera de iCloud, que venció, y

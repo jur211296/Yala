@@ -6099,3 +6099,6 @@
 
 /* Ver qué migraría: los conteos no se pudieron leer */
 "storage.migrate.previewUnreadable" = "データを数えられませんでした。少し待ってからもう一度お試しください。";
+
+/* Storage failure card: another device had already started uploading to this account and this device's data does not share lineage with it */
+"storage.failed.stepLineageUnproven" = "クラウドを有効にできませんでした。そのアカウントにはすでにクラウド上のデータがあり、この端末のデータとは一致しないため、まとめませんでした。この端末のデータはこれまでどおり残っています。正しいアカウントでサインインしているか確認してください。ご自身のアカウントで、この端末が同じiCloudを使っている場合は、iCloudがデータを取り込み終えるまで待ってから、もう一度お試しください。";

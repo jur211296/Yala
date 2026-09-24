@@ -105,6 +105,37 @@ struct CloudAccountClientTests {
         #expect(await client.claim(jwt: "j", deviceID: "d", provider: "apple") == .success(.claimingInProgress))
     }
 
+    // MARK: - claim: la pista de g16_03 (ticket `migration-takeover-uploads-without-a-lineage-check`)
+
+    /// `has_personal_writes` viaja solo en `created`, con los dos valores y ausente (un servidor sin g16_03). El `ClaimOutcome`
+    /// de siempre no cambia: la pista va al lado. Los fixtures copian el JSON literal que el banco del SQL mide.
+    @Test(arguments: [
+        (#"{"state":"created","has_personal_writes":true,"kind":"complete"}"#, true as Bool?),
+        (#"{"state":"created","has_personal_writes":false,"kind":"complete"}"#, false as Bool?),
+        (#"{"state":"created","kind":"complete"}"#, nil as Bool?),
+    ])
+    func claimReportingPersonalWrites_created_carriesTheHint(body: String, expected: Bool?) async {
+        let stub = AccountStubHTTP(status: 200, body: Data(body.utf8))
+        let client = CloudAccountClient(baseURL: base, urlSession: stub)
+        let result = await client.claimReportingPersonalWrites(jwt: "j", deviceID: "d", provider: "apple", migration: true)
+        #expect(result.outcome == .success(.created))
+        #expect(result.personalWrites == expected)
+        #expect(await client.claim(jwt: "j", deviceID: "d", provider: "apple") == .success(.created))
+    }
+
+    /// Otro desenlace no trae pista, aunque el cuerpo la lleve: la pista solo describe un `created`.
+    @Test func claimReportingPersonalWrites_notCreated_hasNoHint() async {
+        let stub = AccountStubHTTP(status: 200, body: Data(#"{"state":"existing_stable","has_personal_writes":true}"#.utf8))
+        let client = CloudAccountClient(baseURL: base, urlSession: stub)
+        let result = await client.claimReportingPersonalWrites(jwt: "j", deviceID: "d", provider: "apple")
+        #expect(result.outcome == .success(.existingStable))
+        #expect(result.personalWrites == nil)
+
+        let failing = CloudAccountClient(baseURL: base, urlSession: AccountStubHTTP(status: 500))
+        let failed = await failing.claimReportingPersonalWrites(jwt: "j", deviceID: "d", provider: "apple")
+        #expect(failed.personalWrites == nil)
+    }
+
     @Test func claim_401_sessionExpired() async {
         let body = Data(#"{"error":{"message":"JWT inválido","type":"yala_attest_invalid","param":null,"code":"yala_attest_invalid"}}"#.utf8)
         let stub = AccountStubHTTP(status: 401, body: body)

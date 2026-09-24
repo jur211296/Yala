@@ -758,16 +758,18 @@ struct MigrationJournalUnreadableWiringTests {
 
     /// El poll del adopt del Welcome no pinta nada con `nil` (el journal no se dejó leer en ese tick), y el reintento
     /// manual solo re-arranca el adopt desde `.idle` — y desde `welcome-adopt-effect-failure-has-no-reason-and-no-cancel`,
-    /// sin una cancelación pedida. El mapeo recibe además la marca del adopt, que elige el texto del fallo.
+    /// sin una cancelación pedida. El mapeo recibe además la marca del adopt, que elige el texto del fallo, y desde
+    /// `migration-takeover-uploads-without-a-lineage-check` el motivo del paso de la ida (la salida por linaje del relevo).
     @Test func welcomeAdopt_pollKeepsTheScreenOnAnUnreadableTick() throws {
         let view = "Yala/App/Views/Onboarding/WelcomeCloudSignInView.swift"
         let poll = Self.lines(try Self.body(of: "private func pollAdoptProgress() async {", in: view))
         let start = try #require(poll.firstIndex(of: "guard let next = CloudWelcomeSignInFlow.phase("))
-        #expect(Array(poll[start..<(start + 12)]) == [
+        #expect(Array(poll[start..<(start + 13)]) == [
             "guard let next = CloudWelcomeSignInFlow.phase(",
             "for: controller.uiState,",
             "claimBlocker: controller.claimBlocker,",
-            "adoptClaimExit: controller.adoptClaimExit) else {",
+            "adoptClaimExit: controller.adoptClaimExit,",
+            "forwardStepExit: controller.forwardStepExitReason) else {",
             "await evaluateAutoResume(controller: controller, screenPhase: phase)",
             "do {",
             "try await Task.sleep(for: .seconds(1))",
@@ -777,7 +779,7 @@ struct MigrationJournalUnreadableWiringTests {
             "continue",
             "}",
         ])
-        #expect(poll[start + 12] == "phase = next")
+        #expect(poll[start + 13] == "phase = next")
         let retry = Self.lines(try Self.body(of: "private func retryAdoptResume() async {", in: view))
         #expect(retry.contains("if case .idle = controller.uiState, !cancelRequested {"))
     }

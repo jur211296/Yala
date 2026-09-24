@@ -169,6 +169,15 @@ final class CloudAccountClient {
         /// consume `provider` (red post-claim sub-first — breadcrumb, jamás alerta). `ClaimOutcome`
         /// NO cambia de shape.
         let profile: ClaimProfile?
+        /// ADITIVO (g16_03, ticket `migration-takeover-uploads-without-a-lineage-check`): en toda respuesta `created`, si la
+        /// cuenta ya recibió alguna escritura personal (hay fila en `sync_seq_counters`). **Opcional** por lo mismo que `kind`
+        /// en `/account/exists`: un servidor sin g16_03 contesta sin el campo, y eso no puede tumbar el decode.
+        let hasPersonalWrites: Bool?
+
+        enum CodingKeys: String, CodingKey {
+            case state, profile
+            case hasPersonalWrites = "has_personal_writes"
+        }
     }
 
     private struct ClaimProfile: Decodable {
@@ -197,6 +206,18 @@ final class CloudAccountClient {
     /// (§g.1) — SOLO la rama de migración lo pasa; born-cloud/exists usan `false` (default). NO envía
     /// header de attest (el gate de cuenta no lo exige). NUNCA lanza — traduce todo a `ClaimOutcome`.
     func claim(jwt: String, deviceID: String, provider: String, migration: Bool = false) async -> ClaimOutcome {
+        await claimReportingPersonalWrites(jwt: jwt, deviceID: deviceID, provider: provider, migration: migration).outcome
+    }
+
+    /// El mismo `POST /account/claim`, con la pista de g16_03 al lado: `personalWrites` es `has_personal_writes` de un
+    /// `created` —la cuenta ya recibió alguna escritura personal—, y `nil` si la respuesta no lo trae (un servidor sin
+    /// g16_03, o un desenlace que no es `created`). Lo usa la migración para saber si un `created` puede caer sobre datos
+    /// de otro dispositivo —el relevo de un líder callado— y hay que comprobar el linaje antes de subir (ticket
+    /// `migration-takeover-uploads-without-a-lineage-check`). Va aparte para no cambiar la forma de `ClaimOutcome`, que
+    /// comparten born-cloud y la migración. `/account/claim` es `requireUser`: sin attest, como `claim`.
+    func claimReportingPersonalWrites(
+        jwt: String, deviceID: String, provider: String, migration: Bool = false
+    ) async -> (outcome: ClaimOutcome, personalWrites: Bool?) {
         var request = URLRequest(url: baseURL.appendingPathComponent("account/claim"))
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -206,7 +227,7 @@ final class CloudAccountClient {
                 withJSONObject: ["device_id": deviceID, "provider": provider, "migration": migration]
             )
         } catch {
-            return .transient(detail: "encode failed")
+            return (.transient(detail: "encode failed"), nil)
         }
 
         let data: Data
@@ -214,10 +235,10 @@ final class CloudAccountClient {
         do {
             (data, response) = try await urlSession.data(for: request)
         } catch {
-            return .transient(detail: "network: \(error.localizedDescription)")
+            return (.transient(detail: "network: \(error.localizedDescription)"), nil)
         }
         guard let http = response as? HTTPURLResponse else {
-            return .transient(detail: "non-HTTP response")
+            return (.transient(detail: "non-HTTP response"), nil)
         }
 
         switch http.statusCode {
@@ -227,7 +248,7 @@ final class CloudAccountClient {
                 let rawState = decoded.state,
                 let state = Self.decodeState(rawState)
             else {
-                return .transient(detail: "HTTP 200 undecodable: \(Self.bodyString(data))")
+                return (.transient(detail: "HTTP 200 undecodable: \(Self.bodyString(data))"), nil)
             }
             // Red post-claim SUB-FIRST (sesión 2, H4): post-claim el sub es EL MISMO por
             // construcción (claim JWT-scoped) ⇒ un `profile.provider` distinto es identity-linking
@@ -237,13 +258,13 @@ final class CloudAccountClient {
                    profileProvider: profileProvider, sessionProvider: provider) {
                 CloudSyncBreadcrumb.claimProfileProviderDiffers(profileProvider: profileProvider)
             }
-            return .success(state)
+            return (.success(state), state == .created ? decoded.hasPersonalWrites : nil)
         case 401:
-            return .sessionExpired(detail: "HTTP 401: \(Self.bodyString(data))")
+            return (.sessionExpired(detail: "HTTP 401: \(Self.bodyString(data))"), nil)
         case 403:
-            return .accountUnavailable(detail: "HTTP 403: \(Self.bodyString(data))")
+            return (.accountUnavailable(detail: "HTTP 403: \(Self.bodyString(data))"), nil)
         default:
-            return .transient(detail: "HTTP \(http.statusCode): \(Self.bodyString(data))")
+            return (.transient(detail: "HTTP \(http.statusCode): \(Self.bodyString(data))"), nil)
         }
     }
 

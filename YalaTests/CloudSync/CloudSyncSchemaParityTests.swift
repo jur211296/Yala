@@ -219,6 +219,7 @@ struct CloudSyncSchemaParityTests {
             "forwardStepExitReasonRaw",
             "adoptClaimExitRaw",
             "adoptClaimAccountHash",
+            "forwardLineageUnverified",
             "adoptEffectStallProgressAt",
             "adoptEffectStallDefinitiveAt",
             "adoptEffectStallDefinitiveAccruedSeconds",
@@ -229,7 +230,7 @@ struct CloudSyncSchemaParityTests {
         #expect(propertyNames(MigrationState.self) == expected)
     }
 
-    @Test func migrationState_schemaVersion_isFifteen() {
+    @Test func migrationState_schemaVersion_isSixteen() {
         // Subió a 2 en I11-2 al añadir el campo aditivo `reverseOriginRaw`; a 3 en C-1 con
         // `markerWrittenSince` (reloj del tope del paso 4) + `cutoverICloudVerdictRaw` (veredicto del canal
         // iCloud), ambos ADITIVOS y opcionales → una fila escrita por un build v2 sigue abriéndose. A 4 con los
@@ -271,7 +272,10 @@ struct CloudSyncSchemaParityTests {
         // de «cualquier motivo definitivo»), opcionales: una fila v14 a mitad de espera se abre sin nada acumulado, y el
         // techo corto le cuenta desde la primera observación de este build con un motivo definitivo (ticket
         // `reverse-upload-ceiling-charges-a-wait-to-whoever-stops-it-last`).
-        #expect(CloudSyncSchemaVersions.migrationState == 15)
+        // A 16 con `forwardLineageUnverified` (la identidad comprueba el linaje antes de subir), opcional: una fila v15
+        // parada en la identidad se abre con `nil`, que COMPRUEBA — falla cerrado (ticket
+        // `migration-takeover-uploads-without-a-lineage-check`).
+        #expect(CloudSyncSchemaVersions.migrationState == 16)
     }
 
     /// **Los SIETE campos del techo de `reverseUpload` se limpian juntos** (`clearReverseUploadCeiling()`), con la

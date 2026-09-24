@@ -1299,6 +1299,13 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSyncAdopt reconcileLineageUnproven pending=\(pending, privacy: .public) — sin marcador de la cuenta en local; upload bloqueado (linaje)")
     }
 
+    /// La comprobación de linaje de la IDA (ticket `migration-takeover-uploads-without-a-lineage-check`): un claim `created`
+    /// sobre una cuenta que ya recibió datos personales —el relevo de un líder callado— cruza las filas vivas del backend con
+    /// el inventario local antes de subir. `verdict` = `proven` · `noLiveRows` · `unproven`. Sin PII: solo conteos.
+    static func forwardLineageChecked(verdict: String, liveRows: Int, sharedRows: Int) {
+        logger.notice("CloudSyncMigration forwardLineage verdict=\(verdict, privacy: .public) live=\(liveRows, privacy: .public) shared=\(sharedRows, privacy: .public)")
+    }
+
     /// DIFERIDOS #30 (guard anti mass-upload): la enumeración del backend llegó VACÍA (verificada completa
     /// contra merkle) teniendo el device huérfanas locales y/o filas sin identidad → NO se sube ni se muta
     /// nada — el guard corre ANTES del backfill (un adopt legítimo `existing_stable` implica backend POBLADO;

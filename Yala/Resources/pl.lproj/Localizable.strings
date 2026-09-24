@@ -6099,3 +6099,6 @@
 
 /* Ver qué migraría: los conteos no se pudieron leer */
 "storage.migrate.previewUnreadable" = "Nie udało się policzyć Twoich danych. Spróbuj ponownie za chwilę.";
+
+/* Storage failure card: another device had already started uploading to this account and this device's data does not share lineage with it */
+"storage.failed.stepLineageUnproven" = "Nie udało się włączyć chmury: to konto ma już dane w chmurze, a dane z tego urządzenia do nich nie pasują, więc ich nie połączyliśmy. To, co masz na tym urządzeniu, nadal tu jest. Sprawdź, czy logujesz się na właściwe konto. Jeśli to Twoje konto, a to urządzenie korzysta z tego samego iCloud, poczekaj, aż iCloud skończy przenosić Twoje dane, i spróbuj ponownie.";
