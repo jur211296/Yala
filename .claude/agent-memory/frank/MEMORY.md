@@ -19,6 +19,7 @@
 - [Un fail-closed sin reintento es permanente](feedback_un_fail_closed_sin_reintento_es_permanente.md) — el motor `.idle` que nadie re-evalúa: busca quién vuelve a preguntar.
 - [Un case nuevo hereda cada `!=` del repo](feedback_un_case_nuevo_hereda_cada_distinto_de.md) — `uiState != .idle` coló `.journalUnreadable` como «dentro».
 - [Tipar un desenlace despierta defensas DORMIDAS](feedback_tipar_un_desenlace_despierta_defensas_dormidas.md) — el 401 del Merkle.
+- [La huella se ata al que ENTRA, no a la respuesta](feedback_la_huella_se_ata_al_que_entra.md) — sellé en `existing_stable` y «Activar Yala completo» choca con la misma respuesta.
 - [El copy lo elige quien PRODUJO el motivo](feedback_el_copy_lo_elige_quien_produjo_el_motivo.md) — y la clasificación también; y el testigo se lee antes del `await` que lo caduca.
 - [El estado compartido no es testigo de su rama](feedback_el_estado_compartido_no_es_testigo_de_su_rama.md) — un campo lo enciende 1 sitio y lo apagan 13; cuenta escritores antes de…
 - [Mi rollback quita lo que otros leían](feedback_mi_rollback_quita_lo_que_otros_leian.md) — un fetch ve lo sucio; deshacerlo cegó al guard D-1 del pull.
