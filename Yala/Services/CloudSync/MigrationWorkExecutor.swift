@@ -238,7 +238,8 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     /// Inyectable para tests (nunca `.standard` directo en tests — regla del repo).
     private let storageDefaults: UserDefaults
     /// Ventana mínima entre heartbeats del lease (I14-pre). El runner llama `sendLeaseHeartbeatIfDue()` por
-    /// PROGRESO (por página del snapshot, por drain de la reversa); este throttle lo capa a 1 request/ventana.
+    /// PROGRESO en la vuelta a iCloud (drenaje, `reverseUpload`); este throttle lo capa a 1 request/ventana. Es también lo
+    /// que dura una confirmación de la puerta de la ida (`confirmMigrationLease`), que pregunta antes de cada página.
     private let heartbeatInterval: TimeInterval
     /// Señal de quiescencia del import CloudKit para el flujo de ADOPT (#30, I14). El adopt persiste `.cloud`
     /// sobre un store que se está importando → DEBE correr solo con el import asentado (contrato de
@@ -277,6 +278,16 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     /// a lo sumo UN heartbeat extra por relanzamiento (idempotente, 1 request). Se arma también en rechazo/red
     /// para no martillar el endpoint por-página cuando el server rechaza o la red está caída.
     private var lastHeartbeatAt: Date?
+    /// La última confirmación del lease de la ida (`confirmMigrationLease`). La comparten la puerta —que la exige de menos
+    /// de 60 s para empezar una página— y el uploader y `verify`, que la exigen de menos de `leaseInFlightBudget` antes de
+    /// cada trozo del push y del pull: una página son varios trozos, y la app congelada entre dos no vuelve a pasar por la
+    /// puerta.
+    private let leaseWitness: MigrationLeaseWitness
+
+    /// Lo que puede tener una confirmación del lease para que un trozo de una página ya empezada todavía salga. 30 min: la
+    /// mitad del lease, así que nadie puede haber tomado el relevo, y de sobra para que una página lenta no se corte sola
+    /// (los 60 s de la puerta sí la cortarían).
+    static let leaseInFlightBudget: Duration = .seconds(1800)
 
     /// Key del flag `relaunchRequested` (§g.4 paso 4). iOS no se auto-relanza; el relaunch asistido es
     /// I14. ALIAS de `StorageModePersistence.mirrorOffArmedKey` (SERIO 1): este flag es TAMBIÉN el
@@ -312,6 +323,7 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         storageDefaults: UserDefaults = .standard,
         snapshotPageSize: Int = 200,
         heartbeatInterval: TimeInterval = 60,
+        leaseClock: @escaping () -> ContinuousClock.Instant = { ContinuousClock.now },
         reverseTombstoneSource: ReverseTombstoneSource? = nil,
         adoptQuiescenceSignal: @escaping () -> Bool = { true },
         claimStore: CloudClaimActionStore? = nil,
@@ -337,6 +349,8 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         self.personalStoreURL = personalStoreURL ?? SwiftDataConfiguration.personalConfiguration.url
         self.storageDefaults = storageDefaults
         self.heartbeatInterval = heartbeatInterval
+        let leaseWitness = MigrationLeaseWitness(clock: leaseClock)
+        self.leaseWitness = leaseWitness
         self.adoptQuiescenceSignal = adoptQuiescenceSignal
         self.claimStore = claimStore ?? .shared
         // C-1: defaults MainActor-aislados resueltos en el CUERPO (los default args son nonisolated, mismo
@@ -353,7 +367,8 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         self.uploader = MigrationSnapshotUploader(
             engine: engine, pushClient: pushClient, context: context,
             calendar: calendar, now: now, pageSize: snapshotPageSize,
-            canRenewSession: { [session] in session.canRenewSession })
+            canRenewSession: { [session] in session.canRenewSession },
+            leaseStillConfirmed: { leaseWitness.isConfirmed(within: MigrationWorkExecutor.leaseInFlightBudget) })
         self.tombstoneSource = reverseTombstoneSource ?? pullClient
     }
 
@@ -617,7 +632,15 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     /// el Merkle. Hasta ese día el push y el pull separaban su 401 y su 403 y el Merkle los aplanaba, así que el 403
     /// que empieza justo ENTRE el pull y el Merkle —la ventana que quedaba— salía de aquí como red y la vuelta lo
     /// esperaba 72 h. Ahora los tres pasos contestan con el mismo vocabulario.
-    func verify() async -> VerifyProbe {
+    ///
+    /// **`underMigrationLease`: la ida pasa `true`** (ticket `displaced-migration-leader-keeps-uploading-after-a-takeover`).
+    /// Entonces el push corta antes de cada trozo, y el pull no se pide, si la confirmación del lease tiene más de
+    /// `leaseInFlightBudget`: la puerta del runner preguntó al empezar, y la app congelada a mitad subiría o traería el
+    /// corpus de quien tomó el relevo. Sale como red. La vuelta a iCloud pasa `false`: su lease lo guardan freeze y complete.
+    func verify(underMigrationLease: Bool = false) async -> VerifyProbe {
+        let leaseStillConfirmed: @MainActor () -> Bool = { [leaseWitness] in
+            !underMigrationLease || leaseWitness.isConfirmed(within: MigrationWorkExecutor.leaseInFlightBudget)
+        }
         // Pre-check TOCTOU: drenar + subir si hay filas vivas ANTES de verificar. Partición poison (#26,
         // fix del review adversarial — simetría con el uploader): una fila no-construible se AÍSLA como
         // dead-letter (el mismatch que provoca consume presupuesto de MISMATCH → degrada honesto a
@@ -640,7 +663,7 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         let (live, poison) = pushClient.partitionBuildable(allLive)
         engine.deadLetterPoison(poison, context: context, now: now())
         if !live.isEmpty {
-            switch await pushClient.push(live) {
+            switch await pushClient.push(live, continueWhile: leaseStillConfirmed) {
             case .completed(let results):
                 await pushClient.applyResults(results, rows: live, engine: engine, context: context)
                 // Si tras el push quedan filas VIVAS → red (transient); si el outbox quedó limpio → un delta
@@ -667,6 +690,11 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
 
         // pullAndApplyOnce ANTES de verifyIntegrity: marca `lastPullCycleCompleted` (cuenta fresca = pull
         // vacío; re-verify = trae de vuelta nuestras propias filas, LWW no-op material). Pull transient → red.
+        // Con la confirmación del lease caducada no se pide: traería a este store el corpus de quien tomó el relevo.
+        guard leaseStillConfirmed() else {
+            CloudSyncBreadcrumb.migrationLeaseUnconfirmed(reason: "verify-before-pull")
+            return .networkTimeout
+        }
         switch await engine.pullAndApplyOnce(using: pullClient, context: context, now: now()) {
         case .completed:
             break
@@ -1452,8 +1480,10 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     /// BEST-EFFORT ABSOLUTO — la firma NO lanza (garantía de compilador) y NUNCA altera el outcome del paso
     /// que lo invoca: esa propiedad es lo que hace SEGURO commitear el cliente ANTES de desplegar la acción al
     /// RPC (pre-deploy el Worker devuelve 400/el RPC no la entiende → breadcrumb y sigue). Un `other_leader`
-    /// aquí NO corta el paso: el guard REAL del lease vive en cutover/freeze/complete (cortar aquí duplicaría
-    /// la lógica de usurpación con una señal débil).
+    /// aquí NO corta el paso. **En la ida ya no la llama nadie** desde el ticket
+    /// `displaced-migration-leader-keeps-uploading-after-a-takeover`: la subida pasa por `confirmMigrationLease`, que late
+    /// con la misma cadencia y SÍ lee la respuesta. Queda para la vuelta a iCloud (el drenaje y `reverseUpload`), donde
+    /// el guard del lease sigue viviendo en freeze/complete.
     ///
     /// Throttle: el runner llama por-página, pero solo se emite a lo sumo un request por `heartbeatInterval`.
     /// El throttle se arma para CUALQUIER outcome (incluida red caída) — evita martillar el endpoint cuando el
@@ -1475,6 +1505,50 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
             CloudSyncBreadcrumb.migrationLeaseHeartbeatRejected(reason: "sessionExpired")
         case .transient:
             CloudSyncBreadcrumb.migrationLeaseHeartbeatRejected(reason: "transient")
+        }
+    }
+
+    /// La PUERTA del lease de la ida (ticket `displaced-migration-leader-keeps-uploading-after-a-takeover`). El runner la
+    /// llama antes de cada página de la subida y de cada verificación, y solo sube con `.held`.
+    ///
+    /// **Una confirmación vale una ventana (`heartbeatInterval`, 60 s)** contada desde que se PIDIÓ: el servidor estampa el
+    /// lease después de recibir la pregunta, así que nadie puede tomar el relevo antes de 60 min desde ese instante, y 60 s
+    /// dejan 59 min de margen a la página que sale detrás. Fuera de la ventana pregunta en el acto, sin throttle: el de
+    /// `sendLeaseHeartbeatIfDue` se arma también con un rechazo, y aquí un rechazo no puede silenciar la pregunta siguiente.
+    ///
+    /// **`not_in_progress` es `.lost`**, no un rechazo cualquiera: el RPC mira «¿hay migración en curso?» antes que
+    /// «¿quién lidera?», así que es lo que recibe este teléfono cuando quien tomó el relevo ya terminó. En la subida no
+    /// llega por otro camino: la migración la abrió el claim de este mismo teléfono, y solo otro la cierra.
+    ///
+    /// La sesión se lee DESPUÉS de pedir el token, como en el resto del ejecutor: el SDK la borra dentro de la renovación.
+    func confirmMigrationLease() async -> MigrationLeaseCheck {
+        if leaseWitness.isConfirmed(within: .seconds(heartbeatInterval)) {
+            return .held
+        }
+        guard let jwt = await session.accessToken(), !jwt.isEmpty else {
+            let renewable = session.canRenewSession
+            CloudSyncBreadcrumb.migrationLeaseUnconfirmed(reason: renewable ? "noToken" : "sessionExpired")
+            return renewable ? .unconfirmed : .sessionExpired
+        }
+        let askedAt = leaseWitness.now()
+        switch await accountClient.migrationProgress(jwt: jwt, deviceID: deviceID, action: "heartbeat") {
+        case .ok:
+            leaseWitness.confirm(askedAt: askedAt)
+            CloudSyncBreadcrumb.migrationLeaseHeartbeat()
+            return .held
+        case .otherLeader:
+            CloudSyncBreadcrumb.migrationLeaseHeartbeatRejected(reason: "otherLeader")
+            return .lost
+        case .rejected(let reason):
+            CloudSyncBreadcrumb.migrationLeaseHeartbeatRejected(reason: reason)
+            return reason == "not_in_progress" ? .lost : .unconfirmed
+        case .sessionExpired:
+            let renewable = session.canRenewSession
+            CloudSyncBreadcrumb.migrationLeaseUnconfirmed(reason: renewable ? "http401" : "sessionExpired")
+            return renewable ? .unconfirmed : .sessionExpired
+        case .transient:
+            CloudSyncBreadcrumb.migrationLeaseUnconfirmed(reason: "transient")
+            return .unconfirmed
         }
     }
 
@@ -1979,5 +2053,29 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
             inputs.append(MigrationSnapshotUploader.makeSnapshotRowInput(
                 model: model, syncID: sid, emission: emission, className: className, calendar: calendar))
         }
+    }
+}
+
+/// La última confirmación del lease de la ida, por REFERENCIA: la escribe la puerta (`confirmMigrationLease`) y la leen el
+/// uploader y `verify` antes de cada trozo (ticket `displaced-migration-leader-keeps-uploading-after-a-takeover`). Guarda el
+/// instante en que se PREGUNTÓ —el servidor estampa el lease después de recibir la pregunta— con `ContinuousClock`, que
+/// sigue contando con el teléfono en reposo y no se mueve si cambian la hora. IN-MEMORY: tras relanzar, la primera página
+/// vuelve a preguntar. Solo la escribe un `ok`; una confirmación vieja deja de valer por el reloj, sin borrarla.
+final class MigrationLeaseWitness {
+    private let clock: () -> ContinuousClock.Instant
+    private var confirmedAt: ContinuousClock.Instant?
+
+    init(clock: @escaping () -> ContinuousClock.Instant) {
+        self.clock = clock
+    }
+
+    func now() -> ContinuousClock.Instant { clock() }
+
+    func confirm(askedAt: ContinuousClock.Instant) { confirmedAt = askedAt }
+
+    /// `false` sin confirmación: nadie ha preguntado todavía.
+    func isConfirmed(within window: Duration) -> Bool {
+        guard let confirmedAt else { return false }
+        return clock() - confirmedAt < window
     }
 }

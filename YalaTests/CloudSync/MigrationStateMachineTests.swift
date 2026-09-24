@@ -1408,6 +1408,27 @@ struct MigrationStateMachineTests {
         }
     }
 
+    // MARK: - El lease perdido (ticket `displaced-migration-leader-keeps-uploading-after-a-takeover`)
+
+    /// Desde la subida y desde la verificación de la ida, el lease perdido sale EN EL ACTO a `failedRollback` con
+    /// `[.rollback]`: sin techo, porque ninguna espera devuelve el lease.
+    @Test func migrationLeaseLost_leavesAtOnceFromUploadAndVerify() {
+        for phase in [Phase.uploadingSnapshot, .verifying] {
+            let out = step(phase, .migrationLeaseLost)
+            #expect(out.next == .failedRollback, "\(phase)")
+            #expect(out.effects == [.rollback], "\(phase)")
+        }
+    }
+
+    /// Solo desde esas dos. El `cutover(.pending)` conserva el techo de su paso para el mismo `other_leader`, y desde
+    /// `.serverConfirmed` manda «el cutover jamás hace rollback»: un lease perdido que llegara ahí no puede sacar a nadie.
+    @Test func migrationLeaseLost_isInvalidOutsideUploadAndVerify() {
+        for phase in Self.allPhases where phase != .uploadingSnapshot && phase != .verifying {
+            #expect(MigrationStateMachine.transition(from: phase, event: .migrationLeaseLost)
+                    == .invalid(from: phase, event: .migrationLeaseLost), "\(phase)")
+        }
+    }
+
     /// Los números son la decisión de Jürgen del 2026-09-22: los mismos que el resto de techos de la familia.
     @Test func snapshotBudgets_defaultsArePinnedProductDecision() {
         #expect(MigrationPolicy.default.snapshotCauseBudgetSeconds == 900)          // 15 min

@@ -1276,11 +1276,29 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSyncMigration leaseHeartbeat — migration_updated_at refrescado (lease vivo)")
     }
 
-    /// I14-pre: el heartbeat NO aplicó (otherLeader/rejected/401/red) — BEST-EFFORT, NO corta el paso (el
-    /// guard real del lease vive en cutover/freeze/complete). `reason` sin PII. Pre-deploy del RPC un
-    /// `bad_action`/400 cae aquí como ruido esperado (documentado en qa/cloud/README).
+    /// El latido NO aplicó (otherLeader/rejected). En la vuelta (`sendLeaseHeartbeatIfDue`) es best-effort y no corta el
+    /// paso; en la ida lo emite también la puerta del lease (`confirmMigrationLease`), y ahí `otherLeader` y
+    /// `not_in_progress` SÍ sacan al líder (su propio rastro: `migrationLeaseLost`). `reason` sin PII.
     static func migrationLeaseHeartbeatRejected(reason: String) {
-        logger.notice("CloudSyncMigration leaseHeartbeatRejected reason=\(reason, privacy: .public) — best-effort, no corta el paso")
+        logger.notice("CloudSyncMigration leaseHeartbeatRejected reason=\(reason, privacy: .public)")
+    }
+
+    /// La puerta del lease de la ida no pudo confirmarlo y la pasada no sube (ticket
+    /// `displaced-migration-leader-keeps-uploading-after-a-takeover`). `reason` = el desenlace del latido, sin PII.
+    static func migrationLeaseUnconfirmed(reason: String) {
+        logger.notice("CloudSyncMigration leaseUnconfirmed reason=\(reason, privacy: .public) — la pasada no sube")
+    }
+
+    /// El push de la migración paró ANTES de un chunk porque su llamador dejó de poder confirmar el lease
+    /// (`SyncPushClient.push(_:continueWhile:)`). `sent` = deltas ya enviados; `pending` = del lote.
+    static func pushStoppedBeforeChunk(sent: Int, pending: Int) {
+        logger.notice("CloudSyncMigration pushStoppedBeforeChunk sent=\(sent, privacy: .public) pending=\(pending, privacy: .public) — la confirmación del lease ya no vale")
+    }
+
+    /// El líder de la ida perdió el lease (`other_leader`/`not_in_progress`) y SALE sin subir nada más. `step` = dónde se
+    /// vio (`upload` | `verify`).
+    static func migrationLeaseLost(step: String) {
+        logger.notice("CloudSyncMigration leaseLost step=\(step, privacy: .public) — otro dispositivo lidera, sale a failedRollback")
     }
 
     // MARK: Adopt-reconcile (DIFERIDOS #30, mecanismo v1 DARK) — sin PII (solo conteos)

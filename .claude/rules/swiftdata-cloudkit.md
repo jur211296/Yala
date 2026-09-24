@@ -542,8 +542,40 @@ paths:
   líder, así que toda entrada suya recibe `created` y vuelve a comprobar; el legítimo bloqueado en falso (un import lento,
   un `shortcutID` que cada dispositivo reparó por su cuenta) pasa cuando sus datos llegan. Se probó retirar el sello y la
   review lo tumbó: no cortaba el bucle —el adopt que recomienda la puerta de «Migrar» lo reabre— y dejaba al legítimo sin
-  salida. Residuales aceptados: el relevo bloqueado se queda el lease hasta que caduca (no hay RPC para soltarlo), y el líder
-  desplazado que vuelve sigue subiendo (`displaced-migration-leader-keeps-uploading-after-a-takeover`).
+  salida. Residual aceptado: el relevo bloqueado se queda el lease hasta que caduca (no hay RPC para soltarlo). El líder
+  desplazado que volvía y seguía subiendo se cerró en la regla siguiente.
+
+- **Y el líder DESPLAZADO no sube ni una página más: la ida sube solo con el lease confirmado (2026-09-24).** Ticket
+  `displaced-migration-leader-keeps-uploading-after-a-takeover`. El linaje protege a quien TOMA el relevo; el teléfono que lo
+  pierde no vuelve a pasar por la identidad, y seguía subiendo desde su cursor encima de lo del nuevo líder hasta que el
+  `cutover` le decía `other_leader`. Cuatro cosas que no se tocan sin reabrirlo:
+  (1) **la puerta va delante de CADA página y de cada verificación** (`MigrationWorkExecuting.confirmMigrationLease`, en
+  `driveUpload` y `driveVerify`), no de cada pasada: una pasada suspendida más de 60 min se reanuda a mitad. Solo `.held`
+  sube; `.lost` sale; `.unconfirmed` (red, 5xx, `no_profile`, `bad_action`, 401 con la sesión guardada) y `.sessionExpired`
+  (sesión borrada) esperan con el trato de la red y de la sesión de cada fase. La verificación entra porque empuja el
+  outbox y trae el corpus de la cuenta;
+  (2) **una confirmación vale 60 s contados desde que se PREGUNTÓ, con `ContinuousClock`**: el servidor estampa el lease
+  después de recibir la pregunta, y el reloj monotónico sigue contando con el teléfono en reposo —cuando caduca el lease—
+  y no se mueve si cambian la hora. **Sin throttle de intentos**, a diferencia de `sendLeaseHeartbeatIfDue` (que arma el
+  suyo también con un rechazo): cada pregunta sin `ok` deja la siguiente sin confirmar, y nada se cachea, porque el mismo
+  teléfono puede volver a liderar tras «Reintentar». El requisito del protocolo no tiene default: un `.held` heredado sería
+  una puerta que falla abierta;
+  (3) **`not_in_progress` también es «perdido»**: `migration_progress` mira «¿hay migración en curso?» ANTES que «¿quién
+  lidera?», así que es lo que recibe el desplazado cuando el nuevo líder ya terminó. En la subida no llega por otro camino;
+  (4) **sale EN EL ACTO** (`MigrationEvent.migrationLeaseLost`, solo desde `uploadingSnapshot` y `verifying`, a
+  `failedRollback` con `[.rollback]`) y journalea `forwardStepExitReasonRaw = otherDevice`: texto `stepOtherDevice` en
+  Almacenamiento. Sin techo porque ninguna espera devuelve el lease; el `cutover(.pending)` conserva su techo de 15 min
+  para el mismo `other_leader`. La subida ya no llama a `sendLeaseHeartbeatIfDue`: la puerta la sustituye y lee la respuesta.
+  **Y el lease cambió de significado, a propósito**: antes solo latía una página CONFIRMADA, así que un líder conectado cuyo
+  push fallaba (5xx, un rechazo transitorio) dejaba caducar el lease y otro tomaba el relevo — justo el escenario de este
+  bug. Ahora late cada pasada que PREGUNTA (≤ 1/min), también en la verificación: el lease dice «el líder está vivo», no «el
+  líder avanza». Un líder sin red sigue sin latir y pierde el lease a los 60 min, como antes; el que se atasca conectado lo
+  conserva hasta su propio techo, y el seguidor espera con el suyo. Además la confirmación caduca a MEDIA página: los trozos
+  del push (50 filas) y el pull de la verificación se cortan si la confirmación tiene más de 30 min
+  (`MigrationWorkExecutor.leaseInFlightBudget`), el caso de la app congelada entre dos trozos. Residuales con ticket: la
+  bienvenida pinta esta salida como error de red (`welcome-shows-a-takeover-exit-as-a-connection-error`), y el líder que
+  perdió el lease DESPUÉS del cutover sube su residual en el reconcile de `done`
+  (`leader-displaced-after-the-cutover-pushes-its-residual-in-the-reconcile`).
 
 - **Y la espera del seguidor también: techo, aviso y «Cancelar» (2026-09-23).** Ticket
   `adopt-follower-waits-for-the-leader-with-no-ceiling`, decisiones de Jürgen: el techo del 22 % y la salida del adopt.
@@ -554,7 +586,8 @@ paths:
   `cloudForwardStepAborted`) y usa los mismos campos `forwardStepStall*`, sin schema nuevo. `pollLeaderInternal` clasifica
   como `driveClaim` (sesión borrada por el SDK y 403 al corto; red y 401 con la sesión guardada al largo);
   (2) **aquí el avance es que el servidor vuelva a contestar `claiming_in_progress`**: prueba que el líder latió en la
-  última hora (la rama no refresca el lease; el latido sale con cada página confirmada de su subida). `noteLeaderAlive`
+  última hora (la rama no refresca el lease; desde `displaced-migration-leader-keeps-uploading-after-a-takeover` el latido
+  sale con la puerta de la subida y de la verificación del líder, avance o no: ver la regla del líder desplazado). `noteLeaderAlive`
   BORRA los dos relojes en su propio save, porque la fase no cambia, y **no los re-sella**: los sella la primera
   observación que no avanza, como en los otros tres. La primera versión sellaba al entrar y en cada respuesta, y la review
   lo tumbó: el seguidor es justo quien cierra Yala mientras espera, y al volver días después sin red el primer poll lo

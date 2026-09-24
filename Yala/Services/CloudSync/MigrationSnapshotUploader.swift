@@ -71,6 +71,12 @@ final class MigrationSnapshotUploader {
     /// `an-incomplete-inventory-reads-as-the-whole-corpus`). SOLO tests.
     var _testThrowOnInventoryFetchOf: Set<String> = []
 
+    /// ¿Sigue valiendo la confirmación del lease de la ida? Se pregunta antes de cada trozo del push de la página y del
+    /// residual (ticket `displaced-migration-leader-keeps-uploading-after-a-takeover`): la puerta del runner pregunta al
+    /// empezar la página, y una página son varios trozos de 50 filas. El default `{ true }` es de los tests y del e2e, que
+    /// no modelan el lease; el único constructor de producción (`MigrationWorkExecutor`) pasa el testigo real.
+    private let leaseStillConfirmed: @MainActor () -> Bool
+
     /// Especificaciones de las 16 entidades, en orden de tabla UTF-8 asc (fijado en `init`).
     private lazy var specs: [SnapshotEntitySpec] = buildSpecs()
 
@@ -81,7 +87,8 @@ final class MigrationSnapshotUploader {
         calendar: Calendar = .current,
         now: @escaping () -> Date = { .now },
         pageSize: Int = 200,
-        canRenewSession: @escaping @MainActor () -> Bool = { false }
+        canRenewSession: @escaping @MainActor () -> Bool = { false },
+        leaseStillConfirmed: @escaping @MainActor () -> Bool = { true }
     ) {
         self.engine = engine
         self.pushClient = pushClient
@@ -90,6 +97,7 @@ final class MigrationSnapshotUploader {
         self.now = now
         self.pageSize = max(1, pageSize)
         self.canRenewSession = canRenewSession
+        self.leaseStillConfirmed = leaseStillConfirmed
     }
 
     // MARK: - Cursor
@@ -268,7 +276,7 @@ final class MigrationSnapshotUploader {
         engine.deadLetterPoison(poison, context: context, now: now())
         guard !buildable.isEmpty else { return liveOutboxState(step: "snapshot-page-poison") }  // solo poison → dead-lettereado → puede avanzar
 
-        switch await pushClient.push(buildable) {
+        switch await pushClient.push(buildable, continueWhile: leaseStillConfirmed) {
         case .completed(let results):
             await pushClient.applyResults(results, rows: buildable, engine: engine, context: context)
             // Confirmada SOLO si no quedan filas VIVAS (los dead-letters no son vivos → la página avanza y
@@ -306,7 +314,7 @@ final class MigrationSnapshotUploader {
             // mismatch que el poison provoca lo caza verify → degrada honesto por topes).
             return residualOutcome(liveOutboxState(step: "snapshot-residual-poison"))
         }
-        switch await pushClient.push(buildable) {
+        switch await pushClient.push(buildable, continueWhile: leaseStillConfirmed) {
         case .completed(let results):
             await pushClient.applyResults(results, rows: buildable, engine: engine, context: context)
             return residualOutcome(liveOutboxState(step: "snapshot-residual-after-push"))

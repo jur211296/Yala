@@ -299,6 +299,12 @@ re-poll de `reverseUpload`); el executor lo capa a **1 request/60s** (throttle i
 **BEST-EFFORT ABSOLUTO** (nunca lanza, nunca altera el outcome del paso — un `other_leader` aquí NO corta,
 el guard real vive en cutover/freeze/complete).
 
+**Desde el 2026-09-24 la IDA ya no usa ese latido a ciegas** (ticket
+`displaced-migration-leader-keeps-uploading-after-a-takeover`): la subida del snapshot y la verificación preguntan con la
+MISMA acción `heartbeat` antes de cada página (`confirmMigrationLease`), y ahí la respuesta SÍ manda: `other_leader` y
+`not_in_progress` sacan al líder desplazado sin subir nada más. El servidor no cambió. `sendLeaseHeartbeatIfDue` sigue igual
+para la vuelta a iCloud.
+
 Semántica de la acción (sirve a la ida Y a la reversa con UNA sola acción; `migration_in_progress OR
 reverse_in_progress`, guard líder SIN edad de lease): líder de un run activo → `UPDATE
 migration_updated_at=now()` → `ok:true`; líder distinto → `ok:false, reason:'other_leader'`; sin run

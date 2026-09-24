@@ -326,6 +326,9 @@ final class MigrationState {
     /// `ForwardStepExitReason.rawValue` del paso que venció su techo. Elige el texto de la tarjeta de fallo y por eso
     /// **sobrevive a `failedRollback`**, como `snapshotExitReasonRaw`. Lo limpian `resetAfterRollback` («Reintentar») y la
     /// normalización de un journal ilegible, que son las dos salidas de esa fase. `nil` = el fallo no vino de estos pasos.
+    /// **Desde `displaced-migration-leader-keeps-uploading-after-a-takeover` lo escribe también la salida del lease
+    /// perdido**, desde la subida o la verificación y sin techo: `otherDevice`, el mismo que el `cutover` journalea para la
+    /// misma respuesta del servidor.
     var forwardStepExitReasonRaw: String?
 
     /// `AdoptClaimExit.rawValue`: el claim de un ADOPT —«Ya tengo una cuenta», «Activar la nube en este dispositivo»—
