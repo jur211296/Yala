@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (541)
+## Index (544)
 
 | id | status | path |
 |---|---|---|
@@ -66,6 +66,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | adopt-effect-retries-forever-with-no-ceiling | done | tickets/done/adopt-effect-retries-forever-with-no-ceiling.md |
 | adopt-exit-keeps-the-session-it-opened | done | tickets/done/adopt-exit-keeps-the-session-it-opened.md |
 | adopt-follower-waits-for-the-leader-with-no-ceiling | done | tickets/done/adopt-follower-waits-for-the-leader-with-no-ceiling.md |
+| adopt-session-close-drops-the-mark-before-the-sign-out-lands | backlog | tickets/backlog/adopt-session-close-drops-the-mark-before-the-sign-out-lands.md |
 | adopt-terminal-claims-ready-without-checking-engine | backlog | tickets/backlog/adopt-terminal-claims-ready-without-checking-engine.md |
 | adopt-uploads-a-foreign-corpus-without-a-lineage-check | backlog | tickets/backlog/adopt-uploads-a-foreign-corpus-without-a-lineage-check.md |
 | adr-013-does-not-know-yala-has-its-own-commit-msg | backlog | tickets/backlog/adr-013-does-not-know-yala-has-its-own-commit-msg.md |
@@ -495,7 +496,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | session-exits-one-verb-per-session | qa | tickets/qa/session-exits-one-verb-per-session.md |
 | session-redesign-implementation-order | backlog | tickets/backlog/session-redesign-implementation-order.md |
 | session-redesign-web-and-store-copy | backlog | tickets/backlog/session-redesign-web-and-store-copy.md |
-| settings-adopt-stalled-before-the-claim-keeps-the-session | backlog | tickets/backlog/settings-adopt-stalled-before-the-claim-keeps-the-session.md |
+| settings-adopt-stalled-before-the-claim-keeps-the-session | done | tickets/done/settings-adopt-stalled-before-the-claim-keeps-the-session.md |
 | settings-migrate-blocks-a-second-device-before-its-marker | backlog | tickets/backlog/settings-migrate-blocks-a-second-device-before-its-marker.md |
 | settings-migrate-to-cloud-adopts-silently-instead-of-migrating | done | tickets/done/settings-migrate-to-cloud-adopts-silently-instead-of-migrating.md |
 | settings-redesign-as-grouped-lists-like-ios | backlog | tickets/backlog/settings-redesign-as-grouped-lists-like-ios.md |
@@ -563,6 +564,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | welcome-adopt-cancel-dialog-says-from-here | backlog | tickets/backlog/welcome-adopt-cancel-dialog-says-from-here.md |
 | welcome-adopt-effect-failure-has-no-reason-and-no-cancel | done | tickets/done/welcome-adopt-effect-failure-has-no-reason-and-no-cancel.md |
 | welcome-adopt-exit-offers-retry-on-a-blocked-account | backlog | tickets/backlog/welcome-adopt-exit-offers-retry-on-a-blocked-account.md |
+| welcome-adopt-stalled-session-is-kept-when-settings-reuses-it | backlog | tickets/backlog/welcome-adopt-stalled-session-is-kept-when-settings-reuses-it.md |
 | welcome-beacon-origin-contradicts-not-found-copy | backlog | tickets/backlog/welcome-beacon-origin-contradicts-not-found-copy.md |
 | welcome-beacon-reads-owner-icloud-in-secondary | discarded | tickets/discarded/welcome-beacon-reads-owner-icloud-in-secondary.md |
 | welcome-chooser-uitests-cannot-reach-the-chooser | discarded | tickets/discarded/welcome-chooser-uitests-cannot-reach-the-chooser.md |
