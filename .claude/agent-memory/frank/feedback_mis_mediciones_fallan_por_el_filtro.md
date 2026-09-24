@@ -732,3 +732,11 @@ script, mira si ese exit tiene más de un valor posible** — un `grep -n "exit"
 Y el hermano del mismo día: un `ok`/`mal` de banco cuyo comparador devuelve TRES códigos (0 / 1 / «no
 pude medir») y solo se comprueban dos: el tercero cae en la rama del ✓.
 
+
+## 2026-09-24 — el control negativo de una COMPROBACIÓN de migración cazó que abortaría la buena
+
+Escribí en el §2 de `g16_01` «toda tabla con `user_id` + `server_seq` lleva `stamp_server_seq`». Antes de aplicarla la
+probé con una tabla falsa sin el trigger: salieron DOS culpables, la falsa y `group_members`, que lleva las dos columnas
+y el contador de Grupos. Aplicada sin ese control, la migración se habría abortado a sí misma en producción. ⇒ una
+comprobación estructural nueva se ejecuta primero con un caso que DEBE fallar y se lee la lista entera de lo que falla,
+no solo si falla.

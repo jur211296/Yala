@@ -99,3 +99,4 @@ aquí queda el porqué y el contexto de cada entrega.
 - [El Merkle de grupos ya no lee una tabla ilegible como vacía](project_merkle_grupos_tabla_ilegible.md) — PR del 23-sep; queda el gemelo del mapa de cursores.
 - [El drain ya no duplica el reloj por unidad](project_drain_reloj_no_se_duplica.md) — PR del 23-sep; seis tickets nuevos de la review.
 - [Una ref colgada ilegible ya no se pierde](project_dangler_ilegible_no_es_rowgone.md) — PR del 23-sep; se tira la página, tres tickets nuevos de la review.
+- PR #232 (24-sep) — el reintento del claim del mismo teléfono termina el alta (`g16_01`, solo SQL, en producción; staging pendiente). Cinco tickets de la review.
