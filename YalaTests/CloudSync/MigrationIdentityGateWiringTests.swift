@@ -113,9 +113,15 @@ struct MigrationIdentityGateWiringTests {
             "return",
             "}",
             "r.setForwardClaimIntent(.adoptIfExisting)",
+            // Ticket `adopt-exit-keeps-the-session-it-opened`: de quién es la sesión, ANTES de conducir (un kill en la
+            // primera pasada la perdía), y retirada si la llamada no llegó al claim.
+            "recordAdoptSessionOwnership(sessionOpenedByThisAttempt: openedSession)",
             "await r.submit(.signInSucceeded)",
+            "withdrawAdoptSessionOwnershipIfNotStarted()",
             "return",
             "}",
+            // Y «Migrar» no hereda la marca de un adopt anterior.
+            "AdoptSessionOwnership.record(nil)",
             "let (check, discovery) = await checkMigrationIdentity(sessionOpenedByThisAttempt: openedSession)",
             "guard check == .proceed else {",
             "let rejectedProvider = await closeSessionIfOpened(openedSession)",
@@ -306,7 +312,7 @@ struct MigrationIdentityGateWiringTests {
         #expect(Self.occurrences(of: "submit(.signInSucceeded)", in: code) == 3)
         #expect(Self.occurrences(of: "setForwardClaimIntent(", in: code) == 3)
 
-        let adopt = try Self.body(of: "func startAdoptWithExistingSession() async {", in: Self.controllerPath)
+        let adopt = try Self.body(of: "func startAdoptWithExistingSession(sessionOpenedByThisAttempt: Bool) async {", in: Self.controllerPath)
         let intent = try #require(adopt.range(of: "r.setForwardClaimIntent(.adoptIfExisting)"))
         let started = try #require(adopt.range(of: "await r.startMigration(dryRun: false)"))
         let signedIn = try #require(adopt.range(of: "await r.submit(.signInSucceeded)"))

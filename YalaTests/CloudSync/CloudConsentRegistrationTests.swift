@@ -274,7 +274,7 @@ struct CloudConsentRegistrationWiringTests {
             exactamente el bug de M0 (la tabla la haría no-op, pero el call-site miente).
             """)
         let persist = try #require(flow.range(of: "persistConsentIfDue(at: .beforeAdopt"))
-        let start = try #require(flow.range(of: "startAdoptWithExistingSession()"))
+        let start = try #require(flow.range(of: "startAdoptWithExistingSession("))
         #expect(persist.lowerBound < start.lowerBound)
     }
 

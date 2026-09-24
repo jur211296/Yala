@@ -58,7 +58,7 @@ struct AdoptEngineInSessionTests {
 
     @Test("La re-entrada arranca el motor en la misma sesión")
     func adoptStartsTheEngineInSession() throws {
-        let adopt = try Self.body(of: "func startAdoptWithExistingSession() async {",
+        let adopt = try Self.body(of: "func startAdoptWithExistingSession(sessionOpenedByThisAttempt: Bool) async {",
                                   in: try Self.controllerSource())
         #expect(adopt.contains("startRuntimeIfStable()"), """
             `startAdoptWithExistingSession` tiene que arrancar el motor. Sin esta línea la re-entrada
@@ -74,7 +74,7 @@ struct AdoptEngineInSessionTests {
     /// y el chip quedaría verde en el test de arriba y muerto en producción.
     @Test("El arranque va DESPUÉS del refresh que asienta la fase")
     func engineStartsAfterTheFinalRefresh() throws {
-        let adopt = try Self.body(of: "func startAdoptWithExistingSession() async {",
+        let adopt = try Self.body(of: "func startAdoptWithExistingSession(sessionOpenedByThisAttempt: Bool) async {",
                                   in: try Self.controllerSource())
         let start = try #require(adopt.range(of: "startRuntimeIfStable()"))
         let lastRefresh = try #require(adopt.range(of: "refresh()", options: .backwards))

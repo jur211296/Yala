@@ -395,6 +395,8 @@ final class CloudAuthService: NSObject {
             throw error
         }
         CloudSyncBreadcrumb.authSignedIn()
+        // Sesión nueva: la marca del adopt describía la anterior (`AdoptSessionOwnership`).
+        AdoptSessionOwnership.record(nil)
         writeProfileString("google", forKey: Self.keyProvider)
 
         // Captura de perfil con la MISMA regla anti-sangrado que SIWA (helper compartido). La
@@ -475,6 +477,8 @@ final class CloudAuthService: NSObject {
         // cuenta cacheado no depende del backend para ser basura una vez cerrada la sesión, así que
         // se borra aquí y no se queda a merced de un flag. (g15_01)
         AccountKindService.shared.handleSignOut()
+        // La marca del adopt describe ESTA sesión (`AdoptSessionOwnership`): muere con ella, también sin backend.
+        AdoptSessionOwnership.record(nil)
         guard let client else { return }
         clearCapturedProfile()
         // `keyProvider` es credencial de SESIÓN (no del provider) → muere con el sign-out. Cubre de
@@ -743,6 +747,8 @@ extension CloudAuthService: ASAuthorizationControllerDelegate {
                         credentials: .init(provider: .apple, idToken: idToken, nonce: nonce)
                     )
                     CloudSyncBreadcrumb.authSignedIn()
+                    // Sesión nueva: la marca del adopt describía la anterior (`AdoptSessionOwnership`).
+                    AdoptSessionOwnership.record(nil)
                     // Provider de la sesión (fuente del claim) — espejo del write en signInWithGoogle.
                     self.writeProfileString("apple", forKey: Self.keyProvider)
                     // Tras el exchange EXITOSO (hay JWT de Supabase para el Worker). Jamás bloquea/retrasa.

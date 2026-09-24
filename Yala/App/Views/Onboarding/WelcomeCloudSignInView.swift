@@ -155,6 +155,10 @@ struct WelcomeCloudSignInView: View {
     /// El diálogo de «Cancelar la activación» de la barra del adopt (ticket
     /// `welcome-adopt-effect-failure-has-no-reason-and-no-cancel`).
     @State private var confirmCancelAdopt = false
+    /// La sesión viva la firmó ESTA pantalla (`ensureSignedIn`). El adopt la cierra si sale (ticket
+    /// `adopt-exit-keeps-the-session-it-opened`); la que trae la puerta de Grupos (`adoptCompleteAccountFromGroups`, que
+    /// salta el sign-in) no. Se queda puesta en un «Retomar», que reusa la sesión que esta pantalla abrió.
+    @State private var sessionOpenedHere = false
     /// La persona confirmó «Cancelar la activación» en ESTE adopt. El poll lo mira en cada vuelta: si la pre-espera del
     /// import venció, el «sí» sigue apuntado en el runner y lo ejecuta una pasada posterior, y sin esto la pantalla se
     /// quedaba en `.adopting(0)` sobre un `notStarted` ya cancelado. También impide que «Retomar» vuelva a reclamar. Se
@@ -975,6 +979,7 @@ struct WelcomeCloudSignInView: View {
         guard !CloudAuthService.shared.hasSession else { return true }
         do {
             try await CloudAuthService.shared.signIn(with: provider)
+            sessionOpenedHere = true
             return true
         } catch CloudAuthError.cancelled {
             // Cancel EXPLÍCITO (Google) → volver al intro en silencio (el user re-tapea).
@@ -1156,7 +1161,8 @@ struct WelcomeCloudSignInView: View {
                 autoResumeState = WelcomeAdoptAutoResume.State()
                 lastObservedPhase = nil
                 cancelRequested = false
-                await CloudMigrationController.shared?.startAdoptWithExistingSession()
+                await CloudMigrationController.shared?.startAdoptWithExistingSession(
+                    sessionOpenedByThisAttempt: sessionOpenedHere)
                 await pollAdoptProgress()
             }
         }
@@ -1258,7 +1264,8 @@ struct WelcomeCloudSignInView: View {
     /// `adopt-effect-retries-forever-with-no-ceiling`): se pinta `.migrating` y aquí se REANUDA, sin reclamar
     /// otra vez, que es lo que no reinicia su techo. Con el journal normalizado a `notStarted` sin
     /// efectos (`uiState == .idle`, adopt perdido antes del claim) `resumeIfNeeded` sería un
-    /// no-op perpetuo → re-arranca el adopt con la sesión aún viva (este camino nunca la soltó);
+    /// no-op perpetuo → re-arranca el adopt con la sesión aún viva; si una salida del adopt la cerró
+    /// (`adopt-exit-keeps-the-session-it-opened`), vuelve a firmar por `runFlowAfterConsent`;
     /// la decisión de RE-claimear queda detrás del gesto del usuario, jamás en el auto.
     private func retryAdoptResume() async {
         autoResumeState = WelcomeAdoptAutoResume.State()
@@ -1270,7 +1277,12 @@ struct WelcomeCloudSignInView: View {
         controller.refresh()
         // Con una cancelación pedida NUNCA se vuelve a reclamar: se reanuda, que ejecuta el «sí» apuntado, y el poll sale.
         if case .idle = controller.uiState, !cancelRequested {
-            await controller.startAdoptWithExistingSession()
+            // La salida de un adopt cierra la sesión que abrió: sin ella se vuelve a firmar, en vez de reclamar sin sesión.
+            guard CloudAuthService.shared.hasSession else {
+                await runFlowAfterConsent()
+                return
+            }
+            await controller.startAdoptWithExistingSession(sessionOpenedByThisAttempt: sessionOpenedHere)
         } else {
             await controller.resumeIfNeeded()
         }

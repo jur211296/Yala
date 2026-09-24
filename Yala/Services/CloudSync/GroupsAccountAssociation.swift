@@ -354,6 +354,10 @@ enum GroupsAssociationRegistrar {
         // estaba el agujero: el que no desasoció seguía con su sesión viva y reponía las keys.
         guard !store.isDetached else { return }
         guard let sub = identity.sub, !sub.isEmpty else { return }
+        // **La sesión que abrió un adopt no es una cuenta de Grupos** (ticket `adopt-exit-keeps-the-session-it-opened`): el
+        // adopt en vuelo no la pidió, y si sale se cierra. Sin esto, un arranque a mitad del adopt la registraba, y el cierre
+        // del arranque —que espera antes de borrar la sesión— podía llegar detrás.
+        guard !AdoptSessionOwnership.ownsLiveSession(sessionAccountHash: CloudBeacon.hash(sub), defaults) else { return }
         // Re-escribir la misma cuenta es barato e idempotente, y además REFRESCA correo y `kind`: el
         // correo puede haberse capturado después del primer registro, y el `kind` cambia con una
         // promoción. Lo que no se toca es `associatedAt` (ver `associate`).

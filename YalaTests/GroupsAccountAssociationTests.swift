@@ -492,6 +492,29 @@ struct GroupsAssociationRegistrarTests {
         #expect(store.read() == nil)
     }
 
+    /// **La sesión que abrió un adopt no se registra** (ticket `adopt-exit-keeps-the-session-it-opened`): un arranque a mitad
+    /// del adopt la asociaba, y el cierre de su salida no deshace la asociación. Con control: la marca de OTRA cuenta no para
+    /// nada, así que el caso no pasa por un guard que lo pare todo.
+    @MainActor
+    @Test("Con la marca del adopt sobre la sesión viva, NO registra; con la de otra cuenta, sí")
+    func noRegistraLaSesionDeUnAdopt() {
+        let defaults = isolatedDefaults()
+        AdoptSessionOwnership.record(CloudBeacon.hash("del-adopt"), defaults)
+        let store = GroupsAccountAssociation(iKV: FakeKV(), defaults: defaults)
+        GroupsAssociationRegistrar.syncFromLiveSessionIfNeeded(
+            deviceState: .privateSession, identity: .init(hasSession: true, sub: "del-adopt", provider: "apple", email: nil),
+            kind: .complete, store: store, defaults: defaults)
+        #expect(store.read() == nil)
+
+        let otros = isolatedDefaults()
+        AdoptSessionOwnership.record(CloudBeacon.hash("otra-cuenta"), otros)
+        let control = GroupsAccountAssociation(iKV: FakeKV(), defaults: otros)
+        GroupsAssociationRegistrar.syncFromLiveSessionIfNeeded(
+            deviceState: .privateSession, identity: .init(hasSession: true, sub: "del-adopt", provider: "apple", email: nil),
+            kind: .complete, store: control, defaults: otros)
+        #expect(control.read()?.sub == "del-adopt")
+    }
+
     /// **El agujero que cerró el tombstone.** El dispositivo que NO desasoció sigue con su sesión viva y
     /// reponía las keys en su siguiente arranque: la desasociación se deshacía sola, en el otro teléfono,
     /// sin que nadie tocara nada.
