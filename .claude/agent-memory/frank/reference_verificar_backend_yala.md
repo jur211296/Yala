@@ -70,6 +70,11 @@ por `execute_sql` y escritura por `apply_migration`, que además sirve de **sand
 `raise exception '<MARCADOR>%', resultados` — el mensaje vuelve en el error y la transacción entera se deshace
 (verificado: md5, usuarios sintéticos, tablas e historial sin rastro). Producción tenía **0 cuentas** ese día.
 
+**Un conteo por `execute_sql` en producción NO cuenta filas: RLS se las esconde.** Entra como `supabase_read_only_user`,
+que no es dueño de ninguna fila de `profiles`, así que «0» es lo que devuelve con o sin cuentas (lo cantó una lente el
+2026-09-24, 4.ª sesión). Se cuenta como `postgres` con `apply_migration` y `raise exception 'MEDIDA %', (select count…)`:
+ese día sí dio 0 de verdad. En staging `execute_sql` entra como `postgres` y el conteo vale.
+
 **2026-09-24, 3.ª sesión: staging SÍ contestó** (`execute_sql` como `postgres`, `apply_migration` escribe). El «no contesta»
 de la mañana era del conector, no permanente: vuelve a probar antes de heredarlo.
 

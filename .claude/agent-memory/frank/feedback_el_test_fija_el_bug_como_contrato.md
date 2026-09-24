@@ -14,6 +14,11 @@ Idempotente: repetir la promoción → `existing_stable`» del MISMO dispositivo
 arreglaba, escrito como contrato. Y el golden 1 dependía, sin decirlo, de si el usuario A tenía filas en el contador.
 Los dos salían en skip ese día (estado previo), así que ninguna corrida los habría cantado.
 
+**Y el golden que no fija su estado lo hereda de la corrida ANTERIOR** (2026-09-24, g16_04): el 9 y el 9-bis heredaban
+el `migrated_at` del golden 6, y el 3 heredaba de la última corrida un lease vencido con `migrated_at` — pasaban con el RPC
+viejo por casualidad y el cambio los puso en rojo sin que describieran el caso nuevo. Al cambiar una rama del RPC, cada
+golden que llegue a ella tiene que fijar por PATCH TODAS las columnas que la rama lee.
+
 **How to apply:** `grep` del valor que el cambio retira (aquí `existing_stable`) en `gateway/test`, `YalaTests` y
 `qa/cloud`; por cada acierto, ¿describe el caso nuevo o el viejo? Y los tests que saltan por estado previo se leen
 enteros: su verde no dice nada. Relacionado: [[el-predicado-del-ticket-no-es-el-criterio]],
