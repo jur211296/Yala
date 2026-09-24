@@ -55,3 +55,8 @@ Tratarlo como definitivo metía una regresión: el reintento reusaba el mismo JW
 .<caso>`) y pregunta para cada uno «¿esperar lo arregla?». Si la respuesta cambia de uno a otro, el outcome no basta
 y hace falta un testigo que los separe (aquí, `canRenewSession` leído después de la llamada). El nombre de un caso
 describe el SÍNTOMA del cliente, no la causa.
+
+**Y el testigo se lee ANTES del `await` que lo deja caducar (2026-09-24, PR #231).** Elegí el aviso del adopt parado con
+`isImportQuiescent` leído DESPUÉS de `closeSessionIfOpened`; `signOut` espera, y un import recién asentado deja de contar a
+los 8 s, así que el texto podía salir genérico siendo la causa iCloud. Lo cazaron las dos lentes. Fija la lectura en una
+`let` antes del `await` y pínchala con un mutante de orden.

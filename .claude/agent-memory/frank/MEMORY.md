@@ -19,7 +19,7 @@
 - [Un fail-closed sin reintento es permanente](feedback_un_fail_closed_sin_reintento_es_permanente.md) — el motor `.idle` que nadie re-evalúa: busca quién vuelve a preguntar.
 - [Un case nuevo hereda cada `!=` del repo](feedback_un_case_nuevo_hereda_cada_distinto_de.md) — `uiState != .idle` coló `.journalUnreadable` como «dentro».
 - [Tipar un desenlace despierta defensas DORMIDAS](feedback_tipar_un_desenlace_despierta_defensas_dormidas.md) — el 401 del Merkle.
-- [El copy lo elige quien PRODUJO el motivo](feedback_el_copy_lo_elige_quien_produjo_el_motivo.md) — y la clasificación también: `.sessionExpired` tenía dos productores y solo…
+- [El copy lo elige quien PRODUJO el motivo](feedback_el_copy_lo_elige_quien_produjo_el_motivo.md) — y la clasificación también; y el testigo se lee antes del `await` que lo caduca.
 - [El estado compartido no es testigo de su rama](feedback_el_estado_compartido_no_es_testigo_de_su_rama.md) — un campo lo enciende 1 sitio y lo apagan 13; cuenta escritores antes de…
 - [Mi rollback quita lo que otros leían](feedback_mi_rollback_quita_lo_que_otros_leian.md) — un fetch ve lo sucio; deshacerlo cegó al guard D-1 del pull.
 - [Mi arreglo quita la SALIDA que había](feedback_mi_arreglo_quita_la_salida_que_habia.md) — cerrar un abuso puede dejar sin puerta al dueño legítimo; enumera quién…
@@ -147,7 +147,7 @@
 - [«Cero warnings» se mide en TODOS los logs](feedback_cero_warnings_se_mide_en_todos_los_logs.md) — el gate no mira los tests y lee un build.
 
 ## Estado del trabajo
-- [La salida del adopt cierra su sesión](project_adopt_exit_cierra_la_sesion.md) — PR #230, 24-sep; un low nuevo.
+- [La salida del adopt cierra su sesión](project_adopt_exit_cierra_la_sesion.md) — #230 y #231, 24-sep; dos low de la review.
 - [Barrido de qa del 23-sep](project_barrido_qa_23_sep.md) — 80 → 21; los 59 cerrados no se le piden; guion por bloques en…
 - [El efecto del adopt tiene techo y salida](project_adopt_effect_techo_y_salida.md) — 23-sep; cuatro tickets de la review, dos esperan producto.
 - [Rediseño de sesiones: dos ejes](project_rediseno_sesiones_dos_ejes.md) — ADR 9-sep + 13 tickets con orden; M1 retirada y «en la nube» RATIFICADOS.
