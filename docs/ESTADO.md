@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-23 (Lima)
 
-**Rama** `2.1` — Merge #227: **Volviendo a iCloud, un fallo de iCloud de una sola pasada ya no cancela la vuelta por las horas que llevaba esperando por otra cosa.**
+**Rama** `2.1` — Merge #228: **Si entras en tu cuenta de la nube mientras otro teléfono la activa, la espera ya no es infinita: avisa, tiene plazo y tiene «Dejar de esperar».**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,25 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#227 · la espera de subida de la vuelta ya no cobra una espera ajena)
+## Esta sesión (#228 · la espera del seguidor tiene techo, aviso y «Dejar de esperar»)
+
+**Si entras en tu cuenta de la nube en un segundo teléfono mientras el primero la activa, la espera ya no es infinita.**
+Hasta hoy, con la sesión borrada o un 403 esa espera («Otro de tus dispositivos está activando la nube…») no terminaba
+nunca. Ahora avisa del motivo en cuanto lo ve, sale a los 15 min con esos motivos o tras 72 h sin noticias del otro
+teléfono (cada respuesta suya reinicia el plazo), y tiene «Dejar de esperar», que vuelve a «Activar la nube en este
+dispositivo». También se cierra el «sí» que se perdía al cancelar con el claim del 22 % en vuelo. Jürgen decidió las tres
+cosas por AskUserQuestion (la tercera, los textos propios, tras la review). Sin schema nuevo; seis claves en 16 idiomas.
+Ticket `adopt-follower-waits-for-the-leader-with-no-ceiling` a `done` sin device-QA (pide dos iPhone y un líder parado).
+Review de 3 lentes; 17 mutantes muertos; CI verde. **Los canarios `cloudForwardStepWaiting`/`Aborted` ganan el valor
+`waitingForLeader`.**
+
+### Lo que espera de Jürgen
+
+- Nada. Tres tickets nuevos de la review, técnicos: `forward-step-ceiling-wins-over-a-cancel-given-in-the-same-pass`
+  (low), `waiting-card-disables-stop-waiting-without-saying-why` (low) y
+  `follower-waits-forever-on-a-lease-with-a-null-heartbeat` (very-low, inferido).
+
+## Sesión anterior (#227 · la espera de subida de la vuelta ya no cobra una espera ajena)
 
 **Si la vuelta a iCloud llevaba horas esperando porque el teléfono no tenía cuenta de iCloud, entrar a iCloud ya no la
 cancela.** CloudKit suele contestar «no autenticado» en la primera pasada tras entrar, y hasta hoy esa pasada se cobraba
@@ -32,16 +50,13 @@ voluntad). Review de 4 lentes; 20 mutantes, 19 muertos y 1 equivalente; CI verde
 `cloudReverseUploadWaiting` y `cloudReverseUploadAborted` cambian de valores con este build** (cuatro segmentos;
 `mixedCauses` aparte de `stalled`).
 
-### Lo que espera de Jürgen
+### Lo que esperaba de Jürgen
 
 - Nada de producto. Un ticket nuevo de la review, `stall-clock-charges-a-closed-app-gap-to-a-one-off-cause` (low):
   un tramo abierto sigue contando con la app cerrada en las cinco etapas del mismo reloj; decidirlo es de la familia.
-- **El árbol principal (`~/Yala`) tiene un commit local sin pushear, `17dc1e2d`** (tus decisiones sobre los dos tickets
-  de producto de #226), que además movía este ticket a `in-progress`, y un cambio sin commitear en ese mismo ticket.
-  No lo toqué: al rebasarlo sobre `origin/2.1` chocará en ese fichero, que ahora está en `done`. Hay que quedarse con
-  `done` y descartar el cambio sin commitear.
+- Las decisiones de Jürgen sobre los dos tickets de producto de #226 ya están en `2.1` (`9ad779c2`).
 
-## Sesión anterior (#226 · el efecto del adopt tiene techo, texto y salida)
+## Antes (#226 · el efecto del adopt tiene techo, texto y salida)
 
 **Al activar la nube en un segundo teléfono con una cuenta que ya existe, el último paso ya no se reintenta en silencio
 para siempre.** Mientras reintenta, Almacenamiento enseña la barra con «Retomar» y «Cancelar la activación» (antes se veía
