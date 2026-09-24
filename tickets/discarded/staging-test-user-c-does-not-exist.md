@@ -1,10 +1,10 @@
 ---
 id: staging-test-user-c-does-not-exist
-status: backlog
+status: discarded
 priority: low
 area: qa, cloud
 created: 2026-09-03
-updated: 2026-09-03
+updated: 2026-09-24
 source: rotación de credenciales de test (2026-09-03)
 ---
 
@@ -39,3 +39,9 @@ nombre sugiere (una RLS *cross-member* con dos usuarios en vez de tres).
    usuarios. Más barato y honesto si nadie va a usarla.
 
 Lo que no conviene es el estado actual, en el que el documento describe una cobertura que no existe.
+
+## Descartado (2026-09-24): la premisa caducó
+
+C **existe** en `auth.users` de staging y tiene fila en `profiles`. Lo creó g15_01 por SQL después de este
+ticket. Su contraseña del `test-users.env` entra: el golden 28, que hace login como C, pasó en verde contra
+staging el 2026-09-24 (sesión `g16-01-is-not-applied-on-staging`). `qa/cloud/README.md` ya lo dice.

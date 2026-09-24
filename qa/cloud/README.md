@@ -96,8 +96,8 @@ export GROUPS_ENC_KEY="$(cat ~/Secrets/yala-groups-enc/staging.key)"            
 Con las tres cosas cargadas, `npm test` en `gateway/` pasa de 242 a 286+ tests ejecutados. Medido el
 2026-09-03.
 
-**El usuario C no existe en `auth.users` de staging** (comprobado el 2026-09-03): no es que su
-contraseña esté rotada. El sub-caso que lo usa cae a B, como ya dice este documento. Los
+**El usuario C existe en `auth.users` de staging** desde que lo creó g15_01 por SQL (el 2026-09-03 aún no
+existía). Su contraseña va en el mismo `test-users.env`, y el golden 28 lo necesita. Medido el 2026-09-24. Los
 **emails** sí conservan valor por defecto (cuentas sintéticas de staging, no son secreto) y se
 pueden sobrescribir con `USER_A_EMAIL` / `USER_B_EMAIL` / `USER_C_EMAIL`.
 
@@ -1696,9 +1696,9 @@ delete from public.profiles where id = (select id from auth.users where email='i
 
 ## g16_01 — el reintento del mismo teléfono termina el alta si se perdió la respuesta (2026-09-24)
 
-**Aplicada en PRODUCCIÓN el 2026-09-24. En STAGING NO** — el conector MCP daba «Connection terminated due to
-connection timeout» a `execute_sql` y a `apply_migration` toda la sesión (la REST de staging sí contestaba).
-Queda en el ticket `g16-01-is-not-applied-on-staging`. Fichero: `qa/cloud/g16_01_claim_replays_for_the_same_device.sql`.
+**Aplicada en PRODUCCIÓN y en STAGING el 2026-09-24.** En staging entró en una segunda sesión (ticket
+`g16-01-is-not-applied-on-staging`): la primera no pudo porque el conector MCP daba «Connection terminated due to
+connection timeout». Fichero: `qa/cloud/g16_01_claim_replays_for_the_same_device.sql`.
 Ticket: `claim-promotion-lost-response-blocks-the-retry` (su Paso 0 tiene las decisiones).
 
 Qué cambia: `claim_account` gana una rama. Un claim sin `migration` del MISMO `device_id` que creó o
@@ -1708,9 +1708,9 @@ reintento tras una respuesta perdida: «Activar Yala completo → nube» y el al
 bloquearse o de adoptar una cuenta vacía. La firma no cambia: sin `drop`, sin grants, **sin deploy del Worker**.
 
 **md5 de `claim_account`**: partida `8668a13c3d452fd5f192a192dd415bbd` (g15_01, igual en los dos entornos) ·
-llegada en producción `e7f8bec957091abaa126d8100a3a53bd`. La migración se aplicó con la cabecera de comentarios
-recortada; lo que va fuera del `$…$` de la función no entra en `prosrc`, y los dos bloques de la sustitución son
-los del fichero, así que desde el mismo cuerpo de partida el fichero da ese md5 (razonado, no re-medido).
+llegada `e7f8bec957091abaa126d8100a3a53bd` **en los dos entornos**. En producción se aplicó con la cabecera de
+comentarios recortada. En staging se aplicó el fichero entero con `apply_migration`, y el md5 de llegada salió el
+mismo, medido: lo que va fuera del `$…$` de la función no entra en `prosrc`.
 
 **Por qué el contador y no las 16 tablas**: `stamp_server_seq` está en las **17** tablas del canal personal (16 de
 dominio + `user_preferences`, medido). Una fila en `sync_seq_counters` = «alguna vez se escribió algo personal»;
@@ -1746,5 +1746,7 @@ El fichero final se ejecutó entero contra producción en sandbox (13/13, sin ra
 **Goldens** (`gateway/test/account.goldens.test.ts`): el 28 (usuario C, el ciclo de la fila ligera) gana los pasos
 4-6 — otro dispositivo bloquea, el mismo repite `created`, una migración no replica—; su paso 4 viejo esperaba
 `existing_stable` del mismo dispositivo, que era el bug escrito como contrato. El 1 pasa a probar la exclusión
-mutua con dos dispositivos. El de g3_02 comprueba por el wire que A tiene fila en el contador. **No se han corrido
-contra staging**: sin g16_01 allí, el 28 fallaría en el paso 5.
+mutua con dos dispositivos. El de g3_02 comprueba por el wire que A tiene fila en el contador. **Corridos contra
+staging el 2026-09-24, tras aplicar g16_01:** 34/35 en verde, con el 1, el de g3_02 y el 28 dentro. El único
+rojo es el 20, el timeout de 5010 ms que ya lleva `account-goldens-freeze-read-test-times-out`. Antes de correrlos
+hubo que borrar las filas de `profiles` de A, B y C, con el `delete` de la sección de I7a ampliado a C.
