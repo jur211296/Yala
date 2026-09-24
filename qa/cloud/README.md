@@ -2,9 +2,9 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (33 entradas)
+## Índice (34 entradas)
 
-> **No hace falta leer este fichero entero** — son 135 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 140 KB. Localiza la entrada
 > aquí y salta a ella.
 
 - `—` [Running the RLS gate](#running-the-rls-gate)
@@ -28,6 +28,7 @@
 - `—` [I14 — UI real de migración + consent + claimAction + relaunch asistido + encendido de flags](#i14--ui-real-de-migracin--consent--claimaction--relaunch-asistido--encendido-de-flags)
 - `—` [transfer_group_ownership (G10 / D10) — batch "salir de todos mis grupos" — APLICADA EN AMBOS ENVS ✅](#transfergroupownership-g10--d10--batch-salir-de-todos-mis-grupos--aplicada-en-ambos-envs)
 - `—` [G7 — cifrado pgcrypto de columnas † de grupos (data-at-rest)](#g7--cifrado-pgcrypto-de-columnas--de-grupos-data-at-rest)
+- `2026-09-24` [g16_04 — después del cutover no hay relevo: quien llega entra en la cuenta (2026-09-24)](#g1604--despus-del-cutover-no-hay-relevo-quien-llega-entra-en-la-cuenta-2026-09-24)
 - `2026-09-24` [g16_03 — el claim que da el turno dice si la cuenta ya tiene datos personales (2026-09-24)](#g1603--el-claim-que-da-el-turno-dice-si-la-cuenta-ya-tiene-datos-personales-2026-09-24)
 - `2026-09-24` [g16_02 — el reintento de un alta ya no siembra al lado de un teléfono que entró (2026-09-24)](#g1602--el-reintento-de-un-alta-ya-no-siembra-al-lado-de-un-telfono-que-entr-2026-09-24)
 - `2026-09-24` [g16_01 — el reintento del mismo teléfono termina el alta si se perdió la respuesta (2026-09-24)](#g1601--el-reintento-del-mismo-telfono-termina-el-alta-si-se-perdi-la-respuesta-2026-09-24)
@@ -1701,6 +1702,79 @@ querying schema»**. El golden 28 hace `ctx.skip()` si `profiles[subC]` ya exist
 ```sql
 delete from public.profiles where id = (select id from auth.users where email='i5-user-c@test.yala');
 ```
+
+## g16_04 — después del cutover no hay relevo: quien llega entra en la cuenta (2026-09-24)
+
+**Aplicada en STAGING y en PRODUCCIÓN el 2026-09-24**, en ese orden, con `apply_migration` (el cuerpo desde el §0, con el §3
+dentro: si un escenario falla, la migración entera se deshace). Fichero: `qa/cloud/g16_04_claim_no_takeover_after_the_cutover.sql`.
+Ticket: `claim-grants-a-takeover-after-the-leader-passed-the-cutover` (Paso 0 en su encargo; la decisión «B adopta» es de
+Jürgen).
+
+Qué cambia: en la rama «migración en curso de otro dispositivo» de `claim_account`, antes del relevo, si `migrated_at` está
+puesto y el lease del líder venció, el claim recibe `existing_stable` con su `profile` y **el líder no cambia**. Con y sin
+`migration`; con `migration` estampa `personal_adopted_at` (la regla de g16_02). Hasta hoy el claim con `migration` recibía
+`created` y el teléfono volvía a subir su corpus encima de una cuenta ya verificada, y sin `migration` esperaba como
+seguidor a un líder que podía no volver. Por qué el líder apuntado es el del cutover: `migrated_at` solo lo estampa
+`migration_progress('cutover')` del líder, y con la migración en curso el único otro que cambia de líder es `reverse_claim`,
+que la cierra. Sin cambio: el lease vigente (`claiming_in_progress`), el latido nulo (nunca vence), el relevo antes del
+cutover y el `reverse_claim` sobre una ida abandonada. La firma tampoco: sin `drop`, sin grants, **sin deploy del Worker**.
+
+**md5 de `claim_account`**: partida `c96106b7f3b043e5a26f68ff971c2123` (g16_03) · llegada
+`354237247d7c366596f1c2f43f78e802` **en los dos entornos** — el §2 aborta si sale otro.
+
+**Verificación antes de aplicar** — banco transaccional contra el motor de producción, cerrado con una excepción (cero
+rastro: md5, usuarios sintéticos e historial comprobados después). El §3 son los 14 escenarios de g16_03, ahora también
+con el líder, el sello, el `profile` y la fila después como salida, y 10 nuevos (el 19, `groups_only`, es de control: sale
+antes de la rama):
+
+```
+escenario                    1234567890 1234567890 1234
+LIVE (control negativo)      .......... ....LLLL.. ....   ← 15-18: el relevo tras el cutover (con y sin migration)
+NEW                          .......... .......... ....
+M1 sin mirar el lease        .......... .........L LL..
+M2 sin mirar migrated_at     ...LLLL... L......... ...L
+M3 sin el sello              .......... ....SSS... ....
+M4 sella sin migration       .......... .......S.. ....
+M5 cambia de líder           .......... ....DDDD.. ....
+M6 sin profile               .......... ....FFFF.. ....
+```
+
+`L` = estado · `S` = sello · `D` = líder · `F` = `existing_stable` sin `profile`. Un mutante que quite `v_updated is not
+null` no existe a propósito: la rama no lo lleva, porque `null < x` ya es null y el latido nulo no vence (escenario 22).
+
+**La review de lentes amplió el banco a 27** (lease a 59 y a 61 min; el reintento de quien ya entró, con el sello puesto;
+y en todos, que un `existing_stable` lleve `kind` y un `profile` fiel a la fila, y que sin `created` no se toquen ni la
+migración ni el lease). Corrido contra la función YA aplicada en producción (md5 `35423724…`), con 7 mutantes más:
+
+```
+escenario                    1234567890 1234567890 1234567
+NEW (vivo)                   .......... .......... .......
+M7 exige que no haya sello   .......... .......... ......L
+M8 reescribe el sello        .......... .......... ......S
+M9 umbral de 5 min           .......... .......... ....L..
+M10 profile nulo             .......... ....FFFF.. .....FF
+M11 profile con mip false    .......... ....FFFF.. .....FF
+M12 refresca el lease        .......... ....MMMM.. .....MM
+M13 cierra la migración      .......... ....MMMM.. .....MM
+```
+
+`M` = sin `created`, la migración o el lease cambiaron. Lo que el banco no ve, porque corre en serie: la carrera del relevo
+con el `cutover` del líder, anterior a g16_04 (`claim-takeover-races-the-leader-cutover-without-cas`).
+
+**Goldens** (`gateway/test/account.goldens.test.ts`): el 9 y el 9-bis heredaban el `migrated_at` del golden 6 y fijaban el
+relevo después del cutover como contrato; ahora ponen `migrated_at: null` (el relevo legítimo antes del cutover). El 3
+heredaba de la corrida anterior un lease vencido con `migrated_at`: ahora fija un lease vigente, que es lo que prueba.
+Nuevos: el 9-ter (con `migration` → `existing_stable`, líder intacto, sello; el propio líder sigue recibiendo `created`) y
+el 9-quater (sin `migration` → `existing_stable` sin sello; con el lease vigente → `claiming_in_progress`). **Corridos contra
+staging el 2026-09-24, tras aplicar g16_04:** 33/34 dos veces, con 3 `skipped` de siempre (1, 2 y 28 necesitan la fila
+borrada). El único rojo es el 20, el timeout que ya lleva `account-goldens-freeze-read-test-times-out`.
+
+**En el cliente no cambia nada**: `existing_stable` ya lleva al adopt por las tres puertas —el poll del seguidor
+(`leaderCompleted`), `driveClaim` con `adoptIfExisting` y el alta del Welcome (`routeReturningUser`)—, y ninguna lee
+`profile.migration_in_progress`. «Migrar a la nube» lo rechaza con «Esa cuenta ya tiene finanzas personales», como cualquier
+cuenta completa. El teléfono que hizo el cutover ya no puede perder el lease ante otra ida: `resolvePostCutoverLease`
+(#238) solo verá `existing_stable` en su claim, y sus ramas `created`/`claiming_in_progress` quedan para un servidor sin
+g16_04.
 
 ## g16_03 — el claim que da el turno dice si la cuenta ya tiene datos personales (2026-09-24)
 

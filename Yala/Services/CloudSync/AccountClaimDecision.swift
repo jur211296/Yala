@@ -26,9 +26,12 @@ nonisolated enum AccountClaimDecision {
     enum ClaimState: Equatable {
         /// The row did NOT exist and this call created it → this device is the seeder/leader.
         case created
-        /// The row exists in a STABLE state (migration done / account operating) → returning-user.
+        /// The row exists in a STABLE state (migration done / account operating) → returning-user. Since
+        /// `qa/cloud/g16_04_…` (2026-09-24) also a migration whose leader already passed the cutover and has been silent
+        /// for more than 60 min: its corpus is verified in the account, so the caller adopts it instead of taking over.
         case existingStable
-        /// The row exists with a migration IN PROGRESS by ANOTHER device (leader ≠ this device).
+        /// The row exists with a migration IN PROGRESS by ANOTHER device (leader ≠ this device) that has not passed the
+        /// cutover, or has and is still alive (lease < 60 min).
         case claimingInProgress
     }
 

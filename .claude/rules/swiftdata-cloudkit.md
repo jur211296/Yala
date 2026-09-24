@@ -580,8 +580,8 @@ paths:
 
 - **Y después del cutover el líder desplazado no sube, no sale: averigua quién cerró y se une (2026-09-24).** Ticket
   `leader-displaced-after-the-cutover-pushes-its-residual-in-the-reconcile`. El lease puede caducar esperando el marcador
-  o el relanzamiento (ahí no late nadie), y `claim_account` da el relevo sin mirar `migrated_at` (medido en producción;
-  el cambio de servidor tiene ticket propio, `claim-grants-a-takeover-after-the-leader-passed-the-cutover`). El reconcile
+  o el relanzamiento (ahí no late nadie), y `claim_account` daba el relevo sin mirar `migrated_at` (medido en producción;
+  lo cierra g16_04, en la regla siguiente). El reconcile
   de `done` empujaba el residual encima de la migración del otro y reintentaba el efecto —con su `complete`
   `other_leader`— en cada arranque, con el runtime sin arrancar (un pendiente en `done` lo bloquea) y Almacenamiento
   diciendo «nube activa». Cinco cosas que no se tocan sin reabrirlo:
@@ -608,6 +608,26 @@ paths:
   `not_in_progress` está medido en el cuerpo vivo (md5 `14fc5e2c…`: las acciones de ida miran el líder antes que nada);
   (5) **sin texto nuevo, a propósito**: no hay nada que la persona pueda decidir y «Nube activa» es verdad en cuanto se une.
   Canario `cloudPostCutoverLeaseLost` (`joined` | `retaken`).
+
+- **Y el servidor ya no da ese relevo: después del cutover, quien llega entra en la cuenta (g16_04, 2026-09-24).** Ticket
+  `claim-grants-a-takeover-after-the-leader-passed-the-cutover`; decisión de Jürgen: B adopta, no espera ni releva. Con
+  `migrated_at` puesto y el lease del líder vencido, `claim_account` contesta `existing_stable` —con y sin `migration`;
+  con ella estampa `personal_adopted_at`— y **no cambia de líder**. Tres cosas que no se tocan sin reabrirlo:
+  (1) **el líder apuntado ES el del cutover**: `migrated_at` solo lo estampa el `cutover` del líder, y con la migración en
+  curso el único otro que cambia de líder es `reverse_claim`, que la cierra. Por eso quien hizo el cutover ya no pierde el
+  lease ante otra ida: al volver, su latido da `.held` y cierra con su `complete`. Las ramas `created`/`claiming_in_progress`
+  del paso (4) de la regla anterior quedan para un servidor sin g16_04, y se conservan porque el cliente no sabe cuál le
+  contesta;
+  (2) **el cliente no cambia**: `existing_stable` ya lleva al adopt por las tres puertas (poll del seguidor, `driveClaim`
+  con `adoptIfExisting`, alta del Welcome) y ninguna lee `profile.migration_in_progress`. La cuenta queda con la migración
+  del líder abierta hasta que vuelva, y eso no bloquea nada: el Worker no mira `migration_in_progress` en el push. Un
+  adoptador sube solo sus huérfanas (`runAdoptOrphanReconcile`), nunca el corpus entero. Dos residuales con ticket: con
+  algo que subir, el adopt exige el marcador, que el líder puede no haber exportado aún
+  (`adopt-after-the-cutover-needs-a-marker-the-leader-never-exported`), y una huérfana del adoptador puede ganar a la
+  edición que el líder ausente aún no subió (`adopt-orphan-with-a-fresh-hlc-beats-the-absent-leaders-edit`);
+  (3) **lease vigente, latido nulo y antes del cutover, sin cambio**: con el lease vivo el líder cierra enseguida
+  (`claiming_in_progress`); un latido nulo nunca vence; y sin `migrated_at` el relevo legítimo sigue. El banco (27
+  escenarios, 13 mutantes) está en `qa/cloud/g16_04_claim_no_takeover_after_the_cutover.sql`.
 
 - **Y la espera del seguidor también: techo, aviso y «Cancelar» (2026-09-23).** Ticket
   `adopt-follower-waits-for-the-leader-with-no-ceiling`, decisiones de Jürgen: el techo del 22 % y la salida del adopt.

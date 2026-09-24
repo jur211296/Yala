@@ -863,7 +863,7 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
             //
             // La PUERTA del lease va DELANTE de todo (ticket
             // `leader-displaced-after-the-cutover-pushes-its-residual-in-the-reconcile`). El lease puede caducar esperando el
-            // marcador o el relanzamiento, y `claim_account` da el relevo sin mirar `migrated_at`: el teléfono desplazado
+            // marcador o el relanzamiento, y `claim_account` daba el relevo sin mirar `migrated_at` (hasta g16_04): el teléfono desplazado
             // empujaba aquí su residual encima de la migración de otro y reintentaba el efecto —y el `complete`, con su
             // `other_leader`— en cada arranque, con el runtime sin arrancar para siempre. Solo sube con el lease confirmado;
             // si lo perdió, `resolvePostCutoverLease` averigua quién cerró la migración sin subir nada. Salir a iCloud, como
@@ -1626,6 +1626,12 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     ///     vuelve o volvió a iCloud (el push del runtime recibirá entonces el 409 de cuenta revirtiendo, como cualquier
     ///     otro dispositivo) → `.finishedElsewhere`. Que `complete` de quien no lidera conteste `other_leader` aunque la
     ///     migración esté cerrada está medido en el cuerpo vivo (md5 `14fc5e2c…`: la ida mira el líder antes que nada).
+    /// **Desde g16_04 (2026-09-24) el servidor ya no da el relevo después del cutover** (ticket
+    /// `claim-grants-a-takeover-after-the-leader-passed-the-cutover`): con `migrated_at` puesto y el lease vencido, quien
+    /// llega recibe `existing_stable` y el líder no cambia. Así que este teléfono, que hizo el cutover, solo pierde el
+    /// lease ante una vuelta a iCloud, y en el paso 3 solo llega `existing_stable`. `created` y `claiming_in_progress`
+    /// quedan para un servidor sin g16_04 o una fila anterior a él: se conservan porque el cliente no sabe qué servidor
+    /// le contesta.
     /// La sesión se lee DESPUÉS de cada petición, como en el resto del ejecutor.
     func resolvePostCutoverLease() async -> PostCutoverLease {
         switch await confirmMigrationLease() {
