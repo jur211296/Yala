@@ -6067,6 +6067,12 @@
 "storage.confirm.cancelMigrationBody" = "Tes données restent sur cet appareil, comme avant. Ce qui a déjà été envoyé reste dans ton compte cloud. Tu peux réessayer quand tu veux.";
 "storage.confirm.cancelAdoptBody" = "Cet appareil n’a rien modifié de ce que tu as dans le cloud. Tu peux réactiver le cloud sur cet appareil depuis ici quand tu veux.";
 "storage.confirm.cancelAdoptEffectBody" = "Ce que tu as sur cet appareil est toujours là, comme avant. Tu peux réactiver le cloud sur cet appareil depuis ici quand tu veux.";
+"storage.waiting.stopWaiting" = "Arrêter d’attendre";
+"storage.confirm.stopWaitingTitle" = "Arrêter d’attendre ?";
+"storage.confirm.stopWaitingBody" = "Ton autre appareil continue d’activer le cloud. Celui-ci arrête d’attendre sans rien modifier de ce que tu as dans le cloud, et tu peux réactiver le cloud sur cet appareil depuis ici quand tu veux.";
+"storage.confirm.stopWaitingConfirm" = "Oui, arrêter d’attendre";
+"storage.confirm.stopWaitingKeep" = "Continuer d’attendre";
+"storage.progress.followerSessionExpired" = "Ta session cloud n’est plus valide. Arrête d’attendre et reconnecte-toi avec ton compte.";
 /* Botón que confirma cancelar la activación */
 "storage.confirm.cancelMigrationConfirm" = "Oui, annuler";
 /* Botón que sigue con la activación */

@@ -231,8 +231,11 @@ nonisolated enum MigrationEvent: Equatable {
     ///    observación del paso y `handle` lo borra en cada cambio de paso;
     ///  · `causeStalledSeconds` es el de CAUSA —lo ACUMULADO bajo el mismo motivo— y gobierna el CORTO, solo con
     ///    `cause == .definitive`.
+    /// Desde `adopt-follower-waits-for-the-leader-with-no-ceiling` vale también en `waitingForLeader`, donde el avance es
+    /// que el servidor vuelva a contestar `claiming_in_progress` (el runner re-sella ahí el reloj de avance).
     case forwardStepStalled(stalledSeconds: Double, causeStalledSeconds: Double, cause: MarkerExportStall)
-    /// La persona cancela la activación desde uno de esos tres pasos. Misma salida que la cancelación de la subida.
+    /// La persona cancela la activación desde uno de esos tres pasos, o desde la espera del seguidor. Misma salida que la
+    /// cancelación de la subida.
     case forwardStepCancelled
     /// Observación del EFECTO del adopt (`.adoptBackendAccount` pendiente en `notStarted`) que venció su techo (ticket
     /// `adopt-effect-retries-forever-with-no-ceiling`, decisión de Jürgen del 2026-09-23: 15 min / 72 h). **Solo sale; no
@@ -740,9 +743,15 @@ nonisolated enum MigrationStateMachine {
         // `.serverConfirmed` el evento es `.invalid` a propósito: ahí manda «el cutover jamás hace rollback».
         //
         // Sale con el PRIMERO de los dos techos que venza, igual que la subida y la vuelta.
+        //
+        // **El seguidor (`waitingForLeader`) comparte las dos aristas** desde `adopt-follower-waits-for-the-leader-with-no-ceiling`
+        // (decisión de Jürgen del 2026-09-23: el techo del 22 %). Hasta ese ticket su única salida de fallo era un
+        // `fatalError` que nadie emite, y con la sesión borrada o un 403 se quedaba esperando para siempre. Tampoco ahí hay
+        // nada que deshacer: el seguidor no reclamó nada propio y el teléfono sigue como estaba.
         case let (.claimingMigration, .forwardStepStalled(stalled, causeStalled, cause)),
              let (.assigningIdentity, .forwardStepStalled(stalled, causeStalled, cause)),
-             let (.cutover(.pending), .forwardStepStalled(stalled, causeStalled, cause)):
+             let (.cutover(.pending), .forwardStepStalled(stalled, causeStalled, cause)),
+             let (.waitingForLeader, .forwardStepStalled(stalled, causeStalled, cause)):
             let hitProgressCeiling = stalled >= policy.forwardStepProgressBudgetSeconds
             let hitCauseCeiling = policy.forwardStepCauseCeilingReached(
                 causeStalledSeconds: causeStalled, cause: cause)
@@ -755,7 +764,8 @@ nonisolated enum MigrationStateMachine {
         // de la subida: no queda nada local que deshacer, y lo que decidió la persona no es un fallo que explicar.
         case (.claimingMigration, .forwardStepCancelled),
              (.assigningIdentity, .forwardStepCancelled),
-             (.cutover(.pending), .forwardStepCancelled):
+             (.cutover(.pending), .forwardStepCancelled),
+             (.waitingForLeader, .forwardStepCancelled):
             return .transition(next: .notStarted, effects: [])
 
         // notStarted con `.adoptBackendAccount` pendiente · el EFECTO del adopt (ticket

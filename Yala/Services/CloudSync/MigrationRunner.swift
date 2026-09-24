@@ -135,23 +135,33 @@ nonisolated enum SnapshotExitReason: String, Equatable, Sendable {
     }
 }
 
-/// Los TRES pasos de la ida en los que avanzar no es una cifra que baje, sino pasar al paso siguiente (ticket
+/// Los pasos de la ida en los que avanzar no es una cifra que baje, sino pasar al paso siguiente (ticket
 /// `forward-migration-steps-have-no-ceiling-and-no-exit`). El `rawValue` es el detalle del canario, así que es WIRE.
 ///
 /// La subida del snapshot NO está aquí aunque vaya entre medias: tiene su propio techo, y ahí avanzar sí es una cifra
 /// (cada página confirmada). `verifying` tampoco: su salida es el contador de reintentos S9. Y del cutover solo entra
 /// `.pending` — desde `.serverConfirmed` el backend ya estampó `migrated_at` y rendirse no puede ser un rollback.
+///
+/// **El seguidor (`waitingForLeader`) es el cuarto** desde `adopt-follower-waits-for-the-leader-with-no-ceiling`
+/// (decisión de Jürgen del 2026-09-23: el techo del 22 %). Su diferencia es qué cuenta como avance: aquí no puede cambiar
+/// de paso por su cuenta, así que avanzar es que el servidor vuelva a contestar `claiming_in_progress` —el líder tiene el
+/// lease vivo—, y cada una de esas respuestas BORRA los relojes (`noteLeaderAlive`). Como en los otros tres, los sella la
+/// primera observación que no avanza: un seguidor que cerró Yala mientras esperaba y la abre días después sin red no sale
+/// en ese primer poll (lo cazó la review). Un líder vivo con mucho corpus no echa nunca al seguidor: lo acota el lease,
+/// que caduca a los 60 min sin latido y convierte al seguidor en líder (`created`).
 nonisolated enum ForwardStepPhase: String, Equatable, Sendable {
     case claim
     case identity
     case cutoverPending
+    case waitingForLeader
 
-    /// El paso journaleado, si es uno de los tres. `nil` en cualquier otra fase.
+    /// El paso journaleado, si es uno de los cuatro. `nil` en cualquier otra fase.
     init?(phase: MigrationPhase) {
         switch phase {
         case .claimingMigration:  self = .claim
         case .assigningIdentity:  self = .identity
         case .cutover(.pending):  self = .cutoverPending
+        case .waitingForLeader:   self = .waitingForLeader
         default:                  return nil
         }
     }
@@ -169,13 +179,18 @@ nonisolated enum ForwardStepPhase: String, Equatable, Sendable {
 /// diálogo tiene su propio cuerpo (`AdoptClaimScope`). Desde la identidad en adelante el claim ya contestó `created` —una
 /// migración de verdad, venga de donde venga—, y la salida vale igual.
 ///
+/// **Y el seguidor (`waitingForLeader`)** desde `adopt-follower-waits-for-the-leader-with-no-ceiling` (decisión de Jürgen
+/// del 2026-09-23): espera a otro dispositivo sin haber tocado nada, y sale como el claim del adopt. Sin él, un «sí» dado
+/// con el claim en vuelo se PERDÍA si el claim contestaba `claiming_in_progress`: la fase pasaba a la espera, que no lo
+/// ofrecía, y la persona que confirmó cancelar aterrizaba en una tarjeta sin botón.
+///
 /// **Un solo predicado, y en POSITIVO**: lo consultan el runner —para honrar un «sí» apuntado— y el controller —para
 /// pintar el botón—, y escrito dos veces un día discrepan. «¿No es el cutover confirmado?» fallaría abierto con cualquier
 /// fase nueva.
 nonisolated enum ForwardCancelScope {
     static func offersCancel(_ phase: MigrationPhase) -> Bool {
         switch phase {
-        case .uploadingSnapshot, .claimingMigration, .assigningIdentity, .cutover(.pending):
+        case .uploadingSnapshot, .claimingMigration, .assigningIdentity, .cutover(.pending), .waitingForLeader:
             return true
         default:
             return false
@@ -219,10 +234,13 @@ nonisolated enum AdoptEffectBlocker: String, Equatable, Sendable {
 /// —techo o «Cancelar»— deja `MigrationState.adoptClaimExitRaw`, y el controller, que elige el cuerpo del diálogo de
 /// cancelar y el aviso del 22 % (ticket `adopt-claim-stays-parked-with-no-ceiling`).
 ///
-/// El seguidor (`waitingForLeader`) también reclama para un adopt, pero su fase es otra y no entra.
+/// **El seguidor (`waitingForLeader`) entra** desde `adopt-follower-waits-for-the-leader-with-no-ceiling`: también reclama
+/// para un adopt y sale igual —techo o «Cancelar»—, así que deja la misma marca y lee el mismo cuerpo y el mismo aviso.
+/// Con «Migrar» nunca se llega ahí (`ForwardClaimIntent.refuses` devuelve `claiming_in_progress` al inicio), así que el
+/// término de la intención vale para los dos igual.
 nonisolated enum AdoptClaimScope {
     static func isAdoptClaim(_ phase: MigrationPhase, claimIntent: ForwardClaimIntent) -> Bool {
-        phase == .claimingMigration && claimIntent == .adoptIfExisting
+        (phase == .claimingMigration || phase == .waitingForLeader) && claimIntent == .adoptIfExisting
     }
 
     /// El aviso de la tarjeta de progreso mientras el claim de un adopt sigue aparcado. `observedCause` es lo que vio el
@@ -1052,7 +1070,8 @@ final class MigrationRunner {
     /// también en los tres pasos sin cifra que baje (22 %, 35 %, 80 %) — decisiones de Jürgen del 2026-09-22, las dos.
     /// Vuelve a `notStarted` sin efectos y sin motivo journaleado: lo decidió la persona, así que no hay fallo que explicar.
     ///
-    /// No-op fuera de esas cuatro fases, y en el claim de un adopt (`ForwardCancelScope`): un toque que llega tarde —el
+    /// Desde `adopt-follower-waits-for-the-leader-with-no-ceiling` también en la espera del seguidor, donde el botón se llama
+    /// «Dejar de esperar». No-op fuera de las fases de `ForwardCancelScope` (y del efecto del adopt): un toque que llega tarde —el
     /// paso ya avanzó, o ya salió por su techo— no puede sacar a nadie de un sitio en el que ya no está. Y con una pasada en
     /// vuelo, `runGuarded` lo descarta: el botón solo se puede tocar con la activación aparcada.
     ///
@@ -1619,7 +1638,8 @@ final class MigrationRunner {
     }
 
     /// Una observación de uno de los TRES pasos sin cifra que baje —claim, identidad, `cutover(.pending)`— en una pasada
-    /// que no avanzó. Decide si el paso sigue esperando o sale a `failedRollback` (ticket
+    /// que no avanzó, o de la espera del seguidor (`waitingForLeader`, ticket
+    /// `adopt-follower-waits-for-the-leader-with-no-ceiling`), cuyo avance re-sella `noteLeaderAlive`. Decide si el paso sigue esperando o sale a `failedRollback` (ticket
     /// `forward-migration-steps-have-no-ceiling-and-no-exit`, decisiones de Jürgen del 2026-09-22: 15 min / 72 h por paso).
     ///
     /// **Molde de `observeSnapshotStall`, con una diferencia: aquí avanzar es cambiar de paso.** No hay página que re-selle
@@ -2820,18 +2840,40 @@ final class MigrationRunner {
 
     // MARK: - Follower (M3)
 
+    /// El poll del seguidor. **Tiene techo y «Cancelar» desde `adopt-follower-waits-for-the-leader-with-no-ceiling`**
+    /// (decisiones de Jürgen del 2026-09-23): hasta ese ticket la sesión borrada, el 403 y la red solo apuntaban
+    /// `lastClaimBlocker` y devolvían sin evento, y el teléfono se quedaba en «esperando a otro dispositivo» para siempre.
+    /// Ahora los tres no-éxitos pasan por el techo de los pasos (`observeForwardStepStall`) con la misma clasificación que
+    /// `driveClaim`, y `claiming_in_progress` —el líder sigue vivo— re-sella los relojes: es el avance de esta fase.
     private func pollLeaderInternal() async throws {
         guard try loadState().readPhase().phase == .waitingForLeader else { return }
+        // Un «sí» apuntado se honra ANTES de volver a reclamar, como hace `drive()` en cada vuelta: la pasada que lo vio
+        // llegar pudo acabar sin evento (el líder seguía trabajando), y reclamar otra vez podría adoptar a quien ya dijo que
+        // cancelaba.
+        if migrationCancelRequested, try await journalMigrationCancel() { return }
         // El seguidor es el de un adopt (ver `ForwardClaimIntent`): su claim no es de «Migrar» y no deja marca.
         switch await executor.performClaim(marksMigrationAttempt: false) {
         case .success(.existingStable):
             lastClaimBlocker = nil
+            lastClaimDefinitiveCause = nil
             try await handle(.leaderCompleted)             // → notStarted + adoptBackendAccount
         case .success(.claimingInProgress):
             lastClaimBlocker = nil
-            return                                         // sigue esperando, sin evento
+            lastClaimDefinitiveCause = nil
+            // Sigue esperando, sin evento. Pero es AVANCE: el líder tiene el lease vivo, y la sesión y la cuenta de este
+            // teléfono acaban de funcionar. Los dos relojes se borran aquí, en su propio save.
+            try noteLeaderAlive()
+            // Un «sí» que llegó con este claim en vuelo se honra ya, sin esperar al próximo poll.
+            if migrationCancelRequested { _ = try await journalMigrationCancel() }
+            return
         case .success(.created):
             lastClaimBlocker = nil
+            lastClaimDefinitiveCause = nil
+            // Un «sí» que llegó con este claim en vuelo se honra AQUÍ, desde la espera y con la marca del adopt: traducido
+            // primero, el relevo escribía el faro y `drive()` cancelaba ya en la identidad, sin marca, y Almacenamiento
+            // ofrecía «Migrar» a quien confirmó dejar de esperar (lo cazaron dos lentes de la review). El lease que el
+            // servidor acaba de dar caduca solo a los 60 min.
+            if migrationCancelRequested, try await journalMigrationCancel() { return }
             // El líder se esfumó → re-claim. TRADUCIR a leaderVanished y REUSAR el resultado ya obtenido
             // (sin 2º POST). `sameDeviceReclaim: false` — ver doc de `driveClaim` (para `.created` la
             // máquina lo ignora de todas formas).
@@ -2840,17 +2882,38 @@ final class MigrationRunner {
         case .sessionExpired:
             lastClaimBlocker = .sessionExpired
             CloudSyncBreadcrumb.migrationClaimNoSuccess(reason: "sessionExpired")
+            // La misma clasificación que `driveClaim`: definitivo solo con la sesión BORRADA por el SDK, leída DESPUÉS del
+            // claim. Con la sesión guardada espera el plazo largo.
+            let blocker: ForwardStepBlocker? = executor.canRenewSession() ? nil : .sessionExpired
+            lastClaimDefinitiveCause = blocker
+            _ = try await observeForwardStepStall(.waitingForLeader, blocker: blocker)
             return
         case .accountUnavailable:
             lastClaimBlocker = .accountUnavailable
             CloudSyncBreadcrumb.migrationAccountUnavailable()
+            lastClaimDefinitiveCause = .accountUnavailable
+            _ = try await observeForwardStepStall(.waitingForLeader, blocker: .accountUnavailable)
             return
         case .transient:
             lastClaimBlocker = nil
             CloudSyncBreadcrumb.migrationClaimNoSuccess(reason: "transient")
-            return                                         // red del poll → sin evento (reintento posterior)
+            lastClaimDefinitiveCause = nil
+            _ = try await observeForwardStepStall(.waitingForLeader, blocker: nil)
+            return                                         // red del poll: techo largo, reintento posterior
         }
         try await drive()
+    }
+
+    /// El avance del seguidor: el servidor volvió a contestar `claiming_in_progress`. Borra los dos relojes —una respuesta
+    /// del claim prueba que el líder vive y que la sesión y la cuenta funcionaron—, en un save propio, porque la fase no
+    /// cambia y `handle` no pasa por aquí. No los re-sella: los sella la próxima observación que no avance, como en los otros
+    /// tres pasos. Sellarlos aquí contaba como espera los días con Yala cerrada tras una respuesta buena, y el primer poll
+    /// sin red al volver sacaba de la espera con «lleva días sin avanzar» a un seguidor cuyo líder ya había terminado.
+    private func noteLeaderAlive() throws {
+        let state = try loadState()
+        state.clearForwardStepStallCeiling()
+        state.updatedAt = now()
+        try context.save()
     }
 
     // MARK: - Journal helpers

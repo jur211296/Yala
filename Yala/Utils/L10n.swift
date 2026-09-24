@@ -7050,6 +7050,10 @@ enum L10n {
     enum Storage {
         static var title: String { ls("storage.title", comment: "") }
         static var waitingForLeader: String { ls("storage.waitingForLeader", comment: "") }
+        /// El botón de salir de esa espera (ticket `adopt-follower-waits-for-the-leader-with-no-ceiling`, texto de Jürgen del
+        /// 2026-09-23): «Cancelar la activación» bajo «otro de tus dispositivos está activando la nube» se leía como parar
+        /// el OTRO teléfono, y ese no se entera.
+        static var stopWaiting: String { ls("storage.waiting.stopWaiting", comment: "") }
         /// El journal de la migración no se deja leer (ticket `an-unreadable-migration-journal-reads-as-never-started`).
         static var journalUnreadableMessage: String { ls("storage.journalUnreadable.message", comment: "") }
 
@@ -7185,6 +7189,8 @@ enum L10n {
             static func adoptAccountUnavailable(_ supportEmail: String) -> String {
                 String(format: ls("storage.progress.adoptAccountUnavailable", comment: ""), supportEmail)
             }
+            /// La sesión borrada en la espera del seguidor: la salida se llama «Dejar de esperar», no «Cancelar la activación».
+            static var followerSessionExpired: String { ls("storage.progress.followerSessionExpired", comment: "") }
         }
 
         /// Después de que la vuelta a iCloud termine sin llegar —por la espera o porque el servidor no dejó empezar—:
@@ -7392,6 +7398,12 @@ enum L10n {
             static var cancelAdoptEffectBody: String { ls("storage.confirm.cancelAdoptEffectBody", comment: "") }
             static var cancelMigrationConfirm: String { ls("storage.confirm.cancelMigrationConfirm", comment: "") }
             static var cancelMigrationKeep: String { ls("storage.confirm.cancelMigrationKeep", comment: "") }
+            /// El mismo diálogo en la espera del seguidor (ticket `adopt-follower-waits-for-the-leader-with-no-ceiling`): este
+            /// teléfono solo espera, así que ni «cancelar la activación» ni «seguir activando la nube» son verdad ahí.
+            static var stopWaitingTitle: String { ls("storage.confirm.stopWaitingTitle", comment: "") }
+            static var stopWaitingBody: String { ls("storage.confirm.stopWaitingBody", comment: "") }
+            static var stopWaitingConfirm: String { ls("storage.confirm.stopWaitingConfirm", comment: "") }
+            static var stopWaitingKeep: String { ls("storage.confirm.stopWaitingKeep", comment: "") }
         }
 
         enum Errors {

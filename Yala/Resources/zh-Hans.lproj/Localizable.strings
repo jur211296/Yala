@@ -6078,6 +6078,12 @@
 "storage.confirm.cancelMigrationBody" = "您的数据会像以前一样保留在这台设备上。已上传的内容会保留在您的云端账户中。随时可以重试。";
 "storage.confirm.cancelAdoptBody" = "此设备没有更改您在云端的任何内容。您可以随时从这里在此设备上重新启用云端。";
 "storage.confirm.cancelAdoptEffectBody" = "此设备上的内容仍像以前一样留在这里。您可以随时从这里在此设备上重新启用云端。";
+"storage.waiting.stopWaiting" = "停止等待";
+"storage.confirm.stopWaitingTitle" = "停止等待？";
+"storage.confirm.stopWaitingBody" = "您的另一台设备会继续启用云端。此设备停止等待，不会更改您在云端的任何内容。您可以随时从这里在此设备上重新启用云端。";
+"storage.confirm.stopWaitingConfirm" = "是，停止等待";
+"storage.confirm.stopWaitingKeep" = "继续等待";
+"storage.progress.followerSessionExpired" = "您的云端登录已失效。请停止等待，然后用您的账户重新登录。";
 /* Botón que confirma cancelar la activación */
 "storage.confirm.cancelMigrationConfirm" = "是，取消";
 /* Botón que sigue con la activación */

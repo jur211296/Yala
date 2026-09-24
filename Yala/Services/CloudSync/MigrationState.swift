@@ -299,6 +299,11 @@ final class MigrationState {
     // `claimingMigration` (22 %), `assigningIdentity` (35 %) y `cutover(.pending)` (80 %). Un solo juego de campos para
     // los tres, y **sin campo de paso**: `handle` los limpia en CADA cambio de paso (`clearForwardStepStallCeiling()`), así
     // que solo pueden estar puestos con la fase en uno de los tres y describen siempre ESE. Pasar de paso es el avance.
+    //
+    // Desde `adopt-follower-waits-for-the-leader-with-no-ceiling` los usa también la espera del seguidor
+    // (`waitingForLeader`), con los mismos campos y sin schema nuevo. Ahí el avance es otro: cada `claiming_in_progress`
+    // borra los dos relojes (`MigrationRunner.noteLeaderAlive`), y como en los otros tres los sella la primera observación
+    // que no avanza.
 
     /// El instante del último AVANCE del paso —su primera observación sin avanzar—, con el `now` INYECTADO. Gobierna las
     /// 72 h. `nil` = el paso aún no se ha observado parado, o la fila viene de un build anterior a la v10: el presupuesto le
