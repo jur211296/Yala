@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-24 (Lima)
 
-**Rama** `2.1` — Merge #238: **El teléfono que pierde el relevo DESPUÉS del cutover ya no sube su residual: espera, se une o recupera el relevo.**
+**Rama** `2.1` — Merge #239: **Después del cutover no hay relevo: el segundo teléfono entra en la cuenta (g16_04, staging y producción).**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,28 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#238 · el que pierde el relevo después del cutover ya no sube su residual)
+## Esta sesión (#239 · después del cutover no hay relevo: el segundo teléfono entra en la cuenta)
+
+**Si el primer teléfono llegó al final de la activación y se quedó más de una hora sin reabrir Yala, el segundo ya no vuelve
+a subir todos sus datos encima: entra en la cuenta como cualquier segundo dispositivo, y tampoco se queda esperando a un
+teléfono que quizá no vuelve.** Decisión de Jürgen: B adopta. Servidor solo: `qa/cloud/g16_04_…`, aplicada en staging y
+producción (md5 de `claim_account` `c96106b7…` → `35423724…`); con `migrated_at` puesto y el lease vencido, el claim —con o
+sin `migration`— da `existing_stable` y el líder no cambia. App sin cambio de lógica (`existing_stable` ya lleva al adopt).
+Banco contra producción: 27 escenarios, 13 mutantes muertos; goldens de staging 33/34 (el 20, timeout conocido); gate (606
+unit, 4 XCUITest); review de 3 lentes. Ticket `claim-grants-a-takeover-after-the-leader-passed-the-cutover` a `qa`.
+
+### Lo que espera de Jürgen
+
+- **Device-QA** de este ticket: dos iPhone, A llega a «cierra y reabre Yala» y no se reabre en más de 60 min; B activa la
+  nube desde la tarjeta de Almacenamiento y entra sin migrar; A al volver termina y sincroniza (guion en el ticket).
+  Sustituye al de #238.
+- **Device-QA** de #237 y #236 siguen pendientes.
+- Nada que decidir ahora. Tickets nuevos de la review: `adopt-after-the-cutover-needs-a-marker-the-leader-never-exported`
+  (medium: si A pasa el cutover del servidor y no llega a exportar el marcador, B con datos propios no entra hasta que A
+  vuelva; tiene dos candidatas, cliente o servidor), `adopt-orphan-with-a-fresh-hlc-beats-the-absent-leaders-edit` (low) y
+  `claim-takeover-races-the-leader-cutover-without-cas` (low).
+
+## Sesión anterior (#238 · el que pierde el relevo después del cutover ya no sube su residual)
 
 **El teléfono que terminó de activar la nube y perdió el relevo mientras esperaba a que reabrieras Yala ya no sube lo que
 escribió encima de la activación de otro dispositivo, ni lo reintenta en bucle.** Espera sin subir mientras el otro sigue;
@@ -34,13 +55,11 @@ hallazgos que suban nada; una refutada midiendo el RPC). Ticket
 
 ### Lo que espera de Jürgen
 
-- **Device-QA** de este ticket: dos iPhone, A llega al final de la activación y no se reabre en más de 60 min; B toma el
-  relevo; A al volver no sube nada y, cuando B termina, sincroniza (guion en el ticket).
+- Su guion de device-QA ya no se puede montar contra producción desde #239 (B ya no toma el relevo): lo sustituye el de
+  `claim-grants-a-takeover-after-the-leader-passed-the-cutover`.
 - **Device-QA** de #237 y #236 siguen pendientes.
-- Nada que decidir ahora. Ticket nuevo: `claim-grants-a-takeover-after-the-leader-passed-the-cutover` (medium): el servidor
-  no debería dar el relevo con `migrated_at` puesto; pide decidir si B espera o adopta.
 
-## Sesión anterior (#237 · el teléfono que perdió el relevo ya no sube nada más)
+## Antes (#237 · el teléfono que perdió el relevo ya no sube nada más)
 
 **El teléfono que empezó a activar la nube, se quedó más de una hora sin conexión y perdió el relevo ya no sube sus datos
 encima de los del dispositivo que tomó el relevo.** Sale enseguida con «otro dispositivo con tu cuenta tomó el relevo».
