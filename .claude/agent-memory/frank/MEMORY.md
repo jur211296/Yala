@@ -49,7 +49,7 @@
 - [El predicado del ticket no es el criterio](feedback_el_predicado_del_ticket_no_es_el_criterio.md) — mide con qué predicado decide la superficie.
 - [Una key nueva está AUSENTE en todo el parque](feedback_una_key_nueva_esta_ausente_en_todo_el_parque.md) — «no hay marca» = «primera vez que corre.
 - [El store vacío no existe](feedback_el_store_vacio_no_existe.md) — el arranque siembra tipos de cambio antes del Welcome; «nada que subir» se mide en un teléfono real.
-- [La premisa del ENCARGO también se mide](feedback_la_premisa_del_encargo_tambien_se_mide.md) — hereda los errores del ticket.
+- [La premisa del ENCARGO también se mide](feedback_la_premisa_del_encargo_tambien_se_mide.md) — hereda los errores del ticket, también el CÓMO arreglarlo.
 - [El paso de ANTES también lee](feedback_el_paso_de_antes_tambien_lee.md) — cerré seis inventarios y el backfill que los alimenta tragaba igual.
 - [Una frase de alcance se cuenta por llamadores](feedback_una_frase_de_alcance_se_cuenta_por_llamadores.md) — «solo en carrera» cayó: la migración sube sin la puerta que yo miré.
 - [`-only-testing` filtra por TIPO, no por fichero](feedback_only_testing_filtra_por_tipo_no_por_fichero.md) — pedí 12 suites y corrieron 7. Cuenta pedidas vs. `Test run with`.
