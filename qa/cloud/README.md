@@ -2,9 +2,9 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (31 entradas)
+## Índice (32 entradas)
 
-> **No hace falta leer este fichero entero** — son 128 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 133 KB. Localiza la entrada
 > aquí y salta a ella.
 
 - `—` [Running the RLS gate](#running-the-rls-gate)
@@ -28,6 +28,7 @@
 - `—` [I14 — UI real de migración + consent + claimAction + relaunch asistido + encendido de flags](#i14--ui-real-de-migracin--consent--claimaction--relaunch-asistido--encendido-de-flags)
 - `—` [transfer_group_ownership (G10 / D10) — batch "salir de todos mis grupos" — APLICADA EN AMBOS ENVS ✅](#transfergroupownership-g10--d10--batch-salir-de-todos-mis-grupos--aplicada-en-ambos-envs)
 - `—` [G7 — cifrado pgcrypto de columnas † de grupos (data-at-rest)](#g7--cifrado-pgcrypto-de-columnas--de-grupos-data-at-rest)
+- `2026-09-24` [g16_02 — el reintento de un alta ya no siembra al lado de un teléfono que entró (2026-09-24)](#g1602--el-reintento-de-un-alta-ya-no-siembra-al-lado-de-un-telfono-que-entr-2026-09-24)
 - `2026-09-24` [g16_01 — el reintento del mismo teléfono termina el alta si se perdió la respuesta (2026-09-24)](#g1601--el-reintento-del-mismo-telfono-termina-el-alta-si-se-perdi-la-respuesta-2026-09-24)
 - `2026-09-10` [g15_01 — el tipo de cuenta: `complete` o `groups_only` (2026-09-10)](#g1501--el-tipo-de-cuenta-complete-o-groupsonly-2026-09-10)
 - `2026-09-07` [g14_01 — presupuesto de grupo: UN límite por grupo (2026-09-07)](#g1401--presupuesto-de-grupo-un-lmite-por-grupo-2026-09-07)
@@ -1693,6 +1694,61 @@ querying schema»**. El golden 28 hace `ctx.skip()` si `profiles[subC]` ya exist
 ```sql
 delete from public.profiles where id = (select id from auth.users where email='i5-user-c@test.yala');
 ```
+
+## g16_02 — el reintento de un alta ya no siembra al lado de un teléfono que entró (2026-09-24)
+
+**Aplicada en STAGING y en PRODUCCIÓN el 2026-09-24**, en ese orden, con `apply_migration` (el cuerpo desde el §0; la
+cabecera de comentarios va fuera de la función y no cambia el md5). Fichero:
+`qa/cloud/g16_02_claim_remembers_another_device_entered.sql`. Ticket:
+`claim-replay-can-seed-beside-a-phone-that-adopted-silently` (Paso 0 en su encargo).
+
+Qué cambia: si otro teléfono entra en la cuenta —«Ya tengo cuenta», la tarjeta de Almacenamiento, Grupos o «Soy nuevo
+→ nube», que acaban todos en el adopt— mientras el primero tiene su alta a medias por una respuesta perdida, el
+«Reintentar» del primero ya no siembra un segundo juego de cuentas y categorías: bloquea, como cualquier segundo
+dispositivo.
+
+La ventana, medida en el código: todo adopt pasa por `POST /account/claim` antes de terminar (`performClaim`,
+`migration: true`, 22 % de la barra), pero sobre una cuenta ya estable ese claim caía en la rama final y **no escribía
+nada**. g16_02 añade `profiles.personal_adopted_at`, que esa rama estampa cuando el claim lleva `migration` y quien
+llama no es el líder; y la rama g16_01 exige que sea nulo. **Solo con `migration`**: un claim sin ella que recibe
+`existing_stable` puede quedarse fuera —«Activar Yala completo» desde otro teléfono solo-grupos—, y la primera versión,
+que lo sellaba, bloqueaba a los dos teléfonos sobre una cuenta vacía (lo cazó la review). **Sin `for update`**: el
+cruce que evitaría da lo mismo que «A llegó antes» (la review también). No estampa: un claim `groups_only`, el propio
+líder, ni un seguidor de migración (`claiming_in_progress`). La firma no cambia: sin `drop`, sin grants, **sin deploy
+del Worker** ni release de la app. El §1 termina con `notify pgrst, 'reload schema'`.
+
+**md5 de `claim_account`**: partida `e7f8bec957091abaa126d8100a3a53bd` (g16_01) · llegada
+`ab0e59d094fe7d7324d3ea79b4861965` **en los dos entornos** — el §3 aborta si sale otro.
+
+**Verificación antes de aplicar** — banco transaccional contra el motor de producción, cerrado con una excepción
+(cero rastro: md5, columna, usuarios sintéticos e historial comprobados después). Los 21 escenarios del §4 (los 13
+de g16_01, ahora también con el sello como salida, y 8 nuevos) con la función VIVA, la NUEVA y un mutante por término:
+
+```
+escenario                    1234567890 1234567890 1
+LIVE (control negativo)      .......... ...LL.LL.. .   ← 14, 15, 17, 18: el bug medido, el reintento repite `created`
+NEW                          .......... .......... .
+M1 sin el sello              .......... ...LL.LL.. .
+M2 g16_01 no mira el sello   .......... ...LL.LL.. .
+M3 sella también al líder    ........S. .........L .
+M4 sella al seguidor         .......... .......... S
+M5 sella sin migración       ...SS..... ..S..L.... .
+```
+
+`L` = estado equivocado; `S` = sello equivocado. Lo que la sonda no cubre: «solo el primer sello» (dentro de una
+transacción `now()` no cambia), y es a propósito —ahorra reescribir la fila en cada re-kick del adopt—.
+
+**Goldens** (`gateway/test/account.goldens.test.ts`): el 28 fijaba el bug como contrato —«otro dispositivo» y después
+«el mismo repite → `created`»—. Ahora recorre: otro teléfono solo por Grupos (sin sello) → el reintento termina
+(criterio 2) → una migración del mismo no replica ni sella → otro teléfono entra por el adopt (sello puesto, contador a
+cero) → el reintento bloquea (criterio 1). **Corridos contra staging el 2026-09-24, tras aplicar g16_02:** 34/35, con el
+1, el de g3_02 y el 28 dentro. El único rojo es el 20, el timeout que ya lleva `account-goldens-freeze-read-test-times-out`.
+Antes se borraron las filas de `profiles` de A, B y C.
+
+**Lo que queda fuera, escrito en la cabecera del fichero**: A reintenta ANTES de que B entre (la carrera de siempre
+entre dos teléfonos sobre una cuenta recién creada); los segundos entre el claim sin migración de «Soy nuevo → nube» y
+el de su adopt; y un «Migrar» de B rechazado en el claim, que sella sin entrar (solo si A promociona entre la pregunta a
+`/account/exists` y ese claim).
 
 ## g16_01 — el reintento del mismo teléfono termina el alta si se perdió la respuesta (2026-09-24)
 

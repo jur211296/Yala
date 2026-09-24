@@ -228,7 +228,8 @@ nonisolated enum BornCloudSignUpFlow {
         /// La cuenta ya existía (la creó otro device, o ya tiene algo personal escrito): continuar por el
         /// flujo de re-entrada CON LA SESIÓN VIVA (`exists` → guard cross-cuenta → adopt). No siembra. El
         /// reintento de ESTE device tras un `created` perdido, con la cuenta aún vacía, ya no llega aquí: el
-        /// servidor lo repite como `created` y siembra (`qa/cloud/g16_01_…`, 2026-09-24).
+        /// servidor lo repite como `created` y siembra (`qa/cloud/g16_01_…`, 2026-09-24). Salvo que otro device
+        /// haya entrado entretanto por el adopt: entonces llega aquí y entra en su cuenta (`qa/cloud/g16_02_…`).
         case continueAsReturningUser
         /// Terminal directa: otro device lidera, el método no casa, o un error del claim.
         case show(CloudWelcomeSignInPhase)
@@ -261,8 +262,9 @@ nonisolated enum BornCloudSignUpFlow {
             return .show(.accountBlocked)
         case .transient:
             // El claim es idempotente por contrato (§f.1: el re-claim del MISMO device colapsa a
-            // `created` mientras la cuenta no tenga nada personal — `qa/cloud/g16_01_…`), así que
-            // reintentar es seguro y, si el alta llegó al servidor, la termina.
+            // `created` mientras la cuenta no tenga nada personal ni nadie más dentro — `qa/cloud/g16_01_…` y
+            // `g16_02_…`), así que reintentar es seguro y, si el alta llegó al servidor, la termina o entra en la
+            // cuenta del otro device.
             return .show(.error(retryable: true))
         }
     }

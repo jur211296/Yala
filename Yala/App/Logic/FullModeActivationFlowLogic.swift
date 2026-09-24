@@ -238,6 +238,8 @@ enum FullModeActivationFlowLogic {
         /// termina: si el servidor llegó a promocionar y la respuesta se perdió, el reintento de ESTE teléfono
         /// sobre la cuenta todavía vacía vuelve a contestar `created` (`qa/cloud/g16_01_…`, 2026-09-24; antes
         /// contestaba `existing_stable` y bloqueaba — ticket `claim-promotion-lost-response-blocks-the-retry`).
+        /// Salvo que otro teléfono haya entrado entretanto por el adopt: entonces bloquea
+        /// (`qa/cloud/g16_02_…`).
         case retry
     }
 
@@ -246,8 +248,10 @@ enum FullModeActivationFlowLogic {
         /// que volvió a iCloud—. Sembrar aquí un segundo corpus sería una fusión, que el ADR descartó.
         /// Desde g16_01 NO sale para el reintento de este mismo teléfono sobre una cuenta en la que nadie ha
         /// escrito nada personal: eso es el mismo alta repetido y el servidor contesta `created`. SÍ sale si el
-        /// que promocionó fue otro teléfono (aunque aún no haya escrito: su alta está en curso) o si ya se
-        /// subió algo personal, preferencias incluidas.
+        /// que promocionó fue otro teléfono (aunque aún no haya escrito: su alta está en curso), si ya se
+        /// subió algo personal, preferencias incluidas, o si otro teléfono ya entró en la cuenta por el adopt
+        /// aunque no haya subido nada (`qa/cloud/g16_02_…`, ticket
+        /// `claim-replay-can-seed-beside-a-phone-that-adopted-silently`).
         case accountAlreadyHasPersonalData
         /// `claiming_in_progress`: otro dispositivo lidera una migración de esta cuenta.
         case anotherDeviceIsMoving

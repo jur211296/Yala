@@ -73,7 +73,9 @@ export async function requireUser(c: Ctx): Promise<AuthedUser | Response> {
  *
  * Idempotencia (g16_01, 2026-09-24): el MISMO `device_id` que creó o promocionó una cuenta `complete` en
  * la que nadie ha escrito nada personal vuelve a recibir `created` si repite el claim sin `migration` —
- * es el reintento tras una respuesta perdida. Vive entera en el RPC; este handler no cambia.
+ * es el reintento tras una respuesta perdida. Desde g16_02 deja de hacerlo si otro dispositivo ya entró: el
+ * claim con `migration` (el adopt) de un dispositivo que no es el líder que recibe `existing_stable` estampa
+ * `profiles.personal_adopted_at`. Vive entera en el RPC; este handler no cambia.
  */
 export async function handleAccountClaim(c: Ctx): Promise<Response> {
   const auth = await requireUser(c);
