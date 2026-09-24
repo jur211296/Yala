@@ -70,6 +70,10 @@ export async function requireUser(c: Ctx): Promise<AuthedUser | Response> {
  * `create_group`/`join_group`. Un claim `complete` sobre una fila ligera la PROMOCIONA (g3_02), así que
  * ésta es también la ruta de «Activar Yala completo → nube». La respuesta lleva `kind` en los tres
  * estados. ADR 2026-09-09 «Sesiones — dos ejes» §11.
+ *
+ * Idempotencia (g16_01, 2026-09-24): el MISMO `device_id` que creó o promocionó una cuenta `complete` en
+ * la que nadie ha escrito nada personal vuelve a recibir `created` si repite el claim sin `migration` —
+ * es el reintento tras una respuesta perdida. Vive entera en el RPC; este handler no cambia.
  */
 export async function handleAccountClaim(c: Ctx): Promise<Response> {
   const auth = await requireUser(c);

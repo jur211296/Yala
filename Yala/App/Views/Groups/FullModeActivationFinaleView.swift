@@ -23,9 +23,9 @@ enum FullModeActivationFinale: Equatable {
     case promoting
     /// No se puede promocionar y reintentar no lo cambia. No se ha escrito nada.
     case blocked(FullModeActivationFlowLogic.PromotionBlock)
-    /// Falló la red o el servidor. Aquí no se ha escrito nada, y reintentar no daña nada. Lo que no garantiza
-    /// es terminar: si el servidor llegó a promocionar y se perdió la respuesta, el reintento contesta
-    /// `existing_stable` y bloquea (`claim-promotion-lost-response-blocks-the-retry`).
+    /// Falló la red o el servidor. Aquí no se ha escrito nada, y reintentar no daña nada. Si el servidor llegó a
+    /// promocionar y se perdió la respuesta, el reintento de este teléfono vuelve a recibir `created` y termina
+    /// (`qa/cloud/g16_01_…`, ticket `claim-promotion-lost-response-blocks-the-retry`).
     case failed
     /// Una instalación solo-grupos anterior al paso 5: hay que reinstalar antes de elegir.
     case reinstallRequired

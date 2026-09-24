@@ -19,7 +19,9 @@ import Foundation
 nonisolated enum AccountClaimDecision {
 
     /// The 3-state result of `POST /account/claim` (§f.1 contract). `created` includes the idempotent
-    /// reclaim by the SAME in-progress leader device (the RPC collapses it to `created`).
+    /// reclaim by the SAME in-progress leader device (the RPC collapses it to `created`) and, since
+    /// `qa/cloud/g16_01_…` (2026-09-24), the non-migration reclaim by the SAME device that created or
+    /// promoted a `complete` account nobody has written anything personal to yet (a lost response).
     enum ClaimState: Equatable {
         /// The row did NOT exist and this call created it → this device is the seeder/leader.
         case created

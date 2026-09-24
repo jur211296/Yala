@@ -234,15 +234,20 @@ enum FullModeActivationFlowLogic {
         case commit
         /// No se puede promocionar y reintentar no lo cambia. **Nada se ha escrito**, ni aquí ni en el servidor.
         case blocked(PromotionBlock)
-        /// Red caída, 5xx o respuesta ilegible. Reintentar no escribe nada que no hiciera ya el primero; pero si
-        /// el servidor llegó a promocionar y la respuesta se perdió, el reintento contesta `existing_stable` y
-        /// se bloquea — ticket `claim-promotion-lost-response-blocks-the-retry`.
+        /// Red caída, 5xx o respuesta ilegible. Reintentar no escribe nada que no hiciera ya el primero, y
+        /// termina: si el servidor llegó a promocionar y la respuesta se perdió, el reintento de ESTE teléfono
+        /// sobre la cuenta todavía vacía vuelve a contestar `created` (`qa/cloud/g16_01_…`, 2026-09-24; antes
+        /// contestaba `existing_stable` y bloqueaba — ticket `claim-promotion-lost-response-blocks-the-retry`).
         case retry
     }
 
     enum PromotionBlock: Equatable {
         /// `existing_stable`: la cuenta ya tiene lo personal reclamado —desde otro dispositivo, o es una cuenta
         /// que volvió a iCloud—. Sembrar aquí un segundo corpus sería una fusión, que el ADR descartó.
+        /// Desde g16_01 NO sale para el reintento de este mismo teléfono sobre una cuenta en la que nadie ha
+        /// escrito nada personal: eso es el mismo alta repetido y el servidor contesta `created`. SÍ sale si el
+        /// que promocionó fue otro teléfono (aunque aún no haya escrito: su alta está en curso) o si ya se
+        /// subió algo personal, preferencias incluidas.
         case accountAlreadyHasPersonalData
         /// `claiming_in_progress`: otro dispositivo lidera una migración de esta cuenta.
         case anotherDeviceIsMoving

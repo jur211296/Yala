@@ -225,8 +225,10 @@ nonisolated enum BornCloudSignUpFlow {
         /// preguntándole al testigo de mount. El nombre del caso se conserva porque lo que este paso
         /// significa (activar el almacenamiento nube) no ha cambiado.
         case activateStorageAndRelaunch
-        /// La cuenta ya existía (2º device o reintento tras un `created` previo): continuar por el
-        /// flujo de re-entrada CON LA SESIÓN VIVA (`exists` → guard cross-cuenta → adopt). No siembra.
+        /// La cuenta ya existía (la creó otro device, o ya tiene algo personal escrito): continuar por el
+        /// flujo de re-entrada CON LA SESIÓN VIVA (`exists` → guard cross-cuenta → adopt). No siembra. El
+        /// reintento de ESTE device tras un `created` perdido, con la cuenta aún vacía, ya no llega aquí: el
+        /// servidor lo repite como `created` y siembra (`qa/cloud/g16_01_…`, 2026-09-24).
         case continueAsReturningUser
         /// Terminal directa: otro device lidera, el método no casa, o un error del claim.
         case show(CloudWelcomeSignInPhase)
@@ -259,7 +261,8 @@ nonisolated enum BornCloudSignUpFlow {
             return .show(.accountBlocked)
         case .transient:
             // El claim es idempotente por contrato (§f.1: el re-claim del MISMO device colapsa a
-            // `created`), así que reintentar es seguro.
+            // `created` mientras la cuenta no tenga nada personal — `qa/cloud/g16_01_…`), así que
+            // reintentar es seguro y, si el alta llegó al servidor, la termina.
             return .show(.error(retryable: true))
         }
     }

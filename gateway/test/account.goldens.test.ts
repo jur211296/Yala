@@ -192,6 +192,21 @@ async function readMigrationUpdatedAt(jwt: string): Promise<string | null> {
 }
 
 
+/**
+ * Filas de `sync_seq_counters` que el dueño ve de sí mismo (0 o 1). Es la señal de g16_01: la crea el
+ * trigger `stamp_server_seq` en la primera escritura personal y nunca se borra con la cuenta viva. Leerla
+ * con el JWT del usuario prueba además que RLS (`seq_select`) se la enseña — `claim_account` es SECURITY
+ * INVOKER y depende de eso.
+ */
+async function seqCounterRows(jwt: string): Promise<number> {
+  const sub = decodeSub(jwt);
+  const res = await fetch(`${URL}/rest/v1/sync_seq_counters?user_id=eq.${sub}&select=user_id`, {
+    headers: { apikey: ANON, Authorization: `Bearer ${jwt}` },
+  });
+  expect(res.status).toBe(200);
+  return ((await res.json()) as unknown[]).length;
+}
+
 const DEV_A = "device-A-01";
 const DEV_OTHER = "device-other-99";
 
@@ -221,7 +236,7 @@ beforeAll(async () => {
 });
 
 describe("I7a goldens · /account/* contra staging real", () => {
-  it("1. dos claims CONCURRENTES del mismo sub → exactamente uno 'created', el otro 'existing_stable'", async (ctx) => {
+  it("1. dos claims CONCURRENTES del mismo sub desde DOS dispositivos → exactamente uno 'created', el otro 'existing_stable'", async (ctx) => {
     // Requiere profiles[subA] AUSENTE (limpieza previa en contexto service — ver README/header).
     // SKIP limpio si el seed no está preparado (2026-07-15): el golden es one-shot-tras-seed por
     // diseño; fallar en cada corrida sin seed solo ensuciaba la suite (era el "preexistente" ×2).
@@ -229,9 +244,13 @@ describe("I7a goldens · /account/* contra staging real", () => {
       console.warn("[account.goldens] golden 1 SKIP: profiles[subA] existe — corre tras el seed (delete en contexto service)");
       ctx.skip();
     }
+    // DOS dispositivos, no uno (g16_01, 2026-09-24): desde esa migración el MISMO dispositivo que repite el
+    // alta sobre una cuenta sin escrituras personales vuelve a recibir `created` —es el reintento tras una
+    // respuesta perdida—, así que con un solo `device_id` el resultado dependería de si A tiene filas en
+    // `sync_seq_counters`. La exclusión mutua que este golden protege es entre dispositivos.
     const [r1, r2] = await Promise.all([
       claim(jwtA, { device_id: DEV_A, provider: "apple" }),
-      claim(jwtA, { device_id: DEV_A, provider: "apple" }),
+      claim(jwtA, { device_id: DEV_OTHER, provider: "apple" }),
     ]);
     expect(r1.status).toBe(200);
     expect(r2.status).toBe(200);
@@ -883,7 +902,7 @@ describe("g3_02 goldens · claim promociona fila LIGERA de grupos (staging real)
   // del usuario solo-grupos que activa Yala completo (antes: existing_stable → migración bloqueada).
   // AUTOSUFICIENTE: simula la fila ligera con patchProfile (RLS own-row) y el propio claim la
   // devuelve al estado reclamado — robusto en corridas repetidas, sin seed externo.
-  it("claim sobre fila ligera → created (promoción, estampa personal_claimed_at) y re-claim → existing_stable", async () => {
+  it("claim sobre fila ligera → created (promoción, estampa personal_claimed_at) y re-claim de una cuenta CON datos → existing_stable", async () => {
     // Garantiza fila presente (si una limpieza previa la dejó ausente, este claim la crea).
     await claim(jwtA, { device_id: "g3-02-pre", provider: "apple" });
     // Simula la fila LIGERA del claim ligero de grupos (provider/leader/mip como los deja G1).
@@ -901,9 +920,14 @@ describe("g3_02 goldens · claim promociona fila LIGERA de grupos (staging real)
     expect(r1.status).toBe(200);
     expect(r1.body.state).toBe("created"); // promoción: para lo PERSONAL la cuenta nace ahora
 
+    // El re-claim del MISMO dispositivo da `existing_stable` porque A TIENE escrituras personales (los goldens
+    // de sync pushean como A). Sin ellas, g16_01 lo repetiría como `created` — ése es el golden 28-bis. Se
+    // comprueba la premisa por el wire, y de paso que RLS deja al dueño ver su fila del contador: si la
+    // escondiera, g16_01 leería una cuenta con datos como vacía.
+    expect(await seqCounterRows(jwtA)).toBeGreaterThan(0);
     const r2 = await claim(jwtA, { device_id: "g3-02-dev", provider: "apple" });
     expect(r2.status).toBe(200);
-    expect(r2.body.state).toBe("existing_stable"); // idempotente post-promoción (pca estampado)
+    expect(r2.body.state).toBe("existing_stable"); // la cuenta ya tiene lo personal: nunca se re-siembra
 
     // Restaura el estado estable de A (leader era NULL; provider quedó "apple" por el claim).
     await patchProfile(jwtA, { leader_device_id: null });
@@ -989,11 +1013,29 @@ describe("g15_01 goldens · kind de la cuenta (staging real)", () => {
     expect((promo.body as { kind?: string }).kind).toBe("complete");
     expect(await existsFull(jwtC)).toEqual({ exists: true, kind: "complete" });
 
-    // (4) Idempotente: repetir la promoción no rompe ni re-crea.
-    const otra = await claim(jwtC, { device_id: "g15-c", provider: "google", kind: "complete" });
+    // (4) Otro dispositivo sobre la cuenta recién promovida: bloquea aunque no tenga nada escrito todavía
+    //     —su alta está en curso y sembrar encima sería la fusión que el ADR descartó—.
+    const otra = await claim(jwtC, { device_id: "g15-c-otro", provider: "google", kind: "complete" });
     expect(otra.status).toBe(200);
     expect(otra.body.state).toBe("existing_stable");
     expect((otra.body as { kind?: string }).kind).toBe("complete");
+
+    // (5) g16_01 · el MISMO dispositivo repite la promoción —el reintento tras una respuesta perdida— y la
+    //     cuenta no tiene ninguna escritura personal: es el mismo alta y contesta `created`. Hasta el
+    //     2026-09-24 este paso esperaba `existing_stable`, y eso era el bug: «Reintentar» bloqueaba con «Tu
+    //     cuenta ya tiene finanzas personales» a quien no las tenía (`claim-promotion-lost-response-blocks-the-retry`).
+    expect(await seqCounterRows(jwtC)).toBe(0);
+    const reintento = await claim(jwtC, { device_id: "g15-c", provider: "google", kind: "complete" });
+    expect(reintento.status).toBe(200);
+    expect(reintento.body.state).toBe("created");
+    expect((reintento.body as { kind?: string }).kind).toBe("complete");
+    expect(await existsFull(jwtC)).toEqual({ exists: true, kind: "complete" }); // no escribió nada nuevo
+
+    // (6) Y una migración del mismo dispositivo sobre esa cuenta NO la replica: `created` con `migration`
+    //     conduciría una máquina sin lease.
+    const migra = await claim(jwtC, { device_id: "g15-c", provider: "google", kind: "complete", migration: true });
+    expect(migra.status).toBe(200);
+    expect(migra.body.state).toBe("existing_stable");
   });
 
   it("29. una cuenta COMPLETA declara kind='complete' (el usuario A, sin tocarle nada)", async () => {
