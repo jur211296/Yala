@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-24 (Lima)
 
-**Rama** `2.1` — Merge #237: **El teléfono que perdió el relevo de una activación ya no sube nada más a la cuenta.**
+**Rama** `2.1` — Merge #238: **El teléfono que pierde el relevo DESPUÉS del cutover ya no sube su residual: espera, se une o recupera el relevo.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,27 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#237 · el teléfono que perdió el relevo ya no sube nada más)
+## Esta sesión (#238 · el que pierde el relevo después del cutover ya no sube su residual)
+
+**El teléfono que terminó de activar la nube y perdió el relevo mientras esperaba a que reabrieras Yala ya no sube lo que
+escribió encima de la activación de otro dispositivo, ni lo reintenta en bucle.** Espera sin subir mientras el otro sigue;
+cuando el otro termina, se une a la cuenta y empieza a sincronizar (hasta hoy se quedaba sin sincronizar para siempre con
+«Nube activa» en pantalla); si el otro abandona, a los 60 min recupera el relevo. No vuelve a iCloud: tras el cutover el
+marcador ya se exportó y sus datos están verificados en la cuenta. Cliente solo (`resolvePostCutoverLease`: latido →
+`complete` → claim de migración directo); medido en producción que `claim_account` da el relevo sin mirar `migrated_at` y
+que `complete` de quien no lidera contesta `other_leader`. Gate (7826 unit), 10 mutantes muertos, review de 2 lentes (sin
+hallazgos que suban nada; una refutada midiendo el RPC). Ticket
+`leader-displaced-after-the-cutover-pushes-its-residual-in-the-reconcile` a `qa`.
+
+### Lo que espera de Jürgen
+
+- **Device-QA** de este ticket: dos iPhone, A llega al final de la activación y no se reabre en más de 60 min; B toma el
+  relevo; A al volver no sube nada y, cuando B termina, sincroniza (guion en el ticket).
+- **Device-QA** de #237 y #236 siguen pendientes.
+- Nada que decidir ahora. Ticket nuevo: `claim-grants-a-takeover-after-the-leader-passed-the-cutover` (medium): el servidor
+  no debería dar el relevo con `migrated_at` puesto; pide decidir si B espera o adopta.
+
+## Sesión anterior (#237 · el teléfono que perdió el relevo ya no sube nada más)
 
 **El teléfono que empezó a activar la nube, se quedó más de una hora sin conexión y perdió el relevo ya no sube sus datos
 encima de los del dispositivo que tomó el relevo.** Sale enseguida con «otro dispositivo con tu cuenta tomó el relevo».
@@ -40,7 +60,7 @@ aceptan `heartbeat`. Gate (7814 unit, 8 XCUITest de Almacenamiento), 23 mutantes
   previo: el que pierde el lease después del cutover sube su residual) y `welcome-shows-a-takeover-exit-as-a-connection-error`
   (low).
 
-## Sesión anterior (#236 · el relevo de una activación abandonada no sube un corpus sin linaje)
+## Antes (#236 · el relevo de una activación abandonada no sube un corpus sin linaje)
 
 **Un teléfono que toma el relevo de una activación de la nube a medias ya no sube sus datos encima de los que otro
 dispositivo empezó a subir, si no casan con ellos.** Servidor: `claim_account` dice en todo `created` si la cuenta ya
