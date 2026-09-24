@@ -3148,6 +3148,209 @@ struct MigrationWorkExecutorTests {
         #expect(enfermo["Category"] == [], "las demás tablas siguen con su key")
         #expect(enfermo.count == sano.count - 1)
     }
+
+    // MARK: - El linaje de la IDA (ticket `migration-takeover-uploads-without-a-lineage-check`)
+
+    /// El backend de un líder que ya subió algo: las páginas que sirve la enumeración y el Merkle COHERENTE con ellas.
+    /// Fábrica y no fuente, por lo mismo que `seedWindowCorpus`: la fuente se consume al paginar.
+    private func backend(_ rows: [(table: String, id: UUID)], stub: RoutingStub) throws -> () -> FakeTombstoneSource {
+        var counts: [String: Int] = [:]
+        for row in rows { counts[row.table, default: 0] += 1 }
+        stub.merkleBody = try makeMerkleBody(counts)
+        return {
+            let source = FakeTombstoneSource()
+            if !rows.isEmpty {
+                source.pages = [PulledPage(deltas: rows.enumerated().map {
+                    upsertDelta(table: $0.element.table, syncID: $0.element.id, seq: Int64($0.offset + 1))
+                }, maxServerSeq: Int64(rows.count))]
+            }
+            return source
+        }
+    }
+
+    /// **Los dos criterios en el MISMO backend.** Un líder callado subió una cuenta y una categoría. El relevo con otro
+    /// corpus —otro iCloud— no comparte ninguna y sale `unproven`; el del mismo iCloud trae la cuenta por CloudKit, con su
+    /// `shortcutID` de siempre, y sale `proven`. Ninguno toca nada: ni push, ni encolado, ni backfill.
+    @Test("checkForwardLineage: otro corpus → unproven; el mismo iCloud (comparte la cuenta) → proven; ninguno muta")
+    func forwardLineage_foreignCorpusUnproven_sameICloudProven() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let leaderAccount = UUID()
+        let source = try backend([("accounts", leaderAccount), ("categories", UUID())], stub: stub)
+
+        // El corpus ajeno: sus propias filas, ninguna del líder. Una sin identidad, para ver que nadie la backfillea.
+        context.insert(Account(name: "Ajena", currencyCode: "USD", colorHex: "#111111", iconName: "banknote", type: "cash"))
+        let nilRow = Category(name: "ajena-sin-identidad", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+        context.insert(nilRow)
+        try context.save()
+        let foreign = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                   personalStoreURL: dir.appendingPathComponent("personal.sqlite"), tombstoneSource: source())
+        #expect(await foreign.checkForwardLineage() == .unproven(liveRows: 2))
+        #expect(stub.pushedSyncIDs.isEmpty)
+        #expect(nilRow.syncID == nil, "no muta: el backfill no corre")
+        #expect(try context.fetch(FetchDescriptor<SyncOutbox>()).isEmpty)
+        #expect(try context.fetch(FetchDescriptor<SyncIdentity>()).isEmpty)
+
+        // El mismo iCloud: la cuenta del líder llega por CloudKit con su identidad de siempre.
+        let shared = Account(name: "Del líder", currencyCode: "USD", colorHex: "#111111", iconName: "banknote", type: "cash")
+        shared.shortcutID = leaderAccount
+        context.insert(shared)
+        try context.save()
+        let relief = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                  personalStoreURL: dir.appendingPathComponent("personal.sqlite"), tombstoneSource: source())
+        #expect(await relief.checkForwardLineage() == .proven(sharedRows: 1))
+        #expect(stub.pushedSyncIDs.isEmpty)
+    }
+
+    /// La identidad compartida tiene que estar en SU tabla: la misma UUID en otra no prueba nada (defensa del cruce por
+    /// tabla; con UUID aleatorias no pasa, pero el diff del adopt ya compara por tabla y esto no puede ser más laxo).
+    @Test("checkForwardLineage: una identidad compartida en OTRA tabla no prueba el linaje")
+    func forwardLineage_sharedIdInAnotherTable_doesNotProve() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let id = UUID()
+        let source = try backend([("categories", id)], stub: stub)
+        let account = Account(name: "x", currencyCode: "USD", colorHex: "#111111", iconName: "banknote", type: "cash")
+        account.shortcutID = id
+        context.insert(account)
+        try context.save()
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source())
+        #expect(await executor.checkForwardLineage() == .unproven(liveRows: 1))
+    }
+
+    /// Sin filas personales vivas en el backend no hay nada que mezclar: el líder callado murió antes de subir, o todo lo
+    /// que subió se borró. Los tipos de cambio no cuentan (caché que cualquier teléfono siembra), ni para pedir prueba ni para
+    /// darla: un relevo que solo comparte un tipo de cambio con un backend que tiene más sigue `unproven`.
+    @Test("checkForwardLineage: backend vacío o solo tipos de cambio → sin datos; un tipo de cambio compartido no prueba nada")
+    func forwardLineage_noLiveRows_andExchangeRatesDoNotCount() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        context.insert(Account(name: "Mía", currencyCode: "USD", colorHex: "#111111", iconName: "banknote", type: "cash"))
+        let rate = try ExchangeRate(dateKey: "2026-09-24", base: "USD", ratesDictionary: ["PEN": 3.7])
+        let rateID = UUID()
+        rate.syncID = rateID
+        context.insert(rate)
+        try context.save()
+
+        let empty = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                 personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                 tombstoneSource: try backend([], stub: stub)())
+        #expect(await empty.checkForwardLineage() == .noLivePersonalRows)
+
+        let onlyRates = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                     personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                     tombstoneSource: try backend([("exchange_rates", rateID)], stub: stub)())
+        #expect(await onlyRates.checkForwardLineage() == .noLivePersonalRows)
+
+        let rateAndMore = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                       personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                       tombstoneSource: try backend([("exchange_rates", rateID), ("accounts", UUID())], stub: stub)())
+        #expect(await rateAndMore.checkForwardLineage() == .unproven(liveRows: 1))
+    }
+
+    /// Un tombstone del backend no es una fila viva: una identidad local que el backend BORRÓ no prueba nada, y sin vivas no
+    /// hay con qué mezclar.
+    @Test("checkForwardLineage: una identidad que el backend borró no prueba ni pide prueba")
+    func forwardLineage_tombstoneIsNotLive() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        stub.merkleBody = try makeMerkleBody([:])
+        let id = UUID()
+        _ = makeCategory("borrada-en-el-backend", syncID: id, in: context)
+        try context.save()
+        let source = FakeTombstoneSource()
+        source.pages = [PulledPage(deltas: [tombstone(table: "categories", syncID: id, seq: 1)], maxServerSeq: 1)]
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source)
+        #expect(await executor.checkForwardLineage() == .noLivePersonalRows)
+    }
+
+    /// Sesgo a esperar, jamás a proceder ni a bloquear por una página que faltó: la red de la enumeración y un Merkle que
+    /// cuenta más vivas de las enumeradas son `transient`. Pero una identidad compartida ya enumerada PRUEBA aunque el Merkle
+    /// no cuadre: la prueba positiva no necesita la enumeración entera.
+    @Test("checkForwardLineage: red o enumeración incompleta → transient; una compartida prueba igual")
+    func forwardLineage_networkAndIncompleteEnumeration() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let shared = UUID()
+        _ = makeCategory("compartida", syncID: shared, in: context)
+        try context.save()
+
+        let offline = FakeTombstoneSource()
+        offline.forced = .transient
+        let e1 = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                              personalStoreURL: dir.appendingPathComponent("personal.sqlite"), tombstoneSource: offline)
+        #expect(await e1.checkForwardLineage() == .transient)
+
+        // El Merkle dice 2 vivas y la enumeración trajo 1 ajena: incompleta → no se puede decir «no comparte nada».
+        stub.merkleBody = try makeMerkleBody(["categories": 2])
+        let partial = FakeTombstoneSource()
+        partial.pages = [PulledPage(deltas: [upsertDelta(table: "categories", syncID: UUID(), seq: 1)], maxServerSeq: 1)]
+        let e2 = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                              personalStoreURL: dir.appendingPathComponent("personal.sqlite"), tombstoneSource: partial)
+        #expect(await e2.checkForwardLineage() == .transient)
+
+        // Lo mismo, pero la página que llegó trae la compartida: probado, sin mirar el Merkle.
+        let partialShared = FakeTombstoneSource()
+        partialShared.pages = [PulledPage(deltas: [upsertDelta(table: "categories", syncID: shared, seq: 1)], maxServerSeq: 1)]
+        let e3 = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                              personalStoreURL: dir.appendingPathComponent("personal.sqlite"), tombstoneSource: partialShared)
+        #expect(await e3.checkForwardLineage() == .proven(sharedRows: 1))
+    }
+
+    /// Un inventario local que no se deja leer es `localFailure`, y ANTES de la red: nunca «probado» ni «sin datos», y sin
+    /// pagar la enumeración.
+    @Test("checkForwardLineage: el inventario local ilegible → localFailure, sin tocar la red")
+    func forwardLineage_unreadableInventory_isLocalFailure() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let source = FakeTombstoneSource()
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source)
+        executor._testInventoryFetchThrows = { step, entity in step == "adopt-inventory" && entity == "Account" }
+        #expect(await executor.checkForwardLineage() == .localFailure)
+        #expect(source.callCount == 0, "la avería local no paga la enumeración")
+    }
+
+    /// La pista del claim: `performClaim` guarda `has_personal_writes` del `created` y la borra en el claim siguiente, que
+    /// puede no traerla (un servidor sin g16_03) o no ser `created`.
+    @Test("performClaim: guarda la pista de g16_03 del created y la borra en el siguiente claim")
+    func claim_recordsThePersonalWritesHint() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    claimStore: CloudClaimActionStore(defaults: makeIsolatedDefaults(prefix: "mwe.claim.hint")))
+        stub.claimBody = Data(#"{"state":"created","has_personal_writes":true,"kind":"complete"}"#.utf8)
+        #expect(await executor.performClaim() == .success(.created))
+        #expect(executor.lastClaimReportedPersonalWrites() == true)
+
+        stub.claimBody = Data(#"{"state":"created","kind":"complete"}"#.utf8)
+        _ = await executor.performClaim()
+        #expect(executor.lastClaimReportedPersonalWrites() == nil, "sin el campo, sin pista: el runner falla cerrado")
+
+        stub.claimBody = Data(#"{"state":"created","has_personal_writes":false,"kind":"complete"}"#.utf8)
+        _ = await executor.performClaim()
+        #expect(executor.lastClaimReportedPersonalWrites() == false)
+
+        stub.claimStatus = 500
+        _ = await executor.performClaim()
+        #expect(executor.lastClaimReportedPersonalWrites() == nil, "un claim sin respuesta no hereda la pista del anterior")
+    }
 }
 
 /// Caja para contar desde el closure del seam: el closure se guarda en el ejecutor y la cuenta tiene que sobrevivir a él.

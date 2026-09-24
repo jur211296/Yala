@@ -66,7 +66,10 @@ extension CloudSyncSchemaVersions {
     /// «cualquier motivo definitivo» (`reverseUploadDefinitiveAt`, `reverseUploadDefinitiveAccruedSeconds`). Con un solo
     /// reloj, un `icloudUnusable` de una pasada cobraba las horas que la espera llevaba sin cuenta de iCloud (ticket
     /// `reverse-upload-ceiling-charges-a-wait-to-whoever-stops-it-last`).
-    static let migrationState = 15
+    /// Subió a 16 con `forwardLineageUnverified`: el claim que dio el turno dijo que la cuenta ya recibió datos personales
+    /// —o no lo dijo—, y la identidad tiene que comprobar que este corpus comparte linaje con ellos antes de subir (ticket
+    /// `migration-takeover-uploads-without-a-lineage-check`).
+    static let migrationState = 16
 }
 
 /// Journal single-row de la migración. Debe existir a lo sumo UNA fila (el runner la crea
@@ -344,6 +347,17 @@ final class MigrationState {
     /// adopta otra (`AdoptClaimScope`). Lo escribe el `handle` que entra en el claim; se va con la marca al volver a
     /// iCloud. `nil` = no se sabe, y entonces la marca no abre nada con una sesión puesta.
     var adoptClaimAccountHash: String?
+
+    /// ¿Tiene la identidad (35 %) que comprobar el LINAJE antes de subir? (ticket
+    /// `migration-takeover-uploads-without-a-lineage-check`). Lo escribe el runner en el MISMO save de la transición
+    /// `created → assigningIdentity`, con la pista del claim (`has_personal_writes`, g16_03): `true` si la cuenta ya recibió
+    /// datos personales o el servidor no lo dijo, `false` si no los recibió. La identidad lo pone a `false` al probarlo, para
+    /// no repetir la enumeración en la pasada siguiente. Se va en los cierres de intento.
+    ///
+    /// **`nil` también comprueba**: es la fila de un build anterior a la v16 parada en la identidad, cuyo claim nadie
+    /// journaleó. Falla cerrado a propósito: una key nueva está ausente en todo el parque, y leer su ausencia como «no hace
+    /// falta» abriría el relevo sin comprobar a todo teléfono que actualice a mitad de una activación.
+    var forwardLineageUnverified: Bool?
 
     // MARK: Techo del EFECTO del adopt (ticket `adopt-effect-retries-forever-with-no-ceiling`)
     //

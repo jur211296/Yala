@@ -147,6 +147,23 @@ private final class FakeExecutor: MigrationWorkExecuting {
         if let error = assignIdentityError { throw error }
     }
 
+    // Linaje de la ida (ticket `migration-takeover-uploads-without-a-lineage-check`).
+    /// `has_personal_writes` del último claim. `false` por defecto: las suites de antes no pagan la comprobación y su
+    /// camino no cambia. Los tests del linaje lo guionan.
+    var claimPersonalWrites: Bool? = false
+    func lastClaimReportedPersonalWrites() -> Bool? { claimPersonalWrites }
+    /// Cola de desenlaces de `checkForwardLineage` (el último se repite).
+    var lineageOutcomes: [ForwardLineageOutcome] = [.noLivePersonalRows]
+    private var lineageIndex = 0
+    var lineageCallCount = 0
+    func checkForwardLineage() async -> ForwardLineageOutcome {
+        lineageCallCount += 1
+        let outcome = lineageOutcomes[min(lineageIndex, lineageOutcomes.count - 1)]
+        lineageIndex += 1
+        return outcome
+    }
+
+
     /// Se llama al EMPEZAR cada `uploadSnapshot`, con el índice de la llamada (0-based). Lo pide el techo de la subida
     /// para que pase tiempo DENTRO de una pasada —entre una página confirmada y el intento siguiente—, que con un reloj
     /// fijo por `resume` no se puede montar.
@@ -5763,5 +5780,162 @@ struct MigrationRunnerTests {
         try seedJournal(context2, phase: .notStarted, pending: [.adoptBackendAccount])
         await makeRunner(context2, fake2).resume()
         #expect(fake2.count(.adoptBackendAccount) == 1)
+    }
+
+    // MARK: - El linaje de la ida (ticket `migration-takeover-uploads-without-a-lineage-check`)
+
+    /// Conduce «Migrar» de `notStarted` a donde llegue con un claim `created`.
+    private func driveMigration(_ runner: MigrationRunner) async {
+        await runner.startMigration(dryRun: false)
+        await runner.submit(.consentAccepted)
+        await runner.submit(.signInSucceeded)
+    }
+
+    /// **Criterio 3: el alta normal no paga nada.** Con el servidor diciendo que la cuenta no recibió datos personales
+    /// (`has_personal_writes: false`, la cuenta nueva o solo de grupos), la identidad no pregunta y la migración llega al
+    /// final como antes del ticket.
+    @Test func forwardLineage_claimWithoutPersonalWrites_skipsTheCheck() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.claimPersonalWrites = false
+        fake.lineageOutcomes = [.unproven(liveRows: 9)]   // si preguntara, bloquearía: el test lo vería
+        await driveMigration(makeRunner(context, fake))
+        #expect(fake.lineageCallCount == 0, "sin datos en la cuenta no hay enumeración")
+        #expect(try journal(context).readPhase().phase == .done)
+    }
+
+    /// **Criterio 2: el relevo legítimo termina.** Con datos en la cuenta —y también sin pista, un servidor sin g16_03: falla
+    /// cerrado— la identidad pregunta UNA vez, lo prueba y la migración llega al final.
+    @Test(arguments: [true as Bool?, nil as Bool?])
+    func forwardLineage_claimOnAnAccountWithData_checksOnceAndFinishes(hint: Bool?) async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.claimPersonalWrites = hint
+        fake.lineageOutcomes = [.proven(sharedRows: 3)]
+        await driveMigration(makeRunner(context, fake))
+        #expect(fake.lineageCallCount == 1)
+        #expect(try journal(context).readPhase().phase == .done)
+    }
+
+    /// Sin filas vivas en la cuenta (el líder callado murió antes de subir) no hay nada que mezclar: sigue.
+    @Test func forwardLineage_noLivePersonalRows_finishes() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.claimPersonalWrites = true
+        fake.lineageOutcomes = [.noLivePersonalRows]
+        await driveMigration(makeRunner(context, fake))
+        #expect(try journal(context).readPhase().phase == .done)
+    }
+
+    /// **Criterio 1: el relevo con otro corpus no sube nada y sale.** La identidad no llega a asignar ni la subida a
+    /// empezar; a 899 s sigue esperando y a 900 s sale a `failedRollback` con su motivo propio, que elige el texto.
+    @Test func forwardLineage_unproven_uploadsNothing_andLeavesAt900Seconds() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.claimPersonalWrites = true
+        fake.lineageOutcomes = [.unproven(liveRows: 42)]
+        let clock = MutableClock(fixedNow)
+        let runner = makeRunner(context, fake, now: { clock.value })
+        await driveMigration(runner)
+        var j = try journal(context)
+        #expect(j.readPhase().phase == .assigningIdentity)
+        #expect(j.forwardLineageUnverified == true, "la pista se journaleó con la transición del claim")
+        #expect(j.forwardStepStallCauseRaw == "lineageUnproven")
+        #expect(fake.assignIdentityCallCount == 0, "ni la identidad toca nada")
+        #expect(fake.uploadCursorsSeen.isEmpty, "ni se sube nada")
+
+        clock.value = fixedNow.addingTimeInterval(899)
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        #expect(try journal(context).readPhase().phase == .assigningIdentity, "a 899 s todavía no")
+
+        clock.value = fixedNow.addingTimeInterval(900)
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        j = try journal(context)
+        #expect(j.readPhase().phase == .failedRollback)
+        #expect(j.forwardStepExitReasonRaw == "lineageUnproven")
+        #expect(j.forwardLineageUnverified == nil, "la pista es del intento que se cierra")
+        #expect(fake.count(.rollback) == 1)
+        #expect(fake.assignIdentityCallCount == 0)
+        #expect(fake.uploadCursorsSeen.isEmpty)
+    }
+
+    /// **El relevo del SEGUIDOR** —el caso del ticket: espera a un líder que calla, y su re-claim recibe el turno— también
+    /// journalea la pista y comprueba. La pista se escribe en `handle`, al entrar en la identidad, y no en `driveClaim`: el
+    /// seguidor entra por `pollLeader`, que es otro claim (lo cazaron dos lentes de la review). Y una pista `false` de un
+    /// intento anterior no se hereda: cada entrada en la identidad la reescribe.
+    @Test func forwardLineage_followerTakeover_checksToo() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.claimOutcomes = [.success(.created)]
+        fake.claimPersonalWrites = true
+        fake.lineageOutcomes = [.unproven(liveRows: 5)]
+        let state = try seedJournal(context, phase: .waitingForLeader)
+        state.forwardLineageUnverified = false            // lo que quedara de un intento anterior
+        try context.save()
+        let runner = makeRunner(context, fake)
+        await runner.pollLeader()
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .assigningIdentity)
+        #expect(j.forwardLineageUnverified == true)
+        #expect(fake.lineageCallCount == 1)
+        #expect(j.forwardStepStallCauseRaw == "lineageUnproven")
+        #expect(fake.uploadCursorsSeen.isEmpty)
+    }
+
+    /// La red —o una enumeración que el Merkle no da por completa— no es definitiva: pausa el reloj corto y espera el
+    /// largo. A 900 s sigue en la identidad.
+    @Test func forwardLineage_transient_waitsTheLongCeiling() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.lineageOutcomes = [.transient]
+        let clock = MutableClock(fixedNow)
+        try seedJournal(context, phase: .assigningIdentity, leaderDeviceID: deviceID)
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        #expect(try journal(context).forwardStepStallCauseRaw == nil)
+        clock.value = fixedNow.addingTimeInterval(900)
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        #expect(try journal(context).readPhase().phase == .assigningIdentity)
+        #expect(fake.assignIdentityCallCount == 0)
+    }
+
+    /// El inventario local ilegible en la comprobación cuenta como la base local de la identidad: el mismo motivo y la
+    /// misma salida, no «probado».
+    @Test func forwardLineage_localFailure_isTheIdentityLocalFailure() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.lineageOutcomes = [.localFailure]
+        try seedJournal(context, phase: .assigningIdentity, leaderDeviceID: deviceID)
+        await makeRunner(context, fake).resume()
+        #expect(try journal(context).forwardStepStallCauseRaw == "localFailure")
+        #expect(fake.assignIdentityCallCount == 0)
+    }
+
+    /// **Una fila de antes de la v16 parada en la identidad COMPRUEBA** (`nil` falla cerrado), y la prueba se journalea:
+    /// la pasada siguiente —aquí, tras un `save()` local que falla— no vuelve a enumerar.
+    @Test func forwardLineage_preV16Row_checks_andTheProofIsJournaled() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.lineageOutcomes = [.proven(sharedRows: 1)]
+        fake.assignIdentityError = FakeError()
+        try seedJournal(context, phase: .assigningIdentity, leaderDeviceID: deviceID)
+        #expect(try journal(context).forwardLineageUnverified == nil)
+
+        await makeRunner(context, fake).resume()
+        #expect(fake.lineageCallCount == 1)
+        #expect(try journal(context).forwardLineageUnverified == false)
+
+        fake.assignIdentityError = nil
+        await makeRunner(context, fake).resume()
+        #expect(fake.lineageCallCount == 1, "probado una vez, no se vuelve a enumerar")
+        #expect(fake.assignIdentityCallCount == 2)
+        #expect(try journal(context).readPhase().phase == .done)
     }
 }

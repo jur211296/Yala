@@ -5360,3 +5360,6 @@
 
 /* Ver qué migraría: los conteos no se pudieron leer */
 "storage.migrate.previewUnreadable" = "Não conseguimos contar os teus dados. Tenta novamente daqui a pouco.";
+
+/* Storage failure card: another device had already started uploading to this account and this device's data does not share lineage with it */
+"storage.failed.stepLineageUnproven" = "Não conseguimos ativar a nuvem: essa conta já tem dados na nuvem, e os deste dispositivo não coincidem com eles, por isso não os juntámos. O que tem neste dispositivo continua aqui. Confirme que está a entrar com a conta certa. Se for a sua e este dispositivo usar o mesmo iCloud, aguarde que o iCloud termine de trazer os seus dados e tente novamente.";

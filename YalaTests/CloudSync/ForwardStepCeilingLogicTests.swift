@@ -29,7 +29,7 @@ struct ForwardStepCeilingLogicTests {
     }
 
     private static let allReasons: [ForwardStepExitReason] = [
-        .stalled, .sessionExpired, .accountUnavailable, .refused, .otherDevice, .localFailure,
+        .stalled, .sessionExpired, .accountUnavailable, .refused, .otherDevice, .localFailure, .lineageUnproven,
     ]
 
     // MARK: - El texto de la tarjeta de fallo (decisión de Jürgen: texto POR MOTIVO)
@@ -44,6 +44,8 @@ struct ForwardStepCeilingLogicTests {
         #expect(message(.refused) == L10n.Storage.Failed.snapshotAccountUnavailable(supportEmail),
                 "el servidor dijo que no: es la frase de la cuenta, con su correo")
         #expect(message(.localFailure) == L10n.Storage.Failed.snapshotLocalFailure)
+        #expect(message(.lineageUnproven) == L10n.Storage.Failed.stepLineageUnproven,
+                "el relevo sin linaje (ticket `migration-takeover-uploads-without-a-lineage-check`)")
     }
 
     /// Las tres frases nuevas son distintas entre sí, de las de la subida que NO se reusan y del genérico. Y ninguna sale
@@ -59,8 +61,8 @@ struct ForwardStepCeilingLogicTests {
                     "la de la subida dice «mientras subíamos tus datos», que al 22 % es falso")
             #expect(text != L10n.Storage.Failed.migration, "ninguno cae al genérico: esa fue la decisión")
         }
-        #expect(Set(Self.allReasons.map { message($0) }).count == 5,
-                "seis motivos, cinco frases: `refused` y `accountUnavailable` comparten la de la cuenta a propósito")
+        #expect(Set(Self.allReasons.map { message($0) }).count == 6,
+                "siete motivos, seis frases: `refused` y `accountUnavailable` comparten la de la cuenta a propósito")
     }
 
     /// Solo lo que dijo el servidor sobre la cuenta da el correo de soporte. «Otro dispositivo tomó el relevo» no es un
@@ -69,7 +71,7 @@ struct ForwardStepCeilingLogicTests {
         for exit in [ForwardStepExitReason.accountUnavailable, .refused] {
             #expect(message(exit).contains(supportEmail), "\(exit)")
         }
-        for exit in [ForwardStepExitReason.stalled, .sessionExpired, .otherDevice, .localFailure] {
+        for exit in [ForwardStepExitReason.stalled, .sessionExpired, .otherDevice, .localFailure, .lineageUnproven] {
             #expect(!message(exit).contains(supportEmail), "\(exit)")
         }
     }
@@ -92,11 +94,14 @@ struct ForwardStepCeilingLogicTests {
     @Test func rawValues_areWire() {
         #expect([ForwardStepPhase.claim, .identity, .cutoverPending, .waitingForLeader].map(\.rawValue)
             == ["claim", "identity", "cutoverPending", "waitingForLeader"])
-        #expect([ForwardStepBlocker.sessionExpired, .accountUnavailable, .refused, .otherDevice, .localFailure]
-            .map(\.rawValue) == ["sessionExpired", "accountUnavailable", "refused", "otherDevice", "localFailure"])
+        #expect([ForwardStepBlocker.sessionExpired, .accountUnavailable, .refused, .otherDevice, .localFailure,
+                 .lineageUnproven].map(\.rawValue)
+            == ["sessionExpired", "accountUnavailable", "refused", "otherDevice", "localFailure", "lineageUnproven"])
         #expect(Self.allReasons.map(\.rawValue)
-            == ["stalled", "sessionExpired", "accountUnavailable", "refused", "otherDevice", "localFailure"])
-        for blocker in [ForwardStepBlocker.sessionExpired, .accountUnavailable, .refused, .otherDevice, .localFailure] {
+            == ["stalled", "sessionExpired", "accountUnavailable", "refused", "otherDevice", "localFailure",
+                "lineageUnproven"])
+        for blocker in [ForwardStepBlocker.sessionExpired, .accountUnavailable, .refused, .otherDevice, .localFailure,
+                        .lineageUnproven] {
             #expect(ForwardStepExitReason(blocker).rawValue == blocker.rawValue, "\(blocker)")
         }
     }
@@ -196,13 +201,14 @@ struct ForwardStepCeilingLogicTests {
             == ["stalled", "sessionExpired", "accountUnavailable", "cancelled"])
         // Las dos del EFECTO (ticket `adopt-effect-retries-forever-with-no-ceiling`) no salen nunca del claim.
         for reason in [ForwardStepExitReason.stalled, .sessionExpired, .accountUnavailable, .refused, .otherDevice,
-                       .localFailure] {
-            #expect(![AdoptClaimExit.effectStalled, .effectLocalFailure].contains(AdoptClaimExit(reason)), "\(reason)")
+                       .localFailure, .lineageUnproven] {
+            #expect(![AdoptClaimExit.effectStalled, .effectLocalFailure, .effectLineageUnproven]
+                .contains(AdoptClaimExit(reason)), "\(reason)")
         }
         #expect(AdoptClaimExit(.stalled) == .stalled)
         #expect(AdoptClaimExit(.sessionExpired) == .sessionExpired)
         #expect(AdoptClaimExit(.accountUnavailable) == .accountUnavailable)
-        for reason in [ForwardStepExitReason.refused, .otherDevice, .localFailure] {
+        for reason in [ForwardStepExitReason.refused, .otherDevice, .localFailure, .lineageUnproven] {
             #expect(AdoptClaimExit(reason) == .stalled, "\(reason)")
         }
     }
@@ -439,5 +445,55 @@ struct ForwardStepCeilingLogicTests {
         #expect(notice.contains("guard !isJournalUnreadable else { return nil }"))
         #expect(notice.contains(
             "phase: journaledPhase, claimIntent: journaledClaimIntent, observedCause: claimDefinitiveCause"))
+    }
+
+    // MARK: - El relevo sin linaje (ticket `migration-takeover-uploads-without-a-lineage-check`)
+
+    /// Su frase es suya —no la del adopt con el mismo nombre, que habla de un marcador y de esperar a iCloud— y en ningún
+    /// idioma promete «tus datos» en el teléfono: la bienvenida la enseña a un teléfono que puede estar recién instalado. Se
+    /// lee del fichero de cada locale, porque la corrida solo ve uno.
+    @Test func lineageText_isItsOwn_inEveryLocale() throws {
+        let text = L10n.Storage.Failed.stepLineageUnproven
+        #expect(!text.hasPrefix("storage."))
+        #expect(text != L10n.Storage.Failed.adoptEffectLineageUnproven)
+        #expect(text != L10n.Storage.Failed.stepOtherDevice)
+        #expect(StorageFailureCopyLogic.forwardLineageMessage == text, "una sola frase para las dos pantallas")
+
+        let resources = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("Yala/Resources")
+        let locales = try FileManager.default.contentsOfDirectory(atPath: resources.path).filter { $0.hasSuffix(".lproj") }
+        #expect(locales.count == 16)
+        for locale in locales {
+            let url = resources.appendingPathComponent("\(locale)/Localizable.strings")
+            let table = try #require(NSDictionary(contentsOf: url) as? [String: String], "\(locale)")
+            let value = try #require(table["storage.failed.stepLineageUnproven"], "\(locale)")
+            #expect(!value.isEmpty && !value.contains("NEEDS_TRANSLATION"), "\(locale)")
+            // La frase de «Migrar» que promete los datos en el teléfono, cortada en su primera cláusula (el molde del adopt).
+            let localData = try #require(table["storage.confirm.cancelMigrationBody"], "\(locale)")
+                .components(separatedBy: CharacterSet(charactersIn: ".。,，、;；")).first ?? ""
+            #expect(!localData.isEmpty, "\(locale): control del corte")
+            #expect(!value.contains(localData), "\(locale) repite «\(localData)»")
+            #expect(value != table["storage.failed.adoptEffectLineageUnproven"], "\(locale)")
+        }
+    }
+
+    /// El claim no produce el linaje: el aviso del 22 % calla con él, como con los otros motivos que no son suyos.
+    @Test func lineageUnproven_isNotAClaimNotice() {
+        #expect(AdoptClaimScope.notice(phase: .claimingMigration, claimIntent: .adoptIfExisting,
+                                       observedCause: .lineageUnproven) == nil)
+    }
+
+    /// La bienvenida: el adopt que recibió el relevo y salió por linaje tiene su fase —ni `.adoptExit`, que es del claim o
+    /// del efecto, ni el «Revisa tu conexión» de `.error`—. La marca de un adopt manda antes, y la vuelta no lo lee.
+    @Test func welcome_lineageExit_isItsOwnPhase() {
+        #expect(CloudWelcomeSignInFlow.phase(for: .failed(.migration), forwardStepExit: .lineageUnproven) == .lineageExit)
+        #expect(CloudWelcomeSignInFlow.phase(for: .failed(.migration), forwardStepExit: .localFailure)
+                == .error(retryable: true), "los demás motivos del paso siguen como estaban")
+        #expect(CloudWelcomeSignInFlow.phase(for: .failed(.migration), adoptClaimExit: .stalled,
+                                             forwardStepExit: .lineageUnproven) == .adoptExit(.stalled))
+        #expect(CloudWelcomeSignInFlow.phase(for: .failed(.reverse), forwardStepExit: .lineageUnproven)
+                == .error(retryable: true))
+        #expect(CloudWelcomeSignInFlow.phase(for: .idle, forwardStepExit: .lineageUnproven) == .adopting(fraction: 0))
     }
 }

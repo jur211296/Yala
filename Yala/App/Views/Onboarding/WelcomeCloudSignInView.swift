@@ -340,7 +340,8 @@ struct WelcomeCloudSignInView: View {
         // `.accountBlocked`: el claim fue RECHAZADO (403) — tampoco se creó nada, y sin retry ni
         // salida sería un callejón (mismo criterio que `.blockedForeignData`).
         // `.adoptExit`: el adopt ya salió —por su techo— y la máquina está en `failedRollback`: nada en vuelo, como `.error`.
-        case .intro, .notFound, .blockedForeignData, .error, .adoptExit, .providerMismatch, .accountBlocked: true
+        // `.lineageExit`: lo mismo; la flecha es la salida para elegir otra cuenta.
+        case .intro, .notFound, .blockedForeignData, .error, .adoptExit, .lineageExit, .providerMismatch, .accountBlocked: true
         // `.creating`: el claim está en vuelo y puede CREAR la cuenta server-side — salir a mitad
         // dejaría al usuario sin saber si se dio de alta. Mismo criterio que `.checking`.
         // `.bornCloudReady` es terminal como `.relaunch`: la cuenta está creada y el par escrito.
@@ -436,6 +437,23 @@ struct WelcomeCloudSignInView: View {
                     title: L10n.Welcome.Cloud.errorTitle,
                     body: StorageFailureCopyLogic.adoptExitMessage(exit) ?? L10n.Welcome.Cloud.errorBody)
                     .accessibilityIdentifier("welcome_cloud_adopt_exit")
+                YalaPrimaryButton(L10n.Welcome.Cloud.retry) {
+                    launchFlow { await runFlowAfterConsent() }
+                }
+                .padding(.horizontal, DS.Spacing.xl)
+                .accessibilityIdentifier("welcome_cloud_retry")
+            }
+        case .lineageExit:
+            // El relevo sin linaje (ticket `migration-takeover-uploads-without-a-lineage-check`), con las dos salidas que el
+            // texto nombra: la flecha, al chooser, para entrar con otra cuenta; y «Reintentar», que repite el sign-in con la
+            // misma y vuelve a comprobar el linaje —es como se recupera el teléfono del mismo iCloud cuyos datos aún no
+            // habían llegado—. Icono de aviso y no de wifi: la causa no es la conexión.
+            VStack(spacing: DS.Spacing.lg) {
+                messageContent(
+                    icon: "exclamationmark.triangle",
+                    title: L10n.Welcome.Cloud.errorTitle,
+                    body: StorageFailureCopyLogic.forwardLineageMessage)
+                    .accessibilityIdentifier("welcome_cloud_lineage_exit")
                 YalaPrimaryButton(L10n.Welcome.Cloud.retry) {
                     launchFlow { await runFlowAfterConsent() }
                 }
@@ -1196,7 +1214,8 @@ struct WelcomeCloudSignInView: View {
             guard let next = CloudWelcomeSignInFlow.phase(
                 for: controller.uiState,
                 claimBlocker: controller.claimBlocker,
-                adoptClaimExit: controller.adoptClaimExit) else {
+                adoptClaimExit: controller.adoptClaimExit,
+                forwardStepExit: controller.forwardStepExitReason) else {
                 await evaluateAutoResume(controller: controller, screenPhase: phase)
                 do {
                     try await Task.sleep(for: .seconds(1))
@@ -1207,7 +1226,7 @@ struct WelcomeCloudSignInView: View {
             }
             phase = next
             switch next {
-            case .relaunch, .error, .adoptExit:
+            case .relaunch, .error, .adoptExit, .lineageExit:
                 return
             case .reentryReady:
                 // Terminal de ÉXITO del adopt sin relanzamiento. Para igual que `.relaunch`, y el

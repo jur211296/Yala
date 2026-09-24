@@ -267,8 +267,8 @@ nonisolated enum AdoptClaimScope {
         switch observedCause {
         case .sessionExpired:     return .sessionExpired
         case .accountUnavailable: return .accountUnavailable
-        case .refused, .otherDevice, .localFailure, nil:
-            // Los tres primeros no los produce el claim.
+        case .refused, .otherDevice, .localFailure, .lineageUnproven, nil:
+            // Los cuatro primeros no los produce el claim.
             return nil
         }
     }
@@ -336,7 +336,7 @@ nonisolated enum AdoptClaimExit: String, Equatable, Sendable {
         switch reason {
         case .sessionExpired:                           self = .sessionExpired
         case .accountUnavailable:                       self = .accountUnavailable
-        case .stalled, .refused, .otherDevice, .localFailure: self = .stalled
+        case .stalled, .refused, .otherDevice, .localFailure, .lineageUnproven: self = .stalled
         }
     }
 }
@@ -361,6 +361,11 @@ nonisolated enum ForwardStepBlocker: String, Equatable, Sendable {
     /// `assignIdentity()` lanzó: el `context.save()` de la base local o, desde `an-incomplete-inventory-reads-as-the-whole-corpus`,
     /// una tabla del inventario de la captura que no se deja leer. Las dos son la base local.
     case localFailure
+    /// La identidad no pudo probar el LINAJE (ticket `migration-takeover-uploads-without-a-lineage-check`): el claim dio el
+    /// turno sobre una cuenta que ya tiene filas personales vivas —el relevo de un líder callado— y ninguna está en este
+    /// store (`ForwardLineageOutcome.unproven`). Esperar no cambia de quién es el corpus; los 15 min absorben un import que
+    /// llega tarde, que la quiescencia de cada pasada ya espera antes.
+    case lineageUnproven
 }
 
 /// Por qué terminó uno de esos tres pasos al vencer su techo. Lo journalea la salida
@@ -376,6 +381,7 @@ nonisolated enum ForwardStepExitReason: String, Equatable, Sendable {
     case refused
     case otherDevice
     case localFailure
+    case lineageUnproven
 
     init(_ blocker: ForwardStepBlocker) {
         switch blocker {
@@ -384,6 +390,7 @@ nonisolated enum ForwardStepExitReason: String, Equatable, Sendable {
         case .refused:            self = .refused
         case .otherDevice:        self = .otherDevice
         case .localFailure:       self = .localFailure
+        case .lineageUnproven:    self = .lineageUnproven
         }
     }
 }
@@ -712,6 +719,15 @@ protocol MigrationWorkExecuting: AnyObject {
     /// paso 5 y el borrado del pendiente— no puede salir a `failedRollback`, que dejaría `.cloud` persistido en un terminal
     /// de fallo. Default `false` en la extension de abajo.
     func hasPersistedCloudMode() -> Bool
+    /// `has_personal_writes` del último `performClaim` que contestó `created` (g16_03, ticket
+    /// `migration-takeover-uploads-without-a-lineage-check`): la cuenta ya recibió datos personales. `nil` = no lo dijo (un
+    /// servidor sin g16_03, u otro desenlace). Lo lee `handle` al ENTRAR en `assigningIdentity`, para journalearlo en el
+    /// save de esa transición, venga del claim de `driveClaim` o del seguidor. Default `nil` en la extension de abajo.
+    func lastClaimReportedPersonalWrites() -> Bool?
+    /// ¿Comparte este corpus linaje con lo que la cuenta ya tiene? Lo pregunta la identidad antes de tocar nada cuando el
+    /// claim dijo —o no dijo— que la cuenta tenía datos personales. Default `.noLivePersonalRows` en la extension de abajo:
+    /// un fake que no lo guiona sigue como antes de este ticket.
+    func checkForwardLineage() async -> ForwardLineageOutcome
     /// w3: backfill de `syncID` (gate permanente) + captura `(ckRecordName, ckZoneName)` con el mirror vivo.
     func assignIdentity() async throws
     /// w4: sube el snapshot completo en batches idempotentes. `cursor` = última página confirmada (journal).
@@ -786,6 +802,11 @@ protocol MigrationWorkExecuting: AnyObject {
 }
 
 extension MigrationWorkExecuting {
+    /// Defaults del linaje de la ida (ticket `migration-takeover-uploads-without-a-lineage-check`): un conformador que no lo
+    /// modela —los fakes de las suites de antes— recorre la identidad como antes del ticket. El ejecutor real los override.
+    func lastClaimReportedPersonalWrites() -> Bool? { nil }
+    func checkForwardLineage() async -> ForwardLineageOutcome { .noLivePersonalRows }
+
     /// Default NO-OP del heartbeat (I14-pre): un conformador que no necesita latir (fakes del runner que no
     /// lo asertan, ejecutores futuros verify-only) no está obligado a implementarlo. El ejecutor real lo
     /// override con el tick throttled best-effort.
@@ -1236,6 +1257,15 @@ final class MigrationRunner {
             // que salió antes: desde aquí manda el desenlace de este intento, que dejará la suya si vuelve a salir. Y apunta
             // la cuenta del intento, a la que quedará atada esa marca (ticket `adopt-claim-stays-parked-with-no-ceiling`).
             // Solo al ENTRAR: en el self-hold del techo la sesión puede estar ya borrada, y re-leerla perdería la cuenta.
+            // La pista del LINAJE, en el MISMO save que ENTRA en la identidad (ticket
+            // `migration-takeover-uploads-without-a-lineage-check`): tras un relanzamiento el claim no se repite y la identidad
+            // solo tiene el journal. Aquí y no en `driveClaim`: a la identidad llegan DOS claims —el de `driveClaim` y el del
+            // seguidor que recibe el relevo (`pollLeaderInternal`)—, y el caso del ticket es justo el segundo. Solo se entra en
+            // la identidad desde un claim `created` de este proceso, así que la pista del último claim es la suya. Sin pista
+            // —un servidor sin g16_03— comprueba: falla cerrado.
+            if next == .assigningIdentity, current != .assigningIdentity {
+                state.forwardLineageUnverified = executor.lastClaimReportedPersonalWrites() != false
+            }
             if next == .claimingMigration, current != .claimingMigration {
                 state.adoptClaimExitRaw = nil
                 state.adoptClaimAccountHash = executor.currentAccountHash()
@@ -1300,8 +1330,9 @@ final class MigrationRunner {
                 // Los pendientes guardados de una vuelta ya se repusieron arriba si tocaba; en un cierre no queda nada
                 // que reponer.
                 state.setReverseOriginPendingEffects([])
-                // La intención es del intento que se cierra.
+                // La intención es del intento que se cierra. La pista del linaje, también: la escribe el claim siguiente.
                 state.forwardClaimIntentRaw = nil
+                state.forwardLineageUnverified = nil
             }
             // Techo de las fases previas al montaje: el reloj se compara por FASE, así que cualquier cambio de fase
             // lo invalida — incluido el RETORNO a una ya visitada, que es el que muerde: `reverseVerify` vuelve a
@@ -1655,6 +1686,25 @@ final class MigrationRunner {
     /// `an-incomplete-inventory-reads-as-the-whole-corpus`, un fetch del inventario de la captura—, y esperar no lo arregla: elige el techo CORTO (ticket `forward-migration-steps-have-no-ceiling-and-no-exit`; hasta ese
     /// ticket el `catch` hacía `return` y la barra se quedaba al 35 % para siempre). Devuelve `false` para cortar.
     private func driveIdentity() async throws -> Bool {
+        // El LINAJE, antes de tocar nada (ticket `migration-takeover-uploads-without-a-lineage-check`). El claim dio el turno
+        // sobre una cuenta que ya recibió datos personales —o no dijo lo contrario—: el caso es el relevo de un líder callado,
+        // que hasta este ticket subía su corpus encima de lo que el otro alcanzó a subir. `nil` también comprueba (una fila
+        // anterior a la v16). Probado, se journalea `false` y la pasada siguiente no vuelve a enumerar.
+        let state = try loadState()
+        if state.forwardLineageUnverified != false {
+            switch await executor.checkForwardLineage() {
+            case .proven, .noLivePersonalRows:
+                state.forwardLineageUnverified = false
+                state.updatedAt = now()
+                try context.save()
+            case .unproven:
+                return try await observeForwardStepStall(.identity, blocker: .lineageUnproven)
+            case .localFailure:
+                return try await observeForwardStepStall(.identity, blocker: .localFailure)
+            case .transient:
+                return try await observeForwardStepStall(.identity, blocker: nil)
+            }
+        }
         do {
             try await executor.assignIdentity()
         } catch {

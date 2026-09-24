@@ -2,9 +2,9 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (32 entradas)
+## Índice (33 entradas)
 
-> **No hace falta leer este fichero entero** — son 133 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 135 KB. Localiza la entrada
 > aquí y salta a ella.
 
 - `—` [Running the RLS gate](#running-the-rls-gate)
@@ -28,6 +28,7 @@
 - `—` [I14 — UI real de migración + consent + claimAction + relaunch asistido + encendido de flags](#i14--ui-real-de-migracin--consent--claimaction--relaunch-asistido--encendido-de-flags)
 - `—` [transfer_group_ownership (G10 / D10) — batch "salir de todos mis grupos" — APLICADA EN AMBOS ENVS ✅](#transfergroupownership-g10--d10--batch-salir-de-todos-mis-grupos--aplicada-en-ambos-envs)
 - `—` [G7 — cifrado pgcrypto de columnas † de grupos (data-at-rest)](#g7--cifrado-pgcrypto-de-columnas--de-grupos-data-at-rest)
+- `2026-09-24` [g16_03 — el claim que da el turno dice si la cuenta ya tiene datos personales (2026-09-24)](#g1603--el-claim-que-da-el-turno-dice-si-la-cuenta-ya-tiene-datos-personales-2026-09-24)
 - `2026-09-24` [g16_02 — el reintento de un alta ya no siembra al lado de un teléfono que entró (2026-09-24)](#g1602--el-reintento-de-un-alta-ya-no-siembra-al-lado-de-un-telfono-que-entr-2026-09-24)
 - `2026-09-24` [g16_01 — el reintento del mismo teléfono termina el alta si se perdió la respuesta (2026-09-24)](#g1601--el-reintento-del-mismo-telfono-termina-el-alta-si-se-perdi-la-respuesta-2026-09-24)
 - `2026-09-10` [g15_01 — el tipo de cuenta: `complete` o `groups_only` (2026-09-10)](#g1501--el-tipo-de-cuenta-complete-o-groupsonly-2026-09-10)
@@ -1694,6 +1695,35 @@ querying schema»**. El golden 28 hace `ctx.skip()` si `profiles[subC]` ya exist
 ```sql
 delete from public.profiles where id = (select id from auth.users where email='i5-user-c@test.yala');
 ```
+
+## g16_03 — el claim que da el turno dice si la cuenta ya tiene datos personales (2026-09-24)
+
+**Aplicada en STAGING y en PRODUCCIÓN el 2026-09-24**, en ese orden, con `apply_migration` (el cuerpo desde el §0). Fichero:
+`qa/cloud/g16_03_claim_reports_personal_writes.sql`. Ticket: `migration-takeover-uploads-without-a-lineage-check` (Paso 0
+en su encargo).
+
+Qué cambia: toda respuesta `created` de `claim_account` lleva `has_personal_writes` —hay fila en `sync_seq_counters`, la
+señal de g16_01—. Son cinco `return`: alta nueva, promoción de una cuenta de grupos, relevo de un líder callado, re-claim
+del mismo líder y la rama g16_01. El cliente de la migración, con `true` (o sin el campo), comprueba en la identidad que
+su corpus comparte alguna fila viva con el backend antes de subir; con `false` —la cuenta nueva o solo de grupos— no paga
+nada. Va en los cinco y no solo en el relevo porque la respuesta perdida de un relevo se reintenta por la rama del mismo
+líder. `existing_stable` y `claiming_in_progress` no cambian. La firma tampoco: sin `drop`, sin grants, **sin deploy del
+Worker** (devuelve el JSON del RPC tal cual). Los clientes de hoy ignoran el campo.
+
+**md5 de `claim_account`**: partida `ab0e59d094fe7d7324d3ea79b4861965` (g16_02) · llegada
+`c96106b7f3b043e5a26f68ff971c2123` **en los dos entornos** — el §2 aborta si sale otro.
+
+**Verificación antes de aplicar** — banco transaccional contra el motor de producción, cerrado con una excepción (cero
+rastro: md5, usuarios sintéticos e historial comprobados después). Los 14 escenarios del §3:
+
+```
+LIVE (control negativo)   los 11 `created` salen sin la pista; los 3 de control (existing_stable ×2,
+                          claiming_in_progress) sin ella y con su estado — el andamio mide lo que dice
+NEW                       14/14
+M1 pista siempre false    3 rojos: el relevo con datos (postgres y authenticated) y el re-claim del mismo líder
+```
+
+El escenario con el rol `authenticated` es el que dice que la pista no falla abierta por RLS (`seq_select`).
 
 ## g16_02 — el reintento de un alta ya no siembra al lado de un teléfono que entró (2026-09-24)
 

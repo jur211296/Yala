@@ -7346,6 +7346,7 @@ enum L10n {
             static var stepStalled: String { ls("storage.failed.stepStalled", comment: "") }
             static var stepSessionExpired: String { ls("storage.failed.stepSessionExpired", comment: "") }
             static var stepOtherDevice: String { ls("storage.failed.stepOtherDevice", comment: "") }
+            static var stepLineageUnproven: String { ls("storage.failed.stepLineageUnproven", comment: "") }
             // El claim de un ADOPT que venció su techo (ticket `adopt-claim-stays-parked-with-no-ceiling`). Frases propias:
             // quien entraba en su cuenta puede estar en un teléfono recién instalado, y las de la ida hablan de sus datos
             // en el dispositivo.

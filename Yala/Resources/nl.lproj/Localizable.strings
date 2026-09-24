@@ -6099,3 +6099,6 @@
 
 /* Ver qué migraría: los conteos no se pudieron leer */
 "storage.migrate.previewUnreadable" = "We konden je gegevens niet tellen. Probeer het zo meteen opnieuw.";
+
+/* Storage failure card: another device had already started uploading to this account and this device's data does not share lineage with it */
+"storage.failed.stepLineageUnproven" = "We konden de cloud niet inschakelen: dat account heeft al gegevens in de cloud, en de gegevens op dit apparaat komen daar niet mee overeen, dus we hebben ze niet samengevoegd. Wat je op dit apparaat hebt, staat er nog. Controleer of je je aanmeldt met het juiste account. Als het van jou is en dit apparaat dezelfde iCloud gebruikt, wacht dan tot iCloud je gegevens heeft binnengehaald en probeer het opnieuw.";

@@ -80,6 +80,12 @@ nonisolated enum CloudWelcomeSignInPhase: Equatable {
     /// Almacenamiento, por la misma función (`StorageFailureCopyLogic.adoptExitMessage`). Nunca lleva `.cancelled`: quien
     /// cancela no ve un fallo.
     case adoptExit(AdoptClaimExit)
+    /// El claim de este adopt recibió el RELEVO de una activación a medias de otro dispositivo (`created` sobre una cuenta
+    /// con datos) y la identidad no pudo probar que este corpus comparta linaje con ellos: salió sin subir nada (ticket
+    /// `migration-takeover-uploads-without-a-lineage-check`). No es `.adoptExit` —esa salida es del claim o del efecto, y su
+    /// marca hace que Almacenamiento ofrezca volver a entrar— ni `.error`, cuyo «Revisa tu conexión» sería falso. El texto es
+    /// el de Almacenamiento (`StorageFailureCopyLogic.forwardLineageMessage`), y «Reintentar» vuelve a comprobar el linaje.
+    case lineageExit
     /// La cuenta existe pero el backend no la deja entrar (403 en el claim). Caso propio y no un
     /// `.error(retryable: false)`: ése comparte copy con el fallo de red —icono de wifi incluido— y
     /// **el problema no es la conexión**. Sin botón de reintentar: esperar no despierta una cuenta
@@ -140,7 +146,8 @@ nonisolated enum CloudWelcomeSignInFlow {
     static func phase(
         for uiState: CloudMigrationUIState,
         claimBlocker: ClaimBlocker? = nil,
-        adoptClaimExit: AdoptClaimExit? = nil
+        adoptClaimExit: AdoptClaimExit? = nil,
+        forwardStepExit: ForwardStepExitReason? = nil
     ) -> CloudWelcomeSignInPhase? {
         if let claimBlocker {
             switch uiState {
@@ -193,6 +200,9 @@ nonisolated enum CloudWelcomeSignInFlow {
         case .failed(let kind):
             if kind == .migration, let adoptClaimExit, adoptClaimExit != .cancelled {
                 return .adoptExit(adoptClaimExit)
+            }
+            if kind == .migration, forwardStepExit == .lineageUnproven {
+                return .lineageExit
             }
             return .error(retryable: true)
         case .journalUnreadable:

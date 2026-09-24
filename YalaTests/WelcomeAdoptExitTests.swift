@@ -202,10 +202,12 @@ struct WelcomeAdoptExitTests {
             guard let next = CloudWelcomeSignInFlow.phase(
                 for: controller.uiState,
                 claimBlocker: controller.claimBlocker,
-                adoptClaimExit: controller.adoptClaimExit) else {
+                adoptClaimExit: controller.adoptClaimExit,
+                forwardStepExit: controller.forwardStepExitReason) else {
             """)))
-        // Terminal: el poll para, como en `.error`.
-        #expect(poll.contains("case .relaunch, .error, .adoptExit: return"))
+        // Terminal: el poll para, como en `.error`. `.lineageExit` también (ticket
+        // `migration-takeover-uploads-without-a-lineage-check`).
+        #expect(poll.contains("case .relaunch, .error, .adoptExit, .lineageExit: return"))
     }
 
     /// La fase pinta el texto de Almacenamiento y ofrece la flecha.
@@ -214,7 +216,32 @@ struct WelcomeAdoptExitTests {
         #expect(src.contains("body: StorageFailureCopyLogic.adoptExitMessage(exit) ?? L10n.Welcome.Cloud.errorBody)"))
         let back = try Self.body(of: "private var canGoBack: Bool")
         #expect(back.contains(
-            "case .intro, .notFound, .blockedForeignData, .error, .adoptExit, .providerMismatch, .accountBlocked: true"))
+            "case .intro, .notFound, .blockedForeignData, .error, .adoptExit, .lineageExit, .providerMismatch, .accountBlocked: true"))
+    }
+
+    /// La salida por linaje del relevo (ticket `migration-takeover-uploads-without-a-lineage-check`): el texto de
+    /// Almacenamiento y las dos salidas que nombra —la flecha (en `canGoBack`, arriba) y «Reintentar», que repite el sign-in
+    /// y vuelve a comprobar el linaje—. El `case` entero: un gesto añadido, o el texto de otra fase, cae aquí.
+    @Test func lineageExitScreen_isWired() throws {
+        let src = try Self.flat(Self.source(Self.view))
+        let start = try #require(src.range(of: "case .lineageExit: VStack("))
+        let tail = src[start.lowerBound...]
+        let end = try #require(tail.range(of: "case .accountBlocked:"))
+        #expect(String(tail[..<end.lowerBound]) == Self.flat("""
+            case .lineageExit:
+                VStack(spacing: DS.Spacing.lg) {
+                    messageContent(
+                        icon: "exclamationmark.triangle",
+                        title: L10n.Welcome.Cloud.errorTitle,
+                        body: StorageFailureCopyLogic.forwardLineageMessage)
+                        .accessibilityIdentifier("welcome_cloud_lineage_exit")
+                    YalaPrimaryButton(L10n.Welcome.Cloud.retry) {
+                        launchFlow { await runFlowAfterConsent() }
+                    }
+                    .padding(.horizontal, DS.Spacing.xl)
+                    .accessibilityIdentifier("welcome_cloud_retry")
+                }
+            """) + " ")
     }
 
     /// La barra ofrece el botón con el predicado de Almacenamiento, y su diálogo cancela por el mismo camino.

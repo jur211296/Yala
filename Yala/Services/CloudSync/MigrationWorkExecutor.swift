@@ -78,6 +78,26 @@ nonisolated enum AdoptReconcileOutcome: Equatable {
     case lineageUnproven
 }
 
+// MARK: - ForwardLineageOutcome (ticket `migration-takeover-uploads-without-a-lineage-check`)
+
+/// Resultado de `checkForwardLineage()`: ¿puede este dispositivo subir su corpus a una cuenta que ya recibió datos
+/// personales? Es la pregunta del relevo de un líder callado —`claim_account` le da el turno (`created`) sobre lo que el
+/// otro alcanzó a subir—, y la contesta el solape de identidades entre el backend y el store local. `nonisolated` (lo
+/// compara la lógica de tests).
+nonisolated enum ForwardLineageOutcome: Equatable {
+    /// Alguna fila VIVA del backend está en el store local, con su tabla y su identidad: este corpus desciende del que
+    /// ya se subió (el mismo iCloud, o el mismo teléfono). `sharedRows` = cuántas, solo para el rastro.
+    case proven(sharedRows: Int)
+    /// El backend no tiene filas personales vivas (fuera de `exchange_rates`): no hay nada con que mezclar.
+    case noLivePersonalRows
+    /// El backend tiene filas personales vivas y ninguna está aquí: el corpus es otro. No se toca nada.
+    case unproven(liveRows: Int)
+    /// Red, sesión o una enumeración que el Merkle no da por completa: esperar lo puede arreglar.
+    case transient
+    /// El inventario local no se dejó leer: nunca «probado» ni «sin datos».
+    case localFailure
+}
+
 // MARK: - ReverseTombstoneSource (§h.3, I11-2)
 
 /// Fuente GENÉRICA de páginas de deltas en LECTURA PURA: NO aplica (`applyPage`), NO avanza `SyncCursor`, NO
@@ -249,6 +269,10 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     /// El sello que había ANTES del último `performClaim`, para que `discardLastClaimStamp` lo reponga. En memoria: solo
     /// se deshace el claim de la llamada en curso. `nil` = el último claim no selló nada.
     private var lastClaimStampUndo: (userID: String, previous: AccountClaimDecision.AuthAction?)?
+    /// `has_personal_writes` del último `performClaim` que contestó `created` (g16_03). `nil` = sin respuesta, otro
+    /// desenlace, o un servidor que no lo manda. Lo lee el runner para journalear si la identidad tiene que comprobar el
+    /// linaje (ticket `migration-takeover-uploads-without-a-lineage-check`).
+    private var lastClaimPersonalWrites: Bool?
     /// Instante del último heartbeat EMITIDO (I14-pre). IN-MEMORY, NO journaled: un kill+resume lo resetea →
     /// a lo sumo UN heartbeat extra por relanzamiento (idempotente, 1 request). Se arma también en rechazo/red
     /// para no martillar el endpoint por-página cuando el server rechaza o la red está caída.
@@ -359,7 +383,11 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         // `migration: true` ES OBLIGATORIO (bug device 2026-07-10): arma `migration_in_progress=true` en
         // el INSERT atómico → el guard de `migration_progress('cutover')` (exige mip) pasa. Sin él, el
         // claim crea la fila con mip=false y el cutover se clava en `not_in_progress` para siempre.
-        let outcome = await accountClient.claim(jwt: jwt, deviceID: deviceID, provider: provider(), migration: true)
+        let (outcome, personalWrites) = await accountClient.claimReportingPersonalWrites(
+            jwt: jwt, deviceID: deviceID, provider: provider(), migration: true)
+        // Se reasigna en CADA claim que llega al POST, también a `nil`. El que no llega (sin token) no puede entrar en la
+        // identidad, que es lo único que lee la pista: un reseteo al empezar sobraba (lo dijo su mutante, que sobrevivía).
+        lastClaimPersonalWrites = personalWrites
         // Con la respuesta en la mano el desenlace ya se sabe: `created` deja el sello (`.proceedMigration`), y cualquier
         // otro dice que la cuenta no es de este intento. La marca sobra en los dos casos; sin respuesta, se queda.
         if case .success = outcome, let attemptUserID {
@@ -402,6 +430,9 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
             claimStore.clear(forUserID: undo.userID)
         }
     }
+
+    /// Ver `MigrationWorkExecuting.lastClaimReportedPersonalWrites`.
+    func lastClaimReportedPersonalWrites() -> Bool? { lastClaimPersonalWrites }
 
     // MARK: - Identidad (w3)
 
@@ -1764,6 +1795,47 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         let expected = CloudBeacon.hash(userID)
         // Por `fetchInventory`: el mismo `catch`, el mismo rastro y el mismo seam de tests que las tablas del inventario.
         return try fetchInventory(CloudMigrationMarker.self, step: "adopt-lineage").contains { $0.accountHash == expected }
+    }
+
+    // MARK: - Linaje de la IDA (ticket `migration-takeover-uploads-without-a-lineage-check`)
+
+    /// ¿Comparte este corpus linaje con lo que la cuenta ya tiene? Lo pregunta el runner en la identidad (35 %), ANTES de
+    /// tocar nada, cuando el claim que dio el turno dijo que la cuenta ya recibió datos personales —o no lo dijo—: el caso es
+    /// el relevo de un líder callado (`claim_account` da `created` a otro dispositivo cuando el líder lleva más de 60 min sin
+    /// latir), que hasta este ticket subía su corpus encima de lo que el otro alcanzó a subir fuera o no el mismo.
+    ///
+    /// **La prueba es una identidad compartida**: alguna fila VIVA del backend está en el inventario local, en su tabla. Una
+    /// identidad aleatoria solo llega a este store por el CloudKit del mismo iCloud (o por un pull de esa cuenta), y la
+    /// subida del líder empieza por `accounts`, cuya identidad (`Account.shortcutID`) nace con la fila y viaja por CloudKit
+    /// sin esperar a que el líder asigne nada. `exchange_rates` no cuenta en ningún lado: es caché que cualquier teléfono
+    /// siembra solo (`adoptLineageExemptTables`, la misma excepción que el adopt).
+    ///
+    /// Orden, y es el del reconcile del adopt: el inventario local primero (una avería local no paga la enumeración), luego
+    /// la enumeración. Una sola fila compartida prueba el linaje aunque la enumeración esté incompleta; para decir «no hay
+    /// nada» o «no comparte nada», en cambio, el Merkle tiene que darla por completa (sesgo a esperar, jamás a proceder ni a
+    /// bloquear por una página que faltó). No muta nada.
+    func checkForwardLineage() async -> ForwardLineageOutcome {
+        let local: [String: Set<UUID>]
+        do {
+            local = Dictionary(grouping: try collectAdoptInventory(), by: \.table).mapValues { Set($0.compactMap(\.syncID)) }
+        } catch {
+            return .localFailure
+        }
+        guard let enumeration = await enumerateBackendSyncIDs() else { return .transient }
+        let live = enumeration.liveByTable.filter { !Self.adoptLineageExemptTables.contains($0.key) }
+        let shared = live.reduce(0) { $0 + $1.value.intersection(local[$1.key] ?? []).count }
+        if shared > 0 {
+            CloudSyncBreadcrumb.forwardLineageChecked(verdict: "proven", liveRows: live.values.reduce(0) { $0 + $1.count }, sharedRows: shared)
+            return .proven(sharedRows: shared)
+        }
+        guard await verifyEnumerationComplete(enumeration) else { return .transient }
+        let liveRows = live.values.reduce(0) { $0 + $1.count }
+        guard liveRows > 0 else {
+            CloudSyncBreadcrumb.forwardLineageChecked(verdict: "noLiveRows", liveRows: 0, sharedRows: 0)
+            return .noLivePersonalRows
+        }
+        CloudSyncBreadcrumb.forwardLineageChecked(verdict: "unproven", liveRows: liveRows, sharedRows: 0)
+        return .unproven(liveRows: liveRows)
     }
 
     /// DRY-RUN read-only (panel DEBUG, §3.4): pasos 1,3,4 SIN backfill (paso 2) NI upload (paso 6). Enumera el
