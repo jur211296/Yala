@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-23 (Lima)
 
-**Rama** `2.1` — Merge #228: **Si entras en tu cuenta de la nube mientras otro teléfono la activa, la espera ya no es infinita: avisa, tiene plazo y tiene «Dejar de esperar».**
+**Rama** `2.1` — Merge #229: **Si entrar en tu cuenta de la nube falla desde la bienvenida, la pantalla dice el motivo, y mientras la barra avanza hay «Cancelar la activación».**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,26 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#228 · la espera del seguidor tiene techo, aviso y «Dejar de esperar»)
+## Esta sesión (#229 · la bienvenida del adopt dice el motivo y deja cancelar)
+
+**Si entrar en tu cuenta de la nube falla desde la bienvenida, la pantalla ya no culpa a tu conexión.** Dice el motivo con
+las mismas frases que Almacenamiento: el teléfono que no pudo leer sus datos, la activación que lleva días sin terminar, y
+las tres del claim. Y mientras la barra avanza hay «Cancelar la activación», con el diálogo de Almacenamiento; al
+confirmar vuelve a la pantalla de elegir, **solo cuando la cancelación aterrizó** (`notStarted` + sin el efecto pendiente +
+marca `.cancelled`). Decisión A de Jürgen. Sin copy nuevo ni schema: el texto y el cuerpo del diálogo salen de funciones
+compartidas (`StorageFailureCopyLogic`). Ticket `welcome-adopt-effect-failure-has-no-reason-and-no-cancel` a `done` sin
+device-QA. Review de 2 lentes: cazó que la primera versión salía mirando solo `notStarted` (también es el efecto antes de
+cancelar y el adopt terminado) y una cancelación diferida que dejaba la barra en 0 % con un «Retomar» que re-reclamaba.
+24 mutantes muertos; CI verde.
+
+### Lo que espera de Jürgen
+
+- Una decisión de copy, low y sin prisa: `welcome-adopt-cancel-dialog-says-from-here` — el diálogo reusado dice «desde
+  aquí» y la bienvenida te saca a la pantalla de elegir. ¿Se deja o lleva cuerpo propio?
+- Técnico, low: `welcome-adopt-exit-offers-retry-on-a-blocked-account`. Y `adopt-exit-keeps-the-session-it-opened` ahora
+  también lo alcanza el «Cancelar» de la bienvenida (anotado).
+
+## Sesión anterior (#228 · la espera del seguidor tiene techo, aviso y «Dejar de esperar»)
 
 **Si entras en tu cuenta de la nube en un segundo teléfono mientras el primero la activa, la espera ya no es infinita.**
 Hasta hoy, con la sesión borrada o un 403 esa espera («Otro de tus dispositivos está activando la nube…») no terminaba
@@ -32,13 +51,13 @@ Ticket `adopt-follower-waits-for-the-leader-with-no-ceiling` a `done` sin device
 Review de 3 lentes; 17 mutantes muertos; CI verde. **Los canarios `cloudForwardStepWaiting`/`Aborted` ganan el valor
 `waitingForLeader`.**
 
-### Lo que espera de Jürgen
+### Lo que esperaba de Jürgen
 
 - Nada. Tres tickets nuevos de la review, técnicos: `forward-step-ceiling-wins-over-a-cancel-given-in-the-same-pass`
   (low), `waiting-card-disables-stop-waiting-without-saying-why` (low) y
   `follower-waits-forever-on-a-lease-with-a-null-heartbeat` (very-low, inferido).
 
-## Sesión anterior (#227 · la espera de subida de la vuelta ya no cobra una espera ajena)
+## Antes (#227 · la espera de subida de la vuelta ya no cobra una espera ajena)
 
 **Si la vuelta a iCloud llevaba horas esperando porque el teléfono no tenía cuenta de iCloud, entrar a iCloud ya no la
 cancela.** CloudKit suele contestar «no autenticado» en la primera pasada tras entrar, y hasta hoy esa pasada se cobraba
