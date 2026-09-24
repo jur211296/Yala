@@ -55,6 +55,7 @@
 - [Mi docblock también es una premisa](feedback_mi_docblock_tambien_es_una_premisa.md) — describo la intención como si fuera el comportamiento.
 - [El tramo sin acotar lo cumple el vecino](feedback_el_tramo_sin_acotar_lo_cumple_el_vecino.md) — un recorte que llega al final del cuerpo se.
 - [El `contains` deja sitio a una sentencia ANTEPUESTA](feedback_el_contains_deja_sitio_a_una_sentencia_antepuesta.md) — fija el cuerpo ENTERO; y cuenta el identificador, no la llamada.
+- [Los mutantes compilan solo YalaTests](feedback_mutantes_compilan_solo_yalatests.md) — sin `-only-testing` en el build, 15 min por mutante; con él, 1.
 - [El script de mutantes revierte mi trabajo](feedback_el_script_de_mutantes_revierte_mi_trabajo.md) — restaura desde una COPIA del scratchpad, no con `git checkout --`.
 - [El source-scan de dos literales no es una red](feedback_el_source_scan_de_dos_literales_no_es_una_red.md) — si el target es inalcanzable, fija el cuerpo ENTERO; y un test que enumera su familia a…
 - [El denominador de una resta es el número que se ve](feedback_el_denominador_de_una_resta_es_el_numero_que_se_ve.md) — numerador en magnitudes, denominador en lo que se VE; y una decisión escrita gana a dos…
