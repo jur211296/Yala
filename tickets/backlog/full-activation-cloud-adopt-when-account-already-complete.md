@@ -38,3 +38,11 @@ seguro —no se escribe nada— pero es un rodeo, y me lo dice después de hacer
       personales de la cuenta sin pedir onboarding ni cerrar sesión.
 - [ ] Una cuenta que volvió a iCloud (`reverted_at`) sigue sin poder promocionarse por aquí: el
       re-cutover es diseño futuro.
+
+## Nota (2026-09-24, `claim-replay-can-seed-beside-a-phone-that-adopted-silently`)
+
+Desde `qa/cloud/g16_02_…` esta pantalla también le sale al **reintento** de «Activar Yala completo» cuando otro teléfono
+entró en la cuenta mientras la respuesta se perdía. Ahí el texto «Esta cuenta ya guarda datos personales» puede ser
+falso —el otro teléfono entró y aún no subió nada— y «No cambiamos nada» también: la promoción de este teléfono sí
+cambió la cuenta. Adoptar en sitio (el alcance de este ticket) lo resolvería igual; si se toca el copy antes, tenerlo
+en cuenta.

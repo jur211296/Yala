@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-24 (Lima)
 
-**Rama** `2.1` — Merge #231: **Si Almacenamiento se queda esperando a iCloud antes de empezar a activar la nube, cierra la sesión que abrió.**
+**Rama** `2.1` — Merge #234: **El «Reintentar» de un alta en la nube ya no siembra al lado de un teléfono que entró en la cuenta.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,48 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#231 · si Almacenamiento se queda esperando a iCloud antes de empezar, cierra la sesión que abrió)
+## Esta sesión (#233 + #234 · g16_01 en staging, y el reintento ya no siembra al lado de otro teléfono)
+
+**Si activas la nube en un teléfono, se corta la red al final y mientras tanto entras con la misma cuenta en otro,
+«Reintentar» en el primero ya no crea un segundo juego de cuentas y categorías: entra en la cuenta como cualquier
+segundo teléfono.** Hasta hoy los dos sembraban. Cómo: solo servidor, `qa/cloud/g16_02_…`. El adopt del segundo teléfono
+sí llegaba al servidor antes de terminar (su claim, al 22 %), pero no dejaba huella; ahora deja `profiles.personal_adopted_at`
+y la rama de g16_01 la mira. Solo lo sella un claim que ENTRA (con `migration`): la review cazó que la primera versión
+también sellaba a un teléfono que choca desde «Activar Yala completo» y se queda fuera, y eso bloqueaba a los dos.
+**Aplicada en staging y en producción**; sin deploy del Worker ni release de la app. Sonda de 21 escenarios (la función
+vieja falla los 4 del bug), 5 mutantes muertos, goldens contra staging 34/35 (el 20 es el timeout conocido). Ticket
+`claim-replay-can-seed-beside-a-phone-that-adopted-silently` a `done` sin device-QA. Antes, el #233 aplicó g16_01 en
+staging y dejó los goldens del claim en verde (`g16-01-is-not-applied-on-staging` a `done`). Gate completo (7756 unit,
+28 XCUITest: 27 en lote y el flaky conocido `edgecases-extreme-minimum-flaky-under-load`, verde aislado).
+
+### Lo que espera de Jürgen
+
+- Nada que decidir. Residuales escritos en la cabecera de la migración: A reintenta ANTES de que B entre (la carrera de
+  siempre entre dos teléfonos), los segundos entre los dos claims de «Soy nuevo → nube», y un «Migrar» rechazado que
+  sella sin entrar.
+- La pantalla que ve el reintento bloqueado («Tu cuenta ya tiene finanzas personales» + «Cerrar») es la de
+  `full-activation-cloud-adopt-when-account-already-complete` (low), que gana una nota: ahí su texto puede ser falso.
+- Siguen los tres low de #232: `claim-replay-after-a-kill-mid-commit-can-duplicate-the-onboarding`,
+  `lost-cloud-signup-then-private-leaves-migrate-blocked` y `welcome-cloud-replay-marks-born-cloud-without-the-guard`.
+
+## Sesión anterior (#232 · si se pierde la respuesta al activar la nube, «Reintentar» la termina)
+
+**Si al activar Yala completo → «Tu cuenta en la nube» se corta la red justo cuando el servidor ya promocionó la cuenta,
+«Reintentar» termina la activación.** Hasta hoy decía «Tu cuenta ya tiene finanzas personales» sin tenerlas y no había
+salida. Lo mismo en la bienvenida: el alta en la nube cuya respuesta se perdió siembra al reintentar en vez de adoptar una
+cuenta vacía. Una cuenta con algo personal escrito, o promocionada por otro teléfono, sigue bloqueando. Cómo: solo servidor,
+una rama en `claim_account` (`qa/cloud/g16_01_…`): el mismo dispositivo sobre una cuenta `complete` sin ninguna escritura
+personal (sin fila en `sync_seq_counters`) recibe `created`. **Aplicada en producción y en staging** (staging, en el #233).
+Sin deploy del Worker y sin cambio de comportamiento en el cliente. Verificado contra el motor de producción en sandbox:
+la función vieja falla los 3 casos, la nueva pasa 13/13 y los 5 mutantes mueren. Ticket
+`claim-promotion-lost-response-blocks-the-retry` a `done` sin device-QA. Review de 2 lentes sin bloqueantes; gate completo
+(807 unit, 20 XCUITest); CI verde.
+
+### Lo que esperaba de Jürgen
+
+- Nada que decidir. Cuatro residuales de la review: el medium lo cerró el #234; quedan tres low (arriba).
+
+## Antes (#231 · si Almacenamiento se queda esperando a iCloud antes de empezar, cierra la sesión que abrió)
 
 **En Almacenamiento, si «Activar la nube en este dispositivo» no llega a empezar porque iCloud sigue trayendo datos (la
 espera vence a los 120 s), la sesión con la que acabas de entrar se cierra y un aviso lo dice.** Hasta hoy la tarjeta
@@ -31,14 +72,14 @@ sin asentar, leído antes del cierre (clave nueva en 16 idiomas). Ticket `settin
 a `done` sin device-QA. Review de 2 lentes, sin bloqueantes. 13 mutantes muertos; gate completo (7756 unit, 12 XCUITest);
 CI verde.
 
-### Lo que espera de Jürgen
+### Lo que esperaba de Jürgen
 
 - Nada nuevo. Dos low técnicos de la review: `adopt-session-close-drops-the-mark-before-the-sign-out-lands` y
   `welcome-adopt-stalled-session-is-kept-when-settings-reuses-it` (primero medir si ese camino existe).
 - Siguen los dos low de #229: `welcome-adopt-cancel-dialog-says-from-here` (copy) y
   `welcome-adopt-exit-offers-retry-on-a-blocked-account`.
 
-## Sesión anterior (#230 · la salida del adopt cierra la sesión que abrió)
+## Antes (#230 · la salida del adopt cierra la sesión que abrió)
 
 **Si entras en tu cuenta de la nube y la activación se cancela o se rinde, la sesión que se abrió para eso se cierra.**
 Vale para «Cancelar la activación» (Almacenamiento y bienvenida), «Dejar de esperar» y los techos. Hasta hoy la sesión se
