@@ -6071,6 +6071,7 @@
 "storage.failed.adoptAccountUnavailable" = "Nie udało się zalogować Cię do konta w chmurze: w tej chwili nie możemy dać Ci dostępu do tego konta. Napisz do nas na %@, a sprawdzimy to razem.";
 "storage.failed.adoptEffectLocalFailure" = "Nie udało się zalogować Cię do konta w chmurze: to urządzenie nie mogło odczytać Twoich danych, aby połączyć je z danymi konta. To, co masz na tym urządzeniu, nadal tu jest — spróbuj ponownie za chwilę.";
 "storage.failed.adoptEffectStalled" = "Nie udało się zalogować Cię do konta w chmurze: włączanie od kilku dni nie może się zakończyć. To, co masz na tym urządzeniu, nadal tu jest — spróbuj ponownie później.";
+"storage.failed.adoptEffectLineageUnproven" = "Nie udało się zalogować Cię do konta w chmurze: to urządzenie ma dane, których to konto nie ma, i nie udało się potwierdzić, że z niego pochodzą, więc ich nie połączyliśmy. To, co masz na tym urządzeniu, nadal tu jest. Jeśli dane z tego konta iCloud zostały przeniesione do chmury na innym urządzeniu, sprawdź, czy logujesz się na to samo konto, i poczekaj, aż iCloud skończy je przenosić, zanim spróbujesz ponownie.";
 /* Botón de la tarjeta de progreso: cancelar la activación de la nube */
 "storage.progress.cancelMigration" = "Anuluj włączanie";
 /* Título de la confirmación de cancelar la activación */

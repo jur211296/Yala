@@ -227,6 +227,18 @@ nonisolated enum AdoptEffectScope {
 nonisolated enum AdoptEffectBlocker: String, Equatable, Sendable {
     /// El reconcile no pudo leer o escribir la base LOCAL (`MigrationExecutorError.adoptLocalFailure`).
     case localFailure
+    /// Había filas que subir y este dispositivo no tiene el marcador de la cuenta (`MigrationExecutorError.adoptLineageUnproven`,
+    /// ticket `adopt-uploads-a-foreign-corpus-without-a-lineage-check`): no demuestra que su corpus sea el de esa cuenta.
+    case lineageUnproven
+
+    /// La clasificación del error del efecto. `nil` = lo que esperar sí puede arreglar (red, quiescencia): plazo largo.
+    init?(_ error: Error) {
+        switch error as? MigrationExecutorError {
+        case .adoptLocalFailure:    self = .localFailure
+        case .adoptLineageUnproven: self = .lineageUnproven
+        default:                    return nil
+        }
+    }
 }
 
 /// ¿Es ESTE el claim de un adopt? La fase `claimingMigration` con la intención journaleada de entrar en una cuenta que ya
@@ -279,7 +291,9 @@ nonisolated enum AdoptClaimScope {
 
     /// Tras firmar desde esa tarjeta, ¿la cuenta NO es la del intento? Entonces no se adopta: la persona eligió otra en el
     /// chooser, y adoptarla le subiría lo local (el caso que `offersReentry` no puede ver, porque sin sesión no hay cuenta
-    /// que comparar). Sin marca, o sin saber de qué cuenta era el intento, no bloquea: es la tarjeta de siempre.
+    /// que comparar). Sin marca, o sin saber de qué cuenta era el intento, no bloquea: es la tarjeta de siempre. La salida
+    /// por linaje (`effectLineageUnproven`) deja la marca SIN cuenta a propósito: ahí la cuenta del intento es la sospechosa,
+    /// y lo que protege la subida con cualquier otra es la guarda de linaje del reconcile.
     static func blocksReentry(exit: AdoptClaimExit?, attemptAccountHash: String?, sessionAccountHash: String?) -> Bool {
         guard exit != nil, let attemptAccountHash else { return false }
         return sessionAccountHash != attemptAccountHash
@@ -311,6 +325,10 @@ nonisolated enum AdoptClaimExit: String, Equatable, Sendable {
     case effectStalled
     /// El efecto del adopt no pudo leer la base local durante 15 min acumulados.
     case effectLocalFailure
+    /// El efecto del adopt tenía filas de este dispositivo que subir y no pudo comprobar que vinieran de esa cuenta —falta su
+    /// marcador en el store local— durante 15 min acumulados (ticket `adopt-uploads-a-foreign-corpus-without-a-lineage-check`).
+    /// No subió nada.
+    case effectLineageUnproven
 
     /// El motivo del techo que venció, en el claim. `refused`, `otherDevice` y `localFailure` no los produce el claim (son
     /// del cutover y de la identidad); si uno llegara, la salida se cuenta como el techo largo, que no acusa a nadie.
@@ -1383,8 +1401,7 @@ final class MigrationRunner {
     private func observeAdoptEffectFailure(_ error: Error) async throws -> Bool {
         if migrationCancelRequested, try await journalMigrationCancel() { return true }
         guard !executor.hasPersistedCloudMode() else { return false }
-        let blocker: AdoptEffectBlocker? =
-            (error as? MigrationExecutorError) == .adoptLocalFailure ? .localFailure : nil
+        let blocker = AdoptEffectBlocker(error)
         let state = try loadState()
         let observedAt = now()
         let lastProgressAt: Date
@@ -1419,11 +1436,24 @@ final class MigrationRunner {
         }
         // Lo elige el techo que VENCIÓ: el corto solo puede vencer en una observación con el motivo (sin él el reloj
         // definitivo devuelve 0), así que tras 72 h de red un fallo local recién visto no se lleva el texto de «este
-        // dispositivo no pudo leer tus datos».
-        let exit: AdoptClaimExit = policy.adoptEffectDefinitiveCeilingReached(clock.stalled)
-            ? .effectLocalFailure : .effectStalled
+        // dispositivo no pudo leer tus datos». Y con el corto, el motivo de ESTA observación, que es la que lo venció: el
+        // reloj suma las dos causas definitivas juntas (ticket `adopt-uploads-a-foreign-corpus-without-a-lineage-check`).
+        let exit: AdoptClaimExit
+        if policy.adoptEffectDefinitiveCeilingReached(clock.stalled), let blocker {
+            switch blocker {
+            case .localFailure:    exit = .effectLocalFailure
+            case .lineageUnproven: exit = .effectLineageUnproven
+            }
+        } else {
+            exit = .effectStalled
+        }
         try await handle(.adoptEffectStalled(stalledSeconds: stalled, definitiveStalledSeconds: clock.stalled)) { state, _ in
             state.adoptClaimExitRaw = exit.rawValue
+            // Por linaje, la marca NO queda atada a la cuenta del intento (hallazgo de la review): aquí la cuenta es la
+            // sospechosa —la persona pudo elegir otra en el chooser—, y atarla bloqueaba justo el arreglo, entrar con la
+            // buena (`AdoptClaimScope.blocksReentry`). Sin atadura la tarjeta vuelve sin sesión y deja elegir cuenta; lo que
+            // protege la subida con cualquiera es la propia guarda de linaje.
+            if exit == .effectLineageUnproven { state.adoptClaimAccountHash = nil }
             // Se cuenta AQUÍ, en el save que journalea la salida: lo que venga después puede no llegar a correr.
             self.reportAdoptEffectExit(reason: exit.rawValue)
         }

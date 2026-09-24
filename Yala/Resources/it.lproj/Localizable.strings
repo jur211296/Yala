@@ -6069,6 +6069,7 @@
 "storage.failed.adoptAccountUnavailable" = "Non siamo riusciti a farti accedere al tuo account nel cloud: al momento non possiamo darti accesso a questo account. Scrivici a %@ e lo verifichiamo insieme.";
 "storage.failed.adoptEffectLocalFailure" = "Non siamo riusciti a farti accedere al tuo account nel cloud: questo dispositivo non è riuscito a leggere i tuoi dati per unirli a quelli del tuo account. Ciò che hai su questo dispositivo è ancora qui; riprova tra poco.";
 "storage.failed.adoptEffectStalled" = "Non siamo riusciti a farti accedere al tuo account nel cloud: l’attivazione non riesce a concludersi da giorni. Ciò che hai su questo dispositivo è ancora qui; riprova più tardi.";
+"storage.failed.adoptEffectLineageUnproven" = "Non siamo riusciti a farti accedere al tuo account nel cloud: questo dispositivo ha dati che quell’account non ha e non siamo riusciti a verificare che provengano da lì, quindi non li abbiamo uniti. Ciò che hai su questo dispositivo è ancora qui. Se hai portato nel cloud i dati di questo iCloud da un altro dispositivo, controlla di accedere con lo stesso account e aspetta che iCloud finisca di portarli prima di riprovare.";
 /* Botón de la tarjeta de progreso: cancelar la activación de la nube */
 "storage.progress.cancelMigration" = "Annulla l’attivazione";
 /* Título de la confirmación de cancelar la activación */

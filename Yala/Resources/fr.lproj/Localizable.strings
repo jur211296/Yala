@@ -6060,6 +6060,7 @@
 "storage.failed.adoptAccountUnavailable" = "Nous n’avons pas pu te connecter à ton compte cloud : nous ne pouvons pas te donner accès à ce compte pour le moment. Écris-nous à %@ et nous regarderons cela avec toi.";
 "storage.failed.adoptEffectLocalFailure" = "Nous n’avons pas pu te connecter à ton compte cloud : cet appareil n’a pas pu lire tes données pour les réunir avec celles de ton compte. Ce que tu as sur cet appareil est toujours là ; réessaie dans un moment.";
 "storage.failed.adoptEffectStalled" = "Nous n’avons pas pu te connecter à ton compte cloud : l’activation n’arrive pas à se terminer depuis des jours. Ce que tu as sur cet appareil est toujours là ; réessaie plus tard.";
+"storage.failed.adoptEffectLineageUnproven" = "Nous n’avons pas pu te connecter à ton compte cloud : cet appareil contient des données que ce compte n’a pas, et nous n’avons pas pu vérifier qu’elles en proviennent ; nous ne les avons donc pas réunies. Ce que tu as sur cet appareil est toujours là. Si tu as transféré les données de cet iCloud vers le cloud depuis un autre appareil, vérifie que tu te connectes avec ce même compte et attends qu’iCloud ait fini de les récupérer avant de réessayer.";
 /* Botón de la tarjeta de progreso: cancelar la activación de la nube */
 "storage.progress.cancelMigration" = "Annuler l’activation";
 /* Título de la confirmación de cancelar la activación */

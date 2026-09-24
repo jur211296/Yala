@@ -7358,6 +7358,9 @@ enum L10n {
             // `adopt-effect-retries-forever-with-no-ceiling`, textos de Jürgen del 2026-09-23). No afirman nada de la nube.
             static var adoptEffectLocalFailure: String { ls("storage.failed.adoptEffectLocalFailure", comment: "") }
             static var adoptEffectStalled: String { ls("storage.failed.adoptEffectStalled", comment: "") }
+            // El efecto del adopt que no pudo comprobar que los datos de este dispositivo vengan de esa cuenta (ticket
+            // `adopt-uploads-a-foreign-corpus-without-a-lineage-check`). No subió nada, y lo dice.
+            static var adoptEffectLineageUnproven: String { ls("storage.failed.adoptEffectLineageUnproven", comment: "") }
         }
 
         enum Confirm {

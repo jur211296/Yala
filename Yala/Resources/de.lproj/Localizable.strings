@@ -6059,6 +6059,7 @@
 "storage.failed.adoptAccountUnavailable" = "Wir konnten dich nicht bei deinem Cloud-Konto anmelden: Wir können dir gerade keinen Zugriff auf dieses Konto geben. Schreib uns an %@, dann sehen wir es uns gemeinsam an.";
 "storage.failed.adoptEffectLocalFailure" = "Wir konnten dich nicht bei deinem Cloud-Konto anmelden: Dieses Gerät konnte deine Daten nicht lesen, um sie mit denen deines Kontos zusammenzuführen. Was du auf diesem Gerät hast, ist weiterhin hier – versuche es in einer Weile erneut.";
 "storage.failed.adoptEffectStalled" = "Wir konnten dich nicht bei deinem Cloud-Konto anmelden: Die Aktivierung kann seit Tagen nicht abgeschlossen werden. Was du auf diesem Gerät hast, ist weiterhin hier – versuche es später erneut.";
+"storage.failed.adoptEffectLineageUnproven" = "Wir konnten dich nicht bei deinem Cloud-Konto anmelden: Dieses Gerät hat Daten, die dieses Konto nicht hat, und wir konnten nicht bestätigen, dass sie von ihm stammen – deshalb haben wir sie nicht zusammengeführt. Was du auf diesem Gerät hast, ist weiterhin hier. Wenn du die Daten dieses iCloud-Kontos auf einem anderen Gerät in die Cloud übertragen hast, prüfe, ob du dich mit demselben Konto anmeldest, und warte, bis iCloud sie vollständig übertragen hat, bevor du es erneut versuchst.";
 /* Botón de la tarjeta de progreso: cancelar la activación de la nube */
 "storage.progress.cancelMigration" = "Aktivierung abbrechen";
 /* Título de la confirmación de cancelar la activación */

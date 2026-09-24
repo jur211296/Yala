@@ -928,6 +928,10 @@ struct CloudSyncE2EStagingTests {
                     "pre-reconcile: solo la cuenta de A en el wire")
 
             let sessionB = E2ECloudSession(userID: "adopt-b-\(run)")
+            // B es el 2.º dispositivo del MISMO Apple ID: su espejo trajo el marcador que el líder escribió en el cutover.
+            // Sin él la guarda de linaje no deja subir la huérfana (ticket `adopt-uploads-a-foreign-corpus-without-a-lineage-check`).
+            contextB.insert(CloudMigrationMarker(accountHash: CloudBeacon.hash("adopt-b-\(run)")))
+            try contextB.save()
             let executorB = MigrationWorkExecutor(
                 engine: engineB, pushClient: pushB, pullClient: pullB, merkleClient: merkleB,
                 accountClient: CloudAccountClient(baseURL: Self.workerURL), session: sessionB,
@@ -945,6 +949,8 @@ struct CloudSyncE2EStagingTests {
                 throw AdoptReconcileNotCompleted(outcome: "transient")
             case .localFailure:
                 throw AdoptReconcileNotCompleted(outcome: "localFailure")
+            case .lineageUnproven:
+                throw AdoptReconcileNotCompleted(outcome: "lineageUnproven")
             }
 
             // Wire (read-only): el backend GANÓ la huérfana → 2 cuentas del run.

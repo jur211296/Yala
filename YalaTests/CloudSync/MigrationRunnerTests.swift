@@ -5518,6 +5518,69 @@ struct MigrationRunnerTests {
         #expect(fake.count(.rollback) == 1)
     }
 
+    // MARK: §16-bis · La guarda de linaje del adopt (ticket `adopt-uploads-a-foreign-corpus-without-a-lineage-check`)
+
+    private var adoptLineage: any Error { MigrationExecutorError.adoptLineageUnproven }
+
+    /// **Un corpus que no demuestra venir de la cuenta** es causa DEFINITIVA: sale a los 900 s acumulados, clavado con sus dos
+    /// vecinos, con SU marca —no la de la base local—, que elige el texto de «no pudimos comprobar que vengan de ella».
+    @Test func adoptEffectCeiling_lineageUnproven_leavesAt900Seconds_withItsOwnMark() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.effectErrors[.adoptBackendAccount] = adoptLineage
+        let clock = MutableClock(fixedNow)
+        try seedJournal(context, phase: .notStarted, pending: [.adoptBackendAccount], adoptClaimAccountHash: "cuenta-x")
+
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        var j = try journal(context)
+        #expect(j.readPendingEffects() == [.adoptBackendAccount], "bajo presupuesto el efecto sigue pendiente")
+        #expect(j.adoptEffectStallDefinitiveAt == fixedNow, "el linaje abre el tramo del corto, como la base local")
+
+        clock.value = fixedNow.addingTimeInterval(899)
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        #expect(try journal(context).readPhase().phase == .notStarted, "a 899 s todavía no")
+
+        clock.value = fixedNow.addingTimeInterval(900)
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        j = try journal(context)
+        #expect(j.readPhase().phase == .failedRollback, "a los 900 s acumulados, se rinde")
+        #expect(j.readPendingEffects().isEmpty, "el adopt ya no se reintenta")
+        #expect(fake.count(.rollback) == 1)
+        #expect(j.adoptClaimExitRaw == "effectLineageUnproven")
+        #expect(j.adoptClaimAccountHash == nil,
+                "por linaje la marca no queda atada a la cuenta: es la sospechosa, y atarla bloquea entrar con la buena")
+    }
+
+    /// **Las dos causas definitivas comparten el reloj corto, y la salida la nombra la observación que lo vence** (Paso 0,
+    /// D5). 600 s de base local ilegible y 300 s de linaje sin probar salen a los 900 acumulados con el texto del linaje;
+    /// al revés, con el de la base local. Si cada causa tuviera su reloj, ninguna de las dos pasadas saldría.
+    @Test func adoptEffectCeiling_definitiveCausesShareTheShortClock_theLastOneNamesTheExit() async throws {
+        for (first, last, expected) in [(adoptLocal, adoptLineage, "effectLineageUnproven"),
+                                         (adoptLineage, adoptLocal, "effectLocalFailure")] {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let context = try makeContext(dir)
+            let fake = FakeExecutor()
+            let clock = MutableClock(fixedNow)
+            try seedJournal(context, phase: .notStarted, pending: [.adoptBackendAccount], adoptClaimAccountHash: "cuenta-x")
+
+            fake.effectErrors[.adoptBackendAccount] = first
+            await makeRunner(context, fake, now: { clock.value }).resume()
+            clock.value = fixedNow.addingTimeInterval(600)
+            fake.effectErrors[.adoptBackendAccount] = last
+            await makeRunner(context, fake, now: { clock.value }).resume()
+            #expect(try journal(context).readPhase().phase == .notStarted, "600 s: todavía no")
+
+            clock.value = fixedNow.addingTimeInterval(900)
+            await makeRunner(context, fake, now: { clock.value }).resume()
+            let j = try journal(context)
+            #expect(j.readPhase().phase == .failedRollback, "900 s acumulados entre las dos causas")
+            #expect(j.adoptClaimExitRaw == expected)
+            #expect(j.adoptClaimAccountHash == (expected == "effectLineageUnproven" ? nil : "cuenta-x"),
+                    "solo la salida por linaje suelta la cuenta; la de la base local la conserva")
+        }
+    }
+
     /// **El camino real: el claim que contesta `existing_stable` y el efecto que falla dentro del mismo `handle`.** La
     /// observación corre ahí también, no solo en el `resume` del arranque.
     @Test func adoptEffectCeiling_observesTheFailureRightAfterTheClaim() async throws {

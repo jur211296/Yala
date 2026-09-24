@@ -35,13 +35,14 @@ struct AdoptEffectCeilingLogicTests {
     @Test func eachEffectExit_hasTheDecidedText() {
         #expect(message(.effectLocalFailure) == L10n.Storage.Failed.adoptEffectLocalFailure)
         #expect(message(.effectStalled) == L10n.Storage.Failed.adoptEffectStalled)
+        #expect(message(.effectLineageUnproven) == L10n.Storage.Failed.adoptEffectLineageUnproven)
     }
 
     /// Las tres frases nuevas son suyas y están traducidas: ninguna repite una del claim del adopt ni de «Migrar», y ninguna
     /// da el correo (ningún motivo del efecto habla de la cuenta).
     @Test func theThreeNewTexts_areTheirOwn_andTranslated() {
         let texts = [L10n.Storage.Failed.adoptEffectLocalFailure, L10n.Storage.Failed.adoptEffectStalled,
-                     L10n.Storage.Confirm.cancelAdoptEffectBody]
+                     L10n.Storage.Confirm.cancelAdoptEffectBody, L10n.Storage.Failed.adoptEffectLineageUnproven]
         let others = [L10n.Storage.Failed.adoptStalled, L10n.Storage.Failed.adoptSessionExpired,
                       L10n.Storage.Failed.adoptAccountUnavailable(supportEmail), L10n.Storage.Confirm.cancelAdoptBody,
                       L10n.Storage.Confirm.cancelMigrationBody, L10n.Storage.Failed.stepStalled,
@@ -59,7 +60,7 @@ struct AdoptEffectCeilingLogicTests {
     /// la nube»— aquí sería falsa. Se lee del fichero de cada locale, porque la corrida solo ve uno.
     @Test func theNewTexts_inEveryLocale_claimNeitherTheCloudNorTheLocalData() throws {
         let keys = ["storage.failed.adoptEffectLocalFailure", "storage.failed.adoptEffectStalled",
-                    "storage.confirm.cancelAdoptEffectBody"]
+                    "storage.confirm.cancelAdoptEffectBody", "storage.failed.adoptEffectLineageUnproven"]
         let resources = Self.repoRoot.appendingPathComponent("Yala/Resources")
         let locales = try FileManager.default.contentsOfDirectory(atPath: resources.path).filter { $0.hasSuffix(".lproj") }
         #expect(locales.count == 16)
@@ -89,10 +90,22 @@ struct AdoptEffectCeilingLogicTests {
         #expect(AdoptClaimExit.effectStalled.rawValue == "effectStalled")
         #expect(AdoptClaimExit.effectLocalFailure.rawValue == "effectLocalFailure")
         #expect(AdoptEffectBlocker.localFailure.rawValue == "localFailure")
+        #expect(AdoptClaimExit.effectLineageUnproven.rawValue == "effectLineageUnproven")
+        #expect(AdoptEffectBlocker.lineageUnproven.rawValue == "lineageUnproven")
         #expect(MigrationRunner.adoptEffectStep == "adopt")
         #expect(MetricsService.forwardStepWaitingDetail(
             step: MigrationRunner.adoptEffectStep, stalledSeconds: 900, causeStalledSeconds: 900, blocker: "localFailure")
             == "adopt|15m_1h|15m_1h|stop_localFailure")
+    }
+
+    /// **Qué cuenta para el techo corto** (ticket `adopt-uploads-a-foreign-corpus-without-a-lineage-check`): la base local y el
+    /// linaje sin probar, que esperar no arregla. La red y la quiescencia, no: esas van al largo, y un `nil` es lo que lo dice.
+    @Test func blockerClassification_onlyWhatWaitingCannotFix() {
+        #expect(AdoptEffectBlocker(MigrationExecutorError.adoptLocalFailure) == .localFailure)
+        #expect(AdoptEffectBlocker(MigrationExecutorError.adoptLineageUnproven) == .lineageUnproven)
+        #expect(AdoptEffectBlocker(MigrationExecutorError.adoptRetry(reason: "quiescence")) == nil)
+        #expect(AdoptEffectBlocker(MigrationExecutorError.adoptRetry(reason: "reconcileTransient")) == nil)
+        #expect(AdoptEffectBlocker(CocoaError(.fileReadUnknown)) == nil)
     }
 
     // MARK: - Alcance

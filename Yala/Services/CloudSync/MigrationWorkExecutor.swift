@@ -47,6 +47,11 @@ nonisolated enum MigrationExecutorError: Error, Equatable {
     /// `adopt-effect-retries-forever-with-no-ceiling`). Esperar no lo arregla, y por eso tiene caso propio y no va dentro de
     /// `adoptRetry`: el runner lo cuenta para el techo CORTO del efecto (15 min), y la red y la quiescencia para el largo.
     case adoptLocalFailure
+    /// El reconcile tenía filas que subir y este dispositivo no demuestra que su corpus descienda de la cuenta: no hay
+    /// `CloudMigrationMarker` de ESA cuenta en el store local (ticket `adopt-uploads-a-foreign-corpus-without-a-lineage-check`).
+    /// Caso propio por lo mismo que `adoptLocalFailure`: esperar no arregla un corpus ajeno, así que cuenta para el techo
+    /// CORTO. La espera legítima —el marcador que aún se importa— la para antes la quiescencia, que es `adoptRetry`.
+    case adoptLineageUnproven
 }
 
 // MARK: - AdoptReconcileOutcome (DIFERIDOS #30, mecanismo v1 DARK)
@@ -67,6 +72,10 @@ nonisolated enum AdoptReconcileOutcome: Equatable {
     /// outbox. Retomable igual que `transient`, pero esperar NO lo arregla (ticket `adopt-effect-retries-forever-with-no-ceiling`;
     /// hasta ese ticket iba dentro de `transient` y el efecto lo reintentaba para siempre).
     case localFailure
+    /// Había filas que subir y el store local no tiene el marcador de ESTA cuenta (`CloudMigrationMarker` con su
+    /// `accountHash`), que es la única prueba de que este dispositivo espeja el corpus del líder (ticket
+    /// `adopt-uploads-a-foreign-corpus-without-a-lineage-check`). No se toca nada: ni backfill, ni encolado, ni red.
+    case lineageUnproven
 }
 
 // MARK: - ReverseTombstoneSource (§h.3, I11-2)
@@ -1446,6 +1455,12 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     /// (está en su store local) y la sube por `/sync/push`; sin ella, TODO adopt con writes de ventana termina
     /// en divergencia Merkle local-ahead PERPETUA (autoridad backend→local en el pull).
     ///
+    /// **Que el corpus local sea del mismo Apple ID no lo supone: lo comprueba** (ticket
+    /// `adopt-uploads-a-foreign-corpus-without-a-lineage-check`). Con algo que subir, exige el marcador de ESA cuenta en el
+    /// store local (`adoptLineageProven`) y sin él devuelve `.lineageUnproven` sin tocar nada. Hasta ese ticket subía como
+    /// huérfano cualquier corpus que llegara aquí —el de un seguidor con otro iCloud, por ejemplo— y lo mezclaba con el de
+    /// la cuenta.
+    ///
     /// **CONTRATO I14** (el flujo de adopt COMPLETO — §k.4 — es I14; este método es su seam): I14 DEBE
     /// (i) correr este método tras la QUIESCENCIA del import CloudKit y ANTES de arrancar el runtime de sync,
     /// (ii) hacer FAST-FORWARD del History baseline (molde `fastForwardHistoryBaseline` de w4) ANTES de
@@ -1515,8 +1530,21 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         } catch {
             return .localFailure
         }
-        if backendSyncIDs.isEmpty && (prePlan.uploadCount > 0 || prePlan.identityCount > 0) {
-            CloudSyncBreadcrumb.adoptReconcileAbortedEmptyBackend(orphans: prePlan.uploadCount + prePlan.identityCount)
+        let pendingUploads = prePlan.uploadCount + prePlan.identityCount
+
+        // Guarda de LINAJE (ticket `adopt-uploads-a-foreign-corpus-without-a-lineage-check`): lo que el backend no conoce
+        // solo sube si este dispositivo demuestra que su corpus desciende de ESTA cuenta, o sea que el marcador que su
+        // líder escribió en CloudKit está en el store local. El diff solo sabe «el backend no la conoce», y eso es igual de
+        // cierto para la huérfana de la ventana del cutover que para el corpus entero de otra persona o de otro iCloud.
+        //
+        // Solo con algo que subir: el 2.º dispositivo de una cuenta NACIDA en la nube entra por este mismo adopt y no
+        // puede tener marcador nunca (no hay corpus de esa cuenta en CloudKit); sin filas que subir, no hay nada que mezclar.
+        // Y ANTES del guard de backend vacío: ese guard sigue el adopt —cambia el modo— y con un corpus ajeno en local eso
+        // lo deja dentro de una cuenta que no es suya, listo para subir en la primera edición.
+        if let blocked = adoptLineageGate(prePlan) { return blocked }
+
+        if backendSyncIDs.isEmpty && pendingUploads > 0 {
+            CloudSyncBreadcrumb.adoptReconcileAbortedEmptyBackend(orphans: pendingUploads)
             return .abortedEmptyBackend
         }
 
@@ -1545,6 +1573,10 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         } catch {
             return .localFailure
         }
+        // Y otra vez sobre el plan DEFINITIVO, que es el que sube (hallazgo de la review): una fila que el import confirme
+        // entre las dos lecturas no estaba en el preliminar, y con un preliminar sin nada que subir la guarda no había
+        // pedido prueba. El backfill ya corrió, pero solo acuña identidades locales: no sube nada.
+        if let blocked = adoptLineageGate(plan) { return blocked }
         guard !plan.orphans.isEmpty else { return .completed(uploaded: 0, identityAssigned: identityAssigned) }
 
         // Paso 6: fetch dirigido de EXACTAMENTE las huérfanas del plan → emisión fila-COMPLETA por el seam del
@@ -1633,6 +1665,10 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
             // Caso propio y no `adoptRetry`: el runner lo cuenta para el techo CORTO del efecto (ticket
             // `adopt-effect-retries-forever-with-no-ceiling`).
             throw MigrationExecutorError.adoptLocalFailure
+        case .lineageUnproven:
+            // Tampoco `adoptRetry`: un corpus ajeno no se arregla esperando (ticket
+            // `adopt-uploads-a-foreign-corpus-without-a-lineage-check`). El techo CORTO y su salida los pone el runner.
+            throw MigrationExecutorError.adoptLineageUnproven
         case .completed, .abortedEmptyBackend:
             break
         }
@@ -1641,9 +1677,9 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         //    el corpus ENTERO importado de CloudKit como deltas (contrato (ii)).
         engine.fastForwardHistoryBaseline(context: context)
 
-        // 4) Belt: el marcador del líder debe haber llegado por el mirror (la card de adopt se disparó por
-        //    `secondaryDeviceCloudLogin`). Ausente = no bloquea (solo diagnóstico) — la ruta ya validó el
-        //    marcador al abrir la pantalla.
+        // 4) Belt: el marcador del líder debe haber llegado por el mirror. Ausente = no bloquea (solo diagnóstico): si
+        //    hubiera algo que subir, la guarda de linaje del paso 2 ya habría parado; sin nada que subir el adopt es
+        //    legítimo sin marcador (el 2.º dispositivo de una cuenta nacida en la nube no lo tiene nunca).
         let markerCount = (try? context.fetchCount(FetchDescriptor<CloudMigrationMarker>())) ?? 0
         if markerCount == 0 {
             CloudSyncBreadcrumb.migrationEffectFailed(effect: "adoptBackendAccount", reason: "marker absent (belt)")
@@ -1684,6 +1720,50 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
             forKey: PrefSyncKey.cloudConsentTextVersion.rawValue)
 
         CloudSyncBreadcrumb.migrationLocalModePersisted()
+    }
+
+    /// Las tablas que NO piden prueba de linaje aunque tengan filas que subir: caché que cualquier teléfono genera solo, no
+    /// corpus de nadie. `ExchangeRate` es la de los tipos de cambio que el arranque siembra ANTES del Welcome
+    /// (`AppBootstrapper.loadExchangeRates`, sin identidad en iCloud): sin esta excepción el 2.º dispositivo de una cuenta
+    /// nacida en la nube —que nunca tiene marcador— no llegaba jamás con «nada que subir» (lo cazó la review). Siguen
+    /// subiendo como antes; lo que no hacen es exigir el marcador.
+    static let adoptLineageExemptTables: Set<String> = [EntityEmissionMap.exchangeRate.table]
+
+    /// Cuántas filas del plan piden prueba de linaje: huérfanas y filas sin identidad, fuera de las tablas exentas.
+    static func adoptLineageRelevantCount(_ plan: AdoptOrphanDiff.Plan) -> Int {
+        let orphans = plan.orphans.filter { !adoptLineageExemptTables.contains($0.key) }.values.reduce(0) { $0 + $1.count }
+        let needsIdentity = plan.needsIdentity.filter { !adoptLineageExemptTables.contains($0.key) }.values.reduce(0, +)
+        return orphans + needsIdentity
+    }
+
+    /// La guarda de linaje sobre un plan: `nil` = puede seguir. Con filas que la piden y sin el marcador de la cuenta,
+    /// `.lineageUnproven`; con la tabla del marcador ilegible, `.localFailure` —nunca «probado»—.
+    private func adoptLineageGate(_ plan: AdoptOrphanDiff.Plan) -> AdoptReconcileOutcome? {
+        let relevant = Self.adoptLineageRelevantCount(plan)
+        guard relevant > 0 else { return nil }
+        do {
+            guard try adoptLineageProven() else {
+                CloudSyncBreadcrumb.adoptReconcileLineageUnproven(pending: relevant)
+                return .lineageUnproven
+            }
+            return nil
+        } catch {
+            return .localFailure
+        }
+    }
+
+    /// ¿Demuestra el store local que este corpus desciende de la cuenta de la sesión? Sí si hay una fila
+    /// `CloudMigrationMarker` cuyo `accountHash` es el de esa cuenta (ticket
+    /// `adopt-uploads-a-foreign-corpus-without-a-lineage-check`). El marcador lo escribe el líder en SU CloudKit en el
+    /// cutover, así que solo está aquí si este dispositivo espeja ese corpus. Vale cualquier fila que case: un marcador
+    /// de OTRA cuenta —una migración anterior de este iCloud— no prueba nada, y uno con el hash vacío (el líder sin sesión)
+    /// tampoco, porque `CloudBeacon.hash` nunca lo es. Sin sesión, no: no hay cuenta con la que comparar.
+    /// LANZA si el fetch falla: el llamador lo cuenta como base local ilegible, nunca como «probado».
+    private func adoptLineageProven() throws -> Bool {
+        guard let userID = session.currentUserID else { return false }
+        let expected = CloudBeacon.hash(userID)
+        // Por `fetchInventory`: el mismo `catch`, el mismo rastro y el mismo seam de tests que las tablas del inventario.
+        return try fetchInventory(CloudMigrationMarker.self, step: "adopt-lineage").contains { $0.accountHash == expected }
     }
 
     /// DRY-RUN read-only (panel DEBUG, §3.4): pasos 1,3,4 SIN backfill (paso 2) NI upload (paso 6). Enumera el

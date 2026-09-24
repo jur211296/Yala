@@ -15,9 +15,9 @@ import Testing
 @Suite("Bienvenida · el motivo del fallo del adopt y su salida")
 struct WelcomeAdoptExitTests {
 
-    /// Las cinco salidas que se explican. `.cancelled` no está: quien cancela no ve un fallo.
+    /// Las seis salidas que se explican. `.cancelled` no está: quien cancela no ve un fallo.
     static let explainedExits: [AdoptClaimExit] = [
-        .stalled, .sessionExpired, .accountUnavailable, .effectStalled, .effectLocalFailure,
+        .stalled, .sessionExpired, .accountUnavailable, .effectStalled, .effectLocalFailure, .effectLineageUnproven,
     ]
 
     // MARK: - El mapeo de motivos
@@ -149,7 +149,7 @@ struct WelcomeAdoptExitTests {
     /// Un adopt que terminó bien también deja `notStarted`, sin la marca: salir tiraba la cuenta ya adoptada.
     @Test func afterCancel_withoutTheCancelMark_staysPut() {
         #expect(Self.after(.notStarted, exit: nil) == .keepPolling)
-        for other: AdoptClaimExit in [.stalled, .sessionExpired, .accountUnavailable, .effectStalled, .effectLocalFailure] {
+        for other: AdoptClaimExit in [.stalled, .sessionExpired, .accountUnavailable, .effectStalled, .effectLocalFailure, .effectLineageUnproven] {
             #expect(Self.after(.notStarted, exit: other) == .keepPolling, "\(other)")
         }
     }
