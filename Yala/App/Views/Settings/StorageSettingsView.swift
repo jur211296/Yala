@@ -652,15 +652,10 @@ struct StorageSettingsView: View {
             }
             Button(L10n.Storage.Confirm.cancelMigrationKeep, role: .cancel) {}
         } message: {
-            // En el claim de un ADOPT el cuerpo es otro: quien entraba en su cuenta puede estar en un teléfono recién
-            // instalado, y «tus datos siguen en este dispositivo» sería falso (ticket `adopt-claim-stays-parked-with-no-ceiling`).
-            // En el EFECTO del adopt, un tercero: el de arriba afirma que este dispositivo no cambió nada en la nube, y el
-            // reconcile puede haber subido algo antes de fallar (ticket `adopt-effect-retries-forever-with-no-ceiling`).
-            Text(controller.isAdoptClaim
-                 ? L10n.Storage.Confirm.cancelAdoptBody
-                 : controller.isAdoptEffectPending
-                    ? L10n.Storage.Confirm.cancelAdoptEffectBody
-                    : L10n.Storage.Confirm.cancelMigrationBody)
+            // El cuerpo por fase —claim del adopt, efecto del adopt, «Migrar»— lo elige `StorageFailureCopyLogic`, que es
+            // también quien lo elige en la barra del adopt de la bienvenida.
+            Text(StorageFailureCopyLogic.cancelMigrationBody(
+                isAdoptClaim: controller.isAdoptClaim, isAdoptEffectPending: controller.isAdoptEffectPending))
         }
     }
 

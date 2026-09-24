@@ -73,6 +73,13 @@ nonisolated enum CloudWelcomeSignInPhase: Equatable {
     case providerMismatch(ProviderMismatchLogic.Exits)
     /// Fallo de red/sesión del `exists` o de la máquina.
     case error(retryable: Bool)
+    /// El adopt SALIÓ por un motivo que la máquina dejó apuntado (`MigrationState.adoptClaimExitRaw`): el techo del claim,
+    /// o el del EFECTO —la base local que no se deja leer, la activación que lleva días sin terminar—. Caso propio y no un
+    /// `.error(retryable: true)`: ése dice «Revisa tu conexión», y aquí la causa puede ser del propio teléfono (ticket
+    /// `welcome-adopt-effect-failure-has-no-reason-and-no-cancel`, decisión de Jürgen del 2026-09-23). El texto es el de
+    /// Almacenamiento, por la misma función (`StorageFailureCopyLogic.adoptExitMessage`). Nunca lleva `.cancelled`: quien
+    /// cancela no ve un fallo.
+    case adoptExit(AdoptClaimExit)
     /// La cuenta existe pero el backend no la deja entrar (403 en el claim). Caso propio y no un
     /// `.error(retryable: false)`: ése comparte copy con el fallo de red —icono de wifi incluido— y
     /// **el problema no es la conexión**. Sin botón de reintentar: esperar no despierta una cuenta
@@ -126,9 +133,14 @@ nonisolated enum CloudWelcomeSignInFlow {
     /// un «Reintentar» que repite el sign-in entero bajo un «Revisa tu conexión» que aquí no es verdad (lo cazaron dos
     /// lentes de la review). Tampoco `.adopting(0)`, que era lo que salía antes por el `.idle`: una barra que salta a
     /// cero es progreso inventado. El `claimBlocker` sí gana, porque viene del runner y no del journal.
+    ///
+    /// **`adoptClaimExit` elige el texto del fallo** (ticket `welcome-adopt-effect-failure-has-no-reason-and-no-cancel`).
+    /// Solo en `.failed(.migration)`, que es la tarjeta donde Almacenamiento lo lee, y detrás de `claimBlocker`, que sigue
+    /// ganando como hasta hoy. `.cancelled` no es un fallo que explicar: cae al genérico, igual que allí.
     static func phase(
         for uiState: CloudMigrationUIState,
-        claimBlocker: ClaimBlocker? = nil
+        claimBlocker: ClaimBlocker? = nil,
+        adoptClaimExit: AdoptClaimExit? = nil
     ) -> CloudWelcomeSignInPhase? {
         if let claimBlocker {
             switch uiState {
@@ -178,7 +190,10 @@ nonisolated enum CloudWelcomeSignInFlow {
             return .reentryReady
         case .waitingForLeader:
             return .waitingLeader
-        case .failed:
+        case .failed(let kind):
+            if kind == .migration, let adoptClaimExit, adoptClaimExit != .cancelled {
+                return .adoptExit(adoptClaimExit)
+            }
             return .error(retryable: true)
         case .journalUnreadable:
             // Sin dato: ni progreso ni final (ver el docblock).
@@ -311,5 +326,49 @@ nonisolated enum WelcomeAdoptAutoResume {
         }
         next.showManualRetry = true
         return (next, false)
+    }
+}
+
+// MARK: - La salida del adopt en la bienvenida
+
+/// «Cancelar la activación» mientras el adopt corre en la bienvenida (ticket
+/// `welcome-adopt-effect-failure-has-no-reason-and-no-cancel`, decisión de Jürgen del 2026-09-23). Hasta ese ticket la
+/// pantalla no tenía salida en `.adopting`: el «Cancelar» del efecto y del claim existía solo en Almacenamiento.
+///
+/// **No decide la fase de la máquina**: eso lo hace `CloudMigrationController.canCancelMigration`, el MISMO predicado que
+/// abre el botón en Almacenamiento. Aquí solo se añade lo que es de esta pantalla: que se esté pintando la barra.
+nonisolated enum WelcomeAdoptCancel {
+
+    /// ¿Se pinta el botón? Con la barra en pantalla y la máquina en una fase que lo ofrece.
+    static func offersCancel(screenPhase: CloudWelcomeSignInPhase, canCancelMigration: Bool) -> Bool {
+        guard case .adopting = screenPhase else { return false }
+        return canCancelMigration
+    }
+
+    /// Qué hace la pantalla tras `cancelMigration()`.
+    enum AfterCancel: Equatable {
+        /// La cancelación aterrizó: al chooser, que es a donde lleva la flecha desde `.error`.
+        case back
+        /// No aterrizó —la máquina avanzó entretanto, o la pre-espera del import venció—: se sigue mirando el progreso.
+        case keepPolling
+    }
+
+    /// **La fase sola no prueba nada**: `notStarted` es también el efecto del adopt todavía pendiente —la fase de ANTES de
+    /// cancelar— y el adopt que terminó bien (lo cazaron las dos lentes de la review). Por eso se exige la huella que deja
+    /// la cancelación en el MISMO save: sin el pendiente del efecto y con la marca `.cancelled` (`journalMigrationCancel`).
+    /// La marca no puede ser vieja: entrar en el claim la retira. **Con el journal ilegible no se sale**: la fase sería la
+    /// última leída, no la de ahora.
+    ///
+    /// Lo pregunta `cancelAdopt()` al volver de `cancelMigration()` y, mientras haya una cancelación pedida, el poll en cada
+    /// vuelta: si la pre-espera del import venció, el «sí» sigue apuntado y lo ejecuta una pasada POSTERIOR.
+    static func afterCancel(
+        journaledPhase: MigrationPhase,
+        adoptEffectJournaled: Bool,
+        adoptClaimExit: AdoptClaimExit?,
+        journalUnreadable: Bool
+    ) -> AfterCancel {
+        guard !journalUnreadable, journaledPhase == .notStarted, !adoptEffectJournaled,
+              adoptClaimExit == .cancelled else { return .keepPolling }
+        return .back
     }
 }

@@ -119,7 +119,7 @@ struct WelcomeCloudSignInView: View {
     /// porque ese chooser es un step del `WelcomeFlowContainer`, que es OTRO cover: presentarlo desde aquí
     /// sería el segundo anchor de la regla (4) de Presentaciones.
     var onCreateAnotherAccount: () -> Void
-    /// Volver al chooser (solo en fases no comprometidas: intro/notFound/blocked/error).
+    /// Volver al chooser: en fases no comprometidas (intro/notFound/blocked/error) y tras cancelar el adopt.
     var onBack: () -> Void
 
     /// R2: el alta sin relanzar arranca el motor del dominio EN ESTA SESIÓN y `startShared` necesita un
@@ -152,6 +152,14 @@ struct WelcomeCloudSignInView: View {
     /// Fase journaleada del tick anterior del poll — alimenta `machineAdvanced` (un avance
     /// real repone intentos de auto-resume). `nil` = primer tick (jamás cuenta como avance).
     @State private var lastObservedPhase: MigrationPhase?
+    /// El diálogo de «Cancelar la activación» de la barra del adopt (ticket
+    /// `welcome-adopt-effect-failure-has-no-reason-and-no-cancel`).
+    @State private var confirmCancelAdopt = false
+    /// La persona confirmó «Cancelar la activación» en ESTE adopt. El poll lo mira en cada vuelta: si la pre-espera del
+    /// import venció, el «sí» sigue apuntado en el runner y lo ejecuta una pasada posterior, y sin esto la pantalla se
+    /// quedaba en `.adopting(0)` sobre un `notStarted` ya cancelado. También impide que «Retomar» vuelva a reclamar. Se
+    /// repone a `false` al empezar cada adopt.
+    @State private var cancelRequested = false
 
     var body: some View {
         WelcomeFlowScreen { logoTopSpacing in
@@ -198,6 +206,25 @@ struct WelcomeCloudSignInView: View {
             }
         }
         .onDisappear { flowTask?.cancel() }
+        // El diálogo de «Cancelar la activación» cuelga del `body` y no del botón: el botón sale del árbol en la misma
+        // pasada en la que la fase deja de ofrecerlo, y un `.onChange` colgado de él no llegaba a correr (lo cazó la
+        // review). Aquí sí baja el diálogo si la máquina deja de ofrecer la salida con él abierto.
+        .confirmationDialog(L10n.Storage.Confirm.cancelMigrationTitle,
+                            isPresented: $confirmCancelAdopt, titleVisibility: .visible) {
+            Button(L10n.Storage.Confirm.cancelMigrationConfirm) {
+                cancelRequested = true
+                launchFlow { await cancelAdopt() }
+            }
+            Button(L10n.Storage.Confirm.cancelMigrationKeep, role: .cancel) {}
+        } message: {
+            if let controller = CloudMigrationController.shared {
+                Text(StorageFailureCopyLogic.cancelMigrationBody(
+                    isAdoptClaim: controller.isAdoptClaim, isAdoptEffectPending: controller.isAdoptEffectPending))
+            }
+        }
+        .onChange(of: offersAdoptCancel) { _, offers in
+            if !offers { confirmCancelAdopt = false }
+        }
         .interactiveDismissDisabled()
     }
 
@@ -292,13 +319,23 @@ struct WelcomeCloudSignInView: View {
         }
     }
 
-    /// Back solo en fases donde nada está comprometido; adopt en vuelo o relaunch = sin salida.
+    /// ¿Se ofrece «Cancelar la activación» ahora? Con la barra en pantalla y la máquina en una fase que lo ofrece
+    /// (`WelcomeAdoptCancel.offersCancel`), y sin una cancelación ya pedida.
+    private var offersAdoptCancel: Bool {
+        guard !cancelRequested, let controller = CloudMigrationController.shared else { return false }
+        return WelcomeAdoptCancel.offersCancel(screenPhase: phase, canCancelMigration: controller.canCancelMigration)
+    }
+
+    /// Back solo en fases donde nada está comprometido; adopt en vuelo o relaunch = sin flecha. El adopt en vuelo tiene
+    /// su salida propia, «Cancelar la activación» (`cancelAdoptButton`): la flecha saldría sin cancelar la máquina, y el
+    /// re-kick la retomaría a su espalda.
     private var canGoBack: Bool {
         switch phase {
         // `.providerMismatch`: sesión ya soltada y sin claim — nada comprometido.
         // `.accountBlocked`: el claim fue RECHAZADO (403) — tampoco se creó nada, y sin retry ni
         // salida sería un callejón (mismo criterio que `.blockedForeignData`).
-        case .intro, .notFound, .blockedForeignData, .error, .providerMismatch, .accountBlocked: true
+        // `.adoptExit`: el adopt ya salió —por su techo— y la máquina está en `failedRollback`: nada en vuelo, como `.error`.
+        case .intro, .notFound, .blockedForeignData, .error, .adoptExit, .providerMismatch, .accountBlocked: true
         // `.creating`: el claim está en vuelo y puede CREAR la cuenta server-side — salir a mitad
         // dejaría al usuario sin saber si se dio de alta. Mismo criterio que `.checking`.
         // `.bornCloudReady` es terminal como `.relaunch`: la cuenta está creada y el par escrito.
@@ -384,6 +421,21 @@ struct WelcomeCloudSignInView: View {
                     .padding(.horizontal, DS.Spacing.xl)
                     .accessibilityIdentifier("welcome_cloud_retry")
                 }
+            }
+        case .adoptExit(let exit):
+            // El motivo con el texto de Almacenamiento (ticket `welcome-adopt-effect-failure-has-no-reason-and-no-cancel`).
+            // Icono de aviso y no de wifi: la causa puede ser del propio teléfono. «Reintentar» repite el sign-in, como `.error`.
+            VStack(spacing: DS.Spacing.lg) {
+                messageContent(
+                    icon: "exclamationmark.triangle",
+                    title: L10n.Welcome.Cloud.errorTitle,
+                    body: StorageFailureCopyLogic.adoptExitMessage(exit) ?? L10n.Welcome.Cloud.errorBody)
+                    .accessibilityIdentifier("welcome_cloud_adopt_exit")
+                YalaPrimaryButton(L10n.Welcome.Cloud.retry) {
+                    launchFlow { await runFlowAfterConsent() }
+                }
+                .padding(.horizontal, DS.Spacing.xl)
+                .accessibilityIdentifier("welcome_cloud_retry")
             }
         case .accountBlocked:
             // Icono de CUENTA y no de wifi: el 403 llega con la conexión perfectamente sana, y el copy
@@ -724,8 +776,42 @@ struct WelcomeCloudSignInView: View {
                 .padding(.top, DS.Spacing.sm)
                 .accessibilityIdentifier("welcome_cloud_adopt_retry")
             }
+            if offersAdoptCancel, let controller = CloudMigrationController.shared {
+                cancelAdoptButton(controller)
+            }
         }
         .accessibilityIdentifier("welcome_cloud_adopting")
+    }
+
+    /// «Cancelar la activación» durante el adopt (ticket `welcome-adopt-effect-failure-has-no-reason-and-no-cancel`,
+    /// decisión de Jürgen del 2026-09-23). El MISMO gesto que Almacenamiento: su predicado (`canCancelMigration`), su
+    /// diálogo (en el `body`), su cuerpo por fase y su `cancelMigration()`. Deshabilitado con trabajo en vuelo, como allí,
+    /// y atenuado entonces: con el color puesto a mano SwiftUI no lo atenúa solo, y parecía activo sin hacer nada.
+    private func cancelAdoptButton(_ controller: CloudMigrationController) -> some View {
+        Button(L10n.Storage.Progress.cancelMigration) {
+            confirmCancelAdopt = true
+        }
+        .font(DS.Typography.subheadline)
+        .foregroundStyle(.white.opacity(controller.isWorking ? 0.4 : 0.8))
+        .disabled(controller.isWorking)
+        .accessibilityIdentifier("welcome_cloud_adopt_cancel")
+    }
+
+    /// Cancela y vuelve a mirar. **El poll se para ANTES** (`launchFlow` cancela el task viejo) y vuelve DESPUÉS: quien
+    /// decide si la cancelación aterrizó es él, en cada vuelta (`cancelLanded`), porque puede aterrizar ahora o en una
+    /// pasada posterior si la pre-espera del import venció.
+    private func cancelAdopt() async {
+        guard let controller = CloudMigrationController.shared else { return }
+        await controller.cancelMigration()
+        guard !Task.isCancelled else { return }
+        await pollAdoptProgress()
+    }
+
+    /// ¿Aterrizó la cancelación que pidió la persona? La huella la lee `WelcomeAdoptCancel.afterCancel`.
+    private func cancelLanded(_ controller: CloudMigrationController) -> Bool {
+        cancelRequested && WelcomeAdoptCancel.afterCancel(
+            journaledPhase: controller.journaledPhase, adoptEffectJournaled: controller.adoptEffectJournaled,
+            adoptClaimExit: controller.adoptClaimExit, journalUnreadable: controller.isJournalUnreadable) == .back
     }
 
     private var waitingLeaderContent: some View {
@@ -1069,6 +1155,7 @@ struct WelcomeCloudSignInView: View {
                 // heredar attempts/showManualRetry del ciclo anterior).
                 autoResumeState = WelcomeAdoptAutoResume.State()
                 lastObservedPhase = nil
+                cancelRequested = false
                 await CloudMigrationController.shared?.startAdoptWithExistingSession()
                 await pollAdoptProgress()
             }
@@ -1090,12 +1177,19 @@ struct WelcomeCloudSignInView: View {
         }
         while true {
             controller.refresh()
+            // La cancelación que pidió la persona, en cuanto aterrice: al chooser. Va ANTES del mapeo, que pintaría el
+            // `.idle` que deja como `.adopting(0)` con un «Retomar» que volvería a reclamar la cuenta.
+            if cancelLanded(controller) {
+                onBack()
+                return
+            }
             // `nil` = el journal no se dejó leer en este tick: la pantalla se queda como estaba y el poll sigue. El
             // detector de aparcada corre igual, con la fase que se está pintando; su `resumeIfNeeded` no decide nada sin
             // journal.
             guard let next = CloudWelcomeSignInFlow.phase(
                 for: controller.uiState,
-                claimBlocker: controller.claimBlocker) else {
+                claimBlocker: controller.claimBlocker,
+                adoptClaimExit: controller.adoptClaimExit) else {
                 await evaluateAutoResume(controller: controller, screenPhase: phase)
                 do {
                     try await Task.sleep(for: .seconds(1))
@@ -1106,7 +1200,7 @@ struct WelcomeCloudSignInView: View {
             }
             phase = next
             switch next {
-            case .relaunch, .error:
+            case .relaunch, .error, .adoptExit:
                 return
             case .reentryReady:
                 // Terminal de ÉXITO del adopt sin relanzamiento. Para igual que `.relaunch`, y el
@@ -1174,7 +1268,8 @@ struct WelcomeCloudSignInView: View {
             return
         }
         controller.refresh()
-        if case .idle = controller.uiState {
+        // Con una cancelación pedida NUNCA se vuelve a reclamar: se reanuda, que ejecuta el «sí» apuntado, y el poll sale.
+        if case .idle = controller.uiState, !cancelRequested {
             await controller.startAdoptWithExistingSession()
         } else {
             await controller.resumeIfNeeded()
