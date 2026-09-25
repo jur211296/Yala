@@ -1041,16 +1041,50 @@ final class CloudMigrationController {
     /// paso 5.5 incluido) hasta que el outbox vivo quede en 0 VERIFICADO por fetch, o bloquea. Los
     /// pendientes JAMÁS se descartan — `.blocked` aborta el cierre y el usuario reintenta con red.
     /// `.coalesced` cuenta como ciclo sano (sin señal de fallo); el tope corta backends caídos.
+    ///
+    /// **Respeta el candado del motor** (ticket `sign-out-push-all-runs-a-sync-cycle-past-the-migration-gate`): con el
+    /// journal ilegible, una fase transitoria o el espejo de iCloud montado, `CloudSyncRuntime.canRunDomain()` está
+    /// cerrado y aquí no se corre ni un ciclo — tampoco su drain, que es parte del motor (asigna identidades y escribe el
+    /// outbox). Lo que el motor no capturó se LEE del History sin escribir, y bloquea igual que una fila del outbox. Se
+    /// consulta antes de CADA ciclo: entre uno y otro hay una pausa en la que una reversa puede arrancar.
     func pushAllPendingForSignOut(maxIterations: Int = 20) async -> CloudSignOutFlowLogic.PushAllVerdict {
-        guard let runtime = CloudSyncRuntime.shared else {
-            // Sin runtime en `.cloud` solo es seguro cerrar si no hay nada pendiente.
-            let live = livePendingUploadCount()
-            return live == 0 ? .drained : .blocked(pendingCount: live, reason: .permanent)
-        }
+        await Self.pushAllForSignOut(
+            runtime: CloudSyncRuntime.shared,
+            context: context,
+            domainGateOpen: { CloudSyncRuntime.canRunDomain() },
+            livePendingCount: { [self] in livePendingUploadCount() },
+            maxIterations: maxIterations)
+    }
+
+    /// El cuerpo del push-all del cierre, con el runtime, el candado y el recuento inyectados para poder medirlo: el
+    /// controller no se construye en tests. Producción entra SOLO por `pushAllPendingForSignOut`.
+    static func pushAllForSignOut(
+        runtime: CloudSyncRuntime?,
+        context: ModelContext,
+        domainGateOpen: () -> Bool,
+        livePendingCount: () -> Int,
+        maxIterations: Int,
+        pause: Duration = .milliseconds(250)
+    ) async -> CloudSignOutFlowLogic.PushAllVerdict {
         for iteration in 1...maxIterations {
+            // Sin runtime, o con el candado del dominio cerrado, no hay motor que pueda subir: solo es seguro cerrar sin
+            // pendientes —en el outbox y en el History sin capturar—, y con ellos se bloquea sin descartar
+            // (`pushAllVerdictWithoutEngine`).
+            guard let runtime else {
+                return CloudSignOutFlowLogic.pushAllVerdictWithoutEngine(
+                    livePendingCount: livePendingCount(), uncapturedChanges: false)
+            }
+            guard domainGateOpen() else {
+                let live = livePendingCount()
+                let uncaptured = runtime.hasUncapturedPersonalChanges(context: context)
+                CloudSyncBreadcrumb.signOutPushSkippedByDomainGate(
+                    pending: live, uncaptured: uncaptured.map { $0 ? "yes" : "no" } ?? "unknown")
+                return CloudSignOutFlowLogic.pushAllVerdictWithoutEngine(
+                    livePendingCount: live, uncapturedChanges: uncaptured)
+            }
             let outcome = await runtime.syncCycle(context: context)
             if let verdict = CloudSignOutFlowLogic.pushAllVerdict(
-                livePendingCount: livePendingUploadCount(),
+                livePendingCount: livePendingCount(),
                 cycleOutcome: outcome,
                 // El motor PERSONAL no puede ver el kill de Grupos: habla con `/sync/push`, y ahí no hay
                 // kill-switch server-side —`CLOUD_MODE_ROLLOUT_PERCENT` se SIRVE como config y el cliente
@@ -1080,14 +1114,14 @@ final class CloudMigrationController {
             // microsegundos y bloquearía con red sana. La pausa deja terminar el
             // ciclo en vuelo; la siguiente iteración corre un ciclo real.
             do {
-                try await Task.sleep(for: .milliseconds(250))
+                try await Task.sleep(for: pause)
             } catch {
                 break  // cancelación del caller
             }
         }
         // Tope alcanzado con pendientes: transitorio (aún drenando; el consumidor `.cloud`/
         // secundario lo re-mapea a su alert permanente al fijar la fase — byte-idéntico).
-        return .blocked(pendingCount: livePendingUploadCount(), reason: .transient)
+        return .blocked(pendingCount: livePendingCount(), reason: .transient)
     }
 
     /// Filas vivas del outbox (`rejectedReason == nil`) — mismo criterio que el banner S11.

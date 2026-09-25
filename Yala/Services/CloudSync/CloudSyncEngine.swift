@@ -398,6 +398,12 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSignOut push blocked pending=\(pending, privacy: .public)")
     }
 
+    /// El push-all del cierre en `.cloud` NO corrió el ciclo porque el candado del dominio estaba cerrado (journal
+    /// ilegible, fase transitoria, espejo montado). `pending` = filas vivas; `uncaptured` = ¿ediciones en el History sin capturar? (`yes` · `no` · `unknown`). Solo con `0` y `no` sigue el cierre.
+    static func signOutPushSkippedByDomainGate(pending: Int, uncaptured: String) {
+        logger.notice("CloudSignOut push skipped by domain gate pending=\(pending, privacy: .public) uncaptured=\(uncaptured, privacy: .public)")
+    }
+
     /// **Por qué se BLOQUEÓ el cierre en la nube, y no solo cuántas filas quedaron** (2026-09-14). Lo emite
     /// el paso 2 —el push-all de GRUPOS— con el motivo YA traducido, que es justo el que decide qué aviso
     /// ve la persona: `upload-retry-later` (pasajero: red, 5xx, un cortafuegos) · `channel-paused` (el
@@ -1980,6 +1986,44 @@ final class CloudSyncEngine {
             print("CloudSyncEngine: drain error: \(error)")
             #endif
             return false
+        }
+    }
+
+    // MARK: - Ediciones sin capturar (solo lectura)
+
+    /// **¿Hay ediciones del store PERSONAL en el History que ningún drain ha capturado?** Solo LEE: ni crea el cursor, ni
+    /// barre, ni guarda — es lo que el cierre de sesión puede preguntar con el candado del dominio cerrado, donde el drain no
+    /// puede correr porque guarda en el store principal (ticket `sign-out-push-all-runs-a-sync-cycle-past-the-migration-gate`).
+    ///
+    /// Mismo criterio que la traducción del drain, en grueso: transacciones posteriores al token del cursor, del store
+    /// personal, que no escribió el propio motor y que tocan alguna de sus entidades. Es más ancho que lo que el drain
+    /// emitiría (un cambio que solo asigna `syncID` cuenta aquí), y es la dirección segura: su consumidor bloquea, no borra.
+    ///
+    /// `nil` = no se pudo saber (token roto, o un fetch que lanza). Quien decida con esto lo trata como «sí».
+    func hasUncapturedPersonalChanges(context: ModelContext) -> Bool? {
+        do {
+            var cursorDescriptor = FetchDescriptor<SyncCursor>()
+            cursorDescriptor.fetchLimit = 1
+            let cursor = try context.fetch(cursorDescriptor).first
+            let txns: [DefaultHistoryTransaction]
+            switch decodeToken(cursor?.historyTokenData) {
+            case .valid(let token):
+                txns = try context.fetchHistory(
+                    HistoryDescriptor<DefaultHistoryTransaction>(predicate: #Predicate { $0.token > token }))
+            case .absent:
+                txns = try context.fetchHistory(HistoryDescriptor<DefaultHistoryTransaction>())
+            case .broken:
+                return nil
+            }
+            return txns.contains { tx in
+                tx.author != Self.outboxSaveAuthor
+                    && tx.changes.contains { Self.personalEntityNames.contains($0.changedPersistentIdentifier.entityName) }
+            }
+        } catch {
+            #if DEBUG
+            print("CloudSyncEngine: Error leyendo el History sin capturar: \(error)")
+            #endif
+            return nil
         }
     }
 
