@@ -407,6 +407,10 @@ final class CloudSyncRuntime {
         // de cuarentena (F-8 exige el drain síncrono inmediatamente antes) → reconcilers de arranque.
         engine.recoverIfQuarantineRecreated(context: context)
         engine.rehydrateOutboxFromMirror(userID: userID, context: context)
+        // Tras el remonte de un ADOPT, las identidades que el espejo cambió entre su reconcile y el remonte vuelven a las que
+        // el backend conoce ANTES del primer drain y del primer pull (ticket
+        // `adopt-window-late-leader-identity-export-can-duplicate-after-the-remount`). Sin la marca del adopt no hace nada.
+        engine.restoreAdoptedRelayIdentitiesIfPinned(context: context)
         // Un drain que no terminó hizo rollback: una edición local sin capturar no está en el outbox y el guard D-1
         // del drenaje de cuarentena no la vería (F-8). La cuarentena es durable: espera al próximo arranque (ticket
         // `drain-duplicates-the-unit-clock-when-its-row-cannot-be-read`).

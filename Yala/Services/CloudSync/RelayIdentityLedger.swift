@@ -19,6 +19,11 @@
 //  justo la que hace falta—. Lo retira el primer drain completo DESPUÉS de que el reconcile de `done` lo marque como
 //  terminado (`markRetirable`), y lo borra entero la vuelta atrás antes del cutover. Solo guarda `Z_PK` y UUIDs.
 //
+//  El ADOPT también lo siembra (ticket `adopt-window-late-leader-identity-export-can-duplicate-after-the-remount`): su espejo
+//  sigue vivo del reconcile de huérfanas al remonte, y ahí no hay reconcile de `done` que restaure. Deja la marca del adopt
+//  (`markAdoptPin`) y el runtime, al arrancar tras el remonte, devuelve las identidades por este registro
+//  (`CloudSyncEngine.restoreAdoptedRelayIdentitiesIfPinned`) y lo marca para retirar.
+//
 
 import Foundation
 import SwiftData
@@ -48,10 +53,13 @@ enum RelayIdentityLedger {
     }
 
     /// Añade `entries` al registro (una clave repetida toma el valor nuevo) y solo escribe si algo cambió. Quita la marca
-    /// de retirada: sembrar es empezar una migración. LANZA si no puede leer el que había o escribir el nuevo.
+    /// de retirada y la del adopt: sembrar es empezar una migración o un adopt, y el adopt vuelve a poner la suya después.
+    /// Sin quitarla, una marca del adopt que sobrevivió a una salida haría que el runtime retirara el registro de una ida.
+    /// LANZA si no puede leer el que había o escribir el nuevo.
     static func merge(_ entries: [String: UUID], into url: URL) throws {
-        if FileManager.default.fileExists(atPath: retireMarkerURL(for: url).path) {
-            try FileManager.default.removeItem(at: retireMarkerURL(for: url))
+        for marker in [retireMarkerURL(for: url), adoptPinURL(for: url)]
+        where FileManager.default.fileExists(atPath: marker.path) {
+            try FileManager.default.removeItem(at: marker)
         }
         guard !entries.isEmpty else { return }
         var ledger = try load(from: url)
@@ -62,9 +70,10 @@ enum RelayIdentityLedger {
         try data.write(to: url, options: .atomic)
     }
 
-    /// Borra el registro y su marca de retirada, si existen.
+    /// Borra el registro y sus dos marcas, si existen.
     static func remove(at url: URL) throws {
-        for file in [url, retireMarkerURL(for: url)] where FileManager.default.fileExists(atPath: file.path) {
+        for file in [url, retireMarkerURL(for: url), adoptPinURL(for: url)]
+        where FileManager.default.fileExists(atPath: file.path) {
             try FileManager.default.removeItem(at: file)
         }
     }
@@ -81,5 +90,25 @@ enum RelayIdentityLedger {
 
     private static func retireMarkerURL(for url: URL) -> URL {
         url.appendingPathExtension("retire")
+    }
+
+    /// La marca «lo sembró un adopt y el runtime tiene que restaurar con él al arrancar tras el remonte»: un fichero vacío
+    /// al lado. La pone `runAdoptOrphanReconcile` después de sembrar; la quita el runtime cuando la restauración termina.
+    static func markAdoptPin(_ url: URL) throws {
+        try Data().write(to: adoptPinURL(for: url), options: .atomic)
+    }
+
+    static func isAdoptPinned(_ url: URL) -> Bool {
+        FileManager.default.fileExists(atPath: adoptPinURL(for: url).path)
+    }
+
+    static func clearAdoptPin(_ url: URL) throws {
+        let marker = adoptPinURL(for: url)
+        guard FileManager.default.fileExists(atPath: marker.path) else { return }
+        try FileManager.default.removeItem(at: marker)
+    }
+
+    private static func adoptPinURL(for url: URL) -> URL {
+        url.appendingPathExtension("adopt")
     }
 }

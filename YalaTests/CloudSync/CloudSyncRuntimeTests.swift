@@ -225,6 +225,56 @@ struct CloudSyncRuntimeTests {
         runtime.teardownGuestSession()  // detener la cadencia async
     }
 
+    // MARK: - La identidad que el espejo cambió en la ventana del adopt
+
+    /// Ticket `adopt-window-late-leader-identity-export-can-duplicate-after-the-remount`. Tras el remonte de un adopt, el
+    /// arranque devuelve la identidad que el espejo cambió entre el reconcile y el remonte ANTES de su primer drain. Sin eso,
+    /// la edición que trajo el import salía de ese drain bajo la identidad nueva: una fila aparte en el backend.
+    @Test func start_afterAnAdopt_restoresTheRekeyedIdentityBeforeTheFirstDrain() async throws {
+        let prev = CloudSyncFlags.syncRuntimeEnabled
+        CloudSyncFlags.syncRuntimeEnabled = true
+        let prevMode = CloudSyncFlags.storageMode
+        CloudSyncFlags.storageMode = .cloud
+        SwiftDataConfiguration._testSetPersonalStoreMountedDecision(.cloudMirrorOff)  // A3: device ya relanzado
+        defer {
+            CloudSyncFlags.syncRuntimeEnabled = prev
+            CloudSyncFlags.storageMode = prevMode
+            SwiftDataConfiguration._testSetPersonalStoreMountedDecision(.iCloudMirror)
+        }
+
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        let ledgerURL = dir.appendingPathComponent("relay-identity-ledger.json")
+        engine.relayIdentityLedgerURL = ledgerURL
+        let backendID = UUID()
+        let category = Category(name: "del backend", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+        category.syncID = backendID
+        context.insert(category)
+        context.insert(SyncIdentity(syncID: backendID, entityType: SyncEntityType.category, localAnchor: "a"))
+        try context.save()
+        let key = try #require(RelayIdentityLedger.key(for: category.persistentModelID))
+        try RelayIdentityLedger.merge([key: backendID], into: ledgerURL)
+        try RelayIdentityLedger.markAdoptPin(ledgerURL)
+        engine.fastForwardHistoryBaseline(context: context)
+        // El import del espejo antes del remonte: la identidad del líder desplazado y su edición.
+        category.syncID = UUID()
+        category.name = "editada por el líder"
+        context.author = "NSCloudKitMirroringDelegate.import"
+        try context.save()
+        context.author = nil
+
+        let runtime = makeRuntime(engine: engine, pull: StubSession(body: emptyPageJSON()),
+                                  session: StubCloudSession(userID: "u1", claim: .routeReturningUser))
+        await runtime.start(context: context)
+        defer { runtime.teardownGuestSession() }
+        #expect(runtime.state == .running)
+        #expect(category.syncID == backendID)
+        let upserts = try outbox(context).filter { $0.opRaw == SyncOutboxOp.upsert.rawValue }.map(\.syncID)
+        #expect(upserts == [backendID], "la edición sale del primer drain con la identidad del backend")
+        #expect(!RelayIdentityLedger.isAdoptPinned(ledgerURL))
+    }
+
     // MARK: - S1 (review I13): el paso de prefs del ciclo está gateado por storageMode
 
     /// En `.icloud` (default SSOT hoy), el paso 5.5 de prefs NO corre aunque las deps estén cableadas

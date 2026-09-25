@@ -2211,6 +2211,140 @@ final class CloudSyncEngine {
         }
     }
 
+    // MARK: - La identidad que el espejo cambia en la ventana del ADOPT (ticket `adopt-window-late-leader-identity-export-can-duplicate-after-the-remount`)
+
+    /// **Devuelve a la identidad que dice el registro (`RelayIdentityLedger`) las filas vivas que el espejo re-identificó.**
+    ///
+    /// Es la restauración del adopt. La de la ida (`MigrationWorkExecutor.restoreRelayIdentities`) casa por las coordenadas
+    /// del record de CloudKit, y eso pide leer los metadatos del espejo de cada fila candidata. El adopt restaura también
+    /// tras el remonte, sin espejo, donde esa lectura no está medida. El registro no la necesita: el cambio de identidad del
+    /// espejo es un update del MISMO objeto, y el registro dice qué identidad le dio este teléfono a esa fila por su `Z_PK`.
+    ///
+    /// Se restaura una fila solo si todo esto es cierto, que son las condiciones del tombstone (`relayTombstoneIdentity`)
+    /// salvo las coordenadas:
+    ///  1. el registro tiene una identidad para su `Z_PK` y no es la que lleva ahora;
+    ///  2. la que lleva ahora NO tiene testigo aquí: ningún camino local cambia una identidad sin escribirlo (regla de #243),
+    ///     así que el cambio es del espejo;
+    ///  3. la del registro SÍ lo tiene, de su tipo: es una identidad que este teléfono dio;
+    ///  4. ninguna fila viva de su tipo la lleva, y ninguna otra fila la reclama;
+    ///  5. con `allowed`, está en ese conjunto. El reconcile del adopt pasa las que el backend conoce (vivas o borradas): en
+    ///     el líder desplazado que adopta, un registro viejo de su ida tendría SU identidad, que el backend no ha visto.
+    ///
+    /// Cambia solo el `syncID`, como la de la ida: el drain lo salta (la identidad no es columna). LANZA si una tabla, los
+    /// testigos o el guardado fallan, con lo suyo deshecho. Un registro que no se deja leer NO lanza: rastro y cero, como en
+    /// el drain (parar el adopt o el motor por esta red sería peor que el daño que cubre). Devuelve cuántas restauró.
+    @discardableResult
+    func restoreRelayIdentitiesFromLedger(context: ModelContext, onlyTo allowed: Set<UUID>? = nil) throws -> Int {
+        let ledger: [String: UUID]
+        do {
+            ledger = try RelayIdentityLedger.load(from: relayIdentityLedgerURL)
+        } catch {
+            #if DEBUG
+            print("CloudSyncEngine: el registro de identidades no se deja leer para restaurar: \(error)")
+            #endif
+            CloudSyncBreadcrumb.relayIdentityLedgerUnavailable(step: "restore", errorType: String(describing: type(of: error)))
+            return 0
+        }
+        guard !ledger.isEmpty else { return 0 }
+
+        var witnessTypes: [UUID: Set<String>] = [:]
+        for witness in try context.fetch(FetchDescriptor<SyncIdentity>()) {
+            witnessTypes[witness.syncID, default: []].insert(witness.entityType)
+        }
+        var live: [String: Set<UUID>] = [:]
+        var candidates: [LedgerRestoreCandidate] = []
+        func collect<M: PersistentModel & SyncIdentifiable>(_ type: M.Type, _ entityType: String) throws {
+            for model in try context.fetch(FetchDescriptor<M>()) {
+                guard let current = model.syncID else { continue }
+                live[entityType, default: []].insert(current)
+                guard witnessTypes[current] == nil, let key = RelayIdentityLedger.key(for: model.persistentModelID),
+                      let prior = ledger[key], prior != current else { continue }
+                candidates.append(LedgerRestoreCandidate(entityType: entityType, current: current, prior: prior,
+                                                         restore: { model.syncID = $0 }))
+            }
+        }
+        try collect(TransactionItem.self, SyncEntityType.transactionItem)
+        try collect(InboxDraft.self, SyncEntityType.inboxDraft)
+        try collect(Category.self, SyncEntityType.category)
+        try collect(FavoritePayment.self, SyncEntityType.favoritePayment)
+        try collect(MerchantMemory.self, SyncEntityType.merchantMemory)
+        try collect(ExchangeRate.self, SyncEntityType.exchangeRate)
+        guard !candidates.isEmpty else { return 0 }
+
+        let claims = Dictionary(grouping: candidates, by: \.prior).mapValues(\.count)
+        var undo: [() -> Void] = []
+        var restoredByEntity: [String: Int] = [:]
+        for candidate in candidates {
+            guard claims[candidate.prior] == 1,
+                  witnessTypes[candidate.prior]?.contains(candidate.entityType) == true,
+                  !(live[candidate.entityType] ?? []).contains(candidate.prior),
+                  allowed?.contains(candidate.prior) ?? true else { continue }
+            candidate.restore(candidate.prior)
+            undo.append { candidate.restore(candidate.current) }
+            restoredByEntity[candidate.entityType, default: 0] += 1
+        }
+        guard !undo.isEmpty else { return 0 }
+        do {
+            try context.save()
+        } catch {
+            // Deshace SOLO lo suyo: el contexto es compartido y un `rollback` tiraría ediciones ajenas.
+            for revert in undo.reversed() { revert() }
+            #if DEBUG
+            print("CloudSyncEngine: guardar las identidades restauradas por el registro falló: \(error)")
+            #endif
+            CloudSyncBreadcrumb.migrationRelayIdentityRestoreFailed(errorType: String(describing: type(of: error)))
+            throw error
+        }
+        for (entity, count) in restoredByEntity.sorted(by: { $0.key < $1.key }) {
+            CloudSyncBreadcrumb.migrationRelayIdentityRestored(entity: entity, count: count)
+            MetricsService.cloudRelayIdentityRestored(entity: entity, count: count)
+        }
+        return undo.count
+    }
+
+    private struct LedgerRestoreCandidate {
+        let entityType: String
+        let current: UUID
+        let prior: UUID
+        let restore: (UUID) -> Void
+    }
+
+    /// **El arranque del runtime tras el remonte de un adopt**: devuelve las identidades que el espejo cambió entre el
+    /// reconcile de huérfanas y el remonte, y marca el registro para que el drain siguiente lo retire.
+    ///
+    /// Solo con la marca del adopt (`RelayIdentityLedger.markAdoptPin`, la pone `runAdoptOrphanReconcile` al sembrar). La
+    /// ida no la tiene: su registro lo marca el reconcile de `done`, y eso no cambia. El runtime lo llama ANTES de su primer
+    /// drain y de su primer pull, sin `await` en medio: sin él, el drain traducía una edición de esa fila bajo la identidad
+    /// nueva (fila aparte en el backend) y el pull creaba un born-remote con la copia del backend (la misma fila dos veces).
+    /// Tras el remonte el espejo está apagado, así que una vez basta.
+    ///
+    /// Si la restauración lanza, la marca se queda y el siguiente arranque lo reintenta; el motor arranca igual, como en el
+    /// reconcile de `done` (parar la sincronización por esta red sería peor), y el registro, sin marca de retirada, sigue
+    /// traduciendo los borrados. Devuelve si la restauración terminó.
+    @discardableResult
+    func restoreAdoptedRelayIdentitiesIfPinned(context: ModelContext) -> Bool {
+        guard RelayIdentityLedger.isAdoptPinned(relayIdentityLedgerURL) else { return false }
+        do {
+            try restoreRelayIdentitiesFromLedger(context: context)
+        } catch {
+            #if DEBUG
+            print("CloudSyncEngine: restaurar las identidades del adopt al arrancar falló: \(error)")
+            #endif
+            CloudSyncBreadcrumb.relayIdentityLedgerUnavailable(step: "adopt-restore", errorType: String(describing: type(of: error)))
+            return false
+        }
+        do {
+            try RelayIdentityLedger.markRetirable(relayIdentityLedgerURL)
+            try RelayIdentityLedger.clearAdoptPin(relayIdentityLedgerURL)
+        } catch {
+            #if DEBUG
+            print("CloudSyncEngine: marcar el registro del adopt como terminado falló: \(error)")
+            #endif
+            CloudSyncBreadcrumb.relayIdentityLedgerUnavailable(step: "adopt-retire", errorType: String(describing: type(of: error)))
+        }
+        return true
+    }
+
     // MARK: - Clasificación del reason de tombstone (§c.1, drain-side)
 
     /// Deriva el `reason` de los tombstones de UNA transacción (§c.1). Precedencia: `migration` (author
