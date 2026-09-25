@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: testing
 created: 2026-09-05
-updated: 2026-09-24
+updated: 2026-09-25
 source: rojo clasificado en el gate de group-joiner-flag-consumers-still-narrow
 ---
 
@@ -230,3 +230,10 @@ Lote de 8 suites (26 tests, `Yala Dev`, centinela 0): 25/26, este el único rojo
 (`XCUIApplication+Yala.swift:264`). Aislado, `EdgeCasesUITests` 2/2 (31.8 s) con el centinela a 0. El diff no toca el
 guardado de transacciones (migración de la nube, texto de Almacenamiento y de la bienvenida). Tercera aparición en dos días
 en lotes de 8–9 suites: la carga del lote parece la condición.
+
+## 2026-09-25 — otra caída, primera corrida tras build completo
+
+Gate de `relay-row-rekeyed-then-deleted-tombstones-the-leader-identity`: cayó en la primera corrida de la suite (build +
+instalación en la misma invocación, disco a ~8 GB libres), con el centinela a 0. Re-corrida la misma suite con
+`test-without-building`, 2 de 2 en verde, centinela a 0. El cambio de ese día no toca la pantalla de nueva transacción
+(solo el drain de la nube, inactivo en ese montaje).

@@ -187,6 +187,10 @@ enum MetricsCanary: String {
     /// tipo de entidad, `value` = cuántas. Distinto de cero mide lo que el ticket no pudo: que CloudKit le da la razón a la
     /// exportación tardía de un líder desplazado.
     case cloudRelayIdentityRestored
+    /// Un borrado de una fila que el espejo había re-identificado salió con la identidad que el backend conoce, no con la del
+    /// líder (ticket `relay-row-rekeyed-then-deleted-tombstones-the-leader-identity`). `detail` = el tipo de entidad. Sin él,
+    /// el movimiento borrado reaparecía en los otros teléfonos.
+    case cloudRelayTombstoneTranslated
     /// Una observación de uno de esos tres pasos que no avanzó. Deja ver un atasco SISTÉMICO antes de que ningún teléfono
     /// llegue a sus 15 min o sus 72 h.
     case cloudForwardStepWaiting
@@ -710,6 +714,10 @@ extension MetricsService {
 
     static func cloudRelayIdentityRestored(entity: String, count: Int) {
         canary(.cloudRelayIdentityRestored, detail: entity, value: Double(count))
+    }
+
+    static func cloudRelayTombstoneTranslated(entity: String) {
+        canary(.cloudRelayTombstoneTranslated, detail: entity)
     }
 
     /// Una observación de uno de esos tres pasos que no avanzó. `detail` = `<paso>|<tramo de avance>|<tramo de causa>|<causa>`,

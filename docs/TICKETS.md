@@ -196,6 +196,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | diez-worktrees-comparten-un-simulador | done | tickets/done/diez-worktrees-comparten-un-simulador.md |
 | discard-gate-cannot-close-an-orphan-session-window | done | tickets/done/discard-gate-cannot-close-an-orphan-session-window.md |
 | discard-gate-proceed-leaves-the-imported-rows-behind | backlog | tickets/backlog/discard-gate-proceed-leaves-the-imported-rows-behind.md |
+| displaced-leader-after-the-cutover-restores-its-own-identity-over-the-relays | backlog | tickets/backlog/displaced-leader-after-the-cutover-restores-its-own-identity-over-the-relays.md |
 | displaced-leader-late-identity-export-can-rekey-the-relief-corpus | done | tickets/done/displaced-leader-late-identity-export-can-rekey-the-relief-corpus.md |
 | displaced-migration-leader-keeps-uploading-after-a-takeover | qa | tickets/qa/displaced-migration-leader-keeps-uploading-after-a-takeover.md |
 | distribucion-recalcula-dos-veces-por-toque-y-sin-debounce | backlog | tickets/backlog/distribucion-recalcula-dos-veces-por-toque-y-sin-debounce.md |
@@ -445,7 +446,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | reinstall-without-network-has-no-cloud-door | done | tickets/done/reinstall-without-network-has-no-cloud-door.md |
 | rejected-member-cold-tap-does-nothing | done | tickets/done/rejected-member-cold-tap-does-nothing.md |
 | rejoin-tap-renotifies-admins | done | tickets/done/rejoin-tap-renotifies-admins.md |
-| relay-row-rekeyed-then-deleted-tombstones-the-leader-identity | backlog | tickets/backlog/relay-row-rekeyed-then-deleted-tombstones-the-leader-identity.md |
+| relay-identity-ledger-missing-after-an-update-mid-migration | backlog | tickets/backlog/relay-identity-ledger-missing-after-an-update-mid-migration.md |
+| relay-row-rekeyed-then-deleted-tombstones-the-leader-identity | done | tickets/done/relay-row-rekeyed-then-deleted-tombstones-the-leader-identity.md |
 | remote-onboarding-signal-ignores-the-session-axis | backlog | tickets/backlog/remote-onboarding-signal-ignores-the-session-axis.md |
 | remote-wipe-alert-skips-the-router | done | tickets/done/remote-wipe-alert-skips-the-router.md |
 | remote-wipe-axis-misses-groups-only-installs-before-the-mount-mark | done | tickets/done/remote-wipe-axis-misses-groups-only-installs-before-the-mount-mark.md |

@@ -259,6 +259,10 @@ struct MigrationWorkExecutorTests {
     }
     private func cleanup(_ dir: URL) { try? FileManager.default.removeItem(at: dir) }
 
+    private func relayLedgerURL(forStore personalStoreURL: URL) -> URL {
+        personalStoreURL.deletingLastPathComponent().appendingPathComponent("relay-identity-ledger.json")
+    }
+
     private func makeContext(_ dir: URL) throws -> ModelContext {
         let personalCfg = ModelConfiguration(
             "MWE-Personal", schema: SwiftDataConfiguration.personalSchema,
@@ -297,6 +301,10 @@ struct MigrationWorkExecutorTests {
         let push = SyncPushClient(baseURL: workerURL, tokenProvider: token, urlSession: stub)
         let pull = SyncPullClient(baseURL: workerURL, tokenProvider: token, urlSession: stub)
         let merkle = SyncMerkleClient(baseURL: workerURL, tokenProvider: token, urlSession: stub)
+        // El registro fila → identidad vive junto al store del test, y el motor lee el mismo: con el de producción, dos tests
+        // se lo pisarían y el host de test guardaría uno.
+        let ledgerURL = relayLedgerURL(forStore: personalStoreURL)
+        engine.relayIdentityLedgerURL = ledgerURL
         return MigrationWorkExecutor(
             engine: engine, pushClient: push, pullClient: pull, merkleClient: merkle,
             accountClient: account, session: session, context: context,
@@ -313,7 +321,8 @@ struct MigrationWorkExecutorTests {
             icloudLastExportErrorCode: icloudLastExportErrorCode,
             icloudMirrorReportedNotAuthenticated: icloudMirrorReportedNotAuthenticated,
             icloudLastExportErrorAt: icloudLastExportErrorAt,
-            icloudLastSuccessfulExportAt: icloudLastSuccessfulExportAt)
+            icloudLastSuccessfulExportAt: icloudLastSuccessfulExportAt,
+            relayIdentityLedgerURL: ledgerURL)
     }
 
     // MARK: - Claim
@@ -4482,7 +4491,7 @@ struct MigrationWorkExecutorTests {
     private func relayWithIdentities(
         _ dir: URL, stub: RoutingStub, ids: [UUID], pageSize: Int = 200
     ) async throws -> (executor: MigrationWorkExecutor, context: ModelContext, categories: [Yala.Category],
-                       records: [PersistentIdentifier: MigrationWorkExecutor.RecordCoordinates]) {
+                       records: [PersistentIdentifier: MigrationWorkExecutor.RecordCoordinates], engine: CloudSyncEngine) {
         let context = try makeContext(dir)
         let engine = CloudSyncEngine()
         let executor = makeExecutor(context, engine, stub, FakeSession(token: "jwt", userID: "sub-relay"), FakeBeaconStore(),
@@ -4511,7 +4520,7 @@ struct MigrationWorkExecutorTests {
         try context.save()
         executor._testRecordCoordinates = { records[$0] }
         engine.fastForwardHistoryBaseline(context: context)
-        return (executor, context, categories, records)
+        return (executor, context, categories, records, engine)
     }
 
     /// Lo que hace el espejo al importar la exportación tardía del líder: la MISMA fila cambia de identidad (y, si el líder
@@ -4932,6 +4941,451 @@ struct MigrationWorkExecutorTests {
         #expect(await relay.executor.verify(underMigrationLease: true) == .match)
         #expect(landed, "control: el import aterrizó durante la espera del Merkle")
         #expect(relay.categories[0].syncID == uploaded)
+    }
+
+    // MARK: - El tombstone de una fila re-identificada (ticket `relay-row-rekeyed-then-deleted-tombstones-the-leader-identity`)
+    //
+    // La misma escena de arriba, pero la fila se BORRA antes de que ninguna restauración la alcance. El tombstone lleva la
+    // identidad que la fila tenía al borrarse —la del líder, que el backend no conoce— y el movimiento seguía vivo allí.
+    // Desde el ticket salen las DOS identidades: la preservada y la que el registro dice que tuvo aquí. Desde un solo
+    // teléfono no se sabe cuál conoce el backend (en el líder desplazado es al revés), y `apply_delta` guarda como borrada
+    // la que no conoce.
+
+    /// El usuario borra en el relevo la fila que el espejo acaba de re-identificar.
+    private func userDeletes(_ model: any PersistentModel, in context: ModelContext) throws {
+        context.delete(model)
+        try context.save()
+    }
+
+    /// Las identidades de los tombstones del outbox.
+    private func outboxTombstones(_ context: ModelContext) throws -> [UUID] {
+        try liveOutboxRows(context).filter { $0.opRaw == SyncOutboxOp.tombstone.rawValue }.map(\.syncID)
+    }
+
+    private func ledgerExists(_ dir: URL) -> Bool {
+        FileManager.default.fileExists(atPath: relayLedgerURL(forStore: dir.appendingPathComponent("personal.sqlite")).path)
+    }
+
+    /// EL BUG, por la verificación. El borrado de la fila re-identificada sube también con la identidad del relevo, la que el
+    /// backend tiene: sin ella subía solo la del líder, el backend no borraba nada y el movimiento volvía en los otros
+    /// teléfonos. Desde el lado del líder desplazado la escena es la misma con los papeles cambiados, y por eso salen las dos.
+    @Test("relevo: el borrado de una fila que el espejo re-identificó sube también con la identidad que el backend conoce")
+    func relayTombstone_verify_deletedRekeyedRowTombstonesTheRelayIdentity() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let stub = RoutingStub()
+        let relay = try await relayWithIdentities(dir, stub: stub, ids: [UUID(), UUID()])
+        let uploaded = try #require(relay.categories[0].syncID)
+        let leaders = UUID()
+        try mirrorRekeys(relay.categories[0], to: leaders, in: relay.context)
+        try userDeletes(relay.categories[0], in: relay.context)
+
+        #expect(await relay.executor.confirmMigrationLease() == .held)
+        #expect(await relay.executor.verify(underMigrationLease: true) == .newDeltaDetected, "control: el borrado subió")
+
+        #expect(Set(stub.pushedSyncIDs) == Set([uploaded, leaders].map { $0.uuidString.lowercased() }))
+        #expect(stub.lastPushedDeltas.map { $0["op"] as? String } == [SyncOutboxOp.tombstone.rawValue, SyncOutboxOp.tombstone.rawValue])
+        #expect(ledgerExists(dir), "sin la marca del cierre el registro se queda: puede llegar otro borrado")
+    }
+
+    /// La intercalación más probable con el motor vivo: el espejo cambia la identidad, el drain corre (y no escribe nada: la
+    /// identidad no es columna), y después el usuario borra.
+    @Test("relevo: con un drain entre el cambio de identidad y el borrado, el borrado sale igual con las dos")
+    func relayTombstone_drainBetweenTheRekeyAndTheDelete() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let relay = try await relayWithIdentities(dir, stub: RoutingStub(), ids: [UUID()])
+        let uploaded = try #require(relay.categories[0].syncID)
+        let leaders = UUID()
+        try mirrorRekeys(relay.categories[0], to: leaders, in: relay.context)
+        #expect(relay.engine.drainOnce(context: relay.context))
+        #expect(try liveOutboxRows(relay.context).isEmpty, "control: cambiar solo la identidad no emite")
+
+        try userDeletes(relay.categories[0], in: relay.context)
+        #expect(relay.engine.drainOnce(context: relay.context))
+
+        #expect(Set(try outboxTombstones(relay.context)) == [uploaded, leaders])
+    }
+
+    /// La ventana larga: del cutover al relanzamiento pueden pasar horas con el espejo vivo. El borrado lo drena el reconcile
+    /// de `done` en OTRO proceso —otro motor, otro executor—, así que el registro tiene que sobrevivir al relanzamiento (en un
+    /// unit test el proceso es el mismo: lo que se prueba es que va por el fichero, con motor y contexto nuevos). El cierre
+    /// marca el registro y el drain SIGUIENTE lo retira.
+    @Test("relevo: un borrado entre el cutover y el relanzamiento sale en el reconcile, y el registro se retira después")
+    func relayTombstone_afterTheCutover_isTranslatedByTheReconcileAfterRelaunch() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let stub = RoutingStub()
+        let relay = try await relayWithIdentities(dir, stub: stub, ids: [UUID(), UUID()])
+        let uploaded = try #require(relay.categories[0].syncID)
+        try await relay.executor.execute(.startParallelHistoryCapture)
+        #expect(try liveOutboxRows(relay.context).isEmpty, "control: el cutover no tenía nada que drenar")
+        let leaders = UUID()
+        try mirrorRekeys(relay.categories[0], to: leaders, in: relay.context)
+        try userDeletes(relay.categories[0], in: relay.context)
+
+        // El relanzamiento: contexto, motor y executor nuevos sobre los mismos ficheros.
+        let relaunched = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        let executor = makeExecutor(relaunched, engine, stub, FakeSession(token: "jwt", userID: "sub-relay"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        try await executor.execute(.runLeaderReconcileFromFrozenCloudKit)
+
+        #expect(Set(stub.pushedSyncIDs) == Set([uploaded, leaders].map { $0.uuidString.lowercased() }))
+        #expect(stub.migrationActions.contains("complete"), "control: el reconcile llegó al final")
+        #expect(ledgerExists(dir), "el drain del reconcile va antes del cierre: el registro sigue")
+        #expect(engine.drainOnce(context: relaunched))
+        #expect(!ledgerExists(dir), "con la marca del cierre, el drain siguiente lo retira")
+    }
+
+    /// Sin la marca, ni la fase `done` ni un drain completo lo retiran: el runtime puede arrancar con el reconcile pendiente,
+    /// antes de que la restauración haya corrido.
+    @Test("relevo: sin la marca del cierre el registro no se retira aunque la fase sea done")
+    func relayTombstone_ledgerIsNotRetiredWithoutTheMark() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let relay = try await relayWithIdentities(dir, stub: RoutingStub(), ids: [UUID()])
+        relay.engine._testMigrationPhaseOverride = .done
+        #expect(relay.engine.drainOnce(context: relay.context))
+        #expect(ledgerExists(dir))
+        try RelayIdentityLedger.markRetirable(relayLedgerURL(forStore: dir.appendingPathComponent("personal.sqlite")))
+        #expect(relay.engine.drainOnce(context: relay.context))
+        #expect(!ledgerExists(dir), "control: con la marca, sí")
+    }
+
+    /// Sembrar es empezar una migración: una marca que quedó de otra no puede retirar el registro nuevo en el primer drain.
+    @Test("relevo: sembrar el registro quita una marca de retirada vieja")
+    func relayTombstone_seedClearsAStaleRetireMark() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let relay = try await relayWithIdentities(dir, stub: RoutingStub(), ids: [UUID()])
+        try RelayIdentityLedger.markRetirable(relayLedgerURL(forStore: dir.appendingPathComponent("personal.sqlite")))
+        try await relay.executor.assignIdentity()
+        #expect(relay.engine.drainOnce(context: relay.context))
+        #expect(ledgerExists(dir))
+    }
+
+    /// Si la restauración del reconcile no pudo leer los metadatos de CloudKit, pudo quedar una fila VIVA con la identidad
+    /// del líder, y el registro es lo único que traduciría su borrado: el cierre no lo marca.
+    @Test("relevo: un reconcile que toleró metadatos ilegibles no marca el registro para retirarlo")
+    func relayTombstone_toleratedRestoreKeepsTheLedger() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let stub = RoutingStub()
+        let relay = try await relayWithIdentities(dir, stub: stub, ids: [UUID(), UUID()])
+        let uploaded = try #require(relay.categories[0].syncID)
+        relay.executor._testRecordCoordinates = nil  // el store de test no tiene las tablas del espejo
+        let leaders = UUID()
+        try mirrorRekeys(relay.categories[0], to: leaders, in: relay.context)
+
+        try await relay.executor.execute(.runLeaderReconcileFromFrozenCloudKit)
+        #expect(stub.migrationActions.contains("complete"), "control: el reconcile llegó al final")
+        #expect(relay.categories[0].syncID == leaders, "control: la restauración no pudo")
+        #expect(relay.engine.drainOnce(context: relay.context))
+        #expect(ledgerExists(dir))
+
+        try userDeletes(relay.categories[0], in: relay.context)
+        #expect(relay.engine.drainOnce(context: relay.context))
+        #expect(Set(try outboxTombstones(relay.context)) == [uploaded, leaders])
+    }
+
+    /// La vuelta atrás antes del cutover borra el registro: el teléfono vuelve a iCloud.
+    @Test("relevo: el rollback de la ida borra el registro")
+    func relayTombstone_rollbackRemovesTheLedger() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let relay = try await relayWithIdentities(dir, stub: RoutingStub(), ids: [UUID()])
+        #expect(ledgerExists(dir), "control: assignIdentity lo sembró")
+        try await relay.executor.execute(.rollback)
+        #expect(!ledgerExists(dir))
+    }
+
+    /// Los seis tipos de identidad acuñada: salen las dos identidades en cada uno; y si una fila viva lleva la del
+    /// registro, solo la preservada, también en cada uno (cada tipo tiene su lectura de «¿la lleva alguien?»).
+    @Test("relevo: los seis tipos acuñados, con y sin otra fila viva que lleve la identidad del registro")
+    func relayTombstone_everyMintedType() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+        for withHolders in [false, true] {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let context = try makeContext(dir)
+            let engine = CloudSyncEngine()
+            let executor = makeExecutor(context, engine, RoutingStub(), FakeSession(token: "jwt", userID: "sub-relay"),
+                                        FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+            func sixModels(_ tag: String) throws -> [any PersistentModel & SyncIdentifiable] {
+                [TransactionItem(date: fixedNow, amount: 12, currencyCode: "USD"),
+                 InboxDraft(note: "draft-\(tag)", amount: 1, sourceType: .voice, rawText: "draft"),
+                 Category(name: "cat-\(tag)", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false),
+                 FavoritePayment(name: "fav-\(tag)"),
+                 MerchantMemory(merchantCanonical: "tambo-\(tag)"),
+                 try ExchangeRate(dateKey: "2026-09-2\(tag)", base: "USD", ratesDictionary: ["PEN": 3.7])]
+            }
+            let models = try sixModels("4")
+            for model in models { context.insert(model) }
+            try context.save()
+            try await executor.assignIdentity()
+            var uploaded: [UUID] = []
+            for (index, model) in models.enumerated() {
+                let id = try #require(model.syncID)
+                uploaded.append(id)
+                let witness = try #require(try context.fetch(FetchDescriptor<SyncIdentity>()).first { $0.syncID == id })
+                witness.ckRecordName = "record-\(index)"
+                witness.ckZoneName = "com.apple.coredata.cloudkit.zone"
+                witness.ckOwnerName = "__defaultOwner__"
+            }
+            try context.save()
+            engine.fastForwardHistoryBaseline(context: context)
+            var rekeyed: [UUID] = []
+            for model in models {
+                let id = UUID()
+                rekeyed.append(id)
+                model.syncID = id
+            }
+            try saveAsImported(context)
+            if withHolders {
+                let holders = try sixModels("5")
+                for (holder, id) in zip(holders, uploaded) {
+                    holder.syncID = id
+                    context.insert(holder)
+                }
+                try context.save()
+            }
+            for model in models { context.delete(model) }
+            try context.save()
+
+            #expect(engine.drainOnce(context: context))
+
+            let expected = withHolders ? Set(rekeyed) : Set(rekeyed + uploaded)
+            #expect(Set(try outboxTombstones(context)) == expected, "holders: \(withHolders)")
+        }
+    }
+
+    /// Falla cerrado: la identidad del registro se añade solo si se reconoce sin duda. El primer caso es el control positivo
+    /// de todos, porque «solo la preservada» también lo da una traducción rota; cada caso de duda la añade sobre esa escena.
+    @Test("relevo: sin registro, con la identidad ya testigo, viva en otra fila o sin coordenadas, sale solo la preservada")
+    func relayTombstone_leavesAloneWhatItCannotTellApart() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+
+        // Control positivo: la escena limpia añade la del relevo.
+        do {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let relay = try await relayWithIdentities(dir, stub: RoutingStub(), ids: [UUID(), UUID()])
+            let uploaded = try #require(relay.categories[0].syncID)
+            let leaders = UUID()
+            try mirrorRekeys(relay.categories[0], to: leaders, in: relay.context)
+            try userDeletes(relay.categories[0], in: relay.context)
+            try await relay.executor.execute(.startParallelHistoryCapture)
+            #expect(Set(try outboxTombstones(relay.context)) == [uploaded, leaders])
+        }
+        // Un borrado normal, sin re-identificar: sale con la suya y nada más.
+        do {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let relay = try await relayWithIdentities(dir, stub: RoutingStub(), ids: [UUID(), UUID()])
+            let uploaded = try #require(relay.categories[0].syncID)
+            try userDeletes(relay.categories[0], in: relay.context)
+            try await relay.executor.execute(.startParallelHistoryCapture)
+            #expect(try outboxTombstones(relay.context) == [uploaded])
+        }
+        // La identidad nueva YA tiene testigo aquí: la cambió este teléfono (sin el autor del espejo), no el espejo.
+        do {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let relay = try await relayWithIdentities(dir, stub: RoutingStub(), ids: [UUID()])
+            let local = UUID()
+            relay.context.insert(SyncIdentity(syncID: local, entityType: SyncEntityType.category, localAnchor: ""))
+            relay.categories[0].syncID = local
+            try relay.context.save()
+            try userDeletes(relay.categories[0], in: relay.context)
+            try await relay.executor.execute(.startParallelHistoryCapture)
+            #expect(try outboxTombstones(relay.context) == [local])
+        }
+        // Otra fila viva lleva ya la identidad del registro: no es de esta fila.
+        do {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let relay = try await relayWithIdentities(dir, stub: RoutingStub(), ids: [UUID()])
+            let uploaded = try #require(relay.categories[0].syncID)
+            let leaders = UUID()
+            try mirrorRekeys(relay.categories[0], to: leaders, in: relay.context)
+            let holder = Category(name: "holder", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+            holder.syncID = uploaded
+            relay.context.insert(holder)
+            try relay.context.save()
+            try userDeletes(relay.categories[0], in: relay.context)
+            try await relay.executor.execute(.startParallelHistoryCapture)
+            #expect(try outboxTombstones(relay.context) == [leaders])
+        }
+        // Al testigo del registro le falta una de las tres coordenadas de CloudKit: la restauración tampoco lo tocaría.
+        for missing in ["record", "zone", "owner"] {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let relay = try await relayWithIdentities(dir, stub: RoutingStub(), ids: [UUID()])
+            let uploaded = try #require(relay.categories[0].syncID)
+            let witness = try #require(try relay.context.fetch(FetchDescriptor<SyncIdentity>()).first { $0.syncID == uploaded })
+            switch missing {
+            case "record": witness.ckRecordName = nil
+            case "zone": witness.ckZoneName = nil
+            default: witness.ckOwnerName = nil
+            }
+            try relay.context.save()
+            let leaders = UUID()
+            try mirrorRekeys(relay.categories[0], to: leaders, in: relay.context)
+            try userDeletes(relay.categories[0], in: relay.context)
+            try await relay.executor.execute(.startParallelHistoryCapture)
+            #expect(try outboxTombstones(relay.context) == [leaders], "sin \(missing)")
+        }
+        // La entrada es de OTRO store (uno que un wipe borró): su `Z_PK` no es esta fila.
+        do {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let relay = try await relayWithIdentities(dir, stub: RoutingStub(), ids: [UUID()])
+            let url = relayLedgerURL(forStore: dir.appendingPathComponent("personal.sqlite"))
+            let ledger = try RelayIdentityLedger.load(from: url)
+            #expect(ledger.count == 1, "control: la entrada sembrada")
+            let store = try #require(CKIdentityCapture.objectURI(for: relay.categories[0].persistentModelID)?.host)
+            var foreign: [String: UUID] = [:]
+            for (key, value) in ledger { foreign[key.replacingOccurrences(of: store, with: "OTRO-STORE")] = value }
+            try JSONEncoder().encode(foreign).write(to: url)
+            let leaders = UUID()
+            try mirrorRekeys(relay.categories[0], to: leaders, in: relay.context)
+            try userDeletes(relay.categories[0], in: relay.context)
+            try await relay.executor.execute(.startParallelHistoryCapture)
+            #expect(try outboxTombstones(relay.context) == [leaders])
+        }
+        // El testigo del registro es de OTRO tipo: la identidad no es de esta fila.
+        do {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let relay = try await relayWithIdentities(dir, stub: RoutingStub(), ids: [UUID()])
+            let uploaded = try #require(relay.categories[0].syncID)
+            let witness = try #require(try relay.context.fetch(FetchDescriptor<SyncIdentity>()).first { $0.syncID == uploaded })
+            witness.entityType = SyncEntityType.merchantMemory
+            try relay.context.save()
+            let leaders = UUID()
+            try mirrorRekeys(relay.categories[0], to: leaders, in: relay.context)
+            try userDeletes(relay.categories[0], in: relay.context)
+            try await relay.executor.execute(.startParallelHistoryCapture)
+            #expect(try outboxTombstones(relay.context) == [leaders])
+        }
+        // La fila nació después de la identidad: no está en el registro.
+        do {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let relay = try await relayWithIdentities(dir, stub: RoutingStub(), ids: [UUID()])
+            let bornHere = Category(name: "born-here", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+            let bornID = UUID()
+            bornHere.syncID = bornID
+            relay.context.insert(bornHere)
+            relay.context.insert(SyncIdentity(syncID: bornID, entityType: SyncEntityType.category, localAnchor: "",
+                                              ckRecordName: "record-new", ckZoneName: "com.apple.coredata.cloudkit.zone",
+                                              ckOwnerName: "__defaultOwner__"))
+            try relay.context.save()
+            let leaders = UUID()
+            try mirrorRekeys(bornHere, to: leaders, in: relay.context)
+            try userDeletes(bornHere, in: relay.context)
+            try await relay.executor.execute(.startParallelHistoryCapture)
+            #expect(try outboxTombstones(relay.context) == [leaders])
+        }
+    }
+
+    /// Un registro que no se deja leer no para el drain: sale solo la preservada, como antes del ticket. Lo que SÍ decide
+    /// —el testigo, la fila viva— si no se deja leer, aborta la vuelta ENTERA (`false`: quien lee el outbox después no puede
+    /// darlo por completo) y la siguiente lo emite.
+    @Test("relevo: registro ilegible → solo la preservada; testigo o fila ilegibles → el drain aborta y se reintenta")
+    func relayTombstone_unreadableInputs() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+        do {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let relay = try await relayWithIdentities(dir, stub: RoutingStub(), ids: [UUID()])
+            let leaders = UUID()
+            try mirrorRekeys(relay.categories[0], to: leaders, in: relay.context)
+            try userDeletes(relay.categories[0], in: relay.context)
+            try Data("no es json".utf8).write(to: relayLedgerURL(forStore: dir.appendingPathComponent("personal.sqlite")))
+            #expect(relay.engine.drainOnce(context: relay.context))
+            #expect(try outboxTombstones(relay.context) == [leaders])
+        }
+        for unreadable in ["SyncIdentity", "Category"] {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let relay = try await relayWithIdentities(dir, stub: RoutingStub(), ids: [UUID()])
+            let uploaded = try #require(relay.categories[0].syncID)
+            let leaders = UUID()
+            try mirrorRekeys(relay.categories[0], to: leaders, in: relay.context)
+            try userDeletes(relay.categories[0], in: relay.context)
+            try RelayIdentityLedger.markRetirable(relayLedgerURL(forStore: dir.appendingPathComponent("personal.sqlite")))
+            EntityApplyMap._testThrowOnFetchOf = [unreadable]
+            defer { EntityApplyMap._testThrowOnFetchOf = [] }
+            #expect(!relay.engine.drainOnce(context: relay.context), "\(unreadable): la vuelta aborta")
+            #expect(try outboxTombstones(relay.context).isEmpty, "\(unreadable): nada a medias en el outbox")
+            #expect(ledgerExists(dir), "\(unreadable): una vuelta abortada no retira el registro")
+            EntityApplyMap._testThrowOnFetchOf = []
+            #expect(relay.engine.drainOnce(context: relay.context))
+            #expect(Set(try outboxTombstones(relay.context)) == [uploaded, leaders], "\(unreadable)")
+        }
+    }
+
+    /// Una pasada de la identidad repetida (un kill a mitad) FUSIONA: la entrada de la fila ya borrada es la que hace falta.
+    @Test("relevo: repetir assignIdentity no tira del registro la entrada de una fila ya borrada")
+    func relayTombstone_reseedKeepsTheDeletedRowsEntry() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let relay = try await relayWithIdentities(dir, stub: RoutingStub(), ids: [UUID(), UUID()])
+        let uploaded = try #require(relay.categories[0].syncID)
+        let leaders = UUID()
+        try mirrorRekeys(relay.categories[0], to: leaders, in: relay.context)
+        try userDeletes(relay.categories[0], in: relay.context)
+
+        try await relay.executor.assignIdentity()
+        try await relay.executor.execute(.startParallelHistoryCapture)
+
+        #expect(Set(try outboxTombstones(relay.context)) == [uploaded, leaders])
+    }
+
+    /// Un registro que no se puede escribir no para la identidad: el paso sigue, sin la red.
+    @Test("relevo: si el registro no se puede sembrar, assignIdentity sigue")
+    func relayTombstone_seedFailureDoesNotStopTheIdentity() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), FakeSession(token: "jwt", userID: "sub-relay"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        // Un directorio donde va el fichero: ni se lee ni se escribe.
+        try FileManager.default.createDirectory(at: relayLedgerURL(forStore: dir.appendingPathComponent("personal.sqlite")),
+                                                withIntermediateDirectories: true)
+        let category = Category(name: "cat", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+        context.insert(category)
+        try context.save()
+
+        try await executor.assignIdentity()
+
+        #expect(category.syncID != nil, "control: la identidad se asignó")
+        #expect(try context.fetchCount(FetchDescriptor<SyncIdentity>()) == 1)
+    }
+
+    /// El canario cuenta en la flota cuántos borrados se habrían perdido.
+    @Test("relevo: el borrado re-identificado deja el canario con el tipo")
+    func relayTombstone_emitsTheCanary() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+        let defaults = makeIsolatedDefaults(prefix: "mwe.relay.tombstone.metrics")
+        MetricsService._testReset()
+        MetricsService.start(
+            client: MetricsClient(baseURL: URL(string: "https://gw.test")!, urlSession: MetricsDown()),
+            defaults: defaults)
+        defer { MetricsService._testReset() }
+
+        let dir = freshDir(); defer { cleanup(dir) }
+        let relay = try await relayWithIdentities(dir, stub: RoutingStub(), ids: [UUID(), UUID()])
+        try mirrorRekeys(relay.categories[0], to: UUID(), in: relay.context)
+        try userDeletes(relay.categories[0], in: relay.context)
+        #expect(relay.engine.drainOnce(context: relay.context))
+
+        let canaries = MetricsSpool.pending(defaults).filter { $0.e == "canary" && $0.n == "cloudRelayTombstoneTranslated" }
+        #expect(canaries.map(\.d) == ["Category"])
     }
 
     /// Siembra en el SQLite del store personal las dos tablas de metadatos del espejo que lee `CKIdentityCapture`, con un

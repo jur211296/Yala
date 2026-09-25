@@ -338,8 +338,8 @@ enum CKIdentityCapture {
 
     /// Extrae el URI `x-coredata://…` de un `PersistentIdentifier` vía JSON encode (búsqueda robusta del
     /// primer string que empiece por `x-coredata://`, tolerante a cambios de nombres de key — mismo patrón
-    /// que `SpikeS5Harness.objectURI`).
-    private static func objectURI(for id: PersistentIdentifier) -> URL? {
+    /// que `SpikeS5Harness.objectURI`). `internal` para `RelayIdentityLedger.key`, que necesita el store (el host).
+    static func objectURI(for id: PersistentIdentifier) -> URL? {
         guard let data = try? JSONEncoder().encode(id),
               let json = try? JSONSerialization.jsonObject(with: data),
               let uriString = findCoreDataURI(in: json) else { return nil }
