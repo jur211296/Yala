@@ -132,3 +132,12 @@ Se bifurca según cómo se abrió la sesión, y eso se lee en el encargo o en el
 **Git:** cada comando de lectura una sola vez, secuencialmente. No matar shells con git en curso.
 
 **Tags:** semver con prefijo `v` → `v1.0.0`. Nunca sin prefijo ni sin 3 componentes.
+
+
+## Antes de cerrar una release
+
+**Pase de estrés** (ADR-046 de casa): datos de peor caso sembrados por `DevSeed*` / `-uitest-*`,
+nunca contra CloudKit de producción. Se miran en el iPhone más pequeño y el más grande, con Dynamic
+Type al máximo y en modo oscuro. Lo barato se arregla; lo demás va a `tickets/backlog/`, con
+capturas del antes y el después en `qa/evidencia-estres-AAAAMMDD/`. El procedimiento:
+`~/Claude/casa/docs/pase-estres.md`.
