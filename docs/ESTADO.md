@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-25 (Lima)
 
-**Rama** `2.1` — Merge #245: **El líder desplazado tras el cutover: descartado; la restauración de identidades se queda donde estaba.**
+**Rama** `2.1` — Merge #246: **En el adopt, lo que un líder desplazado exporta tarde a iCloud ya no duplica movimientos.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,27 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#245 · el líder desplazado tras el cutover: descartado)
+## Esta sesión (#246 · en el adopt, lo que un líder desplazado exporta tarde ya no duplica movimientos)
+
+**Si un teléfono se quedó sin red a mitad de activar la nube, otro terminó, y el primero volvió y mandó a iCloud sus datos
+viejos, el teléfono que entra después en la cuenta ya no sube esos movimientos otra vez.** La ventana del ticket (del
+reconcile al remonte) era la pequeña. Había otra más ancha, antes del reconcile: con el marcador, el adopt no casaba nada y
+el duplicado quedaba en el backend, también para el propio líder desplazado. Las dos se midieron con tests que fallaban.
+Arreglo: con el marcador, las filas sin identidad del backend casan por clave de linaje única (sin bloquear lo que no
+casa). El adopt siembra el registro fila → identidad con una marca, y el runtime restaura por `Z_PK` al arrancar tras el
+remonte, antes del primer drain. En los reintentos, solo hacia lo que conoce el backend o ya espera en el outbox. Qué
+gana CloudKit sigue sin medir: lo mide el canario. Gate (7899 unit en 754 suites), 17 mutantes muertos, review de tres
+lentes que cazó tres cosas (ya arregladas). Ticket a `done` sin device-QA.
+
+### Lo que espera de Jürgen
+
+- Nada que decidir. Ticket nuevo `adopt-rekeyed-rows-without-a-unique-lineage-key-still-duplicate` (medium). Lo que no
+  casa por clave única sigue subiendo duplicado: categorías del usuario, movimientos antiguos, tipos de cambio y gemela
+  borrada. El puente exacto (coordenadas del record en el backend) pide migración de esquema; se decide si el canario
+  sale distinto de cero.
+- Los device-QA de #239, #237 y #236 siguen pendientes.
+
+## Sesión anterior (#245 · el líder desplazado tras el cutover: descartado)
 
 **Nada cambia para el usuario: el teléfono que vuelve tras quedarse sin red al activar la nube se devuelve una identidad
 que la nube ya tiene, así que no duplica.** Medido: al reconcile de `done` solo llega quien pasó su cutover, al cutover
@@ -37,7 +57,7 @@ pendiente en `done` para el runtime). Gate (7888 unit en 754 suites). Ticket a `
   motor parado para siempre.
 - Los device-QA de #239, #237 y #236 siguen pendientes.
 
-## Sesión anterior (#244 · un movimiento re-identificado y borrado en la ventana del relevo ya no reaparece)
+## Antes (#244 · un movimiento re-identificado y borrado en la ventana del relevo ya no reaparece)
 
 **Si borras un movimiento justo mientras la nube se activa y otro teléfono acaba de mandar a iCloud sus datos viejos, el
 borrado llega a la nube: el movimiento ya no reaparece en los otros teléfonos ni deja la verificación sin cuadrar.** El
@@ -66,7 +86,7 @@ suites), 23 mutantes muertos, review de tres lentes que cazó tres cosas (ya arr
 
 - Nada que decidir. Tickets nuevos: `relay-row-rekeyed-then-deleted-tombstones-the-leader-identity` (cerrado en #244),
   `adopt-window-late-leader-identity-export-can-duplicate-after-the-remount`
-  (medium) y `reverse-mount-can-reimport-a-late-leader-identity` (low).
+  (cerrado en #246) y `reverse-mount-can-reimport-a-late-leader-identity` (low).
 - Sin medir en device: que los metadatos del espejo sigan legibles tras el remonte (si no, el reconcile de `done` lo
   tolera con el rastro `relayIdentityRecordsUnreadable`).
 - Los device-QA de #239, #237 y #236 siguen pendientes.
