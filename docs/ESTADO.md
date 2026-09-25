@@ -1,11 +1,11 @@
 ---
-updated: 2026-09-24
+updated: 2026-09-25
 tags: [now, punto-de-retomada]
 ---
 
 # NOW — 2026-09-24 (Lima)
 
-**Rama** `2.1` — Merge #242: **Un borrado en el otro teléfono durante la espera ya no deja el relevo ni el adopt sin salida.**
+**Rama** `2.1` — Merge #243: **Lo que el líder desplazado exporta tarde a iCloud ya no le cambia la identidad al relevo.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,26 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#242 · un borrado durante la espera ya no deja el relevo ni el adopt sin salida)
+## Esta sesión (#243 · lo que el líder desplazado exporta tarde a iCloud ya no le cambia la identidad al relevo)
+
+**Si el primer teléfono se queda sin red a mitad de activar la nube, el segundo toma el relevo y termina, y después el
+primero vuelve y manda a iCloud lo que tenía preparado, el segundo ya no acaba con los mismos movimientos dos veces.** La
+premisa se midió en el código (el `syncID` va espejado y el espejo del relevo sigue vivo hasta el remonte del cutover; con
+la identidad cambiada por debajo, la subida y el pull duplicaban); qué valor gana CloudKit no se puede medir sin dos
+teléfonos y lo cuenta el canario nuevo `cloudRelayIdentityRestored`. El relevo devuelve su identidad por testigo +
+coordenadas del record, falla cerrado (regla «Y lo que el líder desplazado exporta TARDE…»). Gate (7874 unit en 754
+suites), 23 mutantes muertos, review de tres lentes que cazó tres cosas (ya arregladas). Ticket a `done` sin device-QA.
+
+### Lo que espera de Jürgen
+
+- Nada que decidir. Tickets nuevos: `relay-row-rekeyed-then-deleted-tombstones-the-leader-identity` (medium: un movimiento
+  re-identificado y borrado en esa ventana reaparece), `adopt-window-late-leader-identity-export-can-duplicate-after-the-remount`
+  (medium) y `reverse-mount-can-reimport-a-late-leader-identity` (low).
+- Sin medir en device: que los metadatos del espejo sigan legibles tras el remonte (si no, el reconcile de `done` lo
+  tolera con el rastro `relayIdentityRecordsUnreadable`).
+- Los device-QA de #239, #237 y #236 siguen pendientes.
+
+## Sesión anterior (#242 · un borrado durante la espera ya no deja el relevo ni el adopt sin salida)
 
 **Si el primer teléfono calla y en el segundo borras un movimiento que el primero ya había subido, el relevo (y la entrada
 en la cuenta) ya no espera a iCloud para siempre: sigue en cuanto lo que el segundo va a subir lo creó él después.** Y las
@@ -41,7 +60,7 @@ de review que tumbaron dos versiones (la primera fallaba abierta). Ticket a `don
   con su autor. Si no, la prueba de «creada aquí después» fallaría abierta.
 - Los device-QA de #239, #237 y #236 siguen pendientes.
 
-## Sesión anterior (#241 · el relevo no sube filas del líder cuyas identidades aún no llegaron por iCloud)
+## Antes (#241 · el relevo no sube filas del líder cuyas identidades aún no llegaron por iCloud)
 
 **Si el primer teléfono sube parte de tus datos y se queda callado, el segundo del mismo iCloud ya no los sube otra vez
 cuando iCloud todavía no le ha traído las marcas internas que el primero les puso.** Medido: duplicaba (el servidor solo
@@ -55,7 +74,7 @@ device-QA.
 ### Lo que espera de Jürgen
 
 - Nada que decidir. De sus dos tickets de la review, `lineage-coverage-blocks-forever-after-a-row-deleted-during-the-wait`
-  se cerró en #242; `displaced-leader-late-identity-export-can-rekey-the-relief-corpus` (inferido) sigue en backlog.
+  se cerró en #242 y `displaced-leader-late-identity-export-can-rekey-the-relief-corpus` en #243.
 - Los device-QA de #239, #237 y #236 siguen pendientes.
 
 ## Antes (#240 · tras el cutover, el segundo teléfono entra aunque el primero no exportara su marca)
