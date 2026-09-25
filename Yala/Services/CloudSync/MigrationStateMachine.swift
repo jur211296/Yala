@@ -455,6 +455,14 @@ nonisolated enum MigrationEffect: String, Equatable, Codable {
     /// nada. NO se reusa `.disableMirrorAndRelaunch`: el resume lo resuelve por observación y dispara
     /// `mirrorRelaunchCompleted`, inválido fuera del cutover, y corta el drenaje de los pendientes que le siguen.
     case rearmMirrorOff
+
+    /// El aborto del paso 4 borra los marcadores del CUTOVER y deja los RELEVADOS (`CloudMigrationMarker.isRelay`; ticket
+    /// `markerless-adopt-stays-blocked-while-another-device-writes-to-the-account`). El que miente tras el aborto es el suyo,
+    /// sin exportar; uno relevado lo dejó un adoptador que entró en la cuenta con todas sus filas (`relayAdoptMarkerIfCovered`),
+    /// y borrarlo aquí se exportaría y dejaría fuera otra vez a todo teléfono que llegue después. Por el prefijo y no por el
+    /// `deviceID`: si `identifierForVendor` cambió entre arranques, el marcador del propio líder dejaría de ser «suyo». La
+    /// reversa sigue con `.deleteCloudKitMarker`, que borra todos: ahí la nube deja de mandar para la cuenta entera.
+    case deleteCutoverCloudKitMarkers
 }
 
 // MARK: - Outcome & Policy
@@ -833,11 +841,14 @@ nonisolated enum MigrationStateMachine {
         //      nada más pueda fallar. Sin él, `failedRollback` "pelado" sería PEOR que el bug: dejaría
         //      `.cloud` persistido y el "Reintentar" de la UI (`resetAfterRollback` → `notStarted`, fase
         //      ESTABLE) haría pasar `canRunDomain()` ⇒ motor Y mirror escribiendo a la vez, ya sin gate.
-        //   2. `.deleteCloudKitMarker`: el marcador significa "la migración COMPLETÓ y la nube es
+        //   2. `.deleteCutoverCloudKitMarkers` (desde el ticket
+        //      `markerless-adopt-stays-blocked-while-another-device-writes-to-the-account` deja los RELEVADOS: son de un
+        //      adoptador que sí entró en la cuenta y siguen valiendo): el marcador significa "la migración COMPLETÓ y la nube es
         //      autoritativa", y eso pasa a ser FALSO tras el abort. Un marcador sin exportar que exportase
         //      días más tarde le mentiría al parque entero (congelaría escrituras y rutearía a adopt contra
         //      un backend estancado). De regalo, sin fila de marcador `markerReconciliation` ve
-        //      `markerFound == false` y no auto-etiqueta este device como secundario.
+        //      `markerFound == false` y no auto-etiqueta este device como secundario. Con un marcador RELEVADO
+        //      importado sí lo etiqueta, y es lo correcto: la cuenta ya vive en la nube y este teléfono entra por adopt.
         //   3. `.rollback`: desarme defensivo + breadcrumb.
         // Espeja el cierre LOCAL de la reversa (§h.4) menos la llamada al server — el mundo queda con la
         // MISMA forma que una reversa completada, que el diseño ya razonó y aceptó. `migrated_at` sigue
@@ -851,7 +862,7 @@ nonisolated enum MigrationStateMachine {
             }
             return .transition(
                 next: .failedRollback,
-                effects: [.persistICloudMode, .deleteCloudKitMarker, .rollback])
+                effects: [.persistICloudMode, .deleteCutoverCloudKitMarkers, .rollback])
 
         // fatalError INSIDE cutover → hold the state (idempotent resume covers recovery), NEVER rollback
         // (§g.4: a kill/failure inside cutover retakes by sub-state; the marker means the migration is real).

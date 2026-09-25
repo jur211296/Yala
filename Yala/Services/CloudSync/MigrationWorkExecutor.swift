@@ -242,6 +242,9 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     /// `MigrationSnapshotUploader._testEnqueueError`: el test solo pasa si el `catch` separa la deriva del reloj de la base
     /// local (ticket `adopt-effect-retries-forever-with-no-ceiling`). SOLO tests.
     var _testAdoptEnqueueError: Error?
+    /// El error que lanza el guardado del marcador relevado del adopt (`relayAdoptMarkerIfCovered`), DENTRO del `do` real:
+    /// el test solo pasa si el `catch` deshace la inserción y el adopt sigue sin marcador. SOLO tests.
+    var _testRelayMarkerSaveError: Error?
     private let uploader: MigrationSnapshotUploader
     /// Fuente de tombstones para el barrido de zombies (§h.3). Default = `pullClient`; inyectable para el
     /// golden §h.5 (enumeración PURA, sin applyPage/cursor/testigos).
@@ -1294,6 +1297,16 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
             if context.hasChanges { try context.save() }
             CloudSyncBreadcrumb.reverseMarkerDeleted(count: markers.count)
 
+        case .deleteCutoverCloudKitMarkers:
+            // El aborto del paso 4: los marcadores del cutover, no los RELEVADOS (ver `MigrationEffect.deleteCutoverCloudKitMarkers`).
+            // Uno relevado lo dejó un adoptador que entró en la nube, y su borrado se exportaría. Mismo fetch que lanza y
+            // mismo save que `.deleteCloudKitMarker`: queda pendiente y el próximo resume lo reintenta.
+            let markers = try context.fetch(FetchDescriptor<CloudMigrationMarker>())
+            let cutover = markers.filter { !$0.isRelay }
+            for marker in cutover { context.delete(marker) }
+            if context.hasChanges { try context.save() }
+            CloudSyncBreadcrumb.reverseMarkerDeleted(count: cutover.count)
+
         case .clearCloudBeacon:
             beacon.clearCloudAccountLinked()
             CloudSyncBreadcrumb.reverseBeaconCleared()
@@ -1414,6 +1427,16 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
             #endif
             return false
         }
+        // Sin los RELEVADOS (ticket `markerless-adopt-stays-blocked-while-another-device-writes-to-the-account`): el paso 4
+        // pregunta si el marcador del CUTOVER llegó a CloudKit. Uno relevado que se importó ya está exportado por
+        // definición y contestaría por él: el líder apagaría el espejo con el suyo, y las identidades que van delante, aún
+        // en cola. Por el prefijo y no por el `deviceID`, que cae a un UUID nuevo si `identifierForVendor` es nil.
+        return anyMarkerExported(markers.filter { !$0.isRelay })
+    }
+
+    /// ¿Alguno de `markers` tiene ya nombre de registro en CloudKit (exportado)? `false` sin marcadores. Lo comparten el paso
+    /// 4 del líder (`isMarkerExported`) y la espera del relevo del adopt (`relayMarkerAwaitingExport`).
+    private func anyMarkerExported(_ markers: [CloudMigrationMarker]) -> Bool {
         guard !markers.isEmpty else { return false }
         // Testigo SCRATCH por fila (NUNCA insertado): `capture` solo muta la fila en `.captured` y devuelve
         // el Report agregado — `captured >= 1` ⇒ al menos un marcador con recordName non-NULL (exportado).
@@ -2165,6 +2188,17 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         // (`abortedEmptyBackend`) sale antes y no siembra: sin filas en el backend no hay identidad que el espejo pueda pisar.
         pinAdoptedIdentities()
 
+        // El relevo del marcador, en UN sitio y solo si el adopt terminó (ticket
+        // `markerless-adopt-stays-blocked-while-another-device-writes-to-the-account`): después de guardar identidades y
+        // casados, para que el espejo lo exporte detrás de ellos.
+        let outcome = await uploadAdoptOrphans(plan, identityAssigned: identityAssigned)
+        if case .completed = outcome { relayAdoptMarkerIfCovered(enumeration: enumeration) }
+        return outcome
+    }
+
+    /// Los pasos 6-7 del reconcile del adopt: sube EXACTAMENTE las huérfanas del plan definitivo. Sin huérfanas, o sin
+    /// nada que construir tras apartar las envenenadas, `.completed(uploaded: 0)`.
+    private func uploadAdoptOrphans(_ plan: AdoptOrphanDiff.Plan, identityAssigned: Int) async -> AdoptReconcileOutcome {
         guard !plan.orphans.isEmpty else { return .completed(uploaded: 0, identityAssigned: identityAssigned) }
 
         // Paso 6: fetch dirigido de EXACTAMENTE las huérfanas del plan → emisión fila-COMPLETA por el seam del
@@ -2243,6 +2277,12 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
             throw MigrationExecutorError.adoptRetry(reason: "quiescence")
         }
 
+        // 1-bis) Un reintento que solo espera a que el marcador relevado de una pasada anterior llegue a iCloud no repite el
+        //    reconcile (ni su enumeración del backend): sale aquí mientras dure la espera (`relayMarkerAwaitingExport`).
+        if relayMarkerAwaitingExport() {
+            throw MigrationExecutorError.adoptRetry(reason: "relayMarkerExport")
+        }
+
         // 2) Reconcile de huérfanas de la ventana de cutover (identidad local ∉ backend). `.transient` →
         //    retomable; `.completed`/`.abortedEmptyBackend` → continuar (best-effort; el guard vacío es
         //    benigno para el switch de modo).
@@ -2261,11 +2301,18 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
             break
         }
 
+        // 2-bis) El marcador que este adopt acaba de relevar tiene que llegar a iCloud ANTES de armar el apagado del espejo
+        //    (paso 5), como el del líder en su paso 4 (ticket `markerless-adopt-stays-blocked-while-another-device-writes-to-the-account`).
+        //    `adoptRetry`: el runner lo trata como la red —pausa el techo corto— y el reintento espera en el 1-bis.
+        if relayMarkerAwaitingExport() {
+            throw MigrationExecutorError.adoptRetry(reason: "relayMarkerExport")
+        }
+
         // 3) Fast-forward del History baseline: sin él el primer drain del runtime post-relaunch re-emitiría
         //    el corpus ENTERO importado de CloudKit como deltas (contrato (ii)).
         engine.fastForwardHistoryBaseline(context: context)
 
-        // 4) Belt: el marcador del líder debe haber llegado por el mirror. Ausente = no bloquea (solo diagnóstico): con
+        // 4) Belt: el marcador del líder —o el que este adopt relevó— debe estar en el store. Ausente = no bloquea (solo diagnóstico): con
         //    algo que subir, la guarda de linaje del paso 2 ya exigió el marcador o filas de la cuenta en local (el líder
         //    puede haber pasado el cutover del servidor sin exportarlo aún); sin nada que subir el adopt es legítimo sin
         //    marcador (el 2.º dispositivo de una cuenta nacida en la nube no lo tiene nunca).
@@ -2389,11 +2436,143 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
             return nil
         case .noSharedRows:
             CloudSyncBreadcrumb.adoptReconcileLineageUnproven(pending: relevant)
+            MetricsService.cloudAdoptLineageBlocked(reason: "noSharedRows",
+                                                    writer: Self.adoptBackendWriterActivity(lastWriteMs: enumeration.lastWriteMs,
+                                                                                            now: now()))
             return .lineageUnproven
         case .accountRowsMissing(let table, let missing):
             CloudSyncBreadcrumb.adoptReconcileAccountRowsMissing(table: table, missing: missing, pending: relevant)
+            MetricsService.cloudAdoptLineageBlocked(reason: "rowsMissing",
+                                                    writer: Self.adoptBackendWriterActivity(lastWriteMs: enumeration.lastWriteMs,
+                                                                                            now: now()))
             return .lineageUnproven
         }
+    }
+
+    /// Ventana en la que una escritura del backend cuenta como «otro teléfono sigue escribiendo» para el canario del adopt
+    /// bloqueado (`cloudAdoptLineageBlocked`). Solo mide: no decide nada.
+    static let adoptActiveWriterWindow: TimeInterval = 24 * 60 * 60
+
+    /// `active` si la última escritura que conoce el backend cae en las últimas 24 h, `quiet` si es anterior, `unknown` si
+    /// no se deja leer. Es la pregunta del ticket `markerless-adopt-stays-blocked-while-another-device-writes-to-the-account`
+    /// («¿cuántos adopts sin marcador llegan con otro teléfono activo?»), que hasta ese día no salía del teléfono.
+    static func adoptBackendWriterActivity(lastWriteMs: Int64?, now: Date) -> String {
+        guard let lastWriteMs else { return "unknown" }
+        let lastWrite = Date(timeIntervalSince1970: Double(lastWriteMs) / 1000)
+        return now.timeIntervalSince(lastWrite) <= adoptActiveWriterWindow ? "active" : "quiet"
+    }
+
+    /// ¿Está aquí, con su identidad, TODA fila viva del backend fuera de las tablas exentas? Y hay al menos una. Es la
+    /// condición del relevo del marcador (`relayAdoptMarkerIfCovered`): más estricta que la prueba del adopt, que tolera
+    /// filas que faltan sin gemela posible, porque el marcador que se deja aquí lo va a creer otro teléfono sin mirar nada.
+    static func adoptCoverageComplete(inventory: [(table: String, syncID: UUID?)],
+                                      liveByTable: [String: Set<UUID>]) -> Bool {
+        let local = Dictionary(grouping: inventory, by: \.table).mapValues { Set($0.compactMap(\.syncID)) }
+        let live = liveByTable.filter { !adoptLineageExemptTables.contains($0.key) && !$0.value.isEmpty }
+        guard !live.isEmpty else { return false }
+        return live.allSatisfy { $0.value.isSubset(of: local[$0.key] ?? []) }
+    }
+
+    /// **El relevo del marcador** (ticket `markerless-adopt-stays-blocked-while-another-device-writes-to-the-account`).
+    ///
+    /// Los adoptadores no escribían marcador, así que en una cuenta cuyo líder nunca exportó el suyo —se quedó sin red o sin
+    /// iCloud tras el cutover del servidor, y murió o abortó— el primero que adoptaba (por filas compartidas) se ponía a
+    /// escribir en la nube y todo teléfono que llegaba después se quedaba fuera PARA SIEMPRE: sus filas del backend que faltan
+    /// crecen cada día y nunca viajan por iCloud (el espejo del que escribe está apagado), así que la prueba sin marcador no
+    /// pasa nunca, y «espera a iCloud» era mentira. También el propio líder abortado, que vuelve por adopt.
+    ///
+    /// Si este teléfono entra sin marcador de la cuenta y con **cobertura total** (`adoptCoverageComplete`), deja el suyo en
+    /// el store personal: el espejo, vivo hasta el relanzamiento, lo exporta DETRÁS de todo lo que ya estaba en iCloud —las
+    /// identidades del líder que llegaron aquí, y las que este adopt acaba de acuñar o casar y guardar—, y `runAdoptFlow` no
+    /// arma el apagado del espejo hasta verlo exportado o vencer el plazo (`relayMarkerAwaitingExport`). Vale lo mismo que el
+    /// del líder: quien lo importa trae antes todas las filas que el backend tenía, y lo que se escriba en la nube después no
+    /// pasa por iCloud, así que no puede tener gemela allí. Sin cobertura total no se releva: una fila que falta puede ser
+    /// una que no llegó, y el siguiente la tendría sin identidad.
+    ///
+    /// `serverSeqCut = 0`: el corte de la reversa lo sabe el líder, no este teléfono (la reversa lee el de un marcador del
+    /// cutover si lo hay, y si no barre desde 0: correcto, más caro). `writerDeviceID` lleva `relayWriterPrefix`: es lo que
+    /// separa el relevo del marcador del cutover (`isRelay`). Best-effort: una lectura o un guardado que fallan dejan todo como estaba —sin marcador, el comportamiento de
+    /// antes—, nunca el adopt a medias. Deshace solo su inserción: el contexto es compartido.
+    private func relayAdoptMarkerIfCovered(enumeration: BackendEnumeration) {
+        guard let userID = session.currentUserID else { return }
+        let accountHash = CloudBeacon.hash(userID)
+        let inventory: [(table: String, syncID: UUID?)]
+        do {
+            if try fetchInventory(CloudMigrationMarker.self, step: "adopt-relay").contains(where: { $0.accountHash == accountHash }) {
+                return
+            }
+            inventory = try collectAdoptInventory()
+        } catch {
+            CloudSyncBreadcrumb.adoptMarkerRelaySkipped(reason: "unreadable")
+            return
+        }
+        guard Self.adoptCoverageComplete(inventory: inventory, liveByTable: enumeration.liveByTable) else {
+            CloudSyncBreadcrumb.adoptMarkerRelaySkipped(reason: "coverage")
+            return
+        }
+        let marker = CloudMigrationMarker(accountHash: accountHash, migratedAtStamp: now(), serverSeqCut: 0,
+                                          writerDeviceID: CloudMigrationMarker.relayWriterPrefix + deviceID)
+        context.insert(marker)
+        do {
+            if let error = _testRelayMarkerSaveError { throw error }
+            try context.save()
+        } catch {
+            context.delete(marker)
+            #if DEBUG
+            print("MigrationWorkExecutor: guardar el marcador relevado falló: \(error)")
+            #endif
+            CloudSyncBreadcrumb.adoptMarkerRelaySkipped(reason: "save")
+            return
+        }
+        let liveRows = enumeration.liveByTable.filter { !Self.adoptLineageExemptTables.contains($0.key) }
+            .values.reduce(0) { $0 + $1.count }
+        CloudSyncBreadcrumb.adoptMarkerRelayed(liveRows: liveRows)
+    }
+
+    /// Cuánto espera el adopt a que su marcador relevado llegue a iCloud antes de armar el apagado del espejo. Diez minutos
+    /// desde que se escribió (`migratedAtStamp`): con red, el espejo exporta en segundos; si no llega, el adopt entra igual
+    /// —esperar más no debe dejar fuera de la nube a quien releva— y queda como antes, sin relevo.
+    static let relayMarkerExportBudget: TimeInterval = 10 * 60
+
+    /// ¿Tiene que esperar el adopt a que su marcador RELEVADO llegue a iCloud? (ticket
+    /// `markerless-adopt-stays-blocked-while-another-device-writes-to-the-account`). Es la puerta del paso 4 del líder
+    /// (`isMarkerExported`) para el relevo: el espejo solo exporta mientras está montado, y el adopt arma su apagado en el
+    /// paso 5; un relanzamiento que llegue antes deja el marcador solo en local y a los teléfonos de después, fuera.
+    ///
+    /// `true` solo con un relevo de ESTE teléfono (prefijo y `deviceID`) para la cuenta de la sesión, sin nombre de registro
+    /// y dentro de `relayMarkerExportBudget`. Al dejar de esperar deja el canario `cloudAdoptMarkerRelayed`: `exported`, o
+    /// `unconfirmed` si venció el plazo (un reloj que se atrasó también cuenta como vencido). Un fallo al leer no espera: la
+    /// espera es un añadido del relevo y no puede bloquear un adopt que antes entraba.
+    private func relayMarkerAwaitingExport() -> Bool {
+        guard let userID = session.currentUserID else { return false }
+        let accountHash = CloudBeacon.hash(userID)
+        let writer = CloudMigrationMarker.relayWriterPrefix + deviceID
+        let relays: [CloudMigrationMarker]
+        do {
+            if _testInventoryFetchThrows?("adopt-relay-export", "CloudMigrationMarker") == true {
+                throw CocoaError(.fileReadCorruptFile)
+            }
+            relays = try context.fetch(FetchDescriptor<CloudMigrationMarker>())
+                .filter { $0.accountHash == accountHash && $0.writerDeviceID == writer }
+        } catch {
+            #if DEBUG
+            print("MigrationWorkExecutor: leer el marcador relevado para su espera falló: \(error)")
+            #endif
+            CloudSyncBreadcrumb.adoptMarkerRelaySkipped(reason: "exportUnreadable")
+            return false
+        }
+        guard let relay = relays.first else { return false }
+        let waited = now().timeIntervalSince(relay.migratedAtStamp)
+        if anyMarkerExported(relays) {
+            MetricsService.cloudAdoptMarkerRelayed(outcome: "exported", waitedSeconds: waited)
+            return false
+        }
+        guard waited >= 0, waited < Self.relayMarkerExportBudget else {
+            CloudSyncBreadcrumb.adoptMarkerRelaySkipped(reason: "exportUnconfirmed")
+            MetricsService.cloudAdoptMarkerRelayed(outcome: "unconfirmed", waitedSeconds: waited)
+            return false
+        }
+        return true
     }
 
     /// Veredicto de la prueba del adopt por filas de la cuenta (sin marcador). `nonisolated`: la compara la lógica de tests.

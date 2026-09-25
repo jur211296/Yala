@@ -83,6 +83,7 @@ private final class FakeExecutor: MigrationWorkExecuting {
     var setMirrorOnOnMount = true
     var sweepOutcome: ZombieSweepOutcome = .completed(deleted: 0)
     var sweepCallCount = 0
+    var sweptSinceSeqs: [Int64] = []
     var verifyRebindsResult = 0
     var healDuplicatesResult = 0
     var reverseUploadStatuses: [ReverseUploadStatus] = [.drained]
@@ -243,7 +244,9 @@ private final class FakeExecutor: MigrationWorkExecuting {
         return outcome
     }
     func isMirrorConfirmedOn() -> Bool { mirrorOn }
-    func sweepZombies(sinceSeq: Int64) async -> ZombieSweepOutcome { sweepCallCount += 1; return sweepOutcome }
+    func sweepZombies(sinceSeq: Int64) async -> ZombieSweepOutcome {
+        sweepCallCount += 1; sweptSinceSeqs.append(sinceSeq); return sweepOutcome
+    }
     func verifyRebinds() -> Int { verifyRebindsResult }
     func healDuplicates() -> Int { healDuplicatesResult }
     func reverseUploadStatus() -> ReverseUploadStatus {
@@ -879,7 +882,7 @@ struct MigrationRunnerTests {
 
         let j = try journal(context)
         #expect(j.readPhase().phase == .failedRollback)
-        #expect(fake.executedEffects == [.persistICloudMode, .deleteCloudKitMarker, .rollback],
+        #expect(fake.executedEffects == [.persistICloudMode, .deleteCutoverCloudKitMarkers, .rollback],
                 "orden OBLIGATORIO: devolver el device a .icloud, borrar el marcador que ya miente, y rollback")
         #expect(fake.count(.disableMirrorAndRelaunch) == 0,
                 "el mirror JAMÁS se apagó — el abort deja el device igual que estaba en iCloud")
@@ -910,7 +913,7 @@ struct MigrationRunnerTests {
 
         let j = try journal(context)
         #expect(j.readPhase().phase == .failedRollback)
-        #expect(fake.executedEffects == [.persistICloudMode, .deleteCloudKitMarker, .rollback])
+        #expect(fake.executedEffects == [.persistICloudMode, .deleteCutoverCloudKitMarkers, .rollback])
         #expect(fake.count(.disableMirrorAndRelaunch) == 0, "el mirror nunca se apagó")
         #expect(j.cutoverICloudVerdictRaw == "noAccountWithFootprint")
     }
@@ -1077,7 +1080,7 @@ struct MigrationRunnerTests {
         await makeRunner(context, fake, now: { clock.value }).resume()
         j = try journal(context)
         #expect(j.readPhase().phase == .failedRollback, "desde el sello perezoso el presupuesto sí corre")
-        #expect(fake.executedEffects == [.persistICloudMode, .deleteCloudKitMarker, .rollback])
+        #expect(fake.executedEffects == [.persistICloudMode, .deleteCutoverCloudKitMarkers, .rollback])
     }
 
     /// C-1 en `resetAfterRollback`: el "Reintentar" de la UI DRENA los efectos pendientes ANTES de limpiar el
@@ -1545,6 +1548,26 @@ struct MigrationRunnerTests {
 
         #expect(fake.count(.mountMirrorAndRelaunch) == 0, "NO se re-ejecuta el mount (resuelto por observación)")
         #expect(try journal(context).readPhase().phase == .reverseReconcile(.deletingZombies))
+    }
+
+    /// El barrido de zombies de la vuelta corta en el `serverSeqCut` del marcador del CUTOVER, no en el 0 de un marcador
+    /// RELEVADO (ticket `markerless-adopt-stays-blocked-while-another-device-writes-to-the-account`): el relevo se inserta
+    /// primero para que un `fetchLimit = 1` sin filtro lo devolviera a él.
+    @Test func reverse_zombieSweep_cutsAtTheCutoverMarker_notAtARelayedOne() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.sweepOutcome = .transient               // corta en deletingZombies tras la llamada
+        context.insert(CloudMigrationMarker(accountHash: "h", serverSeqCut: 0,
+                                            writerDeviceID: CloudMigrationMarker.relayWriterPrefix + "ipad"))
+        try context.save()
+        context.insert(CloudMigrationMarker(accountHash: "h", serverSeqCut: 42, writerDeviceID: "leader"))
+        try context.save()
+        try seedJournal(context, phase: .reverseReconcile(.deletingZombies), reverseOriginRaw: "done")
+
+        await runner(context, fake).resume()
+
+        #expect(fake.sweptSinceSeqs == [42])
     }
 
     /// Kill-resume en un sub-estado de reconcile → retoma EXACTO (no re-ejecuta los completados).

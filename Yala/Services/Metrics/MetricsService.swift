@@ -141,6 +141,17 @@ enum MetricsCanary: String {
     case cloudSyncMerkleDivergence
     case cloudCutoverLeaderOrphanReconciled
     case cloudAdoptOrphanReconciled
+    /// El adopt se paró por la guarda de linaje (ticket `markerless-adopt-stays-blocked-while-another-device-writes-to-the-account`).
+    /// `detail` = `<motivo>|<escritor>`: el motivo es `noSharedRows` (el corpus no comparte ninguna fila con la cuenta) o
+    /// `rowsMissing` (comparte, pero faltan filas de la cuenta que podrían tener gemela aquí); el escritor, `active` si el
+    /// backend se escribió en las últimas 24 h, `quiet` o `unknown`. **Una vez por proceso y `detail`**: el re-kick de 30 s
+    /// repite el mismo bloqueo. `rowsMissing|active` sostenido es el caso del ticket: otro teléfono escribe y este no entra.
+    case cloudAdoptLineageBlocked
+    /// Un adopt sin marcador de la cuenta y con cobertura total escribió el suyo (el relevo del mismo ticket), y su espera
+    /// terminó. `detail` = `exported` (llegó a iCloud antes de armar el apagado del espejo) o `unconfirmed` (venció el plazo
+    /// de 10 min sin constar exportado: los teléfonos de después pueden seguir fuera). `value` = segundos de espera. Una vez
+    /// por proceso y `detail`. Distinto de cero dice que hay cuentas cuyo líder nunca exportó su marcador.
+    case cloudAdoptMarkerRelayed
     case cloudConsentAccepted
     case cloudAccountUnavailable
     case cloudAccountReverting
@@ -824,6 +835,15 @@ extension MetricsService {
 
     static func cloudAdoptOrphanReconciled(count: Int) {
         canary(.cloudAdoptOrphanReconciled, value: Double(count))
+    }
+
+    static func cloudAdoptLineageBlocked(reason: String, writer: String) {
+        let detail = "\(reason)|\(writer)"
+        canaryOnce(.cloudAdoptLineageBlocked, key: detail, detail: detail)
+    }
+
+    static func cloudAdoptMarkerRelayed(outcome: String, waitedSeconds: TimeInterval) {
+        canaryOnce(.cloudAdoptMarkerRelayed, key: outcome, detail: outcome, value: waitedSeconds.rounded())
     }
 
     static func cloudConsentAccepted(path: String) {

@@ -946,7 +946,7 @@ struct MigrationStateMachineTests {
                 policy: policy
             )
             #expect(r.next == .failedRollback, "elapsed \(elapsed) >= \(budget) debe degradar")
-            #expect(r.effects == [.persistICloudMode, .deleteCloudKitMarker, .rollback])
+            #expect(r.effects == [.persistICloudMode, .deleteCutoverCloudKitMarkers, .rollback])
             #expect(r.effects.first == .persistICloudMode)
         }
     }
@@ -977,7 +977,7 @@ struct MigrationStateMachineTests {
             policy: policy
         )
         #expect(capped.next == .failedRollback)
-        #expect(capped.effects == [.persistICloudMode, .deleteCloudKitMarker, .rollback])
+        #expect(capped.effects == [.persistICloudMode, .deleteCutoverCloudKitMarkers, .rollback])
     }
 
     /// El tope pertenece SOLO al paso 4. En cualquier otro sub-estado del cutover el marcador no está

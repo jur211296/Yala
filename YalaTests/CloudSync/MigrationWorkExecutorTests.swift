@@ -2388,7 +2388,7 @@ struct MigrationWorkExecutorTests {
             return false
         }
         let outcome = await executor.runAdoptOrphanReconcile()
-        #expect(inventoryReads == 3, "control: el paso 0, el preliminar y el definitivo")
+        #expect(inventoryReads == 4, "control: el paso 0, el preliminar, el definitivo y el del relevo del marcador")
         #expect(outcome == .completed(uploaded: 1, identityAssigned: 0))
         #expect(stub.pushedSyncIDs.map { $0.lowercased() } == [orphanID.uuidString.lowercased()])
     }
@@ -2655,6 +2655,439 @@ struct MigrationWorkExecutorTests {
                                       personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
                                       tombstoneSource: FakeTombstoneSource())
         #expect(await withMarker.runAdoptOrphanReconcile() == .abortedEmptyBackend)
+    }
+
+    // MARK: - El relevo del marcador (ticket `markerless-adopt-stays-blocked-while-another-device-writes-to-the-account`)
+
+    /// Los marcadores de la cuenta en el store, para leer lo que dejó el relevo.
+    private func accountMarkers(_ userID: String, in context: ModelContext) throws -> [CloudMigrationMarker] {
+        try context.fetch(FetchDescriptor<CloudMigrationMarker>()).filter { $0.accountHash == CloudBeacon.hash(userID) }
+    }
+
+    /// **El primero que adopta sin marcador deja el suyo.** Comparte la categoría de la cuenta —toda fila viva del backend
+    /// está aquí con su identidad— y sube la suya. Deja un marcador con el hash de la cuenta, su dispositivo y corte 0, y el
+    /// canario lo cuenta.
+    @Test("relevo del marcador: sin marcador y con cobertura total, el adopt deja el suyo")
+    func adoptRelay_markerlessFullCoverage_leavesItsMarker() async throws {
+        let defaults = makeIsolatedDefaults(prefix: "mwe.adopt.relay.metrics")
+        MetricsService._testReset()
+        MetricsService.start(
+            client: MetricsClient(baseURL: URL(string: "https://gw.test")!, urlSession: MetricsDown()),
+            defaults: defaults)
+        defer { MetricsService._testReset() }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let sharedID = UUID(), ownID = UUID()
+        _ = makeCategory("compartida", syncID: sharedID, in: context)
+        _ = makeCategory("mía", syncID: ownID, in: context)
+        context.insert(SyncCursor(serverSeqCursor: 42))   // el cursor de ESTE teléfono no es el corte del líder
+        try context.save()
+        let source = try backend([("categories", sharedID)], stub: stub)
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source())
+        #expect(try accountMarkers("sub-1", in: context).isEmpty, "control: llega sin marcador")
+
+        #expect(await executor.runAdoptOrphanReconcile() == .completed(uploaded: 1, identityAssigned: 0))
+
+        let markers = try accountMarkers("sub-1", in: context)
+        #expect(markers.count == 1)
+        let marker = try #require(markers.first)
+        #expect(marker.writerDeviceID == "relay:device-1")
+        #expect(marker.isRelay, "el prefijo lo separa del marcador del cutover")
+        #expect(marker.serverSeqCut == 0, "el corte de la reversa no lo sabe el adoptador: barre desde 0")
+        #expect(marker.migratedAtStamp == fixedNow, "el sello es el inicio de su espera de export")
+        let canaries = MetricsSpool.pending(defaults).filter { $0.e == "canary" && $0.n == "cloudAdoptMarkerRelayed" }
+        #expect(canaries.isEmpty, "escribirlo no es relevarlo: el canario sale al terminar la espera de export")
+    }
+
+    /// Sin nada que subir el adopt no pasa por la guarda, pero sigue siendo el primero que escribe en la nube: releva igual.
+    @Test("relevo del marcador: también sin nada que subir")
+    func adoptRelay_nothingToUpload_stillRelays() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let sharedID = UUID()
+        _ = makeCategory("compartida", syncID: sharedID, in: context)
+        try context.save()
+        let source = try backend([("categories", sharedID)], stub: stub)
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source())
+        #expect(await executor.runAdoptOrphanReconcile() == .completed(uploaded: 0, identityAssigned: 0))
+        #expect(try accountMarkers("sub-1", in: context).count == 1)
+    }
+
+    /// **Sin cobertura total no se releva.** A la cuenta le falta aquí una cuenta bancaria que el backend tiene. El adopt
+    /// entra —`accounts` no sube nada, así que la prueba no la mira—, pero un marcador de este teléfono haría creer al
+    /// siguiente que todo llegó.
+    @Test("relevo del marcador: si falta una fila viva de la cuenta, no se releva")
+    func adoptRelay_incompleteCoverage_leavesNoMarker() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let sharedID = UUID(), ownID = UUID()
+        _ = makeCategory("compartida", syncID: sharedID, in: context)
+        _ = makeCategory("mía", syncID: ownID, in: context)
+        try context.save()
+        let source = try backend([("categories", sharedID), ("accounts", UUID())], stub: stub)
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source())
+        #expect(await executor.runAdoptOrphanReconcile() == .completed(uploaded: 1, identityAssigned: 0),
+                "control: el adopt entra igual")
+        #expect(try context.fetchCount(FetchDescriptor<CloudMigrationMarker>()) == 0)
+    }
+
+    /// Con el marcador de la cuenta no se escribe otro; con el de OTRA cuenta sí (no prueba nada de ésta).
+    @Test("relevo del marcador: con el de la cuenta no escribe otro; con el de otra cuenta, sí")
+    func adoptRelay_accountMarkerPresent_writesNone_foreignMarker_relays() async throws {
+        for (seeded, expected) in [("sub-1", 1), ("otra-cuenta", 2)] {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let context = try makeContext(dir)
+            try seedLeaderMarker(for: seeded, in: context)
+            let stub = RoutingStub()
+            let sharedID = UUID()
+            _ = makeCategory("compartida", syncID: sharedID, in: context)
+            _ = makeCategory("mía", syncID: UUID(), in: context)
+            try context.save()
+            let source = try backend([("categories", sharedID)], stub: stub)
+            let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                        FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                        tombstoneSource: source())
+            #expect(await executor.runAdoptOrphanReconcile() == .completed(uploaded: 1, identityAssigned: 0))
+            #expect(try context.fetchCount(FetchDescriptor<CloudMigrationMarker>()) == expected, "sembrado: \(seeded)")
+            #expect(try accountMarkers("sub-1", in: context).count == 1, "sembrado: \(seeded)")
+        }
+    }
+
+    /// Un guardado que falla deja el adopt entero y sin marcador: ni a medias ni pendiente de un save ajeno.
+    @Test("relevo del marcador: si el guardado falla, el adopt entra sin marcador y la inserción se deshace")
+    func adoptRelay_saveFails_adoptCompletesWithoutMarker() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let sharedID = UUID()
+        _ = makeCategory("compartida", syncID: sharedID, in: context)
+        _ = makeCategory("mía", syncID: UUID(), in: context)
+        try context.save()
+        let source = try backend([("categories", sharedID)], stub: stub)
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source())
+        executor._testRelayMarkerSaveError = CocoaError(.fileWriteUnknown)
+        #expect(await executor.runAdoptOrphanReconcile() == .completed(uploaded: 1, identityAssigned: 0))
+        try context.save()   // un save posterior de cualquiera no lo resucita
+        #expect(try context.fetchCount(FetchDescriptor<CloudMigrationMarker>()) == 0)
+    }
+
+    /// **EL caso del ticket.** Otro teléfono escribe a diario en la cuenta: su categoría de hoy falta aquí y nunca llegará
+    /// por iCloud. Este teléfono tiene una categoría vieja sin identidad (sospechosa: no consta que la creara él después). Sin
+    /// marcador se queda fuera —y el canario lo cuenta—; con el marcador que relevó el primer adoptador, entra y sube la suya.
+    @Test("relevo del marcador: el tercer teléfono, fuera sin marcador, entra con el relevado")
+    func adoptRelay_thirdDevice_entersByTheRelayedMarker() async throws {
+        let defaults = makeIsolatedDefaults(prefix: "mwe.adopt.relay.third.metrics")
+        MetricsService._testReset()
+        MetricsService.start(
+            client: MetricsClient(baseURL: URL(string: "https://gw.test")!, urlSession: MetricsDown()),
+            defaults: defaults)
+        defer { MetricsService._testReset() }
+        for relayed in [false, true] {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let context = try makeContext(dir)
+            let stub = RoutingStub()
+            let sharedID = UUID(), dailyID = UUID()
+            _ = makeCategory("compartida", syncID: sharedID, in: context)
+            if relayed {
+                // La forma exacta de un relevo (la de `adoptRelay_markerlessFullCoverage_leavesItsMarker`), importada.
+                context.insert(CloudMigrationMarker(accountHash: CloudBeacon.hash("sub-1"), migratedAtStamp: fixedNow,
+                                                    serverSeqCut: 0, writerDeviceID: "relay:iphone"))
+            }
+            try context.save()
+            // Bajó de iCloud: no consta que la creara este teléfono, así que es sospechosa aunque el HLC se deje leer.
+            let old = Category(name: "vieja-sin-identidad", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+            context.insert(old)
+            try saveAsImported(context)
+            // El otro teléfono escribió hace dos días: `quiet`. El HLC legible hace que el canario lea la última escritura.
+            let source = try backend([("categories", sharedID), ("categories", dailyID)],
+                                     hlc: hlc(leaderLastWrite - 2 * 86_400_000), stub: stub)
+            let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                        FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                        tombstoneSource: source())
+            let outcome = await executor.runAdoptOrphanReconcile()
+            if relayed {
+                #expect(outcome == .completed(uploaded: 1, identityAssigned: 1))
+                let freshID = try #require(old.syncID)
+                #expect(stub.pushedSyncIDs.map { $0.lowercased() } == [freshID.uuidString.lowercased()])
+                #expect(try context.fetchCount(FetchDescriptor<CloudMigrationMarker>()) == 1, "no releva otra vez")
+            } else {
+                #expect(outcome == .lineageUnproven)
+                #expect(stub.pushedSyncIDs.isEmpty)
+            }
+        }
+        let blocked = MetricsSpool.pending(defaults).filter { $0.e == "canary" && $0.n == "cloudAdoptLineageBlocked" }
+        #expect(blocked.map(\.d) == ["rowsMissing|quiet"])
+    }
+
+    /// El otro motivo del canario, con un escritor de hoy: el corpus ajeno no comparte ninguna fila con una cuenta que
+    /// alguien escribió en las últimas 24 h.
+    @Test("canario del adopt bloqueado: sin filas compartidas y con el backend escrito hoy → noSharedRows|active")
+    func adoptLineageBlockedCanary_noSharedRows_activeWriter() async throws {
+        let defaults = makeIsolatedDefaults(prefix: "mwe.adopt.blocked.metrics")
+        MetricsService._testReset()
+        MetricsService.start(
+            client: MetricsClient(baseURL: URL(string: "https://gw.test")!, urlSession: MetricsDown()),
+            defaults: defaults)
+        defer { MetricsService._testReset() }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        _ = makeCategory("mía", syncID: UUID(), in: context)
+        try context.save()
+        let source = try backend([("categories", UUID())], hlc: hlc(leaderLastWrite), stub: stub)
+        for _ in 0..<2 {   // la fuente se consume al paginar: cada pasada, la suya
+            let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                        FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                        tombstoneSource: source())
+            #expect(await executor.runAdoptOrphanReconcile() == .lineageUnproven)
+        }
+        let blocked = MetricsSpool.pending(defaults).filter { $0.e == "canary" && $0.n == "cloudAdoptLineageBlocked" }
+        #expect(blocked.map(\.d) == ["noSharedRows|active"], "una vez por proceso: el re-kick repite el mismo bloqueo")
+    }
+
+    @Test("adoptCoverageComplete: toda fila viva fuera de las exentas, y al menos una")
+    func adoptCoverageComplete_cases() {
+        let a = UUID(), b = UUID(), rate = UUID()
+        let inventory: [(table: String, syncID: UUID?)] = [("categories", a), ("categories", nil), ("accounts", b)]
+        #expect(MigrationWorkExecutor.adoptCoverageComplete(inventory: inventory, liveByTable: [:]) == false,
+                "sin filas vivas no hay linaje que certificar")
+        #expect(MigrationWorkExecutor.adoptCoverageComplete(inventory: inventory, liveByTable: ["exchange_rates": [rate]])
+                == false, "solo exentas: tampoco")
+        #expect(MigrationWorkExecutor.adoptCoverageComplete(inventory: inventory,
+                                                            liveByTable: ["categories": [a], "accounts": [b],
+                                                                          "exchange_rates": [rate]]))
+        #expect(MigrationWorkExecutor.adoptCoverageComplete(inventory: inventory,
+                                                            liveByTable: ["categories": [a, UUID()]]) == false)
+        #expect(MigrationWorkExecutor.adoptCoverageComplete(inventory: inventory, liveByTable: ["accounts": [a]]) == false,
+                "la identidad cuenta en SU tabla")
+        #expect(MigrationWorkExecutor.adoptCoverageComplete(inventory: inventory, liveByTable: ["categories": [a], "tags": []]),
+                "una tabla sin filas vivas no pide nada")
+    }
+
+    @Test("adoptBackendWriterActivity: 24 h exactas es activo; un ms más, quieto; ilegible, desconocido")
+    func adoptBackendWriterActivity_boundaries() {
+        let nowMs = Int64(fixedNow.timeIntervalSince1970 * 1000)
+        let window = Int64(MigrationWorkExecutor.adoptActiveWriterWindow * 1000)
+        #expect(MigrationWorkExecutor.adoptBackendWriterActivity(lastWriteMs: nowMs - window, now: fixedNow) == "active")
+        #expect(MigrationWorkExecutor.adoptBackendWriterActivity(lastWriteMs: nowMs - window - 1, now: fixedNow) == "quiet")
+        #expect(MigrationWorkExecutor.adoptBackendWriterActivity(lastWriteMs: nowMs, now: fixedNow) == "active")
+        #expect(MigrationWorkExecutor.adoptBackendWriterActivity(lastWriteMs: nil, now: fixedNow) == "unknown")
+        #expect(MigrationWorkExecutor.adoptActiveWriterWindow == 86_400)
+    }
+
+    /// El aborto del paso 4 borra los del cutover —el suyo, y también uno con otro `deviceID` (el de un arranque en que
+    /// `identifierForVendor` era otro)— y deja el que relevó un adoptador: ese se exportaría borrado para todos.
+    @Test("execute(.deleteCutoverCloudKitMarkers): borra los del cutover y deja el relevado (idempotente)")
+    func execute_deleteCutoverMarkers_keepsTheRelayedOne() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        context.insert(CloudMigrationMarker(accountHash: CloudBeacon.hash("sub-1"), writerDeviceID: "relay:iphone"))
+        context.insert(CloudMigrationMarker(accountHash: CloudBeacon.hash("sub-1"), writerDeviceID: "otro-arranque"))
+        try context.save()
+        try await executor.execute(.writeCloudKitMarker)
+        #expect(try context.fetchCount(FetchDescriptor<CloudMigrationMarker>()) == 3)
+        try await executor.execute(.deleteCutoverCloudKitMarkers)
+        try await executor.execute(.deleteCutoverCloudKitMarkers)
+        let left = try context.fetch(FetchDescriptor<CloudMigrationMarker>())
+        #expect(left.map(\.writerDeviceID) == ["relay:iphone"])
+    }
+
+    /// El paso 4 pregunta si el marcador del CUTOVER llegó a CloudKit. Uno relevado e importado trae su nombre de registro
+    /// por definición y no cuenta; uno del cutover con otro `deviceID` sí (el propio, de un arranque con otro
+    /// `identifierForVendor`: filtrar por dispositivo lo dejaría esperando hasta abortar).
+    @Test("isMarkerExported: cuenta los del cutover, no uno relevado ya exportado")
+    func isMarkerExported_ignoresTheRelayedMarker() async throws {
+        for (exportedWriter, expected) in [("relay:iphone", false), ("device-1", true), ("otro-arranque", true)] {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let context = try makeContext(dir)
+            let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), FakeSession(token: "jwt", userID: "sub-1"),
+                                        FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+            context.insert(CloudMigrationMarker(accountHash: CloudBeacon.hash("sub-1"), writerDeviceID: "relay:iphone"))
+            if exportedWriter == "otro-arranque" {
+                context.insert(CloudMigrationMarker(accountHash: CloudBeacon.hash("sub-1"), writerDeviceID: "otro-arranque"))
+            }
+            try context.save()
+            try await executor.execute(.writeCloudKitMarker)
+            let exported = try #require(try context.fetch(FetchDescriptor<CloudMigrationMarker>())
+                .first { $0.writerDeviceID == exportedWriter })
+            try seedMirrorMetadata(dir, rows: [(exported.persistentModelID, "rec-marker")])
+            #expect(executor.isMarkerExported() == expected, "exportado: \(exportedWriter)")
+        }
+    }
+
+    // MARK: · la espera de export del relevo y lo que no releva
+
+    /// El adopt sin marcador y con cobertura total, a punto para `runAdoptFlow`. `source` es una FÁBRICA: cada pasada
+    /// enumera de cero.
+    private func relayAdoptFixture(_ dir: URL, stub: RoutingStub) throws -> (context: ModelContext,
+                                                                           source: () -> FakeTombstoneSource) {
+        let context = try makeContext(dir)
+        let sharedID = UUID()
+        _ = makeCategory("compartida", syncID: sharedID, in: context)
+        _ = makeCategory("mía", syncID: UUID(), in: context)
+        try context.save()
+        return (context, try backend([("categories", sharedID)], stub: stub))
+    }
+
+    /// Un reloj que el test mueve.
+    private final class TestClock { var date: Date; init(_ date: Date) { self.date = date } }
+
+    /// **El adopt no arma el apagado del espejo con el relevo sin exportar.** La primera pasada escribe el marcador y sale
+    /// a reintentar sin persistir el modo; la segunda sale ANTES del reconcile (con la enumeración caída, un reconcile daría
+    /// `reconcileTransient`); con el marcador exportado entra y el canario dice `exported`.
+    @Test("relevo del marcador: el adopt espera a que se exporte antes de armar el apagado del espejo")
+    func adoptRelay_flowWaitsForTheExport() async throws {
+        let defaults = makeIsolatedDefaults(prefix: "mwe.adopt.relay.export.metrics")
+        MetricsService._testReset()
+        MetricsService.start(
+            client: MetricsClient(baseURL: URL(string: "https://gw.test")!, urlSession: MetricsDown()),
+            defaults: defaults)
+        defer { MetricsService._testReset() }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let stub = RoutingStub()
+        let (context, source) = try relayAdoptFixture(dir, stub: stub)
+        let storageDefaults = makeIsolatedDefaults(prefix: "mwe.adopt.relay.export")
+        func executor(_ source: FakeTombstoneSource) -> MigrationWorkExecutor {
+            makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"), FakeBeaconStore(),
+                         personalStoreURL: dir.appendingPathComponent("personal.sqlite"), storageDefaults: storageDefaults,
+                         tombstoneSource: source)
+        }
+
+        await #expect(throws: MigrationExecutorError.adoptRetry(reason: "relayMarkerExport")) {
+            try await executor(source()).runAdoptFlow()
+        }
+        #expect(StorageModePersistence.read(storageDefaults) == .icloud, "sin armar el apagado del espejo")
+        let relay = try #require(try accountMarkers("sub-1", in: context).first)
+
+        let down = FakeTombstoneSource()
+        down.forced = .transient
+        await #expect(throws: MigrationExecutorError.adoptRetry(reason: "relayMarkerExport")) {
+            try await executor(down).runAdoptFlow()
+        }
+
+        try seedMirrorMetadata(dir, rows: [(relay.persistentModelID, "rec-relay")])
+        try await executor(source()).runAdoptFlow()
+        #expect(StorageModePersistence.read(storageDefaults) == .cloud)
+        let canaries = MetricsSpool.pending(defaults).filter { $0.e == "canary" && $0.n == "cloudAdoptMarkerRelayed" }
+        #expect(canaries.map(\.d) == ["exported"])
+    }
+
+    /// **La espera tiene techo**: a los 10 min sin constar exportado el adopt entra igual (un segundo antes, no), y el
+    /// canario dice `unconfirmed`. Un reloj que se atrasó por debajo del sello también cuenta como vencido.
+    @Test("relevo del marcador: a los 10 min sin exportar el adopt entra igual; un reloj atrasado también")
+    func adoptRelay_exportWaitHasACeiling() async throws {
+        for skewed in [false, true] {
+            let defaults = makeIsolatedDefaults(prefix: "mwe.adopt.relay.ceiling.metrics")
+            MetricsService._testReset()
+            MetricsService.start(
+                client: MetricsClient(baseURL: URL(string: "https://gw.test")!, urlSession: MetricsDown()),
+                defaults: defaults)
+            defer { MetricsService._testReset() }
+            let dir = freshDir(); defer { cleanup(dir) }
+            let stub = RoutingStub()
+            let (context, source) = try relayAdoptFixture(dir, stub: stub)
+            let clock = TestClock(fixedNow)
+            let storageDefaults = makeIsolatedDefaults(prefix: "mwe.adopt.relay.ceiling")
+            func executor() -> MigrationWorkExecutor {
+                makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"), FakeBeaconStore(),
+                             personalStoreURL: dir.appendingPathComponent("personal.sqlite"), storageDefaults: storageDefaults,
+                             now: { clock.date }, tombstoneSource: source())
+            }
+            await #expect(throws: MigrationExecutorError.adoptRetry(reason: "relayMarkerExport")) {
+                try await executor().runAdoptFlow()
+            }
+            if skewed {
+                clock.date = fixedNow.addingTimeInterval(-1)
+            } else {
+                clock.date = fixedNow.addingTimeInterval(MigrationWorkExecutor.relayMarkerExportBudget - 1)
+                await #expect(throws: MigrationExecutorError.adoptRetry(reason: "relayMarkerExport")) {
+                    try await executor().runAdoptFlow()
+                }
+                clock.date = fixedNow.addingTimeInterval(MigrationWorkExecutor.relayMarkerExportBudget)
+            }
+            try await executor().runAdoptFlow()
+            #expect(StorageModePersistence.read(storageDefaults) == .cloud, "atrasado: \(skewed)")
+            let canaries = MetricsSpool.pending(defaults).filter { $0.e == "canary" && $0.n == "cloudAdoptMarkerRelayed" }
+            #expect(canaries.map(\.d) == ["unconfirmed"], "atrasado: \(skewed)")
+        }
+        #expect(MigrationWorkExecutor.relayMarkerExportBudget == 600)
+    }
+
+    /// Un relevo de OTRO teléfono (importado, o de este con otro `deviceID`) no hace esperar; y si el marcador no se deja
+    /// leer para esperarlo, tampoco: la espera es un añadido y no puede bloquear un adopt que antes entraba.
+    @Test("relevo del marcador: sin relevo propio, o sin poder leerlo, el adopt no espera")
+    func adoptRelay_noOwnRelayOrUnreadable_doesNotWait() async throws {
+        for unreadable in [false, true] {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let stub = RoutingStub()
+            let (context, source) = try relayAdoptFixture(dir, stub: stub)
+            if !unreadable {
+                context.insert(CloudMigrationMarker(accountHash: CloudBeacon.hash("sub-1"), migratedAtStamp: fixedNow,
+                                                    writerDeviceID: "relay:iphone"))
+                try context.save()
+            }
+            let storageDefaults = makeIsolatedDefaults(prefix: "mwe.adopt.relay.nowait")
+            let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                        FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                        storageDefaults: storageDefaults, tombstoneSource: source())
+            if unreadable {
+                executor._testInventoryFetchThrows = { step, _ in step == "adopt-relay-export" }
+            }
+            try await executor.runAdoptFlow()
+            #expect(StorageModePersistence.read(storageDefaults) == .cloud, "ilegible: \(unreadable)")
+            if unreadable {
+                #expect(try accountMarkers("sub-1", in: context).count == 1, "control: el relevo sí se escribió")
+            }
+        }
+    }
+
+    /// Solo releva un adopt que TERMINÓ: con el encolado de las huérfanas fallando sale `.localFailure` y no queda marcador.
+    @Test("relevo del marcador: un adopt que no termina no releva")
+    func adoptRelay_notCompleted_leavesNoMarker() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let stub = RoutingStub()
+        let (context, source) = try relayAdoptFixture(dir, stub: stub)
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source())
+        executor._testAdoptEnqueueError = CocoaError(.fileWriteUnknown)
+        #expect(await executor.runAdoptOrphanReconcile() == .localFailure)
+        #expect(try context.fetchCount(FetchDescriptor<CloudMigrationMarker>()) == 0)
+    }
+
+    /// Una lectura del relevo que falla —los marcadores o el inventario de la cobertura— deja el adopt entero y sin marcador.
+    @Test("relevo del marcador: si sus lecturas fallan, el adopt termina sin marcador")
+    func adoptRelay_unreadableReads_leaveNoMarker() async throws {
+        for failing in ["adopt-relay", "adopt-inventory#4"] {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let stub = RoutingStub()
+            let (context, source) = try relayAdoptFixture(dir, stub: stub)
+            let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                        FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                        tombstoneSource: source())
+            var inventoryReads = 0
+            executor._testInventoryFetchThrows = { step, entity in
+                if failing == "adopt-relay" { return step == "adopt-relay" }
+                guard step == "adopt-inventory", entity == "TransactionItem" else { return false }
+                inventoryReads += 1
+                return inventoryReads == 4
+            }
+            #expect(await executor.runAdoptOrphanReconcile() == .completed(uploaded: 1, identityAssigned: 0), "\(failing)")
+            #expect(try context.fetchCount(FetchDescriptor<CloudMigrationMarker>()) == 0, "\(failing)")
+        }
     }
 
     /// **`runAdoptFlow` no adopta sin linaje**: lanza su error propio —que el runner cuenta para el techo CORTO— y no toca
