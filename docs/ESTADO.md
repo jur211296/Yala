@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-25 (Lima)
 
-**Rama** `2.1` — Merge #246: **En el adopt, lo que un líder desplazado exporta tarde a iCloud ya no duplica movimientos.**
+**Rama** `2.1` — Merge #247: **El adopt sin marcador ya no deja fuera para siempre a los teléfonos que llegan después.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,26 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#246 · en el adopt, lo que un líder desplazado exporta tarde ya no duplica movimientos)
+## Esta sesión (#247 · el adopt sin marcador ya no deja fuera a los teléfonos que llegan después)
+
+**Si el primer teléfono que activó la nube no llegó a dejar su marca en iCloud, el siguiente que entra en la cuenta con
+todos sus datos deja la suya, y los que lleguen después entran aunque otro escriba a diario.** Medido: el líder no apaga su
+espejo sin exportar el marcador, así que ese bloqueo solo salía con un ADOPTADOR como escritor diario en una cuenta cuyo
+líder nunca lo exportó; y en la flota no se podía contar (producción con 0 perfiles, el bloqueo solo dejaba `os_log`).
+Arreglo, el relevo del marcador: con cobertura total el adoptador escribe su marcador (`relay:`) y no apaga el espejo hasta
+verlo exportado (tope 10 min); el líder, su aborto y la reversa lo tratan aparte. Canarios nuevos para medirlo. Gate (7916
+unit en 754 suites, 4 XCUITest), 29 mutantes muertos, review de tres lentes: ningún duplicado propio; cazó tres cosas, ya
+arregladas. Ticket a `done` sin device-QA.
+
+### Lo que espera de Jürgen
+
+- Nada que decidir. Ticket nuevo `markerless-adopt-without-full-coverage-never-relays-the-marker` (low): si el primer
+  adoptador había borrado una fila de la cuenta, no releva y los siguientes siguen fuera.
+- Los device-QA de #239, #237 y #236 siguen pendientes.
+- Aviso: al parar mis mutantes corrí `pkill -x xcodebuild` en la Mac; si otra sesión estaba en su gate a esa hora (mañana del 25-sep),
+  su corrida pudo cortarse sin culpa del código.
+
+## Sesión anterior (#246 · en el adopt, lo que un líder desplazado exporta tarde ya no duplica movimientos)
 
 **Si un teléfono se quedó sin red a mitad de activar la nube, otro terminó, y el primero volvió y mandó a iCloud sus datos
 viejos, el teléfono que entra después en la cuenta ya no sube esos movimientos otra vez.** La ventana del ticket (del
@@ -40,7 +59,7 @@ lentes que cazó tres cosas (ya arregladas). Ticket a `done` sin device-QA.
   sale distinto de cero.
 - Los device-QA de #239, #237 y #236 siguen pendientes.
 
-## Sesión anterior (#245 · el líder desplazado tras el cutover: descartado)
+## Antes (#245 · el líder desplazado tras el cutover: descartado)
 
 **Nada cambia para el usuario: el teléfono que vuelve tras quedarse sin red al activar la nube se devuelve una identidad
 que la nube ya tiene, así que no duplica.** Medido: al reconcile de `done` solo llega quien pasó su cutover, al cutover
