@@ -1324,6 +1324,20 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSyncAdopt reconcileLineageUnproven pending=\(pending, privacy: .public) — sin marcador de la cuenta ni filas suyas en local; upload bloqueado (linaje)")
     }
 
+    /// El adopt corre con el espejo adjunto, sin nada local que pida linaje, y CloudKit dice que ese iCloud tiene filas que lo
+    /// pedirían, o las dijo y el primer import aún no terminó: espera a que el import las baje antes de decidir (ticket
+    /// `adopt-on-an-empty-store-uploads-what-the-mirror-imports-before-the-relaunch`). `reason` = `found:<tipo de registro>` o
+    /// `importNotSettled`. Sin PII.
+    static func adoptReconcileAwaitingICloudCorpus(reason: String) {
+        logger.notice("CloudSyncAdopt reconcileAwaitingICloudCorpus reason=\(reason, privacy: .public) — el store no tiene aún el corpus de iCloud; el linaje se decide cuando llegue")
+    }
+
+    /// El adopt con el espejo adjunto y el store sin nada que pida linaje no pudo preguntarle a CloudKit qué hay en ese
+    /// iCloud: no entra sin saberlo, reintenta (mismo ticket). Sin PII: el motivo.
+    static func adoptReconcileICloudCorpusCheckFailed(reason: String) {
+        logger.notice("CloudSyncAdopt reconcileICloudCorpusCheckFailed reason=\(reason, privacy: .public) — sin respuesta de CloudKit; el adopt reintenta")
+    }
+
     /// El adopt comparte filas con la cuenta pero a una tabla que sube le faltan filas vivas de la cuenta: las identidades
     /// del líder no llegaron y subir podría duplicar (ticket `adopt-after-the-cutover-needs-a-marker-the-leader-never-exported`).
     /// Sin PII: nombre de tabla y conteos.

@@ -107,6 +107,35 @@ nonisolated struct ICloudPersonalCorpus: Equatable, Sendable, Identifiable {
         oldestTransactionDate: nil, truncated: false)
 }
 
+/// ¿Tiene este iCloud alguna fila que el ADOPT tendría que probar? Lo pregunta el reconcile del adopt con el espejo adjunto
+/// y nada local que pida linaje (ticket `adopt-on-an-empty-store-uploads-what-the-mirror-imports-before-the-relaunch`).
+///
+/// **No es `ICloudProbeOutcome` a propósito.** Aquél cuenta el corpus para un aviso (cuatro cifras, con exclusiones de
+/// sistema y un tope); éste contesta sí o no para una guarda, y cuenta TODO lo que el adopt subiría si llegara: las 16
+/// entidades del canal personal menos los tipos de cambio (`adoptRelevantRecordTypes`). Una fila de sistema también sube
+/// si llega, así que aquí también cuenta.
+nonisolated enum ICloudAdoptCorpusCheck: Equatable, Sendable {
+    /// Hay al menos un registro de ese tipo. El adopt espera a que el espejo lo baje.
+    case found(recordType: String)
+    /// Ningún registro de esos tipos en las zonas del espejo (o no hay zonas).
+    case none
+    /// CloudKit dice que no hay cuenta a la que preguntar: no hay espejo que vaya a importar nada.
+    case noAccount
+    /// No se pudo contestar (red, CloudKit, el plazo). El adopt no entra sin respuesta: reintenta.
+    case failed(String)
+
+    /// El detalle del canario `cloudAdoptICloudCorpusChecked`: una serie por desenlace, así que `found` NO lleva el tipo de
+    /// registro (va en el rastro del dispositivo). Sin PII: literales fijos y el código del fallo.
+    var canaryDetail: String {
+        switch self {
+        case .found:              return "found"
+        case .none:               return "none"
+        case .noAccount:          return "noAccount"
+        case .failed(let reason): return "failed:\(reason)"
+        }
+    }
+}
+
 /// Cómo terminó la sonda. Tres desenlaces y **ninguno bloquea**, que es la regla del ADR §9.
 nonisolated enum ICloudProbeOutcome: Equatable, Sendable {
     /// Se pudo preguntar. El corpus puede estar vacío — eso también es una respuesta.
@@ -197,13 +226,82 @@ enum ICloudPersonalCorpusProbe {
     }
 
     #if DEBUG
-    /// Repone los tres seams. Lo llaman los tests entre casos.
+    /// Repone los cuatro seams. Lo llaman los tests entre casos.
     static func _testReset() {
         probe = { await measureFromCloudKit() }
         wipe = { await deleteMirrorZonesFromCloudKit() }
         mirrorWillSync = { SwiftDataConfiguration.personalStoreMountedDecision.attachesCloudKitMirror }
+        adoptRelevantRecords = { await findAdoptRelevantRecord() }
     }
     #endif
+
+    // MARK: - La pregunta del adopt
+
+    /// Los tipos de registro que el adopt tendría que probar si llegaran: `CD_` + cada entidad del canal personal
+    /// (`CloudSyncEngine.personalEntityNames`) menos los tipos de cambio, que el adopt no pide probar
+    /// (`MigrationWorkExecutor.adoptLineageExemptTables`: los siembra cualquier teléfono al arrancar). Un test ata las dos
+    /// exenciones: si una cambia sin la otra, la guarda esperaría filas que nunca pedirán prueba, o dejaría pasar las que sí.
+    /// `CD_CloudMigrationMarker` no está: el marcador no sube al backend.
+    static let adoptExemptEntityNames: Set<String> = [SyncEntityType.exchangeRate]
+    static var adoptRelevantRecordTypes: Set<String> {
+        Set(CloudSyncEngine.personalEntityNames.subtracting(adoptExemptEntityNames).map { "CD_" + $0 })
+    }
+
+    /// ¿Hay en las zonas del espejo algún registro de `adoptRelevantRecordTypes`? Sin adjuntar el espejo y sin bajar campos.
+    ///
+    /// **Solo metadatos (`desiredKeys: []`) y para en el PRIMERO.** Es el plan B que `desiredKeys` de arriba deja escrito
+    /// para la sonda del aviso: el tipo del registro viaja siempre, así que no depende de que el servidor acepte una lista de
+    /// claves de otro tipo. Y no cuenta: un corpus de años contesta en la primera página.
+    ///
+    /// **Los tipos de cambio de ESTE teléfono estarán ahí**: el espejo adjunto exporta los que sembró el arranque. Por eso no
+    /// cuentan, y por eso un iCloud «vacío» contesta `.none` aunque su zona exista.
+    ///
+    /// Un registro que falla, una zona que lanza o el plazo son `.failed`: no se sabe, y el adopt no entra sin saberlo.
+    static var adoptRelevantRecords: @MainActor () async -> ICloudAdoptCorpusCheck = { await findAdoptRelevantRecord() }
+
+    private static func findAdoptRelevantRecord() async -> ICloudAdoptCorpusCheck {
+        let startedAt = Date()
+        let relevant = adoptRelevantRecordTypes
+        do {
+            for zoneID in try await mirrorZoneIDs() {
+                var token: CKServerChangeToken?
+                var moreComing = true
+                while moreComing {
+                    let batch: (modificationResultsByID: [CKRecord.ID: Result<CKDatabase.RecordZoneChange.Modification, Error>],
+                                deletions: [CKDatabase.RecordZoneChange.Deletion],
+                                changeToken: CKServerChangeToken, moreComing: Bool)
+                    do {
+                        batch = try await privateDatabase.recordZoneChanges(
+                            inZoneWith: zoneID, since: token, desiredKeys: [])
+                    } catch let error as CKError where error.code == .zoneNotFound || error.code == .userDeletedZone {
+                        // La zona se borró entre la lista y la lectura (el mismo trato que le da el borrado de abajo): no
+                        // tiene registros que el espejo vaya a bajar.
+                        break
+                    }
+                    for (_, result) in batch.modificationResultsByID {
+                        guard case .success(let modification) = result else { return .failed("partialRecordFailure") }
+                        let type = modification.record.recordType
+                        if relevant.contains(type) { return .found(recordType: type) }
+                    }
+                    token = batch.changeToken
+                    moreComing = batch.moreComing
+                    if Date().timeIntervalSince(startedAt) > scanDeadline { return .failed("scanDeadline") }
+                }
+            }
+            return .none
+        } catch let error as CKError {
+            #if DEBUG
+            print("ICloudPersonalCorpusProbe: adopt check failed: \(error)")
+            #endif
+            if error.code == .notAuthenticated || error.code == .managedAccountRestricted { return .noAccount }
+            return .failed("CKError.\(error.code.rawValue)")
+        } catch {
+            #if DEBUG
+            print("ICloudPersonalCorpusProbe: adopt check failed: \(error)")
+            #endif
+            return .failed(String(describing: type(of: error)))
+        }
+    }
 
     // MARK: Implementación de producción
 

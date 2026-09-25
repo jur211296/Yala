@@ -951,6 +951,8 @@ struct CloudSyncE2EStagingTests {
                 throw AdoptReconcileNotCompleted(outcome: "localFailure")
             case .lineageUnproven:
                 throw AdoptReconcileNotCompleted(outcome: "lineageUnproven")
+            case .awaitingICloudCorpus:
+                throw AdoptReconcileNotCompleted(outcome: "awaitingICloudCorpus")
             }
 
             // Wire (read-only): el backend GANÓ la huérfana → 2 cuentas del run.

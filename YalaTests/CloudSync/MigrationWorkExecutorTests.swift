@@ -287,6 +287,9 @@ struct MigrationWorkExecutorTests {
         leaseClock: MutableLeaseClock? = nil,
         tombstoneSource: ReverseTombstoneSource? = nil,
         adoptQuiescenceSignal: @escaping () -> Bool = { true },
+        adoptMirrorAttached: @escaping @MainActor () -> Bool = { false },
+        adoptICloudCorpusCheck: @escaping @MainActor () async -> ICloudAdoptCorpusCheck = { .failed("unwired") },
+        adoptImportSettled: @escaping @MainActor () -> Bool = { true },
         claimStore: CloudClaimActionStore? = nil,
         provider: @escaping @MainActor () -> String = { "apple" },
         icloudAccountPresent: (@MainActor () -> Bool)? = nil,
@@ -316,6 +319,9 @@ struct MigrationWorkExecutorTests {
             leaseClock: leaseClock.map { clock in { clock.now } } ?? { ContinuousClock.now },
             reverseTombstoneSource: tombstoneSource,
             adoptQuiescenceSignal: adoptQuiescenceSignal,
+            adoptMirrorAttached: adoptMirrorAttached,
+            adoptICloudCorpusCheck: adoptICloudCorpusCheck,
+            adoptImportSettled: adoptImportSettled,
             claimStore: claimStore,
             icloudAccountPresent: icloudAccountPresent,
             icloudLastExportErrorCode: icloudLastExportErrorCode,
@@ -3331,6 +3337,272 @@ struct MigrationWorkExecutorTests {
                                      personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
                                      tombstoneSource: source2)
         #expect(await executor2.adoptOrphanDryRun() == nil, "enumeración incompleta → el dry-run devuelve nil")
+    }
+
+    // MARK: - El adopt con el espejo adjunto y el store sin corpus (ticket `adopt-on-an-empty-store-uploads-what-the-mirror-imports-before-the-relaunch`)
+
+    /// Lo que un teléfono REAL tiene antes del Welcome: los tipos de cambio que siembra el arranque, sin identidad. Nunca
+    /// llega vacío, y esas filas no piden linaje (`adoptLineageExemptTables`).
+    private func seedBootstrapRates(in context: ModelContext) throws {
+        context.insert(try ExchangeRate(dateKey: "2026-09-25", base: "USD", ratesDictionary: ["PEN": 3.7]))
+        try context.save()
+    }
+
+    /// La sonda de CloudKit, espiada: cuenta las preguntas y contesta lo que se le diga.
+    @MainActor private final class ICloudCheckSpy {
+        var answer: ICloudAdoptCorpusCheck
+        private(set) var calls = 0
+        init(_ answer: ICloudAdoptCorpusCheck) { self.answer = answer }
+        func ask() async -> ICloudAdoptCorpusCheck { calls += 1; return answer }
+    }
+
+    /// **El caso del ticket.** Con el espejo adjunto y nada local que pida linaje, el adopt NO termina mientras CloudKit diga
+    /// que ese iCloud tiene corpus: sin esperar, la guarda no vería nada, se armaría la nube, y lo que el espejo bajara hasta
+    /// el relanzamiento subiría en el primer drain. Mientras espera no toca el backend ni el store, y el flujo no arma la
+    /// nube. Cuando el corpus llega, y es de OTRO iCloud, decide la guarda de siempre: no sube nada.
+    @Test("adopt con el espejo adjunto y el store sin corpus: espera a que iCloud lo baje, y el ajeno no sube")
+    func adoptEmptyStore_mirrorAttached_foreignCorpusArrivingLate_neverUploads() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        try seedBootstrapRates(in: context)
+        let stub = RoutingStub()
+        let source = try backend([("categories", UUID())], stub: stub)   // la cuenta en la nube, con una categoría suya
+        let enumeration = source()
+        let spy = ICloudCheckSpy(.found(recordType: "CD_TransactionItem"))
+        let storageDefaults = makeIsolatedDefaults(prefix: "mwe.adopt.empty.foreign")
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    storageDefaults: storageDefaults, tombstoneSource: enumeration,
+                                    adoptMirrorAttached: { true }, adoptICloudCorpusCheck: { await spy.ask() })
+
+        #expect(await executor.runAdoptOrphanReconcile() == .awaitingICloudCorpus)
+        #expect(spy.calls == 1)
+        #expect(enumeration.callCount == 0, "ni enumera el backend")
+        #expect(stub.merkleCallCount == 0, "ni pregunta al Merkle")
+        #expect(stub.pushedSyncIDs.isEmpty)
+        #expect(try context.fetch(FetchDescriptor<SyncIdentity>()).isEmpty, "ni el backfill corre")
+        await #expect(throws: MigrationExecutorError.adoptRetry(reason: "icloudCorpusNotImported")) {
+            try await executor.runAdoptFlow()
+        }
+        #expect(StorageModePersistence.read(storageDefaults) == .icloud, "no arma la nube: no hay relanzamiento que esperar")
+        #expect(spy.calls == 2)
+
+        // El espejo baja el corpus de ESE iCloud, que no desciende de la cuenta.
+        let foreign = Yala.Category(name: "de otro iCloud", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+        context.insert(foreign)
+        try context.save()
+        #expect(await executor.runAdoptOrphanReconcile() == .lineageUnproven)
+        #expect(spy.calls == 2, "con el corpus aquí ya no se pregunta a CloudKit: decide la guarda")
+        #expect(enumeration.callCount > 0, "control: esta vez sí llegó al backend")
+        #expect(stub.pushedSyncIDs.isEmpty, "el corpus ajeno no sube")
+        #expect(foreign.syncID == nil)
+    }
+
+    /// **El 2.º teléfono de una cuenta nacida en la nube sigue entrando** (criterio 2 del ticket): su iCloud no tiene nada
+    /// que pida linaje, o no hay iCloud. Entra como antes, y sube sus tipos de cambio como siempre.
+    @Test("adopt con el espejo adjunto y el store sin corpus: sin corpus en iCloud, o sin cuenta de iCloud, entra")
+    func adoptEmptyStore_mirrorAttached_noICloudCorpus_enters() async throws {
+        for answer in [ICloudAdoptCorpusCheck.none, .noAccount] {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let context = try makeContext(dir)
+            try seedBootstrapRates(in: context)
+            let stub = RoutingStub()
+            let source = try backend([("categories", UUID())], stub: stub)
+            let spy = ICloudCheckSpy(answer)
+            let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                        FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                        tombstoneSource: source(),
+                                        adoptMirrorAttached: { true }, adoptICloudCorpusCheck: { await spy.ask() })
+            #expect(await executor.runAdoptOrphanReconcile() == .completed(uploaded: 1, identityAssigned: 1),
+                    "\(answer): entra y sube su tipo de cambio")
+            #expect(spy.calls == 1, "\(answer): preguntó")
+        }
+    }
+
+    /// **Y el del mismo iCloud también** (criterio 2): espera a que su corpus llegue —el de la cuenta, con las identidades
+    /// que el backend conoce— y entonces entra sin subirlo otra vez.
+    @Test("adopt con el espejo adjunto y el store sin corpus: el del mismo iCloud espera a su corpus y entra sin resubirlo")
+    func adoptEmptyStore_mirrorAttached_sameICloud_waitsThenEnters() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        try seedBootstrapRates(in: context)
+        let stub = RoutingStub()
+        let accountID = UUID()
+        let source = try backend([("categories", accountID)], stub: stub)
+        let spy = ICloudCheckSpy(.found(recordType: "CD_Category"))
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source(),
+                                    adoptMirrorAttached: { true }, adoptICloudCorpusCheck: { await spy.ask() })
+        #expect(await executor.runAdoptOrphanReconcile() == .awaitingICloudCorpus)
+
+        _ = makeCategory("de la cuenta", syncID: accountID, in: context)   // el espejo la baja con su identidad
+        try context.save()
+        #expect(await executor.runAdoptOrphanReconcile() == .completed(uploaded: 1, identityAssigned: 1))
+        #expect(!stub.pushedSyncIDs.map { $0.lowercased() }.contains(accountID.uuidString.lowercased()),
+                "la categoría de la cuenta no vuelve a subir: solo el tipo de cambio")
+        #expect(spy.calls == 1)
+    }
+
+    /// **Sin respuesta de CloudKit no se entra**: `.transient`, sin tocar el backend, y el flujo no arma la nube.
+    @Test("adopt con el espejo adjunto y el store sin corpus: si CloudKit no contesta, reintenta sin entrar")
+    func adoptEmptyStore_mirrorAttached_checkFailed_isTransient() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        try seedBootstrapRates(in: context)
+        let stub = RoutingStub()
+        let source = try backend([("categories", UUID())], stub: stub)
+        let enumeration = source()
+        let storageDefaults = makeIsolatedDefaults(prefix: "mwe.adopt.empty.failed")
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    storageDefaults: storageDefaults, tombstoneSource: enumeration,
+                                    adoptMirrorAttached: { true }, adoptICloudCorpusCheck: { .failed("CKError.4") })
+        #expect(await executor.runAdoptOrphanReconcile() == .transient)
+        #expect(enumeration.callCount == 0)
+        #expect(stub.pushedSyncIDs.isEmpty)
+        await #expect(throws: MigrationExecutorError.adoptRetry(reason: "reconcileTransient")) {
+            try await executor.runAdoptFlow()
+        }
+        #expect(StorageModePersistence.read(storageDefaults) == .icloud)
+    }
+
+    /// **Solo se pregunta cuando hace falta.** Sin espejo (el neutro del Welcome: no importa nada, y al relanzar monta sin
+    /// espejo) el adopt sigue como siempre. Y con el espejo pero con una fila local que pide linaje, el corpus ya empezó a
+    /// llegar: decide la guarda. En los dos casos la sonda contestaría «hay corpus» y no se la escucha.
+    @Test("adopt: sin espejo adjunto, o con filas de linaje en local, no se pregunta a CloudKit")
+    func adoptEmptyStore_checkOnlyWithMirrorAndNoLineageRows() async throws {
+        do {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let context = try makeContext(dir)
+            try seedBootstrapRates(in: context)
+            let stub = RoutingStub()
+            let source = try backend([("categories", UUID())], stub: stub)
+            let spy = ICloudCheckSpy(.found(recordType: "CD_Category"))
+            let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                        FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                        tombstoneSource: source(),
+                                        adoptMirrorAttached: { false }, adoptICloudCorpusCheck: { await spy.ask() })
+            #expect(await executor.runAdoptOrphanReconcile() == .completed(uploaded: 1, identityAssigned: 1))
+            #expect(spy.calls == 0, "sin espejo no hay nada que vaya a llegar")
+        }
+        do {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let context = try makeContext(dir)
+            try seedBootstrapRates(in: context)
+            let stub = RoutingStub()
+            let accountID = UUID()
+            _ = makeCategory("de la cuenta", syncID: accountID, in: context)
+            try context.save()
+            let source = try backend([("categories", accountID)], stub: stub)
+            let spy = ICloudCheckSpy(.found(recordType: "CD_Category"))
+            let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                        FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                        tombstoneSource: source(),
+                                        adoptMirrorAttached: { true }, adoptICloudCorpusCheck: { await spy.ask() })
+            #expect(await executor.runAdoptOrphanReconcile() == .completed(uploaded: 1, identityAssigned: 1))
+            #expect(spy.calls == 0, "con una fila de la cuenta aquí, el corpus ya está llegando")
+        }
+    }
+
+    /// **La primera tanda no es el corpus entero** (review del ticket, lente de tests). Tras un `found`, una fila que ya llegó
+    /// no apaga la espera: hasta que el primer import del proceso termina y queda quieto, el adopt sigue esperando, y la
+    /// guarda juzga el corpus completo. Sin esto, la segunda tanda caía por encima del ancla del paso 3 y subía en el primer
+    /// drain tras relanzar.
+    @Test("adopt con el espejo adjunto y el store sin corpus: tras un found, la primera tanda no basta: espera al import entero")
+    func adoptEmptyStore_mirrorAttached_waitsForTheWholeImportAfterFound() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        try seedBootstrapRates(in: context)
+        let stub = RoutingStub()
+        let firstID = UUID(), secondID = UUID()
+        let source = try backend([("categories", firstID), ("categories", secondID)], stub: stub)
+        let enumeration = source()
+        let spy = ICloudCheckSpy(.found(recordType: "CD_Category"))
+        var settled = false
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: enumeration,
+                                    adoptMirrorAttached: { true }, adoptICloudCorpusCheck: { await spy.ask() },
+                                    adoptImportSettled: { settled })
+        #expect(await executor.runAdoptOrphanReconcile() == .awaitingICloudCorpus)
+
+        _ = makeCategory("primera tanda", syncID: firstID, in: context)
+        try context.save()
+        #expect(await executor.runAdoptOrphanReconcile() == .awaitingICloudCorpus, "una fila no es el corpus")
+        #expect(spy.calls == 1, "no vuelve a preguntar: ya sabe que hay corpus")
+        #expect(enumeration.callCount == 0, "ni llega al backend")
+
+        _ = makeCategory("segunda tanda", syncID: secondID, in: context)
+        try context.save()
+        settled = true
+        #expect(await executor.runAdoptOrphanReconcile() == .completed(uploaded: 1, identityAssigned: 1),
+                "con el import entero, entra y solo sube su tipo de cambio")
+    }
+
+    /// **Sin sonda cableada no se entra** (review del ticket, lente de tests): el default del init es `.failed("unwired")`, así
+    /// que declarar el espejo sin inyectar la sonda deja el adopt en `.transient`. Se construye el ejecutor SIN el parámetro,
+    /// que es lo único que prueba el default del init y no el del helper de los tests.
+    @Test("adopt: con el espejo declarado y la sonda sin cablear, el ejecutor no entra")
+    func adoptEmptyStore_unwiredCheck_neverEnters() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        try seedBootstrapRates(in: context)
+        let stub = RoutingStub()
+        let source = try backend([("categories", UUID())], stub: stub)
+        let token: () async -> String? = { "jwt" }
+        let executor = MigrationWorkExecutor(
+            engine: CloudSyncEngine(),
+            pushClient: SyncPushClient(baseURL: workerURL, tokenProvider: token, urlSession: stub),
+            pullClient: SyncPullClient(baseURL: workerURL, tokenProvider: token, urlSession: stub),
+            merkleClient: SyncMerkleClient(baseURL: workerURL, tokenProvider: token, urlSession: stub),
+            accountClient: CloudAccountClient(baseURL: workerURL, urlSession: stub),
+            session: FakeSession(token: "jwt", userID: "sub-1"), context: context,
+            personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+            storageDefaults: makeIsolatedDefaults(prefix: "mwe.adopt.empty.unwired"),
+            reverseTombstoneSource: source(),
+            adoptMirrorAttached: { true },
+            relayIdentityLedgerURL: relayLedgerURL(forStore: dir.appendingPathComponent("personal.sqlite")))
+        #expect(await executor.runAdoptOrphanReconcile() == .transient)
+        #expect(stub.pushedSyncIDs.isEmpty)
+    }
+
+    /// El predicado de «hay filas que pedirían linaje»: cualquier fila viva fuera de las tablas exentas, con identidad o sin
+    /// ella; los tipos de cambio no cuentan.
+    @Test("adoptInventoryHasLineageRows: los tipos de cambio no cuentan; cualquier otra fila sí, con o sin identidad")
+    func adoptInventoryHasLineageRows_table() {
+        #expect(!MigrationWorkExecutor.adoptInventoryHasLineageRows([]))
+        #expect(!MigrationWorkExecutor.adoptInventoryHasLineageRows([("exchange_rates", nil), ("exchange_rates", UUID())]))
+        #expect(MigrationWorkExecutor.adoptInventoryHasLineageRows([("exchange_rates", nil), ("categories", nil)]))
+        #expect(MigrationWorkExecutor.adoptInventoryHasLineageRows([("transaction_items", UUID())]))
+    }
+
+    /// El canario sale una vez por proceso y desenlace, con el detalle de la sonda.
+    @Test("adopt con el espejo adjunto y el store sin corpus: el canario cuenta cada desenlace una vez")
+    func adoptEmptyStore_canaryOncePerOutcome() async throws {
+        let defaults = makeIsolatedDefaults(prefix: "mwe.adopt.empty.metrics")
+        MetricsService._testReset()
+        MetricsService.start(
+            client: MetricsClient(baseURL: URL(string: "https://gw.test")!, urlSession: MetricsDown()),
+            defaults: defaults)
+        defer { MetricsService._testReset() }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        try seedBootstrapRates(in: context)
+        let stub = RoutingStub()
+        let source = try backend([("categories", UUID())], stub: stub)
+        let spy = ICloudCheckSpy(.found(recordType: "CD_TransactionItem"))
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source(),
+                                    adoptMirrorAttached: { true }, adoptICloudCorpusCheck: { await spy.ask() })
+        _ = await executor.runAdoptOrphanReconcile()
+        _ = await executor.runAdoptOrphanReconcile()
+        spy.answer = .failed("scanDeadline")
+        _ = await executor.runAdoptOrphanReconcile()
+        let details = MetricsSpool.pending(defaults)
+            .filter { $0.e == "canary" && $0.n == "cloudAdoptICloudCorpusChecked" }.map(\.d)
+        #expect(details == ["found", "failed:scanDeadline"])
     }
 
     // MARK: - Adopt flow (I14 P6, #30)
