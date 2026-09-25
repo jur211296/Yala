@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-25 (Lima)
 
-**Rama** `2.1` — Merge #248: **Un adopt con el espejo de iCloud puesto ya no sube el corpus que iCloud baja después.**
+**Rama** `2.1` — Merge #249: **Un registro de la migración que este build no entiende ya no dice que nunca empezó.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,33 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#248 · un adopt con el espejo de iCloud puesto ya no sube lo que iCloud baja después)
+## Esta sesión (#249 · un registro de la migración que este build no entiende ya no dice que nunca empezó)
+
+**Si una versión anterior de Yala se encuentra el paso de la nube anotado de una forma que no entiende, ya no concluye que
+el cambio nunca empezó:** no mueve nada, deja la anotación intacta y lo dice en Almacenamiento; al actualizar Yala, sigue
+donde estaba. En la práctica solo pasa bajando de build en TestFlight. Medido: el runner no solo leía `notStarted`, **borraba
+la fila en cada arranque** (la «normalización» M1), así que arreglar solo los lectores habría sido cosmético. Arreglo: un
+testigo, `MigrationState.isJournalUndecodable` (fase, pendientes, pendientes del origen y los raw de intención y origen con
+un valor desconocido); los dos lectores dan `.unreadable` y el runner para en `runGuarded` sin tocar la fila. Gate (7937
+unit en 756 suites, 12 XCUITest en 5 suites), 9 mutantes muertos, review de tres lentes sin altos (añadió los dos raw).
+Ticket a `done`. Único rojo de la suite: `records-summary-approximate-mark-fails-only-alongside-group-suites`, conocido
+y ajeno (3/3 verde a solas). Ojo: una tanda de mutantes + gate llevó el disco a **606 MB**; la caché
+`containermanagerd` del simulador eran 5,6 GB.
+
+### Lo que espera de Jürgen
+
+- **Device-QA en iPhone** del ticket `adopt-on-an-empty-store-uploads-what-the-mirror-imports-before-the-relaunch`
+  (guion en el ticket: un iCloud con finanzas ajenas a la cuenta no las sube; uno vacío entra como siempre).
+- **Una decisión de producto, sin prisa:** `adopt-window-uploads-what-reaches-the-mirror-after-the-icloud-check`
+  (medium) — lo que llega a iCloud DESPUÉS de la comprobación (otro teléfono del mismo Apple ID, o iniciar sesión en iCloud
+  antes de reabrir) sigue subiendo; cerrarlo pide decidir qué se hace con esas filas con la nube ya activada.
+- Ticket nuevo `adopt-window-late-imports-overwrite-newer-cloud-edits` (medium, inferido).
+- Los device-QA de #239, #237 y #236 siguen pendientes.
+- Tickets nuevos de #249, sin prisa: `sign-out-push-all-runs-a-sync-cycle-past-the-migration-gate` (medium, inferido),
+  `journal-unreadable-card-says-reopen-when-a-downgrade-needs-an-update`, `storage-mode-unknown-raw-reads-as-icloud` y
+  `adopt-with-existing-session-skips-the-unreadable-journal-guard` (low).
+
+## Sesión anterior (#248 · un adopt con el espejo de iCloud puesto ya no sube lo que iCloud baja después)
 
 **Si un iPhone entra en una cuenta de la nube mientras su iCloud aún no ha bajado sus finanzas, ya no las sube después a
 esa cuenta sin comprobar que son suyas.** La activación espera a que iCloud las baje entero y decide como siempre: si no son
@@ -32,17 +58,7 @@ opción del ticket (anclar la línea base) no cerraba nada. Arreglo: el adopt le
 tres lentes sin hallazgos altos (cazó la primera tanda de un import por partes, ya arreglado). Ticket a `qa`: la sonda
 lee CloudKit, que no existe en el simulador.
 
-### Lo que espera de Jürgen
-
-- **Device-QA en iPhone** del ticket `adopt-on-an-empty-store-uploads-what-the-mirror-imports-before-the-relaunch`
-  (guion en el ticket: un iCloud con finanzas ajenas a la cuenta no las sube; uno vacío entra como siempre).
-- **Una decisión de producto, sin prisa:** `adopt-window-uploads-what-reaches-the-mirror-after-the-icloud-check`
-  (medium) — lo que llega a iCloud DESPUÉS de la comprobación (otro teléfono del mismo Apple ID, o iniciar sesión en iCloud
-  antes de reabrir) sigue subiendo; cerrarlo pide decidir qué se hace con esas filas con la nube ya activada.
-- Ticket nuevo `adopt-window-late-imports-overwrite-newer-cloud-edits` (medium, inferido).
-- Los device-QA de #239, #237 y #236 siguen pendientes.
-
-## Sesión anterior (#247 · el adopt sin marcador ya no deja fuera a los teléfonos que llegan después)
+## Antes (#247 · el adopt sin marcador ya no deja fuera a los teléfonos que llegan después)
 
 **Si el primer teléfono que activó la nube no llegó a dejar su marca en iCloud, el siguiente que entra en la cuenta con
 todos sus datos deja la suya, y los que lleguen después entran aunque otro escriba a diario.** Medido: el líder no apaga su
