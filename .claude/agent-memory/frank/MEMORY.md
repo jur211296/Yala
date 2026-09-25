@@ -74,6 +74,7 @@
 - [Un número sustituto lo cumple otra cosa](feedback_un_numero_sustituto_lo_cumple_otra_cosa.md) — «3 rechazos» los cumplía un gesto y «2 cambios».
 - [La segunda capa no cubre lo que dice](feedback_la_segunda_capa_no_cubre_lo_que_dice.md) — mide el ALCANCE de cada defensa por separado.
 - [La aserción que no puede fallar](feedback_la_asercion_que_no_puede_fallar.md) — el mutante valida el CASO, no cada `#expect`.
+- [Mover un paso detrás de un `await` deja correr al vecino](feedback_mover_un_paso_detras_de_un_await.md) — el runtime arranca con el reconcile pendiente.
 - [Sacar un `await` a una tarea aparte pierde garantías](feedback_lo_que_saco_a_una_tarea_aparte_pierde_garantias.md) — cancelación heredada e identidad del handle; el…
 - [El predicado que amplío CORTOCIRCUITA](feedback_el_predicado_que_amplio_cortocircuita.md) — un término nuevo APAGA las ramas de detrás.
 - [El scan de la condición no ve la rama vacía](feedback_el_scan_de_la_condicion_no_ve_la_rama_vacia.md) — exige que la rama AÑADA, y con su cifra.
