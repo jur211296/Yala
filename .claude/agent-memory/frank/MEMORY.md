@@ -63,6 +63,7 @@
 - [El oráculo del mutante es el efecto que produce](feedback_el_oraculo_del_mutante_es_el_efecto_que_produce.md) — mide el efecto, no la pantalla.
 - [El test fija el bug como contrato](feedback_el_test_fija_el_bug_como_contrato.md) — grep del valor viejo en los tests antes de cambiar un…
 - [El CI se verifica en LOCAL](feedback_el_ci_se_verifica_en_local.md) — el `run:` se extrae del YAML y se corre con matriz.
+- [Empezar a llegar no es haber llegado](feedback_empezar_a_llegar_no_es_haber_llegado.md) — la primera tanda apagaba la espera del adopt.
 - [El paso 3 del gate no detecta cero casos](feedback_gate_paso3_no_detecta_cero_casos.md) — XCUITest es XCTest: cuenta «Test Suite» y…
 - [Mi docblock también es una premisa](feedback_mi_docblock_tambien_es_una_premisa.md) — describo la intención como si fuera el comportamiento.
 - [El tramo sin acotar lo cumple el vecino](feedback_el_tramo_sin_acotar_lo_cumple_el_vecino.md) — un recorte que llega al final del cuerpo se.
