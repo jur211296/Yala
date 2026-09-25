@@ -368,10 +368,12 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | late-icloud-wipe-can-re-export-between-its-two-halves | backlog | tickets/backlog/late-icloud-wipe-can-re-export-between-its-two-halves.md |
 | leader-displaced-after-the-cutover-pushes-its-residual-in-the-reconcile | qa | tickets/qa/leader-displaced-after-the-cutover-pushes-its-residual-in-the-reconcile.md |
 | leaving-and-reentering-restore-renews-the-hard-cap | done | tickets/done/leaving-and-reentering-restore-renews-the-hard-cap.md |
-| lineage-coverage-blocks-forever-after-a-row-deleted-during-the-wait | backlog | tickets/backlog/lineage-coverage-blocks-forever-after-a-row-deleted-during-the-wait.md |
+| lineage-coverage-blocks-forever-after-a-row-deleted-during-the-wait | done | tickets/done/lineage-coverage-blocks-forever-after-a-row-deleted-during-the-wait.md |
+| lineage-enumeration-check-skips-tables-absent-from-the-merkle | backlog | tickets/backlog/lineage-enumeration-check-skips-tables-absent-from-the-merkle.md |
 | live-anchor-breakdown-doubles-the-approximate-glyph | backlog | tickets/backlog/live-anchor-breakdown-doubles-the-approximate-glyph.md |
 | lost-cloud-signup-then-private-leaves-migrate-blocked | backlog | tickets/backlog/lost-cloud-signup-then-private-leaves-migrate-blocked.md |
 | m1-prose-outlives-its-code-in-comments | backlog | tickets/backlog/m1-prose-outlives-its-code-in-comments.md |
+| markerless-adopt-stays-blocked-while-another-device-writes-to-the-account | backlog | tickets/backlog/markerless-adopt-stays-blocked-while-another-device-writes-to-the-account.md |
 | merchant-memory-suggests-across-natures-in-three-more-places | backlog | tickets/backlog/merchant-memory-suggests-across-natures-in-three-more-places.md |
 | migrate-attempt-session-survives-a-relaunch-mid-attempt | backlog | tickets/backlog/migrate-attempt-session-survives-a-relaunch-mid-attempt.md |
 | migrate-before-the-groups-association-arrives-splits-the-accounts | backlog | tickets/backlog/migrate-before-the-groups-association-arrives-splits-the-accounts.md |
@@ -388,6 +390,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | no-hay-seed-con-miembro-rechazado | backlog | tickets/backlog/no-hay-seed-con-miembro-rechazado.md |
 | no-test-seam-for-account-exists-blocks-xcuitest-of-identity | backlog | tickets/backlog/no-test-seam-for-account-exists-blocks-xcuitest-of-identity.md |
 | nocturna-del-9-sep-dejo-cuatro-xcuitest-en-rojo | backlog | tickets/backlog/nocturna-del-9-sep-dejo-cuatro-xcuitest-en-rojo.md |
+| notification-dedup-deletes-all-custom-reminders-but-one | backlog | tickets/backlog/notification-dedup-deletes-all-custom-reminders-but-one.md |
 | notifications-not-delivered-testflight | done | tickets/done/notifications-not-delivered-testflight.md |
 | onboarding-login-should-match-the-sep15-reference | backlog | tickets/backlog/onboarding-login-should-match-the-sep15-reference.md |
 | onboarding-purpose-drops-groups-card | done | tickets/done/onboarding-purpose-drops-groups-card.md |
@@ -494,6 +497,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | revert-card-copy-says-datos-regresan-a-quien-nunca-estuvo | backlog | tickets/backlog/revert-card-copy-says-datos-regresan-a-quien-nunca-estuvo.md |
 | rojo-heroBuckets-thisWeek-trailing-window | done | tickets/done/rojo-heroBuckets-thisWeek-trailing-window.md |
 | rojo-xcuitest-runner-muere-tras-el-primer-caso | done | tickets/done/rojo-xcuitest-runner-muere-tras-el-primer-caso.md |
+| row-deleted-during-the-relief-wait-comes-back-after-the-relief | backlog | tickets/backlog/row-deleted-during-the-relief-wait-comes-back-after-the-relief.md |
 | rules-testing-habla-de-ios-27-que-no-existe | backlog | tickets/backlog/rules-testing-habla-de-ios-27-que-no-existe.md |
 | saldo-con-seleccion-no-contable-diverge-entre-panel-y-estadisticas | backlog | tickets/backlog/saldo-con-seleccion-no-contable-diverge-entre-panel-y-estadisticas.md |
 | save-error-alert-lies-when-the-context-autosaves | backlog | tickets/backlog/save-error-alert-lies-when-the-context-autosaves.md |
