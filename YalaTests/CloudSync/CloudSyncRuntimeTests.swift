@@ -892,6 +892,246 @@ struct CloudSyncRuntimeTests {
         #expect(after > 0, "la purga se pasó del suelo del canal de Grupos")
         #expect(after < before, "no se purgó nada: el ciclo no llegó a la purga")
     }
+
+    // MARK: - El push-all del cierre respeta el candado del motor
+
+    // Ticket `sign-out-push-all-runs-a-sync-cycle-past-the-migration-gate`. El cierre de sesión en la nube subía lo pendiente
+    // con `syncCycle`, que no pasa por `canRunDomain()`: con el journal ilegible, una fase transitoria o el espejo de iCloud
+    // montado corría un ciclo entero —drain, push, pull— que el motor no podía correr. Ahora no corre ninguno, y el cierre
+    // sigue teniendo salida: sin pendientes llega al borrado; con ellos bloquea sin descartar.
+
+    /// Recuento de filas vivas con el MISMO criterio que `livePendingUploadCount` (un fetch que falla no habilita nada).
+    private func liveCount(_ context: ModelContext) -> Int {
+        do {
+            return try context.fetch(FetchDescriptor<SyncOutbox>()).filter { $0.rejectedReason == nil }.count
+        } catch {
+            return Int.max
+        }
+    }
+
+    /// El drain crea el cursor en su primera vuelta (`loadOrCreateCursor`): sin cursor, el drain no corrió.
+    private func cursorCount(_ context: ModelContext) throws -> Int {
+        try context.fetch(FetchDescriptor<SyncCursor>()).count
+    }
+
+    @Test("cierre con el candado cerrado y pendientes: bloquea sin correr ni el drain ni la red, y no descarta")
+    func signOutPushAll_domainGateClosed_withPending_blocksWithoutACycle() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let row = try liveRow(context, entityType: SyncEntityType.transactionItem, h: hlc(1))
+        let push = StubSession(body: pushAppliedJSON([row]))
+        let pull = StubSession(body: emptyPageJSON())
+        let runtime = makeRuntime(push: push, pull: pull, session: StubCloudSession(userID: "u1"))
+
+        let verdict = await CloudMigrationController.pushAllForSignOut(
+            runtime: runtime, context: context, domainGateOpen: { false },
+            livePendingCount: { liveCount(context) }, maxIterations: 20, pause: .zero)
+
+        #expect(verdict == .blocked(pendingCount: 1, reason: .permanent))
+        #expect(push.callCount == 0, "con el candado cerrado no se sube nada")
+        #expect(pull.callCount == 0, "ni se baja")
+        #expect(try cursorCount(context) == 0, "ni corre el drain, que guarda en el store principal")
+        #expect(try outbox(context).map(\.syncID) == [row.syncID], "la fila pendiente sigue ahí: no se descarta")
+
+        // Control: el MISMO escenario con el candado abierto sí sube la fila y drena.
+        let open = await CloudMigrationController.pushAllForSignOut(
+            runtime: runtime, context: context, domainGateOpen: { true },
+            livePendingCount: { liveCount(context) }, maxIterations: 20, pause: .zero)
+        #expect(open == .drained)
+        #expect(push.callCount > 0, "control: con el candado abierto el ciclo sí sube")
+        #expect(try cursorCount(context) == 1, "control: el ciclo sí drena, y el drain deja su cursor")
+    }
+
+    @Test("cierre con el candado cerrado y sin pendientes: el cierre sigue (su borrado es la salida del estado)")
+    func signOutPushAll_domainGateClosed_withoutPending_drains() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let push = StubSession(body: Data(#"{"results":[]}"#.utf8))
+        let pull = StubSession(body: emptyPageJSON())
+        let runtime = makeRuntime(push: push, pull: pull, session: StubCloudSession(userID: "u1"))
+
+        let verdict = await CloudMigrationController.pushAllForSignOut(
+            runtime: runtime, context: context, domainGateOpen: { false },
+            livePendingCount: { liveCount(context) }, maxIterations: 20, pause: .zero)
+
+        #expect(verdict == .drained, "sin nada pendiente el cierre no se queda atrapado")
+        #expect(push.callCount == 0 && pull.callCount == 0, "y llega ahí sin un solo ciclo")
+        #expect(try cursorCount(context) == 0, "ni un drain")
+    }
+
+    /// Entre ciclo y ciclo hay una pausa en la que una reversa puede arrancar: el candado se consulta antes de CADA uno.
+    /// Con un solo `guard` al entrar, este escenario correría las 20 vueltas contra el servidor y saldría `.transient`.
+    @Test("cierre: si el candado se cierra entre dos ciclos, no corre el siguiente")
+    func signOutPushAll_domainGateClosingMidway_stopsBeforeTheNextCycle() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        _ = try liveRow(context, entityType: SyncEntityType.transactionItem, h: hlc(1))
+        // El servidor responde sin aplicar nada: el ciclo sale sano y la fila sigue viva ⇒ el loop quiere otra vuelta.
+        let push = StubSession(body: Data(#"{"results":[]}"#.utf8))
+        let pull = StubSession(body: emptyPageJSON())
+        let runtime = makeRuntime(push: push, pull: pull, session: StubCloudSession(userID: "u1"))
+        var asked = 0
+
+        let verdict = await CloudMigrationController.pushAllForSignOut(
+            runtime: runtime, context: context,
+            domainGateOpen: { asked += 1; return asked == 1 },
+            livePendingCount: { liveCount(context) }, maxIterations: 20, pause: .zero)
+
+        #expect(verdict == .blocked(pendingCount: 1, reason: .permanent))
+        #expect(asked == 2, "el candado se pregunta otra vez antes del segundo ciclo")
+        #expect(push.callCount == 1, "solo corrió el ciclo de antes del cierre del candado")
+    }
+
+    @Test("cierre sin runtime: mismo veredicto que con el candado cerrado")
+    func signOutPushAll_withoutRuntime_matchesTheClosedGate() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        // Sin runtime no se pregunta el candado: `canRunDomain()` deja rastros y un canario.
+        var asked = 0
+        let empty = await CloudMigrationController.pushAllForSignOut(
+            runtime: nil, context: context, domainGateOpen: { asked += 1; return true },
+            livePendingCount: { liveCount(context) }, maxIterations: 20, pause: .zero)
+        #expect(empty == .drained)
+        _ = try liveRow(context, entityType: SyncEntityType.transactionItem, h: hlc(1))
+        let pending = await CloudMigrationController.pushAllForSignOut(
+            runtime: nil, context: context, domainGateOpen: { true },
+            livePendingCount: { liveCount(context) }, maxIterations: 20, pause: .zero)
+        #expect(pending == .blocked(pendingCount: 1, reason: .permanent))
+        #expect(asked == 0, "sin runtime el candado ni se consulta")
+    }
+
+    /// Cancelar el gesto a mitad de la pausa corta el loop y bloquea como pasajero, con las filas contadas: jamás
+    /// `.drained` con pendientes.
+    @Test("cierre cancelado durante la pausa: bloquea como pasajero sin descartar")
+    func signOutPushAll_cancelledDuringThePause_blocksAsTransient() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        _ = try liveRow(context, entityType: SyncEntityType.transactionItem, h: hlc(1))
+        let push = StubSession(body: Data(#"{"results":[]}"#.utf8))
+        let runtime = makeRuntime(push: push, pull: StubSession(body: emptyPageJSON()),
+                                  session: StubCloudSession(userID: "u1"))
+        let task = Task { @MainActor in
+            await CloudMigrationController.pushAllForSignOut(
+                runtime: runtime, context: context, domainGateOpen: { true },
+                livePendingCount: { liveCount(context) }, maxIterations: 20, pause: .seconds(60))
+        }
+        while push.callCount == 0 { await Task.yield() }
+        task.cancel()
+        let verdict = await task.value
+        #expect(verdict == .blocked(pendingCount: 1, reason: .transient))
+        #expect(push.callCount == 1, "la cancelación corta antes del segundo ciclo")
+    }
+
+    @Test("pushAllVerdictWithoutEngine: solo sigue sin filas Y sin ediciones sin capturar; lo que no se pudo leer bloquea")
+    func pushAllVerdictWithoutEngine_table() {
+        typealias L = CloudSignOutFlowLogic
+        #expect(L.pushAllVerdictWithoutEngine(livePendingCount: 0, uncapturedChanges: false) == .drained)
+        #expect(L.pushAllVerdictWithoutEngine(livePendingCount: 3, uncapturedChanges: false)
+            == .blocked(pendingCount: 3, reason: .permanent))
+        #expect(L.pushAllVerdictWithoutEngine(livePendingCount: 3, uncapturedChanges: true)
+            == .blocked(pendingCount: 3, reason: .permanent))
+        // Ediciones solo en el History: bloquea, con la cifra del «no se pudo contar».
+        #expect(L.pushAllVerdictWithoutEngine(livePendingCount: 0, uncapturedChanges: true)
+            == .blocked(pendingCount: .max, reason: .permanent))
+        // El History que no se pudo leer cuenta como «sí».
+        #expect(L.pushAllVerdictWithoutEngine(livePendingCount: 0, uncapturedChanges: nil)
+            == .blocked(pendingCount: .max, reason: .permanent))
+        // Un recuento que falló (`Int.max`) jamás habilita el cierre.
+        #expect(L.pushAllVerdictWithoutEngine(livePendingCount: .max, uncapturedChanges: false)
+            == .blocked(pendingCount: .max, reason: .permanent))
+    }
+
+    /// El caso que cazaron dos lentes de la review: con el motor parado, lo que la persona edita vive solo en el History.
+    /// Sin drain no llega al outbox, y leer solo el outbox daba `.drained` y el borrado se lo llevaba sin aviso — antes, el
+    /// ciclo que se saltaba el candado lo capturaba. Y la lectura no escribe: ni cursor, ni filas.
+    @Test("cierre con el candado cerrado y una edición que el motor no capturó: bloquea, sin escribir nada")
+    func signOutPushAll_domainGateClosed_withUncapturedEdit_blocks() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let push = StubSession(body: Data(#"{"results":[]}"#.utf8))
+        let engine = CloudSyncEngine()
+        let runtime = makeRuntime(engine: engine, push: push, pull: StubSession(body: emptyPageJSON()),
+                                  session: StubCloudSession(userID: "u1"))
+        context.insert(TransactionItem(date: Date(timeIntervalSince1970: 1_700_000_000), amount: 12, currencyCode: "USD"))
+        try context.save()
+
+        let verdict = await CloudMigrationController.pushAllForSignOut(
+            runtime: runtime, context: context, domainGateOpen: { false },
+            livePendingCount: { liveCount(context) }, maxIterations: 20, pause: .zero)
+
+        #expect(verdict == .blocked(pendingCount: .max, reason: .permanent), "la edición no se pierde en silencio")
+        #expect(push.callCount == 0)
+        #expect(try cursorCount(context) == 0, "la lectura del History no crea el cursor")
+        #expect(try outbox(context).isEmpty, "ni encola nada")
+
+        // Control: con un drain que la captura (el candado abierto), la misma edición ya no cuenta como sin capturar.
+        #expect(engine.drainOnce(context: context), "control: el drain termina")
+        #expect(runtime.hasUncapturedPersonalChanges(context: context) == false,
+                "control: capturada por el drain, la sonda la da por vista")
+        #expect(liveCount(context) > 0, "control: y ahora vive en el outbox, que es quien bloquea")
+    }
+
+    @Test("sonda del History: lo que escribió el propio motor no cuenta, y un token roto es «no se sabe»")
+    func uncapturedProbe_ignoresEngineWrites_andReadsABrokenTokenAsUnknown() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let runtime = makeRuntime(session: StubCloudSession(userID: "u1"))
+        #expect(runtime.hasUncapturedPersonalChanges(context: context) == false, "store sin ediciones")
+
+        // Un guardado firmado por el motor (el apply de un pull) no es una edición local.
+        context.insert(TransactionItem(date: Date(timeIntervalSince1970: 1_700_000_000), amount: 5, currencyCode: "USD"))
+        context.author = CloudSyncEngine.outboxSaveAuthor
+        try context.save()
+        context.author = nil
+        #expect(runtime.hasUncapturedPersonalChanges(context: context) == false, "el eco del motor no cuenta")
+
+        // Control positivo: la misma forma sin el autor del motor sí cuenta.
+        context.insert(TransactionItem(date: Date(timeIntervalSince1970: 1_700_000_100), amount: 6, currencyCode: "USD"))
+        try context.save()
+        #expect(runtime.hasUncapturedPersonalChanges(context: context) == true)
+
+        // Token del cursor que no decodifica: no se sabe, y quien decide lo lee como «sí».
+        let cursor = SyncCursor()
+        cursor.historyTokenData = Data("garbage-token".utf8)
+        context.insert(cursor)
+        try context.save()
+        #expect(runtime.hasUncapturedPersonalChanges(context: context) == nil)
+    }
+
+    /// Producción entra por el método de instancia, y lo que lo hace respetar el candado son sus dos argumentos: el runtime
+    /// VIVO y el candado REAL. Un `domainGateOpen: { true }` aquí reabre el ticket con todos los tests de arriba en verde.
+    /// Cuerpo ENTERO, sin comentarios: una sentencia antepuesta tampoco pasa.
+    @Test("MUTACIÓN: el cierre de producción pasa el candado real y el runtime vivo")
+    func signOutPushAll_productionWrapperWiresTheRealGate() throws {
+        let root = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        let text = try String(contentsOf: root.appendingPathComponent(
+            "Yala/Services/CloudSync/CloudMigrationController.swift"), encoding: .utf8)
+        let marker = "func pushAllPendingForSignOut(maxIterations: Int = 20) async -> CloudSignOutFlowLogic.PushAllVerdict {"
+        let start = try #require(text.range(of: marker), "la firma del push-all del cierre cambió")
+        let chars = Array(text[start.upperBound...])
+        var depth = 1, i = 0
+        while i < chars.count {
+            if chars[i] == "{" { depth += 1 }
+            if chars[i] == "}" { depth -= 1; if depth == 0 { break } }
+            i += 1
+        }
+        let code = String(chars[0..<min(i, chars.count)]).split(separator: "\n")
+            .map { line -> String in
+                var c = String(line)
+                if let comment = c.range(of: "//") { c = String(c[..<comment.lowerBound]) }
+                return c.trimmingCharacters(in: .whitespaces)
+            }
+            .filter { !$0.isEmpty }
+        #expect(code == [
+            "await Self.pushAllForSignOut(",
+            "runtime: CloudSyncRuntime.shared,",
+            "context: context,",
+            "domainGateOpen: { CloudSyncRuntime.canRunDomain() },",
+            "livePendingCount: { [self] in livePendingUploadCount() },",
+            "maxIterations: maxIterations)",
+        ])
+    }
 }
 
 // MARK: - Stubs

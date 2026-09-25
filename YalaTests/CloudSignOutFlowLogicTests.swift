@@ -738,7 +738,7 @@ struct PausedChannelReasonWiringTests {
     @Test("el push-all personal declara que su 403 no es el del canal")
     func personalPushAllDeclaresNoChannelKill() throws {
         let personal = try Self.body(
-            of: "func pushAllPendingForSignOut(maxIterations: Int = 20) async -> CloudSignOutFlowLogic.PushAllVerdict {",
+            of: "pause: Duration = .milliseconds(250)\n    ) async -> CloudSignOutFlowLogic.PushAllVerdict {",
             in: try Self.source("Yala/Services/CloudSync/CloudMigrationController.swift"))
         #expect(personal.contains("channelKilled: false"), """
             El push-all del motor personal dejó de declarar su término del kill. En `true`, una cuenta

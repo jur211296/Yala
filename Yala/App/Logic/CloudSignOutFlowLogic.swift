@@ -518,6 +518,24 @@ nonisolated enum CloudSignOutFlowLogic {
         return nil
     }
 
+    /// Veredicto del push-all personal cuando **no hay motor que pueda subir**: no existe el runtime, o existe y el
+    /// candado del dominio (`CloudSyncRuntime.canRunDomain()`) está cerrado — journal ilegible, fase transitoria, espejo de
+    /// iCloud montado. Ahí no se corre ningún ciclo (ticket `sign-out-push-all-runs-a-sync-cycle-past-the-migration-gate`).
+    ///
+    /// Sin pendientes es seguro seguir: el cierre llega al borrado, que se lleva sesión, sync-meta y la fila del journal — y
+    /// ésa es la salida del estado. Con pendientes bloquea y **no descarta**: suben cuando el motor pueda correr.
+    ///
+    /// **Pendiente no es solo el outbox.** Con el motor parado, lo que la persona edita vive únicamente en el History: sin
+    /// drain no llega al outbox, y el borrado se lo llevaría sin aviso — y el motor puede estar parado días (una reversa
+    /// fallida que nadie reintenta). `uncapturedChanges` es la lectura del History sin escribir; `nil` (no se pudo leer)
+    /// cuenta como «sí», y la cifra de ese bloqueo es `Int.max`, el «no se pudo contar» del repo. Sin runtime no hay a quién
+    /// preguntar y llega `false`.
+    static func pushAllVerdictWithoutEngine(livePendingCount: Int, uncapturedChanges: Bool?) -> PushAllVerdict {
+        if livePendingCount > 0 { return .blocked(pendingCount: livePendingCount, reason: .permanent) }
+        if uncapturedChanges != false { return .blocked(pendingCount: Int.max, reason: .permanent) }
+        return .drained
+    }
+
     // MARK: - Las salidas que pierden los cambios que no suben (teléfono sin App Attest, 2026-09-15)
 
     /// Lo que la persona aceptó perder al elegir «Cerrar sesión y perderlos». **Una por outbox**: la de grupos

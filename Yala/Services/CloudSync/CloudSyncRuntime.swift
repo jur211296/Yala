@@ -221,6 +221,12 @@ final class CloudSyncRuntime {
         self.prefsOutbox = prefsOutbox
     }
 
+    /// Lo que el cierre de sesión pregunta con el candado del dominio cerrado: ¿quedan ediciones personales que el motor no
+    /// capturó? Solo lectura (`CloudSyncEngine.hasUncapturedPersonalChanges`); `nil` = no se pudo saber.
+    func hasUncapturedPersonalChanges(context: ModelContext) -> Bool? {
+        engine.hasUncapturedPersonalChanges(context: context)
+    }
+
     // MARK: - Emisión de IdentityRemap (DIFERIDOS #29, §b.4)
 
     /// El motor de captura, expuesto SOLO para que `CategoryDeduplicationService.repairCollapsedIdentityUUIDs`
