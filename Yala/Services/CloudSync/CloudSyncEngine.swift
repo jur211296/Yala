@@ -1371,6 +1371,25 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSyncMigration relayIdentityRestoreFailed error=\(errorType, privacy: .public)")
     }
 
+    /// Un borrado de una fila que el espejo había re-identificado salió del drain con la identidad que ESTE teléfono le
+    /// dio, la que el backend conoce, y no con la del líder (ticket `relay-row-rekeyed-then-deleted-tombstones-the-leader-identity`).
+    /// Solo el tipo, sin PII.
+    static func relayTombstoneTranslated(entity: String) {
+        logger.notice("CloudSyncMigration relayTombstoneTranslated entity=\(entity, privacy: .public) — tombstone con la identidad que el backend conoce")
+    }
+
+    /// No se pudo leer el testigo o la fila viva que decide esa traducción: el drain no consume la transacción y la
+    /// reintenta en la vuelta siguiente.
+    static func relayTombstoneReadFailed(errorType: String) {
+        logger.notice("CloudSyncMigration relayTombstoneReadFailed error=\(errorType, privacy: .public)")
+    }
+
+    /// El registro fila → identidad (`RelayIdentityLedger`) no se pudo leer, escribir o borrar en `step`
+    /// (`seed` | `drain` | `retire`). Sin él, el borrado sale como antes del ticket: sin traducir.
+    static func relayIdentityLedgerUnavailable(step: String, errorType: String) {
+        logger.notice("CloudSyncMigration relayIdentityLedgerUnavailable step=\(step, privacy: .public) error=\(errorType, privacy: .public)")
+    }
+
     /// El relevo comparte filas con la cuenta pero a `table`, que tiene algo que subir, le faltan `missing` filas vivas del
     /// backend: las identidades del líder callado no llegaron por iCloud y subir duplicaría (ticket
     /// `migration-takeover-may-duplicate-rows-whose-leader-identities-never-arrived`). Solo conteos, sin PII.
@@ -1621,6 +1640,19 @@ final class CloudSyncEngine {
     /// migración/reversa EN CURSO sin journal real).
     var _testMigrationPhaseOverride: MigrationPhase?
 
+    /// Dónde lee el drain el registro fila → identidad del relevo (`RelayIdentityLedger`, ticket
+    /// `relay-row-rekeyed-then-deleted-tombstones-the-leader-identity`). El mismo fichero que escribe el executor de la
+    /// migración: los dos motores (el suyo y el del runtime) tienen que traducir igual. Los tests lo apuntan a su directorio.
+    var relayIdentityLedgerURL: URL = RelayIdentityLedger.defaultURL
+
+    /// El registro leído en ESTA vuelta del drain: `nil` = aún no se leyó. Se lee perezoso, con el primer borrado de un tipo
+    /// de identidad acuñada, y un fichero ilegible se lee vacío (con rastro) para no repetir el intento en cada borrado.
+    private var drainRelayLedger: [String: UUID]?
+
+    /// El contexto de la vuelta del drain en curso, para las lecturas de la traducción del tombstone. Solo vive dentro de
+    /// `performDrain`.
+    private var drainContext: ModelContext?
+
     // MARK: Init
 
     init(nodeID: NodeID = NodeID.generate()) {
@@ -1659,6 +1691,12 @@ final class CloudSyncEngine {
 
     private func performDrain(context: ModelContext) -> Bool {
         drainSeq += 1
+        drainContext = context
+        drainRelayLedger = nil
+        defer {
+            drainContext = nil
+            drainRelayLedger = nil
+        }
         do {
             // 1) Cursor + token persistido. D-3: cargar el reloj persistido (send parte del estado
             //    durable — necesario para el lockstep de resumibilidad tras integrar remotos vía apply).
@@ -1738,6 +1776,12 @@ final class CloudSyncEngine {
                                           tombstoneReason: tombstoneReason,
                                           lookups: lookups, rows: &txRows, seen: &seen)
                         }
+                    } catch let failure as RelayTombstoneReadFailure {
+                        // No se pudo leer lo que decide el tombstone de una fila re-identificada: la vuelta ENTERA
+                        // aborta (`false`), no solo esta transacción. Quien lee el outbox después de un drain lo
+                        // trata como avería local; con `true` y el borrado sin capturar, el guard D-1 del pull
+                        // dejaba volver la fila (review del ticket).
+                        throw failure
                     } catch {
                         // `clock.send` lanzó (drift/overflow): abortar en la FRONTERA de esta transacción.
                         // No consumimos `tx` (advancedToken se queda antes de ella) ni sus filas parciales.
@@ -1899,6 +1943,7 @@ final class CloudSyncEngine {
                 pending = rows.count
             }
             CloudSyncBreadcrumb.drain(seq: drainSeq, pending: pending)
+            if !translationAborted { retireRelayIdentityLedgerIfFinished() }
             return true
         } catch {
             CloudSyncBreadcrumb.drainAborted(errorType: String(describing: type(of: error)))
@@ -2055,6 +2100,115 @@ final class CloudSyncEngine {
             return TokenGuardResult(txns: orderedUnion)
         }
         return TokenGuardResult(txns: orderedUnion, reanchor: (token: last.token, txAt: last.timestamp))
+    }
+
+    // MARK: - El tombstone de una fila que el espejo re-identificó (ticket `relay-row-rekeyed-then-deleted-tombstones-the-leader-identity`)
+
+    /// **La OTRA identidad que tuvo aquí una fila que el espejo de iCloud re-identificó por debajo y que ahora se borra.**
+    ///
+    /// El tombstone lleva la identidad que la fila tenía AL BORRARSE (`.preserveValueOnDeletion`). Si el espejo del relevo le
+    /// había puesto la del líder desplazado (#243) y nadie se la devolvió antes (`MigrationWorkExecutor.restoreRelayIdentities`
+    /// solo alcanza a las filas vivas), el borrado salía con una identidad que el backend no conoce: la fila seguía viva allí,
+    /// reaparecía en los otros teléfonos y el Merkle de la verificación no cuadraba.
+    ///
+    /// El drain emite el tombstone de la preservada SIEMPRE y, si esto devuelve otra, también el de esa. Las dos, y no una
+    /// traducción, porque desde un solo teléfono no se sabe cuál de las dos conoce el backend: en el relevo es la del registro;
+    /// en el líder desplazado, al que el espejo le trae la del relevo, es la preservada. `apply_delta` guarda como borrada una
+    /// identidad que no conoce (medido en producción el 2026-09-25), así que la que sobra no hace daño.
+    ///
+    /// Devuelve la otra solo si las cuatro cosas son ciertas:
+    ///  1. el registro (`RelayIdentityLedger`, sembrado en `assignIdentity`) dice que ESTA fila —por su `Z_PK`, que el cambio
+    ///     de identidad no toca— tenía otra identidad;
+    ///  2. la preservada NO tiene testigo aquí: ningún camino local cambia una identidad sin escribirlo (regla de #243);
+    ///  3. la del registro SÍ lo tiene, de su tipo y con coordenadas de CloudKit: es la condición de la restauración;
+    ///  4. ninguna fila viva la lleva: si otra la lleva, esa identidad no es de esta fila.
+    ///
+    /// Solo los seis tipos de identidad acuñada. LANZA `RelayTombstoneReadFailure` si el testigo o la fila no se dejan leer, y
+    /// la vuelta entera del drain aborta. Un registro ilegible, en cambio, no para nada: rastro y solo la preservada.
+    private func relayTombstoneIdentity(
+        for id: PersistentIdentifier, entityType: String, preserved: UUID
+    ) throws -> UUID? {
+        guard MigrationWorkExecutor.mintedIdentityTypes.contains(entityType), let context = drainContext else {
+            return nil
+        }
+        let ledger = drainRelayIdentityLedger()
+        guard !ledger.isEmpty, let key = RelayIdentityLedger.key(for: id), let prior = ledger[key], prior != preserved else {
+            return nil
+        }
+        do {
+            guard try EntityApplyMap.findSyncIdentity(bySyncID: preserved, context: context) == nil else { return nil }
+            guard let witness = try EntityApplyMap.findSyncIdentity(bySyncID: prior, context: context),
+                  witness.entityType == entityType,
+                  witness.ckRecordName != nil, witness.ckZoneName != nil, witness.ckOwnerName != nil else {
+                return nil
+            }
+            guard try !Self.liveRowCarries(prior, entityType: entityType, context: context) else { return nil }
+        } catch {
+            #if DEBUG
+            print("CloudSyncEngine: leer lo que decide el tombstone de una fila re-identificada falló: \(error)")
+            #endif
+            CloudSyncBreadcrumb.relayTombstoneReadFailed(errorType: String(describing: type(of: error)))
+            throw RelayTombstoneReadFailure()
+        }
+        CloudSyncBreadcrumb.relayTombstoneTranslated(entity: entityType)
+        MetricsService.cloudRelayTombstoneTranslated(entity: entityType)
+        return prior
+    }
+
+    /// El registro de esta vuelta, leído una vez. Ilegible = vacío, con rastro.
+    private func drainRelayIdentityLedger() -> [String: UUID] {
+        if let drainRelayLedger { return drainRelayLedger }
+        let loaded: [String: UUID]
+        do {
+            loaded = try RelayIdentityLedger.load(from: relayIdentityLedgerURL)
+        } catch {
+            #if DEBUG
+            print("CloudSyncEngine: el registro de identidades del relevo no se deja leer: \(error)")
+            #endif
+            CloudSyncBreadcrumb.relayIdentityLedgerUnavailable(step: "drain", errorType: String(describing: type(of: error)))
+            loaded = [:]
+        }
+        drainRelayLedger = loaded
+        return loaded
+    }
+
+    /// ¿Lleva alguna fila viva de `entityType` esta identidad? Fetch CONCRETO por tipo (regla de `#Predicate`). LANZA si la
+    /// tabla no se deja leer.
+    private static func liveRowCarries(_ syncID: UUID, entityType: String, context: ModelContext) throws -> Bool {
+        switch entityType {
+        case SyncEntityType.transactionItem:
+            return try EntityApplyMap.findTransactionItem(bySyncID: syncID, context: context) != nil
+        case SyncEntityType.inboxDraft:
+            return try EntityApplyMap.findInboxDraft(bySyncID: syncID, context: context) != nil
+        case SyncEntityType.category:
+            return try EntityApplyMap.findCategory(bySyncID: syncID, context: context) != nil
+        case SyncEntityType.favoritePayment:
+            return try EntityApplyMap.findFavoritePayment(bySyncID: syncID, context: context) != nil
+        case SyncEntityType.merchantMemory:
+            return try EntityApplyMap.findMerchantMemory(bySyncID: syncID, context: context) != nil
+        case SyncEntityType.exchangeRate:
+            return try EntityApplyMap.findExchangeRate(bySyncID: syncID, context: context) != nil
+        default:
+            // Un tipo que no sé leer: lo trato como «alguien la lleva», que deja solo la preservada.
+            return true
+        }
+    }
+
+    /// Borra el registro cuando la migración ya lo dio por terminado (`RelayIdentityLedger.markRetirable`, desde el cierre del
+    /// reconcile de `done`) y esta vuelta consumió todo el historial: con el espejo apagado no llega ninguna identidad más, y
+    /// lo que quedaba por traducir ya salió. Sin la marca no se toca, aunque la fase sea `done`: el runtime puede arrancar
+    /// con el reconcile aún pendiente, antes de que la restauración haya corrido (review del ticket). Dos `stat` por drain.
+    private func retireRelayIdentityLedgerIfFinished() {
+        guard FileManager.default.fileExists(atPath: relayIdentityLedgerURL.path),
+              RelayIdentityLedger.isRetirable(relayIdentityLedgerURL) else { return }
+        do {
+            try RelayIdentityLedger.remove(at: relayIdentityLedgerURL)
+        } catch {
+            #if DEBUG
+            print("CloudSyncEngine: no se pudo borrar el registro de identidades del relevo: \(error)")
+            #endif
+            CloudSyncBreadcrumb.relayIdentityLedgerUnavailable(step: "retire", errorType: String(describing: type(of: error)))
+        }
     }
 
     // MARK: - Clasificación del reason de tombstone (§c.1, drain-side)
@@ -2285,14 +2439,22 @@ final class CloudSyncEngine {
         case .delete(let delete):
             guard let typed = delete as? DefaultHistoryDelete<T> else { return }
             // Identidad preservada vía `.preserveValueOnDeletion` (spike S1/S4).
-            guard let syncID = tombstoneSyncID(typed) else {
+            guard let preserved = tombstoneSyncID(typed) else {
                 recordIdentityGap(entityType: entityType, reason: "tombstoneSyncIDNil")
                 return
             }
-            // Tombstone (I4): op + syncID + `reason` clasificado drain-side (§c.1), sin payload de campos.
-            try appendRow(op: .tombstone, syncID: syncID, entityType: entityType,
-                          tombstoneReason: tombstoneReason, tx: tx, rows: &rows, seen: &seen) { _ in
-                ("{}", nil)  // tombstone: sin fields ni field_hlcs
+            // Si el espejo le cambió la identidad por debajo antes de borrarse, la otra que tuvo AQUÍ
+            // (`relayTombstoneIdentity`). LANZA si no puede leer lo que lo decide: la vuelta entera aborta.
+            let alsoTombstoned = try relayTombstoneIdentity(
+                for: typed.changedPersistentIdentifier, entityType: entityType, preserved: preserved)
+            // Tombstone (I4): op + syncID + `reason` clasificado drain-side (§c.1), sin payload de campos. Con una
+            // identidad re-identificada salen LAS DOS: el backend guarda como borrada la que no conoce
+            // (`apply_delta`, medido), así que la que sobra no hace daño, y la que falta dejaba la fila viva.
+            for syncID in [preserved] + (alsoTombstoned.map { [$0] } ?? []) {
+                try appendRow(op: .tombstone, syncID: syncID, entityType: entityType,
+                              tombstoneReason: tombstoneReason, tx: tx, rows: &rows, seen: &seen) { _ in
+                    ("{}", nil)  // tombstone: sin fields ni field_hlcs
+                }
             }
 
         @unknown default:
@@ -3494,3 +3656,7 @@ private struct PendingOutboxRow {
         )
     }
 }
+
+/// No se pudo leer el testigo o la fila que deciden el tombstone de una fila re-identificada
+/// (`CloudSyncEngine.relayTombstoneIdentity`). Aborta la vuelta ENTERA del drain, no solo su transacción.
+nonisolated struct RelayTombstoneReadFailure: Error {}

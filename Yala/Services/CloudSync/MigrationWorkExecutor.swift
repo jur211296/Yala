@@ -216,6 +216,10 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     private let provider: @MainActor () -> String
     private let beacon: CloudBeacon
     private let personalStoreURL: URL
+    /// El registro fila → identidad que `assignIdentity` siembra y el drain lee para traducir el tombstone de una fila que el
+    /// espejo re-identificó (`RelayIdentityLedger`). El motor lo lee de SU `relayIdentityLedgerURL`: en producción los dos
+    /// son `RelayIdentityLedger.defaultURL`.
+    private let relayIdentityLedgerURL: URL
 
     /// A partir de la N-ésima llamada (1-based), `liveOutboxRows()` LANZA — monta «la base local no se deja leer»
     /// sin tocar el store. `ModelContext` es una `final class` de SwiftData sin protocolo detrás, así que no hay
@@ -339,7 +343,8 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         icloudLastExportErrorCode: (@MainActor () -> CKError.Code?)? = nil,
         icloudMirrorReportedNotAuthenticated: (@MainActor () -> Bool)? = nil,
         icloudLastExportErrorAt: (@MainActor () -> Date?)? = nil,
-        icloudLastSuccessfulExportAt: (@MainActor () -> Date?)? = nil
+        icloudLastSuccessfulExportAt: (@MainActor () -> Date?)? = nil,
+        relayIdentityLedgerURL: URL? = nil
     ) {
         self.engine = engine
         self.pushClient = pushClient
@@ -355,6 +360,7 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         self.provider = provider
         self.beacon = beacon ?? CloudBeacon()
         self.personalStoreURL = personalStoreURL ?? SwiftDataConfiguration.personalConfiguration.url
+        self.relayIdentityLedgerURL = relayIdentityLedgerURL ?? RelayIdentityLedger.defaultURL
         self.storageDefaults = storageDefaults
         self.heartbeatInterval = heartbeatInterval
         let leaseWitness = MigrationLeaseWitness(clock: leaseClock)
@@ -486,6 +492,11 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         if context.hasChanges {
             try context.save()
         }
+
+        // 5. El registro fila → identidad (ticket `relay-row-rekeyed-then-deleted-tombstones-the-leader-identity`): si el
+        //    espejo le cambia la identidad a una de estas filas y se borra antes de que `restoreRelayIdentities` se la
+        //    devuelva, el drain saca también su tombstone con la de aquí. Best-effort: sin él, como antes del ticket.
+        seedRelayIdentityLedger(pairs)
         CloudSyncBreadcrumb.migrationIdentityCaptured(
             captured: report.captured, exportPending: report.exportPending,
             noMetadata: report.noMetadata, failed: report.failed)
@@ -617,6 +628,26 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         }
     }
 
+    /// Apunta en el registro la identidad de cada fila de los seis tipos acuñados, por su `Z_PK`. Se FUSIONA con lo que
+    /// hubiera: una pasada repetida tras un kill no puede tirar la entrada de una fila ya borrada. Un fallo de lectura o
+    /// escritura deja rastro y no para la identidad: el registro es una red para un caso raro, y parar la migración entera
+    /// por él (un disco lleno, por ejemplo) sería peor que el daño que cubre.
+    private func seedRelayIdentityLedger(_ pairs: [(id: PersistentIdentifier, row: SyncIdentity)]) {
+        var entries: [String: UUID] = [:]
+        for pair in pairs where Self.mintedIdentityTypes.contains(pair.row.entityType) {
+            guard let key = RelayIdentityLedger.key(for: pair.id) else { continue }
+            entries[key] = pair.row.syncID
+        }
+        do {
+            try RelayIdentityLedger.merge(entries, into: relayIdentityLedgerURL)
+        } catch {
+            #if DEBUG
+            print("MigrationWorkExecutor: sembrar el registro de identidades del relevo falló: \(error)")
+            #endif
+            CloudSyncBreadcrumb.relayIdentityLedgerUnavailable(step: "seed", errorType: String(describing: type(of: error)))
+        }
+    }
+
     // MARK: - La identidad que el espejo cambia por debajo (ticket `displaced-leader-late-identity-export-can-rekey-the-relief-corpus`)
 
     /// Las coordenadas de un record de CloudKit. Son las mismas en todos los teléfonos del mismo iCloud: el record es uno.
@@ -640,6 +671,10 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     /// Cuántas filas se mandaron a buscar coordenadas. El camino barato —sin testigo huérfano o sin fila sin testigo— no
     /// busca ninguna, y eso es lo que el test mide. SOLO tests.
     private(set) var _testRecordCoordinateLookups = 0
+
+    /// Si una restauración de este executor toleró unos metadatos de CloudKit ilegibles (solo el reconcile de `done`). Lo lee
+    /// `markRelayIdentityLedgerRetirable`.
+    private var relayIdentityRecordsTolerated = false
 
     /// **Devuelve a la identidad que este teléfono subió las filas que el espejo de iCloud re-identificó por debajo.**
     ///
@@ -721,7 +756,10 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
 
         guard let coordinates = recordCoordinates(for: candidates.map(\.id)) else {
             CloudSyncBreadcrumb.migrationRelayIdentityRecordsUnreadable(tolerated: toleratingUnreadableRecords)
-            if toleratingUnreadableRecords { return 0 }
+            if toleratingUnreadableRecords {
+                relayIdentityRecordsTolerated = true
+                return 0
+            }
             throw MigrationExecutorError.inventoryUnreadable(entity: "CloudKitRecordMetadata")
         }
         var byKey: [PinKey: [PinCandidate]] = [:]
@@ -1209,6 +1247,13 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
             // notWired (bug device 2026-07-10) lo dejaba journaled-pendiente para siempre y cada resume
             // re-lanzaba. Defensivo: desarmar mirror-off (no puede estar armado pre-cutover, pero barato).
             storageDefaults.removeObject(forKey: Self.relaunchRequestedKey)
+            // Antes del cutover el registro fila → identidad ya no sirve: el teléfono vuelve a iCloud y el motor no drena.
+            // Best-effort: si no se borra, queda inerte hasta la siguiente siembra.
+            do {
+                try RelayIdentityLedger.remove(at: relayIdentityLedgerURL)
+            } catch {
+                CloudSyncBreadcrumb.relayIdentityLedgerUnavailable(step: "rollback", errorType: String(describing: type(of: error)))
+            }
             CloudSyncBreadcrumb.migrationRollbackCompleted()
 
         case .adoptBackendAccount:
@@ -1925,6 +1970,23 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     private func stampMigrationFinished() {
         if let userID = session.currentUserID {
             claimStore.record(.routeReturningUser, forUserID: userID)
+        }
+        markRelayIdentityLedgerRetirable()
+    }
+
+    /// Con la migración cerrada, el registro fila → identidad ya no hace falta en cuanto el motor drene lo que quede: la marca
+    /// le deja borrarlo tras su siguiente drain completo (`RelayIdentityLedger`). **Salvo si la restauración de este reconcile
+    /// no pudo leer los metadatos de CloudKit** (`relayIdentityRecordsTolerated`): entonces pudo quedar alguna fila VIVA con la
+    /// identidad del líder, y el registro es lo único que traduciría su borrado. Se queda, inerte para el resto.
+    private func markRelayIdentityLedgerRetirable() {
+        guard !relayIdentityRecordsTolerated else { return }
+        do {
+            try RelayIdentityLedger.markRetirable(relayIdentityLedgerURL)
+        } catch {
+            #if DEBUG
+            print("MigrationWorkExecutor: marcar el registro de identidades del relevo como retirable falló: \(error)")
+            #endif
+            CloudSyncBreadcrumb.relayIdentityLedgerUnavailable(step: "mark", errorType: String(describing: type(of: error)))
         }
     }
 
