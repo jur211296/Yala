@@ -63,6 +63,7 @@
 - [El oráculo del mutante es el efecto que produce](feedback_el_oraculo_del_mutante_es_el_efecto_que_produce.md) — mide el efecto, no la pantalla.
 - [El test fija el bug como contrato](feedback_el_test_fija_el_bug_como_contrato.md) — grep del valor viejo en los tests antes de cambiar un…
 - [El CI se verifica en LOCAL](feedback_el_ci_se_verifica_en_local.md) — el `run:` se extrae del YAML y se corre con matriz.
+- [Empezar a llegar no es haber llegado](feedback_empezar_a_llegar_no_es_haber_llegado.md) — la primera tanda apagaba la espera del adopt.
 - [El paso 3 del gate no detecta cero casos](feedback_gate_paso3_no_detecta_cero_casos.md) — XCUITest es XCTest: cuenta «Test Suite» y…
 - [Mi docblock también es una premisa](feedback_mi_docblock_tambien_es_una_premisa.md) — describo la intención como si fuera el comportamiento.
 - [El tramo sin acotar lo cumple el vecino](feedback_el_tramo_sin_acotar_lo_cumple_el_vecino.md) — un recorte que llega al final del cuerpo se.
@@ -165,7 +166,7 @@
 - [Rediseño de sesiones: dos ejes](project_rediseno_sesiones_dos_ejes.md) — ADR 9-sep + 13 tickets con orden; M1 retirada y «en la…
 - [La frontera de la visita: SUPERADA](project_la_frontera_de_la_visita.md) — el ADR del 9-sep retira M1 y sus 12 tickets están…
 - [Decisiones que esperan a Jürgen](project_decisiones_que_esperan_a_jurgen.md) — 19 contestadas el 6-sep; «¿queda alguna?» se responde…
-- [Trabajo anterior](project_indice_trabajo_anterior.md) — PR #62 a #247: qué cerró cada uno y qué dejó abierto.
+- [Trabajo anterior](project_indice_trabajo_anterior.md) — PR #62 a #248: qué cerró cada uno y qué dejó abierto.
 
 ## Entorno y herramientas
 - [`removeObject` sin efecto = es el simulador](feedback_simulador_preferencias_fuera_del_contenedor.md) — `simctl erase` va PRIMERO.

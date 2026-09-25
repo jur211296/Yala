@@ -78,6 +78,11 @@ nonisolated enum AdoptReconcileOutcome: Equatable {
     /// `adopt-uploads-a-foreign-corpus-without-a-lineage-check` y `adopt-after-the-cutover-needs-a-marker-the-leader-never-exported`).
     /// No se toca nada: ni backfill, ni encolado, ni red.
     case lineageUnproven
+    /// El espejo de CloudKit está adjunto, el store no tiene nada que pida linaje y CloudKit dice que ese iCloud SÍ lo tiene
+    /// (ticket `adopt-on-an-empty-store-uploads-what-the-mirror-imports-before-the-relaunch`): sin esperar, la guarda de linaje
+    /// no vería nada y lo que el espejo bajara después subiría en el primer drain tras relanzar. Esperar lo arregla —el
+    /// import lo baja y la guarda decide—: techo LARGO. No se toca nada: ni red del backend, ni backfill, ni encolado.
+    case awaitingICloudCorpus
 }
 
 // MARK: - ForwardLineageOutcome (ticket `migration-takeover-uploads-without-a-lineage-check`)
@@ -261,6 +266,26 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     /// `runAdoptOrphanReconcile`). Default `{ true }` (fakes/tests que no lo ejercitan); producción inyecta
     /// `{ iCloudSyncService.shared.isImportQuiescent }`.
     private let adoptQuiescenceSignal: () -> Bool
+    /// ¿Este proceso montó el store personal con el espejo de CloudKit ADJUNTO? (ticket
+    /// `adopt-on-an-empty-store-uploads-what-the-mirror-imports-before-the-relaunch`). Con él, lo que el espejo importe hasta el
+    /// relanzamiento sube en el primer drain; sin él (el neutro del Welcome, `.cloudMirrorOff`) no importa nada. Default
+    /// `{ false }`: la VERDAD del host de test, donde el testigo global dice `.iCloudMirror` sin haber montado nada (regla de
+    /// `swiftdata-cloudkit.md`); producción inyecta `personalStoreMountedDecision.attachesCloudKitMirror` en `makeExecutor`.
+    private let adoptMirrorAttached: @MainActor () -> Bool
+    /// ¿Tiene ese iCloud filas que el adopt tendría que probar? (`ICloudPersonalCorpusProbe.adoptRelevantRecords`, sin el
+    /// espejo). Solo se pregunta con `adoptMirrorAttached` y nada local que pida linaje. Default: `.failed("unwired")`, para
+    /// que un espejo declarado sin sonda no entre nunca sin respuesta.
+    private let adoptICloudCorpusCheck: @MainActor () async -> ICloudAdoptCorpusCheck
+    /// ¿El primer import de CloudKit de ESTE proceso terminó y está quieto? (`hasCompletedFirstImport && isImportQuiescent`).
+    /// Solo se mira tras un `.found`: ahí el import tiene algo que bajar, así que acaba encendiéndolo, y hasta entonces una
+    /// fila que ya llegó no es el corpus entero (review del ticket: sin esto, la primera tanda apagaba el paso 0-bis y la
+    /// guarda juzgaba un corpus a medias). Default `{ true }` para los tests que no lo ejercitan; producción inyecta el del
+    /// servicio de iCloud.
+    private let adoptImportSettled: @MainActor () -> Bool
+    /// Este proceso oyó a CloudKit decir que el corpus existe (`.found`). En MEMORIA a propósito: `hasCompletedFirstImport`
+    /// también lo está, y tras relanzar el espejo puede no volver a emitir un import que lo encienda. Un kill a mitad deja que
+    /// la pasada siguiente juzgue lo que haya llegado, que es el residual (c) de siempre del import-lag.
+    private var adoptICloudCorpusFound = false
     /// C-1: ¿hay cuenta iCloud? El MISMO predicado que gobierna el montaje del store
     /// (`SwiftDataConfiguration.isICloudAvailable()`), a propósito — introducir aquí
     /// `CKContainer.accountStatus()` (0 usos en el repo) crearía una segunda verdad que podría discrepar del
@@ -341,6 +366,9 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         leaseClock: @escaping () -> ContinuousClock.Instant = { ContinuousClock.now },
         reverseTombstoneSource: ReverseTombstoneSource? = nil,
         adoptQuiescenceSignal: @escaping () -> Bool = { true },
+        adoptMirrorAttached: @escaping @MainActor () -> Bool = { false },
+        adoptICloudCorpusCheck: @escaping @MainActor () async -> ICloudAdoptCorpusCheck = { .failed("unwired") },
+        adoptImportSettled: @escaping @MainActor () -> Bool = { true },
         claimStore: CloudClaimActionStore? = nil,
         icloudAccountPresent: (@MainActor () -> Bool)? = nil,
         icloudLastExportErrorCode: (@MainActor () -> CKError.Code?)? = nil,
@@ -369,6 +397,9 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         let leaseWitness = MigrationLeaseWitness(clock: leaseClock)
         self.leaseWitness = leaseWitness
         self.adoptQuiescenceSignal = adoptQuiescenceSignal
+        self.adoptMirrorAttached = adoptMirrorAttached
+        self.adoptICloudCorpusCheck = adoptICloudCorpusCheck
+        self.adoptImportSettled = adoptImportSettled
         self.claimStore = claimStore ?? .shared
         // C-1: defaults MainActor-aislados resueltos en el CUERPO (los default args son nonisolated, mismo
         // motivo que `deviceID`/`personalStoreURL`/`claimStore`).
@@ -2076,11 +2107,18 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         // Merkle en cada reintento —el re-kick de Almacenamiento llega cada 30 s—. Solo es la puerta: el plan preliminar
         // se vuelve a leer DESPUÉS de la enumeración, porque el guard de abajo compara el backend con lo que hay ahora, y
         // lo creado o importado mientras se enumeraba también cuenta (hallazgo de la review).
+        let localInventory: [(table: String, syncID: UUID?)]
         do {
-            _ = try collectAdoptInventory()
+            localInventory = try collectAdoptInventory()
         } catch {
             return .localFailure
         }
+        // Paso 0-bis: con el espejo adjunto y nada local que pida linaje, el corpus de iCloud puede no haber llegado todavía
+        // (ticket `adopt-on-an-empty-store-uploads-what-the-mirror-imports-before-the-relaunch`). La guarda de linaje no
+        // vería nada, el adopt terminaría, y lo que el espejo bajara hasta el relanzamiento subiría en el primer drain: un
+        // corpus ajeno, sin prueba. Se le pregunta a CloudKit, antes de la red del backend: si hay filas, se espera a que el
+        // import las baje y decide la guarda de siempre.
+        if let waiting = await awaitICloudCorpusIfNotLocal(localInventory) { return waiting }
         // Paso 1: enumerar el set de identidades del backend (upserts + tombstones) — read-only, idiom
         // `sweepZombies` (SIN applyPage, SIN avance de `SyncCursor`, SIN tocar testigos). Red → `.transient`.
         guard let enumeration = await enumerateBackendSyncIDs() else { return .transient }
@@ -2135,6 +2173,8 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         //
         // Solo con algo que subir: el 2.º dispositivo de una cuenta NACIDA en la nube entra por este mismo adopt y no
         // puede tener marcador nunca (no hay corpus de esa cuenta en CloudKit); sin filas que subir, no hay nada que mezclar.
+        // «Sin filas» solo vale si el corpus de iCloud ya está aquí: con el espejo adjunto y el store sin nada que pida
+        // linaje, lo comprobó el paso 0-bis.
         // Y ANTES del guard de backend vacío: ese guard sigue el adopt —cambia el modo— y con un corpus ajeno en local eso
         // lo deja dentro de una cuenta que no es suya, listo para subir en la primera edición.
         var reboundWithoutIdentity = 0
@@ -2297,6 +2337,10 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
             // Tampoco `adoptRetry`: un corpus ajeno no se arregla esperando (ticket
             // `adopt-uploads-a-foreign-corpus-without-a-lineage-check`). El techo CORTO y su salida los pone el runner.
             throw MigrationExecutorError.adoptLineageUnproven
+        case .awaitingICloudCorpus:
+            // Esto SÍ se arregla esperando: el import baja el corpus y la guarda decide (ticket
+            // `adopt-on-an-empty-store-uploads-what-the-mirror-imports-before-the-relaunch`). Techo largo, como la red.
+            throw MigrationExecutorError.adoptRetry(reason: "icloudCorpusNotImported")
         case .completed, .abortedEmptyBackend:
             break
         }
@@ -2364,6 +2408,45 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     /// nacida en la nube —que nunca tiene marcador— no llegaba jamás con «nada que subir» (lo cazó la review). Siguen
     /// subiendo como antes; lo que no hacen es exigir el marcador.
     static let adoptLineageExemptTables: Set<String> = [EntityEmissionMap.exchangeRate.table]
+
+    /// ¿Tiene el inventario local alguna fila VIVA que la guarda de linaje contaría si el backend no la conociera? Las 16
+    /// entidades menos las tablas exentas, con identidad o sin ella. Sin ninguna, lo que decide si hay algo que probar está
+    /// todavía en iCloud (ticket `adopt-on-an-empty-store-uploads-what-the-mirror-imports-before-the-relaunch`).
+    static func adoptInventoryHasLineageRows(_ inventory: [(table: String, syncID: UUID?)]) -> Bool {
+        inventory.contains { !adoptLineageExemptTables.contains($0.table) }
+    }
+
+    /// El paso 0-bis del reconcile: `nil` = puede seguir. Solo con el espejo ADJUNTO.
+    ///
+    /// - Sin ninguna fila local que pida linaje, pregunta a CloudKit. `.found` → `.awaitingICloudCorpus`: el import aún no lo
+    ///   bajó, y esperar lo arregla. `.none` / `.noAccount` → sigue: ahora no hay nada que el espejo vaya a traer (lo que
+    ///   llegue después de esta respuesta es residual con ticket). `.failed` → `.transient`: sin respuesta no se entra.
+    /// - Tras un `.found`, sigue esperando hasta que el primer import del proceso termine y quede quieto
+    ///   (`adoptImportSettled`), aunque ya haya llegado alguna fila: la primera tanda no es el corpus entero, y juzgarla
+    ///   dejaba el resto para el primer drain tras relanzar.
+    /// - Con filas que piden linaje y sin un `.found` pendiente, no pregunta: decide la guarda como siempre, con el
+    ///   import-lag que ya tenía (residual (c) del reconcile).
+    private func awaitICloudCorpusIfNotLocal(_ inventory: [(table: String, syncID: UUID?)]) async -> AdoptReconcileOutcome? {
+        guard adoptMirrorAttached() else { return nil }
+        if adoptICloudCorpusFound && !adoptImportSettled() {
+            CloudSyncBreadcrumb.adoptReconcileAwaitingICloudCorpus(reason: "importNotSettled")
+            return .awaitingICloudCorpus
+        }
+        guard !Self.adoptInventoryHasLineageRows(inventory) else { return nil }
+        let check = await adoptICloudCorpusCheck()
+        MetricsService.cloudAdoptICloudCorpusChecked(outcome: check.canaryDetail)
+        switch check {
+        case .none, .noAccount:
+            return nil
+        case .found(let recordType):
+            adoptICloudCorpusFound = true
+            CloudSyncBreadcrumb.adoptReconcileAwaitingICloudCorpus(reason: "found:\(recordType)")
+            return .awaitingICloudCorpus
+        case .failed(let reason):
+            CloudSyncBreadcrumb.adoptReconcileICloudCorpusCheckFailed(reason: reason)
+            return .transient
+        }
+    }
 
     /// Cuántas filas del plan piden prueba de linaje: huérfanas y filas sin identidad, fuera de las tablas exentas.
     static func adoptLineageRelevantCount(_ plan: AdoptOrphanDiff.Plan) -> Int {

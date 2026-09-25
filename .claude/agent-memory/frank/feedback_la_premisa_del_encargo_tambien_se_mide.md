@@ -286,3 +286,10 @@ cazaron dos lentes a la vez, y el arreglo además abría un duplicado en el caso
 imposible. Aquí bastaba recorrer la máquina de estados hacia atrás desde el efecto: una pregunta sobre qué ha
 tenido que pasar para llegar a él. Si el encargo te «elige la opción robusta», elige solo entre opciones que
 arreglen algo que exista.
+
+## Tercer caso (2026-09-25): la OPCIÓN del ticket, no solo su premisa
+
+`adopt-on-an-empty-store-uploads-what-the-mirror-imports-before-the-relaunch` proponía «anclar la línea base aunque no haya
+transacción personal». Medido: un teléfono real siempre tiene una (los tipos de cambio del arranque), así que el ancla ya
+existía; y lo importado después del paso 3 queda por encima de cualquier ancla. La opción no cerraba nada. **Las opciones de
+un ticket también son afirmaciones**: antes de elegir entre ellas, comprueba que cada una arreglaría el caso.

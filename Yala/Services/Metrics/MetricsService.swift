@@ -152,6 +152,12 @@ enum MetricsCanary: String {
     /// de 10 min sin constar exportado: los teléfonos de después pueden seguir fuera). `value` = segundos de espera. Una vez
     /// por proceso y `detail`. Distinto de cero dice que hay cuentas cuyo líder nunca exportó su marcador.
     case cloudAdoptMarkerRelayed
+    /// El adopt con el espejo adjunto y nada local que pida linaje le preguntó a CloudKit si ese iCloud tiene filas que
+    /// tendría que probar (ticket `adopt-on-an-empty-store-uploads-what-the-mirror-imports-before-the-relaunch`). `detail` =
+    /// `found` (las hay: espera a que el espejo las baje), `none`, `noAccount` o `failed:<motivo>` (no se supo: reintenta).
+    /// Una vez por proceso y `detail`. `failed:` sostenido en la flota dice que la sonda no funciona en producción, y deja
+    /// esperando a quien adopta así hasta el techo de 72 h.
+    case cloudAdoptICloudCorpusChecked
     case cloudConsentAccepted
     case cloudAccountUnavailable
     case cloudAccountReverting
@@ -844,6 +850,10 @@ extension MetricsService {
 
     static func cloudAdoptMarkerRelayed(outcome: String, waitedSeconds: TimeInterval) {
         canaryOnce(.cloudAdoptMarkerRelayed, key: outcome, detail: outcome, value: waitedSeconds.rounded())
+    }
+
+    static func cloudAdoptICloudCorpusChecked(outcome: String) {
+        canaryOnce(.cloudAdoptICloudCorpusChecked, key: outcome, detail: outcome)
     }
 
     static func cloudConsentAccepted(path: String) {

@@ -599,7 +599,13 @@ final class CloudMigrationController {
             engine: engine, pushClient: push, pullClient: pull, merkleClient: merkle,
             accountClient: account, session: session, context: context, deviceID: deviceID,
             provider: { CloudAuthService.shared.storedProvider() ?? "apple" },
-            adoptQuiescenceSignal: { iCloudSyncService.shared.isImportQuiescent })
+            adoptQuiescenceSignal: { iCloudSyncService.shared.isImportQuiescent },
+            // Ticket `adopt-on-an-empty-store-uploads-what-the-mirror-imports-before-the-relaunch`: con el espejo adjunto y
+            // nada local que pida linaje, el adopt le pregunta a CloudKit si el corpus de iCloud aún no llegó. El testigo es
+            // el del MOUNT de este proceso, no «¿hay iCloud?» (`isICloudAvailable` mide Drive y `.localNoMirror` adjunta igual).
+            adoptMirrorAttached: { SwiftDataConfiguration.personalStoreMountedDecision.attachesCloudKitMirror },
+            adoptICloudCorpusCheck: { await ICloudPersonalCorpusProbe.adoptRelevantRecords() },
+            adoptImportSettled: { iCloudSyncService.shared.hasCompletedFirstImport && iCloudSyncService.shared.isImportQuiescent })
     }
 
     /// El runner de producción (lazy, único). El panel DEBUG delega en este mismo runner.
