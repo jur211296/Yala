@@ -686,7 +686,9 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     /// no está medido (pide dos teléfonos): esto se diseña para el peor caso.
     ///
     /// **La identidad del relevo gana** porque es la que el backend tiene y el líder desplazado ya no sube (su puerta del
-    /// lease lo saca); cuando entre en la cuenta, el linaje del adopt le re-identifica las suyas.
+    /// lease lo saca); cuando entre en la cuenta, el linaje del adopt le re-identifica las suyas. Eso vale para el desplazado
+    /// ANTES del cutover. Quien ya pasó el suyo también restaura, en el reconcile de `done` y sea cual sea la respuesta del
+    /// lease: su identidad está en el backend desde su verificación (el porqué, en ese efecto).
     ///
     /// **Cómo sabe cuál era.** El testigo `SyncIdentity` es local y `assignIdentity` le captura las coordenadas del record,
     /// que no cambian. Se restaura una fila solo si las tres cosas son ciertas:
@@ -1147,6 +1149,15 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
             // (`restoreRelayIdentities`): es la última vez que se miran, y va delante de TODAS las salidas porque las que se
             // unen sin drenar dejan el drain y el pull al runtime. Aquí el espejo ya está apagado, así que no llega nada más,
             // y por eso unos metadatos de CloudKit ilegibles se toleran (ver `restoreRelayIdentities`).
+            //
+            // **Delante también de la pregunta del lease, y en TODAS sus respuestas** (ticket descartado
+            // `displaced-leader-after-the-cutover-restores-its-own-identity-over-the-relays`, 2026-09-25). Dos razones medidas:
+            //  - la identidad que se devuelve el backend la tiene, también en quien se une a la migración de otro: aquí solo
+            //    llega quien pasó SU cutover, al cutover solo se entra con la verificación en `.match`, y la hoja del Merkle
+            //    lleva el `sync_id`. La que trajo el espejo, en cambio, solo la tiene si quien la acuñó la llegó a subir;
+            //  - el runtime puede estar corriendo ya: `CloudSyncRuntime.canRunDomain` no mira los efectos pendientes, y en
+            //    `done` el sello sigue en `.proceedMigration` hasta el cierre. Detrás de la red de la pregunta, su pull
+            //    llegaba antes y creaba un born-remote con la identidad del backend, y la fila ya no se restauraba.
             do {
                 try restoreRelayIdentities(toleratingUnreadableRecords: true)
             } catch {

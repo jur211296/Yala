@@ -273,3 +273,16 @@ esa salida no existe sin romper «el cutover jamás hace rollback»: el marcador
 admitía «sale **o se recupera**», y la recuperación (esperar sin subir, unirse cuando el otro cierra) era
 lo correcto. **How to apply:** cuando el encargo diga *cómo* arreglarlo, comprueba que ese cómo es legal en
 la fase del caso, no solo en la del ticket hermano del que copia el molde; y déjalo por escrito en el Paso 0.
+
+## Cuarto caso (2026-09-25): implementé el arreglo del encargo y la premisa era falsa
+
+Esta vez el encargo lo escribí yo, la noche anterior, con un «inferido» de una lente: el líder desplazado tras
+el cutover «se devuelve una identidad que el backend no conoce». Lo implementé tal cual, con tests y seis
+mutantes muertos, y no me paré a medir la premisa. Estaba mal: al reconcile de `done` solo se llega tras la
+verificación en `.match`, y el Merkle lleva el `sync_id`. Así que el backend SIEMPRE tiene esa identidad. Lo
+cazaron dos lentes a la vez, y el arreglo además abría un duplicado en el caso principal. Se retiró: ticket a
+`discarded` y código intacto.
+**How to apply:** antes de implementar, ve al «Inferido» del ticket y pregunta qué paso del flujo lo haría
+imposible. Aquí bastaba recorrer la máquina de estados hacia atrás desde el efecto: una pregunta sobre qué ha
+tenido que pasar para llegar a él. Si el encargo te «elige la opción robusta», elige solo entre opciones que
+arreglen algo que exista.
