@@ -1787,7 +1787,9 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         // puede tener marcador nunca (no hay corpus de esa cuenta en CloudKit); sin filas que subir, no hay nada que mezclar.
         // Y ANTES del guard de backend vacío: ese guard sigue el adopt —cambia el modo— y con un corpus ajeno en local eso
         // lo deja dentro de una cuenta que no es suya, listo para subir en la primera edición.
-        if let blocked = adoptLineageGate(prePlan, inventory: preInventory, enumeration: enumeration) { return blocked }
+        var reboundWithoutIdentity = 0
+        if let blocked = adoptLineageGate(prePlan, inventory: preInventory, enumeration: enumeration,
+                                          reboundWithoutIdentity: &reboundWithoutIdentity) { return blocked }
 
         if backendSyncIDs.isEmpty && pendingUploads > 0 {
             CloudSyncBreadcrumb.adoptReconcileAbortedEmptyBackend(orphans: pendingUploads)
@@ -1799,7 +1801,8 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         // backend). El conteo sale del plan preliminar; el backfill las materializa (syncID + testigo
         // SyncIdentity). El eco del drain lo previene el contrato de baseline de I14 (punto ii) — igual que
         // en el líder.
-        let identityAssigned = prePlan.identityCount
+        // Menos las que la guarda de linaje acaba de casar con una fila de la cuenta: esas no las acuña el backfill.
+        let identityAssigned = prePlan.identityCount - reboundWithoutIdentity
         // Un backfill que no termina deja filas SIN identidad, y el diff las cuenta como `needsIdentity`, no como
         // huérfanas: el adopt podía cerrarse sin subirlas. `.localFailure`, como el inventario ilegible.
         do {
@@ -1823,7 +1826,8 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         // Y otra vez sobre el plan DEFINITIVO, que es el que sube (hallazgo de la review): una fila que el import confirme
         // entre las dos lecturas no estaba en el preliminar, y con un preliminar sin nada que subir la guarda no había
         // pedido prueba. El backfill ya corrió, pero solo acuña identidades locales: no sube nada.
-        if let blocked = adoptLineageGate(plan, inventory: inventory, enumeration: enumeration) { return blocked }
+        if let blocked = adoptLineageGate(plan, inventory: inventory, enumeration: enumeration,
+                                          reboundWithoutIdentity: &reboundWithoutIdentity) { return blocked }
         guard !plan.orphans.isEmpty else { return .completed(uploaded: 0, identityAssigned: identityAssigned) }
 
         // Paso 6: fetch dirigido de EXACTAMENTE las huérfanas del plan → emisión fila-COMPLETA por el seam del
@@ -2002,10 +2006,15 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     /// implicaba traerlas. Sin él, la exportación del líder puede estar parada —es justo por qué el marcador no llegó—: la
     /// cuenta (`Account.shortcutID`, que nace con la fila) se comparte, pero los movimientos y categorías del líder siguen aquí
     /// sin `syncID`, el backfill les acuñaría una identidad fresca y el adopt SUBIRÍA EL LIBRO ENTERO DUPLICADO. Por eso,
-    /// en cada tabla con algo que subir, toda fila viva del backend tiene que estar ya en local.
+    /// en cada tabla con algo que subir, ninguna fila viva del backend que falte aquí puede tener gemela en lo que sube: las
+    /// que casan por una clave de linaje única toman su identidad, y una que falta sin gemela posible —borrada aquí, con lo
+    /// que sube creado aquí después— ya no bloquea (`adoptSharedRowsProof`).
+    /// `reboundWithoutIdentity` suma las filas SIN `syncID` que la prueba casó con una de la cuenta: ya no las acuña el
+    /// backfill, y el rastro `identityAssigned` no las cuenta.
     private func adoptLineageGate(_ plan: AdoptOrphanDiff.Plan,
                                   inventory: [(table: String, syncID: UUID?)],
-                                  enumeration: BackendEnumeration) -> AdoptReconcileOutcome? {
+                                  enumeration: BackendEnumeration,
+                                  reboundWithoutIdentity: inout Int) -> AdoptReconcileOutcome? {
         let relevant = Self.adoptLineageRelevantCount(plan)
         guard relevant > 0 else { return nil }
         do {
@@ -2013,8 +2022,16 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         } catch {
             return .localFailure
         }
-        switch Self.adoptSharedRowsProof(plan: plan, inventory: inventory, liveByTable: enumeration.liveByTable) {
-        case .proven(let shared):
+        let proof: AdoptSharedRowsProof
+        do {
+            let resolved = try resolveLineageCoverage(plan: plan, inventory: inventory, enumeration: enumeration)
+            proof = resolved.proof
+            reboundWithoutIdentity += resolved.reboundWithoutIdentity
+        } catch {
+            return .localFailure
+        }
+        switch proof {
+        case .proven(let shared, _):
             CloudSyncBreadcrumb.adoptReconcileLineageProvenBySharedRows(sharedRows: shared, pending: relevant)
             return nil
         case .noSharedRows:
@@ -2028,34 +2045,292 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
 
     /// Veredicto de la prueba del adopt por filas de la cuenta (sin marcador). `nonisolated`: la compara la lógica de tests.
     nonisolated enum AdoptSharedRowsProof: Equatable {
-        /// Comparte filas vivas con la cuenta y, en cada tabla con algo que subir, tiene ya todas las de la cuenta.
-        case proven(sharedRows: Int)
+        /// Comparte filas vivas con la cuenta y ninguna fila de la cuenta que falta aquí puede tener gemela en lo que sube.
+        /// `rebinds` = las filas locales sin identidad del backend que casan, por una clave de linaje ÚNICA, con una fila de
+        /// la cuenta que aquí falta: toman esa identidad en vez de acuñar otra (ticket
+        /// `lineage-coverage-blocks-forever-after-a-row-deleted-during-the-wait`).
+        case proven(sharedRows: Int, rebinds: [LineageRebind] = [])
         /// No comparte ninguna fila viva: el corpus no es de esta cuenta (o aún no llegó nada).
         case noSharedRows
-        /// Comparte, pero a `table` —que tiene algo que subir— le faltan `missing` filas vivas de la cuenta: sus identidades
-        /// no llegaron, y lo que sube podría ser la misma fila con otra identidad. Primera tabla en orden alfabético.
+        /// Comparte, pero a `table` —que tiene algo que subir— le faltan `missing` filas vivas de la cuenta y le queda alguna
+        /// fila que podría ser una de ellas con otra identidad: lo que sube podría duplicarla. Primera tabla en orden alfabético.
         case accountRowsMissing(table: String, missing: Int)
     }
 
-    /// La prueba del adopt SIN marcador (ver `adoptLineageGate`): alguna fila VIVA del backend en local
-    /// (`lineageSharedLiveRows`, la de la ida) Y, en cada tabla del `plan` con algo que subir (huérfanas o filas sin
-    /// identidad, fuera de las exentas), TODAS las filas vivas del backend ya en local. La cobertura se pide también en las
-    /// tablas de identidad propia, aunque ahí una fila no puede duplicarse: es la misma condición que el marcador daba por
-    /// hecho —«llegó todo»— y no depende de saber qué tabla acuña qué.
-    static func adoptSharedRowsProof(plan: AdoptOrphanDiff.Plan,
-                                     inventory: [(table: String, syncID: UUID?)],
-                                     liveByTable: [String: Set<UUID>]) -> AdoptSharedRowsProof {
-        let shared = lineageSharedLiveRows(inventory: inventory, liveByTable: liveByTable)
-        guard shared > 0 else { return .noSharedRows }
+    /// Una fila local SIN identidad del backend (sin `syncID`, o con una que el backend no conoce ni viva ni borrada): lo
+    /// que va a subir, y por eso la única que podría ser la gemela de una fila de la cuenta que aquí falta. `ref` la
+    /// identifica ante el llamador. `key` = su clave de linaje, solo en tablas sintéticas. `provenNew` = consta en el
+    /// historial de este teléfono que se CREÓ aquí después de la última escritura que conoce el backend: el líder no pudo
+    /// subirla. `fusionKey` = su clave de fusión si es una semilla que un deduplicador funde (`LineageTwinKey.fusion`).
+    nonisolated struct LineageCandidate: Equatable {
+        let table: String
+        let key: String?
+        let ref: Int
+        var provenNew: Bool = false
+        var fusionKey: String?
+    }
+
+    /// La candidata `ref` es la fila `syncID` de la cuenta: toma esa identidad.
+    nonisolated struct LineageRebind: Equatable {
+        let ref: Int
+        let syncID: UUID
+    }
+
+    /// Las filas VIVAS del backend que faltan en local, por tabla, en las tablas del `plan` con algo que subir (huérfanas o
+    /// filas sin identidad, fuera de las exentas). Solo ahí una fila que falta puede duplicarse.
+    static func lineageMissingRows(plan: AdoptOrphanDiff.Plan,
+                                   inventory: [(table: String, syncID: UUID?)],
+                                   liveByTable: [String: Set<UUID>]) -> [String: Set<UUID>] {
         let local = Dictionary(grouping: inventory, by: \.table).mapValues { Set($0.compactMap(\.syncID)) }
         let uploading = Set(plan.orphans.filter { !$0.value.isEmpty }.keys)
             .union(plan.needsIdentity.filter { $0.value > 0 }.keys)
             .subtracting(adoptLineageExemptTables)
-        for table in uploading.sorted() {
-            let missing = (liveByTable[table] ?? []).subtracting(local[table] ?? []).count
-            if missing > 0 { return .accountRowsMissing(table: table, missing: missing) }
+        var out: [String: Set<UUID>] = [:]
+        for table in uploading {
+            let missing = (liveByTable[table] ?? []).subtracting(local[table] ?? [])
+            if !missing.isEmpty { out[table] = missing }
         }
-        return .proven(sharedRows: shared)
+        return out
+    }
+
+    /// La prueba del adopt SIN marcador (ver `adoptLineageGate`), y la de la ida (`checkForwardLineage`): alguna fila VIVA
+    /// del backend en local (`lineageSharedLiveRows`) Y, en cada tabla del `plan` con algo que subir, o no falta ninguna fila
+    /// viva de la cuenta, o ninguna de las filas que suben puede ser una de las que faltan.
+    ///
+    /// **Por qué no «están todas»** (ticket `lineage-coverage-blocks-forever-after-a-row-deleted-during-the-wait`). Una fila
+    /// que el líder subió y este teléfono BORRÓ durante la espera no llega nunca, y el único que la tombstonea en el backend
+    /// es el motor del líder, callado: relevo y adopt esperaban para siempre. El duplicado que la cobertura evita (ticket
+    /// `migration-takeover-may-duplicate-rows-whose-leader-identities-never-arrived`) necesita que la MISMA fila esté aquí
+    /// con otra identidad, así que la pregunta es por las candidatas (`candidates`, las filas sin identidad del backend), y
+    /// **falla cerrado**: una candidata es sospechosa salvo prueba.
+    ///
+    /// Por tabla, en orden:
+    /// 1. **Casado por clave de linaje, solo si es ÚNICA** (tablas sintéticas): una fila que falta y una candidata con la
+    ///    misma clave (`LineageTwinKey`), cuando la clave sale UNA vez entre todas las vivas de esa tabla en el backend y UNA
+    ///    vez entre las candidatas. La candidata toma la identidad del backend (`rebinds`) y los dos salen de la cuenta. Una
+    ///    clave repetida no casa nada: importaciones, recurrentes o el `createdAt` por defecto de la migración ligera repiten
+    ///    el milisegundo, y casar dentro de un grupo cruzaría identidades.
+    /// 2. Si no queda ninguna fila por explicar, la tabla pasa.
+    /// 3. Si quedan, la tabla bloquea mientras quede alguna candidata **sospechosa**: ni probada nueva (`provenNew`) ni
+    ///    semilla cuya clave de fusión es la de alguna fila sin explicar (`fusionKey`, `liveFusionKeys`: si sube duplicada,
+    ///    el deduplicador del arranque la funde con esa). Una clave de linaje que no casa NO prueba nada: el `createdAt` de
+    ///    las filas anteriores a su columna lo rellenó cada teléfono por su cuenta.
+    ///
+    /// Una fila del backend SIN clave legible en una tabla sintética apaga el casado de toda la tabla: puede ser la gemela
+    /// verdadera de cualquier candidata, así que ninguna clave es «única».
+    ///
+    /// Así una fila borrada aquí deja de bloquear cuando lo que sube es de este teléfono (lo creado durante la espera) o ya
+    /// casó; y sigue bloqueando mientras quede aquí una fila del líder sin su identidad que no se pueda casar.
+    static func adoptSharedRowsProof(plan: AdoptOrphanDiff.Plan,
+                                     inventory: [(table: String, syncID: UUID?)],
+                                     liveByTable: [String: Set<UUID>],
+                                     liveKeys: [UUID: String] = [:],
+                                     liveFusionKeys: [UUID: String] = [:],
+                                     candidates: [LineageCandidate] = []) -> AdoptSharedRowsProof {
+        let shared = lineageSharedLiveRows(inventory: inventory, liveByTable: liveByTable)
+        guard shared > 0 else { return .noSharedRows }
+        let missingByTable = lineageMissingRows(plan: plan, inventory: inventory, liveByTable: liveByTable)
+        var rebinds: [LineageRebind] = []
+        for table in missingByTable.keys.sorted() {
+            var unexplained = missingByTable[table] ?? []
+            let tableCandidates = candidates.filter { $0.table == table }
+            var rebound: Set<Int> = []
+            let tableLive = liveByTable[table] ?? []
+            if LineageTwinKey.syntheticTables.contains(table), tableLive.allSatisfy({ liveKeys[$0] != nil }) {
+                let backendKeyCount = Dictionary(grouping: (liveByTable[table] ?? []).compactMap { liveKeys[$0] }, by: { $0 })
+                    .mapValues(\.count)
+                let candidatesByKey = Dictionary(grouping: tableCandidates.filter { $0.key != nil }, by: { $0.key ?? "" })
+                for id in unexplained.sorted(by: { $0.uuidString < $1.uuidString }) {
+                    guard let key = liveKeys[id], backendKeyCount[key] == 1,
+                          let twins = candidatesByKey[key], twins.count == 1, let twin = twins.first else { continue }
+                    rebinds.append(LineageRebind(ref: twin.ref, syncID: id))
+                    rebound.insert(twin.ref)
+                    unexplained.remove(id)
+                }
+            }
+            guard !unexplained.isEmpty else { continue }
+            let unexplainedFusion = Set(unexplained.compactMap { liveFusionKeys[$0] })
+            let suspects = tableCandidates.filter { candidate in
+                guard !rebound.contains(candidate.ref), !candidate.provenNew else { return false }
+                if let fusion = candidate.fusionKey, unexplainedFusion.contains(fusion) { return false }
+                return true
+            }
+            if !suspects.isEmpty { return .accountRowsMissing(table: table, missing: unexplained.count) }
+        }
+        return .proven(sharedRows: shared, rebinds: rebinds)
+    }
+
+    /// Margen sobre la última escritura del backend para dar una fila local por nacida DESPUÉS: cubre relojes de dos
+    /// teléfonos algo desfasados. Hacia arriba es el lado seguro (menos filas probadas nuevas, más espera).
+    static let lineageBornAfterMargin: TimeInterval = 10 * 60
+
+    /// La prueba de cobertura con lo que pide de la base local, y sus re-identificaciones APLICADAS y guardadas. Solo lee
+    /// candidatas e historial si falta alguna fila (el camino feliz no paga nada). LANZA si la base local no se deja leer o
+    /// el guardado falla —y entonces deshace lo suyo—: el llamador lo cuenta como `localFailure`, nunca como «probado».
+    ///
+    /// Re-identificar antes de probar nada es idempotente: la pasada siguiente encuentra esas filas ya cubiertas.
+    private func resolveLineageCoverage(plan: AdoptOrphanDiff.Plan,
+                                        inventory: [(table: String, syncID: UUID?)],
+                                        enumeration: BackendEnumeration)
+        throws -> (proof: AdoptSharedRowsProof, reboundWithoutIdentity: Int) {
+        let missing = Self.lineageMissingRows(plan: plan, inventory: inventory, liveByTable: enumeration.liveByTable)
+        var collected = LineageCandidates()
+        if Self.lineageSharedLiveRows(inventory: inventory, liveByTable: enumeration.liveByTable) > 0, !missing.isEmpty {
+            let bornAfter: Set<PersistentIdentifier>
+            if let lastWriteMs = enumeration.lastWriteMs {
+                let cutoff = Date(timeIntervalSince1970: Double(lastWriteMs) / 1000).addingTimeInterval(Self.lineageBornAfterMargin)
+                bornAfter = try lineageRowsBornHere(after: cutoff)
+            } else {
+                bornAfter = []
+            }
+            collected = try collectLineageCandidates(tables: Set(missing.keys), backendKnown: enumeration.known,
+                                                     bornAfter: bornAfter)
+        }
+        let proof = Self.adoptSharedRowsProof(plan: plan, inventory: inventory, liveByTable: enumeration.liveByTable,
+                                              liveKeys: enumeration.liveKeys, liveFusionKeys: enumeration.liveFusionKeys,
+                                              candidates: collected.candidates)
+        var reboundWithoutIdentity = 0
+        if case .proven(_, let rebinds) = proof, !rebinds.isEmpty {
+            reboundWithoutIdentity = rebinds.filter { collected.withoutIdentity.contains($0.ref) }.count
+            var undo: [() -> Void] = []
+            do {
+                for rebind in rebinds {
+                    guard let rebinder = collected.rebinders[rebind.ref] else { continue }
+                    undo.append(try rebinder(rebind.syncID))
+                }
+                try context.save()
+            } catch {
+                // Deshace SOLO lo suyo, en orden inverso: el contexto es compartido y un `rollback` tiraría ediciones ajenas.
+                for revert in undo.reversed() { revert() }
+                #if DEBUG
+                print("MigrationWorkExecutor: re-identificación del linaje falló: \(error)")
+                #endif
+                throw error
+            }
+            CloudSyncBreadcrumb.lineageRowsRebound(count: rebinds.count)
+        }
+        return (proof, reboundWithoutIdentity)
+    }
+
+    /// Lo que la prueba necesita de las candidatas locales: el veredicto puro solo ve `candidates`; `rebinders` sabe dar
+    /// otra identidad a las de tablas sintéticas (y devuelve cómo deshacerlo); `withoutIdentity` marca las que no tenían.
+    private struct LineageCandidates {
+        var candidates: [LineageCandidate] = []
+        var rebinders: [Int: (UUID) throws -> () -> Void] = [:]
+        var withoutIdentity: Set<Int> = []
+    }
+
+    /// Las filas de `tables` sin identidad del backend (sin identidad, o con una que el backend no conoce ni viva ni borrada),
+    /// con su clave de linaje en las sintéticas, si consta que nacieron aquí después de la última escritura del backend
+    /// (`bornAfter`) y si son semillas que el deduplicador funde solo. Fetch por el inventario (mismo `catch`, rastro y seam).
+    private func collectLineageCandidates(tables: Set<String>, backendKnown: Set<UUID>,
+                                          bornAfter: Set<PersistentIdentifier>) throws -> LineageCandidates {
+        var out = LineageCandidates()
+        func add<M: PersistentModel>(_ type: M.Type, table: String, identity: (M) -> UUID?,
+                                     key: ((M) -> String?)? = nil, fusion: (M) -> String? = { _ in nil },
+                                     rebind: ((M, UUID?, UUID) throws -> () -> Void)? = nil) throws {
+            guard tables.contains(table) else { return }
+            for model in try fetchInventory(M.self, step: "lineage-candidates") {
+                let current = identity(model)
+                if let current, backendKnown.contains(current) { continue }
+                let ref = out.candidates.count
+                if current == nil { out.withoutIdentity.insert(ref) }
+                out.candidates.append(LineageCandidate(table: table, key: key?(model) ?? nil, ref: ref,
+                                                       provenNew: bornAfter.contains(model.persistentModelID),
+                                                       fusionKey: fusion(model)))
+                if let rebind { out.rebinders[ref] = { newID in try rebind(model, current, newID) } }
+            }
+        }
+        func synthetic<M: PersistentModel & SyncIdentifiable>(_ className: String) -> (M, UUID?, UUID) throws -> () -> Void {
+            { [weak self] model, current, newID in
+                // El testigo primero: si su lectura lanza, la fila no se ha tocado y no queda nada que deshacer a medias.
+                let witnessUndo = try current.map { try self?.rekeyLineageWitness(entityType: className, from: $0, to: newID) }
+                model.syncID = newID
+                return {
+                    model.syncID = current
+                    witnessUndo??()
+                }
+            }
+        }
+        try add(TransactionItem.self, table: EntityEmissionMap.transactionItem.table, identity: { $0.syncID },
+                key: { LineageTwinKey.created($0.createdAt) }, rebind: synthetic(SyncEntityType.transactionItem))
+        try add(InboxDraft.self, table: EntityEmissionMap.inboxDraft.table, identity: { $0.syncID },
+                key: { LineageTwinKey.created($0.createdAt) }, rebind: synthetic(SyncEntityType.inboxDraft))
+        try add(Category.self, table: EntityEmissionMap.category.table, identity: { $0.syncID }, key: {
+            LineageTwinKey.category(isDefaultSeed: $0.isDefaultSeed, iconName: $0.iconName, colorHex: $0.colorHex,
+                                    isIncome: $0.isIncome)
+        }, fusion: {
+            LineageTwinKey.category(isDefaultSeed: $0.isDefaultSeed, iconName: $0.iconName, colorHex: $0.colorHex,
+                                    isIncome: $0.isIncome)
+        }, rebind: synthetic(SyncEntityType.category))
+        try add(FavoritePayment.self, table: EntityEmissionMap.favoritePayment.table, identity: { $0.syncID },
+                key: { LineageTwinKey.created($0.createdAt) }, rebind: synthetic(SyncEntityType.favoritePayment))
+        try add(MerchantMemory.self, table: EntityEmissionMap.merchantMemory.table, identity: { $0.syncID },
+                key: { LineageTwinKey.merchant($0.merchantCanonical) }, rebind: synthetic(SyncEntityType.merchantMemory))
+        try add(Budget.self, table: EntityEmissionMap.budget.table, identity: { $0.id })
+        try add(ScheduledPayment.self, table: EntityEmissionMap.scheduledPayment.table, identity: { $0.id })
+        try add(Account.self, table: EntityEmissionMap.account.table, identity: { $0.shortcutID })
+        try add(Subcategory.self, table: EntityEmissionMap.subcategory.table, identity: { $0.shortcutID },
+                fusion: { $0.isDefaultSeed ? LineageTwinKey.subcategorySeedFusion(iconName: $0.iconName) : nil })
+        try add(Tag.self, table: EntityEmissionMap.tag.table, identity: { $0.id })
+        try add(NotificationItem.self, table: EntityEmissionMap.notificationItem.table, identity: { $0.id },
+                fusion: { LineageTwinKey.notificationFusion(typeRaw: $0.typeRaw) })
+        try add(CashFlowPlan.self, table: EntityEmissionMap.cashFlowPlan.table, identity: { $0.id })
+        try add(CashFlowLine.self, table: EntityEmissionMap.cashFlowLine.table, identity: { $0.id })
+        try add(CashFlowOverride.self, table: EntityEmissionMap.cashFlowOverride.table, identity: { $0.id })
+        try add(GroupBridgePreference.self, table: EntityEmissionMap.groupBridgePreference.table, identity: { $0.id })
+        return out
+    }
+
+    /// El testigo `SyncIdentity` de una huérfana re-identificada pasa a la identidad de la cuenta, con su ancla de contenido
+    /// y sus coordenadas de CloudKit (es la misma fila) y `lastReboundAt` estampado. Si ya hay un testigo de la identidad
+    /// nueva —este teléfono tuvo esa fila y la borró—, no se toca ninguno: dos testigos de un `syncID` no caben, y el viejo
+    /// solo deja de resolverse (un tombstone de su identidad no llegará nunca). Sin testigo viejo no hay nada que hacer: el
+    /// backfill materializa el de la identidad nueva. Sin `save`: lo hace el llamador. Devuelve cómo deshacerlo.
+    private func rekeyLineageWitness(entityType: String, from oldID: UUID, to newID: UUID) throws -> () -> Void {
+        let existingNew = try context.fetch(FetchDescriptor<SyncIdentity>(
+            predicate: #Predicate<SyncIdentity> { $0.syncID == newID }))
+        guard existingNew.isEmpty else { return {} }
+        let old = try context.fetch(FetchDescriptor<SyncIdentity>(
+            predicate: #Predicate<SyncIdentity> { $0.syncID == oldID && $0.entityType == entityType }))
+        let previous = old.map { ($0, $0.lastReboundAt) }
+        for witness in old {
+            witness.syncID = newID
+            witness.lastReboundAt = now()
+        }
+        return {
+            for (witness, rebound) in previous {
+                witness.syncID = oldID
+                witness.lastReboundAt = rebound
+            }
+        }
+    }
+
+    /// Las filas que consta en el historial de SwiftData que se CREARON en este teléfono —transacción sin el autor del
+    /// espejo de CloudKit, que firma lo que BAJÓ— después de `cutoff`. Un líder cuya última escritura en el backend es
+    /// anterior no pudo subirlas, así que no son gemelas de nada suyo. Solo lee desde `cutoff`. LANZA si el historial no se
+    /// deja leer: el llamador lo cuenta como avería local.
+    private func lineageRowsBornHere(after cutoff: Date) throws -> Set<PersistentIdentifier> {
+        let transactions: [DefaultHistoryTransaction]
+        do {
+            if _testInventoryFetchThrows?("lineage-born-here", "History") == true { throw CocoaError(.fileReadCorruptFile) }
+            transactions = try context.fetchHistory(
+                HistoryDescriptor<DefaultHistoryTransaction>(predicate: #Predicate { $0.timestamp > cutoff }))
+        } catch {
+            #if DEBUG
+            print("MigrationWorkExecutor: fetchHistory del linaje falló: \(error)")
+            #endif
+            CloudSyncBreadcrumb.migrationInventoryReadFailed(step: "lineage-born-here", entity: "History")
+            throw MigrationExecutorError.inventoryUnreadable(entity: "History")
+        }
+        var born: Set<PersistentIdentifier> = []
+        for transaction in transactions {
+            if let author = transaction.author, author.hasPrefix(PrivateSignOutExportGateLogic.mirrorAuthorPrefix) { continue }
+            for change in transaction.changes {
+                if case .insert(let insert) = change { born.insert(insert.changedPersistentIdentifier) }
+            }
+        }
+        return born
     }
 
     /// Cuántas filas VIVAS del backend están en el inventario local, cada una en su tabla y fuera de `adoptLineageExemptTables`.
@@ -2103,12 +2378,18 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     /// 35 % y que viaja con su exportación a iCloud —que puede ser justo lo que se paró—. Sin ella, el backfill de aquí
     /// acuña otra —los testigos del rebind son locales de cada teléfono: aquí no hay ninguno del líder—, el servidor solo deduplica por `(user_id, sync_id)` y el
     /// `verify` baja las copias del líder ANTES de contar: el Merkle cuadra con el libro doble. Por eso, en cada tabla con
-    /// algo que subir, toda fila viva del backend tiene que estar ya aquí (`.accountRowsMissing` si no).
+    /// algo que subir, ninguna fila viva del backend que falte aquí puede tener gemela en lo que sube (`.accountRowsMissing` si puede).
     ///
     /// Orden, y es el del reconcile del adopt: el inventario local primero (una avería local no paga la enumeración), luego
     /// la enumeración, y el Merkle tiene que darla por completa ANTES de cualquier veredicto: para decir «no hay nada» o
     /// «no comparte nada», y también para decir «llegó todo», porque una página que faltó escondería justo las filas que no
-    /// están aquí (sesgo a esperar, jamás a proceder ni a bloquear por una página que faltó). No muta nada.
+    /// están aquí (sesgo a esperar, jamás a proceder ni a bloquear por una página que faltó).
+    ///
+    /// **Una fila que falta solo bloquea si aquí puede tener gemela** (ticket
+    /// `lineage-coverage-blocks-forever-after-a-row-deleted-during-the-wait`, ver `adoptSharedRowsProof`): una fila que este
+    /// teléfono borró durante la espera ya no deja el relevo esperando para siempre cuando lo que sube lo creó este teléfono
+    /// después. Lo único que muta es eso: las filas del líder que casan por una clave de linaje única toman su identidad (y
+    /// se guardan) antes de devolver `proven`. Nada más: ni backfill, ni encolado, ni red.
     func checkForwardLineage() async -> ForwardLineageOutcome {
         let inventory: [(table: String, syncID: UUID?)]
         do {
@@ -2123,8 +2404,14 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         if shared > 0 {
             let liveRows = live.values.reduce(0) { $0 + $1.count }
             let plan = AdoptOrphanDiff.compute(inventory: inventory, backendSyncIDs: enumeration.known)
-            switch Self.adoptSharedRowsProof(plan: plan, inventory: inventory, liveByTable: enumeration.liveByTable) {
-            case .proven(let sharedRows):
+            let proof: AdoptSharedRowsProof
+            do {
+                    proof = try resolveLineageCoverage(plan: plan, inventory: inventory, enumeration: enumeration).proof
+            } catch {
+                return .localFailure
+            }
+            switch proof {
+            case .proven(let sharedRows, _):
                 CloudSyncBreadcrumb.forwardLineageChecked(verdict: "proven", liveRows: liveRows, sharedRows: sharedRows)
                 return .proven(sharedRows: sharedRows)
             case .accountRowsMissing(let table, let missing):
@@ -2166,6 +2453,14 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     private struct BackendEnumeration {
         let known: Set<UUID>
         let liveByTable: [String: Set<UUID>]
+        /// La clave de linaje (`LineageTwinKey.backend`) de cada fila VIVA de una tabla sintética cuyos campos la dejan leer.
+        /// Sin entrada = clave ilegible, que la prueba de cobertura trata como «puede ser cualquiera».
+        var liveKeys: [UUID: String] = [:]
+        /// La clave de fusión (`LineageTwinKey.fusion`) de cada fila VIVA que la tiene: semillas que un deduplicador funde.
+        var liveFusionKeys: [UUID: String] = [:]
+        /// El instante (ms, componente físico del HLC) de la última escritura que conoce el backend, upserts y tombstones.
+        /// `nil` si alguna no se deja leer o no hay ninguna: entonces ninguna fila local se da por nacida después.
+        var lastWriteMs: Int64?
     }
 
     /// Enumera TODAS las identidades que el backend conoce (upserts Y tombstones) por páginas read-only (idiom
@@ -2174,23 +2469,39 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     private func enumerateBackendSyncIDs() async -> BackendEnumeration? {
         var known: Set<UUID> = []
         var liveByTable: [String: Set<UUID>] = [:]
+        var liveKeys: [UUID: String] = [:]
+        var liveFusionKeys: [UUID: String] = [:]
+        var lastWriteMs: Int64?
+        var lastWriteReadable = true
         var cursor: Int64 = 0
         while true {
             switch await tombstoneSource.pullPage(since: cursor, limit: 500) {
             case let .page(page):
                 for delta in page.deltas {
                     known.insert(delta.syncID)
+                    do {
+                        let physical = try HLC.parse(delta.hlc).physicalMs
+                        lastWriteMs = max(lastWriteMs ?? physical, physical)
+                    } catch {
+                        lastWriteReadable = false
+                    }
                     if delta.op == .tombstone {
                         // El wire es materialized-rows (cada fila aparece con su ESTADO final), pero el
                         // remove es defensivo por si un upsert previo de la misma identidad ya la contó viva.
                         liveByTable[delta.entityType]?.remove(delta.syncID)
+                        liveKeys[delta.syncID] = nil
+                        liveFusionKeys[delta.syncID] = nil
                     } else {
                         liveByTable[delta.entityType, default: []].insert(delta.syncID)
+                        liveKeys[delta.syncID] = LineageTwinKey.backend(table: delta.entityType, fields: delta.fields)
+                        liveFusionKeys[delta.syncID] = LineageTwinKey.fusion(table: delta.entityType, fields: delta.fields)
                     }
                 }
                 let next = max(page.maxServerSeq, cursor)
                 if page.deltas.isEmpty || next <= cursor {   // agotado / sin progreso
-                    return BackendEnumeration(known: known, liveByTable: liveByTable)
+                    return BackendEnumeration(known: known, liveByTable: liveByTable, liveKeys: liveKeys,
+                                              liveFusionKeys: liveFusionKeys,
+                                              lastWriteMs: lastWriteReadable ? lastWriteMs : nil)
                 }
                 cursor = next
             case .sessionExpired, .accountUnavailable, .transient:
