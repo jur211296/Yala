@@ -1019,9 +1019,6 @@ final class MigrationRunner {
             return
         }
         await runGuarded {
-            // M1 (review adversarial): un journal corrupto que entre por una acción de USUARIO también
-            // debe sonar + resetear (misma normalización que resume()) — no solo el camino de boot.
-            if try self.normalizeCorruptJournalIfNeeded() { return }
             // Una salida de la espera de `reverseUpload` sin red deja la fase ORIGEN con `.reverseRollback`
             // pendiente, y `handle` REEMPLAZA los pendientes al journalear el evento siguiente: empezar otra vuelta
             // encima borraría el `reverse_abort` sin ejecutarlo, y la vuelta nueva chocaría con la nube aún
@@ -1136,7 +1133,6 @@ final class MigrationRunner {
             return
         }
         await runGuarded {
-            if try self.normalizeCorruptJournalIfNeeded() { return }
             let phase = try self.loadState().readPhase().phase
             let origin = try self.originFromJournal()
             if phase == .reverseUpload {
@@ -1176,7 +1172,6 @@ final class MigrationRunner {
         await runGuarded {
             // Aquí se consume pase lo que pase: la salida ocurre ahora, o el toque llegó tarde y no hay de dónde salir.
             defer { self.migrationCancelRequested = false }
-            if try self.normalizeCorruptJournalIfNeeded() { return }
             _ = try await self.journalMigrationCancel()
         }
     }
@@ -1253,6 +1248,7 @@ final class MigrationRunner {
         isRunning = true
         defer { isRunning = false }
         do {
+            if try stopsOnUndecodableJournal() { return }
             try await body()
         } catch Stop.effectFailed {
             // Efecto journaled + stop; el próximo resume() retoma. Sin ruido adicional (ya hubo breadcrumb).
@@ -2958,39 +2954,22 @@ final class MigrationRunner {
 
     // MARK: - Resume
 
-    /// Normalización compartida (M1): journal ilegible (rot del enum) → breadcrumb RUIDOSO + reset
-    /// completo a `notStarted` (incl. campos scoped — no dejar restos de un intento ilegible).
-    /// Devuelve `true` si hubo corrupción (el caller corta).
-    private func normalizeCorruptJournalIfNeeded() throws -> Bool {
-        let state = try loadState()
-        guard state.readPhase().decodeFailed else { return false }
-        CloudSyncBreadcrumb.migrationPhaseDecodeFailed()
-        state.setPhase(.notStarted)
-        state.setPendingEffects([])
-        state.leaderDeviceID = nil
-        state.verifyMismatchRetries = 0
-        state.verifyNetworkRetries = 0
-        state.snapshotCursorJSON = nil
-        state.markerWrittenSince = nil
-        state.cutoverICloudVerdictRaw = nil
-        state.clearReverseUploadCeiling()
-        state.reverseAbortReasonRaw = nil
-        state.clearReversePreMountCeiling()
-        state.clearSnapshotStallCeiling()
-        state.snapshotExitReasonRaw = nil
-        state.clearForwardStepStallCeiling()
-        state.forwardStepExitReasonRaw = nil
-        state.clearAdoptEffectStallCeiling()
-        state.setReverseOriginPendingEffects([])
-        state.forwardClaimIntentRaw = nil
-        state.startedAt = nil
-        state.updatedAt = now()
-        try context.save()
+    /// **Un journal que este build no entiende no se conduce ni se toca** (ticket
+    /// `an-undecodable-migration-phase-reads-as-never-started`). Hasta ese ticket esto era una «normalización» (M1): sonaba
+    /// y reseteaba la fila entera a `notStarted` sin efectos. Pero el único camino real a un blob que no decodifica es un
+    /// DOWNGRADE —un build con un case nuevo lo escribió—, y resetear ahí borraba una migración o una vuelta EN VUELO
+    /// (con sus pendientes: `.persistICloudMode`, `.reverseRollback`) y dejaba la fase estable más ancha. Ahora se para:
+    /// la fila queda intacta, los dos lectores la leen `.unreadable` y el build que la escribió la retoma donde estaba.
+    ///
+    /// Va en `runGuarded`, antes de cualquier cuerpo, y no en cada entrada: así las seis entradas públicas —y cualquiera
+    /// que se añada— heredan la parada sin tener que acordarse. Devuelve `true` si hay que parar.
+    private func stopsOnUndecodableJournal() throws -> Bool {
+        guard try loadState().isJournalUndecodable else { return false }
+        CloudSyncBreadcrumb.migrationJournalUndecodable(reader: "runner")
         return true
     }
 
     private func resumeInternal() async throws {
-        if try normalizeCorruptJournalIfNeeded() { return }
         let state = try loadState()
         let journaled = state.readPhase().phase
         let resumed = MigrationStateMachine.resume(fromJournaled: journaled)

@@ -2450,36 +2450,29 @@ struct MigrationRunnerTests {
         #expect(j.reverseAbortReasonRaw == "icloudFull")
     }
 
-    /// Los dos sitios de limpieza que ningún otro test recorría (lente de tests): el reset tras un rollback y la
-    /// normalización de un journal ilegible. Sembrados a mano, o «nil al final» no mediría nada.
-    @Test func reverseUploadCeiling_resetAfterRollback_andACorruptJournal_clearTheWholeFamily() async throws {
-        for corrupt in [false, true] {
-            let dir = freshDir(); defer { cleanup(dir) }
-            let context = try makeContext(dir)
-            let fake = FakeExecutor()
-            let state = try seedJournal(
-                context, phase: corrupt ? .reverseUpload : .failedRollback, reverseOriginRaw: "done",
-                reverseUploadLowestPending: 4, reverseUploadProgressAt: fixedNow,
-                reverseUploadCauseRaw: "icloudFull", reverseUploadCauseAt: fixedNow,
-                reverseUploadCauseAccruedSeconds: 800, reverseUploadDefinitiveAt: fixedNow,
-                reverseUploadDefinitiveAccruedSeconds: 800)
-            if corrupt {
-                state.phaseData = Data("no-es-una-fase".utf8)
-                try context.save()
-                await makeRunner(context, fake).resume()
-            } else {
-                await makeRunner(context, fake).resetAfterRollback()
-            }
-            let j = try journal(context)
-            #expect(j.readPhase().phase == .notStarted, "corrupt=\(corrupt)")
-            #expect(j.reverseUploadLowestPending == nil, "corrupt=\(corrupt)")
-            #expect(j.reverseUploadProgressAt == nil, "corrupt=\(corrupt)")
-            #expect(j.reverseUploadCauseRaw == nil, "corrupt=\(corrupt)")
-            #expect(j.reverseUploadCauseAt == nil, "corrupt=\(corrupt)")
-            #expect(j.reverseUploadCauseAccruedSeconds == nil, "corrupt=\(corrupt)")
-            #expect(j.reverseUploadDefinitiveAt == nil, "corrupt=\(corrupt)")
-            #expect(j.reverseUploadDefinitiveAccruedSeconds == nil, "corrupt=\(corrupt)")
-        }
+    /// El sitio de limpieza que ningún otro test recorría (lente de tests): el reset tras un rollback. Sembrado a mano, o
+    /// «nil al final» no mediría nada. Hasta `an-undecodable-migration-phase-reads-as-never-started` este test recorría
+    /// también la «normalización» de un journal ilegible, que ya no existe: ese journal se deja intacto (§17).
+    @Test func reverseUploadCeiling_resetAfterRollback_clearsTheWholeFamily() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        try seedJournal(
+            context, phase: .failedRollback, reverseOriginRaw: "done",
+            reverseUploadLowestPending: 4, reverseUploadProgressAt: fixedNow,
+            reverseUploadCauseRaw: "icloudFull", reverseUploadCauseAt: fixedNow,
+            reverseUploadCauseAccruedSeconds: 800, reverseUploadDefinitiveAt: fixedNow,
+            reverseUploadDefinitiveAccruedSeconds: 800)
+        await makeRunner(context, fake).resetAfterRollback()
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .notStarted)
+        #expect(j.reverseUploadLowestPending == nil)
+        #expect(j.reverseUploadProgressAt == nil)
+        #expect(j.reverseUploadCauseRaw == nil)
+        #expect(j.reverseUploadCauseAt == nil)
+        #expect(j.reverseUploadCauseAccruedSeconds == nil)
+        #expect(j.reverseUploadDefinitiveAt == nil)
+        #expect(j.reverseUploadDefinitiveAccruedSeconds == nil)
     }
 
     /// EL test del hallazgo de la review: tras una salida sin red el journal queda `done` + `[.reverseRollback]`, y
@@ -4524,8 +4517,10 @@ struct MigrationRunnerTests {
         #expect(j.snapshotExitReasonRaw == nil)
     }
 
-    /// Un journal ilegible se normaliza entero, también los campos del techo de la subida.
-    @Test func snapshotCeiling_aCorruptJournal_isNormalizedWithTheWholeFamily() async throws {
+    /// Un journal que este build no entiende se deja INTACTO, también los campos del techo de la subida: el build que lo
+    /// escribió lo retoma donde estaba (ticket `an-undecodable-migration-phase-reads-as-never-started`; hasta ese ticket
+    /// se «normalizaba» a `notStarted` y este test lo exigía).
+    @Test func snapshotCeiling_aJournalThisBuildCannotRead_isLeftIntact() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
         let fake = FakeExecutor()
@@ -4538,12 +4533,13 @@ struct MigrationRunnerTests {
 
         await makeRunner(context, fake).resume()
         let j = try journal(context)
-        #expect(j.readPhase().phase == .notStarted)
-        #expect(j.snapshotStallProgressAt == nil)
-        #expect(j.snapshotStallCauseRaw == nil)
-        #expect(j.snapshotStallCauseAt == nil)
-        #expect(j.snapshotStallCauseAccruedSeconds == nil)
-        #expect(j.snapshotExitReasonRaw == nil)
+        #expect(j.phaseData == Data("no-es-una-fase".utf8))
+        #expect(j.snapshotStallProgressAt == fixedNow)
+        #expect(j.snapshotStallCauseRaw == "localFailure")
+        #expect(j.snapshotStallCauseAt == fixedNow)
+        #expect(j.snapshotStallCauseAccruedSeconds == 10)
+        #expect(j.snapshotExitReasonRaw == "stalled")
+        #expect(fake.uploadCursorsSeen.isEmpty, "no sube nada con una fase que no entiende")
     }
 
     // MARK: - §15 · Techo y salida de los tres pasos sin cifra que baje (ticket `forward-migration-steps-have-no-ceiling-and-no-exit`)
@@ -4894,8 +4890,9 @@ struct MigrationRunnerTests {
         #expect(j.forwardStepExitReasonRaw == nil)
     }
 
-    /// Un journal ilegible se normaliza entero, también los campos del techo de los tres pasos.
-    @Test func forwardStepCeiling_aCorruptJournal_isNormalizedWithTheWholeFamily() async throws {
+    /// Un journal que este build no entiende se deja INTACTO, también los campos del techo de los tres pasos (ticket
+    /// `an-undecodable-migration-phase-reads-as-never-started`; hasta ese ticket se «normalizaba» a `notStarted`).
+    @Test func forwardStepCeiling_aJournalThisBuildCannotRead_isLeftIntact() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
         let fake = FakeExecutor()
@@ -4908,12 +4905,134 @@ struct MigrationRunnerTests {
 
         await makeRunner(context, fake).resume()
         let j = try journal(context)
-        #expect(j.readPhase().phase == .notStarted)
-        #expect(j.forwardStepStallProgressAt == nil)
-        #expect(j.forwardStepStallCauseRaw == nil)
-        #expect(j.forwardStepStallCauseAt == nil)
-        #expect(j.forwardStepStallCauseAccruedSeconds == nil)
-        #expect(j.forwardStepExitReasonRaw == nil)
+        #expect(j.phaseData == Data("no-es-una-fase".utf8))
+        #expect(j.forwardStepStallProgressAt == fixedNow)
+        #expect(j.forwardStepStallCauseRaw == "localFailure")
+        #expect(j.forwardStepStallCauseAt == fixedNow)
+        #expect(j.forwardStepStallCauseAccruedSeconds == 10)
+        #expect(j.forwardStepExitReasonRaw == "stalled")
+        #expect(fake.claimCallCount == 0, "no reclama con una fase que no entiende")
+    }
+
+    // MARK: - §17 · Un journal que este build no entiende no se conduce ni se toca
+    // (ticket `an-undecodable-migration-phase-reads-as-never-started`)
+    //
+    // El único camino real a un blob que no decodifica es un DOWNGRADE: un build con un case nuevo lo escribió. Hasta este
+    // ticket el runner lo «normalizaba» a `notStarted` sin pendientes —borraba una migración en vuelo y dejaba la fase estable
+    // más ancha—, y solo miraba la fase: con los pendientes ilegibles conducía como si no quedara nada por hacer. La matriz
+    // cruza las SEIS entradas públicas con los CINCO campos (tres blobs y dos raw cuyo relleno concede), y cada celda lleva su control con el journal legible: una
+    // aserción de «no hace nada» se cumple sola si el runner no hace nunca nada.
+
+    private enum UndecodableBlob: CaseIterable { case phase, pending, reverseOrigin, claimIntent, reverseOriginRaw }
+
+    private struct EntryCase {
+        let name: String
+        let seed: (MigrationRunnerTests, ModelContext) throws -> MigrationState
+        let act: (MigrationRunner) async -> Void
+    }
+
+    /// Cada fila lleva un pendiente que este build SÍ entiende, como en un downgrade real (la fase nueva junto a un
+    /// `.persistICloudMode` conocido): sin él, la columna de la fase pasaba sola en cinco de seis entradas, porque el
+    /// relleno `notStarted` ya las cortaba por su cuenta (lo cazó la review). Con él, un runner sin la parada lo drena.
+    private var entryCases: [EntryCase] {
+        let known: [Effect] = [.persistICloudMode]
+        return [
+            EntryCase(name: "resume",
+                      seed: { t, c in try t.seedJournal(c, phase: .uploadingSnapshot, pending: known) },
+                      act: { await $0.resume() }),
+            EntryCase(name: "submit", seed: { t, c in try t.seedJournal(c, phase: .notStarted, pending: known) },
+                      act: { await $0.submit(.userActivated(dryRun: false)) }),
+            EntryCase(name: "resetAfterRollback",
+                      seed: { t, c in try t.seedJournal(c, phase: .failedRollback, pending: known) },
+                      act: { await $0.resetAfterRollback() }),
+            EntryCase(name: "cancelMigration",
+                      seed: { t, c in try t.seedJournal(c, phase: .uploadingSnapshot, pending: known) },
+                      act: { await $0.cancelMigration() }),
+            EntryCase(name: "cancelReverse",
+                      seed: { t, c in
+                          try t.seedJournal(c, phase: .reverseUpload, pending: known, reverseOriginRaw: "done") },
+                      act: { await $0.cancelReverse() }),
+            EntryCase(name: "pollLeader",
+                      seed: { t, c in
+                          try t.seedJournal(c, phase: .waitingForLeader, pending: known, leaderDeviceID: "otro") },
+                      act: { await $0.pollLeader() }),
+        ]
+    }
+
+    /// Lo que un runner puede haber hecho: cualquier llamada al executor.
+    private func executorWasTouched(_ fake: FakeExecutor) -> Bool {
+        fake.claimCallCount > 0 || fake.assignIdentityCallCount > 0 || !fake.uploadCursorsSeen.isEmpty
+            || fake.verifyCallCount > 0 || fake.confirmCutoverCallCount > 0 || !fake.executeAttempts.isEmpty
+    }
+
+    @Test func undecodableJournal_noEntryDrivesOrWrites_andTheReadableControlDoes() async throws {
+        let garbage = Data("no-es-del-journal".utf8)
+        for entry in entryCases {
+            // Control: el mismo journal, legible, hace algo — escribe la fila o llama al executor.
+            do {
+                let dir = freshDir(); defer { cleanup(dir) }
+                let context = try makeContext(dir)
+                let fake = FakeExecutor()
+                let state = try entry.seed(self, context)
+                let before = (state.phaseData, state.pendingEffectsData, state.updatedAt)
+                await entry.act(makeRunner(context, fake))
+                let j = try journal(context)
+                let wrote = j.phaseData != before.0 || j.pendingEffectsData != before.1 || j.updatedAt != before.2
+                #expect(wrote || executorWasTouched(fake), "control \(entry.name): el journal legible no hizo nada")
+            }
+            for blob in UndecodableBlob.allCases {
+                let dir = freshDir(); defer { cleanup(dir) }
+                let context = try makeContext(dir)
+                let fake = FakeExecutor()
+                let state = try entry.seed(self, context)
+                switch blob {
+                case .phase: state.phaseData = garbage
+                case .pending: state.pendingEffectsData = garbage
+                case .reverseOrigin: state.reverseOriginPendingEffectsData = garbage
+                case .claimIntent: state.forwardClaimIntentRaw = "intencionDeUnBuildNuevo"
+                case .reverseOriginRaw: state.reverseOriginRaw = "origenDeUnBuildNuevo"
+                }
+                try context.save()
+                let before = (state.phaseData, state.pendingEffectsData, state.reverseOriginPendingEffectsData,
+                              state.updatedAt, state.startedAt, state.forwardClaimIntentRaw, state.reverseOriginRaw)
+                #expect(state.isJournalUndecodable, "\(entry.name)/\(blob)")
+
+                await entry.act(makeRunner(context, fake))
+                let j = try journal(context)
+                let label = "\(entry.name)/\(blob)"
+                #expect(j.phaseData == before.0, "\(label): la fase no se toca")
+                #expect(j.pendingEffectsData == before.1, "\(label): los pendientes no se tocan")
+                #expect(j.reverseOriginPendingEffectsData == before.2, "\(label): los del origen no se tocan")
+                #expect(j.updatedAt == before.3, "\(label): ningún save")
+                #expect(j.startedAt == before.4, "\(label): ni la marca de inicio")
+                #expect(j.forwardClaimIntentRaw == before.5, "\(label): ni la intención")
+                #expect(j.reverseOriginRaw == before.6, "\(label): ni el origen")
+                #expect(!executorWasTouched(fake), "\(label): no conduce")
+            }
+        }
+    }
+
+    /// Cuando el build que lo escribió vuelve (el blob vuelve a decodificar), el runner retoma donde estaba: la parada no
+    /// deja rastro en la fila. Es la salida de este estado, y por eso la fila no se toca. Con el reset de antes, la segunda
+    /// pasada habría encontrado `notStarted` sin pendientes y no habría subido nada. El pendiente conocido hace que la
+    /// primera aserción muerda: sin la parada, `resume` lo drenaría bajo el relleno.
+    @Test func undecodableJournal_isResumedWhereItWas_onceItDecodesAgain() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        let state = try seedJournal(context, phase: .uploadingSnapshot, pending: [.persistICloudMode])
+        let good = state.phaseData
+        state.phaseData = Data("case-de-un-build-nuevo".utf8)
+        try context.save()
+
+        await makeRunner(context, fake).resume()
+        #expect(fake.executeAttempts.isEmpty, "no drena un pendiente con una fase que no entiende")
+        #expect(fake.uploadCursorsSeen.isEmpty)
+
+        state.phaseData = good                                    // «actualiza Yala»: el blob vuelve a entenderse
+        try context.save()
+        await makeRunner(context, fake).resume()
+        #expect(!fake.uploadCursorsSeen.isEmpty, "retoma la subida donde estaba")
     }
 
     // MARK: - §16 · El claim de un ADOPT también tiene techo y salida (ticket `adopt-claim-stays-parked-with-no-ceiling`)

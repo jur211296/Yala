@@ -159,15 +159,19 @@ final class MigrationPhaseStore {
     }
 
     /// El núcleo de la lectura, separado del `ModelContext` para poder medir su `catch`: `ModelContext` es una
-    /// `final class` de SwiftData sin protocolo detrás. Sin fila → `.phase(.notStarted)`. Un `phaseData` que no
-    /// decodifica → `.notStarted` + breadcrumb RUIDOSO, coherente con el runner (ese camino tiene su ticket). Un fetch
-    /// que lanza → `.unreadable` + breadcrumb, **nunca `.notStarted`**.
+    /// `final class` de SwiftData sin protocolo detrás. Sin fila → `.phase(.notStarted)`. Un fetch que lanza →
+    /// `.unreadable` + breadcrumb, **nunca `.notStarted`**. Una fila que se lee pero no se ENTIENDE (fase o pendientes
+    /// que este build no decodifica, `isJournalUndecodable`) → `.unreadable` también, con su propio rastro (ticket
+    /// `an-undecodable-migration-phase-reads-as-never-started`): hasta ese ticket salía el `.notStarted` de relleno de
+    /// `readPhase()`, la fase estable más ancha.
     static func phaseRead(fetch: () throws -> MigrationState?) -> JournaledPhaseRead {
         do {
             guard let state = try fetch() else { return .phase(.notStarted) }
-            let (phase, decodeFailed) = state.readPhase()
-            if decodeFailed { CloudSyncBreadcrumb.migrationPhaseDecodeFailed() }
-            return .phase(phase)
+            guard !state.isJournalUndecodable else {
+                CloudSyncBreadcrumb.migrationJournalUndecodable(reader: "phase-store")
+                return .unreadable
+            }
+            return .phase(state.readPhase().phase)
         } catch {
             #if DEBUG
             print("MigrationPhaseStore: fetch(MigrationState) falló: \(error)")

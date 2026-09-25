@@ -740,11 +740,13 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSyncMigration invalidTransition from=\(from, privacy: .public) event=\(event, privacy: .public)")
     }
 
-    /// RUIDOSO a propósito (fuera de #if DEBUG, patrón SaveBreadcrumb): el `phaseData` journaleado NO
-    /// decodifica (rot del enum `MigrationPhase`) → fallback `.notStarted`. Si dispara en mid-cutover real,
-    /// el gate §i.9 leería "estable" — este rastro lo nombra sin dSYM.
-    static func migrationPhaseDecodeFailed() {
-        logger.notice("CloudSyncMigration phaseDecodeFailed — journal ilegible, fallback notStarted (gate §i.9 leería estable)")
+    /// RUIDOSO a propósito (fuera de #if DEBUG, patrón SaveBreadcrumb): la fila del journal se lee pero algún blob
+    /// (fase o pendientes) NO decodifica en este build — en la práctica, un downgrade desde uno con un case nuevo. Desde
+    /// el ticket `an-undecodable-migration-phase-reads-as-never-started` es `.unreadable` y no `.notStarted`, y el runner
+    /// no conduce ni toca la fila. `reader`: `phase-store` (una línea por lectura, como `migrationJournalUnreadable`) o
+    /// `runner` (una por entrada). Sin PII.
+    static func migrationJournalUndecodable(reader: String) {
+        logger.notice("CloudSyncMigration journalUndecodable reader=\(reader, privacy: .public) — no se decide nada con la fase; el journal queda intacto")
     }
 
     /// El `fetch` de `MigrationState` lanzó (ticket `an-unreadable-migration-journal-reads-as-never-started`). `reader`
