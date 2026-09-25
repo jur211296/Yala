@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-25 (Lima)
 
-**Rama** `2.1` — Merge #244: **Un movimiento re-identificado y borrado en la ventana del relevo ya no reaparece.**
+**Rama** `2.1` — Merge #245: **El líder desplazado tras el cutover: descartado; la restauración de identidades se queda donde estaba.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,24 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#244 · un movimiento re-identificado y borrado en la ventana del relevo ya no reaparece)
+## Esta sesión (#245 · el líder desplazado tras el cutover: descartado)
+
+**Nada cambia para el usuario: el teléfono que vuelve tras quedarse sin red al activar la nube se devuelve una identidad
+que la nube ya tiene, así que no duplica.** Medido: al reconcile de `done` solo llega quien pasó su cutover, al cutover
+solo se entra con la verificación en `.match`, y el Merkle lleva el `sync_id`. El arreglo del ticket (restaurar solo
+detrás de la pregunta del lease) se implementó y se retiró: el runtime arranca con el reconcile pendiente
+(`canRunDomain` no mira los pendientes) y su pull duplicaba en el relevo legítimo. Queda un test que fija la restauración
+antes de la primera petición de red (3 mutantes muertos), el porqué en el código y la regla corregida (decía que un
+pendiente en `done` para el runtime). Gate (7888 unit en 754 suites). Ticket a `discarded`.
+
+### Lo que espera de Jürgen
+
+- Nada que decidir. El hallazgo del runtime quedó en `cloud-engine-can-start-with-a-reverse-abort-pending` (low), que ya
+  tenía esa decisión abierta: si `canRunDomain` exige no tener pendientes, un reconcile que falle para siempre deja el
+  motor parado para siempre.
+- Los device-QA de #239, #237 y #236 siguen pendientes.
+
+## Sesión anterior (#244 · un movimiento re-identificado y borrado en la ventana del relevo ya no reaparece)
 
 **Si borras un movimiento justo mientras la nube se activa y otro teléfono acaba de mandar a iCloud sus datos viejos, el
 borrado llega a la nube: el movimiento ya no reaparece en los otros teléfonos ni deja la verificación sin cuadrar.** El
@@ -32,10 +49,10 @@ desplazado la traducción iba al revés). Gate (7887 unit en 754 suites), 19 mut
 ### Lo que espera de Jürgen
 
 - Nada que decidir. Tickets nuevos: `displaced-leader-after-the-cutover-restores-its-own-identity-over-the-relays`
-  (medium, inferido) y `relay-identity-ledger-missing-after-an-update-mid-migration` (low).
+  (descartado en #245: su premisa era falsa) y `relay-identity-ledger-missing-after-an-update-mid-migration` (low).
 - Los device-QA de #239, #237 y #236 siguen pendientes.
 
-## Sesión anterior (#243 · lo que el líder desplazado exporta tarde a iCloud ya no le cambia la identidad al relevo)
+## Antes (#243 · lo que el líder desplazado exporta tarde a iCloud ya no le cambia la identidad al relevo)
 
 **Si el primer teléfono se queda sin red a mitad de activar la nube, el segundo toma el relevo y termina, y después el
 primero vuelve y manda a iCloud lo que tenía preparado, el segundo ya no acaba con los mismos movimientos dos veces.** La
