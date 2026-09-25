@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-25 (Lima)
 
-**Rama** `2.1` — Merge #250: **Cerrar sesión con la sincronización parada ya no sincroniza a escondidas ni pierde lo editado.**
+**Rama** `2.1` — Merge #251: **Con la sincronización parada, el aviso de cerrar sesión nombra la salida real y no la conexión.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,37 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#250 · cerrar sesión con la sincronización parada ya no sincroniza a escondidas ni pierde lo editado)
+## Esta sesión (#251 · con la sincronización parada, el aviso de cerrar sesión nombra la salida real)
+
+**Con cambios sin subir y la sincronización con la nube parada a propósito, «Cerrar sesión» sigue bloqueándose sin perder
+nada, pero el aviso ya no dice «revisa tu conexión».** Dice la salida que toca, y se elige por lo que enseña «Dónde viven tus
+datos» en ese mismo estado:
+
+- **Registro ilegible:** «cierra Yala y ábrela; si sigue igual, actualízala».
+- **Paso entre la nube e iCloud a medias o fallido:** «termínalo en Dónde viven tus datos», con «Reintentar» si falló.
+- **Paso terminado con el espejo de iCloud aún montado:** «ciérrala y vuelve a abrirla».
+
+Hay tres motivos nuevos en `CloudSignOutFlowLogic.BlockReason` (`engineStoppedReason(read:)`), tres textos en 16 locales,
+y el paso 1 del cierre los deja pasar con `personalPushAllShownReason`.
+
+**La review cazó el caso de la fase estable** (dos lentes): el aviso mandaba a terminar un paso que Almacenamiento enseña
+como terminado.
+
+**Verificado:**
+
+- Gate: 7949 unit en 756 suites, sin rojos; 20 XCUITest en 8 suites, con el centinela limpio.
+- 15 mutantes muertos.
+- Ticket a `done`, sin device-QA.
+
+### Lo que espera de Jürgen
+
+- Lo de #249 abajo sigue igual (device-QA de `adopt-on-an-empty-store-…`, la decisión de
+  `adopt-window-uploads-what-reaches-the-mirror-after-the-icloud-check`, los device-QA de #239/#237/#236).
+- `cloud-signout-collapses-the-personal-push-all-reason-into-permanent` (medium) sigue en backlog: lo pasajero y la sesión
+  caducada del paso 1 aún dicen «revisa tu conexión». Hoy se arregla en `personalPushAllShownReason`.
+- `cloud-signout-does-not-look-at-an-in-flight-migration` (low, inferido) sigue abierto.
+
+## Sesión anterior (#250 · cerrar sesión con la sincronización parada ya no sincroniza a escondidas ni pierde lo editado)
 
 **Si la sincronización con la nube está parada a propósito** —una versión anterior de Yala que no entiende en qué punto iba
 el cambio a la nube, una vuelta a iCloud a medias o fallida, el espejo de iCloud aún montado—, **«Cerrar sesión» ya no
@@ -32,15 +62,9 @@ del cierre consulta `canRunDomain()` antes de cada ciclo; cerrado, sin ciclo ni 
 editado con el motor parado moría con el borrado. Gate (7946 unit en 756 suites, sin rojos; 17 XCUITest en 7 suites), 11
 mutantes muertos. Ticket a `done`, sin device-QA.
 
-### Lo que espera de Jürgen
+Su residual de copy lo cerró #251.
 
-- Lo de #249 abajo sigue igual (device-QA de `adopt-on-an-empty-store-…`, la decisión de
-  `adopt-window-uploads-what-reaches-the-mirror-after-the-icloud-check`, los device-QA de #239/#237/#236).
-- **Copy de producto, sin prisa:** `cloud-signout-with-the-engine-stopped-says-check-your-connection` (medium) — ese
-  bloqueo dice «revisa tu conexión» y la salida real es actualizar Yala o «Reintentar» en Almacenamiento.
-- Ticket nuevo `cloud-signout-does-not-look-at-an-in-flight-migration` (low, inferido).
-
-## Sesión anterior (#249 · un registro de la migración que este build no entiende ya no dice que nunca empezó)
+## Antes (#249 · un registro de la migración que este build no entiende ya no dice que nunca empezó)
 
 **Si una versión anterior de Yala se encuentra el paso de la nube anotado de una forma que no entiende, ya no concluye que
 el cambio nunca empezó:** no mueve nada, deja la anotación intacta y lo dice en Almacenamiento; al actualizar Yala, sigue
