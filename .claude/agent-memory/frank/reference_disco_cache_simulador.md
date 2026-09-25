@@ -49,3 +49,8 @@ hacía inútil liberar disco no aplicaba aquí.
 de la app) bajó el disco de 24 a 13 GB en una hora. Esta vez el grueso era `com.apple.containermanagerd` (**8,4 GB**) y
 `coresymbolicationd` solo 0,9 GB. La misma receta, dentro de `sim-lock.sh -- bash -c '…'` para que nadie arranque el
 simulador mientras se vacía, devolvió 10 GB (13 → 23). ⇒ después de una batería de mutantes, limpia ANTES del gate.
+
+**2026-09-24: al borrar DerivedData ajena, mide el dueño EN EL MISMO comando que borra.** Leí mal un listado de dos
+líneas por directorio (ruta y fecha) y borré la DerivedData del árbol principal de Jürgen creyendo que era la de un
+worktree retirado. Es caché y se regenera, pero le cuesta un build. `PlistBuddy -c "Print :WorkspacePath" <dir>/info.plist`
+justo antes del `find -delete`, y el `find` solo si la ruta es la que esperabas.

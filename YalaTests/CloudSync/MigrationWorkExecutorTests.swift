@@ -110,9 +110,10 @@ private func tombstone(table: String, syncID: UUID, seq: Int64) -> PulledDelta {
 /// Construye un upsert `PulledDelta` (para la enumeración del backend del adopt-reconcile: la enumeración
 /// colecciona syncIDs de upserts Y tombstones; solo importa el `syncID`).
 @MainActor
-private func upsertDelta(table: String, syncID: UUID, seq: Int64) -> PulledDelta {
-    PulledDelta(entityType: table, syncID: syncID, op: .upsert, fields: [:], fieldHlcs: [:],
-                hlc: "hlc", serverSeq: seq, schemaVersion: 1, rawDelta: "{}")
+private func upsertDelta(table: String, syncID: UUID, seq: Int64, fields: [String: WireValue] = [:],
+                         hlc: String = "hlc") -> PulledDelta {
+    PulledDelta(entityType: table, syncID: syncID, op: .upsert, fields: fields, fieldHlcs: [:],
+                hlc: hlc, serverSeq: seq, schemaVersion: 1, rawDelta: "{}")
 }
 
 /// El endpoint de métricas caído: el canario se queda en el spool, donde el test lo lee.
@@ -2299,7 +2300,10 @@ struct MigrationWorkExecutorTests {
         #expect(MigrationWorkExecutor.adoptSharedRowsProof(
             plan: AdoptOrphanDiff.Plan(orphans: [:], needsIdentity: ["categories": 1]),
             inventory: [("categories", sharedID), ("categories", nil)],
-            liveByTable: ["categories": [sharedID, leadersID]]) == .accountRowsMissing(table: "categories", missing: 1))
+            liveByTable: ["categories": [sharedID, leadersID]],
+            candidates: [MigrationWorkExecutor.LineageCandidate(table: "categories", key: nil, ref: 0)])
+                == .accountRowsMissing(table: "categories", missing: 1),
+                "la fila sin identidad es candidata, no consta como nueva y no casa: sospechosa")
 
         // Llega su identidad por iCloud, y este teléfono escribe una categoría suya.
         leadersRow.syncID = leadersID
@@ -3819,7 +3823,8 @@ struct MigrationWorkExecutorTests {
 
     /// El backend de un líder que ya subió algo: las páginas que sirve la enumeración y el Merkle COHERENTE con ellas.
     /// Fábrica y no fuente, por lo mismo que `seedWindowCorpus`: la fuente se consume al paginar.
-    private func backend(_ rows: [(table: String, id: UUID)], stub: RoutingStub) throws -> () -> FakeTombstoneSource {
+    private func backend(_ rows: [(table: String, id: UUID)], fields: [UUID: [String: WireValue]] = [:],
+                         hlc: String = "hlc", stub: RoutingStub) throws -> () -> FakeTombstoneSource {
         var counts: [String: Int] = [:]
         for row in rows { counts[row.table, default: 0] += 1 }
         stub.merkleBody = try makeMerkleBody(counts)
@@ -3827,7 +3832,8 @@ struct MigrationWorkExecutorTests {
             let source = FakeTombstoneSource()
             if !rows.isEmpty {
                 source.pages = [PulledPage(deltas: rows.enumerated().map {
-                    upsertDelta(table: $0.element.table, syncID: $0.element.id, seq: Int64($0.offset + 1))
+                    upsertDelta(table: $0.element.table, syncID: $0.element.id, seq: Int64($0.offset + 1),
+                                fields: fields[$0.element.id] ?? [:], hlc: hlc)
                 }, maxServerSeq: Int64(rows.count))]
             }
             return source
@@ -4099,6 +4105,352 @@ struct MigrationWorkExecutorTests {
         stub.claimStatus = 500
         _ = await executor.performClaim()
         #expect(executor.lastClaimReportedPersonalWrites() == nil, "un claim sin respuesta no hereda la pista del anterior")
+    }
+
+    // MARK: - La fila borrada durante la espera (ticket `lineage-coverage-blocks-forever-after-a-row-deleted-during-the-wait`)
+
+    /// `created_at` tal cual lo devuelve PostgREST: `timestamptz` con microsegundos y zona. La clave lo trunca a ms.
+    private func wireCreatedAt(_ date: Date) -> WireValue {
+        let micros = Int64((date.timeIntervalSince1970 * 1_000_000).rounded(.down))
+        let seconds = micros / 1_000_000
+        let fraction = micros % 1_000_000
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "UTC")!
+        let c = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second],
+                                        from: Date(timeIntervalSince1970: TimeInterval(seconds)))
+        return .string(String(format: "%04d-%02d-%02dT%02d:%02d:%02d.%06lld+00:00",
+                              c.year!, c.month!, c.day!, c.hour!, c.minute!, c.second!, fraction))
+    }
+
+    /// Un HLC c1 válido. La última escritura del líder: con `leaderLastWrite` (2023) todo lo que el test crea con el autor
+    /// normal consta como nacido DESPUÉS; con `hlc: "hlc"` (ilegible) nada consta como nuevo.
+    private func hlc(_ ms: Int64) throws -> String {
+        try HLC(physicalMs: ms, counter: 0, nodeID: NodeID(validating: "0123456789abcdef")).description
+    }
+    private let leaderLastWrite: Int64 = 1_700_000_000_000
+
+    /// Guarda como lo haría la importación del espejo de CloudKit: lo que BAJÓ del líder, no lo creado aquí.
+    private func saveAsImported(_ context: ModelContext) throws {
+        context.author = "NSCloudKitMirroringDelegate.import"
+        defer { context.author = nil }
+        try context.save()
+    }
+
+    private func makeTx(createdAt: Date, amount: Double, account: Account, syncID: UUID?, in context: ModelContext) -> TransactionItem {
+        let tx = TransactionItem(date: fixedNow, amount: amount, currencyCode: "USD")
+        tx.createdAt = createdAt
+        tx.account = account
+        tx.syncID = syncID
+        context.insert(tx)
+        return tx
+    }
+
+    /// La cuenta del líder, que llegó por iCloud con la identidad que nace con la fila: la fila compartida de todos estos casos.
+    private func importLeaderAccount(_ id: UUID, in context: ModelContext) throws -> Account {
+        let account = Account(name: "Del líder", currencyCode: "USD", colorHex: "#111111", iconName: "banknote", type: "cash")
+        account.shortcutID = id
+        context.insert(account)
+        try saveAsImported(context)
+        return account
+    }
+
+    /// **El caso del ticket.** El líder subió su cuenta y dos movimientos, y calló. Aquí llegaron los dos; la persona BORRÓ
+    /// uno durante la espera y escribió otro. El borrado no vuelve a llegar nunca y el único que lo tombstonea en el backend
+    /// es el líder: hasta este ticket la cobertura pedía la fila y el relevo esperaba para siempre. Ahora no bloquea, porque
+    /// lo único que sube es un movimiento que consta creado AQUÍ después de la última escritura del líder: no puede ser el
+    /// borrado. Y no hereda su identidad. Sin esa constancia —la última escritura ilegible— sigue esperando.
+    @Test("checkForwardLineage: un movimiento borrado aquí durante la espera ya no bloquea si lo que sube se creó aquí después")
+    func forwardLineage_rowDeletedHereDuringTheWait_doesNotBlock() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let leaderAccount = UUID(), kept = UUID(), deleted = UUID()
+        let t1 = Date(timeIntervalSince1970: 1_699_000_100.123_456), t2 = Date(timeIntervalSince1970: 1_699_000_200.5)
+        let rows: [(table: String, id: UUID)] = [("accounts", leaderAccount), ("tx_items", kept), ("tx_items", deleted)]
+        let fields: [UUID: [String: WireValue]] = [kept: ["created_at": wireCreatedAt(t1)],
+                                                   deleted: ["created_at": wireCreatedAt(t2)]]
+        let account = try importLeaderAccount(leaderAccount, in: context)
+        _ = makeTx(createdAt: t1, amount: 10, account: account, syncID: kept, in: context)
+        let gone = makeTx(createdAt: t2, amount: 20, account: account, syncID: deleted, in: context)
+        try saveAsImported(context)
+        context.delete(gone)
+        let mine = makeTx(createdAt: Date(timeIntervalSince1970: 1_758_000_000), amount: 30, account: account, syncID: nil,
+                          in: context)
+        try context.save()
+
+        let unknown = try backend(rows, fields: fields, stub: stub)
+        let blind = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                 FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                 tombstoneSource: unknown())
+        #expect(await blind.checkForwardLineage() == .accountRowsMissing(table: "tx_items", missing: 1),
+                "sin saber cuándo escribió el líder, el movimiento nuevo no consta como nuevo: falla cerrado")
+
+        let known = try backend(rows, fields: fields, hlc: hlc(leaderLastWrite), stub: stub)
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: known())
+        #expect(await executor.checkForwardLineage() == .proven(sharedRows: 2))
+        #expect(mine.syncID == nil, "no casa con la borrada: su identidad la acuña el backfill, después")
+        #expect(stub.pushedSyncIDs.isEmpty)
+        #expect(try context.fetch(FetchDescriptor<SyncOutbox>()).isEmpty)
+    }
+
+    /// **Sin reabrir el duplicado de #241.** Mismo borrado, pero aquí queda además un movimiento del LÍDER que llegó sin su
+    /// identidad y cuya clave no casa con nada (su `createdAt` lo rellenó este teléfono en la migración ligera, y en el
+    /// backend va el del líder). No casar no prueba nada: puede ser la fila que falta con otra clave. Sigue esperando.
+    @Test("checkForwardLineage: una fila del líder sin identidad que no casa por clave sigue bloqueando aunque haya un borrado")
+    func forwardLineage_unmatchedImportedRow_stillBlocks() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let leaderAccount = UUID(), leaderTx = UUID()
+        let source = try backend([("accounts", leaderAccount), ("tx_items", leaderTx)],
+                                 fields: [leaderTx: ["created_at": wireCreatedAt(Date(timeIntervalSince1970: 1_699_000_000))]],
+                                 hlc: hlc(leaderLastWrite), stub: stub)
+        let account = try importLeaderAccount(leaderAccount, in: context)
+        let leaders = makeTx(createdAt: Date(timeIntervalSince1970: 1_699_500_000), amount: 7, account: account, syncID: nil,
+                             in: context)
+        try saveAsImported(context)
+        _ = makeTx(createdAt: Date(timeIntervalSince1970: 1_758_000_000), amount: 30, account: account, syncID: nil, in: context)
+        try context.save()
+
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source())
+        #expect(await executor.checkForwardLineage() == .accountRowsMissing(table: "tx_items", missing: 1))
+        #expect(leaders.syncID == nil)
+    }
+
+    /// **Y sin esperar cuando casan.** Las identidades del líder no llegaron: su movimiento y su comercio están aquí sin
+    /// `syncID`. Con una clave de linaje ÚNICA en el backend y aquí, cada fila casa con la suya —el movimiento por
+    /// `created_at` aunque aquí se editara el importe; el comercio por su clave canónica— y TOMA la identidad del líder,
+    /// guardada. El backfill ya no les acuña otra. La fila propia de este teléfono no casa con nada y sigue sin identidad.
+    @Test("checkForwardLineage: las filas del líder sin identidad casan por su clave única y toman la del backend; la propia no")
+    func forwardLineage_leaderRowsWithoutIdentity_takeTheirIdentityByKey() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let leaderAccount = UUID(), leaderTx = UUID(), leaderMerchant = UUID()
+        let t1 = Date(timeIntervalSince1970: 1_699_000_100.987)
+        let source = try backend([("accounts", leaderAccount), ("tx_items", leaderTx), ("merchant_memory", leaderMerchant)],
+                                 fields: [leaderTx: ["created_at": wireCreatedAt(t1)],
+                                          leaderMerchant: ["merchant_canonical": .string("starbucks")]],
+                                 hlc: hlc(leaderLastWrite), stub: stub)
+        let account = try importLeaderAccount(leaderAccount, in: context)
+        let edited = makeTx(createdAt: t1, amount: 99, account: account, syncID: nil, in: context)
+        let merchant = MerchantMemory(merchantCanonical: "starbucks")
+        context.insert(merchant)
+        try saveAsImported(context)
+        let mine = makeTx(createdAt: Date(timeIntervalSince1970: 1_758_000_000), amount: 5, account: account, syncID: nil,
+                          in: context)
+        try context.save()
+
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source())
+        #expect(await executor.checkForwardLineage() == .proven(sharedRows: 1))
+        #expect(edited.syncID == leaderTx, "el movimiento del líder, editado aquí, toma su identidad")
+        #expect(merchant.syncID == leaderMerchant)
+        #expect(mine.syncID == nil)
+        #expect(!context.hasChanges, "las re-identificaciones se guardan antes de devolver `proven`")
+        #expect(stub.pushedSyncIDs.isEmpty)
+
+        // La pasada siguiente ya las encuentra cubiertas: idempotente.
+        let again = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                 FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                 tombstoneSource: source())
+        #expect(await again.checkForwardLineage() == .proven(sharedRows: 3))
+    }
+
+    /// **Una clave repetida no casa nada.** Dos movimientos del líder con el mismo `created_at` (una importación) llegaron
+    /// sin identidad. Casarlos «en orden» podría cruzar sus identidades —importe y cuenta de uno bajo la del otro—, así que
+    /// ninguno casa y la tabla sigue esperando a que iCloud traiga las identidades.
+    @Test("checkForwardLineage: con la clave repetida no se re-identifica nada y sigue esperando")
+    func forwardLineage_repeatedKey_doesNotRebind() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let leaderAccount = UUID(), tx1 = UUID(), tx2 = UUID()
+        let t = Date(timeIntervalSince1970: 1_699_000_100)
+        let source = try backend([("accounts", leaderAccount), ("tx_items", tx1), ("tx_items", tx2)],
+                                 fields: [tx1: ["created_at": wireCreatedAt(t)], tx2: ["created_at": wireCreatedAt(t)]],
+                                 hlc: hlc(leaderLastWrite), stub: stub)
+        let account = try importLeaderAccount(leaderAccount, in: context)
+        let a = makeTx(createdAt: t, amount: 1, account: account, syncID: nil, in: context)
+        let b = makeTx(createdAt: t, amount: 2, account: account, syncID: nil, in: context)
+        try saveAsImported(context)
+
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source())
+        #expect(await executor.checkForwardLineage() == .accountRowsMissing(table: "tx_items", missing: 2))
+        #expect(a.syncID == nil && b.syncID == nil)
+    }
+
+    /// **El deduplicador de categorías.** El líder subió su semilla «Food»; iCloud la trajo aquí y el deduplicador la fundió
+    /// con la semilla de este teléfono, «Comida» (misma clave: icono, color, ingreso), y borró la del líder. Por nombre no
+    /// casan —cada teléfono sembró en su idioma—, por la clave del deduplicador sí: la superviviente toma la identidad de
+    /// la fundida y el backend no guarda dos semillas.
+    @Test("checkForwardLineage: la semilla que sobrevive al deduplicador casa con la fundida del líder y toma su identidad")
+    func forwardLineage_seedCategoryFusedByTheDeduplicator_takesTheLeadersIdentity() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let leaderAccount = UUID(), leaderSeed = UUID()
+        let source = try backend([("accounts", leaderAccount), ("categories", leaderSeed)],
+                                 fields: [leaderSeed: ["name": .string("Food"), "is_default_seed": .bool(true),
+                                                       "icon_name": .string("fork.knife"), "color_hex": .string("#FF9500"),
+                                                       "is_income": .bool(false)]],
+                                 hlc: hlc(leaderLastWrite), stub: stub)
+        _ = try importLeaderAccount(leaderAccount, in: context)
+        let survivor = Category(name: "Comida", colorHex: "#FF9500", isIncome: false, isDefaultSeed: true)
+        survivor.iconName = "fork.knife"
+        context.insert(survivor)
+        try saveAsImported(context)
+        #expect(LineageTwinKey.category(isDefaultSeed: true, iconName: survivor.iconName,
+                                        colorHex: survivor.colorHex, isIncome: survivor.isIncome)
+                == "seed:" + CategoryDeduplicationService.identityKey(for: survivor),
+                "la misma clave que el deduplicador")
+
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source())
+        #expect(await executor.checkForwardLineage() == .proven(sharedRows: 1))
+        #expect(survivor.syncID == leaderSeed)
+    }
+
+    /// **Una huérfana que casa se re-identifica con su testigo.** Una pasada anterior le acuñó identidad al comercio del
+    /// líder (tiene testigo) sin subirlo. Casa por su clave con el del backend: la fila y su testigo pasan a la identidad del
+    /// líder, con el ancla de contenido intacta y `lastReboundAt` estampado.
+    @Test("checkForwardLineage: una huérfana que casa pasa a la identidad del backend, y su testigo con ella")
+    func forwardLineage_orphanTwin_isRekeyedWithItsWitness() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let leaderAccount = UUID(), leaderMerchant = UUID(), minted = UUID()
+        let source = try backend([("accounts", leaderAccount), ("merchant_memory", leaderMerchant)],
+                                 fields: [leaderMerchant: ["merchant_canonical": .string("wong")]],
+                                 hlc: hlc(leaderLastWrite), stub: stub)
+        _ = try importLeaderAccount(leaderAccount, in: context)
+        let merchant = MerchantMemory(merchantCanonical: "wong")
+        merchant.syncID = minted
+        context.insert(merchant)
+        context.insert(SyncIdentity(syncID: minted, entityType: SyncEntityType.merchantMemory, localAnchor: "ancla",
+                                    createdAt: fixedNow))
+        try saveAsImported(context)
+
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source())
+        #expect(await executor.checkForwardLineage() == .proven(sharedRows: 1))
+        #expect(merchant.syncID == leaderMerchant)
+        let witnesses = try context.fetch(FetchDescriptor<SyncIdentity>())
+        #expect(witnesses.map(\.syncID) == [leaderMerchant])
+        #expect(witnesses.first?.localAnchor == "ancla")
+        #expect(witnesses.first?.lastReboundAt == fixedNow)
+    }
+
+    /// **Identidad propia.** Un presupuesto del líder falta aquí (se borró aquí, o se borró en otro teléfono y nunca llegó).
+    /// Lo que sube en esa tabla es un presupuesto creado aquí después: no puede ser el del líder, y no bloquea. Si lo que
+    /// sube es un presupuesto que BAJÓ de iCloud sin estar en el backend, podría ser el del líder re-identificado aquí
+    /// (reparación de UUID colapsados): sigue bloqueando. El historial ilegible es avería local, nunca «probado».
+    @Test("checkForwardLineage: en identidad propia no bloquea si lo que sube se creó aquí después; si bajó de iCloud, sí")
+    func forwardLineage_intrinsicMissingRow_blocksOnlyWithASuspect() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let leaderAccount = UUID(), leaderBudget = UUID()
+        let source = try backend([("accounts", leaderAccount), ("budgets", leaderBudget)], hlc: hlc(leaderLastWrite), stub: stub)
+        _ = try importLeaderAccount(leaderAccount, in: context)
+        context.insert(Budget(currencyCode: "USD", limitAmount: 50, name: "de este teléfono"))
+        try context.save()
+
+        let fresh = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                 FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                 tombstoneSource: source())
+        #expect(await fresh.checkForwardLineage() == .proven(sharedRows: 1))
+
+        let sick = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                tombstoneSource: source())
+        sick._testInventoryFetchThrows = { step, _ in step == "lineage-born-here" }
+        #expect(await sick.checkForwardLineage() == .localFailure)
+
+        context.insert(Budget(currencyCode: "USD", limitAmount: 70, name: "bajó de iCloud"))
+        try saveAsImported(context)
+        let suspect = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                   FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                   tombstoneSource: source())
+        #expect(await suspect.checkForwardLineage() == .accountRowsMissing(table: "budgets", missing: 1))
+    }
+
+    /// **Los deduplicadores de identidad propia.** El deduplicador fundió la subcategoría semilla del líder con la de este
+    /// teléfono y borró la del líder: la superviviente es su gemela con otra identidad, y no se puede re-identificar (su
+    /// `shortcutID` lo referencian los espejos CSV). Esperar no la trae nunca. Si sube duplicada, el deduplicador del
+    /// arranque la vuelve a fundir con la del líder —misma clave de fusión, el icono—, así que no bloquea. Con otro icono (el
+    /// líder lo editó) el deduplicador no las fundiría: bloquea. Y una subcategoría del usuario, también.
+    @Test("checkForwardLineage: una subcategoría semilla con la clave de fusión de la que falta no bloquea; con otra, sí")
+    func forwardLineage_seedSubcategorySurvivor_doesNotBlock() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let leaderAccount = UUID(), leaderSeedSub = UUID()
+        let source = try backend([("accounts", leaderAccount), ("subcategories", leaderSeedSub)],
+                                 fields: [leaderSeedSub: ["is_default_seed": .bool(true), "icon_name": .string("cart")]],
+                                 hlc: hlc(leaderLastWrite), stub: stub)
+        _ = try importLeaderAccount(leaderAccount, in: context)
+        let survivor = Subcategory(name: "Supermercado", isDefaultSeed: true, iconName: "cart", category: nil)
+        context.insert(survivor)
+        try saveAsImported(context)
+
+        let seed = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                tombstoneSource: source())
+        #expect(await seed.checkForwardLineage() == .proven(sharedRows: 1))
+
+        survivor.iconName = "basket"
+        try saveAsImported(context)
+        let otherIcon = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                     FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                     tombstoneSource: source())
+        #expect(await otherIcon.checkForwardLineage() == .accountRowsMissing(table: "subcategories", missing: 1))
+
+        survivor.iconName = "cart"
+        survivor.isDefaultSeed = false
+        try saveAsImported(context)
+        let custom = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                  FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                  tombstoneSource: source())
+        #expect(await custom.checkForwardLineage() == .accountRowsMissing(table: "subcategories", missing: 1))
+    }
+
+    /// **El adopt, el mismo arreglo.** Sin marcador: la cuenta se comparte, un movimiento del líder se borró aquí y otro
+    /// llegó sin su identidad. Antes, `lineageUnproven` para siempre. Ahora el del líder toma su identidad y NO sube, y
+    /// sube solo el movimiento que este teléfono creó después.
+    @Test("runAdoptOrphanReconcile: con una fila borrada aquí y otra sin identidad, sube solo la fila nueva")
+    func adoptReconcile_rowDeletedHere_andLeaderRowWithoutIdentity_uploadsOnlyTheNewRow() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let leaderAccount = UUID(), deleted = UUID(), leaderTx = UUID()
+        let t1 = Date(timeIntervalSince1970: 1_699_000_100), t2 = Date(timeIntervalSince1970: 1_699_000_200)
+        let source = try backend([("accounts", leaderAccount), ("tx_items", deleted), ("tx_items", leaderTx)],
+                                 fields: [deleted: ["created_at": wireCreatedAt(t1)], leaderTx: ["created_at": wireCreatedAt(t2)]],
+                                 hlc: hlc(leaderLastWrite), stub: stub)
+        let account = try importLeaderAccount(leaderAccount, in: context)
+        let leaders = makeTx(createdAt: t2, amount: 2, account: account, syncID: nil, in: context)
+        try saveAsImported(context)
+        let mine = makeTx(createdAt: Date(timeIntervalSince1970: 1_758_000_000), amount: 3, account: account, syncID: nil,
+                          in: context)
+        try context.save()
+
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"), tombstoneSource: source())
+        #expect(await executor.runAdoptOrphanReconcile() == .completed(uploaded: 1, identityAssigned: 1))
+        #expect(leaders.syncID == leaderTx)
+        let mineID = try #require(mine.syncID)
+        #expect(stub.pushedSyncIDs.map { $0.lowercased() } == [mineID.uuidString.lowercased()], "solo la fila nueva")
     }
 }
 

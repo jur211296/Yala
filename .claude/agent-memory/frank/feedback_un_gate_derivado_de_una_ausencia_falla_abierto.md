@@ -59,3 +59,10 @@ tipo fabrica justo esa ausencia. La marca positiva existía y nadie la leía: `E
 ⇒ Cuando una rama de éxito se decide por `error == nil`, busca una señal POSITIVA en el payload
 (`succeeded`, un status, un 2xx) y úsala. Y desconfía de todo `as? TipoConcreto` sobre un error: lo que no
 sea de ese tipo se vuelve invisible.
+
+**Corolario, 2026-09-24 (PR #242, dos rondas de review):** lo mismo con un *casado*. Escribí «la clave de linaje se lee
+y no casa con nada ⇒ aquí no hay gemela ⇒ sube». Tres lentes lo tumbaron: una clave que no casa puede ser la MISMA fila
+(el `createdAt` que la migración ligera rellenó en cada teléfono, una categoría editada). **Casar prueba; no casar no
+prueba nada.** La versión buena exime solo con una afirmación positiva (el historial dice «creada aquí después») y casa
+solo con clave única en los dos lados. La segunda ronda cazó además que casar por un campo editable (el nombre) deja
+que un renombrado cruce identidades: la clave de un casado tiene que ser inmutable, no solo legible.

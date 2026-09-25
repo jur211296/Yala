@@ -1345,6 +1345,13 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSyncMigration forwardLineage verdict=\(verdict, privacy: .public) live=\(liveRows, privacy: .public) shared=\(sharedRows, privacy: .public)")
     }
 
+    /// La prueba de cobertura casó filas locales sin identidad del backend con filas de la cuenta que aquí faltaban, por su
+    /// clave de linaje, y les dio esa identidad (ticket `lineage-coverage-blocks-forever-after-a-row-deleted-during-the-wait`):
+    /// son las del líder cuyas identidades no llegaron por iCloud. Solo el conteo, sin PII.
+    static func lineageRowsRebound(count: Int) {
+        logger.notice("CloudSyncMigration lineageRowsRebound count=\(count, privacy: .public) — filas del líder re-identificadas por su clave de linaje")
+    }
+
     /// El relevo comparte filas con la cuenta pero a `table`, que tiene algo que subir, le faltan `missing` filas vivas del
     /// backend: las identidades del líder callado no llegaron por iCloud y subir duplicaría (ticket
     /// `migration-takeover-may-duplicate-rows-whose-leader-identities-never-arrived`). Solo conteos, sin PII.
