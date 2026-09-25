@@ -363,7 +363,13 @@ extension CloudSyncEngine {
     /// jamás pusheadas que el drain encoló) o un ciclo de pull que no terminó `.completed` produce
     /// divergencia ESPERADA (no incidente) → `.skipped` + breadcrumb `merkleSkippedNotQuiescent`,
     /// jamás canario. El caller I9 decide la cadencia.
-    func verifyIntegrity(using client: SyncMerkleClient, context: ModelContext) async -> MerkleVerdict {
+    ///
+    /// `beforeLocalTree` corre SÍNCRONO justo antes de calcular el árbol local, ya pasado el `await` del remoto. Lo pasa la
+    /// verificación de la ida para devolver las identidades que el espejo cambió durante esa espera
+    /// (`MigrationWorkExecutor.restoreRelayIdentities`). Si lanza, es una lectura local que falló: el mismo skip que el
+    /// cómputo del árbol. `nil` en el runtime y en la vuelta a iCloud.
+    func verifyIntegrity(using client: SyncMerkleClient, context: ModelContext,
+                         beforeLocalTree: (@MainActor () throws -> Void)? = nil) async -> MerkleVerdict {
         // A-3: quiescencia local.
         let rows: [SyncOutbox]
         do {
@@ -434,6 +440,7 @@ extension CloudSyncEngine {
         // consumiendo el presupuesto de MISMATCH hasta `reverseFailedRollback`.
         let local: SyncMerkle.LocalMerkle
         do {
+            try beforeLocalTree?()
             local = try SyncMerkle.computeLocalMerkle(context: context)
         } catch {
             #if DEBUG

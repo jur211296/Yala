@@ -91,12 +91,19 @@ extension CloudSyncEngine {
     ///   - client: transporte del pull (inyectable; stub en tests).
     ///   - pageLimit: tamaño de página (= `limit` del wire).
     ///   - maxPages: tope defensivo de páginas por ciclo (evita loops si el server nunca "agota").
+    ///   - beforeDrain: corre SÍNCRONO justo antes del drain F-1 de cada página —después del `await pull`, sin otro
+    ///     `await` hasta el apply—. Lo pasa la verificación de la ida para devolver las identidades que el espejo cambió por
+    ///     debajo durante la espera (`MigrationWorkExecutor.restoreRelayIdentities`): sin él, una fila re-identificada
+    ///     recibiría su propia copia del backend como born-remote. El drain de ENTRADA no lo lleva: la verificación ya
+    ///     restaura antes, sin `await` en medio. Si lanza, la página no se aplica, como con un drain que no terminó
+    ///     (`.transient`). `nil` en el runtime.
     func pullAndApplyOnce(
         using client: SyncPullClient,
         context: ModelContext,
         now: Date = .now,
         pageLimit: Int = 500,
-        maxPages: Int = 50
+        maxPages: Int = 50,
+        beforeDrain: (@MainActor () throws -> Void)? = nil
     ) async -> PullApplyOutcome {
         // D-2: nunca aplicar con un drain en curso. Defensivo (F-10): `drainOnce` es síncrono bajo
         // MainActor → esta rama es inalcanzable hoy; queda como red si el drain gana suspensión.
@@ -105,7 +112,7 @@ extension CloudSyncEngine {
         drainOnce(context: context)
 
         let (outcome, pagesApplied) = await pullLoop(client: client, context: context, now: now,
-                                                     pageLimit: pageLimit, maxPages: maxPages)
+                                                     pageLimit: pageLimit, maxPages: maxPages, beforeDrain: beforeDrain)
         // I8f-3 (guard A-3 del Merkle): registrar si este ciclo AGOTÓ la cola. Un ciclo incompleto
         // (transient/401/403) deja el flag en false → la verificación se salta (divergencia esperada).
         if case .completed = outcome {
@@ -146,7 +153,8 @@ extension CloudSyncEngine {
     /// también `pagesApplied` aparte del outcome (los cases `.sessionExpired`/`.accountUnavailable` no
     /// lo llevan, pero el gate de los reconcilers necesita saber si HUBO páginas antes de esa salida).
     private func pullLoop(
-        client: SyncPullClient, context: ModelContext, now: Date, pageLimit: Int, maxPages: Int
+        client: SyncPullClient, context: ModelContext, now: Date, pageLimit: Int, maxPages: Int,
+        beforeDrain: (@MainActor () throws -> Void)?
     ) async -> (PullApplyOutcome, Int) {
         var pagesApplied = 0
         while pagesApplied < maxPages {
@@ -173,6 +181,13 @@ extension CloudSyncEngine {
                 // Un drain que NO terminó hizo rollback: la edición de la suspensión no está en el outbox, ni
                 // siquiera sucia en el contexto, así que el guard D-1 no la vería y la página la pisaría (y el
                 // drain siguiente la releería ya pisada). Cortar como con un apply fallido: el cursor no se mueve.
+                if let beforeDrain {
+                    do {
+                        try beforeDrain()
+                    } catch {
+                        return (.transient(pagesApplied: pagesApplied), pagesApplied)
+                    }
+                }
                 guard drainOnce(context: context) else {
                     return (.transient(pagesApplied: pagesApplied), pagesApplied)
                 }

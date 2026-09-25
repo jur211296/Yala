@@ -1352,6 +1352,25 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSyncMigration lineageRowsRebound count=\(count, privacy: .public) — filas del líder re-identificadas por su clave de linaje")
     }
 
+    /// El espejo de iCloud había cambiado por debajo la identidad de `count` filas de `entity` que este teléfono ya había
+    /// identificado para la ida, y se les devolvió la suya (ticket
+    /// `displaced-leader-late-identity-export-can-rekey-the-relief-corpus`). Lo provoca la exportación tardía de un líder
+    /// desplazado. Solo el tipo y el conteo, sin PII.
+    static func migrationRelayIdentityRestored(entity: String, count: Int) {
+        logger.notice("CloudSyncMigration relayIdentityRestored entity=\(entity, privacy: .public) count=\(count, privacy: .public) — identidades que el espejo cambió por debajo, devueltas a las de este teléfono")
+    }
+
+    /// No se pudieron leer los metadatos de CloudKit de las filas candidatas a esa restauración. `tolerated` = el reconcile
+    /// de `done`, que sigue sin restaurar; si no, el paso lo cuenta como avería local.
+    static func migrationRelayIdentityRecordsUnreadable(tolerated: Bool) {
+        logger.notice("CloudSyncMigration relayIdentityRecordsUnreadable tolerated=\(tolerated, privacy: .public)")
+    }
+
+    /// No se pudo guardar la restauración de identidades de arriba; se deshizo y el paso lo cuenta como avería local.
+    static func migrationRelayIdentityRestoreFailed(errorType: String) {
+        logger.notice("CloudSyncMigration relayIdentityRestoreFailed error=\(errorType, privacy: .public)")
+    }
+
     /// El relevo comparte filas con la cuenta pero a `table`, que tiene algo que subir, le faltan `missing` filas vivas del
     /// backend: las identidades del líder callado no llegaron por iCloud y subir duplicaría (ticket
     /// `migration-takeover-may-duplicate-rows-whose-leader-identities-never-arrived`). Solo conteos, sin PII.

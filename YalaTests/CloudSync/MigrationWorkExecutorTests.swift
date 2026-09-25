@@ -154,7 +154,15 @@ private final class RoutingStub: SyncHTTPSession, @unchecked Sendable {
     /// 401 aquí = sesión caducada del pull, que es la mitad que `reverseDrainOnce` y `verify` no podían separar
     /// hasta el ticket `reverse-before-mount-stays-stuck-with-an-expired-session`.
     var pullStatus = 200
+    /// Cuerpo del pull con 200. `nil` = la página vacía de siempre; con valor se sirve UNA vez y después la vacía, para que
+    /// el loop del pull termine.
+    var pullBody: Data?
+    /// Se llama en el main actor cuando llega cada GET de `/sync/pull`, antes de la respuesta: es la espera del pull, en la
+    /// que el import del espejo puede aterrizar (ticket `displaced-leader-late-identity-export-can-rekey-the-relief-corpus`).
+    var onPullRequestOnMain: (@MainActor () -> Void)?
     var merkleBody = Data()
+    /// Se llama en el main actor cuando llega cada GET de `/sync/merkle`, antes de la respuesta (la espera del remoto).
+    var onMerkleRequestOnMain: (@MainActor () -> Void)?
     /// Status de `/sync/merkle`. 401 y 403 son la mitad que el Merkle NO podía separar hasta el ticket
     /// `reverse-verify-network-bucket-hides-a-definitive-server-no`: `SyncMerkle` aplanaba los tres desenlaces del
     /// fetch y salían como red.
@@ -216,11 +224,17 @@ private final class RoutingStub: SyncHTTPSession, @unchecked Sendable {
         }
         if path.contains("sync/pull") {
             pullCallCount += 1
+            if let hook = onPullRequestOnMain { hook() }
             if pullStatus != 200 { return (Data(), resp(pullStatus)) }
+            if let body = pullBody {
+                pullBody = nil
+                return (body, resp(200))
+            }
             return (Data("{\"deltas\":[],\"max_server_seq\":0}".utf8), resp(200))
         }
         if path.contains("sync/merkle") {
             merkleCallCount += 1
+            if let hook = onMerkleRequestOnMain { hook() }
             if merkleStatus != 200 { return (merkleErrorBody, resp(merkleStatus)) }
             return (merkleBody, resp(200))
         }
@@ -275,7 +289,8 @@ struct MigrationWorkExecutorTests {
         icloudLastExportErrorCode: (@MainActor () -> CKError.Code?)? = nil,
         icloudMirrorReportedNotAuthenticated: (@MainActor () -> Bool)? = nil,
         icloudLastExportErrorAt: (@MainActor () -> Date?)? = nil,
-        icloudLastSuccessfulExportAt: (@MainActor () -> Date?)? = nil
+        icloudLastSuccessfulExportAt: (@MainActor () -> Date?)? = nil,
+        snapshotPageSize: Int = 200
     ) -> MigrationWorkExecutor {
         let token: () async -> String? = { "jwt" }
         let account = CloudAccountClient(baseURL: workerURL, urlSession: stub)
@@ -289,7 +304,7 @@ struct MigrationWorkExecutorTests {
             deviceID: "device-1", provider: provider, beacon: CloudBeacon(store: beaconStore),
             personalStoreURL: personalStoreURL,
             storageDefaults: storageDefaults ?? makeIsolatedDefaults(prefix: "mwe.storage"),
-            snapshotPageSize: 200, heartbeatInterval: heartbeatInterval,
+            snapshotPageSize: snapshotPageSize, heartbeatInterval: heartbeatInterval,
             leaseClock: leaseClock.map { clock in { clock.now } } ?? { ContinuousClock.now },
             reverseTombstoneSource: tombstoneSource,
             adoptQuiescenceSignal: adoptQuiescenceSignal,
@@ -4451,6 +4466,603 @@ struct MigrationWorkExecutorTests {
         #expect(leaders.syncID == leaderTx)
         let mineID = try #require(mine.syncID)
         #expect(stub.pushedSyncIDs.map { $0.lowercased() } == [mineID.uuidString.lowercased()], "solo la fila nueva")
+    }
+
+    // MARK: - La identidad que el espejo cambia por debajo (ticket `displaced-leader-late-identity-export-can-rekey-the-relief-corpus`)
+    //
+    // El relevo acuñó y subió sus identidades; el líder desplazado vuelve y su espejo exporta las suyas; CloudKit le da la
+    // razón y el espejo del relevo —vivo hasta el remonte— cambia el `syncID` de filas que el backend ya conoce. Qué gana
+    // CloudKit no se puede medir sin dos teléfonos: aquí el import se simula como lo haría el espejo (mismo objeto, solo la
+    // identidad, firmado con su autor) y se mide lo que hace la migración con eso.
+
+    /// Un relevo con categorías que ESTE teléfono ya identificó: backfill real de `assignIdentity` y testigos con las
+    /// coordenadas de CloudKit que la captura les pone con el espejo vivo (en el store de test no hay metadatos, así que se
+    /// escriben a mano y el seam devuelve las mismas para cada fila). Con el baseline del History adelantado: el drain solo
+    /// ve lo que pase después.
+    private func relayWithIdentities(
+        _ dir: URL, stub: RoutingStub, ids: [UUID], pageSize: Int = 200
+    ) async throws -> (executor: MigrationWorkExecutor, context: ModelContext, categories: [Yala.Category],
+                       records: [PersistentIdentifier: MigrationWorkExecutor.RecordCoordinates]) {
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        let executor = makeExecutor(context, engine, stub, FakeSession(token: "jwt", userID: "sub-relay"), FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    snapshotPageSize: pageSize)
+        var categories: [Yala.Category] = []
+        for (index, id) in ids.enumerated() {
+            let category = Category(name: "relay-\(index)", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+            category.syncID = id
+            context.insert(category)
+            categories.append(category)
+        }
+        try context.save()
+        try await executor.assignIdentity()
+        let witnesses = try context.fetch(FetchDescriptor<SyncIdentity>())
+        var records: [PersistentIdentifier: MigrationWorkExecutor.RecordCoordinates] = [:]
+        for (index, category) in categories.enumerated() {
+            let record = MigrationWorkExecutor.RecordCoordinates(
+                recordName: "record-\(index)", zoneName: "com.apple.coredata.cloudkit.zone", ownerName: "__defaultOwner__")
+            records[category.persistentModelID] = record
+            let witness = try #require(witnesses.first { $0.syncID == category.syncID })
+            witness.ckRecordName = record.recordName
+            witness.ckZoneName = record.zoneName
+            witness.ckOwnerName = record.ownerName
+        }
+        try context.save()
+        executor._testRecordCoordinates = { records[$0] }
+        engine.fastForwardHistoryBaseline(context: context)
+        return (executor, context, categories, records)
+    }
+
+    /// Lo que hace el espejo al importar la exportación tardía del líder: la MISMA fila cambia de identidad (y, si el líder
+    /// la había editado sin red, trae también la edición), firmado con el autor del espejo.
+    private func mirrorRekeys(_ category: Yala.Category, to id: UUID, renamedTo name: String? = nil,
+                              in context: ModelContext) throws {
+        category.syncID = id
+        if let name { category.name = name }
+        try saveAsImported(context)
+    }
+
+    /// Una página del pull con la copia del backend de una categoría: lo que el relevo subió con su identidad.
+    private func backendCopyPage(of id: UUID, name: String) throws -> Data {
+        let body = """
+        {"deltas":[{"entity_type":"categories","sync_id":"\(id.uuidString.lowercased())","op":"upsert",\
+        "fields":{"name":"\(name)"},"field_hlcs":{},"hlc":"\(try hlc(leaderLastWrite))","server_seq":1,\
+        "schema_version":1}],"max_server_seq":1}
+        """
+        return Data(body.utf8)
+    }
+
+    private func categoryCount(_ context: ModelContext) throws -> Int {
+        try context.fetchCount(FetchDescriptor<Yala.Category>())
+    }
+
+    /// EL BUG, por el pull. El relevo ya subió la categoría; el espejo le cambia la identidad; la verificación trae la copia
+    /// del backend. Sin restaurar, esa copia no encuentra fila con su identidad y entra como born-remote: la misma categoría
+    /// dos veces aquí, y la re-identificada sube después como otra.
+    @Test("relevo: la fila que el espejo re-identificó después de subirla recupera su identidad y el pull no la duplica")
+    func relayRestore_verify_rekeyedRowIsNotDuplicatedByThePull() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let stub = RoutingStub()
+        let relay = try await relayWithIdentities(dir, stub: stub, ids: [UUID(), UUID()])
+        let uploaded = try #require(relay.categories[0].syncID)
+        try mirrorRekeys(relay.categories[0], to: UUID(), in: relay.context)
+        stub.pullBody = try backendCopyPage(of: uploaded, name: "from-the-backend")
+
+        #expect(await relay.executor.confirmMigrationLease() == .held)
+        _ = await relay.executor.verify(underMigrationLease: true)
+
+        #expect(relay.categories[0].name == "from-the-backend", "control: la página se aplicó, sobre la fila restaurada")
+        #expect(relay.categories[0].syncID == uploaded)
+        #expect(try categoryCount(relay.context) == 2, "sin born-remote de la copia del backend")
+    }
+
+    /// El import aterriza DURANTE la espera del pull, después de la restauración de arriba: la que lo cubre es la del pull,
+    /// justo antes del drain de la página.
+    @Test("relevo: la identidad que el espejo cambia durante la espera del pull se restaura antes de aplicar la página")
+    func relayRestore_verify_rekeyDuringThePullWait() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let stub = RoutingStub()
+        let relay = try await relayWithIdentities(dir, stub: stub, ids: [UUID(), UUID()])
+        let uploaded = try #require(relay.categories[0].syncID)
+        stub.pullBody = try backendCopyPage(of: uploaded, name: "relay-0")
+        let leaders = UUID()
+        var landed: UUID?
+        stub.onPullRequestOnMain = {
+            guard landed == nil else { return }
+            do {
+                try self.mirrorRekeys(relay.categories[0], to: leaders, in: relay.context)
+                landed = relay.categories[0].syncID
+            } catch {
+                Issue.record("el import simulado no se guardó: \(error)")
+            }
+        }
+
+        #expect(await relay.executor.confirmMigrationLease() == .held)
+        _ = await relay.executor.verify(underMigrationLease: true)
+
+        #expect(landed == leaders, "control: el import aterrizó durante la espera y cambió la identidad")
+        #expect(relay.categories[0].syncID == uploaded)
+        #expect(try categoryCount(relay.context) == 2)
+    }
+
+    /// El import trae también la edición que el líder hizo sin red. El pre-check de la verificación la drena y la sube antes
+    /// de pedir nada: tiene que salir con la identidad del relevo, no como una fila nueva.
+    @Test("relevo: la edición que trae el import sube en la verificación con la identidad que el backend conoce")
+    func relayRestore_verify_importedEditIsPushedUnderTheRelayIdentity() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let stub = RoutingStub()
+        let relay = try await relayWithIdentities(dir, stub: stub, ids: [UUID(), UUID()])
+        let uploaded = try #require(relay.categories[0].syncID)
+        let leaders = UUID()
+        try mirrorRekeys(relay.categories[0], to: leaders, renamedTo: "edited-offline", in: relay.context)
+
+        #expect(await relay.executor.confirmMigrationLease() == .held)
+        #expect(await relay.executor.verify(underMigrationLease: true) == .newDeltaDetected, "control: la edición subió")
+
+        #expect(stub.pushedSyncIDs == [uploaded.uuidString.lowercased()])
+        #expect(relay.categories[0].syncID == uploaded)
+    }
+
+    /// El drain del cutover (`startParallelHistoryCapture`) tampoco traduce bajo la identidad nueva, y si la restauración no
+    /// se deja leer no drena: la History sigue ahí para el reconcile, que restaura antes.
+    @Test("relevo: el drain del cutover restaura antes, y sin poder restaurar no drena")
+    func relayRestore_cutoverDrain_restoresFirstOrSkips() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+
+        do {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let relay = try await relayWithIdentities(dir, stub: RoutingStub(), ids: [UUID(), UUID()])
+            let uploaded = try #require(relay.categories[0].syncID)
+            try mirrorRekeys(relay.categories[0], to: UUID(), renamedTo: "edited-offline", in: relay.context)
+
+            try await relay.executor.execute(.startParallelHistoryCapture)
+
+            #expect(try liveOutboxRows(relay.context).map(\.syncID) == [uploaded])
+            #expect(relay.categories[0].syncID == uploaded)
+        }
+        do {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let relay = try await relayWithIdentities(dir, stub: RoutingStub(), ids: [UUID()])
+            try mirrorRekeys(relay.categories[0], to: UUID(), renamedTo: "edited-offline", in: relay.context)
+            relay.executor._testInventoryFetchThrows = { step, _ in step == "identity-pin" }
+
+            try await relay.executor.execute(.startParallelHistoryCapture)
+
+            #expect(try liveOutboxRows(relay.context).isEmpty, "sin restaurar no se traduce nada")
+        }
+    }
+
+    /// EL BUG, por la subida. El snapshot pagina por `afterSyncID`: una fila ya subida que pasa a una identidad mayor que el
+    /// cursor sale otra vez en una página posterior, y el backend la guarda dos veces.
+    @Test("relevo: una fila ya subida que el espejo re-identifica no se sube otra vez con la identidad nueva")
+    func relayRestore_upload_uploadedRowIsNotUploadedAgain() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let stub = RoutingStub()
+        let low = try #require(UUID(uuidString: "00000000-0000-4000-8000-000000000001"))
+        let mid = try #require(UUID(uuidString: "00000000-0000-4000-8000-000000000002"))
+        let high = try #require(UUID(uuidString: "FFFFFFFF-FFFF-4FFF-BFFF-FFFFFFFFFFFF"))
+        let relay = try await relayWithIdentities(dir, stub: stub, ids: [low, mid], pageSize: 1)
+
+        #expect(await relay.executor.confirmMigrationLease() == .held)
+        guard case .pageConfirmed(let first) = await relay.executor.uploadSnapshot(cursor: nil) else {
+            Issue.record("la primera página tenía que confirmarse"); return
+        }
+        #expect(stub.pushedSyncIDs == [low.uuidString.lowercased()], "control: la primera página subió la fila")
+        try mirrorRekeys(relay.categories[0], to: high, in: relay.context)
+
+        var cursor: String? = first
+        var passes = 0
+        while passes < 10 {
+            passes += 1
+            _ = await relay.executor.confirmMigrationLease()
+            let outcome = await relay.executor.uploadSnapshot(cursor: cursor)
+            if case .pageConfirmed(let next) = outcome { cursor = next; continue }
+            #expect(outcome == .completed)
+            break
+        }
+
+        #expect(stub.pushedSyncIDs == [low, mid].map { $0.uuidString.lowercased() }, "cada fila una vez, con su identidad")
+        #expect(relay.categories[0].syncID == low)
+    }
+
+    /// Lo que llegó entre la última verificación y el remonte: el reconcile de `done` restaura antes de su drain, que si no
+    /// traduciría la edición que trajo el import bajo la identidad nueva y la subiría como fila aparte.
+    @Test("relevo: el reconcile de done restaura antes de drenar y no sube nada bajo la identidad nueva")
+    func relayRestore_leaderReconcile_restoresBeforeItsDrain() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let stub = RoutingStub()
+        let relay = try await relayWithIdentities(dir, stub: stub, ids: [UUID(), UUID()])
+        let uploaded = try #require(relay.categories[0].syncID)
+        let leaders = UUID()
+        try mirrorRekeys(relay.categories[0], to: leaders, renamedTo: "edited-offline", in: relay.context)
+
+        try await relay.executor.execute(.runLeaderReconcileFromFrozenCloudKit)
+
+        #expect(stub.pushedSyncIDs == [uploaded.uuidString.lowercased()], "la edición sube con la identidad del relevo")
+        #expect(!stub.pushedSyncIDs.contains(leaders.uuidString.lowercased()))
+        #expect(relay.categories[0].syncID == uploaded)
+        #expect(relay.categories[0].name == "edited-offline", "la edición se conserva")
+    }
+
+    /// Falla cerrado: solo se toca la fila que se reconoce sin duda. El primer caso es el control positivo de todos —la
+    /// escena limpia restaura—, porque «no tocó nada» también lo da una restauración rota; y cada caso de duda la añade
+    /// sobre esa misma escena.
+    @Test("relevo: sin testigo único con coordenadas, o con su identidad viva en otra fila, no se toca nada")
+    func relayRestore_leavesAloneWhatItCannotTellApart() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+
+        // Control positivo: la escena limpia restaura.
+        do {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let relay = try await relayWithIdentities(dir, stub: RoutingStub(), ids: [UUID(), UUID()])
+            let uploaded = try #require(relay.categories[0].syncID)
+            try mirrorRekeys(relay.categories[0], to: UUID(), in: relay.context)
+            #expect(try relay.executor.restoreRelayIdentities() == 1)
+            #expect(relay.categories[0].syncID == uploaded)
+        }
+        // La fila creada aquí después de la identidad (sin testigo, con su propio record) no es de nadie: se queda.
+        do {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let relay = try await relayWithIdentities(dir, stub: RoutingStub(), ids: [UUID(), UUID()])
+            // Un testigo huérfano de verdad: la fila se borró aquí y su testigo se queda (para el rebind).
+            relay.context.delete(relay.categories[1])
+            let bornHere = Category(name: "born-here", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+            let bornID = UUID()
+            bornHere.syncID = bornID
+            relay.context.insert(bornHere)
+            try relay.context.save()
+            var records = relay.records
+            records[bornHere.persistentModelID] = .init(recordName: "record-new", zoneName: "com.apple.coredata.cloudkit.zone",
+                                                         ownerName: "__defaultOwner__")
+            relay.executor._testRecordCoordinates = { records[$0] }
+            #expect(try relay.executor.restoreRelayIdentities() == 0)
+            #expect(relay.executor._testRecordCoordinateLookups == 1, "control: llegó a comparar records")
+            #expect(bornHere.syncID == bornID)
+        }
+        // Dos filas con el mismo record: no se sabe cuál era.
+        do {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let relay = try await relayWithIdentities(dir, stub: RoutingStub(), ids: [UUID()])
+            let rekeyed = UUID(), twinID = UUID()
+            try mirrorRekeys(relay.categories[0], to: rekeyed, in: relay.context)
+            let twin = Category(name: "twin", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+            twin.syncID = twinID
+            relay.context.insert(twin)
+            try relay.context.save()
+            var records = relay.records
+            records[twin.persistentModelID] = relay.records[relay.categories[0].persistentModelID]
+            relay.executor._testRecordCoordinates = { records[$0] }
+            #expect(try relay.executor.restoreRelayIdentities() == 0)
+            #expect(relay.categories[0].syncID == rekeyed)
+            #expect(twin.syncID == twinID)
+        }
+        // Otra fila viva ya lleva la identidad del testigo: restaurarla crearía dos filas con la misma.
+        do {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let relay = try await relayWithIdentities(dir, stub: RoutingStub(), ids: [UUID()])
+            let uploaded = try #require(relay.categories[0].syncID)
+            let rekeyed = UUID()
+            try mirrorRekeys(relay.categories[0], to: rekeyed, in: relay.context)
+            let holder = Category(name: "holder", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+            holder.syncID = uploaded
+            relay.context.insert(holder)
+            try relay.context.save()
+            #expect(try relay.executor.restoreRelayIdentities() == 0)
+            #expect(relay.categories[0].syncID == rekeyed)
+        }
+        // La identidad nueva YA tiene testigo aquí: la cambió este teléfono (la re-identificación del linaje deja así el
+        // testigo viejo cuando el nuevo ya existía), no el espejo.
+        do {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let relay = try await relayWithIdentities(dir, stub: RoutingStub(), ids: [UUID()])
+            let local = UUID()
+            relay.context.insert(SyncIdentity(syncID: local, entityType: SyncEntityType.category, localAnchor: ""))
+            try relay.context.save()
+            try mirrorRekeys(relay.categories[0], to: local, in: relay.context)
+            #expect(try relay.executor.restoreRelayIdentities() == 0)
+            #expect(relay.categories[0].syncID == local)
+        }
+        // Dos testigos huérfanos con el mismo record: no se sabe cuál era.
+        do {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let relay = try await relayWithIdentities(dir, stub: RoutingStub(), ids: [UUID()])
+            let record = try #require(relay.records[relay.categories[0].persistentModelID])
+            relay.context.insert(SyncIdentity(syncID: UUID(), entityType: SyncEntityType.category, localAnchor: "",
+                                              ckRecordName: record.recordName, ckZoneName: record.zoneName,
+                                              ckOwnerName: record.ownerName))
+            try relay.context.save()
+            let rekeyed = UUID()
+            try mirrorRekeys(relay.categories[0], to: rekeyed, in: relay.context)
+            #expect(try relay.executor.restoreRelayIdentities() == 0)
+            #expect(relay.categories[0].syncID == rekeyed)
+        }
+        // Un testigo sin coordenadas de CloudKit no se puede emparejar con nada.
+        do {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let relay = try await relayWithIdentities(dir, stub: RoutingStub(), ids: [UUID()])
+            let uploaded = try #require(relay.categories[0].syncID)
+            let witness = try #require(try relay.context.fetch(FetchDescriptor<SyncIdentity>()).first { $0.syncID == uploaded })
+            witness.ckRecordName = nil
+            try relay.context.save()
+            let rekeyed = UUID()
+            try mirrorRekeys(relay.categories[0], to: rekeyed, in: relay.context)
+            #expect(try relay.executor.restoreRelayIdentities() == 0)
+            #expect(relay.categories[0].syncID == rekeyed)
+        }
+    }
+
+    /// Los seis tipos de identidad acuñada, no solo categorías: los movimientos son justo lo que más duele duplicar.
+    @Test("relevo: restaura los seis tipos de identidad acuñada")
+    func relayRestore_restoresEveryMintedType() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), FakeSession(token: "jwt", userID: "sub-relay"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        let tx = TransactionItem(date: fixedNow, amount: 12, currencyCode: "USD")
+        let draft = InboxDraft(note: "draft", amount: 1, sourceType: .voice, rawText: "draft")
+        let category = Category(name: "cat", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+        let favorite = FavoritePayment(name: "fav")
+        let merchant = MerchantMemory(merchantCanonical: "tambo")
+        let rate = try ExchangeRate(dateKey: "2026-09-24", base: "USD", ratesDictionary: ["PEN": 3.7])
+        let models: [any PersistentModel & SyncIdentifiable] = [tx, draft, category, favorite, merchant, rate]
+        for model in models { context.insert(model) }
+        try context.save()
+        try await executor.assignIdentity()
+
+        let witnesses = try context.fetch(FetchDescriptor<SyncIdentity>())
+        var records: [PersistentIdentifier: MigrationWorkExecutor.RecordCoordinates] = [:]
+        var uploaded: [UUID] = []
+        for (index, model) in models.enumerated() {
+            let id = try #require(model.syncID)
+            uploaded.append(id)
+            let record = MigrationWorkExecutor.RecordCoordinates(
+                recordName: "record-\(index)", zoneName: "com.apple.coredata.cloudkit.zone", ownerName: "__defaultOwner__")
+            records[model.persistentModelID] = record
+            let witness = try #require(witnesses.first { $0.syncID == id })
+            witness.ckRecordName = record.recordName
+            witness.ckZoneName = record.zoneName
+            witness.ckOwnerName = record.ownerName
+        }
+        try context.save()
+        executor._testRecordCoordinates = { records[$0] }
+        for model in models { model.syncID = UUID() }
+        try saveAsImported(context)
+
+        #expect(try executor.restoreRelayIdentities() == 6)
+        #expect(models.map { $0.syncID } == uploaded.map { Optional($0) })
+    }
+
+    /// Lo que el seam sustituye, sin el seam: metadatos del espejo sembrados en el SQLite del store (las mismas tablas que
+    /// lee `CKIdentityCapture`), coordenadas capturadas por el `assignIdentity` real y restauración leyendo el SQLite.
+    @Test("relevo: sin seam, la captura real de assignIdentity y la lectura real de los metadatos restauran")
+    func relayRestore_productionCoordinatePath() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), FakeSession(token: "jwt", userID: "sub-relay"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        let categories = (0..<2).map {
+            Category(name: "relay-\($0)", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+        }
+        for category in categories { context.insert(category) }
+        try context.save()
+        try seedMirrorMetadata(dir, rows: categories.enumerated().map { ($1.persistentModelID, "record-\($0)") })
+        try await executor.assignIdentity()
+
+        let uploaded = try #require(categories[0].syncID)
+        let witness = try #require(try context.fetch(FetchDescriptor<SyncIdentity>()).first { $0.syncID == uploaded })
+        #expect(witness.ckRecordName == "record-0", "control: la captura real leyó el record sembrado")
+        #expect(witness.ckZoneName == "com.apple.coredata.cloudkit.zone")
+
+        try mirrorRekeys(categories[0], to: UUID(), in: context)
+        #expect(try executor.restoreRelayIdentities() == 1)
+        #expect(categories[0].syncID == uploaded)
+    }
+
+    /// Metadatos de CloudKit ilegibles con algo que decidir: con el espejo vivo es avería (lanza); en el reconcile de
+    /// `done`, ya remontado, se tolera para no dejar el motor parado para siempre.
+    @Test("relevo: metadatos de CloudKit ilegibles son avería con el espejo vivo y se toleran en el reconcile")
+    func relayRestore_unreadableRecordMetadata() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let stub = RoutingStub()
+        let relay = try await relayWithIdentities(dir, stub: stub, ids: [UUID(), UUID()])
+        relay.executor._testRecordCoordinates = nil  // el store de test no tiene las tablas del espejo
+        let leaders = UUID()
+        try mirrorRekeys(relay.categories[0], to: leaders, in: relay.context)
+
+        #expect(throws: MigrationExecutorError.inventoryUnreadable(entity: "CloudKitRecordMetadata")) {
+            try relay.executor.restoreRelayIdentities()
+        }
+        #expect(await relay.executor.uploadSnapshot(cursor: nil) == .blocked(.localFailure))
+        #expect(stub.pushCallCount == 0)
+        #expect(try relay.executor.restoreRelayIdentities(toleratingUnreadableRecords: true) == 0)
+        #expect(relay.categories[0].syncID == leaders)
+        try await relay.executor.execute(.runLeaderReconcileFromFrozenCloudKit)
+        #expect(stub.migrationActions.contains("complete"), "el reconcile no se queda parado")
+    }
+
+    /// El import que aterriza durante la espera del Merkle remoto: el árbol local se calcula después, y sin restaurar
+    /// daba una divergencia falsa que gastaba un reintento de MISMATCH.
+    @Test("relevo: la identidad que el espejo cambia durante la espera del Merkle se restaura antes del árbol local")
+    func relayRestore_verify_rekeyDuringTheMerkleWait() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let stub = RoutingStub()
+        let relay = try await relayWithIdentities(dir, stub: stub, ids: [UUID(), UUID()])
+        let uploaded = try #require(relay.categories[0].syncID)
+        let local = try SyncMerkle.computeLocalMerkle(context: relay.context)
+        var entitiesJSON: [String: Any] = [:]
+        for (table, summary) in local.entities {
+            entitiesJSON[table] = ["count": summary.count, "hash": summary.hashHex]
+        }
+        stub.merkleBody = try JSONSerialization.data(withJSONObject: [
+            "canon_version": "c1", "capability_set": "v1", "root": local.rootHex, "entities": entitiesJSON,
+        ])
+        var landed = false
+        stub.onMerkleRequestOnMain = {
+            guard !landed else { return }
+            do {
+                try self.mirrorRekeys(relay.categories[0], to: UUID(), in: relay.context)
+                landed = true
+            } catch {
+                Issue.record("el import simulado no se guardó: \(error)")
+            }
+        }
+
+        #expect(await relay.executor.confirmMigrationLease() == .held)
+        #expect(await relay.executor.verify(underMigrationLease: true) == .match)
+        #expect(landed, "control: el import aterrizó durante la espera del Merkle")
+        #expect(relay.categories[0].syncID == uploaded)
+    }
+
+    /// Siembra en el SQLite del store personal las dos tablas de metadatos del espejo que lee `CKIdentityCapture`, con un
+    /// record por fila en la zona por defecto. `Z_ENT` y `Z_PK` son los reales del store.
+    private func seedMirrorMetadata(_ dir: URL, rows: [(PersistentIdentifier, String)]) throws {
+        var db: OpaquePointer?
+        let url = dir.appendingPathComponent("personal.sqlite")
+        guard sqlite3_open(url.path, &db) == SQLITE_OK, let db else {
+            Issue.record("no abre \(url.path)"); return
+        }
+        defer { sqlite3_close(db) }
+        func exec(_ sql: String) { #expect(sqlite3_exec(db, sql, nil, nil, nil) == SQLITE_OK, "SQL: \(sql)") }
+        exec("CREATE TABLE ANSCKRECORDMETADATA (Z_PK INTEGER, ZENTITYPK INTEGER, ZENTITYID INTEGER, ZCKRECORDNAME TEXT, ZRECORDZONE INTEGER)")
+        exec("CREATE TABLE ANSCKRECORDZONEMETADATA (Z_PK INTEGER, ZCKRECORDZONENAME TEXT, ZCKOWNERNAME TEXT)")
+        exec("INSERT INTO ANSCKRECORDZONEMETADATA VALUES (1, 'com.apple.coredata.cloudkit.zone', '__defaultOwner__')")
+        for (index, row) in rows.enumerated() {
+            let resolved = try #require(CKIdentityCapture.entityAndPK(for: row.0))
+            var statement: OpaquePointer?
+            #expect(sqlite3_prepare_v2(db, "SELECT Z_ENT FROM Z_PRIMARYKEY WHERE Z_NAME = '\(resolved.entityName)'", -1,
+                                       &statement, nil) == SQLITE_OK)
+            #expect(sqlite3_step(statement) == SQLITE_ROW)
+            let zent = sqlite3_column_int64(statement, 0)
+            sqlite3_finalize(statement)
+            exec("INSERT INTO ANSCKRECORDMETADATA VALUES (\(index + 1), \(resolved.zpk), \(zent), '\(row.1)', 1)")
+        }
+    }
+
+    /// Sin fila re-identificada no se busca ni una coordenada: el camino de cada página y de cada verificación es barato.
+    @Test("relevo: sin nada re-identificado la restauración no busca coordenadas")
+    func relayRestore_cheapPathLooksUpNoCoordinates() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let relay = try await relayWithIdentities(dir, stub: RoutingStub(), ids: [UUID(), UUID()])
+        #expect(try relay.executor.restoreRelayIdentities() == 0)
+        #expect(relay.executor._testRecordCoordinateLookups == 0)
+        // Tampoco con un testigo de identidad PROPIA con coordenadas (una cuenta: su UUID nace con la fila y el espejo no
+        // lo cambia) y una fila creada aquí sin testigo: esos testigos no entran.
+        relay.context.insert(SyncIdentity(syncID: UUID(), entityType: SyncEntityType.account, localAnchor: "",
+                                          ckRecordName: "record-account", ckZoneName: "com.apple.coredata.cloudkit.zone",
+                                          ckOwnerName: "__defaultOwner__"))
+        let bornHere = Category(name: "born-here", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+        bornHere.syncID = UUID()
+        relay.context.insert(bornHere)
+        try relay.context.save()
+        #expect(try relay.executor.restoreRelayIdentities() == 0)
+        #expect(relay.executor._testRecordCoordinateLookups == 0)
+
+        try mirrorRekeys(relay.categories[0], to: UUID(), in: relay.context)
+        #expect(try relay.executor.restoreRelayIdentities() == 1)
+        #expect(relay.executor._testRecordCoordinateLookups == 2, "control: con una re-identificada sí busca (ella y la creada aquí)")
+    }
+
+    /// Una restauración que no se deja leer es avería local en los cuatro sitios, y ninguno sube: seguir sería subir con
+    /// identidades sin comprobar. La vuelta a iCloud no la hace.
+    @Test("relevo: si la restauración no se deja leer, cada paso para como avería local y no sube nada")
+    func relayRestore_unreadableIsALocalFailureEverywhere() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let stub = RoutingStub()
+        let relay = try await relayWithIdentities(dir, stub: stub, ids: [UUID()])
+        let reads = InventoryReadCounter()
+        relay.executor._testInventoryFetchThrows = { step, _ in
+            guard step == "identity-pin" else { return false }
+            reads.value += 1
+            return true
+        }
+
+        #expect(await relay.executor.confirmMigrationLease() == .held)
+        #expect(await relay.executor.uploadSnapshot(cursor: nil) == .blocked(.localFailure))
+        #expect(await relay.executor.verify(underMigrationLease: true) == .blocked(.localFailure))
+        await #expect(throws: MigrationExecutorError.notWired(effect: "runLeaderReconcile: relayIdentityPinUnreadable")) {
+            try await relay.executor.execute(.runLeaderReconcileFromFrozenCloudKit)
+        }
+        #expect(stub.pushCallCount == 0)
+        #expect(stub.pullCallCount == 0)
+        #expect(stub.migrationActions.filter { $0 != "heartbeat" }.isEmpty, "sin complete")
+        #expect(reads.value == 3, "control: las tres pasaron por la restauración")
+
+        reads.value = 0
+        stub.pullBody = try backendCopyPage(of: UUID(), name: "from-the-backend")
+        _ = await relay.executor.verify(underMigrationLease: false)
+        #expect(stub.pullCallCount >= 1, "control: la vuelta llegó al pull con una página")
+        #expect(reads.value == 0, "la vuelta a iCloud no restaura, ni arriba ni en el pull")
+    }
+
+    /// El fallo que llega en la restauración DEL PULL —la de arriba pasó— tampoco se lee como red.
+    @Test("relevo: la restauración del pull que no se deja leer es avería local, no red, y no aplica la página")
+    func relayRestore_unreadableInsideThePullIsALocalFailure() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let stub = RoutingStub()
+        let relay = try await relayWithIdentities(dir, stub: stub, ids: [UUID()])
+        let copy = UUID()
+        stub.pullBody = try backendCopyPage(of: copy, name: "from-the-backend")
+        let reads = InventoryReadCounter()
+        relay.executor._testInventoryFetchThrows = { step, entity in
+            guard step == "identity-pin", entity == "SyncIdentity" else { return false }
+            reads.value += 1
+            return reads.value >= 2
+        }
+
+        #expect(await relay.executor.confirmMigrationLease() == .held)
+        #expect(await relay.executor.verify(underMigrationLease: true) == .blocked(.localFailure))
+        #expect(stub.pullCallCount == 1, "control: el pull llegó a pedirse")
+        #expect(try categoryCount(relay.context) == 1, "la página no se aplicó")
+    }
+
+    /// El canario es lo que mide en la flota lo que el ticket no pudo: que CloudKit le da la razón al líder que vuelve.
+    @Test("relevo: restaurar deja el canario con el tipo y la cuenta")
+    func relayRestore_emitsTheCanary() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+        let defaults = makeIsolatedDefaults(prefix: "mwe.relay.metrics")
+        MetricsService._testReset()
+        MetricsService.start(
+            client: MetricsClient(baseURL: URL(string: "https://gw.test")!, urlSession: MetricsDown()),
+            defaults: defaults)
+        defer { MetricsService._testReset() }
+
+        let dir = freshDir(); defer { cleanup(dir) }
+        let relay = try await relayWithIdentities(dir, stub: RoutingStub(), ids: [UUID(), UUID()])
+        try mirrorRekeys(relay.categories[0], to: UUID(), in: relay.context)
+        try mirrorRekeys(relay.categories[1], to: UUID(), in: relay.context)
+        #expect(try relay.executor.restoreRelayIdentities() == 2)
+
+        let canaries = MetricsSpool.pending(defaults).filter { $0.e == "canary" && $0.n == "cloudRelayIdentityRestored" }
+        #expect(canaries.map(\.d) == ["Category"])
+        #expect(canaries.map(\.x) == [2])
     }
 }
 

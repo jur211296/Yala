@@ -40,3 +40,7 @@ sesión, y los dos producen conclusiones falsas que parecen sólidas.
 
 Relacionado: [[review-adversarial-caza-lo-mio]] · [[cola-del-simulador]] ·
 [[mutante-compilado-zanja-hipotesis]] · [[revertir-sin-commit-destruye]]
+
+**Lo que funcionó el 2026-09-25 (#243):** copiar los ficheros limpios y el diff al scratchpad y decirle a cada lente
+«no leas estos dos del árbol: están aquí». Las tres revisaron con la tanda corriendo y ninguna leyó un mutante. Y si la
+review cambia el código, la tanda se para y se repite ENTERA sobre el final: los mutantes de antes miden otro código.
