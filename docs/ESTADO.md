@@ -3,9 +3,9 @@ updated: 2026-09-25
 tags: [now, punto-de-retomada]
 ---
 
-# NOW — 2026-09-24 (Lima)
+# NOW — 2026-09-25 (Lima)
 
-**Rama** `2.1` — Merge #243: **Lo que el líder desplazado exporta tarde a iCloud ya no le cambia la identidad al relevo.**
+**Rama** `2.1` — Merge #244: **Un movimiento re-identificado y borrado en la ventana del relevo ya no reaparece.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,22 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#243 · lo que el líder desplazado exporta tarde a iCloud ya no le cambia la identidad al relevo)
+## Esta sesión (#244 · un movimiento re-identificado y borrado en la ventana del relevo ya no reaparece)
+
+**Si borras un movimiento justo mientras la nube se activa y otro teléfono acaba de mandar a iCloud sus datos viejos, el
+borrado llega a la nube: el movimiento ya no reaparece en los otros teléfonos ni deja la verificación sin cuadrar.** El
+drain emite el tombstone con la identidad preservada y con la que un registro local (`RelayIdentityLedger`, fila por
+`Z_PK` → identidad, sembrado en `assignIdentity`) dice que la fila tuvo aquí; `apply_delta` guarda como borrada la que no
+conoce (medido en producción). La review de tres lentes cambió el diseño (de traducir a emitir las dos: en el líder
+desplazado la traducción iba al revés). Gate (7887 unit en 754 suites), 19 mutantes muertos. Ticket a `done` sin device-QA.
+
+### Lo que espera de Jürgen
+
+- Nada que decidir. Tickets nuevos: `displaced-leader-after-the-cutover-restores-its-own-identity-over-the-relays`
+  (medium, inferido) y `relay-identity-ledger-missing-after-an-update-mid-migration` (low).
+- Los device-QA de #239, #237 y #236 siguen pendientes.
+
+## Sesión anterior (#243 · lo que el líder desplazado exporta tarde a iCloud ya no le cambia la identidad al relevo)
 
 **Si el primer teléfono se queda sin red a mitad de activar la nube, el segundo toma el relevo y termina, y después el
 primero vuelve y manda a iCloud lo que tenía preparado, el segundo ya no acaba con los mismos movimientos dos veces.** La
@@ -32,14 +47,14 @@ suites), 23 mutantes muertos, review de tres lentes que cazó tres cosas (ya arr
 
 ### Lo que espera de Jürgen
 
-- Nada que decidir. Tickets nuevos: `relay-row-rekeyed-then-deleted-tombstones-the-leader-identity` (medium: un movimiento
-  re-identificado y borrado en esa ventana reaparece), `adopt-window-late-leader-identity-export-can-duplicate-after-the-remount`
+- Nada que decidir. Tickets nuevos: `relay-row-rekeyed-then-deleted-tombstones-the-leader-identity` (cerrado en #244),
+  `adopt-window-late-leader-identity-export-can-duplicate-after-the-remount`
   (medium) y `reverse-mount-can-reimport-a-late-leader-identity` (low).
 - Sin medir en device: que los metadatos del espejo sigan legibles tras el remonte (si no, el reconcile de `done` lo
   tolera con el rastro `relayIdentityRecordsUnreadable`).
 - Los device-QA de #239, #237 y #236 siguen pendientes.
 
-## Sesión anterior (#242 · un borrado durante la espera ya no deja el relevo ni el adopt sin salida)
+## Antes (#242 · un borrado durante la espera ya no deja el relevo ni el adopt sin salida)
 
 **Si el primer teléfono calla y en el segundo borras un movimiento que el primero ya había subido, el relevo (y la entrada
 en la cuenta) ya no espera a iCloud para siempre: sigue en cuanto lo que el segundo va a subir lo creó él después.** Y las
