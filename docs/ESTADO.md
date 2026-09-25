@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-24 (Lima)
 
-**Rama** `2.1` — Merge #239: **Después del cutover no hay relevo: el segundo teléfono entra en la cuenta (g16_04, staging y producción).**
+**Rama** `2.1` — Merge #240: **Tras el cutover, el segundo teléfono entra aunque el primero no exportara su marca.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,26 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#239 · después del cutover no hay relevo: el segundo teléfono entra en la cuenta)
+## Esta sesión (#240 · tras el cutover, el segundo teléfono entra aunque el primero no exportara su marca)
+
+**Si el primer teléfono se paró justo después de que el servidor diera la activación por buena, sin dejar su marca en
+iCloud, el segundo teléfono del mismo iCloud ya no se queda fuera para siempre: entra, siempre que iCloud le haya traído
+todo lo que el primero subió en las listas donde va a añadir algo.** Si falta algo no sube nada (subirlo duplicaría los
+movimientos del primero) y sale con el texto de siempre, «espera a que iCloud termine de traerlos». Un teléfono con datos
+de otro iCloud sigue sin subir nada. Solo app: `MigrationWorkExecutor.adoptSharedRowsProof` (fila viva compartida + todas
+las de la cuenta en cada tabla que sube). Gate (679 unit en 42 suites, 2 XCUITest), 12 mutantes muertos, review de 3
+lentes (cazó el duplicado). Ticket a `done` sin device-QA (el escenario no se monta con fiabilidad).
+
+### Lo que espera de Jürgen
+
+- Nada que decidir. **Desde Ajustes**, un teléfono que ya tenía Yala y no tiene la marca sigue viendo «Migrar a la nube» y
+  su aviso: es `settings-migrate-blocks-a-second-device-before-its-marker` (tu D18: parar y avisar), que ahora tiene a mano
+  la prueba de linaje por filas si quieres reabrirla.
+- Ticket nuevo de la review: `migration-takeover-may-duplicate-rows-whose-leader-identities-never-arrived` (medium,
+  inferido): el mismo duplicado, en el relevo de la ida; primero medir.
+- Los device-QA de #239, #237 y #236 siguen pendientes.
+
+## Sesión anterior (#239 · después del cutover no hay relevo: el segundo teléfono entra en la cuenta)
 
 **Si el primer teléfono llegó al final de la activación y se quedó más de una hora sin reabrir Yala, el segundo ya no vuelve
 a subir todos sus datos encima: entra en la cuenta como cualquier segundo dispositivo, y tampoco se queda esperando a un
@@ -41,7 +60,7 @@ unit, 4 XCUITest); review de 3 lentes. Ticket `claim-grants-a-takeover-after-the
   vuelva; tiene dos candidatas, cliente o servidor), `adopt-orphan-with-a-fresh-hlc-beats-the-absent-leaders-edit` (low) y
   `claim-takeover-races-the-leader-cutover-without-cas` (low).
 
-## Sesión anterior (#238 · el que pierde el relevo después del cutover ya no sube su residual)
+## Antes (#238 · el que pierde el relevo después del cutover ya no sube su residual)
 
 **El teléfono que terminó de activar la nube y perdió el relevo mientras esperaba a que reabrieras Yala ya no sube lo que
 escribió encima de la activación de otro dispositivo, ni lo reintenta en bucle.** Espera sin subir mientras el otro sigue;
