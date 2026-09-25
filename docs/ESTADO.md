@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-25 (Lima)
 
-**Rama** `2.1` — Merge #247: **El adopt sin marcador ya no deja fuera para siempre a los teléfonos que llegan después.**
+**Rama** `2.1` — Merge #248: **Un adopt con el espejo de iCloud puesto ya no sube el corpus que iCloud baja después.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,29 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#247 · el adopt sin marcador ya no deja fuera a los teléfonos que llegan después)
+## Esta sesión (#248 · un adopt con el espejo de iCloud puesto ya no sube lo que iCloud baja después)
+
+**Si un iPhone entra en una cuenta de la nube mientras su iCloud aún no ha bajado sus finanzas, ya no las sube después a
+esa cuenta sin comprobar que son suyas.** La activación espera a que iCloud las baje entero y decide como siempre: si no son
+de esa cuenta, no entra y lo dice; si lo son, o ese iCloud no tiene nada, entra. Medido: pasaba con el espejo puesto
+(Ajustes, el reintento del arranque, un Welcome cerrado a mitad); la bienvenida de una instalación limpia no lo monta. La
+opción del ticket (anclar la línea base) no cerraba nada. Arreglo: el adopt le pregunta a CloudKit sin el espejo
+(`ICloudPersonalCorpusProbe.adoptRelevantRecords`) y, si hay corpus, espera al primer import entero. Canario
+`cloudAdoptICloudCorpusChecked`. Gate (7928 unit en 755 suites, 22 XCUITest en 7 suites), 15 mutantes muertos, review de
+tres lentes sin hallazgos altos (cazó la primera tanda de un import por partes, ya arreglado). Ticket a `qa`: la sonda
+lee CloudKit, que no existe en el simulador.
+
+### Lo que espera de Jürgen
+
+- **Device-QA en iPhone** del ticket `adopt-on-an-empty-store-uploads-what-the-mirror-imports-before-the-relaunch`
+  (guion en el ticket: un iCloud con finanzas ajenas a la cuenta no las sube; uno vacío entra como siempre).
+- **Una decisión de producto, sin prisa:** `adopt-window-uploads-what-reaches-the-mirror-after-the-icloud-check`
+  (medium) — lo que llega a iCloud DESPUÉS de la comprobación (otro teléfono del mismo Apple ID, o iniciar sesión en iCloud
+  antes de reabrir) sigue subiendo; cerrarlo pide decidir qué se hace con esas filas con la nube ya activada.
+- Ticket nuevo `adopt-window-late-imports-overwrite-newer-cloud-edits` (medium, inferido).
+- Los device-QA de #239, #237 y #236 siguen pendientes.
+
+## Sesión anterior (#247 · el adopt sin marcador ya no deja fuera a los teléfonos que llegan después)
 
 **Si el primer teléfono que activó la nube no llegó a dejar su marca en iCloud, el siguiente que entra en la cuenta con
 todos sus datos deja la suya, y los que lleguen después entran aunque otro escriba a diario.** Medido: el líder no apaga su
@@ -39,7 +61,7 @@ arregladas. Ticket a `done` sin device-QA.
 - Aviso: al parar mis mutantes corrí `pkill -x xcodebuild` en la Mac; si otra sesión estaba en su gate a esa hora (mañana del 25-sep),
   su corrida pudo cortarse sin culpa del código.
 
-## Sesión anterior (#246 · en el adopt, lo que un líder desplazado exporta tarde ya no duplica movimientos)
+## Antes (#246 · en el adopt, lo que un líder desplazado exporta tarde ya no duplica movimientos)
 
 **Si un teléfono se quedó sin red a mitad de activar la nube, otro terminó, y el primero volvió y mandó a iCloud sus datos
 viejos, el teléfono que entra después en la cuenta ya no sube esos movimientos otra vez.** La ventana del ticket (del
