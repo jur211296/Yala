@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-24 (Lima)
 
-**Rama** `2.1` — Merge #241: **El relevo no sube filas del líder cuyas identidades aún no llegaron por iCloud.**
+**Rama** `2.1` — Merge #242: **Un borrado en el otro teléfono durante la espera ya no deja el relevo ni el adopt sin salida.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,28 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#241 · el relevo no sube filas del líder cuyas identidades aún no llegaron por iCloud)
+## Esta sesión (#242 · un borrado durante la espera ya no deja el relevo ni el adopt sin salida)
+
+**Si el primer teléfono calla y en el segundo borras un movimiento que el primero ya había subido, el relevo (y la entrada
+en la cuenta) ya no espera a iCloud para siempre: sigue en cuanto lo que el segundo va a subir lo creó él después.** Y las
+filas del primero que están aquí sin su marca, cuando se reconocen sin ambigüedad (mismo instante de creación único, mismo
+comercio, misma semilla), toman su identidad en vez de esperar. Sigue esperando, con el aviso de siempre, el teléfono que
+conserva una fila del primero sin marca y sin forma segura de reconocerla: subirla duplicaría (#241). Decisión tomada en
+autónomo: sin salida «subir igualmente». La prueba falla cerrado (`adoptSharedRowsProof` + `LineageTwinKey`; regla «Una
+fila que falta solo bloquea si aquí puede tener gemela»). Gate (7859 unit en 754 suites), 13 mutantes muertos, dos rondas
+de review que tumbaron dos versiones (la primera fallaba abierta). Ticket a `done` sin device-QA.
+
+### Lo que espera de Jürgen
+
+- Nada que decidir. Tickets nuevos: `markerless-adopt-stays-blocked-while-another-device-writes-to-the-account` (medium),
+  `row-deleted-during-the-relief-wait-comes-back-after-the-relief` (low), `lineage-enumeration-check-skips-tables-absent-from-the-merkle`
+  (medium) y, al margen, `notification-dedup-deletes-all-custom-reminders-but-one` (medium: el deduplicador de avisos
+  agruparía todos los recordatorios propios; falta medir si la UI deja crear varios).
+- Sin medir en device, y lo hereda del cierre de la sesión privada: que el espejo de iCloud firme todas sus importaciones
+  con su autor. Si no, la prueba de «creada aquí después» fallaría abierta.
+- Los device-QA de #239, #237 y #236 siguen pendientes.
+
+## Sesión anterior (#241 · el relevo no sube filas del líder cuyas identidades aún no llegaron por iCloud)
 
 **Si el primer teléfono sube parte de tus datos y se queda callado, el segundo del mismo iCloud ya no los sube otra vez
 cuando iCloud todavía no le ha traído las marcas internas que el primero les puso.** Medido: duplicaba (el servidor solo
@@ -33,12 +54,11 @@ device-QA.
 
 ### Lo que espera de Jürgen
 
-- Nada que decidir. Dos tickets nuevos de la review, medium: `lineage-coverage-blocks-forever-after-a-row-deleted-during-the-wait`
-  (un movimiento borrado en el segundo teléfono mientras el primero calla deja el relevo, y el adopt, sin salida; la salida
-  «subir igualmente» sería decisión tuya) y `displaced-leader-late-identity-export-can-rekey-the-relief-corpus` (inferido).
+- Nada que decidir. De sus dos tickets de la review, `lineage-coverage-blocks-forever-after-a-row-deleted-during-the-wait`
+  se cerró en #242; `displaced-leader-late-identity-export-can-rekey-the-relief-corpus` (inferido) sigue en backlog.
 - Los device-QA de #239, #237 y #236 siguen pendientes.
 
-## Sesión anterior (#240 · tras el cutover, el segundo teléfono entra aunque el primero no exportara su marca)
+## Antes (#240 · tras el cutover, el segundo teléfono entra aunque el primero no exportara su marca)
 
 **Si el primer teléfono se paró justo después de que el servidor diera la activación por buena, sin dejar su marca en
 iCloud, el segundo teléfono del mismo iCloud ya no se queda fuera para siempre: entra, siempre que iCloud le haya traído
