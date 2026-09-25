@@ -2941,13 +2941,13 @@ final class MigrationRunner {
         return 0
     }
 
-    /// `CloudMigrationMarker.serverSeqCut` de la fila local (single-row). Lectura pura; `nil` si no hay marcador
-    /// o el fetch falla.
+    /// `CloudMigrationMarker.serverSeqCut` del marcador del CUTOVER. Lectura pura; `nil` si no hay marcador o el fetch
+    /// falla. Un marcador RELEVADO (`isRelay`, ticket `markerless-adopt-stays-blocked-while-another-device-writes-to-the-account`)
+    /// no cuenta: lleva corte 0 porque el adoptador no sabe el del líder, y con un `fetchLimit = 1` sin orden tapaba el bueno
+    /// y mandaba barrer desde 0 (correcto, pero todo el corpus y con el rastro de avería del fallback).
     private func markerSeqCut() -> Int64? {
         do {
-            var descriptor = FetchDescriptor<CloudMigrationMarker>()
-            descriptor.fetchLimit = 1
-            return try context.fetch(descriptor).first?.serverSeqCut
+            return try context.fetch(FetchDescriptor<CloudMigrationMarker>()).first { !$0.isRelay }?.serverSeqCut
         } catch {
             #if DEBUG
             print("MigrationRunner: fetch(CloudMigrationMarker) para serverSeqCut falló: \(error)")

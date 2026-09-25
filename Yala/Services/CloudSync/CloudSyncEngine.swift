@@ -1331,6 +1331,19 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSyncAdopt reconcileAccountRowsMissing table=\(table, privacy: .public) missing=\(missing, privacy: .public) pending=\(pending, privacy: .public) — sin marcador; faltan filas de la cuenta, upload bloqueado (linaje)")
     }
 
+    /// El adopt entró sin marcador de la cuenta y con todas sus filas vivas aquí, y ESCRIBIÓ el suyo para los teléfonos que
+    /// lleguen después (ticket `markerless-adopt-stays-blocked-while-another-device-writes-to-the-account`). Escrito en local:
+    /// si llega a iCloud lo dice el canario `cloudAdoptMarkerRelayed` al terminar la espera. Solo conteos.
+    static func adoptMarkerRelayed(liveRows: Int) {
+        logger.notice("CloudSyncAdopt markerRelayed live=\(liveRows, privacy: .public) — sin marcador de la cuenta y cobertura total; marcador relevado escrito en local")
+    }
+
+    /// El adopt no relevó el marcador o no lo vio llegar a iCloud: `coverage` (falta alguna fila viva de la cuenta),
+    /// `unreadable`, `save`, `exportUnreadable` (no se dejó leer para esperarlo) o `exportUnconfirmed` (venció la espera). Sin PII.
+    static func adoptMarkerRelaySkipped(reason: String) {
+        logger.notice("CloudSyncAdopt markerRelaySkipped reason=\(reason, privacy: .public)")
+    }
+
     /// El adopt probó el linaje sin marcador, por filas vivas de la cuenta que ya están en local (ticket
     /// `adopt-after-the-cutover-needs-a-marker-the-leader-never-exported`): el líder pasó el cutover del servidor y aún no
     /// exportó su marcador, o lo escribió sin sesión. Solo conteos, sin PII.

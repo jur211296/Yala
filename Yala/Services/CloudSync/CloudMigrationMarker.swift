@@ -13,6 +13,11 @@
 //  ya lo estampa `migration_progress('cutover')`; capturarlo al outbox lo rechazaría el backend por falta
 //  de tabla/manifest).
 //
+//  Desde el ticket `markerless-adopt-stays-blocked-while-another-device-writes-to-the-account` también lo escribe un
+//  ADOPTADOR, el RELEVO (`MigrationWorkExecutor.relayAdoptMarkerIfCovered`): entró sin marcador de la cuenta y con todas
+//  sus filas vivas aquí. Se distingue por el prefijo de `writerDeviceID` (`isRelay`), no por quién lo lee: el paso 4 del
+//  líder y su aborto miran SOLO los marcadores del cutover, y el relevo no es uno de ellos.
+//
 //  REGLA DE DEPLOY (owner-pendiente, RUIDOSA): record type nuevo `CD_CloudMigrationMarker` en el container
 //  PERSONAL (`iCloud.com.jurgenschmidt.yala`). ANTES de cualquier cutover REAL en TestFlight, el owner debe
 //  desplegar el schema a Production (CloudKit Console) Y actualizar `cloudkit-yala-production.ckdb` en el
@@ -41,7 +46,8 @@ final class CloudMigrationMarker {
     /// journaleado también en `MigrationState.serverSeqCut`).
     var serverSeqCut: Int64 = 0
 
-    /// `device_id` del líder que escribió el marcador (diagnóstico + `markerReconciliation` self-authored).
+    /// `device_id` del líder que escribió el marcador (diagnóstico). En un marcador RELEVADO lleva delante
+    /// `relayWriterPrefix` (`isRelay`), y eso sí decide: separa el marcador del cutover del de un adoptador.
     var writerDeviceID: String = ""
 
     /// Versión del schema bajo la que se materializó esta fila (testigo A1).
@@ -60,4 +66,15 @@ final class CloudMigrationMarker {
         self.writerDeviceID = writerDeviceID
         self.schemaVersion = schemaVersion
     }
+}
+
+extension CloudMigrationMarker {
+    /// Prefijo de `writerDeviceID` del marcador que deja un ADOPTADOR (`relayAdoptMarkerIfCovered`). Es la única marca que
+    /// lo separa del marcador del cutover sin cambiar el schema de CloudKit (un campo nuevo pide deploy a Production). No
+    /// depende de que `identifierForVendor` sea estable: un `deviceID` que cambió entre dos arranques no convierte el marcador
+    /// del propio líder en «ajeno».
+    static let relayWriterPrefix = "relay:"
+
+    /// ¿Lo dejó un adoptador (relevo) y no el cutover de un líder?
+    var isRelay: Bool { writerDeviceID.hasPrefix(Self.relayWriterPrefix) }
 }

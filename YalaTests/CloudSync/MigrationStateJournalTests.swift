@@ -181,6 +181,8 @@ struct MigrationStateJournalTests {
         #expect(Effect.adoptBackendAccount.rawValue == "adoptBackendAccount")
         // Salida de `reverseUpload`: un journal con este efecto pendiente tiene que poder leerse tras el relanzamiento.
         #expect(Effect.rearmMirrorOff.rawValue == "rearmMirrorOff")
+        // El aborto del paso 4 borra solo el marcador propio: un journal que lo deja pendiente tiene que leerse igual.
+        #expect(Effect.deleteCutoverCloudKitMarkers.rawValue == "deleteCutoverCloudKitMarkers")
     }
 
     // MARK: - (c) readPhase puro: nil / corrupto
