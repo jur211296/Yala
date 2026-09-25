@@ -5,6 +5,7 @@ priority: low
 area: "modo-nube, sync"
 created: 2026-09-16
 source: "review de `reverse-upload-has-no-ceiling-and-no-exit` (2026-09-16), decisión D12(d)"
+updated: 2026-09-25
 ---
 
 # El motor de la nube puede arrancar con un `reverse_abort` pendiente y pararse hasta el siguiente resume
@@ -40,3 +41,19 @@ para un `.adoptBackendAccount` pendiente con fase `notStarted` (anotado en `star
 - [ ] Decidido si `canRunDomain` exige no tener efectos pendientes, o si el runner re-despierta el motor al
       completar un `reverseRollback`.
 - [ ] Test del caso: salida sin red → relanzar → la red vuelve → los cambios suben sin otro arranque.
+
+## También con el reconcile de `done` pendiente (2026-09-25)
+
+Medido al cerrar `displaced-leader-after-the-cutover-restores-its-own-identity-over-the-relays`: el mismo hueco deja
+arrancar el runtime con `.runLeaderReconcileFromFrozenCloudKit` pendiente. `canRunDomain` no mira los pendientes, `done`
+es fase estable y el sello sigue en `.proceedMigration` hasta el cierre (`AppBootstrapper` 14.6 y 14.7 son dos `Task`
+independientes). Dos consecuencias:
+
+- **La regla decía lo contrario** («con el runtime sin arrancar, un pendiente en `done` lo bloquea» y «mientras tanto el
+  runtime sigue parado»). Corregida ese día en `swiftdata-cloudkit.md`.
+- **Condiciona el orden del reconcile.** Por eso la restauración de identidades va antes de la primera petición de red:
+  detrás, el pull del runtime creaba un born-remote y la fila ya no se restauraba. Mientras este hueco siga abierto, nada
+  del reconcile que lea identidades puede ir detrás de un `await`.
+
+Si se decide que `canRunDomain` exija no tener pendientes, pesa el otro lado: un reconcile que falle para siempre (una
+avería local, un `complete` rechazado) dejaría el motor parado para siempre, cuando hoy sincroniza igual.

@@ -1,6 +1,6 @@
 ---
 id: displaced-leader-after-the-cutover-restores-its-own-identity-over-the-relays
-status: backlog
+status: discarded
 priority: medium
 area: "modo-nube, migración"
 created: 2026-09-25
@@ -30,5 +30,33 @@ el primero podría volver a poner las suyas y subir algunos movimientos como si 
 
 ## Criterios de aceptación
 
-- [ ] Decidido si la restauración debe correr solo en quien conserva el lease (o solo antes de perderlo), medido contra
-      el caso del relevo legítimo, que es el que la necesita.
+- [x] Decidido si la restauración debe correr solo en quien conserva el lease (o solo antes de perderlo), medido contra
+      el caso del relevo legítimo, que es el que la necesita. **Ninguna de las dos: corre antes de preguntar y con
+      cualquier respuesta, como ya hacía.** Ver abajo.
+
+## Cierre (2026-09-25): descartado, la premisa no se sostiene
+
+**Lo que pasa para el usuario:** nada que arreglar. El teléfono que vuelve se devuelve una identidad que la nube ya tiene,
+así que no sube nada como nuevo. Cambiar el código abría en cambio un duplicado real en el caso normal del relevo.
+
+**Medido en código:**
+
+- **El backend tiene la identidad que se restaura.** Al reconcile de `done` solo llega quien pasó SU cutover
+  (`.runLeaderReconcileFromFrozenCloudKit` se journalea solo en `(.cutover(.mirrorOff), .mirrorRelaunchCompleted)`), al
+  cutover solo se entra desde la verificación en `.match` (`MigrationStateMachine.verifyTransition`), y la hoja del Merkle
+  lleva el `sync_id` (`SyncMerkle.swift`, cabecera). O sea que el backend tiene cada fila viva con la identidad que llevaba
+  aquí en ese momento, y la restauración vuelve exactamente a esa. La que trajo el espejo solo la tiene si quien la acuñó
+  la llegó a subir. El «inferido» de arriba («la suya, que el backend no conoce») era falso.
+- **Moverla detrás del lease rompía el relevo legítimo.** El runtime arranca con el reconcile pendiente
+  (`CloudSyncRuntime.canRunDomain` no mira los pendientes, `done` es estable y el sello sigue en `.proceedMigration`). Con la
+  restauración detrás de la petición de red, el pull del runtime traía la copia del backend de la fila re-identificada,
+  creaba un born-remote, y la restauración ya no la tocaba (su identidad quedaba viva en otra fila). Se implementó, se
+  probó (sus tests mataron los 6 mutantes que se corrieron) y se retiró tras la review adversarial.
+- **Desde g16_04 el caso ni siquiera llega** salvo con la cuenta volviendo a iCloud: quien hizo el cutover no pierde el
+  lease ante otra ida.
+
+**Qué quedó:** el código igual, con el porqué escrito en el efecto y en el docblock de `restoreRelayIdentities`; un test
+que fija que el reconcile restaura antes de su primera petición de red en las cinco respuestas del lease; la regla
+corregida (punto (4) de «Y lo que el líder desplazado exporta TARDE…» y dos frases que decían que el runtime se queda
+parado con un pendiente en `done`, medido que no); y el hallazgo del runtime, anotado en
+`cloud-engine-can-start-with-a-reverse-abort-pending`.

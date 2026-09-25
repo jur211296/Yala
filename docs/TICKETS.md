@@ -196,7 +196,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | diez-worktrees-comparten-un-simulador | done | tickets/done/diez-worktrees-comparten-un-simulador.md |
 | discard-gate-cannot-close-an-orphan-session-window | done | tickets/done/discard-gate-cannot-close-an-orphan-session-window.md |
 | discard-gate-proceed-leaves-the-imported-rows-behind | backlog | tickets/backlog/discard-gate-proceed-leaves-the-imported-rows-behind.md |
-| displaced-leader-after-the-cutover-restores-its-own-identity-over-the-relays | backlog | tickets/backlog/displaced-leader-after-the-cutover-restores-its-own-identity-over-the-relays.md |
+| displaced-leader-after-the-cutover-restores-its-own-identity-over-the-relays | discarded | tickets/discarded/displaced-leader-after-the-cutover-restores-its-own-identity-over-the-relays.md |
 | displaced-leader-late-identity-export-can-rekey-the-relief-corpus | done | tickets/done/displaced-leader-late-identity-export-can-rekey-the-relief-corpus.md |
 | displaced-migration-leader-keeps-uploading-after-a-takeover | qa | tickets/qa/displaced-migration-leader-keeps-uploading-after-a-takeover.md |
 | distribucion-recalcula-dos-veces-por-toque-y-sin-debounce | backlog | tickets/backlog/distribucion-recalcula-dos-veces-por-toque-y-sin-debounce.md |
