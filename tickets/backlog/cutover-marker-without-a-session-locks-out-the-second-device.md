@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, migración"
 created: 2026-09-24
-updated: 2026-09-24
+updated: 2026-09-25
 source: "review adversarial de `adopt-uploads-a-foreign-corpus-without-a-lineage-check` (lente del dispositivo legítimo, H2), 2026-09-24"
 ---
 
@@ -39,4 +39,9 @@ El bloqueo del segundo dispositivo ya no depende de este marcador: desde ese tic
 linaje una fila VIVA de la cuenta en el store local, y el segundo dispositivo del mismo iCloud siempre tiene las cuentas y
 movimientos que el líder subió. Un marcador con el hash vacío ya no deja fuera a nadie que comparta datos con la cuenta.
 Queda el criterio de abajo como higiene del marcador (sigue siendo la primera prueba que se mira).
+
+## Actualización (2026-09-25, `markerless-adopt-stays-blocked-while-another-device-writes-to-the-account`)
+
+Un marcador con el hash vacío no es el de la cuenta. El primer adoptador que entra con cobertura total releva uno con el
+hash bueno, y los teléfonos siguientes entran por él. El criterio de este ticket sigue abierto como higiene.
 

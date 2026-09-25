@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (573)
+## Index (574)
 
 | id | status | path |
 |---|---|---|
@@ -376,7 +376,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | live-anchor-breakdown-doubles-the-approximate-glyph | backlog | tickets/backlog/live-anchor-breakdown-doubles-the-approximate-glyph.md |
 | lost-cloud-signup-then-private-leaves-migrate-blocked | backlog | tickets/backlog/lost-cloud-signup-then-private-leaves-migrate-blocked.md |
 | m1-prose-outlives-its-code-in-comments | backlog | tickets/backlog/m1-prose-outlives-its-code-in-comments.md |
-| markerless-adopt-stays-blocked-while-another-device-writes-to-the-account | backlog | tickets/backlog/markerless-adopt-stays-blocked-while-another-device-writes-to-the-account.md |
+| markerless-adopt-stays-blocked-while-another-device-writes-to-the-account | done | tickets/done/markerless-adopt-stays-blocked-while-another-device-writes-to-the-account.md |
+| markerless-adopt-without-full-coverage-never-relays-the-marker | backlog | tickets/backlog/markerless-adopt-without-full-coverage-never-relays-the-marker.md |
 | merchant-memory-suggests-across-natures-in-three-more-places | backlog | tickets/backlog/merchant-memory-suggests-across-natures-in-three-more-places.md |
 | migrate-attempt-session-survives-a-relaunch-mid-attempt | backlog | tickets/backlog/migrate-attempt-session-survives-a-relaunch-mid-attempt.md |
 | migrate-before-the-groups-association-arrives-splits-the-accounts | backlog | tickets/backlog/migrate-before-the-groups-association-arrives-splits-the-accounts.md |
