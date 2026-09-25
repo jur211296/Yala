@@ -5567,6 +5567,346 @@ struct MigrationWorkExecutorTests {
         #expect(canaries.map(\.d) == ["Category"])
         #expect(canaries.map(\.x) == [2])
     }
+
+    // MARK: - En el adopt, lo que un líder desplazado exporta TARDE (ticket `adopt-window-late-leader-identity-export-can-duplicate-after-the-remount`)
+    //
+    // Un líder se queda sin red tras acuñar sus identidades, otro teléfono toma el relevo y termina, y el líder vuelve y su
+    // espejo las exporta. Si CloudKit le da la razón —sin medir: pide dos teléfonos—, un teléfono que ADOPTA recibe por su
+    // espejo filas con una identidad que el backend no conoce. Dos ventanas: antes del reconcile de huérfanas (con el
+    // marcador, subían como huérfanas y el duplicado quedaba en el backend) y del reconcile al remonte (el runtime drenaba y
+    // hacía pull sin mirar). El import se simula como en las pruebas del relevo: mismo objeto, solo la identidad, con el
+    // autor del espejo.
+
+    /// Un teléfono que ya adoptó: el marcador del líder llegó por su espejo y dos categorías que el relevo subió con sus
+    /// identidades. El reconcile no sube nada y deja el registro del adopt; el baseline del History, adelantado como en
+    /// `runAdoptFlow`. Con `seedingCoordinates`, los metadatos del espejo están en el SQLite y la captura real los lee.
+    private func adoptedPhone(_ dir: URL, stub: RoutingStub, seedingCoordinates: Bool = false) async throws
+        -> (executor: MigrationWorkExecutor, context: ModelContext, categories: [Yala.Category], engine: CloudSyncEngine,
+            backend: () -> FakeTombstoneSource) {
+        let context = try makeContext(dir)
+        try seedLeaderMarker(for: "sub-1", in: context)
+        let ids = [UUID(), UUID()]
+        let categories = ids.enumerated().map { makeCategory("relay-\($0.offset)", syncID: $0.element, in: context) }
+        try saveAsImported(context)
+        if seedingCoordinates {
+            try seedMirrorMetadata(dir, rows: categories.enumerated().map { ($0.element.persistentModelID, "record-\($0.offset)") })
+        }
+        let source = try backend(ids.map { (table: "categories", id: $0) }, stub: stub)
+        let engine = CloudSyncEngine()
+        let executor = makeExecutor(context, engine, stub, FakeSession(token: "jwt", userID: "sub-1"), FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"), tombstoneSource: source())
+        #expect(await executor.runAdoptOrphanReconcile() == .completed(uploaded: 0, identityAssigned: 0))
+        engine.fastForwardHistoryBaseline(context: context)
+        return (executor, context, categories, engine, source)
+    }
+
+    /// El relanzamiento que remonta el store sin espejo: contexto y motor nuevos sobre los mismos ficheros.
+    private func remount(_ dir: URL) throws -> (context: ModelContext, engine: CloudSyncEngine) {
+        let engine = CloudSyncEngine()
+        engine.relayIdentityLedgerURL = relayLedgerURL(forStore: dir.appendingPathComponent("personal.sqlite"))
+        return (try makeContext(dir), engine)
+    }
+
+    private func ledgerURL(_ dir: URL) -> URL { relayLedgerURL(forStore: dir.appendingPathComponent("personal.sqlite")) }
+
+    /// **EL BUG DEL TICKET.** Entre el reconcile y el remonte el espejo le cambia la identidad a una categoría (y trae la
+    /// edición del líder). Tras el remonte el runtime restaura antes de drenar: la edición sube con la identidad del backend
+    /// y el pull no crea un born-remote. Sin la restauración —el control, sobre otra copia del mismo escenario— el pull la
+    /// duplica.
+    @Test("adopt: la fila que el espejo re-identifica tras el reconcile vuelve a su identidad al arrancar, y el pull no la duplica")
+    func adoptPin_rekeyAfterTheReconcile_isRestoredAtStart() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let stub = RoutingStub()
+        let phone = try await adoptedPhone(dir, stub: stub)
+        let uploaded = try #require(phone.categories[0].syncID)
+        let leaders = UUID()
+        try mirrorRekeys(phone.categories[0], to: leaders, renamedTo: "editada por el líder", in: phone.context)
+        #expect(RelayIdentityLedger.isAdoptPinned(ledgerURL(dir)), "control: el reconcile dejó la marca del adopt")
+
+        let remounted = try remount(dir)
+        #expect(remounted.engine.restoreAdoptedRelayIdentitiesIfPinned(context: remounted.context))
+        let ids = Set(try remounted.context.fetch(FetchDescriptor<Yala.Category>()).compactMap(\.syncID))
+        #expect(ids.contains(uploaded) && !ids.contains(leaders))
+
+        stub.pullBody = try backendCopyPage(of: uploaded, name: "relay-0")
+        let pull = SyncPullClient(baseURL: workerURL, tokenProvider: { "jwt" }, urlSession: stub)
+        _ = await remounted.engine.pullAndApplyOnce(using: pull, context: remounted.context)
+        #expect(try categoryCount(remounted.context) == 2, "sin born-remote")
+        let upserts = try liveOutboxRows(remounted.context).filter { $0.opRaw == SyncOutboxOp.upsert.rawValue }.map(\.syncID)
+        #expect(upserts.contains(uploaded) && !upserts.contains(leaders), "la edición sube con la identidad del backend")
+        #expect(!RelayIdentityLedger.isAdoptPinned(ledgerURL(dir)))
+        #expect(!ledgerExists(dir), "marcado para retirar, el drain del pull lo retiró")
+
+        // El control: la misma escena sin la marca del adopt. El pull crea la copia del backend como fila nueva.
+        let controlDir = freshDir(); defer { cleanup(controlDir) }
+        let controlStub = RoutingStub()
+        let control = try await adoptedPhone(controlDir, stub: controlStub)
+        let controlUploaded = try #require(control.categories[0].syncID)
+        try mirrorRekeys(control.categories[0], to: UUID(), in: control.context)
+        try RelayIdentityLedger.clearAdoptPin(ledgerURL(controlDir))
+        let controlRemounted = try remount(controlDir)
+        #expect(!controlRemounted.engine.restoreAdoptedRelayIdentitiesIfPinned(context: controlRemounted.context))
+        controlStub.pullBody = try backendCopyPage(of: controlUploaded, name: "relay-0")
+        let controlPull = SyncPullClient(baseURL: workerURL, tokenProvider: { "jwt" }, urlSession: controlStub)
+        _ = await controlRemounted.engine.pullAndApplyOnce(using: controlPull, context: controlRemounted.context)
+        #expect(try categoryCount(controlRemounted.context) == 3, "control: sin restaurar, la misma categoría dos veces")
+    }
+
+    /// El borrado de la fila re-identificada en la misma ventana: sale también con la identidad del backend. Es el drain de
+    /// #244 sin cambios; lo nuevo es que el adopt siembre el registro y capture las coordenadas de sus testigos (aquí por el
+    /// camino real: los metadatos del espejo sembrados en el SQLite).
+    @Test("adopt: el borrado de una fila re-identificada tras el reconcile sale también con la identidad del backend")
+    func adoptPin_rekeyedThenDeleted_tombstonesTheBackendIdentity() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let phone = try await adoptedPhone(dir, stub: RoutingStub(), seedingCoordinates: true)
+        let uploaded = try #require(phone.categories[0].syncID)
+        let witness = try #require(try phone.context.fetch(FetchDescriptor<SyncIdentity>()).first { $0.syncID == uploaded })
+        #expect(witness.ckRecordName == "record-0", "control: el adopt capturó las coordenadas")
+        let leaders = UUID()
+        try mirrorRekeys(phone.categories[0], to: leaders, in: phone.context)
+        try userDeletes(phone.categories[0], in: phone.context)
+
+        let remounted = try remount(dir)
+        #expect(remounted.engine.restoreAdoptedRelayIdentitiesIfPinned(context: remounted.context))
+        #expect(remounted.engine.drainOnce(context: remounted.context))
+        #expect(Set(try outboxTombstones(remounted.context)) == [uploaded, leaders])
+    }
+
+    /// **La ventana grande: antes del reconcile.** El líder desplazado volvió después del remonte del relevo, y un
+    /// movimiento que el relevo subió llega aquí con la identidad del líder. Con el marcador subía como huérfano: el
+    /// duplicado quedaba en el backend. Ahora casa por su `created_at` y toma la identidad del backend. Y lo que no casa no
+    /// bloquea: el movimiento que el líder creó sin red no está en el backend y sube, aunque falte uno que el relevo escribió
+    /// después del cutover.
+    @Test("adopt con marcador: la fila que llegó re-identificada casa por su clave y no sube; la nueva del líder sí")
+    func adoptRekeyedBeforeTheReconcile_rebindsByKey_andNeverBlocks() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        try seedLeaderMarker(for: "sub-1", in: context)
+        let leaderAccount = UUID(), relayTx = UUID(), writtenAfterTheCutover = UUID(), offlineTx = UUID()
+        let t1 = Date(timeIntervalSince1970: 1_699_000_100.123)
+        let source = try backend([("accounts", leaderAccount), ("tx_items", relayTx), ("tx_items", writtenAfterTheCutover)],
+                                 fields: [relayTx: ["created_at": wireCreatedAt(t1)],
+                                          writtenAfterTheCutover: ["created_at": wireCreatedAt(Date(timeIntervalSince1970: 1_699_900_000))]],
+                                 hlc: hlc(leaderLastWrite), stub: stub)
+        let account = try importLeaderAccount(leaderAccount, in: context)
+        let rekeyed = makeTx(createdAt: t1, amount: 10, account: account, syncID: UUID(), in: context)
+        _ = makeTx(createdAt: Date(timeIntervalSince1970: 1_699_500_000), amount: 20, account: account, syncID: offlineTx,
+                   in: context)
+        try saveAsImported(context)
+
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source())
+        #expect(await executor.runAdoptOrphanReconcile() == .completed(uploaded: 1, identityAssigned: 0))
+        #expect(rekeyed.syncID == relayTx)
+        #expect(stub.pushedSyncIDs.map { $0.lowercased() } == [offlineTx.uuidString.lowercased()])
+    }
+
+    /// La unicidad se cuenta con TODAS las candidatas: una fila de este teléfono sin identidad con la misma clave hace
+    /// ambiguo el casado, y no se toca ninguna (sube como antes: residual con ticket).
+    @Test("adopt con marcador: una fila propia con la misma clave hace ambiguo el casado y no se re-identifica nada")
+    func adoptRekeyedBeforeTheReconcile_ambiguousKeyIsLeftAlone() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        try seedLeaderMarker(for: "sub-1", in: context)
+        let leaderAccount = UUID(), relayTx = UUID()
+        let t1 = Date(timeIntervalSince1970: 1_699_000_100.123)
+        let source = try backend([("accounts", leaderAccount), ("tx_items", relayTx)],
+                                 fields: [relayTx: ["created_at": wireCreatedAt(t1)]], hlc: hlc(leaderLastWrite), stub: stub)
+        let account = try importLeaderAccount(leaderAccount, in: context)
+        let leaders = UUID()
+        let rekeyed = makeTx(createdAt: t1, amount: 10, account: account, syncID: leaders, in: context)
+        try saveAsImported(context)
+        _ = makeTx(createdAt: t1, amount: 30, account: account, syncID: nil, in: context)
+        try context.save()
+
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source())
+        #expect(await executor.runAdoptOrphanReconcile() == .completed(uploaded: 2, identityAssigned: 1))
+        #expect(rekeyed.syncID == leaders)
+    }
+
+    /// En un reintento del adopt (la red del push falló, la quiescencia no llegó), lo que el espejo cambió desde la pasada
+    /// anterior vuelve por el registro que esa pasada sembró. Las categorías del usuario no tienen clave de linaje: sin esto
+    /// subía como huérfana.
+    @Test("adopt: en un reintento, la fila que el espejo re-identificó desde la pasada anterior vuelve a su identidad")
+    func adoptPin_retryRestoresFromTheLedger() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let stub = RoutingStub()
+        let phone = try await adoptedPhone(dir, stub: stub)
+        let uploaded = try #require(phone.categories[0].syncID)
+        try mirrorRekeys(phone.categories[0], to: UUID(), in: phone.context)
+
+        let again = makeExecutor(phone.context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                 FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                 tombstoneSource: phone.backend())
+        #expect(await again.runAdoptOrphanReconcile() == .completed(uploaded: 0, identityAssigned: 0))
+        #expect(phone.categories[0].syncID == uploaded)
+        #expect(stub.pushedSyncIDs.isEmpty)
+    }
+
+    /// **El líder desplazado que adopta con un registro viejo de su ida.** El registro dice SU identidad; el espejo le trajo
+    /// la del relevo, que es la del backend. Restaurar hacia la suya subiría la categoría como huérfana: solo se restaura
+    /// hacia identidades que el backend conoce.
+    @Test("adopt: la restauración del reconcile no devuelve una identidad que el backend no conoce")
+    func adoptPin_retryNeverRestoresAnIdentityTheBackendDoesNotKnow() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        try seedLeaderMarker(for: "sub-1", in: context)
+        let own = UUID(), relays = UUID()
+        let category = makeCategory("del líder", syncID: own, in: context)
+        context.insert(SyncIdentity(syncID: own, entityType: SyncEntityType.category, localAnchor: "a"))
+        try context.save()
+        let key = try #require(RelayIdentityLedger.key(for: category.persistentModelID))
+        try RelayIdentityLedger.merge([key: own], into: ledgerURL(dir))
+        category.syncID = relays
+        try saveAsImported(context)
+
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: try backend([("categories", relays)], stub: stub)())
+        #expect(await executor.runAdoptOrphanReconcile() == .completed(uploaded: 0, identityAssigned: 0))
+        #expect(category.syncID == relays)
+        #expect(stub.pushedSyncIDs.isEmpty)
+    }
+
+    /// **El reintento tras un push fallido** (review del ticket). La pasada anterior acuñó la identidad de una fila de este
+    /// teléfono, la sembró en el registro, la encoló y el push falló: esa identidad aún no está en el backend, solo en el
+    /// outbox. Si el espejo cambia la fila antes del reintento, la restauración la devuelve a la del outbox: sin eso subían
+    /// las dos.
+    @Test("adopt: en un reintento tras un push fallido, la fila vuelve a la identidad que ya esperaba en el outbox")
+    func adoptPin_retryRestoresTowardsTheIdentityWaitingInTheOutbox() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        try seedLeaderMarker(for: "sub-1", in: context)
+        let known = UUID()
+        _ = makeCategory("del relevo", syncID: known, in: context)
+        try saveAsImported(context)
+        let mine = Category(name: "de este teléfono", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+        context.insert(mine)
+        try context.save()
+        let source = try backend([("categories", known)], stub: stub)
+
+        stub.pushStatus = 500
+        let first = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                 FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                 tombstoneSource: source())
+        #expect(await first.runAdoptOrphanReconcile() == .transient)
+        let minted = try #require(mine.syncID)
+        let leaders = UUID()
+        try mirrorRekeys(mine, to: leaders, in: context)
+
+        stub.pushStatus = 200
+        let again = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                 FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                 tombstoneSource: source())
+        _ = await again.runAdoptOrphanReconcile()
+        #expect(mine.syncID == minted)
+        #expect(Set(stub.pushedSyncIDs.map { $0.lowercased() }) == [minted.uuidString.lowercased()])
+    }
+
+    /// Con el marcador, una fila SIN identidad que casa por clave única con una que falta también toma la del backend
+    /// (review del ticket): es el import que no llegó, y sin casarla el mismo teléfono decidía distinto según el push de la
+    /// pasada anterior hubiera fallado (el backfill ya le había dado identidad).
+    @Test("adopt con marcador: una fila sin identidad que casa por su clave toma la del backend en la primera pasada")
+    func adoptWithMarker_rowWithoutIdentity_rebindsByKey() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        try seedLeaderMarker(for: "sub-1", in: context)
+        let leaderAccount = UUID(), relayTx = UUID()
+        let t1 = Date(timeIntervalSince1970: 1_699_000_100.123)
+        let source = try backend([("accounts", leaderAccount), ("tx_items", relayTx)],
+                                 fields: [relayTx: ["created_at": wireCreatedAt(t1)]], hlc: hlc(leaderLastWrite), stub: stub)
+        let account = try importLeaderAccount(leaderAccount, in: context)
+        let lagging = makeTx(createdAt: t1, amount: 10, account: account, syncID: nil, in: context)
+        try saveAsImported(context)
+
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source())
+        #expect(await executor.runAdoptOrphanReconcile() == .completed(uploaded: 0, identityAssigned: 0))
+        #expect(lagging.syncID == relayTx)
+        #expect(stub.pushedSyncIDs.isEmpty)
+    }
+
+    /// Las condiciones de la restauración por el registro, una por fila. Solo la última se restaura.
+    @Test("restauración por el registro: solo la fila que el espejo cambió, hacia una identidad de este teléfono libre")
+    func ledgerRestore_leavesAloneWhatItCannotTellApart() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        engine.relayIdentityLedgerURL = ledgerURL(dir)
+        func witness(_ id: UUID, _ type: String = SyncEntityType.category) {
+            context.insert(SyncIdentity(syncID: id, entityType: type, localAnchor: id.uuidString))
+        }
+        // 1. La identidad de ahora tiene testigo: la cambió un camino local.
+        let localPrior = UUID(), localNow = UUID()
+        let local = makeCategory("local", syncID: localNow, in: context); witness(localPrior); witness(localNow)
+        // 2. El testigo de la del registro es de otro tipo.
+        let otherTypePrior = UUID()
+        let otherType = makeCategory("otro tipo", syncID: UUID(), in: context); witness(otherTypePrior, SyncEntityType.transactionItem)
+        // 3. Otra fila viva lleva ya la del registro.
+        let carriedPrior = UUID()
+        let carried = makeCategory("llevada", syncID: UUID(), in: context); witness(carriedPrior)
+        _ = makeCategory("la que la lleva", syncID: carriedPrior, in: context)
+        // 4. Dos filas reclaman la misma.
+        let claimedPrior = UUID()
+        let claimA = makeCategory("a", syncID: UUID(), in: context), claimB = makeCategory("b", syncID: UUID(), in: context)
+        witness(claimedPrior)
+        // 5. La buena.
+        let goodPrior = UUID()
+        let good = makeCategory("buena", syncID: UUID(), in: context); witness(goodPrior)
+        try context.save()
+        func key(_ model: Yala.Category) throws -> String { try #require(RelayIdentityLedger.key(for: model.persistentModelID)) }
+        try RelayIdentityLedger.merge([try key(local): localPrior, try key(otherType): otherTypePrior,
+                                       try key(carried): carriedPrior, try key(claimA): claimedPrior,
+                                       try key(claimB): claimedPrior, try key(good): goodPrior], into: ledgerURL(dir))
+        let before = [local, otherType, carried, claimA, claimB].map(\.syncID)
+
+        // Sin `onlyTo`: cada negativo lo descarta SU condición, no el filtro (con el filtro puesto, tres no discriminaban nada:
+        // lo cazó la review y lo confirmaron tres mutantes vivos).
+        #expect(try engine.restoreRelayIdentitiesFromLedger(context: context) == 1)
+        #expect(good.syncID == goodPrior)
+        #expect([local, otherType, carried, claimA, claimB].map(\.syncID) == before)
+
+        // `onlyTo` fuera: ni la buena.
+        good.syncID = UUID(); try saveAsImported(context)
+        #expect(try engine.restoreRelayIdentitiesFromLedger(context: context, onlyTo: []) == 0)
+        // Un registro que no se deja leer no para nada: cero, sin lanzar.
+        try Data("no es json".utf8).write(to: ledgerURL(dir))
+        #expect(try engine.restoreRelayIdentitiesFromLedger(context: context) == 0)
+    }
+
+    /// El ciclo de vida de la marca del adopt: el reconcile la pone con el registro; el arranque restaura, la quita y marca
+    /// el registro para retirar; sembrar para una ida la quita (una marca vieja no retira el registro de una ida); y sin ella
+    /// el arranque no toca nada.
+    @Test("adopt: la marca del adopt la pone el reconcile, la consume el arranque y la quitan la siembra de la ida y la vuelta atrás")
+    func adoptPin_lifecycle() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let phone = try await adoptedPhone(dir, stub: RoutingStub())
+        let url = ledgerURL(dir)
+        let ledger = try RelayIdentityLedger.load(from: url)
+        #expect(Set(ledger.values) == Set(phone.categories.compactMap(\.syncID)), "el registro lleva las identidades definitivas")
+        #expect(RelayIdentityLedger.isAdoptPinned(url))
+
+        let remounted = try remount(dir)
+        #expect(remounted.engine.restoreAdoptedRelayIdentitiesIfPinned(context: remounted.context))
+        #expect(!RelayIdentityLedger.isAdoptPinned(url) && RelayIdentityLedger.isRetirable(url))
+        #expect(!remounted.engine.restoreAdoptedRelayIdentitiesIfPinned(context: remounted.context), "una vez basta")
+
+        try RelayIdentityLedger.markAdoptPin(url)
+        try RelayIdentityLedger.merge([:], into: url)
+        #expect(!RelayIdentityLedger.isAdoptPinned(url), "sembrar para una ida quita la marca del adopt")
+        try RelayIdentityLedger.markAdoptPin(url)
+        try RelayIdentityLedger.remove(at: url)
+        #expect(!RelayIdentityLedger.isAdoptPinned(url), "la vuelta atrás la borra con el registro")
+    }
 }
 
 /// Caja para contar desde el closure del seam: el closure se guarda en el ejecutor y la cuenta tiene que sobrevivir a él.

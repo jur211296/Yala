@@ -2066,6 +2066,22 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         guard await verifyEnumerationComplete(enumeration) else { return .transient }
         let backendSyncIDs = enumeration.known
 
+        // Las identidades que el espejo cambió desde una pasada ANTERIOR de este adopt, que sembró el registro fila →
+        // identidad (ticket `adopt-window-late-leader-identity-export-can-duplicate-after-the-remount`). Por `Z_PK`, y solo
+        // hacia identidades que el backend CONOCE o que ya esperan en el outbox: en el líder desplazado un registro viejo de
+        // su ida llevaría la suya, que el backend no ha visto nunca. Una borrada allí sí vale: la fila vuelve a ella y el pull
+        // la borra, en vez de subir como fila nueva. Y la del outbox también: la huérfana que la pasada anterior encoló y no
+        // llegó a subir (el push falló) no está aún en el backend, y sin ella la fila subía con las dos (lo cazó la review).
+        // Sin `await` entre esto y el inventario de abajo: el import se fusiona desde la cola principal y no cabe en medio.
+        do {
+            let pending = Set(try liveOutboxRows().map(\.syncID))
+            try engine.restoreRelayIdentitiesFromLedger(context: context, onlyTo: backendSyncIDs.union(pending))
+        } catch {
+            CloudSyncBreadcrumb.relayIdentityLedgerUnavailable(step: "adopt-reconcile-restore",
+                                                               errorType: String(describing: type(of: error)))
+            return .localFailure
+        }
+
         // Guard anti mass-upload ANTES de toda mutación (MENOR 2 del review): diff PRELIMINAR pre-backfill.
         // Backend enumerado VACÍO + (huérfanas ∨ filas sin identidad) = página espuria/bug/cuenta equivocada;
         // el costo del falso positivo sería subir el corpus entero → `abortedEmptyBackend` SIN mutar nada
@@ -2100,7 +2116,8 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         // lo deja dentro de una cuenta que no es suya, listo para subir en la primera edición.
         var reboundWithoutIdentity = 0
         if let blocked = adoptLineageGate(prePlan, inventory: preInventory, enumeration: enumeration,
-                                          reboundWithoutIdentity: &reboundWithoutIdentity) { return blocked }
+                                          reboundWithoutIdentity: &reboundWithoutIdentity,
+                                          rebindingRekeyedRows: true) { return blocked }
 
         if backendSyncIDs.isEmpty && pendingUploads > 0 {
             CloudSyncBreadcrumb.adoptReconcileAbortedEmptyBackend(orphans: pendingUploads)
@@ -2138,7 +2155,16 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         // entre las dos lecturas no estaba en el preliminar, y con un preliminar sin nada que subir la guarda no había
         // pedido prueba. El backfill ya corrió, pero solo acuña identidades locales: no sube nada.
         if let blocked = adoptLineageGate(plan, inventory: inventory, enumeration: enumeration,
-                                          reboundWithoutIdentity: &reboundWithoutIdentity) { return blocked }
+                                          reboundWithoutIdentity: &reboundWithoutIdentity,
+                                          rebindingRekeyedRows: false) { return blocked }
+
+        // El registro fila → identidad del adopt, con las identidades DEFINITIVAS y antes del primer `await` que las siga
+        // (el push): el espejo sigue vivo hasta el remonte y puede cambiarlas por debajo. El runtime lo usa al arrancar tras
+        // el remonte, y el drain para los borrados (ticket `adopt-window-late-leader-identity-export-can-duplicate-after-the-remount`).
+        // En todas las salidas que terminan el adopt con el backend poblado, también sin huérfanas. La de backend vacío
+        // (`abortedEmptyBackend`) sale antes y no siembra: sin filas en el backend no hay identidad que el espejo pueda pisar.
+        pinAdoptedIdentities()
+
         guard !plan.orphans.isEmpty else { return .completed(uploaded: 0, identityAssigned: identityAssigned) }
 
         // Paso 6: fetch dirigido de EXACTAMENTE las huérfanas del plan → emisión fila-COMPLETA por el seam del
@@ -2322,14 +2348,30 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     /// que sube creado aquí después— ya no bloquea (`adoptSharedRowsProof`).
     /// `reboundWithoutIdentity` suma las filas SIN `syncID` que la prueba casó con una de la cuenta: ya no las acuña el
     /// backfill, y el rastro `identityAssigned` no las cuenta.
+    ///
+    /// **Y el marcador prueba el linaje, no que las identidades sigan siendo las del backend** (ticket
+    /// `adopt-window-late-leader-identity-export-can-duplicate-after-the-remount`). Un líder desplazado que vuelve después del
+    /// remonte del relevo exporta TARDE las suyas, y si CloudKit le da la razón las filas llegan aquí con una identidad que el
+    /// backend no conoce: subían como huérfanas y el duplicado quedaba en el backend. Con `rebindingRekeyedRows` (el plan
+    /// preliminar, antes del backfill), las filas sin identidad del backend casan por clave de linaje ÚNICA con las que
+    /// faltan y toman la del backend (`rebindRekeyedRows`). Sin bloquear lo que no casa: el líder desplazado también trae
+    /// filas que creó sin red, que no están en el backend y tienen que subir; bloquearlas dejaba fuera a todo teléfono que
+    /// adopte. En el plan definitivo no casa: sería la misma pregunta sobre las identidades que el backfill acaba de acuñar.
     private func adoptLineageGate(_ plan: AdoptOrphanDiff.Plan,
                                   inventory: [(table: String, syncID: UUID?)],
                                   enumeration: BackendEnumeration,
-                                  reboundWithoutIdentity: inout Int) -> AdoptReconcileOutcome? {
+                                  reboundWithoutIdentity: inout Int,
+                                  rebindingRekeyedRows: Bool) -> AdoptReconcileOutcome? {
         let relevant = Self.adoptLineageRelevantCount(plan)
         guard relevant > 0 else { return nil }
         do {
-            if try adoptLineageProven() { return nil }
+            if try adoptLineageProven() {
+                if rebindingRekeyedRows {
+                    reboundWithoutIdentity += try rebindRekeyedRows(plan: plan, inventory: inventory,
+                                                                    enumeration: enumeration)
+                }
+                return nil
+            }
         } catch {
             return .localFailure
         }
@@ -2445,20 +2487,11 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         for table in missingByTable.keys.sorted() {
             var unexplained = missingByTable[table] ?? []
             let tableCandidates = candidates.filter { $0.table == table }
-            var rebound: Set<Int> = []
-            let tableLive = liveByTable[table] ?? []
-            if LineageTwinKey.syntheticTables.contains(table), tableLive.allSatisfy({ liveKeys[$0] != nil }) {
-                let backendKeyCount = Dictionary(grouping: (liveByTable[table] ?? []).compactMap { liveKeys[$0] }, by: { $0 })
-                    .mapValues(\.count)
-                let candidatesByKey = Dictionary(grouping: tableCandidates.filter { $0.key != nil }, by: { $0.key ?? "" })
-                for id in unexplained.sorted(by: { $0.uuidString < $1.uuidString }) {
-                    guard let key = liveKeys[id], backendKeyCount[key] == 1,
-                          let twins = candidatesByKey[key], twins.count == 1, let twin = twins.first else { continue }
-                    rebinds.append(LineageRebind(ref: twin.ref, syncID: id))
-                    rebound.insert(twin.ref)
-                    unexplained.remove(id)
-                }
-            }
+            let tableRebinds = lineageKeyRebinds(table: table, missing: unexplained, candidates: tableCandidates,
+                                                 liveByTable: liveByTable, liveKeys: liveKeys)
+            rebinds += tableRebinds
+            let rebound = Set(tableRebinds.map(\.ref))
+            unexplained.subtract(tableRebinds.map(\.syncID))
             guard !unexplained.isEmpty else { continue }
             let unexplainedFusion = Set(unexplained.compactMap { liveFusionKeys[$0] })
             let suspects = tableCandidates.filter { candidate in
@@ -2469,6 +2502,26 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
             if !suspects.isEmpty { return .accountRowsMissing(table: table, missing: unexplained.count) }
         }
         return .proven(sharedRows: shared, rebinds: rebinds)
+    }
+
+    /// El casado del paso 1 de `adoptSharedRowsProof` para UNA tabla: cada fila que falta (`missing`) con la candidata de su
+    /// misma clave de linaje, solo si la clave sale UNA vez entre todas las vivas de la tabla en el backend y UNA vez entre
+    /// `candidates` (las de esa tabla). Una tabla que no es sintética, o con alguna fila viva del backend sin clave legible,
+    /// no casa nada. Lo usan también las filas re-identificadas con marcador (`rebindRekeyedRows`), con TODAS las candidatas
+    /// para contar la unicidad aunque solo se apliquen las que traen identidad.
+    static func lineageKeyRebinds(table: String, missing: Set<UUID>, candidates: [LineageCandidate],
+                                  liveByTable: [String: Set<UUID>], liveKeys: [UUID: String]) -> [LineageRebind] {
+        let tableLive = liveByTable[table] ?? []
+        guard LineageTwinKey.syntheticTables.contains(table), tableLive.allSatisfy({ liveKeys[$0] != nil }) else { return [] }
+        let backendKeyCount = Dictionary(grouping: tableLive.compactMap { liveKeys[$0] }, by: { $0 }).mapValues(\.count)
+        let candidatesByKey = Dictionary(grouping: candidates.filter { $0.key != nil }, by: { $0.key ?? "" })
+        var rebinds: [LineageRebind] = []
+        for id in missing.sorted(by: { $0.uuidString < $1.uuidString }) {
+            guard let key = liveKeys[id], backendKeyCount[key] == 1,
+                  let twins = candidatesByKey[key], twins.count == 1, let twin = twins.first else { continue }
+            rebinds.append(LineageRebind(ref: twin.ref, syncID: id))
+        }
+        return rebinds
     }
 
     /// Margen sobre la última escritura del backend para dar una fila local por nacida DESPUÉS: cubre relojes de dos
@@ -2521,6 +2574,129 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
             CloudSyncBreadcrumb.lineageRowsRebound(count: rebinds.count)
         }
         return (proof, reboundWithoutIdentity)
+    }
+
+    /// **Las filas que el espejo re-identificó ANTES del reconcile, con el marcador** (ticket
+    /// `adopt-window-late-leader-identity-export-can-duplicate-after-the-remount`, ver `adoptLineageGate`). En las tablas
+    /// sintéticas con huérfanas, cada fila viva del backend que falta aquí casa por clave de linaje ÚNICA con la candidata de
+    /// su clave (`lineageKeyRebinds`, el paso 1 de `adoptSharedRowsProof`) y la candidata toma la identidad del backend.
+    ///
+    /// **Las candidatas sin identidad también**, aunque no sean las re-identificadas: la primera versión las dejaba fuera y
+    /// la review lo tumbó. En un reintento, el backfill de la pasada anterior ya les había dado identidad, así que el mismo
+    /// teléfono casaba o no según hubiera fallado el push. Casar una sin identidad es el casado del camino sin marcador, y una
+    /// clave única de `created_at` en ms o de comercio que falta en el backend es esa misma fila (el import que no llegó).
+    ///
+    /// Lo que no casa sigue como huérfana (residual con ticket). Sin historial: aquí no hay sospechosas que descartar. Guarda
+    /// las re-identificaciones y, si el guardado falla, deshace SOLO lo suyo y LANZA: el llamador lo cuenta como
+    /// `localFailure`, nunca como «no había nada». Devuelve cuántas de las casadas no tenían identidad: ya no las acuña el
+    /// backfill.
+    private func rebindRekeyedRows(plan: AdoptOrphanDiff.Plan, inventory: [(table: String, syncID: UUID?)],
+                                   enumeration: BackendEnumeration) throws -> Int {
+        let tables = Set(plan.orphans.filter { !$0.value.isEmpty }.keys)
+            .union(plan.needsIdentity.filter { $0.value > 0 }.keys)
+            .intersection(LineageTwinKey.syntheticTables)
+        guard !tables.isEmpty else { return 0 }
+        let missing = Self.lineageMissingRows(plan: plan, inventory: inventory, liveByTable: enumeration.liveByTable)
+            .filter { tables.contains($0.key) }
+        guard !missing.isEmpty else { return 0 }
+        let collected = try collectLineageCandidates(tables: Set(missing.keys), backendKnown: enumeration.known,
+                                                     bornAfter: [])
+        var rebinds: [(table: String, rebind: LineageRebind)] = []
+        for table in missing.keys.sorted() {
+            let tableRebinds = Self.lineageKeyRebinds(
+                table: table, missing: missing[table] ?? [],
+                candidates: collected.candidates.filter { $0.table == table },
+                liveByTable: enumeration.liveByTable, liveKeys: enumeration.liveKeys)
+            rebinds += tableRebinds.map { (table, $0) }
+        }
+        guard !rebinds.isEmpty else { return 0 }
+        var undo: [() -> Void] = []
+        var reboundByTable: [String: Int] = [:]
+        do {
+            for (table, rebind) in rebinds {
+                guard let rebinder = collected.rebinders[rebind.ref] else { continue }
+                undo.append(try rebinder(rebind.syncID))
+                // El canario cuenta solo las que TRAÍAN otra identidad: esas son la exportación tardía del líder. Las que no
+                // tenían ninguna son el import que no llegó, otra cosa.
+                if !collected.withoutIdentity.contains(rebind.ref) { reboundByTable[table, default: 0] += 1 }
+            }
+            try context.save()
+        } catch {
+            // Deshace SOLO lo suyo, en orden inverso: el contexto es compartido y un `rollback` tiraría ediciones ajenas.
+            for revert in undo.reversed() { revert() }
+            #if DEBUG
+            print("MigrationWorkExecutor: re-identificar las filas que el espejo cambió falló: \(error)")
+            #endif
+            throw error
+        }
+        CloudSyncBreadcrumb.lineageRowsRebound(count: undo.count)
+        let entityByTable: [String: String] = [
+            EntityEmissionMap.transactionItem.table: SyncEntityType.transactionItem,
+            EntityEmissionMap.inboxDraft.table: SyncEntityType.inboxDraft,
+            EntityEmissionMap.category.table: SyncEntityType.category,
+            EntityEmissionMap.favoritePayment.table: SyncEntityType.favoritePayment,
+            EntityEmissionMap.merchantMemory.table: SyncEntityType.merchantMemory,
+            EntityEmissionMap.exchangeRate.table: SyncEntityType.exchangeRate,
+        ]
+        for (table, count) in reboundByTable.sorted(by: { $0.key < $1.key }) {
+            let entity = entityByTable[table] ?? table
+            CloudSyncBreadcrumb.migrationRelayIdentityRestored(entity: entity, count: count)
+            // El mismo canario que la restauración de la ida: mide lo mismo, que CloudKit le dio la razón al líder desplazado.
+            MetricsService.cloudRelayIdentityRestored(entity: entity, count: count)
+        }
+        return rebinds.filter { collected.withoutIdentity.contains($0.rebind.ref) }.count
+    }
+
+    /// **El registro fila → identidad del adopt** (ticket `adopt-window-late-leader-identity-export-can-duplicate-after-the-remount`).
+    /// El espejo sigue vivo del reconcile de huérfanas al remonte, y el líder desplazado que exporta TARDE puede cambiar
+    /// ahí la identidad de una fila: tras el remonte el drain traducía sus ediciones bajo la nueva (fila aparte en el
+    /// backend) y el pull creaba un born-remote con la copia del backend. Lo que `assignIdentity` hace en la ida, para los
+    /// seis tipos acuñados: captura las coordenadas de CloudKit de sus testigos (el drain las pide para traducir un borrado),
+    /// guarda, siembra el registro con la identidad que cada fila tiene AHORA —la definitiva: el casado del linaje y el
+    /// backfill ya corrieron— y deja la marca del adopt, con la que el runtime restaura al arrancar tras el remonte
+    /// (`CloudSyncEngine.restoreAdoptedRelayIdentitiesIfPinned`).
+    ///
+    /// Best-effort, como la siembra de la ida: sin registro todo sigue como antes del ticket, y parar el adopt por esta red
+    /// (un disco lleno) sería peor que el daño que cubre. Deja rastro.
+    private func pinAdoptedIdentities() {
+        var pairs: [(id: PersistentIdentifier, row: SyncIdentity)] = []
+        do {
+            var rowsBySyncID: [UUID: SyncIdentity] = [:]
+            for row in try fetchInventory(SyncIdentity.self, step: "adopt-pin") where Self.mintedIdentityTypes.contains(row.entityType) {
+                rowsBySyncID[row.syncID] = row
+            }
+            try addPairs(TransactionItem.self, identity: { $0.syncID }, into: &pairs, rowsBySyncID: rowsBySyncID)
+            try addPairs(InboxDraft.self, identity: { $0.syncID }, into: &pairs, rowsBySyncID: rowsBySyncID)
+            try addPairs(Category.self, identity: { $0.syncID }, into: &pairs, rowsBySyncID: rowsBySyncID)
+            try addPairs(FavoritePayment.self, identity: { $0.syncID }, into: &pairs, rowsBySyncID: rowsBySyncID)
+            try addPairs(MerchantMemory.self, identity: { $0.syncID }, into: &pairs, rowsBySyncID: rowsBySyncID)
+            try addPairs(ExchangeRate.self, identity: { $0.syncID }, into: &pairs, rowsBySyncID: rowsBySyncID)
+        } catch {
+            CloudSyncBreadcrumb.relayIdentityLedgerUnavailable(step: "adopt-pin", errorType: String(describing: type(of: error)))
+            return
+        }
+        let report = CKIdentityCapture.capture(pairs, storeURL: personalStoreURL)
+        if context.hasChanges {
+            do {
+                try context.save()
+            } catch {
+                // Sin las coordenadas guardadas el drain no traduce un borrado, pero la restauración por el registro no las
+                // necesita: se siembra igual.
+                #if DEBUG
+                print("MigrationWorkExecutor: guardar las coordenadas del adopt falló: \(error)")
+                #endif
+                CloudSyncBreadcrumb.relayIdentityLedgerUnavailable(step: "adopt-capture", errorType: String(describing: type(of: error)))
+            }
+        }
+        seedRelayIdentityLedger(pairs)
+        do {
+            try RelayIdentityLedger.markAdoptPin(relayIdentityLedgerURL)
+        } catch {
+            CloudSyncBreadcrumb.relayIdentityLedgerUnavailable(step: "adopt-mark", errorType: String(describing: type(of: error)))
+        }
+        CloudSyncBreadcrumb.migrationIdentityCaptured(
+            captured: report.captured, exportPending: report.exportPending,
+            noMetadata: report.noMetadata, failed: report.failed)
     }
 
     /// Lo que la prueba necesita de las candidatas locales: el veredicto puro solo ve `candidates`; `rebinders` sabe dar
