@@ -147,6 +147,7 @@
 - [zsh no divide variables](feedback_zsh_no_divide_variables.md) — «SUCCEEDED» con cero tests; y el exit del wrapper es del…
 - [Nunca matar `xcodebuild` por nombre](feedback_nunca_matar_xcodebuild_por_nombre.md) — `pkill -x` alcanza el gate de otras sesiones.
 - [Revertir sin commit destruye](feedback_revertir_sin_commit_destruye.md) — `git checkout -- <f>` borra el trabajo.
+- [`git add` con una ruta muerta aborta entero](feedback_git_add_con_ruta_muerta_aborta_entero.md) — el fix salió sin código; `git show --stat` tras commitear.
 - [Nunca el trailer Co-Authored-By](feedback_trailer_commit_medido.md) — desde el 9-sep un hook del repo bloquea el COMMIT.
 - [Generar y persistir en un solo gesto](feedback_generar_y_persistir_credenciales.md) — una credencial nunca vive solo en pantalla.
 - [Medir la web: axe, Lighthouse, preview](feedback_medir_la_web_a11y_y_preview.md) — axe ciego con opacity 0; preview con SSO se verifica por.

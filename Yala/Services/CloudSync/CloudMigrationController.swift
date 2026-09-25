@@ -237,10 +237,17 @@ nonisolated enum MigrationJournalRead: Equatable {
 
     /// Lee el journal con `fetch`, que en producción es el `fetch` de `MigrationState` del controller. Separado del
     /// `ModelContext` para poder medir su `catch`: `ModelContext` es una `final class` de SwiftData sin protocolo detrás.
+    ///
+    /// Una fila que no se ENTIENDE (`isJournalUndecodable`: fase o pendientes que este build no decodifica) es
+    /// `.unreadable`, igual que un fetch que lanza (ticket `an-undecodable-migration-phase-reads-as-never-started`). Sin
+    /// eso salían el `.notStarted` y el `[]` de relleno: la pantalla ofrecía «Migrar» y `hasPendingReverseExit` soltaba
+    /// el freno de una vuelta nueva, sobre un journal que no se había entendido.
     @MainActor
     static func read(fetch: () throws -> MigrationState?) -> MigrationJournalRead {
         do {
             guard let state = try fetch() else { return .read(.empty) }
+            // El rastro lo deja `readJournal()` en la TRANSICIÓN: esto se lee cada segundo.
+            guard !state.isJournalUndecodable else { return .unreadable }
             let pending = state.readPendingEffects()
             return .read(MigrationJournalSnapshot(
                 phase: state.readPhase().phase,

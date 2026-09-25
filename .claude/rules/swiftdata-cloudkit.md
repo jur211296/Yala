@@ -209,8 +209,20 @@ paths:
   (`MigrationDryRunPreview.unreadable`) y el marcador que no se cuenta se lee «no hay», que es el lado seguro por la regla
   de las dos capas de «Migrar». Lo fija `MigrationJournalUnreadableTests` (lógica pura con control positivo y el cuerpo
   entero de cada rama) y el XCUITest `StorageJournalUnreadableUITests` (seam `-uitest-migration-journal-unreadable`).
-  Residual con ticket: un `phaseData` presente que no decodifica sigue leyéndose `notStarted`
-  (`an-undecodable-migration-phase-reads-as-never-started`).
+  **Y una fila que se lee pero no se ENTIENDE también es `.unreadable` (2026-09-25,
+  `an-undecodable-migration-phase-reads-as-never-started`).** `readPhase()` y `readPendingEffects()` rellenan con
+  `notStarted` y `[]` cuando un blob presente no decodifica —el único camino real es un DOWNGRADE desde un build con un
+  case nuevo, que los fixtures APPEND-ONLY no pueden impedir—, y esos rellenos conceden. El testigo es UNO,
+  `MigrationState.isJournalUndecodable` (fase, pendientes y pendientes del origen de la vuelta, más los dos raw cuyo
+  relleno concede: `forwardClaimIntentRaw` → `.adoptIfExisting` y `reverseOriginRaw` → `.done`, con su `nil` legítimo
+  fuera), y lo consultan los dos
+  lectores y el runner. **El runner para y NO toca la fila**: hasta ese día la «normalización» M1 la reseteaba a
+  `notStarted` sin pendientes en cada entrada, lo que borraba una migración en vuelo y hacía cosmético cualquier arreglo
+  de los lectores (el primer `resume()` dejaba la fila en `notStarted` de verdad). El chequeo va en `runGuarded`, no en
+  cada entrada: una entrada pública nueva lo hereda sin acordarse. La salida es actualizar Yala; el build que escribió la
+  fila la retoma donde estaba. **Si añades un blob Codable al journal, entra en `isJournalUndecodable`.** Lo fijan
+  `MigrationJournalUndecodableTests` y la §17 de `MigrationRunnerTests` (seis entradas × cinco campos, con control y un
+  pendiente CONOCIDO sembrado: sin él la columna de la fase pasaba sola, porque el relleno `notStarted` ya cortaba).
 
 - **En el apply del pull, «no pude leer» NUNCA es «no hay nada» (2026-09-22).** La lectura LANZA y la página no
   se aplica. Ticket `apply-overwrites-a-pending-local-write-without-its-guards`. Todo lo que `applyPage` lee
@@ -385,7 +397,8 @@ paths:
   `stalled` dice «lleva días sin avanzar», así que solo vale para las 72 h. Lo cazaron dos lentes: en la vuelta el
   genérico no afirma plazo y el molde no lo traía. **Si copias este reloj a otra etapa, mira qué dice su genérico.**
   El canario `cloudSnapshotUploadAborted` gana el valor `mixedCauses` y `stalled` sigue siendo solo el techo largo. `snapshotExitReasonRaw` sobrevive a `failedRollback` —lo lee `StorageFailureCopyLogic`— y solo lo limpian
-  `resetAfterRollback` y la normalización de un journal ilegible, que son las dos salidas de esa fase;
+  `resetAfterRollback`, que es la salida de esa fase (la normalización de un journal ilegible que también lo limpiaba se
+  retiró el 2026-09-25: esa fila ya no se toca);
   (6) **los seis `snapshotStall*` solo existen dentro de la fase**: `handle` los limpia al ENTRAR y al SALIR
   (`clearSnapshotStallCeiling()`), así que la vuelta desde `verifying` por mismatch no hereda el reloj.
   «Cancelar» va a `notStarted` sin efectos, que es el mismo estado al que ya llega «Reintentar»: deja la sesión de la
@@ -1046,9 +1059,10 @@ paths:
   solo que no se pudo preguntar, así que no cuenta ni a favor ni en contra (ojo: habla de un hueco en el que se
   OBSERVÓ red; uno sin ninguna observación deja el tramo abierto y sí cuenta); **(c)** un cambio de CAUSA sí tira lo
   acumulado del motivo anterior; **(d)** un sello del tramo abierto en el FUTURO se re-ancla conservando lo acumulado.
-  Los siete campos se limpian SIEMPRE juntos, con `MigrationState.clearReversePreMountCeiling()`, en seis sitios: una
+  Los siete campos se limpian SIEMPRE juntos, con `MigrationState.clearReversePreMountCeiling()`, en cinco sitios: una
   vuelta nueva los limpia en el cruce a `reverseClaimLeader` —o la primera observación daría un `stalled` de días—,
-  los tres cierres de intento, el reset tras rollback y la normalización de un journal ilegible. **Y el cambio de fase
+  los tres cierres de intento y el reset tras rollback (la normalización de un journal ilegible se retiró el 2026-09-25).
+  **Y el cambio de fase
   los limpia en `handle`, no solo la observación al ver otra fase**: `reverseVerify` vuelve a `reverseDrainAll` por
   mismatch, y sin esa limpieza la segunda visita al drenaje heredaba el sello de la primera y el techo saltaba con
   cero segundos de parada real (lo cazó una review).

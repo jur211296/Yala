@@ -293,7 +293,7 @@ final class MigrationState {
     /// `SnapshotExitReason.rawValue` de la subida que venció su techo. Es lo que elige el texto de la tarjeta de
     /// fallo, y por eso **sobrevive a `failedRollback`**, como `cutoverICloudVerdictRaw`. Solo puede estar puesto en
     /// esa fase —lo escribe la salida del techo, que va ahí— y de esa fase solo se sale por `resetAfterRollback`
-    /// («Reintentar») o por la normalización de un journal ilegible, que son los dos sitios que lo limpian. `nil` =
+    /// («Reintentar»), que es quien lo limpia. `nil` =
     /// nada que explicar, o un fallo que no vino de la subida.
     var snapshotExitReasonRaw: String?
 
@@ -324,8 +324,8 @@ final class MigrationState {
     var forwardStepStallCauseAccruedSeconds: Double?
 
     /// `ForwardStepExitReason.rawValue` del paso que venció su techo. Elige el texto de la tarjeta de fallo y por eso
-    /// **sobrevive a `failedRollback`**, como `snapshotExitReasonRaw`. Lo limpian `resetAfterRollback` («Reintentar») y la
-    /// normalización de un journal ilegible, que son las dos salidas de esa fase. `nil` = el fallo no vino de estos pasos.
+    /// **sobrevive a `failedRollback`**, como `snapshotExitReasonRaw`. Lo limpia `resetAfterRollback` («Reintentar»), que es
+    /// la salida de esa fase. `nil` = el fallo no vino de estos pasos.
     /// **Desde `displaced-migration-leader-keeps-uploading-after-a-takeover` lo escribe también la salida del lease
     /// perdido**, desde la subida o la verificación y sin techo: `otherDevice`, el mismo que el `cutover` journalea para la
     /// misma respuesta del servidor.
@@ -341,8 +341,8 @@ final class MigrationState {
     ///
     /// **Sobrevive a `failedRollback`, a «Reintentar» y a `notStarted` a propósito**: es la salida hacia delante de esa
     /// pantalla. Lo borra el `handle` que ENTRA en `claimingMigration` —otro intento empezó, y su desenlace manda— y el que
-    /// llega a `icloudActive`. La normalización de un journal con la fase ilegible la conserva: la fila se leyó, y la
-    /// marca es lo que la pantalla ofrecerá en `.idle`. `nil` = ningún adopt salió desde el último claim.
+    /// llega a `icloudActive`. Un journal que este build no entiende no se toca (`isJournalUndecodable`), así que la
+    /// conserva también. `nil` = ningún adopt salió desde el último claim.
     var adoptClaimExitRaw: String?
 
     /// `CloudBeacon.hash` de la cuenta con la que el último claim ENTRÓ en `claimingMigration`. Ata la marca de arriba a
@@ -496,9 +496,8 @@ final class MigrationState {
 extension MigrationState {
 
     /// Borra los SIETE campos del techo de `reverseUpload`: la cifra más baja y el reloj de avance, los tres del de
-    /// causa y los dos del de «cualquier motivo definitivo». Juntos siempre y en cinco sitios —el reset tras rollback,
-    /// el arranque de una vuelta nueva, los cierres de intento, la salida de la espera y la normalización de un journal
-    /// ilegible—: un campo que sobreviva al intento deja el techo venciendo con cero segundos de espera real en el
+    /// causa y los dos del de «cualquier motivo definitivo». Juntos siempre y en cuatro sitios —el reset tras rollback,
+    /// el arranque de una vuelta nueva, los cierres de intento y la salida de la espera—: un campo que sobreviva al intento deja el techo venciendo con cero segundos de espera real en el
     /// siguiente. NO toca `reverseAbortReasonRaw`, que es el desenlace y sobrevive a la salida a propósito. Lo que
     /// garantiza que un campo NUEVO de la familia no se quede fuera es `CloudSyncSchemaParityTests`, que la deriva del
     /// schema por su prefijo `reverseUpload`.
@@ -518,9 +517,9 @@ extension MigrationState {
 extension MigrationState {
 
     /// Borra los SIETE campos del techo de las fases previas al montaje: el reloj de fase con su sello, los tres del
-    /// reloj por causa y los dos del de «cualquier motivo definitivo». Existe porque se limpian SIEMPRE juntos y en seis sitios distintos —el reset tras
-    /// rollback, el arranque de una vuelta nueva, los tres cierres de intento, el cambio de fase, la salida del
-    /// techo y la normalización de un journal ilegible—, y un campo que se olvide en uno solo de ellos no deja la
+    /// reloj por causa y los dos del de «cualquier motivo definitivo». Existe porque se limpian SIEMPRE juntos y en cinco sitios distintos —el reset tras
+    /// rollback, el arranque de una vuelta nueva, los tres cierres de intento, el cambio de fase y la salida del
+    /// techo—, y un campo que se olvide en uno solo de ellos no deja la
     /// fila fea: deja el techo venciendo con cero segundos de parada real en el intento siguiente, que es el bug
     /// que el par del reloj de fase ya tuvo una vez.
     ///
@@ -594,10 +593,13 @@ extension MigrationState {
 extension MigrationState {
 
     /// Lectura PURA y NO-lanzante de la fase journaleada. `phaseData == nil` ⇒ `.notStarted` (sin fallo).
-    /// Un blob PRESENTE que NO decodifica (rot del enum `MigrationPhase`) ⇒ `.notStarted` + `decodeFailed`
-    /// = `true` para que el runner emita el breadcrumb RUIDOSO (si esto dispara en mid-cutover real, el
-    /// gate §i.9 leería "estable"). Estructural: `MigrationStateJournalTests` congela un fixture JSON
-    /// literal por CADA case (APPEND-ONLY) → renombrar/borrar un case rompe el fixture ANTES de shippear.
+    /// Un blob PRESENTE que NO decodifica ⇒ `.notStarted` + `decodeFailed = true`. **Ese `.notStarted` es un relleno, no
+    /// una fase**: con `decodeFailed` nadie decide nada con él (ticket `an-undecodable-migration-phase-reads-as-never-started`).
+    /// Los dos lectores lo devuelven como `.unreadable` y el runner no conduce (`isJournalUndecodable`).
+    ///
+    /// Renombrar o borrar un case lo impide `MigrationStateJournalTests`, que congela un fixture JSON literal por CADA
+    /// case (APPEND-ONLY). Lo que ese test no puede impedir es el DOWNGRADE: un build con un case nuevo escribe un blob
+    /// que uno anterior no entiende, y es el único camino real a este `catch`.
     func readPhase() -> (phase: MigrationPhase, decodeFailed: Bool) {
         guard let data = phaseData else { return (.notStarted, false) }
         do {
@@ -610,18 +612,48 @@ extension MigrationState {
     /// Conveniencia de lectura (descarta el flag de fallo). Para el runner usar `readPhase()`.
     var phase: MigrationPhase { readPhase().phase }
 
-    /// Efectos PENDIENTES journaleados. `nil` ⇒ `[]`. Un blob que no decodifica ⇒ `[]` + log DEBUG
-    /// (no debería pasar: solo cases `String` conocidos; APPEND-ONLY).
+    /// Efectos PENDIENTES journaleados. `nil` ⇒ `[]`. Un blob que no decodifica ⇒ `[]` + log DEBUG. Ese `[]` es un
+    /// relleno: quien decide con los pendientes mira antes `isJournalUndecodable` (o usa `readPendingEffectsChecked()`).
     func readPendingEffects() -> [MigrationEffect] {
-        guard let data = pendingEffectsData else { return [] }
+        readPendingEffectsChecked().effects
+    }
+
+    /// Los pendientes con el testigo de si el blob decodificó. Un `[]` silencioso diría «no queda nada por hacer» —ni la
+    /// salida a medias de una vuelta (`hasPendingReverseExit`), ni el efecto del adopt— sobre un journal que no se entendió.
+    func readPendingEffectsChecked() -> (effects: [MigrationEffect], decodeFailed: Bool) {
+        guard let data = pendingEffectsData else { return ([], false) }
         do {
-            return try JSONDecoder().decode([MigrationEffect].self, from: data)
+            return (try JSONDecoder().decode([MigrationEffect].self, from: data), false)
         } catch {
             #if DEBUG
             print("MigrationState: pendingEffects decode falló: \(error)")
             #endif
-            return []
+            return ([], true)
         }
+    }
+
+    /// ¿Hay algún campo del journal PRESENTE que este build no entiende y cuyo relleno CONCEDE? Ticket
+    /// `an-undecodable-migration-phase-reads-as-never-started`: con `true`, el journal es ILEGIBLE, no «nunca empezó».
+    ///
+    /// - Fase, pendientes y pendientes del origen de la vuelta rellenan con `notStarted` y `[]`.
+    /// - `forwardClaimIntentRaw` rellena con `.adoptIfExisting`, la intención que acepta una cuenta ya estable y sigue a
+    ///   otro líder. Su `nil` es legítimo (filas anteriores a la v6); un valor DESCONOCIDO no.
+    /// - `reverseOriginRaw` rellena con `.done` (el origen al que vuelven «Reintentar» y las salidas de la vuelta), que da
+    ///   la migración por hecha. Mismo trato: `nil` legítimo, desconocido no.
+    ///
+    /// Los motivos de salida (`*ExitReasonRaw`, veredictos) quedan fuera a propósito: con un valor desconocido solo eligen
+    /// otro texto, no conceden nada. **Si añades al journal un campo cuyo relleno concede, entra aquí.**
+    var isJournalUndecodable: Bool {
+        readPhase().decodeFailed || readPendingEffectsChecked().decodeFailed
+            || readReverseOriginPendingEffectsChecked().decodeFailed
+            || Self.isUnknown(forwardClaimIntentRaw, ForwardClaimIntent.init(rawValue:))
+            || Self.isUnknown(reverseOriginRaw, ReverseOrigin.init(rawValue:))
+    }
+
+    /// Un raw PRESENTE que este build no reconoce. `nil` no es desconocido.
+    private static func isUnknown<T>(_ raw: String?, _ decode: (String) -> T?) -> Bool {
+        guard let raw else { return false }
+        return decode(raw) == nil
     }
 
     /// Codifica y escribe la fase. Encode de un enum Codable golden-testeado → no puede fallar en la
@@ -648,16 +680,20 @@ extension MigrationState {
     }
 
     /// Los pendientes del origen guardados al empezar la vuelta (`reverseOriginPendingEffectsData`). `nil` ⇒ `[]`; un
-    /// blob que no decodifica ⇒ `[]` + log DEBUG, como `readPendingEffects`.
+    /// blob que no decodifica ⇒ `[]` + log DEBUG, como `readPendingEffects` (y como él, cuenta en `isJournalUndecodable`).
     func readReverseOriginPendingEffects() -> [MigrationEffect] {
-        guard let data = reverseOriginPendingEffectsData else { return [] }
+        readReverseOriginPendingEffectsChecked().effects
+    }
+
+    private func readReverseOriginPendingEffectsChecked() -> (effects: [MigrationEffect], decodeFailed: Bool) {
+        guard let data = reverseOriginPendingEffectsData else { return ([], false) }
         do {
-            return try JSONDecoder().decode([MigrationEffect].self, from: data)
+            return (try JSONDecoder().decode([MigrationEffect].self, from: data), false)
         } catch {
             #if DEBUG
             print("MigrationState: reverseOriginPendingEffects decode falló: \(error)")
             #endif
-            return []
+            return ([], true)
         }
     }
 
