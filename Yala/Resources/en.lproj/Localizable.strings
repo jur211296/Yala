@@ -6096,3 +6096,4 @@
 
 /* Storage failure card: another device had already started uploading to this account and this device's data does not share lineage with it */
 "storage.failed.stepLineageUnproven" = "We couldn’t turn on the cloud: that account already has data in the cloud, and the data on this device doesn’t match it, so we didn’t combine them. What you have on this device is still here. Check that you’re signing in with the right account. If it’s yours and this device uses the same iCloud, wait for iCloud to finish bringing your data over and try again.";
+"storage.failed.stepLeaderRowsNotArrived" = "We couldn’t turn on the cloud: another of your devices already uploaded part of your data, and not all of it has reached this device through iCloud yet, so we didn’t upload anything to avoid duplicating it. What you have on this device is still here. Open Yala on that other device while it’s online, wait for iCloud to finish bringing your data to this one, and try again.";

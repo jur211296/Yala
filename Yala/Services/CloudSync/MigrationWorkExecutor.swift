@@ -94,6 +94,12 @@ nonisolated enum ForwardLineageOutcome: Equatable {
     case noLivePersonalRows
     /// El backend tiene filas personales vivas y ninguna está aquí: el corpus es otro. No se toca nada.
     case unproven(liveRows: Int)
+    /// Comparte filas con la cuenta —es el mismo iCloud—, pero a `table`, que tiene algo que subir, le faltan `missing`
+    /// filas vivas del backend: las identidades que el líder callado asignó y subió no llegaron aquí por iCloud (ticket
+    /// `migration-takeover-may-duplicate-rows-whose-leader-identities-never-arrived`). Subir ahora acuñaría identidades
+    /// frescas a esas mismas filas y el servidor, que solo deduplica por identidad, guardaría el libro dos veces. No se
+    /// toca nada; esperar a que iCloud las traiga lo arregla.
+    case accountRowsMissing(table: String, missing: Int)
     /// Red, sesión o una enumeración que el Merkle no da por completa: esperar lo puede arreglar.
     case transient
     /// El inventario local no se dejó leer: nunca «probado» ni «sin datos».
@@ -2090,10 +2096,19 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     /// sin esperar a que el líder asigne nada. `exchange_rates` no cuenta en ningún lado: es caché que cualquier teléfono
     /// siembra solo (`adoptLineageExemptTables`, la misma excepción que el adopt).
     ///
+    /// **Y una fila compartida no basta: tienen que haber llegado TODAS las de las tablas que suben** (ticket
+    /// `migration-takeover-may-duplicate-rows-whose-leader-identities-never-arrived`, la misma condición que el adopt,
+    /// `adoptSharedRowsProof`). La cuenta del líder llega enseguida porque su identidad nace con la fila; los movimientos,
+    /// categorías, borradores, favoritos y comercios, en cambio, llevan una identidad SINTÉTICA que el líder asignó en su
+    /// 35 % y que viaja con su exportación a iCloud —que puede ser justo lo que se paró—. Sin ella, el backfill de aquí
+    /// acuña otra —los testigos del rebind son locales de cada teléfono: aquí no hay ninguno del líder—, el servidor solo deduplica por `(user_id, sync_id)` y el
+    /// `verify` baja las copias del líder ANTES de contar: el Merkle cuadra con el libro doble. Por eso, en cada tabla con
+    /// algo que subir, toda fila viva del backend tiene que estar ya aquí (`.accountRowsMissing` si no).
+    ///
     /// Orden, y es el del reconcile del adopt: el inventario local primero (una avería local no paga la enumeración), luego
-    /// la enumeración. Una sola fila compartida prueba el linaje aunque la enumeración esté incompleta; para decir «no hay
-    /// nada» o «no comparte nada», en cambio, el Merkle tiene que darla por completa (sesgo a esperar, jamás a proceder ni a
-    /// bloquear por una página que faltó). No muta nada.
+    /// la enumeración, y el Merkle tiene que darla por completa ANTES de cualquier veredicto: para decir «no hay nada» o
+    /// «no comparte nada», y también para decir «llegó todo», porque una página que faltó escondería justo las filas que no
+    /// están aquí (sesgo a esperar, jamás a proceder ni a bloquear por una página que faltó). No muta nada.
     func checkForwardLineage() async -> ForwardLineageOutcome {
         let inventory: [(table: String, syncID: UUID?)]
         do {
@@ -2102,13 +2117,26 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
             return .localFailure
         }
         guard let enumeration = await enumerateBackendSyncIDs() else { return .transient }
+        guard await verifyEnumerationComplete(enumeration) else { return .transient }
         let live = enumeration.liveByTable.filter { !Self.adoptLineageExemptTables.contains($0.key) }
         let shared = Self.lineageSharedLiveRows(inventory: inventory, liveByTable: enumeration.liveByTable)
         if shared > 0 {
-            CloudSyncBreadcrumb.forwardLineageChecked(verdict: "proven", liveRows: live.values.reduce(0) { $0 + $1.count }, sharedRows: shared)
-            return .proven(sharedRows: shared)
+            let liveRows = live.values.reduce(0) { $0 + $1.count }
+            let plan = AdoptOrphanDiff.compute(inventory: inventory, backendSyncIDs: enumeration.known)
+            switch Self.adoptSharedRowsProof(plan: plan, inventory: inventory, liveByTable: enumeration.liveByTable) {
+            case .proven(let sharedRows):
+                CloudSyncBreadcrumb.forwardLineageChecked(verdict: "proven", liveRows: liveRows, sharedRows: sharedRows)
+                return .proven(sharedRows: sharedRows)
+            case .accountRowsMissing(let table, let missing):
+                CloudSyncBreadcrumb.forwardLineageAccountRowsMissing(table: table, missing: missing, sharedRows: shared)
+                return .accountRowsMissing(table: table, missing: missing)
+            case .noSharedRows:
+                // Inalcanzable: `adoptSharedRowsProof` cuenta las compartidas con la misma función que acaba de dar `shared > 0`.
+                // Si alguien las separa, el lado seguro es no subir.
+                CloudSyncBreadcrumb.forwardLineageChecked(verdict: "unproven", liveRows: liveRows, sharedRows: 0)
+                return .unproven(liveRows: liveRows)
+            }
         }
-        guard await verifyEnumerationComplete(enumeration) else { return .transient }
         let liveRows = live.values.reduce(0) { $0 + $1.count }
         guard liveRows > 0 else {
             CloudSyncBreadcrumb.forwardLineageChecked(verdict: "noLiveRows", liveRows: 0, sharedRows: 0)

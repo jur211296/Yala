@@ -5887,6 +5887,55 @@ struct MigrationRunnerTests {
         #expect(fake.uploadCursorsSeen.isEmpty)
     }
 
+    /// **Ticket `migration-takeover-may-duplicate-rows-whose-leader-identities-never-arrived`.** El relevo del mismo iCloud
+    /// al que aún no le llegaron las identidades del líder no asigna identidad ni sube: subir duplicaría su libro. Espera con
+    /// el techo corto y, si en ese tiempo iCloud las trae, la pasada siguiente vuelve a preguntar y termina.
+    @Test func forwardLineage_accountRowsMissing_uploadsNothing_andFinishesWhenTheyArrive() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.claimPersonalWrites = true
+        fake.lineageOutcomes = [.accountRowsMissing(table: "transaction_items", missing: 7), .proven(sharedRows: 12)]
+        let clock = MutableClock(fixedNow)
+        await driveMigration(makeRunner(context, fake, now: { clock.value }))
+        var j = try journal(context)
+        #expect(j.readPhase().phase == .assigningIdentity)
+        #expect(j.forwardStepStallCauseRaw == "leaderRowsNotArrived", "su motivo, no el del corpus ajeno")
+        #expect(j.forwardLineageUnverified == true, "sin prueba no se journalea «probado»")
+        #expect(fake.assignIdentityCallCount == 0, "ni la identidad toca nada")
+        #expect(fake.uploadCursorsSeen.isEmpty, "ni se sube nada")
+
+        clock.value = fixedNow.addingTimeInterval(600)
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        j = try journal(context)
+        #expect(fake.lineageCallCount == 2, "vuelve a preguntar: la espera es la recuperación")
+        #expect(j.readPhase().phase == .done)
+    }
+
+    /// Y si a los 15 min siguen sin llegar, sale con su motivo propio, que elige el texto de «abre Yala en el otro dispositivo,
+    /// espera a iCloud y reintenta».
+    @Test func forwardLineage_accountRowsMissing_leavesAt900SecondsWithItsOwnReason() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.claimPersonalWrites = true
+        fake.lineageOutcomes = [.accountRowsMissing(table: "categories", missing: 1)]
+        let clock = MutableClock(fixedNow)
+        await driveMigration(makeRunner(context, fake, now: { clock.value }))
+
+        clock.value = fixedNow.addingTimeInterval(899)
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        #expect(try journal(context).readPhase().phase == .assigningIdentity, "a 899 s todavía no")
+
+        clock.value = fixedNow.addingTimeInterval(900)
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .failedRollback)
+        #expect(j.forwardStepExitReasonRaw == "leaderRowsNotArrived")
+        #expect(fake.assignIdentityCallCount == 0)
+        #expect(fake.uploadCursorsSeen.isEmpty)
+    }
+
     /// **El relevo del SEGUIDOR** —el caso del ticket: espera a un líder que calla, y su re-claim recibe el turno— también
     /// journalea la pista y comprueba. La pista se escribe en `handle`, al entrar en la identidad, y no en `driveClaim`: el
     /// seguidor entra por `pollLeader`, que es otro claim (lo cazaron dos lentes de la review). Y una pista `false` de un

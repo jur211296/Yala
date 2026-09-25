@@ -6102,3 +6102,4 @@
 
 /* Storage failure card: another device had already started uploading to this account and this device's data does not share lineage with it */
 "storage.failed.stepLineageUnproven" = "クラウドを有効にできませんでした。そのアカウントにはすでにクラウド上のデータがあり、この端末のデータとは一致しないため、まとめませんでした。この端末のデータはこれまでどおり残っています。正しいアカウントでサインインしているか確認してください。ご自身のアカウントで、この端末が同じiCloudを使っている場合は、iCloudがデータを取り込み終えるまで待ってから、もう一度お試しください。";
+"storage.failed.stepLeaderRowsNotArrived" = "クラウドを有効にできませんでした。別の端末がすでにデータの一部をアップロードしていますが、そのすべてがまだiCloud経由でこの端末に届いていないため、重複を避けるために何もアップロードしませんでした。この端末のデータはこれまでどおり残っています。インターネットに接続した状態でその別の端末でYalaを開き、iCloudがこの端末にデータを取り込み終えるまで待ってから、もう一度お試しください。";

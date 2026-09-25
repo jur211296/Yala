@@ -7347,6 +7347,9 @@ enum L10n {
             static var stepSessionExpired: String { ls("storage.failed.stepSessionExpired", comment: "") }
             static var stepOtherDevice: String { ls("storage.failed.stepOtherDevice", comment: "") }
             static var stepLineageUnproven: String { ls("storage.failed.stepLineageUnproven", comment: "") }
+            // El relevo del MISMO iCloud al que aún no le llegaron las filas que el líder subió (ticket
+            // `migration-takeover-may-duplicate-rows-whose-leader-identities-never-arrived`): los datos sí coinciden.
+            static var stepLeaderRowsNotArrived: String { ls("storage.failed.stepLeaderRowsNotArrived", comment: "") }
             // El claim de un ADOPT que venció su techo (ticket `adopt-claim-stays-parked-with-no-ceiling`). Frases propias:
             // quien entraba en su cuenta puede estar en un teléfono recién instalado, y las de la ida hablan de sus datos
             // en el dispositivo.

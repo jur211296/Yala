@@ -76,7 +76,7 @@ enum StorageFailureCopyLogic {
             case .accountUnavailable, .refused:  return L10n.Storage.Failed.snapshotAccountUnavailable(supportEmail)
             case .otherDevice:                   return L10n.Storage.Failed.stepOtherDevice
             case .localFailure:                  return L10n.Storage.Failed.snapshotLocalFailure
-            case .lineageUnproven:               return forwardLineageMessage
+            case .lineageUnproven, .leaderRowsNotArrived: return forwardLineageMessage(for: forwardStepExit)
             }
         }
         // C-1: copy del fallo por MOTIVO. El veredicto del canal iCloud sobrevive en el journal a `failedRollback`
@@ -121,6 +121,14 @@ enum StorageFailureCopyLogic {
     /// pasa entonces—. No promete «termínala desde
     /// el otro dispositivo», que pasa por el lease de éste y por un «otro dispositivo tomó el relevo» en aquél.
     static var forwardLineageMessage: String { L10n.Storage.Failed.stepLineageUnproven }
+
+    /// El texto de las dos salidas de linaje del relevo, que comparten pantalla en la bienvenida (`.lineageExit`): el corpus
+    /// que no es de esa cuenta, y el del mismo iCloud al que aún no le llegaron las filas del líder (ticket
+    /// `migration-takeover-may-duplicate-rows-whose-leader-identities-never-arrived`). Cualquier otro motivo no llega aquí;
+    /// si llegara, el de linaje, que es el que tenía antes esta pantalla.
+    static func forwardLineageMessage(for reason: ForwardStepExitReason) -> String {
+        reason == .leaderRowsNotArrived ? L10n.Storage.Failed.stepLeaderRowsNotArrived : forwardLineageMessage
+    }
 
     /// El aviso del adopt de Almacenamiento que paró antes del claim (ticket
     /// `settings-adopt-stalled-before-the-claim-keeps-the-session`). Casi siempre es la espera de iCloud, que venció, y
