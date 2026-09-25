@@ -4,7 +4,7 @@ status: backlog
 priority: medium
 area: "testing, currency"
 created: 2026-09-15
-updated: 2026-09-15
+updated: 2026-09-25
 source: "gate de `cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes` (2026-09-15): único rojo de la suite completa"
 ---
 
@@ -60,3 +60,9 @@ en el resumen. Dos sospechosos concretos, los dos ya conocidos en `.claude/rules
 
 - `approximate-mark-ors-over-whole-period` (en `qa`) — el trabajo que trajo este test, commit `415193daa`.
 - `appstorage-onboarding-desarma-el-aislamiento-de-tests` — misma familia (estado que sobrevive al test), otro sitio.
+
+## Reapariciones
+
+- **2026-09-25**, gate de `an-undecodable-migration-phase-reads-as-never-started`: único rojo de la suite completa
+  (7937 tests en 756 suites, los mismos dos `#expect` de `:1115` y `:1118`); `RecordsSummaryApproximateMarkTests` a solas,
+  3/3 verde. El cambio de esa sesión no toca resúmenes ni `SessionState`.
