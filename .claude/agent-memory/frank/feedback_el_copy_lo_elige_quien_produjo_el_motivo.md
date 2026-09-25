@@ -60,3 +60,11 @@ describe el SÍNTOMA del cliente, no la causa.
 `isImportQuiescent` leído DESPUÉS de `closeSessionIfOpened`; `signOut` espera, y un import recién asentado deja de contar a
 los 8 s, así que el texto podía salir genérico siendo la causa iCloud. Lo cazaron las dos lentes. Fija la lectura en una
 `let` antes del `await` y pínchala con un mutante de orden.
+
+## Y el 2026-09-24: reusar el terminal del GEMELO por consistencia
+
+En el relevo con filas del líder por llegar reusé `lineageUnproven` porque el adopt había hecho lo mismo con su gemelo y
+el texto terminaba con la acción correcta («espera a iCloud y reintenta»). Pero su primera frase dice «los de este
+dispositivo no coinciden» y pide «comprueba que entras con la cuenta correcta»: falso en el mismo iCloud, y empuja a
+cambiar de cuenta. Dos lentes lo cazaron. **Que la última frase sea verdad no salva a la primera**: se lee entera. Salió
+motivo propio (`leaderRowsNotArrived`) con texto en 16 idiomas. Consistencia con un precedente no es verdad del texto.
