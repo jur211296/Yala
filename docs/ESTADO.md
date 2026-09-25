@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-25 (Lima)
 
-**Rama** `2.1` — Merge #249: **Un registro de la migración que este build no entiende ya no dice que nunca empezó.**
+**Rama** `2.1` — Merge #250: **Cerrar sesión con la sincronización parada ya no sincroniza a escondidas ni pierde lo editado.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,27 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#249 · un registro de la migración que este build no entiende ya no dice que nunca empezó)
+## Esta sesión (#250 · cerrar sesión con la sincronización parada ya no sincroniza a escondidas ni pierde lo editado)
+
+**Si la sincronización con la nube está parada a propósito** —una versión anterior de Yala que no entiende en qué punto iba
+el cambio a la nube, una vuelta a iCloud a medias o fallida, el espejo de iCloud aún montado—, **«Cerrar sesión» ya no
+sincroniza a escondidas.** Sin nada pendiente cierra como siempre y el borrado se lleva el registro ilegible (ésa es la
+salida). Con cambios sin subir —en la cola o editados con el motor parado— se bloquea sin perder nada. Arreglo: el push-all
+del cierre consulta `canRunDomain()` antes de cada ciclo; cerrado, sin ciclo ni drain, y decide
+`pushAllVerdictWithoutEngine` con el outbox y una sonda de solo lectura del History
+(`CloudSyncEngine.hasUncapturedPersonalChanges`). **La review cazó el alto** (dos lentes): mirando solo la cola, lo
+editado con el motor parado moría con el borrado. Gate (7946 unit en 756 suites, sin rojos; 17 XCUITest en 7 suites), 11
+mutantes muertos. Ticket a `done`, sin device-QA.
+
+### Lo que espera de Jürgen
+
+- Lo de #249 abajo sigue igual (device-QA de `adopt-on-an-empty-store-…`, la decisión de
+  `adopt-window-uploads-what-reaches-the-mirror-after-the-icloud-check`, los device-QA de #239/#237/#236).
+- **Copy de producto, sin prisa:** `cloud-signout-with-the-engine-stopped-says-check-your-connection` (medium) — ese
+  bloqueo dice «revisa tu conexión» y la salida real es actualizar Yala o «Reintentar» en Almacenamiento.
+- Ticket nuevo `cloud-signout-does-not-look-at-an-in-flight-migration` (low, inferido).
+
+## Sesión anterior (#249 · un registro de la migración que este build no entiende ya no dice que nunca empezó)
 
 **Si una versión anterior de Yala se encuentra el paso de la nube anotado de una forma que no entiende, ya no concluye que
 el cambio nunca empezó:** no mueve nada, deja la anotación intacta y lo dice en Almacenamiento; al actualizar Yala, sigue
@@ -46,7 +66,7 @@ y ajeno (3/3 verde a solas). Ojo: una tanda de mutantes + gate llevó el disco a
   `journal-unreadable-card-says-reopen-when-a-downgrade-needs-an-update`, `storage-mode-unknown-raw-reads-as-icloud` y
   `adopt-with-existing-session-skips-the-unreadable-journal-guard` (low).
 
-## Sesión anterior (#248 · un adopt con el espejo de iCloud puesto ya no sube lo que iCloud baja después)
+## Antes (#248 · un adopt con el espejo de iCloud puesto ya no sube lo que iCloud baja después)
 
 **Si un iPhone entra en una cuenta de la nube mientras su iCloud aún no ha bajado sus finanzas, ya no las sube después a
 esa cuenta sin comprobar que son suyas.** La activación espera a que iCloud las baje entero y decide como siempre: si no son
