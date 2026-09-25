@@ -182,6 +182,11 @@ enum MetricsCanary: String {
     /// migración y este teléfono se une) o `retaken` (el otro dejó caducar el lease y este vuelve a liderar). La espera
     /// mientras el otro lidera no tiene canario: se repetiría en cada re-kick. Distinto de cero dice que el relevo tras el cutover pasa de verdad.
     case cloudPostCutoverLeaseLost
+    /// El espejo de iCloud le cambió por debajo la identidad a filas que la ida de ESTE teléfono ya había identificado, y
+    /// se le devolvió la suya (ticket `displaced-leader-late-identity-export-can-rekey-the-relief-corpus`). `detail` = el
+    /// tipo de entidad, `value` = cuántas. Distinto de cero mide lo que el ticket no pudo: que CloudKit le da la razón a la
+    /// exportación tardía de un líder desplazado.
+    case cloudRelayIdentityRestored
     /// Una observación de uno de esos tres pasos que no avanzó. Deja ver un atasco SISTÉMICO antes de que ningún teléfono
     /// llegue a sus 15 min o sus 72 h.
     case cloudForwardStepWaiting
@@ -701,6 +706,10 @@ extension MetricsService {
     /// El reconcile de `done` sin el lease. `detail` = `joined` | `retaken`.
     static func cloudPostCutoverLeaseLost(outcome: String) {
         canary(.cloudPostCutoverLeaseLost, detail: outcome)
+    }
+
+    static func cloudRelayIdentityRestored(entity: String, count: Int) {
+        canary(.cloudRelayIdentityRestored, detail: entity, value: Double(count))
     }
 
     /// Una observación de uno de esos tres pasos que no avanzó. `detail` = `<paso>|<tramo de avance>|<tramo de causa>|<causa>`,

@@ -617,11 +617,209 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         }
     }
 
+    // MARK: - La identidad que el espejo cambia por debajo (ticket `displaced-leader-late-identity-export-can-rekey-the-relief-corpus`)
+
+    /// Las coordenadas de un record de CloudKit. Son las mismas en todos los teléfonos del mismo iCloud: el record es uno.
+    struct RecordCoordinates: Hashable {
+        let recordName: String
+        let zoneName: String
+        let ownerName: String
+    }
+
+    /// Los tipos cuya identidad de sync la ACUÑA cada teléfono (`backfillIdentities`), y por eso dos teléfonos pueden darle
+    /// dos distintas a la misma fila. Los otros diez usan un UUID que nace con la fila y viaja con ella.
+    static let mintedIdentityTypes: [String] = [
+        SyncEntityType.transactionItem, SyncEntityType.inboxDraft, SyncEntityType.category,
+        SyncEntityType.favoritePayment, SyncEntityType.merchantMemory, SyncEntityType.exchangeRate,
+    ]
+
+    /// Coordenadas de las filas vivas sin leer el SQLite: los stores de test no espejan, así que no tienen metadatos de
+    /// CloudKit. Sin el seam, un store de test sin esas tablas es una lectura que falla, y el test que lo mide va sin él.
+    /// SOLO tests.
+    var _testRecordCoordinates: ((PersistentIdentifier) -> RecordCoordinates?)?
+    /// Cuántas filas se mandaron a buscar coordenadas. El camino barato —sin testigo huérfano o sin fila sin testigo— no
+    /// busca ninguna, y eso es lo que el test mide. SOLO tests.
+    private(set) var _testRecordCoordinateLookups = 0
+
+    /// **Devuelve a la identidad que este teléfono subió las filas que el espejo de iCloud re-identificó por debajo.**
+    ///
+    /// El caso: un líder de la ida se queda sin red después de su `assignIdentity`, otro teléfono toma el relevo, acuña
+    /// sus identidades —las del líder no llegaron— y las sube. Cuando el líder vuelve, su espejo exporta las suyas, y si
+    /// CloudKit le da la razón, el espejo del relevo (vivo hasta el remonte del cutover) cambia el `syncID` de filas que el
+    /// backend ya conoce con otro. A partir de ahí la misma fila duplica: el paginado del snapshot por `afterSyncID` la
+    /// vuelve a subir con la identidad nueva, y el pull del `verify` crea un born-remote con la vieja. Qué valor gana CloudKit
+    /// no está medido (pide dos teléfonos): esto se diseña para el peor caso.
+    ///
+    /// **La identidad del relevo gana** porque es la que el backend tiene y el líder desplazado ya no sube (su puerta del
+    /// lease lo saca); cuando entre en la cuenta, el linaje del adopt le re-identifica las suyas.
+    ///
+    /// **Cómo sabe cuál era.** El testigo `SyncIdentity` es local y `assignIdentity` le captura las coordenadas del record,
+    /// que no cambian. Se restaura una fila solo si las tres cosas son ciertas:
+    ///  1. su identidad actual NO tiene testigo aquí —ningún camino local cambia una identidad sin dejarlo: rebind,
+    ///     curación de colisiones, re-identificación del linaje y el deduplicador escriben el testigo—;
+    ///  2. su record casa con UN testigo huérfano de su tipo (ninguna fila viva lleva ya su `syncID`), y ese testigo con
+    ///     ella sola;
+    ///  3. el testigo tiene coordenadas. Una fila que el líder pudo re-identificar existía en CloudKit antes de que él la
+    ///     identificara, y eso es antes que la identidad del relevo, así que su testigo las tiene. Sin ellas, o con dos
+    ///     candidatas para un record, no se toca: acertar con otra fila sería el bug contrario.
+    ///
+    /// **Dónde se llama, y por qué ahí**: antes de cada página del snapshot, antes de cada drain de la verificación de la
+    /// ida —los del pull también, que corren después de su `await`, cuando el import pudo aterrizar—, antes del drain del
+    /// cutover y una vez en el reconcile de `done`, ya con el espejo apagado, para lo que llegó entre la última verificación
+    /// y el remonte. Siempre sin `await` entre la restauración y lo que lee identidades: el import se fusiona en el contexto
+    /// principal desde la cola principal, así que no cabe en medio.
+    ///
+    /// La restauración cambia SOLO el `syncID`: el drain la salta (la identidad no es columna) y el espejo la exporta. LANZA
+    /// si una tabla, el testigo, los metadatos de CloudKit o el guardado fallan, con el trabajo deshecho: el llamador lo
+    /// cuenta como avería local, nunca como «no había nada que restaurar». Devuelve cuántas restauró.
+    ///
+    /// **`toleratingUnreadableRecords` es solo del reconcile de `done`**, que corre con el store remontado sin espejo:
+    /// que los metadatos de CloudKit sigan legibles ahí no está medido, y lanzar dejaría el efecto pendiente para siempre
+    /// con el motor parado (un pendiente en `done` lo bloquea). Allí una lectura que falla deja rastro y sigue, sin
+    /// restaurar lo que no puede reconocer. Con el espejo vivo esas tablas existen, y fallar es una avería.
+    @discardableResult
+    func restoreRelayIdentities(toleratingUnreadableRecords: Bool = false) throws -> Int {
+        var witnessed: Set<UUID> = []
+        var pinned: [PinKey: [SyncIdentity]] = [:]
+        for witness in try fetchInventory(SyncIdentity.self, step: "identity-pin") {
+            witnessed.insert(witness.syncID)
+            guard Self.mintedIdentityTypes.contains(witness.entityType),
+                  let recordName = witness.ckRecordName, let zoneName = witness.ckZoneName,
+                  let ownerName = witness.ckOwnerName else { continue }
+            let key = PinKey(entityType: witness.entityType,
+                             record: RecordCoordinates(recordName: recordName, zoneName: zoneName, ownerName: ownerName))
+            pinned[key, default: []].append(witness)
+        }
+        guard !pinned.isEmpty else { return 0 }
+
+        var live: [String: Set<UUID>] = [:]
+        var candidates: [PinCandidate] = []
+        func collect<M: PersistentModel & SyncIdentifiable>(_ type: M.Type, _ entityType: String) throws {
+            for model in try fetchInventory(M.self, step: "identity-pin") {
+                guard let current = model.syncID else { continue }
+                live[entityType, default: []].insert(current)
+                if !witnessed.contains(current) {
+                    candidates.append(PinCandidate(id: model.persistentModelID, entityType: entityType, current: current,
+                                                   restore: { model.syncID = $0 }))
+                }
+            }
+        }
+        try collect(TransactionItem.self, SyncEntityType.transactionItem)
+        try collect(InboxDraft.self, SyncEntityType.inboxDraft)
+        try collect(Category.self, SyncEntityType.category)
+        try collect(FavoritePayment.self, SyncEntityType.favoritePayment)
+        try collect(MerchantMemory.self, SyncEntityType.merchantMemory)
+        try collect(ExchangeRate.self, SyncEntityType.exchangeRate)
+
+        // Un testigo huérfano por record: con dos, no se sabe cuál era.
+        var orphanByKey: [PinKey: SyncIdentity] = [:]
+        for (key, witnesses) in pinned {
+            let orphans = witnesses.filter { !(live[key.entityType] ?? []).contains($0.syncID) }
+            if orphans.count == 1, let orphan = orphans.first { orphanByKey[key] = orphan }
+        }
+        guard !orphanByKey.isEmpty, !candidates.isEmpty else { return 0 }
+
+        guard let coordinates = recordCoordinates(for: candidates.map(\.id)) else {
+            CloudSyncBreadcrumb.migrationRelayIdentityRecordsUnreadable(tolerated: toleratingUnreadableRecords)
+            if toleratingUnreadableRecords { return 0 }
+            throw MigrationExecutorError.inventoryUnreadable(entity: "CloudKitRecordMetadata")
+        }
+        var byKey: [PinKey: [PinCandidate]] = [:]
+        for candidate in candidates {
+            guard let record = coordinates[candidate.id] else { continue }
+            byKey[PinKey(entityType: candidate.entityType, record: record), default: []].append(candidate)
+        }
+
+        var undo: [() -> Void] = []
+        var restoredByEntity: [String: Int] = [:]
+        for (key, orphan) in orphanByKey {
+            guard let matched = byKey[key], matched.count == 1, let candidate = matched.first else { continue }
+            candidate.restore(orphan.syncID)
+            let previous = candidate.current
+            undo.append { candidate.restore(previous) }
+            restoredByEntity[key.entityType, default: 0] += 1
+        }
+        guard !undo.isEmpty else { return 0 }
+        do {
+            try context.save()
+        } catch {
+            // Deshace SOLO lo suyo: el contexto es compartido y un `rollback` tiraría ediciones ajenas.
+            for revert in undo.reversed() { revert() }
+            #if DEBUG
+            print("MigrationWorkExecutor: guardar las identidades restauradas falló: \(error)")
+            #endif
+            CloudSyncBreadcrumb.migrationRelayIdentityRestoreFailed(errorType: String(describing: type(of: error)))
+            throw error
+        }
+        for (entity, count) in restoredByEntity.sorted(by: { $0.key < $1.key }) {
+            CloudSyncBreadcrumb.migrationRelayIdentityRestored(entity: entity, count: count)
+            MetricsService.cloudRelayIdentityRestored(entity: entity, count: count)
+        }
+        return undo.count
+    }
+
+    private struct PinKey: Hashable {
+        let entityType: String
+        let record: RecordCoordinates
+    }
+
+    private struct PinCandidate {
+        let id: PersistentIdentifier
+        let entityType: String
+        let current: UUID
+        let restore: (UUID) -> Void
+    }
+
+    /// Las coordenadas de CloudKit de cada fila, leídas de los metadatos del espejo con testigos SCRATCH que no se insertan
+    /// (molde de `isMarkerExported`): `capture` solo le escribe al objeto en memoria. Una fila sin record —sin metadatos, o
+    /// con el export pendiente— no sale en el mapa y no casa con nada: el espejo no pudo re-identificar lo que no tiene
+    /// record. **`nil` si alguna lectura FALLÓ** (el SQLite no abre, faltan las tablas, una zona que no resuelve): eso no es
+    /// «esta fila no tiene record», y leerlo así dejaba sin restaurar justo la que había que restaurar.
+    private func recordCoordinates(for ids: [PersistentIdentifier]) -> [PersistentIdentifier: RecordCoordinates]? {
+        _testRecordCoordinateLookups += ids.count
+        if let seam = _testRecordCoordinates {
+            return Dictionary(uniqueKeysWithValues: ids.compactMap { id in seam(id).map { (id, $0) } })
+        }
+        let pairs = ids.map { (id: $0, row: SyncIdentity(syncID: UUID(), entityType: "", localAnchor: "")) }
+        guard CKIdentityCapture.capture(pairs, storeURL: personalStoreURL).failed == 0 else { return nil }
+        var out: [PersistentIdentifier: RecordCoordinates] = [:]
+        for pair in pairs {
+            guard let recordName = pair.row.ckRecordName, let zoneName = pair.row.ckZoneName,
+                  let ownerName = pair.row.ckOwnerName else { continue }
+            out[pair.id] = RecordCoordinates(recordName: recordName, zoneName: zoneName, ownerName: ownerName)
+        }
+        return out
+    }
+
+    /// Si la última restauración de identidades lanzó. La verificación la pasa al pull como `beforeDrain`, y el pull solo
+    /// sabe devolver `.transient`: con esto la verificación dice avería local y no red.
+    private var relayIdentityPinUnreadable = false
+
+    /// `restoreRelayIdentities` para el `beforeDrain` del pull: apunta el fallo antes de relanzarlo.
+    private func restoreRelayIdentitiesNotingFailure() throws {
+        do {
+            try restoreRelayIdentities()
+        } catch {
+            relayIdentityPinUnreadable = true
+            throw error
+        }
+    }
+
     // MARK: - Snapshot (w4)
 
     /// Sube el snapshot completo en batches idempotentes/resumibles (delega en `MigrationSnapshotUploader`).
+    ///
+    /// Antes de cada página devuelve a su identidad las filas que el espejo re-identificó (`restoreRelayIdentities`): el
+    /// paginado va por `afterSyncID`, y una fila ya subida que cambia a una identidad mayor que el cursor se subiría otra
+    /// vez. Entre la restauración y la lectura de la página no hay `await` —`uploadPage` es del mismo actor y lee antes de
+    /// su primer push—, así que el import no cabe en medio.
     func uploadSnapshot(cursor: String?) async -> SnapshotStepOutcome {
-        await uploader.uploadPage(cursor: cursor)
+        do {
+            try restoreRelayIdentities()
+        } catch {
+            return .blocked(.localFailure)
+        }
+        return await uploader.uploadPage(cursor: cursor)
     }
 
     // MARK: - Verify (w5)
@@ -645,9 +843,22 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     /// Entonces el push corta antes de cada trozo, y el pull no se pide, si la confirmación del lease tiene más de
     /// `leaseInFlightBudget`: la puerta del runner preguntó al empezar, y la app congelada a mitad subiría o traería el
     /// corpus de quien tomó el relevo. Sale como red. La vuelta a iCloud pasa `false`: su lease lo guardan freeze y complete.
+    ///
+    /// **Y la ida devuelve antes de cada drain las identidades que el espejo cambió por debajo** (`restoreRelayIdentities`,
+    /// ticket `displaced-leader-late-identity-export-can-rekey-the-relief-corpus`): aquí, antes del pre-check, y dentro del
+    /// pull, antes del drain de cada página, que corre después del `await` en el que el import pudo aterrizar. Sin la del
+    /// pull, la fila re-identificada durante esa espera recibía su propia copia del backend como born-remote. Si la restauración no se deja leer es avería local, no red. La vuelta a iCloud no la hace: allí el espejo
+    /// es el que baja lo que la nube congeló, y esa pregunta es otra.
     func verify(underMigrationLease: Bool = false) async -> VerifyProbe {
         let leaseStillConfirmed: @MainActor () -> Bool = { [leaseWitness] in
             !underMigrationLease || leaseWitness.isConfirmed(within: MigrationWorkExecutor.leaseInFlightBudget)
+        }
+        if underMigrationLease {
+            do {
+                try restoreRelayIdentities()
+            } catch {
+                return .blocked(.localFailure)
+            }
         }
         // Pre-check TOCTOU: drenar + subir si hay filas vivas ANTES de verificar. Partición poison (#26,
         // fix del review adversarial — simetría con el uploader): una fila no-construible se AÍSLA como
@@ -703,7 +914,12 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
             CloudSyncBreadcrumb.migrationLeaseUnconfirmed(reason: "verify-before-pull")
             return .networkTimeout
         }
-        switch await engine.pullAndApplyOnce(using: pullClient, context: context, now: now()) {
+        relayIdentityPinUnreadable = false
+        var beforeDrain: (@MainActor () throws -> Void)?
+        if underMigrationLease {
+            beforeDrain = { [weak self] in try self?.restoreRelayIdentitiesNotingFailure() }
+        }
+        switch await engine.pullAndApplyOnce(using: pullClient, context: context, now: now(), beforeDrain: beforeDrain) {
         case .completed:
             break
         case .sessionExpired:
@@ -711,10 +927,12 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         case .accountUnavailable:
             return .blocked(.accountUnavailable)
         case .busy, .transient:
-            return .networkTimeout
+            return relayIdentityPinUnreadable ? .blocked(.localFailure) : .networkTimeout
         }
 
-        let verdict = await engine.verifyIntegrity(using: merkleClient, context: context)
+        // Y otra vez antes del árbol local del Merkle, que se calcula después de esperar el remoto (y de la última página
+        // vacía del pull): un import que aterrizó ahí daba una divergencia falsa que gastaba un reintento de MISMATCH.
+        let verdict = await engine.verifyIntegrity(using: merkleClient, context: context, beforeLocalTree: beforeDrain)
         if VerifyProbeMapping.isUnknownSkip(verdict) {
             if case .skipped(let reason) = verdict {
                 CloudSyncBreadcrumb.migrationVerifyUnknownReason(reason: reason)
@@ -828,7 +1046,17 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
             // localModeSet→mirrorOff queda en History tras el token y lo drena el próximo `drainOnce`
             // (post-relaunch). Un `drainOnce` aquí ancla el baseline al momento del cutover — no hace falta
             // un loop de captura dedicado.
-            engine.drainOnce(context: context)
+            //
+            // Antes del drain, las identidades que el espejo —vivo hasta el remonte— cambió por debajo
+            // (`restoreRelayIdentities`): este drain traduciría una edición que llegó con ellas bajo la identidad nueva, y el
+            // reconcile de `done` la subiría como fila aparte. Si no se deja leer, tampoco se drena: la History sigue ahí y el
+            // reconcile restaura antes de su propio drain.
+            do {
+                try restoreRelayIdentities()
+                engine.drainOnce(context: context)
+            } catch {
+                CloudSyncBreadcrumb.migrationEffectFailed(effect: "startParallelHistoryCapture", reason: "relay identity pin unreadable")
+            }
 
         case .writeCloudKitMarker:
             // Último efecto OBSERVABLE: insertar el marcador en el store PERSONAL (el mirror VIVO lo exporta).
@@ -876,6 +1104,16 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
             // `other_leader`— en cada arranque, con el runtime sin arrancar para siempre. Solo sube con el lease confirmado;
             // si lo perdió, `resolvePostCutoverLease` averigua quién cerró la migración sin subir nada. Salir a iCloud, como
             // antes del cutover, no es una opción: el marcador ya se exportó y el corpus de este teléfono ya está en la cuenta.
+            //
+            // Y antes que nada, las identidades que el espejo cambió por debajo entre la última verificación y el remonte
+            // (`restoreRelayIdentities`): es la última vez que se miran, y va delante de TODAS las salidas porque las que se
+            // unen sin drenar dejan el drain y el pull al runtime. Aquí el espejo ya está apagado, así que no llega nada más,
+            // y por eso unos metadatos de CloudKit ilegibles se toleran (ver `restoreRelayIdentities`).
+            do {
+                try restoreRelayIdentities(toleratingUnreadableRecords: true)
+            } catch {
+                throw MigrationExecutorError.notWired(effect: "runLeaderReconcile: relayIdentityPinUnreadable")
+            }
             switch await resolvePostCutoverLease() {
             case .leads:
                 break
