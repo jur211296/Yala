@@ -6103,3 +6103,12 @@
 /* Storage failure card: another device had already started uploading to this account and this device's data does not share lineage with it */
 "storage.failed.stepLineageUnproven" = "クラウドを有効にできませんでした。そのアカウントにはすでにクラウド上のデータがあり、この端末のデータとは一致しないため、まとめませんでした。この端末のデータはこれまでどおり残っています。正しいアカウントでサインインしているか確認してください。ご自身のアカウントで、この端末が同じiCloudを使っている場合は、iCloudがデータを取り込み終えるまで待ってから、もう一度お試しください。";
 "storage.failed.stepLeaderRowsNotArrived" = "クラウドを有効にできませんでした。別の端末がすでにデータの一部をアップロードしていますが、そのすべてがまだiCloud経由でこの端末に届いていないため、重複を避けるために何もアップロードしませんでした。この端末のデータはこれまでどおり残っています。インターネットに接続した状態でその別の端末でYalaを開き、iCloudがこの端末にデータを取り込み終えるまで待ってから、もう一度お試しください。";
+
+/* Sign-out blocked: sync stopped because this build can't read the migration record */
+"settings.signOutSyncStoppedNeedsUpdate" = "まだクラウドにアップロードされていない変更があります。データのクラウドへの移行状況を確認できなかったため、今はアップロードできません。Yala を完全に終了してもう一度開いてください。変わらない場合は、App Store で Yala をアップデートしてから、もう一度お試しください。";
+
+/* Sign-out blocked: sync paused because the cloud/iCloud switch didn't finish */
+"settings.signOutSyncStoppedMidMigration" = "まだクラウドにアップロードされていない変更があります。クラウドと iCloud の間のデータ移行が完了していないため、同期は一時停止しています。このプロフィール画面の「データの保存先」を開き、そこで完了させてください（失敗している場合は「再試行」をタップ）。その後、もう一度お試しください。";
+
+/* Sign-out blocked: sync paused until Yala is reopened */
+"settings.signOutSyncStoppedNeedsRelaunch" = "まだクラウドにアップロードされていない変更があります。Yala をもう一度開くまで、同期は一時停止しています。Yala を完全に終了し（アプリスイッチャーでスワイプして閉じる）、もう一度開いてからお試しください。";

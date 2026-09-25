@@ -50,3 +50,7 @@ merece su gemela.
 
 - `cloud-signout-collapses-every-groups-transient-into-permanent` — el mismo colapso en el paso 2, cerrado.
 - `cloud-signout-collapses-a-groups-session-expiry-into-permanent` — la mitad que quedó viva en el paso 2.
+- `cloud-signout-with-the-engine-stopped-says-check-your-connection` — cerrado el 2026-09-25. Desde entonces el paso 1 ya no
+  escribe `.permanent` a mano: llama a `CloudSignOutFlowLogic.personalPushAllShownReason`, un `switch` exhaustivo que deja
+  pasar los tres motivos del motor parado y colapsa el resto. **Este ticket se arregla ahí**; el fragmento de «Lo medido»
+  que cita `reason: .permanent` en el paso 1 es anterior a ese cambio.

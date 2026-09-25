@@ -32,7 +32,8 @@ enum SignOutBlockedCopy {
         case .personalAttestUnavailable:
             return L10n.Settings.signOutAttestTitle
         case .permanent, .exportUnconfirmed, .sessionExpired, .bridgeUnreadable, .detachBusy,
-             .channelPaused, .uploadRetryLater:
+             .channelPaused, .uploadRetryLater, .syncStoppedNeedsUpdate, .syncStoppedMidMigration,
+             .syncStoppedNeedsRelaunch:
             return L10n.Settings.signOutBlockedTitle
         }
     }
@@ -52,6 +53,10 @@ enum SignOutBlockedCopy {
     ///    SIN salida; el aviso que ofrece salir perdiendo los cambios usa `attestLossMessage(pending:)`.
     ///  · **lo mismo con tus cambios en la nube** (2026-09-15): el texto SIN salida. El aviso que ofrece exportar y
     ///    perderlos usa `personalAttestLossMessage(pending:)`, y solo lo pinta Ajustes.
+    ///  · **la sincronización con la nube parada a propósito** (2026-09-25): la conexión no tiene nada que ver, así que
+    ///    no se habla de ella. Con el registro de la migración ilegible, cerrar y abrir Yala o actualizarla; con el paso
+    ///    entre la nube e iCloud a medias, «Dónde viven tus datos» y «Reintentar»; con el paso terminado y el espejo aún
+    ///    montado, reabrir la app.
     ///  · el resto: el genérico de siempre, que no afirma ninguna causa concreta.
     ///
     /// `nil` cae al genérico: Ajustes escribe el motivo antes de encender su aviso, así que con el aviso
@@ -64,6 +69,9 @@ enum SignOutBlockedCopy {
         case .transient: return L10n.Settings.signOutPendingMessage
         case .attestUnavailable: return L10n.Groups.Errors.attestUnavailable
         case .personalAttestUnavailable: return L10n.Settings.signOutAttestBlocked
+        case .syncStoppedNeedsUpdate: return L10n.Settings.signOutSyncStoppedNeedsUpdate
+        case .syncStoppedMidMigration: return L10n.Settings.signOutSyncStoppedMidMigration
+        case .syncStoppedNeedsRelaunch: return L10n.Settings.signOutSyncStoppedNeedsRelaunch
         case .permanent, .exportUnconfirmed, .bridgeUnreadable, .detachBusy, .none:
             return L10n.Settings.signOutBlockedMessage
         }

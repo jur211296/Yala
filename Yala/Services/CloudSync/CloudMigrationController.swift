@@ -1052,6 +1052,7 @@ final class CloudMigrationController {
             runtime: CloudSyncRuntime.shared,
             context: context,
             domainGateOpen: { CloudSyncRuntime.canRunDomain() },
+            journalRead: { MigrationPhaseStore.shared.currentPhaseRead },
             livePendingCount: { [self] in livePendingUploadCount() },
             maxIterations: maxIterations)
     }
@@ -1062,6 +1063,7 @@ final class CloudMigrationController {
         runtime: CloudSyncRuntime?,
         context: ModelContext,
         domainGateOpen: () -> Bool,
+        journalRead: () -> JournaledPhaseRead,
         livePendingCount: () -> Int,
         maxIterations: Int,
         pause: Duration = .milliseconds(250)
@@ -1071,16 +1073,21 @@ final class CloudMigrationController {
             // pendientes —en el outbox y en el History sin capturar—, y con ellos se bloquea sin descartar
             // (`pushAllVerdictWithoutEngine`).
             guard let runtime else {
+                // Sin runtime no es el candado —es el motor apagado por flag—, y no hay una salida que nombrar: el genérico.
                 return CloudSignOutFlowLogic.pushAllVerdictWithoutEngine(
-                    livePendingCount: livePendingCount(), uncapturedChanges: false)
+                    livePendingCount: livePendingCount(), uncapturedChanges: false, reason: .permanent)
             }
             guard domainGateOpen() else {
                 let live = livePendingCount()
                 let uncaptured = runtime.hasUncapturedPersonalChanges(context: context)
                 CloudSyncBreadcrumb.signOutPushSkippedByDomainGate(
                     pending: live, uncaptured: uncaptured.map { $0 ? "yes" : "no" } ?? "unknown")
+                // El motivo nombra la salida real, no la conexión (ticket
+                // `cloud-signout-with-the-engine-stopped-says-check-your-connection`): se clasifica por lo que enseña
+                // «Dónde viven tus datos» en ese mismo estado (`engineStoppedReason(read:)`).
                 return CloudSignOutFlowLogic.pushAllVerdictWithoutEngine(
-                    livePendingCount: live, uncapturedChanges: uncaptured)
+                    livePendingCount: live, uncapturedChanges: uncaptured,
+                    reason: CloudSignOutFlowLogic.engineStoppedReason(read: journalRead()))
             }
             let outcome = await runtime.syncCycle(context: context)
             if let verdict = CloudSignOutFlowLogic.pushAllVerdict(

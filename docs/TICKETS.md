@@ -163,7 +163,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | cloud-signout-collapses-the-personal-push-all-reason-into-permanent | backlog | tickets/backlog/cloud-signout-collapses-the-personal-push-all-reason-into-permanent.md |
 | cloud-signout-does-not-look-at-an-in-flight-migration | backlog | tickets/backlog/cloud-signout-does-not-look-at-an-in-flight-migration.md |
 | cloud-signout-drops-unsynced-preference-changes-without-counting-them | backlog | tickets/backlog/cloud-signout-drops-unsynced-preference-changes-without-counting-them.md |
-| cloud-signout-with-the-engine-stopped-says-check-your-connection | backlog | tickets/backlog/cloud-signout-with-the-engine-stopped-says-check-your-connection.md |
+| cloud-signout-with-the-engine-stopped-says-check-your-connection | done | tickets/done/cloud-signout-with-the-engine-stopped-says-check-your-connection.md |
 | cloud-sync-status-says-all-synced-with-changes-still-pending | backlog | tickets/backlog/cloud-sync-status-says-all-synced-with-changes-still-pending.md |
 | cloud-tab-does-not-say-this-phone-cannot-sync-personal-data | done | tickets/done/cloud-tab-does-not-say-this-phone-cannot-sync-personal-data.md |
 | cloud-tx-epoch-orphan-relations | backlog | tickets/backlog/cloud-tx-epoch-orphan-relations.md |

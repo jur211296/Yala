@@ -6117,3 +6117,12 @@
 /* Storage failure card: another device had already started uploading to this account and this device's data does not share lineage with it */
 "storage.failed.stepLineageUnproven" = "No pudimos activar la nube: esa cuenta ya tiene datos en la nube y los de este dispositivo no coinciden con ellos, así que no los juntamos. Lo que tienes en este dispositivo sigue aquí. Comprueba que entras con la cuenta correcta. Si es la tuya y este dispositivo usa el mismo iCloud, espera a que iCloud termine de traer tus datos y vuelve a intentarlo.";
 "storage.failed.stepLeaderRowsNotArrived" = "No pudimos activar la nube: otro de tus dispositivos ya subió parte de tus datos y a este todavía no le han llegado todos por iCloud, así que no subimos nada para no duplicarlos. Lo que tienes en este dispositivo sigue aquí. Abre Yala con conexión en ese otro dispositivo, espera a que iCloud termine de traer tus datos a este y vuelve a intentarlo.";
+
+/* Sign-out blocked: sync stopped because this build can't read the migration record */
+"settings.signOutSyncStoppedNeedsUpdate" = "Hay cambios sin subir a la nube y no queremos que pierdas nada. No pudimos comprobar en qué punto va el paso de tus datos a la nube, así que por ahora no podemos subirlos. Cierra Yala del todo y vuelve a abrirla; si sigue igual, actualízala desde la App Store y vuelve a intentarlo.";
+
+/* Sign-out blocked: sync paused because the cloud/iCloud switch didn't finish */
+"settings.signOutSyncStoppedMidMigration" = "Hay cambios sin subir a la nube y no queremos que pierdas nada. La sincronización está en pausa porque el paso de tus datos entre la nube e iCloud no terminó. Abre «Dónde viven tus datos», aquí en Perfil, y termínalo desde ahí (si falló, toca «Reintentar»); después vuelve a intentarlo.";
+
+/* Sign-out blocked: sync paused until Yala is reopened */
+"settings.signOutSyncStoppedNeedsRelaunch" = "Hay cambios sin subir a la nube y no queremos que pierdas nada. La sincronización está en pausa hasta que vuelvas a abrir Yala. Ciérrala del todo (deslízala fuera del selector de apps), vuelve a abrirla e inténtalo de nuevo.";

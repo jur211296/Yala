@@ -6103,3 +6103,12 @@
 /* Storage failure card: another device had already started uploading to this account and this device's data does not share lineage with it */
 "storage.failed.stepLineageUnproven" = "Nie udało się włączyć chmury: to konto ma już dane w chmurze, a dane z tego urządzenia do nich nie pasują, więc ich nie połączyliśmy. To, co masz na tym urządzeniu, nadal tu jest. Sprawdź, czy logujesz się na właściwe konto. Jeśli to Twoje konto, a to urządzenie korzysta z tego samego iCloud, poczekaj, aż iCloud skończy przenosić Twoje dane, i spróbuj ponownie.";
 "storage.failed.stepLeaderRowsNotArrived" = "Nie udało się włączyć chmury: inne z Twoich urządzeń wysłało już część Twoich danych, a iCloud nie przeniósł jeszcze wszystkich na to urządzenie, więc niczego nie wysłaliśmy, żeby ich nie zduplikować. To, co masz na tym urządzeniu, nadal tu jest. Otwórz Yala na tamtym urządzeniu z dostępem do internetu, poczekaj, aż iCloud przeniesie Twoje dane na to urządzenie, i spróbuj ponownie.";
+
+/* Sign-out blocked: sync stopped because this build can't read the migration record */
+"settings.signOutSyncStoppedNeedsUpdate" = "Niektóre zmiany nie zostały jeszcze przesłane do chmury, a nie chcemy, żeby coś przepadło. Nie udało się sprawdzić, na jakim etapie jest przenoszenie Twoich danych do chmury, więc na razie nie możemy ich przesłać. Zamknij Yala całkowicie i otwórz ponownie; jeśli nic się nie zmieni, zaktualizuj ją w App Store i spróbuj jeszcze raz.";
+
+/* Sign-out blocked: sync paused because the cloud/iCloud switch didn't finish */
+"settings.signOutSyncStoppedMidMigration" = "Niektóre zmiany nie zostały jeszcze przesłane do chmury, a nie chcemy, żeby coś przepadło. Synchronizacja jest wstrzymana, bo przenoszenie Twoich danych między chmurą a iCloud się nie zakończyło. Otwórz „Gdzie są Twoje dane”, tutaj w Profilu, i dokończ je stamtąd (jeśli się nie udało, stuknij „Spróbuj ponownie”); potem spróbuj jeszcze raz.";
+
+/* Sign-out blocked: sync paused until Yala is reopened */
+"settings.signOutSyncStoppedNeedsRelaunch" = "Niektóre zmiany nie zostały jeszcze przesłane do chmury, a nie chcemy, żeby coś przepadło. Synchronizacja jest wstrzymana, dopóki ponownie nie otworzysz Yala. Zamknij ją całkowicie (przesuń w przełączniku aplikacji), otwórz ponownie i spróbuj jeszcze raz.";

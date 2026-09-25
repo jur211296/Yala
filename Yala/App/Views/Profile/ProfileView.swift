@@ -195,7 +195,11 @@ struct ProfileView: View {
             // cierre no se completó y aquí nadie ha reintentado nada. El de `.transient` promete lo
             // contrario («un momento más», tras 45 s de reintentos del cierre solo-grupos) y ante un
             // servidor caído sería falso. Lo que cambia es el mensaje (`signOutBlockedMessage`).
-            case .permanent, .sessionExpired, .channelPaused, .uploadRetryLater:
+            //
+            // **Los tres del motor parado, también** (2026-09-25): mismo título, su propio mensaje. Solo los pone el cierre en
+            // la nube, así que no los comparte ningún otro gesto.
+            case .permanent, .sessionExpired, .channelPaused, .uploadRetryLater,
+                 .syncStoppedNeedsUpdate, .syncStoppedMidMigration, .syncStoppedNeedsRelaunch:
                 showSignOutBlockedAlert = true
             // **Los dos motivos del DESASOCIAR no encienden nada aquí, y no es teoría: llegaban.**
             // `phase` es un singleton observable y esta pantalla escucha sus cambios; la de
