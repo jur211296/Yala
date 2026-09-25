@@ -357,6 +357,10 @@ struct CloudSignOutGroupsReasonTests {
             .exportUnconfirmed: .permanent,
             .bridgeUnreadable: .permanent,
             .detachBusy: .permanent,
+            // Los del motor parado son del paso 1 (outbox PERSONAL): este productor no los recibe nunca.
+            .syncStoppedNeedsUpdate: .permanent,
+            .syncStoppedMidMigration: .permanent,
+            .syncStoppedNeedsRelaunch: .permanent,
         ]
         #expect(CloudSignOutFlowLogic.BlockReason.allCases.count == esperado.count, """
             Hay un motivo de bloqueo sin traducción escrita para el cierre en la nube. Decídelo aquí: el
@@ -382,6 +386,38 @@ struct CloudSignOutGroupsReasonTests {
         #expect(CloudSignOutFlowLogic.BlockReason.channelPaused.breadcrumbSlug == "channel-paused")
         #expect(CloudSignOutFlowLogic.BlockReason.attestUnavailable.breadcrumbSlug == "attest-unavailable")
         #expect(CloudSignOutFlowLogic.BlockReason.personalAttestUnavailable.breadcrumbSlug == "personal-attest-unavailable")
+        #expect(CloudSignOutFlowLogic.BlockReason.syncStoppedNeedsUpdate.breadcrumbSlug == "sync-stopped-needs-update")
+        #expect(CloudSignOutFlowLogic.BlockReason.syncStoppedMidMigration.breadcrumbSlug == "sync-stopped-mid-migration")
+        #expect(CloudSignOutFlowLogic.BlockReason.syncStoppedNeedsRelaunch.breadcrumbSlug == "sync-stopped-needs-relaunch")
+    }
+
+    /// **El paso 1 del cierre en la nube deja pasar SOLO los tres motivos del motor parado** (ticket
+    /// `cloud-signout-with-the-engine-stopped-says-check-your-connection`): su aviso nombra la salida real. El resto sigue
+    /// colapsado en `.permanent` —ése es el hermano `cloud-signout-collapses-the-personal-push-all-reason-into-permanent`—, y
+    /// la tabla cubre `allCases` para que un motivo nuevo tenga que decidir aquí si viaja.
+    @Test
+    func personalPushAllShownReason_letsOnlyTheStoppedEngineThrough() {
+        let esperado: [CloudSignOutFlowLogic.BlockReason: CloudSignOutFlowLogic.BlockReason] = [
+            .syncStoppedNeedsUpdate: .syncStoppedNeedsUpdate,
+            .syncStoppedMidMigration: .syncStoppedMidMigration,
+            .syncStoppedNeedsRelaunch: .syncStoppedNeedsRelaunch,
+            .transient: .permanent,
+            .permanent: .permanent,
+            .exportUnconfirmed: .permanent,
+            .sessionExpired: .permanent,
+            .bridgeUnreadable: .permanent,
+            .detachBusy: .permanent,
+            .channelPaused: .permanent,
+            .uploadRetryLater: .permanent,
+            .attestUnavailable: .permanent,
+            .personalAttestUnavailable: .permanent,
+        ]
+        #expect(CloudSignOutFlowLogic.BlockReason.allCases.count == esperado.count, """
+            Hay un motivo de bloqueo sin decisión escrita para el paso 1 del cierre en la nube. Decide aquí si viaja.
+            """)
+        for motivo in CloudSignOutFlowLogic.BlockReason.allCases {
+            #expect(CloudSignOutFlowLogic.personalPushAllShownReason(motivo) == esperado[motivo], "\(motivo)")
+        }
     }
 }
 
@@ -443,6 +479,10 @@ struct GroupsSignOutRetryDecisionTests {
             .attestUnavailable: .surfacePermanent,
             // Lo mismo con los cambios personales en la nube, que no pasan por aquí: si llegaran, esperar no lo arregla.
             .personalAttestUnavailable: .surfacePermanent,
+            // El motor parado (2026-09-25): tampoco pasa por aquí, y esperar no actualiza la app ni termina una reversa.
+            .syncStoppedNeedsUpdate: .surfacePermanent,
+            .syncStoppedMidMigration: .surfacePermanent,
+            .syncStoppedNeedsRelaunch: .surfacePermanent,
             // Se reintentan dentro del presupuesto: son los que sí se curan esperando.
             .transient: .retryAfter(seconds: GroupsSignOutRetryDecision.retryIntervalSeconds),
             // No los produce este camino, pero si llegaran, esperar tampoco arregla nada que sepamos —
@@ -871,9 +911,12 @@ struct PausedChannelReasonWiringTests {
             of: "private func presentSignOutBlock(_ reason: CloudSignOutFlowLogic.BlockReason) {",
             in: profileFile))
         #expect(present.contains(Self.squashed("""
-            case .permanent, .sessionExpired, .channelPaused, .uploadRetryLater:
+            case .permanent, .sessionExpired, .channelPaused, .uploadRetryLater,
+                 .syncStoppedNeedsUpdate, .syncStoppedMidMigration, .syncStoppedNeedsRelaunch:
                 showSignOutBlockedAlert = true
             """)), """
+            El fallo pasajero de la subida, o uno de los tres del motor parado (2026-09-25), dejó de entrar por el \
+            alert del bloqueo. \
             El fallo pasajero de la subida dejó de entrar por el alert del bloqueo. Si se fue al de \
             `.transient`, su título promete «un momento más» sobre algo que nadie ha reintentado.
             """)

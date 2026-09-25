@@ -6103,3 +6103,12 @@
 /* Storage failure card: another device had already started uploading to this account and this device's data does not share lineage with it */
 "storage.failed.stepLineageUnproven" = "We konden de cloud niet inschakelen: dat account heeft al gegevens in de cloud, en de gegevens op dit apparaat komen daar niet mee overeen, dus we hebben ze niet samengevoegd. Wat je op dit apparaat hebt, staat er nog. Controleer of je je aanmeldt met het juiste account. Als het van jou is en dit apparaat dezelfde iCloud gebruikt, wacht dan tot iCloud je gegevens heeft binnengehaald en probeer het opnieuw.";
 "storage.failed.stepLeaderRowsNotArrived" = "We konden de cloud niet inschakelen: een ander apparaat van je heeft al een deel van je gegevens geüpload, en iCloud heeft ze nog niet allemaal naar dit apparaat gebracht, dus we hebben niets geüpload om dubbele gegevens te voorkomen. Wat je op dit apparaat hebt, staat er nog. Open Yala met een verbinding op dat andere apparaat, wacht tot iCloud je gegevens naar dit apparaat heeft gebracht en probeer het opnieuw.";
+
+/* Sign-out blocked: sync stopped because this build can't read the migration record */
+"settings.signOutSyncStoppedNeedsUpdate" = "Sommige wijzigingen zijn nog niet naar de cloud geüpload en we willen niet dat je iets kwijtraakt. We konden niet controleren hoe ver de overstap van je gegevens naar de cloud is, dus we kunnen ze nu niet uploaden. Sluit Yala volledig af en open hem opnieuw; verandert er niets, werk hem dan bij via de App Store en probeer het opnieuw.";
+
+/* Sign-out blocked: sync paused because the cloud/iCloud switch didn't finish */
+"settings.signOutSyncStoppedMidMigration" = "Sommige wijzigingen zijn nog niet naar de cloud geüpload en we willen niet dat je iets kwijtraakt. Synchroniseren is gepauzeerd omdat de overstap van je gegevens tussen de cloud en iCloud niet is afgerond. Open ‘Waar je gegevens staan’, hier in Profiel, en rond het daar af (als het mislukt is, tik op ‘Opnieuw proberen’); probeer het daarna opnieuw.";
+
+/* Sign-out blocked: sync paused until Yala is reopened */
+"settings.signOutSyncStoppedNeedsRelaunch" = "Sommige wijzigingen zijn nog niet naar de cloud geüpload en we willen niet dat je iets kwijtraakt. Synchroniseren is gepauzeerd tot je Yala opnieuw opent. Sluit hem volledig af (veeg hem weg in de app-kiezer), open hem opnieuw en probeer het nog eens.";

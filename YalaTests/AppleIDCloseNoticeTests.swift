@@ -188,6 +188,10 @@ struct SignOutBlockedCopyTests {
         #expect(SignOutBlockedCopy.message(for: .transient) == L10n.Settings.signOutPendingMessage)
         #expect(SignOutBlockedCopy.message(for: .attestUnavailable) == L10n.Groups.Errors.attestUnavailable)
         #expect(SignOutBlockedCopy.message(for: .personalAttestUnavailable) == L10n.Settings.signOutAttestBlocked)
+        // El motor parado a propósito (2026-09-25): la conexión no tiene nada que ver, y cada uno nombra su salida.
+        #expect(SignOutBlockedCopy.message(for: .syncStoppedNeedsUpdate) == L10n.Settings.signOutSyncStoppedNeedsUpdate)
+        #expect(SignOutBlockedCopy.message(for: .syncStoppedMidMigration) == L10n.Settings.signOutSyncStoppedMidMigration)
+        #expect(SignOutBlockedCopy.message(for: .syncStoppedNeedsRelaunch) == L10n.Settings.signOutSyncStoppedNeedsRelaunch)
     }
 
     @Test("Lo que no tiene causa que nombrar cae al genérico, `nil` incluido")

@@ -6091,3 +6091,12 @@
 /* Storage failure card: another device had already started uploading to this account and this device's data does not share lineage with it */
 "storage.failed.stepLineageUnproven" = "Não conseguimos ativar a nuvem: essa conta já tem dados na nuvem, e os deste dispositivo não coincidem com eles, então não os juntamos. O que você tem neste dispositivo continua aqui. Confira se está entrando com a conta certa. Se ela for sua e este dispositivo usar o mesmo iCloud, espere o iCloud terminar de trazer seus dados e tente de novo.";
 "storage.failed.stepLeaderRowsNotArrived" = "Não conseguimos ativar a nuvem: outro dos seus dispositivos já enviou parte dos seus dados, e nem todos chegaram a este pelo iCloud ainda, então não enviamos nada para não duplicá-los. O que você tem neste dispositivo continua aqui. Abra o Yala com conexão nesse outro dispositivo, espere o iCloud terminar de trazer seus dados para este e tente de novo.";
+
+/* Sign-out blocked: sync stopped because this build can't read the migration record */
+"settings.signOutSyncStoppedNeedsUpdate" = "Há alterações que ainda não subiram para a nuvem e não queremos que você perca nada. Não conseguimos verificar em que ponto está a passagem dos seus dados para a nuvem, então por enquanto não conseguimos enviá-las. Feche o Yala completamente e abra de novo; se nada mudar, atualize-o pela App Store e tente de novo.";
+
+/* Sign-out blocked: sync paused because the cloud/iCloud switch didn't finish */
+"settings.signOutSyncStoppedMidMigration" = "Há alterações que ainda não subiram para a nuvem e não queremos que você perca nada. A sincronização está em pausa porque a passagem dos seus dados entre a nuvem e o iCloud não terminou. Abra “Onde ficam seus dados”, aqui em Perfil, e termine por lá (se falhou, toque em “Tentar de novo”); depois tente de novo.";
+
+/* Sign-out blocked: sync paused until Yala is reopened */
+"settings.signOutSyncStoppedNeedsRelaunch" = "Há alterações que ainda não subiram para a nuvem e não queremos que você perca nada. A sincronização está em pausa até você abrir o Yala de novo. Feche-o completamente (deslize para fora no seletor de apps), abra de novo e tente outra vez.";

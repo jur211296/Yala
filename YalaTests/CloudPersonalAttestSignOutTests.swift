@@ -237,7 +237,11 @@ struct CloudPersonalAttestSignOutWiringTests {
                 reason: reason, pendingRows: rows, acceptance: acceptedPersonalLoss) {
                 acceptedPersonalLoss = nil
                 guard reason == .attestUnavailable else {
-                    phase = .blocked(pendingCount: pending, reason: .permanent)
+                    phase = .blocked(pendingCount: pending,
+                                     reason: CloudSignOutFlowLogic.personalPushAllShownReason(reason))
+                    CloudSyncBreadcrumb.signOutPushBlocked(pending: pending)
+                    return
+                }
             """)), """
             El paso 1 dejó de separar el attest del resto de motivos: o todo bloqueo personal ofrecería perder datos, o \
             una aceptación dejaría pasar filas que nadie aceptó.

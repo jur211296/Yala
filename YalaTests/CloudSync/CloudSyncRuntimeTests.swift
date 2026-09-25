@@ -924,10 +924,12 @@ struct CloudSyncRuntimeTests {
         let runtime = makeRuntime(push: push, pull: pull, session: StubCloudSession(userID: "u1"))
 
         let verdict = await CloudMigrationController.pushAllForSignOut(
-            runtime: runtime, context: context, domainGateOpen: { false },
+            runtime: runtime, context: context, domainGateOpen: { false }, journalRead: { .unreadable },
             livePendingCount: { liveCount(context) }, maxIterations: 20, pause: .zero)
 
-        #expect(verdict == .blocked(pendingCount: 1, reason: .permanent))
+        // El motivo nombra la salida real —actualizar Yala—, no la conexión (ticket
+        // `cloud-signout-with-the-engine-stopped-says-check-your-connection`).
+        #expect(verdict == .blocked(pendingCount: 1, reason: .syncStoppedNeedsUpdate))
         #expect(push.callCount == 0, "con el candado cerrado no se sube nada")
         #expect(pull.callCount == 0, "ni se baja")
         #expect(try cursorCount(context) == 0, "ni corre el drain, que guarda en el store principal")
@@ -935,7 +937,7 @@ struct CloudSyncRuntimeTests {
 
         // Control: el MISMO escenario con el candado abierto sí sube la fila y drena.
         let open = await CloudMigrationController.pushAllForSignOut(
-            runtime: runtime, context: context, domainGateOpen: { true },
+            runtime: runtime, context: context, domainGateOpen: { true }, journalRead: { .unreadable },
             livePendingCount: { liveCount(context) }, maxIterations: 20, pause: .zero)
         #expect(open == .drained)
         #expect(push.callCount > 0, "control: con el candado abierto el ciclo sí sube")
@@ -951,7 +953,7 @@ struct CloudSyncRuntimeTests {
         let runtime = makeRuntime(push: push, pull: pull, session: StubCloudSession(userID: "u1"))
 
         let verdict = await CloudMigrationController.pushAllForSignOut(
-            runtime: runtime, context: context, domainGateOpen: { false },
+            runtime: runtime, context: context, domainGateOpen: { false }, journalRead: { .unreadable },
             livePendingCount: { liveCount(context) }, maxIterations: 20, pause: .zero)
 
         #expect(verdict == .drained, "sin nada pendiente el cierre no se queda atrapado")
@@ -975,9 +977,11 @@ struct CloudSyncRuntimeTests {
         let verdict = await CloudMigrationController.pushAllForSignOut(
             runtime: runtime, context: context,
             domainGateOpen: { asked += 1; return asked == 1 },
+            journalRead: { .phase(.reverseClaimLeader) },
             livePendingCount: { liveCount(context) }, maxIterations: 20, pause: .zero)
 
-        #expect(verdict == .blocked(pendingCount: 1, reason: .permanent))
+        // Una vuelta a iCloud que arrancó entre dos ciclos: la salida está en «Dónde viven tus datos».
+        #expect(verdict == .blocked(pendingCount: 1, reason: .syncStoppedMidMigration))
         #expect(asked == 2, "el candado se pregunta otra vez antes del segundo ciclo")
         #expect(push.callCount == 1, "solo corrió el ciclo de antes del cierre del candado")
     }
@@ -988,16 +992,21 @@ struct CloudSyncRuntimeTests {
         let context = try makeContext(dir)
         // Sin runtime no se pregunta el candado: `canRunDomain()` deja rastros y un canario.
         var asked = 0
+        var journalAsked = 0
         let empty = await CloudMigrationController.pushAllForSignOut(
             runtime: nil, context: context, domainGateOpen: { asked += 1; return true },
+            journalRead: { journalAsked += 1; return .unreadable },
             livePendingCount: { liveCount(context) }, maxIterations: 20, pause: .zero)
         #expect(empty == .drained)
         _ = try liveRow(context, entityType: SyncEntityType.transactionItem, h: hlc(1))
         let pending = await CloudMigrationController.pushAllForSignOut(
             runtime: nil, context: context, domainGateOpen: { true },
+            journalRead: { journalAsked += 1; return .unreadable },
             livePendingCount: { liveCount(context) }, maxIterations: 20, pause: .zero)
+        // Sin runtime no es el candado —es el motor apagado—: no hay una salida que nombrar y queda el genérico.
         #expect(pending == .blocked(pendingCount: 1, reason: .permanent))
         #expect(asked == 0, "sin runtime el candado ni se consulta")
+        #expect(journalAsked == 0, "ni el journal: el motivo del candado no aplica")
     }
 
     /// Cancelar el gesto a mitad de la pausa corta el loop y bloquea como pasajero, con las filas contadas: jamás
@@ -1012,7 +1021,7 @@ struct CloudSyncRuntimeTests {
                                   session: StubCloudSession(userID: "u1"))
         let task = Task { @MainActor in
             await CloudMigrationController.pushAllForSignOut(
-                runtime: runtime, context: context, domainGateOpen: { true },
+                runtime: runtime, context: context, domainGateOpen: { true }, journalRead: { .unreadable },
                 livePendingCount: { liveCount(context) }, maxIterations: 20, pause: .seconds(60))
         }
         while push.callCount == 0 { await Task.yield() }
@@ -1025,20 +1034,61 @@ struct CloudSyncRuntimeTests {
     @Test("pushAllVerdictWithoutEngine: solo sigue sin filas Y sin ediciones sin capturar; lo que no se pudo leer bloquea")
     func pushAllVerdictWithoutEngine_table() {
         typealias L = CloudSignOutFlowLogic
-        #expect(L.pushAllVerdictWithoutEngine(livePendingCount: 0, uncapturedChanges: false) == .drained)
-        #expect(L.pushAllVerdictWithoutEngine(livePendingCount: 3, uncapturedChanges: false)
-            == .blocked(pendingCount: 3, reason: .permanent))
-        #expect(L.pushAllVerdictWithoutEngine(livePendingCount: 3, uncapturedChanges: true)
-            == .blocked(pendingCount: 3, reason: .permanent))
-        // Ediciones solo en el History: bloquea, con la cifra del «no se pudo contar».
-        #expect(L.pushAllVerdictWithoutEngine(livePendingCount: 0, uncapturedChanges: true)
-            == .blocked(pendingCount: .max, reason: .permanent))
-        // El History que no se pudo leer cuenta como «sí».
-        #expect(L.pushAllVerdictWithoutEngine(livePendingCount: 0, uncapturedChanges: nil)
-            == .blocked(pendingCount: .max, reason: .permanent))
-        // Un recuento que falló (`Int.max`) jamás habilita el cierre.
-        #expect(L.pushAllVerdictWithoutEngine(livePendingCount: .max, uncapturedChanges: false)
-            == .blocked(pendingCount: .max, reason: .permanent))
+        // El motivo viaja tal cual en las tres formas de bloquear: se prueba con los dos del motor parado y con el genérico.
+        for reason in [L.BlockReason.syncStoppedNeedsUpdate, .syncStoppedMidMigration, .syncStoppedNeedsRelaunch, .permanent] {
+            #expect(L.pushAllVerdictWithoutEngine(livePendingCount: 0, uncapturedChanges: false, reason: reason) == .drained)
+            #expect(L.pushAllVerdictWithoutEngine(livePendingCount: 3, uncapturedChanges: false, reason: reason)
+                == .blocked(pendingCount: 3, reason: reason))
+            #expect(L.pushAllVerdictWithoutEngine(livePendingCount: 3, uncapturedChanges: true, reason: reason)
+                == .blocked(pendingCount: 3, reason: reason))
+            // Ediciones solo en el History: bloquea, con la cifra del «no se pudo contar».
+            #expect(L.pushAllVerdictWithoutEngine(livePendingCount: 0, uncapturedChanges: true, reason: reason)
+                == .blocked(pendingCount: .max, reason: reason))
+            // El History que no se pudo leer cuenta como «sí».
+            #expect(L.pushAllVerdictWithoutEngine(livePendingCount: 0, uncapturedChanges: nil, reason: reason)
+                == .blocked(pendingCount: .max, reason: reason))
+            // Un recuento que falló (`Int.max`) jamás habilita el cierre.
+            #expect(L.pushAllVerdictWithoutEngine(livePendingCount: .max, uncapturedChanges: false, reason: reason)
+                == .blocked(pendingCount: .max, reason: reason))
+        }
+    }
+
+    /// Se clasifica por lo que enseña «Dónde viven tus datos» en ese mismo estado. El journal ilegible: reabrir o
+    /// actualizar. Una fase en vuelo, fallida o en espera: Almacenamiento, que enseña su progreso o su «Reintentar». Una fase
+    /// ESTABLE con el candado cerrado es el espejo aún montado: Almacenamiento enseña la nube activa, sin nada que terminar,
+    /// y lo que cura es reabrir (review adversarial del 2026-09-25, dos lentes).
+    @Test("engineStoppedReason: ilegible → actualizar; fase en vuelo → Almacenamiento; fase estable → reabrir")
+    func engineStoppedReason_table() {
+        typealias L = CloudSignOutFlowLogic
+        #expect(L.engineStoppedReason(read: .unreadable) == .syncStoppedNeedsUpdate)
+        let midway: [MigrationPhase] = [.reverseClaimLeader, .reverseFailedRollback, .reverseUpload, .reverseMountMirror,
+                                        .icloudActive, .failedRollback, .verifying, .waitingForLeader, .dryRun]
+        for phase in midway {
+            #expect(L.engineStoppedReason(read: .phase(phase)) == .syncStoppedMidMigration, "\(phase)")
+        }
+        for phase in [MigrationPhase.done, .notStarted] {
+            #expect(L.engineStoppedReason(read: .phase(phase)) == .syncStoppedNeedsRelaunch, "\(phase)")
+        }
+    }
+
+    /// Con la edición sin capturar y el paso a iCloud a medias, el motivo sale del journal legible (el otro par).
+    @Test("cierre con el candado cerrado, journal legible y una edición sin capturar: bloquea con «Dónde viven tus datos»")
+    func signOutPushAll_domainGateClosed_legibleJournal_uncapturedEdit_namesStorage() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let push = StubSession(body: Data(#"{"results":[]}"#.utf8))
+        let runtime = makeRuntime(push: push, pull: StubSession(body: emptyPageJSON()),
+                                  session: StubCloudSession(userID: "u1"))
+        context.insert(TransactionItem(date: Date(timeIntervalSince1970: 1_700_000_000), amount: 12, currencyCode: "USD"))
+        try context.save()
+
+        let verdict = await CloudMigrationController.pushAllForSignOut(
+            runtime: runtime, context: context, domainGateOpen: { false },
+            journalRead: { .phase(.reverseFailedRollback) },
+            livePendingCount: { liveCount(context) }, maxIterations: 20, pause: .zero)
+
+        #expect(verdict == .blocked(pendingCount: .max, reason: .syncStoppedMidMigration))
+        #expect(push.callCount == 0)
     }
 
     /// El caso que cazaron dos lentes de la review: con el motor parado, lo que la persona edita vive solo en el History.
@@ -1056,10 +1106,11 @@ struct CloudSyncRuntimeTests {
         try context.save()
 
         let verdict = await CloudMigrationController.pushAllForSignOut(
-            runtime: runtime, context: context, domainGateOpen: { false },
+            runtime: runtime, context: context, domainGateOpen: { false }, journalRead: { .unreadable },
             livePendingCount: { liveCount(context) }, maxIterations: 20, pause: .zero)
 
-        #expect(verdict == .blocked(pendingCount: .max, reason: .permanent), "la edición no se pierde en silencio")
+        #expect(verdict == .blocked(pendingCount: .max, reason: .syncStoppedNeedsUpdate),
+                "la edición no se pierde en silencio")
         #expect(push.callCount == 0)
         #expect(try cursorCount(context) == 0, "la lectura del History no crea el cursor")
         #expect(try outbox(context).isEmpty, "ni encola nada")
@@ -1128,6 +1179,7 @@ struct CloudSyncRuntimeTests {
             "runtime: CloudSyncRuntime.shared,",
             "context: context,",
             "domainGateOpen: { CloudSyncRuntime.canRunDomain() },",
+            "journalRead: { MigrationPhaseStore.shared.currentPhaseRead },",
             "livePendingCount: { [self] in livePendingUploadCount() },",
             "maxIterations: maxIterations)",
         ])

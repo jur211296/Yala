@@ -4464,6 +4464,15 @@ enum L10n {
         static var signOutAttestLossButton: String { ls("settings.signOutAttestLossButton", comment: "") }
         /// El mismo hecho SIN salida, para un bloqueo de ese motivo cuya oferta ya no está.
         static var signOutAttestBlocked: String { ls("settings.signOutAttestBlocked", comment: "") }
+        /// Cierre en la nube bloqueado con la sincronización parada porque no se pudo leer el registro de la migración
+        /// (`CloudSignOutFlowLogic.BlockReason.syncStoppedNeedsUpdate`): la salida es reabrir o actualizar Yala, no la red.
+        static var signOutSyncStoppedNeedsUpdate: String { ls("settings.signOutSyncStoppedNeedsUpdate", comment: "") }
+        /// Lo mismo con el paso entre la nube e iCloud a medias o fallido
+        /// (`CloudSignOutFlowLogic.BlockReason.syncStoppedMidMigration`): la salida está en «Dónde viven tus datos».
+        static var signOutSyncStoppedMidMigration: String { ls("settings.signOutSyncStoppedMidMigration", comment: "") }
+        /// Lo mismo con el paso terminado pero el espejo de iCloud aún montado
+        /// (`CloudSignOutFlowLogic.BlockReason.syncStoppedNeedsRelaunch`): la salida es reabrir Yala.
+        static var signOutSyncStoppedNeedsRelaunch: String { ls("settings.signOutSyncStoppedNeedsRelaunch", comment: "") }
         /// La exportación de ese aviso no encontró ningún movimiento que exportar.
         static var signOutAttestExportEmpty: String { ls("settings.signOutAttestExportEmpty", comment: "") }
         /// La exportación de ese aviso no pudo generar el archivo.

@@ -951,6 +951,9 @@ final class CloudSessionSignOut {
         // Attest**: el push-all lo trae como `.attestUnavailable` cuando el testigo del motor personal lo confirma
         // (`CloudSyncRuntime.stoppedByUnavailableAttest(for:)`), y aquí pasa a `.personalAttestUnavailable`, cuyo aviso habla
         // de tus datos y ofrece exportarlos.
+        //
+        // **Y los dos del motor parado viajan tal cual** (2026-09-25, `personalPushAllShownReason`): con el candado cerrado
+        // su aviso nombra la salida real —actualizar Yala, o «Dónde viven tus datos»— en vez de la conexión.
         if case .blocked(let pending, let reason) = await controller.pushAllPendingForSignOut() {
             let rows = controller.livePendingUploadRowIDs()
             // **La pérdida aceptada, y solo mientras el teléfono siga sin App Attest**: el push-all lo intentó una vez —si el
@@ -960,7 +963,8 @@ final class CloudSessionSignOut {
                 reason: reason, pendingRows: rows, acceptance: acceptedPersonalLoss) {
                 acceptedPersonalLoss = nil
                 guard reason == .attestUnavailable else {
-                    phase = .blocked(pendingCount: pending, reason: .permanent)
+                    phase = .blocked(pendingCount: pending,
+                                     reason: CloudSignOutFlowLogic.personalPushAllShownReason(reason))
                     CloudSyncBreadcrumb.signOutPushBlocked(pending: pending)
                     return
                 }
