@@ -85,7 +85,10 @@ nonisolated enum CloudWelcomeSignInPhase: Equatable {
     /// `migration-takeover-uploads-without-a-lineage-check`). No es `.adoptExit` —esa salida es del claim o del efecto, y su
     /// marca hace que Almacenamiento ofrezca volver a entrar— ni `.error`, cuyo «Revisa tu conexión» sería falso. El texto es
     /// el de Almacenamiento (`StorageFailureCopyLogic.forwardLineageMessage`), y «Reintentar» vuelve a comprobar el linaje.
-    case lineageExit
+    /// Lleva el motivo, que elige el texto: `lineageUnproven` o, desde el ticket
+    /// `migration-takeover-may-duplicate-rows-whose-leader-identities-never-arrived`, `leaderRowsNotArrived` (el mismo iCloud,
+    /// con las filas del líder aún en camino). Mismas salidas para los dos.
+    case lineageExit(ForwardStepExitReason)
     /// La cuenta existe pero el backend no la deja entrar (403 en el claim). Caso propio y no un
     /// `.error(retryable: false)`: ése comparte copy con el fallo de red —icono de wifi incluido— y
     /// **el problema no es la conexión**. Sin botón de reintentar: esperar no despierta una cuenta
@@ -201,8 +204,9 @@ nonisolated enum CloudWelcomeSignInFlow {
             if kind == .migration, let adoptClaimExit, adoptClaimExit != .cancelled {
                 return .adoptExit(adoptClaimExit)
             }
-            if kind == .migration, forwardStepExit == .lineageUnproven {
-                return .lineageExit
+            if kind == .migration, let forwardStepExit,
+               forwardStepExit == .lineageUnproven || forwardStepExit == .leaderRowsNotArrived {
+                return .lineageExit(forwardStepExit)
             }
             return .error(retryable: true)
         case .journalUnreadable:

@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (561)
+## Index (563)
 
 | id | status | path |
 |---|---|---|
@@ -60,6 +60,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | activation-discard-loses-the-group-history-question | backlog | tickets/backlog/activation-discard-loses-the-group-history-question.md |
 | activation-restore-start-fresh-keeps-the-imported-rows | done | tickets/done/activation-restore-start-fresh-keeps-the-imported-rows.md |
 | activation-resume-returns-to-restore-on-an-emptied-zone | backlog | tickets/backlog/activation-resume-returns-to-restore-on-an-emptied-zone.md |
+| adopt-after-the-cutover-needs-a-marker-the-leader-never-exported | done | tickets/done/adopt-after-the-cutover-needs-a-marker-the-leader-never-exported.md |
 | adopt-claim-stays-parked-with-no-ceiling | done | tickets/done/adopt-claim-stays-parked-with-no-ceiling.md |
 | adopt-effect-after-the-cloud-mode-retries-silently | backlog | tickets/backlog/adopt-effect-after-the-cloud-mode-retries-silently.md |
 | adopt-effect-ceiling-never-sees-an-import-that-never-settles | backlog | tickets/backlog/adopt-effect-ceiling-never-sees-an-import-that-never-settles.md |
@@ -67,6 +68,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | adopt-exit-keeps-the-session-it-opened | done | tickets/done/adopt-exit-keeps-the-session-it-opened.md |
 | adopt-follower-waits-for-the-leader-with-no-ceiling | done | tickets/done/adopt-follower-waits-for-the-leader-with-no-ceiling.md |
 | adopt-on-an-empty-store-uploads-what-the-mirror-imports-before-the-relaunch | backlog | tickets/backlog/adopt-on-an-empty-store-uploads-what-the-mirror-imports-before-the-relaunch.md |
+| adopt-orphan-with-a-fresh-hlc-beats-the-absent-leaders-edit | backlog | tickets/backlog/adopt-orphan-with-a-fresh-hlc-beats-the-absent-leaders-edit.md |
 | adopt-session-close-drops-the-mark-before-the-sign-out-lands | backlog | tickets/backlog/adopt-session-close-drops-the-mark-before-the-sign-out-lands.md |
 | adopt-terminal-claims-ready-without-checking-engine | backlog | tickets/backlog/adopt-terminal-claims-ready-without-checking-engine.md |
 | adopt-uploads-a-foreign-corpus-without-a-lineage-check | qa | tickets/qa/adopt-uploads-a-foreign-corpus-without-a-lineage-check.md |
@@ -132,12 +134,10 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | ci-warns-but-does-not-block | backlog | tickets/backlog/ci-warns-but-does-not-block.md |
 | ci-workflow-cites-missing-testing-strategy | backlog | tickets/backlog/ci-workflow-cites-missing-testing-strategy.md |
 | claim-grants-a-takeover-after-the-leader-passed-the-cutover | qa | tickets/qa/claim-grants-a-takeover-after-the-leader-passed-the-cutover.md |
-| claim-takeover-races-the-leader-cutover-without-cas | backlog | tickets/backlog/claim-takeover-races-the-leader-cutover-without-cas.md |
-| adopt-after-the-cutover-needs-a-marker-the-leader-never-exported | done | tickets/done/adopt-after-the-cutover-needs-a-marker-the-leader-never-exported.md |
-| adopt-orphan-with-a-fresh-hlc-beats-the-absent-leaders-edit | backlog | tickets/backlog/adopt-orphan-with-a-fresh-hlc-beats-the-absent-leaders-edit.md |
 | claim-promotion-lost-response-blocks-the-retry | done | tickets/done/claim-promotion-lost-response-blocks-the-retry.md |
 | claim-replay-after-a-kill-mid-commit-can-duplicate-the-onboarding | backlog | tickets/backlog/claim-replay-after-a-kill-mid-commit-can-duplicate-the-onboarding.md |
 | claim-replay-can-seed-beside-a-phone-that-adopted-silently | done | tickets/done/claim-replay-can-seed-beside-a-phone-that-adopted-silently.md |
+| claim-takeover-races-the-leader-cutover-without-cas | backlog | tickets/backlog/claim-takeover-races-the-leader-cutover-without-cas.md |
 | clock-drift-aborted-drain-lets-the-pull-overwrite-untranslated-edits | backlog | tickets/backlog/clock-drift-aborted-drain-lets-the-pull-overwrite-untranslated-edits.md |
 | cloud-attest-notice-does-not-cover-a-gateway-rejected-token | backlog | tickets/backlog/cloud-attest-notice-does-not-cover-a-gateway-rejected-token.md |
 | cloud-engine-can-start-with-a-reverse-abort-pending | backlog | tickets/backlog/cloud-engine-can-start-with-a-reverse-abort-pending.md |
@@ -195,6 +195,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | diez-worktrees-comparten-un-simulador | done | tickets/done/diez-worktrees-comparten-un-simulador.md |
 | discard-gate-cannot-close-an-orphan-session-window | done | tickets/done/discard-gate-cannot-close-an-orphan-session-window.md |
 | discard-gate-proceed-leaves-the-imported-rows-behind | backlog | tickets/backlog/discard-gate-proceed-leaves-the-imported-rows-behind.md |
+| displaced-leader-late-identity-export-can-rekey-the-relief-corpus | backlog | tickets/backlog/displaced-leader-late-identity-export-can-rekey-the-relief-corpus.md |
 | displaced-migration-leader-keeps-uploading-after-a-takeover | qa | tickets/qa/displaced-migration-leader-keeps-uploading-after-a-takeover.md |
 | distribucion-recalcula-dos-veces-por-toque-y-sin-debounce | backlog | tickets/backlog/distribucion-recalcula-dos-veces-por-toque-y-sin-debounce.md |
 | distribution-balance-kpi-skips-fx | done | tickets/done/distribution-balance-kpi-skips-fx.md |
@@ -367,6 +368,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | late-icloud-wipe-can-re-export-between-its-two-halves | backlog | tickets/backlog/late-icloud-wipe-can-re-export-between-its-two-halves.md |
 | leader-displaced-after-the-cutover-pushes-its-residual-in-the-reconcile | qa | tickets/qa/leader-displaced-after-the-cutover-pushes-its-residual-in-the-reconcile.md |
 | leaving-and-reentering-restore-renews-the-hard-cap | done | tickets/done/leaving-and-reentering-restore-renews-the-hard-cap.md |
+| lineage-coverage-blocks-forever-after-a-row-deleted-during-the-wait | backlog | tickets/backlog/lineage-coverage-blocks-forever-after-a-row-deleted-during-the-wait.md |
 | live-anchor-breakdown-doubles-the-approximate-glyph | backlog | tickets/backlog/live-anchor-breakdown-doubles-the-approximate-glyph.md |
 | lost-cloud-signup-then-private-leaves-migrate-blocked | backlog | tickets/backlog/lost-cloud-signup-then-private-leaves-migrate-blocked.md |
 | m1-prose-outlives-its-code-in-comments | backlog | tickets/backlog/m1-prose-outlives-its-code-in-comments.md |
@@ -376,7 +378,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | migrate-card-keeps-promising-an-account-the-check-refused | backlog | tickets/backlog/migrate-card-keeps-promising-an-account-the-check-refused.md |
 | migrate-claim-does-not-announce-a-definitive-cause-before-its-ceiling | backlog | tickets/backlog/migrate-claim-does-not-announce-a-definitive-cause-before-its-ceiling.md |
 | migration-activation-drops-pending-effects-it-never-restores | backlog | tickets/backlog/migration-activation-drops-pending-effects-it-never-restores.md |
-| migration-takeover-may-duplicate-rows-whose-leader-identities-never-arrived | backlog | tickets/backlog/migration-takeover-may-duplicate-rows-whose-leader-identities-never-arrived.md |
+| migration-takeover-may-duplicate-rows-whose-leader-identities-never-arrived | done | tickets/done/migration-takeover-may-duplicate-rows-whose-leader-identities-never-arrived.md |
 | migration-takeover-uploads-without-a-lineage-check | qa | tickets/qa/migration-takeover-uploads-without-a-lineage-check.md |
 | more-tab-missing-profile-button | backlog | tickets/backlog/more-tab-missing-profile-button.md |
 | multi-currency-accounts | backlog | tickets/backlog/multi-currency-accounts.md |

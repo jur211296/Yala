@@ -46,6 +46,8 @@ struct ForwardStepCeilingLogicTests {
         #expect(message(.localFailure) == L10n.Storage.Failed.snapshotLocalFailure)
         #expect(message(.lineageUnproven) == L10n.Storage.Failed.stepLineageUnproven,
                 "el relevo sin linaje (ticket `migration-takeover-uploads-without-a-lineage-check`)")
+        #expect(message(.leaderRowsNotArrived) == L10n.Storage.Failed.stepLeaderRowsNotArrived,
+                "el relevo del mismo iCloud sin las filas del líder: su frase, no la de «no coinciden»")
     }
 
     /// Las tres frases nuevas son distintas entre sí, de las de la subida que NO se reusan y del genérico. Y ninguna sale
@@ -478,16 +480,52 @@ struct ForwardStepCeilingLogicTests {
         }
     }
 
+    /// Ticket `migration-takeover-may-duplicate-rows-whose-leader-identities-never-arrived`. El relevo del MISMO iCloud al
+    /// que le faltan las filas del líder tiene su frase: la de `lineageUnproven` dice que los datos «no coinciden» y pide
+    /// revisar la cuenta, y aquí es la cuenta buena y coinciden. Hereda las prohibiciones de su vecina —no promete «tus datos»
+    /// en el teléfono— y es distinta de ella y de la del adopt en cada idioma.
+    @Test func leaderRowsText_isItsOwn_inEveryLocale() throws {
+        let text = L10n.Storage.Failed.stepLeaderRowsNotArrived
+        #expect(!text.hasPrefix("storage."))
+        #expect(text != L10n.Storage.Failed.stepLineageUnproven)
+        #expect(StorageFailureCopyLogic.forwardLineageMessage(for: .leaderRowsNotArrived) == text)
+        #expect(StorageFailureCopyLogic.forwardLineageMessage(for: .lineageUnproven)
+                == L10n.Storage.Failed.stepLineageUnproven, "control: el otro motivo conserva su frase")
+
+        let resources = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("Yala/Resources")
+        let locales = try FileManager.default.contentsOfDirectory(atPath: resources.path).filter { $0.hasSuffix(".lproj") }
+        #expect(locales.count == 16)
+        for locale in locales {
+            let url = resources.appendingPathComponent("\(locale)/Localizable.strings")
+            let table = try #require(NSDictionary(contentsOf: url) as? [String: String], "\(locale)")
+            let value = try #require(table["storage.failed.stepLeaderRowsNotArrived"], "\(locale)")
+            #expect(!value.isEmpty && !value.contains("NEEDS_TRANSLATION"), "\(locale)")
+            let localData = try #require(table["storage.confirm.cancelMigrationBody"], "\(locale)")
+                .components(separatedBy: CharacterSet(charactersIn: ".。,，、;；")).first ?? ""
+            #expect(!localData.isEmpty, "\(locale): control del corte")
+            #expect(!value.contains(localData), "\(locale) repite «\(localData)»")
+            #expect(value != table["storage.failed.stepLineageUnproven"], "\(locale)")
+            #expect(value != table["storage.failed.adoptEffectLineageUnproven"], "\(locale)")
+        }
+    }
+
     /// El claim no produce el linaje: el aviso del 22 % calla con él, como con los otros motivos que no son suyos.
     @Test func lineageUnproven_isNotAClaimNotice() {
         #expect(AdoptClaimScope.notice(phase: .claimingMigration, claimIntent: .adoptIfExisting,
                                        observedCause: .lineageUnproven) == nil)
+        #expect(AdoptClaimScope.notice(phase: .claimingMigration, claimIntent: .adoptIfExisting,
+                                       observedCause: .leaderRowsNotArrived) == nil)
     }
 
     /// La bienvenida: el adopt que recibió el relevo y salió por linaje tiene su fase —ni `.adoptExit`, que es del claim o
     /// del efecto, ni el «Revisa tu conexión» de `.error`—. La marca de un adopt manda antes, y la vuelta no lo lee.
     @Test func welcome_lineageExit_isItsOwnPhase() {
-        #expect(CloudWelcomeSignInFlow.phase(for: .failed(.migration), forwardStepExit: .lineageUnproven) == .lineageExit)
+        #expect(CloudWelcomeSignInFlow.phase(for: .failed(.migration), forwardStepExit: .lineageUnproven)
+                == .lineageExit(.lineageUnproven))
+        #expect(CloudWelcomeSignInFlow.phase(for: .failed(.migration), forwardStepExit: .leaderRowsNotArrived)
+                == .lineageExit(.leaderRowsNotArrived), "misma pantalla y salidas, con su frase")
         #expect(CloudWelcomeSignInFlow.phase(for: .failed(.migration), forwardStepExit: .localFailure)
                 == .error(retryable: true), "los demás motivos del paso siguen como estaban")
         #expect(CloudWelcomeSignInFlow.phase(for: .failed(.migration), adoptClaimExit: .stalled,

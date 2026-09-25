@@ -1345,6 +1345,13 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSyncMigration forwardLineage verdict=\(verdict, privacy: .public) live=\(liveRows, privacy: .public) shared=\(sharedRows, privacy: .public)")
     }
 
+    /// El relevo comparte filas con la cuenta pero a `table`, que tiene algo que subir, le faltan `missing` filas vivas del
+    /// backend: las identidades del líder callado no llegaron por iCloud y subir duplicaría (ticket
+    /// `migration-takeover-may-duplicate-rows-whose-leader-identities-never-arrived`). Solo conteos, sin PII.
+    static func forwardLineageAccountRowsMissing(table: String, missing: Int, sharedRows: Int) {
+        logger.notice("CloudSyncMigration forwardLineage verdict=accountRowsMissing table=\(table, privacy: .public) missing=\(missing, privacy: .public) shared=\(sharedRows, privacy: .public) — no se sube: faltan filas de la cuenta")
+    }
+
     /// DIFERIDOS #30 (guard anti mass-upload): la enumeración del backend llegó VACÍA (verificada completa
     /// contra merkle) teniendo el device huérfanas locales y/o filas sin identidad → NO se sube ni se muta
     /// nada — el guard corre ANTES del backfill (un adopt legítimo `existing_stable` implica backend POBLADO;

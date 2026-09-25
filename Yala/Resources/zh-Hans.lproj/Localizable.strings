@@ -6102,3 +6102,4 @@
 
 /* Storage failure card: another device had already started uploading to this account and this device's data does not share lineage with it */
 "storage.failed.stepLineageUnproven" = "无法开启云端：该账户在云端已有数据，而此设备上的数据与之不符，因此没有合并。此设备上的内容仍在这里。请确认您登录的是正确的账户。如果这是您的账户，且此设备使用同一个 iCloud，请等待 iCloud 完成数据同步后再试。";
+"storage.failed.stepLeaderRowsNotArrived" = "无法开启云端：您的另一台设备已经上传了部分数据，但这些数据还没有全部通过 iCloud 同步到此设备，为避免重复，我们没有上传任何内容。此设备上的内容仍在这里。请在联网状态下打开那台设备上的 Yala，等待 iCloud 将数据同步到此设备后再试。";

@@ -125,3 +125,11 @@ deriva. Un adopt que quedó pendiente tras el claim vuelve a `notStarted` con el
 
 **How to apply:** cuando escribas que alguien «conserva» o «ve» una pantalla, recorre el derivador del estado de UI con
 cada fase **y** cada efecto pendiente, no la definición del flag que usas en la puerta.
+
+## Quinta variante (2026-09-24): el CÓMO VIAJA un dato, afirmado sin abrir el schema
+
+En `migration-takeover-may-duplicate-rows-whose-leader-identities-never-arrived` escribí en el docblock, en la regla, en el
+ticket y en el Paso 0 que los testigos `SyncIdentity` «viajan por el mismo CloudKit que los `syncID`». Viven en
+`syncMetaSchema`, `cloudKitDatabase: .none`: no viajan nunca. Lo destapó una lente al leer `EntityApplyMap` («Store
+sync-meta»). La conclusión aguantaba por otro camino, pero la razón escrita era falsa en cuatro superficies a la vez.
+**Antes de escribir «X llega/no llega por iCloud», abre `SwiftDataConfiguration` y mira en qué schema está X.**

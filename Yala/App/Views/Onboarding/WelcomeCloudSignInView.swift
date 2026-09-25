@@ -443,7 +443,7 @@ struct WelcomeCloudSignInView: View {
                 .padding(.horizontal, DS.Spacing.xl)
                 .accessibilityIdentifier("welcome_cloud_retry")
             }
-        case .lineageExit:
+        case .lineageExit(let reason):
             // El relevo sin linaje (ticket `migration-takeover-uploads-without-a-lineage-check`), con las dos salidas que el
             // texto nombra: la flecha, al chooser, para entrar con otra cuenta; y «Reintentar», que repite el sign-in con la
             // misma y vuelve a comprobar el linaje —es como se recupera el teléfono del mismo iCloud cuyos datos aún no
@@ -452,7 +452,7 @@ struct WelcomeCloudSignInView: View {
                 messageContent(
                     icon: "exclamationmark.triangle",
                     title: L10n.Welcome.Cloud.errorTitle,
-                    body: StorageFailureCopyLogic.forwardLineageMessage)
+                    body: StorageFailureCopyLogic.forwardLineageMessage(for: reason))
                     .accessibilityIdentifier("welcome_cloud_lineage_exit")
                 YalaPrimaryButton(L10n.Welcome.Cloud.retry) {
                     launchFlow { await runFlowAfterConsent() }

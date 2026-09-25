@@ -268,7 +268,7 @@ nonisolated enum AdoptClaimScope {
         switch observedCause {
         case .sessionExpired:     return .sessionExpired
         case .accountUnavailable: return .accountUnavailable
-        case .refused, .otherDevice, .localFailure, .lineageUnproven, nil:
+        case .refused, .otherDevice, .localFailure, .lineageUnproven, .leaderRowsNotArrived, nil:
             // Los cuatro primeros no los produce el claim.
             return nil
         }
@@ -337,7 +337,7 @@ nonisolated enum AdoptClaimExit: String, Equatable, Sendable {
         switch reason {
         case .sessionExpired:                           self = .sessionExpired
         case .accountUnavailable:                       self = .accountUnavailable
-        case .stalled, .refused, .otherDevice, .localFailure, .lineageUnproven: self = .stalled
+        case .stalled, .refused, .otherDevice, .localFailure, .lineageUnproven, .leaderRowsNotArrived: self = .stalled
         }
     }
 }
@@ -366,7 +366,15 @@ nonisolated enum ForwardStepBlocker: String, Equatable, Sendable {
     /// turno sobre una cuenta que ya tiene filas personales vivas —el relevo de un líder callado— y ninguna está en este
     /// store (`ForwardLineageOutcome.unproven`). Esperar no cambia de quién es el corpus; los 15 min absorben un import que
     /// llega tarde, que la quiescencia de cada pasada ya espera antes.
+    ///
     case lineageUnproven
+    /// El linaje SÍ está probado —el mismo iCloud— pero faltan aquí filas que el líder callado ya subió
+    /// (`ForwardLineageOutcome.accountRowsMissing`, ticket `migration-takeover-may-duplicate-rows-whose-leader-identities-never-arrived`):
+    /// sus identidades no llegaron por iCloud, y subir las duplicaría. Esperar SÍ puede arreglarlo y cada pasada vuelve a
+    /// preguntar; va al techo CORTO igual, porque si a los 15 min no llegaron es que la exportación del líder está parada, y
+    /// eso lo arregla la persona (abrir Yala en el otro teléfono), no esta espera. Motivo propio y no `lineageUnproven`: el
+    /// texto de ése dice que los datos «no coinciden» y pide revisar la cuenta, y aquí es la misma cuenta y coinciden.
+    case leaderRowsNotArrived
 }
 
 /// Por qué terminó uno de esos tres pasos al vencer su techo. Lo journalea la salida
@@ -385,6 +393,7 @@ nonisolated enum ForwardStepExitReason: String, Equatable, Sendable {
     case otherDevice
     case localFailure
     case lineageUnproven
+    case leaderRowsNotArrived
 
     init(_ blocker: ForwardStepBlocker) {
         switch blocker {
@@ -394,6 +403,7 @@ nonisolated enum ForwardStepExitReason: String, Equatable, Sendable {
         case .otherDevice:        self = .otherDevice
         case .localFailure:       self = .localFailure
         case .lineageUnproven:    self = .lineageUnproven
+        case .leaderRowsNotArrived: self = .leaderRowsNotArrived
         }
     }
 }
@@ -1738,6 +1748,11 @@ final class MigrationRunner {
                 try context.save()
             case .unproven:
                 return try await observeForwardStepStall(.identity, blocker: .lineageUnproven)
+            // Ticket `migration-takeover-may-duplicate-rows-whose-leader-identities-never-arrived`: el mismo iCloud, pero las
+            // identidades del líder aún no llegaron y subir duplicaría su libro. Mientras el techo no vence, cada pasada vuelve
+            // a preguntar, así que si iCloud las trae, sigue.
+            case .accountRowsMissing:
+                return try await observeForwardStepStall(.identity, blocker: .leaderRowsNotArrived)
             case .localFailure:
                 return try await observeForwardStepStall(.identity, blocker: .localFailure)
             case .transient:

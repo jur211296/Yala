@@ -224,16 +224,16 @@ struct WelcomeAdoptExitTests {
     /// y vuelve a comprobar el linaje—. El `case` entero: un gesto añadido, o el texto de otra fase, cae aquí.
     @Test func lineageExitScreen_isWired() throws {
         let src = try Self.flat(Self.source(Self.view))
-        let start = try #require(src.range(of: "case .lineageExit: VStack("))
+        let start = try #require(src.range(of: "case .lineageExit(let reason): VStack("))
         let tail = src[start.lowerBound...]
         let end = try #require(tail.range(of: "case .accountBlocked:"))
         #expect(String(tail[..<end.lowerBound]) == Self.flat("""
-            case .lineageExit:
+            case .lineageExit(let reason):
                 VStack(spacing: DS.Spacing.lg) {
                     messageContent(
                         icon: "exclamationmark.triangle",
                         title: L10n.Welcome.Cloud.errorTitle,
-                        body: StorageFailureCopyLogic.forwardLineageMessage)
+                        body: StorageFailureCopyLogic.forwardLineageMessage(for: reason))
                         .accessibilityIdentifier("welcome_cloud_lineage_exit")
                     YalaPrimaryButton(L10n.Welcome.Cloud.retry) {
                         launchFlow { await runFlowAfterConsent() }
