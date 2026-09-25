@@ -4705,6 +4705,55 @@ struct MigrationWorkExecutorTests {
         #expect(relay.categories[0].name == "edited-offline", "la edición se conserva")
     }
 
+    /// El reconcile de `done` restaura ANTES de su primera petición de red y con CUALQUIER respuesta del lease (ticket
+    /// descartado `displaced-leader-after-the-cutover-restores-its-own-identity-over-the-relays`). Antes de la red porque
+    /// el runtime puede estar corriendo ya (`canRunDomain` no mira los pendientes) y su pull, llegando antes, creaba un
+    /// born-remote que dejaba la fila sin restaurar. Con cualquier respuesta porque aquí solo llega quien pasó su propia
+    /// verificación: la identidad que se devuelve el backend la tiene, también en quien se une a la migración de otro.
+    /// Cada escena mira la fila en el instante de la primera petición y al final.
+    @Test("reconcile de done: restaura antes de la primera pregunta de red, sea cual sea la respuesta del lease")
+    func relayRestore_leaderReconcile_restoresBeforeAskingForTheLease() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+        typealias Scene = (label: String, heartbeat: [Data], complete: [Data], claim: String?, status: Int, error: String?)
+        let scenes: [Scene] = [
+            ("lidera", [], [], nil, 200, nil),
+            ("su complete llegó", [Self.notInProgressBody], [Self.okBody], nil, 200, nil),
+            ("se une a la de otro", [Self.notInProgressBody], [Self.otherLeaderBody], "existing_stable", 200, nil),
+            ("otro lidera", [Self.otherLeaderBody], [Self.otherLeaderBody], "claiming_in_progress", 200,
+             "runLeaderReconcile: otherLeaderActive"),
+            ("sin red", [], [], nil, 503, "runLeaderReconcile: leaseUnconfirmed"),
+        ]
+        for scene in scenes {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let stub = RoutingStub()
+            stub.migrationBodiesByAction = ["heartbeat": scene.heartbeat, "complete": scene.complete]
+            stub.migrationStatus = scene.status
+            if let claim = scene.claim { stub.claimBody = Self.claimBody(claim) }
+            let relay = try await relayWithIdentities(dir, stub: stub, ids: [UUID(), UUID()])
+            let uploaded = try #require(relay.categories[0].syncID)
+            try mirrorRekeys(relay.categories[0], to: UUID(), in: relay.context)
+            var atFirstRequest: UUID?
+            var asked = false
+            stub.onMigrationRequest = {
+                if !asked { asked = true; atFirstRequest = relay.categories[0].syncID }
+            }
+
+            if let error = scene.error {
+                await #expect(throws: MigrationExecutorError.notWired(effect: error), "\(scene.label)") {
+                    try await relay.executor.execute(.runLeaderReconcileFromFrozenCloudKit)
+                }
+            } else {
+                try await relay.executor.execute(.runLeaderReconcileFromFrozenCloudKit)
+            }
+
+            #expect(asked, "\(scene.label): control, preguntó por el lease")
+            #expect(stub.claimCallCount == (scene.claim == nil ? 0 : 1), "\(scene.label): control, llegó a esa respuesta")
+            #expect(atFirstRequest == uploaded, "\(scene.label): restaurada antes de la primera petición")
+            #expect(relay.categories[0].syncID == uploaded, "\(scene.label)")
+        }
+    }
+
     /// Falla cerrado: solo se toca la fila que se reconoce sin duda. El primer caso es el control positivo de todos —la
     /// escena limpia restaura—, porque «no tocó nada» también lo da una restauración rota; y cada caso de duda la añade
     /// sobre esa misma escena.
