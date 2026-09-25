@@ -40,6 +40,7 @@
 - [El reintento de fuera multiplica el de dentro](feedback_el_reintento_de_fuera_multiplica_el_de_dentro.md) — el SDK ya reintentaba: mi coste era falso por 3x y tapaba un mutante.
 - [El orden hace INVISIBLE al segundo término](feedback_el_orden_hace_invisible_al_segundo_termino.md) — «A implica B por el orden» puede significar.
 - [El mutante muere y el término sobra](feedback_el_mutante_muere_y_el_termino_sobra.md) — 5 mutantes muertos y la rama solo la alcanzaba gente con.
+- [La prueba que sustituyo implicaba más](feedback_la_prueba_que_sustituyo_implicaba_mas.md) — el marcador implicaba «llegaron las identidades»; sin eso, libro duplicado.
 - [Un registro no prueba la elección](feedback_un_registro_no_prueba_la_eleccion.md) — bloqueé el `nil` y un cinturón fabricaba el `true` de otra.
 - [El copy que propongo hereda las prohibiciones del vecino](feedback_el_copy_que_propongo_hereda_las_prohibiciones_del_vecino.md) — recomendé «tus datos siguen aquí» y #221 lo había vetado en el adopt.
 - [El copy que promete una acción se recorre](feedback_el_copy_que_promete_se_recorre.md) — «en Perfil puedes exportar» era falso para no-Pro.
@@ -159,7 +160,7 @@
 - [Rediseño de sesiones: dos ejes](project_rediseno_sesiones_dos_ejes.md) — ADR 9-sep + 13 tickets con orden; M1 retirada y «en la nube» RATIFICADOS.
 - [La frontera de la visita: SUPERADA](project_la_frontera_de_la_visita.md) — el ADR del 9-sep retira M1 y sus 12 tickets están descartados.
 - [Decisiones que esperan a Jürgen](project_decisiones_que_esperan_a_jurgen.md) — 19 contestadas el 6-sep; «¿queda alguna?» se responde LEYENDO los.
-- [Trabajo anterior](project_indice_trabajo_anterior.md) — PR #62 a #227: qué cerró cada uno y qué dejó abierto.
+- [Trabajo anterior](project_indice_trabajo_anterior.md) — PR #62 a #240: qué cerró cada uno y qué dejó abierto.
 
 ## Entorno y herramientas
 - [`removeObject` sin efecto = es el simulador](feedback_simulador_preferencias_fuera_del_contenedor.md) — `simctl erase` va PRIMERO.

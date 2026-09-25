@@ -2211,40 +2211,49 @@ struct MigrationWorkExecutorTests {
         try context.save()
     }
 
-    /// Un teléfono con una huérfana conocida por el backend al lado y otra sin identidad, contra un backend poblado. Es el
-    /// mismo inventario para el corpus AJENO y para el 2.º dispositivo: lo único que los separa es el marcador.
-    /// Devuelve una FÁBRICA del backend y no la fuente: `FakeTombstoneSource` se consume al paginar, y cada executor enumera
-    /// desde cero.
-    private func seedWindowCorpus(in context: ModelContext) throws -> (backend: () -> FakeTombstoneSource, orphanID: UUID, nilRow: Yala.Category) {
-        let knownID = UUID(); let orphanID = UUID()
+    /// Un teléfono con una categoría `known`, una huérfana y una fila sin identidad, y DOS backends de una categoría viva
+    /// para el MISMO inventario:
+    /// - `backend` es la cuenta de la que este corpus desciende: tiene `known`. Es el 2.º dispositivo del mismo iCloud, y esa
+    ///   fila compartida ya prueba el linaje sin marcador (ticket `adopt-after-the-cutover-needs-a-marker-the-leader-never-exported`).
+    /// - `foreignBackend` es una cuenta ajena: su fila no está aquí, porque ninguna tabla personal tiene identidades fijas
+    ///   entre teléfonos. Contra ella solo el marcador prueba, y `known` también es huérfana (tres filas que subir).
+    /// Devuelve FÁBRICAS y no fuentes: `FakeTombstoneSource` se consume al paginar, y cada executor enumera desde cero.
+    private func seedWindowCorpus(in context: ModelContext) throws -> (backend: () -> FakeTombstoneSource,
+                                                                      foreignBackend: () -> FakeTombstoneSource,
+                                                                      orphanID: UUID, nilRow: Yala.Category) {
+        let knownID = UUID(); let orphanID = UUID(); let foreignID = UUID()
         _ = makeCategory("known", syncID: knownID, in: context)
         _ = makeCategory("orphan", syncID: orphanID, in: context)
         let nilRow = Category(name: "sin-identidad", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
         context.insert(nilRow)
         try context.save()
-        let backend = {
-            let source = FakeTombstoneSource()
-            source.pages = [PulledPage(deltas: [upsertDelta(table: "categories", syncID: knownID, seq: 1)], maxServerSeq: 1)]
-            return source
+        func source(_ id: UUID) -> () -> FakeTombstoneSource {
+            {
+                let source = FakeTombstoneSource()
+                source.pages = [PulledPage(deltas: [upsertDelta(table: "categories", syncID: id, seq: 1)], maxServerSeq: 1)]
+                return source
+            }
         }
-        return (backend, orphanID, nilRow)
+        return (source(knownID), source(foreignID), orphanID, nilRow)
     }
 
-    /// **El criterio 1 y el 2 en el MISMO inventario.** Sin el marcador de la cuenta —un seguidor con otro iCloud, un
-    /// teléfono con el corpus de otra persona— no sube NADA y no toca nada: ni push, ni encolado, ni backfill. Con el
-    /// marcador —el 2.º dispositivo del mismo Apple ID— sube sus huérfanas de la ventana, las dos.
-    @Test("runAdoptOrphanReconcile: sin el marcador de la cuenta no sube nada; con él, sube las huérfanas de la ventana")
+    /// **El criterio 1 y el 2 en el MISMO inventario y SIN marcador.** Contra la cuenta ajena —un seguidor con otro iCloud,
+    /// un teléfono con el corpus de otra persona— no sube NADA y no toca nada: ni push, ni encolado, ni backfill. Contra la
+    /// cuenta de la que desciende —el 2.º dispositivo del mismo Apple ID cuyo líder pasó el cutover del servidor sin
+    /// exportar el marcador (ticket `adopt-after-the-cutover-needs-a-marker-the-leader-never-exported`)— la fila que comparte
+    /// prueba el linaje y sube sus huérfanas de la ventana, las dos. Lo que los separa es el linaje, no el marcador.
+    @Test("runAdoptOrphanReconcile: sin marcador, el corpus ajeno no sube nada y el que comparte una fila viva sube sus huérfanas")
     func adoptReconcile_lineage_foreignCorpusStays_secondDeviceUploads() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
         let stub = RoutingStub()
         stub.merkleBody = try makeMerkleBody(["categories": 1])
         let session = FakeSession(token: "jwt", userID: "sub-1")
-        let (backend, orphanID, nilRow) = try seedWindowCorpus(in: context)
+        let (backend, foreignBackend, orphanID, nilRow) = try seedWindowCorpus(in: context)
 
         let foreign = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
-                                   tombstoneSource: backend())
+                                   tombstoneSource: foreignBackend())
         let foreignOutcome = await foreign.runAdoptOrphanReconcile()
         #expect(foreignOutcome == .lineageUnproven)
         #expect(stub.pushedSyncIDs.isEmpty, "el corpus sin linaje no viaja")
@@ -2252,7 +2261,7 @@ struct MigrationWorkExecutorTests {
         #expect(try context.fetch(FetchDescriptor<SyncOutbox>()).isEmpty, "ni se encola")
         #expect(try context.fetch(FetchDescriptor<SyncIdentity>()).isEmpty, "ni se acuñan testigos")
 
-        try seedLeaderMarker(for: "sub-1", in: context)
+        #expect(try context.fetch(FetchDescriptor<CloudMigrationMarker>()).isEmpty, "control: sigue sin marcador")
         let secondDevice = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
                                         personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
                                         tombstoneSource: backend())
@@ -2264,6 +2273,161 @@ struct MigrationWorkExecutorTests {
                 "las dos huérfanas de la ventana, y solo ellas")
     }
 
+    /// **Una fila compartida no basta si las identidades del líder no llegaron** (review adversarial del ticket
+    /// `adopt-after-the-cutover-needs-a-marker-the-leader-never-exported`, lente del dispositivo legítimo). El líder paró su
+    /// exportación —por eso el marcador no llegó—: la cuenta del iCloud ya viaja con su identidad, pero una categoría que el
+    /// líder subió con un `syncID` que asignó él sigue aquí SIN identidad. El backfill le acuñaría otra y el adopt subiría la
+    /// misma categoría duplicada. Sin nada: ni push ni backfill. Cuando su identidad llega, sube SOLO la fila de este teléfono.
+    @Test("runAdoptOrphanReconcile: sin marcador, si faltan filas de la cuenta en una tabla que sube, no sube nada")
+    func adoptReconcile_lineage_leadersIdentitiesNotArrivedBlocks() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let sharedID = UUID(); let leadersID = UUID()
+        _ = makeCategory("compartida", syncID: sharedID, in: context)
+        let leadersRow = Category(name: "del-líder-sin-identidad-aún", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+        context.insert(leadersRow)
+        try context.save()
+        let source = try backend([("categories", sharedID), ("categories", leadersID)], stub: stub)
+
+        let early = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                 personalStoreURL: dir.appendingPathComponent("personal.sqlite"), tombstoneSource: source())
+        #expect(await early.runAdoptOrphanReconcile() == .lineageUnproven)
+        #expect(leadersRow.syncID == nil, "ni el backfill corre")
+        #expect(stub.pushedSyncIDs.isEmpty, "la categoría del líder no sube con otra identidad")
+        #expect(MigrationWorkExecutor.adoptSharedRowsProof(
+            plan: AdoptOrphanDiff.Plan(orphans: [:], needsIdentity: ["categories": 1]),
+            inventory: [("categories", sharedID), ("categories", nil)],
+            liveByTable: ["categories": [sharedID, leadersID]]) == .accountRowsMissing(table: "categories", missing: 1))
+
+        // Llega su identidad por iCloud, y este teléfono escribe una categoría suya.
+        leadersRow.syncID = leadersID
+        let mine = Category(name: "de-este-teléfono", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+        context.insert(mine)
+        try context.save()
+        let late = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                personalStoreURL: dir.appendingPathComponent("personal.sqlite"), tombstoneSource: source())
+        #expect(await late.runAdoptOrphanReconcile() == .completed(uploaded: 1, identityAssigned: 1))
+        let mineID = try #require(mine.syncID)
+        #expect(stub.pushedSyncIDs.map { $0.lowercased() } == [mineID.uuidString.lowercased()], "solo la fila nueva")
+    }
+
+    /// **La cobertura se pide solo en las tablas que suben algo, y nunca en los tipos de cambio.** A la cuenta le falta aquí
+    /// una CUENTA (el líder la creó y aún no llegó), pero este teléfono no sube cuentas. Y le falta un tipo de cambio, pero
+    /// los tipos de cambio los siembra cualquier teléfono al arrancar sin identidad: pedir cobertura ahí dejaría fuera a
+    /// casi todos. La tabla de categorías, la que importa, está completa: pasa.
+    @Test("runAdoptOrphanReconcile: una fila de la cuenta que falta en una tabla que no sube, o en los tipos de cambio, no bloquea")
+    func adoptReconcile_lineage_missingRowsElsewhereDoNotBlock() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let sharedID = UUID(); let orphanID = UUID()
+        _ = makeCategory("compartida", syncID: sharedID, in: context)
+        _ = makeCategory("nueva", syncID: orphanID, in: context)
+        context.insert(try ExchangeRate(dateKey: "2026-09-24", base: "USD", ratesDictionary: ["PEN": 3.7]))
+        try context.save()
+        let source = try backend([("categories", sharedID), ("accounts", UUID()), ("exchange_rates", UUID())], stub: stub)
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source())
+        #expect(await executor.runAdoptOrphanReconcile() == .completed(uploaded: 2, identityAssigned: 1),
+                "la categoría nueva y el tipo de cambio sembrado, como siempre")
+        #expect(stub.pushedSyncIDs.map { $0.lowercased() }.contains(orphanID.uuidString.lowercased()))
+    }
+
+    /// **La guarda del plan DEFINITIVO decide con SU inventario** (lente de tests de la review). Una fila de la cuenta y una
+    /// huérfana que el import confirma entre las dos lecturas: el preliminar no tenía nada que subir ni nada compartido, y el
+    /// definitivo tiene las dos. Juzgarlo con el inventario preliminar lo bloquearía en falso.
+    @Test("runAdoptOrphanReconcile: la guarda definitiva prueba con las filas que llegaron entre los dos planes")
+    func adoptReconcile_lineage_definitiveGateUsesItsOwnInventory() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let sharedID = UUID(); let orphanID = UUID()
+        let source = try backend([("categories", sharedID)], stub: stub)
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source())
+        var inventoryReads = 0
+        executor._testInventoryFetchThrows = { step, entity in
+            guard step == "adopt-inventory", entity == "TransactionItem" else { return false }
+            inventoryReads += 1
+            if inventoryReads == 3 {
+                _ = self.makeCategory("de-la-cuenta", syncID: sharedID, in: context)
+                _ = self.makeCategory("huérfana", syncID: orphanID, in: context)
+            }
+            return false
+        }
+        let outcome = await executor.runAdoptOrphanReconcile()
+        #expect(inventoryReads == 3, "control: el paso 0, el preliminar y el definitivo")
+        #expect(outcome == .completed(uploaded: 1, identityAssigned: 0))
+        #expect(stub.pushedSyncIDs.map { $0.lowercased() } == [orphanID.uuidString.lowercased()])
+    }
+
+    /// **Y el marcador sigue probando solo**, sin fila compartida: contra la cuenta ajena del fixture —cuya fila no está
+    /// aquí— el marcador de ESA cuenta basta. Es el camino de siempre del 2.º dispositivo (la tarjeta con marcador).
+    @Test("runAdoptOrphanReconcile: con el marcador de la cuenta sube aunque no comparta ninguna fila")
+    func adoptReconcile_lineage_markerAloneStillProves() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        stub.merkleBody = try makeMerkleBody(["categories": 1])
+        let (_, foreignBackend, _, _) = try seedWindowCorpus(in: context)
+        try seedLeaderMarker(for: "sub-1", in: context)
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: foreignBackend())
+        #expect(await executor.runAdoptOrphanReconcile() == .completed(uploaded: 3, identityAssigned: 1))
+    }
+
+    /// **La prueba por fila compartida es la de la ida, con sus mismas exclusiones** (ticket
+    /// `adopt-after-the-cutover-needs-a-marker-the-leader-never-exported`): la fila tiene que estar VIVA en el backend —un
+    /// tombstone dice que existió, no que siga—, en SU tabla, y fuera de los tipos de cambio, que cualquier teléfono siembra.
+    /// Cada caso lleva una huérfana de usuario al lado, que es lo que pide prueba. Control positivo al final: la misma
+    /// categoría, viva y en su tabla, prueba.
+    @Test("runAdoptOrphanReconcile: sin marcador, ni un tombstone, ni otra tabla, ni un tipo de cambio prueban el linaje")
+    func adoptReconcile_lineage_sharedRowMustBeLiveInItsTableAndNotARate() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let sharedID = UUID()
+        _ = makeCategory("compartida", syncID: sharedID, in: context)
+        _ = makeCategory("huérfana", syncID: UUID(), in: context)
+        let rate = try ExchangeRate(dateKey: "2026-09-24", base: "USD", ratesDictionary: ["PEN": 3.7])
+        let rateID = UUID()
+        rate.syncID = rateID
+        context.insert(rate)
+        try context.save()
+        func run(_ source: FakeTombstoneSource) async -> AdoptReconcileOutcome {
+            await makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                               personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                               tombstoneSource: source).runAdoptOrphanReconcile()
+        }
+
+        // Un tombstone: el backend la borró. La fila viva de la cuenta es una CUENTA, en una tabla que aquí no sube nada, así
+        // que la cobertura de categorías no para nada: la única coincidencia posible es la borrada, y no cuenta.
+        stub.merkleBody = try makeMerkleBody(["accounts": 1])
+        let tombstoned = FakeTombstoneSource()
+        tombstoned.pages = [PulledPage(deltas: [tombstone(table: "categories", syncID: sharedID, seq: 1),
+                                                upsertDelta(table: "accounts", syncID: UUID(), seq: 2)], maxServerSeq: 2)]
+        #expect(await run(tombstoned) == .lineageUnproven)
+
+        // La misma identidad, en otra tabla.
+        #expect(await run(try backend([("accounts", sharedID)], stub: stub)()) == .lineageUnproven)
+
+        // Solo un tipo de cambio compartido, con una fila de la cuenta que no está aquí.
+        #expect(await run(try backend([("exchange_rates", rateID), ("accounts", UUID())], stub: stub)()) == .lineageUnproven)
+        #expect(stub.pushedSyncIDs.isEmpty, "nada de lo anterior sube")
+
+        // Control: viva y en su tabla, prueba y sube la huérfana (el tipo de cambio sube con ella, como siempre).
+        guard case .completed(let uploaded, _) = await run(try backend([("categories", sharedID)], stub: stub)()) else {
+            Issue.record("una fila viva compartida en su tabla debía probar el linaje"); return
+        }
+        #expect(uploaded == 2)
+    }
+
     /// **Un marcador que no es de ESTA cuenta no prueba nada**: uno de otra cuenta —una migración anterior de este iCloud—
     /// y uno con el hash vacío. Tampoco sin sesión, porque entonces no hay cuenta con la que comparar.
     @Test("runAdoptOrphanReconcile: marcador de otra cuenta, marcador sin hash o sin sesión → lineageUnproven")
@@ -2272,7 +2436,8 @@ struct MigrationWorkExecutorTests {
         let context = try makeContext(dir)
         let stub = RoutingStub()
         stub.merkleBody = try makeMerkleBody(["categories": 1])
-        let (backend, _, _) = try seedWindowCorpus(in: context)
+        // Contra la cuenta AJENA del fixture: su fila no está aquí, así que el marcador es la única prueba posible.
+        let (_, backend, _, _) = try seedWindowCorpus(in: context)
         try seedLeaderMarker(for: "otra-cuenta", in: context)
         context.insert(CloudMigrationMarker(accountHash: ""))
         try context.save()
@@ -2299,7 +2464,7 @@ struct MigrationWorkExecutorTests {
         guard case .completed(let uploaded, _) = await owner.runAdoptOrphanReconcile() else {
             Issue.record("el marcador de la cuenta debía bastar"); return
         }
-        #expect(uploaded == 2)
+        #expect(uploaded == 3, "`known` también es huérfana contra esta cuenta")
     }
 
     /// **Sin nada que subir no hace falta marcador** (Paso 0, D2). Es el 2.º dispositivo de una cuenta NACIDA en la nube
@@ -2323,7 +2488,8 @@ struct MigrationWorkExecutorTests {
     }
 
     /// **Una fila SIN identidad también es algo que subir.** Es la del retraso de importación —su `CD_syncID` aún no llegó—
-    /// o la de un corpus que nunca migró; el backfill le acuñaría una identidad fresca y subiría. Sin marcador, nada.
+    /// o la de un corpus que nunca migró; el backfill le acuñaría una identidad fresca y subiría. Sin marcador ni filas de la
+    /// cuenta, nada.
     @Test("runAdoptOrphanReconcile: solo filas sin identidad y sin marcador → lineageUnproven, sin backfill")
     func adoptReconcile_lineage_rowsWithoutIdentityAlsoNeedIt() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
@@ -2345,14 +2511,16 @@ struct MigrationWorkExecutorTests {
     }
 
     /// **Un marcador que no se deja leer es la base local, no «probado» ni «la red»**: `.localFailure`, que cuenta para el
-    /// techo corto, y sin subir nada. Control en el mismo store: con la lectura sana, sube.
+    /// techo corto, y sin subir nada. Control en el mismo store: con la lectura sana, sube. Y el marcador se lee ANTES que
+    /// la fila compartida: este backend comparte `known`, y aun así la tabla ilegible para (ticket
+    /// `adopt-after-the-cutover-needs-a-marker-the-leader-never-exported`).
     @Test("runAdoptOrphanReconcile: la tabla del marcador ilegible → localFailure, sin subir")
     func adoptReconcile_lineage_unreadableMarkerIsALocalFailure() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
         let stub = RoutingStub()
         stub.merkleBody = try makeMerkleBody(["categories": 1])
-        let (backend, _, _) = try seedWindowCorpus(in: context)
+        let (backend, _, _, _) = try seedWindowCorpus(in: context)
         try seedLeaderMarker(for: "sub-1", in: context)
         let sick = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
                                 FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
@@ -2410,7 +2578,7 @@ struct MigrationWorkExecutorTests {
     /// **La guarda mira también el plan DEFINITIVO, que es el que sube** (hallazgo de la review). Una fila que el import
     /// confirma entre el plan preliminar —vacío: no pidió prueba— y el definitivo no puede subir sin marcador. Se simula con
     /// el seam del inventario: en la TERCERA lectura (la del definitivo) aparece una categoría del corpus de otro iCloud.
-    @Test("runAdoptOrphanReconcile: una fila que llega entre los dos planes también pide el marcador")
+    @Test("runAdoptOrphanReconcile: una fila que llega entre los dos planes también pide prueba de linaje")
     func adoptReconcile_lineage_rowArrivingBetweenThePlansNeedsItToo() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
@@ -2469,12 +2637,12 @@ struct MigrationWorkExecutorTests {
         let context = try makeContext(dir)
         let stub = RoutingStub()
         stub.merkleBody = try makeMerkleBody(["categories": 1])
-        let (backend, _, _) = try seedWindowCorpus(in: context)
+        let (_, foreignBackend, _, _) = try seedWindowCorpus(in: context)
         let storageDefaults = makeIsolatedDefaults(prefix: "mwe.adopt.lineage")
         let claimStore = CloudClaimActionStore(defaults: makeIsolatedDefaults(prefix: "mwe.adopt.lineage.claim"))
         let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
                                     FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
-                                    storageDefaults: storageDefaults, tombstoneSource: backend(), claimStore: claimStore)
+                                    storageDefaults: storageDefaults, tombstoneSource: foreignBackend(), claimStore: claimStore)
         await #expect(throws: MigrationExecutorError.adoptLineageUnproven) { try await executor.runAdoptFlow() }
         #expect(StorageModePersistence.read(storageDefaults) == .icloud, "la guarda corta ANTES del paso 5")
         #expect(executor.hasPersistedCloudMode() == false)
