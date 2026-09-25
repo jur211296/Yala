@@ -33,3 +33,8 @@ iba **dentro de un script**: el bucle lo repite sin que nadie lo lea otra vez.
   restaura desde ella y se llevaría el cambio nuevo igual que `git checkout --`.
 - Un `xcodebuild test` puede **no salir** después de imprimir `Test run with … failed` (6 min colgado en un mutante).
   El veredicto ya está en su log: mátalo por su PID y el runner sigue. Mejor aún, dale un techo en el propio runner.
+
+**2026-09-25: lánzalo con `nohup … & disown`, no como tarea en segundo plano del harness.** Esas tareas
+tienen tope de 10 min; la tanda dura más, y al pararla con `TaskStop` el `finally` no corrió: quedó un
+mutante puesto en `CloudSyncRuntime.swift`. Lo cazó el `cmp` contra la copia. Y un ancla que aparece
+más de una vez sale `NO APLICA`: dos de siete la primera vez. Ancla con la línea de contexto vecina.
