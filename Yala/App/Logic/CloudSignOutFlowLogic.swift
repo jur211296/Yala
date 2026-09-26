@@ -656,11 +656,10 @@ nonisolated enum CloudSignOutFlowLogic {
     ///
     /// **El motivo es `.uploadRetryLater`, y ninguno nuevo.** Su texto —«no llegaron al servidor, siguen guardados en este
     /// teléfono y no se pierden; inténtalo en un rato»— es verdad para lo que se cura con otro intento: una lectura o un
-    /// `save` que falló. `.transient` diría «espera unos segundos» ante algo que puede durar más. **No lo es para el corte
-    /// del reloj**, medido en la review del 2026-09-26: el drain estampa con la fecha de la transacción, así que una que
-    /// quedó más de 5 min por detrás del reloj lógico corta en cada vuelta y no se cura esperando (ticket
-    /// `groups-clock-rollback-wedges-the-drain-forever`). Bloquear sigue siendo lo correcto —esos cambios ya no suben, y
-    /// borrar los perdería—; lo que falta es el arreglo del reloj, no otro texto aquí.
+    /// `save` que falló. `.transient` diría «espera unos segundos» ante algo que puede durar más. Hasta el 2026-09-26 no lo
+    /// era para el corte del reloj: un reloj lógico más de 5 min por delante de la transacción cortaba en cada vuelta y no
+    /// se curaba esperando. Desde `groups-clock-rollback-wedges-the-drain-forever` el drain estampa con
+    /// `HLCClock.sendLocal`, que no corta por la deriva, así que esa causa ya no llega aquí.
     static func groupsCaptureVerdict(captureCompleted: Bool, livePendingCount: Int,
                                      unrehydratedMirrorCount: Int) -> PushAllVerdict? {
         if livePendingCount > 0 { return nil }

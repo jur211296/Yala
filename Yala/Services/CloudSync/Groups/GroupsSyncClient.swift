@@ -326,6 +326,11 @@ final class GroupsSyncClient {
     /// `drainOnce` lo devuelve como captura sin terminar (ticket `groups-drain-failure-reads-as-nothing-pending`). SOLO tests.
     var _testThrowOnDrainSave = false
 
+    /// Hace que el estampado del HLC lance al traducir, como un año fuera de rango: es lo único que aún puede cortar la
+    /// traducción desde que el drain estampa con `sendLocal`, y en un iPhone no se alcanza. Para seguir fijando qué hace la
+    /// vuelta cortada (devuelve `false`, no re-ancla). SOLO tests.
+    var _testThrowOnClockStamp = false
+
     // MARK: Init
 
     /// El default `{ nil }` de `attestProvider` es **SOLO PARA TESTS**: `POST /groups/push` y
@@ -731,13 +736,15 @@ final class GroupsSyncClient {
     ///
     /// **Devuelve si la captura TERMINÓ** (ticket `groups-drain-failure-reads-as-nothing-pending`, molde de
     /// `CloudSyncEngine.drainOnce`). `false` = algo local quedó sin llegar al outbox y solo vive en el History: una lectura
-    /// o un `save` que lanzó, o la traducción cortada por la deriva del reloj. Quien cuente el outbox para decidir que no
+    /// o un `save` que lanzó, o la traducción cortada porque el HLC no se pudo estampar (desde
+    /// `groups-clock-rollback-wedges-the-drain-forever`, ya no por la deriva del reloj). Quien cuente el outbox para decidir que no
     /// queda nada —el cierre, el desasociar, «Empezar de cero»— no puede seguir con `false`: el recuento daría 0 y el
     /// borrado se llevaría ese gasto sin que ningún drain posterior encontrara una fila viva que traducir.
     ///
-    /// **A diferencia del personal, el corte del reloj también es `false`.** Allí esa vuelta persiste lo traducido y el
+    /// **A diferencia del personal, la traducción cortada también es `false`.** Allí esa vuelta persiste lo traducido y el
     /// llamador que lee el outbox es el guard del pull; aquí lo leen gestos que BORRAN, y lo que quedó detrás del corte es
-    /// exactamente lo que se perdería. Una llamada re-entrante devuelve `false`: no drenó ella.
+    /// exactamente lo que se perdería. Desde `groups-clock-rollback-wedges-the-drain-forever` la deriva del reloj ya no
+    /// corta (el drain estampa con `HLCClock.sendLocal`); solo un año fuera de 0001–9999. Una llamada re-entrante devuelve `false`: no drenó ella.
     @discardableResult
     func drainOnce(context: ModelContext) -> Bool {
         guard !isDraining else {
@@ -872,7 +879,7 @@ final class GroupsSyncClient {
             // transacción del store de Grupos. Solo se usan cuando NO hay ninguna: ver `advanceScanFloor`.
             var maxScannedTxAt: Date?
             var sawGroupsStoreTx = false
-            // La traducción se cortó por la deriva del reloj: lo que queda detrás del corte sigue solo en el History.
+            // La traducción se cortó (el HLC no se pudo estampar): lo que queda detrás del corte sigue solo en el History.
             var translationAborted = false
             for tx in txns {
                 if let seen = maxScannedTxAt { maxScannedTxAt = max(seen, tx.timestamp) }
@@ -892,9 +899,10 @@ final class GroupsSyncClient {
                                           backendZoneIDs: backendZoneIDs, rows: &rows, seen: &seen)
                         }
                     } catch {
-                        // `clock.send` lanzó (drift/overflow): abortar en la FRONTERA de esta transacción.
+                        // El estampado del HLC lanzó: abortar en la FRONTERA de esta transacción. Desde que se estampa con
+                        // `sendLocal` ni la deriva ni el contador agotado cortan aquí; solo un año fuera de 0001–9999.
                         #if DEBUG
-                        logger.error("GroupsSync: clock drift/overflow al traducir tx: \(error)")
+                        logger.error("GroupsSync: el HLC no se pudo estampar al traducir tx: \(error)")
                         #endif
                         translationAborted = true
                         break
@@ -1196,7 +1204,10 @@ final class GroupsSyncClient {
         seen: inout Set<String>,
         makePayload: (String) -> (fieldsJSON: String, fieldHlcsJSON: String?)?
     ) throws {
-        let hlc = try clock.send(now: tx.timestamp).description
+        // `sendLocal` y no `send`: con la hora del teléfono retrocedida, la guarda de deriva de `send` cortaba en esta
+        // transacción en cada vuelta y nada de lo apuntado después salía (`groups-clock-rollback-wedges-the-drain-forever`).
+        if _testThrowOnClockStamp { throw CanonicalTimeError.yearOutOfRange(0) }
+        let hlc = try clock.sendLocal(eventTime: tx.timestamp).description
         let key = dedupKey(syncID: syncID, hlc: hlc, op: op)
         guard !seen.contains(key) else { return }
         seen.insert(key)

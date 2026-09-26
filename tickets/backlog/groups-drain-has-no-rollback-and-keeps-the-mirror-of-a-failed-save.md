@@ -20,7 +20,8 @@ causan esas mismas filas, la app podría no conseguir guardar nada más hasta re
 
 `GroupsSyncClient.performDrain` escribe el espejo antes del save (igual que el personal) y su `catch` no hace
 `rollback()` ni retira el espejo. Es el gemelo de lo que el drain personal cerró el 2026-09-23. Lo atenúa que el
-dedup ve las filas pendientes del contexto y los HLC son deterministas (`clock.send(now: tx.timestamp)`).
+dedup ve las filas pendientes del contexto y los HLC son deterministas (`clock.sendLocal(eventTime: tx.timestamp)` desde
+el 2026-09-26; antes `clock.send(now: tx.timestamp)`).
 
 ## Criterios de aceptación
 

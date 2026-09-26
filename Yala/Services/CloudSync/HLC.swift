@@ -217,12 +217,12 @@ nonisolated struct HLC: Comparable, Hashable, Sendable, Codable, CustomStringCon
 
 // MARK: - HLCClock
 
-/// Reloj HLC con estado mutable. Genera timestamps monótonos (`send`) e integra timestamps remotos
-/// (`receive`) preservando causalidad. `now:` se inyecta (patrón canónico del repo) — nunca lee
+/// Reloj HLC con estado mutable. Genera timestamps monótonos (`send`, y `sendLocal` para un cambio local estampado con
+/// la hora de su transacción) e integra timestamps remotos (`receive`) preservando causalidad. `now:` se inyecta (patrón canónico del repo) — nunca lee
 /// `Date()` internamente. Struct con `mutating` (valor con estado explícito, sin isolation implícita).
 nonisolated struct HLCClock {
 
-    /// Máximo skew tolerado entre el reloj lógico y el de pared: 5 minutos.
+    /// Máximo skew tolerado entre el reloj lógico y el de pared: 5 minutos. Lo aplican `send` y `receive`; `sendLocal` no.
     static let maxDriftMillis: Int64 = 5 * 60 * 1_000
 
     /// Identidad de este nodo. Estampa todo timestamp emitido.
@@ -258,6 +258,39 @@ nonisolated struct HLCClock {
         }
 
         let result = try makeTimestamp(physicalMs: newPhysical, counter: newCounter, wallMs: wallMs)
+        latest = result
+        return result
+    }
+
+    /// Emite el timestamp de un cambio LOCAL que se estampa con la hora de SU transacción (`eventTime`), no con la de
+    /// ahora. Mismo algoritmo que `send` —`l' = max(l, pt)`, mismo ms → counter+1— con dos diferencias, y las dos existen
+    /// para que un reloj que retrocedió no encalle al emisor (ticket `groups-clock-rollback-wedges-the-drain-forever`):
+    ///
+    /// - **Sin guarda de deriva.** La guarda protege de un reloj AJENO adelantado. Aquí `l` solo pudo adelantarse por un
+    ///   cambio propio hecho con la hora puesta por delante, y `eventTime` es la fecha fija de una transacción ya guardada:
+    ///   ni `l` baja ni esa fecha sube, así que la guarda cortaba en el mismo cambio para siempre. Emitir por encima de la
+    ///   hora de pared es lo que un HLC hace ante un retroceso: conserva el orden de este teléfono mientras su reloj
+    ///   persistido viva (en Grupos, `GroupSyncCursor.clockLatestHLC`, que el cierre de sesión borra). El precio: hasta
+    ///   que la hora real alcance a `l`, lo que este teléfono escriba gana por LWW a lo que otros escriban en esas filas.
+    /// - **Un contador agotado avanza el milisegundo** en vez de lanzar. Con `l` por delante el contador crece con cada
+    ///   cambio hasta que la hora alcance a `l`, y con el reloj puesto meses adelante los 65 536 valores se agotan.
+    ///
+    /// Es determinista: el mismo `latest`, el mismo nodo y los mismos `eventTime` dan los mismos HLC, que es de lo que
+    /// depende el dedup de un re-drain `(syncID, hlc, op)`. Solo si el re-drain parte del MISMO `latest`: un reloj
+    /// persistido por otro camino entre medias (el pull guarda el suyo) da otros HLC, y el backend funde las copias por LWW.
+    /// - Throws: solo `CanonicalTimeError` (un año fuera de 0001–9999).
+    mutating func sendLocal(eventTime: Date) throws -> HLC {
+        let wallMs = CanonicalTime.physicalMillis(from: eventTime)
+        let oldPhysical = latestPhysical
+
+        var newPhysical = max(oldPhysical, wallMs)
+        var newCounter = newPhysical == oldPhysical ? latestCounter + 1 : 0
+        if newCounter > Int(UInt16.max) {
+            newPhysical += 1
+            newCounter = 0
+        }
+
+        let result = try HLC(physicalMs: newPhysical, counter: UInt16(newCounter), nodeID: nodeID)
         latest = result
         return result
     }

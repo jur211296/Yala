@@ -68,14 +68,11 @@ review adversarial de tres lentes (datos, regresión, rule de área + concurrenc
 
 ## Device-QA (pendiente, no bloquea)
 
-Inferido del código, sin recorrer. Usa el corte del reloj, que es la única forma de provocar un drain fallido a mano.
+**Actualizado el 2026-09-26 por `groups-clock-rollback-wedges-the-drain-forever`.** El guion de antes atrasaba la hora del
+iPhone para provocar un drain a medias, que era la única forma de hacerlo a mano. Desde ese ticket el reloj ya no corta el
+drain: con la hora atrasada, el gasto **sube** y «Desasociar» **sigue**. Ese recorrido es ahora el guion de
+`groups-clock-rollback-wedges-the-drain-forever`, y su resultado es el contrario del que esperaba este.
 
-1. En el iPhone, con la cuenta de grupos iniciada y un grupo, apunta un gasto con la hora automática puesta y espera a
-   que suba (lo ve otro miembro).
-2. Ajustes del iPhone → General → Fecha y hora → apaga «Ajustar automáticamente» y **atrasa la hora una hora**.
-3. En Yala, apunta otro gasto en ese grupo.
-4. Perfil → Ajustes → cuenta de grupos → «Desasociar» (o «Cerrar sesión»).
-5. **Esperado**: no desasocia; aviso con «no llegaron al servidor… inténtalo en un rato». El grupo y el gasto siguen.
-   Con el código de antes, desasociaba y el gasto desaparecía.
-6. Vuelve a poner la hora automática. **Hoy el gasto sigue sin subir** (ticket
-   `groups-clock-rollback-wedges-the-drain-forever`): el paso 6 documenta ese residuo, no lo verifica.
+Lo que este ticket bloquea (un `save` o una lectura del History que fallan) no se puede provocar en un iPhone. Queda
+cubierto por los tests con el seam (`GroupsDrainCaptureTests`, `GroupsExitGesturesCaptureTests`) y no tiene paso de
+device-QA.
