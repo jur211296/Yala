@@ -5346,6 +5346,16 @@ enum L10n {
                 String(format: ls("welcome.privateICloud.lateBody", comment: ""), counts)
             }
             static var lateKeep: String { ls("welcome.privateICloud.lateKeep", comment: "") }
+            /// **El borrado del aviso tardío quedó a medias**: la zona de iCloud ya se borró y el teléfono no. No reusa
+            /// `wipeFailedBody` porque ése dice «Tus datos siguen en iCloud, intactos», que aquí es falso (ticket
+            /// `late-icloud-notice-exit-after-a-failed-wipe-leaves-the-blind-resume-armed`).
+            static var leftHalfwayTitle: String { ls("welcome.privateICloud.leftHalfwayTitle", comment: "") }
+            static var leftHalfwayBody: String { ls("welcome.privateICloud.leftHalfwayBody", comment: "") }
+            static var leftHalfwayFinish: String { ls("welcome.privateICloud.leftHalfwayFinish", comment: "") }
+            /// El «¿seguro?» de «Terminar de borrar»: dice qué se va (lo que queda en el teléfono, también lo nuevo).
+            static var leftHalfwayConfirmBody: String {
+                ls("welcome.privateICloud.leftHalfwayConfirmBody", comment: "")
+            }
 
             // MARK: El corpus que ya está en el TELÉFONO
             //

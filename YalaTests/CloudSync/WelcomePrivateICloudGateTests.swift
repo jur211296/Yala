@@ -1578,7 +1578,7 @@ struct WelcomePrivateICloudGateWiringTests {
         #expect(observers.contains(".onChange(of: showLateICloudNotice)"))
         // Y la condición viva en el call-site, no un flag paralelo que pueda divergir.
         let cv = try Self.code("Yala/App/ContentView.swift")
-        #expect(cv.contains("showLateICloudNotice: lateICloudCorpus != nil"))
+        #expect(cv.contains("showLateICloudNotice: lateICloudNotice != nil"))
     }
 
     /// **Un borrado reanudado tiene que CERRAR su ciclo.** `performICloudCorpusWipe` no retira los
@@ -1619,8 +1619,8 @@ struct WelcomePrivateICloudGateWiringTests {
     func lateNotice_goesThroughTheRouter() throws {
         let src = try Self.source("Yala/App/ContentView.swift")
         let check = try Self.body(of: "private func runLateICloudMirrorCheck() async {", in: src)
-        #expect(check.contains("RouterEntryGate.shared.submit(.presentLateICloudMirrorNotice"))
-        #expect(!check.contains("lateICloudCorpus ="), """
+        #expect(check.contains("RouterEntryGate.shared.submit(.presentLateICloudMirrorNotice(.corpus(corpus)))"))
+        #expect(!check.contains("lateICloudNotice ="), """
             asignar el corpus aquí salta la matriz de readiness: el sheet se montaría encima de lo que el
             anchor estuviera presentando.
             """)
