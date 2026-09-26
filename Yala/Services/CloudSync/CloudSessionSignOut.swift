@@ -566,7 +566,18 @@ final class CloudSessionSignOut {
 
     /// Cambios locales del store personal que el espejo aún podría no haber subido (`nil` = no hay número
     /// honesto que dar; ver `PersonalExportPendingCounter`).
+    ///
+    /// **Antes de contar, convierte en borrador lo que espera en el App Group** (Apple Pay, Siri): si no, el
+    /// borrado se lo lleva sin haberlo contado. Lo que no se pudo convertir suma como pendiente
+    /// (`PrivateSignOutExportGateLogic.pendingCountMaterializingInbound`).
     static func pendingPersonalExportCount(context: ModelContext) -> Int? {
+        PrivateSignOutExportGateLogic.pendingCountMaterializingInbound(
+            materialize: { InboundCaptureDrain.forSignOut(context: context) },
+            historyPending: { _ in personalHistoryPendingCount(context: context) })
+    }
+
+    /// Solo el historial del store personal, sin tocar las colas del App Group.
+    private static func personalHistoryPendingCount(context: ModelContext) -> Int? {
         PersonalExportPendingCounter.pendingChangeCount(
             context: context, confirmedExportStart: iCloudSyncService.shared.confirmedExportStart)
     }
@@ -782,19 +793,37 @@ final class CloudSessionSignOut {
     /// aviso de la salida de emergencia, fase ya puesta y `blockedExit` recordando dónde retomar.
     ///
     /// Sin ancla, el contador recorre el historial ENTERO para saber si hay algo local: se hace UNA vez por
-    /// espera y se reutiliza hasta que aparece un ancla (un export que termina bien), que es lo único que
-    /// puede cambiar esa respuesta.
+    /// espera y se reutiliza hasta que aparece un ancla (un export que termina bien), hasta que la vuelta crea
+    /// un borrador o hasta que la cola del App Group encoge sin ella —la vuelta a primer plano y el final de
+    /// una ráfaga de cambios remotos también drenan durante la espera—. Otras escrituras ajenas no la tiran:
+    /// las ve el recuento pegado al arm, que no usa caché (ticket
+    /// `private-exit-export-wait-cached-zero-misses-outside-writes`).
+    ///
+    /// **Cada vuelta convierte antes en borrador lo que espera en el App Group** (Apple Pay, Siri): lo que
+    /// llegue durante la espera también sube, y lo que no se pueda convertir cuenta como pendiente.
     private func confirmExportOrBlock(context: ModelContext, kind: CloudSignOutFlowLogic.ExitKind, credentialsReleased: Bool) async -> Bool {
         var withoutAnchor: Int?? = .none
+        var lastQueued: Int?
         let verdict = await PrivateSignOutExportGateLogic.awaitConfirmedExport(
             pendingCount: {
-                if iCloudSyncService.shared.confirmedExportStart == nil {
-                    if case .some(let cached) = withoutAnchor { return cached }
-                    let fresh = Self.pendingPersonalExportCount(context: context)
-                    withoutAnchor = .some(fresh)
-                    return fresh
-                }
-                return Self.pendingPersonalExportCount(context: context)
+                PrivateSignOutExportGateLogic.pendingCountMaterializingInbound(
+                    materialize: {
+                        let inbound = InboundCaptureDrain.forSignOut(context: context)
+                        // La cola encogió: alguien la convirtió en borradores, aquí o fuera. El cero cacheado ya no vale.
+                        if let lastQueued, inbound.stillQueued < lastQueued { withoutAnchor = .none }
+                        lastQueued = inbound.stillQueued
+                        return inbound
+                    },
+                    historyPending: { storeChanged in
+                        if storeChanged { withoutAnchor = .none }
+                        if iCloudSyncService.shared.confirmedExportStart == nil {
+                            if case .some(let cached) = withoutAnchor { return cached }
+                            let fresh = Self.personalHistoryPendingCount(context: context)
+                            withoutAnchor = .some(fresh)
+                            return fresh
+                        }
+                        return Self.personalHistoryPendingCount(context: context)
+                    })
             },
             onWaiting: { self.waitingForPending = true },
             sleep: { seconds in

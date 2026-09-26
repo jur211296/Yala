@@ -43,7 +43,8 @@ enum SiriPendingStore {
     /// Prefijo de las keys por-dictado en el App Group.
     nonisolated static let keyPrefix = "siriPending."
 
-    private nonisolated static var appGroupDefaults: UserDefaults? {
+    /// Internal (no private): `InboundCaptureDrain.queuedCount` lo usa como default de su `defaults` inyectable.
+    nonisolated static var appGroupDefaults: UserDefaults? {
         UserDefaults(suiteName: WidgetURLHelper.appGroupIdentifier)
     }
 

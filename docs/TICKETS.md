@@ -465,7 +465,10 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | prefs-synced-keys-upload-not-download | backlog | tickets/backlog/prefs-synced-keys-upload-not-download.md |
 | presentation-net-desarm-has-no-automated-net | backlog | tickets/backlog/presentation-net-desarm-has-no-automated-net.md |
 | previous-person-cloud-session-survives-fresh-start-and-reinstall | qa | tickets/qa/previous-person-cloud-session-survives-fresh-start-and-reinstall.md |
-| private-exit-loses-unmaterialized-inbound-captures | backlog | tickets/backlog/private-exit-loses-unmaterialized-inbound-captures.md |
+| private-exit-export-wait-cached-zero-misses-outside-writes | backlog | tickets/backlog/private-exit-export-wait-cached-zero-misses-outside-writes.md |
+| private-exit-loses-unmaterialized-inbound-captures | done | tickets/done/private-exit-loses-unmaterialized-inbound-captures.md |
+| private-exit-materialized-drafts-do-not-refresh-the-inbox | backlog | tickets/backlog/private-exit-materialized-drafts-do-not-refresh-the-inbox.md |
+| private-exit-warning-recounts-materialized-captures | backlog | tickets/backlog/private-exit-warning-recounts-materialized-captures.md |
 | private-gate-device-notice-has-no-forward-exit | backlog | tickets/backlog/private-gate-device-notice-has-no-forward-exit.md |
 | private-gate-remote-wipe-can-strand-its-arm | backlog | tickets/backlog/private-gate-remote-wipe-can-strand-its-arm.md |
 | private-gate-wipe-failure-copy-claims-icloud-is-intact | backlog | tickets/backlog/private-gate-wipe-failure-copy-claims-icloud-is-intact.md |

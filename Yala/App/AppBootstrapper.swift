@@ -214,10 +214,9 @@ final class AppBootstrapper {
         // 4b. Materializar gastos de Apple Pay / dictados de Siri encolados por sus intents
         // (App Group → InboxDraft). Los intents ya no tocan SwiftData; la app crea los borradores
         // aquí (gateado por quiescencia). El refresh de UI lo cubre el `incrementDataVersion()` del
-        // final del bootstrap.
+        // final del bootstrap. Por `InboundCaptureDrain`, que no drena con el borrado de cierre armado.
         if !uiTestActive {
-            ApplePayDraftService.processPending(context: context)
-            SiriDraftService.processPending(context: context)
+            InboundCaptureDrain.drain(context: context)
             // Refrescar la caché que lee el intent de Siri (subcategorías para el LLM + divisa + si
             // hay cuentas). Read-only (no save) → seguro aunque el import de CloudKit siga en curso;
             // converge en cada foreground.
@@ -1383,12 +1382,12 @@ final class AppBootstrapper {
                     }
                     // Import asentado (3s de quietud): materializar gastos de Apple Pay / dictados de
                     // Siri que se difirieron al abrir con el import activo; refrescar si crearon alguno.
-                    if let ctx = bootstrapper.remoteChangeModelContext {
-                        let applePayCreated = ApplePayDraftService.processPending(context: ctx)
-                        let siriCreated = SiriDraftService.processPending(context: ctx)
-                        if applePayCreated > 0 || siriCreated > 0 {
-                            bootstrapper.sessionState.incrementDataVersion()
-                        }
+                    // Con el borrado de cierre armado `InboundCaptureDrain` no drena: el store está
+                    // condenado y las colas son de la purga del arranque (ticket
+                    // `private-exit-loses-unmaterialized-inbound-captures`).
+                    if let ctx = bootstrapper.remoteChangeModelContext,
+                       InboundCaptureDrain.drain(context: ctx) > 0 {
+                        bootstrapper.sessionState.incrementDataVersion()
                     }
                     #if DEBUG
                     print("AppBootstrapper: Remote CloudKit change — trailing edge")
@@ -1926,9 +1925,7 @@ final class AppBootstrapper {
         }
         // Materializar gastos de Apple Pay / dictados de Siri encolados por sus intents; refrescar
         // UI si crearon alguno (Bandeja/Registros reaccionan a `dataVersion`).
-        let applePayCreated = ApplePayDraftService.processPending(context: context)
-        let siriCreated = SiriDraftService.processPending(context: context)
-        if applePayCreated > 0 || siriCreated > 0 {
+        if InboundCaptureDrain.drain(context: context) > 0 {
             sessionState.incrementDataVersion()
         }
         // Refrescar la caché de contexto del intent de Siri (subcategorías/divisa/cuentas).
