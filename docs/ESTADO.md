@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-26 (Lima)
 
-**Rama** `2.1` — Merge #257: **Cerrar sesión, desasociar y «Empezar de cero» ya no dan por subido un gasto de grupo que no llegó a capturarse.**
+**Rama** `2.1` — Merge #258: **Exploración del plugin de Yala para Claude (conector MCP de solo lectura), sin código.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,31 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#257 · un drain de grupos a medias ya no se lee como «nada pendiente»)
+## Esta sesión (#258 · exploración: plugin de Yala para Claude)
+
+**Nada cambia en la app.** Hay un documento, `docs/exploracion/plugin-claude-mcp.md`, que evalúa un conector MCP
+de solo lectura sobre la nube, con OAuth por usuario, más tres skills. Es el diferido #22 del modo nube.
+
+- **Es viable.** Supabase Auth trae un servidor OAuth 2.1 (en beta) que cumple lo que Claude exige.
+- **Trampa:** los scopes de Supabase no restringen la base de datos, y la RLS actual deja escribir. Para que sea
+  de solo lectura de verdad hace falta DDL que distinga por `client_id`.
+- **No choca con la cola A en ningún fichero.** Comparte el DDL de permisos y la configuración de Auth de producción.
+- **Recomendación:** una carpeta `mcp/` en este repo, con su propio Worker. El grueso del trabajo es portar a
+  TypeScript los cálculos de Swift.
+- **Fases:** un spike en staging de 1-2 días, luego solo lectura en unas 3 semanas.
+
+Ticket: `claude-plugin-read-only-mcp-connector` (backlog). La cabecera de `docs/TICKETS.md` decía 593 y había 598 tickets:
+corregida.
+
+### Lo que espera de Jürgen
+
+- Las cuatro decisiones de §6 del documento:
+  1. Gratis o Pro.
+  2. Si vale un conector solo para usuarios en modo nube.
+  3. Cuándo empezar.
+  4. Cambiar «suscripciones sin usar» por «recurrentes a revisar».
+
+## Sesión anterior (#257 · un drain de grupos a medias ya no se lee como «nada pendiente»)
 
 **Apuntas un gasto de grupo y justo después cierras sesión, desasocias o haces «Empezar de cero». Si la app no conseguía
 pasarlo a la cola de subida (un fallo al leer o guardar, o el reloj desajustado), la cola salía vacía y el gesto lo borraba.
@@ -45,7 +69,7 @@ cazó, arreglado en la misma rama). Ticket a `qa` con guion (hora del iPhone atr
   (low), `personal-sign-out-reads-an-unfinished-drain-as-nothing-pending` (medium),
   `unit-tests-write-group-amounts-into-the-real-app-group-mirror` (low).
 
-## Sesión anterior (#256 · «Empezar de cero» no se lleva los gastos de grupo sin subir)
+## Antes (#256 · «Empezar de cero» no se lleva los gastos de grupo sin subir)
 
 **Apuntas gastos de grupo sin cobertura y luego haces «Empezar de cero». Antes se perdían sin avisar. Ahora el borrado sube
 primero lo pendiente y, si no puede, no borra nada** —ni iCloud, ni el teléfono, ni los grupos— y dice «Faltan cambios de
