@@ -2,7 +2,7 @@ import { jwtPayload } from "./b64";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { isAllowedEgress } from "../src/egress";
 import { GRANT_MAX_AGE_SECONDS } from "../src/tokens";
-import { BASE, callTool, connect, INIT, looksLikeJwt, refresh, register, RESOURCE, rpc, world } from "./helpers";
+import { BASE, callTool, connect, grantCount, INIT, looksLikeJwt, refresh, register, RESOURCE, rpc, world } from "./helpers";
 import { USER_A, USER_B } from "./supabase-fake";
 
 afterEach(() => {
@@ -153,12 +153,15 @@ describe("revocar corta al momento", () => {
   it("desde Supabase (el permiso de la cuenta): la siguiente llamada da 401 y la conexión desaparece", async () => {
     const w = await world();
     const { tokens, clientId } = await connect(w);
+    expect(grantCount(w)).toBe(1);
     w.supabase.revokeOAuthSessions(USER_A.id);
     const { res } = await callTool(w, tokens.access_token, "listar_categorias");
     expect(res.status).toBe(401);
     expect(res.headers.get("WWW-Authenticate")).toContain('error="invalid_token"');
     expect(w.supabase.calls.some((c) => c.path.startsWith("/rest/v1/"))).toBe(false);
-    // Y no se puede refrescar: el grant ya no existe.
+    // La conexión se borró en el KV en esa misma llamada, ANTES de cualquier refresh: es `/mcp` quien la retira.
+    expect(grantCount(w)).toBe(0);
+    // Y por eso no se puede refrescar: el grant ya no existe.
     const r = await refresh(w, clientId, tokens.refresh_token);
     expect(r.res.status).toBe(400);
     expect(r.body.error).toBe("invalid_grant");
@@ -176,13 +179,31 @@ describe("revocar corta al momento", () => {
     expect((await rpc(w, tokens.access_token, INIT)).status).toBe(401);
   });
 
-  it("si GoTrue no reconoce el JWT (p. ej. caducó), 401 pero la conexión sigue: el refresh decide", async () => {
+  it("si GoTrue no reconoce el JWT (bad_jwt), 401 pero la conexión NO se borra: el refresh decide", async () => {
     const w = await world();
     const { tokens, clientId } = await connect(w);
     w.supabase.userEndpoint = { status: 403, code: "bad_jwt" };
     expect((await callTool(w, tokens.access_token, "listar_categorias")).res.status).toBe(401);
+    // 'stale' no borra la conexión: la distingue de 'gone'. (Si se tratara como 'gone', grantCount sería 0.)
+    expect(grantCount(w)).toBe(1);
     w.supabase.userEndpoint = undefined;
     expect((await refresh(w, clientId, tokens.refresh_token)).res.status).toBe(200);
+  });
+
+  it("distingue 'gone' (sesión retirada → 401 y se borra) de 'stale' (JWT viejo → 401 y sigue)", async () => {
+    for (const [code, expectedGrants] of [
+      ["session_not_found", 0],
+      ["user_not_found", 0],
+      ["user_banned", 0],
+      ["bad_jwt", 1],
+      ["otra_cosa", 1],
+    ] as const) {
+      const w = await world();
+      const { tokens } = await connect(w);
+      w.supabase.userEndpoint = { status: 403, code };
+      expect((await callTool(w, tokens.access_token, "listar_categorias")).res.status, code).toBe(401);
+      expect(grantCount(w), code).toBe(expectedGrants);
+    }
   });
 
   it("si no se puede preguntar a Supabase, 503 sin leer nada y sin borrar la conexión", async () => {
@@ -193,9 +214,41 @@ describe("revocar corta al momento", () => {
     expect(res.status).toBe(503);
     expect(res.headers.get("Retry-After")).toBe("30");
     expect(w.supabase.calls.some((c) => c.path.startsWith("/rest/v1/"))).toBe(false);
+    expect(grantCount(w)).toBe(1);
     w.supabase.userEndpoint = undefined;
     w.supabase.rows = { categories: [], subcategories: [] };
     expect((await callTool(w, tokens.access_token, "listar_categorias")).res.status).toBe(200);
+  });
+});
+
+describe("un fallo pasajero del JWKS no borra la conexión", () => {
+  it("en /mcp: con el JWKS caído da 503, no 401, y conserva la conexión", async () => {
+    const w = await world();
+    const { tokens } = await connect(w);
+    w.supabase.jwksThrows = Object.assign(new Error("timed out"), { code: "ERR_JWKS_TIMEOUT" });
+    const { res } = await callTool(w, tokens.access_token, "listar_categorias");
+    expect(res.status).toBe(503);
+    expect(grantCount(w)).toBe(1);
+    // No llega ni a preguntar por la sesión ni a leer.
+    expect(w.supabase.calls.some((c) => c.path === "/auth/v1/user" || c.path.startsWith("/rest/v1/"))).toBe(false);
+    w.supabase.jwksThrows = undefined;
+    w.supabase.rows = { categories: [], subcategories: [] };
+    expect((await callTool(w, tokens.access_token, "listar_categorias")).res.status).toBe(200);
+  });
+
+  it("en el refresh: con el JWKS caído da 503 y conserva la conexión; al volver el JWKS, refresca", async () => {
+    const w = await world();
+    const { tokens, clientId } = await connect(w);
+    w.supabase.jwksThrows = Object.assign(new Error("no key"), { code: "ERR_JWKS_NO_MATCHING_KEY" });
+    const r = await refresh(w, clientId, tokens.refresh_token);
+    expect(r.res.status).toBe(503);
+    expect(r.body.error).toBe("temporarily_unavailable");
+    expect(grantCount(w)).toBe(1);
+    // El JWKS vuelve. El reintento con el MISMO refresh de Claude (la respuesta se dio por perdida) funciona: Supabase
+    // devuelve el hijo activo dentro de su ventana de reúso.
+    w.supabase.jwksThrows = undefined;
+    expect((await refresh(w, clientId, tokens.refresh_token)).res.status).toBe(200);
+    expect(w.supabase.oauthSessions(USER_A.id)).toHaveLength(1);
   });
 });
 
@@ -231,31 +284,37 @@ describe("rotación y caducidad", () => {
     expect(w.supabase.oauthSessions(USER_A.id)).toHaveLength(1);
   });
 
-  it("Supabase rechaza el refresh (revocado o reusado): invalid_grant y la conexión se borra", async () => {
-    const w = await world();
-    const { tokens, clientId } = await connect(w);
-    w.supabase.failRefresh = { status: 400, code: "refresh_token_not_found" };
-    const r = await refresh(w, clientId, tokens.refresh_token);
-    expect(r.res.status).toBe(400);
-    expect(r.body.error).toBe("invalid_grant");
-    w.supabase.failRefresh = undefined;
-    expect((await refresh(w, clientId, tokens.refresh_token)).body.error).toBe("invalid_grant");
-    expect((await rpc(w, tokens.access_token, INIT)).status).toBe(401);
-  });
-
-  it("Supabase caído o el Worker mal configurado: temporarily_unavailable y la conexión se conserva", async () => {
-    for (const fail of [
-      { status: 503, code: "http_503" },
-      { status: 400, code: "invalid_client" },
-    ]) {
+  it("solo los códigos DEFINITIVOS de GoTrue borran la conexión (invalid_grant)", async () => {
+    for (const code of ["refresh_token_not_found", "refresh_token_already_used", "session_not_found", "session_expired", "user_banned", "user_not_found"]) {
       const w = await world();
       const { tokens, clientId } = await connect(w);
-      w.supabase.failRefresh = fail;
+      w.supabase.failRefresh = { status: 400, code };
       const r = await refresh(w, clientId, tokens.refresh_token);
-      expect(r.res.status, JSON.stringify(fail)).toBe(503);
-      expect(r.body.error).toBe("temporarily_unavailable");
+      expect(r.res.status, code).toBe(400);
+      expect(r.body.error, code).toBe("invalid_grant");
+      expect(grantCount(w), code).toBe(0);
+    }
+  });
+
+  it("un problema de CONFIG del Worker (secreto malo) NO borra las conexiones: es temporarily_unavailable", async () => {
+    // Lo cazó la review: si esto se clasificara como 'rejected', rotar el secreto revocaría a todos los usuarios.
+    for (const [code, status] of [
+      ["invalid_credentials", 400],
+      ["invalid_client", 400],
+      ["unauthorized_client", 400],
+      ["", 503],
+      ["", 500],
+    ] as const) {
+      const w = await world();
+      const { tokens, clientId } = await connect(w);
+      w.supabase.failRefresh = { status, code };
+      const label = code || `http_${status}`;
+      const r = await refresh(w, clientId, tokens.refresh_token);
+      expect(r.res.status, label).toBe(503);
+      expect(r.body.error, label).toBe("temporarily_unavailable");
+      expect(grantCount(w), label).toBe(1);
       w.supabase.failRefresh = undefined;
-      expect((await refresh(w, clientId, tokens.refresh_token)).res.status).toBe(200);
+      expect((await refresh(w, clientId, tokens.refresh_token)).res.status, label).toBe(200);
     }
   });
 

@@ -67,6 +67,8 @@ export class FakeSupabase {
   failRefresh: { status: number; code: string } | undefined;
   /** Si está, `GET /auth/v1/user` responde esto en vez de mirar la sesión. */
   userEndpoint: { status: number; code?: string } | undefined;
+  /** Si está, la verificación del JWT (el JWKS) lanza esto: simula que las claves de Supabase no responden. */
+  jwksThrows: Error | undefined;
   /** Supabase ya tenía permiso de este usuario al cliente: GET de la autorización devuelve solo `redirect_url`. */
   alreadyConsented = false;
   /** Cambia los detalles de la autorización que ve la pantalla de login. */
@@ -220,7 +222,9 @@ export class FakeSupabase {
       const basic = headers.get("Authorization") ?? "";
       const [id, secret] = fromB64url(basic.replace(/^Basic /, "")).split(":").map(decodeURIComponent);
       if (id !== WORKER_SB_CLIENT || secret !== WORKER_SB_SECRET) {
-        return Response.json({ error: "invalid_client" }, { status: 400 });
+        // Formato REAL de GoTrue v2.197 cuando el secreto del cliente no cuadra (internal/api/middleware.go): la
+        // envoltura estándar con `error_code`, no la de OAuth. Importa: `invalid_credentials` NO debe cerrar la conexión.
+        return Response.json({ code: 400, error_code: "invalid_credentials", msg: "Invalid client credentials" }, { status: 400 });
       }
       const form = new URLSearchParams(body);
       if (form.get("grant_type") === "authorization_code") {
@@ -235,18 +239,23 @@ export class FakeSupabase {
         return Response.json({ access_token: t.access_token, refresh_token: t.refresh_token, expires_in: this.accessTtlSeconds });
       }
       if (form.get("grant_type") === "refresh_token") {
-        if (this.failRefresh) return Response.json({ error_code: this.failRefresh.code }, { status: this.failRefresh.status });
+        if (this.failRefresh) {
+          // Un 5xx real de GoTrue no trae `error_code` (es una página de error): readError cae a `http_<status>`.
+          if (this.failRefresh.status >= 500) return new Response("upstream error", { status: this.failRefresh.status });
+          return Response.json({ code: this.failRefresh.status, error_code: this.failRefresh.code }, { status: this.failRefresh.status });
+        }
         const rt = form.get("refresh_token");
         const s = [...this.sessions.values()].find((x) => x.clientId && (x.refresh === rt || x.previousRefresh === rt));
         if (!s) return Response.json({ code: 400, error_code: "refresh_token_not_found" }, { status: 400 });
+        const user = [...this.users.values()].find((u) => u.id === s.userId)!;
         if (s.refresh !== rt) {
-          // Reúso fuera de la ventana: GoTrue revoca toda la familia.
-          this.sessions.delete(s.id);
-          return Response.json({ code: 400, error_code: "refresh_token_already_used" }, { status: 400 });
+          // rt es el PADRE (previousRefresh). GoTrue, dentro de su ventana de reúso (10 s), devuelve el hijo activo en
+          // vez de revocar: es lo que permite recuperarse de una respuesta perdida. El falso modela esa gracia y no la
+          // caduca por tiempo (los tests no avanzan 10 s a mitad de un refresh).
+          return Response.json(await this.tokensFor(s, user));
         }
         s.previousRefresh = s.refresh;
         s.refresh = `rt_${rand()}`;
-        const user = [...this.users.values()].find((u) => u.id === s.userId)!;
         return Response.json(await this.tokensFor(s, user));
       }
       return Response.json({ error: "unsupported_grant_type" }, { status: 400 });

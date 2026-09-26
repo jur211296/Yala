@@ -42,7 +42,13 @@ export interface World {
 export async function world(opts: { env?: Partial<Env>; now?: () => Date } = {}): Promise<World> {
   const supabase = await FakeSupabase.create();
   const env = makeEnv(opts.env);
-  const app = createApp({ fetcher: supabase.fetcher, upstreamKeys: supabase.jwks, now: opts.now });
+  // El resolver del JWKS consulta la palanca `jwksThrows`: así un test puede simular que las claves de Supabase no
+  // responden (el fallo pasajero que NO debe borrar la conexión).
+  const keys: typeof supabase.jwks = (header, token) => {
+    if (supabase.jwksThrows) throw supabase.jwksThrows;
+    return supabase.jwks(header, token);
+  };
+  const app = createApp({ fetcher: supabase.fetcher, upstreamKeys: keys, now: opts.now });
   return {
     app,
     env,
@@ -193,4 +199,9 @@ export async function callTool(w: World, token: string, name: string, args: Reco
 /** ¿Parece un JWT? (tres trozos base64url y cabecera JSON). Lo que Claude reciba no debe serlo. */
 export function looksLikeJwt(s: string): boolean {
   return /^eyJ[\w-]*\.[\w-]+\.[\w-]+$/.test(s);
+}
+
+/** Las conexiones (grants) vivas en el KV de la librería. Para afirmar directamente que una se borró o se conservó. */
+export function grantCount(w: World): number {
+  return [...w.kv.store.keys()].filter((k) => k.startsWith("grant:")).length;
 }

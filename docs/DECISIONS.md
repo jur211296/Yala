@@ -2,11 +2,12 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (84 entradas)
+## Índice (85 entradas)
 
-> **No hace falta leer este fichero entero** — son 242 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 247 KB. Localiza la entrada
 > aquí y salta a ella.
 
+- `2026-09-26` [El conector de Claude emite sus propios tokens](#2026-09-26-el-conector-de-claude-emite-sus-propios-tokens)
 - `2026-09-09` [Sesiones — dos ejes (privada × nube), un verbo por sesión, y Grupos como mini-app](#2026-09-09-sesiones--dos-ejes-privada--nube-un-verbo-por-sesin-y-grupos-como-mini-app)
 - `2026-09-09` [CI — el aviso de rojos advisory es un check propio, y no calla aunque su canal caiga](#2026-09-09-ci--el-aviso-de-rojos-advisory-es-un-check-propio-y-no-calla-aunque-su-canal-caiga)
 - `2026-09-02` [Panel — la jerarquía manda, el color informa y las tarjetas se quedan](#2026-09-02-panel--la-jerarqua-manda-el-color-informa-y-las-tarjetas-se-quedan)
@@ -19,14 +20,14 @@
 - `2026-07-24` [Tanda 2026-07-24: fase 2.0.5 — 36 entradas (2026-07-08 → 2026-07-22)](#tanda-2026-07-24-fase-205--36-entradas-2026-07-08--2026-07-22)
 - `2026-07-24` [Tanda 2026-07-24 (cierre): últimas 5 entradas de la fase 2.0.5](#tanda-2026-07-24-cierre-ltimas-5-entradas-de-la-fase-205)
 - `2026-07-06` [Stats — Comparativa: KPI "período anterior" alineado a la curva MTD-vs-MTD (p20-15 completo)](#2026-07-06-stats--comparativa-kpi-perodo-anterior-alineado-a-la-curva-mtd-vs-mtd-p20-15-completo)
-- `2026-07-05` [Cold launch — deep link de grupo `yala://groups/<id>` se perdía (gemelo D1 del anterior)](#2026-07-05-cold-launch--deep-link-de-grupo-yalagroupsid-se-perda-gemelo-d1-del-anterior)
 - `2026-07-05` [Siri — migrado al mismo patrón de cola (cierra el ciclo de Apple Pay)](#2026-07-05-siri--migrado-al-mismo-patrn-de-cola-cierra-el-ciclo-de-apple-pay)
 - `2026-07-05` [Cold launch — share-image al share sheet no hacía nada (intent no-serializable pre-init)](#2026-07-05-cold-launch--share-image-al-share-sheet-no-haca-nada-intent-no-serializable-pre-init)
 - `2026-07-05` [Stats — clasificación income/expense por categoría (fase 2 de p20-14)](#2026-07-05-stats--clasificacin-incomeexpense-por-categora-fase-2-de-p20-14)
+- `2026-07-05` [Cold launch — deep link de grupo `yala://groups/<id>` se perdía (gemelo D1 del anterior)](#2026-07-05-cold-launch--deep-link-de-grupo-yalagroupsid-se-perda-gemelo-d1-del-anterior)
 - `2026-07-04` [Apple Pay — el intent deja de tocar SwiftData (patrón de cola App Group)](#2026-07-04-apple-pay--el-intent-deja-de-tocar-swiftdata-patrn-de-cola-app-group)
 - `2026-07-02` [INCIDENTE PROD — sync de grupos muerto 4 días por campo sin deploy de schema + hardening](#2026-07-02-incidente-prod--sync-de-grupos-muerto-4-das-por-campo-sin-deploy-de-schema--hardening)
-- `2026-07-01` [Groups — pagos planificados de grupo (gasto compartido recurrente)](#2026-07-01-groups--pagos-planificados-de-grupo-gasto-compartido-recurrente)
 - `2026-07-01` [Groups — notificaciones filtradas por participación + copy con voz de marca](#2026-07-01-groups--notificaciones-filtradas-por-participacin--copy-con-voz-de-marca)
+- `2026-07-01` [Groups — pagos planificados de grupo (gasto compartido recurrente)](#2026-07-01-groups--pagos-planificados-de-grupo-gasto-compartido-recurrente)
 - `2026-06-30` [Personalización — toggle "Iconos coloridos" gobierna también "Más"](#2026-06-30-personalizacin--toggle-iconos-coloridos-gobierna-tambin-ms)
 - `2026-06-28` [Groups — rediseño del split de gastos estilo Splitwise](#2026-06-28-groups--rediseo-del-split-de-gastos-estilo-splitwise)
 - `2026-06-28` [..06-30] Groups — sync de "Solo Grupos" no bajaba cambios de otros miembros](#2026-06-2806-30-groups--sync-de-solo-grupos-no-bajaba-cambios-de-otros-miembros)
@@ -34,8 +35,8 @@
 - `2026-06-19` [..06-22] Groups — saga del crash-loop de sync en restore de iCloud (5 intentos, CERRADA en build 32)](#2026-06-1906-22-groups--saga-del-crash-loop-de-sync-en-restore-de-icloud-5-intentos-cerrada-en-build-32)
 - `2026-06-19` [Fix identity UUIDs colapsados tras restore lento de iCloud (Tag.id/Account.shortcutID/Subcategory.sh](#2026-06-19-fix-identity-uuids-colapsados-tras-restore-lento-de-icloud-tagidaccountshortcutidsubcategoryshortcutid)
 - `2026-06-14` [Fix doble canal de sync CloudKit en Grupos](#2026-06-14-fix-doble-canal-de-sync-cloudkit-en-grupos)
-- `2026-06-10` [OpenAI API key en Info.plist + PrivacyInfo sin FinancialInfo — diferido consciente a post-2.0](#2026-06-10-openai-api-key-en-infoplist--privacyinfo-sin-financialinfo--diferido-consciente-a-post-20)
 - `2026-06-10` [Sesión de cierre pre-release 2.0](#2026-06-10-sesin-de-cierre-pre-release-20)
+- `2026-06-10` [OpenAI API key en Info.plist + PrivacyInfo sin FinancialInfo — diferido consciente a post-2.0](#2026-06-10-openai-api-key-en-infoplist--privacyinfo-sin-financialinfo--diferido-consciente-a-post-20)
 - `2026-06-08` [Fix Apple Pay — "No se pudo ejecutar el atajo"](#2026-06-08-fix-apple-pay--no-se-pudo-ejecutar-el-atajo)
 - `2026-06-08` [Fix invite-drop — persistencia de invite pendiente](#2026-06-08-fix-invite-drop--persistencia-de-invite-pendiente)
 - `2026-06-04` [Fix subcategorías duplicadas por re-sync de CloudKit](#2026-06-04-fix-subcategoras-duplicadas-por-re-sync-de-cloudkit)
@@ -45,8 +46,8 @@
 - `2026-05-26` [Refactor robusto del subsistema de routing (F0-F11)](#2026-05-26-refactor-robusto-del-subsistema-de-routing-f0-f11)
 - `2026-05-25` [Transfer pair integrity — épico de 6 commits](#2026-05-25-transfer-pair-integrity--pico-de-6-commits)
 - `2026-05-25` [CSV mirror épico — Budget filters + TransactionItem/InboxDraft tags resilientes a CloudKit lazy hydr](#2026-05-25-csv-mirror-pico--budget-filters--transactioniteminboxdraft-tags-resilientes-a-cloudkit-lazy-hydration)
-- `2026-05-22` [Groups — Soft-delete de grupo (FU-02, owner-only, gateado por balance=0)](#2026-05-22-groups--soft-delete-de-grupo-fu-02-owner-only-gateado-por-balance0)
 - `2026-05-22` [Groups — cleanup de TX/drafts huérfanos post soft-delete (FU-02-cleanup)](#2026-05-22-groups--cleanup-de-txdrafts-hurfanos-post-soft-delete-fu-02-cleanup)
+- `2026-05-22` [Groups — Soft-delete de grupo (FU-02, owner-only, gateado por balance=0)](#2026-05-22-groups--soft-delete-de-grupo-fu-02-owner-only-gateado-por-balance0)
 - `2026-05-20` [Onboarding informativo del tab Grupos (3 steps)](#2026-05-20-onboarding-informativo-del-tab-grupos-3-steps)
 - `2026-05-17` [Panel polish — AmountText API simplificada (cierre de sprint)](#2026-05-17-panel-polish--amounttext-api-simplificada-cierre-de-sprint)
 - `2026-05-13` [Stats polish — 4 tabs de Statistics panel-aligned (épico completo, Registros→Insights→Tendencias→Dis](#2026-05-13-stats-polish--4-tabs-de-statistics-panel-aligned-pico-completo-registrosinsightstendenciasdistribucin)
@@ -54,34 +55,34 @@
 - `2026-05-10` [..05-11] Onboarding restyle — 5 iteraciones de QA visual (iter1-iter5)](#2026-05-1005-11-onboarding-restyle--5-iteraciones-de-qa-visual-iter1-iter5)
 - `2026-05-09` [Onboarding completo restyling — Welcome Hero/Chooser + Yala AI + 8 steps](#2026-05-09-onboarding-completo-restyling--welcome-herochooser--yala-ai--8-steps)
 - `2026-05-09` [Fix bug deeplinks a tabs ocultos en "Más" — centralizar `selectMainTab`](#2026-05-09-fix-bug-deeplinks-a-tabs-ocultos-en-ms--centralizar-selectmaintab)
-- `2026-05-08` [Fix subcategorías vacías en Grupos + FullModeActivation rediseñado](#2026-05-08-fix-subcategoras-vacas-en-grupos--fullmodeactivation-rediseado)
 - `2026-05-08` [Yala AI Onboarding — tutorial de 4 pasos post-consent](#2026-05-08-yala-ai-onboarding--tutorial-de-4-pasos-post-consent)
 - `2026-05-08` [Groups Pulido — Sprint Pulido 2 (9 bugs UX) + Sprint Pulido 3 (cierre diferidos)](#2026-05-08-groups-pulido--sprint-pulido-2-9-bugs-ux--sprint-pulido-3-cierre-diferidos)
-- `2026-05-07` [A4 v3.2 — Fix P0 #2 (nudge dormant sin grupos) + #6 (Welcome Hero residual tras reinstall)](#2026-05-07-a4-v32--fix-p0-2-nudge-dormant-sin-grupos--6-welcome-hero-residual-tras-reinstall)
+- `2026-05-08` [Fix subcategorías vacías en Grupos + FullModeActivation rediseñado](#2026-05-08-fix-subcategoras-vacas-en-grupos--fullmodeactivation-rediseado)
 - `2026-05-07` [A4 v3.2 — Welcome Hero + Chooser fix unificado (Sprint 2/2.1 polish visual)](#2026-05-07-a4-v32--welcome-hero--chooser-fix-unificado-sprint-221-polish-visual)
+- `2026-05-07` [A4 v3.2 — Fix P0 #2 (nudge dormant sin grupos) + #6 (Welcome Hero residual tras reinstall)](#2026-05-07-a4-v32--fix-p0-2-nudge-dormant-sin-grupos--6-welcome-hero-residual-tras-reinstall)
 - `2026-05-07` [Cleanup sistémico de duplicados CloudKit (TODO #10)](#2026-05-07-cleanup-sistmico-de-duplicados-cloudkit-todo-10)
 - `2026-05-06` [A4 — Landing + AASA + Welcome Chooser (cierra Fase A del épico Grupos)](#2026-05-06-a4--landing--aasa--welcome-chooser-cierra-fase-a-del-pico-grupos)
-- `2026-05-05` [A0-Bridge — rediseño completo del bridge SplitExpense ↔ TransactionItem (modelo M5)](#2026-05-05-a0-bridge--rediseo-completo-del-bridge-splitexpense--transactionitem-modelo-m5)
 - `2026-05-05` [A0-Bridge V2.0 — completa items P0+P1 diferidos](#2026-05-05-a0-bridge-v20--completa-items-p0p1-diferidos)
 - `2026-05-05` [Groups Pulido Final — Subset 3 (A6/A7/A8)](#2026-05-05-groups-pulido-final--subset-3-a6a7a8)
+- `2026-05-05` [A0-Bridge — rediseño completo del bridge SplitExpense ↔ TransactionItem (modelo M5)](#2026-05-05-a0-bridge--rediseo-completo-del-bridge-splitexpense--transactionitem-modelo-m5)
 - `2026-05-04` [Groups Pulido Final — Subset 2 (A9/A10/A12/A13)](#2026-05-04-groups-pulido-final--subset-2-a9a10a12a13)
-- `2026-04-28` [3 fixes runtime post-QA chat-registrar-transacciones](#2026-04-28-3-fixes-runtime-post-qa-chat-registrar-transacciones)
 - `2026-04-28` [Traducciones reales — 4 locales completos (nl, pl, zh-Hans, ja)](#2026-04-28-traducciones-reales--4-locales-completos-nl-pl-zh-hans-ja)
+- `2026-04-28` [3 fixes runtime post-QA chat-registrar-transacciones](#2026-04-28-3-fixes-runtime-post-qa-chat-registrar-transacciones)
 - `2026-04-27` [Sankey con rama Planificados](#2026-04-27-sankey-con-rama-planificados)
 - `2026-04-27` [Chat → Registrar transacciones (Opción C híbrida)](#2026-04-27-chat--registrar-transacciones-opcin-c-hbrida)
 - `2026-04-26` [Yala IA — pivot a context-rich (Opción B)](#2026-04-26-yala-ia--pivot-a-context-rich-opcin-b)
 - `2026-04-25` [AI toggles removal completo](#2026-04-25-ai-toggles-removal-completo)
+- `2026-04-24` [PP2-06d densidad CashFlow + Needs `.small`](#2026-04-24-pp2-06d-densidad-cashflow--needs-small)
 - `2026-04-24` [PP2-06c widgets `.small` chart-based](#2026-04-24-pp2-06c-widgets-small-chart-based)
 - `2026-04-24` [PP2-07 polish + Hero rediseñado (cierre épico Panel Polish #2)](#2026-04-24-pp2-07-polish--hero-rediseado-cierre-pico-panel-polish-2)
-- `2026-04-24` [PP2-06d densidad CashFlow + Needs `.small`](#2026-04-24-pp2-06d-densidad-cashflow--needs-small)
-- `2026-04-22` [PP2-03 Chrome Compacto de Widgets](#2026-04-22-pp2-03-chrome-compacto-de-widgets)
 - `2026-04-22` [PP2-01 Hero Compacto](#2026-04-22-pp2-01-hero-compacto)
 - `2026-04-22` [PP2-05 tamaño `.small` + pilotos](#2026-04-22-pp2-05-tamao-small--pilotos)
+- `2026-04-22` [PP2-03 Chrome Compacto de Widgets](#2026-04-22-pp2-03-chrome-compacto-de-widgets)
 - `2026-04-22` [Refactor consent/feature AI Insights](#2026-04-22-refactor-consentfeature-ai-insights)
 - `2026-04-21` [Sync Status: Banner Global vs Toolbar Indicator](#2026-04-21-sync-status-banner-global-vs-toolbar-indicator)
 - `2026-04-21` [Sync silencioso por defecto + banner pill global](#2026-04-21-sync-silencioso-por-defecto--banner-pill-global)
-- `2026-04-16` [containerRelativeFrame deadlock en ScrollView vertical](#2026-04-16-containerrelativeframe-deadlock-en-scrollview-vertical)
 - `2026-04-16` [..04-20] Épico Panel 2.0 (P20-01..P20-11)](#2026-04-1604-20-pico-panel-20-p20-01p20-11)
+- `2026-04-16` [containerRelativeFrame deadlock en ScrollView vertical](#2026-04-16-containerrelativeframe-deadlock-en-scrollview-vertical)
 - `2026-04-09` [GC-12: Permisos de grupo y flujo de invitación (2026-04-09)](#gc-12-permisos-de-grupo-y-flujo-de-invitacin-2026-04-09)
 - `2026-03-25` [Mindset onboarding: cuenta única = patrimonial, separadas = cashFlow](#2026-03-25-mindset-onboarding-cuenta-nica--patrimonial-separadas--cashflow)
 - `2026-03-05` [Filtros Excluir: Income/Expense siempre usa semántica de inclusión](#2026-03-05-filtros-excluir-incomeexpense-siempre-usa-semntica-de-inclusin)
@@ -110,6 +111,76 @@ Cada decisión sigue esta estructura:
 ---
 
 ## Decisiones Activas
+
+### [2026-09-26] El conector de Claude emite sus propios tokens
+
+**Contexto.** En la fase 0, Claude recibía un token OAuth de Supabase con `role = yala_mcp_reader`. PostgREST no le
+dejaba escribir, pero GoTrue sí aceptaba ese token para cambiar la cuenta (`PUT /auth/v1/user` → 200). Lo medido en
+el código de GoTrue v2.197.0, que es la versión de staging y la última publicada:
+
+- `requireAuthentication` acepta cualquier JWT válido del usuario y **no mira `client_id` ni `scope`**.
+- Ese middleware protege todo lo que cambia la cuenta: `/user`, `/factors`, `/logout`, `/reauthenticate`,
+  `/user/identities`, `/user/oauth/grants` y `/oauth/authorizations`.
+- Supabase no tiene ninguna opción para restringirlo, y no hay issue ni PR abierto.
+
+La vía «reautenticar para cambiar la contraseña + confirmar el cambio de email» **no lo cierra**:
+
+- la reautenticación solo se pide si la sesión tiene más de 24 h;
+- «contraseña actual» solo se pide si el usuario ya tiene una. A un usuario de Apple o Google —todos los de
+  producción— el token le puede **poner** una contraseña, y con ella se entra;
+- los metadatos, el alta de un TOTP y el `logout` global no los cubre ninguna opción.
+
+**Decisión.** El Worker del conector (`mcp/`) pasa a ser el **servidor OAuth de Claude**, con
+`@cloudflare/workers-oauth-provider`:
+
+- Claude recibe un token **opaco**, atado a `…/mcp`, que solo entiende el Worker.
+- El Worker consigue la sesión de Supabase como **cliente OAuth confidencial propio** y la guarda cifrada en KV. Esa
+  sesión es de solo lectura en la base y nunca sale del Worker.
+- En Supabase, solo ese cliente recibe tokens OAuth: el hook tiene una lista cerrada (`mcp0_02`) y el DCR de Supabase
+  está apagado. Claude se registra en el Worker.
+- La reautenticación y la contraseña actual quedan activadas en staging como capa extra.
+
+**Razones.**
+
+1. El token de Claude no sirve en GoTrue, ni en PostgREST, ni en el gateway. El hueco se cierra por construcción,
+   no por una opción que alguien pueda apagar.
+2. Cumple dos reglas de la especificación de MCP que antes no se cumplían:
+   - no reenviar a otra API el token del cliente («token passthrough»);
+   - atar el token a la audiencia del recurso (RFC 8707), que Supabase no aplicaba.
+3. Revocar corta al momento: cada llamada comprueba que la sesión de Supabase sigue viva.
+
+Descartado:
+
+- **Esperar a Supabase.** No hay fecha. El texto del issue quedó redactado en el PR, sin publicar.
+- **Reescribir `sub` en el hook** para que GoTrue rechace el token. Rompe `auth.uid()` en PostgREST y depende de un
+  detalle interno.
+- **Guardar en el Worker una sesión normal.** Escribe todo; es lo que el Paso 0 de la fase 0 ya rechazó.
+
+**Consecuencias.**
+
+- **El Worker guarda sesiones de Supabase.** Van cifradas con una clave que envuelve el token de Claude, y son de solo
+  lectura en la base. Si alguien compromete el Worker (ejecuta código y salta la lista de salidas), en GoTrue sigue a
+  su alcance lo que no mira el rol de Postgres: cambiar los metadatos, y —donde el proveedor de email esté encendido—
+  ponerle una primera contraseña a un usuario de Apple/Google y entrar con ella. **La review adversarial (2026-09-26)
+  cerró un tercer camino, más grave:** GoTrue reemite un token para la misma sesión al verificar un factor MFA, y esa
+  reemisión salía con `role = authenticated` —escribía TODA la base—. El hook pasó a decidir por el cliente de la
+  SESIÓN (`mcp0_03`), no por el claim, así que ese token también sale de solo lectura. Además se apagó MFA en staging.
+  Lo que queda lo acotan:
+  - la lista cerrada de salidas (`mcp/src/egress.ts`), contra bugs;
+  - la reautenticación y la contraseña actual;
+  - y, para producción, apagar el proveedor de email —que la app no usa— y poner un `sessions_timebox`
+    (`claude-mcp-production-auth-hardening`).
+- **El Worker pasa a tener estado y un secreto:** un KV y el secreto de su cliente en Supabase.
+- **Cada llamada cuesta una consulta más a GoTrue**, de unos 150 ms, para comprobar la sesión.
+- **Revocar en Supabase desconecta a Claude entero.** En Supabase hay un solo permiso por usuario, «Yala para Claude».
+  Quitarlo cierra todas las conexiones de Claude de ese usuario.
+- **Revocar desde Claude deja una sesión huérfana en Supabase.** Es inalcanzable, pero sigue listada
+  (`claude-mcp-revoke-from-claude-leaves-supabase-session`).
+- **Quien toque el conector** no devuelve nunca a Claude un token de Supabase, ni acepta uno en `/mcp`.
+
+**Estado:** Activa.
+
+---
 
 ### [2026-09-09] Sesiones — dos ejes (privada × nube), un verbo por sesión, y Grupos como mini-app
 

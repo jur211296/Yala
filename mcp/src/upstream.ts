@@ -40,12 +40,33 @@ function clientBasic(env: Env): string {
 
 async function readError(res: Response): Promise<string> {
   try {
-    const body = (await res.json()) as { error?: string; error_code?: string };
-    return body.error_code ?? body.error ?? `http_${res.status}`;
+    const body = (await res.json()) as { error?: unknown; error_code?: unknown; code?: unknown };
+    // GoTrue tiene dos formas: la estándar (`error_code`, y `code` numérico o string según la versión de la API) y la
+    // de OAuth (`error`, RFC 6749). Se leen las de texto, en ese orden.
+    for (const v of [body.error_code, body.error, typeof body.code === "string" ? body.code : undefined]) {
+      if (typeof v === "string" && v) return v;
+    }
+    return `http_${res.status}`;
   } catch {
     return `http_${res.status}`;
   }
 }
+
+/**
+ * Los códigos con los que GoTrue dice que un refresh NO va a volver a funcionar (medido en su código, v2.197.0:
+ * `internal/tokens/service.go` y el endpoint OAuth). Solo estos borran la conexión. Cualquier otro —secreto del
+ * cliente mal (`invalid_credentials`, `invalid_client`), servidor caído, red— es «no disponible»: se reintenta, no se
+ * borra nada. Una «simplificación» que meta aquí un código de configuración revocaría las conexiones de todos.
+ */
+const DEFINITIVE_REJECT = new Set([
+  "invalid_grant",
+  "refresh_token_not_found",
+  "refresh_token_already_used",
+  "session_not_found",
+  "session_expired",
+  "user_not_found",
+  "user_banned",
+]);
 
 /** La URL a la que se manda al navegador para que Supabase autentique y pida el permiso. */
 export function authorizeUrl(env: Env, state: string, codeChallenge: string): string {
@@ -79,10 +100,8 @@ async function tokenRequest(env: Env, fetcher: Fetcher, body: Record<string, str
     return { ok: true, value: { access: json.access_token, refresh: json.refresh_token } };
   }
   const code = await readError(res);
-  // 400 es la respuesta de «esto ya no vale» (código usado, refresh revocado o reusado)… salvo cuando el problema
-  // es el propio cliente del Worker: eso es configuración, y borrar las conexiones de los usuarios no lo arregla.
-  const clientProblem = code === "invalid_client" || code === "invalid_credentials" || code === "unauthorized_client";
-  const kind = res.status === 400 && !clientProblem ? "rejected" : "unavailable";
+  // Solo los códigos de la lista cerran la conexión. El resto se reintenta.
+  const kind = DEFINITIVE_REJECT.has(code) ? "rejected" : "unavailable";
   return { ok: false, kind, status: res.status, code };
 }
 

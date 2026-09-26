@@ -51,6 +51,23 @@ describe("verificación del token de Supabase que guarda el Worker", async () =>
     expect((await foreignIssuer(await sb.sign(READER))).ok).toBe(false);
   });
 
+  it("un fallo del JWKS (red/timeout) es 'unavailable', no 'invalid': no debe borrar la conexión", async () => {
+    for (const err of [
+      Object.assign(new Error("timed out"), { code: "ERR_JWKS_TIMEOUT" }),
+      Object.assign(new Error("no key"), { code: "ERR_JWKS_NO_MATCHING_KEY" }),
+      new TypeError("fetch failed"),
+      new Error("Expected 200 OK from the JSON Web Key Set HTTP response"),
+    ]) {
+      const throwing = makeUpstreamVerifier(env, (() => {
+        throw err;
+      }) as never);
+      expect(await throwing(await sb.sign(READER)), String(err)).toEqual({ ok: false, reason: "unavailable" });
+    }
+    // Una firma de verdad mala sigue siendo 'invalid' (no 'unavailable'): se distingue de un corte de red.
+    const other = await FakeSupabase.create();
+    expect(await verify(await other.sign(READER))).toEqual({ ok: false, reason: "invalid" });
+  });
+
   it("sin cliente configurado no acepta nada (falla cerrado)", async () => {
     const sinCliente = makeUpstreamVerifier(makeEnv({ SUPABASE_OAUTH_CLIENT_ID: "" }), sb.jwks);
     expect(await sinCliente(await sb.sign({ ...READER, client_id: "" }))).toEqual({ ok: false, reason: "not_worker_client" });

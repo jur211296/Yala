@@ -32,6 +32,14 @@ function unauthorized(env: Env, description: string): Response {
   );
 }
 
+/** No se pudo hablar con Yala: 503, para que Claude reintente en vez de refrescar y disparar una revocación. */
+function unavailableResponse(): Response {
+  return Response.json(
+    { error: "temporarily_unavailable", error_description: "Yala no respondio" },
+    { status: 503, headers: { "Retry-After": "30", "Cache-Control": "no-store" } },
+  );
+}
+
 /** El formato del token de la librería es `userId:grantId:secreto`; el grant se retira por su id. */
 function grantIdOf(token: string): string | null {
   const parts = token.split(":");
@@ -51,7 +59,12 @@ export async function handleMcpRoute(request: Request, env: Env, ctx: Ctx, deps:
   }
 
   const check = await deps.verify(props.access, props.sub);
-  if (!check.ok) return unauthorized(env, "Token no valido o caducado");
+  if (!check.ok) {
+    // Si no se pudieron leer las claves de Supabase, no es un token malo: 503, no 401. Un 401 haría que Claude
+    // refrescara, y un parpadeo del JWKS acabaría revocando la conexión.
+    if (check.reason === "unavailable") return unavailableResponse();
+    return unauthorized(env, "Token no valido o caducado");
+  }
 
   const status = await sessionStatus(env, deps.fetcher, props.access);
   if (status === "gone") {
@@ -65,12 +78,7 @@ export async function handleMcpRoute(request: Request, env: Env, ctx: Ctx, deps:
     return unauthorized(env, "El acceso a Yala se retiro");
   }
   if (status === "stale") return unauthorized(env, "Token no valido o caducado");
-  if (status === "unknown") {
-    return Response.json(
-      { error: "temporarily_unavailable", error_description: "Yala no respondio" },
-      { status: 503, headers: { "Retry-After": "30", "Cache-Control": "no-store" } },
-    );
-  }
+  if (status === "unknown") return unavailableResponse();
 
   return handleMcp(
     request,

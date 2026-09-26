@@ -79,6 +79,14 @@ describe("1 · la pantalla de permiso (GET /authorize)", () => {
     expect(loc.searchParams.get("error")).toBe("invalid_request");
     expect(loc.searchParams.get("state")).toBe("s9");
   });
+
+  it("un POST con un cuerpo que no es formulario da 400, no 500", async () => {
+    const w = await world();
+    for (const path of ["/authorize", "/oauth/consent"]) {
+      const res = await w.call(`${BASE}${path}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+      expect(res.status, path).toBe(400);
+    }
+  });
 });
 
 describe("2 · la decisión (POST /authorize)", () => {
@@ -254,12 +262,31 @@ describe("5 · la vuelta de Supabase (GET /oauth/supabase/callback)", () => {
 });
 
 describe("piezas", () => {
-  it("lista de vueltas: claude.ai, claude.com y loopback; nada más", () => {
-    expect(isAllowedRedirect("http://localhost:53682/callback")).toBe(true);
-    expect(isAllowedRedirect("http://127.0.0.1:9/cb")).toBe(true);
+  it("lista de vueltas EXACTA: el callback fijo de Claude y el loopback /callback; nada más", () => {
+    // Lo que la doc de Claude declara.
     expect(isAllowedRedirect("https://claude.ai/api/mcp/auth_callback")).toBe(true);
     expect(isAllowedRedirect("https://claude.com/api/mcp/auth_callback")).toBe(true);
-    for (const bad of ["https://evil.example/cb", "http://claude.ai/cb", "https://claude.ai.evil.example/cb", "javascript:alert(1)", "https://u:p@claude.ai/cb", undefined]) {
+    expect(isAllowedRedirect("http://localhost:53682/callback")).toBe(true);
+    expect(isAllowedRedirect("http://127.0.0.1:9/callback")).toBe(true);
+    expect(isAllowedRedirect("http://[::1]:41000/callback")).toBe(true);
+    for (const bad of [
+      // Otra ruta o query en un dominio de Claude: aquí es donde vivía el agujero (open redirect en claude.ai).
+      "https://claude.ai/x",
+      "https://claude.ai/api/mcp/auth_callback?next=https://evil.example/",
+      "https://claude.ai/api/mcp/auth_callback/extra",
+      "https://claude.com/",
+      // Loopback con otra ruta o con query.
+      "http://localhost:53682/cb",
+      "http://127.0.0.1:9/callback?x=1",
+      "https://localhost:9/callback",
+      // Formas no canónicas y trucos varios.
+      "https:claude.ai/api/mcp/auth_callback",
+      "http://claude.ai/api/mcp/auth_callback",
+      "https://claude.ai.evil.example/api/mcp/auth_callback",
+      "javascript:alert(1)",
+      "https://u:p@claude.ai/api/mcp/auth_callback",
+      undefined,
+    ]) {
       expect(isAllowedRedirect(bad), String(bad)).toBe(false);
     }
   });

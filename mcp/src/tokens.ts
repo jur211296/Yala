@@ -13,9 +13,11 @@
  * Caducidad:
  * - El access token de Claude caduca un minuto antes que el de Supabase que lleva dentro, así Claude refresca antes
  *   de que el de dentro deje de valer.
- * - La conexión caduca a los 30 días sin usarse (`GRANT_IDLE_SECONDS`, deslizante).
+ * - La conexión (el grant del Worker) caduca a los 30 días sin usarse (`GRANT_IDLE_SECONDS`, deslizante).
  * - Y a los 90 días de autorizarla hay que volver a conectar aunque se use (`GRANT_MAX_AGE_SECONDS`), como en las
- *   apps que leen datos bancarios. En staging la sesión de Supabase no caduca nunca sola: esto la acota.
+ *   apps que leen datos bancarios. OJO: esto acota el GRANT del Worker, no la sesión de Supabase que lleva dentro —
+ *   cuando el grant muere, esa sesión queda huérfana (inalcanzable, pero viva). Acotarla es cosa de Supabase
+ *   (`sessions_timebox`), y va en el ticket de producción.
  *
  * Rotación: la del token de Claude la hace la librería; la de Supabase se hace aquí, en cada refresh, y se guarda en
  * la MISMA escritura del grant. Si Supabase dice que la sesión ya no vale, se lanza `invalid_grant` y la librería
@@ -26,7 +28,7 @@ import { OAuthError, type TokenExchangeCallbackOptions, type TokenExchangeCallba
 import type { UpstreamVerifier } from "./auth";
 import type { Env } from "./env";
 import type { Fetcher } from "./egress";
-import { refreshTokens } from "./upstream";
+import { logout, refreshTokens } from "./upstream";
 import { auditEvent } from "./audit";
 
 export const SCOPE = "lectura";
@@ -91,6 +93,11 @@ function revoke(description: string): never {
   throw new OAuthError("invalid_grant", { description });
 }
 
+function unavailable(description: string): never {
+  // No se pudo decidir ahora. La librería conserva la conexión; Claude reintenta.
+  throw new OAuthError("temporarily_unavailable", { description, statusCode: 503, headers: { "Retry-After": "30" } });
+}
+
 export interface TokenDeps {
   fetcher: Fetcher;
   verify: UpstreamVerifier;
@@ -114,11 +121,11 @@ export function makeTokenExchangeCallback(env: Env, deps: TokenDeps) {
     if (opts.grantType === "refresh_token") {
       const p = opts.props as unknown;
       if (!isGrantProps(p)) revoke("Conexión incompleta");
+      // La caducidad (30 días sin uso o 90 desde autorizar) la impone la librería: en el refresh anterior fijamos
+      // `refreshTokenIdleTTL = ttl`, y `ttl` nunca pasa de `authorizedAt + 90 d`, así que el grant expira solo. Cuando
+      // eso pasa, la librería responde `refresh_token_expired` ANTES de llamar aquí; ese caso se audita en `onError`
+      // (index.ts). Por eso este callback ya no comprueba la caducidad: no llegaría a ejecutarse.
       const ttl = grantTtlFor(p.authorizedAt, nowSec);
-      if (ttl < MIN_TTL_SECONDS) {
-        auditEvent("mcp_revocacion", { motivo: "caducidad_maxima", cliente: opts.clientId, sub: p.sub });
-        revoke("La conexión caducó: vuelve a conectar Yala");
-      }
       const r = await refreshTokens(env, deps.fetcher, p.refresh);
       if (!r.ok) {
         if (r.kind === "rejected") {
@@ -133,7 +140,15 @@ export function makeTokenExchangeCallback(env: Env, deps: TokenDeps) {
       }
       const check = await deps.verify(r.value.access, p.sub);
       if (!check.ok) {
-        // El hook no marcó el token como de solo lectura, o es de otro cliente o de otro usuario: falla cerrado.
+        if (check.reason === "unavailable") {
+          // No se pudieron leer las claves de Supabase para verificar el token nuevo. NO se borra la conexión: se
+          // reintenta. Supabase devuelve el mismo refresh hijo dentro de su ventana de reúso, así que el reintento no
+          // se queda sin refresh. Se descarta el token nuevo sin usarlo.
+          unavailable("No se pudo verificar el acceso de Yala. Prueba de nuevo en un momento");
+        }
+        // El hook no marcó el token como de solo lectura, o es de otro cliente o de otro usuario: falla cerrado. La
+        // sesión nueva ya no sirve para nada: se cierra para no dejarla huérfana.
+        await logout(env, deps.fetcher, r.value.access);
         auditEvent("mcp_revocacion", { motivo: `token_${check.reason}`, cliente: opts.clientId, sub: p.sub });
         revoke("Yala no entregó un acceso de solo lectura");
       }

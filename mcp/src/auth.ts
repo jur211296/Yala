@@ -34,7 +34,9 @@ export interface UpstreamClaims {
 
 export type UpstreamCheck =
   | { ok: true; claims: UpstreamClaims }
-  | { ok: false; reason: "invalid" | "not_worker_client" | "not_read_only" | "no_session" | "wrong_user" };
+  // `unavailable`: no se pudo verificar AHORA (el JWKS de Supabase no respondió, red). NO es un token malo: no se
+  // borra la conexión, se reintenta. El resto son veredictos firmes sobre un token que sí llegó a verificarse.
+  | { ok: false; reason: "invalid" | "unavailable" | "not_worker_client" | "not_read_only" | "no_session" | "wrong_user" };
 
 export type UpstreamVerifier = (raw: string, expectedSub?: string) => Promise<UpstreamCheck>;
 
@@ -62,6 +64,21 @@ export function checkUpstreamClaims(payload: JWTPayload, env: Env, expectedSub?:
   return { ok: true, claims: { sub, sessionId, exp: payload.exp } };
 }
 
+/**
+ * ¿El fallo de `jwtVerify` es porque no se pudo BAJAR o usar el JWKS (red, timeout, respuesta no-200, rotación de
+ * claves), en vez de porque el token esté mal firmado o caducado? En el primer caso no se sabe si el token vale, así
+ * que no se borra nada: se reintenta. jose marca esos casos con un `code` propio, y una caída de red es un `TypeError`.
+ * Como los únicos tokens que verificamos son los que Supabase nos emitió a nosotros, un «no hay clave que case» es casi
+ * siempre una rotación a medio propagar, no un ataque: también cuenta como no disponible.
+ */
+function isJwksUnavailable(err: unknown): boolean {
+  const code = (err as { code?: unknown })?.code;
+  if (code === "ERR_JWKS_TIMEOUT" || code === "ERR_JWKS_NO_MATCHING_KEY" || code === "ERR_JWKS_MULTIPLE_MATCHING_KEYS") return true;
+  if (err instanceof TypeError) return true; // fetch rechazado (red)
+  const msg = err instanceof Error ? err.message : "";
+  return /Expected 200 OK|fetch failed|Failed to fetch|timed? ?out|network/i.test(msg);
+}
+
 export function makeUpstreamVerifier(env: Env, keys?: JWTVerifyGetKey): UpstreamVerifier {
   return async (raw, expectedSub) => {
     let payload: JWTPayload;
@@ -71,8 +88,8 @@ export function makeUpstreamVerifier(env: Env, keys?: JWTVerifyGetKey): Upstream
         algorithms: ["ES256", "RS256"],
         requiredClaims: ["sub", "exp"],
       }));
-    } catch {
-      return { ok: false, reason: "invalid" };
+    } catch (err) {
+      return { ok: false, reason: isJwksUnavailable(err) ? "unavailable" : "invalid" };
     }
     return checkUpstreamClaims(payload, env, expectedSub);
   };

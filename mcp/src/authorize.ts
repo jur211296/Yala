@@ -29,12 +29,15 @@ import { SCOPE, type GrantProps } from "./tokens";
 import { approveAuthorization, authorizeUrl, exchangeCode, getAuthorization, logout, passwordLogin } from "./upstream";
 
 /**
- * Dominios a los que se acepta devolver el acceso. Con registro dinámico, cualquiera registra un cliente llamado
- * «Claude» que vuelve a su propio dominio; enseñar el dominio no basta si el usuario no lo lee. Solo Claude
- * (claude.ai / claude.com, que usan claude.ai y Desktop) y el loopback de Claude Code. Se aplica al registrar el
- * cliente y otra vez al pedir el permiso. Si mañana hace falta otro cliente, se añade aquí a propósito.
+ * Vueltas a las que se acepta devolver el código de autorización. La lista es por URL EXACTA, no por dominio: con
+ * registro dinámico cualquiera registra un cliente que vuelve a `https://claude.ai/algo-suyo`, y basta un open
+ * redirect en ese dominio para robar el código. Se acepta solo lo que la propia documentación de Claude declara
+ * ([auth]): el callback fijo de las apps (claude.ai / claude.com, que cubre Desktop y móvil) y el loopback de Claude
+ * Code, con puerto variable pero ruta `/callback`. Se comprueba al registrar el cliente y otra vez al autorizar.
+ *
+ * [auth]: https://claude.com/docs/connectors/building/authentication
  */
-const ALLOWED_REDIRECT_HOSTS = new Set(["claude.ai", "claude.com"]);
+const HOSTED_CALLBACKS = new Set(["https://claude.ai/api/mcp/auth_callback", "https://claude.com/api/mcp/auth_callback"]);
 const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"]);
 
 export function isAllowedRedirect(uri: string | undefined): boolean {
@@ -45,9 +48,13 @@ export function isAllowedRedirect(uri: string | undefined): boolean {
   } catch {
     return false;
   }
-  if (u.username || u.password || u.hash) return false;
-  if (LOOPBACK_HOSTS.has(u.hostname)) return u.protocol === "http:" || u.protocol === "https:";
-  return u.protocol === "https:" && ALLOWED_REDIRECT_HOSTS.has(u.hostname);
+  // Solo la forma canónica: `https:claude.ai/x` o variantes que el parser normaliza no cuentan como la URL exacta.
+  if (u.href !== uri || u.username || u.password || u.hash) return false;
+  if (LOOPBACK_HOSTS.has(u.hostname)) {
+    // Claude Code: loopback en cualquier puerto, ruta /callback, sin query. RFC 8252.
+    return u.protocol === "http:" && u.pathname === "/callback" && u.search === "";
+  }
+  return HOSTED_CALLBACKS.has(uri);
 }
 
 /** Política del registro dinámico: todas las vueltas tienen que estar en la lista. */
@@ -63,7 +70,11 @@ const AUTH_ID_RE = /^[A-Za-z0-9_-]{8,128}$/;
 /** Prefijo de la cookie con la que la librería liga al navegador la vuelta desde Supabase. */
 const UPSTREAM_COOKIE_PREFIX = "__Host-oauth-upstream-";
 
-/** ¿Viene este navegador de un «Continuar» en la pantalla de permiso de hace menos de 10 minutos? */
+/**
+ * ¿Trae este navegador ALGUNA cookie de «Continuar» de los últimos 10 min? Es solo una primera barrera para el
+ * formulario de login. Lo que de verdad ata cada conexión a su navegador es `finishUpstream` en el callback, que
+ * exige la cookie del `state` concreto; sin ella, el código nunca se canjea aquí.
+ */
 function hasUpstreamBinding(request: Request): boolean {
   const cookie = request.headers.get("Cookie") ?? "";
   return cookie.split(/;\s*/).some((part) => part.startsWith(UPSTREAM_COOKIE_PREFIX));
@@ -117,6 +128,9 @@ async function showConsent(request: Request, env: Env): Promise<Response> {
   if (!isAllowedRedirect(req.redirectUri)) {
     return errorPage("Esta aplicación no está autorizada a conectarse con Yala.", 403);
   }
+  // PKCE obligatorio para todos. La librería ya lo exige a los clientes públicos; un cliente confidencial que se
+  // registrara por DCR podría saltárselo, y Claude siempre manda PKCE S256, así que esto solo frena a otros.
+  if (!req.codeChallenge) return errorRedirect(req.redirectUri, "invalid_request", req.state, req.issuer);
   const client = await oauth.lookupClient(req.clientId);
   if (!client) return errorPage("La solicitud de conexión no es válida. Vuelve a conectar desde Claude.");
   const consent = await oauth.beginConsent(req);
@@ -127,7 +141,8 @@ async function showConsent(request: Request, env: Env): Promise<Response> {
 
 async function decideConsent(request: Request, env: Env): Promise<Response> {
   const oauth = helpers(env);
-  const form = await request.formData();
+  const form = await readForm(request);
+  if (!form) return errorPage("No se pudo leer el formulario. Vuelve a conectar desde Claude.");
   const handle = String(form.get("handle") ?? "");
   const decision = String(form.get("decision") ?? "");
   try {
@@ -161,7 +176,8 @@ function showLogin(request: Request): Response {
 }
 
 async function loginAndApprove(request: Request, env: Env, deps: AuthorizeDeps): Promise<Response> {
-  const form = await request.formData();
+  const form = await readForm(request);
+  if (!form) return errorPage("No se pudo leer el formulario. Vuelve a conectar desde Claude.");
   const authorizationId = String(form.get("authorization_id") ?? "");
   const email = String(form.get("email") ?? "").trim();
   const password = String(form.get("password") ?? "");
@@ -171,7 +187,12 @@ async function loginAndApprove(request: Request, env: Env, deps: AuthorizeDeps):
   if (env.ENVIRONMENT !== "staging") return errorPage("El inicio de sesión con contraseña solo existe en staging.", 403);
   if (!email || !password) return loginPage(authorizationId, "Escribe tu email y tu contraseña.");
 
-  const session = await passwordLogin(env, deps.fetcher, email, password);
+  let session: string | null;
+  try {
+    session = await passwordLogin(env, deps.fetcher, email, password);
+  } catch {
+    return errorPage("Yala no respondió. Prueba de nuevo en un momento.", 503);
+  }
   if (!session) return loginPage(authorizationId, "Email o contraseña incorrectos.");
   // La sesión web es NORMAL (`authenticated`): puede escribir. Vive solo dentro de esta petición.
   try {
@@ -191,8 +212,20 @@ async function loginAndApprove(request: Request, env: Env, deps: AuthorizeDeps):
     const target = callbackTarget(env, redirectUrl);
     if (!target) return errorPage("Yala no aceptó la conexión. Vuelve a conectar desde Claude.", 502);
     return new Response(null, { status: 303, headers: { Location: target, "Cache-Control": "no-store" } });
+  } catch {
+    // Un fallo de red hablando con Supabase, no un bug: se pide reintentar.
+    return errorPage("Yala no respondió. Prueba de nuevo en un momento.", 503);
   } finally {
     await logout(env, deps.fetcher, session);
+  }
+}
+
+/** Lee el formulario; si el cuerpo no es un formulario (Content-Type raro), devuelve null en vez de un 500. */
+async function readForm(request: Request): Promise<FormData | null> {
+  try {
+    return await request.formData();
+  } catch {
+    return null;
   }
 }
 
@@ -242,9 +275,10 @@ async function finishAuthorization(request: Request, env: Env, deps: AuthorizeDe
   }
   const check = await deps.verify(exchanged.value.access);
   if (!check.ok) {
-    // El hook no marcó el token como de solo lectura (o es de otro cliente): no se entrega nada y se cierra.
+    // La sesión ya no sirve para el Worker: se cierra, no se entrega nada. Si no se pudo verificar (JWKS caído), es un
+    // fallo pasajero y Claude puede reintentar toda la conexión; si el token es malo, es un error del servidor.
     await logout(env, deps.fetcher, exchanged.value.access);
-    return fail("server_error", `token_${check.reason}`);
+    return fail(check.reason === "unavailable" ? "temporarily_unavailable" : "server_error", `token_${check.reason}`);
   }
 
   const now = deps.nowSec();

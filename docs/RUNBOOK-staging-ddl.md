@@ -1,5 +1,5 @@
 ---
-updated: 2026-09-08
+updated: 2026-09-26
 tags: [runbook, staging, ddl, owner]
 ---
 
@@ -252,6 +252,89 @@ Verificado en SQL como `yala_mcp_reader` con el `sub` de A: lee sus 69 filas de 
 orden: hook, Site URL y servidor OAuth con DCR. El antes y el después, y cómo se revierte, están en
 `tickets/done/claude-mcp-activate-oauth-in-staging.md`. **El orden importa:** con OAuth encendido y el hook
 apagado, Supabase emite a los clientes OAuth tokens que escriben. Para revertir, primero OAuth y luego el hook.
+
+---
+
+## `mcp0_02_oauth_client_allowlist.sql` — el token de Claude deja de ser de Supabase (solo staging, 2026-09-26)
+
+**Aplicada en staging** con `apply_migration` el 2026-09-26, por la tarde. **Producción: no**, hasta la fase 1 y con
+otro id de cliente (`claude-mcp-production-auth-hardening`).
+
+Va con un cambio de arquitectura. El Worker `mcp/` pasa a ser el servidor OAuth de Claude y consigue la sesión de
+Supabase como su propio cliente confidencial. Lo explica el ADR «El conector de Claude emite sus propios tokens»
+(`docs/DECISIONS.md`). La migración cambia UNA función: el hook solo da tokens OAuth a ese cliente
+(`65fb5767-59a5-4f50-b77c-7970e67589c5`), con `role = yala_mcp_reader`; a cualquier otro `client_id` le devuelve un
+error 403. Lleva una guarda: solo se aplica sobre el cuerpo de `mcp0_01` o sobre sí misma.
+
+Verificado:
+
+- En SQL, antes de aplicarla, con una copia en `pg_temp` y cinco casos: login sin `client_id` intacto; cliente del
+  Worker → lector; cliente de la fase 0 → error 403; `client_id` en la raíz del evento → 403; `client_id` vacío →
+  intacto.
+- Tras aplicarla: md5 `ab0f247643cc82fa54a18079579f733a`, el que el fichero predecía, y los mismos GRANTs.
+- De punta a punta, con `mcp/test/e2e/oauth.e2e.test.ts`: un cliente de la fase 0, aprobado por el propio usuario,
+  recibe 403 y ningún token.
+
+**Estado de staging, antes → después:**
+
+| Qué | Antes | Después |
+|---|---|---|
+| Worker `yala-mcp-staging` | versión `ecd32b4f-79e2-4280-84cb-600cb445ba85` | versión `c597b9cc-04d6-4260-9eed-ccbe60e85b44` |
+| KV `OAUTH_KV` | — | `yala-mcp-staging-oauth`, id `9705886913ee4d1fb7217ef6e3ecdef7` |
+| Secreto `SUPABASE_OAUTH_CLIENT_SECRET` | — | cargado; copia en `~/Secrets/yala-mcp-staging/supabase-oauth-client.json` |
+| Cliente OAuth «Yala para Claude (staging)» | — | `65fb5767-59a5-4f50-b77c-7970e67589c5`, confidencial, `client_secret_basic` |
+| Hook (md5 de `prosrc`) | `5a048417a612be4ceea44ee89ce969f6` | `ab0f247643cc82fa54a18079579f733a` |
+| `oauth_server_allow_dynamic_registration` | `true` | `false` |
+| `security_update_password_require_reauthentication` | `false` | `true` |
+| `security_update_password_require_current_password` | `false` | `true` |
+
+Los tres campos de Auth se cambiaron con un `PATCH` a `/v1/projects/fostjbbwstyuunmmefuk/config/auth` y el token de
+gestión de `~/Secrets/yala-supabase-mgmt/`. Nada más de la configuración de Auth cambió: `site_url`, hook y
+servidor OAuth siguen como los dejó `mcp0_01`.
+
+**Marcha atrás, en este orden.** Va al revés que la subida, para no abrir nunca una ventana con tokens que cambian
+la cuenta:
+
+1. **El Worker vuelve a la fase 0:** `cd mcp && npx wrangler rollback ecd32b4f-79e2-4280-84cb-600cb445ba85`.
+   Ojo: desde ese momento Claude vuelve a recibir tokens de Supabase, es decir, el hueco de
+   `claude-mcp-oauth-token-can-change-the-account`.
+2. **El hook:** `qa/cloud/mcp0_02_rollback.sql`, que vuelve al md5 `5a048417…`.
+3. **La configuración de Auth:** el mismo `PATCH` con los valores de «Antes». Con el DCR encendido, Claude puede
+   volver a registrarse directamente en Supabase.
+4. **El cliente, el KV y el secreto** pueden quedarse: sin el Worker nuevo, no los usa nadie.
+
+**Lo que queda en staging y no molesta:**
+
+- **Seis clientes OAuth registrados.** Cinco ya no reciben tokens: los cuatro públicos de la fase 0 y un «Claude»
+  que registró el primer e2e antes de apagar el DCR. Borrarlos exige `service_role`.
+- Ningún cliente tiene consentimientos ni sesiones vivas (medido tras el e2e).
+
+---
+
+## `mcp0_03_hook_keys_on_session.sql` — el hook decide por la sesión, no por el claim (solo staging, 2026-09-26)
+
+**Aplicada en staging** el 2026-09-26, por la tarde, tras la review adversarial. **Producción: no.**
+
+**Por qué.** Con `mcp0_02` el hook miraba el claim `client_id`. GoTrue reemite un token para la MISMA sesión al
+verificar un factor MFA (`updateMFASessionAndClaims`, `internal/api/token.go:380`) y esa reemisión NO lleva `client_id`,
+así que salía con `role = authenticated`: escribía toda la base. Con un Worker comprometido —que tiene la sesión de solo
+lectura— alguien haría enroll+verify de un TOTP y tendría un token que borra las finanzas. `mcp0_03` decide por
+`auth.sessions.oauth_client_id`: todo token de la sesión del Worker es de solo lectura, MFA incluido.
+
+**El hook pasa a leer `auth.sessions`.** Es aceptable: GoTrue ya lee esa tabla en cada petición autenticada, y
+`supabase_auth_admin` (quien lo invoca) tiene SELECT. Si la lectura fallara, el hook falla y no se emite el token
+(cerrado). El `session_id` siempre es un uuid; se comprueba su forma antes de castear.
+
+Verificado (SQL, en una transacción que se revierte): una sesión sintética del cliente del Worker con un token SIN
+`client_id` (la forma del MFA) → `yala_mcp_reader`; una sesión normal sin `client_id` → intacto; otro cliente → 403;
+login sin `session_id` → intacto; `session_id` con forma rara → no rompe. md5 del cuerpo desplegado = `0a03fb94…`, el que
+el fichero predice.
+
+**Y MFA apagado en staging** (la app no lo usa): `mfa_totp_enroll_enabled` y `mfa_totp_verify_enabled` pasaron de `true`
+a `false`, por el mismo `PATCH` de la Management API. Es defensa en profundidad; el cierre real es `mcp0_03`.
+
+**Marcha atrás:** `qa/cloud/mcp0_03_rollback.sql` (vuelve a `mcp0_02`, md5 `ab0f2476…`), y reencender MFA con el
+`PATCH` inverso. Solo tiene sentido si se revierte también el Worker.
 
 ---
 

@@ -299,11 +299,14 @@ describe.skipIf(!A.pass || !B.pass)("conector de Claude contra staging (OAuth pr
   });
 
   it("con el token de Claude, NINGUNA escritura de la cuenta en /auth/v1/* pasa, y la cuenta queda igual", async () => {
+    // Estas sondas NO pueden dañar la cuenta: el token de Claude es OPAQUE, no un JWT, así que GoTrue lo rechaza en el
+    // parseo (`bad_jwt`) ANTES de mirar qué se pide. Si esta aserción fallara (el token volviera a ser de Supabase),
+    // el test se para aquí, antes de mandar ninguna sonda destructiva (p. ej. el `logout?scope=global`).
+    expect(looksLikeJwt(a.tokens.access_token), "el token de Claude debe ser opaco").toBe(false);
     const before = await accountSnapshot(A);
     const h = { apikey: ANON, Authorization: `Bearer ${a.tokens.access_token}`, "Content-Type": "application/json" };
     const fakeId = "00000000-0000-4000-8000-000000000000";
-    // Cada sonda, si el token valiera, haría algo inofensivo o reversible; el oráculo fuerte es el `error_code`:
-    // GoTrue rechaza el TOKEN (bad_jwt) antes de mirar qué se pide.
+    // El oráculo fuerte es el `error_code`: GoTrue rechaza el TOKEN (bad_jwt) antes de mirar qué se pide.
     const probes: [string, string, unknown?][] = [
       ["PUT", "/auth/v1/user", {}],
       ["PUT", "/auth/v1/user", { data: { mcp_e2e_probe: "1" } }],
@@ -437,19 +440,24 @@ describe.skipIf(!A.pass || !B.pass)("conector de Claude contra staging (OAuth pr
     const t0 = Date.now();
     const del = await revokeWorkerGrant(A);
     expect(del).toBeLessThan(300);
-    const live = await fetch(`${MCP_URL}/mcp`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${a.tokens.access_token}`, "Content-Type": "application/json", Accept: "application/json, text/event-stream" },
-      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "listar_categorias", arguments: {} } }),
-    });
+    // El refresh PRIMERO: así llega a Supabase (el grant aún existe) y se mide su clasificación de verdad —
+    // Supabase dice que la sesión ya no está y el Worker responde exactamente `invalid_grant`, no un 503.
     const refresh = await fetch(meta.token_endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({ grant_type: "refresh_token", refresh_token: a.tokens.refresh_token, client_id: clientId }),
     });
-    console.log("MEDIDA tras revocar desde la cuenta:", JSON.stringify({ mcp: live.status, refresh: refresh.status, ms: Date.now() - t0 }));
+    const refreshBody = (await refresh.json()) as { error?: string };
+    // Y el access token vivo tampoco sirve ya: /mcp comprueba la sesión y da 401.
+    const live = await fetch(`${MCP_URL}/mcp`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${a.tokens.access_token}`, "Content-Type": "application/json", Accept: "application/json, text/event-stream" },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "listar_categorias", arguments: {} } }),
+    });
+    console.log("MEDIDA tras revocar desde la cuenta:", JSON.stringify({ refresh: refresh.status, refreshError: refreshBody.error, mcp: live.status, ms: Date.now() - t0 }));
+    expect(refresh.status).toBe(400);
+    expect(refreshBody.error).toBe("invalid_grant");
     expect(live.status).toBe(401);
-    expect(refresh.status).toBeGreaterThanOrEqual(400);
   });
 
   it("el login normal de la app no cambió: authenticated y sin client_id", async () => {

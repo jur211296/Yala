@@ -64,6 +64,12 @@ function buildProvider(env: Env, deps: AppDeps): OAuthProvider<Env> {
     refreshTokenIdleTTL: GRANT_IDLE_SECONDS,
     tokenExchangeCallback: makeTokenExchangeCallback(env, shared),
     onError({ code, status, internal }) {
+      // La caducidad de la conexión (30 días sin uso o 90 desde autorizar) la impone la librería, que responde
+      // `refresh_token_expired` antes de llamar al callback. Se anota como revocación para que quede en la auditoría.
+      if (internal.reason === "refresh_token_expired") {
+        console.log(JSON.stringify({ evento: "mcp_revocacion", motivo: "caducidad" }));
+        return;
+      }
       // Ni token ni detalle: solo qué comprobación falló.
       console.warn(JSON.stringify({ evento: "oauth_error", code, status, categoria: internal.category, motivo: internal.reason }));
     },
