@@ -18,3 +18,10 @@ avería de toda la sesión, y encima la pantalla mentía («Todo sincronizado» 
 uno pregunta «¿quién lo saca de aquí cuando la lectura vuelva?». Si la respuesta es «nadie», el arreglo necesita su
 reintento en la cadencia que ya existe (aquí, el re-kick de cada primer plano). Familia de
 [[mi-arreglo-quita-la-salida-que-habia]] y [[al-quitar-un-apagado-incondicional-busca-quien-lo-usaba]].
+
+**2026-09-26, y la curación que di por hecha era falsa.** Hice que un drain de grupos cortado por el reloj bloqueara
+cerrar sesión, desasociar y «Empezar de cero», y escribí en el docblock que «la deriva se cura sola con el tiempo». La
+lente de regresión midió que no: el drain estampa con la FECHA DE LA TRANSACCIÓN, así que la misma transacción corta en
+cada vuelta para siempre. Bloquear seguía siendo lo correcto (borrar perdía lo que ya no sube), pero el aviso «inténtalo
+en un rato» prometía algo que no pasa. ⇒ **la frase «se cura solo» es una afirmación: busca el `now` que usa el camino
+que falla** antes de escribirla, y si no se cura, dilo en el ticket y no en el copy.

@@ -166,7 +166,11 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | cloud-signout-session-expiry-with-the-engine-stopped-until-relaunch-has-no-door | backlog | tickets/backlog/cloud-signout-session-expiry-with-the-engine-stopped-until-relaunch-has-no-door.md |
 | cloud-signout-upstream-rejections-with-a-healthy-pull-say-a-moment-more | backlog | tickets/backlog/cloud-signout-upstream-rejections-with-a-healthy-pull-say-a-moment-more.md |
 | fresh-start-has-no-way-out-when-group-writes-can-never-upload | backlog | tickets/backlog/fresh-start-has-no-way-out-when-group-writes-can-never-upload.md |
-| groups-drain-failure-reads-as-nothing-pending | backlog | tickets/backlog/groups-drain-failure-reads-as-nothing-pending.md |
+| groups-drain-failure-reads-as-nothing-pending | qa | tickets/qa/groups-drain-failure-reads-as-nothing-pending.md |
+| groups-clock-rollback-wedges-the-drain-forever | backlog | tickets/backlog/groups-clock-rollback-wedges-the-drain-forever.md |
+| private-sign-out-counts-group-writes-without-capturing-them | backlog | tickets/backlog/private-sign-out-counts-group-writes-without-capturing-them.md |
+| personal-sign-out-reads-an-unfinished-drain-as-nothing-pending | backlog | tickets/backlog/personal-sign-out-reads-an-unfinished-drain-as-nothing-pending.md |
+| unit-tests-write-group-amounts-into-the-real-app-group-mirror | backlog | tickets/backlog/unit-tests-write-group-amounts-into-the-real-app-group-mirror.md |
 | late-icloud-notice-exit-after-a-failed-wipe-leaves-the-blind-resume-armed | backlog | tickets/backlog/late-icloud-notice-exit-after-a-failed-wipe-leaves-the-blind-resume-armed.md |
 | push-unexpected-4xx-is-told-to-try-again-later | backlog | tickets/backlog/push-unexpected-4xx-is-told-to-try-again-later.md |
 | cloud-signout-does-not-look-at-an-in-flight-migration | backlog | tickets/backlog/cloud-signout-does-not-look-at-an-in-flight-migration.md |

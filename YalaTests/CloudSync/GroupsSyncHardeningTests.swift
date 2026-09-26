@@ -564,21 +564,37 @@ struct GroupsSyncHardeningTests {
     /// El ORDEN también importa: va antes del pre-check de pendientes, para que un outbox cuya única fila
     /// viva era la venenosa salga `.drained` sin emitir un solo request.
     ///
-    /// MUTACIÓN: quitar la llamada, o moverla por debajo del pre-check, deja este test en rojo — y los
-    /// otros seis de la sección en verde, que es exactamente por qué hace falta.
+    /// **Desde el 2026-09-26 el barrido va dentro de la captura previa** (`captureLocalWritesForExit`, ticket
+    /// `groups-drain-failure-reads-as-nothing-pending`), y el gate compilado en su testigo de producción
+    /// (`GroupsExitWitness.live`). Se fijan los tres eslabones: la captura corre antes del pre-check, el testigo vivo
+    /// la gatea por el compilado, y la captura barre DESPUÉS de drenar.
+    ///
+    /// MUTACIÓN: quitar el barrido de la captura, o mover la captura por debajo del pre-check, deja este test en rojo
+    /// — y los otros seis de la sección en verde, que es exactamente por qué hace falta.
     @Test func signOutPushAll_wiresPurge_beforePendingPreCheck() throws {
         let source = try String(contentsOf: Self.repoRoot
             .appendingPathComponent("Yala/Services/CloudSync/CloudSessionSignOut.swift"), encoding: .utf8)
         let start = try #require(source.range(of: "private func pushAllPendingGroupsForSignOut("))
         let body = String(source[start.lowerBound...])
+        let capture = try #require(body.range(of: "let captured = witness.capture(context)"),
+                                   "el push-all del sign-out empuja el outbox sin capturar antes")
+        let preCheck = try #require(body.range(of: "if let settled = CloudSignOutFlowLogic.groupsCaptureVerdict("))
+        #expect(capture.lowerBound < preCheck.lowerBound, "la captura va ANTES del pre-check de pendientes")
 
-        let purge = try #require(
-            body.range(of: "GroupsSyncClient.shared.purgeQueuedSplitGroupTombstones(context: context)"),
-            "el push-all del sign-out empuja el outbox sin pasar por startIfEligible")
-        let preCheck = try #require(body.range(of: "if Self.liveGroupsPendingCount(context: context) == 0"))
-        let gate = try #require(body.range(of: "if CloudSyncFlags.groupsBackendCompiledCapability {"))
-        #expect(gate.lowerBound < purge.lowerBound && purge.lowerBound < preCheck.lowerBound,
-                "el barrido va DENTRO del gate compilado y ANTES del pre-check de pendientes")
+        let liveStart = try #require(source.range(of: "static var live: GroupsExitWitness {"))
+        let live = String(source[liveStart.lowerBound...])
+        let gate = try #require(live.range(of: "guard CloudSyncFlags.groupsBackendCompiledCapability else { return true }"))
+        let call = try #require(live.range(of: "GroupsSyncClient.shared.captureLocalWritesForExit(context: context)"))
+        #expect(gate.lowerBound < call.lowerBound, "la captura del testigo vivo va detrás del gate COMPILADO")
+
+        let client = try String(contentsOf: Self.repoRoot
+            .appendingPathComponent("Yala/Services/CloudSync/Groups/GroupsSyncClient.swift"), encoding: .utf8)
+        let captureStart = try #require(client.range(of: "func captureLocalWritesForExit(context: ModelContext) -> Bool {"))
+        let captureBody = String(client[captureStart.upperBound...].prefix(400))
+        let drain = try #require(captureBody.range(of: "let completed = drainOnce(context: context)"))
+        let purge = try #require(captureBody.range(of: "purgeQueuedSplitGroupTombstones(context: context)"),
+                                 "la captura dejó de barrer los tombstones venenosos")
+        #expect(drain.lowerBound < purge.lowerBound, "el barrido va DESPUÉS del drain")
     }
 
     // MARK: - (7) M1 / D8 (G5-C): aislamiento del store de grupos por sesión

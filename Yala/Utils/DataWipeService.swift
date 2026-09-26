@@ -333,6 +333,9 @@ final class DataWipeService {
     ///     en el cuerpo (durable, sobre el `defaults` inyectado); esto solo lo consume en este proceso,
     ///     que es asíncrono y por eso no cabe en el cuerpo. Los tests lo sustituyen para no tocar el
     ///     llavero real.
+    ///   - witness: los testigos del canal que el cinturón consulta —en concreto, lo que el espejo del App Group guarda
+    ///     fuera del outbox—. Default = producción; los tests lo inyectan porque el espejo real del simulador guarda lo
+    ///     que otras suites dejaron.
     static func wipeLocalGroupsDomain(
         in context: ModelContext,
         defaults: UserDefaults = .standard,
@@ -349,7 +352,8 @@ final class DataWipeService {
             // camino ya cierre la sesión: el retiro es un `Task` y un kill entre medias deja la sesión
             // viva con la identidad del anterior casando. El borrado del espejo no depende de eso.
             GroupsOutboxMirror()?.purgeAll()
-        }
+        },
+        witness: CloudSessionSignOut.GroupsExitWitness = .live
     ) throws {
         // El seam `-uitest-fail-wipe` NO está aquí: vive en `deleteLocalGroupsRows`, el escritor que
         // esta función llama abajo (2026-09-11). Repetirlo aquí solo adelantaba el throw por delante del
@@ -390,7 +394,7 @@ final class DataWipeService {
         // callers suben primero (`CloudSessionSignOut.drainGroupsBeforeFreshStart`); esto es el cinturón dentro del
         // escritor, para que un cuarto caller no pueda volver a tirarlas. Las dead-letter (`rejectedReason != nil`) sí se
         // van: el servidor ya las rechazó para siempre, y el cierre tampoco las espera.
-        try requireNoUnsentGroupWrites(in: context)
+        try requireNoUnsentGroupWrites(in: context, witness: witness)
         try deleteLocalGroupsRows(in: context) {
             for row in try context.fetch(FetchDescriptor<GroupSyncOutbox>()) { context.delete(row) }
         }
@@ -430,18 +434,26 @@ final class DataWipeService {
 
     /// Por qué `wipeLocalGroupsDomain` no borró.
     enum GroupsDomainWipeError: Error, Equatable {
-        /// Quedan filas VIVAS en el outbox de grupos: cambios que aún no subieron. `Int.max` = no se pudieron contar.
+        /// Quedan filas VIVAS en el outbox de grupos, o entradas del espejo del App Group sin fila: cambios que aún no
+        /// subieron. `Int.max` = no se pudieron contar.
         case unsentGroupWrites(pendingCount: Int)
     }
 
     /// **El outbox de grupos no tiene nada vivo.** Lanza si lo tiene, o si no se pudo contar (`liveGroupsPendingCount`
     /// devuelve `Int.max` y eso cuenta como «sí»: una fila que no se pudo mirar no se tira). No escribe nada.
     ///
+    /// **Y el espejo del App Group tampoco guarda nada sin fila** (ticket `groups-drain-failure-reads-as-nothing-pending`).
+    /// Un kill o un `save` fallido del drain deja el cambio solo en el espejo, y `resetSyncState`, unas líneas más abajo
+    /// de `wipeLocalGroupsDomain`, lo purga ENTERO: con el recuento del outbox a 0 se iba sin que nada lo contara. Por eso
+    /// aquí cuentan las de la sesión y, sin sesión, todas (`CloudSessionSignOut.freshStartGroupsPendingCount`).
+    ///
     /// La llama `wipeLocalGroupsDomain` como su primera línea, y los callers de «Empezar de cero» ANTES de
     /// `wipeAllUserData`: sin eso, una fila aparecida tras la subida dejaría borrado lo personal y los grupos enteros.
-    static func requireNoUnsentGroupWrites(in context: ModelContext) throws {
-        let live = CloudSessionSignOut.liveGroupsPendingCount(context: context)
-        guard live == 0 else { throw GroupsDomainWipeError.unsentGroupWrites(pendingCount: live) }
+    static func requireNoUnsentGroupWrites(
+        in context: ModelContext, witness: CloudSessionSignOut.GroupsExitWitness = .live
+    ) throws {
+        let pending = CloudSessionSignOut.freshStartGroupsPendingCount(context: context, witness: witness)
+        guard pending == 0 else { throw GroupsDomainWipeError.unsentGroupWrites(pendingCount: pending) }
     }
 
     /// Borra las filas locales del dominio Grupos: los 5 `Split*` y el override por-grupo del bridge.

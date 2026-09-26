@@ -17,3 +17,8 @@ pasa todos los candados.
 dice el mensaje. No filtres los errores de `git add`; usa `set -e` o `&&`. Si ya pasó y no se subió:
 `git reset --soft origin/<base>` + `git reset` y rehacer (el sello del gate ancla en HEAD, que vuelve a ser el mismo).
 Relacionado: [[reference_gate_sello_ancla_en_head]].
+
+**Reincidí el 2026-09-26 por otra puerta: un `git mv` hecho una hora antes.** Pasé la ruta VIEJA del ticket al `git add`,
+que abortó entero; y el commit de docs de justo después se llevó el renombrado, que ya estaba en el índice por el
+`git mv`. ⇒ **antes del `git add`, `git status --short`, y a `git add` solo rutas que salgan ahí.** El `git show --stat
+HEAD` lo delató a tiempo.
