@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (590)
+## Index (593)
 
 | id | status | path |
 |---|---|---|
@@ -165,6 +165,9 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | cloud-signout-personal-session-expiry-does-not-say-where-to-sign-in | done | tickets/done/cloud-signout-personal-session-expiry-does-not-say-where-to-sign-in.md |
 | cloud-signout-session-expiry-with-the-engine-stopped-until-relaunch-has-no-door | backlog | tickets/backlog/cloud-signout-session-expiry-with-the-engine-stopped-until-relaunch-has-no-door.md |
 | cloud-signout-upstream-rejections-with-a-healthy-pull-say-a-moment-more | backlog | tickets/backlog/cloud-signout-upstream-rejections-with-a-healthy-pull-say-a-moment-more.md |
+| fresh-start-has-no-way-out-when-group-writes-can-never-upload | backlog | tickets/backlog/fresh-start-has-no-way-out-when-group-writes-can-never-upload.md |
+| groups-drain-failure-reads-as-nothing-pending | backlog | tickets/backlog/groups-drain-failure-reads-as-nothing-pending.md |
+| late-icloud-notice-exit-after-a-failed-wipe-leaves-the-blind-resume-armed | backlog | tickets/backlog/late-icloud-notice-exit-after-a-failed-wipe-leaves-the-blind-resume-armed.md |
 | push-unexpected-4xx-is-told-to-try-again-later | backlog | tickets/backlog/push-unexpected-4xx-is-told-to-try-again-later.md |
 | cloud-signout-does-not-look-at-an-in-flight-migration | backlog | tickets/backlog/cloud-signout-does-not-look-at-an-in-flight-migration.md |
 | cloud-signout-drops-unsynced-preference-changes-without-counting-them | backlog | tickets/backlog/cloud-signout-drops-unsynced-preference-changes-without-counting-them.md |
@@ -248,7 +251,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | forward-step-ceiling-wins-over-a-cancel-given-in-the-same-pass | backlog | tickets/backlog/forward-step-ceiling-wins-over-a-cancel-given-in-the-same-pass.md |
 | forward-verify-reads-an-expired-session-as-network | backlog | tickets/backlog/forward-verify-reads-an-expired-session-as-network.md |
 | fresh-start-keeps-a-groups-session-that-migrate-promotes | done | tickets/done/fresh-start-keeps-a-groups-session-that-migrate-promotes.md |
-| fresh-start-wipe-kills-unsent-group-writes-silently | backlog | tickets/backlog/fresh-start-wipe-kills-unsent-group-writes-silently.md |
+| fresh-start-wipe-kills-unsent-group-writes-silently | qa | tickets/qa/fresh-start-wipe-kills-unsent-group-writes-silently.md |
 | full-activation-cloud-adopt-when-account-already-complete | backlog | tickets/backlog/full-activation-cloud-adopt-when-account-already-complete.md |
 | full-activation-local-state-never-reaches-the-apple-id-kv | backlog | tickets/backlog/full-activation-local-state-never-reaches-the-apple-id-kv.md |
 | full-mode-activation-must-ask-where-personal-data-lives | qa | tickets/qa/full-mode-activation-must-ask-where-personal-data-lives.md |

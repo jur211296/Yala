@@ -65,6 +65,18 @@ struct FreshStartWipeAlertTests {
         return String(chars[0..<min(i, chars.count)])
     }
 
+    /// **El borrado del alert, dondequiera que viva.** Hasta el 2026-09-26 era el cuerpo del botón destructivo; desde
+    /// el ticket `fresh-start-wipe-kills-unsent-group-writes-silently` el botón sube antes los cambios de grupos y el
+    /// borrado es `performFreshStartWipe`, al que llegan el tap (outbox vacío) y la vuelta de la subida. Aquí se exige
+    /// además que el botón siga llegando a él: un escaneo del cuerpo solo, sin eso, pasaría con un borrado huérfano.
+    private static func freshStartWipeBody() throws -> String {
+        let alerts = try code(alertsPath)
+        let button = try body(of: "isPresented: $showFreshStartWipeAlert) {", in: alerts)
+        #expect(button.contains("performFreshStartWipe()"),
+                "el botón destructivo del alert ya no llega al borrado")
+        return try body(of: "private func performFreshStartWipe() {", in: alerts)
+    }
+
     private static let contentViewPath = "Yala/App/ContentView.swift"
     private static let alertsPath = "Yala/App/Views/Shared/ShellDataAlertsModifier.swift"
     private static let clearCall = "OnboardingResetHelper.clearResidualPreferencesForFreshStart()"
@@ -114,9 +126,7 @@ struct FreshStartWipeAlertTests {
     /// pre-rellenado, que es el bug original que `OnboardingResetHelper` existe para evitar.
     @Test("el confirm destructivo del alert SÍ limpia los residuales")
     func confirmBranch_clearsResiduals() throws {
-        let alerts = try Self.code(Self.alertsPath)
-        let freshStartAlert = try Self.body(
-            of: "isPresented: $showFreshStartWipeAlert) {", in: alerts)
+        let freshStartAlert = try Self.freshStartWipeBody()
 
         #expect(freshStartAlert.contains(Self.clearCall), """
             El botón destructivo de «empiezo de cero» ya no limpia las prefs residuales. El usuario \
@@ -147,9 +157,7 @@ struct FreshStartWipeAlertTests {
     /// `showOnboarding = true`: la app miente sobre un borrado que no ocurrió.
     @Test("si el wipe lanza, NO se navega al onboarding")
     func wipeFailure_doesNotProceedToOnboarding() throws {
-        let alerts = try Self.code(Self.alertsPath)
-        let freshStartAlert = try Self.body(
-            of: "isPresented: $showFreshStartWipeAlert) {", in: alerts)
+        let freshStartAlert = try Self.freshStartWipeBody()
         let catchBody = try Self.body(of: "} catch {", in: freshStartAlert)
 
         #expect(catchBody.contains("showFreshStartWipeFailedAlert = true"), """

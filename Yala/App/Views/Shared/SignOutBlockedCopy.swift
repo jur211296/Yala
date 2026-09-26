@@ -103,6 +103,17 @@ enum SignOutBlockedCopy {
         return L10n.Welcome.Groups.neutralAttestLossBody(count)
     }
 
+    /// **«Empezar de cero» no borró porque quedan cambios de grupos sin subir** (ticket
+    /// `fresh-start-wipe-kills-unsent-group-writes-silently`). Primero lo que importa —no se borró nada, y cuántos cambios
+    /// se habría llevado—, y detrás el motivo de la subida con el MISMO texto que el cierre de sesión: el hecho es el mismo
+    /// y lo que puede hacer la persona también. Lo pintan las tres pantallas del gesto: la puerta privada del Welcome, el
+    /// aviso del espejo tardío y el alert del shell.
+    static func freshStartGroupsPendingMessage(_ block: CloudSessionSignOut.FreshStartGroupsBlock) -> String {
+        let lead = CloudSignOutFlowLogic.shownLossCount(block.pendingCount)
+            .map { L10n.Groups.FreshStartPending.lead($0) } ?? L10n.Groups.FreshStartPending.leadUnknown
+        return lead + " " + message(for: block.reason)
+    }
+
     /// El mensaje del aviso que OFRECE exportar los movimientos y cerrar sesión perdiendo los cambios personales
     /// (`CloudSessionSignOut.offersPersonalLossExit`). Solo lo pinta Ajustes, que es la única pantalla que cierra una sesión
     /// en la nube. Cuenta lo que se pierde con su cifra, o sin ella si no hay número honesto.

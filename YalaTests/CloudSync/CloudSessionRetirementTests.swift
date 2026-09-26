@@ -216,7 +216,8 @@ struct CloudSessionRetirementTests {
         context.insert(GroupSyncOutbox(
             syncID: UUID(), groupID: "g1", entityType: "SplitExpense",
             op: .upsert, hlc: "hlc", fieldsJSON: "{\"amount\":300}", author: "anterior",
-            rejectedReason: nil))
+            // Dead-letter: desde el 2026-09-26 una fila VIVA hace que el borrado se niegue (se sube antes).
+            rejectedReason: "upstream_400:x"))
         try context.save()
 
         var disparos = 0

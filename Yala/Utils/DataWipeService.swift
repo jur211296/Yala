@@ -360,9 +360,13 @@ final class DataWipeService {
         // 2.7 · El outbox de GRUPOS muere aquí; el CURSOR sobrevive A PROPÓSITO. Los dos viven en
         // `syncMetaSchema` —el store que `wipeAllUserData` no toca— pero tienen signos OPUESTOS en una
         // frontera de USUARIO:
-        //  · las filas del outbox son escrituras PENDIENTES del humano anterior, y hasta que el retiro
-        //    de abajo termine el JWT de la sesión Nube sigue en su Keychain ⇒ se subirían firmadas como
-        //    suyas. El retiro no las hace inocuas: las deja sin canal, que no es lo mismo que sin dueño.
+        //  · las filas del outbox son escrituras PENDIENTES de la sesión que las firmó. **Desde el
+        //    2026-09-26 no se tiran: se SUBEN antes** (`CloudSessionSignOut.drainGroupsBeforeFreshStart`,
+        //    en los tres callers). Van firmadas con su JWT a los grupos de su dueño, que es a donde iban,
+        //    y quien empieza de cero puede ser esa misma persona. Lo que llega aquí ya está vacío de filas
+        //    vivas —lo exige `requireNoUnsentGroupWrites`, abajo— y lo que se borra son las dead-letter.
+        //    Hasta ese día se borraban con el razonamiento contrario («se subirían firmadas como suyas»),
+        //    que tiraba en silencio los gastos de grupo apuntados sin cobertura.
         //  · el cursor es la BARRERA que impide que el corpus del anterior BAJE al device del nuevo con
         //    ese mismo JWT (el bug de `31dded30`) ⇒ purgarlo aquí la REABRIRÍA.
         //
@@ -379,6 +383,14 @@ final class DataWipeService {
         // Va DENTRO de `deleteLocalGroupsRows` (2026-09-11) para seguir siendo UNA sola transacción ahora
         // que el `save()` vive ahí: es esa función la que la firma con el autor del canal, y un save propio
         // aquí volvería a escribir los deletes bajo el autor por defecto — traducibles a tombstones.
+        //
+        // **Y desde el 2026-09-26 solo borra lo que ya no puede subir** (ticket
+        // `fresh-start-wipe-kills-unsent-group-writes-silently`). En la puerta privada quien empieza de cero puede ser la
+        // MISMA persona, y esas filas eran sus gastos de grupo sin cobertura: se perdían sin que nada lo dijera. Los tres
+        // callers suben primero (`CloudSessionSignOut.drainGroupsBeforeFreshStart`); esto es el cinturón dentro del
+        // escritor, para que un cuarto caller no pueda volver a tirarlas. Las dead-letter (`rejectedReason != nil`) sí se
+        // van: el servidor ya las rechazó para siempre, y el cierre tampoco las espera.
+        try requireNoUnsentGroupWrites(in: context)
         try deleteLocalGroupsRows(in: context) {
             for row in try context.fetch(FetchDescriptor<GroupSyncOutbox>()) { context.delete(row) }
         }
@@ -414,6 +426,22 @@ final class DataWipeService {
         // el barrido de prefs de arriba no lo nombra, pero el orden lo deja explícito ante un
         // futuro añadido a esa lista.
         defaults.set(true, forKey: AppPreferences.Keys.groupsDomainSealedForFreshStart)
+    }
+
+    /// Por qué `wipeLocalGroupsDomain` no borró.
+    enum GroupsDomainWipeError: Error, Equatable {
+        /// Quedan filas VIVAS en el outbox de grupos: cambios que aún no subieron. `Int.max` = no se pudieron contar.
+        case unsentGroupWrites(pendingCount: Int)
+    }
+
+    /// **El outbox de grupos no tiene nada vivo.** Lanza si lo tiene, o si no se pudo contar (`liveGroupsPendingCount`
+    /// devuelve `Int.max` y eso cuenta como «sí»: una fila que no se pudo mirar no se tira). No escribe nada.
+    ///
+    /// La llama `wipeLocalGroupsDomain` como su primera línea, y los callers de «Empezar de cero» ANTES de
+    /// `wipeAllUserData`: sin eso, una fila aparecida tras la subida dejaría borrado lo personal y los grupos enteros.
+    static func requireNoUnsentGroupWrites(in context: ModelContext) throws {
+        let live = CloudSessionSignOut.liveGroupsPendingCount(context: context)
+        guard live == 0 else { throw GroupsDomainWipeError.unsentGroupWrites(pendingCount: live) }
     }
 
     /// Borra las filas locales del dominio Grupos: los 5 `Split*` y el override por-grupo del bridge.

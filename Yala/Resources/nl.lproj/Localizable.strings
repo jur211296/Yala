@@ -5432,6 +5432,9 @@
 
 /* Body of the alert shown when the fresh-start wipe throws */
 "welcome.freshStart.failedMessage" = "Je gegevens staan er nog, dus we zijn gestopt. Sluit Yala en open de app opnieuw; gebeurt het weer, laat het ons weten.";
+"groups.freshStartPending.title" = "Er moeten nog groepswijzigingen worden geüpload";
+"groups.freshStartPending.lead" = "We hebben niets gewist: sommige wijzigingen in je groepen hebben onze server nog niet bereikt (%d), en opnieuw beginnen zou ze meenemen.";
+"groups.freshStartPending.leadUnknown" = "We hebben niets gewist: sommige wijzigingen in je groepen hebben onze server nog niet bereikt, en opnieuw beginnen zou ze meenemen.";
 
 /* Título del aviso cuando Restaurar compras no encuentra Yala Pro */
 "subscription.restoreEmptyTitle" = "Geen abonnement";

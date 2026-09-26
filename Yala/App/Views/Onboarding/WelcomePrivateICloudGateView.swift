@@ -130,6 +130,17 @@ struct WelcomePrivateICloudGateView: View {
         case confirmingDeviceWipe(iCloudUnverified: Bool)
         case wipingDevice(iCloudUnverified: Bool)
         case deviceWipeFailed(iCloudUnverified: Bool)
+        /// **El borrado no corrió: quedan cambios de grupos sin subir** (ticket
+        /// `fresh-start-wipe-kills-unsent-group-writes-silently`). No se tocó nada, ni en iCloud ni en el teléfono. Lleva
+        /// dentro cuántos y por qué, y a qué borrado vuelve «Reintentar»: el dato viaja en el case, no en un `@State` al
+        /// lado (misma razón que las cuatro de arriba).
+        case groupsPending(CloudSessionSignOut.FreshStartGroupsBlock, retry: GroupsPendingRetry)
+    }
+
+    /// Qué borrado se paró en los cambios de grupos, y por tanto cuál repite «Reintentar».
+    private enum GroupsPendingRetry: Equatable {
+        case iCloud
+        case device(iCloudUnverified: Bool)
     }
 
     var body: some View {
@@ -271,6 +282,24 @@ struct WelcomePrivateICloudGateView: View {
                 secondary: L10n.Welcome.PrivateICloud.wipeFailedBack,
                 identifier: "welcome_private_icloud_wipe_failed_device",
                 primaryAction: { phase = .wipingDevice(iCloudUnverified: unverified) },
+                secondaryAction: leaveGate)
+        case .groupsPending(let block, let retry):
+            // Mismo molde que los dos fallos de arriba —reintentar o irse—, con el texto que dice lo que pasó de
+            // verdad: no se borró nada porque quedan cambios de grupos, cuántos, y qué hacer según el motivo. Sin
+            // salida «perderlos»: ver `CloudSessionSignOut.drainGroupsBeforeFreshStart`.
+            twoWayNoticeContent(
+                icon: "exclamationmark.triangle",
+                title: L10n.Groups.FreshStartPending.title,
+                body: SignOutBlockedCopy.freshStartGroupsPendingMessage(block),
+                primary: L10n.Welcome.PrivateICloud.wipeRetry,
+                secondary: L10n.Welcome.PrivateICloud.wipeFailedBack,
+                identifier: "welcome_private_icloud_groups_pending",
+                primaryAction: {
+                    switch retry {
+                    case .iCloud: phase = .wiping
+                    case .device(let unverified): phase = .wipingDevice(iCloudUnverified: unverified)
+                    }
+                },
                 secondaryAction: leaveGate)
         }
     }
@@ -662,7 +691,7 @@ struct WelcomePrivateICloudGateView: View {
     /// borrado fallido, solo que un paso antes: aquí no se pudo ni MEDIR, así que no hay nada a medias que
     /// el arm proteja — solo una petición que quien se va acaba de retirar.
     private func leaveGate() {
-        if phase == .wipeFailed || isDeviceWipeFailed || isUnverified {
+        if phase == .wipeFailed || isDeviceWipeFailed || isGroupsPending || isUnverified {
             StorageModePersistence.clearICloudCorpusWipeArm()
         }
         onBack()
@@ -683,6 +712,20 @@ struct WelcomePrivateICloudGateView: View {
     private var isDeviceWipeFailed: Bool {
         if case .deviceWipeFailed = phase { return true }
         return false
+    }
+
+    /// El borrado se paró en los cambios de grupos: tampoco borró nada, así que irse retira el arm por la misma razón.
+    private var isGroupsPending: Bool {
+        if case .groupsPending = phase { return true }
+        return false
+    }
+
+    /// La fase de «faltan cambios de grupos», si el fallo fue ése. `nil` para cualquier otro: entonces manda el fallo de
+    /// siempre. El detalle lo puso la subida en `CloudSessionSignOut.freshStartGroupsBlock` justo antes de devolver.
+    private func groupsPendingPhase(for failure: String?, retry: GroupsPendingRetry) -> Phase? {
+        guard failure == CloudSessionSignOut.freshStartGroupsPendingFailure,
+              let block = CloudSessionSignOut.shared.freshStartGroupsBlock else { return nil }
+        return .groupsPending(block, retry: retry)
     }
 
     /// El trabajo de cada fase. Lo llama `.task(id: phase)`, así que la cancelación es real.
@@ -767,7 +810,7 @@ struct WelcomePrivateICloudGateView: View {
         let failure = await performWipe()
         guard !Task.isCancelled else { return }
         guard failure == nil else {
-            phase = .wipeFailed
+            phase = groupsPendingPhase(for: failure, retry: .iCloud) ?? .wipeFailed
             return
         }
         if clearsResidualPreferencesOnWipe {
@@ -824,7 +867,8 @@ struct WelcomePrivateICloudGateView: View {
         }
         let failure = await deviceCorpus.wipe()
         guard failure == nil else {
-            phase = .deviceWipeFailed(iCloudUnverified: iCloudUnverified)
+            phase = groupsPendingPhase(for: failure, retry: .device(iCloudUnverified: iCloudUnverified))
+                ?? .deviceWipeFailed(iCloudUnverified: iCloudUnverified)
             return
         }
         if clearsResidualPreferencesOnWipe {

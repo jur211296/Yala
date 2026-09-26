@@ -5426,6 +5426,9 @@
 
 /* Body of the alert shown when the fresh-start wipe throws */
 "welcome.freshStart.failedMessage" = "Your data is still here, so we stopped. Close Yala and open it again; if it happens again, write to us.";
+"groups.freshStartPending.title" = "Some group changes still need to be uploaded";
+"groups.freshStartPending.lead" = "We didn't erase anything: some of your group changes haven't reached our server yet (%d), and starting from scratch would take them with it.";
+"groups.freshStartPending.leadUnknown" = "We didn't erase anything: some of your group changes haven't reached our server yet, and starting from scratch would take them with it.";
 
 /* Título del aviso cuando Restaurar compras no encuentra Yala Pro */
 "subscription.restoreEmptyTitle" = "No subscription found";

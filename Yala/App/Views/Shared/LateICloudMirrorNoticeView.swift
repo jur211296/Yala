@@ -52,7 +52,12 @@ struct LateICloudMirrorNoticeView: View {
     @State private var phase: Phase = .notice
     @Environment(\.dismiss) private var dismiss
 
-    private enum Phase: Equatable { case notice, confirming, wiping, failed }
+    private enum Phase: Equatable {
+        case notice, confirming, wiping, failed
+        /// El borrado no corrió: quedan cambios de grupos sin subir (ticket
+        /// `fresh-start-wipe-kills-unsent-group-writes-silently`). Nada se tocó.
+        case groupsPending(CloudSessionSignOut.FreshStartGroupsBlock)
+    }
 
     var body: some View {
         NavigationStack {
@@ -68,7 +73,11 @@ struct LateICloudMirrorNoticeView: View {
                     // El cierre por la barra significa lo mismo que «déjalo así»: la persona vio el aviso
                     // y no pidió borrar nada. **Desaparece durante el borrado**, que no admite abandono.
                     if phase != .wiping {
-                        Button(L10n.Action.close) { onKeep(); dismiss() }
+                        Button(L10n.Action.close) {
+                            // Desde «faltan cambios de grupos» también desarma: ver `leaveGroupsPending`.
+                            if case .groupsPending = phase { StorageModePersistence.clearICloudCorpusWipeArm() }
+                            onKeep(); dismiss()
+                        }
                             .accessibilityIdentifier("late_icloud_close")
                     }
                 }
@@ -126,7 +135,29 @@ struct LateICloudMirrorNoticeView: View {
                 // Rendirse deja el testigo puesto a propósito: el corpus sigue en iCloud y la persona no
                 // ha dicho que se lo quede, solo que ahora no. El aviso vuelve en el próximo arranque.
                 destructiveAction: { dismiss() })
+        case .groupsPending(let block):
+            // Mismo molde que `.failed`, con el texto de lo que pasó: no se borró nada porque quedan cambios de grupos,
+            // cuántos y qué hacer. `wipeRetry` y no `Restore.retry` («Reintentar búsqueda»): aquí no se busca nada.
+            noticeBody(
+                icon: "exclamationmark.triangle",
+                title: L10n.Groups.FreshStartPending.title,
+                body: SignOutBlockedCopy.freshStartGroupsPendingMessage(block),
+                identifier: "late_icloud_groups_pending",
+                primary: L10n.Welcome.PrivateICloud.wipeRetry,
+                primaryAction: { phase = .wiping },
+                destructive: L10n.Welcome.PrivateICloud.wipeFailedBack,
+                destructiveAction: leaveGroupsPending)
         }
+    }
+
+    /// «Dejarlo por ahora» desde «faltan cambios de grupos». **Retira el arm y deja el testigo** (review adversarial del
+    /// 2026-09-26, las tres lentes). A diferencia de `.failed`, aquí no se borró NADA —la subida va antes de la zona—, así
+    /// que el arm no protege ningún estado a medias; y dejarlo puesto hacía que `runLateICloudMirrorCheck` reanudara el
+    /// borrado a ciegas en cada arranque hasta que, semanas después, los cambios subieran y se llevara todo lo creado
+    /// entretanto sin una sola pantalla. Con el testigo puesto, el aviso vuelve a preguntar en el próximo arranque.
+    private func leaveGroupsPending() {
+        StorageModePersistence.clearICloudCorpusWipeArm()
+        dismiss()
     }
 
     private func noticeBody(icon: String, title: String, body: String, identifier: String,
@@ -173,8 +204,13 @@ struct LateICloudMirrorNoticeView: View {
         StorageModePersistence.armICloudCorpusWipe()
         let failure = await performWipe()
         guard !Task.isCancelled else { return }
-        guard failure == nil else {
-            phase = .failed
+        if let failure {
+            if failure == CloudSessionSignOut.freshStartGroupsPendingFailure,
+               let block = CloudSessionSignOut.shared.freshStartGroupsBlock {
+                phase = .groupsPending(block)
+            } else {
+                phase = .failed
+            }
             return
         }
         StorageModePersistence.clearPrivateChoseWithoutICloud()
