@@ -7,10 +7,11 @@
  * - Total: port de `LiveBalanceCalculator.liveBalanceBreakdown`
  *   (Yala/App/Logic/Calculators/LiveBalanceCalculator.swift:111) con el filtro de cuentas del chat
  *   (`FullFinancialContextBuilder.buildBalances`: fuera las excluidas de estadísticas y las archivadas). Agrupa por
- *   la divisa DEL MOVIMIENTO y convierte cada bolsa con la tasa más reciente: es «lo que tienes hoy», no la suma de
- *   conversiones históricas.
+ *   la divisa DEL MOVIMIENTO y convierte cada bolsa con la tasa de HOY (`convertCheckedWithLatestRate`: la fila del
+ *   día UTC de hoy, y si le falta la divisa, las anteriores o la tabla estática). Es «lo que tienes hoy», no la suma
+ *   de conversiones históricas. Los gastos de grupo NO se ajustan: el saldo es el dinero que de verdad se movió.
  */
-import { convert, type RateTable } from "./fx";
+import { convertOn, type RateBook } from "./fx";
 import { num, round2, type AccountRow, type TxRow } from "./types";
 
 export interface AccountBalance {
@@ -29,9 +30,9 @@ export interface BalancesResult {
   total: {
     divisa: string;
     importe: number;
-    /** true si alguna divisa se convirtió con la tasa más reciente (siempre que haya más de una divisa). */
+    /** true si alguna divisa se convirtió sin la cotización exacta de hoy (el «≈» de la app). */
     aproximado: boolean;
-    /** Divisas que no se pudieron convertir por falta de tasa; su saldo NO está en `importe`. */
+    /** Divisas que la app no reconoce; su saldo NO está en `importe`. */
     sin_convertir: { divisa: string; importe: number }[];
   };
 }
@@ -42,8 +43,8 @@ export function computeBalances(
   accounts: AccountRow[],
   txs: BalanceTx[],
   preferredCurrency: string,
-  rates: RateTable | null,
-  opts: { incluirArchivadas: boolean },
+  rates: RateBook,
+  opts: { incluirArchivadas: boolean; todayUtc: string },
 ): BalancesResult {
   const byAccount = new Map<string, { sum: number; count: number }>();
   for (const tx of txs) {
@@ -81,12 +82,12 @@ export function computeBalances(
       total += amount;
       continue;
     }
-    const converted = convert(amount, code, preferredCurrency, rates);
+    const converted = convertOn(amount, code, preferredCurrency, opts.todayUtc, rates);
     if (converted === null) {
       unconverted.push({ divisa: code, importe: round2(amount) });
     } else {
-      total += converted;
-      approximate = true;
+      total += converted.value;
+      if (converted.quality !== "exact") approximate = true;
     }
   }
 

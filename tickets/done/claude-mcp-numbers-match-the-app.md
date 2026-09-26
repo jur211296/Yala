@@ -1,6 +1,6 @@
 ---
 id: claude-mcp-numbers-match-the-app
-status: backlog
+status: done
 priority: medium
 area: cloud
 created: 2026-09-26
@@ -38,3 +38,20 @@ declaradas en el campo `avisos` de la respuesta:
 ## Cómo se sabe que está bien
 
 Los goldens de Swift pasan en `npm test` de `mcp/`, y el campo `avisos` ya no menciona grupos ni tasas.
+
+## Cierre (2026-09-26)
+
+- **Goldens desde la app:** `mcp/test/golden/app-parity.json` (filas de PostgREST escritas a mano) y
+  `YalaTests/MCP/MCPAppParityGoldenTests.swift`, que mete esas filas por `EntityApplyMap` y calcula con el código de
+  producción; escribe los `expected` con `TEST_RUNNER_YALA_WRITE_MCP_GOLDENS=1` y los verifica sin ella.
+  `mcp/test/golden.test.ts` los consume en `npm test`. Cubren saldo por cuenta y total (con su «≈»), mes en curso,
+  mes pasado y año (ingresos, gastos, neto, gasto medio, tasa de ahorro y las tres marcas «≈»), gasto de siete
+  presupuestos, totales de recurrentes, el ajuste de grupos por movimiento y conversiones sueltas en sus tres calidades.
+- **Grupos:** `mcp/src/logic/groups.ts`, port literal de `GroupBridgeStatsAdjustment`, cableado en resumen y
+  presupuestos, con las patas hermanas leídas aunque caigan fuera del rango.
+- **Tasa del día:** `mcp/src/logic/fx.ts`, port de `CurrencyConverter.resolveRates` (fila del día UTC, 30 filas
+  anteriores, tabla estática).
+- **`avisos`:** ya no habla de grupos ni de tasas. Queda la zona horaria cuando Claude no la pasa.
+- **Premisa corregida:** `firstWeekday` ya viaja (es una `PrefSyncKey`); el ticket nuevo es solo de la zona.
+- Tickets nuevos: `app-uploads-its-timezone-to-the-cloud`, `duplicate-exchange-rate-rows-pick-an-arbitrary-rate`,
+  `exchange-rate-date-keys-follow-the-phone-calendar`. Diferencias declaradas: §9 de `docs/exploracion/plugin-claude-mcp.md`.

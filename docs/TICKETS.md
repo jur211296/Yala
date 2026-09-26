@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (621)
+## Index (624)
 
 | id | status | path |
 |---|---|---|
@@ -86,6 +86,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | an-incomplete-inventory-reads-as-the-whole-corpus | done | tickets/done/an-incomplete-inventory-reads-as-the-whole-corpus.md |
 | an-undecodable-migration-phase-reads-as-never-started | done | tickets/done/an-undecodable-migration-phase-reads-as-never-started.md |
 | an-unreadable-migration-journal-reads-as-never-started | done | tickets/done/an-unreadable-migration-journal-reads-as-never-started.md |
+| app-uploads-its-timezone-to-the-cloud | backlog | tickets/backlog/app-uploads-its-timezone-to-the-cloud.md |
 | apple-id-change-boot-check-runs-before-the-migration-guard-can-see | backlog | tickets/backlog/apple-id-change-boot-check-runs-before-the-migration-guard-can-see.md |
 | apple-id-change-should-close-the-private-session | done | tickets/done/apple-id-change-should-close-the-private-session.md |
 | apple-id-close-blocked-has-no-visible-outcome | done | tickets/done/apple-id-close-blocked-has-no-visible-outcome.md |
@@ -147,7 +148,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | claim-takeover-races-the-leader-cutover-without-cas | backlog | tickets/backlog/claim-takeover-races-the-leader-cutover-without-cas.md |
 | claude-mcp-activate-oauth-in-staging | done | tickets/done/claude-mcp-activate-oauth-in-staging.md |
 | claude-mcp-consent-with-apple-and-google | backlog | tickets/backlog/claude-mcp-consent-with-apple-and-google.md |
-| claude-mcp-numbers-match-the-app | backlog | tickets/backlog/claude-mcp-numbers-match-the-app.md |
+| claude-mcp-numbers-match-the-app | done | tickets/done/claude-mcp-numbers-match-the-app.md |
 | claude-mcp-oauth-token-can-change-the-account | done | tickets/done/claude-mcp-oauth-token-can-change-the-account.md |
 | claude-mcp-production-auth-hardening | backlog | tickets/backlog/claude-mcp-production-auth-hardening.md |
 | claude-mcp-revoke-from-claude-leaves-supabase-session | backlog | tickets/backlog/claude-mcp-revoke-from-claude-leaves-supabase-session.md |
@@ -174,6 +175,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | cloud-signout-session-expiry-with-the-engine-stopped-until-relaunch-has-no-door | backlog | tickets/backlog/cloud-signout-session-expiry-with-the-engine-stopped-until-relaunch-has-no-door.md |
 | cloud-signout-upstream-rejections-with-a-healthy-pull-say-a-moment-more | backlog | tickets/backlog/cloud-signout-upstream-rejections-with-a-healthy-pull-say-a-moment-more.md |
 | cola-b-redesigns-must-hold-up-at-ipad-width | backlog | tickets/backlog/cola-b-redesigns-must-hold-up-at-ipad-width.md |
+| duplicate-exchange-rate-rows-pick-an-arbitrary-rate | backlog | tickets/backlog/duplicate-exchange-rate-rows-pick-an-arbitrary-rate.md |
+| exchange-rate-date-keys-follow-the-phone-calendar | backlog | tickets/backlog/exchange-rate-date-keys-follow-the-phone-calendar.md |
 | floating-buttons-cover-row-amounts-on-ipad-landscape | backlog | tickets/backlog/floating-buttons-cover-row-amounts-on-ipad-landscape.md |
 | fresh-start-has-no-way-out-when-group-writes-can-never-upload | qa | tickets/qa/fresh-start-has-no-way-out-when-group-writes-can-never-upload.md |
 | fresh-start-drops-mirror-entries-of-another-identity-without-counting-them | backlog | tickets/backlog/fresh-start-drops-mirror-entries-of-another-identity-without-counting-them.md |

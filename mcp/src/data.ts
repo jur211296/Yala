@@ -86,7 +86,7 @@ export class YalaReader {
 export const COLUMNS = {
   accounts: "sync_id,name,currency_code,type,is_archived,exclude_from_statistics,is_system_account",
   categories: "sync_id,name,is_income,is_visible,sort_order",
-  subcategories: "sync_id,name,category_ref,nature_raw_value,is_visible,sort_order",
+  subcategories: "sync_id,name,category_ref,nature_raw_value,is_visible,sort_order,is_system,is_default_seed",
   tags: "sync_id,name",
   tx:
     "sync_id,date,local_day,amount,currency_code,note,category_ref,subcategory_ref,account_ref,tag_refs," +
@@ -99,7 +99,7 @@ export const COLUMNS = {
   scheduled:
     "sync_id,name,amount,currency_code,transaction_type,is_recurring,recurrence_type,recurrence_interval,next_due_date,end_date," +
     "payment_category,is_active,last_paid_date,subcategory_ref,account_ref",
-  rates: "date_key,base,rates",
+  rates: "sync_id,date_key,base,rates,timestamp",
   prefs: "key,value",
 } as const;
 
