@@ -1,11 +1,11 @@
 ---
-updated: 2026-09-25
+updated: 2026-09-26
 tags: [now, punto-de-retomada]
 ---
 
-# NOW — 2026-09-25 (Lima)
+# NOW — 2026-09-26 (Lima)
 
-**Rama** `2.1` — Merge #253: **En la nube, la sesión caducada nombra dónde volver a entrar, y esa puerta existe.**
+**Rama** `2.1` — Merge #254: **Tras activar la nube en un segundo iPhone, lo que iCloud baja tarde ya no pisa las correcciones hechas en la nube.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,33 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#253 · en la nube, la sesión caducada nombra dónde volver a entrar)
+## Esta sesión (#254 · lo que el espejo importa tarde tras un adopt no pisa la nube)
+
+**Activas la nube en tu segundo iPhone mientras su iCloud todavía baja una copia vieja. Lo que bajaba después de movimientos
+que la nube ya tenía subía al reabrir con un reloj nuevo y deshacía las correcciones hechas en la nube. Ahora, en esas filas
+manda la nube:** el primer pull trae su versión.
+
+- El reconcile del adopt guarda qué identidades conoce el backend (vivas y borradas) junto al registro del adopt.
+- El primer drain tras relanzar no traduce, de esas filas: las altas (sin mirar el autor), ni los cambios y borrados que
+  firma el espejo. Lo que se edita o borra en este teléfono sale como siempre. Canario `cloudAdoptLateImportSkipped`.
+- **Cambió un contrato de #246**: la edición vieja que el espejo trae junto con la re-identificación ya no sube.
+
+**La review cazó un defecto en el arreglo** (dos lentes): el borrado de una fila que el espejo había re-identificado salía con
+la identidad del backend. Arreglado en la misma rama, con cinco huecos de test.
+
+**Verificado:** gate con 7990 unit en 757 suites y 4 XCUITest, centinela limpio. 16/16 mutantes muertos. Ticket a `qa`: el
+caso real pide dos iPhone y CloudKit.
+
+### Lo que espera de Jürgen
+
+- **Device-QA con dos iPhone** del ticket `adopt-window-late-imports-overwrite-newer-cloud-edits` (guion en el ticket; el
+  canario dice si la carrera se reprodujo).
+- Residual nuevo `adopt-window-user-edit-uploads-the-value-the-mirror-wrote-over-it` (low): una edición tuya en la ventana
+  sobre una fila que el espejo pisa después sube con el valor del espejo.
+- Por decisión: una edición más nueva de otro teléfono del mismo Apple ID que sigue en iCloud, si llega en esa ventana, ya no
+  sube (manda la nube). Si no es lo que quieres, dilo.
+
+## Sesión anterior (#253 · en la nube, la sesión caducada nombra dónde volver a entrar)
 
 **Con la sesión caducada y cambios sin subir —de grupos o personales—, «Cerrar sesión» sigue bloqueándose sin perder nada,
 pero ahora dice dónde volver a entrar y esa puerta está ahí:**
@@ -49,7 +75,7 @@ Sin device-QA.
   `groups-outbox-rows-without-a-live-session-have-no-exit` gana urgencia: las entradas directas de Grupos siguen sin guarda
   de cuenta.
 
-## Sesión anterior (#252 · el paso 1 del cierre en la nube nombra el motivo real)
+## Antes (#252 · el paso 1 del cierre en la nube nombra el motivo real)
 
 **Con cambios propios sin subir a la nube, «Cerrar sesión» sigue bloqueándose sin perder nada, pero el aviso ya no dice
 «revisa tu conexión» cuando la conexión no tiene nada que ver:**
@@ -139,7 +165,7 @@ y ajeno (3/3 verde a solas). Ojo: una tanda de mutantes + gate llevó el disco a
 - **Una decisión de producto, sin prisa:** `adopt-window-uploads-what-reaches-the-mirror-after-the-icloud-check`
   (medium) — lo que llega a iCloud DESPUÉS de la comprobación (otro teléfono del mismo Apple ID, o iniciar sesión en iCloud
   antes de reabrir) sigue subiendo; cerrarlo pide decidir qué se hace con esas filas con la nube ya activada.
-- Ticket nuevo `adopt-window-late-imports-overwrite-newer-cloud-edits` (medium, inferido).
+- `adopt-window-late-imports-overwrite-newer-cloud-edits`: cerrado en #254 (a `qa`, device-QA con dos iPhone).
 - Los device-QA de #239, #237 y #236 siguen pendientes.
 - Tickets nuevos de #249, sin prisa: `sign-out-push-all-runs-a-sync-cycle-past-the-migration-gate` (medium, inferido),
   `journal-unreadable-card-says-reopen-when-a-downgrade-needs-an-update`, `storage-mode-unknown-raw-reads-as-icloud` y
