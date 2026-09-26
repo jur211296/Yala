@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-26 (Lima)
 
-**Rama** `2.1` — Merge #256: **«Empezar de cero» ya no se lleva los gastos de grupo sin subir: si quedan, no borra nada y lo dice.**
+**Rama** `2.1` — Merge #257: **Cerrar sesión, desasociar y «Empezar de cero» ya no dan por subido un gasto de grupo que no llegó a capturarse.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,32 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#256 · «Empezar de cero» no se lleva los gastos de grupo sin subir)
+## Esta sesión (#257 · un drain de grupos a medias ya no se lee como «nada pendiente»)
+
+**Apuntas un gasto de grupo y justo después cierras sesión, desasocias o haces «Empezar de cero». Si la app no conseguía
+pasarlo a la cola de subida (un fallo al leer o guardar, o el reloj desajustado), la cola salía vacía y el gesto lo borraba.
+Ahora, si la captura no termina o la copia del App Group guarda algo fuera de la cola, no borra nada** y lo dice con los
+textos que ya existían («no llegaron al servidor… inténtalo en un rato», o «vuelve a iniciar sesión» si solo eso lo sube).
+
+- `GroupsSyncClient.drainOnce` devuelve si terminó; captura previa a toda salida (rehidratar espejo → drenar → barrer) y
+  veredicto puro `groupsCaptureVerdict`. El push-all re-captura tras vaciar la cola y ante un bloqueo por App Attest: la
+  salida «perderlos» ya no se lleva lo que el aviso no enseñó.
+- Con la traducción cortada no se re-ancla el token de History (preexistente, lo cazó la review).
+
+**Verificado:** gate con 8042 unit y 22 XCUITest, centinela limpio; 22/22 mutantes; review adversarial de tres lentes (lo que
+cazó, arreglado en la misma rama). Ticket a `qa` con guion (hora del iPhone atrasada una hora → gasto → «Desasociar»).
+
+### Lo que espera de Jürgen
+
+- **Priorizar** `groups-clock-rollback-wedges-the-drain-forever` (medium, preexistente): si la hora del iPhone retrocede más
+  de 5 min, los gastos de grupo de después no suben nunca, y desde #257 esas tres salidas se bloquean (antes borraban en
+  silencio) con un «inténtalo en un rato» que ahí no es verdad. Arreglarlo toca cómo estampa el reloj del sync.
+- Sigue en pie la decisión de #256 (`fresh-start-has-no-way-out-when-group-writes-can-never-upload`).
+- Device-QA del ticket, cuando puedas. Otros hallazgos, a backlog: `private-sign-out-counts-group-writes-without-capturing-them`
+  (low), `personal-sign-out-reads-an-unfinished-drain-as-nothing-pending` (medium),
+  `unit-tests-write-group-amounts-into-the-real-app-group-mirror` (low).
+
+## Sesión anterior (#256 · «Empezar de cero» no se lleva los gastos de grupo sin subir)
 
 **Apuntas gastos de grupo sin cobertura y luego haces «Empezar de cero». Antes se perdían sin avisar. Ahora el borrado sube
 primero lo pendiente y, si no puede, no borra nada** —ni iCloud, ni el teléfono, ni los grupos— y dice «Faltan cambios de
@@ -44,7 +69,7 @@ cazó, arreglado en la misma rama). Ticket a `qa` con guion (modo avión → gas
 - Device-QA del ticket, cuando puedas. Residuales abiertos: `groups-drain-failure-reads-as-nothing-pending` y
   `late-icloud-notice-exit-after-a-failed-wipe-leaves-the-blind-resume-armed` (medium, preexistentes).
 
-## Sesión anterior (#255 · el desasociar se para si la sesión en la nube sobrevive a su cierre)
+## Antes (#255 · el desasociar se para si la sesión en la nube sobrevive a su cierre)
 
 **Sueltas la cuenta de grupos en «¿Dónde viven tus datos?». Si la sesión de esa cuenta sigue guardada en el teléfono después de
 cerrarla, la app se para antes de tocar nada y lo dice** («No pudimos cerrar la sesión de tu cuenta de grupos en este iPhone.
