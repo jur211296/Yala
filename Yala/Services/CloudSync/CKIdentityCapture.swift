@@ -56,6 +56,13 @@ enum CKIdentityCapture {
         var exportPending = 0
         var noMetadata = 0
         var failed = 0
+        /// Por qué la corrida no pudo leer la metadata de CloudKit de NINGUNA fila; `nil` si leyó alguna (ticket
+        /// `reverse-upload-sample-reads-unreadable-rows-as-drained`). Con él puesto, todas las filas salen `failed`
+        /// y el `Report` no dice nada de qué subió: la vuelta a iCloud lo lee como muestra ILEGIBLE, nunca como
+        /// «no queda nada». Sin PII: es un motivo fijo, no el mensaje de SQLite.
+        var structuralFailure: String?
+        /// Los `failed` agrupados por motivo (`failureBucket`), para medir en device cuáles aparecen. Sin PII.
+        var failedReasons: [String: Int] = [:]
 
         var total: Int { captured + exportPending + noMetadata + failed }
 
@@ -64,9 +71,20 @@ enum CKIdentityCapture {
             case .captured: captured += 1
             case .exportPending: exportPending += 1
             case .noMetadata: noMetadata += 1
-            case .failed: failed += 1
+            case .failed(let reason): recordFailure(reason)
             }
         }
+
+        mutating func recordFailure(_ reason: String) {
+            failed += 1
+            failedReasons[CKIdentityCapture.failureBucket(reason), default: 0] += 1
+        }
+    }
+
+    /// El motivo de un `failed` sin el detalle variable: `meta-query:<errmsg>` → `meta-query`, `sqlite-open-14` se
+    /// queda como está. El errmsg de SQLite puede nombrar tablas o columnas; el cubo es lo que se agrupa y se emite.
+    nonisolated static func failureBucket(_ reason: String) -> String {
+        reason.split(separator: ":", maxSplits: 1).first.map(String.init) ?? reason
     }
 
     // MARK: - Entrada pública (PersistentIdentifier → captura)
@@ -87,17 +105,24 @@ enum CKIdentityCapture {
         var report = Report()
         for pair in pairs {
             guard let uri = objectURI(for: pair.id), let parsed = parseCoreDataURI(uri) else {
-                report.failed += 1
+                report.recordFailure("uri-unparseable")
                 continue
             }
             resolved.append(ResolvedRequest(entityName: parsed.entityName, zpk: parsed.zpk, row: pair.row))
         }
-        guard !resolved.isEmpty else { return report }
+        guard !resolved.isEmpty else {
+            // Ninguna fila se dejó localizar en el SQLite: la corrida no miró nada. Una suelta es un fallo por fila;
+            // todas son el formato del identificador que cambió, y eso no dice nada de qué subió.
+            if !pairs.isEmpty { report.structuralFailure = "uri-unparseable" }
+            return report
+        }
         let batch = captureResolved(resolved, storeURL: resolvedStoreURL)
         report.captured += batch.captured
         report.exportPending += batch.exportPending
         report.noMetadata += batch.noMetadata
         report.failed += batch.failed
+        report.failedReasons.merge(batch.failedReasons, uniquingKeysWith: +)
+        report.structuralFailure = batch.structuralFailure
         return report
     }
 
@@ -113,19 +138,29 @@ enum CKIdentityCapture {
 
     /// Abre UNA conexión SQLite READ-ONLY, descubre las side-tables por `sqlite_master`, cachea el mapa
     /// `Z_NAME → Z_ENT` de `Z_PRIMARYKEY` UNA vez, y resuelve N peticiones. Escribe las coordenadas en las
-    /// filas casadas (el caller saveea). Un fallo de apertura marca TODAS las peticiones `failed`.
-    /// `internal` para tests (fixture SQLite fabricado a mano).
+    /// filas casadas (el caller saveea). `internal` para tests (fixture SQLite fabricado a mano).
+    ///
+    /// Un fallo que impide leer la metadata de TODAS las peticiones —el SQLite no abre, falta la tabla o sus
+    /// columnas, el mapa de entidades sale vacío, o la consulta de metadata falla en todas las filas que la
+    /// intentan— las marca `failed` Y pone `structuralFailure`: no es que cada fila tenga un problema, es que no se
+    /// miró ninguna. `no-zent` en todas con el mapa lleno NO es estructural: el mapa se leyó y esas entidades no
+    /// están, que es un motivo por fila (ticket `reverse-upload-sample-reads-unreadable-rows-as-drained`).
     @discardableResult
     static func captureResolved(_ requests: [ResolvedRequest], storeURL: URL) -> Report {
         var report = Report()
         guard !requests.isEmpty else { return report }
 
+        func failAll(_ reason: String) -> Report {
+            for req in requests { req.row.applyOutcome(.failed(reason: reason)); report.recordFailure(reason) }
+            report.structuralFailure = failureBucket(reason)
+            return report
+        }
+
         var db: OpaquePointer?
         let openRC = sqlite3_open_v2(storeURL.path, &db, SQLITE_OPEN_READONLY, nil)
         guard openRC == SQLITE_OK, let db else {
             if let db { sqlite3_close(db) }
-            for req in requests { req.row.applyOutcome(.failed(reason: "sqlite-open-\(openRC)")); report.failed += 1 }
-            return report
+            return failAll("sqlite-open-\(openRC)")
         }
         defer { sqlite3_close(db) }
 
@@ -136,8 +171,7 @@ enum CKIdentityCapture {
             let u = $0.uppercased()
             return u.contains("RECORDMETADATA") && !u.contains("ZONE") && !u.contains("SYSTEMFIELDS")
         }) else {
-            for req in requests { req.row.applyOutcome(.failed(reason: "no-record-metadata-table")); report.failed += 1 }
-            return report
+            return failAll("no-record-metadata-table")
         }
         let zoneTable = ckTables.first { $0.uppercased().contains("ZONEMETADATA") }
 
@@ -149,13 +183,16 @@ enum CKIdentityCapture {
         guard let entityPKCol = metaCol("ZENTITYPK"),
               let entityIDCol = metaCol("ZENTITYID"),
               let recNameCol = metaCol("ZCKRECORDNAME") else {
-            for req in requests { req.row.applyOutcome(.failed(reason: "meta-columns-missing")); report.failed += 1 }
-            return report
+            return failAll("meta-columns-missing")
         }
         let zoneFKCol = metaCol("ZRECORDZONE")
 
-        // Mapa Z_NAME → Z_ENT (Z_PRIMARYKEY) UNA vez. Vacío/no legible → cada lookup fallará por zent.
+        // Mapa Z_NAME → Z_ENT (Z_PRIMARYKEY) UNA vez. Vacío o ilegible no es «ninguna de estas entidades existe»:
+        // un store de Core Data siempre lo tiene lleno, así que sin él no se puede localizar ninguna fila.
         let zentByEntity = loadPrimaryKeyMap(db)
+        guard !zentByEntity.isEmpty else {
+            return failAll("primary-key-map-unreadable")
+        }
 
         // Zona: columnas resueltas UNA vez (solo si hay tabla de zonas).
         var zoneNameCol: String?
@@ -166,6 +203,10 @@ enum CKIdentityCapture {
             zoneOwnerCol = zoneCols.first { $0.uppercased().contains("OWNER") }
         }
 
+        // Cuántas filas llegaron a consultar la metadata y cuántas de esas consultas fallaron: si fallan TODAS, la
+        // tabla no se deja leer y la corrida no miró nada. Las `no-zent` no la consultan y no cuentan en ningún lado.
+        var metaQueryAttempts = 0
+        var metaQueryFailures = 0
         for req in requests {
             let outcome = lookup(
                 db, request: req, metaTable: metaTable,
@@ -174,6 +215,15 @@ enum CKIdentityCapture {
                 zentByEntity: zentByEntity)
             req.row.applyOutcome(outcome)
             report.record(outcome)
+            if case .failed(let reason) = outcome {
+                let bucket = failureBucket(reason)
+                if bucket == "no-zent" { continue }
+                if bucket == "meta-query" { metaQueryFailures += 1 }
+            }
+            metaQueryAttempts += 1
+        }
+        if metaQueryAttempts > 0, metaQueryFailures == metaQueryAttempts {
+            report.structuralFailure = "meta-query"
         }
         return report
     }
