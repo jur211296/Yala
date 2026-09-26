@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-26 (Lima)
 
-**Rama** `2.1` — Merge #258: **Exploración del plugin de Yala para Claude (conector MCP de solo lectura), sin código.**
+**Rama** `2.1` — Merge #259: **Si la hora del iPhone retrocede, los gastos de grupo ya no dejan de subir.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,29 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#258 · exploración: plugin de Yala para Claude)
+## Esta sesión (#259 · un reloj que retrocede ya no encalla la subida de los gastos de grupo)
+
+**Si la hora del iPhone estuvo adelantada y volvió, los gastos de grupo que apuntes después suben como siempre**, y cerrar
+sesión, desasociar y «Empezar de cero» ya no se paran con un «inténtalo en un rato» que esperando no se cumplía. Antes
+esos gastos no salían nunca del teléfono. Sin texto nuevo: el bloqueo ya no ocurre.
+
+- `HLCClock.sendLocal(eventTime:)`: el algoritmo de `send` sin la guarda de deriva y con el contador agotado avanzando
+  1 ms. El drain de Grupos estampa con ella y sigue usando la fecha de la transacción (el re-drain no duplica). `send` no
+  cambia. Regla nueva en `swiftdata-cloudkit.md` («Y el drain de Grupos estampa con `sendLocal`»).
+- El guion de device-QA de #257 atrasaba la hora para provocar el bloqueo: ahora daría lo contrario y se reescribió.
+
+**Verificado:** gate con 8055 unit y 13 XCUITest, centinela limpio; 7/7 mutantes; review adversarial de tres lentes (lo que
+cazó, arreglado en la misma rama). Ticket a `qa` con guion (fecha adelantada un día → gasto → hora automática → otro
+gasto → los dos llegan → «Desasociar» sigue).
+
+### Lo que espera de Jürgen
+
+- Device-QA del ticket, cuando puedas.
+- Hallazgos, a backlog: `groups-clock-ahead-wins-every-conflict-until-real-time-catches-up` (low; el precio del arreglo:
+  un teléfono con la hora adelantada gana los conflictos de sus grupos hasta que la hora real lo alcanza) y
+  `personal-clock-rollback-wedges-the-drain-forever` (medium; el mismo encallamiento en el canal personal).
+
+## Sesión anterior (#258 · exploración: plugin de Yala para Claude)
 
 **Nada cambia en la app.** Hay un documento, `docs/exploracion/plugin-claude-mcp.md`, que evalúa un conector MCP
 de solo lectura sobre la nube, con OAuth por usuario, más tres skills. Es el diferido #22 del modo nube.
@@ -44,7 +66,7 @@ corregida.
   3. Cuándo empezar.
   4. Cambiar «suscripciones sin usar» por «recurrentes a revisar».
 
-## Sesión anterior (#257 · un drain de grupos a medias ya no se lee como «nada pendiente»)
+## Antes (#257 · un drain de grupos a medias ya no se lee como «nada pendiente»)
 
 **Apuntas un gasto de grupo y justo después cierras sesión, desasocias o haces «Empezar de cero». Si la app no conseguía
 pasarlo a la cola de subida (un fallo al leer o guardar, o el reloj desajustado), la cola salía vacía y el gesto lo borraba.
@@ -57,13 +79,11 @@ textos que ya existían («no llegaron al servidor… inténtalo en un rato», o
 - Con la traducción cortada no se re-ancla el token de History (preexistente, lo cazó la review).
 
 **Verificado:** gate con 8042 unit y 22 XCUITest, centinela limpio; 22/22 mutantes; review adversarial de tres lentes (lo que
-cazó, arreglado en la misma rama). Ticket a `qa` con guion (hora del iPhone atrasada una hora → gasto → «Desasociar»).
+cazó, arreglado en la misma rama). Ticket a `qa`; su guion de reloj atrasado lo reescribió #259.
 
 ### Lo que espera de Jürgen
 
-- **Priorizar** `groups-clock-rollback-wedges-the-drain-forever` (medium, preexistente): si la hora del iPhone retrocede más
-  de 5 min, los gastos de grupo de después no suben nunca, y desde #257 esas tres salidas se bloquean (antes borraban en
-  silencio) con un «inténtalo en un rato» que ahí no es verdad. Arreglarlo toca cómo estampa el reloj del sync.
+- ~~Priorizar `groups-clock-rollback-wedges-the-drain-forever`~~: cerrado en #259.
 - Sigue en pie la decisión de #256 (`fresh-start-has-no-way-out-when-group-writes-can-never-upload`).
 - Device-QA del ticket, cuando puedas. Otros hallazgos, a backlog: `private-sign-out-counts-group-writes-without-capturing-them`
   (low), `personal-sign-out-reads-an-unfinished-drain-as-nothing-pending` (medium),
