@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-26 (Lima)
 
-**Rama** `2.1` — Merge #261: **Claude ya se conecta a Yala en staging y lee tus finanzas sin poder tocarlas (fase 0 del conector).**
+**Rama** `2.1` — Merge #262: **Cerrar sesión en la nube ya no borra un cambio personal que no llegó a capturarse, y la limpieza del historial ya no se lleva cambios sin subir.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,31 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#261 · conector de Yala para Claude, fase 0 en staging)
+## Esta sesión (#262 · cerrar sesión en la nube ya no da por subido un cambio que no se capturó)
+
+**Con los datos en la nube, si al cerrar sesión queda un cambio tuyo fuera de la cola de subida, Yala lo intenta otra
+vez y, si sigue ahí, no borra nada y dice «Un momento más»** (texto que ya existía). **Y un cambio guardado mientras Yala
+sincroniza ya no puede perderse para tus otros dispositivos**: la limpieza del historial interno lo borraba antes de
+subirlo. Esto segundo no lo pedía el ticket: salió al medirlo, y sin él el ticket no se podía cerrar.
+
+- El push-all del cierre relee el History tras el ciclo (`CloudSignOutFlowLogic.personalVerdictAfterProbe`), en
+  `.drained` y en el bloqueo por App Attest; con algo sin capturar da otra vuelta hasta el tope.
+- `CloudSyncEngine.purgeHistoryOnce` corta en lo que el drain consumió (ancla y lo más viejo sin consumir por token), no
+  en `now`. La sonda lee la ventana del drain (respaldo de token roto y paso 3-bis). Regla nueva en
+  `swiftdata-cloudkit.md` («Y con el motor abierto, el outbox a 0 tampoco prueba nada»).
+
+**Verificado:** gate con 8075 unit y 17 XCUITest, centinela limpio; 13/13 mutantes; review adversarial de tres lentes
+(sus hallazgos, arreglados en la rama salvo dos con ticket). Ticket a `qa` con guion.
+
+### Lo que espera de Jürgen
+
+- Device-QA de `personal-sign-out-reads-an-unfinished-drain-as-nothing-pending`: cerrar sesión en la nube con y sin un
+  gasto recién apuntado; con segundo dispositivo, comprobar que llega lo apuntado al volver a la app.
+- Hallazgos, a backlog (low): `personal-drain-that-always-aborts-blocks-cloud-sign-out-with-a-wait-a-moment-copy` (un
+  drain que falla siempre deja «un momento más» para siempre, también al teléfono sin App Attest: decidir si debe tener
+  salida) y `cloud-sign-out-final-recount-misses-edits-left-only-in-history`.
+
+## Sesión anterior (#261 · conector de Yala para Claude, fase 0 en staging)
 
 **Con un usuario de prueba de staging, Claude se conecta a Yala, pide permiso y contesta con sus datos reales**:
 saldos, movimientos, resumen del mes, presupuestos y recurrentes. Solo puede leer las finanzas: la base se lo impide.
@@ -43,7 +67,7 @@ Verificado con Claude Code de punta a punta («39 cuentas, −189 PEN» para A).
 - Si quieres probarlo tú: Claude Desktop → Conectores → añadir
   `https://yala-mcp-staging.misty-surf-6866.workers.dev/mcp`, e iniciar sesión con el usuario A de prueba.
 
-## Sesión anterior (#260 · un reloj que retrocede ya no encalla la subida de los cambios personales)
+## Antes (#260 · un reloj que retrocede ya no encalla la subida de los cambios personales)
 
 **Con los datos en la nube, si la hora del iPhone estuvo adelantada y volvió, lo que apuntes después sube como siempre**
 y tus otros dispositivos lo ven. Antes no salía nunca del teléfono, sin aviso ni bloqueo. Lo mismo con las preferencias:
