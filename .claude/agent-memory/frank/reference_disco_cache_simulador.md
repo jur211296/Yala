@@ -54,3 +54,8 @@ simulador mientras se vacía, devolvió 10 GB (13 → 23). ⇒ después de una b
 líneas por directorio (ruta y fecha) y borré la DerivedData del árbol principal de Jürgen creyendo que era la de un
 worktree retirado. Es caché y se regenera, pero le cuesta un build. `PlistBuddy -c "Print :WorkspacePath" <dir>/info.plist`
 justo antes del `find -delete`, y el `find` solo si la ruta es la que esperabas.
+
+**2026-09-26: con 6,5 GB libres y 17 GB en scratchpads de sesiones de Yala ya retiradas, el `rm -rf` de esos scratchpads lo
+DENIEGA el permiso** (y también un `rm -rf` dentro del mío). No lo fuerces por otra vía: la caché del simulador bastó (6,5 → 8,8 GB,
+y otra vez antes del gate), y un `-resultBundlePath` con nombre nuevo evita tener que borrar el anterior. Un build + suite
+completa + 16 mutantes + XCUITest cupieron por encima de 4 GB.
