@@ -1,10 +1,10 @@
 ---
 id: reverse-upload-sample-reads-unreadable-rows-as-drained
-status: backlog
+status: qa
 priority: medium
 area: "modo-nube, migración"
 created: 2026-09-16
-updated: 2026-09-23
+updated: 2026-09-26
 source: "medición de `reverse-upload-has-no-ceiling-and-no-exit` (2026-09-16)"
 ---
 
@@ -52,11 +52,74 @@ y cada intento acabaría en el techo. Hay que medir antes qué `failed` aparecen
 
 ## Criterios de aceptación
 
-- [ ] Medido en device qué motivos de `failed` aparecen durante una reversa real.
-- [ ] Un muestreo que no pudo leer NO devuelve `.drained`.
-- [ ] Test con mutante: devolver la suma vieja pone el caso en rojo.
+- [ ] Medido en device qué motivos de `failed` aparecen durante una reversa real. **Pasa a su propio ticket**,
+  `reverse-upload-failed-rows-need-a-device-measurement`: la medición ya está cableada.
+- [x] Un muestreo que no pudo leer NO devuelve `.drained`.
+- [x] Test con mutante: devolver la suma vieja pone el caso en rojo.
 
 ## Relacionado
 
 - `reverse-upload-has-no-ceiling-and-no-exit`.
 - `.claude/rules/swiftdata-cloudkit.md` — `isMarkerExported()` es necesaria-no-suficiente por lo mismo.
+
+## Arreglado (2026-09-26)
+
+**«Volver a iCloud» ya no se da por terminada cuando la comprobación no pudo mirar tus datos.** Si Yala no consigue leer
+lo que iCloud sabe de tus filas, la vuelta sigue esperando en vez de cerrarse; si la avería dura, sale al plazo largo y
+tus datos siguen en la nube de Yala. Con iCloud sano no cambia nada.
+
+- **Decide quien sabe por qué no miró**: `CKIdentityCapture.Report.structuralFailure`. Seis casos: el SQLite no abre,
+  falta la tabla de metadata del espejo, faltan sus columnas, el mapa `Z_PRIMARYKEY` sale vacío o ilegible, ningún
+  identificador de fila se resuelve, o la consulta de metadata falla en TODAS las filas que la intentan.
+- **`reverseUploadStatus()` lo convierte en `.unreadable`**, el camino que ya existía desde
+  `an-incomplete-inventory-reads-as-the-whole-corpus`: ni cierra ni cuenta como avance, y el techo sigue venciendo. El
+  runner no cambia (lo fija `reverseUploadCeiling_unreadableSample_neitherClosesNorAdvances_ceilingStillApplies`).
+- **Los `failed` POR FILA siguen fuera de la suma**, como pedía el encargo, y ahora se miden: `Report.failedReasons`
+  (motivo sin el detalle de SQLite), breadcrumb `CloudSyncReverse uploadFailedRows` y canario
+  `cloudReverseUploadFailedRows`. «Todas `no-zent` con el mapa leído» se queda por fila a propósito: es el caso benigno
+  y permanente del ticket.
+- **Canario del estructural**: `cloudReverseUploadSampleUnreadable` con el motivo, una vez por proceso.
+
+**Verificado**: `CKIdentityCaptureTests` (cada pieza que falta, con control; la consulta que falla en todas aunque haya
+`no-zent`; una capturada junto a una `no-zent`; todas `no-zent`) y `MigrationWorkExecutorTests` (cuatro SQLite rotos → `.unreadable`
+con el canario, con control `.pending(1)`; un `no-zent` por fila → `.drained` como antes, con su canario). Mutantes:
+volver a la suma vieja en el ejecutor pone rojo el caso estructural; quitar el término de `meta-query`, el del mapa
+vacío o el canario por fila, también.
+
+**Sin test**, dos ramas: «ningún identificador se resuelve» (`uri-unparseable`: un `PersistentIdentifier` persistido
+siempre da su URI y no se puede fabricar uno roto) y «la consulta de metadata falla en unas filas y no en otras» (solo
+sale con un error transitorio de SQLite). Por eso sobreviviría el mutante que marca estructural ante UNA consulta
+fallida: la regla dice «en todas», y esa mitad no está fijada.
+
+**Encontrado y no tocado**: la muestra ilegible espera el plazo LARGO (72 h), con el texto de «subiendo». Es
+`reverse-upload-unreadable-sample-waits-the-long-ceiling` (decisión de producto), que desde hoy cubre también este caso.
+
+## Device-QA (pendiente, no bloquea)
+
+El caso que arregla (el espejo sin sus tablas) no se puede provocar a propósito en un iPhone sin cerrar la sesión de
+iCloud, y eso ya se descartó en el barrido del 23-sep. Lo que se mira es que **el camino normal no cambia** y que el
+rastro nuevo aparece.
+
+**Montaje**: en el Mac, trae `2.1` al día (`git pull`) para que el build lleve este cambio, y lanza `Yala Dev` desde
+Xcode en un iPhone (staging) **con iCloud activo**, una cuenta en la nube con algunos
+movimientos, y el iPhone conectado al Mac con **Console.app** abierta (elige el iPhone a la izquierda, pulsa «Iniciar
+transmisión» y escribe `CloudSyncReverse` en el buscador).
+
+1. En Yala: **Perfil → «Dónde viven tus datos» → «Volver a iCloud»**, pasa las dos confirmaciones y, cuando lo pida,
+   cierra Yala del todo y vuelve a abrirla.
+2. Vuelve a «Dónde viven tus datos». **Esperado**: «Subiendo tus datos a iCloud» con la cifra de pendientes bajando, y
+   al rato la vuelta termina en modo privado, como antes.
+3. En Console.app, **esperado**: líneas `uploadPending count=…` que bajan. **No** debe salir `uploadSampleUnreadable`.
+   Si sale `uploadFailedRows`, copia la línea entera en `reverse-upload-failed-rows-need-a-device-measurement`: es la
+   medición que ese ticket necesita.
+4. Si la vuelta **no** termina y en Console sale `uploadSampleUnreadable reason=…`, es este arreglo actuando: apunta el
+   `reason` aquí, con captura de la pantalla. «Cancelar y seguir en la nube» tiene que devolverte a la nube.
+
+**Qué prueba y qué no**: con iCloud sano el build viejo y el nuevo se comportan igual, así que este guion es de
+no-regresión. La huella del arreglo solo sale si aparece `uploadSampleUnreadable` (paso 4) o `uploadFailedRows` (paso 3).
+
+### Criterios de aceptación de QA
+
+- [ ] Con iCloud sano, la vuelta termina en modo privado como antes.
+- [ ] Console enseña el rastro de la espera sin `uploadSampleUnreadable`.
+
