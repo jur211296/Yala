@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-26 (Lima)
 
-**Rama** `2.1` — Merge #267: **«Volver a iCloud» ya no se da por terminada cuando Yala no pudo comprobar si tus datos llegaron a iCloud: sigue esperando y, si la avería dura, vuelve a la nube por el plazo largo.**
+**Rama** `2.1` — Merge #268: **Si «Empezar de cero» desde el aviso tardío de iCloud falla y sales, Yala ya no termina el borrado a ciegas en el siguiente arranque; si quedó a medias, lo dice y pregunta.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,30 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#267 · la vuelta a iCloud no se da por terminada si la comprobación no pudo mirar ninguna fila)
+## Esta sesión (#268 · salir de un borrado fallido del aviso tardío de iCloud ya no lo reanuda a ciegas)
+
+**Si «Empezar de cero» desde «Encontramos datos tuyos en iCloud» falla y sales**, el arranque siguiente ya no termina el
+borrado sin pantalla (zona, filas y grupos). Si falló antes de tocar iCloud, no se borró nada y el aviso vuelve a
+preguntar. Si falló después, sale «El borrado quedó a medias»: quedarse con lo del teléfono (arriba) o terminar de
+borrar con su «¿seguro?»; si sales sin elegir, vuelve a preguntar.
+
+- La marca de zona la escribe `performICloudCorpusWipe` al cruzarla (sub-estado del arm); el fallo se clasifica al
+  ENTRAR en la fase (`classifyLateWipeFailure`), así que botón, barra, deslizar o kill dan lo mismo.
+- Grupos pendientes también desarma al entrar; «Vaciar datos» y el cierre de sesión retiran la marca «a medias».
+- Regla al día en `swiftdata-cloudkit.md` («Un borrado del corpus de iCloud que FALLA no es uno»).
+
+**Verificado:** gate con 8136 unit y 10/10 XCUITest del área, 12/12 mutantes, review adversarial de tres lentes (cinco
+medios arreglados en el PR). CI verde. Ticket a `qa`.
+
+### Lo que espera de Jürgen
+
+- Device-QA opcional de `late-icloud-notice-exit-after-a-failed-wipe-leaves-the-blind-resume-armed`: modo avión justo
+  antes de «Vaciar definitivamente», «Dejarlo por ahora», reabrir sin modo avión → vuelve a preguntar y no borra nada.
+- Nuevos en backlog (low): `groups-pending-screen-says-nothing-was-deleted-after-a-halfway-wipe` (copy),
+  `late-icloud-sheet-buttons-may-leave-the-screen-at-large-dynamic-type` (no demostrado) y
+  `finish-halfway-wipe-early-failure-shows-no-feedback` (copy).
+
+## Sesión anterior (#267 · la vuelta a iCloud no se da por terminada si la comprobación no pudo mirar ninguna fila)
 
 **Si la comprobación de «Volver a iCloud» no consigue leer lo que el espejo sabe de tus datos** —el SQLite no abre, faltan
 sus tablas o columnas, el mapa de entidades sale vacío—, **la vuelta ya no se cierra**: la muestra sale ilegible, ni cierra
@@ -45,7 +68,7 @@ sin hallazgos altos. CI verde. Ticket a `qa` con guion de no-regresión.
   estructural) y una nota en `reverse-upload-unreadable-sample-waits-the-long-ceiling` (decisión de producto: 72 h con
   «subiendo»).
 
-## Sesión anterior (#266 · Las cifras del conector de Claude cuadran con la app)
+## Antes (#266 · Las cifras del conector de Claude cuadran con la app)
 
 **Si preguntas a Claude cuánto gastaste, la cifra es la misma que enseña la app.** Un gasto de grupo que pagaste tú cuenta
 por tu parte (no por el total, y la parte que te deben ya no sale como ingreso), y un movimiento en otra divisa se
