@@ -3,7 +3,8 @@
  *
  * - Equivalente mensual: port de `FullFinancialContextBuilder.monthlyMultiplier` (línea 770): diario × 30/n,
  *   semanal × 4,33/n, mensual × 1/n, anual × 1/(12·n); un pago único cuenta una vez.
- * - Totales: port de `monthlyTotal` (línea 749): solo GASTOS, separados en suscripciones y recurrentes.
+ * - Totales: port de `monthlyTotal` (línea 749): solo GASTOS, separados en suscripciones y recurrentes, convertidos
+ *   con la tasa de HOY (`convert(on: now)`: el día UTC de ahora).
  *
  * «Recurrentes a revisar» (decisión de Jürgen, 2026-09-26): Yala no sabe si usas un servicio, solo si lo pagas. Así
  * que aquí no hay «sin usar». Hay dos hechos medibles, y se dicen tal cual:
@@ -11,7 +12,7 @@
  *   más de dos ciclos, o no hay ninguno.
  * - `proximo_cobro_vencido`: la fecha del próximo cobro ya pasó y la app no la ha adelantado.
  */
-import { convert, type RateTable } from "./fx";
+import { convertOn, type RateBook } from "./fx";
 import { dayInZone, daysInclusive, type Day } from "./dates";
 import { num, round2, type ScheduledPaymentRow, type SubcategoryRow, type CategoryRow } from "./types";
 
@@ -90,7 +91,7 @@ export function listRecurring(
   payments: ScheduledPaymentRow[],
   lastLinkedTxDay: Map<string, Day>,
   refs: { subcategories: Map<string, SubcategoryRow>; categories: Map<string, CategoryRow> },
-  ctx: { today: Day; tz: string; preferredCurrency: string; rates: RateTable | null; soloActivos: boolean },
+  ctx: { today: Day; todayUtc: string; tz: string; preferredCurrency: string; rates: RateBook; soloActivos: boolean },
 ): RecurringResult {
   const avisos: string[] = [];
   let approximate = false;
@@ -109,9 +110,10 @@ export function listRecurring(
     const currency = (p.currency_code ?? "USD").toUpperCase();
     const mult = monthlyMultiplier(p);
     const monthly = amount * mult;
-    const monthlyPref = convert(monthly, currency, ctx.preferredCurrency, ctx.rates);
-    if (monthlyPref === null) unconvertible += 1;
-    else if (currency !== ctx.preferredCurrency.toUpperCase()) approximate = true;
+    const converted = convertOn(monthly, currency, ctx.preferredCurrency, ctx.todayUtc, ctx.rates);
+    const monthlyPref = converted?.value ?? null;
+    if (converted === null) unconvertible += 1;
+    else if (converted.quality !== "exact") approximate = true;
 
     const isExpense = (p.transaction_type ?? "expense") === "expense";
     if (active && isExpense && monthlyPref !== null) {
@@ -154,8 +156,8 @@ export function listRecurring(
   }
 
   items.sort((a, b) => (b.equivalente_mensual_en_divisa_preferida ?? 0) - (a.equivalente_mensual_en_divisa_preferida ?? 0));
-  if (approximate) avisos.push("Los equivalentes en tu divisa usan la tasa más reciente: son aproximados.");
-  if (unconvertible > 0) avisos.push(`${unconvertible} pago(s) en otra divisa no se pudieron convertir y no están en los totales.`);
+  if (approximate) avisos.push("Algún equivalente en tu divisa se convirtió sin la cotización exacta de hoy: es aproximado.");
+  if (unconvertible > 0) avisos.push(`${unconvertible} pago(s) en una divisa que la app no reconoce no están en los totales.`);
   avisos.push(
     "«A revisar» solo dice si hay movimientos recientes enlazados al pago o si su fecha pasó. Yala no sabe si usas el servicio.",
   );

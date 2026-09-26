@@ -354,7 +354,8 @@ cambiar la cuenta de inicio de sesión** (`PUT /auth/v1/user` → 200), y eso ha
 5. **Las filas llegan a medias** (el sync es por campo): la lógica usa el default del modelo o salta la fila, y lo
    cuenta en `avisos`.
 6. **Faltan datos del teléfono en la nube.** `local_day` falta en 1142 de 4465 movimientos de staging, y la zona
-   horaria y `firstWeekday` no viajan.
+   horaria no viaja. (`firstWeekday` sí: es una preferencia sincronizada que solo sube cuando el usuario la cambia;
+   corregido en §9.)
 7. **Las cuentas de prueba casi no tienen movimientos con categoría.** Los cálculos se validaron con datos a
    mano; la paridad con cifras reales la darán los golden vectors.
 8. **Staging tiene presupuestos con `natures` en inglés** (fixtures `i12-*`). La app los ignora, y el MCP también.
@@ -364,8 +365,9 @@ cambiar la cuenta de inicio de sesión** (`PUT /auth/v1/user` → 200), y eso ha
 
 - ~~**Bloqueante:** que el token de Claude no pueda cambiar la cuenta.~~ Cerrado en §8: Claude recibe un token del
   Worker, que no sirve en Supabase.
-- **Paridad de cifras:** golden vectors desde Swift, gastos de grupo, tasa del día y zona horaria
-  (`claude-mcp-numbers-match-the-app`).
+- ~~**Paridad de cifras:** golden vectors desde Swift, gastos de grupo, tasa del día y zona horaria
+  (`claude-mcp-numbers-match-the-app`).~~ Cerrado en §9, salvo la zona horaria
+  (`app-uploads-its-timezone-to-the-cloud`).
 - **Login con Apple y Google** en la pantalla de consentimiento (`claude-mcp-consent-with-apple-and-google`).
 - **Producción:**
   - Aplicar `mcp0_01` y `mcp0_02` (con el id del cliente del Worker en producción) por el runbook, en una ventana sin
@@ -492,6 +494,56 @@ con el login normal (intacto). MFA, además, apagado.
   que registró el primer e2e antes de apagar el DCR. Borrarlos exige `service_role`.
 - **El token de Claude lleva en claro el id de usuario de Supabase**, porque es el formato de la librería
   (`usuario:grant:secreto`). No es una credencial.
+
+## 9. Las cifras del conector cuadran con la app, y lo dice la app (2026-09-26, noche)
+
+**Qué cambia para quien use Claude:** un gasto de grupo que pagaste tú cuenta por tu parte, no por el total; un
+movimiento en otra divisa se convierte con la cotización de su día, como en Estadísticas; y el campo `avisos` ya no
+habla de grupos ni de tasas. Solo queda un aviso de diferencia: la zona horaria, cuando Claude no la pasa.
+
+### Cómo se sabe
+
+`mcp/test/golden/app-parity.json` son escenarios escritos como filas de PostgREST. El test de Swift
+`YalaTests/MCP/MCPAppParityGoldenTests.swift` los mete en SwiftData por el camino real del pull (`EntityApplyMap`) y
+calcula con el código de producción —`InitialBalanceService`, `FullFinancialContextBuilder.buildFromArrays`,
+`BudgetsViewModel.calculateSpending`, `GroupBridgeStatsAdjustment`, `CurrencyConverter.convertChecked`—, y escribe
+los `expected` (con `TEST_RUNNER_YALA_WRITE_MCP_GOLDENS=1`) o los verifica (sin ella). `npm test` en `mcp/` pasa las
+mismas filas por el TypeScript y exige la misma cifra, al medio céntimo. Si la app cambia una regla, el test de
+Swift se pone rojo; si el conector se separa, `npm test`.
+
+Lo que el conector copia tal cual de la app —la tabla estática de tasas y los nombres de «Préstamo a grupos» en todos
+los idiomas— también viaja en el golden y se compara.
+
+### Las reglas portadas
+
+- **Tasa del día** (`mcp/src/logic/fx.ts`): port de `CurrencyConverter.resolveRates`. La clave es el día **UTC** del
+  instante; la fila de ese día; lo que falte, de las 30 filas anteriores; y lo que siga faltando, de la tabla
+  estática. «La tasa de hoy» (saldos, presupuestos, recurrentes) es la misma función con el día UTC de ahora. `≈` si
+  algo no salió de la fila del día, con el umbral del 5 % de `ApproximateMarkThreshold` en los resúmenes.
+- **Gastos de grupo** (`mcp/src/logic/groups.ts`): port literal de `GroupBridgeStatsAdjustment`. Se construye con las
+  dos patas presentes: las herramientas leen las hermanas por `split_expense_id` aunque caigan fuera del rango.
+- **Primer día de la semana:** el que pase Claude (`primer_dia_semana`), si no la preferencia sincronizada, y si no,
+  lunes — que es también el default de la app.
+
+### Diferencias que quedan, y por qué
+
+- **Zona horaria**, cuando Claude no la pasa: el único aviso que queda en `avisos`
+  (`app-uploads-its-timezone-to-the-cloud`).
+- **Filas de tasas duplicadas.** En staging, 367 días tienen dos o tres filas (una por dispositivo), con valores que
+  difieren hasta un 12,6 %. La app convierte con la primera que le devuelve SwiftData, sin orden; el conector las
+  funde con una regla determinista (y respeta la ventana de 30 FILAS de la app, no 30 días). No hay cifra de la app
+  que copiar hasta que ella también lo sea (`duplicate-exchange-rate-rows-pick-an-arbitrary-rate`).
+- **Una divisa que no es de las 54, o un alias** («S/.», «US$»). La app normaliza el alias y colapsa lo desconocido
+  a USD (`fx-unknown-currency-code-collapses-to-usd`); el conector no lo suma y lo dice. El wire trae códigos ya
+  normalizados.
+- **Días, no instantes.** Un movimiento de hoy posterior a la hora actual cuenta en el conector y no en el chat de la
+  app; y el periodo de un presupuesto termina el último día, no en la medianoche del siguiente
+  (`budget-interval-counts-next-period-midnight`). El golden no mide el periodo de los presupuestos: es una entrada.
+- **La «tasa de hoy» depende de que alguien la haya descargado.** Si el usuario no ha abierto la app hoy, no hay
+  fila de hoy y el conector arrastra la de ayer, con «≈»; la app, al abrirse, descarga la de hoy.
+
+Hallazgo de la review que va a la app: las claves de día de las tasas siguen el calendario del teléfono
+(`exchange-rate-date-keys-follow-the-phone-calendar`, inferido).
 
 [rc]: https://claude.com/docs/connectors/building/review-criteria
 [auth]: https://claude.com/docs/connectors/building/authentication

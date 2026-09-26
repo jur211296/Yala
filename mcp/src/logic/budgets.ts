@@ -9,7 +9,8 @@
  *   (Yala/App/ViewModels/BudgetsViewModel.swift:540, 615). Igual que esa pantalla, NO quita movimientos futuros
  *   ni de cuentas excluidas o archivadas (el chat de la app sí; la pantalla no). Filtros: cuentas, subcategorías,
  *   etiquetas (basta una en común), naturaleza y gastos compartidos. Solo movimientos con categoría que no sea de
- *   ingreso. Suma de valores absolutos en la divisa del presupuesto, con la tasa más reciente si hace falta.
+ *   ingreso. Suma de valores absolutos en la divisa del presupuesto, con la tasa de HOY (`convertWithLatestRate`) si
+ *   hace falta. Un gasto de grupo cuenta por «tu parte» y su pata de préstamo no cuenta (ver groups.ts).
  * - Estado: port de `FullFinancialContextBuilder.buildBudgets` (líneas 608-656): sin límite / excedido ≥ 100 % /
  *   en riesgo ≥ 75 % / en camino.
  *
@@ -20,7 +21,8 @@
  * `DateInterval.contains` lo incluye (ticket `budget-interval-counts-next-period-midnight`). Aquí no.
  */
 import { categoryOf, type Lookup } from "./lookup";
-import { convert, type RateTable } from "./fx";
+import { convertOn, type RateBook } from "./fx";
+import { NO_GROUP_ADJUSTMENT, type GroupAdjustment } from "./groups";
 import { addDays, dayInZone, monthEnd, monthStart, txDay, weekStart, yearEnd, yearStart, type Day } from "./dates";
 import { num, round2, type BudgetRow, type TxRow } from "./types";
 
@@ -87,10 +89,19 @@ export function budgetStatuses(
   budgets: BudgetRow[],
   txs: TxRow[],
   lookup: Lookup,
-  ctx: { today: Day; tz: string; rates: RateTable | null; firstWeekday: 1 | 2; soloActivos: boolean },
+  ctx: {
+    today: Day;
+    /** Día UTC de ahora: la clave con la que la app busca «la tasa de hoy». */
+    todayUtc: string;
+    tz: string;
+    rates: RateBook;
+    firstWeekday: 1 | 2;
+    soloActivos: boolean;
+    groups?: GroupAdjustment;
+  },
 ): { presupuestos: BudgetStatus[]; avisos: string[] } {
+  const groups = ctx.groups ?? NO_GROUP_ADJUSTMENT;
   const avisos: string[] = [];
-  let groupTx = 0;
   let unconvertible = 0;
   let unknownNatures = 0;
 
@@ -99,6 +110,8 @@ export function budgetStatuses(
   for (const tx of txs) {
     if (tx.balance_adjustment_type) continue;
     if (num(tx.amount) === null) continue;
+    // Pata de préstamo de un gasto de grupo: la parte de los demás no es gasto tuyo.
+    if (groups.isSuppressed(tx)) continue;
     const day = txDay(tx, ctx.tz);
     if (day) eligible.push({ tx, day });
   }
@@ -133,15 +146,21 @@ export function budgetStatuses(
       if (rawNatures.length > 0 && !natures.includes(effectiveNeed(tx, lookup))) continue;
       if (!includeShared && tx.split_expense_id) continue;
 
-      const native = num(tx.amount) ?? 0;
+      // Nativo ya proyectado a «tu parte» si es la pata real de un gasto de grupo.
+      const native = groups.amount(tx) ?? 0;
       const from = (tx.currency_code ?? "USD").toUpperCase();
-      const value = convert(native, from, currency, ctx.rates);
-      if (value === null) {
-        unconvertible += 1;
-        continue;
+      let value: number;
+      if (from === currency) {
+        value = native;
+      } else {
+        const out = convertOn(native, from, currency, ctx.todayUtc, ctx.rates);
+        if (!out) {
+          unconvertible += 1;
+          continue;
+        }
+        if (out.quality !== "exact") approximate = true;
+        value = out.value;
       }
-      if (from !== currency && ctx.rates?.filledFromOlder.has(from)) approximate = true;
-      if (tx.split_expense_id) groupTx += 1;
       spent += Math.abs(value);
       movements += 1;
     }
@@ -180,10 +199,7 @@ export function budgetStatuses(
     });
   }
 
-  if (groupTx > 0) {
-    avisos.push(`${groupTx} gasto(s) de grupo cuentan por su importe entero, no por tu parte. La app los ajusta; esta versión todavía no.`);
-  }
-  if (unconvertible > 0) avisos.push(`${unconvertible} movimiento(s) en otra divisa no se pudieron convertir y no están sumados.`);
+  if (unconvertible > 0) avisos.push(`${unconvertible} movimiento(s) en una divisa que la app no reconoce no están sumados.`);
   if (unknownNatures > 0) {
     avisos.push(`${unknownNatures} presupuesto(s) filtran por una naturaleza que la app no reconoce; esa parte del filtro no deja pasar nada, igual que en la app.`);
   }

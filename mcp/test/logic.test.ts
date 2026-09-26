@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { computeBalances } from "../src/logic/balances";
 import { budgetStatuses } from "../src/logic/budgets";
-import { convert, latestRateTable } from "../src/logic/fx";
+import { buildRateBook, convertOn, resolveRates } from "../src/logic/fx";
+import { buildGroupAdjustment } from "../src/logic/groups";
 import { buildLookup } from "../src/logic/lookup";
 import { canonicalMerchant } from "../src/logic/merchant";
 import { listRecurring, monthlyMultiplier } from "../src/logic/recurring";
@@ -9,19 +10,78 @@ import { summarize } from "../src/logic/summary";
 import { resolvePeriod } from "../src/logic/dates";
 import { account, budget, category, scheduled, subcategory, tag, tx, uuid } from "./fixtures";
 
-const RATES = latestRateTable([
-  { date_key: "2026-09-01", base: "USD", rates: { PEN: "3.50", EUR: "0.90" } },
-  { date_key: "2026-09-09", base: "USD", rates: { PEN: "3.40", EUR: "0.85" } },
+const RATES = buildRateBook([
+  { date_key: "2026-09-01", base: "USD", rates: { USD: "1", PEN: "3.50", EUR: "0.90" } },
+  { date_key: "2026-09-09", base: "USD", rates: { USD: "1", PEN: "3.40", EUR: "0.85" } },
 ]);
+/** «Hoy» en UTC para las tasas: el día de la última fila, así la tasa de hoy es exacta. */
+const TODAY_UTC = "2026-09-09";
 
-describe("divisas", () => {
-  it("usa la fila más reciente y convierte pasando por la base", () => {
-    expect(RATES?.dateKey).toBe("2026-09-09");
-    expect(convert(34, "PEN", "USD", RATES)).toBeCloseTo(10);
-    expect(convert(-10, "USD", "PEN", RATES)).toBeCloseTo(-34);
-    expect(convert(8.5, "EUR", "PEN", RATES)).toBeCloseTo(34);
-    expect(convert(5, "PEN", "PEN", null)).toBe(5);
-    expect(convert(5, "JPY", "PEN", RATES)).toBeNull();
+describe("divisas (port de CurrencyConverter.resolveRates)", () => {
+  it("con la fila del día convierte exacto, pasando por USD", () => {
+    expect(convertOn(34, "PEN", "USD", "2026-09-09", RATES)).toEqual({ value: 10, quality: "exact" });
+    expect(convertOn(-10, "USD", "PEN", "2026-09-09", RATES)?.value).toBeCloseTo(-34);
+    expect(convertOn(8.5, "EUR", "PEN", "2026-09-09", RATES)?.value).toBeCloseTo(34);
+    expect(convertOn(5, "pen", "PEN", "2020-01-01", RATES)).toEqual({ value: 5, quality: "exact" });
+  });
+
+  it("sin fila ese día usa la anterior más reciente, nunca una posterior", () => {
+    expect(convertOn(35, "PEN", "USD", "2026-09-05", RATES)).toEqual({ value: 10, quality: "carried" });
+    expect(convertOn(34, "PEN", "USD", "2026-09-26", RATES)).toEqual({ value: 10, quality: "carried" });
+  });
+
+  it("antes de la primera fila, o una divisa que ninguna fila trae, sale de la tabla estática", () => {
+    expect(convertOn(3.72, "PEN", "USD", "2026-08-01", RATES)).toEqual({ value: 1, quality: "static" });
+    expect(convertOn(150, "JPY", "USD", "2026-09-09", RATES)).toEqual({ value: 1, quality: "static" });
+  });
+
+  it("una divisa que la app no conoce no se convierte", () => {
+    expect(convertOn(5, "XXX", "PEN", "2026-09-09", RATES)).toBeNull();
+  });
+
+  it("la ventana hacia atrás es de 30 filas, como la app", () => {
+    const rows = [{ date_key: "2026-01-01", base: "USD", rates: { USD: 1, PEN: 3.3, EUR: 0.8 } }];
+    for (let d = 1; d <= 30; d++) rows.push({ date_key: `2026-02-${String(d).padStart(2, "0")}`, base: "USD", rates: { USD: 1, PEN: 3.6 } as never });
+    const book = buildRateBook(rows);
+    // EUR solo está en una fila 31 filas atrás: la app ya no llega y usa la tabla estática.
+    expect(resolveRates(book, "2026-03-01", ["EUR", "USD"]).quality).toBe("static");
+    expect(resolveRates(book, "2026-02-30", ["EUR", "USD"]).quality).toBe("carried");
+  });
+
+  it("la ventana cuenta FILAS: con dos filas por día solo llega a 15 días atrás", () => {
+    const rows: { date_key: string; base: string; rates: Record<string, number> }[] = [
+      { date_key: "2026-01-10", base: "USD", rates: { USD: 1, JPY: 100 } },
+    ];
+    for (let d = 1; d <= 20; d++) {
+      const key = `2026-02-${String(d).padStart(2, "0")}`;
+      rows.push({ date_key: key, base: "USD", rates: { USD: 1, PEN: 3.5 } }, { date_key: key, base: "USD", rates: { USD: 1, PEN: 3.5 } });
+    }
+    const book = buildRateBook(rows);
+    // La app no alcanza la fila del 10-ene (40 filas atrás) y usa la tabla estática: JPY = 150.
+    expect(convertOn(10_000, "JPY", "PEN", "2026-02-21", book)).toEqual({ value: (10_000 / 150) * 3.5, quality: "static" });
+  });
+
+  it("una tasa se lee como la app: número o texto numérico exacto, y la clave tal cual", () => {
+    const book = buildRateBook([
+      { date_key: "2026-09-09", base: "USD", rates: { USD: 1, PEN: " 3.4", eur: "0.9", JPY: true as never, GBP: "0.75" } },
+    ]);
+    const day = book.byDay.get("2026-09-09");
+    expect(day?.has("PEN")).toBe(false);
+    expect(day?.has("EUR")).toBe(false);
+    expect(day?.has("JPY")).toBe(false);
+    expect(day?.get("GBP")).toBe(0.75);
+  });
+
+  it("varias filas del mismo día se funden: por divisa gana la de timestamp más reciente", () => {
+    const book = buildRateBook([
+      { sync_id: "b", date_key: "2026-09-09", base: "USD", rates: { USD: "1", PEN: "3.40", EUR: "0.85" }, timestamp: "2026-09-09T10:00:00Z" },
+      { sync_id: "a", date_key: "2026-09-09", base: "USD", rates: { USD: "1", PEN: "3.80" }, timestamp: "2026-09-09T12:00:00Z" },
+      { sync_id: "c", date_key: "2026-09-09", base: "USD", rates: { USD: "1", PEN: "9.99", GBP: "0.7" }, timestamp: null },
+    ]);
+    const day = book.byDay.get("2026-09-09");
+    expect(day?.get("PEN")).toBe(3.8);
+    expect(day?.get("EUR")).toBe(0.85);
+    expect(day?.get("GBP")).toBe(0.7);
   });
 });
 
@@ -55,23 +115,26 @@ describe("saldos", () => {
   ];
 
   it("el saldo de cada cuenta es la suma de sus movimientos en su divisa", () => {
-    const r = computeBalances(accounts, txs, "PEN", RATES, { incluirArchivadas: true });
+    const r = computeBalances(accounts, txs, "PEN", RATES, { incluirArchivadas: true, todayUtc: TODAY_UTC });
     const byName = Object.fromEntries(r.cuentas.map((c) => [c.nombre, c.saldo]));
     expect(byName).toEqual({ BCP: 849.5, "Ahorro USD": 100, Vieja: 50, Préstamo: -999 });
   });
 
-  it("el total deja fuera archivadas y excluidas, y convierte cada divisa con la tasa más reciente", () => {
-    const r = computeBalances(accounts, txs, "PEN", RATES, { incluirArchivadas: false });
+  it("el total deja fuera archivadas y excluidas, y convierte cada divisa con la tasa de hoy", () => {
+    const r = computeBalances(accounts, txs, "PEN", RATES, { incluirArchivadas: false, todayUtc: TODAY_UTC });
     expect(r.total.importe).toBeCloseTo(849.5 + 340);
-    expect(r.total.aproximado).toBe(true);
+    expect(r.total.aproximado).toBe(false);
+    // Sin fila de hoy se usa la última anterior, y eso es «≈», igual que en la app.
+    expect(computeBalances(accounts, txs, "PEN", RATES, { incluirArchivadas: false, todayUtc: "2026-09-26" }).total.aproximado).toBe(true);
     expect(r.cuentas.map((c) => c.nombre)).not.toContain("Vieja");
   });
 
-  it("una divisa sin tasa no se suma y se declara", () => {
-    const r = computeBalances(accounts, [...txs, { account_ref: pen, amount: 7, currency_code: "JPY" }], "PEN", RATES, {
+  it("una divisa que la app no conoce no se suma y se declara", () => {
+    const r = computeBalances(accounts, [...txs, { account_ref: pen, amount: 7, currency_code: "XXX" }], "PEN", RATES, {
       incluirArchivadas: false,
+      todayUtc: TODAY_UTC,
     });
-    expect(r.total.sin_convertir).toEqual([{ divisa: "JPY", importe: 7 }]);
+    expect(r.total.sin_convertir).toEqual([{ divisa: "XXX", importe: 7 }]);
   });
 });
 
@@ -103,7 +166,7 @@ describe("resumen de periodo (port de CashFlowCalculator)", () => {
     tx({ ...base, category_ref: food, amount: null }),
     // Del mes anterior, aunque `date` UTC caiga en septiembre: local_day manda.
     tx({ ...base, category_ref: food, date: "2026-09-01T02:00:00Z", local_day: "2026-08-31", amount: -999, amount_in_preferred_currency: -999 }),
-    // Otra divisa guardada con otra preferida: se reconvierte con la tasa más reciente → aproximado.
+    // Otra divisa guardada con otra preferida: se reconvierte con la tasa de SU día (10-sep, sin fila → la del 9) → ≈.
     tx({ ...base, category_ref: food, currency_code: "USD", amount: -10, amount_in_preferred_currency: -10, preferred_currency_code: "USD" }),
   ];
 
@@ -115,6 +178,7 @@ describe("resumen de periodo (port de CashFlowCalculator)", () => {
     expect(r.movimientos).toBe(5);
     expect(r.sin_categoria).toEqual({ movimientos: 1, importe_absoluto: 30 });
     expect(r.aproximado).toBe(true);
+    expect(r.aproximado_detalle).toEqual({ ingresos: false, gastos: true, neto: false });
     // Periodo en curso: el día de hoy no cuenta en el denominador, como `DateIntervalDayCount` hasta `now`.
     expect(r.gasto_medio_diario).toBeCloseTo(164 / 25, 2);
     // Periodo cerrado: cuentan todos sus días.
@@ -133,10 +197,35 @@ describe("resumen de periodo (port de CashFlowCalculator)", () => {
     expect(r.top_categorias_gasto[0]?.categoria).toBe("Comida");
   });
 
-  it("avisa de los gastos de grupo, que la v0 no ajusta a «tu parte»", () => {
-    const r = summarize([tx({ ...base, category_ref: food, amount: -300, amount_in_preferred_currency: -300, split_expense_id: "s1" })], lookup, period, ctx);
-    expect(r.gastos).toBe(300);
-    expect(r.avisos.join(" ")).toMatch(/gastos de grupo/);
+  it("un gasto de grupo que pagaste tú cuenta por tu parte, y su pata de préstamo no es ingreso", () => {
+    const groupsAcc = uuid(2003);
+    const loanCat = uuid(2103);
+    const lk = buildLookup({
+      accounts: [account({ sync_id: acc }), account({ sync_id: groupsAcc, name: "Grupos", is_system_account: true })],
+      categories: [category({ sync_id: food, name: "Comida" }), category({ sync_id: loanCat, name: "Cobros de grupos", is_income: true })],
+    });
+    const legs = [
+      tx({ ...base, category_ref: food, amount: -300, amount_in_preferred_currency: -300, split_expense_id: "s1" }),
+      tx({ ...base, account_ref: groupsAcc, category_ref: loanCat, amount: 200, amount_in_preferred_currency: 200, split_expense_id: "s1" }),
+    ];
+    const groups = buildGroupAdjustment(legs, lk.accounts, lk.subcategories);
+    const r = summarize(legs, lk, period, { ...ctx, groups });
+    expect(r.gastos).toBe(100);
+    expect(r.ingresos).toBe(0);
+    expect(r.avisos.join(" ")).not.toMatch(/grupo|tasa/);
+  });
+
+  it("sin categoría también cuenta tu parte, y una pata de préstamo suprimida no entra aunque su categoría no resuelva", () => {
+    const groupsAcc = uuid(2004);
+    const lk = buildLookup({ accounts: [account({ sync_id: acc }), account({ sync_id: groupsAcc, is_system_account: true })] });
+    const legs = [
+      // La app deja sin categoría la pata real cuando falla el auto-match de subcategoría.
+      tx({ ...base, amount: -300, amount_in_preferred_currency: -300, split_expense_id: "s2" }),
+      tx({ ...base, account_ref: groupsAcc, category_ref: uuid(2999), amount: 200, amount_in_preferred_currency: 200, split_expense_id: "s2" }),
+    ];
+    const groups = buildGroupAdjustment(legs, lk.accounts, lk.subcategories);
+    const r = summarize(legs, lk, period, { ...ctx, groups });
+    expect(r.sin_categoria).toEqual({ movimientos: 1, importe_absoluto: 100 });
   });
 });
 
@@ -157,7 +246,7 @@ describe("presupuestos (port de BudgetsViewModel.calculateSpending)", () => {
     ],
     tags: [tag({ sync_id: trip, name: "viaje" })],
   });
-  const ctx = { today: "2026-09-26", tz: "America/Lima", rates: RATES, firstWeekday: 2 as const, soloActivos: true };
+  const ctx = { today: "2026-09-26", todayUtc: TODAY_UTC, tz: "America/Lima", rates: RATES, firstWeekday: 2 as const, soloActivos: true };
   const e = (p: Parameters<typeof tx>[0]) => tx({ account_ref: acc1, category_ref: food, subcategory_ref: super_, ...p });
 
   const txs = [
@@ -168,7 +257,7 @@ describe("presupuestos (port de BudgetsViewModel.calculateSpending)", () => {
     e({ amount: 500, category_ref: salary }), // ingreso: nunca cuenta
     e({ amount: -999, date: "2026-08-31T15:00:00Z" }), // mes anterior
     e({ amount: -999, date: "2026-10-01T05:00:00Z" }), // 1 de octubre en Lima: ni futuro ni de septiembre
-    e({ amount: -10, currency_code: "USD" }), // 34 PEN con la tasa más reciente
+    e({ amount: -10, currency_code: "USD" }), // 34 PEN con la tasa de hoy
   ];
 
   it("sin filtros suma el valor absoluto de todos los gastos del periodo", () => {
@@ -178,16 +267,15 @@ describe("presupuestos (port de BudgetsViewModel.calculateSpending)", () => {
     expect(b.periodo).toEqual({ tipo: "mensual", desde: "2026-09-01", hasta: "2026-09-30" });
     expect(b.dias_restantes).toBe(4);
     expect(b.estado).toBe("en_riesgo");
-    // La tasa salió de la fila más reciente: igual que la app, no se marca aproximado.
+    // La tasa salió de la fila de hoy: exacta.
     expect(b.aproximado).toBe(false);
   });
 
-  it("una tasa que falta en la fila más reciente se toma de la anterior y marca aproximado", () => {
-    const rates = latestRateTable([
-      { date_key: "2026-09-09", base: "USD", rates: { PEN: "3.40" } },
-      { date_key: "2026-09-01", base: "USD", rates: { PEN: "3.50", EUR: "0.85" } },
+  it("una tasa que falta en la fila de hoy se toma de la anterior y marca aproximado", () => {
+    const rates = buildRateBook([
+      { date_key: "2026-09-09", base: "USD", rates: { USD: "1", PEN: "3.40" } },
+      { date_key: "2026-09-01", base: "USD", rates: { USD: "1", PEN: "3.50", EUR: "0.85" } },
     ]);
-    expect(rates?.filledFromOlder.has("EUR")).toBe(true);
     const r = budgetStatuses(
       [budget({ sync_id: uuid(3450) })],
       [e({ amount: -8.5, currency_code: "EUR" })],
@@ -308,7 +396,7 @@ describe("recurrentes (port de monthlyMultiplier y monthlyTotal)", () => {
       ],
       lastLinked,
       { subcategories: new Map(), categories: new Map() },
-      { today: "2026-09-26", tz: "America/Lima", preferredCurrency: "PEN", rates: RATES, soloActivos: true },
+      { today: "2026-09-26", todayUtc: TODAY_UTC, tz: "America/Lima", preferredCurrency: "PEN", rates: RATES, soloActivos: true },
     );
     expect(r.pagos.map((p) => p.nombre)).not.toContain("Antiguo");
     expect(r.totales_gasto.suscripciones_mensual).toBeCloseTo(164.9);

@@ -32,6 +32,9 @@ export interface SubcategoryRow {
   nature_raw_value: string | null;
   is_visible: boolean | null;
   sort_order: number | null;
+  /** Para reconocer la subcategoría de sistema «Préstamo a grupos» (ver `groups.ts`). */
+  is_system?: boolean | null;
+  is_default_seed?: boolean | null;
 }
 
 export interface TagRow {
@@ -95,9 +98,12 @@ export interface ScheduledPaymentRow {
 }
 
 export interface ExchangeRateRow {
+  sync_id?: string | null;
   date_key: string | null;
   base: string | null;
   rates: Record<string, number | string> | null;
+  /** Cuándo se midió la fila. Decide qué fila gana si hay varias del mismo día. */
+  timestamp?: string | null;
 }
 
 export interface PreferenceRow {
