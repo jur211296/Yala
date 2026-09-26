@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-26 (Lima)
 
-**Rama** `2.1` — Merge #260: **Si la hora del iPhone retrocede, los cambios personales en la nube ya no dejan de subir.**
+**Rama** `2.1` — Merge #261: **Claude ya se conecta a Yala en staging y lee tus finanzas sin poder tocarlas (fase 0 del conector).**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,30 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#260 · un reloj que retrocede ya no encalla la subida de los cambios personales)
+## Esta sesión (#261 · conector de Yala para Claude, fase 0 en staging)
+
+**Con un usuario de prueba de staging, Claude se conecta a Yala, pide permiso y contesta con sus datos reales**:
+saldos, movimientos, resumen del mes, presupuestos y recurrentes. Solo puede leer las finanzas: la base se lo impide.
+Verificado con Claude Code de punta a punta («39 cuentas, −189 PEN» para A). Nada cambia en la app.
+
+- `mcp/`: Worker propio `yala-mcp-staging` con seis herramientas y la pantalla de consentimiento. Tiene 49 tests en el
+  CI (job `mcp`) y 17 e2e contra staging. Las cuatro decisiones del §6 de la exploración, aplicadas.
+- Staging: el rol `yala_mcp_reader` y su hook (`qa/cloud/mcp0_01_readonly_role.sql`). La configuración de Auth también
+  cambió: hook, Site URL al Worker y OAuth con DCR, encendidos en ese orden; el antes y el después están en
+  `tickets/done/claude-mcp-activate-oauth-in-staging.md`. Producción no se tocó.
+- Lo aprendido y lo que falta: §7 de `docs/exploracion/plugin-claude-mcp.md`.
+
+### Lo que espera de Jürgen
+
+- **Revocar el token de gestión** `yala-mcp-fase0` (supabase.com/dashboard/account/tokens). Ya no hace falta.
+- **Bloqueo para la fase 1**, a backlog `high`: `claude-mcp-oauth-token-can-change-the-account`. Con el permiso de
+  Claude, Supabase Auth deja cambiar la cuenta de inicio de sesión (`PUT /auth/v1/user` → 200).
+- **Bug de la app** encontrado al portar, a backlog: `budget-interval-counts-next-period-midnight`. Un gasto del día 1 a
+  medianoche cuenta también en el presupuesto del periodo anterior.
+- Si quieres probarlo tú: Claude Desktop → Conectores → añadir
+  `https://yala-mcp-staging.misty-surf-6866.workers.dev/mcp`, e iniciar sesión con el usuario A de prueba.
+
+## Sesión anterior (#260 · un reloj que retrocede ya no encalla la subida de los cambios personales)
 
 **Con los datos en la nube, si la hora del iPhone estuvo adelantada y volvió, lo que apuntes después sube como siempre**
 y tus otros dispositivos lo ven. Antes no salía nunca del teléfono, sin aviso ni bloqueo. Lo mismo con las preferencias:
@@ -44,7 +67,7 @@ huecos de test y frases desactualizadas, arreglados en la rama). Ticket a `qa` c
 - `clock-drift-aborted-drain-lets-the-pull-overwrite-untranslated-edits`: su única causa conocida desapareció; candidato
   a `discarded` si estás de acuerdo.
 
-## Sesión anterior (#259 · un reloj que retrocede ya no encalla la subida de los gastos de grupo)
+## Antes (#259 · un reloj que retrocede ya no encalla la subida de los gastos de grupo)
 
 **Si la hora del iPhone estuvo adelantada y volvió, los gastos de grupo que apuntes después suben como siempre**, y cerrar
 sesión, desasociar y «Empezar de cero» ya no se paran con un «inténtalo en un rato» que esperando no se cumplía. Antes
@@ -65,30 +88,6 @@ gasto → los dos llegan → «Desasociar» sigue).
 - Hallazgos, a backlog: `groups-clock-ahead-wins-every-conflict-until-real-time-catches-up` (low; el precio del arreglo:
   un teléfono con la hora adelantada gana los conflictos de sus grupos hasta que la hora real lo alcanza) y
   `personal-clock-rollback-wedges-the-drain-forever` (medium; el mismo encallamiento en el canal personal — cerrado en #260).
-
-## Antes (#258 · exploración: plugin de Yala para Claude)
-
-**Nada cambia en la app.** Hay un documento, `docs/exploracion/plugin-claude-mcp.md`, que evalúa un conector MCP
-de solo lectura sobre la nube, con OAuth por usuario, más tres skills. Es el diferido #22 del modo nube.
-
-- **Es viable.** Supabase Auth trae un servidor OAuth 2.1 (en beta) que cumple lo que Claude exige.
-- **Trampa:** los scopes de Supabase no restringen la base de datos, y la RLS actual deja escribir. Para que sea
-  de solo lectura de verdad hace falta DDL que distinga por `client_id`.
-- **No choca con la cola A en ningún fichero.** Comparte el DDL de permisos y la configuración de Auth de producción.
-- **Recomendación:** una carpeta `mcp/` en este repo, con su propio Worker. El grueso del trabajo es portar a
-  TypeScript los cálculos de Swift.
-- **Fases:** un spike en staging de 1-2 días, luego solo lectura en unas 3 semanas.
-
-Ticket: `claude-plugin-read-only-mcp-connector` (backlog). La cabecera de `docs/TICKETS.md` decía 593 y había 598 tickets:
-corregida.
-
-### Lo que espera de Jürgen
-
-- Las cuatro decisiones de §6 del documento:
-  1. Gratis o Pro.
-  2. Si vale un conector solo para usuarios en modo nube.
-  3. Cuándo empezar.
-  4. Cambiar «suscripciones sin usar» por «recurrentes a revisar».
 
 ## Antes (#257 · un drain de grupos a medias ya no se lee como «nada pendiente»)
 
