@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-26 (Lima)
 
-**Rama** `2.1` — Merge #263: **El conector de Claude (staging) emite sus propios tokens; el permiso de solo lectura ya no deja a Claude cambiar la cuenta de inicio de sesión.**
+**Rama** `2.1` — Merge #264: **Exploración de Yala en iPad (sin código): 45 capturas, propuesta de barra lateral + lista-detalle y plan en cinco fases con tickets.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,32 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#263 · Claude ya no puede tocar la cuenta: el conector emite sus propios tokens)
+## Esta sesión (#264 · Yala en iPad: estado actual, propuesta y plan por fases)
+
+**No cambia nada en la app.** Queda escrito qué ve hoy quien usa Yala en un iPad y cómo convertirla en una app de iPad
+de verdad sin hacer otra app: `docs/exploracion/ipad-nativo.md`, con 45 capturas del simulador (iPad mini e iPad Pro
+13", vertical y horizontal, datos ficticios locales).
+
+- **Hoy se ve estirada, no rota:** filas de 1300 pt, lista y detalle nunca a la vez, y en horizontal los botones
+  flotantes tapan importes. Panel y Distribución ya están bien adaptados.
+- **Riesgo vivo:** la app ya deja abrir varias ventanas en iPad (`UIApplicationSupportsMultipleScenes = true`) y toda
+  la navegación es un estado de proceso. Inferido del código, no reproducido: ticket `high` con guion.
+- **Propuesta:** la misma `TabView` con `.sidebarAdaptable` (barra lateral en iPad, pestañas en iPhone) y lista-detalle
+  en Registros, Planificación, Grupos y Ajustes; Yala IA como columna lateral. Pendiente de aprobar; su ADR va con la
+  fase 1.
+- **Tickets:** `ipad-native-app` es el paraguas; 8 nuevos (fases 1-5, el riesgo vivo y dos de Cola B marcados
+  `cola-b` en `area`).
+- **No medido:** Split View y Stage Manager. Esta Mac no tiene Simulator.app; el giro se hizo con un XCUITest temporal.
+
+### Lo que espera de Jürgen
+
+- **Correr el guion de `ipad-multiple-windows-share-one-navigation-state`** en un iPad real (5 pasos). Si falla, el
+  arreglo es una línea: apagar la multiventana hasta la fase 4.
+- **Aprobar o corregir la estructura** del §5.1 del documento antes de la fase 1.
+- **Cola B:** `floating-buttons-cover-row-amounts-on-ipad-landscape` y la checklist
+  `cola-b-redesigns-must-hold-up-at-ipad-width` son para meterlas en esa tanda.
+
+## Sesión anterior (#263 · Claude ya no puede tocar la cuenta: el conector emite sus propios tokens)
 
 **En staging, cuando alguien conecta Yala a Claude y da permiso, Claude ya no puede cambiar NADA de su cuenta** —ni
 metadatos, ni email, ni contraseña, ni MFA—: recibe un token opaco del Worker que no sirve en Supabase. Leer las
