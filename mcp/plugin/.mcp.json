@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "yala": {
+      "type": "http",
+      "url": "https://yala-mcp-staging.misty-surf-6866.workers.dev/mcp"
+    }
+  }
+}

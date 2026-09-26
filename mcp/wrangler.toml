@@ -1,0 +1,23 @@
+# Yala MCP — conector de solo lectura para Claude. Worker PROPIO, separado del gateway (docs/exploracion/plugin-claude-mcp.md §3):
+# no lleva GROUPS_ENC_KEY ni ningún secreto, y un deploy suyo no alcanza al sync de la app.
+#
+# FASE 0: solo staging. No hay [env.production] a propósito; el lanzamiento espera a que la nube esté estable (tras 2.1).
+#
+# Sin secretos: la URL de Supabase y la anon key son públicas. El token que manda Claude es el del usuario, emitido por el
+# servidor OAuth de Supabase con role = yala_mcp_reader (qa/cloud/mcp0_01_readonly_role.sql). RLS decide qué se ve.
+
+name = "yala-mcp-staging"
+main = "src/index.ts"
+compatibility_date = "2026-06-01"
+account_id = "86c270a7776be98639700bd5959b303b"
+workers_dev = true
+
+[observability]
+enabled = true
+
+[vars]
+ENVIRONMENT = "staging"
+SUPABASE_URL = "https://fostjbbwstyuunmmefuk.supabase.co"
+SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZvc3RqYmJ3c3R5dXVubW1lZnVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM0NTAxNTMsImV4cCI6MjA5OTAyNjE1M30.gTWg5a8NKNuL_RhOmaaSGhnJpdV6iMXhwYwZVJb-FKg"
+# Zona por defecto para «este mes» cuando Claude no pasa zona_horaria. El servidor no conoce la del teléfono.
+DEFAULT_TIMEZONE = "America/Lima"

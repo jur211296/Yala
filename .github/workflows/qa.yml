@@ -69,6 +69,27 @@ jobs:
       - name: Cola del simulador (sim-lock.sh + sim-libre.sh)
         run: bash qa/scripts/sim-lock-test.sh
 
+  # Suite del conector MCP de Claude (`mcp/`): typecheck y tests unitarios, sin red. Corre en
+  # cada push, como `coverage-index`: es barata (Linux, segundos) y así un cambio de esquema que
+  # rompa el MCP se ve en el mismo PR. Los e2e contra staging (`npm run test:e2e`) necesitan las
+  # contraseñas de los usuarios de prueba y NO corren aquí.
+  mcp:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: mcp
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mcp/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+
   # Decide si el job `tests` (macos-26, ~1,5 h de reloj) tiene algo que probar. Un
   # cambio de solo docs/tickets no puede romper el build ni la suite y hasta ahora
   # encolaba el runner de simulador igual: el PR #41 (3 ficheros .md) esperó 1 h 45 min.
@@ -151,6 +172,10 @@ jobs:
               # `qa/validate-coverage.*` SI deciden como se verifica el proyecto, asi que
               # siguen disparando la suite. Meter `qa/*` entero seria el error.
               gateway/*|qa/cloud/*) ;;
+              # `mcp/` es el Worker del conector de Claude (TypeScript, su suite corre en el
+              # job `mcp`). Medido el 2026-09-26: 0 apariciones en el project.pbxproj ni en las
+              # fuentes de los targets.
+              mcp/*) ;;
               *) culprit="$file"; break ;;
             esac
           done <<< "$changed"
