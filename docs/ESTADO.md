@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-25 (Lima)
 
-**Rama** `2.1` — Merge #251: **Con la sincronización parada, el aviso de cerrar sesión nombra la salida real y no la conexión.**
+**Rama** `2.1` — Merge #252: **El paso 1 del cierre en la nube nombra el motivo real y no «revisa tu conexión».**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,34 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#251 · con la sincronización parada, el aviso de cerrar sesión nombra la salida real)
+## Esta sesión (#252 · el paso 1 del cierre en la nube nombra el motivo real)
+
+**Con cambios propios sin subir a la nube, «Cerrar sesión» sigue bloqueándose sin perder nada, pero el aviso ya no dice
+«revisa tu conexión» cuando la conexión no tiene nada que ver:**
+
+- **El servidor falla o no hay red** (5xx, sin cobertura, respuesta ilegible, subida a medias): «Tus últimos cambios no
+  llegaron a la nube. Siguen guardados en este teléfono y no se pierden; inténtalo de nuevo en un rato.» Motivo nuevo
+  `.personalUploadRetryLater`, texto en 16 locales.
+- **La sesión caducó** (401): «Tu sesión caducó. Vuelve a iniciar sesión e inténtalo de nuevo.»
+- **Aún se está guardando:** «Un momento más».
+
+El motor personal tiene ahora un testigo de la subida que no llegó (`SyncPushClient.lastPushFailedAtServer`,
+`CloudSyncRuntime.stoppedByFailedUpload(for:)`), con el molde de Grupos. `personalPushAllShownReason` es ya la gemela de la
+función de grupos.
+
+**La review cazó un caso en el arreglo** (dos lentes): una subida a medias sale `.completed` y perdía el testigo.
+
+**Verificado:** gate con 7962 unit en 756 suites y 19 XCUITest en 8 suites, con el centinela limpio. 21 mutantes muertos y 1
+equivalente. Ticket a `done`, sin device-QA.
+
+### Lo que espera de Jürgen
+
+- Nada nuevo de este cierre. Quedan tres residuales `low` en backlog para decidir cuando toque:
+  `cloud-signout-personal-session-expiry-does-not-say-where-to-sign-in`,
+  `cloud-signout-upstream-rejections-with-a-healthy-pull-say-a-moment-more` y
+  `push-unexpected-4xx-is-told-to-try-again-later`.
+
+## Sesión anterior (#251 · con la sincronización parada, el aviso de cerrar sesión nombra la salida real)
 
 **Con cambios sin subir y la sincronización con la nube parada a propósito, «Cerrar sesión» sigue bloqueándose sin perder
 nada, pero el aviso ya no dice «revisa tu conexión».** Dice la salida que toca, y se elige por lo que enseña «Dónde viven tus
@@ -46,11 +73,10 @@ como terminado.
 
 - Lo de #249 abajo sigue igual (device-QA de `adopt-on-an-empty-store-…`, la decisión de
   `adopt-window-uploads-what-reaches-the-mirror-after-the-icloud-check`, los device-QA de #239/#237/#236).
-- `cloud-signout-collapses-the-personal-push-all-reason-into-permanent` (medium) sigue en backlog: lo pasajero y la sesión
-  caducada del paso 1 aún dicen «revisa tu conexión». Hoy se arregla en `personalPushAllShownReason`.
+- `cloud-signout-collapses-the-personal-push-all-reason-into-permanent`: cerrado en #252.
 - `cloud-signout-does-not-look-at-an-in-flight-migration` (low, inferido) sigue abierto.
 
-## Sesión anterior (#250 · cerrar sesión con la sincronización parada ya no sincroniza a escondidas ni pierde lo editado)
+## Antes (#250 · cerrar sesión con la sincronización parada ya no sincroniza a escondidas ni pierde lo editado)
 
 **Si la sincronización con la nube está parada a propósito** —una versión anterior de Yala que no entiende en qué punto iba
 el cambio a la nube, una vuelta a iCloud a medias o fallida, el espejo de iCloud aún montado—, **«Cerrar sesión» ya no
