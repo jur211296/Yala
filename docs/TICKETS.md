@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (593)
+## Index (598)
 
 | id | status | path |
 |---|---|---|
@@ -144,6 +144,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | claim-replay-after-a-kill-mid-commit-can-duplicate-the-onboarding | backlog | tickets/backlog/claim-replay-after-a-kill-mid-commit-can-duplicate-the-onboarding.md |
 | claim-replay-can-seed-beside-a-phone-that-adopted-silently | done | tickets/done/claim-replay-can-seed-beside-a-phone-that-adopted-silently.md |
 | claim-takeover-races-the-leader-cutover-without-cas | backlog | tickets/backlog/claim-takeover-races-the-leader-cutover-without-cas.md |
+| claude-plugin-read-only-mcp-connector | backlog | tickets/backlog/claude-plugin-read-only-mcp-connector.md |
 | clock-drift-aborted-drain-lets-the-pull-overwrite-untranslated-edits | backlog | tickets/backlog/clock-drift-aborted-drain-lets-the-pull-overwrite-untranslated-edits.md |
 | cloud-attest-notice-does-not-cover-a-gateway-rejected-token | backlog | tickets/backlog/cloud-attest-notice-does-not-cover-a-gateway-rejected-token.md |
 | cloud-engine-can-start-with-a-reverse-abort-pending | backlog | tickets/backlog/cloud-engine-can-start-with-a-reverse-abort-pending.md |
