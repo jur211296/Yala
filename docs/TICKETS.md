@@ -170,7 +170,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-drain-failure-reads-as-nothing-pending | qa | tickets/qa/groups-drain-failure-reads-as-nothing-pending.md |
 | groups-clock-rollback-wedges-the-drain-forever | qa | tickets/qa/groups-clock-rollback-wedges-the-drain-forever.md |
 | groups-clock-ahead-wins-every-conflict-until-real-time-catches-up | backlog | tickets/backlog/groups-clock-ahead-wins-every-conflict-until-real-time-catches-up.md |
-| personal-clock-rollback-wedges-the-drain-forever | backlog | tickets/backlog/personal-clock-rollback-wedges-the-drain-forever.md |
+| personal-clock-rollback-wedges-the-drain-forever | qa | tickets/qa/personal-clock-rollback-wedges-the-drain-forever.md |
+| personal-clock-ahead-wins-every-conflict-until-real-time-catches-up | backlog | tickets/backlog/personal-clock-ahead-wins-every-conflict-until-real-time-catches-up.md |
 | private-sign-out-counts-group-writes-without-capturing-them | backlog | tickets/backlog/private-sign-out-counts-group-writes-without-capturing-them.md |
 | personal-sign-out-reads-an-unfinished-drain-as-nothing-pending | backlog | tickets/backlog/personal-sign-out-reads-an-unfinished-drain-as-nothing-pending.md |
 | unit-tests-write-group-amounts-into-the-real-app-group-mirror | backlog | tickets/backlog/unit-tests-write-group-amounts-into-the-real-app-group-mirror.md |

@@ -130,7 +130,7 @@ nonisolated struct SyncOutboxMirror {
 
     /// Nombre de archivo DETERMINISTA a partir de `(syncID, hlc)`, filesystem-safe. El HLC contiene
     /// `:` (inseguro en algunos FS) → se hashea. `(syncID, hlc)` identifica unívocamente una fila:
-    /// `clock.send` avanza el HLC por cada `appendRow`, así que un upsert y un tombstone de la misma
+    /// el estampado (`clock.sendLocal`) avanza el HLC por cada `appendRow`, así que un upsert y un tombstone de la misma
     /// entidad tienen HLCs distintos → sin colisión de op. `remove(syncID:hlc:)` recomputa este nombre
     /// (O(1), sin escanear).
     static func fileName(syncID: UUID, hlc: String) -> String {

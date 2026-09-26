@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, sync"
 created: 2026-09-23
-updated: 2026-09-23
+updated: 2026-09-26
 source: "`drain-duplicates-the-unit-clock-when-its-row-cannot-be-read` (2026-09-23), al fijar qué es «un drain que terminó»"
 ---
 
@@ -22,6 +22,14 @@ tanto sigue bajando los de tus otros dispositivos, y uno de ellos puede pisar un
 - El pull aplica entonces la página con el guard D-1 construido desde el outbox, que no tiene los cambios no
   traducidos. Es el mismo laundering que `drain-duplicates-the-unit-clock-when-its-row-cannot-be-read` cerró para el drain que ABORTA.
 - No se trató igual a propósito: con el reloj desajustado días, parar el pull dejaría el teléfono sin recibir nada.
+
+## Actualización 2026-09-26: la deriva del reloj ya no corta
+
+Desde `personal-clock-rollback-wedges-the-drain-forever` el drain personal estampa con `HLCClock.sendLocal`, que no lanza
+por deriva ni por contador agotado. La traducción cortada solo queda para un año fuera de 0001–9999, que en un iPhone no
+se alcanza (lo simula el seam `_testThrowOnClockStamp`). La premisa de arriba («con el reloj desajustado días») ya no se
+da: el defecto sigue en el código, pero su única causa conocida desapareció. Candidato a `discarded` si nadie encuentra
+otra forma de cortar la traducción con `true`.
 
 ## Qué habría que decidir
 

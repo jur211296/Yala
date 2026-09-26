@@ -264,14 +264,17 @@ nonisolated struct HLCClock {
 
     /// Emite el timestamp de un cambio LOCAL que se estampa con la hora de SU transacción (`eventTime`), no con la de
     /// ahora. Mismo algoritmo que `send` —`l' = max(l, pt)`, mismo ms → counter+1— con dos diferencias, y las dos existen
-    /// para que un reloj que retrocedió no encalle al emisor (ticket `groups-clock-rollback-wedges-the-drain-forever`):
+    /// para que un reloj que retrocedió no encalle al emisor (tickets `groups-clock-rollback-wedges-the-drain-forever` y
+    /// `personal-clock-rollback-wedges-the-drain-forever`):
     ///
     /// - **Sin guarda de deriva.** La guarda protege de un reloj AJENO adelantado. Aquí `l` solo pudo adelantarse por un
     ///   cambio propio hecho con la hora puesta por delante, y `eventTime` es la fecha fija de una transacción ya guardada:
     ///   ni `l` baja ni esa fecha sube, así que la guarda cortaba en el mismo cambio para siempre. Emitir por encima de la
     ///   hora de pared es lo que un HLC hace ante un retroceso: conserva el orden de este teléfono mientras su reloj
-    ///   persistido viva (en Grupos, `GroupSyncCursor.clockLatestHLC`, que el cierre de sesión borra). El precio: hasta
-    ///   que la hora real alcance a `l`, lo que este teléfono escriba gana por LWW a lo que otros escriban en esas filas.
+    ///   persistido viva (en Grupos, `GroupSyncCursor.clockLatestHLC`, que el cierre de sesión borra; en el canal personal,
+    ///   `SyncCursor.clockLatestHLC`, que no se encontró quién borra; en las preferencias, el `lastIssuedHLC` de
+    ///   `PrefsOutbox`). El precio: hasta que la hora real alcance a `l`, lo que este teléfono escriba gana por LWW a lo que
+    ///   otros escriban en esas filas (tickets `groups-clock-ahead-wins-…` y `personal-clock-ahead-wins-…`).
     /// - **Un contador agotado avanza el milisegundo** en vez de lanzar. Con `l` por delante el contador crece con cada
     ///   cambio hasta que la hora alcance a `l`, y con el reloj puesto meses adelante los 65 536 valores se agotan.
     ///

@@ -311,8 +311,9 @@ paths:
     LOCAL (`.blocked(.localFailure)` o el `notWired` retomable del líder), igual que con el outbox ilegible. **Un
     llamador nuevo de `drainOnce` que lea el outbox después, lo comprueba**; el scan
     `drainCallersThatReadTheOutbox_checkThatItFinished` cuenta los que no lo hacen, cada uno con su porqué. `true` no
-    cubre la traducción cortada por deriva del reloj: ticket
-    `clock-drift-aborted-drain-lets-the-pull-overwrite-untranslated-edits`.
+    cubre la traducción cortada: ticket `clock-drift-aborted-drain-lets-the-pull-overwrite-untranslated-edits`. Desde
+    `personal-clock-rollback-wedges-the-drain-forever` la deriva del reloj ya no la corta; solo un año fuera de rango
+    (seam `_testThrowOnClockStamp`).
   - **El de Grupos también devuelve si terminó (2026-09-26), y ahí la traducción cortada SÍ es `false`**
     (`GroupsSyncClient.drainOnce`, ticket `groups-drain-failure-reads-as-nothing-pending`). Sus lectores no son el
     pull sino gestos que BORRAN —cierre, desasociar, «Empezar de cero»—, y lo que queda detrás del corte es justo lo
@@ -330,14 +331,25 @@ paths:
     que depende el dedup `(syncID, hlc, op)` de un re-drain (lo fija `drain_stampsWithTheTransactionTime_notWithNow`,
     con el `now` del cliente tres días por delante: en el régimen adelantado `max(l, pt)` da `l` y no distingue las dos
     variantes); (2) **el contador agotado avanza 1 ms** en vez de lanzar: con el reloj meses por delante los 65 536
-    valores se gastan; (3) **`send` no cambia**: lo usan el canal personal, las prefs y el banco de vectores, y varios
-    consumidores tratan su deriva como pasajera a propósito. **El precio, aceptado y con ticket**
+    valores se gastan; (3) **`send` no cambia**: lo usan la subida del snapshot, el remap de identidad y el banco de
+    vectores, y esos consumidores tratan su deriva como pasajera a propósito. **El precio, aceptado y con ticket**
     (`groups-clock-ahead-wins-every-conflict-until-real-time-catches-up`): hasta que la hora real alcance al reloj
     lógico, lo que ese teléfono escriba gana por LWW a lo que otros miembros escriban en esas filas —también un borrado
     suyo: el tombstone ajeno sale `noop`—, y el servidor no pone tope a un HLC futuro. Y el orden propio dura lo que
     viva `GroupSyncCursor.clockLatestHLC`: el cierre de sesión lo borra, el reloj vuelve a la hora real y una edición
-    posterior de una fila que este teléfono selló adelantada sale `all_units_stale`. El gemelo personal
-    (`CloudSyncEngine.appendRow`) sigue con `send`: `personal-clock-rollback-wedges-the-drain-forever`.
+    posterior de una fila que este teléfono selló adelantada sale `all_units_stale`.
+  - **El drain personal y las preferencias estampan igual, con `sendLocal` (2026-09-26, ticket
+    `personal-clock-rollback-wedges-the-drain-forever`).** `CloudSyncEngine.appendRow` con la fecha de la transacción y
+    `PrefsOutbox.enqueue` con el `now` inyectado. En el personal el encallamiento era silencioso: la vuelta cortada
+    devuelve `true` y nada se bloqueaba, los cambios simplemente no salían. En las prefs cada cambio hecho mientras
+    `lastIssuedHLC` fuera >5 min por delante salía `clockFailed`, `PreferenceSyncService` lo descarta y no subía nunca:
+    ese reloj solo lo avanzan sus propios `enqueue`, así que la guarda solo protegía al teléfono de su propio pasado.
+    **Lo que NO se pasó a `sendLocal`, a propósito:** `enqueueSnapshotRows` (subida del snapshot y huérfanas del adopt) y
+    `emitIdentityRemap` estampan con `now`, se curan cuando la hora real alcanza al reloj lógico y sus llamadores tratan la
+    deriva como pasajera (`.transient`, rollback + defer). Si cambias alguno, mira antes qué hace su llamador con
+    `ClockDriftError`. Tests: `PersonalClockRollbackDrainTests` (el oráculo son filas y cursor, no el `Bool`: la vuelta
+    cortada también devuelve `true`) y los de reloj de `PrefsOutboxTests`. El precio es el de Grupos, en el canal
+    personal: `personal-clock-ahead-wins-every-conflict-until-real-time-catches-up`.
   - **Intercambio aceptado**, el de #216: cualquier drain que aborte —también por causas anteriores a este ticket, como
     un save del barrido que falla— deja ahora el pull en `.transient` en vez de aplicar. Y tras un fallo del save del
     cursor, un `applyPage` que corra antes del re-drain persiste un reloj mayor y el replay encola filas DUPLICADAS
