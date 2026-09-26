@@ -5423,6 +5423,14 @@
 "groups.freshStartPending.title" = "Einige Gruppenänderungen müssen noch hochgeladen werden";
 "groups.freshStartPending.lead" = "Wir haben nichts gelöscht: Einige Änderungen deiner Gruppen haben unseren Server noch nicht erreicht (%d), und ein Neustart von vorn würde sie mitnehmen.";
 "groups.freshStartPending.leadUnknown" = "Wir haben nichts gelöscht: Einige Änderungen deiner Gruppen haben unseren Server noch nicht erreicht, und ein Neustart von vorn würde sie mitnehmen.";
+"groups.freshStartPending.lossSessionExpired" = "Sie lassen sich nur mit dem Konto hochladen, das sie erstellt hat, und dessen Sitzung ist nicht mehr auf diesem Telefon. Wenn du dich nicht wieder mit diesem Konto anmeldest, kannst du von vorn beginnen und sie verlieren: Niemand in der Gruppe wird sie sehen.";
+"groups.freshStartPending.lossPermanent" = "Das Konto, das sie erstellt hat, kann sie nicht mehr hochladen, und ein neuer Versuch ändert daran nichts. Du kannst von vorn beginnen und sie verlieren: Niemand in der Gruppe wird sie sehen.";
+"groups.freshStartPending.lossAttest" = "Dieses Telefon kommt seit über einem Tag nicht durch die Sicherheitsprüfung, die unser Server verlangt, deshalb können sie nicht hochgeladen werden. Du kannst von vorn beginnen und sie verlieren: Niemand in der Gruppe wird sie sehen.";
+"groups.freshStartPending.lossAction" = "Von vorn beginnen und Änderungen verlieren";
+"groups.freshStartPending.lossConfirmTitle" = "Diese Änderungen verlieren?";
+"groups.freshStartPending.lossConfirmBody" = "Gruppenänderungen, die verloren gehen: %d. Sie werden von diesem Telefon gelöscht, ohne den Server zu erreichen, niemand in der Gruppe wird sie sehen, und sie lassen sich nicht wiederherstellen.";
+"groups.freshStartPending.lossConfirmBodyUnknown" = "Die Gruppenänderungen, die den Server nicht erreicht haben, werden von diesem Telefon gelöscht. Niemand in der Gruppe wird sie sehen, und sie lassen sich nicht wiederherstellen.";
+"groups.freshStartPending.lossConfirmAction" = "Änderungen verlieren und von vorn beginnen";
 
 /* Título del aviso cuando Restaurar compras no encuentra Yala Pro */
 "subscription.restoreEmptyTitle" = "Kein Abo gefunden";

@@ -5433,6 +5433,14 @@
 "groups.freshStartPending.title" = "Alcune modifiche dei tuoi gruppi devono ancora essere caricate";
 "groups.freshStartPending.lead" = "Non abbiamo cancellato nulla: alcune modifiche dei tuoi gruppi non sono ancora arrivate al nostro server (%d) e ricominciare da zero le porterebbe via.";
 "groups.freshStartPending.leadUnknown" = "Non abbiamo cancellato nulla: alcune modifiche dei tuoi gruppi non sono ancora arrivate al nostro server e ricominciare da zero le porterebbe via.";
+"groups.freshStartPending.lossSessionExpired" = "Si possono caricare solo con l'account che le ha create, e la sua sessione non è più su questo telefono. Se non rientrerai con quell'account, puoi ricominciare da zero e perderle: nessuno del gruppo le vedrà.";
+"groups.freshStartPending.lossPermanent" = "L'account che le ha create non può più caricarle, e riprovare non risolverà. Puoi ricominciare da zero e perderle: nessuno del gruppo le vedrà.";
+"groups.freshStartPending.lossAttest" = "Da più di un giorno questo telefono non riesce a superare la verifica di sicurezza richiesta dal nostro server, quindi non possono essere caricate. Puoi ricominciare da zero e perderle: nessuno del gruppo le vedrà.";
+"groups.freshStartPending.lossAction" = "Ricomincia da zero e perdile";
+"groups.freshStartPending.lossConfirmTitle" = "Perdere queste modifiche?";
+"groups.freshStartPending.lossConfirmBody" = "Modifiche dei gruppi che vanno perse: %d. Vengono cancellate da questo telefono senza arrivare al server, nessuno del gruppo le vedrà e non si possono recuperare.";
+"groups.freshStartPending.lossConfirmBodyUnknown" = "Le modifiche dei gruppi che non sono arrivate al server vengono cancellate da questo telefono. Nessuno del gruppo le vedrà e non si possono recuperare.";
+"groups.freshStartPending.lossConfirmAction" = "Perdile e ricomincia da zero";
 
 /* Título del aviso cuando Restaurar compras no encuentra Yala Pro */
 "subscription.restoreEmptyTitle" = "Nessun abbonamento";

@@ -324,6 +324,11 @@ enum MetricsCanary: String {
     /// BLOQUEOS, no personas: cada reintento que vuelve a parar suma otro. Fuera de `#if DEBUG` por lo mismo que sus
     /// vecinos.
     case freshStartBlockedByGroupWrites
+    /// **«Empezar de cero» borró cambios de grupos que la persona aceptó perder** (ticket
+    /// `fresh-start-has-no-way-out-when-group-writes-can-never-upload`): el motivo seguía siendo uno que esperar no arregla
+    /// y lo que quedaba estaba entre lo que el aviso enseñó. `detail` = `reason=<motivo> pending=N|unknown`, sin PII. Frente
+    /// al anterior, dice cuántos eligieron salir.
+    case freshStartDiscardedGroupWrites
 
     // Teléfono que no consigue App Attest (ticket `groups-phone-that-never-attests-is-told-to-retry-forever`)
     /// **La racha de App Attest del teléfono se volvió terminal**: 24 h y al menos 3 rechazos sin un solo acierto

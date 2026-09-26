@@ -1277,10 +1277,17 @@ final class CloudSessionSignOut {
     /// Por qué «Empezar de cero» no borró: quedan cambios de grupos que no subieron. Lo lee la pantalla que enseña el
     /// fallo para decir cuántos y qué hacer.
     struct FreshStartGroupsBlock: Equatable {
-        /// Filas VIVAS del outbox de grupos. `Int.max` = no se pudieron contar (`CloudSignOutFlowLogic.shownLossCount`).
+        /// Cuántos cambios de grupos se quedan sin subir. `Int.max` = no se pudieron contar
+        /// (`CloudSignOutFlowLogic.shownLossCount`). **Cuando el bloqueo ofrece perderlos, es lo que el borrado se llevaría**
+        /// —filas vivas y entradas del espejo, `FreshStartGroupsLoss.count`—: la cifra que la persona acepta perder.
         let pendingCount: Int
         /// El motivo de la subida que no drenó, el mismo que enseñaría un cierre de sesión.
         let reason: CloudSignOutFlowLogic.BlockReason
+
+        /// ¿Las pantallas ofrecen «Empezar de cero y perderlos»? Lo decide el motivo
+        /// (`CloudSignOutFlowLogic.freshStartOffersGroupsLossExit`), y es a la vez lo que `drainGroupsBeforeFreshStart` usa
+        /// para anotar la oferta: la vista no puede pintar un botón que el servicio no respalde.
+        var offersLossExit: Bool { CloudSignOutFlowLogic.freshStartOffersGroupsLossExit(reason) }
     }
 
     /// Cómo acabó la subida previa al borrado.
@@ -1291,6 +1298,10 @@ final class CloudSessionSignOut {
         case blocked(FreshStartGroupsBlock)
         /// El coordinador estaba con otro gesto (un cierre de sesión o un desasociar). Tampoco se borra nada.
         case busy
+        /// **No drenó, y la persona aceptó perder exactamente esto** en el aviso de «Empezar de cero y perderlos». El
+        /// borrado puede seguir, pasándole lo aceptado al cinturón del escritor (`requireNoUnsentGroupWrites`), que no deja
+        /// pasar nada más.
+        case lossAccepted(CloudSignOutFlowLogic.FreshStartGroupsLoss)
     }
 
     /// El fallo que devuelven los borrados de `ContentView` cuando esta subida no drenó. Las pantallas lo comparan para
@@ -1306,6 +1317,43 @@ final class CloudSessionSignOut {
     /// usable— y el `defer` de la subida les apagaba el texto de «guardando…». Los dos lo miran junto a su
     /// `guard phase == .idle`.
     private(set) var freshStartDrainInFlight = false
+
+    /// **Lo que el último bloqueo de «Empezar de cero» ofreció perder**, por fila (ticket
+    /// `fresh-start-has-no-way-out-when-group-writes-can-never-upload`). Lo anota la subida en el mismo tramo síncrono en
+    /// que pone `freshStartGroupsBlock`, solo con un motivo que ofrece la salida; la retira el intento siguiente.
+    private var freshStartLossOffer: CloudSignOutFlowLogic.FreshStartGroupsLoss?
+
+    /// **Lo que la persona aceptó perder en el «¿seguro?»**, a la espera del borrado que lo va a comprobar. Lo pone
+    /// `acceptFreshStartGroupsLoss` y lo retira el primer paso del borrado siguiente (`takeFreshStartAcceptedLoss`), sea
+    /// cual sea su desenlace: vale para un intento, no para un gesto posterior.
+    private(set) var freshStartAcceptedLoss: CloudSignOutFlowLogic.FreshStartGroupsLoss?
+
+    /// **Lo aceptado, para el borrado que empieza AHORA.** Lo toman `performICloudCorpusWipe` y `performDeviceCorpusWipe`
+    /// como su PRIMER paso, antes de la espera del import (review adversarial del 2026-09-26, dos lentes): consumido en la
+    /// subida, un borrado que salía antes —`importNotQuiescent`, `cancelled`— lo dejaba vivo, y un gesto posterior por otra
+    /// pantalla lo gastaba sin haber enseñado el aviso de grupos. Lo devuelve y lo retira: vale para UN intento.
+    func takeFreshStartAcceptedLoss() -> CloudSignOutFlowLogic.FreshStartGroupsLoss? {
+        defer { freshStartAcceptedLoss = nil }
+        return freshStartAcceptedLoss
+    }
+
+    /// **«Perderlos y empezar de cero»**: la persona confirmó, en la segunda pantalla, perder lo que le enseñó el aviso.
+    ///
+    /// **Aquí no se borra nada.** Convierte la oferta en lo aceptado, y la pantalla vuelve a lanzar su borrado. Ese borrado
+    /// vuelve a subir primero —el motivo se mide en el gesto, no se hereda del aviso—: si drena, no se pierde nada; si
+    /// vuelve a bloquear con un motivo que ofrece la salida y lo que queda está entre lo aceptado, sigue sin ello
+    /// (`CloudSignOutFlowLogic.freshStartContinuesDiscarding`); si no, vuelve el aviso con su cifra nueva.
+    ///
+    /// `false` si no había oferta viva —otro intento la retiró—: la pantalla puede lanzar el borrado igual, que sin nada
+    /// aceptado no descarta nada y vuelve a enseñar el aviso.
+    @discardableResult
+    func acceptFreshStartGroupsLoss() -> Bool {
+        guard let offer = freshStartLossOffer else { return false }
+        freshStartLossOffer = nil
+        freshStartAcceptedLoss = offer
+        CloudSyncBreadcrumb.freshStartGroupsLossAccepted(pending: CloudSignOutFlowLogic.shownLossCount(offer.count))
+        return true
+    }
 
     /// **¿Hay algo de grupos por subir?, sin red y sin esperar.** El pre-check de `pushAllPendingGroupsForSignOut`, igual
     /// y en el mismo orden: drenar el History al outbox (sin eso, un gasto de hace segundos solo vive ahí y el recuento lo
@@ -1330,6 +1378,9 @@ final class CloudSessionSignOut {
     /// botón pasa por `drainGroupsBeforeFreshStart`, que lo dice.
     func groupsOutboxIsSettledEmpty(context: ModelContext, witness: GroupsExitWitness = .live) -> Bool {
         freshStartGroupsBlock = nil
+        // Un intento nuevo tampoco hereda la oferta ni lo aceptado del anterior.
+        freshStartLossOffer = nil
+        freshStartAcceptedLoss = nil
         let captured = witness.capture(context)
         return CloudSignOutFlowLogic.groupsCaptureVerdict(
             captureCompleted: captured,
@@ -1352,6 +1403,9 @@ final class CloudSessionSignOut {
     nonisolated struct GroupsExitWitness {
         let capture: @MainActor (ModelContext) -> Bool
         let mirrorPending: @MainActor (ModelContext, GroupsSyncClient.MirrorPendingScope) -> Int
+        /// Las mismas entradas que `mirrorPending`, por su clave: lo que «Empezar de cero y perderlos» enseña y acepta
+        /// perder (`GroupsSyncClient.mirrorEntryKeysMissingFromOutbox`). `nil` = no se pudo leer.
+        let mirrorPendingKeys: @MainActor (ModelContext, GroupsSyncClient.MirrorPendingScope) -> Set<String>?
 
         static var live: GroupsExitWitness {
             GroupsExitWitness(
@@ -1362,6 +1416,10 @@ final class CloudSessionSignOut {
                 mirrorPending: { context, scope in
                     guard CloudSyncFlags.groupsBackendCompiledCapability else { return 0 }
                     return GroupsSyncClient.shared.mirrorEntriesMissingFromOutbox(context: context, scope: scope)
+                },
+                mirrorPendingKeys: { context, scope in
+                    guard CloudSyncFlags.groupsBackendCompiledCapability else { return [] }
+                    return GroupsSyncClient.shared.mirrorEntryKeysMissingFromOutbox(context: context, scope: scope)
                 })
         }
     }
@@ -1376,6 +1434,17 @@ final class CloudSessionSignOut {
         return live + mirror
     }
 
+    /// Lo mismo que `freshStartGroupsPendingCount`, **por fila**: lo que «Empezar de cero y perderlos» enseña y lo que la
+    /// persona acepta perder (ticket `fresh-start-has-no-way-out-when-group-writes-can-never-upload`). Mismo alcance del
+    /// espejo que el recuento y que el cinturón: el borrado lo purga entero.
+    static func freshStartGroupsLoss(
+        context: ModelContext, witness: GroupsExitWitness = .live
+    ) -> CloudSignOutFlowLogic.FreshStartGroupsLoss {
+        CloudSignOutFlowLogic.FreshStartGroupsLoss(
+            rows: liveGroupsPendingRowIDs(context: context),
+            mirrorKeys: witness.mirrorPendingKeys(context, .sessionOwnerOrEveryoneWhenSignedOut))
+    }
+
     /// **Sube los cambios de grupos ANTES de que «Empezar de cero» borre nada** (ticket
     /// `fresh-start-wipe-kills-unsent-group-writes-silently`). `DataWipeService.wipeLocalGroupsDomain` borra el outbox de
     /// grupos, y en la puerta privada quien empieza de cero puede ser la MISMA persona: esos gastos eran suyos y se perdían
@@ -1385,9 +1454,10 @@ final class CloudSessionSignOut {
     /// Subir es correcto también cuando quien empieza de cero es OTRA persona: las filas van firmadas con la sesión que
     /// las escribió, así que llegan a los grupos de su dueño, que es a donde iban. Lo incorrecto era tirarlas.
     ///
-    /// **Sin salida «perderlos»**: la decisión de Jürgen del 2026-09-15 para el otro gesto que purga el dominio sin
-    /// cerrar sesión, el desasociar (`lossExit: nil`). Quien no puede subir nunca —el teléfono sin App Attest— tiene la
-    /// del cierre de sesión, que sí la ofrece.
+    /// **La salida «perderlos», solo con los motivos que esperar no arregla** (ticket
+    /// `fresh-start-has-no-way-out-when-group-writes-can-never-upload`, decisión de Jürgen del 2026-09-26). Hasta ese día no
+    /// había ninguna —por la decisión del 2026-09-15 para el desasociar— y quien tenía cambios que no podían subir nunca
+    /// (un iPhone heredado, una sesión que el SDK borró) solo salía desinstalando. Ver `settleFreshStartBlock`.
     ///
     /// **No toca `phase`**, y es a propósito: `.working` y `.blocked` los leen seis sitios que no tienen nada que ver con
     /// este gesto —la matriz de readiness, la fila de cierre del Perfil, la puerta de Grupos del Welcome—, y cualquiera
@@ -1396,11 +1466,16 @@ final class CloudSessionSignOut {
     ///
     /// **Corre ANTES del primer borrado**, sea la zona de iCloud, las filas personales o el dominio de Grupos: parado
     /// aquí, el teléfono queda exactamente como estaba.
+    ///
+    /// `accepted`: lo que la persona aceptó perder, tal como lo tomó el borrado al empezar (`takeFreshStartAcceptedLoss`).
+    /// `nil` —el default— es la subida de siempre, que no descarta nada.
     func drainGroupsBeforeFreshStart(
-        context: ModelContext, witness: GroupsExitWitness = .live
+        context: ModelContext, witness: GroupsExitWitness = .live,
+        accepted: CloudSignOutFlowLogic.FreshStartGroupsLoss? = nil
     ) async -> FreshStartGroupsDrain {
         // Antes del `guard`: un `.busy` tampoco puede dejar a la vista el bloqueo de un intento anterior.
         freshStartGroupsBlock = nil
+        freshStartLossOffer = nil
         guard phase == .idle, !freshStartDrainInFlight else { return .busy }
 
         // **Sin nada que subir, ni espera ni red** — el caso de casi todo el mundo. La subida de abajo abre con la
@@ -1416,8 +1491,11 @@ final class CloudSessionSignOut {
             freshStartDrainInFlight = false
             waitingForPending = false
         }
-        guard let block = Self.freshStartBlock(
-            for: await pushGroupsWithinBudget(context: context, witness: witness)) else {
+        let block: FreshStartGroupsBlock
+        if let pushed = Self.freshStartBlock(
+            for: await pushGroupsWithinBudget(context: context, witness: witness)) {
+            block = pushed
+        } else {
             // **La subida solo mira el espejo de la sesión, y el borrado que viene detrás purga el de TODOS** (ticket
             // `groups-drain-failure-reads-as-nothing-pending`). Sin este paso, una entrada sin fila que no es de la sesión
             // —o cualquiera, sin sesión— pasaba aquí como `.drained` y el cinturón del escritor saltaba DESPUÉS: en la
@@ -1425,16 +1503,66 @@ final class CloudSessionSignOut {
             let residual = Self.freshStartGroupsPendingCount(context: context, witness: witness)
             guard residual != 0 else { return .drained }
             // El motivo dice lo que lo cura: volver a entrar, o intentarlo en un rato (`freshStartResidualReason`).
-            let leftover = FreshStartGroupsBlock(
+            block = FreshStartGroupsBlock(
                 pendingCount: residual,
                 reason: CloudSignOutFlowLogic.freshStartResidualReason(
                     livePendingCount: Self.liveGroupsPendingCount(context: context),
                     sessionMirrorCount: witness.mirrorPending(context, .sessionOwner)))
-            noteFreshStartBlocked(leftover)
-            return .blocked(leftover)
         }
-        noteFreshStartBlocked(block)
-        return .blocked(block)
+        return settleFreshStartBlock(block, accepted: accepted, context: context, witness: witness)
+    }
+
+    /// **Qué hace «Empezar de cero» con un bloqueo** (ticket `fresh-start-has-no-way-out-when-group-writes-can-never-upload`).
+    ///
+    ///  · **Un motivo que no ofrece la salida** (`.channelPaused`, lo pasajero): el bloqueo de siempre, con su cifra y su
+    ///    texto. Lo aceptado, si lo había, no cuenta: la persona aceptó perderlos porque no podían subir, y ahora sí pueden.
+    ///  · **Un motivo que la ofrece, con lo que queda dentro de lo aceptado**: sigue sin ello (`.lossAccepted`). El motivo es
+    ///    el de ESTE intento, así que el aviso no se hereda.
+    ///  · **Un motivo que la ofrece, sin aceptar o con algo nuevo**: el bloqueo, con la cifra de lo que el borrado se
+    ///    llevaría —filas vivas y entradas del espejo— y la oferta anotada por fila para el «¿seguro?».
+    ///
+    /// Interna y no privada para poder probar cada rama con filas de verdad y sin red: la subida que la precede habla con
+    /// el gateway.
+    func settleFreshStartBlock(
+        _ block: FreshStartGroupsBlock, accepted: CloudSignOutFlowLogic.FreshStartGroupsLoss?,
+        context: ModelContext, witness: GroupsExitWitness
+    ) -> FreshStartGroupsDrain {
+        guard block.offersLossExit else {
+            noteFreshStartBlocked(block)
+            return .blocked(block)
+        }
+        // **Antes de contar lo que se perdería, todo dentro del outbox** (review adversarial del 2026-09-26, dos lentes).
+        // El ciclo solo re-captura tras un bloqueo por App Attest; con `.sessionExpired` o `.permanent`, un gasto que un
+        // drain a medias dejó en el History no está ni en las filas ni en el espejo, así que el aviso no lo contaba y el
+        // borrado se lo llevaba. Lo recapturado entra en la cifra; lo que no se pudo capturar bloquea sin salida de
+        // pérdida —la persona no puede aceptar lo que no se le enseñó—, como `attestBlockAfterRecapture`.
+        guard witness.capture(context) else {
+            let uncaptured = FreshStartGroupsBlock(
+                pendingCount: Self.freshStartGroupsPendingCount(context: context, witness: witness),
+                reason: CloudSignOutFlowLogic.freshStartUncapturedReason)
+            noteFreshStartBlocked(uncaptured)
+            return .blocked(uncaptured)
+        }
+        let loss = Self.freshStartGroupsLoss(context: context, witness: witness)
+        if CloudSignOutFlowLogic.freshStartContinuesDiscarding(reason: block.reason, now: loss, accepted: accepted) {
+            Self.noteFreshStartGroupsDiscarded(loss, reason: block.reason)
+            return .lossAccepted(loss)
+        }
+        let offered = FreshStartGroupsBlock(pendingCount: loss.count, reason: block.reason)
+        freshStartLossOffer = loss
+        noteFreshStartBlocked(offered)
+        return .blocked(offered)
+    }
+
+    /// «Empezar de cero» va a borrar con cambios de grupos que la persona aceptó perder. Solo cuenta si queda alguno: con
+    /// cero, subieron entre el aviso y aquí. Fuera de `#if DEBUG`, como su gemelo del cierre (`noteGroupsDiscarded`).
+    private static func noteFreshStartGroupsDiscarded(
+        _ loss: CloudSignOutFlowLogic.FreshStartGroupsLoss, reason: CloudSignOutFlowLogic.BlockReason
+    ) {
+        guard !loss.isEmpty else { return }
+        let shown = CloudSignOutFlowLogic.shownLossCount(loss.count)
+        MetricsService.canary(.freshStartDiscardedGroupWrites,
+                              detail: "reason=\(reason) pending=\(shown.map(String.init) ?? "unknown")")
     }
 
     /// **El veredicto de la subida, en puro**: `nil` = drenó; si no, qué enseñar. El motivo viaja TAL CUAL —el bug del

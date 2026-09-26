@@ -57,6 +57,10 @@ struct LateICloudMirrorNoticeView: View {
         /// El borrado no corrió: quedan cambios de grupos sin subir (ticket
         /// `fresh-start-wipe-kills-unsent-group-writes-silently`). Nada se tocó.
         case groupsPending(CloudSessionSignOut.FreshStartGroupsBlock)
+        /// El «¿seguro?» de «Empezar de cero y perderlos» (ticket
+        /// `fresh-start-has-no-way-out-when-group-writes-can-never-upload`): solo desde un `.groupsPending` cuyo motivo
+        /// ofrece la salida, con el mismo bloqueo dentro para volver a él sin re-medir.
+        case confirmingGroupsLoss(CloudSessionSignOut.FreshStartGroupsBlock)
     }
 
     var body: some View {
@@ -74,9 +78,15 @@ struct LateICloudMirrorNoticeView: View {
                     // y no pidió borrar nada. **Desaparece durante el borrado**, que no admite abandono.
                     if phase != .wiping {
                         Button(L10n.Action.close) {
-                            // Desde «faltan cambios de grupos» también desarma: ver `leaveGroupsPending`.
-                            if case .groupsPending = phase { StorageModePersistence.clearICloudCorpusWipeArm() }
-                            onKeep(); dismiss()
+                            // Desde «faltan cambios de grupos» —y su «¿seguro?»— la barra hace lo mismo que «Dejarlo por
+                            // ahora»: desarma y CONSERVA el testigo, para que el aviso vuelva a preguntar. `onKeep` lo
+                            // retiraba, y los dos controles salían al mismo sitio con efectos distintos (review del
+                            // 2026-09-26).
+                            if isGroupsPending {
+                                leaveGroupsPending()
+                            } else {
+                                onKeep(); dismiss()
+                            }
                         }
                             .accessibilityIdentifier("late_icloud_close")
                     }
@@ -135,6 +145,35 @@ struct LateICloudMirrorNoticeView: View {
                 // Rendirse deja el testigo puesto a propósito: el corpus sigue en iCloud y la persona no
                 // ha dicho que se lo quede, solo que ahora no. El aviso vuelve en el próximo arranque.
                 destructiveAction: { dismiss() })
+        case .groupsPending(let block) where block.offersLossExit:
+            // **Esperar no los va a subir**: la salida «perderlos» (ticket
+            // `fresh-start-has-no-way-out-when-group-writes-can-never-upload`). La que no destruye va arriba, como en
+            // `.notice`. Sin «Volver a intentarlo»: con estos motivos un reintento no cambia nada, y el «¿seguro?» ya
+            // vuelve a subir antes de perder nada.
+            noticeBody(
+                icon: "exclamationmark.triangle",
+                title: L10n.Groups.FreshStartPending.title,
+                body: SignOutBlockedCopy.freshStartGroupsPendingMessage(block),
+                identifier: "late_icloud_groups_pending",
+                primary: L10n.Welcome.PrivateICloud.wipeFailedBack,
+                primaryAction: leaveGroupsPending,
+                destructive: L10n.Groups.FreshStartPending.lossAction,
+                destructiveAction: { phase = .confirmingGroupsLoss(block) })
+        case .confirmingGroupsLoss(let block):
+            // El botón destructivo es el ÚNICO del gesto que acepta la pérdida, y relanza el mismo borrado: vuelve a subir
+            // antes de perder nada (`CloudSessionSignOut.acceptFreshStartGroupsLoss`).
+            noticeBody(
+                icon: "trash",
+                title: L10n.Groups.FreshStartPending.lossConfirmTitle,
+                body: SignOutBlockedCopy.freshStartGroupsLossConfirmMessage(block),
+                identifier: "late_icloud_groups_loss_confirm",
+                primary: L10n.Welcome.PrivateICloud.wipeConfirmKeep,
+                primaryAction: { phase = .groupsPending(block) },
+                destructive: L10n.Groups.FreshStartPending.lossConfirmAction,
+                destructiveAction: {
+                    CloudSessionSignOut.shared.acceptFreshStartGroupsLoss()
+                    phase = .wiping
+                })
         case .groupsPending(let block):
             // Mismo molde que `.failed`, con el texto de lo que pasó: no se borró nada porque quedan cambios de grupos,
             // cuántos y qué hacer. `wipeRetry` y no `Restore.retry` («Reintentar búsqueda»): aquí no se busca nada.
@@ -158,6 +197,14 @@ struct LateICloudMirrorNoticeView: View {
     private func leaveGroupsPending() {
         StorageModePersistence.clearICloudCorpusWipeArm()
         dismiss()
+    }
+
+    /// «Faltan cambios de grupos» o su «¿seguro?»: las dos fases en las que no se borró nada y el arm no protege nada.
+    private var isGroupsPending: Bool {
+        switch phase {
+        case .groupsPending, .confirmingGroupsLoss: return true
+        case .notice, .confirming, .wiping, .failed: return false
+        }
     }
 
     private func noticeBody(icon: String, title: String, body: String, identifier: String,

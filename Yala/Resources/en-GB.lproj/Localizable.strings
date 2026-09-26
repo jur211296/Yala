@@ -4688,6 +4688,14 @@
 "groups.freshStartPending.title" = "Some group changes still need to be uploaded";
 "groups.freshStartPending.lead" = "We didn't erase anything: some of your group changes haven't reached our server yet (%d), and starting from scratch would take them with it.";
 "groups.freshStartPending.leadUnknown" = "We didn't erase anything: some of your group changes haven't reached our server yet, and starting from scratch would take them with it.";
+"groups.freshStartPending.lossSessionExpired" = "They can only upload with the account that made them, and its session is no longer on this phone. If you're not going to sign back in with that account, you can start from scratch and lose them: no one in the group will see them.";
+"groups.freshStartPending.lossPermanent" = "The account that made them can no longer upload them, and trying again won't fix it. You can start from scratch and lose them: no one in the group will see them.";
+"groups.freshStartPending.lossAttest" = "This phone has gone more than a day without passing the security check our server requires, so they can't be uploaded. You can start from scratch and lose them: no one in the group will see them.";
+"groups.freshStartPending.lossAction" = "Start from scratch and lose them";
+"groups.freshStartPending.lossConfirmTitle" = "Lose these changes?";
+"groups.freshStartPending.lossConfirmBody" = "Group changes that will be lost: %d. They're erased from this phone without reaching the server, no one in the group will see them, and they can't be recovered.";
+"groups.freshStartPending.lossConfirmBodyUnknown" = "The group changes that didn't reach the server are erased from this phone. No one in the group will see them, and they can't be recovered.";
+"groups.freshStartPending.lossConfirmAction" = "Lose them and start from scratch";
 
 /* Título del aviso cuando Restaurar compras no encuentra Yala Pro */
 "subscription.restoreEmptyTitle" = "No subscription found";

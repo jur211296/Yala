@@ -618,8 +618,9 @@ struct SignOutNotificationWiringTests {
         let signOut = try Self.source("Yala/Services/CloudSync/CloudSessionSignOut.swift")
         // Los 6: dispatch del path, marker de los cierres por archivos (`finalizeSessionExit`), marker en
         // `.cloud`, marker post-borrado, pre-drain, y desde el 2026-09-26 el pre-check síncrono de «Empezar de cero»
-        // (`groupsOutboxIsSettledEmpty`), que repite el pre-drain y tiene que leer lo mismo que él.
-        #expect(signOut.components(separatedBy: "CloudSyncFlags.groupsBackendCompiledCapability").count - 1 == 6)
+        // (`groupsOutboxIsSettledEmpty`), que repite el pre-drain y tiene que leer lo mismo que él. Y el 7.º, del mismo día:
+        // la tercera closure del testigo de salida (`GroupsExitWitness.live.mirrorPendingKeys`), gemela de `mirrorPending`.
+        #expect(signOut.components(separatedBy: "CloudSyncFlags.groupsBackendCompiledCapability").count - 1 == 7)
         #expect(!signOut.contains("CloudSyncFlags.groupsBackendEnabled"))
 
         // La UI que ofrece las filas tiene que resolver el path con la MISMA fuente que el dispatch, o

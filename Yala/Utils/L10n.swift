@@ -1809,6 +1809,29 @@ enum L10n {
             }
             /// Sin cifra: el recuento falló (`CloudSignOutFlowLogic.shownLossCount` devolvió `nil`).
             static var leadUnknown: String { ls("groups.freshStartPending.leadUnknown", comment: "") }
+
+            // MARK: «Empezar de cero y perderlos» (ticket `fresh-start-has-no-way-out-when-group-writes-can-never-upload`)
+            //
+            // Van detrás de `lead`, en vez del texto del cierre de sesión, con los tres motivos que esperar no arregla
+            // (`CloudSignOutFlowLogic.freshStartOffersGroupsLossExit`). Dicen por qué no suben y ofrecen perderlos.
+            /// La sesión que los apuntó ya no está. **No pide «vuelve a iniciar sesión»**: en un iPhone heredado esa cuenta
+            /// no es de quien empieza de cero.
+            static var lossSessionExpired: String { ls("groups.freshStartPending.lossSessionExpired", comment: "") }
+            /// La cuenta que los apuntó ya no puede subirlos (`.permanent`).
+            static var lossPermanent: String { ls("groups.freshStartPending.lossPermanent", comment: "") }
+            /// Más de un día sin App Attest (`.attestUnavailable`), con las palabras de `Groups.Errors.attestUnavailable`.
+            static var lossAttest: String { ls("groups.freshStartPending.lossAttest", comment: "") }
+            /// El botón destructivo del aviso, que lleva al «¿seguro?».
+            static var lossAction: String { ls("groups.freshStartPending.lossAction", comment: "") }
+            /// La segunda confirmación.
+            static var lossConfirmTitle: String { ls("groups.freshStartPending.lossConfirmTitle", comment: "") }
+            static func lossConfirmBody(_ count: Int) -> String {
+                String(format: ls("groups.freshStartPending.lossConfirmBody", comment: ""), count)
+            }
+            /// Sin cifra honesta: el recuento falló.
+            static var lossConfirmBodyUnknown: String { ls("groups.freshStartPending.lossConfirmBodyUnknown", comment: "") }
+            /// El botón que borra perdiéndolos. Es el único de todo el gesto que acepta la pérdida.
+            static var lossConfirmAction: String { ls("groups.freshStartPending.lossConfirmAction", comment: "") }
         }
 
         static var title: String { ls("groups.title", comment: "") }

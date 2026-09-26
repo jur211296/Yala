@@ -5435,6 +5435,14 @@
 "groups.freshStartPending.title" = "还有群组更改尚未上传";
 "groups.freshStartPending.lead" = "我们没有删除任何内容：你的群组中有部分更改尚未到达我们的服务器（%d 项），从头开始会把它们一起清除。";
 "groups.freshStartPending.leadUnknown" = "我们没有删除任何内容：你的群组中有部分更改尚未到达我们的服务器，从头开始会把它们一起清除。";
+"groups.freshStartPending.lossSessionExpired" = "这些更改只能用创建它们的账户上传，而该账户的会话已不在这台手机上。如果你不会再用那个账户登录，可以从头开始并丢失这些更改：群组里的人都不会看到它们。";
+"groups.freshStartPending.lossPermanent" = "创建这些更改的账户已无法上传它们，重试也解决不了。你可以从头开始并丢失这些更改：群组里的人都不会看到它们。";
+"groups.freshStartPending.lossAttest" = "这台手机已经超过一天没能通过我们服务器要求的安全验证，所以它们无法上传。你可以从头开始并丢失这些更改：群组里的人都不会看到它们。";
+"groups.freshStartPending.lossAction" = "从头开始并丢失更改";
+"groups.freshStartPending.lossConfirmTitle" = "要丢失这些更改吗？";
+"groups.freshStartPending.lossConfirmBody" = "将丢失的群组更改：%d 项。它们会在未到达服务器的情况下从这台手机上删除，群组里的人都不会看到，也无法恢复。";
+"groups.freshStartPending.lossConfirmBodyUnknown" = "未到达服务器的群组更改会从这台手机上删除。群组里的人都不会看到，也无法恢复。";
+"groups.freshStartPending.lossConfirmAction" = "丢失更改并从头开始";
 
 /* Título del aviso cuando Restaurar compras no encuentra Yala Pro */
 "subscription.restoreEmptyTitle" = "未找到订阅";

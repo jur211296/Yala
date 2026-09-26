@@ -1085,7 +1085,7 @@ struct WelcomePrivateICloudGateWiringTests {
             el chequeo de cancelación tiene que ir DELANTE del motivo `importNotQuiescent`.
             """)
         try Self.expectOrder("DataWipeService." + Self.wipeCall,
-                             before: "DataWipeService.wipeLocalGroupsDomain(in: modelContext)", in: wipe,
+                             before: "DataWipeService.wipeLocalGroupsDomain(in: modelContext, acceptedGroupsLoss: acceptedGroupsLoss)", in: wipe,
                              "lo personal primero y el dominio después, como en el alert gemelo")
         // **La gracia del wipe remoto se cancela ANTES de borrar.** `wipeAllUserData` hace `save()`
         // incrementales, así que un borrado que lanza a media lista baja igual la señal; con la gracia
@@ -1314,7 +1314,7 @@ struct WelcomePrivateICloudGateWiringTests {
             está activando.
             """)
         try Self.expectOrder("guard scope.deletesLocalRows",
-                             before: "DataWipeService.wipeLocalGroupsDomain(in: modelContext)", in: wipe,
+                             before: "DataWipeService.wipeLocalGroupsDomain(in: modelContext, acceptedGroupsLoss: acceptedGroupsLoss)", in: wipe,
                              "el corte va antes de la purga, o la activación se lleva los grupos por delante")
         // **Y la purga tiene su PROPIO guard, no cuelga del de las filas.** `.importedRows` borra filas y
         // NO purga Grupos: sin este término, «Restaurar → Empezar desde cero» dentro de la activación se
@@ -1325,7 +1325,7 @@ struct WelcomePrivateICloudGateWiringTests {
             Cuerpo leído: \(wipe)
             """)
         try Self.expectOrder("DataWipeService." + Self.wipeCall,
-                             before: "DataWipeService.wipeLocalGroupsDomain(in: modelContext)", in: wipe,
+                             before: "DataWipeService.wipeLocalGroupsDomain(in: modelContext, acceptedGroupsLoss: acceptedGroupsLoss)", in: wipe,
                              "lo personal primero y el dominio después, como en el alert gemelo")
     }
 
