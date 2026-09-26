@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (608)
+## Index (616)
 
 | id | status | path |
 |---|---|---|
@@ -173,10 +173,18 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | cloud-signout-personal-session-expiry-does-not-say-where-to-sign-in | done | tickets/done/cloud-signout-personal-session-expiry-does-not-say-where-to-sign-in.md |
 | cloud-signout-session-expiry-with-the-engine-stopped-until-relaunch-has-no-door | backlog | tickets/backlog/cloud-signout-session-expiry-with-the-engine-stopped-until-relaunch-has-no-door.md |
 | cloud-signout-upstream-rejections-with-a-healthy-pull-say-a-moment-more | backlog | tickets/backlog/cloud-signout-upstream-rejections-with-a-healthy-pull-say-a-moment-more.md |
+| cola-b-redesigns-must-hold-up-at-ipad-width | backlog | tickets/backlog/cola-b-redesigns-must-hold-up-at-ipad-width.md |
+| floating-buttons-cover-row-amounts-on-ipad-landscape | backlog | tickets/backlog/floating-buttons-cover-row-amounts-on-ipad-landscape.md |
 | fresh-start-has-no-way-out-when-group-writes-can-never-upload | backlog | tickets/backlog/fresh-start-has-no-way-out-when-group-writes-can-never-upload.md |
 | groups-drain-failure-reads-as-nothing-pending | qa | tickets/qa/groups-drain-failure-reads-as-nothing-pending.md |
 | groups-clock-rollback-wedges-the-drain-forever | qa | tickets/qa/groups-clock-rollback-wedges-the-drain-forever.md |
 | groups-clock-ahead-wins-every-conflict-until-real-time-catches-up | backlog | tickets/backlog/groups-clock-ahead-wins-every-conflict-until-real-time-catches-up.md |
+| ipad-keyboard-shortcuts-pointer-context-menus-and-drop | backlog | tickets/backlog/ipad-keyboard-shortcuts-pointer-context-menus-and-drop.md |
+| ipad-large-and-extra-large-widgets | backlog | tickets/backlog/ipad-large-and-extra-large-widgets.md |
+| ipad-list-detail-for-groups-and-settings-and-chat-inspector | backlog | tickets/backlog/ipad-list-detail-for-groups-and-settings-and-chat-inspector.md |
+| ipad-multiple-windows-share-one-navigation-state | backlog | tickets/backlog/ipad-multiple-windows-share-one-navigation-state.md |
+| ipad-real-multiwindow-with-per-scene-state | backlog | tickets/backlog/ipad-real-multiwindow-with-per-scene-state.md |
+| ipad-sidebar-and-list-detail-for-records-and-planning | backlog | tickets/backlog/ipad-sidebar-and-list-detail-for-records-and-planning.md |
 | personal-clock-rollback-wedges-the-drain-forever | qa | tickets/qa/personal-clock-rollback-wedges-the-drain-forever.md |
 | personal-clock-ahead-wins-every-conflict-until-real-time-catches-up | backlog | tickets/backlog/personal-clock-ahead-wins-every-conflict-until-real-time-catches-up.md |
 | private-sign-out-counts-group-writes-without-capturing-them | backlog | tickets/backlog/private-sign-out-counts-group-writes-without-capturing-them.md |
