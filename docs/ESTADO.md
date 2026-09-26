@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-25 (Lima)
 
-**Rama** `2.1` — Merge #252: **El paso 1 del cierre en la nube nombra el motivo real y no «revisa tu conexión».**
+**Rama** `2.1` — Merge #253: **En la nube, la sesión caducada nombra dónde volver a entrar, y esa puerta existe.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,36 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#252 · el paso 1 del cierre en la nube nombra el motivo real)
+## Esta sesión (#253 · en la nube, la sesión caducada nombra dónde volver a entrar)
+
+**Con la sesión caducada y cambios sin subir —de grupos o personales—, «Cerrar sesión» sigue bloqueándose sin perder nada,
+pero ahora dice dónde volver a entrar y esa puerta está ahí:**
+
+- **El aviso**: «Tu sesión caducó y hay cambios sin subir a la nube. No se pierden: abre «Dónde viven tus datos», aquí en
+  Perfil, toca «Iniciar sesión» y después vuelve a intentarlo.» Motivo nuevo `.cloudSessionExpired`, 16 locales, voseo en
+  es-AR. Las celdas privadas conservan su texto.
+- **La puerta**: la tarjeta «Sincronización» cuenta las dos colas y sale con el motor parado hasta firmar **o arrancado sin
+  sesión tras relanzar**. El cierre para el motor al bloquear, para que esté al llegar.
+- **El botón entra de verdad** con la sesión guardada que el servidor rechaza (prueba con un ciclo antes de firmar).
+- **Otra cuenta no sube nada**: la firma se ata al dueño del motor —o al sello del claim—, con el proveedor del faro de la
+  cuenta dueña; si entra otra, esa sesión se cierra. El ciclo del motor tampoco corre con otra cuenta.
+
+**La review cazó el caso principal** (tres lentes): la primera versión dejaba sin puerta a quien relanzaba con la sesión ya
+borrada. Arreglado en la misma rama.
+
+**Verificado:** gate con 7983 unit en 757 suites y 32 XCUITest en 13 suites, centinela limpio. 21 mutantes: 20 muertos y 1
+que cuelga la suite. Ticket a `done` y, por solape, `cloud-signout-personal-session-expiry-does-not-say-where-to-sign-in`.
+Sin device-QA.
+
+### Lo que espera de Jürgen
+
+- Nada nuevo de este cierre. Dos residuales `low` nuevos en backlog:
+  `cloud-signout-session-expiry-with-the-engine-stopped-until-relaunch-has-no-door` y
+  `private-signout-groups-session-expiry-does-not-say-where-to-sign-in`. Y la pregunta 2 de
+  `groups-outbox-rows-without-a-live-session-have-no-exit` gana urgencia: las entradas directas de Grupos siguen sin guarda
+  de cuenta.
+
+## Sesión anterior (#252 · el paso 1 del cierre en la nube nombra el motivo real)
 
 **Con cambios propios sin subir a la nube, «Cerrar sesión» sigue bloqueándose sin perder nada, pero el aviso ya no dice
 «revisa tu conexión» cuando la conexión no tiene nada que ver:**
@@ -47,7 +76,7 @@ equivalente. Ticket a `done`, sin device-QA.
   `cloud-signout-upstream-rejections-with-a-healthy-pull-say-a-moment-more` y
   `push-unexpected-4xx-is-told-to-try-again-later`.
 
-## Sesión anterior (#251 · con la sincronización parada, el aviso de cerrar sesión nombra la salida real)
+## Antes (#251 · con la sincronización parada, el aviso de cerrar sesión nombra la salida real)
 
 **Con cambios sin subir y la sincronización con la nube parada a propósito, «Cerrar sesión» sigue bloqueándose sin perder
 nada, pero el aviso ya no dice «revisa tu conexión».** Dice la salida que toca, y se elige por lo que enseña «Dónde viven tus
