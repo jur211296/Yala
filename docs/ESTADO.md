@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-26 (Lima)
 
-**Rama** `2.1` — Merge #259: **Si la hora del iPhone retrocede, los gastos de grupo ya no dejan de subir.**
+**Rama** `2.1` — Merge #260: **Si la hora del iPhone retrocede, los cambios personales en la nube ya no dejan de subir.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,31 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#259 · un reloj que retrocede ya no encalla la subida de los gastos de grupo)
+## Esta sesión (#260 · un reloj que retrocede ya no encalla la subida de los cambios personales)
+
+**Con los datos en la nube, si la hora del iPhone estuvo adelantada y volvió, lo que apuntes después sube como siempre**
+y tus otros dispositivos lo ven. Antes no salía nunca del teléfono, sin aviso ni bloqueo. Lo mismo con las preferencias:
+un cambio de ajustes hecho en ese tiempo ya no se pierde. Sin texto nuevo.
+
+- El drain personal (`CloudSyncEngine.appendRow`) y `PrefsOutbox.enqueue` estampan con `HLCClock.sendLocal`, la pieza de
+  #259. El drain sigue con la fecha de la transacción (el re-drain no duplica).
+- **A propósito sin tocar:** subida del snapshot, huérfanas del adopt y remap siguen con `send`; sus llamadores tratan la
+  deriva como pasajera y se curan solos. Regla nueva en `swiftdata-cloudkit.md` («El drain personal y las preferencias
+  estampan igual»).
+
+**Verificado:** gate con 8063 unit y 4 XCUITest, centinela limpio; 6/6 mutantes; review adversarial de tres lentes (dos
+huecos de test y frases desactualizadas, arreglados en la rama). Ticket a `qa` con guion.
+
+### Lo que espera de Jürgen
+
+- Device-QA de `personal-clock-rollback-wedges-the-drain-forever` (hace falta un segundo dispositivo con la misma cuenta).
+- Hallazgo, a backlog: `personal-clock-ahead-wins-every-conflict-until-real-time-catches-up` (low; el precio: ese
+  teléfono gana los conflictos hasta que la hora real lo alcanza, y el otro dispositivo puede quedarse sin converger).
+  Conviene decidirlo junto a su gemelo de Grupos.
+- `clock-drift-aborted-drain-lets-the-pull-overwrite-untranslated-edits`: su única causa conocida desapareció; candidato
+  a `discarded` si estás de acuerdo.
+
+## Sesión anterior (#259 · un reloj que retrocede ya no encalla la subida de los gastos de grupo)
 
 **Si la hora del iPhone estuvo adelantada y volvió, los gastos de grupo que apuntes después suben como siempre**, y cerrar
 sesión, desasociar y «Empezar de cero» ya no se paran con un «inténtalo en un rato» que esperando no se cumplía. Antes
@@ -40,9 +64,9 @@ gasto → los dos llegan → «Desasociar» sigue).
 - Device-QA del ticket, cuando puedas.
 - Hallazgos, a backlog: `groups-clock-ahead-wins-every-conflict-until-real-time-catches-up` (low; el precio del arreglo:
   un teléfono con la hora adelantada gana los conflictos de sus grupos hasta que la hora real lo alcanza) y
-  `personal-clock-rollback-wedges-the-drain-forever` (medium; el mismo encallamiento en el canal personal).
+  `personal-clock-rollback-wedges-the-drain-forever` (medium; el mismo encallamiento en el canal personal — cerrado en #260).
 
-## Sesión anterior (#258 · exploración: plugin de Yala para Claude)
+## Antes (#258 · exploración: plugin de Yala para Claude)
 
 **Nada cambia en la app.** Hay un documento, `docs/exploracion/plugin-claude-mcp.md`, que evalúa un conector MCP
 de solo lectura sobre la nube, con OAuth por usuario, más tres skills. Es el diferido #22 del modo nube.
