@@ -112,27 +112,22 @@ struct GroupsDrainCaptureTests {
         #expect(try liveRows(context) == 1)
     }
 
-    /// **El canario del ticket, en el reloj.** Con el reloj lógico una hora por delante, `clock.send` lanza al traducir
-    /// y la vuelta corta en la frontera de la transacción: el gasto NO llega al outbox. Antes el llamador leía un
-    /// outbox a 0 y borraba; ahora la vuelta dice `false`. Y el gasto sigue en el History: un cliente sano lo captura
-    /// después, que es lo que el borrado se llevaba.
-    @Test func drainOnce_whenTheClockCutsTheTranslation_returnsFalse_andTheExpenseStaysInTheHistory() throws {
+    /// **El canario del ticket, con la traducción cortada.** Si el HLC no se puede estampar, la vuelta corta en la
+    /// frontera de la transacción: el gasto NO llega al outbox. Antes el llamador leía un outbox a 0 y borraba; ahora la
+    /// vuelta dice `false`. Y el gasto sigue en el History: un cliente sano lo captura después, que es lo que el borrado se
+    /// llevaba. Hasta `groups-clock-rollback-wedges-the-drain-forever` esto se provocaba con el reloj lógico adelantado;
+    /// desde entonces el reloj ya no corta (`GroupsClockRollbackDrainTests`) y se provoca con el seam.
+    @Test func drainOnce_whenTheTranslationIsCut_returnsFalse_andTheExpenseStaysInTheHistory() throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let mirrorDir = freshDir(); defer { cleanup(mirrorDir) }
         let context = try makeContext(dir)
         let client = makeClient(mirrorDir: mirrorDir)
-        let cursor = try client.loadOrCreateCursor(context)
-        let ahead = try HLC(physicalMs: Int64((Date().timeIntervalSince1970 + 3600) * 1000),
-                            counter: 0, nodeID: NodeID.generate())
-        cursor.clockLatestHLC = ahead.description
-        try context.save()
+        client._testThrowOnClockStamp = true
         try seedBackendExpense(context)
 
         #expect(!client.drainOnce(context: context), "la traducción se cortó: la captura no terminó")
         #expect(try liveRows(context) == 0, "control: el gasto no llegó al outbox (es el recuento que mentía)")
 
-        cursor.clockLatestHLC = nil
-        try context.save()
         let healthy = makeClient(mirrorDir: mirrorDir)
         #expect(healthy.drainOnce(context: context))
         #expect(try liveRows(context) == 1, "el gasto seguía en el History: es lo que el borrado se habría llevado")
@@ -171,16 +166,13 @@ struct GroupsDrainCaptureTests {
         #expect(client.mirrorEntriesMissingFromOutbox(context: context, scope: .sessionOwner) == 0)
     }
 
-    /// La captura devuelve lo que devuelve el drain: con el reloj por delante, `false` aunque la rehidratación fuera bien.
+    /// La captura devuelve lo que devuelve el drain: con la traducción cortada, `false` aunque la rehidratación fuera bien.
     @Test func captureForExit_returnsTheDrainVerdict() throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let mirrorDir = freshDir(); defer { cleanup(mirrorDir) }
         let context = try makeContext(dir)
         let client = makeClient(mirrorDir: mirrorDir)
-        let cursor = try client.loadOrCreateCursor(context)
-        cursor.clockLatestHLC = try HLC(physicalMs: Int64((Date().timeIntervalSince1970 + 3600) * 1000),
-                                        counter: 0, nodeID: NodeID.generate()).description
-        try context.save()
+        client._testThrowOnClockStamp = true
         try seedBackendExpense(context)
 
         #expect(!client.captureLocalWritesForExit(context: context))

@@ -289,6 +289,91 @@ struct HLCTests {
         }
     }
 
+    // MARK: - HLCClock.sendLocal (ticket `groups-clock-rollback-wedges-the-drain-forever`)
+
+    /// Mismo algoritmo que `send` cuando la hora del evento va por delante del reloj lógico: la adopta, contador a 0.
+    @Test func sendLocal_eventAhead_adoptsEventTime_counterZero() throws {
+        var clock = HLCClock(nodeID: try node(nodeA),
+                             latest: try HLC(physicalMs: Self.anchorMs, counter: 7, nodeID: node(nodeA)))
+        let ts = try clock.sendLocal(eventTime: date(Self.anchorMs + 1000))
+        #expect(ts.description == "2021-01-01T00:00:01.000Z-0000-00000000000000aa")
+        #expect(clock.latest == ts)
+    }
+
+    /// Mismo ms: el contador avanza, como en `send`.
+    @Test func sendLocal_sameMillisecond_incrementsCounter() throws {
+        var clock = HLCClock(nodeID: try node(nodeA),
+                             latest: try HLC(physicalMs: Self.anchorMs, counter: 3, nodeID: node(nodeA)))
+        let ts = try clock.sendLocal(eventTime: date(Self.anchorMs))
+        #expect(ts.physicalMs == Self.anchorMs)
+        #expect(ts.counter == 4)
+    }
+
+    /// **El caso del ticket.** El reloj lógico va un día por delante de la transacción (la hora del teléfono estuvo
+    /// adelantada y volvió): `send` lanza `driftExceeded` —su gemelo, abajo, es el control— y `sendLocal` emite por
+    /// encima del reloj lógico, así que el cambio de después sigue ordenado DESPUÉS del de antes.
+    @Test func sendLocal_eventFarBehind_doesNotThrow_andStaysAboveLatest() throws {
+        let oneDay: Int64 = 86_400_000
+        let latest = try HLC(physicalMs: Self.anchorMs + oneDay, counter: 0, nodeID: node(nodeA))
+
+        var guarded = HLCClock(nodeID: try node(nodeA), latest: latest)
+        #expect(throws: ClockDriftError.driftExceeded(driftMillis: oneDay)) {
+            _ = try guarded.send(now: date(Self.anchorMs))
+        }
+
+        var clock = HLCClock(nodeID: try node(nodeA), latest: latest)
+        let ts = try clock.sendLocal(eventTime: date(Self.anchorMs))
+        #expect(ts > latest)
+        #expect(ts.physicalMs == Self.anchorMs + oneDay)
+        #expect(ts.counter == 1)
+    }
+
+    /// Justo después del límite de `send` (5 min + 1 ms), que es donde `send` empieza a lanzar.
+    @Test func sendLocal_justBeyondTheSendDriftLimit_doesNotThrow() throws {
+        var clock = HLCClock(nodeID: try node(nodeA),
+                             latest: try HLC(physicalMs: Self.anchorMs + HLCClock.maxDriftMillis + 1, counter: 0,
+                                             nodeID: node(nodeA)))
+        let ts = try clock.sendLocal(eventTime: date(Self.anchorMs))
+        #expect(ts.physicalMs == Self.anchorMs + HLCClock.maxDriftMillis + 1)
+        #expect(ts.counter == 1)
+    }
+
+    /// Contador agotado: avanza el milisegundo y vuelve a 0, en vez de lanzar como `send`. Sigue por encima del anterior.
+    @Test func sendLocal_counterExhausted_advancesTheMillisecond() throws {
+        let latest = try HLC(physicalMs: Self.anchorMs, counter: 0xFFFF, nodeID: node(nodeA))
+        var clock = HLCClock(nodeID: try node(nodeA), latest: latest)
+        let ts = try clock.sendLocal(eventTime: date(Self.anchorMs - 60_000))
+        #expect(ts.physicalMs == Self.anchorMs + 1)
+        #expect(ts.counter == 0)
+        #expect(ts > latest)
+        #expect(clock.latest == ts)
+    }
+
+    /// El penúltimo valor del contador no avanza el milisegundo: 0xFFFF es válido.
+    @Test func sendLocal_lastCounterValue_isStillUsed() throws {
+        var clock = HLCClock(nodeID: try node(nodeA),
+                             latest: try HLC(physicalMs: Self.anchorMs, counter: 0xFFFE, nodeID: node(nodeA)))
+        let ts = try clock.sendLocal(eventTime: date(Self.anchorMs))
+        #expect(ts.physicalMs == Self.anchorMs)
+        #expect(ts.counter == 0xFFFF)
+    }
+
+    /// **Determinista**: el mismo `latest` y las mismas horas de evento dan los mismos HLC. Es lo que deja al dedup
+    /// `(syncID, hlc, op)` reconocer un re-drain. Y la secuencia es estrictamente creciente aunque las horas retrocedan.
+    @Test func sendLocal_isDeterministic_andStrictlyIncreasing() throws {
+        let latest = try HLC(physicalMs: Self.anchorMs + 3_600_000, counter: 0xFFFD, nodeID: node(nodeA))
+        let events = [Self.anchorMs, Self.anchorMs - 5_000, Self.anchorMs + 10, Self.anchorMs + 7_200_000,
+                      Self.anchorMs + 7_200_000, Self.anchorMs]
+        func run() throws -> [HLC] {
+            var clock = HLCClock(nodeID: try node(nodeA), latest: latest)
+            return try events.map { try clock.sendLocal(eventTime: date($0)) }
+        }
+        let first = try run()
+        #expect(try run() == first)
+        #expect(zip(first, first.dropFirst()).allSatisfy { $0 < $1 })
+        #expect(first[0] > latest)
+    }
+
     // MARK: - HLCClock.receive
 
     @Test func receive_remoteAhead_adoptsRemote_stampsLocalNode() throws {

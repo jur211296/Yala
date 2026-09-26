@@ -59,3 +59,7 @@ justo antes del `find -delete`, y el `find` solo si la ruta es la que esperabas.
 DENIEGA el permiso** (y también un `rm -rf` dentro del mío). No lo fuerces por otra vía: la caché del simulador bastó (6,5 → 8,8 GB,
 y otra vez antes del gate), y un `-resultBundlePath` con nombre nuevo evita tener que borrar el anterior. Un build + suite
 completa + 16 mutantes + XCUITest cupieron por encima de 4 GB.
+
+**Y el DerivedData de un worktree ya retirado es basura segura** (medido el 2026-09-26: 4,5 GB, de 5,9 a 10 GB libres).
+`plutil -p <DerivedData>/<Yala-hash>/info.plist` da su `WorkspacePath`; si ese directorio ya no existe, nadie lo usa. Se
+borra con el mismo `find -delete` (más `-type l`). El mío se crea con otro hash, así que no ahorra el build.

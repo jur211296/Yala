@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (598)
+## Index (600)
 
 | id | status | path |
 |---|---|---|
@@ -168,7 +168,9 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | cloud-signout-upstream-rejections-with-a-healthy-pull-say-a-moment-more | backlog | tickets/backlog/cloud-signout-upstream-rejections-with-a-healthy-pull-say-a-moment-more.md |
 | fresh-start-has-no-way-out-when-group-writes-can-never-upload | backlog | tickets/backlog/fresh-start-has-no-way-out-when-group-writes-can-never-upload.md |
 | groups-drain-failure-reads-as-nothing-pending | qa | tickets/qa/groups-drain-failure-reads-as-nothing-pending.md |
-| groups-clock-rollback-wedges-the-drain-forever | backlog | tickets/backlog/groups-clock-rollback-wedges-the-drain-forever.md |
+| groups-clock-rollback-wedges-the-drain-forever | qa | tickets/qa/groups-clock-rollback-wedges-the-drain-forever.md |
+| groups-clock-ahead-wins-every-conflict-until-real-time-catches-up | backlog | tickets/backlog/groups-clock-ahead-wins-every-conflict-until-real-time-catches-up.md |
+| personal-clock-rollback-wedges-the-drain-forever | backlog | tickets/backlog/personal-clock-rollback-wedges-the-drain-forever.md |
 | private-sign-out-counts-group-writes-without-capturing-them | backlog | tickets/backlog/private-sign-out-counts-group-writes-without-capturing-them.md |
 | personal-sign-out-reads-an-unfinished-drain-as-nothing-pending | backlog | tickets/backlog/personal-sign-out-reads-an-unfinished-drain-as-nothing-pending.md |
 | unit-tests-write-group-amounts-into-the-real-app-group-mirror | backlog | tickets/backlog/unit-tests-write-group-amounts-into-the-real-app-group-mirror.md |
