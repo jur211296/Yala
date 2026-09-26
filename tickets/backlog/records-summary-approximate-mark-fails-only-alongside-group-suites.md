@@ -4,7 +4,7 @@ status: backlog
 priority: medium
 area: "testing, currency"
 created: 2026-09-15
-updated: 2026-09-25
+updated: 2026-09-26
 source: "gate de `cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes` (2026-09-15): único rojo de la suite completa"
 ---
 
@@ -66,3 +66,6 @@ en el resumen. Dos sospechosos concretos, los dos ya conocidos en `.claude/rules
 - **2026-09-25**, gate de `an-undecodable-migration-phase-reads-as-never-started`: único rojo de la suite completa
   (7937 tests en 756 suites, los mismos dos `#expect` de `:1115` y `:1118`); `RecordsSummaryApproximateMarkTests` a solas,
   3/3 verde. El cambio de esa sesión no toca resúmenes ni `SessionState`.
+- **2026-09-26**, gate de `detach-does-not-verify-the-cloud-session-actually-closed`: rojo en una corrida de la suite completa
+  (8003 tests en 759 suites, los mismos `#expect` de `:1115` y `:1118`) y verde en la siguiente sin tocar nada suyo. El cambio
+  de esa sesión no toca resúmenes.

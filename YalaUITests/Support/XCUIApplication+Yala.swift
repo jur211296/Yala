@@ -44,6 +44,7 @@ extension XCUIApplication {
         fakeMigrationIdentity: String? = nil,
         pendingMigrationBlock: String? = nil,
         migrationJournalUnreadable: Bool = false,
+        signOutKeepsSession: Bool = false,
         extraArguments: [String] = []
     ) -> XCUIApplication {
         var args = ["-uitest"]
@@ -149,6 +150,11 @@ extension XCUIApplication {
         // culpando a la pantalla. Su nombre lo fija un test de paridad con `UITestHooks`
         // (`MigrationJournalUnreadableWiringTests`).
         if migrationJournalUnreadable { args.append("-uitest-migration-journal-unreadable") }
+        // El cierre de la sesión en la nube devuelve «sigue guardada»: el desasociar tiene que pararse antes de soltar nada.
+        // NOMBRADO por lo mismo que sus vecinos: un typo dejaría el cierre diciendo que terminó, el gesto seguiría hasta el
+        // final y el caso caería culpando al aviso. Su nombre lo fija un test de paridad con `UITestHooks`
+        // (`GroupsDetachSessionSurvivesTests`).
+        if signOutKeepsSession { args.append("-uitest-sign-out-keeps-session") }
         // Args crudos adicionales (aditivo — p.ej. "-uitest-cloud-chooser").
         args.append(contentsOf: extraArguments)
         // Idioma FIJO para toda la suite. Los seeds nombran sus datos con copy localizado

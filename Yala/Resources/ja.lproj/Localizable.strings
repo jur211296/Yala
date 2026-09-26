@@ -5871,6 +5871,7 @@
 
 /* Aviso: el desasociar abortó porque no se pudo leer el puente */
 "storage.groups.detachBlockedBridge" = "この iPhone でグループの記録を確認できませんでした。何も解除されていません。もう一度お試しください。";
+"storage.groups.detachBlockedSessionNotClosed" = "この iPhone でグループ用アカウントからサインアウトできませんでした。何も解除されていません。もう一度お試しください。";
 
 /* Botón cuando quedó un desasociar a medias */
 "storage.groups.detachFinishButton" = "アカウントのリンク解除を完了";

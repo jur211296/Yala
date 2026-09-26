@@ -33,7 +33,7 @@ enum SignOutBlockedCopy {
             return L10n.Settings.signOutAttestTitle
         case .permanent, .exportUnconfirmed, .sessionExpired, .bridgeUnreadable, .detachBusy,
              .channelPaused, .uploadRetryLater, .syncStoppedNeedsUpdate, .syncStoppedMidMigration,
-             .syncStoppedNeedsRelaunch, .personalUploadRetryLater, .cloudSessionExpired:
+             .syncStoppedNeedsRelaunch, .personalUploadRetryLater, .cloudSessionExpired, .sessionNotClosed:
             return L10n.Settings.signOutBlockedTitle
         }
     }
@@ -79,7 +79,7 @@ enum SignOutBlockedCopy {
         case .syncStoppedNeedsRelaunch: return L10n.Settings.signOutSyncStoppedNeedsRelaunch
         case .personalUploadRetryLater: return L10n.Settings.signOutUploadRetryLater
         case .cloudSessionExpired: return L10n.Settings.signOutCloudSessionExpired
-        case .permanent, .exportUnconfirmed, .bridgeUnreadable, .detachBusy, .none:
+        case .permanent, .exportUnconfirmed, .bridgeUnreadable, .detachBusy, .sessionNotClosed, .none:
             return L10n.Settings.signOutBlockedMessage
         }
     }

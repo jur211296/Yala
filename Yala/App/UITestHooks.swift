@@ -124,6 +124,13 @@ final class UITestHooks {
     /// JWT mandaría credenciales basura a un backend real. Solo DEBUG (inerte en release vía `hasArg`).
     nonisolated static var fakeCloudSession: Bool { hasArg("-uitest-fake-cloud-session") }
 
+    /// `-uitest-sign-out-keeps-session`: `CloudAuthService.signOut()` devuelve «la sesión sigue guardada», como si el
+    /// llavero no la hubiera borrado o un refresco del token en vuelo la hubiera repuesto (ticket
+    /// `detach-does-not-verify-the-cloud-session-actually-closed`). En el simulador no hay forma de provocar ninguna de las
+    /// dos, y sin el seam el aviso del desasociar parado no se ve. Solo cambia lo que el cierre DEVUELVE: todo lo que hace
+    /// antes corre igual. Solo DEBUG.
+    nonisolated static var signOutKeepsSession: Bool { hasArg("-uitest-sign-out-keeps-session") }
+
     /// Valor de `-uitest-fake-migration-identity <personalData|proceed>`: finge la RESPUESTA de la puerta de identidad de
     /// «Migrar a la nube» (`CloudMigrationController.checkMigrationIdentity`), para el XCUITest de la hoja del bloqueo
     /// (ticket `settings-migrate-to-cloud-adopts-silently-instead-of-migrating`). El simulador no puede preguntar a

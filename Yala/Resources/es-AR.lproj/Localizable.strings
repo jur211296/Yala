@@ -5136,6 +5136,7 @@
 
 /* Aviso: el desasociar abortó porque no se pudo leer el puente */
 "storage.groups.detachBlockedBridge" = "No pudimos revisar los movimientos de tus grupos en este iPhone. No se soltó nada. Vuelve a intentarlo.";
+"storage.groups.detachBlockedSessionNotClosed" = "No pudimos cerrar la sesión de tu cuenta de grupos en este iPhone. No se soltó nada. Volvé a intentarlo.";
 
 /* Botón cuando quedó un desasociar a medias */
 "storage.groups.detachFinishButton" = "Terminar de soltar la cuenta";

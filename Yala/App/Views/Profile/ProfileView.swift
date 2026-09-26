@@ -210,8 +210,8 @@ struct ProfileView: View {
             // —dos presentaciones del mismo anchor, con su carrera— y le hablaba a la persona de cerrar
             // la sesión entera cuando solo pidió soltar una cuenta de grupos. Es justo lo que el aviso
             // propio de `GroupsAssociationSection` existe para evitar. Quien los enseña es esa sección,
-            // por el veredicto de retorno, no por la fase.
-            case .bridgeUnreadable, .detachBusy: break
+            // por el veredicto de retorno, no por la fase. `.sessionNotClosed` (2026-09-26) es el tercero, y por lo mismo.
+            case .bridgeUnreadable, .detachBusy, .sessionNotClosed: break
             case .exportUnconfirmed: showSignOutExportAlert = true
             }
         }

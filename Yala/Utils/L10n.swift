@@ -7105,6 +7105,7 @@ enum L10n {
             static var detachPurgeFailedTitle: String { ls("storage.groups.detachPurgeFailedTitle", comment: "") }
             static var detachPurgeFailedBody: String { ls("storage.groups.detachPurgeFailedBody", comment: "") }
             static var detachBlockedBridge: String { ls("storage.groups.detachBlockedBridge", comment: "") }
+            static var detachBlockedSessionNotClosed: String { ls("storage.groups.detachBlockedSessionNotClosed", comment: "") }
             static var detachFinishButton: String { ls("storage.groups.detachFinishButton", comment: "") }
             static var detachPendingBody: String { ls("storage.groups.detachPendingBody", comment: "") }
             static var detachBusy: String { ls("storage.groups.detachBusy", comment: "") }

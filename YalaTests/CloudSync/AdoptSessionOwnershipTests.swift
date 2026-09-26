@@ -407,9 +407,11 @@ struct AdoptSessionOwnershipWiringTests {
         for (i, line) in code.enumerated() where line == "CloudSyncBreadcrumb.authSignedIn()" {
             #expect(code[i + 1] == "AdoptSessionOwnership.record(nil)", "tras el sign-in de la línea \(i)")
         }
-        let signOut = Self.lines(try Self.body(of: "func signOut() async {", in: path))
+        // Desde el 2026-09-26 `signOut()` devuelve si la sesión se fue, y su `guard` sin cliente devuelve ese testigo
+        // (`detach-does-not-verify-the-cloud-session-actually-closed`). Lo que se fija aquí no cambia: la marca, antes.
+        let signOut = Self.lines(try Self.body(of: "func signOut() async -> Bool {", in: path))
         let clear = try #require(signOut.firstIndex(of: "AdoptSessionOwnership.record(nil)"))
-        let guardClient = try #require(signOut.firstIndex(of: "guard let client else { return }"))
+        let guardClient = try #require(signOut.firstIndex(of: "guard let client else { return storedSessionIsGone }"))
         #expect(clear < guardClient)
     }
 
