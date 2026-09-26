@@ -1787,7 +1787,16 @@ struct ContentView: View {
         // testigos —los retiran las vistas al terminar su fase—, así que sin este bloque un borrado
         // reanudado con éxito dejaba el arm puesto y el arranque siguiente volvía a reanudarlo. Bucle.
         if StorageModePersistence.isICloudCorpusWipeArmed() {
-            guard await performICloudCorpusWipe(.handover) == nil else { return }
+            let failure = await performICloudCorpusWipe(.handover)
+            // **Parado en los cambios de grupos, se DESARMA** (ticket `fresh-start-wipe-kills-unsent-group-writes-silently`,
+            // hallazgo de las tres lentes de la review). La subida corre antes del primer borrado, así que no hay nada a
+            // medias que el arm proteja; y dejarlo puesto reintentaba en silencio cada arranque hasta que un día —con la
+            // sesión recuperada, semanas después— los cambios subían y el borrado se llevaba todo lo creado entretanto sin
+            // una sola pantalla. Desarmado, el testigo del espejo tardío sigue puesto y el aviso vuelve a preguntar.
+            if failure == CloudSessionSignOut.freshStartGroupsPendingFailure {
+                StorageModePersistence.clearICloudCorpusWipeArm()
+            }
+            guard failure == nil else { return }
             StorageModePersistence.clearPrivateChoseWithoutICloud()
             StorageModePersistence.clearICloudCorpusWipeArm()
             cancelWipeGrace()
@@ -1857,6 +1866,13 @@ struct ContentView: View {
             guard quiescent else { return "importNotQuiescent" }
         }
         guard !Task.isCancelled else { return "cancelled" }
+        // **Los cambios de grupos suben ANTES del primer borrado, que es la ZONA de iCloud** (ticket
+        // `fresh-start-wipe-kills-unsent-group-writes-silently`). Solo con `purgesGroupsDomain`: es el único alcance que
+        // se lleva el outbox. Parado aquí no se ha tocado nada, ni en iCloud ni en el teléfono.
+        if scope.purgesGroupsDomain,
+           let failure = await drainGroupsBeforeFreshStart() {
+            return failure
+        }
         if let failure = await ICloudPersonalCorpusProbe.wipe() {
             MetricsService.canary(.freshStartWipeFailed, detail: "icloudCorpusWipe:\(failure)")
             return failure
@@ -1883,6 +1899,8 @@ struct ContentView: View {
             return nil
         }
         do {
+            // El cinturón del escritor, antes de las filas personales: entre la subida y aquí hubo un `await` (la zona).
+            if scope.purgesGroupsDomain { try DataWipeService.requireNoUnsentGroupWrites(in: modelContext) }
             try DataWipeService.wipeAllUserData(in: modelContext, broadcastSignal: false,
                                                 resetsPreferences: scope.resetsPreferences)
             // **Y el dominio de Grupos, por la misma razón que en el borrado del teléfono.** Va DENTRO del
@@ -1903,6 +1921,30 @@ struct ContentView: View {
         } catch {
             MetricsService.canary(.freshStartWipeFailed, detail: "icloudCorpusWipeLocal")
             return "localWipeFailed"
+        }
+        return nil
+    }
+
+    /// La subida de grupos previa a «Empezar de cero», con el contrato de fallo de los borrados de aquí: `nil` si drenó, o
+    /// el motivo. El bloqueo viaja como `CloudSessionSignOut.freshStartGroupsPendingFailure`, y el detalle (cuántos, por
+    /// qué) lo lee la pantalla de `CloudSessionSignOut.freshStartGroupsBlock`.
+    ///
+    /// **Y tras una subida vuelve a esperar al import de iCloud**, porque el borrado de después guarda sobre el mismo
+    /// contexto. El caller esperó ANTES de subir, y una subida con cambios puede tardar minutos (quiescencia estricta,
+    /// presupuesto de reintentos, red): un import que empiece en ese hueco pillaría el `save()` del borrado a medias, que
+    /// es el SIGTRAP que esa espera existe para evitar. Con el outbox vacío la subida no suspende y esto sale al momento.
+    private func drainGroupsBeforeFreshStart() async -> String? {
+        switch await CloudSessionSignOut.shared.drainGroupsBeforeFreshStart(context: modelContext) {
+        case .drained: break
+        case .blocked: return CloudSessionSignOut.freshStartGroupsPendingFailure
+        case .busy: return "signOutBusy"
+        }
+        guard !Task.isCancelled else { return "cancelled" }
+        if ICloudPersonalCorpusProbe.mirrorWillSync() {
+            let quiescent = await iCloudSyncService.shared.waitForImportQuiescence(timeout: 30)
+            // Mismo orden que las dos esperas de los borrados: la cancelación antes que el motivo.
+            guard !Task.isCancelled else { return "cancelled" }
+            guard quiescent else { return "importNotQuiescent" }
         }
         return nil
     }
@@ -1938,6 +1980,10 @@ struct ContentView: View {
             guard quiescent else { return "importNotQuiescent" }
         }
         guard !Task.isCancelled else { return "cancelled" }
+        // **Los cambios de grupos suben ANTES de borrar nada** (ticket
+        // `fresh-start-wipe-kills-unsent-group-writes-silently`): el borrado de abajo se lleva el outbox, y quien elige
+        // «Es mi primera vez» desde una sesión solo-grupos es la persona que los apuntó. Si no drenan, no se borra nada.
+        if let failure = await drainGroupsBeforeFreshStart() { return failure }
         // **La gracia se cancela ANTES de borrar, no después, y eso es una corrección de la review.**
         // `wipeAllUserData` hace `save()` incrementales, así que un borrado que lanza a media lista deja
         // igualmente el `hasPersonalData` en `true → false`; con la gracia viva eso se lee como wipe
@@ -1946,11 +1992,19 @@ struct ContentView: View {
         // la cancelaba y la de fallo no: justo al revés de donde hace falta.
         cancelWipeGrace()
         do {
+            // El cinturón del escritor, ANTES del primer borrado: si lanzara dentro de `wipeLocalGroupsDomain`, lo
+            // personal ya estaría borrado y los grupos enteros.
+            try DataWipeService.requireNoUnsentGroupWrites(in: modelContext)
             try DataWipeService.wipeAllUserData(in: modelContext, broadcastSignal: false)
             // El handover: los grupos de la etapa anterior se van de este teléfono y el dominio queda
             // SELLADO hasta que el usuario nuevo adopte Grupos. Va DESPUÉS del borrado personal y dentro
             // del mismo `do`, como en el alert gemelo: si el primero lanza, el segundo no debe correr.
             try DataWipeService.wipeLocalGroupsDomain(in: modelContext)
+        } catch is DataWipeService.GroupsDomainWipeError {
+            // El cinturón saltó ANTES del primer borrado (va delante de `wipeAllUserData`): no se tocó nada, y lo que
+            // hay que decir es «faltan cambios de grupos», no «puede que parte de tus datos ya no esté».
+            CloudSessionSignOut.shared.noteFreshStartGroupsPending(context: modelContext, reason: .uploadRetryLater)
+            return CloudSessionSignOut.freshStartGroupsPendingFailure
         } catch {
             MetricsService.canary(.freshStartWipeFailed, detail: "deviceCorpusWipe")
             return "deviceWipeFailed"

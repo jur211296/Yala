@@ -5430,6 +5430,9 @@
 
 /* Body of the alert shown when the fresh-start wipe throws */
 "welcome.freshStart.failedMessage" = "I tuoi dati sono ancora qui, quindi ci siamo fermati. Chiudi Yala e riaprila; se succede di nuovo, scrivici.";
+"groups.freshStartPending.title" = "Alcune modifiche dei tuoi gruppi devono ancora essere caricate";
+"groups.freshStartPending.lead" = "Non abbiamo cancellato nulla: alcune modifiche dei tuoi gruppi non sono ancora arrivate al nostro server (%d) e ricominciare da zero le porterebbe via.";
+"groups.freshStartPending.leadUnknown" = "Non abbiamo cancellato nulla: alcune modifiche dei tuoi gruppi non sono ancora arrivate al nostro server e ricominciare da zero le porterebbe via.";
 
 /* Título del aviso cuando Restaurar compras no encuentra Yala Pro */
 "subscription.restoreEmptyTitle" = "Nessun abbonamento";

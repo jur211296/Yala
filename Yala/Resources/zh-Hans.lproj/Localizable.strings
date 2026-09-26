@@ -5432,6 +5432,9 @@
 
 /* Body of the alert shown when the fresh-start wipe throws */
 "welcome.freshStart.failedMessage" = "你的数据还在，所以我们没有继续。请关闭 Yala 再重新打开；如果还是这样，请联系我们。";
+"groups.freshStartPending.title" = "还有群组更改尚未上传";
+"groups.freshStartPending.lead" = "我们没有删除任何内容：你的群组中有部分更改尚未到达我们的服务器（%d 项），从头开始会把它们一起清除。";
+"groups.freshStartPending.leadUnknown" = "我们没有删除任何内容：你的群组中有部分更改尚未到达我们的服务器，从头开始会把它们一起清除。";
 
 /* Título del aviso cuando Restaurar compras no encuentra Yala Pro */
 "subscription.restoreEmptyTitle" = "未找到订阅";

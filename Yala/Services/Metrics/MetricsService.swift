@@ -318,6 +318,12 @@ enum MetricsCanary: String {
     /// que eligió para el puente, sin PII. Ticket `detach-does-not-verify-the-cloud-session-actually-closed`, que no pudo
     /// medir si pasa: **es la medición**. Fuera de `#if DEBUG` por lo mismo que su vecino.
     case groupsDetachSessionSurvived
+    /// **«Empezar de cero» se paró porque quedaban cambios de grupos sin subir** (ticket
+    /// `fresh-start-wipe-kills-unsent-group-writes-silently`). Hasta el 2026-09-26 el borrado se los llevaba en silencio;
+    /// ahora sube primero y, si no drena, no borra. `detail` = `reason=<motivo> pending=N|unknown`, sin PII. Cuenta
+    /// BLOQUEOS, no personas: cada reintento que vuelve a parar suma otro. Fuera de `#if DEBUG` por lo mismo que sus
+    /// vecinos.
+    case freshStartBlockedByGroupWrites
 
     // Teléfono que no consigue App Attest (ticket `groups-phone-that-never-attests-is-told-to-retry-forever`)
     /// **La racha de App Attest del teléfono se volvió terminal**: 24 h y al menos 3 rechazos sin un solo acierto

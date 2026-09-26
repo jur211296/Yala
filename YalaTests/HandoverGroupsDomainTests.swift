@@ -329,11 +329,14 @@ struct HandoverGroupsDomainTests {
 
     // MARK: - 2.7 · El seam del handover: el outbox MUERE, el cursor SOBREVIVE
 
+    /// **Dead-letter desde el 2026-09-26** (ticket `fresh-start-wipe-kills-unsent-group-writes-silently`): una fila VIVA
+    /// ya no se borra aquí —el escritor se niega y los callers la suben antes—, así que lo que este seam mata es lo que
+    /// no puede subir nunca. El caso de la fila viva lo fija `FreshStartUnsentGroupWritesTests`.
     private func makeOutboxRow(group: String, in context: ModelContext) {
         context.insert(GroupSyncOutbox(
             syncID: UUID(), groupID: group, entityType: "SplitExpense",
             op: .upsert, hlc: "hlc", fieldsJSON: "{\"amount\":300}", author: "a",
-            rejectedReason: nil))
+            rejectedReason: "upstream_400:x"))
     }
 
     /// El corazón de 2.7, y la razón de que NO sea «repuntar el default a `purgeGroupsSyncState`»: los

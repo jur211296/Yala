@@ -1163,7 +1163,9 @@ struct WelcomePrivateICloudGateWiringTests {
         let fallo = try #require(wipe.range(of: "guard failure == nil else {"))
         #expect(fallo.lowerBound < salida.lowerBound)
         let cuerpoFallo = String(wipe[fallo.upperBound...]).prefix(while: { $0 != "}" })
-        #expect(cuerpoFallo.contains("phase = .deviceWipeFailed(iCloudUnverified: iCloudUnverified)"), """
+        // Desde el 2026-09-26 la rama elige entre «faltan cambios de grupos» y el fallo de siempre; las dos son fases
+        // de fallo que no siguen (ticket `fresh-start-wipe-kills-unsent-group-writes-silently`).
+        #expect(cuerpoFallo.contains("?? .deviceWipeFailed(iCloudUnverified: iCloudUnverified)"), """
             un borrado que falla no puede seguir al onboarding: los datos siguen ahí y continuar sería
             mentirle a la persona.
             """)
@@ -1344,7 +1346,7 @@ struct WelcomePrivateICloudGateWiringTests {
         let fallo = try #require(wipe.range(of: "guard failure == nil else {"))
         #expect(fallo.lowerBound < clear.lowerBound)
         let cuerpoFallo = String(wipe[fallo.upperBound...]).prefix(while: { $0 != "}" })
-        #expect(cuerpoFallo.contains("phase = .wipeFailed"))
+        #expect(cuerpoFallo.contains("phase = groupsPendingPhase(for: failure, retry: .iCloud) ?? .wipeFailed"))
         #expect(cuerpoFallo.contains("return"), """
             sin el `return`, el fallo cae en el desarme y en `onProceed()`: la persona acaba en el
             onboarding creyendo que borró un corpus que sigue entero en su iCloud.
@@ -1602,7 +1604,10 @@ struct WelcomePrivateICloudGateWiringTests {
         #expect(rama.contains("hasCompletedOnboarding = false"),
                 "el borrado se llevó el corpus: la persona tiene que volver al onboarding")
         // Y el corte ante el fallo: si el borrado no confirma, NO se retira nada.
-        #expect(rama.contains("guard await performICloudCorpusWipe(.handover) == nil else { return }"), """
+        // Desde el 2026-09-26 el fallo se lee en una constante para poder desarmar si se paró en los cambios de grupos
+        // (ticket `fresh-start-wipe-kills-unsent-group-writes-silently`); el corte sigue siendo el mismo.
+        #expect(rama.contains("let failure = await performICloudCorpusWipe(.handover)")
+                && rama.contains("guard failure == nil else { return }"), """
             retirar los testigos tras un borrado fallido deja el corpus en iCloud y a nadie mirándolo.
             """)
     }

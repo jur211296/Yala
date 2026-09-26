@@ -1797,6 +1797,20 @@ enum L10n {
     // MARK: - Groups
 
     enum Groups {
+        /// **«Empezar de cero» no borró: quedan cambios de grupos sin subir** (ticket
+        /// `fresh-start-wipe-kills-unsent-group-writes-silently`). Lo enseñan las tres pantallas del gesto —la puerta
+        /// privada del Welcome, el aviso del espejo tardío y el alert del shell—, seguido del motivo de la subida
+        /// (`SignOutBlockedCopy.freshStartGroupsPendingMessage`). Espacio propio y no `Welcome.FreshStart`: aquel copy
+        /// describe el borrado de datos del DISPOSITIVO, y la puerta tiene prohibido reusarlo.
+        enum FreshStartPending {
+            static var title: String { ls("groups.freshStartPending.title", comment: "") }
+            static func lead(_ count: Int) -> String {
+                String(format: ls("groups.freshStartPending.lead", comment: ""), count)
+            }
+            /// Sin cifra: el recuento falló (`CloudSignOutFlowLogic.shownLossCount` devolvió `nil`).
+            static var leadUnknown: String { ls("groups.freshStartPending.leadUnknown", comment: "") }
+        }
+
         static var title: String { ls("groups.title", comment: "") }
         static var newGroup: String { ls("groups.new", comment: "") }
         static var editGroup: String { ls("groups.edit", comment: "") }

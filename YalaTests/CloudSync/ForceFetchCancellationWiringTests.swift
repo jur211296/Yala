@@ -205,9 +205,12 @@ struct ForceFetchCancellationWiringTests {
             + "guard quiescent else { return \"importNotQuiescent\" } }"
 
         let ocurrencias = code.components(separatedBy: bloque).count - 1
-        #expect(ocurrencias == 2, """
-            Esperaba las DOS puertas de quiescencia con el chequeo de cancelación DELANTE del motivo \
-            (`performICloudCorpusWipe` y `performDeviceCorpusWipe`); encontré \(ocurrencias). \
+        // TRES desde el 2026-09-26: la tercera es la re-espera tras subir los cambios de grupos
+        // (`drainGroupsBeforeFreshStart`, ticket `fresh-start-wipe-kills-unsent-group-writes-silently`).
+        #expect(ocurrencias == 3, """
+            Esperaba las TRES puertas de quiescencia con el chequeo de cancelación DELANTE del motivo \
+            (`performICloudCorpusWipe`, `performDeviceCorpusWipe` y la re-espera tras la subida de \
+            grupos); encontré \(ocurrencias). \
             Desde que la espera observa cancelación devuelve `false` también al cancelarla, así que con \
             el `guard ... else { return "importNotQuiescent" }` pegado a la espera el motivo que se le \
             enseña al usuario pasa a ser «el import no se asentó» cuando lo que pasó fue que el `Task` \

@@ -124,7 +124,8 @@ final class CloudSessionSignOut {
     /// que se pierde (decisión de Jürgen del 2026-09-09). En los demás caminos se ignora.
     func signOut(context: ModelContext, confirmedPath: CloudSignOutFlowLogic.Path? = nil,
                  confirmedWithoutICloudCopy: Bool = false) async {
-        guard phase == .idle else { return }
+        // Con la subida de «Empezar de cero» en vuelo tampoco: sube el mismo outbox (`freshStartDrainInFlight`).
+        guard phase == .idle, !freshStartDrainInFlight else { return }
         // Un gesto nuevo no hereda lo que otro aceptó perder (las salidas del teléfono sin App Attest, la de grupos y la
         // personal).
         groupsLossExit = nil
@@ -222,7 +223,8 @@ final class CloudSessionSignOut {
     func detachGroupsAccount(
         context: ModelContext, choice: GroupsAssociationDetach.BridgedRowsChoice
     ) async -> DetachOutcome {
-        guard phase == .idle else { return .busy }
+        // Con la subida de «Empezar de cero» en vuelo tampoco: sube el mismo outbox (`freshStartDrainInFlight`).
+        guard phase == .idle, !freshStartDrainInFlight else { return .busy }
         phase = .working
         defer { waitingForPending = false }
         // El desasociar no hereda lo que un cierre aceptó perder, ni ofrece esa salida: ver `lossExit: nil` abajo.
@@ -1184,6 +1186,57 @@ final class CloudSessionSignOut {
             acceptedGroupsLoss = nil
         }
 
+        switch await pushGroupsWithinBudget(context: context) {
+        case .drained:
+            return true
+        case .surfacePermanent(let pending, let reason):
+            // **El motivo viaja TAL CUAL, y esa es la corrección del 2026-09-13.** Aquí había un
+            // ternario que colapsaba todo lo que no fuera `.sessionExpired` en `.permanent`: con él,
+            // el canal en pausa llegaba a la pantalla convertido en «el problema es tu cuenta» y el
+            // arreglo heredaba la forma del bug. `decide` solo devuelve `.surfacePermanent` para los
+            // tres motivos que se muestran al momento, así que propagarlo es además byte-equivalente
+            // a lo que hacía el ternario para los dos que ya existían.
+            //
+            // **El teléfono sin App Attest anota su salida ANTES de la fase** (2026-09-15): quien reacciona a la
+            // fase pregunta `offersGroupsLossExit` y tiene que encontrarla ya. Con `lossExit == nil` (el
+            // desasociar) no se anota nada y el bloqueo no ofrece perder los cambios.
+            if reason == .attestUnavailable {
+                groupsLossExit = lossExit.map {
+                    GroupsLossOffer(resume: $0, rows: Self.liveGroupsPendingRowIDs(context: context))
+                }
+            }
+            phase = .blocked(pendingCount: pending, reason: reason)
+            CloudSyncBreadcrumb.signOutPushBlocked(pending: pending)
+            if reason == .attestUnavailable, lossExit != nil { Self.noteGroupsLossOffered(pending: pending) }
+            return false
+        case .surfaceTransient(let pending):
+            phase = .blocked(pendingCount: pending, reason: .transient)
+            CloudSyncBreadcrumb.signOutPushBlocked(pending: pending)
+            return false
+        case .cancelled(let pending):
+            // Cancelación del caller → fail-closed transitorio (reintentable).
+            phase = .blocked(pendingCount: pending, reason: .transient)
+            return false
+        }
+    }
+
+    /// Cómo acabó la subida de grupos con el presupuesto de reintentos. **Separado de `pushGroupsForSignOut`
+    /// para que lo comparta el borrado de «Empezar de cero»** (`drainGroupsBeforeFreshStart`), que necesita la
+    /// MISMA subida sin tocar la fase del coordinador. Los cuatro desenlaces son los cuatro que la función
+    /// original distinguía, y lo que cada uno le hace a la fase y al rastro lo sigue decidiendo quien llama.
+    enum BudgetedGroupsPush: Equatable {
+        case drained
+        /// `GroupsSignOutRetryDecision` lo enseña al momento, con su motivo.
+        case surfacePermanent(pending: Int, reason: CloudSignOutFlowLogic.BlockReason)
+        /// Lo pasajero que agotó el presupuesto.
+        case surfaceTransient(pending: Int)
+        /// El `Task` del caller se canceló durante una espera.
+        case cancelled(pending: Int)
+    }
+
+    /// El bucle del presupuesto (H-2026-07-18-6), sin efectos sobre la fase ni el rastro. Pone
+    /// `waitingForPending`, como antes: quien llama decide cuándo bajarlo.
+    private func pushGroupsWithinBudget(context: ModelContext) async -> BudgetedGroupsPush {
         let budget = GroupsSignOutRetryDecision.budgetSeconds
         var retryClockStart: Date?
 
@@ -1193,50 +1246,163 @@ final class CloudSessionSignOut {
 
             switch await attemptGroupsOnlyClose(context: context, quiescenceHardCap: hardCap) {
             case .drained:
-                return true
+                return .drained
             case .blocked(let pending, let reason):
                 let elapsed = retryClockStart.map { Date().timeIntervalSince($0) } ?? 0
                 switch GroupsSignOutRetryDecision.decide(
                     elapsedSeconds: elapsed, budgetSeconds: budget, reason: reason
                 ) {
                 case .surfacePermanent:
-                    // **El motivo viaja TAL CUAL, y esa es la corrección del 2026-09-13.** Aquí había un
-                    // ternario que colapsaba todo lo que no fuera `.sessionExpired` en `.permanent`: con él,
-                    // el canal en pausa llegaba a la pantalla convertido en «el problema es tu cuenta» y el
-                    // arreglo heredaba la forma del bug. `decide` solo devuelve `.surfacePermanent` para los
-                    // tres motivos que se muestran al momento, así que propagarlo es además byte-equivalente
-                    // a lo que hacía el ternario para los dos que ya existían.
-                    //
-                    // **El teléfono sin App Attest anota su salida ANTES de la fase** (2026-09-15): quien reacciona a la
-                    // fase pregunta `offersGroupsLossExit` y tiene que encontrarla ya. Con `lossExit == nil` (el
-                    // desasociar) no se anota nada y el bloqueo no ofrece perder los cambios.
-                    if reason == .attestUnavailable {
-                        groupsLossExit = lossExit.map {
-                            GroupsLossOffer(resume: $0, rows: Self.liveGroupsPendingRowIDs(context: context))
-                        }
-                    }
-                    phase = .blocked(pendingCount: pending, reason: reason)
-                    CloudSyncBreadcrumb.signOutPushBlocked(pending: pending)
-                    if reason == .attestUnavailable, lossExit != nil { Self.noteGroupsLossOffered(pending: pending) }
-                    return false
+                    return .surfacePermanent(pending: pending, reason: reason)
                 case .surfaceTransient:
-                    phase = .blocked(pendingCount: pending, reason: .transient)
-                    CloudSyncBreadcrumb.signOutPushBlocked(pending: pending)
-                    return false
+                    return .surfaceTransient(pending: pending)
                 case .retryAfter(let seconds):
                     if retryClockStart == nil { retryClockStart = Date() }
                     waitingForPending = true
                     do {
                         try await Task.sleep(for: .seconds(seconds))
                     } catch {
-                        // Cancelación del caller → fail-closed transitorio (reintentable).
-                        phase = .blocked(pendingCount: pending, reason: .transient)
-                        return false
+                        return .cancelled(pending: pending)
                     }
                     continue
                 }
             }
         }
+    }
+
+    // MARK: - «Empezar de cero» espera a que suban los cambios de grupos
+
+    /// Por qué «Empezar de cero» no borró: quedan cambios de grupos que no subieron. Lo lee la pantalla que enseña el
+    /// fallo para decir cuántos y qué hacer.
+    struct FreshStartGroupsBlock: Equatable {
+        /// Filas VIVAS del outbox de grupos. `Int.max` = no se pudieron contar (`CloudSignOutFlowLogic.shownLossCount`).
+        let pendingCount: Int
+        /// El motivo de la subida que no drenó, el mismo que enseñaría un cierre de sesión.
+        let reason: CloudSignOutFlowLogic.BlockReason
+    }
+
+    /// Cómo acabó la subida previa al borrado.
+    enum FreshStartGroupsDrain: Equatable {
+        /// El outbox vivo quedó en 0, verificado por fetch: el borrado puede seguir.
+        case drained
+        /// No drenó. **No se borra nada**: el borrado para y la pantalla lo dice.
+        case blocked(FreshStartGroupsBlock)
+        /// El coordinador estaba con otro gesto (un cierre de sesión o un desasociar). Tampoco se borra nada.
+        case busy
+    }
+
+    /// El fallo que devuelven los borrados de `ContentView` cuando esta subida no drenó. Las pantallas lo comparan para
+    /// enseñar `FreshStartGroupsBlock` en vez del fallo genérico.
+    static let freshStartGroupsPendingFailure = "groupsPendingUpload"
+
+    /// El último bloqueo de «Empezar de cero», para que la pantalla que recibe `freshStartGroupsPendingFailure` sepa
+    /// cuántos cambios y por qué. Se pone a `nil` al empezar cada intento: un bloqueo viejo no se cuela en otra pantalla.
+    private(set) var freshStartGroupsBlock: FreshStartGroupsBlock?
+
+    /// `true` mientras `drainGroupsBeforeFreshStart` sube. **La subida no toca `phase`** (ver su docblock), así que sin
+    /// esto un cierre de sesión o un desasociar podían arrancar encima —la reanudación del arranque corre con la app
+    /// usable— y el `defer` de la subida les apagaba el texto de «guardando…». Los dos lo miran junto a su
+    /// `guard phase == .idle`.
+    private(set) var freshStartDrainInFlight = false
+
+    /// **¿Hay algo de grupos por subir?, sin red y sin esperar.** El pre-check de `pushAllPendingGroupsForSignOut`, igual
+    /// y en el mismo orden: drenar el History al outbox (sin eso, un gasto de hace segundos solo vive ahí y el recuento lo
+    /// daría por subido), barrer los tombstones venenosos y contar lo vivo. `true` = nada que subir.
+    ///
+    /// Lo usa el alert del shell para quedarse SÍNCRONO en el caso corriente: su botón borra en el mismo tap, y solo con
+    /// algo pendiente pasa por `drainGroupsBeforeFreshStart`, que es asíncrona. Un productor asíncrono de presentaciones
+    /// sobre ese anchor es el caso que `.claude/rules/swiftui-ds.md` manda al router; así queda acotado a quien de verdad
+    /// tiene cambios sin subir.
+    ///
+    /// Hace el mismo `save()` que el borrado que viene detrás (`wipeAllUserData`), en el mismo tap: no añade un riesgo
+    /// de import que ese camino no corriera ya.
+    ///
+    /// **Retira el bloqueo anterior**, como la subida: es el primer paso de un intento nuevo, y el aviso de fallo del alert
+    /// lee `freshStartGroupsBlock` para elegir su texto — uno viejo diría «faltan cambios» ante un borrado que falló por
+    /// otra cosa.
+    func groupsOutboxIsSettledEmpty(context: ModelContext) -> Bool {
+        freshStartGroupsBlock = nil
+        if CloudSyncFlags.groupsBackendCompiledCapability {
+            GroupsSyncClient.shared.drainOnce(context: context)
+            GroupsSyncClient.shared.purgeQueuedSplitGroupTombstones(context: context)
+        }
+        return Self.liveGroupsPendingCount(context: context) == 0
+    }
+
+    /// **Sube los cambios de grupos ANTES de que «Empezar de cero» borre nada** (ticket
+    /// `fresh-start-wipe-kills-unsent-group-writes-silently`). `DataWipeService.wipeLocalGroupsDomain` borra el outbox de
+    /// grupos, y en la puerta privada quien empieza de cero puede ser la MISMA persona: esos gastos eran suyos y se perdían
+    /// sin que nada lo dijera. Ahora el borrado hace lo que ya hacen el cierre y el desasociar en la misma situación:
+    /// sube primero, con el mismo push-all y el mismo presupuesto, y si no drena **no borra**.
+    ///
+    /// Subir es correcto también cuando quien empieza de cero es OTRA persona: las filas van firmadas con la sesión que
+    /// las escribió, así que llegan a los grupos de su dueño, que es a donde iban. Lo incorrecto era tirarlas.
+    ///
+    /// **Sin salida «perderlos»**: la decisión de Jürgen del 2026-09-15 para el otro gesto que purga el dominio sin
+    /// cerrar sesión, el desasociar (`lossExit: nil`). Quien no puede subir nunca —el teléfono sin App Attest— tiene la
+    /// del cierre de sesión, que sí la ofrece.
+    ///
+    /// **No toca `phase`**, y es a propósito: `.working` y `.blocked` los leen seis sitios que no tienen nada que ver con
+    /// este gesto —la matriz de readiness, la fila de cierre del Perfil, la puerta de Grupos del Welcome—, y cualquiera
+    /// encendería su propia pantalla. El veredicto viaja por el retorno, como el del desasociar. Sí exige la fase en
+    /// `.idle`: con un cierre en vuelo, dos subidas del mismo outbox a la vez no se sabe qué dejan.
+    ///
+    /// **Corre ANTES del primer borrado**, sea la zona de iCloud, las filas personales o el dominio de Grupos: parado
+    /// aquí, el teléfono queda exactamente como estaba.
+    func drainGroupsBeforeFreshStart(context: ModelContext) async -> FreshStartGroupsDrain {
+        // Antes del `guard`: un `.busy` tampoco puede dejar a la vista el bloqueo de un intento anterior.
+        freshStartGroupsBlock = nil
+        guard phase == .idle, !freshStartDrainInFlight else { return .busy }
+
+        // **Sin nada que subir, ni espera ni red** — el caso de casi todo el mundo. La subida de abajo abre con la
+        // quiescencia estricta del cierre (primer import completado Y quieto, hasta 60 s), y con el espejo adjunto y un
+        // import sin asentar eso bloqueaba «Empezar de cero» como `.transient` con CERO cambios pendientes: la regresión
+        // contraria, medida con un mutante. El pre-check hace el mismo `save()` que el borrado que viene detrás, que ya
+        // corre bajo la espera de import de su caller (`waitForImportQuiescence`); la estricta queda para cuando hay algo
+        // que subir de verdad.
+        if groupsOutboxIsSettledEmpty(context: context) { return .drained }
+
+        freshStartDrainInFlight = true
+        defer {
+            freshStartDrainInFlight = false
+            waitingForPending = false
+        }
+        guard let block = Self.freshStartBlock(for: await pushGroupsWithinBudget(context: context)) else {
+            return .drained
+        }
+        noteFreshStartBlocked(block)
+        return .blocked(block)
+    }
+
+    /// **El veredicto de la subida, en puro**: `nil` = drenó; si no, qué enseñar. El motivo viaja TAL CUAL —el bug del
+    /// 2026-09-13 era un ternario que lo aplanaba—, y lo pasajero que agotó el presupuesto o se canceló es `.transient`,
+    /// igual que en el cierre. Separado para poder probar cada desenlace sin red.
+    static func freshStartBlock(for push: BudgetedGroupsPush) -> FreshStartGroupsBlock? {
+        switch push {
+        case .drained:
+            return nil
+        case .surfacePermanent(let pending, let reason):
+            return FreshStartGroupsBlock(pendingCount: pending, reason: reason)
+        case .surfaceTransient(let pending), .cancelled(let pending):
+            return FreshStartGroupsBlock(pendingCount: pending, reason: .transient)
+        }
+    }
+
+    /// **Hay cambios de grupos sin subir y este borrado no va a esperarlos**: el alert del shell, que no tiene pantalla
+    /// donde enseñar una subida, y el cinturón del escritor cuando salta antes del primer borrado. Deja el bloqueo con la
+    /// cifra VIVA y el motivo que se pasa, para que el aviso diga lo que pasó. `.uploadRetryLater` es el que vale sin
+    /// haber intentado nada: «no llegaron al servidor, siguen aquí, inténtalo en un rato» es cierto con red y sin ella.
+    func noteFreshStartGroupsPending(context: ModelContext, reason: CloudSignOutFlowLogic.BlockReason) {
+        noteFreshStartBlocked(FreshStartGroupsBlock(
+            pendingCount: Self.liveGroupsPendingCount(context: context), reason: reason))
+    }
+
+    private func noteFreshStartBlocked(_ block: FreshStartGroupsBlock) {
+        freshStartGroupsBlock = block
+        // Fuera de `#if DEBUG`: es la medición de cuántas veces «Empezar de cero» se habría llevado cambios de grupos.
+        let shown = CloudSignOutFlowLogic.shownLossCount(block.pendingCount)
+        MetricsService.canary(.freshStartBlockedByGroupWrites,
+                              detail: "reason=\(block.reason) pending=\(shown.map(String.init) ?? "unknown")")
     }
 
     /// UN intento del cierre solo-grupos: gate de QUIESCENCIA (hardCap acotado en reintentos) +
