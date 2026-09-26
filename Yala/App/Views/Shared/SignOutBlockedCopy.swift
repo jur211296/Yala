@@ -33,7 +33,7 @@ enum SignOutBlockedCopy {
             return L10n.Settings.signOutAttestTitle
         case .permanent, .exportUnconfirmed, .sessionExpired, .bridgeUnreadable, .detachBusy,
              .channelPaused, .uploadRetryLater, .syncStoppedNeedsUpdate, .syncStoppedMidMigration,
-             .syncStoppedNeedsRelaunch:
+             .syncStoppedNeedsRelaunch, .personalUploadRetryLater:
             return L10n.Settings.signOutBlockedTitle
         }
     }
@@ -57,6 +57,8 @@ enum SignOutBlockedCopy {
     ///    no se habla de ella. Con el registro de la migración ilegible, cerrar y abrir Yala o actualizarla; con el paso
     ///    entre la nube e iCloud a medias, «Dónde viven tus datos» y «Reintentar»; con el paso terminado y el espejo aún
     ///    montado, reabrir la app.
+    ///  · **la subida de tus cambios a la nube no llegó** (2026-09-25): el texto de la de grupos, dicho de tus datos. Hasta
+    ///    ese día el cierre en la nube le decía «revisa tu conexión» a quien tenía el servidor fallando.
     ///  · el resto: el genérico de siempre, que no afirma ninguna causa concreta.
     ///
     /// `nil` cae al genérico: Ajustes escribe el motivo antes de encender su aviso, así que con el aviso
@@ -72,6 +74,7 @@ enum SignOutBlockedCopy {
         case .syncStoppedNeedsUpdate: return L10n.Settings.signOutSyncStoppedNeedsUpdate
         case .syncStoppedMidMigration: return L10n.Settings.signOutSyncStoppedMidMigration
         case .syncStoppedNeedsRelaunch: return L10n.Settings.signOutSyncStoppedNeedsRelaunch
+        case .personalUploadRetryLater: return L10n.Settings.signOutUploadRetryLater
         case .permanent, .exportUnconfirmed, .bridgeUnreadable, .detachBusy, .none:
             return L10n.Settings.signOutBlockedMessage
         }

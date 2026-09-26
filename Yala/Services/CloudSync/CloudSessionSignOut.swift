@@ -946,14 +946,15 @@ final class CloudSessionSignOut {
         // 1) Push-all PERSONAL — bloquear si no drena. **Jamás descartar, salvo lo que la persona aceptó perder** en el aviso
         // del teléfono sin App Attest (`exitDiscardingUnsyncedPersonalChanges`, decisión de Jürgen del 2026-09-15).
         //
-        // El resto de motivos conserva su alert de siempre ("conexión"): `.permanent`, que es un colapso con ticket propio
-        // (`cloud-signout-collapses-the-personal-push-all-reason-into-permanent`). **Solo se separa el teléfono sin App
-        // Attest**: el push-all lo trae como `.attestUnavailable` cuando el testigo del motor personal lo confirma
-        // (`CloudSyncRuntime.stoppedByUnavailableAttest(for:)`), y aquí pasa a `.personalAttestUnavailable`, cuyo aviso habla
-        // de tus datos y ofrece exportarlos.
+        // **El teléfono sin App Attest se traduce aquí**: el push-all lo trae como `.attestUnavailable` cuando el testigo del
+        // motor personal lo confirma (`CloudSyncRuntime.stoppedByUnavailableAttest(for:)`), y pasa a
+        // `.personalAttestUnavailable`, cuyo aviso habla de tus datos y ofrece exportarlos.
         //
-        // **Y los dos del motor parado viajan tal cual** (2026-09-25, `personalPushAllShownReason`): con el candado cerrado
-        // su aviso nombra la salida real —actualizar Yala, o «Dónde viven tus datos»— en vez de la conexión.
+        // **El resto lo traduce `personalPushAllShownReason`**, gemela de la de grupos del paso 2 (2026-09-25, ticket
+        // `cloud-signout-collapses-the-personal-push-all-reason-into-permanent`): la subida que no llegó sale como
+        // `.personalUploadRetryLater` —«no llegaron a la nube, inténtalo en un rato»—, la sesión caducada como tal, el guardado
+        // que se asienta como `.transient` y los tres del motor parado con la salida real. Hasta ese día todo eso era
+        // `.permanent`, «revisa tu conexión».
         if case .blocked(let pending, let reason) = await controller.pushAllPendingForSignOut() {
             let rows = controller.livePendingUploadRowIDs()
             // **La pérdida aceptada, y solo mientras el teléfono siga sin App Attest**: el push-all lo intentó una vez —si el
@@ -990,10 +991,8 @@ final class CloudSessionSignOut {
         // no existe, y sin nombrar lo único que ayuda. Desde el 2026-09-14 lo pasajero se anuncia como
         // pasajero (`.uploadRetryLater`) y el kill-switch sigue viajando tal cual.
         //
-        // **Pero esto arregla la mitad de GRUPOS, no el cierre entero, y conviene saberlo:** el paso 1 de
-        // arriba escribe `.permanent` para todo salvo el teléfono sin App Attest, así que quien tenga filas PERSONALES
-        // pendientes bloquea allí y sigue viendo el aviso genérico. Ticket:
-        // `cloud-signout-collapses-the-personal-push-all-reason-into-permanent`.
+        // **La mitad PERSONAL la cierra el paso 1 desde el 2026-09-25** (`personalPushAllShownReason`): quien tenga filas
+        // personales pendientes bloquea allí, con su propio motivo y no con el aviso genérico.
         //
         // **Con cambios de los dos lados y el teléfono sin App Attest salen dos avisos seguidos** (decisión de Jürgen,
         // 2026-09-15): el de tus datos en el paso 1 y, aceptado ése, el de tus grupos aquí. Aceptar este último retoma el

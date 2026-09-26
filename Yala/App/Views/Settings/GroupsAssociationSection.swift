@@ -195,9 +195,9 @@ struct GroupsAssociationSection: View {
         // causa concreta, que es lo correcto si alguna vez llegaran.
         // `.personalAttestUnavailable` tampoco llega: lo pone solo el paso 1 del cierre en la NUBE, sobre el outbox personal,
         // y el desasociar no sube nada personal (2026-09-15). Los tres del motor parado, igual (2026-09-25): solo los pone ese
-        // mismo paso 1.
+        // mismo paso 1, y la subida personal que no llegó también.
         case .transient, .exportUnconfirmed, .personalAttestUnavailable, .syncStoppedNeedsUpdate, .syncStoppedMidMigration,
-             .syncStoppedNeedsRelaunch, .none:
+             .syncStoppedNeedsRelaunch, .personalUploadRetryLater, .none:
             return L10n.Storage.Groups.detachBlockedTransient
         }
     }

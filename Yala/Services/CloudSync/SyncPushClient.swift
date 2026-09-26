@@ -174,6 +174,26 @@ final class SyncPushClient {
     /// `AttestWiringTests`.
     private let canRenewSession: @MainActor () -> Bool
 
+    /// **¿La última subida que devolvió `.transient` chocó con el SERVIDOR?** Testigo de la subida que no llegó, molde
+    /// `GroupsSyncClient.lastCycleFailedUpload` (ticket `cloud-signout-collapses-the-personal-push-all-reason-into-permanent`,
+    /// 2026-09-25). `push` lo baja al entrar, así que describe la última llamada y no la vida del cliente.
+    ///
+    /// Hace falta porque `PushOutcome.transient` no es «la subida falló»: también trae una fila que no se deja convertir en
+    /// delta, que es de este teléfono. Sin el testigo, el cierre en la nube no puede elegir entre «no llegaron a la nube,
+    /// inténtalo en un rato» y «un momento más», y hasta ese día lo aplanaba todo en «revisa tu conexión».
+    ///
+    /// **Marca lo que habló con el servidor y falló**: la petición que no volvió, la respuesta que no era HTTP, el 200
+    /// ilegible, el 401 del attest, el 409 que no es la reversa, el 5xx, el 429 y el resto de códigos no cableados, y el
+    /// token que no llega con la sesión guardada —un refresh HTTP que no volvió—. **Y NO marca lo del teléfono**:
+    /// `buildDelta`, ni el corte de `continueWhile` antes de un trozo. La marca es POSITIVA y se enciende donde ocurre el
+    /// fallo: marcar de menos deja el aviso conservador, marcar de más culpa al servidor de algo de aquí dentro.
+    ///
+    /// **Y no solo con `.transient`** (review adversarial del 2026-09-25, dos lentes): un push por trozos que confirma
+    /// el primero y falla en otro devuelve `.completed(parciales)` con el testigo encendido, y `applyResults` lo enciende
+    /// con un rechazo `upstream_*` —el Worker contestó 200 y su Postgres no aplicó la fila—. Describe la última subida
+    /// ENTERA, push y aplicación de sus resultados; quien lo lee tras un `.completed` lo lee después de `applyResults`.
+    private(set) var lastPushFailedAtServer = false
+
     /// - Parameters:
     ///   - baseURL: gateway (default `ProxyConfig.baseURL`).
     ///   - tokenProvider: JWT de Supabase. `nil` = no hay token; `canRenewSession` decide si es caducada o pasajero.
@@ -275,6 +295,7 @@ final class SyncPushClient {
     /// trozos más de lo que dura el lease—. Con `false` corta igual que un chunk fallido: lo confirmado se entrega, y sin nada
     /// confirmado es `.transient`. `nil` (el motor normal) no corta nunca.
     func push(_ rows: [SyncOutbox], continueWhile: (@MainActor () -> Bool)? = nil) async -> PushOutcome {
+        lastPushFailedAtServer = false
         guard !rows.isEmpty else { return .completed([]) }
 
         // Sin token no se sube (los datos están a salvo en local), y el porqué lo dice el SDK: si CONSERVA la sesión, la
@@ -289,6 +310,8 @@ final class SyncPushClient {
                 return .sessionExpired(pending: rows.count)
             }
             CloudSyncBreadcrumb.pushTokenUnavailable(pending: rows.count)
+            // La renovación es una petición al servidor de auth que no volvió: la subida no llegó por la red.
+            lastPushFailedAtServer = true
             return .transient
         }
 
@@ -351,11 +374,13 @@ final class SyncPushClient {
         } catch {
             // Red caída / timeout → reintentar. Sin PII.
             CloudSyncBreadcrumb.pushTransport(reason: "\(error)")
+            lastPushFailedAtServer = true
             return .transient
         }
 
         guard let http = response as? HTTPURLResponse else {
             CloudSyncBreadcrumb.pushTransport(reason: "non-http-response")
+            lastPushFailedAtServer = true
             return .transient
         }
 
@@ -367,6 +392,7 @@ final class SyncPushClient {
             } catch {
                 // 200 pero cuerpo ilegible → no podemos confirmar nada; reintentar (no perdemos deltas).
                 CloudSyncBreadcrumb.pushTransport(reason: "decode-200:\(error)")
+                lastPushFailedAtServer = true
                 return .transient
             }
         case 401 where GatewayErrorEnvelope.isAttestRequired(data):
@@ -380,6 +406,7 @@ final class SyncPushClient {
             // escriben la puerta y Grupos. Lo cuenta su canario.
             CloudSyncBreadcrumb.attestRequired(edge: "push")
             MetricsService.cloudSyncAttestRequired(edge: "push")
+            lastPushFailedAtServer = true
             return .transient
         case 401:
             CloudSyncBreadcrumb.pushBlockedNoSession(pending: totalPending)
@@ -399,12 +426,14 @@ final class SyncPushClient {
                 return .accountUnavailable
             }
             CloudSyncBreadcrumb.pushHTTP(status: http.statusCode)
+            lastPushFailedAtServer = true
             return .transient
         default:
             // 5xx (retry), 429 (rate-limit → retry), y 4xx inesperados. Ninguno es un rechazo DEFINITIVO
             // de datos (esos son per-delta) → transient. No dead-letter: no perdemos deltas. I9 acota los
             // reintentos con backoff.
             CloudSyncBreadcrumb.pushHTTP(status: http.statusCode)
+            lastPushFailedAtServer = true
             return .transient
         }
     }
@@ -450,6 +479,9 @@ final class SyncPushClient {
                 // "debe-ser-0": la fila NO se purga y el próximo ciclo (I9) la reintenta → auto-sana.
                 if reason.hasPrefix("upstream_") {
                     CloudSyncBreadcrumb.pushTransientUpstream(syncID: row.syncID.uuidString, reason: reason)
+                    // El servidor no aplicó esta fila: la subida no llegó, aunque la petición diera 200 (ver
+                    // `lastPushFailedAtServer`).
+                    lastPushFailedAtServer = true
                 } else {
                     markRejected(row, reason: reason, context: context)
                 }

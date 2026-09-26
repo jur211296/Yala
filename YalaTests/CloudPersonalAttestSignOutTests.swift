@@ -322,7 +322,12 @@ struct CloudPersonalAttestSignOutWiringTests {
         let cycle = Self.squashed(try Self.body(
             of: "private func performCycle() async -> SyncCadencePolicy.CadenceOutcome {",
             in: Self.source("Yala/Services/CloudSync/CloudSyncRuntime.swift")))
-        #expect(cycle.hasPrefix("lastCycleStoppedAtAttestGate = false guard let context else { return .transient }"))
+        // Los DOS testigos del ciclo se bajan antes de cualquier salida: el del attest y, desde el 2026-09-25, el de la subida
+        // que no llegó (`cloud-signout-collapses-the-personal-push-all-reason-into-permanent`).
+        #expect(cycle.hasPrefix(
+            "lastCycleStoppedAtAttestGate = false lastCycleFailedUpload = false guard let context else { return .transient }"))
+        #expect(try Self.source("Yala/Services/CloudSync/CloudMigrationController.swift")
+            .contains("uploadFailed: runtime.stoppedByFailedUpload(for: outcome),"))
     }
 
     @Test("MUTACIÓN: Ajustes enciende el aviso de tus datos solo con su oferta, y sus tres botones hacen lo suyo en orden")

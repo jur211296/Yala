@@ -6112,3 +6112,6 @@
 
 /* Sign-out blocked: sync paused until Yala is reopened */
 "settings.signOutSyncStoppedNeedsRelaunch" = "まだクラウドにアップロードされていない変更があります。Yala をもう一度開くまで、同期は一時停止しています。Yala を完全に終了し（アプリスイッチャーでスワイプして閉じる）、もう一度開いてからお試しください。";
+
+/* Sign-out blocked: the upload of personal changes to the cloud did not reach the server */
+"settings.signOutUploadRetryLater" = "最新の変更がクラウドに届きませんでした。変更はこの端末に残っていて失われません。しばらくしてからもう一度お試しください。";

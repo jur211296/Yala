@@ -160,7 +160,10 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | cloud-sign-in-screen-offers-sign-up-to-a-phone-without-app-attest | done | tickets/done/cloud-sign-in-screen-offers-sign-up-to-a-phone-without-app-attest.md |
 | cloud-signout-collapses-a-groups-session-expiry-into-permanent | done | tickets/done/cloud-signout-collapses-a-groups-session-expiry-into-permanent.md |
 | cloud-signout-collapses-every-groups-transient-into-permanent | done | tickets/done/cloud-signout-collapses-every-groups-transient-into-permanent.md |
-| cloud-signout-collapses-the-personal-push-all-reason-into-permanent | backlog | tickets/backlog/cloud-signout-collapses-the-personal-push-all-reason-into-permanent.md |
+| cloud-signout-collapses-the-personal-push-all-reason-into-permanent | done | tickets/done/cloud-signout-collapses-the-personal-push-all-reason-into-permanent.md |
+| cloud-signout-personal-session-expiry-does-not-say-where-to-sign-in | backlog | tickets/backlog/cloud-signout-personal-session-expiry-does-not-say-where-to-sign-in.md |
+| cloud-signout-upstream-rejections-with-a-healthy-pull-say-a-moment-more | backlog | tickets/backlog/cloud-signout-upstream-rejections-with-a-healthy-pull-say-a-moment-more.md |
+| push-unexpected-4xx-is-told-to-try-again-later | backlog | tickets/backlog/push-unexpected-4xx-is-told-to-try-again-later.md |
 | cloud-signout-does-not-look-at-an-in-flight-migration | backlog | tickets/backlog/cloud-signout-does-not-look-at-an-in-flight-migration.md |
 | cloud-signout-drops-unsynced-preference-changes-without-counting-them | backlog | tickets/backlog/cloud-signout-drops-unsynced-preference-changes-without-counting-them.md |
 | cloud-signout-with-the-engine-stopped-says-check-your-connection | done | tickets/done/cloud-signout-with-the-engine-stopped-says-check-your-connection.md |

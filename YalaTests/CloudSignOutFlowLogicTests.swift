@@ -361,6 +361,8 @@ struct CloudSignOutGroupsReasonTests {
             .syncStoppedNeedsUpdate: .permanent,
             .syncStoppedMidMigration: .permanent,
             .syncStoppedNeedsRelaunch: .permanent,
+            // La subida personal que no llegó también es del paso 1 (2026-09-25).
+            .personalUploadRetryLater: .permanent,
         ]
         #expect(CloudSignOutFlowLogic.BlockReason.allCases.count == esperado.count, """
             Hay un motivo de bloqueo sin traducción escrita para el cierre en la nube. Decídelo aquí: el
@@ -389,26 +391,36 @@ struct CloudSignOutGroupsReasonTests {
         #expect(CloudSignOutFlowLogic.BlockReason.syncStoppedNeedsUpdate.breadcrumbSlug == "sync-stopped-needs-update")
         #expect(CloudSignOutFlowLogic.BlockReason.syncStoppedMidMigration.breadcrumbSlug == "sync-stopped-mid-migration")
         #expect(CloudSignOutFlowLogic.BlockReason.syncStoppedNeedsRelaunch.breadcrumbSlug == "sync-stopped-needs-relaunch")
+        #expect(CloudSignOutFlowLogic.BlockReason.personalUploadRetryLater.breadcrumbSlug == "personal-upload-retry-later")
     }
 
-    /// **El paso 1 del cierre en la nube deja pasar SOLO los tres motivos del motor parado** (ticket
-    /// `cloud-signout-with-the-engine-stopped-says-check-your-connection`): su aviso nombra la salida real. El resto sigue
-    /// colapsado en `.permanent` —ése es el hermano `cloud-signout-collapses-the-personal-push-all-reason-into-permanent`—, y
-    /// la tabla cubre `allCases` para que un motivo nuevo tenga que decidir aquí si viaja.
+    /// **El paso 1 del cierre en la nube ya no aplana lo que el motor personal sabe** (ticket
+    /// `cloud-signout-collapses-the-personal-push-all-reason-into-permanent`, 2026-09-25; el motor parado,
+    /// `cloud-signout-with-the-engine-stopped-says-check-your-connection`). Hasta ese día un 5xx, un corte de red y un 401
+    /// salían como `.permanent` —«revisa tu conexión»—. La tabla cubre `allCases` para que un motivo nuevo tenga que decidir
+    /// aquí si viaja.
     @Test
-    func personalPushAllShownReason_letsOnlyTheStoppedEngineThrough() {
+    func personalPushAllShownReason_namesWhatThePersonalEngineKnows() {
         let esperado: [CloudSignOutFlowLogic.BlockReason: CloudSignOutFlowLogic.BlockReason] = [
             .syncStoppedNeedsUpdate: .syncStoppedNeedsUpdate,
             .syncStoppedMidMigration: .syncStoppedMidMigration,
             .syncStoppedNeedsRelaunch: .syncStoppedNeedsRelaunch,
-            .transient: .permanent,
+            // La subida que no llegó (5xx, sin red, respuesta ilegible): «no llegaron a la nube, inténtalo en un rato»,
+            // dicho de tus datos y no de tus grupos.
+            .uploadRetryLater: .personalUploadRetryLater,
+            .personalUploadRetryLater: .personalUploadRetryLater,
+            // El 401: su aviso pide volver a entrar, no revisar la conexión.
+            .sessionExpired: .sessionExpired,
+            // El guardado que aún se asienta (el tope de iteraciones con el outbox drenando): «un momento más».
+            .transient: .transient,
+            // La cuenta no disponible: el texto que no afirma ninguna causa.
             .permanent: .permanent,
+            // Lo que el motor personal no puede emitir.
             .exportUnconfirmed: .permanent,
-            .sessionExpired: .permanent,
             .bridgeUnreadable: .permanent,
             .detachBusy: .permanent,
             .channelPaused: .permanent,
-            .uploadRetryLater: .permanent,
+            // El teléfono sin App Attest lo traduce el propio paso 1 a `.personalAttestUnavailable` antes de llegar aquí.
             .attestUnavailable: .permanent,
             .personalAttestUnavailable: .permanent,
         ]
@@ -483,6 +495,8 @@ struct GroupsSignOutRetryDecisionTests {
             .syncStoppedNeedsUpdate: .surfacePermanent,
             .syncStoppedMidMigration: .surfacePermanent,
             .syncStoppedNeedsRelaunch: .surfacePermanent,
+            // La subida PERSONAL que no llegó (2026-09-25): tampoco pasa por aquí; es `.uploadRetryLater` dicho de tus datos.
+            .personalUploadRetryLater: .surfacePermanent,
             // Se reintentan dentro del presupuesto: son los que sí se curan esperando.
             .transient: .retryAfter(seconds: GroupsSignOutRetryDecision.retryIntervalSeconds),
             // No los produce este camino, pero si llegaran, esperar tampoco arregla nada que sepamos —
@@ -912,7 +926,7 @@ struct PausedChannelReasonWiringTests {
             in: profileFile))
         #expect(present.contains(Self.squashed("""
             case .permanent, .sessionExpired, .channelPaused, .uploadRetryLater,
-                 .syncStoppedNeedsUpdate, .syncStoppedMidMigration, .syncStoppedNeedsRelaunch:
+                 .syncStoppedNeedsUpdate, .syncStoppedMidMigration, .syncStoppedNeedsRelaunch, .personalUploadRetryLater:
                 showSignOutBlockedAlert = true
             """)), """
             El fallo pasajero de la subida, o uno de los tres del motor parado (2026-09-25), dejó de entrar por el \
@@ -1188,20 +1202,20 @@ struct SignOutRetryBudgetBySeasonTests {
         #expect(Self.motivo(.coalesced, uploadFailed: true) == .transient)
     }
 
-    /// **El camino PERSONAL no se mueve, y la review pidió fijarlo**: este ticket le cambió la ENTRADA —`classify`
-    /// es compartida— y su salida tiene que seguir siendo byte-equivalente, porque el paso 1 del cierre en la nube
-    /// colapsa a `.permanent` todo lo que no sea el teléfono sin App Attest. Su separación es otro ticket
-    /// (`cloud-signout-collapses-the-personal-push-all-reason-into-permanent`), y hasta que llegue, esto avisa si
-    /// alguien cree que este cambio ya lo arregló.
-    @Test("el push-all personal pasa `uploadFailed: false` y su motivo no cambia")
-    func thePersonalPushAllIsUnchanged() throws {
-        let controller = try Self.source("Yala/Services/CloudSync/CloudMigrationController.swift")
-        #expect(Self.squashed(controller).contains("uploadFailed: false,"), """
-            El push-all personal dejó de pasar `uploadFailed: false`. Si se cableó un testigo de verdad, el paso 1 del
-            cierre en la nube sigue colapsando a `.permanent`: el motivo nuevo no llegaría a ninguna pantalla y el
-            cambio sería inerte con apariencia de arreglo.
+    /// **El push-all personal pasa el testigo de verdad desde el 2026-09-25** (ticket
+    /// `cloud-signout-collapses-the-personal-push-all-reason-into-permanent`). Hasta ese día este test fijaba lo contrario
+    /// —`uploadFailed: false`— porque el paso 1 del cierre en la nube lo aplanaba todo a `.permanent`; hoy lo deja pasar
+    /// (`personalPushAllShownReason`), así que un `false` escrito devolvería en silencio el «un momento más» a quien tiene
+    /// el servidor caído.
+    @Test("el push-all personal pasa el testigo de la subida del motor personal")
+    func thePersonalPushAllPassesTheUploadWitness() throws {
+        let controller = Self.squashed(try Self.source("Yala/Services/CloudSync/CloudMigrationController.swift"))
+        #expect(controller.contains("uploadFailed: runtime.stoppedByFailedUpload(for: outcome),"), """
+            El push-all personal dejó de pasar el testigo del motor (`CloudSyncRuntime.stoppedByFailedUpload(for:)`): la
+            subida que no llega saldría como «un momento más» en el cierre en la nube.
             """)
-        // Y con ese `false`, un ciclo personal fallido sigue dando el mismo motivo que antes del ticket.
+        #expect(!controller.contains("uploadFailed: false,"))
+        #expect(Self.motivo(.transient, uploadFailed: true) == .uploadRetryLater)
         #expect(Self.motivo(.transient, uploadFailed: false) == .transient)
     }
 

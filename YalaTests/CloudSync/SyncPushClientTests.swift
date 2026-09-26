@@ -65,6 +65,13 @@ private final class SequencedHTTPSession: SyncHTTPSession, @unchecked Sendable {
     }
 }
 
+/// Contesta con una respuesta que NO es HTTP: el transporte volvió con algo que no se puede leer como la del Worker.
+private final class NonHTTPSession: SyncHTTPSession, @unchecked Sendable {
+    func data(for request: URLRequest) async throws -> (Data, URLResponse) {
+        (Data(), URLResponse(url: request.url!, mimeType: nil, expectedContentLength: 0, textEncodingName: nil))
+    }
+}
+
 /// La sesión guardada del SDK, mutable desde el `tokenProvider`: la renovación terminal la borra antes de volver.
 private final class SesionDelSDK: @unchecked Sendable {
     var guardada: Bool
@@ -538,6 +545,150 @@ struct SyncPushClientTests {
         _ = await client.push([row])
         #expect(session.lastRequest?.value(forHTTPHeaderField: "Authorization") == "Bearer jwt-abc")
         #expect(session.lastRequest?.url?.absoluteString == "https://example.test/sync/push")
+    }
+
+    // MARK: - El testigo de la subida que no llegó (2026-09-25)
+
+    // Ticket `cloud-signout-collapses-the-personal-push-all-reason-into-permanent`. `.transient` no es «la subida falló»: también
+    // trae una fila que no se deja convertir, que es de este teléfono. El testigo separa las dos para que el cierre en la nube
+    // diga «no llegaron a la nube, inténtalo en un rato» solo cuando el SERVIDOR falló.
+
+    /// Cada salida `.transient` que habló con el servidor enciende el testigo. Una fila por rama: con una sola, quitar la
+    /// marca de cualquier otra dejaría esto verde (`un-arreglo-en-n-sitios-se-prueba-en-los-n`).
+    @Test("MUTACIÓN: cada `.transient` que chocó con el servidor enciende el testigo")
+    func witness_everyServerFailureLightsIt() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let casos: [(String, StubHTTPSession)] = [
+            ("sin red", StubHTTPSession(error: URLError(.notConnectedToInternet))),
+            ("timeout", StubHTTPSession(error: URLError(.timedOut))),
+            ("200 ilegible", StubHTTPSession(status: 200, body: Data("no es json".utf8))),
+            ("401 del attest", StubHTTPSession(status: 401, body: gatewayError("yala_attest_required"))),
+            ("409 que no es la reversa", StubHTTPSession(status: 409, body: Data("conflict".utf8))),
+            ("500", StubHTTPSession(status: 500)),
+            ("502", StubHTTPSession(status: 502)),
+            ("429", StubHTTPSession(status: 429)),
+            ("400 no cableado", StubHTTPSession(status: 400)),
+        ]
+        for (nombre, session) in casos {
+            let row = makeUpsertRow(fieldsJSON: "{}", fieldHlcsJSON: "{}", hlc: "h", context: context)
+            let client = stubClient(session)
+            #expect(await client.push([row]) == .transient, "\(nombre)")
+            #expect(client.lastPushFailedAtServer, "\(nombre): la subida no llegó al servidor")
+        }
+    }
+
+    @Test("MUTACIÓN: una respuesta que no es HTTP enciende el testigo")
+    func witness_nonHTTPResponseLightsIt() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let row = makeUpsertRow(fieldsJSON: "{}", fieldHlcsJSON: "{}", hlc: "h", context: context)
+        let client = SyncPushClient(baseURL: URL(string: "https://example.test")!, tokenProvider: { "jwt" },
+                                    urlSession: NonHTTPSession())
+        #expect(await client.push([row]) == .transient)
+        #expect(client.lastPushFailedAtServer)
+    }
+
+    /// El token que no llega con la sesión GUARDADA es un refresh HTTP que no volvió: la subida no llegó por la red.
+    @Test("MUTACIÓN: sin token con la sesión guardada enciende el testigo; con la sesión borrada es caducada y no")
+    func witness_tokenRefreshThatDidNotComeBackLightsIt() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let row = makeUpsertRow(fieldsJSON: "{}", fieldHlcsJSON: "{}", hlc: "h", context: context)
+        let guardada = stubClient(StubHTTPSession(), token: nil, sessionKept: true)
+        #expect(await guardada.push([row]) == .transient)
+        #expect(guardada.lastPushFailedAtServer)
+
+        let borrada = stubClient(StubHTTPSession(), token: nil, sessionKept: false)
+        #expect(await borrada.push([row]) == .sessionExpired(pending: 1))
+        #expect(!borrada.lastPushFailedAtServer, "la sesión caducada ya dice su causa")
+    }
+
+    /// Lo del teléfono no lo enciende: una fila que no se deja convertir no ha hablado con nadie, y culpar al servidor de
+    /// ella sería mentir en la otra dirección.
+    @Test("MUTACIÓN: una fila que no se deja convertir y el corte de `continueWhile` no encienden el testigo")
+    func witness_phoneSideFailuresDoNotLightIt() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let rara = SyncOutbox(syncID: UUID(), entityType: "NotAWiredClass", op: .upsert, hlc: "x",
+                              fieldsJSON: "{}", author: "")
+        context.insert(rara)
+        let session = StubHTTPSession(status: 500)
+        let client = stubClient(session)
+        #expect(await client.push([rara]) == .transient)
+        #expect(!client.lastPushFailedAtServer)
+        #expect(session.lastRequest == nil, "control: no llegó a la red")
+
+        let rows = makeRows(3, context: context)
+        let corte = stubClient(StubHTTPSession(status: 500))
+        #expect(await corte.push(rows, continueWhile: { false }) == .transient)
+        #expect(!corte.lastPushFailedAtServer)
+    }
+
+    /// Un push por trozos que confirma el primero y falla en el segundo devuelve `.completed(parciales)`: la subida quedó a
+    /// medias, y el testigo tiene que decirlo aunque el outcome no sea `.transient` (review adversarial, dos lentes).
+    @Test("MUTACIÓN: un trozo que falla tras otro confirmado deja el testigo encendido con `.completed`")
+    func witness_partialChunkedPushLightsIt() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let rows = makeRows(4, context: context)
+        let session = SequencedHTTPSession([
+            .init(status: 200, body: okBody(2), error: nil),
+            .init(status: 503, body: Data(), error: nil),
+        ])
+        let client = SyncPushClient(baseURL: URL(string: "https://example.test")!, tokenProvider: { "jwt" },
+                                    urlSession: session, pushChunkSize: 2)
+        guard case .completed(let parciales) = await client.push(rows) else {
+            Issue.record("esperaba .completed(parciales)"); return
+        }
+        #expect(parciales.count == 2, "control: solo el primer trozo")
+        #expect(client.lastPushFailedAtServer)
+
+        // Control: los dos trozos bien ⇒ apagado.
+        let bien = SyncPushClient(baseURL: URL(string: "https://example.test")!, tokenProvider: { "jwt" },
+                                  urlSession: SequencedHTTPSession([.init(status: 200, body: okBody(2), error: nil),
+                                                                    .init(status: 200, body: okBody(2), error: nil)]),
+                                  pushChunkSize: 2)
+        _ = await bien.push(rows)
+        #expect(!bien.lastPushFailedAtServer)
+    }
+
+    /// Un 200 cuyo resultado es `rejected` con `upstream_*`: el Worker contestó y su Postgres no aplicó la fila. La fila sigue
+    /// viva y la subida no llegó.
+    @Test("MUTACIÓN: un rechazo `upstream_*` en `applyResults` enciende el testigo; uno aplicado no")
+    func witness_upstreamRejectionLightsIt() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        let cmid = UUID(); let sid = UUID()
+        _ = makeUpsertRow(fieldsJSON: #"{"amount":"1.0000"}"#, fieldHlcsJSON: #"{"money":"h"}"#, hlc: "hlc-4",
+                          syncID: sid, clientMutationID: cmid, context: context)
+        let rows = try context.fetch(FetchDescriptor<SyncOutbox>())
+        let client = stubClient(StubHTTPSession())
+        await client.applyResults([makeResult(syncID: sid, cmid: cmid, status: "rejected", reason: "upstream_500")],
+                                  rows: rows, engine: engine, context: context)
+        #expect(client.lastPushFailedAtServer)
+
+        let otro = stubClient(StubHTTPSession())
+        await otro.applyResults([makeResult(syncID: sid, cmid: cmid, status: "applied", reason: nil)],
+                                rows: rows, engine: engine, context: context)
+        #expect(!otro.lastPushFailedAtServer, "control: aplicada, la subida llegó")
+    }
+
+    /// Describe la ÚLTIMA llamada: sin el reset al entrar, un 500 de antes teñiría la fila rara de ahora.
+    @Test("MUTACIÓN: el testigo se baja al entrar en cada `push`")
+    func witness_isResetOnEveryPush() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let row = makeUpsertRow(fieldsJSON: "{}", fieldHlcsJSON: "{}", hlc: "h", context: context)
+        let rara = SyncOutbox(syncID: UUID(), entityType: "NotAWiredClass", op: .upsert, hlc: "x",
+                              fieldsJSON: "{}", author: "")
+        context.insert(rara)
+        let client = stubClient(StubHTTPSession(status: 500))
+        #expect(await client.push([row]) == .transient)
+        #expect(client.lastPushFailedAtServer, "control: el 500 lo enciende")
+        #expect(await client.push([rara]) == .transient)
+        #expect(!client.lastPushFailedAtServer)
     }
 
     // MARK: - applyResults

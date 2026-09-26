@@ -235,8 +235,10 @@ paths:
   personales en el History que ningún drain capturó (`CloudSyncEngine.hasUncapturedPersonalChanges`, SOLO LECTURA: no crea
   el cursor). Mirar solo el outbox borraba en silencio lo editado con el motor parado, que en `.reverseFailedRollback`
   pueden ser días. Token roto o fetch que lanza es `nil` y bloquea;
-  (3) **con pendientes bloquea con `.permanent`**, cuyo texto habla de la conexión: residual con ticket
-  (`cloud-signout-with-the-engine-stopped-says-check-your-connection`). Grupos no entra: su canal corre su propio loop justo
+  (3) **con pendientes bloquea con el motivo del candado** (`engineStoppedReason(read:)`, desde el 2026-09-25): su aviso
+  nombra la salida real y no la conexión (`cloud-signout-with-the-engine-stopped-says-check-your-connection`). Y con el
+  candado abierto, el paso 1 del cierre separa la subida que no llegó y la sesión caducada con el testigo del motor
+  personal (`CloudSyncRuntime.stoppedByFailedUpload(for:)`, `cloud-signout-collapses-the-personal-push-all-reason-into-permanent`). Grupos no entra: su canal corre su propio loop justo
   con el candado personal cerrado. Lo fija `CloudSyncRuntimeTests` (`signOutPushAll_*`, `uncapturedProbe_*`).
 
 - **En el apply del pull, «no pude leer» NUNCA es «no hay nada» (2026-09-22).** La lectura LANZA y la página no
