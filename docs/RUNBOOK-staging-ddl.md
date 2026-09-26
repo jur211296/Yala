@@ -235,6 +235,26 @@ aviso legítimo; solo ese hace que el arreglo entre en vigor de una vez.
 
 ---
 
+## `mcp0_01_readonly_role.sql` — conector de Claude, fase 0 (solo staging, 2026-09-26)
+
+**Aplicada en staging** con `apply_migration` el 2026-09-26. **Producción: no**, hasta la fase 1.
+
+Crea el rol `yala_mcp_reader` (miembro de `authenticator`, SELECT sobre 9 tablas y nada más), una política SELECT
+para ese rol en cada tabla y la función `yala_mcp_access_token_hook`. Es **aditiva**: no toca ninguna política,
+función ni GRANT existente, así que no choca con las migraciones de la cola A. Marcha atrás:
+`qa/cloud/mcp0_01_rollback.sql`, **después** de apagar el hook (si no, falla todo login).
+
+Verificado en SQL como `yala_mcp_reader` con el `sub` de A: lee sus 69 filas de `accounts` y 1291 de `tx_items` (lápidas incluidas), y 0 de B;
+`UPDATE`, `INSERT`, `delete_personal_account` y `apply_delta` dan `42501`; `claim_account` y
+`migration_progress` (las dos que PUBLIC puede ejecutar) también. El hook cambia el rol solo si hay `client_id`.
+
+**Y la configuración de Auth, que no es DDL**, también se aplicó el mismo día por la Management API, en este
+orden: hook, Site URL y servidor OAuth con DCR. El antes y el después, y cómo se revierte, están en
+`tickets/done/claude-mcp-activate-oauth-in-staging.md`. **El orden importa:** con OAuth encendido y el hook
+apagado, Supabase emite a los clientes OAuth tokens que escriben. Para revertir, primero OAuth y luego el hook.
+
+---
+
 ## Referencias
 
 - Detalle por migración y su historia: `qa/cloud/README.md` (la entrada de `g14_01` está en

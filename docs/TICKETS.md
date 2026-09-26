@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (600)
+## Index (606)
 
 | id | status | path |
 |---|---|---|
@@ -113,6 +113,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | bridge-synthesis-trusts-a-zero-converted-amount | backlog | tickets/backlog/bridge-synthesis-trusts-a-zero-converted-amount.md |
 | bridge-virtual-only-currency-mismatch-is-silent | backlog | tickets/backlog/bridge-virtual-only-currency-mismatch-is-silent.md |
 | budget-days-left-counts-today | backlog | tickets/backlog/budget-days-left-counts-today.md |
+| budget-interval-counts-next-period-midnight | backlog | tickets/backlog/budget-interval-counts-next-period-midnight.md |
 | budget-tied-to-income-or-expense | backlog | tickets/backlog/budget-tied-to-income-or-expense.md |
 | bulk-update-account-leaves-converted-amount-stale | done | tickets/done/bulk-update-account-leaves-converted-amount-stale.md |
 | canarios-y-breadcrumbs-sin-emisor | backlog | tickets/backlog/canarios-y-breadcrumbs-sin-emisor.md |
@@ -144,6 +145,10 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | claim-replay-after-a-kill-mid-commit-can-duplicate-the-onboarding | backlog | tickets/backlog/claim-replay-after-a-kill-mid-commit-can-duplicate-the-onboarding.md |
 | claim-replay-can-seed-beside-a-phone-that-adopted-silently | done | tickets/done/claim-replay-can-seed-beside-a-phone-that-adopted-silently.md |
 | claim-takeover-races-the-leader-cutover-without-cas | backlog | tickets/backlog/claim-takeover-races-the-leader-cutover-without-cas.md |
+| claude-mcp-activate-oauth-in-staging | done | tickets/done/claude-mcp-activate-oauth-in-staging.md |
+| claude-mcp-consent-with-apple-and-google | backlog | tickets/backlog/claude-mcp-consent-with-apple-and-google.md |
+| claude-mcp-numbers-match-the-app | backlog | tickets/backlog/claude-mcp-numbers-match-the-app.md |
+| claude-mcp-oauth-token-can-change-the-account | backlog | tickets/backlog/claude-mcp-oauth-token-can-change-the-account.md |
 | claude-plugin-read-only-mcp-connector | backlog | tickets/backlog/claude-plugin-read-only-mcp-connector.md |
 | clock-drift-aborted-drain-lets-the-pull-overwrite-untranslated-edits | backlog | tickets/backlog/clock-drift-aborted-drain-lets-the-pull-overwrite-untranslated-edits.md |
 | cloud-attest-notice-does-not-cover-a-gateway-rejected-token | backlog | tickets/backlog/cloud-attest-notice-does-not-cover-a-gateway-rejected-token.md |

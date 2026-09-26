@@ -18,23 +18,33 @@ nada, y el usuario puede revocar el acceso cuando quiera.
 
 ## Estado
 
-Hay exploración hecha, sin código: `docs/exploracion/plugin-claude-mcp.md`. Recoge las herramientas,
-el encaje con OAuth y RLS, el paralelismo con la cola A, los requisitos del portal de Anthropic y las
-fases.
+**Fase 0 hecha en staging** (2026-09-26, encargo `2026-09-26-plugin-claude-mcp-fase0-spike`):
 
-## Lo que espera de Jürgen antes de construir
+- Claude Code se conectó al conector de staging, se autenticó por OAuth y respondió con los datos reales del
+  usuario de prueba. Otro usuario no ve esos datos.
+- `mcp/`: Worker `yala-mcp-staging` con las seis herramientas de solo lectura, la pantalla de consentimiento,
+  49 tests unitarios en el CI (job `mcp`) y 17 e2e contra staging.
+- Staging: rol `yala_mcp_reader` y su hook (`qa/cloud/mcp0_01_readonly_role.sql`), y el servidor OAuth encendido
+  (`tickets/done/claude-mcp-activate-oauth-in-staging.md`).
+- `mcp/plugin/`: borrador del plugin con tres skills, entre ellas `recurrentes-a-revisar`. Sin publicar.
+- Lo aprendido y lo que falta: §7 de `docs/exploracion/plugin-claude-mcp.md`.
 
-Las cuatro decisiones de §6 del documento:
+**Bloqueo para la fase 1:** el token de Claude no puede escribir en las finanzas, pero GoTrue le deja cambiar la
+cuenta de inicio de sesión (`claude-mcp-oauth-token-can-change-the-account`).
 
-1. Gratis o Pro.
-2. Si vale un conector solo para usuarios en modo nube.
-3. Cuándo empezar.
-4. Cambiar «suscripciones sin usar» por «recurrentes a revisar».
+## Decisiones de Jürgen (2026-09-26)
 
-## Primer paso cuando se desbloquee
+1. Gratis por defecto. Queda un punto de extensión (`plan` en cada herramienta) para marcar alguna como Pro.
+2. Vale que solo sirva a usuarios en modo nube.
+3. Producción espera a que la nube esté estable, tras 2.1. La fase 0 va ya, solo en staging.
+4. «Suscripciones sin usar» pasa a «recurrentes a revisar».
 
-La fase 0, un spike en staging de 1-2 días. Cierra los NO VERIFICADO del documento, y el más
-importante es si un token OAuth de Supabase puede quedar de verdad en solo lectura.
+## Residuales
+
+- `claude-mcp-oauth-token-can-change-the-account` — el token de Claude puede cambiar la cuenta vía GoTrue. Bloquea la fase 1.
+- `claude-mcp-numbers-match-the-app` — golden vectors desde Swift, gastos de grupo, tasa del día, zona horaria.
+- `claude-mcp-consent-with-apple-and-google` — iniciar sesión con Apple o Google en la pantalla de permiso.
+- `budget-interval-counts-next-period-midnight` — bug de la app encontrado al portar los presupuestos.
 
 ## Dependencias
 
