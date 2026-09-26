@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, migración"
 created: 2026-09-23
-updated: 2026-09-23
+updated: 2026-09-26
 source: "decisión aparcada de `an-incomplete-inventory-reads-as-the-whole-corpus` (2026-09-23, cola nocturna)"
 ---
 
@@ -27,6 +27,18 @@ tiene un error vigente, al revés: corta a los 15 min culpando a iCloud de una a
 
 La ida ya tiene ese motivo (`SnapshotStallBlocker.localFailure`, techo corto, «este dispositivo no pudo preparar tus
 datos») y la fase previa al montaje de la vuelta también (`ReversePreMountBlocker.localFailure`).
+
+**Desde el 2026-09-26 cubre también la captura que no pudo mirar ninguna fila** (`reverse-upload-sample-reads-unreadable-rows-as-drained`):
+el SQLite del espejo que no abre o no tiene sus tablas ya no cierra la vuelta, sale `.unreadable` y espera aquí. Si el espejo
+sin cuenta de iCloud no crea esas tablas (sin medir), ese teléfono cae aquí y además da `icloudOff` o `unknown`: esos
+motivos PAUSAN el reloj corto, así que esperaría las 72 h con el texto de «subiendo». El canario `cloudReverseUploadSampleUnreadable` dice
+cuántos teléfonos caen aquí.
+
+**Y la pantalla pierde el motivo si la espera empieza ilegible** (review del 2026-09-26, medido en el código):
+`MigrationRunner.observeReverseUploadWait` solo guarda `lastReverseUploadSample` con una cifra buena. Sin ninguna
+previa, el motivo que ya se conoce (`icloudOff`) se tira y la tarjeta dice «Subiendo tus datos a iCloud», sin el aviso
+de «Si iCloud no está activo…». El test `reverseUploadCeiling_unreadableFirstObservation_sealsClockButNoLowest` fija eso
+a propósito. Un arreglo posible: una muestra con la cifra opcional que conserve el motivo.
 
 ## Qué hay que decidir (es de producto)
 

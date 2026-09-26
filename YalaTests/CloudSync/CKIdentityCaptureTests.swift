@@ -144,6 +144,9 @@ struct CKIdentityCaptureTests {
 
         #expect(report.failed == 1)
         #expect(row.ckRecordName == nil)
+        #expect(report.failedReasons == ["no-zent": 1], "el motivo se agrupa para medirlo en device")
+        #expect(report.structuralFailure == nil,
+                "con el mapa de entidades leído, una entidad que no está es un motivo POR FILA, no estructural")
     }
 
     @Test("batch tri-estado: 1 captured + 1 exportPending + 1 noMetadata + 1 failed en UNA corrida")
@@ -169,6 +172,8 @@ struct CKIdentityCaptureTests {
         #expect(report.noMetadata == 1)
         #expect(report.failed == 1)
         #expect(report.total == 4)
+        #expect(report.structuralFailure == nil, "tres filas se miraron: el fallo de la cuarta es suyo")
+        #expect(report.failedReasons == ["no-zent": 1])
         #expect(captured.ckRecordName == "rec-tx-10")
         #expect(pending.ckRecordName == nil && missing.ckRecordName == nil && failed.ckRecordName == nil)
     }
@@ -183,6 +188,123 @@ struct CKIdentityCaptureTests {
         let report = CKIdentityCapture.captureResolved([req], storeURL: missingURL)
         #expect(report.failed == 1)
         #expect(report.captured == 0)
+        #expect(report.structuralFailure?.hasPrefix("sqlite-open-") == true, "no se miró ninguna fila")
+    }
+
+    // MARK: - Fallo ESTRUCTURAL: la corrida no pudo mirar ninguna fila
+    // (ticket `reverse-upload-sample-reads-unreadable-rows-as-drained`)
+    //
+    // Cada fixture rompe UNA pieza del SQLite. El control es `makeFixture(_:)`: con las mismas peticiones, se miran.
+
+    private func makeFixture(_ dir: URL, statements: [String]) -> URL {
+        let url = dir.appendingPathComponent("ckfixture-\(UUID().uuidString).sqlite")
+        var db: OpaquePointer?
+        #expect(sqlite3_open(url.path, &db) == SQLITE_OK)
+        for sql in statements {
+            #expect(sqlite3_exec(db, sql, nil, nil, nil) == SQLITE_OK, "SQL: \(sql)")
+        }
+        sqlite3_close(db)
+        return url
+    }
+
+    private static let zoneTable = [
+        "CREATE TABLE ANSCKRECORDZONEMETADATA (Z_PK INTEGER, ZCKRECORDZONENAME TEXT, ZCKOWNERNAME TEXT)",
+        "INSERT INTO ANSCKRECORDZONEMETADATA VALUES (2, 'com.apple.coredata.cloudkit.zone', '__defaultOwner__')",
+    ]
+    private static let primaryKeys = [
+        "CREATE TABLE Z_PRIMARYKEY (Z_ENT INTEGER, Z_NAME TEXT)",
+        "INSERT INTO Z_PRIMARYKEY (Z_ENT, Z_NAME) VALUES (5, 'TransactionItem')",
+    ]
+    private static let metaTable =
+        "CREATE TABLE ANSCKRECORDMETADATA (Z_PK INTEGER, ZENTITYPK INTEGER, ZENTITYID INTEGER, ZCKRECORDNAME TEXT, ZRECORDZONE INTEGER)"
+    /// La tabla está pero no se deja consultar: la columna de la entidad lleva un espacio y el SELECT sin comillas es SQL
+    /// inválido, así que la consulta no prepara en ninguna fila.
+    private static let unqueryableMetaTable =
+        "CREATE TABLE ANSCKRECORDMETADATA (Z_PK INTEGER, \"X ZENTITYPK\" INTEGER, ZENTITYID INTEGER, ZCKRECORDNAME TEXT, ZRECORDZONE INTEGER)"
+
+    static let structuralCases: [(expected: String, statements: [String])] = [
+        ("no-record-metadata-table", primaryKeys + zoneTable),
+        ("meta-columns-missing", primaryKeys + zoneTable + [
+            "CREATE TABLE ANSCKRECORDMETADATA (Z_PK INTEGER, ZENTITYPK INTEGER, ZRECORDZONE INTEGER)",
+        ]),
+        ("primary-key-map-unreadable", zoneTable + [metaTable]),
+        ("primary-key-map-unreadable", ["CREATE TABLE Z_PRIMARYKEY (Z_ENT INTEGER, Z_NAME TEXT)"] + zoneTable + [metaTable]),
+        ("meta-query", primaryKeys + zoneTable + [unqueryableMetaTable]),
+    ]
+
+    @Test("estructural: cada pieza del SQLite que falta deja la corrida sin mirar ninguna fila",
+          arguments: 0..<5)
+    func structural_eachMissingPiece(caseIndex: Int) throws {
+        let (expected, statements) = Self.structuralCases[caseIndex]
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let requests = (0..<2).map {
+            CKIdentityCapture.ResolvedRequest(
+                entityName: "TransactionItem", zpk: Int64(900 + $0),
+                row: makeIdentityRow(context, entityType: SyncEntityType.transactionItem))
+        }
+
+        let control = CKIdentityCapture.captureResolved(requests, storeURL: makeFixture(dir))
+        #expect(control.structuralFailure == nil && control.noMetadata == 2, "control: con el SQLite entero se miran")
+
+        let report = CKIdentityCapture.captureResolved(requests, storeURL: makeFixture(dir, statements: statements))
+        #expect(report.structuralFailure == expected)
+        #expect(report.failed == 2 && report.total == 2, "todas las filas son failed")
+        #expect(report.failedReasons[expected] == 2)
+    }
+
+    @Test("la consulta de metadata que falla en TODAS las que la intentan es estructural aunque haya no-zent")
+    func structural_metaQueryFailsForEveryAttempt_evenWithNoZentRows() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fixture = makeFixture(dir, statements: Self.primaryKeys + Self.zoneTable + [Self.unqueryableMetaTable])
+        let tx = CKIdentityCapture.ResolvedRequest(
+            entityName: "TransactionItem", zpk: 1, row: makeIdentityRow(context, entityType: SyncEntityType.transactionItem))
+        let budget = CKIdentityCapture.ResolvedRequest(
+            entityName: "Budget", zpk: 1, row: makeIdentityRow(context, entityType: SyncEntityType.budget))
+
+        let report = CKIdentityCapture.captureResolved([tx, budget], storeURL: fixture)
+        #expect(report.structuralFailure == "meta-query", "la única fila que llegó a la tabla no la pudo leer")
+        #expect(report.failedReasons == ["meta-query": 1, "no-zent": 1])
+    }
+
+    /// Una fila capturada junto a una `no-zent`: la corrida miró algo, así que no es estructural. El caso «la consulta de
+    /// metadata falla en UNAS filas y no en otras» no tiene test: la SQL solo cambia en dos enteros, así que ese fallo solo
+    /// sale con un error transitorio de SQLite (base ocupada), que un fixture no reproduce.
+    @Test("una fila capturada junto a una no-zent es un motivo por fila, no estructural")
+    func capturedBesideNoZent_isPerRow() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fixture = makeFixture(dir)
+        let good = CKIdentityCapture.ResolvedRequest(
+            entityName: "TransactionItem", zpk: 10, row: makeIdentityRow(context, entityType: SyncEntityType.transactionItem))
+        let noZent = CKIdentityCapture.ResolvedRequest(
+            entityName: "Budget", zpk: 1, row: makeIdentityRow(context, entityType: SyncEntityType.budget))
+        let report = CKIdentityCapture.captureResolved([good, noZent], storeURL: fixture)
+        #expect(report.captured == 1 && report.failed == 1)
+        #expect(report.structuralFailure == nil)
+    }
+
+    @Test("todas no-zent con el mapa leído NO es estructural: es el motivo por fila que el ticket manda medir")
+    func allNoZent_withAReadableMap_isPerRow() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let requests = (0..<3).map { _ in
+            CKIdentityCapture.ResolvedRequest(
+                entityName: "Budget", zpk: 1, row: makeIdentityRow(context, entityType: SyncEntityType.budget))
+        }
+        let report = CKIdentityCapture.captureResolved(requests, storeURL: makeFixture(dir))
+        #expect(report.failed == 3)
+        #expect(report.structuralFailure == nil)
+        #expect(report.failedReasons == ["no-zent": 3])
+    }
+
+    @Test("failureBucket: quita el detalle variable del motivo")
+    func failureBucket_dropsTheVariableDetail() {
+        #expect(CKIdentityCapture.failureBucket("meta-query:no such column: ZFOO") == "meta-query")
+        #expect(CKIdentityCapture.failureBucket("zone-query:x") == "zone-query")
+        #expect(CKIdentityCapture.failureBucket("sqlite-open-14") == "sqlite-open-14")
+        #expect(CKIdentityCapture.failureBucket("no-zent") == "no-zent")
     }
 
     // MARK: - URI parsing
@@ -307,5 +429,6 @@ struct CKIdentityCaptureTests {
         // no-record-metadata-table → failed. Prueba el camino público end-to-end sin device.
         #expect(report.total == 1)
         #expect(report.failed == 1)
+        #expect(report.structuralFailure == "no-record-metadata-table", "el estructural viaja por la entrada pública")
     }
 }

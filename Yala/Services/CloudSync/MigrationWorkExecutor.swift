@@ -1774,6 +1774,13 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     ///
     /// Una muestra que no pudo leer una tabla es `.unreadable`: ni cierra la vuelta ni vale como avance (ticket
     /// `an-incomplete-inventory-reads-as-the-whole-corpus`). Sale antes del canario de huérfanas, que es informativo.
+    ///
+    /// **Y una captura que no pudo mirar ninguna fila, también** (ticket
+    /// `reverse-upload-sample-reads-unreadable-rows-as-drained`): con el SQLite cerrado o sin las tablas del espejo
+    /// todas las filas salen `failed`, y como `failed` no cuenta en la suma daba cero pendientes y `.drained`, que
+    /// corre el cuarteto de cierre con los datos sin llegar a iCloud. Los `failed` POR FILA siguen fuera de la suma:
+    /// pueden ser benignos y permanentes, y contarlos dejaría la vuelta sin drenar nunca. Se miden antes de decidir
+    /// (`reverseUploadFailedRows`).
     func reverseUploadStatus() -> ReverseUploadStatus {
         let pairs: [(id: PersistentIdentifier, row: SyncIdentity)]
         do {
@@ -1782,6 +1789,16 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
             return .unreadable
         }
         let report = CKIdentityCapture.capture(pairs, storeURL: personalStoreURL)
+        if let reason = report.structuralFailure {
+            // Nada se capturó —todas las filas son `failed`—, así que no hay testigos que guardar.
+            CloudSyncBreadcrumb.reverseUploadSampleUnreadable(reason: reason, rows: report.total)
+            MetricsService.cloudReverseUploadSampleUnreadable(reason: reason)
+            return .unreadable
+        }
+        if report.failed > 0 {
+            CloudSyncBreadcrumb.reverseUploadFailedRows(reasons: report.failedReasons)
+            MetricsService.cloudReverseUploadFailedRows(reasons: report.failedReasons)
+        }
         if context.hasChanges {
             do {
                 try context.save()

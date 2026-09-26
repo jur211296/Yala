@@ -170,6 +170,10 @@ enum MetricsCanary: String {
     // Techo de `reverseUpload` (ticket `reverse-upload-has-no-ceiling-and-no-exit`)
     case cloudReverseUploadWaiting
     case cloudReverseUploadAborted
+    // El muestreo de la vuelta que no pudo mirar, y los `failed` por fila que se miden antes de decidir si cuentan
+    // (ticket `reverse-upload-sample-reads-unreadable-rows-as-drained`)
+    case cloudReverseUploadSampleUnreadable
+    case cloudReverseUploadFailedRows
     // Salida del claim de la reversa (ticket `reverse-claim-rejection-has-no-way-out-in-the-client`)
     case cloudReverseClaimRejected
     // La vuelta a iCloud parada por una sesión que ya no vale, antes de montar el espejo (ticket
@@ -606,6 +610,32 @@ extension MetricsService {
     /// sale como `mixedCauses` (`MigrationRunner.reverseUploadExitDetail`), así que `stalled` sigue siendo solo las 72 h.
     static func cloudReverseUploadAborted(reason: String) {
         canary(.cloudReverseUploadAborted, detail: reason)
+    }
+
+    /// El muestreo de «Volver a iCloud» no pudo leer la metadata de CloudKit de ninguna fila y la muestra salió
+    /// ilegible, en vez del `.drained` que daba antes (ticket `reverse-upload-sample-reads-unreadable-rows-as-drained`).
+    /// `detail` = el motivo fijo de `CKIdentityCapture` (`sqlite-open-<rc>`, `no-record-metadata-table`,
+    /// `meta-columns-missing`, `primary-key-map-unreadable`, `uri-unparseable`, `meta-query`). Una vez por proceso y
+    /// motivo: el re-kick de 30 s lo repetiría. Sostenido en la flota = el espejo sin tablas en esos teléfonos (el ticket
+    /// sospecha, sin medir, que pasa sin cuenta de iCloud), y esas vueltas saldrán por el techo largo.
+    static func cloudReverseUploadSampleUnreadable(reason: String) {
+        canaryOnce(.cloudReverseUploadSampleUnreadable, key: reason, detail: reason)
+    }
+
+    /// Filas del muestreo de la vuelta que salieron `failed` POR FILA. No cuentan como pendientes; esto mide cuáles
+    /// aparecen en device para decidir si deberían (ticket `reverse-upload-failed-rows-need-a-device-measurement`).
+    /// `detail` = el CONJUNTO de motivos, sin cifras, para que dedupe por proceso: las cifras van al breadcrumb.
+    static func cloudReverseUploadFailedRows(reasons: [String: Int]) {
+        let detail = reverseUploadFailedRowsDetail(reasons: reasons)
+        canaryOnce(.cloudReverseUploadFailedRows, key: detail, detail: detail)
+    }
+
+    /// Detalle de `cloudReverseUploadFailedRows`: motivos ordenados y unidos con `|`, dentro de los 128 caracteres que
+    /// acepta el gateway (un detalle más largo tira el lote entero). Nunca vacío.
+    nonisolated static func reverseUploadFailedRowsDetail(reasons: [String: Int]) -> String {
+        let joined = reasons.keys.sorted().joined(separator: "|")
+        guard !joined.isEmpty else { return "unknown" }
+        return String(joined.prefix(128))
     }
 
     /// El claim de «Volver a iCloud» no se concedió y la reversa volvió a la nube sin empezar (ticket

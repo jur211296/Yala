@@ -4529,6 +4529,119 @@ struct MigrationWorkExecutorTests {
                 "sin la tabla la muestra contaba cero pendientes y daba la vuelta por hecha")
     }
 
+    // MARK: - Una captura que no pudo mirar ninguna fila no es «nada pendiente»
+    // (ticket `reverse-upload-sample-reads-unreadable-rows-as-drained`)
+    //
+    // Antes, con el SQLite cerrado o sin las tablas del espejo, todas las filas salían `failed`, `failed` no contaba en
+    // la suma y la vuelta se daba por `.drained`: el cuarteto de cierre corría con los datos sin llegar a iCloud. Que el
+    // runner no cierre con `.unreadable` lo fija `reverseUploadCeiling_unreadableSample_neitherClosesNorAdvances_…` en
+    // `MigrationRunnerTests`.
+
+    /// Un SQLite con UNA pieza rota; `nil` en `statements` = el fichero no existe (el SQLite no abre).
+    private func makeBrokenReverseFixture(_ dir: URL, statements: [String]?) -> URL {
+        let url = dir.appendingPathComponent("ckfixture-broken-\(UUID().uuidString).sqlite")
+        guard let statements else { return url }
+        var db: OpaquePointer?
+        #expect(sqlite3_open(url.path, &db) == SQLITE_OK)
+        for sql in statements {
+            #expect(sqlite3_exec(db, sql, nil, nil, nil) == SQLITE_OK, "SQL: \(sql)")
+        }
+        sqlite3_close(db)
+        return url
+    }
+
+    static let brokenReverseFixtures: [(reason: String, statements: [String]?)] = [
+        ("sqlite-open", nil),
+        ("no-record-metadata-table", [
+            "CREATE TABLE Z_PRIMARYKEY (Z_ENT INTEGER, Z_NAME TEXT)",
+            "INSERT INTO Z_PRIMARYKEY (Z_ENT, Z_NAME) VALUES (5, 'TransactionItem')",
+        ]),
+        ("meta-columns-missing", [
+            "CREATE TABLE Z_PRIMARYKEY (Z_ENT INTEGER, Z_NAME TEXT)",
+            "INSERT INTO Z_PRIMARYKEY (Z_ENT, Z_NAME) VALUES (5, 'TransactionItem')",
+            "CREATE TABLE ANSCKRECORDMETADATA (Z_PK INTEGER, ZENTITYPK INTEGER, ZRECORDZONE INTEGER)",
+        ]),
+        ("primary-key-map-unreadable", [
+            "CREATE TABLE ANSCKRECORDMETADATA (Z_PK INTEGER, ZENTITYPK INTEGER, ZENTITYID INTEGER, ZCKRECORDNAME TEXT, ZRECORDZONE INTEGER)",
+        ]),
+    ]
+
+    @Test("reverseUploadStatus: una captura que no pudo mirar ninguna fila es .unreadable, no .drained",
+          arguments: 0..<4)
+    func reverseUploadStatus_structuralCaptureFailure_isUnreadableNotDrained(caseIndex: Int) async throws {
+        let (reason, statements) = Self.brokenReverseFixtures[caseIndex]
+        let defaults = makeIsolatedDefaults(prefix: "mwe.reverse.structural.\(caseIndex)")
+        MetricsService._testReset()
+        MetricsService.start(
+            client: MetricsClient(baseURL: URL(string: "https://gw.test")!, urlSession: MetricsDown()),
+            defaults: defaults)
+        defer { MetricsService._testReset() }
+
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let tx = TransactionItem(date: fixedNow, amount: -12.5, currencyCode: "USD")
+        context.insert(tx)
+        try context.save()
+        let zpk = try #require(CKIdentityCapture.entityAndPK(for: tx.persistentModelID)?.zpk)
+
+        // Control: la misma fila, con el SQLite entero y sin metadata, es una pendiente.
+        let sano = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                personalStoreURL: makeReverseUploadFixture(dir, zpk: zpk, recordName: nil, withMetadata: false))
+        #expect(sano.reverseUploadStatus() == .pending(count: 1), "control del escenario: la fila está pendiente")
+
+        let roto = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                personalStoreURL: makeBrokenReverseFixture(dir, statements: statements))
+        #expect(roto.reverseUploadStatus() == .unreadable,
+                "sin poder mirar la fila, la muestra daba cero pendientes y la vuelta se cerraba sin iCloud")
+
+        let canaries = MetricsSpool.pending(defaults).filter { $0.e == "canary" && $0.n == "cloudReverseUploadSampleUnreadable" }
+        #expect(canaries.count == 1)
+        #expect(canaries.first?.d?.hasPrefix(reason) == true, "el motivo viaja en el canario")
+        #expect(MetricsSpool.pending(defaults).allSatisfy { $0.n != "cloudReverseUploadFailedRows" },
+                "un estructural no se cuenta como fallos por fila")
+    }
+
+    /// Los `failed` POR FILA siguen fuera de la suma (decisión del encargo: pueden ser benignos y permanentes), y dejan
+    /// el canario con el conjunto de motivos para medirlos en device. La fila `Tag` no está en `Z_PRIMARYKEY` del fixture:
+    /// `no-zent` con el mapa leído.
+    @Test("reverseUploadStatus: un failed por fila no cambia el cálculo y deja su motivo en el canario")
+    func reverseUploadStatus_perRowFailure_keepsTheOldSumAndIsMeasured() async throws {
+        let defaults = makeIsolatedDefaults(prefix: "mwe.reverse.perrow")
+        MetricsService._testReset()
+        MetricsService.start(
+            client: MetricsClient(baseURL: URL(string: "https://gw.test")!, urlSession: MetricsDown()),
+            defaults: defaults)
+        defer { MetricsService._testReset() }
+
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let tx = TransactionItem(date: fixedNow, amount: -12.5, currencyCode: "USD")
+        context.insert(tx)
+        context.insert(Tag(name: "sin-zent"))
+        try context.save()
+        let zpk = try #require(CKIdentityCapture.entityAndPK(for: tx.persistentModelID)?.zpk)
+
+        let exportada = makeReverseUploadFixture(dir, zpk: zpk, recordName: "rec-tx", withMetadata: true)
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: exportada)
+        #expect(executor.reverseUploadStatus() == .drained, "el failed por fila no cuenta: la decisión espera a medirlo")
+
+        let canaries = MetricsSpool.pending(defaults).filter { $0.e == "canary" && $0.n == "cloudReverseUploadFailedRows" }
+        #expect(canaries.map(\.d) == ["no-zent"])
+        #expect(MetricsSpool.pending(defaults).allSatisfy { $0.n != "cloudReverseUploadSampleUnreadable" })
+    }
+
+    @Test("reverseUploadFailedRowsDetail: motivos ordenados, sin cifras, dentro de 128 y nunca vacío")
+    func reverseUploadFailedRowsDetail_shape() {
+        #expect(MetricsService.reverseUploadFailedRowsDetail(reasons: ["zone-fk-missing": 2, "no-zent": 5])
+                == "no-zent|zone-fk-missing")
+        #expect(MetricsService.reverseUploadFailedRowsDetail(reasons: [:]) == "unknown")
+        let long = Dictionary(uniqueKeysWithValues: (0..<40).map { ("motivo-largo-\($0)", 1) })
+        #expect(MetricsService.reverseUploadFailedRowsDetail(reasons: long).count == 128)
+    }
+
     /// El canario de metadata huérfana. Con el `Set` vacío de antes, toda la metadata de una tabla ilegible contaba como
     /// huérfana; ahora la tabla se queda sin key y el escáner la ignora, como a una entidad no cableada.
     @Test("collectLiveByEntityName: una tabla ilegible se queda SIN key, no con un Set vacío")

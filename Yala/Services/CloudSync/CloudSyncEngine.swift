@@ -1096,6 +1096,22 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSyncReverse uploadPending count=\(count, privacy: .public) — filas sin exportar aún, retomable")
     }
 
+    /// El muestreo de la vuelta no pudo leer la metadata de CloudKit de NINGUNA fila (ticket
+    /// `reverse-upload-sample-reads-unreadable-rows-as-drained`): el SQLite no abre, faltan las tablas o columnas del
+    /// espejo, el mapa de entidades sale vacío, ningún identificador se resuelve o la consulta falla en todas. La
+    /// muestra es ilegible: ni cierra ni avanza. `reason` es un motivo fijo, `rows` cuántas filas se quedaron sin mirar.
+    static func reverseUploadSampleUnreadable(reason: String, rows: Int) {
+        logger.notice("CloudSyncReverse uploadSampleUnreadable reason=\(reason, privacy: .public) rows=\(rows, privacy: .public) — no se cierra la vuelta")
+    }
+
+    /// Filas del muestreo de la vuelta que salieron `failed` POR FILA (`no-zent`, `zone-fk-missing`…), agrupadas por
+    /// motivo. NO cuentan como pendientes: esto existe para medir en device cuáles aparecen antes de decidir si
+    /// deberían contar (ticket `reverse-upload-failed-rows-need-a-device-measurement`). Sin PII.
+    static func reverseUploadFailedRows(reasons: [String: Int]) {
+        let detail = reasons.sorted { $0.key < $1.key }.map { "\($0.key)=\($0.value)" }.joined(separator: ",")
+        logger.notice("CloudSyncReverse uploadFailedRows \(detail, privacy: .public) — fuera de la suma de pendientes")
+    }
+
     /// Techo de `reverseUpload`: cada observación de la espera, con el reloj del último avance. `advanced` = la
     /// cifra bajó de la más baja vista; `stalledSeconds` = tiempo SIN avanzar; `blocker` = por qué no drena, hasta
     /// donde se sabe. Es lo que separa «va lento» de «no avanza» al leer un diagnóstico. `pending == -1` = la muestra no
