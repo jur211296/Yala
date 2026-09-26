@@ -25,7 +25,9 @@ import Testing
 extension CloudSessionSignOut.GroupsExitWitness {
     /// Sin canal: la captura termina y el espejo no guarda nada fuera del outbox. Para las suites que miden el recuento
     /// del outbox y no el canal.
-    static var quiet: Self { Self(capture: { _ in true }, mirrorPending: { _, _ in 0 }) }
+    static var quiet: Self {
+        Self(capture: { _ in true }, mirrorPending: { _, _ in 0 }, mirrorPendingKeys: { _, _ in [] })
+    }
 }
 
 // MARK: - 1. El cliente real
@@ -310,6 +312,11 @@ struct GroupsExitGesturesCaptureTests {
             mirrorPending: { _, scope in
                 scopes?.asked.append(scope)
                 return mirror(scope)
+            },
+            // Las claves, derivadas de la misma cifra: estos tests miden el recuento, no qué entradas son.
+            mirrorPendingKeys: { _, scope in
+                let count = mirror(scope)
+                return count == Int.max ? nil : Set((0..<count).map { "k\($0)" })
             })
     }
 

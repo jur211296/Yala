@@ -336,6 +336,9 @@ final class DataWipeService {
     ///   - witness: los testigos del canal que el cinturón consulta —en concreto, lo que el espejo del App Group guarda
     ///     fuera del outbox—. Default = producción; los tests lo inyectan porque el espejo real del simulador guarda lo
     ///     que otras suites dejaron.
+    ///   - acceptedGroupsLoss: lo que la persona aceptó perder en «Empezar de cero y perderlos», tal como lo devolvió la
+    ///     subida (`CloudSessionSignOut.FreshStartGroupsDrain.lossAccepted`). `nil` —el default, y lo de todos los demás
+    ///     callers— es el cinturón de siempre: no se borra nada sin subir.
     static func wipeLocalGroupsDomain(
         in context: ModelContext,
         defaults: UserDefaults = .standard,
@@ -353,7 +356,8 @@ final class DataWipeService {
             // viva con la identidad del anterior casando. El borrado del espejo no depende de eso.
             GroupsOutboxMirror()?.purgeAll()
         },
-        witness: CloudSessionSignOut.GroupsExitWitness = .live
+        witness: CloudSessionSignOut.GroupsExitWitness = .live,
+        acceptedGroupsLoss: CloudSignOutFlowLogic.FreshStartGroupsLoss? = nil
     ) throws {
         // El seam `-uitest-fail-wipe` NO está aquí: vive en `deleteLocalGroupsRows`, el escritor que
         // esta función llama abajo (2026-09-11). Repetirlo aquí solo adelantaba el throw por delante del
@@ -394,7 +398,11 @@ final class DataWipeService {
         // callers suben primero (`CloudSessionSignOut.drainGroupsBeforeFreshStart`); esto es el cinturón dentro del
         // escritor, para que un cuarto caller no pueda volver a tirarlas. Las dead-letter (`rejectedReason != nil`) sí se
         // van: el servidor ya las rechazó para siempre, y el cierre tampoco las espera.
-        try requireNoUnsentGroupWrites(in: context, witness: witness)
+        //
+        // **Y desde el 2026-09-26, con una excepción acotada** (ticket
+        // `fresh-start-has-no-way-out-when-group-writes-can-never-upload`): las que la persona aceptó perder en el
+        // «¿seguro?» de «Empezar de cero y perderlos», por fila. Ni una más.
+        try requireNoUnsentGroupWrites(in: context, witness: witness, accepting: acceptedGroupsLoss)
         try deleteLocalGroupsRows(in: context) {
             for row in try context.fetch(FetchDescriptor<GroupSyncOutbox>()) { context.delete(row) }
         }
@@ -449,9 +457,22 @@ final class DataWipeService {
     ///
     /// La llama `wipeLocalGroupsDomain` como su primera línea, y los callers de «Empezar de cero» ANTES de
     /// `wipeAllUserData`: sin eso, una fila aparecida tras la subida dejaría borrado lo personal y los grupos enteros.
+    ///
+    /// **`accepting`: lo que la persona aceptó perder** en «Empezar de cero y perderlos» (ticket
+    /// `fresh-start-has-no-way-out-when-group-writes-can-never-upload`). Con él, pasa si lo que queda AHORA está entre lo
+    /// aceptado, por fila (`FreshStartGroupsLoss.covers`): un cambio que el aviso no enseñó —apuntado entre la subida y
+    /// aquí— lanza igual. Sin él, el cinturón de siempre.
     static func requireNoUnsentGroupWrites(
-        in context: ModelContext, witness: CloudSessionSignOut.GroupsExitWitness = .live
+        in context: ModelContext, witness: CloudSessionSignOut.GroupsExitWitness = .live,
+        accepting: CloudSignOutFlowLogic.FreshStartGroupsLoss? = nil
     ) throws {
+        if let accepting {
+            let now = CloudSessionSignOut.freshStartGroupsLoss(context: context, witness: witness)
+            guard accepting.covers(now) else {
+                throw GroupsDomainWipeError.unsentGroupWrites(pendingCount: now.count)
+            }
+            return
+        }
         let pending = CloudSessionSignOut.freshStartGroupsPendingCount(context: context, witness: witness)
         guard pending == 0 else { throw GroupsDomainWipeError.unsentGroupWrites(pendingCount: pending) }
     }

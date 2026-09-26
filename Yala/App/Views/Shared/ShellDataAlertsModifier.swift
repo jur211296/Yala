@@ -113,12 +113,13 @@ struct ShellDataAlertsModifier: ViewModifier {
             .alert(L10n.Welcome.FreshStart.alertTitle, isPresented: $showFreshStartWipeAlert) {
                 Button(L10n.Welcome.FreshStart.alertConfirm, role: .destructive) {
                     showFreshStartWipeAlert = false
-                    // **Antes de borrar nada, los cambios de grupos** (2026-09-26, ver `refuseWhileGroupsArePending`).
-                    // Sin nada pendiente el borrado sigue en ESTE tap, como siempre; con algo pendiente no se borra.
+                    // **Antes de borrar nada, los cambios de grupos** (2026-09-26). Sin nada pendiente el borrado sigue
+                    // en ESTE tap, como siempre; con algo pendiente sigue en la puerta, que los sube
+                    // (`continueInTheGateWhileGroupsArePending`).
                     if CloudSessionSignOut.shared.groupsOutboxIsSettledEmpty(context: modelContext) {
                         performFreshStartWipe()
                     } else {
-                        refuseWhileGroupsArePending()
+                        continueInTheGateWhileGroupsArePending()
                     }
                 }
                 // Cancel: **se REABRE el Welcome en el Chooser**, que es de donde vino el usuario.
@@ -183,6 +184,32 @@ struct ShellDataAlertsModifier: ViewModifier {
             }
     }
 
+    /// **«Borrar todo y continuar» con cambios de grupos pendientes: el borrado sigue en la puerta privada del Welcome**
+    /// (ticket `fresh-start-has-no-way-out-when-group-writes-can-never-upload`), directa en su borrado del teléfono
+    /// (`WelcomeFlowStep.freshStartDeviceWipe`). Allí se suben, se enseña el motivo si no suben y, con los motivos que
+    /// esperar no arregla, se ofrece perderlos con su «¿seguro?».
+    ///
+    /// **Por qué no aquí**: este alert no puede subirlos (ver `refuseWhileGroupsArePending`), así que nunca conocía el
+    /// motivo y siempre decía «inténtalo en un rato». En un iPhone heredado, con la sesión del dueño anterior ya borrada,
+    /// ese texto era una trampa: no iban a subir nunca, y la única salida era desinstalar.
+    ///
+    /// **Reabrir el cover en el mismo tap es el molde de «Cancelar»**, unas líneas más arriba: presentar este alert
+    /// desmontó el Welcome, y lo único que deja algo montado debajo es volver a encenderlo. No es una presentación nueva
+    /// sobre el anchor: es el mismo cover, ya en la matriz de readiness (`welcomeFlow`).
+    ///
+    /// Con el onboarding ya completo el Welcome no estaba montado (la guarda de «Cancelar»): ahí se sigue negando en el
+    /// sitio, como hasta ahora.
+    private func continueInTheGateWhileGroupsArePending() {
+        guard !hasCompletedOnboarding else {
+            refuseWhileGroupsArePending()
+            return
+        }
+        // El permiso de un uso que la puerta exige para borrar al montarse: lo da este tap, que es el que confirmó.
+        WelcomePrivateICloudGateView.armDeviceWipeHandoff()
+        welcomeFlowInitialStep = .freshStartDeviceWipe
+        showWelcomeFlow = true
+    }
+
     /// «Borrar todo y continuar» con cambios de grupos pendientes: **no se borra nada** (ticket
     /// `fresh-start-wipe-kills-unsent-group-writes-silently`). `wipeLocalGroupsDomain` se lleva el outbox, y quien pulsa
     /// aquí puede ser la persona que apuntó esos gastos. El aviso de fallo dice cuántos quedan, y su «OK» devuelve al
@@ -237,8 +264,8 @@ struct ShellDataAlertsModifier: ViewModifier {
             showOnboarding = true
         } catch is DataWipeService.GroupsDomainWipeError {
             // El cinturón saltó ANTES del primer borrado: no se tocó nada. Lo que hay que decir es «faltan cambios de
-            // grupos», no «no pudimos borrar tus datos».
-            refuseWhileGroupsArePending()
+            // grupos», no «no pudimos borrar tus datos», y el sitio donde decirlo es la puerta, que puede subirlos.
+            continueInTheGateWhileGroupsArePending()
         } catch {
             // Canario FUERA de `#if DEBUG` a propósito: este fallo era invisible en
             // producción. Sin PII — el detalle es de qué alert vino.

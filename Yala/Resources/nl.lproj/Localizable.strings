@@ -5435,6 +5435,14 @@
 "groups.freshStartPending.title" = "Er moeten nog groepswijzigingen worden geüpload";
 "groups.freshStartPending.lead" = "We hebben niets gewist: sommige wijzigingen in je groepen hebben onze server nog niet bereikt (%d), en opnieuw beginnen zou ze meenemen.";
 "groups.freshStartPending.leadUnknown" = "We hebben niets gewist: sommige wijzigingen in je groepen hebben onze server nog niet bereikt, en opnieuw beginnen zou ze meenemen.";
+"groups.freshStartPending.lossSessionExpired" = "Ze kunnen alleen worden geüpload met het account dat ze heeft gemaakt, en de sessie daarvan staat niet meer op deze telefoon. Als je niet opnieuw inlogt met dat account, kun je opnieuw beginnen en ze verliezen: niemand in de groep zal ze zien.";
+"groups.freshStartPending.lossPermanent" = "Het account dat ze heeft gemaakt kan ze niet meer uploaden, en opnieuw proberen lost dat niet op. Je kunt opnieuw beginnen en ze verliezen: niemand in de groep zal ze zien.";
+"groups.freshStartPending.lossAttest" = "Deze telefoon komt al meer dan een dag niet door de beveiligingscontrole die onze server vereist, dus ze kunnen niet worden geüpload. Je kunt opnieuw beginnen en ze verliezen: niemand in de groep zal ze zien.";
+"groups.freshStartPending.lossAction" = "Opnieuw beginnen en ze verliezen";
+"groups.freshStartPending.lossConfirmTitle" = "Deze wijzigingen verliezen?";
+"groups.freshStartPending.lossConfirmBody" = "Groepswijzigingen die verloren gaan: %d. Ze worden van deze telefoon gewist zonder de server te bereiken, niemand in de groep zal ze zien en ze kunnen niet worden hersteld.";
+"groups.freshStartPending.lossConfirmBodyUnknown" = "De groepswijzigingen die de server niet hebben bereikt, worden van deze telefoon gewist. Niemand in de groep zal ze zien en ze kunnen niet worden hersteld.";
+"groups.freshStartPending.lossConfirmAction" = "Ze verliezen en opnieuw beginnen";
 
 /* Título del aviso cuando Restaurar compras no encuentra Yala Pro */
 "subscription.restoreEmptyTitle" = "Geen abonnement";

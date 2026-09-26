@@ -718,6 +718,82 @@ nonisolated enum CloudSignOutFlowLogic {
         livePendingCount == 0 && sessionMirrorCount == 0 ? .sessionExpired : .uploadRetryLater
     }
 
+    // MARK: - «Empezar de cero y perderlos» (ticket `fresh-start-has-no-way-out-when-group-writes-can-never-upload`)
+
+    /// **¿Este bloqueo de «Empezar de cero» ofrece perder los cambios de grupos?** Solo con los motivos que esperar no
+    /// arregla (decisión de Jürgen del 2026-09-26):
+    ///  · `.sessionExpired` — solo suben con la cuenta que los apuntó, y su sesión ya no está. En un iPhone heredado esa
+    ///    cuenta ni siquiera es de quien empieza de cero.
+    ///  · `.permanent` — la cuenta no está disponible, o no hay motor.
+    ///  · `.attestUnavailable` — el teléfono lleva más de un día sin App Attest. Es el molde: el cierre de sesión ya ofrece
+    ///    «Cerrar sesión y perderlos» con este motivo.
+    ///
+    /// **Con cualquier otro, no.** `.channelPaused` se levanta con un deploy, y lo pasajero —`.uploadRetryLater`,
+    /// `.transient`— se cura con otro intento: ofrecer perderlos ahí sería cambiar cambios que van a subir por una salida
+    /// más rápida. Los motivos que este gesto no produce (los del cierre personal, los del desasociar) tampoco.
+    ///
+    /// `switch` exhaustivo y sin `default`: un motivo nuevo tiene que decidir aquí si deja perder cambios de otras personas.
+    static func freshStartOffersGroupsLossExit(_ reason: BlockReason) -> Bool {
+        switch reason {
+        case .sessionExpired, .permanent, .attestUnavailable:
+            return true
+        case .transient, .exportUnconfirmed, .bridgeUnreadable, .detachBusy, .channelPaused, .uploadRetryLater,
+             .personalAttestUnavailable, .syncStoppedNeedsUpdate, .syncStoppedMidMigration, .syncStoppedNeedsRelaunch,
+             .personalUploadRetryLater, .cloudSessionExpired, .sessionNotClosed:
+            return false
+        }
+    }
+
+    /// **Lo que «Empezar de cero» se llevaría de grupos, por fila.** El borrado purga el outbox y el espejo del App Group,
+    /// así que cuentan las dos cosas: las filas VIVAS del outbox por su `clientMutationID`, y las entradas del espejo sin
+    /// fila por su clave `(syncID, hlc, op)`. `nil` en cualquiera de las dos = no se pudo leer.
+    ///
+    /// Es la instantánea que enseña el aviso y lo que la persona acepta perder. **Por fila y no por cifra**, por lo mismo
+    /// que `LossAcceptance`: con la cifra, aceptar 2 cambios cubría cualquier par, y uno apuntado después se iba sin aviso.
+    struct FreshStartGroupsLoss: Equatable {
+        let rows: Set<UUID>?
+        let mirrorKeys: Set<String>?
+
+        /// La cifra del aviso: `Int.max` si alguna mitad no se pudo leer, el «no se pudo contar» del repo
+        /// (`shownLossCount`).
+        var count: Int {
+            guard let rows, let mirrorKeys else { return .max }
+            return rows.count + mirrorKeys.count
+        }
+
+        var isEmpty: Bool { rows?.isEmpty == true && mirrorKeys?.isEmpty == true }
+
+        /// ¿Aceptar ESTO cubre lo que hay AHORA? Cada mitad por separado: lo de ahora tiene que estar entre lo aceptado.
+        /// Una mitad aceptada sin leer (`nil`, el aviso salió sin cifra) cubre cualquiera, como `LossAcceptance.uncounted`;
+        /// una mitad de ahora que no se pudo leer solo la cubre eso.
+        func covers(_ now: FreshStartGroupsLoss) -> Bool {
+            Self.covers(accepted: rows, now: now.rows) && Self.covers(accepted: mirrorKeys, now: now.mirrorKeys)
+        }
+
+        private static func covers<T: Hashable>(accepted: Set<T>?, now: Set<T>?) -> Bool {
+            if let now, now.isEmpty { return true }
+            guard let accepted else { return true }
+            guard let now else { return false }
+            return now.isSubset(of: accepted)
+        }
+    }
+
+    /// **¿Puede «Empezar de cero» borrar con estos cambios sin subir?** Solo si la subida de ESTE intento acaba de
+    /// bloquear con un motivo que ofrece la salida **y** lo que queda está entre lo que la persona aceptó perder. Con otro
+    /// motivo —el attest volvió y ahora falla la red, por ejemplo— se llevaría cambios que otro intento subiría: vuelve el
+    /// aviso. Es `continuesAfterBlockedUpload`, con los tres motivos de este gesto y las dos mitades que borra.
+    /// **Qué dice «Empezar de cero» cuando la captura previa no terminó** justo antes de ofrecer perder los cambios
+    /// (`CloudSessionSignOut.settleFreshStartBlock`). Es el motivo de `groupsCaptureVerdict` para lo mismo —un drain o una
+    /// rehidratación que otro intento cura— y no ofrece la salida: la persona no puede aceptar perder lo que el aviso no
+    /// cuenta. Vive aquí y no escrito a mano en el coordinador, donde `.uploadRetryLater` lo decide el testigo del ciclo.
+    static let freshStartUncapturedReason: BlockReason = .uploadRetryLater
+
+    static func freshStartContinuesDiscarding(reason: BlockReason, now: FreshStartGroupsLoss,
+                                              accepted: FreshStartGroupsLoss?) -> Bool {
+        guard let accepted, freshStartOffersGroupsLossExit(reason) else { return false }
+        return accepted.covers(now)
+    }
+
     /// Por qué el candado del motor (`CloudSyncRuntime.canRunDomain()`) está cerrado, dicho como el motivo que el cierre
     /// enseña. **Se clasifica por lo que enseña «Dónde viven tus datos» en ese mismo estado**, porque es ahí adonde manda
     /// el aviso (`CloudMigrationUIStateDeriver.derive`):

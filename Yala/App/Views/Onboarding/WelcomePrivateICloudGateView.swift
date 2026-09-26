@@ -103,6 +103,37 @@ struct WelcomePrivateICloudGateView: View {
         case returnWithoutClaimingAWipe
     }
 
+    /// **Por dónde entra la puerta.** `.measure`, el de siempre, le pregunta a iCloud y decide.
+    ///
+    /// `.wipeDevice` va directo al borrado del teléfono, y lo usa un solo sitio: el «Borrar todo y continuar» del shell
+    /// cuando quedan cambios de grupos sin subir (ticket `fresh-start-has-no-way-out-when-group-writes-can-never-upload`).
+    /// Aquel alert no puede subirlos —no queda nada montado donde enseñar una subida—, así que nunca conocía el motivo y
+    /// siempre decía «inténtalo en un rato», también a quien no iba a poder subirlos nunca. Esta puerta sube, enseña el
+    /// motivo y, si esperar no lo arregla, ofrece perderlos. La persona ya confirmó el borrado en ese alert: aquí no se le
+    /// vuelve a preguntar.
+    var entry: Entry = .measure
+
+    enum Entry: Equatable {
+        case measure
+        case wipeDevice
+    }
+
+    /// **La entrada `.wipeDevice` borra con solo montarse, así que exige un permiso de UN solo uso** (review adversarial
+    /// del 2026-09-26). Lo da el alert del shell en el mismo tap que confirma el borrado
+    /// (`armDeviceWipeHandoff`) y lo gasta la primera vuelta de la fase. Sin él, cualquier camino futuro que reabriera
+    /// el Welcome sin reescribir el paso inicial —se queda en `.freshStartDeviceWipe`— borraría sin preguntar. En memoria
+    /// a propósito: un relanzamiento no hereda un «sí».
+    private static var deviceWipeHandoffArmed = false
+
+    /// El alert del shell confirmó «Borrar todo y continuar» con cambios de grupos pendientes: la puerta puede borrar una vez.
+    static func armDeviceWipeHandoff() { deviceWipeHandoffArmed = true }
+
+    /// Gasta el permiso. `false` = nadie confirmó este borrado: la puerta no borra y vuelve atrás.
+    static func consumeDeviceWipeHandoff() -> Bool {
+        defer { deviceWipeHandoffArmed = false }
+        return deviceWipeHandoffArmed
+    }
+
     @State private var phase: Phase = .checking
 
     private enum Phase: Equatable {
@@ -135,6 +166,10 @@ struct WelcomePrivateICloudGateView: View {
         /// dentro cuántos y por qué, y a qué borrado vuelve «Reintentar»: el dato viaja en el case, no en un `@State` al
         /// lado (misma razón que las cuatro de arriba).
         case groupsPending(CloudSessionSignOut.FreshStartGroupsBlock, retry: GroupsPendingRetry)
+        /// **El «¿seguro?» de «Empezar de cero y perderlos»** (ticket
+        /// `fresh-start-has-no-way-out-when-group-writes-can-never-upload`). Solo se llega desde un `.groupsPending` cuyo
+        /// motivo ofrece la salida, y lleva dentro el mismo bloqueo y el mismo borrado para volver a él sin re-medir.
+        case confirmingGroupsLoss(CloudSessionSignOut.FreshStartGroupsBlock, retry: GroupsPendingRetry)
     }
 
     /// Qué borrado se paró en los cambios de grupos, y por tanto cuál repite «Reintentar».
@@ -192,8 +227,14 @@ struct WelcomePrivateICloudGateView: View {
     private var content: some View {
         switch phase {
         case .checking:
-            progressContent(text: L10n.Welcome.PrivateICloud.checking,
-                            identifier: "welcome_private_icloud_checking")
+            // Con `.wipeDevice` esta fase solo dura el instante de arrancar el borrado: se dice lo que va a pasar.
+            if entry == .wipeDevice {
+                progressContent(text: L10n.Welcome.PrivateICloud.wiping,
+                                identifier: "welcome_private_icloud_wiping_device")
+            } else {
+                progressContent(text: L10n.Welcome.PrivateICloud.checking,
+                                identifier: "welcome_private_icloud_checking")
+            }
         case .wiping:
             progressContent(text: L10n.Welcome.PrivateICloud.wiping,
                             identifier: "welcome_private_icloud_wiping")
@@ -283,10 +324,14 @@ struct WelcomePrivateICloudGateView: View {
                 identifier: "welcome_private_icloud_wipe_failed_device",
                 primaryAction: { phase = .wipingDevice(iCloudUnverified: unverified) },
                 secondaryAction: leaveGate)
+        case .groupsPending(let block, let retry) where block.offersLossExit:
+            groupsLossOfferContent(block, retry: retry)
+        case .confirmingGroupsLoss(let block, let retry):
+            groupsLossConfirmContent(block, retry: retry)
         case .groupsPending(let block, let retry):
             // Mismo molde que los dos fallos de arriba —reintentar o irse—, con el texto que dice lo que pasó de
-            // verdad: no se borró nada porque quedan cambios de grupos, cuántos, y qué hacer según el motivo. Sin
-            // salida «perderlos»: ver `CloudSessionSignOut.drainGroupsBeforeFreshStart`.
+            // verdad: no se borró nada porque quedan cambios de grupos, cuántos, y qué hacer según el motivo. Con un
+            // motivo que se cura esperando no hay salida «perderlos» (`CloudSignOutFlowLogic.freshStartOffersGroupsLossExit`).
             twoWayNoticeContent(
                 icon: "exclamationmark.triangle",
                 title: L10n.Groups.FreshStartPending.title,
@@ -294,13 +339,60 @@ struct WelcomePrivateICloudGateView: View {
                 primary: L10n.Welcome.PrivateICloud.wipeRetry,
                 secondary: L10n.Welcome.PrivateICloud.wipeFailedBack,
                 identifier: "welcome_private_icloud_groups_pending",
-                primaryAction: {
-                    switch retry {
-                    case .iCloud: phase = .wiping
-                    case .device(let unverified): phase = .wipingDevice(iCloudUnverified: unverified)
-                    }
-                },
+                primaryAction: { phase = Self.wipePhase(for: retry) },
                 secondaryAction: leaveGate)
+        }
+    }
+
+    /// **Faltan cambios de grupos y esperar no los va a subir**: la salida «perderlos» (ticket
+    /// `fresh-start-has-no-way-out-when-group-writes-can-never-upload`). Dos salidas, la que no destruye arriba —el orden
+    /// de `foundDeviceContent`—: irse, que no borra nada, o ir al «¿seguro?». **Sin «Volver a intentarlo»**: con estos
+    /// motivos un reintento no cambia nada, y el «¿seguro?» ya vuelve a subir antes de perder nada.
+    private func groupsLossOfferContent(_ block: CloudSessionSignOut.FreshStartGroupsBlock,
+                                        retry: GroupsPendingRetry) -> some View {
+        noticeShell(icon: "exclamationmark.triangle",
+                    title: L10n.Groups.FreshStartPending.title,
+                    body: SignOutBlockedCopy.freshStartGroupsPendingMessage(block),
+                    identifier: "welcome_private_icloud_groups_pending") {
+            VStack(spacing: DS.Spacing.sm) {
+                YalaPrimaryButton(L10n.Welcome.PrivateICloud.wipeFailedBack) { leaveGate() }
+                    .accessibilityIdentifier("welcome_private_icloud_groups_pending_back")
+                destructiveButton(L10n.Groups.FreshStartPending.lossAction,
+                                  identifier: "welcome_private_icloud_groups_pending_lose") {
+                    phase = .confirmingGroupsLoss(block, retry: retry)
+                }
+            }
+        }
+    }
+
+    /// **El «¿seguro?»**: cuántos se pierden y que no hay vuelta. «Mejor no» vuelve al aviso sin tocar nada; el botón
+    /// destructivo es el ÚNICO de todo el gesto que acepta la pérdida (`CloudSessionSignOut.acceptFreshStartGroupsLoss`) y
+    /// relanza el mismo borrado, que vuelve a subir antes de perder nada.
+    private func groupsLossConfirmContent(_ block: CloudSessionSignOut.FreshStartGroupsBlock,
+                                          retry: GroupsPendingRetry) -> some View {
+        noticeShell(icon: "trash",
+                    title: L10n.Groups.FreshStartPending.lossConfirmTitle,
+                    body: SignOutBlockedCopy.freshStartGroupsLossConfirmMessage(block),
+                    identifier: "welcome_private_icloud_groups_loss_confirm") {
+            VStack(spacing: DS.Spacing.sm) {
+                YalaPrimaryButton(L10n.Welcome.PrivateICloud.wipeConfirmKeep) {
+                    phase = .groupsPending(block, retry: retry)
+                }
+                .accessibilityIdentifier("welcome_private_icloud_groups_loss_keep")
+                destructiveButton(L10n.Groups.FreshStartPending.lossConfirmAction,
+                                  identifier: "welcome_private_icloud_groups_loss_confirm_lose") {
+                    CloudSessionSignOut.shared.acceptFreshStartGroupsLoss()
+                    phase = Self.wipePhase(for: retry)
+                }
+            }
+        }
+    }
+
+    /// La fase que repite el borrado que se paró en los cambios de grupos.
+    private static func wipePhase(for retry: GroupsPendingRetry) -> Phase {
+        switch retry {
+        case .iCloud: return .wiping
+        case .device(let unverified): return .wipingDevice(iCloudUnverified: unverified)
         }
     }
 
@@ -714,10 +806,13 @@ struct WelcomePrivateICloudGateView: View {
         return false
     }
 
-    /// El borrado se paró en los cambios de grupos: tampoco borró nada, así que irse retira el arm por la misma razón.
+    /// El borrado se paró en los cambios de grupos: tampoco borró nada, así que irse retira el arm por la misma razón. Su
+    /// «¿seguro?» también: se sale por el chevron sin haber aceptado nada.
     private var isGroupsPending: Bool {
-        if case .groupsPending = phase { return true }
-        return false
+        switch phase {
+        case .groupsPending, .confirmingGroupsLoss: return true
+        default: return false
+        }
     }
 
     /// La fase de «faltan cambios de grupos», si el fallo fue ése. `nil` para cualquier otro: entonces manda el fallo de
@@ -731,6 +826,19 @@ struct WelcomePrivateICloudGateView: View {
     /// El trabajo de cada fase. Lo llama `.task(id: phase)`, así que la cancelación es real.
     private func runPhase() async {
         switch phase {
+        case .checking where entry == .wipeDevice:
+            // El alert del shell ya confirmó el borrado: se va directo a él, sin preguntarle nada a iCloud. Solo con su
+            // permiso de un uso; sin él no se borra nada y se vuelve atrás.
+            guard Self.consumeDeviceWipeHandoff() else {
+                onBack()
+                return
+            }
+            // **`iCloudUnverified` sale del testigo que dejó la puerta, no de un literal.** Al alert del shell se llega
+            // tras la puerta por `.measure`: si iCloud no contestó, esa puerta ya escribió el testigo del espejo tardío
+            // (`continueWithoutValidating`), y la salida de este borrado tiene que volver a dejarlo; si contestó, no.
+            // Clavarlo a `false` perdía el aviso del espejo tardío de quien no pudo validar.
+            let unverified = StorageModePersistence.privateChoseWithoutICloud()
+            phase = .wipingDevice(iCloudUnverified: unverified)
         case .checking: await measure()
         case .wiping: await wipe()
         case .wipingDevice(let unverified): await wipeDevice(iCloudUnverified: unverified)

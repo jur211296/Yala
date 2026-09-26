@@ -809,14 +809,44 @@ final class GroupsSyncClient {
     static func mirrorEntriesMissingFromOutbox(
         mirror: GroupsOutboxMirror?, ownerID: String?, scope: MirrorPendingScope, context: ModelContext
     ) -> Int {
-        guard let mirror else { return 0 }
+        mirrorEntryKeysMissingFromOutbox(mirror: mirror, ownerID: ownerID, scope: scope, context: context)
+            .map(\.count) ?? Int.max
+    }
+
+    /// **Las mismas entradas que cuenta `mirrorEntriesMissingFromOutbox`, por su clave `(syncID, hlc, op)`** (ticket
+    /// `fresh-start-has-no-way-out-when-group-writes-can-never-upload`). Es lo que «Empezar de cero y perderlos» enseña y
+    /// lo que la persona acepta perder: el borrado purga el espejo entero, y aceptar una cifra cubriría cualquier entrada
+    /// que llegase después. `nil` si el outbox no se pudo leer. Un solo filtro para las dos: si divergieran, el aviso
+    /// contaría una cosa y el borrado se llevaría otra.
+    func mirrorEntryKeysMissingFromOutbox(context: ModelContext, scope: MirrorPendingScope) -> Set<String>? {
+        Self.mirrorEntryKeysMissingFromOutbox(
+            mirror: outboxMirror, ownerID: currentUserIDProvider(), scope: scope, context: context)
+    }
+
+    /// El cuerpo de `mirrorEntryKeysMissingFromOutbox`, con el espejo y la identidad inyectados para poder medirlo.
+    ///
+    /// **La cifra es la de entradas y la clave es un conjunto**: dos entradas con la misma clave cuentan dos en
+    /// `mirrorEntriesMissingFromOutbox` y una aquí. Se conserva así a propósito —el recuento es el que ya usaban el cierre y
+    /// el cinturón—, y no importa para lo aceptado: la rehidratación deduplica por esa clave, así que es un solo cambio.
+    static func mirrorEntryKeysMissingFromOutbox(
+        mirror: GroupsOutboxMirror?, ownerID: String?, scope: MirrorPendingScope, context: ModelContext
+    ) -> Set<String>? {
+        mirrorEntriesMissingFromOutboxList(mirror: mirror, ownerID: ownerID, scope: scope, context: context)
+            .map { Set($0.map(\.key)) }
+    }
+
+    /// El filtro compartido: las entradas del espejo sin fila, cada una con su clave. `nil` si el outbox no se pudo leer.
+    private static func mirrorEntriesMissingFromOutboxList(
+        mirror: GroupsOutboxMirror?, ownerID: String?, scope: MirrorPendingScope, context: ModelContext
+    ) -> [(entry: GroupsOutboxMirrorEntry, key: String)]? {
+        guard let mirror else { return [] }
         let entries: [GroupsOutboxMirrorEntry]
         switch (ownerID, scope) {
         case (let owner?, _): entries = mirror.entriesForUser(owner)
-        case (nil, .sessionOwner): return 0
+        case (nil, .sessionOwner): return []
         case (nil, .sessionOwnerOrEveryoneWhenSignedOut): entries = mirror.allEntries()
         }
-        guard !entries.isEmpty else { return 0 }
+        guard !entries.isEmpty else { return [] }
         let keys: Set<String>
         do {
             keys = try outboxKeys(context)
@@ -824,13 +854,14 @@ final class GroupsSyncClient {
             #if DEBUG
             print("GroupsSyncClient: Error leyendo el outbox para contar el espejo: \(error)")
             #endif
-            return Int.max
+            return nil
         }
-        return entries.filter { entry in
-            guard let op = SyncOutboxOp(rawValue: entry.op) else { return false }
-            if entry.entityType == GroupSyncEntityType.splitGroup, op == .tombstone { return false }
-            return !keys.contains(dedupKey(syncID: entry.syncID, hlc: entry.hlc, op: op))
-        }.count
+        return entries.compactMap { entry in
+            guard let op = SyncOutboxOp(rawValue: entry.op) else { return nil }
+            if entry.entityType == GroupSyncEntityType.splitGroup, op == .tombstone { return nil }
+            let key = dedupKey(syncID: entry.syncID, hlc: entry.hlc, op: op)
+            return keys.contains(key) ? nil : (entry, key)
+        }
     }
 
     /// ¿Pertenece la transacción al store de GRUPOS? Toda transacción de ese store cambia al menos una de

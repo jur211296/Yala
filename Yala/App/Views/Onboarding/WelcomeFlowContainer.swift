@@ -48,6 +48,12 @@ enum WelcomeFlowStep: Equatable {
     /// nadie vea una pantalla de reinicio** (ADR §9). Es un step y no un alert por las mismas razones que
     /// `.groupsGate`, más una medida: un `.alert` del anchor de `ContentView` desmonta este cover entero.
     case privateICloudGate
+    /// **La misma puerta, directa al borrado del teléfono** (ticket
+    /// `fresh-start-has-no-way-out-when-group-writes-can-never-upload`). La abre el «Borrar todo y continuar» del shell
+    /// cuando quedan cambios de grupos sin subir: aquel alert ya confirmó el borrado, pero no puede subirlos ni enseñar por
+    /// qué no suben, y esta puerta sí —con la salida «perderlos» cuando esperar no lo arregla—. No le pregunta nada a
+    /// iCloud (`WelcomePrivateICloudGateView.Entry.wipeDevice`).
+    case freshStartDeviceWipe
     /// R2 · TERMINAL: este proceso montó el store NEUTRO y el destino elegido necesita el mirror de
     /// CloudKit ⇒ hay que reabrir la app. Vive DENTRO de este cover a propósito: un cover propio sería una
     /// presentación nueva colgando del anchor de `ContentView` (matriz de readiness, regla (3) de
@@ -285,6 +291,32 @@ struct WelcomeFlowContainer: View {
                     // camino muerto: las otras dos ramas del chooser también necesitan red. El testigo
                     // aplaza la validación al primer arranque en que se pueda hacer.
                     unverifiedExit: .proceedWatchingTheMirror
+                )
+                .transition(.opacity)
+            case .freshStartDeviceWipe:
+                WelcomePrivateICloudGateView(
+                    // Borrado y subida hechos: sigue por el mismo portal que la puerta, que vuelve a mirar si hay datos y
+                    // ya no los hay.
+                    onProceed: {
+                        leaveWelcome(to: .privateOnboarding) { onSelectPrivateAccount() }
+                    },
+                    // Inalcanzable: `.wipeDevice` no mide iCloud, así que nunca enseña «traer mis datos». Se cablea al
+                    // mismo sitio que la puerta para no dejar un closure vacío que un cambio futuro volvería alcanzable.
+                    onRestore: {
+                        StorageModePersistence.clearICloudCorpusWipeArm()
+                        handleExistingOption(.restoreICloud)
+                    },
+                    onBack: { goTo(newBranchOriginStep) },
+                    // Re-envuelto y no reenviado, como `deviceCorpus`: pasar la property directa avisa (`may introduce
+                    // data races`). La entrada `.wipeDevice` no llega a usarlo: no mide iCloud.
+                    performWipe: { await performICloudCorpusWipe() },
+                    // **Con el corpus del teléfono SIEMPRE**, y no con `deviceCorpusGate`, que lo pide solo con el mount
+                    // neutro: aquí el borrado ya se decidió en el alert del shell, que es el camino del mount que espeja.
+                    // El borrado es `performDeviceCorpusWipe`, el mismo del alert más la espera del import y la subida.
+                    deviceCorpus: .init(hasData: { hasLocalDataNow() },
+                                        wipe: { await performDeviceCorpusWipe() }),
+                    unverifiedExit: .proceedWatchingTheMirror,
+                    entry: .wipeDevice
                 )
                 .transition(.opacity)
             case .mirrorRelaunch:

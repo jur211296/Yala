@@ -108,10 +108,40 @@ enum SignOutBlockedCopy {
     /// se habría llevado—, y detrás el motivo de la subida con el MISMO texto que el cierre de sesión: el hecho es el mismo
     /// y lo que puede hacer la persona también. Lo pintan las tres pantallas del gesto: la puerta privada del Welcome, el
     /// aviso del espejo tardío y el alert del shell.
+    ///
+    /// **Con los motivos que esperar no arregla, el texto de detrás es otro** (ticket
+    /// `fresh-start-has-no-way-out-when-group-writes-can-never-upload`): dice por qué no van a subir y ofrece perderlos, que
+    /// es lo que el botón de al lado hace. Con `.sessionExpired` ya no pide «vuelve a iniciar sesión»: en un iPhone heredado
+    /// la cuenta que los apuntó no es de quien empieza de cero.
     static func freshStartGroupsPendingMessage(_ block: CloudSessionSignOut.FreshStartGroupsBlock) -> String {
         let lead = CloudSignOutFlowLogic.shownLossCount(block.pendingCount)
             .map { L10n.Groups.FreshStartPending.lead($0) } ?? L10n.Groups.FreshStartPending.leadUnknown
-        return lead + " " + message(for: block.reason)
+        return lead + " " + freshStartReasonText(block)
+    }
+
+    /// Lo que va detrás de la cifra. Los tres motivos que ofrecen perderlos tienen el suyo; el resto, el del cierre de
+    /// sesión. Exhaustivo y sin `default`, como todo este fichero; y un test recorre `BlockReason.allCases` comprobando que
+    /// todo motivo que ofrece la salida (`CloudSignOutFlowLogic.freshStartOffersGroupsLossExit`) tiene aquí su texto.
+    private static func freshStartReasonText(_ block: CloudSessionSignOut.FreshStartGroupsBlock) -> String {
+        guard block.offersLossExit else { return message(for: block.reason) }
+        switch block.reason {
+        case .sessionExpired: return L10n.Groups.FreshStartPending.lossSessionExpired
+        case .permanent: return L10n.Groups.FreshStartPending.lossPermanent
+        case .attestUnavailable: return L10n.Groups.FreshStartPending.lossAttest
+        case .transient, .exportUnconfirmed, .bridgeUnreadable, .detachBusy, .channelPaused, .uploadRetryLater,
+             .personalAttestUnavailable, .syncStoppedNeedsUpdate, .syncStoppedMidMigration, .syncStoppedNeedsRelaunch,
+             .personalUploadRetryLater, .cloudSessionExpired, .sessionNotClosed:
+            return message(for: block.reason)
+        }
+    }
+
+    /// **El «¿seguro?» de «Empezar de cero y perderlos»**: cuántos cambios se pierden y que no hay vuelta. La cifra es la
+    /// del aviso —lo que la persona acepta—, o ninguna si no hay número honesto.
+    static func freshStartGroupsLossConfirmMessage(_ block: CloudSessionSignOut.FreshStartGroupsBlock) -> String {
+        guard let count = CloudSignOutFlowLogic.shownLossCount(block.pendingCount) else {
+            return L10n.Groups.FreshStartPending.lossConfirmBodyUnknown
+        }
+        return L10n.Groups.FreshStartPending.lossConfirmBody(count)
     }
 
     /// El mensaje del aviso que OFRECE exportar los movimientos y cerrar sesión perdiendo los cambios personales

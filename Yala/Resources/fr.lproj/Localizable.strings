@@ -5424,6 +5424,14 @@
 "groups.freshStartPending.title" = "Des modifications de groupe restent à envoyer";
 "groups.freshStartPending.lead" = "On n'a rien effacé : des modifications de tes groupes ne sont pas encore arrivées sur notre serveur (%d), et repartir de zéro les emporterait.";
 "groups.freshStartPending.leadUnknown" = "On n'a rien effacé : des modifications de tes groupes ne sont pas encore arrivées sur notre serveur, et repartir de zéro les emporterait.";
+"groups.freshStartPending.lossSessionExpired" = "Elles ne peuvent être envoyées qu'avec le compte qui les a créées, et sa session n'est plus sur ce téléphone. Si tu ne vas pas te reconnecter avec ce compte, tu peux repartir de zéro et les perdre : personne dans le groupe ne les verra.";
+"groups.freshStartPending.lossPermanent" = "Le compte qui les a créées ne peut plus les envoyer, et réessayer n'y changera rien. Tu peux repartir de zéro et les perdre : personne dans le groupe ne les verra.";
+"groups.freshStartPending.lossAttest" = "Depuis plus d'un jour, ce téléphone n'arrive pas à passer la vérification de sécurité demandée par notre serveur, donc elles ne peuvent pas être envoyées. Tu peux repartir de zéro et les perdre : personne dans le groupe ne les verra.";
+"groups.freshStartPending.lossAction" = "Repartir de zéro et les perdre";
+"groups.freshStartPending.lossConfirmTitle" = "Perdre ces modifications ?";
+"groups.freshStartPending.lossConfirmBody" = "Modifications de groupe perdues : %d. Elles sont effacées de ce téléphone sans arriver au serveur, personne dans le groupe ne les verra et elles ne pourront pas être récupérées.";
+"groups.freshStartPending.lossConfirmBodyUnknown" = "Les modifications de groupe qui ne sont pas arrivées au serveur sont effacées de ce téléphone. Personne dans le groupe ne les verra et elles ne pourront pas être récupérées.";
+"groups.freshStartPending.lossConfirmAction" = "Les perdre et repartir de zéro";
 
 /* Título del aviso cuando Restaurar compras no encuentra Yala Pro */
 "subscription.restoreEmptyTitle" = "Aucun abonnement";
