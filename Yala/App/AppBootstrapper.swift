@@ -682,7 +682,9 @@ final class AppBootstrapper {
         // compartido invalida el token del mirror personal de NSPersistentCloudKitContainer (y el del
         // CKSyncEngine de Grupos) en un device con datos reales. Lo corre el OWNER con el launch arg
         // EXACTO `-spike-s2-purge-history` (guion en el vault). Engine efímero: solo necesita el
-        // helper + el corte seguro (outbox vacío en `.icloud` hoy → corte = now).
+        // helper + el corte seguro. **Desde el 2026-09-26 la purga corta en el ancla del drain personal
+        // (`SyncCursor.lastDrainedTxAt`) y sin ancla no purga**: en `.icloud` no hay drain que la deje, así
+        // que este spike sale `purged=0` sin haber purgado. Para volver a medirlo hace falta un cursor con ancla.
         if ProcessInfo.processInfo.arguments.contains("-spike-s2-purge-history") {
             let spikeEngine = CloudSyncEngine()
             let purged = spikeEngine.purgeHistoryOnce(context: context)

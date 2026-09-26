@@ -646,6 +646,36 @@ nonisolated enum CloudSignOutFlowLogic {
         return .drained
     }
 
+    /// **¿Queda algo personal fuera del outbox?** El veredicto del push-all personal CON motor, releído con la sonda del
+    /// History (`CloudSyncRuntime.hasUncapturedPersonalChanges`) — ticket
+    /// `personal-sign-out-reads-an-unfinished-drain-as-nothing-pending`, gemelo de `groupsCaptureVerdict`.
+    ///
+    /// El outbox a 0 tras un ciclo no prueba que no quede nada: el drain del ciclo no viaja en su outcome, y uno que aborta
+    /// (una lectura o un `save` que falla) hace `rollback()` y deja la edición solo en el History. El borrado que viene
+    /// detrás se la llevaría sin aviso. Solo se relee en los dos veredictos que un caller deja seguir:
+    ///  · `.drained` — el cierre sigue hasta el borrado.
+    ///  · `.blocked(_, .attestUnavailable)` — el paso 1 ofrece perder las filas VIVAS que enseña el aviso; una edición fuera
+    ///    del outbox no sale en él, y la persona no puede aceptar perder lo que no se le enseñó (el molde es
+    ///    `attestBlockAfterRecapture`). Sale como bloqueo sin salida de pérdida, con la cifra del outbox.
+    /// El resto de bloqueos no descarta nada y no pregunta: la sonda es una lectura del History, no gratis.
+    ///
+    /// `true` o `nil` (no se pudo leer) bloquean. La sonda no distingue un drain que abortó de una escritura posterior al
+    /// drain —que el drain siguiente captura—, así que el push-all da otra vuelta mientras le quede tope y devuelve esto
+    /// solo en la última. **El motivo es `.transient`** —«un momento más, espera unos segundos»—, el del guardado que se
+    /// asienta: lo que falló es un guardado de este teléfono, no la subida. La cifra de `.drained` es `Int.max`, el «no se
+    /// pudo contar» del repo.
+    static func personalVerdictAfterProbe(_ verdict: PushAllVerdict,
+                                          uncapturedChanges: () -> Bool?) -> PushAllVerdict {
+        switch verdict {
+        case .drained:
+            return uncapturedChanges() == false ? .drained : .blocked(pendingCount: .max, reason: .transient)
+        case .blocked(let pending, .attestUnavailable):
+            return uncapturedChanges() == false ? verdict : .blocked(pendingCount: pending, reason: .transient)
+        case .blocked:
+            return verdict
+        }
+    }
+
     /// **¿Queda algo de grupos fuera del outbox?** El veredicto de la captura previa a una salida (ticket
     /// `groups-drain-failure-reads-as-nothing-pending`). `nil` = hay filas vivas y toca subirlas; el recuento solo no decide
     /// nada más, porque un outbox vacío no prueba que no quede nada:
