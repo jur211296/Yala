@@ -148,7 +148,9 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | claude-mcp-activate-oauth-in-staging | done | tickets/done/claude-mcp-activate-oauth-in-staging.md |
 | claude-mcp-consent-with-apple-and-google | backlog | tickets/backlog/claude-mcp-consent-with-apple-and-google.md |
 | claude-mcp-numbers-match-the-app | backlog | tickets/backlog/claude-mcp-numbers-match-the-app.md |
-| claude-mcp-oauth-token-can-change-the-account | backlog | tickets/backlog/claude-mcp-oauth-token-can-change-the-account.md |
+| claude-mcp-oauth-token-can-change-the-account | done | tickets/done/claude-mcp-oauth-token-can-change-the-account.md |
+| claude-mcp-production-auth-hardening | backlog | tickets/backlog/claude-mcp-production-auth-hardening.md |
+| claude-mcp-revoke-from-claude-leaves-supabase-session | backlog | tickets/backlog/claude-mcp-revoke-from-claude-leaves-supabase-session.md |
 | claude-plugin-read-only-mcp-connector | backlog | tickets/backlog/claude-plugin-read-only-mcp-connector.md |
 | clock-drift-aborted-drain-lets-the-pull-overwrite-untranslated-edits | backlog | tickets/backlog/clock-drift-aborted-drain-lets-the-pull-overwrite-untranslated-edits.md |
 | cloud-attest-notice-does-not-cover-a-gateway-rejected-token | backlog | tickets/backlog/cloud-attest-notice-does-not-cover-a-gateway-rejected-token.md |

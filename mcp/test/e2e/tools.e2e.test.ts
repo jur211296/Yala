@@ -21,6 +21,11 @@ const ENV: Env = {
   SUPABASE_ANON_KEY:
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZvc3RqYmJ3c3R5dXVubW1lZnVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM0NTAxNTMsImV4cCI6MjA5OTAyNjE1M30.gTWg5a8NKNuL_RhOmaaSGhnJpdV6iMXhwYwZVJb-FKg",
   DEFAULT_TIMEZONE: "America/Lima",
+  // Lo que sigue es del servidor OAuth del Worker; este e2e lee con la sesión normal y no lo usa.
+  PUBLIC_URL: "https://yala-mcp-staging.misty-surf-6866.workers.dev",
+  SUPABASE_OAUTH_CLIENT_ID: "",
+  SUPABASE_OAUTH_CLIENT_SECRET: "",
+  OAUTH_KV: {} as KVNamespace,
 };
 
 const A = { email: process.env.USER_A_EMAIL ?? "", pass: process.env.USER_A_PASS ?? "" };

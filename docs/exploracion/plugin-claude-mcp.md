@@ -1,6 +1,6 @@
 ---
 fecha: 2026-09-26
-estado: fase 0 hecha en staging (§7); un bloqueo para la fase 1 — código en mcp/
+estado: fase 0 hecha en staging (§7); el bloqueo para la fase 1, cerrado (§8) — código en mcp/
 ticket: tickets/backlog/claude-plugin-read-only-mcp-connector.md
 ---
 
@@ -267,7 +267,7 @@ Las preguntas, tal como se plantearon:
 OAuth con Supabase, pasó por la pantalla de consentimiento y respondió con los datos reales del usuario de prueba.
 La base impide que ese token escriba en las finanzas, y otro usuario no ve nada. Pero **GoTrue sí deja al token
 cambiar la cuenta de inicio de sesión** (`PUT /auth/v1/user` → 200), y eso hay que cerrarlo antes de producción
-(`claude-mcp-oauth-token-can-change-the-account`).
+(`claude-mcp-oauth-token-can-change-the-account`). **Cerrado el mismo día: §8.**
 
 ### Qué se construyó
 
@@ -362,15 +362,19 @@ cambiar la cuenta de inicio de sesión** (`PUT /auth/v1/user` → 200), y eso ha
 
 ### Qué falta para la fase 1
 
-- **Bloqueante:** que el token de Claude no pueda cambiar la cuenta (`claude-mcp-oauth-token-can-change-the-account`).
+- ~~**Bloqueante:** que el token de Claude no pueda cambiar la cuenta.~~ Cerrado en §8: Claude recibe un token del
+  Worker, que no sirve en Supabase.
 - **Paridad de cifras:** golden vectors desde Swift, gastos de grupo, tasa del día y zona horaria
   (`claude-mcp-numbers-match-the-app`).
 - **Login con Apple y Google** en la pantalla de consentimiento (`claude-mcp-consent-with-apple-and-google`).
 - **Producción:**
-  - Aplicar `mcp0_01` por el runbook, en una ventana sin migraciones de la cola A.
-  - Encender el hook y, DESPUÉS, OAuth, solo con el sign-in real ya verificado.
+  - Aplicar `mcp0_01` y `mcp0_02` (con el id del cliente del Worker en producción) por el runbook, en una ventana sin
+    migraciones de la cola A.
+  - Encender el hook y, DESPUÉS, OAuth, solo con el sign-in real ya verificado. DCR de Supabase apagado desde el
+    principio. El resto, en `claude-mcp-production-auth-hardening` (§8).
 - **Límites de peticiones** en `/mcp` y en la pantalla de consentimiento.
-- **Una sesión web abandonada** en la pantalla de consentimiento vive hasta 1 h.
+- ~~**Una sesión web abandonada** en la pantalla de consentimiento vive hasta 1 h.~~ Ya no: la sesión web vive lo que
+  dura una petición (§8).
 - **Un dominio propio** (por ejemplo `mcp.yala-app.pe`).
 - **Retirar el login con contraseña**, que hoy solo existe con `ENVIRONMENT = staging`.
 
@@ -386,6 +390,108 @@ cambiar la cuenta de inicio de sesión** (`PUT /auth/v1/user` → 200), y eso ha
   - la forma del plugin, un README de más de 40 palabras y ningún secreto en `.mcp.json`;
   - `title` y `readOnlyHint` en todas las herramientas, y nombres de menos de 64 caracteres;
   - respuestas paginadas y ninguna herramienta de escritura.
+
+## 8. El token de Claude ya no es de Supabase (2026-09-26, tarde)
+
+**En corto: el bloqueo de §7 está cerrado.** Claude recibe un token del propio Worker, y ese token no sirve en
+Supabase. Se midió contra staging con los usuarios A y B:
+
+- las 17 escrituras de `/auth/v1/*` que se probaron con ese token dan **403 `bad_jwt`**, y la cuenta de A queda
+  idéntica;
+- las seis herramientas leen como antes;
+- B no ve nada de A;
+- revocar corta al momento, desde Claude y desde la cuenta.
+
+La decisión y su porqué están en el ADR «El conector de Claude emite sus propios tokens» (`docs/DECISIONS.md`).
+
+### Por qué no bastaba con Supabase (medido en el código de GoTrue v2.197.0)
+
+- **No hay forma de limitar lo que puede hacer un token OAuth.** El middleware `requireAuthentication`
+  (`internal/api/auth.go`) acepta cualquier JWT válido del usuario y no mira `client_id` ni `scope`. Protege `/user`,
+  `/factors`, `/logout`, `/reauthenticate`, `/user/identities`, `/user/oauth/grants` y `/oauth/authorizations`.
+  Tampoco hay issue ni PR abierto en `supabase/auth`. El texto del issue va redactado en el PR, sin publicar.
+- **La «vía 2» cubre menos de lo que decía el ticket** (`internal/api/user.go`):
+  - la reautenticación para cambiar la contraseña solo se pide si la sesión tiene **más de 24 h**;
+  - «contraseña actual» solo se pide si el usuario **ya tiene** una. A un usuario de Apple o Google el token le puede
+    poner una contraseña, y con ella se entra;
+  - el cambio de email ya pedía doble confirmación en staging;
+  - los metadatos, el alta de un TOTP y el `logout` global no los cubre ninguna opción.
+
+### Cómo funciona ahora
+
+El Worker es el servidor OAuth de Claude (`@cloudflare/workers-oauth-provider` 1.1.0), y Supabase queda aguas
+arriba. El código está en `mcp/src/authorize.ts`; la guía, en `mcp/README.md`.
+
+1. Claude se registra en el Worker (DCR). Solo se aceptan vueltas a `claude.ai`, `claude.com` o loopback.
+2. **Permiso por cliente en el Worker**, ANTES de salir hacia Supabase: quién pide, a dónde vuelve y qué no podrá
+   hacer. Así lo pide la guía de seguridad de MCP para servidores que autentican a través de otro.
+3. El Worker manda a Supabase como **su propio cliente confidencial**, con PKCE. Supabase vuelve a la pantalla de
+   login del Worker (`/oauth/consent`). El login, la aprobación y el cierre de la sesión web ocurren **en una sola
+   petición**: esa sesión ya no vive en una cookie.
+4. En el callback, el Worker canjea el código, verifica que el token es de solo lectura y de su cliente, y lo guarda
+   cifrado. A Claude le devuelve un código propio, y luego tokens propios.
+5. **En cada llamada a `/mcp`** comprueba la sesión de Supabase con `GET /auth/v1/user`. Si ya no existe, retira la
+   conexión y responde 401.
+6. **En cada refresh de Claude** rota también el refresh de Supabase. La conexión dura 30 días sin uso, y 90 como
+   máximo desde que se autorizó.
+7. **Nada del Worker puede escribir la cuenta**: todas sus salidas a Supabase pasan por una lista cerrada
+   (`mcp/src/egress.ts`), y `PUT /auth/v1/user` no está en ella.
+
+### Qué cambió en staging (antes → después)
+
+| Qué | Antes | Después |
+|---|---|---|
+| Worker `yala-mcp-staging` | versión `ecd32b4f` (fase 0) | versión `c597b9cc` (OAuth propio) |
+| KV del Worker | — | `yala-mcp-staging-oauth` (`9705886913ee4d1fb7217ef6e3ecdef7`) |
+| Secreto del Worker | — | `SUPABASE_OAUTH_CLIENT_SECRET` (copia en `~/Secrets/yala-mcp-staging/`) |
+| Cliente OAuth del Worker en Supabase | — | `65fb5767-59a5-4f50-b77c-7970e67589c5`, confidencial |
+| Hook `yala_mcp_access_token_hook` | cualquier `client_id` → lector (md5 `5a048417…`) | solo el cliente del Worker, y por el cliente de la SESIÓN, no por el claim; el resto, 403 (md5 `0a03fb94…`, `mcp0_02`+`mcp0_03`) |
+| `oauth_server_allow_dynamic_registration` | `true` | `false` |
+| `security_update_password_require_reauthentication` | `false` | `true` |
+| `security_update_password_require_current_password` | `false` | `true` |
+| `mfa_totp_enroll_enabled` / `mfa_totp_verify_enabled` | `true` | `false` |
+
+La marcha atrás, paso a paso, está en `docs/RUNBOOK-staging-ddl.md`, secciones `mcp0_02` y `mcp0_03`. Producción no se tocó.
+
+**`mcp0_03` lo trajo la review** (2026-09-26): con `mcp0_02` el hook decidía por el claim `client_id`, y GoTrue reemite un
+token para la misma sesión al verificar un factor MFA SIN ese claim — salía con `role = authenticated` y escribía la base.
+Con un Worker comprometido eso era la cuenta entera. `mcp0_03` decide por `auth.sessions.oauth_client_id`, así que todo
+token de la sesión del Worker es de solo lectura. Verificado en SQL con una sesión sintética (rama por sesión → lector) y
+con el login normal (intacto). MFA, además, apagado.
+
+### Medido (e2e contra staging, 18/18)
+
+- **Descubrimiento:** 98-104 ms. **Token:** unos 950 ms. **Cada herramienta:** 445-800 ms, con la comprobación de
+  sesión incluida.
+- **Con el token que recibe Claude:**
+  - las 17 sondas de escritura dan 403 `bad_jwt`: `PUT /user` con cuerpo vacío, metadatos, email, contraseña y
+    teléfono; alta, reto y baja de factores; códigos de recuperación; `logout` global; `reauthenticate`; identidades;
+    permisos; passkeys; y aprobar autorizaciones;
+  - su refresh no vale en `/auth/v1/token` ni en `/auth/v1/oauth/token` (400), y PostgREST no lo acepta (401).
+- **Revocar desde la cuenta** (`DELETE /auth/v1/user/oauth/grants`): la llamada siguiente a `/mcp` ya da 401.
+  **Revocar desde Claude** (RFC 7009): lo mismo.
+- **Un cliente de la fase 0**, aprobado por el propio usuario por la API: 403 del hook, «Este cliente no puede
+  conectarse a Yala.», y ningún token.
+- El login normal sigue saliendo `authenticated` y sin `client_id`. El DCR de Supabase responde 403.
+- Tras el e2e no queda viva ninguna sesión creada en la corrida, ni web ni OAuth (medido en `auth.sessions`).
+
+### Lo que queda
+
+- **Producción** (`claude-mcp-production-auth-hardening`): registrar allí el cliente del Worker; `mcp0_02` con ese
+  id; DCR apagado; la capa de contraseñas; y **apagar el proveedor de email**, que la app no usa y que cierra la vía
+  de la primera contraseña si alguien comprometiera el Worker.
+- **Revocar desde Claude deja una sesión huérfana en Supabase:** inalcanzable, pero listada
+  (`claude-mcp-revoke-from-claude-leaves-supabase-session`). Importa para el «Claude conectado · Revocar» de la
+  fase 2.
+- **Login con Apple y Google** (`claude-mcp-consent-with-apple-and-google`): ahora va en `/oauth/consent` de
+  `mcp/src/authorize.ts`, no en `consent.ts`. Necesitará `grant_type=id_token` en la lista de `egress.ts`.
+- **CIMD:** la librería lo soporta, pero queda apagado porque aquí no se puede probar sin publicar un documento de
+  metadatos.
+- **Límites de peticiones** (§7): ahora incluyen también `/oauth/register` del Worker, que escribe en KV.
+- **En staging siguen registrados cinco clientes que ya no reciben tokens:** los cuatro públicos de la fase 0 y uno
+  que registró el primer e2e antes de apagar el DCR. Borrarlos exige `service_role`.
+- **El token de Claude lleva en claro el id de usuario de Supabase**, porque es el formato de la librería
+  (`usuario:grant:secreto`). No es una credencial.
 
 [rc]: https://claude.com/docs/connectors/building/review-criteria
 [auth]: https://claude.com/docs/connectors/building/authentication

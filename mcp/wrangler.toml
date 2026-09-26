@@ -1,23 +1,38 @@
 # Yala MCP — conector de solo lectura para Claude. Worker PROPIO, separado del gateway (docs/exploracion/plugin-claude-mcp.md §3):
-# no lleva GROUPS_ENC_KEY ni ningún secreto, y un deploy suyo no alcanza al sync de la app.
+# no lleva GROUPS_ENC_KEY, y un deploy suyo no alcanza al sync de la app.
 #
 # FASE 0: solo staging. No hay [env.production] a propósito; el lanzamiento espera a que la nube esté estable (tras 2.1).
 #
-# Sin secretos: la URL de Supabase y la anon key son públicas. El token que manda Claude es el del usuario, emitido por el
-# servidor OAuth de Supabase con role = yala_mcp_reader (qa/cloud/mcp0_01_readonly_role.sql). RLS decide qué se ve.
+# Este Worker es el SERVIDOR OAUTH de Claude (ADR «El conector de Claude emite sus propios tokens», docs/DECISIONS.md):
+# Claude recibe un token opaco del Worker, y el Worker lee con una sesión de Supabase de solo lectura
+# (role = yala_mcp_reader) que consigue como cliente OAuth CONFIDENCIAL de Supabase y guarda cifrada en KV.
+#
+# Secreto (no va aquí): SUPABASE_OAUTH_CLIENT_SECRET, con `wrangler secret put`. Se guarda en
+# ~/Secrets/yala-mcp-staging/supabase-oauth-client.json. La URL de Supabase, la anon key y el id del cliente son públicos.
 
 name = "yala-mcp-staging"
 main = "src/index.ts"
 compatibility_date = "2026-06-01"
+# Las salidas de `fetch` van siempre por internet público (protección SSRF). El Worker solo habla con Supabase.
+compatibility_flags = ["global_fetch_strictly_public"]
 account_id = "86c270a7776be98639700bd5959b303b"
 workers_dev = true
 
 [observability]
 enabled = true
 
+# Clientes de Claude, grants y tokens (solo por hash) y las transacciones de consentimiento de la librería OAuth.
+[[kv_namespaces]]
+binding = "OAUTH_KV"
+id = "9705886913ee4d1fb7217ef6e3ecdef7"
+
 [vars]
 ENVIRONMENT = "staging"
+PUBLIC_URL = "https://yala-mcp-staging.misty-surf-6866.workers.dev"
 SUPABASE_URL = "https://fostjbbwstyuunmmefuk.supabase.co"
 SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZvc3RqYmJ3c3R5dXVubW1lZnVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM0NTAxNTMsImV4cCI6MjA5OTAyNjE1M30.gTWg5a8NKNuL_RhOmaaSGhnJpdV6iMXhwYwZVJb-FKg"
+# El cliente OAuth del Worker en Supabase staging (confidencial, registrado el 2026-09-26). El hook solo le da tokens a él
+# (qa/cloud/mcp0_02_oauth_client_allowlist.sql).
+SUPABASE_OAUTH_CLIENT_ID = "65fb5767-59a5-4f50-b77c-7970e67589c5"
 # Zona por defecto para «este mes» cuando Claude no pasa zona_horaria. El servidor no conoce la del teléfono.
 DEFAULT_TIMEZONE = "America/Lima"

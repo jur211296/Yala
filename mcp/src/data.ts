@@ -1,11 +1,16 @@
 /**
- * Lectura de PostgREST con el token del USUARIO. Nunca `service_role`: el filtro por usuario lo pone RLS, y con
- * `role = yala_mcp_reader` PostgREST no deja hacer nada que no sea SELECT.
+ * Lectura de PostgREST con el token del USUARIO: la sesión de Supabase de solo lectura que el Worker guarda cifrada
+ * (nunca la de Claude, que no es un token de Supabase). Nunca `service_role`: el filtro por usuario lo pone RLS, y
+ * con `role = yala_mcp_reader` PostgREST no deja hacer nada que no sea SELECT.
  *
- * Solo hay GET. Este módulo no tiene ninguna forma de escribir, a propósito: la herramienta que escriba (fase 3)
- * irá en otro módulo y en otra herramienta, como pide la revisión de Anthropic.
+ * Solo hay GET, y además todo sale por la lista cerrada de `egress.ts`. Este módulo no tiene ninguna forma de
+ * escribir, a propósito: la herramienta que escriba (fase 3) irá en otro módulo y en otra herramienta, como pide la
+ * revisión de Anthropic.
  */
 import type { Env } from "./env";
+import { defaultFetch, guardSupabase, type Fetcher } from "./egress";
+
+export type { Fetcher } from "./egress";
 
 export class UpstreamError extends Error {
   constructor(
@@ -15,8 +20,6 @@ export class UpstreamError extends Error {
     super(message);
   }
 }
-
-export type Fetcher = (input: Request | string | URL, init?: RequestInit) => Promise<Response>;
 
 /** Tope de filas por consulta. Protege la latencia del Worker; si se alcanza, se avisa en la respuesta. */
 export const MAX_ROWS = 20_000;
@@ -28,14 +31,15 @@ export interface ReadResult<T> {
 }
 
 export class YalaReader {
+  private readonly fetcher: Fetcher;
+
   constructor(
     private readonly env: Env,
     private readonly token: string,
-    // Envuelto a propósito: guardar `fetch` tal cual y llamarlo como `this.fetcher(…)` lo invoca con `this` =
-    // YalaReader, y el runtime de Workers lo rechaza («Illegal invocation»). En Node funciona, así que los tests
-    // unitarios no lo ven; lo cazó el e2e de OAuth contra el Worker desplegado (2026-09-26).
-    private readonly fetcher: Fetcher = (input, init) => fetch(input, init),
-  ) {}
+    fetcher: Fetcher = defaultFetch,
+  ) {
+    this.fetcher = guardSupabase(env, fetcher);
+  }
 
   private url(table: string, params: [string, string][]): string {
     const u = new URL(`${this.env.SUPABASE_URL.replace(/\/+$/, "")}/rest/v1/${table}`);
