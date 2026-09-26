@@ -26,7 +26,8 @@ import {
   type Day,
   type PeriodKind,
 } from "./logic/dates";
-import { latestRateTable, type RateTable } from "./logic/fx";
+import { buildRateBook, CARRY_FORWARD_LOOKBACK, utcDateKey, type RateBook } from "./logic/fx";
+import { buildGroupAdjustment, type GroupAdjustment } from "./logic/groups";
 import { buildLookup, categoryOf, type Lookup } from "./logic/lookup";
 import { computeBalances } from "./logic/balances";
 import { summarize } from "./logic/summary";
@@ -76,14 +77,52 @@ async function loadPrefs(ctx: ToolContext): Promise<Map<string, string>> {
   return new Map(rows.filter((r) => r.value !== null).map((r) => [r.key, r.value as string]));
 }
 
-/** Las 30 filas más recientes: la primera manda y las demás rellenan las divisas que le falten (ver fx.ts). */
-async function loadRates(ctx: ToolContext): Promise<RateTable | null> {
-  const rows = await ctx.reader.one<ExchangeRateRow>(
-    "exchange_rates",
-    [["select", COLUMNS.rates], NOT_DELETED, ["order", "date_key.desc"]],
-    30,
-  );
-  return latestRateTable(rows);
+/**
+ * Filas de tasas para convertir con la tasa de los días UTC `[fromKey, toKey]`: las de ese rango y, por debajo, las
+ * suficientes para la ventana de 30 días anteriores de la app (ver fx.ts). Hay días con dos o tres filas —una por
+ * dispositivo—, así que se leen hasta tres por día de ventana.
+ */
+async function loadRates(ctx: ToolContext, fromKey: string, toKey: string = fromKey): Promise<RateBook> {
+  const [inRange, before] = await Promise.all([
+    ctx.reader.all<ExchangeRateRow>("exchange_rates", [
+      ["select", COLUMNS.rates],
+      NOT_DELETED,
+      ["date_key", `gte.${fromKey}`],
+      ["date_key", `lte.${toKey}`],
+      ["order", "date_key.desc,sync_id.asc"],
+    ]),
+    ctx.reader.one<ExchangeRateRow>(
+      "exchange_rates",
+      [["select", COLUMNS.rates], NOT_DELETED, ["date_key", `lt.${fromKey}`], ["order", "date_key.desc,sync_id.asc"]],
+      CARRY_FORWARD_LOOKBACK * 3,
+    ),
+  ]);
+  return buildRateBook([...inRange.rows, ...before]);
+}
+
+/** Día UTC de ahora: la clave con la que la app busca «la tasa de hoy». */
+function todayUtcKey(ctx: ToolContext): string {
+  return utcDateKey(ctx.now) as string;
+}
+
+/**
+ * Ajuste de gastos de grupo construido con el conjunto MÁS AMPLIO: los movimientos leídos más las patas hermanas que
+ * se quedaron fuera del rango (misma `split_expense_id`), como pide `GroupBridgeStatsAdjustment.build`.
+ */
+async function loadGroupAdjustment(ctx: ToolContext, txs: TxRow[], lookup: Lookup): Promise<GroupAdjustment> {
+  const ids = [...new Set(txs.map((t) => t.split_expense_id).filter((v): v is string => !!v))];
+  const siblings: TxRow[] = [];
+  for (let i = 0; i < ids.length; i += 50) {
+    const chunk = ids.slice(i, i + 50).map(quoteValue).join(",");
+    const { rows } = await ctx.reader.all<TxRow>("tx_items", [
+      ["select", COLUMNS.tx],
+      NOT_DELETED,
+      ["split_expense_id", `in.(${chunk})`],
+      ORDER_ID,
+    ]);
+    siblings.push(...rows);
+  }
+  return buildGroupAdjustment([...txs, ...siblings], lookup.accounts, lookup.subcategories);
 }
 
 async function loadLookup(ctx: ToolContext): Promise<Lookup> {
@@ -109,14 +148,37 @@ export function resolvePreferredCurrency(prefs: Map<string, string>, candidates:
   return { code: best?.[0] ?? "PEN", inferred: true };
 }
 
-function firstWeekday(prefs: Map<string, string>): 1 | 2 {
+/**
+ * Primer día de la semana: el que pase Claude; si no, la preferencia sincronizada `firstWeekday` (1 = domingo,
+ * 2 = lunes); y si no está, lunes. Ese último caso no es una suposición: la app solo sube la preferencia cuando el
+ * usuario la cambia (`PrefSyncKey.firstWeekday`, «ints por presencia»), y sin ella usa lunes
+ * (`userConfiguredCalendar`).
+ */
+function firstWeekday(prefs: Map<string, string>, args: Record<string, unknown>): 1 | 2 {
+  if (args.primer_dia_semana === "domingo") return 1;
+  if (args.primer_dia_semana === "lunes") return 2;
   return prefs.get("firstWeekday") === "1" ? 1 : 2;
 }
 
-function zoneOf(ctx: ToolContext, args: Record<string, unknown>): string {
-  const tz = typeof args.zona_horaria === "string" && args.zona_horaria ? args.zona_horaria : ctx.env.DEFAULT_TIMEZONE;
-  return assertTimeZone(tz);
+function zoneOf(ctx: ToolContext, args: Record<string, unknown>): { tz: string; assumed: boolean } {
+  const given = typeof args.zona_horaria === "string" && args.zona_horaria ? args.zona_horaria : null;
+  return { tz: assertTimeZone(given ?? ctx.env.DEFAULT_TIMEZONE), assumed: given === null };
 }
+
+/**
+ * Lo único que el conector no puede saber de la app: en qué zona está el teléfono (la app no la sube; ticket
+ * `app-uploads-its-timezone-to-the-cloud`). Solo se avisa cuando Claude no la pasó y se ha tenido que suponer.
+ */
+function zoneNotice(zone: { tz: string; assumed: boolean }): string[] {
+  return zone.assumed
+    ? [`No se indicó zona horaria: se usa ${zone.tz} para decidir qué día es hoy y dónde empieza cada periodo. Si el usuario está en otra, las cifras del borde del periodo pueden cambiar.`]
+    : [];
+}
+
+const primerDiaSemana = z
+  .enum(["lunes", "domingo"])
+  .optional()
+  .describe("Día en que empieza la semana del usuario, si lo sabes. Si no, se usa el que eligió en la app. Solo afecta a periodos y presupuestos semanales.");
 
 const zonaHoraria = z
   .string()
@@ -150,16 +212,19 @@ const listarCuentas: ToolDef = {
         ORDER_ID,
       ]),
       loadPrefs(ctx),
-      loadRates(ctx),
+      loadRates(ctx, todayUtcKey(ctx)),
     ]);
     const preferred = resolvePreferredCurrency(prefs, accounts.rows.map((a) => a.currency_code));
     const result = computeBalances(accounts.rows, txs.rows, preferred.code, rates, {
       incluirArchivadas: args.incluir_archivadas === true,
+      todayUtc: todayUtcKey(ctx),
     });
     const avisos = [...truncationNotice(txs.truncated)];
     if (preferred.inferred) avisos.push(`No hay divisa preferida guardada; se usa ${preferred.code}, la más frecuente en tus cuentas.`);
-    if (result.total.aproximado) avisos.push("El total convierte otras divisas con la tasa más reciente: es aproximado.");
-    if (result.total.sin_convertir.length > 0) avisos.push("Algunas divisas no tienen tasa y su saldo no está en el total.");
+    if (result.total.aproximado) {
+      avisos.push("El total es aproximado: alguna divisa se convirtió sin la cotización exacta de hoy. La app lo marca igual, con «≈».");
+    }
+    if (result.total.sin_convertir.length > 0) avisos.push("Algunas divisas no son de las que la app reconoce y su saldo no está en el total.");
     return { ...result, avisos };
   },
 };
@@ -268,7 +333,8 @@ const buscarMovimientos: ToolDef = {
     zona_horaria: zonaHoraria,
   },
   async run(ctx, args) {
-    const tz = zoneOf(ctx, args);
+    const zone = zoneOf(ctx, args);
+    const tz = zone.tz;
     const limit = typeof args.limite === "number" ? args.limite : 50;
     const params: [string, string][] = [
       ["select", COLUMNS.tx],
@@ -290,7 +356,7 @@ const buscarMovimientos: ToolDef = {
       ands.push(`or(local_day.lte.${h},and(local_day.is.null,date.lt.${quoteValue(instant)}))`);
     }
     const [lookup, prefs] = await Promise.all([loadLookup(ctx), loadPrefs(ctx)]);
-    const avisos: string[] = [];
+    const avisos: string[] = [...zoneNotice(zone)];
 
     if (typeof args.cuenta === "string" && args.cuenta.trim()) {
       const ids = matchIds(lookup.accounts.values(), args.cuenta);
@@ -380,26 +446,38 @@ const resumenPeriodo: ToolDef = {
     hasta: z.string().optional().describe("Con periodo=rango: último día incluido, AAAA-MM-DD."),
     top: z.number().int().min(1).max(20).optional().describe("Cuántas categorías y comercios listar. Por defecto, 5."),
     zona_horaria: zonaHoraria,
+    primer_dia_semana: primerDiaSemana,
   },
   async run(ctx, args) {
-    const tz = zoneOf(ctx, args);
+    const zone = zoneOf(ctx, args);
+    const tz = zone.tz;
     const today = dayInZone(ctx.now, tz);
     const prefs = await loadPrefs(ctx);
-    const period = resolvePeriod(args.periodo as PeriodKind, today, {
+    const fw = firstWeekday(prefs, args);
+    const kind = args.periodo as PeriodKind;
+    const period = resolvePeriod(kind, today, {
       desde: args.desde as string | undefined,
       hasta: args.hasta as string | undefined,
-      firstWeekday: firstWeekday(prefs),
+      firstWeekday: fw,
     });
-    const [lookup, rates, txs] = await Promise.all([loadLookup(ctx), loadRates(ctx), loadTxInRange(ctx, period.desde, period.hasta, tz)]);
+    // Tasas de los días UTC que pueden tocar los movimientos leídos (`loadTxInRange` lee un día de margen a cada lado).
+    const lastKey = addDays(period.hasta, 2) > todayUtcKey(ctx) ? addDays(period.hasta, 2) : todayUtcKey(ctx);
+    const [lookup, rates, txs] = await Promise.all([
+      loadLookup(ctx),
+      loadRates(ctx, addDays(period.desde, -2), lastKey),
+      loadTxInRange(ctx, period.desde, period.hasta, tz),
+    ]);
+    const groups = await loadGroupAdjustment(ctx, txs.rows, lookup);
     const preferred = resolvePreferredCurrency(prefs, txs.rows.map((t) => t.preferred_currency_code));
     const result = summarize(txs.rows, lookup, period, {
       today,
       tz,
       preferredCurrency: preferred.code,
       rates,
+      groups,
       top: typeof args.top === "number" ? args.top : 5,
     });
-    result.avisos.push(...truncationNotice(txs.truncated));
+    result.avisos.push(...truncationNotice(txs.truncated), ...zoneNotice(zone));
     if (preferred.inferred) result.avisos.push(`No hay divisa preferida guardada; se usa ${preferred.code}.`);
     return result;
   },
@@ -415,17 +493,20 @@ const estadoPresupuestos: ToolDef = {
   inputSchema: {
     solo_activos: z.boolean().optional().describe("Solo los presupuestos activos. Por defecto, sí."),
     zona_horaria: zonaHoraria,
+    primer_dia_semana: primerDiaSemana,
   },
   async run(ctx, args) {
-    const tz = zoneOf(ctx, args);
+    const zone = zoneOf(ctx, args);
+    const tz = zone.tz;
     const today = dayInZone(ctx.now, tz);
+    const todayUtc = todayUtcKey(ctx);
     const [budgets, lookup, rates, prefs] = await Promise.all([
       ctx.reader.all<BudgetRow>("budgets", [["select", COLUMNS.budgets], NOT_DELETED, ORDER_ID]),
       loadLookup(ctx),
-      loadRates(ctx),
+      loadRates(ctx, todayUtc),
       loadPrefs(ctx),
     ]);
-    const fw = firstWeekday(prefs);
+    const fw = firstWeekday(prefs, args);
     const soloActivos = args.solo_activos !== false;
     // Se leen solo los días que cubren los presupuestos que se van a enseñar: un «único» inactivo de hace años no
     // arrastra años de movimientos. La pantalla de Presupuestos cuenta también lo futuro, así que `hasta` llega al
@@ -439,8 +520,13 @@ const estadoPresupuestos: ToolDef = {
       if (!to || p.hasta > to) to = p.hasta;
     }
     const txs = from && to ? await loadTxInRange(ctx, from, to, tz) : { rows: [] as TxRow[], truncated: false };
-    const result = budgetStatuses(budgets.rows, txs.rows, lookup, { today, tz, rates, firstWeekday: fw, soloActivos });
-    return { ...result, zona_horaria: tz, avisos: [...result.avisos, ...truncationNotice(txs.truncated || budgets.truncated)] };
+    const groups = await loadGroupAdjustment(ctx, txs.rows, lookup);
+    const result = budgetStatuses(budgets.rows, txs.rows, lookup, { today, todayUtc, tz, rates, groups, firstWeekday: fw, soloActivos });
+    return {
+      ...result,
+      zona_horaria: tz,
+      avisos: [...result.avisos, ...truncationNotice(txs.truncated || budgets.truncated), ...zoneNotice(zone)],
+    };
   },
 };
 
@@ -457,12 +543,14 @@ const listarRecurrentes: ToolDef = {
     zona_horaria: zonaHoraria,
   },
   async run(ctx, args) {
-    const tz = zoneOf(ctx, args);
+    const zone = zoneOf(ctx, args);
+    const tz = zone.tz;
     const today = dayInZone(ctx.now, tz);
+    const todayUtc = todayUtcKey(ctx);
     const [payments, lookup, rates, prefs, linked] = await Promise.all([
       ctx.reader.all<ScheduledPaymentRow>("scheduled_payments", [["select", COLUMNS.scheduled], NOT_DELETED, ORDER_ID]),
       loadLookup(ctx),
-      loadRates(ctx),
+      loadRates(ctx, todayUtc),
       loadPrefs(ctx),
       ctx.reader.all<Pick<TxRow, "scheduled_payment_ref" | "date" | "local_day">>("tx_items", [
         ["select", "scheduled_payment_ref,date,local_day"],
@@ -481,12 +569,13 @@ const listarRecurrentes: ToolDef = {
     const preferred = resolvePreferredCurrency(prefs, payments.rows.map((p) => p.currency_code));
     const result = listRecurring(payments.rows, lastLinked, lookup, {
       today,
+      todayUtc,
       tz,
       preferredCurrency: preferred.code,
       rates,
       soloActivos: args.solo_activos !== false,
     });
-    result.avisos.push(...truncationNotice(payments.truncated || linked.truncated));
+    result.avisos.push(...truncationNotice(payments.truncated || linked.truncated), ...zoneNotice(zone));
     return result;
   },
 };

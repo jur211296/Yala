@@ -8,14 +8,16 @@
  * - Solo cuentan los movimientos CON categoría (así caen las transferencias). Ingreso o gasto lo decide
  *   `category.is_income`, no el signo.
  * - Acumulación CON SIGNO: un reembolso (gasto positivo) resta del gasto; no se usa el valor absoluto.
- * - Importe en divisa preferida: el `amount_in_preferred_currency` guardado si el movimiento se guardó en la misma
- *   preferida; si no, se reconvierte desde el nativo (aquí con la tasa más reciente → marcado aproximado).
- *
- * Lo que la v0 NO porta, y lo declara en `avisos`: `GroupBridgeStatsAdjustment` (un gasto de grupo pagado por ti
- * cuenta entero, no «tu parte») y la tasa del día de cada movimiento.
+ * - Gastos de grupo: la pata real cuenta por «tu parte» y la de préstamo no cuenta (`GroupBridgeStatsAdjustment`,
+ *   ver groups.ts).
+ * - Importe en divisa preferida: el `amount_in_preferred_currency` guardado (ajustado) si el movimiento se guardó en
+ *   la misma preferida; si no, se reconvierte desde el nativo ajustado con la tasa DEL DÍA del movimiento.
+ * - «≈» por lado y en el neto, con el umbral de la app (`ApproximateMarkThreshold`, ver approx.ts).
  */
 import { categoryOf, type Lookup } from "./lookup";
-import { convert, type RateTable } from "./fx";
+import { convertOn, utcDateKey, type RateBook } from "./fx";
+import { marksApproximate } from "./approx";
+import { NO_GROUP_ADJUSTMENT, type GroupAdjustment } from "./groups";
 import { canonicalMerchant } from "./merchant";
 import { daysInclusive, minDay, txDay, type Period } from "./dates";
 import { num, round2, type TxRow } from "./types";
@@ -32,7 +34,9 @@ export interface SummaryResult {
   top_categorias_gasto: { categoria: string; importe: number; movimientos: number }[];
   top_comercios_gasto: { comercio: string; importe: number; movimientos: number }[];
   sin_categoria: { movimientos: number; importe_absoluto: number };
+  /** true si alguna de las tres cifras lleva «≈» en la app. */
   aproximado: boolean;
+  aproximado_detalle: { ingresos: boolean; gastos: boolean; neto: boolean };
   avisos: string[];
 }
 
@@ -48,37 +52,66 @@ export function eligibleForStats(tx: TxRow, lookup: Lookup, today: string, tz: s
   return day;
 }
 
-/** Importe con signo en la divisa preferida, y si hubo que reconvertir. `null` si no hay forma de convertir. */
+/**
+ * Importe con signo en la divisa preferida, como lo cuenta `CashFlowCalculator`, y cuánta magnitud dudosa hay detrás
+ * (el numerador del «≈»). `null` si la divisa no se puede convertir.
+ */
 export function preferredAmount(
   tx: TxRow,
   preferredCurrency: string,
-  rates: RateTable | null,
-): { value: number; approximate: boolean } | null {
-  const stored = num(tx.amount_in_preferred_currency);
-  if (tx.preferred_currency_code?.toUpperCase() === preferredCurrency.toUpperCase() && stored !== null) {
-    return { value: stored, approximate: tx.is_exchange_rate_provisional === true };
+  rates: RateBook,
+  groups: GroupAdjustment = NO_GROUP_ADJUSTMENT,
+): { value: number; approximate: number } | null {
+  // Un null del wire vale el default del modelo: `preferredCurrencyCode = "PEN"`, `amountInPreferredCurrency = 0`.
+  if ((tx.preferred_currency_code ?? "PEN").toUpperCase() === preferredCurrency.toUpperCase()) {
+    const stored = groups.amountInPreferred(tx) ?? 0;
+    return { value: stored, approximate: groups.approximateMagnitude(tx, Math.abs(stored)) };
   }
-  const native = num(tx.amount);
+  const native = groups.amount(tx);
   if (native === null) return null;
   // Un null del wire vale el default del modelo (`TransactionItem.currencyCode = "USD"`).
-  const from = (tx.currency_code ?? "USD").toUpperCase();
-  if (from === preferredCurrency.toUpperCase()) return { value: native, approximate: false };
-  const converted = convert(Math.abs(native), from, preferredCurrency, rates);
-  if (converted === null) return null;
-  return { value: native < 0 ? -converted : converted, approximate: true };
+  const from = tx.currency_code ?? "USD";
+  const key = (tx.date ? utcDateKey(tx.date) : null) ?? tx.local_day;
+  if (!key) return null;
+  const out = convertOn(Math.abs(native), from, preferredCurrency, key, rates);
+  if (!out) return null;
+  const magnitude = Math.abs(out.value);
+  return { value: native < 0 ? -magnitude : magnitude, approximate: out.quality === "exact" ? 0 : magnitude };
+}
+
+/**
+ * Magnitud en divisa preferida como la cuenta el chat para lo que no tiene categoría: port de
+ * `FullFinancialContextBuilder.convertAmount` + `TransactionItem.chatAmount`. Si el ajuste de grupos cambió el
+ * importe, «tu parte»; si no, el nativo cuando ya está en la divisa preferida, luego el guardado, y si no, convertido
+ * con la tasa de su día.
+ */
+function chatMagnitude(tx: TxRow, preferredCurrency: string, rates: RateBook, groups: GroupAdjustment): number | null {
+  if (groups.isAdjusted(tx)) return Math.abs(groups.amountInPreferred(tx) ?? 0);
+  const pref = preferredCurrency.toUpperCase();
+  const native = num(tx.amount) ?? 0;
+  if ((tx.currency_code ?? "USD").toUpperCase() === pref) return Math.abs(native);
+  if ((tx.preferred_currency_code ?? "PEN").toUpperCase() === pref) return Math.abs(num(tx.amount_in_preferred_currency) ?? 0);
+  const key = (tx.date ? utcDateKey(tx.date) : null) ?? tx.local_day;
+  if (!key) return null;
+  const out = convertOn(Math.abs(native), tx.currency_code ?? "USD", preferredCurrency, key, rates);
+  return out ? Math.abs(out.value) : null;
 }
 
 export function summarize(
   txs: TxRow[],
   lookup: Lookup,
   period: Period,
-  ctx: { today: string; tz: string; preferredCurrency: string; rates: RateTable | null; top: number },
+  ctx: { today: string; tz: string; preferredCurrency: string; rates: RateBook; top: number; groups?: GroupAdjustment },
 ): SummaryResult {
+  const groups = ctx.groups ?? NO_GROUP_ADJUSTMENT;
   let income = 0;
   let expense = 0;
   let count = 0;
-  let approximate = false;
-  let groupTx = 0;
+  // Numerador y denominador del «≈», en magnitudes y por lado, como `CashFlowCalculator`.
+  let incomeApprox = 0;
+  let incomeTotal = 0;
+  let expenseApprox = 0;
+  let expenseTotal = 0;
   let unconvertible = 0;
   // Por identidad de categoría, no por nombre: dos categorías que se llamen igual son dos filas en la app.
   const byCategory = new Map<string, { nombre: string; importe: number; movimientos: number }>();
@@ -90,26 +123,31 @@ export function summarize(
     const day = eligibleForStats(tx, lookup, ctx.today, ctx.tz);
     if (!day || day < period.desde || day > period.hasta) continue;
 
+    // La pata de préstamo de un gasto de grupo no es ingreso ni gasto tuyo, ni «sin categoría» aunque su categoría
+    // no resuelva (`buildUncategorized` la excluye igual).
+    if (groups.isSuppressed(tx)) continue;
     const category = categoryOf(lookup, tx);
     if (!category) {
       if (!tx.transfer_pair_id) {
         uncategorizedCount += 1;
-        uncategorizedAbs += Math.abs(num(tx.amount) ?? 0);
+        uncategorizedAbs += chatMagnitude(tx, ctx.preferredCurrency, ctx.rates, groups) ?? 0;
       }
       continue;
     }
-    const conv = preferredAmount(tx, ctx.preferredCurrency, ctx.rates);
+    const conv = preferredAmount(tx, ctx.preferredCurrency, ctx.rates, groups);
     if (!conv) {
       unconvertible += 1;
       continue;
     }
-    if (tx.split_expense_id) groupTx += 1;
-    approximate ||= conv.approximate;
     count += 1;
 
     if (category.is_income === true) {
       income += conv.value;
+      incomeTotal += Math.abs(conv.value);
+      incomeApprox += conv.approximate;
     } else {
+      expenseTotal += Math.abs(conv.value);
+      expenseApprox += conv.approximate;
       expense -= conv.value;
       const c = byCategory.get(category.sync_id) ?? { nombre: category.name ?? "(sin nombre)", importe: 0, movimientos: 0 };
       c.importe -= conv.value;
@@ -143,16 +181,19 @@ export function summarize(
         movimientos: number;
       });
 
+  const flags = {
+    ingresos: marksApproximate(incomeApprox, incomeTotal),
+    gastos: marksApproximate(expenseApprox, expenseTotal),
+    neto: marksApproximate(incomeApprox + expenseApprox, income - expense),
+  };
+  const approximate = flags.ingresos || flags.gastos || flags.neto;
   const avisos: string[] = [];
-  if (groupTx > 0) {
-    avisos.push(
-      `${groupTx} movimiento(s) son gastos de grupo y cuentan por su importe entero, no por tu parte. La app los ajusta; esta versión todavía no.`,
-    );
-  }
   if (unconvertible > 0) {
-    avisos.push(`${unconvertible} movimiento(s) en otra divisa no se pudieron convertir por falta de tasa y no están sumados.`);
+    avisos.push(`${unconvertible} movimiento(s) en una divisa que la app no reconoce no están sumados.`);
   }
-  if (approximate) avisos.push("Hay importes convertidos con la tasa más reciente o marcados como provisionales: las cifras son aproximadas.");
+  if (approximate) {
+    avisos.push("Parte de estas cifras se convirtió sin la cotización exacta de su día: son aproximadas, y la app las marca igual, con «≈».");
+  }
   if (uncategorizedCount > 0) {
     avisos.push(`${uncategorizedCount} movimiento(s) no tienen categoría y no cuentan ni como ingreso ni como gasto.`);
   }
@@ -173,6 +214,7 @@ export function summarize(
     top_comercios_gasto: top([...byMerchant.entries()], "comercio"),
     sin_categoria: { movimientos: uncategorizedCount, importe_absoluto: round2(uncategorizedAbs) },
     aproximado: approximate,
+    aproximado_detalle: flags,
     avisos,
   };
 }
