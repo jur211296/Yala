@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-26 (Lima)
 
-**Rama** `2.1` — Merge #262: **Cerrar sesión en la nube ya no borra un cambio personal que no llegó a capturarse, y la limpieza del historial ya no se lleva cambios sin subir.**
+**Rama** `2.1` — Merge #263: **El conector de Claude (staging) emite sus propios tokens; el permiso de solo lectura ya no deja a Claude cambiar la cuenta de inicio de sesión.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,36 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#262 · cerrar sesión en la nube ya no da por subido un cambio que no se capturó)
+## Esta sesión (#263 · Claude ya no puede tocar la cuenta: el conector emite sus propios tokens)
+
+**En staging, cuando alguien conecta Yala a Claude y da permiso, Claude ya no puede cambiar NADA de su cuenta** —ni
+metadatos, ni email, ni contraseña, ni MFA—: recibe un token opaco del Worker que no sirve en Supabase. Leer las
+finanzas sigue igual, y revocar corta al momento. Cierra el bloqueo de la fase 1
+(`claude-mcp-oauth-token-can-change-the-account`, ahora `done`). Nada cambia en la app.
+
+- **Por qué así:** GoTrue (v2.197, la de staging) acepta cualquier token del usuario en `/auth/v1/user*` sin mirar
+  cliente ni scope, y no hay opción para limitarlo. Así que el Worker (`mcp/`) pasa a ser el servidor OAuth de Claude
+  y consigue la sesión de Supabase como cliente confidencial propio, cifrada en KV. ADR «El conector de Claude emite
+  sus propios tokens». Detalle: §8 de `docs/exploracion/plugin-claude-mcp.md`.
+- **Staging:** hook con lista cerrada de cliente y por sesión (`mcp0_02`+`mcp0_03`), DCR de Supabase apagado, MFA
+  apagado, reauth+contraseña actual encendidos. Antes → después y marcha atrás en `docs/RUNBOOK-staging-ddl.md`.
+  Producción no se tocó.
+- **Review adversarial (3 lentes):** cazó dos altas —escalada por MFA (cerrada con `mcp0_03`) y un parpadeo del JWKS
+  que revocaba la conexión (ahora 503)— y varios menores, todos arreglados y verificados con mutación.
+- **Verificado:** 91 unitarios (con un Supabase falso con estado) + 19 e2e contra staging real (A y B). Las 17
+  escrituras de `/auth/v1/*` con el token de Claude fallan; la cuenta de A queda idéntica.
+
+### Lo que espera de Jürgen
+
+- **Revocar el token de gestión** de Supabase si aún no lo hizo (ya no hace falta; solo veía staging).
+- **Publicar, si quiere, el issue para `supabase/auth`** que va redactado en el PR #263 y en
+  `tickets/done/claude-mcp-oauth-token-can-change-the-account.md` (no lo publiqué).
+- **Probarlo:** Claude Code o Desktop → conector `https://yala-mcp-staging.misty-surf-6866.workers.dev/mcp` →
+  *Authenticate* (si venía de la fase 0, reautenticar: el servidor OAuth cambió) → usuario A de prueba.
+- **Producción, cuando la nube esté estable:** `claude-mcp-production-auth-hardening` (incluye apagar el proveedor de
+  email y `mcp0_03` con el id de producción).
+
+## Sesión anterior (#262 · cerrar sesión en la nube ya no da por subido un cambio que no se capturó)
 
 **Con los datos en la nube, si al cerrar sesión queda un cambio tuyo fuera de la cola de subida, Yala lo intenta otra
 vez y, si sigue ahí, no borra nada y dice «Un momento más»** (texto que ya existía). **Y un cambio guardado mientras Yala
@@ -44,7 +73,7 @@ subirlo. Esto segundo no lo pedía el ticket: salió al medirlo, y sin él el ti
   drain que falla siempre deja «un momento más» para siempre, también al teléfono sin App Attest: decidir si debe tener
   salida) y `cloud-sign-out-final-recount-misses-edits-left-only-in-history`.
 
-## Sesión anterior (#261 · conector de Yala para Claude, fase 0 en staging)
+## Antes (#261 · conector de Yala para Claude, fase 0 en staging)
 
 **Con un usuario de prueba de staging, Claude se conecta a Yala, pide permiso y contesta con sus datos reales**:
 saldos, movimientos, resumen del mes, presupuestos y recurrentes. Solo puede leer las finanzas: la base se lo impide.
