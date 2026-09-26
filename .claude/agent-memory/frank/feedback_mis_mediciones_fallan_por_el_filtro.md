@@ -740,3 +740,11 @@ probé con una tabla falsa sin el trigger: salieron DOS culpables, la falsa y `g
 y el contador de Grupos. Aplicada sin ese control, la migración se habría abortado a sí misma en producción. ⇒ una
 comprobación estructural nueva se ejecuta primero con un caso que DEBE fallar y se lee la lista entera de lo que falla,
 no solo si falla.
+
+## 2026-09-26 — un test añadido tras la review lo corrí PRIMERO bajo el mutante, y «lo mató» porque fallaba siempre
+
+La lente de tests pidió fijar que el drain personal estampa con la fecha de la transacción. Escribí el test y lo estrené
+directamente con el mutante (`tx.timestamp - 3600`): rojo, «muerto». Rojo también sin mutante — el oráculo cogía la
+ÚLTIMA transacción del movimiento, y el barrido del drain le asigna el `syncID` en otra posterior que no se emite. Lo
+cazó la suite completa del gate. ⇒ **un test nuevo se corre verde contra el código real antes de apuntarle un mutante**;
+un mutante «muerto» por un test que nunca pasó no mide nada.
