@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-26 (Lima)
 
-**Rama** `2.1` — Merge #255: **Soltar la cuenta de grupos se para, y lo dice, si la sesión de esa cuenta no llega a cerrarse en el teléfono.**
+**Rama** `2.1` — Merge #256: **«Empezar de cero» ya no se lleva los gastos de grupo sin subir: si quedan, no borra nada y lo dice.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,31 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#255 · el desasociar se para si la sesión en la nube sobrevive a su cierre)
+## Esta sesión (#256 · «Empezar de cero» no se lleva los gastos de grupo sin subir)
+
+**Apuntas gastos de grupo sin cobertura y luego haces «Empezar de cero». Antes se perdían sin avisar. Ahora el borrado sube
+primero lo pendiente y, si no puede, no borra nada** —ni iCloud, ni el teléfono, ni los grupos— y dice «Faltan cambios de
+tus grupos por subir», cuántos y qué hacer.
+
+- Puerta privada del Welcome y aviso del espejo tardío: suben con el push-all del desasociar
+  (`CloudSessionSignOut.drainGroupsBeforeFreshStart`, sin tocar la fase), re-esperan al import y paran en `.groupsPending`.
+  Salir desarma el borrado, y la reanudación del arranque también: armado, se reanudaba a ciegas semanas después.
+- Alert «Borrar todo y continuar»: con pendientes se niega en el mismo tap y despierta el loop de Grupos.
+- Cinturón: `wipeLocalGroupsDomain` lanza con filas vivas en el outbox. La rule de `swiftdata-cloudkit.md` que decía «hay que
+  borrarlas» ahora dice que se suben.
+
+**Verificado:** gate con 8021 unit y 18 XCUITest, centinela limpio; 16/16 mutantes; review adversarial de tres lentes (lo que
+cazó, arreglado en la misma rama). Ticket a `qa` con guion (modo avión → gasto → «Vaciar datos» → «Es mi primera vez»).
+
+### Lo que espera de Jürgen
+
+- **Una decisión:** `fresh-start-has-no-way-out-when-group-writes-can-never-upload` (medium). Sin la salida «perderlos»
+  —asumida de noche con el molde del desasociar—, quien tiene cambios que nunca podrán subir (sesión de grupos caducada,
+  teléfono heredado) no puede empezar de cero salvo reinstalando.
+- Device-QA del ticket, cuando puedas. Residuales abiertos: `groups-drain-failure-reads-as-nothing-pending` y
+  `late-icloud-notice-exit-after-a-failed-wipe-leaves-the-blind-resume-armed` (medium, preexistentes).
+
+## Sesión anterior (#255 · el desasociar se para si la sesión en la nube sobrevive a su cierre)
 
 **Sueltas la cuenta de grupos en «¿Dónde viven tus datos?». Si la sesión de esa cuenta sigue guardada en el teléfono después de
 cerrarla, la app se para antes de tocar nada y lo dice** («No pudimos cerrar la sesión de tu cuenta de grupos en este iPhone.
@@ -44,7 +68,7 @@ device-QA: el fallo del llavero no se provoca en un iPhone.
   instalado» con la sesión anterior dentro. Purgarla ahí también se llevaría los pares de Apple y Google.
 - Residual `detach-postcondition-misses-a-token-refresh-that-lands-after-it` (low).
 
-## Sesión anterior (#254 · lo que el espejo importa tarde tras un adopt no pisa la nube)
+## Antes (#254 · lo que el espejo importa tarde tras un adopt no pisa la nube)
 
 **Activas la nube en tu segundo iPhone mientras su iCloud todavía baja una copia vieja. Lo que bajaba después de movimientos
 que la nube ya tenía subía al reabrir con un reloj nuevo y deshacía las correcciones hechas en la nube. Ahora, en esas filas
