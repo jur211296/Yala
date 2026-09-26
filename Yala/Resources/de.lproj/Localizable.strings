@@ -5859,6 +5859,7 @@
 
 /* Aviso: el desasociar abortó porque no se pudo leer el puente */
 "storage.groups.detachBlockedBridge" = "Wir konnten die Bewegungen deiner Gruppen auf diesem iPhone nicht prüfen. Es wurde nichts getrennt. Versuch es noch mal.";
+"storage.groups.detachBlockedSessionNotClosed" = "Wir konnten die Sitzung deines Gruppenkontos auf diesem iPhone nicht beenden. Es wurde nichts getrennt. Versuch es noch mal.";
 
 /* Botón cuando quedó un desasociar a medias */
 "storage.groups.detachFinishButton" = "Kontoverknüpfung abschließen";

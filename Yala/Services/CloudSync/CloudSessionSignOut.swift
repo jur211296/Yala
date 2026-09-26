@@ -180,7 +180,9 @@ final class CloudSessionSignOut {
     ///
     /// El bloqueo por cambios sin subir se comporta como el del cierre —«nunca descarta»—: si el push-all
     /// no vacía, la fase queda en `.blocked` y **no se suelta nada**. Reintentar es seguro porque hasta el
-    /// paso 2 no se ha escrito nada.
+    /// paso 2 no se ha escrito nada. Lo mismo si la sesión en la nube **sobrevive** a su cierre (`.sessionNotClosed`):
+    /// el cierre va delante del paso 2 y se comprueba, porque con la sesión viva el borrado del paso 3 se deshace solo
+    /// en el siguiente primer plano, y peor.
     ///
     /// **Qué pasa si el borrado local falla, y qué se le ofrece entonces** (ticket
     /// `detach-failure-looks-like-success`). Hasta el 2026-09-11 el fallo se tragaba y el gesto seguía
@@ -243,11 +245,38 @@ final class CloudSessionSignOut {
         GroupsSyncClient.shared.teardownForSignOut()
 
         // Molde S2 del cierre: una fila encolada entre el push-all y el teardown ya no puede subir, así
-        // que es `.permanent`. Es el ÚLTIMO punto en el que abortar no deja nada a medias.
+        // que es `.permanent`. Va ANTES de cerrar la sesión: con ella viva, el loop del siguiente primer
+        // plano sube esa fila, y cerrada haría falta volver a entrar para subirla.
         let residual = Self.liveGroupsPendingCount(context: context)
         guard residual == 0 else {
             phase = .blocked(pendingCount: residual, reason: .permanent)
             CloudSyncBreadcrumb.signOutPushBlocked(pending: residual)
+            return .blockedBeforeWriting
+        }
+
+        // El consent de Grupos NO se limpia aquí, a diferencia del cierre de sesión. Es un snapshot
+        // SELLADO con el `userID` (`GroupsConsentState`), así que no puede colarse en la cuenta
+        // siguiente: si vuelve la misma, casa y no se le vuelve a preguntar algo que ya aceptó; si entra
+        // otra, el sello no casa y se le pregunta igual. Borrarlo solo costaría una pantalla de más a
+        // quien re-asocia.
+        //
+        // **La sesión se cierra ANTES del puente, y se COMPRUEBA** (ticket
+        // `detach-does-not-verify-the-cloud-session-actually-closed`). Si sobrevive —el llavero no la borró, o
+        // un refresco del token en vuelo la repuso—, todo lo de abajo deja el teléfono peor que antes: en el
+        // siguiente primer plano el loop arranca con esa sesión, el cursor ya está borrado y el corpus
+        // entero vuelve a bajar; con la asociación limpia el libro de conservados no casa y se re-puentea
+        // todo, en silencio, al lado de lo que la persona eligió conservar. Parado aquí, el teléfono queda
+        // como con el bloqueo de arriba: canal cortado y nada del dominio Grupos escrito, y reintentar es el
+        // gesto entero. (Lo que `signOut()` borra antes de tocar la sesión —perfil capturado, proveedor, la
+        // caché del entitlement— sí se va, igual que con cualquier cierre que falle: el reintento lo repite.)
+        //
+        // Detrás del puente no valdría: el puente ya estaría soltado con la asociación en pie, y el reintento
+        // volvería a ofrecer las dos salidas cuando la segunda ya no puede aplicarse.
+        guard await CloudAuthService.shared.signOut() else {
+            phase = .blocked(pendingCount: 0, reason: .sessionNotClosed)
+            // Fuera de `#if DEBUG`: el ticket dejó sin medir si esto pasa en la flota, y este es el sitio donde
+            // se ve.
+            MetricsService.canary(.groupsDetachSessionSurvived, detail: "choice=\(choice == .keep ? "keep" : "remove")")
             return .blockedBeforeWriting
         }
 
@@ -257,7 +286,9 @@ final class CloudSessionSignOut {
         // seguir adelante borraría las filas de los grupos dejando las transacciones puenteadas
         // apuntando a una zona que ya no existe, y a ésas no las recoge ningún barrido — el veredicto de
         // zona que `OrphanedBridgedTxSweeper` exige se construye de filas vivas. Sería dinero atrapado
-        // para siempre, y hasta aquí no se ha escrito nada irreversible.
+        // para siempre, y hasta aquí no se ha escrito nada irreversible. La sesión ya está cerrada, y eso no
+        // suelta nada: la asociación sigue en pie, la sección pasa a la celda del segundo móvil y el reintento
+        // no necesita sesión con el outbox vacío.
         //
         // **Y «no se pudo mirar» incluye que su propio `save()` fallara**: `detachBridge` devuelve `nil`
         // en los dos casos desde el 2026-09-11. Antes, un save fallido devolvía un `Outcome` vacío que
@@ -267,13 +298,6 @@ final class CloudSessionSignOut {
             phase = .blocked(pendingCount: 0, reason: .bridgeUnreadable)
             return .blockedBeforeWriting
         }
-
-        // El consent de Grupos NO se limpia aquí, a diferencia del cierre de sesión. Es un snapshot
-        // SELLADO con el `userID` (`GroupsConsentState`), así que no puede colarse en la cuenta
-        // siguiente: si vuelve la misma, casa y no se le vuelve a preguntar algo que ya aceptó; si entra
-        // otra, el sello no casa y se le pregunta igual. Borrarlo solo costaría una pantalla de más a
-        // quien re-asocia.
-        await CloudAuthService.shared.signOut()
 
         // (3) Con el canal cortado y sin credenciales: las filas, el outbox y el cursor, de una vez.
         //

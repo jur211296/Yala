@@ -5871,6 +5871,7 @@
 
 /* Aviso: el desasociar abortó porque no se pudo leer el puente */
 "storage.groups.detachBlockedBridge" = "我们无法检查这台 iPhone 上群组的记录。没有取消任何关联。请再试一次。";
+"storage.groups.detachBlockedSessionNotClosed" = "我们无法在这台 iPhone 上退出你的群组账户。没有取消任何关联。请再试一次。";
 
 /* Botón cuando quedó un desasociar a medias */
 "storage.groups.detachFinishButton" = "完成取消账号关联";

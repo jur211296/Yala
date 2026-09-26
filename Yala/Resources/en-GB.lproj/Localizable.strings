@@ -5127,6 +5127,7 @@
 
 /* Aviso: el desasociar abortó porque no se pudo leer el puente */
 "storage.groups.detachBlockedBridge" = "We couldn't check your groups' entries on this iPhone. Nothing was unlinked. Try again.";
+"storage.groups.detachBlockedSessionNotClosed" = "We couldn't sign your groups account out on this iPhone. Nothing was unlinked. Try again.";
 
 /* Botón cuando quedó un desasociar a medias */
 "storage.groups.detachFinishButton" = "Finish unlinking the account";

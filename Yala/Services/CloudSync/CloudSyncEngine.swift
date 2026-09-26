@@ -646,9 +646,15 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSyncAuth signedOut reason=\(reason, privacy: .public)")
     }
 
-    /// El sign-out del SDK lanzó (no debería) — la sesión local podría seguir presente.
+    /// El sign-out del SDK lanzó. **No dice que la sesión siga**: el SDK la borra antes de la red, así que casi siempre es la
+    /// red. Lo que la sigue es `authSignOutLeftSession`.
     static func authSignOutFailed() {
         logger.notice("CloudSyncAuth signOutFailed")
+    }
+
+    /// Tras el sign-out la sesión SIGUE guardada: el llavero no la borró o un refresco en vuelo la repuso.
+    static func authSignOutLeftSession() {
+        logger.notice("CloudSyncAuth signOutLeftSession")
     }
 
     /// La credencial de Apple fue revocada (#23 mitigación cliente) → se cierra la sesión local.

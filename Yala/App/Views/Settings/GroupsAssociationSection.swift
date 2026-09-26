@@ -172,6 +172,9 @@ struct GroupsAssociationSection: View {
         case .sessionExpired: return L10n.Storage.Groups.detachBlockedSession
         case .permanent: return L10n.Storage.Groups.detachBlockedPermanent
         case .bridgeUnreadable: return L10n.Storage.Groups.detachBlockedBridge
+        // La sesión en la nube sobrevivió a su cierre (2026-09-26): el gesto se paró antes de soltar nada, así que el
+        // texto dice eso y pide reintentar, que es lo que lo arregla.
+        case .sessionNotClosed: return L10n.Storage.Groups.detachBlockedSessionNotClosed
         case .detachBusy: return L10n.Storage.Groups.detachBusy
         // El kill-switch de Grupos no es un problema de la cuenta ni de la conexión, y `.permanent` le
         // decía las dos cosas. Copy compartido con el cierre de sesión: el hecho es el mismo y el título

@@ -5871,6 +5871,7 @@
 
 /* Aviso: el desasociar abortó porque no se pudo leer el puente */
 "storage.groups.detachBlockedBridge" = "We konden de posten van je groepen op deze iPhone niet controleren. Er is niets ontkoppeld. Probeer het opnieuw.";
+"storage.groups.detachBlockedSessionNotClosed" = "We konden je groepsaccount op deze iPhone niet afmelden. Er is niets ontkoppeld. Probeer het opnieuw.";
 
 /* Botón cuando quedó un desasociar a medias */
 "storage.groups.detachFinishButton" = "Ontkoppelen afronden";

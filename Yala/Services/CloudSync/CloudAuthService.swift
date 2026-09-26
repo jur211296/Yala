@@ -179,7 +179,7 @@ final class CloudAuthService: NSObject {
                     "Authorization": "Bearer \(CloudBackendConfig.anonKey)",
                     "apikey": CloudBackendConfig.anonKey,
                 ],
-                storageKey: "yala.cloudauth.session",
+                storageKey: Self.sessionStorageKey,
                 localStorage: CloudAuthKeychainStorage(),
                 autoRefreshToken: true
             )
@@ -479,7 +479,18 @@ final class CloudAuthService: NSObject {
     /// BORRA el perfil capturado (email/fullName/appleUserID) del Keychain propio — fix review R2 #1:
     /// sin este borrado, un usuario B que firme después en el mismo device heredaría el email/nombre
     /// de A (el guard "solo rellenar huecos" vería datos presentes y los reusaría).
-    func signOut() async {
+    ///
+    /// - Returns: `true` si al terminar **no queda sesión guardada**. Es la postcondición, releída del almacén del SDK y no
+    ///   del resultado de la llamada, porque las dos cosas no coinciden (medido en supabase-swift 2.50.0, ticket
+    ///   `detach-does-not-verify-the-cloud-session-actually-closed`): `client.signOut(scope: .local)` borra la sesión ANTES
+    ///   de hablar con el servidor, así que la red caída LANZA con la sesión ya fuera; y el borrado del llavero traga su
+    ///   error, así que un `SecItemDelete` que falla NO lanza y la sesión se queda. Tampoco para el auto-refresco: un
+    ///   refresco en vuelo la repone al terminar, y eso **solo se ve si aterriza antes de esta lectura** — uno que aterrice
+    ///   después no lo ve nadie (ticket `detach-postcondition-misses-a-token-refresh-that-lands-after-it`). **Lo lee el desasociar** (`CloudSessionSignOut.detachGroupsAccount`), que
+    ///   no relanza y se para si esto dice `false`. **No es `hasSession`**: ese lleva el seam `-uitest-fake-cloud-session`
+    ///   y diría «sigue» en todo XCUITest que lo use. Los demás llamadores lo descartan hoy.
+    @discardableResult
+    func signOut() async -> Bool {
         // ANTES del guard a propósito: el `return` de abajo se dispara cuando el backend no está
         // configurado (`client == nil`), y entonces todo lo que viene después no corre. El tipo de
         // cuenta cacheado no depende del backend para ser basura una vez cerrada la sesión, así que
@@ -487,11 +498,7 @@ final class CloudAuthService: NSObject {
         AccountKindService.shared.handleSignOut()
         // La marca del adopt describe ESTA sesión (`AdoptSessionOwnership`): muere con ella, también sin backend.
         AdoptSessionOwnership.record(nil)
-        guard let client else { return }
-        clearCapturedProfile()
-        // `keyProvider` es credencial de SESIÓN (no del provider) → muere con el sign-out. Cubre de
-        // una vez los 6 paths de `CloudSessionSignOut` (todos llaman este `signOut()`).
-        clearStoredProvider()
+        guard let client else { return storedSessionIsGone }
         // Higiene Google (H6 del brief): sign-out LOCAL del SDK — jamás `disconnect()` (eso revoca el
         // grant OAuth entero; es el paso 4b del borrado de cuenta, sesión 3). Sin esto, la sesión del
         // SDK de la cuenta A quedaría viva al entrar B. No-op si nunca hubo sign-in Google. El PAR
@@ -512,6 +519,62 @@ final class CloudAuthService: NSObject {
             print("CloudAuthService.signOut: \(error)")
             #endif
             CloudSyncBreadcrumb.authSignOutFailed()
+        }
+        let gone = storedSessionIsGone
+        if gone {
+            // El perfil capturado y el `keyProvider` son de la SESIÓN, así que mueren con ella —y solo cuando se ha ido de
+            // verdad (2026-09-26, ticket `detach-does-not-verify-the-cloud-session-actually-closed`). Hasta ese día se
+            // borraban antes de llamar al SDK: con la sesión superviviente, el registrador de Grupos del arranque
+            // (`GroupsAccountAssociation.syncFromLiveSessionIfNeeded`) reescribía la asociación con proveedor y correo
+            // `nil`, también en el iCloud-KV, y la sección de Almacenamiento se quedaba sin nombre en todos los teléfonos del
+            // Apple ID. Cubre de una vez los caminos de `CloudSessionSignOut` (todos llaman este `signOut()`).
+            clearCapturedProfile()
+            clearStoredProvider()
+        } else {
+            CloudSyncBreadcrumb.authSignOutLeftSession()
+        }
+        return gone
+    }
+
+    /// La postcondición de `signOut()`: el llavero ya no guarda sesión. Sin el seam de `hasSession`, a propósito (ver el
+    /// docblock de `signOut()`); con el suyo propio, que solo cambia lo que se DEVUELVE.
+    private var storedSessionIsGone: Bool {
+        #if DEBUG
+        if UITestHooks.signOutKeepsSession { return false }
+        #endif
+        guard let client else { return true }
+        return Self.sessionIsGone(
+            sdkSeesSession: client.currentSession != nil,
+            read: { try CloudAuthKeychainStorage().retrieve(key: Self.sessionStorageKey) })
+    }
+
+    /// La clave con la que el SDK guarda la sesión en `CloudAuthKeychainStorage`. Una sola vez: la usan la configuración
+    /// del cliente y la postcondición de `signOut()`, y si divergieran la postcondición leería una clave vacía y diría
+    /// siempre «se fue».
+    nonisolated static let sessionStorageKey = "yala.cloudauth.session"
+
+    /// **¿Se fue la sesión?** Falla CERRADO, y por eso no basta con `currentSession`: el SDK convierte un fallo al LEER el
+    /// llavero en `nil` (medido en supabase-swift 2.50.0, `SessionStorage.live`), así que leído solo de ahí diría «se fue»
+    /// justo cuando el llavero falla — que es cuando el borrado tampoco entró. Sigue viva si el SDK la ve, si el llavero no
+    /// se deja leer, o si guarda algo que decodifica como sesión. Algo que no decodifica cuenta como ida: el SDK tampoco
+    /// puede usarlo, y bloquear por ello no tendría salida (su `signOut` sale sin borrar cuando no ve sesión).
+    nonisolated static func sessionIsGone(sdkSeesSession: Bool, read: () throws -> Data?) -> Bool {
+        if sdkSeesSession { return false }
+        let stored: Data?
+        do {
+            stored = try read()
+        } catch {
+            #if DEBUG
+            print("CloudAuthService: el llavero no se dejó leer tras el cierre de sesión: \(error)")
+            #endif
+            return false
+        }
+        guard let stored else { return true }
+        do {
+            _ = try JSONDecoder().decode(Session.self, from: stored)
+            return false
+        } catch {
+            return true
         }
     }
 

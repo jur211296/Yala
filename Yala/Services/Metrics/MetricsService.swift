@@ -313,6 +313,11 @@ enum MetricsCanary: String {
     /// no dejaba ni una señal. **Cualquier valor sostenido >0 es un bug**, no una cola de release: a
     /// diferencia del suyo, aquí no hay corpus heredado que explique un pico.
     case groupsDetachPurgeFailed
+    /// **El desasociar cerró la sesión en la nube y la sesión SIGUE guardada** (el llavero no la borró, o un refresco del
+    /// token en vuelo la repuso). El gesto se para antes de soltar nada y la persona reintenta; `detail` lleva la salida
+    /// que eligió para el puente, sin PII. Ticket `detach-does-not-verify-the-cloud-session-actually-closed`, que no pudo
+    /// medir si pasa: **es la medición**. Fuera de `#if DEBUG` por lo mismo que su vecino.
+    case groupsDetachSessionSurvived
 
     // Teléfono que no consigue App Attest (ticket `groups-phone-that-never-attests-is-told-to-retry-forever`)
     /// **La racha de App Attest del teléfono se volvió terminal**: 24 h y al menos 3 rechazos sin un solo acierto

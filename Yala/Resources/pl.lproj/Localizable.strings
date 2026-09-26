@@ -5871,6 +5871,7 @@
 
 /* Aviso: el desasociar abortó porque no se pudo leer el puente */
 "storage.groups.detachBlockedBridge" = "Nie udało się sprawdzić wpisów z Twoich grup na tym iPhonie. Nic nie zostało odłączone. Spróbuj ponownie.";
+"storage.groups.detachBlockedSessionNotClosed" = "Nie udało się wylogować konta Twoich grup na tym iPhonie. Nic nie zostało odłączone. Spróbuj ponownie.";
 
 /* Botón cuando quedó un desasociar a medias */
 "storage.groups.detachFinishButton" = "Dokończ odłączanie konta";

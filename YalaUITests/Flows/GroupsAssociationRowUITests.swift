@@ -241,6 +241,53 @@ final class GroupsAssociationRowUITests: XCTestCase {
         XCTAssertEqual(app.alerts.count, 0, "Salió un alert con el borrado en verde.")
     }
 
+    /// Ticket `detach-does-not-verify-the-cloud-session-actually-closed`. Si la sesión en la nube sobrevive a su cierre, el
+    /// gesto tiene que PARARSE antes de soltar nada y decirlo. Hasta el 2026-09-26 seguía: borraba los grupos y la
+    /// asociación, y en el siguiente primer plano el loop arrancaba con esa sesión y volvía a bajarlo todo, re-puenteado al
+    /// lado de lo que la persona eligió conservar.
+    ///
+    /// `-uitest-sign-out-keeps-session` solo cambia lo que `CloudAuthService.signOut()` DEVUELVE. El control es
+    /// `test_detachWithoutFailingWipe_showsNoFailureAlert`: el mismo gesto sin el seam termina sin ningún aviso.
+    /// Se confirma por «conservar» por lo mismo que en el caso del borrado fallido.
+    func test_detachWhenTheSessionSurvivesSignOut_stopsAndSaysSo() {
+        let app = XCUIApplication()
+        app.launchForUITest(seed: "minimal", cloudSession: true, signOutKeepsSession: true)
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap no completó.")
+        app.openProfile()
+        openStorageScreen(app)
+
+        let detach = scrollTo(app, "storage_groups_detach_button")
+        XCTAssertTrue(detach.waitForExistence(timeout: 5), "Falta «Desasociar».")
+        detach.tap()
+
+        let keep = app.buttons.matching(identifier: "storage_groups_detach_keep").firstMatch
+        XCTAssertTrue(keep.waitForExistence(timeout: 5), "La confirmación no ofrece conservar.")
+        keep.tap()
+
+        // El aviso del bloqueo, con UN botón: el del borrado fallido lleva dos y no es este caso.
+        let ok = alertButton(app, 0)
+        XCTAssertTrue(ok.waitForExistence(timeout: 45), """
+            La sesión sobrevivió a su cierre y el desasociar no dijo nada: o siguió hasta el final —el defecto del \
+            ticket— o se paró en silencio.
+            """)
+        XCTAssertEqual(app.alerts.buttons.count, 1, """
+            El aviso no es el del bloqueo (un botón). Con dos es el del borrado fallido: el gesto cruzó el punto de no \
+            retorno con la sesión viva.
+            """)
+        let message = app.alerts.staticTexts.matching(
+            NSPredicate(format: "label CONTAINS %@", "cerrar la sesión de tu cuenta de grupos")).firstMatch
+        XCTAssertTrue(message.exists, """
+            El aviso no dice que la sesión no se cerró: el motivo `.sessionNotClosed` no llegó a la pantalla, o llegó con \
+            el texto de otro bloqueo.
+            """)
+
+        ok.tap()
+        XCTAssertTrue(section(app).waitForExistence(timeout: 5),
+                      "Tras cerrar el aviso no queda nada debajo: la sección se desmontó.")
+        // No se afirma la ausencia de «Terminar de soltar la cuenta»: con la sesión fingida la marca no se arma nunca (no
+        // hay `sub`), así que sería una aserción que no puede fallar. Ver el caso del borrado fallido.
+    }
+
     // MARK: - Solo grupos (F): la sección no aplica
 
     /// Sin sesión privada no hay nada a lo que ligar una cuenta, así que la sección no existe. Es una

@@ -368,6 +368,8 @@ struct CloudSignOutGroupsReasonTests {
             .syncStoppedNeedsRelaunch: .permanent,
             // La subida personal que no llegó también es del paso 1 (2026-09-25).
             .personalUploadRetryLater: .permanent,
+            // La sesión que sobrevivió a su cierre es solo del desasociar (2026-09-26): este productor no la recibe nunca.
+            .sessionNotClosed: .permanent,
         ]
         #expect(CloudSignOutFlowLogic.BlockReason.allCases.count == esperado.count, """
             Hay un motivo de bloqueo sin traducción escrita para el cierre en la nube. Decídelo aquí: el
@@ -431,6 +433,8 @@ struct CloudSignOutGroupsReasonTests {
             // El teléfono sin App Attest lo traduce el propio paso 1 a `.personalAttestUnavailable` antes de llegar aquí.
             .attestUnavailable: .permanent,
             .personalAttestUnavailable: .permanent,
+            // Solo del desasociar (2026-09-26): el motor personal no lo emite.
+            .sessionNotClosed: .permanent,
         ]
         #expect(CloudSignOutFlowLogic.BlockReason.allCases.count == esperado.count, """
             Hay un motivo de bloqueo sin decisión escrita para el paso 1 del cierre en la nube. Decide aquí si viaja.
@@ -514,6 +518,8 @@ struct GroupsSignOutRetryDecisionTests {
             .exportUnconfirmed: .retryAfter(seconds: GroupsSignOutRetryDecision.retryIntervalSeconds),
             .bridgeUnreadable: .retryAfter(seconds: GroupsSignOutRetryDecision.retryIntervalSeconds),
             .detachBusy: .retryAfter(seconds: GroupsSignOutRetryDecision.retryIntervalSeconds),
+            // Lo pone el desasociar DESPUÉS del push-all (2026-09-26), así que tampoco pasa por aquí.
+            .sessionNotClosed: .retryAfter(seconds: GroupsSignOutRetryDecision.retryIntervalSeconds),
         ]
         #expect(CloudSignOutFlowLogic.BlockReason.allCases.count == esperado.count, """
             Hay un motivo de bloqueo sin decisión escrita. `decide` no es un `switch`, así que se lo va a
