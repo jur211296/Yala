@@ -43,8 +43,8 @@ struct PrefsOutboxTests {
         #expect(entries["decimalPlaces"]?.kind == "int")
     }
 
-    /// M2 (review I13): la monotonicidad SOBREVIVE el relanzamiento con reloj físico REGRESIVO dentro
-    /// del drift tolerado (5 min) — el `lastIssuedHLC` persistido es el que la garantiza (si se
+    /// M2 (review I13): la monotonicidad SOBREVIVE el relanzamiento con reloj físico REGRESIVO (aquí 60 s; más allá de
+    /// los 5 min de deriva lo cubre `hlc_regressionBeyondDrift_…`) — el `lastIssuedHLC` persistido es el que la garantiza (si se
     /// perdiera, un HLC nuevo con physical menor perdería el LWW contra el propio pasado del device).
     @Test func hlc_monotonic_acrossReopen_withRegressiveClock() throws {
         let dir = freshDir(); defer { cleanup(dir) }
@@ -54,7 +54,7 @@ struct PrefsOutboxTests {
         let first = outbox.entries(forUserID: "u1").first?.entry.hlc
         #expect(first != nil)
 
-        // Instancia FRESCA (relanzamiento) con `now` 60s ANTERIOR (dentro del drift tolerado de 5 min).
+        // Instancia FRESCA (relanzamiento) con `now` 60s ANTERIOR.
         let reopened = PrefsOutbox(directoryURL: dir)
         try reopened.enqueue(key: "userName", userID: "u1", value: .string("v2"),
                              now: base.addingTimeInterval(-60))
@@ -63,20 +63,74 @@ struct PrefsOutboxTests {
         #expect(second! > first!)   // orden lexicográfico del wire == orden causal
     }
 
-    /// Complemento M2: una regresión MÁS ALLÁ del drift tolerado (5 min) NO emite un HLC stale ni
-    /// rompe la monotonicidad — el reloj RECHAZA (`clockFailed`) y la entry previa queda intacta.
-    @Test func hlc_regressionBeyondDrift_throwsAndPreservesEntry() throws {
+    /// Complemento M2: una regresión MÁS ALLÁ del drift tolerado (5 min) tampoco emite un HLC stale ni rompe la
+    /// monotonicidad, y además **encola**. Hasta `personal-clock-rollback-wedges-the-drain-forever` el reloj rechazaba
+    /// (`clockFailed`), el llamador lo descartaba y ese cambio no subía nunca: el `lastIssuedHLC` solo baja si la hora real
+    /// lo alcanza. Ahora estampa con `sendLocal`: por encima del último emitido, con la hora que sea.
+    @Test func hlc_regressionBeyondDrift_stillEnqueues_aboveTheLastIssued() throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let base = Date(timeIntervalSince1970: 2_000_000)
         let outbox = PrefsOutbox(directoryURL: dir)
         try outbox.enqueue(key: "userName", userID: "u1", value: .string("v1"), now: base)
+        let first = try HLC.parse(try #require(outbox.entries(forUserID: "u1").first?.entry.hlc))
 
         let reopened = PrefsOutbox(directoryURL: dir)
-        #expect(throws: PrefsOutboxError.self) {
-            try reopened.enqueue(key: "userName", userID: "u1", value: .string("v2"),
-                                 now: base.addingTimeInterval(-600))  // 10 min > drift 5 min → rechaza
+        try reopened.enqueue(key: "userName", userID: "u1", value: .string("v2"),
+                             now: base.addingTimeInterval(-600))  // 10 min > drift 5 min
+        let entry = try #require(reopened.entries(forUserID: "u1").first?.entry)
+        #expect(entry.value == "v2", "el cambio llega al outbox")
+        #expect(try HLC.parse(entry.hlc) > first, "por encima del último emitido: no pierde contra su propio pasado")
+    }
+
+    /// El reloj persistido un día por delante, sin tocarlo: cada cambio de después se encola, ordenado tras el anterior.
+    @Test func hlc_clockAheadByADay_everyLaterChangeEnqueues_inOrder() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let base = Date(timeIntervalSince1970: 2_000_000)
+        let outbox = PrefsOutbox(directoryURL: dir)
+        try outbox.enqueue(key: "userName", userID: "u1", value: .string("adelantada"),
+                           now: base.addingTimeInterval(86_400))
+        var last = try HLC.parse(try #require(outbox.entries(forUserID: "u1").first?.entry.hlc))
+
+        for (i, key) in ["userName", "decimalPlaces", "userName"].enumerated() {
+            let value: PrefValue = key == "decimalPlaces" ? .int(i) : .string("v\(i)")
+            try PrefsOutbox(directoryURL: dir).enqueue(key: key, userID: "u1", value: value,
+                                                       now: base.addingTimeInterval(Double(i * 60)))
+            let hlc = try HLC.parse(try #require(outbox.entries(forUserID: "u1").first { $0.key == key }?.entry.hlc))
+            #expect(hlc > last)
+            last = hlc
         }
-        #expect(reopened.entries(forUserID: "u1").first?.entry.value == "v1")  // intacta
+        #expect(outbox.entries(forUserID: "u1").first { $0.key == "userName" }?.entry.value == "v2")
+    }
+
+    /// El HLC sale del `now` inyectado, no de la hora del reloj de pared: en el régimen normal (sin reloj persistido por
+    /// delante) su milisegundo es el de `now`. Sin eso, los tests de esta suite con fechas fijas no medirían lo que dicen.
+    @Test func hlc_isStampedWithTheInjectedNow() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let now = Date(timeIntervalSince1970: 1_000)
+        let outbox = PrefsOutbox(directoryURL: dir)
+        try outbox.enqueue(key: "userName", userID: "u1", value: .string("Ana"), now: now)
+        let hlc = try HLC.parse(try #require(outbox.entries(forUserID: "u1").first?.entry.hlc))
+        #expect(hlc.physicalMs == CanonicalTime.physicalMillis(from: now))
+    }
+
+    /// Lo único que aún hace fallar el estampado, un año fuera de 0001–9999, sigue saliendo `clockFailed` y no toca el
+    /// fichero: la entrada previa y el último HLC emitido quedan como estaban.
+    @Test func hlc_yearOutOfRange_throwsClockFailed_andLeavesTheFileIntact() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let outbox = PrefsOutbox(directoryURL: dir)
+        try outbox.enqueue(key: "userName", userID: "u1", value: .string("v1"), now: Date(timeIntervalSince1970: 1_000))
+        let before = try #require(outbox.entries(forUserID: "u1").first?.entry)
+
+        #expect {
+            try outbox.enqueue(key: "userName", userID: "u1", value: .string("v2"),
+                               now: Date(timeIntervalSince1970: 3e11))  // año ~11476
+        } throws: { error in
+            if case PrefsOutboxError.clockFailed = error { return true }
+            return false
+        }
+        let after = try #require(outbox.entries(forUserID: "u1").first?.entry)
+        #expect(after.value == "v1")
+        #expect(after.hlc == before.hlc)
     }
 
     @Test func enqueue_overwritesByKey() throws {

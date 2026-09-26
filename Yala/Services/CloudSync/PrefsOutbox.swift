@@ -12,7 +12,7 @@
 //
 //  HLC (§d.5): el `hlc` de cada entry es la VERDAD TEMPORAL de la mutación, fijado al encolar vía un
 //  `HLCClock` (mismo tipo/formato c1 que el motor). La MONOTONICIDAD se persiste en el propio archivo
-//  (`lastIssuedHLC`): cada `enqueue` carga el reloj desde ese estado, emite (`send`), y re-persiste →
+//  (`lastIssuedHLC`): cada `enqueue` carga el reloj desde ese estado, emite (`sendLocal`), y re-persiste →
 //  dos enqueues en el mismo ms avanzan el counter (sin `Date()` crudo: `now` inyectable).
 //
 //  NODE ID (desviación documentada): el motor genera un `NodeID` EFÍMERO por instancia (`NodeID.generate()`
@@ -119,7 +119,14 @@ nonisolated struct PrefsOutbox {
 
     /// Encola (o SOBRESCRIBE) la preferencia `key`. Estampa un HLC monótono (reloj persistido) y persiste
     /// el archivo atómicamente. `now` inyectable (nunca `Date()` crudo).
-    /// - Throws: `PrefsOutboxError.clockFailed` si el reloj no puede emitir; `.persistFailed` en I/O.
+    ///
+    /// Estampa con `HLCClock.sendLocal`, no con `send` (ticket `personal-clock-rollback-wedges-the-drain-forever`): este
+    /// reloj solo avanza con los `enqueue` de este teléfono, así que `lastIssuedHLC` solo queda más de 5 min por delante
+    /// si una preferencia se cambió con la hora adelantada. Con `send` cada cambio posterior salía `clockFailed` hasta que
+    /// la hora real lo alcanzara, y el llamador lo descarta: ese cambio no subía nunca. Con `sendLocal` sale por encima del
+    /// último emitido, y la monotonicidad que protege al teléfono de su propio pasado sigue intacta.
+    /// - Throws: `PrefsOutboxError.clockFailed` si el reloj no puede emitir (solo un año fuera de 0001–9999);
+    ///   `.persistFailed` en I/O.
     func enqueue(key: String, userID: String, value: PrefValue, now: Date = .now) throws {
         var state = try loadOrCreateState()
 
@@ -143,7 +150,7 @@ nonisolated struct PrefsOutbox {
         var clock = HLCClock(nodeID: nodeID, latest: latest)
         let stamped: HLC
         do {
-            stamped = try clock.send(now: now)
+            stamped = try clock.sendLocal(eventTime: now)
         } catch {
             throw PrefsOutboxError.clockFailed(underlying: error)
         }

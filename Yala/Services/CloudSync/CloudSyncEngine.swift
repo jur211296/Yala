@@ -1681,6 +1681,11 @@ final class CloudSyncEngine {
     /// con las filas del outbox ya en disco. SOLO tests.
     var _testThrowOnDrainCursorSave = false
 
+    /// Hace que el estampado del HLC lance al traducir, como un año fuera de rango: es lo único que aún puede cortar la
+    /// traducción desde que el drain estampa con `sendLocal` (ticket `personal-clock-rollback-wedges-the-drain-forever`), y
+    /// en un iPhone no se alcanza. Para seguir fijando qué hace la vuelta cortada (no re-ancla por encima del corte). SOLO tests.
+    var _testThrowOnClockStamp = false
+
     /// DIFERIDOS #33 (T13): cuando `true`, el fetch por TOKEN del drain lanza — simula el token
     /// decodable cuyo `fetchHistory(predicate: token >)` revienta (migración destructiva). SOLO tests.
     var _testThrowOnTokenHistoryFetch = false
@@ -1712,7 +1717,7 @@ final class CloudSyncEngine {
     private var drainAdoptBackendKnown: Set<UUID>?
 
     /// Los cambios de la transacción en curso que no se tradujeron por ser del backend, por tipo. Pasan a
-    /// `drainAdoptSkipped` solo cuando la transacción se consume: una cortada por deriva del reloj se re-lee entera.
+    /// `drainAdoptSkipped` solo cuando la transacción se consume: una cortada (el HLC no se pudo estampar) se re-lee entera.
     private var drainTxAdoptSkipped: [String: Int] = [:]
     private var drainAdoptSkipped: [String: Int] = [:]
 
@@ -1732,8 +1737,10 @@ final class CloudSyncEngine {
     /// quizá no estén en el outbox (ticket `drain-duplicates-the-unit-clock-when-its-row-cannot-be-read`). Quien
     /// lea el outbox para decidir algo —el guard D-1 de `applyPage`, «no queda nada que subir» de la migración—
     /// no puede seguir con `false`: con el rollback, las filas de esta vuelta ya no están ni sucias en el contexto.
-    /// Una llamada re-entrante devuelve `false` (no drenó ella). `true` no cubre la traducción cortada por
-    /// deriva del reloj (`translationAborted`): esa vuelta persiste lo que tradujo y es la que ya existía.
+    /// Una llamada re-entrante devuelve `false` (no drenó ella). `true` no cubre la traducción cortada
+    /// (`translationAborted`): esa vuelta persiste lo que tradujo y es la que ya existía. Desde
+    /// `personal-clock-rollback-wedges-the-drain-forever` la deriva del reloj ya no la corta (el drain estampa con
+    /// `HLCClock.sendLocal`); solo un año fuera de 0001–9999.
     @discardableResult
     func drainOnce(context: ModelContext) -> Bool {
         guard !isDraining else {
@@ -1814,16 +1821,17 @@ final class CloudSyncEngine {
             //    de OTRO store no avanzan nada (el token es POR-STORE). Convergencia: un drain ocioso re-lee
             //    solo sus propios writes (0 filas) y, como el cursor vive en `syncMetaSchema`, escribirlo no
             //    produce ninguna transacción del store personal → no hay nada nuevo que anclar la vuelta
-            //    siguiente. Criterio de drift: si `clock.send` lanza, NO se consume esa transacción (el
-            //    high-water se queda antes de ella) → se reintenta al próximo drain. `advancedTxAt` =
+            //    siguiente. Si el estampado del HLC lanza, NO se consume esa transacción (el high-water se
+            //    queda antes de ella) → se reintenta al próximo drain. Desde que se estampa con `sendLocal` ni la
+            //    deriva ni el contador agotado lanzan; solo un año fuera de 0001–9999. `advancedTxAt` =
             //    timestamp de esa última tx (HALLAZGO 2: ancla comparable cross-mount, persistida en 7).
             var rows: [PendingOutboxRow] = []
             var advancedToken: DefaultHistoryToken?
             var advancedTxAt: Date?
-            // SERIO 1 del review adversarial #33: si la traducción ABORTA a mitad (clock.send lanza),
+            // SERIO 1 del review adversarial #33: si la traducción ABORTA a mitad (el estampado del HLC lanza),
             // NINGÚN re-anclaje (ni el del guard ni el de token roto) puede saltar por encima de las
             // txs externas no consumidas — el paso 7 los suprime y cae al avance normal (`advancedToken`
-            // = última tx consumida, el punto de retry seguro del invariante de drift).
+            // = última tx consumida, el punto de retry seguro de la traducción cortada).
             var translationAborted = false
             for tx in txns {
                 // Anti-auto-captura (echo suppression): los writes del propio motor NO se TRADUCEN — el
@@ -1851,10 +1859,11 @@ final class CloudSyncEngine {
                         // dejaba volver la fila (review del ticket).
                         throw failure
                     } catch {
-                        // `clock.send` lanzó (drift/overflow): abortar en la FRONTERA de esta transacción.
-                        // No consumimos `tx` (advancedToken se queda antes de ella) ni sus filas parciales.
+                        // El estampado del HLC lanzó: abortar en la FRONTERA de esta transacción. No consumimos
+                        // `tx` (advancedToken se queda antes de ella) ni sus filas parciales. Desde que se estampa con
+                        // `sendLocal` ni la deriva ni el contador agotado cortan aquí; solo un año fuera de 0001–9999.
                         #if DEBUG
-                        print("CloudSyncEngine: clock drift/overflow al traducir tx \(tx.token): \(error)")
+                        print("CloudSyncEngine: el HLC no se pudo estampar al traducir tx \(tx.token): \(error)")
                         #endif
                         translationAborted = true
                         break
@@ -1940,11 +1949,11 @@ final class CloudSyncEngine {
                 //    nunca queda desincronizada del token.
                 //    SERIO 1 del review adversarial #33 (aplica a AMBOS re-anclajes — el gemelo del guard
                 //    tenía el mismo defecto latente): los reanchor apuntan a la última tx de la ventana/unión
-                //    CRUDA, calculada ANTES de traducir — con `translationAborted` (clock.send lanzó a mitad),
+                //    CRUDA, calculada ANTES de traducir — con `translationAborted` (el estampado lanzó a mitad),
                 //    re-anclar saltaría las txs externas entre el break y el final SIN haberlas emitido →
                 //    quedarían con timestamp ≤ ancla nueva, invisibles para siempre (token-fetch, fallback Y
                 //    guard) = pérdida silenciosa. En abort se cae al avance normal (última tx CONSUMIDA — el
-                //    punto de retry del invariante de drift); si nada se consumió, no se guarda nada y el
+                //    punto de retry de la traducción cortada); si nada se consumió, no se guarda nada y el
                 //    próximo drain reintenta entero.
                 if !_testSuppressTokenAdvance {
                     if let reanchor = tokenGuard.reanchor, !translationAborted {
@@ -1982,7 +1991,7 @@ final class CloudSyncEngine {
                         CloudSyncBreadcrumb.historyTokenBrokenReanchored()
                     } else if let advancedToken {
                         //    Avance normal: SOLO si se consumió ≥1 transacción del STORE PERSONAL (eco incluido —
-                        //    ver el bloque del paso 5). Bundling seguro: todo `clock.send` de esta vuelta ocurrió
+                        //    ver el bloque del paso 5). Bundling seguro: todo estampado de esta vuelta ocurrió
                         //    al traducir una tx externa, y toda tx traducida es de ese store (muro anti-fuga
                         //    `personalEntityNames` ⊂ `personalStoreEntityNames`) ⇒ también fijó `advancedToken`.
                         try saveWithAuthor(context, Self.outboxSaveAuthor) {
@@ -2810,11 +2819,11 @@ final class CloudSyncEngine {
         }
     }
 
-    /// Acuña el HLC (ÚNICO punto que llama `clock.send` → advance determinista y en orden), deduplica
+    /// Acuña el HLC (ÚNICO punto del drain que avanza el reloj → advance determinista y en orden), deduplica
     /// por (syncID, hlc, op) y encola una fila pendiente. `makePayload(hlc)` construye
     /// `(fieldsJSON, fieldHlcsJSON)`; si devuelve `nil` la fila se descarta SIN deshacer el advance del
-    /// reloj (lockstep de resumibilidad intacto). `clock.send` puede lanzar `ClockDriftError` → se
-    /// propaga al llamador (criterio de drift del drain).
+    /// reloj (lockstep de resumibilidad intacto). El estampado solo lanza con un año fuera de 0001–9999 → se
+    /// propaga al llamador, que corta la traducción en la frontera de la transacción.
     private func appendRow(
         op: SyncOutboxOp,
         syncID: UUID,
@@ -2828,7 +2837,12 @@ final class CloudSyncEngine {
         // Advance del reloj: SIEMPRE tras pasar los guards estructurales y ANTES del dedup, de modo que
         // dos instancias frescas procesando el mismo History avanzan el reloj en lockstep → HLCs
         // idénticos (invariante de resumibilidad). El HLC queda FIJADO en la fila (§d.5).
-        let hlc = try clock.send(now: tx.timestamp).description
+        // `sendLocal` y no `send`: con la hora del teléfono adelantada y devuelta, el reloj lógico persistido queda por
+        // delante de la fecha de la transacción, y la guarda de deriva de `send` cortaba en esta transacción en cada
+        // vuelta para siempre (`personal-clock-rollback-wedges-the-drain-forever`). Sigue siendo la fecha de la
+        // TRANSACCIÓN y no la de ahora: es lo que hace determinista el re-drain.
+        if _testThrowOnClockStamp { throw CanonicalTimeError.yearOutOfRange(0) }
+        let hlc = try clock.sendLocal(eventTime: tx.timestamp).description
         let key = dedupKey(syncID: syncID, hlc: hlc, op: op)
         guard !seen.contains(key) else { return }
         seen.insert(key)

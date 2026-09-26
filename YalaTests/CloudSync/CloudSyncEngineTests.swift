@@ -815,10 +815,12 @@ struct CloudSyncEngineTests {
         #expect(engine.historyTokenBrokenBoundedCount == 1)
     }
 
-    /// T14 (SERIO 1 del review adversarial #33): si la traducción ABORTA a mitad de ventana
-    /// (`clock.send` lanza por drift — reloj persistido adelantado > 5 min), el re-anclaje del token
-    /// roto se SUPRIME (re-anclar saltaría txs externas jamás emitidas = pérdida silenciosa). El token
-    /// queda roto y, saneado el reloj, el siguiente drain recupera TODO (nada se perdió).
+    /// T14 (SERIO 1 del review adversarial #33): si la traducción ABORTA a mitad de ventana (el estampado del
+    /// HLC lanza), el re-anclaje del token roto se SUPRIME (re-anclar saltaría txs externas jamás emitidas = pérdida
+    /// silenciosa). El token queda roto y la vuelta siguiente recupera TODO (nada se perdió). Hasta
+    /// `personal-clock-rollback-wedges-the-drain-forever` el corte lo provocaba un reloj persistido adelantado; desde que
+    /// el drain estampa con `sendLocal` ese reloj ya no corta, y lo único que queda (un año fuera de 0001–9999) lo
+    /// simula el seam `_testThrowOnClockStamp`.
     @Test func t14_translationAborted_suppressesBrokenReanchor_noWriteLoss() throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
@@ -829,21 +831,14 @@ struct CloudSyncEngineTests {
         let baseTxAt = try #require(allHistory(context).last?.timestamp)
         let outboxBefore = try outboxRows(context).count
 
-        // FX sin drenar + token corrupto + RELOJ PERSISTIDO adelantado 1h → drift > 5 min: el primer
-        // `clock.send` de la traducción lanza → abort en la frontera, sin filas ni avance.
+        // FX sin drenar + token corrupto + el estampado del HLC lanzando: el primer estampado de la traducción
+        // lanza → abort en la frontera, sin filas ni avance.
         let fx = try makeFX(context)
         try context.save()
         try sealCorruptToken(context, lastDrainedTxAt: baseTxAt)
-        var futureClock = HLCClock(nodeID: NodeID.generate())
-        let futureHLC = try futureClock.send(now: baseTxAt.addingTimeInterval(3600))
-        let cursorPre = try #require(try context.fetch(FetchDescriptor<SyncCursor>()).first)
-        let prevAuthor = context.author
-        context.author = CloudSyncEngine.outboxSaveAuthor
-        cursorPre.clockLatestHLC = futureHLC.description
-        try context.save()
-        context.author = prevAuthor
 
         let engine = CloudSyncEngine()
+        engine._testThrowOnClockStamp = true
         engine.drainOnce(context: context)
 
         #expect(engine.historyTokenBrokenBoundedCount == 1)      // la rama acotada corrió…
@@ -851,14 +846,6 @@ struct CloudSyncEngineTests {
         #expect(try fxRows(context).isEmpty)                     // nada emitido (abort en la frontera)
         let cursorMid = try #require(try context.fetch(FetchDescriptor<SyncCursor>()).first)
         #expect(cursorMid.historyTokenData == Data("garbage-token".utf8))  // token intacto (retry)
-
-        // Reloj saneado → instancia fresca (el reloj en memoria de `engine` quedó contaminado por
-        // loadClock) recupera la FX completa: el abort NO perdió el write.
-        let prevAuthor2 = context.author
-        context.author = CloudSyncEngine.outboxSaveAuthor
-        cursorMid.clockLatestHLC = nil
-        try context.save()
-        context.author = prevAuthor2
 
         let healed = CloudSyncEngine()
         healed.drainOnce(context: context)
