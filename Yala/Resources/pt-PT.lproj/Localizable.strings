@@ -5390,3 +5390,15 @@
 /* Sign-out blocked: the upload of personal changes to the cloud did not reach the server */
 "settings.signOutUploadRetryLater" = "As tuas últimas alterações não chegaram à nuvem. Ficam guardadas neste telemóvel e não se perde nada; tenta de novo daqui a pouco.";
 "settings.signOutCloudSessionExpired" = "A tua sessão expirou e há alterações que ainda não subiram para a nuvem. Não se perde nada: abre “Onde vivem os teus dados”, aqui em Perfil, toca em “Iniciar sessão” e depois tenta novamente.";
+
+/* Title: a deletion of the old iCloud data succeeded in iCloud but failed on this phone */
+"welcome.privateICloud.leftHalfwayTitle" = "Não terminámos de apagar";
+
+/* Body: iCloud already deleted, phone not; the person chooses to finish or keep */
+"welcome.privateICloud.leftHalfwayBody" = "Já apagámos o que estava no iCloud, mas não conseguimos terminar neste telemóvel: tudo ou parte do que tinhas pode continuar aqui. Podes ficar com o que sobrou, ou terminar de apagar e começar do zero.";
+
+/* Button: finish the deletion that was left halfway */
+"welcome.privateICloud.leftHalfwayFinish" = "Terminar de apagar";
+
+/* Confirm body before finishing a deletion that was left halfway */
+"welcome.privateICloud.leftHalfwayConfirmBody" = "O que resta neste telemóvel é apagado, incluindo o que criaste desde então, e começas de novo. Não fica nenhuma cópia.";

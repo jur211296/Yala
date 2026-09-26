@@ -6129,3 +6129,15 @@
 /* Sign-out blocked: the upload of personal changes to the cloud did not reach the server */
 "settings.signOutUploadRetryLater" = "Je laatste wijzigingen zijn niet in de cloud aangekomen. Ze blijven op deze telefoon staan en er gaat niets verloren; probeer het straks opnieuw.";
 "settings.signOutCloudSessionExpired" = "Je sessie is verlopen en sommige wijzigingen zijn nog niet naar de cloud geüpload. Er gaat niets verloren: open ‘Waar je gegevens staan’, hier in Profiel, tik op ‘Aanmelden’ en probeer het daarna opnieuw.";
+
+/* Title: a deletion of the old iCloud data succeeded in iCloud but failed on this phone */
+"welcome.privateICloud.leftHalfwayTitle" = "Het verwijderen is maar half gelukt";
+
+/* Body: iCloud already deleted, phone not; the person chooses to finish or keep */
+"welcome.privateICloud.leftHalfwayBody" = "We hebben al verwijderd wat in iCloud stond, maar op deze telefoon konden we het niet afmaken: alles of een deel van wat je had kan hier nog staan. Je kunt houden wat er nog is, of het alsnog verwijderen en opnieuw beginnen.";
+
+/* Button: finish the deletion that was left halfway */
+"welcome.privateICloud.leftHalfwayFinish" = "Verwijderen afmaken";
+
+/* Confirm body before finishing a deletion that was left halfway */
+"welcome.privateICloud.leftHalfwayConfirmBody" = "Wat er nog op deze telefoon staat wordt verwijderd, ook wat je sindsdien hebt gemaakt, en je begint opnieuw. Er blijft geen kopie over.";

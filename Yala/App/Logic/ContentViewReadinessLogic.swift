@@ -49,7 +49,7 @@ struct ShellReadinessState: Equatable {
     /// **Paso 4 · el aviso del espejo que llegó tarde.** Es un sheet del anchor de `ContentView`, así
     /// que entra a la matriz por la regla (3) de Presentaciones: un intent que presentara debajo se lo
     /// comería, y dentro de él vive un borrado irreversible que nada puede interrumpir. La condición es
-    /// VIVA (`lateICloudCorpus != nil`), no un `@State` de red visual — que es lo que la regla (4) pide
+    /// VIVA (`lateICloudNotice != nil`), no un `@State` de red visual — que es lo que la regla (4) pide
     /// para los blockers.
     let showLateICloudNotice: Bool
     /// **El aviso de «tus datos fueron eliminados de iCloud» está pedido y sin contestar.** Como su

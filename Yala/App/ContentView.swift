@@ -85,7 +85,10 @@ struct ContentView: View {
     /// `.alert` del mismo anchor se pisan, y un `.alert` no tiene `onDismiss` con el que encadenarlos como
     /// hace `UserDataResetView`. La confirmación, el progreso y el fallo son FASES de
     /// `LateICloudMirrorNoticeView`.
-    @State private var lateICloudCorpus: ICloudPersonalCorpus?
+    ///
+    /// Y lleva también «el borrado quedó a medias» (`LateICloudNotice.wipeLeftHalfway`): es la misma hoja en otro
+    /// momento, con el mismo blocker en la matriz.
+    @State private var lateICloudNotice: LateICloudNotice?
     @State private var showSyncSettingsSheet: Bool = false
     @State private var showProTrialOffer: Bool = false
     @State private var showWhatsNew: Bool = false
@@ -441,9 +444,9 @@ struct ContentView: View {
         .modifier(AppleIDCloseNoticeModifier(notice: $appleIDCloseNotice))
         // Paso 4 · el aviso del espejo tardío. Sheet y no alert: lleva dos gestos, un progreso y un
         // fallo, y encadenar presentaciones desde este anchor es la carrera medida del 2026-09-03.
-        .sheet(item: $lateICloudCorpus) { corpus in
+        .sheet(item: $lateICloudNotice) { notice in
             LateICloudMirrorNoticeView(
-                corpus: corpus,
+                notice: notice,
                 onKeep: {
                     // «Déjalo así»: los dos corpus conviven, que es lo que ya pasaba — la diferencia es
                     // que ahora lo eligió la persona. Se retira el testigo: ya decidió, y volver a
@@ -767,7 +770,7 @@ struct ContentView: View {
                 || CloudSessionSignOut.shared.phase == .awaitingRelaunch,
             showFreshStartWipeAlert: showFreshStartWipeAlert,
             showFreshStartWipeFailedAlert: showFreshStartWipeFailedAlert,
-            showLateICloudNotice: lateICloudCorpus != nil,
+            showLateICloudNotice: lateICloudNotice != nil,
             // Condición VIVA y no el `@State` del alert: la red de presentación toggla ese flag para
             // re-presentar, y con la matriz colgada de él cada reintento la abriría un instante.
             showRemoteWipeAlert: remoteWipeNoticePending,
@@ -1010,7 +1013,7 @@ struct ContentView: View {
                 || CloudSessionSignOut.shared.phase == .awaitingRelaunch,
             showFreshStartWipeAlert: showFreshStartWipeAlert,
             showFreshStartWipeFailedAlert: showFreshStartWipeFailedAlert,
-            showLateICloudNotice: lateICloudCorpus != nil,
+            showLateICloudNotice: lateICloudNotice != nil,
             // Condición VIVA y no el `@State` del alert: la red de presentación toggla ese flag para
             // re-presentar, y con la matriz colgada de él cada reintento la abriría un instante.
             showRemoteWipeAlert: remoteWipeNoticePending,
@@ -1105,8 +1108,8 @@ struct ContentView: View {
         case .presentWhatsNew(let features, let version):
             whatsNewData = (features: features, version: version)
             showWhatsNew = true
-        case .presentLateICloudMirrorNotice(let corpus):
-            lateICloudCorpus = corpus
+        case .presentLateICloudMirrorNotice(let notice):
+            lateICloudNotice = notice
         case .showInviteError(let detail):
             // El fallback del cuerpo vacío vivía en la vista; se mueve al productor para que la alerta
             // no tenga que saber de qué camino viene el texto.
@@ -1786,18 +1789,53 @@ struct ContentView: View {
         // **Y el ciclo se cierra aquí, que es lo que faltaba**: `performICloudCorpusWipe` no retira los
         // testigos —los retiran las vistas al terminar su fase—, así que sin este bloque un borrado
         // reanudado con éxito dejaba el arm puesto y el arranque siguiente volvía a reanudarlo. Bucle.
-        if StorageModePersistence.isICloudCorpusWipeArmed() {
+        //
+        // **Salvo que el borrado haya quedado A MEDIAS delante de la persona** (ticket
+        // `late-icloud-notice-exit-after-a-failed-wipe-leaves-the-blind-resume-armed`): la zona de iCloud ya no está, lo
+        // del teléfono sí, y ella vio el fallo y salió. Eso no se termina a ciegas: se le pregunta. El arm gana si están
+        // los dos, porque solo pasa cuando pulsó «Terminar de borrar» y un kill cortó ese intento.
+        switch WelcomePrivateICloudGateLogic.lateWipeLaunch(
+            armed: StorageModePersistence.isICloudCorpusWipeArmed(),
+            leftHalfway: StorageModePersistence.isICloudCorpusWipeLeftHalfway()
+        ) {
+        case .none:
+            break
+        case .askLeftHalfway:
+            RouterEntryGate.shared.submit(.presentLateICloudMirrorNotice(.wipeLeftHalfway))
+            return
+        case .resume:
             let failure = await performICloudCorpusWipe(.handover)
-            // **Parado en los cambios de grupos, se DESARMA** (ticket `fresh-start-wipe-kills-unsent-group-writes-silently`,
-            // hallazgo de las tres lentes de la review). La subida corre antes del primer borrado, así que no hay nada a
-            // medias que el arm proteja; y dejarlo puesto reintentaba en silencio cada arranque hasta que un día —con la
-            // sesión recuperada, semanas después— los cambios subían y el borrado se llevaba todo lo creado entretanto sin
-            // una sola pantalla. Desarmado, el testigo del espejo tardío sigue puesto y el aviso vuelve a preguntar.
-            if failure == CloudSessionSignOut.freshStartGroupsPendingFailure {
-                StorageModePersistence.clearICloudCorpusWipeArm()
+            if let failure {
+                switch WelcomePrivateICloudGateLogic.classifyLateWipeFailure(
+                    groupsPending: failure == CloudSessionSignOut.freshStartGroupsPendingFailure,
+                    zoneDone: StorageModePersistence.isICloudCorpusWipeZoneDone(),
+                    wasLeftHalfway: StorageModePersistence.isICloudCorpusWipeLeftHalfway()
+                ) {
+                case .groupsPending:
+                    // **Parado en los cambios de grupos, se DESARMA** (ticket
+                    // `fresh-start-wipe-kills-unsent-group-writes-silently`, hallazgo de las tres lentes de la review). La
+                    // subida corre antes del primer borrado, así que no hay nada a medias que el arm proteja; y dejarlo
+                    // puesto reintentaba en silencio cada arranque hasta que un día —con la sesión recuperada, semanas
+                    // después— los cambios subían y el borrado se llevaba todo lo creado entretanto sin una sola pantalla.
+                    // Desarmado, el testigo del espejo tardío sigue puesto y el aviso vuelve a preguntar.
+                    //
+                    // **Sin perder la zona**: si esta reanudación viene de un kill tras borrarla, se queda «a medias» y el
+                    // arranque siguiente pregunta (review adversarial del 2026-09-26).
+                    StorageModePersistence.disarmFailedICloudCorpusWipe()
+                case .untouched:
+                    // Nada se tocó y nadie vio el fallo: el arm se queda y el arranque siguiente vuelve a intentarlo, que
+                    // es para lo que existe tras un kill.
+                    break
+                case .leftHalfway:
+                    // **La zona ya no está: otro intento a ciegas no.** Se le enseña a la persona que quedó a medias, y
+                    // el arranque siguiente, si no contesta, vuelve a preguntar en vez de reanudar.
+                    StorageModePersistence.leaveICloudCorpusWipeHalfway()
+                    RouterEntryGate.shared.submit(.presentLateICloudMirrorNotice(.wipeLeftHalfway))
+                }
             }
             guard failure == nil else { return }
             StorageModePersistence.clearPrivateChoseWithoutICloud()
+            StorageModePersistence.clearICloudCorpusWipeLeftHalfway()
             StorageModePersistence.clearICloudCorpusWipeArm()
             cancelWipeGrace()
             hasExistingData = false
@@ -1826,7 +1864,7 @@ struct ContentView: View {
             // Por el ROUTER y no encendiendo el `@State`: la sonda contesta desde un `Task` async, y para
             // entonces el anchor puede estar presentando el cover de idioma o el sheet del trial. La
             // matriz de readiness retiene la cola hasta que el anchor esté libre.
-            RouterEntryGate.shared.submit(.presentLateICloudMirrorNotice(corpus))
+            RouterEntryGate.shared.submit(.presentLateICloudMirrorNotice(.corpus(corpus)))
         }
     }
 
@@ -1887,6 +1925,13 @@ struct ContentView: View {
             MetricsService.canary(.freshStartWipeFailed, detail: "icloudCorpusWipe:\(failure)")
             return failure
         }
+        // **Aquí se cruza la zona, y lo apunta quien la cruza** (ticket
+        // `late-icloud-notice-exit-after-a-failed-wipe-leaves-the-blind-resume-armed`). De esta línea para abajo, un fallo
+        // ya no es «nada se tocó»: la zona no está y lo del teléfono sí. Quien lo lee es el aviso tardío —y su reanudación en
+        // el arranque—, para no dar por intacto ni reanudar a ciegas un borrado a medias. Solo se escribe con el arm puesto
+        // y se va con él. Un fallo DE la zona se queda arriba como «no se tocó»: el espejo usa una sola zona y su borrado
+        // es de todo o nada (con varias, un fallo parcial no se vería aquí; el prefijo lo permite, el espejo hoy no).
+        StorageModePersistence.markICloudCorpusWipeZoneDone()
         // Las filas locales solo si las hay. **Y sí puede haberlas con el mount neutro**: hasta el
         // 2026-09-13 esta línea decía que el predicado de instalación fresca lo impedía, y el tercer
         // término del neutro (`groupsOnlySessionArmed`) rompió esa equivalencia — una sesión solo-grupos

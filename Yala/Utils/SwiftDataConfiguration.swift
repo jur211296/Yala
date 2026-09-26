@@ -667,6 +667,9 @@ extension SwiftDataConfiguration {
         // que se cierra. `cloudSync.*` lo excluye el barrido de preferencias, así que sin esto la persona
         // siguiente heredaría un aviso de espejo tardío sobre un corpus que no es suyo.
         StorageModePersistence.clearPrivateChoseWithoutICloud(defaults)
+        // Y el «borrado a medias» del mismo aviso, por lo mismo: describe el corpus de la vida que se cierra, y sin esto
+        // la persona siguiente vería «El borrado quedó a medias» sobre unos datos que no son suyos.
+        StorageModePersistence.clearICloudCorpusWipeLeftHalfway(defaults)
         // EL EJE 1 muere aquí, y por la misma razón que sus dos vecinas de arriba: describe la vida
         // que se cierra. `removeUserPreferenceKeys` excluye `cloudSync.*` a propósito —y para la
         // marca esa exclusión es deliberada, porque tiene que SOBREVIVIR a «Vaciar datos»— así que

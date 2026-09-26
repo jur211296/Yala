@@ -36,12 +36,19 @@
 //  destruye: decisión de Jürgen del 2026-09-10 —«déjalo así», los dos corpus conviven, ahora avisado—.
 //  Lo que este ticket arregla no es que convivan: es que convivieran **en silencio**.
 //
+//  **Y un borrado que falla no es UNO** (ticket `late-icloud-notice-exit-after-a-failed-wipe-leaves-the-blind-resume-armed`).
+//  Antes de la zona de iCloud no se tocó nada: `.failed`, se desarma y el aviso vuelve. Después, la zona ya no está y lo
+//  del teléfono sí: `.leftHalfway`, que lo dice y deja elegir. Hasta el 2026-09-26 los dos caían en `.failed`, cuyo copy
+//  («Tus datos siguen en iCloud, intactos») era falso en el segundo, y salir dejaba el arm puesto: el arranque siguiente
+//  terminaba el borrado a ciegas sobre quien acababa de decir «déjalo así».
+//
 
 import SwiftUI
 
 struct LateICloudMirrorNoticeView: View {
 
-    let corpus: ICloudPersonalCorpus
+    /// El aviso de siempre (con sus cifras) o el borrado que quedó a medias.
+    let notice: LateICloudNotice
     /// «Déjalo así»: los dos corpus conviven. Retira el testigo — la persona ya decidió.
     var onKeep: () -> Void
     /// Borrar el corpus viejo de iCloud y lo que el espejo bajó. `nil` si fue bien.
@@ -49,11 +56,33 @@ struct LateICloudMirrorNoticeView: View {
     /// El borrado terminó bien: `ContentView` reabre el onboarding.
     var onWiped: () -> Void
 
-    @State private var phase: Phase = .notice
+    @State private var phase: Phase
     @Environment(\.dismiss) private var dismiss
 
+    /// La fase inicial la decide QUÉ se presenta, no la vista al montarse: el borrado a medias empieza en su pantalla.
+    init(notice: LateICloudNotice,
+         onKeep: @escaping () -> Void,
+         performWipe: @escaping @MainActor () async -> String?,
+         onWiped: @escaping () -> Void) {
+        self.notice = notice
+        self.onKeep = onKeep
+        self.performWipe = performWipe
+        self.onWiped = onWiped
+        switch notice {
+        case .corpus: _phase = State(initialValue: .notice)
+        case .wipeLeftHalfway: _phase = State(initialValue: .leftHalfway)
+        }
+    }
+
     private enum Phase: Equatable {
+        /// `.failed` es el fallo ANTES de la zona de iCloud: nada se tocó y su copy lo dice.
         case notice, confirming, wiping, failed
+        /// El fallo DESPUÉS de la zona: iCloud ya se borró y el teléfono no. También es la fase con la que abre la hoja
+        /// cuando el arranque encuentra un borrado a medias.
+        case leftHalfway
+        /// El «¿seguro?» de «Terminar de borrar». Puede llegar días después del fallo, y se lleva también lo creado
+        /// entretanto: un toque no basta (review adversarial del 2026-09-26).
+        case confirmingFinish
         /// El borrado no corrió: quedan cambios de grupos sin subir (ticket
         /// `fresh-start-wipe-kills-unsent-group-writes-silently`). Nada se tocó.
         case groupsPending(CloudSessionSignOut.FreshStartGroupsBlock)
@@ -74,8 +103,9 @@ struct LateICloudMirrorNoticeView: View {
             .yalaScreenBackground(.subtle)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    // El cierre por la barra significa lo mismo que «déjalo así»: la persona vio el aviso
-                    // y no pidió borrar nada. **Desaparece durante el borrado**, que no admite abandono.
+                    // En el aviso y su «¿seguro?», el cierre por la barra significa lo mismo que «déjalo así»: la
+                    // persona vio el aviso y no pidió borrar nada. Tras un fallo o en grupos pendientes es «luego» (abajo).
+                    // **Desaparece durante el borrado**, que no admite abandono.
                     if phase != .wiping {
                         Button(L10n.Action.close) {
                             // Desde «faltan cambios de grupos» —y su «¿seguro?»— la barra hace lo mismo que «Dejarlo por
@@ -84,6 +114,12 @@ struct LateICloudMirrorNoticeView: View {
                             // 2026-09-26).
                             if isGroupsPending {
                                 leaveGroupsPending()
+                            } else if phase == .failed || phase == .leftHalfway || phase == .confirmingFinish {
+                                // Tras un fallo la barra es «luego», como «Dejarlo por ahora»: el arm ya se retiró al
+                                // entrar en la fase, y `onKeep` retiraría el testigo y el aviso no volvería a preguntar
+                                // (ticket `late-icloud-notice-exit-after-a-failed-wipe-leaves-the-blind-resume-armed`).
+                                // A medias, además, la pantalla vuelve en el próximo arranque.
+                                dismiss()
                             } else {
                                 onKeep(); dismiss()
                             }
@@ -143,8 +179,33 @@ struct LateICloudMirrorNoticeView: View {
                 primaryAction: { phase = .wiping },
                 destructive: L10n.Welcome.PrivateICloud.wipeFailedBack,
                 // Rendirse deja el testigo puesto a propósito: el corpus sigue en iCloud y la persona no
-                // ha dicho que se lo quede, solo que ahora no. El aviso vuelve en el próximo arranque.
+                // ha dicho que se lo quede, solo que ahora no. El aviso vuelve en el próximo arranque —y eso es verdad
+                // desde el 2026-09-26: el arm se retira al ENTRAR aquí (`runPhase`), así que el arranque ya no reanuda
+                // el borrado a ciegas—.
                 destructiveAction: { dismiss() })
+        case .leftHalfway:
+            // **El borrado quedó a medias**: iCloud ya se borró y lo del teléfono no (o no del todo). Mismo molde que
+            // `.notice`: la salida que NO borra va arriba, y terminar pasa por su «¿seguro?». Esta pantalla puede salir
+            // días después del fallo, con datos nuevos en el teléfono (review adversarial del 2026-09-26).
+            noticeBody(
+                icon: "exclamationmark.icloud",
+                title: L10n.Welcome.PrivateICloud.leftHalfwayTitle,
+                body: L10n.Welcome.PrivateICloud.leftHalfwayBody,
+                identifier: "late_icloud_left_halfway",
+                primary: L10n.Welcome.PrivateICloud.lateKeep,
+                primaryAction: keepAfterHalfway,
+                destructive: L10n.Welcome.PrivateICloud.leftHalfwayFinish,
+                destructiveAction: { phase = .confirmingFinish })
+        case .confirmingFinish:
+            noticeBody(
+                icon: "trash",
+                title: L10n.Settings.wipeDataSecondConfirmTitle,
+                body: L10n.Welcome.PrivateICloud.leftHalfwayConfirmBody,
+                identifier: "late_icloud_left_halfway_confirm",
+                primary: L10n.Welcome.PrivateICloud.wipeConfirmKeep,
+                primaryAction: { phase = .leftHalfway },
+                destructive: L10n.Settings.deleteAllDataAction,
+                destructiveAction: { phase = .wiping })
         case .groupsPending(let block) where block.offersLossExit:
             // **Esperar no los va a subir**: la salida «perderlos» (ticket
             // `fresh-start-has-no-way-out-when-group-writes-can-never-upload`). La que no destruye va arriba, como en
@@ -199,11 +260,27 @@ struct LateICloudMirrorNoticeView: View {
         dismiss()
     }
 
+    /// Las cifras del aviso. Solo `.notice` las enseña, y a `.notice` solo se llega abriendo con `.corpus`: el borrado a
+    /// medias no tiene camino de vuelta al aviso.
+    private var corpus: ICloudPersonalCorpus {
+        if case .corpus(let corpus) = notice { return corpus }
+        return .empty
+    }
+
+    /// «Déjalo así» desde el borrado a medias: se queda con lo que hay en el teléfono. Retira la marca —ya decidió, y la
+    /// pantalla no vuelve— y el testigo por `onKeep`, como «Déjalo así» en el aviso: preguntarle otra vez por un corpus
+    /// que ya no está en iCloud no tendría sentido. El arm ya se había retirado.
+    private func keepAfterHalfway() {
+        StorageModePersistence.clearICloudCorpusWipeLeftHalfway()
+        onKeep()
+        dismiss()
+    }
+
     /// «Faltan cambios de grupos» o su «¿seguro?»: las dos fases en las que no se borró nada y el arm no protege nada.
     private var isGroupsPending: Bool {
         switch phase {
         case .groupsPending, .confirmingGroupsLoss: return true
-        case .notice, .confirming, .wiping, .failed: return false
+        case .notice, .confirming, .wiping, .failed, .leftHalfway, .confirmingFinish: return false
         }
     }
 
@@ -252,15 +329,36 @@ struct LateICloudMirrorNoticeView: View {
         let failure = await performWipe()
         guard !Task.isCancelled else { return }
         if let failure {
-            if failure == CloudSessionSignOut.freshStartGroupsPendingFailure,
-               let block = CloudSessionSignOut.shared.freshStartGroupsBlock {
-                phase = .groupsPending(block)
-            } else {
+            let block = failure == CloudSessionSignOut.freshStartGroupsPendingFailure
+                ? CloudSessionSignOut.shared.freshStartGroupsBlock : nil
+            // **El estado durable cambia al ENTRAR en el fallo, no al salir** (ticket
+            // `late-icloud-notice-exit-after-a-failed-wipe-leaves-the-blind-resume-armed`): así da igual por dónde se vaya
+            // la persona —botón, barra, deslizar o matar la app mirando la pantalla—, el arranque siguiente no reanuda a
+            // ciegas un borrado que ella vio fallar.
+            switch WelcomePrivateICloudGateLogic.classifyLateWipeFailure(
+                groupsPending: block != nil,
+                zoneDone: StorageModePersistence.isICloudCorpusWipeZoneDone(),
+                wasLeftHalfway: StorageModePersistence.isICloudCorpusWipeLeftHalfway()
+            ) {
+            case .groupsPending:
+                // **También se desarma al entrar** (review adversarial del 2026-09-26): con el arm puesto, un kill mirando
+                // «faltan cambios de grupos» hacía que el arranque reanudara el borrado a ciegas, y si para entonces los
+                // cambios habían subido, se lo llevaba todo sin pantalla. «Volver a intentarlo» no lo necesita: `.wiping`
+                // re-arma. Si la zona ya se había ido en este borrado, queda «a medias».
+                StorageModePersistence.disarmFailedICloudCorpusWipe()
+                if let block { phase = .groupsPending(block) }
+            case .untouched:
+                // Nada se tocó: sin arm, el testigo sigue y el aviso vuelve a preguntar. «Volver a intentarlo» re-arma.
+                StorageModePersistence.clearICloudCorpusWipeArm()
                 phase = .failed
+            case .leftHalfway:
+                StorageModePersistence.leaveICloudCorpusWipeHalfway()
+                phase = .leftHalfway
             }
             return
         }
         StorageModePersistence.clearPrivateChoseWithoutICloud()
+        StorageModePersistence.clearICloudCorpusWipeLeftHalfway()
         StorageModePersistence.clearICloudCorpusWipeArm()
         onWiped()
         dismiss()

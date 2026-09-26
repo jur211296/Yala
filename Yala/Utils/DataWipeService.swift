@@ -260,6 +260,13 @@ final class DataWipeService {
                 .removeObject(forKey: AppPreferences.Keys.lastUsedAccountID)
         }
 
+        // **«El borrado del aviso tardío quedó a medias» se resuelve aquí, en cualquier scope.** Esa marca describe un
+        // teléfono con el corpus de antes y un iCloud ya borrado; con las filas fuera, deja de ser verdad. Y
+        // `cloudSync.*` la saca del barrido de preferencias, así que sin esta línea sobrevivía a «Vaciar datos» y, tras
+        // el onboarding nuevo, el arranque ofrecía «Terminar de borrar» sobre el corpus recién creado (review adversarial
+        // del 2026-09-26, ticket `late-icloud-notice-exit-after-a-failed-wipe-leaves-the-blind-resume-armed`).
+        StorageModePersistence.clearICloudCorpusWipeLeftHalfway()
+
         // ============================================================
         // PASO 3: Limpiar cache de widgets + TipKit
         // ============================================================

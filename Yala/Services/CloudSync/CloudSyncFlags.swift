@@ -339,7 +339,63 @@ nonisolated enum StorageModePersistence {
     /// lectura de la tabla de mounts signifique otra cosa.
     static func clearICloudCorpusWipeArm(_ defaults: UserDefaults = .standard) {
         defaults.removeObject(forKey: icloudCorpusWipeArmedKey)
+        defaults.removeObject(forKey: icloudCorpusWipeZoneDoneKey)
         clearNeutralMountArm(defaults)
+    }
+
+    /// **«Este borrado armado YA se llevó la zona de iCloud».** Sub-estado del arm: se escribe solo con el arm puesto y
+    /// se va con `clearICloudCorpusWipeArm`, así que no puede sobrevivir al borrado que describe (ticket
+    /// `late-icloud-notice-exit-after-a-failed-wipe-leaves-the-blind-resume-armed`).
+    ///
+    /// Existe porque un borrado fallido no es UNO: antes de la zona no se tocó nada y desarmar es seguro; después, la zona
+    /// ya no está y lo del teléfono sí, y ese estado a medias no se puede reanudar a ciegas ni dar por «intacto». **La
+    /// escribe quien cruza la zona** (`ContentView.performICloudCorpusWipe`, justo tras borrarla) y no se deduce del
+    /// motivo del fallo: un motivo nuevo después de la zona caería en «nada se tocó» sin que nadie lo viera.
+    static let icloudCorpusWipeZoneDoneKey = "cloudSync.icloudCorpusWipeZoneDone"
+
+    static func markICloudCorpusWipeZoneDone(_ defaults: UserDefaults = .standard) {
+        guard isICloudCorpusWipeArmed(defaults) else { return }
+        defaults.set(true, forKey: icloudCorpusWipeZoneDoneKey)
+    }
+
+    static func isICloudCorpusWipeZoneDone(_ defaults: UserDefaults = .standard) -> Bool {
+        defaults.bool(forKey: icloudCorpusWipeZoneDoneKey)
+    }
+
+    /// **«El borrado del aviso tardío quedó a medias y la persona tiene que decidir».** La zona de iCloud ya se borró, lo
+    /// del teléfono no, y el borrado falló delante de ella. Mientras esté puesta, el arranque le enseña «El borrado quedó
+    /// a medias» en vez de reanudarlo a ciegas; se retira cuando el borrado termina o cuando elige quedarse con lo que
+    /// tiene. **No caduca por tiempo**: el estado a medias sigue siendo verdad el día que vuelva.
+    ///
+    /// `cloudSync.*` a propósito: el barrido de preferencias lo excluye, y el único sitio donde muere con la sesión es el
+    /// hook de cierre, junto al testigo del espejo tardío.
+    static let icloudCorpusWipeLeftHalfwayKey = "cloudSync.icloudCorpusWipeLeftHalfway"
+
+    /// Pasa el borrado de «armado» a «a medias». **La marca va ANTES de desarmar**: un kill entre las dos deja el arm
+    /// puesto, y el arranque lo reanuda como cualquier borrado interrumpido; al revés, se perdería el estado a medias.
+    static func leaveICloudCorpusWipeHalfway(_ defaults: UserDefaults = .standard) {
+        defaults.set(true, forKey: icloudCorpusWipeLeftHalfwayKey)
+        clearICloudCorpusWipeArm(defaults)
+    }
+
+    /// Desarmar un borrado que falló **sin perder que la zona ya se había ido.** Para los fallos que no son «a medias» por
+    /// sí mismos —los cambios de grupos pendientes, que ganan a la clasificación— pero pueden llegar sobre un borrado que
+    /// ya borró la zona (un kill tras la zona, y la reanudación se para en la subida). `clearICloudCorpusWipeArm` a secas
+    /// se llevaba la marca de la zona y nada recordaba que iCloud ya estaba vacío (review adversarial del 2026-09-26).
+    static func disarmFailedICloudCorpusWipe(_ defaults: UserDefaults = .standard) {
+        if isICloudCorpusWipeZoneDone(defaults) {
+            leaveICloudCorpusWipeHalfway(defaults)
+        } else {
+            clearICloudCorpusWipeArm(defaults)
+        }
+    }
+
+    static func isICloudCorpusWipeLeftHalfway(_ defaults: UserDefaults = .standard) -> Bool {
+        defaults.bool(forKey: icloudCorpusWipeLeftHalfwayKey)
+    }
+
+    static func clearICloudCorpusWipeLeftHalfway(_ defaults: UserDefaults = .standard) {
+        defaults.removeObject(forKey: icloudCorpusWipeLeftHalfwayKey)
     }
 
     /// **Marker «este device eligió privado SIN poder preguntarle a iCloud» (estado K de la matriz).**

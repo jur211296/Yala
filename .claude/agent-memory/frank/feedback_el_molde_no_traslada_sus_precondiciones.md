@@ -42,3 +42,9 @@ red es un source-scan del cuerpo (`ReverseUploadControllerWiringTests`), y ahí 
 comparando posiciones (`range(of:).lowerBound`), no con un `contains`.
 
 Ver también [[review_adversarial_caza_lo_mio]] y [[feedback_dos_getters_que_parecen_sinonimos]].
+
+**Segunda vez, 2026-09-26** (`late-icloud-notice-exit-after-a-failed-wipe-leaves-the-blind-resume-armed`): la fase nueva
+«El borrado quedó a medias» copió la jerarquía de `.failed` —reintentar arriba, sin «¿seguro?»— porque las dos vienen de
+un borrado fallido. Pero `.failed` se ve SEGUNDOS después de confirmar dos veces; la nueva la presenta el arranque, quizá
+días después y con datos nuevos en el teléfono. Lo cazó la review: la salida que no borra va arriba y terminar pide
+confirmación. ⇒ **antes de copiar los botones de una fase, pregunta CUÁNDO la ve la persona**, no solo de qué viene.

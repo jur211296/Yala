@@ -58,7 +58,11 @@ enum RouterIntent: Identifiable, Equatable {
     /// `ContentView` puede estar presentando otra cosa (el cover de idioma, el sheet del trial): encender
     /// una presentación ahí sin gate es la regla (3) de Presentaciones, y su corolario del MOMENTO —un
     /// cover montado con el bootstrap a medias se queda PEGADO— está medido en este repo.
-    case presentLateICloudMirrorNotice(ICloudPersonalCorpus)
+    ///
+    /// **Y lleva también «el borrado quedó a medias»** (ticket
+    /// `late-icloud-notice-exit-after-a-failed-wipe-leaves-the-blind-resume-armed`): es la misma hoja en otro momento, y
+    /// lo pregunta el mismo `runLateICloudMirrorCheck` en el arranque. El dedup sigue siendo por el HECHO.
+    case presentLateICloudMirrorNotice(LateICloudNotice)
 
     // C) Groups & invites
     case showInviteError(String)
