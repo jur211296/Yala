@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-26 (Lima)
 
-**Rama** `2.1` — Merge #266: **Las cifras que da Claude (conector, staging) cuadran con la app: gastos de grupo por tu parte y cada divisa con la cotización de su día, verificado con goldens que escribe la propia app.**
+**Rama** `2.1` — Merge #267: **«Volver a iCloud» ya no se da por terminada cuando Yala no pudo comprobar si tus datos llegaron a iCloud: sigue esperando y, si la avería dura, vuelve a la nube por el plazo largo.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,32 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#266 · Las cifras del conector de Claude cuadran con la app)
+## Esta sesión (#267 · la vuelta a iCloud no se da por terminada si la comprobación no pudo mirar ninguna fila)
+
+**Si la comprobación de «Volver a iCloud» no consigue leer lo que el espejo sabe de tus datos** —el SQLite no abre, faltan
+sus tablas o columnas, el mapa de entidades sale vacío—, **la vuelta ya no se cierra**: la muestra sale ilegible, ni cierra
+ni cuenta como avance, y el techo largo la devuelve a la nube con los datos a salvo. Antes contaba «cero pendientes» y
+corría el cierre irreversible sin datos en iCloud. Con iCloud sano no cambia nada.
+
+- Decide `CKIdentityCapture.Report.structuralFailure`; `reverseUploadStatus()` lo convierte en `.unreadable`.
+- Los `failed` POR FILA siguen fuera de la suma (decisión del encargo) y ahora se miden: breadcrumb `uploadFailedRows` y
+  canario `cloudReverseUploadFailedRows`; el estructural, `cloudReverseUploadSampleUnreadable`.
+- Regla al día en `swiftdata-cloudkit.md` («Y la captura de esa muestra tampoco»).
+
+**Verificado:** gate con 8109 unit, 4/4 mutantes (entre ellos volver a la suma vieja), review adversarial de tres lentes
+sin hallazgos altos. CI verde. Ticket a `qa` con guion de no-regresión.
+
+### Lo que espera de Jürgen
+
+- Device-QA opcional de `reverse-upload-sample-reads-unreadable-rows-as-drained` (Yala Dev, iCloud activo, Console.app
+  filtrando `CloudSyncReverse`): la vuelta termina como antes y no sale `uploadSampleUnreadable`.
+- Con esa misma corrida, la medición de `reverse-upload-failed-rows-need-a-device-measurement` (medium): pegar las líneas
+  `uploadFailedRows` y decidir qué motivos cuentan.
+- Nuevos en backlog: `forward-identity-capture-advances-when-it-could-not-read-any-row` (low, la ida ignora el mismo
+  estructural) y una nota en `reverse-upload-unreadable-sample-waits-the-long-ceiling` (decisión de producto: 72 h con
+  «subiendo»).
+
+## Sesión anterior (#266 · Las cifras del conector de Claude cuadran con la app)
 
 **Si preguntas a Claude cuánto gastaste, la cifra es la misma que enseña la app.** Un gasto de grupo que pagaste tú cuenta
 por tu parte (no por el total, y la parte que te deben ya no sale como ingreso), y un movimiento en otra divisa se
@@ -42,7 +67,7 @@ solo queda el de zona horaria cuando Claude no la pasa. Nada cambia en la app; W
   `duplicate-exchange-rate-rows-pick-an-arbitrary-rate` (medium; medido: 367 días con filas de tasas duplicadas y
   valores hasta un 12,6 % distintos) y `exchange-rate-date-keys-follow-the-phone-calendar` (low, inferido).
 
-## Sesión anterior (#265 · «Empezar de cero» ofrece perder los cambios de grupos que no pueden subir nunca)
+## Antes (#265 · «Empezar de cero» ofrece perder los cambios de grupos que no pueden subir nunca)
 
 **Si «Empezar de cero» se para por cambios de grupos sin subir que no van a subir nunca** —la sesión que los apuntó ya no
 está en el teléfono (un iPhone heredado), la cuenta no está disponible o el teléfono lleva más de un día sin App Attest—,
