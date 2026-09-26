@@ -6027,6 +6027,7 @@
 
 /* Aviso cuando el sign-in para retomar la vuelta a iCloud trae una cuenta distinta */
 "storage.errors.reverseSignInOtherAccount" = "別のアカウントでサインインしました。iCloud に戻す操作を始めたアカウントでサインインしてください。";
+"storage.errors.syncSignInOtherAccount" = "別のアカウントでサインインしたため、サインインしたままにしませんでした。この端末で Yala に使っているアカウントでサインインしてください。";
 
 /* Restore: el import de CloudKit no terminó dentro del tope pero SÍ está en marcha — los datos existen y siguen bajando. NO niega que existan (es lo contrario de welcome.restore.notFoundTitle). */
 "welcome.restore.importIncompleteTitle" = "データを取得しています";
@@ -6115,3 +6116,4 @@
 
 /* Sign-out blocked: the upload of personal changes to the cloud did not reach the server */
 "settings.signOutUploadRetryLater" = "最新の変更がクラウドに届きませんでした。変更はこの端末に残っていて失われません。しばらくしてからもう一度お試しください。";
+"settings.signOutCloudSessionExpired" = "セッションの有効期限が切れ、まだクラウドにアップロードされていない変更があります。変更は失われません。このプロフィール画面の「データの保存先」を開いて「サインイン」をタップし、その後もう一度お試しください。";

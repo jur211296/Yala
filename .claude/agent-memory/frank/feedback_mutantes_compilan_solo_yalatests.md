@@ -14,3 +14,7 @@ en `MigrationRunner.swift` compiló en 54 s. Los 20 mutantes cupieron en media h
 **How to apply:** si solo vas a correr unit tests, el build también se filtra. Y si tienes que parar una batería a mitad,
 mata el script **y** el `xcodebuild`, y restaura los ficheros desde la copia del scratchpad (el `finally` no corre si
 matas el proceso): compara con `cmp` antes de tocar nada más. Relacionado: [[el-script-de-mutantes-revierte-mi-trabajo]].
+
+**Y cada mutante necesita TOPE de tiempo (2026-09-25):** un mutante que convierte un corte en otro camino puede COLGAR la suite
+(un test que espera una petición que ya no sale): el R6 de #253 estuvo 53 min parado hasta que lo maté por PID. Colgar cuenta
+como detectado, pero sin tope la tanda entera se para. Pon `timeout=` al `subprocess.run` (p. ej. 15 min).

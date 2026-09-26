@@ -48,3 +48,20 @@ SDK, la única puerta es «Nuevo grupo» en la pestaña Grupos. Ese botón lleva
 firmar `CloudIdentityRoutingLogic` devuelve `.continueGroupsSetup` sin mirar qué cuenta entra. Si entra otra,
 estas filas podrían subirse a su nombre. Leído en el código, sin ejecutar. Ver
 `cloud-session-expiry-with-only-group-changes-has-no-sign-in-door`.
+
+## 2026-09-25 · la puerta de la nube ya no sube a nombre de otra cuenta; las otras entradas, sí
+
+Desde `cloud-session-expiry-with-only-group-changes-has-no-sign-in-door` la puerta de «Dónde viven tus datos» ata la firma
+al dueño del motor: si entra otra cuenta, cierra esa sesión y no reanuda nada. Y el ciclo del motor personal no corre con
+un `sub` distinto del suyo (`CloudSyncRuntime.performCycle`, paso 1.5), así que en la nube el piggyback de Grupos tampoco.
+
+**La pregunta 2 sigue abierta para las demás entradas**, leído en el código: una sesión de otra cuenta que entre por «Nuevo
+grupo» todavía sube el outbox de grupos por `GroupsSyncClient.syncNowFromPush` y por el paso 2 del cierre en la nube (con el
+outbox personal vacío, el paso 1 drena y el 2 sube). Lo que cierra las dos es el sello por fila que propone este ticket.
+
+Las entradas que hoy suben el outbox de grupos sin pasar por el ciclo del motor, medidas por la review del mismo día:
+`syncNowAfterLocalSave`, `syncNowFromUI`, `syncNowFromPush` y `pushAllPendingGroupsForSignOut` (paso 2 del cierre).
+
+**Y la pregunta 1 gana un caso nuevo en la nube:** si el Apple ID del teléfono cambió y la cuenta es de Apple, la puerta
+firma siempre con la cuenta nueva y la rechaza. El cierre sigue bloqueado por `.cloudSessionExpired` y no hay salida que
+acepte perder esos cambios. Antes de ese día subían a nombre de la cuenta nueva, que era peor.

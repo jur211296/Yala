@@ -37,3 +37,11 @@ Grupos) tiene la misma forma. Ese ticket lo destapó porque su aviso dice «No c
 
 - [ ] Antes de encender `accountEntitlementEnabled`, un inicio de sesión rechazado no deja la suscripción vinculada a
       esa cuenta, o el caso se decide y se documenta como aceptado.
+
+## 2026-09-25 · otra entrada: la firma que la puerta de la nube rechaza
+
+Desde `cloud-session-expiry-with-only-group-changes-has-no-sign-in-door` la puerta de «Dónde viven tus datos» cierra la
+sesión de otra cuenta que entre por ella. Pero `CloudAuthService.signIn(with:)` ya lanzó
+`AccountEntitlementService.handleSignIn()` en un `Task`, y `signOut()` suelta la sesión tras dos `await`: en ese hueco el
+`Task` puede vincular la suscripción del teléfono a la cuenta rechazada (leído, sin ejecutar; la caché local la protege
+`persist`, el servidor no). Es la misma clase que este ticket.

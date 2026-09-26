@@ -925,6 +925,21 @@ final class CloudSessionSignOut {
 
     // MARK: - Camino nube (.cloud) — push-all verificado + wipe armado
 
+    /// Con la sesión caducada, el aviso del cierre manda a «Dónde viven tus datos» y su «Iniciar sesión»
+    /// (`.cloudSessionExpired`), así que esa puerta tiene que estar ahí al llegar (ticket
+    /// `cloud-session-expiry-with-only-group-changes-has-no-sign-in-door`). La tarjeta sale con el motor en
+    /// `.stoppedUntilSignIn`, y la cadencia puede tardar un minuto en chocar con el mismo 401 que el cierre acaba de ver: el
+    /// motor se para ya y el controller se refresca. Va ANTES de la fase, que es lo que enciende el aviso.
+    ///
+    /// Solo con ese motivo. Los demás bloqueos no dicen nada de la sesión, y parar el motor por ellos cortaría la cadencia
+    /// que los cura.
+    private static func leaveSignInDoorOpen(ifShown shown: CloudSignOutFlowLogic.BlockReason,
+                                            controller: CloudMigrationController) {
+        guard shown == .cloudSessionExpired else { return }
+        CloudSyncRuntime.shared?.stopUntilSignIn()
+        controller.refresh()
+    }
+
     private func performCloudSecureSignOut(context: ModelContext) async {
         phase = .working
         CloudSyncBreadcrumb.signOutStarted(path: "cloud-secure")
@@ -964,8 +979,9 @@ final class CloudSessionSignOut {
                 reason: reason, pendingRows: rows, acceptance: acceptedPersonalLoss) {
                 acceptedPersonalLoss = nil
                 guard reason == .attestUnavailable else {
-                    phase = .blocked(pendingCount: pending,
-                                     reason: CloudSignOutFlowLogic.personalPushAllShownReason(reason))
+                    let shown = CloudSignOutFlowLogic.personalPushAllShownReason(reason)
+                    Self.leaveSignInDoorOpen(ifShown: shown, controller: controller)
+                    phase = .blocked(pendingCount: pending, reason: shown)
                     CloudSyncBreadcrumb.signOutPushBlocked(pending: pending)
                     return
                 }
@@ -1017,6 +1033,7 @@ final class CloudSessionSignOut {
             if shown == .attestUnavailable {
                 groupsLossExit = GroupsLossOffer(resume: .cloud, rows: Self.liveGroupsPendingRowIDs(context: context))
             }
+            Self.leaveSignInDoorOpen(ifShown: shown, controller: controller)
             phase = .blocked(pendingCount: pending, reason: shown)
             CloudSyncBreadcrumb.signOutPushBlocked(pending: pending)
             // El motivo YA traducido, que es el que decide el aviso: sin esta línea los tres desenlaces

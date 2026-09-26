@@ -601,16 +601,24 @@ struct MigrationJournalUnreadableWiringTests {
 
     /// Los `try?` de la pantalla, uno a uno: el `catch` entero de cada uno.
     @Test func screenReads_failTowardTheSafeSide() throws {
-        let banner = Self.lines(try Self.body(of: "private func refreshSyncBanner() {", in: Self.controllerPath))
+        let banner = Self.lines(try Self.body(
+            of: "hasSession: Bool) -> SyncSignInBannerLogic.Banner {", in: Self.controllerPath))
         let bannerCatch = try #require(banner.firstIndex(of: "} catch {"))
+        // Desde el 2026-09-25 el `catch` deja el recuento personal en `nil` y la decisión es de `SyncSignInBannerLogic.decide`,
+        // que ofrece firmar sin cifra si CUALQUIERA de las dos colas no se deja contar (ticket
+        // `cloud-session-expiry-with-only-group-changes-has-no-sign-in-door`; lo mide `SyncSignInBannerLogicTests`). Se fija
+        // la cola entera del cuerpo: una sentencia colada entre el `catch` y la asignación también tiene que romper aquí.
         #expect(Array(banner[bannerCatch...]) == [
             "} catch {",
             "#if DEBUG",
             "print(\"CloudMigrationController.refreshSyncBanner: fetch(SyncOutbox) falló: \\(error)\")",
             "#endif",
-            "syncNeedsSignIn = true",
-            "pendingUploadCount = nil",
+            "personalLive = nil",
             "}",
+            "return SyncSignInBannerLogic.decide(",
+            "isCloud: isCloud, engineWaitsForSignIn: waits,",
+            "personalLive: personalLive,",
+            "groupsLive: CloudSessionSignOut.liveGroupsPendingRowIDs(context: context)?.count)",
         ])
 
         let dryRun = Self.lines(try Self.body(of: "func dryRunCounts() -> MigrationDryRunPreview {",

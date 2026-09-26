@@ -1047,6 +1047,13 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSyncReverse signInAccountMismatch — otra cuenta, la vuelta NO se retoma")
     }
 
+    /// El «Iniciar sesión» de la tarjeta de sincronización trajo OTRA cuenta que la del motor: esa sesión se cierra y nada se
+    /// reanuda (ticket `cloud-session-expiry-with-only-group-changes-has-no-sign-in-door`). Sin PII: ni el `sub` viejo ni el
+    /// nuevo.
+    static func syncSignInAccountMismatch() {
+        logger.notice("CloudSyncRuntime signInAccountMismatch — otra cuenta, la sesión se cierra y el sync NO se reanuda")
+    }
+
     static func reverseBlockedByExpiredSession(phase: String) {
         logger.notice(
             "CloudSyncReverse blockedByExpiredSession phase=\(phase, privacy: .public) — pide volver a entrar")

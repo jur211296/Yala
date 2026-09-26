@@ -200,7 +200,8 @@ struct ProfileView: View {
             // la nube, así que no los comparte ningún otro gesto. **Y la subida personal que no llegó**, por lo mismo que la de
             // grupos: el título es exacto y aquí nadie ha reintentado nada.
             case .permanent, .sessionExpired, .channelPaused, .uploadRetryLater,
-                 .syncStoppedNeedsUpdate, .syncStoppedMidMigration, .syncStoppedNeedsRelaunch, .personalUploadRetryLater:
+                 .syncStoppedNeedsUpdate, .syncStoppedMidMigration, .syncStoppedNeedsRelaunch, .personalUploadRetryLater,
+                 .cloudSessionExpired:
                 showSignOutBlockedAlert = true
             // **Los dos motivos del DESASOCIAR no encienden nada aquí, y no es teoría: llegaban.**
             // `phase` es un singleton observable y esta pantalla escucha sus cambios; la de

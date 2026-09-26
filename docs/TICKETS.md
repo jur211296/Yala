@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (582)
+## Index (587)
 
 | id | status | path |
 |---|---|---|
@@ -154,14 +154,15 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | cloud-migration-offers-the-cloud-to-a-phone-without-app-attest | done | tickets/done/cloud-migration-offers-the-cloud-to-a-phone-without-app-attest.md |
 | cloud-onboarding-offers-the-cloud-to-a-phone-without-app-attest | qa | tickets/qa/cloud-onboarding-offers-the-cloud-to-a-phone-without-app-attest.md |
 | cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes | done | tickets/done/cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes.md |
-| cloud-session-expiry-with-only-group-changes-has-no-sign-in-door | backlog | tickets/backlog/cloud-session-expiry-with-only-group-changes-has-no-sign-in-door.md |
+| cloud-session-expiry-with-only-group-changes-has-no-sign-in-door | done | tickets/done/cloud-session-expiry-with-only-group-changes-has-no-sign-in-door.md |
 | cloud-sign-in-cannot-choose-another-apple-id | backlog | tickets/backlog/cloud-sign-in-cannot-choose-another-apple-id.md |
 | cloud-sign-in-discovers-account-kind | qa | tickets/qa/cloud-sign-in-discovers-account-kind.md |
 | cloud-sign-in-screen-offers-sign-up-to-a-phone-without-app-attest | done | tickets/done/cloud-sign-in-screen-offers-sign-up-to-a-phone-without-app-attest.md |
 | cloud-signout-collapses-a-groups-session-expiry-into-permanent | done | tickets/done/cloud-signout-collapses-a-groups-session-expiry-into-permanent.md |
 | cloud-signout-collapses-every-groups-transient-into-permanent | done | tickets/done/cloud-signout-collapses-every-groups-transient-into-permanent.md |
 | cloud-signout-collapses-the-personal-push-all-reason-into-permanent | done | tickets/done/cloud-signout-collapses-the-personal-push-all-reason-into-permanent.md |
-| cloud-signout-personal-session-expiry-does-not-say-where-to-sign-in | backlog | tickets/backlog/cloud-signout-personal-session-expiry-does-not-say-where-to-sign-in.md |
+| cloud-signout-personal-session-expiry-does-not-say-where-to-sign-in | done | tickets/done/cloud-signout-personal-session-expiry-does-not-say-where-to-sign-in.md |
+| cloud-signout-session-expiry-with-the-engine-stopped-until-relaunch-has-no-door | backlog | tickets/backlog/cloud-signout-session-expiry-with-the-engine-stopped-until-relaunch-has-no-door.md |
 | cloud-signout-upstream-rejections-with-a-healthy-pull-say-a-moment-more | backlog | tickets/backlog/cloud-signout-upstream-rejections-with-a-healthy-pull-say-a-moment-more.md |
 | push-unexpected-4xx-is-told-to-try-again-later | backlog | tickets/backlog/push-unexpected-4xx-is-told-to-try-again-later.md |
 | cloud-signout-does-not-look-at-an-in-flight-migration | backlog | tickets/backlog/cloud-signout-does-not-look-at-an-in-flight-migration.md |
@@ -432,6 +433,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | private-gate-wipe-failure-copy-claims-icloud-is-intact | backlog | tickets/backlog/private-gate-wipe-failure-copy-claims-icloud-is-intact.md |
 | private-icloud-gate-back-lands-on-the-wrong-branch | backlog | tickets/backlog/private-icloud-gate-back-lands-on-the-wrong-branch.md |
 | private-sign-out-keeps-legacy-cloudkit-groups | backlog | tickets/backlog/private-sign-out-keeps-legacy-cloudkit-groups.md |
+| private-signout-groups-session-expiry-does-not-say-where-to-sign-in | backlog | tickets/backlog/private-signout-groups-session-expiry-does-not-say-where-to-sign-in.md |
 | prompts-de-traduccion-corren-xcodebuild-sin-cola | backlog | tickets/backlog/prompts-de-traduccion-corren-xcodebuild-sin-cola.md |
 | push-client-ignores-yala-kind | backlog | tickets/backlog/push-client-ignores-yala-kind.md |
 | qa-cloud-readme-sin-entradas-g13-04-y-g13-05 | backlog | tickets/backlog/qa-cloud-readme-sin-entradas-g13-04-y-g13-05.md |

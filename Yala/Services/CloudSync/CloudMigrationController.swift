@@ -1291,8 +1291,9 @@ final class CloudMigrationController {
     /// profileStore propio y solo lo limpia `signOut()`).
     ///
     /// **Y la firma va atada al `sub`**, que es lo que este camino NO hereda de su molde: `signInToResumeSync`
-    /// termina en `CloudSyncRuntime.handleBecameActive()`, cuyo gate de identidad deja el motor `.idle` si la cuenta
-    /// no es la del device; aquí se conduce el runner directo —la fase de la vuelta no es estable, así que ese gate
+    /// ata la firma al dueño del motor (`SyncSignInBannerLogic.afterSignIn`) y `CloudSyncRuntime.handleBecameActive()` no
+    /// reanuda con otra cuenta (las dos cosas desde el 2026-09-25; antes de ese día esta frase decía que ese gate existía, y
+    /// desde `.stoppedUntilSignIn` no existía); aquí se conduce el runner directo —la fase de la vuelta no es estable, así que ese gate
     /// no corre— y `reverseDrainOnce` sube el outbox entero, que no lleva dueño. Con Google el chooser sale siempre
     /// (`hint: nil`), así que elegir la cuenta de al lado escribía el corpus de una persona bajo el `sub` de otra.
     /// Si el `sub` cambia, **no se retoma**: se avisa y la vuelta se queda donde estaba, intacta.
@@ -1637,29 +1638,47 @@ final class CloudMigrationController {
     }
 
     /// Banner S11 (D5): runtime detenido por sesión expirada con filas vivas pendientes → CTA sign-in.
+    ///
+    /// **Cuenta las dos colas desde el 2026-09-25**, la personal y la de grupos (ticket
+    /// `cloud-session-expiry-with-only-group-changes-has-no-sign-in-door`): con solo cambios de grupos no salía, y el cierre de
+    /// sesión mandaba a volver a entrar sin ninguna puerta a la vista. La decisión vive en `SyncSignInBannerLogic.decide`.
     private func refreshSyncBanner() {
-        guard CloudSyncFlags.storageMode == .cloud,
-              CloudSyncRuntime.shared?.state == .stoppedUntilSignIn else {
-            syncNeedsSignIn = false
-            pendingUploadCount = 0
-            return
+        let banner = Self.syncSignInBanner(context: context, isCloud: CloudSyncFlags.storageMode == .cloud,
+                                           runtimeState: CloudSyncRuntime.shared?.state,
+                                           hasSession: CloudAuthService.shared.hasSession)
+        syncNeedsSignIn = banner.needsSignIn
+        pendingUploadCount = banner.pendingCount
+    }
+
+    /// El cuerpo del banner con el store y el estado del motor inyectados, para medirlo con un store real: el controller no
+    /// se construye en tests. Producción entra SOLO por `refreshSyncBanner`.
+    static func syncSignInBanner(context: ModelContext, isCloud: Bool, runtimeState: CloudSyncRuntime.RuntimeState?,
+                                 hasSession: Bool) -> SyncSignInBannerLogic.Banner {
+        let waits = SyncSignInBannerLogic.engineWaitsForSignIn(state: runtimeState, hasSession: hasSession)
+        // Sin contar nada fuera de ese estado: la tarjeta no sale, y el fetch es trabajo del hilo principal.
+        guard isCloud, waits else {
+            return SyncSignInBannerLogic.decide(isCloud: isCloud, engineWaitsForSignIn: waits,
+                                                personalLive: 0, groupsLive: 0)
         }
-        // **Si la cola no se deja contar, se ofrece firmar SIN cifra** (ticket
+        // **Si una cola no se deja contar, se ofrece firmar SIN cifra** (ticket
         // `an-unreadable-migration-journal-reads-as-never-started`). El motor ya está parado hasta firmar, y firmar es
         // inofensivo; el `try? … ?? 0` de antes daba `syncNeedsSignIn = false` y la sección pintaba «Todo sincronizado»
         // con el motor parado. La cifra no se inventa: `pendingUploadCount` queda en `nil`.
+        let personalLive: Int?
         do {
-            let live = try context.fetch(FetchDescriptor<SyncOutbox>())
+            personalLive = try context.fetch(FetchDescriptor<SyncOutbox>())
                 .filter { $0.rejectedReason == nil }.count
-            syncNeedsSignIn = live > 0
-            pendingUploadCount = live
         } catch {
             #if DEBUG
             print("CloudMigrationController.refreshSyncBanner: fetch(SyncOutbox) falló: \(error)")
             #endif
-            syncNeedsSignIn = true
-            pendingUploadCount = nil
+            personalLive = nil
         }
+        return SyncSignInBannerLogic.decide(
+            isCloud: isCloud, engineWaitsForSignIn: waits,
+            personalLive: personalLive,
+            // El MISMO predicado que sube el canal (`GroupsSyncClient.pushPending`): lo que se cuenta es lo que firmar sube.
+            groupsLive: CloudSessionSignOut.liveGroupsPendingRowIDs(context: context)?.count)
     }
 
     /// Re-firma para reanudar el sync detenido (banner S11). El método NO se elige: es determinista —
@@ -1668,22 +1687,70 @@ final class CloudMigrationController {
     /// chooser aquí invitaría al mismatch R9. Fallback `.apple` = el MISMO residual documentado del
     /// claim (key perdida, población ~0): una cuenta Google re-firmaría con SIWA y GoTrue linkearía
     /// por email verificado (H4) o el refresh seguiría detenido — jamás datos cruzados.
+    ///
+    /// **Desde el 2026-09-25 es la puerta del cierre de sesión en la nube** (ticket
+    /// `cloud-session-expiry-with-only-group-changes-has-no-sign-in-door`), y por eso cambió en dos sitios:
+    ///  · **con la sesión que el SDK guarda, prueba con un ciclo antes de firmar** (`SyncSignInBannerLogic.needsSignIn`). El
+    ///    atajo de antes —«hay sesión y hay token ⇒ despierta»— dejaba sin salida el 401 que el servidor da a un JWT que el SDK
+    ///    da por bueno: el botón despertaba la cadencia, chocaba otra vez y la tarjeta volvía a salir.
+    ///  · **la firma se ata a la cuenta del motor** (`SyncSignInBannerLogic.afterSignIn`). Si entra otra, se cierra esa sesión
+    ///    —conservando el proveedor de la cuenta del teléfono—, no se reanuda nada y se avisa. Molde de
+    ///    `signInToResumeReverse`, que deja la vuelta intacta con otra cuenta.
+    ///  · **(review del mismo día) también desde un motor arrancado SIN sesión tras relanzar** (`.idleSignedOut`): sin dueño
+    ///    en memoria el ancla es el sello del claim, y aceptada la firma se arranca el motor en vez de despertarlo. El
+    ///    proveedor sale del faro cuando es el de la cuenta dueña (`SyncSignInBannerLogic.provider`).
     func signInToResumeSync() async {
         isWorking = true
         defer { isWorking = false }
-        // Belt R9 (C-7, hermano del de `startMigration`): si la sesión revivió por otra entrada
-        // mientras el banner seguía en pantalla, re-firmar aquí podría cambiar de cuenta con el
-        // outbox del dueño anterior pendiente. Con sesión usable basta con despertar la cadencia.
-        if CloudAuthService.shared.hasSession, await CloudAuthService.shared.accessToken() != nil {
-            CloudSyncRuntime.shared?.handleBecameActive()
-            refresh()
-            return
+        let runtime = CloudSyncRuntime.shared
+        // Belt R9 (C-7, hermano del de `startMigration`): si la sesión revivió por otra entrada mientras el banner seguía en
+        // pantalla, basta con despertar la cadencia. Pero «revivió» lo contesta el servidor, no el SDK: un ciclo.
+        if CloudAuthService.shared.hasSession {
+            if let runtime, CloudSyncRuntime.canRunDomain() {
+                let outcome = await runtime.syncCycle(context: context)
+                if !SyncSignInBannerLogic.needsSignIn(afterProbe: outcome) {
+                    runtime.handleBecameActive()
+                    refresh()
+                    return
+                }
+            } else if await CloudAuthService.shared.accessToken() != nil {
+                // Con el candado del dominio cerrado no se corre ningún ciclo (ticket
+                // `sign-out-push-all-runs-a-sync-cycle-past-the-migration-gate`), así que no hay prueba posible: el trato de
+                // antes. `handleBecameActive` tampoco reanuda con el candado cerrado.
+                runtime?.handleBecameActive()
+                refresh()
+                return
+            }
         }
-        let provider = CloudSignInProvider(
-            rawValue: CloudAuthService.shared.storedProvider() ?? "") ?? .apple
+        let beacon = CloudBeacon()
+        let provider = SyncSignInBannerLogic.provider(
+            stored: CloudAuthService.shared.storedProvider(), beaconProvider: beacon.linkedProvider,
+            beaconHash: beacon.accountHash, ownerUserID: runtime?.ownerUserID)
         do {
             try await CloudAuthService.shared.signIn(with: provider)
-            CloudSyncRuntime.shared?.handleBecameActive()   // re-evalúa la sesión y despierta la cadencia
+            let signedIn = CloudAuthService.shared.currentUserID
+            switch SyncSignInBannerLogic.afterSignIn(
+                ownerUserID: runtime?.ownerUserID, signedInUserID: signedIn,
+                signedInIsClaimed: signedIn.map { CloudClaimActionStore.shared.action(forUserID: $0) != nil } ?? false) {
+            case .resume:
+                // Parado en este proceso, la cadencia se re-despierta; arrancado sin sesión tras relanzar
+                // (`.idleSignedOut`), `handleBecameActive` no hace nada y hay que arrancarlo, por la puerta de siempre
+                // (`startRuntimeIfStable` → `start`, con su gate de identidad).
+                if runtime?.state == .stoppedUntilSignIn {
+                    runtime?.handleBecameActive()
+                } else {
+                    startRuntimeIfStable()
+                }
+            case .rejectOtherAccount:
+                // Nada se reanuda y la sesión que entró no se queda: con ella viva, el cierre de sesión o cualquier otro
+                // ciclo subiría las colas de este teléfono a su nombre.
+                CloudSyncBreadcrumb.syncSignInAccountMismatch()
+                // La abrió ESTE intento, así que se cierra por el único `signOut` del controller.
+                _ = await closeSessionIfOpened(true)
+                // El de la cuenta del teléfono cuando el faro lo ancla (`SyncSignInBannerLogic.provider`).
+                CloudAuthService.shared.restoreStoredProvider(provider)
+                lastError = L10n.Storage.Errors.syncSignInOtherAccount
+            }
         } catch CloudAuthError.cancelled {
             // Cancel tipado (Google): el banner sigue visible, sin alert (un cancel no es fallo).
         } catch {

@@ -33,7 +33,7 @@ enum SignOutBlockedCopy {
             return L10n.Settings.signOutAttestTitle
         case .permanent, .exportUnconfirmed, .sessionExpired, .bridgeUnreadable, .detachBusy,
              .channelPaused, .uploadRetryLater, .syncStoppedNeedsUpdate, .syncStoppedMidMigration,
-             .syncStoppedNeedsRelaunch, .personalUploadRetryLater:
+             .syncStoppedNeedsRelaunch, .personalUploadRetryLater, .cloudSessionExpired:
             return L10n.Settings.signOutBlockedTitle
         }
     }
@@ -59,6 +59,9 @@ enum SignOutBlockedCopy {
     ///    montado, reabrir la app.
     ///  · **la subida de tus cambios a la nube no llegó** (2026-09-25): el texto de la de grupos, dicho de tus datos. Hasta
     ///    ese día el cierre en la nube le decía «revisa tu conexión» a quien tenía el servidor fallando.
+    ///  · **la sesión en la nube caducó** (2026-09-25): el texto de la sesión caducada, pero diciendo DÓNDE se vuelve a
+    ///    entrar —«Dónde viven tus datos», aquí en Perfil, y su «Iniciar sesión»—. Con solo cambios de grupos no había
+    ///    ninguna puerta a la vista (ticket `cloud-session-expiry-with-only-group-changes-has-no-sign-in-door`).
     ///  · el resto: el genérico de siempre, que no afirma ninguna causa concreta.
     ///
     /// `nil` cae al genérico: Ajustes escribe el motivo antes de encender su aviso, así que con el aviso
@@ -75,6 +78,7 @@ enum SignOutBlockedCopy {
         case .syncStoppedMidMigration: return L10n.Settings.signOutSyncStoppedMidMigration
         case .syncStoppedNeedsRelaunch: return L10n.Settings.signOutSyncStoppedNeedsRelaunch
         case .personalUploadRetryLater: return L10n.Settings.signOutUploadRetryLater
+        case .cloudSessionExpired: return L10n.Settings.signOutCloudSessionExpired
         case .permanent, .exportUnconfirmed, .bridgeUnreadable, .detachBusy, .none:
             return L10n.Settings.signOutBlockedMessage
         }
