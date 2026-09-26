@@ -6127,3 +6127,15 @@
 /* Sign-out blocked: the upload of personal changes to the cloud did not reach the server */
 "settings.signOutUploadRetryLater" = "Le tue ultime modifiche non sono arrivate al cloud. Restano salvate su questo telefono e non si perde nulla; riprova tra poco.";
 "settings.signOutCloudSessionExpired" = "La tua sessione è scaduta e alcune modifiche non sono ancora state caricate nel cloud. Non si perde nulla: apri «Dove si trovano i tuoi dati», qui in Profilo, tocca «Accedi» e poi riprova.";
+
+/* Title: a deletion of the old iCloud data succeeded in iCloud but failed on this phone */
+"welcome.privateICloud.leftHalfwayTitle" = "L'eliminazione si è fermata a metà";
+
+/* Body: iCloud already deleted, phone not; the person chooses to finish or keep */
+"welcome.privateICloud.leftHalfwayBody" = "Abbiamo già eliminato quello che c'era su iCloud, ma non siamo riusciti a finire su questo telefono: qui potrebbe esserci ancora tutto o parte di quello che avevi. Puoi tenere quello che è rimasto, oppure finire di eliminarlo e ricominciare da zero.";
+
+/* Button: finish the deletion that was left halfway */
+"welcome.privateICloud.leftHalfwayFinish" = "Finisci di eliminare";
+
+/* Confirm body before finishing a deletion that was left halfway */
+"welcome.privateICloud.leftHalfwayConfirmBody" = "Quello che resta su questo telefono viene eliminato, anche ciò che hai creato nel frattempo, e ricominci da capo. Non resta nessuna copia.";

@@ -6129,3 +6129,15 @@
 /* Sign-out blocked: the upload of personal changes to the cloud did not reach the server */
 "settings.signOutUploadRetryLater" = "你最近的更改没有传到云端。更改还在这台手机上，不会丢失，过一会儿再试试。";
 "settings.signOutCloudSessionExpired" = "你的登录已过期，还有更改尚未上传到云端。这些更改不会丢失：请打开本页“个人资料”中的“你的数据存放在哪里”，轻点“登录”，然后再试一次。";
+
+/* Title: a deletion of the old iCloud data succeeded in iCloud but failed on this phone */
+"welcome.privateICloud.leftHalfwayTitle" = "删除只完成了一半";
+
+/* Body: iCloud already deleted, phone not; the person chooses to finish or keep */
+"welcome.privateICloud.leftHalfwayBody" = "iCloud 里的数据已经删除了，但这台手机上的没能删完：这里可能还留着你原来的全部或部分数据。你可以保留剩下的数据，也可以继续删完、从头开始。";
+
+/* Button: finish the deletion that was left halfway */
+"welcome.privateICloud.leftHalfwayFinish" = "继续删完";
+
+/* Confirm body before finishing a deletion that was left halfway */
+"welcome.privateICloud.leftHalfwayConfirmBody" = "这台手机上剩下的数据会被删除，包括之后新建的内容，然后你将从头开始。不会留下任何副本。";

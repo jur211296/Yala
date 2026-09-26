@@ -6129,3 +6129,15 @@
 /* Sign-out blocked: the upload of personal changes to the cloud did not reach the server */
 "settings.signOutUploadRetryLater" = "最新の変更がクラウドに届きませんでした。変更はこの端末に残っていて失われません。しばらくしてからもう一度お試しください。";
 "settings.signOutCloudSessionExpired" = "セッションの有効期限が切れ、まだクラウドにアップロードされていない変更があります。変更は失われません。このプロフィール画面の「データの保存先」を開いて「サインイン」をタップし、その後もう一度お試しください。";
+
+/* Title: a deletion of the old iCloud data succeeded in iCloud but failed on this phone */
+"welcome.privateICloud.leftHalfwayTitle" = "削除が途中で止まりました";
+
+/* Body: iCloud already deleted, phone not; the person chooses to finish or keep */
+"welcome.privateICloud.leftHalfwayBody" = "iCloudにあったデータはすでに削除しましたが、この端末では最後まで削除できませんでした。以前のデータの全部または一部がまだ残っている可能性があります。残っているデータをそのままにするか、最後まで削除して最初からやり直すことができます。";
+
+/* Button: finish the deletion that was left halfway */
+"welcome.privateICloud.leftHalfwayFinish" = "最後まで削除する";
+
+/* Confirm body before finishing a deletion that was left halfway */
+"welcome.privateICloud.leftHalfwayConfirmBody" = "この端末に残っているデータは、その後に作成したものも含めて削除され、最初からやり直します。コピーは残りません。";

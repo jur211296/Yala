@@ -292,9 +292,15 @@ struct FreshStartUnsentGroupWritesWiringTests {
     @Test("la reanudación del arranque se desarma al pararse en los cambios de grupos")
     func blindResume_disarmsOnGroupsPending() throws {
         let check = try Self.body(of: "private func runLateICloudMirrorCheck() async {", in: Self.source(Self.contentView))
-        #expect(check.contains("if failure == CloudSessionSignOut.freshStartGroupsPendingFailure {\n"
-                               + "                StorageModePersistence.clearICloudCorpusWipeArm()\n            }"))
-        try Self.expectOrder("StorageModePersistence.clearICloudCorpusWipeArm()", before: "guard failure == nil else { return }",
+        // Desde el 2026-09-26 el fallo se clasifica (`classifyLateWipeFailure`, ticket
+        // `late-icloud-notice-exit-after-a-failed-wipe-leaves-the-blind-resume-armed`): el desarme vive en SU rama.
+        #expect(check.contains("groupsPending: failure == CloudSessionSignOut.freshStartGroupsPendingFailure,"))
+        let start = try #require(check.range(of: "case .groupsPending:"))
+        let end = try #require(check.range(of: "case .untouched:", range: start.upperBound..<check.endIndex))
+        // `disarmFailedICloudCorpusWipe` desarma siempre; si la zona ya se había ido, además deja «a medias».
+        #expect(check[start.upperBound..<end.lowerBound].contains("StorageModePersistence.disarmFailedICloudCorpusWipe()"),
+                "la rama de los cambios de grupos tiene que desarmar")
+        try Self.expectOrder("case .groupsPending:", before: "guard failure == nil else { return }",
                              in: check, "el desarme va antes de salir por el fallo")
     }
 

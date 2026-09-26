@@ -149,4 +149,65 @@ nonisolated enum WelcomePrivateICloudGateLogic {
             return corpus.hasAnyData ? .ask(corpus) : .standDown
         }
     }
+
+    // MARK: - El borrado del aviso tardío que falla, y el que quedó a medias
+
+    /// Qué dejó un borrado del aviso tardío que FALLÓ (ticket
+    /// `late-icloud-notice-exit-after-a-failed-wipe-leaves-the-blind-resume-armed`). **Son tres hechos y no uno**, y el
+    /// arm significa cosas opuestas en cada uno: en los dos primeros no protege nada; en el tercero es lo único que
+    /// terminaría el borrado, y terminarlo a ciegas es justo lo que la persona no pidió.
+    enum LateWipeFailure: Equatable {
+        /// Parado en los cambios de grupos. Nada se tocó, y su pantalla ya sabe salir (desarma al irse).
+        case groupsPending
+        /// Falló antes de la zona de iCloud. **Nada se tocó**: se desarma, el testigo se queda y el aviso vuelve a
+        /// preguntar. El copy de `.failed` («Tus datos siguen en iCloud, intactos») es verdad solo aquí.
+        case untouched
+        /// La zona de iCloud ya no está y lo del teléfono sí. Ni se reanuda a ciegas ni se da por intacto: se le dice a
+        /// la persona que quedó a medias y elige terminar o quedarse con lo que tiene.
+        case leftHalfway
+    }
+
+    /// **`leftHalfway` entra también sin `zoneDone`**, y es a propósito: si el borrado ya había quedado a medias antes
+    /// —la persona pulsó «Terminar de borrar» y este intento falló antes de llegar a la zona— la zona sigue sin estar, y
+    /// decir «nada se tocó» sería mentira. Los grupos pendientes mandan porque su pantalla es la que explica qué falta.
+    static func classifyLateWipeFailure(groupsPending: Bool,
+                                        zoneDone: Bool,
+                                        wasLeftHalfway: Bool) -> LateWipeFailure {
+        if groupsPending { return .groupsPending }
+        return (zoneDone || wasLeftHalfway) ? .leftHalfway : .untouched
+    }
+
+    /// Lo que el arranque hace con un borrado del aviso tardío pendiente, antes de sondear nada.
+    enum LateWipeLaunch: Equatable {
+        /// Hay un arm: un kill cortó el borrado sin que nadie viera un fallo. Se reanuda, como siempre.
+        case resume
+        /// El borrado quedó a medias delante de la persona: se le pregunta, no se reanuda.
+        case askLeftHalfway
+        /// Nada pendiente: sigue la comprobación normal del espejo tardío.
+        case none
+    }
+
+    /// **El arm gana a «a medias»**: los dos a la vez solo pasan si la persona pulsó «Terminar de borrar» y un kill cortó
+    /// ese intento — lo último que pidió fue terminar.
+    static func lateWipeLaunch(armed: Bool, leftHalfway: Bool) -> LateWipeLaunch {
+        if armed { return .resume }
+        return leftHalfway ? .askLeftHalfway : .none
+    }
+}
+
+/// Qué enseña la hoja del aviso tardío. **Un solo `.sheet(item:)` para los dos**, y no dos presentaciones: el borrado a
+/// medias es el mismo flujo en otro momento, comparte fases (borrar, fallar) y su anchor ya es blocker de la matriz de
+/// readiness con `lateICloudNotice != nil`.
+nonisolated enum LateICloudNotice: Equatable, Sendable, Identifiable {
+    /// El espejo trajo un corpus previo: el aviso de siempre, con sus cifras.
+    case corpus(ICloudPersonalCorpus)
+    /// Un borrado anterior quedó a medias: la zona de iCloud ya no está y lo del teléfono sí.
+    case wipeLeftHalfway
+
+    var id: String {
+        switch self {
+        case .corpus(let corpus): return "corpus:\(corpus.id)"
+        case .wipeLeftHalfway: return "wipeLeftHalfway"
+        }
+    }
 }
