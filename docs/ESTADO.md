@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-26 (Lima)
 
-**Rama** `2.1` — Merge #264: **Exploración de Yala en iPad (sin código): 45 capturas, propuesta de barra lateral + lista-detalle y plan en cinco fases con tickets.**
+**Rama** `2.1` — Merge #265: **«Empezar de cero» ya no deja atrapado a quien tiene cambios de grupos que no pueden subir nunca: ofrece perderlos, con la cifra y una segunda confirmación.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,31 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#264 · Yala en iPad: estado actual, propuesta y plan por fases)
+## Esta sesión (#265 · «Empezar de cero» ofrece perder los cambios de grupos que no pueden subir nunca)
+
+**Si «Empezar de cero» se para por cambios de grupos sin subir que no van a subir nunca** —la sesión que los apuntó ya no
+está en el teléfono (un iPhone heredado), la cuenta no está disponible o el teléfono lleva más de un día sin App Attest—,
+**el aviso dice por qué, cuántos se perderían y ofrece «Empezar de cero y perderlos»**, con un segundo paso «¿Perder estos
+cambios?». Sin red, con el canal en pausa o con lo que un rato arregla, nada cambia. Decisión de Jürgen (opción 1 del
+ticket, con guardas).
+
+- Lo aceptado va **por fila** (outbox + espejo del App Group) y el motivo se mide en el gesto: la confirmación vuelve a
+  subir y solo pierde lo que el aviso enseñó. El cinturón del escritor deja pasar eso y nada más.
+- El alert «Borrar todo y continuar» con cambios pendientes ya no se niega en el sitio: sigue en la puerta privada, que
+  sube, dice el motivo y ofrece la salida. Con `.sessionExpired` ya no pide «vuelve a iniciar sesión».
+- Regla al día en `swiftdata-cloudkit.md` («En una frontera de USUARIO…», la excepción).
+
+**Verificado:** gate con 8100 unit y 24 XCUITest, centinela limpio; 11/11 mutantes; review adversarial de tres lentes (sus
+hallazgos, arreglados en la rama). CI verde. Ticket a `qa` con guion.
+
+### Lo que espera de Jürgen
+
+- Device-QA de `fresh-start-has-no-way-out-when-group-writes-can-never-upload` con **Yala Dev** (staging): sin red la
+  salida no aparece; con las sesiones del usuario borradas en staging (`delete from auth.sessions …`, guion en el ticket)
+  aparece, «Mejor no» no borra y «Perderlos y empezar de cero» sí.
+- Hallazgo a backlog (low, decisión de producto): `fresh-start-drops-mirror-entries-of-another-identity-without-counting-them`.
+
+## Sesión anterior (#264 · Yala en iPad: estado actual, propuesta y plan por fases)
 
 **No cambia nada en la app.** Queda escrito qué ve hoy quien usa Yala en un iPad y cómo convertirla en una app de iPad
 de verdad sin hacer otra app: `docs/exploracion/ipad-nativo.md`, con 45 capturas del simulador (iPad mini e iPad Pro
@@ -45,7 +69,7 @@ de verdad sin hacer otra app: `docs/exploracion/ipad-nativo.md`, con 45 capturas
 - **Cola B:** `floating-buttons-cover-row-amounts-on-ipad-landscape` y la checklist
   `cola-b-redesigns-must-hold-up-at-ipad-width` son para meterlas en esa tanda.
 
-## Sesión anterior (#263 · Claude ya no puede tocar la cuenta: el conector emite sus propios tokens)
+## Antes (#263 · Claude ya no puede tocar la cuenta: el conector emite sus propios tokens)
 
 **En staging, cuando alguien conecta Yala a Claude y da permiso, Claude ya no puede cambiar NADA de su cuenta** —ni
 metadatos, ni email, ni contraseña, ni MFA—: recibe un token opaco del Worker que no sirve en Supabase. Leer las
@@ -74,7 +98,7 @@ finanzas sigue igual, y revocar corta al momento. Cierra el bloqueo de la fase 1
 - **Producción, cuando la nube esté estable:** `claude-mcp-production-auth-hardening` (incluye apagar el proveedor de
   email y `mcp0_03` con el id de producción).
 
-## Sesión anterior (#262 · cerrar sesión en la nube ya no da por subido un cambio que no se capturó)
+## Antes (#262 · cerrar sesión en la nube ya no da por subido un cambio que no se capturó)
 
 **Con los datos en la nube, si al cerrar sesión queda un cambio tuyo fuera de la cola de subida, Yala lo intenta otra
 vez y, si sigue ahí, no borra nada y dice «Un momento más»** (texto que ya existía). **Y un cambio guardado mientras Yala
