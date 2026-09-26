@@ -250,12 +250,13 @@ struct FreshStartUnsentGroupWritesWiringTests {
     func deviceWipe_uploadsFirst() throws {
         let wipe = try Self.body(of: "private func performDeviceCorpusWipe() async -> String? {",
                                  in: Self.source(Self.contentView))
-        let drain = "if let failure = await drainGroupsBeforeFreshStart() { return failure }"
+        let drain = "switch await drainGroupsBeforeFreshStart(accepted: acceptedInGesture) {"
+        #expect(wipe.contains("case .stop(let failure): return failure"), "un bloqueo de la subida no deja seguir")
         try Self.expectOrder(drain, before: "cancelWipeGrace()", in: wipe,
                              "la gracia se cancela solo cuando el borrado va a ocurrir")
         try Self.expectOrder(drain, before: "DataWipeService.wipeAllUserData(", in: wipe,
                              "sin subir antes, el borrado se lleva los gastos de grupo sin cobertura")
-        try Self.expectOrder("DataWipeService.requireNoUnsentGroupWrites(in: modelContext)",
+        try Self.expectOrder("DataWipeService.requireNoUnsentGroupWrites(in: modelContext, accepting: acceptedGroupsLoss)",
                              before: "DataWipeService.wipeAllUserData(", in: wipe,
                              "el cinturón va antes del primer borrado, o una fila tardía deja medio borrado")
         // Y si el cinturón salta, lo que se dice es «faltan cambios», no el fallo genérico: no se borró nada.
@@ -271,15 +272,19 @@ struct FreshStartUnsentGroupWritesWiringTests {
     /// en iCloud con la zona ya borrada).
     @Test("el envoltorio de ContentView no deja seguir un bloqueo y re-espera al import")
     func contentViewDrain_mapsTheVerdict() throws {
-        let helper = try Self.body(of: "private func drainGroupsBeforeFreshStart() async -> String? {",
+        let helper = try Self.body(of: """
+            private func drainGroupsBeforeFreshStart(
+                    accepted acceptedInGesture: CloudSignOutFlowLogic.FreshStartGroupsLoss?
+                ) async -> FreshStartGroupsUpload {
+            """,
                                    in: Self.source(Self.contentView))
-        #expect(helper.contains("case .drained: break"))
-        #expect(helper.contains("case .blocked: return CloudSessionSignOut.freshStartGroupsPendingFailure"))
-        #expect(helper.contains("case .busy: return \"signOutBusy\""))
-        try Self.expectOrder("drainGroupsBeforeFreshStart(context: modelContext)",
+        #expect(helper.contains("case .drained: accepted = nil"))
+        #expect(helper.contains("case .blocked: return .stop(CloudSessionSignOut.freshStartGroupsPendingFailure)"))
+        #expect(helper.contains("case .busy: return .stop(\"signOutBusy\")"))
+        try Self.expectOrder("drainGroupsBeforeFreshStart(\n            context: modelContext, accepted: acceptedInGesture)",
                              before: "waitForImportQuiescence(timeout: 30)", in: helper,
                              "la espera del import va DESPUÉS de la subida, pegada al borrado")
-        #expect(helper.contains("guard quiescent else { return \"importNotQuiescent\" }"))
+        #expect(helper.contains("guard quiescent else { return .stop(\"importNotQuiescent\") }"))
     }
 
     /// La reanudación ciega del arranque se DESARMA si se para en los cambios de grupos: dejarla armada borraba todo,
@@ -297,24 +302,27 @@ struct FreshStartUnsentGroupWritesWiringTests {
     func iCloudWipe_uploadsBeforeTheZone() throws {
         let wipe = try Self.body(of: "private func performICloudCorpusWipe(_ scope: ICloudWipeScope) async -> String? {",
                                  in: Self.source(Self.contentView))
-        let drain = "let failure = await drainGroupsBeforeFreshStart()"
+        let drain = "switch await drainGroupsBeforeFreshStart(accepted: acceptedInGesture) {"
         try Self.expectOrder(drain, before: "await ICloudPersonalCorpusProbe.wipe()", in: wipe,
                              "parado después de la zona, iCloud ya estaría vacío con los grupos sin subir")
-        #expect(wipe.contains("if scope.purgesGroupsDomain,\n           \(drain)"),
+        #expect(wipe.contains("if scope.purgesGroupsDomain {\n            \(drain)"),
                 "solo el alcance que se lleva el outbox tiene que esperarlo; los otros dos no lo tocan")
-        try Self.expectOrder("if scope.purgesGroupsDomain { try DataWipeService.requireNoUnsentGroupWrites(in: modelContext) }",
+        #expect(wipe.contains("case .stop(let failure): return failure"))
+        try Self.expectOrder("try DataWipeService.requireNoUnsentGroupWrites(in: modelContext, accepting: acceptedGroupsLoss)",
                              before: "DataWipeService.wipeAllUserData(", in: wipe,
                              "entre la subida y las filas hubo un `await` (la zona): el cinturón va antes de ellas")
     }
 
-    @Test("el alert del shell solo borra con el outbox vacío, y si no avisa en el mismo tap")
+    /// Desde `fresh-start-has-no-way-out-when-group-writes-can-never-upload`, con algo pendiente el tap no se niega en el
+    /// sitio: sigue en la puerta, que sube y sabe el motivo. La negativa en el sitio queda para el onboarding completo.
+    @Test("el alert del shell solo borra con el outbox vacío, y si no sigue en la puerta")
     func shellAlert_refusesWhileGroupsArePending() throws {
         let src = try Self.source(Self.shellAlerts)
         #expect(src.contains("if CloudSessionSignOut.shared.groupsOutboxIsSettledEmpty(context: modelContext) {\n"
                              + "                        performFreshStartWipe()\n"
                              + "                    } else {\n"
-                             + "                        refuseWhileGroupsArePending()"),
-                "el tap borra SOLO con el outbox vacío; si no, se niega")
+                             + "                        continueInTheGateWhileGroupsArePending()"),
+                "el tap borra SOLO con el outbox vacío; si no, sigue en la puerta")
         let refuse = try Self.body(of: "private func refuseWhileGroupsArePending() {", in: src)
         try Self.expectOrder("noteFreshStartGroupsPending(context: modelContext, reason: .uploadRetryLater)",
                              before: "showFreshStartWipeFailedAlert = true", in: refuse,
@@ -327,7 +335,7 @@ struct FreshStartUnsentGroupWritesWiringTests {
         try Self.expectOrder("DataWipeService.requireNoUnsentGroupWrites(in: modelContext)",
                              before: "DataWipeService.wipeAllUserData(", in: wipe,
                              "el cinturón va antes del primer borrado")
-        try Self.expectOrder("} catch is DataWipeService.GroupsDomainWipeError {\n            refuseWhileGroupsArePending()",
+        try Self.expectOrder("} catch is DataWipeService.GroupsDomainWipeError {\n            continueInTheGateWhileGroupsArePending()",
                              before: "MetricsService.canary(.freshStartWipeFailed", in: wipe,
                              "el cinturón se dice como «faltan cambios», no como un borrado que falló")
         // Dos apariciones fuera de comentarios: la declaración y la llamada del tap con el outbox vacío. Una llamada
@@ -341,7 +349,7 @@ struct FreshStartUnsentGroupWritesWiringTests {
         let src = try Self.source(Self.dataWipe)
         let start = try #require(src.range(of: "static func wipeLocalGroupsDomain("))
         let rest = String(src[start.upperBound...])
-        try Self.expectOrder("try requireNoUnsentGroupWrites(in: context, witness: witness)",
+        try Self.expectOrder("try requireNoUnsentGroupWrites(in: context, witness: witness, accepting: acceptedGroupsLoss)",
                              before: "try deleteLocalGroupsRows(in: context)", in: rest,
                              "el cinturón tiene que correr antes de borrar la primera fila")
     }
@@ -351,7 +359,8 @@ struct FreshStartUnsentGroupWritesWiringTests {
         let drain = try Self.body(
             of: """
                 func drainGroupsBeforeFreshStart(
-                        context: ModelContext, witness: GroupsExitWitness = .live
+                        context: ModelContext, witness: GroupsExitWitness = .live,
+                        accepted: CloudSignOutFlowLogic.FreshStartGroupsLoss? = nil
                     ) async -> FreshStartGroupsDrain {
                 """,
             in: Self.source(Self.signOut))
@@ -410,6 +419,7 @@ struct FreshStartUnsentGroupWritesWiringTests {
         let leave = try Self.body(of: "private func leaveGroupsPending() {", in: late)
         #expect(leave.contains("StorageModePersistence.clearICloudCorpusWipeArm()"))
         #expect(late.contains("destructiveAction: leaveGroupsPending)"))
-        #expect(late.contains("if case .groupsPending = phase { StorageModePersistence.clearICloudCorpusWipeArm() }"))
+        #expect(late.contains("if isGroupsPending {\n                                leaveGroupsPending()"),
+                "la barra desde «faltan cambios» sale como «Dejarlo por ahora»: desarma y conserva el testigo")
     }
 }

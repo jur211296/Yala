@@ -5435,6 +5435,14 @@
 "groups.freshStartPending.title" = "Część zmian w grupach nie została jeszcze wysłana";
 "groups.freshStartPending.lead" = "Niczego nie usunęliśmy: część zmian w twoich grupach nie dotarła jeszcze na nasz serwer (%d), a rozpoczęcie od zera by je zabrało.";
 "groups.freshStartPending.leadUnknown" = "Niczego nie usunęliśmy: część zmian w twoich grupach nie dotarła jeszcze na nasz serwer, a rozpoczęcie od zera by je zabrało.";
+"groups.freshStartPending.lossSessionExpired" = "Można je wysłać tylko z konta, które je zapisało, a jego sesji nie ma już na tym telefonie. Jeśli nie zalogujesz się ponownie na to konto, możesz zacząć od zera i je stracić: nikt w grupie ich nie zobaczy.";
+"groups.freshStartPending.lossPermanent" = "Konto, które je zapisało, nie może już ich wysłać, a ponowna próba tego nie naprawi. Możesz zacząć od zera i je stracić: nikt w grupie ich nie zobaczy.";
+"groups.freshStartPending.lossAttest" = "Ten telefon od ponad doby nie przechodzi weryfikacji bezpieczeństwa, której wymaga nasz serwer, więc nie mogą zostać wysłane. Możesz zacząć od zera i je stracić: nikt w grupie ich nie zobaczy.";
+"groups.freshStartPending.lossAction" = "Zacznij od zera mimo utraty zmian";
+"groups.freshStartPending.lossConfirmTitle" = "Stracić te zmiany?";
+"groups.freshStartPending.lossConfirmBody" = "Zmiany w grupach, które zostaną utracone: %d. Zostaną usunięte z tego telefonu bez wysłania na serwer, nikt w grupie ich nie zobaczy i nie da się ich odzyskać.";
+"groups.freshStartPending.lossConfirmBodyUnknown" = "Zmiany w grupach, które nie dotarły na serwer, zostaną usunięte z tego telefonu. Nikt w grupie ich nie zobaczy i nie da się ich odzyskać.";
+"groups.freshStartPending.lossConfirmAction" = "Strać zmiany i zacznij od zera";
 
 /* Título del aviso cuando Restaurar compras no encuentra Yala Pro */
 "subscription.restoreEmptyTitle" = "Brak subskrypcji";

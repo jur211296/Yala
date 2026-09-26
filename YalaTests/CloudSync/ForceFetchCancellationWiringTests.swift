@@ -204,7 +204,16 @@ struct ForceFetchCancellationWiringTests {
             + "guard !Task.isCancelled else { return \"cancelled\" } "
             + "guard quiescent else { return \"importNotQuiescent\" } }"
 
+        // La tercera, la re-espera tras subir los cambios de grupos, devuelve el motivo envuelto en `.stop(…)` desde
+        // el 2026-09-26 (ticket `fresh-start-has-no-way-out-when-group-writes-can-never-upload`): el envoltorio lleva
+        // además lo que la persona aceptó perder. Se cuenta con su forma, y el orden que fija es el mismo.
+        let bloqueEnvuelto = "if ICloudPersonalCorpusProbe.mirrorWillSync() { "
+            + "let quiescent = await iCloudSyncService.shared.waitForImportQuiescence(timeout: 30) "
+            + "guard !Task.isCancelled else { return .stop(\"cancelled\") } "
+            + "guard quiescent else { return .stop(\"importNotQuiescent\") } }"
+
         let ocurrencias = code.components(separatedBy: bloque).count - 1
+            + code.components(separatedBy: bloqueEnvuelto).count - 1
         // TRES desde el 2026-09-26: la tercera es la re-espera tras subir los cambios de grupos
         // (`drainGroupsBeforeFreshStart`, ticket `fresh-start-wipe-kills-unsent-group-writes-silently`).
         #expect(ocurrencias == 3, """

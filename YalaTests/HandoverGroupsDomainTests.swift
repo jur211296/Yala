@@ -461,7 +461,9 @@ struct HandoverGroupsWiringTests {
 
         let contentViewSource = try Self.source("Yala/App/ContentView.swift")
         let contentView = Self.codeOnly(contentViewSource)
-        #expect(contentView.components(separatedBy: "DataWipeService.wipeLocalGroupsDomain(in: modelContext)").count - 1 == 2, """
+        // Con lo aceptado en «Empezar de cero y perderlos» desde el 2026-09-26: las dos purgas lo reciben.
+        let purga = "DataWipeService.wipeLocalGroupsDomain(in: modelContext, acceptedGroupsLoss: acceptedGroupsLoss)"
+        #expect(contentView.components(separatedBy: purga).count - 1 == 2, """
             en `ContentView` la purga del dominio va EXACTAMENTE dos veces, una por cada celda del aviso de
             la puerta privada: el borrado del TELÉFONO (`performDeviceCorpusWipe`) y el de iCloud cuando
             además se lleva las filas locales (`performICloudCorpusWipe`, dentro de su guard). Menos
@@ -474,7 +476,7 @@ struct HandoverGroupsWiringTests {
             ("private func performICloudCorpusWipe(_ scope: ICloudWipeScope) async -> String? {",
              "la celda «iCloud con datos» deja los grupos vivos y el bridge abierto sin esto")] {
             let cuerpo = try Self.body(of: funcion, in: contentViewSource)
-            #expect(cuerpo.contains("DataWipeService.wipeLocalGroupsDomain(in: modelContext)"),
+            #expect(cuerpo.contains(purga),
                     Comment(rawValue: "la purga se salió de `\(funcion)`: \(porque)."))
         }
         // Y el alert sigue sin duplicarse, que es lo que este test vigilaba de origen: la regla (4) de

@@ -445,6 +445,12 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSignOut groups loss accepted pending=\(pending ?? -1, privacy: .public)")
     }
 
+    /// La persona eligió «Perderlos y empezar de cero» (ticket `fresh-start-has-no-way-out-when-group-writes-can-never-upload`):
+    /// el borrado vuelve a subir y, si sigue bloqueado por lo mismo, se lleva esa cifra y no más. −1 = sin cifra. Sin PII.
+    static func freshStartGroupsLossAccepted(pending: Int?) {
+        logger.notice("FreshStart groups loss accepted pending=\(pending ?? -1, privacy: .public)")
+    }
+
     /// El cierre siguió sin subir los cambios de grupos que la persona aceptó perder: mueren con el borrado del
     /// arranque. Va aparte del anterior porque, entre el tap y aquí, el attest pudo volver y subirlos.
     static func signOutGroupsDiscarded(pending: Int?) {

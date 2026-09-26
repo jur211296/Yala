@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (618)
+## Index (619)
 
 | id | status | path |
 |---|---|---|
@@ -175,7 +175,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | cloud-signout-upstream-rejections-with-a-healthy-pull-say-a-moment-more | backlog | tickets/backlog/cloud-signout-upstream-rejections-with-a-healthy-pull-say-a-moment-more.md |
 | cola-b-redesigns-must-hold-up-at-ipad-width | backlog | tickets/backlog/cola-b-redesigns-must-hold-up-at-ipad-width.md |
 | floating-buttons-cover-row-amounts-on-ipad-landscape | backlog | tickets/backlog/floating-buttons-cover-row-amounts-on-ipad-landscape.md |
-| fresh-start-has-no-way-out-when-group-writes-can-never-upload | backlog | tickets/backlog/fresh-start-has-no-way-out-when-group-writes-can-never-upload.md |
+| fresh-start-has-no-way-out-when-group-writes-can-never-upload | qa | tickets/qa/fresh-start-has-no-way-out-when-group-writes-can-never-upload.md |
+| fresh-start-drops-mirror-entries-of-another-identity-without-counting-them | backlog | tickets/backlog/fresh-start-drops-mirror-entries-of-another-identity-without-counting-them.md |
 | groups-drain-failure-reads-as-nothing-pending | qa | tickets/qa/groups-drain-failure-reads-as-nothing-pending.md |
 | groups-clock-rollback-wedges-the-drain-forever | qa | tickets/qa/groups-clock-rollback-wedges-the-drain-forever.md |
 | groups-clock-ahead-wins-every-conflict-until-real-time-catches-up | backlog | tickets/backlog/groups-clock-ahead-wins-every-conflict-until-real-time-catches-up.md |

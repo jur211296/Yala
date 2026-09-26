@@ -5423,6 +5423,14 @@
 "groups.freshStartPending.title" = "Faltam mudanças dos seus grupos para subir";
 "groups.freshStartPending.lead" = "Não apagamos nada: há mudanças dos seus grupos que ainda não chegaram ao servidor (%d), e começar do zero as levaria junto.";
 "groups.freshStartPending.leadUnknown" = "Não apagamos nada: há mudanças dos seus grupos que ainda não chegaram ao servidor, e começar do zero as levaria junto.";
+"groups.freshStartPending.lossSessionExpired" = "Elas só podem subir com a conta que as registrou, e a sessão dela não está mais neste telefone. Se você não vai voltar a entrar com essa conta, pode começar do zero e perdê-las: ninguém do grupo vai vê-las.";
+"groups.freshStartPending.lossPermanent" = "A conta que as registrou não consegue mais enviá-las, e tentar de novo não vai resolver. Você pode começar do zero e perdê-las: ninguém do grupo vai vê-las.";
+"groups.freshStartPending.lossAttest" = "Este telefone está há mais de um dia sem conseguir passar na verificação de segurança exigida pelo nosso servidor, por isso elas não podem subir. Você pode começar do zero e perdê-las: ninguém do grupo vai vê-las.";
+"groups.freshStartPending.lossAction" = "Começar do zero e perdê-las";
+"groups.freshStartPending.lossConfirmTitle" = "Perder estas mudanças?";
+"groups.freshStartPending.lossConfirmBody" = "Mudanças dos seus grupos que se perdem: %d. Elas são apagadas deste telefone sem chegar ao servidor, ninguém do grupo vai vê-las e não dá para recuperá-las.";
+"groups.freshStartPending.lossConfirmBodyUnknown" = "As mudanças dos seus grupos que não chegaram ao servidor são apagadas deste telefone. Ninguém do grupo vai vê-las e não dá para recuperá-las.";
+"groups.freshStartPending.lossConfirmAction" = "Perdê-las e começar do zero";
 
 /* Título del aviso cuando Restaurar compras no encuentra Yala Pro */
 "subscription.restoreEmptyTitle" = "Sem assinatura";

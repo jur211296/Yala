@@ -5435,6 +5435,14 @@
 "groups.freshStartPending.title" = "グループの変更でまだアップロードされていないものがあります";
 "groups.freshStartPending.lead" = "何も消去していません。グループの変更の一部（%d件）がまだサーバーに届いておらず、最初からやり直すとそれらも失われます。";
 "groups.freshStartPending.leadUnknown" = "何も消去していません。グループの変更の一部がまだサーバーに届いておらず、最初からやり直すとそれらも失われます。";
+"groups.freshStartPending.lossSessionExpired" = "これらは作成したアカウントでしかアップロードできませんが、そのアカウントのセッションはもうこの端末にありません。そのアカウントで再度サインインしないなら、変更を失って最初からやり直せます。グループの誰にも表示されません。";
+"groups.freshStartPending.lossPermanent" = "作成したアカウントではもうアップロードできず、再試行しても解決しません。変更を失って最初からやり直せます。グループの誰にも表示されません。";
+"groups.freshStartPending.lossAttest" = "この端末は1日以上、サーバーが求めるセキュリティ確認を通過できていないため、アップロードできません。変更を失って最初からやり直せます。グループの誰にも表示されません。";
+"groups.freshStartPending.lossAction" = "変更が失われても最初からやり直す";
+"groups.freshStartPending.lossConfirmTitle" = "これらの変更を失いますか？";
+"groups.freshStartPending.lossConfirmBody" = "失われるグループの変更：%d件。サーバーに届かないままこの端末から消去され、グループの誰にも表示されず、復元もできません。";
+"groups.freshStartPending.lossConfirmBodyUnknown" = "サーバーに届かなかったグループの変更はこの端末から消去されます。グループの誰にも表示されず、復元もできません。";
+"groups.freshStartPending.lossConfirmAction" = "変更を失って最初からやり直す";
 
 /* Título del aviso cuando Restaurar compras no encuentra Yala Pro */
 "subscription.restoreEmptyTitle" = "サブスクリプションがありません";
