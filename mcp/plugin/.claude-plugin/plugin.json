@@ -1,0 +1,9 @@
+{
+  "name": "yala",
+  "version": "0.0.1",
+  "description": "Consulta tus finanzas de Yala desde Claude: saldos, gasto del mes, presupuestos y pagos recurrentes. Solo lectura.",
+  "author": { "name": "Yala", "url": "https://yala-app.pe" },
+  "homepage": "https://yala-app.pe",
+  "license": "Propietaria",
+  "keywords": ["finanzas", "presupuestos", "gastos", "yala"]
+}

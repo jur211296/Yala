@@ -1,6 +1,6 @@
 ---
 fecha: 2026-09-26
-estado: exploración — no hay código ni nada desplegado
+estado: fase 0 hecha en staging (§7); un bloqueo para la fase 1 — código en mcp/
 ticket: tickets/backlog/claude-plugin-read-only-mcp-connector.md
 ---
 
@@ -65,9 +65,9 @@ de 64 caracteres de nombre.
 - *presupuesto*: usa `estado_presupuestos`.
 - *recurrentes-a-revisar*: usa `listar_recurrentes`.
 
-⚠️ **«Suscripciones sin usar» no se puede prometer.** Yala no sabe si usas un servicio, solo que lo
-pagas. Lo honesto es enseñar «lo que pagas cada mes y al año, y lo que lleva tiempo sin cobro
-asociado». Es una decisión de producto (ver §6).
+**«Suscripciones sin usar» no se puede prometer.** Yala no sabe si usas un servicio, solo que lo
+pagas. Por eso la skill se llama *recurrentes-a-revisar* (decidido el 2026-09-26, §6): enseña lo que
+pagas cada mes y al año, y lo que lleva tiempo sin cobro asociado.
 
 **Ninguna skill da asesoría de inversión ni juzga la solvencia.** La Usage Policy trata las «financial
 decisions, including investment advice… creditworthiness» como caso de alto riesgo. Para esos casos
@@ -248,6 +248,11 @@ sesión.
 
 ## 6. Decisiones que son de Jürgen
 
+**Contestadas el 2026-09-26:** (1) gratis por defecto, con un punto de extensión para marcar alguna
+herramienta como Pro más adelante; (2) sí vale que solo sirva a quien está en modo nube; (3) producción
+espera a que la nube esté estable, tras 2.1, y la fase 0 va ya en staging; (4) «recurrentes a revisar».
+Las preguntas, tal como se plantearon:
+
 1. **¿Gratis o Pro?** Las funciones de IA de la app verifican el entitlement Pro (`gateway/README.md:3`),
    y la nube es «siempre gratis» (`MODO-NUBE-DIFERIDOS.md:202-205`). Un conector gratis le da a Claude
    lo que la app cobra.
@@ -255,6 +260,132 @@ sesión.
 3. **¿Cuándo?** El gatillo del diferido #22 es el modo nube estable en producción. La fase 0 se puede
    hacer antes, porque solo toca staging.
 4. **Reformular «suscripciones sin usar»** como «recurrentes a revisar» (§1).
+
+## 7. Fase 0: lo que se hizo, lo aprendido y lo que falta (2026-09-26)
+
+**En corto: sí, con un bloqueo para la fase 1.** Claude Code se conectó al conector de staging, hizo el baile
+OAuth con Supabase, pasó por la pantalla de consentimiento y respondió con los datos reales del usuario de prueba.
+La base impide que ese token escriba en las finanzas, y otro usuario no ve nada. Pero **GoTrue sí deja al token
+cambiar la cuenta de inicio de sesión** (`PUT /auth/v1/user` → 200), y eso hay que cerrarlo antes de producción
+(`claude-mcp-oauth-token-can-change-the-account`).
+
+### Qué se construyó
+
+- **`mcp/`**, un Worker propio (`yala-mcp-staging`, desplegado en `workers.dev`). Tiene las seis herramientas de
+  §1, los metadatos del recurso protegido (RFC 9728), el `401` con `resource_metadata` y la pantalla de
+  consentimiento. Guía: `mcp/README.md`.
+- **El rol `yala_mcp_reader`** y su hook, en staging (`qa/cloud/mcp0_01_readonly_role.sql`, con marcha atrás y
+  entrada en `docs/RUNBOOK-staging-ddl.md`).
+- **La configuración de Auth de staging:** hook, Site URL y servidor OAuth con DCR. El antes y el después están en
+  `tickets/done/claude-mcp-activate-oauth-in-staging.md`.
+- **Tests:** 49 unitarios sin red (job `mcp` del CI) y 17 e2e contra staging (`tools` 7 y `oauth` 10), todos en
+  verde.
+- **`mcp/plugin/`**, el borrador del plugin: `plugin.json`, `.mcp.json` y tres skills (`gasto-del-mes`,
+  `presupuesto`, `recurrentes-a-revisar`). No se ha publicado ni enviado.
+- **Punto de extensión Pro:** cada herramienta declara `plan` y `planAllows` decide. Hoy las seis son gratis.
+- **Auditoría:** una línea de log por llamada, con herramienta, cliente, hash del usuario, latencia y resultado.
+  Sin datos.
+
+### Qué funcionó (medido)
+
+- **Claude Code, de verdad.** `claude mcp add --transport http …` → «Needs authentication» → `/mcp` →
+  *Authenticate*. Claude Code:
+  - hizo DCR por su cuenta;
+  - mandó PKCE S256 y el parámetro `resource`, sin `scope`;
+  - volvió a su loopback con el código.
+
+  Respondió «39 cuentas, −189 PEN» para A, la misma cifra que el e2e.
+- **El hook se invoca para los tokens OAuth y al refrescarlos.** El token sale con `role = yala_mcp_reader` y
+  `client_id`. El login normal sigue saliendo `authenticated` y sin `client_id`.
+- **Solo lectura en la base.** Con el token de Claude, PostgREST responde 403 a `PATCH`, `INSERT` y a las RPC de
+  escritura. En SQL, como `yala_mcp_reader`, también dan `42501` `delete_personal_account`, `apply_delta`,
+  `claim_account` y `migration_progress`.
+- **Aislamiento.** B no ve ninguna cuenta ni movimiento de A, ni por el MCP ni pidiendo a PostgREST las filas de A
+  con su propio token.
+- **Tiempos.** Discovery en 312-524 ms y token en ~225 ms, lejos de los 10 s de Claude. Cada herramienta tarda
+  entre 430 y 870 ms.
+- **Revocación.** `GET` y `DELETE /auth/v1/user/oauth/grants` funcionan. Tras revocar, el refresh da
+  `refresh_token_not_found`, pero **el access token vivo sigue sirviendo hasta que caduca** (1 h). Es un JWT y el
+  MCP no consulta el estado de la sesión.
+- **La pantalla de consentimiento cierra su sesión web.** Tras decidir, ese token da 403 en `/auth/v1/user`.
+
+### Lo que la verificación destapó y cambió el código
+
+- **En Workers, `fetch` guardado como método falla** («Illegal invocation»). En Node funciona, así que los tests
+  unitarios no lo veían. Lo cazó el e2e contra el Worker desplegado.
+- **La review adversarial** (tres lentes: seguridad, paridad de cálculos, protocolo) encontró, y se arregló:
+  - **Seguridad y protocolo:**
+    - `GET /mcp` devolvía un stream vacío que hacía reconectar al SDK cada segundo; ahora da 405.
+    - Lista cerrada de dominios de vuelta en la pantalla de consentimiento (`claude.ai`, `claude.com` y el
+      loopback): con DCR, cualquiera registra un cliente llamado «Claude».
+    - El cursor se valida como ISO estricto.
+  - **Consultas y fechas:**
+    - El filtro de fechas de `buscar_movimientos` usa el mismo día que enseña (`local_day`).
+    - Corregido el inicio del día en zonas que adelantan la hora a medianoche.
+    - La paginación solo para cuando llega una página vacía.
+  - **Paridad con la app:**
+    - Naturalezas estrictas (lo que la app no reconoce deja el presupuesto en 0, como en la app).
+    - Los null valen el default del modelo.
+    - El gasto medio diario no cuenta el día en curso.
+    - Las tasas se completan con filas anteriores.
+    - El top se ordena por magnitud y se agrupa por categoría, no por nombre.
+    - Los presupuestos cuadran con la pantalla de Presupuestos, no con el chat.
+- **El orden importa:** el hook va antes que el servidor OAuth. Al revés, hay una ventana en la que Supabase emite
+  tokens que escriben.
+
+### Qué sigue NO VERIFICADO
+
+- **CIMD.** Supabase no lo anuncia en sus metadatos. Claude Code usó DCR sin problema.
+- **Claude Desktop y claude.ai.** Solo se probó Claude Code. Los dos usan el callback
+  `https://claude.ai/api/mcp/auth_callback`, que está en la lista de dominios permitidos.
+- **RFC 8707.** Claude Code manda `resource`, pero el token sale con `aud = "authenticated"`. Supabase no lo
+  aplica, y el MCP no puede exigir una audiencia propia.
+
+### Lo aprendido que cambia el diseño
+
+1. **Un rol a medida, no políticas por `client_id`.** Las 11 RPC `SECURITY DEFINER` que escriben corren como su
+   dueño, y una política RESTRICTIVE no las alcanza. Con el rol no llegan a ejecutarse. Además todo es aditivo:
+   no toca nada que mueva la cola A.
+2. **Solo lectura en Postgres no es solo lectura en Auth.** GoTrue no mira el rol ni el `scope`. Es el bloqueo de
+   la fase 1.
+3. **El MCP falla cerrado.** Exige `client_id` y `role = yala_mcp_reader`.
+4. **Días, no instantes.** El MCP cuenta por días inclusivos en la zona del usuario. Portar los presupuestos
+   destapó un bug de la app: cuentan la medianoche del día 1 siguiente (`budget-interval-counts-next-period-midnight`).
+5. **Las filas llegan a medias** (el sync es por campo): la lógica usa el default del modelo o salta la fila, y lo
+   cuenta en `avisos`.
+6. **Faltan datos del teléfono en la nube.** `local_day` falta en 1142 de 4465 movimientos de staging, y la zona
+   horaria y `firstWeekday` no viajan.
+7. **Las cuentas de prueba casi no tienen movimientos con categoría.** Los cálculos se validaron con datos a
+   mano; la paridad con cifras reales la darán los golden vectors.
+8. **Staging tiene presupuestos con `natures` en inglés** (fixtures `i12-*`). La app los ignora, y el MCP también.
+9. **DCR deja un cliente registrado por cada conexión**, y borrarlos exige `service_role`.
+
+### Qué falta para la fase 1
+
+- **Bloqueante:** que el token de Claude no pueda cambiar la cuenta (`claude-mcp-oauth-token-can-change-the-account`).
+- **Paridad de cifras:** golden vectors desde Swift, gastos de grupo, tasa del día y zona horaria
+  (`claude-mcp-numbers-match-the-app`).
+- **Login con Apple y Google** en la pantalla de consentimiento (`claude-mcp-consent-with-apple-and-google`).
+- **Producción:**
+  - Aplicar `mcp0_01` por el runbook, en una ventana sin migraciones de la cola A.
+  - Encender el hook y, DESPUÉS, OAuth, solo con el sign-in real ya verificado.
+- **Límites de peticiones** en `/mcp` y en la pantalla de consentimiento.
+- **Una sesión web abandonada** en la pantalla de consentimiento vive hasta 1 h.
+- **Un dominio propio** (por ejemplo `mcp.yala-app.pe`).
+- **Retirar el login con contraseña**, que hoy solo existe con `ENVIRONMENT = staging`.
+
+### Requisitos del portal que siguen abiertos
+
+- **Política de privacidad:** sigue fallando (`session-redesign-web-and-store-copy`). Además tiene que nombrar a
+  Anthropic como destinatario.
+- **Cuenta de prueba** en producción, con datos y un login que puedan usar los revisores.
+- **Documentación pública** con 3 prompts de ejemplo. El borrador de `mcp/plugin/README.md` los trae.
+- **Licencia del plugin:** el borrador dice «Propietaria». Lo decide Jürgen.
+- **CIMD, el texto de los siete reconocimientos y los Directory Terms:** como en §4.
+- **Lo que ya cumple el borrador:**
+  - la forma del plugin, un README de más de 40 palabras y ningún secreto en `.mcp.json`;
+  - `title` y `readOnlyHint` en todas las herramientas, y nombres de menos de 64 caracteres;
+  - respuestas paginadas y ninguna herramienta de escritura.
 
 [rc]: https://claude.com/docs/connectors/building/review-criteria
 [auth]: https://claude.com/docs/connectors/building/authentication
