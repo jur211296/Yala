@@ -1236,7 +1236,9 @@ final class CloudSessionSignOut {
 
     /// El bucle del presupuesto (H-2026-07-18-6), sin efectos sobre la fase ni el rastro. Pone
     /// `waitingForPending`, como antes: quien llama decide cuándo bajarlo.
-    private func pushGroupsWithinBudget(context: ModelContext) async -> BudgetedGroupsPush {
+    private func pushGroupsWithinBudget(
+        context: ModelContext, witness: GroupsExitWitness = .live
+    ) async -> BudgetedGroupsPush {
         let budget = GroupsSignOutRetryDecision.budgetSeconds
         var retryClockStart: Date?
 
@@ -1244,7 +1246,7 @@ final class CloudSessionSignOut {
             let hardCap: TimeInterval = retryClockStart
                 .map { max(0, budget - Date().timeIntervalSince($0)) } ?? 60
 
-            switch await attemptGroupsOnlyClose(context: context, quiescenceHardCap: hardCap) {
+            switch await attemptGroupsOnlyClose(context: context, quiescenceHardCap: hardCap, witness: witness) {
             case .drained:
                 return .drained
             case .blocked(let pending, let reason):
@@ -1320,13 +1322,58 @@ final class CloudSessionSignOut {
     /// **Retira el bloqueo anterior**, como la subida: es el primer paso de un intento nuevo, y el aviso de fallo del alert
     /// lee `freshStartGroupsBlock` para elegir su texto — uno viejo diría «faltan cambios» ante un borrado que falló por
     /// otra cosa.
-    func groupsOutboxIsSettledEmpty(context: ModelContext) -> Bool {
+    ///
+    /// **Y un drain que no terminó NO es «nada que subir»** (ticket `groups-drain-failure-reads-as-nothing-pending`): hasta
+    /// ese día el recuento de después daba 0 con el gasto todavía en el History, y el borrado seguía. Tampoco lo es una
+    /// entrada del espejo que no llegó a su fila: el borrado purga el espejo entero, así que aquí cuentan también las de
+    /// cualquier identidad cuando no hay sesión (`.sessionOwnerOrEveryoneWhenSignedOut`). Con cualquiera de las dos el
+    /// botón pasa por `drainGroupsBeforeFreshStart`, que lo dice.
+    func groupsOutboxIsSettledEmpty(context: ModelContext, witness: GroupsExitWitness = .live) -> Bool {
         freshStartGroupsBlock = nil
-        if CloudSyncFlags.groupsBackendCompiledCapability {
-            GroupsSyncClient.shared.drainOnce(context: context)
-            GroupsSyncClient.shared.purgeQueuedSplitGroupTombstones(context: context)
+        let captured = witness.capture(context)
+        return CloudSignOutFlowLogic.groupsCaptureVerdict(
+            captureCompleted: captured,
+            livePendingCount: Self.liveGroupsPendingCount(context: context),
+            unrehydratedMirrorCount: witness.mirrorPending(context, .sessionOwnerOrEveryoneWhenSignedOut)
+        ) == .drained
+    }
+
+    /// **Los dos testigos del canal de Grupos que deciden si una salida puede dar el outbox por vacío** (ticket
+    /// `groups-drain-failure-reads-as-nothing-pending`): la captura previa (`GroupsSyncClient.captureLocalWritesForExit`, que
+    /// dice si el drain terminó) y lo que el espejo del App Group guarda fuera del outbox. Con la capacidad sin compilar no
+    /// hay canal, y los dos dicen «nada»: un build sin canal no toca nada.
+    ///
+    /// **Es un parámetro y no una propiedad mutable**, y la razón está medida: el espejo REAL del simulador guarda lo que
+    /// otras suites dejan (48 entradas de `auth-uid-1` el 2026-09-26), y el alcance del borrado lo cuenta entero cuando no
+    /// hay sesión. Un seam compartido haría depender cada suite del orden de las demás.
+    ///
+    /// `nonisolated` porque es el valor por defecto de parámetros, y esos se evalúan en el contexto del llamador; lo que
+    /// toca el canal va dentro de sus closures, que sí son `@MainActor`.
+    nonisolated struct GroupsExitWitness {
+        let capture: @MainActor (ModelContext) -> Bool
+        let mirrorPending: @MainActor (ModelContext, GroupsSyncClient.MirrorPendingScope) -> Int
+
+        static var live: GroupsExitWitness {
+            GroupsExitWitness(
+                capture: { context in
+                    guard CloudSyncFlags.groupsBackendCompiledCapability else { return true }
+                    return GroupsSyncClient.shared.captureLocalWritesForExit(context: context)
+                },
+                mirrorPending: { context, scope in
+                    guard CloudSyncFlags.groupsBackendCompiledCapability else { return 0 }
+                    return GroupsSyncClient.shared.mirrorEntriesMissingFromOutbox(context: context, scope: scope)
+                })
         }
-        return Self.liveGroupsPendingCount(context: context) == 0
+    }
+
+    /// Lo que «Empezar de cero» se llevaría de grupos: las filas vivas y las entradas del espejo sin fila. La cifra que
+    /// enseña su bloqueo, y la que exige a cero el cinturón del escritor (`DataWipeService.requireNoUnsentGroupWrites`).
+    /// `Int.max` si alguna de las dos no se pudo contar.
+    static func freshStartGroupsPendingCount(context: ModelContext, witness: GroupsExitWitness = .live) -> Int {
+        let live = liveGroupsPendingCount(context: context)
+        let mirror = witness.mirrorPending(context, .sessionOwnerOrEveryoneWhenSignedOut)
+        guard live < Int.max, mirror < Int.max else { return Int.max }
+        return live + mirror
     }
 
     /// **Sube los cambios de grupos ANTES de que «Empezar de cero» borre nada** (ticket
@@ -1349,7 +1396,9 @@ final class CloudSessionSignOut {
     ///
     /// **Corre ANTES del primer borrado**, sea la zona de iCloud, las filas personales o el dominio de Grupos: parado
     /// aquí, el teléfono queda exactamente como estaba.
-    func drainGroupsBeforeFreshStart(context: ModelContext) async -> FreshStartGroupsDrain {
+    func drainGroupsBeforeFreshStart(
+        context: ModelContext, witness: GroupsExitWitness = .live
+    ) async -> FreshStartGroupsDrain {
         // Antes del `guard`: un `.busy` tampoco puede dejar a la vista el bloqueo de un intento anterior.
         freshStartGroupsBlock = nil
         guard phase == .idle, !freshStartDrainInFlight else { return .busy }
@@ -1360,15 +1409,29 @@ final class CloudSessionSignOut {
         // contraria, medida con un mutante. El pre-check hace el mismo `save()` que el borrado que viene detrás, que ya
         // corre bajo la espera de import de su caller (`waitForImportQuiescence`); la estricta queda para cuando hay algo
         // que subir de verdad.
-        if groupsOutboxIsSettledEmpty(context: context) { return .drained }
+        if groupsOutboxIsSettledEmpty(context: context, witness: witness) { return .drained }
 
         freshStartDrainInFlight = true
         defer {
             freshStartDrainInFlight = false
             waitingForPending = false
         }
-        guard let block = Self.freshStartBlock(for: await pushGroupsWithinBudget(context: context)) else {
-            return .drained
+        guard let block = Self.freshStartBlock(
+            for: await pushGroupsWithinBudget(context: context, witness: witness)) else {
+            // **La subida solo mira el espejo de la sesión, y el borrado que viene detrás purga el de TODOS** (ticket
+            // `groups-drain-failure-reads-as-nothing-pending`). Sin este paso, una entrada sin fila que no es de la sesión
+            // —o cualquiera, sin sesión— pasaba aquí como `.drained` y el cinturón del escritor saltaba DESPUÉS: en la
+            // puerta privada, con la zona de iCloud ya borrada. Se mide con el mismo recuento que el cinturón.
+            let residual = Self.freshStartGroupsPendingCount(context: context, witness: witness)
+            guard residual != 0 else { return .drained }
+            // El motivo dice lo que lo cura: volver a entrar, o intentarlo en un rato (`freshStartResidualReason`).
+            let leftover = FreshStartGroupsBlock(
+                pendingCount: residual,
+                reason: CloudSignOutFlowLogic.freshStartResidualReason(
+                    livePendingCount: Self.liveGroupsPendingCount(context: context),
+                    sessionMirrorCount: witness.mirrorPending(context, .sessionOwner)))
+            noteFreshStartBlocked(leftover)
+            return .blocked(leftover)
         }
         noteFreshStartBlocked(block)
         return .blocked(block)
@@ -1392,9 +1455,11 @@ final class CloudSessionSignOut {
     /// donde enseñar una subida, y el cinturón del escritor cuando salta antes del primer borrado. Deja el bloqueo con la
     /// cifra VIVA y el motivo que se pasa, para que el aviso diga lo que pasó. `.uploadRetryLater` es el que vale sin
     /// haber intentado nada: «no llegaron al servidor, siguen aquí, inténtalo en un rato» es cierto con red y sin ella.
-    func noteFreshStartGroupsPending(context: ModelContext, reason: CloudSignOutFlowLogic.BlockReason) {
+    func noteFreshStartGroupsPending(
+        context: ModelContext, reason: CloudSignOutFlowLogic.BlockReason, witness: GroupsExitWitness = .live
+    ) {
         noteFreshStartBlocked(FreshStartGroupsBlock(
-            pendingCount: Self.liveGroupsPendingCount(context: context), reason: reason))
+            pendingCount: Self.freshStartGroupsPendingCount(context: context, witness: witness), reason: reason))
     }
 
     private func noteFreshStartBlocked(_ block: FreshStartGroupsBlock) {
@@ -1416,7 +1481,8 @@ final class CloudSessionSignOut {
     /// reintentable; jamás salvar sobre un import a medio asentar).
     private func attemptGroupsOnlyClose(
         context: ModelContext,
-        quiescenceHardCap: TimeInterval
+        quiescenceHardCap: TimeInterval,
+        witness: GroupsExitWitness = .live
     ) async -> CloudSignOutFlowLogic.PushAllVerdict {
         // El caption de espera cubre TAMBIÉN la quiescencia del PRIMER intento (en un restore puede
         // bloquear hasta 60s — exactamente la ventana del hallazgo H-6; sin esto el spinner corre mudo).
@@ -1426,7 +1492,7 @@ final class CloudSessionSignOut {
                 pendingCount: Self.liveGroupsPendingCount(context: context), reason: .transient)
         }
         // Push-all de grupos con la generación INTACTA (antes del teardown).
-        return await pushAllPendingGroupsForSignOut(context: context)
+        return await pushAllPendingGroupsForSignOut(context: context, witness: witness)
     }
 
     // MARK: - Cierre LOCAL tras un borrado de cuenta (G5-D1b) — SIN push-all
@@ -1506,12 +1572,14 @@ final class CloudSessionSignOut {
     /// Push-all VERIFICADO del outbox de GRUPOS (molde `CloudMigrationController.pushAllPendingForSignOut`):
     /// cicla `GroupsSyncClient.syncCycleOnceCoalesced` hasta que el outbox VIVO (no dead-letter) quede en 0
     /// verificado por fetch, o bloquea. Dead-letters (`rejectedReason != nil`) NO bloquean (son permanentes
-    /// — igual que el personal excluye rejected). Pre-check `== 0`: con outbox vacío (flag OFF / sin grupos)
-    /// devuelve `.drained` SIN ciclar (no-op real — cero red). DEBE correr ANTES de `teardownForSignOut`
+    /// — igual que el personal excluye rejected). Pre-check: con outbox vacío (flag OFF / sin grupos), la captura
+    /// completa y el espejo sin nada fuera del outbox, devuelve `.drained` SIN ciclar (no-op real — cero red); con la
+    /// captura a medias bloquea sin ciclar (`CloudSignOutFlowLogic.groupsCaptureVerdict`). DEBE correr ANTES de `teardownForSignOut`
     /// (la guardia de generación abortaría el ciclo).
     private func pushAllPendingGroupsForSignOut(
         context: ModelContext,
-        maxIterations: Int = 20
+        maxIterations: Int = 20,
+        witness: GroupsExitWitness = .live
     ) async -> CloudSignOutFlowLogic.PushAllVerdict {
         // SEV-2 del review lente-grupos: outbox vacío ≠ History drenada. En el path solo-grupos este
         // helper es lo PRIMERO que corre (sin ciclo previo que drene) — una mutación hecha segundos
@@ -1529,22 +1597,33 @@ final class CloudSessionSignOut {
         // nada: los dos boot-wipes borran los archivos donde vive la History del canal, así que lo no
         // drenado se destruye. La partición del drain sigue siendo por `isBackendGroup`, así que en un
         // device sin grupos backend esto produce cero filas.
-        if CloudSyncFlags.groupsBackendCompiledCapability {
-            GroupsSyncClient.shared.drainOnce(context: context)
-            // SEGUNDO call-site del barrido de tombstones de `split_groups` encolados, y NO es redundante
-            // con el de `GroupsSyncClient.startIfEligible`: aquel vive detrás del flag COMPUESTO y éste
-            // detrás del COMPILADO, que es justo la asimetría que el comentario de arriba describe. Con el
-            // kill remoto puesto —o con el snapshot de remote-config ausente/fuera de bucket, que es
-            // fail-closed— `startIfEligible` retorna en su primer guard ⇒ el barrido nunca corre, mientras
-            // este push-all SÍ empuja porque el transporte no consulta el flag. Y bajar
-            // `GROUPS_BACKEND_ROLLOUT_PERCENT` es exactamente la respuesta operativa a ESE incidente, así
-            // que sin esta línea el barrido estaría apagado precisamente en la cohorte donde el veneno
-            // sobrevive. Va DESPUÉS del drain (que con el guard `!updateOnly` ya no puede producir uno,
-            // pero si algún día lo produjera esto lo recogería) y ANTES del pre-check: si la única fila
-            // viva era la venenosa, el conteo cae a 0 y el cierre sale `.drained` sin un solo request.
-            GroupsSyncClient.shared.purgeQueuedSplitGroupTombstones(context: context)
+        //
+        // **Y el drain dice si terminó, porque el recuento de después no lo sabe** (ticket
+        // `groups-drain-failure-reads-as-nothing-pending`). Hasta ese día un `fetchHistory` o un `save` que lanzaba, o el
+        // corte del reloj, dejaban el gasto solo en el History, el recuento daba 0 y el cierre salía `.drained` — y el
+        // teardown y el borrado se lo llevaban sin que ningún drain posterior lo encontrara. La captura
+        // (`witness.capture`, en producción `GroupsSyncClient.captureLocalWritesForExit`) rehidrata además el espejo del
+        // App Group antes de drenar: con el flag compuesto apagado la rehidratación del arranque no corre, y una fila que
+        // solo vivía ahí llegaba aquí con el outbox a 0. Alcance del espejo: la sesión, que es lo único que este gesto
+        // puede subir (`.sessionOwner`).
+        //
+        // La captura barre también los tombstones de `split_groups` encolados, y ése es el SEGUNDO call-site del barrido,
+        // que NO es redundante con el de `GroupsSyncClient.startIfEligible`: aquel vive detrás del flag COMPUESTO y éste
+        // detrás del COMPILADO (`GroupsExitWitness.live`), que es justo la asimetría que el comentario de arriba describe.
+        // Con el kill remoto puesto —o con el snapshot de remote-config ausente/fuera de bucket, que es fail-closed—
+        // `startIfEligible` retorna en su primer guard ⇒ el barrido nunca corre, mientras este push-all SÍ empuja porque
+        // el transporte no consulta el flag. Y bajar `GROUPS_BACKEND_ROLLOUT_PERCENT` es exactamente la respuesta
+        // operativa a ESE incidente, así que sin el barrido aquí estaría apagado precisamente en la cohorte donde el veneno
+        // sobrevive. Va DESPUÉS del drain (que con el guard `!updateOnly` ya no puede producir uno, pero si algún día lo
+        // produjera esto lo recogería) y ANTES del pre-check: si la única fila viva era la venenosa, el conteo cae a 0 y el
+        // cierre sale `.drained` sin un solo request.
+        let captured = witness.capture(context)
+        if let settled = CloudSignOutFlowLogic.groupsCaptureVerdict(
+            captureCompleted: captured,
+            livePendingCount: Self.liveGroupsPendingCount(context: context),
+            unrehydratedMirrorCount: witness.mirrorPending(context, .sessionOwner)) {
+            return settled
         }
-        if Self.liveGroupsPendingCount(context: context) == 0 { return .drained }
         for iteration in 1...maxIterations {
             let outcome = await GroupsSyncClient.shared.syncCycleOnceCoalesced(context: context)
             if let verdict = CloudSignOutFlowLogic.pushAllVerdict(
@@ -1567,7 +1646,29 @@ final class CloudSessionSignOut {
                 iteration: iteration,
                 maxIterations: maxIterations
             ) {
-                return verdict
+                guard verdict == .drained else {
+                    // **Un bloqueo por App Attest es el único que un caller deja seguir** —la pérdida aceptada
+                    // (`continuesAfterBlockedUpload`) compara solo las filas VIVAS con las aceptadas—, así que antes de
+                    // devolverlo se comprueba que no quede nada FUERA del outbox. Sin esto, un cambio que solo vivía en el
+                    // History por un drain a medias se iba con el cierre sin haber salido en el aviso (review adversarial
+                    // del 2026-09-26, dos lentes). Lo recapturado entra al outbox y la comparación por filas lo ve; lo que
+                    // no se pudo capturar bloquea como subida pendiente, sin salida de pérdida hasta que se capture.
+                    guard case .blocked(_, .attestUnavailable) = verdict else { return verdict }
+                    let recaptured = witness.capture(context)
+                    return CloudSignOutFlowLogic.attestBlockAfterRecapture(
+                        captureCompleted: recaptured,
+                        livePendingCount: Self.liveGroupsPendingCount(context: context),
+                        unrehydratedMirrorCount: witness.mirrorPending(context, .sessionOwner))
+                }
+                // **El outbox a 0 tras un ciclo no prueba que no quede nada**: el drain del ciclo no viaja en su outcome,
+                // y uno que no terminó deja el gasto solo en el History. Se vuelve a capturar aquí, con el testigo en la
+                // mano y no con un campo que otro ciclo pudo escribir. `nil` = la captura sacó filas nuevas: otra vuelta.
+                if let settled = CloudSignOutFlowLogic.groupsCaptureVerdict(
+                    captureCompleted: witness.capture(context),
+                    livePendingCount: Self.liveGroupsPendingCount(context: context),
+                    unrehydratedMirrorCount: witness.mirrorPending(context, .sessionOwner)) {
+                    return settled
+                }
             }
             // S1: un ciclo de la cadencia EN VUELO devuelve `.coalesced` SINCRÓNICO — la pausa deja
             // terminar el ciclo en vuelo; sin ella el loop quemaría las 20 iteraciones en microsegundos.
@@ -1577,7 +1678,8 @@ final class CloudSessionSignOut {
                 break  // cancelación del caller
             }
         }
-        // Fuera del loop solo por cancelación (break): transitorio (reintentable).
+        // Fuera del loop por cancelación (break), o porque la re-captura de la última vuelta sacó filas nuevas: las dos,
+        // transitorio (reintentable).
         return .blocked(pendingCount: Self.liveGroupsPendingCount(context: context), reason: .transient)
     }
 

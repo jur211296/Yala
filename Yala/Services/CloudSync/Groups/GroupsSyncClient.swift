@@ -322,6 +322,10 @@ final class GroupsSyncClient {
     /// SwiftData. Molde de `CloudSyncEngine._testThrowOnApplySave`, el mirror declarado de esa función.
     var _testThrowOnApplySave = false
 
+    /// Hace que el `save` de las filas nuevas del drain lance, como un store que no puede escribir. Para fijar que
+    /// `drainOnce` lo devuelve como captura sin terminar (ticket `groups-drain-failure-reads-as-nothing-pending`). SOLO tests.
+    var _testThrowOnDrainSave = false
+
     // MARK: Init
 
     /// El default `{ nil }` de `attestProvider` es **SOLO PARA TESTS**: `POST /groups/push` y
@@ -724,17 +728,102 @@ final class GroupsSyncClient {
     // MARK: - Drain (captura del History → GroupSyncOutbox)
 
     /// Ejecuta UNA vuelta de captura. Re-entrante (coalescing one-in-flight/one-queued, molde personal).
-    func drainOnce(context: ModelContext) {
+    ///
+    /// **Devuelve si la captura TERMINÓ** (ticket `groups-drain-failure-reads-as-nothing-pending`, molde de
+    /// `CloudSyncEngine.drainOnce`). `false` = algo local quedó sin llegar al outbox y solo vive en el History: una lectura
+    /// o un `save` que lanzó, o la traducción cortada por la deriva del reloj. Quien cuente el outbox para decidir que no
+    /// queda nada —el cierre, el desasociar, «Empezar de cero»— no puede seguir con `false`: el recuento daría 0 y el
+    /// borrado se llevaría ese gasto sin que ningún drain posterior encontrara una fila viva que traducir.
+    ///
+    /// **A diferencia del personal, el corte del reloj también es `false`.** Allí esa vuelta persiste lo traducido y el
+    /// llamador que lee el outbox es el guard del pull; aquí lo leen gestos que BORRAN, y lo que quedó detrás del corte es
+    /// exactamente lo que se perdería. Una llamada re-entrante devuelve `false`: no drenó ella.
+    @discardableResult
+    func drainOnce(context: ModelContext) -> Bool {
         guard !isDraining else {
             pendingDrain = true
-            return
+            return false
         }
         isDraining = true
         defer { isDraining = false }
+        var completed = false
         repeat {
             pendingDrain = false
-            performDrain(context: context)
+            completed = performDrain(context: context)
         } while pendingDrain
+        return completed
+    }
+
+    /// **Todo lo local de grupos, dentro del outbox, antes de una salida que lo borra** (ticket
+    /// `groups-drain-failure-reads-as-nothing-pending`). Tres pasos, en este orden:
+    ///  1. **Rehidratar el espejo del App Group.** Un kill entre el espejo y el `save` del drain deja la fila solo en el
+    ///     espejo (regla Q3: el espejo se escribe antes del `save`; un `save` que lanza deja además las filas sucias en el
+    ///     contexto, que el recuento sí ve), y la rehidratación solo corría en `startIfEligible`, detrás del
+    ///     flag compuesto y de una sesión. Con el kill remoto puesto el cierre sí sube —el transporte no consulta el flag—
+    ///     pero esas filas no llegaban al outbox, el recuento daba 0 y el teardown purgaba el espejo.
+    ///  2. **Drenar el History.** Lo que se apuntó hace segundos solo vive ahí.
+    ///  3. **Barrer los tombstones venenosos de `split_groups`**, detrás del drain por si algún día lo produjera.
+    ///
+    /// Devuelve lo que devuelve el drain: si la captura terminó. Lo que el espejo guarde fuera del outbox después de
+    /// rehidratar —otra identidad, o la rehidratación que no pudo guardar— lo cuenta `mirrorEntriesMissingFromOutbox`.
+    @discardableResult
+    func captureLocalWritesForExit(context: ModelContext) -> Bool {
+        rehydrateOutboxFromMirror(context: context)
+        let completed = drainOnce(context: context)
+        purgeQueuedSplitGroupTombstones(context: context)
+        return completed
+    }
+
+    /// De quién son las entradas del espejo que cuentan como pendientes.
+    enum MirrorPendingScope {
+        /// Solo las de la sesión: las únicas que este gesto puede subir. Sin sesión, ninguna. Es el alcance del push-all,
+        /// que comparten el cierre y el desasociar: una entrada que nadie aquí puede subir no puede bloquearlos para
+        /// siempre. Ojo, no es que se conserven: el teardown de esos gestos purga el espejo ENTERO (`teardownForSignOut`,
+        /// red M1(a) de `GroupsOutboxMirror`), las de otra identidad incluidas. Es la decisión B2 de siempre; lo que M1
+        /// garantiza es que la rehidratación no las re-inserta.
+        case sessionOwner
+        /// Las de la sesión y, **sin sesión, todas**: nadie puede probar que no sean de quien vuelve a entrar. Es el alcance
+        /// del borrado de «Empezar de cero», que purga el espejo ENTERO (`DataWipeService.wipeLocalGroupsDomain`).
+        case sessionOwnerOrEveryoneWhenSignedOut
+    }
+
+    /// **Entradas del espejo que NO están en el outbox**: cambios que sobrevivieron a su fila y que un borrado del espejo
+    /// se llevaría con un recuento de 0. Mismo filtro que `rehydrateOutboxFromMirror`, que es quien las devolvería: la
+    /// clave `(syncID, hlc, op)` contra TODAS las filas (una dead-letter presente no es pendiente), y fuera los tombstones
+    /// de `split_groups` y los `op` ilegibles, que nunca se re-insertan. Un archivo que no se decodifica no cuenta: ninguna
+    /// versión de este build podría subirlo. `Int.max` si el outbox no se pudo leer (una fila que no se pudo mirar no se
+    /// tira). Sin App Group, 0.
+    func mirrorEntriesMissingFromOutbox(context: ModelContext, scope: MirrorPendingScope) -> Int {
+        Self.mirrorEntriesMissingFromOutbox(
+            mirror: outboxMirror, ownerID: currentUserIDProvider(), scope: scope, context: context)
+    }
+
+    /// El cuerpo de `mirrorEntriesMissingFromOutbox`, con el espejo y la identidad inyectados para poder medirlo.
+    static func mirrorEntriesMissingFromOutbox(
+        mirror: GroupsOutboxMirror?, ownerID: String?, scope: MirrorPendingScope, context: ModelContext
+    ) -> Int {
+        guard let mirror else { return 0 }
+        let entries: [GroupsOutboxMirrorEntry]
+        switch (ownerID, scope) {
+        case (let owner?, _): entries = mirror.entriesForUser(owner)
+        case (nil, .sessionOwner): return 0
+        case (nil, .sessionOwnerOrEveryoneWhenSignedOut): entries = mirror.allEntries()
+        }
+        guard !entries.isEmpty else { return 0 }
+        let keys: Set<String>
+        do {
+            keys = try outboxKeys(context)
+        } catch {
+            #if DEBUG
+            print("GroupsSyncClient: Error leyendo el outbox para contar el espejo: \(error)")
+            #endif
+            return Int.max
+        }
+        return entries.filter { entry in
+            guard let op = SyncOutboxOp(rawValue: entry.op) else { return false }
+            if entry.entityType == GroupSyncEntityType.splitGroup, op == .tombstone { return false }
+            return !keys.contains(dedupKey(syncID: entry.syncID, hlc: entry.hlc, op: op))
+        }.count
     }
 
     /// ¿Pertenece la transacción al store de GRUPOS? Toda transacción de ese store cambia al menos una de
@@ -753,7 +842,7 @@ final class GroupsSyncClient {
         return decodeToken(cursor.historyTokenData)
     }
 
-    private func performDrain(context: ModelContext) {
+    private func performDrain(context: ModelContext) -> Bool {
         do {
             let cursor = try loadOrCreateCursor(context)
             loadClock(from: cursor)
@@ -783,6 +872,8 @@ final class GroupsSyncClient {
             // transacción del store de Grupos. Solo se usan cuando NO hay ninguna: ver `advanceScanFloor`.
             var maxScannedTxAt: Date?
             var sawGroupsStoreTx = false
+            // La traducción se cortó por la deriva del reloj: lo que queda detrás del corte sigue solo en el History.
+            var translationAborted = false
             for tx in txns {
                 if let seen = maxScannedTxAt { maxScannedTxAt = max(seen, tx.timestamp) }
                 else { maxScannedTxAt = tx.timestamp }
@@ -805,6 +896,7 @@ final class GroupsSyncClient {
                         #if DEBUG
                         logger.error("GroupsSync: clock drift/overflow al traducir tx: \(error)")
                         #endif
+                        translationAborted = true
                         break
                     }
                 }
@@ -845,11 +937,18 @@ final class GroupsSyncClient {
                 writeMirror(rows: rows)
                 try saveWithAuthor(context) {
                     for row in rows { context.insert(row.makeModel()) }
+                    if _testThrowOnDrainSave { throw GroupsDrainTestCrash.save }
                 }
             }
 
             if !_testSuppressTokenAdvance {
-                if let reanchor = tokenGuard.reanchor {
+                // **Con la traducción cortada no se re-ancla** (review adversarial del 2026-09-26): el re-ancla salta a la
+                // última transacción de Grupos de la UNIÓN, que puede estar DETRÁS del corte, y el drain siguiente ya no
+                // vería lo que no se tradujo — devolvería `true` con el outbox a 0, que es el bug de
+                // `groups-drain-failure-reads-as-nothing-pending` por otra puerta. Se cae al avance normal, que se queda en
+                // la última transacción CONSUMIDA (un token de este mismo fetch, así que comparable); el guard vuelve a
+                // correr en la vuelta siguiente.
+                if let reanchor = tokenGuard.reanchor, !translationAborted {
                     try saveWithAuthor(context) {
                         cursor.historyTokenData = try encodeToken(reanchor.token)
                         cursor.historyTokenStoreID = reanchor.storeID
@@ -882,10 +981,12 @@ final class GroupsSyncClient {
                     }
                 }
             }
+            return !translationAborted
         } catch {
             #if DEBUG
             logger.error("GroupsSync: drain error: \(error)")
             #endif
+            return false
         }
     }
 
@@ -1232,6 +1333,10 @@ final class GroupsSyncClient {
     }
 
     private func existingOutboxKeys(_ context: ModelContext) throws -> Set<String> {
+        try Self.outboxKeys(context)
+    }
+
+    private static func outboxKeys(_ context: ModelContext) throws -> Set<String> {
         let existing = try context.fetch(FetchDescriptor<GroupSyncOutbox>())
         var keys: Set<String> = []
         for row in existing {
@@ -1242,6 +1347,10 @@ final class GroupsSyncClient {
     }
 
     private func dedupKey(syncID: UUID, hlc: String, op: SyncOutboxOp) -> String {
+        Self.dedupKey(syncID: syncID, hlc: hlc, op: op)
+    }
+
+    private static func dedupKey(syncID: UUID, hlc: String, op: SyncOutboxOp) -> String {
         "\(syncID.uuidString)\u{1}\(hlc)\u{1}\(op.rawValue)"
     }
 
@@ -3432,6 +3541,9 @@ extension GroupsSyncClient {
 /// Error del seam `_testThrowOnApplySave` (simula un crash antes del commit de una página).
 /// Gemelo de `ApplyTestCrash` del canal personal, que es `private` a su propio fichero.
 private enum GroupsApplyTestCrash: Error { case suppressed }
+
+/// Error del seam `_testThrowOnDrainSave` (simula un `save` del drain que no puede escribir).
+private enum GroupsDrainTestCrash: Error { case save }
 
 // MARK: - PendingGroupRow
 

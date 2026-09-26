@@ -776,14 +776,16 @@ struct PausedChannelReasonWiringTests {
     private static let attemptCloseMarker = """
         private func attemptGroupsOnlyClose(
                 context: ModelContext,
-                quiescenceHardCap: TimeInterval
+                quiescenceHardCap: TimeInterval,
+                witness: GroupsExitWitness = .live
             ) async -> CloudSignOutFlowLogic.PushAllVerdict {
         """
 
     private static let groupsPushAllMarker = """
         private func pushAllPendingGroupsForSignOut(
                 context: ModelContext,
-                maxIterations: Int = 20
+                maxIterations: Int = 20,
+                witness: GroupsExitWitness = .live
             ) async -> CloudSignOutFlowLogic.PushAllVerdict {
         """
 
@@ -842,7 +844,7 @@ struct PausedChannelReasonWiringTests {
     @Test("el paso intermedio devuelve el veredicto del push-all sin tocarlo")
     func theIntermediateStepDoesNotRewriteTheVerdict() throws {
         let attempt = try Self.body(of: Self.attemptCloseMarker, in: try Self.source(Self.signOutPath))
-        #expect(attempt.contains("return await pushAllPendingGroupsForSignOut(context: context)"), """
+        #expect(attempt.contains("return await pushAllPendingGroupsForSignOut(context: context, witness: witness)"), """
             El paso intermedio dejó de devolver el veredicto del push-all tal cual. Una reescritura aquí
             atraviesa los otros escaneos sin tocarlos y devuelve el aviso que culpa a la cuenta.
             """)

@@ -646,6 +646,49 @@ nonisolated enum CloudSignOutFlowLogic {
         return .drained
     }
 
+    /// **¿Queda algo de grupos fuera del outbox?** El veredicto de la captura previa a una salida (ticket
+    /// `groups-drain-failure-reads-as-nothing-pending`). `nil` = hay filas vivas y toca subirlas; el recuento solo no decide
+    /// nada más, porque un outbox vacío no prueba que no quede nada:
+    ///  · un drain que no terminó (`captureCompleted == false`) deja lo apuntado solo en el History, y
+    ///  · el espejo del App Group puede guardar cambios que nunca llegaron a su fila (`unrehydratedMirrorCount`).
+    /// Con cualquiera de las dos, bloquea y **no descarta** —el molde es `pushAllVerdictWithoutEngine` del personal—. La
+    /// cifra es la del espejo si la hay, o `Int.max`, el «no se pudo contar» del repo.
+    ///
+    /// **El motivo es `.uploadRetryLater`, y ninguno nuevo.** Su texto —«no llegaron al servidor, siguen guardados en este
+    /// teléfono y no se pierden; inténtalo en un rato»— es verdad para lo que se cura con otro intento: una lectura o un
+    /// `save` que falló. `.transient` diría «espera unos segundos» ante algo que puede durar más. **No lo es para el corte
+    /// del reloj**, medido en la review del 2026-09-26: el drain estampa con la fecha de la transacción, así que una que
+    /// quedó más de 5 min por detrás del reloj lógico corta en cada vuelta y no se cura esperando (ticket
+    /// `groups-clock-rollback-wedges-the-drain-forever`). Bloquear sigue siendo lo correcto —esos cambios ya no suben, y
+    /// borrar los perdería—; lo que falta es el arreglo del reloj, no otro texto aquí.
+    static func groupsCaptureVerdict(captureCompleted: Bool, livePendingCount: Int,
+                                     unrehydratedMirrorCount: Int) -> PushAllVerdict? {
+        if livePendingCount > 0 { return nil }
+        if captureCompleted && unrehydratedMirrorCount == 0 { return .drained }
+        return .blocked(pendingCount: unrehydratedMirrorCount > 0 ? unrehydratedMirrorCount : Int.max,
+                        reason: .uploadRetryLater)
+    }
+
+    /// **Un bloqueo por App Attest, después de volver a capturar.** Es el único bloqueo que un caller deja seguir —la
+    /// pérdida aceptada compara las filas VIVAS con las que la persona aceptó perder (`continuesAfterBlockedUpload`)—, así
+    /// que solo se devuelve como attest si no queda nada fuera del outbox. Si queda, es una subida pendiente sin salida de
+    /// pérdida: la persona no puede aceptar perder lo que el aviso no le enseñó (review adversarial del 2026-09-26). La
+    /// cifra es la del outbox después de capturar, que es la que el aviso de la pérdida va a enseñar.
+    static func attestBlockAfterRecapture(captureCompleted: Bool, livePendingCount: Int,
+                                          unrehydratedMirrorCount: Int) -> PushAllVerdict {
+        let settled = captureCompleted && unrehydratedMirrorCount == 0
+        return .blocked(pendingCount: livePendingCount, reason: settled ? .attestUnavailable : .uploadRetryLater)
+    }
+
+    /// **Por qué «Empezar de cero» no borra lo que la subida dejó** (`CloudSessionSignOut.drainGroupsBeforeFreshStart`). Si
+    /// solo quedan entradas del espejo que esta sesión no puede subir —sin sesión, el borrado las cuenta todas y la
+    /// rehidratación no toca ninguna—, esperar no las sube nunca: lo que las sube es volver a entrar con su cuenta, y eso
+    /// dice `.sessionExpired`, el mismo motivo que el push-all ya da a las filas vivas sin sesión. Con filas vivas nuevas, o
+    /// entradas de la sesión que no se pudieron rehidratar, otro intento sí lo cura (review adversarial del 2026-09-26).
+    static func freshStartResidualReason(livePendingCount: Int, sessionMirrorCount: Int) -> BlockReason {
+        livePendingCount == 0 && sessionMirrorCount == 0 ? .sessionExpired : .uploadRetryLater
+    }
+
     /// Por qué el candado del motor (`CloudSyncRuntime.canRunDomain()`) está cerrado, dicho como el motivo que el cierre
     /// enseña. **Se clasifica por lo que enseña «Dónde viven tus datos» en ese mismo estado**, porque es ahí adonde manda
     /// el aviso (`CloudMigrationUIStateDeriver.derive`):

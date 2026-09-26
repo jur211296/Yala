@@ -223,7 +223,7 @@ struct CloudSessionRetirementTests {
         var disparos = 0
         try DataWipeService.wipeLocalGroupsDomain(
             in: context, defaults: defaults,
-            retireCloudSession: { disparos += 1 }, resetSyncState: {})
+            retireCloudSession: { disparos += 1 }, resetSyncState: {}, witness: .quiet)
 
         #expect(defaults.bool(forKey: CloudSessionRetirement.armedKey), """
             sin el arm, un kill después del borrado deja la sesión de la persona anterior viva y ningún

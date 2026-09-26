@@ -315,6 +315,49 @@ struct GroupsDrainHistoryStoreAnchorTests {
         #expect(try expenseRows(context).count == 2)
     }
 
+    /// **Con la traducción cortada por el reloj, el re-ancla NO salta el corte** (review adversarial del 2026-09-26,
+    /// ticket `groups-drain-failure-reads-as-nothing-pending`). Mismo montaje que el test de arriba, con el reloj lógico
+    /// una hora por delante: el gasto rezagado no se traduce y la vuelta devuelve `false`. Si el re-ancla se escribiera
+    /// igual, caería en la transacción del propio gasto y un drain posterior sano ya no lo vería: `true` con el outbox a
+    /// 0, que es el bug del ticket por otra puerta. La aserción de fondo es ese drain posterior.
+    @Test func drain_reanchorSkipped_whenTheClockCutsTheTranslation() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let client = GroupsSyncClient(outboxMirror: nil)
+
+        let group = try makeBackendGroup(context)
+        try addPersonalTx(context, at: 100)
+        try addExpense(context, zone: group.cloudKitZoneID, amount: 11)
+        try addPersonalTx(context, at: 200)
+
+        let all = try context.fetchHistory(HistoryDescriptor<DefaultHistoryTransaction>())
+        let groupsStoreID = try #require(all.first { tx in
+            tx.changes.contains { $0.changedPersistentIdentifier.entityName == "SplitGroup" }
+        }).storeIdentifier
+        let firstPersonal = try #require(all.first { tx in
+            tx.changes.contains { $0.changedPersistentIdentifier.entityName == "TransactionItem" }
+        })
+        let cursor = try client.loadOrCreateCursor(context)
+        let ahead = try HLC(physicalMs: Int64((Date().timeIntervalSince1970 + 3600) * 1000),
+                            counter: 0, nodeID: NodeID.generate())
+        try saveUnderOutboxAuthor(context) {
+            cursor.historyTokenData = try JSONEncoder().encode(firstPersonal.token)
+            cursor.historyTokenStoreID = groupsStoreID
+            cursor.lastDrainedTxAt = firstPersonal.timestamp
+            cursor.clockLatestHLC = ahead.description
+        }
+
+        #expect(!client.drainOnce(context: context), "control: el reloj cortó la traducción del gasto")
+        #expect(try expenseRows(context).isEmpty)
+        #expect(client.historyTokenRecoveredCount == 0, "con la traducción cortada no se re-ancla")
+
+        // El reloj se arregla: un cliente sano, desde el cursor que dejó la vuelta cortada, tiene que ver el gasto.
+        try saveUnderOutboxAuthor(context) { cursor.clockLatestHLC = nil }
+        let healthy = GroupsSyncClient(outboxMirror: nil)
+        #expect(healthy.drainOnce(context: context))
+        #expect(try expenseRows(context).count == 1, "el gasto seguía detrás del cursor: el re-ancla no lo saltó")
+    }
+
     /// SUELO DEL BARRIDO: sin actividad de Grupos no hay token que anclar, así que el drain avanza
     /// `lastDrainedTxAt` para que el fetch por timestamp no re-lea todo el History en cada vuelta. Solo es
     /// seguro porque en la ventana barrida no había ninguna transacción del store de Grupos — y un gasto

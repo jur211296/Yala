@@ -68,7 +68,7 @@ struct FreshStartUnsentGroupWritesTests {
         #expect(throws: DataWipeService.GroupsDomainWipeError.unsentGroupWrites(pendingCount: 1)) {
             try DataWipeService.wipeLocalGroupsDomain(
                 in: context, defaults: defaults,
-                retireCloudSession: { retired += 1 }, resetSyncState: { reset += 1 })
+                retireCloudSession: { retired += 1 }, resetSyncState: { reset += 1 }, witness: .quiet)
         }
 
         #expect(CloudSessionSignOut.liveGroupsPendingCount(context: context) == 1,
@@ -98,7 +98,7 @@ struct FreshStartUnsentGroupWritesTests {
         try context.save()
 
         try DataWipeService.wipeLocalGroupsDomain(
-            in: context, defaults: makeIsolatedDefaults(), retireCloudSession: {}, resetSyncState: {})
+            in: context, defaults: makeIsolatedDefaults(), retireCloudSession: {}, resetSyncState: {}, witness: .quiet)
 
         #expect(try context.fetchCount(FetchDescriptor<GroupSyncOutbox>()) == 0)
     }
@@ -107,17 +107,17 @@ struct FreshStartUnsentGroupWritesTests {
     @Test func requireNoUnsentGroupWrites_countsOnlyLiveRows() throws {
         let context = try makeTestContext()
         try clearOutbox(context)
-        try DataWipeService.requireNoUnsentGroupWrites(in: context)
+        try DataWipeService.requireNoUnsentGroupWrites(in: context, witness: .quiet)
 
         context.insert(deadLetter())
         try context.save()
-        try DataWipeService.requireNoUnsentGroupWrites(in: context)
+        try DataWipeService.requireNoUnsentGroupWrites(in: context, witness: .quiet)
 
         context.insert(liveRow("g1"))
         context.insert(liveRow("g2"))
         try context.save()
         #expect(throws: DataWipeService.GroupsDomainWipeError.unsentGroupWrites(pendingCount: 2)) {
-            try DataWipeService.requireNoUnsentGroupWrites(in: context)
+            try DataWipeService.requireNoUnsentGroupWrites(in: context, witness: .quiet)
         }
         try clearOutbox(context)
     }
@@ -130,9 +130,10 @@ struct FreshStartUnsentGroupWritesTests {
     @Test func drain_withNothingPending_isDrainedAndClearsTheBlock() async throws {
         let context = try makeTestContext()
         try clearOutbox(context)
-        CloudSessionSignOut.shared.noteFreshStartGroupsPending(context: context, reason: .sessionExpired)
+        CloudSessionSignOut.shared.noteFreshStartGroupsPending(
+            context: context, reason: .sessionExpired, witness: .quiet)
         #expect(CloudSessionSignOut.shared.freshStartGroupsBlock != nil, "control: el bloqueo anterior está puesto")
-        let verdict = await CloudSessionSignOut.shared.drainGroupsBeforeFreshStart(context: context)
+        let verdict = await CloudSessionSignOut.shared.drainGroupsBeforeFreshStart(context: context, witness: .quiet)
         #expect(verdict == .drained)
         #expect(CloudSessionSignOut.shared.freshStartGroupsBlock == nil)
     }
@@ -161,10 +162,11 @@ struct FreshStartUnsentGroupWritesTests {
         context.insert(liveRow("g2"))
         context.insert(deadLetter())
         try context.save()
-        CloudSessionSignOut.shared.noteFreshStartGroupsPending(context: context, reason: .uploadRetryLater)
+        CloudSessionSignOut.shared.noteFreshStartGroupsPending(
+            context: context, reason: .uploadRetryLater, witness: .quiet)
         #expect(CloudSessionSignOut.shared.freshStartGroupsBlock == .init(pendingCount: 2, reason: .uploadRetryLater))
         try clearOutbox(context)
-        #expect(CloudSessionSignOut.shared.groupsOutboxIsSettledEmpty(context: context))
+        #expect(CloudSessionSignOut.shared.groupsOutboxIsSettledEmpty(context: context, witness: .quiet))
         #expect(CloudSessionSignOut.shared.freshStartGroupsBlock == nil, "el intento nuevo retira el bloqueo")
     }
 
@@ -173,15 +175,15 @@ struct FreshStartUnsentGroupWritesTests {
     @Test func settledEmpty_readsLiveRowsOnly() throws {
         let context = try makeTestContext()
         try clearOutbox(context)
-        #expect(CloudSessionSignOut.shared.groupsOutboxIsSettledEmpty(context: context))
+        #expect(CloudSessionSignOut.shared.groupsOutboxIsSettledEmpty(context: context, witness: .quiet))
 
         context.insert(deadLetter())
         try context.save()
-        #expect(CloudSessionSignOut.shared.groupsOutboxIsSettledEmpty(context: context))
+        #expect(CloudSessionSignOut.shared.groupsOutboxIsSettledEmpty(context: context, witness: .quiet))
 
         context.insert(liveRow())
         try context.save()
-        #expect(!CloudSessionSignOut.shared.groupsOutboxIsSettledEmpty(context: context))
+        #expect(!CloudSessionSignOut.shared.groupsOutboxIsSettledEmpty(context: context, witness: .quiet))
         try clearOutbox(context)
     }
 
@@ -339,7 +341,7 @@ struct FreshStartUnsentGroupWritesWiringTests {
         let src = try Self.source(Self.dataWipe)
         let start = try #require(src.range(of: "static func wipeLocalGroupsDomain("))
         let rest = String(src[start.upperBound...])
-        try Self.expectOrder("try requireNoUnsentGroupWrites(in: context)",
+        try Self.expectOrder("try requireNoUnsentGroupWrites(in: context, witness: witness)",
                              before: "try deleteLocalGroupsRows(in: context)", in: rest,
                              "el cinturón tiene que correr antes de borrar la primera fila")
     }
@@ -347,7 +349,11 @@ struct FreshStartUnsentGroupWritesWiringTests {
     @Test("la subida previa no toca la fase del coordinador, y exige que esté libre")
     func drain_leavesThePhaseAlone() throws {
         let drain = try Self.body(
-            of: "func drainGroupsBeforeFreshStart(context: ModelContext) async -> FreshStartGroupsDrain {",
+            of: """
+                func drainGroupsBeforeFreshStart(
+                        context: ModelContext, witness: GroupsExitWitness = .live
+                    ) async -> FreshStartGroupsDrain {
+                """,
             in: Self.source(Self.signOut))
         #expect(!drain.contains("phase = ."), """
             La subida de «Empezar de cero» escribió la fase del coordinador. `.working` y `.blocked` los leen la matriz \
@@ -366,7 +372,8 @@ struct FreshStartUnsentGroupWritesWiringTests {
                              "un `.busy` no puede dejar a la vista el bloqueo de un intento anterior")
         // Sin nada pendiente sale ANTES de la primera espera: la quiescencia estricta del cierre bloqueaba «Empezar de
         // cero» con cero cambios cuando el import de iCloud no se había asentado.
-        let fastPath = try #require(drain.range(of: "if groupsOutboxIsSettledEmpty(context: context) { return .drained }"),
+        let fastPath = try #require(
+            drain.range(of: "if groupsOutboxIsSettledEmpty(context: context, witness: witness) { return .drained }"),
                                     "falta el atajo del outbox vacío")
         let firstAwait = try #require(drain.range(of: "await "))
         #expect(fastPath.lowerBound < firstAwait.lowerBound,
@@ -378,7 +385,11 @@ struct FreshStartUnsentGroupWritesWiringTests {
     @Test("el bucle compartido devuelve el motivo sin aplanarlo")
     func budgetLoop_keepsTheReason() throws {
         let loop = try Self.body(
-            of: "private func pushGroupsWithinBudget(context: ModelContext) async -> BudgetedGroupsPush {",
+            of: """
+                private func pushGroupsWithinBudget(
+                        context: ModelContext, witness: GroupsExitWitness = .live
+                    ) async -> BudgetedGroupsPush {
+                """,
             in: Self.source(Self.signOut))
         #expect(loop.contains("return .surfacePermanent(pending: pending, reason: reason)"))
         #expect(!loop.contains(".permanent"), "volvió un colapso a `.permanent` en el bucle compartido")

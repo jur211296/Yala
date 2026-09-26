@@ -105,7 +105,7 @@ struct HandoverGroupsDomainTests {
         #expect(try context.fetchCount(FetchDescriptor<GroupBridgePreference>()) == 1)
 
         try DataWipeService.wipeLocalGroupsDomain(
-            in: context, defaults: makeIsolatedDefaults(), retireCloudSession: {}, resetSyncState: {})
+            in: context, defaults: makeIsolatedDefaults(), retireCloudSession: {}, resetSyncState: {}, witness: .quiet)
 
         #expect(try context.fetchCount(FetchDescriptor<SplitGroup>()) == 0)
         #expect(try context.fetchCount(FetchDescriptor<SplitMember>()) == 0)
@@ -129,7 +129,7 @@ struct HandoverGroupsDomainTests {
         var resetSyncStateCalls = 0
         try DataWipeService.wipeLocalGroupsDomain(
             in: context, defaults: makeIsolatedDefaults(), retireCloudSession: {},
-            resetSyncState: { resetSyncStateCalls += 1 })
+            resetSyncState: { resetSyncStateCalls += 1 }, witness: .quiet)
 
         #expect(resetSyncStateCalls == 1)
     }
@@ -147,7 +147,7 @@ struct HandoverGroupsDomainTests {
         try context.save()
 
         try DataWipeService.wipeLocalGroupsDomain(
-            in: context, defaults: makeIsolatedDefaults(), retireCloudSession: {}, resetSyncState: {})
+            in: context, defaults: makeIsolatedDefaults(), retireCloudSession: {}, resetSyncState: {}, witness: .quiet)
 
         #expect(try context.fetchCount(FetchDescriptor<Account>()) == 1)
         #expect(try context.fetchCount(FetchDescriptor<Yala.Tag>()) == 1)
@@ -204,7 +204,7 @@ struct HandoverGroupsDomainTests {
         PrivateSessionMark.set(false, defaults)
 
         try DataWipeService.wipeLocalGroupsDomain(
-            in: context, defaults: defaults, retireCloudSession: {}, resetSyncState: {})
+            in: context, defaults: defaults, retireCloudSession: {}, resetSyncState: {}, witness: .quiet)
 
         // 1. La marca vuelve a AUSENTE, que es como nace un teléfono recién instalado.
         #expect(PrivateSessionMark.raw(defaults) == nil)
@@ -229,7 +229,7 @@ struct HandoverGroupsDomainTests {
         let iKV = RecordingKVStore()
 
         try DataWipeService.wipeLocalGroupsDomain(
-            in: context, defaults: makeIsolatedDefaults(), retireCloudSession: {}, resetSyncState: {})
+            in: context, defaults: makeIsolatedDefaults(), retireCloudSession: {}, resetSyncState: {}, witness: .quiet)
 
         #expect(iKV.writtenKeys.isEmpty)
         #expect(iKV.removedKeys.isEmpty)
@@ -243,7 +243,7 @@ struct HandoverGroupsDomainTests {
         #expect(defaults.bool(forKey: AppPreferences.Keys.groupsDomainSealedForFreshStart) == false)
 
         try DataWipeService.wipeLocalGroupsDomain(
-            in: context, defaults: defaults, retireCloudSession: {}, resetSyncState: {})
+            in: context, defaults: defaults, retireCloudSession: {}, resetSyncState: {}, witness: .quiet)
 
         #expect(defaults.bool(forKey: AppPreferences.Keys.groupsDomainSealedForFreshStart) == true)
     }
@@ -355,7 +355,7 @@ struct HandoverGroupsDomainTests {
         try context.save()
 
         try DataWipeService.wipeLocalGroupsDomain(
-            in: context, defaults: makeIsolatedDefaults(), retireCloudSession: {}, resetSyncState: {})
+            in: context, defaults: makeIsolatedDefaults(), retireCloudSession: {}, resetSyncState: {}, witness: .quiet)
 
         #expect(try context.fetchCount(FetchDescriptor<GroupSyncOutbox>()) == 0,
                 "Las escrituras pendientes del humano anterior se subirían con su JWT, que sobrevive.")
@@ -371,7 +371,7 @@ struct HandoverGroupsDomainTests {
         try context.save()
 
         try DataWipeService.wipeLocalGroupsDomain(
-            in: context, defaults: makeIsolatedDefaults(), retireCloudSession: {}, resetSyncState: {})
+            in: context, defaults: makeIsolatedDefaults(), retireCloudSession: {}, resetSyncState: {}, witness: .quiet)
 
         let cursors = try context.fetch(FetchDescriptor<GroupSyncCursor>())
         #expect(cursors.first?.groupCursorsJSON == "{\"g1\":5}")
@@ -386,7 +386,7 @@ struct HandoverGroupsDomainTests {
         try seedGroupsDomain(in: context)
 
         try DataWipeService.wipeLocalGroupsDomain(
-            in: context, defaults: makeIsolatedDefaults(), retireCloudSession: {}, resetSyncState: {})
+            in: context, defaults: makeIsolatedDefaults(), retireCloudSession: {}, resetSyncState: {}, witness: .quiet)
 
         #expect(try context.fetchCount(FetchDescriptor<SplitGroup>()) == 0)
         #expect(try context.fetchCount(FetchDescriptor<GroupBridgePreference>()) == 0)
