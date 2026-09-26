@@ -4477,6 +4477,10 @@ enum L10n {
         /// nada (`CloudSignOutFlowLogic.BlockReason.personalUploadRetryLater`). El texto de `Groups.Errors.uploadRetryLater`,
         /// dicho de tus datos.
         static var signOutUploadRetryLater: String { ls("settings.signOutUploadRetryLater", comment: "") }
+        /// La sesión en la nube caducó y quedan cambios sin subir (`CloudSignOutFlowLogic.BlockReason.cloudSessionExpired`).
+        /// Nombra la puerta: «Dónde viven tus datos» y su «Iniciar sesión» (ticket
+        /// `cloud-session-expiry-with-only-group-changes-has-no-sign-in-door`).
+        static var signOutCloudSessionExpired: String { ls("settings.signOutCloudSessionExpired", comment: "") }
         /// La exportación de ese aviso no encontró ningún movimiento que exportar.
         static var signOutAttestExportEmpty: String { ls("settings.signOutAttestExportEmpty", comment: "") }
         /// La exportación de ese aviso no pudo generar el archivo.
@@ -7446,6 +7450,12 @@ enum L10n {
             /// cuenta de otra.
             static var reverseSignInOtherAccount: String {
                 ls("storage.errors.reverseSignInOtherAccount", comment: "")
+            }
+            /// «Iniciar sesión» de la tarjeta de sincronización trajo OTRA cuenta que la del motor (ticket
+            /// `cloud-session-expiry-with-only-group-changes-has-no-sign-in-door`). Esa sesión se cierra y no se reanuda
+            /// nada: el outbox pendiente no lleva dueño y subiría a nombre de la cuenta que entró.
+            static var syncSignInOtherAccount: String {
+                ls("storage.errors.syncSignInOtherAccount", comment: "")
             }
         }
 

@@ -237,8 +237,9 @@ struct CloudPersonalAttestSignOutWiringTests {
                 reason: reason, pendingRows: rows, acceptance: acceptedPersonalLoss) {
                 acceptedPersonalLoss = nil
                 guard reason == .attestUnavailable else {
-                    phase = .blocked(pendingCount: pending,
-                                     reason: CloudSignOutFlowLogic.personalPushAllShownReason(reason))
+                    let shown = CloudSignOutFlowLogic.personalPushAllShownReason(reason)
+                    Self.leaveSignInDoorOpen(ifShown: shown, controller: controller)
+                    phase = .blocked(pendingCount: pending, reason: shown)
                     CloudSyncBreadcrumb.signOutPushBlocked(pending: pending)
                     return
                 }

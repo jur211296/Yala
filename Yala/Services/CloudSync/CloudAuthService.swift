@@ -282,6 +282,14 @@ final class CloudAuthService: NSObject {
     /// este device (o key perdida — los call-sites de claim caen a `?? "apple"` con residual anotado).
     func storedProvider() -> String? { readProfileString(Self.keyProvider) }
 
+    /// Repone el proveedor de la cuenta de este teléfono tras cerrar una sesión de OTRA cuenta que entró por la puerta de
+    /// «Dónde viven tus datos» (`CloudMigrationController.signInToResumeSync`, ticket
+    /// `cloud-session-expiry-with-only-group-changes-has-no-sign-in-door`). `signOut()` lo borra —es credencial de sesión—, y
+    /// sin él el siguiente intento caería a SIWA para una cuenta de Google. Solo se llama justo después de ese `signOut()`.
+    func restoreStoredProvider(_ provider: CloudSignInProvider) {
+        writeProfileString(provider.rawValue, forKey: Self.keyProvider)
+    }
+
     // MARK: - Sign in with Apple
 
     /// Lanza el flujo nativo de Sign in with Apple y, si tiene éxito, crea la sesión de Supabase vía

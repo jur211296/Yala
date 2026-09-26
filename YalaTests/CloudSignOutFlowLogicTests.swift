@@ -324,8 +324,12 @@ struct CloudSignOutGroupsReasonTests {
     func aGroupsSessionExpiryEndsInTheSignInAgainCopy() {
         let motivo = CloudSignOutFlowLogic.cloudSignOutGroupsBlockReason(
             CloudSignOutFlowLogic.classify(.sessionExpired, channelKilled: false, attestUnavailable: false, uploadFailed: false))
-        #expect(motivo == .sessionExpired)
-        #expect(SignOutBlockedCopy.message(for: motivo) == L10n.Groups.Errors.sessionExpired)
+        // Desde el 2026-09-25 con el texto que NOMBRA la puerta (ticket
+        // `cloud-session-expiry-with-only-group-changes-has-no-sign-in-door`): en la nube se vuelve a entrar desde
+        // «Dónde viven tus datos», y el «vuelve a iniciar sesión» a secas no decía dónde.
+        #expect(motivo == .cloudSessionExpired)
+        #expect(SignOutBlockedCopy.message(for: motivo) == L10n.Settings.signOutCloudSessionExpired)
+        #expect(SignOutBlockedCopy.message(for: motivo) != L10n.Settings.signOutBlockedMessage)
         // Y el vecino no se arrastra: la cuenta no disponible sigue en el aviso que no afirma ninguna causa.
         let cuenta = CloudSignOutFlowLogic.cloudSignOutGroupsBlockReason(
             CloudSignOutFlowLogic.classify(.accountUnavailable, channelKilled: false, attestUnavailable: false, uploadFailed: false))
@@ -348,9 +352,10 @@ struct CloudSignOutGroupsReasonTests {
             .attestUnavailable: .attestUnavailable,
             // El de los cambios personales es del paso 1: este productor, que traduce el de grupos, no lo recibe nunca.
             .personalAttestUnavailable: .permanent,
-            // La sesión caducada viaja tal cual desde el 2026-09-15 (decisión 3A de Jürgen).
-            // Ticket `cloud-signout-collapses-a-groups-session-expiry-into-permanent`.
-            .sessionExpired: .sessionExpired,
+            // La sesión caducada viaja desde el 2026-09-15 (decisión 3A de Jürgen), y desde el 2026-09-25 con el texto que
+            // nombra la puerta de la nube (`cloud-session-expiry-with-only-group-changes-has-no-sign-in-door`).
+            .sessionExpired: .cloudSessionExpired,
+            .cloudSessionExpired: .cloudSessionExpired,
             // El aviso que no afirma ninguna causa, para lo que de verdad no se sabe.
             .permanent: .permanent,
             // No los produce `classify`, así que este productor no puede emitirlos.
@@ -392,6 +397,7 @@ struct CloudSignOutGroupsReasonTests {
         #expect(CloudSignOutFlowLogic.BlockReason.syncStoppedMidMigration.breadcrumbSlug == "sync-stopped-mid-migration")
         #expect(CloudSignOutFlowLogic.BlockReason.syncStoppedNeedsRelaunch.breadcrumbSlug == "sync-stopped-needs-relaunch")
         #expect(CloudSignOutFlowLogic.BlockReason.personalUploadRetryLater.breadcrumbSlug == "personal-upload-retry-later")
+        #expect(CloudSignOutFlowLogic.BlockReason.cloudSessionExpired.breadcrumbSlug == "cloud-session-expired")
     }
 
     /// **El paso 1 del cierre en la nube ya no aplana lo que el motor personal sabe** (ticket
@@ -409,8 +415,10 @@ struct CloudSignOutGroupsReasonTests {
             // dicho de tus datos y no de tus grupos.
             .uploadRetryLater: .personalUploadRetryLater,
             .personalUploadRetryLater: .personalUploadRetryLater,
-            // El 401: su aviso pide volver a entrar, no revisar la conexión.
-            .sessionExpired: .sessionExpired,
+            // El 401: su aviso pide volver a entrar, no revisar la conexión, y desde el 2026-09-25 dice DÓNDE: la misma
+            // puerta que la de grupos, porque reanudar el motor sube las dos colas.
+            .sessionExpired: .cloudSessionExpired,
+            .cloudSessionExpired: .cloudSessionExpired,
             // El guardado que aún se asienta (el tope de iteraciones con el outbox drenando): «un momento más».
             .transient: .transient,
             // La cuenta no disponible: el texto que no afirma ninguna causa.
@@ -497,6 +505,8 @@ struct GroupsSignOutRetryDecisionTests {
             .syncStoppedNeedsRelaunch: .surfacePermanent,
             // La subida PERSONAL que no llegó (2026-09-25): tampoco pasa por aquí; es `.uploadRetryLater` dicho de tus datos.
             .personalUploadRetryLater: .surfacePermanent,
+            // La sesión caducada en la nube (2026-09-25): tampoco pasa por aquí, y esperar no devuelve la sesión.
+            .cloudSessionExpired: .surfacePermanent,
             // Se reintentan dentro del presupuesto: son los que sí se curan esperando.
             .transient: .retryAfter(seconds: GroupsSignOutRetryDecision.retryIntervalSeconds),
             // No los produce este camino, pero si llegaran, esperar tampoco arregla nada que sepamos —
@@ -926,7 +936,8 @@ struct PausedChannelReasonWiringTests {
             in: profileFile))
         #expect(present.contains(Self.squashed("""
             case .permanent, .sessionExpired, .channelPaused, .uploadRetryLater,
-                 .syncStoppedNeedsUpdate, .syncStoppedMidMigration, .syncStoppedNeedsRelaunch, .personalUploadRetryLater:
+                 .syncStoppedNeedsUpdate, .syncStoppedMidMigration, .syncStoppedNeedsRelaunch, .personalUploadRetryLater,
+                 .cloudSessionExpired:
                 showSignOutBlockedAlert = true
             """)), """
             El fallo pasajero de la subida, o uno de los tres del motor parado (2026-09-25), dejó de entrar por el \
@@ -1406,7 +1417,13 @@ struct AttestUnavailableSignOutWiringTests {
                 groupsLossExit = GroupsLossOffer(resume: .cloud, rows: Self.liveGroupsPendingRowIDs(context: context))
             }
             """)))
-        let cloudPhase = try #require(cloud.range(of: "phase = .blocked(pendingCount: pending, reason: shown)"))
+        // Desde el 2026-09-25 el paso 1 también escribe `phase = .blocked(pendingCount: pending, reason: shown)` (la puerta
+        // de la sesión caducada), así que la fase del paso 2 se busca DESPUÉS de su propia traducción.
+        let groupsShown = try #require(cloud.range(
+            of: "let shown = CloudSignOutFlowLogic.cloudSignOutGroupsBlockReason(reason)"))
+        let cloudPhase = try #require(cloud.range(of: "phase = .blocked(pendingCount: pending, reason: shown)",
+                                                  range: groupsShown.upperBound..<cloud.endIndex))
+        #expect(groupsShown.upperBound <= cloudNote.lowerBound)
         #expect(cloudNote.lowerBound < cloudPhase.lowerBound)
     }
 

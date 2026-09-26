@@ -471,12 +471,61 @@ final class CloudSyncRuntime {
         case .stoppedUntilSignIn:
             // El usuario pudo re-firmar: si ahora hay sesión, re-arranca la cadencia (el ciclo re-evalúa
             // `SessionExpiryPolicy` con el `canRenewSession` actual y sube lo pendiente).
-            guard session.currentUserID != nil else { return }
+            //
+            // **Y la sesión tiene que ser la del DUEÑO del motor** (2026-09-25, ticket
+            // `cloud-session-expiry-with-only-group-changes-has-no-sign-in-door`). Este camino no pasa por el gate de
+            // identidad de `start()`: firmar con otra cuenta por cualquier puerta —«Nuevo grupo» incluida— y volver a
+            // primer plano reanudaba la cadencia con el outbox del dueño y el JWT de la cuenta que entró.
+            guard session.currentUserID != nil, !sessionBelongsToAnotherAccount else { return }
             startCadenceLoop()
         case .running:
             // Cancela el sleep actual y corre un ciclo ya (re-arrancar el loop = ciclo inmediato).
             startCadenceLoop()
         }
+    }
+
+    // MARK: - Dueño del motor y parada anticipada
+
+    /// El `sub` con el que el motor arrancó (`start()`), o `nil` si no arrancó o un teardown lo limpió. Es el ancla con la
+    /// que la puerta de «Dónde viven tus datos» comprueba que quien vuelve a entrar es la misma cuenta
+    /// (`CloudMigrationController.signInToResumeSync`).
+    var ownerUserID: String? { engine.currentUserID }
+
+    /// ¿Hay sesión y es de OTRA cuenta que la del dueño del motor? Sin dueño no hay nada que comparar (el trato de antes de
+    /// este término). **Sin sesión, `false` a propósito**: eso no es otra cuenta sino ninguna, y ya lo contestan el preflight
+    /// de `SessionExpiryPolicy` y el pull, con su canario (`cloudSyncBlockedByExpiredSession`). Si este término lo cubriera,
+    /// cortaría el ciclo antes que ellos y se llevaría la métrica.
+    ///
+    /// Lo consultan `handleBecameActive` para reanudar desde `.stoppedUntilSignIn` y el propio ciclo antes de tocar la red
+    /// (`performCycle`), que es la red de verdad: `syncCycle` lo llaman también el cierre de sesión y la puerta, y ninguno
+    /// pasa por el gate de identidad de `start()`.
+    ///
+    /// **Sin dueño en memoria** —el motor arrancó sin sesión tras relanzar y nunca fijó el suyo— el ancla en la nube es el sello
+    /// del claim, el mismo gate de identidad de `start()`: una sesión sin sello no es la de este teléfono. Sin él, tras un
+    /// relanzamiento la guarda desaparecía y el cierre de sesión subía el outbox del dueño con el JWT de una cuenta que entró
+    /// por «Nuevo grupo» (review del 2026-09-25).
+    private var sessionBelongsToAnotherAccount: Bool {
+        guard let current = session.currentUserID else { return false }
+        guard let owner = engine.currentUserID else {
+            return CloudSyncFlags.storageMode == .cloud && session.claimAction == nil
+        }
+        return current != owner
+    }
+
+    /// Para la cadencia hasta volver a entrar. Lo llama el cierre de sesión en la nube cuando bloquea por sesión caducada
+    /// (ticket `cloud-session-expiry-with-only-group-changes-has-no-sign-in-door`): su veredicto es el que el próximo ciclo
+    /// de la cadencia daría —el JWT es el mismo para `/sync` y `/groups`—, pero la cadencia puede tardar un minuto en
+    /// chocar con él, y hasta entonces «Dónde viven tus datos» decía «Todo sincronizado» sin su «Iniciar sesión».
+    ///
+    /// **Solo desde `.running`.** `.stoppedUntilRelaunch` es un veredicto más fuerte y no se rebaja, y en `.idle` /
+    /// `.idleSignedOut` el motor no arrancó, así que no hay dueño con el que atar la firma. Lo que la reanuda es lo de
+    /// siempre: `handleBecameActive` con sesión del dueño.
+    func stopUntilSignIn() {
+        guard state == .running else { return }
+        cadenceTask?.cancel()
+        cadenceTask = nil
+        state = .stoppedUntilSignIn
+        CloudSyncBreadcrumb.runtimeStopped(reason: "session-expired-at-sign-out")
     }
 
     // MARK: - Teardown de sesión invitada (M1)
@@ -589,6 +638,17 @@ final class CloudSyncRuntime {
 
         // 1) Drain SÍNCRONO al entrar (captura escrituras locales pendientes antes de tocar la red).
         engine.drainOnce(context: context)
+
+        // 1.5) **La sesión tiene que ser la del dueño del motor** (2026-09-25, ticket
+        //      `cloud-session-expiry-with-only-group-changes-has-no-sign-in-door`). El outbox no lleva dueño y el servidor
+        //      firma con el `sub` del JWT: con otra cuenta, el push subía el corpus de una persona a la cuenta de otra y el
+        //      pull bajaba el de la otra a este store. Se lee como sesión caducada —hace falta volver a entrar, con la
+        //      cuenta buena—, que es lo que para la cadencia y enciende la puerta. Va tras el drain, que solo captura
+        //      escrituras locales, y antes de todo lo que toca la red (el ciclo de Grupos del paso 5.6 incluido).
+        guard !sessionBelongsToAnotherAccount else {
+            CloudSyncBreadcrumb.runtimeStopped(reason: "session-not-owner")
+            return .sessionExpired
+        }
 
         // 2) Gate de attest (seam I7b): terminal → stop; transient → backoff; ok → seguir.
         switch await resolveAttest() {

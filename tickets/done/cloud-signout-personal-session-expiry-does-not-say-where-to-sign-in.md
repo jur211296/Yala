@@ -1,6 +1,6 @@
 ---
 id: cloud-signout-personal-session-expiry-does-not-say-where-to-sign-in
-status: backlog
+status: done
 priority: low
 area: "modo-nube, sesión, settings"
 created: 2026-09-25
@@ -30,3 +30,15 @@ pero no dice dónde se vuelve a entrar.
 
 ¿El aviso nombra «Dónde viven tus datos», y el 401 del push-all del cierre deja el motor en `.stoppedUntilSignIn` para
 que la puerta esté ahí al llegar? Son dos cambios y el segundo toca el runtime.
+
+## 2026-09-25 · cubierto por solape
+
+`cloud-session-expiry-with-only-group-changes-has-no-sign-in-door` resolvió las dos preguntas de este ticket, porque el
+motivo y la puerta son los mismos para las dos colas:
+
+- el aviso del paso 1 (personal) también sale como `.cloudSessionExpired`, que nombra «Dónde viven tus datos» y su «Iniciar
+  sesión» (`personalPushAllShownReason`);
+- el cierre que bloquea por sesión caducada para el motor en `.stoppedUntilSignIn` (`CloudSyncRuntime.stopUntilSignIn`), así
+  que la puerta está ahí al llegar.
+
+Lo fijan `SyncSignInBannerLogicTests` y `CloudSyncRuntimeTests`.

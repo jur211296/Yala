@@ -195,6 +195,9 @@ struct SignOutBlockedCopyTests {
         // La subida personal que no llegó (2026-09-25): el texto de la de grupos, dicho de tus datos.
         #expect(SignOutBlockedCopy.message(for: .personalUploadRetryLater) == L10n.Settings.signOutUploadRetryLater)
         #expect(SignOutBlockedCopy.title(for: .personalUploadRetryLater) == L10n.Settings.signOutBlockedTitle)
+        // La sesión caducada en la nube (2026-09-25): nombra dónde se vuelve a entrar.
+        #expect(SignOutBlockedCopy.message(for: .cloudSessionExpired) == L10n.Settings.signOutCloudSessionExpired)
+        #expect(SignOutBlockedCopy.title(for: .cloudSessionExpired) == L10n.Settings.signOutBlockedTitle)
     }
 
     @Test("Lo que no tiene causa que nombrar cae al genérico, `nil` incluido")
@@ -227,7 +230,8 @@ struct SignOutBlockedCopyTests {
         let messages = [L10n.Groups.Errors.sessionExpired, L10n.Groups.Errors.channelPaused,
                         L10n.Groups.Errors.uploadRetryLater, L10n.Settings.signOutPendingMessage,
                         L10n.Settings.signOutBlockedMessage, L10n.Groups.Errors.attestUnavailable,
-                        L10n.Settings.signOutAttestBlocked, L10n.Settings.signOutUploadRetryLater]
+                        L10n.Settings.signOutAttestBlocked, L10n.Settings.signOutUploadRetryLater,
+                        L10n.Settings.signOutCloudSessionExpired]
         #expect(Set(messages).count == messages.count)
         #expect(L10n.Settings.signOutPendingTitle != L10n.Settings.signOutBlockedTitle)
         #expect(L10n.Groups.Errors.attestUnavailableTitle != L10n.Settings.signOutBlockedTitle)

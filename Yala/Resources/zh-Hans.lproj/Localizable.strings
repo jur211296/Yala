@@ -6027,6 +6027,7 @@
 
 /* Aviso cuando el sign-in para retomar la vuelta a iCloud trae una cuenta distinta */
 "storage.errors.reverseSignInOtherAccount" = "你登录的是另一个账户。请使用开始返回 iCloud 时所用的账户登录。";
+"storage.errors.syncSignInOtherAccount" = "你登录的是另一个账户，因此我们没有保留该登录。请使用你在这台手机上使用 Yala 的账户登录。";
 
 /* Restore: el import de CloudKit no terminó dentro del tope pero SÍ está en marcha — los datos existen y siguen bajando. NO niega que existan (es lo contrario de welcome.restore.notFoundTitle). */
 "welcome.restore.importIncompleteTitle" = "正在继续获取你的数据";
@@ -6115,3 +6116,4 @@
 
 /* Sign-out blocked: the upload of personal changes to the cloud did not reach the server */
 "settings.signOutUploadRetryLater" = "你最近的更改没有传到云端。更改还在这台手机上，不会丢失，过一会儿再试试。";
+"settings.signOutCloudSessionExpired" = "你的登录已过期，还有更改尚未上传到云端。这些更改不会丢失：请打开本页“个人资料”中的“你的数据存放在哪里”，轻点“登录”，然后再试一次。";

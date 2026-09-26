@@ -5288,6 +5288,7 @@
 
 /* Aviso cuando el sign-in para retomar la vuelta a iCloud trae una cuenta distinta */
 "storage.errors.reverseSignInOtherAccount" = "Iniciaste sessão com outra conta. Inicia sessão com a conta a partir da qual começaste a voltar ao iCloud.";
+"storage.errors.syncSignInOtherAccount" = "Iniciaste sessão com outra conta, por isso não a mantivemos. Inicia sessão com a conta que usas no Yala neste telemóvel.";
 
 /* Restore: el import de CloudKit no terminó dentro del tope pero SÍ está en marcha — los datos existen y siguen bajando. NO niega que existan (es lo contrario de welcome.restore.notFoundTitle). */
 "welcome.restore.importIncompleteTitle" = "Ainda estamos a trazer os teus dados";
@@ -5376,3 +5377,4 @@
 
 /* Sign-out blocked: the upload of personal changes to the cloud did not reach the server */
 "settings.signOutUploadRetryLater" = "As tuas últimas alterações não chegaram à nuvem. Ficam guardadas neste telemóvel e não se perde nada; tenta de novo daqui a pouco.";
+"settings.signOutCloudSessionExpired" = "A tua sessão expirou e há alterações que ainda não subiram para a nuvem. Não se perde nada: abre “Onde vivem os teus dados”, aqui em Perfil, toca em “Iniciar sessão” e depois tenta novamente.";

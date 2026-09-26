@@ -353,6 +353,17 @@ nonisolated enum CloudSignOutFlowLogic {
         /// servidor fallando, y sin decir lo único cierto: no se pierde nada y se vuelve a intentar en un rato. Va al final del
         /// `enum` para no mover el orden de los que ya existían.
         case personalUploadRetryLater
+        /// **La sesión en la nube caducó y quedan cambios sin subir —tuyos o de tus grupos—** (2026-09-25, ticket
+        /// `cloud-session-expiry-with-only-group-changes-has-no-sign-in-door`). Es `.sessionExpired` dicho donde la puerta
+        /// existe: lo producen SOLO los pasos 1 y 2 del cierre en la nube (`personalPushAllShownReason` y
+        /// `cloudSignOutGroupsBlockReason`), y su aviso nombra «Dónde viven tus datos» y su «Iniciar sesión».
+        ///
+        /// Va aparte de `.sessionExpired` porque ése lo enseñan también las celdas PRIVADAS del cierre, y ahí la puerta es
+        /// otra: «vuelve a iniciar sesión» sin decir dónde era todo lo que se podía decir con un solo texto. En la nube la
+        /// puerta es la tarjeta de sincronización de Almacenamiento, que desde el mismo día cuenta también las filas de
+        /// grupos (`SyncSignInBannerLogic`) y que el cierre deja encendida al bloquear (`CloudSyncRuntime.stopUntilSignIn`).
+        /// Al final del `enum` para no mover el orden de los que ya existían.
+        case cloudSessionExpired
 
         /// Slug corto para los logs (`CloudSyncBreadcrumb.signOutGroupsBlocked`). Va aquí y no en el
         /// emisor para que un motivo nuevo tenga que nombrarse una sola vez: el `switch` es exhaustivo.
@@ -372,6 +383,7 @@ nonisolated enum CloudSignOutFlowLogic {
             case .syncStoppedMidMigration: return "sync-stopped-mid-migration"
             case .syncStoppedNeedsRelaunch: return "sync-stopped-needs-relaunch"
             case .personalUploadRetryLater: return "personal-upload-retry-later"
+            case .cloudSessionExpired: return "cloud-session-expired"
             }
         }
     }
@@ -413,7 +425,11 @@ nonisolated enum CloudSignOutFlowLogic {
         case .uploadRetryLater: return .uploadRetryLater
         // La sesión caducada, tal cual (decisión 3A de Jürgen, 2026-09-15): su aviso pide volver a entrar, que es
         // lo único que sube estos cambios. Colapsada en `.permanent` le decía «revisa tu conexión».
-        case .sessionExpired: return .sessionExpired
+        //
+        // **Desde el 2026-09-25 viaja como `.cloudSessionExpired`**, que nombra la puerta: en la nube se vuelve a entrar
+        // desde «Dónde viven tus datos» (ticket `cloud-session-expiry-with-only-group-changes-has-no-sign-in-door`). Hasta
+        // ese día el aviso decía «vuelve a iniciar sesión» y, con solo cambios de grupos, no había dónde.
+        case .sessionExpired, .cloudSessionExpired: return .cloudSessionExpired
         // El teléfono sin App Attest, tal cual (2026-09-15): su aviso es el que ofrece salir perdiendo los cambios de
         // grupos. Traducido a `.uploadRetryLater` volvería a decir «inténtalo en un rato» a quien lleva un día sin poder.
         case .attestUnavailable: return .attestUnavailable
@@ -451,7 +467,9 @@ nonisolated enum CloudSignOutFlowLogic {
     static func personalPushAllShownReason(_ reason: BlockReason) -> BlockReason {
         switch reason {
         case .uploadRetryLater, .personalUploadRetryLater: return .personalUploadRetryLater
-        case .sessionExpired: return .sessionExpired
+        // Con el texto que nombra la puerta (2026-09-25): la misma que la de grupos, porque «Iniciar sesión» en «Dónde viven
+        // tus datos» reanuda el motor y sube las dos colas.
+        case .sessionExpired, .cloudSessionExpired: return .cloudSessionExpired
         case .transient: return .transient
         case .syncStoppedNeedsUpdate: return .syncStoppedNeedsUpdate
         case .syncStoppedMidMigration: return .syncStoppedMidMigration
@@ -757,7 +775,8 @@ nonisolated enum GroupsSignOutRetryDecision {
         if reason == .permanent || reason == .sessionExpired || reason == .channelPaused
             || reason == .uploadRetryLater || reason == .attestUnavailable || reason == .personalAttestUnavailable
             || reason == .syncStoppedNeedsUpdate || reason == .syncStoppedMidMigration
-            || reason == .syncStoppedNeedsRelaunch || reason == .personalUploadRetryLater {
+            || reason == .syncStoppedNeedsRelaunch || reason == .personalUploadRetryLater
+            || reason == .cloudSessionExpired {
             return .surfacePermanent
         }
         if elapsedSeconds < budgetSeconds { return .retryAfter(seconds: retryIntervalSeconds) }

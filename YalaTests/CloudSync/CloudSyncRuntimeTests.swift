@@ -323,7 +323,9 @@ struct CloudSyncRuntimeTests {
                                 now: Date(timeIntervalSince1970: 1_700_000_000))
         let prefsSession = StubSession(
             status: 200, body: Data(#"{"results":[{"key":"userName","status":"applied"}]}"#.utf8))
-        let runtime = makeRuntime(session: StubCloudSession(userID: "u1"),
+        // Con el sello del claim, como toda sesión que cicla en la nube: desde el 2026-09-25 un motor sin dueño en memoria
+        // no cicla con una sesión sin sello (`sessionBelongsToAnotherAccount`), y `start()` ya lo exigía.
+        let runtime = makeRuntime(session: StubCloudSession(userID: "u1", claim: .routeReturningUser),
                                   prefsSession: prefsSession, prefsOutbox: prefsOutbox)
         _ = await runtime.syncCycle(context: context)
 
@@ -1145,8 +1147,8 @@ struct CloudSyncRuntimeTests {
             livePendingCount: { liveCount(context) }, maxIterations: 20, pause: .zero)
 
         #expect(verdict == .blocked(pendingCount: 1, reason: .sessionExpired))
-        #expect(CloudSignOutFlowLogic.personalPushAllShownReason(.sessionExpired) == .sessionExpired)
-        #expect(shownMessage(verdict) == L10n.Groups.Errors.sessionExpired)
+        #expect(CloudSignOutFlowLogic.personalPushAllShownReason(.sessionExpired) == .cloudSessionExpired)
+        #expect(shownMessage(verdict) == L10n.Settings.signOutCloudSessionExpired)
         #expect(shownMessage(verdict) != L10n.Settings.signOutBlockedMessage)
         #expect(try outbox(context).count == 1)
     }
@@ -1347,6 +1349,146 @@ struct CloudSyncRuntimeTests {
             "livePendingCount: { [self] in livePendingUploadCount() },",
             "maxIterations: maxIterations)",
         ])
+    }
+
+    // MARK: - La puerta de la nube con la sesión caducada
+
+    /// Ticket `cloud-session-expiry-with-only-group-changes-has-no-sign-in-door` (2026-09-25). Arranca un runtime en `.cloud`
+    /// estable con el dueño `u1` y lo deja en `.stoppedUntilSignIn` con `stopUntilSignIn()`, que es lo que hace el cierre de
+    /// sesión al bloquear por sesión caducada. La cadencia que `start()` lanzó no llega a correr: se cancela antes del primer
+    /// punto de suspensión del test.
+    private func withStoppedCloudRuntime(
+        push: StubSession, pull: StubSession,
+        _ body: (CloudSyncRuntime, StubCloudSession, ModelContext) async throws -> Void
+    ) async throws {
+        let prev = CloudSyncFlags.syncRuntimeEnabled
+        CloudSyncFlags.syncRuntimeEnabled = true
+        let prevMode = CloudSyncFlags.storageMode
+        CloudSyncFlags.storageMode = .cloud
+        SwiftDataConfiguration._testSetPersonalStoreMountedDecision(.cloudMirrorOff)
+        defer {
+            CloudSyncFlags.syncRuntimeEnabled = prev
+            CloudSyncFlags.storageMode = prevMode
+            SwiftDataConfiguration._testSetPersonalStoreMountedDecision(.iCloudMirror)
+        }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = StubCloudSession(userID: "u1", claim: .routeReturningUser)
+        let runtime = makeRuntime(push: push, pull: pull, session: session)
+        await runtime.start(context: context)
+        defer { runtime.teardownGuestSession() }
+        #expect(runtime.state == .running, "control: el motor arrancó con su dueño")
+        #expect(runtime.ownerUserID == "u1")
+        runtime.stopUntilSignIn()
+        #expect(runtime.state == .stoppedUntilSignIn)
+        try await body(runtime, session, context)
+    }
+
+    @Test("MUTACIÓN: el cierre que bloquea por sesión caducada deja el motor parado hasta firmar, solo desde `.running`")
+    func stopUntilSignIn_onlyFromRunning() async throws {
+        try await withStoppedCloudRuntime(push: StubSession(), pull: StubSession(body: emptyPageJSON())) { runtime, _, _ in
+            // Idempotente: parado sigue parado.
+            runtime.stopUntilSignIn()
+            #expect(runtime.state == .stoppedUntilSignIn)
+            // Y no rebaja ni despierta otro estado: tras el teardown el motor está sin sesión, no «hasta firmar». La puerta de
+            // ese estado la da la tarjeta con `.idleSignedOut` sin sesión (`SyncSignInBannerLogic.engineWaitsForSignIn`).
+            runtime.teardownGuestSession()
+            runtime.stopUntilSignIn()
+            #expect(runtime.state == .idleSignedOut)
+        }
+    }
+
+    @Test("MUTACIÓN: con OTRA cuenta firmada el ciclo no toca la red y lo lee como sesión caducada; con la del dueño, sube")
+    func aCycleWithAnotherAccount_neitherPushesNorPulls() async throws {
+        // La respuesta del push da igual: lo que se mide es si la petición SALE.
+        let push = StubSession()
+        let pull = StubSession(body: emptyPageJSON())
+        try await withStoppedCloudRuntime(push: push, pull: pull) { runtime, session, context in
+            _ = try liveRow(context, entityType: SyncEntityType.transactionItem, h: hlc(1))
+            let pushesBefore = push.callCount, pullsBefore = pull.callCount
+
+            // Entró otra cuenta por cualquier puerta.
+            session.currentUserID = "u2"
+            #expect(await runtime.syncCycle(context: context) == .sessionExpired)
+            #expect(push.callCount == pushesBefore, "el outbox del dueño no sube con el JWT de otra cuenta")
+            #expect(pull.callCount == pullsBefore, "y lo de la otra cuenta no baja a este store")
+
+            // La otra dirección: vuelve la cuenta del dueño y el ciclo sí habla con el servidor.
+            session.currentUserID = "u1"
+            _ = await runtime.syncCycle(context: context)
+            #expect(push.callCount > pushesBefore, "con la cuenta del dueño, lo pendiente sube")
+        }
+    }
+
+    /// Sin sesión no es «otra cuenta»: ése lo contestan el preflight y el pull, con su canario. Si la guarda lo cubriera,
+    /// cortaría antes que ellos. Aquí la sesión falta en `currentUserID` pero el cliente aún tiene token: el push sale.
+    @Test("MUTACIÓN: sin `sub` la guarda del dueño no corta el ciclo; lo decide lo de siempre")
+    func noSessionIsNotAnotherAccount() async throws {
+        let push = StubSession()
+        try await withStoppedCloudRuntime(push: push, pull: StubSession(body: emptyPageJSON())) { runtime, session, context in
+            _ = try liveRow(context, entityType: SyncEntityType.transactionItem, h: hlc(1))
+            let before = push.callCount
+            session.currentUserID = nil
+            session.canRenewSession = true
+            _ = await runtime.syncCycle(context: context)
+            #expect(push.callCount > before)
+        }
+    }
+
+    /// Tras relanzar sin sesión el motor no fija dueño (`.idleSignedOut`), y el cierre de sesión llama a `syncCycle` igual. En
+    /// la nube, el ancla es entonces el sello del claim: una sesión sin sello —otra cuenta que entró por «Nuevo grupo»— no
+    /// sube ni baja nada; una con sello, sí (review del 2026-09-25).
+    @Test("MUTACIÓN: sin dueño en memoria, en la nube el ciclo solo habla con el servidor con una cuenta sellada")
+    func withoutAnOwner_theClaimStampDecides() async throws {
+        let prevMode = CloudSyncFlags.storageMode
+        CloudSyncFlags.storageMode = .cloud
+        defer { CloudSyncFlags.storageMode = prevMode }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        _ = try liveRow(context, entityType: SyncEntityType.transactionItem, h: hlc(1))
+        let push = StubSession()
+        let pull = StubSession(body: emptyPageJSON())
+        let session = StubCloudSession(userID: "u2", claim: nil)
+        let runtime = makeRuntime(push: push, pull: pull, session: session)
+        #expect(runtime.ownerUserID == nil, "control: el motor no arrancó y no tiene dueño")
+
+        #expect(await runtime.syncCycle(context: context) == .sessionExpired)
+        #expect(push.callCount == 0 && pull.callCount == 0, "una cuenta sin sello no toca el servidor")
+
+        session.claimAction = .routeReturningUser
+        _ = await runtime.syncCycle(context: context)
+        #expect(push.callCount > 0, "con el sello de este teléfono, lo pendiente sube")
+    }
+
+    /// Fuera de la nube el ancla no aplica: el trato de antes.
+    @Test("Sin dueño y fuera de la nube, la guarda no corta")
+    func withoutAnOwner_outsideTheCloud_doesNotCut() async throws {
+        let prevMode = CloudSyncFlags.storageMode
+        CloudSyncFlags.storageMode = .icloud
+        defer { CloudSyncFlags.storageMode = prevMode }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        _ = try liveRow(context, entityType: SyncEntityType.transactionItem, h: hlc(1))
+        let push = StubSession()
+        let runtime = makeRuntime(push: push, pull: StubSession(body: emptyPageJSON()),
+                                  session: StubCloudSession(userID: "u2", claim: nil))
+        _ = await runtime.syncCycle(context: context)
+        #expect(push.callCount > 0)
+    }
+
+    @Test("MUTACIÓN: volver a primer plano con otra cuenta no reanuda la cadencia; con la del dueño, sí")
+    func becomingActive_resumesOnlyForTheOwner() async throws {
+        try await withStoppedCloudRuntime(push: StubSession(), pull: StubSession(body: emptyPageJSON())) { runtime, session, _ in
+            session.currentUserID = "u2"
+            runtime.handleBecameActive()
+            #expect(runtime.state == .stoppedUntilSignIn)
+            session.currentUserID = nil
+            runtime.handleBecameActive()
+            #expect(runtime.state == .stoppedUntilSignIn, "sin sesión tampoco: el trato de antes")
+            session.currentUserID = "u1"
+            runtime.handleBecameActive()
+            #expect(runtime.state == .running)
+        }
     }
 }
 
