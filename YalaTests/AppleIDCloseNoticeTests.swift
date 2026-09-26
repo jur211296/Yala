@@ -192,6 +192,9 @@ struct SignOutBlockedCopyTests {
         #expect(SignOutBlockedCopy.message(for: .syncStoppedNeedsUpdate) == L10n.Settings.signOutSyncStoppedNeedsUpdate)
         #expect(SignOutBlockedCopy.message(for: .syncStoppedMidMigration) == L10n.Settings.signOutSyncStoppedMidMigration)
         #expect(SignOutBlockedCopy.message(for: .syncStoppedNeedsRelaunch) == L10n.Settings.signOutSyncStoppedNeedsRelaunch)
+        // La subida personal que no llegó (2026-09-25): el texto de la de grupos, dicho de tus datos.
+        #expect(SignOutBlockedCopy.message(for: .personalUploadRetryLater) == L10n.Settings.signOutUploadRetryLater)
+        #expect(SignOutBlockedCopy.title(for: .personalUploadRetryLater) == L10n.Settings.signOutBlockedTitle)
     }
 
     @Test("Lo que no tiene causa que nombrar cae al genérico, `nil` incluido")
@@ -224,7 +227,7 @@ struct SignOutBlockedCopyTests {
         let messages = [L10n.Groups.Errors.sessionExpired, L10n.Groups.Errors.channelPaused,
                         L10n.Groups.Errors.uploadRetryLater, L10n.Settings.signOutPendingMessage,
                         L10n.Settings.signOutBlockedMessage, L10n.Groups.Errors.attestUnavailable,
-                        L10n.Settings.signOutAttestBlocked]
+                        L10n.Settings.signOutAttestBlocked, L10n.Settings.signOutUploadRetryLater]
         #expect(Set(messages).count == messages.count)
         #expect(L10n.Settings.signOutPendingTitle != L10n.Settings.signOutBlockedTitle)
         #expect(L10n.Groups.Errors.attestUnavailableTitle != L10n.Settings.signOutBlockedTitle)

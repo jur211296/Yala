@@ -1,9 +1,10 @@
 ---
 id: cloud-signout-collapses-the-personal-push-all-reason-into-permanent
-status: backlog
+status: done
 priority: medium
 area: "modo-nube, sesión"
 created: 2026-09-14
+updated: 2026-09-25
 source: "hallazgo al cerrar `cloud-signout-collapses-every-groups-transient-into-permanent` (2026-09-14)"
 ---
 
@@ -54,3 +55,34 @@ merece su gemela.
   escribe `.permanent` a mano: llama a `CloudSignOutFlowLogic.personalPushAllShownReason`, un `switch` exhaustivo que deja
   pasar los tres motivos del motor parado y colapsa el resto. **Este ticket se arregla ahí**; el fragmento de «Lo medido»
   que cita `reason: .permanent` en el paso 1 es anterior a ese cambio.
+
+## Resolución (2026-09-25)
+
+Decisión del encargo: la opción robusta, la misma que grupos el 2026-09-14/15.
+
+- **Lo pasajero llega separado.** El motor personal no tenía testigo y el push-all pasaba `uploadFailed: false`, así que
+  un 5xx era `.transient` y dejarlo pasar habría dicho «un momento más, espera unos segundos». Ahora hay testigo
+  positivo, molde `GroupsSyncClient.stoppedByFailedUpload(for:)`: `SyncPushClient.lastPushFailedAtServer` (red, no-HTTP,
+  200 ilegible, 401 del attest, 409 que no es la reversa, 5xx/429/4xx, token que no se renueva con la sesión guardada;
+  no `buildDelta` ni `continueWhile`) y `CloudSyncRuntime.stoppedByFailedUpload(for:)`, que además enciende la puerta de
+  attest con `.transient`.
+- **Motivo nuevo `.personalUploadRetryLater`**, porque el texto de `.uploadRetryLater` dice «tus grupos». Texto nuevo
+  `settings.signOutUploadRetryLater` en los 16 locales: «Tus últimos cambios no llegaron a la nube. Siguen guardados en
+  este teléfono y no se pierden; inténtalo de nuevo en un rato.»
+- **`personalPushAllShownReason`** es ya la gemela de `cloudSignOutGroupsBlockReason`: `.uploadRetryLater` →
+  `.personalUploadRetryLater`, `.sessionExpired` y `.transient` tal cual, el motor parado tal cual, el resto `.permanent`.
+- Tests de punta a punta en `CloudSyncRuntimeTests` (500, 503, sin red, 200 ilegible, puerta de attest → «inténtalo en
+  un rato»; 401 → «tu sesión caducó»; fallo local → «un momento más»; ninguno «revisa tu conexión»), el testigo rama a
+  rama en `SyncPushClientTests`, y el test que fijaba `uploadFailed: false` invertido.
+- Sin device-QA: el cambio es de clasificación y texto, y el recorrido entero lo ejercen los tests con el ciclo real.
+
+- **La review adversarial (tres lentes) cazó un caso en MI arreglo**, dos lentes por separado: una subida a medias que sale
+  `.completed` —un trozo que falla tras otro confirmado, o un rechazo `upstream_*`— perdía el testigo, y con el pull
+  fallando decía «un momento más». El runtime copia el testigo también tras un push `.completed`, y `applyResults` lo
+  enciende con `upstream_*`. Y tres comentarios que el cambio había dejado mintiendo.
+
+Residuales, con ticket:
+- `cloud-signout-personal-session-expiry-does-not-say-where-to-sign-in` — el aviso de sesión caducada no dice dónde entrar.
+- `cloud-signout-upstream-rejections-with-a-healthy-pull-say-a-moment-more` — con el pull sano, el tope ignora el testigo.
+- `push-unexpected-4xx-is-told-to-try-again-later` — un 4xx no cableado promete curarse esperando.
+- es-AR sin voseo en «Tu sesión caducó»: ya estaba en `es-ar-detach-and-signout-copy-lost-the-voseo`.

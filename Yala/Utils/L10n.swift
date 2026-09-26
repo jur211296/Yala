@@ -4473,6 +4473,10 @@ enum L10n {
         /// Lo mismo con el paso terminado pero el espejo de iCloud aún montado
         /// (`CloudSignOutFlowLogic.BlockReason.syncStoppedNeedsRelaunch`): la salida es reabrir Yala.
         static var signOutSyncStoppedNeedsRelaunch: String { ls("settings.signOutSyncStoppedNeedsRelaunch", comment: "") }
+        /// La subida de tus cambios a la nube no llegó al servidor —sin red, un 5xx— y el cierre en la nube bloquea sin borrar
+        /// nada (`CloudSignOutFlowLogic.BlockReason.personalUploadRetryLater`). El texto de `Groups.Errors.uploadRetryLater`,
+        /// dicho de tus datos.
+        static var signOutUploadRetryLater: String { ls("settings.signOutUploadRetryLater", comment: "") }
         /// La exportación de ese aviso no encontró ningún movimiento que exportar.
         static var signOutAttestExportEmpty: String { ls("settings.signOutAttestExportEmpty", comment: "") }
         /// La exportación de ese aviso no pudo generar el archivo.

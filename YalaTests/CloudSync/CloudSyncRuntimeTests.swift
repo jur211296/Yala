@@ -1031,6 +1031,170 @@ struct CloudSyncRuntimeTests {
         #expect(push.callCount == 1, "la cancelación corta antes del segundo ciclo")
     }
 
+    // MARK: - El paso 1 del cierre en la nube nombra el motivo real (2026-09-25)
+
+    // Ticket `cloud-signout-collapses-the-personal-push-all-reason-into-permanent`. Hasta ese día el paso 1 aplanaba a
+    // `.permanent` —«revisa tu conexión»— un 5xx, un corte de red y un 401, porque el push-all personal pasaba
+    // `uploadFailed: false` y el paso 1 no dejaba pasar nada que no fuera el motor parado. Estos casos van de punta a punta:
+    // el ciclo real contra un transporte stub, el veredicto del push-all, la traducción del paso 1 y el texto del aviso.
+
+    /// Lo que enseña Ajustes para un veredicto del push-all personal: el mismo camino que `performCloudSecureSignOut`.
+    private func shownMessage(_ verdict: CloudSignOutFlowLogic.PushAllVerdict) -> String? {
+        guard case .blocked(_, let reason) = verdict else { return nil }
+        return SignOutBlockedCopy.message(for: CloudSignOutFlowLogic.personalPushAllShownReason(reason))
+    }
+
+    @Test("MUTACIÓN: con cambios personales pendientes, un fallo del servidor dice «inténtalo en un rato», no «revisa tu conexión»")
+    func signOutPushAll_serverFailure_saysTryAgainLater() async throws {
+        let racha = try IsolatedAttestStreak(); defer { racha.restore() }
+        let casos: [(String, SyncHTTPSession)] = [
+            ("500", StubSession(status: 500, body: Data())),
+            ("503", StubSession(status: 503, body: Data())),
+            ("sin red", ThrowingSession(URLError(.notConnectedToInternet))),
+            ("200 ilegible", StubSession(status: 200, body: Data("no es json".utf8))),
+        ]
+        for (nombre, push) in casos {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let context = try makeContext(dir)
+            _ = try liveRow(context, entityType: SyncEntityType.transactionItem, h: hlc(1))
+            let runtime = makeRuntime(push: push, pull: StubSession(body: emptyPageJSON()),
+                                      session: StubCloudSession(userID: "u1"))
+
+            let verdict = await CloudMigrationController.pushAllForSignOut(
+                runtime: runtime, context: context, domainGateOpen: { true }, journalRead: { .unreadable },
+                livePendingCount: { liveCount(context) }, maxIterations: 20, pause: .zero)
+
+            #expect(verdict == .blocked(pendingCount: 1, reason: .uploadRetryLater), "\(nombre)")
+            #expect(CloudSignOutFlowLogic.personalPushAllShownReason(.uploadRetryLater) == .personalUploadRetryLater)
+            #expect(shownMessage(verdict) == L10n.Settings.signOutUploadRetryLater, "\(nombre)")
+            #expect(shownMessage(verdict) != L10n.Settings.signOutBlockedMessage, "\(nombre): no es la conexión")
+            #expect(try outbox(context).count == 1, "\(nombre): la fila sigue ahí, no se descarta")
+        }
+    }
+
+    /// El 200 cuyo resultado es `upstream_*` no aplica la fila: el push sale `.completed`, el ciclo sigue al pull y, si ése
+    /// falla, el testigo copiado tras `applyResults` es lo único que dice que lo pendiente no llegó (review adversarial del
+    /// 2026-09-25, dos lentes). Sin él, «un momento más, espera unos segundos» con el servidor fallando.
+    @Test("MUTACIÓN: un rechazo `upstream_*` seguido de un pull que falla dice «inténtalo en un rato»")
+    func signOutPushAll_upstreamRejectionThenFailedPull_saysTryAgainLater() async throws {
+        let racha = try IsolatedAttestStreak(); defer { racha.restore() }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let row = try liveRow(context, entityType: SyncEntityType.transactionItem, h: hlc(1))
+        let upstream = Data(("{\"results\":[{\"sync_id\":\"\(row.syncID.uuidString.lowercased())\"," +
+            "\"client_mutation_id\":\"\(row.clientMutationID.uuidString.lowercased())\"," +
+            "\"status\":\"rejected\",\"reason\":\"upstream_500\"}]}").utf8)
+        let runtime = makeRuntime(push: StubSession(status: 200, body: upstream),
+                                  pull: StubSession(status: 503, body: Data()),
+                                  session: StubCloudSession(userID: "u1"))
+
+        let verdict = await CloudMigrationController.pushAllForSignOut(
+            runtime: runtime, context: context, domainGateOpen: { true }, journalRead: { .unreadable },
+            livePendingCount: { liveCount(context) }, maxIterations: 20, pause: .zero)
+
+        #expect(verdict == .blocked(pendingCount: 1, reason: .uploadRetryLater))
+        #expect(shownMessage(verdict) == L10n.Settings.signOutUploadRetryLater)
+
+        // Control: el mismo pull fallido con la fila APLICADA drena — el testigo no se enciende por el pull.
+        let dir2 = freshDir(); defer { cleanup(dir2) }
+        let context2 = try makeContext(dir2)
+        let row2 = try liveRow(context2, entityType: SyncEntityType.transactionItem, h: hlc(1))
+        let runtime2 = makeRuntime(push: StubSession(status: 200, body: pushAppliedJSON([row2])),
+                                   pull: StubSession(status: 503, body: Data()),
+                                   session: StubCloudSession(userID: "u1"))
+        let drenado = await CloudMigrationController.pushAllForSignOut(
+            runtime: runtime2, context: context2, domainGateOpen: { true }, journalRead: { .unreadable },
+            livePendingCount: { liveCount(context2) }, maxIterations: 20, pause: .zero)
+        #expect(drenado == .drained)
+        #expect(!runtime2.stoppedByFailedUpload(for: .transient), "el pull que falla no enciende el testigo")
+    }
+
+    /// Sin el pase del servidor el ciclo para antes de subir, y esperar unos segundos no lo cura: va con backoff.
+    @Test("MUTACIÓN: la puerta de attest que no consigue el pase dice «inténtalo en un rato»")
+    func signOutPushAll_attestGateTransient_saysTryAgainLater() async throws {
+        let racha = try IsolatedAttestStreak(); defer { racha.restore() }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        _ = try liveRow(context, entityType: SyncEntityType.transactionItem, h: hlc(1))
+        let push = StubSession(status: 200, body: Data(#"{"results":[]}"#.utf8))
+        let runtime = makeRuntime(push: push, pull: StubSession(body: emptyPageJSON()),
+                                  session: StubCloudSession(userID: "u1",
+                                                            attestError: .network(URLError(.notConnectedToInternet))))
+
+        let verdict = await CloudMigrationController.pushAllForSignOut(
+            runtime: runtime, context: context, domainGateOpen: { true }, journalRead: { .unreadable },
+            livePendingCount: { liveCount(context) }, maxIterations: 20, pause: .zero)
+
+        #expect(verdict == .blocked(pendingCount: 1, reason: .uploadRetryLater))
+        #expect(push.callCount == 0, "control: el ciclo paró en la puerta, antes de subir")
+        #expect(shownMessage(verdict) == L10n.Settings.signOutUploadRetryLater)
+    }
+
+    @Test("MUTACIÓN: con cambios personales pendientes, un 401 dice que la sesión caducó, no «revisa tu conexión»")
+    func signOutPushAll_401_saysTheSessionExpired() async throws {
+        let racha = try IsolatedAttestStreak(); defer { racha.restore() }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        _ = try liveRow(context, entityType: SyncEntityType.transactionItem, h: hlc(1))
+        let runtime = makeRuntime(push: StubSession(status: 401, body: Data()),
+                                  pull: StubSession(body: emptyPageJSON()),
+                                  session: StubCloudSession(userID: "u1"))
+
+        let verdict = await CloudMigrationController.pushAllForSignOut(
+            runtime: runtime, context: context, domainGateOpen: { true }, journalRead: { .unreadable },
+            livePendingCount: { liveCount(context) }, maxIterations: 20, pause: .zero)
+
+        #expect(verdict == .blocked(pendingCount: 1, reason: .sessionExpired))
+        #expect(CloudSignOutFlowLogic.personalPushAllShownReason(.sessionExpired) == .sessionExpired)
+        #expect(shownMessage(verdict) == L10n.Groups.Errors.sessionExpired)
+        #expect(shownMessage(verdict) != L10n.Settings.signOutBlockedMessage)
+        #expect(try outbox(context).count == 1)
+    }
+
+    /// Lo del teléfono no se le achaca al servidor: un outbox que no se deja leer sale como el guardado que se asienta.
+    @Test("MUTACIÓN: un fallo local del ciclo sale «un momento más», no «no llegaron a la nube» ni «revisa tu conexión»")
+    func signOutPushAll_localFailure_saysAMomentMore() async throws {
+        let racha = try IsolatedAttestStreak(); defer { racha.restore() }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        _ = try liveRow(context, entityType: SyncEntityType.transactionItem, h: hlc(1))
+        let push = StubSession(status: 500, body: Data())
+        let runtime = makeRuntime(push: push, pull: StubSession(body: emptyPageJSON()),
+                                  session: StubCloudSession(userID: "u1"))
+        runtime._testThrowOnOutboxFetch = true
+
+        let verdict = await CloudMigrationController.pushAllForSignOut(
+            runtime: runtime, context: context, domainGateOpen: { true }, journalRead: { .unreadable },
+            livePendingCount: { liveCount(context) }, maxIterations: 20, pause: .zero)
+
+        #expect(verdict == .blocked(pendingCount: 1, reason: .transient))
+        #expect(push.callCount == 0, "control: no llegó a la red")
+        #expect(shownMessage(verdict) == L10n.Settings.signOutPendingMessage)
+    }
+
+    /// El testigo describe el ÚLTIMO ciclo: un 500 de antes no tiñe un fallo local de ahora, y un `.coalesced` no es suyo.
+    @Test("MUTACIÓN: el testigo de la subida se baja en cada ciclo y solo cuenta con `.transient`")
+    func uploadWitness_describesTheLastCycleOnly() async throws {
+        let racha = try IsolatedAttestStreak(); defer { racha.restore() }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        _ = try liveRow(context, entityType: SyncEntityType.transactionItem, h: hlc(1))
+        let runtime = makeRuntime(push: StubSession(status: 500, body: Data()),
+                                  pull: StubSession(body: emptyPageJSON()),
+                                  session: StubCloudSession(userID: "u1"))
+
+        let primero = await runtime.syncCycle(context: context)
+        #expect(primero == .transient)
+        #expect(runtime.stoppedByFailedUpload(for: primero), "control: el 500 lo enciende")
+        #expect(!runtime.stoppedByFailedUpload(for: .coalesced), "un ciclo ajeno no es este")
+        #expect(!runtime.stoppedByFailedUpload(for: .completed))
+
+        runtime._testThrowOnOutboxFetch = true
+        let segundo = await runtime.syncCycle(context: context)
+        #expect(segundo == .transient)
+        #expect(!runtime.stoppedByFailedUpload(for: segundo), "el fallo local de este ciclo no es del servidor")
+    }
+
     @Test("pushAllVerdictWithoutEngine: solo sigue sin filas Y sin ediciones sin capturar; lo que no se pudo leer bloquea")
     func pushAllVerdictWithoutEngine_table() {
         typealias L = CloudSignOutFlowLogic
@@ -1187,6 +1351,13 @@ struct CloudSyncRuntimeTests {
 }
 
 // MARK: - Stubs
+
+/// Stub de `SyncHTTPSession` que LANZA: la petición salió y no volvió (sin cobertura, timeout).
+private final class ThrowingSession: SyncHTTPSession, @unchecked Sendable {
+    let error: Error
+    init(_ error: Error) { self.error = error }
+    func data(for request: URLRequest) async throws -> (Data, URLResponse) { throw error }
+}
 
 /// Stub de `SyncHTTPSession` con respuesta fija + contador de llamadas.
 private final class StubSession: SyncHTTPSession, @unchecked Sendable {

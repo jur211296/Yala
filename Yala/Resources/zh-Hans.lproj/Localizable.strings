@@ -6112,3 +6112,6 @@
 
 /* Sign-out blocked: sync paused until Yala is reopened */
 "settings.signOutSyncStoppedNeedsRelaunch" = "还有更改尚未上传到云端，我们不希望你丢失任何内容。在你重新打开 Yala 之前，同步会保持暂停。请彻底关闭 Yala（在应用切换器中划走），重新打开后再试一次。";
+
+/* Sign-out blocked: the upload of personal changes to the cloud did not reach the server */
+"settings.signOutUploadRetryLater" = "你最近的更改没有传到云端。更改还在这台手机上，不会丢失，过一会儿再试试。";

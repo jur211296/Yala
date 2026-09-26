@@ -5377,3 +5377,6 @@
 
 /* Sign-out blocked: sync paused until Yala is reopened */
 "settings.signOutSyncStoppedNeedsRelaunch" = "Hay cambios sin subir a la nube y no queremos que pierdas nada. La sincronización está en pausa hasta que vuelvas a abrir Yala. Cerrala del todo (deslizala fuera del selector de apps), volvé a abrirla e intentalo de nuevo.";
+
+/* Sign-out blocked: the upload of personal changes to the cloud did not reach the server */
+"settings.signOutUploadRetryLater" = "Tus últimos cambios no llegaron a la nube. Siguen guardados en este teléfono y no se pierden; intentalo de nuevo en un rato.";

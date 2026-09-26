@@ -197,9 +197,10 @@ struct ProfileView: View {
             // servidor caído sería falso. Lo que cambia es el mensaje (`signOutBlockedMessage`).
             //
             // **Los tres del motor parado, también** (2026-09-25): mismo título, su propio mensaje. Solo los pone el cierre en
-            // la nube, así que no los comparte ningún otro gesto.
+            // la nube, así que no los comparte ningún otro gesto. **Y la subida personal que no llegó**, por lo mismo que la de
+            // grupos: el título es exacto y aquí nadie ha reintentado nada.
             case .permanent, .sessionExpired, .channelPaused, .uploadRetryLater,
-                 .syncStoppedNeedsUpdate, .syncStoppedMidMigration, .syncStoppedNeedsRelaunch:
+                 .syncStoppedNeedsUpdate, .syncStoppedMidMigration, .syncStoppedNeedsRelaunch, .personalUploadRetryLater:
                 showSignOutBlockedAlert = true
             // **Los dos motivos del DESASOCIAR no encienden nada aquí, y no es teoría: llegaban.**
             // `phase` es un singleton observable y esta pantalla escucha sus cambios; la de

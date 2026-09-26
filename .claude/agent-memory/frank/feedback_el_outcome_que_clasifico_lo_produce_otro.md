@@ -28,3 +28,9 @@ marca POSITIVA que enciende la etapa concreta y un getter que la liga al outcome
 tiene dos veces (`stoppedByChannelKill`, `stoppedByUnavailableAttest`). Marcar de menos deja el aviso
 conservador de siempre; marcar de más acusa a una parte de lo que hizo otra. Ver también
 [[el-oraculo-del-mutante-es-el-efecto-que-produce]] y [[la-rule-de-area-es-una-lente-mas]].
+
+**Corolario (2026-09-25): el testigo se copia en TODAS las ramas del outcome, no solo en la de fallo.** Al cablear el testigo
+de la subida en el motor personal lo leí solo en `case .transient:` del push. Dos lentes cazaron por separado que una subida a
+medias sale `.completed`: un trozo que falla tras otro confirmado (`.completed(parciales)`) o un 200 con `upstream_*` por
+fila. El ciclo seguía al pull, y si ése fallaba, «un momento más» con el servidor caído. **Pregunta, para cada rama de
+éxito: ¿puede traer el fallo dentro?** Si la respuesta está en los resultados por elemento o en un progreso parcial, sí.

@@ -284,7 +284,8 @@ Ticket `cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes`.
 - **La salida personal vive solo en el cierre en la nube, que es solo Ajustes.** El paso 1 traduce a
   `.personalAttestUnavailable` el `.attestUnavailable` que trae el testigo del motor
   (`CloudSyncRuntime.stoppedByUnavailableAttest(for:)`, que acepta también la parada terminal `.accountUnavailable`); el resto
-  de motivos del paso 1 sigue en `.permanent`. **Cada aceptación cubre solo su outbox**, y lo aceptado de lo personal
+  de motivos del paso 1 lo traduce `CloudSignOutFlowLogic.personalPushAllShownReason` desde el 2026-09-25 (la subida que
+  no llegó, la sesión caducada, el guardado que se asienta y el motor parado; hasta ese día, todos `.permanent`). **Cada aceptación cubre solo su outbox**, y lo aceptado de lo personal
   sobrevive al aviso de grupos que sale después.
 - **Retomar un cierre con la pérdida aceptada exige que el bloqueo siga siendo el attest**
   (`CloudSignOutFlowLogic.continuesAfterBlockedUpload`, en los tres sitios que suben: los pasos 1 y 2 de la nube y

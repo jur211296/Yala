@@ -147,7 +147,8 @@ nonisolated enum CloudSignOutFlowLogic {
         /// review adversarial.** `CadenceOutcome.transient` es el cajón de todo lo pasajero —red, HTTP, decode,
         /// el `save()` LOCAL de una página del pull, el tope de páginas— y además **el veredicto del ciclo es el
         /// del PULL siempre que el push vaya bien** (`GroupsSyncClient.syncCycleOnce`). Quien la hace es un
-        /// testigo del ciclo, `stoppedByFailedUpload(for:)`, que solo enciende el push: sin él, al `save()` local
+        /// testigo del ciclo, `stoppedByFailedUpload(for:)`, que solo enciende el push (en el motor personal, también su
+        /// puerta de attest: `CloudSyncRuntime.lastCycleFailedUpload`): sin él, al `save()` local
         /// de una página se le decía «tus cambios no llegaron al servidor» con la subida perfecta, y se le
         /// quitaban los 45 s que ese caso sí cura — que es H-2026-07-18-6, el que motivó el presupuesto.
         ///
@@ -172,11 +173,10 @@ nonisolated enum CloudSignOutFlowLogic {
         /// **Y desde el 2026-09-15 la sesión caducada tampoco se colapsa aquí**: el paso 2 la deja pasar tal
         /// cual (decisión 3A de Jürgen, ticket `cloud-signout-collapses-a-groups-session-expiry-into-permanent`).
         ///
-        /// **Queda UN colapso vivo, con su ticket.** El paso 1 —el push-all PERSONAL, que corre ANTES— escribe
-        /// `.permanent` para todo motivo salvo el del teléfono sin App Attest (`.personalAttestUnavailable`, 2026-09-15) y
-        /// los tres del motor parado (`.syncStoppedNeedsUpdate`/`.syncStoppedMidMigration`/`.syncStoppedNeedsRelaunch`,
-        /// 2026-09-25), así que con filas personales pendientes es él quien bloquea y el aviso vuelve a ser el genérico
-        /// (`cloud-signout-collapses-the-personal-push-all-reason-into-permanent`).
+        /// **Y desde el 2026-09-25 el paso 1 —el push-all PERSONAL, que corre ANTES— tampoco** (ticket
+        /// `cloud-signout-collapses-the-personal-push-all-reason-into-permanent`): la subida que no llegó, la sesión caducada y
+        /// el guardado que se asienta viajan con su motivo (`personalPushAllShownReason`). Aquí solo llega ya lo que de verdad
+        /// no se puede nombrar mejor: la cuenta no disponible, o no tener motor.
         case permanent
         /// El cierre PRIVADO esperó a que el último cambio llegara a iCloud y agotó el presupuesto. Es el
         /// único bloqueo del móvil propio con salida de emergencia (decisión de Jürgen, 2026-09-09): tras
@@ -273,11 +273,9 @@ nonisolated enum CloudSignOutFlowLogic {
         /// «revisa tu conexión» —mandando a buscar un fallo que no existe— y sin nombrar lo único que ayuda,
         /// que es esperar. Ticket `cloud-signout-collapses-every-groups-transient-into-permanent`.
         ///
-        /// **En la NUBE sigue habiendo una mitad que este motivo no alcanza, y no es suya.** El paso 1 de ese
-        /// cierre sube lo personal y bloquea antes, con `.permanent` salvo el teléfono sin App Attest, así que
-        /// ante un corte de red con filas personales pendientes la persona sigue viendo el aviso genérico. Con el
-        /// outbox personal vacío —lo normal: ese push-all corta en `.drained` sin ciclar— manda éste. Ticket
-        /// propio: `cloud-signout-collapses-the-personal-push-all-reason-into-permanent`.
+        /// **En la NUBE, si lo trae el motor PERSONAL, el paso 1 lo traduce a `.personalUploadRetryLater`** (2026-09-25):
+        /// el hecho es el mismo, pero este texto habla de tus grupos. Desde ese día el motor personal también tiene el
+        /// testigo (`CloudSyncRuntime.stoppedByFailedUpload(for:)`).
         ///
         /// **Quién lo pinta, medido el 2026-09-16 con los cuatro caminos produciéndolo.** Ajustes y la hoja del
         /// cambio de Apple ID ya lo enseñaban por el camino de la nube, con el título genérico —«No pudimos
@@ -345,6 +343,16 @@ nonisolated enum CloudSignOutFlowLogic {
         /// (review adversarial del 2026-09-25, dos lentes). Lo que lo cura es reabrir la app. Mismo ticket que los dos de
         /// arriba.
         case syncStoppedNeedsRelaunch
+        /// **La subida de tus cambios PERSONALES a la nube no llegó al servidor** —sin red, un 5xx, una respuesta ilegible—,
+        /// y el cierre en la nube bloquea sin borrar nada (ticket `cloud-signout-collapses-the-personal-push-all-reason-into-permanent`,
+        /// 2026-09-25). Es `.uploadRetryLater` dicho de tus datos y no de tus grupos: lo produce SOLO el paso 1 del cierre en
+        /// la nube, traduciendo el `.uploadRetryLater` que `classify` devuelve con el testigo del motor personal
+        /// (`CloudSyncRuntime.stoppedByFailedUpload(for:)`).
+        ///
+        /// Hasta ese día este caso salía como `.permanent` —«revisa tu conexión»— a quien tenía la conexión bien y el
+        /// servidor fallando, y sin decir lo único cierto: no se pierde nada y se vuelve a intentar en un rato. Va al final del
+        /// `enum` para no mover el orden de los que ya existían.
+        case personalUploadRetryLater
 
         /// Slug corto para los logs (`CloudSyncBreadcrumb.signOutGroupsBlocked`). Va aquí y no en el
         /// emisor para que un motivo nuevo tenga que nombrarse una sola vez: el `switch` es exhaustivo.
@@ -363,6 +371,7 @@ nonisolated enum CloudSignOutFlowLogic {
             case .syncStoppedNeedsUpdate: return "sync-stopped-needs-update"
             case .syncStoppedMidMigration: return "sync-stopped-mid-migration"
             case .syncStoppedNeedsRelaunch: return "sync-stopped-needs-relaunch"
+            case .personalUploadRetryLater: return "personal-upload-retry-later"
             }
         }
     }
@@ -412,25 +421,43 @@ nonisolated enum CloudSignOutFlowLogic {
         // `.personalAttestUnavailable` es del paso 1, sobre el outbox PERSONAL: este productor, que traduce el de grupos, no
         // lo recibe nunca.
         case .exportUnconfirmed, .bridgeUnreadable, .detachBusy, .personalAttestUnavailable: return .permanent
-        // Los dos del motor parado son del paso 1, sobre el outbox PERSONAL: este productor no los recibe nunca.
-        case .syncStoppedNeedsUpdate, .syncStoppedMidMigration, .syncStoppedNeedsRelaunch: return .permanent
+        // Los del motor parado y la subida personal que no llegó son del paso 1, sobre el outbox PERSONAL: este productor no
+        // los recibe nunca.
+        case .syncStoppedNeedsUpdate, .syncStoppedMidMigration, .syncStoppedNeedsRelaunch, .personalUploadRetryLater:
+            return .permanent
         }
     }
 
     /// El motivo que el cierre en la NUBE enseña cuando su paso 1 —el push-all PERSONAL— bloquea por algo que no es el
     /// teléfono sin App Attest (ese lo traduce el propio paso a `.personalAttestUnavailable`, con su oferta).
     ///
-    /// **Solo los tres del motor parado viajan tal cual** (ticket `cloud-signout-with-the-engine-stopped-says-check-your-connection`,
-    /// 2026-09-25): su aviso nombra la salida real. Todo lo demás sigue colapsado en `.permanent` —«revisa tu conexión»—, y
-    /// ése es el colapso con ticket propio (`cloud-signout-collapses-the-personal-push-all-reason-into-permanent`): aquí es
-    /// donde se arregla. `switch` exhaustivo para que un motivo nuevo tenga que decidir si viaja.
+    /// **Hasta el 2026-09-25 todo lo que no fuera el motor parado se colapsaba aquí en `.permanent`** —«revisa tu conexión»—,
+    /// también un 5xx y una sesión caducada (ticket `cloud-signout-collapses-the-personal-push-all-reason-into-permanent`).
+    /// Hoy es la gemela de `cloudSignOutGroupsBlockReason` para el motor personal, con la misma decisión que Jürgen tomó
+    /// para grupos el 2026-09-14/15:
+    ///  · **la subida que no llegó** pasa a `.personalUploadRetryLater`: el mismo hecho que `.uploadRetryLater`, dicho de tus
+    ///    datos. Llega separada porque el motor personal ya tiene su testigo (`CloudSyncRuntime.stoppedByFailedUpload(for:)`).
+    ///  · **la sesión caducada**, tal cual: su aviso pide volver a entrar, que es lo único que sube esos cambios.
+    ///  · **el guardado que se asienta** (`.transient`, sin el testigo), tal cual: «un momento más» es exacto para el tope
+    ///    de iteraciones con el outbox aún drenando, y para el que se agota con ciclos `.coalesced` —un ciclo de la
+    ///    cadencia en vuelo que el cierre no puede adelantar—. Un fallo local del ciclo (el `fetch` del outbox) también
+    ///    cae aquí: es de este teléfono y no del servidor.
+    ///  · **los tres del motor parado**, tal cual (ticket `cloud-signout-with-the-engine-stopped-says-check-your-connection`).
+    ///  · **`.permanent`** —la cuenta no disponible— se queda donde está: es el texto que no afirma ninguna causa.
+    ///
+    /// El teléfono sin App Attest no pasa por aquí: el propio paso 1 lo traduce a `.personalAttestUnavailable`, con su
+    /// oferta. Lo que el motor personal no puede emitir cae en `.permanent`. `switch` exhaustivo para que un motivo nuevo
+    /// tenga que decidir si viaja.
     static func personalPushAllShownReason(_ reason: BlockReason) -> BlockReason {
         switch reason {
+        case .uploadRetryLater, .personalUploadRetryLater: return .personalUploadRetryLater
+        case .sessionExpired: return .sessionExpired
+        case .transient: return .transient
         case .syncStoppedNeedsUpdate: return .syncStoppedNeedsUpdate
         case .syncStoppedMidMigration: return .syncStoppedMidMigration
         case .syncStoppedNeedsRelaunch: return .syncStoppedNeedsRelaunch
-        case .transient, .permanent, .exportUnconfirmed, .sessionExpired, .bridgeUnreadable, .detachBusy,
-             .channelPaused, .uploadRetryLater, .attestUnavailable, .personalAttestUnavailable:
+        case .permanent, .exportUnconfirmed, .bridgeUnreadable, .detachBusy, .channelPaused, .attestUnavailable,
+             .personalAttestUnavailable:
             return .permanent
         }
     }
@@ -502,8 +529,8 @@ nonisolated enum CloudSignOutFlowLogic {
     ///
     /// **Cuenta solo con `.transient`**, como el del attest; y va DESPUÉS de él, porque un teléfono que lleva un día
     /// sin App Attest tiene su propio aviso y no es un problema de subida. Sin valor por defecto, por lo mismo que
-    /// los otros dos: quien no tenga la señal —el motor personal, cuyo consumidor colapsa todo a `.permanent`—
-    /// escribe `false` y lo dice.
+    /// los otros dos: quien no tenga la señal la escribe `false` y lo dice. Desde el 2026-09-25 el motor personal la tiene
+    /// (`CloudSyncRuntime.stoppedByFailedUpload(for:)`).
     static func classify(_ outcome: SyncCadencePolicy.CadenceOutcome,
                          channelKilled: Bool,
                          attestUnavailable: Bool,
@@ -519,7 +546,8 @@ nonisolated enum CloudSignOutFlowLogic {
         // segundos» era falso (no se estaba guardando nada) y volver a pulsar costaba otros 45 s de lo mismo.
         //
         // **Todo lo demás se queda en `.transient`, y esa asimetría es el arreglo, no un descuido.** El testigo lo
-        // enciende el push y solo el push, así que sin él aquí caen el `save()` local de una página que no entra, el
+        // enciende el push y solo el push (y en el motor personal su puerta de attest, que no sube sin el pase del
+        // servidor), así que sin él aquí caen el `save()` local de una página que no entra, el
         // tope de páginas del pull, el `fetch` del outbox y la fila poison — cosas de este teléfono, para las que
         // «un momento más» es lo honesto y los 45 s de reintentos son justo lo que hace que el gesto termine solo.
         //
@@ -723,10 +751,13 @@ nonisolated enum GroupsSignOutRetryDecision {
         //
         // **Y los dos del motor parado** (2026-09-25), que tampoco nacen aquí: esperar 45 s no actualiza la app ni termina
         // una vuelta a iCloud.
+        //
+        // **Y `.personalUploadRetryLater`** (2026-09-25), que tampoco nace aquí: es `.uploadRetryLater` dicho de tus datos, y
+        // se decide igual.
         if reason == .permanent || reason == .sessionExpired || reason == .channelPaused
             || reason == .uploadRetryLater || reason == .attestUnavailable || reason == .personalAttestUnavailable
             || reason == .syncStoppedNeedsUpdate || reason == .syncStoppedMidMigration
-            || reason == .syncStoppedNeedsRelaunch {
+            || reason == .syncStoppedNeedsRelaunch || reason == .personalUploadRetryLater {
             return .surfacePermanent
         }
         if elapsedSeconds < budgetSeconds { return .retryAfter(seconds: retryIntervalSeconds) }

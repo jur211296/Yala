@@ -170,6 +170,20 @@ final class CloudSyncRuntime {
     /// anterior no puede convertir el corte de red de éste en «este teléfono no puede sincronizar».
     private var lastCycleStoppedAtAttestGate = false
 
+    /// **¿Paró el último ciclo sin que la subida llegara al servidor?** Testigo por ciclo, molde
+    /// `GroupsSyncClient.lastCycleFailedUpload`: `performCycle` lo baja al entrar. Lo encienden dos sitios: el push que
+    /// devuelve `.transient` habiendo chocado con el servidor (`SyncPushClient.lastPushFailedAtServer`), y la puerta de attest
+    /// que devuelve `.transient` — el ciclo paró antes de subir porque no consiguió el pase del servidor, y esperar unos
+    /// segundos no lo cura (va con backoff). Ni el `fetch` del outbox, ni una fila que no se deja convertir, ni el pull.
+    /// Un push `.completed` también lo copia del cliente: la subida pudo quedar a medias (un trozo que falló, un rechazo
+    /// `upstream_*`) y es el pull de detrás el que puede parar el ciclo (review adversarial del 2026-09-25).
+    ///
+    /// **La puerta de attest lo enciende con cualquier error, también uno de este teléfono** (un `DCError` de DeviceCheck),
+    /// y es a propósito: es la decisión de Grupos, que marca igual el 401 del attest por debajo de las 24 h. Para quien lo
+    /// oye, «no llegaron a la nube, inténtalo en un rato» es literal, y «espera unos segundos» no lo sería: la puerta va
+    /// con backoff. Con la racha terminal manda `.attestUnavailable`, que `classify` mira antes.
+    private var lastCycleFailedUpload = false
+
     /// Cuando `true`, `liveOutboxRows(_:)` LANZA. Mismo molde y mismo porqué que sus dos gemelos de la
     /// migración. SOLO tests.
     var _testThrowOnOutboxFetch = false
@@ -193,6 +207,16 @@ final class CloudSyncRuntime {
         (outcome == .transient || outcome == .accountUnavailable)
             && lastCycleStoppedAtAttestGate
             && GroupsAttestStreakStore.isTerminal()
+    }
+
+    /// ¿Paró el ciclo que acaba de correr porque la SUBIDA no llegó al servidor? Es la señal que el push-all previo a cerrar
+    /// sesión en la nube necesita para decir «no llegaron a la nube, inténtalo en un rato» en vez de «un momento más» o, como
+    /// hasta el 2026-09-25, «revisa tu conexión» (`CloudSignOutFlowLogic.BlockReason.personalUploadRetryLater`, ticket
+    /// `cloud-signout-collapses-the-personal-push-all-reason-into-permanent`). Molde
+    /// `GroupsSyncClient.stoppedByFailedUpload(for:)`: solo cuenta con `.transient`, porque un `.coalesced` describe un ciclo
+    /// ajeno y el resto de outcomes ya dicen su causa.
+    func stoppedByFailedUpload(for outcome: SyncCadencePolicy.CadenceOutcome) -> Bool {
+        outcome == .transient && lastCycleFailedUpload
     }
 
     // MARK: Init
@@ -559,6 +583,7 @@ final class CloudSyncRuntime {
     private func performCycle() async -> SyncCadencePolicy.CadenceOutcome {
         // El testigo del attest es de ESTE ciclo (ver `lastCycleStoppedAtAttestGate`), también si sale sin contexto.
         lastCycleStoppedAtAttestGate = false
+        lastCycleFailedUpload = false
         guard let context else { return .transient }
         let epoch = sessionEpoch
 
@@ -570,6 +595,8 @@ final class CloudSyncRuntime {
         case .ok:
             break
         case .transient:
+            // Sin el pase del servidor no se sube nada, y el backoff no se cura en segundos (ver `lastCycleFailedUpload`).
+            lastCycleFailedUpload = true
             return .transient
         case .terminal:
             MetricsService.cloudSyncBlockedByAttestUnavailable(platform: "ios")
@@ -614,11 +641,17 @@ final class CloudSyncRuntime {
                 case .completed(let results):
                     await pushClient.applyResults(results, rows: buildable, engine: engine, context: context)
                     guard epoch == sessionEpoch else { return .coalesced }  // teardown durante applyResults
+                    // Un `.completed` también puede traer la subida a medias: un trozo que falló tras otro confirmado, o
+                    // un rechazo `upstream_*`. El ciclo sigue al pull, y si ése falla, el testigo es lo que dice que lo
+                    // pendiente no llegó (review adversarial del 2026-09-25, dos lentes).
+                    lastCycleFailedUpload = pushClient.lastPushFailedAtServer
                 case .sessionExpired:
                     return .sessionExpired
                 case .accountUnavailable:
                     return .accountUnavailable
                 case .transient:
+                    // Solo si chocó con el servidor: una fila que no se deja convertir es de este teléfono.
+                    lastCycleFailedUpload = pushClient.lastPushFailedAtServer
                     return .transient
                 }
             }

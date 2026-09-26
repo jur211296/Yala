@@ -1104,13 +1104,11 @@ final class CloudMigrationController {
                 // (`CloudSyncRuntime.stoppedByUnavailableAttest(for:)`, ticket
                 // `cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes`).
                 attestUnavailable: runtime.stoppedByUnavailableAttest(for: outcome),
-                // El motor personal no tiene ese testigo, y aquí `false` no pierde nada: su ÚNICO consumidor —el paso
-                // 1 del cierre en la nube— colapsa a `.permanent` todo motivo que no sea el teléfono sin App Attest,
-                // así que lo pasajero acaba igual venga separado o no. Escrito y no heredado por defecto, como
-                // `channelKilled`: el día que ese colapso se arregle
-                // (`cloud-signout-collapses-the-personal-push-all-reason-into-permanent`), esta línea es donde hay
-                // que cablear el testigo del transporte de `SyncPushClient`, y no en `classify`.
-                uploadFailed: false,
+                // ¿Paró este ciclo porque la subida no llegó al servidor? El testigo del motor personal
+                // (`CloudSyncRuntime.stoppedByFailedUpload(for:)`, 2026-09-25): separa lo pasajero en sus dos mitades como
+                // en Grupos, y el paso 1 del cierre en la nube lo enseña como `.personalUploadRetryLater` en vez del
+                // «revisa tu conexión» de antes (ticket `cloud-signout-collapses-the-personal-push-all-reason-into-permanent`).
+                uploadFailed: runtime.stoppedByFailedUpload(for: outcome),
                 iteration: iteration,
                 maxIterations: maxIterations
             ) {
@@ -1126,8 +1124,9 @@ final class CloudMigrationController {
                 break  // cancelación del caller
             }
         }
-        // Tope alcanzado con pendientes: transitorio (aún drenando; el consumidor `.cloud`/
-        // secundario lo re-mapea a su alert permanente al fijar la fase — byte-idéntico).
+        // Tope alcanzado con pendientes, o el gesto cancelado en la pausa: transitorio (aún drenando). Desde el 2026-09-25
+        // el paso 1 del cierre en la nube lo enseña tal cual —«un momento más»— (`personalPushAllShownReason`); hasta ese
+        // día lo aplanaba en el aviso de la conexión.
         return .blocked(pendingCount: livePendingCount(), reason: .transient)
     }
 

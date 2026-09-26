@@ -27,3 +27,6 @@ mezclan los dos registros según el motivo.
 
 Barrer `es-AR` en busca de la misma deuda —esto es una muestra, no el inventario— y adaptar. Es sólo
 gramática verbal: `BRAND-VOICE` §9.4 prohíbe expresamente los modismos.
+
+**2026-09-25:** `groups.errors.sessionExpired` se ve más desde hoy: también lo enseña el paso 1 del cierre en la nube con
+cambios personales y la sesión caducada (`cloud-signout-collapses-the-personal-push-all-reason-into-permanent`).
