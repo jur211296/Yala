@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (606)
+## Index (608)
 
 | id | status | path |
 |---|---|---|
@@ -178,7 +178,9 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | personal-clock-rollback-wedges-the-drain-forever | qa | tickets/qa/personal-clock-rollback-wedges-the-drain-forever.md |
 | personal-clock-ahead-wins-every-conflict-until-real-time-catches-up | backlog | tickets/backlog/personal-clock-ahead-wins-every-conflict-until-real-time-catches-up.md |
 | private-sign-out-counts-group-writes-without-capturing-them | backlog | tickets/backlog/private-sign-out-counts-group-writes-without-capturing-them.md |
-| personal-sign-out-reads-an-unfinished-drain-as-nothing-pending | backlog | tickets/backlog/personal-sign-out-reads-an-unfinished-drain-as-nothing-pending.md |
+| personal-sign-out-reads-an-unfinished-drain-as-nothing-pending | qa | tickets/qa/personal-sign-out-reads-an-unfinished-drain-as-nothing-pending.md |
+| personal-drain-that-always-aborts-blocks-cloud-sign-out-with-a-wait-a-moment-copy | backlog | tickets/backlog/personal-drain-that-always-aborts-blocks-cloud-sign-out-with-a-wait-a-moment-copy.md |
+| cloud-sign-out-final-recount-misses-edits-left-only-in-history | backlog | tickets/backlog/cloud-sign-out-final-recount-misses-edits-left-only-in-history.md |
 | unit-tests-write-group-amounts-into-the-real-app-group-mirror | backlog | tickets/backlog/unit-tests-write-group-amounts-into-the-real-app-group-mirror.md |
 | late-icloud-notice-exit-after-a-failed-wipe-leaves-the-blind-resume-armed | backlog | tickets/backlog/late-icloud-notice-exit-after-a-failed-wipe-leaves-the-blind-resume-armed.md |
 | push-unexpected-4xx-is-told-to-try-again-later | backlog | tickets/backlog/push-unexpected-4xx-is-told-to-try-again-later.md |

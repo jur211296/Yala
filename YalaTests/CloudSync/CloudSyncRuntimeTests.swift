@@ -751,19 +751,26 @@ struct CloudSyncRuntimeTests {
 
     // MARK: - Purga de History (§i.6, doble-DARK)
 
+    /// El ancla del drain personal (`SyncCursor.lastDrainedTxAt`): hasta dónde consumió el drain el History.
+    private func personalAnchor(_ context: ModelContext) throws -> Date? {
+        try context.fetch(FetchDescriptor<SyncCursor>()).first?.lastDrainedTxAt
+    }
+
+    private func historyCount(_ context: ModelContext, before cut: Date? = nil) throws -> Int {
+        guard let cut else { return try context.fetchHistory(HistoryDescriptor<DefaultHistoryTransaction>()).count }
+        return try context.fetchHistory(
+            HistoryDescriptor<DefaultHistoryTransaction>(predicate: #Predicate { $0.timestamp < cut })).count
+    }
+
     @Test func purgeHistoryOnce_respectsSafeCut_withUnconfirmedOutboxRow() throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
         let engine = CloudSyncEngine()
-
-        // Generar history real: un save de dominio.
-        let tx = TransactionItem(date: Date(timeIntervalSince1970: 1_700_000_000),
-                                 amount: -5, currencyCode: "USD")
-        context.insert(tx)
-        try context.save()
-        let historyBefore = try context.fetchHistory(
-            HistoryDescriptor<DefaultHistoryTransaction>()).count
-        #expect(historyBefore > 0)
+        // History real y consumida: dos ediciones drenadas y confirmadas (el ancla queda en la segunda).
+        try seedHistoryWithEmptyOutbox(engine: engine, context: context)
+        let anchor = try #require(try personalAnchor(context), "sin ancla la purga no corre y esto no prueba nada")
+        let historyBefore = try historyCount(context)
+        #expect(try historyCount(context, before: anchor) > 0, "control: hay History consumida que purgar")
 
         // Fila de outbox SIN confirmar con createdAt en el pasado remoto → el corte queda EN ella:
         // nada por delante de la fila sin-2xx más vieja se purga (invariante §d.5).
@@ -775,29 +782,172 @@ struct CloudSyncRuntimeTests {
 
         let purged = engine.purgeHistoryOnce(context: context, now: .now)
         #expect(purged == nil)  // corte = distantPast → 0 transacciones por delante → no purga
-        let historyAfter = try context.fetchHistory(
-            HistoryDescriptor<DefaultHistoryTransaction>()).count
-        #expect(historyAfter >= historyBefore)  // history INTACTA (el insert del outbox pudo sumar)
+        #expect(try historyCount(context) >= historyBefore)  // history INTACTA (el insert del outbox pudo sumar)
 
-        // Al confirmar (purgar) la fila, el corte avanza a `now` → TODO lo anterior se purga.
+        // Al confirmar (purgar) la fila, el corte avanza hasta el ancla del drain → lo anterior se purga, y el ancla no.
         engine.confirmUploaded(syncID: unconfirmed.syncID, hlc: hlc(1), context: context)
         let purged2 = engine.purgeHistoryOnce(context: context, now: .now)
         #expect((purged2 ?? 0) > 0)
-        let historyFinal = try context.fetchHistory(
-            HistoryDescriptor<DefaultHistoryTransaction>()).count
-        #expect(historyFinal == 0)
+        #expect(try historyCount(context, before: anchor) == 0, "todo lo consumido antes del ancla se va")
+        #expect(try historyCount(context) > 0, "la transacción del ancla —la del token— se queda")
     }
 
-    /// Prepara un contexto con history real y el outbox VACÍO (drain + confirm), para que el ciclo del
-    /// runtime no necesite push (el corte de la purga queda en `now`, sin fila sin-2xx que lo frene).
-    private func seedHistoryWithEmptyOutbox(engine: CloudSyncEngine, context: ModelContext) throws {
-        let tx = TransactionItem(date: Date(timeIntervalSince1970: 1_700_000_000),
-                                 amount: -5, currencyCode: "USD")
-        context.insert(tx)
+    /// Ticket `personal-sign-out-reads-an-unfinished-drain-as-nothing-pending` (2026-09-26). La purga cortaba en `now`
+    /// suponiendo que el drain ya había consumido todo. Una edición guardada DESPUÉS del último drain del ciclo —los
+    /// reconciliadores del pull, o la persona durante la espera de red de las preferencias— se purgaba sin que ningún
+    /// drain la viera, y no subía nunca. El drain siguiente tampoco la encontraba: su token apuntaba a History borrada.
+    @Test("MUTACIÓN: la purga no se lleva lo que el drain no consumió, ni la transacción de su token")
+    func purgeHistoryOnce_keepsWhatTheDrainHasNotConsumed() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        try seedHistoryWithEmptyOutbox(engine: engine, context: context)
+        let anchor = try #require(try personalAnchor(context))
+
+        usleep(20_000)
+        context.insert(TransactionItem(date: Date(timeIntervalSince1970: 1_700_000_500), amount: -7, currencyCode: "USD"))
+        try context.save()   // la edición que llega después del drain
+
+        let purged = engine.purgeHistoryOnce(context: context, now: .now)
+        #expect((purged ?? 0) > 0, "control: lo consumido sí se purga")
+        #expect(try historyCount(context, before: anchor) == 0)
+
+        let boundedBefore = engine.historyTokenBrokenBoundedCount
+        #expect(engine.drainOnce(context: context))
+        #expect(engine.historyTokenBrokenBoundedCount == boundedBefore, "el token sigue vivo: el drain no cae al respaldo")
+        #expect(try outbox(context).count == 1, "el drain siguiente encuentra la edición y la encola")
+    }
+
+    /// Un reloj que retrocede no adelanta el corte: `min(now, ancla)`.
+    @Test("MUTACIÓN: con `now` por detrás del ancla, la purga corta en `now`")
+    func purgeHistoryOnce_clockBehindTheAnchor_cutsAtNow() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        try seedHistoryWithEmptyOutbox(engine: engine, context: context)
+        let before = try historyCount(context)
+        #expect(engine.purgeHistoryOnce(context: context, now: .distantPast) == nil)
+        #expect(try historyCount(context) == before)
+    }
+
+    /// Las instalaciones de antes del 2026-09-26 llegan con el token apuntando a History que la purga vieja ya borró: su
+    /// fetch por token lanza. El drain lo resuelve con el re-escaneo acotado por el ancla; la sonda tiene que leer lo
+    /// mismo, o el cierre con motor se quedaría en «no se sabe» —bloqueado— en un teléfono quieto, para siempre.
+    @Test("MUTACIÓN: con el token purgado, la sonda lee la ventana del drain en vez de «no se sabe»")
+    func uncapturedProbe_withAPurgedToken_readsTheDrainWindow() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        let runtime = makeRuntime(engine: engine, session: StubCloudSession(userID: "u1"))
+        try seedHistoryWithEmptyOutbox(engine: engine, context: context)
+        try context.deleteHistory(HistoryDescriptor<DefaultHistoryTransaction>())   // la purga vieja, hasta `now`
+        #expect(try historyCount(context) == 0, "control de escenario: el History está vacío y el token, huérfano")
+        let tokenData = try #require(try context.fetch(FetchDescriptor<SyncCursor>()).first?.historyTokenData)
+        let token = try JSONDecoder().decode(DefaultHistoryToken.self, from: tokenData)
+        #expect(throws: (any Error).self, "control de escenario: el fetch por un token purgado lanza") {
+            _ = try context.fetchHistory(HistoryDescriptor<DefaultHistoryTransaction>(predicate: #Predicate { $0.token > token }))
+        }
+
+        #expect(runtime.hasUncapturedPersonalChanges(context: context) == false, "nada que el drain vaya a leer")
+
+        usleep(20_000)
+        context.insert(TransactionItem(date: Date(timeIntervalSince1970: 1_700_000_900), amount: -8, currencyCode: "USD"))
         try context.save()
-        engine.drainOnce(context: context)
-        for row in try outbox(context) {
-            engine.confirmUploaded(syncID: row.syncID, hlc: row.hlc, context: context)
+        #expect(runtime.hasUncapturedPersonalChanges(context: context) == true, "la edición nueva sí")
+    }
+
+    /// El drain consume por TOKEN y la purga borra por TIMESTAMP. Con el reloj por detrás del ancla (la hora estuvo
+    /// adelantada y volvió), una edición sin consumir lleva un timestamp ANTERIOR al ancla; con `min(now, ancla)` se purgaba
+    /// igual. El ancla se adelanta a mano: es lo que deja un drain que consumió con la hora adelantada.
+    @Test("MUTACIÓN: con el reloj por detrás del ancla, la purga no se lleva una edición sin consumir")
+    func purgeHistoryOnce_clockRewound_keepsAnUnconsumedEditBelowTheAnchor() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        try seedHistoryWithEmptyOutbox(engine: engine, context: context)
+        let cursor = try #require(try context.fetch(FetchDescriptor<SyncCursor>()).first)
+        cursor.lastDrainedTxAt = Date().addingTimeInterval(3600)
+        try context.save()
+
+        usleep(20_000)
+        context.insert(TransactionItem(date: Date(timeIntervalSince1970: 1_700_000_700), amount: -9, currencyCode: "USD"))
+        try context.save()
+        let editAt = try #require(try context.fetchHistory(HistoryDescriptor<DefaultHistoryTransaction>())
+            .last { $0.author != CloudSyncEngine.outboxSaveAuthor && CloudSyncEngine.isPersonalStoreTransaction($0) }?
+            .timestamp)
+
+        _ = engine.purgeHistoryOnce(context: context, now: .now)
+        #expect(try historyCount(context, before: editAt) == 0, "control: lo anterior a la edición sí se purga")
+        let kept = try context.fetchHistory(
+            HistoryDescriptor<DefaultHistoryTransaction>(predicate: #Predicate { $0.timestamp >= editAt })).count
+        #expect(kept > 0, "la edición sin consumir sobrevive aunque su timestamp quede por debajo del ancla")
+    }
+
+    /// El paso 3-bis del drain: hasta que un drain valide el token en este proceso, el token puede venir de otro mount y
+    /// excluir lo nuevo sin lanzar. Se simula con un token que apunta DESPUÉS de la edición y el ancla antes de ella.
+    @Test("MUTACIÓN: con el token sin validar, la sonda también mira lo posterior al ancla")
+    func uncapturedProbe_unvalidatedToken_alsoReadsPastTheAnchor() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        try seedHistoryWithEmptyOutbox(engine: CloudSyncEngine(), context: context)
+        usleep(20_000)
+        context.insert(TransactionItem(date: Date(timeIntervalSince1970: 1_700_000_800), amount: -4, currencyCode: "USD"))
+        try context.save()   // la edición sin capturar
+        context.insert(TransactionItem(date: Date(timeIntervalSince1970: 1_700_000_801), amount: -3, currencyCode: "USD"))
+        context.author = CloudSyncEngine.outboxSaveAuthor
+        try context.save()   // una transacción del motor, por detrás de la edición
+        context.author = nil
+        let lastEngineTx = try #require(try context.fetchHistory(HistoryDescriptor<DefaultHistoryTransaction>())
+            .last { $0.author == CloudSyncEngine.outboxSaveAuthor && CloudSyncEngine.isPersonalStoreTransaction($0) })
+        let cursor = try #require(try context.fetch(FetchDescriptor<SyncCursor>()).first)
+        cursor.historyTokenData = try JSONEncoder().encode(lastEngineTx.token)   // el token «de otro mount» tapa la edición
+        try context.save()
+
+        // Un motor recién creado: ningún drain ha validado el token en este proceso.
+        let runtime = makeRuntime(engine: CloudSyncEngine(), session: StubCloudSession(userID: "u1"))
+        #expect(runtime.hasUncapturedPersonalChanges(context: context) == true)
+    }
+
+    @Test("sin ancla del drain —no ha consumido nada— la purga no borra nada")
+    func purgeHistoryOnce_withoutAnAnchor_purgesNothing() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        context.insert(TransactionItem(date: Date(timeIntervalSince1970: 1_700_000_000), amount: -5, currencyCode: "USD"))
+        try context.save()
+        let before = try historyCount(context)
+        #expect(before > 0)
+
+        #expect(engine.purgeHistoryOnce(context: context, now: .now) == nil)
+        #expect(try historyCount(context) == before, "una edición que ningún drain vio no se purga")
+
+        // Con cursor y token pero sin ancla (un cursor anterior al schema del ancla): tampoco. Purgar hasta `now` se
+        // llevaría la transacción de su token, y el drain caería al re-escaneo completo sin ancla en cada vuelta.
+        let dir2 = freshDir(); defer { cleanup(dir2) }
+        let context2 = try makeContext(dir2)
+        let engine2 = CloudSyncEngine()
+        try seedHistoryWithEmptyOutbox(engine: engine2, context: context2)
+        let cursor = try #require(try context2.fetch(FetchDescriptor<SyncCursor>()).first)
+        #expect(cursor.historyTokenData != nil, "control de escenario: el token sigue ahí")
+        cursor.lastDrainedTxAt = nil
+        try context2.save()
+        let before2 = try historyCount(context2)
+        #expect(engine2.purgeHistoryOnce(context: context2, now: .now) == nil)
+        #expect(try historyCount(context2) == before2, "sin ancla no hay nada consumido que purgar")
+    }
+
+    /// Prepara un contexto con history real y CONSUMIDA y el outbox VACÍO: dos ediciones, cada una drenada y confirmada,
+    /// para que el ciclo del runtime no necesite push y quede History por debajo del ancla (la segunda) que purgar.
+    private func seedHistoryWithEmptyOutbox(engine: CloudSyncEngine, context: ModelContext) throws {
+        for amount in [-5.0, -6.0] {
+            let tx = TransactionItem(date: Date(timeIntervalSince1970: 1_700_000_000), amount: amount, currencyCode: "USD")
+            context.insert(tx)
+            try context.save()
+            engine.drainOnce(context: context)
+            for row in try outbox(context) {
+                engine.confirmUploaded(syncID: row.syncID, hlc: row.hlc, context: context)
+            }
+            usleep(20_000)   // timestamps distintos: la primera queda estrictamente por debajo del ancla
         }
     }
 
@@ -822,10 +972,10 @@ struct CloudSyncRuntimeTests {
         #expect(history >= historyBefore)  // NADA purgado con el flag off
     }
 
-    /// Con el canal de Grupos APAGADO no queda ningún suelo que retenga el corte ⇒ la purga llega hasta
-    /// `now` y la History queda vacía.
+    /// Con el canal de Grupos APAGADO el único suelo es el del drain personal ⇒ la purga llega hasta su ancla
+    /// (hasta el 2026-09-26 llegaba hasta `now` y la History quedaba vacía).
     ///
-    /// El apagado explícito NO es cosmético: es la precondición de `history == 0`, y sin fijarla el
+    /// El apagado explícito NO es cosmético: es la precondición de «nada por debajo del ancla», y sin fijarla el
     /// resultado lo decidía el SCHEME. `Yala Dev` define `DEV_BUILD` ⇒ el default-ausente de remote-config
     /// es ON ⇒ el paso 5.6 corre el piggyback de Grupos ⇒ su `GroupSyncCursor.lastDrainedTxAt` entra como
     /// suelo en `deleteHistorySafeCut` (que devuelve `floors.min()`) ⇒ la purga no puede bajar a cero y la
@@ -847,18 +997,24 @@ struct CloudSyncRuntimeTests {
 
         let runtime = makeRuntime(engine: engine, pull: StubSession(body: emptyPageJSON()),
                                   session: StubCloudSession(userID: "u1"))
-        // Ciclo completed (outbox vacío → sin push; pull vacío) + ambos flags → purga hasta `now`.
+        // Ciclo completed (outbox vacío → sin push; pull vacío) + ambos flags → purga hasta el ancla del drain (no hasta
+        // `now` desde el 2026-09-26: lo que el drain no consumió, y la transacción de su token, se quedan).
+        let before = try historyCount(context)
         let outcome = await runtime.syncCycle(context: context)
         #expect(outcome == .completed)
-        let history = try context.fetchHistory(HistoryDescriptor<DefaultHistoryTransaction>()).count
-        #expect(history == 0)
+        let anchor = try #require(try personalAnchor(context))
+        #expect(try historyCount(context, before: anchor) == 0, "todo lo consumido antes del ancla se va")
+        let history = try historyCount(context)
+        #expect(history > 0, "la transacción del ancla se queda")
+        #expect(history < before, "control: la purga corrió")
     }
 
     /// La otra mitad, y la que describe producción: con el canal de Grupos ENCENDIDO el paso 5.6 deja un
     /// `GroupSyncCursor.lastDrainedTxAt`, y ese es un suelo más del corte. La purga tiene que llegar
-    /// EXACTAMENTE hasta él —ni menos (no purgar sería el bug que la purga existe para evitar) ni más
-    /// (pasarse borra la History de una fila del outbox de Grupos antes de que su drain la vea, y esa fila
-    /// se queda local para siempre: el bug que cierra `GroupsHistoryCutFloorTests`)—.
+    /// EXACTAMENTE hasta el menor de los suelos —el de Grupos o, desde el 2026-09-26, el ancla del drain
+    /// personal—: ni menos (no purgar sería el bug que la purga existe para evitar) ni más (pasarse borra la
+    /// History de una fila del outbox de Grupos antes de que su drain la vea, y esa fila se queda local para
+    /// siempre: el bug que cierra `GroupsHistoryCutFloorTests`, donde el suelo de Grupos se mide solo)—.
     ///
     /// El piggyback se inyecta con un `GroupsSyncClient` PROPIO en vez del singleton: `shared` arrastraría
     /// su estado (`historyTokenValidated`, reloj, cursor de ciclo) entre tests y no tiene `_testReset()`.
@@ -890,10 +1046,10 @@ struct CloudSyncRuntimeTests {
             try context.fetch(FetchDescriptor<GroupSyncCursor>()).first?.lastDrainedTxAt,
             "el piggyback tiene que dejar su ancla: sin ella este test no prueba nada")
 
-        let below = try context.fetchHistory(
-            HistoryDescriptor<DefaultHistoryTransaction>(predicate: #Predicate { $0.timestamp < floor })
-        ).count
-        #expect(below == 0, "la purga se quedó corta: todo lo anterior al corte tenía que irse")
+        // El corte es el menor de los suelos: el de Grupos y, desde el 2026-09-26, el ancla del drain personal.
+        let anchor = try #require(try personalAnchor(context))
+        let cut = min(floor, anchor)
+        #expect(try historyCount(context, before: cut) == 0, "la purga se quedó corta: todo lo anterior al corte tenía que irse")
 
         let after = try context.fetchHistory(HistoryDescriptor<DefaultHistoryTransaction>()).count
         #expect(after > 0, "la purga se pasó del suelo del canal de Grupos")
@@ -1293,8 +1449,8 @@ struct CloudSyncRuntimeTests {
         #expect(liveCount(context) > 0, "control: y ahora vive en el outbox, que es quien bloquea")
     }
 
-    @Test("sonda del History: lo que escribió el propio motor no cuenta, y un token roto es «no se sabe»")
-    func uncapturedProbe_ignoresEngineWrites_andReadsABrokenTokenAsUnknown() throws {
+    @Test("sonda del History: lo que escribió el propio motor no cuenta, y un token roto se lee como lo leería el drain")
+    func uncapturedProbe_ignoresEngineWrites_andReadsABrokenTokenLikeTheDrain() throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
         let runtime = makeRuntime(session: StubCloudSession(userID: "u1"))
@@ -1312,12 +1468,25 @@ struct CloudSyncRuntimeTests {
         try context.save()
         #expect(runtime.hasUncapturedPersonalChanges(context: context) == true)
 
-        // Token del cursor que no decodifica: no se sabe, y quien decide lo lee como «sí».
+        // Token del cursor que no decodifica y sin ancla: la ventana del drain es el History entero (`fullRescanNoAnchor`),
+        // y la edición de arriba está ahí. Hasta el 2026-09-26 era `nil` sin mirar.
         let cursor = SyncCursor()
         cursor.historyTokenData = Data("garbage-token".utf8)
         context.insert(cursor)
         try context.save()
-        #expect(runtime.hasUncapturedPersonalChanges(context: context) == nil)
+        #expect(runtime.hasUncapturedPersonalChanges(context: context) == true)
+
+        // Con ancla, la ventana es la acotada (ancla − slack): lo consumido antes no cuenta; lo que viene después, sí.
+        cursor.lastDrainedTxAt = Date().addingTimeInterval(3600)
+        try context.save()
+        #expect(runtime.hasUncapturedPersonalChanges(context: context) == false, "todo queda por debajo del ancla")
+        cursor.lastDrainedTxAt = Date().addingTimeInterval(-3600)
+        try context.save()
+        #expect(runtime.hasUncapturedPersonalChanges(context: context) == true, "la edición queda por delante del ancla")
+        // La holgura del drain (60 s): con el ancla 30 s por delante de la edición, el drain la re-leería y la sonda también.
+        cursor.lastDrainedTxAt = Date().addingTimeInterval(30)
+        try context.save()
+        #expect(runtime.hasUncapturedPersonalChanges(context: context) == true, "dentro de la holgura del respaldo")
     }
 
     /// Producción entra por el método de instancia, y lo que lo hace respetar el candado son sus dos argumentos: el runtime
@@ -1354,6 +1523,196 @@ struct CloudSyncRuntimeTests {
             "livePendingCount: { [self] in livePendingUploadCount() },",
             "maxIterations: maxIterations)",
         ])
+    }
+
+    // MARK: - El push-all con motor relee el History antes de dar el outbox por vacío (2026-09-26)
+
+    // Ticket `personal-sign-out-reads-an-unfinished-drain-as-nothing-pending`, gemelo de
+    // `groups-drain-failure-reads-as-nothing-pending`. El drain del ciclo no viaja en su outcome: uno que aborta hace
+    // `rollback()`, la edición se queda solo en el History, el outbox da 0 y el cierre salía `.drained` hacia el borrado.
+
+    /// Una edición local de verdad (autor por defecto, como la de la persona): es lo que el drain tiene que capturar.
+    private func localEdit(_ context: ModelContext) throws {
+        context.insert(TransactionItem(date: Date(timeIntervalSince1970: 1_700_000_000), amount: 12, currencyCode: "USD"))
+        try context.save()
+    }
+
+    @Test("MUTACIÓN: un drain que aborta no deja el cierre en `.drained`: bloquea «un momento más» sin descartar")
+    func signOutPushAll_drainAborts_blocksInsteadOfDraining() async throws {
+        let racha = try IsolatedAttestStreak(); defer { racha.restore() }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        let push = EchoAppliedSession()
+        let pull = StubSession(body: emptyPageJSON())
+        let runtime = makeRuntime(engine: engine, push: push, pull: pull, session: StubCloudSession(userID: "u1"))
+        try localEdit(context)
+        engine._testThrowOnDrainOutboxSave = true
+
+        let verdict = await CloudMigrationController.pushAllForSignOut(
+            runtime: runtime, context: context, domainGateOpen: { true }, journalRead: { .unreadable },
+            livePendingCount: { liveCount(context) }, maxIterations: 3, pause: .zero)
+
+        #expect(liveCount(context) == 0, "control de escenario: el drain abortó y el outbox quedó vacío")
+        #expect(pull.callCount == 3, "da las vueltas del tope —otra vuelta cura lo escrito tras el drain— y ahí bloquea")
+        #expect(verdict == .blocked(pendingCount: .max, reason: .transient), "la edición no se pierde en silencio")
+        #expect(shownMessage(verdict) == L10n.Settings.signOutPendingMessage, "el aviso es el del guardado que se asienta")
+        #expect(push.callCount == 0, "no había nada en el outbox que subir")
+        #expect(runtime.hasUncapturedPersonalChanges(context: context) == true, "la edición sigue en el History")
+
+        // Control: el MISMO escenario con el drain sano captura, sube y drena.
+        engine._testThrowOnDrainOutboxSave = false
+        let sano = await CloudMigrationController.pushAllForSignOut(
+            runtime: runtime, context: context, domainGateOpen: { true }, journalRead: { .unreadable },
+            livePendingCount: { liveCount(context) }, maxIterations: 20, pause: .zero)
+        #expect(sano == .drained)
+        #expect(push.callCount == 1, "control: el reintento sube la edición")
+    }
+
+    /// Con la traducción cortada `drainOnce` devuelve `true` a propósito (ver su docblock), así que su Bool no bastaría:
+    /// lo que decide es el History. Hoy solo lo corta un año fuera de 0001–9999, que el seam imita.
+    @Test("MUTACIÓN: con la traducción cortada el drain dice que terminó, y el cierre tampoco sale `.drained`")
+    func signOutPushAll_translationCut_blocksInsteadOfDraining() async throws {
+        let racha = try IsolatedAttestStreak(); defer { racha.restore() }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        let runtime = makeRuntime(engine: engine, push: EchoAppliedSession(), pull: StubSession(body: emptyPageJSON()),
+                                  session: StubCloudSession(userID: "u1"))
+        try localEdit(context)
+        engine._testThrowOnClockStamp = true
+        defer { engine._testThrowOnClockStamp = false }
+
+        let verdict = await CloudMigrationController.pushAllForSignOut(
+            runtime: runtime, context: context, domainGateOpen: { true }, journalRead: { .unreadable },
+            livePendingCount: { liveCount(context) }, maxIterations: 20, pause: .zero)
+
+        #expect(liveCount(context) == 0, "control de escenario: la edición no llegó al outbox")
+        #expect(verdict == .blocked(pendingCount: .max, reason: .transient))
+    }
+
+    /// El segundo criterio del ticket: sin nada que se quede fuera, el cierre es el de siempre — un ciclo, una subida, un
+    /// pull, y `.drained`. Ni esperas ni red nuevas. Con una edición REAL drenada y subida, no con una fila sembrada a mano.
+    @Test("sin nada fuera del outbox, el cierre no cambia: un ciclo y `.drained`")
+    func signOutPushAll_editDrainedAndUploaded_drainsInOneCycle() async throws {
+        let racha = try IsolatedAttestStreak(); defer { racha.restore() }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let push = EchoAppliedSession()
+        let pull = StubSession(body: emptyPageJSON())
+        let runtime = makeRuntime(push: push, pull: pull, session: StubCloudSession(userID: "u1"))
+        try localEdit(context)
+
+        let verdict = await CloudMigrationController.pushAllForSignOut(
+            runtime: runtime, context: context, domainGateOpen: { true }, journalRead: { .unreadable },
+            livePendingCount: { liveCount(context) }, maxIterations: 20, pause: .zero)
+
+        #expect(verdict == .drained)
+        #expect(push.callCount == 1 && push.appliedCount == 1, "la edición subió en la primera vuelta")
+        #expect(pull.callCount == 1, "un solo ciclo: la relectura no añade vueltas")
+
+        // Y un store sin nada que subir: ni una subida.
+        let dir2 = freshDir(); defer { cleanup(dir2) }
+        let context2 = try makeContext(dir2)
+        let push2 = EchoAppliedSession()
+        let runtime2 = makeRuntime(push: push2, pull: StubSession(body: emptyPageJSON()), session: StubCloudSession(userID: "u1"))
+        let vacio = await CloudMigrationController.pushAllForSignOut(
+            runtime: runtime2, context: context2, domainGateOpen: { true }, journalRead: { .unreadable },
+            livePendingCount: { liveCount(context2) }, maxIterations: 20, pause: .zero)
+        #expect(vacio == .drained)
+        #expect(push2.callCount == 0)
+    }
+
+    /// Lo que la sonda ve puede haber llegado DESPUÉS del drain del ciclo, y eso lo cura el drain de la vuelta siguiente:
+    /// el puente de Grupos del paso 5.6 escribe en el store personal justo ahí. Sin la vuelta extra, «un momento más».
+    @Test("MUTACIÓN: una edición que llega tras el drain del ciclo sube en la vuelta siguiente y el cierre sigue")
+    func signOutPushAll_editAfterTheCycleDrain_isCapturedByTheNextLap() async throws {
+        let racha = try IsolatedAttestStreak(); defer { racha.restore() }
+        CloudSyncFlags.groupsBackendEnabled = true
+        defer { CloudSyncFlags._testResetGroupsBackendEnabledOverride() }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let push = EchoAppliedSession()
+        let pull = StubSession(body: emptyPageJSON())
+        let runtime = makeRuntime(push: push, pull: pull, session: StubCloudSession(userID: "u1"))
+        var bridged = false
+        runtime.groupsSyncCycleRunner = { ctx in
+            guard !bridged else { return }
+            bridged = true
+            ctx.insert(TransactionItem(date: Date(timeIntervalSince1970: 1_700_000_600), amount: -11, currencyCode: "USD"))
+            do { try ctx.save() } catch { Issue.record("el save del puente simulado falló: \(error)") }
+        }
+
+        let verdict = await CloudMigrationController.pushAllForSignOut(
+            runtime: runtime, context: context, domainGateOpen: { true }, journalRead: { .unreadable },
+            livePendingCount: { liveCount(context) }, maxIterations: 20, pause: .zero)
+
+        #expect(bridged, "control de escenario: el paso 5.6 corrió")
+        #expect(verdict == .drained)
+        #expect(push.appliedCount == 1, "la edición del puente subió en la segunda vuelta")
+        #expect(pull.callCount == 2, "una vuelta más, y no el tope")
+    }
+
+    /// El bloqueo por App Attest es el único que el paso 1 deja seguir perdiendo las filas del aviso. Con una edición fuera
+    /// del outbox, el aviso no la enseñaría y la pérdida aceptada se la llevaría: sale como «un momento más», sin salida de
+    /// pérdida, hasta que un drain la capture y el aviso la cuente.
+    @Test("MUTACIÓN: el bloqueo por App Attest con una edición sin capturar no ofrece perder: «un momento más»")
+    func signOutPushAll_attestBlockWithUncapturedEdit_isNotTheLossOffer() async throws {
+        let racha = try IsolatedAttestStreak(); defer { racha.restore() }
+        try racha.seedTerminal()
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        let runtime = makeRuntime(engine: engine, push: EchoAppliedSession(), pull: StubSession(body: emptyPageJSON()),
+                                  session: StubCloudSession(userID: "u1", attestError: .unavailable))
+        _ = try liveRow(context, entityType: SyncEntityType.transactionItem, h: hlc(1))
+
+        // Control: sin nada fuera del outbox, el bloqueo es el del attest, con la cifra del aviso.
+        let soloOutbox = await CloudMigrationController.pushAllForSignOut(
+            runtime: runtime, context: context, domainGateOpen: { true }, journalRead: { .unreadable },
+            livePendingCount: { liveCount(context) }, maxIterations: 20, pause: .zero)
+        #expect(soloOutbox == .blocked(pendingCount: 1, reason: .attestUnavailable))
+
+        try localEdit(context)
+        engine._testThrowOnDrainOutboxSave = true
+        let conEdicion = await CloudMigrationController.pushAllForSignOut(
+            runtime: runtime, context: context, domainGateOpen: { true }, journalRead: { .unreadable },
+            livePendingCount: { liveCount(context) }, maxIterations: 20, pause: .zero)
+        #expect(conEdicion == .blocked(pendingCount: 1, reason: .transient))
+
+        // Control: capturada la edición, el aviso de la pérdida vuelve y la cuenta.
+        engine._testThrowOnDrainOutboxSave = false
+        let capturada = await CloudMigrationController.pushAllForSignOut(
+            runtime: runtime, context: context, domainGateOpen: { true }, journalRead: { .unreadable },
+            livePendingCount: { liveCount(context) }, maxIterations: 20, pause: .zero)
+        #expect(capturada == .blocked(pendingCount: 2, reason: .attestUnavailable))
+    }
+
+    @Test("personalVerdictAfterProbe: solo relee `.drained` y el bloqueo por attest; lo que no se pudo leer bloquea")
+    func personalVerdictAfterProbe_table() {
+        typealias L = CloudSignOutFlowLogic
+        var asked = 0
+        func probe(_ answer: Bool?) -> () -> Bool? { { asked += 1; return answer } }
+
+        #expect(L.personalVerdictAfterProbe(.drained, uncapturedChanges: probe(false)) == .drained)
+        #expect(L.personalVerdictAfterProbe(.drained, uncapturedChanges: probe(true))
+            == .blocked(pendingCount: .max, reason: .transient))
+        #expect(L.personalVerdictAfterProbe(.drained, uncapturedChanges: probe(nil))
+            == .blocked(pendingCount: .max, reason: .transient))
+
+        let attest = L.PushAllVerdict.blocked(pendingCount: 3, reason: .attestUnavailable)
+        #expect(L.personalVerdictAfterProbe(attest, uncapturedChanges: probe(false)) == attest)
+        #expect(L.personalVerdictAfterProbe(attest, uncapturedChanges: probe(true)) == .blocked(pendingCount: 3, reason: .transient))
+        #expect(L.personalVerdictAfterProbe(attest, uncapturedChanges: probe(nil)) == .blocked(pendingCount: 3, reason: .transient))
+        #expect(asked == 6)
+
+        // El resto de bloqueos no descarta nada: pasan tal cual y ni preguntan.
+        asked = 0
+        for reason in L.BlockReason.allCases where reason != .attestUnavailable {
+            let verdict = L.PushAllVerdict.blocked(pendingCount: 2, reason: reason)
+            #expect(L.personalVerdictAfterProbe(verdict, uncapturedChanges: probe(true)) == verdict, "\(reason)")
+        }
+        #expect(asked == 0, "la sonda es una lectura del History: solo se hace cuando decide algo")
     }
 
     // MARK: - La puerta de la nube con la sesión caducada
@@ -1504,6 +1863,28 @@ private final class ThrowingSession: SyncHTTPSession, @unchecked Sendable {
     let error: Error
     init(_ error: Error) { self.error = error }
     func data(for request: URLRequest) async throws -> (Data, URLResponse) { throw error }
+}
+
+/// Push que responde `applied` a cada delta que recibe: para subir filas que el drain crea en el propio test, cuyos
+/// `sync_id` no se conocen al montar el stub.
+private final class EchoAppliedSession: SyncHTTPSession, @unchecked Sendable {
+    private(set) var callCount = 0
+    private(set) var appliedCount = 0
+    func data(for request: URLRequest) async throws -> (Data, URLResponse) {
+        callCount += 1
+        var results: [String] = []
+        if let body = request.httpBody,
+           let json = try JSONSerialization.jsonObject(with: body) as? [String: Any],
+           let deltas = json["deltas"] as? [[String: Any]] {
+            for delta in deltas {
+                guard let sid = delta["sync_id"] as? String, let cmid = delta["client_mutation_id"] as? String else { continue }
+                results.append("{\"sync_id\":\"\(sid)\",\"client_mutation_id\":\"\(cmid)\",\"status\":\"applied\"}")
+            }
+        }
+        appliedCount += results.count
+        let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+        return (Data("{\"results\":[\(results.joined(separator: ","))]}".utf8), response)
+    }
 }
 
 /// Stub de `SyncHTTPSession` con respuesta fija + contador de llamadas.

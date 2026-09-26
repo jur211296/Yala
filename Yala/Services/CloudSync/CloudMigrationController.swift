@@ -1038,7 +1038,8 @@ final class CloudMigrationController {
     }
 
     /// Push-all del cierre de sesión (H4, camino `.cloud`): cicla el runtime (drain + push + prefs,
-    /// paso 5.5 incluido) hasta que el outbox vivo quede en 0 VERIFICADO por fetch, o bloquea. Los
+    /// paso 5.5 incluido) hasta que el outbox vivo quede en 0 VERIFICADO por fetch —y el History sin ediciones que el drain
+    /// no capturó (`CloudSignOutFlowLogic.personalVerdictAfterProbe`)—, o bloquea. Los
     /// pendientes JAMÁS se descartan — `.blocked` aborta el cierre y el usuario reintenta con red.
     /// `.coalesced` cuenta como ciclo sano (sin señal de fallo); el tope corta backends caídos.
     ///
@@ -1112,7 +1113,16 @@ final class CloudMigrationController {
                 iteration: iteration,
                 maxIterations: maxIterations
             ) {
-                return verdict
+                // **El outbox a 0 no prueba que no quede nada** (ticket
+                // `personal-sign-out-reads-an-unfinished-drain-as-nothing-pending`): un drain que aborta deja la edición solo
+                // en el History. Se relee aquí, sin escribir, en los dos veredictos que el paso 1 deja seguir.
+                let probed = CloudSignOutFlowLogic.personalVerdictAfterProbe(verdict) {
+                    runtime.hasUncapturedPersonalChanges(context: context)
+                }
+                // Lo que la sonda ve puede haber llegado DESPUÉS del drain del ciclo —los reconciliadores del pull, el puente
+                // de Grupos del paso 5.6, un ciclo de la cadencia que coalesció—, y eso lo captura el drain de la vuelta
+                // siguiente. Otra vuelta, con el tope del bucle: un drain que aborta siempre llega a él y bloquea igual.
+                if probed == verdict || iteration >= maxIterations { return probed }
             }
             // S1 del review: un ciclo de la cadencia EN VUELO devuelve `.coalesced`
             // SINCRÓNICO — sin esta pausa el loop quemaría las 20 iteraciones en

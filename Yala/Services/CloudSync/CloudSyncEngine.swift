@@ -2042,25 +2042,50 @@ final class CloudSyncEngine {
     /// barre, ni guarda — es lo que el cierre de sesión puede preguntar con el candado del dominio cerrado, donde el drain no
     /// puede correr porque guarda en el store principal (ticket `sign-out-push-all-runs-a-sync-cycle-past-the-migration-gate`).
     ///
-    /// Mismo criterio que la traducción del drain, en grueso: transacciones posteriores al token del cursor, del store
+    /// Mismo criterio que la traducción del drain, en grueso: transacciones que el drain siguiente leería, del store
     /// personal, que no escribió el propio motor y que tocan alguna de sus entidades. Es más ancho que lo que el drain
     /// emitiría (un cambio que solo asigna `syncID` cuenta aquí), y es la dirección segura: su consumidor bloquea, no borra.
     ///
-    /// `nil` = no se pudo saber (token roto, o un fetch que lanza). Quien decida con esto lo trata como «sí».
+    /// **La ventana es la del paso 3 del drain** (`fetchHistoryResolvingToken`), con su misma tabla
+    /// (`HistoryTokenFallbackLogic`), pero sin su telemetría ni su re-anclaje: fetch por token; y con el token roto —no
+    /// decodifica, o su fetch lanza porque la purga se llevó su transacción—, el re-escaneo acotado por el ancla
+    /// (`lastDrainedTxAt` − slack). Hasta el 2026-09-26 un token roto era `nil` sin más, y la purga de cada ciclo lo
+    /// rompía: el cierre con motor que pregunta esto después del ciclo se habría quedado bloqueado siempre (ticket
+    /// `personal-sign-out-reads-an-unfinished-drain-as-nothing-pending`). Lo que la frontera del slack re-lee ya consumido
+    /// puede dar un «sí» de más, y solo dura hasta el siguiente drain, que re-ancla el token. **Y el paso 3-bis también**:
+    /// mientras ningún drain haya validado el token en este proceso (`historyTokenValidated`), suma lo posterior al ancla,
+    /// porque un token de otro mount excluye lo nuevo sin lanzar.
+    ///
+    /// `nil` = no se pudo saber (un fetch que lanza). Quien decida con esto lo trata como «sí».
     func hasUncapturedPersonalChanges(context: ModelContext) -> Bool? {
         do {
             var cursorDescriptor = FetchDescriptor<SyncCursor>()
             cursorDescriptor.fetchLimit = 1
             let cursor = try context.fetch(cursorDescriptor).first
+            let anchor = cursor?.lastDrainedTxAt
             let txns: [DefaultHistoryTransaction]
             switch decodeToken(cursor?.historyTokenData) {
             case .valid(let token):
-                txns = try context.fetchHistory(
-                    HistoryDescriptor<DefaultHistoryTransaction>(predicate: #Predicate { $0.token > token }))
+                do {
+                    let byToken = try context.fetchHistory(
+                        HistoryDescriptor<DefaultHistoryTransaction>(predicate: #Predicate { $0.token > token }))
+                    // El paso 3-bis del drain (`recoverIfHistoryTokenIncomparable`): hasta que un drain valide el token en
+                    // este proceso, puede venir de otro mount y excluir en silencio lo nuevo. Mismo criterio que el guard:
+                    // solo sin validar y con ancla, y lo nuevo es lo POSTERIOR al ancla (lo consumido cae en o antes).
+                    if !historyTokenValidated, let anchor {
+                        txns = byToken + (try context.fetchHistory(
+                            HistoryDescriptor<DefaultHistoryTransaction>(predicate: #Predicate { $0.timestamp > anchor })))
+                    } else {
+                        txns = byToken
+                    }
+                } catch {
+                    // El drain re-decide como token roto (`fetchHistoryResolvingToken`); la sonda, igual.
+                    txns = try uncapturedProbeBrokenWindow(anchor: anchor, context: context)
+                }
             case .absent:
                 txns = try context.fetchHistory(HistoryDescriptor<DefaultHistoryTransaction>())
             case .broken:
-                return nil
+                txns = try uncapturedProbeBrokenWindow(anchor: anchor, context: context)
             }
             return txns.contains { tx in
                 tx.author != Self.outboxSaveAuthor
@@ -2071,6 +2096,18 @@ final class CloudSyncEngine {
             print("CloudSyncEngine: Error leyendo el History sin capturar: \(error)")
             #endif
             return nil
+        }
+    }
+
+    /// La ventana del token roto para la sonda: la rama que `HistoryTokenFallbackLogic` decide para el drain, sin su
+    /// degradación (b) —si el fetch acotado lanza, la sonda no sabe y devuelve `nil` por el `catch` de su llamador—.
+    private func uncapturedProbeBrokenWindow(anchor: Date?, context: ModelContext) throws -> [DefaultHistoryTransaction] {
+        switch HistoryTokenFallbackLogic.decide(tokenState: .broken, lastDrainedTxAt: anchor, slack: Self.historyTokenSlack) {
+        case .boundedRescan(let cutoff):
+            return try context.fetchHistory(
+                HistoryDescriptor<DefaultHistoryTransaction>(predicate: #Predicate { $0.timestamp > cutoff }))
+        case .fullRescanNoAnchor, .fullRescanBootstrap, .tokenFetch:
+            return try context.fetchHistory(HistoryDescriptor<DefaultHistoryTransaction>())
         }
     }
 
@@ -3459,19 +3496,50 @@ final class CloudSyncEngine {
     }
 
     /// Purga el SwiftData History por delante del corte SEGURO (I9 ampliado, §i.6 purga conservadora).
-    /// El corte lo calcula `deleteHistorySafeCut(drainedBoundary: now)` — invariante §d.5: NUNCA por
-    /// delante de la fila de outbox sin-2xx más vieja (su transacción de History es el backup del delta
-    /// hasta el 2xx; el espejo App Group es la red redundante, no la primaria). Se llama SOLO tras un
-    /// ciclo del runtime con pull `.completed` (drain ya consumió toda la history externa → `now` es un
-    /// boundary honesto) y bajo DOBLE flag (`syncRuntimeEnabled` + `historyPurgeEnabled` — el riesgo
-    /// device-only del token del mirror de NSPersistentCloudKitContainer se resuelve en el spike S2).
+    /// El corte lo calcula `deleteHistorySafeCut` — invariante §d.5: NUNCA por delante de la fila de
+    /// outbox sin-2xx más vieja (su transacción de History es el backup del delta hasta el 2xx; el espejo
+    /// App Group es la red redundante, no la primaria). Se llama SOLO tras un ciclo del runtime con pull
+    /// `.completed` y bajo DOBLE flag (`syncRuntimeEnabled` + `historyPurgeEnabled` — el riesgo device-only
+    /// del token del mirror de NSPersistentCloudKitContainer se resuelve en el spike S2).
+    ///
+    /// **La frontera del drain es lo que el drain CONSUMIÓ (`SyncCursor.lastDrainedTxAt`), no `now`** (ticket
+    /// `personal-sign-out-reads-an-unfinished-drain-as-nothing-pending`, 2026-09-26). Hasta ese día se pasaba `now`
+    /// con la premisa de que «el drain ya consumió toda la history externa», y no era verdad en tres casos medidos:
+    /// un drain que aborta (`rollback()`: la edición queda solo en el History), una traducción cortada (no consume la
+    /// transacción a propósito, para reintentarla) y todo lo escrito DESPUÉS del último drain del ciclo — los
+    /// reconciliadores del pull, que guardan con autor normal para que «drenen en el próximo ciclo», y una edición
+    /// hecha durante la espera de red de las preferencias, de Grupos o del Merkle. La purga borraba esas
+    /// transacciones antes de que ningún drain las viera, y el cambio no subía nunca, sin aviso. Con el ancla:
+    ///  · la transacción del token (su `timestamp` ES el ancla) no se purga, así que el fetch por token no caduca;
+    ///  · **lo que el drain no consumió se mide por TOKEN, no por timestamp** (review adversarial del mismo día): el
+    ///    drain ordena por token y la purga borra por timestamp, así que con un reloj que retrocedió una edición sin
+    ///    consumir puede llevar un timestamp ANTERIOR al ancla. Su timestamp más viejo (`unconsumedFloor`) es un suelo
+    ///    más, y con el token ilegible no se purga: sin saber qué queda sin consumir no hay corte honesto;
+    ///  · sin ancla —el drain no ha consumido nada todavía— no se purga nada: no hay nada consumido que purgar.
+    ///
+    /// **Precio aceptado**: el ancla solo avanza con transacciones del store personal, así que el History de Grupos y de
+    /// sync-meta espera a la siguiente. En uso normal llega a diario (el tipo de cambio de cada día,
+    /// `ExchangeRateService.updateTodayIfNeeded`, es una fila personal), y lo que crece es ese día, no el corpus.
     ///
     /// - Returns: nº de transacciones purgadas; `nil` si no había corte, no había nada que purgar, o el
     ///   fetch/delete falló (con log — un fallo NUNCA rompe el ciclo).
     @discardableResult
     func purgeHistoryOnce(context: ModelContext, now: Date = .now) -> Int? {
         do {
-            guard let cut = try deleteHistorySafeCut(drainedBoundary: now, context: context) else {
+            var cursorDescriptor = FetchDescriptor<SyncCursor>()
+            cursorDescriptor.fetchLimit = 1
+            guard let cursor = try context.fetch(cursorDescriptor).first, let drained = cursor.lastDrainedTxAt else {
+                return nil  // el drain no ha consumido nada: nada que purgar
+            }
+            guard case .valid(let token) = decodeToken(cursor.historyTokenData) else {
+                return nil  // sin token legible no se sabe qué queda sin consumir
+            }
+            let unconsumedFloor = try context.fetchHistory(
+                HistoryDescriptor<DefaultHistoryTransaction>(predicate: #Predicate { $0.token > token })
+            ).filter { $0.author != Self.outboxSaveAuthor && Self.isPersonalStoreTransaction($0) }
+                .map(\.timestamp).min()
+            let boundary = [now, drained, unconsumedFloor].compactMap { $0 }.min() ?? drained
+            guard let cut = try deleteHistorySafeCut(drainedBoundary: boundary, context: context) else {
                 return nil  // sin restricción calculable → conservador: no purgar nada
             }
             // Contar ANTES de borrar (deleteHistory devuelve Void). Mismo predicate en fetch y delete.
