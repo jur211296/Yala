@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-26 (Lima)
 
-**Rama** `2.1` — Merge #254: **Tras activar la nube en un segundo iPhone, lo que iCloud baja tarde ya no pisa las correcciones hechas en la nube.**
+**Rama** `2.1` — Merge #255: **Soltar la cuenta de grupos se para, y lo dice, si la sesión de esa cuenta no llega a cerrarse en el teléfono.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,31 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#254 · lo que el espejo importa tarde tras un adopt no pisa la nube)
+## Esta sesión (#255 · el desasociar se para si la sesión en la nube sobrevive a su cierre)
+
+**Sueltas la cuenta de grupos en «¿Dónde viven tus datos?». Si la sesión de esa cuenta sigue guardada en el teléfono después de
+cerrarla, la app se para antes de tocar nada y lo dice** («No pudimos cerrar la sesión de tu cuenta de grupos en este iPhone.
+No se soltó nada. Vuelve a intentarlo.»). Antes seguía: borraba los grupos y, al reabrir, esa sesión los volvía a bajar
+re-puenteados junto a lo que elegiste conservar.
+
+- **Medido en supabase-swift 2.50.0**: sin red el cierre falla con la sesión ya borrada; con el llavero negándose a borrar
+  «sale bien» y la sesión sigue. `CloudAuthService.signOut()` devuelve ahora si la sesión se fue, releyendo el llavero (si no
+  se deja leer, cuenta como que sigue).
+- El desasociar cierra la sesión **antes** de soltar el puente y la comprueba. El correo y el proveedor guardados se borran
+  solo con la sesión ida (la review cazó que, si no, el arranque reescribía la asociación sin nombre en todos tus teléfonos).
+- Motivo nuevo `.sessionNotClosed` (16 locales), canario `groupsDetachSessionSurvived`, rule nueva en `swiftdata-cloudkit.md`.
+
+**Verificado:** gate con 8003 unit en 759 suites y 13 XCUITest, centinela limpio; 10/10 mutantes muertos. Ticket a `done` sin
+device-QA: el fallo del llavero no se provoca en un iPhone.
+
+### Lo que espera de Jürgen
+
+- **Una decisión, sin prisa:** `sign-out-exits-do-not-verify-the-cloud-session-closed` (medium). «Cerrar sesión» tampoco
+  comprueba que la sesión se fue, y el borrado del arranque no la purga del llavero: el teléfono puede quedar «como recién
+  instalado» con la sesión anterior dentro. Purgarla ahí también se llevaría los pares de Apple y Google.
+- Residual `detach-postcondition-misses-a-token-refresh-that-lands-after-it` (low).
+
+## Sesión anterior (#254 · lo que el espejo importa tarde tras un adopt no pisa la nube)
 
 **Activas la nube en tu segundo iPhone mientras su iCloud todavía baja una copia vieja. Lo que bajaba después de movimientos
 que la nube ya tenía subía al reabrir con un reloj nuevo y deshacía las correcciones hechas en la nube. Ahora, en esas filas
@@ -46,7 +70,7 @@ caso real pide dos iPhone y CloudKit.
 - Por decisión: una edición más nueva de otro teléfono del mismo Apple ID que sigue en iCloud, si llega en esa ventana, ya no
   sube (manda la nube). Si no es lo que quieres, dilo.
 
-## Sesión anterior (#253 · en la nube, la sesión caducada nombra dónde volver a entrar)
+## Antes (#253 · en la nube, la sesión caducada nombra dónde volver a entrar)
 
 **Con la sesión caducada y cambios sin subir —de grupos o personales—, «Cerrar sesión» sigue bloqueándose sin perder nada,
 pero ahora dice dónde volver a entrar y esa puerta está ahí:**
