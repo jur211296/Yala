@@ -256,6 +256,7 @@ struct CloudSyncRuntimeTests {
         let key = try #require(RelayIdentityLedger.key(for: category.persistentModelID))
         try RelayIdentityLedger.merge([key: backendID], into: ledgerURL)
         try RelayIdentityLedger.markAdoptPin(ledgerURL)
+        try RelayIdentityLedger.writeAdoptBackendKnown([backendID], for: ledgerURL)
         engine.fastForwardHistoryBaseline(context: context)
         // El import del espejo antes del remonte: la identidad del líder desplazado y su edición.
         category.syncID = UUID()
@@ -270,8 +271,12 @@ struct CloudSyncRuntimeTests {
         defer { runtime.teardownGuestSession() }
         #expect(runtime.state == .running)
         #expect(category.syncID == backendID)
+        // Restaurada ANTES del primer drain, la fila lleva una identidad que el backend conoce y la edición vieja que trajo el
+        // espejo no sale (ticket `adopt-window-late-imports-overwrite-newer-cloud-edits`). Restaurada después, saldría con la
+        // del líder.
         let upserts = try outbox(context).filter { $0.opRaw == SyncOutboxOp.upsert.rawValue }.map(\.syncID)
-        #expect(upserts == [backendID], "la edición sale del primer drain con la identidad del backend")
+        #expect(upserts.isEmpty, "ni con la identidad del líder ni con la del backend: manda el backend")
+        #expect(!RelayIdentityLedger.hasAdoptBackendKnown(for: ledgerURL), "control: el primer drain corrió entero y la retiró")
         #expect(!RelayIdentityLedger.isAdoptPinned(ledgerURL))
     }
 

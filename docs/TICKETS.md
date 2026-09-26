@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (587)
+## Index (588)
 
 | id | status | path |
 |---|---|---|
@@ -73,9 +73,10 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | adopt-session-close-drops-the-mark-before-the-sign-out-lands | backlog | tickets/backlog/adopt-session-close-drops-the-mark-before-the-sign-out-lands.md |
 | adopt-terminal-claims-ready-without-checking-engine | backlog | tickets/backlog/adopt-terminal-claims-ready-without-checking-engine.md |
 | adopt-uploads-a-foreign-corpus-without-a-lineage-check | qa | tickets/qa/adopt-uploads-a-foreign-corpus-without-a-lineage-check.md |
-| adopt-window-late-imports-overwrite-newer-cloud-edits | backlog | tickets/backlog/adopt-window-late-imports-overwrite-newer-cloud-edits.md |
+| adopt-window-late-imports-overwrite-newer-cloud-edits | qa | tickets/qa/adopt-window-late-imports-overwrite-newer-cloud-edits.md |
 | adopt-window-late-leader-identity-export-can-duplicate-after-the-remount | done | tickets/done/adopt-window-late-leader-identity-export-can-duplicate-after-the-remount.md |
 | adopt-window-uploads-what-reaches-the-mirror-after-the-icloud-check | backlog | tickets/backlog/adopt-window-uploads-what-reaches-the-mirror-after-the-icloud-check.md |
+| adopt-window-user-edit-uploads-the-value-the-mirror-wrote-over-it | backlog | tickets/backlog/adopt-window-user-edit-uploads-the-value-the-mirror-wrote-over-it.md |
 | adopt-with-existing-session-skips-the-unreadable-journal-guard | backlog | tickets/backlog/adopt-with-existing-session-skips-the-unreadable-journal-guard.md |
 | adr-013-does-not-know-yala-has-its-own-commit-msg | backlog | tickets/backlog/adr-013-does-not-know-yala-has-its-own-commit-msg.md |
 | after-session-redesign-review-widgets-siri-applepay-and-web-copy | backlog | tickets/backlog/after-session-redesign-review-widgets-siri-applepay-and-web-copy.md |

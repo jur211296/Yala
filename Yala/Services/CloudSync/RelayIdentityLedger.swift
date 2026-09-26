@@ -24,6 +24,11 @@
 //  (`markAdoptPin`) y el runtime, al arrancar tras el remonte, devuelve las identidades por este registro
 //  (`CloudSyncEngine.restoreAdoptedRelayIdentitiesIfPinned`) y lo marca para retirar.
 //
+//  Y al lado, las identidades que el backend CONOCÍA cuando terminó el reconcile del adopt (ticket
+//  `adopt-window-late-imports-overwrite-newer-cloud-edits`): lo que el espejo importe de ellas hasta el remonte no lo traduce
+//  el drain, porque subiría con un HLC fresco y pisaría por LWW las ediciones más nuevas de la nube; el pull trae su versión.
+//  Vive y muere con el registro: la siembra lo quita, el adopt lo escribe después, y la retirada y la vuelta atrás lo borran.
+//
 
 import Foundation
 import SwiftData
@@ -53,11 +58,12 @@ enum RelayIdentityLedger {
     }
 
     /// Añade `entries` al registro (una clave repetida toma el valor nuevo) y solo escribe si algo cambió. Quita la marca
-    /// de retirada y la del adopt: sembrar es empezar una migración o un adopt, y el adopt vuelve a poner la suya después.
+    /// de retirada, la del adopt y lo que el backend conocía en el adopt: sembrar es empezar una migración o un adopt, y el
+    /// adopt vuelve a poner lo suyo después.
     /// Sin quitarla, una marca del adopt que sobrevivió a una salida haría que el runtime retirara el registro de una ida.
     /// LANZA si no puede leer el que había o escribir el nuevo.
     static func merge(_ entries: [String: UUID], into url: URL) throws {
-        for marker in [retireMarkerURL(for: url), adoptPinURL(for: url)]
+        for marker in [retireMarkerURL(for: url), adoptPinURL(for: url), adoptBackendKnownURL(for: url)]
         where FileManager.default.fileExists(atPath: marker.path) {
             try FileManager.default.removeItem(at: marker)
         }
@@ -70,9 +76,9 @@ enum RelayIdentityLedger {
         try data.write(to: url, options: .atomic)
     }
 
-    /// Borra el registro y sus dos marcas, si existen.
+    /// Borra el registro, sus dos marcas y lo que el backend conocía en el adopt, si existen.
     static func remove(at url: URL) throws {
-        for file in [url, retireMarkerURL(for: url), adoptPinURL(for: url)]
+        for file in [url, retireMarkerURL(for: url), adoptPinURL(for: url), adoptBackendKnownURL(for: url)]
         where FileManager.default.fileExists(atPath: file.path) {
             try FileManager.default.removeItem(at: file)
         }
@@ -110,5 +116,42 @@ enum RelayIdentityLedger {
 
     private static func adoptPinURL(for url: URL) -> URL {
         url.appendingPathExtension("adopt")
+    }
+
+    // MARK: - Lo que el backend conocía al terminar el adopt (ticket `adopt-window-late-imports-overwrite-newer-cloud-edits`)
+
+    /// Guarda las identidades que el backend conocía, vivas o borradas, según la enumeración del reconcile del adopt. Reemplaza
+    /// lo que hubiera: cada pasada del reconcile enumera otra vez. LANZA si no puede escribir.
+    static func writeAdoptBackendKnown(_ ids: Set<UUID>, for url: URL) throws {
+        let data = try JSONEncoder().encode(ids.map(\.uuidString).sorted())
+        try data.write(to: adoptBackendKnownURL(for: url), options: .atomic)
+    }
+
+    /// Lo que el backend conocía en el adopt. Sin fichero es vacío; un fichero que no se deja leer o decodificar LANZA.
+    static func loadAdoptBackendKnown(for url: URL) throws -> Set<UUID> {
+        let file = adoptBackendKnownURL(for: url)
+        guard FileManager.default.fileExists(atPath: file.path) else { return [] }
+        let raw = try JSONDecoder().decode([String].self, from: Data(contentsOf: file))
+        var ids = Set<UUID>()
+        for string in raw {
+            guard let id = UUID(uuidString: string) else { throw CocoaError(.coderReadCorrupt) }
+            ids.insert(id)
+        }
+        return ids
+    }
+
+    /// Quita lo que el backend conocía, si existe. LANZA si no puede borrarlo.
+    static func clearAdoptBackendKnown(for url: URL) throws {
+        let file = adoptBackendKnownURL(for: url)
+        guard FileManager.default.fileExists(atPath: file.path) else { return }
+        try FileManager.default.removeItem(at: file)
+    }
+
+    static func hasAdoptBackendKnown(for url: URL) -> Bool {
+        FileManager.default.fileExists(atPath: adoptBackendKnownURL(for: url).path)
+    }
+
+    private static func adoptBackendKnownURL(for url: URL) -> URL {
+        url.appendingPathExtension("backend-known")
     }
 }

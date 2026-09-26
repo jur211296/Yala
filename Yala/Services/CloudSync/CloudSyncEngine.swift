@@ -1416,6 +1416,12 @@ enum CloudSyncBreadcrumb {
     /// Un borrado de una fila que el espejo había re-identificado salió del drain con la identidad que ESTE teléfono le
     /// dio, la que el backend conoce, y no con la del líder (ticket `relay-row-rekeyed-then-deleted-tombstones-the-leader-identity`).
     /// Solo el tipo, sin PII.
+    /// El drain no tradujo lo que el espejo importó, en la ventana del adopt, de filas que el backend ya conocía (ticket
+    /// `adopt-window-late-imports-overwrite-newer-cloud-edits`): el pull trae su versión.
+    static func adoptLateImportSkipped(entity: String, count: Int) {
+        logger.notice("CloudSyncMigration adoptLateImportSkipped entity=\(entity, privacy: .public) count=\(count, privacy: .public) — importado tarde por el espejo de filas que el backend ya conoce: manda el backend")
+    }
+
     static func relayTombstoneTranslated(entity: String) {
         logger.notice("CloudSyncMigration relayTombstoneTranslated entity=\(entity, privacy: .public) — tombstone con la identidad que el backend conoce")
     }
@@ -1695,6 +1701,15 @@ final class CloudSyncEngine {
     /// `performDrain`.
     private var drainContext: ModelContext?
 
+    /// Lo que el backend conocía al terminar el adopt (`RelayIdentityLedger.loadAdoptBackendKnown`), leído en ESTA vuelta del
+    /// drain: `nil` = aún no se leyó. Perezoso, con el primer cambio que lo necesite; ilegible se lee vacío, con rastro.
+    private var drainAdoptBackendKnown: Set<UUID>?
+
+    /// Los cambios de la transacción en curso que no se tradujeron por ser del backend, por tipo. Pasan a
+    /// `drainAdoptSkipped` solo cuando la transacción se consume: una cortada por deriva del reloj se re-lee entera.
+    private var drainTxAdoptSkipped: [String: Int] = [:]
+    private var drainAdoptSkipped: [String: Int] = [:]
+
     // MARK: Init
 
     init(nodeID: NodeID = NodeID.generate()) {
@@ -1735,9 +1750,13 @@ final class CloudSyncEngine {
         drainSeq += 1
         drainContext = context
         drainRelayLedger = nil
+        drainAdoptBackendKnown = nil
+        drainAdoptSkipped = [:]
         defer {
             drainContext = nil
             drainRelayLedger = nil
+            drainAdoptBackendKnown = nil
+            drainAdoptSkipped = [:]
         }
         do {
             // 1) Cursor + token persistido. D-3: cargar el reloj persistido (send parte del estado
@@ -1809,6 +1828,7 @@ final class CloudSyncEngine {
                     // CONJUNTO de deletes de la transacción, no del change individual). §c.1.
                     let tombstoneReason = Self.classifyTombstoneReason(tx)
                     var txRows: [PendingOutboxRow] = []
+                    drainTxAdoptSkipped = [:]
                     do {
                         for change in tx.changes {
                             let entityName = change.changedPersistentIdentifier.entityName
@@ -1834,6 +1854,7 @@ final class CloudSyncEngine {
                         break
                     }
                     rows.append(contentsOf: txRows)
+                    drainAdoptSkipped.merge(drainTxAdoptSkipped, uniquingKeysWith: +)
                 }
                 // El high-water SOLO se mueve con transacciones del STORE PERSONAL, y SÍ se mueve con el
                 // ECO. Son dos razones DISTINTAS para no avanzar y confundirlas en una sola línea costó el
@@ -1985,6 +2006,10 @@ final class CloudSyncEngine {
                 pending = rows.count
             }
             CloudSyncBreadcrumb.drain(seq: drainSeq, pending: pending)
+            for (entity, count) in drainAdoptSkipped.sorted(by: { $0.key < $1.key }) {
+                CloudSyncBreadcrumb.adoptLateImportSkipped(entity: entity, count: count)
+                MetricsService.cloudAdoptLateImportSkipped(entity: entity, count: count)
+            }
             if !translationAborted { retireRelayIdentityLedgerIfFinished() }
             return true
         } catch {
@@ -2230,8 +2255,8 @@ final class CloudSyncEngine {
             CloudSyncBreadcrumb.relayTombstoneReadFailed(errorType: String(describing: type(of: error)))
             throw RelayTombstoneReadFailure()
         }
-        CloudSyncBreadcrumb.relayTombstoneTranslated(entity: entityType)
-        MetricsService.cloudRelayTombstoneTranslated(entity: entityType)
+        // El rastro y el canario los deja quien emite (`translateChange`): el borrado puede no salir si es del espejo sobre
+        // una fila que el backend conoce (ticket `adopt-window-late-imports-overwrite-newer-cloud-edits`).
         return prior
     }
 
@@ -2277,10 +2302,13 @@ final class CloudSyncEngine {
     /// Borra el registro cuando la migración ya lo dio por terminado (`RelayIdentityLedger.markRetirable`, desde el cierre del
     /// reconcile de `done`) y esta vuelta consumió todo el historial: con el espejo apagado no llega ninguna identidad más, y
     /// lo que quedaba por traducir ya salió. Sin la marca no se toca, aunque la fase sea `done`: el runtime puede arrancar
-    /// con el reconcile aún pendiente, antes de que la restauración haya corrido (review del ticket). Dos `stat` por drain.
+    /// con el reconcile aún pendiente, antes de que la restauración haya corrido (review del ticket). Un `stat` por drain.
+    ///
+    /// Decide la MARCA, no el fichero del registro: un adopt sin filas de identidad acuñada con testigo no escribe el registro,
+    /// pero sí la marca y lo que el backend conocía (ticket `adopt-window-late-imports-overwrite-newer-cloud-edits`), y eso
+    /// también se retira aquí.
     private func retireRelayIdentityLedgerIfFinished() {
-        guard FileManager.default.fileExists(atPath: relayIdentityLedgerURL.path),
-              RelayIdentityLedger.isRetirable(relayIdentityLedgerURL) else { return }
+        guard RelayIdentityLedger.isRetirable(relayIdentityLedgerURL) else { return }
         do {
             try RelayIdentityLedger.remove(at: relayIdentityLedgerURL)
         } catch {
@@ -2423,6 +2451,55 @@ final class CloudSyncEngine {
             CloudSyncBreadcrumb.relayIdentityLedgerUnavailable(step: "adopt-retire", errorType: String(describing: type(of: error)))
         }
         return true
+    }
+
+    // MARK: - Lo que el espejo importa tarde tras un adopt (ticket `adopt-window-late-imports-overwrite-newer-cloud-edits`)
+
+    /// **¿Es este cambio lo que el espejo trajo, en la ventana del adopt, de una fila que el backend ya conoce?** Entonces no se
+    /// traduce. `syncIDs` son las identidades con las que saldría: una, o las dos de un borrado re-identificado.
+    ///
+    /// La ventana va del paso 3 del adopt (`fastForwardHistoryBaseline`) al remonte sin espejo, y el drain que la lee es el
+    /// primero del runtime tras relanzar. Lo que el espejo importa ahí de una fila que el backend ya tiene es la versión que
+    /// estaba en iCloud —del líder, o de otro teléfono del mismo Apple ID que sigue en iCloud—, y traducida subía con un HLC
+    /// fresco: por LWW pisaba las ediciones que la nube había recibido después. El backend manda en esas filas: el primer pull
+    /// del runtime trae su versión (y un borrado que no sale, la fila de vuelta; si el backend la borró, el pull la borra).
+    ///
+    /// - `requiresMirrorAuthor == false` (altas): ningún camino local le da a una fila NUEVA una identidad que el backend ya
+    ///   tiene —el barrido y el backfill acuñan UUIDs frescos, y el alta que baja del pull la firma el motor—, así que un alta
+    ///   con identidad conocida es del espejo aunque la transacción no lleve su autor. Esa firma no está medida en device.
+    /// - `true` (cambios y borrados): solo con el autor del espejo (`PrivateSignOutExportGateLogic.mirrorAuthorPrefix`). Lo que
+    ///   el usuario edita o borra en este teléfono en la ventana sale como siempre.
+    ///
+    /// Lo que el backend conoce lo escribió el reconcile del adopt al lado del registro, y se retira con él tras el primer
+    /// drain completo después del remonte. Sin fichero no hay ventana: todo sale como antes. Un fichero ilegible, igual, con
+    /// rastro: parar el motor por esta red sería peor que el daño que cubre (la regla del registro).
+    private func skipsAdoptBackendKnownRow(_ syncIDs: [UUID], entityType: String, tx: DefaultHistoryTransaction,
+                                           requiresMirrorAuthor: Bool) -> Bool {
+        if requiresMirrorAuthor {
+            guard let author = tx.author, author.hasPrefix(PrivateSignOutExportGateLogic.mirrorAuthorPrefix) else { return false }
+        }
+        let known = drainAdoptBackendKnownIDs()
+        guard syncIDs.contains(where: known.contains) else { return false }
+        drainTxAdoptSkipped[entityType, default: 0] += 1
+        return true
+    }
+
+    /// Lo que el backend conocía en el adopt, leído una vez por vuelta. Sin fichero, vacío; ilegible, vacío con rastro.
+    private func drainAdoptBackendKnownIDs() -> Set<UUID> {
+        if let drainAdoptBackendKnown { return drainAdoptBackendKnown }
+        let loaded: Set<UUID>
+        do {
+            loaded = try RelayIdentityLedger.loadAdoptBackendKnown(for: relayIdentityLedgerURL)
+        } catch {
+            #if DEBUG
+            print("CloudSyncEngine: lo que el backend conocía en el adopt no se deja leer: \(error)")
+            #endif
+            CloudSyncBreadcrumb.relayIdentityLedgerUnavailable(step: "drain-backend-known",
+                                                               errorType: String(describing: type(of: error)))
+            loaded = []
+        }
+        drainAdoptBackendKnown = loaded
+        return loaded
     }
 
     // MARK: - Clasificación del reason de tombstone (§c.1, drain-side)
@@ -2619,6 +2696,8 @@ final class CloudSyncEngine {
             guard insert is DefaultHistoryInsert<T> else { return }
             guard let model = lookup[insert.changedPersistentIdentifier] else { return }  // borrada → skip
             guard let syncID = liveSyncID(model) else { return }  // sin identidad → skip
+            // El alta de una fila que el backend ya conoce, en la ventana del adopt: la importó el espejo, venga firmada o no.
+            guard !skipsAdoptBackendKnownRow([syncID], entityType: entityType, tx: tx, requiresMirrorAuthor: false) else { return }
             // INSERT = proyección COMPLETA de dominio (todas las columnas). Todas las unidades reciben
             // el HLC de la transacción. Los grupos de coherencia viajan enteros por construcción.
             try appendUpsert(model: model, emission: emission, syncID: syncID, entityType: entityType,
@@ -2637,6 +2716,9 @@ final class CloudSyncEngine {
                 identityMutationObservedCount += 1
                 CloudSyncBreadcrumb.identityMutationObserved(entity: entityType)
             }
+            // Lo que el espejo le cambió a una fila que el backend ya conoce, en la ventana del adopt. Una edición de ESTE
+            // teléfono no lleva el autor del espejo y sale como siempre.
+            guard !skipsAdoptBackendKnownRow([syncID], entityType: entityType, tx: tx, requiresMirrorAuthor: true) else { return }
             // PATCH parcial: mapea los keypaths cambiados a columnas Postgres. La identidad NO está en el
             // mapa (es la PK) → si SOLO cambió la identidad el set queda vacío → SKIP. Los keypaths sin
             // mapeo (relaciones no-columna, internos) se ignoran.
@@ -2661,6 +2743,17 @@ final class CloudSyncEngine {
             // (`relayTombstoneIdentity`). LANZA si no puede leer lo que lo decide: la vuelta entera aborta.
             let alsoTombstoned = try relayTombstoneIdentity(
                 for: typed.changedPersistentIdentifier, entityType: entityType, preserved: preserved)
+            // Lo que el espejo borró de una fila que el backend conoce, en la ventana del adopt: el pull dice si sigue viva.
+            // Con las DOS identidades: re-identificada por el espejo, la preservada es la del líder y la que el backend conoce
+            // es la del registro (lo cazó la review).
+            guard !skipsAdoptBackendKnownRow([preserved] + (alsoTombstoned.map { [$0] } ?? []), entityType: entityType,
+                                             tx: tx, requiresMirrorAuthor: true) else {
+                return
+            }
+            if alsoTombstoned != nil {
+                CloudSyncBreadcrumb.relayTombstoneTranslated(entity: entityType)
+                MetricsService.cloudRelayTombstoneTranslated(entity: entityType)
+            }
             // Tombstone (I4): op + syncID + `reason` clasificado drain-side (§c.1), sin payload de campos. Con una
             // identidad re-identificada salen LAS DOS: el backend guarda como borrada la que no conoce
             // (`apply_delta`, medido), así que la que sobra no hace daño, y la que falta dejaba la fila viva.

@@ -4553,17 +4553,22 @@ struct MigrationWorkExecutorTests {
     /// El backend de un líder que ya subió algo: las páginas que sirve la enumeración y el Merkle COHERENTE con ellas.
     /// Fábrica y no fuente, por lo mismo que `seedWindowCorpus`: la fuente se consume al paginar.
     private func backend(_ rows: [(table: String, id: UUID)], fields: [UUID: [String: WireValue]] = [:],
-                         hlc: String = "hlc", stub: RoutingStub) throws -> () -> FakeTombstoneSource {
+                         hlc: String = "hlc", tombstones: [(table: String, id: UUID)] = [],
+                         stub: RoutingStub) throws -> () -> FakeTombstoneSource {
         var counts: [String: Int] = [:]
         for row in rows { counts[row.table, default: 0] += 1 }
         stub.merkleBody = try makeMerkleBody(counts)
         return {
             let source = FakeTombstoneSource()
-            if !rows.isEmpty {
-                source.pages = [PulledPage(deltas: rows.enumerated().map {
+            if !rows.isEmpty || !tombstones.isEmpty {
+                let live = rows.enumerated().map {
                     upsertDelta(table: $0.element.table, syncID: $0.element.id, seq: Int64($0.offset + 1),
                                 fields: fields[$0.element.id] ?? [:], hlc: hlc)
-                }, maxServerSeq: Int64(rows.count))]
+                }
+                let deleted = tombstones.enumerated().map {
+                    tombstone(table: $0.element.table, syncID: $0.element.id, seq: Int64(rows.count + $0.offset + 1))
+                }
+                source.pages = [PulledPage(deltas: live + deleted, maxServerSeq: Int64(rows.count + tombstones.count))]
             }
             return source
         }
@@ -6315,9 +6320,11 @@ struct MigrationWorkExecutorTests {
     private func ledgerURL(_ dir: URL) -> URL { relayLedgerURL(forStore: dir.appendingPathComponent("personal.sqlite")) }
 
     /// **EL BUG DEL TICKET.** Entre el reconcile y el remonte el espejo le cambia la identidad a una categoría (y trae la
-    /// edición del líder). Tras el remonte el runtime restaura antes de drenar: la edición sube con la identidad del backend
-    /// y el pull no crea un born-remote. Sin la restauración —el control, sobre otra copia del mismo escenario— el pull la
-    /// duplica.
+    /// edición del líder). Tras el remonte el runtime restaura antes de drenar: la fila vuelve a la identidad del backend y el
+    /// pull no crea un born-remote. Sin la restauración —el control, sobre otra copia del mismo escenario— el pull la
+    /// duplica. La edición del líder NO sube: la trajo el espejo sobre una fila que el backend conoce, y desde
+    /// `adopt-window-late-imports-overwrite-newer-cloud-edits` manda el backend (hasta ese ticket este test afirmaba que
+    /// subía, con un HLC fresco que pisaba lo que la nube tuviera más nuevo).
     @Test("adopt: la fila que el espejo re-identifica tras el reconcile vuelve a su identidad al arrancar, y el pull no la duplica")
     func adoptPin_rekeyAfterTheReconcile_isRestoredAtStart() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
@@ -6338,7 +6345,9 @@ struct MigrationWorkExecutorTests {
         _ = await remounted.engine.pullAndApplyOnce(using: pull, context: remounted.context)
         #expect(try categoryCount(remounted.context) == 2, "sin born-remote")
         let upserts = try liveOutboxRows(remounted.context).filter { $0.opRaw == SyncOutboxOp.upsert.rawValue }.map(\.syncID)
-        #expect(upserts.contains(uploaded) && !upserts.contains(leaders), "la edición sube con la identidad del backend")
+        #expect(!upserts.contains(uploaded) && !upserts.contains(leaders), "la edición vieja del espejo no sube con ninguna")
+        let restored = try remounted.context.fetch(FetchDescriptor<Yala.Category>()).first { $0.syncID == uploaded }
+        #expect(restored?.name == "relay-0", "manda la versión del backend")
         #expect(!RelayIdentityLedger.isAdoptPinned(ledgerURL(dir)))
         #expect(!ledgerExists(dir), "marcado para retirar, el drain del pull lo retiró")
 
@@ -6611,6 +6620,238 @@ struct MigrationWorkExecutorTests {
         try RelayIdentityLedger.markAdoptPin(url)
         try RelayIdentityLedger.remove(at: url)
         #expect(!RelayIdentityLedger.isAdoptPinned(url), "la vuelta atrás la borra con el registro")
+    }
+
+    // MARK: - Lo que el espejo importa TARDE tras el adopt (ticket `adopt-window-late-imports-overwrite-newer-cloud-edits`)
+    //
+    // El adopt terminó y el paso 3 ancló la línea base del History, pero el import de iCloud no había bajado todo. Lo que el
+    // espejo trae después lo lee el primer drain tras relanzar. De las filas que el backend ya conoce es la versión vieja de
+    // iCloud, y traducida subía con un HLC fresco que pisaba por LWW la edición más nueva de la nube.
+
+    /// La escena, tras el paso 3 del adopt y antes del remonte. El backend conoce cinco categorías que ya estaban aquí, dos
+    /// que el espejo aún no había bajado y una que la nube ya borró. En la ventana el espejo baja las que faltaban (también la
+    /// borrada), trae una edición vieja de otra, un borrado de otra y una categoría que el backend no conoce; llega otra
+    /// conocida sin la firma del espejo; y en este teléfono se edita una del backend, otro escritor con autor propio edita
+    /// otra, se borra una y se crea una nueva.
+    private struct LateImportScene {
+        let late: UUID, lateWithoutAuthor: UUID, deletedInTheCloud: UUID, editedByMirror: UUID, deletedByMirror: UUID
+        let editedHere: UUID, editedByAnotherWriter: UUID, deletedHere: UUID, createdHere: UUID, unknownImport: UUID
+        var skippedByTheFix: Set<UUID> { [late, lateWithoutAuthor, deletedInTheCloud, editedByMirror] }
+    }
+
+    private func adoptThenLateImports(_ dir: URL, stub: RoutingStub) async throws -> LateImportScene {
+        let context = try makeContext(dir)
+        try seedLeaderMarker(for: "sub-1", in: context)
+        let editedByMirror = UUID(), deletedByMirror = UUID(), editedHere = UUID(), editedByAnotherWriter = UUID()
+        let deletedHere = UUID(), late = UUID(), lateWithoutAuthor = UUID(), deletedInTheCloud = UUID()
+        let imported = [editedByMirror, deletedByMirror, editedHere, editedByAnotherWriter, deletedHere].enumerated().map {
+            makeCategory("importada-\($0.offset)", syncID: $0.element, in: context)
+        }
+        try saveAsImported(context)
+        let source = try backend([editedByMirror, deletedByMirror, editedHere, editedByAnotherWriter, deletedHere, late,
+                                  lateWithoutAuthor].map { (table: "categories", id: $0) },
+                                 tombstones: [(table: "categories", id: deletedInTheCloud)], stub: stub)
+        let engine = CloudSyncEngine()
+        let executor = makeExecutor(context, engine, stub, FakeSession(token: "jwt", userID: "sub-1"), FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"), tombstoneSource: source())
+        #expect(await executor.runAdoptOrphanReconcile() == .completed(uploaded: 0, identityAssigned: 0))
+        engine.fastForwardHistoryBaseline(context: context)
+
+        // El espejo termina de bajar lo que iCloud tenía: una que faltaba, una edición vieja, un borrado y una que el backend
+        // no conoce (esa sigue subiendo: es `adopt-window-uploads-what-reaches-the-mirror-after-the-icloud-check`).
+        _ = makeCategory("vieja de iCloud", syncID: late, in: context)
+        _ = makeCategory("borrada ya en la nube", syncID: deletedInTheCloud, in: context)
+        imported[0].name = "editada en iCloud hace días"
+        context.delete(imported[1])
+        let unknownImport = UUID()
+        _ = makeCategory("solo en iCloud", syncID: unknownImport, in: context)
+        try saveAsImported(context)
+        // Un alta con una identidad que el backend ya tiene, sin la firma del espejo: tampoco la creó este teléfono.
+        _ = makeCategory("sin firma", syncID: lateWithoutAuthor, in: context)
+        try context.save()
+        // Lo que se hace en este teléfono en la ventana: editar una del backend, borrar otra y crear una. Eso sí sale.
+        imported[2].name = "editada aquí"
+        context.delete(imported[4])
+        let createdHere = UUID()
+        _ = makeCategory("creada aquí", syncID: createdHere, in: context)
+        try context.save()
+        // Un escritor de este teléfono con autor propio (no el del espejo ni el del motor): también sale.
+        imported[3].name = "editada por otro escritor"
+        context.author = "OtroEscritorDeEsteTelefono"
+        defer { context.author = nil }
+        try context.save()
+        return LateImportScene(late: late, lateWithoutAuthor: lateWithoutAuthor, deletedInTheCloud: deletedInTheCloud,
+                               editedByMirror: editedByMirror, deletedByMirror: deletedByMirror, editedHere: editedHere,
+                               editedByAnotherWriter: editedByAnotherWriter, deletedHere: deletedHere,
+                               createdHere: createdHere, unknownImport: unknownImport)
+    }
+
+    private func outboxUpserts(_ context: ModelContext) throws -> Set<UUID> {
+        Set(try liveOutboxRows(context).filter { $0.opRaw == SyncOutboxOp.upsert.rawValue }.map(\.syncID))
+    }
+
+    /// **EL BUG DEL TICKET.** Tras el remonte, el primer drain no traduce lo que el espejo trajo de filas que el backend
+    /// conoce (vivas o borradas): ni el alta (firmada o no), ni la edición vieja, ni el borrado. Lo que se hace en este teléfono
+    /// y lo que el backend no conoce sale como siempre. El control, sobre otra copia de la misma escena y quitando SOLO lo que
+    /// el backend conocía: todo sube, con HLC fresco.
+    @Test("adopt: el primer drain tras el remonte no sube lo que el espejo importó tarde de filas que el backend conoce")
+    func adoptLateImport_knownRowsDoNotUpload() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let scene = try await adoptThenLateImports(dir, stub: RoutingStub())
+        #expect(RelayIdentityLedger.hasAdoptBackendKnown(for: ledgerURL(dir)), "control: el reconcile dejó lo que el backend conoce")
+
+        let remounted = try remount(dir)
+        #expect(remounted.engine.restoreAdoptedRelayIdentitiesIfPinned(context: remounted.context))
+        #expect(remounted.engine.drainOnce(context: remounted.context))
+        #expect(try outboxUpserts(remounted.context)
+                == [scene.editedHere, scene.editedByAnotherWriter, scene.createdHere, scene.unknownImport])
+        #expect(try outboxTombstones(remounted.context) == [scene.deletedHere], "el borrado del espejo no sale; el de aquí sí")
+
+        let controlDir = freshDir(); defer { cleanup(controlDir) }
+        let control = try await adoptThenLateImports(controlDir, stub: RoutingStub())
+        try RelayIdentityLedger.clearAdoptBackendKnown(for: ledgerURL(controlDir))
+        let controlRemounted = try remount(controlDir)
+        #expect(controlRemounted.engine.restoreAdoptedRelayIdentitiesIfPinned(context: controlRemounted.context))
+        #expect(controlRemounted.engine.drainOnce(context: controlRemounted.context))
+        #expect(try outboxUpserts(controlRemounted.context).isSuperset(of: control.skippedByTheFix),
+                "control: sin la lista, lo importado tarde sube")
+        #expect(Set(try outboxTombstones(controlRemounted.context)) == [control.deletedByMirror, control.deletedHere],
+                "control: y el borrado del espejo también")
+    }
+
+    /// Lo que no subió lo trae el pull con la versión de la nube, sobre la misma fila: el backend manda y no se duplica.
+    @Test("adopt: lo que el espejo importó tarde toma la versión de la nube en el primer pull, sin duplicarse")
+    func adoptLateImport_thePullBringsTheCloudVersion() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let stub = RoutingStub()
+        let scene = try await adoptThenLateImports(dir, stub: stub)
+        let remounted = try remount(dir)
+        #expect(remounted.engine.restoreAdoptedRelayIdentitiesIfPinned(context: remounted.context))
+        let before = try categoryCount(remounted.context)
+
+        stub.pullBody = try backendCopyPage(of: scene.late, name: "editada en la nube")
+        let pull = SyncPullClient(baseURL: workerURL, tokenProvider: { "jwt" }, urlSession: stub)
+        _ = await remounted.engine.pullAndApplyOnce(using: pull, context: remounted.context)
+        #expect(stub.pullCallCount >= 1, "control: el pull llegó a pedirse")
+        let late = try remounted.context.fetch(FetchDescriptor<Yala.Category>()).filter { $0.syncID == scene.late }
+        #expect(late.map(\.name) == ["editada en la nube"])
+        #expect(try categoryCount(remounted.context) == before, "sin born-remote")
+        #expect(try !outboxUpserts(remounted.context).contains(scene.late), "la versión vieja no queda esperando a subir")
+    }
+
+    /// El canario: cuántos cambios no salieron, por tipo. Es lo que mide en la flota lo que el ticket solo infirió.
+    @Test("adopt: el drain que no traduce lo importado tarde deja el canario con el tipo y la cuenta")
+    func adoptLateImport_emitsTheCanary() async throws {
+        let defaults = makeIsolatedDefaults(prefix: "mwe.lateimport.metrics")
+        MetricsService._testReset()
+        MetricsService.start(
+            client: MetricsClient(baseURL: URL(string: "https://gw.test")!, urlSession: MetricsDown()),
+            defaults: defaults)
+        defer { MetricsService._testReset() }
+
+        let dir = freshDir(); defer { cleanup(dir) }
+        _ = try await adoptThenLateImports(dir, stub: RoutingStub())
+        let remounted = try remount(dir)
+        #expect(remounted.engine.restoreAdoptedRelayIdentitiesIfPinned(context: remounted.context))
+        #expect(remounted.engine.drainOnce(context: remounted.context))
+
+        let canaries = MetricsSpool.pending(defaults).filter { $0.e == "canary" && $0.n == "cloudAdoptLateImportSkipped" }
+        #expect(canaries.map(\.d) == ["Category"])
+        #expect(canaries.map(\.x) == [5], "las dos altas firmadas, la sin firma, la edición y el borrado")
+    }
+
+    /// El ciclo de vida de lo que el backend conocía: lo escribe el reconcile, lo lee el primer drain tras el remonte y ese
+    /// mismo drain lo retira; la siembra de una ida y la vuelta atrás lo quitan. Y lo retira la marca aunque el registro no
+    /// llegara a escribirse (un adopt sin filas de identidad acuñada con testigo).
+    @Test("adopt: lo que el backend conocía lo escribe el reconcile, lo retira el primer drain y lo quitan la siembra y la vuelta atrás")
+    func adoptLateImport_backendKnownLifecycle() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let phone = try await adoptedPhone(dir, stub: RoutingStub())
+        let url = ledgerURL(dir)
+        #expect(try RelayIdentityLedger.loadAdoptBackendKnown(for: url) == Set(phone.categories.compactMap(\.syncID)))
+
+        let remounted = try remount(dir)
+        #expect(remounted.engine.restoreAdoptedRelayIdentitiesIfPinned(context: remounted.context))
+        #expect(RelayIdentityLedger.hasAdoptBackendKnown(for: url), "control: la restauración no lo quita, lo necesita el drain")
+        #expect(remounted.engine.drainOnce(context: remounted.context))
+        #expect(!RelayIdentityLedger.hasAdoptBackendKnown(for: url), "el primer drain completo lo retira con el registro")
+
+        // Sin fichero del registro, con la marca de retirada: se retira igual.
+        try RelayIdentityLedger.writeAdoptBackendKnown([UUID()], for: url)
+        try RelayIdentityLedger.markRetirable(url)
+        #expect(!ledgerExists(dir), "control: no hay registro")
+        #expect(remounted.engine.drainOnce(context: remounted.context))
+        #expect(!RelayIdentityLedger.hasAdoptBackendKnown(for: url))
+        #expect(!RelayIdentityLedger.isRetirable(url))
+
+        try RelayIdentityLedger.writeAdoptBackendKnown([UUID()], for: url)
+        try RelayIdentityLedger.merge([:], into: url)
+        #expect(!RelayIdentityLedger.hasAdoptBackendKnown(for: url), "sembrar para una ida lo quita")
+        try RelayIdentityLedger.writeAdoptBackendKnown([UUID()], for: url)
+        try RelayIdentityLedger.remove(at: url)
+        #expect(!RelayIdentityLedger.hasAdoptBackendKnown(for: url), "la vuelta atrás lo borra con el registro")
+    }
+
+    /// **Lo cazó la review.** El espejo re-identifica una fila (la exportación tardía del líder) y después importa su borrado.
+    /// La preservada es la del líder, que el backend no conoce, pero el registro la traduce a la del backend: ese tombstone
+    /// tampoco sale. El mismo borrado hecho por el usuario sale con las dos (`adoptPin_rekeyedThenDeleted_tombstonesTheBackendIdentity`).
+    @Test("adopt: el borrado que el espejo importa de una fila que antes re-identificó tampoco sale con la identidad del backend")
+    func adoptLateImport_mirrorDeleteOfARekeyedRow_doesNotTombstoneTheBackendIdentity() async throws {
+        func scene(_ dir: URL) async throws -> (uploaded: UUID, leaders: UUID) {
+            let phone = try await adoptedPhone(dir, stub: RoutingStub(), seedingCoordinates: true)
+            let uploaded = try #require(phone.categories[0].syncID)
+            let leaders = UUID()
+            try mirrorRekeys(phone.categories[0], to: leaders, in: phone.context)
+            phone.context.delete(phone.categories[0])
+            try saveAsImported(phone.context)
+            return (uploaded, leaders)
+        }
+        let dir = freshDir(); defer { cleanup(dir) }
+        _ = try await scene(dir)
+        let remounted = try remount(dir)
+        #expect(remounted.engine.restoreAdoptedRelayIdentitiesIfPinned(context: remounted.context))
+        #expect(remounted.engine.drainOnce(context: remounted.context))
+        #expect(try outboxTombstones(remounted.context).isEmpty)
+
+        let controlDir = freshDir(); defer { cleanup(controlDir) }
+        let control = try await scene(controlDir)
+        try RelayIdentityLedger.clearAdoptBackendKnown(for: ledgerURL(controlDir))
+        let controlRemounted = try remount(controlDir)
+        #expect(controlRemounted.engine.restoreAdoptedRelayIdentitiesIfPinned(context: controlRemounted.context))
+        #expect(controlRemounted.engine.drainOnce(context: controlRemounted.context))
+        #expect(Set(try outboxTombstones(controlRemounted.context)) == [control.uploaded, control.leaders],
+                "control: sin la lista salen las dos")
+    }
+
+    /// Un adopt que se reintenta y sale por backend vacío no deja la lista de una pasada anterior (review): ya no describe el
+    /// backend.
+    @Test("adopt: la salida por backend vacío quita lo que una pasada anterior guardó como conocido")
+    func adoptLateImport_emptyBackendExitClearsAnOldList() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        try seedLeaderMarker(for: "sub-1", in: context)
+        _ = makeCategory("huérfana", syncID: UUID(), in: context)
+        try context.save()
+        try RelayIdentityLedger.writeAdoptBackendKnown([UUID()], for: ledgerURL(dir))
+        let stub = RoutingStub()
+        stub.merkleBody = try makeMerkleBody([:])
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: FakeTombstoneSource())
+        #expect(await executor.runAdoptOrphanReconcile() == .abortedEmptyBackend)
+        #expect(!RelayIdentityLedger.hasAdoptBackendKnown(for: ledgerURL(dir)))
+    }
+
+    /// Un fichero que no se deja leer no para el motor: el drain termina y todo sale como antes del ticket.
+    @Test("adopt: lo que el backend conocía ilegible no para el drain y todo sale como antes")
+    func adoptLateImport_unreadableListTranslatesAsBefore() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let scene = try await adoptThenLateImports(dir, stub: RoutingStub())
+        try Data("no es json".utf8).write(to: ledgerURL(dir).appendingPathExtension("backend-known"))
+        #expect(throws: (any Error).self) { try RelayIdentityLedger.loadAdoptBackendKnown(for: ledgerURL(dir)) }
+        let remounted = try remount(dir)
+        #expect(remounted.engine.drainOnce(context: remounted.context))
+        #expect(try outboxUpserts(remounted.context).isSuperset(of: scene.skippedByTheFix))
     }
 }
 
