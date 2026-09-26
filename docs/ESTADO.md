@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-26 (Lima)
 
-**Rama** `2.1` — Merge #265: **«Empezar de cero» ya no deja atrapado a quien tiene cambios de grupos que no pueden subir nunca: ofrece perderlos, con la cifra y una segunda confirmación.**
+**Rama** `2.1` — Merge #266: **Las cifras que da Claude (conector, staging) cuadran con la app: gastos de grupo por tu parte y cada divisa con la cotización de su día, verificado con goldens que escribe la propia app.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,29 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#265 · «Empezar de cero» ofrece perder los cambios de grupos que no pueden subir nunca)
+## Esta sesión (#266 · Las cifras del conector de Claude cuadran con la app)
+
+**Si preguntas a Claude cuánto gastaste, la cifra es la misma que enseña la app.** Un gasto de grupo que pagaste tú cuenta
+por tu parte (no por el total, y la parte que te deben ya no sale como ingreso), y un movimiento en otra divisa se
+convierte con la cotización de su día, con «≈» cuando no la hay. El campo `avisos` ya no habla de grupos ni de tasas:
+solo queda el de zona horaria cuando Claude no la pasa. Nada cambia en la app; Worker desplegado en staging.
+
+- **Cómo se sabe:** `mcp/test/golden/app-parity.json` (filas de PostgREST) → `YalaTests/MCP/MCPAppParityGoldenTests`
+  las mete por `EntityApplyMap` y calcula con el código de producción (escribe los `expected` con
+  `TEST_RUNNER_YALA_WRITE_MCP_GOLDENS=1`, los verifica sin ella) → `npm test` exige la misma cifra. Si la app cambia una
+  regla, rojo en Swift; si el conector se separa, rojo en `mcp/`.
+- **Premisa corregida:** `firstWeekday` ya viaja (es una `PrefSyncKey`); lo que falta subir es la zona horaria.
+- **Verificado:** 118 tests en `mcp/`, mutantes muertos en los dos lados, gate, CI verde (el golden pasa también en el
+  runner en UTC), e2e OAuth contra el Worker desplegado 12/12. Review adversarial de tres lentes, hallazgos arreglados.
+- Diferencias que quedan, declaradas: §9 de `docs/exploracion/plugin-claude-mcp.md`.
+
+### Lo que espera de Jürgen
+
+- Nada bloqueante. Tres tickets nuevos en backlog: `app-uploads-its-timezone-to-the-cloud` (medium),
+  `duplicate-exchange-rate-rows-pick-an-arbitrary-rate` (medium; medido: 367 días con filas de tasas duplicadas y
+  valores hasta un 12,6 % distintos) y `exchange-rate-date-keys-follow-the-phone-calendar` (low, inferido).
+
+## Sesión anterior (#265 · «Empezar de cero» ofrece perder los cambios de grupos que no pueden subir nunca)
 
 **Si «Empezar de cero» se para por cambios de grupos sin subir que no van a subir nunca** —la sesión que los apuntó ya no
 está en el teléfono (un iPhone heredado), la cuenta no está disponible o el teléfono lleva más de un día sin App Attest—,
@@ -44,7 +66,7 @@ hallazgos, arreglados en la rama). CI verde. Ticket a `qa` con guion.
   aparece, «Mejor no» no borra y «Perderlos y empezar de cero» sí.
 - Hallazgo a backlog (low, decisión de producto): `fresh-start-drops-mirror-entries-of-another-identity-without-counting-them`.
 
-## Sesión anterior (#264 · Yala en iPad: estado actual, propuesta y plan por fases)
+## Antes (#264 · Yala en iPad: estado actual, propuesta y plan por fases)
 
 **No cambia nada en la app.** Queda escrito qué ve hoy quien usa Yala en un iPad y cómo convertirla en una app de iPad
 de verdad sin hacer otra app: `docs/exploracion/ipad-nativo.md`, con 45 capturas del simulador (iPad mini e iPad Pro
