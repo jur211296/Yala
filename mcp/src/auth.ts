@@ -1,40 +1,42 @@
 /**
- * Validación del token que manda Claude en cada llamada a /mcp.
+ * Verificación de los tokens de Supabase que guarda el Worker. Claude ya no ve ninguno (ver `authorize.ts`): recibe
+ * un token opaco del propio Worker, y el Worker lee las finanzas con una sesión de Supabase que consiguió como
+ * cliente OAuth propio de Supabase.
  *
- * El token lo emite el servidor OAuth de Supabase Auth, no este Worker. Se verifica con el JWKS del proyecto
- * (ES256, el mismo que usa el gateway) y además se exige que sea un token DE SOLO LECTURA:
+ * Esa sesión se verifica al recibirla (canje del código y cada refresh) y en cada uso, con el JWKS del proyecto
+ * (ES256, el mismo que usa el gateway). Además de la firma se exige:
  *
- * - `client_id` presente: solo lo llevan los tokens emitidos a un cliente OAuth. Un token de la app (SIWA, Google,
- *   contraseña) no lo trae, así que aquí no sirve aunque su firma sea buena.
- * - `role = yala_mcp_reader`: lo pone el hook `yala_mcp_access_token_hook` (qa/cloud/mcp0_01_readonly_role.sql).
- *   Con ese rol, PostgREST no deja escribir nada ni ejecutar las RPC de escritura.
+ * - `client_id` = el cliente del Worker. Es el único al que el hook de Supabase deja recibir tokens
+ *   (`qa/cloud/mcp0_02_oauth_client_allowlist.sql`); un token de la app, o de cualquier otro cliente, no sirve aquí.
+ * - `role = yala_mcp_reader`: lo pone ese hook. Con ese rol PostgREST no deja escribir ni ejecutar las RPC de
+ *   escritura.
+ * - `session_id`: sin él no se puede comprobar que la sesión siga viva (revocación al momento).
+ * - `sub` = el usuario del grant, cuando se conoce: un refresh no puede cambiar de usuario.
  *
- * Las dos condiciones fallan CERRADO a propósito: si alguien apaga el hook, los tokens de Claude vuelven a salir con
- * `role = authenticated` —que sí escribe— y el MCP deja de atender en vez de atender con un token que escribe.
+ * Todo falla CERRADO: si alguien apaga el hook, los tokens vuelven con `role = authenticated` —que sí escribe— y el
+ * Worker deja de atender en vez de atender con un token que escribe.
  *
- * Lo que NO se comprueba y por qué: la audiencia. Supabase emite `aud = "authenticated"` y no implementa todavía el
- * parámetro `resource` de RFC 8707, así que no hay audiencia propia que exigir. Lo anota la exploración (§7).
+ * Lo que NO se comprueba y por qué: la audiencia. Supabase emite `aud = "authenticated"` y no implementa RFC 8707.
+ * La audiencia que importa ahora es la del token de Claude, que es del Worker y está atada a `…/mcp`.
  */
 import { createRemoteJWKSet, jwtVerify, type JWTPayload, type JWTVerifyGetKey } from "jose";
-import { authIssuer, type Env } from "./env";
+import { authIssuer, resourceMetadataUrl, type Env } from "./env";
 
 export const READER_ROLE = "yala_mcp_reader";
 
-export interface VerifiedToken {
+export interface UpstreamClaims {
   /** user_id de Supabase. Nunca se usa para filtrar: el filtro lo pone RLS con el propio token. */
   sub: string;
-  clientId: string;
-  sessionId: string | null;
-  expiresAt: number;
-  /** El JWT tal cual, para reenviarlo a PostgREST. */
-  raw: string;
+  sessionId: string;
+  /** `exp` del JWT, en segundos Unix. */
+  exp: number;
 }
 
-export type VerifyResult =
-  | { ok: true; token: VerifiedToken }
-  | { ok: false; reason: "missing" | "invalid" | "not_oauth_client" | "not_read_only" };
+export type UpstreamCheck =
+  | { ok: true; claims: UpstreamClaims }
+  | { ok: false; reason: "invalid" | "not_worker_client" | "not_read_only" | "no_session" | "wrong_user" };
 
-export type TokenVerifier = (raw: string | null) => Promise<VerifyResult>;
+export type UpstreamVerifier = (raw: string, expectedSub?: string) => Promise<UpstreamCheck>;
 
 let cachedJwks: { url: string; set: JWTVerifyGetKey } | null = null;
 
@@ -47,22 +49,21 @@ function remoteJwks(env: Env): JWTVerifyGetKey {
 }
 
 /** Comprobaciones de claims, separadas de la firma para poder probarlas sin red. */
-export function checkClaims(payload: JWTPayload, raw: string): VerifyResult {
+export function checkUpstreamClaims(payload: JWTPayload, env: Env, expectedSub?: string): UpstreamCheck {
   const sub = typeof payload.sub === "string" ? payload.sub : "";
-  if (!sub) return { ok: false, reason: "invalid" };
-  const clientId = typeof payload["client_id"] === "string" ? (payload["client_id"] as string) : "";
-  if (!clientId) return { ok: false, reason: "not_oauth_client" };
+  if (!sub || typeof payload.exp !== "number") return { ok: false, reason: "invalid" };
+  if (!env.SUPABASE_OAUTH_CLIENT_ID || payload["client_id"] !== env.SUPABASE_OAUTH_CLIENT_ID) {
+    return { ok: false, reason: "not_worker_client" };
+  }
   if (payload["role"] !== READER_ROLE) return { ok: false, reason: "not_read_only" };
-  const sessionId = typeof payload["session_id"] === "string" ? (payload["session_id"] as string) : null;
-  return {
-    ok: true,
-    token: { sub, clientId, sessionId, expiresAt: typeof payload.exp === "number" ? payload.exp : 0, raw },
-  };
+  const sessionId = typeof payload["session_id"] === "string" ? (payload["session_id"] as string) : "";
+  if (!sessionId) return { ok: false, reason: "no_session" };
+  if (expectedSub !== undefined && sub !== expectedSub) return { ok: false, reason: "wrong_user" };
+  return { ok: true, claims: { sub, sessionId, exp: payload.exp } };
 }
 
-export function makeVerifier(env: Env, keys?: JWTVerifyGetKey): TokenVerifier {
-  return async (raw) => {
-    if (!raw) return { ok: false, reason: "missing" };
+export function makeUpstreamVerifier(env: Env, keys?: JWTVerifyGetKey): UpstreamVerifier {
+  return async (raw, expectedSub) => {
     let payload: JWTPayload;
     try {
       ({ payload } = await jwtVerify(raw, keys ?? remoteJwks(env), {
@@ -73,36 +74,22 @@ export function makeVerifier(env: Env, keys?: JWTVerifyGetKey): TokenVerifier {
     } catch {
       return { ok: false, reason: "invalid" };
     }
-    return checkClaims(payload, raw);
+    return checkUpstreamClaims(payload, env, expectedSub);
   };
-}
-
-export function bearer(header: string | null): string | null {
-  if (!header) return null;
-  const m = /^Bearer\s+(.+)$/i.exec(header.trim());
-  return m?.[1]?.trim() || null;
 }
 
 /**
  * Cabecera del 401 que pide la especificación de autorización de MCP: apunta a los metadatos del recurso
- * protegido, de donde el cliente saca el servidor de autorización.
+ * protegido, de donde el cliente saca el servidor de autorización (este Worker). La del 401 sin token la pone la
+ * librería; esta es para cuando el token de Claude es bueno pero la sesión de Supabase que representa ya no.
  */
-export function wwwAuthenticate(resourceMetadataUrl: string, reason: string): string {
-  const parts = [`Bearer resource_metadata="${resourceMetadataUrl}"`];
-  if (reason !== "missing") {
-    parts.push(`error="invalid_token"`);
-    parts.push(`error_description="${describe(reason)}"`);
-  }
-  return parts.join(", ");
-}
-
-function describe(reason: string): string {
-  switch (reason) {
-    case "not_oauth_client":
-      return "El token no es de un cliente OAuth";
-    case "not_read_only":
-      return "El token no es de solo lectura";
-    default:
-      return "Token no valido o caducado";
-  }
+export function invalidTokenChallenge(env: Env, description: string): string {
+  // RFC 6750 §3: error_description solo admite ASCII visible sin comillas ni barra invertida.
+  const safe = description.replace(/[^\x20-\x21\x23-\x5b\x5d-\x7e]/g, "");
+  return [
+    `Bearer realm="OAuth"`,
+    `resource_metadata="${resourceMetadataUrl(env)}"`,
+    `error="invalid_token"`,
+    `error_description="${safe}"`,
+  ].join(", ");
 }
