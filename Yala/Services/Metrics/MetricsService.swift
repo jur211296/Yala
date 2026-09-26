@@ -208,6 +208,11 @@ enum MetricsCanary: String {
     /// líder (ticket `relay-row-rekeyed-then-deleted-tombstones-the-leader-identity`). `detail` = el tipo de entidad. Sin él,
     /// el movimiento borrado reaparecía en los otros teléfonos.
     case cloudRelayTombstoneTranslated
+    /// El primer drain tras el remonte de un adopt no tradujo lo que el espejo importó TARDE de filas que el backend ya
+    /// conocía (ticket `adopt-window-late-imports-overwrite-newer-cloud-edits`). `detail` = el tipo de entidad, `value` =
+    /// cuántos cambios. Distinto de cero mide lo que el ticket solo pudo inferir: que el import llega después del paso 3 del
+    /// adopt, y cuántas ediciones de la nube se habrían pisado.
+    case cloudAdoptLateImportSkipped
     /// Una observación de uno de esos tres pasos que no avanzó. Deja ver un atasco SISTÉMICO antes de que ningún teléfono
     /// llegue a sus 15 min o sus 72 h.
     case cloudForwardStepWaiting
@@ -735,6 +740,10 @@ extension MetricsService {
 
     static func cloudRelayTombstoneTranslated(entity: String) {
         canary(.cloudRelayTombstoneTranslated, detail: entity)
+    }
+
+    static func cloudAdoptLateImportSkipped(entity: String, count: Int) {
+        canary(.cloudAdoptLateImportSkipped, detail: entity, value: Double(count))
     }
 
     /// Una observación de uno de esos tres pasos que no avanzó. `detail` = `<paso>|<tramo de avance>|<tramo de causa>|<causa>`,

@@ -2184,6 +2184,14 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
 
         if backendSyncIDs.isEmpty && pendingUploads > 0 {
             CloudSyncBreadcrumb.adoptReconcileAbortedEmptyBackend(orphans: pendingUploads)
+            // Esta salida también termina el adopt, y con el backend vacío no hay nada que proteger: lo que una pasada
+            // ANTERIOR guardó como conocido ya no describe el backend (ticket `adopt-window-late-imports-overwrite-newer-cloud-edits`).
+            do {
+                try RelayIdentityLedger.clearAdoptBackendKnown(for: relayIdentityLedgerURL)
+            } catch {
+                CloudSyncBreadcrumb.relayIdentityLedgerUnavailable(step: "adopt-backend-known-clear",
+                                                                   errorType: String(describing: type(of: error)))
+            }
             return .abortedEmptyBackend
         }
 
@@ -2226,7 +2234,9 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         // el remonte, y el drain para los borrados (ticket `adopt-window-late-leader-identity-export-can-duplicate-after-the-remount`).
         // En todas las salidas que terminan el adopt con el backend poblado, también sin huérfanas. La de backend vacío
         // (`abortedEmptyBackend`) sale antes y no siembra: sin filas en el backend no hay identidad que el espejo pueda pisar.
-        pinAdoptedIdentities()
+        // Con él va lo que el backend conoce, para que el drain no traduzca lo que el espejo importe de esas filas hasta el
+        // remonte (ticket `adopt-window-late-imports-overwrite-newer-cloud-edits`).
+        pinAdoptedIdentities(backendKnown: backendSyncIDs)
 
         // El relevo del marcador, en UN sitio y solo si el adopt terminó (ticket
         // `markerless-adopt-stays-blocked-while-another-device-writes-to-the-account`): después de guardar identidades y
@@ -2918,9 +2928,14 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     /// backfill ya corrieron— y deja la marca del adopt, con la que el runtime restaura al arrancar tras el remonte
     /// (`CloudSyncEngine.restoreAdoptedRelayIdentitiesIfPinned`).
     ///
+    /// Y, detrás de la marca, las identidades que el backend conoce (`backendKnown`, vivas o borradas, de la enumeración de
+    /// ESTA pasada): lo que el espejo importe de esas filas entre el paso 3 del adopt y el remonte no lo traduce el drain
+    /// (ticket `adopt-window-late-imports-overwrite-newer-cloud-edits`). Solo con la marca puesta: sin ella el runtime no
+    /// marca el registro para retirar, y el fichero se quedaría hasta la próxima siembra.
+    ///
     /// Best-effort, como la siembra de la ida: sin registro todo sigue como antes del ticket, y parar el adopt por esta red
     /// (un disco lleno) sería peor que el daño que cubre. Deja rastro.
-    private func pinAdoptedIdentities() {
+    private func pinAdoptedIdentities(backendKnown: Set<UUID>) {
         var pairs: [(id: PersistentIdentifier, row: SyncIdentity)] = []
         do {
             var rowsBySyncID: [UUID: SyncIdentity] = [:]
@@ -2953,6 +2968,12 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         seedRelayIdentityLedger(pairs)
         do {
             try RelayIdentityLedger.markAdoptPin(relayIdentityLedgerURL)
+            do {
+                try RelayIdentityLedger.writeAdoptBackendKnown(backendKnown, for: relayIdentityLedgerURL)
+            } catch {
+                CloudSyncBreadcrumb.relayIdentityLedgerUnavailable(step: "adopt-backend-known",
+                                                                   errorType: String(describing: type(of: error)))
+            }
         } catch {
             CloudSyncBreadcrumb.relayIdentityLedgerUnavailable(step: "adopt-mark", errorType: String(describing: type(of: error)))
         }
