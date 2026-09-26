@@ -63,3 +63,9 @@ completa + 16 mutantes + XCUITest cupieron por encima de 4 GB.
 **Y el DerivedData de un worktree ya retirado es basura segura** (medido el 2026-09-26: 4,5 GB, de 5,9 a 10 GB libres).
 `plutil -p <DerivedData>/<Yala-hash>/info.plist` da su `WorkspacePath`; si ese directorio ya no existe, nadie lo usa. Se
 borra con el mismo `find -delete` (más `-type l`). El mío se crea con otro hash, así que no ahorra el build.
+
+**2026-09-26: la otra bolsa está en el `tmp` de la APP dentro del device.** Tras mutantes + la suite completa,
+`data/Containers/Data/Application/<uuid de com.jurgenschmidt.yala>/tmp` tenía **2,7 GB en 2323 directorios** (`CSRuntime-*`,
+`IdRemap-*`: stores de prueba que los tests no borran). Con el simulador apagado se vacía con el mismo `find -delete`
+(`-mindepth 1`, más `-type l`) y devolvió 3,8 → 6,5 GB. El contenedor se identifica por `MCMMetadataIdentifier` en su
+`.com.apple.mobile_container_manager.metadata.plist`. Esto el `disk-report.sh` tampoco lo desglosa.
