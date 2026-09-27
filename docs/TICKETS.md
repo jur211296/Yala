@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (651)
+## Index (653)
 
 | id | status | path |
 |---|---|---|
@@ -58,9 +58,10 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | accounts-need-more-visibility-in-the-ui | backlog | tickets/backlog/accounts-need-more-visibility-in-the-ui.md |
 | activation-discard-gate-exits-without-wiping-when-icloud-is-unreachable | done | tickets/done/activation-discard-gate-exits-without-wiping-when-icloud-is-unreachable.md |
 | activation-discard-loses-the-group-history-question | backlog | tickets/backlog/activation-discard-loses-the-group-history-question.md |
-| activation-private-gate-leaves-a-late-notice-that-purges-groups | backlog | tickets/backlog/activation-private-gate-leaves-a-late-notice-that-purges-groups.md |
+| activation-private-gate-leaves-a-late-notice-that-purges-groups | qa | tickets/qa/activation-private-gate-leaves-a-late-notice-that-purges-groups.md |
 | activation-restore-start-fresh-keeps-the-imported-rows | done | tickets/done/activation-restore-start-fresh-keeps-the-imported-rows.md |
 | activation-resume-returns-to-restore-on-an-emptied-zone | backlog | tickets/backlog/activation-resume-returns-to-restore-on-an-emptied-zone.md |
+| activation-start-fresh-drops-group-settlement-legs | backlog | tickets/backlog/activation-start-fresh-drops-group-settlement-legs.md |
 | adopt-after-the-cutover-needs-a-marker-the-leader-never-exported | done | tickets/done/adopt-after-the-cutover-needs-a-marker-the-leader-never-exported.md |
 | adopt-claim-stays-parked-with-no-ceiling | done | tickets/done/adopt-claim-stays-parked-with-no-ceiling.md |
 | adopt-effect-after-the-cloud-mode-retries-silently | backlog | tickets/backlog/adopt-effect-after-the-cloud-mode-retries-silently.md |
@@ -414,6 +415,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | late-icloud-notice-wipe-cancelled-after-it-committed-skips-its-exit | backlog | tickets/backlog/late-icloud-notice-wipe-cancelled-after-it-committed-skips-its-exit.md |
 | late-icloud-sheet-buttons-may-leave-the-screen-at-large-dynamic-type | backlog | tickets/backlog/late-icloud-sheet-buttons-may-leave-the-screen-at-large-dynamic-type.md |
 | late-icloud-wipe-can-re-export-between-its-two-halves | backlog | tickets/backlog/late-icloud-wipe-can-re-export-between-its-two-halves.md |
+| late-notice-of-a-welcome-private-session-purges-groups-joined-later | backlog | tickets/backlog/late-notice-of-a-welcome-private-session-purges-groups-joined-later.md |
 | late-wipe-arm-is-dropped-silently-when-the-device-moves-to-the-cloud | backlog | tickets/backlog/late-wipe-arm-is-dropped-silently-when-the-device-moves-to-the-cloud.md |
 | leader-displaced-after-the-cutover-pushes-its-residual-in-the-reconcile | qa | tickets/qa/leader-displaced-after-the-cutover-pushes-its-residual-in-the-reconcile.md |
 | leaving-and-reentering-restore-renews-the-hard-cap | done | tickets/done/leaving-and-reentering-restore-renews-the-hard-cap.md |

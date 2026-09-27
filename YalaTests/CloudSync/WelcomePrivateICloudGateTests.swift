@@ -1700,18 +1700,22 @@ struct WelcomePrivateICloudGateWiringTests {
         // **El scope de la reanudación a ciegas es `.handover`, y decirlo aquí importa:** este es el
         // camino que NO vuelve a preguntar —la persona ya confirmó dos veces y lo que falta es acabar—,
         // así que es el que más daño hace si su alcance cambia sin que nadie lo mire.
-        #expect(rama.contains("performICloudCorpusWipe(.handover)"))
+        // Desde el ticket `activation-private-gate-leaves-a-late-notice-that-purges-groups` el scope lo decide
+        // `performLateICloudWipe` (de dónde nació la sesión), el MISMO borrado que el aviso: reanudar con otro alcance
+        // sería terminar a ciegas un borrado distinto del que la persona confirmó.
+        #expect(rama.contains("await performLateICloudWipe()"))
+        #expect(!rama.contains("performICloudCorpusWipe("), "la reanudación volvió a escribir su scope a mano")
         #expect(rama.contains("clearICloudCorpusWipeArm()"), """
             sin retirar el arm, el arranque siguiente vuelve a reanudar el mismo borrado, y el siguiente,
             y el siguiente.
             """)
         #expect(rama.contains("clearPrivateChoseWithoutICloud()"))
-        #expect(rama.contains("hasCompletedOnboarding = false"),
+        #expect(rama.contains("settleAfterLateICloudWipe()"),
                 "el borrado se llevó el corpus: la persona tiene que volver al onboarding")
         // Y el corte ante el fallo: si el borrado no confirma, NO se retira nada.
         // Desde el 2026-09-26 el fallo se lee en una constante para poder desarmar si se paró en los cambios de grupos
         // (ticket `fresh-start-wipe-kills-unsent-group-writes-silently`); el corte sigue siendo el mismo.
-        #expect(rama.contains("let failure = await performICloudCorpusWipe(.handover)")
+        #expect(rama.contains("let failure = await performLateICloudWipe()")
                 && rama.contains("guard failure == nil else { return }"), """
             retirar los testigos tras un borrado fallido deja el corpus en iCloud y a nadie mirándolo.
             """)

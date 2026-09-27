@@ -138,7 +138,9 @@ struct FullModeActivationView: View {
                 // **Aquí sí se sigue, y es la diferencia con la puerta de abajo.** Quien llega a esta
                 // pantalla acaba de elegir «privado» y no ha pedido borrar nada, así que no hay ningún
                 // borrado que declarar: no poder preguntarle a iCloud jamás bloquea (ADR §9), y el testigo
-                // deja el aviso pendiente para el primer arranque en que se pueda.
+                // deja el aviso pendiente para el primer arranque en que se pueda. **Su borrado no es el del
+                // Welcome**: `completeFullActivation` apunta que la sesión nace de aquí, y el aviso borra con
+                // `.importedRows`, sin purgar los grupos (`ICloudWipeScope.lateNotice`).
                 unverifiedExit: .proceedWatchingTheMirror,
                 // **Su borrado es solo de zona, así que nunca deja nada a medias**: con la zona ida ya terminó, y lo
                 // que queda en el teléfono es de quien activa. Salir retira el arm y la marca de la zona, como siempre.
@@ -598,6 +600,15 @@ struct FullModeActivationView: View {
         // dueño en su próximo arranque — o sea le causaría el bug de este ticket desde la sesión de otra
         // persona. La simetría es la regla: quien no arma, no desarma.
         StorageModePersistence.clearGroupsOnlyNeutralMount()
+
+        // **Y queda escrito de dónde nace la sesión, ANTES del eje** (ticket
+        // `activation-private-gate-leaves-a-late-notice-that-purges-groups`). La puerta privada que no pudo preguntarle a
+        // iCloud deja el testigo del espejo tardío, y ése sí sobrevive a la activación, a propósito: la validación se
+        // aplaza, no se tira. Lo que no puede sobrevivir es su borrado de siempre (`.handover`), que purgaría los grupos
+        // que esta activación existe para conservar. Con la marca, ese aviso borra con `.importedRows`
+        // (`ICloudWipeScope.lateNotice`). Antes del eje por la kill-safety: al revés, un kill entre las dos dejaría una
+        // sesión privada cuyo aviso tardío purga sus grupos.
+        PrivateSessionMark.markBornFromFullActivation()
 
         // El eje 1: «Activar Yala completo» es el nacimiento de la sesión privada de un solo-grupos
         // (F → D). Asignar al espejo observable PERSISTE la marca y además des-reduce la shell, que es
