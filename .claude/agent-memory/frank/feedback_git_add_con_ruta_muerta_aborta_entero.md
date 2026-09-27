@@ -33,3 +33,7 @@ rename solo, y como el sello del gate ancla en HEAD, el `--amend` quedó BLOQUEA
 que devuelve HEAD y deja el sello válido. ⇒ el comando de commit se escribe SIEMPRE como
 `git add -A -- Yala YalaTests docs tickets qa .claude/rules && git commit …`, sin excepción: la lista a mano no es una
 opción aunque parezca más precisa.
+
+**Quinta vez el 2026-09-27 (#277), lista a mano otra vez.** Esta vez con `&&`, así que no salió nada a medias: el
+`fatal: pathspec` abortó el commit entero y se repitió sin la ruta. El `&&` funcionó; la lista a mano sigue sin
+funcionar. Leer esta memoria no basta: el primer comando de commit de la sesión se escribe por directorio.
