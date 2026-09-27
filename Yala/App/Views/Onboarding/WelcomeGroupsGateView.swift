@@ -443,6 +443,19 @@ struct WelcomeGroupsGateView: View {
                 YalaPrimaryButton(L10n.Welcome.Groups.gateBack) { leaveAfterBlock() }
                     .accessibilityIdentifier("welcome_groups_gate_neutral_session_survived_back")
             }
+        case .blocked(_, .migrationInFlight), .blocked(_, .migrationUnreadable):
+            // **El paso de los datos entre iCloud y la nube no está en reposo** (2026-09-27, ticket
+            // `private-sign-out-proceeds-with-a-migration-in-flight`): el cierre se paró antes de escribir nada, porque
+            // borrar ahí se llevaría lo que falta por subir. Un adopt que se retoma tras un kill puede estar en marcha con
+            // esta pantalla delante. **El texto no es el de Ajustes**: aquel manda a «Dónde viven tus datos» en Perfil, y
+            // en el Welcome no hay Perfil. Este vale para los dos motivos porque no afirma cuál de los dos es.
+            noticeShell(icon: "arrow.trianglehead.2.clockwise.rotate.90",
+                        title: L10n.Welcome.Groups.neutralUnavailableTitle,
+                        body: L10n.Welcome.Groups.neutralMigrationBody,
+                        identifier: "welcome_groups_gate_neutral_migration") {
+                YalaPrimaryButton(L10n.Welcome.Groups.gateBack) { leaveAfterBlock() }
+                    .accessibilityIdentifier("welcome_groups_gate_neutral_migration_back")
+            }
         case .blocked:
             // El otro bloqueo alcanzable en esta celda: quedaron cambios de GRUPOS sin subir de una sesión
             // que caducó (`blockIfGroupsCannotUpload`). No se descartan nunca, así que la única salida

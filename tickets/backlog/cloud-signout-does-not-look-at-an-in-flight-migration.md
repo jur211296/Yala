@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, cierre de sesión, migración"
 created: 2026-09-25
-updated: 2026-09-25
+updated: 2026-09-27
 source: "review adversarial de `sign-out-push-all-runs-a-sync-cycle-past-the-migration-gate` (2026-09-25)"
 ---
 
@@ -27,3 +27,10 @@ adelante y arma el borrado aunque el proceso de la migración siga trabajando. I
 
 - [ ] Medido si el cierre es alcanzable con una fase transitoria en vuelo; si lo es, decidido qué hace (esperar, bloquear o
   cancelar la migración primero).
+
+## Nota (2026-09-27): la mitad privada está cerrada
+
+`private-sign-out-proceeds-with-a-migration-in-flight` para el cierre de las tres celdas por archivos (C, D, F) con la
+migración fuera de reposo. Queda la celda de la nube (`.cloudSecureSignOut`, modo `.cloud`), que es este ticket: una vuelta
+a iCloud en vuelo antes de persistir `.icloud`. `migrationAtRest` no sirve aquí tal cual —en `.cloud` deriva `.cloudActive`
+y bloquearía todo cierre en la nube—; habría que distinguir `.cloudActive` estable de una fase de la vuelta.

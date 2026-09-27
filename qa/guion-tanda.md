@@ -39,6 +39,7 @@ En el orden del guion. Una línea por ticket: qué pruebas y por qué no basta c
 | D3 | `previous-person-cloud-session-survives-fresh-start-and-reinstall` | Tras reinstalar, la app no entra sola con la cuenta anterior | Sale gratis en D2 |
 | D4 | `snapshot-upload-has-no-ceiling-and-no-way-out` | «Cancelar la activación» aparece si la subida se para al 55 % | Muy alto: sin él, la migración se quedaba colgada para siempre |
 | D5 | `forward-migration-steps-have-no-ceiling-and-no-exit` | «Activar la nube» termina de punta a punta tras cancelar una vez | Muy alto, y va en la misma pasada que D4 |
+| D7 | `private-sign-out-proceeds-with-a-migration-in-flight` | Con la subida a la nube parada, «Cerrar sesión» no borra nada | Riesgo de perder datos; una subida en marcha no existe en el simulador |
 | D6 | `reentry-counts-as-fresh-install` | Volver a tu cuenta de la nube tras reinstalar no parece una instalación nueva | Flujo que hará todo el que cambie de teléfono |
 | E1 | `reverse-cutover-cerrado-para-cuentas-born-cloud` | «Volver a iCloud» con una cuenta nacida en la nube sube TODO a iCloud | Es la única pieza del repo marcada «NO medido» |
 
@@ -201,6 +202,10 @@ Necesita **G1**, que tras el bloque C ya es una cuenta solo de grupos.
    - **Control:** mientras sube con red, el botón de cancelar sale deshabilitado.
    - **Al llegar al 55 %, pon el modo avión.**
    - **PASA si**, cuando el intento se detiene, aparece «Cancelar la activación» debajo de «Retomar».
+   - **D7 · Cerrar sesión no borra nada a mitad.** Antes de cancelar, vuelve a Perfil → «Cerrar sesión» →
+     confirma. **PASA si** sale «No pudimos cerrar tu sesión» diciendo que el paso de tus datos entre iCloud y la
+     nube todavía no terminó, y al tocar OK sigues en la app con tus movimientos. **FALLA si** sale «Cierra y vuelve
+     a abrir Yala» o la espera de iCloud. Vuelve a «Dónde viven tus datos» y sigue con el cancelar.
    - «Seguir activando la nube» no cambia nada.
    - «Sí, cancelar» te devuelve a «Migrar a la nube» **sin alerta ni tarjeta de fallo**.
 5. **D5 · Ahora de punta a punta.** Quita el modo avión y «Activar la nube» otra vez con **G2**.

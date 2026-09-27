@@ -706,6 +706,10 @@ struct MigrationJournalUnreadableWiringTests {
     /// Apple ID pasa la lectura a `AppleIDChangeCloseLogic.migrationAtRest`, que la deriva con
     /// `CloudMigrationUIStateDeriver.derive(read:)` —ilegible es `.journalUnreadable` y no concede—. Su cableado lo fija
     /// `AppleIDChangeWiringTests.elGuardLeeLasDosFuentes`.
+    ///
+    /// Y el 2026-09-27 esa lectura se muda de `AppBootstrapper.swift` a `MigrationRestReading.swift` (ticket
+    /// `private-sign-out-proceeds-with-a-migration-in-flight`): la comparten la oferta del Apple ID y el cierre de la sesión
+    /// privada, que pasa la misma lectura al mismo predicado. Sigue siendo UNA lectura: el cierre no añade otra.
     @Test func phaseStoreConsumers_inventory() throws {
         let yala = Self.repoRoot.appendingPathComponent("Yala")
         let files = try #require(FileManager.default.enumerator(at: yala, includingPropertiesForKeys: nil))
@@ -723,7 +727,7 @@ struct MigrationJournalUnreadableWiringTests {
         }
         #expect(readUses == ["BackgroundTaskManager.swift": 4, "CloudSyncRuntime.swift": 1, "CloudSyncEngine.swift": 1,
                              "PreferenceSyncService.swift": 1, "CloudMigrationController.swift": 1,
-                             "AppBootstrapper.swift": 1])
+                             "MigrationRestReading.swift": 1])
         #expect(phaseDecideUses == ["BGTaskMigrationGate.swift": 1, "CloudSyncDebugView.swift": 1])
     }
 

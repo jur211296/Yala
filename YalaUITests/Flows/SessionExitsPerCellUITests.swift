@@ -14,9 +14,10 @@
 //  La E (nube completa) no tiene seam de `storageMode == .cloud` y la cubre la tabla unitaria
 //  (`CloudSignOutFlowLogicTests`, `DestructiveScopeLogicTests`).
 //
-//  Solo UN test CONFIRMA el cierre, y con un seam que lo para antes del arm: el de la sesión que sobrevive a su cierre
-//  (`-uitest-sign-out-keeps-session`). Los demás abren la hoja, leen su escenario y la cancelan: el seam de la sesión no
-//  crea una real, y un cierre que llegara al arm borraría el store del simulador en el siguiente arranque MANUAL.
+//  Solo DOS tests CONFIRMAN el cierre, y los dos con el seam que lo para antes del arm: el de la sesión que sobrevive a su
+//  cierre (`-uitest-sign-out-keeps-session`) y el de la migración fuera de reposo, que lo lleva de freno. Los demás abren la
+//  hoja, leen su escenario y la cancelan: el seam de la sesión no crea una real, y un cierre que llegara al arm borraría el
+//  store del simulador en el siguiente arranque MANUAL.
 //
 
 import XCTest
@@ -156,6 +157,47 @@ final class SessionExitsPerCellUITests: XCTestCase {
 
         // El reintento: cerrar el aviso devuelve el cierre a reposo, y «Cerrar sesión» vuelve a abrir su hoja. Con la fase
         // pegada en `.blocked`, el toque volvería a enseñar el aviso en vez de la hoja.
+        app.alerts.buttons.firstMatch.tap()
+        scrollTo(app, "profile_security_signout").tap()
+        XCTAssertTrue(app.buttons["destructive_scope_confirm"].waitForExistence(timeout: 10),
+                      "Tras cerrar el aviso, «Cerrar sesión» no vuelve a abrir su hoja: el reintento no tiene puerta.")
+        app.buttons["destructive_scope_cancel"].tap()
+    }
+
+    /// Ticket `private-sign-out-proceeds-with-a-migration-in-flight`. Con el paso de los datos a la nube fuera de reposo, el
+    /// cierre de la sesión privada se para ANTES de escribir nada y lo dice. El seam `-uitest-migration-journal-unreadable`
+    /// hace lanzar la lectura del journal del controller, que es el único estado «fuera de reposo» que el simulador puede
+    /// montar: da el motivo `.migrationUnreadable`, cuyo texto manda a cerrar y abrir Yala (no a «Dónde viven tus datos»).
+    ///
+    /// **El control positivo es el test de arriba**: la misma celda, sin el seam, llega hasta soltar la sesión — o sea, en
+    /// reposo la puerta de la migración deja pasar. Y **si este test sale con la pantalla de reabrir, el arm YA SE ESCRIBIÓ**
+    /// **Lleva el seam de la sesión superviviente como FRENO** (review adversarial): si la puerta se rompe, el cierre se para
+    /// en `signOut()` con «sigue abierta» antes del arm, en vez de escribir el arm en el simulador. Y con la puerta rota el
+    /// aviso que sale es ése, no el de la migración, así que el test cae igual. El controller se crea en los dos schemes
+    /// bajo `-uitest` (`CloudBackendConfig.isConfigured`); el gate lo corre con `Yala Dev`, como sus vecinos.
+    func test_privateCell_C_signOutWithTheMigrationNotAtRest_stopsBeforeAnythingAndSaysSo() {
+        let app = XCUIApplication()
+        app.launchForUITest(seed: "minimal", migrationJournalUnreadable: true, signOutKeepsSession: true)
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap no completó.")
+        app.openProfile()
+
+        scrollTo(app, "profile_security_signout").tap()
+        let confirm = app.buttons["destructive_scope_confirm"]
+        XCTAssertTrue(confirm.waitForExistence(timeout: 5), "La hoja de «Cerrar sesión» no ofrece confirmar.")
+        confirm.tap()
+
+        // La puerta va ANTES de la espera de iCloud: el aviso sale sin pasar por «Aún faltan cambios por subir».
+        let migration = app.alerts.staticTexts
+            .matching(NSPredicate(format: "label CONTAINS %@", "en qué punto va el paso de tus datos entre iCloud y la nube"))
+            .firstMatch
+        XCTAssertTrue(migration.waitForExistence(timeout: 15), """
+            No salió el aviso de la migración: el cierre siguió con el registro de la migración ilegible, se paró en \
+            silencio o enseñó el texto de otro bloqueo.
+            """)
+        XCTAssertFalse(app.descendants(matching: .any)["signout_relaunch_screen"].exists,
+                       "Salió la pantalla de reabrir: el cierre armó el borrado. Borra el arm del simulador.")
+
+        // El reintento tiene puerta: cerrar el aviso devuelve el cierre a reposo y la hoja vuelve a abrir.
         app.alerts.buttons.firstMatch.tap()
         scrollTo(app, "profile_security_signout").tap()
         XCTAssertTrue(app.buttons["destructive_scope_confirm"].waitForExistence(timeout: 10),

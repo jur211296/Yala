@@ -372,6 +372,9 @@ struct CloudSignOutGroupsReasonTests {
             .sessionNotClosed: .permanent,
             // Y la del cierre de sesión (2026-09-26) la pone el cierre DESPUÉS de los dos push-all: tampoco pasa por aquí.
             .signOutSessionSurvived: .permanent,
+            // Los de la migración los pone solo el cierre PRIVADO (2026-09-27): este productor, de la nube, no los recibe.
+            .migrationInFlight: .permanent,
+            .migrationUnreadable: .permanent,
         ]
         #expect(CloudSignOutFlowLogic.BlockReason.allCases.count == esperado.count, """
             Hay un motivo de bloqueo sin traducción escrita para el cierre en la nube. Decídelo aquí: el
@@ -439,6 +442,9 @@ struct CloudSignOutGroupsReasonTests {
             .sessionNotClosed: .permanent,
             // Lo pone el cierre tras soltar la sesión (2026-09-26), no el push-all personal.
             .signOutSessionSurvived: .permanent,
+            // Solo el cierre PRIVADO (2026-09-27), no el push-all personal de la nube.
+            .migrationInFlight: .permanent,
+            .migrationUnreadable: .permanent,
         ]
         #expect(CloudSignOutFlowLogic.BlockReason.allCases.count == esperado.count, """
             Hay un motivo de bloqueo sin decisión escrita para el paso 1 del cierre en la nube. Decide aquí si viaja.
@@ -526,6 +532,10 @@ struct GroupsSignOutRetryDecisionTests {
             .sessionNotClosed: .retryAfter(seconds: GroupsSignOutRetryDecision.retryIntervalSeconds),
             // Lo pone el cierre DESPUÉS del push-all, al soltar la sesión (2026-09-26): tampoco pasa por aquí.
             .signOutSessionSurvived: .retryAfter(seconds: GroupsSignOutRetryDecision.retryIntervalSeconds),
+            // Los pone el cierre PRIVADO antes de subir nada o pegados al arm (2026-09-27): no salen de un push-all, así que
+            // tampoco pasan por aquí.
+            .migrationInFlight: .retryAfter(seconds: GroupsSignOutRetryDecision.retryIntervalSeconds),
+            .migrationUnreadable: .retryAfter(seconds: GroupsSignOutRetryDecision.retryIntervalSeconds),
         ]
         #expect(CloudSignOutFlowLogic.BlockReason.allCases.count == esperado.count, """
             Hay un motivo de bloqueo sin decisión escrita. `decide` no es un `switch`, así que se lo va a
@@ -962,7 +972,7 @@ struct PausedChannelReasonWiringTests {
         #expect(present.contains(Self.squashed("""
             case .permanent, .sessionExpired, .channelPaused, .uploadRetryLater,
                  .syncStoppedNeedsUpdate, .syncStoppedMidMigration, .syncStoppedNeedsRelaunch, .personalUploadRetryLater,
-                 .cloudSessionExpired, .signOutSessionSurvived:
+                 .cloudSessionExpired, .signOutSessionSurvived, .migrationInFlight, .migrationUnreadable:
                 showSignOutBlockedAlert = true
             """)), """
             El fallo pasajero de la subida, o uno de los tres del motor parado (2026-09-25), dejó de entrar por el \

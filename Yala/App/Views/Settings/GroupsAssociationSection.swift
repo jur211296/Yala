@@ -200,9 +200,11 @@ struct GroupsAssociationSection: View {
         // y el desasociar no sube nada personal (2026-09-15). Los tres del motor parado, igual (2026-09-25): solo los pone ese
         // mismo paso 1, y la subida personal que no llegó también. `.cloudSessionExpired`, igual (2026-09-25): solo lo traducen
         // los pasos 1 y 2 del cierre en la nube. `.signOutSessionSurvived`, igual (2026-09-26): lo ponen solo los cierres de
-        // sesión; el desasociar tiene el suyo, `.sessionNotClosed`.
+        // sesión; el desasociar tiene el suyo, `.sessionNotClosed`. `.migrationInFlight` y `.migrationUnreadable`, igual
+        // (2026-09-27): los pone solo el cierre de una sesión privada.
         case .transient, .exportUnconfirmed, .personalAttestUnavailable, .syncStoppedNeedsUpdate, .syncStoppedMidMigration,
-             .syncStoppedNeedsRelaunch, .personalUploadRetryLater, .cloudSessionExpired, .signOutSessionSurvived, .none:
+             .syncStoppedNeedsRelaunch, .personalUploadRetryLater, .cloudSessionExpired, .signOutSessionSurvived,
+             .migrationInFlight, .migrationUnreadable, .none:
             return L10n.Storage.Groups.detachBlockedTransient
         }
     }

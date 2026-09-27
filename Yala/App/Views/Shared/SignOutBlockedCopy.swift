@@ -34,7 +34,7 @@ enum SignOutBlockedCopy {
         case .permanent, .exportUnconfirmed, .sessionExpired, .bridgeUnreadable, .detachBusy,
              .channelPaused, .uploadRetryLater, .syncStoppedNeedsUpdate, .syncStoppedMidMigration,
              .syncStoppedNeedsRelaunch, .personalUploadRetryLater, .cloudSessionExpired, .sessionNotClosed,
-             .signOutSessionSurvived:
+             .signOutSessionSurvived, .migrationInFlight, .migrationUnreadable:
             return L10n.Settings.signOutBlockedTitle
         }
     }
@@ -83,6 +83,12 @@ enum SignOutBlockedCopy {
         // El cierre soltó la sesión y la sesión sigue (2026-09-26): no se borró nada. El genérico hablaría de cambios sin
         // subir y de la conexión, y aquí no es ninguna de las dos.
         case .signOutSessionSurvived: return L10n.Settings.signOutSessionSurvived
+        // El paso de los datos entre iCloud y la nube no está en reposo (2026-09-27): no se borró nada. El genérico hablaría
+        // de cambios sin subir a la nube y de la conexión, y en una sesión privada no es ninguna de las dos. En vuelo, manda a
+        // «Dónde viven tus datos», que se ve con la migración fuera de reposo; ilegible, esa fila puede no estar, así que
+        // dice cerrar y abrir Yala.
+        case .migrationInFlight: return L10n.Settings.signOutMigrationInFlight
+        case .migrationUnreadable: return L10n.Settings.signOutMigrationUnreadable
         case .permanent, .exportUnconfirmed, .bridgeUnreadable, .detachBusy, .sessionNotClosed, .none:
             return L10n.Settings.signOutBlockedMessage
         }
@@ -134,7 +140,8 @@ enum SignOutBlockedCopy {
         case .attestUnavailable: return L10n.Groups.FreshStartPending.lossAttest
         case .transient, .exportUnconfirmed, .bridgeUnreadable, .detachBusy, .channelPaused, .uploadRetryLater,
              .personalAttestUnavailable, .syncStoppedNeedsUpdate, .syncStoppedMidMigration, .syncStoppedNeedsRelaunch,
-             .personalUploadRetryLater, .cloudSessionExpired, .sessionNotClosed, .signOutSessionSurvived:
+             .personalUploadRetryLater, .cloudSessionExpired, .sessionNotClosed, .signOutSessionSurvived,
+             .migrationInFlight, .migrationUnreadable:
             return message(for: block.reason)
         }
     }

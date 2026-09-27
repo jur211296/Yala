@@ -5063,6 +5063,9 @@
 /* Vuelta al neutro imposible en esta celda: cuerpo */
 "welcome.groups.neutralUnavailableBody" = "Este telemóvel tem uma sessão aberta que tem de ser fechada nas Definições antes de começar um grupo aqui. Volta atrás: não se tocou em nada.";
 
+/* Vuelta al neutro parada: el paso de los datos entre iCloud y la nube no está en reposo */
+"welcome.groups.neutralMigrationBody" = "Ainda não conseguimos confirmar que a passagem dos teus dados entre o iCloud e a nuvem terminou, e preparar este telemóvel agora poderia apagar o que falta enviar. Volta atrás: não se tocou em nada.";
+
 /* Título de la sección Grupos dentro de «Dónde viven tus datos» */
 "storage.groups.title" = "Grupos";
 
@@ -5391,6 +5394,8 @@
 "settings.signOutUploadRetryLater" = "As tuas últimas alterações não chegaram à nuvem. Ficam guardadas neste telemóvel e não se perde nada; tenta de novo daqui a pouco.";
 "settings.signOutCloudSessionExpired" = "A tua sessão expirou e há alterações que ainda não subiram para a nuvem. Não se perde nada: abre “Onde vivem os teus dados”, aqui em Perfil, toca em “Iniciar sessão” e depois tenta novamente.";
 "settings.signOutSessionSurvived" = "A tua sessão continua aberta neste iPhone, por isso nada foi apagado. Tenta de novo.";
+"settings.signOutMigrationInFlight" = "A passagem dos teus dados entre o iCloud e a nuvem ainda não terminou, e terminar a sessão agora poderia apagar o que falta enviar, por isso nada foi apagado. Abre “Onde vivem os teus dados”, em Perfil, e termina-a a partir daí (se falhou, toca em “Tentar novamente”); depois tenta novamente.";
+"settings.signOutMigrationUnreadable" = "Não conseguimos verificar em que ponto está a passagem dos teus dados entre o iCloud e a nuvem, e terminar a sessão agora poderia apagar o que falta enviar, por isso nada foi apagado. Fecha o Yala por completo e volta a abri-lo; se nada mudar, atualiza-o na App Store e tenta novamente.";
 
 /* Title: a deletion of the old iCloud data succeeded in iCloud but failed on this phone */
 "welcome.privateICloud.leftHalfwayTitle" = "Não terminámos de apagar";

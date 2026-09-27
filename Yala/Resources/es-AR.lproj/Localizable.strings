@@ -5067,6 +5067,9 @@
 /* Vuelta al neutro imposible en esta celda: cuerpo */
 "welcome.groups.neutralUnavailableBody" = "Este teléfono tiene una sesión abierta que hay que cerrar desde Ajustes antes de empezar un grupo aquí. Vuelve atrás: no se ha tocado nada.";
 
+/* Vuelta al neutro parada: el paso de los datos entre iCloud y la nube no está en reposo */
+"welcome.groups.neutralMigrationBody" = "Todavía no podemos confirmar que el paso de tus datos entre iCloud y la nube haya terminado, y preparar este teléfono ahora podría borrar lo que falta por subir. Volvé atrás: no se tocó nada.";
+
 /* Título de la sección Grupos dentro de «Dónde viven tus datos» */
 "storage.groups.title" = "Grupos";
 
@@ -5395,6 +5398,8 @@
 "settings.signOutUploadRetryLater" = "Tus últimos cambios no llegaron a la nube. Siguen guardados en este teléfono y no se pierden; intentalo de nuevo en un rato.";
 "settings.signOutCloudSessionExpired" = "Tu sesión caducó y hay cambios sin subir a la nube. No se pierden: abrí «Dónde viven tus datos», acá en Perfil, tocá «Iniciar sesión» y después volvé a intentarlo.";
 "settings.signOutSessionSurvived" = "Tu sesión sigue abierta en este iPhone, así que no se borró nada. Volvé a intentarlo.";
+"settings.signOutMigrationInFlight" = "El paso de tus datos entre iCloud y la nube todavía no terminó, y cerrar sesión ahora podría borrar lo que falta por subir, así que no se borró nada. Abrí «Dónde viven tus datos», en Perfil, y terminalo desde ahí (si falló, tocá «Reintentar»); después volvé a intentarlo.";
+"settings.signOutMigrationUnreadable" = "No pudimos comprobar en qué punto va el paso de tus datos entre iCloud y la nube, y cerrar sesión ahora podría borrar lo que falta por subir, así que no se borró nada. Cerrá Yala del todo y volvé a abrirla; si sigue igual, actualizala desde la App Store y volvé a intentarlo.";
 
 /* Title: a deletion of the old iCloud data succeeded in iCloud but failed on this phone */
 "welcome.privateICloud.leftHalfwayTitle" = "El borrado quedó a medias";

@@ -381,6 +381,18 @@ nonisolated enum CloudSignOutFlowLogic {
         /// quedaría mudo), y el mensaje genérico dice «hay cambios sin subir, revisa tu conexión», que aquí es falso. Al
         /// final del `enum` por lo mismo que los anteriores.
         case signOutSessionSurvived
+        /// **El cierre de una sesión PRIVADA se paró porque el paso de los datos entre iCloud y la nube no está en reposo**
+        /// (ticket `private-sign-out-proceeds-with-a-migration-in-flight`, 2026-09-27): una ida o una vuelta en marcha, un
+        /// relanzamiento pendiente, un fallo que espera «Reintentar», o el controller trabajando. Cerrar ahí borra lo local
+        /// mientras sube. Lo pone solo `CloudSessionSignOut`, antes de escribir nada o pegado al arm, así que no se ha
+        /// borrado nada y reintentar es el gesto entero. Su aviso manda a «Dónde viven tus datos», que con la migración
+        /// fuera de reposo se ve (`StorageRowGateLogic.isEngaged`). Al final del `enum` por lo mismo que los anteriores.
+        case migrationInFlight
+        /// **Lo mismo, pero lo único que se sabe es que el journal de la migración no se pudo leer.** Va aparte porque la
+        /// fila de «Dónde viven tus datos» NO se enciende con `.journalUnreadable` (medido en `StorageRowGateLogic.isEngaged`),
+        /// así que mandar allí sería mandar a una pantalla que puede no existir. Su texto dice lo que cura la lectura en este
+        /// proceso —cerrar y abrir Yala— y, si sigue, actualizarla, como el motor parado del cierre en la nube.
+        case migrationUnreadable
 
         /// Slug corto para los logs (`CloudSyncBreadcrumb.signOutGroupsBlocked`). Va aquí y no en el
         /// emisor para que un motivo nuevo tenga que nombrarse una sola vez: el `switch` es exhaustivo.
@@ -403,8 +415,37 @@ nonisolated enum CloudSignOutFlowLogic {
             case .cloudSessionExpired: return "cloud-session-expired"
             case .sessionNotClosed: return "session-not-closed"
             case .signOutSessionSurvived: return "sign-out-session-survived"
+            case .migrationInFlight: return "migration-in-flight"
+            case .migrationUnreadable: return "migration-unreadable"
             }
         }
+    }
+
+    /// **¿Se para el cierre de la sesión privada porque el paso de los datos entre iCloud y la nube no está en reposo?**
+    /// `nil` = sigue. Ticket `private-sign-out-proceeds-with-a-migration-in-flight` (2026-09-27).
+    ///
+    /// **La decisión es la del predicado compartido y nada más**: devuelve `nil` exactamente cuando
+    /// `AppleIDChangeCloseLogic.migrationAtRest` dice reposo. Lo que se añade aquí es solo QUÉ texto toca.
+    ///
+    /// - **Vale para las tres celdas que borran por archivos, solo-grupos incluida.** La primera versión la excluía («su
+    ///   store es el neutro vacío») y la review lo midió falso: nada impide migrar desde una sesión solo-grupos —la fila de
+    ///   Almacenamiento y «Migrar a la nube» no miran la marca del eje—, y su cierre espera al export justo porque en una
+    ///   instalación antigua ese store puede espejar datos reales. `kind` se queda en la firma para que la decisión por
+    ///   celda, si algún día hace falta, tenga dónde vivir.
+    /// - `.migrationUnreadable` solo cuando nadie sabe más que «el journal no se lee»: ni el controller trabaja ni enseña
+    ///   otro estado. Si el controller sabe algo, manda él: su estado es el que pinta la pantalla a la que se envía.
+    static func migrationBlockReason(kind: ExitKind, reading: MigrationRestReading) -> BlockReason? {
+        guard !AppleIDChangeCloseLogic.migrationAtRest(reading) else { return nil }
+        if reading.controllerIsWorking { return .migrationInFlight }
+        let state: CloudMigrationUIState
+        if let controllerState = reading.controllerState, controllerState != .idle {
+            state = controllerState
+        } else {
+            state = CloudMigrationUIStateDeriver.derive(
+                storageMode: reading.persistedStorageMode, read: reading.journalRead,
+                mirrorOffArmed: reading.mirrorOffArmed, mountedDecision: reading.mountedDecision)
+        }
+        return state == .journalUnreadable ? .migrationUnreadable : .migrationInFlight
     }
 
     /// Traduce el veredicto del push-all de GRUPOS al motivo que el cierre en la NUBE enseña
@@ -461,6 +502,10 @@ nonisolated enum CloudSignOutFlowLogic {
         // los recibe nunca.
         case .syncStoppedNeedsUpdate, .syncStoppedMidMigration, .syncStoppedNeedsRelaunch, .personalUploadRetryLater:
             return .permanent
+        // Los de la migración los pone solo el cierre PRIVADO, antes del push-all o pegados al arm: este productor, que es
+        // de la nube, no los recibe nunca (2026-09-27).
+        case .migrationInFlight, .migrationUnreadable:
+            return .permanent
         }
     }
 
@@ -495,7 +540,7 @@ nonisolated enum CloudSignOutFlowLogic {
         case .syncStoppedMidMigration: return .syncStoppedMidMigration
         case .syncStoppedNeedsRelaunch: return .syncStoppedNeedsRelaunch
         case .permanent, .exportUnconfirmed, .bridgeUnreadable, .detachBusy, .channelPaused, .attestUnavailable,
-             .personalAttestUnavailable, .sessionNotClosed, .signOutSessionSurvived:
+             .personalAttestUnavailable, .sessionNotClosed, .signOutSessionSurvived, .migrationInFlight, .migrationUnreadable:
             return .permanent
         }
     }
@@ -751,7 +796,8 @@ nonisolated enum CloudSignOutFlowLogic {
             return true
         case .transient, .exportUnconfirmed, .bridgeUnreadable, .detachBusy, .channelPaused, .uploadRetryLater,
              .personalAttestUnavailable, .syncStoppedNeedsUpdate, .syncStoppedMidMigration, .syncStoppedNeedsRelaunch,
-             .personalUploadRetryLater, .cloudSessionExpired, .sessionNotClosed, .signOutSessionSurvived:
+             .personalUploadRetryLater, .cloudSessionExpired, .sessionNotClosed, .signOutSessionSurvived,
+             .migrationInFlight, .migrationUnreadable:
             return false
         }
     }
