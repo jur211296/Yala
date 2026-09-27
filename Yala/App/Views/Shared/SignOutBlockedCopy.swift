@@ -33,7 +33,8 @@ enum SignOutBlockedCopy {
             return L10n.Settings.signOutAttestTitle
         case .permanent, .exportUnconfirmed, .sessionExpired, .bridgeUnreadable, .detachBusy,
              .channelPaused, .uploadRetryLater, .syncStoppedNeedsUpdate, .syncStoppedMidMigration,
-             .syncStoppedNeedsRelaunch, .personalUploadRetryLater, .cloudSessionExpired, .sessionNotClosed:
+             .syncStoppedNeedsRelaunch, .personalUploadRetryLater, .cloudSessionExpired, .sessionNotClosed,
+             .signOutSessionSurvived:
             return L10n.Settings.signOutBlockedTitle
         }
     }
@@ -79,6 +80,9 @@ enum SignOutBlockedCopy {
         case .syncStoppedNeedsRelaunch: return L10n.Settings.signOutSyncStoppedNeedsRelaunch
         case .personalUploadRetryLater: return L10n.Settings.signOutUploadRetryLater
         case .cloudSessionExpired: return L10n.Settings.signOutCloudSessionExpired
+        // El cierre soltó la sesión y la sesión sigue (2026-09-26): no se borró nada. El genérico hablaría de cambios sin
+        // subir y de la conexión, y aquí no es ninguna de las dos.
+        case .signOutSessionSurvived: return L10n.Settings.signOutSessionSurvived
         case .permanent, .exportUnconfirmed, .bridgeUnreadable, .detachBusy, .sessionNotClosed, .none:
             return L10n.Settings.signOutBlockedMessage
         }
@@ -130,7 +134,7 @@ enum SignOutBlockedCopy {
         case .attestUnavailable: return L10n.Groups.FreshStartPending.lossAttest
         case .transient, .exportUnconfirmed, .bridgeUnreadable, .detachBusy, .channelPaused, .uploadRetryLater,
              .personalAttestUnavailable, .syncStoppedNeedsUpdate, .syncStoppedMidMigration, .syncStoppedNeedsRelaunch,
-             .personalUploadRetryLater, .cloudSessionExpired, .sessionNotClosed:
+             .personalUploadRetryLater, .cloudSessionExpired, .sessionNotClosed, .signOutSessionSurvived:
             return message(for: block.reason)
         }
     }

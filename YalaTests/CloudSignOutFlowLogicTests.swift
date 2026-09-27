@@ -370,6 +370,8 @@ struct CloudSignOutGroupsReasonTests {
             .personalUploadRetryLater: .permanent,
             // La sesión que sobrevivió a su cierre es solo del desasociar (2026-09-26): este productor no la recibe nunca.
             .sessionNotClosed: .permanent,
+            // Y la del cierre de sesión (2026-09-26) la pone el cierre DESPUÉS de los dos push-all: tampoco pasa por aquí.
+            .signOutSessionSurvived: .permanent,
         ]
         #expect(CloudSignOutFlowLogic.BlockReason.allCases.count == esperado.count, """
             Hay un motivo de bloqueo sin traducción escrita para el cierre en la nube. Decídelo aquí: el
@@ -435,6 +437,8 @@ struct CloudSignOutGroupsReasonTests {
             .personalAttestUnavailable: .permanent,
             // Solo del desasociar (2026-09-26): el motor personal no lo emite.
             .sessionNotClosed: .permanent,
+            // Lo pone el cierre tras soltar la sesión (2026-09-26), no el push-all personal.
+            .signOutSessionSurvived: .permanent,
         ]
         #expect(CloudSignOutFlowLogic.BlockReason.allCases.count == esperado.count, """
             Hay un motivo de bloqueo sin decisión escrita para el paso 1 del cierre en la nube. Decide aquí si viaja.
@@ -520,6 +524,8 @@ struct GroupsSignOutRetryDecisionTests {
             .detachBusy: .retryAfter(seconds: GroupsSignOutRetryDecision.retryIntervalSeconds),
             // Lo pone el desasociar DESPUÉS del push-all (2026-09-26), así que tampoco pasa por aquí.
             .sessionNotClosed: .retryAfter(seconds: GroupsSignOutRetryDecision.retryIntervalSeconds),
+            // Lo pone el cierre DESPUÉS del push-all, al soltar la sesión (2026-09-26): tampoco pasa por aquí.
+            .signOutSessionSurvived: .retryAfter(seconds: GroupsSignOutRetryDecision.retryIntervalSeconds),
         ]
         #expect(CloudSignOutFlowLogic.BlockReason.allCases.count == esperado.count, """
             Hay un motivo de bloqueo sin decisión escrita. `decide` no es un `switch`, así que se lo va a
@@ -633,19 +639,30 @@ struct PrivateSignOutWiringTests {
     }
 
     /// La re-verificación de grupos va tras la segunda subida y antes de soltar credenciales; el consent se
-    /// olvida antes de `signOut()` (CR-2), y el arm es el disparador: va el último.
-    @Test("grupos: segunda subida, residual, consent y credenciales en su orden")
+    /// olvida DETRÁS de la comprobación del `signOut()` y antes del arm, que es el disparador y va el último.
+    ///
+    /// **Hasta el 2026-09-26 el consent iba ANTES de `signOut()`** (CR-2: un kill entre las dos cosas dejaba el consent
+    /// de una sesión que ya no existía). Desde que el cierre se PARA si la sesión sobrevive (ticket
+    /// `sign-out-exits-do-not-verify-the-cloud-session-closed`), borrarlo antes le quitaba el consent a una sesión que
+    /// seguía viva. Detrás de la comprobación y sin un `await` en medio, CR-2 se sigue cumpliendo: no queda hueco entre
+    /// la sesión ida y el consent borrado.
+    @Test("grupos: segunda subida, residual, credenciales comprobadas y consent en su orden")
     func groupsTailOrder() throws {
         let tail = try Self.body(of: Self.finalizeMarker, in: Self.source(Self.signOutPath))
         let push = try #require(tail.range(of: "await pushGroupsForSignOut(context: context, lossExit: .finalize(kind: kind, export: export))"))
         let teardown = try #require(tail.range(of: "GroupsSyncClient.shared.teardownForSignOut()"))
         let residual = try #require(tail.range(of: "Self.liveGroupsPendingCount(context: context)"))
+        let signOut = try #require(tail.range(of: "guard await CloudAuthService.shared.signOut() else {"))
         let consent = try #require(tail.range(of: "GroupsConsentState.clear()"))
-        let signOut = try #require(tail.range(of: "await CloudAuthService.shared.signOut()"))
+        let arm = try #require(tail.range(of: "await armAfterCredentials(context: context, kind: kind, export: export)"))
         #expect(push.lowerBound < teardown.lowerBound)
         #expect(teardown.lowerBound < residual.lowerBound)
-        #expect(residual.lowerBound < consent.lowerBound)
-        #expect(consent.lowerBound < signOut.lowerBound)
+        #expect(residual.lowerBound < signOut.lowerBound)
+        #expect(signOut.lowerBound < consent.lowerBound,
+                "El consent se borra antes de comprobar el cierre: con la sesión viva el cierre se para y queda sin consent.")
+        #expect(consent.lowerBound < arm.lowerBound)
+        #expect(!String(tail[signOut.upperBound..<consent.lowerBound]).contains("await"),
+                "Hay una suspensión entre la sesión comprobada y el consent borrado: un kill ahí rompe CR-2.")
     }
 
     /// Sin sesión privada que conservar, el store de grupos se olvida con la sesión; en la privada sin
@@ -945,7 +962,7 @@ struct PausedChannelReasonWiringTests {
         #expect(present.contains(Self.squashed("""
             case .permanent, .sessionExpired, .channelPaused, .uploadRetryLater,
                  .syncStoppedNeedsUpdate, .syncStoppedMidMigration, .syncStoppedNeedsRelaunch, .personalUploadRetryLater,
-                 .cloudSessionExpired:
+                 .cloudSessionExpired, .signOutSessionSurvived:
                 showSignOutBlockedAlert = true
             """)), """
             El fallo pasajero de la subida, o uno de los tres del motor parado (2026-09-25), dejó de entrar por el \

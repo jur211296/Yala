@@ -430,6 +430,19 @@ struct WelcomeGroupsGateView: View {
                 YalaPrimaryButton(L10n.Welcome.Groups.gateBack) { leaveAfterBlock() }
                     .accessibilityIdentifier("welcome_groups_gate_neutral_pending_back")
             }
+        case .blocked(_, .signOutSessionSurvived):
+            // **El cierre soltó la sesión en la nube y la sesión SIGUE guardada** (2026-09-26, ticket
+            // `sign-out-exits-do-not-verify-the-cloud-session-closed`): el cierre se paró antes de armar el borrado. En el
+            // catch-all de abajo esta pantalla decía «faltan cambios de tus grupos por subir, vuelve a entrar con esa
+            // cuenta», y no es ninguna de las dos cosas. El mensaje es el de Ajustes (`SignOutBlockedCopy`); el título, el
+            // de esta pantalla que no afirma ninguna causa.
+            noticeShell(icon: "exclamationmark.triangle",
+                        title: L10n.Welcome.Groups.neutralUnavailableTitle,
+                        body: SignOutBlockedCopy.message(for: .signOutSessionSurvived),
+                        identifier: "welcome_groups_gate_neutral_session_survived") {
+                YalaPrimaryButton(L10n.Welcome.Groups.gateBack) { leaveAfterBlock() }
+                    .accessibilityIdentifier("welcome_groups_gate_neutral_session_survived_back")
+            }
         case .blocked:
             // El otro bloqueo alcanzable en esta celda: quedaron cambios de GRUPOS sin subir de una sesión
             // que caducó (`blockIfGroupsCannotUpload`). No se descartan nunca, así que la única salida

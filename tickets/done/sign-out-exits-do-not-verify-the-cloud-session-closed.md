@@ -1,10 +1,13 @@
 ---
 id: sign-out-exits-do-not-verify-the-cloud-session-closed
-status: backlog
+status: done
 priority: medium
 area: "modo-nube, sesiones"
 created: 2026-09-26
 updated: 2026-09-26
+qa-status: not-replicable
+qa-date: 2026-09-26
+qa-notes: la sesion que sobrevive al cierre no se puede provocar en un iPhone; lo fija el XCUITest con su seam y el cierre normal sigue en session-exits-one-verb-per-session
 source: "Paso 0 de `detach-does-not-verify-the-cloud-session-actually-closed` (2026-09-26): la premisa del ticket, medida"
 ---
 
@@ -35,3 +38,24 @@ O los cierres comprueban el `signOut()` antes de armar el borrado —y entonces 
 porque algunos ya soltaron cosas que no vuelven—, o el boot-wipe purga también la sesión del llavero, como ya hace el retiro
 de «Empezar desde cero». La segunda es más barata, pero `purgeAll()` se lleva además los pares de SIWA y de Google, que
 `signOut()` conserva a propósito: eso es una decisión.
+
+## Resuelto (2026-09-26)
+
+Decisión del encargo: **las dos capas**.
+
+- **Los cierres comprueban el `signOut()` antes de armar el borrado.** Los cuatro voluntarios (privado, «equipo», solo
+  grupos y nube) se paran sin armar y enseñan «No pudimos cerrar tu sesión — Tu sesión sigue abierta en este iPhone, así
+  que no se ha borrado nada. Vuelve a intentarlo.» (motivo propio `.signOutSessionSurvived`: Ajustes silencia
+  `.sessionNotClosed`, que es del desasociar). Los dos cierres tras borrar la cuenta no se paran —la cuenta ya no existe—
+  y arman el retiro durable de la sesión, que el arranque siguiente purga antes de que exista el SDK.
+- **El borrado del arranque purga el llavero de la sesión**, pares de SIWA y Google incluidos, como «Empezar desde cero»
+  (`CloudSessionRetirement.retireForSignOutWipe`), tras el guard S3 y verificado: si un refresco la repone, el retiro queda
+  armado y lo termina el arranque siguiente. Cubre el refresco que aterriza DESPUÉS de la comprobación.
+
+Tests: `YalaTests/CloudSync/SignOutSessionSurvivesTests` (llavero real con un service de test: borrado armado + sesión
+superviviente → sin sesión, con control; abort S3; refresco que repone; scans del orden en los cuatro cierres y del
+cableado de producción) y `SessionExitsPerCellUITests.test_privateCell_C_signOutWithASurvivingSession_stopsAndSaysSo`.
+
+**Sin guion de iPhone, a propósito:** la sesión que sobrevive al `signOut()` no se provoca en un teléfono, así que un guion
+no distinguiría este build del anterior. Que un cierre normal sigue terminando lo mira ya el device-QA de
+`session-exits-one-verb-per-session`.

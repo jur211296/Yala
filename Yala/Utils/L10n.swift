@@ -4518,6 +4518,9 @@ enum L10n {
         /// Nombra la puerta: «Dónde viven tus datos» y su «Iniciar sesión» (ticket
         /// `cloud-session-expiry-with-only-group-changes-has-no-sign-in-door`).
         static var signOutCloudSessionExpired: String { ls("settings.signOutCloudSessionExpired", comment: "") }
+        /// El cierre soltó la sesión en la nube y la sesión SIGUE guardada: no se armó el borrado
+        /// (`CloudSignOutFlowLogic.BlockReason.signOutSessionSurvived`, ticket `sign-out-exits-do-not-verify-the-cloud-session-closed`).
+        static var signOutSessionSurvived: String { ls("settings.signOutSessionSurvived", comment: "") }
         /// La exportación de ese aviso no encontró ningún movimiento que exportar.
         static var signOutAttestExportEmpty: String { ls("settings.signOutAttestExportEmpty", comment: "") }
         /// La exportación de ese aviso no pudo generar el archivo.

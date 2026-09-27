@@ -5390,6 +5390,7 @@
 /* Sign-out blocked: the upload of personal changes to the cloud did not reach the server */
 "settings.signOutUploadRetryLater" = "As tuas últimas alterações não chegaram à nuvem. Ficam guardadas neste telemóvel e não se perde nada; tenta de novo daqui a pouco.";
 "settings.signOutCloudSessionExpired" = "A tua sessão expirou e há alterações que ainda não subiram para a nuvem. Não se perde nada: abre “Onde vivem os teus dados”, aqui em Perfil, toca em “Iniciar sessão” e depois tenta novamente.";
+"settings.signOutSessionSurvived" = "A tua sessão continua aberta neste iPhone, por isso nada foi apagado. Tenta de novo.";
 
 /* Title: a deletion of the old iCloud data succeeded in iCloud but failed on this phone */
 "welcome.privateICloud.leftHalfwayTitle" = "Não terminámos de apagar";

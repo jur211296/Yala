@@ -106,8 +106,9 @@ extension CloudAuthKeychainStorage {
     /// Bajo `com.yala.cloudauth` viven CINCO cosas y todas son credenciales de la persona que firmó:
     /// la sesión del SDK (`storageKey` de `AuthClient`), el perfil capturado (correo, nombre,
     /// `appleUserID`), el provider del último sign-in, el PAR SIWA (refresh token de Apple) y el PAR
-    /// Google. En una frontera de relevo —«Empezar desde cero», o el primer arranque tras instalar en un
-    /// teléfono que cambió de dueño— no hay ninguna que deba quedarse, y una lista de `account` sería
+    /// Google. En una frontera de relevo —«Empezar desde cero», el primer arranque tras instalar en un
+    /// teléfono que cambió de dueño, o desde el 2026-09-26 el borrado del arranque tras «Cerrar sesión»
+    /// (`CloudSessionRetirement.retireForSignOutWipe`)— no hay ninguna que deba quedarse, y una lista de `account` sería
     /// exactamente por donde divergiría de lo que este service acabe guardando mañana.
     ///
     /// **No sustituye a `CloudAuthService.signOut()`, va DESPUÉS de él.** El `AuthClient` se construye

@@ -371,6 +371,16 @@ nonisolated enum CloudSignOutFlowLogic {
         /// otro texto es verdad aquí: no queda nada sin subir (`pendingCount == 0`) y el puente ni se ha mirado. Al final del
         /// `enum` por lo mismo que el anterior.
         case sessionNotClosed
+        /// **Un CIERRE DE SESIÓN soltó la sesión en la nube y la sesión SIGUE guardada** (ticket
+        /// `sign-out-exits-do-not-verify-the-cloud-session-closed`, 2026-09-26). Es `.sessionNotClosed` dicho del cierre y no
+        /// del desasociar: los cuatro cierres que arman el borrado se paran ANTES del arm, así que no se ha borrado nada y
+        /// reintentar es el gesto entero. Sin esa parada el teléfono quedaba como recién instalado con la sesión de quien
+        /// cerró dentro, y la siguiente persona bajaba sus grupos.
+        ///
+        /// Va aparte por dos razones medidas: Ajustes silencia `.sessionNotClosed` porque es del desasociar (el cierre se
+        /// quedaría mudo), y el mensaje genérico dice «hay cambios sin subir, revisa tu conexión», que aquí es falso. Al
+        /// final del `enum` por lo mismo que los anteriores.
+        case signOutSessionSurvived
 
         /// Slug corto para los logs (`CloudSyncBreadcrumb.signOutGroupsBlocked`). Va aquí y no en el
         /// emisor para que un motivo nuevo tenga que nombrarse una sola vez: el `switch` es exhaustivo.
@@ -392,6 +402,7 @@ nonisolated enum CloudSignOutFlowLogic {
             case .personalUploadRetryLater: return "personal-upload-retry-later"
             case .cloudSessionExpired: return "cloud-session-expired"
             case .sessionNotClosed: return "session-not-closed"
+            case .signOutSessionSurvived: return "sign-out-session-survived"
             }
         }
     }
@@ -444,7 +455,8 @@ nonisolated enum CloudSignOutFlowLogic {
         case .permanent: return .permanent
         // `.personalAttestUnavailable` es del paso 1, sobre el outbox PERSONAL: este productor, que traduce el de grupos, no
         // lo recibe nunca.
-        case .exportUnconfirmed, .bridgeUnreadable, .detachBusy, .personalAttestUnavailable, .sessionNotClosed: return .permanent
+        case .exportUnconfirmed, .bridgeUnreadable, .detachBusy, .personalAttestUnavailable, .sessionNotClosed,
+             .signOutSessionSurvived: return .permanent
         // Los del motor parado y la subida personal que no llegó son del paso 1, sobre el outbox PERSONAL: este productor no
         // los recibe nunca.
         case .syncStoppedNeedsUpdate, .syncStoppedMidMigration, .syncStoppedNeedsRelaunch, .personalUploadRetryLater:
@@ -483,7 +495,7 @@ nonisolated enum CloudSignOutFlowLogic {
         case .syncStoppedMidMigration: return .syncStoppedMidMigration
         case .syncStoppedNeedsRelaunch: return .syncStoppedNeedsRelaunch
         case .permanent, .exportUnconfirmed, .bridgeUnreadable, .detachBusy, .channelPaused, .attestUnavailable,
-             .personalAttestUnavailable, .sessionNotClosed:
+             .personalAttestUnavailable, .sessionNotClosed, .signOutSessionSurvived:
             return .permanent
         }
     }
@@ -739,7 +751,7 @@ nonisolated enum CloudSignOutFlowLogic {
             return true
         case .transient, .exportUnconfirmed, .bridgeUnreadable, .detachBusy, .channelPaused, .uploadRetryLater,
              .personalAttestUnavailable, .syncStoppedNeedsUpdate, .syncStoppedMidMigration, .syncStoppedNeedsRelaunch,
-             .personalUploadRetryLater, .cloudSessionExpired, .sessionNotClosed:
+             .personalUploadRetryLater, .cloudSessionExpired, .sessionNotClosed, .signOutSessionSurvived:
             return false
         }
     }

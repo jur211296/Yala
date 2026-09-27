@@ -33,3 +33,13 @@ grupos pueden volver a bajar, sin aviso.
 Una segunda comprobación que no dependa del instante: por ejemplo, que el registrador del arranque o `startIfEligible`, con
 la asociación ya limpia por un desasociar, cierre esa sesión en vez de usarla. O parar el auto-refresco del SDK antes del
 cierre (`stopAutoRefresh`) y reanudarlo si el gesto se para. Cualquiera de las dos toca cómo arranca Grupos.
+
+## El mismo agujero en el cierre de sesión que no relanza (2026-09-26)
+
+Ticket `sign-out-exits-do-not-verify-the-cloud-session-closed`. Los cierres comprueban ya el `signOut()` antes de armar, y el
+borrado del arranque purga el llavero; con relanzamiento eso cubre un refresco tardío, porque la purga pre-mount corre antes
+de que exista el SDK. **En el swap sin relanzar del cierre en la nube** (`PersonalContainerSwap.attemptSignOutSwap`) el
+borrado corre con el SDK vivo: `retireForSignOutWipe` purga y relee (`isEmpty()`), y un refresco que aterrice DESPUÉS de esa
+relectura deja la sesión repuesta con el retiro ya desarmado. Además el remonte llama `CloudSessionRetirement.purgeIfArmed()`,
+que no relee el llavero (su docblock da por hecho que el SDK no existe, y en el remonte sí). Inferido, sin medir: la ventana
+es la misma que la del desasociar. El arreglo de raíz es el mismo: parar el auto-refresco antes del cierre.

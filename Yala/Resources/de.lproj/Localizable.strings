@@ -6117,6 +6117,7 @@
 /* Sign-out blocked: the upload of personal changes to the cloud did not reach the server */
 "settings.signOutUploadRetryLater" = "Deine letzten Änderungen haben die Cloud nicht erreicht. Sie bleiben auf diesem Telefon gespeichert und gehen nicht verloren – versuch es später noch einmal.";
 "settings.signOutCloudSessionExpired" = "Deine Sitzung ist abgelaufen und einige Änderungen wurden noch nicht in die Cloud hochgeladen. Es geht nichts verloren: Öffne „Wo deine Daten liegen“ hier im Profil, tippe auf „Anmelden“ und versuche es danach noch einmal.";
+"settings.signOutSessionSurvived" = "Du bist auf diesem iPhone noch angemeldet, deshalb wurde nichts gelöscht. Versuch es noch einmal.";
 
 /* Title: a deletion of the old iCloud data succeeded in iCloud but failed on this phone */
 "welcome.privateICloud.leftHalfwayTitle" = "Das Löschen ist nur halb fertig";

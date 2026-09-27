@@ -487,8 +487,10 @@ final class CloudAuthService: NSObject {
     ///   error, así que un `SecItemDelete` que falla NO lanza y la sesión se queda. Tampoco para el auto-refresco: un
     ///   refresco en vuelo la repone al terminar, y eso **solo se ve si aterriza antes de esta lectura** — uno que aterrice
     ///   después no lo ve nadie (ticket `detach-postcondition-misses-a-token-refresh-that-lands-after-it`). **Lo lee el desasociar** (`CloudSessionSignOut.detachGroupsAccount`), que
-    ///   no relanza y se para si esto dice `false`. **No es `hasSession`**: ese lleva el seam `-uitest-fake-cloud-session`
-    ///   y diría «sigue» en todo XCUITest que lo use. Los demás llamadores lo descartan hoy.
+    ///   no relanza y se para si esto dice `false`, y desde el 2026-09-26 **también los cierres de sesión** (ticket
+    ///   `sign-out-exits-do-not-verify-the-cloud-session-closed`): los cuatro voluntarios se paran sin armar el borrado y los
+    ///   dos tras borrar la cuenta arman el retiro de la sesión. **No es `hasSession`**: ese lleva el seam
+    ///   `-uitest-fake-cloud-session` y diría «sigue» en todo XCUITest que lo use. Los demás llamadores lo descartan hoy.
     @discardableResult
     func signOut() async -> Bool {
         // ANTES del guard a propósito: el `return` de abajo se dispara cuando el backend no está
