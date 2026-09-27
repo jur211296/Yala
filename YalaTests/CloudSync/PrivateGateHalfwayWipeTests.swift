@@ -244,14 +244,27 @@ struct PrivateGateHalfwayWipeWiringTests {
 
     // MARK: La puerta
 
-    /// **EL PIN DEL BUG.** Salir de las fases de fallo pasa por `disarm()`, no por el desarme a secas que se llevaba
-    /// la zona.
-    @Test("salir de un fallo desarma sin olvidar la zona")
+    /// **EL PIN DEL BUG.** Salir de la puerta pasa por `disarm()`, no por el desarme a secas que se llevaba la zona. Y
+    /// desde cualquier fase (ticket `private-gate-back-from-found-keeps-a-resumed-arm`): la salida no pregunta en qué
+    /// fase está, porque la única que no debe desarmar —el borrado en vuelo— no tiene «volver».
+    @Test("salir de la puerta desarma sin olvidar la zona, desde cualquier fase")
     func leaveGate_disarmsWithoutForgettingTheZone() throws {
         let src = try Self.code(Self.gate)
         let leave = try Self.body(of: "private func leaveGate() {", in: src)
-        #expect(leave.contains("if isWipeFailed || isDeviceWipeFailed || isGroupsPending || isUnverified {"))
-        #expect(leave.contains("disarm()"), "leído: \(leave)")
+        try Self.expectOrder("disarm()", before: "onBack()", in: leave, "desarma antes de salir")
+        for filtro in ["if ", "guard ", "switch "] {
+            #expect(!leave.contains(filtro), """
+                la salida vuelve a filtrar por fase (`\(filtro)`): desde `.found`, `.confirmingWipe`, `.foundDevice` o
+                `.checking` —a las que el arranque trae de vuelta tras un kill en `.wiping`— el arm sobrevive y la nube lo
+                reanuda a ciegas. Leído: \(leave)
+                """)
+        }
+        // **La otra mitad, y ahora es la única red**: desarmar sin condición solo es seguro porque el «volver» no existe
+        // con un borrado en vuelo. Sin estas dos líneas, el chevron sale en pleno borrado y retira el arm con la
+        // operación corriendo: un kill después deja la zona o las filas a medias sin nada que lo termine.
+        let back = try Self.body(of: "private var backAction: (() -> Void)? {", in: src)
+        #expect(back.contains("if phase == .wiping { return nil }"), "leído: \(back)")
+        #expect(back.contains("if case .wipingDevice = phase { return nil }"), "leído: \(back)")
         #expect(!leave.contains("clearICloudCorpusWipeArm"), """
             el desarme a secas se lleva la marca de la zona: tras «Dejarlo por ahora» nada recuerda que iCloud ya está vacío
             """)
@@ -379,12 +392,16 @@ struct PrivateGateHalfwayWipeWiringTests {
     }
 
     /// En la nube la marca se retira, y ni se pregunta ni se borra.
-    @Test("el arranque en la nube retira la marca sin preguntar ni borrar")
+    @Test("el arranque en la nube retira el arm y la marca sin preguntar ni borrar")
     func launch_inTheCloudRetiresTheMark() throws {
         let check = try Self.body(of: "private func runLateICloudMirrorCheck() async {", in: try Self.code(Self.contentView))
         #expect(check.contains("storageMode: CloudSyncFlags.storageMode"))
-        let retire = try Self.slice(from: "case .retireLeftHalfway:", to: "case .askLeftHalfway:", in: check)
+        let retire = try Self.slice(from: "case .retireInCloud:", to: "case .askLeftHalfway:", in: check)
         #expect(retire.contains("StorageModePersistence.clearICloudCorpusWipeLeftHalfway()"), "leído: \(retire)")
+        #expect(retire.contains("StorageModePersistence.clearICloudCorpusWipeArm()"), """
+            en la nube el arm se queda puesto: `lateWipeLaunch` ya no lo reanuda, pero sigue ahí para el día que el
+            dispositivo vuelva a iCloud y lo reanude sobre datos que ya no son los que se pidió borrar. Leído: \(retire)
+            """)
         #expect(!retire.contains("presentLateICloudMirrorNotice"))
         #expect(!retire.contains("performICloudCorpusWipe"))
     }

@@ -321,6 +321,33 @@ struct ICloudCorpusWipeArmTests {
             """)
     }
 
+    /// **El neutro del cierre de sesión no es del borrado** (ticket `private-gate-back-from-found-keeps-a-resumed-arm`,
+    /// review adversarial). Cierre de sesión → Welcome → «privado» → confirmar → kill → volver desde «Encontramos datos»:
+    /// desarmar el borrado no puede llevarse el neutro que impide readjuntar el espejo sobre el corpus que se fue.
+    @Test("desarmar no se lleva el neutro que armó el cierre de sesión antes del borrado")
+    func clearing_keepsTheSignOutNeutral() {
+        let d = freshDefaults()
+        StorageModePersistence.armNeutralMount(d)       // el cierre de sesión
+        StorageModePersistence.armICloudCorpusWipe(d)   // la puerta, ya en el Welcome
+        StorageModePersistence.clearICloudCorpusWipeArm(d)
+        #expect(!StorageModePersistence.isICloudCorpusWipeArmed(d))
+        #expect(StorageModePersistence.isNeutralMountArmed(d), """
+            el desarme se llevó el neutro del cierre de sesión: el arranque siguiente monta el espejo sobre el Welcome
+            recién vaciado e importa el corpus del humano que se fue
+            """)
+    }
+
+    /// Y al revés: si el cierre de sesión llega con el borrado ya armado —el arm sobrevive a un cierre—, el neutro pasa a
+    /// ser suyo y desarmar el borrado tampoco se lo lleva.
+    @Test("un cierre de sesión con el borrado armado se queda el neutro")
+    func signOutAfterTheArm_takesTheNeutral() {
+        let d = freshDefaults()
+        StorageModePersistence.armICloudCorpusWipe(d)
+        StorageModePersistence.armNeutralMount(d)       // el cierre de sesión
+        StorageModePersistence.clearICloudCorpusWipeArm(d)
+        #expect(StorageModePersistence.isNeutralMountArmed(d))
+    }
+
     @Test("re-armar es idempotente (el arranque que reanuda vuelve a armar antes de reintentar)")
     func armingTwice_isIdempotent() {
         let d = freshDefaults()
@@ -999,11 +1026,12 @@ struct WelcomePrivateICloudGateWiringTests {
         #expect(back.contains("if case .wipingDevice = phase { return nil }"), """
             el «volver» reaparece con el borrado local en vuelo: es la otra mitad de la kill-safety.
             """)
-        // S7 · y el arm del borrado de iCloud se retira también cuando el que falló fue el del teléfono.
+        // S7 · y el arm del borrado de iCloud se retira también cuando el que falló fue el del teléfono. Desde el ticket
+        // `private-gate-back-from-found-keeps-a-resumed-arm` la salida desarma en todas las fases, esta incluida.
         let leave = try Self.body(of: "private func leaveGate() {", in: src)
-        #expect(leave.contains("isDeviceWipeFailed"), """
+        #expect(leave.contains("disarm()") && !leave.contains("if "), """
             quien se va tras un borrado local fallido deja el arm puesto, y el arranque siguiente le pide
-            terminar un borrado que acaba de retirar.
+            terminar un borrado que acaba de retirar. Leído: \(leave)
             """)
         // S8 · el reintento de la pantalla de fallo LOCAL vuelve al borrado local, no al de la zona.
         let contenido = try Self.body(of: "private var content: some View {", in: src)
@@ -1582,19 +1610,12 @@ struct WelcomePrivateICloudGateWiringTests {
     func backButton_discardsTheArmWhenNothingCouldBeMeasured() throws {
         let src = try Self.code("Yala/App/Views/Onboarding/WelcomePrivateICloudGateView.swift")
         let leave = try Self.body(of: "private func leaveGate() {", in: src)
-        #expect(leave.contains("isUnverified"), """
+        #expect(leave.contains("disarm()") && !leave.contains("if "), """
             el chevron sale de `.noICloud` y `.unreachable` al MISMO sitio que su botón, y ese botón retira
-            el arm. Sin este término, tocar la flecha en vez del botón deja armado un borrado que ni
-            siquiera se pudo medir, y el arranque siguiente lo reanuda sin preguntar.
+            el arm. Si la salida vuelve a filtrar por fase, tocar la flecha en vez del botón deja armado un
+            borrado que ni siquiera se pudo medir, y el arranque siguiente lo reanuda sin preguntar.
             Cuerpo leído: \(leave)
             """)
-        let predicado = try Self.body(of: "private var isUnverified: Bool {", in: src)
-        for fase in ["phase == .noICloud", "phase == .unreachable"] {
-            #expect(predicado.contains(fase), Comment(rawValue: """
-                `isUnverified` dejó fuera \(fase): esa fase ofrece la salida que retira el arm, y su
-                chevron volvería a dejarlo puesto.
-                """))
-        }
     }
 
     /// **La salida de «no se pudo preguntar» bifurca, y las dos ramas van EMPAREJADAS.**

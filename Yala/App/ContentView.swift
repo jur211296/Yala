@@ -1801,9 +1801,11 @@ struct ContentView: View {
         ) {
         case .none:
             break
-        case .retireLeftHalfway:
-            // En la nube la marca no describe este store, y terminarla se llevaría los datos de la cuenta. Se retira y
-            // sigue la comprobación de siempre, que en la nube sale sola (no hay espejo).
+        case .retireInCloud:
+            // En la nube ni el arm ni la marca describen este store, y terminar ese borrado se llevaría los datos de la
+            // cuenta y sus grupos. Se retiran los dos —el arm con su marca de zona— y sigue la comprobación de siempre,
+            // que en la nube sale sola (no hay espejo).
+            StorageModePersistence.clearICloudCorpusWipeArm()
             StorageModePersistence.clearICloudCorpusWipeLeftHalfway()
         case .askLeftHalfway:
             RouterEntryGate.shared.submit(.presentLateICloudMirrorNotice(.wipeLeftHalfway))
