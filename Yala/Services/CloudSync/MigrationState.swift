@@ -178,6 +178,11 @@ final class MigrationState {
     /// `.runLeaderReconcileFromFrozenCloudKit` de un líder cuyo `complete` aún no había llegado, que es lo único que
     /// manda `complete`, y `migration_in_progress` se quedaba puesto en el backend para siempre. Se limpia al reponerlos
     /// y al conceder la reserva. `nil` = nada guardado.
+    ///
+    /// **La ida lo usa también** (`ForwardOriginPendingEffects`, ticket
+    /// `migration-activation-drops-pending-effects-it-never-restores`): «Activar la nube» guarda aquí los pendientes del
+    /// origen y los repone si sale antes de que el servidor conteste el claim. Las dos ventanas son excluyentes por fase, así
+    /// que el nombre se queda: renombrarlo sería una migración de schema sin nada que ganar.
     var reverseOriginPendingEffectsData: Data?
 
     /// `ForwardClaimIntent.rawValue` del intento que llegó al claim de la ida. Se escribe en el MISMO save que la

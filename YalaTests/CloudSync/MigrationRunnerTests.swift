@@ -6333,4 +6333,315 @@ struct MigrationRunnerTests {
         #expect(fake.verifyLeaseFlags == [false])
         #expect(try journal(context).readPhase().phase == .reverseVerify)
     }
+
+    // MARK: - «Activar la nube» devuelve lo que tiró (ticket `migration-activation-drops-pending-effects-it-never-restores`)
+
+    /// El escenario del ticket: la vuelta a iCloud terminó sin red y dejó `.completeReverseServer` pendiente en
+    /// `icloudActive` (lo único que llama a `reverse_complete`). Sigue sin red: el pendiente lanza.
+    private func seedReverseCompletePending(_ context: ModelContext, _ fake: FakeExecutor) throws {
+        fake.effectErrors[.completeReverseServer] = FakeError()
+        try seedJournal(context, phase: .icloudActive, pending: [.completeReverseServer])
+    }
+
+    /// Vuelve la red: el siguiente `resume` tiene que ejecutar el pendiente repuesto, que es el criterio del ticket.
+    private func expectRestoredAndThenRetried(
+        _ context: ModelContext, _ fake: FakeExecutor, _ label: String
+    ) async throws {
+        var j = try journal(context)
+        #expect(j.readPhase().phase == .notStarted, "\(label): vuelve al inicio")
+        #expect(j.readPendingEffects() == [.completeReverseServer], "\(label): el pendiente vuelve al journal")
+        #expect(j.reverseOriginPendingEffectsData == nil, "\(label): y lo guardado se consume")
+        #expect(fake.attempts(.completeReverseServer) == 1, "\(label): repuesto, se intenta en el acto y lanza sin red")
+
+        fake.effectErrors.removeValue(forKey: .completeReverseServer)
+        await runner(context, fake).resume()
+        j = try journal(context)
+        #expect(fake.count(.completeReverseServer) == 1, "\(label): con red, el siguiente resume lo ejecuta")
+        #expect(j.readPendingEffects().isEmpty, "\(label)")
+    }
+
+    /// El toque GUARDA lo pendiente: `consent` journalea sin efectos, y hasta el ticket eso era todo lo que quedaba.
+    @Test func activation_savesTheOriginPendingEffects() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        try seedReverseCompletePending(context, fake)
+
+        await runner(context, fake).startMigration(dryRun: false)
+
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .consent)
+        #expect(j.readPendingEffects().isEmpty, "la fase nueva no hereda el pendiente: la máquina reemplaza")
+        #expect(j.readReverseOriginPendingEffects() == [.completeReverseServer], "pero queda guardado")
+        #expect(fake.attempts(.completeReverseServer) == 0)
+    }
+
+    /// Criterio 1, las TRES salidas del ticket, con el orden real de los gestos del controller.
+    @Test func activation_exitBeforeTheClaim_restoresTheOriginPendingEffect() async throws {
+        let exits: [(String, @MainActor (MigrationRunner, FakeExecutor) async -> Void)] = [
+            ("consentDeclined", { r, _ in
+                await r.submit(.consentDeclined)
+            }),
+            ("signInFailed", { r, _ in
+                await r.submit(.consentAccepted)
+                await r.submit(.signInFailed)
+            }),
+            ("claimRefusedExistingAccount", { r, fake in
+                fake.claimOutcomes = [.success(.existingStable)]
+                await r.submit(.consentAccepted)
+                r.setForwardClaimIntent(.migrateOnly)
+                await r.submit(.signInSucceeded)
+            }),
+        ]
+        for (label, exit) in exits {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let context = try makeContext(dir)
+            let fake = FakeExecutor()
+            try seedReverseCompletePending(context, fake)
+            let r = runner(context, fake)
+
+            await r.startMigration(dryRun: false)
+            await exit(r, fake)
+
+            try await expectRestoredAndThenRetried(context, fake, label)
+        }
+    }
+
+    /// **El aviso del rechazo sale aunque lo repuesto lance.** Se anotaba DESPUÉS del `handle`, y el `handle` drena lo
+    /// que repone: con el `reverse_complete` sin red, «Migrar a la nube» volvía al inicio sin decir por qué.
+    ///
+    /// El mutante: sacar la anotación de `lastForwardClaimRefusal` del `mutate` y ponerla detrás del `handle`.
+    @Test func activation_claimRefused_withARestoredEffectThatThrows_stillAnnouncesTheRefusal() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        try seedReverseCompletePending(context, fake)
+        fake.claimOutcomes = [.success(.existingStable)]
+        let r = runner(context, fake)
+
+        await r.startMigration(dryRun: false)
+        await r.submit(.consentAccepted)
+        r.setForwardClaimIntent(.migrateOnly)
+        await r.submit(.signInSucceeded)
+
+        #expect(fake.attempts(.completeReverseServer) == 1, "control: lo repuesto SÍ lanzó")
+        #expect(r.lastForwardClaimRefusal == ForwardClaimRefusal(sequence: 1, claimState: .existingStable))
+    }
+
+    /// «Cancelar la activación» al 22 %, con el claim aparcado sin red, también vuelve antes del claim. Y el claim que se
+    /// queda esperando (el self-hold bajo presupuesto) NO tira lo guardado: es la trampa que mordió a la vuelta en
+    /// `reverseClaimLeader`.
+    @Test func activation_claimParked_keepsTheSavedEffects_andCancelRestoresThem() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        try seedReverseCompletePending(context, fake)
+        fake.claimOutcomes = [.transient(detail: "sin red")]
+        let r = runner(context, fake)
+
+        await r.startMigration(dryRun: false)
+        await r.submit(.consentAccepted)
+        r.setForwardClaimIntent(.migrateOnly)
+        await r.submit(.signInSucceeded)
+
+        let parked = try journal(context)
+        #expect(parked.readPhase().phase == .claimingMigration, "control: el claim se aparca")
+        #expect(parked.forwardStepStallProgressAt != nil, "control: pasó por el self-hold del techo")
+        #expect(parked.readReverseOriginPendingEffects() == [.completeReverseServer],
+                "lo guardado sigue guardado mientras el claim no contesta")
+
+        await r.cancelMigration()
+
+        try await expectRestoredAndThenRetried(context, fake, "forwardStepCancelled")
+    }
+
+    /// Un kill en las fases no durables (`consent`, `authenticating`) vuelve al inicio por la normalización del `resume`,
+    /// que no pasa por `handle`: repone igual.
+    @Test func activation_killBeforeTheClaim_resumeRestoresTheOriginPendingEffect() async throws {
+        for label in ["consent", "authenticating"] {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let context = try makeContext(dir)
+            let fake = FakeExecutor()
+            try seedReverseCompletePending(context, fake)
+            let r = runner(context, fake)
+            await r.startMigration(dryRun: false)
+            if label == "authenticating" { await r.submit(.consentAccepted) }
+            #expect(try journal(context).readPhase().phase == (label == "consent" ? .consent : .authenticating))
+
+            await runner(context, fake).resume()                 // relanzamiento: runner nuevo
+
+            try await expectRestoredAndThenRetried(context, fake, label)
+        }
+    }
+
+    /// `dryRun → consent` está DENTRO de la ventana: no puede pisar lo guardado con los `[]` que `dryRun` journaleó.
+    ///
+    /// El mutante: guardar en todo `userActivated`, también desde una fase de la ventana.
+    @Test func activation_afterADryRun_keepsWhatTheFirstTapSaved() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        try seedReverseCompletePending(context, fake)
+        let r = runner(context, fake)
+
+        await r.startMigration(dryRun: true)
+        #expect(try journal(context).readPhase().phase == .dryRun)
+        await r.startMigration(dryRun: false)
+        await r.submit(.consentDeclined)
+
+        try await expectRestoredAndThenRetried(context, fake, "dryRun → consent → consentDeclined")
+    }
+
+    /// Criterio 2: un claim que SÍ empieza la migración no repone nada. La migración empezó, y lo guardado se descarta en
+    /// el mismo save que entra en la identidad. Con el executor falso: `created` lidera.
+    @Test func activation_claimThatStartsTheMigration_restoresNothing() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        try seedReverseCompletePending(context, fake)
+        fake.claimOutcomes = [.success(.created)]
+        fake.uploadOutcomes = [.transient]
+        let r = runner(context, fake)
+
+        await r.startMigration(dryRun: false)
+        await r.submit(.consentAccepted)
+        r.setForwardClaimIntent(.migrateOnly)
+        await r.submit(.signInSucceeded)
+
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .uploadingSnapshot, "control: la migración arrancó")
+        #expect(!j.readPendingEffects().contains(.completeReverseServer), "no se repone")
+        #expect(j.reverseOriginPendingEffectsData == nil, "y lo guardado se descarta")
+        #expect(fake.attempts(.completeReverseServer) == 0)
+    }
+
+    /// Las otras dos salidas con el claim CONTESTADO tampoco reponen: seguir a otro líder (un adopt, `claiming_in_progress`)
+    /// y adoptar la cuenta (`existing_stable` sin la intención de migrar), que sale con su propio efecto y nada más.
+    @Test func activation_claimAnsweredForAnAdopt_restoresNothing() async throws {
+        let cases: [(AccountClaimDecision.ClaimState, MigrationPhase, [MigrationEffect])] = [
+            (.claimingInProgress, .waitingForLeader, []),
+            (.existingStable, .notStarted, [.adoptBackendAccount]),
+        ]
+        for (claimState, expectedPhase, expectedAttempts) in cases {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let context = try makeContext(dir)
+            let fake = FakeExecutor()
+            try seedReverseCompletePending(context, fake)
+            fake.claimOutcomes = [.success(claimState)]
+            let r = runner(context, fake)
+
+            await r.startMigration(dryRun: false)
+            await r.submit(.consentAccepted)
+            await r.submit(.signInSucceeded)
+
+            let j = try journal(context)
+            #expect(j.readPhase().phase == expectedPhase, "\(claimState)")
+            #expect(j.reverseOriginPendingEffectsData == nil, "\(claimState): lo guardado se descarta")
+            #expect(fake.executeAttempts == expectedAttempts, "\(claimState): nada repuesto se ejecuta")
+        }
+    }
+
+    /// El techo del claim sale a `failedRollback`, y ahí NO se repone, igual que la vuelta con su `fatalError`: lo guardado
+    /// puede ser un `.adoptBackendAccount`, y ejecutarlo en un terminal de fallo dejaría `.cloud` persistido. El
+    /// `reverse_complete` que se pierde por ahí tiene ticket propio.
+    @Test func activation_claimCeilingToFailedRollback_discardsWhatItSaved() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        try seedReverseCompletePending(context, fake)
+        fake.claimOutcomes = [.accountUnavailable(detail: "403")]
+        let clock = MutableClock(fixedNow)
+        let r = makeRunner(context, fake, now: { clock.value })
+
+        await r.startMigration(dryRun: false)
+        await r.submit(.consentAccepted)
+        r.setForwardClaimIntent(.migrateOnly)
+        await r.submit(.signInSucceeded)
+        clock.value = fixedNow.addingTimeInterval(900)
+        await makeRunner(context, fake, now: { clock.value }).resume()
+
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .failedRollback, "control: salió por el techo")
+        #expect(j.reverseOriginPendingEffectsData == nil)
+        #expect(fake.attempts(.completeReverseServer) == 0)
+        #expect(fake.executedEffects == [.rollback])
+    }
+
+    /// **El adopt pendiente no se guarda** (hallazgo de la review): una activación nueva lo sustituye. Guardado, «Cancelar»
+    /// al 22 % lo reponía y lo ejecutaba en el acto, con la marca `.cancelled` puesta en el mismo save: el teléfono entraba
+    /// en la cuenta que la persona acababa de dejar. Con red, que es el caso que muerde.
+    ///
+    /// El mutante: guardar los pendientes sin `effectsToSave`.
+    @Test func activation_withAPendingAdopt_cancelDoesNotRunTheCancelledAdopt() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        try seedJournal(context, phase: .notStarted, pending: [.adoptBackendAccount])
+        fake.claimOutcomes = [.transient(detail: "sin red")]
+        let r = runner(context, fake)
+
+        await r.startMigration(dryRun: false)
+        #expect(try journal(context).reverseOriginPendingEffectsData == nil, "el adopt no se guarda")
+        await r.submit(.consentAccepted)
+        await r.submit(.signInSucceeded)
+        #expect(try journal(context).readPhase().phase == .claimingMigration, "control: el claim se aparca")
+        await r.cancelMigration()
+
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .notStarted)
+        #expect(j.adoptClaimExitRaw == AdoptClaimExit.cancelled.rawValue, "control: la cancelación aterrizó")
+        #expect(j.readPendingEffects().isEmpty)
+        #expect(fake.attempts(.adoptBackendAccount) == 0, "el adopt cancelado no se ejecuta")
+    }
+
+    /// El origen `notStarted` también: una salida de la vuelta a iCloud sin red deja `[.rearmMirrorOff, .reverseRollback]`
+    /// en `notStarted` (origen de un adoptador), y activar y declinar la devuelve entera.
+    @Test func activation_fromNotStarted_restoresAPendingReverseExit() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.effectErrors[.reverseRollback] = FakeError()
+        try seedJournal(context, phase: .notStarted, pending: [.rearmMirrorOff, .reverseRollback])
+        let r = runner(context, fake)
+
+        await r.startMigration(dryRun: false)
+        await r.submit(.consentDeclined)
+
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .notStarted)
+        #expect(j.readPendingEffects() == [.reverseRollback], "el primero se ejecutó; el de red sigue pendiente")
+        #expect(fake.count(.rearmMirrorOff) == 1)
+        #expect(fake.attempts(.reverseRollback) == 1)
+    }
+
+    /// Un kill en `dryRun` (el panel DEBUG) también vuelve al inicio por el `resume` y repone.
+    @Test func activation_killInADryRun_resumeRestores() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        try seedReverseCompletePending(context, fake)
+        await runner(context, fake).startMigration(dryRun: true)
+        #expect(try journal(context).readPhase().phase == .dryRun)
+
+        await runner(context, fake).resume()
+
+        try await expectRestoredAndThenRetried(context, fake, "dryRun")
+    }
+
+    /// Control: sin nada pendiente en el origen, la activación y sus salidas no dejan rastro en la fila.
+    @Test func activation_withNothingPending_leavesNoSavedEffects() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        let r = runner(context, fake)
+
+        await r.startMigration(dryRun: false)
+        #expect(try journal(context).reverseOriginPendingEffectsData == nil)
+        await r.submit(.consentDeclined)
+
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .notStarted)
+        #expect(j.readPendingEffects().isEmpty)
+        #expect(fake.executeAttempts.isEmpty)
+    }
 }

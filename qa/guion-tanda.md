@@ -42,6 +42,7 @@ En el orden del guion. Una línea por ticket: qué pruebas y por qué no basta c
 | D7 | `private-sign-out-proceeds-with-a-migration-in-flight` | Con la subida a la nube parada, «Cerrar sesión» no borra nada | Riesgo de perder datos; una subida en marcha no existe en el simulador |
 | D6 | `reentry-counts-as-fresh-install` | Volver a tu cuenta de la nube tras reinstalar no parece una instalación nueva | Flujo que hará todo el que cambie de teléfono |
 | E1 | `reverse-cutover-cerrado-para-cuentas-born-cloud` | «Volver a iCloud» con una cuenta nacida en la nube sube TODO a iCloud | Es la única pieza del repo marcada «NO medido» |
+| E2 | `migration-activation-drops-pending-effects-it-never-restores` | Tocar «Activar la nube» y cancelar no pierde el cierre pendiente de la vuelta | Oportunista: solo si E1 acaba sin red; los unit tests ya cubren la lógica |
 
 **Si hoy solo tienes hora y media:** el bloque D (los dos «muy alto») y el B. Lo que no hagas sigue en
 `qa` y no pasa nada.
@@ -236,6 +237,13 @@ Necesita **G1**, que tras el bloque C ya es una cuenta solo de grupos.
    - Si tienes a mano la CloudKit Console, en la base privada del contenedor `.dev` aparecen los registros.
    - **Si se queda clavado al 95 %**: sal por «Cancelar y seguir en la nube», y apunta cuántas filas tenías
      y cuánto tardó.
+4. **E2 · Activar y cancelar no tira el cierre pendiente (opcional).** Solo si al acabar E1 activas el modo
+   avión justo cuando pide reabrir, y tras reabrir CloudSync Debug dice `Pending fx … completeReverseServer`.
+   - Con el modo avión puesto: Ajustes → «Dónde viven tus datos» → «Activar la nube» → acepta el
+     consentimiento. Sin red, el inicio de sesión o la comprobación de tu cuenta fallan y vuelves al inicio.
+   - **PASA si** tras ese aviso CloudSync Debug sigue diciendo `completeReverseServer` en `Pending fx`, y al
+     quitar el modo avión y cerrar y abrir Yala desaparece.
+   - Si E1 acabó con red, no hay nada que probar: apúntalo como «no se dio».
 
 ## Al terminar cada ticket
 
