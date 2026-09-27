@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "testing, xcuitest, presentaciones"
 created: 2026-09-15
-updated: 2026-09-15
+updated: 2026-09-27
 source: "gate de `cloud-signout-collapses-a-groups-session-expiry-into-permanent` (2026-09-15)"
 ---
 
@@ -121,3 +121,10 @@ Sin tocar una línea, el árbol que había fallado 3 de 3 volvió a correrse cua
 **Los fallos se reparten entre configuraciones idénticas entre sí**, así que no hay señal en el código: es el
 entorno. Y el corolario para quien venga: **con una tasa así, ninguna bisección de este caso significa nada por
 debajo de N≈10 por rama.**
+
+## Otra aparición (2026-09-27, gate de `apple-id-change-boot-check-runs-before-the-migration-guard-can-see`)
+
+Misma línea 86, 67,2 s, con el centinela limpio (99 muestreos, un solo runner), en una corrida de tres clases que siguió
+a dos corridas completas de unit en el mismo simulador. La repetición inmediata de la clase sola pasó los dos casos (el
+de la cola en 22,4 s). Ese diff solo toca el guard de migración de `checkForAppleIDChange`, que bajo `-uitest` sale antes
+por `UITestHooks.isActive`: no interviene en este caso.

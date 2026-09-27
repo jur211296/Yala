@@ -117,4 +117,44 @@ nonisolated enum AppleIDChangeCloseLogic {
         // 3. En la nube lo personal no es del Apple ID.
         return storageMode == .icloud
     }
+
+    /// **¿El paso de los datos a la nube está en reposo?** Si no lo está, «ahora no es el momento» de ofrecer el cierre:
+    /// cerrar a mitad de una migración o de una reversa puede borrar lo local mientras sube.
+    ///
+    /// **Dos fuentes y hacen falta las dos** (ticket `apple-id-change-boot-check-runs-before-the-migration-guard-can-see`).
+    /// Hasta ese ticket el guard leía solo `CloudMigrationController.shared?.uiState ?? .idle`, y en el arranque corría
+    /// ANTES de `configureShared`: `shared` era `nil`, el `?? .idle` concedía y la protección no existía. El controller
+    /// puede faltar también después —sin backend configurado no se crea nunca, y el swap de persona lo suelta un rato—,
+    /// así que además se deriva el estado desde el journal, por la MISMA derivación con la que se pinta la pantalla.
+    ///
+    /// - Parameters:
+    ///   - controllerState: `uiState` del controller, o `nil` si no existe. `nil` no concede nada: solo quita una fuente.
+    ///   - controllerIsWorking: el controller está conduciendo algo (`isWorking`). Su `uiState` solo se repinta en
+    ///     `refresh()`, así que un adopt o una ida recién arrancados siguen en `.idle` mientras el runner trabaja, y el
+    ///     journal de fase no los ve (el efecto del adopt se journalea con `notStarted`; consent y authenticating no se
+    ///     guardan). Ocupado ⇒ no en reposo.
+    ///   - journalRead: `MigrationPhaseStore.currentPhaseRead`. Ilegible ⇒ `.journalUnreadable` ⇒ **no en reposo**: no
+    ///     saber en qué punto está el paso de los datos no es saber que terminó.
+    ///   - persistedStorageMode / mirrorOffArmed / mountedDecision: los mismos insumos con los que `refresh()` deriva
+    ///     `uiState`. El journal de fase no lleva los efectos pendientes, así que sin controller no ve el efecto del adopt
+    ///     (`notStarted` + `.adoptBackendAccount`): eso solo pasa sin backend configurado, donde no hay adopt.
+    ///
+    /// Reposo = la derivación da `.idle`. Cualquier otro estado —progreso, relanzamiento pendiente, fallo, seguidor,
+    /// nube activa, journal ilegible— no lo es. En la nube el predicado ya no participa, así que exigir `.idle` no quita
+    /// ninguna oferta que fuera a salir. **`failedRollback` tampoco es reposo, a propósito**: es el criterio que el
+    /// controller ya aplicaba, y abrirlo es una decisión de producto con ticket
+    /// (`apple-id-change-check-stays-off-after-a-failed-migration`).
+    static func migrationAtRest(controllerState: CloudMigrationUIState?,
+                                controllerIsWorking: Bool,
+                                journalRead: JournaledPhaseRead,
+                                persistedStorageMode: StorageMode,
+                                mirrorOffArmed: Bool,
+                                mountedDecision: SwiftDataConfiguration.PersonalStoreDecision) -> Bool {
+        if controllerIsWorking { return false }
+        if let controllerState, controllerState != .idle { return false }
+        let journalState = CloudMigrationUIStateDeriver.derive(
+            storageMode: persistedStorageMode, read: journalRead,
+            mirrorOffArmed: mirrorOffArmed, mountedDecision: mountedDecision)
+        return journalState == .idle
+    }
 }

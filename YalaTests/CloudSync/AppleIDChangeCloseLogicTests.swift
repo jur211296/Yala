@@ -236,6 +236,104 @@ struct PrivateSessionAppleIDWitnessTests {
     }
 }
 
+// MARK: - «No a mitad de una migración»
+
+/// El guard que decide si es el momento de ofrecer el cierre
+/// (`apple-id-change-boot-check-runs-before-the-migration-guard-can-see`). Hasta ese ticket, en el arranque, el
+/// controller aún no existía y el `?? .idle` concedía siempre. **La mayoría de los casos son negativos con el
+/// controller AUSENTE**: es exactamente la situación del arranque que el ticket cierra, y el journal es la única
+/// fuente que queda.
+@Suite("Apple ID cambiado · no a mitad de una migración")
+struct AppleIDChangeMigrationAtRestTests {
+
+    /// La celda que SÍ está en reposo: sin controller, journal sin empezar, iCloud con espejo, nada armado.
+    private func atRest(controllerState: CloudMigrationUIState? = nil,
+                        controllerIsWorking: Bool = false,
+                        journalRead: JournaledPhaseRead = .phase(.notStarted),
+                        persistedStorageMode: StorageMode = .icloud,
+                        mirrorOffArmed: Bool = false,
+                        mountedDecision: SwiftDataConfiguration.PersonalStoreDecision = .iCloudMirror) -> Bool {
+        AppleIDChangeCloseLogic.migrationAtRest(controllerState: controllerState,
+                                                controllerIsWorking: controllerIsWorking,
+                                                journalRead: journalRead,
+                                                persistedStorageMode: persistedStorageMode,
+                                                mirrorOffArmed: mirrorOffArmed,
+                                                mountedDecision: mountedDecision)
+    }
+
+    // MARK: Controles positivos: el guard no se come la función entera
+
+    @Test("Sin migración y sin controller (el arranque) ⇒ en reposo: la comprobación sigue viva")
+    func sinMigracionSinController_enReposo() {
+        #expect(atRest())
+    }
+
+    @Test("Sin migración y con el controller en `.idle` ⇒ en reposo")
+    func sinMigracionConControllerIdle_enReposo() {
+        #expect(atRest(controllerState: .idle))
+    }
+
+    @Test("Una reversa ya terminada (`icloudActive`) es reposo: el teléfono volvió a iCloud")
+    func reversaTerminada_enReposo() {
+        #expect(atRest(journalRead: .phase(.icloudActive)))
+    }
+
+    // MARK: El caso del ticket: sin controller, el journal manda
+
+    /// Las fases que el runner journalea a mitad de la ida o de la reversa, más los terminales de fallo y el
+    /// seguidor. Con cualquiera de ellas en el journal, cerrar puede borrar lo local mientras sube o baja.
+    static let fasesNoEnReposo: [MigrationPhase] = [
+        .consent, .authenticating, .claimingMigration, .assigningIdentity, .uploadingSnapshot, .verifying,
+        .cutover(.pending), .cutover(.serverConfirmed), .cutover(.localModeSet), .cutover(.markerWritten), .cutover(.mirrorOff),
+        .waitingForLeader, .failedRollback,
+        .reverseConfirm(.done), .reverseConfirm(.notStarted), .reverseClaimLeader, .reverseDrainAll, .reverseVerify, .reverseFreezeBackend,
+        .reverseMountMirror, .reverseReconcile(.awaitingQuiescence), .reverseReconcile(.deletingZombies),
+        .reverseReconcile(.rebindingUUIDs), .reverseReconcile(.dedupHealed), .reverseUpload, .reverseFailedRollback,
+    ]
+
+    @Test("Sin controller, una fase journaleada que no es reposo NO concede", arguments: fasesNoEnReposo)
+    func sinController_faseJournaleada_noConcede(_ phase: MigrationPhase) {
+        #expect(!atRest(journalRead: .phase(phase)), "fase \(phase)")
+    }
+
+    @Test("Sin controller, un journal ILEGIBLE no concede: no saber no es saber que terminó")
+    func sinController_journalIlegible_noConcede() {
+        #expect(!atRest(journalRead: .unreadable))
+    }
+
+    @Test("Mirror-off armado con el espejo aún montado (relanzamiento de ida pendiente) no concede")
+    func relanzamientoDeIdaPendiente_noConcede() {
+        #expect(!atRest(mirrorOffArmed: true, mountedDecision: .iCloudMirror))
+        // Control: con un mount SIN espejo ya no hay relanzamiento que pedir. Fija que el mount sale del argumento.
+        #expect(atRest(mirrorOffArmed: true, mountedDecision: .neutralNoMirror))
+    }
+
+    @Test("El controller OCUPADO no concede aunque su estado siga en `.idle` y el journal diga «sin empezar»")
+    func controllerOcupado_noConcede() {
+        // `uiState` solo se repinta en `refresh()`: un adopt o una ida recién arrancados siguen en `.idle` mientras el
+        // runner trabaja, y el journal no los ve (el efecto del adopt va con `notStarted`; consent no se guarda).
+        #expect(!atRest(controllerState: .idle, controllerIsWorking: true, journalRead: .phase(.notStarted)))
+    }
+
+    // MARK: Las dos fuentes, cada una por su lado
+
+    @Test("El controller a mitad de migración NO concede aunque el journal diga «sin empezar»")
+    func controllerEnVuelo_noConcedeAunqueElJournalSi() {
+        // El efecto del adopt pendiente se journalea con `notStarted`: solo el controller lo pinta como progreso.
+        let step = MigrationUIStep(fraction: CloudMigrationUIStateDeriver.adoptEffectFraction, phase: .notStarted)
+        #expect(!atRest(controllerState: .migrating(step), journalRead: .phase(.notStarted)))
+        #expect(!atRest(controllerState: .journalUnreadable, journalRead: .phase(.notStarted)))
+        #expect(!atRest(controllerState: .needsRelaunch(.toCloud), journalRead: .phase(.notStarted)))
+    }
+
+    @Test("El journal en vuelo NO concede aunque el controller diga `.idle`")
+    func journalEnVuelo_noConcedeAunqueElControllerSi() {
+        // Un controller desfasado (se pinta en `refresh()`) no basta para abrir la puerta que el journal cierra.
+        #expect(!atRest(controllerState: .idle, journalRead: .phase(.uploadingSnapshot)))
+        #expect(!atRest(controllerState: .idle, journalRead: .unreadable))
+    }
+}
+
 // MARK: - Cableado (source-scan)
 
 /// **Las cuatro líneas que no tiene ningún test de comportamiento, y las cuatro destruyen o ciegan.**
@@ -303,6 +401,69 @@ struct AppleIDChangeWiringTests {
         #expect(despues.contains("StorageModePersistence.isGroupsOnlyNeutralMountArmed()"), "solo-grupos")
         #expect(despues.contains("CloudSyncFlags.storageMode"), "el modo")
         #expect(despues.contains("PrivateSessionAppleIDWitness.witness()"), "el testigo")
+    }
+
+    @Test("MUTACIÓN: el disparo de arranque va DETRÁS de `configureShared` y fuera de su `if`")
+    func elArranqueCompruebaDetrasDelController() throws {
+        let src = try Self.code("Yala/App/AppBootstrapper.swift")
+        let boot = try Self.body(of: "func bootstrap(container: ModelContainer) async {", in: src)
+        let trigger = "checkForAppleIDChange(trigger: \"boot\")"
+        #expect(boot.components(separatedBy: trigger).count - 1 == 1, "el disparo de arranque debe existir una vez")
+        let configure = try #require(boot.range(of: "CloudMigrationController.configureShared(context: context)"))
+        let check = try #require(boot.range(of: trigger))
+        #expect(configure.upperBound <= check.lowerBound, """
+            la comprobación del Apple ID volvió a correr ANTES de crear el controller de migración. En ese
+            instante `CloudMigrationController.shared` es `nil` y el guard pierde una de sus dos fuentes —la
+            que ve el efecto del adopt pendiente—, justo en el arranque que sigue a un relanzamiento a mitad
+            de migración.
+            """)
+        // Y fuera del `if CloudBackendConfig.isConfigured`: sin backend también hay sesión privada que comprobar.
+        #expect(boot.contains("\n        " + trigger), """
+            el disparo de arranque ya no está al nivel del cuerpo de `bootstrap` (8 espacios): quedó dentro de
+            un bloque, probablemente el del 14.6, y sin backend configurado la comprobación deja de correr.
+            """)
+    }
+
+    @Test("MUTACIÓN: el guard lee el controller (estado y trabajo) Y el journal, antes y después del `await`")
+    func elGuardLeeLasDosFuentes() throws {
+        let src = try Self.code("Yala/App/AppBootstrapper.swift")
+        let normalizado = { (s: String) in s.split(whereSeparator: \.isWhitespace).joined(separator: " ") }
+
+        let helper = try Self.body(of: "private func migrationAtRestForAppleIDChange() -> Bool {", in: src)
+        let esperado = """
+            AppleIDChangeCloseLogic.migrationAtRest(
+                controllerState: CloudMigrationController.shared?.uiState,
+                controllerIsWorking: CloudMigrationController.shared?.isWorking ?? false,
+                journalRead: MigrationPhaseStore.shared.currentPhaseRead,
+                persistedStorageMode: StorageModePersistence.read(),
+                mirrorOffArmed: StorageModePersistence.isMirrorOffArmed(),
+                mountedDecision: SwiftDataConfiguration.personalStoreMountedDecision)
+            """
+        #expect(normalizado(helper) == normalizado(esperado), """
+            el guard «no a mitad de una migración» cambió de forma. Tiene que leer las DOS fuentes —el controller,
+            que puede no existir, con su estado y su `isWorking`, y el journal, que existe desde el paso 11— con los
+            insumos con los que la pantalla deriva su estado.
+            """)
+
+        let fn = try Self.body(of: "func checkForAppleIDChange(trigger: String) {", in: src)
+        let guardia = "guard migrationAtRestForAppleIDChange() else { return }"
+        #expect(fn.components(separatedBy: guardia).count - 1 == 2, "el guard tiene que estar antes Y después del `await`")
+        let primero = try #require(fn.range(of: guardia))
+        let flag = try #require(fn.range(of: "appleIDChangeCheckInFlight = true"))
+        #expect(primero.upperBound <= flag.lowerBound, """
+            el guard de migración quedó DETRÁS del flag «en vuelo»: al salir por él, el flag se queda puesto el
+            resto del lanzamiento y calla también el aviso del espejo tardío y los disparos por notificación.
+            """)
+        let awaitIdx = try #require(fn.range(of: "await PrivateSessionAppleIDWitness.currentIdentity()"))
+        let tras = String(fn[awaitIdx.upperBound...])
+        let segundo = try #require(tras.range(of: guardia))
+        let veredicto = try #require(tras.range(of: "AppleIDChangeCloseLogic.decide("))
+        #expect(segundo.upperBound <= veredicto.lowerBound, """
+            la migración ya no se re-lee tras el `await` a CloudKit. El `resumeIfNeeded` del 14.6 corre durante ese
+            viaje, y la persona puede tocar «Migrar» mientras tanto: decidir con la foto de antes ofrece el cierre
+            a mitad de la subida.
+            """)
+        #expect(!src.contains("uiState ?? .idle) == .idle"), "volvió el `?? .idle`: sin controller, concede siempre")
     }
 
     @Test("MUTACIÓN: `.seedWitness` SIEMBRA — sin eso la detección queda ciega para siempre")

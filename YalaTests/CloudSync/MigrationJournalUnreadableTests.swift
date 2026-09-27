@@ -692,14 +692,20 @@ struct MigrationJournalUnreadableWiringTests {
             "guard PrefsCutoverDrain.isLeaderPostRelaunchPhase(MigrationPhaseStore.shared.currentPhaseRead) else { return }"))
     }
 
-    /// El INVENTARIO: siete consumidores de `currentPhaseRead` fuera del store, y la variante `decide(phase:)` del gate de
-    /// BGTasks solo la usan él mismo y el panel DEBUG del spike S7. Un octavo consumidor con su propio `if case .phase`
+    /// El INVENTARIO de consumidores de `currentPhaseRead` fuera del store (el número, en el `#expect`), y la variante `decide(phase:)` del gate de
+    /// BGTasks solo la usan él mismo y el panel DEBUG del spike S7. Un consumidor nuevo con su propio `if case .phase`
     /// —que concediera en el `else`— no lo vería ningún otro scan.
     ///
     /// `CloudMigrationController.swift` entra el 2026-09-25 (ticket
     /// `cloud-signout-with-the-engine-stopped-says-check-your-connection`): el push-all del cierre lee el journal SOLO con el
     /// candado ya cerrado, para elegir el TEXTO del bloqueo, y lo pasa a `CloudSignOutFlowLogic.engineStoppedReason(read:)`,
     /// un `switch` exhaustivo que no concede nada. Su cableado lo fija `signOutPushAll_productionWrapperWiresTheRealGate`.
+    ///
+    /// `AppBootstrapper.swift` entra el 2026-09-27 (ticket
+    /// `apple-id-change-boot-check-runs-before-the-migration-guard-can-see`): el guard de la comprobación del cambio de
+    /// Apple ID pasa la lectura a `AppleIDChangeCloseLogic.migrationAtRest`, que la deriva con
+    /// `CloudMigrationUIStateDeriver.derive(read:)` —ilegible es `.journalUnreadable` y no concede—. Su cableado lo fija
+    /// `AppleIDChangeWiringTests.elGuardLeeLasDosFuentes`.
     @Test func phaseStoreConsumers_inventory() throws {
         let yala = Self.repoRoot.appendingPathComponent("Yala")
         let files = try #require(FileManager.default.enumerator(at: yala, includingPropertiesForKeys: nil))
@@ -716,7 +722,8 @@ struct MigrationJournalUnreadableWiringTests {
             if decides > 0 { phaseDecideUses[name] = decides }
         }
         #expect(readUses == ["BackgroundTaskManager.swift": 4, "CloudSyncRuntime.swift": 1, "CloudSyncEngine.swift": 1,
-                             "PreferenceSyncService.swift": 1, "CloudMigrationController.swift": 1])
+                             "PreferenceSyncService.swift": 1, "CloudMigrationController.swift": 1,
+                             "AppBootstrapper.swift": 1])
         #expect(phaseDecideUses == ["BGTaskMigrationGate.swift": 1, "CloudSyncDebugView.swift": 1])
     }
 
