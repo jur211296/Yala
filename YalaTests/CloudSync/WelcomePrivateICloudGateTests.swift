@@ -1349,7 +1349,7 @@ struct WelcomePrivateICloudGateWiringTests {
         let fallo = try #require(wipe.range(of: "guard failure == nil else {"))
         #expect(fallo.lowerBound < clear.lowerBound)
         let cuerpoFallo = String(wipe[fallo.upperBound...]).prefix(while: { $0 != "}" })
-        #expect(cuerpoFallo.contains("phase = groupsPendingPhase(for: failure, retry: .iCloud) ?? .wipeFailed"))
+        #expect(cuerpoFallo.contains("phase = groupsPendingPhase(for: failure, retry: .iCloud) ?? .wipeFailed(zoneGone: zoneGone)"))
         #expect(cuerpoFallo.contains("return"), """
             sin el `return`, el fallo cae en el desarme y en `onProceed()`: la persona acaba en el
             onboarding creyendo que borró un corpus que sigue entero en su iCloud.
@@ -1378,7 +1378,7 @@ struct WelcomePrivateICloudGateWiringTests {
         // Los tres argumentos, exactos: un `|| true` detrás de la marca de la zona pasaría un `contains`.
         let args = try Self.call(of: "WelcomePrivateICloudGateLogic.gateWipeSettles(", in: wipe)
             .split(whereSeparator: \.isWhitespace).joined(separator: " ")
-        #expect(args == "failed: failure != nil, cancelled: cancelled, zoneGone: StorageModePersistence.isICloudCorpusWipeZoneDone()",
+        #expect(args == "failed: failure != nil, cancelled: cancelled, zoneGone: zoneGone",
                 "argumentos leídos: \(args)")
         // La cancelación y la marca de la zona se leen DETRÁS del borrado —antes, la marca sale rancia— y la
         // decisión va DELANTE de cualquier consecuencia.
@@ -1386,6 +1386,11 @@ struct WelcomePrivateICloudGateWiringTests {
                              in: wipe, "leer la cancelación antes del borrado no ve la que causa el propio borrado")
         try Self.expectOrder("let cancelled = Task.isCancelled", before: "WelcomePrivateICloudGateLogic.gateWipeSettles(",
                              in: wipe, "la decisión usa la lectura de después del borrado")
+        try Self.expectOrder("await performWipe()", before: "let zoneGone = StorageModePersistence.isICloudCorpusWipeZoneDone()",
+                             in: wipe, "la marca de la zona leída antes del borrado sale rancia")
+        try Self.expectOrder("let zoneGone = StorageModePersistence.isICloudCorpusWipeZoneDone()",
+                             before: "WelcomePrivateICloudGateLogic.gateWipeSettles(",
+                             in: wipe, "la decisión usa la marca de después del borrado")
         try Self.expectOrder("WelcomePrivateICloudGateLogic.gateWipeSettles(", before: "guard failure == nil else {",
                              in: wipe, "la cancelación se decide antes de aplicar el fallo")
         // El `else` es la cancelación limpia: desarma y vuelve, y nada más. Sin el desarme, el arm de un borrado que
@@ -1454,7 +1459,7 @@ struct WelcomePrivateICloudGateWiringTests {
         // salida re-midiendo, con los dos literales igual de presentes.
         let content = try Self.body(of: "private var content: some View {", in: src)
         let unreachable = try #require(content.range(of: "case .unreachable:"))
-        let hasta = try #require(content.range(of: "case .wipeFailed:",
+        let hasta = try #require(content.range(of: "case .wipeFailed(let zoneGone):",
                                                range: unreachable.upperBound..<content.endIndex))
         let ramaUnreachable = String(content[unreachable.upperBound..<hasta.lowerBound])
         #expect(ramaUnreachable.contains("primaryAction: { phase = .checking }"), """

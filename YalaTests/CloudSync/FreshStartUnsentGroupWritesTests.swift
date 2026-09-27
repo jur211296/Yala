@@ -413,10 +413,10 @@ struct FreshStartUnsentGroupWritesWiringTests {
     @Test("las dos pantallas con fases enseñan «faltan cambios de grupos», no el fallo genérico")
     func screens_mapTheFailureToTheirPendingPhase() throws {
         let gate = try Self.source("Yala/App/Views/Onboarding/WelcomePrivateICloudGateView.swift")
-        #expect(gate.contains("phase = groupsPendingPhase(for: failure, retry: .iCloud) ?? .wipeFailed"))
+        #expect(gate.contains("phase = groupsPendingPhase(for: failure, retry: .iCloud) ?? .wipeFailed(zoneGone: zoneGone)"))
         #expect(gate.contains("phase = groupsPendingPhase(for: failure, retry: .device(iCloudUnverified: iCloudUnverified))\n"
                               + "                ?? .deviceWipeFailed(iCloudUnverified: iCloudUnverified)"))
-        #expect(gate.contains("if phase == .wipeFailed || isDeviceWipeFailed || isGroupsPending || isUnverified {"),
+        #expect(gate.contains("if isWipeFailed || isDeviceWipeFailed || isGroupsPending || isUnverified {"),
                 "irse desde «faltan cambios» retira el arm, como desde cualquier borrado que no borró")
         let late = try Self.source("Yala/App/Views/Shared/LateICloudMirrorNoticeView.swift")
         #expect(late.contains("phase = .groupsPending(block)"))
