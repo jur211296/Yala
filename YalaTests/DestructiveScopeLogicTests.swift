@@ -340,12 +340,44 @@ struct SignOutRowIdentifiersTests {
         #expect(view.components(separatedBy: "broadcastSignal: signalsOtherDevices").count - 1 == 1)
         // Sin el paréntesis a propósito: con él, `SharedStateIsolationTests` leería este fichero como uno que
         // EJECUTA el wipe y le exigiría el trait de aislamiento del App Group.
-        let wipe = try #require(view.range(of: "try DataWipeService.wipeAllUserData"))
+        let wipe = try #require(view.range(of: "try DataWipeService.wipePersonalDataKeepingGroups"))
         let landing = try #require(view.range(of: "applyWipeLanding(landing)", range: wipe.upperBound..<view.endIndex))
         let firstAwait = try #require(view.range(of: "await", range: wipe.upperBound..<view.endIndex))
         #expect(landing.lowerBound < firstAwait.lowerBound, """
             El aterrizaje tiene que ir en la misma vuelta del main actor que el wipe: el `onChange` de ContentView \
             leería el estado intermedio que deja el barrido.
+            """)
+    }
+
+    /// **«Vaciar datos» borra por la función que devuelve los gastos de grupo a lo personal** (ticket
+    /// `wipe-data-keeps-groups-but-drops-their-bridged-rows`). Llamando a `wipeAllUserData` a secas, los grupos y sus
+    /// saldos siguen y sus gastos y liquidaciones desaparecen de Registros, Panel e Inbox sin que nadie los reponga. El
+    /// comportamiento lo miden los casos contra el bridge real de `GroupsBridgeRestoreConvergenceTests`; esto fija que la
+    /// vista los use.
+    @Test("«Vaciar datos» pide que los gastos de grupo vuelvan, antes de empezar a borrar")
+    func userDataReset_asksTheGroupRowsBack() throws {
+        let view = try Self.code("Yala/App/Views/Settings/UserDataResetView.swift")
+        #expect(!view.contains("DataWipeService.wipeAllUserData"), """
+            la vista vuelve a vaciar con `wipeAllUserData` a secas: los gastos de grupo no vuelven a lo personal
+            """)
+        let service = try Self.code("Yala/Utils/DataWipeService.swift")
+        // Los needles van sin el paréntesis del call a propósito: con él, `SharedStateIsolationTests` leería este fichero
+        // como uno que EJECUTA el wipe y le exigiría el trait de aislamiento del App Group.
+        let start = try #require(service.range(of: "static func wipePersonalDataKeepingGroups"))
+        let end = try #require(service.range(of: "\n    }\n", range: start.upperBound..<service.endIndex))
+        let body = String(service[start.upperBound..<end.lowerBound])
+        // El cuerpo ENTERO tras la firma, no un sufijo: una petición antepuesta al borrado también tiene que caer.
+        let lines = body.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+        let signatureEnd = try #require(lines.firstIndex(of: ") throws {"), "la firma cambió: \(body)")
+        #expect(Array(lines[(signatureEnd + 1)...]) == [
+            "GroupsBridgeRestoreConvergenceStore.markSettlementLegsPending(defaults)",
+            "GroupsBridgeRestoreConvergenceStore.markPending(defaults)",
+            "try wipeAllUserData" + "(in: context, reseedInitialData: false, broadcastSignal: broadcastSignal)",
+        ], """
+            el cuerpo cambió. Las dos peticiones van ANTES del borrado (uno que lanza, o un proceso que muere, después de
+            borrar las transacciones dejaría los gastos de grupo sin nadie que los pida) y las liquidaciones ANTES que la
+            convergencia (un corte entre las dos la dejaría correr sin ellas). Cuerpo: \(body)
             """)
     }
 }

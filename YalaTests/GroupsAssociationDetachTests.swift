@@ -510,6 +510,22 @@ struct GroupsDetachedBridgeLedgerTests {
             expenseID: "g1", associatedSub: nil, defaults: defaults) == false)
     }
 
+    /// **El libro se retira en el borrado de filas, no en el barrido de claves del corpus** (ticket
+    /// `wipe-data-keeps-groups-but-drops-their-bridged-rows`). `removeRowDerivedKeys` corre también en el borrado del
+    /// arranque tras cerrar sesión, que borra ficheros y cuyas filas pueden volver a bajar del espejo: allí el libro lo
+    /// decide ese camino (lo retira cuando los grupos se van con la sesión). Quien lo retira al borrar filas es
+    /// `wipeAllUserData`, y eso lo miden los casos de `GroupsBridgeRestoreConvergenceTests`.
+    @MainActor
+    @Test("el barrido de claves del corpus NO retira el libro: lo decide cada borrado")
+    func rowDerivedSweep_keepsTheLedger() {
+        let defaults = isolatedDetachDefaults()
+        GroupsDetachedBridgeLedger.record(
+            sub: "sub-mia", expenseIDs: ["g1"], settlementIDs: ["s1"], defaults: defaults)
+        DataWipeService.removeRowDerivedKeys(from: defaults)
+        #expect(GroupsDetachedBridgeLedger.isConserved(
+            expenseID: "g1", associatedSub: "sub-mia", defaults: defaults))
+    }
+
     @Test("Un gasto que no está en el libro nunca se frena")
     func gastoAjenoNoSeFrena() {
         let defaults = isolatedDetachDefaults()

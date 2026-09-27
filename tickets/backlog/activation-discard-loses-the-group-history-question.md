@@ -49,3 +49,11 @@ Si se elige «sí», lo barato es **medir el conteo ANTES del borrado** y llevar
 ## Relacionados
 
 - [[activation-restore-start-fresh-keeps-the-imported-rows]] — el padre.
+
+## El mismo hueco tras «Vaciar datos» en solo-grupos (2026-09-27)
+
+Lo encontró la review de `wipe-data-keeps-groups-but-drops-their-bridged-rows`. «Vaciar datos» en una sesión solo-grupos
+se lleva las filas del bridge y deja pedida la convergencia, que espera a la activación. Al activar Yala completo,
+`bridgedGroupExpenseCount()` da 0, la pregunta no sale y la convergencia del arranque siguiente trae el historial con la
+visibilidad por defecto. Se eligió así a propósito: sin la convergencia esas filas no volverían nunca. El arreglo que se
+elija aquí tiene que cubrir también este camino.

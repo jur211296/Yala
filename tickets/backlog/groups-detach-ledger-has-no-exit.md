@@ -47,3 +47,9 @@ Lo encontró la review de `activation-start-fresh-drops-group-settlement-legs`: 
 («Restaurar → Empezar desde cero» de la activación, el aviso tardío de iCloud) también se lleva el movimiento conservado,
 y el libro sigue ahí. Cuando la convergencia re-puentea gastos y liquidaciones, el guard los da por atendidos sin crear
 nada. Es el «borro a mano» de arriba, pero en masa. El arreglo que se elija aquí tiene que cubrir también ese borrado.
+
+## El borrado masivo, cerrado (2026-09-27)
+
+`wipe-data-keeps-groups-but-drops-their-bridged-rows` hace que `DataWipeService.wipeAllUserData` retire el libro en
+cualquier alcance: «Vaciar datos» y los dos borrados de iCloud que conservan grupos. Queda abierto lo de arriba: el
+movimiento conservado que se borra a mano y la edición remota del gasto.

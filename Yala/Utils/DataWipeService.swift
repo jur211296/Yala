@@ -267,6 +267,16 @@ final class DataWipeService {
         // del 2026-09-26, ticket `late-icloud-notice-exit-after-a-failed-wipe-leaves-the-blind-resume-armed`).
         StorageModePersistence.clearICloudCorpusWipeLeftHalfway()
 
+        // **El libro de lo conservado al desasociar, también en cualquier scope** (ticket
+        // `wipe-data-keeps-groups-but-drops-their-bridged-rows`). Afirma «este gasto ya está en el Panel como movimiento
+        // personal», y el PASO 1 se acaba de llevar ese movimiento. Sin esto, cuando la convergencia re-puentea los
+        // gastos de grupo, el guard del bridge los da por atendidos sin crear nada y se quedan sin rastro en lo personal.
+        // Aquí y NO en `removeRowDerivedKeys`: esa lista corre también en el borrado del arranque tras cerrar sesión
+        // (`resetForSignOutWipe`), que no borra filas sino ficheros, y cuyas filas pueden volver a bajar del espejo. Allí
+        // el libro lo decide su propio camino (`SwiftDataConfiguration.performSignOutWipeIfArmed` lo retira cuando los
+        // grupos se van con la sesión), y un cierre que conservara los grupos lo necesitaría para no puentear dos veces.
+        GroupsDetachedBridgeLedger.clear()
+
         // ============================================================
         // PASO 3: Limpiar cache de widgets + TipKit
         // ============================================================
@@ -285,6 +295,42 @@ final class DataWipeService {
         if reseedInitialData {
             try reseedInitialAppState(in: context)
         }
+    }
+
+    // MARK: - «Vaciar datos» de Ajustes
+
+    /// **«Vaciar datos»: borra la vida personal y la deja lista para empezar de nuevo, con los grupos intactos**
+    /// (ticket `wipe-data-keeps-groups-but-drops-their-bridged-rows`, decisión de Jürgen del 2026-09-27).
+    ///
+    /// `wipeAllUserData` borra `TransactionItem` sin predicado, o sea también lo que el bridge puso en lo personal: los
+    /// gastos de grupo, sus borradores y las patas de las liquidaciones. Los grupos y sus saldos siguen, y nadie repone
+    /// esas filas. Por eso aquí se pide la misma convergencia que los dos borrados de iCloud que conservan grupos: los
+    /// gastos y las liquidaciones confirmadas vuelven una vez, y el Inbox pregunta la cuenta donde toca.
+    ///
+    /// **Cuándo vuelven.** La convergencia la consume `AppBootstrapper.retryPendingBridges` en el ARRANQUE siguiente,
+    /// detrás de sus gates de store listo, dominio abierto y sesión privada. Con sesión privada, el próximo arranque en
+    /// frío. En solo-grupos espera a que la persona active Yala completo: sin eso no hay vida personal que reponer.
+    ///
+    /// **Se piden ANTES de borrar, no después** (review adversarial). `wipeAllUserData` guarda por pasos: uno que lanza,
+    /// o un proceso que muere, después de borrar las transacciones dejaría los gastos de grupo fuera de lo personal y
+    /// nadie los pediría. Pedirlos de más no cuesta nada: la convergencia es idempotente sobre filas intactas —conserva la
+    /// transacción real (preserve+update), rehace la virtual y sus borradores, y de las liquidaciones solo toca las que
+    /// no tienen ninguna pata—. Las liquidaciones van ANTES que la convergencia, como en #282: un corte entre las dos
+    /// deja la primera dormida, que es inocuo.
+    ///
+    /// `defaults` es solo para las dos peticiones: el borrado y el libro de conservados escriben en `.standard`.
+    ///
+    /// El borrado reactivo del otro dispositivo (`performLocalWipeForRemoteSync`) NO pasa por aquí: esa señal solo sale
+    /// en modo iCloud, así que las filas que repone el dispositivo de origen le llegan por el espejo, y pedirlo en los
+    /// dos las puentearía dos veces.
+    static func wipePersonalDataKeepingGroups(
+        in context: ModelContext,
+        broadcastSignal: Bool,
+        defaults: UserDefaults = .standard
+    ) throws {
+        GroupsBridgeRestoreConvergenceStore.markSettlementLegsPending(defaults)
+        GroupsBridgeRestoreConvergenceStore.markPending(defaults)
+        try wipeAllUserData(in: context, reseedInitialData: false, broadcastSignal: broadcastSignal)
     }
 
     // MARK: - Purga del dominio Grupos en «empiezo de cero» (handover de dispositivo)
