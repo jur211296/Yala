@@ -263,13 +263,23 @@ struct ActivationLateNoticeKeepsGroupsTests {
         let wipe = try Self.body(of: "private func performLateICloudWipe(finishingPendingWipe: Bool) async -> String? {",
                                  in: src)
         let kept = try Self.body(of: "if !scope.purgesGroupsDomain {", in: wipe)
-        #expect(kept.contains("armSettlementLegsAfterLateWipe()"), """
+        #expect(kept.contains("GroupsBridgeRestoreConvergenceStore.markSettlementLegsPending()"), """
             el borrado se lleva las patas de las liquidaciones y la convergencia solo repone gastos: la cuenta de grupos
             cuenta lo prestado sin descontar lo ya cobrado o pagado
             """)
-        let arm = try Self.body(of: "private func armSettlementLegsAfterLateWipe() {", in: src)
-        #expect(arm.contains(".filter(\\.isConfirmed)"), "el bridge solo crea las confirmadas: el resto gastaría intentos")
-        #expect(arm.contains("GroupsPendingBridgeIntent.arm(expenseIDs: [], settlementIDs: Set(confirmed), channel: .backend)"))
+        // Delante de la convergencia: un corte entre las dos deja dormida la de las liquidaciones (inocua), y al revés
+        // la convergencia correría sin ellas.
+        try Self.expectOrder("GroupsBridgeRestoreConvergenceStore.markSettlementLegsPending()",
+                             before: "GroupsBridgeRestoreConvergenceStore.markPending()", in: kept,
+                             "la convergencia se pide antes que sus liquidaciones: un corte entre las dos las pierde")
+        // Un solo camino: el retome de la intención durable no espera a la sesión privada.
+        #expect(!kept.contains("GroupsPendingBridgeIntent.arm"), """
+            las liquidaciones vuelven a armar la intención durable a mano: un segundo camino que no mira si ya tienen pata
+            """)
+        #expect(!src.contains("armSettlementLegsAfterLateWipe"), """
+            vuelve el segundo camino para las mismas patas: el retome de `GroupsPendingBridgeIntent` no espera a la
+            sesión privada, y la convergencia es la que no pisa una pata real
+            """)
     }
 
     @Test("el borrado del Welcome retira la marca ANTES de borrar")

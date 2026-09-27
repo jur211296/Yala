@@ -503,6 +503,30 @@ struct ActivationRestoreDiscardTests {
             """)
     }
 
+    /// **Y las patas de las liquidaciones también** (ticket `activation-start-fresh-drops-group-settlement-legs`). El
+    /// borrado se las lleva, y la convergencia sola solo repone gastos: la cuenta de grupos contaba lo prestado sin
+    /// descontar lo ya cobrado o pagado. Van con la convergencia, que espera a la sesión privada, y no por el retome
+    /// de la intención durable, que en solo-grupos las re-puentearía sin el borrador de «¿de qué cuenta?».
+    @Test("tras el borrado quedan pedidas también las patas de las liquidaciones, con la convergencia")
+    func discardWipe_asksForTheSettlementLegsWithTheConvergence() throws {
+        let src = try Self.code("Yala/App/ContentView.swift")
+        let wrapper = try Self.body(of: "performICloudZoneAndImportedRowsWipe: {", in: src)
+        #expect(wrapper.contains("GroupsBridgeRestoreConvergenceStore.markSettlementLegsPending()"), """
+            «Empezar desde cero» dejó de pedir las liquidaciones: se van con el borrado y no las repone nadie.
+            Cuerpo leído: \(wrapper)
+            """)
+        try Self.expectOrder("guard failure == nil else { return failure }",
+                             before: "GroupsBridgeRestoreConvergenceStore.markSettlementLegsPending()", in: wrapper,
+                             "las liquidaciones se piden también cuando el borrado falló: sus patas reales siguen ahí")
+        try Self.expectOrder("GroupsBridgeRestoreConvergenceStore.markSettlementLegsPending()",
+                             before: "GroupsBridgeRestoreConvergenceStore.markPending()", in: wrapper,
+                             "la convergencia se pide antes que sus liquidaciones: un corte entre las dos las pierde")
+        #expect(!wrapper.contains("GroupsPendingBridgeIntent.arm"), """
+            las liquidaciones van por el retome de la intención durable, que no espera a la sesión privada: tras un corte
+            antes de completar la activación quedan con la forma de solo-grupos para siempre
+            """)
+    }
+
     /// **El prefill se re-mide tras el borrado.** Se construye una sola vez en el `.onAppear` de la raíz,
     /// que aquí corre DESPUÉS del relanzamiento — o sea contando las categorías que el borrado se va a
     /// llevar. Con el conteo rancio, `OnboardingStepPlan` salta el paso de categorías y la persona se

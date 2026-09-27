@@ -1,6 +1,6 @@
 ---
 name: only-testing-filtra-por-tipo-no-por-fichero
-description: Creí haber verificado cinco suites que NUNCA se ejecutaron — usé nombres de fichero y -only-testing filtra por TIPO; un fichero de este repo declara hasta 4 @Suite. El conteo pedido vs. ejecutado es la única red.
+description: Creí haber verificado cinco suites que NUNCA se ejecutaron — usé nombres de fichero y -only-testing filtra por TIPO; un fichero declara hasta 4 @Suite. Y un test añadido al final cae en el ÚLTIMO tipo: busca su nombre en el log.
 metadata:
   type: feedback
 ---
@@ -37,6 +37,13 @@ crece y alguien parte la suite en cuatro.
   correr `YalaTests` entero que elegir bien... **si la máquina aguanta**: ese mismo día la corrida
   completa la mató el OOM del sistema a los 10 minutos, sin veredicto. Entonces se hace por lotes, y
   entonces vuelve a hacer falta esta regla.
+
+**Segundo caso, 2026-09-27: el test que AÑADES al final de un fichero cae en su ÚLTIMO tipo.** Añadí
+`theHandover_sweepsTheConvergenceRequests` al final de `GroupsPendingBridgeDurabilityTests.swift`, filtré el
+mutante por `GroupsPendingBridgeDurabilityTests` y el mutante sobrevivió: el test vivía en
+`GroupsPendingBridgeWiringTests`, el segundo `struct` del fichero. El número de suites cuadraba (pedí 6, corrieron
+6); lo que no corría era mi test dentro de ellas. ⇒ tras añadir un test, busca su nombre en el log de la corrida
+(`grep <nombreDelTest>`), y un mutante que sobrevive se reproduce aislado antes de creerlo.
 
 Relacionado: [[el-barrido-qa-rinde-por-lotes]] · [[gate-paso3-no-detecta-cero-casos]] ·
 [[mis-mediciones-fallan-por-el-filtro]]

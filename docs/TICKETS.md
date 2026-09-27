@@ -61,7 +61,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | activation-private-gate-leaves-a-late-notice-that-purges-groups | qa | tickets/qa/activation-private-gate-leaves-a-late-notice-that-purges-groups.md |
 | activation-restore-start-fresh-keeps-the-imported-rows | done | tickets/done/activation-restore-start-fresh-keeps-the-imported-rows.md |
 | activation-resume-returns-to-restore-on-an-emptied-zone | backlog | tickets/backlog/activation-resume-returns-to-restore-on-an-emptied-zone.md |
-| activation-start-fresh-drops-group-settlement-legs | backlog | tickets/backlog/activation-start-fresh-drops-group-settlement-legs.md |
+| activation-start-fresh-drops-group-settlement-legs | qa | tickets/qa/activation-start-fresh-drops-group-settlement-legs.md |
 | adopt-after-the-cutover-needs-a-marker-the-leader-never-exported | done | tickets/done/adopt-after-the-cutover-needs-a-marker-the-leader-never-exported.md |
 | adopt-claim-stays-parked-with-no-ceiling | done | tickets/done/adopt-claim-stays-parked-with-no-ceiling.md |
 | adopt-effect-after-the-cloud-mode-retries-silently | backlog | tickets/backlog/adopt-effect-after-the-cloud-mode-retries-silently.md |
@@ -316,6 +316,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-cloud-identity-loss-on-migrate | discarded | tickets/discarded/groups-cloud-identity-loss-on-migrate.md |
 | groups-cloud-mode-hardening-v1 | discarded | tickets/discarded/groups-cloud-mode-hardening-v1.md |
 | groups-consent-door-spec | qa | tickets/qa/groups-consent-door-spec.md |
+| groups-convergence-retries-every-launch-without-a-ceiling | backlog | tickets/backlog/groups-convergence-retries-every-launch-without-a-ceiling.md |
 | groups-create-approve-remove-show-a-raw-rpc-error | backlog | tickets/backlog/groups-create-approve-remove-show-a-raw-rpc-error.md |
 | groups-cursor-map-reads-an-undecodable-json-as-no-cursors | backlog | tickets/backlog/groups-cursor-map-reads-an-undecodable-json-as-no-cursors.md |
 | groups-deleted-group-detail-stays-open | done | tickets/done/groups-deleted-group-detail-stays-open.md |
@@ -696,6 +697,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | wipe-alert-fires-on-a-session-that-no-longer-obeys-the-signal | done | tickets/done/wipe-alert-fires-on-a-session-that-no-longer-obeys-the-signal.md |
 | wipe-copy-reads-one-axis-while-the-sheet-reads-two | backlog | tickets/backlog/wipe-copy-reads-one-axis-while-the-sheet-reads-two.md |
 | wipe-data-does-not-cancel-the-remote-wipe-grace | backlog | tickets/backlog/wipe-data-does-not-cancel-the-remote-wipe-grace.md |
+| wipe-data-keeps-groups-but-drops-their-bridged-rows | backlog | tickets/backlog/wipe-data-keeps-groups-but-drops-their-bridged-rows.md |
 | wipe-sheet-still-promises-every-apple-id-device | done | tickets/done/wipe-sheet-still-promises-every-apple-id-device.md |
 | wiped-state-reaches-the-discard-gate-with-the-window-open | done | tickets/done/wiped-state-reaches-the-discard-gate-with-the-window-open.md |
 | wire-decoder-accepts-non-finite-money | backlog | tickets/backlog/wire-decoder-accepts-non-finite-money.md |

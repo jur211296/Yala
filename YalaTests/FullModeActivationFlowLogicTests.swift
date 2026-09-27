@@ -725,9 +725,15 @@ struct FullModeActivationWiringTests {
                              "sin sesión privada el bridge borra las transacciones reales que re-puentea")
         try Self.expectOrder("guard GroupTransactionBridge.isDomainOpenForBridge(defaults: defaults) else { return }",
                              before: "bridgeRemoteExpenses(ids:", in: converge, "el dominio cerrado no se toca")
-        try Self.expectOrder("GroupsPendingBridgeIntent.arm(expenseIDs: unattended, settlementIDs: [], channel: .backend)",
-                             before: "GroupsBridgeRestoreConvergenceStore.clear(defaults)", in: converge,
-                             "retirar la intención antes de entregar lo pendiente lo perdería")
+        // Las liquidaciones tras un borrado de filas, detrás del mismo guard: en solo-grupos quedarían con la pata
+        // virtual sin su borrador, y nadie las re-puentearía después.
+        try Self.expectOrder("guard SessionState.shared.hasPrivateSession else { return }",
+                             before: "reBridgeSettlementLegs(context:", in: converge,
+                             "las liquidaciones se re-puentean antes de comprobar que la sesión es privada")
+        try Self.expectOrder(
+            "GroupsPendingBridgeIntent.arm(expenseIDs: unattended, settlementIDs: unattendedSettlements, channel: .backend)",
+            before: "GroupsBridgeRestoreConvergenceStore.clear(defaults)", in: converge,
+            "retirar la intención antes de entregar lo pendiente lo perdería")
         let after = try Self.body(of: "static func runAfterActivation(", in: src)
         try Self.expectOrder("waitForImportQuiescence", before: "convergeIfPending(", in: after,
                              "recién restaurado, el import puede seguir en curso")
