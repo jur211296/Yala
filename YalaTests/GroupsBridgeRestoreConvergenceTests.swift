@@ -578,4 +578,173 @@ struct GroupsBridgeRestoreConvergenceBehaviourTests {
             #expect(!GroupsBridgeRestoreConvergenceStore.isSettlementLegsPending(defaults), "lo que falta ya tiene dueño")
         }
     }
+
+    // MARK: - «Vaciar datos» de Ajustes (ticket `wipe-data-keeps-groups-but-drops-their-bridged-rows`)
+
+    private func expenseDrafts(_ context: ModelContext, _ expense: SplitExpense) throws -> [InboxDraft] {
+        let idStr = expense.id.uuidString
+        return try context.fetch(FetchDescriptor<InboxDraft>(
+            predicate: #Predicate { $0.splitExpenseID == idStr }))
+    }
+
+    /// Lo que la persona tiene en lo personal antes de vaciar: el gasto y las dos liquidaciones puenteados en modo
+    /// completo. Luego el borrado REAL de «Vaciar datos», el que resetea también las preferencias. Los controles fijan la
+    /// premisa del ticket: el borrado se lleva las filas puenteadas y conserva los grupos.
+    private func bridgeThenEmptyMyData(
+        _ context: ModelContext, _ expense: SplitExpense, _ s: Settlements, defaults: UserDefaults
+    ) throws {
+        SessionState.shared.hasPrivateSession = true
+        try GroupTransactionBridge.shared.bridgeRemoteExpenses(ids: [expense.id])
+        try GroupTransactionBridge.shared.bridgeRemoteSettlements(ids: [s.paid.id, s.received.id])
+        #expect(try !txs(context, expenseID: expense.id).isEmpty && legs(context, s.paid).count == 1,
+                "el fixture no puentea antes de vaciar")
+        try DataWipeService.wipePersonalDataKeepingGroups(in: context, broadcastSignal: false, defaults: defaults)
+        #expect(try txs(context, expenseID: expense.id).isEmpty && legs(context, s.paid).isEmpty,
+                "«Vaciar datos» ya no se lleva las filas puenteadas: la premisa del ticket cambió")
+        #expect(try context.fetchCount(FetchDescriptor<SplitExpense>()) == 1
+                && context.fetchCount(FetchDescriptor<SplitSettlement>()) == 3, "«Vaciar datos» conserva los grupos")
+        #expect(PrivateSessionMark.confirmedPrivateSession(),
+                "vaciar no cambia quién eres: la marca persistida de sesión privada, la que lee el arranque, sigue")
+    }
+
+    /// El recorrido del ticket: «Vaciar datos» con grupos → el arranque siguiente converge. El gasto y las dos
+    /// liquidaciones confirmadas vuelven a lo personal, con su borrador de «¿de qué cuenta?» donde toca, y otra
+    /// convergencia no duplica nada.
+    @Test("tras «Vaciar datos» los gastos y las liquidaciones de grupo vuelven a lo personal, una vez")
+    func emptyMyData_groupRowsComeBackOnce() throws {
+        let dir = try freshDir()
+        defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let f = try makeFixture(context)
+        try withEnvironment(context) { defaults in
+            let expense = try makeCaseAExpense(context, f)
+            let s = try makeSettlements(context, f)
+            try bridgeThenEmptyMyData(context, expense, s, defaults: defaults)
+
+            #expect(GroupsBridgeRestoreConvergenceStore.isPending(defaults), "«Vaciar datos» no pidió la convergencia")
+            #expect(GroupsBridgeRestoreConvergenceStore.isSettlementLegsPending(defaults),
+                    "«Vaciar datos» no pidió las liquidaciones: la cuenta de grupos contaría lo ya cobrado o pagado")
+
+            GroupsBridgeRestoreConvergence.convergeIfPending(context: context, defaults: defaults)
+
+            let expenseRows = try txs(context, expenseID: expense.id)
+            #expect(!expenseRows.isEmpty, "el gasto de grupo no volvió a lo personal")
+            #expect(expenseRows.allSatisfy { $0.account?.isSystemAccount == true },
+                    "sin cuentas personales solo vuelve la parte de la cuenta de grupos")
+            #expect(try expenseDrafts(context, expense).count == 1, "el Inbox no pregunta de qué cuenta salió el gasto")
+            #expect(try legs(context, s.paid).count == 1, "la liquidación que pagué no volvió, o volvió dos veces")
+            #expect(try legs(context, s.received).count == 1, "la que me pagaron no volvió, o volvió dos veces")
+            #expect(try drafts(context, s.received).count == 1, "el Inbox no pregunta a qué cuenta llegó el pago")
+            #expect(try legs(context, s.unconfirmed).isEmpty, "sin confirmar no se crea nunca")
+            #expect(!GroupsBridgeRestoreConvergenceStore.isPending(defaults))
+            #expect(GroupsPendingBridgeIntent.pending.isEmpty, "todo quedó atendido")
+
+            // Ninguna fila sale dos veces: otra petición igual no crea nada nuevo. Las patas del gasto se comparan por
+            // importe y no por identidad: el bridge re-crea la virtual en cada re-puenteo (delete+recreate). Las de las
+            // liquidaciones, que ya tienen pata, no se tocan y se comparan por identidad.
+            let expenseAmounts = try txs(context, expenseID: expense.id).map(\.amount).sorted()
+            let legIDs = Set(try (legs(context, s.paid) + legs(context, s.received)).map(\.persistentModelID))
+            let draftCount = try context.fetchCount(FetchDescriptor<InboxDraft>())
+            GroupsBridgeRestoreConvergenceStore.markSettlementLegsPending(defaults)
+            GroupsBridgeRestoreConvergenceStore.markPending(defaults)
+            GroupsBridgeRestoreConvergence.convergeIfPending(context: context, defaults: defaults)
+            #expect(try txs(context, expenseID: expense.id).map(\.amount).sorted() == expenseAmounts,
+                    "una segunda convergencia duplicó el gasto")
+            #expect(Set(try (legs(context, s.paid) + legs(context, s.received)).map(\.persistentModelID)) == legIDs,
+                    "una segunda convergencia duplicó una liquidación")
+            #expect(try context.fetchCount(FetchDescriptor<InboxDraft>()) == draftCount, "una segunda convergencia duplicó borradores")
+        }
+    }
+
+    /// Un gasto y una liquidación que la persona conservó como movimiento personal al desasociar, y luego re-asoció la
+    /// misma cuenta. El libro de conservados dice «ya está en el Panel» y frena el bridge, que es lo correcto mientras el
+    /// movimiento exista. «Vaciar datos» se lo lleva: si el libro sigue, la convergencia los da por atendidos sin crear
+    /// nada y se quedan sin rastro en lo personal.
+    @Test("tras «Vaciar datos» vuelve también lo que el libro de conservados daba por puesto")
+    func emptyMyData_conservedOnDetach_comesBackToo() throws {
+        let dir = try freshDir()
+        defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let f = try makeFixture(context)
+        try withEnvironment(context) { defaults in
+            let expense = try makeCaseAExpense(context, f)
+            let s = try makeSettlements(context, f)
+            // La misma cuenta, re-asociada; el espejo local se lee antes que el iCloud-KV. `.standard` lo restaura
+            // `withEnvironment`.
+            let encoder = JSONEncoder()
+            encoder.dateEncodingStrategy = .iso8601
+            UserDefaults.standard.set(
+                try encoder.encode(GroupsAssociationRecord(sub: "sub-mia", provider: "apple", email: nil, kind: nil,
+                                                           associatedAt: .now)),
+                forKey: GroupsAccountAssociation.localKey)
+            try #require(GroupsAccountAssociation.shared.associatedSub == "sub-mia", "el fixture no asocia la cuenta")
+            GroupsDetachedBridgeLedger.record(sub: "sub-mia", expenseIDs: [expense.id.uuidString],
+                                              settlementIDs: [s.paid.id.uuidString])
+
+            // Control: con el libro puesto, el bridge da el gasto por atendido sin crear nada.
+            SessionState.shared.hasPrivateSession = true
+            #expect(try GroupTransactionBridge.shared.bridgeRemoteExpenses(ids: [expense.id]) == [expense.id])
+            #expect(try txs(context, expenseID: expense.id).isEmpty, "el libro ya no frena el bridge: el fixture no vale")
+
+            try DataWipeService.wipePersonalDataKeepingGroups(in: context, broadcastSignal: false, defaults: defaults)
+            #expect(GroupsAccountAssociation.shared.associatedSub == "sub-mia",
+                    "vaciar soltó la asociación: el libro ya no casaría y el caso no mide nada")
+            #expect(GroupsDetachedBridgeLedger.read() == nil,
+                    "el libro sobrevive a un borrado que se llevó los movimientos que afirma")
+
+            GroupsBridgeRestoreConvergence.convergeIfPending(context: context, defaults: defaults)
+
+            #expect(!(try txs(context, expenseID: expense.id)).isEmpty,
+                    "el gasto conservado no volvió: el libro lo dio por puesto en el Panel")
+            #expect(try legs(context, s.paid).count == 1, "la liquidación conservada no volvió")
+        }
+    }
+
+    /// Un grupo borrado (oculto) conserva su dominio. Vaciar se lleva sus patas —la del gasto y la de la liquidación, que
+    /// se compensaban—, y el gasto de un grupo oculto no vuelve nunca (`bridgeExpense` lo salta). Si volviera solo la
+    /// liquidación, la cuenta de grupos enseñaría una deuda que no existe y el Inbox pediría un pago viejo. Es el
+    /// hallazgo de la review; el control fija que el bridge, pedido a mano, sí la crearía.
+    @Test("tras «Vaciar datos» la liquidación de un grupo borrado no vuelve sola")
+    func emptyMyData_hiddenGroupSettlement_staysOut() throws {
+        let dir = try freshDir()
+        defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let f = try makeFixture(context)
+        try withEnvironment(context) { defaults in
+            let s = try makeSettlements(context, f)
+            f.group.isHiddenForAll = true
+            try context.save()
+            SessionState.shared.hasPrivateSession = true
+
+            try DataWipeService.wipePersonalDataKeepingGroups(in: context, broadcastSignal: false, defaults: defaults)
+            GroupsBridgeRestoreConvergence.convergeIfPending(context: context, defaults: defaults)
+
+            #expect(try legs(context, s.paid).isEmpty && legs(context, s.received).isEmpty,
+                    "la liquidación de un grupo borrado volvió sin el gasto que la compensaba: deuda fantasma")
+            #expect(try drafts(context, s.received).isEmpty, "el Inbox pide un pago de un grupo borrado")
+            #expect(!GroupsBridgeRestoreConvergenceStore.isSettlementLegsPending(defaults))
+
+            // Control: el bridge no mira el grupo oculto, así que lo que la deja fuera es el filtro de la convergencia.
+            try GroupTransactionBridge.shared.bridgeRemoteSettlements(ids: [s.paid.id])
+            #expect(try legs(context, s.paid).count == 1, "el bridge ya salta los grupos ocultos: revisa el porqué del filtro")
+        }
+    }
+
+    /// El libro lo retira el borrado de filas EN CUALQUIER ALCANCE, no solo «Vaciar datos»: los dos borrados de iCloud
+    /// que conservan grupos (`resetsPreferences: false`) también se llevan los movimientos que afirma.
+    @Test("el borrado que conserva las preferencias también retira el libro de conservados")
+    func importedRowsWipe_alsoClearsTheLedger() throws {
+        let dir = try freshDir()
+        defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        _ = try makeFixture(context)
+        try withEnvironment(context) { _ in
+            GroupsDetachedBridgeLedger.record(sub: "sub-mia", expenseIDs: ["g1"], settlementIDs: [])
+            try #require(GroupsDetachedBridgeLedger.read() != nil, "el fixture no escribe el libro")
+            try DataWipeService.wipeAllUserData(in: context, reseedInitialData: false, broadcastSignal: false,
+                                                resetsPreferences: false)
+            #expect(GroupsDetachedBridgeLedger.read() == nil,
+                    "el libro sobrevive al borrado de filas de la activación o del aviso tardío")
+        }
+    }
 }

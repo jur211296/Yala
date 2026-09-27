@@ -168,8 +168,16 @@ enum GroupsBridgeRestoreConvergence {
 
     /// Re-puentea las liquidaciones confirmadas que un borrado de filas dejó sin patas, y devuelve las que el bridge no
     /// atendió (member propio sin resolver): van a la intención durable con su tope, igual que los gastos.
+    ///
+    /// **Las de un grupo oculto no** (review adversarial del ticket `wipe-data-keeps-groups-but-drops-their-bridged-rows`).
+    /// Un grupo borrado o retirado conserva su dominio con `isHiddenForAll`, y `bridgeSettlement`, a diferencia de
+    /// `bridgeExpense`, no lo mira: re-puentearla dejaba la pata de la liquidación SIN la del gasto que la compensaba —el
+    /// gasto de un grupo oculto no vuelve—, o sea una deuda fantasma en la cuenta de grupos y un borrador de un pago viejo.
     private static func reBridgeSettlementLegs(context: ModelContext) throws -> Set<UUID> {
-        let confirmed = Set(try context.fetch(FetchDescriptor<SplitSettlement>()).filter(\.isConfirmed).map(\.id))
+        let hiddenZones = Set(try context.fetch(FetchDescriptor<SplitGroup>(
+            predicate: #Predicate { $0.isHiddenForAll })).map(\.cloudKitZoneID))
+        let confirmed = Set(try context.fetch(FetchDescriptor<SplitSettlement>())
+            .filter { $0.isConfirmed && !hiddenZones.contains($0.groupZoneID) }.map(\.id))
         let legSettlementIDs = Set(try context.fetch(FetchDescriptor<TransactionItem>(
             predicate: #Predicate { $0.splitSettlementID != nil })).compactMap(\.splitSettlementID))
         let requested = GroupsBridgeRestoreConvergenceLogic.settlementsToReBridge(

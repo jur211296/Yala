@@ -19,7 +19,7 @@ struct UserDataResetView: View {
 
     // D4 (§3.3.1): paso 1 = hoja de alcance (`.sheet`, `DestructiveScopeSheet`). El botón destructivo fija
     // `pendingSecondConfirm` y cierra la hoja; su `onDismiss` presenta el paso 2 (alert corto) YA con la hoja
-    // fuera (anti-carrera). La mecánica de `wipeAllUserData` NO cambia.
+    // fuera (anti-carrera). El borrado es `DataWipeService.wipePersonalDataKeepingGroups`.
     ///
     /// El resumen viaja COMO ITEM de la presentación, no por `@State` leído dentro del closure: medido
     /// 2026-08-03 en el gemelo D5 de `ProfileView`, calcular el resumen y encender `isPresented` en el
@@ -280,11 +280,11 @@ struct UserDataResetView: View {
         //    This is critical - without this delay, @Query observers may still be active during deletion
         try? await Task.sleep(for: .milliseconds(500))
 
-        // 5. Perform the actual wipe (without auto-seeding categories)
+        // 5. Perform the actual wipe (without auto-seeding categories). Conserva los grupos y pide que sus gastos y
+        //    liquidaciones vuelvan a lo personal (ver `wipePersonalDataKeepingGroups`).
         do {
-            try DataWipeService.wipeAllUserData(
+            try DataWipeService.wipePersonalDataKeepingGroups(
                 in: modelContext,
-                reseedInitialData: false,
                 broadcastSignal: signalsOtherDevices
             )
 

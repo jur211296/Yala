@@ -59,6 +59,8 @@ import SwiftData
 /// Molde `GroupsPendingBridgeIntent`: un blob JSON en `UserDefaults`, namespace `groups.*` para que el
 /// «empiezo de cero» se lo lleve (`DataWipeService.removeGroupsDomainPreferenceKeys`). Sin TTL: no
 /// caduca porque lo que afirma —«este gasto ya está en el Panel»— no deja de ser cierto con el tiempo.
+/// Sí deja de serlo cuando se borran las filas: por eso `DataWipeService.wipeAllUserData` lo retira en cualquier
+/// alcance («Vaciar datos», los dos borrados de iCloud que conservan grupos).
 nonisolated enum GroupsDetachedBridgeLedger {
 
     static let userDefaultsKey = "groups.conservedOnDetach"

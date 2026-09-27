@@ -43,13 +43,14 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (655)
+## Index (659)
 
 | id | status | path |
 |---|---|---|
 | a-failed-snapshot-enqueue-save-leaves-the-journal-unsaved | backlog | tickets/backlog/a-failed-snapshot-enqueue-save-leaves-the-journal-unsaved.md |
 | a-local-read-failure-in-the-migration-apply-reads-as-network | backlog | tickets/backlog/a-local-read-failure-in-the-migration-apply-reads-as-network.md |
 | a-malformed-ref-leaves-a-stale-dangler | backlog | tickets/backlog/a-malformed-ref-leaves-a-stale-dangler.md |
+| a-wipe-that-throws-between-drafts-and-transactions-loses-settlement-drafts | backlog | tickets/backlog/a-wipe-that-throws-between-drafts-and-transactions-loses-settlement-drafts.md |
 | abandoned-restore-no-longer-clears-the-session-window-clock | done | tickets/done/abandoned-restore-no-longer-clears-the-session-window-clock.md |
 | account-currency-change-leaves-scheduled-and-favorites-stale | backlog | tickets/backlog/account-currency-change-leaves-scheduled-and-favorites-stale.md |
 | account-currency-conversion-overlay-has-no-ceiling | backlog | tickets/backlog/account-currency-conversion-overlay-has-no-ceiling.md |
@@ -231,6 +232,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | distribution-subviews-miss-the-new-panel-hero | backlog | tickets/backlog/distribution-subviews-miss-the-new-panel-hero.md |
 | dmarc-sube-la-politica-tras-observar | backlog | tickets/backlog/dmarc-sube-la-politica-tras-observar.md |
 | doble-conteo-dia1-previo-thismonth | done | tickets/done/doble-conteo-dia1-previo-thismonth.md |
+| dormant-convergence-request-from-a-groups-only-wipe | backlog | tickets/backlog/dormant-convergence-request-from-a-groups-only-wipe.md |
 | dos-criterios-de-aproximado-en-la-misma-pantalla | backlog | tickets/backlog/dos-criterios-de-aproximado-en-la-misma-pantalla.md |
 | drain-duplicates-the-unit-clock-when-its-row-cannot-be-read | done | tickets/done/drain-duplicates-the-unit-clock-when-its-row-cannot-be-read.md |
 | dry-run-del-avisador-envia-igual | backlog | tickets/backlog/dry-run-del-avisador-envia-igual.md |
@@ -419,6 +421,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | late-icloud-wipe-can-re-export-between-its-two-halves | backlog | tickets/backlog/late-icloud-wipe-can-re-export-between-its-two-halves.md |
 | late-notice-of-a-welcome-private-session-purges-groups-joined-later | qa | tickets/qa/late-notice-of-a-welcome-private-session-purges-groups-joined-later.md |
 | late-notice-witness-survives-a-welcome-restore-over-device-data | backlog | tickets/backlog/late-notice-witness-survives-a-welcome-restore-over-device-data.md |
+| late-remote-wipe-signal-undoes-the-rows-the-origin-reconverged | backlog | tickets/backlog/late-remote-wipe-signal-undoes-the-rows-the-origin-reconverged.md |
 | late-wipe-arm-is-dropped-silently-when-the-device-moves-to-the-cloud | backlog | tickets/backlog/late-wipe-arm-is-dropped-silently-when-the-device-moves-to-the-cloud.md |
 | leader-displaced-after-the-cutover-pushes-its-residual-in-the-reconcile | qa | tickets/qa/leader-displaced-after-the-cutover-pushes-its-residual-in-the-reconcile.md |
 | leaving-and-reentering-restore-renews-the-hard-cap | done | tickets/done/leaving-and-reentering-restore-renews-the-hard-cap.md |
@@ -697,7 +700,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | wipe-alert-fires-on-a-session-that-no-longer-obeys-the-signal | done | tickets/done/wipe-alert-fires-on-a-session-that-no-longer-obeys-the-signal.md |
 | wipe-copy-reads-one-axis-while-the-sheet-reads-two | backlog | tickets/backlog/wipe-copy-reads-one-axis-while-the-sheet-reads-two.md |
 | wipe-data-does-not-cancel-the-remote-wipe-grace | backlog | tickets/backlog/wipe-data-does-not-cancel-the-remote-wipe-grace.md |
-| wipe-data-keeps-groups-but-drops-their-bridged-rows | backlog | tickets/backlog/wipe-data-keeps-groups-but-drops-their-bridged-rows.md |
+| wipe-data-group-rows-return-only-on-the-next-cold-launch | backlog | tickets/backlog/wipe-data-group-rows-return-only-on-the-next-cold-launch.md |
+| wipe-data-keeps-groups-but-drops-their-bridged-rows | qa | tickets/qa/wipe-data-keeps-groups-but-drops-their-bridged-rows.md |
 | wipe-sheet-still-promises-every-apple-id-device | done | tickets/done/wipe-sheet-still-promises-every-apple-id-device.md |
 | wiped-state-reaches-the-discard-gate-with-the-window-open | done | tickets/done/wiped-state-reaches-the-discard-gate-with-the-window-open.md |
 | wire-decoder-accepts-non-finite-money | backlog | tickets/backlog/wire-decoder-accepts-non-finite-money.md |
