@@ -114,6 +114,31 @@ nonisolated enum PrivateSignOutExportGateLogic {
         return stored
     }
 
+    // MARK: - Las capturas que esperan en el App Group
+
+    /// Una vuelta del recuento del cierre, con las capturas de Apple Pay y Siri dentro.
+    ///
+    /// Esas capturas esperan en el App Group hasta que la app las convierte en borrador. No están en el
+    /// store, así que el historial no las ve, y el arranque siguiente las purga con el resto
+    /// (`AppGroupInboundPurge`). En la privada quien vuelve suele ser la misma persona: se pierden sin que
+    /// ningún aviso las nombre (ticket `private-exit-loses-unmaterialized-inbound-captures`).
+    ///
+    /// **Por eso el orden: primero se materializan, después se lee el historial.** Un borrador recién creado
+    /// es un cambio local más, y la espera lo sube como cualquier otro. Lo que NO se pudo materializar —el
+    /// import de iCloud seguía activo, o el `save()` falló— cuenta como pendiente: nunca autoriza a borrar.
+    ///
+    /// `historyPending` recibe si el store cambió en esta vuelta: quien cachea el recuento tiene que tirarlo.
+    /// Un historial que no se pudo contar (`nil`) sigue siendo `nil`.
+    @MainActor
+    static func pendingCountMaterializingInbound(
+        materialize: @MainActor () -> (created: Int, stillQueued: Int),
+        historyPending: @MainActor (_ storeChanged: Bool) -> Int?
+    ) -> Int? {
+        let inbound = materialize()
+        guard let history = historyPending(inbound.created > 0) else { return nil }
+        return history + inbound.stillQueued
+    }
+
     // MARK: - ¿Se puede borrar ya?
 
     enum Verdict: Equatable {

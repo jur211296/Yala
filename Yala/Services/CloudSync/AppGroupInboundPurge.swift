@@ -22,6 +22,15 @@
 //  iniciará sesión después: conservarla filtraría montos y comercios a una cuenta ajena, que es el daño
 //  mayor e irreversible de los dos.
 //
+//  LOS CIERRES PRIVADOS NO PAGAN ESE COSTE (2026-09-26, ticket `private-exit-loses-unmaterialized-inbound-captures`).
+//  Desde el paso 9 también arman este borrado la privada, el «equipo» y solo-grupos, y ahí iCloud se queda: quien
+//  vuelve suele ser la misma persona. Cuando esos cierres esperan al export, cada recuento convierte antes en
+//  borrador lo que espera en las colas (`InboundCaptureDrain.forSignOut`), así que viaja a iCloud como cualquier
+//  cambio; lo que no se pudo convertir cuenta como pendiente y el aviso lo incluye. Esta purga sigue igual: es la
+//  frontera de privacidad. En un cierre privado solo le llega lo capturado DESPUÉS del arm (la sesión ya estaba
+//  cerrada) o lo que la persona aceptó perder. La nube y M1 siguen purgando sin materializar. Y con el borrado
+//  armado nadie drena al store condenado (`InboundCaptureDrain.drain`).
+//
 //  NO es una enumeración exhaustiva del App Group. Fuera quedan, a propósito, las superficies de ámbito
 //  DEVICE (`isProUser` sigue a la suscripción del Apple ID, `pendingControlAction` es transient, el
 //  override de idioma es preferencia de device) y las del dominio GRUPOS — ver el doc-comment de
