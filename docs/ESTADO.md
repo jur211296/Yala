@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-26 (Lima)
 
-**Rama** `2.1` — Merge #271: **Si el teléfono no consigue leer tus preferencias pendientes de subir, ya no las borra.**
+**Rama** `2.1` — Merge #272: **Si cambias una preferencia mientras se sube la anterior, el cambio nuevo ya no se pierde.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,28 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#271 · una cola de preferencias que no se deja leer ya no se sobrescribe vacía)
+## Esta sesión (#272 · un cambio de preferencia hecho durante la subida ya no se pierde)
+
+**Si cambias una preferencia mientras Yala sube la anterior**, el cambio nuevo se queda en cola y sube en la siguiente
+sincronización: tus otros dispositivos acaban con el valor nuevo. Antes la limpieza que sigue a la subida se llevaba
+también el segundo cambio y los otros dispositivos se quedaban con el primero.
+
+- `PrefsOutbox.removeEntries(pushed:)` purga solo si la entry conserva el HLC que viajó (igualdad exacta); el ciclo de
+  prefs lo toma del wire enviado. Regla en `swiftdata-cloudkit.md` («La purga del outbox de preferencias tras el push
+  compara el HLC que viajó»).
+
+**Verificado:** gate con 898 unit en 44 suites y 5/5 XCUITest de las áreas; el stub de red encola la misma key DENTRO del
+push (la carrera real, sin seam); 6/6 mutantes; review adversarial de tres lentes sin altos ni medios sobre el diff (dos
+huecos de test, cubiertos en el PR). CI verde. Ticket a `done` (`not-replicable`).
+
+### Lo que espera de Jürgen
+
+- Nada de esta sesión. Nuevos en backlog, los tres low: `prefs-pull-overwrites-a-pending-local-change-on-screen` (el pull
+  del mismo ciclo pinta un ciclo el valor viejo sobre un cambio pendiente), `prefs-push-retries-a-rejected-key-forever`
+  (una key que el servidor rechace para siempre se reintenta sin fin; el rechazo permanente es inferido) y
+  `metrics-drain-purge-drops-unsent-events-when-the-spool-is-full` (el mismo patrón en la cola de métricas).
+
+## Sesión anterior (#271 · una cola de preferencias que no se deja leer ya no se sobrescribe vacía)
 
 **Si el teléfono no consigue leer el archivo de preferencias pendientes de subir** (la lectura falla; el archivo no
 está roto), ya no lo trata como basura: lo deja como está y sus cambios suben en cuanto se deje leer. Antes empezaba
@@ -38,11 +59,11 @@ podían fallar y un docblock, arreglados en el PR). CI verde. Ticket a `done` (`
 
 ### Lo que espera de Jürgen
 
-- Nada de esta sesión. Nuevos en backlog: `prefs-push-purge-drops-a-change-made-during-the-upload` (medium, bug previo
-  que encontró la review: un cambio hecho mientras se sube el anterior se pierde) y
+- Nada de esa sesión. Nuevos en backlog: `prefs-push-purge-drops-a-change-made-during-the-upload` (medium; cerrado en
+  #272) y
   `prefs-change-is-dropped-when-the-outbox-cannot-take-it` (low, el cambio hecho justo con el archivo ilegible).
 
-## Sesión anterior (#270 · cerrar sesión ya no deja la sesión en la nube dentro de un teléfono vacío)
+## Antes (#270 · cerrar sesión ya no deja la sesión en la nube dentro de un teléfono vacío)
 
 **Si al cerrar sesión la sesión en la nube no se borra del teléfono** (el llavero no la borró, o una renovación del token
 la repuso), el cierre se para antes de borrar nada y lo dice: «Tu sesión sigue abierta en este iPhone, así que no se ha
