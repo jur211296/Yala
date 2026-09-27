@@ -743,9 +743,17 @@ struct WelcomePrivateICloudGateView: View {
     ///
     /// Lo comparten los dos desenlaces en los que no se pudo preguntar —sin cuenta y sin red— porque el
     /// hecho que recuerdan es el mismo: *esta persona siguió adelante sin que pudiéramos comprobarlo*.
+    ///
+    /// **Y con el teléfono medido, un borrado a medias deja de estarlo** (`unverifiedExitRetiresHalfway`): la marca antes
+    /// que el arm, como en `measure()`.
     private func continueWithoutValidating() {
         StorageModePersistence.markPrivateChoseWithoutICloud()
-        discardPendingWipe()
+        if WelcomePrivateICloudGateLogic.unverifiedExitRetiresHalfway(halfwayWipe, measuredDevice: deviceCorpus != nil) {
+            StorageModePersistence.clearICloudCorpusWipeLeftHalfway()
+            StorageModePersistence.clearICloudCorpusWipeArm()
+        } else {
+            discardPendingWipe()
+        }
         onProceed()
     }
 

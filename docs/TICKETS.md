@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (653)
+## Index (655)
 
 | id | status | path |
 |---|---|---|
@@ -339,6 +339,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-join-intent-reconciler | blocked | tickets/blocked/groups-join-intent-reconciler.md |
 | groups-join-is-not-retried-when-the-network-returns | backlog | tickets/backlog/groups-join-is-not-retried-when-the-network-returns.md |
 | groups-join-reconcile-can-clear-an-invite-while-its-join-is-in-flight | backlog | tickets/backlog/groups-join-reconcile-can-clear-an-invite-while-its-join-is-in-flight.md |
+| groups-kept-by-the-late-notice-are-purged-by-the-welcome-fresh-start | backlog | tickets/backlog/groups-kept-by-the-late-notice-are-purged-by-the-welcome-fresh-start.md |
 | groups-killswitch-403-blocks-detach-forever | done | tickets/done/groups-killswitch-403-blocks-detach-forever.md |
 | groups-leave-rpc-error-10 | done | tickets/done/groups-leave-rpc-error-10.md |
 | groups-log-expense-via-chat-voice | backlog | tickets/backlog/groups-log-expense-via-chat-voice.md |
@@ -415,7 +416,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | late-icloud-notice-wipe-cancelled-after-it-committed-skips-its-exit | backlog | tickets/backlog/late-icloud-notice-wipe-cancelled-after-it-committed-skips-its-exit.md |
 | late-icloud-sheet-buttons-may-leave-the-screen-at-large-dynamic-type | backlog | tickets/backlog/late-icloud-sheet-buttons-may-leave-the-screen-at-large-dynamic-type.md |
 | late-icloud-wipe-can-re-export-between-its-two-halves | backlog | tickets/backlog/late-icloud-wipe-can-re-export-between-its-two-halves.md |
-| late-notice-of-a-welcome-private-session-purges-groups-joined-later | backlog | tickets/backlog/late-notice-of-a-welcome-private-session-purges-groups-joined-later.md |
+| late-notice-of-a-welcome-private-session-purges-groups-joined-later | qa | tickets/qa/late-notice-of-a-welcome-private-session-purges-groups-joined-later.md |
+| late-notice-witness-survives-a-welcome-restore-over-device-data | backlog | tickets/backlog/late-notice-witness-survives-a-welcome-restore-over-device-data.md |
 | late-wipe-arm-is-dropped-silently-when-the-device-moves-to-the-cloud | backlog | tickets/backlog/late-wipe-arm-is-dropped-silently-when-the-device-moves-to-the-cloud.md |
 | leader-displaced-after-the-cutover-pushes-its-residual-in-the-reconcile | qa | tickets/qa/leader-displaced-after-the-cutover-pushes-its-residual-in-the-reconcile.md |
 | leaving-and-reentering-restore-renews-the-hard-cap | done | tickets/done/leaving-and-reentering-restore-renews-the-hard-cap.md |

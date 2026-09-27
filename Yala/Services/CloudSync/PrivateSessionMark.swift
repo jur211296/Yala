@@ -141,6 +141,11 @@ nonisolated enum PrivateSessionMark {
     /// sin poder preguntarle a iCloud se lleva el testigo del espejo tardío, y el borrado de ese aviso era `.handover`:
     /// purgaba el dominio de Grupos que la activación existe para conservar. Con esta marca es `.importedRows`.
     ///
+    /// **Desde el 2026-09-27 solo decide los borrados pendientes SIN apunte de alcance** (ticket
+    /// `late-notice-of-a-welcome-private-session-purges-groups-joined-later`): el aviso que empieza un borrado ya es
+    /// `.importedRows` para todas las sesiones, y el que termina uno usa el alcance que ese borrado apuntó al entrar
+    /// (`StorageModePersistence.icloudCorpusWipeScope`). Lo que queda es el arm de un build anterior al apunte.
+    ///
     /// **Es un hecho de la sesión y no del testigo**, y por eso vive aquí: el mismo aviso termina también el borrado que
     /// dejó a medias la puerta del Welcome, sin testigo y con su `.handover` legítimo. **Vive y muere con el eje**:
     /// `set(false)` y `clear` la retiran, así que no sobrevive a un cierre de sesión ni al relevo de humano de «Empiezo de

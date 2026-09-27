@@ -292,6 +292,19 @@ nonisolated enum WelcomePrivateICloudGateLogic {
     /// **Y termina también con `zoneDone` sin marca** (review adversarial, dos lentes). Un kill —o la hoja desmontada— justo
     /// tras borrar la zona deja el arm y la marca de la zona, pero no «a medias»: esa la escribe `disarm()` al salir, y
     /// nadie salió. En solo-grupos ningún arranque devuelve a la puerta, así que la próxima vez que se llega es esta.
+    /// **Qué hace la salida «sin poder preguntarle a iCloud» con un borrado que quedó a medias** (ticket
+    /// `late-notice-of-a-welcome-private-session-purges-groups-joined-later`, review adversarial). Es la hermana de
+    /// `afterEmptyMeasure` para `.noICloud` y `.unreachable`: con el corpus del teléfono medido, la puerta solo llega ahí con
+    /// el teléfono vacío —con datos habría salido por «Encontramos datos en este teléfono»—, o recién vaciado por
+    /// «Empezar de cero» del teléfono. No queda mitad: la zona ya no está y el teléfono tampoco tiene nada.
+    ///
+    /// Dejar la marca era el bug: la persona hacía su onboarding privado, se unía a grupos, y el arranque le ofrecía
+    /// «Terminar de borrar» con el `.handover` del Welcome, que purgaba esos grupos y sellaba el dominio. Solo en el
+    /// Welcome (`.leaveForLateNotice`): los otros montajes no salen por aquí o no dejan nada a medias.
+    static func unverifiedExitRetiresHalfway(_ halfway: HalfwayWipe, measuredDevice: Bool) -> Bool {
+        halfway == .leaveForLateNotice && measuredDevice
+    }
+
     static func afterEmptyMeasure(_ halfway: HalfwayWipe, leftHalfway: Bool, zoneDone: Bool,
                                   measuredDevice: Bool) -> EmptyMeasure {
         switch halfway {
