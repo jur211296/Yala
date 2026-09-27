@@ -1,10 +1,13 @@
 ---
 id: apple-id-change-boot-check-runs-before-the-migration-guard-can-see
-status: backlog
+status: done
 priority: medium
 area: "sesiones, modo-nube"
 created: 2026-09-22
-updated: 2026-09-22
+updated: 2026-09-27
+qa-status: not-replicable
+qa-date: 2026-09-27
+qa-notes: pide un arranque con una migracion a medias y un Apple ID cambiado a la vez; lo fijan los unit de la logica pura y los scans del orden
 source: "review adversarial de `an-unreadable-migration-journal-reads-as-never-started` (2026-09-22), lente de fail-open"
 ---
 
@@ -34,5 +37,25 @@ antes de que exista lo que consulta, así que en el arranque no protege nada.
 
 ## Criterios de aceptación
 
-- [ ] En el arranque, con una fase de migración transitoria journaleada, no se ofrece el cierre.
-- [ ] Test del orden (el guard ve un controller o el journal) + control positivo sin migración.
+- [x] En el arranque, con una fase de migración transitoria journaleada, no se ofrece el cierre.
+- [x] Test del orden (el guard ve un controller o el journal) + control positivo sin migración.
+
+## Qué se hizo (2026-09-27)
+
+Se tomaron las dos opciones, no una:
+
+- **El disparo de arranque va detrás del 14.6** (paso 14.65), fuera de su `if`: el controller ya existe y su `init` ha
+  pintado `uiState`.
+- **El guard lee dos fuentes** (`AppleIDChangeCloseLogic.migrationAtRest`): el controller, si existe (estado `.idle` y
+  sin `isWorking`), y el journal (`MigrationPhaseStore.currentPhaseRead`) derivado con la misma función que la pantalla.
+  Un journal ilegible no concede.
+- **El guard se vuelve a mirar tras el `await` a CloudKit**, antes de decidir: el `resumeIfNeeded` del 14.6 corre
+  durante ese viaje. Lo trajo la review.
+
+Tests: `AppleIDChangeMigrationAtRestTests` (24 fases fuera de reposo sin controller, ilegible, relanzamiento pendiente,
+controller ocupado, cada fuente por su lado, controles positivos) y dos scans nuevos en `AppleIDChangeWiringTests`
+(orden y nivel del disparo; forma del guard, antes del flag «en vuelo» y otra vez tras el `await`).
+
+Hallazgos de la review con ticket propio: `private-sign-out-proceeds-with-a-migration-in-flight`,
+`apple-id-change-check-stays-off-after-a-failed-migration` y
+`apple-id-change-boot-check-is-lost-when-the-journal-is-unreadable-at-launch`.

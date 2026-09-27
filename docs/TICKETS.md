@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (638)
+## Index (641)
 
 | id | status | path |
 |---|---|---|
@@ -87,7 +87,9 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | an-undecodable-migration-phase-reads-as-never-started | done | tickets/done/an-undecodable-migration-phase-reads-as-never-started.md |
 | an-unreadable-migration-journal-reads-as-never-started | done | tickets/done/an-unreadable-migration-journal-reads-as-never-started.md |
 | app-uploads-its-timezone-to-the-cloud | backlog | tickets/backlog/app-uploads-its-timezone-to-the-cloud.md |
-| apple-id-change-boot-check-runs-before-the-migration-guard-can-see | backlog | tickets/backlog/apple-id-change-boot-check-runs-before-the-migration-guard-can-see.md |
+| apple-id-change-boot-check-is-lost-when-the-journal-is-unreadable-at-launch | backlog | tickets/backlog/apple-id-change-boot-check-is-lost-when-the-journal-is-unreadable-at-launch.md |
+| apple-id-change-boot-check-runs-before-the-migration-guard-can-see | done | tickets/done/apple-id-change-boot-check-runs-before-the-migration-guard-can-see.md |
+| apple-id-change-check-stays-off-after-a-failed-migration | backlog | tickets/backlog/apple-id-change-check-stays-off-after-a-failed-migration.md |
 | apple-id-change-should-close-the-private-session | done | tickets/done/apple-id-change-should-close-the-private-session.md |
 | apple-id-close-blocked-has-no-visible-outcome | done | tickets/done/apple-id-close-blocked-has-no-visible-outcome.md |
 | apple-id-close-notice-does-not-say-what-else-the-close-does | backlog | tickets/backlog/apple-id-close-notice-does-not-say-what-else-the-close-does.md |
@@ -478,6 +480,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | private-sign-out-blocks-on-a-cloud-keychain-read-error | backlog | tickets/backlog/private-sign-out-blocks-on-a-cloud-keychain-read-error.md |
 | private-sign-out-counts-group-writes-without-capturing-them | backlog | tickets/backlog/private-sign-out-counts-group-writes-without-capturing-them.md |
 | private-sign-out-keeps-legacy-cloudkit-groups | backlog | tickets/backlog/private-sign-out-keeps-legacy-cloudkit-groups.md |
+| private-sign-out-proceeds-with-a-migration-in-flight | backlog | tickets/backlog/private-sign-out-proceeds-with-a-migration-in-flight.md |
 | private-signout-groups-session-expiry-does-not-say-where-to-sign-in | backlog | tickets/backlog/private-signout-groups-session-expiry-does-not-say-where-to-sign-in.md |
 | prompts-de-traduccion-corren-xcodebuild-sin-cola | backlog | tickets/backlog/prompts-de-traduccion-corren-xcodebuild-sin-cola.md |
 | push-client-ignores-yala-kind | backlog | tickets/backlog/push-client-ignores-yala-kind.md |

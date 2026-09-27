@@ -332,17 +332,6 @@ final class AppBootstrapper {
             observeTransactionsImportedFromSync()
         }
 
-        // 14.55-bis. ¿Sigue siendo el mismo Apple ID que montó esta sesión privada? (ADR §1).
-        //
-        // **En el arranque ADEMÁS del observer, y no solo en él**: `NSUbiquityIdentityDidChange` no se
-        // entrega a una app que no está corriendo, y cambiar de cuenta de iCloud es justo el gesto que
-        // suele hacerse con Yala cerrada. Sin esta línea, el cambio no se detectaría hasta el siguiente
-        // cambio de cuenta.
-        //
-        // Dentro del `if lifecycleObserversInstalled` NO, aunque lo parezca: esto no instala nada, es
-        // una comprobación, y su idempotencia la da su propio latch por proceso.
-        checkForAppleIDChange(trigger: "boot")
-
         // 14.55 B1 (SIWA revoke 5.1.1(v)): composición de PRODUCCIÓN del hook de canje — el ÚNICO punto
         // que instala el closure real (AJUSTE #2 del brief: CloudAuthService no depende de
         // CloudAccountClient; el default nil = no-op). Gateado como 14.6: desde D-R1 paso 1 el gate está
@@ -374,6 +363,24 @@ final class AppBootstrapper {
             CloudMigrationController.configureShared(context: context)
             Task { await CloudMigrationController.shared?.resumeIfNeeded() }
         }
+
+        // 14.65. ¿Sigue siendo el mismo Apple ID que montó esta sesión privada? (ADR §1).
+        //
+        // **En el arranque ADEMÁS del observer, y no solo en él**: `NSUbiquityIdentityDidChange` no se
+        // entrega a una app que no está corriendo, y cambiar de cuenta de iCloud es justo el gesto que
+        // suele hacerse con Yala cerrada. Sin esta línea, el cambio no se detectaría hasta el siguiente
+        // cambio de cuenta.
+        //
+        // **Detrás del 14.6, no antes** (ticket `apple-id-change-boot-check-runs-before-the-migration-guard-can-see`):
+        // su guard «no a mitad de una migración» lee el `uiState` del controller, que `configureShared` crea
+        // y pinta en su `init`. Delante, el controller aún no existía y el arranque —justo el instante tras
+        // un relanzamiento a mitad de migración— no tenía protección. El guard lee además el journal por su
+        // cuenta, para cuando el controller no existe. Va FUERA del `if` del 14.6: sin backend configurado
+        // también hay sesión privada que comprobar.
+        //
+        // Dentro del `if lifecycleObserversInstalled` NO, aunque lo parezca: esto no instala nada, es
+        // una comprobación, y su idempotencia la da su propio latch por proceso.
+        checkForAppleIDChange(trigger: "boot")
 
         // 14.7 Modo Nube runtime (I9). El gate del dominio (P0) lo corta en `.icloud` o en fase transicional
         // (default de producción HOY): ni observer, ni arranque, ni red. Va ANTES del paso 15 de Grupos
@@ -1227,7 +1234,10 @@ final class AppBootstrapper {
     /// lleva timeout ni se guarda su `Task`, así que un `userRecordID()` que se cuelgue deja la
     /// comprobación apagada el resto del lanzamiento. En los dos casos el desenlace es «no se ofrece el
     /// cierre todavía», que converge solo con el arranque siguiente; lo contrario —reintentar contra un
-    /// estado que no se pudo leer— es lo que lleva a cerrar sesiones por error.
+    /// estado que no se pudo leer— es lo que lleva a cerrar sesiones por error. (3) Por lo mismo, un
+    /// disparo que llega con la migración fuera de reposo —también con el journal ilegible, como en un
+    /// prewarm con el store aún protegido— no se reintenta al volver a primer plano: espera al disparo
+    /// siguiente (ticket `apple-id-change-boot-check-is-lost-when-the-journal-is-unreadable-at-launch`).
     func checkForAppleIDChange(trigger: String) {
         guard !appleIDChangeHandledThisLaunch, !appleIDChangeCheckInFlight else { return }
         // Los hosts de test no salen a CloudKit: ahí `personalConfiguration` ni siquiera monta el store
@@ -1236,10 +1246,11 @@ final class AppBootstrapper {
         // **Y no a mitad de una migración a la nube.** `CloudSyncFlags.storageMode` sigue siendo
         // `.icloud` durante buena parte del cutover —el modo se persiste al final—, así que el término
         // del predicado que excluye la nube todavía no protege: sin este guard, una migración en vuelo
-        // podría recibir la oferta de cerrar la sesión y borrar lo local justo mientras sube. Es el
-        // mismo guard con el que `ProfileView` inhibe su fila de cierre (`ProfileView.swift:1116`), y
-        // no va en el predicado puro porque no es un hecho del eje: es «ahora no es el momento».
-        guard (CloudMigrationController.shared?.uiState ?? .idle) == .idle else { return }
+        // podría recibir la oferta de cerrar la sesión y borrar lo local justo mientras sube. No va en
+        // el predicado del eje porque no es un hecho del eje: es «ahora no es el momento».
+        // Lee el controller Y el journal (`migrationAtRestForAppleIDChange`), y se vuelve a mirar tras el
+        // `await`: ver ahí.
+        guard migrationAtRestForAppleIDChange() else { return }
 
         // Los tres términos LOCALES se leen antes de gastar una ida a la red: si esta celda no
         // participa —no hay sesión privada confirmada, es solo-grupos, o lo personal vive en la nube—
@@ -1256,6 +1267,10 @@ final class AppBootstrapper {
         Task { @MainActor in
             defer { appleIDChangeCheckInFlight = false }
             let identity = await PrivateSessionAppleIDWitness.currentIdentity()
+            // **La migración se RE-LEE aquí**, igual que los términos del eje: el `resumeIfNeeded` que el 14.6
+            // lanza en un `Task` corre durante este viaje a CloudKit, y la persona pudo tocar «Migrar» mientras
+            // tanto. El guard de arriba solo ahorra la ida a la red; el que decide es éste.
+            guard migrationAtRestForAppleIDChange() else { return }
             // Los términos se RE-LEEN después del `await`: entre el disparo y la respuesta de CloudKit
             // la persona pudo cerrar sesión o activar Yala completo, y decidir con el snapshot de antes
             // sería borrar sobre un estado que ya no existe.
@@ -1281,6 +1296,21 @@ final class AppBootstrapper {
                 break
             }
         }
+    }
+
+    /// **¿El paso de los datos a la nube está en reposo?** Las dos fuentes —el controller y el journal—
+    /// por `AppleIDChangeCloseLogic.migrationAtRest`. Sin controller —antes del 14.6, sin backend configurado,
+    /// en el swap de persona— el `?? .idle` de antes concedía siempre. En el swap tampoco hay journal
+    /// (`currentPhaseRead` sin container da `notStarted`) y concede: inferido que es verdad, porque el swap
+    /// acaba de borrar ese journal. `isWorking` sin controller es `false`: la fuente que queda es el journal.
+    private func migrationAtRestForAppleIDChange() -> Bool {
+        AppleIDChangeCloseLogic.migrationAtRest(
+            controllerState: CloudMigrationController.shared?.uiState,
+            controllerIsWorking: CloudMigrationController.shared?.isWorking ?? false,
+            journalRead: MigrationPhaseStore.shared.currentPhaseRead,
+            persistedStorageMode: StorageModePersistence.read(),
+            mirrorOffArmed: StorageModePersistence.isMirrorOffArmed(),
+            mountedDecision: SwiftDataConfiguration.personalStoreMountedDecision)
     }
 
     // MARK: - M6: Race Cleaner Hook
