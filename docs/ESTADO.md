@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-27 (Lima)
 
-**Rama** `2.1` — Merge #275: **«Activar la nube» ya no pierde lo que el teléfono tenía pendiente si sales antes del claim.**
+**Rama** `2.1` — Merge #276: **el borrado de iCloud de la puerta privada termina aunque la pantalla se cierre por debajo.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,29 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#275 · «Activar la nube» ya no pierde lo pendiente si sales antes del claim)
+## Esta sesión (#276 · el borrado de iCloud de la puerta privada termina aunque la pantalla se cierre)
+
+**En «Es mi primera vez → privado»**, si la pantalla se cerraba por debajo mientras borraba los datos de iCloud —por
+ejemplo, una invitación de grupo que la sustituye—, un borrado ya hecho se quedaba a medias por dentro (sin limpiar lo de
+quien usó el teléfono antes, con el borrado apuntado como pendiente), y uno que no había tocado nada dejaba ese pendiente
+para que el aviso tardío lo repitiera a ciegas, grupos incluidos. Ahora el hecho termina, el que no tocó nada se cancela
+limpio y la app ya no sale en nombre de la pantalla que se fue.
+
+- `WelcomePrivateICloudGateLogic.gateWipeSettles`: la cancelación solo manda si el borrado no llegó a escribir. Termina
+  lo durable, no la navegación (cancelada = desmontada, medido en la review). Premisa del ticket corregida: no había
+  «spinner eterno».
+
+**Verificado:** gate con 8232 unit en 786 suites y cuatro suites de XCUITest, centinela solo; 26/26 mutantes; review
+adversarial de tres lentes (un medio, arreglado; bajos al arreglo o a ticket). CI verde. Ticket a `qa`.
+
+### Lo que espera de Jürgen
+
+- **Device-QA opcional**: guion de cinco pasos en `tickets/qa/private-gate-remote-wipe-can-strand-its-arm.md`
+  (invitación de grupo a mitad del borrado).
+- Nuevos en backlog, los dos low: `private-gate-device-wipe-navigates-after-its-gate-unmounted` y
+  `late-icloud-notice-wipe-cancelled-after-it-committed-skips-its-exit`.
+
+## Sesión anterior (#275 · «Activar la nube» ya no pierde lo pendiente si sales antes del claim)
 
 **Si vuelves a iCloud sin red**, el aviso al servidor de que la vuelta terminó queda pendiente. Tocar «Activar la nube» y
 salir antes de que la nube contestara —cancelar, un inicio de sesión fallido, «No pudimos comprobar tu cuenta», una cuenta
@@ -41,7 +63,7 @@ de tres lentes (un medio, arreglado; bajos). CI verde. Ticket a `qa`.
 - Nuevos en backlog, los dos low: `migration-activation-ceiling-drops-origin-pending-effects` y
   `pending-reverse-complete-runs-with-whatever-session-is-live`.
 
-## Sesión anterior (#274 · cerrar sesión ya no borra lo local a mitad de una migración)
+## Antes (#274 · cerrar sesión ya no borra lo local a mitad de una migración)
 
 **Si hay un paso de tus datos entre iCloud y la nube a medias** —subiendo, parado, fallido esperando «Reintentar» o
 pendiente de reabrir Yala—, «Cerrar sesión» ya no borra nada: sale «No pudimos cerrar tu sesión» con el motivo y dónde
