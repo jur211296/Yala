@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-27 (Lima)
 
-**Rama** `2.1` — Merge #276: **el borrado de iCloud de la puerta privada termina aunque la pantalla se cierre por debajo.**
+**Rama** `2.1` — Merge #277: **si el borrado de iCloud de la puerta privada falla con iCloud ya borrado, la pantalla ya no dice «intactos».**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,29 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#276 · el borrado de iCloud de la puerta privada termina aunque la pantalla se cierre)
+## Esta sesión (#277 · la puerta privada ya no dice que iCloud sigue intacto tras un borrado a medias)
+
+**En «Es mi primera vez → privado»** (y en las dos puertas de «Activar Yala completo»), el borrado quita primero iCloud y
+después lo del teléfono. Si fallaba en la segunda mitad, la pantalla decía «Tus datos siguen en iCloud, intactos» con
+iCloud ya vacío. Ahora dice «Puede que parte de tus datos ya no esté y el resto siga aquí». Si falla antes de tocar
+iCloud, sigue diciendo «intactos», que ahí es verdad.
+
+- `.wipeFailed(zoneGone:)`: la fase lleva la marca durable de la zona, leída una vez tras el borrado. Copy reusado
+  (`wipeDeviceFailedBody`), sin claves nuevas. Premisa del ticket corregida: decidir por el motivo `localWipeFailed`
+  fallaba en un reintento que cae EN la zona.
+
+**Verificado:** gate con 8240 unit en 789 suites y `OnboardingFlowUITests` + `WelcomeChooserUITests`, centinela solo;
+6/6 mutantes. CI verde. Ticket a `qa`.
+
+### Lo que espera de Jürgen
+
+- **Device-QA opcional**: el fallo con iCloud ya borrado no se puede provocar a mano; el guion del ticket
+  (`tickets/qa/private-gate-wipe-failure-copy-claims-icloud-is-intact.md`) comprueba que el caso de siempre no cambió.
+- Nuevo en backlog (medium): `private-gate-leave-after-a-halfway-wipe-forgets-the-zone` — salir de la puerta tras el
+  borrado a medias no recuerda que iCloud quedó vacío; no se copió el desarme del aviso tardío porque en la activación
+  purgaría los grupos de quien activa.
+
+## Sesión anterior (#276 · el borrado de iCloud de la puerta privada termina aunque la pantalla se cierre)
 
 **En «Es mi primera vez → privado»**, si la pantalla se cerraba por debajo mientras borraba los datos de iCloud —por
 ejemplo, una invitación de grupo que la sustituye—, un borrado ya hecho se quedaba a medias por dentro (sin limpiar lo de
@@ -42,7 +64,7 @@ adversarial de tres lentes (un medio, arreglado; bajos al arreglo o a ticket). C
 - Nuevos en backlog, los dos low: `private-gate-device-wipe-navigates-after-its-gate-unmounted` y
   `late-icloud-notice-wipe-cancelled-after-it-committed-skips-its-exit`.
 
-## Sesión anterior (#275 · «Activar la nube» ya no pierde lo pendiente si sales antes del claim)
+## Antes (#275 · «Activar la nube» ya no pierde lo pendiente si sales antes del claim)
 
 **Si vuelves a iCloud sin red**, el aviso al servidor de que la vuelta terminó queda pendiente. Tocar «Activar la nube» y
 salir antes de que la nube contestara —cancelar, un inicio de sesión fallido, «No pudimos comprobar tu cuenta», una cuenta
