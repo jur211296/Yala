@@ -57,9 +57,9 @@ struct LateICloudWipeLeftHalfwayLogicTests {
         (true, true, .icloud, .resume),
         (false, true, .icloud, .askLeftHalfway),
         (false, false, .icloud, .none),
-        // Sin las filas `(armado, .cloud)` a propósito: que el arm se reanude también en la nube es un hueco abierto
-        // (`private-gate-back-from-found-keeps-a-resumed-arm`), no un contrato.
-        (false, true, .cloud, .retireLeftHalfway),
+        (true, false, .cloud, .retireInCloud),
+        (true, true, .cloud, .retireInCloud),
+        (false, true, .cloud, .retireInCloud),
         (false, false, .cloud, .none),
     ])
     func launch(armed: Bool, leftHalfway: Bool, storageMode: StorageMode, expected: Logic.LateWipeLaunch) {
@@ -75,7 +75,17 @@ struct LateICloudWipeLeftHalfwayLogicTests {
     /// **En la nube no se pregunta** (ticket `private-gate-leave-after-a-halfway-wipe-forgets-the-zone`): «Terminar de
     /// borrar» es `.handover`, y lo del teléfono ya es de la cuenta de la nube. La marca se retira.
     @Test func leftHalfwayInTheCloud_isRetiredAndNeverAsked() {
-        #expect(Logic.lateWipeLaunch(armed: false, leftHalfway: true, storageMode: .cloud) == .retireLeftHalfway)
+        #expect(Logic.lateWipeLaunch(armed: false, leftHalfway: true, storageMode: .cloud) == .retireInCloud)
+    }
+
+    /// **EL PIN DEL TICKET `private-gate-back-from-found-keeps-a-resumed-arm`.** Un arm que llega a un arranque en la nube
+    /// no se reanuda: su borrado es `.handover` del iCloud privado, y en una cuenta de la nube se llevaría lo del teléfono
+    /// —ya de esa cuenta— y sus grupos sin una sola pregunta. Con o sin «a medias» al lado.
+    @Test func armedInTheCloud_isRetiredAndNeverResumed() {
+        for leftHalfway in [false, true] {
+            let launch = Logic.lateWipeLaunch(armed: true, leftHalfway: leftHalfway, storageMode: .cloud)
+            #expect(launch == .retireInCloud, "leftHalfway=\(leftHalfway)")
+        }
     }
 
     @Test func notice_identityIsTheFact() {

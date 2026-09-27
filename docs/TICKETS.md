@@ -414,6 +414,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | late-icloud-notice-wipe-cancelled-after-it-committed-skips-its-exit | backlog | tickets/backlog/late-icloud-notice-wipe-cancelled-after-it-committed-skips-its-exit.md |
 | late-icloud-sheet-buttons-may-leave-the-screen-at-large-dynamic-type | backlog | tickets/backlog/late-icloud-sheet-buttons-may-leave-the-screen-at-large-dynamic-type.md |
 | late-icloud-wipe-can-re-export-between-its-two-halves | backlog | tickets/backlog/late-icloud-wipe-can-re-export-between-its-two-halves.md |
+| late-wipe-arm-is-dropped-silently-when-the-device-moves-to-the-cloud | backlog | tickets/backlog/late-wipe-arm-is-dropped-silently-when-the-device-moves-to-the-cloud.md |
 | leader-displaced-after-the-cutover-pushes-its-residual-in-the-reconcile | qa | tickets/qa/leader-displaced-after-the-cutover-pushes-its-residual-in-the-reconcile.md |
 | leaving-and-reentering-restore-renews-the-hard-cap | done | tickets/done/leaving-and-reentering-restore-renews-the-hard-cap.md |
 | lineage-coverage-blocks-forever-after-a-row-deleted-during-the-wait | done | tickets/done/lineage-coverage-blocks-forever-after-a-row-deleted-during-the-wait.md |
@@ -479,7 +480,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | private-exit-loses-unmaterialized-inbound-captures | done | tickets/done/private-exit-loses-unmaterialized-inbound-captures.md |
 | private-exit-materialized-drafts-do-not-refresh-the-inbox | backlog | tickets/backlog/private-exit-materialized-drafts-do-not-refresh-the-inbox.md |
 | private-exit-warning-recounts-materialized-captures | backlog | tickets/backlog/private-exit-warning-recounts-materialized-captures.md |
-| private-gate-back-from-found-keeps-a-resumed-arm | backlog | tickets/backlog/private-gate-back-from-found-keeps-a-resumed-arm.md |
+| private-gate-back-from-found-keeps-a-resumed-arm | qa | tickets/qa/private-gate-back-from-found-keeps-a-resumed-arm.md |
 | private-gate-device-notice-has-no-forward-exit | backlog | tickets/backlog/private-gate-device-notice-has-no-forward-exit.md |
 | private-gate-device-wipe-navigates-after-its-gate-unmounted | backlog | tickets/backlog/private-gate-device-wipe-navigates-after-its-gate-unmounted.md |
 | private-gate-leave-after-a-halfway-wipe-forgets-the-zone | qa | tickets/qa/private-gate-leave-after-a-halfway-wipe-forgets-the-zone.md |

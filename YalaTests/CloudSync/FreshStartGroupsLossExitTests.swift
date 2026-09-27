@@ -460,8 +460,8 @@ struct FreshStartGroupsLossWiringTests {
     /// **Irse desde el «¿seguro?» también desarma**, como desde el aviso: no se borró nada.
     @Test func leavingFromTheConfirmStepDisarms() throws {
         let gate = try Self.source(Self.gate)
-        let pending = try Self.slice(from: "private var isGroupsPending: Bool {", to: "\n    }\n", in: gate)
-        #expect(pending.contains(".confirmingGroupsLoss"))
+        let leave = try Self.slice(from: "private func leaveGate() {", to: "onBack()", in: gate)
+        #expect(leave.contains("disarm()") && !leave.contains("if "), "la salida de la puerta vuelve a filtrar por fase")
         let late = try Self.source(Self.late)
         let latePending = try Self.slice(from: "private var isGroupsPending: Bool {", to: "\n    }\n", in: late)
         #expect(latePending.contains(".confirmingGroupsLoss"))

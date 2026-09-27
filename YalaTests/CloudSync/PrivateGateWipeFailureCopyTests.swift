@@ -153,9 +153,9 @@ struct PrivateGateWipeFailureWiringTests {
     @Test("irse desde el fallo retira el arm con cualquier valor de la zona")
     func leaving_disarmsForBothValues() throws {
         let src = try Self.code(Self.gate)
-        let predicate = try Self.slice(from: "private var isWipeFailed: Bool {", to: "return false", in: src)
-        #expect(predicate.contains("if case .wipeFailed = phase { return true }"), "leído: \(predicate)")
         let leave = try Self.slice(from: "private func leaveGate() {", to: "onBack()", in: src)
-        #expect(leave.contains("if isWipeFailed || "), "leído: \(leave)")
+        #expect(leave.contains("disarm()") && !leave.contains("if "), """
+            la salida filtra por fase otra vez: un filtro por valor deja armado uno de los dos `zoneGone`. Leído: \(leave)
+            """)
     }
 }

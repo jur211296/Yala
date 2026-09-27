@@ -416,8 +416,9 @@ struct FreshStartUnsentGroupWritesWiringTests {
         #expect(gate.contains("phase = groupsPendingPhase(for: failure, retry: .iCloud) ?? .wipeFailed(zoneGone: failureZoneGone)"))
         #expect(gate.contains("phase = groupsPendingPhase(for: failure, retry: .device(iCloudUnverified: iCloudUnverified))\n"
                               + "                ?? .deviceWipeFailed(iCloudUnverified: iCloudUnverified)"))
-        #expect(gate.contains("if isWipeFailed || isDeviceWipeFailed || isGroupsPending || isUnverified {"),
-                "irse desde «faltan cambios» retira el arm, como desde cualquier borrado que no borró")
+        let leaveGate = try Self.body(of: "private func leaveGate() {", in: gate)
+        #expect(leaveGate.contains("disarm()") && !leaveGate.contains("if "),
+                "irse desde «faltan cambios» retira el arm, como desde cualquier otra fase de la puerta")
         let late = try Self.source("Yala/App/Views/Shared/LateICloudMirrorNoticeView.swift")
         #expect(late.contains("phase = .groupsPending(block)"))
         // Salir de «faltan cambios» desarma, por el botón y por la barra: armado, el arranque reanudaba el borrado a

@@ -787,72 +787,29 @@ struct WelcomePrivateICloudGateView: View {
         }
     }
 
-    /// Salir de la puerta. **Retira el arm si el borrado FALLÓ, y solo entonces.**
+    /// Salir de la puerta. **Retira el arm desde cualquier fase** (ticket `private-gate-back-from-found-keeps-a-resumed-arm`).
     ///
-    /// Un borrado que falla no borró nada, así que un arm que le sobrevive no protege ningún estado a
-    /// medias: solo recuerda una petición, y quien se va de esta pantalla acaba de retirarla. Sin esto,
-    /// alguien que se arrepiente tras un fallo de red y elige la nube se encuentra esta misma puerta en el
-    /// arranque siguiente, pidiéndole que termine un borrado que ya no quiere.
+    /// El arm existe para sobrevivir a un KILL con el borrado en vuelo, y solo a eso. Quien toca «volver» ha retirado su
+    /// petición, sea desde un fallo, desde «no se pudo preguntar» o desde «Encontramos datos tuyos». Hasta ese ticket
+    /// solo desarmaban los fallos: tras un kill en `.wiping`, el arranque traía de vuelta la puerta con el arm puesto,
+    /// la puerta volvía a medir y enseñaba `.found`; volver desde ahí y crear una cuenta en la nube dejaba el arm vivo, y
+    /// el arranque siguiente lo reanudaba a ciegas con `.handover` — iCloud privado, lo del teléfono y los grupos.
     ///
-    /// **Desde `.wiping` no se puede llegar aquí**, y esa es la otra mitad de la kill-safety: el «volver»
-    /// está oculto mientras la operación está en vuelo, así que el arm solo sobrevive a un KILL —que es
-    /// para lo que existe— y nunca a un abandono.
+    /// **Desde `.wiping` y `.wipingDevice` no se puede llegar aquí**, y esa es la otra mitad de la kill-safety: el
+    /// «volver» está oculto mientras la operación está en vuelo (`backAction`), así que el arm solo sobrevive a un KILL
+    /// —que es para lo que existe— y nunca a un abandono. Por eso no hay condición: la única fase que la necesitaría no
+    /// tiene salida.
     ///
-    /// **No toca el neutro durable**, y eso es una corrección de la review: `clearNeutralMountArm` tiene
-    /// OTRO dueño —el wipe de cierre de sesión (`performSignOutWipeIfArmed`)— y limpiarlo aquí le quitaba
-    /// al device recién vaciado la única cosa que impide que el espejo se readjunte sobre el corpus del
-    /// humano que se acaba de ir.
-    /// **Y desde el 2026-09-14 también desde las dos fases de «no se pudo preguntar»** (review
-    /// adversarial). El chevron sale de esas dos pantallas al mismo sitio que su botón, y ese botón
-    /// —`returnWithoutClaimingAWipe`— retira el arm: dos controles al mismo destino con efectos durables
-    /// distintos es como un arm sobrevive a una salida deliberada. Y el criterio es el mismo que el de un
-    /// borrado fallido, solo que un paso antes: aquí no se pudo ni MEDIR, así que no hay nada a medias que
-    /// el arm proteja — solo una petición que quien se va acaba de retirar.
+    /// **Desarma con `disarm()`**: si la zona ya se había ido —en el intento que falló delante o en el que cortó un
+    /// kill—, el borrado dejó algo a medias (iCloud vacío, lo del teléfono no) y `disarm()` lo deja escrito en vez de
+    /// olvidarlo (ticket `private-gate-leave-after-a-halfway-wipe-forgets-the-zone`). Qué lo termina depende del montaje
+    /// (`halfwayWipe`): en el Welcome, el aviso tardío; en «Empezar desde cero», esta misma puerta al volver.
     ///
-    /// **Salvo que la zona ya se hubiera borrado** (`.wipeFailed(zoneGone: true)`): ahí el borrado sí dejó algo a medias
-    /// —iCloud vacío, lo del teléfono no— y `disarm()` lo deja escrito en vez de olvidarlo (ticket
-    /// `private-gate-leave-after-a-halfway-wipe-forgets-the-zone`). Qué lo termina depende del montaje (`halfwayWipe`):
-    /// en el Welcome, el aviso tardío; en «Empezar desde cero», esta misma puerta al volver. Las cuatro fases pasan por
-    /// ahí y no solo `.wipeFailed`: «faltan cambios de grupos» tras un reintento y «no se pudo preguntar» tras un kill
-    /// también pueden llegar con la zona ya ida.
+    /// **Y no se lleva el neutro durable del cierre de sesión** (`performSignOutWipeIfArmed`), que es lo que hace seguro
+    /// desarmar desde todas las fases: `clearICloudCorpusWipeArm` solo retira el neutro que armó el propio borrado.
     private func leaveGate() {
-        if isWipeFailed || isDeviceWipeFailed || isGroupsPending || isUnverified {
-            disarm()
-        }
+        disarm()
         onBack()
-    }
-
-    /// El borrado de iCloud falló, con la zona ida o sin tocarla: los dos retiran el arm al irse. `if case` en una
-    /// propiedad por lo mismo que `isDeviceWipeFailed`: el case lleva su término dentro y `==` ya no lo alcanza.
-    private var isWipeFailed: Bool {
-        if case .wipeFailed = phase { return true }
-        return false
-    }
-
-    /// «A iCloud no se le pudo preguntar»: las dos fases que ofrecen `exitWithoutValidating`. En una
-    /// propiedad y no en el `if` de arriba porque el hecho tiene nombre y porque `||` no admite pattern
-    /// matching — aquí los dos cases son simples, pero mezclar `==` y `if case` en la misma condición es
-    /// como se cuela el tercero cuando aparezca.
-    private var isUnverified: Bool {
-        phase == .noICloud || phase == .unreachable
-    }
-
-    /// `if case` envuelto en una propiedad porque el `||` de arriba no admite pattern matching, y porque
-    /// el hecho —«el borrado que falló fue el del teléfono»— se lee mejor con nombre. Los dos fallos
-    /// retiran el arm por la misma razón: un borrado que no borró nada no deja ningún estado a medias que
-    /// proteger, solo una petición que quien se va acaba de retirar.
-    private var isDeviceWipeFailed: Bool {
-        if case .deviceWipeFailed = phase { return true }
-        return false
-    }
-
-    /// El borrado se paró en los cambios de grupos: tampoco borró nada, así que irse retira el arm por la misma razón. Su
-    /// «¿seguro?» también: se sale por el chevron sin haber aceptado nada.
-    private var isGroupsPending: Bool {
-        switch phase {
-        case .groupsPending, .confirmingGroupsLoss: return true
-        default: return false
-        }
     }
 
     /// La fase de «faltan cambios de grupos», si el fallo fue ése. `nil` para cualquier otro: entonces manda el fallo de

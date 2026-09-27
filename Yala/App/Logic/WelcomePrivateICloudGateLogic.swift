@@ -211,8 +211,9 @@ nonisolated enum WelcomePrivateICloudGateLogic {
         case resume
         /// El borrado quedó a medias delante de la persona: se le pregunta, no se reanuda.
         case askLeftHalfway
-        /// Quedó a medias, pero este dispositivo ya vive en la nube: la marca no describe su store y se retira.
-        case retireLeftHalfway
+        /// Este dispositivo ya vive en la nube: ni el arm ni «a medias» describen su store, y los dos se retiran sin borrar
+        /// ni preguntar.
+        case retireInCloud
         /// Nada pendiente: sigue la comprobación normal del espejo tardío.
         case none
     }
@@ -225,12 +226,19 @@ nonisolated enum WelcomePrivateICloudGateLogic {
     /// una cuenta de la nube lo del teléfono es de esa cuenta: terminar el borrado se llevaría sus datos. Desde que la
     /// puerta del Welcome también deja la marca, «Soy nuevo → nube» la lleva hasta aquí. El modo nube cuenta como
     /// sesión privada, así que el guard de arriba no la para.
+    ///
+    /// **Y en la nube tampoco se reanuda el arm** (ticket `private-gate-back-from-found-keeps-a-resumed-arm`). El arm es
+    /// un borrado del iCloud PRIVADO con alcance `.handover`: reanudarlo en una cuenta de la nube se lleva lo del teléfono
+    /// —que ya es de esa cuenta— y sus grupos, sin una sola pregunta. En la nube ningún camino arma ese borrado (el aviso
+    /// tardío no sale sin espejo), así que un arm aquí siempre es una petición privada que sobrevivió al cambio de modo. La
+    /// nube se mira PRIMERO por eso: el arm ya no gana en todos los modos.
     static func lateWipeLaunch(armed: Bool, leftHalfway: Bool, storageMode: StorageMode) -> LateWipeLaunch {
-        if armed { return .resume }
-        guard leftHalfway else { return .none }
         switch storageMode {
-        case .icloud: return .askLeftHalfway
-        case .cloud: return .retireLeftHalfway
+        case .cloud:
+            return (armed || leftHalfway) ? .retireInCloud : .none
+        case .icloud:
+            if armed { return .resume }
+            return leftHalfway ? .askLeftHalfway : .none
         }
     }
 

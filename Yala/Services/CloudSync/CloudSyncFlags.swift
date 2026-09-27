@@ -212,8 +212,11 @@ nonisolated enum StorageModePersistence {
     /// relanzamiento del restore volvería a montar neutro y el usuario giraría para siempre.
     static let neutralMountArmedKey = "cloudSync.neutralMountArmed"
 
+    /// **Quien lo arma por aquí es su dueño**: el cierre de sesión. Por eso retira la marca de que lo armó el borrado del
+    /// corpus (`icloudCorpusWipeOwnsNeutralMountKey`): desde ese momento desarmar aquel borrado no puede llevárselo.
     static func armNeutralMount(_ defaults: UserDefaults = .standard) {
         defaults.set(true, forKey: neutralMountArmedKey)
+        defaults.removeObject(forKey: icloudCorpusWipeOwnsNeutralMountKey)
     }
 
     static func isNeutralMountArmed(_ defaults: UserDefaults = .standard) -> Bool {
@@ -322,25 +325,41 @@ nonisolated enum StorageModePersistence {
     /// El predicado del neutro durable (`armado && !hasShownWelcomeChooser`) encaja exacto aquí: en la
     /// puerta nadie ha marcado el chooser todavía —lo marcan las SALIDAS, no la puerta— y en cuanto el
     /// usuario cruza el portal la marca queda inerte sola. El anti-bucle es el término que ya tenía.
+    ///
+    /// **Pero el neutro tiene dos dueños, y el borrado solo retira el suyo** (ticket
+    /// `private-gate-back-from-found-keeps-a-resumed-arm`, review adversarial). El cierre de sesión lo arma también
+    /// (`SwiftDataConfiguration`), y en el Welcome de un dispositivo recién vaciado es lo único que impide readjuntar el
+    /// espejo sobre el corpus del humano que se fue. Si ya estaba puesto al armar el borrado, no es suyo y desarmar no lo
+    /// toca. Sin esta marca, volver desde «Encontramos datos» tras un kill se lo llevaba, y seis sitios vuelven a poner
+    /// `hasShownWelcomeChooser = false`: un neutro retirado de más, o dejado de más, sí cambia un montaje.
     static let icloudCorpusWipeArmedKey = "cloudSync.icloudCorpusWipeArmed"
+
+    /// «El neutro durable lo armó el borrado del corpus, no el cierre de sesión». Solo existe con el neutro puesto.
+    static let icloudCorpusWipeOwnsNeutralMountKey = "cloudSync.icloudCorpusWipeOwnsNeutralMount"
 
     static func armICloudCorpusWipe(_ defaults: UserDefaults = .standard) {
         defaults.set(true, forKey: icloudCorpusWipeArmedKey)
+        // Re-armar su propio borrado no cambia de dueño: el neutro ya está y la marca ya es suya.
+        guard !isNeutralMountArmed(defaults) else { return }
         armNeutralMount(defaults)
+        defaults.set(true, forKey: icloudCorpusWipeOwnsNeutralMountKey)
     }
 
     static func isICloudCorpusWipeArmed(_ defaults: UserDefaults = .standard) -> Bool {
         defaults.bool(forKey: icloudCorpusWipeArmedKey)
     }
 
-    /// Desarmar — SIEMPRE el ÚLTIMO paso, y limpia también el neutro durable que `arm` puso. Dejarlo
-    /// puesto no cuelga a nadie (`hasShownWelcomeChooser` ya lo inhabilita en cuanto el usuario sale del
-    /// Welcome), pero un estado que sobrevive a su motivo es exactamente lo que hace que la próxima
-    /// lectura de la tabla de mounts signifique otra cosa.
+    /// Desarmar — SIEMPRE el ÚLTIMO paso, y limpia también el neutro durable **si lo puso `arm`**. Dejarlo
+    /// puesto no cuelga a nadie mientras `hasShownWelcomeChooser` lo inhabilite, pero un estado que sobrevive a su motivo
+    /// es exactamente lo que hace que la próxima lectura de la tabla de mounts signifique otra cosa. Y el del cierre de
+    /// sesión no es suyo: ése se queda.
     static func clearICloudCorpusWipeArm(_ defaults: UserDefaults = .standard) {
         defaults.removeObject(forKey: icloudCorpusWipeArmedKey)
         defaults.removeObject(forKey: icloudCorpusWipeZoneDoneKey)
-        clearNeutralMountArm(defaults)
+        if defaults.bool(forKey: icloudCorpusWipeOwnsNeutralMountKey) {
+            clearNeutralMountArm(defaults)
+        }
+        defaults.removeObject(forKey: icloudCorpusWipeOwnsNeutralMountKey)
     }
 
     /// **«Este borrado armado YA se llevó la zona de iCloud».** Sub-estado del arm: se escribe solo con el arm puesto y
