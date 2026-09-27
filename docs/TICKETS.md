@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (646)
+## Index (649)
 
 | id | status | path |
 |---|---|---|
@@ -480,8 +480,9 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | private-exit-warning-recounts-materialized-captures | backlog | tickets/backlog/private-exit-warning-recounts-materialized-captures.md |
 | private-gate-device-notice-has-no-forward-exit | backlog | tickets/backlog/private-gate-device-notice-has-no-forward-exit.md |
 | private-gate-device-wipe-navigates-after-its-gate-unmounted | backlog | tickets/backlog/private-gate-device-wipe-navigates-after-its-gate-unmounted.md |
+| private-gate-leave-after-a-halfway-wipe-forgets-the-zone | backlog | tickets/backlog/private-gate-leave-after-a-halfway-wipe-forgets-the-zone.md |
 | private-gate-remote-wipe-can-strand-its-arm | qa | tickets/qa/private-gate-remote-wipe-can-strand-its-arm.md |
-| private-gate-wipe-failure-copy-claims-icloud-is-intact | backlog | tickets/backlog/private-gate-wipe-failure-copy-claims-icloud-is-intact.md |
+| private-gate-wipe-failure-copy-claims-icloud-is-intact | qa | tickets/qa/private-gate-wipe-failure-copy-claims-icloud-is-intact.md |
 | private-icloud-gate-back-lands-on-the-wrong-branch | backlog | tickets/backlog/private-icloud-gate-back-lands-on-the-wrong-branch.md |
 | private-sign-out-blocks-on-a-cloud-keychain-read-error | backlog | tickets/backlog/private-sign-out-blocks-on-a-cloud-keychain-read-error.md |
 | private-sign-out-counts-group-writes-without-capturing-them | backlog | tickets/backlog/private-sign-out-counts-group-writes-without-capturing-them.md |

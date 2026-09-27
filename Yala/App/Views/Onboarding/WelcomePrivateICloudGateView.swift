@@ -144,7 +144,11 @@ struct WelcomePrivateICloudGateView: View {
         /// dudar, y el corpus no ha cambiado en esos dos segundos.
         case confirmingWipe(ICloudPersonalCorpus)
         case wiping
-        case wipeFailed
+        /// El borrado de iCloud falló. **`zoneGone` dice si la zona ya se había borrado**, y cambia el hecho que la
+        /// pantalla cuenta (ticket `private-gate-wipe-failure-copy-claims-icloud-is-intact`): sin tocarla, los datos
+        /// siguen en iCloud; con ella ida, iCloud está vacío y lo del teléfono a medias. Viaja dentro del case por lo
+        /// mismo que `iCloudUnverified` abajo: un `@State` al lado se hereda en silencio al reintentar.
+        case wipeFailed(zoneGone: Bool)
         case noICloud
         case unreachable
         // MARK: Las cuatro del corpus que ya está en el TELÉFONO
@@ -288,14 +292,14 @@ struct WelcomePrivateICloudGateView: View {
                 identifier: "welcome_private_icloud_error",
                 primaryAction: { phase = .checking },
                 secondaryAction: exitWithoutValidating)
-        case .wipeFailed:
-            // El borrado falló y los datos SIGUEN en iCloud, intactos. Continuar sería mentirle. Dos
-            // salidas: reintentar, o irse — y ese «irse» es el ÚNICO sitio donde se retira el arm, porque
-            // es el único donde consta que la persona ya no quiere el borrado.
+        case .wipeFailed(let zoneGone):
+            // El borrado falló. Continuar sería mentirle. Dos salidas: reintentar, o irse — y ese «irse» es el
+            // ÚNICO sitio donde se retira el arm, porque es el único donde consta que la persona ya no quiere el
+            // borrado. **Qué se le dice depende de si la zona ya se había ido**: ver `wipeFailedBody(zoneGone:)`.
             twoWayNoticeContent(
                 icon: "exclamationmark.icloud",
                 title: L10n.Welcome.PrivateICloud.wipeFailedTitle,
-                body: L10n.Welcome.PrivateICloud.wipeFailedBody,
+                body: Self.wipeFailedBody(zoneGone: zoneGone),
                 // **`wipeRetry` y no `Restore.retry`**: aquél dice «Reintentar búsqueda», que en una
                 // pantalla de borrado fallido no significa nada. El de `.unreachable` se queda como está,
                 // porque ahí sí se vuelve a BUSCAR.
@@ -313,8 +317,8 @@ struct WelcomePrivateICloudGateView: View {
             confirmDeviceContent(iCloudUnverified: unverified)
         case .deviceWipeFailed(let unverified):
             // Mismo molde que su gemela de iCloud y por la misma razón: el borrado falló, los datos siguen
-            // AQUÍ, y continuar sería mentirle. Lo que cambia es dónde están — el copy de arriba promete
-            // que siguen en iCloud, y aquí eso sería falso.
+            // AQUÍ, y continuar sería mentirle. Lo que cambia es dónde están — el copy de arriba, con la zona sin
+            // tocar, promete que siguen en iCloud, y aquí eso sería falso.
             twoWayNoticeContent(
                 icon: "exclamationmark.triangle",
                 title: L10n.Welcome.PrivateICloud.wipeFailedTitle,
@@ -782,11 +786,24 @@ struct WelcomePrivateICloudGateView: View {
     /// distintos es como un arm sobrevive a una salida deliberada. Y el criterio es el mismo que el de un
     /// borrado fallido, solo que un paso antes: aquí no se pudo ni MEDIR, así que no hay nada a medias que
     /// el arm proteja — solo una petición que quien se va acaba de retirar.
+    ///
+    /// **Salvo que la zona ya se hubiera borrado** (`.wipeFailed(zoneGone: true)`): ahí el borrado sí dejó algo a medias
+    /// —iCloud vacío, lo del teléfono no— y desarmar se lleva también la marca de la zona. Recordarlo al salir no cabe en
+    /// este sitio: el remedio de «a medias» es el aviso tardío, que termina con `.handover`, y en la puerta de la
+    /// activación eso purgaría los grupos de quien activa para conservarlos. Ticket
+    /// `private-gate-leave-after-a-halfway-wipe-forgets-the-zone`.
     private func leaveGate() {
-        if phase == .wipeFailed || isDeviceWipeFailed || isGroupsPending || isUnverified {
+        if isWipeFailed || isDeviceWipeFailed || isGroupsPending || isUnverified {
             StorageModePersistence.clearICloudCorpusWipeArm()
         }
         onBack()
+    }
+
+    /// El borrado de iCloud falló, con la zona ida o sin tocarla: los dos retiran el arm al irse. `if case` en una
+    /// propiedad por lo mismo que `isDeviceWipeFailed`: el case lleva su término dentro y `==` ya no lo alcanza.
+    private var isWipeFailed: Bool {
+        if case .wipeFailed = phase { return true }
+        return false
     }
 
     /// «A iCloud no se le pudo preguntar»: las dos fases que ofrecen `exitWithoutValidating`. En una
@@ -927,14 +944,20 @@ struct WelcomePrivateICloudGateView: View {
     /// step del Welcome y la desmonta: un `onProceed()` ahí saldría en nombre de una pantalla que ya no está —con su
     /// relanzamiento y su `exit(0)` al pasar a segundo plano— encima de la invitación que la persona acaba de abrir.
     /// Por eso la cancelación se lee UNA vez y decide las dos cosas: si se aplica el desenlace y si se navega.
+    ///
+    /// **La marca de la zona también se lee UNA vez, y decide dos cosas**: si el desenlace se aplica y qué cuenta la
+    /// pantalla de fallo (ticket `private-gate-wipe-failure-copy-claims-icloud-is-intact`). Se lee de la marca y no del
+    /// motivo: un reintento desde el estado a medias que falla EN la zona devuelve un error de CloudKit con la zona ya
+    /// borrada por el intento anterior, y decidir por el motivo le diría «intactos».
     private func wipe() async {
         StorageModePersistence.armICloudCorpusWipe()
         let failure = await performWipe()
         let cancelled = Task.isCancelled
+        let zoneGone = StorageModePersistence.isICloudCorpusWipeZoneDone()
         guard WelcomePrivateICloudGateLogic.gateWipeSettles(
             failed: failure != nil,
             cancelled: cancelled,
-            zoneGone: StorageModePersistence.isICloudCorpusWipeZoneDone()
+            zoneGone: zoneGone
         ) else {
             // **Cancelado sin tocar nada: vuelve DESARMADO.** Una cancelación no es un kill: el borrado volvió y
             // consta que no llegó a la zona, así que el arm no protege nada. Dejarlo puesto hace que
@@ -944,7 +967,7 @@ struct WelcomePrivateICloudGateView: View {
             return
         }
         guard failure == nil else {
-            phase = groupsPendingPhase(for: failure, retry: .iCloud) ?? .wipeFailed
+            phase = groupsPendingPhase(for: failure, retry: .iCloud) ?? .wipeFailed(zoneGone: zoneGone)
             return
         }
         if clearsResidualPreferencesOnWipe {
@@ -1014,6 +1037,24 @@ struct WelcomePrivateICloudGateView: View {
         } else {
             onProceed()
         }
+    }
+
+    // MARK: - El fallo del borrado de iCloud
+
+    /// **Qué dice la pantalla cuando el borrado de iCloud falla** (ticket
+    /// `private-gate-wipe-failure-copy-claims-icloud-is-intact`). Son dos hechos distintos:
+    ///
+    ///  · **Sin tocar la zona** (red, cuenta, import en vuelo): `wipeFailedBody`, «Tus datos siguen en iCloud,
+    ///    intactos». Solo es verdad aquí.
+    ///  · **Con la zona ya borrada** (falló el borrado de las filas del teléfono, o un reintento tras eso):
+    ///    `wipeDeviceFailedBody`, «puede que parte de tus datos ya no esté y el resto siga aquí». Es el estado real:
+    ///    iCloud vacío y el teléfono a medio vaciar. Hasta este ticket se le decía «intactos».
+    ///
+    /// Reusa la clave del fallo del teléfono, ya traducida en los 16 idiomas, en vez de una nueva: cuenta el mismo
+    /// hecho. `leftHalfwayBody`, el del aviso tardío, no vale aquí: su última frase nombra «quedarte con lo que haya» y
+    /// «terminar de borrarlo», y los botones de esta pantalla son «Volver a intentarlo» y «Dejarlo por ahora».
+    static func wipeFailedBody(zoneGone: Bool) -> String {
+        zoneGone ? L10n.Welcome.PrivateICloud.wipeDeviceFailedBody : L10n.Welcome.PrivateICloud.wipeFailedBody
     }
 
     // MARK: - Cifras

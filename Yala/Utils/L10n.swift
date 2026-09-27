@@ -5396,7 +5396,8 @@ enum L10n {
             /// fallo de borrado; `.unreachable` conserva aquél, porque ahí sí se vuelve a medir.
             static var wipeRetry: String { ls("welcome.privateICloud.wipeRetry", comment: "") }
             /// Y su fallo, por lo mismo: `wipeFailedBody` dice que los datos siguen en iCloud, que aquí
-            /// sería falso — siguen en el teléfono.
+            /// sería falso — siguen en el teléfono. Lo reusa también el fallo del borrado de iCloud cuando la zona ya
+            /// se había ido (`WelcomePrivateICloudGateView.wipeFailedBody(zoneGone:)`): es el mismo hecho.
             static var wipeDeviceFailedBody: String {
                 ls("welcome.privateICloud.wipeDeviceFailedBody", comment: "")
             }
