@@ -913,10 +913,36 @@ struct WelcomePrivateICloudGateView: View {
     /// La limpieza de residuales va **después** del borrado y no antes, por el mismo motivo que en
     /// `ShellDataAlertsModifier`: si el borrado falla, los datos siguen ahí y quitarle el nombre y la
     /// divisa sería cobrarle por un borrado que no ocurrió.
+    ///
+    /// **La cancelación solo manda si el borrado no llegó a escribir** (ticket
+    /// `private-gate-remote-wipe-can-strand-its-arm`). Con el scope del Welcome, el propio borrado se lleva
+    /// `hasCompletedOnboarding` y eso puede cancelar esta `.task` con todo ya borrado; un `guard !Task.isCancelled`
+    /// a secas dejaba el arm puesto y las preferencias residuales sin limpiar sobre un corpus ya borrado. La tabla
+    /// entera está en `WelcomePrivateICloudGateLogic.gateWipeSettles`: cancelado sin tocar nada vuelve; cancelado
+    /// después de borrar termina. Y el que vuelve, vuelve desarmado.
+    ///
+    /// **«Termina» es lo DURABLE, no la navegación** (review adversarial del 2026-09-27). Esta `.task` solo se
+    /// cancela si la puerta se desmonta —durante `.wiping` no hay «volver» y solo esta función cambia la fase—, así
+    /// que cancelada ya no hay puerta en pantalla. Una invitación de grupo que llega a mitad del borrado sustituye el
+    /// step del Welcome y la desmonta: un `onProceed()` ahí saldría en nombre de una pantalla que ya no está —con su
+    /// relanzamiento y su `exit(0)` al pasar a segundo plano— encima de la invitación que la persona acaba de abrir.
+    /// Por eso la cancelación se lee UNA vez y decide las dos cosas: si se aplica el desenlace y si se navega.
     private func wipe() async {
         StorageModePersistence.armICloudCorpusWipe()
         let failure = await performWipe()
-        guard !Task.isCancelled else { return }
+        let cancelled = Task.isCancelled
+        guard WelcomePrivateICloudGateLogic.gateWipeSettles(
+            failed: failure != nil,
+            cancelled: cancelled,
+            zoneGone: StorageModePersistence.isICloudCorpusWipeZoneDone()
+        ) else {
+            // **Cancelado sin tocar nada: vuelve DESARMADO.** Una cancelación no es un kill: el borrado volvió y
+            // consta que no llegó a la zona, así que el arm no protege nada. Dejarlo puesto hace que
+            // `ContentView.runLateICloudMirrorCheck` lo reanude A CIEGAS —zona, filas y purga de Grupos— si la
+            // persona acaba el onboarding por otro camino, como la invitación que desmontó esta puerta.
+            StorageModePersistence.clearICloudCorpusWipeArm()
+            return
+        }
         guard failure == nil else {
             phase = groupsPendingPhase(for: failure, retry: .iCloud) ?? .wipeFailed
             return
@@ -925,6 +951,7 @@ struct WelcomePrivateICloudGateView: View {
             OnboardingResetHelper.clearResidualPreferencesForFreshStart()
         }
         StorageModePersistence.clearICloudCorpusWipeArm()
+        guard !cancelled else { return }
         onProceed()
     }
 

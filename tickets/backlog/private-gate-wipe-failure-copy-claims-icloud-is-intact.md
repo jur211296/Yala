@@ -39,3 +39,10 @@ a medio vaciar.
 ## Relacionados
 
 - [[activation-restore-start-fresh-keeps-the-imported-rows]] · [[restore-start-fresh-keeps-the-imported-corpus]]
+
+## Añadido 2026-09-27 (review de `private-gate-remote-wipe-can-strand-its-arm`)
+
+La misma mitad a medias tiene un segundo síntoma, fuera del copy: salir de `.wipeFailed` por `leaveGate` desarma
+con `clearICloudCorpusWipeArm()`, que también borra `icloudCorpusWipeZoneDone`. El aviso tardío ya usa
+`disarmFailedICloudCorpusWipe()`, que en ese caso deja «a medias» (`leaveICloudCorpusWipeHalfway`). En la puerta
+nadie recuerda que iCloud quedó vacío con lo del teléfono dentro. Inferido por lectura, sin reproducir.
