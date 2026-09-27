@@ -1,6 +1,6 @@
 ---
 name: git-add-con-ruta-muerta-aborta-entero
-description: Un `git add` con UNA ruta que ya no existe no añade NADA (3 veces, la última con git mv); añade por DIRECTORIO y encadena con &&
+description: Un `git add` con UNA ruta que ya no existe no añade NADA (4 veces, todas con un git mv); añade por DIRECTORIO y encadena con &&
 metadata:
   type: feedback
 ---
@@ -27,3 +27,9 @@ HEAD` lo delató a tiempo.
 aguantó: escribí la lista a mano igual. ⇒ **no listes ficheros: añade por DIRECTORIO** (`git add -A -- Yala YalaTests
 .claude/rules docs tickets qa`), que recoge renombrados y nuevos y no muere por un fichero movido; deja fuera solo lo que
 no va (p.ej. `encargos/`). Y `&&` entre el `git add` y el `git commit`, siempre.
+
+**Cuarta vez el 2026-09-27 (#276), otra vez lista a mano y sin `&&`.** Tenía esta memoria cargada. El commit salió con el
+rename solo, y como el sello del gate ancla en HEAD, el `--amend` quedó BLOQUEADO; lo arregló `git reset --soft HEAD~1`,
+que devuelve HEAD y deja el sello válido. ⇒ el comando de commit se escribe SIEMPRE como
+`git add -A -- Yala YalaTests docs tickets qa .claude/rules && git commit …`, sin excepción: la lista a mano no es una
+opción aunque parezca más precisa.
