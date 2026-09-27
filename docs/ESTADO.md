@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-26 (Lima)
 
-**Rama** `2.1` — Merge #270: **«Cerrar sesión» ya no deja el teléfono como recién instalado con la sesión en la nube de quien cerró dentro.**
+**Rama** `2.1` — Merge #271: **Si el teléfono no consigue leer tus preferencias pendientes de subir, ya no las borra.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,29 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#270 · cerrar sesión ya no deja la sesión en la nube dentro de un teléfono vacío)
+## Esta sesión (#271 · una cola de preferencias que no se deja leer ya no se sobrescribe vacía)
+
+**Si el teléfono no consigue leer el archivo de preferencias pendientes de subir** (la lectura falla; el archivo no
+está roto), ya no lo trata como basura: lo deja como está y sus cambios suben en cuanto se deje leer. Antes empezaba
+una cola vacía encima, esos cambios no llegaban nunca a los otros dispositivos y se reiniciaba el reloj que decide qué
+cambio gana. Mientras no se deja leer, la sincronización de preferencias espera: antes bajaba todo de nuevo y deshacía
+en pantalla lo que acababas de cambiar.
+
+- `PrefsOutbox` separa lectura y decode (`readState`); un archivo ilegible lanza `.readFailed` y nadie escribe encima.
+  La corrupción sigue en «estado nuevo». El ciclo de prefs lee con `syncSnapshot`, que lanza, y sin lectura no hace
+  push ni pull. Regla en `swiftdata-cloudkit.md` («Y el outbox de preferencias tampoco»).
+
+**Verificado:** gate con 234 unit en 9 suites y 8/8 XCUITest de las áreas, 5/5 mutantes (fallo de lectura reproducido
+con permisos 000 sobre el archivo real, sin seam), review adversarial de tres lentes (sin altos; dos aserciones que no
+podían fallar y un docblock, arreglados en el PR). CI verde. Ticket a `done` (`not-replicable`).
+
+### Lo que espera de Jürgen
+
+- Nada de esta sesión. Nuevos en backlog: `prefs-push-purge-drops-a-change-made-during-the-upload` (medium, bug previo
+  que encontró la review: un cambio hecho mientras se sube el anterior se pierde) y
+  `prefs-change-is-dropped-when-the-outbox-cannot-take-it` (low, el cambio hecho justo con el archivo ilegible).
+
+## Sesión anterior (#270 · cerrar sesión ya no deja la sesión en la nube dentro de un teléfono vacío)
 
 **Si al cerrar sesión la sesión en la nube no se borra del teléfono** (el llavero no la borró, o una renovación del token
 la repuso), el cierre se para antes de borrar nada y lo dice: «Tu sesión sigue abierta en este iPhone, así que no se ha
@@ -42,7 +64,7 @@ arrancaba en esa cuenta (Grupos bajaba sus grupos).
   (low), `private-sign-out-blocks-on-a-cloud-keychain-read-error` (low) y `uitest-reset-keeps-the-sign-out-wipe-arm`
   (very-low). El swap sin relanzar quedó anotado en `detach-postcondition-misses-a-token-refresh-that-lands-after-it`.
 
-## Sesión anterior (#269 · un pago de Apple Pay o un gasto de Siri ya no se pierde al cerrar la sesión privada)
+## Antes (#269 · un pago de Apple Pay o un gasto de Siri ya no se pierde al cerrar la sesión privada)
 
 **Si pagas con Apple Pay o dictas un gasto a Siri y cierras la sesión privada antes de que Yala lo convierta en
 borrador**, el cierre lo convierte antes de contar lo que falta por subir a iCloud, y viaja con lo demás. Si no puede
