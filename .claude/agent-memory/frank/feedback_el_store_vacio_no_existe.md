@@ -16,3 +16,8 @@ no protegía a nadie. Con el D2 escrito en el Paso 0, el error estaba en la prem
 **How to apply:** ante «sin filas locales» / «store vacío» / «nada que subir», grep de lo que el arranque inserta sin
 condición de onboarding (`AppBootstrapper`, servicios de caché) y ponlo en el fixture del test. Emparenta con
 [[el-fixture-hereda-la-anatomia-de-produccion]] y [[la-premisa-del-encargo-tambien-se-mide]].
+
+**Segunda vez, 2026-09-27 (#274):** excluí la celda solo-grupos de la puerta de la migración porque «su store es el neutro
+vacío y no puede estar subiendo». La review midió que nada impide migrar desde esa sesión (la fila de Almacenamiento y
+«Migrar» no miran la marca del eje). ⇒ antes de EXCLUIR una celda de una protección, busca quién puede llevarla al estado
+que proteges; «está vacía» es una premisa, no una medida.
