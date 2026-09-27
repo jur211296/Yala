@@ -1,6 +1,6 @@
 ---
 name: git-add-con-ruta-muerta-aborta-entero
-description: Un `git add` con UNA ruta que ya no existe no añade NADA; si filtras su salida, el commit sale casi vacío con el mensaje del fix entero
+description: Un `git add` con UNA ruta que ya no existe no añade NADA (3 veces, la última con git mv); añade por DIRECTORIO y encadena con &&
 metadata:
   type: feedback
 ---
@@ -22,3 +22,8 @@ Relacionado: [[reference_gate_sello_ancla_en_head]].
 que abortó entero; y el commit de docs de justo después se llevó el renombrado, que ya estaba en el índice por el
 `git mv`. ⇒ **antes del `git add`, `git status --short`, y a `git add` solo rutas que salgan ahí.** El `git show --stat
 HEAD` lo delató a tiempo.
+
+**Tercera vez el 2026-09-26 (#272), con el mismo `git mv` y aun sabiéndolo.** La regla «mira `git status` antes» no
+aguantó: escribí la lista a mano igual. ⇒ **no listes ficheros: añade por DIRECTORIO** (`git add -A -- Yala YalaTests
+.claude/rules docs tickets qa`), que recoge renombrados y nuevos y no muere por un fichero movido; deja fuera solo lo que
+no va (p.ej. `encargos/`). Y `&&` entre el `git add` y el `git commit`, siempre.

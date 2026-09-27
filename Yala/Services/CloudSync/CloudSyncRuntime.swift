@@ -846,8 +846,15 @@ final class CloudSyncRuntime {
             if case .completed(let results) = outcome {
                 // `applied`/`noop` (LWW resuelto server-side) → purgar del outbox. `reason` != nil (upstream
                 // transitorio) NO llega como `applied`/`noop` → la entry queda y se reintenta.
-                let done = results.filter { $0.reason == nil }.map(\.key)
-                do { try prefsOutbox.removeEntries(keys: done) } catch {
+                // Se purga con el HLC que VIAJÓ, no por key: un `set()` durante el `await` de arriba reencola la misma
+                // key con un HLC nuevo, y ésa tiene que quedarse (ticket `prefs-push-purge-drops-a-change-made-during-the-upload`).
+                // El HLC sale del wire enviado: la respuesta no lo trae, y una key que no se envió no purga nada.
+                let sentHLC = Dictionary(wire.map { ($0.key, $0.hlc) }, uniquingKeysWith: { first, _ in first })
+                var done: [String: String] = [:]
+                for result in results where result.reason == nil {
+                    if let hlc = sentHLC[result.key] { done[result.key] = hlc }
+                }
+                do { try prefsOutbox.removeEntries(pushed: done) } catch {
                     #if DEBUG
                     print("CloudSyncRuntime.syncPrefsOnce: removeEntries falló: \(error)")
                     #endif

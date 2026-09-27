@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (635)
+## Index (638)
 
 | id | status | path |
 |---|---|---|
@@ -420,6 +420,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | markerless-adopt-stays-blocked-while-another-device-writes-to-the-account | done | tickets/done/markerless-adopt-stays-blocked-while-another-device-writes-to-the-account.md |
 | markerless-adopt-without-full-coverage-never-relays-the-marker | backlog | tickets/backlog/markerless-adopt-without-full-coverage-never-relays-the-marker.md |
 | merchant-memory-suggests-across-natures-in-three-more-places | backlog | tickets/backlog/merchant-memory-suggests-across-natures-in-three-more-places.md |
+| metrics-drain-purge-drops-unsent-events-when-the-spool-is-full | backlog | tickets/backlog/metrics-drain-purge-drops-unsent-events-when-the-spool-is-full.md |
 | migrate-attempt-session-survives-a-relaunch-mid-attempt | backlog | tickets/backlog/migrate-attempt-session-survives-a-relaunch-mid-attempt.md |
 | migrate-before-the-groups-association-arrives-splits-the-accounts | backlog | tickets/backlog/migrate-before-the-groups-association-arrives-splits-the-accounts.md |
 | migrate-card-keeps-promising-an-account-the-check-refused | backlog | tickets/backlog/migrate-card-keeps-promising-an-account-the-check-refused.md |
@@ -460,7 +461,9 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | prefs-change-is-dropped-when-the-outbox-cannot-take-it | backlog | tickets/backlog/prefs-change-is-dropped-when-the-outbox-cannot-take-it.md |
 | prefs-domain-per-secondary-session | discarded | tickets/discarded/prefs-domain-per-secondary-session.md |
 | prefs-outbox-reads-an-unreadable-file-as-corrupt-and-overwrites-it | done | tickets/done/prefs-outbox-reads-an-unreadable-file-as-corrupt-and-overwrites-it.md |
-| prefs-push-purge-drops-a-change-made-during-the-upload | backlog | tickets/backlog/prefs-push-purge-drops-a-change-made-during-the-upload.md |
+| prefs-pull-overwrites-a-pending-local-change-on-screen | backlog | tickets/backlog/prefs-pull-overwrites-a-pending-local-change-on-screen.md |
+| prefs-push-purge-drops-a-change-made-during-the-upload | done | tickets/done/prefs-push-purge-drops-a-change-made-during-the-upload.md |
+| prefs-push-retries-a-rejected-key-forever | backlog | tickets/backlog/prefs-push-retries-a-rejected-key-forever.md |
 | prefs-synced-keys-upload-not-download | backlog | tickets/backlog/prefs-synced-keys-upload-not-download.md |
 | presentation-net-desarm-has-no-automated-net | backlog | tickets/backlog/presentation-net-desarm-has-no-automated-net.md |
 | previous-person-cloud-session-survives-fresh-start-and-reinstall | qa | tickets/qa/previous-person-cloud-session-survives-fresh-start-and-reinstall.md |
