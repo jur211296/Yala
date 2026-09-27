@@ -27,3 +27,11 @@ la sesión privada aunque cambie de Apple ID. No se pierde nada: se queda en el 
 ## Qué hay que decidir (Jürgen)
 
 ¿Se ofrece el cierre con una migración fallida y sin efectos pendientes? Hasta decidirlo, no se ofrece.
+
+## Nota (2026-09-27): la decisión ya gobierna dos lectores
+
+Desde `private-sign-out-proceeds-with-a-migration-in-flight`, el cierre de la sesión privada usa el MISMO predicado
+(`CloudSignOutFlowLogic.migrationBlockReason` sobre `migrationAtRest`). Con `failedRollback`, hoy tampoco se puede cerrar la
+sesión privada hasta pulsar «Reintentar»: el aviso lo dice. Si se decide ofrecer el cierre tras un fallo sin efectos
+pendientes, el término entra en `migrationAtRest` y se abren los dos a la vez; el test
+`migracionFallida_tambienPara` de `PrivateSignOutMigrationGuardTests` es el que tiene que cambiar.

@@ -1303,14 +1303,11 @@ final class AppBootstrapper {
     /// en el swap de persona— el `?? .idle` de antes concedía siempre. En el swap tampoco hay journal
     /// (`currentPhaseRead` sin container da `notStarted`) y concede: inferido que es verdad, porque el swap
     /// acaba de borrar ese journal. `isWorking` sin controller es `false`: la fuente que queda es el journal.
+    ///
+    /// Las seis lecturas viven en `MigrationRestReading.live` desde el 2026-09-27: el cierre de la sesión privada hace
+    /// la misma pregunta (ticket `private-sign-out-proceeds-with-a-migration-in-flight`) y lee por el mismo sitio.
     private func migrationAtRestForAppleIDChange() -> Bool {
-        AppleIDChangeCloseLogic.migrationAtRest(
-            controllerState: CloudMigrationController.shared?.uiState,
-            controllerIsWorking: CloudMigrationController.shared?.isWorking ?? false,
-            journalRead: MigrationPhaseStore.shared.currentPhaseRead,
-            persistedStorageMode: StorageModePersistence.read(),
-            mirrorOffArmed: StorageModePersistence.isMirrorOffArmed(),
-            mountedDecision: SwiftDataConfiguration.personalStoreMountedDecision)
+        AppleIDChangeCloseLogic.migrationAtRest(.live)
     }
 
     // MARK: - M6: Race Cleaner Hook

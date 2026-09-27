@@ -5802,6 +5802,9 @@
 /* Vuelta al neutro imposible en esta celda: cuerpo */
 "welcome.groups.neutralUnavailableBody" = "Op deze telefoon staat een sessie open die je eerst via Instellingen moet afsluiten voordat je hier een groep start. Ga terug: er is niets aangeraakt.";
 
+/* Vuelta al neutro parada: el paso de los datos entre iCloud y la nube no está en reposo */
+"welcome.groups.neutralMigrationBody" = "We kunnen nog niet bevestigen dat de overstap van je gegevens tussen iCloud en de cloud is afgerond, en als we deze telefoon nu klaarmaken, kan verloren gaan wat nog geüpload moet worden. Ga terug: er is niets aangeraakt.";
+
 /* Título de la sección Grupos dentro de «Dónde viven tus datos» */
 "storage.groups.title" = "Groepen";
 
@@ -6130,6 +6133,8 @@
 "settings.signOutUploadRetryLater" = "Je laatste wijzigingen zijn niet in de cloud aangekomen. Ze blijven op deze telefoon staan en er gaat niets verloren; probeer het straks opnieuw.";
 "settings.signOutCloudSessionExpired" = "Je sessie is verlopen en sommige wijzigingen zijn nog niet naar de cloud geüpload. Er gaat niets verloren: open ‘Waar je gegevens staan’, hier in Profiel, tik op ‘Aanmelden’ en probeer het daarna opnieuw.";
 "settings.signOutSessionSurvived" = "Je bent nog ingelogd op deze iPhone, dus er is niets verwijderd. Probeer het opnieuw.";
+"settings.signOutMigrationInFlight" = "De overstap van je gegevens tussen iCloud en de cloud is nog niet afgerond, en als je nu uitlogt, kan verloren gaan wat nog geüpload moet worden, dus er is niets verwijderd. Open ‘Waar je gegevens staan’, in Profiel, en rond het daar af (als het mislukt is, tik op ‘Opnieuw proberen’); probeer het daarna opnieuw.";
+"settings.signOutMigrationUnreadable" = "We konden niet controleren hoe ver de overstap van je gegevens tussen iCloud en de cloud is, en als je nu uitlogt, kan verloren gaan wat nog geüpload moet worden, dus er is niets verwijderd. Sluit Yala volledig af en open hem opnieuw; verandert er niets, werk hem dan bij via de App Store en probeer het opnieuw.";
 
 /* Title: a deletion of the old iCloud data succeeded in iCloud but failed on this phone */
 "welcome.privateICloud.leftHalfwayTitle" = "Het verwijderen is maar half gelukt";

@@ -429,9 +429,15 @@ struct AppleIDChangeWiringTests {
         let src = try Self.code("Yala/App/AppBootstrapper.swift")
         let normalizado = { (s: String) in s.split(whereSeparator: \.isWhitespace).joined(separator: " ") }
 
+        // Desde el 2026-09-27 las seis lecturas viven en `MigrationRestReading.live`, que comparte con el cierre de la sesión
+        // privada (`private-sign-out-proceeds-with-a-migration-in-flight`). Se fijan las dos mitades: que el guard lee por
+        // ahí, y qué lee eso.
         let helper = try Self.body(of: "private func migrationAtRestForAppleIDChange() -> Bool {", in: src)
+        #expect(normalizado(helper) == "AppleIDChangeCloseLogic.migrationAtRest(.live)")
+        let lectura = try Self.body(of: "@MainActor static var live: MigrationRestReading {",
+                                    in: try Self.code("Yala/Services/CloudSync/MigrationRestReading.swift"))
         let esperado = """
-            AppleIDChangeCloseLogic.migrationAtRest(
+            MigrationRestReading(
                 controllerState: CloudMigrationController.shared?.uiState,
                 controllerIsWorking: CloudMigrationController.shared?.isWorking ?? false,
                 journalRead: MigrationPhaseStore.shared.currentPhaseRead,
@@ -439,7 +445,7 @@ struct AppleIDChangeWiringTests {
                 mirrorOffArmed: StorageModePersistence.isMirrorOffArmed(),
                 mountedDecision: SwiftDataConfiguration.personalStoreMountedDecision)
             """
-        #expect(normalizado(helper) == normalizado(esperado), """
+        #expect(normalizado(lectura) == normalizado(esperado), """
             el guard «no a mitad de una migración» cambió de forma. Tiene que leer las DOS fuentes —el controller,
             que puede no existir, con su estado y su `isWorking`, y el journal, que existe desde el paso 11— con los
             insumos con los que la pantalla deriva su estado.

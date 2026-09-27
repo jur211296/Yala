@@ -422,6 +422,13 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSignOut private export unconfirmed pending=\(pending ?? -1, privacy: .public)")
     }
 
+    /// El cierre de una sesión PRIVADA se paró porque el paso de los datos entre iCloud y la nube no estaba en reposo
+    /// (`migration-in-flight` · `migration-unreadable`). Ticket `private-sign-out-proceeds-with-a-migration-in-flight`.
+    /// Sin PII: solo el slug.
+    static func signOutBlockedByMigration(reason: String) {
+        logger.notice("CloudSignOut blocked by migration reason=\(reason, privacy: .public)")
+    }
+
     /// Paso 9 · la celda cambió entre la hoja y la ejecución (una sesión que caducó con la hoja abierta): no
     /// se ejecuta un borrado que nadie leyó. La vista lo comprueba antes; esto es el cinturón.
     static func signOutCellChangedBeforeRunning() {

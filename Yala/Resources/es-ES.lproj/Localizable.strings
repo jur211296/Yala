@@ -5074,6 +5074,9 @@
 /* Vuelta al neutro imposible en esta celda: cuerpo */
 "welcome.groups.neutralUnavailableBody" = "Este teléfono tiene una sesión abierta que hay que cerrar desde Ajustes antes de empezar un grupo aquí. Vuelve atrás: no se ha tocado nada.";
 
+/* Vuelta al neutro parada: el paso de los datos entre iCloud y la nube no está en reposo */
+"welcome.groups.neutralMigrationBody" = "Todavía no podemos confirmar que el paso de tus datos entre iCloud y la nube haya terminado, y preparar este teléfono ahora podría borrar lo que falta por subir. Vuelve atrás: no se ha tocado nada.";
+
 /* Título de la sección Grupos dentro de «Dónde viven tus datos» */
 "storage.groups.title" = "Grupos";
 
@@ -5402,6 +5405,8 @@
 "settings.signOutUploadRetryLater" = "Tus últimos cambios no llegaron a la nube. Siguen guardados en este teléfono y no se pierden; inténtalo de nuevo en un rato.";
 "settings.signOutCloudSessionExpired" = "Tu sesión ha caducado y hay cambios sin subir a la nube. No se pierden: abre «Dónde viven tus datos», aquí en Perfil, toca «Iniciar sesión» y después vuelve a intentarlo.";
 "settings.signOutSessionSurvived" = "Tu sesión sigue abierta en este iPhone, así que no se ha borrado nada. Vuelve a intentarlo.";
+"settings.signOutMigrationInFlight" = "El paso de tus datos entre iCloud y la nube todavía no ha terminado, y cerrar sesión ahora podría borrar lo que falta por subir, así que no se ha borrado nada. Abre «Dónde viven tus datos», en Perfil, y termínalo desde ahí (si ha fallado, toca «Reintentar»); después vuelve a intentarlo.";
+"settings.signOutMigrationUnreadable" = "No hemos podido comprobar en qué punto va el paso de tus datos entre iCloud y la nube, y cerrar sesión ahora podría borrar lo que falta por subir, así que no se ha borrado nada. Cierra Yala del todo y vuelve a abrirla; si sigue igual, actualízala desde la App Store y vuelve a intentarlo.";
 
 /* Title: a deletion of the old iCloud data succeeded in iCloud but failed on this phone */
 "welcome.privateICloud.leftHalfwayTitle" = "El borrado quedó a medias";

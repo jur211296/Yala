@@ -5790,6 +5790,9 @@
 /* Vuelta al neutro imposible en esta celda: cuerpo */
 "welcome.groups.neutralUnavailableBody" = "Este celular tem uma sessão aberta que precisa ser encerrada nos Ajustes antes de começar um grupo aqui. Volte: nada foi tocado.";
 
+/* Vuelta al neutro parada: el paso de los datos entre iCloud y la nube no está en reposo */
+"welcome.groups.neutralMigrationBody" = "Ainda não conseguimos confirmar que a passagem dos seus dados entre o iCloud e a nuvem terminou, e preparar este celular agora poderia apagar o que falta subir. Volte: nada foi tocado.";
+
 /* Título de la sección Grupos dentro de «Dónde viven tus datos» */
 "storage.groups.title" = "Grupos";
 
@@ -6118,6 +6121,8 @@
 "settings.signOutUploadRetryLater" = "Suas últimas alterações não chegaram à nuvem. Elas continuam salvas neste telefone e nada se perde; tente de novo daqui a pouco.";
 "settings.signOutCloudSessionExpired" = "Sua sessão expirou e há alterações que ainda não subiram para a nuvem. Nada se perde: abra “Onde ficam seus dados”, aqui em Perfil, toque em “Entrar” e depois tente de novo.";
 "settings.signOutSessionSurvived" = "Sua sessão continua aberta neste iPhone, então nada foi apagado. Tente de novo.";
+"settings.signOutMigrationInFlight" = "A passagem dos seus dados entre o iCloud e a nuvem ainda não terminou, e sair da conta agora poderia apagar o que falta subir, então nada foi apagado. Abra “Onde ficam seus dados”, em Perfil, e termine por lá (se falhou, toque em “Tentar de novo”); depois tente de novo.";
+"settings.signOutMigrationUnreadable" = "Não conseguimos verificar em que ponto está a passagem dos seus dados entre o iCloud e a nuvem, e sair da conta agora poderia apagar o que falta subir, então nada foi apagado. Feche o Yala completamente e abra de novo; se nada mudar, atualize-o pela App Store e tente de novo.";
 
 /* Title: a deletion of the old iCloud data succeeded in iCloud but failed on this phone */
 "welcome.privateICloud.leftHalfwayTitle" = "Não terminamos de apagar";

@@ -157,4 +157,16 @@ nonisolated enum AppleIDChangeCloseLogic {
             mirrorOffArmed: mirrorOffArmed, mountedDecision: mountedDecision)
         return journalState == .idle
     }
+
+    /// El mismo predicado con la lectura en un solo valor (`MigrationRestReading`). Desde el 2026-09-27 lo usan DOS
+    /// lectores —esta oferta y el cierre de la sesión privada (`CloudSignOutFlowLogic.migrationBlockReason`)— y los dos
+    /// leen por aquí, así que no hay una segunda definición de «reposo» que pueda divergir.
+    static func migrationAtRest(_ reading: MigrationRestReading) -> Bool {
+        migrationAtRest(controllerState: reading.controllerState,
+                        controllerIsWorking: reading.controllerIsWorking,
+                        journalRead: reading.journalRead,
+                        persistedStorageMode: reading.persistedStorageMode,
+                        mirrorOffArmed: reading.mirrorOffArmed,
+                        mountedDecision: reading.mountedDecision)
+    }
 }

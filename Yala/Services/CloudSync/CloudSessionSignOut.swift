@@ -624,6 +624,9 @@ final class CloudSessionSignOut {
         // Salir por CUALQUIER camino apaga el caption de espera (regla del @Observable).
         defer { waitingForPending = false }
 
+        // Lo primero, antes de subir ni esperar nada: con el paso de los datos a la nube fuera de reposo no se empieza.
+        // El que decide es el de pegado al arm (`armAfterCredentials`); éste evita soltar la sesión de grupos para nada.
+        if blockIfMigrationNotAtRest(kind: plan.kind) { return }
         if blockIfGroupsCannotUpload(context: context, kind: plan.kind) { return }
         if plan.waitsForExport {
             if plan.kind.pushesGroups {
@@ -859,6 +862,10 @@ final class CloudSessionSignOut {
     /// fija que el swap vive solo en `.cloud`).
     private func finalizeSessionExit(context: ModelContext, kind: CloudSignOutFlowLogic.ExitKind, export: ExportPolicy) async {
         phase = .working
+        // **La migración otra vez, antes de soltar nada** (review adversarial del 2026-09-27). Aquí entran también los que
+        // RETOMAN un cierre sin pasar por `performSessionExit` —«Cerrar sesión igualmente», «Esperar», «Cerrar sesión y
+        // perderlos»—, y lo de abajo desmonta el canal y suelta la sesión en la nube que una migración en vuelo usa.
+        if blockIfMigrationNotAtRest(kind: kind) { return }
         if kind.pushesGroups {
             // Otra vuelta de grupos: lo escrito en grupos durante la espera puede estar SOLO en el historial —
             // el recuento del outbox no lo ve— y solo el push-all lo drena (con su puerta de quiescencia).
@@ -904,6 +911,30 @@ final class CloudSessionSignOut {
             GroupsConsentState.clear()
         }
         await armAfterCredentials(context: context, kind: kind, export: export)
+    }
+
+    /// Sustituye la lectura de la migración en los tests (`nil` = la de producción, `MigrationRestReading.live`). Mismo
+    /// patrón que los `…Override` de los servicios de notificaciones: el predicado y el escritor siguen siendo los reales.
+    var migrationRestReadingOverride: (() -> MigrationRestReading)?
+
+    /// **Con el paso de los datos entre iCloud y la nube fuera de reposo, el cierre de una sesión privada se para**
+    /// (ticket `private-sign-out-proceeds-with-a-migration-in-flight`). Cerrar ahí borra lo local mientras sube. La
+    /// decisión es `CloudSignOutFlowLogic.migrationBlockReason`, que es el predicado de la oferta del cambio de Apple ID
+    /// (`AppleIDChangeCloseLogic.migrationAtRest`) más el texto que toca. Lo hace el ESCRITOR y no cada pantalla: Ajustes,
+    /// la hoja del cambio de Apple ID y la puerta de Grupos del Welcome entran todas por aquí.
+    ///
+    /// **Tres sitios**: al empezar el cierre (antes de subir grupos o esperar a iCloud), al entrar en `finalizeSessionExit`
+    /// (antes de soltar el canal y la sesión, y es donde entran los que retoman un cierre bloqueado) y pegado al arm, sin
+    /// `await` entre medias, que es el que decide.
+    ///
+    /// Sin `blockedExit`: no hay nada que retomar a medias, y reintentar es el gesto entero, como el resto de bloqueos
+    /// de antes del arm.
+    func blockIfMigrationNotAtRest(kind: CloudSignOutFlowLogic.ExitKind) -> Bool {
+        let reading = migrationRestReadingOverride?() ?? MigrationRestReading.live
+        guard let reason = CloudSignOutFlowLogic.migrationBlockReason(kind: kind, reading: reading) else { return false }
+        phase = .blocked(pendingCount: 0, reason: reason)
+        CloudSyncBreadcrumb.signOutBlockedByMigration(reason: reason.breadcrumbSlug)
+        return true
     }
 
     /// El cierre soltó la sesión y la sesión SIGUE guardada: se para sin armar el borrado. Ver
@@ -954,6 +985,11 @@ final class CloudSessionSignOut {
         }
         // ── Desde aquí no hay ni un `await` hasta el arm. ──
         if blockIfGroupsCannotUpload(context: context, kind: kind) { return }
+        // **La migración se re-lee aquí, pegada al arm** (ticket `private-sign-out-proceeds-with-a-migration-in-flight`).
+        // Desde el principio del cierre han pasado la subida de grupos, la espera de iCloud y la suelta de la sesión, y
+        // mientras tanto una migración pudo arrancar o retomarse. Con las credenciales ya sueltas, pararse deja el teléfono
+        // como el bloqueo S2 —canal cortado, datos intactos— y reintentar es el gesto entero.
+        if blockIfMigrationNotAtRest(kind: kind) { return }
         // Lo que se pierde con la pérdida aceptada (teléfono sin App Attest) se cuenta pegado al arm, sin `await`.
         if acceptedGroupsLoss != nil { Self.noteGroupsDiscarded(pending: Self.liveGroupsPendingCount(context: context)) }
         let forgetsGroups = kind.pushesGroups || Self.hasBackendGroupRows(context: context)

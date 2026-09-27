@@ -4521,6 +4521,11 @@ enum L10n {
         /// El cierre soltó la sesión en la nube y la sesión SIGUE guardada: no se armó el borrado
         /// (`CloudSignOutFlowLogic.BlockReason.signOutSessionSurvived`, ticket `sign-out-exits-do-not-verify-the-cloud-session-closed`).
         static var signOutSessionSurvived: String { ls("settings.signOutSessionSurvived", comment: "") }
+        /// El cierre de una sesión privada se paró con el paso de los datos entre iCloud y la nube fuera de reposo
+        /// (`CloudSignOutFlowLogic.BlockReason.migrationInFlight`, ticket `private-sign-out-proceeds-with-a-migration-in-flight`).
+        static var signOutMigrationInFlight: String { ls("settings.signOutMigrationInFlight", comment: "") }
+        /// Lo mismo con el journal de la migración ilegible (`BlockReason.migrationUnreadable`).
+        static var signOutMigrationUnreadable: String { ls("settings.signOutMigrationUnreadable", comment: "") }
         /// La exportación de ese aviso no encontró ningún movimiento que exportar.
         static var signOutAttestExportEmpty: String { ls("settings.signOutAttestExportEmpty", comment: "") }
         /// La exportación de ese aviso no pudo generar el archivo.
@@ -5481,6 +5486,9 @@ enum L10n {
             /// de una visita, que hacen OTRO borrado. Se dice y se vuelve; cero escrituras.
             static var neutralUnavailableTitle: String { ls("welcome.groups.neutralUnavailableTitle", comment: "") }
             static var neutralUnavailableBody: String { ls("welcome.groups.neutralUnavailableBody", comment: "") }
+            /// La vuelta al neutro se paró porque el paso de los datos entre iCloud y la nube no está en reposo (los dos
+            /// motivos de la migración). No manda a Perfil: en el Welcome no existe.
+            static var neutralMigrationBody: String { ls("welcome.groups.neutralMigrationBody", comment: "") }
             /// CTA de las pantallas con una sola salida: vuelta al step con las otras vías intactas.
             static var gateBack: String { ls("welcome.groups.gateBack", comment: "") }
             /// G3 · el único dato que el alta del organizador pide (decisión del owner: solo nombre).

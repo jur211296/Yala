@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (641)
+## Index (644)
 
 | id | status | path |
 |---|---|---|
@@ -417,6 +417,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | lineage-coverage-blocks-forever-after-a-row-deleted-during-the-wait | done | tickets/done/lineage-coverage-blocks-forever-after-a-row-deleted-during-the-wait.md |
 | lineage-enumeration-check-skips-tables-absent-from-the-merkle | backlog | tickets/backlog/lineage-enumeration-check-skips-tables-absent-from-the-merkle.md |
 | live-anchor-breakdown-doubles-the-approximate-glyph | backlog | tickets/backlog/live-anchor-breakdown-doubles-the-approximate-glyph.md |
+| local-wipes-other-than-sign-out-do-not-look-at-an-in-flight-migration | backlog | tickets/backlog/local-wipes-other-than-sign-out-do-not-look-at-an-in-flight-migration.md |
 | lost-cloud-signup-then-private-leaves-migrate-blocked | backlog | tickets/backlog/lost-cloud-signup-then-private-leaves-migrate-blocked.md |
 | m1-prose-outlives-its-code-in-comments | backlog | tickets/backlog/m1-prose-outlives-its-code-in-comments.md |
 | markerless-adopt-stays-blocked-while-another-device-writes-to-the-account | done | tickets/done/markerless-adopt-stays-blocked-while-another-device-writes-to-the-account.md |
@@ -428,6 +429,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | migrate-card-keeps-promising-an-account-the-check-refused | backlog | tickets/backlog/migrate-card-keeps-promising-an-account-the-check-refused.md |
 | migrate-claim-does-not-announce-a-definitive-cause-before-its-ceiling | backlog | tickets/backlog/migrate-claim-does-not-announce-a-definitive-cause-before-its-ceiling.md |
 | migration-activation-drops-pending-effects-it-never-restores | backlog | tickets/backlog/migration-activation-drops-pending-effects-it-never-restores.md |
+| migration-started-during-a-sign-out-teardown-loses-its-session | backlog | tickets/backlog/migration-started-during-a-sign-out-teardown-loses-its-session.md |
 | migration-takeover-may-duplicate-rows-whose-leader-identities-never-arrived | done | tickets/done/migration-takeover-may-duplicate-rows-whose-leader-identities-never-arrived.md |
 | migration-takeover-uploads-without-a-lineage-check | qa | tickets/qa/migration-takeover-uploads-without-a-lineage-check.md |
 | more-tab-missing-profile-button | backlog | tickets/backlog/more-tab-missing-profile-button.md |
@@ -480,7 +482,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | private-sign-out-blocks-on-a-cloud-keychain-read-error | backlog | tickets/backlog/private-sign-out-blocks-on-a-cloud-keychain-read-error.md |
 | private-sign-out-counts-group-writes-without-capturing-them | backlog | tickets/backlog/private-sign-out-counts-group-writes-without-capturing-them.md |
 | private-sign-out-keeps-legacy-cloudkit-groups | backlog | tickets/backlog/private-sign-out-keeps-legacy-cloudkit-groups.md |
-| private-sign-out-proceeds-with-a-migration-in-flight | backlog | tickets/backlog/private-sign-out-proceeds-with-a-migration-in-flight.md |
+| private-sign-out-proceeds-with-a-migration-in-flight | qa | tickets/qa/private-sign-out-proceeds-with-a-migration-in-flight.md |
 | private-signout-groups-session-expiry-does-not-say-where-to-sign-in | backlog | tickets/backlog/private-signout-groups-session-expiry-does-not-say-where-to-sign-in.md |
 | prompts-de-traduccion-corren-xcodebuild-sin-cola | backlog | tickets/backlog/prompts-de-traduccion-corren-xcodebuild-sin-cola.md |
 | push-client-ignores-yala-kind | backlog | tickets/backlog/push-client-ignores-yala-kind.md |
@@ -594,6 +596,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | sign-out-block-reason-is-only-logged-on-the-cloud-path | backlog | tickets/backlog/sign-out-block-reason-is-only-logged-on-the-cloud-path.md |
 | sign-out-blocked-by-a-surviving-session-already-dropped-the-account-caches | backlog | tickets/backlog/sign-out-blocked-by-a-surviving-session-already-dropped-the-account-caches.md |
 | sign-out-exits-do-not-verify-the-cloud-session-closed | done | tickets/done/sign-out-exits-do-not-verify-the-cloud-session-closed.md |
+| sign-out-migration-copy-does-not-fit-a-failed-or-waiting-migration | backlog | tickets/backlog/sign-out-migration-copy-does-not-fit-a-failed-or-waiting-migration.md |
 | sign-out-push-all-runs-a-sync-cycle-past-the-migration-gate | done | tickets/done/sign-out-push-all-runs-a-sync-cycle-past-the-migration-gate.md |
 | sign-out-wipe-abort-in-icloud-says-nothing | backlog | tickets/backlog/sign-out-wipe-abort-in-icloud-says-nothing.md |
 | sign-out-wipe-abort-loops-the-groups-gate | backlog | tickets/backlog/sign-out-wipe-abort-loops-the-groups-gate.md |

@@ -5791,6 +5791,9 @@
 /* Vuelta al neutro imposible en esta celda: cuerpo */
 "welcome.groups.neutralUnavailableBody" = "Ce téléphone a une session ouverte qu'il faut fermer depuis les Réglages avant de créer un groupe ici. Reviens en arrière : rien n'a été touché.";
 
+/* Vuelta al neutro parada: el paso de los datos entre iCloud y la nube no está en reposo */
+"welcome.groups.neutralMigrationBody" = "Nous ne pouvons pas encore confirmer que le passage de tes données entre iCloud et le cloud est terminé, et préparer ce téléphone maintenant pourrait supprimer ce qui reste à envoyer. Reviens en arrière : rien n'a été touché.";
+
 /* Título de la sección Grupos dentro de «Dónde viven tus datos» */
 "storage.groups.title" = "Groupes";
 
@@ -6119,6 +6122,8 @@
 "settings.signOutUploadRetryLater" = "Tes dernières modifications ne sont pas arrivées dans le cloud. Elles restent enregistrées sur ce téléphone et rien n'est perdu ; réessaie dans un moment.";
 "settings.signOutCloudSessionExpired" = "Ta session a expiré et certaines modifications n'ont pas encore été envoyées vers le cloud. Rien n'est perdu : ouvre « Où vivent tes données », ici dans Profil, touche « Se connecter », puis réessaie.";
 "settings.signOutSessionSurvived" = "Ta session est toujours ouverte sur cet iPhone, donc rien n'a été supprimé. Réessaie.";
+"settings.signOutMigrationInFlight" = "Le passage de tes données entre iCloud et le cloud n'est pas encore terminé, et te déconnecter maintenant pourrait supprimer ce qui reste à envoyer, donc rien n'a été supprimé. Ouvre « Où vivent tes données », dans Profil, et termine-le depuis là (s'il a échoué, touche « Réessayer ») ; puis réessaie.";
+"settings.signOutMigrationUnreadable" = "Nous n'avons pas pu vérifier où en est le passage de tes données entre iCloud et le cloud, et te déconnecter maintenant pourrait supprimer ce qui reste à envoyer, donc rien n'a été supprimé. Ferme complètement Yala puis rouvre-la ; si rien ne change, mets-la à jour depuis l'App Store et réessaie.";
 
 /* Title: a deletion of the old iCloud data succeeded in iCloud but failed on this phone */
 "welcome.privateICloud.leftHalfwayTitle" = "La suppression s'est arrêtée à mi-chemin";
