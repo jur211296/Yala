@@ -314,10 +314,16 @@ struct RestoreStartFreshGateTests {
 
         // La rama `.proceed` de la medida: la sonda acaba de decir que no queda nada que borrar.
         let measure = try Self.body(of: "private func measure() async {", in: gate)
+        // Desde `private-gate-leave-after-a-halfway-wipe-forgets-the-zone` la rama se bifurca por el borrado a medias:
+        // las dos salidas que siguen retiran el arm, y la que termina el borrado va a `.wiping`, que lo vuelve a armar.
         let proceed = try #require(measure.range(of: "case .proceed:"))
-        let siguiente = measure.range(of: "case .", range: proceed.upperBound..<measure.endIndex)?.lowerBound
+        let siguiente = measure.range(of: "case .foundData", range: proceed.upperBound..<measure.endIndex)?.lowerBound
             ?? measure.endIndex
-        #expect(String(measure[proceed.upperBound..<siguiente]).contains("discardPendingWipe()"), """
+        let rama = String(measure[proceed.upperBound..<siguiente])
+        let retira = try #require(rama.range(of: "case .proceed(retiresHalfway: true):"))
+        let noRetira = try #require(rama.range(of: "case .proceed(retiresHalfway: false):"))
+        #expect(String(rama[retira.upperBound..<noRetira.lowerBound]).contains("StorageModePersistence.clearICloudCorpusWipeArm()"))
+        #expect(String(rama[noRetira.upperBound...]).contains("discardPendingWipe()"), """
             `.proceed` es el desenlace de quien vuelve aquí tras un kill con el borrado a medias: la zona
             ya está vacía. Dejar el arm puesto hace que un arranque posterior «reanude» un borrado que ya
             no tiene objeto y se lleve por delante lo que la persona haya creado.

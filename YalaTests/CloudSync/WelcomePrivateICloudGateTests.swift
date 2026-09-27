@@ -1349,7 +1349,7 @@ struct WelcomePrivateICloudGateWiringTests {
         let fallo = try #require(wipe.range(of: "guard failure == nil else {"))
         #expect(fallo.lowerBound < clear.lowerBound)
         let cuerpoFallo = String(wipe[fallo.upperBound...]).prefix(while: { $0 != "}" })
-        #expect(cuerpoFallo.contains("phase = groupsPendingPhase(for: failure, retry: .iCloud) ?? .wipeFailed(zoneGone: zoneGone)"))
+        #expect(cuerpoFallo.contains("phase = groupsPendingPhase(for: failure, retry: .iCloud) ?? .wipeFailed(zoneGone: failureZoneGone)"))
         #expect(cuerpoFallo.contains("return"), """
             sin el `return`, el fallo cae en el desarme y en `onProceed()`: la persona acaba en el
             onboarding creyendo que borró un corpus que sigue entero en su iCloud.

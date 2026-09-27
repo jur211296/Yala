@@ -211,15 +211,96 @@ nonisolated enum WelcomePrivateICloudGateLogic {
         case resume
         /// El borrado quedó a medias delante de la persona: se le pregunta, no se reanuda.
         case askLeftHalfway
+        /// Quedó a medias, pero este dispositivo ya vive en la nube: la marca no describe su store y se retira.
+        case retireLeftHalfway
         /// Nada pendiente: sigue la comprobación normal del espejo tardío.
         case none
     }
 
     /// **El arm gana a «a medias»**: los dos a la vez solo pasan si la persona pulsó «Terminar de borrar» y un kill cortó
     /// ese intento — lo último que pidió fue terminar.
-    static func lateWipeLaunch(armed: Bool, leftHalfway: Bool) -> LateWipeLaunch {
+    ///
+    /// **Y «a medias» solo se pregunta en `.icloud`** (ticket `private-gate-leave-after-a-halfway-wipe-forgets-the-zone`).
+    /// La marca dice «el iCloud privado ya está vacío y lo del teléfono no», y su «Terminar de borrar» es `.handover`. En
+    /// una cuenta de la nube lo del teléfono es de esa cuenta: terminar el borrado se llevaría sus datos. Desde que la
+    /// puerta del Welcome también deja la marca, «Soy nuevo → nube» la lleva hasta aquí. El modo nube cuenta como
+    /// sesión privada, así que el guard de arriba no la para.
+    static func lateWipeLaunch(armed: Bool, leftHalfway: Bool, storageMode: StorageMode) -> LateWipeLaunch {
         if armed { return .resume }
-        return leftHalfway ? .askLeftHalfway : .none
+        guard leftHalfway else { return .none }
+        switch storageMode {
+        case .icloud: return .askLeftHalfway
+        case .cloud: return .retireLeftHalfway
+        }
+    }
+
+    // MARK: - El borrado de la puerta que queda a medias
+
+    /// **Qué hace cada montaje de la puerta con un borrado que quedó a medias**: la zona de iCloud ya no está y lo del
+    /// teléfono sí (ticket `private-gate-leave-after-a-halfway-wipe-forgets-the-zone`). Hasta ese ticket, salir de la
+    /// puerta retiraba el arm y con él la marca de la zona, y nada recordaba que iCloud había quedado vacío.
+    ///
+    /// Sin default, por lo mismo que `unverifiedExit`: los montajes contestan cosas distintas y el compilador tiene que
+    /// obligarles a decirlo. **El remedio lo decide el alcance del borrado de cada uno**, no la pantalla:
+    enum HalfwayWipe: Equatable {
+        /// **El Welcome** (`.handover`). Salir deja la marca «a medias», y la pregunta el aviso tardío en el arranque:
+        /// su «Terminar de borrar» es este mismo borrado.
+        case leaveForLateNotice
+        /// **«Activar Yala completo → Restaurar → Empezar desde cero»** (`.importedRows`). Salir deja la marca, pero su
+        /// remedio no puede ser el aviso tardío: termina con `.handover`, que purgaría los grupos de quien activa para
+        /// conservarlos. Lo termina esta misma puerta: al volver a entrar con iCloud vacío, borra lo que falta con su
+        /// alcance en vez de seguir al onboarding encima de las filas importadas.
+        case finishOnReentry
+        /// **La puerta privada de la activación** (`.zoneOnly`). No borra filas, así que con la zona ida su borrado ya
+        /// terminó: lo del teléfono es de quien activa y no queda nada a medias que recordar.
+        case nothingLeftBehind
+
+        /// **¿El borrado de este montaje llega a las filas del teléfono?** Es lo que decide las dos puntas de la marca:
+        /// solo un borrado que las toca puede quedar a medias —y salir lo deja escrito—, y solo uno que las toca lo
+        /// resuelve al terminar bien.
+        var reachesDeviceRows: Bool {
+            switch self {
+            case .leaveForLateNotice, .finishOnReentry: return true
+            case .nothingLeftBehind: return false
+            }
+        }
+    }
+
+    /// Qué hace `measure()` cuando la sonda dice que no hay nada que borrar (`Decision.proceed`).
+    enum EmptyMeasure: Equatable {
+        /// Seguir. Con `retiresHalfway`, la puerta acaba de medir que no queda mitad y la marca se va.
+        case proceed(retiresHalfway: Bool)
+        /// Terminar el borrado que quedó a medias, con el alcance de esta puerta.
+        case finishHalfwayWipe
+    }
+
+    /// **La marca solo se retira donde la puerta midió las dos mitades.** `.proceed` dice «iCloud vacío» siempre, pero
+    /// «el teléfono vacío» solo si el montaje le pasó su corpus (`measuredDevice`). Sin medirlo, retirar la marca sería
+    /// dar por terminado un borrado del que no consta nada.
+    ///
+    /// `.finishOnReentry` no la retira: la termina. Con la marca puesta y la zona vacía, `.proceed` es justo el camino
+    /// que deja las filas importadas en el teléfono, y la persona acaba de volver a pedir «Empezar desde cero».
+    ///
+    /// **Y termina también con `zoneDone` sin marca** (review adversarial, dos lentes). Un kill —o la hoja desmontada— justo
+    /// tras borrar la zona deja el arm y la marca de la zona, pero no «a medias»: esa la escribe `disarm()` al salir, y
+    /// nadie salió. En solo-grupos ningún arranque devuelve a la puerta, así que la próxima vez que se llega es esta.
+    static func afterEmptyMeasure(_ halfway: HalfwayWipe, leftHalfway: Bool, zoneDone: Bool,
+                                  measuredDevice: Bool) -> EmptyMeasure {
+        switch halfway {
+        case .leaveForLateNotice: return .proceed(retiresHalfway: measuredDevice)
+        case .finishOnReentry: return (leftHalfway || zoneDone) ? .finishHalfwayWipe : .proceed(retiresHalfway: false)
+        case .nothingLeftBehind: return .proceed(retiresHalfway: false)
+        }
+    }
+
+    /// **¿La pantalla de fallo dice que la zona ya no está?** La marca de ESTE borrado, o la de uno anterior que quedó a
+    /// medias: un reintento que falla antes de llegar a la zona no la devuelve, e iCloud sigue vacío. Es el mismo
+    /// criterio que `classifyLateWipeFailure` en el aviso tardío.
+    ///
+    /// Solo decide el COPY. Si el desenlace de una cancelación se aplica lo decide `zoneDone` a secas
+    /// (`gateWipeSettles`): lo que importa ahí es si este intento llegó a escribir.
+    static func failureFoundZoneGone(zoneDone: Bool, leftHalfway: Bool) -> Bool {
+        zoneDone || leftHalfway
     }
 }
 

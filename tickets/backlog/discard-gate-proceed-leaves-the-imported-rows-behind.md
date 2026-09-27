@@ -54,3 +54,10 @@ llamar a `performWipe` igualmente — que con la zona vacía solo borraría las 
 
 - [[activation-discard-gate-exits-without-wiping-when-icloud-is-unreachable]] — el ticket padre.
 - [[activation-restore-start-fresh-keeps-the-imported-rows]] — el abuelo, que creó esta puerta.
+
+## Añadido 2026-09-27 (`private-gate-leave-after-a-halfway-wipe-forgets-the-zone`)
+
+El caso más probable de «zona vacía con las filas importadas dentro» era el borrado de esta misma puerta que falla (o
+un corte) después de vaciar iCloud. Ese ya no sigue al onboarding: con la marca «a medias» o la de la zona puesta, la
+rama `.proceed` termina el borrado `.importedRows` (`HalfwayWipe.finishOnReentry`). Queda abierto lo de este ticket:
+iCloud vaciado desde otro dispositivo, sin ninguna marca en este.

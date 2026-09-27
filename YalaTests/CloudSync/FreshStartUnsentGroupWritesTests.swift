@@ -413,7 +413,7 @@ struct FreshStartUnsentGroupWritesWiringTests {
     @Test("las dos pantallas con fases enseñan «faltan cambios de grupos», no el fallo genérico")
     func screens_mapTheFailureToTheirPendingPhase() throws {
         let gate = try Self.source("Yala/App/Views/Onboarding/WelcomePrivateICloudGateView.swift")
-        #expect(gate.contains("phase = groupsPendingPhase(for: failure, retry: .iCloud) ?? .wipeFailed(zoneGone: zoneGone)"))
+        #expect(gate.contains("phase = groupsPendingPhase(for: failure, retry: .iCloud) ?? .wipeFailed(zoneGone: failureZoneGone)"))
         #expect(gate.contains("phase = groupsPendingPhase(for: failure, retry: .device(iCloudUnverified: iCloudUnverified))\n"
                               + "                ?? .deviceWipeFailed(iCloudUnverified: iCloudUnverified)"))
         #expect(gate.contains("if isWipeFailed || isDeviceWipeFailed || isGroupsPending || isUnverified {"),

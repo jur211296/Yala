@@ -125,8 +125,13 @@ struct PrivateGateWipeFailureWiringTests {
         let src = try Self.code(Self.gate)
         let builds = src.components(separatedBy: ".wipeFailed(zoneGone:").count - 1
         #expect(builds == 1, "`.wipeFailed(zoneGone:` aparece \(builds) veces; se construye solo en `wipe()`")
-        #expect(src.contains("?? .wipeFailed(zoneGone: zoneGone)"))
+        #expect(src.contains("?? .wipeFailed(zoneGone: failureZoneGone)"))
         #expect(src.contains("let zoneGone = StorageModePersistence.isICloudCorpusWipeZoneDone()"))
+        // Desde `private-gate-leave-after-a-halfway-wipe-forgets-the-zone`, el copy suma el «a medias» de antes: un
+        // reintento que falla antes de la zona no la devuelve.
+        let plano = src.split(whereSeparator: \.isWhitespace).joined(separator: " ")
+        #expect(plano.contains("let failureZoneGone = WelcomePrivateICloudGateLogic.failureFoundZoneGone( "
+                               + "zoneDone: zoneGone, leftHalfway: StorageModePersistence.isICloudCorpusWipeLeftHalfway() )"))
     }
 
     /// La pantalla pinta el cuerpo que elige la función, no la clave vieja. Un `L10n…wipeFailedBody` a pelo en esa rama
