@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-27 (Lima)
 
-**Rama** `2.1` — Merge #278: **salir de la puerta privada tras un borrado a medias ya no olvida que iCloud quedó vacío.**
+**Rama** `2.1` — Merge #279: **volver desde «Encontramos datos» tras un corte ya no deja un borrado que la nube termina a ciegas.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,32 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#278 · salir de la puerta privada tras un borrado a medias ya no olvida que iCloud quedó vacío)
+## Esta sesión (#279 · volver desde «Encontramos datos» tras un corte ya no deja un borrado que la nube termina a ciegas)
+
+Tras un corte a mitad del borrado de iCloud de **«Es mi primera vez → privado»**, la app volvía a enseñar «Encontramos
+datos tuyos». Volver desde ahí y crear una cuenta en la nube dejaba el borrado armado, y el arranque siguiente se llevaba
+sin preguntar el iCloud privado, lo del teléfono y los grupos. Ahora:
+
+- **Volver desde cualquier pantalla de la puerta retira el borrado pedido.** Si el intento cortado ya había vaciado
+  iCloud, la app lo sigue recordando («El borrado quedó a medias»).
+- **Una cuenta de la nube nunca termina un borrado del iCloud privado**: si queda uno pendiente al arrancar, se retira sin
+  borrar ni preguntar.
+- **Volver tras un corte ya no desprotege el Welcome de un dispositivo recién vaciado** (hallazgo de la review): el
+  borrado solo retira el montaje neutro que puso él, no el del cierre de sesión.
+
+**Verificado:** gate con 8264 unit en 792 suites y 16 XCUITest (onboarding, Welcome, «Empezar de cero», chooser de la
+activación), centinela solo; 7/7 mutantes; review adversarial de tres lentes (un medio aplicado, un hueco de test
+cerrado). CI verde. Ticket a `qa`.
+
+### Lo que espera de Jürgen
+
+- **Device-QA opcional**: el corte a mitad del borrado no se provoca a mano; el guion del ticket
+  (`tickets/qa/private-gate-back-from-found-keeps-a-resumed-arm.md`) comprueba que el camino de siempre no cambió.
+- Nuevo en backlog (medium, preexistente): `late-wipe-arm-is-dropped-silently-when-the-device-moves-to-the-cloud` — un
+  borrado de iCloud pendiente se olvida sin avisar si la persona pasa a la nube entre dos arranques. Hay que decidir si
+  la migración avisa o lo bloquea.
+
+## Sesión anterior (#278 · salir de la puerta privada tras un borrado a medias ya no olvida que iCloud quedó vacío)
 
 Si el borrado de iCloud de la puerta privada fallaba **después** de vaciar iCloud y la persona salía, la app olvidaba que
 iCloud había quedado vacío con lo del teléfono dentro. Ahora cada puerta lo recuerda con el remedio de su alcance:
@@ -46,7 +71,7 @@ activación), centinela solo; 18/18 mutantes; review adversarial de tres lentes 
   `activation-private-gate-leaves-a-late-notice-that-purges-groups` (activar sin poder mirar iCloud deja un aviso cuyo
   borrado purga los grupos).
 
-## Sesión anterior (#277 · la puerta privada ya no dice que iCloud sigue intacto tras un borrado a medias)
+## Antes (#277 · la puerta privada ya no dice que iCloud sigue intacto tras un borrado a medias)
 
 **En «Es mi primera vez → privado»** (y en las dos puertas de «Activar Yala completo»), el borrado quita primero iCloud y
 después lo del teléfono. Si fallaba en la segunda mitad, la pantalla decía «Tus datos siguen en iCloud, intactos» con
