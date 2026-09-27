@@ -721,6 +721,67 @@ nonisolated enum ReverseOriginPendingEffects {
     }
 }
 
+/// Lo mismo para la IDA (ticket `migration-activation-drops-pending-effects-it-never-restores`): «Activar la nube»
+/// REEMPLAZA los pendientes de la fase de origen al journalear `consent`, y hasta este ticket ninguna salida los devolvía.
+/// El caso que mordía: tras una vuelta a iCloud sin red queda `.completeReverseServer` pendiente en `icloudActive` —lo
+/// único que llama a `reverse_complete`—, y activar y salir antes del claim lo tiraba: la cuenta quedaba en la nube a
+/// medio cerrar para siempre, con un aviso que decía «No cambiamos nada».
+///
+/// La ventana es la de la ida ANTES de que el servidor conteste el claim (`isBeforeClaim`), y cada paso hace una cosa:
+///  · `save` — el toque que ENTRA desde fuera (`userActivated`). `dryRun → consent` está dentro y no pisa lo guardado
+///    con los `[]` de `dryRun`. **Se guarda todo menos `.adoptBackendAccount`** (`effectsToSave`): una activación nueva
+///    SUSTITUYE al adopt anterior —si la cuenta ya existe, su claim lo vuelve a emitir—, y guardarlo hacía que
+///    «Cancelar» repusiera y ejecutara en el acto el adopt que la persona acababa de cancelar (lo cazó la review).
+///  · `restore` — toda VUELTA al inicio (`notStarted`) sin un claim contestado: las tres del ticket (`consentDeclined`,
+///    `signInFailed`, `claimRefusedExistingAccount`), «Cancelar» al 22 % y la normalización del `resume` desde las fases
+///    no durables (`event == nil`).
+///  · `discard` — cualquier otra salida. La del claim contestado (`claimResult`): la migración empezó, o el dispositivo
+///    adopta. Y `failedRollback` (el techo del claim, un `fatalError`), igual que en la vuelta: reponer ahí podía ejecutar
+///    un `.adoptBackendAccount` guardado en un terminal de fallo, que deja `.cloud` persistido donde nadie lo espera. El
+///    `reverse_complete` que se pierde por ahí es su propio ticket
+///    (`migration-activation-ceiling-drops-origin-pending-effects`).
+///  · `keep` — todo lo demás, incluido el self-hold del claim bajo presupuesto: en `reverseClaimLeader` un brazo que
+///    descartaba en el self-hold perdía lo guardado con un corte de red, y aquí pasaría lo mismo.
+///
+/// Comparte el campo del journal con la vuelta (`MigrationState.reverseOriginPendingEffectsData`): las dos ventanas son
+/// excluyentes por fase, y cada cierre que lo limpia (`notStarted`, `failedRollback`, `icloudActive`, «Reintentar») sirve a
+/// las dos.
+///
+/// Reponer tras un claim que no contestó no pisa una reserva nueva: sobre una cuenta con la vuelta sin completar
+/// (`migration_in_progress` falso), `claim_account` personal contesta `existing_stable`, nunca `created`
+/// (`qa/cloud/g15_01_account_kind.sql`).
+nonisolated enum ForwardOriginPendingEffects {
+    enum Step: Equatable {
+        case save, restore, discard, keep
+    }
+
+    /// Las fases de la ida antes de que el servidor conteste el claim.
+    static func isBeforeClaim(_ phase: MigrationPhase) -> Bool {
+        switch phase {
+        case .dryRun, .consent, .authenticating, .claimingMigration:
+            return true
+        default:
+            return false
+        }
+    }
+
+    /// Lo que guarda el toque: los pendientes del origen sin el efecto del adopt, que la activación nueva sustituye.
+    static func effectsToSave(_ pending: [MigrationEffect]) -> [MigrationEffect] {
+        pending.filter { $0 != .adoptBackendAccount }
+    }
+
+    /// `event == nil` es la normalización del `resume`, que no tiene evento.
+    static func step(from current: MigrationPhase, to next: MigrationPhase, event: MigrationEvent?) -> Step {
+        guard isBeforeClaim(current) else {
+            if isBeforeClaim(next), case .userActivated? = event { return .save }
+            return .keep
+        }
+        if isBeforeClaim(next) { return .keep }
+        if case .claimResult? = event { return .discard }
+        return next == .notStarted ? .restore : .discard
+    }
+}
+
 /// ¿Quedó a medias una salida de la espera de `reverseUpload`? Lo preguntan dos sitios que tienen que contestar lo
 /// mismo: el runner, que solo drena antes de otra vuelta si es así, y la pantalla, que solo entonces dice que falta
 /// terminar de reactivar la nube. `.reverseRollback` es el último efecto de las dos salidas
@@ -1291,6 +1352,19 @@ final class MigrationRunner {
                 // reabierto por un corte de red.
                 state.setReverseOriginPendingEffects([])
             }
+            // La IDA, con el mismo molde (`ForwardOriginPendingEffects`): ninguna de sus fases está en la ventana de la
+            // vuelta, así que como mucho uno de los dos bloques hace algo.
+            switch ForwardOriginPendingEffects.step(from: current, to: next, event: event) {
+            case .save:
+                state.setReverseOriginPendingEffects(ForwardOriginPendingEffects.effectsToSave(state.readPendingEffects()))
+            case .restore:
+                nextPending += state.readReverseOriginPendingEffects()
+                state.setReverseOriginPendingEffects([])
+            case .discard:
+                state.setReverseOriginPendingEffects([])
+            case .keep:
+                break
+            }
             state.setPhase(next)
             state.setPendingEffects(nextPending)
             // La intención del claim de la ida, en el MISMO save que lleva a `claimingMigration`: lo que la lee es
@@ -1697,9 +1771,13 @@ final class MigrationRunner {
                 // entre los dos, el journal sigue en `claimingMigration` y el claim se repite.
                 executor.discardLastClaimStamp()
                 CloudSyncBreadcrumb.migrationClaimRefusedExistingAccount()
-                try await handle(.claimRefusedExistingAccount)
-                lastForwardClaimRefusal = ForwardClaimRefusal(
-                    sequence: (lastForwardClaimRefusal?.sequence ?? 0) + 1, claimState: claimState)
+                // El rechazo se anota DENTRO del paso, antes de drenar: la salida repone los pendientes del origen
+                // (`ForwardOriginPendingEffects`), y si uno lanza —el `reverse_complete` sin red— lo de después del
+                // `handle` no corre y la pantalla se quedaba sin su aviso.
+                try await handle(.claimRefusedExistingAccount) { _, _ in
+                    self.lastForwardClaimRefusal = ForwardClaimRefusal(
+                        sequence: (self.lastForwardClaimRefusal?.sequence ?? 0) + 1, claimState: claimState)
+                }
                 return true                                // notStarted: `drive` sale en la siguiente vuelta
             }
             try await handle(.claimResult(claimState, sameDeviceReclaim: false))
@@ -2976,9 +3054,11 @@ final class MigrationRunner {
         if resumed != journaled {
             // Estados no-durables (dryRun/consent/authenticating) reingresan desde notStarted. Un kill en la
             // confirmación de la vuelta a iCloud la devuelve al origen sin haber empezado: se reponen los pendientes que
-            // había reemplazado, igual que en `handle`.
+            // había reemplazado, igual que en `handle`. Y lo mismo un kill en la ida antes del claim
+            // (`ForwardOriginPendingEffects`): «Activar la nube» no llegó a empezar nada.
             state.setPhase(resumed)
-            if ReverseOriginPendingEffects.restoresOnReturn(from: journaled, to: resumed) {
+            if ReverseOriginPendingEffects.restoresOnReturn(from: journaled, to: resumed)
+                || ForwardOriginPendingEffects.step(from: journaled, to: resumed, event: nil) == .restore {
                 state.setPendingEffects(state.readReverseOriginPendingEffects())
                 state.setReverseOriginPendingEffects([])
             } else {
