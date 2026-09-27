@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-26 (Lima)
 
-**Rama** `2.1` — Merge #268: **Si «Empezar de cero» desde el aviso tardío de iCloud falla y sales, Yala ya no termina el borrado a ciegas en el siguiente arranque; si quedó a medias, lo dice y pregunta.**
+**Rama** `2.1` — Merge #269: **Un pago de Apple Pay o un gasto dictado a Siri ya no se pierde si cierras la sesión privada antes de que Yala lo convierta en borrador.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,30 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#268 · salir de un borrado fallido del aviso tardío de iCloud ya no lo reanuda a ciegas)
+## Esta sesión (#269 · un pago de Apple Pay o un gasto de Siri ya no se pierde al cerrar la sesión privada)
+
+**Si pagas con Apple Pay o dictas un gasto a Siri y cierras la sesión privada antes de que Yala lo convierta en
+borrador**, el cierre lo convierte antes de contar lo que falta por subir a iCloud, y viaja con lo demás. Si no puede
+(iCloud aún importa), lo cuenta como pendiente: la espera no confirma y el aviso lo incluye en la cifra. Antes, la
+purga del arranque se lo llevaba sin nombrarlo.
+
+- Cada recuento del cierre que espera al export pasa por `PrivateSignOutExportGateLogic.pendingCountMaterializingInbound`
+  (primero `InboundCaptureDrain.forSignOut`, después el historial). La caché sin ancla se tira también si la cola encoge.
+- Un solo escritor drena las colas: `InboundCaptureDrain.drain`, con el guard del borrado armado dentro. Arranque,
+  primer plano y remote-change pasan por él; ya nadie drena al store condenado.
+- Fuera, a propósito: imágenes compartidas, la nube y M1. Regla en `swiftdata-cloudkit.md` («Lo que espera en el App
+  Group no está en el historial»).
+
+**Verificado:** gate con 8151 unit y 12/12 XCUITest de las áreas, 13/13 mutantes, review adversarial de tres lentes
+(caché y cuatro huecos de test arreglados en el PR). CI verde. Ticket a `done`: un guion en iPhone no distinguía builds.
+
+### Lo que espera de Jürgen
+
+- Nada de esta sesión. Nuevos en backlog: `private-exit-export-wait-cached-zero-misses-outside-writes` (low),
+  `private-exit-warning-recounts-materialized-captures` (low) y `private-exit-materialized-drafts-do-not-refresh-the-inbox`
+  (very-low).
+
+## Sesión anterior (#268 · salir de un borrado fallido del aviso tardío de iCloud ya no lo reanuda a ciegas)
 
 **Si «Empezar de cero» desde «Encontramos datos tuyos en iCloud» falla y sales**, el arranque siguiente ya no termina el
 borrado sin pantalla (zona, filas y grupos). Si falló antes de tocar iCloud, no se borró nada y el aviso vuelve a
@@ -43,7 +66,7 @@ medios arreglados en el PR). CI verde. Ticket a `qa`.
   `late-icloud-sheet-buttons-may-leave-the-screen-at-large-dynamic-type` (no demostrado) y
   `finish-halfway-wipe-early-failure-shows-no-feedback` (copy).
 
-## Sesión anterior (#267 · la vuelta a iCloud no se da por terminada si la comprobación no pudo mirar ninguna fila)
+## Antes (#267 · la vuelta a iCloud no se da por terminada si la comprobación no pudo mirar ninguna fila)
 
 **Si la comprobación de «Volver a iCloud» no consigue leer lo que el espejo sabe de tus datos** —el SQLite no abre, faltan
 sus tablas o columnas, el mapa de entidades sale vacío—, **la vuelta ya no se cierra**: la muestra sale ilegible, ni cierra
