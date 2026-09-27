@@ -1,11 +1,11 @@
 ---
-updated: 2026-09-26
+updated: 2026-09-27
 tags: [now, punto-de-retomada]
 ---
 
-# NOW — 2026-09-26 (Lima)
+# NOW — 2026-09-27 (Lima)
 
-**Rama** `2.1` — Merge #272: **Si cambias una preferencia mientras se sube la anterior, el cambio nuevo ya no se pierde.**
+**Rama** `2.1` — Merge #273: **El aviso de «cambiaste de Apple ID» ya no sale a mitad de un paso de tus datos a la nube.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,29 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#272 · un cambio de preferencia hecho durante la subida ya no se pierde)
+## Esta sesión (#273 · el aviso de cambio de Apple ID ya no sale a mitad de una migración)
+
+**Si cambias de Apple ID con Yala cerrada**, al abrirla Yala te ofrece cerrar la sesión privada, pero ya no lo hace si hay
+un paso de tus datos a la nube a medias. Antes, justo en el arranque, esa protección no existía: el aviso podía salir en
+mitad de una migración, y cerrar ahí podía borrar lo local mientras subía.
+
+- El disparo del arranque va tras `CloudMigrationController.configureShared` (paso 14.65). El guard
+  (`AppleIDChangeCloseLogic.migrationAtRest`) lee el controller (estado y `isWorking`) y el journal, y se re-evalúa tras
+  el `await` a CloudKit. Regla en `swiftdata-cloudkit.md` («Un guard que lee el controller de migración falla ABIERTO
+  sin controller»).
+
+**Verificado:** gate con 8186 unit en 781 suites y los XCUITest de las tres áreas (un rojo del flaky con ticket
+`queued-offer-after-dismiss-flakes-on-a-cold-simulator`, verde al repetir); 15/15 mutantes; review adversarial de tres
+lentes sin altos (los dos medios sobre el diff, arreglados en el PR). CI verde. Ticket a `done` (`not-replicable`).
+
+### Lo que espera de Jürgen
+
+- **Una decisión, sin prisa:** `apple-id-change-check-stays-off-after-a-failed-migration` — ¿se ofrece cerrar la sesión
+  privada tras una migración fallida? Hoy no se ofrece hasta pulsar «Reintentar».
+- Nuevos en backlog: `private-sign-out-proceeds-with-a-migration-in-flight` (medium, previo: el cierre privado por Perfil
+  no mira la migración) y `apple-id-change-boot-check-is-lost-when-the-journal-is-unreadable-at-launch` (low).
+
+## Sesión anterior (#272 · un cambio de preferencia hecho durante la subida ya no se pierde)
 
 **Si cambias una preferencia mientras Yala sube la anterior**, el cambio nuevo se queda en cola y sube en la siguiente
 sincronización: tus otros dispositivos acaban con el valor nuevo. Antes la limpieza que sigue a la subida se llevaba
@@ -36,12 +58,12 @@ huecos de test, cubiertos en el PR). CI verde. Ticket a `done` (`not-replicable`
 
 ### Lo que espera de Jürgen
 
-- Nada de esta sesión. Nuevos en backlog, los tres low: `prefs-pull-overwrites-a-pending-local-change-on-screen` (el pull
+- Nada de esa sesión. Nuevos en backlog, los tres low: `prefs-pull-overwrites-a-pending-local-change-on-screen` (el pull
   del mismo ciclo pinta un ciclo el valor viejo sobre un cambio pendiente), `prefs-push-retries-a-rejected-key-forever`
   (una key que el servidor rechace para siempre se reintenta sin fin; el rechazo permanente es inferido) y
   `metrics-drain-purge-drops-unsent-events-when-the-spool-is-full` (el mismo patrón en la cola de métricas).
 
-## Sesión anterior (#271 · una cola de preferencias que no se deja leer ya no se sobrescribe vacía)
+## Antes (#271 · una cola de preferencias que no se deja leer ya no se sobrescribe vacía)
 
 **Si el teléfono no consigue leer el archivo de preferencias pendientes de subir** (la lectura falla; el archivo no
 está roto), ya no lo trata como basura: lo deja como está y sus cambios suben en cuanto se deje leer. Antes empezaba
