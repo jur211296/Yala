@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-27 (Lima)
 
-**Rama** `2.1` — Merge #279: **volver desde «Encontramos datos» tras un corte ya no deja un borrado que la nube termina a ciegas.**
+**Rama** `2.1` — Merge #280: **el aviso tardío de quien activó Yala completo sin mirar iCloud ya no se lleva sus grupos.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,35 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#279 · volver desde «Encontramos datos» tras un corte ya no deja un borrado que la nube termina a ciegas)
+## Esta sesión (#280 · el aviso tardío de quien activó Yala completo sin mirar iCloud ya no se lleva sus grupos)
+
+Quien estaba en solo-grupos y activaba **Yala completo → privado sin red o sin iCloud** seguía adelante, y días después,
+con iCloud de vuelta, le salía «Encontramos datos tuyos en iCloud». Su «Empezar de cero» purgaba también los grupos que la
+activación existía para conservar. Ahora:
+
+- **El aviso sigue saliendo** (la validación de iCloud que no se pudo hacer al activar no se pierde), pero **«Empezar de
+  cero» borra los registros, cuentas y presupuestos y deja los grupos**. Lo mismo «Terminar de borrar» y un borrado cortado
+  que el arranque reanuda. Tras borrar vuelve al onboarding personal, y los gastos y liquidaciones de grupo reaparecen en
+  lo personal en el arranque siguiente.
+- **Lo decide de dónde nació la sesión** (la activación lo apunta), no quién dejó el aviso: el mismo aviso termina también
+  el borrado a medias del Welcome, que sigue llevándose todo.
+
+**Verificado:** gate con 8274 unit en 793 suites y 14 XCUITest (onboarding, Welcome, chooser de la activación), centinela
+solo; 11/11 mutantes; review adversarial de tres lentes (liquidaciones que no volvían y un borrado del Welcome a medias
+terminado con otro alcance, los dos arreglados). CI verde. Ticket a `qa`.
+
+### Lo que espera de Jürgen
+
+- **Device-QA opcional**: guion en `tickets/qa/activation-private-gate-leaves-a-late-notice-that-purges-groups.md` (hace
+  falta un Apple ID con datos viejos de Yala en iCloud y una sesión solo-grupos).
+- **Parque de TestFlight**: quien activó con un build anterior y aún tiene el aviso pendiente sigue con el borrado de
+  antes (la marca es nueva). Se prefirió a arriesgar el sellado del Welcome.
+- Nuevos en backlog, los dos medium: `activation-start-fresh-drops-group-settlement-legs` («Restaurar → Empezar desde
+  cero» de la activación tampoco repone las liquidaciones; preexistente) y
+  `late-notice-of-a-welcome-private-session-purges-groups-joined-later` (la misma forma en quien empezó en el Welcome y se
+  unió a grupos después; pide decidir de quién son esos grupos).
+
+## Sesión anterior (#279 · volver desde «Encontramos datos» tras un corte ya no deja un borrado que la nube termina a ciegas)
 
 Tras un corte a mitad del borrado de iCloud de **«Es mi primera vez → privado»**, la app volvía a enseñar «Encontramos
 datos tuyos». Volver desde ahí y crear una cuenta en la nube dejaba el borrado armado, y el arranque siguiente se llevaba
@@ -45,7 +73,7 @@ cerrado). CI verde. Ticket a `qa`.
   borrado de iCloud pendiente se olvida sin avisar si la persona pasa a la nube entre dos arranques. Hay que decidir si
   la migración avisa o lo bloquea.
 
-## Sesión anterior (#278 · salir de la puerta privada tras un borrado a medias ya no olvida que iCloud quedó vacío)
+## Antes (#278 · salir de la puerta privada tras un borrado a medias ya no olvida que iCloud quedó vacío)
 
 Si el borrado de iCloud de la puerta privada fallaba **después** de vaciar iCloud y la persona salía, la app olvidaba que
 iCloud había quedado vacío con lo del teléfono dentro. Ahora cada puerta lo recuerda con el remedio de su alcance:
