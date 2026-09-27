@@ -69,3 +69,7 @@ borra con el mismo `find -delete` (más `-type l`). El mío se crea con otro has
 `IdRemap-*`: stores de prueba que los tests no borran). Con el simulador apagado se vacía con el mismo `find -delete`
 (`-mindepth 1`, más `-type l`) y devolvió 3,8 → 6,5 GB. El contenedor se identifica por `MCMMetadataIdentifier` en su
 `.com.apple.mobile_container_manager.metadata.plist`. Esto el `disk-report.sh` tampoco lo desglosa.
+
+**2026-09-26: el disco lo llené YO, con cuatro `-derivedDataPath` distintos en una sesión (≈11 GB).** Uno por scheme y otro
+por gate. El gate murió a 1,4 GB libres con `loadIssueModelContainer` en suites que no tocaba. ⇒ **un solo DerivedData por
+scheme en toda la sesión**, y antes del gate completo: `df -h /` más la limpieza de cachés del device (9 GB esa vez).
