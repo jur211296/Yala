@@ -38,3 +38,9 @@ iba **dentro de un script**: el bucle lo repite sin que nadie lo lea otra vez.
 tienen tope de 10 min; la tanda dura más, y al pararla con `TaskStop` el `finally` no corrió: quedó un
 mutante puesto en `CloudSyncRuntime.swift`. Lo cazó el `cmp` contra la copia. Y un ancla que aparece
 más de una vez sale `NO APLICA`: dos de siete la primera vez. Ancla con la línea de contexto vecina.
+
+**2026-09-27: el ancla ÚNICA al aplicar no lo es al REVERTIR.** Un mutante que BORRA una línea (`a` = línea + `}`,
+`b` = `}`) comprueba que `a` es única al aplicar, pero revertir busca `b`, y `        }` aparece cien veces: el
+`replace(b, a, 1)` metió la línea en la primera llave del fichero y el mutante siguiente salió `BUILD FAIL`. Lo cazó el
+`diff` contra la copia. ⇒ el mutante que borra deja un **marcador** en su lugar (`// MUTANTE-Mn`) y se revierte por él,
+o se restaura siempre desde la copia en vez de invertir el reemplazo.

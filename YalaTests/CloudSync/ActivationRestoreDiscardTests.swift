@@ -415,13 +415,18 @@ struct ActivationRestoreDiscardTests {
     func everyWipeCallSite_asksForItsOwnScope() throws {
         let src = try Self.code("Yala/App/ContentView.swift")
 
-        // El aviso del espejo tardío: handover completo. Con `.zoneOnly` dejaría el corpus viejo entero en
-        // el teléfono; con `.importedRows` no sellaría el dominio de Grupos, que es el criterio nº4 del
-        // ticket hermano.
+        // El aviso del espejo tardío: su scope ya no se escribe en el call-site, lo decide de dónde nació la sesión
+        // (ticket `activation-private-gate-leaves-a-late-notice-that-purges-groups`). Lo que se afirma aquí es que el
+        // aviso pasa por ese único borrado; la tabla de `ICloudWipeScope.lateNotice` la fija
+        // `ActivationLateNoticeKeepsGroupsTests`.
         let late = try Self.call(of: "LateICloudMirrorNoticeView(", in: src)
-        #expect(late.contains("performWipe: { await performICloudCorpusWipe(.handover) }"), """
-            el aviso del espejo tardío cambió de scope. Es el borrado de una frontera de usuario: tiene que
-            llevarse las filas, las preferencias y el dominio de Grupos. Tramo leído: \(late)
+        #expect(late.contains("performWipe: { await performLateICloudWipe() }"), """
+            el aviso del espejo tardío dejó de pasar por `performLateICloudWipe`. Con un scope escrito a mano, quien
+            activó Yala completo vuelve a perder sus grupos (`.handover`), o el Welcome deja de sellar el dominio de
+            otra persona (`.importedRows`). Tramo leído: \(late)
+            """)
+        #expect(!late.contains("performICloudCorpusWipe("), """
+            el aviso del espejo tardío volvió a llamar al borrado con un scope propio. Tramo leído: \(late)
             """)
 
         // **El reenvío de dentro del modifier NO lleva scope, y esa ausencia es lo que se afirma.** Es el

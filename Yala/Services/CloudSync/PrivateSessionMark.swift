@@ -122,12 +122,49 @@ nonisolated enum PrivateSessionMark {
     static func set(_ value: Bool, _ defaults: UserDefaults = .standard) {
         defaults.set(value, forKey: userDefaultsKey)
         if !value { PrivateSessionAppleIDWitness.clear(defaults) }
+        if !value { clearBornFromFullActivation(defaults) }
     }
 
     /// El dispositivo vuelve a «recién instalado».
     static func clear(_ defaults: UserDefaults = .standard) {
         defaults.removeObject(forKey: userDefaultsKey)
         PrivateSessionAppleIDWitness.clear(defaults)
+        clearBornFromFullActivation(defaults)
+    }
+
+    // MARK: - De dónde nació la sesión
+
+    /// **«Esta sesión privada nació de "Activar Yala completo"»**: los grupos que hay en este teléfono son de la misma
+    /// persona que tiene la vida personal (ticket `activation-private-gate-leaves-a-late-notice-that-purges-groups`).
+    ///
+    /// Lo lee el borrado del aviso del espejo tardío para elegir su alcance (`ICloudWipeScope.lateNotice`). Quien activa
+    /// sin poder preguntarle a iCloud se lleva el testigo del espejo tardío, y el borrado de ese aviso era `.handover`:
+    /// purgaba el dominio de Grupos que la activación existe para conservar. Con esta marca es `.importedRows`.
+    ///
+    /// **Es un hecho de la sesión y no del testigo**, y por eso vive aquí: el mismo aviso termina también el borrado que
+    /// dejó a medias la puerta del Welcome, sin testigo y con su `.handover` legítimo. **Vive y muere con el eje**:
+    /// `set(false)` y `clear` la retiran, así que no sobrevive a un cierre de sesión ni al relevo de humano de «Empiezo de
+    /// cero». **Ausente ⇒ `false`**, que es el comportamiento anterior a la marca: quien activó con un build anterior
+    /// sigue con `.handover` (TestFlight), y se prefirió a que un Welcome viejo dejara de sellar el dominio de otra persona.
+    static let bornFromFullActivationKey = "cloudSync.privateSessionBornFromFullActivation"
+
+    /// La escribe `FullModeActivationView.completeFullActivation`, **antes** de encender el eje: al revés, un kill entre
+    /// las dos dejaría una sesión privada cuyo aviso purga sus grupos. Un kill en medio deja la marca en solo-grupos, donde
+    /// el aviso tardío no corre; y desde solo-grupos la única vía a una sesión privada es volver a activar, que la reescribe.
+    static func markBornFromFullActivation(_ defaults: UserDefaults = .standard) {
+        defaults.set(true, forKey: bornFromFullActivationKey)
+    }
+
+    static func isBornFromFullActivation(_ defaults: UserDefaults = .standard) -> Bool {
+        defaults.bool(forKey: bornFromFullActivationKey)
+    }
+
+    /// **La retira también el borrado de la puerta del Welcome, antes de armarse** (review adversarial del 2026-09-27).
+    /// Tras un aviso tardío que conservó los grupos, la persona puede volver al Welcome (cancelar el onboarding) y
+    /// empezar de cero por ahí: ese borrado es `.handover`, y si queda a medias, su «Terminar de borrar» lo termina el
+    /// aviso tardío. Con la marca viva lo terminaría con `.importedRows`, un borrado distinto del que se armó.
+    static func clearBornFromFullActivation(_ defaults: UserDefaults = .standard) {
+        defaults.removeObject(forKey: bornFromFullActivationKey)
     }
 
     // MARK: - Backfill

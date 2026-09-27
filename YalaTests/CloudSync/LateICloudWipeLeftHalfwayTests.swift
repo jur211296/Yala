@@ -272,7 +272,7 @@ struct LateICloudWipeLeftHalfwayWiringTests {
     @Test("la reanudación que termina retira también «a medias»")
     func launch_success_clearsTheHalfwayMark() throws {
         let check = try Self.body(of: "private func runLateICloudMirrorCheck() async {", in: Self.code(Self.contentView))
-        let success = try Self.slice(from: "guard failure == nil else { return }", to: "hasCompletedOnboarding = false", in: check)
+        let success = try Self.slice(from: "guard failure == nil else { return }", to: "settleAfterLateICloudWipe()", in: check)
         #expect(success.contains("StorageModePersistence.clearICloudCorpusWipeLeftHalfway()"))
         #expect(success.contains("StorageModePersistence.clearICloudCorpusWipeArm()"), """
             sin desarmar al terminar, el arranque siguiente vuelve a reanudar el mismo borrado: bucle
