@@ -1631,7 +1631,8 @@ struct ContentView: View {
         remoteWipeNoticePending = false
         showRemoteWipeAlert = false
 
-        performLocalWipeForRemoteSync(skipOnboarding: onboardingAlreadyDone)
+        performLocalWipeForRemoteSync(skipOnboarding: onboardingAlreadyDone,
+                                      signaledAt: Date(timeIntervalSince1970: remoteWipe))
     }
 
     /// Idempotencia para el guard fresh-install: marca AMBOS timestamps remotos
@@ -1662,7 +1663,7 @@ struct ContentView: View {
         showPositiveToast(L10n.iCloud.remoteOnboardingCompleted)
     }
 
-    private func performLocalWipeForRemoteSync(skipOnboarding: Bool) {
+    private func performLocalWipeForRemoteSync(skipOnboarding: Bool, signaledAt: Date) {
         remoteWipeTask?.cancel()
         remoteWipeTask = Task {
             let sessionState = SessionState.shared
@@ -1673,10 +1674,10 @@ struct ContentView: View {
             try? await Task.sleep(for: .milliseconds(500))
 
             do {
-                try DataWipeService.wipeAllUserData(
-                    in: modelContext,
-                    broadcastSignal: false  // Reactive wipe — don't re-signal
-                )
+                // Conserva los grupos y, si se lleva gastos o liquidaciones de grupo que el origen ya repuso (filas
+                // posteriores a la señal), pide que vuelvan: si no, faltarían en todo el parque (ver
+                // `wipeLocallyForRemoteWipeSignal`).
+                try DataWipeService.wipeLocallyForRemoteWipeSignal(in: modelContext, signaledAt: signaledAt)
                 themeManager.resetToDefaults()
             } catch {
                 #if DEBUG

@@ -112,6 +112,17 @@ nonisolated enum GroupsBridgeRestoreConvergenceLogic {
     static func unattended(requested: Set<UUID>, attended: Set<UUID>) -> Set<UUID> {
         requested.subtracting(attended)
     }
+
+    /// **¿El borrado por la señal de «Vaciar datos» de otro dispositivo se lleva filas posteriores al vaciado?** Sí si
+    /// alguna transacción puenteada es POSTERIOR a la señal: todo lo anterior ya lo borró el origen, y lo posterior es su
+    /// reposición —el caso del ticket— o sync de grupos nuevo. Solo entonces el receptor pide la convergencia; sin nada
+    /// posterior, la petición del origen basta y pedir en los dos duplica (`DataWipeService.wipeLocallyForRemoteWipeSignal`).
+    /// Estricto: el mismo instante no cuenta. **Sin hora de señal (≤ 0) no pide**: toda fila parecería posterior y volvería
+    /// el duplicado de pedir siempre.
+    static func remoteWipeTakesRowsTheOriginReconverged(bridgedRowsCreatedAt: [Date], signaledAt: Date) -> Bool {
+        guard signaledAt.timeIntervalSince1970 > 0 else { return false }
+        return bridgedRowsCreatedAt.contains { $0 > signaledAt }
+    }
 }
 
 @MainActor

@@ -442,4 +442,53 @@ struct RemoteWipeSignalWiringTests {
             Comprueba que el emisor nuevo consulta el eje de sesión y consume la señal antes de encolar.
             """)
     }
+
+    // MARK: - Lo que BORRA el receptor
+
+    /// **El receptor borra con el borrado que decide si pide la convergencia, y con ninguno más** (ticket
+    /// `late-remote-wipe-signal-undoes-the-rows-the-origin-reconverged`). Lo que hace ese borrado —pedirla antes de borrar
+    /// cuando se lleva filas posteriores a la señal, sin re-emitirla— lo fijan los casos de comportamiento de
+    /// `GroupsBridgeRestoreConvergenceBehaviourTests`. Lo que no pueden ver es que `performLocalWipeForRemoteSync`, que es
+    /// `private` de una `View`, lo llame: volver a `wipeAllUserData` a pelo deja esos casos en verde y reabre el bug —un
+    /// dispositivo que procesa la señal después de que el origen convergiera se lleva las filas repuestas a todo el
+    /// parque, y nadie las vuelve a pedir—.
+    @Test("MUTACIÓN: el receptor de la señal borra por `wipeLocallyForRemoteWipeSignal`, con la hora de esa señal")
+    func theReceiverWipesThroughTheConvergingWipe() throws {
+        // Los nombres se parten del paréntesis a propósito: `SharedStateIsolationTests` cuenta como «ejecuta el wipe» todo
+        // fichero de test cuyo código contenga `<borrado>(`, y este solo los BUSCA en el código de producción.
+        let receptor = "wipeLocallyForRemoteWipeSignal", abre = "("
+        let vista = try Self.code("Yala/App/ContentView.swift")
+        let inicio = try #require(vista.range(of: "private func performLocalWipeForRemoteSync("),
+                                  "no existe el receptor de la señal: el escáner mide otra cosa")
+        let resto = vista[inicio.upperBound...]
+        let fin = try #require(resto.range(of: " private "), "no se encuentra el final del receptor")
+        let cuerpo = String(resto[resto.startIndex..<fin.lowerBound])
+
+        #expect(Self.count("try DataWipeService." + receptor + abre + "in: modelContext, signaledAt: signaledAt)", in: cuerpo) == 1, """
+            el receptor de la señal de vaciado ya no borra por `wipeLocallyForRemoteWipeSignal`. Sin ella no pide la
+            convergencia, y si procesa la señal después de que el origen convergiera, su borrado viaja por el espejo y
+            deja a todo el parque sin los gastos y liquidaciones de grupo, para siempre.
+
+            Cuerpo encontrado: \(cuerpo.prefix(400))
+            """)
+        #expect(!cuerpo.contains("wipeAllUserData" + abre) && !cuerpo.contains("wipePersonalDataKeepingGroups" + abre), """
+            el receptor llama además a otro borrado. `wipeAllUserData` no pide nada, y `wipePersonalDataKeepingGroups`
+            deja elegir la señal: las dos cosas que la función del receptor fija.
+            """)
+        #expect(!cuerpo.contains("signalWipeInitiated"), """
+            el receptor emite una señal de vaciado propia: rebotaría el vaciado entre los dispositivos del Apple ID.
+            """)
+        // Y la hora que decide si pide es la de ESTA señal: la que lee el drenaje del KV, no otra.
+        #expect(Self.count("performLocalWipeForRemoteSync(skipOnboarding: onboardingAlreadyDone, "
+                           + "signaledAt: Date(timeIntervalSince1970: remoteWipe))", in: vista) == 1, """
+            el receptor ya no recibe la hora de la señal que está procesando. Con otra hora, decide mal si su borrado se
+            lleva lo que el origen repuso: o pide sin motivo (y los dos dispositivos duplican los gastos de grupo) o no
+            pide cuando hace falta (y desaparecen de todo el parque).
+            """)
+        #expect(try Self.countInProduction(receptor + abre) == 2, """
+            el borrado del receptor tiene un número inesperado de apariciones en `Yala/` (se esperan la definición y la
+            llamada de `ContentView`). Si otro camino borra por él, comprueba que de verdad responde a una señal: no
+            re-emite la suya.
+            """)
+    }
 }

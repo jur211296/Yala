@@ -308,8 +308,10 @@ struct SharedStateIsolationTests {
                 .split(separator: "\n", omittingEmptySubsequences: false)
                 .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
                 .joined(separator: "\n")
-            // `wipePersonalDataKeepingGroups(` también cuenta: es «Vaciar datos», y ejecuta `wipeAllUserData` dentro.
-            guard code.contains("wipeAllUserData(") || code.contains("wipePersonalDataKeepingGroups(") else { continue }
+            // `wipePersonalDataKeepingGroups(` también cuenta: es «Vaciar datos», y ejecuta `wipeAllUserData` dentro. Y
+            // `wipeLocallyForRemoteWipeSignal(`, el borrado del receptor de la señal, por lo mismo.
+            guard code.contains("wipeAllUserData(") || code.contains("wipePersonalDataKeepingGroups(")
+                || code.contains("wipeLocallyForRemoteWipeSignal(") else { continue }
             ejecutanElWipe.append(url.lastPathComponent)
             if !code.contains(".wipeAppGroupMirrorIsolated") { sinTrait.append(url.lastPathComponent) }
         }
