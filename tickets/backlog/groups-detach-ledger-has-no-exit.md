@@ -40,3 +40,10 @@ el gasto al circuito normal del puente.
 
 Unit sobre el libro + el bridge con un contexto real: conservar, re-asociar, borrar la transacción, y
 exigir que el puente vuelva a crearla en el ciclo siguiente.
+
+## Otro camino al mismo hueco (2026-09-27)
+
+Lo encontró la review de `activation-start-fresh-drops-group-settlement-legs`: un borrado de filas que conserva los grupos
+(«Restaurar → Empezar desde cero» de la activación, el aviso tardío de iCloud) también se lleva el movimiento conservado,
+y el libro sigue ahí. Cuando la convergencia re-puentea gastos y liquidaciones, el guard los da por atendidos sin crear
+nada. Es el «borro a mano» de arriba, pero en masa. El arreglo que se elija aquí tiene que cubrir también ese borrado.

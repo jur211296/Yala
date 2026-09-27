@@ -81,9 +81,33 @@ struct GroupsBridgeRestoreConvergenceLogicTests {
         GroupsBridgeRestoreConvergenceStore.clear(defaults)
         #expect(!GroupsBridgeRestoreConvergenceStore.isPending(defaults))
     }
+
+    /// La de las liquidaciones viaja con la convergencia: retirar una intención convergida sin ella la dejaría dormida,
+    /// y la próxima convergencia —la de un restaurar, que no la pidió— re-puentearía liquidaciones por nada.
+    @Test("la petición de liquidaciones se marca aparte y se retira con la convergencia")
+    func settlementLegsRoundTrip() {
+        let defaults = makeIsolatedDefaults()
+        #expect(!GroupsBridgeRestoreConvergenceStore.isSettlementLegsPending(defaults))
+        GroupsBridgeRestoreConvergenceStore.markSettlementLegsPending(defaults)
+        #expect(GroupsBridgeRestoreConvergenceStore.isSettlementLegsPending(defaults))
+        #expect(!GroupsBridgeRestoreConvergenceStore.isPending(defaults), "no enciende la convergencia por su cuenta")
+        GroupsBridgeRestoreConvergenceStore.markPending(defaults)
+        GroupsBridgeRestoreConvergenceStore.clear(defaults)
+        #expect(!GroupsBridgeRestoreConvergenceStore.isSettlementLegsPending(defaults))
+    }
+
+    /// Qué se re-puentea tras un borrado de filas: las confirmadas que se quedaron sin ninguna pata. Una pata, la que
+    /// sea, dice que alguien la re-puenteó después, y su borrador pudo aprobarse ya (sin rastro en `splitSettlementID`).
+    @Test("se re-puentean las confirmadas sin ninguna pata; con cualquier pata se dejan quietas")
+    func settlementsToReBridge_onlyTheBareOnes() {
+        let bare = UUID(), withVirtual = UUID(), withReal = UUID()
+        let legs: Set<String> = [withVirtual.uuidString, withReal.uuidString, UUID().uuidString]
+        #expect(Logic.settlementsToReBridge(confirmed: [bare, withVirtual, withReal], legSettlementIDs: legs) == [bare])
+        #expect(Logic.settlementsToReBridge(confirmed: [], legSettlementIDs: legs).isEmpty, "solo las confirmadas")
+    }
 }
 
-@Suite("Paso 8 · convergencia tras restaurar, contra el bridge real", .serialized)
+@Suite("Paso 8 · convergencia tras restaurar, contra el bridge real", .serialized, .wipeAppGroupMirrorIsolated)
 @MainActor
 struct GroupsBridgeRestoreConvergenceBehaviourTests {
 
@@ -190,7 +214,15 @@ struct GroupsBridgeRestoreConvergenceBehaviourTests {
 
     /// El entorno del bridge: su contexto, el eje de sesión privada y la intención durable en defaults aislados. Todo
     /// se restaura al salir: son singletons que comparten las demás suites.
+    ///
+    /// El dominio de `UserDefaults.standard` también se restaura: los casos del borrado de filas ejecutan el
+    /// `wipeAllUserData` real, que reabre las puertas del seed y barre claves derivadas del host de test. El App Group
+    /// lo cubre el trait `.wipeAppGroupMirrorIsolated` de la suite.
     private func withEnvironment(_ context: ModelContext, _ body: (UserDefaults) throws -> Void) rethrows {
+        let standard = UserDefaults.standard
+        let domain = Bundle.main.bundleIdentifier ?? "com.yala.app"
+        let standardSnapshot = standard.persistentDomain(forName: domain) ?? [:]
+        defer { standard.setPersistentDomain(standardSnapshot, forName: domain) }
         GroupTransactionBridge.shared.setContext(context)
         let previousPrivateSession = SessionState.shared.hasPrivateSession
         let previousIntentDefaults = GroupsPendingBridgeIntent.defaults
@@ -347,6 +379,203 @@ struct GroupsBridgeRestoreConvergenceBehaviourTests {
             #expect(pending.backendExpenseIDs.contains(expense.id),
                     "con el canal CloudKit el retome lo soltaría como abandonado sin intentarlo")
             #expect(!GroupsBridgeRestoreConvergenceStore.isPending(defaults), "lo que falta ya tiene dueño")
+        }
+    }
+
+    // MARK: - Tras un borrado de filas que conservó los grupos (ticket `activation-start-fresh-drops-group-settlement-legs`)
+
+    private struct Settlements {
+        /// Yo le pagué 40 a Ana (Caso C).
+        let paid: SplitSettlement
+        /// Ana me pagó 25 (Caso D).
+        let received: SplitSettlement
+        /// Sin confirmar: el bridge no la crea nunca.
+        let unconfirmed: SplitSettlement
+    }
+
+    private func makeSettlements(_ context: ModelContext, _ f: Fixture) throws -> Settlements {
+        let zone = f.group.cloudKitZoneID
+        let paid = SplitSettlement(groupZoneID: zone, fromMemberID: f.me.id.uuidString,
+                                   toMemberID: f.ana.id.uuidString, amount: 40, currencyCode: "USD")
+        paid.isConfirmed = true
+        let received = SplitSettlement(groupZoneID: zone, fromMemberID: f.ana.id.uuidString,
+                                       toMemberID: f.me.id.uuidString, amount: 25, currencyCode: "USD")
+        received.isConfirmed = true
+        let unconfirmed = SplitSettlement(groupZoneID: zone, fromMemberID: f.me.id.uuidString,
+                                          toMemberID: f.ana.id.uuidString, amount: 10, currencyCode: "USD")
+        for s in [paid, received, unconfirmed] { context.insert(s) }
+        try context.save()
+        return Settlements(paid: paid, received: received, unconfirmed: unconfirmed)
+    }
+
+    private func legs(_ context: ModelContext, _ settlement: SplitSettlement) throws -> [TransactionItem] {
+        let idStr = settlement.id.uuidString
+        return try context.fetch(FetchDescriptor<TransactionItem>(
+            predicate: #Predicate { $0.splitSettlementID == idStr }))
+    }
+
+    private func drafts(_ context: ModelContext, _ settlement: SplitSettlement) throws -> [InboxDraft] {
+        let idStr = settlement.id.uuidString
+        return try context.fetch(FetchDescriptor<InboxDraft>(
+            predicate: #Predicate { $0.splitSettlementID == idStr }))
+    }
+
+    /// Lo que deja el borrado REAL de «Empezar desde cero» (`.importedRows`): las liquidaciones puenteadas en modo
+    /// completo, y luego `wipeAllUserData` sin tocar preferencias. El control fija la premisa del ticket.
+    private func bridgeThenWipe(_ context: ModelContext, _ s: Settlements) throws {
+        SessionState.shared.hasPrivateSession = true
+        try GroupTransactionBridge.shared.bridgeRemoteSettlements(ids: [s.paid.id, s.received.id, s.unconfirmed.id])
+        #expect(try legs(context, s.paid).count == 1 && legs(context, s.received).count == 1,
+                "el fixture no puentea las liquidaciones antes del borrado")
+        try DataWipeService.wipeAllUserData(in: context, reseedInitialData: false, broadcastSignal: false,
+                                            resetsPreferences: false)
+        #expect(try legs(context, s.paid).isEmpty && legs(context, s.received).isEmpty,
+                "el borrado ya no se lleva las patas: la premisa del ticket cambió")
+        #expect(try context.fetchCount(FetchDescriptor<SplitSettlement>()) == 3, "el borrado conserva los grupos")
+    }
+
+    /// El recorrido del ticket: borrado → un arranque todavía en solo-grupos (corte antes de completar la activación)
+    /// → la activación completa → la convergencia. Las patas vuelven con la forma del modo completo, una por
+    /// liquidación, y otra convergencia no las duplica.
+    @Test("tras el borrado, las liquidaciones confirmadas vuelven a lo personal cuando la sesión es privada, y una vez")
+    func afterImportedRowsWipe_confirmedSettlementLegsComeBackOnce() throws {
+        let dir = try freshDir()
+        defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let f = try makeFixture(context)
+        try withEnvironment(context) { defaults in
+            let s = try makeSettlements(context, f)
+            try bridgeThenWipe(context, s)
+
+            // Lo que piden las dos puertas del borrado.
+            GroupsBridgeRestoreConvergenceStore.markSettlementLegsPending(defaults)
+            GroupsBridgeRestoreConvergenceStore.markPending(defaults)
+
+            // Todavía solo-grupos: se espera, con las dos peticiones intactas.
+            SessionState.shared.hasPrivateSession = false
+            GroupsBridgeRestoreConvergence.convergeIfPending(context: context, defaults: defaults)
+            #expect(try legs(context, s.paid).isEmpty, "en solo-grupos se re-puentea con la forma que nadie funde después")
+            #expect(GroupsBridgeRestoreConvergenceStore.isSettlementLegsPending(defaults))
+
+            SessionState.shared.hasPrivateSession = true
+            GroupsBridgeRestoreConvergence.convergeIfPending(context: context, defaults: defaults)
+
+            let paid = try legs(context, s.paid)
+            let received = try legs(context, s.received)
+            #expect(paid.count == 1, "la liquidación que pagué no volvió, o volvió dos veces")
+            #expect(received.count == 1, "la que me pagaron no volvió, o volvió dos veces")
+            #expect(paid.first?.account?.isSystemAccount == true && paid.first?.amount == 40)
+            #expect(received.first?.account?.isSystemAccount == true && received.first?.amount == -25)
+            #expect(try drafts(context, s.received).count == 1,
+                    "con sesión privada vuelve también el borrador de «¿a qué cuenta llegó?»")
+            let paidDrafts = try drafts(context, s.paid).count
+            #expect(try legs(context, s.unconfirmed).isEmpty, "sin confirmar no se crea nunca")
+            #expect(!GroupsBridgeRestoreConvergenceStore.isPending(defaults))
+            #expect(!GroupsBridgeRestoreConvergenceStore.isSettlementLegsPending(defaults))
+            #expect(GroupsPendingBridgeIntent.pending.isEmpty, "todo quedó atendido")
+
+            // Ninguna sale dos veces: con sus patas ya puestas, otra petición igual no las toca.
+            let legIDs = Set(try (legs(context, s.paid) + legs(context, s.received)).map(\.persistentModelID))
+            GroupsBridgeRestoreConvergenceStore.markSettlementLegsPending(defaults)
+            GroupsBridgeRestoreConvergenceStore.markPending(defaults)
+            GroupsBridgeRestoreConvergence.convergeIfPending(context: context, defaults: defaults)
+            #expect(Set(try (legs(context, s.paid) + legs(context, s.received)).map(\.persistentModelID)) == legIDs)
+            #expect(try drafts(context, s.received).count == 1)
+            #expect(try drafts(context, s.paid).count == paidDrafts)
+        }
+    }
+
+    /// El restaurar pide la convergencia SIN las liquidaciones, porque ahí re-puentear borra las patas reales que
+    /// vuelven con el corpus. Es el control del término: sin la petición, nada.
+    @Test("sin la petición de liquidaciones la convergencia no las re-puentea")
+    func withoutSettlementRequest_settlementsAreNotReBridged() throws {
+        let dir = try freshDir()
+        defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let f = try makeFixture(context)
+        try withEnvironment(context) { defaults in
+            let s = try makeSettlements(context, f)
+            try bridgeThenWipe(context, s)
+
+            GroupsBridgeRestoreConvergenceStore.markPending(defaults)
+            GroupsBridgeRestoreConvergence.convergeIfPending(context: context, defaults: defaults)
+
+            #expect(try legs(context, s.paid).isEmpty)
+            #expect(try legs(context, s.received).isEmpty)
+            #expect(!GroupsBridgeRestoreConvergenceStore.isPending(defaults))
+        }
+    }
+
+    /// Entre el borrado y la convergencia el sync puede re-puentear una liquidación, y la persona aprobar su borrador.
+    /// Aprobarlo crea la transacción real SIN `splitSettlementID` (`DraftService`, D7) y borra el borrador. Re-puentear
+    /// esa liquidación sacaría otro borrador del mismo pago: aprobado dos veces, cuenta doble. Es el hallazgo de la
+    /// review, y el control fija su premisa: la real no lleva el ID, así que ningún guard sobre patas reales la ve.
+    @Test("un borrador aprobado después del borrado no vuelve a salir")
+    func draftApprovedAfterTheWipe_isNotAskedAgain() throws {
+        let dir = try freshDir()
+        defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let f = try makeFixture(context)
+        try withEnvironment(context) { defaults in
+            let s = try makeSettlements(context, f)
+            try bridgeThenWipe(context, s)
+
+            // El sync re-puentea la que me pagaron (sesión privada: pata virtual + borrador) y la persona lo aprueba.
+            try GroupTransactionBridge.shared.bridgeRemoteSettlements(ids: [s.received.id])
+            let draft = try #require(try drafts(context, s.received).first, "el fixture no crea el borrador")
+            let bank = Account(name: "Banco", currencyCode: "USD", colorHex: "#222222",
+                               iconName: "building.columns", type: "bank")
+            context.insert(bank)
+            let approved = TransactionItem(date: s.received.date, amount: 25, currencyCode: "USD",
+                                           note: "Ana me pagó", account: bank)
+            context.insert(approved)
+            context.delete(draft)
+            try context.save()
+            #expect(approved.splitSettlementID == nil, "D7: la aprobada no lleva el ID de la liquidación")
+            let before = Set(try legs(context, s.received).map(\.persistentModelID))
+
+            GroupsBridgeRestoreConvergenceStore.markSettlementLegsPending(defaults)
+            GroupsBridgeRestoreConvergenceStore.markPending(defaults)
+            GroupsBridgeRestoreConvergence.convergeIfPending(context: context, defaults: defaults)
+
+            #expect(try drafts(context, s.received).isEmpty,
+                    "la convergencia re-puenteó una liquidación ya atendida: el pago aprobado vuelve a pedirse")
+            #expect(Set(try legs(context, s.received).map(\.persistentModelID)) == before)
+            #expect(try legs(context, s.paid).count == 1, "la que se quedó sin nada sí vuelve")
+        }
+    }
+
+    /// Una liquidación de un grupo donde todavía no se sabe quién soy vuelve sin atender: a la intención durable, con
+    /// el canal del backend, igual que los gastos.
+    @Test("la liquidación que el bridge no atiende pasa a la intención durable, con el canal del backend")
+    func unattendedSettlement_goesToTheDurableIntent() throws {
+        let dir = try freshDir()
+        defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        _ = try makeFixture(context)
+        try withEnvironment(context) { defaults in
+            SessionState.shared.hasPrivateSession = true
+            let flat = SplitGroup(name: "Piso", currencyCode: "USD")
+            context.insert(flat)
+            let luis = SplitMember(groupZoneID: flat.cloudKitZoneID, displayName: "Luis")
+            let eva = SplitMember(groupZoneID: flat.cloudKitZoneID, displayName: "Eva")
+            context.insert(luis)
+            context.insert(eva)
+            let settlement = SplitSettlement(groupZoneID: flat.cloudKitZoneID, fromMemberID: luis.id.uuidString,
+                                             toMemberID: eva.id.uuidString, amount: 20, currencyCode: "USD")
+            settlement.isConfirmed = true
+            context.insert(settlement)
+            try context.save()
+
+            GroupsBridgeRestoreConvergenceStore.markSettlementLegsPending(defaults)
+            GroupsBridgeRestoreConvergenceStore.markPending(defaults)
+            GroupsBridgeRestoreConvergence.convergeIfPending(context: context, defaults: defaults)
+
+            let pending = GroupsPendingBridgeIntent.pending
+            #expect(pending.settlementIDs.contains(settlement.id))
+            #expect(pending.backendSettlementIDs.contains(settlement.id),
+                    "con el canal CloudKit el retome la soltaría como abandonada sin intentarlo")
+            #expect(!GroupsBridgeRestoreConvergenceStore.isSettlementLegsPending(defaults), "lo que falta ya tiene dueño")
         }
     }
 }

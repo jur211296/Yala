@@ -648,6 +648,14 @@ struct ContentView: View {
                     // solo-grupos BORRE las transacciones reales del gasto que re-puentea. La recoge
                     // `AppBootstrapper` en el arranque siguiente, con el gate de store listo que la espera
                     // de la sheet no tiene.
+                    //
+                    // **Las patas de las liquidaciones, con ella y no antes** (ticket
+                    // `activation-start-fresh-drops-group-settlement-legs`). Este borrado también se las lleva, y el
+                    // retome de `GroupsPendingBridgeIntent` —el camino del aviso tardío hasta el 2026-09-27— no espera
+                    // a la sesión privada: tras un corte antes de `completeFullActivation` las re-puentearía con la
+                    // forma de solo-grupos, sin el borrador de «¿de qué cuenta?», y nadie las volvería a tocar. La
+                    // convergencia sí espera.
+                    GroupsBridgeRestoreConvergenceStore.markSettlementLegsPending()
                     GroupsBridgeRestoreConvergenceStore.markPending()
                     return nil
                 }
@@ -1899,29 +1907,15 @@ struct ContentView: View {
         let failure = await performICloudCorpusWipe(scope)
         guard failure == nil else { return failure }
         if !scope.purgesGroupsDomain {
+            // **Las patas de las liquidaciones también vuelven** (review adversarial del 2026-09-27): el borrado se
+            // acaba de llevar TODA `TransactionItem`, reales incluidas, y sin esto la cuenta de grupos contaba lo
+            // prestado sin descontar lo ya cobrado o pagado. Por la convergencia y no por el retome de
+            // `GroupsPendingBridgeIntent`: es el mismo camino que «Empezar desde cero» de la activación, que sí
+            // necesita esperar a la sesión privada, y la convergencia solo toca las que se quedaron sin ninguna pata.
+            GroupsBridgeRestoreConvergenceStore.markSettlementLegsPending()
             GroupsBridgeRestoreConvergenceStore.markPending()
-            armSettlementLegsAfterLateWipe()
         }
         return nil
-    }
-
-    /// **Las patas de las liquidaciones también vuelven** (review adversarial del 2026-09-27). La convergencia de
-    /// arriba solo re-puentea GASTOS: su re-puente de liquidaciones borraría las transacciones reales que la persona
-    /// registró con su cuenta (`GroupsBridgeRestoreConvergence`, cabecera). Aquí ese motivo no existe —el borrado se
-    /// acaba de llevar TODA `TransactionItem`, reales incluidas—, y sin esto la cuenta de grupos contaba lo prestado sin
-    /// descontar lo ya cobrado o pagado. Van por la intención durable del retome del arranque, con su tope de intentos;
-    /// solo las confirmadas, que son las únicas que el bridge crea.
-    @MainActor
-    private func armSettlementLegsAfterLateWipe() {
-        do {
-            let confirmed = try modelContext.fetch(FetchDescriptor<SplitSettlement>())
-                .filter(\.isConfirmed).map(\.id)
-            GroupsPendingBridgeIntent.arm(expenseIDs: [], settlementIDs: Set(confirmed), channel: .backend)
-        } catch {
-            #if DEBUG
-            print("ContentView: Error: no se pudieron pedir las liquidaciones tras el borrado tardío: \(error)")
-            #endif
-        }
     }
 
     /// Lo que queda tras un borrado del aviso tardío que terminó bien: las señales al día y el onboarding de nuevo.

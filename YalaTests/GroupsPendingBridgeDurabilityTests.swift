@@ -683,4 +683,20 @@ struct GroupsPendingBridgeWiringTests {
                 Grupos esos gastos se puentearían a SU Panel, su Inbox y sus presupuestos.
                 """)
     }
+
+    /// La convergencia pendiente del bridge, con su petición de liquidaciones, tampoco viaja: la pidió un borrado del
+    /// humano anterior y correría sobre los grupos del nuevo en cuanto tuviera sesión privada.
+    @MainActor
+    @Test func theHandover_sweepsTheConvergenceRequests() {
+        let defaults = makeIsolatedDefaults(prefix: "handover.convergence")
+        GroupsBridgeRestoreConvergenceStore.markSettlementLegsPending(defaults)
+        GroupsBridgeRestoreConvergenceStore.markPending(defaults)
+
+        DataWipeService.removeGroupsDomainPreferenceKeys(from: defaults)
+
+        #expect(!GroupsBridgeRestoreConvergenceStore.isPending(defaults),
+                "la convergencia del humano anterior sobrevive al relevo")
+        #expect(!GroupsBridgeRestoreConvergenceStore.isSettlementLegsPending(defaults),
+                "la petición de liquidaciones del humano anterior sobrevive al relevo")
+    }
 }

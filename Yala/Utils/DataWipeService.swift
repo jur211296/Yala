@@ -617,6 +617,10 @@ final class DataWipeService {
         // cuanto adopte Grupos y el sello deje de cortar.
         defaults.removeObject(forKey: GroupsPendingBridgeIntent.userDefaultsKey)
 
+        // Y la convergencia pendiente del bridge, con su petición de liquidaciones, por lo mismo: la pidió un borrado del
+        // humano ANTERIOR (o su activación a medias), y correría sobre los grupos del nuevo en cuanto tenga sesión privada.
+        GroupsBridgeRestoreConvergenceStore.clear(defaults)
+
         // Paso 10 · el espejo local de la cuenta de grupos asociada, y el libro de lo que una
         // desasociación anterior conservó en el Panel. Los dos son del humano ANTERIOR: el primero le
         // enseñaría al nuevo el CORREO del anterior en la fila de Ajustes, y el segundo frenaría el

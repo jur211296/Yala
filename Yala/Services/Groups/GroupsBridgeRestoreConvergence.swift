@@ -17,6 +17,15 @@
 //    TX/Drafts»): re-puentear se llevaría los pagos que la persona registró con su cuenta en su vida
 //    anterior. Lo único duplicado ahí es la pata VIRTUAL —las dos etapas crean la misma—, y se quita solo esa.
 //
+//  **Salvo tras un borrado de filas que conservó los grupos** (`.importedRows`: «Restaurar → Empezar desde cero» de la
+//  activación y el aviso tardío). Ese borrado se lleva TODA `TransactionItem`, reales incluidas, así que el motivo de
+//  arriba no existe y sin re-puentear la cuenta de grupos cuenta lo prestado sin descontar lo ya cobrado o pagado. Lo
+//  pide aparte (`markSettlementLegsPending`) y se hace AQUÍ, detrás del guard de sesión privada: en una sesión
+//  solo-grupos el bridge crea la pata virtual sin el borrador de «¿de qué cuenta?», y nadie la re-puentearía después.
+//  Solo las que se quedaron SIN NINGUNA pata: cualquier pata dice que alguien la re-puenteó después del borrado, y
+//  hacerlo otra vez duplicaría el borrador de un pago que la persona ya aprobó (la aprobación crea la transacción real
+//  SIN `splitSettlementID`, `DraftService` D7, así que no hay pata real que la delate).
+//
 //  **Durable**, porque lo que se difiere siendo una intención tiene que sobrevivir al proceso: si el import de
 //  CloudKit no se asienta, o la app muere, la marca sigue y el retome del arranque
 //  (`AppBootstrapper.retryPendingBridges`, con su gate de store listo) lo reintenta.
@@ -39,8 +48,25 @@ nonisolated enum GroupsBridgeRestoreConvergenceStore {
         defaults.bool(forKey: key)
     }
 
+    /// Retira la intención entera: la convergencia y, si iba con ella, el re-puente de las liquidaciones.
     static func clear(_ defaults: UserDefaults = .standard) {
         defaults.removeObject(forKey: key)
+        defaults.removeObject(forKey: settlementLegsKey)
+    }
+
+    /// **Las patas de liquidación también vuelven**, y solo lo pide un borrado de filas que conservó los grupos
+    /// (ticket `activation-start-fresh-drops-group-settlement-legs`). Viaja con la convergencia —la consume
+    /// `convergeIfPending`, con sus guards— y no por `GroupsPendingBridgeIntent`, cuyo retome no espera a la sesión
+    /// privada. Se escribe ANTES de `markPending()` en los call-sites: un corte entre las dos deja esta dormida (inocua:
+    /// nunca pisa una pata real), mientras que al revés la convergencia correría sin las liquidaciones.
+    static let settlementLegsKey = "fullModeActivation.groupsConvergenceSettlementLegs"
+
+    static func markSettlementLegsPending(_ defaults: UserDefaults = .standard) {
+        defaults.set(true, forKey: settlementLegsKey)
+    }
+
+    static func isSettlementLegsPending(_ defaults: UserDefaults = .standard) -> Bool {
+        defaults.bool(forKey: settlementLegsKey)
     }
 }
 
@@ -71,6 +97,15 @@ nonisolated enum GroupsBridgeRestoreConvergenceLogic {
             toDelete.append(contentsOf: indices.filter { $0 != keep })
         }
         return toDelete.sorted()
+    }
+
+    /// Las liquidaciones confirmadas que se re-puentean tras un borrado de filas: **las que se quedaron sin ninguna
+    /// pata**. Una pata, la que sea, dice que el sync la re-puenteó después del borrado: con sesión privada eso trajo un
+    /// borrador, y si la persona ya lo aprobó, la transacción real que creó no lleva `splitSettlementID` (D7 de
+    /// `DraftService`). Re-puentearla borraría la virtual y sacaría otro borrador del mismo pago: aprobado dos veces,
+    /// cuenta doble. Las que no tienen nada son justo las que el borrado dejó así, y el bridge las crea una vez.
+    static func settlementsToReBridge(confirmed: Set<UUID>, legSettlementIDs: Set<String>) -> Set<UUID> {
+        confirmed.filter { !legSettlementIDs.contains($0.uuidString) }
     }
 
     /// Los gastos que se pidió converger y el bridge no atendió.
@@ -117,16 +152,31 @@ enum GroupsBridgeRestoreConvergence {
             // intentos. Canal `.backend` porque todo grupo es hoy del backend: con `.cloudKit` el retome lo
             // clasificaría como abandonado y lo soltaría sin intentarlo.
             let unattended = GroupsBridgeRestoreConvergenceLogic.unattended(requested: expenseIDs, attended: attended)
-            GroupsPendingBridgeIntent.arm(expenseIDs: unattended, settlementIDs: [], channel: .backend)
+            let unattendedSettlements = GroupsBridgeRestoreConvergenceStore.isSettlementLegsPending(defaults)
+                ? try reBridgeSettlementLegs(context: context) : []
+            GroupsPendingBridgeIntent.arm(expenseIDs: unattended, settlementIDs: unattendedSettlements, channel: .backend)
             try dedupeSettlementVirtualLegs(context: context)
             GroupsBridgeRestoreConvergenceStore.clear(defaults)
-            logger.notice("GroupsBridgeRestoreConvergence done unattended=\(unattended.count, privacy: .public)")
+            logger.notice("GroupsBridgeRestoreConvergence done unattended=\(unattended.count, privacy: .public) unattendedSettlements=\(unattendedSettlements.count, privacy: .public)")
         } catch {
             logger.notice("GroupsBridgeRestoreConvergence deferred reason=bridgeFailed")
             #if DEBUG
             print("GroupsBridgeRestoreConvergence: Error: \(error)")
             #endif
         }
+    }
+
+    /// Re-puentea las liquidaciones confirmadas que un borrado de filas dejó sin patas, y devuelve las que el bridge no
+    /// atendió (member propio sin resolver): van a la intención durable con su tope, igual que los gastos.
+    private static func reBridgeSettlementLegs(context: ModelContext) throws -> Set<UUID> {
+        let confirmed = Set(try context.fetch(FetchDescriptor<SplitSettlement>()).filter(\.isConfirmed).map(\.id))
+        let legSettlementIDs = Set(try context.fetch(FetchDescriptor<TransactionItem>(
+            predicate: #Predicate { $0.splitSettlementID != nil })).compactMap(\.splitSettlementID))
+        let requested = GroupsBridgeRestoreConvergenceLogic.settlementsToReBridge(
+            confirmed: confirmed, legSettlementIDs: legSettlementIDs)
+        guard !requested.isEmpty else { return [] }
+        let attended = try GroupTransactionBridge.shared.bridgeRemoteSettlements(ids: Array(requested))
+        return GroupsBridgeRestoreConvergenceLogic.unattended(requested: requested, attended: attended)
     }
 
     private static func dedupeSettlementVirtualLegs(context: ModelContext) throws {
