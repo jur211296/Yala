@@ -1,6 +1,6 @@
 ---
 name: el-reparador-tan-reejecutable-como-el-destructor
-description: Si añades una reposición dentro de un hook kill-safe, tiene que poder re-ejecutarse tantas veces como el borrado que repara — consumir su fuente la destruye en la segunda pasada.
+description: Si añades una reposición dentro de un hook kill-safe, tiene que poder re-ejecutarse tantas veces como el borrado que repara; y si el borrado guarda por pasos, la petición de reparar va ANTES, no «solo si terminó».
 metadata:
   type: feedback
 ---
@@ -36,3 +36,10 @@ Dos primos que salieron del mismo sitio y valen igual:
   lo consuma.
 
 Ver [[review-adversarial-caza-lo-mio]] y [[un-gate-derivado-de-una-ausencia-falla-abierto]].
+
+**Y el orden de la petición (2026-09-27, «Vaciar datos» y la convergencia del bridge).** Escribí «las peticiones
+solo si el borrado terminó: uno que lanza deja filas reales vivas». Era falso: `wipeAllUserData` guarda por pasos,
+y uno que lanza —o un kill— DESPUÉS de borrar las transacciones dejaba lo destruido sin nadie que lo pidiera. Lo
+cazaron dos lentes a la vez. Si el reparador es idempotente sobre el estado intacto, la petición va ANTES del
+destructor: pedir de más no cuesta y pedir de menos pierde datos. La pregunta que lo destapa: «¿en qué paso del
+destructor se destruye lo que reparo, y cuántos `save()` vienen después?».
