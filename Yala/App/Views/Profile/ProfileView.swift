@@ -201,7 +201,7 @@ struct ProfileView: View {
             // grupos: el título es exacto y aquí nadie ha reintentado nada.
             case .permanent, .sessionExpired, .channelPaused, .uploadRetryLater,
                  .syncStoppedNeedsUpdate, .syncStoppedMidMigration, .syncStoppedNeedsRelaunch, .personalUploadRetryLater,
-                 .cloudSessionExpired:
+                 .cloudSessionExpired, .signOutSessionSurvived:
                 showSignOutBlockedAlert = true
             // **Los dos motivos del DESASOCIAR no encienden nada aquí, y no es teoría: llegaban.**
             // `phase` es un singleton observable y esta pantalla escucha sus cambios; la de

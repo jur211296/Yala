@@ -543,7 +543,8 @@ extension SwiftDataConfiguration {
     ///
     /// Orden IDEMPOTENTE ante kill a mitad (el arm se limpia AL FINAL; re-entrada re-ejecuta:
     /// archivos ya ausentes = no-op, escrituras de flags idempotentes):
-    /// 1) archivos personal + sync-meta → 2) par storageMode/mirrorOffArmed a `.icloud` fresh
+    /// 1) archivos personal + sync-meta → 1b) la sesión en la nube (`CloudSessionRetirement.retireForSignOutWipe`) →
+    /// 2) par storageMode/mirrorOffArmed a `.icloud` fresh
     /// (invariante SERIO-1: juntos) → 3) consent de grupos + prefs/caches/onboarding a estado recién
     /// instalada + notificaciones locales + colas del App Group → 4) desarmar.
     static func performSignOutWipeIfArmed() {
@@ -559,7 +560,8 @@ extension SwiftDataConfiguration {
             purgeInboundSurfaces: { AppGroupInboundPurge.purgeInboundSurfaces() },
             clearGroupsConsent: { GroupsConsentState.clear() },
             restoreDeferredInvite: { GroupInviteResumeStore.restoreIntoPendingJoins() },
-            clearDeferredInvite: { GroupInviteResumeStore.clearAfterRestore() })
+            clearDeferredInvite: { GroupInviteResumeStore.clearAfterRestore() },
+            retireCloudSession: { CloudSessionRetirement.retireForSignOutWipe(defaults: .standard) })
     }
 
     /// Variante inyectable (tests del ORDEN/idempotencia sin archivos reales, sin `UserDefaults.standard`
@@ -578,7 +580,8 @@ extension SwiftDataConfiguration {
         purgeInboundSurfaces: () -> Void = {},
         clearGroupsConsent: () -> Void = {},
         restoreDeferredInvite: () -> Void = {},
-        clearDeferredInvite: () -> Void = {}
+        clearDeferredInvite: () -> Void = {},
+        retireCloudSession: () -> Void = {}
     ) {
         guard StorageModePersistence.isSignOutWipeArmed(defaults) else { return }
 
@@ -637,6 +640,17 @@ extension SwiftDataConfiguration {
             // —no hay barrido por prefijo— así que el `groups.*` del nombre no la borra solo.
             defaults.removeObject(forKey: GroupsDetachPendingPurge.userDefaultsKey)
         }
+
+        // **La sesión en la nube se va con el resto** (ticket `sign-out-exits-do-not-verify-the-cloud-session-closed`). Este
+        // hook devuelve el teléfono a «recién instalado», y hasta el 2026-09-26 dejaba intacto el llavero de la sesión: si
+        // sobrevivía al `signOut()` del cierre —o un refresco del token la reponía después de comprobarlo—, la persona
+        // siguiente arrancaba con la sesión de quien cerró y Grupos bajaba sus grupos. El cierre ya comprueba el `signOut()`
+        // antes de armar; esto es la segunda capa, la que cubre lo que llega tarde.
+        //
+        // DESPUÉS del guard abort-S3, por lo mismo que las notificaciones y las colas: si el store sobrevive, el cierre no
+        // ocurrió. Y es kill-safe por su cuenta: el retiro arma su propia marca durable antes de purgar, así que un kill a
+        // mitad —o un llavero que no queda vacío— lo termina el `purgeIfArmed()` del arranque siguiente.
+        retireCloudSession()
 
         StorageModePersistence.write(.icloud, defaults: defaults)
         defaults.removeObject(forKey: StorageModePersistence.mirrorOffArmedKey)

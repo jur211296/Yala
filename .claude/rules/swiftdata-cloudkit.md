@@ -42,7 +42,7 @@ paths:
 
 ## Índice de reglas (77)
 
-> Este fichero son **216 KB en 77 reglas largas**. No lo leas entero: localiza la regla
+> Este fichero son **218 KB en 77 reglas largas**. No lo leas entero: localiza la regla
 > aquí y lee **solo su tramo** con `sed -n '<linea>,<linea+N>p'`.
 > Los números de línea se desplazan al editar — regenera con
 > `python3 scripts/indexar_doc.py <fichero> --apply`.
@@ -125,7 +125,7 @@ paths:
 | `L1416` | Un token que no llega NO es una sesión caducada: pregúntale al SDK si la conserva (2026-09-15). | 2.4 KB |
 | `L1418` | El canal personal separa lo mismo desde el 2026-09-16, y cada sitio decide por su cuenta | 2.9 KB |
 | `L1420` | La puerta para volver a entrar en la nube es UNA, y el aviso del cierre la nombra (2026-09-25). | 2.1 KB |
-| `L1441` | Que `signOut()` volviera no dice que la sesión se fuera: pregúntale a su valor de retorno (2026-09-26). | 1.7 KB |
+| `L1441` | Que `signOut()` volviera no dice que la sesión se fuera: pregúntale a su valor de retorno (2026-09-26). | 3.1 KB |
 
 <!-- INDICE:fin -->
 
@@ -1447,9 +1447,21 @@ paths:
   `sessionIsGone`: viva si el SDK la ve, si el llavero no se deja leer o si guarda algo que decodifica como sesión. Ni
   `currentSession` a secas (convierte un fallo de LECTURA en `nil`: fallaría abierto justo cuando el borrado tampoco entró)
   ni `hasSession` (lleva el seam `-uitest-fake-cloud-session`: bloquearía todo XCUITest que lo use);
-  (2) **un camino que no relanza y escribe algo irreversible detrás lo comprueba antes de su punto de no retorno**. Hoy solo
-  el desasociar: se para en `.blocked(.sessionNotClosed)` sin escribir nada del dominio Grupos. Los cierres de sesión lo
-  descartan, y el boot-wipe no purga el llavero de la sesión: ticket `sign-out-exits-do-not-verify-the-cloud-session-closed`;
+  (2) **un camino que escribe algo irreversible detrás lo comprueba antes de su punto de no retorno**. El desasociar se
+  para en `.blocked(.sessionNotClosed)` sin escribir nada del dominio Grupos. **Desde el 2026-09-26 también los cierres**
+  (ticket `sign-out-exits-do-not-verify-the-cloud-session-closed`): los cuatro voluntarios se paran ANTES del arm en
+  `.blocked(.signOutSessionSurvived)` —motivo propio: Ajustes silencia `.sessionNotClosed` y el genérico habla de cambios
+  sin subir—, y los dos tras borrar la cuenta no se paran (la cuenta ya no existe) sino que arman el retiro durable
+  (`CloudSessionRetirement.arm`). **Y el borrado del arranque purga el llavero entero** (`retireForSignOutWipe`, tras el
+  guard S3, verificado con `isEmpty()` porque el swap sin relanzar corre con el SDK vivo): cubre el refresco que aterriza
+  DESPUÉS de la comprobación cuando hay relanzamiento; en el swap sin relanzar, uno que aterrice después de esa relectura
+  no lo ve nadie (el mismo mecanismo que `detach-postcondition-misses-a-token-refresh-that-lands-after-it`). Se lleva los pares de SIWA y
+  Google, como «Empezar desde cero». **Un cierre nuevo que arme el borrado comprueba el `signOut()` antes del arm y se
+  añade a los `arguments:` de `SignOutChecksTheSessionBeforeArmingTests`**: el scan enumera las firmas, no las descubre.
+  Y **todo lector que enseñe el motivo** necesita su rama: la puerta de Grupos del Welcome tiene un `case .blocked:` final
+  que no es exhaustivo y le decía «faltan cambios de tus grupos por subir». El borrado solo-grupos no purga: solo lo arma
+  el cierre tras borrar la cuenta solo-grupos, que ya arma el retiro;
   (3) **el perfil capturado y el proveedor se borran SOLO con la sesión ida**: borrados antes, el registrador de Grupos del
   arranque reescribía la asociación sin nombre, también en el iCloud-KV;
-  (4) **un refresco que aterriza DESPUÉS de la lectura no lo ve nadie** (`detach-postcondition-misses-a-token-refresh-that-lands-after-it`).
+  (4) **un refresco que aterriza DESPUÉS de la lectura no lo ve el gesto** (`detach-postcondition-misses-a-token-refresh-that-lands-after-it`).
+  En los cierres lo recoge la purga del borrado del arranque; en el desasociar, que no relanza, sigue abierto.

@@ -23,6 +23,10 @@
 //
 //  ## Un arm durable, y DOS consumidores con física distinta
 //
+//  (Desde el 2026-09-26 hay un TERCER disparador, el borrado del arranque tras «Cerrar sesión»
+//  —`retireForSignOutWipe`—, y los cierres tras borrar la cuenta arman el retiro si la sesión sobrevive. Los dos
+//  consumidores son los mismos: ticket `sign-out-exits-do-not-verify-the-cloud-session-closed`.)
+//
 //  Los dos disparadores son síncronos —`wipeLocalGroupsDomain` lanza, y el arranque pre-mount no tiene
 //  dónde esperar— así que lo que se escribe es un arm durable. Lo que lo consume depende de si hay un SDK
 //  vivo al otro lado:
@@ -198,6 +202,34 @@ nonisolated enum CloudSessionRetirement {
         defaults.removeObject(forKey: armedKey)
         CloudSyncBreadcrumb.previousPersonSessionRetired()
         return true
+    }
+
+    // MARK: - El borrado de cierre de sesión
+
+    /// **El borrado de «Cerrar sesión» retira también la sesión en la nube** (ticket
+    /// `sign-out-exits-do-not-verify-the-cloud-session-closed`, 2026-09-26). Lo llama
+    /// `SwiftDataConfiguration.performSignOutWipeIfArmed`, que devuelve el teléfono a «recién instalado»: hasta ese día
+    /// borraba stores y preferencias pero no este llavero, así que una sesión que sobreviviera al `signOut()` —o que un
+    /// refresco del token repusiera DESPUÉS de comprobarlo— quedaba dentro de un teléfono vacío, y la persona siguiente
+    /// arrancaba con ella.
+    ///
+    /// **Se lleva el service entero, pares de SIWA y Google incluidos**, como «Empezar desde cero»: tras este borrado no
+    /// queda ninguna credencial que deba quedarse (decisión del encargo, 2026-09-26). Quien vuelve a entrar firma de nuevo.
+    ///
+    /// **Arma primero y verifica después**, con los dos consumidores de siempre como red: el arm es durable, así que si el
+    /// llavero no queda vacío —un `SecItemDelete` que falla, o en el swap sin relanzar un refresco del SDK vivo que repone
+    /// la sesión— lo termina el `purgeIfArmed()` pre-mount del arranque siguiente. Por eso relee (`isKeychainEmpty`)
+    /// aunque en el arranque no haría falta: este borrado también corre con el proceso vivo (`PersonalContainerSwap`).
+    ///
+    /// - Returns: `true` si el llavero quedó vacío y el arm se retiró.
+    @discardableResult
+    static func retireForSignOutWipe(
+        defaults: UserDefaults,
+        purgeKeychain: () -> Bool = { CloudAuthKeychainStorage().purgeAll() },
+        isKeychainEmpty: () -> Bool = { CloudAuthKeychainStorage().isEmpty() }
+    ) -> Bool {
+        arm(defaults: defaults)
+        return purgeIfArmed(defaults: defaults, purgeKeychain: { purgeKeychain() && isKeychainEmpty() })
     }
 
     // MARK: - El consumidor EN PROCESO: el relevo

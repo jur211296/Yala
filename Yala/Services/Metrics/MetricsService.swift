@@ -322,6 +322,12 @@ enum MetricsCanary: String {
     /// que eligió para el puente, sin PII. Ticket `detach-does-not-verify-the-cloud-session-actually-closed`, que no pudo
     /// medir si pasa: **es la medición**. Fuera de `#if DEBUG` por lo mismo que su vecino.
     case groupsDetachSessionSurvived
+    /// **Un cierre de sesión soltó la sesión en la nube y la sesión SIGUE guardada** (ticket
+    /// `sign-out-exits-do-not-verify-the-cloud-session-closed`). `detail` = `path=<private|private-with-groups|
+    /// icloud-groups-session|cloud-secure|account-delete-cloud|account-delete-groups-only>`, sin PII. En los cuatro cierres
+    /// voluntarios el gesto se para sin armar el borrado; en los dos tras borrar la cuenta sigue y arma el retiro de la
+    /// sesión para el arranque siguiente. Hermano del de arriba y, como él, **es la medición**: nadie sabe si pasa.
+    case signOutSessionSurvived
     /// **«Empezar de cero» se paró porque quedaban cambios de grupos sin subir** (ticket
     /// `fresh-start-wipe-kills-unsent-group-writes-silently`). Hasta el 2026-09-26 el borrado se los llevaba en silencio;
     /// ahora sube primero y, si no drena, no borra. `detail` = `reason=<motivo> pending=N|unknown`, sin PII. Cuenta

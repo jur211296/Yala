@@ -886,12 +886,42 @@ final class CloudSessionSignOut {
                 CloudSyncBreadcrumb.signOutPushBlocked(pending: residual)
                 return
             }
+        }
+        // **Se COMPRUEBA, y antes del arm** (ticket `sign-out-exits-do-not-verify-the-cloud-session-closed`). El borrado del
+        // arranque deja el teléfono como recién instalado; con la sesión viva dentro, la persona siguiente arrancaría en la
+        // cuenta de quien cerró y Grupos bajaría sus grupos. Parado aquí el borrado no se arma y los datos siguen: el teléfono
+        // queda como con el bloqueo S2 de arriba —canal cortado— y reintentar es el gesto entero. Lo que `signOut()` suelta
+        // antes de tocar la sesión (caché del entitlement, tipo de cuenta, Google) sí se va, igual que en el desasociar.
+        guard await CloudAuthService.shared.signOut() else {
+            blockBecauseSessionSurvived(path: Self.breadcrumbPath(kind))
+            return
+        }
+        if kind.pushesGroups {
             // CR-2: sin esto, un kill entre `signOut()` y el arm dejaría el consent de una sesión que ya no
-            // existe, y la cuenta siguiente se saltaría su pantalla. Desde C1 es local puro.
+            // existe, y la cuenta siguiente se saltaría su pantalla. Desde C1 es local puro. **Detrás de la comprobación**
+            // (2026-09-26): con la sesión superviviente el cierre se para, la persona sigue en la app con su cuenta de grupos,
+            // y un consent borrado le volvería a pedir la pantalla y registraría otro en el servidor.
             GroupsConsentState.clear()
         }
-        await CloudAuthService.shared.signOut()
         await armAfterCredentials(context: context, kind: kind, export: export)
+    }
+
+    /// El cierre soltó la sesión y la sesión SIGUE guardada: se para sin armar el borrado. Ver
+    /// `CloudSignOutFlowLogic.BlockReason.signOutSessionSurvived`.
+    private func blockBecauseSessionSurvived(path: String) {
+        phase = .blocked(pendingCount: 0, reason: .signOutSessionSurvived)
+        // Fuera de `#if DEBUG`: nadie ha medido si esto pasa en la flota, y este es el sitio donde se ve.
+        MetricsService.canary(.signOutSessionSurvived, detail: "path=\(path)")
+    }
+
+    /// El cierre tras BORRAR LA CUENTA no se para si la sesión sobrevive: la cuenta ya no existe en el servidor y
+    /// bloquear dejaría a la persona sin salida tras un paso irreversible. Arma el retiro durable de la sesión
+    /// (`CloudSessionRetirement`), que el arranque siguiente —obligatorio: la fase es `.awaitingRelaunch`— purga
+    /// pre-mount, antes de que exista el SDK que podría reponerla.
+    private static func retireIfSessionSurvived(_ gone: Bool, path: String) {
+        guard !gone else { return }
+        CloudSessionRetirement.arm(defaults: .standard)
+        MetricsService.canary(.signOutSessionSurvived, detail: "path=\(path)")
     }
 
     /// Lo que queda con las credenciales ya sueltas: el último recuento y el arm.
@@ -1126,7 +1156,13 @@ final class CloudSessionSignOut {
             return
         }
 
-        await CloudAuthService.shared.signOut()
+        // 4b) La sesión se suelta y se COMPRUEBA antes del arm, por lo mismo que en `finalizeSessionExit`: sin esto el
+        // teléfono quedaba recién instalado con la sesión de quien cerró dentro. Parado aquí, el estado es el del bloqueo
+        // de arriba —motores cortados, borrado sin armar— y reintentar es el gesto entero.
+        guard await CloudAuthService.shared.signOut() else {
+            blockBecauseSessionSurvived(path: "cloud-secure")
+            return
+        }
 
         // 5) CR-4: marker ANTES del arm (el arm es el DISPARADOR, va ÚLTIMO). Kill entre marker y arm =
         // no-op re-armable; kill entre arm y marker habría dejado un wipe personal SIN grupos.
@@ -1674,7 +1710,8 @@ final class CloudSessionSignOut {
         GroupsSyncClient.shared.teardownForSignOut()
         await PushTokenSignOutSeam.clearForSignOut()  // G8-2: desregistro best-effort del push token
 
-        await CloudAuthService.shared.signOut()
+        // No se para si la sesión sobrevive (ver `retireIfSessionSurvived`); el retiro va ANTES del arm del borrado.
+        Self.retireIfSessionSurvived(await CloudAuthService.shared.signOut(), path: "account-delete-cloud")
 
         // Marker ANTES del arm (kill-safe), con la capacidad COMPILADA — mismo getter y mismo racional
         // que su gemelo de `performCloudSecureSignOut`, y aquí con un agravante: la sesión ya está muerta
@@ -1716,7 +1753,9 @@ final class CloudSessionSignOut {
         Self.purgeGroupsSyncState(context: context)
         GroupsConsentState.clear()
 
-        await CloudAuthService.shared.signOut()
+        // No se para si la sesión sobrevive (ver `retireIfSessionSurvived`). Aquí es lo ÚNICO que la retira: el borrado
+        // solo-grupos del arranque no toca el llavero, porque el store personal y su sesión privada siguen.
+        Self.retireIfSessionSurvived(await CloudAuthService.shared.signOut(), path: "account-delete-groups-only")
 
         StorageModePersistence.armGroupsOnlyWipe()
         CloudSyncBreadcrumb.signOutGroupsOnlyWipeArmed()

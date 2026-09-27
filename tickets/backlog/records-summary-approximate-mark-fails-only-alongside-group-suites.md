@@ -69,3 +69,8 @@ en el resumen. Dos sospechosos concretos, los dos ya conocidos en `.claude/rules
 - **2026-09-26**, gate de `detach-does-not-verify-the-cloud-session-actually-closed`: rojo en una corrida de la suite completa
   (8003 tests en 759 suites, los mismos `#expect` de `:1115` y `:1118`) y verde en la siguiente sin tocar nada suyo. El cambio
   de esa sesión no toca resúmenes.
+
+## Visto otra vez (2026-09-26, gate de `sign-out-exits-do-not-verify-the-cloud-session-closed`)
+
+Mismo test, mismas dos líneas (`:1115`, `:1118`). Suite completa de `YalaTests` tres veces sobre el mismo árbol: **1 roja de 3**
+(8166 tests, 1 fallido con 2 issues), y aislado pasa. El cambio de esa rama no toca Registros ni montos aproximados.
