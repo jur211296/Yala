@@ -200,14 +200,42 @@ struct PrefsOutboxTests {
 
     // MARK: - removeEntries (purga tras push)
 
+    /// Control del de abajo: la entry que no cambió desde la lectura del push se purga, y la que no se subió se queda.
     @Test func removeEntries_purgesGivenKeys() throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let outbox = PrefsOutbox(directoryURL: dir)
         try outbox.enqueue(key: "a", userID: "u1", value: .string("1"))
         try outbox.enqueue(key: "b", userID: "u1", value: .string("2"))
+        let read = try outbox.syncSnapshot(forUserID: "u1").entries
+        let pushedA = try #require(read.first { $0.key == "a" }).entry.hlc
 
-        try outbox.removeEntries(keys: ["a"])
+        try outbox.removeEntries(pushed: ["a": pushedA])
         #expect(outbox.entries(forUserID: "u1").map(\.key) == ["b"])
+    }
+
+    /// El cambio hecho DURANTE el push no se purga (ticket `prefs-push-purge-drops-a-change-made-during-the-upload`): el
+    /// `enqueue` cae entre la lectura del ciclo y la purga, reencola la misma key con un HLC nuevo, y la purga del HLC
+    /// que se subió la deja en paz. Antes se purgaba por key y ese segundo valor no subía nunca.
+    @Test func removeEntries_keepsAnEntryReenqueuedAfterThePushRead() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let outbox = PrefsOutbox(directoryURL: dir)
+        let t0 = Date(timeIntervalSince1970: 1_700_000_000)
+        try outbox.enqueue(key: "userName", userID: "u1", value: .string("Uno"), now: t0)
+        let read = try outbox.syncSnapshot(forUserID: "u1").entries
+        let pushed = try #require(read.first { $0.key == "userName" }).entry
+
+        try outbox.enqueue(key: "userName", userID: "u1", value: .string("Dos"), now: t0.addingTimeInterval(1))
+        try outbox.removeEntries(pushed: ["userName": pushed.hlc])
+
+        let left = PrefsOutbox(directoryURL: dir).entries(forUserID: "u1")
+        #expect(left.map(\.key) == ["userName"])
+        #expect(left.first?.entry.value == "Dos")
+        #expect(left.first?.entry.hlc != pushed.hlc)
+
+        // Igualdad exacta, no «≤»: un HLC subido MAYOR que el guardado (el guardado sería más viejo, p.ej. un reloj que se
+        // reinició) tampoco purga — no es la escritura que viajó.
+        try outbox.removeEntries(pushed: ["userName": "9999-12-31T23:59:59.999Z-ffff-ffffffffffffffff"])
+        #expect(PrefsOutbox(directoryURL: dir).entries(forUserID: "u1").first?.entry.value == "Dos")
     }
 
     // MARK: - Cursor del pull
@@ -309,7 +337,7 @@ struct PrefsOutboxTests {
         #expect(snapshot.entries.isEmpty)
         #expect(snapshot.pullCursor == 0)
         do {
-            try outbox.removeEntries(keys: ["userName"])
+            try outbox.removeEntries(pushed: ["userName": "cualquiera"])
             Issue.record("removeEntries sobre un archivo corrupto no lanzó")
         } catch {
             if case PrefsOutboxError.corrupt = error {} else { Issue.record("error inesperado: \(error)") }

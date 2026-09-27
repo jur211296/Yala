@@ -98,7 +98,7 @@ struct CloudSyncRuntimeTests {
         coordinator: SyncQuiescenceCoordinator? = nil,
         session: StubCloudSession? = nil,
         onRemoteChangesApplied: (() -> Void)? = nil,
-        prefsSession: StubSession? = nil,
+        prefsSession: (any SyncHTTPSession)? = nil,
         prefsOutbox: PrefsOutbox? = nil,
         clientToken: String? = "jwt",
         clientSessionKept: Bool = false
@@ -412,6 +412,127 @@ struct CloudSyncRuntimeTests {
 
         #expect(prefsSession.callCount == 1)  // sin entries no hay push; el pull sí corre, desde 0
         #expect(prefsOutbox.pullCursor == 5)  // y `setPullCursor` reemplaza el archivo corrupto por un estado nuevo
+    }
+
+    /// Un cambio hecho MIENTRAS se sube el anterior no se purga con él (ticket
+    /// `prefs-push-purge-drops-a-change-made-during-the-upload`). El stub de red encola la misma key DENTRO del push —el
+    /// `await` que suelta el main actor—, así que el `enqueue` cae entre la lectura del ciclo y la purga, como en el
+    /// teléfono. El segundo valor tiene que seguir en la cola y subir en el ciclo siguiente.
+    @Test func syncCycle_prefsStep_changeDuringPush_survivesThePurgeAndUploadsNextCycle() async throws {
+        let prevFlag = CloudSyncFlags.syncRuntimeEnabled
+        let prevMode = CloudSyncFlags.storageMode
+        CloudSyncFlags.syncRuntimeEnabled = true
+        CloudSyncFlags.storageMode = .cloud
+        defer {
+            CloudSyncFlags.syncRuntimeEnabled = prevFlag
+            CloudSyncFlags.storageMode = prevMode
+        }
+
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let prefsDir = freshDir(); defer { cleanup(prefsDir) }
+        let prefsOutbox = PrefsOutbox(directoryURL: prefsDir)
+        let t0 = Date(timeIntervalSince1970: 1_700_000_000)
+        try prefsOutbox.enqueue(key: "userName", userID: "u1", value: .string("Uno"), now: t0)
+        let firstHLC = try #require(prefsOutbox.entries(forUserID: "u1").first).entry.hlc
+
+        let prefsSession = RecordingPrefsSession(
+            body: Data(#"{"results":[{"key":"userName","status":"applied"}],"prefs":[],"max_server_seq":5}"#.utf8))
+        var enqueueError: (any Error)?
+        prefsSession.onFirstPush = {
+            do {
+                try prefsOutbox.enqueue(key: "userName", userID: "u1", value: .string("Dos"), now: t0.addingTimeInterval(1))
+            } catch {
+                enqueueError = error
+            }
+        }
+        let runtime = makeRuntime(session: StubCloudSession(userID: "u1", claim: .routeReturningUser),
+                                  prefsSession: prefsSession, prefsOutbox: prefsOutbox)
+        _ = await runtime.syncCycle(context: context)
+
+        #expect(enqueueError == nil)
+        #expect(prefsSession.pushBodies.count == 1)
+        #expect(prefsSession.pushBodies.first?.contains(firstHLC) == true)  // subió el primero
+        let left = prefsOutbox.entries(forUserID: "u1")
+        #expect(left.map(\.key) == ["userName"])  // y el segundo sigue en la cola
+        #expect(left.first?.entry.value == "Dos")
+        let secondHLC = try #require(left.first).entry.hlc
+        #expect(secondHLC != firstHLC)
+
+        // Ciclo siguiente: sube el segundo y ahora sí se purga.
+        _ = await runtime.syncCycle(context: context)
+        #expect(prefsSession.pushBodies.count == 2)
+        #expect(prefsSession.pushBodies.last?.contains(secondHLC) == true)
+        #expect(prefsSession.pushBodies.last?.contains("Dos") == true)
+        #expect(prefsOutbox.entries(forUserID: "u1").isEmpty)
+    }
+
+    /// Control del de arriba en el mismo montaje: sin cambio durante el push, la entry subida se purga en ese ciclo.
+    @Test func syncCycle_prefsStep_noChangeDuringPush_purgesTheUploadedEntry() async throws {
+        let prevFlag = CloudSyncFlags.syncRuntimeEnabled
+        let prevMode = CloudSyncFlags.storageMode
+        CloudSyncFlags.syncRuntimeEnabled = true
+        CloudSyncFlags.storageMode = .cloud
+        defer {
+            CloudSyncFlags.syncRuntimeEnabled = prevFlag
+            CloudSyncFlags.storageMode = prevMode
+        }
+
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let prefsDir = freshDir(); defer { cleanup(prefsDir) }
+        let prefsOutbox = PrefsOutbox(directoryURL: prefsDir)
+        try prefsOutbox.enqueue(key: "userName", userID: "u1", value: .string("Uno"),
+                                now: Date(timeIntervalSince1970: 1_700_000_000))
+
+        let prefsSession = RecordingPrefsSession(
+            body: Data(#"{"results":[{"key":"userName","status":"applied"}],"prefs":[],"max_server_seq":5}"#.utf8))
+        let runtime = makeRuntime(session: StubCloudSession(userID: "u1", claim: .routeReturningUser),
+                                  prefsSession: prefsSession, prefsOutbox: prefsOutbox)
+        _ = await runtime.syncCycle(context: context)
+
+        #expect(prefsSession.pushBodies.count == 1)
+        #expect(prefsOutbox.entries(forUserID: "u1").isEmpty)
+    }
+
+    /// La purga solo toma los resultados `applied`/`noop` SIN `reason`, y solo de keys que viajaron: un `reason`
+    /// (`upstream_*`, fallo del servidor) deja la entry para reintentar, y un resultado de una key que no se envió no purga
+    /// una pendiente que no subió. El diff de `prefs-push-purge-drops-a-change-made-during-the-upload` reescribe ese filtro.
+    @Test func syncCycle_prefsStep_purgesOnlyCleanResultsOfSentKeys() async throws {
+        let prevFlag = CloudSyncFlags.syncRuntimeEnabled
+        let prevMode = CloudSyncFlags.storageMode
+        CloudSyncFlags.syncRuntimeEnabled = true
+        CloudSyncFlags.storageMode = .cloud
+        defer {
+            CloudSyncFlags.syncRuntimeEnabled = prevFlag
+            CloudSyncFlags.storageMode = prevMode
+        }
+
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let prefsDir = freshDir(); defer { cleanup(prefsDir) }
+        let prefsOutbox = PrefsOutbox(directoryURL: prefsDir)
+        let t0 = Date(timeIntervalSince1970: 1_700_000_000)
+        try prefsOutbox.enqueue(key: "userName", userID: "u1", value: .string("Uno"), now: t0)
+        try prefsOutbox.enqueue(key: "colorfulIcons", userID: "u1", value: .bool(true), now: t0.addingTimeInterval(1))
+        try prefsOutbox.enqueue(key: "decimalPlaces", userID: "u1", value: .int(0), now: t0.addingTimeInterval(2))
+
+        // `userName` con reason; `decimalPlaces` limpio; `colorfulIcons` entra sin enviarse (se encola de otro dueño ANTES
+        // del ciclo, así que no viaja) y el servidor lo contesta igual; `colorfulIcons` de u1 sí viaja y no tiene resultado.
+        try prefsOutbox.enqueue(key: "defaultPeriod", userID: "otro", value: .string("thisMonth"), now: t0.addingTimeInterval(3))
+        let prefsSession = RecordingPrefsSession(body: Data(#"""
+            {"results":[{"key":"userName","status":"noop","reason":"upstream_500"},
+            {"key":"decimalPlaces","status":"applied"},
+            {"key":"defaultPeriod","status":"applied"}],"prefs":[],"max_server_seq":5}
+            """#.utf8))
+        let runtime = makeRuntime(session: StubCloudSession(userID: "u1", claim: .routeReturningUser),
+                                  prefsSession: prefsSession, prefsOutbox: prefsOutbox)
+        _ = await runtime.syncCycle(context: context)
+
+        #expect(prefsSession.pushBodies.count == 1)
+        #expect(prefsSession.pushBodies.first?.contains("defaultPeriod") == false)  // la premisa: la de otro no viaja
+        #expect(Set(prefsOutbox.entries(forUserID: "u1").map(\.key)) == ["userName", "colorfulIcons"])
+        #expect(prefsOutbox.entries(forUserID: "otro").map(\.key) == ["defaultPeriod"])
     }
 
     // MARK: - Gate puro de claim (AccountClaimDecision)
@@ -1975,6 +2096,24 @@ private final class StubSession: SyncHTTPSession, @unchecked Sendable {
     func data(for request: URLRequest) async throws -> (Data, URLResponse) {
         callCount += 1
         let response = HTTPURLResponse(url: request.url!, statusCode: status, httpVersion: nil, headerFields: nil)!
+        return (body, response)
+    }
+}
+
+/// Stub de las llamadas de prefs que guarda el cuerpo de cada push y ejecuta `onFirstPush` DENTRO del primero, antes de
+/// responder: es la ventana del `await prefsClient.push`, donde el main actor queda libre para un `set()`. Bajo
+/// `NonisolatedNonsendingByDefault` corre en el actor del caller (MainActor en estos tests), como `GatedSession`.
+private final class RecordingPrefsSession: SyncHTTPSession, @unchecked Sendable {
+    private let body: Data
+    var onFirstPush: (() -> Void)?
+    private(set) var pushBodies: [String] = []
+    init(body: Data) { self.body = body }
+    func data(for request: URLRequest) async throws -> (Data, URLResponse) {
+        if request.url?.path.hasSuffix("prefs/push") == true {
+            pushBodies.append(String(decoding: request.httpBody ?? Data(), as: UTF8.self))
+            if pushBodies.count == 1, let hook = onFirstPush { hook() }
+        }
+        let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
         return (body, response)
     }
 }

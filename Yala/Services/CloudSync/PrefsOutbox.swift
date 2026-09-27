@@ -231,11 +231,18 @@ nonisolated struct PrefsOutbox {
             .map { (key: $0.key, entry: $0.value) }
     }
 
-    /// Purga las keys dadas del archivo (tras un push `applied`/`noop`). Idempotente.
-    func removeEntries(keys: [String]) throws {
-        guard !keys.isEmpty else { return }
+    /// Purga lo que se subió (tras un push `applied`/`noop`): `pushed` es `key → hlc` de las entries que viajaron en el
+    /// batch. **Solo retira una entry si su `hlc` sigue siendo el que se subió** (ticket
+    /// `prefs-push-purge-drops-a-change-made-during-the-upload`): el `await` del push suelta el main actor, y un `set()`
+    /// en esa ventana reencola la misma key con un HLC nuevo. Purgar por key se llevaba ese cambio, que no subía nunca.
+    /// Igualdad exacta, no «≤»: cada `enqueue` emite un HLC estrictamente mayor, así que el mismo HLC es la misma
+    /// escritura, y uno distinto —más nuevo, o de otra identidad— se queda para el ciclo siguiente. Idempotente.
+    func removeEntries(pushed: [String: String]) throws {
+        guard !pushed.isEmpty else { return }
         guard var state = try loadState() else { return }
-        for k in keys { state.entries.removeValue(forKey: k) }
+        for (key, hlc) in pushed where state.entries[key]?.hlc == hlc {
+            state.entries.removeValue(forKey: key)
+        }
         try persist(state)
     }
 
