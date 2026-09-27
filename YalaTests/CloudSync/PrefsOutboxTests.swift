@@ -240,4 +240,96 @@ struct PrefsOutboxTests {
         #expect(outbox.entries(forUserID: "u2").isEmpty)
         #expect(outbox.pullCursor == 0)  // archivo borrado → cursor vuelve a 0
     }
+
+    // MARK: - Lectura que falla ≠ corrupción (ticket prefs-outbox-reads-an-unreadable-file-as-corrupt-and-overwrites-it)
+
+    private func fileURL(_ dir: URL) -> URL { dir.appendingPathComponent(PrefsOutbox.fileName) }
+
+    /// Deja el archivo sin permiso de lectura: `Data(contentsOf:)` falla de verdad, y la escritura atómica —que
+    /// renombra en el DIRECTORIO— sigue pudiendo. Es el montaje en el que el `catch` único de antes sobrescribía.
+    private func makeUnreadable(_ dir: URL) throws {
+        try FileManager.default.setAttributes([.posixPermissions: 0o000], ofItemAtPath: fileURL(dir).path)
+        // La premisa del montaje, medida y no supuesta: si el host lee sin permisos, el test no prueba nada.
+        #expect(throws: (any Error).self) { _ = try Data(contentsOf: fileURL(dir)) }
+    }
+    private func makeReadable(_ dir: URL) throws {
+        try FileManager.default.setAttributes([.posixPermissions: 0o644], ofItemAtPath: fileURL(dir).path)
+    }
+    private func isReadFailed(_ error: any Error) -> Bool {
+        if case PrefsOutboxError.readFailed = error { return true }
+        return false
+    }
+
+    /// El fallo de LECTURA no reemplaza el archivo: `enqueue` y `setPullCursor` lanzan `.readFailed` sin escribir, y
+    /// cuando el archivo vuelve a leerse las pendientes, el cursor, el `nodeID` y el reloj siguen byte a byte.
+    @Test func unreadableFile_neitherEnqueueNorCursorWritesAFreshStateOverIt() throws {
+        let dir = freshDir(); defer { try? makeReadable(dir); cleanup(dir) }
+        let outbox = PrefsOutbox(directoryURL: dir)
+        try outbox.enqueue(key: "userName", userID: "u1", value: .string("Ana"), now: Date(timeIntervalSince1970: 1_000))
+        try outbox.enqueue(key: "colorfulIcons", userID: "u1", value: .bool(true), now: Date(timeIntervalSince1970: 1_001))
+        try outbox.setPullCursor(42)
+        let before = try Data(contentsOf: fileURL(dir))
+
+        try makeUnreadable(dir)
+        do {
+            try outbox.enqueue(key: "decimalPlaces", userID: "u1", value: .int(0), now: Date(timeIntervalSince1970: 1_002))
+            Issue.record("enqueue sobre un archivo ilegible no lanzó")
+        } catch { #expect(isReadFailed(error)) }
+        do {
+            try outbox.setPullCursor(99)
+            Issue.record("setPullCursor sobre un archivo ilegible no lanzó")
+        } catch { #expect(isReadFailed(error)) }
+        do {
+            _ = try outbox.syncSnapshot(forUserID: "u1")
+            Issue.record("syncSnapshot sobre un archivo ilegible no lanzó")
+        } catch { #expect(isReadFailed(error)) }
+
+        try makeReadable(dir)
+        #expect(try Data(contentsOf: fileURL(dir)) == before)  // nodeID, reloj, cursor y pendientes: intactos
+        let snapshot = try outbox.syncSnapshot(forUserID: "u1")
+        #expect(snapshot.entries.map(\.key) == ["userName", "colorfulIcons"])
+        #expect(snapshot.pullCursor == 42)
+
+        // Control positivo: con el archivo legible, el mismo `enqueue` sí encola.
+        try outbox.enqueue(key: "decimalPlaces", userID: "u1", value: .int(0), now: Date(timeIntervalSince1970: 1_002))
+        #expect(outbox.entries(forUserID: "u1").count == 3)
+    }
+
+    /// La CORRUPCIÓN conserva el trato de siempre: el `enqueue` empieza un estado nuevo (lo viejo no se puede leer) y
+    /// el cursor vuelve a 0; `syncSnapshot` la lee vacía sin lanzar y `removeEntries` lanza `.corrupt` sin escribir.
+    @Test func corruptFile_keepsTheFreshStateTreatment() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let outbox = PrefsOutbox(directoryURL: dir)
+        try outbox.enqueue(key: "userName", userID: "u1", value: .string("Ana"))
+        try outbox.setPullCursor(42)
+        let garbage = Data("{ esto no es el outbox".utf8)
+        try garbage.write(to: fileURL(dir))
+
+        let snapshot = try outbox.syncSnapshot(forUserID: "u1")
+        #expect(snapshot.entries.isEmpty)
+        #expect(snapshot.pullCursor == 0)
+        do {
+            try outbox.removeEntries(keys: ["userName"])
+            Issue.record("removeEntries sobre un archivo corrupto no lanzó")
+        } catch {
+            if case PrefsOutboxError.corrupt = error {} else { Issue.record("error inesperado: \(error)") }
+        }
+        #expect(try Data(contentsOf: fileURL(dir)) == garbage)  // ni `syncSnapshot` ni `removeEntries` escriben
+
+        try outbox.enqueue(key: "colorfulIcons", userID: "u1", value: .bool(true))
+        #expect(outbox.entries(forUserID: "u1").map(\.key) == ["colorfulIcons"])
+        #expect(outbox.pullCursor == 0)
+    }
+
+    /// Lo mismo por `setPullCursor`, el otro escritor que parte de `loadOrCreateState`: corrupto → estado nuevo.
+    @Test func corruptFile_setPullCursorStartsAFreshState() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let outbox = PrefsOutbox(directoryURL: dir)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        try Data("[]".utf8).write(to: fileURL(dir))
+
+        try outbox.setPullCursor(7)
+        #expect(outbox.pullCursor == 7)
+        #expect(outbox.entries(forUserID: "u1").isEmpty)
+    }
 }

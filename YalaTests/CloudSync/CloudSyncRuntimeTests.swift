@@ -338,6 +338,82 @@ struct CloudSyncRuntimeTests {
         #expect(prefsOutbox.entries(forUserID: "u1").isEmpty)     // applied → purgada del outbox
     }
 
+    /// El outbox de prefs que no se deja LEER aplaza el paso entero: ni push ni pull (un pull desde el cursor 0 revertía
+    /// en pantalla los cambios pendientes) y nada escrito encima. Ticket
+    /// `prefs-outbox-reads-an-unreadable-file-as-corrupt-and-overwrites-it`; el control es `…_runs_inCloudMode`, de arriba.
+    @Test func syncCycle_prefsStep_unreadableOutbox_neitherPushesNorPulls() async throws {
+        let prevFlag = CloudSyncFlags.syncRuntimeEnabled
+        let prevMode = CloudSyncFlags.storageMode
+        CloudSyncFlags.syncRuntimeEnabled = true
+        CloudSyncFlags.storageMode = .cloud
+        defer {
+            CloudSyncFlags.syncRuntimeEnabled = prevFlag
+            CloudSyncFlags.storageMode = prevMode
+        }
+
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let prefsDir = freshDir()
+        let prefsFile = prefsDir.appendingPathComponent(PrefsOutbox.fileName)
+        defer {
+            try? FileManager.default.setAttributes([.posixPermissions: 0o644], ofItemAtPath: prefsFile.path)
+            cleanup(prefsDir)
+        }
+        let prefsOutbox = PrefsOutbox(directoryURL: prefsDir)
+        try prefsOutbox.enqueue(key: "userName", userID: "u1", value: .string("Nube"),
+                                now: Date(timeIntervalSince1970: 1_700_000_000))
+        let before = try Data(contentsOf: prefsFile)
+        try FileManager.default.setAttributes([.posixPermissions: 0o000], ofItemAtPath: prefsFile.path)
+        #expect(throws: (any Error).self) { _ = try Data(contentsOf: prefsFile) }  // la premisa del montaje
+
+        // Un cuerpo que vale para las dos llamadas: sin él, un pull que se colara no llegaría a `setPullCursor`
+        // (el escritor del bug) y las dos aserciones de los bytes no podrían fallar.
+        let prefsSession = StubSession(
+            status: 200,
+            body: Data(#"{"results":[{"key":"userName","status":"applied"}],"prefs":[],"max_server_seq":5}"#.utf8))
+        let runtime = makeRuntime(session: StubCloudSession(userID: "u1", claim: .routeReturningUser),
+                                  prefsSession: prefsSession, prefsOutbox: prefsOutbox)
+        _ = await runtime.syncCycle(context: context)
+
+        #expect(prefsSession.callCount == 0)  // ni push ni pull
+        try FileManager.default.setAttributes([.posixPermissions: 0o644], ofItemAtPath: prefsFile.path)
+        #expect(try Data(contentsOf: prefsFile) == before)  // nada escrito encima
+        #expect(prefsOutbox.entries(forUserID: "u1").count == 1)
+
+        // Control en el MISMO montaje: con el archivo legible, el paso sí llega, sube la pendiente y avanza el cursor.
+        _ = await runtime.syncCycle(context: context)
+        #expect(prefsSession.callCount >= 2)
+        #expect(prefsOutbox.entries(forUserID: "u1").isEmpty)
+        #expect(prefsOutbox.pullCursor == 5)
+    }
+
+    /// La CORRUPCIÓN no aplaza el paso: se lee vacía y el ciclo sigue (pull desde 0), el trato de siempre.
+    @Test func syncCycle_prefsStep_corruptOutbox_stillPulls() async throws {
+        let prevFlag = CloudSyncFlags.syncRuntimeEnabled
+        let prevMode = CloudSyncFlags.storageMode
+        CloudSyncFlags.syncRuntimeEnabled = true
+        CloudSyncFlags.storageMode = .cloud
+        defer {
+            CloudSyncFlags.syncRuntimeEnabled = prevFlag
+            CloudSyncFlags.storageMode = prevMode
+        }
+
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let prefsDir = freshDir(); defer { cleanup(prefsDir) }
+        try FileManager.default.createDirectory(at: prefsDir, withIntermediateDirectories: true)
+        try Data("{ esto no es el outbox".utf8).write(to: prefsDir.appendingPathComponent(PrefsOutbox.fileName))
+        let prefsOutbox = PrefsOutbox(directoryURL: prefsDir)
+
+        let prefsSession = StubSession(status: 200, body: Data(#"{"prefs":[],"max_server_seq":5}"#.utf8))
+        let runtime = makeRuntime(session: StubCloudSession(userID: "u1", claim: .routeReturningUser),
+                                  prefsSession: prefsSession, prefsOutbox: prefsOutbox)
+        _ = await runtime.syncCycle(context: context)
+
+        #expect(prefsSession.callCount == 1)  // sin entries no hay push; el pull sí corre, desde 0
+        #expect(prefsOutbox.pullCursor == 5)  // y `setPullCursor` reemplaza el archivo corrupto por un estado nuevo
+    }
+
     // MARK: - Gate puro de claim (AccountClaimDecision)
 
     @Test func shouldStartSync_proceedLikeActions() {

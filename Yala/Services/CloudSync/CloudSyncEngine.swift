@@ -1021,6 +1021,15 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSyncMigration identityCollisionHealed count=\(count, privacy: .public) — filas vivas con syncID compartido re-acuñadas")
     }
 
+    /// El archivo del outbox de prefs existe y no se deja LEER (`PrefsOutboxError.readFailed`): no es corrupción, así que
+    /// nadie escribe encima y el paso se reintenta más tarde. `step` dice quién lo vio: `sync-cycle` (el ciclo de prefs
+    /// no hace push ni pull) o `enqueue` (el cambio de ese instante no se encola). No lo emiten los
+    /// `removeEntries`/`setPullCursor` del final del ciclo ni el drenaje iKV→outbox (solo cuenta `failures`), y ningún
+    /// test lo fija (el `Logger` no tiene sink). Sin PII.
+    static func prefsOutboxUnreadable(step: String) {
+        logger.notice("CloudSyncPrefs outboxUnreadable step=\(step, privacy: .public) — no se escribe encima")
+    }
+
     /// w8 (DIFERIDOS #30 / §g.4 S8): el drenaje único iKV→outbox del cutover corrió en el device LÍDER.
     /// `failures` > 0 = I/O del outbox falló para algunas keys → el sentinel NO se estampó y el próximo
     /// boot reintenta (LWW absorbe el re-enqueue). Sin PII (solo conteos).
