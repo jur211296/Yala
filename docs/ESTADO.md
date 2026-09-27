@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-27 (Lima)
 
-**Rama** `2.1` — Merge #282: **tras «Restaurar → Empezar desde cero» de la activación, las liquidaciones de grupo vuelven a lo personal.**
+**Rama** `2.1` — Merge #283: **tras «Vaciar datos», los gastos y liquidaciones de grupo vuelven a lo personal.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,32 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#282 · tras «Restaurar → Empezar desde cero» de la activación, las liquidaciones de grupo vuelven a lo personal)
+## Esta sesión (#283 · tras «Vaciar datos», los gastos y liquidaciones de grupo vuelven a lo personal)
+
+Quien vaciaba sus datos en Ajustes conservaba sus grupos y sus saldos, pero los gastos y las liquidaciones de grupo
+desaparecían de Registros, el Panel y el Inbox. Solo volvía lo que alguien editara después. Ahora:
+
+- **Vuelven en el siguiente arranque de la app**, una vez cada uno, y el Inbox pregunta de qué cuenta salió cada gasto
+  pagado y a qué cuenta llegó cada pago recibido. En una sesión solo-grupos esperan a que la persona active Yala completo.
+- **Los gastos que se conservaron al soltar la cuenta de grupos también vuelven.** El borrado se lleva esos movimientos,
+  y ahora retira también el registro que los daba por puestos. Vale igual para los dos borrados de iCloud de #282.
+- **Los grupos borrados no dejan rastro.** Hallazgo de la review, arreglado dentro y válido también para #282: la
+  liquidación de un grupo borrado volvía sin el gasto que la compensaba, y la cuenta de grupos mostraba una deuda que no
+  existe.
+
+**Verificado:** gate con 598 unit en 71 suites y 4 XCUITest de Ajustes, con el centinela solo; 9/9 mutantes; review
+adversarial de tres lentes, seis arreglos dentro. CI verde. Ticket a `qa`.
+
+### Lo que espera de Jürgen
+
+- **Device-QA opcional**: el guion está en `tickets/qa/wipe-data-keeps-groups-but-drops-their-bridged-rows.md`. Hace falta
+  una sesión privada con un grupo que tenga un gasto pagado por ti y una liquidación confirmada.
+- Nuevos en backlog. Dos medium: `wipe-data-group-rows-return-only-on-the-next-cold-launch` (en la misma sesión no
+  vuelven hasta relanzar) y `late-remote-wipe-signal-undoes-the-rows-the-origin-reconverged` (un segundo dispositivo que
+  procesa tarde el vaciado deshace la reposición). Dos low: `dormant-convergence-request-from-a-groups-only-wipe` y
+  `a-wipe-that-throws-between-drafts-and-transactions-loses-settlement-drafts`.
+
+## Sesión anterior (#282 · tras «Restaurar → Empezar desde cero» de la activación, las liquidaciones de grupo vuelven a lo personal)
 
 Quien activaba Yala completo, entraba en Restaurar y elegía **«Empezar desde cero»** conservaba sus grupos, pero sus
 liquidaciones de grupo desaparecían de lo personal: la cuenta de grupos contaba lo prestado sin descontar lo ya cobrado
@@ -40,11 +65,10 @@ solo; 10/10 mutantes; review adversarial de tres lentes (tres arreglos dentro). 
 
 - **Device-QA opcional**: guion en `tickets/qa/activation-start-fresh-drops-group-settlement-legs.md` (hace falta un Apple
   ID con datos viejos de Yala en iCloud y un grupo con al menos una liquidación confirmada).
-- Nuevo en backlog, medium: `wipe-data-keeps-groups-but-drops-their-bridged-rows` («Vaciar datos» de Ajustes conserva los
-  grupos pero se lleva sus gastos y liquidaciones de lo personal; pide decidir qué promete esa pantalla). Y low:
-  `groups-convergence-retries-every-launch-without-a-ceiling`.
+- Nuevo en backlog, low: `groups-convergence-retries-every-launch-without-a-ceiling`. (El medium
+  `wipe-data-keeps-groups-but-drops-their-bridged-rows` lo cerró #283.)
 
-## Sesión anterior (#281 · el aviso tardío de quien empezó en el Welcome privado ya no se lleva los grupos a los que se unió después)
+## Antes (#281 · el aviso tardío de quien empezó en el Welcome privado ya no se lleva los grupos a los que se unió después)
 
 Quien elegía **«Es mi primera vez → privado» sin iCloud o sin red** y después se unía a un grupo, días más tarde, con iCloud
 de vuelta, veía «Encontramos datos tuyos en iCloud». Su «Empezar de cero» se llevaba también sus grupos, sus saldos y su
