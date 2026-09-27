@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-27 (Lima)
 
-**Rama** `2.1` — Merge #280: **el aviso tardío de quien activó Yala completo sin mirar iCloud ya no se lleva sus grupos.**
+**Rama** `2.1` — Merge #281: **el aviso tardío de quien empezó en el Welcome privado ya no se lleva los grupos a los que se unió después.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,33 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#280 · el aviso tardío de quien activó Yala completo sin mirar iCloud ya no se lleva sus grupos)
+## Esta sesión (#281 · el aviso tardío de quien empezó en el Welcome privado ya no se lleva los grupos a los que se unió después)
+
+Quien elegía **«Es mi primera vez → privado» sin iCloud o sin red** y después se unía a un grupo, días más tarde, con iCloud
+de vuelta, veía «Encontramos datos tuyos en iCloud». Su «Empezar de cero» se llevaba también sus grupos, sus saldos y su
+sesión de Grupos, aunque el aviso solo nombra registros, cuentas y presupuestos. Ahora:
+
+- **«Empezar de cero» del aviso borra lo que dice**, para todo el mundo: registros, cuentas y presupuestos. Los grupos se
+  quedan, vuelve al onboarding personal con su nombre y su divisa, y los gastos de grupo reaparecen en el arranque siguiente.
+- **«Terminar de borrar» y la reanudación tras un corte terminan el borrado que se empezó, con su alcance.** El borrado lo
+  apunta al entrar. Así, el borrado a medias de la puerta del Welcome (con datos de otra persona) se sigue llevando todo.
+- **Hallazgo de la review, arreglado**: salir de la puerta del Welcome «sin poder mirar iCloud» tras un borrado a medias,
+  con el teléfono ya vacío, dejaba el «a medias» puesto; tras el onboarding, su «Terminar de borrar» purgaba los grupos
+  nuevos. Ahora esa salida lo retira.
+
+**Verificado:** gate con 8293 unit en 794 suites y 10 XCUITest (onboarding, Welcome), centinela solo; 13/13 mutantes;
+review adversarial de tres lentes (tres arreglos dentro). CI verde. Ticket a `qa`.
+
+### Lo que espera de Jürgen
+
+- **Device-QA opcional**: guion en `tickets/qa/late-notice-of-a-welcome-private-session-purges-groups-joined-later.md`
+  (hace falta un Apple ID con datos viejos de Yala en iCloud y una invitación a un grupo).
+- Nuevos en backlog, los dos low: `late-notice-witness-survives-a-welcome-restore-over-device-data` (el aviso sobrevive a
+  «Restaurar» tras cancelar el alert de datos en el teléfono) y
+  `groups-kept-by-the-late-notice-are-purged-by-the-welcome-fresh-start` (cancelar el onboarding y empezar de cero en el
+  Welcome purga los grupos conservados, con su alert; pide decidir si ahí hay otra persona).
+
+## Sesión anterior (#280 · el aviso tardío de quien activó Yala completo sin mirar iCloud ya no se lleva sus grupos)
 
 Quien estaba en solo-grupos y activaba **Yala completo → privado sin red o sin iCloud** seguía adelante, y días después,
 con iCloud de vuelta, le salía «Encontramos datos tuyos en iCloud». Su «Empezar de cero» purgaba también los grupos que la
@@ -46,9 +72,9 @@ terminado con otro alcance, los dos arreglados). CI verde. Ticket a `qa`.
 - Nuevos en backlog, los dos medium: `activation-start-fresh-drops-group-settlement-legs` («Restaurar → Empezar desde
   cero» de la activación tampoco repone las liquidaciones; preexistente) y
   `late-notice-of-a-welcome-private-session-purges-groups-joined-later` (la misma forma en quien empezó en el Welcome y se
-  unió a grupos después; pide decidir de quién son esos grupos).
+  unió a grupos después; cerrado en #281).
 
-## Sesión anterior (#279 · volver desde «Encontramos datos» tras un corte ya no deja un borrado que la nube termina a ciegas)
+## Antes (#279 · volver desde «Encontramos datos» tras un corte ya no deja un borrado que la nube termina a ciegas)
 
 Tras un corte a mitad del borrado de iCloud de **«Es mi primera vez → privado»**, la app volvía a enseñar «Encontramos
 datos tuyos». Volver desde ahí y crear una cuenta en la nube dejaba el borrado armado, y el arranque siguiente se llevaba
