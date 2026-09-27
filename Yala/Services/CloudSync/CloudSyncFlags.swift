@@ -356,6 +356,10 @@ nonisolated enum StorageModePersistence {
     static func clearICloudCorpusWipeArm(_ defaults: UserDefaults = .standard) {
         defaults.removeObject(forKey: icloudCorpusWipeArmedKey)
         defaults.removeObject(forKey: icloudCorpusWipeZoneDoneKey)
+        // El alcance describe el borrado pendiente, y «a medias» también lo es: solo se va si no queda ninguno.
+        if !isICloudCorpusWipeLeftHalfway(defaults) {
+            defaults.removeObject(forKey: icloudCorpusWipeScopeKey)
+        }
         if defaults.bool(forKey: icloudCorpusWipeOwnsNeutralMountKey) {
             clearNeutralMountArm(defaults)
         }
@@ -419,6 +423,42 @@ nonisolated enum StorageModePersistence {
 
     static func clearICloudCorpusWipeLeftHalfway(_ defaults: UserDefaults = .standard) {
         defaults.removeObject(forKey: icloudCorpusWipeLeftHalfwayKey)
+        // Mismo criterio que al desarmar: con el arm puesto, el borrado sigue pendiente y su alcance con él.
+        if !isICloudCorpusWipeArmed(defaults) {
+            defaults.removeObject(forKey: icloudCorpusWipeScopeKey)
+        }
+    }
+
+    /// **«Con qué alcance entró el borrado pendiente»** (ticket
+    /// `late-notice-of-a-welcome-private-session-purges-groups-joined-later`). El arm y «a medias» los comparten tres
+    /// borrados distintos —la puerta del Welcome (`.handover`), el aviso del espejo tardío (`.importedRows`) y
+    /// «Restaurar → Empezar desde cero» de la activación—, y quien los termina es a veces otro: el aviso tardío termina
+    /// el borrado a medias del Welcome, y la reanudación del arranque, el suyo propio. Sin saber cuál está terminando, el
+    /// aviso tenía que elegir un alcance para todos, y el del Welcome purgaba los grupos a los que la persona del aviso se
+    /// había unido después.
+    ///
+    /// **La escribe el borrado al entrar** (`ContentView.performICloudCorpusWipe`), que es quien sabe su alcance, y no
+    /// las vistas que arman. Es un sub-estado del borrado pendiente, como la marca de la zona: solo se escribe con el arm
+    /// puesto, sobrevive al paso a «a medias» y se va cuando no queda ni arm ni «a medias». Un borrado nuevo la
+    /// sobrescribe si llega a las filas: lo que se termina es lo último que la persona pidió.
+    ///
+    /// `cloudSync.*` a propósito, como sus vecinas: el barrido de preferencias del `.handover` no puede llevársela a
+    /// mitad del borrado que describe.
+    static let icloudCorpusWipeScopeKey = "cloudSync.icloudCorpusWipeScope"
+
+    ///
+    /// **Solo apunta un borrado que llega a las filas** (review adversarial): `.zoneOnly` no deja nada a medias, así que no
+    /// tiene nada que terminar, y apuntarlo encima de un «a medias» ajeno haría que ese se terminara solo con la zona.
+    static func recordICloudCorpusWipeScope(_ scope: ICloudWipeScope, _ defaults: UserDefaults = .standard) {
+        guard isICloudCorpusWipeArmed(defaults), scope.deletesLocalRows else { return }
+        defaults.set(scope.rawValue, forKey: icloudCorpusWipeScopeKey)
+    }
+
+    /// `nil` = no hay apunte: ningún borrado pendiente, o uno armado por un build anterior. Un valor que no se reconoce
+    /// también es `nil`, y quien termina cae al comportamiento de antes (`ICloudWipeScope.lateNotice`).
+    static func icloudCorpusWipeScope(_ defaults: UserDefaults = .standard) -> ICloudWipeScope? {
+        guard let raw = defaults.string(forKey: icloudCorpusWipeScopeKey) else { return nil }
+        return ICloudWipeScope(rawValue: raw)
     }
 
     /// **Marker «este device eligió privado SIN poder preguntarle a iCloud» (estado K de la matriz).**

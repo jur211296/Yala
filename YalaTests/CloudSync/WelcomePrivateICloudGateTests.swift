@@ -1703,7 +1703,10 @@ struct WelcomePrivateICloudGateWiringTests {
         // Desde el ticket `activation-private-gate-leaves-a-late-notice-that-purges-groups` el scope lo decide
         // `performLateICloudWipe` (de dónde nació la sesión), el MISMO borrado que el aviso: reanudar con otro alcance
         // sería terminar a ciegas un borrado distinto del que la persona confirmó.
-        #expect(rama.contains("await performLateICloudWipe()"))
+        #expect(rama.contains("await performLateICloudWipe(finishingPendingWipe: true)"), """
+            la reanudación del arranque dejó de TERMINAR el borrado que se armó: con el alcance de un borrado nuevo, un
+            kill a mitad del borrado del Welcome dejaría sin sellar el dominio de Grupos de la persona anterior
+            """)
         #expect(!rama.contains("performICloudCorpusWipe("), "la reanudación volvió a escribir su scope a mano")
         #expect(rama.contains("clearICloudCorpusWipeArm()"), """
             sin retirar el arm, el arranque siguiente vuelve a reanudar el mismo borrado, y el siguiente,
@@ -1715,7 +1718,7 @@ struct WelcomePrivateICloudGateWiringTests {
         // Y el corte ante el fallo: si el borrado no confirma, NO se retira nada.
         // Desde el 2026-09-26 el fallo se lee en una constante para poder desarmar si se paró en los cambios de grupos
         // (ticket `fresh-start-wipe-kills-unsent-group-writes-silently`); el corte sigue siendo el mismo.
-        #expect(rama.contains("let failure = await performLateICloudWipe()")
+        #expect(rama.contains("let failure = await performLateICloudWipe(finishingPendingWipe: true)")
                 && rama.contains("guard failure == nil else { return }"), """
             retirar los testigos tras un borrado fallido deja el corpus en iCloud y a nadie mirándolo.
             """)

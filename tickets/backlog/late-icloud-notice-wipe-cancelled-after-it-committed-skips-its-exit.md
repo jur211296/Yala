@@ -40,3 +40,11 @@ callejón: hay un borrado repetido en el arranque siguiente.
 El corte de `WelcomePrivateICloudGateLogic.gateWipeSettles`: la cancelación solo manda si el borrado no llegó a
 escribir. Antes, medir si la hoja se desmonta de verdad (una traza en su `onDisappear` basta en el simulador con el
 seam del aviso).
+
+## Actualización (2026-09-27, review de `late-notice-of-a-welcome-private-session-purges-groups-joined-later`)
+
+Desde ese ticket, «Empezar de cero» del aviso con el corpus es `.importedRows` en todas las sesiones: ya no se lleva
+`hasCompletedOnboarding`, así que el disparador descrito arriba (el `onChange` a mitad del borrado) deja de ocurrir en ese
+camino. Pero si la hoja se desmonta por otra causa tras un borrado que terminó, el «por qué es `low`» ya no vale entero:
+la persona se queda en la app con lo personal vacío y el arm puesto, y el arranque siguiente reanuda el borrado **sobre lo
+que haya creado entretanto**. Sigue acotado por `interactiveDismissDisabled` y por no haber botón de cerrar en `.wiping`.

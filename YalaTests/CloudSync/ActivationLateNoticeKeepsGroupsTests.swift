@@ -11,6 +11,10 @@
 //  El arreglo: la activación apunta en `PrivateSessionMark` que la sesión nace de ella, y el aviso —con su «Terminar de
 //  borrar» y la reanudación del arranque— borra con el alcance que eso decide (`ICloudWipeScope.lateNotice`).
 //
+//  Desde `late-notice-of-a-welcome-private-session-purges-groups-joined-later` la marca solo decide los borrados
+//  pendientes SIN apunte de alcance (un arm de un build anterior): el aviso que empieza uno es `.importedRows` para todas
+//  las sesiones, y el que termina uno usa el alcance apuntado. Lo nuevo lo fija `WelcomeLateNoticeKeepsJoinedGroupsTests`.
+//
 //  Mutantes que estos tests matan (medidos, ver el PR):
 //   (1) `lateNotice` devolviendo siempre `.handover` → la tabla.
 //   (2) `set(false)` / `clear` sin retirar la marca → su vida.
@@ -31,9 +35,10 @@ struct ActivationLateNoticeKeepsGroupsTests {
 
     // MARK: - La tabla
 
-    @Test("el aviso tardío de una sesión nacida de la activación conserva los grupos y las preferencias")
-    func lateNotice_afterFullActivation_keepsGroups() {
-        let scope = ICloudWipeScope.lateNotice(sessionBornFromFullActivation: true)
+    @Test("el aviso tardío de una sesión nacida de la activación conserva los grupos y las preferencias",
+          arguments: [ICloudWipeScope.LateWipe.startFresh, .finishPending(armedWith: nil)])
+    func lateNotice_afterFullActivation_keepsGroups(_ wipe: ICloudWipeScope.LateWipe) {
+        let scope = ICloudWipeScope.lateNotice(wipe, sessionBornFromFullActivation: true)
         #expect(scope == .importedRows)
         #expect(scope.purgesGroupsDomain == false, """
             el aviso tardío de quien activó Yala completo purga el dominio de Grupos: son los grupos que la activación
@@ -45,11 +50,13 @@ struct ActivationLateNoticeKeepsGroupsTests {
             """)
     }
 
-    @Test("fuera de la activación, el aviso tardío sigue siendo el handover")
+    @Test("fuera de la activación, un borrado pendiente sin apunte sigue siendo el handover")
     func lateNotice_otherwise_isTheHandover() {
         // El control: el aviso termina también el borrado a medias de la puerta del Welcome, que es una frontera de
-        // usuario. Si esto cambiara, el dominio de Grupos de la persona anterior dejaría de sellarse.
-        #expect(ICloudWipeScope.lateNotice(sessionBornFromFullActivation: false) == .handover)
+        // usuario. Sin apunte de alcance (un arm de un build anterior), no se sabe si lo es: se queda el de antes. Si
+        // esto cambiara, el dominio de Grupos de la persona anterior dejaría de sellarse.
+        #expect(ICloudWipeScope.lateNotice(.finishPending(armedWith: nil), sessionBornFromFullActivation: false)
+                == .handover)
     }
 
     // MARK: - La vida de la marca
@@ -89,7 +96,7 @@ struct ActivationLateNoticeKeepsGroupsTests {
     /// `ActivationRestoreDiscardTests`). Este test no ejecuta `performICloudCorpusWipe` —es `private` en `ContentView` y
     /// habla con CloudKit—: encadena el hecho de la sesión, leído de `UserDefaults`, hasta la purga real del dominio
     /// (marca → scope → `wipeLocalGroupsDomain`), con su control en la otra dirección.
-    @Test("con la sesión nacida de la activación, el borrado del aviso tardío deja los grupos en el teléfono",
+    @Test("con la sesión nacida de la activación, terminar un borrado sin apunte deja los grupos en el teléfono",
           arguments: [true, false])
     func lateWipe_groupsSurvive_onlyForTheActivation(_ bornFromActivation: Bool) throws {
         let d = makeIsolatedDefaults(prefix: "test.lateWipeGroups")
@@ -100,6 +107,7 @@ struct ActivationLateNoticeKeepsGroupsTests {
         try context.save()
 
         let scope = ICloudWipeScope.lateNotice(
+            .finishPending(armedWith: StorageModePersistence.icloudCorpusWipeScope(d)),
             sessionBornFromFullActivation: PrivateSessionMark.isBornFromFullActivation(d))
         if scope.purgesGroupsDomain {
             try DataWipeService.wipeLocalGroupsDomain(
@@ -201,29 +209,31 @@ struct ActivationLateNoticeKeepsGroupsTests {
         let src = try Self.code("Yala/App/ContentView.swift")
 
         let sheet = try Self.balanced(after: "LateICloudMirrorNoticeView(", open: "(", close: ")", in: src)
-        #expect(sheet.contains("performWipe: { await performLateICloudWipe() }"), "Tramo leído: \(sheet)")
+        #expect(sheet.contains("performWipe: { await performLateICloudWipe(finishingPendingWipe: notice == .wipeLeftHalfway) }"),
+                "Tramo leído: \(sheet)")
         #expect(sheet.contains("onWiped: { settleAfterLateICloudWipe() }"), "Tramo leído: \(sheet)")
 
         let check = try Self.body(of: "private func runLateICloudMirrorCheck() async {", in: src)
-        #expect(check.contains("let failure = await performLateICloudWipe()"))
+        #expect(check.contains("let failure = await performLateICloudWipe(finishingPendingWipe: true)"))
         #expect(!check.contains("performICloudCorpusWipe("), """
             la reanudación del arranque volvió a escribir su scope a mano: a quien activó Yala completo, un kill durante el
             borrado le purgaría los grupos al arrancar, sin una sola pantalla.
             """)
 
-        let scope = try Self.body(of: "private var lateICloudWipeScope: ICloudWipeScope {", in: src)
-        #expect(scope.contains(
-            "ICloudWipeScope.lateNotice(sessionBornFromFullActivation: PrivateSessionMark.isBornFromFullActivation())"))
-
-        let wipe = try Self.body(of: "private func performLateICloudWipe() async -> String? {", in: src)
-        #expect(wipe.contains("let scope = lateICloudWipeScope"))
+        let wipe = try Self.body(of: "private func performLateICloudWipe(finishingPendingWipe: Bool) async -> String? {",
+                                 in: src)
+        #expect(wipe.contains("sessionBornFromFullActivation: PrivateSessionMark.isBornFromFullActivation())"), """
+            el borrado tardío dejó de leer de dónde nació la sesión: un borrado pendiente sin apunte de quien activó Yala
+            completo volvería a purgarle los grupos
+            """)
         #expect(wipe.contains("await performICloudCorpusWipe(scope)"), "el borrado tardío no usa el alcance que decidió")
     }
 
     @Test("con los grupos conservados, sus filas puenteadas vuelven y las señales se re-miden")
     func keptGroups_reconvergeTheBridgeAndRemeasure() throws {
         let src = try Self.code("Yala/App/ContentView.swift")
-        let wipe = try Self.body(of: "private func performLateICloudWipe() async -> String? {", in: src)
+        let wipe = try Self.body(of: "private func performLateICloudWipe(finishingPendingWipe: Bool) async -> String? {",
+                                 in: src)
         let kept = try Self.body(of: "if !scope.purgesGroupsDomain {", in: wipe)
         #expect(kept.contains("GroupsBridgeRestoreConvergenceStore.markPending()"), """
             el borrado se lleva las `TransactionItem` puenteadas de los grupos y nadie las repone: la persona conserva sus
@@ -235,21 +245,23 @@ struct ActivationLateNoticeKeepsGroupsTests {
             """)
 
         let settle = try Self.body(of: "private func settleAfterLateICloudWipe() {", in: src)
-        // La CONDICIÓN, no solo las ramas: invertida, el `.importedRows` bajaría `hasExistingData` a `false`.
-        let handover = try Self.body(of: "if lateICloudWipeScope.purgesGroupsDomain {", in: settle)
-        #expect(handover.contains("hasExistingData = false"), "con el handover se fue todo: la señal baja")
-        let remeasure = try Self.body(of: "} else {", in: settle)
-        #expect(remeasure.contains("hasExistingData = checkHasExistingData()"), """
+        // Sin rama: el alcance ya no se puede releer aquí (sus marcas se retiran antes), así que se mide siempre. Tras un
+        // `.handover` la medida da `false` sola.
+        #expect(settle.contains("hasExistingData = checkHasExistingData()"), """
             con los grupos conservados, `hasExistingData` baja a `false`: cuenta también los grupos, y le mentiría a toda la app
             """)
-        #expect(remeasure.contains("hasPersonalData = checkHasPersonalData()"))
+        #expect(settle.contains("hasPersonalData = checkHasPersonalData()"))
+        #expect(!settle.contains("hasExistingData = false"), """
+            la señal vuelve a bajarse a ciegas: con los grupos conservados, la app creería el teléfono vacío
+            """)
         #expect(settle.contains("hasCompletedOnboarding = false"), "el corpus personal se fue: hay que volver a empezarlo")
     }
 
     @Test("con los grupos conservados, las liquidaciones confirmadas vuelven a puentearse")
     func keptGroups_reArmTheConfirmedSettlements() throws {
         let src = try Self.code("Yala/App/ContentView.swift")
-        let wipe = try Self.body(of: "private func performLateICloudWipe() async -> String? {", in: src)
+        let wipe = try Self.body(of: "private func performLateICloudWipe(finishingPendingWipe: Bool) async -> String? {",
+                                 in: src)
         let kept = try Self.body(of: "if !scope.purgesGroupsDomain {", in: wipe)
         #expect(kept.contains("armSettlementLegsAfterLateWipe()"), """
             el borrado se lleva las patas de las liquidaciones y la convergencia solo repone gastos: la cuenta de grupos

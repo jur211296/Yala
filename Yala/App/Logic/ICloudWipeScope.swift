@@ -31,7 +31,11 @@ import Foundation
 /// | `.zoneOnly` | sí | — | — | — |
 /// | `.importedRows` | sí | sí | **no** | **no** |
 /// | `.handover` | sí | sí | sí | purga + sello |
-enum ICloudWipeScope: Equatable, CaseIterable {
+///
+/// **`String` porque se apunta en disco** (`StorageModePersistence.recordICloudCorpusWipeScope`): el borrado armado
+/// guarda con qué alcance entró, y quien lo termina lo lee. Los `rawValue` son formato persistido: no se renombran.
+/// `nonisolated` porque lo lee y lo escribe `StorageModePersistence`, que lo es.
+nonisolated enum ICloudWipeScope: String, Equatable, CaseIterable {
 
     /// **Solo la zona de iCloud.** La puerta privada de «Activar Yala completo» ANTES del relanzamiento:
     /// allí el store todavía no espeja, así que lo local nunca vino de iCloud — son las categorías, las
@@ -48,15 +52,15 @@ enum ICloudWipeScope: Equatable, CaseIterable {
     ///    activando, y `hasCompletedOnboarding` lo mandaría al Welcome a mitad de la activación;
     ///  · **el dominio de Grupos** — esos grupos son suyos, y conservarlos es el motivo de la activación.
     ///
-    /// Y **el aviso del espejo tardío de quien ya activó**, por la misma razón (ticket
-    /// `activation-private-gate-leaves-a-late-notice-that-purges-groups`): ver `lateNotice`.
+    /// Y **el borrado que empieza el aviso del espejo tardío**, para todas las sesiones (tickets
+    /// `activation-private-gate-leaves-a-late-notice-that-purges-groups` y
+    /// `late-notice-of-a-welcome-private-session-purges-groups-joined-later`): ver `lateNotice`.
     case importedRows
 
     /// **El handover: aquí empieza otro usuario en este dispositivo.** El Welcome, y el aviso del espejo
-    /// tardío —con su reanudación y su «Terminar de borrar»— salvo en una sesión nacida de «Activar Yala
-    /// completo» (`lateNotice(sessionBornFromFullActivation:)`). Se lleva las filas, las preferencias y el
-    /// dominio de Grupos, y escribe el sello que mantiene el bridge cerrado hasta que el usuario nuevo
-    /// adopte Grupos.
+    /// tardío cuando lo que termina es un borrado del Welcome que quedó a medias (`lateNotice`). Se lleva las
+    /// filas, las preferencias y el dominio de Grupos, y escribe el sello que mantiene el bridge cerrado hasta
+    /// que el usuario nuevo adopte Grupos.
     ///
     /// **Las tres promesas cuelgan de que HAYA filas locales, y eso no es un descuido** (2026-09-17). Sin
     /// corpus en el teléfono no hay nada que apartar, y el sello es irreversible aquí: escribirlo sobre un
@@ -66,18 +70,51 @@ enum ICloudWipeScope: Equatable, CaseIterable {
     /// `performICloudCorpusWipe`).
     case handover
 
-    /// **El alcance del borrado del aviso del espejo tardío**: el aviso, su «Terminar de borrar» y la reanudación del
-    /// arranque, que son el mismo borrado en tres momentos.
+    /// **Los dos borrados del aviso del espejo tardío.** El aviso hace dos cosas distintas, y hasta el 2026-09-27 las
+    /// borraba con el mismo alcance:
+    nonisolated enum LateWipe: Equatable {
+        /// «Empezar de cero» del aviso con el corpus de iCloud: un borrado NUEVO, que pide la persona de esta sesión.
+        case startFresh
+        /// Terminar un borrado que ya estaba en marcha: «Terminar de borrar» del borrado a medias y la reanudación del
+        /// arranque tras un kill. `armedWith` es el alcance con que ese borrado entró
+        /// (`StorageModePersistence.icloudCorpusWipeScope`), o `nil` si lo armó un build anterior al apunte.
+        case finishPending(armedWith: ICloudWipeScope?)
+
+        /// **Cuál de los dos es, leído del llamador y del disco.** Termina quien lo dice —la hoja «El borrado quedó a
+        /// medias» y la reanudación del arranque— y también cualquiera con «a medias» puesto: el «Terminar de borrar» del
+        /// aviso con el corpus cuyo propio borrado quedó a medias delante de la persona (la hoja sigue siendo `.corpus`).
+        /// Así no depende de que empezar y terminar den hoy el mismo alcance en ese caso.
+        static func resolve(finishingPendingWipe: Bool, leftHalfway: Bool, armedWith: ICloudWipeScope?) -> LateWipe {
+            (finishingPendingWipe || leftHalfway) ? .finishPending(armedWith: armedWith) : .startFresh
+        }
+    }
+
+    /// **El alcance del borrado del aviso del espejo tardío.**
     ///
-    /// Quien activó Yala completo sin poder preguntarle a iCloud se lleva el testigo del espejo tardío, y el borrado de
-    /// su aviso era `.handover`: purgaba los grupos que la activación existe para conservar. Para esa sesión es
-    /// `.importedRows` —la zona y lo personal del teléfono, que es lo que el copy del aviso promete—. En el resto, el de
-    /// siempre: el aviso termina también el borrado a medias de la puerta del Welcome, que es una frontera de usuario.
+    /// **Empezar de cero es `.importedRows`, venga de donde venga la sesión.** Quien contesta al aviso es la persona
+    /// de esta sesión privada, y los grupos que hay en el teléfono son suyos. El testigo del aviso solo lo dejan dos
+    /// puertas: la del Welcome, que sigue al onboarding privado —y ése solo arranca sobre un teléfono sin datos, grupos
+    /// incluidos: `startFreshPrivateOnboarding` los cuenta y, si los hay, pide borrarlos con el handover—, y la de
+    /// «Activar Yala completo», que existe para conservarlos. Así que todo grupo que haya al llegar el aviso es uno al
+    /// que la persona se unió DESPUÉS de elegir privado, o uno que trajo la activación. El `.handover` se los llevaba,
+    /// con su sesión de Grupos y el sello, mientras el copy solo nombra «tus registros, tus cuentas y tus presupuestos».
     ///
-    /// Sin default a propósito, como `performICloudCorpusWipe`: el llamador tiene que leer de dónde nació la sesión
-    /// (`PrivateSessionMark.isBornFromFullActivation`).
-    static func lateNotice(sessionBornFromFullActivation: Bool) -> ICloudWipeScope {
-        sessionBornFromFullActivation ? .importedRows : .handover
+    /// **Terminar un borrado es terminar EL QUE SE ARMÓ**, con su alcance. El aviso termina también el borrado a medias
+    /// de la puerta del Welcome, y ése sí es una frontera de usuario: el dominio puede ser de quien usó el teléfono
+    /// antes, y tiene que seguir sellándose. Lo que decide no es quién contesta sino qué borrado se está terminando, y
+    /// ese hecho lo apunta el propio borrado al entrar. Sin apunte (un arm de un build anterior), el comportamiento de
+    /// antes: de dónde nació la sesión (`PrivateSessionMark.isBornFromFullActivation`).
+    ///
+    /// Sin default a propósito, como `performICloudCorpusWipe`: el llamador tiene que decir cuál de los dos borra.
+    static func lateNotice(_ wipe: LateWipe, sessionBornFromFullActivation: Bool) -> ICloudWipeScope {
+        switch wipe {
+        case .startFresh:
+            return .importedRows
+        case .finishPending(armedWith: let armed?):
+            return armed
+        case .finishPending(armedWith: nil):
+            return sessionBornFromFullActivation ? .importedRows : .handover
+        }
     }
 
     /// ¿Borra las filas personales del dispositivo?

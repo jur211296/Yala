@@ -453,8 +453,9 @@ struct ContentView: View {
                     // preguntárselo en cada arranque sería no haberla escuchado.
                     StorageModePersistence.clearPrivateChoseWithoutICloud()
                 },
-                // El alcance lo decide de dónde nació la sesión, no esta vista: ver `performLateICloudWipe`.
-                performWipe: { await performLateICloudWipe() },
+                // El alcance no lo decide esta vista: el aviso EMPIEZA un borrado, el borrado a medias TERMINA el que
+                // se armó (`performLateICloudWipe`).
+                performWipe: { await performLateICloudWipe(finishingPendingWipe: notice == .wipeLeftHalfway) },
                 onWiped: { settleAfterLateICloudWipe() }
             )
         }
@@ -1808,9 +1809,9 @@ struct ContentView: View {
             RouterEntryGate.shared.submit(.presentLateICloudMirrorNotice(.wipeLeftHalfway))
             return
         case .resume:
-            // El mismo borrado que el aviso, con el mismo alcance: reanudarlo con otro sería terminar a ciegas un
-            // borrado distinto del que la persona confirmó.
-            let failure = await performLateICloudWipe()
+            // El borrado que se armó, con su alcance: reanudarlo con otro sería terminar a ciegas un borrado distinto del
+            // que la persona confirmó.
+            let failure = await performLateICloudWipe(finishingPendingWipe: true)
             if let failure {
                 switch WelcomePrivateICloudGateLogic.classifyLateWipeFailure(
                     groupsPending: failure == CloudSessionSignOut.freshStartGroupsPendingFailure,
@@ -1871,24 +1872,27 @@ struct ContentView: View {
         }
     }
 
-    /// **El alcance del borrado del aviso tardío**, leído del hecho durable de la sesión (ticket
-    /// `activation-private-gate-leaves-a-late-notice-that-purges-groups`). Quien activó Yala completo conserva sus grupos
-    /// (`.importedRows`); el resto, el `.handover` de siempre.
-    private var lateICloudWipeScope: ICloudWipeScope {
-        ICloudWipeScope.lateNotice(sessionBornFromFullActivation: PrivateSessionMark.isBornFromFullActivation())
-    }
-
     /// **El borrado del aviso tardío, y es UNO para sus tres caminos**: el aviso, su «Terminar de borrar» y la
     /// reanudación del arranque. Hasta el 2026-09-27 los tres escribían `.handover` a mano, y por eso el aviso de quien
     /// activó Yala completo sin poder mirar iCloud le purgaba los grupos que la activación existía para conservar.
+    ///
+    /// **El alcance lo decide QUÉ borrado es** (ticket `late-notice-of-a-welcome-private-session-purges-groups-joined-later`,
+    /// tabla en `ICloudWipeScope.lateNotice`): el aviso con el corpus EMPIEZA uno y se queda en lo personal; «Terminar de
+    /// borrar» y la reanudación TERMINAN el que se armó, con el alcance que ese borrado apuntó al entrar. Así el borrado a
+    /// medias del Welcome sigue sellando el dominio de quien usó el teléfono antes, y el del propio aviso no se lleva los
+    /// grupos a los que la persona se unió después de elegir privado.
     ///
     /// **Con los grupos conservados, sus filas PUENTEADAS no**: `wipeAllUserData` borra `TransactionItem` sin predicado, y
     /// nadie más las repone. Se pide la convergencia durable, la misma receta que «Restaurar → Empezar desde cero» de la
     /// activación, y la recoge `AppBootstrapper` en el arranque siguiente. Detrás del corte del fallo: un borrado que no
     /// ocurrió no dejó nada que reponer.
     @MainActor
-    private func performLateICloudWipe() async -> String? {
-        let scope = lateICloudWipeScope
+    private func performLateICloudWipe(finishingPendingWipe: Bool) async -> String? {
+        let scope = ICloudWipeScope.lateNotice(
+            .resolve(finishingPendingWipe: finishingPendingWipe,
+                     leftHalfway: StorageModePersistence.isICloudCorpusWipeLeftHalfway(),
+                     armedWith: StorageModePersistence.icloudCorpusWipeScope()),
+            sessionBornFromFullActivation: PrivateSessionMark.isBornFromFullActivation())
         // Antes de borrar, no en la rama de éxito: `wipeAllUserData` guarda por lotes, y un fallo a media lista deja
         // `hasPersonalData` cayendo igual. Mismo molde que los otros envoltorios.
         cancelWipeGrace()
@@ -1922,23 +1926,19 @@ struct ContentView: View {
 
     /// Lo que queda tras un borrado del aviso tardío que terminó bien: las señales al día y el onboarding de nuevo.
     ///
-    /// **Con los grupos conservados, las señales se RE-MIDEN**: `hasExistingData` cuenta también los grupos, y bajarla a
-    /// `false` le mentiría a toda la app. Con el `.handover` se bajan, como siempre: se fue todo. La gracia del wipe
-    /// remoto se cancela antes: este borrado es deliberado, y sin esto el true→false se lee como «te borraron los datos
-    /// en otro dispositivo».
+    /// **Las señales se RE-MIDEN, sea cual sea el alcance**: `hasExistingData` cuenta también los grupos, y bajarla a
+    /// `false` con los grupos conservados le mentiría a toda la app. Tras un `.handover` la medida da `false` sola: se fue
+    /// todo. Y medir es lo único que queda, porque el alcance ya no se puede releer aquí: lo decidía el borrado pendiente,
+    /// y sus marcas se retiran antes de llegar. La gracia del wipe remoto se cancela antes: este borrado es deliberado, y
+    /// sin esto el true→false se lee como «te borraron los datos en otro dispositivo».
     ///
     /// `hasCompletedOnboarding = false` en los dos: el corpus personal se fue y hay que volver a empezarlo. Quien activó
     /// vuelve al onboarding personal y no al Welcome — la activación dejó `hasShownWelcomeChooser` puesto.
     @MainActor
     private func settleAfterLateICloudWipe() {
         cancelWipeGrace()
-        if lateICloudWipeScope.purgesGroupsDomain {
-            hasExistingData = false
-            hasPersonalData = false
-        } else {
-            hasExistingData = checkHasExistingData()
-            hasPersonalData = checkHasPersonalData()
-        }
+        hasExistingData = checkHasExistingData()
+        hasPersonalData = checkHasPersonalData()
         hasCompletedOnboarding = false
     }
 
@@ -1962,6 +1962,11 @@ struct ContentView: View {
         // Lo aceptado en «Empezar de cero y perderlos» se toma ANTES del primer `await`: vale para este intento y no
         // puede sobrevivir a una salida temprana (`CloudSessionSignOut.takeFreshStartAcceptedLoss`).
         let acceptedInGesture = CloudSessionSignOut.shared.takeFreshStartAcceptedLoss()
+        // **El borrado apunta con qué alcance entra, también antes del primer `await`** (ticket
+        // `late-notice-of-a-welcome-private-session-purges-groups-joined-later`). Quien lo termine —el aviso tardío tras un
+        // kill o un borrado a medias— tiene que terminar ESTE, y no puede deducirlo: el arm lo comparten tres borrados.
+        // Solo con el arm puesto; sin él no hay nada que terminar.
+        StorageModePersistence.recordICloudCorpusWipeScope(scope)
         // **Si el import está en vuelo, NO se borra.** Dos motivos y el segundo es duro: un `save()` de
         // SwiftData durante un import de CloudKit dispara el SIGTRAP que ese gate existe para evitar, y
         // borrar la zona con el import a medias deja al espejo re-creando filas que acabamos de quitar.
