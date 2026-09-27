@@ -1042,6 +1042,7 @@ struct WelcomePrivateICloudGateWiringTests {
     func deviceWipe_hasNoCancellationPointAfterTheDelete() throws {
         let src = try Self.code("Yala/App/Views/Onboarding/WelcomePrivateICloudGateView.swift")
         let wipe = try Self.body(of: "private func wipeDevice(iCloudUnverified: Bool) async {", in: src)
+        #expect(!wipe.contains("checkCancellation"), "un `checkCancellation()` es el mismo punto de cancelación")
         #expect(!wipe.contains("Task.isCancelled"), """
             un `guard !Task.isCancelled` después del borrado deja el corpus borrado y sin sus
             consecuencias: el propio `wipeAllUserData` puede cancelar esta task al tocar los flags de
@@ -1337,7 +1338,9 @@ struct WelcomePrivateICloudGateWiringTests {
         let wipe = try Self.body(of: "private func wipe() async {", in: src)
         let arm = try #require(wipe.range(of: "armICloudCorpusWipe()"))
         let call = try #require(wipe.range(of: "await performWipe()"))
-        let clear = try #require(wipe.range(of: "clearICloudCorpusWipeArm()"))
+        // El desarme del ÉXITO es el último del cuerpo. Desde `private-gate-remote-wipe-can-strand-its-arm` hay otro
+        // antes, en el `else` de la cancelación limpia, y ése no es el paso final del borrado.
+        let clear = try #require(wipe.range(of: "clearICloudCorpusWipeArm()", options: .backwards))
         #expect(arm.lowerBound < call.lowerBound, "armar después de llamar deja la ventana sin cubrir")
         #expect(call.lowerBound < clear.lowerBound, "desarmar es SIEMPRE el último paso")
         // **El control de FLUJO, no solo las posiciones.** Comparar índices sobrevive a borrar el `return`
@@ -1351,6 +1354,82 @@ struct WelcomePrivateICloudGateWiringTests {
             sin el `return`, el fallo cae en el desarme y en `onProceed()`: la persona acaba en el
             onboarding creyendo que borró un corpus que sigue entero en su iCloud.
             """)
+    }
+
+    /// **Ticket `private-gate-remote-wipe-can-strand-its-arm` · la cancelación ya no se come un borrado consumado.**
+    /// Con el scope del Welcome, `wipeAllUserData` borra `hasCompletedOnboarding` y eso puede cancelar la `.task`
+    /// con todo ya borrado. Un `guard !Task.isCancelled` a secas tras `await performWipe()` dejaba el arm puesto y
+    /// las preferencias residuales sin limpiar. La cancelación se lee UNA vez y decide dos cosas: si se aplica el
+    /// desenlace (`gateWipeSettles`) y si se navega. Lo durable termina siempre; `onProceed()` solo con la puerta
+    /// montada, porque cancelada ya la sustituyó otra pantalla (una invitación de grupo, medido en la review).
+    @Test("tras borrar, la cancelación solo manda si el borrado no llegó a escribir, y nunca navega")
+    func wipe_cancellationOnlyWinsBeforeAnythingWasWritten() throws {
+        let src = try Self.code("Yala/App/Views/Onboarding/WelcomePrivateICloudGateView.swift")
+        let wipe = try Self.body(of: "private func wipe() async {", in: src)
+        // Una sola lectura de la cancelación, y por la API que no lanza: un `checkCancellation()` tras el borrado
+        // es el guard viejo con otra forma.
+        let cancellationReads = wipe.components(separatedBy: "isCancelled").count - 1
+        #expect(cancellationReads == 1, """
+            `wipe()` lee la cancelación \(cancellationReads) veces. Se lee UNA vez en `let cancelled`: otra lectura
+            tras el borrado vuelve a dejar el arm puesto sobre un iCloud ya vacío.
+            Cuerpo leído: \(wipe)
+            """)
+        #expect(!wipe.contains("checkCancellation"), "un `checkCancellation()` tras el borrado es el guard viejo")
+        // Los tres argumentos, exactos: un `|| true` detrás de la marca de la zona pasaría un `contains`.
+        let args = try Self.call(of: "WelcomePrivateICloudGateLogic.gateWipeSettles(", in: wipe)
+            .split(whereSeparator: \.isWhitespace).joined(separator: " ")
+        #expect(args == "failed: failure != nil, cancelled: cancelled, zoneGone: StorageModePersistence.isICloudCorpusWipeZoneDone()",
+                "argumentos leídos: \(args)")
+        // La cancelación y la marca de la zona se leen DETRÁS del borrado —antes, la marca sale rancia— y la
+        // decisión va DELANTE de cualquier consecuencia.
+        try Self.expectOrder("await performWipe()", before: "let cancelled = Task.isCancelled",
+                             in: wipe, "leer la cancelación antes del borrado no ve la que causa el propio borrado")
+        try Self.expectOrder("let cancelled = Task.isCancelled", before: "WelcomePrivateICloudGateLogic.gateWipeSettles(",
+                             in: wipe, "la decisión usa la lectura de después del borrado")
+        try Self.expectOrder("WelcomePrivateICloudGateLogic.gateWipeSettles(", before: "guard failure == nil else {",
+                             in: wipe, "la cancelación se decide antes de aplicar el fallo")
+        // El `else` es la cancelación limpia: desarma y vuelve, y nada más. Sin el desarme, el arm de un borrado que
+        // no tocó nada lo reanuda a ciegas el arranque siguiente; sin el `return`, el borrado cancelado seguiría.
+        let guardCall = try #require(wipe.range(of: "guard WelcomePrivateICloudGateLogic.gateWipeSettles("))
+        let afterGuard = String(wipe[guardCall.upperBound...])
+        let exit = try #require(afterGuard.range(of: ") else {"))
+        let elseBody = afterGuard[exit.upperBound...].prefix(while: { $0 != "}" })
+            .split(whereSeparator: \.isWhitespace).joined(separator: " ")
+        #expect(elseBody == "StorageModePersistence.clearICloudCorpusWipeArm() return", """
+            el `else` de `gateWipeSettles` desarma y vuelve, sin más: es la cancelación limpia de un borrado que no
+            llegó a tocar iCloud. Leído: \(elseBody)
+            """)
+        // Lo que termina un borrado consumado va detrás del fallo y delante del corte de la navegación: con la puerta
+        // desmontada, las preferencias y el desarme se aplican igual.
+        let exito = try #require(wipe.range(of: "guard failure == nil else {"))
+        let tramoExito = String(wipe[exito.upperBound...])
+        let antesDelFallo = String(wipe[..<exito.lowerBound])
+        #expect(!antesDelFallo.contains("clearResidualPreferencesForFreshStart"),
+                "limpiar las preferencias delante del fallo le cobra el nombre y la divisa a un borrado que no ocurrió")
+        #expect(antesDelFallo.components(separatedBy: "clearICloudCorpusWipeArm()").count - 1 == 1,
+                "delante del fallo solo desarma la cancelación limpia: otro desarme ahí quita la red de un kill")
+        for efecto in ["OnboardingResetHelper.clearResidualPreferencesForFreshStart()",
+                       "StorageModePersistence.clearICloudCorpusWipeArm()"] {
+            try Self.expectOrder(efecto, before: "guard !cancelled else { return }", in: tramoExito,
+                                 "detrás del corte, un borrado consumado y cancelado se queda sin \(efecto)")
+        }
+        // Y la navegación, solo con la puerta montada.
+        try Self.expectOrder("guard !cancelled else { return }", before: "onProceed()", in: tramoExito, """
+            `onProceed()` con la puerta desmontada sale en nombre de una pantalla que ya no está: relanza o baja
+            el cover encima de la invitación que la sustituyó.
+            """)
+    }
+
+    /// **La premisa de `gateWipeSettles`: todo `nil` del borrado cruzó la zona.** Es lo que permite terminar un éxito
+    /// cancelado sin mirar la marca. Un atajo `return nil` antes de la zona haría «terminar» un borrado que no tocó
+    /// iCloud: desarmaría y le limpiaría las preferencias residuales con su corpus entero.
+    @Test("el borrado del corpus solo devuelve `nil` después de cruzar la zona")
+    func corpusWipe_returnsNilOnlyAfterTheZone() throws {
+        let src = try Self.code("Yala/App/ContentView.swift")
+        let wipe = try Self.body(of: "private func performICloudCorpusWipe(_ scope: ICloudWipeScope) async -> String? {", in: src)
+        let mark = try #require(wipe.range(of: "StorageModePersistence.markICloudCorpusWipeZoneDone()"))
+        let firstNil = try #require(wipe.range(of: "return nil"))
+        #expect(mark.lowerBound < firstNil.lowerBound, "hay un `return nil` antes de cruzar la zona")
     }
 
     /// El testigo del aviso tardío se escribe cuando la persona CONTINÚA, no al entrar en la rama. Quien
@@ -1669,5 +1748,42 @@ struct WelcomePrivateICloudGateWiringTests {
                 consecuencia: aquel alert habla de datos en el DISPOSITIVO.
                 """)
         }
+    }
+}
+
+// MARK: - (E) El borrado de la puerta que se cancela
+
+/// **Ticket `private-gate-remote-wipe-can-strand-its-arm`.** La tabla entera de `gateWipeSettles`: tras
+/// `await performWipe()`, la cancelación solo gana si el borrado no llegó a escribir.
+@Suite("Paso 4 · el borrado de la puerta que se cancela")
+struct PrivateGateCancelledWipeTests {
+
+    private typealias Logic = WelcomePrivateICloudGateLogic
+
+    @Test("sin cancelación manda el veredicto, como siempre", arguments: [
+        (false, false), (false, true), (true, false), (true, true),
+    ])
+    func notCancelled_alwaysSettles(failed: Bool, zoneGone: Bool) {
+        #expect(Logic.gateWipeSettles(failed: failed, cancelled: false, zoneGone: zoneGone))
+    }
+
+    /// **El caso del ticket**: el borrado terminó bien y el propio borrado canceló la `.task` al llevarse
+    /// `hasCompletedOnboarding`. Tiene que terminar: desarmar y salir, no quedarse en «Borrando…».
+    @Test("cancelado DESPUÉS de un borrado que terminó bien: termina", arguments: [false, true])
+    func cancelledAfterSuccess_settles(zoneGone: Bool) {
+        #expect(Logic.gateWipeSettles(failed: false, cancelled: true, zoneGone: zoneGone))
+    }
+
+    /// El fallo llegó con la zona de iCloud ya borrada: se enseña el fallo en vez de un spinner sobre un iCloud vacío.
+    @Test("cancelado con un fallo DESPUÉS de borrar la zona: enseña el fallo")
+    func cancelledFailureAfterTheZone_settles() {
+        #expect(Logic.gateWipeSettles(failed: true, cancelled: true, zoneGone: true))
+    }
+
+    /// El único caso en el que la cancelación gana: nada se tocó. Vuelve limpio, con el arm puesto para que un kill
+    /// vuelva a medir.
+    @Test("cancelado ANTES de tocar nada: vuelve sin aplicar nada")
+    func cancelledBeforeTouchingAnything_abandons() {
+        #expect(!Logic.gateWipeSettles(failed: true, cancelled: true, zoneGone: false))
     }
 }

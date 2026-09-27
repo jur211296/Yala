@@ -152,6 +152,34 @@ nonisolated enum WelcomePrivateICloudGateLogic {
 
     // MARK: - El borrado del aviso tardío que falla, y el que quedó a medias
 
+    // MARK: - El borrado de la puerta que se cancela
+
+    /// **¿El borrado de iCloud de la puerta aplica su desenlace aunque su `.task` se haya cancelado?** (ticket
+    /// `private-gate-remote-wipe-can-strand-its-arm`).
+    ///
+    /// Un `guard !Task.isCancelled` a secas tras el borrado se comía un borrado CONSUMADO: el scope del Welcome
+    /// (`.handover`) llama a `wipeAllUserData`, que borra `hasCompletedOnboarding`, y ese cambio puede cancelar la
+    /// `.task(id: phase)` con todo ya borrado. El arm se quedaba puesto y las preferencias residuales sin limpiar.
+    /// Es el gemelo de `wipeDevice`, que ya no tiene ese guard.
+    ///
+    /// Quitarlo a secas tampoco vale: este borrado habla con CloudKit y puede cancelarse de verdad antes de tocar nada.
+    /// **Lo que separa los dos casos es si llegó a escribir**, no si se canceló:
+    ///
+    ///  · **Sin cancelación**, manda el veredicto, como siempre.
+    ///  · **Éxito** (`failed == false`): termina lo durable —preferencias residuales y desarme—. Todo camino que
+    ///    devuelve `nil` cruzó la zona. Navegar (`onProceed`) ya no: cancelada, la puerta no está en pantalla.
+    ///  · **Fallo con la zona ya ida** (`zoneGone`): pone la fase de fallo. Solo escribe `@State`, sin efectos
+    ///    durables: el arm se queda, como en un fallo sin cancelar.
+    ///  · **Fallo sin tocar nada**: vuelve y desarma. Cancelada, la puerta ya no está; el arm existe para sobrevivir a
+    ///    un KILL, no a un abandono, y puesto lo reanudaría a ciegas `runLateICloudMirrorCheck`.
+    ///
+    /// `zoneGone` es la marca durable que escribe quien cruza la zona (`markICloudCorpusWipeZoneDone`), no algo
+    /// deducido del motivo del fallo. Si viene de un intento anterior que ya se llevó la zona, también es verdad hoy.
+    static func gateWipeSettles(failed: Bool, cancelled: Bool, zoneGone: Bool) -> Bool {
+        guard cancelled else { return true }
+        return !failed || zoneGone
+    }
+
     /// Qué dejó un borrado del aviso tardío que FALLÓ (ticket
     /// `late-icloud-notice-exit-after-a-failed-wipe-leaves-the-blind-resume-armed`). **Son tres hechos y no uno**, y el
     /// arm significa cosas opuestas en cada uno: en los dos primeros no protege nada; en el tercero es lo único que
