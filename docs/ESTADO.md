@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-27 (Lima)
 
-**Rama** `2.1` — Merge #274: **«Cerrar sesión» ya no borra lo local a mitad de un paso de tus datos a la nube.**
+**Rama** `2.1` — Merge #275: **«Activar la nube» ya no pierde lo que el teléfono tenía pendiente si sales antes del claim.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,28 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#274 · cerrar sesión ya no borra lo local a mitad de una migración)
+## Esta sesión (#275 · «Activar la nube» ya no pierde lo pendiente si sales antes del claim)
+
+**Si vuelves a iCloud sin red**, el aviso al servidor de que la vuelta terminó queda pendiente. Tocar «Activar la nube» y
+salir antes de que la nube contestara —cancelar, un inicio de sesión fallido, «No pudimos comprobar tu cuenta», una cuenta
+con datos o cancelar al 22 %— lo borraba, y la cuenta se quedaba en la nube a medio cerrar. Ahora vuelve a quedar
+pendiente y se termina en cuanto hay red.
+
+- `ForwardOriginPendingEffects` (molde de la vuelta): guarda al tocar, repone en toda vuelta al inicio sin claim contestado
+  (también un kill), descarta con el claim contestado o a `failedRollback`. Reusa el campo del journal de la vuelta, sin
+  schema. No guarda un adopt pendiente (la review cazó que «Cancelar» lo ejecutaba). Regla en `swiftdata-cloudkit.md`.
+
+**Verificado:** gate con 8226 unit en 785 suites y `EdgeCasesUITests`, centinela solo; 11/11 mutantes; review adversarial
+de tres lentes (un medio, arreglado; bajos). CI verde. Ticket a `qa`.
+
+### Lo que espera de Jürgen
+
+- **Device-QA opcional, guion E2** (`qa/guion-tanda.md`, bloque E): solo si E1 acaba sin red. Los unit tests ya cubren la
+  lógica.
+- Nuevos en backlog, los dos low: `migration-activation-ceiling-drops-origin-pending-effects` y
+  `pending-reverse-complete-runs-with-whatever-session-is-live`.
+
+## Sesión anterior (#274 · cerrar sesión ya no borra lo local a mitad de una migración)
 
 **Si hay un paso de tus datos entre iCloud y la nube a medias** —subiendo, parado, fallido esperando «Reintentar» o
 pendiente de reabrir Yala—, «Cerrar sesión» ya no borra nada: sale «No pudimos cerrar tu sesión» con el motivo y dónde
@@ -44,7 +65,7 @@ salieron de ahí). CI verde. Ticket a `qa`.
 - Nuevos en backlog, los tres low: `local-wipes-other-than-sign-out-do-not-look-at-an-in-flight-migration`,
   `migration-started-during-a-sign-out-teardown-loses-its-session`, `sign-out-migration-copy-does-not-fit-a-failed-or-waiting-migration`.
 
-## Sesión anterior (#273 · el aviso de cambio de Apple ID ya no sale a mitad de una migración)
+## Antes (#273 · el aviso de cambio de Apple ID ya no sale a mitad de una migración)
 
 **Si cambias de Apple ID con Yala cerrada**, al abrirla Yala te ofrece cerrar la sesión privada, pero ya no lo hace si hay
 un paso de tus datos a la nube a medias. Antes, justo en el arranque, esa protección no existía: el aviso podía salir en
