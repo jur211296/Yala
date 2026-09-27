@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-27 (Lima)
 
-**Rama** `2.1` — Merge #273: **El aviso de «cambiaste de Apple ID» ya no sale a mitad de un paso de tus datos a la nube.**
+**Rama** `2.1` — Merge #274: **«Cerrar sesión» ya no borra lo local a mitad de un paso de tus datos a la nube.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,31 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#273 · el aviso de cambio de Apple ID ya no sale a mitad de una migración)
+## Esta sesión (#274 · cerrar sesión ya no borra lo local a mitad de una migración)
+
+**Si hay un paso de tus datos entre iCloud y la nube a medias** —subiendo, parado, fallido esperando «Reintentar» o
+pendiente de reabrir Yala—, «Cerrar sesión» ya no borra nada: sale «No pudimos cerrar tu sesión» con el motivo y dónde
+terminarlo. En reposo, el cierre sigue igual. Vale para Ajustes, la hoja del cambio de Apple ID y la puerta de Grupos del
+Welcome, en las tres celdas por archivos.
+
+- El escritor (`CloudSessionSignOut.blockIfMigrationNotAtRest`) se para al empezar, al entrar en `finalizeSessionExit`
+  y pegado al arm. Mismo predicado que la oferta del Apple ID; las seis lecturas viven en `MigrationRestReading.live`.
+  Motivos `.migrationInFlight` y `.migrationUnreadable`, en 16 idiomas. Regla en `swiftdata-cloudkit.md`.
+
+**Verificado:** gate con 8207 unit en 784 suites y 19 XCUITest de seis suites (con el nuevo de la celda C), centinela
+solo; 12/12 mutantes; review adversarial de tres lentes sin altos (solo-grupos y la puerta de `finalizeSessionExit`
+salieron de ahí). CI verde. Ticket a `qa`.
+
+### Lo que espera de Jürgen
+
+- **Device-QA, guion D7** (`qa/guion-tanda.md`, bloque D): con la subida parada al 55 % en modo avión, «Cerrar sesión»
+  no borra nada. Con Yala Dev y datos de prueba.
+- La decisión pendiente `apple-id-change-check-stays-off-after-a-failed-migration` ahora gobierna también el cierre: con
+  una migración fallida no se puede cerrar la sesión privada hasta «Reintentar».
+- Nuevos en backlog, los tres low: `local-wipes-other-than-sign-out-do-not-look-at-an-in-flight-migration`,
+  `migration-started-during-a-sign-out-teardown-loses-its-session`, `sign-out-migration-copy-does-not-fit-a-failed-or-waiting-migration`.
+
+## Sesión anterior (#273 · el aviso de cambio de Apple ID ya no sale a mitad de una migración)
 
 **Si cambias de Apple ID con Yala cerrada**, al abrirla Yala te ofrece cerrar la sesión privada, pero ya no lo hace si hay
 un paso de tus datos a la nube a medias. Antes, justo en el arranque, esa protección no existía: el aviso podía salir en
@@ -42,7 +66,7 @@ lentes sin altos (los dos medios sobre el diff, arreglados en el PR). CI verde. 
 - Nuevos en backlog: `private-sign-out-proceeds-with-a-migration-in-flight` (medium, previo: el cierre privado por Perfil
   no mira la migración) y `apple-id-change-boot-check-is-lost-when-the-journal-is-unreadable-at-launch` (low).
 
-## Sesión anterior (#272 · un cambio de preferencia hecho durante la subida ya no se pierde)
+## Antes (#272 · un cambio de preferencia hecho durante la subida ya no se pierde)
 
 **Si cambias una preferencia mientras Yala sube la anterior**, el cambio nuevo se queda en cola y sube en la siguiente
 sincronización: tus otros dispositivos acaban con el valor nuevo. Antes la limpieza que sigue a la subida se llevaba
