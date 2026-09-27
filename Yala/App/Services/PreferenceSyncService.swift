@@ -218,6 +218,10 @@ final class PreferenceSyncService {
         do {
             try prefsOutbox.enqueue(key: key, userID: userID, value: value)
         } catch {
+            // Con el archivo ilegible el outbox no escribe nada: lo pendiente se conserva y este cambio no se encola.
+            if case PrefsOutboxError.readFailed = error {
+                CloudSyncBreadcrumb.prefsOutboxUnreadable(step: "enqueue")
+            }
             #if DEBUG
             print("PreferenceSyncService: enqueue pref \(key) failed: \(error)")
             #endif

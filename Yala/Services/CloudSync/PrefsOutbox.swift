@@ -44,6 +44,13 @@ nonisolated enum PrefsOutboxError: Error {
     case persistFailed(underlying: Error)
     /// El `HLCClock` no pudo emitir (drift/overflow) — condición insegura para estampar un HLC.
     case clockFailed(underlying: Error)
+    /// El archivo EXISTE y no se dejó LEER (`Data(contentsOf:)` lanzó: permisos, protección de datos antes del primer
+    /// desbloqueo, E/S). No es corrupción: lo que hay dentro puede estar perfectamente bien, así que nadie escribe
+    /// encima y quien lo recibe reintenta más tarde (ticket `prefs-outbox-reads-an-unreadable-file-as-corrupt-and-overwrites-it`).
+    case readFailed(underlying: Error)
+    /// El archivo se leyó y no DECODIFICA. Lo lanza `removeEntries`; `syncSnapshot` lo lee vacío y
+    /// `loadOrCreateState` lo reemplaza por un estado nuevo, que es el trato de siempre.
+    case corrupt(underlying: Error)
 }
 
 // MARK: - PrefsOutbox
@@ -126,7 +133,8 @@ nonisolated struct PrefsOutbox {
     /// la hora real lo alcanzara, y el llamador lo descarta: ese cambio no subía nunca. Con `sendLocal` sale por encima del
     /// último emitido, y la monotonicidad que protege al teléfono de su propio pasado sigue intacta.
     /// - Throws: `PrefsOutboxError.clockFailed` si el reloj no puede emitir (solo un año fuera de 0001–9999);
-    ///   `.persistFailed` en I/O.
+    ///   `.readFailed` si el archivo existe y no se deja leer (no se encola y no se escribe nada: lo pendiente se
+    ///   conserva); `.persistFailed` en la escritura.
     func enqueue(key: String, userID: String, value: PrefValue, now: Date = .now) throws {
         var state = try loadOrCreateState()
 
@@ -167,22 +175,57 @@ nonisolated struct PrefsOutbox {
 
     // MARK: Read (push side)
 
+    /// Lo que el ciclo de prefs necesita para decidir, en UNA lectura: las entries del owner y el cursor del pull.
+    struct SyncSnapshot {
+        let entries: [(key: String, entry: Entry)]
+        let pullCursor: Int64
+    }
+
+    /// La lectura del ciclo de prefs (`CloudSyncRuntime.syncPrefsOnce`). **Lanza `.readFailed` si el archivo existe y no
+    /// se deja leer**: ahí «no pude leer» no puede ser «no hay nada», porque con `[]` el ciclo se saltaba el push y con
+    /// el cursor a `0` bajaba todas las prefs del backend, y el merge (gana el remoto) revertía en pantalla los cambios
+    /// que esperaban aquí. Sin archivo: vacío y cursor `0`. Corrupto: lo mismo, con log — es el trato de siempre, y el
+    /// `setPullCursor` del final del ciclo lo reemplaza.
+    func syncSnapshot(forUserID userID: String) throws -> SyncSnapshot {
+        let state: FileState?
+        switch try readState() {
+        case .absent:
+            state = nil
+        case .decoded(let decoded):
+            state = decoded
+        case .undecodable(let error):
+            #if DEBUG
+            print("PrefsOutbox: syncSnapshot — estado corrupto, se lee vacío: \(error)")
+            #endif
+            state = nil
+        }
+        guard let state else { return SyncSnapshot(entries: [], pullCursor: 0) }
+        return SyncSnapshot(entries: Self.ownedEntries(of: state, userID: userID), pullCursor: state.pullCursor)
+    }
+
     /// Entries del `userID` dado (owner-scoping M1: las de OTRA identidad se ignoran). Devuelve pares
     /// `(key, entry)` ordenados por HLC ascendente (orden causal de subida; el server LWW no lo exige,
     /// pero es determinista para el batch).
+    ///
+    /// **Tolerante**: un archivo ilegible o corrupto devuelve `[]` con log. Sirve para LEER una señal; quien DECIDE algo
+    /// que no se pueda deshacer con ella usa `syncSnapshot`, que separa «no pude leer» de «no hay».
     func entries(forUserID userID: String) -> [(key: String, entry: Entry)] {
         let state: FileState?
         do {
             state = try loadState()
         } catch {
-            // Archivo corrupto → push vacío ESTE ciclo, pero JAMÁS en silencio (regla inviolable).
+            // Ilegible o corrupto → vacío, pero JAMÁS en silencio (regla inviolable).
             #if DEBUG
             print("PrefsOutbox: entries() no pudo leer el estado: \(error)")
             #endif
             state = nil
         }
         guard let state else { return [] }
-        return state.entries
+        return Self.ownedEntries(of: state, userID: userID)
+    }
+
+    private static func ownedEntries(of state: FileState, userID: String) -> [(key: String, entry: Entry)] {
+        state.entries
             .filter { $0.value.userID == userID }
             .sorted { $0.value.hlc < $1.value.hlc }
             .map { (key: $0.key, entry: $0.value) }
@@ -198,7 +241,8 @@ nonisolated struct PrefsOutbox {
 
     // MARK: Cursor (pull side)
 
-    /// El cursor del pull de prefs (`server_seq`). `0` si no existe archivo aún (o ilegible — con log).
+    /// El cursor del pull de prefs (`server_seq`). `0` si no existe archivo aún (o ilegible — con log). Tolerante,
+    /// como `entries(forUserID:)`: el ciclo de prefs lee el suyo con `syncSnapshot`.
     var pullCursor: Int64 {
         do {
             return try loadState()?.pullCursor ?? 0
@@ -211,6 +255,7 @@ nonisolated struct PrefsOutbox {
     }
 
     /// Avanza el cursor del pull. Crea el archivo si no existía (preserva nodeID/entries si ya estaba).
+    /// - Throws: `.readFailed` sin escribir si el archivo no se deja leer; `.persistFailed` en la escritura.
     func setPullCursor(_ value: Int64) throws {
         var state = try loadOrCreateState()
         state.pullCursor = value
@@ -234,29 +279,65 @@ nonisolated struct PrefsOutbox {
 
     // MARK: - Persistencia
 
-    /// Carga el estado del archivo, o `nil` si no existe. Lanza en corrupción (do/catch en el caller).
-    private func loadState() throws -> FileState? {
-        guard FileManager.default.fileExists(atPath: fileURL.path) else { return nil }
-        let data = try Data(contentsOf: fileURL)
-        return try JSONDecoder().decode(FileState.self, from: data)
+    /// Los tres desenlaces de mirar el archivo. El cuarto, «existe y no se deja leer», no es un caso: LANZA
+    /// `.readFailed`, para que ningún `switch` pueda tratarlo como ausente o corrupto por descuido.
+    private enum StateRead {
+        case absent
+        case decoded(FileState)
+        case undecodable(Error)
     }
 
-    /// Carga el estado o crea uno nuevo (con un nodeID recién generado y persistido). Un archivo corrupto
-    /// se REEMPLAZA por uno nuevo (log): no bloquea el sync de prefs por basura en disco.
-    private func loadOrCreateState() throws -> FileState {
+    /// Lee el archivo separando LECTURA de DECODE (ticket `prefs-outbox-reads-an-unreadable-file-as-corrupt-and-overwrites-it`).
+    /// Hasta ese ticket los dos fallos caían en el mismo `catch` de `loadOrCreateState`, y un archivo que solo no se
+    /// dejaba leer se reemplazaba por uno vacío en el siguiente `enqueue` o `setPullCursor`: las prefs pendientes no
+    /// subían nunca y se reseteaban el `nodeID` y el reloj del LWW. **No fundas las dos ramas**: el `do` de la lectura
+    /// envuelve SOLO `Data(contentsOf:)`.
+    private func readState() throws -> StateRead {
+        guard FileManager.default.fileExists(atPath: fileURL.path) else { return .absent }
+        let data: Data
         do {
-            if let existing = try loadState() {
-                return existing
-            }
+            data = try Data(contentsOf: fileURL)
         } catch {
+            #if DEBUG
+            print("PrefsOutbox: el archivo existe y no se deja leer — no se toca: \(error)")
+            #endif
+            throw PrefsOutboxError.readFailed(underlying: error)
+        }
+        do {
+            return .decoded(try JSONDecoder().decode(FileState.self, from: data))
+        } catch {
+            return .undecodable(error)
+        }
+    }
+
+    /// Carga el estado del archivo, o `nil` si no existe. Lanza `.readFailed` si no se deja leer y `.corrupt` si no
+    /// decodifica (do/catch en el caller).
+    private func loadState() throws -> FileState? {
+        switch try readState() {
+        case .absent: return nil
+        case .decoded(let state): return state
+        case .undecodable(let error): throw PrefsOutboxError.corrupt(underlying: error)
+        }
+    }
+
+    /// Carga el estado o crea uno nuevo (con un nodeID recién generado y persistido). Un archivo CORRUPTO se
+    /// REEMPLAZA por uno nuevo (log): no bloquea el sync de prefs por basura en disco. Un archivo que no se deja
+    /// LEER no: `readState` lanza `.readFailed`, el llamador no escribe nada y lo pendiente sigue ahí para el
+    /// siguiente intento.
+    private func loadOrCreateState() throws -> FileState {
+        switch try readState() {
+        case .decoded(let existing):
+            return existing
+        case .undecodable(let error):
             // Corrupto → se REEMPLAZA por estado nuevo (nodeID+reloj reseteados) — logueado, nunca en
             // silencio (M1/M2 review I13): el reset de identidad del reloj afecta el desempate LWW.
             #if DEBUG
             print("PrefsOutbox: estado corrupto, se regenera nodeID/reloj: \(error)")
             #endif
+            return FileState(nodeID: NodeID.generate().value)
+        case .absent:
+            return FileState(nodeID: NodeID.generate().value)
         }
-        // No existe (o corrupto): estado nuevo con nodeID persistido.
-        return FileState(nodeID: NodeID.generate().value)
     }
 
     /// Escribe el estado atómicamente (contenido determinista con `.sortedKeys`).

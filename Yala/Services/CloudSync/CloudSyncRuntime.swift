@@ -822,8 +822,23 @@ final class CloudSyncRuntime {
         guard CloudSyncFlags.storageMode == .cloud else { return }
         guard let prefsClient, let prefsOutbox, let userID = session.currentUserID else { return }
 
+        // UNA lectura del outbox para las dos mitades, y si no se deja leer este ciclo no hace NADA: con `[]` se saltaba
+        // el push y con el cursor a 0 bajaba todas las prefs, cuyo merge (gana el remoto) revertía en pantalla los
+        // cambios que esperaban en el archivo; luego `setPullCursor` escribía un estado vacío encima (ticket
+        // `prefs-outbox-reads-an-unreadable-file-as-corrupt-and-overwrites-it`). El ciclo siguiente lo reintenta.
+        let snapshot: PrefsOutbox.SyncSnapshot
+        do {
+            snapshot = try prefsOutbox.syncSnapshot(forUserID: userID)
+        } catch {
+            CloudSyncBreadcrumb.prefsOutboxUnreadable(step: "sync-cycle")
+            #if DEBUG
+            print("CloudSyncRuntime.syncPrefsOnce: el outbox de prefs no se deja leer — ciclo de prefs aplazado: \(error)")
+            #endif
+            return
+        }
+
         // Push: subir las entries del owner actual (owner-scoping M1).
-        let entries = prefsOutbox.entries(forUserID: userID)
+        let entries = snapshot.entries
         if !entries.isEmpty {
             let wire = entries.map { WirePref(key: $0.key, value: $0.entry.value, hlc: $0.entry.hlc) }
             let outcome = await prefsClient.push(wire)
@@ -840,8 +855,8 @@ final class CloudSyncRuntime {
             }
         }
 
-        // Pull: bajar desde el cursor y mergear.
-        let since = prefsOutbox.pullCursor
+        // Pull: bajar desde el cursor y mergear. El push no mueve el cursor: el de la lectura de arriba sigue valiendo.
+        let since = snapshot.pullCursor
         let pullOutcome = await prefsClient.pull(since: since)
         guard epoch == sessionEpoch else { return }
         if case .page(let page) = pullOutcome {

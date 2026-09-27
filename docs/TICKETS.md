@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (633)
+## Index (635)
 
 | id | status | path |
 |---|---|---|
@@ -457,8 +457,10 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | pie-header-total-unmarked | backlog | tickets/backlog/pie-header-total-unmarked.md |
 | post-pull-reconcilers-read-an-unreadable-table-as-nothing-to-repair | backlog | tickets/backlog/post-pull-reconcilers-read-an-unreadable-table-as-nothing-to-repair.md |
 | preferred-currency-has-three-different-defaults | backlog | tickets/backlog/preferred-currency-has-three-different-defaults.md |
+| prefs-change-is-dropped-when-the-outbox-cannot-take-it | backlog | tickets/backlog/prefs-change-is-dropped-when-the-outbox-cannot-take-it.md |
 | prefs-domain-per-secondary-session | discarded | tickets/discarded/prefs-domain-per-secondary-session.md |
-| prefs-outbox-reads-an-unreadable-file-as-corrupt-and-overwrites-it | backlog | tickets/backlog/prefs-outbox-reads-an-unreadable-file-as-corrupt-and-overwrites-it.md |
+| prefs-outbox-reads-an-unreadable-file-as-corrupt-and-overwrites-it | done | tickets/done/prefs-outbox-reads-an-unreadable-file-as-corrupt-and-overwrites-it.md |
+| prefs-push-purge-drops-a-change-made-during-the-upload | backlog | tickets/backlog/prefs-push-purge-drops-a-change-made-during-the-upload.md |
 | prefs-synced-keys-upload-not-download | backlog | tickets/backlog/prefs-synced-keys-upload-not-download.md |
 | presentation-net-desarm-has-no-automated-net | backlog | tickets/backlog/presentation-net-desarm-has-no-automated-net.md |
 | previous-person-cloud-session-survives-fresh-start-and-reinstall | qa | tickets/qa/previous-person-cloud-session-survives-fresh-start-and-reinstall.md |
