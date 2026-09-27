@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-26 (Lima)
 
-**Rama** `2.1` — Merge #269: **Un pago de Apple Pay o un gasto dictado a Siri ya no se pierde si cierras la sesión privada antes de que Yala lo convierta en borrador.**
+**Rama** `2.1` — Merge #270: **«Cerrar sesión» ya no deja el teléfono como recién instalado con la sesión en la nube de quien cerró dentro.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,29 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#269 · un pago de Apple Pay o un gasto de Siri ya no se pierde al cerrar la sesión privada)
+## Esta sesión (#270 · cerrar sesión ya no deja la sesión en la nube dentro de un teléfono vacío)
+
+**Si al cerrar sesión la sesión en la nube no se borra del teléfono** (el llavero no la borró, o una renovación del token
+la repuso), el cierre se para antes de borrar nada y lo dice: «Tu sesión sigue abierta en este iPhone, así que no se ha
+borrado nada. Vuelve a intentarlo.» Antes seguía, dejaba el teléfono como recién instalado y la siguiente persona
+arrancaba en esa cuenta (Grupos bajaba sus grupos).
+
+- Los cuatro cierres voluntarios comprueban el `signOut()` antes del arm (`.signOutSessionSurvived`, copy en 16 idiomas;
+  Ajustes, la hoja del Apple ID y la puerta de Grupos del Welcome). Los dos tras borrar la cuenta no se paran: arman el
+  retiro durable de la sesión.
+- El borrado del arranque purga también el llavero (`CloudSessionRetirement.retireForSignOutWipe`, tras el guard S3 y
+  verificado), pares de SIWA y Google incluidos. Regla en `swiftdata-cloudkit.md` («Que `signOut()` volviera…»).
+
+**Verificado:** gate con 8166 unit y 96/96 XCUITest de las áreas, 13/13 mutantes, review adversarial de tres lentes
+(sin altos; la puerta del Welcome y el consent de Grupos, arreglados en el PR). CI verde. Ticket a `done` (`not-replicable`).
+
+### Lo que espera de Jürgen
+
+- Nada de esta sesión. Nuevos en backlog: `sign-out-blocked-by-a-surviving-session-already-dropped-the-account-caches`
+  (low), `private-sign-out-blocks-on-a-cloud-keychain-read-error` (low) y `uitest-reset-keeps-the-sign-out-wipe-arm`
+  (very-low). El swap sin relanzar quedó anotado en `detach-postcondition-misses-a-token-refresh-that-lands-after-it`.
+
+## Sesión anterior (#269 · un pago de Apple Pay o un gasto de Siri ya no se pierde al cerrar la sesión privada)
 
 **Si pagas con Apple Pay o dictas un gasto a Siri y cierras la sesión privada antes de que Yala lo convierta en
 borrador**, el cierre lo convierte antes de contar lo que falta por subir a iCloud, y viaja con lo demás. Si no puede
@@ -43,7 +65,7 @@ purga del arranque se lo llevaba sin nombrarlo.
   `private-exit-warning-recounts-materialized-captures` (low) y `private-exit-materialized-drafts-do-not-refresh-the-inbox`
   (very-low).
 
-## Sesión anterior (#268 · salir de un borrado fallido del aviso tardío de iCloud ya no lo reanuda a ciegas)
+## Antes (#268 · salir de un borrado fallido del aviso tardío de iCloud ya no lo reanuda a ciegas)
 
 **Si «Empezar de cero» desde «Encontramos datos tuyos en iCloud» falla y sales**, el arranque siguiente ya no termina el
 borrado sin pantalla (zona, filas y grupos). Si falló antes de tocar iCloud, no se borró nada y el aviso vuelve a
