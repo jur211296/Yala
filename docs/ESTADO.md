@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-27 (Lima)
 
-**Rama** `2.1` — Merge #281: **el aviso tardío de quien empezó en el Welcome privado ya no se lleva los grupos a los que se unió después.**
+**Rama** `2.1` — Merge #282: **tras «Restaurar → Empezar desde cero» de la activación, las liquidaciones de grupo vuelven a lo personal.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,31 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#281 · el aviso tardío de quien empezó en el Welcome privado ya no se lleva los grupos a los que se unió después)
+## Esta sesión (#282 · tras «Restaurar → Empezar desde cero» de la activación, las liquidaciones de grupo vuelven a lo personal)
+
+Quien activaba Yala completo, entraba en Restaurar y elegía **«Empezar desde cero»** conservaba sus grupos, pero sus
+liquidaciones de grupo desaparecían de lo personal: la cuenta de grupos contaba lo prestado sin descontar lo ya cobrado
+o pagado. Ahora:
+
+- **Las liquidaciones confirmadas vuelven** en el arranque siguiente a terminar la activación, una vez cada una, y el
+  Inbox pregunta a qué cuenta llegó o de cuál salió cada una. Lo mismo tras «Empezar de cero» del aviso «Encontramos
+  datos tuyos en iCloud», que ahora va por el mismo camino.
+- **Solo vuelven las que el borrado dejó sin nada.** Hallazgo de la review, arreglado dentro: el primer diseño volvía a
+  pedir un pago que la persona ya había aprobado, porque la transacción aprobada no lleva la marca de la liquidación.
+- El relevo de persona («Empezar de cero» con otra persona) retira estas peticiones pendientes.
+
+**Verificado:** gate con 8301 unit en 794 suites y 21 XCUITest (onboarding, Welcome, borrado, salidas de sesión), centinela
+solo; 10/10 mutantes; review adversarial de tres lentes (tres arreglos dentro). CI verde. Ticket a `qa`.
+
+### Lo que espera de Jürgen
+
+- **Device-QA opcional**: guion en `tickets/qa/activation-start-fresh-drops-group-settlement-legs.md` (hace falta un Apple
+  ID con datos viejos de Yala en iCloud y un grupo con al menos una liquidación confirmada).
+- Nuevo en backlog, medium: `wipe-data-keeps-groups-but-drops-their-bridged-rows` («Vaciar datos» de Ajustes conserva los
+  grupos pero se lleva sus gastos y liquidaciones de lo personal; pide decidir qué promete esa pantalla). Y low:
+  `groups-convergence-retries-every-launch-without-a-ceiling`.
+
+## Sesión anterior (#281 · el aviso tardío de quien empezó en el Welcome privado ya no se lleva los grupos a los que se unió después)
 
 Quien elegía **«Es mi primera vez → privado» sin iCloud o sin red** y después se unía a un grupo, días más tarde, con iCloud
 de vuelta, veía «Encontramos datos tuyos en iCloud». Su «Empezar de cero» se llevaba también sus grupos, sus saldos y su
@@ -46,7 +70,7 @@ review adversarial de tres lentes (tres arreglos dentro). CI verde. Ticket a `qa
   `groups-kept-by-the-late-notice-are-purged-by-the-welcome-fresh-start` (cancelar el onboarding y empezar de cero en el
   Welcome purga los grupos conservados, con su alert; pide decidir si ahí hay otra persona).
 
-## Sesión anterior (#280 · el aviso tardío de quien activó Yala completo sin mirar iCloud ya no se lleva sus grupos)
+## Antes (#280 · el aviso tardío de quien activó Yala completo sin mirar iCloud ya no se lleva sus grupos)
 
 Quien estaba en solo-grupos y activaba **Yala completo → privado sin red o sin iCloud** seguía adelante, y días después,
 con iCloud de vuelta, le salía «Encontramos datos tuyos en iCloud». Su «Empezar de cero» purgaba también los grupos que la
@@ -70,7 +94,7 @@ terminado con otro alcance, los dos arreglados). CI verde. Ticket a `qa`.
 - **Parque de TestFlight**: quien activó con un build anterior y aún tiene el aviso pendiente sigue con el borrado de
   antes (la marca es nueva). Se prefirió a arriesgar el sellado del Welcome.
 - Nuevos en backlog, los dos medium: `activation-start-fresh-drops-group-settlement-legs` («Restaurar → Empezar desde
-  cero» de la activación tampoco repone las liquidaciones; preexistente) y
+  cero» de la activación tampoco repone las liquidaciones; cerrado en #282) y
   `late-notice-of-a-welcome-private-session-purges-groups-joined-later` (la misma forma en quien empezó en el Welcome y se
   unió a grupos después; cerrado en #281).
 
