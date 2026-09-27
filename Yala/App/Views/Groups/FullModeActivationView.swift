@@ -139,7 +139,10 @@ struct FullModeActivationView: View {
                 // pantalla acaba de elegir «privado» y no ha pedido borrar nada, así que no hay ningún
                 // borrado que declarar: no poder preguntarle a iCloud jamás bloquea (ADR §9), y el testigo
                 // deja el aviso pendiente para el primer arranque en que se pueda.
-                unverifiedExit: .proceedWatchingTheMirror)
+                unverifiedExit: .proceedWatchingTheMirror,
+                // **Su borrado es solo de zona, así que nunca deja nada a medias**: con la zona ida ya terminó, y lo
+                // que queda en el teléfono es de quien activa. Salir retira el arm y la marca de la zona, como siempre.
+                halfwayWipe: .nothingLeftBehind)
         case .restoreDiscardGate:
             WelcomePrivateICloudGateView(
                 // **Ninguno de los dos relanza, y eso es lo que impide caer al Welcome.** Para estar aquí
@@ -187,7 +190,13 @@ struct FullModeActivationView: View {
                 // prometió lo contrario. Y el desenlace de arriba, además de no borrar, escribiría el
                 // testigo del espejo tardío — cuyo borrado es `.handover`, o sea que le purgaría el
                 // dominio de Grupos a quien está activando precisamente para conservarlos.
-                unverifiedExit: .returnWithoutClaimingAWipe)
+                unverifiedExit: .returnWithoutClaimingAWipe,
+                // **Un borrado a medias lo termina ESTA puerta, no el aviso tardío** (ticket
+                // `private-gate-leave-after-a-halfway-wipe-forgets-the-zone`). Si falla con la zona ya borrada, las
+                // filas importadas siguen aquí; salir lo deja escrito, y volver a «Empezar desde cero» con iCloud vacío
+                // termina el borrado con `.importedRows` en vez de seguir al onboarding encima de ellas. El remedio del
+                // aviso tardío es `.handover`, y purgaría los grupos que esta activación existe para conservar.
+                halfwayWipe: .finishOnReentry)
         case .relaunch:
             WelcomeMirrorRelaunchView()
         case .consent:
@@ -571,6 +580,12 @@ struct FullModeActivationView: View {
         // restaurar, y la mandaría al Welcome. A estas alturas la persona ya eligió dónde viven sus datos, que es
         // lo que deja sin efecto una petición de borrado anterior.
         StorageModePersistence.clearICloudCorpusWipeArm()
+        // **Y el borrado que quedó a medias, por lo mismo y por algo peor** (ticket
+        // `private-gate-leave-after-a-halfway-wipe-forgets-the-zone`). Mientras la sesión es solo-grupos, el aviso tardío
+        // no corre; en cuanto la activación termina, el arranque siguiente preguntaría «El borrado quedó a medias», y su
+        // «Terminar de borrar» es `.handover`: purgaría los grupos que esta activación existe para conservar. La marca
+        // puede venir de «Empezar desde cero», que la termina ella misma al volver, o de un Welcome anterior.
+        StorageModePersistence.clearICloudCorpusWipeLeftHalfway()
         // **Se levanta el neutro durable de solo-grupos** (paso 5 del rediseño). Activar Yala completo ES
         // «ya elegí dónde viven mis datos personales», y desde el paso 8 esto solo se alcanza DESPUÉS de haberlo
         // elegido: la rama privada ya lo levantó antes de relanzar, y en la de nube hace falta igual —con

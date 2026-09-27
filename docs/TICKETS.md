@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (649)
+## Index (651)
 
 | id | status | path |
 |---|---|---|
@@ -58,6 +58,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | accounts-need-more-visibility-in-the-ui | backlog | tickets/backlog/accounts-need-more-visibility-in-the-ui.md |
 | activation-discard-gate-exits-without-wiping-when-icloud-is-unreachable | done | tickets/done/activation-discard-gate-exits-without-wiping-when-icloud-is-unreachable.md |
 | activation-discard-loses-the-group-history-question | backlog | tickets/backlog/activation-discard-loses-the-group-history-question.md |
+| activation-private-gate-leaves-a-late-notice-that-purges-groups | backlog | tickets/backlog/activation-private-gate-leaves-a-late-notice-that-purges-groups.md |
 | activation-restore-start-fresh-keeps-the-imported-rows | done | tickets/done/activation-restore-start-fresh-keeps-the-imported-rows.md |
 | activation-resume-returns-to-restore-on-an-emptied-zone | backlog | tickets/backlog/activation-resume-returns-to-restore-on-an-emptied-zone.md |
 | adopt-after-the-cutover-needs-a-marker-the-leader-never-exported | done | tickets/done/adopt-after-the-cutover-needs-a-marker-the-leader-never-exported.md |
@@ -478,9 +479,10 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | private-exit-loses-unmaterialized-inbound-captures | done | tickets/done/private-exit-loses-unmaterialized-inbound-captures.md |
 | private-exit-materialized-drafts-do-not-refresh-the-inbox | backlog | tickets/backlog/private-exit-materialized-drafts-do-not-refresh-the-inbox.md |
 | private-exit-warning-recounts-materialized-captures | backlog | tickets/backlog/private-exit-warning-recounts-materialized-captures.md |
+| private-gate-back-from-found-keeps-a-resumed-arm | backlog | tickets/backlog/private-gate-back-from-found-keeps-a-resumed-arm.md |
 | private-gate-device-notice-has-no-forward-exit | backlog | tickets/backlog/private-gate-device-notice-has-no-forward-exit.md |
 | private-gate-device-wipe-navigates-after-its-gate-unmounted | backlog | tickets/backlog/private-gate-device-wipe-navigates-after-its-gate-unmounted.md |
-| private-gate-leave-after-a-halfway-wipe-forgets-the-zone | backlog | tickets/backlog/private-gate-leave-after-a-halfway-wipe-forgets-the-zone.md |
+| private-gate-leave-after-a-halfway-wipe-forgets-the-zone | qa | tickets/qa/private-gate-leave-after-a-halfway-wipe-forgets-the-zone.md |
 | private-gate-remote-wipe-can-strand-its-arm | qa | tickets/qa/private-gate-remote-wipe-can-strand-its-arm.md |
 | private-gate-wipe-failure-copy-claims-icloud-is-intact | qa | tickets/qa/private-gate-wipe-failure-copy-claims-icloud-is-intact.md |
 | private-icloud-gate-back-lands-on-the-wrong-branch | backlog | tickets/backlog/private-icloud-gate-back-lands-on-the-wrong-branch.md |

@@ -86,6 +86,10 @@ struct WelcomePrivateICloudGateView: View {
     /// es la forma exacta del bug que este parámetro cierra — la puerta de «Empezar desde cero» nació
     /// reusando esta vista y se trajo la salida de la otra sin que nadie lo decidiera.
     var unverifiedExit: UnverifiedExit
+    /// **Qué hace este montaje con un borrado que quedó a medias**: recordarlo para el aviso tardío (Welcome),
+    /// terminarlo al volver (la puerta de «Empezar desde cero») o nada, porque su borrado no toca filas (la puerta
+    /// privada de la activación). Sin default: ver `WelcomePrivateICloudGateLogic.HalfwayWipe`.
+    var halfwayWipe: WelcomePrivateICloudGateLogic.HalfwayWipe
 
     /// Los dos desenlaces de «no se pudo preguntar». Lo que los separa es **si la persona ya confirmó un
     /// borrado antes de llegar aquí**.
@@ -761,8 +765,26 @@ struct WelcomePrivateICloudGateView: View {
     ///
     /// **Desde `.wipeFailed` no se llega aquí**: ese fallo SÍ deja algo pendiente —se puede reintentar— y
     /// su arm lo retira `leaveGate`, que es donde consta que la persona se va.
+    ///
+    /// **Y desarma con `disarm()`, no con `clearICloudCorpusWipeArm` a secas**: la zona puede haberse ido en un intento
+    /// anterior del mismo arm —un kill tras borrarla, y la puerta vuelve a medir sin red—, y retirar el arm a secas se la
+    /// llevaba con él.
     private func discardPendingWipe() {
-        StorageModePersistence.clearICloudCorpusWipeArm()
+        disarm()
+    }
+
+    /// **Retirar el arm sin olvidar la zona** (ticket `private-gate-leave-after-a-halfway-wipe-forgets-the-zone`). Si el
+    /// borrado ya se la llevó y este montaje recuerda los borrados a medias, queda «a medias»
+    /// (`disarmFailedICloudCorpusWipe`, el mismo desarme que el aviso tardío). Si no se la llevó, es retirar el arm.
+    ///
+    /// La puerta privada de la activación retira a secas: su borrado es solo de zona, así que con la zona ida ya
+    /// terminó, y lo que queda en el teléfono es de quien activa.
+    private func disarm() {
+        if halfwayWipe.reachesDeviceRows {
+            StorageModePersistence.disarmFailedICloudCorpusWipe()
+        } else {
+            StorageModePersistence.clearICloudCorpusWipeArm()
+        }
     }
 
     /// Salir de la puerta. **Retira el arm si el borrado FALLÓ, y solo entonces.**
@@ -788,13 +810,14 @@ struct WelcomePrivateICloudGateView: View {
     /// el arm proteja — solo una petición que quien se va acaba de retirar.
     ///
     /// **Salvo que la zona ya se hubiera borrado** (`.wipeFailed(zoneGone: true)`): ahí el borrado sí dejó algo a medias
-    /// —iCloud vacío, lo del teléfono no— y desarmar se lleva también la marca de la zona. Recordarlo al salir no cabe en
-    /// este sitio: el remedio de «a medias» es el aviso tardío, que termina con `.handover`, y en la puerta de la
-    /// activación eso purgaría los grupos de quien activa para conservarlos. Ticket
-    /// `private-gate-leave-after-a-halfway-wipe-forgets-the-zone`.
+    /// —iCloud vacío, lo del teléfono no— y `disarm()` lo deja escrito en vez de olvidarlo (ticket
+    /// `private-gate-leave-after-a-halfway-wipe-forgets-the-zone`). Qué lo termina depende del montaje (`halfwayWipe`):
+    /// en el Welcome, el aviso tardío; en «Empezar desde cero», esta misma puerta al volver. Las cuatro fases pasan por
+    /// ahí y no solo `.wipeFailed`: «faltan cambios de grupos» tras un reintento y «no se pudo preguntar» tras un kill
+    /// también pueden llegar con la zona ya ida.
     private func leaveGate() {
         if isWipeFailed || isDeviceWipeFailed || isGroupsPending || isUnverified {
-            StorageModePersistence.clearICloudCorpusWipeArm()
+            disarm()
         }
         onBack()
     }
@@ -908,8 +931,28 @@ struct WelcomePrivateICloudGateView: View {
             // un arranque posterior y se lleve por delante lo que la persona haya creado desde entonces.
             // Lo que se pierde al retirarlo está acotado y tiene ticket
             // (`late-icloud-wipe-can-re-export-between-its-two-halves`): reaparición, nunca pérdida.
-            discardPendingWipe()
-            onProceed()
+            //
+            // **Y el borrado a medias se resuelve aquí, según el montaje** (ticket
+            // `private-gate-leave-after-a-halfway-wipe-forgets-the-zone`): donde la puerta midió también el teléfono,
+            // no queda mitad y la marca se va; en «Empezar desde cero», iCloud vacío con la marca puesta es el borrado
+            // sin terminar, y se termina en vez de seguir encima de las filas importadas.
+            switch WelcomePrivateICloudGateLogic.afterEmptyMeasure(
+                halfwayWipe,
+                leftHalfway: StorageModePersistence.isICloudCorpusWipeLeftHalfway(),
+                zoneDone: StorageModePersistence.isICloudCorpusWipeZoneDone(),
+                measuredDevice: deviceCorpus != nil
+            ) {
+            case .finishHalfwayWipe:
+                phase = .wiping
+            case .proceed(retiresHalfway: true):
+                // La marca antes que el arm: un kill entre las dos deja el arm, y el arranque vuelve a esta puerta.
+                StorageModePersistence.clearICloudCorpusWipeLeftHalfway()
+                StorageModePersistence.clearICloudCorpusWipeArm()
+                onProceed()
+            case .proceed(retiresHalfway: false):
+                discardPendingWipe()
+                onProceed()
+            }
         case .foundData(let corpus):
             phase = .found(corpus)
         case .foundDeviceData(let unverified):
@@ -967,11 +1010,23 @@ struct WelcomePrivateICloudGateView: View {
             return
         }
         guard failure == nil else {
-            phase = groupsPendingPhase(for: failure, retry: .iCloud) ?? .wipeFailed(zoneGone: zoneGone)
+            // El copy suma el borrado a medias de antes: un reintento que falla antes de la zona no la devuelve.
+            let failureZoneGone = WelcomePrivateICloudGateLogic.failureFoundZoneGone(
+                zoneDone: zoneGone,
+                leftHalfway: StorageModePersistence.isICloudCorpusWipeLeftHalfway()
+            )
+            phase = groupsPendingPhase(for: failure, retry: .iCloud) ?? .wipeFailed(zoneGone: failureZoneGone)
             return
         }
         if clearsResidualPreferencesOnWipe {
             OnboardingResetHelper.clearResidualPreferencesForFreshStart()
+        }
+        // **Un borrado que llega a las filas y termina bien resuelve el «a medias»** (ticket
+        // `private-gate-leave-after-a-halfway-wipe-forgets-the-zone`). `wipeAllUserData` ya retira la marca cuando hay
+        // filas; sin filas el borrado sale antes de llamarlo, y la marca se quedaba sobre un teléfono y un iCloud vacíos.
+        // Antes que el arm, por lo mismo que en `measure()`.
+        if halfwayWipe.reachesDeviceRows {
+            StorageModePersistence.clearICloudCorpusWipeLeftHalfway()
         }
         StorageModePersistence.clearICloudCorpusWipeArm()
         guard !cancelled else { return }

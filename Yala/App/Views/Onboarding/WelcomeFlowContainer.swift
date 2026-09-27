@@ -290,7 +290,10 @@ struct WelcomeFlowContainer: View {
                     // preguntarle a iCloud jamás bloquea (ADR §9) y sin esta salida la pantalla sería un
                     // camino muerto: las otras dos ramas del chooser también necesitan red. El testigo
                     // aplaza la validación al primer arranque en que se pueda hacer.
-                    unverifiedExit: .proceedWatchingTheMirror
+                    unverifiedExit: .proceedWatchingTheMirror,
+                    // **El borrado a medias lo termina el aviso tardío**: su «Terminar de borrar» es `.handover`, el mismo
+                    // borrado de esta puerta. Salir lo deja escrito en vez de olvidar que iCloud ya quedó vacío.
+                    halfwayWipe: .leaveForLateNotice
                 )
                 .transition(.opacity)
             case .freshStartDeviceWipe:
@@ -316,6 +319,9 @@ struct WelcomeFlowContainer: View {
                     deviceCorpus: .init(hasData: { hasLocalDataNow() },
                                         wipe: { await performDeviceCorpusWipe() }),
                     unverifiedExit: .proceedWatchingTheMirror,
+                    // Mismo Welcome y mismo borrado que la puerta de arriba. Esta entrada no borra iCloud, así que no
+                    // llega a dejar la zona a medias; se declara igual para no dejar un default que un cambio heredaría.
+                    halfwayWipe: .leaveForLateNotice,
                     entry: .wipeDevice
                 )
                 .transition(.opacity)
@@ -398,10 +404,18 @@ struct WelcomeFlowContainer: View {
 
     /// R2: el sub-chooser de "Ya tengo una cuenta" y su bypass comparten portal. Solo `restoreICloud`
     /// necesita el mirror; las dos entradas a la cuenta nube montan el mismo store que el neutro ya es.
+    ///
+    /// **«Restaurar» retira también el borrado a medias** (ticket `private-gate-leave-after-a-halfway-wipe-forgets-the-zone`,
+    /// review adversarial). Quien sale de la puerta tras un borrado a medias y elige traer sus datos se queda con lo que hay
+    /// en el teléfono: es la voluntad expresada DESPUÉS, el mismo criterio con el que se retira el arm. Con la marca viva,
+    /// el arranque le ofrecería «Terminar de borrar» sobre lo que acaba de elegir conservar. Aquí y no en cada `onRestore`:
+    /// este es el portal por el que pasan las tres entradas a Restaurar del Welcome.
     private func handleExistingOption(_ option: WelcomeAccountChoiceLogic.ExistingOption) {
         let destination: WelcomeMirrorRelaunchLogic.Destination
         switch option {
-        case .restoreICloud: destination = .restoreICloud
+        case .restoreICloud:
+            StorageModePersistence.clearICloudCorpusWipeLeftHalfway()
+            destination = .restoreICloud
         case .cloudSignIn, .googleSignIn: destination = .cloudSignIn
         }
         leaveWelcome(to: destination) { onSelectExistingOption(option) }

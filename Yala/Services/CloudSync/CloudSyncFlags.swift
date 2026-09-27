@@ -362,10 +362,14 @@ nonisolated enum StorageModePersistence {
         defaults.bool(forKey: icloudCorpusWipeZoneDoneKey)
     }
 
-    /// **«El borrado del aviso tardío quedó a medias y la persona tiene que decidir».** La zona de iCloud ya se borró, lo
-    /// del teléfono no, y el borrado falló delante de ella. Mientras esté puesta, el arranque le enseña «El borrado quedó
-    /// a medias» en vez de reanudarlo a ciegas; se retira cuando el borrado termina o cuando elige quedarse con lo que
-    /// tiene. **No caduca por tiempo**: el estado a medias sigue siendo verdad el día que vuelva.
+    /// **«El borrado quedó a medias y la persona tiene que decidir».** La zona de iCloud ya se borró, lo del teléfono no,
+    /// y el borrado falló delante de ella. Mientras esté puesta, el arranque le enseña «El borrado quedó a medias» en vez
+    /// de reanudarlo a ciegas; se retira cuando el borrado termina o cuando elige quedarse con lo que tiene. **No caduca
+    /// por tiempo**: el estado a medias sigue siendo verdad el día que vuelva.
+    ///
+    /// La escriben el aviso tardío y, desde el ticket `private-gate-leave-after-a-halfway-wipe-forgets-the-zone`, la
+    /// puerta privada al salir: el Welcome y «Empezar desde cero» de la activación. Quién la termina en cada caso está en
+    /// `WelcomePrivateICloudGateLogic.HalfwayWipe`, y el aviso tardío solo la pregunta en `.icloud`.
     ///
     /// `cloudSync.*` a propósito: el barrido de preferencias lo excluye, y el único sitio donde muere con la sesión es el
     /// hook de cierre, junto al testigo del espejo tardío.

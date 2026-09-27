@@ -53,19 +53,29 @@ struct LateICloudWipeLeftHalfwayLogicTests {
     }
 
     @Test(arguments: [
-        (true, false, Logic.LateWipeLaunch.resume),
-        (true, true, .resume),
-        (false, true, .askLeftHalfway),
-        (false, false, .none),
+        (true, false, StorageMode.icloud, Logic.LateWipeLaunch.resume),
+        (true, true, .icloud, .resume),
+        (false, true, .icloud, .askLeftHalfway),
+        (false, false, .icloud, .none),
+        // Sin las filas `(armado, .cloud)` a propósito: que el arm se reanude también en la nube es un hueco abierto
+        // (`private-gate-back-from-found-keeps-a-resumed-arm`), no un contrato.
+        (false, true, .cloud, .retireLeftHalfway),
+        (false, false, .cloud, .none),
     ])
-    func launch(armed: Bool, leftHalfway: Bool, expected: Logic.LateWipeLaunch) {
-        #expect(Logic.lateWipeLaunch(armed: armed, leftHalfway: leftHalfway) == expected)
+    func launch(armed: Bool, leftHalfway: Bool, storageMode: StorageMode, expected: Logic.LateWipeLaunch) {
+        #expect(Logic.lateWipeLaunch(armed: armed, leftHalfway: leftHalfway, storageMode: storageMode) == expected)
     }
 
     /// **EL PIN DEL BUG.** Sin arm y con el borrado a medias, el arranque PREGUNTA. Reanudar aquí es terminar a ciegas lo
     /// que la persona vio fallar y dejó.
     @Test func leftHalfwayWithoutArm_asksAndNeverResumes() {
-        #expect(Logic.lateWipeLaunch(armed: false, leftHalfway: true) == .askLeftHalfway)
+        #expect(Logic.lateWipeLaunch(armed: false, leftHalfway: true, storageMode: .icloud) == .askLeftHalfway)
+    }
+
+    /// **En la nube no se pregunta** (ticket `private-gate-leave-after-a-halfway-wipe-forgets-the-zone`): «Terminar de
+    /// borrar» es `.handover`, y lo del teléfono ya es de la cuenta de la nube. La marca se retira.
+    @Test func leftHalfwayInTheCloud_isRetiredAndNeverAsked() {
+        #expect(Logic.lateWipeLaunch(armed: false, leftHalfway: true, storageMode: .cloud) == .retireLeftHalfway)
     }
 
     @Test func notice_identityIsTheFact() {
@@ -124,7 +134,8 @@ struct LateICloudWipeLeftHalfwayFlagsTests {
         #expect(!StorageModePersistence.isICloudCorpusWipeZoneDone(d))
         #expect(WelcomePrivateICloudGateLogic.lateWipeLaunch(
             armed: StorageModePersistence.isICloudCorpusWipeArmed(d),
-            leftHalfway: StorageModePersistence.isICloudCorpusWipeLeftHalfway(d)) == .askLeftHalfway)
+            leftHalfway: StorageModePersistence.isICloudCorpusWipeLeftHalfway(d),
+            storageMode: .icloud) == .askLeftHalfway)
         StorageModePersistence.clearICloudCorpusWipeLeftHalfway(d)
         #expect(!StorageModePersistence.isICloudCorpusWipeLeftHalfway(d))
     }

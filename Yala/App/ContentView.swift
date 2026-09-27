@@ -1796,10 +1796,15 @@ struct ContentView: View {
         // los dos, porque solo pasa cuando pulsó «Terminar de borrar» y un kill cortó ese intento.
         switch WelcomePrivateICloudGateLogic.lateWipeLaunch(
             armed: StorageModePersistence.isICloudCorpusWipeArmed(),
-            leftHalfway: StorageModePersistence.isICloudCorpusWipeLeftHalfway()
+            leftHalfway: StorageModePersistence.isICloudCorpusWipeLeftHalfway(),
+            storageMode: CloudSyncFlags.storageMode
         ) {
         case .none:
             break
+        case .retireLeftHalfway:
+            // En la nube la marca no describe este store, y terminarla se llevaría los datos de la cuenta. Se retira y
+            // sigue la comprobación de siempre, que en la nube sale sola (no hay espejo).
+            StorageModePersistence.clearICloudCorpusWipeLeftHalfway()
         case .askLeftHalfway:
             RouterEntryGate.shared.submit(.presentLateICloudMirrorNotice(.wipeLeftHalfway))
             return
@@ -2737,6 +2742,12 @@ private struct WelcomeFlowModifier: ViewModifier {
             // reinstala lo suyo.
             UserDefaults.standard.removeObject(forKey: GroupsAccountAssociation.localKey)
             UserDefaults.standard.removeObject(forKey: GroupsSessionHistoryMarker.key)
+            // **Y un borrado a medias de la puerta del Welcome deja de estarlo** (ticket
+            // `private-gate-leave-after-a-halfway-wipe-forgets-the-zone`). La marca dice «iCloud vacío y lo del teléfono
+            // no», y aquí se acaba de medir el teléfono vacío. Con el espejo puesto, la puerta no mide el teléfono y su
+            // `.proceed` llega aquí sin retirarla; sin esta línea, tras el onboarding nuevo el arranque ofrecería
+            // «Terminar de borrar» sobre el corpus recién creado.
+            StorageModePersistence.clearICloudCorpusWipeLeftHalfway()
             showWelcomeFlow = false
             showOnboarding = true
         }
