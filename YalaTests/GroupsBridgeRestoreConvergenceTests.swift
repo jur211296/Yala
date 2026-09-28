@@ -916,4 +916,706 @@ struct GroupsBridgeRestoreConvergenceBehaviourTests {
                     "el borrado del receptor re-emitió la señal de vaciado: rebotaría entre los dispositivos del Apple ID")
         }
     }
+
+    // MARK: - El receptor que NO puede reponer (ticket `late-remote-wipe-on-a-device-without-groups-cannot-return-the-rows`)
+
+    /// Una fila del origen que el espejo llevó al receptor: su identidad en el origen (el borrado alcanza a ESE registro).
+    private struct MirroredRow {
+        let originID: PersistentIdentifier
+    }
+
+    private func bridgedRows(_ context: ModelContext) throws -> [TransactionItem] {
+        try context.fetch(FetchDescriptor<TransactionItem>(
+            predicate: #Predicate { $0.splitExpenseID != nil || $0.splitSettlementID != nil }))
+    }
+
+    private func groupRowIDs(_ context: ModelContext) throws -> Set<PersistentIdentifier> {
+        Set(try bridgedRows(context).map(\.persistentModelID))
+    }
+
+    /// Las filas repuestas por el origen se crearon hace un minuto, después de la señal (hace una hora): se atrasan todas lo
+    /// mismo, conservando lo que las separa. Así una fila que el origen rehaga durante el caso no cae dentro del margen de
+    /// la huella de la vieja.
+    private func backdateGroupRows(_ context: ModelContext) throws {
+        for tx in try bridgedRows(context) { tx.createdAt = tx.createdAt.addingTimeInterval(-60) }
+        try context.save()
+    }
+
+    /// El espejo lleva al receptor las filas puenteadas del origen (con `onlyGroupsAccount`, solo las de la cuenta de
+    /// grupos: lo que llegó antes que la real). Devuelve las filas del ORIGEN que se llevó, para que el borrado las alcance.
+    @discardableResult
+    private func mirror(from origin: ModelContext, into receiver: ModelContext,
+                        onlyGroupsAccount: Bool = false) throws -> [MirroredRow] {
+        let groups = Account(name: "Grupos", currencyCode: "USD", colorHex: "#333333", iconName: "person.3", type: "cash",
+                             isSystemAccount: true)
+        let cash = Account(name: "Efectivo", currencyCode: "USD", colorHex: "#111111", iconName: "banknote", type: "cash")
+        receiver.insert(groups)
+        receiver.insert(cash)
+        var mirrored: [MirroredRow] = []
+        for source in try bridgedRows(origin) where !onlyGroupsAccount || source.account?.isSystemAccount == true {
+            let tx = TransactionItem(date: source.date, amount: source.amount, currencyCode: "USD", note: "",
+                                     account: source.account?.isSystemAccount == true ? groups : cash)
+            tx.splitExpenseID = source.splitExpenseID
+            tx.splitSettlementID = source.splitSettlementID
+            // El espejo puede dejar la hora al milisegundo: la huella del receptor no es la del origen al bit.
+            tx.createdAt = Date(timeIntervalSince1970: (source.createdAt.timeIntervalSince1970 * 1000).rounded() / 1000)
+            receiver.insert(tx)
+            mirrored.append(.init(originID: source.persistentModelID))
+        }
+        try receiver.save()
+        return mirrored
+    }
+
+    /// Llega al origen, por el espejo, el borrado de las filas que el receptor se llevó (son los mismos registros).
+    private func deletionArrives(at origin: ModelContext, of taken: [MirroredRow]) throws {
+        let ids = Set(taken.map(\.originID))
+        for tx in try bridgedRows(origin) where ids.contains(tx.persistentModelID) { origin.delete(tx) }
+        try origin.save()
+    }
+
+    private static let signaledAt = Date.now.addingTimeInterval(-3600)
+
+    /// La huella de una fila que aquí no existe: la de un receptor que se llevó algo que en este dispositivo ya no está.
+    private static let oldStamp = GroupsRemoteWipeReturnLogic.Stamp(createdAt: 1, groupsAccount: true)
+
+    /// **El orden del ticket.** El origen (con grupos) vació sus datos y ya repuso lo de grupo. El iPad, que nunca entró en
+    /// su cuenta de grupos, procesa la señal tarde: tiene esas filas por el espejo y ningún gasto local. Declara lo que se
+    /// lleva. El origen atiende la declaración: mientras esas filas sigan ahí no hace nada; cuando faltan, las repone, una vez.
+    @Test("receptor sin grupos: declara lo que se lleva y el origen lo repone cuando ya falta, una vez")
+    func lateRemoteWipe_onADeviceWithoutGroups_theOriginReturnsTheRowsOnce() throws {
+        let dir = try freshDir(), receiverDir = try freshDir()
+        defer { cleanup(dir); cleanup(receiverDir) }
+        let origin = try makeContext(dir)
+        let receiver = try makeContext(receiverDir)
+        let f = try makeFixture(origin)
+        try withEnvironment(origin) { defaults in
+            let kv = InMemoryKeyValueStore()
+            let expense = try makeCaseAExpense(origin, f)
+            let s = try makeSettlements(origin, f)
+            try bridgeGroupRows(origin, expense, s, defaults: defaults)
+            try backdateGroupRows(origin)
+            let taken = try mirror(from: origin, into: receiver)
+            try #require(try receiver.fetchCount(FetchDescriptor<SplitExpense>()) == 0, "el receptor trae grupos")
+
+            try DataWipeService.wipeLocallyForRemoteWipeSignal(
+                in: receiver, signaledAt: Self.signaledAt, defaults: makeIsolatedDefaults(), declarationStore: kv)
+
+            #expect(try groupRowIDs(receiver).isEmpty, "el borrado del receptor ya no se lleva las filas puenteadas")
+            let declaration = try #require(GroupsRemoteWipeReturnStore.read(kv).first, """
+                el receptor sin grupos no declaró lo que se lleva: su convergencia no repone nada, su borrado viaja al \
+                origen y los gastos de grupo desaparecen de todo el parque
+                """)
+            #expect(Set(declaration.expenses.keys) == [expense.id.uuidString])
+            #expect(Set(declaration.settlements.keys) == [s.paid.id.uuidString, s.received.id.uuidString])
+            #expect(declaration.expenses.values.joined().count + declaration.settlements.values.joined().count
+                    == taken.count, "no declara la huella de cada fila que se lleva")
+
+            // El origen arranca ANTES de que le llegue el borrado: sus filas siguen, y reponer ahí sería reponer debajo.
+            let before = try groupRowIDs(origin)
+            let draftsBefore = try origin.fetchCount(FetchDescriptor<InboxDraft>())
+            GroupsRemoteWipeReturn.returnIfDeclared(context: origin, kv: kv, defaults: defaults, obeysWipeSignal: true)
+            #expect(try groupRowIDs(origin) == before, "el origen re-puenteó con las filas aún presentes")
+            #expect(try origin.fetchCount(FetchDescriptor<InboxDraft>()) == draftsBefore)
+
+            // Llega el borrado por el espejo, y el arranque siguiente repone.
+            try deletionArrives(at: origin, of: taken)
+            GroupsRemoteWipeReturn.returnIfDeclared(context: origin, kv: kv, defaults: defaults, obeysWipeSignal: true)
+
+            #expect(!(try txs(origin, expenseID: expense.id)).isEmpty, "el gasto de grupo no volvió a lo personal")
+            #expect(try expenseDrafts(origin, expense).count == 1, "el Inbox no pregunta de qué cuenta salió el gasto")
+            #expect(try legs(origin, s.paid).count == 1, "la liquidación que pagué no volvió, o volvió dos veces")
+            #expect(try legs(origin, s.received).count == 1, "la que me pagaron no volvió, o volvió dos veces")
+            #expect(try drafts(origin, s.received).count == 1, "el Inbox no pregunta a qué cuenta llegó el pago")
+            #expect(try legs(origin, s.unconfirmed).isEmpty, "sin confirmar no se crea nunca")
+            #expect(GroupsPendingBridgeIntent.pending.isEmpty, "todo quedó atendido")
+
+            // Una vez: otro arranque no crea nada.
+            let after = try groupRowIDs(origin)
+            let draftsAfter = try origin.fetchCount(FetchDescriptor<InboxDraft>())
+            GroupsRemoteWipeReturn.returnIfDeclared(context: origin, kv: kv, defaults: defaults, obeysWipeSignal: true)
+            #expect(try groupRowIDs(origin) == after, "un segundo arranque volvió a reponer")
+            #expect(try origin.fetchCount(FetchDescriptor<InboxDraft>()) == draftsAfter)
+        }
+    }
+
+    /// **La prueba es por FILA** (review adversarial). El receptor había importado solo la virtual del gasto, no la real:
+    /// en el origen la real sigue ahí cuando le llega el borrado de la virtual. Mirando «¿queda alguna fila del gasto?», el
+    /// gasto se quedaba sin su pata de la cuenta de grupos para siempre. Faltando la declarada, se re-puentea: el bridge
+    /// conserva la real y rehace la virtual.
+    @Test("el receptor solo tenía una parte de las filas del gasto: vuelve lo que se llevó y la real se conserva")
+    func lateRemoteWipe_receiverHadOnlyPartOfTheRows_returnsWhatItTook() throws {
+        let dir = try freshDir(), receiverDir = try freshDir()
+        defer { cleanup(dir); cleanup(receiverDir) }
+        let origin = try makeContext(dir)
+        let receiver = try makeContext(receiverDir)
+        let f = try makeFixture(origin)
+        try withEnvironment(origin) { defaults in
+            let kv = InMemoryKeyValueStore()
+            let expense = try makeCaseAExpense(origin, f)
+            SessionState.shared.hasPrivateSession = true
+            let realID = try insertRestoredRealTransaction(origin, f, for: expense)
+            try GroupTransactionBridge.shared.bridgeRemoteExpenses(ids: [expense.id])
+            // La real y la virtual de un mismo gesto nacen a microsegundos: se ponen en el MISMO instante para que el caso
+            // no dependa de lo rápido que corra, y solo las separe la cuenta.
+            let bridgedNow = try txs(origin, expenseID: expense.id)
+            let virtualAt = try #require(bridgedNow.first { $0.account?.isSystemAccount == true }?.createdAt,
+                                         "el fixture no tiene la pata de la cuenta de grupos")
+            for tx in bridgedNow where tx.persistentModelID == realID { tx.createdAt = virtualAt }
+            try origin.save()
+            try backdateGroupRows(origin)
+            try #require(try txs(origin, expenseID: expense.id).contains { $0.account?.isSystemAccount == true },
+                         "el fixture no tiene la pata de la cuenta de grupos")
+            let taken = try mirror(from: origin, into: receiver, onlyGroupsAccount: true)
+
+            try DataWipeService.wipeLocallyForRemoteWipeSignal(
+                in: receiver, signaledAt: Self.signaledAt, defaults: makeIsolatedDefaults(), declarationStore: kv)
+            try deletionArrives(at: origin, of: taken)
+            try #require(try txs(origin, expenseID: expense.id).allSatisfy { $0.account?.isSystemAccount == false },
+                         "el borrado no se llevó la pata de grupos: el caso no mide nada")
+
+            GroupsRemoteWipeReturn.returnIfDeclared(context: origin, kv: kv, defaults: defaults, obeysWipeSignal: true)
+
+            let rows = try txs(origin, expenseID: expense.id)
+            #expect(rows.contains { $0.account?.isSystemAccount == true },
+                    "la pata de la cuenta de grupos no volvió: la real presente dejó el gasto a medias para siempre")
+            #expect(rows.contains { $0.persistentModelID == realID }, "reponer se llevó la transacción real")
+        }
+    }
+
+    /// El origen rehízo la virtual (otra identidad) entre la importación del receptor y su borrado: cuando llega el borrado
+    /// de la vieja y de la real, en el origen queda la nueva. Por id, el gasto seguía «presente» y nunca se conciliaba. Por
+    /// fila, faltando las declaradas se re-puentea (la virtual se rehace), sin duplicar el borrador.
+    @Test("el origen rehízo la virtual antes del borrado: el gasto se re-puentea igual")
+    func lateRemoteWipe_originRebuiltTheVirtual_stillReturns() throws {
+        let dir = try freshDir(), receiverDir = try freshDir()
+        defer { cleanup(dir); cleanup(receiverDir) }
+        let origin = try makeContext(dir)
+        let receiver = try makeContext(receiverDir)
+        let f = try makeFixture(origin)
+        try withEnvironment(origin) { defaults in
+            let kv = InMemoryKeyValueStore()
+            let expense = try makeCaseAExpense(origin, f)
+            SessionState.shared.hasPrivateSession = true
+            _ = try insertRestoredRealTransaction(origin, f, for: expense)
+            try GroupTransactionBridge.shared.bridgeRemoteExpenses(ids: [expense.id])
+            try backdateGroupRows(origin)
+            let taken = try mirror(from: origin, into: receiver)
+            try DataWipeService.wipeLocallyForRemoteWipeSignal(
+                in: receiver, signaledAt: Self.signaledAt, defaults: makeIsolatedDefaults(), declarationStore: kv)
+
+            // El sync de grupos re-puentea el gasto en el origen antes de que llegue el borrado: la virtual es otra.
+            try GroupTransactionBridge.shared.bridgeRemoteExpenses(ids: [expense.id])
+            try deletionArrives(at: origin, of: taken)
+            let rebuilt = try #require(try txs(origin, expenseID: expense.id).first { $0.account?.isSystemAccount == true },
+                                       "el fixture no deja la virtual rehecha")
+            let rebuiltID = rebuilt.persistentModelID
+            let draftsBefore = try expenseDrafts(origin, expense).count
+
+            GroupsRemoteWipeReturn.returnIfDeclared(context: origin, kv: kv, defaults: defaults, obeysWipeSignal: true)
+
+            #expect(try txs(origin, expenseID: expense.id).allSatisfy { $0.persistentModelID != rebuiltID }, """
+                el gasto no se re-puenteó: la virtual rehecha lo daba por presente y lo que se llevó el receptor no se \
+                concilia nunca
+                """)
+            #expect(try expenseDrafts(origin, expense).count == max(draftsBefore, 1), "reponer duplicó el borrador")
+        }
+    }
+
+    /// El receptor con una parte de los grupos (canal parado) converge lo que tiene y declara SOLO lo que le falta:
+    /// declarar también lo suyo haría dos reponedores del mismo id.
+    @Test("receptor con una parte de los grupos: converge lo suyo y declara solo lo que le falta")
+    func lateRemoteWipe_partialGroups_declaresOnlyWhatItLacks() throws {
+        let dir = try freshDir()
+        defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let f = try makeFixture(context)
+        try withEnvironment(context) { defaults in
+            let kv = InMemoryKeyValueStore()
+            let expense = try makeCaseAExpense(context, f)
+            let s = try makeSettlements(context, f)
+            try bridgeGroupRows(context, expense, s, defaults: defaults)
+            let missing = UUID().uuidString
+            let tx = TransactionItem(date: .now, amount: -60, currencyCode: "USD", note: "", account: f.cash)
+            tx.splitExpenseID = missing
+            context.insert(tx)
+            try context.save()
+
+            try DataWipeService.wipeLocallyForRemoteWipeSignal(
+                in: context, signaledAt: Self.signaledAt, defaults: defaults, declarationStore: kv)
+
+            let declaration = try #require(GroupsRemoteWipeReturnStore.read(kv).first, "no declaró lo que no puede reponer")
+            #expect(Set(declaration.expenses.keys) == [missing], "declaró también lo que repone su convergencia")
+            #expect(declaration.settlements.isEmpty)
+            #expect(GroupsBridgeRestoreConvergenceStore.isPending(defaults), "no pidió su convergencia para lo que tiene")
+        }
+    }
+
+    /// Una liquidación que el receptor tiene en local pero SIN confirmar (su canal se paró antes de la confirmación) no la
+    /// repone su convergencia, que solo mira las confirmadas: se declara, o no la repone nadie (re-review adversarial).
+    @Test("una liquidación que el receptor tiene sin confirmar se declara: su convergencia no la repone")
+    func lateRemoteWipe_localButUnconfirmedSettlement_isDeclared() throws {
+        let dir = try freshDir(), receiverDir = try freshDir()
+        defer { cleanup(dir); cleanup(receiverDir) }
+        let origin = try makeContext(dir)
+        let receiver = try makeContext(receiverDir)
+        let f = try makeFixture(origin)
+        try withEnvironment(origin) { defaults in
+            let kv = InMemoryKeyValueStore()
+            let s = try makeSettlements(origin, f)
+            SessionState.shared.hasPrivateSession = true
+            try GroupTransactionBridge.shared.bridgeRemoteSettlements(ids: [s.paid.id])
+            try backdateGroupRows(origin)
+            try mirror(from: origin, into: receiver)
+            let g = try makeFixture(receiver)
+            let stale = SplitSettlement(groupZoneID: g.group.cloudKitZoneID, fromMemberID: g.me.id.uuidString,
+                                        toMemberID: g.ana.id.uuidString, amount: 40, currencyCode: "USD")
+            stale.id = s.paid.id
+            receiver.insert(stale)
+            try receiver.save()
+            try #require(!stale.isConfirmed, "el fixture no deja la liquidación sin confirmar en el receptor")
+
+            try DataWipeService.wipeLocallyForRemoteWipeSignal(
+                in: receiver, signaledAt: Self.signaledAt, defaults: makeIsolatedDefaults(), declarationStore: kv)
+
+            let declaration = try #require(GroupsRemoteWipeReturnStore.read(kv).first, """
+                la liquidación que el receptor tiene sin confirmar no se declaró: su convergencia no la repone y nadie más
+                """)
+            #expect(Set(declaration.settlements.keys) == [s.paid.id.uuidString])
+        }
+    }
+
+    /// El receptor que tiene todo converge él, como desde el ticket padre, y no declara nada.
+    @Test("receptor con todos los grupos: converge él y no declara nada")
+    func lateRemoteWipe_withAllGroups_doesNotDeclare() throws {
+        let dir = try freshDir()
+        defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let f = try makeFixture(context)
+        try withEnvironment(context) { defaults in
+            let kv = InMemoryKeyValueStore()
+            let expense = try makeCaseAExpense(context, f)
+            let s = try makeSettlements(context, f)
+            try bridgeGroupRows(context, expense, s, defaults: defaults)
+
+            try DataWipeService.wipeLocallyForRemoteWipeSignal(
+                in: context, signaledAt: Self.signaledAt, defaults: defaults, declarationStore: kv)
+
+            #expect(GroupsRemoteWipeReturnStore.read(kv).isEmpty, "declaró lo que repone él: dos reponedores")
+            #expect(GroupsBridgeRestoreConvergenceStore.isPending(defaults))
+        }
+    }
+
+    /// En el orden normal (el receptor procesa la señal antes de que el origen reponga nada) no se declara: la petición del
+    /// origen basta, como desde el ticket padre.
+    @Test("en el orden normal el receptor sin grupos no declara")
+    func remoteWipe_beforeTheOriginConverges_withoutGroups_doesNotDeclare() throws {
+        let dir = try freshDir(), receiverDir = try freshDir()
+        defer { cleanup(dir); cleanup(receiverDir) }
+        let origin = try makeContext(dir)
+        let receiver = try makeContext(receiverDir)
+        let f = try makeFixture(origin)
+        try withEnvironment(origin) { defaults in
+            let kv = InMemoryKeyValueStore()
+            let expense = try makeCaseAExpense(origin, f)
+            let s = try makeSettlements(origin, f)
+            try bridgeGroupRows(origin, expense, s, defaults: defaults)
+            try mirror(from: origin, into: receiver)
+
+            try DataWipeService.wipeLocallyForRemoteWipeSignal(
+                in: receiver, signaledAt: Date.now.addingTimeInterval(60), defaults: makeIsolatedDefaults(),
+                declarationStore: kv)
+
+            #expect(GroupsRemoteWipeReturnStore.read(kv).isEmpty, "declaró sin llevarse nada que el origen hubiera repuesto")
+        }
+    }
+
+    /// Quien declaró no atiende su propia declaración aunque después tenga los grupos: la repone otro.
+    @Test("quien declara no atiende su propia declaración aunque luego tenga los grupos")
+    func theDeclaringDevice_neverReturnsItsOwnDeclaration() throws {
+        let dir = try freshDir(), receiverDir = try freshDir()
+        defer { cleanup(dir); cleanup(receiverDir) }
+        let origin = try makeContext(dir)
+        let receiver = try makeContext(receiverDir)
+        let f = try makeFixture(origin)
+        try withEnvironment(receiver) { defaults in
+            let kv = InMemoryKeyValueStore()
+            let expense = try makeCaseAExpense(origin, f)
+            SessionState.shared.hasPrivateSession = true
+            GroupTransactionBridge.shared.setContext(origin)
+            try GroupTransactionBridge.shared.bridgeRemoteExpenses(ids: [expense.id])
+            try backdateGroupRows(origin)
+            try mirror(from: origin, into: receiver)
+            GroupTransactionBridge.shared.setContext(receiver)
+            try DataWipeService.wipeLocallyForRemoteWipeSignal(
+                in: receiver, signaledAt: Self.signaledAt, defaults: defaults, declarationStore: kv)
+            try #require(!GroupsRemoteWipeReturnStore.read(kv).isEmpty, "el fixture no declara")
+
+            // Su canal baja después el gasto que declaró.
+            let g = try makeFixture(receiver)
+            let arrived = SplitExpense(groupZoneID: g.group.cloudKitZoneID, amount: 90, currencyCode: "USD",
+                                       expenseDescription: "Cena", paidByMemberID: g.me.id.uuidString)
+            arrived.id = expense.id
+            receiver.insert(arrived)
+            receiver.insert(SplitShare(expenseID: arrived.id, memberID: g.me.id.uuidString, amount: 30,
+                                       groupZoneID: g.group.cloudKitZoneID))
+            try receiver.save()
+
+            GroupsRemoteWipeReturn.returnIfDeclared(context: receiver, kv: kv, defaults: defaults, obeysWipeSignal: true)
+            #expect(try txs(receiver, expenseID: expense.id).isEmpty, "el que declaró repuso también: dos reponedores")
+            // Control: el bridge, pedido a mano, sí lo crearía; lo que lo frena es que la declaración es suya.
+            try GroupTransactionBridge.shared.bridgeRemoteExpenses(ids: [expense.id])
+            #expect(!(try txs(receiver, expenseID: expense.id)).isEmpty, "el bridge no crea nada: el caso no mide nada")
+        }
+    }
+
+    /// **Otra declaración del mismo gasto se atiende otra vez** (review adversarial). Un segundo receptor tardío se lleva
+    /// lo que el origen ya repuso: su declaración es otra, con otras huellas, y el origen la repone cuando faltan esas
+    /// filas. Con un «ya repuesto» global, el gasto se quedaba fuera; uniendo las dos bajo un id nuevo, el primer receptor
+    /// perdía su «es mía».
+    @Test("un segundo receptor que se lleva lo repuesto: el origen repone otra vez, y el primero sigue sin atender la suya")
+    func aSecondDeclaration_ofTheSameExpense_isReturnedAgain() throws {
+        let dir = try freshDir(), firstDir = try freshDir(), secondDir = try freshDir()
+        defer { cleanup(dir); cleanup(firstDir); cleanup(secondDir) }
+        let origin = try makeContext(dir)
+        let first = try makeContext(firstDir)
+        let second = try makeContext(secondDir)
+        let f = try makeFixture(origin)
+        try withEnvironment(origin) { defaults in
+            let kv = InMemoryKeyValueStore()
+            let firstDefaults = makeIsolatedDefaults()
+            let expense = try makeCaseAExpense(origin, f)
+            SessionState.shared.hasPrivateSession = true
+            try GroupTransactionBridge.shared.bridgeRemoteExpenses(ids: [expense.id])
+            try backdateGroupRows(origin)
+            let takenByFirst = try mirror(from: origin, into: first)
+            try DataWipeService.wipeLocallyForRemoteWipeSignal(
+                in: first, signaledAt: Self.signaledAt, defaults: firstDefaults, declarationStore: kv)
+            try deletionArrives(at: origin, of: takenByFirst)
+            GroupsRemoteWipeReturn.returnIfDeclared(context: origin, kv: kv, defaults: defaults, obeysWipeSignal: true)
+            try #require(!(try txs(origin, expenseID: expense.id)).isEmpty, "el fixture no repone la primera vez")
+
+            try backdateGroupRows(origin)
+            let takenBySecond = try mirror(from: origin, into: second)
+            try DataWipeService.wipeLocallyForRemoteWipeSignal(
+                in: second, signaledAt: Self.signaledAt, defaults: makeIsolatedDefaults(), declarationStore: kv)
+            #expect(GroupsRemoteWipeReturnStore.read(kv).count == 2, "la segunda declaración pisó a la primera")
+            try deletionArrives(at: origin, of: takenBySecond)
+            try #require(try txs(origin, expenseID: expense.id).isEmpty, "el borrado del segundo no se llevó lo repuesto")
+
+            GroupsRemoteWipeReturn.returnIfDeclared(context: origin, kv: kv, defaults: defaults, obeysWipeSignal: true)
+            #expect(!(try txs(origin, expenseID: expense.id)).isEmpty,
+                    "lo que se llevó el segundo receptor no vuelve: el primero ya lo había repuesto")
+            let firstHandled = GroupsRemoteWipeReturnStore.handled(firstDefaults)
+            #expect(firstHandled.values.filter(\.own).count == 1, "el primer receptor perdió la marca de su declaración")
+        }
+    }
+
+    /// Lo repuesto de una declaración no se repone otra vez desde ella aunque vuelva a faltar: reponerlo otra vez es cosa
+    /// del camino que lo quitó.
+    @Test("lo ya repuesto de una declaración no se repone otra vez desde ella")
+    func declaredRows_areReturnedOnlyOncePerDeclaration() throws {
+        let dir = try freshDir()
+        defer { cleanup(dir) }
+        let origin = try makeContext(dir)
+        let f = try makeFixture(origin)
+        try withEnvironment(origin) { defaults in
+            SessionState.shared.hasPrivateSession = true
+            let kv = InMemoryKeyValueStore()
+            let expense = try makeCaseAExpense(origin, f)
+            try GroupsRemoteWipeReturn.declare(expenses: [expense.id.uuidString: [Self.oldStamp]], settlements: [:], kv: kv,
+                                               defaults: makeIsolatedDefaults())
+            GroupsRemoteWipeReturn.returnIfDeclared(context: origin, kv: kv, defaults: defaults, obeysWipeSignal: true)
+            try #require(!(try txs(origin, expenseID: expense.id)).isEmpty, "el fixture no repone")
+
+            for tx in try txs(origin, expenseID: expense.id) { origin.delete(tx) }
+            try origin.save()
+            GroupsRemoteWipeReturn.returnIfDeclared(context: origin, kv: kv, defaults: defaults, obeysWipeSignal: true)
+            #expect(try txs(origin, expenseID: expense.id).isEmpty, "se repuso dos veces desde la misma declaración")
+        }
+    }
+
+    /// Lo declarado que aquí todavía no ha bajado (el canal de grupos va por detrás) no se da por repuesto: se repone el
+    /// arranque en que llega. Apuntarlo antes lo perdería.
+    @Test("lo declarado que aún no ha bajado aquí se repone cuando baja")
+    func declaredButNotYetLocal_isReturnedWhenItArrives() throws {
+        let dir = try freshDir()
+        defer { cleanup(dir) }
+        let origin = try makeContext(dir)
+        let f = try makeFixture(origin)
+        try withEnvironment(origin) { defaults in
+            SessionState.shared.hasPrivateSession = true
+            let kv = InMemoryKeyValueStore()
+            let expenseID = UUID()
+            try GroupsRemoteWipeReturn.declare(expenses: [expenseID.uuidString: [Self.oldStamp]], settlements: [:], kv: kv,
+                                               defaults: makeIsolatedDefaults())
+            GroupsRemoteWipeReturn.returnIfDeclared(context: origin, kv: kv, defaults: defaults, obeysWipeSignal: true)
+
+            let expense = SplitExpense(groupZoneID: f.group.cloudKitZoneID, amount: 90, currencyCode: "USD",
+                                       expenseDescription: "Cena", paidByMemberID: f.me.id.uuidString)
+            expense.id = expenseID
+            origin.insert(expense)
+            origin.insert(SplitShare(expenseID: expense.id, memberID: f.me.id.uuidString, amount: 30,
+                                     groupZoneID: f.group.cloudKitZoneID))
+            try origin.save()
+
+            GroupsRemoteWipeReturn.returnIfDeclared(context: origin, kv: kv, defaults: defaults, obeysWipeSignal: true)
+            #expect(!(try txs(origin, expenseID: expenseID)).isEmpty,
+                    "lo declarado que aún no había bajado se dio por repuesto y no vuelve")
+        }
+    }
+
+    /// Una declaración caducada no se atiende: nadie la borra del KV, y un dispositivo nuevo la encontraría meses después.
+    @Test("una declaración caducada no se atiende")
+    func expiredDeclaration_isIgnored() throws {
+        let dir = try freshDir()
+        defer { cleanup(dir) }
+        let origin = try makeContext(dir)
+        let f = try makeFixture(origin)
+        try withEnvironment(origin) { defaults in
+            SessionState.shared.hasPrivateSession = true
+            let kv = InMemoryKeyValueStore()
+            let expense = try makeCaseAExpense(origin, f)
+            let now = Date.now
+            try GroupsRemoteWipeReturn.declare(expenses: [expense.id.uuidString: [Self.oldStamp]], settlements: [:], kv: kv,
+                                               defaults: makeIsolatedDefaults(),
+                                               now: now.addingTimeInterval(-GroupsRemoteWipeReturnLogic.lifetime - 1))
+
+            GroupsRemoteWipeReturn.returnIfDeclared(context: origin, kv: kv, defaults: defaults, obeysWipeSignal: true,
+                                                    now: now)
+            #expect(try txs(origin, expenseID: expense.id).isEmpty, "se atendió una declaración caducada")
+
+            // Control: la misma, dos segundos antes, sí se atiende. La frontera exacta la clava el test puro: aquí la fecha
+            // pasa por el JSON del KV y el redondeo de ese viaje no es lo que se mide.
+            GroupsRemoteWipeReturn.returnIfDeclared(context: origin, kv: kv, defaults: defaults, obeysWipeSignal: true,
+                                                    now: now.addingTimeInterval(-2))
+            #expect(!(try txs(origin, expenseID: expense.id)).isEmpty, "el control no repone: el caso no mide el plazo")
+        }
+    }
+
+    /// Solo atiende una sesión que obedece la señal de vaciado (privada y en iCloud: la declaración habla de ese espejo) y,
+    /// como la convergencia, con sesión privada: en solo-grupos el bridge borra las transacciones reales que re-puentea.
+    @Test("sin sesión privada, o en una sesión que no obedece la señal, no se atiende la declaración")
+    func onlyASessionThatObeysTheWipeSignalReturns() throws {
+        let dir = try freshDir()
+        defer { cleanup(dir) }
+        let origin = try makeContext(dir)
+        let f = try makeFixture(origin)
+        try withEnvironment(origin) { defaults in
+            let kv = InMemoryKeyValueStore()
+            let expense = try makeCaseAExpense(origin, f)
+            try GroupsRemoteWipeReturn.declare(expenses: [expense.id.uuidString: [Self.oldStamp]], settlements: [:], kv: kv,
+                                               defaults: makeIsolatedDefaults())
+
+            SessionState.shared.hasPrivateSession = false
+            GroupsRemoteWipeReturn.returnIfDeclared(context: origin, kv: kv, defaults: defaults, obeysWipeSignal: true)
+            #expect(try txs(origin, expenseID: expense.id).isEmpty, "se re-puenteó en una sesión solo-grupos")
+
+            SessionState.shared.hasPrivateSession = true
+            GroupsRemoteWipeReturn.returnIfDeclared(context: origin, kv: kv, defaults: defaults, obeysWipeSignal: false)
+            #expect(try txs(origin, expenseID: expense.id).isEmpty, "se re-puenteó en una sesión que no obedece la señal")
+            #expect(GroupsRemoteWipeReturnStore.handled(defaults).isEmpty, "se apuntó como atendida sin atenderla")
+
+            // Control: con las dos, sí.
+            GroupsRemoteWipeReturn.returnIfDeclared(context: origin, kv: kv, defaults: defaults, obeysWipeSignal: true)
+            #expect(!(try txs(origin, expenseID: expense.id)).isEmpty, "el control no repone")
+        }
+    }
+
+    /// La liquidación de un grupo oculto no vuelve sola: el gasto que la compensaba no vuelve (mismo filtro que la
+    /// convergencia).
+    @Test("la liquidación declarada de un grupo borrado no vuelve")
+    func declaredHiddenGroupSettlement_staysOut() throws {
+        let dir = try freshDir()
+        defer { cleanup(dir) }
+        let origin = try makeContext(dir)
+        let f = try makeFixture(origin)
+        try withEnvironment(origin) { defaults in
+            SessionState.shared.hasPrivateSession = true
+            let kv = InMemoryKeyValueStore()
+            let s = try makeSettlements(origin, f)
+            f.group.isHiddenForAll = true
+            try origin.save()
+            try GroupsRemoteWipeReturn.declare(expenses: [:], settlements: [s.paid.id.uuidString: [Self.oldStamp]], kv: kv,
+                                               defaults: makeIsolatedDefaults())
+
+            GroupsRemoteWipeReturn.returnIfDeclared(context: origin, kv: kv, defaults: defaults, obeysWipeSignal: true)
+            #expect(try legs(origin, s.paid).isEmpty, "la liquidación de un grupo borrado volvió: deuda fantasma")
+        }
+    }
+
+    /// Faltando la pata declarada, una liquidación que conserva otra no se re-puentea: `bridgeSettlement` borra todas sus
+    /// transacciones, reales incluidas, antes de rehacerla. Criterio de la convergencia.
+    @Test("una liquidación declarada que conserva otra pata no se re-puentea")
+    func declaredSettlementWithASurvivingLeg_isLeftAlone() throws {
+        let dir = try freshDir()
+        defer { cleanup(dir) }
+        let origin = try makeContext(dir)
+        let f = try makeFixture(origin)
+        try withEnvironment(origin) { defaults in
+            SessionState.shared.hasPrivateSession = true
+            let kv = InMemoryKeyValueStore()
+            let s = try makeSettlements(origin, f)
+            try GroupTransactionBridge.shared.bridgeRemoteSettlements(ids: [s.paid.id])
+            let before = Set(try legs(origin, s.paid).map(\.persistentModelID))
+            try #require(!before.isEmpty, "el fixture no puentea la liquidación")
+            try GroupsRemoteWipeReturn.declare(expenses: [:], settlements: [s.paid.id.uuidString: [Self.oldStamp]], kv: kv,
+                                               defaults: makeIsolatedDefaults())
+
+            GroupsRemoteWipeReturn.returnIfDeclared(context: origin, kv: kv, defaults: defaults, obeysWipeSignal: true)
+            #expect(Set(try legs(origin, s.paid).map(\.persistentModelID)) == before,
+                    "se re-puenteó una liquidación que conservaba una pata: el bridge se lleva también las reales")
+        }
+    }
+
+    /// Lo declarado que el bridge no atiende (el member propio sin resolver) pasa a la intención durable con el canal del
+    /// backend, como en la convergencia; lo que no está confirmado no se pide, porque el bridge no lo crea nunca.
+    @Test("lo declarado que el bridge no atiende va a la intención durable; lo no confirmado no se pide")
+    func declaredButUnattended_goesToTheDurableIntent() throws {
+        let dir = try freshDir()
+        defer { cleanup(dir) }
+        let origin = try makeContext(dir)
+        let f = try makeFixture(origin)
+        try withEnvironment(origin) { defaults in
+            SessionState.shared.hasPrivateSession = true
+            let kv = InMemoryKeyValueStore()
+            let s = try makeSettlements(origin, f)
+            let flat = SplitGroup(name: "Piso", currencyCode: "USD")
+            origin.insert(flat)
+            let luis = SplitMember(groupZoneID: flat.cloudKitZoneID, displayName: "Luis")
+            let eva = SplitMember(groupZoneID: flat.cloudKitZoneID, displayName: "Eva")
+            origin.insert(luis)
+            origin.insert(eva)
+            let foreign = SplitSettlement(groupZoneID: flat.cloudKitZoneID, fromMemberID: luis.id.uuidString,
+                                          toMemberID: eva.id.uuidString, amount: 20, currencyCode: "USD")
+            foreign.isConfirmed = true
+            origin.insert(foreign)
+            try origin.save()
+            try GroupsRemoteWipeReturn.declare(
+                expenses: [:], settlements: [foreign.id.uuidString: [Self.oldStamp], s.unconfirmed.id.uuidString: [Self.oldStamp]], kv: kv,
+                defaults: makeIsolatedDefaults())
+
+            GroupsRemoteWipeReturn.returnIfDeclared(context: origin, kv: kv, defaults: defaults, obeysWipeSignal: true)
+
+            let pending = GroupsPendingBridgeIntent.pending
+            #expect(pending.backendSettlementIDs.contains(foreign.id),
+                    "lo que el bridge no atendió se soltó: no vuelve nunca")
+            #expect(!pending.settlementIDs.contains(s.unconfirmed.id),
+                    "se pidió una liquidación sin confirmar: la intención la reintenta sin que pueda crearse")
+        }
+    }
+
+    /// Lo que los otros casos no ven, porque apuntan en unos `defaults` aislados: en producción la marca de «es mía» va a
+    /// `.standard`, y el borrado del receptor RESETEA las preferencias de `.standard` justo después. Si su key entrara en
+    /// esa lista, el receptor atendería luego su propia declaración sin que nada fallara a la vista.
+    @Test("en `.standard` la marca de la declaración propia sobrevive al reset de preferencias del borrado")
+    func ownDeclarationMark_survivesThePreferencesReset() throws {
+        let dir = try freshDir(), receiverDir = try freshDir()
+        defer { cleanup(dir); cleanup(receiverDir) }
+        let origin = try makeContext(dir)
+        let receiver = try makeContext(receiverDir)
+        let f = try makeFixture(origin)
+        try withEnvironment(origin) { defaults in
+            let kv = InMemoryKeyValueStore()
+            let expense = try makeCaseAExpense(origin, f)
+            SessionState.shared.hasPrivateSession = true
+            try GroupTransactionBridge.shared.bridgeRemoteExpenses(ids: [expense.id])
+            try backdateGroupRows(origin)
+            try mirror(from: origin, into: receiver)
+            let standard = UserDefaults.standard
+            standard.set("Alguien", forKey: "userName")
+            GroupsRemoteWipeReturnStore.clearHandled(standard)
+
+            try DataWipeService.wipeLocallyForRemoteWipeSignal(in: receiver, signaledAt: Self.signaledAt, declarationStore: kv)
+
+            #expect(standard.object(forKey: "userName") == nil,
+                    "el borrado ya no resetea las preferencias: el caso no mide la supervivencia de la marca")
+            let declaration = try #require(GroupsRemoteWipeReturnStore.read(kv).first, "el fixture no declara")
+            #expect(GroupsRemoteWipeReturnStore.handled(standard)[declaration.id.uuidString]?.own == true,
+                    "el reset de preferencias se llevó la marca de «es mía»: el receptor atendería su propia declaración")
+        }
+    }
+}
+
+/// Un iCloud-KV en memoria: lo que escribe un dispositivo lo lee el otro, sin iCloud.
+private final class InMemoryKeyValueStore: OwnerKeyValueWriting {
+    private var values: [String: Any] = [:]
+    func setBool(_ value: Bool, forKey key: String) { values[key] = value }
+    func setString(_ value: String, forKey key: String) { values[key] = value }
+    func setDouble(_ value: Double, forKey key: String) { values[key] = value }
+    func setInt(_ value: Int, forKey key: String) { values[key] = value }
+    func removeObject(forKey key: String) { values[key] = nil }
+    func bool(forKey key: String) -> Bool { values[key] as? Bool ?? false }
+    func string(forKey key: String) -> String? { values[key] as? String }
+    func double(forKey key: String) -> Double { values[key] as? Double ?? 0 }
+    func longLong(forKey key: String) -> Int64 { values[key] as? Int64 ?? 0 }
+    func object(forKey key: String) -> Any? { values[key] }
+    @discardableResult func synchronize() -> Bool { true }
+}
+
+@Suite("Vaciado tardío en un dispositivo sin grupos: la decisión pura")
+struct GroupsRemoteWipeReturnLogicTests {
+
+    typealias Logic = GroupsRemoteWipeReturnLogic
+
+    @Test("el receptor declara la huella de las filas posteriores a la señal que su convergencia no repone")
+    func toDeclare_onlyWhatItsConvergenceWillNotReturn() {
+        let signal = Date(timeIntervalSince1970: 1_800_000_000)
+        let t1 = signal.addingTimeInterval(10), t2 = t1.addingTimeInterval(5)
+        let rows: [Logic.BridgedRow] = [
+            .init(expenseID: "a", settlementID: nil, createdAt: t1, groupsAccount: true),
+            .init(expenseID: "a", settlementID: nil, createdAt: t2, groupsAccount: false),
+            .init(expenseID: "a", settlementID: nil, createdAt: signal, groupsAccount: true),
+            .init(expenseID: "old", settlementID: nil, createdAt: signal.addingTimeInterval(-1), groupsAccount: true),
+            .init(expenseID: "b", settlementID: nil, createdAt: t1, groupsAccount: true),
+            .init(expenseID: nil, settlementID: "s", createdAt: t1, groupsAccount: nil),
+            .init(expenseID: nil, settlementID: "z", createdAt: t2, groupsAccount: true),
+        ]
+        let declared = Logic.toDeclare(rows: rows, signaledAt: signal,
+                                       returnableExpenseIDs: ["b"], returnableSettlementIDs: ["z"])
+        #expect(declared.expenses == ["a": [.init(createdAt: t1.timeIntervalSince1970, groupsAccount: true),
+                                            .init(createdAt: t2.timeIntervalSince1970, groupsAccount: false)]],
+                "lo anterior a la señal (o de su mismo instante) ya lo borró el origen: no se declara")
+        #expect(declared.settlements == ["s": [.init(createdAt: t1.timeIntervalSince1970, groupsAccount: nil)]])
+        #expect(Logic.toDeclare(rows: rows, signaledAt: signal, returnableExpenseIDs: ["a", "b"],
+                                returnableSettlementIDs: ["s", "z"]).expenses.isEmpty)
+    }
+
+    @Test("una fila es la declarada dentro del margen de la huella y en la misma cuenta, con sus dos vecinos")
+    func declaredRowsAreGone_boundaries() {
+        let t = 1_800_000_000.0
+        let declared = Logic.Stamp(createdAt: t, groupsAccount: true)
+        func row(_ offset: Double, _ groups: Bool?) -> Logic.Stamp { .init(createdAt: t + offset, groupsAccount: groups) }
+        let inside = Logic.stampTolerance - 0.0005, outside = Logic.stampTolerance + 0.0005
+        #expect(!Logic.declaredRowsAreGone(declared: [declared], local: [row(inside, true)]), "dentro del margen sigue presente")
+        #expect(Logic.declaredRowsAreGone(declared: [declared], local: [row(outside, true)]), "fuera del margen es otra fila")
+        #expect(Logic.declaredRowsAreGone(declared: [declared], local: [row(0, false)]),
+                "la real del mismo gesto no es la virtual declarada")
+        #expect(!Logic.declaredRowsAreGone(declared: [declared], local: [row(0, nil)]),
+                "una fila con la cuenta sin hidratar puede ser la declarada: se espera")
+        #expect(!Logic.declaredRowsAreGone(declared: [.init(createdAt: t, groupsAccount: nil)], local: [row(0, false)]))
+        #expect(Logic.declaredRowsAreGone(declared: [declared], local: []))
+        #expect(!Logic.declaredRowsAreGone(declared: [row(-9, true), declared], local: [row(outside, true), row(0, true)]),
+                "basta con UNA declarada presente para esperar")
+        #expect(Logic.stampTolerance == 0.005)
+    }
+
+    @Test("el plazo de una declaración, con sus dos vecinos")
+    func isLive_boundary() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        func declared(ago: TimeInterval) -> Logic.Declaration {
+            .init(id: UUID(), declaredAt: now.addingTimeInterval(-ago), expenses: [:], settlements: [:])
+        }
+        #expect(Logic.isLive(declared(ago: Logic.lifetime - 1), now: now))
+        #expect(!Logic.isLive(declared(ago: Logic.lifetime), now: now))
+        #expect(Logic.lifetime == 30 * 24 * 60 * 60)
+    }
+
+    /// La key del KV es formato compartido entre versiones de la app en el parque: renombrarla deja de ver las
+    /// declaraciones de los dispositivos que no se han actualizado.
+    @Test("la key del iCloud-KV no cambia")
+    func kvKey_isPinned() {
+        #expect(GroupsRemoteWipeReturnStore.kvKey == "groupsRowsToReturnAfterRemoteWipe")
+        #expect(GroupsRemoteWipeReturnStore.handledKey.hasPrefix("fullModeActivation."),
+                "fuera de ese prefijo el reset de preferencias podría llevársela")
+    }
 }

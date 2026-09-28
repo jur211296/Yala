@@ -237,3 +237,11 @@ Gate de `relay-row-rekeyed-then-deleted-tombstones-the-leader-identity`: cayó e
 instalación en la misma invocación, disco a ~8 GB libres), con el centinela a 0. Re-corrida la misma suite con
 `test-without-building`, 2 de 2 en verde, centinela a 0. El cambio de ese día no toca la pantalla de nueva transacción
 (solo el drain de la nube, inactivo en ese montaje).
+
+## Quinta observación, 2026-09-27 — gate de `late-remote-wipe-on-a-device-without-groups-cannot-return-the-rows`
+
+Cinco suites en una invocación (14 casos, centinela 0): falla este, con la firma de siempre (`XCUIApplication+Yala.swift:270`,
+36,3 s esperando `transaction_success_accept`). Aislado, con el centinela en 0 las dos veces: **pasa 32,4 s y falla 36,9 s**.
+Mismo binario, 1 de 2 aislado: no hace falta carga. Lo que el PR añade al arranque (`GroupsRemoteWipeReturn.returnIfDeclared`)
+sale en su primera lectura del iCloud-KV bajo este test (no hay ninguna declaración), así que no toca el guardado.
+Disco: 5,8 GB libres.

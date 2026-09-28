@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (662)
+## Index (663)
 
 | id | status | path |
 |---|---|---|
@@ -422,7 +422,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | late-notice-of-a-welcome-private-session-purges-groups-joined-later | qa | tickets/qa/late-notice-of-a-welcome-private-session-purges-groups-joined-later.md |
 | late-notice-witness-survives-a-welcome-restore-over-device-data | backlog | tickets/backlog/late-notice-witness-survives-a-welcome-restore-over-device-data.md |
 | late-remote-wipe-infers-the-origin-converged-from-row-dates | backlog | tickets/backlog/late-remote-wipe-infers-the-origin-converged-from-row-dates.md |
-| late-remote-wipe-on-a-device-without-groups-cannot-return-the-rows | backlog | tickets/backlog/late-remote-wipe-on-a-device-without-groups-cannot-return-the-rows.md |
+| late-remote-wipe-on-a-device-without-groups-cannot-return-the-rows | qa | tickets/qa/late-remote-wipe-on-a-device-without-groups-cannot-return-the-rows.md |
 | late-remote-wipe-signal-also-wipes-rows-created-after-it | backlog | tickets/backlog/late-remote-wipe-signal-also-wipes-rows-created-after-it.md |
 | late-remote-wipe-signal-undoes-the-rows-the-origin-reconverged | qa | tickets/qa/late-remote-wipe-signal-undoes-the-rows-the-origin-reconverged.md |
 | late-wipe-arm-is-dropped-silently-when-the-device-moves-to-the-cloud | backlog | tickets/backlog/late-wipe-arm-is-dropped-silently-when-the-device-moves-to-the-cloud.md |
@@ -609,6 +609,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | settings-migrate-blocks-a-second-device-before-its-marker | backlog | tickets/backlog/settings-migrate-blocks-a-second-device-before-its-marker.md |
 | settings-migrate-to-cloud-adopts-silently-instead-of-migrating | done | tickets/done/settings-migrate-to-cloud-adopts-silently-instead-of-migrating.md |
 | settings-redesign-as-grouped-lists-like-ios | backlog | tickets/backlog/settings-redesign-as-grouped-lists-like-ios.md |
+| settlement-approval-leaves-no-trace-so-a-rebridge-asks-again | backlog | tickets/backlog/settlement-approval-leaves-no-trace-so-a-rebridge-asks-again.md |
 | shared-state-guard-misses-wipelocalgroupsdomain | backlog | tickets/backlog/shared-state-guard-misses-wipelocalgroupsdomain.md |
 | shell-and-wipe-alert-read-the-session-axis-differently | backlog | tickets/backlog/shell-and-wipe-alert-read-the-session-axis-differently.md |
 | shell-derives-from-two-session-axes | done | tickets/done/shell-derives-from-two-session-axes.md |
