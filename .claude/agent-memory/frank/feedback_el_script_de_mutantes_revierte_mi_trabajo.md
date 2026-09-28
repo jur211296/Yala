@@ -50,3 +50,10 @@ del harness, la paré con `TaskStop` al cambiar el diseño y dejó un mutante pu
 regla estaba aquí y no la leí antes de lanzar. ⇒ **antes de escribir el runner, abre este fichero**; y tras cualquier
 parada, `cmp` contra la copia antes de tocar nada. El tope por corrida (`timeout 150` delante del `test-without-building`)
 es lo que hace que un mutante muerto no cueste 10 min: tras un rojo `xcodebuild` no sale.
+
+**2026-09-28: tercera reincidencia, y esta vez por el DISCO.** Escribí el runner sin abrir este fichero. Paré el colgado
+a mano (bien, restaurando desde la copia), pero la tanda de 31 llenó el disco: cada corrida deja ~400 MB en `Dead/` del
+simulador (`docs/aprendizajes-tecnicos.md`, escrito EL DÍA ANTES). Con 121 MB libres la restauración del `finally` falló
+con ENOSPC y dejó `DataWipeService.swift` mutado; lo cazó el `cmp`. ⇒ **el runner vacía `Dead/` al empezar cada vuelta**
+(`find <device>/data/Library/Caches/com.apple.containermanagerd/Dead -mindepth 1 -delete`; `rm -rf` con glob lo deniega
+el permiso), y un `INFRA` sin `Test run with` se lee con `df -h /` antes que como veredicto.

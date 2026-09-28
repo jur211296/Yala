@@ -575,6 +575,94 @@ struct RemoteWipeSignalWiringTests {
         }
     }
 
+    // MARK: - El reparto del origen (ticket `a-wipe-on-a-device-without-the-groups-loses-their-rows-everywhere`)
+
+    /// **«Vaciar datos» escribe el reparto ANTES de la señal y con su MISMA hora, y solo si avisa al parque.** Los casos de
+    /// comportamiento llaman a `declare` a mano (la señal real escribiría en el iCloud-KV del simulador), así que solo este
+    /// scan ve que el vaciado lo llame. Sin la llamada el receptor espera 30 días y lo suelta: el bug entero, en verde. Con
+    /// otra hora, el receptor no reconoce el reparto de su señal. Después de la señal, un fallo en medio la dejaría sin él.
+    @Test("MUTACIÓN: «Vaciar datos» escribe el reparto antes de la señal, con su misma hora")
+    func emptyMyDataDeclaresTheDivisionBeforeTheSignal() throws {
+        let abre = "("
+        let fuente = try Self.code("Yala/Utils/DataWipeService.swift")
+        let inicio = try #require(fuente.range(of: "static func wipePersonalDataKeepingGroups" + abre))
+        let resto = fuente[inicio.upperBound...]
+        let fin = try #require(resto.range(of: "static func wipeLocallyForRemoteWipeSignal"), "no se encuentra el final")
+        let cuerpo = String(resto[resto.startIndex..<fin.lowerBound])
+        let reparte = try #require(cuerpo.range(of: "let signalTimestamp = Date.now if broadcastSignal { "
+                                                + "GroupsRemoteWipeDivision.declare" + abre + " context: context, "
+                                                + "signaledAt: signalTimestamp, kv: divisionStore, domainOpen: "
+                                                + "GroupTransactionBridge.isDomainOpenForBridge(defaults: defaults)) }"), """
+            «Vaciar datos» ya no escribe el reparto, lo escribe sin avisar al parque o con otra hora que la de la señal.             Cuerpo encontrado: \(cuerpo.prefix(600))
+            """)
+        let borra = try #require(cuerpo.range(of: "try wipeAllUserData" + abre + "in: context, reseedInitialData: false, "
+                                              + "broadcastSignal: broadcastSignal, signalTimestamp: signalTimestamp)"),
+                                 "el vaciado ya no emite la señal con la hora del reparto")
+        #expect(reparte.upperBound <= borra.lowerBound, "el reparto se escribe después de la señal y del borrado")
+        #expect(fuente.contains("PreferenceSyncService.shared.signalWipeInitiated(at: signalTimestamp ?? .now)"),
+                "la señal ya no sale con la hora que le pasa el vaciado")
+        let prefs = try Self.code("Yala/App/Services/PreferenceSyncService.swift")
+        #expect(prefs.contains("func signalWipeInitiated(at date: Date = .now) { let timestamp = date.timeIntervalSince1970"),
+                "la señal ya no escribe la hora que recibe")
+        #expect(try Self.countInProduction("GroupsRemoteWipeDivision.declare" + abre) == 1,
+                "el reparto se escribe desde más de un sitio, o desde ninguno")
+    }
+
+    /// **El receptor del orden normal apunta que espera el reparto, antes de borrar; el tardío no.** Los casos de
+    /// comportamiento lo ven con sus fixtures; este scan ve la rama y el orden en la función entera.
+    @Test("MUTACIÓN: el receptor del orden normal espera el reparto antes de borrar")
+    func theNormalOrderReceiverAwaitsTheDivisionBeforeWiping() throws {
+        let abre = "("
+        let fuente = try Self.code("Yala/Utils/DataWipeService.swift")
+        let inicio = try #require(fuente.range(of: "static func wipeLocallyForRemoteWipeSignal" + abre))
+        let resto = fuente[inicio.upperBound...]
+        let fin = try #require(resto.range(of: "static func rescheduleSurvivingReminders"), "no se encuentra el final")
+        let cuerpo = String(resto[resto.startIndex..<fin.lowerBound])
+        let espera = try #require(cuerpo.range(of: "GroupsBridgeRestoreConvergenceStore.markPending(defaults) } else { "
+                                              + "GroupsRemoteWipeDivision.awaitOrigin" + abre
+                                              + "signaledAt: cut.signaledAt, defaults: defaults) }"),
+                                  "el receptor del orden normal ya no espera el reparto del origen, o lo espera también en el tardío")
+        let borra = try #require(cuerpo.range(of: "try wipeAllUserData" + abre))
+        #expect(espera.upperBound <= borra.lowerBound, "el receptor apunta la espera después de borrar: un corte la pierde")
+    }
+
+    /// **El arranque resuelve el reparto justo antes de la convergencia, detrás de sus gates.** Sin la llamada, el receptor
+    /// espera y nadie pide: el bug entero. Después de la convergencia, la petición esperaría otro arranque en frío.
+    @Test("MUTACIÓN: el arranque resuelve el reparto antes de la convergencia, detrás de sus gates")
+    func theBootResolvesTheDivisionBeforeTheConvergence() throws {
+        let llamada = "GroupsRemoteWipeDivision.resolveIfArrived()"
+        #expect(try Self.countInProduction(llamada) == 1, "el arranque ya no resuelve el reparto, o lo resuelve dos veces")
+        let boot = try Self.code("Yala/App/AppBootstrapper.swift")
+        let inicio = try #require(boot.range(of: "func retryPendingBridges(context: ModelContext) async {"))
+        let cuerpo = boot[inicio.upperBound...]
+        let resuelve = try #require(cuerpo.range(of: llamada), "retryPendingBridges no resuelve el reparto")
+        for antes in ["guard await awaitPersonalStoreReady() else", "guard GroupTransactionBridge.isDomainOpenForBridge() else"] {
+            let r = try #require(cuerpo.range(of: antes), "no existe «\(antes)» en retryPendingBridges")
+            #expect(r.upperBound <= resuelve.lowerBound, "el reparto se resuelve antes de «\(antes)»")
+        }
+        let converge = try #require(cuerpo.range(of: "GroupsBridgeRestoreConvergence.convergeIfPending(context: context)"))
+        #expect(resuelve.upperBound <= converge.lowerBound, """
+            el reparto se resuelve después de la convergencia: lo que pide espera a otro arranque en frío
+            """)
+    }
+
+    /// **El alcance se escribe antes que la marca.** Al revés, un corte entre las dos deja una petición ENTERA, que repone
+    /// lo que repone el origen: el duplicado del 27-sep. Ningún test de comportamiento puede cortar entre dos `set`.
+    @Test("MUTACIÓN: la petición con exclusión escribe el alcance antes que la marca")
+    func theScopedRequestWritesTheScopeFirst() throws {
+        let fuente = try Self.code("Yala/Services/Groups/GroupsBridgeRestoreConvergence.swift")
+        let inicio = try #require(fuente.range(of: "static func markPending(excluding scope: Exclusion,"))
+        let resto = fuente[inicio.upperBound...]
+        let fin = try #require(resto.range(of: "enum GroupsBridgeRestoreConvergenceLogic"), "no se encuentra el final")
+        let cuerpo = String(resto[resto.startIndex..<fin.lowerBound])
+        #expect(Self.count("defaults.set(true, forKey: key)", in: cuerpo) == 1, "la petición con exclusión pone la marca dos veces")
+        #expect(cuerpo.contains("defaults.set(try JSONEncoder().encode(scope), forKey: excludedKey) "
+                                + "defaults.set(true, forKey: key) }"), """
+            la petición con exclusión ya no escribe el alcance justo antes que la marca: un corte entre las dos dejaría \
+            una convergencia entera
+            """)
+    }
+
     /// Quien repone solo lo hace en una sesión que obedece la señal de vaciado: el valor por defecto de producción es el
     /// predicado del receptor. Los casos de comportamiento lo pasan a mano, así que solo este scan ve que sigue ahí.
     @Test("MUTACIÓN: quien repone decide con el mismo predicado que obedece la señal")
