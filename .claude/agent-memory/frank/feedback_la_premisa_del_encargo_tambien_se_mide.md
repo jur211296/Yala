@@ -293,3 +293,11 @@ arreglen algo que exista.
 transacción personal». Medido: un teléfono real siempre tiene una (los tipos de cambio del arranque), así que el ancla ya
 existía; y lo importado después del paso 3 queda por encima de cualquier ancla. La opción no cerraba nada. **Las opciones de
 un ticket también son afirmaciones**: antes de elegir entre ellas, comprueba que cada una arreglaría el caso.
+
+## 2026-09-27 — la RECETA del ticket compila y no hace nada
+
+`ipad-multiple-windows-share-one-navigation-state` prescribía `INFOPLIST_KEY_UIApplicationSupportsMultipleScenes = NO`
+«en los dos build settings del target». Xcode acepta cualquier `INFOPLIST_KEY_*` sin quejarse, compiló, y el plist
+siguió en `true`: esa clave no existe en el generador (solo `…SceneManifest_Generation`). Y eran cuatro
+configuraciones, no dos. **How to apply:** un build setting que el ticket da por bueno se valida mirando el
+PRODUCTO (`plutil -p` del `.app`), no el `pbxproj`; y el «antes» se mide también, o no sabes si tu cambio movió algo.
