@@ -226,6 +226,93 @@ struct GroupsRemoteWipeDivisionTests {
             """)
     }
 
+    // MARK: - Lo prometido que no llega (ticket `wipe-division-exclusion-trusts-the-origin-to-converge`)
+
+    /// El techo lo leen los demás tests por su símbolo: sin esta línea, un techo de un minuto dejaría de confiar en el
+    /// origen antes de su arranque en frío y los dos repondrían lo mismo.
+    @Test("el techo de la promesa son 72 horas")
+    func trustCeilingIsThreeDays() {
+        #expect(Logic.trustCeiling == 3 * 24 * 60 * 60)
+    }
+
+    @Test("lo que llegó sale de la promesa; con todo llegado, se suelta")
+    func review_prunesWhatArrived() {
+        let since = 1_800_000_000.0
+        let trusted = Logic.Trusted(signaledAt: since - 60, since: since, expenseIDs: ["a", "b"], settlementIDs: ["s"])
+        let now = Date(timeIntervalSince1970: since + 60)
+        #expect(Logic.review(trusted, arrivedExpenses: ["a", "x"], arrivedSettlements: [], now: now)
+                == .keep(.init(signaledAt: since - 60, since: since, expenseIDs: ["b"], settlementIDs: ["s"])))
+        #expect(Logic.review(trusted, arrivedExpenses: ["a", "b"], arrivedSettlements: ["s"], now: now) == .settled,
+                "el origen repuso todo y el receptor sigue esperando")
+        #expect(Logic.review(trusted, arrivedExpenses: ["a", "b"], arrivedSettlements: ["s"],
+                             now: Date(timeIntervalSince1970: since + Logic.trustCeiling * 2)) == .settled,
+                "pasado el techo, el receptor repone lo que el origen ya repuso")
+        #expect(Logic.review(trusted, arrivedExpenses: [], arrivedSettlements: ["s"],
+                             now: Date(timeIntervalSince1970: since + Logic.trustCeiling))
+                == .takeOver(expenses: ["a", "b"], settlements: []), "la retoma no deja fuera lo que ya llegó")
+    }
+
+    /// El techo corre desde que se resolvió el reparto, con sus dos vecinos, y un reloj que vuelve atrás más que el
+    /// techo no deja la promesa abierta para siempre.
+    @Test("pasado el techo el receptor repone, con sus dos vecinos y el reloj que vuelve atrás")
+    func review_ceilingBoundaries() {
+        let since = 1_800_000_000.0
+        let trusted = Logic.Trusted(signaledAt: since - 60, since: since, expenseIDs: ["a"], settlementIDs: [])
+        func at(_ offset: TimeInterval) -> Logic.TrustReview {
+            Logic.review(trusted, arrivedExpenses: [], arrivedSettlements: [], now: Date(timeIntervalSince1970: since + offset))
+        }
+        #expect(at(Logic.trustCeiling - 1) == .keep(trusted), "el receptor dejó de confiar antes del techo")
+        #expect(at(Logic.trustCeiling) == .takeOver(expenses: ["a"], settlements: []))
+        #expect(at(-Logic.trustCeiling) == .takeOver(expenses: ["a"], settlements: []),
+                "un reloj que volvió atrás más que el techo deja la promesa abierta para siempre")
+        #expect(at(-60) == .keep(trusted))
+    }
+
+    /// **El reparto deja la promesa con la hora de la señal y la del arranque que lo resuelve**, no la de la espera (review
+    /// adversarial, lente de sync): un reparto que llega a los cuatro días daba la promesa por vencida en el mismo arranque
+    /// que la apuntaba. El de un vaciado nuevo la sustituye, y un reparto vacío no promete nada.
+    @Test("el reparto apunta la promesa con la hora del arranque que lo resuelve; el nuevo la sustituye y el vacío la retira")
+    func resolveIfArrived_recordsTheTrust() throws {
+        let defaults = makeIsolatedDefaults()
+        let kv = EmptyKeyValueStore()
+        let since = Date(timeIntervalSince1970: 1_800_000_000)
+        let later = since.addingTimeInterval(3600)
+        GroupsRemoteWipeDivision.awaitOrigin(signaledAt: since, defaults: defaults, now: since)
+        kv.stored = #"{"expenseIDs":["a"],"settlementIDs":["s"],"signaledAt":1800000000}"#
+        GroupsRemoteWipeDivision.resolveIfArrived(kv: kv, defaults: defaults, now: later)
+        #expect(GroupsRemoteWipeDivisionStore.trusted(defaults)
+                == .init(signaledAt: since.timeIntervalSince1970, since: later.timeIntervalSince1970,
+                         expenseIDs: ["a"], settlementIDs: ["s"]), """
+            el receptor excluyó lo del origen sin apuntar la promesa, o la apuntó con la hora de la espera: si el origen \
+            no repone no vuelve nunca, y con la espera un reparto tardío la da por vencida sin darle al origen un arranque
+            """)
+
+        Store.clear(defaults)
+        GroupsRemoteWipeDivision.awaitOrigin(signaledAt: later, defaults: defaults, now: later)
+        kv.stored = #"{"expenseIDs":["b"],"settlementIDs":[],"signaledAt":1800003600}"#
+        GroupsRemoteWipeDivision.resolveIfArrived(kv: kv, defaults: defaults, now: later)
+        #expect(GroupsRemoteWipeDivisionStore.trusted(defaults)
+                == .init(signaledAt: later.timeIntervalSince1970, since: later.timeIntervalSince1970,
+                         expenseIDs: ["b"], settlementIDs: []),
+                "la promesa del reparto nuevo no sustituyó a la vieja: el corte nuevo ya se llevó lo que repuso el origen viejo")
+
+        Store.clear(defaults)
+        GroupsRemoteWipeDivision.awaitOrigin(signaledAt: since, defaults: defaults, now: later)
+        kv.stored = #"{"expenseIDs":[],"settlementIDs":[],"signaledAt":1800000000}"#
+        GroupsRemoteWipeDivision.resolveIfArrived(kv: kv, defaults: defaults, now: later)
+        #expect(GroupsRemoteWipeDivisionStore.trusted(defaults) == nil, "un reparto vacío dejó una promesa vieja puesta")
+    }
+
+    @Test("el relevo de persona retira la promesa")
+    func trust_personHandoverClearsIt() throws {
+        let defaults = makeIsolatedDefaults()
+        try GroupsRemoteWipeDivisionStore.setTrusted(.init(signaledAt: 1, since: 1, expenseIDs: ["a"], settlementIDs: []), defaults)
+        DataWipeService.removeGroupsDomainPreferenceKeys(from: defaults)
+        #expect(GroupsRemoteWipeDivisionStore.trusted(defaults) == nil, """
+            el relevo de persona dejó la promesa: pasado el techo re-puentearía sobre los grupos del humano nuevo
+            """)
+    }
+
     @Test("la convergencia deja fuera los gastos y las liquidaciones del reparto")
     func convergenceScope() {
         let a = UUID(), b = UUID()

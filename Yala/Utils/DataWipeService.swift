@@ -912,6 +912,8 @@ final class DataWipeService {
         GroupsRemoteWipeReturnStore.clearHandled(defaults)
         // Y el reparto que esperaba del origen de un vaciado: pediría la convergencia sobre los grupos del nuevo.
         GroupsRemoteWipeDivisionStore.clearAwaiting(defaults)
+        // Y lo que dejó en manos del origen de un vaciado: pasado el techo lo re-puentearía sobre los grupos del nuevo.
+        GroupsRemoteWipeDivisionStore.clearTrusted(defaults)
 
         // Paso 10 · el espejo local de la cuenta de grupos asociada, y el libro de lo que una
         // desasociación anterior conservó en el Panel. Los dos son del humano ANTERIOR: el primero le
