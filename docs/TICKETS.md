@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (662)
+## Index (672)
 
 | id | status | path |
 |---|---|---|
@@ -402,6 +402,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | invite-link-five-causes-one-message | done | tickets/done/invite-link-five-causes-one-message.md |
 | invite-recovery-relaunches-for-a-mirror-it-never-uses | backlog | tickets/backlog/invite-recovery-relaunches-for-a-mirror-it-never-uses.md |
 | invite-refresh-forzado-es-noop-si-hay-otro-en-vuelo | done | tickets/done/invite-refresh-forzado-es-noop-si-hay-otro-en-vuelo.md |
+| ipad-and-duo-panel-and-statistics-use-the-width | backlog | tickets/backlog/ipad-and-duo-panel-and-statistics-use-the-width.md |
 | ipad-keyboard-shortcuts-pointer-context-menus-and-drop | backlog | tickets/backlog/ipad-keyboard-shortcuts-pointer-context-menus-and-drop.md |
 | ipad-large-and-extra-large-widgets | backlog | tickets/backlog/ipad-large-and-extra-large-widgets.md |
 | ipad-list-detail-for-groups-and-settings-and-chat-inspector | backlog | tickets/backlog/ipad-list-detail-for-groups-and-settings-and-chat-inspector.md |
@@ -410,6 +411,10 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | ipad-real-multiwindow-with-per-scene-state | backlog | tickets/backlog/ipad-real-multiwindow-with-per-scene-state.md |
 | ipad-sidebar-and-list-detail-for-records-and-planning | backlog | tickets/backlog/ipad-sidebar-and-list-detail-for-records-and-planning.md |
 | iphone-duo-native-app | backlog | tickets/backlog/iphone-duo-native-app.md |
+| iphone-large-models-use-the-extra-width | backlog | tickets/backlog/iphone-large-models-use-the-extra-width.md |
+| iphone-large-text-sizes-break-layouts | backlog | tickets/backlog/iphone-large-text-sizes-break-layouts.md |
+| iphone-small-screens-and-safe-areas-audit | backlog | tickets/backlog/iphone-small-screens-and-safe-areas-audit.md |
+| iphone-supports-landscape-orientation | backlog | tickets/backlog/iphone-supports-landscape-orientation.md |
 | joiner-flag-residuals-cosmetic-and-service-guard | backlog | tickets/backlog/joiner-flag-residuals-cosmetic-and-service-guard.md |
 | journal-unreadable-card-says-reopen-when-a-downgrade-needs-an-update | backlog | tickets/backlog/journal-unreadable-card-says-reopen-when-a-downgrade-needs-an-update.md |
 | l10n-check-corre-13-de-17-tests | backlog | tickets/backlog/l10n-check-corre-13-de-17-tests.md |
@@ -610,6 +615,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | settings-migrate-to-cloud-adopts-silently-instead-of-migrating | done | tickets/done/settings-migrate-to-cloud-adopts-silently-instead-of-migrating.md |
 | settings-redesign-as-grouped-lists-like-ios | backlog | tickets/backlog/settings-redesign-as-grouped-lists-like-ios.md |
 | shared-state-guard-misses-wipelocalgroupsdomain | backlog | tickets/backlog/shared-state-guard-misses-wipelocalgroupsdomain.md |
+| sheet-size-follows-the-device-not-the-window | backlog | tickets/backlog/sheet-size-follows-the-device-not-the-window.md |
 | shell-and-wipe-alert-read-the-session-axis-differently | backlog | tickets/backlog/shell-and-wipe-alert-read-the-session-axis-differently.md |
 | shell-derives-from-two-session-axes | done | tickets/done/shell-derives-from-two-session-axes.md |
 | sign-out-block-reason-is-only-logged-on-the-cloud-path | backlog | tickets/backlog/sign-out-block-reason-is-only-logged-on-the-cloud-path.md |
@@ -709,6 +715,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | wiped-state-reaches-the-discard-gate-with-the-window-open | done | tickets/done/wiped-state-reaches-the-discard-gate-with-the-window-open.md |
 | wire-decoder-accepts-non-finite-money | backlog | tickets/backlog/wire-decoder-accepts-non-finite-money.md |
 | wrangler-prod-onboarding-choice-percent-drift | done | tickets/done/wrangler-prod-onboarding-choice-percent-drift.md |
+| xcode-27-1-with-the-iphone-duo-simulator | backlog | tickets/backlog/xcode-27-1-with-the-iphone-duo-simulator.md |
 | xcode-project-config-json-format-when-27-2-stable | backlog | tickets/backlog/xcode-project-config-json-format-when-27-2-stable.md |
 | yala-android | backlog | tickets/backlog/yala-android.md |
 | zone-decisions-still-per-row | backlog | tickets/backlog/zone-decisions-still-per-row.md |

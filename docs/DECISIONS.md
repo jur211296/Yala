@@ -2,11 +2,12 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (85 entradas)
+## Índice (86 entradas)
 
-> **No hace falta leer este fichero entero** — son 247 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 250 KB. Localiza la entrada
 > aquí y salta a ella.
 
+- `2026-09-27` [Yala se adapta por espacio, no por dispositivo](#2026-09-27-yala-se-adapta-por-espacio-no-por-dispositivo)
 - `2026-09-26` [El conector de Claude emite sus propios tokens](#2026-09-26-el-conector-de-claude-emite-sus-propios-tokens)
 - `2026-09-09` [Sesiones — dos ejes (privada × nube), un verbo por sesión, y Grupos como mini-app](#2026-09-09-sesiones--dos-ejes-privada--nube-un-verbo-por-sesin-y-grupos-como-mini-app)
 - `2026-09-09` [CI — el aviso de rojos advisory es un check propio, y no calla aunque su canal caiga](#2026-09-09-ci--el-aviso-de-rojos-advisory-es-un-check-propio-y-no-calla-aunque-su-canal-caiga)
@@ -111,6 +112,48 @@ Cada decisión sigue esta estructura:
 ---
 
 ## Decisiones Activas
+
+### [2026-09-27] Yala se adapta por espacio, no por dispositivo
+
+**Contexto.** La exploración de iPad del 26-sep (`docs/exploracion/ipad-nativo.md`) propuso una estructura para iPad:
+barra lateral, lista y detalle (§5.1). El 9-sep Apple publicó el iPhone Duo: pantalla exterior compact, interior
+regular, y la app se redimensiona cada vez que se abre o se cierra. Jürgen aprobó la dirección el 2026-09-27 con una
+condición: la versión que Apple recomienda, que se adapte sola a cualquier tamaño de iPad, de ventana y al Duo.
+
+**Decisión.**
+
+1. **Una sola app universal.** Ni app de iPad aparte ni app de Duo aparte.
+2. **El layout se decide por el espacio**: size classes y ancho del contenedor. Nunca por `userInterfaceIdiom` ni por
+   la orientación.
+3. **Raíz:** la `TabView` de hoy con `.sidebarAdaptable` y `TabSection` (las secciones de Más).
+4. **Lista y detalle:** un único `NavigationSplitView` por sección, que en compact se pliega solo a pila. **No** un
+   `if sizeClass == .regular` con dos árboles en la raíz.
+5. **El estado vive fuera de la forma**: lo abierto, lo seleccionado y los filtros sobreviven a un redimensionado.
+6. **APIs de iOS 27.1** (`ReservedRegion`, `ArrangementView`, barras verticales): solo tras `if #available`, y solo
+   donde una vista propia lo necesite.
+7. **iPhone:** se permiten mejoras de adaptación si no rompen flujos ni arriesgan la 2.1, cada una con capturas antes y
+   después en iPhone pequeño, grande y con texto grande.
+8. **Simuladores del carril:** dedicados, con prefijo `YalaLane-Adapt-` y siempre por UDID, para no chocar con Cola A.
+
+**Razones.**
+
+- Es lo que Apple documenta: «Determine layout based on size classes, not device type or orientation» (HIG · Layout),
+  y en el Duo, compact fuera y regular dentro «give you the fundamentals for every pose» (HIG · Designing for iPhone
+  Duo).
+- El `if` en la raíz destruye el estado de la rama que se va (lo explica un ingeniero de Apple en el foro «iOS 27
+  automatic resize»). En el Duo eso pasaría con cada apertura.
+- Un contenedor del sistema hereda gratis el ajuste al pliegue, las barras verticales y Split View.
+
+**Consecuencias.**
+
+- `DS.Adaptive.usesLargeSheets`, que mira el tipo de dispositivo, se cambia antes de la fase 1
+  (`sheet-size-follows-the-device-not-the-window`).
+- Las fases y sus tickets están en `docs/exploracion/adaptativo-ipad-duo.md` §7.
+- Verificar el Duo pide Xcode 27.1 en la Mac (`xcode-27-1-with-the-iphone-duo-simulator`).
+
+**Estado:** Activa.
+
+---
 
 ### [2026-09-26] El conector de Claude emite sus propios tokens
 

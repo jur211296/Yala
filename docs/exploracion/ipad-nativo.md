@@ -1,10 +1,15 @@
 ---
 fecha: 2026-09-26
-estado: exploración hecha; sin código. La implementación va después de Cola B, probablemente tras la release 2.1
+estado: exploración hecha; sin código. Dirección y §5.1 aprobadas por Jürgen el 2026-09-27. El plan vigente, con el iPhone Duo y las mejoras de iPhone, está en docs/exploracion/adaptativo-ipad-duo.md
 ticket: tickets/backlog/ipad-native-app.md (paraguas) y los tickets de fase del §9
 ---
 
 # Yala bien hecha para iPad
+
+> **Actualizado el 2026-09-27.** Jürgen aprobó la dirección de este documento y la estructura del §5.1. El plan
+> vigente —que cubre también el iPhone Duo, añade mejoras de iPhone y reordena las fases— está en
+> [`adaptativo-ipad-duo.md`](adaptativo-ipad-duo.md). Este documento sigue valiendo como **medición** de lo que se
+> ve hoy; su §8 queda sustituido por el §7 de aquél.
 
 **Qué es:** qué ve hoy quien abre Yala en un iPad, qué desaprovecha, y cómo convertir la misma app
 universal en una app de iPad de verdad, en fases. No es una app aparte: el proyecto ya compila para
@@ -206,7 +211,12 @@ Ordenado por lo que más nota el usuario:
 
 ## 5 · Propuesta de estructura para iPad
 
-### 5.1 · Barra lateral + lista + detalle
+### 5.1 · Barra lateral + lista + detalle — **aprobada por Jürgen el 2026-09-27**
+
+> Aprobada con una condición: la versión que Apple recomienda, que se adapte sola a cualquier tamaño. De ahí sale un
+> ajuste al tercer punto de abajo: un único `NavigationSplitView` que se pliega solo en compact, sin un `if` por
+> size class. Detalle y fuentes en [`adaptativo-ipad-duo.md`](adaptativo-ipad-duo.md) §4. Decisión escrita en
+> `docs/DECISIONS.md` («[2026-09-27] Yala se adapta por espacio, no por dispositivo»).
 
 ```
 ┌──────────────┬───────────────────────┬──────────────────────────────┐
@@ -357,6 +367,9 @@ pantallas: **los botones flotantes que tapan importes** y **el ancho legible** (
 
 ## 8 · Plan por fases
 
+> **Sustituido el 2026-09-27** por el §7 de [`adaptativo-ipad-duo.md`](adaptativo-ipad-duo.md), que añade la fase
+> iPhone, un cimiento, la fase Duo y la 2b. Se deja como registro de la propuesta original.
+
 Tamaños: **S** ≈ una sesión · **M** ≈ dos o tres · **L** ≈ cuatro o más.
 
 | Fase | Qué cambia para el usuario | Tamaño | Cuándo | Ticket |
@@ -373,9 +386,8 @@ Tamaños: **S** ≈ una sesión · **M** ≈ dos o tres · **L** ≈ cuatro o m�
 barra lateral y las columnas). La 4 depende de la 0 (si se apagó la multiventana, se vuelve a
 encender aquí, con estado por ventana). La 5 es independiente. Si solo se hiciera una, la **1**.
 
-**Cada fase termina con:** captura antes/después en los dos iPad y en iPhone (el iPhone no debe
-cambiar), XCUITest de navegación en un destino iPad, y el pase de estrés del `CLAUDE.md` en el mini y
+**Cada fase termina con:** captura antes/después en los dos iPad y en iPhone (regla del iPhone actualizada
+el 2026-09-27: se permiten mejoras de adaptación, ver `adaptativo-ipad-duo.md` §6.1), XCUITest de navegación en un destino iPad, y el pase de estrés del `CLAUDE.md` en el mini y
 el Pro 13".
 
-**ADR pendiente:** la estructura del §5.1 es una propuesta. Cuando Jürgen la apruebe, la fase 1 la
-deja escrita como ADR antes de empezar.
+**ADR:** la estructura del §5.1 se aprobó el 2026-09-27 y quedó escrita ese día en `docs/DECISIONS.md`.
