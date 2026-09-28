@@ -646,6 +646,53 @@ struct RemoteWipeSignalWiringTests {
             """)
     }
 
+    /// **El arranque retoma lo que el origen prometió y no llegó, después de la convergencia y detrás de sus gates** (ticket
+    /// `wipe-division-exclusion-trusts-the-origin-to-converge`). Los casos de comportamiento llaman a `takeOverIfOverdue` a
+    /// mano; sin la llamada, lo prometido no vuelve nunca: el bug entero, en verde. Antes de la convergencia, la retoma vería
+    /// sin filas lo que la convergencia va a reponer en ese mismo arranque.
+    @Test("MUTACIÓN: el arranque retoma lo prometido tras la convergencia, detrás de sus gates")
+    func theBootTakesOverWhatTheOriginPromisedAfterTheConvergence() throws {
+        let llamada = "GroupsRemoteWipeDivision.takeOverIfOverdue(context: context)"
+        #expect(try Self.countInProduction(llamada) == 1, "el arranque ya no retoma lo prometido, o lo retoma dos veces")
+        let boot = try Self.code("Yala/App/AppBootstrapper.swift")
+        let inicio = try #require(boot.range(of: "func retryPendingBridges(context: ModelContext) async {"))
+        let cuerpo = boot[inicio.upperBound...]
+        let retoma = try #require(cuerpo.range(of: llamada), "retryPendingBridges no retoma lo prometido")
+        for antes in ["guard await awaitPersonalStoreReady() else", "guard GroupTransactionBridge.isDomainOpenForBridge() else",
+                      "GroupsRemoteWipeDivision.resolveIfArrived()",
+                      "GroupsBridgeRestoreConvergence.convergeIfPending(context: context)"] {
+            let r = try #require(cuerpo.range(of: antes), "no existe «\(antes)» en retryPendingBridges")
+            #expect(r.upperBound <= retoma.lowerBound, "la retoma corre antes de «\(antes)»")
+        }
+
+        let fuente = try Self.code("Yala/Services/Groups/GroupsRemoteWipeDivision.swift")
+        let funcion = try #require(fuente.range(of: "static func takeOverIfOverdue("))
+        let resto = fuente[funcion.upperBound...]
+        let escribe = try #require(resto.range(of: "bridgeRemoteExpenses(ids:"))
+        for guarda in ["guard GroupsRemoteWipeDivisionStore.awaiting(defaults) == nil else { return }",
+                       "guard SessionState.shared.hasPrivateSession else { return }",
+                       "guard GroupTransactionBridge.isDomainOpenForBridge(defaults: defaults) else { return }"] {
+            let r = try #require(resto.range(of: guarda), "takeOverIfOverdue perdió «\(guarda)»")
+            #expect(r.upperBound <= escribe.lowerBound, """
+                takeOverIfOverdue re-puentea antes de «\(guarda)»: en solo-grupos el bridge borra las reales, con el dominio \
+                cerrado no se toca nada, y con un reparto nuevo por llegar decide él
+                """)
+        }
+    }
+
+    /// **La promesa se apunta antes que la petición con exclusión.** Al revés, un corte entre las dos deja lo del origen
+    /// excluido y sin techo: el bug del ticket. Ningún test de comportamiento puede cortar entre dos escrituras.
+    @Test("MUTACIÓN: el reparto apunta la promesa antes de pedir la convergencia sin lo del origen")
+    func theDivisionRecordsTheTrustBeforeTheScopedRequest() throws {
+        let fuente = try Self.code("Yala/Services/Groups/GroupsRemoteWipeDivision.swift")
+        let inicio = try #require(fuente.range(of: "static func resolveIfArrived("))
+        let resto = fuente[inicio.upperBound...]
+        let promete = try #require(resto.range(of: "try GroupsRemoteWipeDivisionStore.setTrusted("),
+                                   "el reparto ya no apunta la promesa")
+        let pide = try #require(resto.range(of: "try GroupsBridgeRestoreConvergenceStore.markPending("))
+        #expect(promete.upperBound <= pide.lowerBound, "la promesa se apunta después de pedir: un corte la pierde")
+    }
+
     /// **El alcance se escribe antes que la marca.** Al revés, un corte entre las dos deja una petición ENTERA, que repone
     /// lo que repone el origen: el duplicado del 27-sep. Ningún test de comportamiento puede cortar entre dos `set`.
     @Test("MUTACIÓN: la petición con exclusión escribe el alcance antes que la marca")

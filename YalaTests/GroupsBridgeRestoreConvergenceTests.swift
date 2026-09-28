@@ -2298,6 +2298,320 @@ struct GroupsBridgeRestoreConvergenceBehaviourTests {
                     "con el dominio cerrado el origen no repone nada, y su reparto dice lo contrario")
         }
     }
+
+    // MARK: - Lo que el origen prometió y no llega (ticket `wipe-division-exclusion-trusts-the-origin-to-converge`)
+
+    /// El receptor del orden normal con un origen que tiene los mismos grupos: su reparto lo promete TODO, el receptor lo
+    /// excluye de su convergencia y no repone nada. Devuelve desde cuándo confía (el arranque que resolvió el reparto), que
+    /// es de donde corre el techo.
+    private func receiverTrustsTheOrigin(
+        _ context: ModelContext, expense: SplitExpense, _ s: Settlements, defaults: UserDefaults
+    ) throws -> Date {
+        let kv = InMemoryKeyValueStore()
+        let signaledAt = Date.now.addingTimeInterval(60)
+        try receiverWipesInTheNormalOrder(context, expense: expense, s, defaults: defaults, signaledAt: signaledAt)
+        try GroupsRemoteWipeDivisionStore.writeDivision(.init(
+            signaledAt: signaledAt.timeIntervalSince1970, expenseIDs: [expense.id.uuidString],
+            settlementIDs: [s.paid.id.uuidString, s.received.id.uuidString]), to: kv)
+        GroupsRemoteWipeDivision.resolveIfArrived(kv: kv, defaults: defaults)
+        GroupsBridgeRestoreConvergence.convergeIfPending(context: context, defaults: defaults)
+        #expect(try bridgedRows(context).isEmpty && expenseDrafts(context, expense).isEmpty,
+                "el receptor repuso lo que prometió el origen: el caso no mide la promesa")
+        let trusted = try #require(GroupsRemoteWipeDivisionStore.trusted(defaults), "el reparto no apuntó la promesa")
+        return Date(timeIntervalSince1970: trusted.since)
+    }
+
+    /// Lo que el espejo trae del origen cuando por fin converge: la pata de la cuenta de grupos del gasto y una por
+    /// liquidación, con la identidad de allí (aquí son filas nuevas que el receptor no creó) y creadas después de la señal
+    /// (la de `receiverTrustsTheOrigin` va un minuto por delante). `createdAt` anterior es lo que sube tarde un tercer
+    /// dispositivo sin red.
+    @discardableResult
+    private func originRowsArrive(
+        _ context: ModelContext, expense: SplitExpense? = nil, settlements: [SplitSettlement] = [],
+        createdAt: Date = Date.now.addingTimeInterval(120)
+    ) throws -> Set<PersistentIdentifier> {
+        let groups = Account(name: "Grupos", currencyCode: "USD", colorHex: "#333333", iconName: "person.3", type: "cash",
+                             isSystemAccount: true)
+        context.insert(groups)
+        if let expense {
+            let tx = TransactionItem(date: expense.date, amount: 60, currencyCode: "USD", note: "", account: groups)
+            tx.splitExpenseID = expense.id.uuidString
+            tx.createdAt = createdAt
+            context.insert(tx)
+        }
+        for settlement in settlements {
+            let tx = TransactionItem(date: settlement.date, amount: settlement.amount, currencyCode: "USD", note: "",
+                                     account: groups)
+            tx.splitSettlementID = settlement.id.uuidString
+            tx.createdAt = createdAt
+            context.insert(tx)
+        }
+        try context.save()
+        return try groupRowIDs(context)
+    }
+
+    private func takeOver(_ defaults: UserDefaults, at date: Date, _ context: ModelContext) {
+        GroupsRemoteWipeDivision.takeOverIfOverdue(context: context, defaults: defaults, now: date)
+    }
+
+    /// **El ticket.** El iPad tiene los mismos grupos, vacía y no vuelve a abrirse: su reparto lo promete todo y nunca lo
+    /// repone. Hasta hoy el iPhone lo excluía para siempre y los gastos y liquidaciones de grupo no volvían. Ahora, pasado el
+    /// techo, los repone el iPhone, una vez.
+    @Test("origen que promete y nunca repone: pasado el techo el receptor repone él, una vez")
+    func trust_originNeverReturns_theReceiverReturnsTheRowsAfterTheCeiling() throws {
+        let dir = try freshDir()
+        defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let f = try makeFixture(context)
+        try withEnvironment(context) { defaults in
+            let expense = try makeCaseAExpense(context, f)
+            let s = try makeSettlements(context, f)
+            let since = try receiverTrustsTheOrigin(context, expense: expense, s, defaults: defaults)
+            let ceiling = GroupsRemoteWipeDivisionLogic.trustCeiling
+
+            takeOver(defaults, at: since.addingTimeInterval(ceiling - 1), context)
+            #expect(try bridgedRows(context).isEmpty, "el receptor dejó de confiar en el origen antes del techo")
+
+            takeOver(defaults, at: since.addingTimeInterval(ceiling), context)
+            #expect(!(try txs(context, expenseID: expense.id)).isEmpty, """
+                pasado el techo el gasto de grupo sigue sin volver: el origen no repuso y nadie lo hará
+                """)
+            #expect(try expenseDrafts(context, expense).count == 1, "el Inbox no pregunta de qué cuenta salió el gasto")
+            #expect(try legs(context, s.paid).count == 1, "la liquidación que pagué no volvió, o volvió dos veces")
+            #expect(try legs(context, s.received).count == 1, "la que me pagaron no volvió, o volvió dos veces")
+            #expect(try legs(context, s.unconfirmed).isEmpty, "sin confirmar no se crea nunca")
+            #expect(GroupsRemoteWipeDivisionStore.trusted(defaults) == nil, "la promesa sigue puesta tras reponer")
+            #expect(GroupsPendingBridgeIntent.pending.isEmpty, "todo quedó atendido")
+
+            let after = try groupRowIDs(context)
+            let draftCount = try context.fetchCount(FetchDescriptor<InboxDraft>())
+            takeOver(defaults, at: since.addingTimeInterval(ceiling * 2), context)
+            #expect(try groupRowIDs(context) == after, "un segundo arranque volvió a reponer")
+            #expect(try context.fetchCount(FetchDescriptor<InboxDraft>()) == draftCount)
+        }
+    }
+
+    /// **El origen cumple a tiempo**: sus filas bajan antes del techo. Un arranque antes del techo ve que llegaron y suelta
+    /// la promesa; pasado el techo no se toca nada.
+    @Test("origen que repone a tiempo: el receptor suelta la promesa y no toca nada")
+    func trust_originReturnsInTime_nothingChanges() throws {
+        let dir = try freshDir()
+        defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let f = try makeFixture(context)
+        try withEnvironment(context) { defaults in
+            let expense = try makeCaseAExpense(context, f)
+            let s = try makeSettlements(context, f)
+            let since = try receiverTrustsTheOrigin(context, expense: expense, s, defaults: defaults)
+            let arrived = try originRowsArrive(context, expense: expense, settlements: [s.paid, s.received])
+
+            takeOver(defaults, at: since.addingTimeInterval(3600), context)
+            #expect(GroupsRemoteWipeDivisionStore.trusted(defaults) == nil,
+                    "todo lo prometido llegó y el receptor sigue esperando")
+            takeOver(defaults, at: since.addingTimeInterval(GroupsRemoteWipeDivisionLogic.trustCeiling), context)
+            #expect(try groupRowIDs(context) == arrived, "el receptor re-puenteó lo que el origen ya había repuesto")
+            #expect(try context.fetchCount(FetchDescriptor<InboxDraft>()) == 0, "el receptor creó borradores de lo repuesto")
+        }
+    }
+
+    /// **El origen cumple tarde, pasado el techo, pero antes de que el receptor mire**: sus filas ya están aquí cuando el
+    /// receptor deja de confiar. No se re-puentea nada: sin copias dobles.
+    @Test("origen que repone tarde, antes de que el receptor mire: sin copias dobles")
+    func trust_originReturnsLate_beforeTheReceiverLooks_noSecondCopy() throws {
+        let dir = try freshDir()
+        defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let f = try makeFixture(context)
+        try withEnvironment(context) { defaults in
+            let expense = try makeCaseAExpense(context, f)
+            let s = try makeSettlements(context, f)
+            let since = try receiverTrustsTheOrigin(context, expense: expense, s, defaults: defaults)
+            let arrived = try originRowsArrive(context, expense: expense, settlements: [s.paid, s.received])
+
+            takeOver(defaults, at: since.addingTimeInterval(GroupsRemoteWipeDivisionLogic.trustCeiling + 3600), context)
+            #expect(try groupRowIDs(context) == arrived, "el receptor repuso encima de lo que el origen ya repuso")
+            #expect(try context.fetchCount(FetchDescriptor<InboxDraft>()) == 0, "el Inbox pregunta dos veces por lo mismo")
+            #expect(GroupsRemoteWipeDivisionStore.trusted(defaults) == nil)
+        }
+    }
+
+    /// **Una fila ANTERIOR a la señal que baja tarde no prueba que el origen cumpliera** (review adversarial, lente de sync).
+    /// La sube tarde un tercer dispositivo que estaba sin red; su propio corte se la llevará cuando procese la señal, y si
+    /// el origen no repone, nadie lo haría. Pasado el techo, el receptor repone el gasto.
+    @Test("una fila anterior a la señal que baja tarde no cuenta como llegada")
+    func trust_aPreSignalRowArrivingLate_doesNotCount() throws {
+        let dir = try freshDir()
+        defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let f = try makeFixture(context)
+        try withEnvironment(context) { defaults in
+            let expense = try makeCaseAExpense(context, f)
+            let s = try makeSettlements(context, f)
+            let since = try receiverTrustsTheOrigin(context, expense: expense, s, defaults: defaults)
+            try originRowsArrive(context, expense: expense, createdAt: Date.now.addingTimeInterval(-3600))
+
+            takeOver(defaults, at: since.addingTimeInterval(3600), context)
+            #expect(GroupsRemoteWipeDivisionStore.trusted(defaults)?.expenseIDs == [expense.id.uuidString],
+                    "una fila de antes de la señal sacó el gasto de la promesa: si el origen no repone, no vuelve")
+            takeOver(defaults, at: since.addingTimeInterval(GroupsRemoteWipeDivisionLogic.trustCeiling), context)
+            #expect(try expenseDrafts(context, expense).count == 1, "pasado el techo el receptor no repuso el gasto")
+        }
+    }
+
+    /// **El origen cumple después de que el receptor repusiera.** Converge detrás de la quiescencia del import, sobre las
+    /// filas del receptor ya bajadas por el espejo: su re-puente es el de este store, y el bridge concilia por id.
+    @Test("origen que repone después de que el receptor repusiera: su convergencia concilia, sin copias dobles")
+    func trust_originReturnsAfterTheReceiverTookOver_itsConvergenceReconciles() throws {
+        let dir = try freshDir()
+        defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let f = try makeFixture(context)
+        try withEnvironment(context) { defaults in
+            let expense = try makeCaseAExpense(context, f)
+            let s = try makeSettlements(context, f)
+            let since = try receiverTrustsTheOrigin(context, expense: expense, s, defaults: defaults)
+            takeOver(defaults, at: since.addingTimeInterval(GroupsRemoteWipeDivisionLogic.trustCeiling), context)
+            try #require(!(try txs(context, expenseID: expense.id)).isEmpty, "el receptor no repuso: el caso no mide nada")
+
+            let expenseAmounts = try txs(context, expenseID: expense.id).map(\.amount).sorted()
+            let legIDs = Set(try (legs(context, s.paid) + legs(context, s.received)).map(\.persistentModelID))
+            let draftCount = try context.fetchCount(FetchDescriptor<InboxDraft>())
+            // La convergencia ENTERA del origen, la que pide su «Vaciar datos», sobre el store con lo del receptor.
+            GroupsBridgeRestoreConvergenceStore.markSettlementLegsPending(defaults)
+            GroupsBridgeRestoreConvergenceStore.markPending(defaults)
+            GroupsBridgeRestoreConvergence.convergeIfPending(context: context, defaults: defaults)
+            #expect(try txs(context, expenseID: expense.id).map(\.amount).sorted() == expenseAmounts,
+                    "la convergencia tardía del origen duplicó el gasto que repuso el receptor")
+            #expect(Set(try (legs(context, s.paid) + legs(context, s.received)).map(\.persistentModelID)) == legIDs,
+                    "la convergencia tardía del origen duplicó una liquidación")
+            #expect(try context.fetchCount(FetchDescriptor<InboxDraft>()) == draftCount, "el Inbox pregunta dos veces")
+        }
+    }
+
+    /// **El origen cumple a medias**: repone el gasto y una liquidación, y la otra agota sus intentos. Pasado el techo, el
+    /// receptor repone solo la que falta.
+    @Test("origen que repone una parte: pasado el techo el receptor repone solo lo que falta")
+    func trust_originReturnsPart_theReceiverReturnsOnlyTheRest() throws {
+        let dir = try freshDir()
+        defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let f = try makeFixture(context)
+        try withEnvironment(context) { defaults in
+            let expense = try makeCaseAExpense(context, f)
+            let s = try makeSettlements(context, f)
+            let since = try receiverTrustsTheOrigin(context, expense: expense, s, defaults: defaults)
+            let arrived = try originRowsArrive(context, expense: expense, settlements: [s.paid])
+
+            takeOver(defaults, at: since.addingTimeInterval(3600), context)
+            let rest = try #require(GroupsRemoteWipeDivisionStore.trusted(defaults), "la promesa se soltó con algo sin llegar")
+            #expect(rest.expenseIDs.isEmpty && rest.settlementIDs == [s.received.id.uuidString]
+                    && rest.since == since.timeIntervalSince1970, "la promesa no se quedó solo con lo que falta")
+
+            takeOver(defaults, at: since.addingTimeInterval(GroupsRemoteWipeDivisionLogic.trustCeiling), context)
+            #expect(try legs(context, s.received).count == 1, "la liquidación que el origen no repuso no volvió")
+            #expect(try arrived.isSubset(of: groupRowIDs(context)), "el receptor rehízo lo que el origen sí repuso")
+            #expect(try txs(context, expenseID: expense.id).count == 1 && expenseDrafts(context, expense).isEmpty,
+                    "el receptor re-puenteó el gasto que el origen sí repuso")
+            #expect(try legs(context, s.paid).count == 1, "la liquidación que el origen repuso salió dos veces")
+        }
+    }
+
+    /// **Lo que la retoma NO toca, y lo que entrega a la intención durable** (review adversarial, lente de tests). Una
+    /// liquidación cuyo único rastro aquí es su marca de aprobación (un borrador `.approved`, y su real sin
+    /// `splitSettlementID`) ya llegó: re-puentearla volvería a preguntar por un pago registrado. Una sin confirmar o de un
+    /// grupo oculto no se pide (`bridgeSettlement` no mira el oculto: sería una deuda fantasma). Un gasto cuyo member propio
+    /// aún no se resuelve va a la intención durable, con el canal del backend. El control: la que falta sí vuelve.
+    @Test("la retoma deja lo aprobado, lo no confirmado y lo oculto, y entrega lo no atendido a la intención durable")
+    func trust_takeOver_filtersAndHandsOverTheUnattended() throws {
+        let dir = try freshDir()
+        defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let f = try makeFixture(context)
+        try withEnvironment(context) { defaults in
+            SessionState.shared.hasPrivateSession = true
+            let s = try makeSettlements(context, f)
+            let hidden = SplitGroup(name: "Borrado", currencyCode: "USD")
+            hidden.isHiddenForAll = true
+            context.insert(hidden)
+            let hiddenSettlement = SplitSettlement(groupZoneID: hidden.cloudKitZoneID, fromMemberID: f.me.id.uuidString,
+                                                   toMemberID: f.ana.id.uuidString, amount: 5, currencyCode: "USD")
+            hiddenSettlement.isConfirmed = true
+            context.insert(hiddenSettlement)
+            let flat = SplitGroup(name: "Piso", currencyCode: "USD")
+            context.insert(flat)
+            let luis = SplitMember(groupZoneID: flat.cloudKitZoneID, displayName: "Luis")
+            context.insert(luis)
+            let unresolved = SplitExpense(groupZoneID: flat.cloudKitZoneID, amount: 50, currencyCode: "USD",
+                                          expenseDescription: "Luz", paidByMemberID: luis.id.uuidString)
+            context.insert(unresolved)
+            // La marca de aprobación de `received`, llegada del origen: su única fila con el id de la liquidación.
+            context.insert(InboxDraft(amount: 25, sourceType: .groupSettlement, status: .approved,
+                                      splitSettlementID: s.received.id.uuidString))
+            // Un gasto del que solo bajó el borrador de «¿de qué cuenta salió?»: también llegó.
+            let draftOnly = try makeCaseAExpense(context, f)
+            context.insert(InboxDraft(note: "Cena", amount: -90, sourceType: .groupExpense,
+                                      splitExpenseID: draftOnly.id.uuidString))
+            try context.save()
+            let since = Date.now.addingTimeInterval(-GroupsRemoteWipeDivisionLogic.trustCeiling)
+            try GroupsRemoteWipeDivisionStore.setTrusted(.init(
+                signaledAt: since.timeIntervalSince1970 - 60, since: since.timeIntervalSince1970,
+                expenseIDs: [unresolved.id.uuidString, draftOnly.id.uuidString],
+                settlementIDs: [s.paid.id.uuidString, s.received.id.uuidString, s.unconfirmed.id.uuidString,
+                                hiddenSettlement.id.uuidString]), defaults)
+
+            takeOver(defaults, at: .now, context)
+
+            #expect(try legs(context, s.paid).count == 1, "el control: la liquidación que falta no volvió")
+            #expect(try legs(context, s.received).isEmpty && drafts(context, s.received).count == 1, """
+                la retoma re-puenteó una liquidación cuya marca de aprobación ya llegó: el Inbox vuelve a preguntar por un \
+                pago registrado
+                """)
+            #expect(try legs(context, s.unconfirmed).isEmpty, "la retoma pidió una liquidación sin confirmar")
+            #expect(try txs(context, expenseID: draftOnly.id).isEmpty && expenseDrafts(context, draftOnly).count == 1, """
+                la retoma re-puenteó un gasto cuyo borrador ya había llegado: sale dos veces al cruzarse por el espejo
+                """)
+            #expect(try legs(context, hiddenSettlement).isEmpty, """
+                la retoma re-puenteó la liquidación de un grupo oculto: deuda fantasma sin el gasto que la compensaba
+                """)
+            let pending = GroupsPendingBridgeIntent.pending
+            #expect(pending.expenseIDs.contains(unresolved.id) && pending.backendExpenseIDs.contains(unresolved.id), """
+                el gasto que el bridge no atendió no pasó a la intención durable con el canal del backend: no vuelve nunca
+                """)
+            #expect(!pending.settlementIDs.contains(s.unconfirmed.id) && !pending.settlementIDs.contains(hiddenSettlement.id),
+                    "la retoma entregó a la intención lo que no debía pedir")
+            #expect(GroupsRemoteWipeDivisionStore.trusted(defaults) == nil)
+        }
+    }
+
+    /// **Las puertas de la convergencia**: en solo-grupos el bridge borra las reales que re-puentea, y mientras se espera
+    /// el reparto de una señal más nueva, ese reparto decide. El control: sin las dos, repone.
+    @Test("sin sesión privada, o esperando el reparto de otra señal, el receptor no repone")
+    func trust_waitsForAPrivateSession_andForANewerDivision() throws {
+        let dir = try freshDir()
+        defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let f = try makeFixture(context)
+        try withEnvironment(context) { defaults in
+            let expense = try makeCaseAExpense(context, f)
+            let s = try makeSettlements(context, f)
+            let since = try receiverTrustsTheOrigin(context, expense: expense, s, defaults: defaults)
+            let overdue = since.addingTimeInterval(GroupsRemoteWipeDivisionLogic.trustCeiling)
+
+            SessionState.shared.hasPrivateSession = false
+            takeOver(defaults, at: overdue, context)
+            #expect(try bridgedRows(context).isEmpty, "el receptor re-puenteó en una sesión solo-grupos")
+            SessionState.shared.hasPrivateSession = true
+
+            GroupsRemoteWipeDivision.awaitOrigin(signaledAt: overdue, defaults: defaults, now: overdue)
+            takeOver(defaults, at: overdue, context)
+            #expect(try bridgedRows(context).isEmpty, "el receptor repuso sin esperar el reparto de la señal nueva")
+            #expect(GroupsRemoteWipeDivisionStore.trusted(defaults) != nil, "la espera de otra señal se llevó la promesa")
+
+            GroupsRemoteWipeDivisionStore.clearAwaiting(defaults)
+            takeOver(defaults, at: overdue, context)
+            #expect(!(try txs(context, expenseID: expense.id)).isEmpty, "el control: sin las dos puertas, repone")
+        }
+    }
 }
 
 /// Un iCloud-KV en memoria: lo que escribe un dispositivo lo lee el otro, sin iCloud.

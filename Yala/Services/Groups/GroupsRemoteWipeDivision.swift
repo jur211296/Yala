@@ -29,9 +29,12 @@
 //  (`GroupsBridgeRestoreConvergenceLogic.remoteWipeTakesRowsTheOriginReconverged`), que ya cubría este caso.
 //
 //  **Lo que queda fuera, dicho entero:**
-//   · **«Disjuntos y que lo cubren todo» vale si el origen llega a converger.** Lo que declara y luego no repone —un gasto
-//     que agota los intentos de `GroupsPendingBridgeIntent`, un relevo de persona o una desinstalación antes de su arranque
-//     en frío— no vuelve. Antes del reparto tampoco volvía.
+//   · **Lo que el origen promete y no repone lo repone el receptor, 72 horas después de resolver el reparto** (ticket
+//     `wipe-division-exclusion-trusts-the-origin-to-converge`, `takeOverIfOverdue`): un gasto que agota los intentos de
+//     `GroupsPendingBridgeIntent`, un relevo de persona o una desinstalación antes de su arranque en frío. Si el origen
+//     repone después, su bridge concilia por id sobre las filas del receptor ya bajadas. Si los dos puentean antes de
+//     cruzarse por el espejo —o dos receptores retoman a la vez—, duplica, y en una liquidación eso son dos borradores
+//     aprobables que nadie poda (ticket `wipe-division-takeover-can-cross-a-late-origin-before-the-mirror`).
 //   · **Un reparto que no se deja leer se trata como uno que no llegó**: se espera y a los 30 días se suelta. Reponer todo
 //     arriesgaría el duplicado que el reparto existe para evitar; el formato está fijado por test.
 //   · **Una petición ENTERA ya puesta gana**, aunque dos vaciados seguidos en dos dispositivos con grupos permitirían
@@ -114,6 +117,51 @@ nonisolated enum GroupsRemoteWipeDivisionLogic {
         }
         return abs(now.timeIntervalSince1970 - awaiting.since) >= lifetime ? .giveUp : .wait
     }
+
+    // MARK: - Lo prometido que no llega (ticket `wipe-division-exclusion-trusts-the-origin-to-converge`)
+
+    /// **Lo que el receptor dejó en manos del origen**: los ids que excluyó de su convergencia, la hora de la señal y desde
+    /// cuándo confía (el arranque que resolvió el reparto). Solo lo que falta: lo que ya llegó sale de aquí.
+    struct Trusted: Codable, Equatable {
+        let signaledAt: Double
+        let since: Double
+        let expenseIDs: Set<String>
+        let settlementIDs: Set<String>
+    }
+
+    enum TrustReview: Equatable {
+        /// Sigue faltando algo y el techo no ha pasado: se espera, con lo que queda.
+        case keep(Trusted)
+        /// Todo lo prometido llegó: el origen cumplió.
+        case settled
+        /// Pasó el techo: el receptor repone él lo que sigue faltando.
+        case takeOver(expenses: Set<String>, settlements: Set<String>)
+    }
+
+    /// **Cuánto se confía en el origen**, desde el arranque que resolvió el reparto. Su convergencia corre en su siguiente
+    /// arranque en frío, que suele llegar en horas. Tres días lo cubren sin dejar a la persona una semana sin sus gastos de grupo. Si el origen repone después, converge
+    /// sobre las filas del receptor ya bajadas por el espejo y el bridge las concilia por id.
+    static let trustCeiling: TimeInterval = 3 * 24 * 60 * 60
+
+    /// Qué hace el arranque con lo confiado. Un id **llegó** si aquí hay alguna fila suya POSTERIOR a la señal (el llamador
+    /// filtra): el corte del receptor se llevó todo lo anterior y su convergencia lo excluye, así que esa fila la trajo el
+    /// espejo. Una anterior que baja tarde —de un tercer dispositivo sin red— no prueba nada: su propio corte se la llevará.
+    /// **El plazo corre desde que se resolvió el reparto, no desde que se empezó a esperar** (review adversarial, lente de
+    /// sync): un reparto que llega tarde, o un receptor que no arranca en días, daba la promesa por vencida en el mismo
+    /// arranque que la apuntaba, sin dejar al origen ni un arranque de margen. El valor absoluto cubre un reloj que vuelve
+    /// atrás, como en `resolve`.
+    static func review(
+        _ trusted: Trusted, arrivedExpenses: Set<String>, arrivedSettlements: Set<String>, now: Date
+    ) -> TrustReview {
+        let expenses = trusted.expenseIDs.subtracting(arrivedExpenses)
+        let settlements = trusted.settlementIDs.subtracting(arrivedSettlements)
+        guard !expenses.isEmpty || !settlements.isEmpty else { return .settled }
+        guard abs(now.timeIntervalSince1970 - trusted.since) >= trustCeiling else {
+            return .keep(Trusted(signaledAt: trusted.signaledAt, since: trusted.since,
+                                 expenseIDs: expenses, settlementIDs: settlements))
+        }
+        return .takeOver(expenses: expenses, settlements: settlements)
+    }
 }
 
 /// Lo que persiste: el reparto en el iCloud-KV del Apple ID, y en local lo que el receptor espera. En el main actor, como la
@@ -174,6 +222,31 @@ enum GroupsRemoteWipeDivisionStore {
     /// (`DataWipeService.removeGroupsDomainPreferenceKeys`).
     nonisolated static func clearAwaiting(_ defaults: UserDefaults) {
         defaults.removeObject(forKey: awaitingKey)
+    }
+
+    /// Lo que el receptor dejó en manos del origen (`GroupsRemoteWipeDivisionLogic.Trusted`). Prefijo
+    /// `fullModeActivation.*`, como la espera.
+    nonisolated static let trustedKey = "fullModeActivation.groupsConvergenceTrustedDivision"
+
+    static func trusted(_ defaults: UserDefaults) -> GroupsRemoteWipeDivisionLogic.Trusted? {
+        guard let data = defaults.data(forKey: trustedKey) else { return nil }
+        do {
+            return try JSONDecoder().decode(GroupsRemoteWipeDivisionLogic.Trusted.self, from: data)
+        } catch {
+            #if DEBUG
+            print("GroupsRemoteWipeDivisionStore: Error: \(error)")
+            #endif
+            return nil
+        }
+    }
+
+    static func setTrusted(_ trusted: GroupsRemoteWipeDivisionLogic.Trusted, _ defaults: UserDefaults) throws {
+        defaults.set(try encoder().encode(trusted), forKey: trustedKey)
+    }
+
+    /// La retiran el origen que cumplió, la retoma pasado el techo y el relevo de persona.
+    nonisolated static func clearTrusted(_ defaults: UserDefaults) {
+        defaults.removeObject(forKey: trustedKey)
     }
 }
 
@@ -245,6 +318,16 @@ enum GroupsRemoteWipeDivision {
             awaiting: awaiting, division: GroupsRemoteWipeDivisionStore.readDivision(kv), now: now) {
         case .request(let expenses, let settlements):
             do {
+                // Lo que se deja en manos del origen, ANTES de la petición: un corte entre las dos deja la espera puesta y
+                // el arranque siguiente lo rehace. Al revés, la exclusión quedaría sin promesa y lo del origen, sin techo.
+                // Sustituye a la de un reparto anterior, como la exclusión; vacía, no hay nada que confiar.
+                if expenses.isEmpty && settlements.isEmpty {
+                    GroupsRemoteWipeDivisionStore.clearTrusted(defaults)
+                } else {
+                    try GroupsRemoteWipeDivisionStore.setTrusted(
+                        .init(signaledAt: awaiting.signaledAt, since: now.timeIntervalSince1970,
+                              expenseIDs: expenses, settlementIDs: settlements), defaults)
+                }
                 GroupsBridgeRestoreConvergenceStore.markSettlementLegsPending(defaults)
                 try GroupsBridgeRestoreConvergenceStore.markPending(
                     excluding: .init(expenseIDs: expenses, settlementIDs: settlements), defaults)
@@ -261,6 +344,81 @@ enum GroupsRemoteWipeDivision {
         case .giveUp:
             GroupsRemoteWipeDivisionStore.clearAwaiting(defaults)
             logger.notice("GroupsRemoteWipeDivision gave up")
+        }
+    }
+
+    /// **Lo que el origen prometió y no llega, lo repone el receptor pasado el techo** (ticket
+    /// `wipe-division-exclusion-trusts-the-origin-to-converge`). En el arranque, justo después de la convergencia y con sus
+    /// mismos gates (`AppBootstrapper.retryPendingBridges`: import quieto y dominio abierto), y con sesión privada como ella:
+    /// en solo-grupos el bridge borra las transacciones reales que re-puentea.
+    ///
+    /// - Lo que ya bajó del origen (filas posteriores a la señal) sale de la promesa. Si llegó todo, se suelta.
+    /// - Pasado el techo, re-puentea lo prometido que siga faltando y que tenga aquí, con los filtros de la convergencia
+    ///   (liquidaciones confirmadas fuera de grupos ocultos), y suelta la promesa. Lo que el bridge no atiende pasa a la
+    ///   intención durable con el canal del backend, como en la convergencia.
+    /// - **Mientras se espera el reparto de una señal más nueva no hace nada**: ese reparto decide, y al resolverse
+    ///   sustituye la promesa.
+    ///
+    /// **Sin copias dobles cuando el origen repone tarde.** Si sus filas llegan antes de que el receptor mire, no se
+    /// re-puentea nada. Si el origen converge después, lo hace detrás de la quiescencia del import, sobre las filas del
+    /// receptor ya bajadas, y el bridge las concilia por id. Queda el residual de siempre: los dos puentean antes de cruzarse
+    /// por el espejo, y el siguiente re-puente lo concilia. Si el bridge lanza, la promesa sigue y el arranque siguiente
+    /// reintenta: lo que sí se repuso ya cuenta como llegado.
+    static func takeOverIfOverdue(context: ModelContext, defaults: UserDefaults = .standard, now: Date = .now) {
+        guard let trusted = GroupsRemoteWipeDivisionStore.trusted(defaults) else { return }
+        guard GroupsRemoteWipeDivisionStore.awaiting(defaults) == nil else { return }
+        guard SessionState.shared.hasPrivateSession else { return }
+        guard GroupTransactionBridge.isDomainOpenForBridge(defaults: defaults) else { return }
+        do {
+            // Llegó lo que tiene aquí alguna fila posterior a la señal: una transacción o un borrador (la marca de una
+            // liquidación aprobada es un borrador, y su transacción real no lleva `splitSettlementID`). Mismo reloj que el
+            // del origen, que fecha lo que repone; una fila del receptor con su reloj atrasado cuenta como no llegada, y
+            // re-puentearla aquí es idempotente.
+            let signal = Date(timeIntervalSince1970: trusted.signaledAt)
+            let rows = try context.fetch(FetchDescriptor<TransactionItem>(
+                predicate: #Predicate { $0.splitExpenseID != nil || $0.splitSettlementID != nil }))
+                .filter { $0.createdAt > signal }
+            let drafts = try context.fetch(FetchDescriptor<InboxDraft>(
+                predicate: #Predicate { $0.splitExpenseID != nil || $0.splitSettlementID != nil }))
+                .filter { $0.createdAt > signal }
+            let review = GroupsRemoteWipeDivisionLogic.review(
+                trusted,
+                arrivedExpenses: Set(rows.compactMap(\.splitExpenseID) + drafts.compactMap(\.splitExpenseID)),
+                arrivedSettlements: Set(rows.compactMap(\.splitSettlementID) + drafts.compactMap(\.splitSettlementID)),
+                now: now)
+            switch review {
+            case .settled:
+                GroupsRemoteWipeDivisionStore.clearTrusted(defaults)
+                logger.notice("GroupsRemoteWipeDivision origin returned what it promised")
+            case .keep(let rest):
+                if rest != trusted { try GroupsRemoteWipeDivisionStore.setTrusted(rest, defaults) }
+            case .takeOver(let expenses, let settlements):
+                let hiddenZones = Set(try context.fetch(FetchDescriptor<SplitGroup>(
+                    predicate: #Predicate { $0.isHiddenForAll })).map(\.cloudKitZoneID))
+                let expenseIDs = Set(try context.fetch(FetchDescriptor<SplitExpense>()).map(\.id)
+                    .filter { expenses.contains($0.uuidString) })
+                let settlementIDs = Set(try context.fetch(FetchDescriptor<SplitSettlement>())
+                    .filter { $0.isConfirmed && !hiddenZones.contains($0.groupZoneID)
+                        && settlements.contains($0.id.uuidString) }
+                    .map(\.id))
+                let bridge = GroupTransactionBridge.shared
+                let attendedExpenses = expenseIDs.isEmpty ? [] : try bridge.bridgeRemoteExpenses(ids: Array(expenseIDs))
+                let attendedSettlements = settlementIDs.isEmpty
+                    ? [] : try bridge.bridgeRemoteSettlements(ids: Array(settlementIDs))
+                GroupsPendingBridgeIntent.arm(
+                    expenseIDs: GroupsBridgeRestoreConvergenceLogic.unattended(
+                        requested: expenseIDs, attended: attendedExpenses),
+                    settlementIDs: GroupsBridgeRestoreConvergenceLogic.unattended(
+                        requested: settlementIDs, attended: attendedSettlements),
+                    channel: .backend)
+                GroupsRemoteWipeDivisionStore.clearTrusted(defaults)
+                logger.notice("GroupsRemoteWipeDivision took over expenses=\(expenseIDs.count, privacy: .public) settlements=\(settlementIDs.count, privacy: .public)")
+            }
+        } catch {
+            logger.notice("GroupsRemoteWipeDivision takeover deferred reason=bridgeFailed")
+            #if DEBUG
+            print("GroupsRemoteWipeDivision: Error: \(error)")
+            #endif
         }
     }
 }

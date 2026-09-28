@@ -1724,6 +1724,9 @@ final class AppBootstrapper {
         // mismo arranque.
         GroupsRemoteWipeDivision.resolveIfArrived()
         GroupsBridgeRestoreConvergence.convergeIfPending(context: context)
+        // Y lo que el origen de ese vaciado prometió reponer y no llegó: pasado el techo lo repone este dispositivo
+        // (`GroupsRemoteWipeDivision.takeOverIfOverdue`). DESPUÉS de la convergencia y con sus mismos gates.
+        GroupsRemoteWipeDivision.takeOverIfOverdue(context: context)
         // Y lo que el «Vaciar datos» de otro dispositivo se llevó en uno que no podía reponerlo: lo declaró al parque, y
         // aquí se repone por id si ya falta (`GroupsRemoteWipeReturn`). DESPUÉS de la convergencia: lo que ella reponga
         // ya está presente y no se vuelve a pedir. Mismos gates, por lo mismo.
