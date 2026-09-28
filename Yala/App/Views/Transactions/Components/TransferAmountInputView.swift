@@ -43,7 +43,6 @@ struct TransferAmountInputView: View {
             // Exchange Rate (Clean, Explicit, No Box)
             exchangeRateField
         }
-        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
     }
 
     // MARK: - Source Amount Field
@@ -182,6 +181,9 @@ struct TransferAmountInputView: View {
                     .foregroundStyle(.secondary)
             }
         }
+        // Tope con motivo, medido el 2026-09-28: sin él, a AX5 en un iPhone SE la fila no cabe y el tipo de cambio
+        // se corta («1 U… 3.6600 PEN»), porque el campo de la tasa va con `fixedSize` y es el texto el que cede.
+        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
         .onChange(of: exchangeRateString) { _, newValue in
             // Only sync to model if USER IS editing it
             if isRateFieldFocused {

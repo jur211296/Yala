@@ -40,6 +40,7 @@ struct TransactionDetailSheet: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.tagCatalog) private var tagCatalog
     @Environment(AppPreferences.self) private var appPreferences
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     @State private var transferPartnerAccount: Account?
 
@@ -247,7 +248,7 @@ struct TransactionDetailSheet: View {
     // MARK: - Rows (neutras: íconos/labels secondary, values primary)
 
     private var typeRow: some View {
-        HStack(spacing: DS.Spacing.md) {
+        AdaptiveRowStack(spacing: DS.Spacing.md) {
             Image(systemName: transactionType.iconName)
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
@@ -257,9 +258,7 @@ struct TransactionDetailSheet: View {
             Text(L10n.Transaction.type)
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
-
-            Spacer()
-
+        } trailing: {
             Text(transactionType.displayName)
                 .font(DS.Typography.label)
                 .foregroundStyle(.primary)
@@ -269,7 +268,7 @@ struct TransactionDetailSheet: View {
     }
 
     private func detailRow(icon: String, label: String, value: String) -> some View {
-        HStack(spacing: DS.Spacing.md) {
+        AdaptiveRowStack(spacing: DS.Spacing.md) {
             Image(systemName: icon)
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
@@ -279,13 +278,11 @@ struct TransactionDetailSheet: View {
             Text(label)
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
-
-            Spacer()
-
+        } trailing: {
             Text(value)
                 .font(DS.Typography.label)
                 .foregroundStyle(.primary)
-                .lineLimit(1)
+                .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
         }
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.vertical, DS.FormRow.paddingV)
@@ -311,7 +308,7 @@ struct TransactionDetailSheet: View {
     }
 
     private func accountRow(icon: String, label: String, account: Account) -> some View {
-        HStack(spacing: DS.Spacing.md) {
+        AdaptiveRowStack(spacing: DS.Spacing.md) {
             Image(systemName: icon)
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
@@ -321,9 +318,7 @@ struct TransactionDetailSheet: View {
             Text(label)
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
-
-            Spacer()
-
+        } trailing: {
             HStack(spacing: DS.Spacing.xs) {
                 Circle()
                     .fill(Color(hex: account.colorHex))
@@ -364,7 +359,7 @@ struct TransactionDetailSheet: View {
     }
 
     private var categoryRow: some View {
-        HStack(spacing: DS.Spacing.md) {
+        AdaptiveRowStack(spacing: DS.Spacing.md) {
             Image(systemName: "tag")
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
@@ -374,10 +369,8 @@ struct TransactionDetailSheet: View {
             Text(L10n.Transaction.category)
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
-
-            Spacer()
-
-            VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
+        } trailing: {
+            VStack(alignment: .trailingUnlessStacked(dynamicTypeSize), spacing: DS.Spacing.xxs) {
                 if let subcatName = transaction.subcategory?.name {
                     Text(subcatName)
                         .font(DS.Typography.label)
@@ -399,7 +392,7 @@ struct TransactionDetailSheet: View {
     }
 
     private var tagsRow: some View {
-        HStack(spacing: DS.Spacing.md) {
+        AdaptiveRowStack(spacing: DS.Spacing.md) {
             Image(systemName: "number")
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
@@ -409,9 +402,7 @@ struct TransactionDetailSheet: View {
             Text(L10n.Transaction.tags)
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
-
-            Spacer()
-
+        } trailing: {
             // Chips réplica de RecordRowView.tagsRow (límite 3 + "+N") — fill
             // de color propio del tag (contenido del usuario, sólido y legible).
             HStack(spacing: DS.Spacing.xs) {
@@ -441,7 +432,7 @@ struct TransactionDetailSheet: View {
     /// Monto convertido a la moneda preferida con la tasa snapshot persistida
     /// (sin recalcular — formato del exchangeRateChip del form).
     private var conversionRow: some View {
-        HStack(spacing: DS.Spacing.md) {
+        AdaptiveRowStack(spacing: DS.Spacing.md) {
             Image(systemName: "arrow.triangle.2.circlepath")
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
@@ -451,10 +442,8 @@ struct TransactionDetailSheet: View {
             Text(L10n.Transaction.exchangeRate)
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
-
-            Spacer()
-
-            VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
+        } trailing: {
+            VStack(alignment: .trailingUnlessStacked(dynamicTypeSize), spacing: DS.Spacing.xxs) {
                 Text(
                     "≈ \(appPreferences.currency(transaction.amountInPreferredCurrency, currencyCode: transaction.preferredCurrencyCode, forceFullPrecision: true))"
                 )

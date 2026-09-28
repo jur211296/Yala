@@ -49,6 +49,7 @@ struct GroupRecordsView: View {
 
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var expenseToDelete: SplitExpense?
 
     var body: some View {
@@ -226,7 +227,7 @@ struct GroupRecordsView: View {
         let creditorName = memberNameLookup[expense.paidByMemberID] ?? "?"
         let amountStr = appPreferences.currency(expense.amount, currencyCode: expense.currencyCode)
 
-        return HStack(spacing: DS.ListRow.spacing) {
+        return AdaptiveRowStack(spacing: DS.ListRow.spacing, stackedSpacing: DS.Spacing.sm) {
             Image(systemName: "arrow.left.arrow.right")
                 .font(DS.Typography.label)
                 .foregroundStyle(.secondary)
@@ -244,9 +245,7 @@ struct GroupRecordsView: View {
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
-
-            Spacer()
-
+        } trailing: {
             Text(amountStr)
                 .font(DS.Typography.headline)
                 .foregroundStyle(.secondary)
@@ -263,7 +262,7 @@ struct GroupRecordsView: View {
         let toName = memberNameLookup[settlement.toMemberID] ?? "?"
         let amountStr = appPreferences.currency(settlement.amount, currencyCode: settlement.currencyCode)
 
-        return HStack(spacing: DS.ListRow.spacing) {
+        return AdaptiveRowStack(spacing: DS.ListRow.spacing, stackedSpacing: DS.Spacing.sm) {
             Image(systemName: "checkmark.circle")
                 .font(DS.Typography.label)
                 .foregroundStyle(.secondary)
@@ -281,9 +280,7 @@ struct GroupRecordsView: View {
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
-
-            Spacer()
-
+        } trailing: {
             Text(amountStr)
                 .font(DS.Typography.headline)
                 .foregroundStyle(.secondary)
@@ -307,7 +304,7 @@ struct GroupRecordsView: View {
             currentMemberID: currentMemberID
         )
 
-        return HStack(spacing: DS.ListRow.spacing) {
+        return AdaptiveRowStack(spacing: DS.ListRow.spacing, stackedSpacing: DS.Spacing.sm) {
             subcategoryBadge(for: expense)
 
             // Description + payer
@@ -315,16 +312,14 @@ struct GroupRecordsView: View {
                 Text(expense.expenseDescription.isEmpty ? "—" : expense.expenseDescription)
                     .font(DS.Typography.label)
                     .foregroundStyle(.primary)
-                    .lineLimit(1)
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
 
                 Text(payerLabel)
                     .font(DS.Typography.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
-
-            Spacer()
-
+        } trailing: {
             GroupExpenseAmountView(status: status, currencyCode: expense.currencyCode)
         }
         .listRowCard()

@@ -312,7 +312,6 @@ struct ScheduledPaymentEditorView: View {
                             .keyboardType(.decimalPad)
                             .multilineTextAlignment(.trailing)
                             .font(.system(size: scaledAmountSize, weight: .bold))
-                            .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                             .accessibilityIdentifier("scheduled_amount_field")
                             .foregroundStyle(transactionType == "income" ? Color.electricIndigo : .primary)
                             .focused($isAmountFieldFocused)

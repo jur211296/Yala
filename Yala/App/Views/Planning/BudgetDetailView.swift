@@ -13,6 +13,7 @@ struct BudgetDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @ScaledMetric(relativeTo: .largeTitle) private var scaledAmountSize: CGFloat = 36 // A11Y-DT: @ScaledMetric
 
     let budget: Budget
@@ -130,7 +131,10 @@ struct BudgetDetailView: View {
 
                 Text(spentText)
                     .font(DS.Typography.largeTitle)
-                    .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+                    // Crece con el texto del sistema y, si un importe largo no cabe en el ancho, se encoge en
+                    // vez de cortarse. Sustituye al tope en AX1, que lo dejaba pequeño a propósito.
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
                     .foregroundStyle(summary.status == .exceeded ? Color.hotPink : .primary)
 
                 Text(String(format: NSLocalizedString("budgets.amount.of", comment: ""), limitText))
@@ -282,7 +286,7 @@ struct BudgetDetailView: View {
                     SubsectionDivider()
 
                     // Alert thresholds
-                    HStack(spacing: DS.Spacing.md) {
+                    AdaptiveRowStack(spacing: DS.Spacing.md) {
                         Image(systemName: "bell.fill")
                             .font(DS.Typography.body)
                             .foregroundStyle(.secondary)
@@ -292,9 +296,7 @@ struct BudgetDetailView: View {
                         Text(L10n.BudgetDetail.alerts)
                             .font(DS.Typography.subheadline)
                             .foregroundStyle(.secondary)
-
-                        Spacer()
-
+                    } trailing: {
                         Text(alertThresholdsDescription)
                             .font(DS.Typography.label)
                             .foregroundStyle(.primary)
@@ -331,7 +333,7 @@ struct BudgetDetailView: View {
     // MARK: - Detail Row
 
     private func detailRow(icon: String, label: String, value: String) -> some View {
-        HStack(spacing: DS.Spacing.md) {
+        AdaptiveRowStack(spacing: DS.Spacing.md) {
             Image(systemName: icon)
                 .font(DS.Typography.body)
                 .foregroundStyle(.secondary)
@@ -341,13 +343,11 @@ struct BudgetDetailView: View {
             Text(label)
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
-
-            Spacer()
-
+        } trailing: {
             Text(value)
                 .font(DS.Typography.label)
                 .foregroundStyle(.primary)
-                .multilineTextAlignment(.trailing)
+                .multilineTextAlignment(dynamicTypeSize.isAccessibilitySize ? .leading : .trailing)
         }
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.vertical, DS.Spacing.md)

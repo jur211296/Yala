@@ -70,6 +70,9 @@ struct TutorialDetailView: View {
                 UserDefaults.standard.set(true, forKey: tutorial.completionKey)
             }
         }
+        // Tope con motivo: cada paso es una página de un `TabView` paginado, sin scroll propio, con el vídeo
+        // y los botones de navegación compartiendo el alto de la pantalla. Pasado AX1 el texto de un paso no
+        // cabe en su página y se cortaría sin forma de leerlo. Quitarlo pide dar scroll a cada página.
         .dynamicTypeSize(...DynamicTypeSize.accessibility1)
         .navigationTitle(tutorial.title)
         .navigationBarTitleDisplayMode(.inline)

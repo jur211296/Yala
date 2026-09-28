@@ -38,7 +38,6 @@ struct ThemeSettingsView: View {
                         Image(systemName: "paintpalette.fill")
                             .font(.system(size: heroIconSize))
                             .foregroundStyle(.thAccent)
-                            .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                             .padding(.bottom, DS.Spacing.sm)
 
                         Text(L10n.Profile.appearance)

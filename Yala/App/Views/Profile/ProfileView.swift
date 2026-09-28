@@ -938,7 +938,6 @@ struct ProfileView: View {
                         Image(systemName: appPreferences.userProfileIcon.isEmpty ? "person.fill" : appPreferences.userProfileIcon)
                             .font(.system(size: avatarIconSize))
                             .foregroundStyle(theme.accent)
-                            .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                     }
 
                     // Spark badge for Pro users

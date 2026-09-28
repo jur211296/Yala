@@ -10,6 +10,7 @@ import SwiftUI
 
 struct RecentRecordsWidget: View {
     @Environment(AppPreferences.self) private var appPreferences
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let records: [TransactionItem]
     let currencyCode: String
 
@@ -86,7 +87,9 @@ struct RecentRecordsWidget: View {
     // MARK: - Record Rows
 
     private func recordRow(_ record: TransactionItem) -> some View {
-        HStack(spacing: DS.Spacing.md) {
+        // A tamaños de accesibilidad el importe baja bajo el concepto, como en `RecordRowView`: en fila se
+        // cortaba («S/-…00»).
+        AdaptiveRowStack(spacing: DS.Spacing.md, stackedSpacing: DS.Spacing.sm) {
             // Icon
             subcategoryIcon(for: record, size: 36)
 
@@ -120,11 +123,9 @@ struct RecentRecordsWidget: View {
                         .lineLimit(1)
                 }
             }
-
-            Spacer()
-
+        } trailing: {
             // Right Column: Amount + Nature (matches RecordRowView)
-            VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
+            VStack(alignment: .trailingUnlessStacked(dynamicTypeSize), spacing: DS.Spacing.xs) {
                 AmountText(
                     value: record.amount,
                     currencyCode: record.currencyCode,

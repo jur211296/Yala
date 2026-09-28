@@ -14,12 +14,14 @@ struct BudgetRowView: View {
 
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
         NavigationLink(value: BudgetNavigationID(id: summary.budget.persistentModelID)) {
             VStack(alignment: .leading, spacing: DS.Spacing.md) {
-                // Top row: Icon + Name + Amount
-                HStack(spacing: DS.Spacing.md) {
+                // Top row: Icon + Name + Amount. A tamaños de accesibilidad el importe baja bajo el
+                // nombre (`AdaptiveRowStack`): en fila se partía carácter a carácter («S/ 435. / 00»).
+                AdaptiveRowStack(spacing: DS.Spacing.md, stackedSpacing: DS.Spacing.sm) {
                     // Icon badge
                     budgetIcon
 
@@ -29,7 +31,7 @@ struct BudgetRowView: View {
                             Text(summary.budget.name)
                                 .font(DS.Typography.headline)
                                 .foregroundStyle(.primary)
-                                .lineLimit(1)
+                                .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
 
                             if summary.budget.isFavorite {
                                 Image(systemName: "star.fill")
@@ -42,11 +44,9 @@ struct BudgetRowView: View {
                         // Status info (% spent + days remaining)
                         statusInfo
                     }
-
-                    Spacer()
-
+                } trailing: {
                     // Amount (right-aligned)
-                    VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
+                    VStack(alignment: .trailingUnlessStacked(dynamicTypeSize), spacing: DS.Spacing.xxs) {
                         HStack(spacing: DS.Spacing.xxs) {
                             if summary.status == .exceeded {
                                 Image(systemName: "exclamationmark.triangle.fill")
@@ -116,14 +116,18 @@ struct BudgetRowView: View {
             daysText = String(format: daysKey, "\(summary.daysRemaining)")
         }
 
-        return HStack(spacing: DS.Spacing.xs) {
+        // A tamaños de accesibilidad las dos cifras van una bajo otra, sin el separador: en fila se
+        // partían sílaba a sílaba.
+        return AdaptiveRowStack(spacing: DS.Spacing.xs, stackedSpacing: DS.Spacing.xxs) {
             Text(spentText)
                 .font(DS.Typography.labelTiny)
                 .foregroundStyle(summary.status == .exceeded ? Color.hotPink : .secondary)
 
-            Text("•")
-                .font(DS.Typography.captionSmall)
-                .foregroundStyle(.secondary.opacity(0.5))
+            if !dynamicTypeSize.isAccessibilitySize {
+                Text("•")
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(.secondary.opacity(0.5))
+            }
 
             Text(daysText)
                 .font(DS.Typography.captionSmall)

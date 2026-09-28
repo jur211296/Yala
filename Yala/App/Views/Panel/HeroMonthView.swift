@@ -123,7 +123,9 @@ struct HeroMonthView: View {
                     isEstimate: periodSummary.amountsAreApproximate
                 )
 
-                HStack(spacing: DS.Spacing.md) {
+                // A tamaños de accesibilidad los dos importes van uno bajo otro (`AdaptiveRowStack`): en fila no
+                // cabían y se cortaban por el medio («S/1,7…10»).
+                AdaptiveRowStack(spacing: DS.Spacing.md, stackedSpacing: DS.Spacing.xs) {
                     // Income — pill de filtro por naturaleza (income está oculto en
                     // expenses-only, rama que ya no entra aquí).
                     Button {
