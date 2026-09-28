@@ -32,3 +32,13 @@ el arranque siguiente?
 ## Relacionados
 
 - [[wipe-data-keeps-groups-but-drops-their-bridged-rows]]
+- [[late-remote-wipe-signal-undoes-the-rows-the-origin-reconverged]]
+
+## Nota (2026-09-27, review de `late-remote-wipe-signal-undoes-the-rows-the-origin-reconverged`)
+
+El receptor de la señal tardía hereda este momento, y ahí pesa más: su borrado se lleva las filas también del ORIGEN, y
+no vuelven a ningún dispositivo hasta el siguiente arranque en frío del receptor, que suele ser el que menos se abre.
+Mientras tanto hay una ventana (inferida): si en el origen se aprueba el borrador de una liquidación antes de que le
+llegue el borrado de su pata virtual, la transacción real (D7, sin `splitSettlementID`) sobrevive; el receptor ve la
+liquidación sin ninguna pata, la re-puentea y el Inbox vuelve a pedir ese pago. Converger en el mismo proceso
+(`GroupsBridgeRestoreConvergence.runAfterActivation`, que ya espera la quiescencia) cerraría la mayor parte.

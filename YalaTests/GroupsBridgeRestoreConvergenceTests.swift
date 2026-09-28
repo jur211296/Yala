@@ -105,6 +105,24 @@ struct GroupsBridgeRestoreConvergenceLogicTests {
         #expect(Logic.settlementsToReBridge(confirmed: [bare, withVirtual, withReal], legSettlementIDs: legs) == [bare])
         #expect(Logic.settlementsToReBridge(confirmed: [], legSettlementIDs: legs).isEmpty, "solo las confirmadas")
     }
+
+    /// El receptor de la señal de vaciado pide la convergencia solo si su borrado se lleva una fila puenteada POSTERIOR a
+    /// la señal. El corte, clavado con sus dos vecinos: un segundo después cuenta, el mismo instante no.
+    @Test("el receptor pide solo si hay una fila puenteada posterior a la señal (corte estricto, sin hora no pide)")
+    func remoteWipeTakesRowsTheOriginReconverged_strictCut() {
+        let t0 = Date(timeIntervalSince1970: 1_800_000_000)
+        #expect(Logic.remoteWipeTakesRowsTheOriginReconverged(
+            bridgedRowsCreatedAt: [t0.addingTimeInterval(-3600), t0.addingTimeInterval(1)], signaledAt: t0))
+        #expect(!Logic.remoteWipeTakesRowsTheOriginReconverged(bridgedRowsCreatedAt: [t0], signaledAt: t0),
+                "una fila del mismo instante no es posterior a la señal")
+        #expect(!Logic.remoteWipeTakesRowsTheOriginReconverged(
+            bridgedRowsCreatedAt: [t0.addingTimeInterval(-1)], signaledAt: t0))
+        #expect(!Logic.remoteWipeTakesRowsTheOriginReconverged(bridgedRowsCreatedAt: [], signaledAt: t0),
+                "sin filas puenteadas no hay nada que el origen haya repuesto")
+        #expect(!Logic.remoteWipeTakesRowsTheOriginReconverged(
+            bridgedRowsCreatedAt: [t0], signaledAt: Date(timeIntervalSince1970: 0)),
+                "sin hora de señal toda fila parece posterior: pedir ahí es pedir siempre, y duplica")
+    }
 }
 
 @Suite("Paso 8 · convergencia tras restaurar, contra el bridge real", .serialized, .wipeAppGroupMirrorIsolated)
@@ -745,6 +763,157 @@ struct GroupsBridgeRestoreConvergenceBehaviourTests {
                                                 resetsPreferences: false)
             #expect(GroupsDetachedBridgeLedger.read() == nil,
                     "el libro sobrevive al borrado de filas de la activación o del aviso tardío")
+        }
+    }
+
+    // MARK: - El dispositivo que RECIBE la señal (ticket `late-remote-wipe-signal-undoes-the-rows-the-origin-reconverged`)
+
+    /// Puentea el gasto y las dos liquidaciones en modo completo, como las deja la convergencia del origen o el sync de
+    /// grupos. El control fija que este dispositivo no había pedido nada: la petición que haya después la pone su borrado.
+    private func bridgeGroupRows(
+        _ context: ModelContext, _ expense: SplitExpense, _ s: Settlements, defaults: UserDefaults
+    ) throws {
+        SessionState.shared.hasPrivateSession = true
+        try GroupTransactionBridge.shared.bridgeRemoteExpenses(ids: [expense.id])
+        try GroupTransactionBridge.shared.bridgeRemoteSettlements(ids: [s.paid.id, s.received.id])
+        #expect(try !txs(context, expenseID: expense.id).isEmpty && legs(context, s.paid).count == 1
+                && legs(context, s.received).count == 1, "el fixture no puentea las filas de grupo")
+        #expect(!GroupsBridgeRestoreConvergenceStore.isPending(defaults)
+                && !GroupsBridgeRestoreConvergenceStore.isSettlementLegsPending(defaults),
+                "el fixture ya trae una petición: el caso no mediría la del borrado del receptor")
+    }
+
+    /// El orden del ticket: el origen vació sus datos y ya convergió, y este dispositivo —cerrado o sin red hasta ahora—
+    /// procesa la señal tarde. Lo que tiene puenteado es POSTERIOR a la señal (la reposición del origen, que llegó por el
+    /// espejo). Su borrado se lo lleva y ese borrado viaja al origen: si este dispositivo no lo pide, no lo pide nadie.
+    /// Con la petición, vuelve en su arranque siguiente, una vez.
+    @Test("la señal de «Vaciar datos» procesada tarde no deja sin gastos de grupo: el receptor los pide")
+    func lateRemoteWipe_afterTheOriginReconverged_rowsComeBackOnce() throws {
+        let dir = try freshDir()
+        defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let f = try makeFixture(context)
+        try withEnvironment(context) { defaults in
+            let expense = try makeCaseAExpense(context, f)
+            let s = try makeSettlements(context, f)
+            let signaledAt = Date.now.addingTimeInterval(-60)
+            try bridgeGroupRows(context, expense, s, defaults: defaults)
+
+            try DataWipeService.wipeLocallyForRemoteWipeSignal(in: context, signaledAt: signaledAt, defaults: defaults)
+            #expect(try txs(context, expenseID: expense.id).isEmpty && legs(context, s.paid).isEmpty
+                    && legs(context, s.received).isEmpty,
+                    "el borrado del receptor ya no se lleva las filas puenteadas: la premisa del ticket cambió")
+            #expect(try context.fetchCount(FetchDescriptor<SplitExpense>()) == 1
+                    && context.fetchCount(FetchDescriptor<SplitSettlement>()) == 3, "el borrado del receptor conserva los grupos")
+            #expect(GroupsBridgeRestoreConvergenceStore.isPending(defaults), """
+                el receptor no pidió la convergencia: su borrado viaja por el espejo al origen, que ya convergió, y los \
+                gastos de grupo desaparecen de lo personal en todo el parque
+                """)
+            #expect(GroupsBridgeRestoreConvergenceStore.isSettlementLegsPending(defaults),
+                    "el receptor no pidió las liquidaciones: la cuenta de grupos contaría lo ya cobrado o pagado")
+            #expect(PrivateSessionMark.confirmedPrivateSession(),
+                    "el borrado del receptor soltó la sesión privada: la convergencia no correría en el arranque siguiente")
+
+            GroupsBridgeRestoreConvergence.convergeIfPending(context: context, defaults: defaults)
+
+            #expect(!(try txs(context, expenseID: expense.id)).isEmpty, "el gasto de grupo no volvió a lo personal")
+            #expect(try expenseDrafts(context, expense).count == 1, "el Inbox no pregunta de qué cuenta salió el gasto")
+            #expect(try legs(context, s.paid).count == 1, "la liquidación que pagué no volvió, o volvió dos veces")
+            #expect(try legs(context, s.received).count == 1, "la que me pagaron no volvió, o volvió dos veces")
+            #expect(try drafts(context, s.received).count == 1, "el Inbox no pregunta a qué cuenta llegó el pago")
+            #expect(try legs(context, s.unconfirmed).isEmpty, "sin confirmar no se crea nunca")
+            #expect(!GroupsBridgeRestoreConvergenceStore.isPending(defaults))
+        }
+    }
+
+    /// Una liquidación sola también es prueba: si lo único posterior a la señal es la pata de una liquidación (el origen
+    /// repuso solo eso, o solo eso llegó por el espejo), el borrado se la lleva igual y nadie más la pide.
+    @Test("una liquidación repuesta sola también hace pedir al receptor")
+    func lateRemoteWipe_onlyASettlementLeg_alsoAsks() throws {
+        let dir = try freshDir()
+        defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let f = try makeFixture(context)
+        try withEnvironment(context) { defaults in
+            let s = try makeSettlements(context, f)
+            let signaledAt = Date.now.addingTimeInterval(-60)
+            SessionState.shared.hasPrivateSession = true
+            try GroupTransactionBridge.shared.bridgeRemoteSettlements(ids: [s.paid.id])
+            try #require(try legs(context, s.paid).count == 1, "el fixture no puentea la liquidación")
+            try #require(try context.fetchCount(FetchDescriptor<TransactionItem>(
+                predicate: #Predicate { $0.splitExpenseID != nil })) == 0, "el fixture trae un gasto puenteado")
+
+            try DataWipeService.wipeLocallyForRemoteWipeSignal(in: context, signaledAt: signaledAt, defaults: defaults)
+
+            #expect(GroupsBridgeRestoreConvergenceStore.isSettlementLegsPending(defaults)
+                    && GroupsBridgeRestoreConvergenceStore.isPending(defaults),
+                    "el receptor no ve la pata de liquidación repuesta: su borrado se la lleva de todo el parque")
+        }
+    }
+
+    /// El orden normal: este dispositivo procesa la señal ANTES de que el origen converja, así que lo que tiene puenteado
+    /// es anterior al vaciado (las filas viejas cuyo borrado aún no llegó por el espejo). Reponerlo es cosa de la petición
+    /// del origen. Si el receptor también la pidiera, los dos convergerían, y si lo hacen antes de cruzarse por el espejo
+    /// cada uno crea su copia de todo el histórico de grupos: virtuales dobles y dos borradores por gasto y por
+    /// liquidación, que aprobados cuentan dos veces (review adversarial, lentes de dinero y de sync).
+    @Test("en el orden normal el receptor no pide la convergencia: la del origen basta, y dos duplicarían")
+    func remoteWipe_beforeTheOriginConverges_doesNotAsk() throws {
+        let dir = try freshDir()
+        defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let f = try makeFixture(context)
+        try withEnvironment(context) { defaults in
+            let expense = try makeCaseAExpense(context, f)
+            let s = try makeSettlements(context, f)
+            try bridgeGroupRows(context, expense, s, defaults: defaults)
+            let signaledAt = Date.now.addingTimeInterval(60)
+
+            try DataWipeService.wipeLocallyForRemoteWipeSignal(in: context, signaledAt: signaledAt, defaults: defaults)
+
+            #expect(try txs(context, expenseID: expense.id).isEmpty && legs(context, s.paid).isEmpty,
+                    "el borrado del receptor ya no se lleva las filas viejas: el caso no mide nada")
+            #expect(!GroupsBridgeRestoreConvergenceStore.isPending(defaults)
+                    && !GroupsBridgeRestoreConvergenceStore.isSettlementLegsPending(defaults), """
+                el receptor pidió la convergencia sin que su borrado se llevara nada que el origen hubiera repuesto: si los \
+                dos convergen antes de cruzarse por el espejo, cada gasto y cada liquidación de grupo sale dos veces
+                """)
+        }
+    }
+
+    /// Lo que los otros casos no pueden ver, porque piden en unos `defaults` aislados: en producción la petición va a
+    /// `.standard`, y el borrado del receptor RESETEA las preferencias de `.standard` justo después de pedirla. Si sus keys
+    /// entraran en esa lista, el receptor dejaría de pedir sin que nada fallara a la vista. Y la otra mitad: este borrado
+    /// es la RESPUESTA a una señal, así que no puede emitir otra — rebotaría el vaciado entre dispositivos.
+    @Test("en `.standard` la petición del receptor sobrevive a su reset de preferencias, y no re-emite la señal")
+    func remoteWipe_requestSurvivesThePreferencesReset_andDoesNotResignal() throws {
+        let dir = try freshDir()
+        defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let f = try makeFixture(context)
+        try withEnvironment(context) { defaults in
+            let expense = try makeCaseAExpense(context, f)
+            let s = try makeSettlements(context, f)
+            let signaledAt = Date.now.addingTimeInterval(-60)
+            try bridgeGroupRows(context, expense, s, defaults: defaults)
+            let standard = UserDefaults.standard
+            let start = Date.now.timeIntervalSince1970
+            // `PreferenceSyncService.signalWipeInitiated` escribe aquí (`WipeKey.localWipe`) la hora de la señal que emite.
+            standard.set(42.0, forKey: "lastKnownWipeTimestamp")
+            standard.set("Alguien", forKey: "userName")
+            GroupsBridgeRestoreConvergenceStore.clear(standard)
+
+            try DataWipeService.wipeLocallyForRemoteWipeSignal(in: context, signaledAt: signaledAt)
+
+            #expect(standard.object(forKey: "userName") == nil,
+                    "el borrado del receptor ya no resetea las preferencias: el caso no mide la supervivencia de la petición")
+            #expect(GroupsBridgeRestoreConvergenceStore.isPending(standard), """
+                el reset de preferencias del receptor se llevó su petición de convergencia: los gastos de grupo que el \
+                origen repuso no vuelven
+                """)
+            #expect(GroupsBridgeRestoreConvergenceStore.isSettlementLegsPending(standard),
+                    "el reset de preferencias del receptor se llevó la petición de las liquidaciones")
+            #expect(standard.double(forKey: "lastKnownWipeTimestamp") < start,
+                    "el borrado del receptor re-emitió la señal de vaciado: rebotaría entre los dispositivos del Apple ID")
         }
     }
 }

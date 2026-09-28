@@ -320,9 +320,8 @@ final class DataWipeService {
     ///
     /// `defaults` es solo para las dos peticiones: el borrado y el libro de conservados escriben en `.standard`.
     ///
-    /// El borrado reactivo del otro dispositivo (`performLocalWipeForRemoteSync`) NO pasa por aquí: esa señal solo sale
-    /// en modo iCloud, así que las filas que repone el dispositivo de origen le llegan por el espejo, y pedirlo en los
-    /// dos las puentearía dos veces.
+    /// El borrado reactivo del otro dispositivo pasa por aquí cuando se lleva filas que el origen ya repuso
+    /// (`wipeLocallyForRemoteWipeSignal`).
     static func wipePersonalDataKeepingGroups(
         in context: ModelContext,
         broadcastSignal: Bool,
@@ -331,6 +330,60 @@ final class DataWipeService {
         GroupsBridgeRestoreConvergenceStore.markSettlementLegsPending(defaults)
         GroupsBridgeRestoreConvergenceStore.markPending(defaults)
         try wipeAllUserData(in: context, reseedInitialData: false, broadcastSignal: broadcastSignal)
+    }
+
+    /// **El «Vaciar datos» de OTRO dispositivo del Apple ID, aplicado aquí: el mismo borrado, sin volver a señalizar, y
+    /// pidiendo la convergencia SOLO si este borrado se lleva filas de grupo que el origen ya repuso** (ticket
+    /// `late-remote-wipe-signal-undoes-the-rows-the-origin-reconverged`).
+    ///
+    /// Hasta el 2026-09-27 este borrado no pedía nada, con un argumento que solo valía en un orden: «las filas que repone
+    /// el dispositivo de origen le llegan por el espejo». Si este dispositivo procesa la señal DESPUÉS de que el origen
+    /// haya convergido —estaba cerrado, o sin red—, lo que se borra aquí son justo esas filas repuestas, el borrado viaja
+    /// por el espejo al origen y nadie vuelve a pedir la convergencia: los gastos y liquidaciones de grupo desaparecen de
+    /// lo personal en todo el parque, y ya no vuelven.
+    ///
+    /// **El indicio de ese orden es la FECHA de las filas puenteadas que hay aquí**, y no se pide la convergencia sin él
+    /// (review adversarial, lentes de dinero y de sync). Pedirla siempre abría un duplicado nuevo: en el orden normal el
+    /// origen todavía no ha convergido, y si los dos dispositivos convergen antes de cruzarse por el espejo cada uno crea
+    /// su copia de TODO el histórico de grupos —virtuales dobles y dos borradores por gasto y por liquidación, que
+    /// aprobados cuentan dos veces—. Una fila puenteada creada DESPUÉS de la señal es posterior al vaciado: casi siempre la
+    /// reposición del origen, que ya consumió su petición y no volverá a converger; borrarla sin pedir nada es el bug. Sin
+    /// ninguna, lo que se borra es anterior al vaciado y reponerlo es cosa de la petición del origen.
+    ///
+    /// **Es un indicio, no una prueba.** Una fila posterior también la crea el sync de grupos (un gasto nuevo o editado
+    /// después del vaciado) con el origen todavía sin converger: entonces quedan dos peticiones, y duplican solo si las
+    /// dos convergencias se cruzan antes que el espejo (`retryPendingBridges` espera al import quieto, así que la segunda
+    /// suele ver las filas de la primera y re-puentear sobre ellas es idempotente). Ticket
+    /// `late-remote-wipe-infers-the-origin-converged-from-row-dates`.
+    ///
+    /// `signaledAt` es la hora de la señal (`lastWipeTimestamp`, reloj del origen, el mismo que fecha lo que el origen
+    /// repone). El corte es estricto, y sin hora (≤ 0) no se pide: ver `remoteWipeTakesRowsTheOriginReconverged`.
+    ///
+    /// La señal NO se vuelve a emitir: es la respuesta a una señal, y re-emitirla haría rebotar el vaciado entre
+    /// dispositivos. Por eso el parámetro no existe aquí.
+    ///
+    /// Las peticiones van antes del borrado por lo mismo que en «Vaciar datos», y sobreviven a su reset de preferencias
+    /// porque sus keys (`fullModeActivation.*`) no están en las listas de ese reset. Sí las retira el relevo de persona
+    /// (`removeGroupsDomainPreferenceKeys`), que se lleva también los grupos.
+    ///
+    /// **Lo que esto no arregla:** un dispositivo sin el dominio de Grupos (nunca entró en su cuenta de grupos, o su canal
+    /// está parado) pide y converge sobre cero gastos, así que lo que borró no vuelve. Ticket
+    /// `late-remote-wipe-on-a-device-without-groups-cannot-return-the-rows`.
+    static func wipeLocallyForRemoteWipeSignal(
+        in context: ModelContext,
+        signaledAt: Date,
+        defaults: UserDefaults = .standard
+    ) throws {
+        // Las transacciones bastan: todo lo que el bridge pone en lo personal lleva al menos una (la virtual de la cuenta
+        // de grupos), y sus borradores nacen con ella.
+        let bridgedRowsCreatedAt = try context.fetch(FetchDescriptor<TransactionItem>(
+            predicate: #Predicate { $0.splitExpenseID != nil || $0.splitSettlementID != nil })).map(\.createdAt)
+        if GroupsBridgeRestoreConvergenceLogic.remoteWipeTakesRowsTheOriginReconverged(
+            bridgedRowsCreatedAt: bridgedRowsCreatedAt, signaledAt: signaledAt) {
+            try wipePersonalDataKeepingGroups(in: context, broadcastSignal: false, defaults: defaults)
+        } else {
+            try wipeAllUserData(in: context, reseedInitialData: false, broadcastSignal: false)
+        }
     }
 
     // MARK: - Purga del dominio Grupos en «empiezo de cero» (handover de dispositivo)

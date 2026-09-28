@@ -69,8 +69,10 @@ borrado no dejan rastro.
 - La convergencia salta las liquidaciones de un grupo oculto (borrado o retirado). Hallazgo de la review, que vale
   también para los borrados de #282: `bridgeSettlement` no mira el grupo oculto, y re-puentearla dejaba la pata de la
   liquidación sin la del gasto que la compensaba, o sea una deuda fantasma.
-- El borrado reactivo del otro dispositivo (`performLocalWipeForRemoteSync`) no pide nada: la señal solo sale en modo
-  iCloud y las filas que repone el dispositivo de origen le llegan por el espejo.
+- El borrado reactivo del otro dispositivo (`performLocalWipeForRemoteSync`) no pedía nada: la señal solo sale en modo
+  iCloud y las filas que repone el dispositivo de origen le llegan por el espejo. **Superado el 2026-09-27**: eso solo
+  valía si el receptor procesaba la señal antes de que el origen convergiera; ahora también pide la convergencia (ticket
+  `late-remote-wipe-signal-undoes-the-rows-the-origin-reconverged`).
 
 ## Verificado
 
