@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-28 (Lima)
 
-**Rama** `2.1` — Merge #290: **«Vaciar datos» en un dispositivo sin los grupos ya no deja al resto sin los gastos de grupo.**
+**Rama** `2.1` — Merge #291: **el barrido semanal deja 23 tickets de device-QA, con un guion de un día en `qa/guion-tanda.md`.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,26 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#290 · «Vaciar datos» en un dispositivo sin los grupos ya no deja al resto sin los gastos de grupo)
+## Esta sesión (#291 · el barrido semanal de `qa`: de 51 tickets a 23)
+
+La cola de device-QA había vuelto a 51 en cinco días. Con el criterio del 23-sep (#224):
+
+- **28 a `done` sin device-QA**, cada uno con su sección «Barrido de `qa` · 2026-09-28»: 25 piden dos dispositivos, una
+  hora de espera, SQL o un fallo que no se provoca a mano, y ya los cubren sus tests; 2 son no-regresión de C4 y E1
+  (`absorbed`); y el antiguo E2, que solo se daba de rebote. Entre ellos, el device-QA de dos dispositivos de #290.
+- **Entra uno:** `wipe-data-keeps-groups-but-drops-their-bridged-rows`, bloque F del guion, el último porque «Vaciar datos»
+  vacía también el iCloud de Yala Dev que usan B y C.
+- Ninguno vuelve a `backlog`: los 51 tenían su arreglo en `2.1`. Guion, carpeta e índice cuadran (23 · 683).
+- **Encontrado:** los guiones de los dos `fresh-start-*` no existían tal cual: «Vaciar datos» con sesión privada va al
+  onboarding personal, no a la bienvenida (`DestructiveScopeLogic.wipeLanding`). Salen con sus tests.
+
+### Lo que espera de Jürgen
+
+- **El guion de `qa/guion-tanda.md`** con Yala Dev compilada desde `2.1` en un iPhone: bloques A–F, lista corta arriba.
+  Con hora y media, D y B. Basta con pasarme «B2 pasa, C5 falla: salió X».
+- Cola A se reanuda con el siguiente ticket.
+
+## Sesión anterior (#290 · «Vaciar datos» en un dispositivo sin los grupos ya no deja al resto sin los gastos de grupo)
 
 Si usabas Grupos en el iPhone y vaciabas tus datos en un iPad que nunca entró en Grupos, en el iPhone los gastos y
 liquidaciones de grupo desaparecían de tus cuentas y no volvían. Ahora:
@@ -37,8 +56,7 @@ mutantes volvió a llenar el disco con los contenedores muertos del simulador (`
 
 ### Lo que espera de Jürgen
 
-- **Device-QA con dos dispositivos** (mismo Apple ID, modo iCloud): guion en
-  `tickets/qa/a-wipe-on-a-device-without-the-groups-loses-their-rows-everywhere.md`.
+- ~~Device-QA con dos dispositivos~~: salió en el barrido de #291 (`done`, cubierto por sus tests).
 - Nuevos en backlog: `wipe-division-exclusion-trusts-the-origin-to-converge` (medium: si el dispositivo que vació no
   vuelve a abrirse, lo que prometió reponer no vuelve; ya pasaba antes), `wipe-division-complement-can-be-bridged-twice`,
   `consecutive-wipes-whole-convergence-ignores-the-second-division` y `wipe-division-kv-key-has-no-quota-ceiling` (low).
