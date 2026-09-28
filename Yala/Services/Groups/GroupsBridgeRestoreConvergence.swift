@@ -42,7 +42,11 @@ nonisolated enum GroupsBridgeRestoreConvergenceStore {
 
     static let key = "fullModeActivation.groupsConvergencePending"
 
+    /// Pide la convergencia ENTERA: todo lo local. Retira el alcance de una petición con exclusión que hubiera, y lo que un
+    /// receptor esperaba del origen (`GroupsRemoteWipeDivision`): esta convergencia repone todo, también eso.
     static func markPending(_ defaults: UserDefaults = .standard) {
+        defaults.removeObject(forKey: excludedKey)
+        GroupsRemoteWipeDivisionStore.clearAwaiting(defaults)
         defaults.set(true, forKey: key)
     }
 
@@ -50,10 +54,54 @@ nonisolated enum GroupsBridgeRestoreConvergenceStore {
         defaults.bool(forKey: key)
     }
 
-    /// Retira la intención entera: la convergencia y, si iba con ella, el re-puente de las liquidaciones.
+    /// Retira la intención entera: la convergencia, su alcance y, si iba con ella, el re-puente de las liquidaciones. Lo que
+    /// un receptor espera del origen NO: es de otra señal, y su convergencia todavía no se ha pedido.
     static func clear(_ defaults: UserDefaults = .standard) {
         defaults.removeObject(forKey: key)
         defaults.removeObject(forKey: settlementLegsKey)
+        defaults.removeObject(forKey: excludedKey)
+    }
+
+    // MARK: - El alcance: lo que repone OTRO dispositivo (ticket `a-wipe-on-a-device-without-the-groups-loses-their-rows-everywhere`)
+
+    /// **Lo que esta convergencia NO repone, porque lo repone el origen de un vaciado** (`GroupsRemoteWipeDivision`). Sin
+    /// esta key la petición es entera. Los ids, tal como los guarda la fila.
+    static let excludedKey = "fullModeActivation.groupsConvergenceExcluded"
+
+    struct Exclusion: Codable, Equatable {
+        var expenseIDs: Set<String>
+        var settlementIDs: Set<String>
+    }
+
+    /// El alcance de la petición puesta. `nil` es entera, y también un alcance que no se puede leer: un duplicado se
+    /// concilia en el siguiente re-puente del gasto, y una fila que no vuelve no la ve nadie.
+    static func exclusion(_ defaults: UserDefaults = .standard) -> Exclusion? {
+        guard let data = defaults.data(forKey: excludedKey) else { return nil }
+        do {
+            return try JSONDecoder().decode(Exclusion.self, from: data)
+        } catch {
+            #if DEBUG
+            print("GroupsBridgeRestoreConvergenceStore: Error: \(error)")
+            #endif
+            return nil
+        }
+    }
+
+    /// ¿Hay una petición ENTERA puesta? Es la que repone todo.
+    static func isWholePending(_ defaults: UserDefaults = .standard) -> Bool {
+        isPending(defaults) && exclusion(defaults) == nil
+    }
+
+    /// **Pide la convergencia sin lo que repone otro dispositivo.** Con una petición entera ya puesta no cambia nada: la
+    /// entera repone más. Con otra con exclusión, **la sustituye** (review adversarial, lente de grupos): su único llamador
+    /// es el reparto de un vaciado, y el corte de la señal nueva ya se llevó lo que repuso el origen de la vieja, así que la
+    /// exclusión vieja no describe nada. Intersecarlas repondría también lo que repone el origen nuevo.
+    /// El alcance se escribe ANTES que la marca: un corte entre las dos lo deja dormido (la marca siguiente lo sustituye),
+    /// mientras que al revés la convergencia correría entera y duplicaría lo del origen.
+    static func markPending(excluding scope: Exclusion, _ defaults: UserDefaults = .standard) throws {
+        guard !isWholePending(defaults) else { return }
+        defaults.set(try JSONEncoder().encode(scope), forKey: excludedKey)
+        defaults.set(true, forKey: key)
     }
 
     /// **Las patas de liquidación también vuelven**, y solo lo pide un borrado de filas que conservó los grupos
@@ -105,8 +153,17 @@ nonisolated enum GroupsBridgeRestoreConvergenceLogic {
     /// pata**. Una pata, la que sea, dice que el sync la re-puenteó después del borrado, y re-puentearla borraría con ella
     /// las reales enlazadas. Las que no tienen nada son justo las que el borrado dejó así, y el bridge las crea una vez; si
     /// su borrador ya se aprobó, su marca de aprobación hace que no vuelva a preguntar (`GroupSettlementDraftResolutionLogic`).
-    static func settlementsToReBridge(confirmed: Set<UUID>, legSettlementIDs: Set<String>) -> Set<UUID> {
-        confirmed.filter { !legSettlementIDs.contains($0.uuidString) }
+    ///
+    /// `excluded` son las que repone otro dispositivo (el origen de un vaciado, `GroupsRemoteWipeDivision`).
+    static func settlementsToReBridge(
+        confirmed: Set<UUID>, legSettlementIDs: Set<String>, excluded: Set<String> = []
+    ) -> Set<UUID> {
+        confirmed.filter { !legSettlementIDs.contains($0.uuidString) && !excluded.contains($0.uuidString) }
+    }
+
+    /// Los gastos que re-puentea una convergencia: todos los locales menos los que repone otro dispositivo.
+    static func expensesToConverge(local: Set<UUID>, excluded: Set<String>) -> Set<UUID> {
+        local.filter { !excluded.contains($0.uuidString) }
     }
 
     /// Los gastos que se pidió converger y el bridge no atendió.
@@ -159,7 +216,11 @@ enum GroupsBridgeRestoreConvergence {
         guard SessionState.shared.hasPrivateSession else { return }
         guard GroupTransactionBridge.isDomainOpenForBridge(defaults: defaults) else { return }
         do {
-            let expenseIDs = Set(try context.fetch(FetchDescriptor<SplitExpense>()).map(\.id))
+            // Sin lo que repone el origen de un vaciado, si la petición lo trae (`GroupsRemoteWipeDivision`).
+            let exclusion = GroupsBridgeRestoreConvergenceStore.exclusion(defaults)
+            let expenseIDs = GroupsBridgeRestoreConvergenceLogic.expensesToConverge(
+                local: Set(try context.fetch(FetchDescriptor<SplitExpense>()).map(\.id)),
+                excluded: exclusion?.expenseIDs ?? [])
             let attended = try GroupTransactionBridge.shared.bridgeRemoteExpenses(ids: Array(expenseIDs))
             // **Lo NO atendido no se da por convergido** (review adversarial). `bridgeRemoteExpenses` devuelve
             // solo lo que atendió de verdad: un gasto cuyo member propio aún no resuelve vuelve sin tocar, y
@@ -169,7 +230,7 @@ enum GroupsBridgeRestoreConvergence {
             // clasificaría como abandonado y lo soltaría sin intentarlo.
             let unattended = GroupsBridgeRestoreConvergenceLogic.unattended(requested: expenseIDs, attended: attended)
             let unattendedSettlements = GroupsBridgeRestoreConvergenceStore.isSettlementLegsPending(defaults)
-                ? try reBridgeSettlementLegs(context: context) : []
+                ? try reBridgeSettlementLegs(context: context, excluded: exclusion?.settlementIDs ?? []) : []
             GroupsPendingBridgeIntent.arm(expenseIDs: unattended, settlementIDs: unattendedSettlements, channel: .backend)
             try dedupeSettlementVirtualLegs(context: context)
             GroupsBridgeRestoreConvergenceStore.clear(defaults)
@@ -189,7 +250,7 @@ enum GroupsBridgeRestoreConvergence {
     /// Un grupo borrado o retirado conserva su dominio con `isHiddenForAll`, y `bridgeSettlement`, a diferencia de
     /// `bridgeExpense`, no lo mira: re-puentearla dejaba la pata de la liquidación SIN la del gasto que la compensaba —el
     /// gasto de un grupo oculto no vuelve—, o sea una deuda fantasma en la cuenta de grupos y un borrador de un pago viejo.
-    private static func reBridgeSettlementLegs(context: ModelContext) throws -> Set<UUID> {
+    private static func reBridgeSettlementLegs(context: ModelContext, excluded: Set<String>) throws -> Set<UUID> {
         let hiddenZones = Set(try context.fetch(FetchDescriptor<SplitGroup>(
             predicate: #Predicate { $0.isHiddenForAll })).map(\.cloudKitZoneID))
         let confirmed = Set(try context.fetch(FetchDescriptor<SplitSettlement>())
@@ -197,7 +258,7 @@ enum GroupsBridgeRestoreConvergence {
         let legSettlementIDs = Set(try context.fetch(FetchDescriptor<TransactionItem>(
             predicate: #Predicate { $0.splitSettlementID != nil })).compactMap(\.splitSettlementID))
         let requested = GroupsBridgeRestoreConvergenceLogic.settlementsToReBridge(
-            confirmed: confirmed, legSettlementIDs: legSettlementIDs)
+            confirmed: confirmed, legSettlementIDs: legSettlementIDs, excluded: excluded)
         guard !requested.isEmpty else { return [] }
         let attended = try GroupTransactionBridge.shared.bridgeRemoteSettlements(ids: Array(requested))
         return GroupsBridgeRestoreConvergenceLogic.unattended(requested: requested, attended: attended)

@@ -875,9 +875,10 @@ struct GroupsBridgeRestoreConvergenceBehaviourTests {
     }
 
     /// El orden normal: este dispositivo procesa la señal ANTES de que el origen converja, así que lo que tiene puenteado
-    /// es anterior al vaciado (las filas viejas cuyo borrado aún no llegó por el espejo). Se va, y reponerlo es cosa de la
-    /// petición del origen. Si el receptor también la pidiera, los dos convergerían, y si lo hacen antes de cruzarse por
-    /// el espejo cada uno crea su copia de todo el histórico de grupos (review adversarial, lentes de dinero y de sync).
+    /// es anterior al vaciado (las filas viejas cuyo borrado aún no llegó por el espejo). Se va, y no pide la convergencia
+    /// ENTERA: si los dos convergieran enteros antes de cruzarse por el espejo, cada uno crearía su copia de todo el
+    /// histórico de grupos (review adversarial, lentes de dinero y de sync). Desde el 2026-09-28 repone lo que el origen no
+    /// repone, con el reparto del origen: casos «El origen sin los grupos», más abajo.
     @Test("en el orden normal el receptor se lleva lo puenteado y no pide la convergencia: la del origen basta")
     func remoteWipe_beforeTheOriginConverges_doesNotAsk() throws {
         let dir = try freshDir()
@@ -2053,6 +2054,248 @@ struct GroupsBridgeRestoreConvergenceBehaviourTests {
                 } catch { Issue.record("error inesperado: \(error)") }
                 #expect(try bankRows(context, bank).map(\.amount) == [25])
             }
+        }
+    }
+
+    // MARK: - El origen sin los grupos (ticket `a-wipe-on-a-device-without-the-groups-loses-their-rows-everywhere`)
+
+    /// Lo que el receptor del orden normal ve después: se llevó todo lo puenteado (anterior a la señal), no pidió nada
+    /// entero y apunta que espera el reparto de ESTA señal.
+    private func receiverWipesInTheNormalOrder(
+        _ context: ModelContext, expense: SplitExpense, _ s: Settlements, defaults: UserDefaults, signaledAt: Date
+    ) throws {
+        try bridgeGroupRows(context, expense, s, defaults: defaults)
+        try DataWipeService.wipeLocallyForRemoteWipeSignal(in: context, signaledAt: signaledAt, fleetStartedOver: false,
+                                                           defaults: defaults, rescheduleReminders: { _ in })
+        #expect(try txs(context, expenseID: expense.id).isEmpty && legs(context, s.paid).isEmpty
+                && legs(context, s.received).isEmpty, "el borrado del receptor ya no se lleva lo puenteado: el caso no mide nada")
+        #expect(!GroupsBridgeRestoreConvergenceStore.isPending(defaults), """
+            en el orden normal el receptor pidió la convergencia antes de saber qué repone el origen: si los dos convergen \
+            antes de cruzarse por el espejo, cada gasto de grupo sale dos veces
+            """)
+        let awaiting = try #require(GroupsRemoteWipeDivisionStore.awaiting(defaults), """
+            el receptor del orden normal no apuntó que espera el reparto del origen: si el origen no tiene los grupos, \
+            nadie repone lo que se llevó
+            """)
+        #expect(GroupsRemoteWipeDivisionLogic.sameSignal(awaiting.signaledAt, signaledAt.timeIntervalSince1970),
+                "el receptor espera el reparto de otra señal")
+    }
+
+    /// **El ticket.** El iPad nunca entró en Grupos y vacía sus datos: su reparto va vacío. El iPhone con grupos procesa la
+    /// señal en el orden normal —nada de grupo posterior— y se lleva lo puenteado. Hasta hoy no pedía nada y los gastos de
+    /// grupo desaparecían de lo personal en todo el parque. Ahora, con el reparto del origen, el arranque pide la convergencia
+    /// y vuelven una vez. El control: sin reparto, el arranque espera y no pide.
+    @Test("origen sin grupos: el receptor con grupos repone los gastos y las liquidaciones de grupo, una vez")
+    func normalOrder_originWithoutGroups_theReceiverReturnsTheRows() throws {
+        let dir = try freshDir(), originDir = try freshDir()
+        defer { cleanup(dir); cleanup(originDir) }
+        let context = try makeContext(dir)
+        let origin = try makeContext(originDir)
+        let f = try makeFixture(context)
+        try withEnvironment(context) { defaults in
+            let kv = InMemoryKeyValueStore()
+            let expense = try makeCaseAExpense(context, f)
+            let s = try makeSettlements(context, f)
+            let signaledAt = Date.now.addingTimeInterval(60)
+            try receiverWipesInTheNormalOrder(context, expense: expense, s, defaults: defaults, signaledAt: signaledAt)
+
+            // Control: el reparto aún no llegó. El arranque espera, sin pedir.
+            GroupsRemoteWipeDivision.resolveIfArrived(kv: kv, defaults: defaults)
+            #expect(!GroupsBridgeRestoreConvergenceStore.isPending(defaults), "el receptor pidió sin saber qué repone el origen")
+            #expect(GroupsRemoteWipeDivisionStore.awaiting(defaults) != nil, "el receptor dejó de esperar sin reparto")
+
+            try #require(try origin.fetchCount(FetchDescriptor<SplitExpense>()) == 0, "el origen trae grupos")
+            GroupsRemoteWipeDivision.declare(context: origin, signaledAt: signaledAt, kv: kv, domainOpen: true)
+            let division = try #require(GroupsRemoteWipeDivisionStore.readDivision(kv), "el origen no escribió su reparto")
+            #expect(division.expenseIDs.isEmpty && division.settlementIDs.isEmpty, "el origen sin grupos dice que repone algo")
+
+            GroupsRemoteWipeDivision.resolveIfArrived(kv: kv, defaults: defaults)
+            #expect(GroupsBridgeRestoreConvergenceStore.isPending(defaults)
+                    && GroupsBridgeRestoreConvergenceStore.isSettlementLegsPending(defaults), """
+                con el reparto vacío del origen, el receptor no pidió la convergencia: los gastos de grupo no vuelven nunca
+                """)
+            #expect(GroupsRemoteWipeDivisionStore.awaiting(defaults) == nil, "el receptor sigue esperando un reparto que ya llegó")
+
+            GroupsBridgeRestoreConvergence.convergeIfPending(context: context, defaults: defaults)
+
+            #expect(!(try txs(context, expenseID: expense.id)).isEmpty, "el gasto de grupo no volvió a lo personal")
+            #expect(try expenseDrafts(context, expense).count == 1, "el Inbox no pregunta de qué cuenta salió el gasto")
+            #expect(try legs(context, s.paid).count == 1, "la liquidación que pagué no volvió, o volvió dos veces")
+            #expect(try legs(context, s.received).count == 1, "la que me pagaron no volvió, o volvió dos veces")
+            #expect(try legs(context, s.unconfirmed).isEmpty, "sin confirmar no se crea nunca")
+            #expect(!GroupsBridgeRestoreConvergenceStore.isPending(defaults)
+                    && GroupsBridgeRestoreConvergenceStore.exclusion(defaults) == nil)
+
+            // Una vez: el arranque siguiente no vuelve a pedir.
+            let after = try groupRowIDs(context)
+            GroupsRemoteWipeDivision.resolveIfArrived(kv: kv, defaults: defaults)
+            GroupsBridgeRestoreConvergence.convergeIfPending(context: context, defaults: defaults)
+            #expect(try groupRowIDs(context) == after, "un segundo arranque volvió a reponer")
+        }
+    }
+
+    /// **Origen con los mismos grupos: repone él, y el receptor no.** Es el orden normal del 27-sep, y lo que el reparto no
+    /// puede romper: si el receptor repusiera también, cada gasto saldría dos veces al cruzarse por el espejo.
+    @Test("origen con los grupos: el receptor no repone lo que repone el origen")
+    func normalOrder_originWithTheGroups_theReceiverLeavesThemToTheOrigin() throws {
+        let dir = try freshDir()
+        defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let f = try makeFixture(context)
+        try withEnvironment(context) { defaults in
+            let kv = InMemoryKeyValueStore()
+            let expense = try makeCaseAExpense(context, f)
+            let s = try makeSettlements(context, f)
+            let signaledAt = Date.now.addingTimeInterval(60)
+            // El origen tiene los mismos grupos: su reparto sale del mismo store de Grupos.
+            GroupsRemoteWipeDivision.declare(context: context, signaledAt: signaledAt, kv: kv, domainOpen: true)
+            try receiverWipesInTheNormalOrder(context, expense: expense, s, defaults: defaults, signaledAt: signaledAt)
+
+            GroupsRemoteWipeDivision.resolveIfArrived(kv: kv, defaults: defaults)
+            let exclusion = try #require(GroupsBridgeRestoreConvergenceStore.exclusion(defaults),
+                                         "el receptor pidió la convergencia ENTERA con un origen que repone")
+            #expect(exclusion.expenseIDs == [expense.id.uuidString])
+            #expect(exclusion.settlementIDs == [s.paid.id.uuidString, s.received.id.uuidString])
+
+            GroupsBridgeRestoreConvergence.convergeIfPending(context: context, defaults: defaults)
+
+            #expect(try txs(context, expenseID: expense.id).isEmpty && expenseDrafts(context, expense).isEmpty, """
+                el receptor repuso un gasto que repone el origen: al cruzarse por el espejo sale dos veces, con dos borradores
+                """)
+            #expect(try legs(context, s.paid).isEmpty && legs(context, s.received).isEmpty,
+                    "el receptor repuso una liquidación que repone el origen")
+            #expect(!GroupsBridgeRestoreConvergenceStore.isPending(defaults) && GroupsPendingBridgeIntent.pending.isEmpty)
+        }
+    }
+
+    /// **Origen con una parte**: otra cuenta de grupos, o el canal atrasado. Repone lo suyo, y el receptor el resto: un
+    /// sí/no en la señal no podía decir esto.
+    @Test("origen con una parte de los grupos: el receptor repone solo lo que el origen no tiene")
+    func normalOrder_originWithPartOfTheGroups_theReceiverReturnsTheRest() throws {
+        let dir = try freshDir()
+        defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let f = try makeFixture(context)
+        try withEnvironment(context) { defaults in
+            let kv = InMemoryKeyValueStore()
+            let known = try makeCaseAExpense(context, f)
+            let unknown = try makeCaseAExpense(context, f)
+            let s = try makeSettlements(context, f)
+            let signaledAt = Date.now.addingTimeInterval(60)
+            SessionState.shared.hasPrivateSession = true
+            try GroupTransactionBridge.shared.bridgeRemoteExpenses(ids: [unknown.id])
+            try receiverWipesInTheNormalOrder(context, expense: known, s, defaults: defaults, signaledAt: signaledAt)
+            #expect(try txs(context, expenseID: unknown.id).isEmpty)
+            try GroupsRemoteWipeDivisionStore.writeDivision(.init(
+                signaledAt: signaledAt.timeIntervalSince1970, expenseIDs: [known.id.uuidString],
+                settlementIDs: [s.paid.id.uuidString]), to: kv)
+
+            GroupsRemoteWipeDivision.resolveIfArrived(kv: kv, defaults: defaults)
+            GroupsBridgeRestoreConvergence.convergeIfPending(context: context, defaults: defaults)
+
+            #expect(try txs(context, expenseID: known.id).isEmpty, "el receptor repuso el gasto que repone el origen")
+            #expect(!(try txs(context, expenseID: unknown.id)).isEmpty, "el gasto que el origen no tiene no volvió")
+            #expect(try expenseDrafts(context, unknown).count == 1)
+            #expect(try legs(context, s.paid).isEmpty, "el receptor repuso la liquidación que repone el origen")
+            #expect(try legs(context, s.received).count == 1, "la liquidación que el origen no tiene no volvió")
+        }
+    }
+
+    /// **El orden tardío sigue pidiendo la convergencia ENTERA** (#284/#289) aunque haya un reparto esperando o una
+    /// exclusión puesta: la entera repone más, y lo que el corte se lleva en ese orden no lo cubre el reparto.
+    @Test("orden tardío: el receptor pide la convergencia entera y deja de esperar el reparto")
+    func lateOrder_asksForTheWholeConvergence_andStopsAwaiting() throws {
+        let dir = try freshDir()
+        defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let f = try makeFixture(context)
+        try withEnvironment(context) { defaults in
+            let expense = try makeCaseAExpense(context, f)
+            let s = try makeSettlements(context, f)
+            let signaledAt = Date.now.addingTimeInterval(-60)
+            try bridgeGroupRows(context, expense, s, defaults: defaults)
+            try GroupsRemoteWipeDivisionStore.setAwaiting(.init(signaledAt: 1, since: Date.now.timeIntervalSince1970),
+                                                          defaults)
+            try GroupsBridgeRestoreConvergenceStore.markPending(
+                excluding: .init(expenseIDs: [expense.id.uuidString], settlementIDs: []), defaults)
+            GroupsBridgeRestoreConvergenceStore.markSettlementLegsPending(defaults)
+
+            try DataWipeService.wipeLocallyForRemoteWipeSignal(in: context, signaledAt: signaledAt, fleetStartedOver: true,
+                                                               defaults: defaults, rescheduleReminders: { _ in })
+
+            #expect(GroupsBridgeRestoreConvergenceStore.isWholePending(defaults), """
+                el receptor tardío ya no pide la convergencia entera: lo anterior que el corte se lleva y el origen no repone \
+                no vuelve nunca
+                """)
+            #expect(GroupsRemoteWipeDivisionStore.awaiting(defaults) == nil, """
+                el receptor tardío sigue esperando un reparto: su convergencia entera ya lo repone todo, y el reparto pediría \
+                otra
+                """)
+        }
+    }
+
+    /// Lo que los casos de arriba no pueden ver, porque esperan en unos `defaults` aislados: en producción la espera va a
+    /// `.standard`, y el borrado del receptor RESETEA las preferencias de `.standard` justo después de apuntarla.
+    @Test("en `.standard` la espera del reparto sobrevive al reset de preferencias del receptor")
+    func normalOrder_awaitingSurvivesThePreferencesReset() throws {
+        let dir = try freshDir()
+        defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let f = try makeFixture(context)
+        try withEnvironment(context) { defaults in
+            let expense = try makeCaseAExpense(context, f)
+            let s = try makeSettlements(context, f)
+            try bridgeGroupRows(context, expense, s, defaults: defaults)
+            let standard = UserDefaults.standard
+            standard.set("Alguien", forKey: "userName")
+            GroupsBridgeRestoreConvergenceStore.clear(standard)
+            GroupsRemoteWipeDivisionStore.clearAwaiting(standard)
+
+            try DataWipeService.wipeLocallyForRemoteWipeSignal(in: context, signaledAt: Date.now.addingTimeInterval(60),
+                                                               fleetStartedOver: false, rescheduleReminders: { _ in })
+
+            #expect(standard.object(forKey: "userName") == nil,
+                    "el borrado del receptor ya no resetea las preferencias: el caso no mide la supervivencia de la espera")
+            #expect(GroupsRemoteWipeDivisionStore.awaiting(standard) != nil,
+                    "el reset de preferencias del receptor se llevó la espera del reparto")
+        }
+    }
+
+    /// **El reparto del origen, con los filtros de su convergencia**: todos los gastos locales, y las liquidaciones
+    /// confirmadas fuera de grupos ocultos. Con el dominio cerrado su convergencia espera: reparto vacío.
+    @Test("el origen reparte con los filtros de su convergencia, y con el dominio cerrado no reparte nada")
+    func originDivision_usesTheConvergenceFilters() throws {
+        let dir = try freshDir()
+        defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let f = try makeFixture(context)
+        try withEnvironment(context) { _ in
+            let kv = InMemoryKeyValueStore()
+            let expense = try makeCaseAExpense(context, f)
+            let s = try makeSettlements(context, f)
+            let hidden = SplitGroup(name: "Borrado", currencyCode: "USD")
+            hidden.isHiddenForAll = true
+            context.insert(hidden)
+            let hiddenSettlement = SplitSettlement(groupZoneID: hidden.cloudKitZoneID, fromMemberID: f.me.id.uuidString,
+                                                   toMemberID: f.ana.id.uuidString, amount: 5, currencyCode: "USD")
+            hiddenSettlement.isConfirmed = true
+            context.insert(hiddenSettlement)
+            try context.save()
+            let signaledAt = Date(timeIntervalSince1970: 1_800_000_000.123456)
+
+            GroupsRemoteWipeDivision.declare(context: context, signaledAt: signaledAt, kv: kv, domainOpen: true)
+            let division = try #require(GroupsRemoteWipeDivisionStore.readDivision(kv))
+            #expect(division.signaledAt == signaledAt.timeIntervalSince1970, "el reparto no lleva la hora de la señal")
+            #expect(division.expenseIDs == [expense.id.uuidString])
+            #expect(division.settlementIDs == [s.paid.id.uuidString, s.received.id.uuidString], """
+                el reparto incluye una liquidación sin confirmar o de un grupo oculto: el origen no la repone y el receptor \
+                tampoco lo haría
+                """)
+
+            GroupsRemoteWipeDivision.declare(context: context, signaledAt: signaledAt, kv: kv, domainOpen: false)
+            let closed = try #require(GroupsRemoteWipeDivisionStore.readDivision(kv))
+            #expect(closed.expenseIDs.isEmpty && closed.settlementIDs.isEmpty,
+                    "con el dominio cerrado el origen no repone nada, y su reparto dice lo contrario")
         }
     }
 }

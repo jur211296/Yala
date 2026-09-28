@@ -50,12 +50,16 @@ final class DataWipeService {
     // - Parameter remoteWipeCut: `nil` (el default) borra todas las filas. El borrado reactivo a la señal de otro
     //   dispositivo pasa su corte, y entonces se va solo lo que existía al vaciar (`rowsToWipe`). Las preferencias y los
     //   pasos 2 y 3 no cambian con él: describen a este dispositivo, no a las filas.
+    //
+    // - Parameter signalTimestamp: la hora de la señal que emite (`nil`, ahora). «Vaciar datos» la fija para escribir antes
+    //   el reparto de lo que repone con la MISMA hora (`GroupsRemoteWipeDivision`).
     static func wipeAllUserData(
         in context: ModelContext,
         reseedInitialData: Bool = false,
         broadcastSignal: Bool = true,
         resetsPreferences: Bool = true,
-        remoteWipeCut: RemoteWipeCutLogic.Cut? = nil
+        remoteWipeCut: RemoteWipeCutLogic.Cut? = nil,
+        signalTimestamp: Date? = nil
     ) throws {
         #if DEBUG
         // Seam de QA (`-uitest-fail-wipe`): lanza ANTES de tocar nada, así que los datos quedan
@@ -67,7 +71,7 @@ final class DataWipeService {
         // PASO 0: Señalizar wipe a otros dispositivos via iCloud KV
         // ============================================================
         if broadcastSignal {
-            PreferenceSyncService.shared.signalWipeInitiated()
+            PreferenceSyncService.shared.signalWipeInitiated(at: signalTimestamp ?? .now)
         }
 
         // ============================================================
@@ -311,15 +315,30 @@ final class DataWipeService {
     /// `defaults` es solo para las dos peticiones: el borrado y el libro de conservados escriben en `.standard`.
     ///
     /// El borrado reactivo del otro dispositivo NO pasa por aquí: lo que se lleva es anterior al vaciado, y reponerlo es
-    /// cosa de esta petición, la del origen (`wipeLocallyForRemoteWipeSignal`).
+    /// cosa de esta petición, la del origen, y de la del receptor para lo que el origen no tiene
+    /// (`wipeLocallyForRemoteWipeSignal`).
+    ///
+    /// **Si avisa al parque, antes dice QUÉ repone** (ticket `a-wipe-on-a-device-without-the-groups-loses-their-rows-everywhere`).
+    /// Escribe en el iCloud-KV el reparto —los gastos y liquidaciones que su convergencia re-puentea— con la hora de la señal,
+    /// y la señal sale con esa hora. El receptor repone el resto (`GroupsRemoteWipeDivision`). Sin grupos, el reparto va
+    /// vacío y el receptor repone todo. Va antes del borrado: se calcula sobre los grupos, que el borrado conserva, pero un
+    /// fallo después dejaría la señal sin reparto.
     static func wipePersonalDataKeepingGroups(
         in context: ModelContext,
         broadcastSignal: Bool,
-        defaults: UserDefaults = .standard
+        defaults: UserDefaults = .standard,
+        divisionStore: OwnerKeyValueWriting = GroupsRemoteWipeReturn.defaultStore
     ) throws {
         GroupsBridgeRestoreConvergenceStore.markSettlementLegsPending(defaults)
         GroupsBridgeRestoreConvergenceStore.markPending(defaults)
-        try wipeAllUserData(in: context, reseedInitialData: false, broadcastSignal: broadcastSignal)
+        let signalTimestamp = Date.now
+        if broadcastSignal {
+            GroupsRemoteWipeDivision.declare(
+                context: context, signaledAt: signalTimestamp, kv: divisionStore,
+                domainOpen: GroupTransactionBridge.isDomainOpenForBridge(defaults: defaults))
+        }
+        try wipeAllUserData(in: context, reseedInitialData: false, broadcastSignal: broadcastSignal,
+                            signalTimestamp: signalTimestamp)
     }
 
     /// **El «Vaciar datos» de OTRO dispositivo del Apple ID, aplicado aquí: el mismo borrado, sin volver a señalizar, y
@@ -340,6 +359,12 @@ final class DataWipeService {
     /// Sobre filas intactas la convergencia es idempotente (conserva la real, rehace la virtual y sus borradores). Las
     /// peticiones van a `defaults` ANTES del borrado y sobreviven a su reset de preferencias (`fullModeActivation.*` no
     /// está en esas listas).
+    ///
+    /// **En el orden normal espera el reparto del origen** (ticket
+    /// `a-wipe-on-a-device-without-the-groups-loses-their-rows-everywhere`). Sin filas de grupo posteriores a la señal no
+    /// pide la convergencia entera —las dos convergencias del 27-sep duplicarían—, pero sí apunta que espera el reparto de
+    /// ESTA señal: el arranque pide la suya sin lo que repone el origen (`GroupsRemoteWipeDivision.resolveIfArrived`). Un
+    /// origen sin grupos, o con una parte, ya no deja sin reponer lo que no tiene. Antes del borrado, como las peticiones.
     ///
     /// **Ya no declara al parque** (ticket `late-remote-wipe-on-a-device-without-groups-cannot-return-the-rows`):
     /// declaraba las filas POSTERIORES que se llevaba, y ya no se lleva ninguna. El atendedor de declaraciones sigue en el
@@ -370,6 +395,8 @@ final class DataWipeService {
                 bridgedRowsCreatedAt: bridgedRows.map(\.createdAt), signaledAt: cut.signaledAt) {
                 GroupsBridgeRestoreConvergenceStore.markSettlementLegsPending(defaults)
                 GroupsBridgeRestoreConvergenceStore.markPending(defaults)
+            } else {
+                GroupsRemoteWipeDivision.awaitOrigin(signaledAt: cut.signaledAt, defaults: defaults)
             }
         }
         try wipeAllUserData(in: context, reseedInitialData: false, broadcastSignal: false,
@@ -883,6 +910,8 @@ final class DataWipeService {
         GroupsBridgeRestoreConvergenceStore.clear(defaults)
         // Y lo que este dispositivo atendió de las declaraciones de vaciado tardío (o la suya propia), por lo mismo.
         GroupsRemoteWipeReturnStore.clearHandled(defaults)
+        // Y el reparto que esperaba del origen de un vaciado: pediría la convergencia sobre los grupos del nuevo.
+        GroupsRemoteWipeDivisionStore.clearAwaiting(defaults)
 
         // Paso 10 · el espejo local de la cuenta de grupos asociada, y el libro de lo que una
         // desasociación anterior conservó en el Panel. Los dos son del humano ANTERIOR: el primero le

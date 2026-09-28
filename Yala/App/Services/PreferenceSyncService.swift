@@ -460,8 +460,11 @@ final class PreferenceSyncService {
     // MARK: - Cross-Device Wipe Signaling
 
     /// Called by DataWipeService BEFORE deleting data — signals other devices that a wipe occurred.
-    func signalWipeInitiated() {
-        let timestamp = Date.now.timeIntervalSince1970
+    ///
+    /// `date` es la hora de la señal: «Vaciar datos» escribe antes, con esa misma hora, el reparto de lo que repone
+    /// (`GroupsRemoteWipeDivision`), y este `synchronize` sube los dos cambios juntos.
+    func signalWipeInitiated(at date: Date = .now) {
+        let timestamp = date.timeIntervalSince1970
         iKV.setDouble(timestamp, forKey: WipeKey.remoteWipe)
         iKV.synchronize()
 

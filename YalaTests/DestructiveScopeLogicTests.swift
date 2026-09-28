@@ -373,11 +373,20 @@ struct SignOutRowIdentifiersTests {
         #expect(Array(lines[(signatureEnd + 1)...]) == [
             "GroupsBridgeRestoreConvergenceStore.markSettlementLegsPending(defaults)",
             "GroupsBridgeRestoreConvergenceStore.markPending(defaults)",
-            "try wipeAllUserData" + "(in: context, reseedInitialData: false, broadcastSignal: broadcastSignal)",
+            "let signalTimestamp = Date.now",
+            "if broadcastSignal {",
+            "GroupsRemoteWipeDivision.declare(",
+            "context: context, signaledAt: signalTimestamp, kv: divisionStore,",
+            "domainOpen: GroupTransactionBridge.isDomainOpenForBridge(defaults: defaults))",
+            "}",
+            "try wipeAllUserData" + "(in: context, reseedInitialData: false, broadcastSignal: broadcastSignal,",
+            "signalTimestamp: signalTimestamp)",
         ], """
             el cuerpo cambió. Las dos peticiones van ANTES del borrado (uno que lanza, o un proceso que muere, después de
             borrar las transacciones dejaría los gastos de grupo sin nadie que los pida) y las liquidaciones ANTES que la
-            convergencia (un corte entre las dos la dejaría correr sin ellas). Cuerpo: \(body)
+            convergencia (un corte entre las dos la dejaría correr sin ellas). Si avisa al parque, el reparto de lo que
+            repone va antes de la señal y con su misma hora (ticket
+            `a-wipe-on-a-device-without-the-groups-loses-their-rows-everywhere`). Cuerpo: \(body)
             """)
     }
 }

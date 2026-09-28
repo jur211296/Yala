@@ -43,14 +43,14 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (679)
+## Index (683)
 
 | id | status | path |
 |---|---|---|
 | a-failed-snapshot-enqueue-save-leaves-the-journal-unsaved | backlog | tickets/backlog/a-failed-snapshot-enqueue-save-leaves-the-journal-unsaved.md |
 | a-local-read-failure-in-the-migration-apply-reads-as-network | backlog | tickets/backlog/a-local-read-failure-in-the-migration-apply-reads-as-network.md |
 | a-malformed-ref-leaves-a-stale-dangler | backlog | tickets/backlog/a-malformed-ref-leaves-a-stale-dangler.md |
-| a-wipe-on-a-device-without-the-groups-loses-their-rows-everywhere | backlog | tickets/backlog/a-wipe-on-a-device-without-the-groups-loses-their-rows-everywhere.md |
+| a-wipe-on-a-device-without-the-groups-loses-their-rows-everywhere | qa | tickets/qa/a-wipe-on-a-device-without-the-groups-loses-their-rows-everywhere.md |
 | a-wipe-that-throws-between-drafts-and-transactions-loses-settlement-drafts | backlog | tickets/backlog/a-wipe-that-throws-between-drafts-and-transactions-loses-settlement-drafts.md |
 | abandoned-restore-no-longer-clears-the-session-window-clock | done | tickets/done/abandoned-restore-no-longer-clears-the-session-window-clock.md |
 | account-currency-change-leaves-scheduled-and-favorites-stale | backlog | tickets/backlog/account-currency-change-leaves-scheduled-and-favorites-stale.md |
@@ -192,6 +192,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | cobertura-ui-diaria-cuelga-del-push | backlog | tickets/backlog/cobertura-ui-diaria-cuelga-del-push.md |
 | cola-b-redesigns-must-hold-up-at-ipad-width | backlog | tickets/backlog/cola-b-redesigns-must-hold-up-at-ipad-width.md |
 | completed-mode-escalates-a-second-groups-only-device | backlog | tickets/backlog/completed-mode-escalates-a-second-groups-only-device.md |
+| consecutive-wipes-whole-convergence-ignores-the-second-division | backlog | tickets/backlog/consecutive-wipes-whole-convergence-ignores-the-second-division.md |
 | converted-amount-sweep-blind-to-input-changes | backlog | tickets/backlog/converted-amount-sweep-blind-to-input-changes.md |
 | corpus-de-test-de-staging-crece-sin-limite | backlog | tickets/backlog/corpus-de-test-de-staging-crece-sin-limite.md |
 | coverage-index-meta-counts-drifted-from-reality | backlog | tickets/backlog/coverage-index-meta-counts-drifted-from-reality.md |
@@ -718,6 +719,9 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | wipe-data-does-not-cancel-the-remote-wipe-grace | backlog | tickets/backlog/wipe-data-does-not-cancel-the-remote-wipe-grace.md |
 | wipe-data-group-rows-return-only-on-the-next-cold-launch | backlog | tickets/backlog/wipe-data-group-rows-return-only-on-the-next-cold-launch.md |
 | wipe-data-keeps-groups-but-drops-their-bridged-rows | qa | tickets/qa/wipe-data-keeps-groups-but-drops-their-bridged-rows.md |
+| wipe-division-complement-can-be-bridged-twice | backlog | tickets/backlog/wipe-division-complement-can-be-bridged-twice.md |
+| wipe-division-exclusion-trusts-the-origin-to-converge | backlog | tickets/backlog/wipe-division-exclusion-trusts-the-origin-to-converge.md |
+| wipe-division-kv-key-has-no-quota-ceiling | backlog | tickets/backlog/wipe-division-kv-key-has-no-quota-ceiling.md |
 | wipe-sheet-still-promises-every-apple-id-device | done | tickets/done/wipe-sheet-still-promises-every-apple-id-device.md |
 | wiped-state-reaches-the-discard-gate-with-the-window-open | done | tickets/done/wiped-state-reaches-the-discard-gate-with-the-window-open.md |
 | wire-decoder-accepts-non-finite-money | backlog | tickets/backlog/wire-decoder-accepts-non-finite-money.md |

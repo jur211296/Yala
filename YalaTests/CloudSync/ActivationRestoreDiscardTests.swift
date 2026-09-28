@@ -320,7 +320,7 @@ struct ActivationRestoreDiscardTests {
     @Test("la foto de perfil solo se borra cuando se resetean las preferencias")
     func profilePhotoFollowsTheIdentityFlag() throws {
         let wipe = try Self.body(
-            of: "remoteWipeCut: RemoteWipeCutLogic.Cut? = nil\n    ) throws {",
+            of: "signalTimestamp: Date? = nil\n    ) throws {",
             in: try Self.code("Yala/Utils/DataWipeService.swift"))
         let gate = try Self.segment(from: "if resetsPreferences {", to: "}", in: wipe)
         #expect(gate.contains("ProfileImageStorage.shared.delete()"), """

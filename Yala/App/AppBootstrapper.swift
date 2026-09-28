@@ -1718,6 +1718,11 @@ final class AppBootstrapper {
         // quedó pendiente (el import no se asentó en la sheet, o la app murió). Aquí y no en un Task propio por
         // lo mismo que el retome de arriba: hereda los dos gates —store listo y dominio abierto—, y el de store
         // listo tiene la salida del store vacío que la espera de quiescencia de la sheet no tiene.
+        //
+        // Antes, lo que un «Vaciar datos» de otro dispositivo dejó sin reponer: con el reparto del origen ya en el KV, se
+        // pide la convergencia sin lo que repone él (`GroupsRemoteWipeDivision`). Justo antes, para que corra en este
+        // mismo arranque.
+        GroupsRemoteWipeDivision.resolveIfArrived()
         GroupsBridgeRestoreConvergence.convergeIfPending(context: context)
         // Y lo que el «Vaciar datos» de otro dispositivo se llevó en uno que no podía reponerlo: lo declaró al parque, y
         // aquí se repone por id si ya falta (`GroupsRemoteWipeReturn`). DESPUÉS de la convergencia: lo que ella reponga
