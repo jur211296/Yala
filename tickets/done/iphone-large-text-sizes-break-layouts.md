@@ -1,9 +1,10 @@
 ---
 id: iphone-large-text-sizes-break-layouts
-status: backlog
+status: done
 priority: medium
 area: "a11y, design-system, iphone, adaptativo"
 created: 2026-09-27
+updated: 2026-09-28
 source: "plan adaptativo (docs/exploracion/adaptativo-ipad-duo.md §3 y §7, fase iPhone), 2026-09-27"
 ---
 
@@ -65,3 +66,41 @@ Dynamic Type grande (`adaptativo-ipad-duo.md` §6.1).
 **Layout** (ADR «[2026-09-27] Yala se adapta por espacio, no por dispositivo»). Se decide por size class y ancho del
 contenedor, nunca por tipo de dispositivo ni orientación; un contenedor que se adapta, no un `if` por size class en
 la raíz; APIs de iOS 27.1 solo tras `if #available`.
+
+## Hecho (2026-09-28)
+
+**Qué cambia para el usuario.** Con el texto del sistema en los tamaños de accesibilidad, las filas de concepto e
+importe pasan de una línea a dos: el concepto arriba y el importe entero debajo, en lugar de un importe cortado por
+el medio («S/-…00»). Lo mismo en las filas etiqueta–valor de los detalles (la etiqueta encima de su valor) y en la
+pareja ingresos/gastos de las cabeceras del Panel y de Registros. A tamaño de texto normal no cambia nada.
+
+**Dónde:** filas de Registros, «Últimos registros» del Panel, presupuestos, tarjetas de grupo, gastos, saldos y
+liquidaciones del detalle de grupo, borradores de la Bandeja, cabeceras de ingresos/gastos del Panel y de Registros,
+y las filas etiqueta–valor del detalle de registro y del detalle de presupuesto. El contenedor es nuevo y único,
+`AdaptiveRowStack` (`Yala/App/Views/Shared/`): `AnyLayout` de `HStack` a `VStack` cuando
+`dynamicTypeSize.isAccessibilitySize`, sin `ViewThatFits`.
+
+**Los 41 topes, uno a uno** (detalle en el Paso 0 del encargo, D3 y D4):
+- **33 fuera sin efecto visible**: iban sobre fuentes de tamaño fijo (`.system(size:)` con `@ScaledMetric`) y el
+  `@ScaledMetric` se resuelve fuera del `body`, así que el tope no les llegaba.
+- **2 fuera**: Siri y Atajos y el recuento de la aprobación en lote. Se ven bien a AX5 sin tope.
+- **2 sustituidos**: los importes grandes del detalle de presupuesto y de pago planificado crecen con el texto y se
+  encogen si no caben (`lineLimit(1)` + `minimumScaleFactor(0.5)`).
+- **4 se quedan con motivo escrito al lado**: el widget pequeño de pagos del Panel (tarjeta de alto fijo, 192 pt),
+  el tutorial (páginas sin scroll), el icono decorativo de `YalaEmptyState` en estilo `.widget` y la fila del tipo
+  de cambio de la transferencia (sin tope, a AX5 en el SE se cortaba; ahora cubre solo esa fila).
+
+**Lo que salió y no entra aquí:** [[large-text-leftovers-outside-the-main-iphone-screens]].
+
+**Verificado** (simuladores del carril, iOS 27.0, por UDID):
+- Capturas antes/después de las diez pantallas (más transferencia, Siri y tutorial) en `YalaLane-Adapt-iPhone-SE`
+  y `YalaLane-Adapt-iPhone-ProMax`, a tamaño por defecto y a AX5:
+  `qa/evidencia-adaptativo-20260928/iphone-large-text-sizes-break-layouts/` (su README cuenta el método).
+- **Tamaño por defecto, sin cambios visibles**, medido píxel a píxel: 36/45 fotogramas idénticos en el SE y 34/45 en
+  el ProMax; el resto, scroll, animaciones y barras del sistema, revisados uno a uno. La primera versión NO lo
+  cumplía (en el SE la tarjeta de grupo truncaba el nombre) y así se rehízo el contenedor.
+- **AX5, ningún importe cortado** en las diez pantallas, en los dos iPhone.
+- `YalaTests` entero en verde (8392 tests en 799 suites) y XCUITest de las 50 suites de las áreas tocadas en verde
+  en `YalaLane-Adapt-iPhone-ProMax` (123 casos, 0 fallos, 0 reinicios), en cola con `sim-lock.sh`.
+
+**Estado: `done`, sin device-QA.** Es maquetación y el simulador pinta Dynamic Type igual que el iPhone.

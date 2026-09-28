@@ -192,7 +192,9 @@ struct RecordsTabView: View {
         let isExpenseFiltered = viewModel.selectedTransactionNatures == [.expense]
         let hasNeedFilter = isIncomeFiltered || isExpenseFiltered
 
-        return HStack(spacing: DS.Spacing.md) {
+        // A tamaños de accesibilidad los dos importes van uno bajo otro (`AdaptiveRowStack`): en fila no
+        // cabían y se cortaban por el medio («S/1,…10»).
+        return AdaptiveRowStack(stackedAlignment: .center, spacing: DS.Spacing.md, stackedSpacing: DS.Spacing.xs) {
             if !sessionState.isExpensesOnlyMode {
                 Button {
                     dsWithAnimation(reduceMotion) {

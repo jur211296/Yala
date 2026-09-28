@@ -461,7 +461,6 @@ struct GroupExpenseFormView: View {
                     }
                 }
         }
-        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
     }
 
     // MARK: - Currency Chip

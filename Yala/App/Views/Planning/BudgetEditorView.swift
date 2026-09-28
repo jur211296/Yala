@@ -211,7 +211,6 @@ struct BudgetEditorView: View {
                             .keyboardType(.decimalPad)
                             .multilineTextAlignment(.trailing)
                             .font(.system(size: scaledAmountSize, weight: .bold))
-                            .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                             .focused($isAmountFieldFocused)
                             .onChange(of: isAmountFieldFocused) { _, isFocused in
                                 if isFocused && (limitAmount == "0" || limitAmount == "0.00" || limitAmount == "0,00") {

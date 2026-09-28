@@ -35,7 +35,6 @@ struct BudgetPeriodSelectorSheet: View {
 
                     Image(systemName: periodIcon)
                         .font(.system(size: scaledIconSize, weight: .medium))
-                        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                         .foregroundStyle(.thAccent)
                         .accessibilityHidden(true)
                 }

@@ -532,7 +532,6 @@ struct InboxDraftEditSheet: View {
                     }
                 }
         }
-        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
     }
 
     private var sourceIndicator: some View {

@@ -38,6 +38,10 @@ struct YalaEmptyState: View {
             Image(systemName: icon)
                 .font(style == .widget ? DS.Typography.title : .system(size: heroIconSize, weight: .light))
                 .foregroundStyle(Color.secondary.opacity(0.6))
+                // Tope con motivo: solo actúa en `.widget`, donde el icono usa `DS.Typography.title` (el `.hero`
+                // va en tamaño fijo con `@ScaledMetric` y el tope no le llega). Es decorativo —VoiceOver no lo
+                // lee— y vive en las tarjetas pequeñas del Panel: pasado AX1 crecería más que el texto que
+                // acompaña y le quitaría el sitio.
                 .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                 .accessibilityHidden(true)
 

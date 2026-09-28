@@ -53,7 +53,6 @@ struct CurrencySettingsView: View {
                         Image(systemName: "arrow.triangle.2.circlepath")
                             .font(.system(size: heroIconSize))
                             .foregroundStyle(.thAccent)
-                            .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                             .padding(.bottom, DS.Spacing.sm)
 
                         Text(L10n.Settings.currencyAndExchange)

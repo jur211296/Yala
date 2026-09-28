@@ -71,7 +71,6 @@ struct PersonalizationSettingsView: View {
                         Image(systemName: "slider.horizontal.3")
                             .font(.system(size: heroIconSize))
                             .foregroundStyle(.thAccent)
-                            .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                             .padding(.bottom, DS.Spacing.sm)
 
                         Text(L10n.Settings.personalization)

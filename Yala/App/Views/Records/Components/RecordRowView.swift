@@ -23,6 +23,7 @@ struct RecordRowView: View {
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.tagCatalog) private var tagCatalog
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
         Button {
@@ -33,7 +34,9 @@ struct RecordRowView: View {
                 onTap()
             }
         } label: {
-            HStack(spacing: DS.ListRow.spacing) {
+            // A tamaños de accesibilidad el importe baja bajo el concepto (`AdaptiveRowStack`): en fila,
+            // un concepto largo lo cortaba. Apilada, icono y texto quedan juntos en su propia fila.
+            AdaptiveRowStack(spacing: DS.ListRow.spacing, stackedSpacing: DS.Spacing.sm) {
                 // Selection circle (only in selection mode)
                 if isSelectionMode {
                     selectionCircle
@@ -49,7 +52,7 @@ struct RecordRowView: View {
                         Text(note)
                             .font(DS.Typography.label)
                             .foregroundStyle(.primary)
-                            .lineLimit(1)
+                            .lineLimit(conceptLineLimit)
 
                         // Line 2: Category • Account (Compact)
                         let categoryName =
@@ -65,7 +68,7 @@ struct RecordRowView: View {
                         Text(record.subcategory?.name ?? record.category?.name ?? L10n.Common.uncategorized)
                             .font(DS.Typography.label)
                             .foregroundStyle(.primary)
-                            .lineLimit(1)
+                            .lineLimit(conceptLineLimit)
 
                         // Line 2: Account name
                         if let account = record.account {
@@ -82,11 +85,9 @@ struct RecordRowView: View {
                         tagsRow(resolvedTags)
                     }
                 }
-
-                Spacer()
-
+            } trailing: {
                 // Right column: Amount + Nature
-                VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
+                VStack(alignment: .trailingUnlessStacked(dynamicTypeSize), spacing: DS.Spacing.xs) {
                     // Amount with currency
                     AmountText(
                         value: record.amount,
@@ -237,6 +238,10 @@ struct RecordRowView: View {
     }
 
     // MARK: - Helpers
+
+    /// Una línea a los tamaños normales; dos a los de accesibilidad, donde el concepto ya tiene la fila
+    /// entera para él y cortarlo en una palabra dejaba la fila ilegible.
+    private var conceptLineLimit: Int { dynamicTypeSize.isAccessibilitySize ? 2 : 1 }
 
     private var formattedAmount: String {
         // Individual records always show full precision (2 decimals) regardless of user preference

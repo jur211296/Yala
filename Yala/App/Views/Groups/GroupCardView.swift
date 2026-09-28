@@ -32,6 +32,7 @@ struct GroupCardView: View {
 
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     init(
         group: SplitGroup,
@@ -55,7 +56,9 @@ struct GroupCardView: View {
 
     var body: some View {
         Button(action: handleTap) {
-            HStack(spacing: DS.ListRow.spacing) {
+            // A tamaños de accesibilidad las deudas bajan bajo el nombre (`AdaptiveRowStack`): en fila
+            // el importe se cortaba («S/ 190…»). Apilada, icono y nombre quedan juntos en su propia fila.
+            AdaptiveRowStack(spacing: DS.ListRow.spacing, stackedSpacing: DS.Spacing.sm) {
                 // Icon
                 groupIcon
 
@@ -64,7 +67,7 @@ struct GroupCardView: View {
                     Text(group.name)
                         .font(DS.Typography.label)
                         .foregroundStyle(.primary)
-                        .lineLimit(1)
+                        .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
 
                     HStack(spacing: DS.Spacing.xs) {
                         Text(L10n.Groups.Member.activeCount(memberCount))
@@ -83,9 +86,7 @@ struct GroupCardView: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
                 }
-
-                Spacer()
-
+            } trailing: {
                 trailingArea
             }
             .listRowCard()
@@ -102,7 +103,7 @@ struct GroupCardView: View {
     /// Área derecha con el alto del caso PEOR ya reservado (ver `trailingHeightReserve`),
     /// para que todas las filas de la lista midan igual.
     private var trailingArea: some View {
-        ZStack(alignment: .trailing) {
+        ZStack(alignment: Alignment(horizontal: .trailingUnlessStacked(dynamicTypeSize), vertical: .center)) {
             trailingHeightReserve
             trailingContent
         }
@@ -120,7 +121,7 @@ struct GroupCardView: View {
     /// ciclo de layout ni saltos al filtrar la lista. Frente a un `minHeight` en
     /// puntos gana en que ESCALA con Dynamic Type igual que el contenido real.
     private var trailingHeightReserve: some View {
-        VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
+        VStack(alignment: .trailingUnlessStacked(dynamicTypeSize), spacing: DS.Spacing.xs) {
             reserveBlock
             reserveBlock
         }
@@ -191,7 +192,7 @@ struct GroupCardView: View {
         if grouped.isEmpty {
             EmptyView()
         } else {
-            VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
+            VStack(alignment: .trailingUnlessStacked(dynamicTypeSize), spacing: DS.Spacing.xs) {
                 if !grouped.owedToMe.isEmpty {
                     directionBlock(
                         label: L10n.Groups.Summary.owedToMe,
@@ -218,7 +219,7 @@ struct GroupCardView: View {
         overflow: Int,
         color: Color
     ) -> some View {
-        VStack(alignment: .trailing, spacing: 0) {
+        VStack(alignment: .trailingUnlessStacked(dynamicTypeSize), spacing: 0) {
             Text("\(label):")
                 .font(DS.Typography.captionSmall)
                 .foregroundStyle(.secondary)
