@@ -34,3 +34,12 @@ que está midiendo el spike no es estable — y sus conclusiones sostienen decis
 Reproducirlo (correr la suite completa varias veces y ver con qué frecuencia cae), decidir si el aserto tiene
 que aflojar sus expectativas sobre el modo de fallo o si el harness necesita aislamiento, y —si se queda
 flaky— entrada en la Lista Negra con owner y fecha, que hoy no tiene.
+
+## 2026-09-28 · también el eje 4a
+
+En la corrida completa del gate de `groups-outbox-rows-without-a-live-session-have-no-exit` (8447 casos, 804 suites) falló
+**solo** «R3 eje 4a · wipe in-process con release verificado», con su log: `EJE 4a ❌ ABORTADO: quedan 3 descriptores abiertos`.
+Aislada, la suite pasa 2/2, y las tres corridas completas anteriores del mismo día, con el mismo cambio, pasaron. Es la misma
+forma que el 4b: el spike cuenta descriptores del proceso, y lo que corrió antes deja algunos abiertos. El release verificado
+que sostiene (sentinel nil **y** cero descriptores) sigue fallando cerrado en producción —aborta el borrado—; lo inestable es
+el test.

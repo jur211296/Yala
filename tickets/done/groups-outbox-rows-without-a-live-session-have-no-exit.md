@@ -1,9 +1,10 @@
 ---
 id: groups-outbox-rows-without-a-live-session-have-no-exit
-status: backlog
+status: done
 priority: medium
 area: "settings, groups, modo-nube"
 created: 2026-09-11
+updated: 2026-09-28
 source: "review adversarial del paso 9 (`session-exits-one-verb-per-session`), lente de celdas"
 ---
 
@@ -32,9 +33,9 @@ desde otro sitio, perdí el acceso a ese correo—, no hay forma de cerrar sesi�
 
 ## Criterios de aceptación
 
-- [ ] Decisión escrita sobre las dos preguntas.
-- [ ] Si hay descarte: aviso con el número, segundo gesto, canario.
-- [ ] Si hay sello: una fila de otra cuenta no se sube nunca (test en las dos direcciones).
+- [x] Decisión escrita sobre las dos preguntas (encargo del 2026-09-28, abajo).
+- [x] Si hay descarte: aviso con el número, segundo gesto, canario.
+- [x] Si hay sello: una fila de otra cuenta no se sube nunca (test en las dos direcciones).
 
 ## 2026-09-15 · la celda de la nube entra en esta población
 
@@ -65,3 +66,47 @@ Las entradas que hoy suben el outbox de grupos sin pasar por el ciclo del motor,
 **Y la pregunta 1 gana un caso nuevo en la nube:** si el Apple ID del teléfono cambió y la cuenta es de Apple, la puerta
 firma siempre con la cuenta nueva y la rechaza. El cierre sigue bloqueado por `.cloudSessionExpired` y no hay salida que
 acepte perder esos cambios. Antes de ese día subían a nombre de la cuenta nueva, que era peor.
+
+## 2026-09-28 · Resuelto
+
+**Decisiones** (encargo del 2026-09-28, por la norma de opción robusta): (1) quien no puede volver a entrar tiene un descarte
+AVISADO; «vuelve a entrar para subirlos» sigue siendo el camino por defecto. (2) El outbox tiene dueño: una fila de otra cuenta
+no se sube nunca con la sesión de ahora; se retiene para su dueño o se ofrece al descarte avisado.
+
+**Qué cambia para quien usa la app**
+
+- Con la sesión de grupos caducada y cambios sin subir, «Cerrar sesión» enseña cuántos cambios se perderían, dice que se suben
+  volviendo a entrar con esa cuenta y ofrece «Cerrar sesión y perderlos». «Ahora no» no borra nada. En Ajustes, en la hoja del
+  cambio de Apple ID y en la puerta de Grupos del Welcome (nunca al invitado). En la nube, el texto nombra «Dónde viven tus
+  datos».
+- Si entra otra cuenta en el teléfono, los cambios que dejó la anterior no suben a nombre de la nueva: se quedan. Al cerrar
+  sesión, el aviso los cuenta y ofrece perderlos. «Empezar de cero» también lo ofrece; el desasociar no.
+- Si la cuenta que los apuntó vuelve a entrar, suben como siempre.
+
+**Cómo**: `GroupSyncOutbox.ownerUserID`, fechado por transacción contra un registro de sesiones (`SessionSignInLog`, que escriben
+los dos canjes de `CloudAuthService`, su `signOut()` y el arranque); `pushPending` filtra por dueño; `lossCause` y
+`GroupsLossAcceptance` generalizan la salida del attest; la cifra suma el espejo del App Group y la celda C captura el History
+antes de contar. La regla durable: «El outbox de Grupos tiene DUEÑO por fila» en `.claude/rules/swiftdata-cloudkit.md`.
+
+**Verificado**: `GroupsOutboxOwnershipTests` (cinco suites: registro de sesiones, causas, canal con drain y subida reales, el
+cierre C sobre el coordinador, cableado) + los XCUITest `SessionExitsPerCellUITests#test_privateCell_C_signOutWithGroupChangesAndNoSession_offersTheLoss_andNotNowKeepsThem`
+y `AppleIDCloseNoticeUITests#test_blockedClose_offersTheLoss_notNowKeepsEverything_andLeavesTheCoordinatorFree`. Review
+adversarial de tres lentes: tumbó la primera versión del dueño (un libro de un solo valor) y encontró que el aviso de la celda
+C no contaba lo que vivía en el History ni en el espejo; las dos cosas se arreglaron en este ticket.
+
+**A `done` sin device-QA**: la frontera de cuenta necesita dos cuentas y una sesión caducada, que no se provoca a mano; la
+pantalla la cubren los dos XCUITest.
+
+**Residuales con ticket**: `cloud-sign-out-with-an-expired-session-and-personal-changes-has-no-exit` (medium),
+`groups-outbox-rows-without-a-provable-owner-never-upload` (low), `private-sign-out-misses-group-edits-made-during-the-icloud-wait`
+(low). Aceptados sin ticket: un reloj que cambia entre un inicio de sesión y lo apuntado desplaza el reparto; lo que la cuenta
+nueva apunte en el instante entre el canje y su registro se fecha como de la anterior (se retiene, no se reatribuye); con la
+captura a medias, la sesión caducada se enseña como «inténtalo en un rato» hasta que la captura termine; la celda C de quien
+tiene grupos del canal backend espera la quiescencia del import antes de cerrar aunque no tenga nada pendiente (en uso normal
+no espera nada; durante un primer import de iCloud, hasta 60 s); y las entradas del espejo de OTRA cuenta que no llegaron a su
+fila no entran en la cifra cuando la sesión es de otra (decisión B2: el teardown purga el espejo entero).
+
+Segunda ronda de la review, sobre el rediseño: tumbó dos cosas y las dos se arreglaron aquí. La adopción de dueño alcanzaba
+también a filas nuevas que el drain dejó sin dueño a propósito (ahora solo a las de `schemaVersion` 1), y todo cierre de sesión
+volvía a la cuenta anterior (ahora solo el de una sesión de paso). Y la guardia de «la sesión sigue siendo la del filtro» va
+tras cada `await` de la subida, no solo tras el refresh.
