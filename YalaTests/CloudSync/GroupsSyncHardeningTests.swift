@@ -138,6 +138,9 @@ struct GroupsSyncHardeningTests {
             tokenProvider: { "jwt" }, urlSession: session,
             sessionCheck: { checks.count += 1; return checks.count <= 50 },
             currentUserIDProvider: { userID },
+            // El teléfono es de esa cuenta desde siempre: el drain fecha contra el registro de sesiones el dueño de cada fila
+            // (`groups-outbox-rows-without-a-live-session-have-no-exit`), y sin él lo drenado nacería sin dueño.
+            signInLogProvider: { SessionSignInLog(entries: [.init(sub: userID, at: .distantPast)]) },
             outboxMirror: mirrorDir.map { GroupsOutboxMirror(directoryURL: $0) },
             // Hermético: los tests con 401 NO deben tocar `CloudAuthService.shared` (default del retry-once
             // H-2026-07-18-4). nil = sin refresh → sessionExpired, byte-idéntico al comportamiento previo.
@@ -148,15 +151,18 @@ struct GroupsSyncHardeningTests {
     }
 
     @discardableResult
+    /// `owner`: de quién es la fila (`GroupSyncOutbox.ownerUserID`). Por defecto, la cuenta de `makeClient`: desde
+    /// `groups-outbox-rows-without-a-live-session-have-no-exit` una fila sin dueño no la sube ninguna sesión, y el drain que
+    /// en producción le pone dueño no corre en estos tests, que siembran el outbox a mano.
     private func seedOutboxRow(
         _ context: ModelContext, group: String = "SplitGroup-A", mid: UUID = UUID(),
-        hlc: String, createdAt: Date = .now, rejectedReason: String? = nil
+        hlc: String, createdAt: Date = .now, rejectedReason: String? = nil, owner: String? = "sub-a"
     ) throws -> GroupSyncOutbox {
         let row = GroupSyncOutbox(
             syncID: UUID(), groupID: group, entityType: GroupSyncEntityType.splitExpense,
             op: .upsert, hlc: hlc, clientMutationID: mid,
             fieldsJSON: "{\"amount\":\"1.0000\"}", author: "", createdAt: createdAt,
-            rejectedReason: rejectedReason)
+            rejectedReason: rejectedReason, ownerUserID: owner)
         context.insert(row)
         try context.save()
         return row
@@ -267,7 +273,7 @@ struct GroupsSyncHardeningTests {
 
         let row = try seedOutboxRow(context, group: "zone-1", mid: UUID(),
                                     hlc: "2026-07-15T00:00:00.000Z-0003-00000000000000aa",
-                                    rejectedReason: "upstream_400:yala_not_authorized")
+                                    rejectedReason: "upstream_400:yala_not_authorized", owner: "auth-uid-1")
         let client = makeClient(session: StubSession(emptyPageJSON), mirrorDir: mirrorDir,
                                 userID: "auth-uid-1")
         #expect(mirrorFiles(mirrorDir).isEmpty)  // dead-letter: fuera del espejo

@@ -77,7 +77,10 @@ struct GroupsClockRollbackDrainTests {
                             now: @escaping () -> Date = { .now }) -> GroupsSyncClient {
         GroupsSyncClient(
             tokenProvider: { "jwt" }, urlSession: session, sessionCheck: { true },
-            currentUserIDProvider: { "sub-a" }, now: now, nodeID: nodeID, outboxMirror: nil,
+            currentUserIDProvider: { "sub-a" },
+            // El dueño de lo drenado sale del registro de sesiones (`groups-outbox-rows-without-a-live-session-have-no-exit`).
+            signInLogProvider: { SessionSignInLog(entries: [.init(sub: "sub-a", at: .distantPast)]) },
+            now: now, nodeID: nodeID, outboxMirror: nil,
             forceRefreshTokenProvider: { nil }, canRenewSession: { true })
     }
 

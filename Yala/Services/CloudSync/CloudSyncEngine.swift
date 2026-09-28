@@ -447,6 +447,13 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSignOut groups attest unavailable — loss exit offered pending=\(pending ?? -1, privacy: .public)")
     }
 
+    /// Un cierre se bloqueó en cambios de grupos que solo suben con una sesión que no está —la de su cuenta caducó, o la
+    /// abierta es de otra— y dejó ofrecida la salida que los pierde (ticket
+    /// `groups-outbox-rows-without-a-live-session-have-no-exit`). `cause` = `noSession` | `otherAccount`.
+    static func signOutGroupsLossOffered(cause: String, pending: Int?) {
+        logger.notice("CloudSignOut groups loss exit offered cause=\(cause, privacy: .public) pending=\(pending ?? -1, privacy: .public)")
+    }
+
     /// La persona eligió «Cerrar sesión y perderlos»: el cierre se retoma con esa cifra como tope aceptado.
     static func signOutGroupsLossAccepted(pending: Int?) {
         logger.notice("CloudSignOut groups loss accepted pending=\(pending ?? -1, privacy: .public)")

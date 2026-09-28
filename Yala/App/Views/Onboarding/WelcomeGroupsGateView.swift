@@ -140,8 +140,9 @@ struct WelcomeGroupsGateView: View {
         case discardingUnconfirmed(intento: Int)
         /// «Esperar»: el cierre retoma la espera donde se paró.
         case resumingExportWait(intento: Int)
-        /// «Continuar y perderlos»: el teléfono lleva más de un día sin App Attest y la persona acepta perder los cambios
-        /// de grupos que no suben (2026-09-15, `CloudSessionSignOut.exitDiscardingUnsyncedGroups`).
+        /// «Continuar y perderlos»: el teléfono lleva más de un día sin App Attest —o, desde el 2026-09-28, los cambios solo
+        /// suben con una sesión que no está— y la persona acepta perder los cambios de grupos que no suben
+        /// (`CloudSessionSignOut.exitDiscardingUnsyncedGroups`).
         case discardingUnsyncedGroups(intento: Int)
     }
 
@@ -456,20 +457,45 @@ struct WelcomeGroupsGateView: View {
                 YalaPrimaryButton(L10n.Welcome.Groups.gateBack) { leaveAfterBlock() }
                     .accessibilityIdentifier("welcome_groups_gate_neutral_migration_back")
             }
-        case .blocked:
+        case .blocked(let pending, let reason):
             // El otro bloqueo alcanzable en esta celda: quedaron cambios de GRUPOS sin subir de una sesión
-            // que caducó (`blockIfGroupsCannotUpload`). No se descartan nunca, así que la única salida
-            // honesta es volver y entrar con esa cuenta. Sin esta rama la pantalla era un spinner eterno.
+            // que caducó (`blockIfGroupsCannotUpload`). Volver y entrar con esa cuenta es el camino por defecto,
+            // y el botón primario. Sin esta rama la pantalla era un spinner eterno.
             // **Con el canal en pausa NO se llega aquí**: ese motivo tiene su propia rama arriba, porque
             // aquí el consejo de volver a entrar sería falso. **Lo pasajero tampoco, y desde el 2026-09-16 son
             // DOS ramas**: el outbox que drena y la subida que no llegó, que se separaron justo para que ésta
             // no les dijera a los dos que volvieran a entrar con la cuenta.
+            //
+            // **Desde el 2026-09-28 al dueño se le ofrece además perderlos** (ticket
+            // `groups-outbox-rows-without-a-live-session-have-no-exit`): quien no puede volver a entrar con esa cuenta no
+            // tenía salida. Solo con la sesión caducada o con cambios de otra cuenta (`lossCause`) y la salida de un cierre
+            // (`offersGroupsLossExit`); **al INVITADO no**, por lo mismo que el attest de arriba: no son suyos.
+            let cause = CloudSignOutFlowLogic.lossCause(reason)
+            let offersLoss = purpose.invitedGroupID == nil && (cause == .noSession || cause == .otherAccount)
+                && CloudSessionSignOut.shared.offersGroupsLossExit
             noticeShell(icon: "arrow.trianglehead.2.clockwise.rotate.90",
                         title: L10n.Welcome.Groups.neutralBlockedTitle,
-                        body: L10n.Welcome.Groups.neutralBlockedBody,
+                        body: offersLoss
+                            ? SignOutBlockedCopy.welcomeNoSessionLossMessage(pending: pending)
+                            : L10n.Welcome.Groups.neutralBlockedBody,
                         identifier: "welcome_groups_gate_neutral_blocked") {
-                YalaPrimaryButton(L10n.Welcome.Groups.gateBack) { leaveAfterBlock() }
-                    .accessibilityIdentifier("welcome_groups_gate_neutral_blocked_back")
+                VStack(spacing: DS.Spacing.sm) {
+                    YalaPrimaryButton(L10n.Welcome.Groups.gateBack) { leaveAfterBlock() }
+                        .accessibilityIdentifier("welcome_groups_gate_neutral_blocked_back")
+                    if offersLoss {
+                        Button(role: .destructive) {
+                            intento += 1
+                            phase = .discardingUnsyncedGroups(intento: intento)
+                        } label: {
+                            Text(L10n.Welcome.Groups.neutralAttestLossContinue)
+                                .font(DS.Typography.label)
+                                .foregroundStyle(.white.opacity(0.7))
+                                .frame(maxWidth: .infinity, minHeight: DS.Button.actionSize)
+                                .contentShape(Rectangle())
+                        }
+                        .accessibilityIdentifier("welcome_groups_gate_neutral_blocked_continue")
+                    }
+                }
             }
         }
     }

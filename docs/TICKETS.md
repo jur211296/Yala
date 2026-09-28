@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (685)
+## Index (688)
 
 | id | status | path |
 |---|---|---|
@@ -175,6 +175,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | cloud-sign-in-discovers-account-kind | qa | tickets/qa/cloud-sign-in-discovers-account-kind.md |
 | cloud-sign-in-screen-offers-sign-up-to-a-phone-without-app-attest | done | tickets/done/cloud-sign-in-screen-offers-sign-up-to-a-phone-without-app-attest.md |
 | cloud-sign-out-final-recount-misses-edits-left-only-in-history | backlog | tickets/backlog/cloud-sign-out-final-recount-misses-edits-left-only-in-history.md |
+| cloud-sign-out-with-an-expired-session-and-personal-changes-has-no-exit | backlog | tickets/backlog/cloud-sign-out-with-an-expired-session-and-personal-changes-has-no-exit.md |
 | cloud-signout-collapses-a-groups-session-expiry-into-permanent | done | tickets/done/cloud-signout-collapses-a-groups-session-expiry-into-permanent.md |
 | cloud-signout-collapses-every-groups-transient-into-permanent | done | tickets/done/cloud-signout-collapses-every-groups-transient-into-permanent.md |
 | cloud-signout-collapses-the-personal-push-all-reason-into-permanent | done | tickets/done/cloud-signout-collapses-the-personal-push-all-reason-into-permanent.md |
@@ -356,7 +357,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-only-second-launch-mounts-icloud-mirror | qa | tickets/qa/groups-only-second-launch-mounts-icloud-mirror.md |
 | groups-only-session-storage-screen-says-data-lives-in-icloud | backlog | tickets/backlog/groups-only-session-storage-screen-says-data-lives-in-icloud.md |
 | groups-organizer-intent-is-lost-on-relaunch | backlog | tickets/backlog/groups-organizer-intent-is-lost-on-relaunch.md |
-| groups-outbox-rows-without-a-live-session-have-no-exit | backlog | tickets/backlog/groups-outbox-rows-without-a-live-session-have-no-exit.md |
+| groups-outbox-rows-without-a-live-session-have-no-exit | done | tickets/done/groups-outbox-rows-without-a-live-session-have-no-exit.md |
+| groups-outbox-rows-without-a-provable-owner-never-upload | backlog | tickets/backlog/groups-outbox-rows-without-a-provable-owner-never-upload.md |
 | groups-owner-debt-no-heir-dead-end | done | tickets/done/groups-owner-debt-no-heir-dead-end.md |
 | groups-owner-transfer-and-leave | done | tickets/done/groups-owner-transfer-and-leave.md |
 | groups-pending-member-can-open-group | done | tickets/done/groups-pending-member-can-open-group.md |
@@ -513,6 +515,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | private-sign-out-blocks-on-a-cloud-keychain-read-error | backlog | tickets/backlog/private-sign-out-blocks-on-a-cloud-keychain-read-error.md |
 | private-sign-out-counts-group-writes-without-capturing-them | backlog | tickets/backlog/private-sign-out-counts-group-writes-without-capturing-them.md |
 | private-sign-out-keeps-legacy-cloudkit-groups | backlog | tickets/backlog/private-sign-out-keeps-legacy-cloudkit-groups.md |
+| private-sign-out-misses-group-edits-made-during-the-icloud-wait | backlog | tickets/backlog/private-sign-out-misses-group-edits-made-during-the-icloud-wait.md |
 | private-sign-out-proceeds-with-a-migration-in-flight | qa | tickets/qa/private-sign-out-proceeds-with-a-migration-in-flight.md |
 | private-signout-groups-session-expiry-does-not-say-where-to-sign-in | backlog | tickets/backlog/private-signout-groups-session-expiry-does-not-say-where-to-sign-in.md |
 | prompts-de-traduccion-corren-xcodebuild-sin-cola | backlog | tickets/backlog/prompts-de-traduccion-corren-xcodebuild-sin-cola.md |

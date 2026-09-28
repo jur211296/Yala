@@ -620,7 +620,9 @@ struct SignOutNotificationWiringTests {
         // `.cloud`, marker post-borrado, pre-drain, y desde el 2026-09-26 el pre-check síncrono de «Empezar de cero»
         // (`groupsOutboxIsSettledEmpty`), que repite el pre-drain y tiene que leer lo mismo que él. Y el 7.º, del mismo día:
         // la tercera closure del testigo de salida (`GroupsExitWitness.live.mirrorPendingKeys`), gemela de `mirrorPending`.
-        #expect(signOut.components(separatedBy: "CloudSyncFlags.groupsBackendCompiledCapability").count - 1 == 7)
+        // El 8.º y el 9.º, del 2026-09-28 (`groups-outbox-rows-without-a-live-session-have-no-exit`): las dos closures nuevas
+        // del testigo, `heldForAnotherAccount` y `mirrorPendingMutationIDs`.
+        #expect(signOut.components(separatedBy: "CloudSyncFlags.groupsBackendCompiledCapability").count - 1 == 9)
         #expect(!signOut.contains("CloudSyncFlags.groupsBackendEnabled"))
 
         // La UI que ofrece las filas tiene que resolver el path con la MISMA fuente que el dispatch, o

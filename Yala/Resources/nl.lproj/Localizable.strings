@@ -6148,3 +6148,27 @@
 
 /* Confirm body before finishing a deletion that was left halfway */
 "welcome.privateICloud.leftHalfwayConfirmBody" = "Wat er nog op deze telefoon staat wordt verwijderd, ook wat je sindsdien hebt gemaakt, en je begint opnieuw. Er blijft geen kopie over.";
+
+/* Cierre de sesión bloqueado: quedan cambios de grupos de otra cuenta, sin salida que los pierda */
+"groups.errors.groupsChangesFromAnotherAccount" = "Sommige groepswijzigingen op deze telefoon zijn met een ander account gemaakt en kunnen alleen met dat account worden geüpload. Er gaat niets verloren: ze blijven hier bewaard tot je met dat account inlogt.";
+
+/* Cerrar sesión sin la sesión de la cuenta que apuntó los cambios; %d = cambios de grupos que se pierden */
+"groups.errors.noSessionSignOutLoss" = "Nog niet geüploade groepswijzigingen: %d. Ze worden alleen geüpload met het account dat ze heeft gemaakt, en de sessie daarvan is niet open op deze telefoon: log opnieuw in met dat account om ze te uploaden. Lukt dat niet, log dan toch uit; ze gaan dan verloren en niemand in de groep krijgt ze te zien.";
+
+/* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
+"groups.errors.noSessionSignOutLossUnknown" = "Sommige groepswijzigingen zijn nog niet geüpload. Ze worden alleen geüpload met het account dat ze heeft gemaakt, en de sessie daarvan is niet open op deze telefoon: log opnieuw in met dat account om ze te uploaden. Lukt dat niet, log dan toch uit; ze gaan dan verloren en niemand in de groep krijgt ze te zien.";
+
+/* Cerrar sesión en la nube con la sesión caducada; %d = cambios de grupos que se pierden */
+"settings.signOutCloudSessionExpiredGroupsLoss" = "Je sessie is verlopen. Nog niet geüploade groepswijzigingen: %d. Open ‘Waar je gegevens staan’, hier in Profiel, en tik op ‘Aanmelden’ om ze te uploaden. Lukt aanmelden niet, log dan toch uit; ze gaan dan verloren en niemand in de groep krijgt ze te zien.";
+
+/* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
+"settings.signOutCloudSessionExpiredGroupsLossUnknown" = "Je sessie is verlopen en sommige groepswijzigingen zijn nog niet geüpload. Open ‘Waar je gegevens staan’, hier in Profiel, en tik op ‘Aanmelden’ om ze te uploaden. Lukt aanmelden niet, log dan toch uit; ze gaan dan verloren en niemand in de groep krijgt ze te zien.";
+
+/* Vuelta al neutro sin la sesión de la cuenta que apuntó los cambios; %d = cambios de grupos que se pierden */
+"welcome.groups.neutralNoSessionLossBody" = "Nog niet geüploade groepswijzigingen: %d. Ze worden alleen geüpload met het account dat ze heeft gemaakt, en de sessie daarvan is niet open op deze telefoon. Als je nu doorgaat, gaan ze verloren en krijgt niemand in de groep ze te zien.";
+
+/* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
+"welcome.groups.neutralNoSessionLossBodyUnknown" = "Sommige groepswijzigingen zijn nog niet geüpload. Ze worden alleen geüpload met het account dat ze heeft gemaakt, en de sessie daarvan is niet open op deze telefoon. Als je nu doorgaat, gaan ze verloren en krijgt niemand in de groep ze te zien.";
+
+/* Empezar de cero con cambios de grupos de otra cuenta: por qué no suben */
+"groups.freshStartPending.lossOtherAccount" = "Ze kunnen alleen worden geüpload met het account dat ze heeft gemaakt, en de sessie op deze telefoon is van een ander account. Als je niet opnieuw inlogt met dat account, kun je opnieuw beginnen en ze verliezen: niemand in de groep zal ze zien.";

@@ -5420,3 +5420,27 @@
 
 /* Confirm body before finishing a deletion that was left halfway */
 "welcome.privateICloud.leftHalfwayConfirmBody" = "Se borra lo que queda en este teléfono, también lo que hayas creado desde entonces, y vuelves a empezar. No queda copia.";
+
+/* Cierre de sesión bloqueado: quedan cambios de grupos de otra cuenta, sin salida que los pierda */
+"groups.errors.groupsChangesFromAnotherAccount" = "Hay cambios de grupos que se apuntaron en este teléfono con otra cuenta, y solo se pueden subir con ella. No se pierden: siguen guardados aquí hasta que entres con esa cuenta.";
+
+/* Cerrar sesión sin la sesión de la cuenta que apuntó los cambios; %d = cambios de grupos que se pierden */
+"groups.errors.noSessionSignOutLoss" = "Cambios de grupos sin subir: %d. Solo se suben con la cuenta que los apuntó, y su sesión no está abierta en este teléfono: vuelve a entrar con esa cuenta para subirlos. Si no puedes, cierra sesión igualmente y se perderán; nadie del grupo los verá.";
+
+/* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
+"groups.errors.noSessionSignOutLossUnknown" = "Hay cambios de grupos sin subir. Solo se suben con la cuenta que los apuntó, y su sesión no está abierta en este teléfono: vuelve a entrar con esa cuenta para subirlos. Si no puedes, cierra sesión igualmente y se perderán; nadie del grupo los verá.";
+
+/* Cerrar sesión en la nube con la sesión caducada; %d = cambios de grupos que se pierden */
+"settings.signOutCloudSessionExpiredGroupsLoss" = "Tu sesión ha caducado. Cambios de tus grupos sin subir: %d. Para subirlos, abre «Dónde viven tus datos», aquí en Perfil, y toca «Iniciar sesión». Si no puedes entrar, cierra sesión igualmente y se perderán; nadie del grupo los verá.";
+
+/* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
+"settings.signOutCloudSessionExpiredGroupsLossUnknown" = "Tu sesión ha caducado y hay cambios de tus grupos sin subir. Para subirlos, abre «Dónde viven tus datos», aquí en Perfil, y toca «Iniciar sesión». Si no puedes entrar, cierra sesión igualmente y se perderán; nadie del grupo los verá.";
+
+/* Vuelta al neutro sin la sesión de la cuenta que apuntó los cambios; %d = cambios de grupos que se pierden */
+"welcome.groups.neutralNoSessionLossBody" = "Cambios de grupos sin subir: %d. Solo se suben con la cuenta que los apuntó, y su sesión no está abierta en este teléfono. Si continúas ahora, se perderán y nadie del grupo los verá.";
+
+/* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
+"welcome.groups.neutralNoSessionLossBodyUnknown" = "Hay cambios de grupos sin subir. Solo se suben con la cuenta que los apuntó, y su sesión no está abierta en este teléfono. Si continúas ahora, se perderán y nadie del grupo los verá.";
+
+/* Empezar de cero con cambios de grupos de otra cuenta: por qué no suben */
+"groups.freshStartPending.lossOtherAccount" = "Solo pueden subir con la cuenta que los apuntó, y la sesión abierta en este teléfono es de otra. Si no vas a volver a entrar con esa cuenta, puedes empezar de cero y perderlos: nadie del grupo los verá.";

@@ -195,7 +195,7 @@ struct GroupsDetachSessionSurvivesTests {
 
     @Test("`signOut()` devuelve el almacén del SDK releído, en sus DOS salidas, y no `hasSession`")
     func signOut_returnsTheStoredSessionWitness() throws {
-        let body = try Self.body(of: "func signOut() async -> Bool {", in: Self.authPath)
+        let body = try Self.body(of: "func signOut(returningToPreviousAccount: Bool = false) async -> Bool {", in: Self.authPath)
         #expect(body.contains("guard let client else { return storedSessionIsGone }"), """
             La salida sin backend configurado ya no devuelve el testigo. Sin ella, el seam del XCUITest (que corre sin \
             cliente) no llega al desasociar.

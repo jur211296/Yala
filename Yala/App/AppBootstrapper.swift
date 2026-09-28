@@ -165,6 +165,14 @@ final class AppBootstrapper {
         // 0.6. Record first launch date for review prompt timing
         ReviewPromptService.recordFirstLaunchIfNeeded()
 
+        // 0.7. El registro de sesiones que fecha el dueño de cada cambio de grupos (ticket
+        //      `groups-outbox-rows-without-a-live-session-have-no-exit`). La primera vez que este build ve el teléfono,
+        //      todo lo anterior es de la cuenta que ya estaba: la sesión guardada o, sin ella, la cuenta de grupos asociada.
+        //      ANTES de cualquier drain —el canal de Grupos y el motor personal arrancan más abajo— y de cualquier inicio de
+        //      sesión, que necesita pantalla. Idempotente: con el registro ya escrito no hace nada.
+        SessionSignInLog.seedIfAbsent(
+            sub: CloudAuthService.shared.currentUserID ?? GroupsAccountAssociation.shared.associatedSub)
+
         // 1. Initialize notification delegate (must be early for foreground display)
         _ = NotificationService.shared
 

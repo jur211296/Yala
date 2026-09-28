@@ -357,6 +357,16 @@ enum MetricsCanary: String {
     /// `detail` = `pending=N` o `pending=unknown`. Frente al anterior, dice cuántos eligieron salir.
     case groupsSignOutAttestDiscarded
 
+    // Cambios de grupos que no pueden subir por la sesión (ticket `groups-outbox-rows-without-a-live-session-have-no-exit`)
+    /// Un CIERRE DE SESIÓN se bloqueó porque los cambios de grupos solo suben con una sesión que no hay —la de su cuenta
+    /// caducó, o la abierta es de otra cuenta— y dejó ofrecida la salida que los pierde. `detail` =
+    /// `cause=noSession|otherAccount pending=N` (o `pending=unknown`). El attest sigue en `groupsSignOutAttestUnavailable`,
+    /// para no romper su serie. Cuenta OFERTAS, no personas.
+    case groupsSignOutLossOffered
+    /// El cierre siguió sin subir esos cambios, con la persona conforme. Mismo `detail`. Frente al anterior, cuántos eligieron
+    /// salir sin volver a entrar.
+    case groupsSignOutLossDiscarded
+
     // Tus datos en la nube con un teléfono sin App Attest (ticket `cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes`)
     /// Un cierre de sesión en la NUBE se bloqueó en los cambios PERSONALES de un teléfono con la racha terminal y dejó
     /// ofrecido el aviso que exporta los movimientos o los pierde. `detail` = `pending=N` o `pending=unknown`. Cuenta

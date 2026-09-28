@@ -236,8 +236,8 @@ struct AppleIDCloseNoticeView: View {
             .accessibilityIdentifier("apple_id_close_working")
         case .blocked(let reason):
             blockedBody(reason: reason)
-        case .losingGroupChanges(let pending):
-            attestLossBody(pending: pending)
+        case .losingGroupChanges(let pending, let reason):
+            groupsLossBody(pending: pending, reason: reason)
         case .busy:
             // Ni cierre en vuelo ni bloqueo que enseñar: no arrancó, u otra pantalla ya reconoció el bloqueo.
             // «Un momento más» es lo cierto, y las dos salidas siguen ahí.
@@ -264,14 +264,16 @@ struct AppleIDCloseNoticeView: View {
         }
     }
 
-    /// **El teléfono sin App Attest** (2026-09-15): el aviso cuenta lo que se pierde con el texto de Ajustes
-    /// (`SignOutBlockedCopy.attestLossMessage`) y ofrece cerrar igualmente. «Ahora no» va primero, como en la pregunta:
-    /// perder cambios tiene que ser un gesto deliberado. Sin «Reintentar»: tras un día sin attest no es lo que ayuda.
-    private func attestLossBody(pending: Int) -> some View {
+    /// **Cambios de grupos que no van a subir** (2026-09-15 el teléfono sin App Attest; desde el 2026-09-28 también la
+    /// sesión caducada y los cambios de otra cuenta): el aviso cuenta lo que se pierde con el texto de Ajustes
+    /// (`SignOutBlockedCopy.groupsLossMessage`) y ofrece cerrar igualmente. «Ahora no» va primero, como en la pregunta:
+    /// perder cambios tiene que ser un gesto deliberado. Sin «Reintentar»: con la misma sesión, reintentar vuelve al mismo
+    /// aviso; lo que sube esos cambios es entrar con su cuenta, y eso lo dice el texto.
+    private func groupsLossBody(pending: Int, reason: CloudSignOutFlowLogic.BlockReason) -> some View {
         noticeBody(
             icon: "exclamationmark.triangle",
-            title: SignOutBlockedCopy.title(for: .attestUnavailable),
-            message: SignOutBlockedCopy.attestLossMessage(pending: pending),
+            title: SignOutBlockedCopy.groupsLossTitle(for: reason),
+            message: SignOutBlockedCopy.groupsLossMessage(for: reason, pending: pending),
             // Identificador propio: el mismo motivo sin salida lleva `apple_id_close_blocked_attest-unavailable`, y los dos
             // textos son distintos.
             identifier: "apple_id_close_losing_group_changes") {

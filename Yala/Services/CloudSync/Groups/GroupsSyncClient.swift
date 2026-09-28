@@ -84,6 +84,9 @@ final class GroupsSyncClient {
     /// El `sub` de la sesión (auth uid). Inyectable para el RE-DRIVE del dead-letter (A2). Default: el
     /// singleton de sesión. `@MainActor` (el cliente ya lo es → no cruza actor).
     private let currentUserIDProvider: @MainActor () -> String?
+    /// Qué cuenta tenía este teléfono en cada momento (`SessionSignInLog`): el drain fecha cada transacción contra él para
+    /// darle su dueño (`GroupsOutboxOwnershipLogic.owner`). Default: el que escriben `CloudAuthService` y el arranque.
+    private let signInLogProvider: @MainActor () -> SessionSignInLog?
     /// G8-3: el device token APNs local para el header `X-Yala-Device-Token` del push (el server excluye SOLO
     /// este device del autor del fan-out → el 2º device del autor SÍ recibe el silent push). Provider inyectado;
     /// el DEFAULT del init es `{ nil }` (AJUSTE review #7 — NO acoplar los tests existentes a
@@ -120,6 +123,9 @@ final class GroupsSyncClient {
     // MARK: Estado
 
     private var clock: HLCClock
+    /// El registro de sesiones de la vuelta de drain EN CURSO (`performDrain` lo lee al empezar y `appendRow` fecha cada
+    /// transacción contra él). `nil` fuera de un drain, o sin registro.
+    private var drainSignInLog: SessionSignInLog?
     private var isDraining = false
     private var pendingDrain = false
     private var bridgeRetryTask: Task<Void, Never>?
@@ -345,6 +351,7 @@ final class GroupsSyncClient {
         urlSession: SyncHTTPSession = URLSession.shared,
         sessionCheck: @escaping @MainActor () -> Bool = { CloudAuthService.shared.hasSession },
         currentUserIDProvider: @escaping @MainActor () -> String? = { CloudAuthService.shared.currentUserID },
+        signInLogProvider: @escaping @MainActor () -> SessionSignInLog? = { SessionSignInLog.read() },
         now: @escaping () -> Date = { .now },
         nodeID: NodeID = NodeID.generate(),
         merkleClient: GroupsMerkleClient? = nil,
@@ -365,6 +372,7 @@ final class GroupsSyncClient {
         self.urlSession = urlSession
         self.sessionCheck = sessionCheck
         self.currentUserIDProvider = currentUserIDProvider
+        self.signInLogProvider = signInLogProvider
         self.deviceTokenProvider = deviceTokenProvider
         self.now = now
         self.onRemoteChangesApplied = onRemoteChangesApplied
@@ -835,6 +843,16 @@ final class GroupsSyncClient {
             .map { Set($0.map(\.key)) }
     }
 
+    /// **Las mismas entradas, por su `clientMutationID`** (ticket `groups-outbox-rows-without-a-live-session-have-no-exit`).
+    /// Es lo que el cierre de sesión suma a las filas vivas al ofrecer perder los cambios de grupos: el teardown purga el espejo
+    /// entero, así que una entrada sin fila se perdería sin que el aviso la contara (review adversarial del 2026-09-28). Mismo
+    /// filtro que la cifra y que la clave, para que las tres digan lo mismo. `nil` si el outbox no se pudo leer.
+    func mirrorEntryMutationIDsMissingFromOutbox(context: ModelContext, scope: MirrorPendingScope) -> Set<UUID>? {
+        Self.mirrorEntriesMissingFromOutboxList(
+            mirror: outboxMirror, ownerID: currentUserIDProvider(), scope: scope, context: context)
+            .map { Set($0.map(\.entry.clientMutationID)) }
+    }
+
     /// El filtro compartido: las entradas del espejo sin fila, cada una con su clave. `nil` si el outbox no se pudo leer.
     private static func mirrorEntriesMissingFromOutboxList(
         mirror: GroupsOutboxMirror?, ownerID: String?, scope: MirrorPendingScope, context: ModelContext
@@ -864,6 +882,75 @@ final class GroupsSyncClient {
         }
     }
 
+    // MARK: - El dueño de cada fila (`groups-outbox-rows-without-a-live-session-have-no-exit`)
+
+    /// **Filas VIVAS que la sesión de ahora no puede subir porque no son suyas**: de otra cuenta, o sin dueño probado. Es lo
+    /// que el push-all del cierre cuenta aparte para bloquear con `.groupsChangesFromAnotherAccount` en vez de esperar a un
+    /// outbox que esta sesión nunca va a vaciar. Sin sesión, 0: ahí el bloqueo es la sesión caducada. `Int.max` si el outbox
+    /// no se pudo leer (el «no se pudo contar» del repo).
+    func liveRowsHeldForAnotherAccount(context: ModelContext) -> Int {
+        Self.liveRowsHeldForAnotherAccount(sessionOwner: currentUserIDProvider(), context: context)
+    }
+
+    /// El cuerpo de `liveRowsHeldForAnotherAccount`, con la sesión inyectada para poder medirlo.
+    static func liveRowsHeldForAnotherAccount(sessionOwner: String?, context: ModelContext) -> Int {
+        guard let sessionOwner, !sessionOwner.isEmpty else { return 0 }
+        do {
+            let live = try context.fetch(FetchDescriptor<GroupSyncOutbox>(predicate: #Predicate { $0.rejectedReason == nil }))
+            return live.filter {
+                GroupsOutboxOwnershipLogic.isHeldForAnotherAccount(rowOwner: $0.ownerUserID, sessionOwner: sessionOwner)
+            }.count
+        } catch {
+            #if DEBUG
+            print("GroupsSyncClient: Error contando las filas de otra cuenta: \(error)")
+            #endif
+            return Int.max
+        }
+    }
+
+    /// **Dar dueño a las filas de un build anterior**, una vez y con prueba: las encoladas antes de que existiera `ownerUserID`
+    /// (`schemaVersion` 1). Las de este build ya nacieron con su dueño decidido, también cuando es «ninguno». Dos pruebas, por
+    /// orden:
+    ///  1. **La entrada del espejo del App Group** que casa por `(syncID, hlc)`: guarda el `sub` que la escribió desde B2, así
+    ///     que no es una reatribución, es el mismo sello.
+    ///  2. **El registro de sesiones a la hora en que se encoló** (`createdAt`): la cuenta que tenía el teléfono al drenarla.
+    ///     Es lo que cubre la fila capturada sin sesión o rechazada —el espejo no guarda ni una ni otra— de un build anterior,
+    ///     que el arranque siembra con la cuenta que ya estaba (`SessionSignInLog.seedIfAbsent`). Sin las dos, se queda sin
+    ///     dueño y no la sube nadie (`GroupSyncOutbox.ownerUserID`).
+    ///
+    /// Incluye las dead-letter: el re-drive de `yala_not_authorized` las devuelve a pendientes, y sin dueño quedarían retenidas
+    /// para siempre (review adversarial del 2026-09-28). **No aborta el drain**: es contabilidad del dueño, y una fila que no
+    /// lo recibe hoy se queda retenida, que es el lado seguro. Sin filas sin dueño no lee el espejo.
+    private func adoptOwnersForUnownedRows(context: ModelContext, log: SessionSignInLog?) {
+        do {
+            // Solo las de un build anterior: una fila nueva sin dueño lo dejó así la regla del drain, y buscárselo ahora se
+            // lo daría a la sesión de ahora —el registro ya tiene su entrada para el `createdAt` del drain que la creó—, que
+            // es el bug de este ticket por otra puerta (review adversarial del 2026-09-28).
+            let legacy = CloudSyncSchemaVersions.groupSyncOutboxBeforeOwners
+            let unowned = try context.fetch(FetchDescriptor<GroupSyncOutbox>(
+                predicate: #Predicate { $0.ownerUserID == nil && $0.schemaVersion <= legacy }))
+            guard !unowned.isEmpty else { return }
+            var ownerByFile: [String: String] = [:]
+            for entry in outboxMirror?.allEntries() ?? [] where !entry.userID.isEmpty {
+                ownerByFile[GroupsOutboxMirror.fileName(syncID: entry.syncID, hlc: entry.hlc)] = entry.userID
+            }
+            let adopted = unowned.compactMap { row -> (GroupSyncOutbox, String)? in
+                let owner = ownerByFile[GroupsOutboxMirror.fileName(syncID: row.syncID, hlc: row.hlc)]
+                    ?? log?.owner(at: row.createdAt)
+                return owner.map { (row, $0) }
+            }
+            guard !adopted.isEmpty else { return }
+            try saveWithAuthor(context) {
+                for (row, owner) in adopted { row.ownerUserID = owner }
+            }
+            GroupsSyncBreadcrumb.groupsOutboxOwnersAdopted(count: adopted.count)
+        } catch {
+            #if DEBUG
+            logger.error("GroupsSync: no se pudo dar dueño a las filas sin dueño: \(error)")
+            #endif
+        }
+    }
+
     /// ¿Pertenece la transacción al store de GRUPOS? Toda transacción de ese store cambia al menos una de
     /// sus 5 entidades y NINGUNA transacción de otro store lo hace — `groupEntityNames` es exactamente el
     /// conjunto de entidades del `groupsSchema` (invariante pinneado por
@@ -881,10 +968,16 @@ final class GroupsSyncClient {
     }
 
     private func performDrain(context: ModelContext) -> Bool {
+        defer { drainSignInLog = nil }
         do {
             let cursor = try loadOrCreateCursor(context)
             loadClock(from: cursor)
             let token = anchoredHistoryToken(cursor)
+            // **De quién es lo que se capture en esta vuelta** (`groups-outbox-rows-without-a-live-session-have-no-exit`): el
+            // registro de sesiones, leído UNA vez. Cada transacción se fecha contra él; la sesión de ahora no cuenta.
+            let signInLog = signInLogProvider()
+            drainSignInLog = signInLog
+            adoptOwnersForUnownedRows(context: context, log: signInLog)
 
             let lookups = try buildLookups(context)
             // C2-bis (CRÍTICO #1): partición POR-GRUPO simétrica del push. Solo los grupos del canal BACKEND
@@ -1253,7 +1346,8 @@ final class GroupsSyncClient {
             fieldsJSON: payload.fieldsJSON,
             fieldHlcsJSON: payload.fieldHlcsJSON,
             author: tx.author ?? "",
-            createdAt: now()
+            createdAt: now(),
+            ownerUserID: GroupsOutboxOwnershipLogic.owner(transactionAt: tx.timestamp, log: drainSignInLog)
         ))
     }
 
@@ -1411,10 +1505,14 @@ final class GroupsSyncClient {
 
     /// Escribe el espejo `.atomic` de cada fila NUEVA de un drain, ANTES del insert+save (mismo cuerpo
     /// síncrono, regla Q3). Best-effort: un fallo se loguea y NO aborta el drain (la History es backup
-    /// redundante). No-op sin espejo o sin `sub` de sesión (owner-scoping M1: sin identidad no se sella).
+    /// redundante). No-op sin espejo; una fila sin dueño probado no se espeja (owner-scoping M1: sin identidad no se
+    /// sella). **La entrada lleva el dueño de la FILA**, no la sesión: desde
+    /// `groups-outbox-rows-without-a-live-session-have-no-exit` son lo mismo casi siempre, y cuando no lo son —captura sin
+    /// sesión, o lo escrito antes de que entrara otra cuenta— la rehidratación tiene que devolver la fila a su dueño.
     private func writeMirror(rows: [PendingGroupRow]) {
-        guard let mirror = outboxMirror, let userID = currentUserIDProvider() else { return }
+        guard let mirror = outboxMirror else { return }
         for row in rows {
+            guard let userID = row.ownerUserID, !userID.isEmpty else { continue }
             do {
                 try mirror.write(row.mirrorEntry(userID: userID))
             } catch {
@@ -1428,7 +1526,7 @@ final class GroupsSyncClient {
     /// Espeja una fila de outbox YA materializada (`@Model`) — para el RE-DRIVE (una dead-letter revivida
     /// vuelve a ser pendiente y re-entra al espejo). Mismo best-effort que `writeMirror(rows:)`.
     private func writeMirrorEntry(for row: GroupSyncOutbox) {
-        guard let mirror = outboxMirror, let userID = currentUserIDProvider() else { return }
+        guard let mirror = outboxMirror, let userID = row.ownerUserID, !userID.isEmpty else { return }
         do {
             try mirror.write(GroupsOutboxMirrorEntry(
                 userID: userID, syncID: row.syncID, groupID: row.groupID, entityType: row.entityType,
@@ -1614,7 +1712,9 @@ final class GroupsSyncClient {
                         op: op, hlc: entry.hlc, clientMutationID: entry.clientMutationID,
                         fieldsJSON: entry.fieldsJSON, fieldHlcsJSON: entry.fieldHlcsJSON,
                         author: entry.author, tombstoneReason: entry.tombstoneReason,
-                        createdAt: entry.createdAt))
+                        createdAt: entry.createdAt,
+                        // El dueño es el que selló la entrada, que por el filtro de arriba es la sesión.
+                        ownerUserID: entry.userID))
                 }
             }
         } catch {
@@ -1741,17 +1841,28 @@ final class GroupsSyncClient {
     /// NO purga si la sesión está caída. Sin token no hay request: `.sessionExpired` solo si el SDK borró la
     /// sesión, y `.transient` si la conserva (`sdkRemovedTheSession`).
     func pushPending(context: ModelContext) async -> PushOutcome {
-        let rows: [GroupSyncOutbox]
+        let live: [GroupSyncOutbox]
         do {
             var descriptor = FetchDescriptor<GroupSyncOutbox>(
                 sortBy: [SortDescriptor(\.createdAt, order: .forward)])
             descriptor.predicate = #Predicate { $0.rejectedReason == nil }
-            rows = try context.fetch(descriptor)
+            live = try context.fetch(descriptor)
         } catch {
             #if DEBUG
             logger.error("GroupsSync: fetch outbox para push falló: \(error)")
             #endif
             return .transient
+        }
+        // **Solo sube lo que es de la sesión** (ticket `groups-outbox-rows-without-a-live-session-have-no-exit`). Lo de
+        // otra cuenta —o sin dueño probado— se queda en el outbox, intacto y sin re-sellar: lo sube su dueño cuando vuelva,
+        // o lo pierde el cierre de sesión con el aviso que lo cuenta (`CloudSessionSignOut`). Sin sesión no se filtra: el
+        // token de abajo es quien dice «sesión caducada».
+        let sessionOwner = currentUserIDProvider()
+        let rows = live.filter {
+            GroupsOutboxOwnershipLogic.isUploadable(rowOwner: $0.ownerUserID, sessionOwner: sessionOwner)
+        }
+        if rows.count < live.count {
+            GroupsSyncBreadcrumb.groupsOutboxHeldForAnotherAccount(count: live.count - rows.count)
         }
         guard !rows.isEmpty else { return .completed([]) }
 
@@ -1764,6 +1875,11 @@ final class GroupsSyncClient {
         }
         // Attest UNA vez para todos los chunks (TTL de sesión ≫ duración del push, molde personal).
         let attest = await attestProvider()
+        // **La sesión del token tiene que ser la del filtro** (review adversarial del 2026-09-28): durante los dos `await` de
+        // arriba —el token y el attest— pudo entrar otra cuenta, y sus credenciales firmarían filas que se filtraron para
+        // otra. Se deja para el ciclo siguiente, que filtra con la sesión de entonces. Una sola comprobación tras los dos
+        // basta (el mutante que quitaba otra tras el token sobrevivía por eso); la del refresh vive en `pushChunk`.
+        guard currentUserIDProvider() == sessionOwner else { return .transient }
 
         var confirmed: [SyncDeltaResult] = []
         var index = 0
@@ -1773,7 +1889,7 @@ final class GroupsSyncClient {
             // `token` es inout: si un chunk rescata un 401 con refresh forzado, el token FRESCO se
             // propaga a los chunks siguientes (sin él, cada chunk posterior forzaría su propio refresh).
             let outcome = await pushChunk(chunk, token: &token, attest: attest,
-                                          totalPending: rows.count, context: context)
+                                          totalPending: rows.count, sessionOwner: sessionOwner, context: context)
             switch outcome {
             case .completed(let results):
                 confirmed.append(contentsOf: results)
@@ -1793,7 +1909,7 @@ final class GroupsSyncClient {
     /// `pushPending` lo reusan sin re-forzar el refresh por chunk).
     private func pushChunk(
         _ chunk: [GroupSyncOutbox], token: inout String, attest: String?,
-        totalPending: Int, context: ModelContext
+        totalPending: Int, sessionOwner: String?, context: ModelContext
     ) async -> PushOutcome {
         let generation = teardownGeneration  // guardia MEDIA: no aplicar resultados post-teardown
         let deltas: [GroupSyncDelta]
@@ -1939,6 +2055,10 @@ final class GroupsSyncClient {
             return sdkRemovedTheSession() ? outcome : .transient
         }
         guard fresh != token else { return outcome }
+        // **El token nuevo tiene que ser de la MISMA cuenta que el filtro** (review adversarial del 2026-09-28): si mientras
+        // el refresh volaba entró otra cuenta, reenviar este chunk lo firmaría ella. Se deja para el ciclo siguiente, que
+        // filtra con la sesión de entonces.
+        guard currentUserIDProvider() == sessionOwner else { return .transient }
         token = fresh
         return await send(bearer: fresh)
     }
@@ -3601,6 +3721,8 @@ private struct PendingGroupRow {
     let fieldHlcsJSON: String?
     let author: String
     let createdAt: Date
+    /// De quién es el cambio (`GroupsOutboxOwnershipLogic.owner`). `nil` = sin probar.
+    let ownerUserID: String?
 
     @MainActor
     func makeModel() -> GroupSyncOutbox {
@@ -3608,7 +3730,7 @@ private struct PendingGroupRow {
             syncID: syncID, groupID: groupID, entityType: entityType, op: op, hlc: hlc,
             clientMutationID: clientMutationID, fieldsJSON: fieldsJSON, fieldHlcsJSON: fieldHlcsJSON,
             author: author, tombstoneReason: op == .tombstone ? SyncTombstoneReason.user.rawValue : nil,
-            createdAt: createdAt
+            createdAt: createdAt, ownerUserID: ownerUserID
         )
     }
 

@@ -133,6 +133,7 @@
 - [El mutante que sobrevive puede SOBRAR](feedback_el_mutante_que_sobrevive_puede_sobrar.md) — dos respuestas: falta un test.
 - [Pedir en los dos extremos duplica](feedback_pedir_en_los_dos_extremos_duplica.md) — si la reparación re-hace todo y no un delta.
 - [El motivo que cae no retira el mecanismo](feedback_el_motivo_que_cae_no_retira_el_mecanismo.md) — quité la petición de #284 y cubría tres casos más.
+- [El dueño se FECHA, no se recuerda](feedback_el_dueno_se_fecha_no_se_recuerda.md) — «último visto» cayó 3 veces; la red de rescate no toca lo decidido «ninguno».
 - [La review adversarial caza lo MÍO](feedback_review_adversarial_caza_lo_mio.md) — el 14-sep cazó que MI ARREGLO no arreglaba.
 - [Apagar una voz destapa el residual de la otra](feedback_apagar_una_voz_destapa_el_residual_de_la_otra.md) — el spinner tapa…
 - [La fase ajena tiene otros escritores](feedback_la_fase_ajena_tiene_otros_escritores.md) — mi «en vuelo» leía un `.idle` co…

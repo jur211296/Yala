@@ -6148,3 +6148,27 @@
 
 /* Confirm body before finishing a deletion that was left halfway */
 "welcome.privateICloud.leftHalfwayConfirmBody" = "この端末に残っているデータは、その後に作成したものも含めて削除され、最初からやり直します。コピーは残りません。";
+
+/* Cierre de sesión bloqueado: quedan cambios de grupos de otra cuenta, sin salida que los pierda */
+"groups.errors.groupsChangesFromAnotherAccount" = "この端末には、別のアカウントで作成されたグループの変更があり、そのアカウントでしかアップロードできません。変更は失われません。そのアカウントでサインインするまで、この端末に保存されます。";
+
+/* Cerrar sesión sin la sesión de la cuenta que apuntó los cambios; %d = cambios de grupos que se pierden */
+"groups.errors.noSessionSignOutLoss" = "未アップロードのグループの変更：%d件。これらは作成したアカウントでしかアップロードできず、そのアカウントのセッションはこの端末で開かれていません。アップロードするには、そのアカウントで再度サインインしてください。できない場合はこのままサインアウトできますが、変更は失われ、グループの誰にも表示されません。";
+
+/* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
+"groups.errors.noSessionSignOutLossUnknown" = "まだアップロードされていないグループの変更があります。これらは作成したアカウントでしかアップロードできず、そのアカウントのセッションはこの端末で開かれていません。アップロードするには、そのアカウントで再度サインインしてください。できない場合はこのままサインアウトできますが、変更は失われ、グループの誰にも表示されません。";
+
+/* Cerrar sesión en la nube con la sesión caducada; %d = cambios de grupos que se pierden */
+"settings.signOutCloudSessionExpiredGroupsLoss" = "セッションの有効期限が切れました。未アップロードのグループの変更：%d件。アップロードするには、このプロフィール画面の「データの保存先」を開いて「サインイン」をタップしてください。サインインできない場合はこのままサインアウトできますが、変更は失われ、グループの誰にも表示されません。";
+
+/* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
+"settings.signOutCloudSessionExpiredGroupsLossUnknown" = "セッションの有効期限が切れ、まだアップロードされていないグループの変更があります。アップロードするには、このプロフィール画面の「データの保存先」を開いて「サインイン」をタップしてください。サインインできない場合はこのままサインアウトできますが、変更は失われ、グループの誰にも表示されません。";
+
+/* Vuelta al neutro sin la sesión de la cuenta que apuntó los cambios; %d = cambios de grupos que se pierden */
+"welcome.groups.neutralNoSessionLossBody" = "未アップロードのグループの変更：%d件。これらは作成したアカウントでしかアップロードできず、そのアカウントのセッションはこの端末で開かれていません。今続けると失われ、グループの誰にも表示されません。";
+
+/* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
+"welcome.groups.neutralNoSessionLossBodyUnknown" = "まだアップロードされていないグループの変更があります。これらは作成したアカウントでしかアップロードできず、そのアカウントのセッションはこの端末で開かれていません。今続けると失われ、グループの誰にも表示されません。";
+
+/* Empezar de cero con cambios de grupos de otra cuenta: por qué no suben */
+"groups.freshStartPending.lossOtherAccount" = "これらは作成したアカウントでしかアップロードできませんが、この端末で開いているセッションは別のアカウントのものです。そのアカウントで再度サインインしないなら、変更を失って最初からやり直せます。グループの誰にも表示されません。";

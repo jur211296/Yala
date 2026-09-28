@@ -26,8 +26,14 @@ import Foundation
 import SwiftData
 
 extension CloudSyncSchemaVersions {
-    /// Versión de schema de `GroupSyncOutbox` (testigo A1 en cada fila). Día-1 del canal de Grupos (G2).
-    static let groupSyncOutbox = 1
+    /// Versión de schema de `GroupSyncOutbox` (testigo A1 en cada fila). Día-1 del canal de Grupos (G2). **2 desde el
+    /// 2026-09-28**: la fila nació con su dueño ya decidido (`ownerUserID`, ticket
+    /// `groups-outbox-rows-without-a-live-session-have-no-exit`). Una fila de versión 1 es de un build anterior, y solo a ésa
+    /// se le busca dueño después (`GroupsSyncClient.adoptOwnersForUnownedRows`): una de versión 2 sin dueño se quedó así a
+    /// propósito, y dárselo luego se lo daría a quien tenga la sesión.
+    static let groupSyncOutbox = 2
+    /// La versión de las filas de antes del dueño por fila.
+    static let groupSyncOutboxBeforeOwners = 1
 }
 
 /// Fila de la cola de salida del canal de Grupos. Una por operación de dominio pendiente de sincronizar.
@@ -79,6 +85,16 @@ final class GroupSyncOutbox {
     /// Versión del schema bajo la que se materializó esta fila (testigo A1).
     var schemaVersion: Int = CloudSyncSchemaVersions.groupSyncOutbox
 
+    /// **De quién es este cambio**: el `sub` de la cuenta que lo apuntó (ticket
+    /// `groups-outbox-rows-without-a-live-session-have-no-exit`). Lo estampa el drain con
+    /// `GroupsOutboxOwnershipLogic.owner`, y **nadie lo re-sella después**. `pushPending` solo sube las filas cuyo dueño es
+    /// la sesión viva: las de otra cuenta se quedan para su dueño o para el descarte avisado del cierre, nunca se suben
+    /// firmadas por quien entró después.
+    ///
+    /// `nil` = dueño sin probar: una fila de un build anterior sin entrada en el espejo del App Group, o una capturada sin
+    /// sesión en un teléfono en el que el canal nunca vio una. Tampoco se sube con una sesión: retener gana a reatribuir.
+    var ownerUserID: String?
+
     init(
         syncID: UUID,
         groupID: String,
@@ -93,7 +109,8 @@ final class GroupSyncOutbox {
         createdAt: Date = .now,
         rejectedReason: String? = nil,
         rejectedAt: Date? = nil,
-        schemaVersion: Int = CloudSyncSchemaVersions.groupSyncOutbox
+        schemaVersion: Int = CloudSyncSchemaVersions.groupSyncOutbox,
+        ownerUserID: String? = nil
     ) {
         self.syncID = syncID
         self.groupID = groupID
@@ -109,5 +126,6 @@ final class GroupSyncOutbox {
         self.rejectedReason = rejectedReason
         self.rejectedAt = rejectedAt
         self.schemaVersion = schemaVersion
+        self.ownerUserID = ownerUserID
     }
 }

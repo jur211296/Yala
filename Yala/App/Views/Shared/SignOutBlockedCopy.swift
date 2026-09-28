@@ -34,7 +34,7 @@ enum SignOutBlockedCopy {
         case .permanent, .exportUnconfirmed, .sessionExpired, .bridgeUnreadable, .detachBusy,
              .channelPaused, .uploadRetryLater, .syncStoppedNeedsUpdate, .syncStoppedMidMigration,
              .syncStoppedNeedsRelaunch, .personalUploadRetryLater, .cloudSessionExpired, .sessionNotClosed,
-             .signOutSessionSurvived, .migrationInFlight, .migrationUnreadable:
+             .signOutSessionSurvived, .migrationInFlight, .migrationUnreadable, .groupsChangesFromAnotherAccount:
             return L10n.Settings.signOutBlockedTitle
         }
     }
@@ -89,6 +89,9 @@ enum SignOutBlockedCopy {
         // dice cerrar y abrir Yala.
         case .migrationInFlight: return L10n.Settings.signOutMigrationInFlight
         case .migrationUnreadable: return L10n.Settings.signOutMigrationUnreadable
+        // Cambios de grupos de otra cuenta (2026-09-28): la sesión está viva, así que ni «caducó» ni «revisa tu conexión».
+        // Este es el texto SIN salida; el aviso que ofrece perderlos usa `groupsLossMessage`.
+        case .groupsChangesFromAnotherAccount: return L10n.Groups.Errors.groupsChangesFromAnotherAccount
         case .permanent, .exportUnconfirmed, .bridgeUnreadable, .detachBusy, .sessionNotClosed, .none:
             return L10n.Settings.signOutBlockedMessage
         }
@@ -104,6 +107,32 @@ enum SignOutBlockedCopy {
         return L10n.Groups.Errors.attestUnavailableSignOutLoss(count)
     }
 
+    /// **El título del aviso que OFRECE perder los cambios de grupos, por la causa que lo abre** (ticket
+    /// `groups-outbox-rows-without-a-live-session-have-no-exit`). El attest conserva el suyo —lo que importa ahí es que el
+    /// teléfono no puede sincronizar—; la sesión que no hay y la otra cuenta, el del bloqueo, que es exacto: el cierre no
+    /// se completó.
+    static func groupsLossTitle(for reason: CloudSignOutFlowLogic.BlockReason) -> String {
+        CloudSignOutFlowLogic.lossCause(reason) == .attestUnavailable ? title(for: .attestUnavailable) : title(for: reason)
+    }
+
+    /// **El mensaje del aviso que OFRECE perder los cambios de grupos**, por la causa que lo abre, en Ajustes y en la hoja
+    /// del cambio de Apple ID. Sin sesión y con otra cuenta van juntos —los dos se arreglan entrando con la cuenta que los
+    /// apuntó—, salvo en la nube, donde el texto nombra la puerta para entrar («Dónde viven tus datos»).
+    static func groupsLossMessage(for reason: CloudSignOutFlowLogic.BlockReason, pending: Int) -> String {
+        let count = CloudSignOutFlowLogic.shownLossCount(pending)
+        switch CloudSignOutFlowLogic.lossCause(reason) {
+        case .attestUnavailable:
+            return attestLossMessage(pending: pending)
+        case .noSession where reason == .cloudSessionExpired:
+            return count.map { L10n.Settings.signOutCloudSessionExpiredGroupsLoss($0) }
+                ?? L10n.Settings.signOutCloudSessionExpiredGroupsLossUnknown
+        case .noSession, .otherAccount:
+            return count.map { L10n.Groups.Errors.noSessionSignOutLoss($0) } ?? L10n.Groups.Errors.noSessionSignOutLossUnknown
+        case nil:
+            return message(for: reason)
+        }
+    }
+
     /// Lo mismo para la puerta de Grupos del Welcome, que no habla de «cerrar sesión» sino de «continuar», como ya adapta
     /// el aviso de la espera de iCloud (`L10n.Welcome.Groups.neutralStalledBody`).
     static func welcomeAttestLossMessage(pending: Int) -> String {
@@ -111,6 +140,15 @@ enum SignOutBlockedCopy {
             return L10n.Welcome.Groups.neutralAttestLossBodyUnknown
         }
         return L10n.Welcome.Groups.neutralAttestLossBody(count)
+    }
+
+    /// Lo mismo, en la puerta de Grupos del Welcome, con los cambios que solo suben con una sesión que no está (ticket
+    /// `groups-outbox-rows-without-a-live-session-have-no-exit`).
+    static func welcomeNoSessionLossMessage(pending: Int) -> String {
+        guard let count = CloudSignOutFlowLogic.shownLossCount(pending) else {
+            return L10n.Welcome.Groups.neutralNoSessionLossBodyUnknown
+        }
+        return L10n.Welcome.Groups.neutralNoSessionLossBody(count)
     }
 
     /// **«Empezar de cero» no borró porque quedan cambios de grupos sin subir** (ticket
@@ -138,6 +176,7 @@ enum SignOutBlockedCopy {
         case .sessionExpired: return L10n.Groups.FreshStartPending.lossSessionExpired
         case .permanent: return L10n.Groups.FreshStartPending.lossPermanent
         case .attestUnavailable: return L10n.Groups.FreshStartPending.lossAttest
+        case .groupsChangesFromAnotherAccount: return L10n.Groups.FreshStartPending.lossOtherAccount
         case .transient, .exportUnconfirmed, .bridgeUnreadable, .detachBusy, .channelPaused, .uploadRetryLater,
              .personalAttestUnavailable, .syncStoppedNeedsUpdate, .syncStoppedMidMigration, .syncStoppedNeedsRelaunch,
              .personalUploadRetryLater, .cloudSessionExpired, .sessionNotClosed, .signOutSessionSurvived,

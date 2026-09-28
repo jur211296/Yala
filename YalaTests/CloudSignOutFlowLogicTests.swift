@@ -375,6 +375,8 @@ struct CloudSignOutGroupsReasonTests {
             // Los de la migración los pone solo el cierre PRIVADO (2026-09-27): este productor, de la nube, no los recibe.
             .migrationInFlight: .permanent,
             .migrationUnreadable: .permanent,
+            // Los cambios de otra cuenta viajan tal cual (2026-09-28): la sesión está viva y su aviso ofrece perderlos.
+            .groupsChangesFromAnotherAccount: .groupsChangesFromAnotherAccount,
         ]
         #expect(CloudSignOutFlowLogic.BlockReason.allCases.count == esperado.count, """
             Hay un motivo de bloqueo sin traducción escrita para el cierre en la nube. Decídelo aquí: el
@@ -445,6 +447,8 @@ struct CloudSignOutGroupsReasonTests {
             // Solo el cierre PRIVADO (2026-09-27), no el push-all personal de la nube.
             .migrationInFlight: .permanent,
             .migrationUnreadable: .permanent,
+            // Es de las filas de GRUPOS de otra cuenta (2026-09-28): el motor personal no lo emite.
+            .groupsChangesFromAnotherAccount: .permanent,
         ]
         #expect(CloudSignOutFlowLogic.BlockReason.allCases.count == esperado.count, """
             Hay un motivo de bloqueo sin decisión escrita para el paso 1 del cierre en la nube. Decide aquí si viaja.
@@ -536,6 +540,8 @@ struct GroupsSignOutRetryDecisionTests {
             // tampoco pasan por aquí.
             .migrationInFlight: .retryAfter(seconds: GroupsSignOutRetryDecision.retryIntervalSeconds),
             .migrationUnreadable: .retryAfter(seconds: GroupsSignOutRetryDecision.retryIntervalSeconds),
+            // Los cambios de otra cuenta (2026-09-28): esta sesión no los sube nunca, así que se enseñan al momento.
+            .groupsChangesFromAnotherAccount: .surfacePermanent,
         ]
         #expect(CloudSignOutFlowLogic.BlockReason.allCases.count == esperado.count, """
             Hay un motivo de bloqueo sin decisión escrita. `decide` no es un `switch`, así que se lo va a
@@ -603,7 +609,8 @@ struct PrivateSignOutWiringTests {
     @Test("los grupos suben ANTES de la espera, y la espera va ANTES del borrado")
     func groupsThenExportThenWipe() throws {
         let perform = try Self.body(of: Self.performMarker, in: Self.source(Self.signOutPath))
-        let groupsCheck = try #require(perform.range(of: "if blockIfGroupsCannotUpload(context: context, kind: plan.kind) { return }"), """
+        let groupsCheck = try #require(perform.range(
+            of: "if blockIfGroupsCannotUpload(context: context, kind: plan.kind, lossExit: .sessionExit(plan)) { return }"), """
             La privada dejó de mirar sus grupos sin subir: el boot-wipe borraría el outbox de una sesión caducada.
             """)
         let push = try #require(perform.range(of: "await pushGroupsForSignOut(context: context, lossExit: .sessionExit(plan))"))
@@ -612,6 +619,10 @@ struct PrivateSignOutWiringTests {
             haber subido.
             """)
         let finalize = try #require(perform.range(of: "await finalizeSessionExit("))
+        // La privada captura lo que solo vive en el History ANTES de contar lo que se perdería (2026-09-28).
+        let capture = try #require(perform.range(
+            of: "guard await captureGroupsBeforeCountingThem(context: context, kind: plan.kind) else { return }"))
+        #expect(capture.lowerBound < groupsCheck.lowerBound)
         #expect(groupsCheck.lowerBound < push.lowerBound)
         #expect(push.lowerBound < gate.lowerBound)
         #expect(gate.lowerBound < finalize.lowerBound)
@@ -682,7 +693,8 @@ struct PrivateSignOutWiringTests {
         let source = try Self.source(Self.signOutPath)
         let finalize = try Self.body(of: Self.finalizeMarker, in: source)
         let arm = try Self.body(of: Self.armMarker, in: source)
-        let groupsCheck = try #require(arm.range(of: "if blockIfGroupsCannotUpload(context: context, kind: kind) { return }"), """
+        let groupsCheck = try #require(arm.range(
+            of: "if blockIfGroupsCannotUpload(context: context, kind: kind, lossExit: .finalize(kind: kind, export: export)) { return }"), """
             El último tramo dejó de mirar los grupos sin subir de la privada: una fila encolada durante la \
             espera moriría con el wipe.
             """)
@@ -852,7 +864,8 @@ struct PausedChannelReasonWiringTests {
         let push = try Self.body(
             of: "private func pushGroupsForSignOut(context: ModelContext, lossExit: GroupsLossResume?) async -> Bool {",
             in: try Self.source(Self.signOutPath))
-        #expect(push.contains("phase = .blocked(pendingCount: pending, reason: reason)"), """
+        // Desde el 2026-09-28 la cifra es `shown`: la de las filas que la oferta acepta, cuando el motivo abre la salida.
+        #expect(push.contains("phase = .blocked(pendingCount: shown, reason: reason)"), """
             El bloqueo del push-all dejó de propagar su motivo. Todo lo que `decide` manda mostrar al \
             momento —sesión caducada, cuenta no disponible y canal en pausa— llega a la pantalla como el \
             mismo aviso.
@@ -970,9 +983,9 @@ struct PausedChannelReasonWiringTests {
             of: "private func presentSignOutBlock(_ reason: CloudSignOutFlowLogic.BlockReason) {",
             in: profileFile))
         #expect(present.contains(Self.squashed("""
-            case .permanent, .sessionExpired, .channelPaused, .uploadRetryLater,
+            case .permanent, .channelPaused, .uploadRetryLater,
                  .syncStoppedNeedsUpdate, .syncStoppedMidMigration, .syncStoppedNeedsRelaunch, .personalUploadRetryLater,
-                 .cloudSessionExpired, .signOutSessionSurvived, .migrationInFlight, .migrationUnreadable:
+                 .signOutSessionSurvived, .migrationInFlight, .migrationUnreadable:
                 showSignOutBlockedAlert = true
             """)), """
             El fallo pasajero de la subida, o uno de los tres del motor parado (2026-09-25), dejó de entrar por el \
@@ -1050,7 +1063,7 @@ struct PausedChannelReasonWiringTests {
             La puerta de grupos del Welcome perdió su rama del canal en pausa: vuelve a decirle a quien \
             acepta una invitación que entre con su cuenta, sobre un 403 que no depende de la sesión.
             """)
-        let catchAll = try #require(gate.range(of: "\n        case .blocked:"))
+        let catchAll = try #require(gate.range(of: "\n        case .blocked(let pending, let reason):"))
         // **El literal, dentro de SU rama y no en el fichero.** Con un `contains` a nivel de fichero,
         // intercambiar los dos `body:` —el copy de pausa al catch-all y el de «vuelve a entrar» a la rama
         // de pausa— pasaba las tres aserciones: justo el fallo que esto existe para impedir.
@@ -1117,7 +1130,7 @@ struct WelcomeGateTransientBlockWiringTests {
     @Test("las dos ramas de lo pasajero van antes del catch-all y cada una enseña SU texto")
     func bothTransientBranchesShowTheirOwnCopy() throws {
         let gate = try Self.source("Yala/App/Views/Onboarding/WelcomeGroupsGateView.swift")
-        let catchAll = try #require(gate.range(of: "\n        case .blocked:"))
+        let catchAll = try #require(gate.range(of: "\n        case .blocked(let pending, let reason):"))
         for rama in Self.ramas {
             let inicio = try #require(gate.range(of: rama.patrón), """
                 La puerta de Grupos del Welcome perdió la rama de \(rama.qué): esa población vuelve al catch-all, \
@@ -1407,14 +1420,25 @@ struct AttestUnavailableSignOutWiringTests {
         let exit = Self.squashed(try Self.body(
             of: "func exitDiscardingUnsyncedGroups(context: ModelContext) async {", in: Self.source(Self.signOutPath)))
         #expect(exit.contains(Self.squashed(
-            "guard case .blocked(let shown, .attestUnavailable) = phase, let offer = groupsLossExit else { return }")), """
+            "guard offersGroupsLossExit, case .blocked(let shown, _) = phase, let offer = groupsLossExit else { return }")), """
             Sin el guard, «Cerrar sesión y perderlos» descartaría cambios de grupos sin que ningún aviso lo haya \
             ofrecido, o desde un bloqueo que puso el desasociar.
             """)
-        #expect(exit.contains(Self.squashed("acceptedGroupsLoss = offer.rows.map { .rows($0) } ?? .uncounted")), """
-            Lo aceptado dejó de ser las filas que contó el aviso: con una cifra, una fila nueva de la misma cuenta se \
-            perdería sin que nadie la avisara.
+        #expect(exit.contains(Self.squashed("""
+            acceptedGroupsLoss = CloudSignOutFlowLogic.GroupsLossAcceptance(
+                rows: offer.rows.map { .rows($0) } ?? .uncounted, cause: offer.cause)
+            """)), """
+            Lo aceptado dejó de ser las filas que contó el aviso, o perdió su causa: con una cifra, una fila nueva de la \
+            misma cuenta se perdería sin que nadie la avisara; sin causa, un reintento que falla por otra cosa se la llevaría.
             """)
+        // **La oferta tiene que ser de la causa del bloqueo que se enseña** (2026-09-28): con una oferta del attest viva y la
+        // fase cambiada a la sesión caducada, el botón aceptaría perder por una causa que el aviso no dice.
+        let offers = Self.squashed(try Self.body(of: "var offersGroupsLossExit: Bool {", in: Self.source(Self.signOutPath)))
+        #expect(offers == Self.squashed("""
+            guard case .blocked(_, let reason) = phase, let cause = CloudSignOutFlowLogic.lossCause(reason),
+                  let offer = groupsLossExit else { return false }
+            return offer.cause == cause
+            """))
         for resume in ["await performSessionExit(context: context, plan: plan)",
                        "await finalizeSessionExit(context: context, kind: kind, export: export)",
                        "await performCloudSecureSignOut(context: context)"] {
@@ -1434,13 +1458,15 @@ struct AttestUnavailableSignOutWiringTests {
             of: "private func pushGroupsForSignOut(context: ModelContext, lossExit: GroupsLossResume?) async -> Bool {",
             in: source))
         let note = try #require(push.range(of: Self.squashed("""
-            if reason == .attestUnavailable {
-                groupsLossExit = lossExit.map {
-                    GroupsLossOffer(resume: $0, rows: Self.liveGroupsPendingRowIDs(context: context))
-                }
+            let lossCause = CloudSignOutFlowLogic.lossCause(reason)
+            var shown = pending
+            if let lossCause, let lossExit {
+                let rows = groupsLossRowIDs(context: context)
+                groupsLossExit = GroupsLossOffer(resume: lossExit, rows: rows, cause: lossCause)
+                shown = rows?.count ?? Int.max
             }
             """)))
-        let phase = try #require(push.range(of: "phase = .blocked(pendingCount: pending, reason: reason)"))
+        let phase = try #require(push.range(of: "phase = .blocked(pendingCount: shown, reason: reason)"))
         #expect(note.lowerBound < phase.lowerBound, """
             La salida se anota DESPUÉS de la fase: quien reacciona a la fase pregunta `offersGroupsLossExit`, no la \
             encuentra, y el aviso sale sin su botón.
@@ -1448,15 +1474,18 @@ struct AttestUnavailableSignOutWiringTests {
         let cloud = Self.squashed(try Self.body(
             of: "private func performCloudSecureSignOut(context: ModelContext) async {", in: source))
         let cloudNote = try #require(cloud.range(of: Self.squashed("""
-            if shown == .attestUnavailable {
-                groupsLossExit = GroupsLossOffer(resume: .cloud, rows: Self.liveGroupsPendingRowIDs(context: context))
+            let offerRows = groupsLossRowIDs(context: context)
+            let lossCause = CloudSignOutFlowLogic.lossCause(shown)
+            if let lossCause {
+                groupsLossExit = GroupsLossOffer(resume: .cloud, rows: offerRows, cause: lossCause)
             }
+            let shownCount = lossCause == nil ? pending : (offerRows?.count ?? Int.max)
             """)))
         // Desde el 2026-09-25 el paso 1 también escribe `phase = .blocked(pendingCount: pending, reason: shown)` (la puerta
         // de la sesión caducada), así que la fase del paso 2 se busca DESPUÉS de su propia traducción.
         let groupsShown = try #require(cloud.range(
             of: "let shown = CloudSignOutFlowLogic.cloudSignOutGroupsBlockReason(reason)"))
-        let cloudPhase = try #require(cloud.range(of: "phase = .blocked(pendingCount: pending, reason: shown)",
+        let cloudPhase = try #require(cloud.range(of: "phase = .blocked(pendingCount: shownCount, reason: shown)",
                                                   range: groupsShown.upperBound..<cloud.endIndex))
         #expect(groupsShown.upperBound <= cloudNote.lowerBound)
         #expect(cloudNote.lowerBound < cloudPhase.lowerBound)
@@ -1473,14 +1502,14 @@ struct AttestUnavailableSignOutWiringTests {
             guard residualPersonal == 0 || CloudSignOutFlowLogic.continuesWithoutUploading(
                       pendingRows: controller.livePendingUploadRowIDs(), acceptance: acceptedPersonalLoss),
                   residualGroups == 0 || CloudSignOutFlowLogic.continuesWithoutUploading(
-                      pendingRows: Self.liveGroupsPendingRowIDs(context: context), acceptance: acceptedGroupsLoss) else {
+                      pendingRows: Self.liveGroupsPendingRowIDs(context: context), acceptance: acceptedGroupsLoss?.rows) else {
             """)), "El residual de la nube cruzó las aceptaciones: cada outbox tiene que compararse con la suya.")
         let finalize = Self.squashed(try Self.body(
             of: "private func finalizeSessionExit(context: ModelContext, kind: CloudSignOutFlowLogic.ExitKind, export: ExportPolicy) async {",
             in: source))
         #expect(finalize.contains(Self.squashed("""
             guard residual == 0 || CloudSignOutFlowLogic.continuesWithoutUploading(
-                pendingRows: Self.liveGroupsPendingRowIDs(context: context), acceptance: acceptedGroupsLoss) else {
+                pendingRows: Self.liveGroupsPendingRowIDs(context: context), acceptance: acceptedGroupsLoss?.rows) else {
             """)))
     }
 
@@ -1535,8 +1564,23 @@ struct AttestUnavailableSignOutWiringTests {
             Ajustes enciende el aviso de la pérdida sin comprobar que la puso un cierre: sobre un bloqueo del \
             desasociar ofrecería cerrar la sesión entera perdiendo cambios.
             """)
+        // La sesión caducada y los cambios de otra cuenta (2026-09-28): mismo aviso con la salida de un cierre, y el de
+        // bloqueo de siempre sin ella.
+        #expect(present.contains(Self.squashed("""
+            case .sessionExpired, .cloudSessionExpired:
+                if signOutCoordinator.offersGroupsLossExit {
+                    showSignOutAttestLossAlert = true
+                } else {
+                    showSignOutBlockedAlert = true
+                }
+            """)))
+        // Y los cambios de otra cuenta sin salida —el desasociar— no encienden el aviso del cierre.
+        #expect(present.contains(Self.squashed("""
+            case .groupsChangesFromAnotherAccount:
+                if signOutCoordinator.offersGroupsLossExit { showSignOutAttestLossAlert = true }
+            """)))
         #expect(Self.squashed(profile).contains(Self.squashed("""
-            .alert(L10n.Groups.Errors.attestUnavailableTitle, isPresented: $showSignOutAttestLossAlert) {
+            .alert(SignOutBlockedCopy.groupsLossTitle(for: signOutGroupsLossReason), isPresented: $showSignOutAttestLossAlert) {
                 Button(L10n.Groups.Errors.attestUnavailableSignOutLossButton, role: .destructive) {
                     Task { await CloudSessionSignOut.shared.exitDiscardingUnsyncedGroups(context: modelContext) }
                 }
@@ -1544,7 +1588,7 @@ struct AttestUnavailableSignOutWiringTests {
                     CloudSessionSignOut.shared.acknowledgeBlocked()
                 }
             } message: {
-                Text(SignOutBlockedCopy.attestLossMessage(pending: signOutAttestLossPending))
+                Text(SignOutBlockedCopy.groupsLossMessage(for: signOutGroupsLossReason, pending: signOutAttestLossPending))
             }
             """)))
     }
@@ -1582,8 +1626,29 @@ struct AttestUnavailableSignOutWiringTests {
                         } label: {
                             Text(L10n.Welcome.Groups.neutralAttestLossContinue)
             """)))
+        // La sesión caducada y los cambios de otra cuenta (2026-09-28): la misma rama, el mismo guard del invitado.
+        #expect(gate.contains(Self.squashed("""
+            let cause = CloudSignOutFlowLogic.lossCause(reason)
+            let offersLoss = purpose.invitedGroupID == nil && (cause == .noSession || cause == .otherAccount)
+                && CloudSessionSignOut.shared.offersGroupsLossExit
+            noticeShell(icon: "arrow.trianglehead.2.clockwise.rotate.90",
+                        title: L10n.Welcome.Groups.neutralBlockedTitle,
+                        body: offersLoss
+                            ? SignOutBlockedCopy.welcomeNoSessionLossMessage(pending: pending)
+                            : L10n.Welcome.Groups.neutralBlockedBody,
+                        identifier: "welcome_groups_gate_neutral_blocked") {
+                VStack(spacing: DS.Spacing.sm) {
+                    YalaPrimaryButton(L10n.Welcome.Groups.gateBack) { leaveAfterBlock() }
+                        .accessibilityIdentifier("welcome_groups_gate_neutral_blocked_back")
+                    if offersLoss {
+                        Button(role: .destructive) {
+                            intento += 1
+                            phase = .discardingUnsyncedGroups(intento: intento)
+            """)), "La rama de la sesión caducada dejó de negarle la salida al invitado, o su botón no retoma el cierre.")
         let association = Self.squashed(try Self.source("Yala/App/Views/Settings/GroupsAssociationSection.swift"))
         #expect(association.contains("case .attestUnavailable: return L10n.Groups.Errors.attestUnavailable"))
+        #expect(association.contains(
+            "case .groupsChangesFromAnotherAccount: return L10n.Groups.Errors.groupsChangesFromAnotherAccount"))
     }
 
     @Test("MUTACIÓN: Ajustes guarda la cifra del bloqueo, y las pantallas de salir de un grupo leen el veredicto")
@@ -1591,7 +1656,12 @@ struct AttestUnavailableSignOutWiringTests {
         let profile = try Self.source("Yala/App/Views/Profile/ProfileView.swift")
         let sync = Self.squashed(try Self.body(
             of: "private func syncSignOutUI(from phase: CloudSessionSignOut.Phase) {", in: profile))
-        #expect(sync.contains("if reason == .attestUnavailable { signOutAttestLossPending = pending }"), """
+        #expect(sync.contains(Self.squashed("""
+            if CloudSignOutFlowLogic.lossCause(reason) != nil {
+                signOutAttestLossPending = pending
+                signOutGroupsLossReason = reason
+            }
+            """)), """
             Ajustes dejó de guardar la cifra del bloqueo: el aviso saldría siempre sin cifra y la persona aceptaría \
             perder cambios sin saber cuántos.
             """)
