@@ -5,22 +5,34 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-28 (Lima)
 
-**Rama** `2.1` — Merge #291: **el barrido semanal deja 23 tickets de device-QA, con un guion de un día en `qa/guion-tanda.md`.**
+**Rama** `2.1` — Merge #292: **lo que el dispositivo que vació promete reponer y no repone vuelve igual, a los tres días.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
-> ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
-> `-destination 'platform=iOS Simulator,name=iPhone 17 Pro'` sin `OS=` significa `OS:latest` = **iOS 27.0**, y no
-> hay ningún device de 27.0 creado (el runtime sí está instalado). Eso sale con **exit 70 y CERO tests**, que es
-> el modo de fallo que el gate existe para no cometer. Se corre con
-> `-destination 'platform=iOS Simulator,id=9D0F6D32-1F49-46AD-8070-603D42B5220F'` (iPhone 17 Pro en 26.5) y pasa
-> entero: `SDKROOT` es el 27.0 y el deployment target es 26.0. Ticket:
-> `the-gate-destination-no-longer-resolves-on-this-mac`.
->
-> **La licencia de Xcode 27.0 SÍ está aceptada** — `IDEXcodeVersionForAgreedToGMLicense = 27.0`, y
-> `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
-> correr un gate en esta máquina», era falso: se midió y se retira.
+> **El destino del gate vuelve a resolver** (medido el 28-sep): hay un iPhone 17 Pro de **iOS 27.0**
+> (`9EDA6AAF-B37D-45DD-A158-17527B306AB0`) y `-showdestinations` lo lista, así que `name=iPhone 17 Pro` casa. El
+> `9D0F6D32` (26.5) que citaba el aviso anterior **ya no existe**. El ticket
+> `the-gate-destination-no-longer-resolves-on-this-mac` tiene la premisa cambiada: medirlo antes de trabajarlo.
 
-## Esta sesión (#291 · el barrido semanal de `qa`: de 51 tickets a 23)
+## Esta sesión (#292 · lo que el origen de «Vaciar datos» promete y no repone)
+
+Vacío mis datos en el iPad, que tiene los mismos grupos, y no lo vuelvo a abrir: en el iPhone los gastos y liquidaciones
+de grupo no volvían nunca, porque el iPhone se los dejaba al iPad. Ahora, si a las **72 horas** de resolver el reparto no
+han llegado, los repone el iPhone, una vez; lo que el iPad sí repuso no se toca.
+
+- `GroupsRemoteWipeDivision.takeOverIfOverdue`, en el arranque tras la convergencia; la promesa la apunta `resolveIfArrived`.
+- **Verificado:** repro en rojo primero; review de dos lentes (cambió el reloj del techo y el criterio de «llegó»); 9/9
+  mutantes; gate con `YalaTests` entero (8407) y 14 XCUITest en verde (uno, flake de arranque, verde aislado). CI verde
+  tras relanzar un runner que no encontraba el simulador.
+- Ticket a `done` sin device-QA (dos dispositivos y 72 h de espera). Nuevo en backlog, low:
+  `wipe-division-takeover-can-cross-a-late-origin-before-the-mirror` (si el iPad repone justo cuando el iPhone deja de
+  esperar, un pago de grupo puede salir con dos borradores).
+
+### Lo que espera de Jürgen
+
+- Nada nuevo. Sigue en pie **el guion de `qa/guion-tanda.md`** (sesión anterior).
+- Cola A se reanuda con el siguiente ticket.
+
+## Sesión anterior (#291 · el barrido semanal de `qa`: de 51 tickets a 23)
 
 La cola de device-QA había vuelto a 51 en cinco días. Con el criterio del 23-sep (#224):
 
