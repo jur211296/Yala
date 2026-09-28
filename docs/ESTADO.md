@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-27 (Lima)
 
-**Rama** `2.1` — Merge #286: **fase 0 del carril adaptativo: en iPad (y en el Duo) ya no se abre una segunda ventana rota.**
+**Rama** `2.1` — Merge #287: **si el dispositivo que procesa tarde «Vaciar datos» no tiene Grupos, los gastos de grupo vuelven igual.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,29 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#286 · fase 0: multiventana apagada en iPad y Duo)
+## Esta sesión (#287 · el receptor sin Grupos del vaciado tardío ya no deja al parque sin los gastos de grupo)
+
+Si vaciabas tus datos en el iPhone y abrías días después un iPad que nunca entró en tu cuenta de grupos, el iPad se
+vaciaba, su borrado viajaba por iCloud y los gastos y liquidaciones de grupo desaparecían del iPhone para siempre: el
+iPad no podía reponerlos porque no tiene los grupos. Ahora:
+
+- **El iPad declara lo que se lleva** (en el iCloud del Apple ID, antes de borrar) y repone él solo lo que sí tiene.
+- **El iPhone lo repone cuando ya falta**, en su siguiente arranque en frío tras recibir el borrado: por fila, nunca
+  debajo de un borrado que aún no llegó, y una vez por declaración.
+
+**Verificado:** review adversarial de tres lentes (tumbó la primera versión) y re-review del rediseño; 29/29 mutantes;
+gate con 1396 unit en 130 suites y 14 XCUITest (un rojo: el flaky conocido `test_extremeMinimumAmountSaves`, 1 de 2
+aislado, anotado en su ticket). CI verde. Ticket a `qa`.
+
+### Lo que espera de Jürgen
+
+- **Device-QA opcional**, con dos dispositivos del mismo Apple ID y el iPad sin cuenta de grupos: guion en
+  `tickets/qa/late-remote-wipe-on-a-device-without-groups-cannot-return-the-rows.md`.
+- Nuevo en backlog: `settlement-approval-leaves-no-trace-so-a-rebridge-asks-again` (medium). Una liquidación ya aprobada
+  puede volver a pedir su cuenta tras un vaciado tardío; arreglarlo cambia D7.
+- Disco: bajó a ~4-6 GB durante la sesión (simuladores `YalaLane-…` de otra sesión, que no se tocaron).
+
+## Sesión anterior (#286 · fase 0: multiventana apagada en iPad y Duo)
 
 Hasta hoy, en iPad se podía abrir una segunda ventana de Yala que compartía pestaña, hojas y destino de widgets con la
 primera. El Duo, a la venta el 23-oct, lo habría heredado. Queda apagado hasta la fase 4
