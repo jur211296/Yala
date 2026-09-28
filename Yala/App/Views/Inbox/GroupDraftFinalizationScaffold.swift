@@ -139,7 +139,6 @@ struct GroupDraftFinalizationScaffold<Selector: View>: View {
                     .font(.system(size: fontSize, weight: .bold, design: .rounded))
                     .foregroundStyle(amountColor)
             }
-            .dynamicTypeSize(...DynamicTypeSize.accessibility1)
         }
     }
 

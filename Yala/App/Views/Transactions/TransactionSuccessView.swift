@@ -140,7 +140,6 @@ struct TransactionSuccessView: View {
                         Image(systemName: "checkmark")
                             .font(.system(size: heroIconSize, weight: .semibold))
                             .foregroundStyle(.white)
-                            .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                             .scaleEffect(showCheckmark ? 1.0 : 0.0)
                             .opacity(showCheckmark ? 1.0 : 0.0)
                             .accessibilityHidden(true)

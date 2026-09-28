@@ -53,7 +53,6 @@ struct SiriShortcutsView: View {
                 .padding(.bottom, DS.Spacing.safeBottom)
             }
         .yalaScreenBackground(.subtle)
-        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
         .navigationTitle(String(localized: "siriShortcuts.title"))
         .navigationBarTitleDisplayMode(.inline)
         .swipeBack()

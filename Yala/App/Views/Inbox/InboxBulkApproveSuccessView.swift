@@ -50,7 +50,6 @@ struct InboxBulkApproveSuccessView: View {
                 Image(systemName: "checkmark")
                     .font(.system(size: checkmarkSize, weight: .medium))
                     .foregroundStyle(.white)
-                    .dynamicTypeSize(...DynamicTypeSize.accessibility1)
             }
 
             // Count and label
@@ -58,7 +57,6 @@ struct InboxBulkApproveSuccessView: View {
                 Text("\(approvedCount)")
                     .font(Font.system(.largeTitle, design: .rounded).weight(.bold))
                     .foregroundStyle(.thAccent)
-                    .dynamicTypeSize(...DynamicTypeSize.accessibility1)
 
                 Text(approvedCount == 1 ? L10n.Inbox.transactionCreated : L10n.Inbox.transactionsCreated)
                     .font(DS.Typography.subheadline)

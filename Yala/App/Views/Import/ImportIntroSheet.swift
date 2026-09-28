@@ -45,7 +45,6 @@ struct ImportResultOverlay: View {
                 Image(systemName: result.isSuccess ? "checkmark.circle.fill" : "xmark.circle.fill")
                     .font(.system(size: heroSize))
                     .foregroundStyle(result.isSuccess ? Color.financeGreen : DS.Semantic.errorForeground)
-                    .dynamicTypeSize(...DynamicTypeSize.accessibility1)
 
                 // Title
                 Text(result.isSuccess ? L10n.Import.completed : L10n.Import.importError)
@@ -246,7 +245,6 @@ struct ImportIntroSheet: View {
             Image(systemName: "square.and.arrow.down")
                 .font(.system(size: heroIconSize))
                 .foregroundStyle(.thAccent)
-                .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                 .padding(.bottom, DS.Spacing.sm)
 
             Text(L10n.Import.title)

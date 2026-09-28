@@ -127,7 +127,6 @@ struct DowngradeResolutionSheet: View {
         VStack(spacing: DS.Spacing.md) {
             Image(systemName: "exclamationmark.triangle.fill")
                 .font(.system(size: heroIconSize))
-                .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                 .foregroundStyle(
                     LinearGradient(
                         colors: DS.Gradients.warning,

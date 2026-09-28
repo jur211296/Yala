@@ -24,7 +24,6 @@ struct LanguageSelectionView: View {
                 Image(systemName: "globe")
                     .font(.system(size: heroSize))
                     .foregroundStyle(Color.electricIndigo)
-                    .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                     .accessibilityHidden(true)
 
                 Text(L10n.Onboarding.languageTitle)

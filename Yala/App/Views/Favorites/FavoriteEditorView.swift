@@ -286,7 +286,6 @@ struct FavoriteEditorView: View {
                     }
                 }
         }
-        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
     }
 
     private var currencySymbol: String {

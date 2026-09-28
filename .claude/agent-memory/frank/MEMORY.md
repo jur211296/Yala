@@ -179,6 +179,7 @@
 - [Desarmar desde más sitios reparte lo compartido](feedback_desarmar_desde_mas_sitios_reparte_lo_compartido.md) — el desarme retiraba un neutro con dos dueños.
 - [«Cero warnings» se mide en TODOS los logs](feedback_cero_warnings_se_mide_en_todos_los_logs.md) — el gate no mira los test…
 - [Lo que hago visible hereda los botones de su pantalla](feedback_lo_que_hago_visible_hereda_los_botones_de_su_pantalla.md) — la marca en Archivados y su «Eliminar» en lote.
+- [«Sin cambios visibles» se mide al píxel](feedback_sin_cambios_visibles_se_mide_al_pixel.md) — el ojo pasó un truncado del SE; diff antes/después.
 
 ## Estado del trabajo
 - [La salida del adopt cierra su sesión](project_adopt_exit_cierra_la_sesion.md) — #230 y #231, 24-sep; dos low de la review.

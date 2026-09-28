@@ -159,7 +159,6 @@ struct PersonalDetailsView: View {
                 Image(systemName: selectedIcon)
                     .font(.system(size: avatarSize))
                     .foregroundStyle(theme.accent)
-                    .dynamicTypeSize(...DynamicTypeSize.accessibility1)
             } else {
                 // Default
                 Circle()
@@ -169,7 +168,6 @@ struct PersonalDetailsView: View {
                 Image(systemName: "person.fill")
                     .font(.system(size: avatarSize))
                     .foregroundStyle(theme.accent)
-                    .dynamicTypeSize(...DynamicTypeSize.accessibility1)
             }
 
             // Edit badge overlay

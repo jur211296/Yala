@@ -468,7 +468,6 @@ struct OnboardingView: View {
                         Image(systemName: "target")
                             .font(.system(size: heroIconSize))
                             .foregroundStyle(primaryTextStyle)
-                            .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                             .accessibilityHidden(true)
 
                         Text(L10n.Onboarding.purposeTitle)
@@ -536,7 +535,6 @@ struct OnboardingView: View {
                         Image(systemName: "building.columns.fill")
                             .font(.system(size: heroIconSize))
                             .foregroundStyle(primaryTextStyle)
-                            .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                             .accessibilityHidden(true)
 
                         Text(L10n.Onboarding.accountsTitle)
@@ -659,7 +657,6 @@ struct OnboardingView: View {
                         Image(systemName: "wallet.bifold")
                             .font(.system(size: heroIconSize))
                             .foregroundStyle(primaryTextStyle)
-                            .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                             .accessibilityHidden(true)
 
                         Text(L10n.Onboarding.accountTypeTitle)
@@ -737,7 +734,6 @@ struct OnboardingView: View {
                     Image(systemName: wantsSeparateAccounts ? "pencil.circle" : "star.circle")
                         .font(.system(size: heroIconSize))
                         .foregroundStyle(primaryTextStyle)
-                        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                         .accessibilityHidden(true)
 
                     Text(wantsSeparateAccounts
@@ -836,7 +832,6 @@ struct OnboardingView: View {
                         Image(systemName: "dollarsign.circle.fill")
                             .font(.system(size: heroIconSize))
                             .foregroundStyle(primaryTextStyle)
-                            .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                             .accessibilityHidden(true)
 
                         Text(L10n.Onboarding.balanceTitle)
@@ -1272,7 +1267,6 @@ struct OnboardingView: View {
                         Image(systemName: "square.grid.2x2.fill")
                             .font(.system(size: heroIconSize))
                             .foregroundStyle(primaryTextStyle)
-                            .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                             .accessibilityHidden(true)
 
                         Text(L10n.Onboarding.categoriesTitle)

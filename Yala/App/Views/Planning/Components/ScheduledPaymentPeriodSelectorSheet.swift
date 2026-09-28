@@ -32,7 +32,6 @@ struct ScheduledPaymentPeriodSelectorSheet: View {
 
                     Image(systemName: "calendar")
                         .font(.system(size: scaledIconSize, weight: .medium))
-                        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                         .foregroundStyle(.thAccent)
                         .accessibilityHidden(true)
                 }

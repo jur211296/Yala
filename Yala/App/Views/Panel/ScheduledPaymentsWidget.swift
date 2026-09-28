@@ -71,6 +71,8 @@ struct ScheduledPaymentsWidget: View {
                 }
             }
         }
+        // Tope con motivo: la tarjeta pequeña del Panel tiene alto fijo (`WidgetSize.smallHeight`) y comparte
+        // fila con otra; pasado AX1 la cabecera, la cifra y el anillo no caben y se cortan entre sí.
         .dynamicTypeSize(...DynamicTypeSize.accessibility1)
     }
 

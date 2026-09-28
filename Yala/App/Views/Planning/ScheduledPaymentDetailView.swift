@@ -158,7 +158,10 @@ struct ScheduledPaymentDetailView: View {
 
                 Text(formatAmount(payment.amount, isEstimate: payment.isVariableAmount))
                     .font(DS.Typography.largeTitle)
-                    .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+                    // Crece con el texto del sistema y, si un importe largo no cabe en el ancho, se encoge en
+                    // vez de cortarse. Sustituye al tope en AX1, que lo dejaba pequeño a propósito.
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
                     .foregroundStyle(payment.transactionType == "income" ? Color.electricIndigo : .primary)
 
                 if payment.isVariableAmount {

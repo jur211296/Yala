@@ -817,7 +817,6 @@ struct NewTransactionView: View {
                     }
                 }
         }
-        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
         .animation(.easeInOut(duration: DS.Animation.fast), value: viewModel.transactionType)
     }
 

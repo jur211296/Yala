@@ -19,10 +19,13 @@ struct InboxDraftRowView: View {
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(\.tagCatalog) private var tagCatalog
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
         Button(action: onTap) {
-            HStack(spacing: DS.ListRow.spacing) {
+            // A tamaños de accesibilidad el importe baja bajo el concepto (`AdaptiveRowStack`), como en
+            // `RecordRowView`: en fila se cortaba («S/-…50»). Apilada, icono y texto quedan juntos en su propia fila.
+            AdaptiveRowStack(spacing: DS.ListRow.spacing, stackedSpacing: DS.Spacing.sm) {
                 // Selection circle (only in selection mode)
                 if isSelectionMode {
                     selectionCircle
@@ -41,9 +44,7 @@ struct InboxDraftRowView: View {
                         incompleteContentView
                     }
                 }
-
-                Spacer()
-
+            } trailing: {
                 // Amount column
                 amountColumn
             }
@@ -77,7 +78,7 @@ struct InboxDraftRowView: View {
             Text(draft.note)
                 .font(DS.Typography.label)
                 .foregroundStyle(.primary)
-                .lineLimit(1)
+                .lineLimit(conceptLineLimit)
 
             // Line 2: Subcategory • Account
             Text("\(subcategoryName) • \(accountName)")
@@ -109,6 +110,9 @@ struct InboxDraftRowView: View {
         }
     }
 
+    /// Una línea a los tamaños normales; dos a los de accesibilidad, donde el concepto ya tiene la fila entera.
+    private var conceptLineLimit: Int { dynamicTypeSize.isAccessibilitySize ? 2 : 1 }
+
     // MARK: - Incomplete Content View
 
     @ViewBuilder
@@ -117,7 +121,7 @@ struct InboxDraftRowView: View {
         Text(draft.note.isEmpty ? L10n.Inbox.noDescription : draft.note)
             .font(DS.Typography.label)
             .foregroundStyle(draft.note.isEmpty ? .secondary : .primary)
-            .lineLimit(1)
+            .lineLimit(conceptLineLimit)
 
         // Line 2: Missing fields indicators
         if !draft.needsUserInput.isEmpty {
@@ -133,7 +137,7 @@ struct InboxDraftRowView: View {
     // MARK: - Amount Column
 
     private var amountColumn: some View {
-        VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
+        VStack(alignment: .trailingUnlessStacked(dynamicTypeSize), spacing: DS.Spacing.xs) {
             if let amount = draft.amount {
                 AmountText(
                     value: amount,
