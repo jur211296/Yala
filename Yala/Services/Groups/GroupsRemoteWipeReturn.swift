@@ -6,6 +6,13 @@
 //  no puede reponerlos, los repone quien sí puede, y cuando ya faltan** (ticket
 //  `late-remote-wipe-on-a-device-without-groups-cannot-return-the-rows`).
 //
+//  **⚠️ Desde el 2026-09-28 nadie declara** (ticket `late-remote-wipe-signal-also-wipes-rows-created-after-it`). El receptor
+//  solo se lleva lo que existía al vaciar, así que ya no borra la reposición del origen ni tiene nada que declarar.
+//  `declare` y `GroupsRemoteWipeReturnLogic.toDeclare` no tienen llamador en producción, y `returnIfDeclared` lee un KV que
+//  ningún build publicado escribe (el mecanismo nació el 27-sep y el último build es anterior). Se deja entero a propósito:
+//  retirarlo es otra decisión, con su ticket (`late-remote-wipe-return-has-no-producer-left`). Lo de abajo describe el
+//  diseño tal como era.
+//
 //  **El hueco.** Desde el ticket `late-remote-wipe-signal-undoes-the-rows-the-origin-reconverged`, el dispositivo que
 //  procesa la señal DESPUÉS de que el origen repusiera sus filas de grupo pide la convergencia para devolverlas. Pero la
 //  convergencia re-puentea desde el store LOCAL de Grupos, que no viaja por iCloud (`cloudKitDatabase: .none`): un iPad

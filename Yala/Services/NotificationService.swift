@@ -630,19 +630,27 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
     /// Delete all notifications (used in data wipe)
     @MainActor
     func deleteAllNotifications(context: ModelContext) {
-        cancelAllNotifications()
-
         let descriptor = FetchDescriptor<NotificationItem>()
 
         let items: [NotificationItem]
         do {
             items = try context.fetch(descriptor)
         } catch {
+            cancelAllNotifications()
             #if DEBUG
             print("NotificationService: Error fetching notifications for deletion: \(error)")
             #endif
             return
         }
+        deleteNotifications(items, context: context)
+    }
+
+    /// Borra esas notificaciones y cancela TODO lo programado en el sistema. Lo cancela entero también cuando se quedan
+    /// otras —el borrado reactivo a la señal de otro dispositivo conserva las creadas después—: el arranque siguiente
+    /// reprograma las activas (`AppBootstrapper`), y así no queda viva ninguna de las borradas.
+    @MainActor
+    func deleteNotifications(_ items: [NotificationItem], context: ModelContext) {
+        cancelAllNotifications()
 
         for item in items {
             context.delete(item)

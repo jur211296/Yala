@@ -445,15 +445,15 @@ struct RemoteWipeSignalWiringTests {
 
     // MARK: - Lo que BORRA el receptor
 
-    /// **El receptor borra con el borrado que decide si pide la convergencia, y con ninguno más** (ticket
-    /// `late-remote-wipe-signal-undoes-the-rows-the-origin-reconverged`). Lo que hace ese borrado —pedirla antes de borrar
-    /// cuando se lleva filas posteriores a la señal, sin re-emitirla— lo fijan los casos de comportamiento de
-    /// `GroupsBridgeRestoreConvergenceBehaviourTests`. Lo que no pueden ver es que `performLocalWipeForRemoteSync`, que es
-    /// `private` de una `View`, lo llame: volver a `wipeAllUserData` a pelo deja esos casos en verde y reabre el bug —un
-    /// dispositivo que procesa la señal después de que el origen convergiera se lleva las filas repuestas a todo el
-    /// parque, y nadie las vuelve a pedir—.
+    /// **El receptor borra con el borrado que corta por la hora de la señal, y con ninguno más** (tickets
+    /// `late-remote-wipe-signal-undoes-the-rows-the-origin-reconverged` y `late-remote-wipe-signal-also-wipes-rows-created-
+    /// after-it`). Lo que hace ese borrado —llevarse solo lo que existía al vaciar, sin re-emitir la señal— lo fijan
+    /// `RemoteWipeCutBehaviourTests`. Lo que no pueden ver es que `performLocalWipeForRemoteSync`, que es `private` de una
+    /// `View`, lo llame con la hora de ESTA señal y con «alguien terminó el onboarding después»: volver a `wipeAllUserData`
+    /// a pelo deja esos casos en verde y reabre el bug —un dispositivo que procesa la señal tarde se lleva lo que el
+    /// origen apuntó después de vaciar, y su borrado viaja al origen—.
     @Test("MUTACIÓN: el receptor de la señal borra por `wipeLocallyForRemoteWipeSignal`, con la hora de esa señal")
-    func theReceiverWipesThroughTheConvergingWipe() throws {
+    func theReceiverWipesThroughTheCutWipe() throws {
         // Los nombres se parten del paréntesis a propósito: `SharedStateIsolationTests` cuenta como «ejecuta el wipe» todo
         // fichero de test cuyo código contenga `<borrado>(`, y este solo los BUSCA en el código de producción.
         let receptor = "wipeLocallyForRemoteWipeSignal", abre = "("
@@ -464,26 +464,25 @@ struct RemoteWipeSignalWiringTests {
         let fin = try #require(resto.range(of: " private "), "no se encuentra el final del receptor")
         let cuerpo = String(resto[resto.startIndex..<fin.lowerBound])
 
-        #expect(Self.count("try DataWipeService." + receptor + abre + "in: modelContext, signaledAt: signaledAt)", in: cuerpo) == 1, """
-            el receptor de la señal de vaciado ya no borra por `wipeLocallyForRemoteWipeSignal`. Sin ella no pide la
-            convergencia, y si procesa la señal después de que el origen convergiera, su borrado viaja por el espejo y
-            deja a todo el parque sin los gastos y liquidaciones de grupo, para siempre.
+        #expect(Self.count("try DataWipeService." + receptor + abre + "in: modelContext, signaledAt: signaledAt, "
+                           + "fleetStartedOver: skipOnboarding)", in: cuerpo) == 1, """
+            el receptor de la señal de vaciado ya no borra por `wipeLocallyForRemoteWipeSignal`, o no le pasa si el parque \
+            ya empezó de nuevo. Sin el corte se lleva lo que otro dispositivo apuntó después de vaciar, y ese borrado \
+            viaja al origen.
 
             Cuerpo encontrado: \(cuerpo.prefix(400))
             """)
         #expect(!cuerpo.contains("wipeAllUserData" + abre) && !cuerpo.contains("wipePersonalDataKeepingGroups" + abre), """
-            el receptor llama además a otro borrado. `wipeAllUserData` no pide nada, y `wipePersonalDataKeepingGroups`
-            deja elegir la señal: las dos cosas que la función del receptor fija.
+            el receptor llama además a otro borrado. Los dos borran sin corte: se llevarían lo creado después de la señal.
             """)
         #expect(!cuerpo.contains("signalWipeInitiated"), """
             el receptor emite una señal de vaciado propia: rebotaría el vaciado entre los dispositivos del Apple ID.
             """)
-        // Y la hora que decide si pide es la de ESTA señal: la que lee el drenaje del KV, no otra.
+        // Y la hora del corte es la de ESTA señal: la que lee el drenaje del KV, no otra.
         #expect(Self.count("performLocalWipeForRemoteSync(skipOnboarding: onboardingAlreadyDone, "
                            + "signaledAt: Date(timeIntervalSince1970: remoteWipe))", in: vista) == 1, """
-            el receptor ya no recibe la hora de la señal que está procesando. Con otra hora, decide mal si su borrado se
-            lleva lo que el origen repuso: o pide sin motivo (y los dos dispositivos duplican los gastos de grupo) o no
-            pide cuando hace falta (y desaparecen de todo el parque).
+            el receptor ya no recibe la hora de la señal que está procesando. Con otra hora corta mal: o se lleva lo que \
+            el origen apuntó después de vaciar, o deja lo que había antes.
             """)
         #expect(try Self.countInProduction(receptor + abre) == 2, """
             el borrado del receptor tiene un número inesperado de apariciones en `Yala/` (se esperan la definición y la
@@ -547,25 +546,33 @@ struct RemoteWipeSignalWiringTests {
         }
     }
 
-    /// **El receptor declara lo que no puede reponer ANTES de borrar**, como las peticiones de «Vaciar datos»: un corte
-    /// entre el borrado y la declaración dejaría las filas fuera del parque sin nadie que las pida. Declarar antes es
-    /// inocuo: quien la atiende espera a que las filas falten. Y borra por el camino que pide su convergencia, para lo que sí
-    /// tiene.
-    @Test("MUTACIÓN: el receptor declara antes de borrar, y borra pidiendo su convergencia")
-    func theReceiverDeclaresBeforeWiping() throws {
+    /// **El receptor pide la convergencia ANTES de borrar, borra con el corte y no declara** (tickets
+    /// `late-remote-wipe-signal-undoes-the-rows-the-origin-reconverged` y `late-remote-wipe-signal-also-wipes-rows-
+    /// created-after-it`). Pedir después dejaría que un corte entre las dos cosas perdiera la petición; declarar ya no
+    /// tiene nada que declarar, porque lo posterior a la señal se queda. Los casos de comportamiento lo ven con sus
+    /// fixtures; este scan ve el orden en la función entera.
+    @Test("MUTACIÓN: el receptor pide antes de borrar, borra con el corte y no declara")
+    func theReceiverAsksBeforeWiping_withTheCut_andDoesNotDeclare() throws {
         let abre = "("
         let fuente = try Self.code("Yala/Utils/DataWipeService.swift")
         let inicio = try #require(fuente.range(of: "static func wipeLocallyForRemoteWipeSignal" + abre))
         let resto = fuente[inicio.upperBound...]
-        let fin = try #require(resto.range(of: "static func wipeLocalGroupsDomain" + abre), "no se encuentra el final")
+        let fin = try #require(resto.range(of: "static func rescheduleSurvivingReminders"), "no se encuentra el final")
         let cuerpo = String(resto[resto.startIndex..<fin.lowerBound])
-        let declara = try #require(cuerpo.range(of: "try GroupsRemoteWipeReturn.declare" + abre),
-                                   "el receptor ya no declara lo que no puede reponer")
-        let borra = try #require(cuerpo.range(of: "try wipePersonalDataKeepingGroups" + abre
-                                              + "in: context, broadcastSignal: false, defaults: defaults)"),
-                                 "el receptor ya no borra pidiendo su convergencia")
-        #expect(declara.upperBound <= borra.lowerBound, "el receptor borra antes de declarar: un corte en medio pierde las filas")
-        #expect(Self.count("GroupsRemoteWipeReturn.declare" + abre, in: cuerpo) == 1)
+        let pide = try #require(cuerpo.range(of: "GroupsBridgeRestoreConvergenceStore.markSettlementLegsPending(defaults) "
+                                             + "GroupsBridgeRestoreConvergenceStore.markPending(defaults)"),
+                                "el receptor ya no pide la convergencia, o no pide las liquidaciones antes que los gastos")
+        let borra = try #require(cuerpo.range(of: "try wipeAllUserData" + abre + "in: context, reseedInitialData: false, "
+                                              + "broadcastSignal: false, remoteWipeCut: cut) "
+                                              + "if cut != nil { rescheduleReminders(context) }"),
+                                 "el receptor ya no borra con el corte de la señal, o no reprograma los avisos")
+        #expect(pide.upperBound <= borra.lowerBound, "el receptor pide después de borrar: un corte en medio pierde la petición")
+        #expect(Self.count("let cut = RemoteWipeCutLogic.cut(signaledAt: signaledAt, fleetStartedOver: fleetStartedOver)",
+                           in: cuerpo) == 1, "el corte ya no sale de la hora de ESTA señal")
+        for prohibido in ["GroupsRemoteWipeReturn.declare" + abre, "wipePersonalDataKeepingGroups" + abre,
+                          "signalWipeInitiated"] {
+            #expect(!cuerpo.contains(prohibido), "el receptor volvió a llamar a «\(prohibido)»")
+        }
     }
 
     /// Quien repone solo lo hace en una sesión que obedece la señal de vaciado: el valor por defecto de producción es el
