@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-28 (Lima)
 
-**Rama** `2.1` — Merge #292: **lo que el dispositivo que vació promete reponer y no repone vuelve igual, a los tres días.**
+**Rama** `2.1` — Merge #293: **con el texto muy grande, los importes del iPhone ya no se cortan.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > **El destino del gate vuelve a resolver** (medido el 28-sep): hay un iPhone 17 Pro de **iOS 27.0**
@@ -13,7 +13,29 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `9D0F6D32` (26.5) que citaba el aviso anterior **ya no existe**. El ticket
 > `the-gate-destination-no-longer-resolves-on-this-mac` tiene la premisa cambiada: medirlo antes de trabajarlo.
 
-## Esta sesión (#292 · lo que el origen de «Vaciar datos» promete y no repone)
+## Esta sesión (#293 · carril adaptativo, paso 2: el texto muy grande en las pantallas del iPhone)
+
+Con el texto del sistema en los tamaños de accesibilidad, Yala cortaba los importes por el medio («S/-…00» en Registros,
+«S/ 190…» en Grupos) y en Planificación los partía carácter a carácter. Ahora esas filas pasan a dos líneas: el concepto
+arriba y el importe entero debajo. A tamaño normal no cambia nada, medido píxel a píxel en un SE y un Pro Max.
+
+- Contenedor nuevo `AdaptiveRowStack` (`Yala/App/Views/Shared/`), en Registros, Panel, presupuestos, Grupos, Bandeja y
+  las filas etiqueta–valor del detalle de registro y de presupuesto.
+- **Los 41 topes en AX1, uno a uno:** 33 no hacían nada (fuentes fijas con `@ScaledMetric`), 2 fuera, 2 sustituidos por
+  un importe que se encoge si no cabe y 4 se quedan con su motivo escrito al lado.
+- **Verificado:** capturas antes/después en `YalaLane-Adapt-iPhone-SE` y `-ProMax` (iOS 27.0, creados en la Mini) en
+  `qa/evidencia-adaptativo-20260928/`; gate con `YalaTests` entero (8392) y 50 suites XCUITest (123 casos) en verde; CI
+  verde. Ticket a `done` sin device-QA. Nuevo en backlog: `large-text-leftovers-outside-the-main-iphone-screens`.
+- **Encontrado:** la primera versión anidaba un `HStack` y en el SE truncaba el nombre de la tarjeta de grupo a tamaño
+  normal; lo cazó el diff píxel a píxel (regla en `swiftui-ds.md`). Y la cola del simulador no es FIFO: una tanda de
+  mutantes de Cola A tuvo el turno ~50 min.
+
+### Lo que espera de Jürgen
+
+- Nada nuevo. Sigue en pie **el guion de `qa/guion-tanda.md`**.
+- El carril adaptativo sigue con el paso 3, `iphone-small-screens-and-safe-areas-audit`.
+
+## Sesión anterior (#292 · lo que el origen de «Vaciar datos» promete y no repone)
 
 Vacío mis datos en el iPad, que tiene los mismos grupos, y no lo vuelvo a abrir: en el iPhone los gastos y liquidaciones
 de grupo no volvían nunca, porque el iPhone se los dejaba al iPad. Ahora, si a las **72 horas** de resolver el reparto no
