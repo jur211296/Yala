@@ -37,7 +37,7 @@ modo compatible: sin llegar al borde de la pantalla en la interior.
 ## Lo no documentado, que esta fase mide primero
 
 - ¿La `TabView` con `.sidebarAdaptable` da barra lateral en el Duo abierto? Su documentación solo habla de iPadOS e
-  iOS.
+  iOS. sarunw.com (fuente secundaria) dice que sí; se confirma en el simulador.
 - ¿Dónde caen los botones flotantes (`FABStackView`) cuando la barra de pestañas está en el lateral? Apple no habla
   de botones flotantes; `toolbarVerticalEdge` (iOS 27.1) dice en qué lado está la barra.
 - Tamaño en puntos de cada pantalla (Apple publica pulgadas).

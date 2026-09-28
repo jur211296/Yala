@@ -96,14 +96,28 @@ Yala despliega en iOS 26.0: todo lo de 27.x va tras `if #available`. **El núcle
 | Evitar un `if` por size class en la raíz: «will tear down the state and views in the other branches». Preferir un contenedor adaptable (split view), `AnyLayout`, o `ViewThatFits` sacando fuera el estado compartido | [Foro · iOS 27 automatic resize](https://developer.apple.com/forums/thread/832755) (respuesta de un Frameworks Engineer de Apple) |
 | Novedades de SwiftUI en iOS 27 que tocan esto: prioridad de botones en barra, menú de desbordamiento fijo, botón anclado a la derecha, reordenar en listas y rejillas | [What's new in SwiftUI](https://developer.apple.com/swiftui/whats-new/) |
 
+### 1.3 · Fuente secundaria: sarunw.com
+
+Referencia que pidió Jürgen el 27-sep para patrones y trampas prácticas. **Apple manda si hay conflicto.** Leídos el
+27-sep; no contradicen nada del §1.1:
+
+| Lo que dice | Artículo |
+|---|---|
+| No se diseña un layout por postura: dos anchos (compact y regular) bastan; las seis posturas sirven para **validar**, no para diseñar | [Adapting your app for iPhone Duo](https://sarunw.com/posts/adapting-your-app-for-iphone-duo/) (12-sep-2026) |
+| Trampa: los márgenes laterales del área segura, que en un iPhone normal casi no existen, en el Duo sí, porque las barras se van al lateral | [Adapting your app for iPhone Duo](https://sarunw.com/posts/adapting-your-app-for-iphone-duo/) |
+| Con `.sidebarAdaptable`, la barra de pestañas del Duo cerrado pasa a **barra lateral** en el abierto (ejemplo: la app Salud) | [Adapting content for iPhone Duo](https://sarunw.com/posts/adapting-content-for-iphone-duo/) (14-sep-2026) |
+| Tres maneras de lidiar con la asimetría de la barra lateral: todo al área segura, lo principal centrado en la pantalla entera, o fondo a pantalla completa con el contenido metido | [Adapting content for iPhone Duo](https://sarunw.com/posts/adapting-content-for-iphone-duo/) |
+| Las barras verticales **no llegan solas**: hace falta compilar con el SDK nuevo y usar las barras del sistema. «The system can only move a bar it owns»: lo hecho a mano se queda horizontal | [Opt in to vertical bars on iPhone Duo](https://sarunw.com/posts/opt-in-to-vertical-bars-on-iphone-duo/) (22-sep-2026) |
+| `ViewThatFits` prueba sus hijas de la que más espacio pide a la que menos y se queda con la primera que cabe | [Responsive layout in SwiftUI with ViewThatFits](https://sarunw.com/posts/swiftui-viewthatfits/) |
+
 ---
 
 ## 2 · Lo que NO está documentado (supuestos que hay que medir)
 
 | Pregunta | Por qué no se sabe | Cómo se cierra |
 |---|---|---|
-| ¿`.sidebarAdaptable` enseña barra lateral en el Duo abierto? | Su documentación solo distingue iPadOS (barra lateral) e iOS (pestañas abajo), y el Duo es iOS. El HIG dice que la interior «lets you show more content like sidebars», sin decir si la `TabView` lo hace sola | Simulador del Duo (Xcode 27.1), fase Duo |
-| ¿Dónde caen los botones flotantes de Yala (`FABStackView`) cuando la barra de pestañas pasa al lateral? | Son una vista propia superpuesta, no un botón de barra. Apple no habla de botones flotantes | Simulador del Duo, cerrado y abierto en horizontal |
+| ¿`.sidebarAdaptable` enseña barra lateral en el Duo abierto? | Su documentación solo distingue iPadOS (barra lateral) e iOS (pestañas abajo), y el Duo es iOS. El HIG dice que la interior «lets you show more content like sidebars», sin decir si la `TabView` lo hace sola. sarunw.com dice que **sí** (§1.3): probable, pero no es Apple | Simulador del Duo (Xcode 27.1), fase Duo |
+| ¿Dónde caen los botones flotantes de Yala (`FABStackView`) cuando la barra de pestañas pasa al lateral? | Son una vista propia superpuesta, no un botón de barra. Apple no habla de botones flotantes; sarunw.com confirma que lo hecho a mano no se mueve con las barras (§1.3). Falta ver si choca | Simulador del Duo, cerrado y abierto en horizontal |
 | Tamaño en puntos de cada pantalla del Duo | Apple publica pulgadas. No se inventan puntos | Leerlos del simulador |
 | ¿Cómo se ven las hojas de Yala en la interior? | Depende de `usesLargeSheets` (§3), que hoy mira el tipo de dispositivo | Simulador del Duo |
 | Size class de cada mitad en Split View en el Duo | Apple dice que todas las apps participan y que se usen size classes, no cuál toca | Simulador del Duo |
@@ -328,5 +342,9 @@ Mac. Solo bloquea la fase 6.
   [ReservedRegion](https://developer.apple.com/documentation/swiftui/reservedregion) ·
   [What's new in SwiftUI](https://developer.apple.com/swiftui/whats-new/)
 - [UIRequiresFullScreen](https://developer.apple.com/documentation/bundleresources/information-property-list/uirequiresfullscreen)
+- Fuente secundaria (sarunw.com): [Adapting your app for iPhone Duo](https://sarunw.com/posts/adapting-your-app-for-iphone-duo/) ·
+  [Adapting content for iPhone Duo](https://sarunw.com/posts/adapting-content-for-iphone-duo/) ·
+  [Opt in to vertical bars on iPhone Duo](https://sarunw.com/posts/opt-in-to-vertical-bars-on-iphone-duo/) ·
+  [ViewThatFits](https://sarunw.com/posts/swiftui-viewthatfits/)
 - Foros: [iOS 27 automatic resize](https://developer.apple.com/forums/thread/832755) (Frameworks Engineer de Apple) ·
   [iPhone Duo Simulator](https://developer.apple.com/forums/thread/847556) (comunidad)
