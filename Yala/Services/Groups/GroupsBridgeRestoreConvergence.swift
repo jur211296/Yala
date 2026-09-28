@@ -23,8 +23,10 @@
 //  pide aparte (`markSettlementLegsPending`) y se hace AQUÍ, detrás del guard de sesión privada: en una sesión
 //  solo-grupos el bridge crea la pata virtual sin el borrador de «¿de qué cuenta?», y nadie la re-puentearía después.
 //  Solo las que se quedaron SIN NINGUNA pata: cualquier pata dice que alguien la re-puenteó después del borrado, y
-//  hacerlo otra vez duplicaría el borrador de un pago que la persona ya aprobó (la aprobación crea la transacción real
-//  SIN `splitSettlementID`, `DraftService` D7, así que no hay pata real que la delate).
+//  el bridge borra todas sus transacciones antes de rehacerla, reales enlazadas incluidas. Una liquidación cuyo borrador
+//  ya se aprobó no tiene pata real que la delate (la aprobación crea la transacción SIN `splitSettlementID`, `DraftService`
+//  D7), pero sí su marca de aprobación: si se queda sin patas, el bridge rehace la virtual y no vuelve a preguntar
+//  (`GroupSettlementDraftResolutionLogic`, ticket `settlement-approval-leaves-no-trace-so-a-rebridge-asks-again`).
 //
 //  **Durable**, porque lo que se difiere siendo una intención tiene que sobrevivir al proceso: si el import de
 //  CloudKit no se asienta, o la app muere, la marca sigue y el retome del arranque
@@ -100,10 +102,9 @@ nonisolated enum GroupsBridgeRestoreConvergenceLogic {
     }
 
     /// Las liquidaciones confirmadas que se re-puentean tras un borrado de filas: **las que se quedaron sin ninguna
-    /// pata**. Una pata, la que sea, dice que el sync la re-puenteó después del borrado: con sesión privada eso trajo un
-    /// borrador, y si la persona ya lo aprobó, la transacción real que creó no lleva `splitSettlementID` (D7 de
-    /// `DraftService`). Re-puentearla borraría la virtual y sacaría otro borrador del mismo pago: aprobado dos veces,
-    /// cuenta doble. Las que no tienen nada son justo las que el borrado dejó así, y el bridge las crea una vez.
+    /// pata**. Una pata, la que sea, dice que el sync la re-puenteó después del borrado, y re-puentearla borraría con ella
+    /// las reales enlazadas. Las que no tienen nada son justo las que el borrado dejó así, y el bridge las crea una vez; si
+    /// su borrador ya se aprobó, su marca de aprobación hace que no vuelva a preguntar (`GroupSettlementDraftResolutionLogic`).
     static func settlementsToReBridge(confirmed: Set<UUID>, legSettlementIDs: Set<String>) -> Set<UUID> {
         confirmed.filter { !legSettlementIDs.contains($0.uuidString) }
     }

@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "testing, xcuitest, presentaciones"
 created: 2026-09-15
-updated: 2026-09-27
+updated: 2026-09-28
 source: "gate de `cloud-signout-collapses-a-groups-session-expiry-into-permanent` (2026-09-15)"
 ---
 
@@ -128,3 +128,11 @@ Misma línea 86, 67,2 s, con el centinela limpio (99 muestreos, un solo runner),
 a dos corridas completas de unit en el mismo simulador. La repetición inmediata de la clase sola pasó los dos casos (el
 de la cola en 22,4 s). Ese diff solo toca el guard de migración de `checkForAppleIDChange`, que bajo `-uitest` sale antes
 por `UITestHooks.isActive`: no interviene en este caso.
+
+## Otra caída, 2026-09-28 (gate de `settlement-approval-leaves-no-trace-so-a-rebridge-asks-again`)
+
+Misma línea 86, con el simulador caliente y el centinela en 0 durante toda la corrida: cayó en el lote de XCUITest del
+gate (68 s) y pasó **3 de 3** aislado con el mismo binario (`test-without-building`, 25,8 · 26,3 · 26,9 s, centinela en
+0). El cambio de ese gate no toca presentaciones ni el router (Inbox y bridge de liquidaciones); entró al lote porque
+`AppBootstrapper.swift` casa con el área `session-sign-out`.
+

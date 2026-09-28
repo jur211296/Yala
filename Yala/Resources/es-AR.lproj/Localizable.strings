@@ -3678,6 +3678,7 @@
 
 /* Banner explicativo en el sheet de finalización de liquidación de grupo. %@ = nombre del grupo. */
 "inbox.groupSettlementDraft.banner" = "Liquidación del grupo %@. Solo asignale una cuenta; el monto y la fecha los gestiona el grupo.";
+"inbox.groupSettlementDraft.alreadyRegistered" = "Este pago ya está registrado en tus cuentas. Podés descartar este borrador.";
 
 /* Title del sheet de finalización cuando faltan cuenta + subcategoría (Caso A match falla) */
 "inbox.groupExpenseAccountSubcategoryDraft.title" = "Asignar cuenta y categoría";

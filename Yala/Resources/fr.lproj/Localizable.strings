@@ -4414,6 +4414,7 @@
 
 /* Banner explicativo en el sheet de finalización de liquidación de grupo. %@ = nombre del grupo. */
 "inbox.groupSettlementDraft.banner" = "Règlement du groupe %@. Attribuez simplement un compte ; le montant et la date sont gérés par le groupe.";
+"inbox.groupSettlementDraft.alreadyRegistered" = "Ce paiement est déjà enregistré dans vos comptes. Vous pouvez supprimer ce brouillon.";
 
 /* Title del sheet de finalización cuando faltan cuenta + subcategoría (Caso A match falla) */
 "inbox.groupExpenseAccountSubcategoryDraft.title" = "Assigner un compte et une sous-catégorie";

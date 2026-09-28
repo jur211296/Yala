@@ -1723,6 +1723,15 @@ final class AppBootstrapper {
         // aquí se repone por id si ya falta (`GroupsRemoteWipeReturn`). DESPUÉS de la convergencia: lo que ella reponga
         // ya está presente y no se vuelve a pedir. Mismos gates, por lo mismo.
         GroupsRemoteWipeReturn.returnIfDeclared(context: context)
+        // Y los borradores de liquidación que otro dispositivo creó antes de ver que la persona ya la había resuelto
+        // (aprobada o rechazada): sin esto el Inbox vuelve a preguntar por un pago ya registrado. Mismos gates.
+        do {
+            try GroupTransactionBridge.pruneSettlementDraftsAlreadyResolved(context: context)
+        } catch {
+            #if DEBUG
+            print("AppBootstrapper: pruneSettlementDraftsAlreadyResolved: Error: \(error)")
+            #endif
+        }
 
         let descriptor = FetchDescriptor<SplitExpense>(
             predicate: #Predicate { $0.bridgePending == true }

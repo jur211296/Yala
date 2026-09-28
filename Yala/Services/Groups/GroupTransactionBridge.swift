@@ -1111,8 +1111,17 @@ final class GroupTransactionBridge {
         let existingDrafts = try context.fetch(FetchDescriptor<InboxDraft>(
             predicate: #Predicate { $0.splitSettlementID == settlementIDStr }
         ))
-        // Opt-in drafts preservados (mismo razonamiento que bridgeExpense).
-        for draft in existingDrafts where !draft.optInPersonalOnly {
+        // Solo se sustituyen los borradores PENDIENTES. Los opt-in se preservan (mismo razonamiento que
+        // bridgeExpense), y los ya RESUELTOS también: el aprobado es la marca de que esta liquidación ya se
+        // registró en una cuenta, y el rechazado, la de que la persona no quiere registrarla. Borrarlos aquí
+        // era lo que hacía volver a preguntar tras un borrado tardío (ticket
+        // `settlement-approval-leaves-no-trace-so-a-rebridge-asks-again`).
+        let resolution = GroupSettlementDraftResolutionLogic.resolution(
+            of: existingDrafts.map(\.status))
+        // Lo que baja por el espejo de otro dispositivo puede traer un pendiente junto a la marca: el re-puente ya lo
+        // sustituye arriba; en frío lo poda `pruneSettlementDraftsAlreadyResolved`.
+        for draft in existingDrafts where GroupSettlementDraftResolutionLogic.isReplacedOnReBridge(
+            status: draft.status, optInPersonalOnly: draft.optInPersonalOnly) {
             context.delete(draft)
         }
 
@@ -1152,8 +1161,9 @@ final class GroupTransactionBridge {
             context.insert(tx1)
             tx1.recalculatePreferredCurrency(context: context)
 
-            // TX2 en cuenta real solo con vida personal en este teléfono Y bridge effective ON.
-            if hasPrivateSession && effectiveBridgeEnabled {
+            // TX2 en cuenta real solo con vida personal en este teléfono Y bridge effective ON, y nunca si el
+            // pago ya se registró en una cuenta (marca de aprobación): sería el mismo dinero dos veces.
+            if hasPrivateSession && effectiveBridgeEnabled && resolution != .approved {
                 if let account = accountForCurrentUser {
                     let sentSubcat = try GroupBridgeSystemEntities.systemSubcategory(role: .settlementSent, context: context)
                     let tx2 = TransactionItem(
@@ -1170,7 +1180,7 @@ final class GroupTransactionBridge {
                     context.insert(tx2)
                     tx2.recalculatePreferredCurrency(context: context)
                     // M6: NO defaults — eliminada persistencia de defaultSettlementAccount.
-                } else {
+                } else if resolution == nil {
                     // Sin cuenta proveída: draft pendiente. La subcat sistema es opcional (el user
                     // la completa en Inbox); do/catch para no tragar un error real con try?.
                     let sentSubcat: Subcategory?
@@ -1217,9 +1227,10 @@ final class GroupTransactionBridge {
             context.insert(tx1)
             tx1.recalculatePreferredCurrency(context: context)
 
-            // Con vida personal: draft groupSettlement para asignar cuenta real.
+            // Con vida personal: draft groupSettlement para asignar cuenta real, salvo que la persona ya lo
+            // resolviera (aprobado o rechazado): ese borrador sigue ahí y no se vuelve a preguntar.
             // M6: NO defaults universales — sin preselect, user siempre elige cuenta.
-            if hasPrivateSession {
+            if hasPrivateSession && resolution == nil {
                 let receivedSubcat: Subcategory?
                 do {
                     receivedSubcat = try GroupBridgeSystemEntities.systemSubcategory(role: .settlementReceived, context: context)
@@ -1331,6 +1342,29 @@ final class GroupTransactionBridge {
         try context.save()
         SessionState.shared.incrementDataVersion()
         WidgetDataCache.updateCache(context: context)
+    }
+
+    // MARK: - Poda de borradores de liquidación ya aprobada
+
+    /// **En frío, retira los borradores pendientes de una liquidación que la persona ya resolvió**
+    /// (`GroupSettlementDraftResolutionLogic.redundantPendingDrafts`). Corre en `AppBootstrapper.retryPendingBridges`, detrás
+    /// de sus gates (store listo y dominio abierto): un `save()` durante un import es el SIGTRAP que esos gates evitan.
+    @discardableResult
+    static func pruneSettlementDraftsAlreadyResolved(context: ModelContext) throws -> Int {
+        let settlementRaw = DraftSourceType.groupSettlement.rawValue
+        let drafts = try context.fetch(FetchDescriptor<InboxDraft>(
+            predicate: #Predicate { $0.sourceTypeRaw == settlementRaw && $0.splitSettlementID != nil }))
+        let redundant = GroupSettlementDraftResolutionLogic.redundantPendingDrafts(
+            drafts.map { ($0.splitSettlementID, $0.status, $0.optInPersonalOnly) })
+        guard !redundant.isEmpty else { return 0 }
+        for index in redundant {
+            InboxRowPruneCoordinator.shared.pruneRow(drafts[index].persistentModelID)
+            context.delete(drafts[index])
+        }
+        try context.save()
+        SessionState.shared.incrementDataVersion()
+        logger.notice("pruneSettlementDraftsAlreadyResolved removed=\(redundant.count, privacy: .public)")
+        return redundant.count
     }
 
     // MARK: - Unbridge por borrado REMOTO (tombstone de un canal de sync)
@@ -1568,6 +1602,57 @@ final class GroupTransactionBridge {
         return nil
     }
 
+}
+
+// MARK: - Resolución de un borrador de liquidación
+
+/// **Qué dicen los borradores que ya existen de una liquidación sobre su lado real** (ticket
+/// `settlement-approval-leaves-no-trace-so-a-rebridge-asks-again`).
+///
+/// Aprobar el borrador de una liquidación crea la transacción real SIN `splitSettlementID` (D7 de `DraftService`: el
+/// bridge la borraría al re-puentear). Lo que queda como marca es un borrador APROBADO de esa liquidación, enlazado a la
+/// transacción y creado en el mismo guardado (`DraftService.approveDraft`). El re-puente lo lee aquí:
+///
+/// - `.approved`: el pago ya está en una cuenta. Se rehace la pata virtual y nada más: ni borrador ni pata real del
+///   Caso C, que serían el mismo dinero dos veces.
+/// - `.rejected`: la persona no quiere registrarlo. Se rehace la pata virtual, y la pata real del Caso C solo si el
+///   formulario trae una cuenta elegida ahora (un gesto explícito); borrador nuevo, no.
+/// - `nil`: nada resuelto; el bridge pregunta como siempre.
+///
+/// El aprobado gana al rechazado: si conviven, el dinero ya se registró.
+nonisolated enum GroupSettlementDraftResolutionLogic {
+
+    enum Resolution: Equatable {
+        case approved
+        case rejected
+    }
+
+    static func resolution(of statuses: [DraftStatus]) -> Resolution? {
+        if statuses.contains(.approved) { return .approved }
+        if statuses.contains(.rejected) { return .rejected }
+        return nil
+    }
+
+    /// El re-puente sustituye solo los borradores pendientes que creó él. El opt-in lo creó el formulario (su TX virtual ya
+    /// existe y el bridge no lo recrearía), y el resuelto es la decisión de la persona.
+    static func isReplacedOnReBridge(status: DraftStatus, optInPersonalOnly: Bool) -> Bool {
+        status == .pending && !optInPersonalOnly
+    }
+
+    /// Los borradores que sobran en frío: los pendientes que creó el bridge para una liquidación que la persona ya resolvió
+    /// (su marca de aprobación, o un rechazo). Aparecen cuando otro dispositivo re-puenteó antes de que lo resuelto le
+    /// llegara por el espejo (un receptor tardío con grupos que converge, un dispositivo que puentea el mismo id). Aprobarlos
+    /// ya no duplica (`DraftService` lo rechaza), pero el Inbox volvería a preguntar. Devuelve los índices.
+    static func redundantPendingDrafts(
+        _ drafts: [(settlementID: String?, status: DraftStatus, optInPersonalOnly: Bool)]
+    ) -> [Int] {
+        let resolved = Set(drafts.compactMap { $0.status != .pending ? $0.settlementID : nil })
+        return drafts.indices.filter { index in
+            let draft = drafts[index]
+            guard let id = draft.settlementID, resolved.contains(id) else { return false }
+            return isReplacedOnReBridge(status: draft.status, optInPersonalOnly: draft.optInPersonalOnly)
+        }
+    }
 }
 
 // MARK: - Errors

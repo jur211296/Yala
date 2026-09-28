@@ -27,11 +27,20 @@ enum DraftSourceType: String, Codable {
     case manual         // FU-02 cleanup: draft convertido tras soft-delete/leave/remove. Editable como personal.
     case groupScheduledExpense // Pago planificado de grupo: al aprobar abre el form de grupo y crea el SplitExpense.
 
-    /// True para sources de grupos que NO permiten eliminar/rechazar (solo asignar+finalizar).
+    /// True para los sources que crea el bridge de grupos. Decide el ruteo del aprobar en lote
+    /// (`BulkApproveRoutingLogic`). Si se pueden rechazar o borrar lo decide `blocksInboxDismissal`.
     /// `.groupScheduledExpense` NO se incluye: aún no existe un SplitExpense, así que debe poder
     /// saltarse/rechazarse como un pago planificado (el descarte hace skip de la ocurrencia).
     var isFromGroup: Bool {
         self == .groupExpense || self == .groupSettlement
+    }
+
+    /// True si el Inbox NO deja rechazar ni borrar un borrador de este source. Solo `.groupExpense`: apunta a una
+    /// transacción que ya existe y solo pide clasificarla. `.groupSettlement` SÍ se deja descartar (ticket
+    /// `settlement-approval-leaves-no-trace-so-a-rebridge-asks-again`): un borrador de liquidación que vuelve a
+    /// preguntar por un pago ya registrado no puede dejar a la persona atrapada.
+    var blocksInboxDismissal: Bool {
+        self == .groupExpense
     }
 }
 
@@ -224,6 +233,23 @@ final class InboxDraft: Identifiable {
     /// Indica si la transacción aprobada fue eliminada (permite re-aprobar)
     var wasTransactionDeleted: Bool {
         status == .approved && approvedTransaction == nil
+    }
+
+    /// **La marca de una liquidación ya registrada, con su transacción viva** (ticket
+    /// `settlement-approval-leaves-no-trace-so-a-rebridge-asks-again`). Mientras la transacción exista, la marca no se
+    /// borra ni se devuelve a pendientes desde el Inbox: sin ella, el siguiente re-puente volvería a preguntar por el
+    /// pago, y devuelta a pendientes se aprobaría otra vez. Sin transacción (la persona la borró) vuelve a ser un
+    /// borrador más: tocarla la re-aprueba, como cualquier aprobado cuya transacción desapareció.
+    var isLiveSettlementApprovalMark: Bool {
+        sourceType == .groupSettlement && status == .approved && approvedTransaction != nil
+    }
+
+    /// Si sale en la pestaña Archivados. Los archivados sin cuenta cacheada no salen (sus relaciones pueden estar
+    /// invalidadas), salvo el de una liquidación: se rechaza sin haber elegido cuenta, y si no saliera, el rechazo no se
+    /// podría deshacer nunca —el re-puente lo respeta—. Su fila solo lee valores guardados (`needsUserInput`, importe).
+    var isShownInArchive: Bool {
+        (status == .approved || status == .rejected)
+            && (cachedAccountName != nil || sourceType == .groupSettlement)
     }
 
     /// Indica si todos los campos están completos (para mostrar vista completa vs incompleta)

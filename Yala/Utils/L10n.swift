@@ -6033,6 +6033,8 @@ enum L10n {
             static var assignAccount: String { ls("inbox.groupSettlementDraft.assignAccount", comment: "") }
             /// Banner explicativo (liquidación). Formato: %@ = nombre del grupo.
             static var banner: String { ls("inbox.groupSettlementDraft.banner", comment: "") }
+            /// Error al finalizar el borrador de una liquidación cuyo pago ya está registrado (hay marca de aprobación).
+            static var alreadyRegistered: String { ls("inbox.groupSettlementDraft.alreadyRegistered", comment: "") }
         }
 
         // M6: sheet finalización Caso A pendiente cuenta.

@@ -525,9 +525,10 @@ struct GroupsBridgeRestoreConvergenceBehaviourTests {
     }
 
     /// Entre el borrado y la convergencia el sync puede re-puentear una liquidación, y la persona aprobar su borrador.
-    /// Aprobarlo crea la transacción real SIN `splitSettlementID` (`DraftService`, D7) y borra el borrador. Re-puentear
-    /// esa liquidación sacaría otro borrador del mismo pago: aprobado dos veces, cuenta doble. Es el hallazgo de la
-    /// review, y el control fija su premisa: la real no lleva el ID, así que ningún guard sobre patas reales la ve.
+    /// Aquí la aprobación se simula como la hace una versión ANTERIOR de la app: transacción real SIN `splitSettlementID`
+    /// (`DraftService`, D7) y el borrador borrado, sin marca. Es lo que protege la guarda «solo sin ninguna pata»: la
+    /// liquidación conserva su pata virtual y no se re-puentea. La aprobación de hoy, con marca, la cubren los casos del
+    /// ticket `settlement-approval-leaves-no-trace-so-a-rebridge-asks-again`, más abajo.
     @Test("un borrador aprobado después del borrado no vuelve a salir")
     func draftApprovedAfterTheWipe_isNotAskedAgain() throws {
         let dir = try freshDir()
@@ -1534,6 +1535,485 @@ struct GroupsBridgeRestoreConvergenceBehaviourTests {
                     "el reset de preferencias se llevó la marca de «es mía»: el receptor atendería su propia declaración")
         }
     }
+
+    // MARK: - La aprobación de una liquidación deja rastro (ticket `settlement-approval-leaves-no-trace-so-a-rebridge-asks-again`)
+
+    /// El contexto de `DraftService`, que es singleton: se pone para el caso y se retira al salir.
+    private func withDraftService(_ context: ModelContext, _ body: () throws -> Void) rethrows {
+        DraftService.shared.setContext(context)
+        defer { DraftService.shared.setContext(nil) }
+        try body()
+    }
+
+    private func makeBank(_ context: ModelContext) throws -> Account {
+        let bank = Account(name: "Banco", currencyCode: "USD", colorHex: "#222222",
+                           iconName: "building.columns", type: "bank")
+        context.insert(bank)
+        try context.save()
+        return bank
+    }
+
+    /// La persona aprueba en el Inbox el borrador pendiente de la liquidación, con su cuenta del banco, por el camino REAL.
+    @discardableResult
+    private func approvePendingDraft(
+        _ context: ModelContext, _ settlement: SplitSettlement, into bank: Account
+    ) throws -> TransactionItem {
+        let draft = try #require(try pendingDrafts(context, settlement).first,
+                                 "el fixture no deja un borrador pendiente de la liquidación")
+        draft.account = bank
+        return try DraftService.shared.approveDraft(draft, currencyConverter: CurrencyConverter())
+    }
+
+    private func bankRows(_ context: ModelContext, _ bank: Account) throws -> [TransactionItem] {
+        try context.fetch(FetchDescriptor<TransactionItem>()).filter {
+            $0.account?.persistentModelID == bank.persistentModelID
+        }
+    }
+
+    private func pendingDrafts(_ context: ModelContext, _ settlement: SplitSettlement) throws -> [InboxDraft] {
+        try drafts(context, settlement).filter { $0.status == .pending }
+    }
+
+    /// Los borradores que el espejo llevó al receptor junto a las filas: en la vida real el receptor importa también los
+    /// `InboxDraft` del origen, y su borrado se los lleva (nacen con las filas puenteadas).
+    private func draftIDs(_ context: ModelContext, _ settlements: [SplitSettlement]) throws -> Set<PersistentIdentifier> {
+        Set(try settlements.flatMap { try drafts(context, $0) }.map(\.persistentModelID))
+    }
+
+    /// Llega al origen el borrado de esos borradores. Los que el origen ya no tiene (el pendiente que la aprobación
+    /// sustituyó) no se tocan: el borrado de un registro que ya no existe no hace nada.
+    private func draftDeletionArrives(at origin: ModelContext, of ids: Set<PersistentIdentifier>) throws {
+        for draft in try origin.fetch(FetchDescriptor<InboxDraft>()) where ids.contains(draft.persistentModelID) {
+            origin.delete(draft)
+        }
+        try origin.save()
+    }
+
+    private func expectAlreadyRegistered(_ body: () throws -> Void) {
+        do {
+            try body()
+            Issue.record("aprobar una liquidación ya registrada no dio error: se habría creado otra transacción")
+        } catch DraftServiceError.groupSettlementAlreadyRegistered {
+        } catch {
+            Issue.record("error inesperado: \(error)")
+        }
+    }
+
+    /// **Camino 2 del ticket: la aprobación cae en la ventana.** El origen repuso lo de grupo; el receptor sin grupos importó
+    /// las filas y los borradores, procesa la señal tarde, declara y borra. Antes de que su borrado llegue al origen, la
+    /// persona aprueba allí «Ana me pagó 25» en el banco. Llega el borrado —de la pata virtual y del borrador pendiente que
+    /// el receptor se llevó— y la devolución re-puentea: vuelve la pata, y NO vuelve a preguntar.
+    @Test("aprobada en la ventana del borrado tardío: la devolución rehace la pata virtual y no vuelve a pedir la cuenta")
+    func approvedInTheWindow_theReturnDoesNotAskAgain() throws {
+        let dir = try freshDir(), receiverDir = try freshDir()
+        defer { cleanup(dir); cleanup(receiverDir) }
+        let origin = try makeContext(dir)
+        let receiver = try makeContext(receiverDir)
+        let f = try makeFixture(origin)
+        try withEnvironment(origin) { defaults in
+            try withDraftService(origin) {
+                let kv = InMemoryKeyValueStore()
+                let expense = try makeCaseAExpense(origin, f)
+                let s = try makeSettlements(origin, f)
+                try bridgeGroupRows(origin, expense, s, defaults: defaults)
+                try backdateGroupRows(origin)
+                let taken = try mirror(from: origin, into: receiver)
+                let takenDrafts = try draftIDs(origin, [s.paid, s.received])
+                try #require(takenDrafts.count == 2, "el fixture no deja un borrador por liquidación")
+                try DataWipeService.wipeLocallyForRemoteWipeSignal(
+                    in: receiver, signaledAt: Self.signaledAt, defaults: makeIsolatedDefaults(), declarationStore: kv)
+                try #require(GroupsRemoteWipeReturnStore.read(kv).first?.settlements[s.received.id.uuidString] != nil,
+                             "el fixture no declara la liquidación")
+
+                let bank = try makeBank(origin)
+                try approvePendingDraft(origin, s.received, into: bank)
+                #expect(try bankRows(origin, bank).map(\.amount) == [25])
+
+                try deletionArrives(at: origin, of: taken)
+                try draftDeletionArrives(at: origin, of: takenDrafts)
+                try #require(try legs(origin, s.received).isEmpty, "el borrado no dejó la liquidación sin patas")
+                try #require(try pendingDrafts(origin, s.paid).isEmpty, "el borrado no se llevó el borrador de la otra")
+                GroupsRemoteWipeReturn.returnIfDeclared(context: origin, kv: kv, defaults: defaults, obeysWipeSignal: true)
+
+                #expect(try legs(origin, s.received).count == 1, "la pata virtual de la liquidación no volvió")
+                #expect(try pendingDrafts(origin, s.received).isEmpty, """
+                    la devolución volvió a pedir a qué cuenta llegó un pago ya registrado: aprobado otra vez, el banco \
+                    lo cuenta doble
+                    """)
+                #expect(try drafts(origin, s.received).map(\.status) == [.approved],
+                        "la marca no sobrevivió al borrado del receptor y a la devolución")
+                #expect(try bankRows(origin, bank).map(\.amount) == [25], "el banco no cuenta el pago una sola vez")
+                #expect(try pendingDrafts(origin, s.paid).count == 1, "la que no se aprobó sí vuelve a preguntar")
+
+                // Otro re-puente de la misma liquidación tampoco pregunta.
+                try GroupTransactionBridge.shared.bridgeRemoteSettlements(ids: [s.received.id])
+                #expect(try drafts(origin, s.received).map(\.status) == [.approved])
+                #expect(try legs(origin, s.received).count == 1)
+            }
+        }
+    }
+
+    /// **Camino 1 del ticket: el receptor se llevó la virtual, no la real aprobada.** La persona aprobó antes; el receptor
+    /// sin grupos solo había importado la pata de la cuenta de grupos. En el origen la liquidación queda sin patas y se
+    /// re-puentea: vuelve la virtual y la real aprobada sigue sola en el banco.
+    @Test("el receptor se llevó la virtual y no la real aprobada: vuelve la virtual y no se pregunta otra vez")
+    func receiverTookTheVirtualButNotTheApprovedReal_notAskedAgain() throws {
+        let dir = try freshDir(), receiverDir = try freshDir()
+        defer { cleanup(dir); cleanup(receiverDir) }
+        let origin = try makeContext(dir)
+        let receiver = try makeContext(receiverDir)
+        let f = try makeFixture(origin)
+        try withEnvironment(origin) { defaults in
+            try withDraftService(origin) {
+                let kv = InMemoryKeyValueStore()
+                let expense = try makeCaseAExpense(origin, f)
+                let s = try makeSettlements(origin, f)
+                try bridgeGroupRows(origin, expense, s, defaults: defaults)
+                let bank = try makeBank(origin)
+                try approvePendingDraft(origin, s.received, into: bank)
+                try backdateGroupRows(origin)
+                let taken = try mirror(from: origin, into: receiver)
+                try DataWipeService.wipeLocallyForRemoteWipeSignal(
+                    in: receiver, signaledAt: Self.signaledAt, defaults: makeIsolatedDefaults(), declarationStore: kv)
+
+                try deletionArrives(at: origin, of: taken)
+                GroupsRemoteWipeReturn.returnIfDeclared(context: origin, kv: kv, defaults: defaults, obeysWipeSignal: true)
+
+                #expect(try legs(origin, s.received).count == 1, "la pata virtual de la liquidación no volvió")
+                #expect(try pendingDrafts(origin, s.received).isEmpty,
+                        "la liquidación ya aprobada vuelve a pedir su cuenta: aprobada otra vez, cuenta doble")
+                #expect(try bankRows(origin, bank).map(\.amount) == [25])
+            }
+        }
+    }
+
+    /// **La otra cara de «la marca corre la suerte de la real»:** si el receptor se llevó también la transacción real y su
+    /// marca, el pago ya no está en ninguna cuenta y volver a preguntar es lo correcto.
+    @Test("el receptor se llevó la real y su marca: la devolución vuelve a preguntar, y el banco no cuenta nada doble")
+    func receiverTookTheRealAndItsMark_theReturnAsksAgain() throws {
+        let dir = try freshDir(), receiverDir = try freshDir()
+        defer { cleanup(dir); cleanup(receiverDir) }
+        let origin = try makeContext(dir)
+        let receiver = try makeContext(receiverDir)
+        let f = try makeFixture(origin)
+        try withEnvironment(origin) { defaults in
+            try withDraftService(origin) {
+                let kv = InMemoryKeyValueStore()
+                let expense = try makeCaseAExpense(origin, f)
+                let s = try makeSettlements(origin, f)
+                try bridgeGroupRows(origin, expense, s, defaults: defaults)
+                let bank = try makeBank(origin)
+                let real = try approvePendingDraft(origin, s.received, into: bank)
+                try backdateGroupRows(origin)
+                let taken = try mirror(from: origin, into: receiver)
+                let takenMark = try draftIDs(origin, [s.received])
+                try DataWipeService.wipeLocallyForRemoteWipeSignal(
+                    in: receiver, signaledAt: Self.signaledAt, defaults: makeIsolatedDefaults(), declarationStore: kv)
+
+                try deletionArrives(at: origin, of: taken)
+                origin.delete(real)
+                try draftDeletionArrives(at: origin, of: takenMark)
+                GroupsRemoteWipeReturn.returnIfDeclared(context: origin, kv: kv, defaults: defaults, obeysWipeSignal: true)
+
+                #expect(try legs(origin, s.received).count == 1)
+                #expect(try pendingDrafts(origin, s.received).count == 1, "el pago ya no está en ninguna cuenta y no se pregunta")
+                #expect(try bankRows(origin, bank).isEmpty)
+            }
+        }
+    }
+
+    /// El mismo agujero por la convergencia: tras el borrado, el sync re-puentea la liquidación y la persona la aprueba.
+    /// Después otro dispositivo se lleva la pata virtual y la convergencia la repone, porque se quedó sin ninguna.
+    @Test("la convergencia rehace la pata virtual de una liquidación aprobada sin volver a preguntar")
+    func convergence_reBridgesAnApprovedSettlementWithoutAskingAgain() throws {
+        let dir = try freshDir()
+        defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let f = try makeFixture(context)
+        try withEnvironment(context) { defaults in
+            try withDraftService(context) {
+                let s = try makeSettlements(context, f)
+                try bridgeThenWipe(context, s)
+                try GroupTransactionBridge.shared.bridgeRemoteSettlements(ids: [s.received.id])
+                let bank = try makeBank(context)
+                try approvePendingDraft(context, s.received, into: bank)
+                for leg in try legs(context, s.received) { context.delete(leg) }
+                try context.save()
+
+                GroupsBridgeRestoreConvergenceStore.markSettlementLegsPending(defaults)
+                GroupsBridgeRestoreConvergenceStore.markPending(defaults)
+                GroupsBridgeRestoreConvergence.convergeIfPending(context: context, defaults: defaults)
+
+                #expect(try legs(context, s.received).count == 1, "la pata virtual no volvió")
+                #expect(try pendingDrafts(context, s.received).isEmpty, "la convergencia volvió a pedir un pago ya registrado")
+                #expect(try bankRows(context, bank).map(\.amount) == [25])
+            }
+        }
+    }
+
+    /// La marca es un registro NUEVO que nace con la transacción real: el borrador pendiente nació con la pata virtual, y
+    /// un receptor que importó la virtual lo importó con ella. Si la marca fuera ese registro, su borrado se la llevaría.
+    @Test("aprobar deja una marca nueva, aprobada y enlazada a la transacción real, que no es el borrador pendiente")
+    func approval_leavesANewApprovedMarkLinkedToTheRealTransaction() throws {
+        let dir = try freshDir()
+        defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let f = try makeFixture(context)
+        try withEnvironment(context) { _ in
+            try withDraftService(context) {
+                SessionState.shared.hasPrivateSession = true
+                let s = try makeSettlements(context, f)
+                try GroupTransactionBridge.shared.bridgeRemoteSettlements(ids: [s.received.id])
+                let pendingID = try #require(try pendingDrafts(context, s.received).first).persistentModelID
+                let bank = try makeBank(context)
+
+                let real = try approvePendingDraft(context, s.received, into: bank)
+
+                #expect(real.splitSettlementID == nil, "D7: la real no es pata del bridge")
+                let all = try drafts(context, s.received)
+                let mark = try #require(all.first, "aprobar no dejó rastro de la liquidación")
+                #expect(all.count == 1)
+                #expect(mark.status == .approved)
+                #expect(mark.persistentModelID != pendingID, """
+                    la marca es el mismo registro que el borrador pendiente: un receptor que lo importó con la pata \
+                    virtual se lo llevaría al borrar
+                    """)
+                #expect(mark.approvedTransaction?.persistentModelID == real.persistentModelID)
+                #expect(mark.cachedAccountName == "Banco", "sin la cuenta cacheada el Inbox no lo enseña en Archivados")
+                #expect(mark.sourceType == .groupSettlement && mark.needsUserInput.isEmpty)
+                #expect(mark.isLiveSettlementApprovalMark && mark.isShownInArchive)
+            }
+        }
+    }
+
+    /// La rama opt-in (Caso C con el bridge apagado: el formulario crea el borrador bajo demanda) deja la misma marca.
+    @Test("la aprobación opt-in de una liquidación también deja marca, y aprobar otra vez no registra el pago dos veces")
+    func optInApproval_leavesTheMarkToo() throws {
+        let dir = try freshDir()
+        defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let f = try makeFixture(context)
+        try withEnvironment(context) { _ in
+            try withDraftService(context) {
+                SessionState.shared.hasPrivateSession = true
+                let s = try makeSettlements(context, f)
+                let bank = try makeBank(context)
+                try DraftService.shared.createGroupSettlementOptInDraft(
+                    splitSettlementID: s.paid.id.uuidString, groupZoneID: s.paid.groupZoneID)
+                let real = try approvePendingDraft(context, s.paid, into: bank)
+
+                let mark = try #require(try drafts(context, s.paid).first, "la aprobación opt-in no dejó rastro")
+                #expect(try drafts(context, s.paid).count == 1)
+                #expect(mark.status == .approved && mark.optInPersonalOnly)
+                #expect(mark.approvedTransaction?.persistentModelID == real.persistentModelID)
+
+                try DraftService.shared.createGroupSettlementOptInDraft(
+                    splitSettlementID: s.paid.id.uuidString, groupZoneID: s.paid.groupZoneID)
+                expectAlreadyRegistered { try approvePendingDraft(context, s.paid, into: bank) }
+                #expect(try bankRows(context, bank).map(\.amount) == [-40], "el mismo pago quedó dos veces en el banco")
+            }
+        }
+    }
+
+    /// Un borrador pendiente puede convivir con la marca (lo creó otro dispositivo antes de que ella le llegara). Aprobarlo
+    /// da error y no crea otra transacción, **aunque la marca aún no tenga su transacción enlazada** (CloudKit puede traer
+    /// la marca antes que ella). El pendiente lo poda el arranque. Si la persona borró la transacción, se re-aprueba desde
+    /// la marca: al tocarla vuelve a pendiente.
+    @Test("aprobar un borrador de una liquidación ya aprobada da error y no crea otra transacción")
+    func approvingASettlementAlreadyApproved_doesNotRegisterItTwice() throws {
+        let dir = try freshDir()
+        defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let f = try makeFixture(context)
+        try withEnvironment(context) { _ in
+            try withDraftService(context) {
+                SessionState.shared.hasPrivateSession = true
+                let s = try makeSettlements(context, f)
+                try GroupTransactionBridge.shared.bridgeRemoteSettlements(ids: [s.received.id])
+                let bank = try makeBank(context)
+                let first = try approvePendingDraft(context, s.received, into: bank)
+                let subcategory = try #require(try drafts(context, s.received).first?.subcategory)
+
+                func staleDraftArrives() throws {
+                    let stale = InboxDraft(note: "", amount: 25, date: s.received.date, subcategory: subcategory,
+                                           sourceType: .groupSettlement,
+                                           needsUserInput: [DraftInputRequirement.account],
+                                           splitGroupZoneID: s.received.groupZoneID,
+                                           splitSettlementID: s.received.id.uuidString)
+                    context.insert(stale)
+                    try context.save()
+                }
+
+                try staleDraftArrives()
+                expectAlreadyRegistered { try approvePendingDraft(context, s.received, into: bank) }
+                #expect(try bankRows(context, bank).map(\.amount) == [25], "el mismo pago quedó dos veces en el banco")
+
+                // La poda del arranque lo retira; la marca se queda.
+                #expect(try GroupTransactionBridge.pruneSettlementDraftsAlreadyResolved(context: context) == 1)
+                #expect(try drafts(context, s.received).map(\.status) == [.approved])
+
+                // La transacción aún no ha llegado (o la persona la borró): la marca sin ella sigue protegiendo.
+                context.delete(first)
+                try context.save()
+                let mark = try #require(try drafts(context, s.received).first)
+                #expect(mark.approvedTransaction == nil && !mark.isLiveSettlementApprovalMark)
+                try staleDraftArrives()
+                expectAlreadyRegistered { try approvePendingDraft(context, s.received, into: bank) }
+                #expect(try bankRows(context, bank).isEmpty)
+                #expect(try GroupTransactionBridge.pruneSettlementDraftsAlreadyResolved(context: context) == 1)
+
+                // Re-aprobar desde la marca: vuelve a pendiente, y aprobarla registra el pago otra vez, una vez.
+                try DraftService.shared.returnToPending(mark)
+                try approvePendingDraft(context, s.received, into: bank)
+                #expect(try bankRows(context, bank).map(\.amount) == [25])
+                #expect(try drafts(context, s.received).map(\.status) == [.approved])
+            }
+        }
+    }
+
+    /// Caso C: yo pagué. Con la liquidación ya aprobada, ni el re-puente sin cuenta pregunta otra vez ni el formulario con
+    /// cuenta crea la pata real enlazada: los dos serían el mismo dinero otra vez.
+    @Test("con la liquidación aprobada, el Caso C no pregunta ni crea la pata real aunque el formulario traiga cuenta")
+    func caseC_withApprovalMark_doesNotAskNorCreateTheRealLegAgain() throws {
+        let dir = try freshDir()
+        defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let f = try makeFixture(context)
+        try withEnvironment(context) { _ in
+            try withDraftService(context) {
+                SessionState.shared.hasPrivateSession = true
+                let s = try makeSettlements(context, f)
+                try GroupTransactionBridge.shared.bridgeRemoteSettlements(ids: [s.paid.id])
+                let bank = try makeBank(context)
+                try approvePendingDraft(context, s.paid, into: bank)
+                #expect(try bankRows(context, bank).map(\.amount) == [-40])
+
+                try GroupTransactionBridge.shared.bridgeRemoteSettlements(ids: [s.paid.id])
+                #expect(try pendingDrafts(context, s.paid).isEmpty, "el re-puente del Caso C volvió a preguntar")
+
+                try GroupTransactionBridge.shared.bridgeSettlement(s.paid, in: f.group, accountForCurrentUser: f.cash)
+                #expect(try legs(context, s.paid).allSatisfy { $0.account?.isSystemAccount == true },
+                        "se creó una pata real enlazada para un pago ya registrado")
+                #expect(try legs(context, s.paid).count == 1)
+                #expect(try pendingDrafts(context, s.paid).isEmpty)
+                #expect(try bankRows(context, bank).map(\.amount) == [-40])
+            }
+        }
+    }
+
+    /// Caso C rechazado: el re-puente no vuelve a preguntar, pero una cuenta elegida ahora en el formulario sí crea la pata
+    /// real enlazada (es un gesto explícito).
+    @Test("Caso C rechazado: no vuelve a preguntar, y con cuenta elegida en el formulario sí crea la pata real")
+    func caseC_rejected_doesNotAskAgainButAnExplicitAccountStillCounts() throws {
+        let dir = try freshDir()
+        defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let f = try makeFixture(context)
+        try withEnvironment(context) { _ in
+            try withDraftService(context) {
+                SessionState.shared.hasPrivateSession = true
+                let s = try makeSettlements(context, f)
+                try GroupTransactionBridge.shared.bridgeRemoteSettlements(ids: [s.paid.id])
+                try DraftService.shared.rejectDraft(try #require(try pendingDrafts(context, s.paid).first))
+
+                try GroupTransactionBridge.shared.bridgeRemoteSettlements(ids: [s.paid.id])
+                #expect(try pendingDrafts(context, s.paid).isEmpty, "el re-puente resucitó un borrador rechazado")
+                #expect(try drafts(context, s.paid).map(\.status) == [.rejected])
+
+                try GroupTransactionBridge.shared.bridgeSettlement(s.paid, in: f.group, accountForCurrentUser: f.cash)
+                #expect(try legs(context, s.paid).contains {
+                    $0.account?.persistentModelID == f.cash.persistentModelID && $0.amount == -40
+                }, "con una cuenta elegida ahora, la pata real enlazada tiene que crearse")
+            }
+        }
+    }
+
+    /// Rechazar el borrador de una liquidación se puede, el re-puente lo respeta y sale en Archivados (sin cuenta, para
+    /// poder deshacerlo). Borrarlo también se puede, y sin rastro vuelve a preguntar. El puntero de un gasto sigue sin
+    /// poder descartarse.
+    @Test("el borrador de una liquidación se rechaza o se borra; rechazado, el re-puente no vuelve a preguntar")
+    func settlementDraft_canBeRejectedOrDeleted_andARejectionSticks() throws {
+        let dir = try freshDir()
+        defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let f = try makeFixture(context)
+        try withEnvironment(context) { _ in
+            try withDraftService(context) {
+                SessionState.shared.hasPrivateSession = true
+                let s = try makeSettlements(context, f)
+                try GroupTransactionBridge.shared.bridgeRemoteSettlements(ids: [s.received.id, s.paid.id])
+
+                let received = try #require(try pendingDrafts(context, s.received).first)
+                try DraftService.shared.rejectDraft(received)
+                #expect(received.status == .rejected)
+                #expect(received.isShownInArchive, "un rechazo sin cuenta que no sale en Archivados no se puede deshacer")
+                try GroupTransactionBridge.shared.bridgeRemoteSettlements(ids: [s.received.id])
+                #expect(try pendingDrafts(context, s.received).isEmpty, "el re-puente resucitó un borrador rechazado")
+                #expect(try drafts(context, s.received).map(\.status) == [.rejected], "el re-puente borró el rechazo")
+                #expect(try legs(context, s.received).count == 1, "la pata virtual se rehace igual")
+
+                let paid = try #require(try pendingDrafts(context, s.paid).first)
+                try DraftService.shared.deleteDraft(paid)
+                #expect(try drafts(context, s.paid).isEmpty)
+                try GroupTransactionBridge.shared.bridgeRemoteSettlements(ids: [s.paid.id])
+                #expect(try pendingDrafts(context, s.paid).count == 1, "borrado sin rastro, el re-puente pregunta otra vez")
+
+                let pointer = InboxDraft(note: "Cena", amount: -30, sourceType: .groupExpense,
+                                         needsUserInput: [DraftInputRequirement.subcategory],
+                                         splitExpenseID: UUID().uuidString)
+                context.insert(pointer)
+                try context.save()
+                do {
+                    try DraftService.shared.rejectDraft(pointer)
+                    Issue.record("el puntero de un gasto se dejó rechazar")
+                } catch DraftServiceError.cannotRejectGroupDraft {
+                } catch { Issue.record("error inesperado: \(error)") }
+                do {
+                    try DraftService.shared.deleteDraft(pointer)
+                    Issue.record("el puntero de un gasto se dejó borrar")
+                } catch DraftServiceError.cannotDeleteGroupDraft {
+                } catch { Issue.record("error inesperado: \(error)") }
+            }
+        }
+    }
+
+    /// Las acciones en lote del Inbox: rechazar en lote acepta el borrador de una liquidación; en Archivados, «Eliminar» y
+    /// «Devolver a pendientes» se saltan la marca viva —sin ella el re-puente volvería a preguntar, y devuelta a pendientes
+    /// se aprobaría otra vez—.
+    @Test("en lote: se rechaza un borrador de liquidación; la marca viva no se borra ni vuelve a pendientes")
+    func bulkActions_respectTheLiveMark() throws {
+        let dir = try freshDir()
+        defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let f = try makeFixture(context)
+        try withEnvironment(context) { _ in
+            try withDraftService(context) {
+                SessionState.shared.hasPrivateSession = true
+                let s = try makeSettlements(context, f)
+                try GroupTransactionBridge.shared.bridgeRemoteSettlements(ids: [s.received.id, s.paid.id])
+                let bank = try makeBank(context)
+                try approvePendingDraft(context, s.received, into: bank)
+                let mark = try #require(try drafts(context, s.received).first)
+
+                try DraftService.shared.bulkReject(try pendingDrafts(context, s.paid))
+                #expect(try drafts(context, s.paid).map(\.status) == [.rejected])
+
+                try DraftService.shared.bulkReturnToPending([mark])
+                #expect(mark.status == .approved, "la marca volvió a pendientes: aprobarla registraría el pago otra vez")
+                try DraftService.shared.returnToPending(mark)
+                #expect(mark.status == .approved)
+
+                try DraftService.shared.bulkDelete([mark])
+                #expect(try drafts(context, s.received).map(\.status) == [.approved], "limpiar Archivados se llevó la marca")
+                do {
+                    try DraftService.shared.deleteDraft(mark)
+                    Issue.record("la marca viva se dejó borrar")
+                } catch DraftServiceError.cannotDeleteGroupDraft {
+                } catch { Issue.record("error inesperado: \(error)") }
+                #expect(try bankRows(context, bank).map(\.amount) == [25])
+            }
+        }
+    }
 }
 
 /// Un iCloud-KV en memoria: lo que escribe un dispositivo lo lee el otro, sin iCloud.
@@ -1617,5 +2097,66 @@ struct GroupsRemoteWipeReturnLogicTests {
         #expect(GroupsRemoteWipeReturnStore.kvKey == "groupsRowsToReturnAfterRemoteWipe")
         #expect(GroupsRemoteWipeReturnStore.handledKey.hasPrefix("fullModeActivation."),
                 "fuera de ese prefijo el reset de preferencias podría llevársela")
+    }
+}
+
+@Suite("La aprobación de una liquidación deja rastro: la decisión pura")
+struct GroupSettlementDraftResolutionLogicTests {
+
+    typealias Logic = GroupSettlementDraftResolutionLogic
+
+    @Test("el aprobado gana al rechazado; sin nada resuelto, se pregunta")
+    func resolution_approvedWinsOverRejected() {
+        #expect(Logic.resolution(of: []) == nil)
+        #expect(Logic.resolution(of: [.pending]) == nil)
+        #expect(Logic.resolution(of: [.pending, .rejected]) == .rejected)
+        #expect(Logic.resolution(of: [.rejected, .approved]) == .approved)
+        #expect(Logic.resolution(of: [.approved, .pending]) == .approved)
+    }
+
+    @Test("el re-puente sustituye solo los pendientes que creó él")
+    func isReplacedOnReBridge_onlyTheBridgesOwnPendingDrafts() {
+        #expect(Logic.isReplacedOnReBridge(status: .pending, optInPersonalOnly: false))
+        #expect(!Logic.isReplacedOnReBridge(status: .pending, optInPersonalOnly: true), "el opt-in lo creó el formulario")
+        #expect(!Logic.isReplacedOnReBridge(status: .approved, optInPersonalOnly: false), "el aprobado es la marca")
+        #expect(!Logic.isReplacedOnReBridge(status: .rejected, optInPersonalOnly: false), "el rechazo es de la persona")
+        #expect(!Logic.isReplacedOnReBridge(status: .approved, optInPersonalOnly: true))
+    }
+
+    @Test("en frío sobran los pendientes del bridge de una liquidación resuelta, y nada más")
+    func redundantPendingDrafts_onlyTheBridgesPendingOfAResolvedSettlement() {
+        let drafts: [(settlementID: String?, status: DraftStatus, optInPersonalOnly: Bool)] = [
+            ("A", .approved, false),   // 0 · la marca
+            ("A", .pending, false),    // 1 · sobra
+            ("A", .pending, true),     // 2 · opt-in: lo creó el formulario
+            ("B", .pending, false),    // 3 · sin resolver: se queda
+            ("C", .rejected, false),   // 4 · rechazo
+            ("C", .pending, false),    // 5 · sobra
+            (nil, .pending, false),    // 6 · sin liquidación
+        ]
+        #expect(Logic.redundantPendingDrafts(drafts) == [1, 5])
+        #expect(Logic.redundantPendingDrafts([]).isEmpty)
+    }
+
+    @Test("solo el puntero de un gasto de grupo no se deja descartar")
+    func blocksInboxDismissal_onlyGroupExpense() {
+        #expect(DraftSourceType.groupExpense.blocksInboxDismissal)
+        #expect(!DraftSourceType.groupSettlement.blocksInboxDismissal)
+        #expect(!DraftSourceType.groupScheduledExpense.blocksInboxDismissal)
+        #expect(!DraftSourceType.voice.blocksInboxDismissal)
+        #expect(DraftSourceType.groupSettlement.isFromGroup, "el ruteo del aprobar en lote no cambia")
+    }
+
+    @MainActor @Test("en Archivados sale el rechazo sin cuenta de una liquidación, no el de un borrador personal")
+    func isShownInArchive_rejectedSettlementWithoutAccount() {
+        let settlement = InboxDraft(amount: 25, sourceType: .groupSettlement, status: .rejected)
+        let personal = InboxDraft(amount: -10, sourceType: .voice, status: .rejected)
+        let pending = InboxDraft(amount: 25, sourceType: .groupSettlement)
+        #expect(settlement.isShownInArchive)
+        #expect(!personal.isShownInArchive, "sin cuenta cacheada un archivado personal sigue sin salir")
+        #expect(!pending.isShownInArchive)
+        personal.cachedAccountName = "Banco"
+        #expect(personal.isShownInArchive)
+        #expect(!settlement.isLiveSettlementApprovalMark, "rechazada no es la marca")
     }
 }

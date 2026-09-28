@@ -108,11 +108,9 @@ final class InboxViewModel {
         case .pending:
             return allDrafts.filter { $0.status == .pending }
         case .archived:
-            // Only show archived drafts that have cached values (to avoid crashes from invalid relationships)
-            return allDrafts.filter {
-                ($0.status == .approved || $0.status == .rejected) &&
-                $0.cachedAccountName != nil
-            }
+            // Only show archived drafts that have cached values (to avoid crashes from invalid relationships),
+            // plus rejected settlement drafts, which never had an account (`InboxDraft.isShownInArchive`).
+            return allDrafts.filter(\.isShownInArchive)
         }
     }
 
@@ -136,7 +134,7 @@ final class InboxViewModel {
         case .pending:
             return allDrafts.count(where: { $0.status == .pending })
         case .archived:
-            return allDrafts.count(where: { ($0.status == .approved || $0.status == .rejected) && $0.cachedAccountName != nil })
+            return allDrafts.count(where: \.isShownInArchive)
         }
     }
 

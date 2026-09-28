@@ -4413,6 +4413,7 @@
 
 /* Banner explicativo en el sheet de finalización de liquidación de grupo. %@ = nombre del grupo. */
 "inbox.groupSettlementDraft.banner" = "Abrechnung aus der Gruppe %@. Weisen Sie nur ein Konto zu; Betrag und Datum verwaltet die Gruppe.";
+"inbox.groupSettlementDraft.alreadyRegistered" = "Diese Zahlung ist bereits in Ihren Konten erfasst. Sie können diesen Entwurf verwerfen.";
 
 /* Title del sheet de finalización cuando faltan cuenta + subcategoría (Caso A match falla) */
 "inbox.groupExpenseAccountSubcategoryDraft.title" = "Konto und Unterkategorie zuweisen";

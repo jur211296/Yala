@@ -4423,6 +4423,7 @@
 
 /* Banner explicativo en el sheet de finalización de liquidación de grupo. %@ = nombre del grupo. */
 "inbox.groupSettlementDraft.banner" = "Liquidazione del gruppo %@. Assegna solo un conto; l'importo e la data sono gestiti dal gruppo.";
+"inbox.groupSettlementDraft.alreadyRegistered" = "Questo pagamento è già registrato nei tuoi conti. Puoi eliminare questa bozza.";
 
 /* Title del sheet de finalización cuando faltan cuenta + subcategoría (Caso A match falla) */
 "inbox.groupExpenseAccountSubcategoryDraft.title" = "Assegna conto e sottocategoria";
