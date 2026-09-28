@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-27 (Lima)
 
-**Rama** `2.1` — Merge #284: **el dispositivo que procesa tarde «Vaciar datos» repone los gastos de grupo que se lleva.**
+**Rama** `2.1` — Merge #286: **fase 0 del carril adaptativo: en iPad (y en el Duo) ya no se abre una segunda ventana rota.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,49 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#284 · el dispositivo que procesa tarde «Vaciar datos» repone lo que se lleva)
+## Esta sesión (#286 · fase 0: multiventana apagada en iPad y Duo)
+
+Hasta hoy, en iPad se podía abrir una segunda ventana de Yala que compartía pestaña, hojas y destino de widgets con la
+primera. El Duo, a la venta el 23-oct, lo habría heredado. Queda apagado hasta la fase 4
+(`ipad-real-multiwindow-with-per-scene-state`, donde está escrito cómo se reenciende).
+
+- **Medido en simulador:** una sonda en `YalaLane-Adapt-iPad-Pro-13` abría 2 escenas; ahora el sistema rechaza la
+  segunda. Plist compilado de `Yala` y `Yala Dev`: `false`.
+- **La receta del ticket no hacía nada:** `INFOPLIST_KEY_UIApplicationSupportsMultipleScenes` no existe en Xcode 27.0.
+  Va con `…SceneManifest_Generation = NO` en las cuatro configuraciones y el manifiesto en `Yala/Resources/Info.plist`.
+- **Encontrado:** los XCUITest de navegación buscan la barra de pestañas del iPhone y en iPad fallan también en la base
+  (5 de 6). Ticket `navigation-uitests-look-for-the-iphone-tab-bar-on-ipad`; toca antes o con la fase 1.
+
+### Lo que espera de Jürgen
+
+- **Xcode 27.1 beta en esta Mac** para el simulador del Duo: `xcode-27-1-with-the-iphone-duo-simulator`. Solo bloquea
+  la fase Duo, y el disco bajó a ~4 GB durante esta sesión.
+- Opcional: con el próximo TestFlight en un iPad, arrastrar Yala desde el Dock ya no debe abrir otra ventana.
+
+## Sesión anterior (#285 · plan adaptativo: iPad, iPhone Duo y mejoras de iPhone)
+
+Sin código: plan y tickets. Jürgen aprobó la dirección de la exploración de iPad y su §5.1 (barra lateral + lista +
+detalle), con una condición: la versión que Apple recomienda, que se adapte sola a cualquier tamaño, incluido el
+iPhone Duo. Queda:
+
+- **Plan vigente** en `docs/exploracion/adaptativo-ipad-duo.md`: lo que Apple documenta del Duo (con URLs), lo no
+  documentado aparte, la regla de layout y **13 fases en serie**, cada una un encargo lanzable. Decisión escrita en
+  `docs/DECISIONS.md`: «Yala se adapta por espacio, no por dispositivo».
+- **Dos reglas nuevas de Jürgen** en el plan y en cada ticket: se permiten mejoras de iPhone si no rompen flujos ni
+  arriesgan la 2.1; y el carril usa solo simuladores `YalaLane-Adapt-…` por UDID, para no chocar con Cola A.
+- **El Duo se cubre adaptando la misma app**: fuera es un iPhone (compact) y dentro un iPad (regular).
+- **La fase 0 tiene fecha**: el Duo, a la venta el 23-oct, es el primer iPhone con varias ventanas de una app, y Yala
+  tiene la multiventana encendida.
+
+### Lo que espera de Jürgen
+
+- **Xcode 27.1 beta en esta Mac** para el simulador del Duo (disco a 15 GB):
+  `tickets/backlog/xcode-27-1-with-the-iphone-duo-simulator.md`. Solo bloquea la fase Duo.
+- **¿Yala gira a horizontal en iPhone?** Recomendado: sí, tras la fase 1.
+  `tickets/backlog/iphone-supports-landscape-orientation.md`.
+- Siguiente del carril: la fase 0, `ipad-multiple-windows-share-one-navigation-state`.
+
+## Antes (#284 · el dispositivo que procesa tarde «Vaciar datos» repone lo que se lleva)
 
 Si vaciabas tus datos en el iPhone y abrías después el iPad, que estaba cerrado, el iPad se vaciaba y se llevaba los
 gastos y liquidaciones de grupo que el iPhone ya había repuesto, en los dos dispositivos y para siempre. Ahora:
@@ -42,7 +84,7 @@ gastos y liquidaciones de grupo que el iPhone ya había repuesto, en los dos dis
   tardío se lleva también lo personal nuevo; pide decidir qué promete). Un low:
   `late-remote-wipe-infers-the-origin-converged-from-row-dates`.
 
-## Sesión anterior (#283 · tras «Vaciar datos», los gastos y liquidaciones de grupo vuelven a lo personal)
+## Antes (#283 · tras «Vaciar datos», los gastos y liquidaciones de grupo vuelven a lo personal)
 
 Quien vaciaba sus datos en Ajustes conservaba sus grupos y sus saldos, pero los gastos y las liquidaciones de grupo
 desaparecían de Registros, el Panel y el Inbox. Solo volvía lo que alguien editara después. Ahora:
