@@ -29,10 +29,12 @@ struct FreshStartGroupsLossLogicTests {
 
     typealias Loss = CloudSignOutFlowLogic.FreshStartGroupsLoss
 
-    /// **Los tres que esperar no arregla, y ni uno más.** Recorre `allCases`: un motivo nuevo que se colara en la salida
-    /// sin decidirlo pondría esto en rojo.
+    /// **Los que esperar no arregla, y ni uno más.** Recorre `allCases`: un motivo nuevo que se colara en la salida sin
+    /// decidirlo pondría esto en rojo. Eran tres; desde el 2026-09-28 cuatro, con los cambios de otra cuenta
+    /// (`groups-outbox-rows-without-a-live-session-have-no-exit`).
     @Test func offers_onlyTheThreeReasonsThatWaitingDoesNotFix() {
-        let offering: Set<CloudSignOutFlowLogic.BlockReason> = [.sessionExpired, .permanent, .attestUnavailable]
+        let offering: Set<CloudSignOutFlowLogic.BlockReason> = [
+            .sessionExpired, .permanent, .attestUnavailable, .groupsChangesFromAnotherAccount]
         for reason in CloudSignOutFlowLogic.BlockReason.allCases {
             #expect(CloudSignOutFlowLogic.freshStartOffersGroupsLossExit(reason) == offering.contains(reason),
                     "\(reason)")

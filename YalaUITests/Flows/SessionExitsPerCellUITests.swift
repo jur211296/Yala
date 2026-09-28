@@ -164,6 +164,40 @@ final class SessionExitsPerCellUITests: XCTestCase {
         app.buttons["destructive_scope_cancel"].tap()
     }
 
+    /// Ticket `groups-outbox-rows-without-a-live-session-have-no-exit` (2026-09-28). En la celda C, con cambios de grupos sin
+    /// subir y sin sesión —el estado real que siembra `-uitest-groups-outbox-pending`—, el aviso cuenta lo que se perdería,
+    /// ofrece «Cerrar sesión y perderlos» y su salida por defecto, «Ahora no», **no borra nada**: el siguiente cierre vuelve a
+    /// encontrar el mismo cambio. **El botón destructivo no se toca**: armaría un boot-wipe REAL en el simulador. Que aceptar
+    /// deje seguir el cierre lo fija `GroupsNoSessionLossExitTests`. Lleva el seam de la sesión superviviente como FRENO: si
+    /// algo tocara la salida, el cierre se pararía en `signOut()` antes del arm.
+    func test_privateCell_C_signOutWithGroupChangesAndNoSession_offersTheLoss_andNotNowKeepsThem() {
+        let app = XCUIApplication()
+        app.launchForUITest(seed: "minimal", groupsOutboxPending: true, signOutKeepsSession: true)
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap no completó.")
+        app.openProfile()
+
+        let lossText = app.alerts.staticTexts
+            .matching(NSPredicate(format: "label CONTAINS %@", "Cambios de grupos sin subir: 1")).firstMatch
+        let notNow = app.alerts.buttons["Ahora no"].firstMatch
+        for intento in 1...2 {
+            scrollTo(app, "profile_security_signout").tap()
+            let confirm = app.buttons["destructive_scope_confirm"]
+            XCTAssertTrue(confirm.waitForExistence(timeout: 10), "La hoja de «Cerrar sesión» no ofrece confirmar (intento \(intento)).")
+            confirm.tap()
+
+            XCTAssertTrue(lossText.waitForExistence(timeout: 20), """
+                El cierre con cambios de grupos y sin sesión no enseñó el aviso que cuenta lo que se perdería \
+                (intento \(intento)). En el segundo intento, eso es que «Ahora no» borró el cambio.
+                """)
+            XCTAssertTrue(app.alerts.buttons["Cerrar sesión y perderlos"].exists, "El aviso no ofrece perder los cambios.")
+            XCTAssertTrue(notNow.exists, "El aviso no ofrece «Ahora no».")
+            XCTAssertFalse(app.descendants(matching: .any)["signout_relaunch_screen"].exists,
+                           "Salió la pantalla de reabrir: el cierre armó el borrado. Borra el arm del simulador.")
+            notNow.tap()
+            XCTAssertTrue(lossText.waitForNonExistence(timeout: 10), "«Ahora no» no cerró el aviso.")
+        }
+    }
+
     /// Ticket `private-sign-out-proceeds-with-a-migration-in-flight`. Con el paso de los datos a la nube fuera de reposo, el
     /// cierre de la sesión privada se para ANTES de escribir nada y lo dice. El seam `-uitest-migration-journal-unreadable`
     /// hace lanzar la lectura del journal del controller, que es el único estado «fuera de reposo» que el simulador puede

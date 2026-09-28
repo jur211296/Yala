@@ -60,10 +60,11 @@ enum AppleIDCloseNoticeLogic {
         /// No hay cierre en vuelo ni bloqueo que enseñar: no arrancó, u otra pantalla reconoció su bloqueo.
         /// Mismo texto que el bloqueo pasajero, «un momento más», y las mismas dos salidas.
         case busy
-        /// **El cierre paró porque este teléfono lleva más de un día sin App Attest, y puede seguir perdiendo los
-        /// cambios de grupos** (2026-09-15). El aviso cuenta `pending` y ofrece «Cerrar sesión y perderlos» junto a
-        /// «Ahora no». Solo lo da `stage(notice:phase:offersGroupsLossExit:)`, con la salida de ESTE cierre viva.
-        case losingGroupChanges(pending: Int)
+        /// **El cierre paró en cambios de grupos que no van a subir, y puede seguir perdiéndolos** (2026-09-15 para el
+        /// teléfono sin App Attest; desde el 2026-09-28 también la sesión caducada y los cambios de otra cuenta). El aviso
+        /// cuenta `pending`, con el texto de `reason`, y ofrece «Cerrar sesión y perderlos» junto a «Ahora no». Solo lo da
+        /// `stage(notice:phase:offersGroupsLossExit:)`, con la salida de ESTE cierre viva.
+        case losingGroupChanges(pending: Int, reason: CloudSignOutFlowLogic.BlockReason)
     }
 
     /// La etapa con la salida que pierde los cambios de grupos (ticket
@@ -73,13 +74,14 @@ enum AppleIDCloseNoticeLogic {
     /// bloqueo y deja de ofrecer la salida en el mismo gesto; si la vista la leyera aparte, la animación de salida
     /// pintaría el bloqueo sin salida justo encima de lo que la persona eligió (el bug que ya obligó a congelar la etapa).
     ///
-    /// Solo cambia `.blocked(.attestUnavailable)` con la salida ofrecida; el resto es la tabla de siempre.
+    /// Solo cambia un `.blocked` cuyo motivo abre la salida (`CloudSignOutFlowLogic.lossCause`) con la salida ofrecida; el
+    /// resto es la tabla de siempre.
     static func stage(notice: AppleIDCloseNotice, phase: CloudSessionSignOut.Phase,
                       offersGroupsLossExit: Bool) -> Stage {
         let base = stage(notice: notice, phase: phase)
-        guard base == .blocked(.attestUnavailable), offersGroupsLossExit,
+        guard case .blocked(let reason) = base, CloudSignOutFlowLogic.lossCause(reason) != nil, offersGroupsLossExit,
               case .blocked(let pending, _) = phase else { return base }
-        return .losingGroupChanges(pending: pending)
+        return .losingGroupChanges(pending: pending, reason: reason)
     }
 
     static func stage(notice: AppleIDCloseNotice, phase: CloudSessionSignOut.Phase) -> Stage {

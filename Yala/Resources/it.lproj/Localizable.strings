@@ -6146,3 +6146,27 @@
 
 /* Confirm body before finishing a deletion that was left halfway */
 "welcome.privateICloud.leftHalfwayConfirmBody" = "Quello che resta su questo telefono viene eliminato, anche ciò che hai creato nel frattempo, e ricominci da capo. Non resta nessuna copia.";
+
+/* Cierre de sesión bloqueado: quedan cambios de grupos de otra cuenta, sin salida que los pierda */
+"groups.errors.groupsChangesFromAnotherAccount" = "Alcune modifiche dei gruppi su questo telefono sono state fatte con un altro account e si possono caricare solo con quell'account. Non si perde nulla: restano salvate qui finché non accedi con quell'account.";
+
+/* Cerrar sesión sin la sesión de la cuenta que apuntó los cambios; %d = cambios de grupos que se pierden */
+"groups.errors.noSessionSignOutLoss" = "Modifiche dei gruppi non ancora caricate: %d. Si caricano solo con l'account che le ha create, e la sua sessione non è aperta su questo telefono: rientra con quell'account per caricarle. Se non puoi, esci comunque e andranno perse; nessuno del gruppo le vedrà.";
+
+/* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
+"groups.errors.noSessionSignOutLossUnknown" = "Alcune modifiche dei gruppi non sono ancora state caricate. Si caricano solo con l'account che le ha create, e la sua sessione non è aperta su questo telefono: rientra con quell'account per caricarle. Se non puoi, esci comunque e andranno perse; nessuno del gruppo le vedrà.";
+
+/* Cerrar sesión en la nube con la sesión caducada; %d = cambios de grupos que se pierden */
+"settings.signOutCloudSessionExpiredGroupsLoss" = "La tua sessione è scaduta. Modifiche dei tuoi gruppi non ancora caricate: %d. Per caricarle, apri «Dove si trovano i tuoi dati», qui in Profilo, e tocca «Accedi». Se non riesci ad accedere, esci comunque e andranno perse; nessuno del gruppo le vedrà.";
+
+/* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
+"settings.signOutCloudSessionExpiredGroupsLossUnknown" = "La tua sessione è scaduta e alcune modifiche dei tuoi gruppi non sono ancora state caricate. Per caricarle, apri «Dove si trovano i tuoi dati», qui in Profilo, e tocca «Accedi». Se non riesci ad accedere, esci comunque e andranno perse; nessuno del gruppo le vedrà.";
+
+/* Vuelta al neutro sin la sesión de la cuenta que apuntó los cambios; %d = cambios de grupos que se pierden */
+"welcome.groups.neutralNoSessionLossBody" = "Modifiche dei gruppi non ancora caricate: %d. Si caricano solo con l'account che le ha create, e la sua sessione non è aperta su questo telefono. Se continui ora, andranno perse e nessuno del gruppo le vedrà.";
+
+/* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
+"welcome.groups.neutralNoSessionLossBodyUnknown" = "Alcune modifiche dei gruppi non sono ancora state caricate. Si caricano solo con l'account che le ha create, e la sua sessione non è aperta su questo telefono. Se continui ora, andranno perse e nessuno del gruppo le vedrà.";
+
+/* Empezar de cero con cambios de grupos de otra cuenta: por qué no suben */
+"groups.freshStartPending.lossOtherAccount" = "Si possono caricare solo con l'account che le ha create, e la sessione aperta su questo telefono è di un altro account. Se non rientrerai con quell'account, puoi ricominciare da zero e perderle: nessuno del gruppo le vedrà.";

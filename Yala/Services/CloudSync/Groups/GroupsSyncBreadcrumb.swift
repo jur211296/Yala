@@ -71,6 +71,17 @@ enum GroupsSyncBreadcrumb {
         logger.notice("GroupsSync mirrorRehydrated count=\(count, privacy: .public) — filas re-insertadas desde el espejo App Group")
     }
 
+    /// La subida dejó en el outbox `count` filas que no son de la sesión viva: de otra cuenta, o sin dueño probado (ticket
+    /// `groups-outbox-rows-without-a-live-session-have-no-exit`). No es un fallo: se retienen para su dueño.
+    static func groupsOutboxHeldForAnotherAccount(count: Int) {
+        logger.notice("GroupsSync outboxHeldForAnotherAccount count=\(count, privacy: .public) — filas de otra cuenta, sin subir")
+    }
+
+    /// `count` filas sin dueño lo recibieron: de su entrada del espejo del App Group, o del registro de sesiones.
+    static func groupsOutboxOwnersAdopted(count: Int) {
+        logger.notice("GroupsSync outboxOwnersAdopted count=\(count, privacy: .public)")
+    }
+
     /// El barrido retiró tombstones de `split_groups` ENCOLADOS por un build anterior al guard del
     /// 2026-08-02: `rows` filas del `GroupSyncOutbox` y `mirror` entries venenosas realmente VISTAS en el
     /// espejo App Group (incluye las huérfanas sin fila; NO cuenta las dead-letter, que por diseño B2

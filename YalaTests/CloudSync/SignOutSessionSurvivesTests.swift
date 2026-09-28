@@ -348,7 +348,7 @@ struct SignOutChecksTheSessionBeforeArmingTests {
     func welcomeGroupsGate_hasItsOwnBranch() throws {
         let source = try Self.code("Yala/App/Views/Onboarding/WelcomeGroupsGateView.swift")
         guard let branch = source.range(of: "case .blocked(_, .signOutSessionSurvived):"),
-              let catchAll = source.range(of: "        case .blocked:\n") else {
+              let catchAll = source.range(of: "        case .blocked(let pending, let reason):\n") else {
             Issue.record("""
                 La puerta de Grupos del Welcome no tiene rama para `.signOutSessionSurvived`: cae en el `case .blocked:` \
                 final, que dice «faltan cambios de tus grupos por subir, vuelve a entrar con esa cuenta».

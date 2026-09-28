@@ -243,11 +243,13 @@ struct MigrationIdentityGateWiringTests {
         #expect(Self.lines(body) == [
             "guard opened else { return nil }",
             "let provider = CloudAuthService.shared.storedProvider().flatMap(CloudSignInProvider.init(rawValue:))",
-            "await CloudAuthService.shared.signOut()",
+            // Una sesión DE PASO: el registro de sesiones vuelve a la cuenta de antes
+            // (`groups-outbox-rows-without-a-live-session-have-no-exit`).
+            "await CloudAuthService.shared.signOut(returningToPreviousAccount: true)",
             "return provider",
         ])
         let code = Self.lines(try Self.source(Self.controllerPath)).joined(separator: "\n")
-        #expect(Self.occurrences(of: "CloudAuthService.shared.signOut()", in: code) == 1,
+        #expect(Self.occurrences(of: "CloudAuthService.shared.signOut(", in: code) == 1,
                 "ningún otro camino de la puerta cierra sesiones")
     }
 

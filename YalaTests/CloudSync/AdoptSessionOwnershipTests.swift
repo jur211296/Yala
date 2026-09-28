@@ -409,7 +409,7 @@ struct AdoptSessionOwnershipWiringTests {
         }
         // Desde el 2026-09-26 `signOut()` devuelve si la sesión se fue, y su `guard` sin cliente devuelve ese testigo
         // (`detach-does-not-verify-the-cloud-session-actually-closed`). Lo que se fija aquí no cambia: la marca, antes.
-        let signOut = Self.lines(try Self.body(of: "func signOut() async -> Bool {", in: path))
+        let signOut = Self.lines(try Self.body(of: "func signOut(returningToPreviousAccount: Bool = false) async -> Bool {", in: path))
         let clear = try #require(signOut.firstIndex(of: "AdoptSessionOwnership.record(nil)"))
         let guardClient = try #require(signOut.firstIndex(of: "guard let client else { return storedSessionIsGone }"))
         #expect(clear < guardClient)

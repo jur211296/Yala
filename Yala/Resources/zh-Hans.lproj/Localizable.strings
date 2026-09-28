@@ -6148,3 +6148,27 @@
 
 /* Confirm body before finishing a deletion that was left halfway */
 "welcome.privateICloud.leftHalfwayConfirmBody" = "这台手机上剩下的数据会被删除，包括之后新建的内容，然后你将从头开始。不会留下任何副本。";
+
+/* Cierre de sesión bloqueado: quedan cambios de grupos de otra cuenta, sin salida que los pierda */
+"groups.errors.groupsChangesFromAnotherAccount" = "这台手机上有一些群组更改是用另一个账户创建的，只能用那个账户上传。这些更改不会丢失：在你用那个账户登录之前，它们会一直保存在这里。";
+
+/* Cerrar sesión sin la sesión de la cuenta que apuntó los cambios; %d = cambios de grupos que se pierden */
+"groups.errors.noSessionSignOutLoss" = "尚未上传的群组更改：%d 项。这些更改只能用创建它们的账户上传，而该账户的会话没有在这台手机上打开：请用那个账户重新登录来上传。如果无法登录，也可以直接退出登录，但这些更改会丢失，群组里的任何人都看不到。";
+
+/* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
+"groups.errors.noSessionSignOutLossUnknown" = "还有尚未上传的群组更改。这些更改只能用创建它们的账户上传，而该账户的会话没有在这台手机上打开：请用那个账户重新登录来上传。如果无法登录，也可以直接退出登录，但这些更改会丢失，群组里的任何人都看不到。";
+
+/* Cerrar sesión en la nube con la sesión caducada; %d = cambios de grupos que se pierden */
+"settings.signOutCloudSessionExpiredGroupsLoss" = "你的登录已过期。尚未上传的群组更改：%d 项。要上传它们，请打开本页“个人资料”中的“你的数据存放在哪里”，轻点“登录”。如果无法登录，也可以直接退出登录，但这些更改会丢失，群组里的任何人都看不到。";
+
+/* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
+"settings.signOutCloudSessionExpiredGroupsLossUnknown" = "你的登录已过期，还有尚未上传的群组更改。要上传它们，请打开本页“个人资料”中的“你的数据存放在哪里”，轻点“登录”。如果无法登录，也可以直接退出登录，但这些更改会丢失，群组里的任何人都看不到。";
+
+/* Vuelta al neutro sin la sesión de la cuenta que apuntó los cambios; %d = cambios de grupos que se pierden */
+"welcome.groups.neutralNoSessionLossBody" = "尚未上传的群组更改：%d 项。这些更改只能用创建它们的账户上传，而该账户的会话没有在这台手机上打开。如果现在继续，这些更改会丢失，群组里的任何人都看不到。";
+
+/* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
+"welcome.groups.neutralNoSessionLossBodyUnknown" = "还有尚未上传的群组更改。这些更改只能用创建它们的账户上传，而该账户的会话没有在这台手机上打开。如果现在继续，这些更改会丢失，群组里的任何人都看不到。";
+
+/* Empezar de cero con cambios de grupos de otra cuenta: por qué no suben */
+"groups.freshStartPending.lossOtherAccount" = "这些更改只能用创建它们的账户上传，而这台手机上打开的会话属于另一个账户。如果你不会再用那个账户登录，可以从头开始并丢失这些更改：群组里的人都不会看到它们。";

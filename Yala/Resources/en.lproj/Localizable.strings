@@ -6142,3 +6142,27 @@
 
 /* Confirm body before finishing a deletion that was left halfway */
 "welcome.privateICloud.leftHalfwayConfirmBody" = "Whatever is left on this phone is deleted, including anything you've created since, and you start over. No copy is left.";
+
+/* Cierre de sesión bloqueado: quedan cambios de grupos de otra cuenta, sin salida que los pierda */
+"groups.errors.groupsChangesFromAnotherAccount" = "Some group changes on this phone were made with another account, and they can only upload with that account. Nothing is lost: they stay saved here until you sign in with it.";
+
+/* Cerrar sesión sin la sesión de la cuenta que apuntó los cambios; %d = cambios de grupos que se pierden */
+"groups.errors.noSessionSignOutLoss" = "Group changes not uploaded yet: %d. They only upload with the account that made them, and its session isn't open on this phone: sign back in with that account to upload them. If you can't, sign out anyway and they'll be lost; no one in the group will see them.";
+
+/* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
+"groups.errors.noSessionSignOutLossUnknown" = "Some group changes haven't been uploaded yet. They only upload with the account that made them, and its session isn't open on this phone: sign back in with that account to upload them. If you can't, sign out anyway and they'll be lost; no one in the group will see them.";
+
+/* Cerrar sesión en la nube con la sesión caducada; %d = cambios de grupos que se pierden */
+"settings.signOutCloudSessionExpiredGroupsLoss" = "Your session expired. Group changes not uploaded yet: %d. To upload them, open “Where your data lives”, here in Profile, and tap “Sign in”. If you can't sign in, sign out anyway and they'll be lost; no one in the group will see them.";
+
+/* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
+"settings.signOutCloudSessionExpiredGroupsLossUnknown" = "Your session expired and some group changes haven't been uploaded yet. To upload them, open “Where your data lives”, here in Profile, and tap “Sign in”. If you can't sign in, sign out anyway and they'll be lost; no one in the group will see them.";
+
+/* Vuelta al neutro sin la sesión de la cuenta que apuntó los cambios; %d = cambios de grupos que se pierden */
+"welcome.groups.neutralNoSessionLossBody" = "Group changes not uploaded yet: %d. They only upload with the account that made them, and its session isn't open on this phone. If you continue now, they'll be lost and no one in the group will see them.";
+
+/* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
+"welcome.groups.neutralNoSessionLossBodyUnknown" = "Some group changes haven't been uploaded yet. They only upload with the account that made them, and its session isn't open on this phone. If you continue now, they'll be lost and no one in the group will see them.";
+
+/* Empezar de cero con cambios de grupos de otra cuenta: por qué no suben */
+"groups.freshStartPending.lossOtherAccount" = "They can only upload with the account that made them, and the session open on this phone belongs to another one. If you're not going to sign back in with that account, you can start from scratch and lose them: no one in the group will see them.";
