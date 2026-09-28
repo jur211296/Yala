@@ -1,6 +1,6 @@
 ---
 id: ipad-multiple-windows-share-one-navigation-state
-status: backlog
+status: done
 priority: high
 area: "platform, ipad, navigation"
 updated: 2026-09-27
@@ -42,9 +42,35 @@ adaptativo y tiene fecha.
 ## Qué hacer
 
 1. **Medir en un iPad real** con el guion de abajo.
-2. Si se confirma, **apagar la multiventana**: `INFOPLIST_KEY_UIApplicationSupportsMultipleScenes = NO`
-   en los dos build settings del target `Yala`. No quita nada que funcione hoy. Se vuelve a encender en
+2. Si se confirma, **apagar la multiventana**. No quita nada que funcione hoy. Se vuelve a encender en
    `ipad-real-multiwindow-with-per-scene-state`.
+
+## Resuelto (2026-09-27)
+
+**La multiventana está apagada, en iPad y en el Duo, hasta que cada ventana tenga su propio estado.**
+
+- **Medido en simulador, sin interfaz gráfica.** Una sonda temporal (no commiteada) pidió una segunda escena con
+  `requestSceneSessionActivation` en `YalaLane-Adapt-iPad-Pro-13`. **Antes:** `supportsMultipleScenes=true`, 1 → 2
+  escenas: el sistema abría la segunda ventana. **Después:** `false`, error «La aplicación no admite varios
+  entornos», se queda en 1. La navegación compartida es estructural (un solo `WindowGroup`, `SessionState.shared`,
+  `AppRouter.shared`) y no hacía falta verla en pantalla para saber que la segunda ventana nacía rota.
+- **La receta de arriba no funcionaba.** `INFOPLIST_KEY_UIApplicationSupportsMultipleScenes` no existe en el
+  generador de Xcode 27.0 (su `CoreBuildSystem.xcspec` solo define `…SceneManifest_Generation`, que siempre escribe un
+  manifiesto multiventana): se puso en las cuatro configuraciones, compiló y el plist siguió en `true`.
+- **Lo que se hizo:** `INFOPLIST_KEY_UIApplicationSceneManifest_Generation = NO` en las **cuatro** configuraciones del
+  target `Yala` (`Debug`, `Release`, `Debug-Dev`, `Release-Dev`: el ticket decía dos, pero `Yala Dev` usa las `-Dev`)
+  y el manifiesto escrito en `Yala/Resources/Info.plist` con `UIApplicationSupportsMultipleScenes = false` y
+  `UISceneConfigurations` vacío, la misma forma que generaba Xcode.
+- **Plist compilado:** `plutil -p .ddp/Build/Products/Debug-iphonesimulator/Yala.app/Info.plist` → antes `true`,
+  después `false`.
+- **Se vuelve a encender** en [[ipad-real-multiwindow-with-per-scene-state]]; allí está escrito cómo.
+- **Builds:** `Yala` (`Debug`) y `Yala Dev` (`Debug-Dev`) compilan, y las dos dan `false`.
+- **XCUITest de navegación** (`DeeplinkRoutingUITests`, `StatisticsNavigationUITests`, `LaunchSliceUITests`), por
+  UDID: `YalaLane-Adapt-iPhone-ProMax` 6/6 ✓. `YalaLane-Adapt-iPad-Pro-13` 1/6, **idéntico en la base sin el cambio**
+  (mismos 5 rojos, mismas líneas): esos tests buscan la barra de pestañas del iPhone, que en iPad no existe. No es
+  de esta fase; va a [[navigation-uitests-look-for-the-iphone-tab-bar-on-ipad]].
+- El guion de iPad real de abajo queda como comprobación opcional: con el cambio, el paso 1 ya no debe abrir una
+  segunda ventana.
 
 ## Guion de QA (iPad real, build de TestFlight)
 
