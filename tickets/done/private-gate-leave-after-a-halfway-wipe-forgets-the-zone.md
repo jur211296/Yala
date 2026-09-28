@@ -1,11 +1,14 @@
 ---
 id: private-gate-leave-after-a-halfway-wipe-forgets-the-zone
-status: qa
-updated: 2026-09-27
+status: done
+updated: 2026-09-28
 priority: medium
 area: "onboarding, modo-nube"
 created: 2026-09-27
 source: "encargo de `private-gate-wipe-failure-copy-claims-icloud-is-intact` (2026-09-27), punto 4; aparcado por alcance. Inferido por lectura, NO reproducido"
+qa-status: not-replicable
+qa-date: 2026-09-28
+qa-notes: barrido 2026-09-28 sin device-QA - el fallo exige que falle el borrado local a mitad; cubierto por PrivateGateHalfwayWipeTests
 ---
 
 # Salir de la puerta tras un borrado a medias olvida que iCloud ya está vacío
@@ -108,3 +111,7 @@ mirar es que el camino de siempre no cambió:
 3. Toca «Empezar de cero», confirma, y **justo al confirmar activa el modo avión**.
 4. Esperado: «No pudimos borrar todo» con «Tus datos siguen en iCloud, intactos». Toca «Dejarlo por ahora».
 5. Quita el modo avión, elige otra vez «Privado»: vuelve a salir «Encontramos datos tuyos en iCloud». Nada se borró.
+
+## Barrido de `qa` · 2026-09-28 · cerrado sin device-QA
+
+Sale de la cola de device-QA por el barrido semanal (encargo `2026-09-28-barrido-qa-in-qa-semanal`), con el criterio del 2026-09-23 (#224). El propio ticket dice que el fallo no se provoca a mano: exige que el borrado local falle a mitad. Su guion de no-regresión depende de poner el modo avión en el instante justo. Lo cubren `PrivateGateHalfwayWipeTests` y `LateICloudWipeLeftHalfwayLogicTests`.

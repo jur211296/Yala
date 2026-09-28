@@ -3,11 +3,13 @@
 > **Qué es esto.** La cola de `tickets/qa/` y el guion para recorrerla en el iPhone, agrupada **por
 > montaje** y no por ticket: una reinstalación sirve a tres tickets si se hacen seguidos.
 >
-> **Actualizado: 2026-09-23 · 21 tickets.** Sale del barrido del 2026-09-23 (encargo
-> `2026-09-23-barrido-qa-in-qa-pre-device`). De 80 tickets en `qa`, **59 bajaron a `done` sin device-QA**:
-> casos raros, montajes de dos teléfonos o de servidor, o ya cubiertos por tests. Cada uno lleva al final
-> su sección «Barrido de `qa` · 2026-09-23» con el porqué. **Los 21 de aquí son los que merece la pena
-> probar a mano**, y cada uno dice en esa misma sección qué recorridos bastan para cerrarlo.
+> **Actualizado: 2026-09-28 · 23 tickets.** Sale del barrido semanal del 2026-09-28 (encargo
+> `2026-09-28-barrido-qa-in-qa-semanal`), con el criterio del 2026-09-23 (#224). Desde aquel barrido la cola
+> volvió a crecer de 21 a 51. **28 bajaron a `done` sin device-QA**: 25 casos raros, montajes de dos
+> dispositivos, esperas de una hora o SQL, ya cubiertos por tests, y 2 cuya no-regresión ya recorren C4 y
+> E1 (`absorbed`). Uno más, el antiguo E2, salió porque solo se daba de rebote. Cada uno lleva al final su
+> sección «Barrido de `qa` · 2026-09-28» con el porqué. **Entra uno nuevo**, el bloque F. **Los 23 de aquí son
+> los que merece la pena probar a mano**; los que bajaron a `done` no se te vuelven a pedir.
 >
 > Al mover algo a `qa/` o sacarlo de ahí, actualiza este guion.
 >
@@ -42,17 +44,19 @@ En el orden del guion. Una línea por ticket: qué pruebas y por qué no basta c
 | D7 | `private-sign-out-proceeds-with-a-migration-in-flight` | Con la subida a la nube parada, «Cerrar sesión» no borra nada | Riesgo de perder datos; una subida en marcha no existe en el simulador |
 | D6 | `reentry-counts-as-fresh-install` | Volver a tu cuenta de la nube tras reinstalar no parece una instalación nueva | Flujo que hará todo el que cambie de teléfono |
 | E1 | `reverse-cutover-cerrado-para-cuentas-born-cloud` | «Volver a iCloud» con una cuenta nacida en la nube sube TODO a iCloud | Es la única pieza del repo marcada «NO medido» |
-| E2 | `migration-activation-drops-pending-effects-it-never-restores` | Tocar «Activar la nube» y cancelar no pierde el cierre pendiente de la vuelta | Oportunista: solo si E1 acaba sin red; los unit tests ya cubren la lógica |
+| F1 | `wipe-data-keeps-groups-but-drops-their-bridged-rows` | Tras «Vaciar datos», los gastos de tus grupos vuelven a tus cuentas, una sola vez | Toca dinero: sin el arreglo desaparecían de tus cuentas. Es del 27-sep y el TestFlight 14 no lo lleva |
 
 **Si hoy solo tienes hora y media:** el bloque D (los dos «muy alto») y el B. Lo que no hagas sigue en
-`qa` y no pasa nada.
+`qa` y no pasa nada. **El bloque F va siempre el último**: «Vaciar datos» borra también el iCloud de Yala
+Dev que usan B y C.
 
 ## Antes de empezar (10 minutos, una vez)
 
 1. **Actualiza `2.1` en el Mac**: en `~/Yala`, `git pull`.
 2. **Instala Yala Dev en el iPhone.** Conéctalo por cable, abre `Yala.xcodeproj` en Xcode, arriba elige el
    scheme **Yala Dev** y tu iPhone como destino, y pulsa ▶. Tiene que ser Yala Dev compilada hoy: el
-   TestFlight 13 es del 9-sep y no lleva casi nada de esta lista.
+   TestFlight 14 es de `2.1` del 23-sep y no lleva lo de después (D7 y F), y las cuentas G1-G3 viven en
+   staging.
    - Yala Dev es **otra app** (otro icono) y va contra **staging**. Tu Yala de TestFlight y sus datos no se
      tocan.
    - Yala Dev usa **su propio iCloud** (`iCloud.com.jurgenschmidt.yala.dev`). Tus datos reales no cuentan
@@ -237,13 +241,26 @@ Necesita **G1**, que tras el bloque C ya es una cuenta solo de grupos.
    - Si tienes a mano la CloudKit Console, en la base privada del contenedor `.dev` aparecen los registros.
    - **Si se queda clavado al 95 %**: sal por «Cancelar y seguir en la nube», y apunta cuántas filas tenías
      y cuánto tardó.
-4. **E2 · Activar y cancelar no tira el cierre pendiente (opcional).** Solo si al acabar E1 activas el modo
-   avión justo cuando pide reabrir, y tras reabrir CloudSync Debug dice `Pending fx … completeReverseServer`.
-   - Con el modo avión puesto: Ajustes → «Dónde viven tus datos» → «Activar la nube» → acepta el
-     consentimiento. Sin red, el inicio de sesión o la comprobación de tu cuenta fallan y vuelves al inicio.
-   - **PASA si** tras ese aviso CloudSync Debug sigue diciendo `completeReverseServer` en `Pending fx`, y al
-     quitar el modo avión y cerrar y abrir Yala desaparece.
-   - Si E1 acabó con red, no hay nada que probar: apúntalo como «no se dio».
+
+## Bloque F · «Vaciar datos» con grupos (15 min, siempre el último)
+
+«Vaciar datos» borra tus datos de este iPhone **y** del iCloud de Yala Dev, así que va después de todo lo
+demás. Parte de una sesión privada, la que dejó E u otra cualquiera de Yala Dev.
+
+1. **Monta el grupo.** Pestaña Grupos: si no estás dentro, entra con Google **G1**. Abre el grupo del
+   bloque C (o crea uno) y apunta un gasto «QA Vaciar» de 20, pagado por ti.
+2. **Apunta lo que hay.** Abre Registros y anota los gastos de grupo que ves; «QA Vaciar» tiene que estar.
+   Si el Inbox te pregunta de qué cuenta salió, contesta. Mira también el saldo del grupo en Grupos.
+3. **Vacía.** Perfil → «Vaciar datos» (debajo de «Dónde viven tus datos»; dice «Borra tus datos. Tu cuenta
+   y tus grupos se conservan») → confirma → «Vaciar definitivamente».
+   - Tiene que llevarte directo al onboarding personal, no a la bienvenida. Termínalo y crea una cuenta.
+4. **Reabre.** Cierra Yala Dev del todo (desliza hacia arriba en el selector de apps) y ábrela.
+   - **PASA si** en Registros vuelven los gastos de grupo del paso 2, **una sola vez cada uno**; el Inbox
+     tiene un borrador por cada gasto que pagaste, preguntando la cuenta; y en Grupos el saldo sigue igual.
+   - **FALLA si** tras dos arranques en frío no han vuelto, o si alguno sale dos veces.
+5. **Otra vez.** Cierra y abre Yala Dev de nuevo: nada se duplica.
+   - Si en el grupo tienes a otra persona que te pagó una liquidación, mírala también: vuelve a la cuenta
+     de grupos una vez y el Inbox pregunta a qué cuenta llegó. Sin esa persona, no hace falta.
 
 ## Al terminar cada ticket
 

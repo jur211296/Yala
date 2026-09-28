@@ -1,12 +1,14 @@
 ---
 id: a-wipe-on-a-device-without-the-groups-loses-their-rows-everywhere
-status: qa
+status: done
 priority: medium
 area: "groups, sync"
 created: 2026-09-28
 updated: 2026-09-28
-qa-status: needs-testing
 source: "review adversarial de `late-remote-wipe-signal-also-wipes-rows-created-after-it` (lentes de grupos y de sync, 2026-09-28); inferido leyendo código, NO reproducido"
+qa-status: not-replicable
+qa-date: 2026-09-28
+qa-notes: barrido 2026-09-28 sin device-QA - pide iPhone y iPad con el mismo Apple ID; cubierto por GroupsRemoteWipeDivisionTests y GroupsBridgeRestoreConvergenceTests
 ---
 
 # «Vaciar datos» en un dispositivo sin los grupos deja al resto sin los gastos de grupo
@@ -107,3 +109,7 @@ repone él y el iPhone no, sin copias dobles. Si tenía una parte, cada uno repo
    un borrador por cada uno.
 7. Control del caso sin copias dobles (opcional): repite con el iPad DENTRO de la misma cuenta de grupos. Tras el paso 5,
    cada gasto y liquidación sale una sola vez en los dos dispositivos.
+
+## Barrido de `qa` · 2026-09-28 · cerrado sin device-QA
+
+Sale de la cola de device-QA por el barrido semanal (encargo `2026-09-28-barrido-qa-in-qa-semanal`), con el criterio del 2026-09-23 (#224). El guion pide dos dispositivos con el mismo Apple ID (un iPhone con grupos y un iPad que nunca entró en ellos). Lo cubren `GroupsRemoteWipeDivisionTests` y `GroupsBridgeRestoreConvergenceTests` (31/31 mutantes). El camino de un solo iPhone, «Vaciar datos» con grupos, se queda en el guion con `wipe-data-keeps-groups-but-drops-their-bridged-rows`.

@@ -1,11 +1,14 @@
 ---
 id: claim-grants-a-takeover-after-the-leader-passed-the-cutover
-status: qa
+status: done
 priority: medium
 area: "modo-nube, migración, backend"
 created: 2026-09-24
-updated: 2026-09-24
+updated: 2026-09-28
 source: "sesión de `leader-displaced-after-the-cutover-pushes-its-residual-in-the-reconcile` (2026-09-24), candidata de servidor que quedó fuera"
+qa-status: not-replicable
+qa-date: 2026-09-28
+qa-notes: barrido 2026-09-28 sin device-QA - arreglo de servidor, dos iPhone y 60 min de espera; verificado con el banco g16_04 y los goldens del Worker
 ---
 
 # El servidor da el relevo de una activación que ya pasó el cutover
@@ -83,3 +86,7 @@ montarse. Lo sustituye el de abajo. Sus ramas `retaken`/`otherLeads` quedan para
 6. Crea un gasto en A: aparece en B.
 7. **Fallo si:** B hace una migración entera (la barra de subida de «Migrar a la nube»), aparecen datos duplicados, B se
    queda esperando a otro dispositivo, o A sale con error o no sincroniza tras el paso 5.
+
+## Barrido de `qa` · 2026-09-28 · cerrado sin device-QA
+
+Sale de la cola de device-QA por el barrido semanal (encargo `2026-09-28-barrido-qa-in-qa-semanal`), con el criterio del 2026-09-23 (#224). Es un arreglo de servidor (`qa/cloud/g16_04_claim_no_takeover_after_the_cutover.sql`), y el guion pide dos iPhone y más de una hora de espera. Lo verificó el banco de 27 escenarios contra el motor de producción y los goldens del Worker contra staging (`qa/cloud/README.md` §g16_04).

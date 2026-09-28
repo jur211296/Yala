@@ -1,11 +1,14 @@
 ---
 id: leader-displaced-after-the-cutover-pushes-its-residual-in-the-reconcile
-status: qa
+status: done
 priority: medium
 area: "modo-nube, migración"
 created: 2026-09-24
-updated: 2026-09-24
+updated: 2026-09-28
 source: "review adversarial de `displaced-migration-leader-keeps-uploading-after-a-takeover` (2026-09-24), lente de bypass"
+qa-status: not-replicable
+qa-date: 2026-09-28
+qa-notes: barrido 2026-09-28 sin device-QA - dos iPhone y 60 min; y desde g16_04 el servidor ya no da ese relevo; cubierto por MigrationWorkExecutorTests
 ---
 
 # El teléfono que pierde el relevo DESPUÉS del cutover sigue subiendo lo que escribe
@@ -77,3 +80,7 @@ vacío; 10 mutantes muertos; review de dos lentes (servidor/carreras y consumido
    activa») y B termina su activación sin fallar la verificación.
 5. Cuando B termine, cierra y abre Yala en A. **Esperado:** A se une: crea un gasto en A y aparece en B tras sincronizar.
 6. Fallo si: B sale con error en la verificación, A no sincroniza nunca tras el paso 5, o aparecen datos duplicados.
+
+## Barrido de `qa` · 2026-09-28 · cerrado sin device-QA
+
+Sale de la cola de device-QA por el barrido semanal (encargo `2026-09-28-barrido-qa-in-qa-semanal`), con el criterio del 2026-09-23 (#224). El guion pide dos iPhone y más de una hora de espera, y desde g16_04 (`claim-grants-a-takeover-after-the-leader-passed-the-cutover`) el servidor ya no da ese relevo, así que no se puede montar. Lo cubre `MigrationWorkExecutorTests`.

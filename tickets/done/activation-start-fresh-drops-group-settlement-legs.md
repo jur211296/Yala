@@ -1,12 +1,14 @@
 ---
 id: activation-start-fresh-drops-group-settlement-legs
-status: qa
+status: done
 priority: medium
 area: "groups, onboarding"
 created: 2026-09-27
-updated: 2026-09-27
-qa-status: needs-testing
+updated: 2026-09-28
 source: "review adversarial de `activation-private-gate-leaves-a-late-notice-that-purges-groups` (2026-09-27, lente «después del borrado»); inferido por lectura, NO reproducido"
+qa-status: not-replicable
+qa-date: 2026-09-28
+qa-notes: barrido 2026-09-28 sin device-QA - pide una liquidacion confirmada por otra persona y un camino compuesto; cubierto por GroupsBridgeRestoreConvergenceTests
 ---
 
 # «Activar Yala completo → Restaurar → Empezar desde cero» pierde las liquidaciones de grupo en lo personal
@@ -97,3 +99,7 @@ liquidación confirmada (tú pagas a alguien o alguien te paga).
 5. **Comprueba**: en la cuenta de grupos aparece cada liquidación confirmada una sola vez, y el saldo descuenta lo ya
    cobrado o pagado; en el Inbox hay un borrador por cada liquidación que te pagaron, pidiendo la cuenta.
 6. Cierra y abre Yala otra vez: nada se duplica.
+
+## Barrido de `qa` · 2026-09-28 · cerrado sin device-QA
+
+Sale de la cola de device-QA por el barrido semanal (encargo `2026-09-28-barrido-qa-in-qa-semanal`), con el criterio del 2026-09-23 (#224). Pide una liquidación confirmada, que necesita a otra persona con la app, y el camino compuesto «Activar Yala completo → Restaurar → Empezar desde cero». Lo cubren `GroupsBridgeRestoreConvergenceTests` contra el bridge y el borrado reales (10/10 mutantes).

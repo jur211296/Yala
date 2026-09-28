@@ -1,11 +1,14 @@
 ---
 id: adopt-on-an-empty-store-uploads-what-the-mirror-imports-before-the-relaunch
-status: qa
+status: done
 priority: medium
 area: "modo-nube, migración"
 created: 2026-09-24
-updated: 2026-09-25
+updated: 2026-09-28
 source: "review adversarial de `adopt-uploads-a-foreign-corpus-without-a-lineage-check` (lente de bypass, H1), 2026-09-24"
+qa-status: not-replicable
+qa-date: 2026-09-28
+qa-notes: barrido 2026-09-28 sin device-QA - pide dos iPhone, un Apple ID con finanzas y Analytics Engine; cubierto por MigrationWorkExecutorTests
 ---
 
 # Un adopt sobre un store VACÍO no pide prueba de linaje, y lo que el espejo importa antes de relanzar se sube después
@@ -114,3 +117,7 @@ device-QA abajo.
 
 **Qué mirar en Analytics Engine.** Canario `cloudAdoptICloudCorpusChecked`: `found` en el caso 1, `none` en el 2. Un
 `failed:…` en cualquiera de los dos es la sonda rota en producción: avisar.
+
+## Barrido de `qa` · 2026-09-28 · cerrado sin device-QA
+
+Sale de la cola de device-QA por el barrido semanal (encargo `2026-09-28-barrido-qa-in-qa-semanal`), con el criterio del 2026-09-23 (#224). El guion pide dos dispositivos con el mismo Apple ID, uno de ellos con finanzas que nunca pasaron a la nube, y leer el canario en Analytics Engine. Lo cubren `MigrationWorkExecutorTests` y `AdoptICloudCorpusCheckWiringTests`.

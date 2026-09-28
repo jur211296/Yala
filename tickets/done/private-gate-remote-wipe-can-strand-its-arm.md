@@ -1,12 +1,14 @@
 ---
 id: private-gate-remote-wipe-can-strand-its-arm
-status: qa
+status: done
 priority: medium
 area: "modo-nube, onboarding"
 created: 2026-09-13
-updated: 2026-09-27
-qa-status: needs-testing
+updated: 2026-09-28
 source: "review adversarial de `groups-only-private-restart-skips-the-wipe-alert`, lente de camino (F2)"
+qa-status: not-replicable
+qa-date: 2026-09-28
+qa-notes: barrido 2026-09-28 sin device-QA - pide abrir una invitacion mientras borra; carrera cubierta por PrivateGateCancelledWipeTests
 ---
 
 # El borrado de iCloud de la puerta privada puede quedarse consumado con su arm puesto y la persona mirando un spinner
@@ -90,3 +92,7 @@ nota en `private-gate-wipe-failure-copy-claims-icloud-is-intact` (salir de `.wip
 4. **Esperado:** la invitación se queda en pantalla; la app no relanza ni salta al onboarding por su cuenta.
 5. Termina o cancela la invitación, cierra Yala del todo y ábrela. **Esperado:** no vuelve a borrar nada sola; si
    vuelves a «Privado», la puerta mide otra vez y ve iCloud vacío.
+
+## Barrido de `qa` · 2026-09-28 · cerrado sin device-QA
+
+Sale de la cola de device-QA por el barrido semanal (encargo `2026-09-28-barrido-qa-in-qa-semanal`), con el criterio del 2026-09-23 (#224). Pide abrir una invitación de grupo justo mientras se borra iCloud: una carrera difícil de acertar a mano. Lo cubre `PrivateGateCancelledWipeTests` (26/26 mutantes).

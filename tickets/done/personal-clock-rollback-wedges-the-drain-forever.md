@@ -1,11 +1,14 @@
 ---
 id: personal-clock-rollback-wedges-the-drain-forever
-status: qa
+status: done
 priority: medium
 area: "modo-nube, sync"
 created: 2026-09-26
-updated: 2026-09-26
+updated: 2026-09-28
 source: "`groups-clock-rollback-wedges-the-drain-forever` (2026-09-26), al buscar todas las instancias del patrón"
+qa-status: not-replicable
+qa-date: 2026-09-28
+qa-notes: barrido 2026-09-28 sin device-QA - cambiar la fecha del iPhone y un segundo dispositivo; cubierto por PersonalClockRollbackDrainTests
 ---
 
 # En la nube, si la hora del iPhone retrocede, tus cambios personales dejan de subir para siempre
@@ -90,3 +93,7 @@ con la misma cuenta (otro iPhone o iPad) para ver que el cambio llega.
    antes, «Prueba después» y el ajuste no salían nunca del iPhone.
 8. Precio aceptado, por si lo ves: durante ese día, si editas «Prueba adelantada» desde el otro dispositivo, gana la
    versión del iPhone.
+
+## Barrido de `qa` · 2026-09-28 · cerrado sin device-QA
+
+Sale de la cola de device-QA por el barrido semanal (encargo `2026-09-28-barrido-qa-in-qa-semanal`), con el criterio del 2026-09-23 (#224). Pide adelantar la fecha del iPhone un día y un segundo dispositivo en la nube: un caso raro. Lo cubren `PersonalClockRollbackDrainTests`, `PrefsOutboxTests` y `CloudSyncEngineTests`.

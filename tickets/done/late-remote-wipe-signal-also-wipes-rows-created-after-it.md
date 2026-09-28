@@ -1,12 +1,14 @@
 ---
 id: late-remote-wipe-signal-also-wipes-rows-created-after-it
-status: qa
+status: done
 updated: 2026-09-28
-qa-status: needs-testing
 priority: medium
 area: "sync, settings"
 created: 2026-09-27
 source: "encargo `late-remote-wipe-signal-undoes-the-rows-the-origin-reconverged` (2026-09-27); inferido por lectura, NO reproducido"
+qa-status: not-replicable
+qa-date: 2026-09-28
+qa-notes: barrido 2026-09-28 sin device-QA - pide dos dispositivos con el mismo Apple ID; cubierto por RemoteWipeCutTests
 ---
 
 # Un dispositivo que procesa tarde la señal de «Vaciar datos» también borra lo personal creado DESPUÉS
@@ -79,3 +81,7 @@ No frena el merge. Hace falta un iPhone y un iPad (o dos iPhone) con la misma cu
 
 - [[late-remote-wipe-signal-undoes-the-rows-the-origin-reconverged]]
 - [[remote-wipe-receiver-has-no-behaviour-test]]
+
+## Barrido de `qa` · 2026-09-28 · cerrado sin device-QA
+
+Sale de la cola de device-QA por el barrido semanal (encargo `2026-09-28-barrido-qa-in-qa-semanal`), con el criterio del 2026-09-23 (#224). El guion pide dos dispositivos con el mismo Apple ID, uno de ellos en modo avión mientras el otro vacía. Lo cubre `RemoteWipeCutTests`.

@@ -1,11 +1,14 @@
 ---
 id: settlement-approval-leaves-no-trace-so-a-rebridge-asks-again
-status: qa
+status: done
 priority: medium
 area: "groups, sync"
 created: 2026-09-27
-updated: 2026-09-27
+updated: 2026-09-28
 source: "review adversarial de `late-remote-wipe-on-a-device-without-groups-cannot-return-the-rows` (2026-09-27, lentes de dinero y de sync); leído en código, NO reproducido"
+qa-status: not-replicable
+qa-date: 2026-09-28
+qa-notes: barrido 2026-09-28 sin device-QA - pide liquidaciones que te paga otra persona, y lo visible se ve en el simulador; cubierto por GroupsBridgeRestoreConvergenceTests
 ---
 
 # Una liquidación ya aprobada vuelve a pedir su cuenta si otro dispositivo se lleva su pata
@@ -103,3 +106,7 @@ en las que esa persona te paga (cada una deja en el Inbox un borrador «¿a qué
    muestra el pago una sola vez. Toca el icono del círculo con check (arriba a la derecha), marca esa liquidación y
    prueba **Regresar a pendientes** y luego **Eliminar**: la liquidación aprobada se queda donde está.
 4. Crea una tercera liquidación en la que te pagan. Desliza su borrador y toca **Eliminar**: desaparece.
+
+## Barrido de `qa` · 2026-09-28 · cerrado sin device-QA
+
+Sale de la cola de device-QA por el barrido semanal (encargo `2026-09-28-barrido-qa-in-qa-semanal`), con el criterio del 2026-09-23 (#224). Pide un grupo con otra persona que te pague dos liquidaciones, y su propio guion es de simulador, no de iPhone. Que el re-puente no vuelva a preguntar pide dos dispositivos. Lo cubren `GroupsBridgeRestoreConvergenceTests` y `RemoteWipeSignalWiringTests`.

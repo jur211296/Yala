@@ -1,11 +1,14 @@
 ---
 id: fresh-start-has-no-way-out-when-group-writes-can-never-upload
-status: qa
+status: done
 priority: medium
 area: "groups, modo-nube"
 created: 2026-09-26
-updated: 2026-09-26
+updated: 2026-09-28
 source: "review adversarial de `fresh-start-wipe-kills-unsent-group-writes-silently` (2026-09-26)"
+qa-status: not-replicable
+qa-date: 2026-09-28
+qa-notes: barrido 2026-09-28 sin device-QA - su guion no existe tal cual (Vaciar datos en privado va al onboarding, no a la bienvenida) y el caso B pide SQL; cubierto por FreshStartGroupsLossExitTests
 ---
 
 # «Empezar de cero» no tiene salida cuando los cambios de grupos no pueden subir nunca
@@ -109,3 +112,7 @@ Hace falta la build **Yala Dev** (apunta a staging) en tu iPhone o en el simulad
 
 **C. Aviso del espejo tardío** (solo si tienes a mano el escenario del aviso «Tus datos de iCloud llegaron después»): con
 lo de B.1–B.3 montado, «Borrar» → «Borrar todo» en ese aviso tiene que enseñar la misma oferta y el mismo «¿seguro?».
+
+## Barrido de `qa` · 2026-09-28 · cerrado sin device-QA
+
+Sale de la cola de device-QA por el barrido semanal (encargo `2026-09-28-barrido-qa-in-qa-semanal`), con el criterio del 2026-09-23 (#224). Su guion no se puede recorrer tal cual: dice que «Vaciar datos» devuelve a la bienvenida, y con sesión privada lleva directo al onboarding personal (medido en `DestructiveScopeLogic.wipeLanding`, `.personalOnboarding`). El caso B además pide borrar sesiones por SQL en staging. Lo cubre `FreshStartGroupsLossExitTests`. Lo que un iPhone sí recorre de «Vaciar datos» con grupos se queda en el guion con `wipe-data-keeps-groups-but-drops-their-bridged-rows`.

@@ -1,11 +1,14 @@
 ---
 id: late-notice-of-a-welcome-private-session-purges-groups-joined-later
-status: qa
+status: done
 priority: medium
 area: "groups, onboarding, modo-nube"
 created: 2026-09-27
-qa-status: needs-testing
 source: "hallazgo de `activation-private-gate-leaves-a-late-notice-that-purges-groups` (2026-09-27); inferido por lectura, NO reproducido"
+updated: 2026-09-28
+qa-status: not-replicable
+qa-date: 2026-09-28
+qa-notes: barrido 2026-09-28 sin device-QA - pide una invitacion desde otro telefono y empezar sin red; cubierto por WelcomeLateNoticeKeepsJoinedGroupsTests
 ---
 
 # El aviso tardío de quien empezó en el Welcome se lleva los grupos a los que se unió después
@@ -108,3 +111,7 @@ Hace falta un Apple ID con datos viejos de Yala en iCloud y un grupo al que unir
 
 - [[activation-private-gate-leaves-a-late-notice-that-purges-groups]]
 - [[late-notice-witness-survives-a-welcome-restore-over-device-data]] (residual que sale de la premisa de arriba)
+
+## Barrido de `qa` · 2026-09-28 · cerrado sin device-QA
+
+Sale de la cola de device-QA por el barrido semanal (encargo `2026-09-28-barrido-qa-in-qa-semanal`), con el criterio del 2026-09-23 (#224). Pide empezar en privado sin red, unirse a un grupo con una invitación de otro teléfono y esperar el aviso tardío: un caso raro. Lo cubren `WelcomeLateNoticeKeepsJoinedGroupsTests` y `WelcomePrivateICloudGateTests`.

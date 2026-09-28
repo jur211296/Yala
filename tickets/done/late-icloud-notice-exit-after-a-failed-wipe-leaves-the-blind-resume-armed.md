@@ -1,11 +1,14 @@
 ---
 id: late-icloud-notice-exit-after-a-failed-wipe-leaves-the-blind-resume-armed
-status: qa
+status: done
 priority: medium
 area: "groups, modo-nube"
 created: 2026-09-26
-updated: 2026-09-26
+updated: 2026-09-28
 source: "review adversarial de `fresh-start-wipe-kills-unsent-group-writes-silently` (2026-09-26)"
+qa-status: not-replicable
+qa-date: 2026-09-28
+qa-notes: barrido 2026-09-28 sin device-QA - pide apagar iCloud y poner modo avion en un instante exacto; cubierto por LateICloudWipeLeftHalfwayTests
 ---
 
 # Salir del aviso del espejo tardío tras un borrado fallido deja armada la reanudación a ciegas
@@ -91,3 +94,7 @@ iPhone: lo cubren los tests.
 ### Criterios de aceptación de QA
 
 - [ ] Tras un fallo sin red y salir, el siguiente arranque vuelve a preguntar y no borra nada (botón y barra).
+
+## Barrido de `qa` · 2026-09-28 · cerrado sin device-QA
+
+Sale de la cola de device-QA por el barrido semanal (encargo `2026-09-28-barrido-qa-in-qa-semanal`), con el criterio del 2026-09-23 (#224). Pide apagar iCloud Drive, esperar el aviso tardío y poner el modo avión justo entre dos toques: un caso raro y difícil de acertar a mano. Lo cubren `LateICloudWipeLeftHalfwayTests` y `WelcomePrivateICloudGateTests`.

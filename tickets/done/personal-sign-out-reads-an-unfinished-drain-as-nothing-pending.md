@@ -1,11 +1,14 @@
 ---
 id: personal-sign-out-reads-an-unfinished-drain-as-nothing-pending
-status: qa
+status: done
 priority: medium
 area: "modo-nube, sync"
 created: 2026-09-26
-updated: 2026-09-26
+updated: 2026-09-28
 source: "`groups-drain-failure-reads-as-nothing-pending` (2026-09-26), al buscar todas las instancias del patrón"
+qa-status: not-replicable
+qa-date: 2026-09-28
+qa-notes: barrido 2026-09-28 sin device-QA - el fallo no se provoca en un iPhone y el guion es solo no-regresion; cubierto por CloudSyncRuntimeTests
 ---
 
 # Cerrar sesión en la nube puede llevarse un cambio personal que no llegó a capturarse
@@ -91,3 +94,7 @@ segundo dispositivo con la misma cuenta. Con red.
    después. **Esperado**: los dos aparecen en el otro dispositivo. Con el código de antes, el primero podía no llegar nunca.
 6. Usa la app en la nube un día normal. **Esperado**: todo lo que apuntas llega al otro dispositivo y la app no va más lenta
    al abrir (el historial interno ahora se limpia menos; en uso normal, una vez al día).
+
+## Barrido de `qa` · 2026-09-28 · cerrado sin device-QA
+
+Sale de la cola de device-QA por el barrido semanal (encargo `2026-09-28-barrido-qa-in-qa-semanal`), con el criterio del 2026-09-23 (#224). El propio ticket dice que el fallo (un guardado que falla al capturar) no se provoca en un iPhone; su guion es solo de no-regresión del cierre de sesión en la nube. Lo cubre `CloudSyncRuntimeTests`.

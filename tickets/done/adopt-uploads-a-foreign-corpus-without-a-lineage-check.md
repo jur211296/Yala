@@ -1,11 +1,14 @@
 ---
 id: adopt-uploads-a-foreign-corpus-without-a-lineage-check
-status: qa
+status: done
 priority: medium
 area: "modo-nube, migración"
 created: 2026-09-16
-updated: 2026-09-24
+updated: 2026-09-28
 source: "residual declarado de `settings-migrate-to-cloud-adopts-silently-instead-of-migrating` (Paso 0 · D9), 2026-09-16"
+qa-status: not-replicable
+qa-date: 2026-09-28
+qa-notes: barrido 2026-09-28 sin device-QA - pide dos dispositivos con el mismo Apple ID; cubierto por MigrationWorkExecutorTests y WelcomeAdoptExitTests
 ---
 
 # El adopt sube a la cuenta todo lo que el backend no conoce, sin mirar si esos datos son de esa cuenta
@@ -187,3 +190,7 @@ tiene el rastro, y la app lo deja entrar porque no trae datos suyos.
 2. En la bienvenida, «Ya tengo una cuenta» y entra con esa misma cuenta.
 3. **Esperado:** entra y ves tus datos de la nube. NO sale «…no pudimos comprobar que vengan de ella…», ni a los
    15 minutos.
+
+## Barrido de `qa` · 2026-09-28 · cerrado sin device-QA
+
+Sale de la cola de device-QA por el barrido semanal (encargo `2026-09-28-barrido-qa-in-qa-semanal`), con el criterio del 2026-09-23 (#224). El guion pide dos dispositivos con el mismo Apple ID. Lo cubren `MigrationWorkExecutorTests`, `MigrationRunnerTests` y `WelcomeAdoptExitTests`.

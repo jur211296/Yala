@@ -1,11 +1,14 @@
 ---
 id: private-gate-back-from-found-keeps-a-resumed-arm
-status: qa
-updated: 2026-09-27
+status: done
+updated: 2026-09-28
 priority: medium
 area: "onboarding, modo-nube"
 created: 2026-09-27
 source: "review adversarial de `private-gate-leave-after-a-halfway-wipe-forgets-the-zone` (2026-09-27, lente de estados durables); inferido por lectura, NO reproducido"
+qa-status: absorbed
+qa-date: 2026-09-28
+qa-notes: barrido 2026-09-28 absorbed por welcome-private-fresh-start-skips-icloud-check - su no-regresion es el paso C4 del guion; el corte no se provoca a mano
 ---
 
 # Volver desde «Encontramos datos tuyos» tras un corte deja armado el borrado, y la nube lo termina a ciegas
@@ -103,3 +106,7 @@ siempre no cambió:
 3. Toca la flecha de volver. Esperado: vuelves a la elección privado / nube.
 4. Elige otra vez «Privado». Esperado: vuelve a salir «Encontramos datos tuyos en iCloud». Nada se borró.
 5. Toca «Traer mis datos». Esperado: se restauran como siempre.
+
+## Barrido de `qa` · 2026-09-28 · absorbido
+
+Sale de la cola de device-QA por el barrido semanal (encargo `2026-09-28-barrido-qa-in-qa-semanal`), con el criterio del 2026-09-23 (#224). El corte a mitad del borrado no se provoca a mano, y su guion de no-regresión (volver desde «Encontramos datos tuyos» y ver las mismas cifras) es el paso C4 del guion, que recorre `welcome-private-fresh-start-skips-icloud-check`. Lo cubre `LateICloudWipeLeftHalfwayLogicTests`.
