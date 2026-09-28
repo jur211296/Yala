@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-27 (Lima)
 
-**Rama** `2.1` — Merge #285: **plan adaptativo aprobado: iPad, iPhone Duo y mejoras de iPhone, en 13 fases en serie.**
+**Rama** `2.1` — Merge #286: **fase 0 del carril adaptativo: en iPad (y en el Duo) ya no se abre una segunda ventana rota.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,26 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#285 · plan adaptativo: iPad, iPhone Duo y mejoras de iPhone)
+## Esta sesión (#286 · fase 0: multiventana apagada en iPad y Duo)
+
+Hasta hoy, en iPad se podía abrir una segunda ventana de Yala que compartía pestaña, hojas y destino de widgets con la
+primera. El Duo, a la venta el 23-oct, lo habría heredado. Queda apagado hasta la fase 4
+(`ipad-real-multiwindow-with-per-scene-state`, donde está escrito cómo se reenciende).
+
+- **Medido en simulador:** una sonda en `YalaLane-Adapt-iPad-Pro-13` abría 2 escenas; ahora el sistema rechaza la
+  segunda. Plist compilado de `Yala` y `Yala Dev`: `false`.
+- **La receta del ticket no hacía nada:** `INFOPLIST_KEY_UIApplicationSupportsMultipleScenes` no existe en Xcode 27.0.
+  Va con `…SceneManifest_Generation = NO` en las cuatro configuraciones y el manifiesto en `Yala/Resources/Info.plist`.
+- **Encontrado:** los XCUITest de navegación buscan la barra de pestañas del iPhone y en iPad fallan también en la base
+  (5 de 6). Ticket `navigation-uitests-look-for-the-iphone-tab-bar-on-ipad`; toca antes o con la fase 1.
+
+### Lo que espera de Jürgen
+
+- **Xcode 27.1 beta en esta Mac** para el simulador del Duo: `xcode-27-1-with-the-iphone-duo-simulator`. Solo bloquea
+  la fase Duo, y el disco bajó a ~4 GB durante esta sesión.
+- Opcional: con el próximo TestFlight en un iPad, arrastrar Yala desde el Dock ya no debe abrir otra ventana.
+
+## Sesión anterior (#285 · plan adaptativo: iPad, iPhone Duo y mejoras de iPhone)
 
 Sin código: plan y tickets. Jürgen aprobó la dirección de la exploración de iPad y su §5.1 (barra lateral + lista +
 detalle), con una condición: la versión que Apple recomienda, que se adapte sola a cualquier tamaño, incluido el
@@ -43,7 +62,7 @@ iPhone Duo. Queda:
   `tickets/backlog/iphone-supports-landscape-orientation.md`.
 - Siguiente del carril: la fase 0, `ipad-multiple-windows-share-one-navigation-state`.
 
-## Sesión anterior (#284 · el dispositivo que procesa tarde «Vaciar datos» repone lo que se lleva)
+## Antes (#284 · el dispositivo que procesa tarde «Vaciar datos» repone lo que se lleva)
 
 Si vaciabas tus datos en el iPhone y abrías después el iPad, que estaba cerrado, el iPad se vaciaba y se llevaba los
 gastos y liquidaciones de grupo que el iPhone ya había repuesto, en los dos dispositivos y para siempre. Ahora:
