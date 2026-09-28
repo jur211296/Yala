@@ -1,11 +1,14 @@
 ---
 id: adopt-window-late-imports-overwrite-newer-cloud-edits
-status: qa
+status: done
 priority: medium
 area: "modo-nube, migración"
 created: 2026-09-25
-updated: 2026-09-26
+updated: 2026-09-28
 source: "review adversarial (lente de tests) de `adopt-on-an-empty-store-uploads-what-the-mirror-imports-before-the-relaunch`, 2026-09-25"
+qa-status: not-replicable
+qa-date: 2026-09-28
+qa-notes: barrido 2026-09-28 sin device-QA - dos iPhone y una carrera que el propio guion dice que puede no salir; cubierto por MigrationWorkExecutorTests
 ---
 
 # Lo que el espejo importa tarde tras un adopt sube con un reloj nuevo y puede pisar ediciones más nuevas de la nube
@@ -111,3 +114,7 @@ a la primera. El canario dice si se reprodujo.
 **Qué mirar en Analytics Engine.** Canario `cloudAdoptLateImportSkipped`: `TransactionItem` con un valor distinto de cero
 dice que el import llegó tarde y el arreglo actuó. En cero, el import terminó antes del adopt y el caso no se reprodujo:
 repítelo con más datos en el paso 3.
+
+## Barrido de `qa` · 2026-09-28 · cerrado sin device-QA
+
+Sale de la cola de device-QA por el barrido semanal (encargo `2026-09-28-barrido-qa-in-qa-semanal`), con el criterio del 2026-09-23 (#224). El guion pide dos dispositivos con el mismo Apple ID, y depende de una carrera que el propio guion avisa que puede no reproducirse. Lo cubre `MigrationWorkExecutorTests`.

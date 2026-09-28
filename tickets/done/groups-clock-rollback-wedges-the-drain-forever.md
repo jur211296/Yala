@@ -1,11 +1,14 @@
 ---
 id: groups-clock-rollback-wedges-the-drain-forever
-status: qa
+status: done
 priority: medium
 area: "groups, sync"
 created: 2026-09-26
-updated: 2026-09-26
+updated: 2026-09-28
 source: "review adversarial de `groups-drain-failure-reads-as-nothing-pending` (2026-09-26), lente de regresión"
+qa-status: not-replicable
+qa-date: 2026-09-28
+qa-notes: barrido 2026-09-28 sin device-QA - cambiar la fecha del iPhone y un segundo miembro; edge raro cubierto por GroupsClockRollbackDrainTests y HLCTests
 ---
 
 # Si la hora del iPhone retrocede, tus cambios de grupos dejan de subir para siempre
@@ -81,3 +84,7 @@ Inferido del código, sin recorrer en un iPhone. Hace falta una cuenta de grupos
 8. **Esperado**: desasocia sin el aviso «no llegaron al servidor… inténtalo en un rato». Con el código de antes, se
    quedaba en ese aviso para siempre.
 9. Precio aceptado, por si lo ves: durante ese día, si el otro miembro edita «Prueba adelantada», gana tu versión.
+
+## Barrido de `qa` · 2026-09-28 · cerrado sin device-QA
+
+Sale de la cola de device-QA por el barrido semanal (encargo `2026-09-28-barrido-qa-in-qa-semanal`), con el criterio del 2026-09-23 (#224). Pide adelantar la fecha del iPhone un día y otro miembro del grupo que vea el gasto: un caso raro. Lo cubren `GroupsClockRollbackDrainTests` y `HLCTests`.

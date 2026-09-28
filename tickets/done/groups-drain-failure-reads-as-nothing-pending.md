@@ -1,11 +1,14 @@
 ---
 id: groups-drain-failure-reads-as-nothing-pending
-status: qa
+status: done
 priority: medium
 area: "groups, modo-nube"
 created: 2026-09-26
-updated: 2026-09-26
+updated: 2026-09-28
 source: "review adversarial de `fresh-start-wipe-kills-unsent-group-writes-silently` (2026-09-26)"
+qa-status: not-replicable
+qa-date: 2026-09-28
+qa-notes: barrido 2026-09-28 sin device-QA - el propio ticket dice que no tiene paso de device-QA; cubierto por GroupsDrainFailureReadsAsPendingTests
 ---
 
 # Un drain de grupos que falla se lee como «no hay nada pendiente»
@@ -76,3 +79,7 @@ drain: con la hora atrasada, el gasto **sube** y «Desasociar» **sigue**. Ese r
 Lo que este ticket bloquea (un `save` o una lectura del History que fallan) no se puede provocar en un iPhone. Queda
 cubierto por los tests con el seam (`GroupsDrainCaptureTests`, `GroupsExitGesturesCaptureTests`) y no tiene paso de
 device-QA.
+
+## Barrido de `qa` · 2026-09-28 · cerrado sin device-QA
+
+Sale de la cola de device-QA por el barrido semanal (encargo `2026-09-28-barrido-qa-in-qa-semanal`), con el criterio del 2026-09-23 (#224). El propio ticket dice que no tiene paso de device-QA: un `save` o una lectura del History que fallan no se provocan en un iPhone. Lo cubren `GroupsDrainFailureReadsAsPendingTests` y `GroupsExitGesturesCaptureTests`.

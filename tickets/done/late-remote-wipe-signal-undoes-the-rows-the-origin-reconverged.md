@@ -1,12 +1,14 @@
 ---
 id: late-remote-wipe-signal-undoes-the-rows-the-origin-reconverged
-status: qa
+status: done
 priority: medium
 area: "groups, sync"
 created: 2026-09-27
-updated: 2026-09-27
-qa-status: needs-testing
+updated: 2026-09-28
 source: "review adversarial de `wipe-data-keeps-groups-but-drops-their-bridged-rows` (2026-09-27, lente de dinero); inferido por lectura, NO reproducido"
+qa-status: not-replicable
+qa-date: 2026-09-28
+qa-notes: barrido 2026-09-28 sin device-QA - pide dos dispositivos con el mismo Apple ID; cubierto por GroupsBridgeRestoreConvergenceTests y RemoteWipeSignalWiringTests
 ---
 
 # Un dispositivo que procesa tarde la señal de «Vaciar datos» borra lo que el de origen ya repuso
@@ -93,3 +95,7 @@ nada: lo repone el iPhone y le llega por iCloud, sin copias dobles.
 5. Abre el iPad: se vacía. Cierra la app del iPad del todo y vuelve a abrirla.
 6. Comprueba en el iPad y, pasado un minuto, en el iPhone: el gasto y la liquidación de grupo están, una sola vez cada
    uno, y el Inbox tiene un borrador por cada uno, no dos.
+
+## Barrido de `qa` · 2026-09-28 · cerrado sin device-QA
+
+Sale de la cola de device-QA por el barrido semanal (encargo `2026-09-28-barrido-qa-in-qa-semanal`), con el criterio del 2026-09-23 (#224). El guion pide dos dispositivos con el mismo Apple ID, los dos en la misma cuenta de grupos. Lo cubren `GroupsBridgeRestoreConvergenceTests` y `RemoteWipeSignalWiringTests`.

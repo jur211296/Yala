@@ -1,11 +1,14 @@
 ---
 id: fresh-start-wipe-kills-unsent-group-writes-silently
-status: qa
+status: done
 priority: medium
 area: "groups, modo-nube"
 created: 2026-09-13
 source: "review adversarial de `groups-only-private-restart-skips-the-wipe-alert`, lente de datos (A5)"
-updated: 2026-09-26
+updated: 2026-09-28
+qa-status: not-replicable
+qa-date: 2026-09-28
+qa-notes: barrido 2026-09-28 sin device-QA - su guion inferido no existe tal cual (Vaciar datos en privado va al onboarding, no a la bienvenida); cubierto por FreshStartUnsentGroupWritesTests
 ---
 
 # «Empezar de cero» se lleva los gastos de grupo que aún no habían subido, y no lo dice
@@ -92,3 +95,7 @@ recorrer**: «Vaciar datos» conserva los grupos y su outbox, y deja la app en e
    servidor». Nada borrado: al pulsar OK vuelves a la bienvenida y el grupo sigue con su gasto.
 6. Quita el modo avión, espera un minuto (el gasto sube solo: lo ve otro miembro del grupo) y repite el paso 4: esta
    vez borra y sigue hasta el onboarding.
+
+## Barrido de `qa` · 2026-09-28 · cerrado sin device-QA
+
+Sale de la cola de device-QA por el barrido semanal (encargo `2026-09-28-barrido-qa-in-qa-semanal`), con el criterio del 2026-09-23 (#224). Su guion se escribió inferido del código y no se puede recorrer tal cual: dice que «Vaciar datos» devuelve a la bienvenida, y con sesión privada lleva directo al onboarding personal (medido en `DestructiveScopeLogic.wipeLanding`, `.personalOnboarding`). Lo cubre `FreshStartUnsentGroupWritesTests`.

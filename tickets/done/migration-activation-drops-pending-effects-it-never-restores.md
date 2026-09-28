@@ -1,12 +1,14 @@
 ---
 id: migration-activation-drops-pending-effects-it-never-restores
-status: qa
+status: done
 priority: medium
 area: "modo-nube, migración"
 created: 2026-09-16
-updated: 2026-09-27
-qa-status: needs-testing
+updated: 2026-09-28
 source: "review adversarial de `settings-migrate-to-cloud-adopts-silently-instead-of-migrating` (lente de máquina y runner, hallazgo 3), 2026-09-16"
+qa-status: not-replicable
+qa-date: 2026-09-28
+qa-notes: barrido 2026-09-28 sin device-QA - en el guion del 23-sep era oportunista y solo salia si E1 acababa sin red; cubierto por ForwardOriginPendingEffectsTests
 ---
 
 # Tocar «Activar la nube» tira los pendientes de la fase de origen, y cancelar no los devuelve
@@ -74,3 +76,7 @@ que no llegó a disco.
 
 **Por qué `qa`.** Una vuelta a iCloud que termina sin red no se monta en el simulador. Guion: bloque E del
 `qa/guion-tanda.md`, paso E2 (oportunista).
+
+## Barrido de `qa` · 2026-09-28 · cerrado sin device-QA
+
+Sale de la cola de device-QA por el barrido semanal (encargo `2026-09-28-barrido-qa-in-qa-semanal`), con el criterio del 2026-09-23 (#224). En el guion del 23-sep era el paso E2, «oportunista»: solo se daba si la vuelta a iCloud acababa sin red, y los unit tests ya cubrían la lógica. Sale para que la lista corta sea lo que merece la pena. Lo cubren `ForwardOriginPendingEffectsTests` y `MigrationRunnerTests`.

@@ -1,12 +1,14 @@
 ---
 id: late-remote-wipe-on-a-device-without-groups-cannot-return-the-rows
-status: qa
+status: done
 priority: medium
 area: "groups, sync"
 created: 2026-09-27
-updated: 2026-09-27
-qa-status: needs-testing
+updated: 2026-09-28
 source: "review adversarial de `late-remote-wipe-signal-undoes-the-rows-the-origin-reconverged` (2026-09-27, lente de sync); inferido por lectura, NO reproducido"
+qa-status: not-replicable
+qa-date: 2026-09-28
+qa-notes: barrido 2026-09-28 sin device-QA - pide iPhone y iPad con el mismo Apple ID; cubierto por GroupsBridgeRestoreConvergenceTests y RemoteWipeSignalWiringTests
 ---
 
 # Si el dispositivo que procesa tarde el vaciado no tiene Grupos, los gastos de grupo no vuelven
@@ -118,3 +120,7 @@ nunca en la cuenta de grupos.
 7. En el iPhone: el gasto y la liquidación de grupo están en Registros, una sola vez cada uno, y el Inbox tiene un solo
    borrador por cada uno. Pasado un minuto, comprueba lo mismo en el iPad.
 8. Si en el paso 7 no están, repite el paso 6 una vez: el borrado del iPad puede tardar en llegar por iCloud.
+
+## Barrido de `qa` · 2026-09-28 · cerrado sin device-QA
+
+Sale de la cola de device-QA por el barrido semanal (encargo `2026-09-28-barrido-qa-in-qa-semanal`), con el criterio del 2026-09-23 (#224). El guion pide dos dispositivos con el mismo Apple ID (un iPhone con grupos y un iPad sin ellos). Lo cubren `GroupsBridgeRestoreConvergenceTests` y `RemoteWipeSignalWiringTests`.

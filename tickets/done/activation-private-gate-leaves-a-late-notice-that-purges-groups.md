@@ -1,11 +1,14 @@
 ---
 id: activation-private-gate-leaves-a-late-notice-that-purges-groups
-status: qa
+status: done
 priority: medium
 area: "groups, onboarding, modo-nube"
 created: 2026-09-27
-qa-status: needs-testing
 source: "review adversarial de `private-gate-leave-after-a-halfway-wipe-forgets-the-zone` (2026-09-27, lente de alcance); inferido por lectura, NO reproducido"
+updated: 2026-09-28
+qa-status: not-replicable
+qa-date: 2026-09-28
+qa-notes: barrido 2026-09-28 sin device-QA - activar sin red y esperar el aviso tardio es un caso raro; cubierto por ActivationLateNoticeKeepsGroupsTests
 ---
 
 # Activar Yala completo sin poder mirar iCloud deja un aviso cuyo borrado se lleva los grupos
@@ -83,3 +86,7 @@ Hace falta un Apple ID con datos viejos de Yala en iCloud y una sesión solo-gru
 4. Debe salir «Encontramos datos tuyos en iCloud». Toca «Empezar de cero» → «Borrar todos los datos».
 5. **Comprueba**: vuelves al onboarding personal (no al Welcome), y en Grupos siguen tus grupos y sus saldos.
 6. Termina el onboarding, cierra y abre Yala: los gastos de grupo vuelven a salir en Registros.
+
+## Barrido de `qa` · 2026-09-28 · cerrado sin device-QA
+
+Sale de la cola de device-QA por el barrido semanal (encargo `2026-09-28-barrido-qa-in-qa-semanal`), con el criterio del 2026-09-23 (#224). Pide activar Yala completo en modo avión, con datos viejos en iCloud, y esperar el aviso tardío: un caso raro que el propio ticket marca como opcional. Lo cubre `ActivationLateNoticeKeepsGroupsTests` (11/11 mutantes).

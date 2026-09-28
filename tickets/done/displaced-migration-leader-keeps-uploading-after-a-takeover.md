@@ -1,11 +1,14 @@
 ---
 id: displaced-migration-leader-keeps-uploading-after-a-takeover
-status: qa
+status: done
 priority: medium
 area: "modo-nube, migración"
 created: 2026-09-24
-updated: 2026-09-24
+updated: 2026-09-28
 source: "review adversarial de `migration-takeover-uploads-without-a-lineage-check` (2026-09-24), lente de bypass"
+qa-status: not-replicable
+qa-date: 2026-09-28
+qa-notes: barrido 2026-09-28 sin device-QA - dos iPhone y 61 min en modo avion; cubierto por MigrationRunnerTests y MigrationWorkExecutorTests
 ---
 
 # El teléfono que perdió el relevo de una activación vuelve y sigue subiendo sus datos a la cuenta
@@ -110,3 +113,7 @@ Lo que el simulador no puede montar: dos teléfonos con la misma cuenta y 61 min
 
 - A sigue subiendo tras quitar el modo avión (la barra avanza del 55 %).
 - A sale con otro texto («dejó de avanzar», «revisa tu conexión»).
+
+## Barrido de `qa` · 2026-09-28 · cerrado sin device-QA
+
+Sale de la cola de device-QA por el barrido semanal (encargo `2026-09-28-barrido-qa-in-qa-semanal`), con el criterio del 2026-09-23 (#224). El guion pide dos iPhone con la misma cuenta y 61 minutos de silencio del primero. Lo cubren `MigrationRunnerTests`, `MigrationStateMachineTests` y `MigrationWorkExecutorTests`.

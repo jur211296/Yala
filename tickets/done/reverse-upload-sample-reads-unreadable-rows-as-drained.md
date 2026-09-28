@@ -1,11 +1,14 @@
 ---
 id: reverse-upload-sample-reads-unreadable-rows-as-drained
-status: qa
+status: done
 priority: medium
 area: "modo-nube, migración"
 created: 2026-09-16
-updated: 2026-09-26
+updated: 2026-09-28
 source: "medición de `reverse-upload-has-no-ceiling-and-no-exit` (2026-09-16)"
+qa-status: absorbed
+qa-date: 2026-09-28
+qa-notes: barrido 2026-09-28 absorbed por reverse-cutover-cerrado-para-cuentas-born-cloud - su no-regresion es el paso E1 del guion; el caso no se provoca
 ---
 
 # Si el muestreo de la subida no puede leer las filas, la vuelta a iCloud se da por terminada
@@ -123,3 +126,6 @@ no-regresión. La huella del arreglo solo sale si aparece `uploadSampleUnreadabl
 - [ ] Con iCloud sano, la vuelta termina en modo privado como antes.
 - [ ] Console enseña el rastro de la espera sin `uploadSampleUnreadable`.
 
+## Barrido de `qa` · 2026-09-28 · absorbido
+
+Sale de la cola de device-QA por el barrido semanal (encargo `2026-09-28-barrido-qa-in-qa-semanal`), con el criterio del 2026-09-23 (#224). El caso que arregla no se provoca en un iPhone, y su guion de no-regresión (volver a iCloud y ver que termina) es el bloque E1 del guion, que recorre `reverse-cutover-cerrado-para-cuentas-born-cloud`. Lo cubren `MigrationWorkExecutorTests` y `CKIdentityCaptureTests`.

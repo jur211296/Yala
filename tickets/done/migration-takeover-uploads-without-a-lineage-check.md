@@ -1,11 +1,14 @@
 ---
 id: migration-takeover-uploads-without-a-lineage-check
-status: qa
+status: done
 priority: medium
 area: "modo-nube, migración"
 created: 2026-09-24
-updated: 2026-09-24
+updated: 2026-09-28
 source: "Paso 0 · D6 de `adopt-uploads-a-foreign-corpus-without-a-lineage-check` (2026-09-24): el camino 2 de ese ticket no pasa por el adopt"
+qa-status: not-replicable
+qa-date: 2026-09-28
+qa-notes: barrido 2026-09-28 sin device-QA - dos dispositivos y 61 min de espera; cubierto por MigrationWorkExecutorTests y WelcomeAdoptExitTests
 ---
 
 # El dispositivo que toma el relevo de una migración abandonada sube su corpus sin comprobar que sea el de esa cuenta
@@ -140,3 +143,7 @@ al tomar el relevo, tiene de verdad las cuentas que el primero subió. Hacen fal
 6. Quita el modo avión del **A** y ábrelo: puede decir que otro dispositivo tomó el relevo. Es lo esperado.
 
 Si en el paso 5 sale ese texto, anota cuánto tardó y manda una captura: sería el relevo legítimo bloqueado.
+
+## Barrido de `qa` · 2026-09-28 · cerrado sin device-QA
+
+Sale de la cola de device-QA por el barrido semanal (encargo `2026-09-28-barrido-qa-in-qa-semanal`), con el criterio del 2026-09-23 (#224). El guion pide dos dispositivos con el mismo Apple ID y 61 minutos de espera. Lo cubren `MigrationWorkExecutorTests`, `MigrationRunnerTests` y `WelcomeAdoptExitTests`.

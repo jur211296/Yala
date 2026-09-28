@@ -1,11 +1,14 @@
 ---
 id: private-gate-wipe-failure-copy-claims-icloud-is-intact
-status: qa
-updated: 2026-09-27
+status: done
+updated: 2026-09-28
 priority: medium
 area: "onboarding, modo-nube, l10n"
 created: 2026-09-14
 source: "review adversarial del PR de `activation-restore-start-fresh-keeps-the-imported-rows` (2026-09-14); NO reproducido en device"
+qa-status: not-replicable
+qa-date: 2026-09-28
+qa-notes: barrido 2026-09-28 sin device-QA - el caso exige que falle el guardado local a mitad; cubierto por PrivateGateWipeFailureCopyTests
 ---
 
 # Si el borrado falla a mitad, la app dice que iCloud sigue intacto — y ya no lo está
@@ -80,3 +83,7 @@ que sí se puede mirar es que el caso de siempre no cambió:
 3. Toca «Empezar de cero» y confirma en la segunda pantalla. **Justo al confirmar, activa el modo avión.**
 4. Esperado: «No pudimos borrar todo» con «Tus datos siguen en iCloud, intactos. Revisa tu conexión…».
 5. Quita el modo avión y toca «Volver a intentarlo»: el borrado termina y sigue al onboarding.
+
+## Barrido de `qa` · 2026-09-28 · cerrado sin device-QA
+
+Sale de la cola de device-QA por el barrido semanal (encargo `2026-09-28-barrido-qa-in-qa-semanal`), con el criterio del 2026-09-23 (#224). El propio ticket dice que el caso no se provoca a mano: exige que falle el guardado local a mitad de lista. Lo cubre `PrivateGateWipeFailureCopyTests`.
