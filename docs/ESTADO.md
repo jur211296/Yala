@@ -1,11 +1,11 @@
 ---
-updated: 2026-09-27
+updated: 2026-09-28
 tags: [now, punto-de-retomada]
 ---
 
-# NOW — 2026-09-27 (Lima)
+# NOW — 2026-09-28 (Lima)
 
-**Rama** `2.1` — Merge #287: **si el dispositivo que procesa tarde «Vaciar datos» no tiene Grupos, los gastos de grupo vuelven igual.**
+**Rama** `2.1` — Merge #288: **una liquidación de grupo ya aprobada no vuelve a pedir su cuenta ni duplica el pago.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,29 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#287 · el receptor sin Grupos del vaciado tardío ya no deja al parque sin los gastos de grupo)
+## Esta sesión (#288 · una liquidación ya aprobada no vuelve a pedir su cuenta)
+
+Si aprobabas en el Inbox «Ana me pagó 25» y después otro dispositivo procesaba tarde un «Vaciar datos», el Inbox volvía
+a preguntar a qué cuenta llegó ese pago, y aprobado otra vez el banco lo contaba doble. Ahora:
+
+- **Aprobar deja una marca** (un borrador aprobado nuevo, enlazado a la transacción real): la liquidación rehace su
+  movimiento en la cuenta de grupos sin volver a preguntar. Sale en Archivados y abre la transacción.
+- **Un borrador de un pago ya registrado** (lo creó otro dispositivo antes de enterarse) dice «Este pago ya está
+  registrado en tus cuentas» al finalizarlo, y el arranque siguiente lo retira.
+- **El borrador de una liquidación se puede rechazar o borrar**; el rechazado sale en Archivados para poder deshacerlo.
+
+**Verificado:** review de tres lentes (dinero, sync, tests; tumbó cuatro cosas de la primera versión), 22/22 mutantes,
+gate con 3805 unit en 348 suites y 37 XCUITest (un rojo: el flaky conocido de `AppleIDCloseNoticeUITests`, 3 de 3
+aislado, anotado en su ticket). CI verde. Ticket a `qa`.
+
+### Lo que espera de Jürgen
+
+- **QA opcional en simulador** (rechazar, finalizar, Archivados, borrar): guion en
+  `tickets/qa/settlement-approval-leaves-no-trace-so-a-rebridge-asks-again.md`.
+- Nuevo en backlog: `settlement-amount-edited-after-approval-leaves-the-bank-stale` (low) — si otra persona corrige el
+  importe de una liquidación ya aprobada, el banco no se entera. Decisión de producto: avisar o aceptarlo (D7).
+
+## Sesión anterior (#287 · el receptor sin Grupos del vaciado tardío ya no deja al parque sin los gastos de grupo)
 
 Si vaciabas tus datos en el iPhone y abrías días después un iPad que nunca entró en tu cuenta de grupos, el iPad se
 vaciaba, su borrado viajaba por iCloud y los gastos y liquidaciones de grupo desaparecían del iPhone para siempre: el
