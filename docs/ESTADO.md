@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-27 (Lima)
 
-**Rama** `2.1` — Merge #283: **tras «Vaciar datos», los gastos y liquidaciones de grupo vuelven a lo personal.**
+**Rama** `2.1` — Merge #284: **el dispositivo que procesa tarde «Vaciar datos» repone los gastos de grupo que se lleva.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,29 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#283 · tras «Vaciar datos», los gastos y liquidaciones de grupo vuelven a lo personal)
+## Esta sesión (#284 · el dispositivo que procesa tarde «Vaciar datos» repone lo que se lleva)
+
+Si vaciabas tus datos en el iPhone y abrías después el iPad, que estaba cerrado, el iPad se vaciaba y se llevaba los
+gastos y liquidaciones de grupo que el iPhone ya había repuesto, en los dos dispositivos y para siempre. Ahora:
+
+- **El iPad los vuelve a poner** en su siguiente arranque en frío, una vez cada uno, y llegan también al iPhone.
+- **Solo lo pide cuando hace falta**: si su borrado se lleva filas de grupo posteriores al vaciado (la reposición del
+  iPhone). Pedirlo siempre, que era la decisión del encargo, lo tumbó la review: los dos dispositivos habrían repuesto
+  todo el histórico a la vez, con cada gasto dos veces y dos borradores aprobables.
+
+**Verificado:** gate con 614 unit en 72 suites y 5 XCUITest (aviso de vaciado remoto y Perfil), con el centinela solo;
+10/10 mutantes; review adversarial de tres lentes más una re-review del rediseño. CI verde. Ticket a `qa`.
+
+### Lo que espera de Jürgen
+
+- **Device-QA opcional, con dos dispositivos del mismo Apple ID**: guion en
+  `tickets/qa/late-remote-wipe-signal-undoes-the-rows-the-origin-reconverged.md`.
+- Nuevos en backlog. Dos medium: `late-remote-wipe-on-a-device-without-groups-cannot-return-the-rows` (si el iPad no
+  tiene Grupos, no puede reponer) y `late-remote-wipe-signal-also-wipes-rows-created-after-it` (preexistente: el vaciado
+  tardío se lleva también lo personal nuevo; pide decidir qué promete). Un low:
+  `late-remote-wipe-infers-the-origin-converged-from-row-dates`.
+
+## Sesión anterior (#283 · tras «Vaciar datos», los gastos y liquidaciones de grupo vuelven a lo personal)
 
 Quien vaciaba sus datos en Ajustes conservaba sus grupos y sus saldos, pero los gastos y las liquidaciones de grupo
 desaparecían de Registros, el Panel y el Inbox. Solo volvía lo que alguien editara después. Ahora:
@@ -41,11 +63,10 @@ adversarial de tres lentes, seis arreglos dentro. CI verde. Ticket a `qa`.
 - **Device-QA opcional**: el guion está en `tickets/qa/wipe-data-keeps-groups-but-drops-their-bridged-rows.md`. Hace falta
   una sesión privada con un grupo que tenga un gasto pagado por ti y una liquidación confirmada.
 - Nuevos en backlog. Dos medium: `wipe-data-group-rows-return-only-on-the-next-cold-launch` (en la misma sesión no
-  vuelven hasta relanzar) y `late-remote-wipe-signal-undoes-the-rows-the-origin-reconverged` (un segundo dispositivo que
-  procesa tarde el vaciado deshace la reposición). Dos low: `dormant-convergence-request-from-a-groups-only-wipe` y
+  vuelven hasta relanzar) y `late-remote-wipe-signal-undoes-the-rows-the-origin-reconverged` (cerrado por #284). Dos low: `dormant-convergence-request-from-a-groups-only-wipe` y
   `a-wipe-that-throws-between-drafts-and-transactions-loses-settlement-drafts`.
 
-## Sesión anterior (#282 · tras «Restaurar → Empezar desde cero» de la activación, las liquidaciones de grupo vuelven a lo personal)
+## Antes (#282 · tras «Restaurar → Empezar desde cero» de la activación, las liquidaciones de grupo vuelven a lo personal)
 
 Quien activaba Yala completo, entraba en Restaurar y elegía **«Empezar desde cero»** conservaba sus grupos, pero sus
 liquidaciones de grupo desaparecían de lo personal: la cuenta de grupos contaba lo prestado sin descontar lo ya cobrado
