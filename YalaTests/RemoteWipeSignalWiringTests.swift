@@ -528,6 +528,25 @@ struct RemoteWipeSignalWiringTests {
         }
     }
 
+    /// **El arranque poda los borradores de liquidación que otro dispositivo creó antes de ver la marca de aprobación**
+    /// (ticket `settlement-approval-leaves-no-trace-so-a-rebridge-asks-again`). Sin la llamada, el Inbox vuelve a preguntar
+    /// por un pago ya registrado. Detrás de los mismos gates y DESPUÉS de la devolución: lo que ella re-puentea ya sustituye
+    /// sus pendientes, y un `save()` durante el import es el SIGTRAP de la quiescencia.
+    @Test("MUTACIÓN: el arranque poda los borradores de una liquidación ya resuelta, tras la devolución y sus gates")
+    func theBootPrunesSettlementDraftsAlreadyResolved() throws {
+        let llamada = "GroupTransactionBridge.pruneSettlementDraftsAlreadyResolved(context: context)"
+        #expect(try Self.countInProduction(llamada) == 1, "el arranque ya no poda los borradores, o los poda dos veces")
+        let boot = try Self.code("Yala/App/AppBootstrapper.swift")
+        let inicio = try #require(boot.range(of: "func retryPendingBridges(context: ModelContext) async {"))
+        let cuerpo = boot[inicio.upperBound...]
+        let poda = try #require(cuerpo.range(of: llamada), "retryPendingBridges no poda los borradores")
+        for antes in ["guard await awaitPersonalStoreReady() else", "guard GroupTransactionBridge.isDomainOpenForBridge() else",
+                      "GroupsRemoteWipeReturn.returnIfDeclared(context: context)"] {
+            let r = try #require(cuerpo.range(of: antes), "no existe «\(antes)» en retryPendingBridges")
+            #expect(r.upperBound <= poda.lowerBound, "la poda corre antes de «\(antes)»")
+        }
+    }
+
     /// **El receptor declara lo que no puede reponer ANTES de borrar**, como las peticiones de «Vaciar datos»: un corte
     /// entre el borrado y la declaración dejaría las filas fuera del parque sin nadie que las pida. Declarar antes es
     /// inocuo: quien la atiende espera a que las filas falten. Y borra por el camino que pide su convergencia, para lo que sí

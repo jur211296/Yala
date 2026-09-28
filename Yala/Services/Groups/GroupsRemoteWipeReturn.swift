@@ -35,11 +35,12 @@
 //  tardío se llevó lo repuesto) se atiende de nuevo cuando falten SUS filas. Quien declara se apunta la suya y no la atiende.
 //
 //  **Lo que queda fuera, dicho entero:**
-//   · **Una liquidación ya aprobada vuelve a preguntar.** Aprobar su borrador crea la transacción real SIN
-//     `splitSettlementID` (`DraftService`, D7), así que no hay rastro de que se aprobó. Si el receptor se llevó la pata
-//     virtual sin haber importado aún la real aprobada, aquí la liquidación queda sin patas y sale otro borrador del mismo
-//     pago. El camino de la convergencia del receptor tiene el mismo agujero; ticket
-//     `settlement-approval-leaves-no-trace-so-a-rebridge-asks-again`.
+//   · **Una liquidación aprobada ANTES de que existiera la marca de aprobación vuelve a preguntar.** Desde el ticket
+//     `settlement-approval-leaves-no-trace-so-a-rebridge-asks-again`, aprobar su borrador deja un borrador aprobado nuevo
+//     enlazado a la transacción real, y el re-puente de aquí la lee (`GroupSettlementDraftResolutionLogic`): rehace la
+//     pata virtual sin volver a preguntar. Las aprobadas antes no tienen marca; su borrador ya se puede rechazar.
+//     Y si un receptor importó la marca sin la transacción real (o al revés), esa fila queda como antes: las dos nacen
+//     en el mismo guardado y viajan juntas.
 //   · **Dos dispositivos que puentean el mismo id antes de cruzarse por el espejo duplican**: dos con grupos que atienden
 //     la misma declaración, uno que la atiende mientras otro converge por su cuenta, o el canal de grupos del propio
 //     receptor que se pone al día y puentea lo que baja —cada dispositivo con grupos puentea lo que le llega—. Y un

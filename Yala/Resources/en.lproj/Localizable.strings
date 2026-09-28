@@ -4419,6 +4419,7 @@
 
 /* Banner explicativo en el sheet de finalización de liquidación de grupo. %@ = nombre del grupo. */
 "inbox.groupSettlementDraft.banner" = "Settlement from group %@. Just assign an account; the amount and date are managed by the group.";
+"inbox.groupSettlementDraft.alreadyRegistered" = "This payment is already recorded in your accounts. You can dismiss this draft.";
 
 /* Title del sheet de finalización cuando faltan cuenta + subcategoría (Caso A match falla) */
 "inbox.groupExpenseAccountSubcategoryDraft.title" = "Assign account and subcategory";

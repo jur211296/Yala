@@ -4425,6 +4425,7 @@
 
 /* Banner explicativo en el sheet de finalización de liquidación de grupo. %@ = nombre del grupo. */
 "inbox.groupSettlementDraft.banner" = "Afrekening van groep %@. Wijs alleen een rekening toe; het bedrag en de datum worden door de groep beheerd.";
+"inbox.groupSettlementDraft.alreadyRegistered" = "Deze betaling staat al in je rekeningen. Je kunt dit concept verwijderen.";
 
 /* Title del sheet de finalización cuando faltan cuenta + subcategoría (Caso A match falla) */
 "inbox.groupExpenseAccountSubcategoryDraft.title" = "Rekening en subcategorie toewijzen";

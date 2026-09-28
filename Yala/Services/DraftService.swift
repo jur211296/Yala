@@ -102,6 +102,71 @@ final class DraftService {
         context.delete(draft)
     }
 
+    // MARK: - Marca de aprobación de una liquidación
+
+    /// **La marca de que el borrador de una liquidación ya se aprobó** (ticket
+    /// `settlement-approval-leaves-no-trace-so-a-rebridge-asks-again`). La transacción real no lleva `splitSettlementID`
+    /// (D7), así que sin esto el re-puente de la liquidación —convergencia, devolución del borrado tardío, retome— no veía
+    /// el pago ya registrado y volvía a preguntar: aprobado dos veces, el banco lo cuenta doble.
+    ///
+    /// La marca es un borrador APROBADO de la liquidación enlazado a su transacción, el mecanismo del camino personal,
+    /// que viaja por el espejo sin campos nuevos. **Es un registro NUEVO, no el pendiente que se aprueba:** ese nació con
+    /// la pata virtual, y un receptor tardío que importó la virtual lo importó con ella; su borrado llegaría después y se
+    /// llevaría la marca. El nuevo nace en el mismo guardado que la transacción real y corre su suerte: si un receptor se
+    /// lleva la real, se lleva la marca, y volver a preguntar es lo correcto. `GroupSettlementDraftResolutionLogic` es
+    /// quien la lee.
+    private func insertSettlementApprovalMark(
+        for draft: InboxDraft, transaction: TransactionItem, in context: ModelContext
+    ) {
+        let mark = InboxDraft(
+            note: draft.note,
+            amount: draft.amount,
+            date: draft.effectiveDate,
+            account: draft.account,
+            subcategory: draft.subcategory,
+            sourceType: .groupSettlement,
+            confidenceAmount: draft.confidenceAmount,
+            confidenceDate: draft.confidenceDate,
+            confidenceMerchant: draft.confidenceMerchant,
+            confidenceSubcategory: draft.confidenceSubcategory,
+            needsUserInput: [],
+            status: .approved,
+            splitGroupZoneID: draft.splitGroupZoneID,
+            splitSettlementID: draft.splitSettlementID,
+            originReasonKey: draft.originReasonKey,
+            originActorName: draft.originActorName,
+            originGroupName: draft.originGroupName,
+            optInPersonalOnly: draft.optInPersonalOnly
+        )
+        mark.approvedTransaction = transaction
+        cacheDisplayValues(mark)
+        context.insert(mark)
+    }
+
+    /// **Aprobar una liquidación ya aprobada no crea otra transacción.** Un borrador pendiente puede convivir con la marca:
+    /// otro dispositivo lo creó antes de que la marca le llegara por el espejo, o lo creó una versión anterior de la app.
+    /// Si hay marca de la misma liquidación, se rechaza con un error que se lo dice a la persona, y el pendiente se queda
+    /// para que lo descarte (o lo poda el arranque siguiente, `pruneSettlementDraftsAlreadyResolved`); no se borra aquí
+    /// porque la hoja que lo muestra sigue montada.
+    ///
+    /// **Basta el estado, no la transacción enlazada:** CloudKit puede traer la marca antes que su transacción, y en esa
+    /// ventana la relación está a `nil`; exigirla creaba justo la segunda transacción que esto evita. Es el mismo criterio
+    /// que el re-puente (`GroupSettlementDraftResolutionLogic`). Si la persona borró la transacción, se re-aprueba desde la
+    /// marca en Archivados, que al tocarla vuelve a pendiente.
+    private func ensureSettlementNotAlreadyApproved(_ draft: InboxDraft, in context: ModelContext) throws {
+        guard let settlementID = draft.splitSettlementID else { return }
+        let approvedRaw = DraftStatus.approved.rawValue
+        var descriptor = FetchDescriptor<InboxDraft>(
+            predicate: #Predicate { $0.splitSettlementID == settlementID && $0.statusRaw == approvedRaw }
+        )
+        descriptor.fetchLimit = 1
+        guard try !context.fetch(descriptor).isEmpty else { return }
+        Logger(subsystem: "com.yala", category: "GroupBridge").notice(
+            "groupSettlement draft for an already approved settlement; no second transaction"
+        )
+        throw DraftServiceError.groupSettlementAlreadyRegistered
+    }
+
     // MARK: - Convert to Group Expense
 
     /// Cierra el ciclo tras convertir un draft PERSONAL de gasto en un `SplitExpense` de grupo.
@@ -217,8 +282,11 @@ final class DraftService {
         // borre la TX manual del user (ej: transferiste vía Yape, después editas el monto del
         // settlement → tu TX en Yape desaparece). La TX virtual (lado bridge) sigue ligada
         // al settlement y se regenera correctamente.
+        // Lo que sí queda ligado a la liquidación es la MARCA de aprobación (`insertSettlementApprovalMark`):
+        // sin ella, un re-puente posterior volvía a preguntar por un pago ya registrado.
         if draft.sourceType == .groupSettlement, let account = draft.account,
            let amount = draft.amount, let subcategory = draft.subcategory {
+            try ensureSettlementNotAlreadyApproved(draft, in: context)
             let preferredCode = CurrencyDefaults.currentPreferred
             // `convertChecked` y no `convert`: lo que sigue PERSISTE el monto convertido, y
             // `convert` tira la calidad de la tasa.
@@ -251,7 +319,7 @@ final class DraftService {
             // D7: NO setear tx.splitSettlementID ni tx.splitGroupZoneID — TX queda manual independiente.
 
             context.insert(tx)
-            cacheDisplayValues(draft)
+            insertSettlementApprovalMark(for: draft, transaction: tx, in: context)
             deleteInboxDraftPruningRow(draft, in: context)
             try context.save()
 
@@ -510,9 +578,9 @@ final class DraftService {
     // MARK: - Reject Operations
 
     func rejectDraft(_ draft: InboxDraft) throws {
-        // A0-Bridge: drafts de grupos no se rechazan desde Inbox.
-        // Solo se eliminan desde el grupo (delete del expense/settlement origen).
-        if draft.isFromGroup {
+        // A0-Bridge: los punteros `.groupExpense` no se rechazan desde Inbox: solo se eliminan desde el
+        // grupo. Los de liquidación sí (`blocksInboxDismissal`), y el re-puente respeta el rechazo.
+        if draft.sourceType.blocksInboxDismissal {
             throw DraftServiceError.cannotRejectGroupDraft
         }
 
@@ -534,8 +602,8 @@ final class DraftService {
         let context = try requireContext()
 
         for draft in drafts {
-            // A0-Bridge: skip drafts de grupos (silent skip en bulk).
-            if draft.isFromGroup { continue }
+            // A0-Bridge: skip de los que no se pueden descartar (silent skip en bulk).
+            if draft.sourceType.blocksInboxDismissal { continue }
             skipGroupScheduledOccurrence(for: draft, in: context)
             cacheDisplayValues(draft)
             draft.status = .rejected
@@ -548,9 +616,9 @@ final class DraftService {
     // MARK: - Delete Operations
 
     func deleteDraft(_ draft: InboxDraft) throws {
-        // A0-Bridge: drafts de grupos no se eliminan desde Inbox.
-        // Solo se eliminan al borrar el expense/settlement origen en el grupo.
-        if draft.isFromGroup {
+        // A0-Bridge: los punteros `.groupExpense` no se eliminan desde Inbox: solo al borrar el gasto
+        // origen en el grupo. Los de liquidación sí (`blocksInboxDismissal`).
+        if draft.sourceType.blocksInboxDismissal || draft.isLiveSettlementApprovalMark {
             throw DraftServiceError.cannotDeleteGroupDraft
         }
         let context = try requireContext()
@@ -562,8 +630,9 @@ final class DraftService {
     func bulkDelete(_ drafts: [InboxDraft]) throws {
         let context = try requireContext()
         for draft in drafts {
-            // A0-Bridge: skip drafts de grupos (silent skip en bulk).
-            if draft.isFromGroup { continue }
+            // A0-Bridge: skip de los que no se pueden descartar (silent skip en bulk). La marca viva de una
+            // liquidación tampoco: sin ella el siguiente re-puente volvería a preguntar por el pago.
+            if draft.sourceType.blocksInboxDismissal || draft.isLiveSettlementApprovalMark { continue }
             skipGroupScheduledOccurrence(for: draft, in: context)
             context.delete(draft)
         }
@@ -594,6 +663,8 @@ final class DraftService {
 
     func returnToPending(_ draft: InboxDraft) throws {
         let context = try requireContext()
+        // La marca viva de una liquidación no vuelve a pendientes: aprobarla otra vez sería el mismo pago dos veces.
+        guard !draft.isLiveSettlementApprovalMark else { return }
 
         draft.status = .pending
         draft.updatedAt = Date.now
@@ -605,7 +676,8 @@ final class DraftService {
     func bulkReturnToPending(_ drafts: [InboxDraft]) throws {
         let context = try requireContext()
 
-        for draft in drafts {
+        // La marca viva de una liquidación se salta (silent skip en bulk), como en `returnToPending`.
+        for draft in drafts where !draft.isLiveSettlementApprovalMark {
             draft.status = .pending
             draft.updatedAt = Date.now
             updateNeedsUserInput(draft)
@@ -911,6 +983,7 @@ final class DraftService {
     ) throws -> TransactionItem {
         guard let account = draft.account else { throw DraftServiceError.missingAccount }
         guard let amount = draft.amount else { throw DraftServiceError.missingAmount }
+        try ensureSettlementNotAlreadyApproved(draft, in: context)
 
         let preferredCode = CurrencyDefaults.currentPreferred
         let outcome = currencyConverter.convertChecked(
@@ -940,7 +1013,7 @@ final class DraftService {
         // NO setear splitSettlementID / splitGroupZoneID — preserva edición independiente.
 
         context.insert(tx)
-        cacheDisplayValues(draft)
+        insertSettlementApprovalMark(for: draft, transaction: tx, in: context)
         deleteInboxDraftPruningRow(draft, in: context)
         try context.save()
         SessionState.shared.incrementDataVersion()
@@ -958,8 +1031,8 @@ enum DraftServiceError: LocalizedError {
     case missingSubcategory
     case futureDateNotAllowed
     case saveFailed(Error)
-    /// A0-Bridge: drafts de grupos (groupExpense/groupSettlement) no permiten eliminar/rechazar.
-    /// Solo se borran al eliminar el expense/settlement origen en el grupo.
+    /// A0-Bridge: los drafts `.groupExpense` no permiten eliminar/rechazar (`blocksInboxDismissal`).
+    /// Solo se borran al eliminar el expense origen en el grupo.
     case cannotDeleteGroupDraft
     case cannotRejectGroupDraft
     /// Draft-puntero `.groupExpense` cuyo expense origen se borró remotamente (no existe TX).
@@ -968,6 +1041,8 @@ enum DraftServiceError: LocalizedError {
     /// `.groupScheduledExpense` solo se aprueba vía GroupExpenseFormView (crea el SplitExpense),
     /// nunca por el path genérico de approveDraft. Defensa interna — no debería alcanzar al usuario.
     case groupScheduledExpenseRequiresForm
+    /// El borrador de una liquidación cuyo pago ya se registró (hay marca de aprobación): aprobarlo lo contaría dos veces.
+    case groupSettlementAlreadyRegistered
 
     var errorDescription: String? {
         switch self {
@@ -989,6 +1064,8 @@ enum DraftServiceError: LocalizedError {
             return L10n.Inbox.errorGroupExpenseGone
         case .groupScheduledExpenseRequiresForm:
             return "DraftService: group scheduled expense must be approved via the group form"
+        case .groupSettlementAlreadyRegistered:
+            return L10n.Inbox.GroupSettlementDraft.alreadyRegistered
         }
     }
 }
