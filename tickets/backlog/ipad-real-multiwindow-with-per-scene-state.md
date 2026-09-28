@@ -26,8 +26,13 @@ Estadísticas en otra; Split View y Stage Manager probados en iPad real.
   las ventanas a la vez. El swap ya remonta toda la jerarquía (`YalaApp.swift:90-97`); falta que ninguna
   ventana siga operando mientras otra enseña el cover.
 - `WindowGroup(for:)` para abrir un grupo o un registro en ventana propia.
-- Volver a encender `UIApplicationSupportsMultipleScenes` si
-  [[ipad-multiple-windows-share-one-navigation-state]] lo apagó.
+- **Volver a encender la multiventana**, que [[ipad-multiple-windows-share-one-navigation-state]] apagó el
+  2026-09-27. Está en dos sitios y se tocan los dos: `UIApplicationSupportsMultipleScenes` a `true` en el
+  `UIApplicationSceneManifest` de `Yala/Resources/Info.plist`, y —si se quiere volver al manifiesto generado—
+  `INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES` en las cuatro configuraciones del target `Yala`
+  quitando a la vez el manifiesto del fichero. **`INFOPLIST_KEY_UIApplicationSupportsMultipleScenes` no existe** en
+  el generador de Xcode 27.0: se probó y no cambia el plist. Se comprueba con
+  `plutil -p <.app>/Info.plist | grep -A1 SceneManifest`.
 
 ## iPhone Duo (documentado, 2026-09-27)
 

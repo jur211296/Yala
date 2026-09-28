@@ -147,7 +147,13 @@ Referencia que pidió Jürgen el 27-sep para patrones y trampas prácticas. **Ap
   300 y 320 puntos (`SubscriptionView.swift:153`, `SplashScreenView.swift:63`).
 - **Botones flotantes:** `FABStackView`, montado en Panel, Registros y el detalle de Estadísticas
   (`PanelView.swift:630`, `RecordsStandaloneView.swift:159`, `DetailContainerView.swift:253`).
-- **Multiventana encendida** y navegación de proceso: ver `ipad-nativo.md` §6.1, sin cambios.
+- **Multiventana APAGADA desde el 2026-09-27** (fase 0). Antes estaba encendida con navegación de proceso
+  (`ipad-nativo.md` §6.1), y una sonda en `YalaLane-Adapt-iPad-Pro-13` lo midió: el sistema abría una segunda
+  ventana de Yala (1 → 2 escenas). Hoy el manifiesto va escrito en `Yala/Resources/Info.plist` con
+  `UIApplicationSupportsMultipleScenes = false` y `INFOPLIST_KEY_UIApplicationSceneManifest_Generation = NO` en las
+  cuatro configuraciones del target; la misma sonda recibe «La aplicación no admite varios entornos» y se queda en 1
+  escena. **Se vuelve a encender en la fase 4**, `ipad-real-multiwindow-with-per-scene-state`, cuando cada ventana
+  tenga su estado.
 - **Esta Mac:** Xcode 27.0 (27A266a), runtimes iOS 26.5 y 27.0, **ningún tipo de dispositivo Duo**, 15 GB libres. Hay
   `DeviceHub.app` dentro de Xcode, que la exploración del 26-sep no contó: con él se puede redimensionar la app en el
   simulador de iPad, aunque es interfaz gráfica y no se maneja desde `simctl`.
@@ -268,7 +274,7 @@ Tamaños: **S** ≈ una sesión · **M** ≈ dos o tres · **L** ≈ cuatro o m�
 
 | # | Fase | Qué cambia para el usuario | Ticket | Tamaño | Depende de | Prioridad |
 |---|---|---|---|---|---|---|
-| 1 | **0 · Multiventana** | Si se confirma el fallo, no se puede abrir una segunda ventana rota, ni en iPad ni en el Duo | `ipad-multiple-windows-share-one-navigation-state` | S | nada | high · antes del 23-oct |
+| 1 | **0 · Multiventana** ✅ 27-sep | No se puede abrir una segunda ventana rota, ni en iPad ni en el Duo. Apagada hasta la fase 4 (#12) | `ipad-multiple-windows-share-one-navigation-state` | S | nada | high · antes del 23-oct |
 | 2 | **iPhone · texto grande** | Con texto grande, los importes no se cortan y las filas crecen | `iphone-large-text-sizes-break-layouts` | M | nada | medium |
 | 3 | **iPhone · pantallas pequeñas** | En un iPhone SE nada queda tapado ni cortado, tampoco con el teclado | `iphone-small-screens-and-safe-areas-audit` | S–M | nada | medium |
 | 4 | **Cimiento · hojas por espacio** | Las hojas se dimensionan por la ventana, no por el aparato | `sheet-size-follows-the-device-not-the-window` | S | nada | medium |

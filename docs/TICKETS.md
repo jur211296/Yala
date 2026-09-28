@@ -406,7 +406,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | ipad-keyboard-shortcuts-pointer-context-menus-and-drop | backlog | tickets/backlog/ipad-keyboard-shortcuts-pointer-context-menus-and-drop.md |
 | ipad-large-and-extra-large-widgets | backlog | tickets/backlog/ipad-large-and-extra-large-widgets.md |
 | ipad-list-detail-for-groups-and-settings-and-chat-inspector | backlog | tickets/backlog/ipad-list-detail-for-groups-and-settings-and-chat-inspector.md |
-| ipad-multiple-windows-share-one-navigation-state | backlog | tickets/backlog/ipad-multiple-windows-share-one-navigation-state.md |
+| ipad-multiple-windows-share-one-navigation-state | done | tickets/done/ipad-multiple-windows-share-one-navigation-state.md |
 | ipad-native-app | backlog | tickets/backlog/ipad-native-app.md |
 | ipad-real-multiwindow-with-per-scene-state | backlog | tickets/backlog/ipad-real-multiwindow-with-per-scene-state.md |
 | ipad-sidebar-and-list-detail-for-records-and-planning | backlog | tickets/backlog/ipad-sidebar-and-list-detail-for-records-and-planning.md |
@@ -454,6 +454,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | migration-takeover-uploads-without-a-lineage-check | qa | tickets/qa/migration-takeover-uploads-without-a-lineage-check.md |
 | more-tab-missing-profile-button | backlog | tickets/backlog/more-tab-missing-profile-button.md |
 | multi-currency-accounts | backlog | tickets/backlog/multi-currency-accounts.md |
+| navigation-uitests-look-for-the-iphone-tab-bar-on-ipad | backlog | tickets/backlog/navigation-uitests-look-for-the-iphone-tab-bar-on-ipad.md |
 | needsrelaunch-hides-the-groups-section | backlog | tickets/backlog/needsrelaunch-hides-the-groups-section.md |
 | neutral-boot-hands-owner-prefs-to-whoever-signs-in-next | backlog | tickets/backlog/neutral-boot-hands-owner-prefs-to-whoever-signs-in-next.md |
 | neutral-mount-wiring-scan-is-red-on-2-1 | backlog | tickets/backlog/neutral-mount-wiring-scan-is-red-on-2-1.md |
