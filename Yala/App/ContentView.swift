@@ -1674,10 +1674,11 @@ struct ContentView: View {
             try? await Task.sleep(for: .milliseconds(500))
 
             do {
-                // Conserva los grupos y, si se lleva gastos o liquidaciones de grupo que el origen ya repuso (filas
-                // posteriores a la señal), pide que vuelvan: si no, faltarían en todo el parque (ver
-                // `wipeLocallyForRemoteWipeSignal`).
-                try DataWipeService.wipeLocallyForRemoteWipeSignal(in: modelContext, signaledAt: signaledAt)
+                // Conserva los grupos y se lleva solo lo que existía al vaciar: lo que otro dispositivo creó después de
+                // la señal se queda, y sin tocarlo (ver `wipeLocallyForRemoteWipeSignal`). `skipOnboarding` es «alguien
+                // terminó el onboarding después de la señal»: decide qué pasa con lo que no tiene fecha ni lo usa nadie.
+                try DataWipeService.wipeLocallyForRemoteWipeSignal(in: modelContext, signaledAt: signaledAt,
+                                                                   fleetStartedOver: skipOnboarding)
                 themeManager.resetToDefaults()
             } catch {
                 #if DEBUG

@@ -46,11 +46,16 @@ final class DataWipeService {
     //   la checklist y el buffer de intents: no son preferencias, son estado que tiene que casar con la
     //   base. El criterio para clasificar una key: **¿seguiría siendo verdad si no se hubiera borrado
     //   nada?** Si no, se va en los dos borrados.
+    //
+    // - Parameter remoteWipeCut: `nil` (el default) borra todas las filas. El borrado reactivo a la señal de otro
+    //   dispositivo pasa su corte, y entonces se va solo lo que existía al vaciar (`rowsToWipe`). Las preferencias y los
+    //   pasos 2 y 3 no cambian con él: describen a este dispositivo, no a las filas.
     static func wipeAllUserData(
         in context: ModelContext,
         reseedInitialData: Bool = false,
         broadcastSignal: Bool = true,
-        resetsPreferences: Bool = true
+        resetsPreferences: Bool = true,
+        remoteWipeCut: RemoteWipeCutLogic.Cut? = nil
     ) throws {
         #if DEBUG
         // Seam de QA (`-uitest-fail-wipe`): lanza ANTES de tocar nada, así que los datos quedan
@@ -72,16 +77,18 @@ final class DataWipeService {
         // TransactionItem → Budget → FavoritePayment → ScheduledPayment →
         // Tag → ExchangeRate → Account → Subcategory → Category
 
+        // Qué se va: todo, o —en el borrado reactivo tardío— lo que existía al vaciar (`rowsToWipe`). Se decide ANTES de
+        // tocar nada: los `.nullify` de cada borrado cambian las relaciones con las que se mide el resto. Y **lo que se
+        // queda no se escribe**: cada limpieza de relaciones de abajo toca solo filas que se van, porque una escritura en
+        // una superviviente viajaría por el espejo al dispositivo que la creó.
+        let rows = try rowsToWipe(in: context, cut: remoteWipeCut)
+
         // 1.1 Limpiar relaciones many-to-many de TransactionItem y Tag
-        let transactionDescriptor = FetchDescriptor<TransactionItem>()
-        let allTransactions = try context.fetch(transactionDescriptor)
-        for transaction in allTransactions {
+        for transaction in rows.transactions {
             transaction.setTags(from: [])
         }
 
-        let tagDescriptor = FetchDescriptor<Tag>()
-        let allTags = try context.fetch(tagDescriptor)
-        for tag in allTags {
+        for tag in rows.tags {
             tag.transactions = []
             tag.favoritePayments = []
             tag.budgets = []
@@ -89,127 +96,110 @@ final class DataWipeService {
         try context.save()
 
         // 1.1b Limpiar relaciones de InboxDraft y eliminar
-        let inboxDraftDescriptor = FetchDescriptor<InboxDraft>()
-        let allDrafts = try context.fetch(inboxDraftDescriptor)
-        for draft in allDrafts {
+        for draft in rows.drafts {
             draft.setTags(from: [])
             draft.account = nil
             draft.subcategory = nil
             draft.approvedTransaction = nil
         }
         try context.save()
-        for draft in allDrafts {
+        for draft in rows.drafts {
             context.delete(draft)
         }
         try context.save()
 
         // 1.1c Eliminar MerchantMemory (limpiar relaciones y eliminar)
-        let merchantMemoryDescriptor = FetchDescriptor<MerchantMemory>()
-        let allMerchantMemories = try context.fetch(merchantMemoryDescriptor)
-        for memory in allMerchantMemories {
+        for memory in rows.merchantMemories {
             memory.subcategory = nil
         }
         try context.save()
-        for memory in allMerchantMemories {
+        for memory in rows.merchantMemories {
             context.delete(memory)
         }
         try context.save()
 
         // 1.1d Eliminar notificaciones personalizadas y resetear default
-        NotificationService.shared.deleteAllNotifications(context: context)
+        if let notifications = rows.notifications {
+            NotificationService.shared.deleteNotifications(notifications, context: context)
+        } else {
+            NotificationService.shared.deleteAllNotifications(context: context)
+        }
 
         // 1.2 Eliminar todas las transacciones
-        for transaction in allTransactions {
+        for transaction in rows.transactions {
             context.delete(transaction)
         }
         try context.save()
 
         // 1.3 Limpiar relaciones de Budget y eliminar
-        let budgetDescriptor = FetchDescriptor<Budget>()
-        let allBudgets = try context.fetch(budgetDescriptor)
-        for budget in allBudgets {
+        for budget in rows.budgets {
             // SSOT: usa el helper único que mantiene M2M + CSV sincronizados.
             budget.setFilters(accounts: [], subcategories: [], tags: [])
         }
         try context.save()
-        for budget in allBudgets {
+        for budget in rows.budgets {
             context.delete(budget)
         }
         try context.save()
 
         // 1.4 Limpiar relaciones de FavoritePayment y eliminar
-        let favoriteDescriptor = FetchDescriptor<FavoritePayment>()
-        let allFavorites = try context.fetch(favoriteDescriptor)
-        for favorite in allFavorites {
+        for favorite in rows.favorites {
             favorite.setTags(from: [])
         }
         try context.save()
-        for favorite in allFavorites {
+        for favorite in rows.favorites {
             context.delete(favorite)
         }
         try context.save()
 
         // 1.5 Eliminar todos los pagos programados
-        let scheduledDescriptor = FetchDescriptor<ScheduledPayment>()
-        let allScheduled = try context.fetch(scheduledDescriptor)
-        for scheduled in allScheduled {
+        for scheduled in rows.scheduled {
             context.delete(scheduled)
         }
         try context.save()
 
         // 1.6 Eliminar todos los tags
-        let remainingTags = try context.fetch(tagDescriptor)
-        for tag in remainingTags {
+        for tag in rows.tags {
             context.delete(tag)
         }
         try context.save()
 
         // 1.7 Eliminar todos los tipos de cambio
-        let exchangeDescriptor = FetchDescriptor<ExchangeRate>()
-        let allExchangeRates = try context.fetch(exchangeDescriptor)
-        for rate in allExchangeRates {
+        for rate in rows.exchangeRates {
             context.delete(rate)
         }
         try context.save()
 
         // 1.8 Limpiar relaciones de Account y eliminar
-        let accountDescriptor = FetchDescriptor<Account>()
-        let allAccounts = try context.fetch(accountDescriptor)
-        for account in allAccounts {
+        for account in rows.accounts {
             account.budgets = []
         }
         try context.save()
-        for account in allAccounts {
+        for account in rows.accounts {
             context.delete(account)
         }
         try context.save()
 
         // 1.9 Limpiar relaciones de Subcategory y eliminar
-        let subcategoryDescriptor = FetchDescriptor<Subcategory>()
-        let allSubcategories = try context.fetch(subcategoryDescriptor)
-        for subcategory in allSubcategories {
+        for subcategory in rows.subcategories {
             subcategory.budgets = []
         }
         try context.save()
-        for subcategory in allSubcategories {
+        for subcategory in rows.subcategories {
             context.delete(subcategory)
         }
         try context.save()
         context.processPendingChanges()
 
         // 1.10 Eliminar todas las categorías
-        let categoryDescriptor = FetchDescriptor<Category>()
-        let allCategories = try context.fetch(categoryDescriptor)
-        for category in allCategories {
+        for category in rows.categories {
             context.delete(category)
         }
         try context.save()
         context.processPendingChanges()
 
         // 1.11 Eliminar todos los CashFlowPlans (cascade → Lines → Overrides)
-        let cashFlowPlanDescriptor = FetchDescriptor<CashFlowPlan>()
-        let allCashFlowPlans = try context.fetch(cashFlowPlanDescriptor)
-        for plan in allCashFlowPlans {
+        for plan in rows.cashFlowPlans {
             context.delete(plan)
         }
         try context.save()
@@ -320,8 +310,8 @@ final class DataWipeService {
     ///
     /// `defaults` es solo para las dos peticiones: el borrado y el libro de conservados escriben en `.standard`.
     ///
-    /// El borrado reactivo del otro dispositivo pasa por aquí cuando se lleva filas que el origen ya repuso y puede
-    /// reponerlas él (`wipeLocallyForRemoteWipeSignal`).
+    /// El borrado reactivo del otro dispositivo NO pasa por aquí: lo que se lleva es anterior al vaciado, y reponerlo es
+    /// cosa de esta petición, la del origen (`wipeLocallyForRemoteWipeSignal`).
     static func wipePersonalDataKeepingGroups(
         in context: ModelContext,
         broadcastSignal: Bool,
@@ -333,79 +323,229 @@ final class DataWipeService {
     }
 
     /// **El «Vaciar datos» de OTRO dispositivo del Apple ID, aplicado aquí: el mismo borrado, sin volver a señalizar, y
-    /// pidiendo la convergencia SOLO si este borrado se lleva filas de grupo que el origen ya repuso** (ticket
-    /// `late-remote-wipe-signal-undoes-the-rows-the-origin-reconverged`).
+    /// solo de lo que existía al vaciar** (ticket `late-remote-wipe-signal-also-wipes-rows-created-after-it`).
     ///
-    /// Hasta el 2026-09-27 este borrado no pedía nada, con un argumento que solo valía en un orden: «las filas que repone
-    /// el dispositivo de origen le llegan por el espejo». Si este dispositivo procesa la señal DESPUÉS de que el origen
-    /// haya convergido —estaba cerrado, o sin red—, lo que se borra aquí son justo esas filas repuestas, el borrado viaja
-    /// por el espejo al origen y nadie vuelve a pedir la convergencia: los gastos y liquidaciones de grupo desaparecen de
-    /// lo personal en todo el parque, y ya no vuelven.
+    /// Si este dispositivo procesa la señal tarde —estaba cerrado desde antes del vaciado, o sin red—, el origen ya ha
+    /// empezado de nuevo: gastos, cuentas, su semilla de categorías, la reposición de lo de grupo. Hasta el 2026-09-28 este
+    /// borrado se lo llevaba todo y el borrado viajaba por el espejo al origen. Ahora corta por la hora de la señal
+    /// (`RemoteWipeCutLogic`): lo de antes se va, lo de después se queda y **no se escribe**. `fleetStartedOver` dice si
+    /// algún dispositivo terminó el onboarding después de la señal; decide qué pasa con lo que no tiene fecha ni lo usa
+    /// nadie (`RemoteWipeCutLogic.takesUndated`).
     ///
-    /// **El indicio de ese orden es la FECHA de las filas puenteadas que hay aquí**, y no se pide la convergencia sin él
-    /// (review adversarial, lentes de dinero y de sync). Pedirla siempre abría un duplicado nuevo: en el orden normal el
-    /// origen todavía no ha convergido, y si los dos dispositivos convergen antes de cruzarse por el espejo cada uno crea
-    /// su copia de TODO el histórico de grupos —virtuales dobles y dos borradores por gasto y por liquidación, que
-    /// aprobados cuentan dos veces—. Una fila puenteada creada DESPUÉS de la señal es posterior al vaciado: casi siempre la
-    /// reposición del origen, que ya consumió su petición y no volverá a converger; borrarla sin pedir nada es el bug. Sin
-    /// ninguna, lo que se borra es anterior al vaciado y reponerlo es cosa de la petición del origen.
+    /// **La convergencia de grupos se sigue pidiendo como desde el 2026-09-27**: si hay alguna fila puenteada posterior a
+    /// la señal —el indicio de que el origen ya repuso—. Ya no es para devolver esa reposición, que ahora se queda, sino
+    /// lo que el corte SÍ se lleva y el origen no va a reponer (review adversarial, lente de grupos): una real anterior
+    /// que llegó tarde del receptor y el bridge del origen conservó con su fecha vieja, la pata vieja que hizo saltar una
+    /// liquidación a la convergencia del origen, o los gastos de los grupos que el origen no tiene en su store local.
+    /// Sobre filas intactas la convergencia es idempotente (conserva la real, rehace la virtual y sus borradores). Las
+    /// peticiones van a `defaults` ANTES del borrado y sobreviven a su reset de preferencias (`fullModeActivation.*` no
+    /// está en esas listas).
     ///
-    /// **Es un indicio, no una prueba.** Una fila posterior también la crea el sync de grupos (un gasto nuevo o editado
-    /// después del vaciado) con el origen todavía sin converger: entonces quedan dos peticiones, y duplican solo si las
-    /// dos convergencias se cruzan antes que el espejo (`retryPendingBridges` espera al import quieto, así que la segunda
-    /// suele ver las filas de la primera y re-puentear sobre ellas es idempotente). Ticket
-    /// `late-remote-wipe-infers-the-origin-converged-from-row-dates`.
-    ///
-    /// `signaledAt` es la hora de la señal (`lastWipeTimestamp`, reloj del origen, el mismo que fecha lo que el origen
-    /// repone). El corte es estricto, y sin hora (≤ 0) no se pide: ver `remoteWipeTakesRowsTheOriginReconverged`.
+    /// **Ya no declara al parque** (ticket `late-remote-wipe-on-a-device-without-groups-cannot-return-the-rows`):
+    /// declaraba las filas POSTERIORES que se llevaba, y ya no se lleva ninguna. El atendedor de declaraciones sigue en el
+    /// arranque sin productor: ticket `late-remote-wipe-return-has-no-producer-left`.
     ///
     /// La señal NO se vuelve a emitir: es la respuesta a una señal, y re-emitirla haría rebotar el vaciado entre
     /// dispositivos. Por eso el parámetro no existe aquí.
     ///
-    /// Las peticiones van antes del borrado por lo mismo que en «Vaciar datos», y sobreviven a su reset de preferencias
-    /// porque sus keys (`fullModeActivation.*`) no están en las listas de ese reset. Sí las retira el relevo de persona
-    /// (`removeGroupsDomainPreferenceKeys`), que se lleva también los grupos.
-    ///
-    /// **Lo que este dispositivo no puede reponer, lo declara al parque** (ticket
-    /// `late-remote-wipe-on-a-device-without-groups-cannot-return-the-rows`). La convergencia re-puentea desde el store
-    /// LOCAL de Grupos, que no viaja por iCloud: un dispositivo que nunca entró en su cuenta de grupos, o con el canal
-    /// parado, convergería sobre nada. Así que, además de pedir la suya, escribe en el iCloud-KV la huella de cada fila
-    /// posterior a la señal que borra de un gasto o una liquidación que su convergencia NO va a reponer; lo repone el
-    /// dispositivo que los tenga, por id y cuando esas filas ya falten allí (`GroupsRemoteWipeReturn`). Lo que sí repone no
-    /// se declara: dos reponedores del mismo id. La declaración va antes del borrado por lo mismo que las peticiones, y
-    /// es inocua antes: quien la atiende espera a que las filas falten.
-    ///
-    /// `declarationStore` es el iCloud-KV del Apple ID, por su puerta; los tests lo sustituyen.
+    /// **Los avisos de lo que se queda se vuelven a programar** (review adversarial, lente de tests). El borrado cancela
+    /// TODO lo programado en el sistema —recordatorios y avisos de pagos programados—, y con el corte hay recordatorios
+    /// y pagos que se quedan. El arranque los reprograma, pero este borrado no pasa por un arranque: con `skipOnboarding`
+    /// la persona sigue en la app y sus avisos quedaban mudos hasta el siguiente arranque en frío. `rescheduleReminders`
+    /// es el seam: los tests lo sustituyen para no tocar el centro de notificaciones ni el contexto de un singleton.
     static func wipeLocallyForRemoteWipeSignal(
         in context: ModelContext,
         signaledAt: Date,
+        fleetStartedOver: Bool,
         defaults: UserDefaults = .standard,
-        declarationStore: OwnerKeyValueWriting = GroupsRemoteWipeReturn.defaultStore
+        rescheduleReminders: @MainActor (ModelContext) -> Void = { rescheduleSurvivingReminders(in: $0) }
     ) throws {
-        // Las transacciones bastan: todo lo que el bridge pone en lo personal lleva al menos una (la virtual de la cuenta
-        // de grupos), y sus borradores nacen con ella.
-        let bridgedRows = try context.fetch(FetchDescriptor<TransactionItem>(
-            predicate: #Predicate { $0.splitExpenseID != nil || $0.splitSettlementID != nil }))
-        guard GroupsBridgeRestoreConvergenceLogic.remoteWipeTakesRowsTheOriginReconverged(
-            bridgedRowsCreatedAt: bridgedRows.map(\.createdAt), signaledAt: signaledAt) else {
-            try wipeAllUserData(in: context, reseedInitialData: false, broadcastSignal: false)
+        let cut = RemoteWipeCutLogic.cut(signaledAt: signaledAt, fleetStartedOver: fleetStartedOver)
+        if let cut {
+            // Antes de borrar, como en «Vaciar datos»: un corte entre el borrado y la petición la perdería. Las
+            // liquidaciones antes que los gastos (un corte entre las dos deja la primera dormida, que es inocuo).
+            let bridgedRows = try context.fetch(FetchDescriptor<TransactionItem>(
+                predicate: #Predicate { $0.splitExpenseID != nil || $0.splitSettlementID != nil }))
+            if GroupsBridgeRestoreConvergenceLogic.remoteWipeTakesRowsTheOriginReconverged(
+                bridgedRowsCreatedAt: bridgedRows.map(\.createdAt), signaledAt: cut.signaledAt) {
+                GroupsBridgeRestoreConvergenceStore.markSettlementLegsPending(defaults)
+                GroupsBridgeRestoreConvergenceStore.markPending(defaults)
+            }
+        }
+        try wipeAllUserData(in: context, reseedInitialData: false, broadcastSignal: false,
+                            remoteWipeCut: cut)
+        if cut != nil { rescheduleReminders(context) }
+    }
+
+    /// Lo que hace el arranque (`AppBootstrapper.ensureNotificationsScheduled`) con los avisos, sobre lo que quedó.
+    static func rescheduleSurvivingReminders(in context: ModelContext) {
+        let kept: [NotificationItem]
+        do {
+            kept = try context.fetch(FetchDescriptor<NotificationItem>())
+        } catch {
+            #if DEBUG
+            print("DataWipeService: Error fetching surviving notifications: \(error)")
+            #endif
             return
         }
-        // Lo que repondrá la convergencia de aquí, con sus mismos filtros: todo gasto local (lo que no atienda va a la
-        // intención durable) y las liquidaciones confirmadas fuera de grupos ocultos. Una liquidación que aquí sigue sin
-        // confirmar —el canal parado antes de que se confirmara— no la repone nadie si no se declara.
-        let hiddenZones = Set(try context.fetch(FetchDescriptor<SplitGroup>(
-            predicate: #Predicate { $0.isHiddenForAll })).map(\.cloudKitZoneID))
-        let toDeclare = GroupsRemoteWipeReturnLogic.toDeclare(
-            rows: bridgedRows.map { .init(expenseID: $0.splitExpenseID, settlementID: $0.splitSettlementID,
-                                          createdAt: $0.createdAt, groupsAccount: $0.account?.isSystemAccount) },
-            signaledAt: signaledAt,
-            returnableExpenseIDs: Set(try context.fetch(FetchDescriptor<SplitExpense>()).map(\.id.uuidString)),
-            returnableSettlementIDs: Set(try context.fetch(FetchDescriptor<SplitSettlement>())
-                .filter { $0.isConfirmed && !hiddenZones.contains($0.groupZoneID) }.map(\.id.uuidString)))
-        try GroupsRemoteWipeReturn.declare(expenses: toDeclare.expenses, settlements: toDeclare.settlements,
-                                           kv: declarationStore, defaults: defaults)
-        try wipePersonalDataKeepingGroups(in: context, broadcastSignal: false, defaults: defaults)
+        Task { @MainActor in
+            await NotificationService.shared.rescheduleAllNotifications(items: kept)
+            ScheduledPaymentNotificationService.shared.setContext(context)
+            await ScheduledPaymentNotificationService.shared.checkAllPaymentNotifications()
+        }
+    }
+
+    /// Las filas que se lleva un borrado del PASO 1. `notifications == nil` es «todas, por el camino de siempre»
+    /// (`NotificationService.deleteAllNotifications`).
+    struct RowsToWipe {
+        var transactions: [TransactionItem]
+        var drafts: [InboxDraft]
+        var merchantMemories: [MerchantMemory]
+        var notifications: [NotificationItem]?
+        var budgets: [Budget]
+        var favorites: [FavoritePayment]
+        var scheduled: [ScheduledPayment]
+        var tags: [Tag]
+        var exchangeRates: [ExchangeRate]
+        var accounts: [Account]
+        var subcategories: [Subcategory]
+        var categories: [Category]
+        var cashFlowPlans: [CashFlowPlan]
+    }
+
+    /// **Qué filas se van.** Sin corte, todas. Con corte, lo fechado por su fecha, lo derivado con su origen y lo que no
+    /// tiene fecha por quién lo usa (`RemoteWipeCutLogic`). «Quién lo usa» se mide desde las filas fechadas —sus
+    /// relaciones a uno, y en `Budget` su espejo CSV, porque su M2M puede llegar sin hidratar— y una subcategoría usada
+    /// pasa su uso a su categoría.
+    static func rowsToWipe(in context: ModelContext, cut: RemoteWipeCutLogic.Cut?) throws -> RowsToWipe {
+        let transactions = try context.fetch(FetchDescriptor<TransactionItem>())
+        let drafts = try context.fetch(FetchDescriptor<InboxDraft>())
+        let merchantMemories = try context.fetch(FetchDescriptor<MerchantMemory>())
+        let budgets = try context.fetch(FetchDescriptor<Budget>())
+        let favorites = try context.fetch(FetchDescriptor<FavoritePayment>())
+        let scheduled = try context.fetch(FetchDescriptor<ScheduledPayment>())
+        let tags = try context.fetch(FetchDescriptor<Tag>())
+        let exchangeRates = try context.fetch(FetchDescriptor<ExchangeRate>())
+        let accounts = try context.fetch(FetchDescriptor<Account>())
+        let subcategories = try context.fetch(FetchDescriptor<Subcategory>())
+        let categories = try context.fetch(FetchDescriptor<Category>())
+        let cashFlowPlans = try context.fetch(FetchDescriptor<CashFlowPlan>())
+
+        guard let signalCut = cut else {
+            return RowsToWipe(
+                transactions: transactions, drafts: drafts, merchantMemories: merchantMemories, notifications: nil,
+                budgets: budgets, favorites: favorites, scheduled: scheduled, tags: tags, exchangeRates: exchangeRates,
+                accounts: accounts, subcategories: subcategories, categories: categories, cashFlowPlans: cashFlowPlans)
+        }
+
+        let notifications = try context.fetch(FetchDescriptor<NotificationItem>())
+        let personalRowsCreatedAt: [Date] =
+            transactions.filter { $0.splitExpenseID == nil && $0.splitSettlementID == nil }.map(\.createdAt)
+            + budgets.map(\.createdAt) + favorites.map(\.createdAt) + scheduled.map(\.createdAt) + tags.map(\.createdAt)
+            + cashFlowPlans.map(\.createdAt) + notifications.map(\.createdAt)
+        let cut = RemoteWipeCutLogic.startedOver(signalCut, personalRowsCreatedAt: personalRowsCreatedAt)
+        func taken(_ createdAt: Date) -> Bool { RemoteWipeCutLogic.takesDated(createdAt: createdAt, cut: cut) }
+        let takenScheduled = scheduled.filter { taken($0.createdAt) }
+        let takenScheduledIDs = Set(takenScheduled.map(\.id.uuidString))
+
+        // Quién usa cada fila sin fecha: lo que se queda y lo que se va, por separado.
+        var usedByKept = Set<PersistentIdentifier>()
+        var usedByTaken = Set<PersistentIdentifier>()
+        func use(_ id: PersistentIdentifier?, byTaken: Bool) {
+            guard let id else { return }
+            if byTaken { usedByTaken.insert(id) } else { usedByKept.insert(id) }
+        }
+
+        var takenTransactions: [TransactionItem] = []
+        for tx in transactions {
+            let isTaken = taken(tx.createdAt)
+            if isTaken { takenTransactions.append(tx) }
+            use(tx.account?.persistentModelID, byTaken: isTaken)
+            use(tx.category?.persistentModelID, byTaken: isTaken)
+            use(tx.subcategory?.persistentModelID, byTaken: isTaken)
+        }
+        var takenDrafts: [InboxDraft] = []
+        for draft in drafts {
+            let isTaken = RemoteWipeCutLogic.takesDraft(
+                createdAt: draft.createdAt, sourceScheduledPaymentID: draft.sourceScheduledPaymentID,
+                takenScheduledPaymentIDs: takenScheduledIDs, cut: cut)
+            if isTaken { takenDrafts.append(draft) }
+            // Un borrador que se queda no protege lo que usa (`RemoteWipeCutLogic.takesUndated`).
+            if isTaken {
+                use(draft.account?.persistentModelID, byTaken: true)
+                use(draft.subcategory?.persistentModelID, byTaken: true)
+            }
+        }
+        var takenMemories: [MerchantMemory] = []
+        for memory in merchantMemories {
+            let isTaken = taken(memory.lastApprovedAt)
+            if isTaken { takenMemories.append(memory) }
+            if isTaken { use(memory.subcategory?.persistentModelID, byTaken: true) }
+        }
+        var takenFavorites: [FavoritePayment] = []
+        for favorite in favorites {
+            let isTaken = taken(favorite.createdAt)
+            if isTaken { takenFavorites.append(favorite) }
+            use(favorite.account?.persistentModelID, byTaken: isTaken)
+            use(favorite.subcategory?.persistentModelID, byTaken: isTaken)
+        }
+        for payment in scheduled {
+            let isTaken = takenScheduledIDs.contains(payment.id.uuidString)
+            use(payment.account?.persistentModelID, byTaken: isTaken)
+            use(payment.subcategory?.persistentModelID, byTaken: isTaken)
+        }
+        let accountByShortcut = Dictionary(accounts.map { ($0.shortcutID, $0.persistentModelID) },
+                                           uniquingKeysWith: { first, _ in first })
+        let subcategoryByShortcut = Dictionary(subcategories.map { ($0.shortcutID, $0.persistentModelID) },
+                                               uniquingKeysWith: { first, _ in first })
+        var takenBudgets: [Budget] = []
+        for budget in budgets {
+            let isTaken = taken(budget.createdAt)
+            if isTaken { takenBudgets.append(budget) }
+            use(budget.category?.persistentModelID, byTaken: isTaken)
+            for id in budget.resolvedAccountIDs() ?? [] { use(accountByShortcut[id], byTaken: isTaken) }
+            for id in budget.resolvedSubcategoryIDs() ?? [] { use(subcategoryByShortcut[id], byTaken: isTaken) }
+        }
+        var takenPlans: [CashFlowPlan] = []
+        for plan in cashFlowPlans {
+            let isTaken = taken(plan.createdAt)
+            if isTaken { takenPlans.append(plan) }
+            for line in plan.lines ?? [] {
+                use(line.category?.persistentModelID, byTaken: isTaken)
+                use(line.subcategory?.persistentModelID, byTaken: isTaken)
+            }
+        }
+        for subcategory in subcategories {
+            let parent = subcategory.category?.persistentModelID
+            if usedByKept.contains(subcategory.persistentModelID) { use(parent, byTaken: false) }
+            if usedByTaken.contains(subcategory.persistentModelID) { use(parent, byTaken: true) }
+        }
+
+        func takesUndated(_ id: PersistentIdentifier, parentTaken: Bool = false) -> Bool {
+            RemoteWipeCutLogic.takesUndated(usedByKept: usedByKept.contains(id), usedByTaken: usedByTaken.contains(id),
+                                            parentTaken: parentTaken, cut: cut)
+        }
+        let takenCategories = categories.filter { takesUndated($0.persistentModelID) }
+        let takenCategoryIDs = Set(takenCategories.map(\.persistentModelID))
+        let takenSubcategories = subcategories.filter {
+            takesUndated($0.persistentModelID,
+                         parentTaken: $0.category.map { takenCategoryIDs.contains($0.persistentModelID) } ?? false)
+        }
+
+        return RowsToWipe(
+            transactions: takenTransactions,
+            drafts: takenDrafts,
+            merchantMemories: takenMemories,
+            notifications: notifications.filter { taken($0.createdAt) },
+            budgets: takenBudgets,
+            favorites: takenFavorites,
+            scheduled: takenScheduled,
+            tags: tags.filter { taken($0.createdAt) },
+            exchangeRates: exchangeRates.filter { takesUndated($0.persistentModelID) },
+            accounts: accounts.filter { takesUndated($0.persistentModelID) },
+            subcategories: takenSubcategories,
+            categories: takenCategories,
+            cashFlowPlans: takenPlans)
     }
 
     // MARK: - Purga del dominio Grupos en «empiezo de cero» (handover de dispositivo)

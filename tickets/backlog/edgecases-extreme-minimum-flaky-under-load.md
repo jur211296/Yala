@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: testing
 created: 2026-09-05
-updated: 2026-09-25
+updated: 2026-09-28
 source: rojo clasificado en el gate de group-joiner-flag-consumers-still-narrow
 ---
 
@@ -245,3 +245,9 @@ Cinco suites en una invocación (14 casos, centinela 0): falla este, con la firm
 Mismo binario, 1 de 2 aislado: no hace falta carga. Lo que el PR añade al arranque (`GroupsRemoteWipeReturn.returnIfDeclared`)
 sale en su primera lectura del iCloud-KV bajo este test (no hay ninguna declaración), así que no toca el guardado.
 Disco: 5,8 GB libres.
+
+## Otra vez el 2026-09-28
+
+Gate de `late-remote-wipe-signal-also-wipes-rows-created-after-it`: 19 suites XCUITest en una invocación (46 tests), el
+centinela limpio (solo en el simulador), y cayó este caso con el mismo mensaje (`XCUIApplication+Yala.swift:270`, 36 s).
+Aislado, `EdgeCasesUITests` pasó 3 de 3. El cambio de esa sesión no toca el guardado de una transacción.

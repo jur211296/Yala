@@ -16,9 +16,9 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (28 entradas)
+## Índice (29 entradas)
 
-> **No hace falta leer este fichero entero** — son 202 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 203 KB. Localiza la entrada
 > aquí y salta a ella.
 
 - `—` [Sync de Grupos (CKSyncEngine) NO debe arrancar/`save()` sobre el `mainContext` compartido antes](#sync-de-grupos-cksyncengine-no-debe-arrancarsave-sobre-el-maincontext-compartido-antes)
@@ -40,6 +40,7 @@
 - `—` [`accessibilityIdentifier` NO se propaga dentro de un `.alert` de SwiftUI: el botón existe en pantall](#accessibilityidentifier-no-se-propaga-dentro-de-un-alert-de-swiftui-el-botn-existe-en-pantalla-y-el-id-llega-vaco-al-rbol)
 - `—` [`xcodebuild test` REINSTALA la app del simulador: el QA que corres después del gate no mira tu](#xcodebuild-test-reinstala-la-app-del-simulador-el-qa-que-corres-despus-del-gate-no-mira-tu)
 - `—` [El árbol de accesibilidad del simulador se degrada tras muchos ciclos launch/stop y solo lo cura](#el-rbol-de-accesibilidad-del-simulador-se-degrada-tras-muchos-ciclos-launchstop-y-solo-lo-cura)
+- `2026-09-28` [Cada `xcodebuild test` deja ~400 MB de contenedor muerto en el simulador, y una tanda de mutantes ll](#cada-xcodebuild-test-deja-400-mb-de-contenedor-muerto-en-el-simulador-y-una-tanda-de-mutantes-llena-el-disco-2026-09-28)
 - `2026-09-23` [Una tanda de mutantes: `-collect-test-diagnostics never`, o cada mutante muerto cuesta 10 min (2026-](#una-tanda-de-mutantes--collect-test-diagnostics-never-o-cada-mutante-muerto-cuesta-10-min-2026-09-23)
 - `2026-09-16` [Atajos en el simulador: la tarjeta de la app no corre, una acción añadida a mano sí (2026-09-16)](#atajos-en-el-simulador-la-tarjeta-de-la-app-no-corre-una-accin-aadida-a-mano-s-2026-09-16)
 - `2026-09-08` [Una corrida programada que no ocurre no deja rastro, y las dos formas obvias de buscarla mienten (20](#una-corrida-programada-que-no-ocurre-no-deja-rastro-y-las-dos-formas-obvias-de-buscarla-mienten-2026-09-08)
@@ -296,6 +297,10 @@
 ### `xcodebuild test` REINSTALA la app del simulador: el QA que corres después del gate no mira tu
 
 - **`xcodebuild test` REINSTALA la app del simulador, así que el QA que corres DESPUÉS del gate no está mirando el binario que tú instalaste (2026-09-02).** Se descubrió verificando un seam de fixture recién escrito: los dos borradores del Inbox mostraban «Hoy» cuando uno debía decir «30 ago. 2026», y **el mismo lanzamiento había funcionado veinte minutos antes**. Entre medias había corrido `/gate`, que hace `xcodebuild test` — y eso instala su propio build. Medido: el `.app` del contenedor era de las `10:38:52` (la hora de los XCUITest del gate), no de las `10:20:53` (el `build_sim` + `install_app_sim` que yo había hecho). Reinstalar y relanzar devolvió «30 ago. 2026» al instante. **La forma en que engaña es la peligrosa**: no hay error, la app arranca, el seed corre, los seams `-uitest-*` responden — simplemente son los de OTRA construcción, así que un cambio recién hecho parece no funcionar y se diagnostica el código en vez del entorno. Es el mismo género que «antes de culpar al código, mira el entorno», pero un escalón más abajo: aquí el entorno no falla, miente. ⇒ **tras cualquier `xcodebuild test` (el gate incluido), reinstala antes de seguir con QA visual.** Y el corolario al depurar: si un cambio «no aparece» en el simulador, lo primero es `stat` del `.app` del contenedor (`xcrun simctl get_app_container <udid> <bundle>`) contra el `.app` que crees haber instalado; si las fechas no cuadran, no hay nada que depurar en el código. **Lo que NO sirve para comprobarlo, y costó un desvío: `strings` sobre el ejecutable.** Buscar una cadena literal del cambio (`"Recibo vence hoy"`) devolvió 0 coincidencias **también en el `.app` que sí tenía el cambio y que se acababa de ver funcionando en pantalla** — o sea, el método daba un falso negativo perfecto y habría «confirmado» una causa equivocada. Se salvó por hacer el control (correr el mismo `strings` contra el binario conocido-bueno) antes de concluir; sin ese control, la sesión habría reportado una causa raíz inventada con evidencia aparente. **Un método de diagnóstico también necesita su control positivo.**
+
+### Cada `xcodebuild test` deja ~400 MB de contenedor muerto en el simulador, y una tanda de mutantes llena el disco (2026-09-28)
+
+- **Cada `xcodebuild test` reinstala la app, y CoreSimulator guarda el contenedor viejo en `data/Library/Caches/com.apple.containermanagerd/Dead/` del device: ~400 MB por corrida, y nadie lo retira.** Medido el 2026-09-28 con una tanda de 30 mutantes: el `iPhone 17 Pro` pasó de 10,4 a 19,5 GB, el disco bajó de 13 GB libres a **273 MB**, y las corridas desde el mutante 20 murieron compilando, sin una sola línea `Test run with`. El síntoma no menciona el disco: parece un mutante que no compila. `qa/scripts/disk-report.sh` enseña el device como «pesado», pero no dice que 8,4 de esos GB son `Dead/`. ⇒ **en una tanda larga, vacía `Dead/*` entre vueltas** (son contenedores de apps ya reinstaladas; borrarlos es seguro) y **mira `df -h /` antes de leer un rojo sin veredicto**.
 
 ### El árbol de accesibilidad del simulador se degrada tras muchos ciclos launch/stop y solo lo cura
 

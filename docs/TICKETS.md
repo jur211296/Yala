@@ -43,13 +43,14 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (674)
+## Index (679)
 
 | id | status | path |
 |---|---|---|
 | a-failed-snapshot-enqueue-save-leaves-the-journal-unsaved | backlog | tickets/backlog/a-failed-snapshot-enqueue-save-leaves-the-journal-unsaved.md |
 | a-local-read-failure-in-the-migration-apply-reads-as-network | backlog | tickets/backlog/a-local-read-failure-in-the-migration-apply-reads-as-network.md |
 | a-malformed-ref-leaves-a-stale-dangler | backlog | tickets/backlog/a-malformed-ref-leaves-a-stale-dangler.md |
+| a-wipe-on-a-device-without-the-groups-loses-their-rows-everywhere | backlog | tickets/backlog/a-wipe-on-a-device-without-the-groups-loses-their-rows-everywhere.md |
 | a-wipe-that-throws-between-drafts-and-transactions-loses-settlement-drafts | backlog | tickets/backlog/a-wipe-that-throws-between-drafts-and-transactions-loses-settlement-drafts.md |
 | abandoned-restore-no-longer-clears-the-session-window-clock | done | tickets/done/abandoned-restore-no-longer-clears-the-session-window-clock.md |
 | account-currency-change-leaves-scheduled-and-favorites-stale | backlog | tickets/backlog/account-currency-change-leaves-scheduled-and-favorites-stale.md |
@@ -426,10 +427,13 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | late-icloud-wipe-can-re-export-between-its-two-halves | backlog | tickets/backlog/late-icloud-wipe-can-re-export-between-its-two-halves.md |
 | late-notice-of-a-welcome-private-session-purges-groups-joined-later | qa | tickets/qa/late-notice-of-a-welcome-private-session-purges-groups-joined-later.md |
 | late-notice-witness-survives-a-welcome-restore-over-device-data | backlog | tickets/backlog/late-notice-witness-survives-a-welcome-restore-over-device-data.md |
+| late-remote-wipe-cut-keeps-what-it-cannot-date-until-the-mirror-decides | backlog | tickets/backlog/late-remote-wipe-cut-keeps-what-it-cannot-date-until-the-mirror-decides.md |
 | late-remote-wipe-infers-the-origin-converged-from-row-dates | backlog | tickets/backlog/late-remote-wipe-infers-the-origin-converged-from-row-dates.md |
 | late-remote-wipe-on-a-device-without-groups-cannot-return-the-rows | qa | tickets/qa/late-remote-wipe-on-a-device-without-groups-cannot-return-the-rows.md |
-| late-remote-wipe-signal-also-wipes-rows-created-after-it | backlog | tickets/backlog/late-remote-wipe-signal-also-wipes-rows-created-after-it.md |
+| late-remote-wipe-return-has-no-producer-left | backlog | tickets/backlog/late-remote-wipe-return-has-no-producer-left.md |
+| late-remote-wipe-signal-also-wipes-rows-created-after-it | qa | tickets/qa/late-remote-wipe-signal-also-wipes-rows-created-after-it.md |
 | late-remote-wipe-signal-undoes-the-rows-the-origin-reconverged | qa | tickets/qa/late-remote-wipe-signal-undoes-the-rows-the-origin-reconverged.md |
+| late-remote-wipe-survivors-can-point-at-rows-the-origin-deleted | backlog | tickets/backlog/late-remote-wipe-survivors-can-point-at-rows-the-origin-deleted.md |
 | late-wipe-arm-is-dropped-silently-when-the-device-moves-to-the-cloud | backlog | tickets/backlog/late-wipe-arm-is-dropped-silently-when-the-device-moves-to-the-cloud.md |
 | leader-displaced-after-the-cutover-pushes-its-residual-in-the-reconcile | qa | tickets/qa/leader-displaced-after-the-cutover-pushes-its-residual-in-the-reconcile.md |
 | leaving-and-reentering-restore-renews-the-hard-cap | done | tickets/done/leaving-and-reentering-restore-renews-the-hard-cap.md |

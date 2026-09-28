@@ -120,6 +120,10 @@ nonisolated enum GroupsBridgeRestoreConvergenceLogic {
     /// posterior, la petición del origen basta y pedir en los dos duplica (`DataWipeService.wipeLocallyForRemoteWipeSignal`).
     /// Estricto: el mismo instante no cuenta. **Sin hora de señal (≤ 0) no pide**: toda fila parecería posterior y volvería
     /// el duplicado de pedir siempre.
+    ///
+    /// **Desde el 2026-09-28 el receptor ya no se lleva esas filas posteriores** (`RemoteWipeCutLogic`): la pregunta sigue
+    /// siendo el indicio de que el origen repuso, y el receptor pide para lo anterior que sí se lleva
+    /// (`DataWipeService.wipeLocallyForRemoteWipeSignal`).
     static func remoteWipeTakesRowsTheOriginReconverged(bridgedRowsCreatedAt: [Date], signaledAt: Date) -> Bool {
         guard signaledAt.timeIntervalSince1970 > 0 else { return false }
         return bridgedRowsCreatedAt.contains { $0 > signaledAt }
