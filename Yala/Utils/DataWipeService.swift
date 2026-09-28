@@ -320,8 +320,8 @@ final class DataWipeService {
     ///
     /// `defaults` es solo para las dos peticiones: el borrado y el libro de conservados escriben en `.standard`.
     ///
-    /// El borrado reactivo del otro dispositivo pasa por aquí cuando se lleva filas que el origen ya repuso
-    /// (`wipeLocallyForRemoteWipeSignal`).
+    /// El borrado reactivo del otro dispositivo pasa por aquí cuando se lleva filas que el origen ya repuso y puede
+    /// reponerlas él (`wipeLocallyForRemoteWipeSignal`).
     static func wipePersonalDataKeepingGroups(
         in context: ModelContext,
         broadcastSignal: Bool,
@@ -366,24 +366,46 @@ final class DataWipeService {
     /// porque sus keys (`fullModeActivation.*`) no están en las listas de ese reset. Sí las retira el relevo de persona
     /// (`removeGroupsDomainPreferenceKeys`), que se lleva también los grupos.
     ///
-    /// **Lo que esto no arregla:** un dispositivo sin el dominio de Grupos (nunca entró en su cuenta de grupos, o su canal
-    /// está parado) pide y converge sobre cero gastos, así que lo que borró no vuelve. Ticket
-    /// `late-remote-wipe-on-a-device-without-groups-cannot-return-the-rows`.
+    /// **Lo que este dispositivo no puede reponer, lo declara al parque** (ticket
+    /// `late-remote-wipe-on-a-device-without-groups-cannot-return-the-rows`). La convergencia re-puentea desde el store
+    /// LOCAL de Grupos, que no viaja por iCloud: un dispositivo que nunca entró en su cuenta de grupos, o con el canal
+    /// parado, convergería sobre nada. Así que, además de pedir la suya, escribe en el iCloud-KV la huella de cada fila
+    /// posterior a la señal que borra de un gasto o una liquidación que su convergencia NO va a reponer; lo repone el
+    /// dispositivo que los tenga, por id y cuando esas filas ya falten allí (`GroupsRemoteWipeReturn`). Lo que sí repone no
+    /// se declara: dos reponedores del mismo id. La declaración va antes del borrado por lo mismo que las peticiones, y
+    /// es inocua antes: quien la atiende espera a que las filas falten.
+    ///
+    /// `declarationStore` es el iCloud-KV del Apple ID, por su puerta; los tests lo sustituyen.
     static func wipeLocallyForRemoteWipeSignal(
         in context: ModelContext,
         signaledAt: Date,
-        defaults: UserDefaults = .standard
+        defaults: UserDefaults = .standard,
+        declarationStore: OwnerKeyValueWriting = GroupsRemoteWipeReturn.defaultStore
     ) throws {
         // Las transacciones bastan: todo lo que el bridge pone en lo personal lleva al menos una (la virtual de la cuenta
         // de grupos), y sus borradores nacen con ella.
-        let bridgedRowsCreatedAt = try context.fetch(FetchDescriptor<TransactionItem>(
-            predicate: #Predicate { $0.splitExpenseID != nil || $0.splitSettlementID != nil })).map(\.createdAt)
-        if GroupsBridgeRestoreConvergenceLogic.remoteWipeTakesRowsTheOriginReconverged(
-            bridgedRowsCreatedAt: bridgedRowsCreatedAt, signaledAt: signaledAt) {
-            try wipePersonalDataKeepingGroups(in: context, broadcastSignal: false, defaults: defaults)
-        } else {
+        let bridgedRows = try context.fetch(FetchDescriptor<TransactionItem>(
+            predicate: #Predicate { $0.splitExpenseID != nil || $0.splitSettlementID != nil }))
+        guard GroupsBridgeRestoreConvergenceLogic.remoteWipeTakesRowsTheOriginReconverged(
+            bridgedRowsCreatedAt: bridgedRows.map(\.createdAt), signaledAt: signaledAt) else {
             try wipeAllUserData(in: context, reseedInitialData: false, broadcastSignal: false)
+            return
         }
+        // Lo que repondrá la convergencia de aquí, con sus mismos filtros: todo gasto local (lo que no atienda va a la
+        // intención durable) y las liquidaciones confirmadas fuera de grupos ocultos. Una liquidación que aquí sigue sin
+        // confirmar —el canal parado antes de que se confirmara— no la repone nadie si no se declara.
+        let hiddenZones = Set(try context.fetch(FetchDescriptor<SplitGroup>(
+            predicate: #Predicate { $0.isHiddenForAll })).map(\.cloudKitZoneID))
+        let toDeclare = GroupsRemoteWipeReturnLogic.toDeclare(
+            rows: bridgedRows.map { .init(expenseID: $0.splitExpenseID, settlementID: $0.splitSettlementID,
+                                          createdAt: $0.createdAt, groupsAccount: $0.account?.isSystemAccount) },
+            signaledAt: signaledAt,
+            returnableExpenseIDs: Set(try context.fetch(FetchDescriptor<SplitExpense>()).map(\.id.uuidString)),
+            returnableSettlementIDs: Set(try context.fetch(FetchDescriptor<SplitSettlement>())
+                .filter { $0.isConfirmed && !hiddenZones.contains($0.groupZoneID) }.map(\.id.uuidString)))
+        try GroupsRemoteWipeReturn.declare(expenses: toDeclare.expenses, settlements: toDeclare.settlements,
+                                           kv: declarationStore, defaults: defaults)
+        try wipePersonalDataKeepingGroups(in: context, broadcastSignal: false, defaults: defaults)
     }
 
     // MARK: - Purga del dominio Grupos en «empiezo de cero» (handover de dispositivo)
@@ -719,6 +741,8 @@ final class DataWipeService {
         // Y la convergencia pendiente del bridge, con su petición de liquidaciones, por lo mismo: la pidió un borrado del
         // humano ANTERIOR (o su activación a medias), y correría sobre los grupos del nuevo en cuanto tenga sesión privada.
         GroupsBridgeRestoreConvergenceStore.clear(defaults)
+        // Y lo que este dispositivo atendió de las declaraciones de vaciado tardío (o la suya propia), por lo mismo.
+        GroupsRemoteWipeReturnStore.clearHandled(defaults)
 
         // Paso 10 · el espejo local de la cuenta de grupos asociada, y el libro de lo que una
         // desasociación anterior conservó en el Panel. Los dos son del humano ANTERIOR: el primero le

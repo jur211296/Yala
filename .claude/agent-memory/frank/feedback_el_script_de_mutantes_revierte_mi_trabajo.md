@@ -44,3 +44,9 @@ más de una vez sale `NO APLICA`: dos de siete la primera vez. Ancla con la lín
 `replace(b, a, 1)` metió la línea en la primera llave del fichero y el mutante siguiente salió `BUILD FAIL`. Lo cazó el
 `diff` contra la copia. ⇒ el mutante que borra deja un **marcador** en su lugar (`// MUTANTE-Mn`) y se revierte por él,
 o se restaura siempre desde la copia en vez de invertir el reemplazo.
+
+**2026-09-27 (noche): reincidí DOS veces en la misma sesión con la regla de arriba escrita.** Lancé la tanda como tarea
+del harness, la paré con `TaskStop` al cambiar el diseño y dejó un mutante puesto; la relancé igual y volvió a pasar. La
+regla estaba aquí y no la leí antes de lanzar. ⇒ **antes de escribir el runner, abre este fichero**; y tras cualquier
+parada, `cmp` contra la copia antes de tocar nada. El tope por corrida (`timeout 150` delante del `test-without-building`)
+es lo que hace que un mutante muerto no cueste 10 min: tras un rojo `xcodebuild` no sale.

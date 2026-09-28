@@ -699,4 +699,18 @@ struct GroupsPendingBridgeWiringTests {
         #expect(!GroupsBridgeRestoreConvergenceStore.isSettlementLegsPending(defaults),
                 "la petición de liquidaciones del humano anterior sobrevive al relevo")
     }
+
+    /// Lo que este dispositivo atendió de una declaración de vaciado tardío —o la suya propia— tampoco viaja: es del
+    /// humano anterior (ticket `late-remote-wipe-on-a-device-without-groups-cannot-return-the-rows`).
+    @MainActor
+    @Test func theHandover_sweepsWhatWasReturnedFromARemoteWipeDeclaration() throws {
+        let defaults = makeIsolatedDefaults(prefix: "handover.remoteWipeReturn")
+        try GroupsRemoteWipeReturnStore.setHandled([UUID().uuidString: .init(own: true, returnedIDs: ["g1"])], defaults)
+        try #require(!GroupsRemoteWipeReturnStore.handled(defaults).isEmpty, "el fixture no apunta nada")
+
+        DataWipeService.removeGroupsDomainPreferenceKeys(from: defaults)
+
+        #expect(GroupsRemoteWipeReturnStore.handled(defaults).isEmpty,
+                "lo atendido por el humano anterior sobrevive al relevo")
+    }
 }

@@ -1719,6 +1719,10 @@ final class AppBootstrapper {
         // lo mismo que el retome de arriba: hereda los dos gates —store listo y dominio abierto—, y el de store
         // listo tiene la salida del store vacío que la espera de quiescencia de la sheet no tiene.
         GroupsBridgeRestoreConvergence.convergeIfPending(context: context)
+        // Y lo que el «Vaciar datos» de otro dispositivo se llevó en uno que no podía reponerlo: lo declaró al parque, y
+        // aquí se repone por id si ya falta (`GroupsRemoteWipeReturn`). DESPUÉS de la convergencia: lo que ella reponga
+        // ya está presente y no se vuelve a pedir. Mismos gates, por lo mismo.
+        GroupsRemoteWipeReturn.returnIfDeclared(context: context)
 
         let descriptor = FetchDescriptor<SplitExpense>(
             predicate: #Predicate { $0.bridgePending == true }
