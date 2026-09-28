@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-28 (Lima)
 
-**Rama** `2.1` — Merge #289: **el dispositivo que procesa tarde «Vaciar datos» ya no se lleva lo que otro creó después.**
+**Rama** `2.1` — Merge #290: **«Vaciar datos» en un dispositivo sin los grupos ya no deja al resto sin los gastos de grupo.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,30 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#289 · el vaciado tardío ya no se lleva lo que otro dispositivo creó después)
+## Esta sesión (#290 · «Vaciar datos» en un dispositivo sin los grupos ya no deja al resto sin los gastos de grupo)
+
+Si usabas Grupos en el iPhone y vaciabas tus datos en un iPad que nunca entró en Grupos, en el iPhone los gastos y
+liquidaciones de grupo desaparecían de tus cuentas y no volvían. Ahora:
+
+- **El dispositivo que vacía dice qué repone** (en el iCloud del Apple ID, junto a la señal): los gastos y liquidaciones
+  que tiene en su store de Grupos. Sin grupos, nada.
+- **El iPhone repone el resto** en su arranque en frío (en el flujo típico, el segundo), una vez, con el Inbox
+  preguntando la cuenta. Si el iPad tenía los mismos grupos, repone él y el iPhone no: sin copias dobles.
+- El orden tardío (#284/#289) y las declaraciones del 27-sep no cambian.
+
+**Verificado:** review de tres lentes (sync, grupos/dinero, tests; ningún hallazgo alto, cambió dos cosas), 31/31
+mutantes, gate con `YalaTests` entero (8392 tests) y 16 XCUITest en verde. CI verde. Ticket a `qa`. De camino, la tanda de
+mutantes volvió a llenar el disco con los contenedores muertos del simulador (`Dead/`, 11 GB): el runner ya los vacía.
+
+### Lo que espera de Jürgen
+
+- **Device-QA con dos dispositivos** (mismo Apple ID, modo iCloud): guion en
+  `tickets/qa/a-wipe-on-a-device-without-the-groups-loses-their-rows-everywhere.md`.
+- Nuevos en backlog: `wipe-division-exclusion-trusts-the-origin-to-converge` (medium: si el dispositivo que vació no
+  vuelve a abrirse, lo que prometió reponer no vuelve; ya pasaba antes), `wipe-division-complement-can-be-bridged-twice`,
+  `consecutive-wipes-whole-convergence-ignores-the-second-division` y `wipe-division-kv-key-has-no-quota-ceiling` (low).
+
+## Sesión anterior (#289 · el vaciado tardío ya no se lleva lo que otro dispositivo creó después)
 
 Si vaciabas tus datos en el iPhone, empezabas de nuevo y apuntabas gastos unos días, al abrir el iPad (cerrado desde
 antes) el iPad se vaciaba y su borrado viajaba por iCloud llevándose también lo nuevo del iPhone. Ahora:
@@ -44,7 +67,7 @@ tests deja ~400 MB de contenedor muerto en el simulador (`docs/aprendizajes-tecn
   `tickets/qa/late-remote-wipe-signal-also-wipes-rows-created-after-it.md`.
 - **Decidir si se retira** el mecanismo de declaraciones del 27-sep, que se quedó sin productor:
   `late-remote-wipe-return-has-no-producer-left` (recomendado: retirarlo).
-- Nuevos en backlog: `a-wipe-on-a-device-without-the-groups-loses-their-rows-everywhere` (medium),
+- Nuevos en backlog: `a-wipe-on-a-device-without-the-groups-loses-their-rows-everywhere` (medium, cerrado en #290),
   `late-remote-wipe-cut-keeps-what-it-cannot-date-until-the-mirror-decides` y
   `late-remote-wipe-survivors-can-point-at-rows-the-origin-deleted` (low).
 
