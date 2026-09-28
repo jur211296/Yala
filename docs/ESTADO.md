@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-28 (Lima)
 
-**Rama** `2.1` — Merge #288: **una liquidación de grupo ya aprobada no vuelve a pedir su cuenta ni duplica el pago.**
+**Rama** `2.1` — Merge #289: **el dispositivo que procesa tarde «Vaciar datos» ya no se lleva lo que otro creó después.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > ⚠️ **El destino que usan `/gate` y `/verify-ios` NO resuelve en esta Mac** (medido el 22-sep).
@@ -20,7 +20,35 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `xcodebuild -version` responde. El aviso anterior de este documento, que decía lo contrario y que «no se puede
 > correr un gate en esta máquina», era falso: se midió y se retira.
 
-## Esta sesión (#288 · una liquidación ya aprobada no vuelve a pedir su cuenta)
+## Esta sesión (#289 · el vaciado tardío ya no se lleva lo que otro dispositivo creó después)
+
+Si vaciabas tus datos en el iPhone, empezabas de nuevo y apuntabas gastos unos días, al abrir el iPad (cerrado desde
+antes) el iPad se vaciaba y su borrado viajaba por iCloud llevándose también lo nuevo del iPhone. Ahora:
+
+- **El iPad solo borra lo que existía al vaciar.** Gastos, cuentas, categorías, etiquetas, presupuestos, favoritos,
+  pagos programados, planes y avisos creados después se quedan, sin tocar, y el iPhone los conserva.
+- **Lo que no tiene fecha** (cuentas, categorías, tipos de cambio) se queda si lo usa algo nuevo, y la semilla nueva del
+  origen se queda en cuanto hay prueba de que alguien empezó de nuevo.
+- **Lo de grupos sigue como el 27-sep:** el receptor tardío pide su convergencia. Ya no declara nada al parque.
+- Los avisos de lo que se queda se reprograman en el momento.
+
+**Verificado:** review de tres lentes (datos/sync, grupos, tests; cambió tres cosas de la primera versión), 30/30
+mutantes, gate con `YalaTests` entero en verde y 46 XCUITest (un rojo: el flaky conocido de
+`EdgeCasesUITests.test_extremeMinimumAmountSaves`, 3 de 3 aislado, anotado en su ticket). CI verde. Ticket a `qa`.
+De camino: dos suites de test tumbaban la suite completa por el autosave de SwiftData (arreglado), y cada corrida de
+tests deja ~400 MB de contenedor muerto en el simulador (`docs/aprendizajes-tecnicos.md`).
+
+### Lo que espera de Jürgen
+
+- **Device-QA con dos dispositivos** (mismo Apple ID, modo iCloud): guion en
+  `tickets/qa/late-remote-wipe-signal-also-wipes-rows-created-after-it.md`.
+- **Decidir si se retira** el mecanismo de declaraciones del 27-sep, que se quedó sin productor:
+  `late-remote-wipe-return-has-no-producer-left` (recomendado: retirarlo).
+- Nuevos en backlog: `a-wipe-on-a-device-without-the-groups-loses-their-rows-everywhere` (medium),
+  `late-remote-wipe-cut-keeps-what-it-cannot-date-until-the-mirror-decides` y
+  `late-remote-wipe-survivors-can-point-at-rows-the-origin-deleted` (low).
+
+## Sesión anterior (#288 · una liquidación ya aprobada no vuelve a pedir su cuenta)
 
 Si aprobabas en el Inbox «Ana me pagó 25» y después otro dispositivo procesaba tarde un «Vaciar datos», el Inbox volvía
 a preguntar a qué cuenta llegó ese pago, y aprobado otra vez el banco lo contaba doble. Ahora:
