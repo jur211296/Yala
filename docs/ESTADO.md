@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-29 (Lima)
 
-**Rama** `2.1` — Merge #297: **las hojas se dimensionan por el espacio de la ventana, no por el aparato (carril adaptativo, paso 4).**
+**Rama** `2.1` — Merge #298: **la cuenta que cerró sesión antes ya no entra sobre los datos del siguiente (Cola A).**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > **El destino del gate vuelve a resolver** (medido el 28-sep): hay un iPhone 17 Pro de **iOS 27.0**
@@ -13,7 +13,27 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `9D0F6D32` (26.5) que citaba el aviso anterior **ya no existe**. El ticket
 > `the-gate-destination-no-longer-resolves-on-this-mac` tiene la premisa cambiada: medirlo antes de trabajarlo.
 
-## Esta sesión (#297 · carril adaptativo, paso 4: las hojas, por la ventana)
+## Esta sesión (#298 · Cola A: la cuenta que cerró sesión antes ya no entra sobre tus datos)
+
+Si B usó Yala en la nube en un teléfono y cerró sesión, y después A lo usa también en la nube, B ya no puede volver a
+entrar sobre los datos de A. Hasta hoy, tras relanzar la app, los movimientos de A sin subir podían acabar en la cuenta de
+B y lo de B bajar sobre lo de A. Ahora B entra como una cuenta ajena en ese teléfono y A sigue igual.
+
+- **Medido antes de arreglar** (el ticket estaba inferido): ningún borrado olvidaba el sello del claim, y con el motor sin
+  dueño en memoria las cuatro anclas de identidad aceptaban el sello viejo. El test del runtime sale rojo en `2.1`.
+- `CloudSessionRetirement.arm` —la frontera de persona: borrado del cierre, «Empezar desde cero», cierre tras borrar la
+  cuenta— olvida los sellos de todas las cuentas; y los tres escritores que fijan dueño sellan con `recordOwner`, que
+  olvida a las demás («un corpus, un sello»). Regla en `swiftdata-cloudkit.md`.
+- `YalaTests` entero (8471), `EdgeCasesUITests`, diez mutantes muertos, review de tres lentes y CI verde.
+- **Coste aceptado**: tras un cierre de sesión, «Reintentar» una migración a medias hacia la misma cuenta vuelve a preguntar
+  al servidor como si fuera ajena. Tickets `migrate-retry-after-a-sign-out-meets-its-own-half-claimed-account` (low) y
+  `claim-seal-writers-read-the-session-after-the-claim-await` (very-low).
+
+### Lo que espera de Jürgen
+
+- Nada. Sin device-QA: el escenario pide dos cuentas reales en la nube y su lógica está cubierta por unit tests.
+
+## Sesión anterior (#297 · carril adaptativo, paso 4: las hojas, por la ventana)
 
 En un iPad con la ventana de Yala estrechada, las hojas salen con el tamaño de iPhone en vez de estirarse a toda la
 altura. A pantalla completa en iPad siguen grandes y en iPhone no cambia nada. Cuando llegue el iPhone Duo, abierto
