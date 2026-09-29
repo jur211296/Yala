@@ -277,7 +277,7 @@ final class BornCloudSignUpService {
         //    estampado, el guard de identidad deja el runtime en `.idle` post-relanzamiento
         //    (`CloudSyncRuntime.swift:326`): es el M1 del review del adopt, no lo repitas.
         if let userID {
-            claimStore.record(action, forUserID: userID)
+            claimStore.recordOwner(action, forUserID: userID)
         } else {
             BornCloudBreadcrumb.claimStampSkippedNoUserID()
         }

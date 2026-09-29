@@ -2051,7 +2051,7 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     /// claim, que la paraba igual pero tras el consentimiento. El runtime arranca con los dos.
     private func stampMigrationFinished() {
         if let userID = session.currentUserID {
-            claimStore.record(.routeReturningUser, forUserID: userID)
+            claimStore.recordOwner(.routeReturningUser, forUserID: userID)
         }
         markRelayIdentityLedgerRetirable()
     }
@@ -2401,7 +2401,7 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         // camino futuro escriba solo una mitad por descuido; el kill-window lo cubre el gate del motor.
         StorageModePersistence.writeCloudArmed(defaults: storageDefaults)
         if let userID = session.currentUserID {
-            claimStore.record(.routeReturningUser, forUserID: userID)
+            claimStore.recordOwner(.routeReturningUser, forUserID: userID)
         } else {
             // M1 del review: sin userID no hay estampado → el guard de identidad dejaría al DUEÑO en
             // `.idle` post-relaunch sin auto-cura. Improbable (el claim que trajo aquí usó la sesión);

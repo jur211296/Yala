@@ -167,8 +167,11 @@ struct BornCloudSignUpServiceTests {
     func created_seeds_writesBeacon_stamps_andCounts() async throws {
         try await withMetrics { metricsDefaults in
             let (sut, _, beacon, claimStore, _) = makeSUT()
+            claimStore.record(.routeReturningUser, forUserID: "sub-anterior")
 
             #expect(await sut.signUp() == .seeded)
+            #expect(claimStore.action(forUserID: "sub-anterior") == nil,
+                    "MUTACIÓN: la cuenta nacida aquí no olvidó el sello de la que usó el teléfono antes")
 
             #expect(beaconIsWritten(beacon), "el faro es TEMPRANO: se escribe al reservar la cuenta")
             #expect(beacon.string(forKey: CloudBeacon.Keys.provider) == "apple")
@@ -203,8 +206,11 @@ struct BornCloudSignUpServiceTests {
             let stub = ClaimStubHTTP()
             stub.body = Data(#"{"state":"claiming_in_progress"}"#.utf8)
             let (sut, _, beacon, claimStore, _) = makeSUT(stub: stub)
+            claimStore.record(.routeReturningUser, forUserID: "sub-anterior")
 
             #expect(await sut.signUp() == .waitForLeader)
+            #expect(claimStore.action(forUserID: "sub-anterior") == .routeReturningUser,
+                    "un seguidor no se queda el corpus: no olvida a nadie")
 
             #expect(!beaconIsWritten(beacon))
             #expect(claimStore.action(forUserID: "sub-born") == .waitForLeader)
@@ -566,7 +572,7 @@ struct BornCloudSignUpWiringTests {
     func effectOrder_isBeaconThenStampThenConsentThenMetric() throws {
         let body = try Self.signUpBody(try Self.serviceSource())
         let beacon = try #require(body.range(of: "beacon.writeCloudAccountLinked("))
-        let stamp = try #require(body.range(of: "claimStore.record("))
+        let stamp = try #require(body.range(of: "claimStore.recordOwner("))
         let consent = try #require(body.range(of: "verifyConsentRegistered()"))
         let metric = try #require(body.range(of: "MetricsService.cloudRegistrationCompletedIfFirst("))
 

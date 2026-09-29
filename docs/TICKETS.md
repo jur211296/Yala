@@ -43,14 +43,14 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (696)
+## Index (698)
 
 | id | status | path |
 |---|---|---|
 | a-failed-snapshot-enqueue-save-leaves-the-journal-unsaved | backlog | tickets/backlog/a-failed-snapshot-enqueue-save-leaves-the-journal-unsaved.md |
 | a-local-read-failure-in-the-migration-apply-reads-as-network | backlog | tickets/backlog/a-local-read-failure-in-the-migration-apply-reads-as-network.md |
 | a-malformed-ref-leaves-a-stale-dangler | backlog | tickets/backlog/a-malformed-ref-leaves-a-stale-dangler.md |
-| a-previous-owners-claim-seal-passes-the-cloud-identity-gate | backlog | tickets/backlog/a-previous-owners-claim-seal-passes-the-cloud-identity-gate.md |
+| a-previous-owners-claim-seal-passes-the-cloud-identity-gate | done | tickets/done/a-previous-owners-claim-seal-passes-the-cloud-identity-gate.md |
 | a-wipe-on-a-device-without-the-groups-loses-their-rows-everywhere | done | tickets/done/a-wipe-on-a-device-without-the-groups-loses-their-rows-everywhere.md |
 | a-wipe-that-throws-between-drafts-and-transactions-loses-settlement-drafts | backlog | tickets/backlog/a-wipe-that-throws-between-drafts-and-transactions-loses-settlement-drafts.md |
 | abandoned-restore-no-longer-clears-the-session-window-clock | done | tickets/done/abandoned-restore-no-longer-clears-the-session-window-clock.md |
@@ -153,6 +153,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | claim-promotion-lost-response-blocks-the-retry | done | tickets/done/claim-promotion-lost-response-blocks-the-retry.md |
 | claim-replay-after-a-kill-mid-commit-can-duplicate-the-onboarding | backlog | tickets/backlog/claim-replay-after-a-kill-mid-commit-can-duplicate-the-onboarding.md |
 | claim-replay-can-seed-beside-a-phone-that-adopted-silently | done | tickets/done/claim-replay-can-seed-beside-a-phone-that-adopted-silently.md |
+| claim-seal-writers-read-the-session-after-the-claim-await | backlog | tickets/backlog/claim-seal-writers-read-the-session-after-the-claim-await.md |
 | claim-takeover-races-the-leader-cutover-without-cas | backlog | tickets/backlog/claim-takeover-races-the-leader-cutover-without-cas.md |
 | claude-mcp-activate-oauth-in-staging | done | tickets/done/claude-mcp-activate-oauth-in-staging.md |
 | claude-mcp-consent-with-apple-and-google | backlog | tickets/backlog/claude-mcp-consent-with-apple-and-google.md |
@@ -460,6 +461,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | migrate-before-the-groups-association-arrives-splits-the-accounts | backlog | tickets/backlog/migrate-before-the-groups-association-arrives-splits-the-accounts.md |
 | migrate-card-keeps-promising-an-account-the-check-refused | backlog | tickets/backlog/migrate-card-keeps-promising-an-account-the-check-refused.md |
 | migrate-claim-does-not-announce-a-definitive-cause-before-its-ceiling | backlog | tickets/backlog/migrate-claim-does-not-announce-a-definitive-cause-before-its-ceiling.md |
+| migrate-retry-after-a-sign-out-meets-its-own-half-claimed-account | backlog | tickets/backlog/migrate-retry-after-a-sign-out-meets-its-own-half-claimed-account.md |
 | migration-activation-ceiling-drops-origin-pending-effects | backlog | tickets/backlog/migration-activation-ceiling-drops-origin-pending-effects.md |
 | migration-activation-drops-pending-effects-it-never-restores | done | tickets/done/migration-activation-drops-pending-effects-it-never-restores.md |
 | migration-started-during-a-sign-out-teardown-loses-its-session | backlog | tickets/backlog/migration-started-during-a-sign-out-teardown-loses-its-session.md |

@@ -18,7 +18,10 @@
 //
 //  La MISMA cuenta re-entra libre: su claim persistido (CloudClaimActionStore,
 //  keyed por userID, sobrevive el sign-out a propósito) es la prueba de que el
-//  corpus local le pertenece.
+//  corpus local le pertenece. Sobrevive a cerrar la sesión, no al BORRADO del corpus:
+//  el de «Cerrar sesión» y «Empezar desde cero» lo olvidan (`CloudSessionRetirement.arm`),
+//  y quien se queda con el corpus olvida el de las demás (`recordOwner`). Sin eso, la
+//  cuenta que cerró antes pasaba este guard con los datos de la siguiente.
 //
 
 import Foundation

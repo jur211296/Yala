@@ -663,6 +663,8 @@ struct MigrationWorkExecutorTests {
         let stub = RoutingStub()
         let claimStore = CloudClaimActionStore(defaults: makeIsolatedDefaults(prefix: "mwe.complete.stamp"))
         claimStore.record(.proceedMigration, forUserID: "sub-leader")
+        // El sello de otra cuenta que usó este teléfono antes (ticket `a-previous-owners-claim-seal-passes-the-cloud-identity-gate`).
+        claimStore.record(.routeReturningUser, forUserID: "sub-anterior")
         let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
                                     personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
                                     claimStore: claimStore)
@@ -678,6 +680,7 @@ struct MigrationWorkExecutorTests {
                 try await executor.execute(.runLeaderReconcileFromFrozenCloudKit)
             }
             #expect(claimStore.action(forUserID: "sub-leader") == .proceedMigration, "sin complete, el intento sigue a medias")
+            #expect(claimStore.action(forUserID: "sub-anterior") == .routeReturningUser, "sin complete, nadie se quedó el corpus")
         }
         #expect(stub.claimCallCount == 0, "con el lease confirmado no se reclama nada")
 
@@ -685,6 +688,7 @@ struct MigrationWorkExecutorTests {
         stub.migrationBody = Data("{\"ok\":true}".utf8)
         try await executor.execute(.runLeaderReconcileFromFrozenCloudKit)
         #expect(claimStore.action(forUserID: "sub-leader") == .routeReturningUser)
+        #expect(claimStore.action(forUserID: "sub-anterior") == nil, "MUTACIÓN: la migración terminada no olvidó a la otra cuenta")
     }
 
     @Test("done-effect w8: el barrido de RED rescata un write huérfano de la ventana de cutover ANTES del complete")
@@ -3753,6 +3757,7 @@ struct MigrationWorkExecutorTests {
 
         let storageDefaults = makeIsolatedDefaults(prefix: "mwe.adopt.ok")
         let claimStore = CloudClaimActionStore(defaults: makeIsolatedDefaults(prefix: "mwe.adopt.claim"))
+        claimStore.record(.routeReturningUser, forUserID: "sub-anterior")
         // Rutea `PreferenceSyncService.set` por el outbox (no iKV): `.cloud` override + userID nil → sin
         // enqueue; solo escribe las 2 keys de consent a standard, que se limpian abajo.
         CloudSyncFlags.storageMode = .cloud
@@ -3772,6 +3777,7 @@ struct MigrationWorkExecutorTests {
         #expect(executor.hasPersistedCloudMode(), "el testigo del runner lee los mismos defaults que escribe el paso 5")
         #expect(storageDefaults.bool(forKey: MigrationWorkExecutor.relaunchRequestedKey) == true, "arma el mirror-off")
         #expect(claimStore.action(forUserID: "sub-adopt") == .routeReturningUser, "estampa el claim-store")
+        #expect(claimStore.action(forUserID: "sub-anterior") == nil, "MUTACIÓN: el adopt no olvidó el sello de otra cuenta")
     }
 
     @Test("performClaim: 200 created → estampa el claim-store con proceedMigration (branch migración)")
