@@ -62,11 +62,27 @@ nonisolated enum GroupInviteNeutralGateLogic {
     ///     **Sin valor por defecto a propósito**, igual que en la puerta del organizador: un default sería
     ///     `false` y cualquier call-site nuevo heredaría en silencio justo el medio bug que este término
     ///     existe para cerrar.
+    ///   - personalDataLivesInLiveCloudAccount: `storageMode == .cloud` **y** una sesión viva (2026-09-29, ticket
+    ///     `groups-invite-neutral-gate-has-no-way-out-when-the-exit-cell-cannot-wipe`). **Solo apaga el
+    ///     término del corpus, nunca el del espejo.** Con los datos personales en la cuenta de la nube y su
+    ///     sesión abierta, lo que hay en el store es de quien tiene esa sesión y no se exporta a ningún iCloud:
+    ///     la vuelta al neutro no protege nada, y además no se puede hacer —el cierre de la nube no borra por
+    ///     archivos—, así que interponerla dejaba a la persona en un «ahora no» sin salida. **La sesión viva no es
+    ///     un adorno** (review adversarial del mismo día): sin ella, el corpus es de una cuenta que nadie tiene
+    ///     abierta, la invitación pediría entrar y el alta de grupos no pasa por el guard cross-cuenta — otra
+    ///     persona se uniría y sus gastos del grupo caerían en el store de esa cuenta, que los subiría a la nube
+    ///     al volver su dueña. La matriz lo pide así (fila F: «unirse con la
+    ///     sesión activa»), y es más estrecho que lo que el primer término ya acepta: con el onboarding
+    ///     terminado, la puerta sigue en TODAS las celdas. El espejo sí sigue mandando: en el arranque que
+    ///     acaba de pasar a la nube el store aún lo lleva adjunto hasta reabrir, y lo escrito ahí se iría al
+    ///     iCloud del teléfono. Sin valor por defecto, por lo mismo que `mountAttachesMirror`.
     static func decide(hasCompletedPersonalOnboarding: Bool,
                        hasExistingData: Bool,
-                       mountAttachesMirror: Bool) -> Decision {
+                       mountAttachesMirror: Bool,
+                       personalDataLivesInLiveCloudAccount: Bool) -> Decision {
         guard !hasCompletedPersonalOnboarding else { return .proceed }
-        return (hasExistingData || mountAttachesMirror) ? .returnsToNeutral : .proceed
+        if mountAttachesMirror { return .returnsToNeutral }
+        return (hasExistingData && !personalDataLivesInLiveCloudAccount) ? .returnsToNeutral : .proceed
     }
 }
 

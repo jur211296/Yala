@@ -6172,3 +6172,18 @@
 
 /* iPad/ventana ancha: columna de detalle vacía en Planificación */
 "planning.detailPlaceholder" = "Escolha um orçamento ou um pagamento para vê-lo aqui";
+
+/* Puerta del invitado: el cierre de sesión del teléfono está a medias; se reintenta sola */
+"welcome.groups.inviteRetryBody" = "Não mexemos em nada e seu convite continua salvo. Tente de novo em um instante; se nada acontecer, feche o Yala por completo (deslize-o para fora do seletor de apps) e abra de novo.";
+
+/* Puerta del invitado: la cuenta en la nube termina de prepararse al reabrir: título */
+"welcome.groups.inviteRelaunchTitle" = "Abra o Yala de novo para entrar";
+
+/* Puerta del invitado: la cuenta en la nube termina de prepararse al reabrir: cuerpo */
+"welcome.groups.inviteRelaunchBody" = "Sua conta na nuvem termina de ser preparada quando você abre o Yala de novo. Feche-o por completo (deslize-o para fora do seletor de apps) e abra de novo: seu convite continua salvo e você continua de onde parou.";
+
+/* Puerta del invitado: datos de una cuenta en la nube con la sesión cerrada: título */
+"welcome.groups.inviteCloudSignInTitle" = "Primeiro, entre com a conta deste telefone";
+
+/* Puerta del invitado: datos de una cuenta en la nube con la sesión cerrada: cuerpo */
+"welcome.groups.inviteCloudSignInBody" = "Este telefone tem os dados de uma conta na nuvem que não está conectada, e seus gastos do grupo acabariam nela. Se ela for sua, entre com ela em “Já tenho conta” e você continua com seu convite. Se não for, entre no grupo pelo seu próprio telefone.";

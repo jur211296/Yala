@@ -6184,3 +6184,18 @@
 
 /* iPad/ventana ancha: columna de detalle vacía en Planificación */
 "planning.detailPlaceholder" = "予算または支払いを選ぶとここに表示されます";
+
+/* Puerta del invitado: el cierre de sesión del teléfono está a medias; se reintenta sola */
+"welcome.groups.inviteRetryBody" = "何も変更していません。招待はそのまま保存されています。少し待ってからもう一度お試しください。進まない場合は、Yala を完全に閉じて（App スイッチャーから上にスワイプ）もう一度開いてください。";
+
+/* Puerta del invitado: la cuenta en la nube termina de prepararse al reabrir: título */
+"welcome.groups.inviteRelaunchTitle" = "参加するには Yala をもう一度開いてください";
+
+/* Puerta del invitado: la cuenta en la nube termina de prepararse al reabrir: cuerpo */
+"welcome.groups.inviteRelaunchBody" = "クラウドのアカウントは、Yala をもう一度開くと準備が完了します。アプリを完全に閉じて（App スイッチャーから上にスワイプ）もう一度開いてください。招待はそのまま保存されており、そこから続けられます。";
+
+/* Puerta del invitado: datos de una cuenta en la nube con la sesión cerrada: título */
+"welcome.groups.inviteCloudSignInTitle" = "まず、この端末のアカウントでサインインしてください";
+
+/* Puerta del invitado: datos de una cuenta en la nube con la sesión cerrada: cuerpo */
+"welcome.groups.inviteCloudSignInBody" = "この端末には、サインインしていないクラウドアカウントのデータがあり、グループの支出はそのアカウントに入ってしまいます。ご自身のアカウントなら「すでにアカウントがあります」からサインインすると、招待の続きから進められます。そうでない場合は、ご自身の端末から参加してください。";

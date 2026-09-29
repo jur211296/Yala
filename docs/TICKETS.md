@@ -116,6 +116,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | beacon-routes-only-never-blocks | done | tickets/done/beacon-routes-only-never-blocks.md |
 | blocked-copy-mapping-lives-in-three-views-untestable | backlog | tickets/backlog/blocked-copy-mapping-lives-in-three-views-untestable.md |
 | blocked-sign-in-still-binds-the-subscription-to-that-account | backlog | tickets/backlog/blocked-sign-in-still-binds-the-subscription-to-that-account.md |
+| born-cloud-sign-up-over-mirror-imported-rows-skips-the-corpus-check | backlog | tickets/backlog/born-cloud-sign-up-over-mirror-imported-rows-skips-the-corpus-check.md |
 | born-cloud-signup-lands-on-existing-account-silently | backlog | tickets/backlog/born-cloud-signup-lands-on-existing-account-silently.md |
 | borncloud-consent-epoch-written-before-the-guard-decides | backlog | tickets/backlog/borncloud-consent-epoch-written-before-the-guard-decides.md |
 | bridge-de-grupos-pierde-la-marca-de-sus-patas | done | tickets/done/bridge-de-grupos-pierde-la-marca-de-sus-patas.md |
@@ -343,7 +344,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-history-cutoff-needs-synced-state | backlog | tickets/backlog/groups-history-cutoff-needs-synced-state.md |
 | groups-import-splitwise-tricount | backlog | tickets/backlog/groups-import-splitwise-tricount.md |
 | groups-in-group-search | backlog | tickets/backlog/groups-in-group-search.md |
-| groups-invite-neutral-gate-has-no-way-out-when-the-exit-cell-cannot-wipe | backlog | tickets/backlog/groups-invite-neutral-gate-has-no-way-out-when-the-exit-cell-cannot-wipe.md |
+| groups-invite-neutral-gate-has-no-way-out-when-the-exit-cell-cannot-wipe | done | tickets/done/groups-invite-neutral-gate-has-no-way-out-when-the-exit-cell-cannot-wipe.md |
 | groups-invite-on-a-mirrored-store-crosses-data | done | tickets/done/groups-invite-on-a-mirrored-store-crosses-data.md |
 | groups-invite-skips-unirme-sheet-if-onboarded | done | tickets/done/groups-invite-skips-unirme-sheet-if-onboarded.md |
 | groups-join-intent-expires-silently-after-transient-failures | backlog | tickets/backlog/groups-join-intent-expires-silently-after-transient-failures.md |
@@ -361,6 +362,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-only-private-restart-skips-the-wipe-alert | done | tickets/done/groups-only-private-restart-skips-the-wipe-alert.md |
 | groups-only-second-launch-mounts-icloud-mirror | qa | tickets/qa/groups-only-second-launch-mounts-icloud-mirror.md |
 | groups-only-session-storage-screen-says-data-lives-in-icloud | backlog | tickets/backlog/groups-only-session-storage-screen-says-data-lives-in-icloud.md |
+| groups-organizer-gate-unavailable-sends-to-settings-from-the-welcome | backlog | tickets/backlog/groups-organizer-gate-unavailable-sends-to-settings-from-the-welcome.md |
 | groups-organizer-intent-is-lost-on-relaunch | backlog | tickets/backlog/groups-organizer-intent-is-lost-on-relaunch.md |
 | groups-outbox-rows-without-a-live-session-have-no-exit | done | tickets/done/groups-outbox-rows-without-a-live-session-have-no-exit.md |
 | groups-outbox-rows-without-a-provable-owner-never-upload | backlog | tickets/backlog/groups-outbox-rows-without-a-provable-owner-never-upload.md |
