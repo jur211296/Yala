@@ -14,6 +14,7 @@
 - [Cuándo la app pregunta al usuario](feedback_cuando_la_app_pregunta_al_usuario.md) — pregunta si la decisión mueve DATOS su…
 - [Un límite de plataforma se explica en la pregunta](feedback_un_limite_de_plataforma_se_explica_en_la_pregunta.md) — preguntó por qu…
 - [Credencial pendiente: se aparca y se mide](feedback_credencial_pendiente_se_aparca.md) — pídela una vez; al llegar, mide a qué alcanza antes de usarla.
+- [El carril espera a Cola A](feedback_carril_espera_a_cola_a.md) — nada al simulador con Cola A viva; al acabar, validar que limpió.
 
 ## Cómo mido y cómo entrego
 - [El final del ciclo borra la prueba](feedback_el_final_del_ciclo_borra_la_prueba.md) — «haz el ciclo y lee Y»: la purga de la cola borraba Y.
