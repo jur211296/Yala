@@ -1,11 +1,11 @@
 ---
-updated: 2026-09-28
+updated: 2026-09-29
 tags: [now, punto-de-retomada]
 ---
 
-# NOW — 2026-09-28 (Lima)
+# NOW — 2026-09-29 (Lima)
 
-**Rama** `2.1` — Merge #296: **con la sesión de la nube caducada, cerrar sesión ofrece exportar tus movimientos o perderlos, y nada sube con otra cuenta.**
+**Rama** `2.1` — Merge #297: **las hojas se dimensionan por el espacio de la ventana, no por el aparato (carril adaptativo, paso 4).**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > **El destino del gate vuelve a resolver** (medido el 28-sep): hay un iPhone 17 Pro de **iOS 27.0**
@@ -13,7 +13,28 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `9D0F6D32` (26.5) que citaba el aviso anterior **ya no existe**. El ticket
 > `the-gate-destination-no-longer-resolves-on-this-mac` tiene la premisa cambiada: medirlo antes de trabajarlo.
 
-## Esta sesión (#296 · la nube con la sesión caducada: exportar o perder tus movimientos, nunca a ciegas)
+## Esta sesión (#297 · carril adaptativo, paso 4: las hojas, por la ventana)
+
+En un iPad con la ventana de Yala estrechada, las hojas salen con el tamaño de iPhone en vez de estirarse a toda la
+altura. A pantalla completa en iPad siguen grandes y en iPhone no cambia nada. Cuando llegue el iPhone Duo, abierto
+tendrá hojas grandes y cerrado, las de teléfono.
+
+- La decisión deja de mirar `userInterfaceIdiom`: la raíz calcula `\.usesLargeSheets` con el size class de la ventana
+  (`.sizesSheetsByWindow()`), y las 57 llamadas pasan a `.yalaSheetDetents(_:)` y `.yalaScreenBackground(.partialSheet)`.
+  Convención en `swiftui-ds.md`. `userInterfaceIdiom` ya no aparece en `Yala/`.
+- **Verificado** en los simuladores del carril: ProMax e iPad a pantalla completa, idénticos antes y después; el iPad con
+  la ventana estrechada («Apps en ventanas» + arrastre desde un XCUITest, sin Device Hub), con hojas de iPhone.
+  `YalaTests` entero (8465, 0 fallos), 52 suites XCUITest (127 verdes) y CI verde.
+- **Los 3 rojos de XCUITest ya fallaban en `2.1`** (`435bd8eb`, medido) y la app hace lo correcto a mano. Tickets:
+  `apple-id-close-loss-notice-uitest-fails-on-2-1` y `scheduled-payment-skip-uitests-fail-at-the-end-of-the-month`
+  (media las dos). También `partial-sheets-that-never-adapted-to-the-window` (baja): 19 hojas que nunca usaron el helper.
+
+### Lo que espera de Jürgen
+
+- Nada nuevo de esta sesión. El carril adaptativo sigue con la fase 1,
+  `ipad-sidebar-and-list-detail-for-records-and-planning`.
+
+## Sesión anterior (#296 · la nube con la sesión caducada: exportar o perder tus movimientos, nunca a ciegas)
 
 Con los datos en la nube, la sesión caducada y movimientos sin subir, quien no podía volver a entrar (cuenta borrada, correo
 perdido) no podía cerrar sesión. Ahora el aviso cuenta los cambios, dice cómo subirlos desde «Dónde viven tus datos» y ofrece
