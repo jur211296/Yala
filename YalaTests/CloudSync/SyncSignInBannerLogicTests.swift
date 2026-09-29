@@ -291,8 +291,8 @@ struct SyncSignInBannerLogicTests {
             """)), "paso 1")
         #expect(body.contains(Self.squash("""
             Self.leaveSignInDoorOpen(ifShown: shown, controller: controller)
-            phase = .blocked(pendingCount: pending, reason: shown)
-            CloudSyncBreadcrumb.signOutPushBlocked(pending: pending)
+            phase = .blocked(pendingCount: shownCount, reason: shown)
+            CloudSyncBreadcrumb.signOutPushBlocked(pending: shownCount)
             CloudSyncBreadcrumb.signOutGroupsBlocked(reason: shown.breadcrumbSlug)
             """)), "paso 2")
         let door = try Self.squashedBody(of: "controller: CloudMigrationController) {",

@@ -184,6 +184,9 @@ struct GroupsAssociationSection: View {
         // salida, y es la decisión de Jürgen: el desasociar no ofrece soltar la cuenta perdiendo los cambios
         // (`CloudSessionSignOut.detachGroupsAccount` le pasa `lossExit: nil`). El título ya dice qué gesto falló.
         case .attestUnavailable: return L10n.Groups.Errors.attestUnavailable
+        // Cambios de grupos de otra cuenta (2026-09-28, ticket `groups-outbox-rows-without-a-live-session-have-no-exit`): el
+        // texto SIN salida, como el del attest. El desasociar no ofrece perderlos.
+        case .groupsChangesFromAnotherAccount: return L10n.Groups.Errors.groupsChangesFromAnotherAccount
         // **La subida que no llegó al servidor** (2026-09-16). Desde que `classify` separa las dos mitades de
         // lo pasajero, este gesto también lo recibe: sin red, con un 5xx o con un cortafuegos delante. Antes
         // caía en el texto de abajo, que dice «inténtalo de nuevo en un momento» —un momento no basta cuando

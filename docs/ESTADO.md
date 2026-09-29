@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-28 (Lima)
 
-**Rama** `2.1` — Merge #293: **con el texto muy grande, los importes del iPhone ya no se cortan.**
+**Rama** `2.1` — Merge #294: **quien no puede volver a entrar sale perdiendo sus cambios de grupos con aviso, y nadie los sube a nombre de otra cuenta.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > **El destino del gate vuelve a resolver** (medido el 28-sep): hay un iPhone 17 Pro de **iOS 27.0**
@@ -13,7 +13,33 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `9D0F6D32` (26.5) que citaba el aviso anterior **ya no existe**. El ticket
 > `the-gate-destination-no-longer-resolves-on-this-mac` tiene la premisa cambiada: medirlo antes de trabajarlo.
 
-## Esta sesión (#293 · carril adaptativo, paso 2: el texto muy grande en las pantallas del iPhone)
+## Esta sesión (#294 · cambios de grupos sin sesión: una salida con aviso, y cada cambio con su dueño)
+
+Con la sesión de grupos caducada y cambios sin subir, quien no podía volver a entrar se quedaba sin salida: cerrar sesión
+se bloqueaba para siempre. Ahora el aviso cuenta los cambios, pide confirmación destructiva y deja «Volver a entrar» como
+camino por defecto; «Ahora no» no borra nada. Y si entra otra cuenta en el teléfono, los cambios de la anterior ya no se
+suben a su nombre: se guardan para su dueño o se ofrecen en esa misma salida.
+
+- Cada fila del outbox lleva su **dueño**, fechado contra un registro de inicios de sesión (`SessionSignInLog`), no «el
+  último que vi». Las filas del build anterior se adoptan una vez; las que la regla deja sin dueño, no. Regla nueva en
+  `swiftdata-cloudkit.md` («El outbox de Grupos tiene DUEÑO por fila…»).
+- La salida del attest se generaliza por **causa** (attest · sin sesión · otra cuenta); las demás salidas del paso 9 y
+  «nunca descarta sin avisar» no cambian. Copy nuevo en los 14 idiomas.
+- **Verificado:** los cuatro casos del encargo en test; 13/13 mutantes muertos; `YalaTests` entero (8447) en verde sobre
+  el árbol ya mezclado con #293; 18 XCUITest de las áreas tocadas; dos rondas de review adversarial (cazaron cinco y tres
+  fallos reales, todos arreglados); CI verde. Ticket a `done` sin device-QA.
+- **Nuevo en backlog:** `cloud-sign-out-with-an-expired-session-and-personal-changes-has-no-exit` (media),
+  `groups-outbox-rows-without-a-provable-owner-never-upload` y
+  `private-sign-out-misses-group-edits-made-during-the-icloud-wait` (bajas).
+
+### Lo que espera de Jürgen
+
+- **Decidir** `cloud-sign-out-with-an-expired-session-and-personal-changes-has-no-exit`: el mismo callejón, con cambios
+  personales de la nube en vez de grupos. Hoy sigue bloqueado sin salida.
+- Sigue en pie **el guion de `qa/guion-tanda.md`**. El carril adaptativo sigue con el paso 3,
+  `iphone-small-screens-and-safe-areas-audit`.
+
+## Sesión anterior (#293 · carril adaptativo, paso 2: el texto muy grande en las pantallas del iPhone)
 
 Con el texto del sistema en los tamaños de accesibilidad, Yala cortaba los importes por el medio («S/-…00» en Registros,
 «S/ 190…» en Grupos) y en Planificación los partía carácter a carácter. Ahora esas filas pasan a dos líneas: el concepto
@@ -29,11 +55,6 @@ arriba y el importe entero debajo. A tamaño normal no cambia nada, medido píxe
 - **Encontrado:** la primera versión anidaba un `HStack` y en el SE truncaba el nombre de la tarjeta de grupo a tamaño
   normal; lo cazó el diff píxel a píxel (regla en `swiftui-ds.md`). Y la cola del simulador no es FIFO: una tanda de
   mutantes de Cola A tuvo el turno ~50 min.
-
-### Lo que espera de Jürgen
-
-- Nada nuevo. Sigue en pie **el guion de `qa/guion-tanda.md`**.
-- El carril adaptativo sigue con el paso 3, `iphone-small-screens-and-safe-areas-audit`.
 
 ## Sesión anterior (#292 · lo que el origen de «Vaciar datos» promete y no repone)
 

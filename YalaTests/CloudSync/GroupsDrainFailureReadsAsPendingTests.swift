@@ -258,15 +258,29 @@ struct GroupsCaptureVerdictTests {
     /// attest solo sigue siendo attest —el único que un caller deja seguir con la pérdida aceptada— si no queda nada
     /// fuera del outbox. La cifra es la del outbox recapturado.
     @Test func attestBlock_staysAttestOnlyWhenNothingIsLeftOutside() {
-        #expect(CloudSignOutFlowLogic.attestBlockAfterRecapture(
-            captureCompleted: true, livePendingCount: 2, unrehydratedMirrorCount: 0)
+        #expect(CloudSignOutFlowLogic.lossBlockAfterRecapture(
+            reason: .attestUnavailable, captureCompleted: true, livePendingCount: 2, unrehydratedMirrorCount: 0)
                 == .blocked(pendingCount: 2, reason: .attestUnavailable))
-        #expect(CloudSignOutFlowLogic.attestBlockAfterRecapture(
-            captureCompleted: false, livePendingCount: 2, unrehydratedMirrorCount: 0)
+        #expect(CloudSignOutFlowLogic.lossBlockAfterRecapture(
+            reason: .attestUnavailable, captureCompleted: false, livePendingCount: 2, unrehydratedMirrorCount: 0)
                 == .blocked(pendingCount: 2, reason: .uploadRetryLater))
-        #expect(CloudSignOutFlowLogic.attestBlockAfterRecapture(
-            captureCompleted: true, livePendingCount: 3, unrehydratedMirrorCount: 1)
+        #expect(CloudSignOutFlowLogic.lossBlockAfterRecapture(
+            reason: .attestUnavailable, captureCompleted: true, livePendingCount: 3, unrehydratedMirrorCount: 1)
                 == .blocked(pendingCount: 3, reason: .uploadRetryLater))
+    }
+
+    /// Desde el 2026-09-28 la sesión caducada abre la misma salida (`groups-outbox-rows-without-a-live-session-have-no-exit`),
+    /// así que pasa por la misma re-captura; un motivo que no la abre vuelve tal cual, sin mirar la captura.
+    @Test func sessionExpiredBlock_isReCapturedLikeTheAttest_andOtherReasonsPassThrough() {
+        #expect(CloudSignOutFlowLogic.lossBlockAfterRecapture(
+            reason: .sessionExpired, captureCompleted: true, livePendingCount: 2, unrehydratedMirrorCount: 0)
+                == .blocked(pendingCount: 2, reason: .sessionExpired))
+        #expect(CloudSignOutFlowLogic.lossBlockAfterRecapture(
+            reason: .sessionExpired, captureCompleted: false, livePendingCount: 2, unrehydratedMirrorCount: 0)
+                == .blocked(pendingCount: 2, reason: .uploadRetryLater))
+        #expect(CloudSignOutFlowLogic.lossBlockAfterRecapture(
+            reason: .channelPaused, captureCompleted: false, livePendingCount: 2, unrehydratedMirrorCount: 3)
+                == .blocked(pendingCount: 2, reason: .channelPaused))
     }
 
     /// El motivo del residuo de «Empezar de cero»: solo entradas que esta sesión no puede subir ⇒ volver a entrar; con
@@ -430,12 +444,13 @@ struct GroupsPushAllRecaptureWiringTests {
         let afterLoop = String(body[loop.upperBound...])
         let guardDrained = try #require(afterLoop.range(of: "guard verdict == .drained else {"),
                                         "el `.drained` del ciclo se devuelve sin volver a capturar")
-        let recapture = try #require(afterLoop.range(of: "captureCompleted: witness.capture(context),"),
+        let recapture = try #require(afterLoop.range(of: "let captured = witness.capture(context)"),
                                      "falta la re-captura tras un ciclo que vació el outbox")
         #expect(guardDrained.lowerBound < recapture.lowerBound)
+        #expect(afterLoop.contains("captureCompleted: captured,"), "la re-captura no decide con lo que acaba de capturar")
         #expect(afterLoop.contains("unrehydratedMirrorCount: witness.mirrorPending(context, .sessionOwner)) {\n"
-                                   + "                    return settled"),
-                "la re-captura decide con el espejo de la sesión y devuelve su veredicto")
+                                   + "                    return CloudSignOutFlowLogic.heldRowsVerdict(settled, "),
+                "la re-captura decide con el espejo de la sesión y devuelve su veredicto, releído con las filas ajenas")
         #expect(!afterLoop.contains("return verdict\n            }\n            // S1"),
                 "volvió el `return verdict` directo, que da por vacío un ciclo cuyo drain no terminó")
     }
@@ -443,11 +458,14 @@ struct GroupsPushAllRecaptureWiringTests {
     /// El bloqueo por App Attest pasa por la re-captura antes de salir: es el único que la pérdida aceptada deja seguir.
     @Test func anAttestBlock_isReCapturedBeforeReturning() throws {
         let body = try Self.pushAllBody()
-        let attest = try #require(body.range(of: "guard case .blocked(_, .attestUnavailable) = verdict else { return verdict }"),
-                                  "el bloqueo por attest sale sin volver a capturar")
+        let attest = try #require(body.range(
+            of: "guard case .blocked(_, let reason) = verdict, CloudSignOutFlowLogic.lossCause(reason) != nil else {\n"
+                + "                        return verdict"),
+            "un bloqueo que abre la salida de la pérdida sale sin volver a capturar")
         let rest = String(body[attest.upperBound...])
         let capture = try #require(rest.range(of: "let recaptured = witness.capture(context)"))
-        let decide = try #require(rest.range(of: "return CloudSignOutFlowLogic.attestBlockAfterRecapture(\n"
+        let decide = try #require(rest.range(of: "return CloudSignOutFlowLogic.lossBlockAfterRecapture(\n"
+                                              + "                        reason: reason,\n"
                                               + "                        captureCompleted: recaptured,"))
         #expect(capture.lowerBound < decide.lowerBound)
         #expect(rest.contains("unrehydratedMirrorCount: witness.mirrorPending(context, .sessionOwner))"))

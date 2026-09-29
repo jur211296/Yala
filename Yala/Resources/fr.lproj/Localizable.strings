@@ -6137,3 +6137,27 @@
 
 /* Confirm body before finishing a deletion that was left halfway */
 "welcome.privateICloud.leftHalfwayConfirmBody" = "Ce qui reste sur ce téléphone est supprimé, y compris ce que tu as créé depuis, et tu recommences. Il ne reste aucune copie.";
+
+/* Cierre de sesión bloqueado: quedan cambios de grupos de otra cuenta, sin salida que los pierda */
+"groups.errors.groupsChangesFromAnotherAccount" = "Certaines modifications de groupe sur ce téléphone ont été faites avec un autre compte, et elles ne peuvent être envoyées qu'avec ce compte. Rien n'est perdu : elles restent enregistrées ici jusqu'à ce que tu te connectes avec ce compte.";
+
+/* Cerrar sesión sin la sesión de la cuenta que apuntó los cambios; %d = cambios de grupos que se pierden */
+"groups.errors.noSessionSignOutLoss" = "Modifications de groupe pas encore envoyées : %d. Elles ne s'envoient qu'avec le compte qui les a créées, et sa session n'est pas ouverte sur ce téléphone : reconnecte-toi avec ce compte pour les envoyer. Si tu ne peux pas, déconnecte-toi quand même et elles seront perdues ; personne dans le groupe ne les verra.";
+
+/* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
+"groups.errors.noSessionSignOutLossUnknown" = "Certaines modifications de groupe n'ont pas encore été envoyées. Elles ne s'envoient qu'avec le compte qui les a créées, et sa session n'est pas ouverte sur ce téléphone : reconnecte-toi avec ce compte pour les envoyer. Si tu ne peux pas, déconnecte-toi quand même et elles seront perdues ; personne dans le groupe ne les verra.";
+
+/* Cerrar sesión en la nube con la sesión caducada; %d = cambios de grupos que se pierden */
+"settings.signOutCloudSessionExpiredGroupsLoss" = "Ta session a expiré. Modifications de tes groupes pas encore envoyées : %d. Pour les envoyer, ouvre « Où vivent tes données », ici dans Profil, et touche « Se connecter ». Si tu ne peux pas te connecter, déconnecte-toi quand même et elles seront perdues ; personne dans le groupe ne les verra.";
+
+/* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
+"settings.signOutCloudSessionExpiredGroupsLossUnknown" = "Ta session a expiré et certaines modifications de tes groupes n'ont pas encore été envoyées. Pour les envoyer, ouvre « Où vivent tes données », ici dans Profil, et touche « Se connecter ». Si tu ne peux pas te connecter, déconnecte-toi quand même et elles seront perdues ; personne dans le groupe ne les verra.";
+
+/* Vuelta al neutro sin la sesión de la cuenta que apuntó los cambios; %d = cambios de grupos que se pierden */
+"welcome.groups.neutralNoSessionLossBody" = "Modifications de groupe pas encore envoyées : %d. Elles ne s'envoient qu'avec le compte qui les a créées, et sa session n'est pas ouverte sur ce téléphone. Si tu continues maintenant, elles seront perdues et personne dans le groupe ne les verra.";
+
+/* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
+"welcome.groups.neutralNoSessionLossBodyUnknown" = "Certaines modifications de groupe n'ont pas encore été envoyées. Elles ne s'envoient qu'avec le compte qui les a créées, et sa session n'est pas ouverte sur ce téléphone. Si tu continues maintenant, elles seront perdues et personne dans le groupe ne les verra.";
+
+/* Empezar de cero con cambios de grupos de otra cuenta: por qué no suben */
+"groups.freshStartPending.lossOtherAccount" = "Elles ne peuvent être envoyées qu'avec le compte qui les a créées, et la session ouverte sur ce téléphone est celle d'un autre compte. Si tu ne vas pas te reconnecter avec ce compte, tu peux repartir de zéro et les perdre : personne dans le groupe ne les verra.";

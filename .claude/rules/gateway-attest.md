@@ -176,7 +176,9 @@ terminal y, en los cierres de sesión, una salida que pierde esos cambios con co
 - **El veredicto exige además un rechazo del ciclo que se lee** (`GroupsSyncClient.stoppedByUnavailableAttest(for:)`, molde
   del testigo del kill): una racha terminal no dice por qué falló ESTE ciclo. Lo consumen `CloudSignOutFlowLogic.classify`
   (motivo `.attestUnavailable`, que se enseña al momento y la nube no traduce) y `GroupLeaveErrorLogic.classify`.
-- **La salida es una excepción ACOTADA a «nunca descarta»**: solo la ofrecen los cierres de sesión (Ajustes, la hoja del
+- **La salida es una excepción ACOTADA a «nunca descarta»** —desde el 2026-09-28 la abren también la sesión caducada y los
+  cambios de otra cuenta, con la misma forma (`CloudSignOutFlowLogic.lossCause`, regla «El outbox de Grupos tiene DUEÑO por
+  fila» de `swiftdata-cloudkit.md`)—: solo la ofrecen los cierres de sesión (Ajustes, la hoja del
   cambio de Apple ID y la puerta del Welcome, salvo al invitado). El desasociar pasa `lossExit: nil` y enseña el aviso sin
   salida. `exitDiscardingUnsyncedGroups` no borra nada: retoma el cierre con las FILAS que contó el aviso (por
   `clientMutationID`) como lo aceptado, y los cambios mueren con el boot-wipe de siempre. Una fila que no estaba en el aviso
@@ -190,8 +192,8 @@ terminal y, en los cierres de sesión, una salida que pierde esos cambios con co
   attest no (`KeychainService`, `…ThisDeviceOnly`): un teléfono restaurado hereda la racha, y lo acotan el testigo del
   ciclo y el primer 200. (2) Con el reloj atrasado 24 h o más, el token cacheado da 401 más de un día en un teléfono que sí
   atesta (`attest-session-token-rejected-by-the-gateway-stays-cached`). (3) Si un cierre con la pérdida aceptada no llega
-  a armar el borrado, las filas se quedan en `GroupSyncOutbox`, que no guarda dueño
-  (`superseding-intent-can-strand-the-sign-out-coordinator`).
+  a armar el borrado, las filas se quedan en `GroupSyncOutbox` (`superseding-intent-can-strand-the-sign-out-coordinator`).
+  Desde el 2026-09-28 cada fila guarda su dueño, así que otra cuenta que entre después no las sube.
 - **Observación**: el canario `groupsAttestTerminal` (una vez por racha) es la medición de cuántos teléfonos están así;
   `groupsSignOutAttestUnavailable` y `groupsSignOutAttestDiscarded` dicen cuántos vieron la salida y cuántos la usaron.
 - **La pestaña Grupos lo dice FIJO desde el 2026-09-15, y el que avisa es el ESCRITOR** (ticket

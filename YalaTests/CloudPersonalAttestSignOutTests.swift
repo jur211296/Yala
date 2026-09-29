@@ -67,13 +67,17 @@ struct CloudPersonalAttestSignOutLogicTests {
     @Test("MUTACIÓN: al retomar, lo aceptado solo cubre un bloqueo que siga siendo el attest")
     func acceptanceOnlyCoversARetryStillBlockedByAttest() {
         let a = UUID()
-        #expect(L.continuesAfterBlockedUpload(reason: .attestUnavailable, pendingRows: [a], acceptance: .rows([a])))
+        #expect(L.continuesAfterBlockedUpload(reason: .attestUnavailable, cause: .attestUnavailable,
+                                              pendingRows: [a], acceptance: .rows([a])))
         for otro in L.BlockReason.allCases where otro != .attestUnavailable {
-            #expect(!L.continuesAfterBlockedUpload(reason: otro, pendingRows: [a], acceptance: .rows([a])),
+            #expect(!L.continuesAfterBlockedUpload(reason: otro, cause: .attestUnavailable,
+                                                   pendingRows: [a], acceptance: .rows([a])),
                     "con \(otro) el attest ya no es la causa: un reintento podría subirlos")
         }
-        #expect(!L.continuesAfterBlockedUpload(reason: .attestUnavailable, pendingRows: [a, UUID()], acceptance: .rows([a])))
-        #expect(!L.continuesAfterBlockedUpload(reason: .attestUnavailable, pendingRows: [a], acceptance: nil))
+        #expect(!L.continuesAfterBlockedUpload(reason: .attestUnavailable, cause: .attestUnavailable,
+                                               pendingRows: [a, UUID()], acceptance: .rows([a])))
+        #expect(!L.continuesAfterBlockedUpload(reason: .attestUnavailable, cause: .attestUnavailable,
+                                               pendingRows: [a], acceptance: nil))
     }
 
     @MainActor
@@ -234,7 +238,7 @@ struct CloudPersonalAttestSignOutWiringTests {
         let cloud = try Self.cloudSignOut()
         #expect(cloud.contains(Self.squashed("""
             if !CloudSignOutFlowLogic.continuesAfterBlockedUpload(
-                reason: reason, pendingRows: rows, acceptance: acceptedPersonalLoss) {
+                reason: reason, cause: .attestUnavailable, pendingRows: rows, acceptance: acceptedPersonalLoss) {
                 acceptedPersonalLoss = nil
                 guard reason == .attestUnavailable else {
                     let shown = CloudSignOutFlowLogic.personalPushAllShownReason(reason)
@@ -254,26 +258,39 @@ struct CloudPersonalAttestSignOutWiringTests {
     }
 
     /// Los tres sitios que suben con una pérdida aceptada —los pasos 1 y 2 de la nube y `pushGroupsForSignOut`— exigen que
-    /// el bloqueo siga siendo el attest. Con la comparación por filas a secas, un 5xx al retomar se llevaba los cambios.
-    @Test("MUTACIÓN: los tres sitios que retoman con lo aceptado exigen que el bloqueo siga siendo el attest")
+    /// el bloqueo siga siendo de la causa aceptada (el attest; desde el 2026-09-28 también la sesión que no hay o la otra
+    /// cuenta, en grupos). Con la comparación por filas a secas, un 5xx al retomar se llevaba los cambios.
+    @Test("MUTACIÓN: los tres sitios que retoman con lo aceptado exigen que el bloqueo siga siendo de su causa")
     func theThreeRetrySitesRequireTheAttest() throws {
         let source = Self.squashed(try Self.source(Self.signOutPath))
         #expect(source.components(separatedBy: "CloudSignOutFlowLogic.continuesAfterBlockedUpload(").count - 1 == 3)
-        #expect(source.components(separatedBy: "CloudSignOutFlowLogic.continuesWithoutUploading(").count - 1 == 3, """
-            La comparación por filas a secas solo vale en los recuentos finales, tras soltar el canal: el de la nube, con \
-            una llamada para lo personal y otra para grupos, y el de `finalizeSessionExit`.
+        #expect(source.components(separatedBy: "CloudSignOutFlowLogic.continuesWithoutUploading(").count - 1 == 4, """
+            La comparación por filas a secas solo vale donde no hay subida que contradiga lo aceptado: los recuentos finales \
+            tras soltar el canal (el de la nube, con una llamada para lo personal y otra para grupos, y el de \
+            `finalizeSessionExit`) y el bloqueo de la celda privada, que no sube grupos (`blockIfGroupsCannotUpload`, que \
+            además exige la causa `.noSession`).
             """)
         #expect(source.contains(Self.squashed("""
-            case .blocked(_, let reason) where CloudSignOutFlowLogic.continuesAfterBlockedUpload(
-                reason: reason, pendingRows: Self.liveGroupsPendingRowIDs(context: context), acceptance: acceptedGroupsLoss):
+            case .blocked(_, let reason) where acceptedGroupsLoss.map {
+                CloudSignOutFlowLogic.continuesAfterBlockedUpload(
+                    reason: reason, cause: $0.cause, pendingRows: groupsLossRowIDs(context: context),
+                    acceptance: $0.rows)
+            } ?? false:
             """)))
         #expect(source.contains(Self.squashed("""
             case .blocked(_, let reason):
                 if CloudSignOutFlowLogic.continuesAfterBlockedUpload(
-                    reason: reason, pendingRows: Self.liveGroupsPendingRowIDs(context: context), acceptance: accepted) {
+                    reason: reason, cause: accepted.cause,
+                    pendingRows: groupsLossRowIDs(context: context), acceptance: accepted.rows) {
                     return true
                 }
             """)))
+        #expect(source.contains(Self.squashed("""
+            if let accepted = acceptedGroupsLoss, accepted.cause == .noSession,
+               CloudSignOutFlowLogic.continuesWithoutUploading(pendingRows: rows, acceptance: accepted.rows) {
+                return false
+            }
+            """)), "la celda privada acepta perder por una causa que no es la suya")
     }
 
     @Test("MUTACIÓN: la salida personal exige su bloqueo y su oferta, y retoma el cierre en la nube con las filas del aviso")

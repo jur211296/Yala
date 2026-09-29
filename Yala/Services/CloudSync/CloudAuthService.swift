@@ -389,6 +389,8 @@ final class CloudAuthService: NSObject {
             throw CloudAuthError.missingIdentityToken
         }
 
+        // La sesión que había antes del canje: siembra el registro de sesiones si este build aún no lo había visto.
+        let previousUserID = currentUserID
         do {
             _ = try await client.signInWithIdToken(
                 credentials: .init(
@@ -405,6 +407,9 @@ final class CloudAuthService: NSObject {
         CloudSyncBreadcrumb.authSignedIn()
         // Sesión nueva: la marca del adopt describía la anterior (`AdoptSessionOwnership`).
         AdoptSessionOwnership.record(nil)
+        // Cuándo entró esta cuenta: separa los cambios de grupos escritos ANTES —de la cuenta anterior— de los suyos
+        // (`GroupsOutboxOwnershipLogic.owner`, ticket `groups-outbox-rows-without-a-live-session-have-no-exit`).
+        SessionSignInLog.recordSignIn(sub: currentUserID, previousSub: previousUserID, at: Date())
         writeProfileString("google", forKey: Self.keyProvider)
 
         // Captura de perfil con la MISMA regla anti-sangrado que SIWA (helper compartido). La
@@ -491,8 +496,15 @@ final class CloudAuthService: NSObject {
     ///   `sign-out-exits-do-not-verify-the-cloud-session-closed`): los cuatro voluntarios se paran sin armar el borrado y los
     ///   dos tras borrar la cuenta arman el retiro de la sesión. **No es `hasSession`**: ese lleva el seam
     ///   `-uitest-fake-cloud-session` y diría «sigue» en todo XCUITest que lo use. Los demás llamadores lo descartan hoy.
+    ///
+    /// `returningToPreviousAccount` (ticket `groups-outbox-rows-without-a-live-session-have-no-exit`): la sesión que se cierra
+    /// fue DE PASO —la abrió un intento que la rechaza, como el «otra cuenta» de la puerta de la nube o la salida del adopt—,
+    /// así que lo que se escriba en grupos a partir de ahora vuelve a ser de la cuenta de antes (`SessionSignInLog.recordSignOut`).
+    /// Solo lo pasa `CloudMigrationController.closeSessionIfOpened`. **Con el default no se apunta nada**, y es el lado
+    /// seguro: tras una revocación de Apple o un cierre sin borrado la persona sigue siendo la que cerró, y en los cierres con
+    /// borrado no queda nada que fechar.
     @discardableResult
-    func signOut() async -> Bool {
+    func signOut(returningToPreviousAccount: Bool = false) async -> Bool {
         // ANTES del guard a propósito: el `return` de abajo se dispara cuando el backend no está
         // configurado (`client == nil`), y entonces todo lo que viene después no corre. El tipo de
         // cuenta cacheado no depende del backend para ser basura una vez cerrada la sesión, así que
@@ -501,6 +513,8 @@ final class CloudAuthService: NSObject {
         // La marca del adopt describe ESTA sesión (`AdoptSessionOwnership`): muere con ella, también sin backend.
         AdoptSessionOwnership.record(nil)
         guard let client else { return storedSessionIsGone }
+        // La cuenta que se cierra, antes de cerrarla: el registro de sesiones vuelve a la de antes si se va de verdad.
+        let closingUserID = currentUserID
         // Higiene Google (H6 del brief): sign-out LOCAL del SDK — jamás `disconnect()` (eso revoca el
         // grant OAuth entero; es el paso 4b del borrado de cuenta, sesión 3). Sin esto, la sesión del
         // SDK de la cuenta A quedaría viva al entrar B. No-op si nunca hubo sign-in Google. El PAR
@@ -532,6 +546,11 @@ final class CloudAuthService: NSObject {
             // Apple ID. Cubre de una vez los caminos de `CloudSessionSignOut` (todos llaman este `signOut()`).
             clearCapturedProfile()
             clearStoredProvider()
+            // Una sesión DE PASO que se cierra: lo que se escriba en grupos a partir de ahora vuelve a ser de la cuenta de antes
+            // (`SessionSignInLog.recordSignOut`, ticket `groups-outbox-rows-without-a-live-session-have-no-exit`).
+            if returningToPreviousAccount {
+                SessionSignInLog.recordSignOut(closingSub: closingUserID, at: Date())
+            }
         } else {
             CloudSyncBreadcrumb.authSignOutLeftSession()
         }
@@ -815,6 +834,8 @@ extension CloudAuthService: ASAuthorizationControllerDelegate {
             let siwaCodeData = credential.authorizationCode
             let appleUserID = credential.user
             Task { @MainActor in
+                // La sesión que había antes del canje (ver el gemelo de Google).
+                let previousUserID = self.currentUserID
                 do {
                     _ = try await self.client?.signInWithIdToken(
                         credentials: .init(provider: .apple, idToken: idToken, nonce: nonce)
@@ -822,6 +843,8 @@ extension CloudAuthService: ASAuthorizationControllerDelegate {
                     CloudSyncBreadcrumb.authSignedIn()
                     // Sesión nueva: la marca del adopt describía la anterior (`AdoptSessionOwnership`).
                     AdoptSessionOwnership.record(nil)
+                    // Cuándo entró esta cuenta, para el dueño de los cambios de grupos (ver el gemelo de Google).
+                    SessionSignInLog.recordSignIn(sub: self.currentUserID, previousSub: previousUserID, at: Date())
                     // Provider de la sesión (fuente del claim) — espejo del write en signInWithGoogle.
                     self.writeProfileString("apple", forKey: Self.keyProvider)
                     // Tras el exchange EXITOSO (hay JWT de Supabase para el Worker). Jamás bloquea/retrasa.

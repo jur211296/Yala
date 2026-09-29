@@ -89,7 +89,12 @@ final class AppleIDCloseNoticeUITests: XCTestCase {
             """)
     }
 
-    func test_blockedClose_showsTheReason_canRetry_andLeavesTheCoordinatorFree() {
+    /// **Sin sesión y con cambios de grupos, el aviso ofrece perderlos y «Ahora no» no pierde nada** (ticket
+    /// `groups-outbox-rows-without-a-live-session-have-no-exit`, 2026-09-28). Hasta ese día este bloqueo era «Tu sesión
+    /// caducó» con «Reintentar», y quien no podía volver a entrar no tenía salida. **El botón destructivo no se toca aquí**:
+    /// terminaría el cierre y armaría un boot-wipe REAL en el simulador (ver la cabecera). Que aceptar deje seguir el cierre
+    /// lo fija `GroupsNoSessionLossExitTests`, sin armar nada.
+    func test_blockedClose_offersTheLoss_notNowKeepsEverything_andLeavesTheCoordinatorFree() {
         let app = XCUIApplication()
         app.launchForUITest(seed: "minimal", appleIDChanged: true, groupsOutboxPending: true)
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap no completó.")
@@ -100,21 +105,18 @@ final class AppleIDCloseNoticeUITests: XCTestCase {
             """)
         app.buttons["apple_id_close_confirm"].tap()
 
-        // **El motivo, a la vista.** Antes de este ticket el alert se cerraba y no se veía nada. El
-        // identificador sale del mismo motivo que el texto, así que esto es también el copy de la sesión caducada.
-        let blocked = stage(app, "apple_id_close_blocked_session-expired")
+        // **La pérdida, a la vista, con su cifra.** El identificador es el de la etapa que la ofrece; el texto sale del
+        // motivo (la sesión que no está) y cuenta la fila sembrada.
+        let blocked = stage(app, "apple_id_close_losing_group_changes")
         XCTAssertTrue(blocked.waitForExistence(timeout: 15), """
-            El cierre bloqueado no enseñó su motivo. Si lo que aparece es la pantalla de reiniciar, el cierre \
-            TERMINÓ: la fila de outbox no bloqueó y el simulador tiene un boot-wipe armado — `simctl erase` \
+            El cierre bloqueado no ofreció perder los cambios de grupos. Si lo que aparece es la pantalla de reiniciar, \
+            el cierre TERMINÓ: la fila de outbox no bloqueó y el simulador tiene un boot-wipe armado — `simctl erase` \
             antes de volver a abrir Yala Dev a mano.
             """)
-        XCTAssertTrue(app.buttons["apple_id_close_retry"].exists, "El bloqueo no ofrece «Reintentar».")
-        XCTAssertTrue(app.buttons["apple_id_close_later"].exists, "El bloqueo no ofrece «Ahora no».")
-
-        // «Reintentar» vuelve a pedir el cierre y, con la fila todavía ahí, vuelve al mismo motivo. Que el botón
-        // haga algo no se ve desde aquí —la celda C se bloquea en el mismo turno—: lo fija el escáner.
-        app.buttons["apple_id_close_retry"].tap()
-        XCTAssertTrue(blocked.waitForExistence(timeout: 15), "Tras «Reintentar» la hoja no volvió al motivo.")
+        let cifra = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "sin subir: 1")).firstMatch
+        XCTAssertTrue(cifra.exists, "El aviso no cuenta los cambios que se perderían.")
+        XCTAssertTrue(app.buttons["apple_id_close_discard_groups"].exists, "El aviso no ofrece «Cerrar sesión y perderlos».")
+        XCTAssertTrue(app.buttons["apple_id_close_later"].exists, "El aviso no ofrece «Ahora no».")
 
         app.buttons["apple_id_close_later"].tap()
         // La hoja congela lo que enseñaba mientras se retira, así que esperar a que desaparezcan el motivo y el

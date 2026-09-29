@@ -322,7 +322,8 @@ struct PrivateSignOutMigrationWiringTests {
         let fn = try Self.body(of: "private func performSessionExit(context: ModelContext, plan: CloudSignOutFlowLogic.ExitPlan) async {",
                                in: try Self.code(Self.signOut))
         let puerta = try #require(fn.range(of: Self.gate), "el cierre ya no mira la migración al empezar")
-        let grupos = try #require(fn.range(of: "if blockIfGroupsCannotUpload(context: context, kind: plan.kind) { return }"))
+        let grupos = try #require(fn.range(
+            of: "if blockIfGroupsCannotUpload(context: context, kind: plan.kind, lossExit: .sessionExit(plan)) { return }"))
         let primerAwait = try #require(fn.range(of: "await "))
         #expect(puerta.upperBound <= grupos.lowerBound)
         #expect(puerta.upperBound <= primerAwait.lowerBound, """
@@ -356,7 +357,8 @@ struct PrivateSignOutMigrationWiringTests {
         #expect(puerta.upperBound <= arm.lowerBound)
         // Fuera del `switch` del export (dentro de una rama solo correría en esa) y antes de escribir el marcador de grupos
         // (entre él y el arm, un bloqueo dejaría el marcador puesto sin arm). Mutantes de la review.
-        let grupos = try #require(fn.range(of: "if blockIfGroupsCannotUpload(context: context, kind: kind) { return }"))
+        let grupos = try #require(fn.range(
+            of: "if blockIfGroupsCannotUpload(context: context, kind: kind, lossExit: .finalize(kind: kind, export: export)) { return }"))
         let marcador = try #require(fn.range(of: "let forgetsGroups = kind.pushesGroups || Self.hasBackendGroupRows(context: context)"))
         #expect(grupos.upperBound <= puerta.lowerBound)
         #expect(puerta.upperBound <= marcador.lowerBound)
@@ -403,10 +405,10 @@ struct PrivateSignOutMigrationWiringTests {
     @Test("Ajustes enseña el aviso con los dos motivos; la puerta del Welcome, su rama propia antes del catch-all")
     func pantallas() throws {
         let profile = try Self.code("Yala/App/Views/Profile/ProfileView.swift")
-        #expect(profile.contains(".cloudSessionExpired, .signOutSessionSurvived, .migrationInFlight, .migrationUnreadable:\n                showSignOutBlockedAlert = true"))
+        #expect(profile.contains(".signOutSessionSurvived, .migrationInFlight, .migrationUnreadable:\n                showSignOutBlockedAlert = true"))
         let welcome = try Self.code("Yala/App/Views/Onboarding/WelcomeGroupsGateView.swift")
         let rama = try #require(welcome.range(of: "case .blocked(_, .migrationInFlight), .blocked(_, .migrationUnreadable):"))
-        let catchAll = try #require(welcome.range(of: "        case .blocked:\n"))
+        let catchAll = try #require(welcome.range(of: "        case .blocked(let pending, let reason):\n"))
         #expect(rama.upperBound <= catchAll.lowerBound)
         let cuerpo = String(welcome[rama.upperBound...].prefix(900))
         #expect(cuerpo.contains("title: L10n.Welcome.Groups.neutralUnavailableTitle,"))

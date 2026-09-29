@@ -396,8 +396,8 @@ struct AppleIDCloseNoticeWiringTests {
         #expect(content.contains(Self.squashed("""
             case .blocked(let reason):
                 blockedBody(reason: reason)
-            case .losingGroupChanges(let pending):
-                attestLossBody(pending: pending)
+            case .losingGroupChanges(let pending, let reason):
+                groupsLossBody(pending: pending, reason: reason)
             case .busy:
                 blockedBody(reason: .transient, identifierOverride: "apple_id_close_busy")
             """)), """
@@ -543,7 +543,7 @@ struct AppleIDCloseNoticeAttestLossTests {
     func theLossStageNeedsTheExit() {
         let bloqueado = CloudSessionSignOut.Phase.blocked(pendingCount: 4, reason: .attestUnavailable)
         for notice in [AppleIDCloseNotice.closing, .stopped] {
-            #expect(L.stage(notice: notice, phase: bloqueado, offersGroupsLossExit: true) == .losingGroupChanges(pending: 4))
+            #expect(L.stage(notice: notice, phase: bloqueado, offersGroupsLossExit: true) == .losingGroupChanges(pending: 4, reason: .attestUnavailable))
             #expect(L.stage(notice: notice, phase: bloqueado, offersGroupsLossExit: false) == .blocked(.attestUnavailable))
         }
         // Otro motivo, u otra etapa, es la tabla de siempre aunque la salida estuviera ofrecida.
@@ -589,18 +589,18 @@ struct AppleIDCloseNoticeAttestLossTests {
             """)))
         #expect(code.contains("await CloudSessionSignOut.shared.exitDiscardingUnsyncedGroups(context: context)"))
         #expect(code.contains(squashed("""
-            case .losingGroupChanges(let pending):
-                attestLossBody(pending: pending)
+            case .losingGroupChanges(let pending, let reason):
+                groupsLossBody(pending: pending, reason: reason)
             """)))
         // **El cuerpo entero, con su orden y su botón** (lente de la review, 2026-09-15). Con `requestClose()` en el botón,
         // «Cerrar sesión y perderlos» reconocía el bloqueo, volvía a arrancar el cierre y paraba en el mismo aviso, en
         // bucle y sin perder nada; con el mensaje de `message(for:)`, ofrecía perder cambios sin decir cuántos.
         #expect(code.contains(squashed(#"""
-            private func attestLossBody(pending: Int) -> some View {
+            private func groupsLossBody(pending: Int, reason: CloudSignOutFlowLogic.BlockReason) -> some View {
                 noticeBody(
                     icon: "exclamationmark.triangle",
-                    title: SignOutBlockedCopy.title(for: .attestUnavailable),
-                    message: SignOutBlockedCopy.attestLossMessage(pending: pending),
+                    title: SignOutBlockedCopy.groupsLossTitle(for: reason),
+                    message: SignOutBlockedCopy.groupsLossMessage(for: reason, pending: pending),
                     identifier: "apple_id_close_losing_group_changes") {
                     YalaPrimaryButton(L10n.iCloud.appleIDChangedLater) { later() }
                         .accessibilityIdentifier("apple_id_close_later")

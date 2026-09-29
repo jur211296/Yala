@@ -1819,6 +1819,9 @@ enum L10n {
             static var lossSessionExpired: String { ls("groups.freshStartPending.lossSessionExpired", comment: "") }
             /// La cuenta que los apuntó ya no puede subirlos (`.permanent`).
             static var lossPermanent: String { ls("groups.freshStartPending.lossPermanent", comment: "") }
+            /// La sesión abierta es de OTRA cuenta que la que los apuntó (`.groupsChangesFromAnotherAccount`, ticket
+            /// `groups-outbox-rows-without-a-live-session-have-no-exit`).
+            static var lossOtherAccount: String { ls("groups.freshStartPending.lossOtherAccount", comment: "") }
             /// Más de un día sin App Attest (`.attestUnavailable`), con las palabras de `Groups.Errors.attestUnavailable`.
             static var lossAttest: String { ls("groups.freshStartPending.lossAttest", comment: "") }
             /// El botón destructivo del aviso, que lleva al «¿seguro?».
@@ -2228,6 +2231,22 @@ enum L10n {
             static var attestUnavailableSignOutLossUnknown: String { ls("groups.errors.attestUnavailableSignOutLossUnknown", comment: "") }
             /// El botón destructivo del aviso: nombra la pérdida (decisión de Jürgen). Literal, como todo botón de `.alert`.
             static var attestUnavailableSignOutLossButton: String { ls("groups.errors.attestUnavailableSignOutLossButton", comment: "") }
+            /// **Quedan cambios de grupos de otra cuenta, sin salida** (`CloudSignOutFlowLogic.BlockReason
+            /// .groupsChangesFromAnotherAccount`, ticket `groups-outbox-rows-without-a-live-session-have-no-exit`): el
+            /// desasociar y todo bloqueo de ese motivo que no ofrece perderlos. Dice que no se pierden y con qué se suben.
+            static var groupsChangesFromAnotherAccount: String {
+                ls("groups.errors.groupsChangesFromAnotherAccount", comment: "")
+            }
+            /// **El aviso que OFRECE perder los cambios de grupos que solo suben con una sesión que no está**: la de su cuenta
+            /// caducó, o la abierta es de otra (mismo ticket). Un texto para las dos causas, porque las dos se arreglan igual
+            /// —entrando con la cuenta que los apuntó— y la persona no tiene por qué distinguirlas. Accessor-FUNCIÓN y cifra
+            /// tras dos puntos, como `attestUnavailableSignOutLoss`. El botón es `attestUnavailableSignOutLossButton`, que ya
+            /// dice «Cerrar sesión y perderlos» sin nombrar el attest.
+            static func noSessionSignOutLoss(_ count: Int) -> String {
+                String(format: ls("groups.errors.noSessionSignOutLoss", comment: "Cerrar sesión sin la sesión de la cuenta que apuntó los cambios; %d = cambios de grupos que se pierden"), count)
+            }
+            /// Sin cifra: el recuento del outbox de Grupos falló.
+            static var noSessionSignOutLossUnknown: String { ls("groups.errors.noSessionSignOutLossUnknown", comment: "") }
             /// Salir de un grupo con el attest ya terminal (`GroupLeaveErrorLogic.Kind.deviceCannotSyncGroups`): no hay
             /// salida local, así que no ofrece nada.
             static var leaveAttestUnavailable: String { ls("groups.errors.leaveAttestUnavailable", comment: "") }
@@ -4518,6 +4537,16 @@ enum L10n {
         /// Nombra la puerta: «Dónde viven tus datos» y su «Iniciar sesión» (ticket
         /// `cloud-session-expiry-with-only-group-changes-has-no-sign-in-door`).
         static var signOutCloudSessionExpired: String { ls("settings.signOutCloudSessionExpired", comment: "") }
+        /// Lo mismo cuando el aviso OFRECE perder los cambios de GRUPOS (ticket
+        /// `groups-outbox-rows-without-a-live-session-have-no-exit`): nombra la puerta para subirlos y la salida para quien
+        /// no puede entrar. Accessor-FUNCIÓN y cifra tras dos puntos, como `Groups.Errors.attestUnavailableSignOutLoss`.
+        static func signOutCloudSessionExpiredGroupsLoss(_ count: Int) -> String {
+            String(format: ls("settings.signOutCloudSessionExpiredGroupsLoss", comment: "Cerrar sesión en la nube con la sesión caducada; %d = cambios de grupos que se pierden"), count)
+        }
+        /// Sin cifra: el recuento del outbox de Grupos falló.
+        static var signOutCloudSessionExpiredGroupsLossUnknown: String {
+            ls("settings.signOutCloudSessionExpiredGroupsLossUnknown", comment: "")
+        }
         /// El cierre soltó la sesión en la nube y la sesión SIGUE guardada: no se armó el borrado
         /// (`CloudSignOutFlowLogic.BlockReason.signOutSessionSurvived`, ticket `sign-out-exits-do-not-verify-the-cloud-session-closed`).
         static var signOutSessionSurvived: String { ls("settings.signOutSessionSurvived", comment: "") }
@@ -5466,6 +5495,14 @@ enum L10n {
             static var neutralAttestLossBodyUnknown: String { ls("welcome.groups.neutralAttestLossBodyUnknown", comment: "") }
             /// El botón destructivo: nombra la pérdida, como «Cerrar sesión y perderlos» en Ajustes.
             static var neutralAttestLossContinue: String { ls("welcome.groups.neutralAttestLossContinue", comment: "") }
+            /// **Los cambios de grupos solo suben con una sesión que no está** —caducó, o la abierta es de otra cuenta— y la
+            /// vuelta al neutro se paró en ellos (ticket `groups-outbox-rows-without-a-live-session-have-no-exit`). «Si
+            /// continúas ahora», como `neutralAttestLossBody`. El botón es `neutralAttestLossContinue`.
+            static func neutralNoSessionLossBody(_ count: Int) -> String {
+                String(format: ls("welcome.groups.neutralNoSessionLossBody", comment: "Vuelta al neutro sin la sesión de la cuenta que apuntó los cambios; %d = cambios de grupos que se pierden"), count)
+            }
+            /// Sin cifra: el recuento del outbox de Grupos falló.
+            static var neutralNoSessionLossBodyUnknown: String { ls("welcome.groups.neutralNoSessionLossBodyUnknown", comment: "") }
             /// Quedaron cambios de GRUPOS sin subir de una sesión que caducó. No se descartan nunca, así
             /// que la única salida honesta es volver a entrar con esa cuenta.
             static var neutralBlockedTitle: String { ls("welcome.groups.neutralBlockedTitle", comment: "") }

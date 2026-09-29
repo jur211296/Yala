@@ -876,7 +876,9 @@ final class CloudMigrationController {
     private func closeSessionIfOpened(_ opened: Bool) async -> CloudSignInProvider? {
         guard opened else { return nil }
         let provider = CloudAuthService.shared.storedProvider().flatMap(CloudSignInProvider.init(rawValue:))
-        await CloudAuthService.shared.signOut()
+        // La sesión la abrió este intento y se cierra sin usarse: el teléfono vuelve a la cuenta de antes para el dueño de
+        // los cambios de grupos (`SessionSignInLog.recordSignOut`).
+        await CloudAuthService.shared.signOut(returningToPreviousAccount: true)
         return provider
     }
 

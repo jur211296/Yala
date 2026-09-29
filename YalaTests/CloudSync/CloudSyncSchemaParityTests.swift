@@ -446,12 +446,18 @@ struct CloudSyncSchemaParityTests {
             "rejectedReason",
             "rejectedAt",
             "schemaVersion",
+            // De quién es el cambio (`groups-outbox-rows-without-a-live-session-have-no-exit`): el push solo sube los de
+            // la sesión viva. Opcional: una fila de un build anterior lo lee `nil`.
+            "ownerUserID",
         ]
         #expect(propertyNames(GroupSyncOutbox.self) == expected)
     }
 
-    @Test func groupSyncOutbox_schemaVersion_isOne() {
-        #expect(CloudSyncSchemaVersions.groupSyncOutbox == 1)
+    /// 2 desde el 2026-09-28 (`groups-outbox-rows-without-a-live-session-have-no-exit`): la fila nace con su dueño decidido,
+    /// y solo a las de versión 1 se les busca después.
+    @Test func groupSyncOutbox_schemaVersion_isTwo() {
+        #expect(CloudSyncSchemaVersions.groupSyncOutbox == 2)
+        #expect(CloudSyncSchemaVersions.groupSyncOutboxBeforeOwners == 1)
     }
 
     @Test func groupSyncCursor_entityName_isAnchoredLiteral() {

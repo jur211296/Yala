@@ -393,6 +393,18 @@ nonisolated enum CloudSignOutFlowLogic {
         /// así que mandar allí sería mandar a una pantalla que puede no existir. Su texto dice lo que cura la lectura en este
         /// proceso —cerrar y abrir Yala— y, si sigue, actualizarla, como el motor parado del cierre en la nube.
         case migrationUnreadable
+        /// **Quedan cambios de grupos que la sesión abierta no puede subir porque no son suyos**: los apuntó otra cuenta en
+        /// este teléfono —su sesión caducó y entró otra—, o no hay prueba de quién los apuntó (ticket
+        /// `groups-outbox-rows-without-a-live-session-have-no-exit`, 2026-09-28). Desde ese día cada fila del outbox lleva
+        /// su dueño y la subida solo manda las de la sesión, así que esperar no los sube nunca: los sube su cuenta, o se
+        /// pierden con el aviso que los cuenta.
+        ///
+        /// Lo produce SOLO el push-all del cierre (`CloudSessionSignOut.pushAllPendingGroupsForSignOut`), cuando lo único
+        /// que queda son filas ajenas. Va aparte de `.sessionExpired` porque aquí la sesión SÍ está viva —«tu sesión
+        /// caducó» sería falso— y de `.permanent` porque no hay nada que revisar. Como la sesión caducada, **abre la salida
+        /// que los pierde** en los cierres y en «Empezar de cero» (`lossCause`, `freshStartOffersGroupsLossExit`); el
+        /// desasociar no la ofrece, como con el attest. Al final del `enum` por lo mismo que los anteriores.
+        case groupsChangesFromAnotherAccount
 
         /// Slug corto para los logs (`CloudSyncBreadcrumb.signOutGroupsBlocked`). Va aquí y no en el
         /// emisor para que un motivo nuevo tenga que nombrarse una sola vez: el `switch` es exhaustivo.
@@ -417,6 +429,7 @@ nonisolated enum CloudSignOutFlowLogic {
             case .signOutSessionSurvived: return "sign-out-session-survived"
             case .migrationInFlight: return "migration-in-flight"
             case .migrationUnreadable: return "migration-unreadable"
+            case .groupsChangesFromAnotherAccount: return "groups-changes-from-another-account"
             }
         }
     }
@@ -493,6 +506,9 @@ nonisolated enum CloudSignOutFlowLogic {
         // El teléfono sin App Attest, tal cual (2026-09-15): su aviso es el que ofrece salir perdiendo los cambios de
         // grupos. Traducido a `.uploadRetryLater` volvería a decir «inténtalo en un rato» a quien lleva un día sin poder.
         case .attestUnavailable: return .attestUnavailable
+        // Los cambios de otra cuenta, tal cual (2026-09-28): la sesión de la nube está viva, así que ni «tu sesión caducó»
+        // ni «revisa tu conexión» son verdad. Su aviso ofrece perderlos.
+        case .groupsChangesFromAnotherAccount: return .groupsChangesFromAnotherAccount
         case .permanent: return .permanent
         // `.personalAttestUnavailable` es del paso 1, sobre el outbox PERSONAL: este productor, que traduce el de grupos, no
         // lo recibe nunca.
@@ -540,7 +556,8 @@ nonisolated enum CloudSignOutFlowLogic {
         case .syncStoppedMidMigration: return .syncStoppedMidMigration
         case .syncStoppedNeedsRelaunch: return .syncStoppedNeedsRelaunch
         case .permanent, .exportUnconfirmed, .bridgeUnreadable, .detachBusy, .channelPaused, .attestUnavailable,
-             .personalAttestUnavailable, .sessionNotClosed, .signOutSessionSurvived, .migrationInFlight, .migrationUnreadable:
+             .personalAttestUnavailable, .sessionNotClosed, .signOutSessionSurvived, .migrationInFlight, .migrationUnreadable,
+             .groupsChangesFromAnotherAccount:
             return .permanent
         }
     }
@@ -755,15 +772,35 @@ nonisolated enum CloudSignOutFlowLogic {
                         reason: .uploadRetryLater)
     }
 
-    /// **Un bloqueo por App Attest, después de volver a capturar.** Es el único bloqueo que un caller deja seguir —la
-    /// pérdida aceptada compara las filas VIVAS con las que la persona aceptó perder (`continuesAfterBlockedUpload`)—, así
-    /// que solo se devuelve como attest si no queda nada fuera del outbox. Si queda, es una subida pendiente sin salida de
-    /// pérdida: la persona no puede aceptar perder lo que el aviso no le enseñó (review adversarial del 2026-09-26). La
-    /// cifra es la del outbox después de capturar, que es la que el aviso de la pérdida va a enseñar.
-    static func attestBlockAfterRecapture(captureCompleted: Bool, livePendingCount: Int,
-                                          unrehydratedMirrorCount: Int) -> PushAllVerdict {
+    /// **Lo que la sesión de ahora puede subir**: el outbox vivo menos lo de otra cuenta (ticket
+    /// `groups-outbox-rows-without-a-live-session-have-no-exit`). Un recuento que falló (`Int.max`) sigue siendo «no se pudo
+    /// contar», nunca un número restado.
+    static func uploadableAfterHeld(live: Int, held: Int) -> Int {
+        guard live < Int.max, held < Int.max else { return Int.max }
+        return max(0, live - held)
+    }
+
+    /// **El push-all del cierre drenó lo de ESTA sesión y solo quedan filas de otra cuenta.** Es el `.drained` de
+    /// `groupsCaptureVerdict` releído con esas filas: con alguna, el cierre bloquea con `.groupsChangesFromAnotherAccount`
+    /// y la cifra del outbox ENTERO, que es lo que el borrado se llevaría. Cualquier otro veredicto pasa tal cual.
+    static func heldRowsVerdict(_ verdict: PushAllVerdict, livePendingCount: Int, heldCount: Int) -> PushAllVerdict {
+        guard verdict == .drained, heldCount > 0 else { return verdict }
+        return .blocked(pendingCount: livePendingCount, reason: .groupsChangesFromAnotherAccount)
+    }
+
+    /// **Un bloqueo que abre la salida de la pérdida, después de volver a capturar.** Son los únicos que un caller deja
+    /// seguir —la pérdida aceptada compara las filas VIVAS con las que la persona aceptó perder
+    /// (`continuesAfterBlockedUpload`)—, así que solo se devuelven tal cual si no queda nada fuera del outbox. Si queda, es
+    /// una subida pendiente sin salida de pérdida: la persona no puede aceptar perder lo que el aviso no le enseñó (review
+    /// adversarial del 2026-09-26). La cifra es la del outbox después de capturar, que es la que el aviso va a enseñar.
+    ///
+    /// Nació para el attest (`attestBlockAfterRecapture`); desde el 2026-09-28 cubre también la sesión caducada y los
+    /// cambios de otra cuenta, que abren la misma salida (`lossCause`). Un motivo que no la abre vuelve tal cual.
+    static func lossBlockAfterRecapture(reason: BlockReason, captureCompleted: Bool, livePendingCount: Int,
+                                        unrehydratedMirrorCount: Int) -> PushAllVerdict {
+        guard lossCause(reason) != nil else { return .blocked(pendingCount: livePendingCount, reason: reason) }
         let settled = captureCompleted && unrehydratedMirrorCount == 0
-        return .blocked(pendingCount: livePendingCount, reason: settled ? .attestUnavailable : .uploadRetryLater)
+        return .blocked(pendingCount: livePendingCount, reason: settled ? reason : .uploadRetryLater)
     }
 
     /// **Por qué «Empezar de cero» no borra lo que la subida dejó** (`CloudSessionSignOut.drainGroupsBeforeFreshStart`). Si
@@ -792,7 +829,9 @@ nonisolated enum CloudSignOutFlowLogic {
     /// `switch` exhaustivo y sin `default`: un motivo nuevo tiene que decidir aquí si deja perder cambios de otras personas.
     static func freshStartOffersGroupsLossExit(_ reason: BlockReason) -> Bool {
         switch reason {
-        case .sessionExpired, .permanent, .attestUnavailable:
+        // `.groupsChangesFromAnotherAccount` (2026-09-28) por lo mismo que la sesión caducada: solo suben con la cuenta que
+        // los apuntó, y la sesión de ahora es otra.
+        case .sessionExpired, .permanent, .attestUnavailable, .groupsChangesFromAnotherAccount:
             return true
         case .transient, .exportUnconfirmed, .bridgeUnreadable, .detachBusy, .channelPaused, .uploadRetryLater,
              .personalAttestUnavailable, .syncStoppedNeedsUpdate, .syncStoppedMidMigration, .syncStoppedNeedsRelaunch,
@@ -871,7 +910,51 @@ nonisolated enum CloudSignOutFlowLogic {
         }
     }
 
-    // MARK: - Las salidas que pierden los cambios que no suben (teléfono sin App Attest, 2026-09-15)
+    // MARK: - Las salidas que pierden los cambios que no suben (teléfono sin App Attest 2026-09-15 · sin sesión y otra
+    // cuenta 2026-09-28)
+
+    /// **Por qué un cambio de grupos no va a subir, dicho como lo que la persona puede aceptar perder.** Es la causa que
+    /// viaja con la oferta y con lo aceptado: retomar el cierre solo sigue sin subir mientras el bloqueo siga siendo de la
+    /// MISMA causa (`continuesAfterBlockedUpload`).
+    enum LossCause: String, Equatable {
+        /// El teléfono lleva más de un día sin App Attest (`.attestUnavailable`).
+        case attestUnavailable
+        /// No hay sesión con la que subirlos: el SDK la borró, o el servidor rechaza su token (`.sessionExpired`, y
+        /// `.cloudSessionExpired` en el paso 2 del cierre en la nube).
+        case noSession
+        /// La sesión viva es de otra cuenta, o no hay prueba de quién los apuntó (`.groupsChangesFromAnotherAccount`).
+        case otherAccount
+    }
+
+    /// **¿Abre este motivo la salida que pierde los cambios de GRUPOS en un cierre de sesión?** Solo los que esperar no
+    /// arregla y que se curan con algo que la persona puede no tener: App Attest, una sesión de esa cuenta
+    /// (decisión 1 del encargo del 2026-09-28: «vuelve a entrar» sigue siendo el camino por defecto, y quien no puede
+    /// volver a entrar —cuenta borrada, correo perdido— necesita salir). `nil` = no la abre.
+    ///
+    /// **La de «Empezar de cero» es otra tabla** (`freshStartOffersGroupsLossExit`): aquel gesto la abre también con
+    /// `.permanent`. Aquí `.permanent` no, porque en un cierre lo producen el motor que falta y el recuento de después del
+    /// teardown, y ninguno de los dos dice que esos cambios no puedan subir nunca.
+    ///
+    /// `switch` exhaustivo y sin `default`: un motivo nuevo tiene que decidir aquí si deja perder cambios de otras personas.
+    static func lossCause(_ reason: BlockReason) -> LossCause? {
+        switch reason {
+        case .attestUnavailable: return .attestUnavailable
+        case .sessionExpired, .cloudSessionExpired: return .noSession
+        case .groupsChangesFromAnotherAccount: return .otherAccount
+        case .transient, .permanent, .exportUnconfirmed, .bridgeUnreadable, .detachBusy, .channelPaused,
+             .uploadRetryLater, .personalAttestUnavailable, .syncStoppedNeedsUpdate, .syncStoppedMidMigration,
+             .syncStoppedNeedsRelaunch, .personalUploadRetryLater, .sessionNotClosed, .signOutSessionSurvived,
+             .migrationInFlight, .migrationUnreadable:
+            return nil
+        }
+    }
+
+    /// Lo que la persona aceptó perder de sus cambios de GRUPOS en «Cerrar sesión y perderlos», con la causa del aviso que
+    /// lo enseñó. Lo personal no lo lleva: su única causa es el attest.
+    struct GroupsLossAcceptance: Equatable {
+        let rows: LossAcceptance
+        let cause: LossCause
+    }
 
     /// Lo que la persona aceptó perder al elegir «Cerrar sesión y perderlos». **Una por outbox**: la de grupos
     /// (`CloudSessionSignOut.acceptedGroupsLoss`) y, en la nube, la de los cambios personales (`acceptedPersonalLoss`). Cada
@@ -904,17 +987,21 @@ nonisolated enum CloudSignOutFlowLogic {
         }
     }
 
-    /// ¿Puede el cierre seguir cuando la subida de ESTE intento acaba de bloquear? Solo si el bloqueo sigue siendo el
-    /// teléfono sin App Attest (`.attestUnavailable`) **y** lo que queda está entre lo aceptado.
+    /// ¿Puede el cierre seguir cuando la subida de ESTE intento acaba de bloquear? Solo si el bloqueo sigue siendo de la
+    /// causa por la que se aceptó (`lossCause(reason) == cause`) **y** lo que queda está entre lo aceptado.
     ///
     /// **El motivo cuenta, por un hallazgo de la review adversarial (2026-09-15).** La persona aceptó perder esos cambios
     /// porque el teléfono no podía sincronizar. Si al retomar el cierre el attest ya pasa y la subida falla por otra cosa —un
     /// 5xx, un 403 de cuenta, la sesión caducada—, seguir se llevaría cambios que un reintento habría subido. Con otro motivo
     /// el cierre bloquea como siempre y la aceptación se retira. Los recuentos finales, tras soltar el canal, usan
     /// `continuesWithoutUploading`: ahí ya no hay subida que pueda contradecir lo aceptado.
-    static func continuesAfterBlockedUpload(reason: BlockReason, pendingRows: Set<UUID>?,
+    ///
+    /// **Por causa y no por motivo desde el 2026-09-28**: la sesión caducada llega como `.sessionExpired` al push-all y como
+    /// `.cloudSessionExpired` al aviso de la nube, y son el mismo hecho. Aceptada sin sesión, si la persona volvió a entrar y
+    /// la subida falla por la red, no sigue: esos cambios ya pueden subir.
+    static func continuesAfterBlockedUpload(reason: BlockReason, cause: LossCause, pendingRows: Set<UUID>?,
                                             acceptance: LossAcceptance?) -> Bool {
-        reason == .attestUnavailable && continuesWithoutUploading(pendingRows: pendingRows, acceptance: acceptance)
+        lossCause(reason) == cause && continuesWithoutUploading(pendingRows: pendingRows, acceptance: acceptance)
     }
 
     /// La cifra que el aviso de la pérdida puede enseñar, o `nil` si no hay número honesto: `Int.max` es un recuento
@@ -986,11 +1073,14 @@ nonisolated enum GroupsSignOutRetryDecision {
         //
         // **Y `.personalUploadRetryLater`** (2026-09-25), que tampoco nace aquí: es `.uploadRetryLater` dicho de tus datos, y
         // se decide igual.
+        //
+        // **Y los cambios de otra cuenta** (2026-09-28): la sesión de ahora no los sube nunca, así que 45 s de reintentos
+        // serían 45 s de «Guardando…» sin guardar nada.
         if reason == .permanent || reason == .sessionExpired || reason == .channelPaused
             || reason == .uploadRetryLater || reason == .attestUnavailable || reason == .personalAttestUnavailable
             || reason == .syncStoppedNeedsUpdate || reason == .syncStoppedMidMigration
             || reason == .syncStoppedNeedsRelaunch || reason == .personalUploadRetryLater
-            || reason == .cloudSessionExpired {
+            || reason == .cloudSessionExpired || reason == .groupsChangesFromAnotherAccount {
             return .surfacePermanent
         }
         if elapsedSeconds < budgetSeconds { return .retryAfter(seconds: retryIntervalSeconds) }

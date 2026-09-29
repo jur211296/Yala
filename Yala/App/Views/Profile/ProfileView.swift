@@ -112,6 +112,9 @@ struct ProfileView: View {
     @State private var showSignOutAttestLossAlert = false
     /// Cuántos cambios de grupos se perderían en el bloqueo que se está mostrando (`Int.max` = no se pudo contar).
     @State private var signOutAttestLossPending = 0
+    /// El motivo del bloqueo que ofrece perder los cambios de grupos (desde el 2026-09-28 no es solo el attest: también la
+    /// sesión caducada y los cambios de otra cuenta). Elige título y mensaje del mismo aviso; el botón es el mismo.
+    @State private var signOutGroupsLossReason: CloudSignOutFlowLogic.BlockReason = .attestUnavailable
     /// El aviso de cerrar sesión en la nube con cambios PERSONALES sin subir y un teléfono sin App Attest (2026-09-15,
     /// decisión de Jürgen): exportar los movimientos, cerrar sesión perdiéndolos o dejarlo. Alert DEDICADO, por lo mismo
     /// que los dos de arriba: sus botones son literales.
@@ -136,7 +139,10 @@ struct ProfileView: View {
         case .blocked(let pending, let reason):
             signOutBlockedReason = reason
             if reason == .exportUnconfirmed { signOutExportPending = pending }
-            if reason == .attestUnavailable { signOutAttestLossPending = pending }
+            if CloudSignOutFlowLogic.lossCause(reason) != nil {
+                signOutAttestLossPending = pending
+                signOutGroupsLossReason = reason
+            }
             if reason == .personalAttestUnavailable { signOutPersonalAttestPending = pending }
             presentSignOutBlock(reason)
         case .awaitingRelaunch: dismiss()
@@ -169,6 +175,23 @@ struct ProfileView: View {
             // `signout-alert-fires-on-detach-blocks-it-did-not-cause` con un motivo nuevo.
             case .attestUnavailable:
                 if signOutCoordinator.offersGroupsLossExit { showSignOutAttestLossAlert = true }
+            // **Los cambios de grupos que solo suben con una sesión que no está** (2026-09-28, ticket
+            // `groups-outbox-rows-without-a-live-session-have-no-exit`): la de su cuenta caducó, o la abierta es de otra.
+            // Con la salida de un CIERRE, el mismo aviso que el attest con su texto: cuenta lo que se pierde, dice cómo
+            // subirlos y ofrece «Cerrar sesión y perderlos»; «Ahora no» no pierde nada. Sin ella —el desasociar, que no la
+            // ofrece, o un gesto que la retiró— el aviso de bloqueo de siempre.
+            case .sessionExpired, .cloudSessionExpired:
+                if signOutCoordinator.offersGroupsLossExit {
+                    showSignOutAttestLossAlert = true
+                } else {
+                    showSignOutBlockedAlert = true
+                }
+            // **Los cambios de otra cuenta, sin salida, no encienden nada aquí**, como el attest de arriba (review adversarial
+            // del 2026-09-28): todo cierre de sesión que produce este motivo ofrece la salida, así que sin ella lo puso el
+            // desasociar, cuyo aviso pinta `GroupsAssociationSection`. Encender el genérico hablaría de cerrar sesión a quien
+            // solo pidió soltar la cuenta de grupos.
+            case .groupsChangesFromAnotherAccount:
+                if signOutCoordinator.offersGroupsLossExit { showSignOutAttestLossAlert = true }
             // **Tus datos en la nube, con el teléfono sin App Attest** (2026-09-15, decisión de Jürgen). Con la salida que
             // anotó el cierre en la nube, su propio aviso: cuenta lo que se pierde y ofrece exportar los movimientos, cerrar
             // sesión perdiéndolos o dejarlo. Sin ella —otro gesto la retiró— el aviso de bloqueo con el texto que no ofrece
@@ -199,9 +222,9 @@ struct ProfileView: View {
             // **Los tres del motor parado, también** (2026-09-25): mismo título, su propio mensaje. Solo los pone el cierre en
             // la nube, así que no los comparte ningún otro gesto. **Y la subida personal que no llegó**, por lo mismo que la de
             // grupos: el título es exacto y aquí nadie ha reintentado nada.
-            case .permanent, .sessionExpired, .channelPaused, .uploadRetryLater,
+            case .permanent, .channelPaused, .uploadRetryLater,
                  .syncStoppedNeedsUpdate, .syncStoppedMidMigration, .syncStoppedNeedsRelaunch, .personalUploadRetryLater,
-                 .cloudSessionExpired, .signOutSessionSurvived, .migrationInFlight, .migrationUnreadable:
+                 .signOutSessionSurvived, .migrationInFlight, .migrationUnreadable:
                 showSignOutBlockedAlert = true
             // **Los dos motivos del DESASOCIAR no encienden nada aquí, y no es teoría: llegaban.**
             // `phase` es un singleton observable y esta pantalla escucha sus cambios; la de
@@ -652,8 +675,9 @@ struct ProfileView: View {
             }
             // El teléfono sin App Attest (2026-09-15, decisión de Jürgen): el aviso cuenta los cambios de grupos que se
             // pierden y ofrece cerrar igualmente. «Ahora no» reconoce el bloqueo y no pierde nada. Botones literales y
-            // sin `accessibilityIdentifier`: SwiftUI no los propaga a los botones de un `.alert`.
-            .alert(L10n.Groups.Errors.attestUnavailableTitle, isPresented: $showSignOutAttestLossAlert) {
+            // sin `accessibilityIdentifier`: SwiftUI no los propaga a los botones de un `.alert`. Desde el 2026-09-28 es
+            // también el de la sesión caducada y el de los cambios de otra cuenta: título y mensaje salen del motivo.
+            .alert(SignOutBlockedCopy.groupsLossTitle(for: signOutGroupsLossReason), isPresented: $showSignOutAttestLossAlert) {
                 Button(L10n.Groups.Errors.attestUnavailableSignOutLossButton, role: .destructive) {
                     Task { await CloudSessionSignOut.shared.exitDiscardingUnsyncedGroups(context: modelContext) }
                 }
@@ -661,7 +685,7 @@ struct ProfileView: View {
                     CloudSessionSignOut.shared.acknowledgeBlocked()
                 }
             } message: {
-                Text(SignOutBlockedCopy.attestLossMessage(pending: signOutAttestLossPending))
+                Text(SignOutBlockedCopy.groupsLossMessage(for: signOutGroupsLossReason, pending: signOutAttestLossPending))
             }
             // Tus datos en la nube con el teléfono sin App Attest (2026-09-15, decisión de Jürgen): el aviso cuenta los cambios
             // que no llegaron y ofrece, en este orden, exportar los movimientos, cerrar sesión perdiéndolos o dejarlo. Exportar

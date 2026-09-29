@@ -6136,3 +6136,27 @@
 
 /* Confirm body before finishing a deletion that was left halfway */
 "welcome.privateICloud.leftHalfwayConfirmBody" = "O que restou neste telefone é apagado, inclusive o que você criou desde então, e você começa de novo. Não fica nenhuma cópia.";
+
+/* Cierre de sesión bloqueado: quedan cambios de grupos de otra cuenta, sin salida que los pierda */
+"groups.errors.groupsChangesFromAnotherAccount" = "Algumas alterações de grupos neste telefone foram feitas com outra conta, e só podem subir com essa conta. Nada se perde: elas ficam salvas aqui até você entrar com essa conta.";
+
+/* Cerrar sesión sin la sesión de la cuenta que apuntó los cambios; %d = cambios de grupos que se pierden */
+"groups.errors.noSessionSignOutLoss" = "Alterações de grupos ainda não enviadas: %d. Elas só sobem com a conta que as registrou, e a sessão dela não está aberta neste telefone: entre de novo com essa conta para enviá-las. Se não conseguir, saia mesmo assim e elas serão perdidas; ninguém do grupo vai vê-las.";
+
+/* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
+"groups.errors.noSessionSignOutLossUnknown" = "Há alterações de grupos que ainda não foram enviadas. Elas só sobem com a conta que as registrou, e a sessão dela não está aberta neste telefone: entre de novo com essa conta para enviá-las. Se não conseguir, saia mesmo assim e elas serão perdidas; ninguém do grupo vai vê-las.";
+
+/* Cerrar sesión en la nube con la sesión caducada; %d = cambios de grupos que se pierden */
+"settings.signOutCloudSessionExpiredGroupsLoss" = "Sua sessão expirou. Alterações dos seus grupos ainda não enviadas: %d. Para enviá-las, abra “Onde ficam seus dados”, aqui em Perfil, e toque em “Entrar”. Se não conseguir entrar, saia mesmo assim e elas serão perdidas; ninguém do grupo vai vê-las.";
+
+/* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
+"settings.signOutCloudSessionExpiredGroupsLossUnknown" = "Sua sessão expirou e há alterações dos seus grupos que ainda não foram enviadas. Para enviá-las, abra “Onde ficam seus dados”, aqui em Perfil, e toque em “Entrar”. Se não conseguir entrar, saia mesmo assim e elas serão perdidas; ninguém do grupo vai vê-las.";
+
+/* Vuelta al neutro sin la sesión de la cuenta que apuntó los cambios; %d = cambios de grupos que se pierden */
+"welcome.groups.neutralNoSessionLossBody" = "Alterações de grupos ainda não enviadas: %d. Elas só sobem com a conta que as registrou, e a sessão dela não está aberta neste telefone. Se você continuar agora, elas serão perdidas e ninguém do grupo vai vê-las.";
+
+/* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
+"welcome.groups.neutralNoSessionLossBodyUnknown" = "Há alterações de grupos que ainda não foram enviadas. Elas só sobem com a conta que as registrou, e a sessão dela não está aberta neste telefone. Se você continuar agora, elas serão perdidas e ninguém do grupo vai vê-las.";
+
+/* Empezar de cero con cambios de grupos de otra cuenta: por qué no suben */
+"groups.freshStartPending.lossOtherAccount" = "Elas só podem subir com a conta que as registrou, e a sessão aberta neste telefone é de outra conta. Se você não vai voltar a entrar com essa conta, pode começar do zero e perdê-las: ninguém do grupo vai vê-las.";
