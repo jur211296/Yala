@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-28 (Lima)
 
-**Rama** `2.1` — Merge #294: **quien no puede volver a entrar sale perdiendo sus cambios de grupos con aviso, y nadie los sube a nombre de otra cuenta.**
+**Rama** `2.1` — Merge #295: **en el iPhone más pequeño, «Guardar» y los botones de las pantallas de éxito vuelven a estar a la vista.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > **El destino del gate vuelve a resolver** (medido el 28-sep): hay un iPhone 17 Pro de **iOS 27.0**
@@ -13,7 +13,32 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `9D0F6D32` (26.5) que citaba el aviso anterior **ya no existe**. El ticket
 > `the-gate-destination-no-longer-resolves-on-this-mac` tiene la premisa cambiada: medirlo antes de trabajarlo.
 
-## Esta sesión (#294 · cambios de grupos sin sesión: una salida con aviso, y cada cambio con su dueño)
+## Esta sesión (#295 · carril adaptativo, paso 3: el iPhone más pequeño)
+
+En un iPhone SE, Nuevo registro no dejaba guardar con el texto al máximo: «Guardar» y los chips de cuenta y
+subcategoría quedaban fuera de la pantalla. A tamaño normal, con el teclado abierto, el selector de tipo se metía bajo
+la barra, y las pantallas de éxito tras guardar y tras aprobar un borrador se salían por arriba y por abajo. Ahora se
+desplazan solo cuando no caben. Con el texto muy grande, además, el Panel y Registros vuelven a caber en el ancho, y
+dejan de cortarse la suma de dos monedas de la tarjeta de grupo y la cabecera de Yala Pro.
+
+- Scroll `.basedOnSize` con alto mínimo en `NewTransactionView`, `TransactionSuccessView` e `InboxApproveSuccessView`;
+  `PeriodSelectorLabel` sin ancho fijo a tamaños de accesibilidad. Dos reglas nuevas en `swiftui-ds.md`.
+- Los 27 `ignoresSafeArea` (no 29) y las 27 alturas fijas (no 24), uno a uno: se quedan todos los `ignoresSafeArea`.
+- **Verificado:** capturas antes/después en el SE y el ProMax del carril, normal y AX5, en
+  `qa/evidencia-adaptativo-20260928/iphone-small-screens-and-safe-areas-audit/`; a tamaño normal, píxel a píxel, solo
+  cambia lo arreglado. Gate con `YalaTests` entero (8407) y 18 suites XCUITest (44 casos); CI verde. Ticket a `done`.
+- **Nuevo en backlog:** `inbox-header-leaves-no-room-for-drafts-at-large-text` (media: en el SE a AX5 no se llega a
+  ningún borrador), `first-expense-practice-alert-tears-down-the-success-screen` (media, previo: el aviso del primer
+  gasto se come la pantalla de éxito) y `small-screen-leftovers-after-the-iphone-se-audit` (baja).
+- **Encontrado:** la cola del simulador dio a Cola A ~1 h seguida; por orden de Jürgen, el carril ya no corre nada
+  mientras Cola A esté viva (en memoria de Frank). Al terminar, Cola A dejó los simuladores limpios.
+
+### Lo que espera de Jürgen
+
+- Nada nuevo de esta sesión. Sigue pendiente la **decisión** de #294, justo debajo. El carril adaptativo sigue con el
+  paso 4, `sheet-size-follows-the-device-not-the-window`.
+
+## Sesión anterior (#294 · cambios de grupos sin sesión: una salida con aviso, y cada cambio con su dueño)
 
 Con la sesión de grupos caducada y cambios sin subir, quien no podía volver a entrar se quedaba sin salida: cerrar sesión
 se bloqueaba para siempre. Ahora el aviso cuenta los cambios, pide confirmación destructiva y deja «Volver a entrar» como
@@ -36,8 +61,7 @@ suben a su nombre: se guardan para su dueño o se ofrecen en esa misma salida.
 
 - **Decidir** `cloud-sign-out-with-an-expired-session-and-personal-changes-has-no-exit`: el mismo callejón, con cambios
   personales de la nube en vez de grupos. Hoy sigue bloqueado sin salida.
-- Sigue en pie **el guion de `qa/guion-tanda.md`**. El carril adaptativo sigue con el paso 3,
-  `iphone-small-screens-and-safe-areas-audit`.
+- Sigue en pie **el guion de `qa/guion-tanda.md`**.
 
 ## Sesión anterior (#293 · carril adaptativo, paso 2: el texto muy grande en las pantallas del iPhone)
 
