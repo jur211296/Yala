@@ -478,6 +478,13 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSignOut personal attest unavailable — export and loss exit offered pending=\(pending ?? -1, privacy: .public)")
     }
 
+    /// El cierre en la NUBE se bloqueó en los cambios PERSONALES porque no hay sesión con la que subirlos —caducó, o la
+    /// abierta es de otra cuenta— y ofrece exportar los movimientos o salir perdiéndolos (ticket
+    /// `cloud-sign-out-with-an-expired-session-and-personal-changes-has-no-exit`). `cause` = `noSession`. Sin PII.
+    static func signOutPersonalLossOffered(cause: String, pending: Int?) {
+        logger.notice("CloudSignOut personal loss exit offered cause=\(cause, privacy: .public) pending=\(pending ?? -1, privacy: .public)")
+    }
+
     /// Desde ese aviso se generó el archivo con todos los movimientos. `rows` = movimientos exportados. Sin PII.
     static func signOutPersonalExported(rows: Int) {
         logger.notice("CloudSignOut personal export before losing changes rows=\(rows, privacy: .public)")

@@ -5433,3 +5433,9 @@
 
 /* Empezar de cero con cambios de grupos de otra cuenta: por qué no suben */
 "groups.freshStartPending.lossOtherAccount" = "Só podem ser enviadas com a conta que as registou, e a sessão aberta neste telemóvel é de outra conta. Se não vais voltar a entrar com essa conta, podes começar do zero e perdê-las: ninguém do grupo as verá.";
+
+/* Cerrar sesión en la nube con la sesión caducada; %d = cambios personales que se pierden */
+"settings.signOutCloudSessionExpiredPersonalLoss" = "A tua sessão expirou. Alterações que não chegaram à tua conta na nuvem: %d. Para as enviares, abre “Onde vivem os teus dados”, aqui em Perfil, e toca em “Iniciar sessão”. Se não conseguires entrar, antes de decidires podes exportar as tuas transações para um ficheiro. Se terminares sessão agora, essas alterações perdem-se.";
+
+/* Cerrar sesión en la nube con la sesión caducada, sin cifra */
+"settings.signOutCloudSessionExpiredPersonalLossUnknown" = "A tua sessão expirou e há alterações que não chegaram à tua conta na nuvem. Para as enviares, abre “Onde vivem os teus dados”, aqui em Perfil, e toca em “Iniciar sessão”. Se não conseguires entrar, antes de decidires podes exportar as tuas transações para um ficheiro. Se terminares sessão agora, essas alterações perdem-se.";

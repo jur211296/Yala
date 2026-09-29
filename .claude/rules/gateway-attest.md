@@ -289,8 +289,9 @@ Ticket `cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes`.
   de motivos del paso 1 lo traduce `CloudSignOutFlowLogic.personalPushAllShownReason` desde el 2026-09-25 (la subida que
   no llegó, la sesión caducada, el guardado que se asienta y el motor parado; hasta ese día, todos `.permanent`). **Cada aceptación cubre solo su outbox**, y lo aceptado de lo personal
   sobrevive al aviso de grupos que sale después.
-- **Retomar un cierre con la pérdida aceptada exige que el bloqueo siga siendo el attest**
-  (`CloudSignOutFlowLogic.continuesAfterBlockedUpload`, en los tres sitios que suben: los pasos 1 y 2 de la nube y
+- **Retomar un cierre con la pérdida aceptada exige que el bloqueo siga siendo de su causa**
+  (`CloudSignOutFlowLogic.continuesAfterBlockedUpload`, en los tres sitios que suben: el paso 1 de la nube —desde el
+  2026-09-28 dentro de `personalUploadBlockDecision`, donde la sesión caducada abre también la salida personal—, el paso 2 y
   `pushGroupsForSignOut`). Si el attest volvió y la subida falla por otra cosa, un reintento subiría esos cambios: el cierre
   bloquea como siempre y retira lo aceptado. Los recuentos finales, tras soltar el canal, no pasan por ahí.
 - **Tests: aísla la tienda en los del runtime que fijan `attestError`** (`IsolatedAttestStreak`). Un ciclo con token también

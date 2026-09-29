@@ -5428,3 +5428,9 @@
 
 /* Empezar de cero con cambios de grupos de otra cuenta: por qué no suben */
 "groups.freshStartPending.lossOtherAccount" = "They can only upload with the account that made them, and the session open on this phone belongs to another one. If you're not going to sign back in with that account, you can start from scratch and lose them: no one in the group will see them.";
+
+/* Cerrar sesión en la nube con la sesión caducada; %d = cambios personales que se pierden */
+"settings.signOutCloudSessionExpiredPersonalLoss" = "Your session has expired. Changes that didn't reach your account in the cloud: %d. To upload them, open “Where your data lives”, here in Profile, and tap “Sign in”. If you can't sign in, you can export your transactions to a file before you decide. If you sign out now, those changes will be lost.";
+
+/* Cerrar sesión en la nube con la sesión caducada, sin cifra */
+"settings.signOutCloudSessionExpiredPersonalLossUnknown" = "Your session has expired and some changes didn't reach your account in the cloud. To upload them, open “Where your data lives”, here in Profile, and tap “Sign in”. If you can't sign in, you can export your transactions to a file before you decide. If you sign out now, those changes will be lost.";

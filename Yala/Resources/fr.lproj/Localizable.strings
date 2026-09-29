@@ -6161,3 +6161,9 @@
 
 /* Empezar de cero con cambios de grupos de otra cuenta: por qué no suben */
 "groups.freshStartPending.lossOtherAccount" = "Elles ne peuvent être envoyées qu'avec le compte qui les a créées, et la session ouverte sur ce téléphone est celle d'un autre compte. Si tu ne vas pas te reconnecter avec ce compte, tu peux repartir de zéro et les perdre : personne dans le groupe ne les verra.";
+
+/* Cerrar sesión en la nube con la sesión caducada; %d = cambios personales que se pierden */
+"settings.signOutCloudSessionExpiredPersonalLoss" = "Ta session a expiré. Modifications qui ne sont pas arrivées sur ton compte dans le cloud : %d. Pour les envoyer, ouvre « Où vivent tes données », ici dans Profil, et touche « Se connecter ». Si tu ne peux pas te connecter, tu peux d'abord exporter tes transactions dans un fichier. Si tu te déconnectes maintenant, ces modifications seront perdues.";
+
+/* Cerrar sesión en la nube con la sesión caducada, sin cifra */
+"settings.signOutCloudSessionExpiredPersonalLossUnknown" = "Ta session a expiré et des modifications ne sont pas arrivées sur ton compte dans le cloud. Pour les envoyer, ouvre « Où vivent tes données », ici dans Profil, et touche « Se connecter ». Si tu ne peux pas te connecter, tu peux d'abord exporter tes transactions dans un fichier. Si tu te déconnectes maintenant, ces modifications seront perdues.";

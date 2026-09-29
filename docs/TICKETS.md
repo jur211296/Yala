@@ -43,13 +43,14 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (691)
+## Index (693)
 
 | id | status | path |
 |---|---|---|
 | a-failed-snapshot-enqueue-save-leaves-the-journal-unsaved | backlog | tickets/backlog/a-failed-snapshot-enqueue-save-leaves-the-journal-unsaved.md |
 | a-local-read-failure-in-the-migration-apply-reads-as-network | backlog | tickets/backlog/a-local-read-failure-in-the-migration-apply-reads-as-network.md |
 | a-malformed-ref-leaves-a-stale-dangler | backlog | tickets/backlog/a-malformed-ref-leaves-a-stale-dangler.md |
+| a-previous-owners-claim-seal-passes-the-cloud-identity-gate | backlog | tickets/backlog/a-previous-owners-claim-seal-passes-the-cloud-identity-gate.md |
 | a-wipe-on-a-device-without-the-groups-loses-their-rows-everywhere | done | tickets/done/a-wipe-on-a-device-without-the-groups-loses-their-rows-everywhere.md |
 | a-wipe-that-throws-between-drafts-and-transactions-loses-settlement-drafts | backlog | tickets/backlog/a-wipe-that-throws-between-drafts-and-transactions-loses-settlement-drafts.md |
 | abandoned-restore-no-longer-clears-the-session-window-clock | done | tickets/done/abandoned-restore-no-longer-clears-the-session-window-clock.md |
@@ -175,7 +176,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | cloud-sign-in-discovers-account-kind | qa | tickets/qa/cloud-sign-in-discovers-account-kind.md |
 | cloud-sign-in-screen-offers-sign-up-to-a-phone-without-app-attest | done | tickets/done/cloud-sign-in-screen-offers-sign-up-to-a-phone-without-app-attest.md |
 | cloud-sign-out-final-recount-misses-edits-left-only-in-history | backlog | tickets/backlog/cloud-sign-out-final-recount-misses-edits-left-only-in-history.md |
-| cloud-sign-out-with-an-expired-session-and-personal-changes-has-no-exit | backlog | tickets/backlog/cloud-sign-out-with-an-expired-session-and-personal-changes-has-no-exit.md |
+| cloud-sign-out-with-an-expired-session-and-personal-changes-has-no-exit | qa | tickets/qa/cloud-sign-out-with-an-expired-session-and-personal-changes-has-no-exit.md |
+| cloud-sign-out-with-another-account-points-to-a-missing-sign-in-door | backlog | tickets/backlog/cloud-sign-out-with-another-account-points-to-a-missing-sign-in-door.md |
 | cloud-signout-collapses-a-groups-session-expiry-into-permanent | done | tickets/done/cloud-signout-collapses-a-groups-session-expiry-into-permanent.md |
 | cloud-signout-collapses-every-groups-transient-into-permanent | done | tickets/done/cloud-signout-collapses-every-groups-transient-into-permanent.md |
 | cloud-signout-collapses-the-personal-push-all-reason-into-permanent | done | tickets/done/cloud-signout-collapses-the-personal-push-all-reason-into-permanent.md |

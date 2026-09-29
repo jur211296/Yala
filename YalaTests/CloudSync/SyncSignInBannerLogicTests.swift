@@ -284,11 +284,20 @@ struct SyncSignInBannerLogicTests {
     func bothCloudStepsLeaveTheDoorOpenBeforeTheNotice() throws {
         let body = try Self.squashedBody(of: "private func performCloudSecureSignOut(context: ModelContext) async {",
                                          in: "Yala/Services/CloudSync/CloudSessionSignOut.swift")
+        // El paso 1 tiene dos salidas que enseñan la sesión caducada desde el 2026-09-28: el bloqueo de siempre y el aviso que
+        // ofrece perder los cambios (`cloud-sign-out-with-an-expired-session-and-personal-changes-has-no-exit`), cuyo camino
+        // por defecto sigue siendo volver a entrar. Las dos dejan la puerta encendida antes de la fase.
         #expect(body.contains(Self.squash("""
-            let shown = CloudSignOutFlowLogic.personalPushAllShownReason(reason)
+            case .block(let shown):
+                acceptedPersonalLoss = nil
+                Self.leaveSignInDoorOpen(ifShown: shown, controller: controller)
+                phase = .blocked(pendingCount: pending, reason: shown)
+            """)), "paso 1, sin salida")
+        #expect(body.contains(Self.squash("""
+            let shownCount = rows?.count ?? Int.max
             Self.leaveSignInDoorOpen(ifShown: shown, controller: controller)
-            phase = .blocked(pendingCount: pending, reason: shown)
-            """)), "paso 1")
+            phase = .blocked(pendingCount: shownCount, reason: shown)
+            """)), "paso 1, con la salida de tus datos")
         #expect(body.contains(Self.squash("""
             Self.leaveSignInDoorOpen(ifShown: shown, controller: controller)
             phase = .blocked(pendingCount: shownCount, reason: shown)

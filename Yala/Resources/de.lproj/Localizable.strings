@@ -6160,3 +6160,9 @@
 
 /* Empezar de cero con cambios de grupos de otra cuenta: por qué no suben */
 "groups.freshStartPending.lossOtherAccount" = "Sie lassen sich nur mit dem Konto hochladen, das sie erstellt hat, und die Sitzung auf diesem Telefon gehört zu einem anderen. Wenn du dich nicht wieder mit diesem Konto anmeldest, kannst du von vorn beginnen und sie verlieren: Niemand in der Gruppe wird sie sehen.";
+
+/* Cerrar sesión en la nube con la sesión caducada; %d = cambios personales que se pierden */
+"settings.signOutCloudSessionExpiredPersonalLoss" = "Deine Sitzung ist abgelaufen. Änderungen, die nicht in deinem Konto in der Cloud angekommen sind: %d. Um sie hochzuladen, öffne „Wo deine Daten liegen“ hier im Profil und tippe auf „Anmelden“. Wenn du dich nicht anmelden kannst, kannst du deine Transaktionen vorher in eine Datei exportieren. Wenn du dich jetzt abmeldest, gehen diese Änderungen verloren.";
+
+/* Cerrar sesión en la nube con la sesión caducada, sin cifra */
+"settings.signOutCloudSessionExpiredPersonalLossUnknown" = "Deine Sitzung ist abgelaufen, und einige Änderungen sind nicht in deinem Konto in der Cloud angekommen. Um sie hochzuladen, öffne „Wo deine Daten liegen“ hier im Profil und tippe auf „Anmelden“. Wenn du dich nicht anmelden kannst, kannst du deine Transaktionen vorher in eine Datei exportieren. Wenn du dich jetzt abmeldest, gehen diese Änderungen verloren.";

@@ -182,6 +182,7 @@
 - [«Cero warnings» se mide en TODOS los logs](feedback_cero_warnings_se_mide_en_todos_los_logs.md) — el gate no mira los test…
 - [Lo que hago visible hereda los botones de su pantalla](feedback_lo_que_hago_visible_hereda_los_botones_de_su_pantalla.md) — la marca en Archivados y su «Eliminar» en lote.
 - [«Sin cambios visibles» se mide al píxel](feedback_sin_cambios_visibles_se_mide_al_pixel.md) — el ojo pasó un truncado del SE; diff antes/después.
+- [Un motivo que abre una pérdida hereda sus falsos positivos](feedback_un_motivo_que_abre_una_perdida_hereda_sus_falsos_positivos.md) — todo 401 era «caducada»; prueba aparte.
 
 ## Estado del trabajo
 - [La salida del adopt cierra su sesión](project_adopt_exit_cierra_la_sesion.md) — #230 y #231, 24-sep; dos low de la review.

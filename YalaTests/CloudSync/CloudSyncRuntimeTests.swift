@@ -1885,7 +1885,7 @@ struct CloudSyncRuntimeTests {
         #expect(capturada == .blocked(pendingCount: 2, reason: .attestUnavailable))
     }
 
-    @Test("personalVerdictAfterProbe: solo relee `.drained` y el bloqueo por attest; lo que no se pudo leer bloquea")
+    @Test("personalVerdictAfterProbe: solo relee `.drained` y los bloqueos que ofrecen perder; lo que no se pudo leer bloquea")
     func personalVerdictAfterProbe_table() {
         typealias L = CloudSignOutFlowLogic
         var asked = 0
@@ -1903,9 +1903,18 @@ struct CloudSyncRuntimeTests {
         #expect(L.personalVerdictAfterProbe(attest, uncapturedChanges: probe(nil)) == .blocked(pendingCount: 3, reason: .transient))
         #expect(asked == 6)
 
+        // La sesión caducada, igual desde el 2026-09-28: su aviso también ofrece perder las filas que cuenta (ticket
+        // `cloud-sign-out-with-an-expired-session-and-personal-changes-has-no-exit`).
+        asked = 0
+        let caducada = L.PushAllVerdict.blocked(pendingCount: 2, reason: .sessionExpired)
+        #expect(L.personalVerdictAfterProbe(caducada, uncapturedChanges: probe(false)) == caducada)
+        #expect(L.personalVerdictAfterProbe(caducada, uncapturedChanges: probe(true)) == .blocked(pendingCount: 2, reason: .transient))
+        #expect(L.personalVerdictAfterProbe(caducada, uncapturedChanges: probe(nil)) == .blocked(pendingCount: 2, reason: .transient))
+        #expect(asked == 3)
+
         // El resto de bloqueos no descarta nada: pasan tal cual y ni preguntan.
         asked = 0
-        for reason in L.BlockReason.allCases where reason != .attestUnavailable {
+        for reason in L.BlockReason.allCases where reason != .attestUnavailable && reason != .sessionExpired {
             let verdict = L.PushAllVerdict.blocked(pendingCount: 2, reason: reason)
             #expect(L.personalVerdictAfterProbe(verdict, uncapturedChanges: probe(true)) == verdict, "\(reason)")
         }
@@ -2049,6 +2058,91 @@ struct CloudSyncRuntimeTests {
             session.currentUserID = "u1"
             runtime.handleBecameActive()
             #expect(runtime.state == .running)
+        }
+    }
+
+    // MARK: - El cierre en la nube con la sesión caducada y cambios personales
+
+    /// Ticket `cloud-sign-out-with-an-expired-session-and-personal-changes-has-no-exit` (2026-09-28). El push-all del cierre
+    /// con el runtime de verdad y la sesión caducada: bloquea sin subir, el paso 1 ofrece exportar y perder (decisión 1 del
+    /// encargo) y, si la persona puede volver a entrar, sube y el cierre sigue como siempre, sin cambio.
+    @Test("MUTACIÓN: caducada — el push-all bloquea sin subir y ofrece la pérdida; si vuelve a entrar, sube y drena")
+    func signOutPushAll_expiredSession_offersTheLoss_andSigningBackInUploads() async throws {
+        let racha = try IsolatedAttestStreak(); defer { racha.restore() }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let push = EchoAppliedSession()
+        let session = StubCloudSession(userID: "u1", canRenew: false)
+        let runtime = makeRuntime(push: push, pull: StubSession(body: emptyPageJSON()), session: session)
+        try localEdit(context)
+        try localEdit(context)
+
+        let caducada = await CloudMigrationController.pushAllForSignOut(
+            runtime: runtime, context: context, domainGateOpen: { true }, journalRead: { .unreadable },
+            livePendingCount: { liveCount(context) }, maxIterations: 20, pause: .zero)
+        #expect(caducada == .blocked(pendingCount: 2, reason: .sessionExpired))
+        #expect(push.callCount == 0, "sin sesión no sale ninguna subida")
+        let rows = Set(try context.fetch(FetchDescriptor<SyncOutbox>()).map(\.clientMutationID))
+        #expect(rows.count == 2)
+        #expect(runtime.ownersSessionIsGone, "el SDK borró la sesión: no queda con qué subir")
+        #expect(CloudSignOutFlowLogic.personalUploadBlockDecision(
+            reason: .sessionExpired, pendingRows: rows, acceptance: nil, ownersSessionIsGone: runtime.ownersSessionIsGone)
+                == .offerLoss(shown: .cloudSessionExpired, cause: .noSession))
+
+        // Puede entrar: la sesión vuelve y el mismo cierre sube lo pendiente y drena. No hay aviso ni pérdida.
+        session.canRenewSession = true
+        #expect(!runtime.ownersSessionIsGone)
+        let deVuelta = await CloudMigrationController.pushAllForSignOut(
+            runtime: runtime, context: context, domainGateOpen: { true }, journalRead: { .unreadable },
+            livePendingCount: { liveCount(context) }, maxIterations: 20, pause: .zero)
+        #expect(deVuelta == .drained)
+        #expect(push.appliedCount == 2, "los dos cambios subieron con su cuenta")
+    }
+
+    /// Decisión 3 del encargo: los cambios personales pendientes son de la cuenta que los apuntó, y nunca suben con otra. El
+    /// motor ya lo cumplía (`sessionBelongsToAnotherAccount`); aquí se fija en el camino del CIERRE, que llama a `syncCycle`
+    /// sin pasar por el gate de identidad de `start()`, y también con la pérdida aceptada: aceptar no sube nada a nadie.
+    @Test("MUTACIÓN: con otra cuenta, el cierre no sube los cambios del dueño, tampoco tras aceptar perderlos")
+    func signOutPushAll_anotherAccount_neverUploadsTheOwnersChanges() async throws {
+        let push = StubSession()
+        try await withStoppedCloudRuntime(push: push, pull: StubSession(body: emptyPageJSON())) { runtime, session, context in
+            _ = try liveRow(context, entityType: SyncEntityType.transactionItem, h: hlc(1))
+            let rows = Set(try context.fetch(FetchDescriptor<SyncOutbox>()).map(\.clientMutationID))
+            let before = push.callCount
+            session.currentUserID = "u2"
+
+            let ajena = await CloudMigrationController.pushAllForSignOut(
+                runtime: runtime, context: context, domainGateOpen: { true }, journalRead: { .unreadable },
+                livePendingCount: { liveCount(context) }, maxIterations: 20, pause: .zero)
+            #expect(ajena == .blocked(pendingCount: 1, reason: .sessionExpired))
+            #expect(push.callCount == before, "el outbox del dueño no sube con el JWT de otra cuenta")
+            #expect(runtime.ownersSessionIsGone, "la sesión abierta es de otra cuenta")
+            #expect(CloudSignOutFlowLogic.personalUploadBlockDecision(
+                reason: .sessionExpired, pendingRows: rows, acceptance: nil, ownersSessionIsGone: runtime.ownersSessionIsGone)
+                    == .offerLoss(shown: .cloudSessionExpired, cause: .noSession))
+
+            // Aceptada la pérdida, el cierre retomado vuelve a intentarlo: sigue sin subir con la otra cuenta, y lo aceptado
+            // le deja seguir.
+            let aceptado = CloudSignOutFlowLogic.CausedLossAcceptance(rows: .rows(rows), cause: .noSession)
+            let retomada = await CloudMigrationController.pushAllForSignOut(
+                runtime: runtime, context: context, domainGateOpen: { true }, journalRead: { .unreadable },
+                livePendingCount: { liveCount(context) }, maxIterations: 20, pause: .zero)
+            #expect(push.callCount == before, "aceptar perderlos no los sube a la cuenta que entró")
+            guard case .blocked(_, let reason) = retomada else {
+                Issue.record("el cierre retomado drenó con otra cuenta: \(retomada)")
+                return
+            }
+            #expect(CloudSignOutFlowLogic.personalUploadBlockDecision(
+                reason: reason, pendingRows: rows, acceptance: aceptado, ownersSessionIsGone: runtime.ownersSessionIsGone)
+                    == .continueWithAcceptedLoss)
+
+            // Control: con la cuenta del dueño, sí sale la subida, y su sesión no se da por ida.
+            session.currentUserID = "u1"
+            #expect(!runtime.ownersSessionIsGone)
+            _ = await CloudMigrationController.pushAllForSignOut(
+                runtime: runtime, context: context, domainGateOpen: { true }, journalRead: { .unreadable },
+                livePendingCount: { liveCount(context) }, maxIterations: 1, pause: .zero)
+            #expect(push.callCount > before, "control: con su cuenta, lo pendiente sube")
         }
     }
 }
