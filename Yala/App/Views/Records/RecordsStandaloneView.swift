@@ -101,34 +101,15 @@ struct RecordsStandaloneView: View {
                 recalculateData: recalculateData
             ))
             .appliesPendingRemoteChanges(sessionState)
+            .modifier(RecordsDetailColumnObservers(
+                recordsViewModel: recordsViewModel,
+                compactColumn: $compactColumn,
+                horizontalSizeClass: horizontalSizeClass,
+                allTransactions: dataViewModel.allTransactions
+            ))
             .onAppear {
                 dataViewModel.setContext(modelContext)
-                recordsViewModel.opensDetailInColumn = horizontalSizeClass == .regular
                 performRecalculation()
-            }
-            .onChange(of: horizontalSizeClass) { _, newClass in
-                recordsViewModel.opensDetailInColumn = newClass == .regular
-            }
-            .onChange(of: recordsViewModel.openRecordID) { _, newID in
-                compactColumn = newID == nil ? .sidebar : .detail
-            }
-            .onChange(of: compactColumn) { _, newColumn in
-                // Atrás en el split plegado: el registro se cierra. En ancho el split no toca esta
-                // columna, así que solo la mueve el gesto del usuario.
-                if newColumn == .sidebar, recordsViewModel.openRecordID != nil,
-                   horizontalSizeClass != .regular {
-                    recordsViewModel.openRecordID = nil
-                }
-            }
-            .onChange(of: dataViewModel.allTransactions) {
-                // Registro abierto que ya no existe (borrado desde el editor u otro dispositivo): la
-                // columna vuelve al vacío en vez de sostener un objeto muerto.
-                if recordsViewModel.openRecordID != nil, openRecord == nil {
-                    #if DEBUG
-                    print("RecordsStandaloneView: el registro abierto ya no está, se cierra la columna")
-                    #endif
-                    recordsViewModel.openRecordID = nil
-                }
             }
             .onDisappear {
                 recalculateTask?.cancel()
@@ -546,6 +527,48 @@ private struct RecordsStandaloneSheets: ViewModifier {
 }
 
 // MARK: - Observers Modifiers
+
+/// La columna de detalle (ventana ancha): qué abre un toque, qué se ve con el split plegado y cuándo se cierra lo
+/// abierto. Va en su propio modificador, como los demás observadores de esta vista, porque la cadena del `body`
+/// ya roza el límite de tipado de Swift: con estos `onChange` en línea, Xcode 26.6 (CI) no la tipaba a tiempo.
+private struct RecordsDetailColumnObservers: ViewModifier {
+    let recordsViewModel: RecordsViewModel
+    @Binding var compactColumn: NavigationSplitViewColumn
+    let horizontalSizeClass: UserInterfaceSizeClass?
+    let allTransactions: [TransactionItem]
+
+    func body(content: Content) -> some View {
+        content
+            .onAppear {
+                recordsViewModel.opensDetailInColumn = horizontalSizeClass == .regular
+            }
+            .onChange(of: horizontalSizeClass) { _, newClass in
+                recordsViewModel.opensDetailInColumn = newClass == .regular
+            }
+            .onChange(of: recordsViewModel.openRecordID) { _, newID in
+                compactColumn = newID == nil ? .sidebar : .detail
+            }
+            .onChange(of: compactColumn) { _, newColumn in
+                // Atrás en el split plegado: el registro se cierra. En ancho el split no toca esta
+                // columna, así que solo la mueve el gesto del usuario.
+                if newColumn == .sidebar, recordsViewModel.openRecordID != nil,
+                   horizontalSizeClass != .regular {
+                    recordsViewModel.openRecordID = nil
+                }
+            }
+            .onChange(of: allTransactions) {
+                // Registro abierto que ya no existe (borrado desde el editor u otro dispositivo): la
+                // columna vuelve al vacío en vez de sostener un objeto muerto.
+                guard let id = recordsViewModel.openRecordID else { return }
+                if !allTransactions.contains(where: { $0.persistentModelID == id }) {
+                    #if DEBUG
+                    print("RecordsStandaloneView: el registro abierto ya no está, se cierra la columna")
+                    #endif
+                    recordsViewModel.openRecordID = nil
+                }
+            }
+    }
+}
 
 /// Session state navigation observer
 private struct RecordsNavObserver: ViewModifier {

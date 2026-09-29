@@ -34,6 +34,13 @@ paths:
 
 - **`.dynamicTypeSize(...)` dentro del `body` NO topa una fuente `.system(size: X)` con `X` un `@ScaledMetric` (medido 2026-09-28).** El `@ScaledMetric` se resuelve con el entorno de FUERA del `body` y la fuente de tamaño fijo no mira el entorno: 33 de los 41 topes en AX1 que había en el repo no hacían nada. Si un tamaño escalado necesita techo, se topa el propio valor, no la vista.
 
+- **El CI compila con Xcode 26.6 y su compilador tipa peor que el de 27 (medido 2026-09-29).** Cuatro `onChange` más en
+  la cadena del `body` de `RecordsStandaloneView` compilaban en local (Xcode 27) y en el CI salieron con «the compiler
+  is unable to type-check this expression in reasonable time». Por eso esa vista reparte sus observadores en
+  `ViewModifier` pequeños; al añadir modificadores a un `body` largo, van a uno de ellos o a uno nuevo. Para medirlo
+  en local: `OTHER_SWIFT_FLAGS='$(inherited) -Xfrontend -warn-long-expression-type-checking=150'` y buscar tu fichero
+  en los avisos.
+
 - **Forms con `TextField`/`TextEditor`/`SecureField`** (sin `Form`): obligatorio `dismissKeyboardOnTap()` desde el primer commit. Detalles en SWIFT-STYLE.md.
 
 - **Swift Charts `.annotation { }` NO propaga environment objects `@Observable`** → el contenido de una annotation de un mark (`BarMark`/`LineMark`/etc.) se hostea fuera del árbol de la vista; una sub-View que lea `@Environment(AppPreferences.self)` (ej. `AmountText`) NO lo resuelve y dispara `SIGTRAP` (`_assertionFailure` en `EnvironmentValues.subscript.getter`) al renderizar — sin crash log claro. Dentro de annotations usar `Text(...)` con el valor YA resuelto del callsite (`appPreferences.currency(...)` desde `self`) o un formatter estático (`YalaFormatter`), NUNCA una sub-View con `@Environment`. **`.chartOverlay { }` SÍ propaga** (ahí `AmountText` funciona, ej. `CashFlowWidget`). Causa del crash del chip Estadísticas en grupos (`8bb5ace8`).
