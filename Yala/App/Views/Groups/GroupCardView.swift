@@ -223,8 +223,10 @@ struct GroupCardView: View {
             Text("\(label):")
                 .font(DS.Typography.captionSmall)
                 .foregroundStyle(.secondary)
+            // A tamaños de accesibilidad, sin tope de líneas: con dos monedas («S/ 190.00 + $ 46.67») la suma no
+            // cabe en una línea del iPhone SE y se cortaba el segundo importe (medido el 2026-09-28).
             Text(attributedAmounts(amounts, overflow: overflow, color: color))
-                .lineLimit(1)
+                .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
                 .minimumScaleFactor(0.8)
         }
     }

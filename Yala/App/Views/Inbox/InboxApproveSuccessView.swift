@@ -68,85 +68,97 @@ struct InboxApproveSuccessView: View {
                 .padding(.top, DS.Spacing.lg)
                 .opacity(showActions ? 1.0 : 0.0)
 
-                Spacer()
+                // Mismo arreglo que `TransactionSuccessView`: el centro no tenía scroll y en un iPhone SE no
+                // cabía ni a tamaño normal («Editar» y el título se salían por arriba y «Aprobar siguiente» por
+                // abajo; medido el 2026-09-28). Solo el centro se desplaza, y solo si no cabe.
+                GeometryReader { proxy in
+                    ScrollView {
+                        VStack(spacing: DS.Spacing.none) {
+                            Spacer()
 
-                // Hero area
-                VStack(spacing: DS.Spacing.lg) {
-                    // Title above circle
-                    Text(L10n.Inbox.approveSuccess)
-                        .font(DS.Typography.headline)
-                        .foregroundStyle(.secondary)
-                        .opacity(showHero ? 1.0 : 0.0)
+                            // Hero area
+                            VStack(spacing: DS.Spacing.lg) {
+                                // Title above circle
+                                Text(L10n.Inbox.approveSuccess)
+                                    .font(DS.Typography.headline)
+                                    .foregroundStyle(.secondary)
+                                    .opacity(showHero ? 1.0 : 0.0)
 
-                    // Layered circle
-                    ZStack {
-                        // Radiant glow
-                        RadialGradient(
-                            colors: [typeColor.opacity(0.25), .clear],
-                            center: .center,
-                            startRadius: 20,
-                            endRadius: 90
-                        )
-                        .frame(width: 180, height: 180)
-                        .blur(radius: 12)
-                        .opacity(showHero ? 1.0 : 0.0)
+                                // Layered circle
+                                ZStack {
+                                    // Radiant glow
+                                    RadialGradient(
+                                        colors: [typeColor.opacity(0.25), .clear],
+                                        center: .center,
+                                        startRadius: 20,
+                                        endRadius: 90
+                                    )
+                                    .frame(width: 180, height: 180)
+                                    .blur(radius: 12)
+                                    .opacity(showHero ? 1.0 : 0.0)
 
-                        // Main gradient circle
-                        Circle()
-                            .fill(
-                                LinearGradient(
-                                    colors: [typeColor, typeColor.opacity(0.7)],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
+                                    // Main gradient circle
+                                    Circle()
+                                        .fill(
+                                            LinearGradient(
+                                                colors: [typeColor, typeColor.opacity(0.7)],
+                                                startPoint: .topLeading,
+                                                endPoint: .bottomTrailing
+                                            )
+                                        )
+                                        .frame(width: 100, height: 100)
+                                        .shadow(color: typeColor.opacity(0.4), radius: 20, y: 8)
+                                        .scaleEffect(showHero ? 1.0 : 0.3)
+                                        .opacity(showHero ? 1.0 : 0.0)
+
+                                    // Glass overlay
+                                    Circle()
+                                        .fill(Color.white.opacity(0.1))
+                                        .frame(width: 100, height: 100)
+                                        .mask(
+                                            LinearGradient(
+                                                colors: [.white, .clear],
+                                                startPoint: .top,
+                                                endPoint: .center
+                                            )
+                                        )
+                                        .opacity(showHero ? 1.0 : 0.0)
+
+                                    // White checkmark
+                                    Image(systemName: "checkmark")
+                                        .font(.system(size: heroIconSize, weight: .semibold))
+                                        .foregroundStyle(.white)
+                                        .scaleEffect(showCheckmark ? 1.0 : 0.0)
+                                        .opacity(showCheckmark ? 1.0 : 0.0)
+                                        .accessibilityHidden(true)
+                                }
+
+                                // Promoted amount
+                                AmountText(
+                                    value: data.amount,
+                                    currencyCode: data.currencyCode,
+                                    font: DS.Typography.heroAmount, secondaryFont: DS.Typography.heroAmountSecondary,
+                                    tint: .color(typeColor),
+                                    forceFullPrecision: true
                                 )
-                            )
-                            .frame(width: 100, height: 100)
-                            .shadow(color: typeColor.opacity(0.4), radius: 20, y: 8)
-                            .scaleEffect(showHero ? 1.0 : 0.3)
-                            .opacity(showHero ? 1.0 : 0.0)
+                                .scaleEffect(showAmount ? 1.0 : 0.8)
+                                .opacity(showAmount ? 1.0 : 0.0)
+                            }
+                            .padding(.bottom, DS.Spacing.xxxl)
 
-                        // Glass overlay
-                        Circle()
-                            .fill(Color.white.opacity(0.1))
-                            .frame(width: 100, height: 100)
-                            .mask(
-                                LinearGradient(
-                                    colors: [.white, .clear],
-                                    startPoint: .top,
-                                    endPoint: .center
-                                )
-                            )
-                            .opacity(showHero ? 1.0 : 0.0)
+                            // Transaction details
+                            detailsSection
+                                .padding(.horizontal, DS.Spacing.xl)
+                                .opacity(showDetails ? 1.0 : 0.0)
+                                .offset(y: showDetails ? 0 : 15)
 
-                        // White checkmark
-                        Image(systemName: "checkmark")
-                            .font(.system(size: heroIconSize, weight: .semibold))
-                            .foregroundStyle(.white)
-                            .scaleEffect(showCheckmark ? 1.0 : 0.0)
-                            .opacity(showCheckmark ? 1.0 : 0.0)
-                            .accessibilityHidden(true)
+                            Spacer()
+                        }
+                        .frame(minHeight: proxy.size.height)
                     }
-
-                    // Promoted amount
-                    AmountText(
-                        value: data.amount,
-                        currencyCode: data.currencyCode,
-                        font: DS.Typography.heroAmount, secondaryFont: DS.Typography.heroAmountSecondary,
-                        tint: .color(typeColor),
-                        forceFullPrecision: true
-                    )
-                    .scaleEffect(showAmount ? 1.0 : 0.8)
-                    .opacity(showAmount ? 1.0 : 0.0)
+                    .scrollBounceBehavior(.basedOnSize)
+                    .scrollIndicators(.hidden)
                 }
-                .padding(.bottom, DS.Spacing.xxxl)
-
-                // Transaction details
-                detailsSection
-                    .padding(.horizontal, DS.Spacing.xl)
-                    .opacity(showDetails ? 1.0 : 0.0)
-                    .offset(y: showDetails ? 0 : 15)
-
-                Spacer()
 
                 // Action buttons
                 actionButtons

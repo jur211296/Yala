@@ -52,13 +52,15 @@ struct HeroMonthView: View {
     // `summaryRow` — así el hero tiene UN SOLO eje de lectura, el mismo margen
     // izquierdo que el resto del Panel.
 
+    // A tamaños de accesibilidad la píldora del período baja bajo el label (`AdaptiveRowStack`): en fila no
+    // cabían los dos en el ancho de un iPhone SE y «Disponible» desaparecía (medido el 2026-09-28).
     private var topRow: some View {
-        HStack(spacing: DS.Spacing.xs) {
+        AdaptiveRowStack(spacing: DS.Spacing.xs, stackedSpacing: DS.Spacing.sm) {
             Text(summaryLabel)
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
-            Spacer(minLength: DS.Spacing.sm)
+        } trailing: {
             TrendsPeriodMenu(
                 selectedPeriod: selectedPeriod,
                 customDateRange: customDateRange,
