@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-29 (Lima)
 
-**Rama** `2.1` — Merge #299: **iPad con barra lateral y lista-detalle en Registros y Planificación (carril adaptativo, paso 5).**
+**Rama** `2.1` — Merge #300: **Cola A: la puerta del invitado ya no deja sin salida cuando no puede borrar.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > **El destino del gate vuelve a resolver** (medido el 28-sep): hay un iPhone 17 Pro de **iOS 27.0**
@@ -13,7 +13,29 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `9D0F6D32` (26.5) que citaba el aviso anterior **ya no existe**. El ticket
 > `the-gate-destination-no-longer-resolves-on-this-mac` tiene la premisa cambiada: medirlo antes de trabajarlo.
 
-## Esta sesión (#299 · carril adaptativo, paso 5: barra lateral y lista-detalle en iPad)
+## Esta sesión (#300 · Cola A: la puerta del invitado ya no deja sin salida cuando no puede borrar)
+
+Quien acepta una invitación de grupo en un teléfono con datos ya no se queda en un «ahora no se puede» con un solo
+«Volver». Con sus datos en su cuenta de la nube y la sesión abierta, entra al grupo directo. Si el teléfono está
+cerrando una sesión, la pantalla lo reintenta sola al terminar y tiene «Reintentar». Si la cuenta de la nube acaba de
+prepararse, dice «abre Yala otra vez»; si es de una cuenta con la sesión cerrada, «entra con la cuenta de este
+teléfono». La invitación sigue guardada en todos los casos. «Crear mi primer grupo» no cambia.
+
+- **Medido antes de arreglar**: el ticket (11-sep) citaba la celda de la visita y `isSecondarySession`, que ya no
+  existen. Quedaban dos motivos: el cierre en curso y la celda de la nube.
+- Término nuevo `personalDataLivesInLiveCloudAccount` en `GroupInviteNeutralGateLogic`: apaga solo el del corpus; el
+  espejo sigue mandando. **La review adversarial cazó que sin exigir la sesión viva** otra persona se unía sobre el
+  corpus de una cuenta de la nube cerrada. Corregido antes de mergear.
+- Gate: 440 unit en 55 suites y 28 XCUITest en 9 suites; 3 mutantes muertos. Las tres pantallas nuevas **no se han
+  visto en el simulador**: sus estados no tienen hook de XCUITest.
+- Ticket a `done`. Nuevos en backlog: `groups-organizer-gate-unavailable-sends-to-settings-from-the-welcome` y
+  `born-cloud-sign-up-over-mirror-imported-rows-skips-the-corpus-check` (inferido: medir primero).
+
+### Lo que espera de Jürgen
+
+- Nada de esta sesión. Sigue pendiente el guion de 3 min de `tickets/qa/ipad-sidebar-and-list-detail-for-records-and-planning.md`.
+
+## Sesión anterior (#299 · carril adaptativo, paso 5: barra lateral y lista-detalle en iPad)
 
 En un iPad a pantalla completa en horizontal, las seis páginas de Yala y Buscar van en una barra lateral, sin pasar por
 Más; en vertical salen arriba, con la lateral a un toque. En Registros el registro se abre al lado de la lista, y en
