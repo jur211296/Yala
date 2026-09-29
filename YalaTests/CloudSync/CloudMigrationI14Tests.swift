@@ -401,6 +401,38 @@ struct CloudClaimActionStoreTests {
         #expect(store.action(forUserID: "B") == nil)
     }
 
+    /// Ticket `a-previous-owners-claim-seal-passes-the-cloud-identity-gate`: un corpus es de una sola cuenta. Quien se queda
+    /// con él olvida los sellos y marcas de las demás; su propia marca de «Migrar» no es cosa de este escritor.
+    @Test("MUTACIÓN: recordOwner con una acción que arranca olvida a las demás cuentas, y a nadie más")
+    func recordOwner_forgetsTheOtherAccounts() {
+        let defaults = makeIsolatedDefaults(prefix: "claim.owner")
+        let store = CloudClaimActionStore(defaults: defaults)
+        store.record(.routeReturningUser, forUserID: "B")
+        store.recordMigrationClaimAttempt(forUserID: "B")
+        store.recordMigrationClaimAttempt(forUserID: "A")
+        defaults.set(true, forKey: "cloudSync.installSeen")
+
+        store.recordOwner(.routeReturningUser, forUserID: "A")
+
+        #expect(store.action(forUserID: "A") == .routeReturningUser)
+        #expect(store.action(forUserID: "B") == nil, "el sello de otra cuenta sobrevivió a que A se quedara con el corpus")
+        #expect(!store.hasMigrationClaimAttempt(forUserID: "B"), "la marca de «Migrar» de otra cuenta sobrevivió")
+        #expect(store.hasMigrationClaimAttempt(forUserID: "A"), "se llevó la marca propia, que borra la respuesta del claim")
+        #expect(defaults.bool(forKey: "cloudSync.installSeen"), "el barrido se lleva keys que no son sellos")
+    }
+
+    /// `waitForLeader` y `showProviderMismatch` no dan el corpus a nadie: olvidar ahí dejaría al dueño sin sello.
+    @Test("MUTACIÓN: recordOwner con una acción que no arranca el sync no olvida a nadie")
+    func recordOwner_withANonStartingAction_forgetsNobody() {
+        let store = CloudClaimActionStore(defaults: makeIsolatedDefaults(prefix: "claim.owner.wait"))
+        store.record(.routeReturningUser, forUserID: "A")
+        for action: AccountClaimDecision.AuthAction in [.waitForLeader, .showProviderMismatch] {
+            store.recordOwner(action, forUserID: "B")
+            #expect(store.action(forUserID: "B") == action)
+            #expect(store.action(forUserID: "A") == .routeReturningUser, "\(action) le quitó el sello al dueño")
+        }
+    }
+
     @Test("store poblado → shouldStartSync coherente con la acción (gate de arranque P6)")
     func storePopulated_gate() {
         let store = CloudClaimActionStore(defaults: makeIsolatedDefaults(prefix: "claim.gate"))

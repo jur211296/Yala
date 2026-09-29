@@ -239,6 +239,71 @@ struct CloudSessionRetirementTests {
         #expect(cursor?.groupCursorsJSON == "{\"g1\":5}", "y conserva su CONTENIDO, no solo su fila")
     }
 
+    // MARK: - El relevo olvida los sellos de claim
+
+    /// Ticket `a-previous-owners-claim-seal-passes-the-cloud-identity-gate` (2026-09-29). El sello le dice al motor y a las
+    /// puertas que el corpus local es de esa cuenta; en la frontera de otra persona deja de serlo. Se van los de TODAS las
+    /// cuentas —el de quien cerró antes también sobrevivió a su borrado— y nada más: el barrido es por prefijo, y un prefijo
+    /// de más se llevaría las marcas vecinas del relevo.
+    @Test("MUTACIÓN: armar el relevo olvida los sellos y las marcas de claim de todas las cuentas, y nada más")
+    func arm_forgetsEveryAccountsClaim_andNothingElse() {
+        let defaults = makeIsolatedDefaults(prefix: "retirement.claims")
+        let store = CloudClaimActionStore(defaults: defaults)
+        store.record(.routeReturningUser, forUserID: "A")
+        store.record(.proceedMigration, forUserID: "B")
+        store.recordMigrationClaimAttempt(forUserID: "B")
+        defaults.set(true, forKey: CloudSessionRetirement.installSeenKey)
+        defaults.set("vecina", forKey: "cloudSync.claimActionLedger")
+        defaults.set("Ana", forKey: "userName")
+
+        CloudSessionRetirement.arm(defaults: defaults)
+
+        #expect(store.action(forUserID: "A") == nil && store.action(forUserID: "B") == nil, """
+            un sello sobrevivió al relevo: con el motor sin dueño en memoria, esa cuenta vuelve a entrar sobre los datos de             la persona siguiente y sube sus pendientes a su nombre.
+            """)
+        #expect(!store.hasMigrationClaimAttempt(forUserID: "B"), "la marca de «Migrar» sobrevivió al relevo")
+        #expect(defaults.bool(forKey: CloudSessionRetirement.armedKey), "el arm dejó de escribirse")
+        #expect(defaults.bool(forKey: CloudSessionRetirement.installSeenKey), "el barrido se llevó una marca vecina")
+        #expect(defaults.string(forKey: "cloudSync.claimActionLedger") == "vecina",
+                "el barrido perdió el punto del prefijo y se lleva keys que no son sellos")
+        #expect(defaults.string(forKey: "userName") == "Ana", "el barrido se lleva keys que no son suyas")
+    }
+
+    /// El otro escritor de la frontera: «Empezar desde cero». Olvida los sellos DESPUÉS del borrado, por el `arm` de siempre.
+    @Test("«Empezar desde cero» olvida los sellos de claim")
+    func freshStart_forgetsTheClaims() throws {
+        let context = try makeTestContext()
+        let defaults = makeIsolatedDefaults(prefix: "retirement.claims.freshstart")
+        let store = CloudClaimActionStore(defaults: defaults)
+        store.record(.routeReturningUser, forUserID: "B")
+
+        try DataWipeService.wipeLocalGroupsDomain(
+            in: context, defaults: defaults, retireCloudSession: {}, resetSyncState: {}, witness: .quiet)
+
+        #expect(store.action(forUserID: "B") == nil, "el relevo de «Empezar desde cero» dejó vivo el sello de la persona anterior")
+    }
+
+    /// Un borrado del cierre que falla no ocurrió: los datos siguen aquí y son del dueño, así que su sello se queda.
+    @Test("Si el borrado del cierre falla, el sello del dueño se queda")
+    func signOutWipe_thatAborts_keepsTheOwnersSeal() {
+        let defaults = makeIsolatedDefaults(prefix: "retirement.claims.abort")
+        let store = CloudClaimActionStore(defaults: defaults)
+        store.record(.routeReturningUser, forUserID: "A")
+        StorageModePersistence.write(.cloud, defaults: defaults)
+        StorageModePersistence.armSignOutWipe(defaults)
+
+        SwiftDataConfiguration.performSignOutWipeIfArmed(
+            defaults: defaults, deleteFiles: { _, _ in false }, resetPrefs: {}, cancelNotifications: {},
+            retireCloudSession: {
+                CloudSessionRetirement.retireForSignOutWipe(
+                    defaults: defaults, purgeKeychain: { true }, isKeychainEmpty: { true })
+            })
+
+        #expect(store.action(forUserID: "A") == .routeReturningUser, """
+            el borrado abortó y se llevó el sello: A sigue con sus datos en la nube y su motor se quedaría parado sin salida.
+            """)
+    }
+
     private final class Spy {
         private(set) var steps: [String] = []
         func record(_ step: String) { steps.append(step) }

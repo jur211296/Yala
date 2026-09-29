@@ -118,7 +118,27 @@ nonisolated enum CloudSessionRetirement {
     /// **El relevo.** Lo llama `DataWipeService.wipeLocalGroupsDomain`, el escritor común de los tres
     /// call-sites de «Empezar desde cero». Síncrono y durable: escribir la key es todo lo que tiene que
     /// sobrevivir a un kill.
+    ///
+    /// **Y olvida los sellos de claim de todas las cuentas** (`CloudClaimActionStore.forgetAllClaims`, ticket
+    /// `a-previous-owners-claim-seal-passes-the-cloud-identity-gate`). Es la misma frontera vista desde el otro lado: la
+    /// sesión dice quién puede entrar, y el sello le dice al motor y a las puertas que el corpus local es de esa cuenta. Con
+    /// el corpus ya borrado, un sello superviviente deja entrar a la persona anterior sobre los datos de la siguiente.
+    /// Vive AQUÍ, y no en cada llamador, porque este es el escritor común de todas esas fronteras —el borrado de «Cerrar
+    /// sesión» (`retireForSignOutWipe`), «Empezar desde cero» y el cierre tras borrar la cuenta—, y llaman con el corpus ya
+    /// borrado o sin corpus que borrar: un borrado que falla no se lleva el sello del dueño. Dos excepciones, las dos hacia el
+    /// lado seguro: el cierre tras borrar la cuenta arma cuando la sesión sobrevive (`CloudSessionSignOut.retireIfSessionSurvived`)
+    /// y antes del borrado del arranque, y en la de solo-grupos el corpus privado se queda. Ahí se pierde, como mucho, el sello
+    /// de una migración a medias de esa persona, y «Migrar» vuelve a preguntar al servidor.
+    ///
+    /// **Olvida ANTES de escribir el arm, y el orden es lo kill-safe**: al revés, un kill entre las dos líneas dejaría el arm
+    /// puesto —su consumidor lo termina— y los sellos vivos para siempre, porque el consumidor no olvida (abajo).
+    ///
+    /// **No va en el consumidor (`purgeIfArmed`), a propósito.** El arm sobrevive a un llavero que no se deja purgar, y cada
+    /// arranque lo reintenta: si olvidara los sellos, se llevaría el de la persona que ya entró y reclamó después, y su motor
+    /// se quedaría parado sin salida. El olvido es del GESTO, que ocurre una vez; el borrado del cierre, que se reintenta
+    /// entero tras un kill, lo repite con él.
     static func arm(defaults: UserDefaults) {
+        CloudClaimActionStore.forgetAllClaims(in: defaults)
         defaults.set(true, forKey: armedKey)
     }
 

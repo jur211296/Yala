@@ -100,7 +100,9 @@ nonisolated enum StorageMigrationIdentityGateLogic {
     ///     mismo que el sello —solo una `complete`, solo hasta el claim, que sigue decidiendo— con UNA diferencia: **no se
     ///     salta la red de «Empezar desde cero»**. Con el sello de ese caso, la sesión que no abrió este intento y no está
     ///     asociada puede ser de la persona anterior, y la marca no la ha visto contestar nunca. El sello sí se la salta, y es
-    ///     el residual escrito abajo; la marca no lo amplía (lo cazaron dos lentes de la review).
+    ///     el residual escrito abajo; la marca no lo amplía (lo cazaron dos lentes de la review). Desde el 2026-09-29 los dos
+    ///     se olvidan en el relevo de «Empezar desde cero» y en el borrado del cierre (`CloudSessionRetirement.arm`), así que
+    ///     ese residual queda en el kill entre el borrado y el olvido, que cubre `recordOwner` al sellar el siguiente dueño.
     ///
     ///     **Y deja pasar un poco más que el sello, medido:** el sello solo existe si este dispositivo recibió `created`. La
     ///     marca se queda también con un `claiming_in_progress` cuya respuesta se perdió, y si ese otro dispositivo abandona

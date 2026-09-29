@@ -521,7 +521,9 @@ extension SwiftDataConfiguration {
     /// sesión y armó `signOutWipeArmed`. El store de GRUPOS legacy (CKSyncEngine, atado al iCloud del
     /// OS) NO se toca por defecto; SOLO si el sign-out marcó `signOutWipeIncludesGroups` (G5-B: el store
     /// de grupos es re-descargable desde el backend y debe olvidarse junto a la sesión). El claim-store
-    /// (UserDefaults keyed por userID) sobrevive → la misma cuenta re-entra por adopt sin migración.
+    /// (UserDefaults keyed por userID) se OLVIDA entero con el retiro de la sesión (`retireForSignOutWipe` →
+    /// `CloudSessionRetirement.arm`): el corpus ya no es de nadie, y la cuenta que vuelva re-entra por adopt, que la
+    /// vuelve a sellar. Hasta el 2026-09-29 sobrevivía, y abría la puerta a esa cuenta sobre los datos de la siguiente.
     ///
     /// **D-R1 paso 2 (2026-07-30): quién escribe ese marker cambió, y con él las garantías de este hook.**
     /// Antes lo escribía el getter compuesto y este docblock podía afirmar «con el flag OFF el marker

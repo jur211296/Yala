@@ -2030,6 +2030,83 @@ struct CloudSyncRuntimeTests {
         #expect(push.callCount > 0, "con el sello de este teléfono, lo pendiente sube")
     }
 
+    /// Ticket `a-previous-owners-claim-seal-passes-the-cloud-identity-gate` (2026-09-29). El test de arriba fija que, sin dueño
+    /// en memoria, el sello decide. Éste fija de QUIÉN puede ser el sello: B usó la nube en este teléfono y cerró sesión, A lo
+    /// usa después y se queda con cambios sin subir, y B vuelve a entrar tras un relanzamiento. Hasta ese día el sello de B
+    /// sobrevivía al borrado de su cierre, y con él los pendientes de A subían con el JWT de B por las tres anclas: el
+    /// arranque, el ciclo (que llama también el paso 1 del cierre) y la puerta de «Dónde viven tus datos». Aquí corre el
+    /// borrado DE VERDAD (`performSignOutWipeIfArmed` con su `retireForSignOutWipe`), y el sello se lee del store, no se
+    /// inventa en el stub. El motor se ejercita entero; la puerta y el guard del Welcome, en su lógica pura con el valor del
+    /// store, que es lo que sus call-sites leen sin caché (`CloudMigrationController.signInToResumeSync`,
+    /// `WelcomeCloudSignInView`).
+    @Test("MUTACIÓN: la cuenta que cerró sesión antes no sube los pendientes de quien usó el teléfono después")
+    func aPreviousOwnersSeal_doesNotOpenTheNextOwnersOutbox() async throws {
+        let prevMode = CloudSyncFlags.storageMode
+        CloudSyncFlags.storageMode = .cloud
+        SwiftDataConfiguration._testSetPersonalStoreMountedDecision(.cloudMirrorOff)
+        defer {
+            CloudSyncFlags.storageMode = prevMode
+            SwiftDataConfiguration._testSetPersonalStoreMountedDecision(.iCloudMirror)
+        }
+        let defaults = makeIsolatedDefaults(prefix: "claimseal.previous-owner")
+        let store = CloudClaimActionStore(defaults: defaults)
+
+        // B usó la nube aquí y cerró sesión: su claim selló el teléfono, y el borrado del arranque devuelve el teléfono a
+        // «recién instalado».
+        store.record(.routeReturningUser, forUserID: "B")
+        store.recordMigrationClaimAttempt(forUserID: "B")
+        StorageModePersistence.write(.cloud, defaults: defaults)
+        StorageModePersistence.armSignOutWipe(defaults)
+        SwiftDataConfiguration.performSignOutWipeIfArmed(
+            defaults: defaults, deleteFiles: { _, _ in true }, resetPrefs: {}, cancelNotifications: {},
+            retireCloudSession: {
+                CloudSessionRetirement.retireForSignOutWipe(
+                    defaults: defaults, purgeKeychain: { true }, isKeychainEmpty: { true })
+            })
+        #expect(!StorageModePersistence.isSignOutWipeArmed(defaults), "control: el borrado del cierre de B terminó")
+        #expect(store.action(forUserID: "B") == nil, """
+            El sello de B sobrevivió al borrado de su cierre de sesión: tras él, el corpus de este teléfono es de quien entre             después, y el sello de B le sigue diciendo al motor y a las puertas que es de B.
+            """)
+        #expect(!store.hasMigrationClaimAttempt(forUserID: "B"), "la marca de «Migrar» de B describe unos datos que ya no están")
+
+        // A entra en el teléfono vacío, lo reclama y apunta un cambio que no llega a subir. La app se relanza sin sesión: el
+        // motor no fija dueño. Entra B.
+        store.record(.routeReturningUser, forUserID: "A")
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        _ = try liveRow(context, entityType: SyncEntityType.transactionItem, h: hlc(1))
+        let push = StubSession()
+        let pull = StubSession(body: emptyPageJSON())
+        let session = StubCloudSession(userID: "B", claim: store.action(forUserID: "B"))
+        let runtime = makeRuntime(push: push, pull: pull, session: session)
+        defer { runtime.teardownGuestSession() }  // si un mutante lo arranca, que no deje la cadencia viva
+        #expect(runtime.ownerUserID == nil, "control: sin dueño en memoria, que es donde el sello decide")
+
+        // 1. El ciclo —el de la cadencia y el del paso 1 del cierre— no habla con el servidor con B.
+        #expect(await runtime.syncCycle(context: context) == .sessionExpired)
+        #expect(runtime.ownersSessionIsGone, "el paso 1 del cierre no puede tomar a B por el dueño")
+        // 2. La puerta de «Dónde viven tus datos» rechaza a B.
+        #expect(SyncSignInBannerLogic.afterSignIn(
+            ownerUserID: runtime.ownerUserID, signedInUserID: "B",
+            signedInIsClaimed: store.action(forUserID: "B") != nil) == .rejectOtherAccount)
+        // 3. El guard del Welcome no le deja adoptar sobre el corpus de A.
+        #expect(CrossAccountEntryGuardLogic.decide(
+            hasLocalData: true, sameAccountClaimExists: store.action(forUserID: "B") != nil,
+            restoreInProgress: false) == .blockedForeignData)
+        // 4. El arranque no arranca.
+        await runtime.start(context: context)
+        #expect(runtime.state == .idle)
+        #expect(push.callCount == 0 && pull.callCount == 0, "lo de A no sube a B, y lo de B no baja sobre lo de A")
+
+        // Control: A, la dueña del corpus, vuelve a entrar y todo eso le sigue abierto.
+        #expect(SyncSignInBannerLogic.afterSignIn(
+            ownerUserID: nil, signedInUserID: "A", signedInIsClaimed: store.action(forUserID: "A") != nil) == .resume)
+        session.currentUserID = "A"
+        session.claimAction = store.action(forUserID: "A")
+        _ = await runtime.syncCycle(context: context)
+        #expect(push.callCount > 0, "control: con la cuenta de A, lo suyo sube")
+    }
+
     /// Fuera de la nube el ancla no aplica: el trato de antes.
     @Test("Sin dueño y fuera de la nube, la guarda no corta")
     func withoutAnOwner_outsideTheCloud_doesNotCut() async throws {
