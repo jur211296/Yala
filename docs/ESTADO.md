@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-29 (Lima)
 
-**Rama** `2.1` — Merge #298: **la cuenta que cerró sesión antes ya no entra sobre los datos del siguiente (Cola A).**
+**Rama** `2.1` — Merge #299: **iPad con barra lateral y lista-detalle en Registros y Planificación (carril adaptativo, paso 5).**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > **El destino del gate vuelve a resolver** (medido el 28-sep): hay un iPhone 17 Pro de **iOS 27.0**
@@ -13,7 +13,30 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `9D0F6D32` (26.5) que citaba el aviso anterior **ya no existe**. El ticket
 > `the-gate-destination-no-longer-resolves-on-this-mac` tiene la premisa cambiada: medirlo antes de trabajarlo.
 
-## Esta sesión (#298 · Cola A: la cuenta que cerró sesión antes ya no entra sobre tus datos)
+## Esta sesión (#299 · carril adaptativo, paso 5: barra lateral y lista-detalle en iPad)
+
+En un iPad a pantalla completa en horizontal, las seis páginas de Yala y Buscar van en una barra lateral, sin pasar por
+Más; en vertical salen arriba, con la lateral a un toque. En Registros el registro se abre al lado de la lista, y en
+Planificación el presupuesto. En un iPad mini en vertical la lista flota sobre el detalle y se aparta al abrir algo; al
+estrechar la ventana con un registro abierto, pasa a pestañas abajo con el registro a la vista. En iPhone no cambia nada.
+
+- Raíz `TabView(.sidebarAdaptable)` que QUITA las pestañas que no tocan (`RootTabLayoutLogic`); lista y detalle con
+  `ListDetailSplit`, reusable. Convención y cuatro trampas medidas en `swiftui-ds.md` («Layout adaptativo»).
+- **El gate cazó un crash** de la primera versión: ocultar pestañas con `.hidden(_:)` aborta la app en UIKit cuando la
+  oculta es la seleccionada (entrada por invitación, shell de solo grupos). Arreglado antes de mergear.
+- **El CI (Xcode 26.6) no tipaba** el `body` de Registros con los `onChange` nuevos; dos arreglos, ya en verde. Trampa
+  y forma de medirla en local, en la regla.
+- `YalaTests` 8491 en verde; 49 suites XCUITest (115 verdes; los 3 rojos fallan igual en `2.1` y tienen ticket);
+  `AdaptiveNavigationUITests` nuevo en iPad Pro 13 y iPhone Pro Max; Instruments en Registros con `pesado`: 0 cuelgues.
+  Evidencia en `qa/evidencia-adaptativo-20260929/ipad-sidebar-and-list-detail-for-records-and-planning/`.
+- Nuevos en backlog: `ipad-list-highlights-the-open-row` y `ipad-reports-and-search-get-a-readable-width` (baja las dos).
+
+### Lo que espera de Jürgen
+
+- **3 minutos de QA**: el guion de `tickets/qa/ipad-sidebar-and-list-detail-for-records-and-planning.md`. Falta ver la
+  vuelta a ancho con un registro abierto; la ida (estrechar) ya está vista en el simulador.
+
+## Sesión anterior (#298 · Cola A: la cuenta que cerró sesión antes ya no entra sobre tus datos)
 
 Si B usó Yala en la nube en un teléfono y cerró sesión, y después A lo usa también en la nube, B ya no puede volver a
 entrar sobre los datos de A. Hasta hoy, tras relanzar la app, los movimientos de A sin subir podían acabar en la cuenta de
