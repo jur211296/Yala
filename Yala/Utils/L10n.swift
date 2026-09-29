@@ -4547,6 +4547,16 @@ enum L10n {
         static var signOutCloudSessionExpiredGroupsLossUnknown: String {
             ls("settings.signOutCloudSessionExpiredGroupsLossUnknown", comment: "")
         }
+        /// Lo mismo cuando el aviso OFRECE exportar y perder los cambios PERSONALES (ticket
+        /// `cloud-sign-out-with-an-expired-session-and-personal-changes-has-no-exit`): nombra la puerta para subirlos,
+        /// ofrece exportar antes y dice qué se pierde, en la línea de `signOutAttestMessage`. Accessor-FUNCIÓN.
+        static func signOutCloudSessionExpiredPersonalLoss(_ count: Int) -> String {
+            String(format: ls("settings.signOutCloudSessionExpiredPersonalLoss", comment: "Cerrar sesión en la nube con la sesión caducada; %d = cambios personales que se pierden"), count)
+        }
+        /// Sin cifra: el recuento del outbox personal falló.
+        static var signOutCloudSessionExpiredPersonalLossUnknown: String {
+            ls("settings.signOutCloudSessionExpiredPersonalLossUnknown", comment: "")
+        }
         /// El cierre soltó la sesión en la nube y la sesión SIGUE guardada: no se armó el borrado
         /// (`CloudSignOutFlowLogic.BlockReason.signOutSessionSurvived`, ticket `sign-out-exits-do-not-verify-the-cloud-session-closed`).
         static var signOutSessionSurvived: String { ls("settings.signOutSessionSurvived", comment: "") }

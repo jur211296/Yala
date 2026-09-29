@@ -204,6 +204,31 @@ enum SignOutBlockedCopy {
         return L10n.Settings.signOutAttestMessage(count)
     }
 
+    /// **El título del aviso de tus datos, por la causa que lo abre** (ticket
+    /// `cloud-sign-out-with-an-expired-session-and-personal-changes-has-no-exit`). El attest conserva el suyo —lo que importa
+    /// ahí es que el teléfono no puede sincronizar—; la sesión que no hay, el del bloqueo, como en el aviso de grupos: el
+    /// cierre no se completó. `nil` no ocurre con el aviso presentado (Ajustes anota la causa antes de encenderlo) y cae al
+    /// del attest, que es el que había.
+    static func personalLossTitle(for cause: CloudSignOutFlowLogic.LossCause?) -> String {
+        switch cause {
+        case .attestUnavailable, nil: return title(for: .personalAttestUnavailable)
+        case .noSession, .otherAccount: return title(for: .cloudSessionExpired)
+        }
+    }
+
+    /// **El mensaje del aviso de tus datos, por la causa que lo abre.** El attest, el de siempre
+    /// (`personalAttestLossMessage`); la sesión que no hay, el que nombra la puerta para subirlos («Dónde viven tus datos» →
+    /// «Iniciar sesión»), ofrece exportar antes y dice qué se pierde. Con su cifra, o sin ella si no hay número honesto.
+    static func personalLossMessage(for cause: CloudSignOutFlowLogic.LossCause?, pending: Int) -> String {
+        switch cause {
+        case .attestUnavailable, nil:
+            return personalAttestLossMessage(pending: pending)
+        case .noSession, .otherAccount:
+            return CloudSignOutFlowLogic.shownLossCount(pending).map { L10n.Settings.signOutCloudSessionExpiredPersonalLoss($0) }
+                ?? L10n.Settings.signOutCloudSessionExpiredPersonalLossUnknown
+        }
+    }
+
     /// El texto del aviso de error de la exportación que ofrece ese aviso. El del servicio no sirve: está escrito en español
     /// y, sin movimientos, habla de «filtros seleccionados» que aquí no existen (review adversarial, 2026-09-15).
     static func personalExportFailureMessage(for error: any Error) -> String {

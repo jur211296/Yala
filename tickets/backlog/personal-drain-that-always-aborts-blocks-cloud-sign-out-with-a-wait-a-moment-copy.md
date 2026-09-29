@@ -39,3 +39,11 @@ alguna salida en ese estado (hoy: ninguna, y tampoco la tenía el gemelo de Grup
 
 - [ ] Con un drain que aborta en todas las vueltas, el aviso no dice «espera unos segundos».
 - [ ] El caso pasajero (algo escrito tras el drain) sigue curándose solo con otra vuelta.
+
+## 2026-09-28 · también con la sesión caducada
+
+Desde `cloud-sign-out-with-an-expired-session-and-personal-changes-has-no-exit`, `personalVerdictAfterProbe` relee el History
+también con `.sessionExpired`, porque su aviso ofrece perder las filas que cuenta. Con un drain que aborta siempre, esa sesión
+caducada sale como «un momento más» (`.transient`) en vez de «vuelve a entrar»: pierde la puerta de «Iniciar sesión» (el paso
+1 no para el motor con `.transient`) y la salida de perderlos. No se pierde nada; la persona oye «espera» para siempre. Mismo
+arreglo que el del attest (review adversarial, lentes 1 y 2).

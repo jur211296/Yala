@@ -378,6 +378,18 @@ enum MetricsCanary: String {
     /// El cierre siguió sin subir esos cambios personales, con la persona conforme: se pierden con el borrado del arranque.
     /// `detail` = `pending=N` o `pending=unknown`. Frente al primero, dice cuántos eligieron salir.
     case cloudSignOutAttestDiscarded
+
+    // Tus datos en la nube con la sesión caducada (ticket `cloud-sign-out-with-an-expired-session-and-personal-changes-has-no-exit`)
+    /// Un cierre de sesión en la NUBE se bloqueó en los cambios PERSONALES porque no hay sesión con la que subirlos —caducó, o
+    /// la abierta es de otra cuenta— y dejó ofrecido el aviso que exporta los movimientos o los pierde. `detail` =
+    /// `cause=noSession pending=N` (o `pending=unknown`). El attest sigue en `cloudSignOutAttestUnavailable`, para no romper
+    /// su serie. Cuenta OFERTAS, no personas.
+    case cloudSignOutPersonalLossOffered
+    /// Desde ese aviso se generó el archivo con todos los movimientos. `detail` = `cause=noSession rows=N`, sin PII.
+    case cloudSignOutPersonalLossExported
+    /// El cierre siguió sin subir esos cambios personales, con la persona conforme: se pierden con el borrado del arranque.
+    /// `detail` = `cause=noSession pending=N`. Frente al primero, cuántos eligieron salir sin volver a entrar.
+    case cloudSignOutPersonalLossDiscarded
 }
 
 // MARK: - Servicio

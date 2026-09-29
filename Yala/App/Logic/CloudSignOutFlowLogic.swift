@@ -313,9 +313,9 @@ nonisolated enum CloudSignOutFlowLogic {
         /// tus datos y no de tus grupos, y ofrece otra cosa.
         ///
         /// **Su aviso ofrece exportar los movimientos y cerrar sesión perdiendo esos cambios** (decisión de Jürgen,
-        /// 2026-09-15): la excepción a «jamás descartar» del cierre en la nube, acotada a este motivo
-        /// (`CloudSessionSignOut.exitDiscardingUnsyncedPersonalChanges`). En las demás pantallas es inerte: ninguna otra
-        /// corre el cierre en la nube.
+        /// 2026-09-15): la excepción a «jamás descartar» del cierre en la nube, acotada a este motivo y, desde el 2026-09-28,
+        /// a `.cloudSessionExpired` (`personalLossCause`, `CloudSessionSignOut.exitDiscardingUnsyncedPersonalChanges`). En
+        /// las demás pantallas es inerte: ninguna otra corre el cierre en la nube.
         case personalAttestUnavailable
         /// **La sincronización con la nube está parada a propósito porque no se pudo leer en qué punto va el paso de los
         /// datos** (el journal de la migración es ilegible), y quedan cambios personales sin subir (ticket
@@ -363,6 +363,11 @@ nonisolated enum CloudSignOutFlowLogic {
         /// puerta es la tarjeta de sincronización de Almacenamiento, que desde el mismo día cuenta también las filas de
         /// grupos (`SyncSignInBannerLogic`) y que el cierre deja encendida al bloquear (`CloudSyncRuntime.stopUntilSignIn`).
         /// Al final del `enum` para no mover el orden de los que ya existían.
+        ///
+        /// **Con cambios PERSONALES, desde el 2026-09-28 abre también su salida** (ticket
+        /// `cloud-sign-out-with-an-expired-session-and-personal-changes-has-no-exit`): el aviso cuenta los movimientos que se
+        /// perderían, dice cómo subirlos volviendo a entrar, ofrece exportarlos y, solo si la persona lo elige, cerrar sesión
+        /// perdiéndolos (`personalLossCause`). Con cambios de grupos, la suya desde el mismo día (`lossCause`).
         case cloudSessionExpired
         /// **El desasociar cerró la sesión en la nube y la sesión SIGUE guardada** (ticket
         /// `detach-does-not-verify-the-cloud-session-actually-closed`): el llavero no la borró, o un refresco del token en
@@ -542,8 +547,8 @@ nonisolated enum CloudSignOutFlowLogic {
     ///  · **los tres del motor parado**, tal cual (ticket `cloud-signout-with-the-engine-stopped-says-check-your-connection`).
     ///  · **`.permanent`** —la cuenta no disponible— se queda donde está: es el texto que no afirma ninguna causa.
     ///
-    /// El teléfono sin App Attest no pasa por aquí: el propio paso 1 lo traduce a `.personalAttestUnavailable`, con su
-    /// oferta. Lo que el motor personal no puede emitir cae en `.permanent`. `switch` exhaustivo para que un motivo nuevo
+    /// El teléfono sin App Attest no pasa por aquí: `personalUploadBlockDecision` lo traduce a `.personalAttestUnavailable`,
+    /// con su oferta. Lo que el motor personal no puede emitir cae en `.permanent`. `switch` exhaustivo para que un motivo nuevo
     /// tenga que decidir si viaja.
     static func personalPushAllShownReason(_ reason: BlockReason) -> BlockReason {
         switch reason {
@@ -728,9 +733,10 @@ nonisolated enum CloudSignOutFlowLogic {
     /// (una lectura o un `save` que falla) hace `rollback()` y deja la edición solo en el History. El borrado que viene
     /// detrás se la llevaría sin aviso. Solo se relee en los dos veredictos que un caller deja seguir:
     ///  · `.drained` — el cierre sigue hasta el borrado.
-    ///  · `.blocked(_, .attestUnavailable)` — el paso 1 ofrece perder las filas VIVAS que enseña el aviso; una edición fuera
-    ///    del outbox no sale en él, y la persona no puede aceptar perder lo que no se le enseñó (el molde es
-    ///    `attestBlockAfterRecapture`). Sale como bloqueo sin salida de pérdida, con la cifra del outbox.
+    ///  · `.blocked(_, .attestUnavailable)` y, desde el 2026-09-28, `.blocked(_, .sessionExpired)` — el paso 1 ofrece
+    ///    perder las filas VIVAS que enseña el aviso (`personalUploadBlockDecision`); una edición fuera del outbox no sale en
+    ///    él, y la persona no puede aceptar perder lo que no se le enseñó (el molde es `attestBlockAfterRecapture`). Sale como
+    ///    bloqueo sin salida de pérdida, con la cifra del outbox.
     /// El resto de bloqueos no descarta nada y no pregunta: la sonda es una lectura del History, no gratis.
     ///
     /// `true` o `nil` (no se pudo leer) bloquean. La sonda no distingue un drain que abortó de una escritura posterior al
@@ -743,7 +749,7 @@ nonisolated enum CloudSignOutFlowLogic {
         switch verdict {
         case .drained:
             return uncapturedChanges() == false ? .drained : .blocked(pendingCount: .max, reason: .transient)
-        case .blocked(let pending, .attestUnavailable):
+        case .blocked(let pending, .attestUnavailable), .blocked(let pending, .sessionExpired):
             return uncapturedChanges() == false ? verdict : .blocked(pendingCount: pending, reason: .transient)
         case .blocked:
             return verdict
@@ -949,16 +955,80 @@ nonisolated enum CloudSignOutFlowLogic {
         }
     }
 
-    /// Lo que la persona aceptó perder de sus cambios de GRUPOS en «Cerrar sesión y perderlos», con la causa del aviso que
-    /// lo enseñó. Lo personal no lo lleva: su única causa es el attest.
-    struct GroupsLossAcceptance: Equatable {
+    /// Lo que la persona aceptó perder en «Cerrar sesión y perderlos», con la causa del aviso que lo enseñó. **Lo usan los
+    /// dos lados**: los cambios de GRUPOS (`CloudSessionSignOut.acceptedGroupsLoss`) y, desde el 2026-09-28, los PERSONALES
+    /// de la nube (`acceptedPersonalLoss`), que hasta ese día no llevaban causa porque su única salida era el attest (ticket
+    /// `cloud-sign-out-with-an-expired-session-and-personal-changes-has-no-exit`).
+    struct CausedLossAcceptance: Equatable {
         let rows: LossAcceptance
         let cause: LossCause
     }
 
-    /// Lo que la persona aceptó perder al elegir «Cerrar sesión y perderlos». **Una por outbox**: la de grupos
-    /// (`CloudSessionSignOut.acceptedGroupsLoss`) y, en la nube, la de los cambios personales (`acceptedPersonalLoss`). Cada
-    /// una se compara solo con las filas de su outbox.
+    /// **¿Abre este motivo YA TRADUCIDO la salida que pierde los cambios PERSONALES del cierre en la nube?** Es la tabla
+    /// gemela de `lossCause` para el paso 1 (`CloudSessionSignOut.performCloudSecureSignOut`), que la lee sobre lo que
+    /// enseña:
+    ///  · `.personalAttestUnavailable` — el teléfono sin App Attest (decisión de Jürgen del 2026-09-15).
+    ///  · `.cloudSessionExpired` — no hay sesión con la que subirlos, o la abierta es de otra cuenta, que el motor lee igual
+    ///    (encargo del 2026-09-28, decisión 1): «vuelve a entrar» sigue siendo el camino por defecto, y quien no puede —cuenta
+    ///    borrada, correo perdido— necesita salir. El dato es más caro que el de grupos, así que el aviso ofrece antes
+    ///    exportar los movimientos.
+    ///
+    /// El resto no la abre: esperar, reintentar o reabrir la app los sube. `switch` exhaustivo y sin `default`: un motivo
+    /// nuevo tiene que decidir aquí si deja perder los movimientos de alguien.
+    static func personalLossCause(_ shown: BlockReason) -> LossCause? {
+        switch shown {
+        case .personalAttestUnavailable: return .attestUnavailable
+        case .cloudSessionExpired: return .noSession
+        case .transient, .permanent, .exportUnconfirmed, .sessionExpired, .bridgeUnreadable, .detachBusy, .channelPaused,
+             .uploadRetryLater, .attestUnavailable, .syncStoppedNeedsUpdate, .syncStoppedMidMigration,
+             .syncStoppedNeedsRelaunch, .personalUploadRetryLater, .sessionNotClosed, .signOutSessionSurvived,
+             .migrationInFlight, .migrationUnreadable, .groupsChangesFromAnotherAccount:
+            return nil
+        }
+    }
+
+    /// Qué hace el paso 1 del cierre en la nube cuando la subida PERSONAL acaba de bloquear.
+    enum PersonalUploadBlockDecision: Equatable {
+        /// Lo que queda es lo que la persona aceptó perder, y por la misma causa: el cierre sigue sin subirlo.
+        case continueWithAcceptedLoss
+        /// Bloquea como siempre, sin salida que pierda nada, con el motivo que enseña el aviso.
+        case block(shown: BlockReason)
+        /// Bloquea y ofrece exportar y perder esos cambios, por `cause`.
+        case offerLoss(shown: BlockReason, cause: LossCause)
+    }
+
+    /// **La decisión del paso 1 del cierre en la nube, pura** (2026-09-28): hasta ese día vivía en el coordinador, con el
+    /// attest escrito a mano como única salida. `reason` es el motivo CRUDO del push-all personal; `pendingRows`, las filas
+    /// vivas de su outbox (`nil` = no se pudieron leer); `acceptance`, lo que la persona aceptó perder en este cierre; y
+    /// `ownersSessionIsGone`, si de verdad no queda sesión del dueño con la que subir (`CloudSyncRuntime.ownersSessionIsGone`:
+    /// el SDK la borró, o la abierta es de otra cuenta).
+    ///
+    /// 1. **Lo aceptado solo cubre su causa y sus filas** (`continuesAfterBlockedUpload`). Aceptado sin sesión, si la persona
+    ///    volvió a entrar y la subida falla por la red, bloquea como siempre: esos cambios ya pueden subir.
+    /// 2. **El motivo se traduce**: el attest a `.personalAttestUnavailable` —el push-all lo trae como `.attestUnavailable`
+    ///    con el testigo del motor personal—, y el resto con `personalPushAllShownReason`.
+    /// 3. **Ofrece la pérdida solo si el motivo traducido la abre** (`personalLossCause`).
+    /// 4. **Y la sesión que no hay tiene que PROBARSE** (review adversarial del 2026-09-28). Todo 401 del gateway llega como
+    ///    `.sessionExpired`, también con la sesión guardada y renovable: un deploy roto o un reloj desfasado lo daría a toda la
+    ///    flota, y ofrecer ahí perder los movimientos se llevaría lo que un arreglo del servidor habría subido. Sin la prueba,
+    ///    el aviso de siempre —«vuelve a entrar», que no pierde nada—; y lo aceptado sin sesión deja de cubrir.
+    static func personalUploadBlockDecision(reason: BlockReason, pendingRows: Set<UUID>?,
+                                            acceptance: CausedLossAcceptance?,
+                                            ownersSessionIsGone: Bool) -> PersonalUploadBlockDecision {
+        if let acceptance, acceptance.cause != .noSession || ownersSessionIsGone, continuesAfterBlockedUpload(
+            reason: reason, cause: acceptance.cause, pendingRows: pendingRows, acceptance: acceptance.rows) {
+            return .continueWithAcceptedLoss
+        }
+        let shown = reason == .attestUnavailable ? .personalAttestUnavailable : personalPushAllShownReason(reason)
+        guard let cause = personalLossCause(shown), cause != .noSession || ownersSessionIsGone else {
+            return .block(shown: shown)
+        }
+        return .offerLoss(shown: shown, cause: cause)
+    }
+
+    /// Lo que la persona aceptó perder al elegir «Cerrar sesión y perderlos», por fila. **Una por outbox**, cada una dentro
+    /// de su `CausedLossAcceptance`: la de grupos (`CloudSessionSignOut.acceptedGroupsLoss`) y, en la nube, la de los cambios
+    /// personales (`acceptedPersonalLoss`). Cada una se compara solo con las filas de su outbox.
     enum LossAcceptance: Equatable {
         /// Las filas vivas del outbox que había cuando se le enseñó la cifra, por su `clientMutationID`.
         case rows(Set<UUID>)

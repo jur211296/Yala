@@ -121,6 +121,9 @@ struct ProfileView: View {
     @State private var showSignOutPersonalAttestAlert = false
     /// Cuántos cambios personales se perderían en el bloqueo que se está mostrando (`Int.max` = no se pudo contar).
     @State private var signOutPersonalAttestPending = 0
+    /// Por qué no suben esos cambios —el attest o, desde el 2026-09-28, la sesión que no hay—: elige título y mensaje del aviso
+    /// y la serie del canario de la exportación (ticket `cloud-sign-out-with-an-expired-session-and-personal-changes-has-no-exit`).
+    @State private var signOutPersonalLossCause: CloudSignOutFlowLogic.LossCause?
     /// El archivo con todos los movimientos que ofrece ese aviso, mientras la hoja de compartir está en pantalla.
     @State private var signOutRescueExportFile: ExportedFile?
     /// La exportación de ese aviso falló: el texto que lo explica (no había movimientos, o no se pudo escribir el archivo).
@@ -143,7 +146,12 @@ struct ProfileView: View {
                 signOutAttestLossPending = pending
                 signOutGroupsLossReason = reason
             }
-            if reason == .personalAttestUnavailable { signOutPersonalAttestPending = pending }
+            // Solo con la oferta de tus datos viva: `.cloudSessionExpired` lo pone también el paso 2 con la cifra de GRUPOS, y
+            // anotarla aquí dejaría esa cifra en el estado del aviso de tus movimientos (review adversarial, 2026-09-28).
+            if let cause = CloudSignOutFlowLogic.personalLossCause(reason), signOutCoordinator.offersPersonalLossExit {
+                signOutPersonalAttestPending = pending
+                signOutPersonalLossCause = cause
+            }
             presentSignOutBlock(reason)
         case .awaitingRelaunch: dismiss()
         case .idle, .working: break
@@ -180,8 +188,16 @@ struct ProfileView: View {
             // Con la salida de un CIERRE, el mismo aviso que el attest con su texto: cuenta lo que se pierde, dice cómo
             // subirlos y ofrece «Cerrar sesión y perderlos»; «Ahora no» no pierde nada. Sin ella —el desasociar, que no la
             // ofrece, o un gesto que la retiró— el aviso de bloqueo de siempre.
+            //
+            // **Con cambios PERSONALES en la nube, primero el aviso de tus datos** (2026-09-28, ticket
+            // `cloud-sign-out-with-an-expired-session-and-personal-changes-has-no-exit`): el paso 1 del cierre anota su oferta
+            // con la causa de la sesión que no hay, y ése cuenta los movimientos, ofrece exportarlos y perderlos. Los dos no
+            // viven a la vez —el paso 1 vuelve antes del paso 2—, pero `.cloudSessionExpired` es de los dos, así que se
+            // pregunta primero por el que llega antes.
             case .sessionExpired, .cloudSessionExpired:
-                if signOutCoordinator.offersGroupsLossExit {
+                if signOutCoordinator.offersPersonalLossExit {
+                    showSignOutPersonalAttestAlert = true
+                } else if signOutCoordinator.offersGroupsLossExit {
                     showSignOutAttestLossAlert = true
                 } else {
                     showSignOutBlockedAlert = true
@@ -273,7 +289,7 @@ struct ProfileView: View {
                 let result = try TransactionsExportService.export(
                     format: .csv, using: .allTransactions, columns: .default, in: modelContext,
                     scheduleTagBackfill: false)
-                CloudSessionSignOut.notePersonalLossExport(rows: result.exportedCount)
+                CloudSessionSignOut.notePersonalLossExport(rows: result.exportedCount, cause: signOutPersonalLossCause)
                 signOutRescueExportFile = ExportedFile(urls: [result.fileURL])
             } catch {
                 #if DEBUG
@@ -287,8 +303,10 @@ struct ProfileView: View {
 
     /// Tras la hoja de compartir o el aviso de error de la exportación: el cierre sigue parado en el aviso de tus datos, y se
     /// vuelve a enseñar, que es lo que la persona dejó a medias. Si ya no está ahí —otro gesto lo reconoció—, no enciende nada.
+    /// Desde el 2026-09-28 ese aviso lo abre también la sesión caducada (`personalLossCause`).
     private func returnToPersonalAttestNotice() {
-        guard case .blocked(_, .personalAttestUnavailable) = signOutCoordinator.phase else { return }
+        guard case .blocked(_, let reason) = signOutCoordinator.phase,
+              CloudSignOutFlowLogic.personalLossCause(reason) != nil else { return }
         syncSignOutUI(from: signOutCoordinator.phase)
     }
 
@@ -691,7 +709,14 @@ struct ProfileView: View {
             // que no llegaron y ofrece, en este orden, exportar los movimientos, cerrar sesión perdiéndolos o dejarlo. Exportar
             // no toca el cierre, que sigue parado: al cerrar la hoja de compartir vuelve este aviso. Botones literales y sin
             // `accessibilityIdentifier`, como el de grupos.
-            .alert(L10n.Settings.signOutAttestTitle, isPresented: $showSignOutPersonalAttestAlert) {
+            //
+            // **Desde el 2026-09-28 es también el de la sesión caducada** (ticket
+            // `cloud-sign-out-with-an-expired-session-and-personal-changes-has-no-exit`): título y mensaje salen de la causa, y
+            // el mensaje dice primero cómo subirlos. «Exportar» va primero y no es destructivo; **no se marca como acción
+            // preferida** (`.keyboardShortcut(.defaultAction)`): sería el primer uso en la app, este aviso no se puede montar en
+            // el simulador para verlo, y `swiftui-ds.md` mide que un cambio así en el `actions` de un `.alert` rompió flujos de
+            // otras pantallas (review adversarial, 2026-09-28).
+            .alert(SignOutBlockedCopy.personalLossTitle(for: signOutPersonalLossCause), isPresented: $showSignOutPersonalAttestAlert) {
                 Button(L10n.Settings.signOutAttestExportButton) {
                     exportAllTransactionsBeforeLosingThem()
                 }
@@ -702,7 +727,7 @@ struct ProfileView: View {
                     CloudSessionSignOut.shared.acknowledgeBlocked()
                 }
             } message: {
-                Text(SignOutBlockedCopy.personalAttestLossMessage(pending: signOutPersonalAttestPending))
+                Text(SignOutBlockedCopy.personalLossMessage(for: signOutPersonalLossCause, pending: signOutPersonalAttestPending))
             }
             .sheet(item: $signOutRescueExportFile, onDismiss: { returnToPersonalAttestNotice() }) { file in
                 ShareSheet(activityItems: file.urls)

@@ -512,6 +512,14 @@ final class CloudSyncRuntime {
         return current != owner
     }
 
+    /// **¿No queda sesión del dueño con la que subir el outbox personal?** El SDK la borró (`canRenewSession == false`: la
+    /// renovación falló de verdad —cuenta borrada, sesión revocada o caducada—), o la abierta es de otra cuenta
+    /// (`sessionBelongsToAnotherAccount`). Lo pregunta el paso 1 del cierre en la nube antes de ofrecer perder los cambios
+    /// personales por la sesión (ticket `cloud-sign-out-with-an-expired-session-and-personal-changes-has-no-exit`): un 401 del
+    /// gateway con la sesión guardada y renovable también se lee como sesión caducada, y ahí volver a entrar —o un arreglo del
+    /// servidor— los sube.
+    var ownersSessionIsGone: Bool { !session.canRenewSession || sessionBelongsToAnotherAccount }
+
     /// Para la cadencia hasta volver a entrar. Lo llama el cierre de sesión en la nube cuando bloquea por sesión caducada
     /// (ticket `cloud-session-expiry-with-only-group-changes-has-no-sign-in-door`): su veredicto es el que el próximo ciclo
     /// de la cadencia daría —el JWT es el mismo para `/sync` y `/groups`—, pero la cadencia puede tardar un minuto en

@@ -38,3 +38,10 @@ existiendo para poder preguntar, o exponer la sonda sin el runtime.
 
 - [ ] Con una edición guardada tras el push-all y antes del recuento, el cierre bloquea sin borrar.
 - [ ] Sin nada pendiente, el cierre no cambia.
+
+## 2026-09-28 · más alcanzable con la sesión caducada
+
+Con la pérdida aceptada por la sesión caducada (`cloud-sign-out-with-an-expired-session-and-personal-changes-has-no-exit`), el
+motor ya está parado (`stopUntilSignIn`): nada drena lo que entre durante el `await` del paso 2 —una importación de la cola
+de Siri o Apple Pay—, y el recuento del paso 4 solo mira el outbox. Esas ediciones se irían con el borrado sin que ningún aviso
+las cuente (inferido en la review adversarial, lente 2, hallazgo 4; sin medir).

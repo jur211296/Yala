@@ -1425,7 +1425,7 @@ struct AttestUnavailableSignOutWiringTests {
             ofrecido, o desde un bloqueo que puso el desasociar.
             """)
         #expect(exit.contains(Self.squashed("""
-            acceptedGroupsLoss = CloudSignOutFlowLogic.GroupsLossAcceptance(
+            acceptedGroupsLoss = CloudSignOutFlowLogic.CausedLossAcceptance(
                 rows: offer.rows.map { .rows($0) } ?? .uncounted, cause: offer.cause)
             """)), """
             Lo aceptado dejó de ser las filas que contó el aviso, o perdió su causa: con una cifra, una fila nueva de la \
@@ -1500,7 +1500,7 @@ struct AttestUnavailableSignOutWiringTests {
         // cada una se compara solo con su outbox: la de grupos nunca cubre una fila personal.
         #expect(cloud.contains(Self.squashed("""
             guard residualPersonal == 0 || CloudSignOutFlowLogic.continuesWithoutUploading(
-                      pendingRows: controller.livePendingUploadRowIDs(), acceptance: acceptedPersonalLoss),
+                      pendingRows: controller.livePendingUploadRowIDs(), acceptance: acceptedPersonalLoss?.rows),
                   residualGroups == 0 || CloudSignOutFlowLogic.continuesWithoutUploading(
                       pendingRows: Self.liveGroupsPendingRowIDs(context: context), acceptance: acceptedGroupsLoss?.rows) else {
             """)), "El residual de la nube cruzó las aceptaciones: cada outbox tiene que compararse con la suya.")
@@ -1566,9 +1566,12 @@ struct AttestUnavailableSignOutWiringTests {
             """)
         // La sesión caducada y los cambios de otra cuenta (2026-09-28): mismo aviso con la salida de un cierre, y el de
         // bloqueo de siempre sin ella.
+        // Desde el 2026-09-28 lo pregunta DESPUÉS del aviso de tus datos, que con la sesión caducada llega antes (paso 1).
         #expect(present.contains(Self.squashed("""
             case .sessionExpired, .cloudSessionExpired:
-                if signOutCoordinator.offersGroupsLossExit {
+                if signOutCoordinator.offersPersonalLossExit {
+                    showSignOutPersonalAttestAlert = true
+                } else if signOutCoordinator.offersGroupsLossExit {
                     showSignOutAttestLossAlert = true
                 } else {
                     showSignOutBlockedAlert = true
