@@ -6166,3 +6166,9 @@
 
 /* Cerrar sesión en la nube con la sesión caducada, sin cifra */
 "settings.signOutCloudSessionExpiredPersonalLossUnknown" = "Deine Sitzung ist abgelaufen, und einige Änderungen sind nicht in deinem Konto in der Cloud angekommen. Um sie hochzuladen, öffne „Wo deine Daten liegen“ hier im Profil und tippe auf „Anmelden“. Wenn du dich nicht anmelden kannst, kannst du deine Transaktionen vorher in eine Datei exportieren. Wenn du dich jetzt abmeldest, gehen diese Änderungen verloren.";
+
+/* iPad/ventana ancha: columna de detalle vacía en Registros */
+"records.detailPlaceholder" = "Wähle einen Eintrag, um ihn hier zu sehen";
+
+/* iPad/ventana ancha: columna de detalle vacía en Planificación */
+"planning.detailPlaceholder" = "Wähle ein Budget oder eine Zahlung, um sie hier zu sehen";

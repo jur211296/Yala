@@ -3141,6 +3141,9 @@ struct MainTabView: View {
     @Environment(\.requestReview) private var requestReview
     @Environment(\.yalaTheme) private var theme
     @Environment(\.modelContext) private var modelContext
+    /// El ancho de la VENTANA decide la forma de la raíz: barra lateral en regular, pestañas en compact
+    /// (ADR «Yala se adapta por espacio, no por dispositivo»). Se lee aquí, fuera de las columnas.
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     /// D1: leído reactivamente para reducir la tab bar cuando el usuario elige «Solo mis grupos».
     @Environment(AppPreferences.self) private var appPreferences
     @State private var searchText: String = ""
@@ -3163,15 +3166,40 @@ struct MainTabView: View {
         TabBarConfiguration.fromJSON(tabConfigJSON)
     }
 
-    /// Tabs to show: mode-aware config + temporary tab (if set and not already active)
-    private var visibleTabs: [ConfigurableTab] {
-        // El eje 1 se lee del espejo OBSERVABLE de `SessionState` y no de la marca persistida: esta
-        // propiedad se recalcula cuando SwiftUI observa un cambio, y un point-read no lo provocaría.
-        let reduceToGroupsOnly = ShellModeLogic.effective(
+    /// El eje 1 se lee del espejo OBSERVABLE de `SessionState` y no de la marca persistida: esta
+    /// propiedad se recalcula cuando SwiftUI observa un cambio, y un point-read no lo provocaría.
+    private var reduceToGroupsOnly: Bool {
+        ShellModeLogic.effective(
             hasPrivateSession: sessionState.hasPrivateSession) == .groupsFocused
-        let modeConfig = TabBarConfiguration.forMode(
+    }
+
+    private var modeConfig: TabBarConfiguration {
+        TabBarConfiguration.forMode(
             stored: tabConfig,
             reduceToGroupsOnly: reduceToGroupsOnly)
+    }
+
+    /// Barra lateral (ventana ancha) o barra de pestañas (ventana compacta). Ver `RootTabLayoutLogic`.
+    private var layout: RootTabLayoutLogic.Layout {
+        RootTabLayoutLogic.layout(
+            isRegularWidth: horizontalSizeClass == .regular,
+            reduceToGroupsOnly: reduceToGroupsOnly)
+    }
+
+    /// Las páginas que monta la `TabView`: todas en la barra lateral; las de siempre (más la seleccionada) en la
+    /// barra de pestañas. Se QUITAN, no se ocultan: una pestaña oculta y seleccionada tumba la app (medido, ver
+    /// `RootTabLayoutLogic`).
+    private var shownTabs: [ConfigurableTab] {
+        RootTabLayoutLogic.shownTabs(
+            layout: layout,
+            orderedTabs: RootTabLayoutLogic.orderedTabs(activeTabs: modeConfig.activeTabs),
+            tabBarTabs: visibleTabs,
+            selected: sessionState.selectedMainTab,
+            reduceToGroupsOnly: reduceToGroupsOnly)
+    }
+
+    /// Tabs to show in the TAB BAR: mode-aware config + temporary tab (if set and not already active)
+    private var visibleTabs: [ConfigurableTab] {
         var tabs = modeConfig.activeTabs
         if let temp = sessionState.temporaryTab, !tabs.contains(temp) {
             tabs.append(temp)
@@ -3191,7 +3219,7 @@ struct MainTabView: View {
     /// that window would push the bar back to 6 items, so the transient is
     /// accepted over re-triggering iOS's native More.
     private var showsSearchTab: Bool {
-        visibleTabs.count <= 3
+        RootTabLayoutLogic.showsSearchTab(layout: layout, tabBarTabCount: shownTabs.count)
     }
 
     /// «La app se ve vacía», medido por el shell con el MISMO detector que decide el alert del Welcome
@@ -3213,15 +3241,18 @@ struct MainTabView: View {
             wipingDataView
         } else {
             TabView(selection: $sessionState.selectedMainTab) {
-                // Dynamic tabs based on configuration + temporary tab
-                ForEach(visibleTabs) { tab in
+                // En la barra de pestañas, las de la configuración + la temporal; en la barra lateral, todas.
+                ForEach(shownTabs) { tab in
                     Tab(tab.displayName, systemImage: tab.iconName, value: tab.appTab) {
                         viewForTab(tab)
                     }
                 }
 
-                Tab(L10n.Tab.more, systemImage: "ellipsis", value: .more) {
-                    MoreView()
+                // Más solo en la barra de pestañas: en la lateral ya está todo a la vista.
+                if RootTabLayoutLogic.showsMoreTab(layout: layout) {
+                    Tab(L10n.Tab.more, systemImage: "ellipsis", value: .more) {
+                        MoreView()
+                    }
                 }
 
                 // Search tab with .search role - pinned to trailing edge.
@@ -3232,6 +3263,7 @@ struct MainTabView: View {
                     }
                 }
             }
+            .tabViewStyle(.sidebarAdaptable)
             .tint(theme.accent)
             .tabBarMinimizeBehavior(.onScrollDown)
             .transaction { $0.animation = nil }
@@ -3271,6 +3303,13 @@ struct MainTabView: View {
             // revision — mismo racional que el gate del ChatSheet en PanelShell).
             .onChange(of: sessionState.shellModalBlocker) { _, newBlocker in
                 if newBlocker == nil { drainMainTabIntents() }
+            }
+            // Más no existe en la barra lateral: si la ventana se ensancha con Más elegida, se vuelve al
+            // Panel en vez de dejar la selección en una pestaña oculta.
+            .onChange(of: layout) { _, newLayout in
+                if !RootTabLayoutLogic.showsMoreTab(layout: newLayout), sessionState.selectedMainTab == .more {
+                    sessionState.selectMainTab(.panel)
+                }
             }
             .onChange(of: showDowngradeResolution) { _, _ in publishMainTabModalVisibilityAndRedrain() }
             .onChange(of: showTrialExpired) { _, _ in publishMainTabModalVisibilityAndRedrain() }

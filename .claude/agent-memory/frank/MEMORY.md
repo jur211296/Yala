@@ -183,6 +183,7 @@
 - [Lo que hago visible hereda los botones de su pantalla](feedback_lo_que_hago_visible_hereda_los_botones_de_su_pantalla.md) — la marca en Archivados y su «Eliminar» en lote.
 - [«Sin cambios visibles» se mide al píxel](feedback_sin_cambios_visibles_se_mide_al_pixel.md) — el ojo pasó un truncado del SE; diff antes/después.
 - [Un motivo que abre una pérdida hereda sus falsos positivos](feedback_un_motivo_que_abre_una_perdida_hereda_sus_falsos_positivos.md) — todo 401 era «caducada»; prueba aparte.
+- [El mecanismo nuevo quita la tolerancia del viejo](feedback_el_modificador_nuevo_quita_la_tolerancia.md) — `.hidden` en TabView abortó donde quitar la pestaña se toleraba.
 
 ## Estado del trabajo
 - [La salida del adopt cierra su sesión](project_adopt_exit_cierra_la_sesion.md) — #230 y #231, 24-sep; dos low de la review.
@@ -194,7 +195,7 @@
 - [Trabajo anterior](project_indice_trabajo_anterior.md) — PR #62 a #282: qué cerró cada uno y qué dejó abierto.
 
 ## Entorno y herramientas
-- [Girar y estrechar el iPad sin Simulator.app](reference_girar_simulador_sin_simulator_app.md) — XCUITest temporal; ventana estrecha SÍ (Apps en ventanas + arrastre).
+- [Girar y estrechar el iPad sin Simulator.app](reference_girar_simulador_sin_simulator_app.md) — XCUITest temporal; estrechar SÍ, ensanchar no; borrar el sim antes.
 - [`removeObject` sin efecto = es el simulador](feedback_simulador_preferencias_fuera_del_contenedor.md) — `simctl erase` va…
 - [El sello del gate ancla en HEAD](reference_gate_sello_ancla_en_head.md) — una tanda de commits obliga a re-sellar entre el…
 - [Avisar a Frank: lo hace el hook, no tú](reference_avisar_a_frank_webhook.md) — el hook manda PR y rojos solo; «prueba» en…

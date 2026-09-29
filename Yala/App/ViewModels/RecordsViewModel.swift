@@ -132,6 +132,16 @@ final class RecordsViewModel: Filterable {
     /// consume este flag para presentar NewTransactionView con la misma TX.
     private var pendingEditAfterDetail = false
 
+    /// Registro abierto en la columna de detalle (ventana ancha). Vive aquí, fuera del
+    /// `NavigationSplitView`, para que sobreviva a un redimensionado: si la ventana se estrecha,
+    /// el split se pliega y lo enseña empujado.
+    var openRecordID: PersistentIdentifier?
+
+    /// `true` cuando la vista que monta este VM tiene columna de detalle y la ventana es ancha.
+    /// Lo escribe `RecordsStandaloneView` con el size class de la ventana; quien no lo toca
+    /// (Estadísticas › Registros) sigue abriendo la hoja de siempre.
+    var opensDetailInColumn = false
+
     /// Mensaje de error surfaceado por `BulkEditSheet` cuando una operación bulk rechaza
     /// la mutación (e.g., subcategoría sobre transferencias).
     var bulkUpdateError: String?
@@ -515,8 +525,19 @@ final class RecordsViewModel: Filterable {
     /// Tap de una row: abre el detalle read-only (TransactionDetailSheet);
     /// la edición se alcanza desde ahí con el botón Editar.
     func showRecordDetail(_ record: TransactionItem) {
+        if opensDetailInColumn {
+            openRecordID = record.persistentModelID
+            return
+        }
         editingTransaction = record
         showTransactionDetail = true
+    }
+
+    /// Editar desde la columna de detalle: el registro sigue abierto en su columna y el editor se
+    /// presenta directo, sin el encadenado de la hoja (no hay hoja que cerrar antes).
+    func editOpenRecord(_ record: TransactionItem) {
+        editingTransaction = record
+        showEditTransaction = true
     }
 
     /// Botón Editar del detalle: cierra el detalle (slide-down) sin perder la TX.

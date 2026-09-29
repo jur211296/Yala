@@ -62,8 +62,12 @@ struct BudgetDetailView: View {
                         }
                     }
                     .padding(.vertical, DS.Spacing.xxl)
+                    // Ancho legible en la columna de detalle de una ventana ancha; en iPhone no toca nada.
+                    .frame(maxWidth: DS.Adaptive.readableWidth)
+                    .frame(maxWidth: .infinity)
                 }
                 .scrollViewGlassEdges()
+                .accessibilityIdentifier("budget_detail")
             } else {
                 Color.clear
             }

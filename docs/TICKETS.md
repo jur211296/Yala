@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (698)
+## Index (700)
 
 | id | status | path |
 |---|---|---|
@@ -416,10 +416,12 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | ipad-keyboard-shortcuts-pointer-context-menus-and-drop | backlog | tickets/backlog/ipad-keyboard-shortcuts-pointer-context-menus-and-drop.md |
 | ipad-large-and-extra-large-widgets | backlog | tickets/backlog/ipad-large-and-extra-large-widgets.md |
 | ipad-list-detail-for-groups-and-settings-and-chat-inspector | backlog | tickets/backlog/ipad-list-detail-for-groups-and-settings-and-chat-inspector.md |
+| ipad-list-highlights-the-open-row | backlog | tickets/backlog/ipad-list-highlights-the-open-row.md |
 | ipad-multiple-windows-share-one-navigation-state | done | tickets/done/ipad-multiple-windows-share-one-navigation-state.md |
 | ipad-native-app | backlog | tickets/backlog/ipad-native-app.md |
 | ipad-real-multiwindow-with-per-scene-state | backlog | tickets/backlog/ipad-real-multiwindow-with-per-scene-state.md |
-| ipad-sidebar-and-list-detail-for-records-and-planning | backlog | tickets/backlog/ipad-sidebar-and-list-detail-for-records-and-planning.md |
+| ipad-reports-and-search-get-a-readable-width | backlog | tickets/backlog/ipad-reports-and-search-get-a-readable-width.md |
+| ipad-sidebar-and-list-detail-for-records-and-planning | qa | tickets/qa/ipad-sidebar-and-list-detail-for-records-and-planning.md |
 | iphone-duo-native-app | backlog | tickets/backlog/iphone-duo-native-app.md |
 | iphone-large-models-use-the-extra-width | backlog | tickets/backlog/iphone-large-models-use-the-extra-width.md |
 | iphone-large-text-sizes-break-layouts | done | tickets/done/iphone-large-text-sizes-break-layouts.md |

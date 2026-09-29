@@ -6192,3 +6192,9 @@
 
 /* Cerrar sesión en la nube con la sesión caducada, sin cifra */
 "settings.signOutCloudSessionExpiredPersonalLossUnknown" = "Tu sesión caducó y hay cambios que no llegaron a tu cuenta en la nube. Para subirlos, abre «Dónde viven tus datos», aquí en Perfil, y toca «Iniciar sesión». Si no puedes entrar, antes de decidir puedes exportar tus movimientos a un archivo. Si cierras sesión ahora, esos cambios se pierden.";
+
+/* iPad/ventana ancha: columna de detalle vacía en Registros */
+"records.detailPlaceholder" = "Elige un registro para verlo aquí";
+
+/* iPad/ventana ancha: columna de detalle vacía en Planificación */
+"planning.detailPlaceholder" = "Elige un presupuesto o un pago para verlo aquí";
