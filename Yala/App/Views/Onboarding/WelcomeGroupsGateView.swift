@@ -134,6 +134,17 @@ struct WelcomeGroupsGateView: View {
         /// que borran por archivos. Pantalla con salida, y CERO escrituras — lo contrario del `return` mudo
         /// que dejaba un progreso eterno sin botón.
         case unavailable
+        /// **El invitado en un arranque que acaba de pasar sus datos a la nube** (2026-09-29): el store aún lleva el
+        /// espejo adjunto y lo escrito ahí iría al iCloud del teléfono, así que la puerta sigue cerrada — pero solo hasta
+        /// reabrir, que monta el store sin espejo y deja pasar (`GroupInviteNeutralGateLogic`, término
+        /// `personalDataLivesInLiveCloudAccount`). La salida es decirlo: la invitación sigue en `PendingJoinStore` y el
+        /// reconciler la retoma en el arranque. Cero escrituras.
+        case inviteNeedsRelaunch
+        /// **El invitado sobre los datos de una cuenta de la nube con la sesión cerrada** (2026-09-29, review adversarial):
+        /// no se puede borrar —el cierre de la nube no borra por archivos— ni unirse encima —los gastos del grupo
+        /// caerían en esa cuenta—. La salida es la que sí existe: si la cuenta es suya, volver a entrar con ella (y
+        /// la puerta deja pasar); si no, unirse desde su propio teléfono. Cero escrituras.
+        case inviteNeedsCloudSignIn
         /// El cierre privado en marcha. El detalle de lo que se ve lo dice `CloudSessionSignOut.phase`.
         case returningToNeutral(withoutICloudCopy: Bool, intento: Int)
         /// «Continuar igualmente» tras agotarse la espera del export.
@@ -185,9 +196,7 @@ struct WelcomeGroupsGateView: View {
         // terminal no avisaría nunca, el Welcome no se cerraría y el cover que cuenta el relanzamiento no
         // podría presentarse — un solo cover por body. El aviso es idempotente aguas abajo (persistir el
         // mismo destino y bajar un flag que ya está bajo).
-        .onChange(of: exitPhase, initial: true) { _, new in
-            if new == .awaitingRelaunch { onNeutralReturnArmed() }
-        }
+        .onChange(of: exitPhase, initial: true) { _, new in exitPhaseChanged(to: new) }
     }
 
     /// El «volver», o `nil` para que no se pinte. Va en una propiedad y no en un ternario dentro del
@@ -195,7 +204,7 @@ struct WelcomeGroupsGateView: View {
     private var backAction: (() -> Void)? {
         switch phase {
         case .checking, .blockedChannelOff, .confirmingNoBackup,
-             .confirmingInviteNeutral, .unavailable:
+             .confirmingInviteNeutral, .unavailable, .inviteNeedsRelaunch, .inviteNeedsCloudSignIn:
             return onBack
         case .returningToNeutral, .discardingUnconfirmed, .resumingExportWait, .discardingUnsyncedGroups:
             // Con un aviso en pantalla la salida es su propio botón; mientras trabaja, no hay ninguna.
@@ -220,6 +229,41 @@ struct WelcomeGroupsGateView: View {
                 title: L10n.Welcome.Groups.channelOffTitle,
                 body: L10n.Welcome.Groups.channelOffBody,
                 identifier: "welcome_groups_gate_channel_off")
+        case .unavailable where purpose.invitedGroupID != nil:
+            // **El invitado no se queda con un «ahora no» y un «Volver»** (2026-09-29, ticket
+            // `groups-invite-neutral-gate-has-no-way-out-when-the-exit-cell-cannot-wipe`). Aquí se llega con el cierre
+            // de sesión del teléfono a medias, o porque la celda cambió entre medir y arrancar: las dos cosas pasan
+            // solas. La pantalla se re-mide sola cuando el cierre vuelve a reposo (`retryInviteWhenTheExitSettles`),
+            // «Reintentar» lo hace a mano, y si no avanza el texto dice qué hacer — la fase del coordinador vive en
+            // memoria y reabrir la app la devuelve a reposo. Volver era la única salida, y llevaba a un chooser
+            // donde ninguna card retoma esta invitación.
+            noticeShell(icon: "arrow.trianglehead.2.clockwise.rotate.90",
+                        title: L10n.Welcome.Groups.neutralUnavailableTitle,
+                        body: L10n.Welcome.Groups.inviteRetryBody,
+                        identifier: "welcome_groups_gate_invite_retry") {
+                VStack(spacing: DS.Spacing.sm) {
+                    YalaPrimaryButton(L10n.Action.retry) { phase = .checking }
+                        .accessibilityIdentifier("welcome_groups_gate_invite_retry_retry")
+                    YalaSecondaryButton(L10n.Welcome.Groups.gateBack) { onBack() }
+                        .accessibilityIdentifier("welcome_groups_gate_invite_retry_back")
+                }
+            }
+        case .inviteNeedsRelaunch:
+            noticeShell(icon: "arrow.clockwise",
+                        title: L10n.Welcome.Groups.inviteRelaunchTitle,
+                        body: L10n.Welcome.Groups.inviteRelaunchBody,
+                        identifier: "welcome_groups_gate_invite_relaunch") {
+                YalaPrimaryButton(L10n.Welcome.Groups.gateBack) { onBack() }
+                    .accessibilityIdentifier("welcome_groups_gate_invite_relaunch_back")
+            }
+        case .inviteNeedsCloudSignIn:
+            noticeShell(icon: "person.crop.circle.badge.exclamationmark",
+                        title: L10n.Welcome.Groups.inviteCloudSignInTitle,
+                        body: L10n.Welcome.Groups.inviteCloudSignInBody,
+                        identifier: "welcome_groups_gate_invite_cloud_sign_in") {
+                YalaPrimaryButton(L10n.Welcome.Groups.gateBack) { onBack() }
+                    .accessibilityIdentifier("welcome_groups_gate_invite_cloud_sign_in_back")
+            }
         case .unavailable:
             // Sin esta pantalla el camino era un progreso eterno sin botón: `signOut` tiene TRES `return`
             // mudos (fase no `.idle`, celda distinta de la confirmada, plan nulo) y ninguno toca la fase que
@@ -565,7 +609,7 @@ struct WelcomeGroupsGateView: View {
         case .discardingUnsyncedGroups:
             await CloudSessionSignOut.shared.exitDiscardingUnsyncedGroups(context: modelContext)
         case .blockedChannelOff, .confirmingNoBackup,
-             .confirmingInviteNeutral, .unavailable:
+             .confirmingInviteNeutral, .unavailable, .inviteNeedsRelaunch, .inviteNeedsCloudSignIn:
             return
         }
     }
@@ -648,9 +692,30 @@ struct WelcomeGroupsGateView: View {
                 withoutICloudCopy: CloudSessionSignOut.privateCopyChannel() == .none)
         case .cloudSecureSignOut:
             // El cierre de la nube NO borra por archivos: haría un borrado distinto del que esta pantalla
-            // promete.
-            return .unavailable
+            // promete. **Y al invitado aquí lo traen dos cosas** (2026-09-29): con los datos en la nube, sin espejo y
+            // con la sesión abierta la puerta ya no se interpone. Queda el arranque que acaba de pasar a la nube con el
+            // espejo aún montado —reabrir lo desmonta y la puerta deja pasar— y el corpus de una cuenta de la nube con
+            // la sesión cerrada, que solo se desbloquea entrando con ella.
+            return Self.mountAttachesMirrorNow ? .inviteNeedsRelaunch : .inviteNeedsCloudSignIn
         }
+    }
+
+    /// Lo que la pantalla hace cuando cambia la fase del coordinador. En una función y no en el cierre del `onChange`
+    /// para que el cierre sea una línea: el compilador del CI (Xcode 26.6) no tipa bien la cadena del `body` con
+    /// cierres de varias líneas (`swiftui-ds.md`).
+    private func exitPhaseChanged(to new: CloudSessionSignOut.Phase) {
+        if new == .awaitingRelaunch { onNeutralReturnArmed() }
+        if new == .idle { retryInviteWhenTheExitSettles() }
+    }
+
+    /// **La re-medida del invitado cuando el cierre de sesión vuelve a reposo.** Solo desde `.unavailable`, que es la
+    /// pantalla que espera a eso: en cualquier otra fase el reposo es de este mismo step (salir de un bloqueo, un
+    /// `signOut` que volvió mudo) o todavía no hay nada que re-medir. Y solo en la rama del invitado: la del
+    /// organizador arranca el borrado sin preguntar al re-medir, y un reintento automático ahí sería un borrado sin
+    /// gesto. Aquí no lo es: re-medir acaba, como mucho, en la pregunta (`confirmingInviteNeutral`).
+    private func retryInviteWhenTheExitSettles() {
+        guard purpose.invitedGroupID != nil, phase == .unavailable else { return }
+        phase = .checking
     }
 
     /// **El único sitio que arranca la vuelta al neutro desde un gesto, y el que escribe el sobre.**

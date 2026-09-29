@@ -5536,6 +5536,18 @@ enum L10n {
             /// de una visita, que hacen OTRO borrado. Se dice y se vuelve; cero escrituras.
             static var neutralUnavailableTitle: String { ls("welcome.groups.neutralUnavailableTitle", comment: "") }
             static var neutralUnavailableBody: String { ls("welcome.groups.neutralUnavailableBody", comment: "") }
+            /// **El «ahora no» del INVITADO, con salida** (2026-09-29): el cierre de sesión del teléfono está a medias, o la
+            /// celda cambió entre medir y arrancar. La pantalla se re-mide sola cuando el cierre acaba; el texto no afirma
+            /// ninguna causa, porque no siempre es la misma, y dice qué hacer si no avanza. Va con `neutralUnavailableTitle`.
+            static var inviteRetryBody: String { ls("welcome.groups.inviteRetryBody", comment: "") }
+            /// El invitado en el arranque que acaba de pasar los datos a la nube, con el espejo aún montado: reabrir lo
+            /// resuelve y la invitación sigue guardada.
+            static var inviteRelaunchTitle: String { ls("welcome.groups.inviteRelaunchTitle", comment: "") }
+            static var inviteRelaunchBody: String { ls("welcome.groups.inviteRelaunchBody", comment: "") }
+            /// El invitado sobre los datos de una cuenta de la nube con la sesión cerrada: ni se puede borrar ni unirse
+            /// encima. Si la cuenta es suya, entrar con ella; si no, unirse desde su teléfono.
+            static var inviteCloudSignInTitle: String { ls("welcome.groups.inviteCloudSignInTitle", comment: "") }
+            static var inviteCloudSignInBody: String { ls("welcome.groups.inviteCloudSignInBody", comment: "") }
             /// La vuelta al neutro se paró porque el paso de los datos entre iCloud y la nube no está en reposo (los dos
             /// motivos de la migración). No manda a Perfil: en el Welcome no existe.
             static var neutralMigrationBody: String { ls("welcome.groups.neutralMigrationBody", comment: "") }

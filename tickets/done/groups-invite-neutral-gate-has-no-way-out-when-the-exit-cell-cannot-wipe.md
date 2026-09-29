@@ -1,6 +1,7 @@
 ---
 id: groups-invite-neutral-gate-has-no-way-out-when-the-exit-cell-cannot-wipe
-status: backlog
+status: done
+updated: 2026-09-29
 priority: medium
 area: "modo-nube, groups, onboarding"
 created: 2026-09-11
@@ -55,3 +56,34 @@ ofrece a la persona** cuando ese «no se puede» es el estado estable.
 
 Desde cualquier estado que hoy da `.unavailable`, la persona tiene **una acción concreta** que la
 acerca a entrar al grupo, y la invitación no se queda dando vueltas hasta caducar a los 7 días.
+
+## Resolución (2026-09-29)
+
+**Qué cambia para quien usa la app.** Quien acepta una invitación en un teléfono con datos ya no se queda en un «ahora no»
+con un solo «Volver»:
+
+- **Con los datos en su cuenta de la nube y la sesión abierta**, entra al grupo sin pantalla en medio (matriz, fila F).
+- **Si el teléfono está cerrando una sesión**, la pantalla lo reintenta sola cuando termina, tiene «Reintentar» y dice
+  qué hacer si no avanza (cerrar Yala del todo y abrirla).
+- **Si la cuenta de la nube acaba de prepararse** y el teléfono aún no se ha reabierto, dice «abre Yala otra vez».
+- **Si los datos son de una cuenta de la nube con la sesión cerrada**, dice «entra con la cuenta de este teléfono» (si es
+  tuya) o «únete desde tu teléfono» (si no).
+
+**La premisa había cambiado** (medido): `.secondaryCloudSignOut` e `isSecondarySession` ya no existen. Quedaban dos
+motivos: el cierre en curso y la celda `.cloudSecureSignOut`.
+
+**Qué se tocó.** `GroupInviteNeutralGateLogic.decide` gana `personalDataLivesInLiveCloudAccount` (apaga solo el término
+del corpus; el espejo sigue mandando). `WelcomeGroupsGateView`: el `.unavailable` del invitado con Reintentar y re-medida
+sola, y dos fases nuevas (`inviteNeedsRelaunch`, `inviteNeedsCloudSignIn`). La rama del organizador no cambia. Cuatro
+claves de copy en las 16 locales.
+
+**Verificado.** `GroupInviteNeutralGateTests`: tabla de 16 celdas, desvío de `drive` con y sin sesión, scans de las
+pantallas. Tres mutantes muertos (quitar el término, ponerlo delante del espejo, quitarle la sesión). Review adversarial
+en dos lentes: cazó que sin exigir la sesión otra persona se unía sobre el corpus de una cuenta cerrada — corregido.
+
+**No verificado a ojo.** Las pantallas nuevas no se han visto en el simulador: sus estados (cierre a medias, arranque
+recién pasado a la nube, sesión caducada en `.cloud` sin onboarding) no tienen hook de XCUITest. Reusan el mismo
+`noticeShell` que las demás pantallas de la puerta.
+
+**Fuera, con ticket:** `groups-organizer-gate-unavailable-sends-to-settings-from-the-welcome` y
+`born-cloud-sign-up-over-mirror-imported-rows-skips-the-corpus-check`.

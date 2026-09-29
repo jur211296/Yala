@@ -6184,3 +6184,18 @@
 
 /* iPad/ventana ancha: columna de detalle vacía en Planificación */
 "planning.detailPlaceholder" = "选择一项预算或付款，在这里查看";
+
+/* Puerta del invitado: el cierre de sesión del teléfono está a medias; se reintenta sola */
+"welcome.groups.inviteRetryBody" = "我们没有改动任何内容，你的邀请仍然保存着。请稍后再试；如果没有进展，请彻底关闭 Yala（在 App 切换器中将其划走）并重新打开。";
+
+/* Puerta del invitado: la cuenta en la nube termina de prepararse al reabrir: título */
+"welcome.groups.inviteRelaunchTitle" = "重新打开 Yala 以加入";
+
+/* Puerta del invitado: la cuenta en la nube termina de prepararse al reabrir: cuerpo */
+"welcome.groups.inviteRelaunchBody" = "重新打开 Yala 后，你的云端账户就会完成设置。请彻底关闭它（在 App 切换器中将其划走）并重新打开：你的邀请仍然保存着，你可以从那里继续。";
+
+/* Puerta del invitado: datos de una cuenta en la nube con la sesión cerrada: título */
+"welcome.groups.inviteCloudSignInTitle" = "请先用这部手机上的账户登录";
+
+/* Puerta del invitado: datos de una cuenta en la nube con la sesión cerrada: cuerpo */
+"welcome.groups.inviteCloudSignInBody" = "这部手机上有一个未登录的云端账户的数据，你的群组支出会记到那个账户里。如果这是你的账户，请通过“我已经有账户了”登录，然后继续你的邀请。如果不是，请用你自己的手机加入。";

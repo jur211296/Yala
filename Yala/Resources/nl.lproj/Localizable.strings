@@ -6184,3 +6184,18 @@
 
 /* iPad/ventana ancha: columna de detalle vacía en Planificación */
 "planning.detailPlaceholder" = "Kies een budget of betaling om die hier te zien";
+
+/* Puerta del invitado: el cierre de sesión del teléfono está a medias; se reintenta sola */
+"welcome.groups.inviteRetryBody" = "We hebben niets aangeraakt en je uitnodiging is nog opgeslagen. Probeer het zo opnieuw; gebeurt er niets, sluit Yala dan helemaal (veeg de app weg uit de appkiezer) en open hem opnieuw.";
+
+/* Puerta del invitado: la cuenta en la nube termina de prepararse al reabrir: título */
+"welcome.groups.inviteRelaunchTitle" = "Open Yala opnieuw om mee te doen";
+
+/* Puerta del invitado: la cuenta en la nube termina de prepararse al reabrir: cuerpo */
+"welcome.groups.inviteRelaunchBody" = "Je cloudaccount wordt verder ingesteld zodra je Yala opnieuw opent. Sluit de app helemaal (veeg hem weg uit de appkiezer) en open hem opnieuw: je uitnodiging is nog opgeslagen en je gaat daar verder.";
+
+/* Puerta del invitado: datos de una cuenta en la nube con la sesión cerrada: título */
+"welcome.groups.inviteCloudSignInTitle" = "Log eerst in met het account van deze telefoon";
+
+/* Puerta del invitado: datos de una cuenta en la nube con la sesión cerrada: cuerpo */
+"welcome.groups.inviteCloudSignInBody" = "Op deze telefoon staan de gegevens van een cloudaccount dat niet is ingelogd, en je groepsuitgaven zouden daarin terechtkomen. Is het van jou, log er dan mee in via ‘Ik heb al een account’ en ga verder met je uitnodiging. Zo niet, doe dan mee vanaf je eigen telefoon.";

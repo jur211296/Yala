@@ -37,7 +37,8 @@ struct GroupInviteNeutralGateLogicTests {
     func mirroredEmptyStore_returnsToNeutral() {
         #expect(Gate.decide(hasCompletedPersonalOnboarding: false,
                             hasExistingData: false,
-                            mountAttachesMirror: true) == .returnsToNeutral)
+                            mountAttachesMirror: true,
+                            personalDataLivesInLiveCloudAccount: false) == .returnsToNeutral)
     }
 
     /// La otra mitad del OR: corpus de alguien debajo, sin espejo.
@@ -45,7 +46,8 @@ struct GroupInviteNeutralGateLogicTests {
     func localCorpusWithoutMirror_returnsToNeutral() {
         #expect(Gate.decide(hasCompletedPersonalOnboarding: false,
                             hasExistingData: true,
-                            mountAttachesMirror: false) == .returnsToNeutral)
+                            mountAttachesMirror: false,
+                            personalDataLivesInLiveCloudAccount: false) == .returnsToNeutral)
     }
 
     /// **Criterio nº 3 del ticket**: el invitado de una instalación fresca no paga NADA. Es la población
@@ -55,7 +57,8 @@ struct GroupInviteNeutralGateLogicTests {
     func freshDevice_proceeds() {
         #expect(Gate.decide(hasCompletedPersonalOnboarding: false,
                             hasExistingData: false,
-                            mountAttachesMirror: false) == .proceed)
+                            mountAttachesMirror: false,
+                            personalDataLivesInLiveCloudAccount: false) == .proceed)
     }
 
     /// **El término que separa esta puerta de la del organizador**, y el que evita el daño más caro: con
@@ -66,27 +69,60 @@ struct GroupInviteNeutralGateLogicTests {
     func livePrivateSession_alwaysProceeds() {
         for hasData in [true, false] {
             for mirror in [true, false] {
-                #expect(Gate.decide(hasCompletedPersonalOnboarding: true,
-                                            hasExistingData: hasData,
-                                    mountAttachesMirror: mirror) == .proceed,
-                        "corpus=\(hasData) espejo=\(mirror): la fila C de la matriz dice asociar, no borrar")
+                for cloud in [true, false] {
+                    #expect(Gate.decide(hasCompletedPersonalOnboarding: true,
+                                        hasExistingData: hasData,
+                                        mountAttachesMirror: mirror,
+                                        personalDataLivesInLiveCloudAccount: cloud) == .proceed,
+                            "corpus=\(hasData) espejo=\(mirror) nube=\(cloud): la fila C de la matriz dice asociar, no borrar")
+                }
             }
+        }
+    }
+
+    /// **La celda que dejaba al invitado sin salida** (2026-09-29, ticket
+    /// `groups-invite-neutral-gate-has-no-way-out-when-the-exit-cell-cannot-wipe`). Con los datos personales en la
+    /// cuenta de la nube, lo que hay en el store es de esa cuenta y no se exporta a ningún iCloud: la vuelta al neutro
+    /// no protegía nada y además no se podía hacer (el cierre de la nube no borra por archivos). Antes la puerta
+    /// desviaba igual, y la pantalla solo sabía decir «ahora no».
+    @Test("con los datos en la nube, su sesión abierta y sin espejo, el corpus no despierta la puerta")
+    func cloudAccountCorpusWithoutMirror_proceeds() {
+        #expect(Gate.decide(hasCompletedPersonalOnboarding: false,
+                            hasExistingData: true,
+                            mountAttachesMirror: false,
+                            personalDataLivesInLiveCloudAccount: true) == .proceed)
+    }
+
+    /// **Y el espejo sigue mandando aunque los datos ya vivan en la nube.** En el arranque que acaba de pasar a la nube
+    /// el store aún lleva el espejo adjunto hasta reabrir, y lo que el bridge escribiera ahí se iría al iCloud del
+    /// teléfono — el daño entero del ticket padre. El término nuevo apaga el del corpus, jamás el del espejo.
+    @Test("con los datos en la nube pero el espejo aún montado, la puerta sigue cerrada")
+    func cloudAccountWithMirrorStillAttached_returnsToNeutral() {
+        for hasData in [true, false] {
+            #expect(Gate.decide(hasCompletedPersonalOnboarding: false,
+                                hasExistingData: hasData,
+                                mountAttachesMirror: true,
+                                personalDataLivesInLiveCloudAccount: true) == .returnsToNeutral,
+                    "corpus=\(hasData): con el espejo adjunto lo escrito se exporta, vivan donde vivan los datos")
         }
     }
 
     /// La tabla ENTERA, 8 celdas, contra la regla dicha de otra forma. Lo que caza que una implementación
     /// futura reordene los guards y cambie una celda sin que ninguna de las de arriba lo note.
-    @Test("las 8 celdas, contra el predicado dicho al revés")
+    @Test("las 16 celdas, contra el predicado dicho al revés")
     func fullTruthTable() {
         for onboarded in [true, false] {
             for hasData in [true, false] {
                 for mirror in [true, false] {
-                    let esperado: Gate.Decision =
-                        (!onboarded && (hasData || mirror)) ? .returnsToNeutral : .proceed
-                    #expect(Gate.decide(hasCompletedPersonalOnboarding: onboarded,
-                                        hasExistingData: hasData,
-                                        mountAttachesMirror: mirror) == esperado,
-                            "onboarded=\(onboarded) corpus=\(hasData) espejo=\(mirror)")
+                    for cloud in [true, false] {
+                        let esperado: Gate.Decision =
+                            (!onboarded && (mirror || (hasData && !cloud))) ? .returnsToNeutral : .proceed
+                        #expect(Gate.decide(hasCompletedPersonalOnboarding: onboarded,
+                                            hasExistingData: hasData,
+                                            mountAttachesMirror: mirror,
+                                            personalDataLivesInLiveCloudAccount: cloud) == esperado,
+                                "onboarded=\(onboarded) corpus=\(hasData) espejo=\(mirror) nube=\(cloud)")
+                    }
                 }
             }
         }
@@ -105,6 +141,7 @@ struct GroupInviteNeutralGateRoutingTests {
     private func makeEnv(mirror: Bool,
                          onboarded: Bool = false,
                          hasData: Bool = false,
+                         cloud: Bool = false,
                          joinSpy: @escaping @MainActor () -> Void = {}) -> () -> Void {
         let suite = "test.inviteneutral.\(UUID().uuidString)"
         let d = UserDefaults(suiteName: suite)!
@@ -118,6 +155,7 @@ struct GroupInviteNeutralGateRoutingTests {
         let savedMirror = GroupBackendInviteEntryHandler.mountAttachesMirrorProvider
         let savedOnboarded = GroupBackendInviteEntryHandler.hasCompletedPersonalOnboardingProvider
         let savedData = GroupBackendInviteEntryHandler.hasLocalDataProvider
+        let savedCloud = GroupBackendInviteEntryHandler.personalDataLivesInLiveCloudAccountProvider
         let savedReadiness = RouterEntryGate.shared.readinessProvider
         let savedFlag = CloudSyncFlags.groupsBackendEnabled
 
@@ -127,6 +165,7 @@ struct GroupInviteNeutralGateRoutingTests {
         GroupBackendInviteEntryHandler.mountAttachesMirrorProvider = { mirror }
         GroupBackendInviteEntryHandler.hasCompletedPersonalOnboardingProvider = { onboarded }
         GroupBackendInviteEntryHandler.hasLocalDataProvider = { hasData }
+        GroupBackendInviteEntryHandler.personalDataLivesInLiveCloudAccountProvider = { cloud }
         GroupBackendInviteEntryHandler.joinProvider = { _, _, _ in
             joinSpy()
             return JoinGroupResult(groupID: "G1", memberKey: "sub", status: "pendingApproval", rebound: false)
@@ -145,6 +184,7 @@ struct GroupInviteNeutralGateRoutingTests {
             GroupBackendInviteEntryHandler.mountAttachesMirrorProvider = savedMirror
             GroupBackendInviteEntryHandler.hasCompletedPersonalOnboardingProvider = savedOnboarded
             GroupBackendInviteEntryHandler.hasLocalDataProvider = savedData
+            GroupBackendInviteEntryHandler.personalDataLivesInLiveCloudAccountProvider = savedCloud
             RouterEntryGate.shared.readinessProvider = savedReadiness
             CloudSyncFlags.groupsBackendEnabled = savedFlag
             AppRouter.shared._testReset()
@@ -228,6 +268,68 @@ struct GroupInviteNeutralGateRoutingTests {
 
         #expect(joins == 1)
         #expect(!queuedIDs().contains { $0.hasPrefix("groupsInviteNeutralGate") })
+    }
+
+    /// **La celda sin salida, por el camino real** (2026-09-29). Con los datos en la cuenta de la nube y sin espejo,
+    /// el corpus es de esa cuenta: `drive` sigue al join con la sesión activa (matriz, fila F) en vez de desviar a una
+    /// pantalla que solo podía decir «ahora no». Poniendo el término del corpus por delante del de la nube, rojo.
+    @Test("con los datos en la nube y sin espejo, el enlace llega al join")
+    func cloudAccountWithoutMirror_joinsWithTheLiveSession() async {
+        var joins = 0
+        let cleanup = makeEnv(mirror: false, hasData: true, cloud: true, joinSpy: { joins += 1 })
+        defer { cleanup() }
+        let groupID = "SplitGroup-\(UUID().uuidString)"
+        GroupBackendInviteEntryHandler.persistIntent(groupID: groupID, token: "tok")
+        PendingJoinStore.markInviteConfirmed(zoneName: groupID)
+
+        await GroupBackendInviteEntryHandler.drive(groupID: groupID, token: "tok", source: .userAction)
+
+        #expect(joins == 1, "la invitación se quedó en la puerta aunque no hay ningún iCloud al que proteger")
+        #expect(!queuedIDs().contains { $0.hasPrefix("groupsInviteNeutralGate") })
+    }
+
+    /// **Y sin la sesión, la puerta vuelve a interponerse** (review adversarial, 2026-09-29). El corpus es de una
+    /// cuenta que nadie tiene abierta: seguir pediría entrar, y el alta de grupos no pasa por el guard cross-cuenta,
+    /// así que otra persona se uniría y sus gastos del grupo caerían en el store de esa cuenta. El término se mide con
+    /// el provider de PRODUCCIÓN —modo y sesión reales—, que es la mitad que un provider fingido no ve.
+    @Test("con los datos en la nube pero la sesión cerrada, el corpus sigue despertando la puerta")
+    func cloudAccountWithoutSession_routesToTheGate() async {
+        var joins = 0
+        // El provider de PRODUCCIÓN, capturado antes de que el entorno lo sustituya por uno fingido: así un mutante que
+        // le quite la sesión pone este test en rojo, y no solo el scan.
+        let production = GroupBackendInviteEntryHandler.personalDataLivesInLiveCloudAccountProvider
+        let cleanup = makeEnv(mirror: false, hasData: true, joinSpy: { joins += 1 }); defer { cleanup() }
+        let savedMode = CloudSyncFlags.storageMode
+        defer {
+            CloudSyncFlags.storageMode = savedMode
+            CloudSyncFlags._testResetStorageModeOverride()
+        }
+        GroupBackendInviteEntryHandler.personalDataLivesInLiveCloudAccountProvider = production
+        CloudSyncFlags.storageMode = .cloud
+        GroupBackendInviteEntryHandler.hasSessionProvider = { false }
+        let groupID = "SplitGroup-\(UUID().uuidString)"
+        GroupBackendInviteEntryHandler.persistIntent(groupID: groupID, token: "tok")
+        PendingJoinStore.markInviteConfirmed(zoneName: groupID)
+
+        await GroupBackendInviteEntryHandler.drive(groupID: groupID, token: "tok", source: .userAction)
+
+        #expect(queuedIDs() == ["groupsInviteNeutralGate:\(groupID)"],
+                "sin sesión la invitación siguió sobre el corpus de otra cuenta. Encontrado: \(queuedIDs())")
+        #expect(joins == 0)
+    }
+
+    /// Y el cableado del término: el provider de producción lee el MISMO modo que decide la celda de cierre y la MISMA
+    /// sesión que decide si `drive` pide entrar. Se fija el cuerpo entero porque cada mitad cierra un daño distinto.
+    @Test("el término de la nube lee el modo de almacenamiento Y la sesión")
+    func theCloudTermReadsTheStorageModeAndTheSession() throws {
+        let root = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        let code = try String(contentsOf: root.appendingPathComponent("Yala/App/Services/GroupBackendInviteEntryHandler.swift"),
+                              encoding: .utf8)
+        let cuerpo = "static var personalDataLivesInLiveCloudAccountProvider: @MainActor () -> Bool = {\n"
+            + "        CloudSyncFlags.storageMode == .cloud && hasSessionProvider()\n    }"
+        #expect(code.contains(cuerpo),
+                "el término dejó de exigir la sesión viva: otra persona se une sobre el corpus de una cuenta cerrada")
     }
 
     /// El sello de la confirmación va DELANTE del desvío: la persona dijo que sí, y eso ya es verdad
@@ -566,5 +668,82 @@ struct GroupInviteNeutralGateWiringTests {
         let boot = try Self.source("Yala/App/AppBootstrapper.swift")
         #expect(boot.contains("UITestEphemeralDefaults.purgeGroupInviteResumeEnvelope()"),
                 "el sobre se filtra al UserDefaults real del simulador y no lo limpia nadie")
+    }
+}
+
+// MARK: - 5 · La salida cuando la puerta no puede borrar
+
+/// «Acepto una invitación, la app me dice que ahora no se puede, vuelvo a intentarlo y me dice lo mismo» (ticket
+/// `groups-invite-neutral-gate-has-no-way-out-when-the-exit-cell-cannot-wipe`, 2026-09-29). La puerta no arranca un
+/// borrado que su celda no puede hacer —eso es correcto—, pero la única salida era «Volver», a un chooser donde ninguna
+/// card retoma la invitación, y el reconciler la re-submitía en cada `.foreground`: un bucle hasta caducar a los 7 días.
+///
+/// Son scans porque lo que decide es QUÉ pantalla se elige en cada rama de una vista SwiftUI, y la tabla de la decisión
+/// ya tiene su suite arriba. Cada `#expect` nombra el mutante que lo pone rojo.
+@Suite("La puerta del invitado · el «ahora no» tiene salida")
+struct GroupInviteNeutralGateWayOutTests {
+
+    private static func view() throws -> String {
+        let root = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()   // Groups
+            .deletingLastPathComponent()   // YalaTests
+            .deletingLastPathComponent()   // repo
+        return try String(contentsOf: root.appendingPathComponent("Yala/App/Views/Onboarding/WelcomeGroupsGateView.swift"),
+                          encoding: .utf8)
+    }
+
+    /// El cuerpo de una función, desde su firma hasta la primera línea que cierra al nivel de 4 espacios.
+    private static func body(of signature: String, in code: String) throws -> Substring {
+        let start = try #require(code.range(of: signature), "no se encontró `\(signature)`")
+        let end = try #require(code.range(of: "\n    }\n", range: start.upperBound..<code.endIndex))
+        return code[start.lowerBound..<end.upperBound]
+    }
+
+    /// **Con la celda de la nube, al invitado se le dice que reabra**, no «ahora no». Aquí solo lo trae el espejo aún
+    /// montado del arranque que acaba de pasar a la nube, y reabrir lo desmonta.
+    @Test("MUTACIÓN: la celda de la nube del invitado lleva a «abre Yala otra vez»")
+    func cloudCellTellsTheGuestToReopen() throws {
+        let entry = try Self.body(of: "private func inviteNeutralEntryPhase() -> Phase {", in: try Self.view())
+        let cell = try #require(entry.range(of: "case .cloudSecureSignOut:"))
+        let rest = entry[cell.upperBound...]
+        #expect(rest.contains("return Self.mountAttachesMirrorNow ? .inviteNeedsRelaunch : .inviteNeedsCloudSignIn"),
+                "la celda de la nube volvió al «ahora no» sin salida, o dice «reabre» donde reabrir no arregla nada")
+        #expect(!rest.contains("return .unavailable"))
+        #expect(try Self.view().contains("identifier: \"welcome_groups_gate_invite_relaunch\""))
+        #expect(try Self.view().contains("identifier: \"welcome_groups_gate_invite_cloud_sign_in\""))
+    }
+
+    /// **El «ahora no» del invitado va ANTES que el del organizador**, porque `switch` se queda con el primer `case`
+    /// que casa: al revés, el invitado volvería a la pantalla con un solo «Volver» y el copy de «cerrar desde
+    /// Ajustes», que en el Welcome no existe.
+    @Test("MUTACIÓN: el invitado tiene su propio «ahora no», con Reintentar")
+    func theGuestsUnavailableHasARetry() throws {
+        let code = try Self.view()
+        let guest = try #require(code.range(of: "case .unavailable where purpose.invitedGroupID != nil:"),
+                                 "el invitado vuelve a compartir la pantalla del organizador")
+        let owner = try #require(code.range(of: "        case .unavailable:\n"))
+        #expect(guest.upperBound < owner.lowerBound,
+                "el `case` general va primero y se traga al invitado")
+        let screen = code[guest.upperBound..<owner.lowerBound]
+        #expect(screen.contains("YalaPrimaryButton(L10n.Action.retry) { phase = .checking }"),
+                "sin Reintentar, la única salida vuelve a ser «Volver»")
+        #expect(screen.contains("L10n.Welcome.Groups.inviteRetryBody"))
+        #expect(!screen.contains("neutralUnavailableBody"),
+                "el copy del organizador («ciérrala desde Ajustes») no vale en el Welcome del invitado")
+    }
+
+    /// **Y se re-mide SOLA cuando el cierre vuelve a reposo.** Solo desde `.unavailable` y solo en la rama del
+    /// invitado: la del organizador arranca el borrado al re-medir, y un reintento automático ahí sería un borrado
+    /// sin gesto.
+    @Test("MUTACIÓN: el reposo del cierre re-mide al invitado, y solo a él")
+    func theExitSettlingRetriesOnlyTheGuest() throws {
+        let code = try Self.view()
+        #expect(code.contains(".onChange(of: exitPhase, initial: true) { _, new in exitPhaseChanged(to: new) }"))
+        #expect(code.contains("if new == .idle { retryInviteWhenTheExitSettles() }"),
+                "sin el aviso del reposo, la pantalla espera a un Reintentar que la persona no sabe que toca")
+        let retry = try Self.body(of: "private func retryInviteWhenTheExitSettles() {", in: code)
+        #expect(retry.contains("guard purpose.invitedGroupID != nil, phase == .unavailable else { return }"),
+                "sin el guard, el reposo relanza la puerta del organizador —un borrado sin gesto— o pisa otra fase")
+        #expect(retry.contains("phase = .checking"))
     }
 }

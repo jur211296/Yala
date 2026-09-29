@@ -110,13 +110,22 @@ enum GroupBackendInviteEntryHandler {
         return CloudSessionSignOut.personalMountAttachesMirror
     }
 
-    /// El veredicto de la puerta con los tres términos VIVOS. Internal para que el test pueda
+    /// ¿Viven los datos personales de este teléfono en una cuenta de la nube **con su sesión abierta**? El modo es la
+    /// misma lectura que decide la celda de cierre (`CloudSignOutFlowLogic.path`) y la sesión la misma que decide si
+    /// `drive` pide entrar (`hasSessionProvider`), así que la puerta y la pantalla que la re-mide no pueden discrepar.
+    /// Sin la sesión, el corpus es de una cuenta que nadie tiene abierta: ver el docblock del término.
+    static var personalDataLivesInLiveCloudAccountProvider: @MainActor () -> Bool = {
+        CloudSyncFlags.storageMode == .cloud && hasSessionProvider()
+    }
+
+    /// El veredicto de la puerta con los cuatro términos VIVOS. Internal para que el test pueda
     /// llamarla con los providers fingidos sin tocar `drive`.
     static func neutralGateDecision() -> GroupInviteNeutralGateLogic.Decision {
         GroupInviteNeutralGateLogic.decide(
             hasCompletedPersonalOnboarding: hasCompletedPersonalOnboardingProvider(),
             hasExistingData: hasLocalDataProvider(),
-            mountAttachesMirror: mountAttachesMirrorProvider())
+            mountAttachesMirror: mountAttachesMirrorProvider(),
+            personalDataLivesInLiveCloudAccount: personalDataLivesInLiveCloudAccountProvider())
     }
     // `hasCompletedOnboardingProvider` se RETIRÓ el 2026-09-05 y aquí queda su lápida, porque su ausencia
     // es el arreglo. Alimentaba el único término que decidía si el invitado veía la hoja, y respondía a la
