@@ -94,7 +94,7 @@ struct BudgetsListView: View {
                 transactions: viewModel.allTransactions,
                 onPeriodChange: { refreshData() }
             )
-            .presentationDetents(DS.Adaptive.sheetDetents([.medium]))
+            .yalaSheetDetents([.medium])
             .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $showUpgradeSheet) {

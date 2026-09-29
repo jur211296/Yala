@@ -146,7 +146,7 @@ struct ScheduledPaymentPeriodSelectorSheet: View {
             .padding(.horizontal, DS.Spacing.xl)
             .padding(.bottom, DS.Spacing.xxl)
         }
-        .yalaScreenBackground(DS.Adaptive.usesLargeSheets ? .subtle : .transparent)
+        .yalaScreenBackground(.partialSheet)
         .onAppear {
             generatePeriods()
         }

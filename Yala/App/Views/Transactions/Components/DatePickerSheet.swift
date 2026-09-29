@@ -17,8 +17,6 @@ struct DatePickerSheet: View {
     @State private var workingDate: Date = .now
     @State private var selectedDetent: PresentationDetent = .medium
 
-    private let detents = DS.Adaptive.sheetDetents([.medium, .large])
-
     /// Computed range: nil maxDate means "up to today" at render time
     private var dateRange: ClosedRange<Date> {
         let upper = maxDate ?? Date.now
@@ -64,7 +62,7 @@ struct DatePickerSheet: View {
                 workingDate = selectedDate
             }
         }
-        .presentationDetents(detents, selection: $selectedDetent)
+        .yalaSheetDetents([.medium, .large], selection: $selectedDetent)
         .presentationDragIndicator(.visible)
     }
 }

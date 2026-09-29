@@ -222,7 +222,7 @@ struct BudgetChartsView: View {
                     selectedYear: $localSelectedYear,
                     transactions: viewModel.allTransactions
                 )
-                .presentationDetents(DS.Adaptive.sheetDetents([.medium]))
+                .yalaSheetDetents([.medium])
                 .presentationDragIndicator(.visible)
             }
         }

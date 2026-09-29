@@ -437,7 +437,7 @@ struct InboxView: View {
                         conversionContext = buildConversionContext(draft: draft, group: picked)
                     }
                 }
-                .presentationDetents(DS.Adaptive.sheetDetents([.medium, .large]))
+                .yalaSheetDetents([.medium, .large])
             }
             .sheet(item: $conversionContext, onDismiss: { viewModel.loadData() }) { ctx in
                 GroupExpenseFormView(

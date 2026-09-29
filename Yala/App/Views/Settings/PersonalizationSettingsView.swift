@@ -643,7 +643,7 @@ struct PersonalizationSettingsView: View {
                     showingWeekdayPicker = false
                 }
             )
-            .presentationDetents(DS.Adaptive.sheetDetents([.height(280)]))
+            .yalaSheetDetents([.height(280)])
         }
         .sheet(isPresented: $showingDecimalsPicker) {
             DecimalsPickerSheet(
@@ -653,7 +653,7 @@ struct PersonalizationSettingsView: View {
                     showingDecimalsPicker = false
                 }
             )
-            .presentationDetents(DS.Adaptive.sheetDetents([.height(320)]))
+            .yalaSheetDetents([.height(320)])
         }
         .sheet(isPresented: $showingCurrencyFormatPicker) {
             CurrencyFormatPickerSheet(
@@ -665,7 +665,7 @@ struct PersonalizationSettingsView: View {
                     showingCurrencyFormatPicker = false
                 }
             )
-            .presentationDetents(DS.Adaptive.sheetDetents([.height(280)]))
+            .yalaSheetDetents([.height(280)])
         }
         .sheet(isPresented: $showingAutoFocusPicker) {
             AutoFocusPickerSheet(
@@ -675,7 +675,7 @@ struct PersonalizationSettingsView: View {
                     showingAutoFocusPicker = false
                 }
             )
-            .presentationDetents(DS.Adaptive.sheetDetents([.height(320)]))
+            .yalaSheetDetents([.height(320)])
         }
         .sheet(isPresented: $showingAverageLinePicker) {
             AverageLinePickerSheet(
@@ -685,7 +685,7 @@ struct PersonalizationSettingsView: View {
                     showingAverageLinePicker = false
                 }
             )
-            .presentationDetents(DS.Adaptive.sheetDetents([.height(320)]))
+            .yalaSheetDetents([.height(320)])
         }
         .sheet(isPresented: $showingLanguagePicker) {
             LanguagePickerSheet(
@@ -698,7 +698,7 @@ struct PersonalizationSettingsView: View {
                     showingLanguagePicker = false
                 }
             )
-            .presentationDetents(DS.Adaptive.sheetDetents([.medium]))
+            .yalaSheetDetents([.medium])
         }
         .sheet(isPresented: $showingSmartInsightsSettings) {
             SmartInsightsSettingsView()
@@ -843,7 +843,7 @@ private struct WeekdayPickerSheet: View {
             }
             .navigationTitle(L10n.Settings.firstWeekday)
             .navigationBarTitleDisplayMode(.inline)
-            .yalaScreenBackground(DS.Adaptive.usesLargeSheets ? .subtle : .transparent)
+            .yalaScreenBackground(.partialSheet)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
@@ -919,7 +919,7 @@ private struct DecimalsPickerSheet: View {
             }
             .navigationTitle(L10n.Settings.decimalPlaces)
             .navigationBarTitleDisplayMode(.inline)
-            .yalaScreenBackground(DS.Adaptive.usesLargeSheets ? .subtle : .transparent)
+            .yalaScreenBackground(.partialSheet)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
@@ -1000,7 +1000,7 @@ private struct CurrencyFormatPickerSheet: View {
             }
             .navigationTitle(L10n.Settings.currencyFormat)
             .navigationBarTitleDisplayMode(.inline)
-            .yalaScreenBackground(DS.Adaptive.usesLargeSheets ? .subtle : .transparent)
+            .yalaScreenBackground(.partialSheet)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
@@ -1076,7 +1076,7 @@ private struct LanguagePickerSheet: View {
             }
             .navigationTitle(L10n.Settings.appLanguage)
             .navigationBarTitleDisplayMode(.inline)
-            .yalaScreenBackground(DS.Adaptive.usesLargeSheets ? .subtle : .transparent)
+            .yalaScreenBackground(.partialSheet)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(L10n.Action.cancel) { dismiss() }
@@ -1154,7 +1154,7 @@ private struct AverageLinePickerSheet: View {
             }
             .navigationTitle(L10n.Settings.averageLine)
             .navigationBarTitleDisplayMode(.inline)
-            .yalaScreenBackground(DS.Adaptive.usesLargeSheets ? .subtle : .transparent)
+            .yalaScreenBackground(.partialSheet)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
@@ -1232,7 +1232,7 @@ private struct AutoFocusPickerSheet: View {
             }
             .navigationTitle(L10n.Settings.autoFocusField)
             .navigationBarTitleDisplayMode(.inline)
-            .yalaScreenBackground(DS.Adaptive.usesLargeSheets ? .subtle : .transparent)
+            .yalaScreenBackground(.partialSheet)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {

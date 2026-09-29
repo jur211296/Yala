@@ -239,7 +239,7 @@ struct IconColorPickerSheet: View {
             }
             .scrollContentBackground(.hidden)
             // Sheet full-height en todos sus callsites (sin detents o `.large`) → .subtle.
-            // El idiom-aware `usesLargeSheets ? .subtle : .transparent` es solo para
+            // El `.partialSheet` (subtle solo si la ventana fuerza `.large`) es solo para
             // sheets con detents parciales; aquí dejaba ver el gris de sistema en iPhone.
             .yalaScreenBackground(.subtle)
             .navigationTitle(L10n.IconPicker.title)

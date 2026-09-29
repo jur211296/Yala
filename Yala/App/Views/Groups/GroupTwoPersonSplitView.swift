@@ -44,7 +44,7 @@ struct GroupTwoPersonSplitView: View {
                 }
             }
         }
-        .presentationDetents(DS.Adaptive.sheetDetents([.large]))
+        .yalaSheetDetents([.large])
         .presentationDragIndicator(.visible)
     }
 

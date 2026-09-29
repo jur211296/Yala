@@ -1,9 +1,10 @@
 ---
 id: sheet-size-follows-the-device-not-the-window
-status: backlog
+status: done
 priority: medium
 area: "design-system, ipad, iphone-duo, adaptativo"
 created: 2026-09-27
+updated: 2026-09-29
 source: "plan adaptativo (docs/exploracion/adaptativo-ipad-duo.md §3), 2026-09-27"
 ---
 
@@ -67,3 +68,41 @@ Dynamic Type grande (`adaptativo-ipad-duo.md` §6.1).
 **Layout** (ADR «[2026-09-27] Yala se adapta por espacio, no por dispositivo»). Se decide por size class y ancho del
 contenedor, nunca por tipo de dispositivo ni orientación; un contenedor que se adapta, no un `if` por size class en
 la raíz; APIs de iOS 27.1 solo tras `if #available`.
+
+## Hecho (2026-09-29)
+
+**Qué cambia para el usuario.** En un iPad con la ventana de Yala estrechada, las hojas salen con el tamaño de
+iPhone: el detalle de un registro, el selector de fecha o el de período ocupan media pantalla, como en el teléfono,
+en vez de estirarse a toda la altura. A pantalla completa en iPad siguen grandes, y en iPhone no cambia nada. Cuando
+llegue el iPhone Duo, abierto tendrá las hojas grandes de tableta y cerrado las de teléfono, sin tocar nada más.
+
+**Cómo.** El tamaño lo decide el espacio de la ventana (size class horizontal), no el tipo de aparato. La raíz de la
+ventana (`YalaApp.rootView`) lo calcula una vez con `.sizesSheetsByWindow()` y lo baja como `\.usesLargeSheets`, que
+llega intacto a toda hoja que cuelgue de ella. Las hojas usan `.yalaSheetDetents(_:)` (o `(_:selection:)`) y su fondo
+`.yalaScreenBackground(.partialSheet)`; los tres detalles de detent fijo leen `@Environment(\.usesLargeSheets)`. El
+`static var usesLargeSheets` se retiró, así que el compilador no deja ninguna llamada decidiendo por aparato. Mac
+sigue con hojas grandes siempre. Decisiones en el Paso 0 del encargo; convención en `.claude/rules/swiftui-ds.md`.
+
+**Premisas del ticket, medidas en `435bd8eb`.** Las «62 llamadas en 37 ficheros» eran 64 líneas en 38 ficheros fuera
+de `DesignTokens.swift`: 57 de código de la app en 34 ficheros, 5 comentarios y 2 de tests. Tras el cambio,
+`DS.Adaptive.usesLargeSheets` y `DS.Adaptive.sheetDetents` solo aparecen en `DesignTokens.swift` y `ViewModifiers.swift`,
+y `userInterfaceIdiom` ya no aparece en `Yala/`.
+
+**Verificado** (simuladores del carril, iOS 27.0, por UDID; evidencia en
+`qa/evidencia-adaptativo-20260928/sheet-size-follows-the-device-not-the-window/`, con su README):
+- `YalaLane-Adapt-iPhone-ProMax`, tres hojas con detent medio: **idénticas** antes y después, píxel a píxel (solo
+  difiere la barra de inicio del sistema).
+- `YalaLane-Adapt-iPad-Pro-13` a pantalla completa, las mismas tres: **idénticas**, grandes como hoy.
+- **El mismo iPad con la ventana estrechada** —«Apps en ventanas» y la esquina arrastrada hasta el 40 % desde un
+  XCUITest temporal, sin Device Hub—: antes, las tres a toda la altura; ahora, con los detents de iPhone. La ventana
+  sin la hoja es idéntica en las dos corridas, así que lo único que cambia es la hoja.
+- Test unitario de la decisión con los dos size classes, sin size class y en Mac: `YalaTests/AdaptiveSheetSizingTests.swift`.
+
+**Encontrado:** 19 hojas con detent parcial nunca pasaron por el helper y salen medias también en un iPad a pantalla
+completa. Es preexistente y queda en [[partial-sheets-that-never-adapted-to-the-window]].
+
+**No medido:** el iPhone Duo (no hay simulador sin Xcode 27.1; queda en [[iphone-duo-native-app]]) y la app en Mac.
+
+**Estado: `done`, sin device-QA.** Todos los criterios se vieron en el simulador, incluido el de ventana estrecha
+que el ticket dejaba para Jürgen.
+

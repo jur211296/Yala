@@ -306,7 +306,7 @@ struct GroupDetailView: View {
                 groupChip: .readOnly,
                 onSave: {}
             )
-            .presentationDetents(DS.Adaptive.sheetDetents([.large]))
+            .yalaSheetDetents([.large])
             .presentationDragIndicator(.visible)
 
         case .expenseDetail(let expense):
@@ -333,7 +333,7 @@ struct GroupDetailView: View {
                 onSave: {},
                 onDelete: viewModel.canCurrentUserParticipate ? { viewModel.deleteExpense($0) } : nil
             )
-            .presentationDetents(DS.Adaptive.sheetDetents([.large]))
+            .yalaSheetDetents([.large])
             .presentationDragIndicator(.visible)
 
         case .openingBalanceDetail(let expense):
@@ -355,7 +355,7 @@ struct GroupDetailView: View {
                 existingDebtorMemberID: viewModel.sharesForExpense(expense).first?.memberID,
                 onSave: {}
             )
-            .presentationDetents(DS.Adaptive.sheetDetents([.large]))
+            .yalaSheetDetents([.large])
             .presentationDragIndicator(.visible)
 
         case .settlement(let debt):
@@ -366,7 +366,7 @@ struct GroupDetailView: View {
                 currentUserMemberID: viewModel.currentMemberID,
                 onSave: {}
             )
-            .presentationDetents(DS.Adaptive.sheetDetents([.large]))
+            .yalaSheetDetents([.large])
             .presentationDragIndicator(.visible)
         }
     }

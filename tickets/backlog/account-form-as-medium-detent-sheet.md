@@ -30,7 +30,8 @@ altura se vuelve un gesto: ves de dónde vienes, rellenas y vuelves.
   `RecordsStandaloneView.swift:393`. El `[.medium]` que hay dentro de
   `NewTransactionView.swift:455` es de un sub-sheet interno, no del formulario.
 - **El patrón ya existe en la app**: hay un helper de Design System,
-  `DS.Adaptive.sheetDetents(_:)` (`Yala/App/Theme/DesignTokens.swift:436`), y ~16 sheets ya abren
+  `DS.Adaptive.sheetDetents(_:)` (`Yala/App/Theme/DesignTokens.swift:436`; desde el 29-sep, en la vista,
+  `.yalaSheetDetents(_:)`, que decide por la ventana), y ~16 sheets ya abren
   en `[.medium]`. No hay que inventar nada, sólo aplicarlo.
 
 ## La pregunta que falta (para Jürgen, antes del spec)

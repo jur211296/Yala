@@ -46,10 +46,11 @@ struct GroupExpenseDetailSheet: View {
 
     @Environment(\.dismiss) private var dismiss
     @Environment(AppPreferences.self) private var appPreferences
+    @Environment(\.usesLargeSheets) private var usesLargeSheets
 
-    /// Detent fijo: medium (iPhone) / large (iPad). Mismo patrón que TransactionDetailSheet.
+    /// Detent fijo: medium en ventana compacta / large en ventana ancha. Mismo patrón que TransactionDetailSheet.
     private var detent: PresentationDetent {
-        DS.Adaptive.usesLargeSheets ? .large : .medium
+        usesLargeSheets ? .large : .medium
     }
 
     var body: some View {
@@ -89,7 +90,7 @@ struct GroupExpenseDetailSheet: View {
                     .accessibilityIdentifier("group_expense_detail_edit")
                 }
             }
-            .yalaScreenBackground(DS.Adaptive.usesLargeSheets ? .subtle : .transparent)
+            .yalaScreenBackground(.partialSheet)
         }
         .accessibilityIdentifier("group_expense_detail_sheet")
     }

@@ -95,7 +95,7 @@ struct ExportSummaryStepView: View {
             }
         ) { file in
             ShareSheet(activityItems: file.urls)
-                .presentationDetents(DS.Adaptive.sheetDetents([.medium, .large]))
+                .yalaSheetDetents([.medium, .large])
                 .interactiveDismissDisabled(false)
         }
     }

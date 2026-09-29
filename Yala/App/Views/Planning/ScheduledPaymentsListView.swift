@@ -68,7 +68,7 @@ struct ScheduledPaymentsListView: View {
                 payments: payments,
                 onPeriodChange: { onRefresh() }
             )
-            .presentationDetents(DS.Adaptive.sheetDetents([.medium]))
+            .yalaSheetDetents([.medium])
         }
     }
 

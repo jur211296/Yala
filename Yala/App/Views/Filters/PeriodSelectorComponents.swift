@@ -168,7 +168,7 @@ struct CustomPeriodPickerSheet: View {
             .listStyle(.insetGrouped)
             .scrollContentBackground(.hidden)
             .background(.thCard)
-            .yalaScreenBackground(DS.Adaptive.usesLargeSheets ? .subtle : .transparent)
+            .yalaScreenBackground(.partialSheet)
             .navigationTitle(L10n.Period.custom)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -184,7 +184,7 @@ struct CustomPeriodPickerSheet: View {
                 }
             }
         }
-        .presentationDetents(DS.Adaptive.sheetDetents([.medium]))
+        .yalaSheetDetents([.medium])
         .presentationDragIndicator(.visible)
     }
 

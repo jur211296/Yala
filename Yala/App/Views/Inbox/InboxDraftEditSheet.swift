@@ -305,7 +305,7 @@ struct InboxDraftEditSheet: View {
             .dismissKeyboardOnTap()
         }
         // Sheet full-height (presentado sin detents desde InboxView) → .subtle.
-        // El idiom-aware `usesLargeSheets ? .subtle : .transparent` es solo para
+        // El `.partialSheet` (subtle solo si la ventana fuerza `.large`) es solo para
         // detents parciales; aquí dejaba ver el gris de sistema del sheet en iPhone.
         .yalaScreenBackground(.subtle)
     }
@@ -420,7 +420,7 @@ struct InboxDraftEditSheet: View {
                 set: { selectedNeed = $0 }
             )
         )
-        .presentationDetents(DS.Adaptive.sheetDetents([.medium]))
+        .yalaSheetDetents([.medium])
     }
 
     // MARK: - Central Content
