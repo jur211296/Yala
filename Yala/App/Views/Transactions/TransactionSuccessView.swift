@@ -86,105 +86,119 @@ struct TransactionSuccessView: View {
                 .padding(.horizontal, DS.Spacing.xl)
                 .padding(.top, DS.Spacing.lg)
 
-                Spacer()
+                // El centro reparte su alto con `Spacer`s y no tenía scroll: en un iPhone SE no cabía ni a tamaño
+                // normal, y «¡Listo!» y «Editar» se salían por arriba y «Registrar otro» por abajo (medido el
+                // 2026-09-28). Ahora solo el centro se desplaza, y solo si no cabe (`.basedOnSize`); con el alto
+                // mínimo del hueco, los `Spacer`s reparten igual que antes cuando cabe. Es el molde de
+                // `GroupExpenseSuccessView`: «Editar» arriba y los botones abajo quedan siempre a la vista.
+                GeometryReader { proxy in
+                    ScrollView {
+                        VStack(spacing: DS.Spacing.none) {
+                            Spacer()
 
-                // Hero area
-                VStack(spacing: DS.Spacing.lg) {
-                    // Title above circle
-                    Text(L10n.Transaction.successTitle)
-                        .font(DS.Typography.headline)
-                        .foregroundStyle(.secondary)
-                        .opacity(showHero ? 1.0 : 0.0)
+                            // Hero area
+                            VStack(spacing: DS.Spacing.lg) {
+                                // Title above circle
+                                Text(L10n.Transaction.successTitle)
+                                    .font(DS.Typography.headline)
+                                    .foregroundStyle(.secondary)
+                                    .opacity(showHero ? 1.0 : 0.0)
 
-                    // Layered circle
-                    ZStack {
-                        // Radiant glow
-                        RadialGradient(
-                            colors: [typeColor.opacity(0.25), .clear],
-                            center: .center,
-                            startRadius: 20,
-                            endRadius: 90
-                        )
-                        .frame(width: 180, height: 180)
-                        .blur(radius: 12)
-                        .opacity(showHero ? 1.0 : 0.0)
+                                // Layered circle
+                                ZStack {
+                                    // Radiant glow
+                                    RadialGradient(
+                                        colors: [typeColor.opacity(0.25), .clear],
+                                        center: .center,
+                                        startRadius: 20,
+                                        endRadius: 90
+                                    )
+                                    .frame(width: 180, height: 180)
+                                    .blur(radius: 12)
+                                    .opacity(showHero ? 1.0 : 0.0)
 
-                        // Main gradient circle
-                        Circle()
-                            .fill(
-                                LinearGradient(
-                                    colors: [typeColor, typeColor.opacity(0.7)],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
-                            .frame(width: 100, height: 100)
-                            .shadow(color: typeColor.opacity(0.4), radius: 20, y: 8)
-                            .scaleEffect(showHero ? 1.0 : 0.3)
-                            .opacity(showHero ? 1.0 : 0.0)
+                                    // Main gradient circle
+                                    Circle()
+                                        .fill(
+                                            LinearGradient(
+                                                colors: [typeColor, typeColor.opacity(0.7)],
+                                                startPoint: .topLeading,
+                                                endPoint: .bottomTrailing
+                                            )
+                                        )
+                                        .frame(width: 100, height: 100)
+                                        .shadow(color: typeColor.opacity(0.4), radius: 20, y: 8)
+                                        .scaleEffect(showHero ? 1.0 : 0.3)
+                                        .opacity(showHero ? 1.0 : 0.0)
 
-                        // Glass overlay
-                        Circle()
-                            .fill(Color.white.opacity(0.1))
-                            .frame(width: 100, height: 100)
-                            .mask(
-                                LinearGradient(
-                                    colors: [.white, .clear],
-                                    startPoint: .top,
-                                    endPoint: .center
-                                )
-                            )
-                            .opacity(showHero ? 1.0 : 0.0)
+                                    // Glass overlay
+                                    Circle()
+                                        .fill(Color.white.opacity(0.1))
+                                        .frame(width: 100, height: 100)
+                                        .mask(
+                                            LinearGradient(
+                                                colors: [.white, .clear],
+                                                startPoint: .top,
+                                                endPoint: .center
+                                            )
+                                        )
+                                        .opacity(showHero ? 1.0 : 0.0)
 
-                        // White checkmark
-                        Image(systemName: "checkmark")
-                            .font(.system(size: heroIconSize, weight: .semibold))
-                            .foregroundStyle(.white)
-                            .scaleEffect(showCheckmark ? 1.0 : 0.0)
-                            .opacity(showCheckmark ? 1.0 : 0.0)
-                            .accessibilityHidden(true)
+                                    // White checkmark
+                                    Image(systemName: "checkmark")
+                                        .font(.system(size: heroIconSize, weight: .semibold))
+                                        .foregroundStyle(.white)
+                                        .scaleEffect(showCheckmark ? 1.0 : 0.0)
+                                        .opacity(showCheckmark ? 1.0 : 0.0)
+                                        .accessibilityHidden(true)
+                                }
+
+                                // Promoted amount
+                                if data.isTransfer,
+                                   let destAmount = data.destinationAmount,
+                                   let destCurrency = data.destinationCurrencyCode,
+                                   destCurrency != data.currencyCode
+                                {
+                                    Text(
+                                        appPreferences.currency(Double(truncating: data.amount as NSDecimalNumber),
+                                            currencyCode: data.currencyCode,
+                                            forceFullPrecision: true)
+                                        + " → "
+                                        + appPreferences.currency(Double(truncating: destAmount as NSDecimalNumber),
+                                            currencyCode: destCurrency,
+                                            forceFullPrecision: true)
+                                    )
+                                    .font(DS.Typography.title2)
+                                    .foregroundStyle(typeColor)
+                                    .scaleEffect(showAmount ? 1.0 : 0.8)
+                                    .opacity(showAmount ? 1.0 : 0.0)
+                                } else {
+                                    AmountText(
+                                        value: Double(truncating: data.amount as NSDecimalNumber),
+                                        currencyCode: data.currencyCode,
+                                        font: DS.Typography.heroAmount, secondaryFont: DS.Typography.heroAmountSecondary,
+                                        tint: .color(typeColor),
+                                        forceFullPrecision: true
+                                    )
+                                    .scaleEffect(showAmount ? 1.0 : 0.8)
+                                    .opacity(showAmount ? 1.0 : 0.0)
+                                }
+                            }
+                            .padding(.bottom, DS.Spacing.xxxl)
+
+                            // Transaction details
+                            detailsSection
+                                .padding(.horizontal, DS.Spacing.xl)
+                                .opacity(showDetails ? 1.0 : 0.0)
+                                .offset(y: showDetails ? 0 : 15)
+
+                            Spacer()
+                        }
+                        .frame(minHeight: proxy.size.height)
                     }
-
-                    // Promoted amount
-                    if data.isTransfer,
-                       let destAmount = data.destinationAmount,
-                       let destCurrency = data.destinationCurrencyCode,
-                       destCurrency != data.currencyCode
-                    {
-                        Text(
-                            appPreferences.currency(Double(truncating: data.amount as NSDecimalNumber),
-                                currencyCode: data.currencyCode,
-                                forceFullPrecision: true)
-                            + " → "
-                            + appPreferences.currency(Double(truncating: destAmount as NSDecimalNumber),
-                                currencyCode: destCurrency,
-                                forceFullPrecision: true)
-                        )
-                        .font(DS.Typography.title2)
-                        .foregroundStyle(typeColor)
-                        .scaleEffect(showAmount ? 1.0 : 0.8)
-                        .opacity(showAmount ? 1.0 : 0.0)
-                    } else {
-                        AmountText(
-                            value: Double(truncating: data.amount as NSDecimalNumber),
-                            currencyCode: data.currencyCode,
-                            font: DS.Typography.heroAmount, secondaryFont: DS.Typography.heroAmountSecondary,
-                            tint: .color(typeColor),
-                            forceFullPrecision: true
-                        )
-                        .scaleEffect(showAmount ? 1.0 : 0.8)
-                        .opacity(showAmount ? 1.0 : 0.0)
-                    }
+                    .scrollBounceBehavior(.basedOnSize)
+                    .scrollIndicators(.hidden)
                 }
-                .padding(.bottom, DS.Spacing.xxxl)
-
-                // Transaction details
-                detailsSection
-                    .padding(.horizontal, DS.Spacing.xl)
-                    .opacity(showDetails ? 1.0 : 0.0)
-                    .offset(y: showDetails ? 0 : 15)
-
-                Spacer()
 
                 // Action buttons - native iOS style
                 VStack(spacing: DS.Spacing.md) {

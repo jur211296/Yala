@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (688)
+## Index (691)
 
 | id | status | path |
 |---|---|---|
@@ -262,6 +262,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | financial-report-amounts-unmarked | backlog | tickets/backlog/financial-report-amounts-unmarked.md |
 | finish-halfway-wipe-early-failure-shows-no-feedback | backlog | tickets/backlog/finish-halfway-wipe-early-failure-shows-no-feedback.md |
 | first-drain-cursor-creation-saves-pending-edits-under-the-engine-author | backlog | tickets/backlog/first-drain-cursor-creation-saves-pending-edits-under-the-engine-author.md |
+| first-expense-practice-alert-tears-down-the-success-screen | backlog | tickets/backlog/first-expense-practice-alert-tears-down-the-success-screen.md |
 | floating-buttons-cover-row-amounts-on-ipad-landscape | backlog | tickets/backlog/floating-buttons-cover-row-amounts-on-ipad-landscape.md |
 | flows-atlas-predates-session-redesign | backlog | tickets/backlog/flows-atlas-predates-session-redesign.md |
 | follower-waits-forever-on-a-lease-with-a-null-heartbeat | backlog | tickets/backlog/follower-waits-forever-on-a-lease-with-a-null-heartbeat.md |
@@ -396,6 +397,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | import-activity-latch-survives-an-icloud-account-change | backlog | tickets/backlog/import-activity-latch-survives-an-icloud-account-change.md |
 | inbox-convert-draft-to-group-expense | done | tickets/done/inbox-convert-draft-to-group-expense.md |
 | inbox-crash-convert-to-group-expense | done | tickets/done/inbox-crash-convert-to-group-expense.md |
+| inbox-header-leaves-no-room-for-drafts-at-large-text | backlog | tickets/backlog/inbox-header-leaves-no-room-for-drafts-at-large-text.md |
 | indice-readme-barre-worktrees-anidados | backlog | tickets/backlog/indice-readme-barre-worktrees-anidados.md |
 | indice-readme-cuenta-los-ficheros-de-los-worktrees-anidados | backlog | tickets/backlog/indice-readme-cuenta-los-ficheros-de-los-worktrees-anidados.md |
 | initial-balance-date-move-leaves-converted-amount-stale | backlog | tickets/backlog/initial-balance-date-move-leaves-converted-amount-stale.md |
@@ -417,7 +419,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | iphone-duo-native-app | backlog | tickets/backlog/iphone-duo-native-app.md |
 | iphone-large-models-use-the-extra-width | backlog | tickets/backlog/iphone-large-models-use-the-extra-width.md |
 | iphone-large-text-sizes-break-layouts | done | tickets/done/iphone-large-text-sizes-break-layouts.md |
-| iphone-small-screens-and-safe-areas-audit | backlog | tickets/backlog/iphone-small-screens-and-safe-areas-audit.md |
+| iphone-small-screens-and-safe-areas-audit | done | tickets/done/iphone-small-screens-and-safe-areas-audit.md |
 | iphone-supports-landscape-orientation | backlog | tickets/backlog/iphone-supports-landscape-orientation.md |
 | joiner-flag-residuals-cosmetic-and-service-guard | backlog | tickets/backlog/joiner-flag-residuals-cosmetic-and-service-guard.md |
 | journal-unreadable-card-says-reopen-when-a-downgrade-needs-an-update | backlog | tickets/backlog/journal-unreadable-card-says-reopen-when-a-downgrade-needs-an-update.md |
@@ -644,6 +646,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | siri-ai-visual-redesign | discarded | tickets/discarded/siri-ai-visual-redesign.md |
 | siri-intent-dual-container | done | tickets/done/siri-intent-dual-container.md |
 | siri-shortcut-error-replies-speak-english-on-a-spanish-iphone | backlog | tickets/backlog/siri-shortcut-error-replies-speak-english-on-a-spanish-iphone.md |
+| small-screen-leftovers-after-the-iphone-se-audit | backlog | tickets/backlog/small-screen-leftovers-after-the-iphone-se-audit.md |
 | smart-ai-notifications | backlog | tickets/backlog/smart-ai-notifications.md |
 | snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling | done | tickets/done/snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling.md |
 | snapshot-upload-has-no-ceiling-and-no-way-out | qa | tickets/qa/snapshot-upload-has-no-ceiling-and-no-way-out.md |

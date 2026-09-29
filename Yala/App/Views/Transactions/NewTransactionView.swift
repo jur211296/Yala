@@ -315,52 +315,63 @@ struct NewTransactionView: View {
 
     private var transactionFormView: some View {
         NavigationStack {
-            VStack(spacing: DS.Spacing.none) {
-                    // P1-3: oculto en read-only (no se cambia el tipo de TX bridgeada).
-                    if !isBridgedReadOnly {
-                        transactionTypeSelector
-                            .padding(.top, DS.Spacing.sm)
+            // El formulario reparte su alto con `Spacer`s y no tenía scroll: en un iPhone SE con el texto en
+            // tamaños de accesibilidad no cabía, el selector de tipo quedaba bajo la barra y «Guardar» y los
+            // chips de cuenta y subcategoría, fuera de la pantalla — no se podía guardar (medido el
+            // 2026-09-28). Ahora va en un scroll que solo se mueve si hace falta (`.basedOnSize`), con el
+            // alto mínimo de la pantalla para que los `Spacer`s sigan repartiendo igual cuando cabe.
+            GeometryReader { proxy in
+                ScrollView {
+                    VStack(spacing: DS.Spacing.none) {
+                        // P1-3: oculto en read-only (no se cambia el tipo de TX bridgeada).
+                        if !isBridgedReadOnly {
+                            transactionTypeSelector
+                                .padding(.top, DS.Spacing.sm)
+                        }
+
+                        // P1-3: banner CTA contextual cuando la TX es bridgeada.
+                        bridgedTxReadOnlyBanner
+
+                        // Contextual guide for new users (oculto en read-only).
+                        if !isBridgedReadOnly {
+                            ContextualGuideBanner.transaction()
+                                .padding(.horizontal, DS.Spacing.md)
+                                .padding(.top, DS.Spacing.xs)
+                        }
+
+                        // Resto del form: disabled granular según tipo bridged (M5 vs M6 Caso A).
+                        Group {
+                            Spacer()
+
+                            // Central content area: campos del grupo (monto/fecha/tipo) — always
+                            // disabled si bridged (M5 + M6 Caso A: el grupo es la fuente de verdad).
+                            centralContent
+                                .disabled(isBridgedReadOnly)
+                                .opacity(isBridgedReadOnly ? 0.5 : 1.0)
+
+                            Spacer()
+
+                            // Bottom selection chips: el disabled es GRANULAR por chip según
+                            // `BridgedEditPolicy` (dentro de `bottomChips`): cuenta editable solo en
+                            // Caso A real; subcat/tags también en Caso B clasificable; nada en
+                            // derivadas/settlements. Sin `.disabled` de contenedor aquí.
+                            bottomChips
+                                .padding(.bottom, DS.Spacing.lg)
+
+                            // Register button: habilitado si algún campo personal es editable
+                            // (Caso A y Caso B clasificable). Solo toca campos personales en
+                            // SwiftData, no invoca service del grupo.
+                            registerButton
+                                .disabled(!canSaveBridged)
+                                .opacity(canSaveBridged ? 1.0 : 0.5)
+                                .padding(.horizontal, DS.Spacing.xl)
+                                .padding(.bottom, DS.Spacing.xxl)
+                        }
                     }
-
-                    // P1-3: banner CTA contextual cuando la TX es bridgeada.
-                    bridgedTxReadOnlyBanner
-
-                    // Contextual guide for new users (oculto en read-only).
-                    if !isBridgedReadOnly {
-                        ContextualGuideBanner.transaction()
-                            .padding(.horizontal, DS.Spacing.md)
-                            .padding(.top, DS.Spacing.xs)
-                    }
-
-                    // Resto del form: disabled granular según tipo bridged (M5 vs M6 Caso A).
-                    Group {
-                        Spacer()
-
-                        // Central content area: campos del grupo (monto/fecha/tipo) — always
-                        // disabled si bridged (M5 + M6 Caso A: el grupo es la fuente de verdad).
-                        centralContent
-                            .disabled(isBridgedReadOnly)
-                            .opacity(isBridgedReadOnly ? 0.5 : 1.0)
-
-                        Spacer()
-
-                        // Bottom selection chips: el disabled es GRANULAR por chip según
-                        // `BridgedEditPolicy` (dentro de `bottomChips`): cuenta editable solo en
-                        // Caso A real; subcat/tags también en Caso B clasificable; nada en
-                        // derivadas/settlements. Sin `.disabled` de contenedor aquí.
-                        bottomChips
-                            .padding(.bottom, DS.Spacing.lg)
-
-                        // Register button: habilitado si algún campo personal es editable
-                        // (Caso A y Caso B clasificable). Solo toca campos personales en
-                        // SwiftData, no invoca service del grupo.
-                        registerButton
-                            .disabled(!canSaveBridged)
-                            .opacity(canSaveBridged ? 1.0 : 0.5)
-                            .padding(.horizontal, DS.Spacing.xl)
-                            .padding(.bottom, DS.Spacing.xxl)
-                    }
+                    .frame(minHeight: proxy.size.height)
                 }
+                .scrollBounceBehavior(.basedOnSize)
+            }
             .scaleEffect(duplicateAnimationVisible ? 1.0 : 0.92)
             .opacity(duplicateAnimationVisible ? 1.0 : 0.0)
             .dismissKeyboardOnTap()

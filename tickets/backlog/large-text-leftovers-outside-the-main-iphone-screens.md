@@ -30,9 +30,11 @@ arregladas, **inferido** sin captura.
 2. **Ingresos y gastos de la cabecera de Estadísticas**: `incomeExpenseChips` en `TrendsTabView` e
    `InsightsTabView` tienen la forma de la de Registros, que a AX5 cortaba los dos importes. Inferido.
 3. **Nuevo registro**: a AX5 el selector Gasto / Ingreso / Transferencia corta sus rótulos («Ingr…», «Tran…») y la
-   fila de acciones también («Calcul…», «Favori…», «Recurr…»). Visto a AX5. No tapa ningún botón: todos se pueden
-   tocar. La solución nativa es pasar a solo icono o a dos filas a esos tamaños; toca un formulario con mucho uso, y
-   por eso no entró aquí.
+   fila de acciones también («Calcul…», «Favori…», «Recurr…»). Visto a AX5. La solución nativa es pasar a solo icono
+   o a dos filas a esos tamaños; toca un formulario con mucho uso, y por eso no entró aquí.
+   **Corrección del 2026-09-28** ([[iphone-small-screens-and-safe-areas-audit]]): «no tapa ningún botón» valía para
+   el ProMax. En el SE a AX5 el formulario no cabía y «Guardar» y los chips quedaban fuera de la pantalla; ese
+   ticket le dio scroll. Los rótulos cortados siguen aquí.
 4. **Bandeja**: los filtros «Pendientes / Archivados» se parten en sílabas («Pe / n…») a AX5. Visto.
 5. **Panel**: el widget pequeño de presupuestos corta su título («Pre…») y el eje del gráfico de Tendencias solapa
    las fechas («2122 24 2628»). Visto a AX5. Las tarjetas pequeñas tienen alto fijo (`WidgetSize.smallHeight`,
