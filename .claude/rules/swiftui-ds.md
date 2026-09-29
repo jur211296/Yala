@@ -36,10 +36,12 @@ paths:
 
 - **El CI compila con Xcode 26.6 y su compilador tipa peor que el de 27 (medido 2026-09-29).** Cuatro `onChange` más en
   la cadena del `body` de `RecordsStandaloneView` compilaban en local (Xcode 27) y en el CI salieron con «the compiler
-  is unable to type-check this expression in reasonable time». Por eso esa vista reparte sus observadores en
-  `ViewModifier` pequeños; al añadir modificadores a un `body` largo, van a uno de ellos o a uno nuevo. Para medirlo
-  en local: `OTHER_SWIFT_FLAGS='$(inherited) -Xfrontend -warn-long-expression-type-checking=150'` y buscar tu fichero
-  en los avisos.
+  is unable to type-check this expression in reasonable time». Moverlos a un `ViewModifier` propio **no bastó**: ahí,
+  cinco `onChange` con cierres de varias líneas volvieron a fallar. Lo que pasa: como mucho **tres modificadores por
+  `ViewModifier`** (el molde de los observadores de esa vista) y **cierres de una línea que llaman a una función**.
+  Para medirlo en local, con margen: `OTHER_SWIFT_FLAGS='$(inherited) -Xfrontend
+  -warn-long-expression-type-checking=20'` y buscar tu fichero en los avisos; lo nuevo debe salir por debajo de lo
+  viejo que ya pasa el CI.
 
 - **Forms con `TextField`/`TextEditor`/`SecureField`** (sin `Form`): obligatorio `dismissKeyboardOnTap()` desde el primer commit. Detalles en SWIFT-STYLE.md.
 
