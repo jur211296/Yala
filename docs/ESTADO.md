@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-28 (Lima)
 
-**Rama** `2.1` — Merge #295: **en el iPhone más pequeño, «Guardar» y los botones de las pantallas de éxito vuelven a estar a la vista.**
+**Rama** `2.1` — Merge #296: **con la sesión de la nube caducada, cerrar sesión ofrece exportar tus movimientos o perderlos, y nada sube con otra cuenta.**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > **El destino del gate vuelve a resolver** (medido el 28-sep): hay un iPhone 17 Pro de **iOS 27.0**
@@ -13,7 +13,30 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `9D0F6D32` (26.5) que citaba el aviso anterior **ya no existe**. El ticket
 > `the-gate-destination-no-longer-resolves-on-this-mac` tiene la premisa cambiada: medirlo antes de trabajarlo.
 
-## Esta sesión (#295 · carril adaptativo, paso 3: el iPhone más pequeño)
+## Esta sesión (#296 · la nube con la sesión caducada: exportar o perder tus movimientos, nunca a ciegas)
+
+Con los datos en la nube, la sesión caducada y movimientos sin subir, quien no podía volver a entrar (cuenta borrada, correo
+perdido) no podía cerrar sesión. Ahora el aviso cuenta los cambios, dice cómo subirlos desde «Dónde viven tus datos» y ofrece
+«Exportar mis movimientos», «Cerrar sesión y perderlos» y «Ahora no», que no borra nada. Si la persona vuelve a entrar, suben y
+el cierre sigue sin aviso. Un 401 con la sesión aún renovable no ofrece perder nada, y otra cuenta no sube nada ajeno.
+
+- Resuelve la decisión que dejó #294 (opción robusta del encargo). La salida del attest se generaliza por causa:
+  `CloudSignOutFlowLogic.personalUploadBlockDecision` + `personalLossCause`, `CausedLossAcceptance`, y la prueba
+  `CloudSyncRuntime.ownersSessionIsGone`. Regla nueva en `swiftdata-cloudkit.md`.
+- **Verificado:** `YalaTests` entero (8457) y 34 suites XCUITest de las áreas tocadas (83 casos, 0 fallos, sin nadie
+  encima); 10 mutantes, 10 muertos; review adversarial de tres lentes, sin altos (tres arreglos dentro); CI verde.
+- **Nuevo en backlog:** `cloud-sign-out-with-another-account-points-to-a-missing-sign-in-door` (baja) y
+  `a-previous-owners-claim-seal-passes-the-cloud-identity-gate` (media, inferido y preexistente: el sello de claim de una
+  cuenta que ya usó la nube en el teléfono pasa la puerta de identidad del motor sin dueño en memoria).
+- **Encontrado:** «Exportar» iba a ser la acción destacada del aviso; se quedó primera pero sin negrita, porque
+  `.keyboardShortcut(.defaultAction)` sería el primer uso en la app y el aviso no se puede ver en el simulador.
+
+### Lo que espera de Jürgen
+
+- **Device-QA** de `cloud-sign-out-with-an-expired-session-and-personal-changes-has-no-exit` (en `qa`): guion de 7 pasos en
+  el ticket, con una cuenta en la nube de staging y la sesión borrada en el SQL Editor.
+
+## Sesión anterior (#295 · carril adaptativo, paso 3: el iPhone más pequeño)
 
 En un iPhone SE, Nuevo registro no dejaba guardar con el texto al máximo: «Guardar» y los chips de cuenta y
 subcategoría quedaban fuera de la pantalla. A tamaño normal, con el teclado abierto, el selector de tipo se metía bajo
@@ -35,8 +58,7 @@ dejan de cortarse la suma de dos monedas de la tarjeta de grupo y la cabecera de
 
 ### Lo que espera de Jürgen
 
-- Nada nuevo de esta sesión. Sigue pendiente la **decisión** de #294, justo debajo. El carril adaptativo sigue con el
-  paso 4, `sheet-size-follows-the-device-not-the-window`.
+- Nada nuevo de esta sesión. El carril adaptativo sigue con el paso 4, `sheet-size-follows-the-device-not-the-window`.
 
 ## Sesión anterior (#294 · cambios de grupos sin sesión: una salida con aviso, y cada cambio con su dueño)
 
@@ -59,8 +81,6 @@ suben a su nombre: se guardan para su dueño o se ofrecen en esa misma salida.
 
 ### Lo que espera de Jürgen
 
-- **Decidir** `cloud-sign-out-with-an-expired-session-and-personal-changes-has-no-exit`: el mismo callejón, con cambios
-  personales de la nube en vez de grupos. Hoy sigue bloqueado sin salida.
 - Sigue en pie **el guion de `qa/guion-tanda.md`**.
 
 ## Sesión anterior (#293 · carril adaptativo, paso 2: el texto muy grande en las pantallas del iPhone)
