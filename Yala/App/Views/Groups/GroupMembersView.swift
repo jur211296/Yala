@@ -99,7 +99,7 @@ struct GroupMembersView: View {
                     prefillDebtorMemberID: openingBalanceToEdit == nil ? openingBalancePrefillDebtor : nil,
                     onSave: { viewModel.loadData() }
                 )
-                .presentationDetents(DS.Adaptive.sheetDetents([.large]))
+                .yalaSheetDetents([.large])
                 .presentationDragIndicator(.visible)
             }
             .confirmationDialog(

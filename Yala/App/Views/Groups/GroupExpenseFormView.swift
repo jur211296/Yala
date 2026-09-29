@@ -288,7 +288,7 @@ struct GroupExpenseFormView: View {
                     groupColorHex: group.colorHex,
                     selectedMemberID: $viewModel.paidByMemberID
                 )
-                .presentationDetents(DS.Adaptive.sheetDetents([.large]))
+                .yalaSheetDetents([.large])
             }
             .sheet(isPresented: $showCurrencyPicker) {
                 // NavigationStack para que el .toolbar con la "X" de CurrencySelectorView
@@ -296,7 +296,7 @@ struct GroupExpenseFormView: View {
                 NavigationStack {
                     CurrencySelectorView(selectedCurrency: currencyCodeBinding)
                 }
-                .presentationDetents(DS.Adaptive.sheetDetents([.large]))
+                .yalaSheetDetents([.large])
             }
             .sheet(isPresented: $showAccountSelector) {
                 // M6: filtrado por moneda para que la cuenta seleccionada siempre sea compatible.
@@ -305,14 +305,14 @@ struct GroupExpenseFormView: View {
                     title: L10n.Transaction.account,
                     currencyFilter: viewModel.currencyCode
                 )
-                .presentationDetents(DS.Adaptive.sheetDetents([.medium, .large]))
+                .yalaSheetDetents([.medium, .large])
             }
             .sheet(isPresented: $showSubcategorySelector) {
                 SubcategorySelectorSheet(
                     selectedSubcategory: $viewModel.selectedSubcategory,
                     transactionType: .expense
                 )
-                .presentationDetents(DS.Adaptive.sheetDetents([.large]))
+                .yalaSheetDetents([.large])
             }
             .sheet(isPresented: $showSplitDetail, onDismiss: {
                 // Al cerrar: quien quedó sin valor en el tipo activo se deselecciona

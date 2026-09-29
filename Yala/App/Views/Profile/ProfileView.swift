@@ -731,7 +731,7 @@ struct ProfileView: View {
             }
             .sheet(item: $signOutRescueExportFile, onDismiss: { returnToPersonalAttestNotice() }) { file in
                 ShareSheet(activityItems: file.urls)
-                    .presentationDetents(DS.Adaptive.sheetDetents([.medium, .large]))
+                    .yalaSheetDetents([.medium, .large])
             }
             .alert(L10n.Export.exportError, isPresented: $showSignOutRescueExportError) {
                 Button(L10n.Common.ok, role: .cancel) { returnToPersonalAttestNotice() }

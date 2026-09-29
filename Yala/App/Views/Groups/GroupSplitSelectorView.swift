@@ -78,7 +78,7 @@ struct GroupSplitSelectorView: View {
             }
             .onAppear { lastType = viewModel.splitType }
         }
-        .presentationDetents(DS.Adaptive.sheetDetents([.large]))
+        .yalaSheetDetents([.large])
         .presentationDragIndicator(.visible)
     }
 

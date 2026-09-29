@@ -24,7 +24,7 @@ informes largos — todo lo que en el teléfono obliga a ir y volver entre panta
 
 Idea capturada, **sin spec**. Nota de camino, medida el 2026-09-09: la app **ya tiene rastro de
 iPad** —el helper de Design System `DS.Adaptive.sheetDetents(_:)`
-(`Yala/App/Theme/DesignTokens.swift:436`) existe para adaptar sheets a iPad/Mac, y hay ramas `isWide`
+(`Yala/App/Theme/DesignTokens.swift:436`; desde el 29-sep, `.yalaSheetDetents(_:)`, que decide por la ventana) existe para adaptar sheets a iPad/Mac, y hay ramas `isWide`
 en las vistas de Estadísticas—, así que el punto de partida no es cero. Al hacer spec, medir qué
 parte está ya adaptada antes de estimar.
 

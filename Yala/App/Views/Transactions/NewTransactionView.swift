@@ -463,7 +463,7 @@ struct NewTransactionView: View {
                         set: { viewModel.selectedNeed = $0 }
                     )
                 )
-                .presentationDetents(DS.Adaptive.sheetDetents([.medium]))
+                .yalaSheetDetents([.medium])
             }
             .onChange(of: viewModel.showAccountSelector) { _, isPresenting in
                 if isPresenting {

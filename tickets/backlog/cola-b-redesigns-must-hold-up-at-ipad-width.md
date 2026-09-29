@@ -22,7 +22,8 @@ ahora no haya que rehacerlo en la fase 1 de iPad.
 - [ ] [[ai-chat-reads-heavier-than-a-messaging-app]]: la vista del chat no debe asumir que vive en una
       hoja (sin tirador ni cierre dentro del hilo). En iPad irá en un `.inspector`.
 - [ ] [[account-form-as-medium-detent-sheet]]: en iPad el detent medio no se aplica, porque
-      `DS.Adaptive.usesLargeSheets` fuerza `.large` (`DesignTokens.swift:430`). Decidirlo a propósito.
+      `.yalaSheetDetents(_:)` fuerza `.large` en una ventana ancha (desde el 29-sep lo decide la ventana, no el
+      aparato: [[sheet-size-follows-the-device-not-the-window]]). Decidirlo a propósito.
 - [ ] [[panel-accounts-redesign]]: el detalle de cuenta, pensado para poder ir en columna en iPad.
 - [ ] [[more-tab-missing-profile-button]]: Más deja de ser pantalla en iPad (barra lateral). No
       invertir en rediseñar Más como pantalla.

@@ -134,7 +134,7 @@ struct PersonalDetailsView: View {
                 profileImage = nil
                 profileUIImage = nil
             }
-            .presentationDetents(DS.Adaptive.sheetDetents([.medium]))
+            .yalaSheetDetents([.medium])
             .presentationDragIndicator(.visible)
         }
     }

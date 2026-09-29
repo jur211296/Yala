@@ -107,6 +107,8 @@ struct YalaApp: App {
     @ViewBuilder
     private func rootView(container: ModelContainer) -> some View {
         ContentView()
+            // Las hojas se dimensionan por el espacio de ESTA ventana, no por el aparato.
+            .sizesSheetsByWindow()
             .preferredColorScheme(themeManager.userChoice == .system ? nil : themeManager.resolved.baseColorScheme)
             .tint(themeManager.resolved.accent)
             .environment(\.yalaTheme, themeManager.resolved)

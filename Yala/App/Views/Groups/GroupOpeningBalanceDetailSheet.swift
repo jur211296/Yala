@@ -24,10 +24,11 @@ struct GroupOpeningBalanceDetailSheet: View {
     let onDelete: () -> Void
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.usesLargeSheets) private var usesLargeSheets
     @State private var showDeleteConfirm = false
 
     private var detent: PresentationDetent {
-        DS.Adaptive.usesLargeSheets ? .large : .medium
+        usesLargeSheets ? .large : .medium
     }
 
     private var debtorName: String {
@@ -78,7 +79,7 @@ struct GroupOpeningBalanceDetailSheet: View {
                     }
                 }
             }
-            .yalaScreenBackground(DS.Adaptive.usesLargeSheets ? .subtle : .transparent)
+            .yalaScreenBackground(.partialSheet)
             .confirmationDialog(
                 L10n.Action.delete,
                 isPresented: $showDeleteConfirm,

@@ -621,10 +621,14 @@ enum YalaBackgroundVariant {
     case subtle
 
     /// Sin fondo aplicado (desnudo): el sheet muestra su fondo de sistema. Para
-    /// sheets con detent parcial (`.medium`/`.height`/`.fraction`). En iPad el
-    /// detent se fuerza a `.large`, así que esos sheets usan `.subtle` vía
-    /// `DS.Adaptive.usesLargeSheets ? .subtle : .transparent`.
+    /// sheets con detent parcial fijo (`.medium`/`.height`/`.fraction`) que NO
+    /// pasan por `.yalaSheetDetents(_:)`.
     case transparent
+
+    /// Sheet cuyo detent parcial sale de `.yalaSheetDetents(_:)`: `.transparent`
+    /// mientras la ventana deja el detent parcial, `.subtle` cuando lo fuerza a
+    /// `.large` (ventana ancha o Mac). Lo resuelve `\.usesLargeSheets`.
+    case partialSheet
 }
 
 /// Aplica background temático consistente a la vista.
@@ -637,6 +641,7 @@ enum YalaBackgroundVariant {
 /// manualmente — el modifier NO lo hace automático para preservar predictibilidad.
 struct YalaScreenBackgroundModifier: ViewModifier {
     @Environment(\.yalaTheme) private var theme
+    @Environment(\.usesLargeSheets) private var usesLargeSheets
     let variant: YalaBackgroundVariant
     let ignoredEdges: Edge.Set?
 
@@ -644,9 +649,14 @@ struct YalaScreenBackgroundModifier: ViewModifier {
         ignoredEdges ?? .all
     }
 
+    private var resolvedVariant: YalaBackgroundVariant {
+        guard variant == .partialSheet else { return variant }
+        return usesLargeSheets ? .subtle : .transparent
+    }
+
     @ViewBuilder
     func body(content: Content) -> some View {
-        switch variant {
+        switch resolvedVariant {
         case .panel:
             ZStack {
                 PanelBackgroundView(ignoredEdges: effectiveEdges)
@@ -658,7 +668,7 @@ struct YalaScreenBackgroundModifier: ViewModifier {
                     .ignoresSafeArea(edges: effectiveEdges)
                 content
             }
-        case .transparent:
+        case .transparent, .partialSheet:
             content
         }
     }
@@ -669,7 +679,7 @@ extension View {
     ///
     /// - Parameter variant: `.panel` (gradient, vistas completas), `.subtle`
     ///   (plano, sheets normales/success), `.transparent` (desnudo, sheets con
-    ///   detent parcial).
+    ///   detent parcial fijo), `.partialSheet` (sheets con `.yalaSheetDetents`).
     /// - Parameter ignoredEdges: Si `nil`, usa `.all`. Pasar valor explícito
     ///   (`[.top]`, `[.bottom]`) para coexistir con `safeAreaInset`.
     func yalaScreenBackground(
@@ -677,6 +687,66 @@ extension View {
         ignoredEdges: Edge.Set? = nil
     ) -> some View {
         modifier(YalaScreenBackgroundModifier(variant: variant, ignoredEdges: ignoredEdges))
+    }
+}
+
+// MARK: - Sheet Sizing (por ventana)
+
+extension EnvironmentValues {
+    /// Si las hojas con detent parcial se fuerzan a `.large`. Lo pone la raíz de la ventana con
+    /// `sizesSheetsByWindow()` y llega intacto a toda hoja que cuelgue de ella. Sin raíz (previews),
+    /// el comportamiento de iPhone; en Mac, grandes.
+    @Entry var usesLargeSheets: Bool = DS.Adaptive.usesLargeSheets(windowHorizontalSizeClass: nil)
+}
+
+/// Calcula `\.usesLargeSheets` con el size class de la VENTANA. Se aplica una vez, en la raíz: ahí el
+/// `horizontalSizeClass` es el de la ventana; dentro de una hoja, no tiene por qué serlo.
+private struct WindowSheetSizingModifier: ViewModifier {
+    @Environment(\.horizontalSizeClass) private var windowHorizontalSizeClass
+
+    func body(content: Content) -> some View {
+        content.environment(
+            \.usesLargeSheets,
+            DS.Adaptive.usesLargeSheets(windowHorizontalSizeClass: windowHorizontalSizeClass)
+        )
+    }
+}
+
+/// `.presentationDetents` que fuerza `.large` cuando la ventana pide hojas grandes.
+private struct YalaSheetDetentsModifier: ViewModifier {
+    @Environment(\.usesLargeSheets) private var usesLargeSheets
+    let detents: Set<PresentationDetent>
+    let selection: Binding<PresentationDetent>?
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        let resolved = DS.Adaptive.sheetDetents(detents, usesLargeSheets: usesLargeSheets)
+        if let selection {
+            content.presentationDetents(resolved, selection: selection)
+        } else {
+            content.presentationDetents(resolved)
+        }
+    }
+}
+
+extension View {
+    /// Decide el tamaño de las hojas por el espacio de esta ventana. Solo en la raíz de la escena.
+    func sizesSheetsByWindow() -> some View {
+        modifier(WindowSheetSizingModifier())
+    }
+
+    /// Detents de iPhone en una ventana compacta; `.large` en una ancha o en Mac. Sustituye a
+    /// `.presentationDetents(_:)` en toda hoja con detent parcial. Su fondo: `.yalaScreenBackground(.partialSheet)`.
+    func yalaSheetDetents(_ detents: Set<PresentationDetent>) -> some View {
+        modifier(YalaSheetDetentsModifier(detents: detents, selection: nil))
+    }
+
+    /// Igual, con el detent elegido en `selection`.
+    func yalaSheetDetents(
+        _ detents: Set<PresentationDetent>,
+        selection: Binding<PresentationDetent>
+    ) -> some View {
+        modifier(YalaSheetDetentsModifier(detents: detents, selection: selection))
     }
 }
 

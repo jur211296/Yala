@@ -41,13 +41,14 @@ struct TransactionDetailSheet: View {
     @Environment(\.tagCatalog) private var tagCatalog
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.usesLargeSheets) private var usesLargeSheets
 
     @State private var transferPartnerAccount: Account?
 
-    /// Detent fijo: medium (iPhone) / large (iPad). Sin `selection` — ya no hay
+    /// Detent fijo: medium en ventana compacta / large en ventana ancha. Sin `selection` — ya no hay
     /// drag-to-edit que dispare cambios de modo.
     private var detent: PresentationDetent {
-        TransactionDetailSheetLogic.initialDetent(usesLargeSheets: DS.Adaptive.usesLargeSheets)
+        TransactionDetailSheetLogic.initialDetent(usesLargeSheets: usesLargeSheets)
             .presentationDetent
     }
 
@@ -88,7 +89,7 @@ struct TransactionDetailSheet: View {
                     .accessibilityIdentifier("transaction_detail_edit")
                 }
             }
-            .yalaScreenBackground(DS.Adaptive.usesLargeSheets ? .subtle : .transparent)
+            .yalaScreenBackground(.partialSheet)
         }
         .accessibilityIdentifier("transaction_detail_sheet")
         .task { resolveTransferPartner() }

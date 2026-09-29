@@ -421,19 +421,29 @@ enum DS {
             isWideScreen(sizeClass) ? DS.Spacing.xxxl : DS.Spacing.lg
         }
 
-        /// True on iPad and Mac Catalyst, where medium/fixed-height sheets are
-        /// forced to `.large` (too small otherwise for pickers / complex content).
-        /// Used both to adapt detents and to pick the sheet background variant:
-        /// a "partial" sheet is effectively `.large` here, so it must be `.subtle`,
-        /// not `.transparent`.
-        static var usesLargeSheets: Bool {
-            UIDevice.current.userInterfaceIdiom == .pad
-                || ProcessInfo.processInfo.isiOSAppOnMac
+        /// Si las hojas con detent parcial (`.medium`, `.height`) se fuerzan a `.large`.
+        ///
+        /// Decide el ESPACIO de la ventana, no el aparato (ADR «Yala se adapta por espacio, no por
+        /// dispositivo», 2026-09-27): una ventana de ancho regular —iPad a pantalla completa, iPhone Duo
+        /// abierto— las fuerza a grandes; una compacta —cualquier iPhone, iPad en ventana estrecha o
+        /// Split View— deja los detents de iPhone. En Mac, siempre grandes.
+        ///
+        /// Las vistas no la llaman: leen `\.usesLargeSheets`, que la raíz calcula con el size class de
+        /// la ventana (`sizesSheetsByWindow()`). Dentro de una hoja el `horizontalSizeClass` lo fija la
+        /// presentación y no tiene por qué ser el de la ventana que la presenta.
+        static func usesLargeSheets(
+            windowHorizontalSizeClass: UserInterfaceSizeClass?,
+            isiOSAppOnMac: Bool = ProcessInfo.processInfo.isiOSAppOnMac
+        ) -> Bool {
+            isiOSAppOnMac || windowHorizontalSizeClass == .regular
         }
 
-        /// Forces .large detents on iPad and Mac Catalyst where
-        /// medium/fixed-height sheets are too small for pickers and complex content.
-        static func sheetDetents(_ detents: Set<PresentationDetent>) -> Set<PresentationDetent> {
+        /// Fuerza `.large` cuando la ventana pide hojas grandes: ahí un detent medio o de altura fija se
+        /// queda corto para selectores y contenido complejo. En la vista, `.yalaSheetDetents(_:)`.
+        static func sheetDetents(
+            _ detents: Set<PresentationDetent>,
+            usesLargeSheets: Bool
+        ) -> Set<PresentationDetent> {
             usesLargeSheets ? [.large] : detents
         }
     }

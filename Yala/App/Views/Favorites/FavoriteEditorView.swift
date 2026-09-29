@@ -119,7 +119,7 @@ struct FavoriteEditorView: View {
                         set: { selectedNeed = $0 }
                     )
                 )
-                .presentationDetents(DS.Adaptive.sheetDetents([.medium]))
+                .yalaSheetDetents([.medium])
             }
             .onChange(of: showAccountSelector) { _, isPresenting in
                 if isPresenting {

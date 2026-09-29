@@ -220,7 +220,7 @@ struct GroupsContainerView: View {
                     memberCount: { viewModel.memberCount(for: $0) },
                     onSave: { viewModel.loadData() }
                 )
-                .presentationDetents(DS.Adaptive.sheetDetents([.large]))
+                .yalaSheetDetents([.large])
             }
             .navigationDestination(item: $viewModel.selectedGroup) { group in
                 GroupDetailView(group: group)

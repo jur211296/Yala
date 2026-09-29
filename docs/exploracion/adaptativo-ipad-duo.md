@@ -132,7 +132,8 @@ Referencia que pidió Jürgen el 27-sep para patrones y trampas prácticas. **Ap
   `DS.Adaptive.sheetDetents`). En el Duo abierto (idiom iPhone, ancho regular)
   las hojas saldrían con los detents de iPhone; en un iPad en una ventana estrecha, forzadas a grandes. Es lo único
   que decide por dispositivo: el resto de `userInterfaceIdiom`/`UIDevice.current` es informativo (versión, modelo,
-  identificador). Ticket: `sheet-size-follows-the-device-not-the-window`.
+  identificador). Ticket: `sheet-size-follows-the-device-not-the-window`. **Resuelto el 29-sep:** lo decide el size
+  class de la ventana (`\.usesLargeSheets`, calculado en la raíz) y `userInterfaceIdiom` ya no aparece en `Yala/`.
 - **Size classes en solo 6 ficheros**, todos de Panel y Estadísticas. `DS.Adaptive.horizontalPadding` tiene un solo
   uso (`PanelView.swift:562`).
 - **El Panel ya reparte en pares:** 2 columnas en regular (`PanelWidgetsGrid.swift:24`), que es lo que el HIG pide
@@ -277,7 +278,7 @@ Tamaños: **S** ≈ una sesión · **M** ≈ dos o tres · **L** ≈ cuatro o m�
 | 1 | **0 · Multiventana** ✅ 27-sep | No se puede abrir una segunda ventana rota, ni en iPad ni en el Duo. Apagada hasta la fase 4 (#12) | `ipad-multiple-windows-share-one-navigation-state` | S | nada | high · antes del 23-oct |
 | 2 | **iPhone · texto grande** | Con texto grande, los importes no se cortan y las filas crecen | `iphone-large-text-sizes-break-layouts` | M | nada | medium |
 | 3 | **iPhone · pantallas pequeñas** | En un iPhone SE nada queda tapado ni cortado, tampoco con el teclado | `iphone-small-screens-and-safe-areas-audit` | S–M | nada | medium |
-| 4 | **Cimiento · hojas por espacio** | Las hojas se dimensionan por la ventana, no por el aparato | `sheet-size-follows-the-device-not-the-window` | S | nada | medium |
+| 4 | **Cimiento · hojas por espacio** ✅ 29-sep | Las hojas se dimensionan por la ventana, no por el aparato | `sheet-size-follows-the-device-not-the-window` | S | nada | medium |
 | 5 | **1 · Barra lateral y lista-detalle** | Barra lateral; Registros y Planificación con lista y detalle a la vez; ancho legible | `ipad-sidebar-and-list-detail-for-records-and-planning` | L | 4 y [[cola-b-redesigns-must-hold-up-at-ipad-width]] | medium |
 | 6 | **Duo · barras, pliegue y SDK 27.1** | Yala a pantalla completa en el Duo, barras en el lateral bien ordenadas, nada en el pliegue | `iphone-duo-native-app` | M | 5 y `xcode-27-1-with-the-iphone-duo-simulator` | medium |
 | 7 | **2 · Grupos, Ajustes y Yala IA al lado** | Grupos y Ajustes en dos columnas; Yala IA como columna junto a los datos | `ipad-list-detail-for-groups-and-settings-and-chat-inspector` | M | 5 | low |
