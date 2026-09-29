@@ -32,6 +32,12 @@ struct TransactionDetailSheet: View {
 
     let transaction: TransactionItem
 
+    /// Dónde vive el detalle: hoja (iPhone, ventana estrecha, Estadísticas) o columna de detalle de
+    /// Registros en una ventana ancha. En columna no hay X —la columna no se cierra— ni detents, y
+    /// Editar abre el editor directo.
+    enum Presentation { case sheet, column }
+    var presentation: Presentation = .sheet
+
     /// Botón Editar. El padre marca pendingEditAfterDetail y cierra este sheet;
     /// al cerrarse presenta NewTransactionView (reemplazo de sheet nativo).
     let onEdit: () -> Void
@@ -53,25 +59,59 @@ struct TransactionDetailSheet: View {
     }
 
     var body: some View {
-        detailContent
-            .presentationDetents([detent])
-            .presentationDragIndicator(.hidden)
+        switch presentation {
+        case .sheet:
+            detailContent
+                .presentationDetents([detent])
+                .presentationDragIndicator(.hidden)
+        case .column:
+            columnContent
+        }
     }
 
     // MARK: - Detail content
 
+    private var scrollContent: some View {
+        ScrollView {
+            VStack(spacing: DS.Spacing.lg) {
+                compactHero
+                detailsCard
+            }
+            .padding(.horizontal, DS.Spacing.xl)
+            .padding(.top, DS.Spacing.md)
+            .padding(.bottom, DS.Spacing.xl)
+            .frame(maxWidth: DS.Adaptive.readableWidth)
+            .frame(maxWidth: .infinity)
+        }
+        .scrollBounceBehavior(.basedOnSize)
+    }
+
+    private var editButton: some View {
+        Button(L10n.Action.edit) {
+            onEdit()
+        }
+        .fontWeight(.semibold)
+        .foregroundStyle(Color.primary)
+        .accessibilityIdentifier("transaction_detail_edit")
+    }
+
+    /// Columna de detalle de Registros: ya está dentro de la pila de su columna, así que no abre otra.
+    private var columnContent: some View {
+        scrollContent
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    editButton
+                }
+            }
+            .yalaScreenBackground(.panel)
+            .accessibilityIdentifier("transaction_detail_column")
+            .task(id: transaction.persistentModelID) { resolveTransferPartner() }
+    }
+
     private var detailContent: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: DS.Spacing.lg) {
-                    compactHero
-                    detailsCard
-                }
-                .padding(.horizontal, DS.Spacing.xl)
-                .padding(.top, DS.Spacing.md)
-                .padding(.bottom, DS.Spacing.xl)
-            }
-            .scrollBounceBehavior(.basedOnSize)
+            scrollContent
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -81,12 +121,7 @@ struct TransactionDetailSheet: View {
                     .accessibilityIdentifier("transaction_detail_close")
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button(L10n.Action.edit) {
-                        onEdit()
-                    }
-                    .fontWeight(.semibold)
-                    .foregroundStyle(Color.primary)
-                    .accessibilityIdentifier("transaction_detail_edit")
+                    editButton
                 }
             }
             .yalaScreenBackground(.partialSheet)

@@ -6178,3 +6178,9 @@
 
 /* Cerrar sesión en la nube con la sesión caducada, sin cifra */
 "settings.signOutCloudSessionExpiredPersonalLossUnknown" = "Twoja sesja wygasła, a część zmian nie dotarła na Twoje konto w chmurze. Aby je wysłać, otwórz „Gdzie są Twoje dane”, tutaj w Profilu, i stuknij „Zaloguj się”. Jeśli nie możesz się zalogować, zanim zdecydujesz, możesz wyeksportować swoje transakcje do pliku. Jeśli wylogujesz się teraz, te zmiany zostaną utracone.";
+
+/* iPad/ventana ancha: columna de detalle vacía en Registros */
+"records.detailPlaceholder" = "Wybierz wpis, aby zobaczyć go tutaj";
+
+/* iPad/ventana ancha: columna de detalle vacía en Planificación */
+"planning.detailPlaceholder" = "Wybierz budżet lub płatność, aby zobaczyć je tutaj";

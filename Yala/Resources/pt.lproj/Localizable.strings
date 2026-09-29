@@ -6166,3 +6166,9 @@
 
 /* Cerrar sesión en la nube con la sesión caducada, sin cifra */
 "settings.signOutCloudSessionExpiredPersonalLossUnknown" = "Sua sessão expirou e há alterações que não chegaram à sua conta na nuvem. Para enviá-las, abra “Onde ficam seus dados”, aqui em Perfil, e toque em “Entrar”. Se não conseguir entrar, antes de decidir você pode exportar suas transações para um arquivo. Se você sair agora, essas alterações serão perdidas.";
+
+/* iPad/ventana ancha: columna de detalle vacía en Registros */
+"records.detailPlaceholder" = "Escolha um registro para vê-lo aqui";
+
+/* iPad/ventana ancha: columna de detalle vacía en Planificación */
+"planning.detailPlaceholder" = "Escolha um orçamento ou um pagamento para vê-lo aqui";

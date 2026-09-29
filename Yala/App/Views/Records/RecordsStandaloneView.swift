@@ -19,6 +19,9 @@ struct RecordsStandaloneView: View {
     @Environment(SessionState.self) private var sessionState
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
+    /// Size class de la VENTANA (se lee fuera del split: dentro, la columna de lista es compacta).
+    /// Decide si tocar un registro lo abre en la columna de detalle o en la hoja de siempre.
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     // MARK: - ViewModels
 
@@ -34,6 +37,9 @@ struct RecordsStandaloneView: View {
     @State private var pendingReload = false
     @Environment(\.scenePhase) private var scenePhase
     @State private var isInBackground = false
+    /// Qué columna enseña el split cuando está plegado (ventana compacta). `.detail` solo mientras hay
+    /// un registro abierto en columna: al estrecharse la ventana, el registro sigue a la vista, empujado.
+    @State private var compactColumn: NavigationSplitViewColumn = .sidebar
 
     // MARK: - FAB State
 
@@ -97,7 +103,32 @@ struct RecordsStandaloneView: View {
             .appliesPendingRemoteChanges(sessionState)
             .onAppear {
                 dataViewModel.setContext(modelContext)
+                recordsViewModel.opensDetailInColumn = horizontalSizeClass == .regular
                 performRecalculation()
+            }
+            .onChange(of: horizontalSizeClass) { _, newClass in
+                recordsViewModel.opensDetailInColumn = newClass == .regular
+            }
+            .onChange(of: recordsViewModel.openRecordID) { _, newID in
+                compactColumn = newID == nil ? .sidebar : .detail
+            }
+            .onChange(of: compactColumn) { _, newColumn in
+                // Atrás en el split plegado: el registro se cierra. En ancho el split no toca esta
+                // columna, así que solo la mueve el gesto del usuario.
+                if newColumn == .sidebar, recordsViewModel.openRecordID != nil,
+                   horizontalSizeClass != .regular {
+                    recordsViewModel.openRecordID = nil
+                }
+            }
+            .onChange(of: dataViewModel.allTransactions) {
+                // Registro abierto que ya no existe (borrado desde el editor u otro dispositivo): la
+                // columna vuelve al vacío en vez de sostener un objeto muerto.
+                if recordsViewModel.openRecordID != nil, openRecord == nil {
+                    #if DEBUG
+                    print("RecordsStandaloneView: el registro abierto ya no está, se cierra la columna")
+                    #endif
+                    recordsViewModel.openRecordID = nil
+                }
             }
             .onDisappear {
                 recalculateTask?.cancel()
@@ -136,8 +167,40 @@ struct RecordsStandaloneView: View {
 
     // MARK: - Main Content
 
+    /// El registro abierto en columna, resuelto contra lo cargado (nunca `model(for:)`, que fabrica un
+    /// objeto aunque ya no exista).
+    private var openRecord: TransactionItem? {
+        guard let id = recordsViewModel.openRecordID else { return nil }
+        return dataViewModel.allTransactions.first { $0.persistentModelID == id }
+    }
+
+    /// Lista y detalle (`ListDetailSplit`): en ventana ancha a la vez; en compacta se pliega solo a la
+    /// pila de siempre (ADR «Yala se adapta por espacio, no por dispositivo»).
     private var mainContent: some View {
-        NavigationStack {
+        ListDetailSplit(preferredCompactColumn: $compactColumn) {
+            listColumn
+        } detail: {
+            detailColumn
+        }
+    }
+
+    @ViewBuilder
+    private var detailColumn: some View {
+        if let record = openRecord {
+            TransactionDetailSheet(transaction: record, presentation: .column) {
+                recordsViewModel.editOpenRecord(record)
+            }
+            .announcesShownInDetailColumn()
+            .id(record.persistentModelID)
+        } else {
+            ContentUnavailableView(L10n.Records.detailPlaceholder, systemImage: ConfigurableTab.records.iconName)
+                .yalaScreenBackground(.panel)
+                .accessibilityIdentifier("records_detail_placeholder")
+                .marksEmptyDetailColumn()
+        }
+    }
+
+    private var listColumn: some View {
             RecordsTabView(
                 viewModel: recordsViewModel,
                 accounts: dataViewModel.accounts,
@@ -203,7 +266,6 @@ struct RecordsStandaloneView: View {
                 }
             }
             .navigationBarBackButtonHidden(recordsViewModel.isSelectionMode)
-        }
     }
 
     // MARK: - Normal Mode Toolbar

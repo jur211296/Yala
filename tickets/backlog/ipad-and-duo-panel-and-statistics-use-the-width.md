@@ -21,6 +21,10 @@ En pantalla ancha (iPad, Duo abierto):
 - **Estadísticas · Resumen**: hoy es el iPhone estirado, con barras de 900 puntos para tres números. Las tarjetas
   pasan a rejilla de dos columnas.
 - **Estadísticas · Tendencias**: sin comparación, gráfica e indicadores lado a lado, como ya hace con comparación.
+- **Estadísticas · Registros** (el chip): el detalle de un registro sigue saliendo en hoja, también en ancho. La
+  fase 1 lo resolvió en la página Registros (`RecordsStandaloneView`, columna de detalle) pero no aquí: el chip vive
+  dentro de `DetailContainerView`, que no tiene split, y su hoja encadena el editor al cerrarse
+  (`DetailContainerView.swift`, `showTransactionDetail`). Mismo molde: `RecordsViewModel.opensDetailInColumn`.
 
 Capturas del antes: `docs/exploracion/ipad-nativo/01`, `02`, `03`, `20`, `21`, `22`.
 

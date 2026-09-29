@@ -85,6 +85,7 @@ struct ScheduledPaymentsView: View {
         }
         .navigationDestination(for: PersistentIdentifier.self) { paymentID in
             ScheduledPaymentDetailDestination(paymentID: paymentID, viewModel: viewModel)
+                .announcesShownInDetailColumn()
         }
         // Peek first so we only drain intents this view handles —
         // BudgetsListView shares the .planning consumer.

@@ -1617,6 +1617,7 @@ enum L10n {
         static var latest: String { ls("records.latest", comment: "") }
         static var noRecords: String { ls("records.noRecords", comment: "") }
         static var noRecordsThisDay: String { ls("records.noRecordsThisDay", comment: "Calendario: día seleccionado sin registros") }
+        static var detailPlaceholder: String { ls("records.detailPlaceholder", comment: "iPad/ventana ancha: columna de detalle vacía en Registros") }
         static var viewModeListA11y: String { ls("records.viewModeListA11y", comment: "A11y: botón vista lista") }
         static var viewModeCalendarA11y: String { ls("records.viewModeCalendarA11y", comment: "A11y: botón vista calendario") }
         static func deleteConfirmTitle(_ count: Int) -> String {
@@ -5088,6 +5089,7 @@ enum L10n {
 
     enum Planning {
         static var title: String { ls("planning.title", comment: "") }
+        static var detailPlaceholder: String { ls("planning.detailPlaceholder", comment: "iPad/ventana ancha: columna de detalle vacía en Planificación") }
         static var budgets: String { ls("planning.budgets", comment: "") }
         static var goals: String { ls("planning.goals", comment: "") }
         static var comingSoon: String { ls("planning.comingSoon", comment: "") }

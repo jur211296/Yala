@@ -81,6 +81,7 @@ struct BudgetsListView: View {
         .yalaScreenBackground(.panel)
         .navigationDestination(for: BudgetNavigationID.self) { navID in
             BudgetDetailDestination(budgetID: navID.id, viewModel: viewModel)
+                .announcesShownInDetailColumn()
         }
         .sheet(isPresented: $viewModel.showBudgetEditor) {
             BudgetEditorView(budget: nil)

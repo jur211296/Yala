@@ -6178,3 +6178,9 @@
 
 /* Cerrar sesión en la nube con la sesión caducada, sin cifra */
 "settings.signOutCloudSessionExpiredPersonalLossUnknown" = "Je sessie is verlopen en sommige wijzigingen zijn niet in je account in de cloud aangekomen. Open ‘Waar je gegevens staan’, hier in Profiel, en tik op ‘Aanmelden’ om ze te uploaden. Lukt aanmelden niet, dan kun je je transacties eerst naar een bestand exporteren. Als je nu uitlogt, gaan deze wijzigingen verloren.";
+
+/* iPad/ventana ancha: columna de detalle vacía en Registros */
+"records.detailPlaceholder" = "Kies een boeking om die hier te zien";
+
+/* iPad/ventana ancha: columna de detalle vacía en Planificación */
+"planning.detailPlaceholder" = "Kies een budget of betaling om die hier te zien";

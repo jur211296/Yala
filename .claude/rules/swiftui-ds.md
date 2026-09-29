@@ -86,3 +86,43 @@ paths:
 ## Audit markers
 - `// A11Y-DT:` justifica font size hardcodeado (Dynamic Type).
 - `// A11Y-DM:` justifica color hardcodeado (Dark Mode).
+
+## Layout adaptativo: raíz y lista-detalle (2026-09-29)
+
+- **La raíz QUITA las pestañas que no tocan; nunca las oculta con `.hidden(_:)`.** `MainTabView` es un
+  `TabView(.sidebarAdaptable)`: en ventana compacta monta las de siempre (configuración + temporal + Más + Buscar), en
+  regular todas las páginas y Buscar, sin Más (`RootTabLayoutLogic.shownTabs`, con test). **Medido el 2026-09-29: una
+  pestaña oculta con `.hidden` y SELECCIONADA tumba la app** (UIKit, `-[_UITabModel _setSelectedItem:…]`,
+  `NSInternalInconsistency`), y la selección apunta a pestañas que no se ven más de lo que parece: Panel en la shell
+  de solo grupos (lo cazó `GroupInviteOnboardingUITests`), Buscar durante los 50 ms de una pestaña temporal, Más al
+  ensanchar la ventana. Quitada, la `TabView` lo tolera. Para que ESTRECHAR la ventana no desmonte lo abierto, la
+  página seleccionada sigue montada en la barra de pestañas aunque no esté en la configuración (fuera de la shell de
+  solo grupos). **Barra lateral plana, sin `TabSection`**: una sección que solo exista en regular cambia el árbol en
+  cada redimensionado, y una permanente reordena la barra del iPhone, que el usuario ordena a mano (`TabBarConfigView`).
+- **En vertical el iPad pinta pestañas arriba y en horizontal barra lateral**: es el `.automatic` de Apple y se deja
+  así (medido en el iPad Pro 13). La barra lateral está a un toque en vertical.
+- **Lista y detalle = `ListDetailSplit`** (`Views/Shared/ListDetailSplit.swift`): un único `NavigationSplitView` de dos
+  columnas, `.balanced`, que en compacta se pliega solo a la pila de siempre. Lo usan `RecordsStandaloneView` y
+  `PlanningView`; una pantalla nueva con lista y detalle lo reusa en vez de montar su split. Lo que se abre en el
+  detalle lleva `.announcesShownInDetailColumn()`: si la lista estaba superpuesta, se retira para que se vea
+  (`ListDetailOverlayLogic`, con test). Tres cosas medidas en el iPad (2026-09-29) que el contenedor ya resuelve:
+  - **La columna de lista lleva `DS.Adaptive.listColumn*Width` (mínimo 375, el iPhone más estrecho).** Sin tope
+    propio el split la deja en ~280-320 pt y las filas de presupuesto parten el importe en tres líneas.
+  - **`.toolbar(removing: .sidebarToggle)` DETRÁS de `.navigationSplitViewColumnWidth` hace que el ancho se ignore**
+    sin ningún aviso: la columna seguía en 320 con un ancho fijo de 420. Delante sí funciona. Aquí no se quita el
+    botón, por lo siguiente.
+  - **La visibilidad es un `@State`, nunca `.constant(.all)`, y el botón de plegar se queda.** Cuando lista y detalle
+    no caben a la vez (iPad mini en vertical: 744 pt), el split SUPERPONE la lista sobre el detalle; con la
+    visibilidad fija la superposición no se retira nunca y tapa el detalle, y sin el botón no hay forma de volver a
+    la lista después de retirarla.
+- **Un `navigationDestination` de la columna de lista presenta en la de detalle** (medido con presupuestos): sus filas
+  no se tocaron. En compacta, empuja como siempre.
+- **El `horizontalSizeClass` se lee FUERA del split**, en la vista que lo monta: dentro, la columna de lista es
+  compacta aunque la ventana sea ancha.
+- **Lo abierto vive fuera del split** (`RecordsViewModel.openRecordID`) y se resuelve contra lo cargado, nunca con
+  `modelContext.model(for:)`, que fabrica un objeto aunque ya no exista. Si la ventana se estrecha con un registro
+  abierto, `preferredCompactColumn = .detail` lo enseña empujado; Atrás lo cierra.
+- **El detalle de registro es hoja en compacta y columna en regular** (`TransactionDetailSheet(presentation:)`): el
+  iPhone no cambia de hoja a empuje. En columna, Editar abre el editor directo; el encadenado «cerrar hoja → editor»
+  solo existe en la hoja.
+- Ancho legible: `DS.Adaptive.readableWidth` (700) en el contenido de una columna de detalle.

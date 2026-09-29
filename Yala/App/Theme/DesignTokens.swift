@@ -446,6 +446,17 @@ enum DS {
         ) -> Set<PresentationDetent> {
             usesLargeSheets ? [.large] : detents
         }
+
+        /// Ancho legible: tope del contenido de una columna de detalle o de un formulario en una ventana
+        /// ancha. Más allá, las filas se separan tanto que concepto e importe dejan de leerse juntos.
+        static let readableWidth: CGFloat = 700
+
+        /// Anchos de la columna de lista de un `NavigationSplitView` (Registros, Planificación). El mínimo
+        /// es el ancho del iPhone más estrecho (375): las filas ya están medidas ahí. Sin tope propio el split
+        /// la deja en ~280-320 y las filas de presupuesto parten el importe en tres líneas (medido 2026-09-29).
+        static let listColumnMinWidth: CGFloat = 375
+        static let listColumnIdealWidth: CGFloat = 400
+        static let listColumnMaxWidth: CGFloat = 480
     }
 
     // MARK: - Form Row Dimensions

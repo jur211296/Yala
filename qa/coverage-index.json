@@ -28,8 +28,8 @@
       "none"
     ],
     "counts": {
-      "total": 134,
-      "deterministic": 41,
+      "total": 135,
+      "deterministic": 42,
       "agentic": 35,
       "manual": 58,
       "deterministicSinXCUITest": 0
@@ -3157,6 +3157,28 @@
       "coverage": "unit:YalaTests/DateIntervalDayCountTests (6 casos, incluido el que sostiene el diseño: normalizar NO altera un intervalo que ya cierra a medianoche, así que el helper no necesita guarda) + WeekdaySpendingCalculatorTests (2 casos de COMPORTAMIENTO sobre período cerrado). AVISO MEDIDO 2026-09-03: al mutar el helper caen SOLO sus propios tests — de los cuatro call-sites, únicamente WeekdaySpendingCalculator tiene cobertura de comportamiento. InsightsCalculator, FullFinancialContextBuilder y WidgetDataCache están cubiertos solo indirectamente. Si tocas un promedio diario ahí, escribe el caso y compruébalo con una mutación: un verde no prueba nada por sí solo en esta área.",
       "owner": "frank",
       "lastVerified": "2026-09-08"
+    },
+    {
+      "area": "adaptive-navigation-sidebar-list-detail",
+      "codeGlobs": [
+        "Yala/App/Logic/RootTabLayoutLogic.swift",
+        "Yala/App/ContentView.swift",
+        "Yala/App/Views/Records/RecordsStandaloneView.swift",
+        "Yala/App/Views/Records/TransactionDetailSheet.swift",
+        "Yala/App/Views/Planning/PlanningView.swift",
+        "Yala/App/ViewModels/RecordsViewModel.swift",
+        "Yala/App/Views/Shared/ListDetailSplit.swift",
+        "Yala/App/Logic/ListDetailOverlayLogic.swift"
+      ],
+      "scenarioIDs": [
+        "F-NAV-ADAPT-01",
+        "F-NAV-ADAPT-02",
+        "F-NAV-ADAPT-03"
+      ],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/AdaptiveNavigationUITests (por UDID en YalaLane-Adapt-iPad-Pro-13 y -iPhone-ProMax: barra lateral / pestañas, registro al lado / en hoja, presupuesto al lado / empujado) + unit:YalaTests/RootTabLayoutLogicTests,YalaTests/RecordsDetailColumnTests,YalaTests/ListDetailOverlayLogicTests. Redimensionado con registro abierto: evidencia en qa/evidencia-adaptativo-20260929/ipad-sidebar-and-list-detail-for-records-and-planning/.",
+      "owner": "",
+      "lastVerified": "2026-09-29"
     }
   ]
 }
