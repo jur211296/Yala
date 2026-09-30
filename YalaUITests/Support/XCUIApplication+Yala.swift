@@ -47,6 +47,8 @@ extension XCUIApplication {
         pendingMigrationBlock: String? = nil,
         migrationJournalUnreadable: Bool = false,
         signOutKeepsSession: Bool = false,
+        groupsGateMirrorLive: Bool = false,
+        groupsGateWipeFailed: Bool = false,
         extraArguments: [String] = []
     ) -> XCUIApplication {
         var args = ["-uitest"]
@@ -159,6 +161,8 @@ extension XCUIApplication {
         // final y el caso caería culpando al aviso. Su nombre lo fija un test de paridad con `UITestHooks`
         // (`GroupsDetachSessionSurvivesTests`).
         if signOutKeepsSession { args.append("-uitest-sign-out-keeps-session") }
+        if groupsGateMirrorLive { args.append("-uitest-groups-gate-mirror-live") }
+        if groupsGateWipeFailed { args.append("-uitest-groups-gate-wipe-failed") }
         // Args crudos adicionales (aditivo — p.ej. "-uitest-cloud-chooser").
         args.append(contentsOf: extraArguments)
         // Idioma FIJO para toda la suite. Los seeds nombran sus datos con copy localizado

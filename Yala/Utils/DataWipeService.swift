@@ -260,6 +260,9 @@ final class DataWipeService {
         // el onboarding nuevo, el arranque ofrecía «Terminar de borrar» sobre el corpus recién creado (review adversarial
         // del 2026-09-26, ticket `late-icloud-notice-exit-after-a-failed-wipe-leaves-the-blind-resume-armed`).
         StorageModePersistence.clearICloudCorpusWipeLeftHalfway()
+        // Y el «no pudimos preparar este teléfono» de la puerta de Grupos, por lo mismo que su vecina: con las filas fuera,
+        // la puerta que venga después no tiene nada que no pudiera borrar, y `cloudSync.*` la saca del barrido.
+        GroupsGateWipeFailureMarker.clear()
 
         // **El libro de lo conservado al desasociar, también en cualquier scope** (ticket
         // `wipe-data-keeps-groups-but-drops-their-bridged-rows`). Afirma «este gasto ya está en el Panel como movimiento

@@ -399,6 +399,64 @@ final class WelcomeChooserUITests: XCTestCase {
                       "El alta terminó pero el formulario de grupo no se abrió solo.")
     }
 
+    /// **Tras un borrado de arranque que no pudo borrar, la puerta de Grupos lo dice y NO vuelve a armar** (ticket
+    /// `sign-out-wipe-abort-loops-the-groups-gate`).
+    ///
+    /// Lo que se fabrica y por qué: el aborto de verdad no puede provocarse aquí —el borrado del arranque no corre bajo
+    /// `-uitest`—, así que `-uitest-groups-gate-wipe-failed` deja puesto su RESULTADO, la marca que el abort escribe. Con
+    /// datos sembrados y el espejo fingido (`-uitest-groups-gate-mirror-live`) la puerta mide «hay que volver al neutro»,
+    /// que en la rama del organizador con copia en iCloud es ARRANCAR el cierre sin preguntar: es la vuelta del bucle.
+    /// Aquí tiene que salir el aviso, y el progreso de la vuelta al neutro no tiene que aparecer nunca.
+    ///
+    /// **Si este test se pone rojo por la segunda aserción, el simulador puede haberse quedado con un borrado ARMADO de
+    /// verdad** (`cloudSync.signOutWipeArmed`, que `-uitest-reset` no limpia): el cierre corrió. No afecta a otras corridas
+    /// —el ejecutor no corre bajo `-uitest`— pero sí al próximo arranque manual de la app en ese simulador.
+    ///
+    /// Y no se vuelve a tocar «Crear mi primer grupo» después de «Volver», aunque sea lo natural: con la marca retirada,
+    /// ese toque SÍ arrancaría el cierre.
+    func testGroupsGate_afterAWipeThatCouldNotDelete_saysSoAndDoesNotRetry() throws {
+        let app = XCUIApplication()
+        app.launchForUITest(
+            reset: true,
+            skipOnboarding: false,
+            seed: "grupos",
+            groupsGateMirrorLive: true,
+            groupsGateWipeFailed: true
+        )
+
+        let heroCTA = app.buttons["welcome_hero_cta"]
+        XCTAssertTrue(heroCTA.waitForExistence(timeout: 60), "No apareció el CTA del Hero.")
+        heroCTA.tap()
+
+        let inviteBranch = app.buttons["welcome_chooser_invite"]
+        XCTAssertTrue(inviteBranch.waitForExistence(timeout: 10), "No apareció la card «Vengo por un grupo».")
+        inviteBranch.tap()
+
+        let createCard = app.buttons["welcome_groups_create"]
+        XCTAssertTrue(createCard.waitForExistence(timeout: 10), "No apareció la card «Crear mi primer grupo».")
+        createCard.tap()
+
+        // El botón se busca por el identifier de la PANTALLA y no por el suyo, y está medido: `noticeShell` pone su
+        // `accessibilityIdentifier` en el contenedor y SwiftUI se lo aplica a cada hijo, pisando el del botón (en el árbol
+        // de esta misma corrida, el botón sale como `welcome_groups_gate_wipe_failed`). Es el único botón con ese id: el
+        // «volver» de arriba lleva `welcome_back_button`.
+        let back = app.buttons.matching(identifier: "welcome_groups_gate_wipe_failed").firstMatch
+        XCTAssertTrue(back.waitForExistence(timeout: 20), """
+            La puerta no enseñó el aviso del borrado que no pudo. Si en su lugar salió el progreso de la vuelta al \
+            neutro, volvió a armar: el bucle del ticket.
+            """)
+        // El aviso y el progreso de la vuelta al neutro son ramas del mismo `switch`, así que afirmar aquí la ausencia
+        // del progreso no probaría nada: lo que discrimina es la aserción positiva de arriba.
+
+        back.tap()
+        XCTAssertTrue(createCard.waitForExistence(timeout: 10),
+                      "«Volver» no devolvió al paso de los dos caminos de Grupos.")
+        // Y ahora sí se ESPERA una ventana: una vuelta al neutro que arrancara tras «Volver» lo haría de forma asíncrona,
+        // y una comprobación en el acto no la vería.
+        let working = app.descendants(matching: .any)["welcome_groups_gate_neutral_working"]
+        XCTAssertFalse(working.waitForExistence(timeout: 3), "Salir del aviso arrancó la vuelta al neutro.")
+    }
+
     /// `waitForNonExistence` local: el helper compartido de `Support/` cubre `isHittable`, y aquí lo que
     /// prueba el desmontaje es la AUSENCIA del elemento.
     private func waitForNonExistence(of element: XCUIElement, timeout: TimeInterval) -> Bool {

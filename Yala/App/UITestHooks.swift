@@ -244,6 +244,13 @@ final class UITestHooks {
     /// tiene que limpiar el arm al terminar.
     nonisolated static var groupsGateMirrorLive: Bool { hasArg("-uitest-groups-gate-mirror-live") }
 
+    /// `-uitest-groups-gate-wipe-failed`: deja puesta al arrancar la marca «la vuelta al neutro de la puerta de Grupos no
+    /// pudo borrar este teléfono» (`GroupsGateWipeFailureMarker`), que en producción escribe el abort S3 del borrado del
+    /// arranque. Ese borrado no corre bajo `-uitest` (su wrapper lo corta), así que el aborto no se puede provocar aquí:
+    /// se fabrica su RESULTADO y la puerta se recorre de verdad. Con `-uitest-groups-gate-mirror-live` y datos sembrados,
+    /// la puerta tiene que enseñar el aviso y NO arrancar el cierre de sesión.
+    nonisolated static var groupsGateWipeFailed: Bool { hasArg("-uitest-groups-gate-wipe-failed") }
+
     /// `-uitest-groups-batch-demo`: QA/XCUITest del batch "salir de todos mis grupos" (D10) SIN backend ni
     /// iCloud (imposibles en sim — la ejecución real de leave/transfer es device/TestFlight). Fuerza que la
     /// hoja de Vaciar OFREZCA «También salir de mis grupos» (input `canLeaveAllGroups` de `UserDataResetView`)

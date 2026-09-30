@@ -6202,5 +6202,11 @@
 /* Puerta del invitado: datos de una cuenta en la nube con la sesión cerrada: cuerpo */
 "welcome.groups.inviteCloudSignInBody" = "这部手机上有一个未登录的云端账户的数据，你的群组支出会记到那个账户里。如果这是你的账户，请通过“我已经有账户了”登录，然后继续你的邀请。如果不是，请用你自己的手机加入。";
 
+/* Puerta de Grupos: el borrado del arranque no pudo borrar los archivos y la puerta no lo reintenta sola: título */
+"welcome.groups.wipeFailedTitle" = "无法准备这台手机";
+
+/* Puerta de Grupos: el borrado del arranque no pudo borrar los archivos: cuerpo. No dice dónde siguen los datos ni que no se tocó nada: no siempre es verdad. */
+"welcome.groups.wipeFailedBody" = "重新打开 Yala 时，未能清除这台手机上保存的内容，所以它还没有为你的群组准备好。我们不会自动重试：请返回，如果愿意，稍后再试一次。";
+
 /* Apple ID change notice: extra paragraph, only when the close also removes the groups stored on this phone. Says nothing about whose they are or where else they live: that is not always true. */
 "icloud.appleIDChanged.groupsLine" = "这台手机上的群组也会被移除。";

@@ -185,6 +185,7 @@
 - [«Sin cambios visibles» se mide al píxel](feedback_sin_cambios_visibles_se_mide_al_pixel.md) — el ojo pasó un truncado del SE; diff antes/después.
 - [Un motivo que abre una pérdida hereda sus falsos positivos](feedback_un_motivo_que_abre_una_perdida_hereda_sus_falsos_positivos.md) — todo 401 era «caducada»; prueba aparte.
 - [El mecanismo nuevo quita la tolerancia del viejo](feedback_el_modificador_nuevo_quita_la_tolerancia.md) — `.hidden` en TabView abortó donde quitar la pestaña se toleraba.
+- [El fallo que se traga es gemelo del que aborta](feedback_el_fallo_que_se_traga_es_gemelo_del_que_aborta.md) — `_ = deleteFiles` dejaba el mismo bucle.
 
 ## Estado del trabajo
 - [La salida del adopt cierra su sesión](project_adopt_exit_cierra_la_sesion.md) — #230 y #231, 24-sep; dos low de la review.

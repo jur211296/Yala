@@ -6202,5 +6202,11 @@
 /* Puerta del invitado: datos de una cuenta en la nube con la sesión cerrada: cuerpo */
 "welcome.groups.inviteCloudSignInBody" = "Op deze telefoon staan de gegevens van een cloudaccount dat niet is ingelogd, en je groepsuitgaven zouden daarin terechtkomen. Is het van jou, log er dan mee in via ‘Ik heb al een account’ en ga verder met je uitnodiging. Zo niet, doe dan mee vanaf je eigen telefoon.";
 
+/* Puerta de Grupos: el borrado del arranque no pudo borrar los archivos y la puerta no lo reintenta sola: título */
+"welcome.groups.wipeFailedTitle" = "We konden deze telefoon niet klaarmaken";
+
+/* Puerta de Grupos: el borrado del arranque no pudo borrar los archivos: cuerpo. No dice dónde siguen los datos ni que no se tocó nada: no siempre es verdad. */
+"welcome.groups.wipeFailedBody" = "Bij het opnieuw openen van Yala kon wat op deze telefoon is opgeslagen niet worden gewist, dus hij is niet klaar voor je groep. We proberen het niet zelf opnieuw: ga terug en probeer het later nog eens als je wilt.";
+
 /* Apple ID change notice: extra paragraph, only when the close also removes the groups stored on this phone. Says nothing about whose they are or where else they live: that is not always true. */
 "icloud.appleIDChanged.groupsLine" = "Ook de groepen op deze telefoon worden verwijderd.";

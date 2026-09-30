@@ -145,6 +145,11 @@ struct WelcomeGroupsGateView: View {
         /// caerían en esa cuenta—. La salida es la que sí existe: si la cuenta es suya, volver a entrar con ella (y
         /// la puerta deja pasar); si no, unirse desde su propio teléfono. Cero escrituras.
         case inviteNeedsCloudSignIn
+        /// **La vuelta al neutro anterior no pudo borrar este teléfono** (ticket `sign-out-wipe-abort-loops-the-groups-gate`):
+        /// el borrado del arranque abortó y desarmó, y los datos siguen. Volver a armar aquí era el bucle —la misma medida,
+        /// el mismo arm, el mismo aborto, y las notificaciones canceladas en cada vuelta—, así que se dice y no se arma nada.
+        /// Salir retira la marca: el siguiente intento es un gesto de la persona, no de esta pantalla.
+        case wipeFailed
         /// El cierre privado en marcha. El detalle de lo que se ve lo dice `CloudSessionSignOut.phase`.
         case returningToNeutral(withoutICloudCopy: Bool, intento: Int)
         /// «Continuar igualmente» tras agotarse la espera del export.
@@ -206,6 +211,9 @@ struct WelcomeGroupsGateView: View {
         case .checking, .blockedChannelOff, .confirmingNoBackup,
              .confirmingInviteNeutral, .unavailable, .inviteNeedsRelaunch, .inviteNeedsCloudSignIn:
             return onBack
+        case .wipeFailed:
+            // El «volver» de arriba también es salir de este aviso, así que también retira la marca.
+            return leaveAfterWipeFailure
         case .returningToNeutral, .discardingUnconfirmed, .resumingExportWait, .discardingUnsyncedGroups:
             // Con un aviso en pantalla la salida es su propio botón; mientras trabaja, no hay ninguna.
             if case .blocked = exitPhase { return leaveAfterBlock }
@@ -263,6 +271,24 @@ struct WelcomeGroupsGateView: View {
                         identifier: "welcome_groups_gate_invite_cloud_sign_in") {
                 YalaPrimaryButton(L10n.Welcome.Groups.gateBack) { onBack() }
                     .accessibilityIdentifier("welcome_groups_gate_invite_cloud_sign_in_back")
+            }
+        case .wipeFailed:
+            noticeShell(icon: "exclamationmark.triangle",
+                        title: L10n.Welcome.Groups.wipeFailedTitle,
+                        body: L10n.Welcome.Groups.wipeFailedBody,
+                        identifier: "welcome_groups_gate_wipe_failed") {
+                VStack(spacing: DS.Spacing.sm) {
+                    YalaPrimaryButton(L10n.Welcome.Groups.gateBack) { leaveAfterWipeFailure() }
+                        .accessibilityIdentifier("welcome_groups_gate_wipe_failed_back")
+                    // **El invitado tiene además «Reintentar»** (review adversarial): «Volver» lo deja en el paso de los
+                    // dos caminos, donde ninguna card retoma su invitación. Reintentar es un gesto suyo y acaba, como
+                    // mucho, en la pregunta de siempre (`confirmingInviteNeutral`): no arma nada solo. Al organizador no
+                    // le hace falta: tras «Volver», «Crear mi primer grupo» es su reintento.
+                    if purpose.invitedGroupID != nil {
+                        YalaSecondaryButton(L10n.Action.retry) { retryAfterWipeFailure() }
+                            .accessibilityIdentifier("welcome_groups_gate_wipe_failed_retry")
+                    }
+                }
             }
         case .unavailable:
             // Sin esta pantalla el camino era un progreso eterno sin botón: `signOut` tiene TRES `return`
@@ -609,7 +635,7 @@ struct WelcomeGroupsGateView: View {
         case .discardingUnsyncedGroups:
             await CloudSessionSignOut.shared.exitDiscardingUnsyncedGroups(context: modelContext)
         case .blockedChannelOff, .confirmingNoBackup,
-             .confirmingInviteNeutral, .unavailable, .inviteNeedsRelaunch, .inviteNeedsCloudSignIn:
+             .confirmingInviteNeutral, .unavailable, .inviteNeedsRelaunch, .inviteNeedsCloudSignIn, .wipeFailed:
             return
         }
     }
@@ -650,6 +676,8 @@ struct WelcomeGroupsGateView: View {
 
         switch verdict {
         case .proceed:
+            // Ya no hay nada que borrar, así que el aviso de un borrado que no pudo dejó de venir a cuento.
+            GroupsGateWipeFailureMarker.clear()
             onProceed()
         case .blockedChannelOff:
             phase = .blockedChannelOff
@@ -674,6 +702,7 @@ struct WelcomeGroupsGateView: View {
         // que es lo único que esta segunda lectura añade.
         switch GroupBackendInviteEntryHandler.neutralGateDecision() {
         case .proceed:
+            GroupsGateWipeFailureMarker.clear()
             onProceed()
         case .returnsToNeutral:
             phase = inviteNeutralEntryPhase()
@@ -688,6 +717,9 @@ struct WelcomeGroupsGateView: View {
         guard CloudSessionSignOut.shared.phase == .idle else { return .unavailable }
         switch Self.exitCell() {
         case .privateSignOut, .privateWithGroupsSignOut, .groupsOnlySignOut:
+            // Con la marca puesta no se vuelve a preguntar por un borrado que ya se sabe que no puede. Va DENTRO de las
+            // celdas que borran y no delante: en las otras la puerta no arma nada, y su pantalla es la que dice la verdad.
+            if GroupsGateWipeFailureMarker.isPending() { return .wipeFailed }
             return .confirmingInviteNeutral(
                 withoutICloudCopy: CloudSessionSignOut.privateCopyChannel() == .none)
         case .cloudSecureSignOut:
@@ -768,6 +800,11 @@ struct WelcomeGroupsGateView: View {
         guard CloudSessionSignOut.shared.phase == .idle else { return .unavailable }
         switch Self.exitCell() {
         case .privateSignOut, .privateWithGroupsSignOut, .groupsOnlySignOut:
+            // **El arreglo del bucle** (ticket `sign-out-wipe-abort-loops-the-groups-gate`). Esta rama no pregunta: con
+            // copia en iCloud, medir es armar. Así que tras un borrado que no pudo, re-medir era volver a armar el mismo
+            // borrado, sin que nadie tocara nada. Va dentro de las celdas que borran —las únicas que arman— y antes de
+            // todo lo que arma o pregunta; en la de la nube la pantalla de siempre sigue siendo la verdad.
+            if GroupsGateWipeFailureMarker.isPending() { return .wipeFailed }
             // Informar, no preguntar — salvo que no haya copia a la que apuntar, y eso solo se afirma con
             // prueba (`mirrorReportedNotAuthenticated`). Con Drive apagado y CloudKit vivo el canal sigue
             // siendo `.iCloud`, que es el hallazgo nº 7 de la review del paso 9.
@@ -828,5 +865,22 @@ struct WelcomeGroupsGateView: View {
     private func leaveAfterBlock() {
         CloudSessionSignOut.shared.acknowledgeBlocked()
         onBack()
+    }
+
+    /// Salir del aviso de un borrado que no pudo. **Retira la marca**: la persona ya lo ha leído, y si vuelve a entrar por
+    /// la puerta es un gesto suyo, que merece el intento. Sin esto la puerta se quedaría diciendo «no pudimos» para
+    /// siempre, aunque lo que impedía borrar ya se hubiera ido.
+    private func leaveAfterWipeFailure() {
+        GroupsGateWipeFailureMarker.clear()
+        onBack()
+    }
+
+    /// Reintentar desde el aviso (solo el invitado). Retira la marca y vuelve a medir: la puerta del invitado siempre
+    /// pregunta antes de borrar, así que esto no arranca nada sin otro gesto.
+    private func retryAfterWipeFailure() {
+        // En la rama del organizador re-medir ES armar: ahí este botón sería el bucle con un toque de por medio.
+        guard purpose.invitedGroupID != nil else { return }
+        GroupsGateWipeFailureMarker.clear()
+        phase = .checking
     }
 }
