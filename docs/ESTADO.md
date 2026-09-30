@@ -5,13 +5,29 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-30 (Lima)
 
-**Rama** `2.1` — Merge #304: **la puerta de Grupos deja de entrar en bucle si el borrado de arranque no puede borrar
-el teléfono (Cola A).** TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
+**Rama** `2.1` — Merge #305: **en iPad el Panel y Estadísticas aprovechan el ancho (carril adaptativo, paso 8).**
+TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > **El destino del gate resuelve** (medido de nuevo el 30-sep): `name=iPhone 17 Pro` casa con el `9EDA6AAF` de iOS
 > 27.0. El ticket `the-gate-destination-no-longer-resolves-on-this-mac` tiene la premisa cambiada: medirlo antes.
 
-## Esta sesión (#304 · Cola A: la puerta de Grupos ya no entra en bucle si el borrado no puede borrar)
+## Esta sesión (#305 · carril adaptativo: el Panel y Estadísticas aprovechan el ancho)
+
+En iPad (y en el Duo abierto cuando llegue) el Panel y Estadísticas dejan de ser un iPhone estirado; en iPhone no
+cambia nada, medido al píxel en el SE y el Pro Max con texto normal y AX5.
+
+- **Panel**: la cabecera va en dos columnas —saldo y acciones | «Tus finanzas»— y en el iPad Pro 13 horizontal baja de
+  ~290 a ~180 pt; Últimos registros ocupa la fila entera con sus filas en pares.
+- **Estadísticas**: Resumen y Tendencias en pares; en Registros el registro se abre en un panel al lado de la lista
+  (si no caben, lo tapa con su X; al estrechar a compacta pasa a la hoja). Estrechar conserva chip y período.
+- Cómo: `PairedCardsStack` / `HeaderBandLayout` con `AnyLayout` (regla nueva en `swiftui-ds.md`).
+- Gate en el Pro Max del carril por UDID: unit 8550 en 816 suites; XCUITest 93 en 37 suites; `AdaptiveNavigationUITests`
+  también en el iPad Pro 13, con «Apps en ventanas». CI en verde. Ticket a `done`; el Duo a medio plegar queda en
+  `iphone-duo-native-app`. Evidencia: `qa/evidencia-adaptativo-20260930/`.
+- **Encontrado**: `tag-chips-change-order-on-every-launch` (low) — las etiquetas de un registro cambian de orden en
+  cada arranque.
+
+## Sesión anterior (#304 · Cola A: la puerta de Grupos ya no entra en bucle si el borrado no puede borrar)
 
 Quien entra por «Vengo por un grupo» con datos y el espejo de iCloud deja el teléfono listo para borrarse y reabre
 Yala. Si ese arranque no conseguía borrar los archivos, la puerta volvía a armar el mismo borrado y pedía reabrir otra
