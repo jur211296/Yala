@@ -219,6 +219,23 @@ enum FullModeActivationFlowLogic {
     /// Restaurar con los datos completos no pasa por el onboarding: el resumen restaurado ya trae todo.
     static let restoredWithoutOnboardingPlan: [CommitStep] = [.completeActivation, .convergeGroupsBridge]
 
+    /// ¿Sube la activación lo que guardó en local al iCloud-KV del Apple ID, en cuanto nace la sesión privada?
+    /// (`PrivateBirthKeyValueHandover`, ticket `full-activation-local-state-never-reaches-the-apple-id-kv`.)
+    ///
+    /// **Solo la rama privada NUEVA**, por decisión de Jürgen: en ella la persona acaba de elegir, y el remoto del
+    /// Apple ID —si lo hay— es de una vida anterior que pisaría lo elegido. **Restaurar no sube**: ahí valen las del
+    /// Apple ID. La **nube** tampoco: sus preferencias van al outbox del backend y no al KV. `nil` es el plan sin
+    /// onboarding de Restaurar, o el recorrido legado (`.legacyOnboarding`), que no nace de solo-grupos: la marca del
+    /// eje no está en `false`. Su única celda con la puerta cerrada —eje ausente y neutro armado— es un alta
+    /// solo-grupos a medias (`OwnerKeyValueGate`), que todavía no enseña esta activación. Inferido, no medido en device.
+    static func handsLocalStateToAppleID(_ source: OnboardingSource?) -> Bool {
+        guard let source else { return false }
+        switch source {
+        case .freshPrivate: return true
+        case .freshCloud, .restored: return false
+        }
+    }
+
     /// ¿Hay que dejar DURABLE la intención de converger antes de empezar? Se marca al principio del plan y no
     /// en su paso: un kill entre el modo `.completed` y la convergencia dejaría cada gasto dos veces para
     /// siempre, y lo que se difiere siendo una INTENCIÓN tiene que sobrevivir al proceso (regla del repo).

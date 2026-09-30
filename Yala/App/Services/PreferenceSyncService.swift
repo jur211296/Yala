@@ -379,18 +379,28 @@ final class PreferenceSyncService {
 
     /// Lee el value remoto de iKV para `key`, normalizado por presencia (nil = key ausente).
     private func readRemoteIKV(_ key: PrefSyncKey) -> PrefValue? {
-        let k = key.rawValue
-        guard iKV.object(forKey: k) != nil else { return nil }
-        switch key.kind {
-        case .string: return .string(iKV.string(forKey: k) ?? "")
-        case .bool: return .bool(iKV.bool(forKey: k))
-        case .int: return .int(Int(iKV.longLong(forKey: k)))
-        }
+        Self.readRemote(key, from: iKV)
     }
 
     /// Lee el value local actual (UserDefaults standard) para `key`. Ints devuelven `.int(0)` cuando la
     /// key está ausente (paridad con `UserDefaults.integer` y con el diff-check previo).
     private func readLocal(_ key: PrefSyncKey) -> PrefValue? {
+        Self.readLocal(key, from: local)
+    }
+
+    /// Los dos lectores de arriba, sin el singleton: los mismos que usa el merge, para que un test pueda afirmar
+    /// qué haría `applyRemoteValues` con un store y un dominio suyos (`PrivateBirthKeyValueHandoverTests`).
+    static func readRemote(_ key: PrefSyncKey, from store: OwnerKeyValueWriting) -> PrefValue? {
+        let k = key.rawValue
+        guard store.object(forKey: k) != nil else { return nil }
+        switch key.kind {
+        case .string: return .string(store.string(forKey: k) ?? "")
+        case .bool: return .bool(store.bool(forKey: k))
+        case .int: return .int(Int(store.longLong(forKey: k)))
+        }
+    }
+
+    static func readLocal(_ key: PrefSyncKey, from local: UserDefaults) -> PrefValue? {
         let k = key.rawValue
         switch key.kind {
         case .string:

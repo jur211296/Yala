@@ -610,11 +610,22 @@ struct FullModeActivationView: View {
         // sesión privada cuyo aviso tardío purga sus grupos.
         PrivateSessionMark.markBornFromFullActivation()
 
+        // **Lo guardado en local con la puerta cerrada se debe al iCloud-KV del Apple ID**, y la deuda se apunta ANTES
+        // del eje (ticket `full-activation-local-state-never-reaches-the-apple-id-kv`). Solo en la rama privada nueva:
+        // en Restaurar valen las del Apple ID. Apuntarla después dejaría un kill entre las dos en el que el arranque
+        // siguiente, ya con la puerta abierta, aplicaría el remoto sobre lo recién elegido.
+        if FullModeActivationFlowLogic.handsLocalStateToAppleID(pendingSource) {
+            PrivateBirthKeyValueHandover.arm()
+        }
+
         // El eje 1: «Activar Yala completo» es el nacimiento de la sesión privada de un solo-grupos
         // (F → D). Asignar al espejo observable PERSISTE la marca y además des-reduce la shell, que es
         // por qué esta línea va ANTES de `selectMainTab(.panel)`: el guard GC-08 rechazaría `.panel`
         // mientras el eje siga apagado.
         sessionState.hasPrivateSession = true
+        // Y se paga en cuanto la puerta se abre, que es ahora. Sin deuda apuntada no hace nada; el arranque la paga
+        // si este proceso muere antes.
+        PrivateBirthKeyValueHandover.consumeIfArmed()
         // La reanudación, fuera — DESPUÉS de la marca, a propósito: un kill entre las dos escrituras deja
         // la marca puesta, y el arranque retira la reanudación sola (`resolveAtBoot`, fuera de solo-grupos).
         // Al revés dejaría a quien ya guardó su onboarding en solo-grupos y sin nada que retome la activación.

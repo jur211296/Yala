@@ -83,6 +83,7 @@ struct OwnerKeyValueWiringTests {
         "AppBootstrapper.swift",                      // el bloque de `-uitest-reset` (las claves del Panel)
         "PanelPreferencesMigration.swift",            // «¿hay Panel remoto?»
         "GroupsRemoteWipeReturn.swift",               // lo que un vaciado tardío se llevó en un dispositivo sin grupos
+        "PrivateBirthKeyValueHandover.swift",         // lo guardado en solo-grupos, al nacer la sesión privada NUEVA
     ]
 
     /// Las líneas de código de un fichero, sin las de comentario.
@@ -197,22 +198,38 @@ struct OwnerKeyValueWiringTests {
         let service = try Self.normalized("Yala/App/Services/PreferenceSyncService.swift")
         #expect(service.contains("private let iKV: OwnerKeyValueWriting = OwnerKeyValueStore.shared"))
 
+        // El lector de instancia delega en el estático (2026-09-30: lo comparten el merge y los tests de
+        // `PrivateBirthKeyValueHandoverTests`), así que se fijan los dos: que delegue en el store de la puerta, y el
+        // cuerpo entero del que corta.
         let start = try #require(service.range(of: "private func readRemoteIKV("))
         let end = try #require(service.range(of: "private func readLocal(", range: start.upperBound..<service.endIndex))
         let body = service[start.lowerBound..<end.lowerBound].trimmingCharacters(in: .whitespaces)
         #expect(body == Self.readRemoteIKVBody, """
-            `readRemoteIKV` cambió. Con la puerta cerrada las lecturas vienen VACÍAS, no ausentes para el tipo: si el \
+            `readRemoteIKV` dejó de leer el store de la puerta por el lector que corta por presencia. Cuerpo \
+            actual: \(body)
+            """)
+
+        let staticStart = try #require(service.range(of: "static func readRemote(_ key: PrefSyncKey, from store:"))
+        let staticEnd = try #require(service.range(
+            of: "static func readLocal(", range: staticStart.upperBound..<service.endIndex))
+        let staticBody = service[staticStart.lowerBound..<staticEnd.lowerBound].trimmingCharacters(in: .whitespaces)
+        #expect(staticBody == Self.readRemoteBody, """
+            `readRemote` cambió. Con la puerta cerrada las lecturas vienen VACÍAS, no ausentes para el tipo: si el \
             corte por presencia deja de ser lo primero para todos los tipos, esos vacíos se aplican encima de las \
-            preferencias locales. Cuerpo actual: \(body)
+            preferencias locales. Cuerpo actual: \(staticBody)
             """)
     }
 
     private static let readRemoteIKVBody =
-        "private func readRemoteIKV(_ key: PrefSyncKey) -> PrefValue? { let k = key.rawValue "
-        + "guard iKV.object(forKey: k) != nil else { return nil } switch key.kind { "
-        + "case .string: return .string(iKV.string(forKey: k) ?? \"\") "
-        + "case .bool: return .bool(iKV.bool(forKey: k)) "
-        + "case .int: return .int(Int(iKV.longLong(forKey: k))) } }"
+        "private func readRemoteIKV(_ key: PrefSyncKey) -> PrefValue? { Self.readRemote(key, from: iKV) }"
+
+    private static let readRemoteBody =
+        "static func readRemote(_ key: PrefSyncKey, from store: OwnerKeyValueWriting) -> PrefValue? { "
+        + "let k = key.rawValue "
+        + "guard store.object(forKey: k) != nil else { return nil } switch key.kind { "
+        + "case .string: return .string(store.string(forKey: k) ?? \"\") "
+        + "case .bool: return .bool(store.bool(forKey: k)) "
+        + "case .int: return .int(Int(store.longLong(forKey: k))) } }"
 
     /// Las señales que la puerta deja LEER cerrada son exactamente las dos del canal de vaciado, con los nombres
     /// con los que las escribe el servicio. Una tercera clave ahí le enseña algo del dueño a quien tiene el móvil

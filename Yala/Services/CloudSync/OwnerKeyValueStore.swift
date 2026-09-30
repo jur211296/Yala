@@ -60,11 +60,10 @@
 //   · **La sesión en la nube completa (celda E).** Su eje vale `true`, y el faro y el cutover tienen que
 //     escribir aquí desde ella. Sus 36 preferencias van al backend salvo el idioma, que `LanguageManager`
 //     sigue escribiendo aquí. Ticket `language-override-bypasses-the-cloud-prefs-channel`.
-//   · **Lo que la sesión solo-grupos guarda en local con la puerta cerrada no sube cuando nace la privada.**
-//     El onboarding de «Activar Yala completo» escribe sus preferencias con el eje todavía en `false`, y el
-//     centinela del interruptor maestro se marca en local sin su espejo. Al abrirse la puerta nada los sube,
-//     y el siguiente arranque aplica los del Apple ID si los había. Ticket
-//     `full-activation-local-state-never-reaches-the-apple-id-kv`.
+//   · **Lo que la sesión solo-grupos guarda en local con la puerta cerrada no lo sube esta puerta.** Lo sube
+//     `PrivateBirthKeyValueHandover` cuando nace la sesión privada NUEVA de «Activar Yala completo», ya con la
+//     puerta abierta y por ella; en Restaurar no sube nada, porque valen las del Apple ID. Lo que queda fuera:
+//     la señal de onboarding (`lastOnboardingTimestamp`) de esa activación, que tampoco llega.
 //   · **Los dos lectores CRUDOS declarados** (`ContentView`, `AppPreferences`), que no pasan por aquí: leen las
 //     dos señales —que la puerta también deja pasar— y se suscriben al emisor. `OwnerKeyValueWiringTests` fija
 //     sus sentencias exactas, así que una escritura cruda nueva en ellos no pasa en verde.
