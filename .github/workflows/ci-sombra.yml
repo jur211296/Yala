@@ -20,7 +20,7 @@ name: CI en sombra (runner de la Mini)
 # - Xcode: el de la Mini (27.x, el del gate local y el de las subidas), no `latest-stable`.
 #   `setup-xcode` hace `sudo xcode-select` y `ci` no es admin; el Xcode lo fija
 #   `DEVELOPER_DIR` en el LaunchDaemon.
-# - DerivedData persistente en ExtDev, fuera del checkout (el `git clean` de `checkout` se lo
+# - DerivedData persistente en el home de `ci`, fuera del checkout (el `git clean` de `checkout` se lo
 #   llevaría). Build incremental, como el gate local. `limpio: true` lo borra para medir en frío.
 # - El simulador sale del juego de devices PROPIO de `ci`: no toca los de Jürgen ni los de las
 #   colas. Por eso aquí no hay `shutdown all`: se apaga solo el UDID que usó esta corrida.
@@ -51,7 +51,7 @@ jobs:
     timeout-minutes: 150
     env:
       TEST_RUNNER_TZ: America/Lima
-      DDP: /Volumes/ExtDev/ci/DerivedData/yala
+      DDP: /Users/ci/DerivedData/yala
       SIM_NAME: iPhone 17 Pro
     steps:
       - name: Entorno del runner
@@ -59,7 +59,7 @@ jobs:
           echo "usuario: $(whoami)  host: $(hostname)"
           sw_vers -productVersion
           xcodebuild -version
-          df -h / /Volumes/ExtDev | tail -2
+          df -h / | tail -1
 
       - uses: actions/checkout@v4
 
