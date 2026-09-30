@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-29 (Lima)
 
-**Rama** `2.1` — Merge #301: **iPad: Grupos y Ajustes con lista y detalle, y Yala IA en columna junto a los datos (carril adaptativo, paso 7).**
+**Rama** `2.1` — Merge #302: **el aviso del cambio de Apple ID dice que también se quitan los grupos del teléfono (Cola A).**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > **El destino del gate vuelve a resolver** (medido el 28-sep): hay un iPhone 17 Pro de **iOS 27.0**
@@ -13,7 +13,30 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `9D0F6D32` (26.5) que citaba el aviso anterior **ya no existe**. El ticket
 > `the-gate-destination-no-longer-resolves-on-this-mac` tiene la premisa cambiada: medirlo antes de trabajarlo.
 
-## Esta sesión (#301 · carril adaptativo, paso 7: Grupos, Ajustes y Yala IA en iPad)
+## Esta sesión (#302 · Cola A: el aviso del cambio de Apple ID dice que también se quitan los grupos)
+
+Quien cambia la cuenta de iCloud del teléfono ve «Cambiaste de cuenta de iCloud». Ahora, si cerrar se lleva también
+los grupos del teléfono, la pregunta lo dice antes de confirmar, en un párrafo propio: «También se quitan los grupos
+que hay en este teléfono.» Pasa siempre con cuenta de grupos (celda D) y sin ella cuando quedan grupos de una sesión
+de grupos que caducó (celda C). Sin grupos que se vayan, el mensaje es el de siempre. En 16 idiomas.
+
+- **Una sola regla para el cierre y para la hoja**: la fórmula del arm pasa a `CloudSignOutFlowLogic.wipeForgetsGroups`.
+  Si la hoja la copiara, divergirían el día que cambie el criterio.
+- **La review cambió el copy**: la primera versión decía «siguen en tu cuenta de Yala», como Ajustes. En la celda C las
+  filas pueden ser de una cuenta de grupos borrada o de otra persona, así que la frase no dice dónde siguen.
+- Gate: unit 815 en 86 suites; XCUITest 13 de 13 (el nuevo ve la frase con grupos del canal nuevo y no la ve sin
+  ellos); CI en verde. Ticket a `done`; la celda D en un iPhone real es un paso más del device-QA del cambio de Apple ID.
+- **Encontrado**: Ajustes dice «(siguen en tu cuenta)» en su fila de grupos, con el mismo matiz en la celda C. Ticket
+  low `settings-sign-out-scope-says-groups-stay-in-an-account-that-may-not-exist`.
+
+### Lo que espera de Jürgen
+
+- **Decidir si el crash de Grupos al estrechar la ventana frena 2.1** para iPad (de #301, sigue abierto).
+- 5 min de QA de iPad de #301: `tickets/qa/ipad-list-detail-for-groups-and-settings-and-chat-inspector.md`.
+- Cuando corra el device-QA del cambio de Apple ID, el paso nuevo del recorrido 1: con cuenta de grupos, la frase de
+  los grupos al final del mensaje.
+
+## Sesión anterior (#301 · carril adaptativo, paso 7: Grupos, Ajustes y Yala IA en iPad)
 
 En un iPad, Grupos pone la lista y el grupo abierto a la vez, sin esconder la barra lateral ni las pestañas de arriba.
 Ajustes pone la lista y el ajuste en la misma hoja, más ancha que antes. Yala IA se abre en una columna a la derecha
@@ -32,12 +55,6 @@ estrechar la ventana, el chat pasa a hoja con la misma conversación. En iPhone 
   `ipad-narrowing-the-window-on-groups-crashes-the-app`.
 - Ticket a `qa` con guion. Nuevo en backlog: `ipad-settings-sheet-size-depends-on-where-it-opens` (la hoja de Ajustes
   unas veces sale a pantalla completa y otras a 810 pt).
-
-### Lo que espera de Jürgen
-
-- **Decidir si el crash de Grupos al estrechar la ventana frena 2.1** para iPad: afecta a quien use «Apps en ventanas».
-- 5 min de QA: el guion de `tickets/qa/ipad-list-detail-for-groups-and-settings-and-chat-inspector.md` (vuelta a ancho
-  con Yala IA abierto). Sigue el de 3 min de `tickets/qa/ipad-sidebar-and-list-detail-for-records-and-planning.md`.
 
 ## Sesión anterior (#300 · Cola A: la puerta del invitado ya no deja sin salida cuando no puede borrar)
 
