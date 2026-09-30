@@ -14,6 +14,8 @@
 //  El mismo test corre en los dos: el runner pregunta al propio dispositivo qué forma esperar. Correrlo
 //  por UDID en `YalaLane-Adapt-iPad-Pro-13` y `YalaLane-Adapt-iPhone-ProMax` (reglas del carril).
 //  Seed `realista` + Pro: hace falta más de un presupuesto y registros de varios días.
+//  Los casos de «Estrechar la ventana» necesitan además Ajustes → Multitarea y gestos → «Apps en ventanas» en el
+//  iPad; sin eso, o en iPhone, se saltan diciéndolo (`XCTSkip`). Redimensionan con `XCUIApplication+Window`.
 //
 
 import XCTest
@@ -214,5 +216,79 @@ final class AdaptiveNavigationUITests: XCTestCase {
         }
         app.buttons["chat_close"].tap()
         XCTAssertTrue(input.waitForNonExistence(timeout: 5), "La X no cerró Yala IA.")
+    }
+
+    // MARK: - Estrechar la ventana
+
+    /// Las seis páginas, en la lateral y en el orden de siempre.
+    private let pages = ["Panel", "Estadísticas", "Planificación", "Registros", "Reportes", "Grupos"]
+
+    /// Arranca en horizontal con la ventana a pantalla completa. Salta si no hay ventana que estrechar: en iPhone,
+    /// o en un iPad con «Apps en pantalla completa» (Ajustes → Multitarea y gestos → «Apps en ventanas» lo activa).
+    private func launchInResizableWindow(seed: String) throws -> XCUIApplication {
+        guard expectsWideWindow else { throw XCTSkip("Solo en iPad: en iPhone la ventana no se redimensiona.") }
+        XCUIDevice.shared.orientation = .landscapeLeft
+        let app = XCUIApplication()
+        app.launchForUITest(pro: true, seed: seed)
+        XCTAssertTrue(app.waitForUITestReady(timeout: 90), "uitest_ready ausente — bootstrap/seed no completó.")
+        guard app.hasResizableWindow else {
+            throw XCTSkip("El iPad no tiene «Apps en ventanas» (Ajustes → Multitarea y gestos): no hay ventana que estrechar.")
+        }
+        app.maximizeWindow()
+        return app
+    }
+
+    private func sidebarEntry(_ label: String, in app: XCUIApplication) -> XCUIElement {
+        app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", label)).firstMatch
+    }
+
+    /// Ticket `ipad-narrowing-the-window-on-groups-crashes-the-app`: estrechar la ventana con cualquiera de las seis
+    /// páginas seleccionada pasa a pestañas abajo con esa página a la vista, sin cerrar la app; y al volver a ancho,
+    /// la barra lateral vuelve con la misma página. Antes se cerraba con cinco de las seis: todas menos Registros.
+    func test_narrowingTheWindow_keepsEveryPageOpen_andWideningBringsTheSidebarBack() throws {
+        let app = try launchInResizableWindow(seed: "grupos")
+        for page in pages {
+            let entry = sidebarEntry(page, in: app)
+            XCTAssertTrue(entry.waitForExistence(timeout: 10), "La barra lateral no enseña «\(page)».")
+            entry.tap()
+
+            app.narrowWindow()
+            let tab = app.tabBars.buttons[page]
+            XCTAssertTrue(tab.waitForExistence(timeout: 10), "Al estrechar con «\(page)», no hay pestaña «\(page)» abajo.")
+            XCTAssertTrue(tab.isSelected, "Al estrechar con «\(page)», la pestaña seleccionada es otra.")
+            XCTAssertTrue(app.tabBars.buttons["Más"].exists, "La barra estrecha perdió «Más».")
+            XCTAssertEqual(app.state, .runningForeground, "La app se cerró al estrechar con «\(page)».")
+
+            app.maximizeWindow()
+            XCTAssertTrue(
+                app.tabBars.buttons["Más"].waitForNonExistence(timeout: 10),
+                "Al volver a ancho con «\(page)», «Más» sigue a la vista.")
+            XCTAssertTrue(
+                sidebarEntry(pages.last ?? page, in: app).waitForExistence(timeout: 10),
+                "Al volver a ancho con «\(page)», la barra lateral no vuelve.")
+        }
+    }
+
+    /// Con un grupo abierto al lado de la lista, estrechar la ventana no cierra la app y el grupo sigue a la vista,
+    /// empujado, con su chevron de volver.
+    func test_narrowingTheWindow_withAGroupOpen_keepsTheGroupPushed() throws {
+        let app = try launchInResizableWindow(seed: "grupos")
+        let groups = sidebarEntry("Grupos", in: app)
+        XCTAssertTrue(groups.waitForExistence(timeout: 10), "La barra lateral no enseña Grupos.")
+        groups.tap()
+        let card = app.descendants(matching: .any).matching(identifier: "group_card").firstMatch
+        XCTAssertTrue(card.waitForExistence(timeout: 15), "No hay grupo sembrado.")
+        card.tap()
+        let members = app.buttons["group_members_button"]
+        XCTAssertTrue(members.waitForExistence(timeout: 10), "No se abrió el grupo.")
+
+        app.narrowWindow()
+        XCTAssertTrue(
+            app.buttons["group_detail_back"].waitForExistence(timeout: 10),
+            "Al estrechar, el grupo abierto no sigue empujado con su chevron.")
+        XCTAssertTrue(members.waitForHittable(timeout: 5), "Al estrechar, el grupo abierto dejó de verse.")
+        XCTAssertFalse(card.isHittable, "Al estrechar, la lista tapa el grupo abierto.")
+        XCTAssertEqual(app.state, .runningForeground, "La app se cerró al estrechar con un grupo abierto.")
+        app.maximizeWindow()
     }
 }

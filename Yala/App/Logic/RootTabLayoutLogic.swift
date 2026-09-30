@@ -5,11 +5,13 @@
 //  Qué pestañas enseña la raíz y en qué orden, según el espacio de la ventana (ADR «Yala se adapta por
 //  espacio, no por dispositivo»).
 //
-//  **Las pestañas que no tocan se QUITAN de la `TabView`, no se ocultan con `.hidden(_:)`.** Medido el
-//  2026-09-29: con una pestaña oculta seleccionada, UIKit aborta la app (`-[_UITabModel _setSelectedItem:…]`,
-//  NSInternalInconsistency). Y la selección apunta a una pestaña que no se ve más a menudo de lo que parece:
-//  Panel en la shell de solo grupos, Buscar durante los 50 ms de una pestaña temporal, Más al ensanchar la
-//  ventana. Quitada, la `TabView` lo tolera, que es como funcionaba antes de esta fase.
+//  **Las seis páginas se montan desde el primer arranque; la barra de pestañas OCULTA las que no tocan, nunca la
+//  seleccionada** (`mountedTabs`, `hiddenTabs`). Las dos mitades están medidas el 2026-09-29 y tiran en sentidos
+//  opuestos: una pestaña añadida al ensanchar la ventana no tiene controlador hasta que se visita y tumba la app al
+//  estrecharla (ver `mountedTabs`); una pestaña oculta y SELECCIONADA también la tumba
+//  (`-[_UITabModel _setSelectedItem:…]`, NSInternalInconsistency). Por eso `shownTabs` incluye siempre la
+//  seleccionada, y lo que la selección puede señalar sin verse —Panel en la shell de solo grupos, Buscar durante los
+//  50 ms de una pestaña temporal, Más al ensanchar— se QUITA en vez de ocultarse.
 //
 //  Para que redimensionar no desmonte lo abierto, la página SELECCIONADA sigue en la barra de pestañas aunque
 //  no esté en la configuración, y el orden es el mismo en los dos tamaños (misma identidad por pestaña).
@@ -38,7 +40,7 @@ enum RootTabLayoutLogic {
         activeTabs + ConfigurableTab.allCases.filter { !activeTabs.contains($0) }
     }
 
-    /// Las páginas que monta la `TabView`, en orden.
+    /// Las páginas que se VEN, en orden (las demás montadas van ocultas: `hiddenTabs`).
     ///
     /// - Barra lateral: todas (`orderedTabs`).
     /// - Barra de pestañas: las de antes de esta fase (`tabBarTabs`: configuración + temporal) y, si la página
@@ -59,6 +61,33 @@ enum RootTabLayoutLogic {
               !tabBarTabs.contains(selectedPage)
         else { return tabBarTabs }
         return tabBarTabs + [selectedPage]
+    }
+
+    /// Las páginas que la `TabView` MONTA, en orden: las seis, en los dos tamaños, salvo en la shell de solo grupos.
+    ///
+    /// **Montadas desde el primer arranque, no añadidas al ensanchar.** Medido el 2026-09-29 (iPad Pro 13, iOS 27.0):
+    /// al estrechar la ventana, UIKit reconstruye la barra con las pestañas que tenía en la lateral y mete el ítem de
+    /// cada una de las cuatro primeras. Una pestaña que SwiftUI añadió con la barra lateral ya puesta no tiene
+    /// controlador —ni ítem— hasta que se visita, y ese `nil` tumba la app
+    /// (`-[UITabBarController _tabs_rebuildTabBarItemsAnimated:]`, `insertObject:atIndex:: object cannot be nil`).
+    /// Las que ya estaban en el primer montaje sí lo tienen. Por eso la barra de pestañas OCULTA las que no tocan
+    /// (`hiddenTabs`) en vez de quitarlas.
+    ///
+    /// En la shell de solo grupos se siguen quitando: ahí la selección puede quedarse en Panel, y una pestaña oculta
+    /// y seleccionada también tumba la app (`-[_UITabModel _setSelectedItem:…]`, fase 1).
+    static func mountedTabs(
+        orderedTabs: [ConfigurableTab],
+        tabBarTabs: [ConfigurableTab],
+        reduceToGroupsOnly: Bool
+    ) -> [ConfigurableTab] {
+        reduceToGroupsOnly ? tabBarTabs : orderedTabs
+    }
+
+    /// Las páginas montadas que la barra de pestañas no enseña: las que no están en `shownTabs`. Nunca la
+    /// seleccionada —`shownTabs` la incluye siempre—, porque una pestaña oculta y seleccionada tumba la app.
+    /// En la lateral, ninguna.
+    static func hiddenTabs(mounted: [ConfigurableTab], shown: [ConfigurableTab]) -> [ConfigurableTab] {
+        mounted.filter { !shown.contains($0) }
     }
 
     /// Más solo existe en la barra de pestañas: en la lateral, todo lo que ofrecía ya está a la vista.

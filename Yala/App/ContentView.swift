@@ -3186,8 +3186,8 @@ struct MainTabView: View {
             reduceToGroupsOnly: reduceToGroupsOnly)
     }
 
-    /// Las páginas que monta la `TabView`: todas en la barra lateral; las de siempre (más la seleccionada) en la
-    /// barra de pestañas. Se QUITAN, no se ocultan: una pestaña oculta y seleccionada tumba la app (medido, ver
+    /// Las páginas que se VEN: todas en la barra lateral; las de siempre (más la seleccionada) en la barra de
+    /// pestañas. Incluye siempre la seleccionada: una pestaña oculta y seleccionada tumba la app (medido, ver
     /// `RootTabLayoutLogic`).
     private var shownTabs: [ConfigurableTab] {
         RootTabLayoutLogic.shownTabs(
@@ -3196,6 +3196,20 @@ struct MainTabView: View {
             tabBarTabs: visibleTabs,
             selected: sessionState.selectedMainTab,
             reduceToGroupsOnly: reduceToGroupsOnly)
+    }
+
+    /// Las páginas que la `TabView` monta: las seis siempre (salvo en la shell de solo grupos), para que al estrechar
+    /// la ventana ninguna esté sin controlador. Ver `RootTabLayoutLogic.mountedTabs`.
+    private var mountedTabs: [ConfigurableTab] {
+        RootTabLayoutLogic.mountedTabs(
+            orderedTabs: RootTabLayoutLogic.orderedTabs(activeTabs: modeConfig.activeTabs),
+            tabBarTabs: visibleTabs,
+            reduceToGroupsOnly: reduceToGroupsOnly)
+    }
+
+    /// Las montadas que no se ven: en la barra de pestañas, las que no están en `shownTabs`. Nunca la seleccionada.
+    private var hiddenTabs: [ConfigurableTab] {
+        RootTabLayoutLogic.hiddenTabs(mounted: mountedTabs, shown: shownTabs)
     }
 
     /// Tabs to show in the TAB BAR: mode-aware config + temporary tab (if set and not already active)
@@ -3241,11 +3255,13 @@ struct MainTabView: View {
             wipingDataView
         } else {
             TabView(selection: $sessionState.selectedMainTab) {
-                // En la barra de pestañas, las de la configuración + la temporal; en la barra lateral, todas.
-                ForEach(shownTabs) { tab in
+                // Las seis páginas, montadas en los dos tamaños; la barra de pestañas oculta las que no tocan
+                // (la configuración + la temporal + la seleccionada quedan a la vista). Ver `RootTabLayoutLogic`.
+                ForEach(mountedTabs) { tab in
                     Tab(tab.displayName, systemImage: tab.iconName, value: tab.appTab) {
                         viewForTab(tab)
                     }
+                    .hidden(hiddenTabs.contains(tab))
                 }
 
                 // Más solo en la barra de pestañas: en la lateral ya está todo a la vista.
