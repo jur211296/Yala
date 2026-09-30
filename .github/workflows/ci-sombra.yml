@@ -85,6 +85,11 @@ jobs:
             UDID="$(xcrun simctl create "$SIM_NAME" com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro "$RT")"
             echo "creado $UDID en $RT"
           fi
+          # Limpio en cada corrida, como en GitHub: con los datos de la anterior (UserDefaults
+          # del app incluidos) falló un test que en GitHub pasa (run 36746388865). Solo se borra
+          # ESTE device, del juego propio de `ci`.
+          xcrun simctl shutdown "$UDID" 2>/dev/null || true
+          xcrun simctl erase "$UDID"
           echo "udid=$UDID" >> "$GITHUB_OUTPUT"
           xcrun simctl list devices | grep "$UDID"
 
