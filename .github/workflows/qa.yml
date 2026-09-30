@@ -41,6 +41,23 @@ on:
   # conserva el evento original y no se traga la hora larga de UI.
   workflow_dispatch:
 
+# Un push nuevo a un PR CANCELA el run anterior de ese mismo PR (2026-09-30, ADR-053 de casa).
+# Medido en 30 días: 145 de 239 ramas de PR tuvieron más de un run, y cada uno ocupaba un
+# `macos-26` ~27 min para probar un commit que ya nadie iba a mergear.
+#
+# SOLO `pull_request`. Todo lo demás —push a `2.1`, la nocturna, un `workflow_dispatch`— cae en
+# un grupo por `run_id`, que es único: nunca comparte grupo con nadie y nunca se cancela. Es a
+# propósito. El push a `2.1` es la red del CI después del merge, y la nocturna es la única corrida
+# de la suite de UI; cancelar cualquiera de las dos perdería cobertura sin que nadie lo viera.
+# (`nocturna-vigilante.yml` cuenta runs de `schedule` y `workflow_dispatch` sin mirar su
+# conclusión: como esos no se cancelan nunca, su cuenta no cambia.)
+#
+# Un run cancelado así NO avisa: el job `aviso` va con `!cancelled()`, que da `false` cuando se
+# cancela el RUN entero. Si hay algo que avisar, lo avisa el run del push nuevo.
+concurrency:
+  group: ${{ github.event_name == 'pull_request' && format('qa-pr-{0}', github.event.pull_request.number) || format('qa-{0}', github.run_id) }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   # Barato y rápido: valida el SSOT de cobertura + el ratchet anti-drift.
   # Corre en Linux (solo necesita python3). Bloquea merge si el index regresa.
@@ -436,11 +453,12 @@ jobs:
     name: ¿Se ha enterado alguien de los rojos advisory?
     needs: tests
     # `!cancelled()` y NO `always()`, y la diferencia importa mucho: `always()` corre tambien
-    # cuando el RUN ENTERO se cancela a mano. Este workflow no declara `concurrency`, asi que
-    # los runs no se auto-cancelan y las cancelaciones son manuales — con un job de hasta 90
-    # min en `macos-26`, cancelar al ver un typo es lo normal. Con `always()`, cada una de esas
-    # veces `tests` acaba en `cancelled`, sus outputs llegan vacios, y esto entregaba a Grok
-    # «la suite NO llego a correr — el job murio antes de los tests». No murio: lo cancelaste tu.
+    # cuando el RUN ENTERO se cancela. Y el run entero se cancela de dos formas: a mano —con un
+    # job de hasta 90 min en `macos-26`, cancelar al ver un typo es lo normal— y, desde el
+    # 2026-09-30, solo, cuando un push nuevo a un PR sustituye al anterior (`concurrency`, arriba
+    # del todo). Con `always()`, cada una de esas veces `tests` acaba en `cancelled`, sus outputs
+    # llegan vacios, y esto entregaba a Grok «la suite NO llego a correr — el job murio antes de
+    # los tests». No murio: lo cancelaste tu, o lo sustituyo un push mas nuevo.
     #
     # `!cancelled()` mira si se cancelo el RUN, no si se cancelo `tests`. Asi que sigue
     # cubriendo el caso que si hay que avisar: el tope del job `tests` agotado, que es una

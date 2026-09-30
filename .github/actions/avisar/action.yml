@@ -116,6 +116,13 @@ runs:
               404)     motivo="el webhook no existe (HTTP 404). La routine pudo borrarse o rehacerse; su URL cambia con ella, asi que hay que reponer GROK_WEBHOOK_URL desde el panel" ;;
               *)       motivo="respuesta inesperada del webhook (HTTP $codigo)" ;;
             esac
+            # Una routine DESACTIVADA contesta 400 con `is disabled` en el cuerpo. La URL y la
+            # clave estan bien, asi que reponer los secretos no lo arregla: hay que volver a
+            # activarla en el panel de automations de Cursor. Del 2026-09-16 al -30 esto se
+            # leyo como «respuesta inesperada» y se busco en la clave y en el cuerpo del aviso.
+            if [ "$codigo" = "400" ] && grep -qi 'is disabled' "$RUNNER_TEMP/aviso-respuesta.txt" 2>/dev/null; then
+              motivo="la routine esta DESACTIVADA (HTTP 400, «is disabled»). La URL y la clave estan bien: hay que reactivarla en el panel de automations de Cursor, no reponer los secretos"
+            fi
             [ -n "$motivo" ] || echo "::notice title=Aviso entregado::La routine recibio el aviso (HTTP $codigo): $ASUNTO."
           fi
           if [ -n "$motivo" ] && [ -s "$RUNNER_TEMP/aviso-respuesta.txt" ]; then
