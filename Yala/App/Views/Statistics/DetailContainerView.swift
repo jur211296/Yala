@@ -20,6 +20,8 @@ struct DetailContainerView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.yalaTheme) private var theme
     @Environment(\.scenePhase) private var scenePhase
+    /// Size class de la ventana: en ancha el chip Registros abre el registro en un panel al lado de la lista.
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     // MARK: - ViewModels
 
@@ -44,6 +46,8 @@ struct DetailContainerView: View {
     /// dataVersion + mes en curso, no de filtros/periodo. Evita los 2 fetches
     /// de SwiftData (`loadPaidAmounts`) en cada cambio de chip.
     @State private var lastScoreSignature: Int = 0
+    /// Ancho del chip Registros: decide si lista y registro abierto caben lado a lado.
+    @State private var recordsWidth: CGFloat = 0
     private let isFromSearch: Bool  // Skip session sync when coming from global search
 
     @Environment(AppPreferences.self) private var appPreferences
@@ -226,6 +230,11 @@ struct DetailContainerView: View {
                 case .image: showImageSelection = true
                 }
             }
+            .modifier(StatsRecordsPaneObservers(
+                recordsViewModel: recordsViewModel,
+                horizontalSizeClass: horizontalSizeClass,
+                recordsTabIsShown: selectedTab == .records,
+                allTransactions: dataViewModel.allTransactions))
     }
 
     // MARK: - Main Content
@@ -245,7 +254,7 @@ struct DetailContainerView: View {
                     .padding(.vertical, DS.Spacing.sm)
             }
 
-            if selectedTab == .records && !recordsViewModel.isSelectionMode {
+            if selectedTab == .records && !recordsViewModel.isSelectionMode && !recordPaneCoversList {
                 VStack {
                     Spacer()
                     HStack {
@@ -277,10 +286,15 @@ struct DetailContainerView: View {
                         )
                     }
                 }
+                // Con el registro abierto al lado, los flotantes van sobre la lista, como en la página Registros.
+                .frame(width: recordsListWidth)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
 
             if recordsViewModel.isSelectionMode && !recordsViewModel.selectedRecordIDs.isEmpty {
                 selectionActionBar
+                    .frame(width: recordsListWidth)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
         .yalaScreenBackground()
@@ -342,6 +356,45 @@ struct DetailContainerView: View {
             )
             .accessibilityIdentifier("stats_tab_categories")
         case .records:
+            recordsContent
+        }
+    }
+
+    // MARK: - Registros: lista y registro abierto
+
+    /// Ventana ancha: tocar un registro lo abre en un panel, no en hoja (`RecordsViewModel.opensDetailInColumn`,
+    /// el molde de la página Registros). Sin `NavigationSplitView`: este chip vive dentro de la pila de Estadísticas.
+    private var recordsOpensInPane: Bool { horizontalSizeClass == .regular }
+
+    /// Lista y panel caben lado a lado: dos anchos de iPhone, la misma regla que `ListDetailSplit`.
+    private var recordsSideBySide: Bool {
+        recordsOpensInPane && recordsWidth >= 2 * DS.Adaptive.listColumnMinWidth
+    }
+
+    /// Sin sitio para los dos, el registro abierto tapa la lista; su X la devuelve.
+    private var recordPaneCoversList: Bool {
+        selectedTab == .records && recordsOpensInPane && !recordsSideBySide && openPaneRecord != nil
+    }
+
+    /// Ancho de la lista cuando va al lado del panel; `nil` (todo) si no.
+    private var recordsListWidth: CGFloat? {
+        selectedTab == .records && recordsSideBySide ? DS.Adaptive.listColumnIdealWidth : nil
+    }
+
+    /// El registro abierto, resuelto contra lo cargado (nunca `model(for:)`, que fabrica un objeto aunque ya no
+    /// exista).
+    private var openPaneRecord: TransactionItem? {
+        guard let id = recordsViewModel.openRecordID else { return nil }
+        return dataViewModel.allTransactions.first { $0.persistentModelID == id }
+    }
+
+    /// Los mismos hijos en todos los tamaños —la lista siempre la primera— para que redimensionar no la
+    /// reconstruya: lado a lado un `HStack`; sin sitio, un `ZStack` donde el panel tapa la lista; en compacta, la
+    /// lista sola (la hoja de siempre).
+    private var recordsContent: some View {
+        let sideBySide = recordsSideBySide
+        let layout = sideBySide ? AnyLayout(HStackLayout(spacing: DS.Spacing.none)) : AnyLayout(ZStackLayout())
+        return layout {
             RecordsTabView(
                 viewModel: recordsViewModel,
                 accounts: dataViewModel.accounts,
@@ -352,7 +405,33 @@ struct DetailContainerView: View {
                 defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue,
                 onFilterChange: { recalculateData() }
             )
+            .frame(width: sideBySide ? DS.Adaptive.listColumnIdealWidth : nil)
+            .overlay(alignment: .trailing) {
+                if sideBySide { Divider() }
+            }
             .accessibilityIdentifier("stats_tab_records")
+
+            if recordsOpensInPane, sideBySide || openPaneRecord != nil {
+                recordPane
+            }
+        }
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { recordsWidth = $0 }
+    }
+
+    @ViewBuilder
+    private var recordPane: some View {
+        if let record = openPaneRecord {
+            TransactionDetailSheet(
+                transaction: record,
+                presentation: .pane,
+                onEdit: { recordsViewModel.editOpenRecord(record) },
+                onClose: { recordsViewModel.openRecordID = nil }
+            )
+            .id(record.persistentModelID)
+        } else {
+            ContentUnavailableView(L10n.Records.detailPlaceholder, systemImage: ConfigurableTab.records.iconName)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .accessibilityIdentifier("stats_records_detail_placeholder")
         }
     }
 
@@ -889,5 +968,45 @@ private struct SessionStateObservers: ViewModifier {
             .onChange(of: sessionState.isExcludeMode) { recalculateData() }
             .onChange(of: sessionState.selectedTrendMetric) { recalculateData() }
             .onChange(of: sessionState.customDateRange) { recalculateData() }
+    }
+}
+
+/// El panel del registro abierto en Estadísticas › Registros (ventana ancha): qué abre un toque, qué pasa al
+/// estrechar con uno abierto y cuándo se cierra. En un modificador aparte por lo mismo que los otros observadores de
+/// esta vista: el compilador de CI no tipa a tiempo una cadena larga de `onChange` con cierres.
+private struct StatsRecordsPaneObservers: ViewModifier {
+    let recordsViewModel: RecordsViewModel
+    let horizontalSizeClass: UserInterfaceSizeClass?
+    /// El chip Registros está a la vista. Con otro chip delante, estrechar cierra lo abierto sin sacar una hoja
+    /// encima del Resumen o de Tendencias.
+    let recordsTabIsShown: Bool
+    let allTransactions: [TransactionItem]
+
+    func body(content: Content) -> some View {
+        content
+            .onChange(of: horizontalSizeClass, initial: true) { _, newClass in sizeClassChanged(newClass) }
+            .onChange(of: allTransactions) { closeIfTheRecordIsGone() }
+    }
+
+    /// En ancha el toque abre el panel; en compacta, la hoja. Si la ventana se estrecha con un registro abierto en
+    /// el panel, pasa a la hoja: el mismo registro sigue a la vista.
+    private func sizeClassChanged(_ newClass: UserInterfaceSizeClass?) {
+        recordsViewModel.opensDetailInColumn = newClass == .regular
+        guard newClass != .regular, let id = recordsViewModel.openRecordID else { return }
+        recordsViewModel.openRecordID = nil
+        guard recordsTabIsShown,
+              let record = allTransactions.first(where: { $0.persistentModelID == id }) else { return }
+        recordsViewModel.editingTransaction = record
+        recordsViewModel.showTransactionDetail = true
+    }
+
+    /// Registro abierto que ya no existe (borrado desde el editor u otro dispositivo): el panel vuelve al vacío.
+    private func closeIfTheRecordIsGone() {
+        guard let id = recordsViewModel.openRecordID else { return }
+        guard !allTransactions.contains(where: { $0.persistentModelID == id }) else { return }
+        #if DEBUG
+        print("DetailContainerView: el registro abierto ya no está, se cierra el panel")
+        #endif
+        recordsViewModel.openRecordID = nil
     }
 }

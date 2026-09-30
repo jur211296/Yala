@@ -17,7 +17,6 @@ struct TrendsTabView: View {
     // MARK: - Environment
 
     @Environment(\.modelContext) private var modelContext
-    @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(SessionState.self) private var sessionState
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.yalaTheme) private var theme
@@ -143,12 +142,16 @@ struct TrendsTabView: View {
                     )
                     .padding(.top, DS.Spacing.xxxxl)
                 } else {
-                    LazyVStack(spacing: DS.Spacing.xl) {
+                    // En ancha, todas las tarjetas en pares: con comparación [Tendencia | Comparación] como antes;
+                    // sin ella, la tendencia ya no va sola a todo lo ancho, sino al lado del flujo de efectivo
+                    // (ticket `ipad-and-duo-panel-and-statistics-use-the-width`).
+                    PairedCardsStack(rowSpacing: DS.Spacing.xl) {
                         chartsLayout
                         cashFlowWidget
                         weekdayChartSection
                         trendInsightCard            // mueve al final: cierre narrativo
                     }
+                    .frame(maxWidth: .infinity)
                     .yalaSafeBottomPadding()
                 }
             }
@@ -349,24 +352,18 @@ struct TrendsTabView: View {
             && cashFlowSummary == nil
     }
 
-    // MARK: - Charts Layout (preserva iPad wide side-by-side)
+    // MARK: - Charts Layout
 
+    /// Tendencia y, si hay período anterior, comparación. Dos hijos sueltos: el lado a lado en ancha lo pone la
+    /// rejilla en pares de la que cuelgan, igual que al resto de tarjetas.
     @ViewBuilder
     private var chartsLayout: some View {
-        let isWide = DS.Adaptive.isWideScreen(sizeClass)
         let hasComparison = appPreferences.showVariations
             && PreviousPeriodHelper.isSelectorVisible(for: trendsViewModel.detailPeriod)
 
-        if isWide && hasComparison {
-            HStack(alignment: .top, spacing: DS.Spacing.lg) {
-                trendChartSection.frame(maxWidth: .infinity)
-                comparisonChartSection.frame(maxWidth: .infinity)
-            }
-        } else {
-            trendChartSection
-            if hasComparison {
-                comparisonChartSection
-            }
+        trendChartSection
+        if hasComparison {
+            comparisonChartSection
         }
     }
 

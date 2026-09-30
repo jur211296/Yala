@@ -14,11 +14,8 @@ struct PanelFilterAndWidgetsSection: View {
     let sessionState: SessionState
     let defaultCurrencyCodeRaw: String
     let showVariations: Bool
-    let accountsSortOrderNames: [String]
     @Binding var sectionPrefsPresentation: PanelSectionKind?
     @Binding var showBudgetFavoritesSettings: Bool
-    @Binding var accountFormSheet: AccountFormSheet?
-    @Binding var showUpgradeForAccounts: Bool
     @Binding var showCustomPeriodPicker: Bool
 
     var body: some View {
@@ -31,20 +28,9 @@ struct PanelFilterAndWidgetsSection: View {
                 viewModel.isSectionVisible(kind) && viewModel.hasAnyVisibleWidget(in: kind)
             }
             let orderedVisibleSections = viewModel.orderedPanelSections(allVisibleSections)
-            let accountsVisible = orderedVisibleSections.contains(.accounts)
-            let healthVisible = orderedVisibleSections.contains(.health)
 
-            if accountsVisible || healthVisible {
-                PanelPanoramaSection(
-                    viewModel: viewModel,
-                    sessionState: sessionState,
-                    accountsSortOrderNames: accountsSortOrderNames,
-                    accountsVisible: accountsVisible,
-                    healthVisible: healthVisible,
-                    accountFormSheet: $accountFormSheet,
-                    showUpgradeForAccounts: $showUpgradeForAccounts
-                )
-            }
+            // «Tus finanzas» (cuentas + salud) ya no vive aquí: la monta `PanelView` en su cabecera, que en una
+            // ventana ancha la pone al lado del saldo.
 
             // Filter bar sits between Tu panorama and the thematic sections —
             // period + chips travel with the widgets they affect, not with the hero.
@@ -69,7 +55,7 @@ struct PanelFilterAndWidgetsSection: View {
     private func sectionView(for kind: PanelSectionKind) -> some View {
         switch kind {
         case .accounts, .health:
-            let _ = assertionFailure("\(kind) should be rendered inside PanelPanoramaSection")
+            let _ = assertionFailure("\(kind) should be rendered inside PanelPanoramaSection (PanelView)")
             EmptyView()
         case .tendencias, .distribucion, .planificacion, .latestRecords, .tools:
             PanelThematicSection(

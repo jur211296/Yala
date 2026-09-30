@@ -10,6 +10,8 @@
 //    presupuesto se empuja.
 //  - Fase 2: Grupos y Ajustes con lista y detalle a la vez en ancho (en iPhone, empujados), y Yala IA en
 //    una columna al lado de los datos (en iPhone, la hoja de siempre).
+//  - Fase 2b: el Panel y Estadísticas en pares en ancho (cabecera en banda, Resumen en dos columnas) y el
+//    registro de Estadísticas › Registros en un panel al lado de la lista (en iPhone, la hoja de siempre).
 //
 //  El mismo test corre en los dos: el runner pregunta al propio dispositivo qué forma esperar. Correrlo
 //  por UDID en `YalaLane-Adapt-iPad-Pro-13` y `YalaLane-Adapt-iPhone-ProMax` (reglas del carril).
@@ -223,6 +225,102 @@ final class AdaptiveNavigationUITests: XCTestCase {
     /// Las seis páginas, en la lateral y en el orden de siempre.
     private let pages = ["Panel", "Estadísticas", "Planificación", "Registros", "Reportes", "Grupos"]
 
+    /// Toca un chip de Estadísticas. En iPhone los últimos quedan fuera del carril horizontal: se desplaza hasta verlo.
+    private func tapStatisticsChip(_ id: String, in app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
+        let chip = app.buttons[id]
+        XCTAssertTrue(chip.waitForExistence(timeout: 15), "No está el chip \(id).", file: file, line: line)
+        let bar = app.scrollViews.containing(.button, identifier: "detail_chip_insights").firstMatch
+        var swipes = 0
+        while swipes < 4 && !app.frame.insetBy(dx: 1, dy: 1).contains(chip.frame) {
+            if chip.frame.minX < app.frame.minX { bar.swipeRight() } else { bar.swipeLeft() }
+            swipes += 1
+        }
+        chip.tap()
+    }
+
+    private func label(_ text: String, in app: XCUIApplication) -> XCUIElement {
+        app.staticTexts.matching(NSPredicate(format: "label == %@", text)).firstMatch
+    }
+
+    /// Fase 2b: en ancho (horizontal), «Tus finanzas» sube a la derecha del saldo y las acciones, en la misma
+    /// banda; en iPhone sigue debajo de las acciones.
+    func test_panelHeader_putsYourFinancesBesideTheBalance_inWideWindow() {
+        if expectsWideWindow { XCUIDevice.shared.orientation = .landscapeLeft }
+        let app = launch(deeplink: "panel")
+        let newRecord = app.buttons["panel_action_new"]
+        let finances = label("Tus finanzas", in: app)
+        XCTAssertTrue(newRecord.waitForExistence(timeout: 15), "No está la fila de acciones del Panel.")
+        XCTAssertTrue(finances.waitForExistence(timeout: 10), "No está «Tus finanzas».")
+
+        if expectsWideWindow {
+            XCTAssertLessThan(finances.frame.minY, newRecord.frame.maxY, "«Tus finanzas» no está en la banda de la cabecera.")
+            XCTAssertGreaterThan(finances.frame.minX, newRecord.frame.maxX, "«Tus finanzas» no está a la derecha de las acciones.")
+        } else {
+            XCTAssertGreaterThan(finances.frame.minY, newRecord.frame.maxY, "En iPhone «Tus finanzas» dejó de ir debajo.")
+        }
+    }
+
+    /// Fase 2b: Estadísticas › Resumen en pares en ancho: «Tu salud financiera» y «Resumen inteligente» en la misma
+    /// fila. En iPhone, uno debajo de otro.
+    func test_statisticsSummary_pairsTheCards_inWideWindow() {
+        if expectsWideWindow { XCUIDevice.shared.orientation = .landscapeLeft }
+        let app = launch(deeplink: "statistics")
+        let health = label("Tu salud financiera", in: app)
+        let smart = label("Resumen inteligente", in: app)
+        XCTAssertTrue(health.waitForExistence(timeout: 15), "No está «Tu salud financiera».")
+        XCTAssertTrue(smart.waitForExistence(timeout: 10), "No está «Resumen inteligente».")
+
+        if expectsWideWindow {
+            XCTAssertGreaterThan(smart.frame.minX, health.frame.maxX, "«Resumen inteligente» no está al lado de la salud financiera.")
+            XCTAssertLessThan(abs(smart.frame.midY - health.frame.midY), 60, "Las dos tarjetas no están en la misma fila.")
+        } else {
+            XCTAssertGreaterThan(smart.frame.minY, health.frame.maxY, "En iPhone el Resumen dejó de ir en una columna.")
+        }
+    }
+
+    /// Fase 2b: Estadísticas › Registros. En ancho el registro se abre en un panel al lado de la lista, sin tocar la
+    /// barra de Estadísticas (sigue su título grande), y su X lo cierra. En iPhone, la hoja de siempre.
+    func test_statisticsRecordOpensBesideTheList_inWideWindow_andAsSheetInCompact() {
+        let app = launch(deeplink: "statistics")
+        tapStatisticsChip("detail_chip_registros", in: app)
+        let rows = app.buttons.matching(identifier: "record_row")
+        XCTAssertTrue(rows.firstMatch.waitForExistence(timeout: 15), "No hay filas de registro.")
+
+        if expectsWideWindow {
+            XCTAssertTrue(
+                app.descendants(matching: .any)["stats_records_detail_placeholder"].waitForExistence(timeout: 5),
+                "El panel vacío no aparece al lado de la lista.")
+        }
+
+        rows.element(boundBy: 0).tap()
+        let edit = app.buttons["transaction_detail_edit"]
+        XCTAssertTrue(edit.waitForExistence(timeout: 10), "No se abrió el detalle del registro.")
+        let close = app.buttons["transaction_detail_close"]
+        XCTAssertTrue(close.exists, "El detalle no tiene X.")
+
+        if expectsWideWindow {
+            XCTAssertTrue(
+                app.descendants(matching: .any)["transaction_detail_pane"].exists,
+                "El registro no se abrió en el panel (¿hoja?).")
+            XCTAssertFalse(app.descendants(matching: .any)["transaction_detail_sheet"].exists, "En ancho no debe salir la hoja.")
+            XCTAssertTrue(rows.element(boundBy: 1).isHittable, "La lista dejó de verse al abrir el registro.")
+            XCTAssertTrue(app.navigationBars["Estadísticas"].exists, "El panel cambió la barra de Estadísticas.")
+
+            // Otro registro sustituye al primero en el mismo panel.
+            rows.element(boundBy: 1).tap()
+            XCTAssertTrue(edit.waitForExistence(timeout: 5))
+
+            close.tap()
+            XCTAssertTrue(
+                app.descendants(matching: .any)["stats_records_detail_placeholder"].waitForExistence(timeout: 5),
+                "La X no devolvió el panel a vacío.")
+        } else {
+            XCTAssertTrue(app.descendants(matching: .any)["transaction_detail_sheet"].exists, "En iPhone el detalle es la hoja.")
+            close.tap()
+            XCTAssertTrue(edit.waitForNonExistence(timeout: 5), "La hoja de detalle no se cerró.")
+        }
+    }
+
     /// Arranca en horizontal con la ventana a pantalla completa. Salta si no hay ventana que estrechar: en iPhone,
     /// o en un iPad con «Apps en pantalla completa» (Ajustes → Multitarea y gestos → «Apps en ventanas» lo activa).
     private func launchInResizableWindow(seed: String) throws -> XCUIApplication {
@@ -267,6 +365,52 @@ final class AdaptiveNavigationUITests: XCTestCase {
                 sidebarEntry(pages.last ?? page, in: app).waitForExistence(timeout: 10),
                 "Al volver a ancho con «\(page)», la barra lateral no vuelve.")
         }
+    }
+
+    /// Fase 2b: en Estadísticas, estrechar la ventana vuelve a una columna sin perder el chip ni el período, y un
+    /// registro abierto en el panel pasa a la hoja; al volver a ancho, la barra lateral vuelve con el mismo chip.
+    func test_narrowingTheWindow_onStatistics_keepsTheChipThePeriodAndTheOpenRecord() throws {
+        let app = try launchInResizableWindow(seed: "realista")
+        let stats = sidebarEntry("Estadísticas", in: app)
+        XCTAssertTrue(stats.waitForExistence(timeout: 10), "La barra lateral no enseña Estadísticas.")
+        stats.tap()
+
+        // Tendencias, con otro período que el de arranque.
+        let trends = app.buttons["detail_chip_tendencias"]
+        XCTAssertTrue(trends.waitForExistence(timeout: 10), "No está el chip Tendencias.")
+        trends.tap()
+        // La semilla arranca en «Todo el tiempo»: se cambia a «Este mes».
+        let periodMenu = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", "Todo el tiempo")).firstMatch
+        XCTAssertTrue(periodMenu.waitForExistence(timeout: 10), "No está el selector de período.")
+        periodMenu.tap()
+        let thisMonth = app.buttons["Este mes"]
+        XCTAssertTrue(thisMonth.waitForExistence(timeout: 5), "El selector no ofrece «Este mes».")
+        thisMonth.tap()
+        let periodPill = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", "Este mes")).firstMatch
+        XCTAssertTrue(periodPill.waitForExistence(timeout: 5), "El período no cambió.")
+
+        app.narrowWindow()
+        XCTAssertTrue(app.tabBars.buttons["Estadísticas"].waitForExistence(timeout: 10), "Al estrechar no queda Estadísticas.")
+        XCTAssertTrue(app.buttons["detail_chip_tendencias"].isSelected || app.otherElements["stats_tab_trends"].exists
+            || app.descendants(matching: .any)["stats_tab_trends"].exists, "Al estrechar se perdió Tendencias.")
+        XCTAssertTrue(periodPill.waitForExistence(timeout: 5), "Al estrechar se perdió el período.")
+        app.maximizeWindow()
+        XCTAssertTrue(app.descendants(matching: .any)["stats_tab_trends"].waitForExistence(timeout: 10), "Al volver a ancho se perdió Tendencias.")
+        XCTAssertTrue(periodPill.exists, "Al volver a ancho se perdió el período.")
+
+        // Registro abierto en el panel → al estrechar, la hoja con el mismo registro.
+        tapStatisticsChip("detail_chip_registros", in: app)
+        let row = app.buttons.matching(identifier: "record_row").firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 15), "No hay filas de registro.")
+        row.tap()
+        XCTAssertTrue(app.descendants(matching: .any)["transaction_detail_pane"].waitForExistence(timeout: 10), "No se abrió el panel.")
+        app.narrowWindow()
+        XCTAssertTrue(
+            app.descendants(matching: .any)["transaction_detail_sheet"].waitForExistence(timeout: 10),
+            "Al estrechar con un registro abierto, no pasó a la hoja.")
+        XCTAssertEqual(app.state, .runningForeground, "La app se cerró al estrechar en Estadísticas.")
+        app.buttons["transaction_detail_close"].tap()
+        app.maximizeWindow()
     }
 
     /// Con un grupo abierto al lado de la lista, estrechar la ventana no cierra la app y el grupo sigue a la vista,

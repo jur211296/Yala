@@ -17,10 +17,17 @@ struct AccountsCarouselView: View {
     /// Al moverlo a @State local, sólo este carrusel re-renderea mientras el usuario scrollea.
     @State private var leadingColumnIndex: Int? = 0
 
+    /// Ancho del carrusel. En una ventana ancha «Tus finanzas» va en la columna derecha de la cabecera del Panel
+    /// (`HeaderBandLayout`): con el size class solo saldrían cuatro tarjetas de ~110 pt en media pantalla.
+    @State private var carouselWidth: CGFloat = 0
+
+    /// Cuatro tarjetas a la vez solo en ancha y con sitio para cuatro de al menos 140 pt; si no, dos, como en iPhone.
+    private static let fourCardsMinWidth: CGFloat = 4 * 140 + 3 * DS.Spacing.md
+
     var body: some View {
         let allCards = orderedAccounts
         let totalCards = allCards.count + 1  // accounts + add button
-        let cardsVisible = DS.Adaptive.isWideScreen(sizeClass) ? 4 : 2
+        let cardsVisible = DS.Adaptive.isWideScreen(sizeClass) && carouselWidth >= Self.fourCardsMinWidth ? 4 : 2
 
         // Calculate page count: we show N cards at a time, scroll 1 at a time
         let pageCount = max(1, totalCards - (cardsVisible - 1))
@@ -49,6 +56,7 @@ struct AccountsCarouselView: View {
             .scrollPosition(id: $leadingColumnIndex)
             .contentMargins(.horizontal, 0, for: .scrollContent)
             .frame(height: 96)
+            .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { carouselWidth = $0 }
 
             // Page indicator
             if pageCount > 1 {

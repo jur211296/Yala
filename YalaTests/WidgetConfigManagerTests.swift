@@ -107,6 +107,75 @@ struct WidgetConfigManagerTests {
         #expect(right?.id == b.id)
     }
 
+    // MARK: - Solo en su fila, en ancho (ticket ipad-and-duo-panel-and-statistics-use-the-width)
+
+    /// Últimos registros, solo en su section: en ancho ocupa la fila entera (reparte sus filas en pares), no media
+    /// fila con la otra media vacía.
+    @Test func latestRecordsAlone_iPad_fullWidth() {
+        let latest = Self.makeConfig(type: .latestRecords, size: .medium)
+        let rows = WidgetConfigManager.makeLayoutRows(for: [latest], columns: 2)
+
+        #expect(rows.count == 1)
+        guard case .fullWidth(let config) = rows[0].type else {
+            Issue.record("Expected fullWidth for a lone .latestRecords, got \(rows[0].type)")
+            return
+        }
+        #expect(config.id == latest.id)
+    }
+
+    /// Solo porque un ancho-completo lo deja sin pareja: también ocupa la fila.
+    @Test func latestRecordsFlushedByTrend_iPad_fullWidth() {
+        let latest = Self.makeConfig(type: .latestRecords, size: .medium)
+        let trend = Self.makeConfig(type: .trend, size: .medium)
+        let rows = WidgetConfigManager.makeLayoutRows(for: [latest, trend], columns: 2)
+
+        #expect(rows.count == 2)
+        guard case .fullWidth(let config) = rows[0].type else {
+            Issue.record("Expected fullWidth for .latestRecords, got \(rows[0].type)")
+            return
+        }
+        #expect(config.id == latest.id)
+    }
+
+    /// Con pareja, sigue siendo media fila.
+    @Test func latestRecordsWithPartner_iPad_paired() {
+        let latest = Self.makeConfig(type: .latestRecords, size: .medium)
+        let top = Self.makeConfig(type: .topSpending, size: .medium)
+        let rows = WidgetConfigManager.makeLayoutRows(for: [latest, top], columns: 2)
+
+        #expect(rows.count == 1)
+        guard case .halfWidthPair(let left, let right) = rows[0].type else {
+            Issue.record("Expected halfWidthPair, got \(rows[0].type)")
+            return
+        }
+        #expect(left.id == latest.id)
+        #expect(right?.id == top.id)
+    }
+
+    /// Los demás widgets solos siguen en media fila: estirarlos a todo lo ancho sería el iPhone estirado.
+    @Test func otherMediumAlone_iPad_staysHalf() {
+        let top = Self.makeConfig(type: .topSpending, size: .medium)
+        let rows = WidgetConfigManager.makeLayoutRows(for: [top], columns: 2)
+
+        guard case .halfWidthPair(let left, let right) = rows.first?.type else {
+            Issue.record("Expected halfWidthPair for a lone .topSpending")
+            return
+        }
+        #expect(left.id == top.id)
+        #expect(right == nil)
+    }
+
+    /// En iPhone no cambia nada: ancho completo, como siempre.
+    @Test func latestRecordsAlone_iPhone_fullWidth() {
+        let latest = Self.makeConfig(type: .latestRecords, size: .medium)
+        let rows = WidgetConfigManager.makeLayoutRows(for: [latest], columns: 1)
+
+        guard case .fullWidth = rows.first?.type else {
+            Issue.record("Expected fullWidth on iPhone")
+            return
+        }
+    }
+
     @Test func trendAlone_fullWidthEvenOnIPad() {
         let trend = Self.makeConfig(type: .trend, size: .medium)
         let rows = WidgetConfigManager.makeLayoutRows(for: [trend], columns: 2)

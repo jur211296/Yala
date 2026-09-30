@@ -96,19 +96,30 @@ final class WidgetConfigManager {
         .trend, .cashFlow, .expensesByNeed, .exchangeRate
     ]
 
+    /// Widgets que, si se quedan solos en su fila en una ventana ancha, la ocupan entera en vez de dejar media fila
+    /// vacía, porque saben repartir su contenido en dos columnas (`RecentRecordsWidget` pone sus filas en pares). Los
+    /// demás se quedan en media fila: estirar un donut o un «Top gastos» a 1000 pt sería el iPhone estirado otra vez.
+    /// Ticket `ipad-and-duo-panel-and-statistics-use-the-width`.
+    private static let spansRowWhenAloneTypes: Set<WidgetType> = [.latestRecords]
+
     /// Pure layout computation — called by `PanelWidgetsGrid` to render per-section
     /// rows. PP2-05: widgets with `size == .small` pair on both iPhone and iPad;
     /// other sizes keep the prior behaviour (full-width on iPhone, pair on iPad).
     static func makeLayoutRows(for widgets: [WidgetConfig], columns: Int) -> [WidgetRow] {
         var rows: [WidgetRow] = []
         var pendingHalf: WidgetConfig?
+        /// La media fila que se queda sin pareja.
+        func loneRow(_ pending: WidgetConfig) -> WidgetRow {
+            let spans = columns >= 2 && pending.size != .small && spansRowWhenAloneTypes.contains(pending.type)
+            return WidgetRow(id: pending.id, type: spans ? .fullWidth(pending) : .halfWidthPair(left: pending, right: nil))
+        }
         for config in widgets {
             let isFullWidthOnly = fullWidthOnlyTypes.contains(config.type)
             let isHalfCapable = config.size == .small || (columns >= 2 && !isFullWidthOnly)
 
             if !isHalfCapable {
                 if let pending = pendingHalf {
-                    rows.append(WidgetRow(id: pending.id, type: .halfWidthPair(left: pending, right: nil)))
+                    rows.append(loneRow(pending))
                     pendingHalf = nil
                 }
                 rows.append(WidgetRow(id: config.id, type: .fullWidth(config)))
@@ -122,7 +133,7 @@ final class WidgetConfigManager {
             }
         }
         if let pending = pendingHalf {
-            rows.append(WidgetRow(id: pending.id, type: .halfWidthPair(left: pending, right: nil)))
+            rows.append(loneRow(pending))
         }
         return rows
     }

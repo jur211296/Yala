@@ -138,8 +138,8 @@ final class RecordsViewModel: Filterable {
     var openRecordID: PersistentIdentifier?
 
     /// `true` cuando la vista que monta este VM tiene columna de detalle y la ventana es ancha.
-    /// Lo escribe `RecordsStandaloneView` con el size class de la ventana; quien no lo toca
-    /// (Estadísticas › Registros) sigue abriendo la hoja de siempre.
+    /// Lo escriben, con el size class de la ventana, `RecordsStandaloneView` (columna del split) y
+    /// `DetailContainerView` (panel de Estadísticas › Registros). En compacta, la hoja de siempre.
     var opensDetailInColumn = false
 
     /// Mensaje de error surfaceado por `BulkEditSheet` cuando una operación bulk rechaza
