@@ -1,0 +1,178 @@
+name: CI en sombra (runner de la Mini)
+
+# Fase 4 del CI propio (ADR-053 de casa, plan en `~/Claude/casa/docs/ci-propio-yala.md`).
+# Corre el job `tests` de `qa.yml` en el runner de la Mini (usuario `ci`, etiqueta
+# `yala-mini`) para compararlo con GitHub antes de mudar el CI de verdad.
+#
+# SOLO `workflow_dispatch`, y es la condición de seguridad de toda la fase: mientras Yala sea
+# público, un runner propio enganchado a `pull_request` correría en la Mini el código de
+# cualquier PR. Un dispatch solo lo lanza quien tiene permiso de escritura en el repo.
+#
+# Es un fichero APARTE de `qa.yml` a propósito: un `workflow_dispatch` de `qa.yml` es la
+# nocturna (UI incluida) y lo cuenta `nocturna-vigilante.yml`. La sombra no debe tocar esa
+# señal ni disparar el job `aviso`.
+#
+# Los pasos de build y test COPIAN los de `qa.yml` (flags, `-skip-testing`, `-only-testing`).
+# Si cambian allí antes de la fase 5, se cambian aquí. La fase 5 pone `runs-on` de `qa.yml`
+# en la Mini y borra este fichero.
+#
+# Diferencias con GitHub, deliberadas:
+# - Xcode: el de la Mini (27.x, el del gate local y el de las subidas), no `latest-stable`.
+#   `setup-xcode` hace `sudo xcode-select` y `ci` no es admin; el Xcode lo fija
+#   `DEVELOPER_DIR` en el LaunchDaemon.
+# - DerivedData persistente en ExtDev, fuera del checkout (el `git clean` de `checkout` se lo
+#   llevaría). Build incremental, como el gate local. `limpio: true` lo borra para medir en frío.
+# - El simulador sale del juego de devices PROPIO de `ci`: no toca los de Jürgen ni los de las
+#   colas. Por eso aquí no hay `shutdown all`: se apaga solo el UDID que usó esta corrida.
+
+on:
+  workflow_dispatch:
+    inputs:
+      limpio:
+        description: "Borrar el DerivedData antes (build en frío)"
+        type: boolean
+        default: false
+      ui:
+        description: "Correr también YalaUITests (como la nocturna)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+# Un solo runner: dos dispatches seguidos se encolan, no se cancelan.
+concurrency:
+  group: ci-sombra
+  cancel-in-progress: false
+
+jobs:
+  tests:
+    runs-on: [self-hosted, yala-mini]
+    timeout-minutes: 150
+    env:
+      TEST_RUNNER_TZ: America/Lima
+      DDP: /Volumes/ExtDev/ci/DerivedData/yala
+      SIM_NAME: iPhone 17 Pro
+    steps:
+      - name: Entorno del runner
+        run: |
+          echo "usuario: $(whoami)  host: $(hostname)"
+          sw_vers -productVersion
+          xcodebuild -version
+          df -h / /Volumes/ExtDev | tail -2
+
+      - uses: actions/checkout@v4
+
+      - name: Simulador propio de ci
+        id: sim
+        run: |
+          UDID="$(xcrun simctl list devices available -j | python3 -c '
+          import json, os, sys
+          name = os.environ["SIM_NAME"]
+          d = json.load(sys.stdin)["devices"]
+          ios = sorted((k for k in d if ".iOS-" in k), reverse=True)
+          for rt in ios:
+              for dev in d[rt]:
+                  if dev["name"] == name:
+                      print(dev["udid"]); sys.exit()
+          ')"
+          if [ -z "$UDID" ]; then
+            RT="$(xcrun simctl list runtimes -j | python3 -c '
+          import json, sys
+          rts = [r for r in json.load(sys.stdin)["runtimes"] if r["platform"] == "iOS" and r["isAvailable"]]
+          print(sorted(rts, key=lambda r: [int(x) for x in r["version"].split(".")])[-1]["identifier"])
+          ')"
+            UDID="$(xcrun simctl create "$SIM_NAME" com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro "$RT")"
+            echo "creado $UDID en $RT"
+          fi
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+          xcrun simctl list devices | grep "$UDID"
+
+      - name: Borrar DerivedData (build en frío)
+        if: ${{ inputs.limpio }}
+        run: rm -rf "$DDP"
+
+      - name: Crear Secrets.xcconfig (placeholder para CI)
+        run: cp Secrets.xcconfig.template Secrets.xcconfig
+
+      - name: Build for testing
+        timeout-minutes: 25
+        run: |
+          xcodebuild build-for-testing \
+            -scheme "Yala Dev" \
+            -project Yala.xcodeproj \
+            -destination "id=${{ steps.sim.outputs.udid }}" \
+            -derivedDataPath "$DDP" \
+            -quiet
+
+      - name: Unit tests (YalaTests pure-logic) — advisory
+        id: unit_pure
+        continue-on-error: true
+        timeout-minutes: 30
+        run: |
+          xcodebuild test-without-building \
+            -scheme "Yala Dev" \
+            -project Yala.xcodeproj \
+            -destination "id=${{ steps.sim.outputs.udid }}" \
+            -only-testing:YalaTests \
+            -skip-testing:YalaTests/BudgetFilterRegressionTests \
+            -skip-testing:YalaTests/CategoryDeduplicationServiceTests \
+            -skip-testing:YalaTests/ChatAssistantViewModelTests \
+            -skip-testing:YalaTests/CurrencyConverterCacheTests \
+            -skip-testing:YalaTests/ICloudAccountSummaryTests \
+            -skip-testing:YalaTests/InitialBalanceServiceTests \
+            -skip-testing:YalaTests/UserSegmentServiceTests \
+            -derivedDataPath "$DDP" \
+            -parallel-testing-enabled NO \
+            -retry-tests-on-failure
+
+      - name: Unit tests (YalaTests context-based) — advisory
+        id: unit_context
+        continue-on-error: true
+        timeout-minutes: 10
+        run: |
+          xcodebuild test-without-building \
+            -scheme "Yala Dev" \
+            -project Yala.xcodeproj \
+            -destination "id=${{ steps.sim.outputs.udid }}" \
+            -only-testing:YalaTests/BudgetFilterRegressionTests \
+            -only-testing:YalaTests/CategoryDeduplicationServiceTests \
+            -only-testing:YalaTests/ChatAssistantViewModelTests \
+            -only-testing:YalaTests/CurrencyConverterCacheTests \
+            -only-testing:YalaTests/ICloudAccountSummaryTests \
+            -only-testing:YalaTests/InitialBalanceServiceTests \
+            -only-testing:YalaTests/UserSegmentServiceTests \
+            -derivedDataPath "$DDP" \
+            -parallel-testing-enabled NO \
+            -retry-tests-on-failure
+
+      - name: UI tests (YalaUITests) — advisory
+        id: ui
+        if: ${{ inputs.ui }}
+        continue-on-error: true
+        timeout-minutes: 110
+        run: |
+          xcodebuild test-without-building \
+            -scheme "Yala Dev" \
+            -project Yala.xcodeproj \
+            -destination "id=${{ steps.sim.outputs.udid }}" \
+            -only-testing:YalaUITests \
+            -derivedDataPath "$DDP" \
+            -parallel-testing-enabled NO \
+            -retry-tests-on-failure
+
+      - name: Resumen
+        if: ${{ always() }}
+        run: |
+          {
+            echo "### CI en sombra"
+            echo "| paso | resultado |"
+            echo "|---|---|"
+            echo "| unit pure-logic | ${{ steps.unit_pure.outcome }} |"
+            echo "| unit context | ${{ steps.unit_context.outcome }} |"
+            echo "| UI | ${{ steps.ui.outcome || 'no pedida' }} |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Apagar el simulador de esta corrida
+        if: ${{ always() && steps.sim.outputs.udid != '' }}
+        run: xcrun simctl shutdown "${{ steps.sim.outputs.udid }}" || true
