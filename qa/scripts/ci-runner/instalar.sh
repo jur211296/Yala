@@ -15,12 +15,23 @@
 #    (servicio `yala-ci-usuario-macos`), en el mismo gesto — nunca vive solo en pantalla.
 #    Pide a GitHub el token de registro con `gh`. **Ninguno de los dos se imprime.** Si
 #    `gh` no puede, lo pide con `read -s` (no hace eco) y dice dónde generarlo.
-# 2. Como root: crea `ci` (usuario ESTÁNDAR, oculto en la pantalla de login), lo mete en
+# 2. Como root: crea `ci` (usuario ESTÁNDAR, visible en el cambio rápido de usuario), lo mete en
 #    `_developer` para que `xcodebuild test` no pida autorización de depurador, y activa
 #    `DevToolsSecurity` por la misma razón.
 # 3. Descarga el runner con su SHA-256 verificado y lo registra con la etiqueta `yala-mini`.
-# 4. Lo instala como LaunchDaemon con `UserName=ci`: arranca solo tras un reinicio sin que
-#    nadie inicie sesión como `ci`, y los simuladores corren sin primer plano.
+# 4. Lo instala como LaunchAgent de `ci` (sesión gráfica, `Aqua`): arranca cuando `ci` inicia
+#    sesión y sigue vivo con la sesión en segundo plano, mientras Jürgen usa la suya.
+#
+# ## Por qué agente y no daemon (medido el 2026-09-30)
+#
+# La primera versión era un LaunchDaemon con `UserName=ci`, sin sesión. Compilaba bien, pero
+# los tests unitarios iban hasta ~1.000× más lentos: un test que tarda 0,05 s con Jürgen (mismo
+# binario, mismo iOS 27) tardaba 46 s en el daemon, y el paso de 8.469 tests se cortaba a los
+# 30 min con la mitad hecha (runs 36742100762 y 36746388865). Los runners de GitHub corren en
+# un usuario con sesión iniciada, y ahora este también.
+#
+# **Coste:** tras un reinicio el runner no vuelve hasta que alguien entra como `ci` una vez
+# (cambio rápido de usuario → `CI Yala` → contraseña del llavero) y vuelve a su sesión.
 #
 # ## Dónde queda cada cosa
 #
@@ -33,7 +44,7 @@
 # | DerivedData persistente (sobrevive al `git clean` del checkout) | `/Users/ci/DerivedData` |
 # | Simuladores de `ci`: juego PROPIO, no toca los de Jürgen | `/Users/ci/Library/Developer/CoreSimulator` |
 #
-# **No en ExtDev, medido el 2026-09-30:** macOS (TCC) no deja a un LaunchDaemon entrar en un
+# **No en ExtDev, medido el 2026-09-30:** macOS (TCC) no dejaba al runner entrar en un
 # volumen externo — `Operation not permitted` al listar `/Volumes/ExtDev/ci/_work`, aunque el
 # `-d` pase. Abrirlo pide Acceso total al disco para el binario del runner, que se
 # auto-actualiza y perdería el permiso. Coste: ~12 GB del interno (checkout, ~3 GB de
@@ -51,7 +62,9 @@ CI_HOME="/Users/ci"
 RUNNER_DIR="$CI_HOME/actions-runner"
 WORK="$CI_HOME/_work"
 DDATA="$CI_HOME/DerivedData"
-PLIST="/Library/LaunchDaemons/com.yala.ci-runner.plist"
+PLIST="$CI_HOME/Library/LaunchAgents/com.yala.ci-runner.plist"
+# El daemon de la primera versión: se retira si sigue puesto.
+PLIST_DAEMON="/Library/LaunchDaemons/com.yala.ci-runner.plist"
 LABEL="com.yala.ci-runner"
 LLAVERO_SERVICIO="yala-ci-usuario-macos"
 
@@ -63,11 +76,17 @@ if [[ "${1:-}" == "--como-root" ]]; then
   [[ $EUID -eq 0 ]] || falla "la fase root tiene que correr con sudo"
   cd /   # el cwd de Jürgen no lo puede leer `ci`, y `sudo -u ci` se queja
   MODO="${2:-instalar}"
+  CI_UID="$(id -u "$CI_USER" 2>/dev/null || true)"
+  retirar_servicio() {
+    launchctl bootout system "$PLIST_DAEMON" 2>/dev/null || true
+    rm -f "$PLIST_DAEMON"
+    if [[ -n "$CI_UID" ]]; then launchctl bootout "gui/$CI_UID/$LABEL" 2>/dev/null || true; fi
+    rm -f "$PLIST"
+  }
 
   if [[ "$MODO" == "desinstalar" ]]; then
     paso "Parando el servicio"
-    launchctl bootout system "$PLIST" 2>/dev/null || true
-    rm -f "$PLIST"
+    retirar_servicio
     if [[ -x "$RUNNER_DIR/config.sh" && -n "${YALA_CI_REMOVE_TOKEN:-}" ]]; then
       paso "Dando de baja el runner en GitHub"
       ACTIONS_RUNNER_INPUT_TOKEN="$YALA_CI_REMOVE_TOKEN" \
@@ -90,8 +109,10 @@ if [[ "${1:-}" == "--como-root" ]]; then
     paso "Creando el usuario estándar '$CI_USER'"
     sysadminctl -addUser "$CI_USER" -fullName "CI Yala" -password "$YALA_CI_PW" -home "$CI_HOME"
     createhomedir -c -u "$CI_USER" >/dev/null
+    CI_UID="$(id -u "$CI_USER")"
   fi
-  dscl . -create "/Users/$CI_USER" IsHidden 1
+  # Visible: si no, no sale en el cambio rápido de usuario y no hay forma cómoda de entrar.
+  dscl . -create "/Users/$CI_USER" IsHidden 0
 
   paso "Permisos de desarrollo (_developer + DevToolsSecurity)"
   dseditgroup -o edit -a "$CI_USER" -t user _developer
@@ -101,7 +122,7 @@ if [[ "${1:-}" == "--como-root" ]]; then
   sudo -u "$CI_USER" mkdir -p "$WORK" "$DDATA"
 
   paso "Descargando el runner v$RUNNER_VER"
-  launchctl bootout system "$PLIST" 2>/dev/null || true
+  retirar_servicio
   # Desde cero: con un `.runner` viejo, `config.sh` se niega a reconfigurar. El registro en
   # GitHub lo sustituye `--replace` por nombre.
   rm -rf "$RUNNER_DIR"
@@ -133,16 +154,15 @@ exec ./run.sh
 EOF
   chown "$CI_USER":staff "$RUNNER_DIR/arranque.sh"; chmod 755 "$RUNNER_DIR/arranque.sh"
 
-  paso "LaunchDaemon $PLIST"
+  paso "LaunchAgent $PLIST"
+  sudo -u "$CI_USER" mkdir -p "$(dirname "$PLIST")"
   cat > "$PLIST" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
   <key>Label</key><string>$LABEL</string>
-  <key>UserName</key><string>$CI_USER</string>
-  <key>GroupName</key><string>staff</string>
-  <key>SessionCreate</key><true/>
+  <key>LimitLoadToSessionType</key><string>Aqua</string>
   <key>ProgramArguments</key><array><string>$RUNNER_DIR/arranque.sh</string></array>
   <key>WorkingDirectory</key><string>$RUNNER_DIR</string>
   <key>RunAtLoad</key><true/>
@@ -162,13 +182,19 @@ EOF
 </dict>
 </plist>
 EOF
-  chown root:wheel "$PLIST"; chmod 644 "$PLIST"
-  launchctl bootstrap system "$PLIST"
-  sleep 5
-  launchctl print "system/$LABEL" | grep -E '^\s*(state|pid) ' || true
-  echo
-  echo "Listo. En 1 min el runner '$RUNNER_NAME' debería salir 'Idle' en"
-  echo "  https://github.com/$REPO/settings/actions/runners"
+  chown "$CI_USER":staff "$PLIST"; chmod 644 "$PLIST"
+  if launchctl print "gui/$CI_UID" >/dev/null 2>&1; then
+    launchctl bootstrap "gui/$CI_UID" "$PLIST"
+    sleep 5
+    launchctl print "gui/$CI_UID/$LABEL" | grep -E '^\s*(state|pid) ' || true
+    echo
+    echo "Listo. En 1 min el runner '$RUNNER_NAME' debería salir 'Idle' en"
+    echo "  https://github.com/$REPO/settings/actions/runners"
+  else
+    echo
+    echo "Instalado. Arranca cuando '$CI_USER' inicie sesión: cambio rápido de usuario →"
+    echo "'CI Yala' → la contraseña del llavero ($LLAVERO_SERVICIO) → vuelve a tu sesión."
+  fi
   exit 0
 fi
 
