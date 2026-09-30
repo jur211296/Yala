@@ -166,7 +166,9 @@ PR #86 seguía `in_progress` a los 31 minutos. Y como corre la suite entera, **v
 arriba**: su rojo no es señal de tu cambio.
 
 **How to apply:** el gate local sigue siendo mi red —es el que corre XCUITest de verdad— pero **no
-mergees un PR con checks pendientes por creer que no hay CI.** Y si vuelves a leer que está apagado,
+mergees a mano un PR con checks pendientes por creer que no hay CI.** Desde el 2026-09-30 (ADR-054)
+en MODO AUTÓNOMO no se espera ni se mergea a mano: `gh pr merge --auto --merge` y GitHub espera los
+checks por mí. Y si vuelves a leer que está apagado,
 mídelo con `gh pr checks` antes de obedecerlo.
 
 ## El SNAPSHOT de Time Machine: por qué liberar disco puede EMPEORARLO (2026-09-07)

@@ -62,7 +62,8 @@ se comprueba con `git rev-parse --git-common-dir`.
   escribe para que se entienda sin abrir el diff: qué cambia para el usuario, qué tocaste, qué
   probaste, qué quedó fuera.
 - **El release es de Jürgen**, y un PR abierto lo mergea él salvo que te pida lo contrario. Un encargo
-  en MODO AUTÓNOMO ya lo pide: ahí mergeas tú, con el CI en verde.
+  en MODO AUTÓNOMO ya lo pide: ahí lo dejas tú en cola
+  de auto-merge y cierras sin esperar al CI (ADR-054 de casa). GitHub lo mergea cuando pasan los checks.
 
 **Review adversarial** —varias lentes independientes y refutación por hallazgo— cuando el cambio
 toque lógica donde un bug sale caro: sync (CKShare, bridges, notificaciones), cálculos
@@ -79,7 +80,8 @@ Depende de cómo se abrió la sesión. Qué cuenta como MODO AUTÓNOMO lo define
   confirmar, sugieres el siguiente paso y **te detienes**. No encadenas tests, QA ni commits sin
   que te los pidan.
 - **MODO AUTÓNOMO.** La lista de ficheros es una nota del Paso 0, no una pregunta. Sigues hasta
-  `/cerrar-total`: gate, commit, PR, CI, merge y board. No preguntas «¿Sigo?» ni «¿mergeo?». El
+  `/cerrar-total` en modo cola: gate, commit, PR, board, `gh pr merge --auto --merge` y comprobar
+  `autoMergeRequest`. El CI no se espera y la rama remota no se borra. No preguntas «¿Sigo?» ni «¿mergeo?». El
   device-QA de iPhone deja el ticket en `qa` con su guion y no frena el merge. De día solo paras
   por una decisión real de producto o de acceso.
 - Sólo los cambios pedidos. No mueves UI, no refactorizas lo adyacente, no añades mejoras que

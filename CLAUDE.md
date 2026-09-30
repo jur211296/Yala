@@ -98,7 +98,7 @@ Esta lista **ya no es** «la del job `changes` de `.github/workflows/qa.yml` men
 - **`.claude/` está aquí fuera y allí dentro.** Hooks, rules y permisos no rompen el build —por eso el CI los deja pasar— pero cambian cómo trabaja todo el mundo, así que van por PR.
 - **`.github/` está aquí dentro y allí fuera** (2026-09-03). En local no hay nada que compilar, así que el gate no aporta; en CI un cambio al workflow **tiene** que disparar la suite, o el CI dejaría de probar sus propios cambios — que es justo lo que hay que evitar después de un día ejecutando cero tests.
 
-**El release sigue siendo de Jürgen**, y un PR abierto lo mergea él salvo que pida otra cosa. Un encargo en **MODO AUTÓNOMO ya lo pide**: ahí la sesión mergea su propio PR con el CI en verde. Mergear no es release; subir un build sigue siendo suyo. Lo que desaparece es el PR como trámite para el trabajo de una sesión única, no su criterio.
+**El release sigue siendo de Jürgen**, y un PR abierto lo mergea él salvo que pida otra cosa. Un encargo en **MODO AUTÓNOMO ya lo pide**: ahí la sesión deja su propio PR **en cola de auto-merge** y cierra sin esperar al CI (ADR-054 de casa). GitHub lo mergea cuando pasan `tests` y `coverage-index`, que el ruleset de `2.1` exige. Mergear no es release; subir un build sigue siendo suyo. Lo que desaparece es el PR como trámite para el trabajo de una sesión única, no su criterio.
 
 **Documentación: dos superficies, no cinco.** El ticket en `tickets/` (qué y por qué, mientras el trabajo vive) y la regla durable en `.claude/rules/` (lo que el yo-futuro no debe romper). Git y el cuerpo de cada PR ya guardan el qué y el cuándo; `docs/DECISIONS.md` es narrativa de proceso, no bitácora de cada commit.
 
@@ -122,8 +122,11 @@ Se bifurca según cómo se abrió la sesión, y eso se lee en el encargo o en el
 
 **Sesión interactiva** (Jürgen delante, sin MODO AUTÓNOMO). Tras implementar: resumen **en lenguaje de usuario** (qué cambia para él), build para confirmar, sugerir el siguiente paso y **detenerse**. No encadenar tests, QA ni commits sin que los pida.
 
-**MODO AUTÓNOMO.** Cuenta como tal un encargo con la sección «MODO AUTÓNOMO HASTA TERMINAR», una sesión de la cola en bypass, o Jürgen diciendo «autónomo» o «hasta el final». Ahí se sigue el tren entero sin checkpoints de proceso: implementar → `/gate` → commit → PR → CI → merge a la base del encargo → board y `docs/TICKETS.md` → `/cerrar-total`.
+**MODO AUTÓNOMO.** Cuenta como tal un encargo con la sección «MODO AUTÓNOMO HASTA TERMINAR», una sesión de la cola en bypass, o Jürgen diciendo «autónomo» o «hasta el final». Ahí se sigue el tren entero sin checkpoints de proceso: implementar → `/gate` → commit → PR → board y `docs/TICKETS.md` → `/cerrar-total` en **modo cola** (ADR-054 de casa, §3 bis del skill).
 
+- **El merge no se espera.** `/cerrar-total` hace `gh pr merge <n> --auto --merge` y comprueba la cola con `gh pr view <n> --json state,autoMergeRequest`: `autoMergeRequest` no nulo es «en cola». Sin tty, `--auto` no imprime nada; lo que vale es esa segunda línea. `MERGED` en el acto también vale. `OPEN` sin cola es un fallo y se dice.
+- **En modo cola no se borra la rama remota**: borrarla cierra el PR sin mergear. La borra GitHub al mergear.
+- **El parte va en el cuerpo del PR**, que es lo que sobrevive. En modo cola no se escribe estado en la rama principal.
 - **No** se pregunta «¿Sigo?» tras listar el plan, toque los ficheros que toque.
 - **No** se para tras implementar, ni se deja el PR abierto «para que Jürgen mergee».
 - El device-QA de iPhone **no bloquea el merge**: el ticket va a `qa` con su guion y Jürgen lo corre cuando pueda.
