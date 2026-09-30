@@ -53,7 +53,7 @@ Por qué: la regla «una carga pesada a la vez» tiene que cumplirse aunque nadi
 
 **D4 · ¿El usuario `ci` sobra?** → Se queda. Medido: ~1–1,5 GB en reposo; la carga real es la suite, que pesa igual con cualquier usuario. Separarlo protege el llavero y `~/Secrets` de Jürgen de un workflow. Recortar su sesión (ítems de inicio, Spotlight) queda como paso para Jürgen.
 
-**D5 · Causa del crash** → Se documenta lo medido, sin afirmar OOM: ni `JetsamEvent` ni avisos de memoria del kernel entre 13:08 y 13:10; a las 13:09:03 Grok Bot se cerró y se relanzó, y la sesión murió a las 13:09:08. Hipótesis principal: el servidor tmux cayó con Grok Bot. Es terreno de casa (`lanzar-sesion`), no de este repo: va como hallazgo.
+**D5 · Causa del crash** → **CPU, no memoria.** Ni `JetsamEvent` ni eventos de memoria del kernel; sí Time Machine activo de 12:40 a 13:13 e informes de CPU de `backupd` y Spotlight, a la vez que la suite en el simulador de `ci`. Grok, que lo vio en vivo, da carga ~37 y confirma que los tmux no colgaban de Grok Bot (la primera hipótesis de esta sesión, descartada). Los candados suman carga de CPU, Time Machine y `renice` del vigía.
 
 **D6 · Fases 5–7** → 5 necesita a Jürgen (Pro, facturación, visibilidad); 6 espera al encargo de casa `2026-09-29-cierre-con-auto-merge`, que sigue en `pendientes/`; 7 solo lo de este PR. No se toca nada de 5–6.
 

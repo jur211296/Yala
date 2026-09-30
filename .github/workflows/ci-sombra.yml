@@ -27,9 +27,10 @@ name: CI en sombra (runner de la Mini)
 #
 # Candados de máquina (`qa/scripts/ci-runner/guardia.sh`, 2026-09-30). La Mini tiene 16 GB y
 # la comparte Jürgen: aquí corre UNA carga pesada a la vez y el CI es el que cede. Antes de
-# compilar espera a que no haya ningún `xcodebuild` ni simulador arrancado de nadie, con disco
-# y RAM por encima del suelo; si no llega en 20 min, falla sin tocar nada. Durante la corrida
-# un vigía para los `xcodebuild` de `ci` (solo los suyos) si la RAM o el disco se hunden, y el
+# compilar espera a que no haya ningún `xcodebuild` ni simulador arrancado de nadie, ni Time
+# Machine copiando, con disco, RAM y carga de CPU dentro del margen; si no llega en 20 min, falla
+# sin tocar nada. Durante la corrida un vigía baja la prioridad de todo lo de `ci` y para sus
+# `xcodebuild` (solo los suyos) si la RAM, el disco o la carga se hunden, y el
 # job sale en rojo aunque los tests sean advisory. Al final poda xcresult y DerivedData.
 
 on:

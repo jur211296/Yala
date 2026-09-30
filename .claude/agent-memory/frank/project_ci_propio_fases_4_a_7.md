@@ -26,9 +26,10 @@ de rápido; el runner solo compensa en privado, y antes hay que recortar el volu
 ~1.000× más lentos. Tampoco funcionó el DerivedData en ExtDev, porque TCC bloquea el volumen
 externo.
 
-**La caída del 2026-09-30 a las 13:09:** no hay evidencia de OOM. Coincide al segundo con el
-cierre y relanzamiento de Grok Bot. Hipótesis sin probar: tmux cayó con él. Si vuelve a pasar,
-mira primero si Grok Bot se reinició (`log show` con `QUITTING`) y después la RAM.
+**La caída del 2026-09-30 a las 13:09 fue CPU, no memoria:** la suite en el simulador de `ci`,
+Time Machine y Spotlight a la vez (carga ~37, según Grok). Mi primera hipótesis, que tmux colgaba
+de Grok Bot, era falsa: el reinicio de Grok Bot fue un síntoma. Si vuelve a pasar, mira primero la
+CPU (`backupd`, `spotlightknowledged` en DiagnosticReports) y no solo los Jetsam.
 
 **How to apply:** antes de retomar, mide `gh api repos/jur211296/Yala --jq .private`, el estado
 del runner (`gh api repos/jur211296/Yala/actions/runners`) y `bash qa/scripts/ci-runner/guardia.sh foto`.

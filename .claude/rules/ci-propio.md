@@ -1,5 +1,5 @@
 ---
-description: El CI propio en la Mini (runner `mini-ci`, usuario `ci`) — los candados de máquina, por qué `ci` es un usuario aparte y qué se sabe de la caída del 2026-09-30. Se carga al tocar el workflow en sombra o los scripts del runner.
+description: El CI propio en la Mini (runner `mini-ci`, usuario `ci`) — los candados de máquina, por qué `ci` es un usuario aparte y la caída del 2026-09-30 por CPU. Se carga al tocar el workflow en sombra o los scripts del runner.
 paths:
   - ".github/workflows/ci-sombra.yml"
   - "qa/scripts/ci-runner/**"
@@ -18,8 +18,8 @@ que nadie se acuerde:
 
 | Fase | Qué comprueba | Si falla |
 |---|---|---|
-| `antes` | Disco libre ≥ 15 GB, RAM libre ≥ 35 %, **cero** `xcodebuild` y **cero** simuladores arrancados, sean de quien sean | Espera hasta 20 min. Si sigue igual, el job sale en rojo sin haber tocado nada |
-| `vigia` (de fondo) | RAM libre ≥ 12 % y disco ≥ 10 GB, cada 30 s. Cada 5 min deja una foto en el log | Para los `xcodebuild` **de `ci`**, con `pkill -u`, y el job sale en rojo aunque los tests sean advisory |
+| `antes` | Disco libre ≥ 15 GB, RAM libre ≥ 35 %, carga de 1 min ≤ 10 (hay 10 núcleos), Time Machine parado, **cero** `xcodebuild` y **cero** simuladores arrancados, sean de quien sean | Espera hasta 20 min. Si sigue igual, el job sale en rojo sin haber tocado nada |
+| `vigia` (de fondo, solo como `ci`) | Cada 30 s: pone a nice 10 todo lo de `ci` (simulador incluido); RAM libre ≥ 12 %, disco ≥ 10 GB y carga ≤ 24, que no se sostenga 2 min. Cada 5 min deja una foto en el log | Para los `xcodebuild` **de `ci`**, con `pkill -u`, y el job sale en rojo aunque los tests sean advisory |
 | `despues` | Se queda con los 3 últimos xcresult. Si el DerivedData pasa de 20 GB, lo borra | — |
 
 Lo que **no** se hace, nunca, desde el CI ni desde una sesión que lo esté montando:
@@ -29,6 +29,10 @@ Lo que **no** se hace, nunca, desde el CI ni desde una sesión que lo esté mont
 - Lanzar una corrida en sombra con Cola A viva, con otra sesión compilando o con el disco por
   debajo de 15 GB. El candado `antes` ya lo impide. Saltárselo a mano es justo lo que no se hace.
 - Correr la suite completa en la Mini solo para validar un cambio del instalador o del workflow.
+- Correr `guardia.sh vigia` sin `GUARDIA_SECO=1` con un usuario que no sea `ci`. Baja la prioridad
+  de **todo** lo de ese usuario, y deshacerlo pide root. El script ya se niega a hacerlo, porque
+  pasó el 2026-09-30: 420 procesos de `jur` quedaron a nice 20. Y `renice -n` en macOS es un
+  **incremento**: en un bucle suma en cada vuelta. La prioridad se fija en absoluto, `renice 10`.
   Para eso basta el banco en seco: `GUARDIA_SECO=1` y umbrales forzados por variable de entorno.
 
 Si subes un umbral, mide antes cuánto marca la Mini en reposo con `guardia.sh foto`. El
@@ -55,23 +59,23 @@ La sesión de `ci` arranca servicios que el runner no usa: análisis de fotos, S
 inicio globales como Jump Desktop… Recortarlos es barato. Además,
 `com.apple.accessibility.heard` se relanzaba cada segundo en esa sesión, medido el 2026-09-30.
 
-## La caída del 2026-09-30: qué se midió y qué no
+## La caída del 2026-09-30: fue CPU, no memoria
 
-A las 13:09 (Lima) cayeron todas las sesiones de Claude de la Mini. En ese momento corría en `ci`
-la suite unitaria entera: la 4.ª corrida en sombra, de 12:41 a 13:12. La Mini no se reinició.
+Entre 12:55 y 13:09 (Lima) la Mini se ahogó y cayeron todas las sesiones de Claude, sin reinicio.
+Coincidieron tres cargas: la suite unitaria en el simulador de `ci` (la 4.ª corrida en sombra, de
+12:41 a 13:12), Time Machine y Spotlight.
 
-**Medido:**
+**Medido en la Mini:**
 
-- No hay ningún `JetsamEvent` de ese día.
-- El log del kernel no registra ningún evento de memoria (`memorystatus`, `jetsam`, compresor)
-  entre 13:08 y 13:10.
-- A las 13:09:03 **Grok Bot se cerró** (`exit(0)`, `QUITTING`) y se relanzó a las 13:09:18. La
-  sesión caída anotó su última tarea como `killed` a las 13:09:08.
-- El servidor tmux que sigue vivo hoy lo arrancó el relanzamiento de las 13:30.
+- Time Machine (`backupd`) activo de 12:40 a 13:13, con un informe de CPU excesiva a las 12:30.
+- Spotlight (`spotlightknowledged`) con informes de CPU a las 12:53 y a las 13:16.
+- Ningún `JetsamEvent`, y ningún evento de memoria del kernel entre 13:08 y 13:10. Por eso
+  no fue OOM.
 - Un `log` dentro de un simulador escribió 2 GB en 17 min, de 12:55 a 13:12.
 
-**Inferido, sin probar:** el servidor tmux de las sesiones cayó junto con Grok Bot, no por falta de
-memoria. Si fue así, el CI coincidió con la caída pero no la causó. Probarlo pide root
-(`launchctl procinfo` sobre el servidor tmux) y es terreno de casa (`lanzar-sesion`), no de este
-repo. Los candados de arriba se mantienen igual: la carga del CI sobre 16 GB es real aunque esta
-vez no fuera la causa.
+**Según Grok, que lo vio en vivo:** la carga llegó a ~37, y eso ahogó el bridge de Grok Bot, que se
+reinició a las 13:09. **Los tmux no colgaban de Grok Bot**, así que su reinicio no se llevó las
+sesiones. Una primera lectura de esta sesión lo suponía, y era falso.
+
+La lección: el candado que falta no es de memoria, es de **CPU y de lo que la Mini hace sola**
+(Time Machine, Spotlight). De ahí la carga, Time Machine y el `renice` del vigía.
