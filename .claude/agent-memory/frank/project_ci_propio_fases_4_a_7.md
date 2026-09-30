@@ -1,25 +1,31 @@
 ---
 name: project-ci-propio-fases-4-a-7
-description: Encargo CI propio + auto-merge (ADR-053): fases 1-3 cerradas el 2026-09-30 en #307; qué espera cada fase 4-7 y a quién
+description: Encargo CI propio + auto-merge (ADR-053): fase 4 con runner vivo y candados (2026-09-30, r2); qué espera cada fase 4-7 y a quién
 metadata:
   type: project
 ---
 
-Las fases 1-3 del encargo `2026-09-30-ci-propio-y-auto-merge` están mergeadas y validadas (#307, 2026-09-30):
-aviso del CI vivo, `concurrency` en los PR y `docs/ESTADO.md` retirado.
+Las fases 1-3 están mergeadas desde el 2026-09-30 (#307). La fase 4 quedó montada ese mismo día en la
+segunda sesión (r2): el runner `mini-ci` está online como LaunchAgent en la sesión gráfica de `ci`, y
+`ci-sombra.yml` lleva los candados de `guardia.sh`.
 
-**Por qué siguen paradas las 4-7:**
-- **4 (runner en sombra):** Jürgen tiene que crear el usuario de macOS `ci` y generar el token de registro del runner.
-  El token no va por chat. Hasta que el repo sea privado, el runner solo corre por `workflow_dispatch`.
-- **5 (privado):** Jürgen contrata GitHub Pro, confirma si GitHub cobra el minuto de runner propio y cambia la visibilidad.
-- **6-7 (auto-merge):** esperan a que se mergee el encargo de casa `2026-09-29-cierre-con-auto-merge` (`/cerrar-total` y playbook).
+**Por qué sigue parado lo que sigue parado:**
+- **4, validar los candados:** no se lanzó ninguna corrida en sombra en r2, porque el disco estaba
+  en 12 GB, por debajo del suelo de 15. La primera corrida con candados la lanza Jürgen con la Mini
+  libre. Tras un reinicio, el runner no vuelve hasta que alguien entra como `ci` una vez.
+- **5 (privado):** Jürgen contrata GitHub Pro, confirma cuánto se cobra el minuto de runner propio
+  y cambia la visibilidad.
+- **6-7 (auto-merge):** esperan al encargo de casa `2026-09-29-cierre-con-auto-merge`, que el
+  2026-09-30 seguía en `pendientes/`.
 
-**Why:** el orden lo fija el encargo: cada fase se valida antes de la siguiente. Sin repo privado, un runner con
-`pull_request` correría en la Mini el código de cualquier PR.
+**Lo que se intentó y no funcionó:** el LaunchDaemon sin sesión. Compilaba, pero los tests iban
+~1.000× más lentos. Tampoco funcionó el DerivedData en ExtDev, porque TCC bloquea el volumen
+externo.
 
-**How to apply:** antes de retomar, mide si el usuario `ci` existe (`dscl . -list /Users | grep '^ci$'`) y si el repo
-ya es privado (`gh api repos/jur211296/Yala --jq .private`). Al reactivar la routine vuelve el aviso de cada push a
-`2.1`, merges incluidos. Recortarlo es de la fase 7, no antes.
+**La caída del 2026-09-30 a las 13:09:** no hay evidencia de OOM. Coincide al segundo con el
+cierre y relanzamiento de Grok Bot. Hipótesis sin probar: tmux cayó con él. Si vuelve a pasar,
+mira primero si Grok Bot se reinició (`log show` con `QUITTING`) y después la RAM.
 
-Lo que el encargo daba por causa del `HTTP 400` (el cuerpo del aviso) era falso: el cuerpo de la respuesta decía
-«Automation … is disabled». Ver [[feedback_la_premisa_del_encargo_tambien_se_mide]].
+**How to apply:** antes de retomar, mide `gh api repos/jur211296/Yala --jq .private`, el estado
+del runner (`gh api repos/jur211296/Yala/actions/runners`) y `bash qa/scripts/ci-runner/guardia.sh foto`.
+Ver [[feedback_la_premisa_del_encargo_tambien_se_mide]].
