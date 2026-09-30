@@ -5550,6 +5550,11 @@ enum L10n {
             /// encima. Si la cuenta es suya, entrar con ella; si no, unirse desde su teléfono.
             static var inviteCloudSignInTitle: String { ls("welcome.groups.inviteCloudSignInTitle", comment: "") }
             static var inviteCloudSignInBody: String { ls("welcome.groups.inviteCloudSignInBody", comment: "") }
+            /// **El borrado del arranque no pudo borrar los archivos** (ticket `sign-out-wipe-abort-loops-the-groups-gate`): la
+            /// puerta NO lo reintenta sola, que era el bucle. El cuerpo no dice dónde siguen los datos ni que no se tocó nada,
+            /// porque ninguna de las dos cosas es verdad en todos los abortos.
+            static var wipeFailedTitle: String { ls("welcome.groups.wipeFailedTitle", comment: "") }
+            static var wipeFailedBody: String { ls("welcome.groups.wipeFailedBody", comment: "") }
             /// La vuelta al neutro se paró porque el paso de los datos entre iCloud y la nube no está en reposo (los dos
             /// motivos de la migración). No manda a Perfil: en el Welcome no existe.
             static var neutralMigrationBody: String { ls("welcome.groups.neutralMigrationBody", comment: "") }

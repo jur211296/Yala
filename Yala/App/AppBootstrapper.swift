@@ -779,6 +779,11 @@ final class AppBootstrapper {
             //    Medido el 2026-09-11: es lo que tumbaba el control negativo del seam. Misma familia
             //    que sus vecinas de aquí, con la diferencia de que ésta no la siembra un seam.
             GroupsDetachPendingPurge.clear()
+            //  · el testigo «la puerta de Grupos no pudo preparar este teléfono»: lo siembra
+            //    `-uitest-groups-gate-wipe-failed` DESPUÉS de este bloque, y si su test cae antes de tocar «Volver» se
+            //    quedaba en el simulador — `cloudSync.*`, fuera del barrido — y la puerta siguiente decía «no pudimos»
+            //    sin haber intentado nada.
+            GroupsGateWipeFailureMarker.clear()
             //  · identidad iCloud sembrada por `-uitest-icloud-identity`: se PERSISTE en defaults,
             //    así que sin esto una corrida con el arg dejaba al siguiente XCUITest resolviendo
             //    identidad contra un member que no es suyo. Es la trampa que `.claude/rules/
@@ -1033,6 +1038,10 @@ final class AppBootstrapper {
         // del intent de abajo para que la fila exista cuando alguien confirme.
         if UITestHooks.seedPendingGroupsOutboxRow {
             DevSeedGroups.seedPendingOutboxRow(in: context)
+        }
+        // El resultado de un borrado de arranque que abortó tras armarlo la puerta de Grupos. Ver el seam.
+        if UITestHooks.groupsGateWipeFailed {
+            GroupsGateWipeFailureMarker.mark()
         }
         // Hoja del cambio de Apple ID simulada en uitest: la detección real sale a CloudKit y está apagada
         // bajo test, así que se encola el intent. De ahí en adelante —la cola, la hoja y el cierre del

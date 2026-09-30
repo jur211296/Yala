@@ -6190,5 +6190,11 @@
 /* Puerta del invitado: datos de una cuenta en la nube con la sesión cerrada: cuerpo */
 "welcome.groups.inviteCloudSignInBody" = "Auf diesem Telefon liegen die Daten eines Cloud-Kontos, das nicht angemeldet ist, und deine Gruppenausgaben würden dort landen. Wenn es deins ist, melde dich über „Ich habe bereits ein Konto“ damit an und mach mit deiner Einladung weiter. Wenn nicht, tritt über dein eigenes Telefon bei.";
 
+/* Puerta de Grupos: el borrado del arranque no pudo borrar los archivos y la puerta no lo reintenta sola: título */
+"welcome.groups.wipeFailedTitle" = "Wir konnten dieses Telefon nicht vorbereiten";
+
+/* Puerta de Grupos: el borrado del arranque no pudo borrar los archivos: cuerpo. No dice dónde siguen los datos ni que no se tocó nada: no siempre es verdad. */
+"welcome.groups.wipeFailedBody" = "Beim erneuten Öffnen von Yala ließ sich nicht löschen, was auf diesem Telefon gespeichert ist, deshalb ist es nicht für deine Gruppe bereit. Wir versuchen es nicht von selbst noch einmal: Geh zurück und versuch es, wenn du möchtest, später erneut.";
+
 /* Apple ID change notice: extra paragraph, only when the close also removes the groups stored on this phone. Says nothing about whose they are or where else they live: that is not always true. */
 "icloud.appleIDChanged.groupsLine" = "Auch die Gruppen auf diesem Telefon werden entfernt.";

@@ -604,6 +604,15 @@ extension SwiftDataConfiguration {
             // más tarde se llevaría cambios que nadie esperó a exportar. Desarmado, el cierre simplemente no
             // ocurrió: los datos siguen aquí y en iCloud, y volver a «Cerrar sesión» vuelve a esperar al export.
             if StorageModePersistence.read(defaults) == .icloud {
+                // **Si lo armó la puerta de Grupos, se apunta que no se pudo** (ticket
+                // `sign-out-wipe-abort-loops-the-groups-gate`). Sin esto el arranque retoma la puerta, la puerta mide lo
+                // mismo que antes y vuelve a armar: un bucle que además cancela las notificaciones en cada vuelta. Va
+                // ANTES del desarme: un kill entre las dos líneas repite el abort y la vuelve a poner; al revés, el
+                // arranque siguiente ya no aborta y la marca no llega nunca.
+                if GroupsGateWipeFailureMarker.armedByTheGroupsGate(
+                    pendingDestination: WelcomePendingDestinationStore.peek(defaults)) {
+                    GroupsGateWipeFailureMarker.mark(defaults)
+                }
                 StorageModePersistence.clearSignOutWipeIncludesGroups(defaults)
                 StorageModePersistence.clearSignOutWipeArm(defaults)
                 // El sobre de la invitación se va con el arm, por lo mismo: el cierre no ocurrió, así que
@@ -623,8 +632,12 @@ extension SwiftDataConfiguration {
         // trío de archivos del store de grupos. Un fallo aquí NO aborta el wipe personal (ya consumado);
         // el trío -wal/-shm huérfano es inerte y el store se recrea vacío al montar. El marker se limpia
         // JUNTO al arm (AL FINAL, orden kill-safe existente).
+        // Si el archivo de grupos no se deja borrar, el borrado no aborta —el personal ya se fue— pero la puerta de Grupos
+        // vuelve a encontrar filas (`checkHasExistingData` cuenta `SplitGroup`) y volvería a armar el mismo borrado que no
+        // pudo: el bucle del ticket `sign-out-wipe-abort-loops-the-groups-gate` por el otro archivo (review adversarial).
+        var groupsFileSurvived = false
         if StorageModePersistence.signOutWipeIncludesGroups(defaults) {
-            _ = deleteFiles(groupsDatabaseName, groupsSchema)
+            groupsFileSurvived = !deleteFiles(groupsDatabaseName, groupsSchema)
             // Paso 9 · el latch «este dispositivo tuvo sesión de Grupos» se va con los grupos. Decide si el
             // empty state dice «vuelve a tu cuenta» o «crea una cuenta», y tras este borrado el dispositivo es
             // «recién instalado»: la persona siguiente no tiene grupos esperándola en ninguna cuenta.
@@ -683,6 +696,18 @@ extension SwiftDataConfiguration {
         // que se cierra. `cloudSync.*` lo excluye el barrido de preferencias, así que sin esto la persona
         // siguiente heredaría un aviso de espejo tardío sobre un corpus que no es suyo.
         StorageModePersistence.clearPrivateChoseWithoutICloud(defaults)
+        // Y el «no pudimos preparar este teléfono» de la puerta de Grupos, por lo mismo: este borrado sí pudo, así que el
+        // hecho que la marca cuenta dejó de ser verdad. Sin esto la sobrevivía `cloudSync.*` y una puerta posterior, en la
+        // vida siguiente, enseñaría el aviso sin haber intentado nada. **Salvo que el archivo de grupos se quedara**: ahí
+        // el borrado que armó la puerta tampoco pudo, y se apunta. El destino se lee aquí porque el barrido de
+        // preferencias de abajo no lo toca (`welcome.*` no está en `removeUserPreferenceKeys`).
+        if groupsFileSurvived,
+           GroupsGateWipeFailureMarker.armedByTheGroupsGate(
+               pendingDestination: WelcomePendingDestinationStore.peek(defaults)) {
+            GroupsGateWipeFailureMarker.mark(defaults)
+        } else {
+            GroupsGateWipeFailureMarker.clear(defaults)
+        }
         // Y el «borrado a medias» del mismo aviso, por lo mismo: describe el corpus de la vida que se cierra, y sin esto
         // la persona siguiente vería «El borrado quedó a medias» sobre unos datos que no son suyos.
         StorageModePersistence.clearICloudCorpusWipeLeftHalfway(defaults)

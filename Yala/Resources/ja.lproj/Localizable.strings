@@ -6202,5 +6202,11 @@
 /* Puerta del invitado: datos de una cuenta en la nube con la sesión cerrada: cuerpo */
 "welcome.groups.inviteCloudSignInBody" = "この端末には、サインインしていないクラウドアカウントのデータがあり、グループの支出はそのアカウントに入ってしまいます。ご自身のアカウントなら「すでにアカウントがあります」からサインインすると、招待の続きから進められます。そうでない場合は、ご自身の端末から参加してください。";
 
+/* Puerta de Grupos: el borrado del arranque no pudo borrar los archivos y la puerta no lo reintenta sola: título */
+"welcome.groups.wipeFailedTitle" = "この端末を準備できませんでした";
+
+/* Puerta de Grupos: el borrado del arranque no pudo borrar los archivos: cuerpo. No dice dónde siguen los datos ni que no se tocó nada: no siempre es verdad. */
+"welcome.groups.wipeFailedBody" = "Yala を開き直したときに、この端末に保存されている内容を消去できなかったため、この端末はまだグループに使える状態になっていません。自動ではもう一度試しません。戻って、よければ後でもう一度お試しください。";
+
 /* Apple ID change notice: extra paragraph, only when the close also removes the groups stored on this phone. Says nothing about whose they are or where else they live: that is not always true. */
 "icloud.appleIDChanged.groupsLine" = "この iPhone にあるグループも削除されます。";

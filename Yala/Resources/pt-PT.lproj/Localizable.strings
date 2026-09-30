@@ -5463,5 +5463,11 @@
 /* Puerta del invitado: datos de una cuenta en la nube con la sesión cerrada: cuerpo */
 "welcome.groups.inviteCloudSignInBody" = "Este telemóvel tem os dados de uma conta na nuvem sem sessão iniciada, e as tuas despesas do grupo iriam parar lá. Se for tua, entra com ela em «Já tenho conta» e continuas com o teu convite. Se não for, junta-te a partir do teu próprio telemóvel.";
 
+/* Puerta de Grupos: el borrado del arranque no pudo borrar los archivos y la puerta no lo reintenta sola: título */
+"welcome.groups.wipeFailedTitle" = "Não conseguimos preparar este telemóvel";
+
+/* Puerta de Grupos: el borrado del arranque no pudo borrar los archivos: cuerpo. No dice dónde siguen los datos ni que no se tocó nada: no siempre es verdad. */
+"welcome.groups.wipeFailedBody" = "Ao abrir o Yala de novo, não foi possível apagar o que está guardado neste telemóvel, por isso não ficou pronto para o teu grupo. Não vamos voltar a tentar por nossa conta: volta atrás e, se quiseres, tenta mais tarde.";
+
 /* Apple ID change notice: extra paragraph, only when the close also removes the groups stored on this phone. Says nothing about whose they are or where else they live: that is not always true. */
 "icloud.appleIDChanged.groupsLine" = "Os grupos deste telemóvel também serão removidos.";
