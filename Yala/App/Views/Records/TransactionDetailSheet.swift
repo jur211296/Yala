@@ -32,15 +32,23 @@ struct TransactionDetailSheet: View {
 
     let transaction: TransactionItem
 
-    /// Dónde vive el detalle: hoja (iPhone, ventana estrecha, Estadísticas) o columna de detalle de
-    /// Registros en una ventana ancha. En columna no hay X —la columna no se cierra— ni detents, y
-    /// Editar abre el editor directo.
-    enum Presentation { case sheet, column }
+    /// Dónde vive el detalle: hoja (iPhone, ventana estrecha), columna de detalle de Registros en una ventana
+    /// ancha, o panel de Estadísticas › Registros en una ventana ancha. En columna no hay X —la columna no se
+    /// cierra— ni detents, y Editar abre el editor directo.
+    ///
+    /// `pane`: como la columna, pero sin pila propia ni barra que tomar prestada. El chip Registros vive dentro de la
+    /// pila de Estadísticas: meter ahí `.toolbar` o el título inline cambiaría la barra de Estadísticas (su título
+    /// grande pasaría a inline y Editar se sumaría a sus botones). Así que lleva su propia cabecera, con X —cuando no
+    /// caben lista y detalle, el panel tapa la lista y la X es la vuelta— y Editar.
+    enum Presentation { case sheet, column, pane }
     var presentation: Presentation = .sheet
 
     /// Botón Editar. El padre marca pendingEditAfterDetail y cierra este sheet;
     /// al cerrarse presenta NewTransactionView (reemplazo de sheet nativo).
     let onEdit: () -> Void
+
+    /// Cerrar el panel (`pane`): el padre vacía lo abierto. En hoja cierra `dismiss()` y en columna no hay X.
+    var onClose: (() -> Void)? = nil
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
@@ -66,6 +74,8 @@ struct TransactionDetailSheet: View {
                 .presentationDragIndicator(.hidden)
         case .column:
             columnContent
+        case .pane:
+            paneContent
         }
     }
 
@@ -107,6 +117,39 @@ struct TransactionDetailSheet: View {
             .yalaScreenBackground(.panel)
             .accessibilityIdentifier("transaction_detail_column")
             .task(id: transaction.persistentModelID) { resolveTransferPartner() }
+    }
+
+    /// Panel de Estadísticas › Registros: cabecera propia en vez de la barra de la pantalla (ver `Presentation`).
+    private var paneContent: some View {
+        VStack(spacing: DS.Spacing.none) {
+            HStack {
+                Button {
+                    onClose?()
+                } label: {
+                    Image(systemName: "xmark")
+                        .fontWeight(.medium)
+                        .foregroundStyle(Color.primary)
+                }
+                .buttonStyle(.glass)
+                .buttonBorderShape(.circle)
+                .accessibilityLabel(L10n.Action.close)
+                .accessibilityIdentifier("transaction_detail_close")
+
+                Spacer()
+
+                editButton
+                    .buttonStyle(.glass)
+            }
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.Spacing.sm)
+
+            scrollContent
+        }
+        .yalaScreenBackground(.panel)
+        // `.contain` ANTES del id: un id suelto en el contenedor pisa los de sus botones (X y Editar).
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("transaction_detail_pane")
+        .task(id: transaction.persistentModelID) { resolveTransferPartner() }
     }
 
     private var detailContent: some View {

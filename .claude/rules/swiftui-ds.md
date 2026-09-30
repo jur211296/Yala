@@ -174,3 +174,31 @@ paths:
   (ni apartando la lista ni envolviendo el split en otro contenedor), y colgado de la columna de detalle su barra se
   mete en la del registro aunque esté cerrado. En columna, `ChatSheetView(presentation: .column)` pinta su cabecera y
   no lleva `NavigationStack` (en Estadísticas vive dentro de otra pila).
+
+## Layout adaptativo: rejillas en pares (2026-09-30)
+
+- **Una lista de tarjetas que en ancha va en pares es un `PairedCardsStack`** (`Views/Shared/PairedColumnsLayout.swift`):
+  en compacta monta el `VStackLayout(spacing:)` de siempre —el iPhone queda igual por construcción— y en ancha
+  `PairedColumnsLayout`. Los mismos hijos en los dos, con `AnyLayout`: redimensionar no cambia su identidad. Lo usan
+  Estadísticas › Resumen y Tendencias y las filas de Últimos registros. **No lo sustituyas por un `LazyVGrid` ni por
+  filas troceadas a mano**: al pasar de una columna a dos cambian los padres y los hijos pierden su estado.
+- **Pares, nunca tres columnas** (pliegue del Duo). Un impar se queda en la columna izquierda, no se estira. Lo que
+  debe ocupar la fila entera (cabeceras de sección, el selector Detalle/Observaciones, un bloque que reparte su propio
+  contenido) lleva `.spansAllColumns()` **en el hijo directo** del contenedor: el valor viaja por el subview del
+  layout, y en un hijo de un hijo no llega.
+- **Dos columnas solo si caben dos de 320** (`DS.Adaptive.pairedColumnMinWidth`); si no, una. Lo decide el layout con
+  el ancho que le proponen, sin `GeometryReader`: con Yala IA abierto al lado la ventana sigue en regular pero
+  estrecha.
+- **La cabecera del Panel es un `HeaderBandLayout`**: los hijos marcados `.headerBandColumn(.leading/.trailing)`
+  —saldo y acciones / «Tus finanzas»— forman una banda en el sitio del primero; los demás van a todo lo ancho, arriba o
+  debajo según su orden. Por eso «Tus finanzas» vive en `PanelView`, entre los avisos y la barra de filtros, y no en
+  `PanelFilterAndWidgetsSection`: el contenedor la sube a la banda sin mover a nadie de sitio en el árbol.
+- **Lo que va dentro de media columna decide por su ancho, no por el size class.** El carrusel de cuentas enseñaba 4
+  tarjetas en regular: en la columna derecha de la cabecera eran 4 de ~110 pt. Ahora pide ancho para 4 de 140.
+- **Un widget solo en su fila ocupa la fila entera solo si sabe repartir su contenido** (`WidgetConfigManager
+  .spansRowWhenAloneTypes`, hoy `latestRecords`); los demás siguen en media fila.
+- **Estadísticas › Registros abre el registro en un panel, no en un split** (`DetailContainerView.recordsContent`):
+  el chip vive dentro de la pila de Estadísticas. Lista y panel lado a lado con dos anchos de iPhone; si no caben, el
+  panel tapa la lista (`ZStackLayout`, la lista sigue montada) y su X la devuelve; al pasar a compacta con uno
+  abierto, la hoja de siempre. El panel es `TransactionDetailSheet(presentation: .pane)`: cabecera propia con X y
+  Editar, porque un `.toolbar` o el título inline ahí dentro cambiarían la barra de Estadísticas.

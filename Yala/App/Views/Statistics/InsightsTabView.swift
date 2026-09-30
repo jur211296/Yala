@@ -82,7 +82,10 @@ struct InsightsTabView: View {
                         )
                         .padding(.top, DS.Spacing.xxxxl)
                     } else {
-                        LazyVStack(spacing: DS.Spacing.xl) {
+                        // En ancha, tarjetas en pares: [Salud financiera | Resumen inteligente], el selector a lo
+                        // ancho, [Compromisos | Por necesidad]. Hoy era el iPhone estirado, con barras de 900 pt para
+                        // tres números (ticket `ipad-and-duo-panel-and-statistics-use-the-width`).
+                        PairedCardsStack(rowSpacing: DS.Spacing.xl) {
                             if let score = viewModel.financialScore {
                                 financialScoreSection(score)
                             }
@@ -95,6 +98,7 @@ struct InsightsTabView: View {
 
                             if data.periodSummary.transactionCount >= 5 {
                                 contentModePill
+                                    .spansAllColumns()
 
                                 switch contentMode {
                                 case .detail:
@@ -110,8 +114,10 @@ struct InsightsTabView: View {
                                     .foregroundStyle(.secondary)
                                     .frame(maxWidth: .infinity, alignment: .center)
                                     .padding(.vertical, DS.Spacing.lg)
+                                    .spansAllColumns()
                             }
                         }
+                        .frame(maxWidth: .infinity)
                         .yalaSafeBottomPadding()
                     }
                 }
@@ -346,12 +352,14 @@ struct InsightsTabView: View {
 
     @ViewBuilder
     private func proObservationsSection(_ data: InsightData) -> some View {
-        VStack(spacing: DS.Spacing.sm) {
+        PairedCardsStack(rowSpacing: DS.Spacing.sm, columnSpacing: DS.Spacing.md) {
             YalaSectionHeader(L10n.Insights.intelligentInsights)
+                .spansAllColumns()
 
             if viewModel.aiActivated {
                 if viewModel.isLoadingAI {
                     AIInsightCardComponents.loadingPlaceholder(accentColor: theme.accent)
+                        .spansAllColumns()
                 } else if let aiCards = viewModel.aiInsights?.cards, !aiCards.isEmpty {
                     ForEach(Array(aiCards.enumerated()), id: \.offset) { _, card in
                         let sentiment: Sentiment = switch card.sentiment {
@@ -394,8 +402,10 @@ struct InsightsTabView: View {
                 }
                 .frame(maxWidth: .infinity)
                 .panelCard()
+                .spansAllColumns()
             }
         }
+        .spansAllColumns()
     }
 
     // MARK: - Free Observations Section
@@ -429,10 +439,13 @@ struct InsightsTabView: View {
     @ViewBuilder
     private func detailModeContent(_ data: InsightData) -> some View {
         if appPreferences.insightsShowQuickStats {
-            VStack(spacing: DS.Spacing.sm) {
+            // En ancha: [Promedio diario | las cuatro cifras], Suscripciones debajo a la izquierda.
+            PairedCardsStack(rowSpacing: DS.Spacing.sm, columnSpacing: DS.Spacing.md) {
                 detailModeHeader(summary: data.periodSummary)
+                    .spansAllColumns()
                 detailModeBody(stats: data.quickStats, summary: data.periodSummary)
             }
+            .spansAllColumns()
         }
 
         if hasCommitmentsData(data.commitments) {
@@ -837,13 +850,15 @@ struct InsightsTabView: View {
 
     @ViewBuilder
     private func textInsightsSection(_ insights: [InsightResult]) -> some View {
-        VStack(spacing: DS.Spacing.sm) {
+        PairedCardsStack(rowSpacing: DS.Spacing.sm, columnSpacing: DS.Spacing.md) {
             YalaSectionHeader(L10n.Insights.intelligentInsights)
+                .spansAllColumns()
 
             ForEach(insights) { insight in
                 InsightCard(insight: insight)
             }
         }
+        .spansAllColumns()
     }
 
     // MARK: - AI Insights Teaser (Free users)

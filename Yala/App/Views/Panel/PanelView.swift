@@ -419,13 +419,34 @@ struct PanelView: View {
         }
     }
 
+    /// «Tus finanzas» (cuentas y salud) se pinta si alguna de sus dos secciones está a la vista. Misma regla que
+    /// las secciones temáticas de `PanelFilterAndWidgetsSection`.
+    private var panoramaVisibility: (accounts: Bool, health: Bool) {
+        let visible = { (kind: PanelSectionKind) in
+            viewModel.isSectionVisible(kind) && viewModel.hasAnyVisibleWidget(in: kind)
+        }
+        return (visible(.accounts), visible(.health))
+    }
+
+    /// La cabecera del Panel. En compacta, la pila de siempre. En ancha, una banda de dos columnas —saldo y acciones
+    /// a la izquierda, «Tus finanzas» a la derecha— con los avisos debajo: en horizontal la cabecera se comía un tercio
+    /// de la pantalla (ticket `ipad-and-duo-panel-and-statistics-use-the-width`). Los mismos hijos en los dos casos,
+    /// así redimensionar no cambia su identidad.
+    private var headerLayout: AnyLayout {
+        DS.Adaptive.isWideScreen(sizeClass)
+            ? AnyLayout(HeaderBandLayout(spacing: DS.Spacing.lg))
+            : AnyLayout(VStackLayout(alignment: .leading, spacing: DS.Spacing.lg))
+    }
+
     private var mainContent: some View {
-        ZStack {
+        let panorama = panoramaVisibility
+        let panoramaVisible = panorama.accounts || panorama.health
+        return ZStack {
             PanelBackgroundView()
 
             ScrollViewReader { scrollProxy in
                 ScrollView(.vertical, showsIndicators: false) {
-                    VStack(alignment: .leading, spacing: DS.Spacing.lg) {
+                    headerLayout {
                         // **Antes del hero, y el PRIMERO de la pila de banners.** Es el único aviso del Panel que no
                         // ofrece nada —los demás son novedades y ofertas— y dice que lo que la persona apunta aquí no
                         // está llegando a su cuenta. Hasta este ticket eso solo se leía al intentar cerrar sesión.
@@ -447,6 +468,7 @@ struct PanelView: View {
                             sessionState: sessionState,
                             showCustomPeriodPicker: $sheets.showCustomPeriodPicker
                         )
+                        .headerBandColumn(.leading)
 
                         PanelQuickActionsRow(
                             canCreateRecords: viewModel.canUseVoiceInput,
@@ -459,6 +481,7 @@ struct PanelView: View {
                             onImageTap: { startAIEntry(.image) },
                             onChatTap: { startChat() }
                         )
+                        .headerBandColumn(.leading)
 
                         if !UITestHooks.isActive, appPreferences.showSiriTip, viewModel.transactions.count >= 5 {
                             SiriTipCard(isVisible: Binding(
@@ -539,22 +562,34 @@ struct PanelView: View {
                         // aquí invalidaba este body entero en cada gasto.
                         FXPnLCard(viewModel: viewModel)
 
-                        // Thematic sections wrapper renders: Tu panorama
-                        // (accounts + health), then the filter bar (period + chips),
-                        // then each thematic section. Auto-hide uses
-                        // `viewModel.hasAnyVisibleWidget(in:)`.
+                        // «Tus finanzas» (cuentas + salud). En compacta va aquí, tras los avisos, como siempre; en
+                        // ancha, `HeaderBandLayout` la sube a la columna derecha de la cabecera.
+                        if panoramaVisible {
+                            PanelPanoramaSection(
+                                viewModel: viewModel,
+                                sessionState: sessionState,
+                                accountsSortOrderNames: appPreferences.accountsSortOrderNames,
+                                accountsVisible: panorama.accounts,
+                                healthVisible: panorama.health,
+                                accountFormSheet: $sheets.accountFormSheet,
+                                showUpgradeForAccounts: $sheets.showUpgradeForAccounts
+                            )
+                            .headerBandColumn(.trailing)
+                        }
+
+                        // The filter bar (period + chips), then each thematic section. Auto-hide uses
+                        // `viewModel.hasAnyVisibleWidget(in:)`. Entre «Tus finanzas» y la barra de filtros van los
+                        // 32 pt que había entre sections cuando «Tus finanzas» vivía dentro de este bloque.
                         PanelFilterAndWidgetsSection(
                             viewModel: viewModel,
                             sessionState: sessionState,
                             defaultCurrencyCodeRaw: appPreferences.defaultCurrencyCode.rawValue,
                             showVariations: appPreferences.showVariations,
-                            accountsSortOrderNames: appPreferences.accountsSortOrderNames,
                             sectionPrefsPresentation: $sheets.sectionPrefsPresentation,
                             showBudgetFavoritesSettings: $sheets.showBudgetFavoritesSettings,
-                            accountFormSheet: $sheets.accountFormSheet,
-                            showUpgradeForAccounts: $sheets.showUpgradeForAccounts,
                             showCustomPeriodPicker: $sheets.showCustomPeriodPicker
                         )
+                        .padding(.top, panoramaVisible ? DS.Spacing.xxl - DS.Spacing.lg : 0)
                     }
                     .padding(.top, DS.Spacing.lg)
                     .padding(.bottom, DS.Spacing.xxxl)

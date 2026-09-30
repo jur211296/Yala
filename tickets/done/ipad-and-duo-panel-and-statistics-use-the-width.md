@@ -1,6 +1,6 @@
 ---
 id: ipad-and-duo-panel-and-statistics-use-the-width
-status: backlog
+status: done
 priority: low
 area: "panel, statistics, ipad, iphone-duo, adaptativo"
 created: 2026-09-27
@@ -42,6 +42,38 @@ Capturas del antes: `docs/exploracion/ipad-nativo/01`, `02`, `03`, `20`, `21`, `
   elegido.
 - Duo a medio plegar, si ya existe `YalaLane-Adapt-iPhone-Duo`: ninguna tarjeta partida por el pliegue.
 - Gate verde.
+
+## Cierre (2026-09-30)
+
+Qué cambia para el usuario, en pantalla ancha (iPad, Duo abierto); en iPhone no cambia nada:
+
+- **Panel**: la cabecera va en dos columnas —saldo y acciones a la izquierda, «Tus finanzas» a la derecha— y los avisos
+  debajo. En el iPad Pro 13 en horizontal pasa de ~290 a ~180 pt, y Últimos registros asoma en la primera pantalla.
+  Últimos registros ocupa la fila entera con sus cinco filas en pares. El carrusel de cuentas enseña dos tarjetas en
+  media columna (cuatro solo si caben).
+- **Resumen**: [Salud financiera · Resumen inteligente], [Promedio diario · las cuatro cifras], [Compromisos · Por
+  necesidad]; en Observaciones, las tarjetas en pares.
+- **Tendencias**: todas las tarjetas en pares; sin comparación, la tendencia va al lado del flujo de efectivo.
+- **Registros (chip)**: el registro se abre en un panel al lado de la lista, con X y Editar (Editar abre el editor
+  directo). Si no caben lista y panel (iPad mini en vertical, Yala IA al lado), el panel tapa la lista y la X la
+  devuelve. Al estrechar a compacta con uno abierto, pasa a la hoja de siempre.
+
+Cómo: `PairedCardsStack` / `PairedColumnsLayout` y `HeaderBandLayout` (`Views/Shared/PairedColumnsLayout.swift`),
+con `AnyLayout` para que en compacta sea el `VStackLayout` de siempre. Detalle y trampas en `swiftui-ds.md`,
+«Layout adaptativo: rejillas en pares».
+
+Verificado:
+
+- Capturas antes/después en los cuatro Adapt, iPad en las dos orientaciones:
+  `qa/evidencia-adaptativo-20260930/ipad-and-duo-panel-and-statistics-use-the-width/`.
+- iPhone SE y Pro Max, texto por defecto y AX5: sin diferencias de layout (diff al píxel, detalle en el README).
+- Redimensionado: `AdaptiveNavigationUITests.test_narrowingTheWindow_onStatistics_…` en el iPad Pro 13 con «Apps en
+  ventanas» — estrechar conserva chip y período, volver a ancho también, y el registro abierto pasa a la hoja.
+- Tests nuevos: `PairedColumnsLogicTests` (columnas, filas, colocación y banda), cinco casos en
+  `WidgetConfigManagerTests`, y cuatro en `AdaptiveNavigationUITests` (banda del Panel, Resumen en pares, registro
+  en panel / en hoja, estrechar en Estadísticas).
+
+Queda fuera: el **Duo a medio plegar** (no hay simulador del Duo en esta Mac) va con `iphone-duo-native-app`.
 
 ## Relacionados
 

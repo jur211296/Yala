@@ -75,8 +75,11 @@ struct RecentRecordsWidget: View {
 
     // MARK: - Layout (Medium Style: 5 records)
 
+    /// En compacta, la columna de siempre. En ancha el widget ocupa la fila entera del Panel
+    /// (`WidgetConfigManager.spansRowWhenAloneTypes`) y sus filas van en pares, para no dejar concepto e importe a
+    /// 900 pt; si no caben dos columnas, una.
     private var mediumLayout: some View {
-        VStack(spacing: DS.Spacing.md) {
+        PairedCardsStack(rowSpacing: DS.Spacing.md, columnSpacing: DS.Spacing.xxl) {
             ForEach(Array(records.prefix(5).enumerated()), id: \.element.persistentModelID) {
                 _, record in
                 recordRow(record)

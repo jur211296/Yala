@@ -457,6 +457,11 @@ enum DS {
         static let listColumnMinWidth: CGFloat = 375
         static let listColumnIdealWidth: CGFloat = 400
         static let listColumnMaxWidth: CGFloat = 480
+
+        /// Ancho mínimo de cada columna de una rejilla en pares (`PairedColumnsLayout`, `HeaderBandLayout`): si no
+        /// caben dos, una. Un pelo por debajo del contenido de un iPhone SE (343), donde las tarjetas ya están medidas,
+        /// y por encima de las 290 que quedarían con Yala IA abierto al lado.
+        static let pairedColumnMinWidth: CGFloat = 320
     }
 
     // MARK: - Form Row Dimensions
