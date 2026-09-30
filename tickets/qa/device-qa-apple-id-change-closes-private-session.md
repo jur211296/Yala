@@ -5,7 +5,7 @@ priority: high
 area: "modo-nube, sesiones, swiftdata"
 created: 2026-09-14
 source: "device-QA del PR de `apple-id-change-should-close-the-private-session` (2026-09-14)"
-updated: 2026-09-23
+updated: 2026-09-29
 ---
 
 # Device-QA · Cambiar el Apple ID del teléfono cierra la sesión privada
@@ -51,6 +51,8 @@ verdad. Lo único simulable es el predicado puro, y eso ya lo cubren 15 unit tes
 4. Abrir Yala.
    - **Se espera:** el aviso «Cambiaste de cuenta de iCloud», con los botones «Cerrar sesión y
      quitarlos» y «Ahora no».
+   - **Sin grupos en el teléfono, el mensaje no habla de grupos.** Si esa sesión tiene cuenta de grupos (celda D),
+     el mensaje termina con un párrafo aparte: «También se quitan los grupos que hay en este teléfono» (ticket `apple-id-close-notice-does-not-say-what-else-the-close-does`, 2026-09-29).
    - ¿Sale en el primer arranque, o hace falta un segundo? (La notificación del sistema puede no llegar
      si la app estaba cerrada; el arranque tiene su propia comprobación, así que debería salir al
      primero.)

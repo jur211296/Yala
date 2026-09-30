@@ -1,9 +1,10 @@
 ---
 id: apple-id-close-notice-does-not-say-what-else-the-close-does
-status: backlog
+status: done
 priority: medium
 area: "modo-nube, sesiones, copy"
 created: 2026-09-15
+updated: 2026-09-29
 source: "hallazgo de la review de #159 que viajaba dentro de `apple-id-close-blocked-has-no-visible-outcome`; se separa al cerrar aquel (2026-09-15)"
 ---
 
@@ -53,6 +54,30 @@ la pregunta es una sola.
 
 ## Criterios de aceptación
 
-- [ ] Cuando el cierre se lleva grupos del teléfono (D, y C con grupos del canal nuevo), la persona lo sabe
+- [x] Cuando el cierre se lleva grupos del teléfono (D, y C con grupos del canal nuevo), la persona lo sabe
       antes de confirmar.
-- [ ] Nada de lo que dice la hoja es falso para la celda C ni para la D.
+- [x] Nada de lo que dice la hoja es falso para la celda C ni para la D.
+
+## Resolución (2026-09-29)
+
+Decidido: una frase más, sin la hoja de alcance (la recomendación de arriba). Cuando el cierre se lleva los grupos,
+la pregunta añade en párrafo propio **«También se quitan los grupos que hay en este teléfono.»** En los demás casos el mensaje es el de siempre.
+
+**La frase no dice dónde siguen los grupos, y es a propósito** (review adversarial del 2026-09-29). La primera versión
+decía «siguen en tu cuenta de Yala», como Ajustes. En la celda C eso no siempre es cierto: las filas del canal nuevo
+pueden ser de una cuenta de grupos borrada, o de otra persona (el bloqueo `groupsChangesFromAnotherAccount`). Y esta
+hoja la puede leer alguien que no es el dueño, porque el teléfono pudo cambiar de manos: por eso el mensaje de siempre
+tampoco dice «tus datos». «Siguen en el servidor», el ejemplo del ticket, cae por lo mismo y además choca con el
+«sin servidores» de la marca.
+
+- **Una sola regla para el cierre y para la hoja**: la fórmula del arm pasa a `CloudSignOutFlowLogic.wipeForgetsGroups`
+  (`(sube grupos || filas del canal nuevo) && canal compilado`). La hoja la llama con la celda de ahora, leída con los
+  mismos getters que el tap (`AppleIDCloseNoticeView.currentCell`). Si la hoja copiara la fórmula, divergirían.
+- `hasBackendGroupRows` falla hacia `true` ante un error de lectura, y el cierre también borra entonces: la frase dice
+  lo que pasa.
+- Tests: `CloudSignOutFlowLogicTests.wipeForgetsGroupsTable` (3 × 2 × 2), `AppleIDCloseNoticeGroupsLineTests` (D siempre,
+  C con y sin filas, sin canal compilado, E y F), `AppleIDCloseNoticeWiringTests` (la hoja y el arm usan la regla
+  compartida) y `AppleIDCloseNoticeUITests`: la frase sale con `seed: grupos` (celda C con grupos del canal nuevo) y
+  no sale con `minimal`.
+- La celda D en un iPhone real va como paso del device-QA del cambio de Apple ID
+  (`tickets/qa/device-qa-apple-id-change-closes-private-session.md`, recorrido 1, paso 4).

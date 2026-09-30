@@ -1127,8 +1127,10 @@ final class CloudSessionSignOut {
         if let accepted = acceptedGroupsLoss {
             Self.noteGroupsDiscarded(pending: Self.liveGroupsPendingCount(context: context), cause: accepted.cause)
         }
-        let forgetsGroups = kind.pushesGroups || Self.hasBackendGroupRows(context: context)
-        if forgetsGroups && CloudSyncFlags.groupsBackendCompiledCapability {
+        // La MISMA fórmula que cuenta la hoja del cambio de Apple ID antes de confirmar.
+        if CloudSignOutFlowLogic.wipeForgetsGroups(
+            kind: kind, hasBackendGroupRows: Self.hasBackendGroupRows(context: context),
+            groupsBackendCompiled: CloudSyncFlags.groupsBackendCompiledCapability) {
             StorageModePersistence.markSignOutWipeIncludesGroups()  // marker ANTES del arm (CR-4)
         }
         StorageModePersistence.armSignOutWipe()

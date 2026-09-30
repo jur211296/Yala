@@ -359,7 +359,7 @@ struct PrivateSignOutMigrationWiringTests {
         // (entre él y el arm, un bloqueo dejaría el marcador puesto sin arm). Mutantes de la review.
         let grupos = try #require(fn.range(
             of: "if blockIfGroupsCannotUpload(context: context, kind: kind, lossExit: .finalize(kind: kind, export: export)) { return }"))
-        let marcador = try #require(fn.range(of: "let forgetsGroups = kind.pushesGroups || Self.hasBackendGroupRows(context: context)"))
+        let marcador = try #require(fn.range(of: "if CloudSignOutFlowLogic.wipeForgetsGroups("))
         #expect(grupos.upperBound <= puerta.lowerBound)
         #expect(puerta.upperBound <= marcador.lowerBound)
         #expect(!fn[puerta.upperBound..<arm.lowerBound].contains("await"), "hay un `await` entre la puerta y el arm")

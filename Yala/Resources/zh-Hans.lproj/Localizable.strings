@@ -6201,3 +6201,6 @@
 
 /* Puerta del invitado: datos de una cuenta en la nube con la sesión cerrada: cuerpo */
 "welcome.groups.inviteCloudSignInBody" = "这部手机上有一个未登录的云端账户的数据，你的群组支出会记到那个账户里。如果这是你的账户，请通过“我已经有账户了”登录，然后继续你的邀请。如果不是，请用你自己的手机加入。";
+
+/* Apple ID change notice: extra paragraph, only when the close also removes the groups stored on this phone. Says nothing about whose they are or where else they live: that is not always true. */
+"icloud.appleIDChanged.groupsLine" = "这台手机上的群组也会被移除。";

@@ -202,7 +202,7 @@ struct AppleIDCloseNoticeView: View {
             noticeBody(
                 icon: "exclamationmark.icloud",
                 title: L10n.iCloud.appleIDChangedTitle,
-                message: L10n.iCloud.appleIDChangedMessage,
+                message: AppleIDCloseNoticeLogic.askingMessage(forgetsGroups: askingForgetsGroups),
                 identifier: "apple_id_close_asking") {
                 YalaPrimaryButton(L10n.iCloud.appleIDChangedLater) { later() }
                     .accessibilityIdentifier("apple_id_close_later")
@@ -340,6 +340,32 @@ struct AppleIDCloseNoticeView: View {
         }
     }
 
+    // MARK: - La celda
+
+    /// La celda de AHORA, leída con los mismos getters que el coordinador: la capacidad COMPILADA de Grupos, como
+    /// `ProfileView.signOutRowPath` y `WelcomeGroupsGateView.exitCell`. Es una lectura fresca en cada acceso, y la
+    /// usan los dos lados de la pregunta: lo que cuenta y lo que confirma.
+    private var currentCell: CloudSignOutFlowLogic.Path {
+        CloudSignOutFlowLogic.path(
+            for: CloudSyncFlags.storageMode,
+            hasLiveSession: CloudAuthService.shared.hasSession,
+            groupsBackendEnabled: CloudSyncFlags.groupsBackendCompiledCapability,
+            hasPrivateSession: PrivateSessionMark.hasPrivateSession())
+    }
+
+    /// **¿El cierre que se ofrece se lleva también los grupos del teléfono?** (ticket
+    /// `apple-id-close-notice-does-not-say-what-else-the-close-does`). Solo se evalúa pintando la pregunta, y en
+    /// vivo: la persona tiene que saberlo antes de confirmar, con la celda que va a confirmar. Las filas del canal
+    /// nuevo se cuentan solo en la celda C, que es donde deciden; en la D el cierre los olvida igual.
+    private var askingForgetsGroups: Bool {
+        let cell = currentCell
+        return AppleIDCloseNoticeLogic.closeForgetsGroups(
+            cell: cell,
+            hasBackendGroupRows: cell == .privateSignOut
+                && CloudSessionSignOut.hasBackendGroupRows(context: modelContext),
+            groupsBackendCompiled: CloudSyncFlags.groupsBackendCompiledCapability)
+    }
+
     // MARK: - Los botones
 
     /// «Ahora no». Suelta el aviso, que vuelve en el arranque siguiente: el latch de `AppBootstrapper` es por
@@ -354,8 +380,7 @@ struct AppleIDCloseNoticeView: View {
 
     /// «Cerrar sesión y quitarlos», y «Reintentar».
     ///
-    /// **La celda se resuelve AQUÍ, con los mismos getters que el coordinador** —la capacidad COMPILADA de
-    /// Grupos, como `ProfileView.signOutRowPath` y `WelcomeGroupsGateView.exitCell`— y viaja como
+    /// **La celda se resuelve AQUÍ, con los mismos getters que el coordinador** (`currentCell`) y viaja como
     /// `confirmedPath`. El alert de antes leía el getter compuesto: con el kill remoto de Grupos, o sin
     /// snapshot de remote-config, y una sesión de grupos viva, el tap resolvía la celda C y el coordinador la
     /// D, `confirmedPath` no casaba y `signOut` volvía sin hacer nada. Se mide en el tap, y no en la
@@ -369,11 +394,7 @@ struct AppleIDCloseNoticeView: View {
     /// cancelar la subida de grupos fabricaría un `.blocked(.transient)`. Suelto, el cierre sigue, y la red
     /// vuelve a presentar la hoja con la fase que tenga.
     private func requestClose() {
-        let cell = CloudSignOutFlowLogic.path(
-            for: CloudSyncFlags.storageMode,
-            hasLiveSession: CloudAuthService.shared.hasSession,
-            groupsBackendEnabled: CloudSyncFlags.groupsBackendCompiledCapability,
-            hasPrivateSession: PrivateSessionMark.hasPrivateSession())
+        let cell = currentCell
         switch AppleIDCloseNoticeLogic.closeRequest(cell: cell, phase: coordinator.phase) {
         case .release:
             notice = nil
