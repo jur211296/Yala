@@ -8,13 +8,14 @@ Yala es una app iOS de finanzas personales. Objetivo: entender gastos, cuentas, 
 - **Target iOS 26+** — APIs nativas (Liquid Glass, ToolbarSpacer, etc.)
 - Schemes: **Yala** (producción) | **Yala Dev** (con toggle Pro y `DEV_BUILD`) | Tests: YalaTests
 - Simulador: **iPhone 17 Pro**
+- **La subida a TestFlight y a la App Store se hace solo desde la Mini.** El número de build no se escribe en ningún documento: se mira al subir.
 - 21 SwiftData models. ModelContainer via `SwiftDataConfiguration`. Divisas SSOT en `Yala/Utils/CurrencyUtils.swift` (`CurrencyCode`, 54 divisas).
 
 ## Docs (leer cuando sea relevante)
 
 | Archivo | Propósito |
 |---------|-----------|
-| `docs/ESTADO.md` | Qué está en curso (NOW) |
+| `/abrir` | Qué está en curso. **No hay fichero de estado** desde el 2026-09-30 (ADR-053 de casa): lo que pasó está en los PRs mergeados, lo que sigue en `tickets/in-progress/` y lo que espera de Jürgen en el tablero (`tablero listar --proyecto yala --asignado jurgen`) |
 | `docs/HANDOFF.md` | Traspaso de sesión |
 | `docs/DECISIONS.md` | Registro de decisiones |
 | `docs/TICKETS.md` | Índice + schema de tickets |
@@ -99,7 +100,7 @@ Esta lista **ya no es** «la del job `changes` de `.github/workflows/qa.yml` men
 
 **El release sigue siendo de Jürgen**, y un PR abierto lo mergea él salvo que pida otra cosa. Un encargo en **MODO AUTÓNOMO ya lo pide**: ahí la sesión mergea su propio PR con el CI en verde. Mergear no es release; subir un build sigue siendo suyo. Lo que desaparece es el PR como trámite para el trabajo de una sesión única, no su criterio.
 
-**Documentación: dos superficies, no cinco.** El ticket en `tickets/` (qué y por qué, mientras el trabajo vive) y la regla durable en `.claude/rules/` (lo que el yo-futuro no debe romper). Git ya guarda el qué y el cuándo; `docs/ESTADO.md` y `docs/DECISIONS.md` son narrativa de proceso, no bitácora de cada commit.
+**Documentación: dos superficies, no cinco.** El ticket en `tickets/` (qué y por qué, mientras el trabajo vive) y la regla durable en `.claude/rules/` (lo que el yo-futuro no debe romper). Git y el cuerpo de cada PR ya guardan el qué y el cuándo; `docs/DECISIONS.md` es narrativa de proceso, no bitácora de cada commit.
 
 **Regla QA (contrato anti-drift):** la SSOT de cobertura es `qa/coverage-index.json` (validar: `bash qa/validate-coverage.sh`). Al tocar código bajo `Yala/`, en el MISMO commit actualizar el área correspondiente (`coverage`, `lastVerified`). Cobertura por clasificación: `deterministic` → XCUITest en `YalaUITests`; `agentic` → `/qa`; `manual` → documentada. El **ratchet** BLOQUEA si el backlog determinista crece respecto a `_meta.backlogBaseline` — escribe el test o baja el baseline conscientemente.
 
