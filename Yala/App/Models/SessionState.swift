@@ -500,6 +500,19 @@ class SessionState {
         dataVersion += 1
     }
 
+    /// Peticiones de asentamiento tras un borrado DELIBERADO hecho fuera de `ContentView` —hoy, «Vaciar datos»—. Lo
+    /// observa `ContentView`, que re-mide sus señales y absorbe la caída de `hasPersonalData` que provoca el borrado
+    /// (ticket `wipe-data-does-not-cancel-the-remote-wipe-grace`). Sin esto, esa caída arrancaba la gracia del aviso
+    /// «tus datos fueron eliminados de iCloud» como si viniera de otro dispositivo.
+    private(set) var deliberateWipeSettleRequests: Int = 0
+
+    /// **Se llama en la MISMA vuelta del main actor que el borrado, sin ningún `await` entre medias**: así el render
+    /// que procesa el store ya vaciado procesa también esta petición, y ninguna re-medida ajena —un bump de
+    /// `dataVersion` en ese mismo render— baja la señal antes de que la absorción esté armada.
+    func requestDeliberateWipeSettle() {
+        deliberateWipeSettleRequests &+= 1
+    }
+
     /// Mark that remote data arrived — views will pick this up on onAppear
     func markRemoteChangePending() {
         hasPendingRemoteChanges = true

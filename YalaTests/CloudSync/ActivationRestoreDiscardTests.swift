@@ -40,7 +40,9 @@
 //  (10) `ProfileImageStorage.delete()` sacado del `if resetsPreferences` → 1 (borra la cara, deja el nombre).
 //
 //  Y los seis de las correcciones de la review adversarial, que es donde estaban los defectos graves:
-//  (11) `&& !showFullModeActivation` quitado del `onChange` → 1 (el alert que desmonta la sheet).
+//  (11) `&& !showFullModeActivation` quitado del `onChange` → 1 (el alert que desmonta la sheet). Desde el 2026-09-30
+//       el término es el argumento `isShowingFullModeActivation:` de `RemoteWipeGraceLogic`, y el mutante es pasarle
+//       otra cosa; la decisión la fija `RemoteWipeGraceLogicTests`.
 //  (12) `markPending()` quitado del envoltorio → 1 (los gastos de grupo no vuelven al Panel).
 //  (13) `prefilledSummary = buildPrefilledSummary()` quitado → 1 (el onboarding salta las categorías).
 //  (14) `removeRowDerivedKeys` vaciada → 1 (contadores y punteros de un corpus que ya no está).
@@ -462,7 +464,11 @@ struct ActivationRestoreDiscardTests {
     func deliberateWipeInsideActivation_neverLooksLikeARemoteWipe() throws {
         let src = try Self.code("Yala/App/ContentView.swift")
         let onChange = try Self.body(of: ".onChange(of: hasPersonalData) { oldValue, newValue in", in: src)
-        #expect(onChange.contains("&& !showFullModeActivation"), """
+        // **Desde el 2026-09-30 el término viaja como argumento** (`wipe-data-does-not-cancel-the-remote-wipe-grace`):
+        // la decisión la toma `RemoteWipeGraceLogic`, cuyos tests fijan que con la activación en pantalla no hay
+        // gracia. Lo que queda aquí es que `ContentView` le pase la activación VIVA y no otra cosa.
+        let termino = "isShowingFullModeActivation: showFullModeActivation)"
+        #expect(onChange.contains(termino), """
             el guard perdió el término de la activación. Quien está activando y acaba de confirmar un
             borrado ve, cinco segundos después, un alert que le dice que le borraron los datos en OTRO
             dispositivo — y ese alert, colgado del anchor de `ContentView`, le desmonta la sheet.
@@ -475,7 +481,7 @@ struct ActivationRestoreDiscardTests {
         // (`remote-wipe-alert-skips-the-router`): la gracia ya no enciende nada, PIDE el aviso por la
         // cola del router. El término sigue teniendo que ir por delante de esa petición, que es lo que
         // impide que la tarea NAZCA mientras la activación está en pantalla.
-        try Self.expectOrder("&& !showFullModeActivation",
+        try Self.expectOrder(termino,
                              before: "RouterEntryGate.shared.submit(.presentRemoteWipeNotice)",
                              in: onChange, """
             el término quedó por debajo del armado de la gracia: entonces no la impide, solo la adorna.

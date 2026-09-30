@@ -301,3 +301,13 @@ un ticket también son afirmaciones**: antes de elegir entre ellas, comprueba qu
 siguió en `true`: esa clave no existe en el generador (solo `…SceneManifest_Generation`). Y eran cuatro
 configuraciones, no dos. **How to apply:** un build setting que el ticket da por bueno se valida mirando el
 PRODUCTO (`plutil -p` del `.app`), no el `pbxproj`; y el «antes» se mide también, o no sabes si tu cambio movió algo.
+
+## 2026-09-30 — la decisión «ya contestada» nombraba un patrón que no funciona
+
+El encargo de `wipe-data-does-not-cancel-the-remote-wipe-grace` traía la decisión de producto fijada: «cancelar la
+gracia antes de que la señal baje, el mismo patrón que los cuatro hermanos». Medido: ese patrón **no cancela nada**
+—la tarea la crea el `onChange` en el render siguiente— y los hermanos se salvaban por otra condición que las dos celdas
+del ticket no cumplían. Implementé el PROPÓSITO (que un borrado deliberado no encienda el aviso) con otro mecanismo y
+lo dejé escrito en el Paso 0 y en el PR. **How to apply:** que una decisión venga marcada «no la vuelvas a preguntar»
+fija el QUÉ, no convierte en verdad el CÓMO que cita; si el cómo es un «como hace X», mide por qué funciona en X antes
+de copiarlo. Ver [[mi-fix-hereda-la-forma-del-bug]].
