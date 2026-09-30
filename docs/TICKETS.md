@@ -415,7 +415,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | invite-link-five-causes-one-message | done | tickets/done/invite-link-five-causes-one-message.md |
 | invite-recovery-relaunches-for-a-mirror-it-never-uses | backlog | tickets/backlog/invite-recovery-relaunches-for-a-mirror-it-never-uses.md |
 | invite-refresh-forzado-es-noop-si-hay-otro-en-vuelo | done | tickets/done/invite-refresh-forzado-es-noop-si-hay-otro-en-vuelo.md |
-| ipad-and-duo-panel-and-statistics-use-the-width | backlog | tickets/backlog/ipad-and-duo-panel-and-statistics-use-the-width.md |
+| ipad-and-duo-panel-and-statistics-use-the-width | done | tickets/done/ipad-and-duo-panel-and-statistics-use-the-width.md |
 | ipad-keyboard-shortcuts-pointer-context-menus-and-drop | backlog | tickets/backlog/ipad-keyboard-shortcuts-pointer-context-menus-and-drop.md |
 | ipad-large-and-extra-large-widgets | backlog | tickets/backlog/ipad-large-and-extra-large-widgets.md |
 | ipad-list-detail-for-groups-and-settings-and-chat-inspector | qa | tickets/qa/ipad-list-detail-for-groups-and-settings-and-chat-inspector.md |
@@ -685,6 +685,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | superseding-intent-can-strand-the-sign-out-coordinator | backlog | tickets/backlog/superseding-intent-can-strand-the-sign-out-coordinator.md |
 | sync-runtime-safety-note-assumes-every-prod-device-is-icloud | backlog | tickets/backlog/sync-runtime-safety-note-assumes-every-prod-device-is-icloud.md |
 | synced-prefs-outside-prefsynckey | discarded | tickets/discarded/synced-prefs-outside-prefsynckey.md |
+| tag-chips-change-order-on-every-launch | backlog | tickets/backlog/tag-chips-change-order-on-every-launch.md |
 | tests-borran-el-store-sqlite-abierto | backlog | tickets/backlog/tests-borran-el-store-sqlite-abierto.md |
 | the-gate-destination-no-longer-resolves-on-this-mac | backlog | tickets/backlog/the-gate-destination-no-longer-resolves-on-this-mac.md |
 | the-gate-stamp-hides-the-deleted-side-of-a-staged-rename | backlog | tickets/backlog/the-gate-stamp-hides-the-deleted-side-of-a-staged-rename.md |

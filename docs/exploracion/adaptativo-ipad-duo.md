@@ -249,6 +249,11 @@ xcrun simctl list devices | grep 'YalaLane-Adapt-'      # de aquí salen los UDI
 - Arrancar, apagar o borrar: solo `xcrun simctl boot|shutdown|erase <UDID>` de un simulador con el prefijo.
 - El Duo, cuando haya Xcode 27.1: `YalaLane-Adapt-iPhone-Duo`, con el tipo de dispositivo y el runtime que traiga.
 - Con 15 GB libres en esta Mac, crear los cuatro puede no caber: `bash qa/scripts/disk-report.sh` antes.
+- **Un simulador recreado pierde «Apps en ventanas»** (Ajustes → Multitarea y gestos), y sin ella los casos de
+  estrechar la ventana de `AdaptiveNavigationUITests` se saltan (`XCTSkip`), no fallan. Medido el 2026-09-30: se activa
+  con un XCUITest temporal que abre `com.apple.Preferences`, entra en «Multitarea y gestos» y toca «Apps en ventanas»;
+  el ajuste sobrevive a los arranques siguientes.
+- Las capturas de `XCUIScreen` en horizontal salen giradas 90°: para verlas, `Image.rotate(90, expand=True)` (PIL).
 
 ### 6.3 · Qué es «hecho» en una fase de este carril
 
@@ -282,7 +287,7 @@ Tamaños: **S** ≈ una sesión · **M** ≈ dos o tres · **L** ≈ cuatro o m�
 | 5 | **1 · Barra lateral y lista-detalle** ✅ 29-sep (en `qa`: falta ver la vuelta a ancho) | Barra lateral; Registros y Planificación con lista y detalle a la vez; ancho legible | `ipad-sidebar-and-list-detail-for-records-and-planning` | L | 4 y [[cola-b-redesigns-must-hold-up-at-ipad-width]] | medium |
 | 6 | **Duo · barras, pliegue y SDK 27.1** | Yala a pantalla completa en el Duo, barras en el lateral bien ordenadas, nada en el pliegue | `iphone-duo-native-app` | M | 5 y `xcode-27-1-with-the-iphone-duo-simulator` | medium |
 | 7 | **2 · Grupos, Ajustes y Yala IA al lado** | Grupos y Ajustes en dos columnas; Yala IA como columna junto a los datos | `ipad-list-detail-for-groups-and-settings-and-chat-inspector` | M | 5 | low |
-| 8 | **2b · Panel y Estadísticas aprovechan el ancho** | Cabecera más baja en horizontal, Últimos registros a dos columnas, Resumen en rejilla | `ipad-and-duo-panel-and-statistics-use-the-width` | M | 5 | low |
+| 8 | **2b · Panel y Estadísticas aprovechan el ancho** ✅ 30-sep | Cabecera más baja en horizontal, Últimos registros a dos columnas, Resumen en rejilla | `ipad-and-duo-panel-and-statistics-use-the-width` | M | 5 | low |
 | 9 | **3 · Teclado, puntero y menús** | Atajos, resaltado al pasar el puntero, menús contextuales, soltar un recibo | `ipad-keyboard-shortcuts-pointer-context-menus-and-drop` | M | 5 | low |
 | 10 | **iPhone · más espacio en los grandes** | El Pro Max enseña más sin cambiar nada de sitio | `iphone-large-models-use-the-extra-width` | S | 2 y 3 | low |
 | 11 | **iPhone · horizontal** (decisión) | Yala gira en iPhone y en el Duo cerrado | `iphone-supports-landscape-orientation` | M | 5 y 2 | low |
