@@ -351,8 +351,10 @@ Acababa de escribir en el PR «espero a que termine el CI antes de mergear» y l
 tiene ninguno ⇒ no hay nada que esperar y GitHub mergea. La salida del comando fue **vacía**, así que
 tampoco avisó: lo delató `gh pr view --json state`.
 
-**How to apply:** en este repo `--auto` == merge inmediato. Para esperar de verdad a un run hay que
-sondear (`gh run watch <id>`) y mergear después. Y como siempre: **el estado se comprueba, no se
+**How to apply:** ~~en este repo `--auto` == merge inmediato~~ — **caducado el 2026-09-30**: desde
+ADR-054 `2.1` tiene ruleset con `tests` + `coverage-index` requeridos, así que `--auto` SÍ deja el PR
+en cola, y en MODO AUTÓNOMO es justo lo que se hace (modo cola de `/cerrar-total`, sin esperar). Lo
+que sigue valiendo: Y como siempre: **el estado se comprueba, no se
 supone** — un comando que no imprime nada no ha confirmado nada.
 
 ## Decimosexto (2026-09-05): el MUTANTE del control positivo también hay que medirlo

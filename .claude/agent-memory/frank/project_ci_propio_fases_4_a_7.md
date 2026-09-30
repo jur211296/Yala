@@ -19,8 +19,8 @@ de rápido; el runner solo compensa en privado, y antes hay que recortar el volu
   libre. Tras un reinicio, el runner no vuelve hasta que alguien entra como `ci` una vez.
 - **5 (privado):** Jürgen contrata GitHub Pro, confirma cuánto se cobra el minuto de runner propio
   y cambia la visibilidad.
-- **6-7 (auto-merge):** esperan al encargo de casa `2026-09-29-cierre-con-auto-merge`, que el
-  2026-09-30 seguía en `pendientes/`.
+- **6-7 (auto-merge):** ya no esperan al runner: ADR-054 (2026-09-30) activó el auto-merge con el
+  CI de GitHub y el modo cola de `/cerrar-total`. Aparcado queda solo el runner.
 
 **Lo que se intentó y no funcionó:** el LaunchDaemon sin sesión. Compilaba, pero los tests iban
 ~1.000× más lentos. Tampoco funcionó el DerivedData en ExtDev, porque TCC bloquea el volumen
