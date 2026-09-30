@@ -4,11 +4,16 @@ status: backlog
 priority: high
 area: "qa, entorno"
 created: 2026-09-22
-updated: 2026-09-22
+updated: 2026-09-30
 source: "medido al correr el gate de `verify-reads-a-failed-local-fetch-as-an-empty-outbox` (2026-09-22)"
 ---
 
 # El destino que usan el gate y `/verify-ios` no resuelve en esta Mac desde que se actualizó Xcode
+
+> **La premisa ha cambiado (medido el 2026-09-30, sesión del #306).** `name=iPhone 17 Pro` vuelve a
+> casar con el `9EDA6AAF` de iOS 27.0, así que el destino del gate resuelve. Antes de trabajar
+> este ticket, vuelve a medirlo: puede que ya no haya nada que arreglar. (Venía de la cabecera de
+> `docs/ESTADO.md`, retirado ese mismo día.)
 
 ## El problema
 

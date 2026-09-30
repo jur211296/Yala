@@ -6,7 +6,7 @@
 
 | Pregunta | Dónde |
 |---|---|
-| ¿Dónde quedó todo? ¿Qué sigue? | [`docs/ESTADO.md`](./docs/ESTADO.md) |
+| ¿Dónde quedó todo? ¿Qué sigue? | — *(pendiente)* |
 | ¿Por qué se decidió X? ¿Qué manda hoy? | [`docs/DECISIONS.md`](./docs/DECISIONS.md) |
 | ¿Qué pasó el día X? | — *(pendiente)* |
 | ¿Qué hitos y fechas hay? | — *(pendiente)* |
@@ -18,7 +18,7 @@
 | ¿Cómo arranco de cero en otra máquina? | [`docs/HANDOFF.md`](./docs/HANDOFF.md) |
 
 > **Ficheros de más de 60 KB** — `✓` = lleva índice arriba, entra por ahí:
-> ✗ `docs/ESTADO.md` (305 KB) · ✓ `.claude/rules/swiftdata-cloudkit.md` (284 KB) · ✓ `docs/DECISIONS.md` (263 KB) · ✓ `docs/aprendizajes-tecnicos.md` (211 KB) · ✓ `qa/cloud/README.md` (147 KB) · ✓ `docs/modo-nube/MODO-NUBE-DIFERIDOS.md` (113 KB) · ✓ `tickets/qa/groups-consent-door-spec.md` (98 KB) · ✓ `docs/audit/AUDIT-UI-patterns.md` (94 KB) · ✓ `docs/modo-nube/MODO-NUBE-AUDITORIA-ESCENARIOS.md` (94 KB) · ✗ `docs/TICKETS.md` (93 KB) · ✓ `docs/modo-nube/_archive/groups-backend-v1.md` (72 KB) · ✓ `docs/modo-nube/_archive/fase3-medicion/fase3-REMEDICION-2026-08-04.md` (64 KB)
+> ✓ `.claude/rules/swiftdata-cloudkit.md` (284 KB) · ✓ `docs/DECISIONS.md` (266 KB) · ✓ `docs/aprendizajes-tecnicos.md` (211 KB) · ✓ `qa/cloud/README.md` (147 KB) · ✓ `docs/modo-nube/MODO-NUBE-DIFERIDOS.md` (113 KB) · ✓ `tickets/qa/groups-consent-door-spec.md` (98 KB) · ✓ `docs/audit/AUDIT-UI-patterns.md` (94 KB) · ✓ `docs/modo-nube/MODO-NUBE-AUDITORIA-ESCENARIOS.md` (94 KB) · ✗ `docs/TICKETS.md` (93 KB) · ✓ `docs/modo-nube/_archive/groups-backend-v1.md` (72 KB) · ✓ `docs/modo-nube/_archive/fase3-medicion/fase3-REMEDICION-2026-08-04.md` (64 KB) · ✓ `docs/modo-nube/MODO-NUBE-DECISION-RELEASE-2.1.md` (61 KB)
 
 <!-- INDICE:fin -->
 
@@ -41,7 +41,7 @@ Personal finance app for iOS.
 ## Start here
 
 1. [`CLAUDE.md`](CLAUDE.md) — agent contract, inviolable rules, workflow
-2. [`docs/ESTADO.md`](docs/ESTADO.md) — what is in progress right now
+2. `/abrir` — what is in progress right now. There is no state file since 2026-09-30: `/abrir` rebuilds it from the last merged PRs, `tickets/in-progress/` and Jürgen's cards on the board
 
 Process docs: [`docs/HANDOFF.md`](docs/HANDOFF.md) · [`docs/DECISIONS.md`](docs/DECISIONS.md) · [`docs/TICKETS.md`](docs/TICKETS.md)
 

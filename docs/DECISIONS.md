@@ -2,11 +2,12 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (86 entradas)
+## Índice (87 entradas)
 
-> **No hace falta leer este fichero entero** — son 250 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 253 KB. Localiza la entrada
 > aquí y salta a ella.
 
+- `2026-09-30` [El estado de Yala se lee de donde se escribe solo: se retira `docs/ESTADO.md`](#2026-09-30-el-estado-de-yala-se-lee-de-donde-se-escribe-solo-se-retira-docsestadomd)
 - `2026-09-27` [Yala se adapta por espacio, no por dispositivo](#2026-09-27-yala-se-adapta-por-espacio-no-por-dispositivo)
 - `2026-09-26` [El conector de Claude emite sus propios tokens](#2026-09-26-el-conector-de-claude-emite-sus-propios-tokens)
 - `2026-09-09` [Sesiones — dos ejes (privada × nube), un verbo por sesión, y Grupos como mini-app](#2026-09-09-sesiones--dos-ejes-privada--nube-un-verbo-por-sesin-y-grupos-como-mini-app)
@@ -112,6 +113,42 @@ Cada decisión sigue esta estructura:
 ---
 
 ## Decisiones Activas
+
+### [2026-09-30] El estado de Yala se lee de donde se escribe solo: se retira `docs/ESTADO.md`
+
+**Contexto.** ADR-053 de casa (29-sep) deja las sesiones de Yala con auto-merge: pushean, dejan el PR en cola y
+cierran sin esperar al CI. Un fichero de estado que toda sesión reescribe no sobrevive a eso. La sesión cierra antes
+de su merge, la siguiente nace sin su cambio, y los dos PRs chocan en el fichero. Un PR con conflicto ni arranca el
+CI, y el auto-merge espera en silencio. Además el fichero ya no era un estado: medía 4.001 líneas en 140 secciones,
+con 75 «Lo que espera de Jürgen», y lo leían a propósito 12 de 521 transcripts en 14 días.
+
+**Decisión.** `docs/ESTADO.md` se borra. Cada contenido suyo se muda a donde ya se escribe solo:
+
+| Qué | Dónde vive ahora |
+|---|---|
+| La crónica de una sesión | El cuerpo de su PR. Sin PR (árbol principal), el cuerpo del commit a `2.1` |
+| Lo que espera de Jürgen (decisión, tarea, credencial) | Una tarjeta del tablero, proyecto `Yala`, asignada a `jurgen` |
+| Un device-QA pendiente | Su ticket en `tickets/qa/`, con guion. No lleva tarjeta propia: una sola tarjeta paraguas apunta a la carpeta |
+| Qué está en curso | `tickets/in-progress/` |
+| Los avisos fijos de la cabecera | `CLAUDE.md` si son hechos del entorno; el ticket, si son de un ticket |
+| El número de build de TestFlight | Ningún sitio: se mira al subir |
+
+`/abrir` reconstruye el briefing con `gh pr list --state merged`, los commits directos a `2.1`, `tickets/in-progress/`
+y `tablero listar --proyecto yala --asignado jurgen`. `/cerrar` deja el parte en el PR con las secciones en un orden
+fijo, empezando por «Necesita de ti».
+
+**Razones.** Las tres fuentes nuevas se escriben al trabajar y no las comparte nadie: un PR por sesión, un fichero por
+ticket, una tarjeta por pendiente. Ninguna choca en un merge.
+
+**Descartado.** Un stub de tres líneas en lugar del fichero: el hook de arranque lo seguiría volcando como estado. Que
+`/cerrar` escriba el resumen en otro fichero: es el mismo fichero compartido con otro nombre. Una tarjeta por device-QA:
+serían 27 tarjetas que repiten los 27 tickets de `tickets/qa/`.
+
+**Consecuencias.** El hook de arranque (`~/.claude/hooks/abrir_sesion.py`) dirá que el repo no tiene fichero de estado;
+es deliberado y está escrito aquí y en `CLAUDE.md`. `/cerrar-total` y `parte Yala` los adapta el encargo de casa
+`2026-09-29-cierre-con-auto-merge`. `/higiene` avisa si el fichero vuelve a aparecer.
+
+**Estado:** Activa
 
 ### [2026-09-27] Yala se adapta por espacio, no por dispositivo
 

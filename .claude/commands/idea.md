@@ -30,7 +30,7 @@ PASOS:
    - Slug inglés kebab-case (filename = id)
    - Frontmatter: `id`, `status: backlog`, `priority` si la clasificaste, `updated` (hoy), `source` si aplica
    - Título + descripción + contexto + dependencias
-   - Una línea en `docs/ESTADO.md` si la idea bloquea el trabajo actual
+   - Si la idea bloquea el trabajo actual y espera a Jürgen, una tarjeta: `tablero crear --proyecto Yala --asignado jurgen --titulo "…" --fecha hoy --agente frank`
    - Añadir la fila en `docs/TICKETS.md`
 
 5. CONFIRMA:

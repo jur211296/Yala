@@ -6,7 +6,7 @@ Muestra el estado del Backlog de features.
 
 ## PASO 1: LEER BACKLOG
 
-Leer todos los archivos `.md` en `tickets/backlog/` y `tickets/in-progress/` (ignorar `.gitkeep` y README.md). Índice: `docs/TICKETS.md`. Estado vivo: `docs/ESTADO.md`.
+Leer todos los archivos `.md` en `tickets/backlog/` y `tickets/in-progress/` (ignorar `.gitkeep` y README.md). Índice: `docs/TICKETS.md`.
 Para cada archivo, extraer del frontmatter: `status`, `priority`, `area`, `created`.
 
 ## PASO 2: MOSTRAR TABLA
@@ -34,7 +34,7 @@ Si hay items con status `backlog` sin spec:
 > Hay N features sin spec. Usa `/spec [nombre]` para desarrollar uno.
 
 Si hay items con status `in-progress`:
-> Hay N features en progreso. Continua desde donde quedaste (revisa `docs/ESTADO.md`).
+> Hay N features en progreso. Continua desde donde quedaste (el último PR mergeado lo cuenta: `gh pr list --state merged --base 2.1 -L 5`).
 
 ## REGLAS
 - Si el Backlog esta vacio, sugerir crear un feature: "Crea un archivo en `tickets/backlog/` o dime una idea y la creo yo."

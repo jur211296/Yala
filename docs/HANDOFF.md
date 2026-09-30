@@ -11,13 +11,12 @@ Session start from a clean clone. Do not use Obsidian / YalaWiki as SSOT.
 
 ## TestFlight
 
-- 2.1 build 12 **VALID**
 
 ## SSOT
 
-This repo. Tickets live in `tickets/` (index: `docs/TICKETS.md`). Process: `docs/ESTADO.md`, this file, `docs/DECISIONS.md`.
+This repo. Tickets live in `tickets/` (index: `docs/TICKETS.md`). Process: this file and `docs/DECISIONS.md`. There is no state file since 2026-09-30 (ADR-053 in casa): what happened lives in the merged PRs, what is in progress in `tickets/in-progress/`, and what waits for Jürgen on the board (`tablero listar --proyecto yala --asignado jurgen`).
 
-Ticket bodies are now in the tree under `tickets/<status>/`. `docs/ESTADO.md` is the vault `planning/NOW.md`. `docs/DECISIONS.md` is the vault decision log. Source: `jur211296/YalaWiki` @ `1934e8ad`.
+Ticket bodies are now in the tree under `tickets/<status>/`. `docs/DECISIONS.md` is the vault decision log. Source: `jur211296/YalaWiki` @ `1934e8ad`.
 
 ## HOLD
 
@@ -32,6 +31,6 @@ Instagram / Spark / marketing moves are a later PR. Do not delete them here.
 
 ## Next session
 
-1. Read `docs/ESTADO.md` and `docs/TICKETS.md`.
+1. Run `/abrir`, and read `docs/TICKETS.md`.
 2. Work from `tickets/<status>/`, not from iCloud.
 3. Do not invent PASS or close tickets.

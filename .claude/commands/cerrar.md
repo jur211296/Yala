@@ -1,6 +1,6 @@
 ---
-description: Cierra la sesión — verifica que nada quedó abierto, sincroniza el ticket, escribe docs/ESTADO.md y libera el disco sin preguntar
-allowed-tools: Bash(git:*), Bash(gh:*), Bash(python3 scripts/indice_readme.py:*), Bash(python3 scripts/glosario.py:*), Bash(bash qa/scripts/disk-report.sh:*), Bash(bash qa/scripts/session-cleanup.sh:*), Bash(xcrun simctl:*), Bash(tmutil:*), Bash(pgrep:*), Read, Edit, Glob, Grep, Bash(bash ~/.claude/scripts/limpiar-cowork.sh:*)
+description: Cierra la sesión — verifica que nada quedó abierto, sincroniza el ticket, deja el parte donde se lee y libera el disco sin preguntar
+allowed-tools: Bash(git:*), Bash(gh:*), Bash(tablero:*), Bash(python3 scripts/indice_readme.py:*), Bash(python3 scripts/glosario.py:*), Bash(bash qa/scripts/disk-report.sh:*), Bash(bash qa/scripts/session-cleanup.sh:*), Bash(xcrun simctl:*), Bash(tmutil:*), Bash(pgrep:*), Read, Edit, Glob, Grep, Bash(bash ~/.claude/scripts/limpiar-cowork.sh:*)
 ---
 
 Cierre de sesión de Yala. Cinco bloques, en este orden. Un solo informe al final; no narres cada paso. No preguntes. Tras reportar, ejecuta y listo.
@@ -10,11 +10,9 @@ Cierre de sesión de Yala. Cinco bloques, en este orden. Un solo informe al fina
 `git rev-parse --git-common-dir` distinto de `.git` significa que sí: la lanzó `lanzar-sesion`
 en `~/Claude/worktrees/`, sobre una rama `encargo/<slug>`. **El árbol principal es de Jürgen.**
 
-- **Sáltate el bloque 5: no escribas `docs/ESTADO.md`.** Es un fichero único que toda sesión
-  reescribe; dos ramas tocándolo chocan en el merge siempre. Se escribe en la rama principal
-  después de mergear. **El ticket sí va aquí** — es un fichero por ticket y no colisiona.
-- **Pushea tu rama y abre PR** con `gh pr create`, con el parte en el cuerpo: qué se hizo, qué
-  quedó abierto, qué sigue. Es lo que leerá quien mergee para escribir el estado.
+- **El ticket va aquí** — es un fichero por ticket y no colisiona.
+- **Pushea tu rama y abre PR** con `gh pr create`, con el parte del bloque 5 en el cuerpo. Es lo
+  que leerá el próximo `/abrir`: no hay otro sitio donde quede.
 - El hook `Stop` respeta el worktree desde el 1-sep (`CLAUDE_PROJECT_DIR`), pero comprueba que
   pusheó tu rama y no otra.
 
@@ -72,21 +70,30 @@ En el informe, una línea por destino (TM / DerivedData / scratch / clones / sim
 
 Tres líneas, no más: **dónde quedó**, **qué sigue**, **qué está bloqueado esperando algo tuyo**.
 
-## 5 · Escribir docs/ESTADO.md
+## 5 · El parte, donde se lee
 
-Reescribir el archivo entero (no append). Tope 40 líneas.
+**Yala no tiene fichero de estado desde el 2026-09-30** (ADR-053 de casa). Un fichero que toda
+sesión reescribe no sobrevive al auto-merge: la sesión cierra antes de su merge, la siguiente nace
+sin su cambio y los dos PRs chocan en él. Cada cosa va a donde ya se escribe sola:
 
-Campos:
-- Fecha (hoy, Lima)
-- Rama y HEAD (`git rev-parse --abbrev-ref HEAD`, `git rev-parse --short HEAD`) + sujeto del último commit
-- Tema de esta sesión (una línea, lenguaje de usuario)
-- Abiertos: máx. 3 tickets que siguen vivos
-- Siguiente: un item
-- Bloqueo: uno, o “ninguno”
+| Qué | Dónde |
+|---|---|
+| La crónica de la sesión | **Worktree:** el cuerpo del PR. **Árbol principal:** el cuerpo del commit a `2.1` |
+| Lo que espera de Jürgen (decisión, tarea, credencial) | Una tarjeta: `tablero crear --proyecto Yala --asignado jurgen --titulo "…" --fecha hoy --nota "…" --agente frank` |
+| Un device-QA | El ticket en `tickets/qa/` con su guion. **No** lleva tarjeta: el ticket ya es su registro |
+| Un aviso que toda sesión debe saber | `CLAUDE.md` o la regla de `.claude/rules/` de su área |
 
-Si pasaría de 40 líneas, recortar Abiertos. No copiar DECISIONS. No listar el diff.
+El cuerpo del PR lleva estas secciones, **en este orden**, para que `/abrir` las encuentre:
 
-En el informe: `✓ docs/ESTADO.md <fecha> <HEAD>`
+1. `## Necesita de ti` — lo que queda en Jürgen, o «nada». Cada punto con su tarjeta o su ticket.
+2. `## Qué cambia para el usuario` — en lenguaje de usuario.
+3. `## Qué toqué`
+4. `## Qué probé`
+5. `## Qué quedó fuera` — con el ticket de cada residual.
+
+El número de build de TestFlight no se escribe en ningún sitio: Jürgen lo mira al subir.
+
+En el informe: `✓ parte en PR #N` (o `en el commit <sha>`) y `✓ N tarjeta(s) para Jürgen`, o «ninguna».
 
 ## 6 · La fila de actividad
 
@@ -112,4 +119,4 @@ aparte y su resultado va a `~/.claude/logs/actividad.log`. Saltarse este paso de
 
 - Disco: ejecuta y listo. No pidas confirmación. El puente (YalaAgent) ya corre el mismo teardown al terminar cada orden, sin Claude; este comando es para cuando Claude sí lo corre.
 - No commitees, no pushees, no cambies el estado de un ticket sin decirlo.
-- Si la sesión no tocó código, salta el bloque 2: disco + ESTADO + cierre.
+- Si la sesión no tocó código, salta el bloque 2: disco + parte + cierre.

@@ -5,9 +5,10 @@ allowed-tools: Bash(limpiar-worktrees:*), Bash(python3 scripts/reorg_docs.py:*),
 
 Higiene de **Yala**. **Nunca borra nada**: solo mueve a historial. Un informe al final.
 
-> Este repo tiene su propia variante del estándar y es deliberado: el estado se llama
-> `docs/ESTADO.md`, las decisiones van **por fecha** (`## AAAA-MM-DD Título`) y no por `ADR-NNN`,
-> y no hay `CHANGELOG.md` — el rastro cronológico lo dan `tickets/` y `git log`.
+> Este repo tiene su propia variante del estándar y es deliberado: **no hay fichero de estado**
+> desde el 2026-09-30 (lo sustituyen los PRs mergeados, `tickets/` y las tarjetas de Jürgen;
+> ADR-053 de casa), las decisiones van **por fecha** (`## AAAA-MM-DD Título`) y no por `ADR-NNN`,
+> y no hay `CHANGELOG.md` — el rastro cronológico lo dan los PRs, `tickets/` y `git log`.
 > **No fuerces los nombres de la casa aquí.** Lo que tiene que ser igual entre repos es qué
 > trabajo hace cada documento, no cómo se llama el fichero.
 
@@ -42,16 +43,15 @@ aquí**: moverlos es trabajo de `/cerrar`, no de higiene.
 
 ## 3 · Punteros rotos y sellos que mienten
 
-- Rutas absolutas (`/Users/...`) de `CLAUDE.md`, `README.md` y `docs/ESTADO.md` que no resuelven.
-- **El sello `updated:` de `docs/ESTADO.md` contra `git log` del propio fichero.** Un sello a mano
-  miente en cuanto alguien se olvida; ese olvido es lo que buscamos.
+- Rutas absolutas (`/Users/...`) de `CLAUDE.md` y `README.md` que no resuelven.
+- **Que no haya vuelto un fichero de estado.** Un cierre con la receta vieja lo recrearía, y el
+  hook de arranque volcaría el primero que encuentre de su lista (`CANDIDATOS_ESTADO` en
+  `~/.claude/hooks/abrir_sesion.py`) como si fuera el estado. Si existe, se dice en el informe.
 - Cifras y estados que un documento afirma y ya no son ciertos (número de build, rama, «rojo
   conocido»). Son afirmaciones verificables y comprobarlas cuesta un `grep`.
 
 ## 4 · Los topes
 
-- **`docs/ESTADO.md`: máximo 40 líneas** — el mismo número que `/cerrar`. **El número avisa, no
-  manda:** si se pasa acumulando lo cerrado, fuera; si lo que hay dentro sigue vivo, no se toca.
 - **Cualquier fichero de referencia de más de 100 líneas necesita índice arriba.**
   `python3 scripts/indexar_doc.py <fichero> --apply`. `docs/glosario.md` está exento.
 
