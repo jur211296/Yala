@@ -328,12 +328,17 @@ struct AppleIDCloseNoticeWiringTests {
     @Test("MUTACIÓN: la celda se resuelve en el tap con la capacidad COMPILADA de Grupos, la del coordinador")
     func theTapReadsTheCoordinatorsGetter() throws {
         let request = Self.squashed(try Self.body(of: "private func requestClose() {", in: Self.noticeCode()))
-        #expect(request.contains("groupsBackendEnabled: CloudSyncFlags.groupsBackendCompiledCapability"), """
+        // La celda sale de `currentCell`, que lee FRESCO en cada acceso: leída al tocar, es la del tap.
+        #expect(request.hasPrefix("let cell = currentCell switch"), "`requestClose` dejó de resolver la celda al tocar")
+        let cellReader = Self.squashed(try Self.body(
+            of: "private var currentCell: CloudSignOutFlowLogic.Path {", in: Self.noticeCode()))
+        #expect(!cellReader.contains("="), "`currentCell` dejó de ser una lectura directa de los getters")
+        #expect(cellReader.contains("groupsBackendEnabled: CloudSyncFlags.groupsBackendCompiledCapability"), """
             la hoja dejó de resolver la celda con el getter del coordinador. Con el compuesto, un kill remoto de \
             Grupos con sesión viva resuelve C en el tap y D en `signOut`: `confirmedPath` no casa y el botón no \
             hace nada.
             """)
-        #expect(!request.contains("CloudSyncFlags.groupsBackendEnabled,"))
+        #expect(!cellReader.contains("CloudSyncFlags.groupsBackendEnabled,"))
     }
 
     @Test("MUTACIÓN: pedir el cierre recorre las TRES ramas de la tabla y marca la vuelta del cierre")
@@ -609,5 +614,86 @@ struct AppleIDCloseNoticeAttestLossTests {
                     } label: {
                         Text(L10n.Groups.Errors.attestUnavailableSignOutLossButton)
             """#)), "el cuerpo de la pérdida en la hoja cambió de forma: orden, mensaje con cifra o acción del botón")
+    }
+}
+
+// MARK: - 4 · Lo que la pregunta cuenta de los grupos
+
+/// **La pregunta dice que el cierre se lleva los grupos del teléfono cuando se los lleva, y solo entonces** (ticket
+/// `apple-id-close-notice-does-not-say-what-else-the-close-does`). En la celda D siempre; en la C solo con filas del
+/// canal nuevo. La tabla del borrado en sí la fija `CloudSignOutFlowLogicTests.wipeForgetsGroupsTable`.
+@MainActor
+@Suite("Hoja del cambio de Apple ID · los grupos que se lleva el cierre")
+struct AppleIDCloseNoticeGroupsLineTests {
+
+    typealias L = AppleIDCloseNoticeLogic
+
+    @Test("MUTACIÓN: D avisa siempre; C solo con grupos del canal nuevo; sin canal compilado, nunca")
+    func theQuestionCountsWhatTheCloseForgets() {
+        // D: el cierre sube los grupos y los olvida, haya filas contadas o no.
+        #expect(L.closeForgetsGroups(cell: .privateWithGroupsSignOut, hasBackendGroupRows: false, groupsBackendCompiled: true))
+        #expect(L.closeForgetsGroups(cell: .privateWithGroupsSignOut, hasBackendGroupRows: true, groupsBackendCompiled: true))
+        // C: solo si quedan grupos del canal nuevo (una sesión de grupos que caducó).
+        #expect(L.closeForgetsGroups(cell: .privateSignOut, hasBackendGroupRows: true, groupsBackendCompiled: true))
+        #expect(!L.closeForgetsGroups(cell: .privateSignOut, hasBackendGroupRows: false, groupsBackendCompiled: true),
+                "La celda C sin grupos del canal nuevo afirmaría un borrado que no ocurre.")
+        // Sin canal compilado el borrado no lleva la marca de grupos: la frase sería falsa.
+        for cell in [CloudSignOutFlowLogic.Path.privateSignOut, .privateWithGroupsSignOut] {
+            for rows in [false, true] {
+                #expect(!L.closeForgetsGroups(cell: cell, hasBackendGroupRows: rows, groupsBackendCompiled: false))
+            }
+        }
+    }
+
+    @Test("Fuera de C y D la pregunta no cuenta grupos: confirmar ahí no cierra nada")
+    func otherCellsCountNothing() {
+        for cell in [CloudSignOutFlowLogic.Path.cloudSecureSignOut, .groupsOnlySignOut] {
+            #expect(L.closeRequest(cell: cell, phase: .idle) == .release, "control: esta celda no arranca el cierre")
+            for rows in [false, true] {
+                #expect(!L.closeForgetsGroups(cell: cell, hasBackendGroupRows: rows, groupsBackendCompiled: true))
+            }
+        }
+    }
+
+    @Test("MUTACIÓN: la frase de los grupos va en su párrafo solo cuando se van, y el mensaje de siempre queda entero")
+    func theMessageAddsTheLineOnlyWhenTrue() {
+        #expect(L.askingMessage(forgetsGroups: false) == L10n.iCloud.appleIDChangedMessage)
+        #expect(L.askingMessage(forgetsGroups: true)
+                == L10n.iCloud.appleIDChangedMessage + "\n\n" + L10n.iCloud.appleIDChangedGroupsLine)
+        // Control del instrumento: una key sin resolver o igual al mensaje haría pasar lo de arriba sin decir nada.
+        #expect(L10n.iCloud.appleIDChangedGroupsLine != "icloud.appleIDChanged.groupsLine")
+        #expect(!L10n.iCloud.appleIDChangedGroupsLine.isEmpty)
+        #expect(L10n.iCloud.appleIDChangedGroupsLine != L10n.iCloud.appleIDChangedMessage)
+    }
+}
+
+extension AppleIDCloseNoticeWiringTests {
+
+    @Test("MUTACIÓN: la pregunta pinta el mensaje de la tabla con la celda de AHORA y las entradas del coordinador")
+    func theQuestionReadsTheSameInputsAsTheClose() throws {
+        let code = try Self.noticeCode()
+        #expect(code.contains("message: AppleIDCloseNoticeLogic.askingMessage(forgetsGroups: askingForgetsGroups),"),
+                "la pregunta dejó de pintar el mensaje de la tabla")
+        #expect(!code.contains("message: L10n.iCloud.appleIDChangedMessage"), "la pregunta volvió al mensaje fijo")
+        // El cuerpo ENTERO y no fragmentos: un `|| true` detrás o un `return false` delante pasarían por `contains`.
+        let reader = Self.squashed(try Self.body(of: "private var askingForgetsGroups: Bool {", in: code))
+        #expect(reader == "let cell = currentCell return AppleIDCloseNoticeLogic.closeForgetsGroups( cell: cell, "
+                + "hasBackendGroupRows: cell == .privateSignOut && CloudSessionSignOut.hasBackendGroupRows(context: modelContext), "
+                + "groupsBackendCompiled: CloudSyncFlags.groupsBackendCompiledCapability)", """
+            la hoja dejó de preguntar a la tabla con la celda de ahora, las filas del canal nuevo y la capacidad compilada (las entradas del arm). Cuerpo leído: \(reader)
+            """)
+    }
+
+    @Test("MUTACIÓN: la hoja y el arm deciden con la MISMA regla, y la hoja con el reparto de celdas del cierre")
+    func oneRuleForTheQuestionAndTheArm() throws {
+        let logic = Self.codeOnly(try Self.source("Yala/App/Logic/AppleIDCloseNoticeLogic.swift"))
+        let forgets = Self.squashed(try Self.body(of: "groupsBackendCompiled: Bool) -> Bool {", in: logic))
+        #expect(forgets.contains("CloudSignOutFlowLogic.exitPlan( path: cell, confirmedWithoutICloudCopy: true,"))
+        #expect(forgets.contains("return CloudSignOutFlowLogic.wipeForgetsGroups( kind: plan.kind,"))
+        let signOut = Self.codeOnly(try Self.source("Yala/Services/CloudSync/CloudSessionSignOut.swift"))
+        #expect(signOut.components(separatedBy: "CloudSignOutFlowLogic.wipeForgetsGroups(").count - 1 == 1,
+                "el arm tiene que preguntar a la regla compartida, una vez")
+        #expect(!signOut.contains("kind.pushesGroups || Self.hasBackendGroupRows"),
+                "volvió la fórmula copiada en el arm: la hoja y el cierre pueden divergir")
     }
 }

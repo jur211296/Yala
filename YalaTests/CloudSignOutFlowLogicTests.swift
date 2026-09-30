@@ -124,6 +124,22 @@ struct CloudSignOutFlowLogicTests {
         #expect(CloudSignOutFlowLogic.ExitKind.privateWithGroups.pushesGroups)
         #expect(CloudSignOutFlowLogic.ExitKind.groupsOnly.pushesGroups)
     }
+
+    /// La regla que decide si el borrado se lleva el store de grupos, y que cuentan el arm y la hoja del cambio de
+    /// Apple ID (ticket `apple-id-close-notice-does-not-say-what-else-the-close-does`). Tabla ENTERA: 3 × 2 × 2.
+    @Test("MUTACIÓN: el borrado se lleva los grupos si el cierre los sube o quedan filas del canal nuevo, y solo con el canal compilado")
+    func wipeForgetsGroupsTable() {
+        typealias Kind = CloudSignOutFlowLogic.ExitKind
+        for kind in [Kind.privateOnly, .privateWithGroups, .groupsOnly] {
+            for rows in [false, true] {
+                #expect(!CloudSignOutFlowLogic.wipeForgetsGroups(kind: kind, hasBackendGroupRows: rows, groupsBackendCompiled: false),
+                        "Sin el canal compilado no hay marca de grupos: \(kind), filas \(rows).")
+                let expected = kind != .privateOnly || rows
+                #expect(CloudSignOutFlowLogic.wipeForgetsGroups(kind: kind, hasBackendGroupRows: rows, groupsBackendCompiled: true)
+                        == expected, "\(kind), filas \(rows)")
+            }
+        }
+    }
 }
 
 @Suite("Cerrar sesión — veredicto del push-all (.cloud)")
@@ -698,9 +714,15 @@ struct PrivateSignOutWiringTests {
             El último tramo dejó de mirar los grupos sin subir de la privada: una fila encolada durante la \
             espera moriría con el wipe.
             """)
-        let marker = try #require(arm.range(of: "let forgetsGroups = kind.pushesGroups || Self.hasBackendGroupRows(context: context)"))
+        // La regla vive en `CloudSignOutFlowLogic.wipeForgetsGroups` (la misma que cuenta la hoja del cambio de Apple ID) y
+        // su tabla la fija `wipeForgetsGroupsTable`. Aquí se fija que el arm la llame con SUS entradas y que guarde la marca.
+        let marker = try #require(arm.range(of: "if CloudSignOutFlowLogic.wipeForgetsGroups("))
         #expect(groupsCheck.lowerBound < marker.lowerBound)
-        #expect(arm.contains("if forgetsGroups && CloudSyncFlags.groupsBackendCompiledCapability {"))
+        #expect(arm.contains(
+            "if CloudSignOutFlowLogic.wipeForgetsGroups(\n"
+            + "            kind: kind, hasBackendGroupRows: Self.hasBackendGroupRows(context: context),\n"
+            + "            groupsBackendCompiled: CloudSyncFlags.groupsBackendCompiledCapability) {\n"
+            + "            StorageModePersistence.markSignOutWipeIncludesGroups()"), "El arm dejó de preguntar con sus entradas, o la marca de grupos ya no depende de la respuesta.")
         let tail = finalize + arm
         #expect(!tail.contains("attemptSignOutSwap"))
         #expect(!tail.contains("armGroupsOnlyWipe()"))

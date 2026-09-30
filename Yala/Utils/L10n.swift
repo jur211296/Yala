@@ -7184,6 +7184,7 @@ enum L10n {
         static var appleIDChangedMessage: String { ls("icloud.appleIDChanged.message", comment: "") }
         static var appleIDChangedConfirm: String { ls("icloud.appleIDChanged.confirm", comment: "") }
         static var appleIDChangedLater: String { ls("icloud.appleIDChanged.later", comment: "") }
+        static var appleIDChangedGroupsLine: String { ls("icloud.appleIDChanged.groupsLine", comment: "") }
     }
 
     // MARK: - Modo Nube (I14): almacenamiento / migración / consentimiento

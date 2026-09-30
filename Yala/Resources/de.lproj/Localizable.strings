@@ -6189,3 +6189,6 @@
 
 /* Puerta del invitado: datos de una cuenta en la nube con la sesión cerrada: cuerpo */
 "welcome.groups.inviteCloudSignInBody" = "Auf diesem Telefon liegen die Daten eines Cloud-Kontos, das nicht angemeldet ist, und deine Gruppenausgaben würden dort landen. Wenn es deins ist, melde dich über „Ich habe bereits ein Konto“ damit an und mach mit deiner Einladung weiter. Wenn nicht, tritt über dein eigenes Telefon bei.";
+
+/* Apple ID change notice: extra paragraph, only when the close also removes the groups stored on this phone. Says nothing about whose they are or where else they live: that is not always true. */
+"icloud.appleIDChanged.groupsLine" = "Auch die Gruppen auf diesem Telefon werden entfernt.";

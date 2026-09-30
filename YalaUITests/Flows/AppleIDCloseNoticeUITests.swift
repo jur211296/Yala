@@ -42,6 +42,13 @@ final class AppleIDCloseNoticeUITests: XCTestCase {
         app.descendants(matching: .any).matching(identifier: identifier).firstMatch
     }
 
+    /// La frase de los grupos (`icloud.appleIDChanged.groupsLine`, en es). Va dentro del mensaje de la pregunta, así que
+    /// se busca por su texto y no por identificador: el de la cabecera pisa el de sus hijos.
+    private func groupsLine(_ app: XCUIApplication) -> XCUIElement {
+        app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "También se quitan los grupos que hay en este teléfono"))
+            .firstMatch
+    }
+
     /// Baja por Ajustes hasta que el botón sea alcanzable. Tope de intentos, sin sleeps (molde
     /// `SessionExitsPerCellUITests`).
     private func scrollTo(_ app: XCUIApplication, _ identifier: String) -> XCUIElement {
@@ -70,6 +77,8 @@ final class AppleIDCloseNoticeUITests: XCTestCase {
             """)
         XCTAssertTrue(app.buttons["apple_id_close_confirm"].exists, "Falta «Cerrar sesión y quitarlos».")
         XCTAssertTrue(app.buttons["apple_id_close_later"].exists, "Falta «Ahora no».")
+        // Sin grupos en el teléfono el cierre no se lleva ninguno, y la pregunta no puede decir que sí.
+        XCTAssertFalse(groupsLine(app).exists, "La pregunta afirma que se van los grupos de un teléfono que no tiene.")
 
         // La red de presentación deja en paz una hoja que está en pantalla. Su cap de ciclo son unos 9 s, y
         // 12 s cubren la ventana. Si el `onAppear` del contenido dejara de disparar, la hoja se soltaría aquí.
@@ -144,5 +153,25 @@ final class AppleIDCloseNoticeUITests: XCTestCase {
             cambio de Apple ID.
             """)
         app.buttons["destructive_scope_cancel"].tap()
+    }
+
+    /// **Con grupos del canal nuevo en el teléfono, la pregunta dice que el cierre también se los lleva** (ticket
+    /// `apple-id-close-notice-does-not-say-what-else-the-close-does`). `seed: grupos` deja grupos del backend sin sesión
+    /// en la nube: la celda C cuyo cierre borra el store de grupos (`CloudSignOutFlowLogic.wipeForgetsGroups`). La D no
+    /// se alcanza desde aquí —pide una sesión de grupos viva— y la fija la tabla de `AppleIDCloseNoticeGroupsLineTests`.
+    /// **No se confirma**: terminaría el cierre y armaría un boot-wipe REAL (ver la cabecera).
+    func test_question_saysTheGroupsLeaveThePhone_whenTheCloseTakesThem() {
+        let app = XCUIApplication()
+        app.launchForUITest(seed: "grupos", appleIDChanged: true)
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap no completó.")
+
+        let asking = stage(app, "apple_id_close_asking")
+        XCTAssertTrue(asking.waitForExistence(timeout: 30), "La hoja del cambio de Apple ID no se presentó.")
+        XCTAssertTrue(groupsLine(app).exists, """
+            La pregunta no avisa de que el cierre se lleva los grupos de este teléfono, y con estos grupos sí se los lleva.
+            """)
+
+        app.buttons["apple_id_close_later"].tap()
+        XCTAssertTrue(asking.waitForNonExistence(timeout: 10), "La hoja no se cerró con «Ahora no».")
     }
 }

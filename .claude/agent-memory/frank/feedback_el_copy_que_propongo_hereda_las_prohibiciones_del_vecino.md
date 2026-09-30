@@ -1,6 +1,6 @@
 ---
 name: el-copy-que-propongo-hereda-las-prohibiciones-del-vecino
-description: Propuse a Jürgen un texto con «Tus datos siguen en este dispositivo» para el adopt, la frase que #221 había prohibido ahí; antes de proponer copy, lee lo que la superficie hermana ya vetó
+description: Propuse «Tus datos siguen en este dispositivo» donde #221 lo vetó, y copié «siguen en tu cuenta» de Ajustes donde la cuenta puede no existir; lee lo que la hermana vetó y mide lo que afirma
 metadata:
   type: feedback
 ---
@@ -17,3 +17,9 @@ sí la pensé, y no la otra porque solo pensé en el servidor.
 **How to apply:** al redactar la propuesta, recorre cada población que verá el texto (teléfono con datos, recién
 instalado, seguidor) y pregúntate si cada frase es verdad para las tres. Hermana de
 [[un-verbo-nuevo-hereda-las-prohibiciones-del-viejo]] y [[el-copy-lo-elige-quien-produjo-el-motivo]].
+
+**Y la frase que el encargo manda copiar de la hermana también se mide** (2026-09-29, #302). El encargo pedía «la misma
+idea que Ajustes» y escribí «siguen en tu cuenta de Yala». La lente 1 midió que en la celda C las filas del canal nuevo
+pueden ser de una cuenta borrada o ajena: el DESTINO que la frase nombra no siempre existe. Además, el mensaje base de
+esa hoja evitaba «tus datos» a propósito, porque el teléfono puede haber cambiado de manos. ⇒ una frase que dice
+«siguen en X» exige comprobar que X existe en cada población; si no, di solo lo que se va.

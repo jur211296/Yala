@@ -109,6 +109,21 @@ nonisolated enum CloudSignOutFlowLogic {
         }
     }
 
+    /// **¿El borrado de este cierre se lleva también el store de GRUPOS del teléfono?** Es la pregunta que el
+    /// coordinador se hace pegado al arm (`CloudSessionSignOut.armAfterCredentials`, que escribe
+    /// `markSignOutWipeIncludesGroups` si sale `true`) y la que la hoja del cambio de Apple ID contesta ANTES
+    /// de que la persona confirme (ticket `apple-id-close-notice-does-not-say-what-else-the-close-does`).
+    ///
+    /// **Una sola fórmula para los dos a propósito**: si la hoja la copiara, el día que el cierre cambie de
+    /// criterio la hoja seguiría contando el de antes.
+    ///  - Los cierres que SUBEN grupos (D, F) los olvidan siempre: ya están en la cuenta.
+    ///  - La privada sin sesión (C) solo si el store guarda filas del canal backend
+    ///    (`CloudSessionSignOut.hasBackendGroupRows`, una sesión de grupos que caducó).
+    ///  - Sin la capacidad COMPILADA del canal no hay marca, y el store de grupos sobrevive al borrado.
+    static func wipeForgetsGroups(kind: ExitKind, hasBackendGroupRows: Bool, groupsBackendCompiled: Bool) -> Bool {
+        (kind.pushesGroups || hasBackendGroupRows) && groupsBackendCompiled
+    }
+
     // D4: `ConfirmMessage`/`confirmMessage(for:)` ELIMINADOS — el copy por-path del sign-out ya no es un
     // mensaje único; lo sustituyen las filas de la hoja de alcance (`DestructiveScopeLogic`, operación
     // resuelta en ProfileView por `signOutScopeOperation`). Las keys `signOutConfirmMessage*` fueron retiradas.

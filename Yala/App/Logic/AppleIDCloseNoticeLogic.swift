@@ -112,6 +112,35 @@ enum AppleIDCloseNoticeLogic {
         }
     }
 
+    // MARK: - Lo que cuenta la pregunta
+
+    /// **¿El cierre que la pregunta ofrece se lleva también los grupos del teléfono?** (ticket
+    /// `apple-id-close-notice-does-not-say-what-else-the-close-does`). En la celda D siempre; en la C solo si
+    /// quedan filas del canal nuevo, de una sesión de grupos que caducó. Lo decide la MISMA regla que el arm
+    /// (`CloudSignOutFlowLogic.wipeForgetsGroups`), con el reparto de celdas de `exitPlan` y
+    /// `confirmedWithoutICloudCopy: true`, que es lo que este aviso confirma.
+    ///
+    /// Fuera de C y D, `false`: confirmar ahí suelta la hoja sin cerrar nada (`closeRequest`), así que no hay
+    /// borrado que contar.
+    ///
+    /// - Parameter cell: la celda resuelta con los mismos getters que el tap y que el coordinador.
+    static func closeForgetsGroups(cell: CloudSignOutFlowLogic.Path, hasBackendGroupRows: Bool,
+                                   groupsBackendCompiled: Bool) -> Bool {
+        guard cell == .privateSignOut || cell == .privateWithGroupsSignOut,
+              let plan = CloudSignOutFlowLogic.exitPlan(
+                path: cell, confirmedWithoutICloudCopy: true, mountAttachesMirror: false) else { return false }
+        return CloudSignOutFlowLogic.wipeForgetsGroups(
+            kind: plan.kind, hasBackendGroupRows: hasBackendGroupRows, groupsBackendCompiled: groupsBackendCompiled)
+    }
+
+    /// El texto de la pregunta. **La frase de los grupos va en párrafo propio**: unirla con un espacio no vale en
+    /// japonés ni en chino, que no separan frases así. Sin grupos que se vayan, el mensaje de siempre y nada más:
+    /// una frase sobre grupos que no se tocan sería ruido, o peor, una afirmación falsa.
+    static func askingMessage(forgetsGroups: Bool) -> String {
+        guard forgetsGroups else { return L10n.iCloud.appleIDChangedMessage }
+        return L10n.iCloud.appleIDChangedMessage + "\n\n" + L10n.iCloud.appleIDChangedGroupsLine
+    }
+
     /// Qué hace «Cerrar sesión y quitarlos», y «Reintentar», que es el mismo gesto otra vez.
     enum CloseRequest: Equatable {
         /// La celda ya no es una de las dos que este aviso describe, o el borrado ya está armado: no
