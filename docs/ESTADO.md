@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-29 (Lima)
 
-**Rama** `2.1` — Merge #300: **Cola A: la puerta del invitado ya no deja sin salida cuando no puede borrar.**
+**Rama** `2.1` — Merge #301: **iPad: Grupos y Ajustes con lista y detalle, y Yala IA en columna junto a los datos (carril adaptativo, paso 7).**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > **El destino del gate vuelve a resolver** (medido el 28-sep): hay un iPhone 17 Pro de **iOS 27.0**
@@ -13,7 +13,33 @@ TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mi
 > `9D0F6D32` (26.5) que citaba el aviso anterior **ya no existe**. El ticket
 > `the-gate-destination-no-longer-resolves-on-this-mac` tiene la premisa cambiada: medirlo antes de trabajarlo.
 
-## Esta sesión (#300 · Cola A: la puerta del invitado ya no deja sin salida cuando no puede borrar)
+## Esta sesión (#301 · carril adaptativo, paso 7: Grupos, Ajustes y Yala IA en iPad)
+
+En un iPad, Grupos pone la lista y el grupo abierto a la vez, sin esconder la barra lateral ni las pestañas de arriba.
+Ajustes pone la lista y el ajuste en la misma hoja, más ancha que antes. Yala IA se abre en una columna a la derecha
+del Panel, Registros o Estadísticas, que siguen a la vista; con un registro abierto, la lista se aparta sola. Al
+estrechar la ventana, el chat pasa a hoja con la misma conversación. En iPhone no cambia nada (medido al píxel).
+
+- **Yala IA no es un `.inspector`**: medido, sobre un split se superpone al registro abierto sin recolocarlo. Es una
+  columna propia (`yalaAIChat`). Detalle y trampas en `swiftui-ds.md` («Layout adaptativo»).
+- **El gate cazó una regresión**: con Ajustes como split plegado en iPhone, el «+» de Categorías no empujaba nada.
+  Ahora compacta es la pila de siempre y ancha lleva una pila propia en el detalle. Arreglado antes de mergear.
+- Gate: `YalaTests` 8509 en 811 suites; XCUITest 153 de 153 en 63 suites (Pro Max); `AdaptiveNavigationUITests` en
+  iPad Pro 13 y Pro Max; CI en verde. Evidencia en
+  `qa/evidencia-adaptativo-20260929/ipad-list-detail-for-groups-and-settings-and-chat-inspector/`.
+- **Encontrado, viene de #299**: estrechar la ventana con **Grupos** seleccionado **cierra la app** (UIKit,
+  `_tabs_rebuildTabBarItemsAnimated:`). Reproducido también con `2.1` limpio. Ticket **high**
+  `ipad-narrowing-the-window-on-groups-crashes-the-app`.
+- Ticket a `qa` con guion. Nuevo en backlog: `ipad-settings-sheet-size-depends-on-where-it-opens` (la hoja de Ajustes
+  unas veces sale a pantalla completa y otras a 810 pt).
+
+### Lo que espera de Jürgen
+
+- **Decidir si el crash de Grupos al estrechar la ventana frena 2.1** para iPad: afecta a quien use «Apps en ventanas».
+- 5 min de QA: el guion de `tickets/qa/ipad-list-detail-for-groups-and-settings-and-chat-inspector.md` (vuelta a ancho
+  con Yala IA abierto). Sigue el de 3 min de `tickets/qa/ipad-sidebar-and-list-detail-for-records-and-planning.md`.
+
+## Sesión anterior (#300 · Cola A: la puerta del invitado ya no deja sin salida cuando no puede borrar)
 
 Quien acepta una invitación de grupo en un teléfono con datos ya no se queda en un «ahora no se puede» con un solo
 «Volver». Con sus datos en su cuenta de la nube y la sesión abierta, entra al grupo directo. Si el teléfono está
