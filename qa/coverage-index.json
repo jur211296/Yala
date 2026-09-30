@@ -3184,7 +3184,7 @@
         "F-NAV-ADAPT-06"
       ],
       "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/AdaptiveNavigationUITests (por UDID en YalaLane-Adapt-iPad-Pro-13 y -iPhone-ProMax: barra lateral / pestañas, registro al lado / en hoja, presupuesto al lado / empujado; fase 2: grupo al lado / empujado, Ajustes en dos columnas / pila, Yala IA en columna junto a Registros / en hoja) + unit:YalaTests/RootTabLayoutLogicTests,YalaTests/RecordsDetailColumnTests,YalaTests/ListDetailOverlayLogicTests,YalaTests/YalaAIChatLayoutLogicTests. Redimensionado con registro, grupo y chat abiertos: evidencia en qa/evidencia-adaptativo-20260929/.",
+      "coverage": "xcuitest:YalaUITests/AdaptiveNavigationUITests (por UDID en YalaLane-Adapt-iPad-Pro-13 y -iPhone-ProMax: barra lateral / pestañas, registro al lado / en hoja, presupuesto al lado / empujado; fase 2: grupo al lado / empujado, Ajustes en dos columnas / pila, Yala IA en columna junto a Registros / en hoja; estrechar la ventana con cada una de las seis páginas y volver a ancho, y con un grupo abierto, sin que la app se cierre — necesita «Apps en ventanas» en el iPad) + unit:YalaTests/RootTabLayoutLogicTests,YalaTests/RecordsDetailColumnTests,YalaTests/ListDetailOverlayLogicTests,YalaTests/YalaAIChatLayoutLogicTests. Redimensionado con registro, grupo y chat abiertos: evidencia en qa/evidencia-adaptativo-20260929/.",
       "owner": "",
       "lastVerified": "2026-09-29"
     }

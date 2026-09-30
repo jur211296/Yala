@@ -89,6 +89,7 @@ la raíz; APIs de iOS 27.1 solo tras `if #available`.
    hoja con la misma conversación.
 4. **Vuelve a ensanchar** la ventana hasta pantalla completa: el chat tiene que volver a la columna de la derecha y
    el registro seguir abierto. Esto es lo que no se pudo automatizar.
-5. Grupos no se prueba aquí hasta que se arregle el ticket del crash.
+5. Grupos ya se puede estrechar sin que la app se cierre (arreglado en
+   [[ipad-narrowing-the-window-on-groups-crashes-the-app]]): abre un grupo, estrecha y vuelve a ensanchar.
 
 Si en el paso 4 algo se pierde (el chat se cierra, el registro desaparece), apúntalo en este ticket.

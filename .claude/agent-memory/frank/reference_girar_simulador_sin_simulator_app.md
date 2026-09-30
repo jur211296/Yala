@@ -1,6 +1,6 @@
 ---
 name: girar-simulador-sin-simulator-app
-description: Esta Mac no tiene Simulator.app; girar y ESTRECHAR la ventana del iPad se hace con un XCUITest temporal; ensanchar de vuelta no. Medido 2026-09-26 y 2026-09-29
+description: Esta Mac no tiene Simulator.app; girar, ESTRECHAR y ENSANCHAR la ventana del iPad se hace desde XCUITest (helper XCUIApplication+Window). Medido 2026-09-26 y 2026-09-29
 metadata:
   type: reference
 ---
@@ -28,8 +28,14 @@ arranques: si una sesión anterior la estrechó, la app arranca pequeña y centr
 completa ⇒ `xcrun simctl erase <UDID>` del simulador del carril antes (permitido por UDID); (2) `app.frame` es LOCAL a
 la ventana (minX 0), así que «arrastrar hasta el borde de la pantalla» calculado con él se sale y trae Ajustes al
 frente (captura en blanco); (3) un arrastre mínimo de la esquina a pantalla completa la **desmaximiza** a 706 pt.
-Lo que sí funciona: abrir a pantalla completa y arrastrar la esquina `(0.995, 0.995) → (0.4, 0.995)`. Ensanchar de
-vuelta desde la ventana centrada NO lo conseguí: va a guion para Jürgen. Instruments: `xctrace --attach <pid>` con
+Lo que sí funciona: abrir a pantalla completa y arrastrar la esquina `(0.995, 0.995) → (0.4, 0.995)`.
+**Ensanchar de vuelta SÍ se puede (corregido la noche del 2026-09-29):** SpringBoard expone `card:<bundle>` (el marco
+de la ventana EN PANTALLA), `resize-grabber` y `window-controls:<bundle>`; tocar los controles y luego el tercer
+botón (~85 pt a la derecha de su borde) maximiza. Ya está en `YalaUITests/Support/XCUIApplication+Window.swift`
+(`maximizeWindow`, `narrowWindow`, `hasResizableWindow`), así que ni erase entre corridas hace falta: maximizar al
+arrancar deshace el tamaño recordado. Desinstalar la app NO lo resetea. Y `app.state` tras un crash sigue en 4
+(el sistema la reabre): el crash se ve en el «crashed» del log, no en el estado.
+Instruments: `xctrace --attach <pid>` con
 Time Profiler sí graba en el simulador; Animation Hitches y la plantilla SwiftUI no («Hitches is not supported»).
 
 **Antes/después con un solo runner:** un XCUITest no enlaza el código de la app, así que al corregir el

@@ -79,6 +79,64 @@ struct RootTabLayoutLogicTests {
         #expect(shown == [.groups])
     }
 
+    // MARK: - mountedTabs / hiddenTabs (ticket ipad-narrowing-the-window-on-groups-crashes-the-app)
+
+    /// Las seis páginas se montan en los dos tamaños y en el MISMO orden: una pestaña añadida al ensanchar no tiene
+    /// controlador hasta que se visita, y al estrechar UIKit la mete en la barra y se cierra la app.
+    @Test func mountedTabs_areEveryPage_inTheSameOrder_forAnyTabBarTabs() {
+        for tabBarTabs: [ConfigurableTab] in [[.panel], [.panel, .statistics, .planning], [.panel, .statistics, .planning, .groups]] {
+            let mounted = Logic.mountedTabs(orderedTabs: everyPage, tabBarTabs: tabBarTabs, reduceToGroupsOnly: false)
+            #expect(mounted == everyPage)
+        }
+    }
+
+    /// Solo grupos: se QUITAN las demás, no se ocultan. Ahí la selección puede quedarse en Panel, y una pestaña
+    /// oculta y seleccionada tumba la app.
+    @Test func mountedTabs_inGroupsOnlyShell_areOnlyTheTabBarTabs() {
+        let mounted = Logic.mountedTabs(orderedTabs: everyPage, tabBarTabs: [.groups], reduceToGroupsOnly: true)
+        #expect(mounted == [.groups])
+    }
+
+    /// En la barra de pestañas se ocultan las montadas que no se enseñan; la seleccionada nunca, aunque no esté en
+    /// la configuración.
+    @Test func hiddenTabs_inTabBar_areTheMountedOnesNotShown_neverTheSelected() {
+        let tabBarTabs: [ConfigurableTab] = [.panel, .statistics, .planning]
+        for selected in [AppTab.panel, .statistics, .planning, .records, .reports, .groups, .more, .search] {
+            let shown = Logic.shownTabs(
+                layout: .tabBar, orderedTabs: everyPage, tabBarTabs: tabBarTabs, selected: selected,
+                reduceToGroupsOnly: false)
+            let mounted = Logic.mountedTabs(orderedTabs: everyPage, tabBarTabs: tabBarTabs, reduceToGroupsOnly: false)
+            let hidden = Logic.hiddenTabs(mounted: mounted, shown: shown)
+            #expect(Set(hidden).isDisjoint(with: shown))
+            #expect(Set(hidden).union(shown) == Set(mounted))
+            if let page = selected.asConfigurable { #expect(!hidden.contains(page)) }
+        }
+    }
+
+    /// Con Grupos seleccionado en una ventana estrecha: a la vista las tres de la configuración y Grupos; ocultas
+    /// Registros y Reportes. Es el caso del ticket.
+    @Test func hiddenTabs_narrowWindowWithGroups_hidesRecordsAndReports() {
+        let shown = Logic.shownTabs(
+            layout: .tabBar, orderedTabs: everyPage, tabBarTabs: [.panel, .statistics, .planning], selected: .groups,
+            reduceToGroupsOnly: false)
+        #expect(shown == [.panel, .statistics, .planning, .groups])
+        #expect(Logic.hiddenTabs(mounted: everyPage, shown: shown) == [.records, .reports])
+    }
+
+    @Test func hiddenTabs_inSidebar_areNone() {
+        let shown = Logic.shownTabs(
+            layout: .sidebar, orderedTabs: everyPage, tabBarTabs: [.panel], selected: .panel, reduceToGroupsOnly: false)
+        #expect(Logic.hiddenTabs(mounted: everyPage, shown: shown).isEmpty)
+    }
+
+    /// Solo grupos: nada oculto (lo que no toca ya no está montado).
+    @Test func hiddenTabs_inGroupsOnlyShell_areNone() {
+        let mounted = Logic.mountedTabs(orderedTabs: everyPage, tabBarTabs: [.groups], reduceToGroupsOnly: true)
+        let shown = Logic.shownTabs(
+            layout: .tabBar, orderedTabs: everyPage, tabBarTabs: [.groups], selected: .panel, reduceToGroupsOnly: true)
+        #expect(Logic.hiddenTabs(mounted: mounted, shown: shown).isEmpty)
+    }
+
     // MARK: - More / Search
 
     @Test func moreTab_onlyInTabBar() {

@@ -98,16 +98,25 @@ paths:
 
 ## Layout adaptativo: raíz y lista-detalle (2026-09-29)
 
-- **La raíz QUITA las pestañas que no tocan; nunca las oculta con `.hidden(_:)`.** `MainTabView` es un
-  `TabView(.sidebarAdaptable)`: en ventana compacta monta las de siempre (configuración + temporal + Más + Buscar), en
-  regular todas las páginas y Buscar, sin Más (`RootTabLayoutLogic.shownTabs`, con test). **Medido el 2026-09-29: una
-  pestaña oculta con `.hidden` y SELECCIONADA tumba la app** (UIKit, `-[_UITabModel _setSelectedItem:…]`,
-  `NSInternalInconsistency`), y la selección apunta a pestañas que no se ven más de lo que parece: Panel en la shell
-  de solo grupos (lo cazó `GroupInviteOnboardingUITests`), Buscar durante los 50 ms de una pestaña temporal, Más al
-  ensanchar la ventana. Quitada, la `TabView` lo tolera. Para que ESTRECHAR la ventana no desmonte lo abierto, la
-  página seleccionada sigue montada en la barra de pestañas aunque no esté en la configuración (fuera de la shell de
-  solo grupos). **Barra lateral plana, sin `TabSection`**: una sección que solo exista en regular cambia el árbol en
-  cada redimensionado, y una permanente reordena la barra del iPhone, que el usuario ordena a mano (`TabBarConfigView`).
+- **La raíz MONTA las seis páginas desde el primer arranque y en la barra de pestañas OCULTA las que no tocan — nunca
+  la seleccionada.** `MainTabView` es un `TabView(.sidebarAdaptable)`: en ventana compacta se ven las de siempre
+  (configuración + temporal + seleccionada + Más + Buscar), en regular todas las páginas y Buscar, sin Más
+  (`RootTabLayoutLogic.mountedTabs` / `shownTabs` / `hiddenTabs`, con test). Las dos mitades están medidas y tiran en
+  sentidos opuestos:
+  - **Una pestaña añadida al ENSANCHAR tumba la app al estrechar** (2026-09-29, lldb en el crash, iPad Pro 13): UIKit
+    reconstruye la barra con las pestañas que tenía en la lateral y, con más de cinco, mete el ítem de las cuatro
+    primeras; una pestaña que SwiftUI añadió con la lateral ya puesta no tiene controlador ni ítem hasta que se
+    visita (`_tabs_rebuildTabBarItemsAnimated:`, `insertObject:atIndex:: object cannot be nil`). Cerraba la app con
+    cinco de las seis páginas; con Registros no, porque entonces las cuatro primeras sí tenían ítem. Las que están en
+    el primer montaje sí lo tienen. `.tabPlacement(.sidebarOnly)` no lo evita (UIKit las recorre igual) y el getter
+    `UITab.viewController` fabrica un `UIViewController` vacío, no la pantalla.
+  - **Una pestaña oculta y SELECCIONADA tumba la app** (`-[_UITabModel _setSelectedItem:…]`, fase 1). Por eso
+    `shownTabs` incluye siempre la seleccionada, y **la shell de solo grupos sigue QUITANDO** en vez de ocultar: ahí
+    la selección puede quedarse en Panel (lo cazó `GroupInviteOnboardingUITests`). Buscar (los 50 ms de una pestaña
+    temporal) y Más (al ensanchar con Más elegida) también se quitan, no se ocultan.
+  El orden es el mismo en los dos tamaños y en el iPhone la barra no cambia (medido al píxel). **Barra lateral plana,
+  sin `TabSection`**: una sección que solo exista en regular cambia el árbol en cada redimensionado, y una permanente
+  reordena la barra del iPhone, que el usuario ordena a mano (`TabBarConfigView`).
 - **En vertical el iPad pinta pestañas arriba y en horizontal barra lateral**: es el `.automatic` de Apple y se deja
   así (medido en el iPad Pro 13). La barra lateral está a un toque en vertical.
 - **Lista y detalle = `ListDetailSplit`** (`Views/Shared/ListDetailSplit.swift`): un único `NavigationSplitView` de dos
@@ -155,10 +164,9 @@ paths:
   en el iPad Pro 13 unas veces ocupa la pantalla con lista y ajuste lado a lado y otras mide 810 pt y la lista flota
   sobre el ajuste; un `PresentationSizing` propio que pide `.infinity` no pasa de 810 (ticket
   `ipad-settings-sheet-size-depends-on-where-it-opens`).
-- **Estrechar la ventana con Grupos seleccionado cierra la app**, también en `2.1` (UIKit,
-  `_tabs_rebuildTabBarItemsAnimated:`, `insertObject:atIndex:: object cannot be nil`); con Registros no. Marcar las
-  pestañas con `.defaultVisibility(.hidden, for: .tabBar)` no lo arregla. Ticket
-  `ipad-narrowing-the-window-on-groups-crashes-the-app`.
+- **Estrechar y ensanchar la ventana se prueba en XCUITest** (`XCUIApplication+Window`): con los marcos de SpringBoard
+  (`card:<bundle>`, `window-controls:<bundle>`), que van en coordenadas de pantalla; `app.frame` es local a la ventana.
+  Necesita «Apps en ventanas» en el iPad; sin eso el caso se salta diciéndolo.
 - **Yala IA junto a los datos NO es un `.inspector`** (`yalaAIChat(isPresented:)`, `YalaAIChatLayoutLogic`): en ancha
   es una columna propia a la derecha dentro de un `HStack` que siempre envuelve al contenido; en compacta, la hoja de
   siempre. Medido el 2026-09-29 en Registros (iPad Pro 13 vertical): un `.inspector` colgado de un
