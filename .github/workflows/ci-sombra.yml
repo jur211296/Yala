@@ -19,11 +19,19 @@ name: CI en sombra (runner de la Mini)
 # Diferencias con GitHub, deliberadas:
 # - Xcode: el de la Mini (27.x, el del gate local y el de las subidas), no `latest-stable`.
 #   `setup-xcode` hace `sudo xcode-select` y `ci` no es admin; el Xcode lo fija
-#   `DEVELOPER_DIR` en el LaunchDaemon.
+#   `DEVELOPER_DIR` en el LaunchAgent de `ci`.
 # - DerivedData persistente en el home de `ci`, fuera del checkout (el `git clean` de `checkout` se lo
 #   llevaría). Build incremental, como el gate local. `limpio: true` lo borra para medir en frío.
 # - El simulador sale del juego de devices PROPIO de `ci`: no toca los de Jürgen ni los de las
 #   colas. Por eso aquí no hay `shutdown all`: se apaga solo el UDID que usó esta corrida.
+#
+# Candados de máquina (`qa/scripts/ci-runner/guardia.sh`, 2026-09-30). La Mini tiene 16 GB y
+# la comparte Jürgen: aquí corre UNA carga pesada a la vez y el CI es el que cede. Antes de
+# compilar espera a que no haya ningún `xcodebuild` ni simulador arrancado de nadie, ni Time
+# Machine copiando, con disco, RAM y carga de CPU dentro del margen; si no llega en 20 min, falla
+# sin tocar nada. Durante la corrida un vigía baja la prioridad de todo lo de `ci` y para sus
+# `xcodebuild` (solo los suyos) si la RAM, el disco o la carga se hunden, y el
+# job sale en rojo aunque los tests sean advisory. Al final poda xcresult y DerivedData.
 
 on:
   workflow_dispatch:
@@ -66,6 +74,14 @@ jobs:
           df -h / | tail -1
 
       - uses: actions/checkout@v4
+
+      - name: Candado — la Mini tiene que estar libre
+        run: bash qa/scripts/ci-runner/guardia.sh antes
+
+      - name: Vigía de RAM y disco (de fondo)
+        run: |
+          nohup bash qa/scripts/ci-runner/guardia.sh vigia > "$RUNNER_TEMP/vigia.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/vigia.pid"
 
       # Diagnóstico de la fase 4: el servicio que arrancó cuando el runner era un daemon sin
       # sesión sobrevive al paso a LaunchAgent, y las corridas lo reutilizan. `killall` sin
@@ -197,3 +213,16 @@ jobs:
       - name: Apagar el simulador de esta corrida
         if: ${{ always() && steps.sim.outputs.udid != '' }}
         run: xcrun simctl shutdown "${{ steps.sim.outputs.udid }}" || true
+
+      # Va DESPUÉS de apagar el simulador: si el vigía paró la corrida, el job sale en rojo
+      # aquí, y el simulador ya no queda encendido.
+      - name: Vigía y poda
+        if: ${{ always() }}
+        run: |
+          if [ -f "$RUNNER_TEMP/vigia.pid" ]; then kill "$(cat "$RUNNER_TEMP/vigia.pid")" 2>/dev/null || true; fi
+          cat "$RUNNER_TEMP/vigia.log" 2>/dev/null || true
+          bash qa/scripts/ci-runner/guardia.sh despues
+          if grep -q '::error::Vigía' "$RUNNER_TEMP/vigia.log" 2>/dev/null; then
+            echo "El vigía paró la corrida: sin margen de RAM o disco en la Mini."
+            exit 1
+          fi

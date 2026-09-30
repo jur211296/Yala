@@ -190,7 +190,7 @@
 - [El fallo que se traga es gemelo del que aborta](feedback_el_fallo_que_se_traga_es_gemelo_del_que_aborta.md) — `_ = deleteFiles` dejaba el mismo bucle.
 
 ## Estado del trabajo
-- [CI propio: fases 4-7 paradas](project_ci_propio_fases_4_a_7.md) — 1-3 cerradas en #307; 4-5 esperan a Jürgen (usuario ci, Pro), 6-7 al encargo de casa.
+- [CI propio: aparcado](project_ci_propio_fases_4_a_7.md) — Yala sigue público (30-sep); runner con candados, sin uso; volver solo si pasa a privado.
 - [La salida del adopt cierra su sesión](project_adopt_exit_cierra_la_sesion.md) — #230 y #231, 24-sep; dos low de la review.
 - [Barridos de qa (23 y 28-sep)](project_barrido_qa_23_sep.md) — 80→21 y 51→23; lo cerrado no se le pide; guiones inferidos mienten.
 - [El efecto del adopt tiene techo y salida](project_adopt_effect_techo_y_salida.md) — 23-sep; cuatro tickets de la review, d…
