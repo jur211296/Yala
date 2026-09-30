@@ -171,6 +171,11 @@ struct ContentView: View {
     /// store, los sincroniza CKSyncEngine, y salir de un grupo es una acción local legítima.
     @State private var hasPersonalData: Bool = false
 
+    /// **Qué hacer con la próxima caída de `hasPersonalData`** (ticket `wipe-data-does-not-cancel-the-remote-wipe-grace`).
+    /// La arma `settleSignalsAfterDeliberateWipe` cuando este teléfono borra a propósito, y la consume el `onChange`
+    /// de `hasPersonalData`: así la caída que provoca el borrado no arranca la gracia del vaciado remoto.
+    @State private var wipeGrace = RemoteWipeGraceLogic()
+
     /// Increments cuando el idioma cambia (local o sync iCloud). Usado como `.id()`
     /// del root para forzar re-render de strings y formatters localizados.
     @State private var languageVersion: Int = 0
@@ -320,7 +325,18 @@ struct ContentView: View {
             // Mientras la activación está en pantalla, unos datos que desaparecen no son un wipe remoto: los
             // está borrando la persona que mira. Y la sesión sigue siendo solo-grupos hasta
             // `completeFullActivation`, así que tampoco es de las que obedecen esa señal (paso 9).
-            if oldValue && !newValue && hasCompletedOnboarding && !showFullModeActivation {
+            //
+            // **Y la caída que provoca un borrado DELIBERADO de este teléfono se absorbe antes que nada**
+            // (ticket `wipe-data-does-not-cancel-the-remote-wipe-grace`). Los borrados que REPONEN
+            // `hasCompletedOnboarding` —«Vaciar datos» en solo-grupos, el restore remoto con el onboarding
+            // ya hecho en otro dispositivo— dejaban el guard abierto, y cancelar la gracia antes de borrar
+            // no la evita por lo mismo que arriba. La absorción la arma `settleSignalsAfterDeliberateWipe`.
+            switch wipeGrace.personalDataChanged(from: oldValue, to: newValue,
+                                                 hasCompletedOnboarding: hasCompletedOnboarding,
+                                                 isShowingFullModeActivation: showFullModeActivation) {
+            case .absorbDeliberateDrop:
+                cancelWipeGrace()
+            case .startGrace:
                 // Data disappeared — debounce 5s before acting (transient CloudKit gap)
                 wipeGraceTask?.cancel()
                 wipeGraceTask = Task {
@@ -344,14 +360,12 @@ struct ContentView: View {
                         // (`PrivateSessionMark.backfillIfNeeded`), así que este guard NO lo calla. Lo que sí
                         // llega, en producción y hoy:
                         //
-                        //  · **El aviso AUTO-INFLIGIDO tras «Vaciar datos» en una sesión solo-grupos**, que es
-                        //    el caso común. `UserDataResetView.handleWipeAllData` no cancela esta gracia, y
-                        //    este `onChange` no mira `isWipingData` —que además se apaga a los ~800 ms, mucho
-                        //    antes de los 5 s—. En la celda privada el barrido se lleva `hasCompletedOnboarding`
-                        //    y el guard de arriba cierra solo; en solo-grupos `applyWipeLanding(.groupsShell)`
-                        //    lo REPONE a mano, así que la gracia arranca. Sin esta línea, a quien acaba de
-                        //    vaciar sus propios datos le saltaba a los cinco segundos un aviso diciendo que se
-                        //    los habían borrado desde otro dispositivo.
+                        //  · **El aviso AUTO-INFLIGIDO tras «Vaciar datos» en una sesión solo-grupos**, que era
+                        //    el caso común. En solo-grupos `applyWipeLanding(.groupsShell)` REPONE
+                        //    `hasCompletedOnboarding`, así que el guard de arriba no cerraba y la gracia
+                        //    arrancaba. Hasta el 2026-09-30 esta línea era lo único que lo callaba; desde
+                        //    entonces la caída se absorbe antes (`settleSignalsAfterDeliberateWipe`, ticket
+                        //    `wipe-data-does-not-cancel-the-remote-wipe-grace`) y la gracia ya no nace.
                         //  · La ventana entre que una sesión solo-grupos nace y su neutro entra en vigor (la
                         //    marca del mount actúa en el arranque SIGUIENTE; la del eje, ya), y la simétrica
                         //    entre desarmar ese neutro y el relanzamiento.
@@ -413,10 +427,17 @@ struct ContentView: View {
                         // Cancelled — data reappeared
                     }
                 }
-            } else if !oldValue && newValue {
+            case .cancelGrace:
                 // Data reappeared — cancel pending wipe grace
                 cancelWipeGrace()
+            case .ignore:
+                break
             }
+        }
+        .onChange(of: SessionState.shared.deliberateWipeSettleRequests) { _, _ in
+            // «Vaciar datos» vive en otra vista y no ve este estado: pide el asentamiento por aquí, en la misma
+            // vuelta del main actor que su borrado (ver `SessionState.requestDeliberateWipeSettle`).
+            settleSignalsAfterDeliberateWipe()
         }
     }
 
@@ -1427,6 +1448,27 @@ struct ContentView: View {
         AppRouter.shared.drop { $0.id == RouterIntent.presentRemoteWipeNotice.id }
     }
 
+    /// **Lo que hace un borrado deliberado para que su propia caída no se lea como un vaciado remoto**, y se llama
+    /// en la MISMA vuelta del main actor que el borrado (ticket `wipe-data-does-not-cancel-the-remote-wipe-grace`).
+    ///
+    /// Las tres cosas hacen falta. `cancelWipeGrace()` retira la gracia que ya estuviera corriendo. Re-medir trae
+    /// la caída a AHORA: `wipeAllUserData` no bumpea `dataVersion`, así que sin esto `hasPersonalData` seguía en
+    /// `true` hasta el siguiente bump de quien fuera, en un momento que nadie controla. Y la absorción —que es lo
+    /// que de verdad para la gracia— se arma ANTES de escribir la señal, para que el `onChange` que esta escritura
+    /// dispara en el render siguiente la encuentre puesta.
+    ///
+    /// Cancelar sin absorber no basta, y es lo que hacían los cuatro borrados deliberados de antes: la tarea la
+    /// crea ese `onChange` DESPUÉS del `cancel()`. A ellos los salvaba otra cosa —bajan `hasCompletedOnboarding`—
+    /// y a los dos que lo reponen, no.
+    @MainActor
+    private func settleSignalsAfterDeliberateWipe() {
+        cancelWipeGrace()
+        hasExistingData = checkHasExistingData()
+        let measuredPersonalData = checkHasPersonalData()
+        wipeGrace.settleAfterDeliberateWipe(measuredPersonalData: measuredPersonalData)
+        hasPersonalData = measuredPersonalData
+    }
+
     /// Drenaje de `.presentRemoteWipeNotice`: enciende el aviso de «tus datos fueron eliminados de
     /// iCloud», ya con el anchor de `ContentView` libre (la matriz de readiness es lo que lo garantiza).
     ///
@@ -1685,6 +1727,11 @@ struct ContentView: View {
                 print("ContentView: Remote wipe failed: \(error)")
                 #endif
             }
+            // El borrado es la respuesta de ESTE teléfono a una señal: su caída no es otro vaciado que anunciar. Va
+            // aquí, antes del primer `await` tras el borrado y fuera de las ramas de `skipOnboarding`, para cubrir
+            // las dos — y la de `skipOnboarding` repone el onboarding, que es lo que dejaba el guard abierto.
+            // También tras un fallo: el borrado guarda por lotes y uno a medias baja la señal igual.
+            settleSignalsAfterDeliberateWipe()
 
             // Let SwiftData settle
             try? await Task.sleep(for: .milliseconds(200))

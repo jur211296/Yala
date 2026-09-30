@@ -1,6 +1,6 @@
 ---
 id: wipe-data-does-not-cancel-the-remote-wipe-grace
-status: backlog
+status: qa
 priority: medium
 area: "settings, sesiones"
 created: 2026-09-14
@@ -42,9 +42,9 @@ propósito, antes de que la señal baje.
 
 ## Criterios de aceptación
 
-- [ ] «Vaciar datos» cancela la gracia antes de que `hasPersonalData` caiga, como sus cuatro hermanos.
-- [ ] Un test fija que los borrados deliberados que reponen `hasCompletedOnboarding` la cancelan.
-- [ ] Verificado con el eje de sesión FORZADO a `true`, o el arreglo no se puede distinguir del tapón.
+- [x] «Vaciar datos» cancela la gracia antes de que `hasPersonalData` caiga, como sus cuatro hermanos.
+- [x] Un test fija que los borrados deliberados que reponen `hasCompletedOnboarding` la cancelan.
+- [x] Verificado con el eje de sesión FORZADO a `true`, o el arreglo no se puede distinguir del tapón.
 
 ## Y hay una SEGUNDA celda, medida el 2026-09-14 (tarde) — la del restore remoto
 
@@ -73,5 +73,46 @@ a `true` y el drenaje descarta el aviso por su primera condición.
 drenaje de hoy al menos re-mide. Se anota aquí, y no en un ticket propio, porque el arreglo es el
 mismo y fragmentarlo dejaría dos mitades que nadie vuelve a juntar.
 
-- [ ] `performLocalWipeForRemoteSync` cancela la gracia al terminar, en las DOS ramas (con y sin
+- [x] `performLocalWipeForRemoteSync` cancela la gracia al terminar, en las DOS ramas (con y sin
       `skipOnboarding`): las dos bajan las filas, y la de `skipOnboarding` además repone el flag.
+
+## Implementado (2026-09-30)
+
+**Lo que cambia para quien usa la app:** vaciar tus datos, o recibir en este teléfono el vaciado que hiciste en otro
+con el onboarding ya terminado, ya no enseña cinco segundos después «tus datos fueron eliminados de iCloud». El
+vaciado remoto de verdad sigue avisando.
+
+**La premisa que no era cierta, y cambió el arreglo.** El «mismo patrón que los cuatro hermanos» —cancelar la gracia
+antes de bajar la señal— no la cancela: la tarea la crea el `onChange` en el render siguiente, cuando el `cancel()` ya
+pasó. Los hermanos se salvaban porque bajan `hasCompletedOnboarding`. Y `wipeAllUserData` NO bumpea `dataVersion`
+(el ticket decía lo contrario): la señal caía en el siguiente bump de quien fuera.
+
+**Qué se hizo:**
+- `RemoteWipeGraceLogic` (nuevo, puro): decide la reacción a cada transición de `hasPersonalData` y guarda una
+  absorción de UNA caída. Toda transición la desarma.
+- `ContentView.settleSignalsAfterDeliberateWipe()`: cancela la gracia, re-mide las dos señales y arma la absorción
+  ANTES de escribir `hasPersonalData`. Lo llama `performLocalWipeForRemoteSync` justo tras el `do/catch` del borrado
+  (las dos ramas de `skipOnboarding`, éxito y fallo).
+- «Vaciar datos» lo pide por `SessionState.requestDeliberateWipeSettle()` en la vuelta del borrado, en éxito y fallo.
+- Regla nueva en `.claude/rules/swiftui-ds.md` (Gotchas de vistas).
+
+**Verificación:** `RemoteWipeGraceLogicTests` (12 casos: comportamiento con el eje a `true` + cableado por igualdad) y
+el escáner de `ActivationRestoreDiscardTests` actualizado. Review adversarial de tres lentes (timing SwiftUI, caminos,
+tests+reglas): dos mutantes que sobrevivían en el cableado —asentamiento solo en el `catch`, o envuelto en `Task {}`—
+y la petición sin test de comportamiento; corregidos. Mutantes a mano: 12/12 muertos (quitar o diferir cada petición y asentamiento, invertir armado y escritura, no consumir, armar siempre, absorber tras los guards, contador vacío, observador desenganchado).
+
+**Residual a ticket propio:** `late-icloud-wipe-failure-does-not-settle-the-remote-wipe-grace` (rama de fallo del
+aviso tardío, y la medida que falla cerrado). Ninguno de los dos es alcanzable sin un fallo de SwiftData.
+
+## Guion de QA en dispositivo (opcional, no frena el merge)
+
+Montaje: dos dispositivos con el mismo Apple ID e iCloud activo; Yala instalado en los dos, sesión privada con datos.
+
+1. En el **dispositivo A**: Perfil → Ajustes → Vaciar datos → confirma las dos veces.
+2. En el **dispositivo B**, con Yala cerrado desde antes del paso 1: termina el onboarding otra vez en A (o ya estaba
+   hecho) y abre Yala en B.
+3. Esperado en B: el toast «tus datos están aquí» (restore remoto) y **ningún** aviso «tus datos fueron eliminados de
+   iCloud» en los 10 s siguientes.
+4. En A tras el paso 1 (y en una instalación solo-grupos que vacíe sus datos): **ningún** aviso a los 5-10 s.
+5. El vaciado remoto DE VERDAD (filas que desaparecen sin señal) no se puede provocar a mano de forma fiable: lo
+   fijan los unitarios (`aRealRemoteWipe_stillStartsTheGrace`).

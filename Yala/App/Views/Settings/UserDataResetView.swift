@@ -292,6 +292,11 @@ struct UserDataResetView: View {
             // `await`: el `onChange(hasCompletedOnboarding)` de ContentView lee estos flags en el render
             // siguiente, así que ve el estado final y no el intermedio que deja el barrido.
             applyWipeLanding(landing)
+            // 5c. Y en esa misma vuelta, la caída de `hasPersonalData` se anuncia como DELIBERADA. En solo-grupos el
+            // aterrizaje repone `hasCompletedOnboarding`, y con el guard abierto esa caída arrancaba la gracia de 5 s
+            // del aviso «tus datos fueron eliminados de iCloud», como si el borrado viniera de otro dispositivo
+            // (ticket `wipe-data-does-not-cancel-the-remote-wipe-grace`).
+            sessionState.requestDeliberateWipeSettle()
 
             // 6. Ensure @Observable tracks the theme reset
             themeManager.resetToDefaults()
@@ -309,6 +314,8 @@ struct UserDataResetView: View {
             await exchangeRateService.preloadHistoricalIfNeeded(context: modelContext)
             await TransactionUpdateService.updateProvisionalTransactions(context: modelContext)
         } catch {
+            // También tras un fallo: el borrado guarda por lotes, y uno que lanza a media lista baja la señal igual.
+            sessionState.requestDeliberateWipeSettle()
             isProcessing = false
             sessionState.isWipingData = false
             errorMessage = error.localizedDescription

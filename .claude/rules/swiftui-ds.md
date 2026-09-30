@@ -22,6 +22,17 @@ paths:
 
 ## Gotchas de vistas
 
+- **Cancelar una tarea que crea un `onChange` ANTES de cambiar su valor no la cancela (medido 2026-09-30).** El
+  `onChange` corre en el render SIGUIENTE a la escritura, cuando el `cancel()` ya pasó, y la tarea nace después.
+  Mordió en la gracia de 5 s del aviso de vaciado remoto de `ContentView`: los borrados deliberados la «cancelaban»
+  antes de bajar `hasPersonalData`, y solo se salvaban porque bajaban también `hasCompletedOnboarding`, que cierra el
+  guard. Los dos que lo reponen —«Vaciar datos» en solo-grupos y el restore remoto con `skipOnboarding`— encendían el
+  aviso. ⇒ lo que tiene que impedir la reacción viaja al `onChange` como estado que él CONSUME (la absorción de
+  `RemoteWipeGraceLogic`), armado ANTES de escribir el valor y en la misma vuelta del main actor que el cambio. Y
+  **una señal `@State` que se recalcula en el `onChange` de otro contador no cae cuando cambia el store**, sino en el
+  siguiente bump: `wipeAllUserData` no bumpea `dataVersion`, así que quien borra re-mide
+  (`settleSignalsAfterDeliberateWipe`).
+
 - **`containerRelativeFrame(.horizontal)` en `ScrollView(.vertical)` con `.contentMargins`** → deadlock de layout, splash nunca dismissa, sin crash log. Usar `onGeometryChange`. Detalles en UI-PATTERNS.md.
 
 - **`YalaFormatter` no auto-refresca prefs** — lee `UserDefaults` directo. Vista que lo use con `decimalPlaces` o `currencyDisplayFormat` debe inyectar `@Environment(AppPreferences.self)` y leer `let _ = appPreferences.X` en body para registrar dependencia.
