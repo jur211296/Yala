@@ -9,7 +9,11 @@ Las fases 1-3 están mergeadas desde el 2026-09-30 (#307). La fase 4 quedó mont
 segunda sesión (r2): el runner `mini-ci` está online como LaunchAgent en la sesión gráfica de `ci`, y
 `ci-sombra.yml` lleva los candados de `guardia.sh`.
 
-**Por qué sigue parado lo que sigue parado:**
+**APARCADO por decisión de Jürgen (2026-09-30): Yala sigue público.** En público GitHub es gratis e igual
+de rápido; el runner solo compensa en privado, y antes hay que recortar el volumen de CI (~30.500 min/mes
+≈ 17 h/día), que la Mini no absorbe. No retomes la fase 5 sin que él decida pasar a privado.
+
+**Por qué sigue parado lo que sigue parado (si se retoma):**
 - **4, validar los candados:** no se lanzó ninguna corrida en sombra en r2, porque el disco estaba
   en 12 GB, por debajo del suelo de 15. La primera corrida con candados la lanza Jürgen con la Mini
   libre. Tras un reinicio, el runner no vuelve hasta que alguien entra como `ci` una vez.

@@ -56,3 +56,5 @@ Por qué: la regla «una carga pesada a la vez» tiene que cumplirse aunque nadi
 **D5 · Causa del crash** → Se documenta lo medido, sin afirmar OOM: ni `JetsamEvent` ni avisos de memoria del kernel entre 13:08 y 13:10; a las 13:09:03 Grok Bot se cerró y se relanzó, y la sesión murió a las 13:09:08. Hipótesis principal: el servidor tmux cayó con Grok Bot. Es terreno de casa (`lanzar-sesion`), no de este repo: va como hallazgo.
 
 **D6 · Fases 5–7** → 5 necesita a Jürgen (Pro, facturación, visibilidad); 6 espera al encargo de casa `2026-09-29-cierre-con-auto-merge`, que sigue en `pendientes/`; 7 solo lo de este PR. No se toca nada de 5–6.
+
+**D7 · ¿Sigue adelante el runner local?** → **Aparcado; Yala sigue público** (Jürgen, 2026-09-30, contestado en sesión). En público GitHub es gratis y tarda lo mismo (25–38 min contra 31 en la Mini). El runner solo compensa en privado, y ahí antes hay que recortar el volumen de CI (~30.500 min/mes ≈ 17 h/día), que la Mini no absorbe mientras Jürgen trabaja. El runner queda instalado y sin uso; los candados se mergean igual.
