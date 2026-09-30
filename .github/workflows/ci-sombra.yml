@@ -36,6 +36,10 @@ on:
         description: "Correr también YalaUITests (como la nocturna)"
         type: boolean
         default: false
+      reiniciar_coresim:
+        description: "Reiniciar el CoreSimulatorService de ci antes (solo el suyo)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -62,6 +66,18 @@ jobs:
           df -h / | tail -1
 
       - uses: actions/checkout@v4
+
+      # Diagnóstico de la fase 4: el servicio que arrancó cuando el runner era un daemon sin
+      # sesión sobrevive al paso a LaunchAgent, y las corridas lo reutilizan. `killall` sin
+      # root solo alcanza los procesos de `ci`: los simuladores de Jürgen y de las colas no se tocan.
+      - name: Reiniciar CoreSimulatorService de ci
+        if: ${{ inputs.reiniciar_coresim }}
+        run: |
+          xcrun simctl shutdown all || true
+          killall -u "$(whoami)" com.apple.CoreSimulator.CoreSimulatorService 2>/dev/null || true
+          sleep 3
+          xcrun simctl list devices >/dev/null
+          pgrep -lu "$(whoami)" -f CoreSimulatorService | cut -c1-80
 
       - name: Simulador propio de ci
         id: sim
