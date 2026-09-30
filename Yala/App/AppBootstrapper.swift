@@ -142,6 +142,12 @@ final class AppBootstrapper {
         // review adversarial en vez de un síntoma. Es un no-op cuando coinciden.
         sessionState.refreshPrivateSessionMirror()
 
+        // 0.0-quater. La deuda de una activación privada que murió entre el eje y la subida, ANTES del merge del paso 0:
+        // al revés, `applyRemoteValues` aplicaría las preferencias viejas del Apple ID sobre las recién elegidas. Con la
+        // puerta cerrada (el kill fue antes del eje) la descarta sin subir; reactivar la vuelve a apuntar. Ticket
+        // `full-activation-local-state-never-reaches-the-apple-id-kv`.
+        PrivateBirthKeyValueHandover.consumeIfArmed()
+
         // 0. Sync preferences from iCloud (must be FIRST — other services read these)
         if !uiTestActive { PreferenceSyncService.shared.bootstrap() }
 
