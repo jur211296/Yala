@@ -1,10 +1,13 @@
 ---
 id: ipad-list-detail-for-groups-and-settings-and-chat-inspector
-status: backlog
+status: qa
 priority: low
 area: "platform, ipad, groups, settings, chat"
 created: 2026-09-26
-updated: 2026-09-27
+updated: 2026-09-29
+qa-status: needs-testing
+qa-date: 2026-09-29
+qa-notes: falta ver estrechar con un grupo abierto (bloqueado por un crash de la fase 1, ticket propio) y la vuelta a ancho; lo demás visto en simulador
 source: "exploración iPad (docs/exploracion/ipad-nativo.md §5.1, §5.2 y §8, fase 2), 2026-09-26"
 ---
 
@@ -59,3 +62,33 @@ Dynamic Type grande (`adaptativo-ipad-duo.md` §6.1).
 **Layout** (ADR «[2026-09-27] Yala se adapta por espacio, no por dispositivo»). Se decide por size class y ancho del
 contenedor, nunca por tipo de dispositivo ni orientación; un contenedor que se adapta, no un `if` por size class en
 la raíz; APIs de iOS 27.1 solo tras `if #available`.
+
+## Hecho (2026-09-29, PR del encargo `2026-09-29-ipad-list-detail-for-groups-and-settings-and-chat-inspector`)
+
+- **Grupos**: `ListDetailSplit`. En ancho, lista y grupo a la vez, con la barra lateral o las pestañas de arriba a la
+  vista; el grupo en columna no pinta su chevron ni oculta la navegación (`GroupDetailView(presentation:)`). En
+  compacta, empujado como siempre. Columna vacía «Elige un grupo para verlo aquí».
+- **Ajustes**: en compacta, la pila de siempre; en ancha, `ListDetailSplit` dentro de su hoja
+  (`.presentationSizing(.page)`) con una pila propia en el detalle, para que lo que un ajuste empuja se empuje (el «+»
+  de Categorías). Unas veces sale a pantalla completa con lista y ajuste lado a lado y otras a 810 pt con la lista
+  flotando (ticket [[ipad-settings-sheet-size-depends-on-where-it-opens]]). Antes, hoja de 575 pt.
+- **Yala IA**: columna propia a la derecha en ancho (`yalaAIChat`), la hoja de siempre en compacta. **No es un
+  `.inspector`**: medido, sobre un split se superpone al registro abierto. Con un registro abierto y el chat al lado,
+  la lista se aparta sola (`ListDetailOverlayLogic.listYieldsToDetail`).
+- Evidencia: `qa/evidencia-adaptativo-20260929/ipad-list-detail-for-groups-and-settings-and-chat-inspector/`.
+- **Redimensionado**: con Yala IA abierto en Registros, a pantalla completa en columna → ventana estrecha en hoja, con
+  la misma conversación. **Con Grupos seleccionado la app se cierra al estrechar**, también en `2.1`:
+  [[ipad-narrowing-the-window-on-groups-crashes-the-app]] (high).
+
+## Guion para Jürgen (5 min, iPad o simulador `YalaLane-Adapt-iPad-Pro-13`)
+
+1. Ajustes del iPad → Multitarea y gestos → **Apps en ventanas**.
+2. Abre Yala a pantalla completa en horizontal, ve a **Registros**, abre un registro y toca el botón de Yala IA
+   (el dorado). Tienes que ver lista, registro y chat, o registro y chat con la lista a un toque.
+3. Estrecha la ventana arrastrando su esquina inferior derecha hasta que salgan las pestañas abajo: el chat pasa a
+   hoja con la misma conversación.
+4. **Vuelve a ensanchar** la ventana hasta pantalla completa: el chat tiene que volver a la columna de la derecha y
+   el registro seguir abierto. Esto es lo que no se pudo automatizar.
+5. Grupos no se prueba aquí hasta que se arregle el ticket del crash.
+
+Si en el paso 4 algo se pierde (el chat se cierra, el registro desaparece), apúntalo en este ticket.

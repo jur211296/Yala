@@ -26,6 +26,8 @@ extension XCUIApplication {
         trialOffer: Bool = false,
         forceUpdate: Bool = false,
         aiConsent: Bool = false,
+        aiChatReady: Bool = false,
+        chatConversation: Bool = false,
         groupInvite: Bool = false,
         fakeICloud: Bool = false,
         cloudSession: Bool = false,
@@ -69,6 +71,8 @@ extension XCUIApplication {
         if trialOffer { args.append("-uitest-trial-offer") }
         if forceUpdate { args.append("-uitest-force-update") }
         if aiConsent { args.append("-uitest-ai-consent") }
+        if aiChatReady { args.append("-uitest-ai-chat-ready") }
+        if chatConversation { args.append("-uitest-chat-conversation") }
         if groupInvite { args.append("-uitest-group-invite") }
         if fakeICloud { args.append("-uitest-fake-icloud") }
         // Sesión de nube fingida + consent de Grupos aceptado. Son parámetros nombrados y no

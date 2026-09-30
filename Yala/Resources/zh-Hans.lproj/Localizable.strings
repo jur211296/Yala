@@ -6184,6 +6184,8 @@
 
 /* iPad/ventana ancha: columna de detalle vacía en Planificación */
 "planning.detailPlaceholder" = "选择一项预算或付款，在这里查看";
+"groups.detailPlaceholder" = "选择一个群组，在这里查看";
+"settings.detailPlaceholder" = "选择一项设置，在这里查看";
 
 /* Puerta del invitado: el cierre de sesión del teléfono está a medias; se reintenta sola */
 "welcome.groups.inviteRetryBody" = "我们没有改动任何内容，你的邀请仍然保存着。请稍后再试；如果没有进展，请彻底关闭 Yala（在 App 切换器中将其划走）并重新打开。";

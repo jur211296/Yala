@@ -18,55 +18,30 @@ struct ChatSheetView: View {
     @State private var showAISettingsSheet = false
     @State private var showTopicsSheet = false
 
+    /// Cómo está montado el chat. `.sheet`: la hoja de siempre, con su barra de navegación (iPhone, ventana
+    /// compacta). `.column`: la columna de Yala IA junto a los datos en una ventana ancha (`yalaAIChat`). Con
+    /// `insideNavigationStack` (Estadísticas, donde la columna vive dentro de otra pila) pinta su cabecera y no abre
+    /// otra pila, porque dos anidadas se pisan la barra; fuera de una pila (Panel, Registros) lleva la suya, o su
+    /// cabecera quedaría debajo de las pestañas de arriba del iPad (medido 2026-09-29).
+    enum Presentation {
+        case sheet
+        case column(onClose: () -> Void, insideNavigationStack: Bool)
+    }
+    var presentation: Presentation = .sheet
+
     var body: some View {
-        NavigationStack {
-            VStack(spacing: DS.Spacing.none) {
-                if viewModel.messages.isEmpty {
-                    emptyState
-                } else {
-                    messagesView
+        Group {
+            switch presentation {
+            case .sheet:
+                navigationWrapped(close: { dismiss() }, closesFromTrailingEdge: false)
+            case .column(let onClose, insideNavigationStack: false):
+                navigationWrapped(close: onClose, closesFromTrailingEdge: true)
+            case .column(let onClose, insideNavigationStack: true):
+                VStack(spacing: DS.Spacing.none) {
+                    columnHeader(onClose: onClose)
+                    chatContent
                 }
-
-                if let error = viewModel.errorMessage {
-                    errorBanner(error)
-                }
-
-                if viewModel.showQuestionCounter {
-                    Text(L10n.Chat.questionsRemaining(viewModel.questionsRemaining))
-                        .font(DS.Typography.captionSmall)
-                        .foregroundStyle(.secondary)
-                        .padding(.top, DS.Spacing.xs)
-                }
-
-                chatInputBar
-
-                disclaimerFooter
-            }
-            .dismissKeyboardOnTap()
-            .yalaScreenBackground(.subtle)
-            .navigationTitle(L10n.Chat.assistantName)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) { dismiss() }
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    YalaToolbarButton(systemName: "slider.horizontal.3", label: L10n.AISettings.title) {
-                        showAISettingsSheet = true
-                    }
-                }
-            }
-            .sheet(isPresented: $showAISettingsSheet) {
-                AIPersonalizationSheet()
-            }
-            .sheet(isPresented: $showTopicsSheet) {
-                ChatTopicsSheet(
-                    suggestions: viewModel.suggestions,
-                    isLoading: viewModel.suggestionsLoading,
-                    onSelect: { suggestion in
-                        Task { await viewModel.sendSuggestion(suggestion) }
-                    }
-                )
+                .yalaScreenBackground(.subtle)
             }
         }
         .presentationDetents([.large])
@@ -84,6 +59,90 @@ struct ChatSheetView: View {
         .onChange(of: sessionState.chatDraftSavedSignal) { _, _ in
             consumeChatDraftSavedSignal()
         }
+    }
+
+    /// El chat con su propia barra: la X, el nombre y los ajustes de IA. En la hoja la X va a la izquierda, como
+    /// siempre. En la columna va a la derecha, junto a los ajustes: en un iPad en vertical las pestañas comparten fila
+    /// con la barra y su cápsula tapa el borde izquierdo de la columna (medido 2026-09-29, Panel en el iPad Pro 13).
+    private func navigationWrapped(close: @escaping () -> Void, closesFromTrailingEdge: Bool) -> some View {
+        NavigationStack {
+            chatContent
+                .navigationTitle(L10n.Chat.assistantName)
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: closesFromTrailingEdge ? .topBarTrailing : .cancellationAction) {
+                        YalaToolbarButton(systemName: "xmark", label: L10n.Action.close, action: close)
+                            .accessibilityIdentifier("chat_close")
+                    }
+                    ToolbarItem(placement: .topBarTrailing) {
+                        aiSettingsButton
+                    }
+                }
+        }
+    }
+
+    /// La conversación, la barra de escribir y sus hojas: lo mismo en la hoja y en la columna.
+    private var chatContent: some View {
+        VStack(spacing: DS.Spacing.none) {
+            if viewModel.messages.isEmpty {
+                emptyState
+            } else {
+                messagesView
+            }
+
+            if let error = viewModel.errorMessage {
+                errorBanner(error)
+            }
+
+            if viewModel.showQuestionCounter {
+                Text(L10n.Chat.questionsRemaining(viewModel.questionsRemaining))
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(.secondary)
+                    .padding(.top, DS.Spacing.xs)
+            }
+
+            chatInputBar
+
+            disclaimerFooter
+        }
+        .dismissKeyboardOnTap()
+        .yalaScreenBackground(.subtle)
+        .sheet(isPresented: $showAISettingsSheet) {
+            AIPersonalizationSheet()
+        }
+        .sheet(isPresented: $showTopicsSheet) {
+            ChatTopicsSheet(
+                suggestions: viewModel.suggestions,
+                isLoading: viewModel.suggestionsLoading,
+                onSelect: { suggestion in
+                    Task { await viewModel.sendSuggestion(suggestion) }
+                }
+            )
+        }
+    }
+
+    private var aiSettingsButton: some View {
+        YalaToolbarButton(systemName: "slider.horizontal.3", label: L10n.AISettings.title) {
+            showAISettingsSheet = true
+        }
+    }
+
+    /// La cabecera de la columna dentro de otra pila: el nombre y, a la derecha como en la otra columna, los ajustes
+    /// de IA y la X.
+    private func columnHeader(onClose: @escaping () -> Void) -> some View {
+        HStack(spacing: DS.Spacing.sm) {
+            Text(L10n.Chat.assistantName)
+                .font(DS.Typography.headline)
+                .accessibilityAddTraits(.isHeader)
+            Spacer(minLength: DS.Spacing.none)
+            aiSettingsButton
+                .buttonStyle(.glass)
+            YalaToolbarButton(systemName: "xmark", label: L10n.Action.close, action: onClose)
+                .buttonStyle(.glass)
+                .accessibilityIdentifier("chat_close")
+        }
+        .padding(.horizontal, DS.Spacing.md)
+        .padding(.vertical, DS.Spacing.sm)
     }
 
     private func consumeChatDraftSavedSignal() {
@@ -346,6 +405,7 @@ struct ChatSheetView: View {
                 .lineLimit(1...4)
                 .textFieldStyle(.plain)
                 .disabled(!viewModel.isAIAvailable)
+                .accessibilityIdentifier("chat_input")
 
             HStack(spacing: DS.Spacing.sm) {
                 topicsButton

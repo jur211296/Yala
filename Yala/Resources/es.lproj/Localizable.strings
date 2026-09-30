@@ -6198,6 +6198,8 @@
 
 /* iPad/ventana ancha: columna de detalle vacía en Planificación */
 "planning.detailPlaceholder" = "Elige un presupuesto o un pago para verlo aquí";
+"groups.detailPlaceholder" = "Elige un grupo para verlo aquí";
+"settings.detailPlaceholder" = "Elige un ajuste para verlo aquí";
 
 /* Puerta del invitado: el cierre de sesión del teléfono está a medias; se reintenta sola */
 "welcome.groups.inviteRetryBody" = "No tocamos nada y tu invitación sigue guardada. Vuelve a intentarlo en un momento; si no avanza, cierra Yala del todo (deslízala fuera del selector de apps) y ábrela otra vez.";

@@ -166,9 +166,8 @@ struct PanelSheetsModifier: ViewModifier {
             .sheet(isPresented: $sheets.showUpgradeForAccounts) {
                 UpgradePromptSheet(feature: .accounts, context: .limitReached)
             }
-            .sheet(isPresented: $sheets.showChatSheet) {
-                ChatSheetView()
-            }
+            // Yala IA: columna al lado en ventana ancha, la hoja de siempre en compacta.
+            .yalaAIChat(isPresented: $sheets.showChatSheet)
             .yalaAIOnboardingSheet(
                 isPresented: $sheets.showYalaAIOnboarding,
                 pendingOpenChat: $sheets.pendingOpenChatAfterOnboarding,

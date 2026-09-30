@@ -6184,6 +6184,8 @@
 
 /* iPad/ventana ancha: columna de detalle vacía en Planificación */
 "planning.detailPlaceholder" = "Kies een budget of betaling om die hier te zien";
+"groups.detailPlaceholder" = "Kies een groep om die hier te zien";
+"settings.detailPlaceholder" = "Kies een instelling om die hier te zien";
 
 /* Puerta del invitado: el cierre de sesión del teléfono está a medias; se reintenta sola */
 "welcome.groups.inviteRetryBody" = "We hebben niets aangeraakt en je uitnodiging is nog opgeslagen. Probeer het zo opnieuw; gebeurt er niets, sluit Yala dan helemaal (veeg de app weg uit de appkiezer) en open hem opnieuw.";

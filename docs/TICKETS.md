@@ -417,12 +417,14 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | ipad-and-duo-panel-and-statistics-use-the-width | backlog | tickets/backlog/ipad-and-duo-panel-and-statistics-use-the-width.md |
 | ipad-keyboard-shortcuts-pointer-context-menus-and-drop | backlog | tickets/backlog/ipad-keyboard-shortcuts-pointer-context-menus-and-drop.md |
 | ipad-large-and-extra-large-widgets | backlog | tickets/backlog/ipad-large-and-extra-large-widgets.md |
-| ipad-list-detail-for-groups-and-settings-and-chat-inspector | backlog | tickets/backlog/ipad-list-detail-for-groups-and-settings-and-chat-inspector.md |
+| ipad-list-detail-for-groups-and-settings-and-chat-inspector | qa | tickets/qa/ipad-list-detail-for-groups-and-settings-and-chat-inspector.md |
 | ipad-list-highlights-the-open-row | backlog | tickets/backlog/ipad-list-highlights-the-open-row.md |
 | ipad-multiple-windows-share-one-navigation-state | done | tickets/done/ipad-multiple-windows-share-one-navigation-state.md |
+| ipad-narrowing-the-window-on-groups-crashes-the-app | backlog | tickets/backlog/ipad-narrowing-the-window-on-groups-crashes-the-app.md |
 | ipad-native-app | backlog | tickets/backlog/ipad-native-app.md |
 | ipad-real-multiwindow-with-per-scene-state | backlog | tickets/backlog/ipad-real-multiwindow-with-per-scene-state.md |
 | ipad-reports-and-search-get-a-readable-width | backlog | tickets/backlog/ipad-reports-and-search-get-a-readable-width.md |
+| ipad-settings-sheet-size-depends-on-where-it-opens | backlog | tickets/backlog/ipad-settings-sheet-size-depends-on-where-it-opens.md |
 | ipad-sidebar-and-list-detail-for-records-and-planning | qa | tickets/qa/ipad-sidebar-and-list-detail-for-records-and-planning.md |
 | iphone-duo-native-app | backlog | tickets/backlog/iphone-duo-native-app.md |
 | iphone-large-models-use-the-extra-width | backlog | tickets/backlog/iphone-large-models-use-the-extra-width.md |

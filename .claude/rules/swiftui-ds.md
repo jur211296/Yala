@@ -135,3 +135,34 @@ paths:
   iPhone no cambia de hoja a empuje. En columna, Editar abre el editor directo; el encadenado «cerrar hoja → editor»
   solo existe en la hoja.
 - Ancho legible: `DS.Adaptive.readableWidth` (700) en el contenido de una columna de detalle.
+- **La lista se aparta sola cuando lo abierto no cabe legible a su lado** (fase 2, 2026-09-29): con algo abierto en el
+  detalle y el split por debajo de dos anchos de iPhone (750), `ListDetailSplit` pasa a `.detailOnly`
+  (`ListDetailOverlayLogic.listYieldsToDetail`, con test); con «Elige un…» la lista se queda. Lo dispara abrir Yala IA
+  al lado o estrechar la ventana. La lista sigue a un toque en el botón del sistema.
+- **Un detalle que en compacta se empuja y en ancha va en columna** sabe cuál es (`GroupDetailView(presentation:)`,
+  como `TransactionDetailSheet`): en columna no oculta la barra de pestañas ni pinta su chevron, y cerrar es vaciar la
+  selección de quien lo monta (`onCloseColumn`), no `dismiss()`. Sin `if` de vistas entre los dos modos
+  (`swipeBack(isEnabled:)`, `.toolbar(_:for:)` con valor): al redimensionar cambian de uno a otro y no deben cambiar
+  de identidad.
+- **Ajustes, dentro de su hoja: en compacta la `NavigationStack(path:)` de siempre; en ancha, `ListDetailSplit` con
+  una `NavigationStack` propia en la columna de detalle** (`ProfileView.settingsContainer`, `settingsLink`). No es un
+  split plegado en compacta, y está medido (2026-09-29): con los ajustes presentados por un `navigationDestination`
+  de la columna de lista, lo que un ajuste empuja por su cuenta no se empuja — el «+» de Categorías
+  (`navigationDestination(isPresented:)`) no hacía nada, en iPhone ni en iPad; lo cazó
+  `CategoriesCrudUITests.test_createCategoryWithSubcategory`. En ancha el ajuste se empuja sobre «Elige un ajuste», así
+  que su «Atrás» (el suyo o el del sistema) vuelve ahí. **Cualquier pantalla con lista y detalle cuyos detalles
+  empujen algo por su cuenta necesita esa pila de verdad en el detalle.** La hoja lleva `.presentationSizing(.page)`:
+  en el iPad Pro 13 unas veces ocupa la pantalla con lista y ajuste lado a lado y otras mide 810 pt y la lista flota
+  sobre el ajuste; un `PresentationSizing` propio que pide `.infinity` no pasa de 810 (ticket
+  `ipad-settings-sheet-size-depends-on-where-it-opens`).
+- **Estrechar la ventana con Grupos seleccionado cierra la app**, también en `2.1` (UIKit,
+  `_tabs_rebuildTabBarItemsAnimated:`, `insertObject:atIndex:: object cannot be nil`); con Registros no. Marcar las
+  pestañas con `.defaultVisibility(.hidden, for: .tabBar)` no lo arregla. Ticket
+  `ipad-narrowing-the-window-on-groups-crashes-the-app`.
+- **Yala IA junto a los datos NO es un `.inspector`** (`yalaAIChat(isPresented:)`, `YalaAIChatLayoutLogic`): en ancha
+  es una columna propia a la derecha dentro de un `HStack` que siempre envuelve al contenido; en compacta, la hoja de
+  siempre. Medido el 2026-09-29 en Registros (iPad Pro 13 vertical): un `.inspector` colgado de un
+  `NavigationSplitView` pasa a la columna de inspector de UIKit, que se SUPERPONE al registro abierto sin recolocarlo
+  (ni apartando la lista ni envolviendo el split en otro contenedor), y colgado de la columna de detalle su barra se
+  mete en la del registro aunque esté cerrado. En columna, `ChatSheetView(presentation: .column)` pinta su cabecera y
+  no lleva `NavigationStack` (en Estadísticas vive dentro de otra pila).

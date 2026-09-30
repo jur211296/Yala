@@ -1798,6 +1798,7 @@ enum L10n {
     // MARK: - Groups
 
     enum Groups {
+        static var detailPlaceholder: String { ls("groups.detailPlaceholder", comment: "iPad/ventana ancha: columna de detalle vacía en Grupos") }
         /// **«Empezar de cero» no borró: quedan cambios de grupos sin subir** (ticket
         /// `fresh-start-wipe-kills-unsent-group-writes-silently`). Lo enseñan las tres pantallas del gesto —la puerta
         /// privada del Welcome, el aviso del espejo tardío y el alert del shell—, seguido del motivo de la subida
@@ -4166,6 +4167,7 @@ enum L10n {
 
     enum Settings {
         static var title: String { ls("settings.title", comment: "") }
+        static var detailPlaceholder: String { ls("settings.detailPlaceholder", comment: "iPad/ventana ancha: columna de detalle vacía en Ajustes") }
         static var theme: String { ls("settings.theme", comment: "") }
         static var themeDescription: String {
             ls("settings.themeDescription", comment: "")
