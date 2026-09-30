@@ -5,13 +5,33 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-30 (Lima)
 
-**Rama** `2.1` — Merge #305: **en iPad el Panel y Estadísticas aprovechan el ancho (carril adaptativo, paso 8).**
+**Rama** `2.1` — Merge #306: **lo elegido al activar Yala completo en privado sube al iCloud del Apple ID (Cola A).**
 TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
 > **El destino del gate resuelve** (medido de nuevo el 30-sep): `name=iPhone 17 Pro` casa con el `9EDA6AAF` de iOS
 > 27.0. El ticket `the-gate-destination-no-longer-resolves-on-this-mac` tiene la premisa cambiada: medirlo antes.
 
-## Esta sesión (#305 · carril adaptativo: el Panel y Estadísticas aprovechan el ancho)
+## Esta sesión (#306 · Cola A: lo elegido al activar Yala completo en privado sube al iCloud del Apple ID)
+
+Quien entra solo por un grupo y activa «Yala completo» → iCloud privado → «Empezar de cero» elegía nombre, moneda y
+periodo con la puerta del iCloud-KV cerrada: nada llegaba al Apple ID, y al reabrir le volvían las preferencias de la
+vida anterior de ese Apple ID. Ahora sube al nacer la sesión privada, y se queda. Restaurar no sube (valen las del
+Apple ID); la nube va por su outbox; la puerta no se abre durante la activación.
+
+- **`PrivateBirthKeyValueHandover`**: marca durable armada ANTES del eje, solo con `.freshPrivate`; se paga tras el eje
+  y, si el proceso muere antes, en el arranque antes de `PreferenceSyncService.bootstrap`. Con la puerta cerrada (kill
+  antes del eje) el arranque la descarta.
+- Sube el estado local ENTERO de las `PrefSyncKey`: lo presente se escribe, lo ausente se retira del KV (el gesto de
+  «idioma del sistema»), salvo el consentimiento de la nube; y el espejo del interruptor maestro de pagos.
+- **La review de tres lentes cambió el diseño en un sitio**: saltar las claves ausentes dejaba entrar el idioma o los
+  iconos de la vida anterior. Además cerró seis mutantes que sobrevivían; 17 mutantes muertos en total.
+- Gate: unit 8566 en 817 suites; XCUITest 44 en 13 suites; CI en verde. Ticket a `qa` con guion de un iPhone (Apple ID
+  de pruebas: el guion borra su iCloud). Regla nueva en `swiftdata-cloudkit.md`.
+- **Encontrado**: dos low con ticket — la señal «onboarding terminado» de esa activación tampoco llega
+  (`full-activation-onboarding-signal-never-reaches-the-apple-id-kv`) y el espejo del interruptor en la activación a
+  la nube (`cloud-activation-master-toggle-mirror-never-reaches-the-apple-id-kv`).
+
+## Sesión anterior (#305 · carril adaptativo: el Panel y Estadísticas aprovechan el ancho)
 
 En iPad (y en el Duo abierto cuando llegue) el Panel y Estadísticas dejan de ser un iPhone estirado; en iPhone no
 cambia nada, medido al píxel en el SE y el Pro Max con texto normal y AX5.
