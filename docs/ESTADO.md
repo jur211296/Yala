@@ -1,19 +1,47 @@
 ---
-updated: 2026-09-29
+updated: 2026-09-30
 tags: [now, punto-de-retomada]
 ---
 
-# NOW — 2026-09-29 (Lima)
+# NOW — 2026-09-30 (Lima)
 
-**Rama** `2.1` — Merge #302: **el aviso del cambio de Apple ID dice que también se quitan los grupos del teléfono (Cola A).**
-TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
+**Rama** `2.1` — Merge #304: **la puerta de Grupos deja de entrar en bucle si el borrado de arranque no puede borrar
+el teléfono (Cola A).** TestFlight build **14** (CPV 14, `ba884680`). **Subida Yala (TF/store) = solo Mini.**
 
-> **El destino del gate vuelve a resolver** (medido el 28-sep): hay un iPhone 17 Pro de **iOS 27.0**
-> (`9EDA6AAF-B37D-45DD-A158-17527B306AB0`) y `-showdestinations` lo lista, así que `name=iPhone 17 Pro` casa. El
-> `9D0F6D32` (26.5) que citaba el aviso anterior **ya no existe**. El ticket
-> `the-gate-destination-no-longer-resolves-on-this-mac` tiene la premisa cambiada: medirlo antes de trabajarlo.
+> **El destino del gate resuelve** (medido de nuevo el 30-sep): `name=iPhone 17 Pro` casa con el `9EDA6AAF` de iOS
+> 27.0. El ticket `the-gate-destination-no-longer-resolves-on-this-mac` tiene la premisa cambiada: medirlo antes.
 
-## Esta sesión (#302 · Cola A: el aviso del cambio de Apple ID dice que también se quitan los grupos)
+## Esta sesión (#304 · Cola A: la puerta de Grupos ya no entra en bucle si el borrado no puede borrar)
+
+Quien entra por «Vengo por un grupo» con datos y el espejo de iCloud deja el teléfono listo para borrarse y reabre
+Yala. Si ese arranque no conseguía borrar los archivos, la puerta volvía a armar el mismo borrado y pedía reabrir otra
+vez, en bucle, cancelando además las notificaciones y vaciando el widget cada vuelta. Ahora lo dice una vez —«No
+pudimos preparar este teléfono», con «Volver»; el invitado, además «Reintentar»— y no vuelve a intentarlo sola.
+
+- **Testigo durable** `GroupsGateWipeFailureMarker`: lo apunta el borrado del arranque al abortar (y si el archivo de
+  grupos no se deja borrar), solo si el borrado lo armó la puerta; la puerta lo mira dentro de las celdas que borran.
+- **La review cambió el diseño en cinco sitios**: el archivo de grupos que fallaba sin abortar dejaba el mismo bucle,
+  el testigo antes de la celda tapaba pantallas correctas, el invitado se quedaba sin salida, y «Vaciar datos» y el
+  reset de UI no lo retiraban.
+- Gate: unit 8534 en 815 suites; XCUITest 37 en 11 suites; dos mutantes del hook muertos; CI en verde. Ticket a `done`
+  (el fallo de `removeItem` no se provoca en un iPhone).
+- **Encontrado**: dos low — el aviso puede salir una vez días después sin intento detrás
+  (`groups-gate-wipe-failed-notice-can-outlive-its-attempt`), y `noticeShell` pisa los identificadores de sus botones
+  (`welcome-groups-gate-button-identifiers-are-shadowed-by-their-screen`).
+
+### Lo que espera de Jürgen
+
+- 5 min de QA de iPad de #301: `tickets/qa/ipad-list-detail-for-groups-and-settings-and-chat-inspector.md`.
+- Cuando corra el device-QA del cambio de Apple ID, el paso nuevo del recorrido 1: con cuenta de grupos, la frase de
+  los grupos al final del mensaje.
+
+## Sesión anterior (#303 · carril adaptativo: estrechar la ventana en iPad ya no cierra la app)
+
+En un iPad con «Apps en ventanas», estrechar la ventana hasta las pestañas de abajo cerraba la app con cinco de las
+seis páginas de la barra lateral (no solo Grupos). Ahora ninguna la cierra, y un grupo abierto sigue a la vista. En
+iPhone no cambia nada. Deja de frenar 2.1 en iPad. (Esta entrada se escribe con el cierre de #304: #303 no la dejó.)
+
+## Sesión anterior (#302 · Cola A: el aviso del cambio de Apple ID dice que también se quitan los grupos)
 
 Quien cambia la cuenta de iCloud del teléfono ve «Cambiaste de cuenta de iCloud». Ahora, si cerrar se lleva también
 los grupos del teléfono, la pregunta lo dice antes de confirmar, en un párrafo propio: «También se quitan los grupos
@@ -28,13 +56,6 @@ de grupos que caducó (celda C). Sin grupos que se vayan, el mensaje es el de si
   ellos); CI en verde. Ticket a `done`; la celda D en un iPhone real es un paso más del device-QA del cambio de Apple ID.
 - **Encontrado**: Ajustes dice «(siguen en tu cuenta)» en su fila de grupos, con el mismo matiz en la celda C. Ticket
   low `settings-sign-out-scope-says-groups-stay-in-an-account-that-may-not-exist`.
-
-### Lo que espera de Jürgen
-
-- **Decidir si el crash de Grupos al estrechar la ventana frena 2.1** para iPad (de #301, sigue abierto).
-- 5 min de QA de iPad de #301: `tickets/qa/ipad-list-detail-for-groups-and-settings-and-chat-inspector.md`.
-- Cuando corra el device-QA del cambio de Apple ID, el paso nuevo del recorrido 1: con cuenta de grupos, la frase de
-  los grupos al final del mensaje.
 
 ## Sesión anterior (#301 · carril adaptativo, paso 7: Grupos, Ajustes y Yala IA en iPad)
 
