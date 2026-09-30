@@ -6184,6 +6184,8 @@
 
 /* iPad/ventana ancha: columna de detalle vacía en Planificación */
 "planning.detailPlaceholder" = "予算または支払いを選ぶとここに表示されます";
+"groups.detailPlaceholder" = "グループを選ぶとここに表示されます";
+"settings.detailPlaceholder" = "設定を選ぶとここに表示されます";
 
 /* Puerta del invitado: el cierre de sesión del teléfono está a medias; se reintenta sola */
 "welcome.groups.inviteRetryBody" = "何も変更していません。招待はそのまま保存されています。少し待ってからもう一度お試しください。進まない場合は、Yala を完全に閉じて（App スイッチャーから上にスワイプ）もう一度開いてください。";

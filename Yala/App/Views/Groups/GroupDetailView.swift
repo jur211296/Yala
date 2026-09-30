@@ -62,7 +62,7 @@ struct GroupDetailView: View {
     /// antes de tocar el modelo evita recalcular sobre una vista que se está yendo.
     private func discardRejectedGroup() {
         let zoneID = group.cloudKitZoneID
-        dismiss()
+        close()
         Task { await GroupService.shared.performRemovedSelfCleanup(zoneName: zoneID, context: modelContext) }
     }
 
@@ -78,6 +78,14 @@ struct GroupDetailView: View {
 
     let group: SplitGroup
 
+    /// Cómo está montado el detalle. `.pushed`: empujado sobre la lista (iPhone, ventana compacta), inmersivo, sin
+    /// barra de pestañas y con su chevron. `.column`: en la columna de detalle de `ListDetailSplit` (ventana ancha),
+    /// junto a la lista; la navegación de la app sigue a la vista y no hay «volver» porque no hay adónde.
+    enum Presentation { case pushed, column }
+    var presentation: Presentation = .pushed
+    /// En columna, cerrar el detalle es vaciar la selección de quien lo monta (vuelve «Elige un grupo…»).
+    var onCloseColumn: (() -> Void)?
+
     // MARK: - State
 
     @State private var viewModel: GroupDetailViewModel
@@ -88,8 +96,10 @@ struct GroupDetailView: View {
 
     // MARK: - Init
 
-    init(group: SplitGroup) {
+    init(group: SplitGroup, presentation: Presentation = .pushed, onCloseColumn: (() -> Void)? = nil) {
         self.group = group
+        self.presentation = presentation
+        self.onCloseColumn = onCloseColumn
         self._viewModel = State(initialValue: GroupDetailViewModel(group: group))
     }
 
@@ -155,15 +165,17 @@ struct GroupDetailView: View {
         }
         .navigationTitle(group.name)
         .navigationBarTitleDisplayMode(.large)
-        // Push nativo (como el resto de detalles de la app): swipe-back desde el borde
-        // izquierdo + chevron custom. Tab bar oculto para conservar el look inmersivo
-        // que tenía como fullScreenCover (Grupos se navega desde "Más").
-        .swipeBack()
-        .toolbar(.hidden, for: .tabBar)
+        // Empujado (compacta): push nativo con swipe-back desde el borde izquierdo + chevron custom, y tab bar
+        // oculto para conservar el look inmersivo que tenía como fullScreenCover. En columna (ventana ancha)
+        // nada de eso: la lista sigue al lado y la navegación de la app a la vista.
+        .modifier(GroupDetailPushedChrome(isPushed: presentation == .pushed))
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back) {
-                    dismiss()
+            if presentation == .pushed {
+                ToolbarItem(placement: .topBarLeading) {
+                    YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back) {
+                        dismiss()
+                    }
+                    .accessibilityIdentifier("group_detail_back")
                 }
             }
 
@@ -277,7 +289,7 @@ struct GroupDetailView: View {
                 isArchived: group.isArchived,
                 wasArchivedOnAppear: wasArchivedOnAppear
             ) {
-                dismiss()
+                close()
                 return
             }
             // Sync remoto: debounced para coalescer ráfagas de cambios de CloudKit.
@@ -494,6 +506,16 @@ struct GroupDetailView: View {
         }
     }
 
+    /// Cierra el detalle: en pila, el `dismiss()` de siempre (pop); en columna, vaciar la selección de la lista, que
+    /// deja la columna en «Elige un grupo…» sin depender de cómo interpreta el split un `dismiss`.
+    private func close() {
+        if presentation == .column, let onCloseColumn {
+            onCloseColumn()
+        } else {
+            dismiss()
+        }
+    }
+
     // MARK: - Nudge CTA Routing
 
     private func handleNudgeAction(_ nudge: NudgeType) {
@@ -501,7 +523,7 @@ struct GroupDetailView: View {
         case .activateFullMode:
             RouterEntryGate.shared.submit(.presentFullModeActivation)
         case .openPanel:
-            dismiss()
+            close()
         case .openGroupDetail, .dismiss:
             break
         }
@@ -689,5 +711,19 @@ private struct PendingApprovalBanner: View {
         )
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.top, DS.Spacing.sm)
+    }
+}
+
+/// El envoltorio del detalle EMPUJADO (compacta): swipe-back y tab bar oculta. En columna no se aplica: ocultar la
+/// barra de pestañas escondería la navegación de la app al lado de la lista, y `navigationBarBackButtonHidden` de
+/// `swipeBack` se llevaría el botón del sistema que vuelve a sacar la lista superpuesta (iPad mini en vertical).
+/// Sin `if` de vistas: al redimensionar el detalle pasa de un modo a otro y no debe cambiar de identidad.
+private struct GroupDetailPushedChrome: ViewModifier {
+    let isPushed: Bool
+
+    func body(content: Content) -> some View {
+        content
+            .swipeBack(isEnabled: isPushed)
+            .toolbar(isPushed ? .hidden : .automatic, for: .tabBar)
     }
 }

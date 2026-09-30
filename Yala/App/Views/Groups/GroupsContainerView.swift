@@ -18,6 +18,9 @@ struct GroupsContainerView: View {
     @Environment(\.yalaTheme) private var theme
     @Environment(\.openURL) private var openURL
     @Environment(\.scenePhase) private var scenePhase
+    /// Size class de la VENTANA (se lee fuera del split: dentro, la columna de lista es compacta). Decide si el grupo
+    /// abierto va en la columna de detalle o empujado.
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     // MARK: - State
 
@@ -67,8 +70,22 @@ struct GroupsContainerView: View {
 
     // MARK: - Body
 
+    /// Lista y detalle (`ListDetailSplit`): en ventana ancha, la lista de grupos y el grupo abierto a la vez; en
+    /// compacta se pliega solo a la pila de siempre (ADR «Yala se adapta por espacio, no por dispositivo»). El
+    /// `navigationDestination(item:)` de la columna de lista presenta en la de detalle; lo abierto vive en
+    /// `viewModel.selectedGroup`, fuera del split, así que redimensionar no lo pierde.
     var body: some View {
-        NavigationStack {
+        ListDetailSplit {
+            listColumn
+        } detail: {
+            ContentUnavailableView(L10n.Groups.detailPlaceholder, systemImage: ConfigurableTab.groups.iconName)
+                .yalaScreenBackground(.panel)
+                .accessibilityIdentifier("groups_detail_placeholder")
+                .marksEmptyDetailColumn()
+        }
+    }
+
+    private var listColumn: some View {
             ZStack {
                 if !viewModel.hasLoadedOnce {
                     // Cold launch de "Solo Grupos": el tab puede montar antes de que el bootstrap
@@ -223,7 +240,13 @@ struct GroupsContainerView: View {
                 .yalaSheetDetents([.large])
             }
             .navigationDestination(item: $viewModel.selectedGroup) { group in
-                GroupDetailView(group: group)
+                // En ventana ancha el grupo va en la columna de detalle, junto a la lista y sin tapar la barra de
+                // navigación; en compacta, empujado como siempre.
+                GroupDetailView(
+                    group: group,
+                    presentation: horizontalSizeClass == .regular ? .column : .pushed,
+                    onCloseColumn: { viewModel.selectedGroup = nil })
+                .announcesShownInDetailColumn()
             }
             .onChange(of: viewModel.selectedGroup) { _, newValue in
                 // Al volver del detalle (pop → nil) refrescamos la lista, igual que el
@@ -398,7 +421,6 @@ struct GroupsContainerView: View {
             } message: {
                 Text(L10n.Welcome.Groups.channelOffBody)
             }
-        }
     }
 
     // MARK: - Helpers

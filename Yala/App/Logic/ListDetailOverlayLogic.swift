@@ -18,4 +18,22 @@ enum ListDetailOverlayLogic {
         guard listIsShown, splitWidth > 0, detailWidth > 0 else { return false }
         return detailWidth >= splitWidth - 1
     }
+
+    /// `true` si, con algo abierto en el detalle, el split es demasiado estrecho para lista y detalle legibles a la
+    /// vez, y la lista debe apartarse (queda a un toque en el botón de la barra). Pasa al abrir Yala IA al lado
+    /// (iPad Pro 13 en vertical: 1024 − 375 de chat = 649 pt de split, que el split repartía en 415 de lista y ~230
+    /// de registro abierto, medido 2026-09-29), y en cualquier ventana ancha por debajo de dos anchos de iPhone.
+    ///
+    /// - `minimumColumnWidth`: por debajo, una columna deja de leerse (el ancho del iPhone más estrecho).
+    /// - Solo en ventana ancha: plegado (compacta) el split enseña una columna y esto no aplica.
+    /// - Con el detalle vacío («Elige un…») la lista se queda: apartarla dejaría la pantalla sin salida.
+    static func listYieldsToDetail(
+        splitWidth: CGFloat,
+        minimumColumnWidth: CGFloat,
+        isRegularWidth: Bool,
+        detailIsEmpty: Bool
+    ) -> Bool {
+        guard isRegularWidth, !detailIsEmpty, splitWidth > 0 else { return false }
+        return splitWidth < minimumColumnWidth * 2
+    }
 }

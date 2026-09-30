@@ -60,6 +60,23 @@ final class ChatAssistantViewModel {
         sessionKeyPrefix + DayKeyFormatter.string(from: date)
     }
 
+    #if DEBUG
+    /// `-uitest-chat-conversation`: guarda una conversación de hoy en el mismo sitio y formato que `persistSession`.
+    static func seedTodayConversationForUITest(defaults: UserDefaults = .standard) {
+        let now = Date.now
+        let messages = [
+            ChatMessage(role: .user, text: "¿Cuánto gasté en transporte este mes?", timestamp: now),
+            ChatMessage(role: .assistant, text: "Este mes llevas S/ 120 en transporte.", timestamp: now),
+        ]
+        do {
+            let data = try JSONEncoder().encode(ChatPersistedSession(messages: messages, allTurns: []))
+            defaults.set(data, forKey: sessionKey(for: now))
+        } catch {
+            print("ChatAssistantViewModel: seedTodayConversationForUITest failed: \(error)")
+        }
+    }
+    #endif
+
     // MARK: - Setup
 
     func setContext(_ ctx: ModelContext, autoLoadSuggestions: Bool = true) {

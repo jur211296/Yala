@@ -39,6 +39,11 @@ struct ProfileView: View {
 
     // Navigation & Sheets
     @State private var navigationPath = NavigationPath()
+    /// Ventana ancha: la pila de la columna de detalle. El ajuste abierto se empuja sobre «Elige un ajuste», así que
+    /// su «Atrás» vuelve ahí y lo que el ajuste empuje dentro (el «+» de Categorías) tiene una pila de verdad.
+    @State private var detailPath: [ProfileDestination] = []
+    /// Size class de la hoja: decide si Ajustes es la pila de siempre (compacta) o lista y ajuste a la vez.
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var activeSheet: ProfileSheet?
 
     // Import result - shown as alert after ImportIntroSheet dismisses
@@ -531,8 +536,48 @@ struct ProfileView: View {
 
     // ProfileDestination extracted to Yala/App/Models/ProfileDestination.swift
 
-    var body: some View {
-        NavigationStack(path: $navigationPath) {
+    @ViewBuilder
+    private var settingsContainer: some View {
+        if horizontalSizeClass == .regular {
+            ListDetailSplit {
+                listColumn
+            } detail: {
+                NavigationStack(path: $detailPath) {
+                    ContentUnavailableView(L10n.Settings.detailPlaceholder, systemImage: "gearshape")
+                        .yalaScreenBackground(.subtle)
+                        .accessibilityIdentifier("settings_detail_placeholder")
+                        .marksEmptyDetailColumn()
+                        .navigationDestination(for: ProfileDestination.self) { destination in
+                            destinationView(destination)
+                        }
+                }
+            }
+        } else {
+            NavigationStack(path: $navigationPath) {
+                listColumn
+                    .navigationDestination(for: ProfileDestination.self) { destination in
+                        destinationView(destination)
+                    }
+            }
+        }
+    }
+
+    /// Una fila que abre un ajuste: en compacta empuja (`NavigationLink`, como siempre); en ancha lo pone en la
+    /// columna de detalle, sustituyendo al que hubiera.
+    @ViewBuilder
+    private func settingsLink<Label: View>(
+        _ destination: ProfileDestination,
+        @ViewBuilder label: () -> Label
+    ) -> some View {
+        if horizontalSizeClass == .regular {
+            Button { detailPath = [destination] } label: { label() }
+        } else {
+            NavigationLink(value: destination) { label() }
+        }
+    }
+
+    /// La lista de Ajustes: la columna de lista del split en ancha, la raíz de la pila en compacta.
+    private var listColumn: some View {
             ScrollViewReader { scrollProxy in
                 ScrollView {
                         VStack(spacing: DS.Spacing.xxl) {
@@ -814,96 +859,31 @@ struct ProfileView: View {
                 // Auto-navigate to destination passed by caller (e.g. sync settings sheet).
                 if let dest = initialDestination {
                     navigationPath.append(dest)
+                    detailPath = [dest]
                 }
             }
             // .routerConsumer(.profile) removed in F7 — was dead code (drained
             // .profileNavigate intent but never produced one, and consumed without
             // acting). Profile navigation flows through ContentView.handleMainTabIntent
             // for tab routing instead.
-            .navigationDestination(for: ProfileDestination.self) { destination in
-                switch destination {
-                case .accounts:
-                    AccountsSettingsListView()
-                case .categories:
-                    CategoriesSettingsListView()
-                case .tags:
-                    TagsSettingsListView()
-                case .themes:
-                    ThemeSettingsView {
-                        dismiss()
-                    }
-                case .personalization:
-                    PersonalizationSettingsView()
-                case .currency:
-                    CurrencySettingsView()
-                case .appIcon:
-                    AppIconSettingsView()
-                case .faceIDProtectionGuide:
-                    FaceIDProtectionGuideView()
-                case .subscription:
-                    SubscriptionView(source: "profile")
-                case .tips:
-                    TutorialsListView()
-                case .faq:
-                    FAQView()
-                case .notifications:
-                    NotificationsSettingsView()
-                case .favorites:
-                    FavoritesListView(mode: .manage)
-                case .budgets:
-                    BudgetsFavoritesSettingsView()
-                case .planned:
-                    ScheduledPaymentsSettingsView()
-                case .userDataReset:
-                    UserDataResetView(onRequestCloseSettings: {
-                        dismiss()
-                    })
-                case .iCloudSync:
-                    iCloudSyncSettingsView()
-                case .siriShortcuts:
-                    SiriShortcutsView()
-                case .aiPrivacy:
-                    AIPrivacySettingsView()
-                case .storageMode:
-                    // Paso 10 · el CTA de asociar cierra ESTE sheet y emite el intent: el sheet del
-                    // sign-in de Grupos tiene dueño único (`GroupsBackendInviteModifier`, anclado en
-                    // `ContentView`) y dos anchors ante el mismo observable es el bug de sign-out del
-                    // 2026-07-14 — UIKit no presenta dos veces y puede tumbar las dos cadenas. Misma
-                    // forma que los desenlaces de `YalaAccountView`: la vista pide, `ProfileView` cierra.
-                    StorageSettingsView(onAssociateGroupsAccount: {
-                        dismiss()
-                        // **Sin `sleep` de por medio, y es lo que hace seguro el gesto.** El intent va por
-                        // el router porque el router RETIENE la cola mientras un nodo superior tape
-                        // (`RouterConsumerGateLogic`, peek-first): si este sheet todavía no ha terminado
-                        // de irse, el intent espera y se drena cuando el anchor quede libre. Un
-                        // `Task { sleep 350 ms }` apostaba a un reloj —y el flag que enciende es BLOCKER
-                        // de la matriz de readiness, así que una presentación que no monta deja el router
-                        // muerto el resto de la sesión, sin `onDismiss` que rescate porque nunca se
-                        // presentó. Es el modo de fallo de la regla (4) de Presentaciones.
-                        RouterEntryGate.shared.submit(.presentGroupsSignIn(pendingJoin: ""))
-                    })
-                case .yalaAccount:
-                    // §3.3.5: mapa/explainer del enlace privado ↔ nube. Los desenlaces disparan el @State
-                    // de ProfileView vía closures (dueño único de las hojas/observers/cover-root); "Volver a
-                    // iCloud" navega por su cuenta a `.storageMode`. «Cerrar sesión» es el MISMO toque que la
-                    // fila de Ajustes (`requestSignOut`), y el borrado recomputa el resumen D5 READ-ONLY. Desde
-                    // el paso 9 es la única puerta del borrado, así que hereda el bloqueo cruzado de la fila
-                    // retirada: con un cierre o un borrado en curso, el otro no arranca.
-                    YalaAccountView(
-                        onSignOut: { requestSignOut() },
-                        onDeleteAccount: {
-                            deleteAccountScope = DeleteAccountScope(
-                                summary: GroupService.shared.accountDeletionGroupsSummary())
-                        },
-                        signOutDisabled: signOutCoordinator.phase == .working || deletionService.phase == .working,
-                        deleteDisabled: signOutCoordinator.phase != .idle || deletionService.phase == .working)
-                }
-            }
             .onAppear {
                 viewModel.setContext(modelContext)
                 profileStorage.migrateFromUserDefaultsIfNeeded()
             }
-        }
+    }
+
+    /// Como la app Ajustes: en una hoja ancha, la lista y el ajuste abierto a la vez (`ListDetailSplit`); en
+    /// compacta (iPhone), la pila de siempre, la misma de antes de la fase 2. **No es el mismo split plegado**, y está
+    /// medido (2026-09-29): con los ajustes presentados desde la lista del split, lo que un ajuste empuja por su cuenta
+    /// no se empuja — el «+» de Categorías (`navigationDestination(isPresented:)`) no hacía nada, ni en iPhone ni en
+    /// iPad. Una pila de verdad en cada forma lo evita. Redimensionar la hoja cambia de forma y vuelve a la lista.
+    ///
+    /// La hoja pide tamaño de página (`presentationSizing(.page)`): en iPhone es la hoja de siempre; en iPad, más
+    /// ancha que la de antes (575 pt). Medido en el iPad Pro 13: unas veces ocupa la pantalla con lista y ajuste lado
+    /// a lado y otras mide 810 pt y la lista flota sobre el ajuste (ticket
+    /// `ipad-settings-sheet-size-depends-on-where-it-opens`).
+    var body: some View {
+        settingsContainer
         .coachMarkOverlay(
             steps: SettingsTourSteps.steps,
             isPresented: $showSettingsTour,
@@ -944,6 +924,93 @@ struct ProfileView: View {
                   !showSettingsTour else { return }
             showProTour = true
         }
+        .presentationSizing(.page)
+    }
+
+    /// Una pantalla de Ajustes. En ventana ancha se abre en la columna de detalle del split, junto a la lista; en
+    /// compacta se empuja como siempre. La marca retira la lista si estaba superpuesta (iPad mini en vertical).
+    @ViewBuilder
+    private func destinationView(_ destination: ProfileDestination) -> some View {
+        Group {
+            switch destination {
+            case .accounts:
+                AccountsSettingsListView()
+            case .categories:
+                CategoriesSettingsListView()
+            case .tags:
+                TagsSettingsListView()
+            case .themes:
+                ThemeSettingsView {
+                    dismiss()
+                }
+            case .personalization:
+                PersonalizationSettingsView()
+            case .currency:
+                CurrencySettingsView()
+            case .appIcon:
+                AppIconSettingsView()
+            case .faceIDProtectionGuide:
+                FaceIDProtectionGuideView()
+            case .subscription:
+                SubscriptionView(source: "profile")
+            case .tips:
+                TutorialsListView()
+            case .faq:
+                FAQView()
+            case .notifications:
+                NotificationsSettingsView()
+            case .favorites:
+                FavoritesListView(mode: .manage)
+            case .budgets:
+                BudgetsFavoritesSettingsView()
+            case .planned:
+                ScheduledPaymentsSettingsView()
+            case .userDataReset:
+                UserDataResetView(onRequestCloseSettings: {
+                    dismiss()
+                })
+            case .iCloudSync:
+                iCloudSyncSettingsView()
+            case .siriShortcuts:
+                SiriShortcutsView()
+            case .aiPrivacy:
+                AIPrivacySettingsView()
+            case .storageMode:
+                // Paso 10 · el CTA de asociar cierra ESTE sheet y emite el intent: el sheet del
+                // sign-in de Grupos tiene dueño único (`GroupsBackendInviteModifier`, anclado en
+                // `ContentView`) y dos anchors ante el mismo observable es el bug de sign-out del
+                // 2026-07-14 — UIKit no presenta dos veces y puede tumbar las dos cadenas. Misma
+                // forma que los desenlaces de `YalaAccountView`: la vista pide, `ProfileView` cierra.
+                StorageSettingsView(onAssociateGroupsAccount: {
+                    dismiss()
+                    // **Sin `sleep` de por medio, y es lo que hace seguro el gesto.** El intent va por
+                    // el router porque el router RETIENE la cola mientras un nodo superior tape
+                    // (`RouterConsumerGateLogic`, peek-first): si este sheet todavía no ha terminado
+                    // de irse, el intent espera y se drena cuando el anchor quede libre. Un
+                    // `Task { sleep 350 ms }` apostaba a un reloj —y el flag que enciende es BLOCKER
+                    // de la matriz de readiness, así que una presentación que no monta deja el router
+                    // muerto el resto de la sesión, sin `onDismiss` que rescate porque nunca se
+                    // presentó. Es el modo de fallo de la regla (4) de Presentaciones.
+                    RouterEntryGate.shared.submit(.presentGroupsSignIn(pendingJoin: ""))
+                })
+            case .yalaAccount:
+                // §3.3.5: mapa/explainer del enlace privado ↔ nube. Los desenlaces disparan el @State
+                // de ProfileView vía closures (dueño único de las hojas/observers/cover-root); "Volver a
+                // iCloud" navega por su cuenta a `.storageMode`. «Cerrar sesión» es el MISMO toque que la
+                // fila de Ajustes (`requestSignOut`), y el borrado recomputa el resumen D5 READ-ONLY. Desde
+                // el paso 9 es la única puerta del borrado, así que hereda el bloqueo cruzado de la fila
+                // retirada: con un cierre o un borrado en curso, el otro no arranca.
+                YalaAccountView(
+                    onSignOut: { requestSignOut() },
+                    onDeleteAccount: {
+                        deleteAccountScope = DeleteAccountScope(
+                            summary: GroupService.shared.accountDeletionGroupsSummary())
+                    },
+                    signOutDisabled: signOutCoordinator.phase == .working || deletionService.phase == .working,
+                    deleteDisabled: signOutCoordinator.phase != .idle || deletionService.phase == .working)
+            }
+        }
+        .announcesShownInDetailColumn()
     }
 
     // MARK: - Header
@@ -1281,7 +1348,7 @@ struct ProfileView: View {
                         hasCompletedOnboarding: appPreferences.hasCompletedOnboarding)
                 ) {
                     SubsectionDivider()
-                    NavigationLink(value: ProfileDestination.storageMode) {
+                    settingsLink(ProfileDestination.storageMode) {
                         settingsRowContent(
                             icon: "externaldrive.badge.icloud",
                             title: L10n.Storage.title,
@@ -1294,7 +1361,7 @@ struct ProfileView: View {
 
                 // Vaciar mis datos — SIEMPRE al final (lo más irreversible de la sección).
                 SubsectionDivider()
-                NavigationLink(value: ProfileDestination.userDataReset) {
+                settingsLink(ProfileDestination.userDataReset) {
                     // Fase 1 (§3.2): "arrow.counterclockwise" (volver al estado inicial);
                     // "trash" queda reservado a "Eliminar mi cuenta". `.red` es color de
                     // sistema (adapta a Dark Mode) → sin marcador A11Y-DM.
@@ -1378,7 +1445,7 @@ struct ProfileView: View {
                         .padding(.top, DS.Spacing.md)
                         .padding(.bottom, DS.Spacing.xs)
                         .accessibilityAddTraits(.isHeader)
-                    NavigationLink(value: ProfileDestination.yalaAccount) {
+                    settingsLink(ProfileDestination.yalaAccount) {
                         settingsRowContent(
                             icon: "person.crop.circle.badge.checkmark",
                             title: L10n.Settings.yalaAccountRowTitle,
@@ -1589,7 +1656,7 @@ struct ProfileView: View {
         iconColor: Color = .gray,
         destination: ProfileDestination
     ) -> some View {
-        NavigationLink(value: destination) {
+        settingsLink(destination) {
             settingsRowContent(icon: icon, title: title, iconColor: iconColor)
         }
         .buttonStyle(.plain)

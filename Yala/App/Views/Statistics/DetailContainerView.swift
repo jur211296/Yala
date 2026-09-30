@@ -732,9 +732,8 @@ private struct DetailContainerSheets: ViewModifier {
             .sheet(isPresented: $showUpgradeForImage) {
                 UpgradePromptSheet(feature: .imageInput, context: .proFeature)
             }
-            .sheet(isPresented: $showChatSheet) {
-                ChatSheetView()
-            }
+            // Yala IA: columna al lado en ventana ancha, la hoja de siempre en compacta.
+            .yalaAIChat(isPresented: $showChatSheet, insideNavigationStack: true)
             .yalaAIOnboardingSheet(
                 isPresented: $showYalaAIOnboarding,
                 pendingOpenChat: $pendingOpenChatAfterOnboarding,

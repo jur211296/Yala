@@ -1075,6 +1075,15 @@ final class AppBootstrapper {
         if UITestHooks.aiConsent {
             appPreferences.aiDataConsentAccepted = true
         }
+        if UITestHooks.aiChatReady {
+            appPreferences.aiChatConsentAccepted = true
+            appPreferences.hasShownYalaAIOnboarding = true
+        }
+        #if DEBUG
+        if UITestHooks.chatConversation {
+            ChatAssistantViewModel.seedTodayConversationForUITest()
+        }
+        #endif
     }
 
     /// Mapea `-uitest-deeplink <target>` a un DeepLinkDestination (solo uitest/DEBUG).

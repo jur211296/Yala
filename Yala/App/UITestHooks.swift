@@ -344,6 +344,16 @@ final class UITestHooks {
     /// transcribe — solo destraba la navegación a la vista.
     nonisolated static var aiConsent: Bool { hasArg("-uitest-ai-consent") }
 
+    /// `-uitest-ai-chat-ready`: el chat de Yala IA ya tiene su consentimiento y su onboarding vistos, así que
+    /// tocar la entrada abre el chat directo (`YalaAIOnboardingLogic.nextScreen` → `.chat`). Lo usa el XCUITest de
+    /// la columna de Yala IA en iPad: solo monta la vista, no envía nada.
+    nonisolated static var aiChatReady: Bool { hasArg("-uitest-ai-chat-ready") }
+
+    /// `-uitest-chat-conversation`: deja guardada una conversación de hoy (una pregunta y su respuesta) donde el chat
+    /// la lee al abrirse. Sin red no hay forma de conversar en un XCUITest, y hace falta una conversación para
+    /// probar que redimensionar la ventana con Yala IA abierto no la pierde.
+    nonisolated static var chatConversation: Bool { hasArg("-uitest-chat-conversation") }
+
     /// `-uitest-invite-onboarding`: presenta el cover de GroupInviteOnboarding directo
     /// (sin CKShare real — no funciona en sim). Combinar con `-uitest-join-phase` para
     /// congelar la fase del GroupJoinIntentTracker y testear cada step determinista.
