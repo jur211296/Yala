@@ -148,3 +148,8 @@ Yala, como pide el encargo, que diga dónde vive ahora cada cosa.
 **D10 · Entrega.** → Worktree, así que va por rama y PR. Sesión en bypass: mergeo yo con el CI en
 verde. `/gate` antes del commit, aunque no haya Swift. La fase 1 no se cierra hasta que un ping
 llegue a la routine. El issue #183 se cierra solo entonces.
+
+## Validación
+
+- **Fase 2, dos pushes seguidos al PR #307.** El segundo push lleva esta sección. Con `tests` en
+  marcha en el run 36729621046, el run de este push tiene que cancelarlo, sin job `aviso`.
