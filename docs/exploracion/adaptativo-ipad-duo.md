@@ -289,7 +289,7 @@ Tamaños: **S** ≈ una sesión · **M** ≈ dos o tres · **L** ≈ cuatro o m�
 | 7 | **2 · Grupos, Ajustes y Yala IA al lado** | Grupos y Ajustes en dos columnas; Yala IA como columna junto a los datos | `ipad-list-detail-for-groups-and-settings-and-chat-inspector` | M | 5 | low |
 | 8 | **2b · Panel y Estadísticas aprovechan el ancho** ✅ 30-sep | Cabecera más baja en horizontal, Últimos registros a dos columnas, Resumen en rejilla | `ipad-and-duo-panel-and-statistics-use-the-width` | M | 5 | low |
 | 9 | **3 · Teclado, puntero y menús** | Atajos, resaltado al pasar el puntero, menús contextuales, soltar un recibo | `ipad-keyboard-shortcuts-pointer-context-menus-and-drop` | M | 5 | low |
-| 10 | **iPhone · más espacio en los grandes** | El Pro Max enseña más sin cambiar nada de sitio | `iphone-large-models-use-the-extra-width` | S | 2 y 3 | low |
+| 10 | **iPhone · más espacio en los grandes** ✅ 1-oct | El Pro Max enseña más sin cambiar nada de sitio | `iphone-large-models-use-the-extra-width` | S | 2 y 3 | low |
 | 11 | **iPhone · horizontal** (decisión) | Yala gira en iPhone y en el Duo cerrado | `iphone-supports-landscape-orientation` | M | 5 y 2 | low |
 | 12 | **4 · Varias ventanas de verdad** | Abrir un grupo o un registro en otra ventana, en iPad y en el Duo abierto | `ipad-real-multiwindow-with-per-scene-state` | L | 1 y 5 | low |
 | 13 | **5 · Widgets grandes** | Widgets grandes y uno extragrande en iPad | `ipad-large-and-extra-large-widgets` | S–M | nada | low |

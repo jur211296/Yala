@@ -321,6 +321,43 @@ final class AdaptiveNavigationUITests: XCTestCase {
         }
     }
 
+    // MARK: - iPhone grande: las gráficas de tendencia ganan alto (iphone-large-models-use-the-extra-width)
+
+    /// La gráfica de tendencia: busca por su etiqueta de accesibilidad y, si aún no está en pantalla, baja una vez.
+    private func trendChart(in app: XCUIApplication) -> XCUIElement {
+        let chart = app.descendants(matching: .any)
+            .matching(NSPredicate(format: "label BEGINSWITH %@", "Gráfica de tendencia")).firstMatch
+        if !chart.waitForExistence(timeout: 15) { app.swipeUp() }
+        XCTAssertTrue(chart.waitForExistence(timeout: 10), "No está la gráfica de tendencia.")
+        return chart
+    }
+
+    /// 170 pt en un iPhone de 375 pt y en ancho regular; 200 pt en un iPhone de 440 pt (Pro Max), donde la gráfica
+    /// mide ~376 de ancho. El marco de accesibilidad sale 3,5 pt más alto que la gráfica (173,5 en el SE, igual antes y
+    /// después de este cambio), así que se separan los dos casos con umbrales y no con el valor exacto. Los anchos
+    /// intermedios no se fijan aquí: la regla exacta la cubre `AdaptiveChartHeightTests`.
+    private func assertTrendChartHeight(_ chart: XCUIElement, in app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
+        let height = chart.frame.height
+        let windowWidth = app.frame.width
+        if expectsWideWindow || windowWidth <= 375 {
+            XCTAssertLessThan(height, 180, "La gráfica cambió de alto donde no debía (ancho \(windowWidth)).", file: file, line: line)
+        } else if windowWidth >= 430 {
+            XCTAssertGreaterThan(height, 195, "La gráfica no aprovecha el ancho del iPhone grande (ancho \(windowWidth)).", file: file, line: line)
+            XCTAssertLessThan(height, 210, "La gráfica creció más que su techo (ancho \(windowWidth)).", file: file, line: line)
+        }
+    }
+
+    func test_panelTrendChart_growsWithTheWidth_onLargePhones() {
+        let app = launch(deeplink: "panel")
+        assertTrendChartHeight(trendChart(in: app), in: app)
+    }
+
+    func test_statisticsTrendChart_growsWithTheWidth_onLargePhones() {
+        let app = launch(deeplink: "statistics")
+        tapStatisticsChip("detail_chip_tendencias", in: app)
+        assertTrendChartHeight(trendChart(in: app), in: app)
+    }
+
     /// Arranca en horizontal con la ventana a pantalla completa. Salta si no hay ventana que estrechar: en iPhone,
     /// o en un iPad con «Apps en pantalla completa» (Ajustes → Multitarea y gestos → «Apps en ventanas» lo activa).
     private func launchInResizableWindow(seed: String) throws -> XCUIApplication {

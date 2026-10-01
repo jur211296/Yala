@@ -54,8 +54,11 @@ struct TrendsCarouselWidget: View {
         } else {
             VStack(alignment: .leading, spacing: DS.Spacing.md) {
                 header
-                trendPage
-                    .frame(height: 170)
+                // Más alta en los iPhone grandes, con la misma proporción que en el pequeño (`AdaptiveChartHeight`).
+                AdaptiveChartHeight(base: 170) { chartHeight in
+                    trendPage(chartHeight: chartHeight)
+                        .frame(height: chartHeight)
+                }
             }
             .panelCard()
         }
@@ -165,7 +168,7 @@ struct TrendsCarouselWidget: View {
     // MARK: - Trend chart page
 
     @ViewBuilder
-    private var trendPage: some View {
+    private func trendPage(chartHeight: CGFloat) -> some View {
         if hasNoTrendData {
             YalaEmptyState(
                 icon: "chart.line.uptrend.xyaxis",
@@ -184,7 +187,7 @@ struct TrendsCarouselWidget: View {
                 trendType: viewModel.dataTrendType,
                 focusedDate: $viewModel.focusedDate,
                 period: viewModel.currentPeriod,
-                chartHeight: 170,
+                chartHeight: chartHeight,
                 liveAnchor: viewModel.trendLiveAnchor,
                 liveAnchorBreakdown: viewModel.trendLiveAnchorBreakdown,
                 liveAnchorIsApproximate: viewModel.trendLiveAnchorIsApproximate

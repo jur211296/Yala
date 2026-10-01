@@ -438,6 +438,30 @@ enum DS {
             isiOSAppOnMac || windowHorizontalSizeClass == .regular
         }
 
+        /// Ancho de gráfica a partir del cual crece su alto. Una gráfica de un iPhone de 375 pt mide ~311 pt dentro
+        /// de su tarjeta: por debajo de este umbral, así que en el iPhone más pequeño no cambia nada.
+        static let chartGrowthReferenceWidth: CGFloat = 320
+
+        /// Techo del crecimiento: +20 %. En un Pro Max (gráfica de ~376 pt) la de 170 pt pasa a ~200 pt.
+        static let chartMaxGrowth: CGFloat = 1.2
+
+        /// Alto de una gráfica que aprovecha el ancho de los iPhone grandes (ticket
+        /// `iphone-large-models-use-the-extra-width`): conserva la proporción que tiene en el iPhone pequeño, con
+        /// techo. Decide el ANCHO medido de la gráfica, no el aparato. Solo en ancho compacto: en regular (iPad, Duo
+        /// abierto) la composición la decide la fase 2b y el alto se queda en `base`. Sin size class conocido o sin
+        /// ancho medido todavía, `base`.
+        ///
+        /// En la vista, `AdaptiveChartHeight`.
+        static func chartHeight(
+            base: CGFloat,
+            width: CGFloat,
+            sizeClass: UserInterfaceSizeClass?
+        ) -> CGFloat {
+            guard sizeClass == .compact, width > chartGrowthReferenceWidth else { return base }
+            let growth = min(width / chartGrowthReferenceWidth, chartMaxGrowth)
+            return (base * growth).rounded()
+        }
+
         /// Fuerza `.large` cuando la ventana pide hojas grandes: ahí un detent medio o de altura fija se
         /// queda corto para selectores y contenido complejo. En la vista, `.yalaSheetDetents(_:)`.
         static func sheetDetents(

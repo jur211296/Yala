@@ -4,7 +4,7 @@ status: backlog
 priority: high
 area: "testing, qa"
 created: 2026-09-09
-updated: 2026-09-11
+updated: 2026-10-01
 source: run 34354119553 (nocturna de 2.1, 2026-09-09) — encontrado al arreglar el avisador
 ---
 
@@ -64,6 +64,16 @@ matara la anterior por memoria, y cayó en `PanelDashboardUITests.swift:138` —
 accounts»— a los 5 s de tocar `panel_sections_config`: el sheet de secciones no mostró sus toggles a tiempo.
 Con el árbol idéntico en las cuatro, no es una regresión de ese PR; es la misma intermitencia que esta tabla
 ya tenía como «1 (pasó al reintentar)».
+
+## Medido el 2026-10-01: en un iPhone SE falla SIEMPRE
+
+`test_freshInstallShowsFourSectionsByDefault` en `YalaLane-Adapt-iPhone-SE` (iOS 27.0, por UDID, con
+`sim-libre.sh --vigilar` sin intrusos): **rojo 3 de 3** en el árbol del PR `iphone-large-models-use-the-extra-width` y
+**rojo 1 de 1 en un worktree limpio de `2.1` (`f8c893cb3`)**, siempre en `PanelDashboardUITests.swift:138` con «No
+apareció el toggle de latestRecords» —el cuarto de la lista—. En `YalaLane-Adapt-iPhone-ProMax`, con el mismo binario,
+verde. No es intermitencia: en una pantalla de 667 pt el cuarto toggle de la hoja de secciones no llega a existir sin
+desplazar (inferido, no medido el árbol). El test necesita desplazarse por la hoja, o el gate solo es honesto en
+iPhones altos.
 
 ## Lo que hay que hacer
 
