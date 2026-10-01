@@ -37,3 +37,9 @@ opción aunque parezca más precisa.
 **Quinta vez el 2026-09-27 (#277), lista a mano otra vez.** Esta vez con `&&`, así que no salió nada a medias: el
 `fatal: pathspec` abortó el commit entero y se repitió sin la ruta. El `&&` funcionó; la lista a mano sigue sin
 funcionar. Leer esta memoria no basta: el primer comando de commit de la sesión se escribe por directorio.
+
+**Sexta vez el 2026-10-01 (#315), y la variante es nueva: dos comandos en UN bloque.** El `&&` paró el primer commit,
+pero el segundo `git add … && git commit` iba en la línea siguiente y corrió igual: el commit de docs se llevó el
+`git mv` del ticket que ya estaba en el índice, y salió antes que el fix. Se arregló con `git reset --soft HEAD~1` +
+`git reset` y rehaciendo los dos. ⇒ **dos commits = dos llamadas**, y mira el primero antes de lanzar el segundo. La
+ruta muerta era la vieja de un `git mv`: tras renombrar, la ruta de origen ya no existe para `git add` sin `-A`.
