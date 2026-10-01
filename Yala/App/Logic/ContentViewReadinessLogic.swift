@@ -87,6 +87,21 @@ struct ShellReadinessState: Equatable {
     /// viva (`appleIDCloseNoticePending`), que retiene el router mientras lo enseña y lo suelta al
     /// reconocerlo (ticket `apple-id-close-blocked-has-no-visible-outcome`, 2026-09-15).
     let isSignOutWorking: Bool
+    /// **El cierre de sesión está BLOQUEADO** (`CloudSessionSignOut.phase` es `.blocked`), esperando a que su
+    /// pantalla lo enseñe y alguien elija salida.
+    ///
+    /// **No es un blocker de `blocker()`**, por lo que dice el término de arriba: `.blocked` puede quedarse
+    /// puesto, y retener el router con él lo dejaría muerto. Lo que hace es una sola cosa: que la cadena
+    /// del Welcome **no se derribe** por un intent que la supersede (`isBlockedSolelyByWelcomeChain`).
+    ///
+    /// Porque el cierre bloqueado puede ser de un step de esa cadena —la vuelta al neutro de la puerta de
+    /// Grupos enseña allí su «espera agotada»—, y tumbar el Welcome desmonta la única pantalla que lo
+    /// enseña: el coordinador se queda en `.blocked` sin dueño, `signOut` empieza con `guard phase == .idle`
+    /// y el «Cerrar sesión» de Ajustes vuelve mudo el resto del proceso. Si el bloqueo cae con las
+    /// credenciales ya soltadas, además deja la sesión a medio cerrar y sin borrado armado (ticket
+    /// `superseding-intent-can-strand-the-sign-out-coordinator`). El intent no se pierde: espera en la cola
+    /// a que la persona elija, y `ContentView` vuelve a mirarla cuando la fase cambia.
+    let isSignOutBlocked: Bool
     let hasActiveInviteError: Bool
     let hasActiveGroupSyncError: Bool
 
@@ -213,7 +228,12 @@ enum ContentViewReadinessLogic {
     /// anti-"inbox alert tardío". Usado por `ContentView.drainContentViewIntents`
     /// para cerrar la cadena welcome cuando un intent que la supersede está
     /// pendiente (cierra el deadlock B4-04).
+    ///
+    /// **Con un cierre de sesión bloqueado, nunca** (`isSignOutBlocked`): el step que lo enseña puede vivir
+    /// dentro de esa cadena, y derribarla lo deja sin dueño. Con el cierre trabajando o armado ya no hace
+    /// falta decirlo aquí: `signOutWorking` y `signOutRelaunch` van por delante de la cadena en `blocker()`.
     static func isBlockedSolelyByWelcomeChain(state: ShellReadinessState) -> Bool {
+        guard !state.isSignOutBlocked else { return false }
         guard let current = blocker(state: state),
               welcomeChainBlockers.contains(current) else { return false }
         return isReady(state: state.withWelcomeChainCleared())
@@ -245,6 +265,7 @@ extension ShellReadinessState {
             showICloudRestartAlert: showICloudRestartAlert,
             appleIDCloseNoticePending: appleIDCloseNoticePending,
             isSignOutWorking: isSignOutWorking,
+            isSignOutBlocked: isSignOutBlocked,
             hasActiveInviteError: hasActiveInviteError,
             hasActiveGroupSyncError: hasActiveGroupSyncError,
             hasActiveInboxAlert: hasActiveInboxAlert,
