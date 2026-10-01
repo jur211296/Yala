@@ -1745,6 +1745,11 @@ final class AppBootstrapper {
         //
         // El `onBridged` ponía al día el camino rápido en memoria del transporte CloudKit. La Fase 3 se
         // llevó ese argumento y el retome sigue en pie, que es exactamente lo que su diseño prometía.
+        //
+        // Justo antes, los gastos que la persona conservó al desasociar y cuyo movimiento ya borró: pasan a
+        // esa misma intención para que el retome los cree aquí (ticket `groups-detach-ledger-has-no-exit`).
+        // Sin esto, un gasto que nadie edita no volvía a pasar por el puente y se quedaba sin movimiento.
+        GroupsDetachedBridgeLedger.reviveVanished(context: context)
         GroupsPendingBridgeResume.resumeIfNeeded(context: context)
         // Paso 8 · la convergencia de los gastos de grupo tras restaurar dentro de «Activar Yala completo», si
         // quedó pendiente (el import no se asentó en la sheet, o la app murió). Aquí y no en un Task propio por

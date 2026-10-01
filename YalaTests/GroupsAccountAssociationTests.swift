@@ -730,8 +730,10 @@ struct GroupsAssociationWiringTests {
         let src = Self.flattened("Yala/Services/Groups/GroupTransactionBridge.swift")
         // El `guard !` va DENTRO del match: sin la negación, el guard se invierte y el puente deja de
         // puentear todo lo que NO esté conservado, o sea todo. Test verde, feature apagada.
-        #expect(src.contains("guard !GroupsDetachedBridgeLedger.isConserved( expenseID: expense.id.uuidString,"))
-        #expect(src.contains("guard !GroupsDetachedBridgeLedger.isConserved( settlementID: settlement.id.uuidString,"))
+        // Desde 2026-10-01 la consulta es `stillHoldsBridge`, que además mira si el movimiento conservado sigue
+        // ahí (`groups-detach-ledger-has-no-exit`); con `isConserved` el gasto borrado se quedaba sin salida.
+        #expect(src.contains("guard !GroupsDetachedBridgeLedger.stillHoldsBridge( expenseID: expense.id.uuidString,"))
+        #expect(src.contains("guard !GroupsDetachedBridgeLedger.stillHoldsBridge( settlementID: settlement.id.uuidString,"))
         // El libro se consulta SELLADO con la cuenta asociada. Sin el sello, los conservados de una
         // cuenta frenarían el puente de otra — y ahí sí se perderían gastos que nadie pidió conservar.
         let sellos = src.components(

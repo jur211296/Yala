@@ -223,6 +223,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | detach-pending-purge-is-unreachable-without-an-association-record | backlog | tickets/backlog/detach-pending-purge-is-unreachable-without-an-association-record.md |
 | detach-postcondition-misses-a-token-refresh-that-lands-after-it | backlog | tickets/backlog/detach-postcondition-misses-a-token-refresh-that-lands-after-it.md |
 | detach-saves-the-personal-graph-outside-the-quiescence-window | backlog | tickets/backlog/detach-saves-the-personal-graph-outside-the-quiescence-window.md |
+| detach-second-pass-replaces-the-conserved-ledger | backlog | tickets/backlog/detach-second-pass-replaces-the-conserved-ledger.md |
 | device-handover-groups-leak | discarded | tickets/discarded/device-handover-groups-leak.md |
 | device-qa-activation-restore-start-fresh | done | tickets/done/device-qa-activation-restore-start-fresh.md |
 | device-qa-apple-id-change-closes-private-session | qa | tickets/qa/device-qa-apple-id-change-closes-private-session.md |
@@ -336,7 +337,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-create-approve-remove-show-a-raw-rpc-error | backlog | tickets/backlog/groups-create-approve-remove-show-a-raw-rpc-error.md |
 | groups-cursor-map-reads-an-undecodable-json-as-no-cursors | backlog | tickets/backlog/groups-cursor-map-reads-an-undecodable-json-as-no-cursors.md |
 | groups-deleted-group-detail-stays-open | done | tickets/done/groups-deleted-group-detail-stays-open.md |
-| groups-detach-ledger-has-no-exit | backlog | tickets/backlog/groups-detach-ledger-has-no-exit.md |
+| groups-detach-ledger-cannot-verify-conserved-drafts | backlog | tickets/backlog/groups-detach-ledger-cannot-verify-conserved-drafts.md |
+| groups-detach-ledger-has-no-exit | qa | tickets/qa/groups-detach-ledger-has-no-exit.md |
 | groups-detach-save-breadcrumb-never-closes-on-throw | backlog | tickets/backlog/groups-detach-save-breadcrumb-never-closes-on-throw.md |
 | groups-drain-failure-reads-as-nothing-pending | done | tickets/done/groups-drain-failure-reads-as-nothing-pending.md |
 | groups-drain-has-no-rollback-and-keeps-the-mirror-of-a-failed-save | backlog | tickets/backlog/groups-drain-has-no-rollback-and-keeps-the-mirror-of-a-failed-save.md |
