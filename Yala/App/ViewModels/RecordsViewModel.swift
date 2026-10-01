@@ -142,6 +142,21 @@ final class RecordsViewModel: Filterable {
     /// `DetailContainerView` (panel de Estadísticas › Registros). En compacta, la hoja de siempre.
     var opensDetailInColumn = false
 
+    /// Menú contextual y teclado (iPad, fase 3): el editor se abre ya en modo «duplicar». Lo limpian los hosts al
+    /// cerrarse el editor, junto con `editingTransaction`.
+    var editorStartsAsDuplicate = false
+
+    /// Menú contextual y ⌫: el registro que espera la confirmación de borrado.
+    var pendingDeleteRecordID: PersistentIdentifier?
+    var isConfirmingSingleDelete = false
+
+    /// Menú contextual: el registro al que se le elige otra categoría.
+    var categoryChangeRecord: TransactionItem?
+
+    /// ↑↓: el día que enseña la vista calendario, si hay uno elegido. Lo escribe `RecordsTabView`, que es quien filtra
+    /// la lista por él (`displayedGroups`); sin él, las flechas abrirían registros que no se ven.
+    var keyboardDayFilter: Date?
+
     /// Mensaje de error surfaceado por `BulkEditSheet` cuando una operación bulk rechaza
     /// la mutación (e.g., subcategoría sobre transferencias).
     var bulkUpdateError: String?
@@ -440,11 +455,18 @@ final class RecordsViewModel: Filterable {
 
     /// Delete selected records (including transfer pairs)
     func deleteSelected(context: ModelContext) {
+        deleteRecords(ids: selectedRecordIDs, context: context)
+        exitSelectionMode()
+    }
+
+    /// Borra estos registros y, de las transferencias, también su pareja. Es el borrado del modo selección; el menú
+    /// contextual y ⌫ lo usan con un solo id.
+    func deleteRecords(ids: Set<PersistentIdentifier>, context: ModelContext) {
         // Collect transfer pair IDs from selected records
         var transferPairIDs: Set<String> = []
         var recordsToDelete: [TransactionItem] = []
 
-        for id in selectedRecordIDs {
+        for id in ids {
             guard let record = context.model(for: id) as? TransactionItem else { continue }
             recordsToDelete.append(record)
             if record.balanceAdjustmentType == TransactionItem.adjustmentTypeTransfer, let pairID = record.transferPairID {
@@ -461,7 +483,7 @@ final class RecordsViewModel: Filterable {
                 )
                 do {
                     let pairs = try context.fetch(descriptor)
-                    for pair in pairs where !selectedRecordIDs.contains(pair.persistentModelID) {
+                    for pair in pairs where !ids.contains(pair.persistentModelID) {
                         context.delete(pair)
                     }
                 } catch {
@@ -487,8 +509,38 @@ final class RecordsViewModel: Filterable {
             print("Error deleting records: \(error)")
             #endif
         }
+    }
 
-        exitSelectionMode()
+    // MARK: - Menú contextual y teclado (iPad, fase 3)
+
+    /// Duplicar desde el menú: el editor de siempre, que arranca ya convertido en un registro nuevo con los mismos
+    /// datos y la fecha de hoy (`NewTransactionView(startsAsDuplicate:)`).
+    func duplicateRecord(_ record: TransactionItem) {
+        editorStartsAsDuplicate = true
+        editingTransaction = record
+        showEditTransaction = true
+    }
+
+    /// Eliminar desde el menú o con ⌫: primero la confirmación.
+    func requestDelete(_ record: TransactionItem) {
+        pendingDeleteRecordID = record.persistentModelID
+        isConfirmingSingleDelete = true
+    }
+
+    func confirmPendingDelete(context: ModelContext) {
+        guard let id = pendingDeleteRecordID else { return }
+        pendingDeleteRecordID = nil
+        deleteRecords(ids: [id], context: context)
+    }
+
+    /// ↑↓: abre en la columna el registro vecino del abierto, en el orden de la lista.
+    func openNeighbor(_ direction: KeyboardCommandLogic.Direction) {
+        let groups = keyboardDayFilter.map { day in
+            groupedRecords.filter { Calendar.current.isDate($0.date, inSameDayAs: day) }
+        } ?? groupedRecords
+        let ids = groups.flatMap(\.records).map(\.persistentModelID)
+        guard let next = KeyboardCommandLogic.neighbor(of: openRecordID, in: ids, direction: direction) else { return }
+        openRecordID = next
     }
 
     // MARK: - Filter Actions
@@ -536,6 +588,7 @@ final class RecordsViewModel: Filterable {
     /// Editar desde la columna de detalle: el registro sigue abierto en su columna y el editor se
     /// presenta directo, sin el encadenado de la hoja (no hay hoja que cerrar antes).
     func editOpenRecord(_ record: TransactionItem) {
+        editorStartsAsDuplicate = false
         editingTransaction = record
         showEditTransaction = true
     }
@@ -605,7 +658,12 @@ final class RecordsViewModel: Filterable {
     /// Update subcategory for all selected transactions.
     /// Bloqueado si la selección contiene transferencias — usan subcat sistema obligatoria.
     func bulkUpdateSubcategory(_ subcategory: Subcategory, context: ModelContext) {
-        let transactions = getSelectedTransactions(context: context)
+        updateSubcategory(subcategory, ids: selectedRecordIDs, context: context)
+    }
+
+    /// El cambio de subcategoría del modo selección, para estos registros. El menú contextual lo usa con uno solo.
+    func updateSubcategory(_ subcategory: Subcategory, ids: Set<PersistentIdentifier>, context: ModelContext) {
+        let transactions = fetchTransactions(ids: ids, context: context)
         if transactions.contains(where: { $0.balanceAdjustmentType == TransactionItem.adjustmentTypeTransfer }) {
             bulkUpdateError = L10n.BulkEdit.cannotEditTransferSubcategory
             return
@@ -823,8 +881,12 @@ final class RecordsViewModel: Filterable {
 
     /// Helper to fetch selected transactions from context
     private func getSelectedTransactions(context: ModelContext) -> [TransactionItem] {
+        fetchTransactions(ids: selectedRecordIDs, context: context)
+    }
+
+    private func fetchTransactions(ids: Set<PersistentIdentifier>, context: ModelContext) -> [TransactionItem] {
         var transactions: [TransactionItem] = []
-        for id in selectedRecordIDs {
+        for id in ids {
             if let transaction = context.model(for: id) as? TransactionItem {
                 transactions.append(transaction)
             }

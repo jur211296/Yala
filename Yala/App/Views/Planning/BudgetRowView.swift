@@ -84,6 +84,7 @@ struct BudgetRowView: View {
             .solidCard(radius: DS.Radius.md)
         }
         .buttonStyle(.plain)
+        .pointerHighlight(cornerRadius: DS.Radius.md)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(L10n.Accessibility.budgetRow(summary.budget.name, Int(summary.percentage), formattedSpent, formattedLimit))
         .accessibilityIdentifier("budget_row_\(summary.budget.name)")

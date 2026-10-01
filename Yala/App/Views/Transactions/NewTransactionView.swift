@@ -64,18 +64,25 @@ struct NewTransactionView: View {
     // Transaction being edited (if any)
     let transactionToEdit: TransactionItem?
 
+    /// Menú contextual «Duplicar» de una fila (iPad, fase 3): el editor arranca ya convertido en un registro nuevo,
+    /// igual que tras pulsar su botón Duplicar. Solo si ese botón estaría habilitado (ver `openAsDuplicateIfAsked`).
+    let startsAsDuplicate: Bool
+    @State private var didStartAsDuplicate = false
+
     init(
         prefillAccountID: PersistentIdentifier? = nil,
         prefillCategoryID: PersistentIdentifier? = nil,
         prefillSubcategoryName: String? = nil,
         prefillFromChatDraft: ChatDraftPrefill? = nil,
-        transactionToEdit: TransactionItem? = nil
+        transactionToEdit: TransactionItem? = nil,
+        startsAsDuplicate: Bool = false
     ) {
         self.prefillAccountID = prefillAccountID
         self.prefillCategoryID = prefillCategoryID
         self.prefillSubcategoryName = prefillSubcategoryName
         self.prefillFromChatDraft = prefillFromChatDraft
         self.transactionToEdit = transactionToEdit
+        self.startsAsDuplicate = startsAsDuplicate
     }
 
     // MARK: - A0-Bridge V2.0 Read-Only Mode (P1-3)
@@ -573,6 +580,7 @@ struct NewTransactionView: View {
             // depende de esta resolución.
             resolveBridgedPointer()
             loadPendingGroupDraftIfNeeded()
+            openAsDuplicateIfAsked()
             // Force expense type in expenses-only mode
             if sessionState.isExpensesOnlyMode {
                 viewModel.transactionType = .expense
@@ -1618,6 +1626,14 @@ struct NewTransactionView: View {
             accounts: viewModel.accounts,
             subcategories: allSubcategories
         )
+    }
+
+    /// Tras `resolveBridgedPointer`: con la MISMA condición que deshabilita el botón Duplicar (`isBridgedCasoA`) y la
+    /// del modo solo lectura. Una vez por editor: el `onAppear` vuelve a correr al cerrarse una hoja encima.
+    private func openAsDuplicateIfAsked() {
+        guard startsAsDuplicate, !didStartAsDuplicate, !isBridgedCasoA, !isBridgedReadOnly else { return }
+        didStartAsDuplicate = true
+        duplicateTransaction()
     }
 
     private func duplicateTransaction() {

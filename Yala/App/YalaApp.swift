@@ -102,6 +102,8 @@ struct YalaApp: App {
         .onChange(of: scenePhase) { _, newPhase in
             handleScenePhase(newPhase)
         }
+        // iPad con teclado: la lista de atajos que sale al mantener ⌘ (fase 3 del carril adaptativo).
+        .commands { YalaCommands() }
     }
 
     @ViewBuilder

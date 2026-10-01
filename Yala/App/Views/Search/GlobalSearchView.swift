@@ -12,6 +12,7 @@ import SwiftUI
 
 struct GlobalSearchView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(SessionState.self) private var sessionState
 
     @State private var searchText: String = ""
     @State private var isSearchActive: Bool = false
@@ -61,6 +62,8 @@ struct GlobalSearchView: View {
                 isSearchActive = true
             }
         }
+        // ⌘F (iPad con teclado): enfoca el campo aunque Buscar ya estuviera delante.
+        .onChange(of: sessionState.keyboardSearchRequest) { _, _ in isSearchActive = true }
     }
 }
 

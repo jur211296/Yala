@@ -58,6 +58,7 @@ struct FilterChipView: View {
         .padding(.horizontal, DS.Chip.paddingH)
         .padding(.vertical, DS.Chip.paddingV)
         .glassEffect(.regular.interactive(), in: .capsule)
+        .pointerHighlight(cornerRadius: nil)
     }
 
     /// Fluent API to set exclude mode on any chip

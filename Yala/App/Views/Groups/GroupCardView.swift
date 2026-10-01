@@ -93,6 +93,7 @@ struct GroupCardView: View {
         }
         .buttonStyle(.plain)
         .contentShape(Rectangle())
+        .pointerHighlight(cornerRadius: DS.Radius.card)
         // El `.disabled(displayMode == .pendingApproval)` que vivía aquí se RETIRÓ (2026-09-06). No
         // protegía nada que `handleTap` no proteja ya —abajo, con su propio `case`— y sí hacía dos
         // daños: apagaba la card para VoiceOver (un botón deshabilitado no se anuncia como activable)

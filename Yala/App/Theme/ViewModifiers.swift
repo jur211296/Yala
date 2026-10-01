@@ -98,6 +98,13 @@ extension View {
         .padding(.vertical, DS.ListRow.paddingV)
         .padding(.horizontal, DS.ListRow.paddingH)
     }
+    /// Resaltado al pasar el puntero (iPad con trackpad o ratón; fase 3 del carril adaptativo). La forma es la de la
+    /// pieza —fila, tarjeta o chip— para que el resaltado y la vista previa del menú contextual la sigan en vez de
+    /// pintar un rectángulo. En un iPhone no hace nada. `nil` = cápsula (chips).
+    func pointerHighlight(cornerRadius: CGFloat?) -> some View {
+        modifier(PointerHighlightModifier(cornerRadius: cornerRadius))
+    }
+
     /// Aplica estilo de card sólido (mismo fondo que widgets del Panel, sin material)
     func solidCard(padding: CGFloat = 0, radius: CGFloat = DS.Card.radius) -> some View {
         modifier(SolidCardModifier(padding: padding, radius: radius))
@@ -824,4 +831,23 @@ extension View {
         .yalaFormRow(showChevron: true)
     }
     .background(.thBackground)
+}
+
+/// Ver `View.pointerHighlight(cornerRadius:)`.
+struct PointerHighlightModifier: ViewModifier {
+    let cornerRadius: CGFloat?
+
+    func body(content: Content) -> some View {
+        if let cornerRadius {
+            content
+                .contentShape(.hoverEffect, RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+                .contentShape(.contextMenuPreview, RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+                .hoverEffect(.highlight)
+        } else {
+            content
+                .contentShape(.hoverEffect, Capsule())
+                .contentShape(.contextMenuPreview, Capsule())
+                .hoverEffect(.highlight)
+        }
+    }
 }

@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (712)
+## Index (713)
 
 | id | status | path |
 |---|---|---|
@@ -266,6 +266,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | export-errors-are-hardcoded-in-spanish | backlog | tickets/backlog/export-errors-are-hardcoded-in-spanish.md |
 | exportable-insights | backlog | tickets/backlog/exportable-insights.md |
 | fab-appears-without-animation | backlog | tickets/backlog/fab-appears-without-animation.md |
+| faq-says-long-press-starts-bulk-edit | backlog | tickets/backlog/faq-says-long-press-starts-bulk-edit.md |
 | filtro-de-cuentas-se-colapsa-al-navegar-a-registros | backlog | tickets/backlog/filtro-de-cuentas-se-colapsa-al-navegar-a-registros.md |
 | financial-report-amounts-unmarked | backlog | tickets/backlog/financial-report-amounts-unmarked.md |
 | finish-halfway-wipe-early-failure-shows-no-feedback | backlog | tickets/backlog/finish-halfway-wipe-early-failure-shows-no-feedback.md |
@@ -420,7 +421,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | invite-recovery-relaunches-for-a-mirror-it-never-uses | backlog | tickets/backlog/invite-recovery-relaunches-for-a-mirror-it-never-uses.md |
 | invite-refresh-forzado-es-noop-si-hay-otro-en-vuelo | done | tickets/done/invite-refresh-forzado-es-noop-si-hay-otro-en-vuelo.md |
 | ipad-and-duo-panel-and-statistics-use-the-width | done | tickets/done/ipad-and-duo-panel-and-statistics-use-the-width.md |
-| ipad-keyboard-shortcuts-pointer-context-menus-and-drop | backlog | tickets/backlog/ipad-keyboard-shortcuts-pointer-context-menus-and-drop.md |
+| ipad-keyboard-shortcuts-pointer-context-menus-and-drop | qa | tickets/qa/ipad-keyboard-shortcuts-pointer-context-menus-and-drop.md |
 | ipad-large-and-extra-large-widgets | backlog | tickets/backlog/ipad-large-and-extra-large-widgets.md |
 | ipad-list-detail-for-groups-and-settings-and-chat-inspector | qa | tickets/qa/ipad-list-detail-for-groups-and-settings-and-chat-inspector.md |
 | ipad-list-highlights-the-open-row | backlog | tickets/backlog/ipad-list-highlights-the-open-row.md |

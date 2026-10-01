@@ -6198,3 +6198,21 @@
 
 /* Apple ID change notice: extra paragraph, only when the close also removes the groups stored on this phone. Says nothing about whose they are or where else they live: that is not always true. */
 "icloud.appleIDChanged.groupsLine" = "Auch die Gruppen auf diesem Telefon werden entfernt.";
+
+/* iPad: atajos de teclado y menús contextuales (fase 3 del carril adaptativo) */
+/* Keyboard menu (iPad, hold Cmd): go to a section */
+"keyboard.menu.go" = "Gehe zu";
+/* Keyboard menu (iPad, hold Cmd): actions on the open record */
+"keyboard.menu.record" = "Eintrag";
+/* Keyboard command Cmd-Shift-N: new shared expense in a group */
+"keyboard.newGroupExpense" = "Neue Gruppenausgabe";
+/* Keyboard command Up arrow: open the previous record in the list */
+"keyboard.previousRecord" = "Vorheriger Eintrag";
+/* Keyboard command Down arrow: open the next record in the list */
+"keyboard.nextRecord" = "Nächster Eintrag";
+/* Context menu on a record row: pick another category for it */
+"records.contextMenu.changeCategory" = "Kategorie ändern";
+/* Context menu on an account card in the Panel: show only this account */
+"panel.accounts.filterByAccount" = "Nach diesem Konto filtern";
+/* Context menu on a group card: open the group */
+"groups.contextMenu.open" = "Gruppe öffnen";

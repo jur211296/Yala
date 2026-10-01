@@ -101,6 +101,9 @@ struct RecordsStandaloneView: View {
                 recalculateData: recalculateData
             ))
             .appliesPendingRemoteChanges(sessionState)
+            // Menú contextual de las filas y ⌫: aquí y no en la lista, que en el iPad puede estar apartada.
+            .modifier(RecordRowActionsPresenter(viewModel: recordsViewModel))
+            .focusedSceneValue(\.recordCommands, recordCommands)
             .modifier(RecordsDetailColumnObservers(
                 recordsViewModel: recordsViewModel,
                 compactColumn: $compactColumn,
@@ -153,6 +156,36 @@ struct RecordsStandaloneView: View {
     private var openRecord: TransactionItem? {
         guard let id = recordsViewModel.openRecordID else { return nil }
         return dataViewModel.allTransactions.first { $0.persistentModelID == id }
+    }
+
+    /// ⌘E, ⌫ y ↑↓ (iPad con teclado): solo con Registros delante, la ventana ancha y fuera del modo selección. Ahí el
+    /// registro se abre en la columna de detalle; en compacta es una hoja y no hay «registro abierto» al que apuntar.
+    private var recordCommands: RecordCommandActions? {
+        guard sessionState.selectedMainTab == .records,
+              horizontalSizeClass == .regular,
+              !recordsViewModel.isSelectionMode
+        else { return nil }
+        let record = openRecord
+        let viewModel = recordsViewModel
+        let sessionState = sessionState
+        return RecordCommandActions(
+            hasOpenRecord: record != nil,
+            canDeleteOpenRecord: record.map { RecordContextActionLogic.actions(.init(record: $0)).canDelete } ?? false,
+            editOpenRecord: {
+                guard let record, RootCommandPerformer.keyboardMayAct(sessionState) else { return }
+                viewModel.editOpenRecord(record)
+            },
+            deleteOpenRecord: {
+                guard let record, RootCommandPerformer.keyboardMayAct(sessionState),
+                      RecordContextActionLogic.actions(.init(record: record)).canDelete
+                else { return }
+                viewModel.requestDelete(record)
+            },
+            move: { direction in
+                guard RootCommandPerformer.keyboardMayAct(sessionState) else { return }
+                viewModel.openNeighbor(direction)
+            }
+        )
     }
 
     /// Lista y detalle (`ListDetailSplit`): en ventana ancha a la vez; en compacta se pliega solo a la
@@ -472,10 +505,13 @@ private struct RecordsStandaloneSheets: ViewModifier {
             }
             .sheet(isPresented: $recordsViewModel.showEditTransaction) {
                 if let transaction = recordsViewModel.editingTransaction {
-                    NewTransactionView(transactionToEdit: transaction)
+                    NewTransactionView(
+                        transactionToEdit: transaction,
+                        startsAsDuplicate: recordsViewModel.editorStartsAsDuplicate)
                         .presentationDetents([.large])
                         .onDisappear {
                             recordsViewModel.editingTransaction = nil
+                            recordsViewModel.editorStartsAsDuplicate = false
                             reloadAndRecalculate()
                         }
                 }

@@ -93,6 +93,12 @@ struct RecordsTabView: View {
         .onAppear {
             syncCalendarMonth()
         }
+        .onChange(of: keyboardDay, initial: true) { _, day in viewModel.keyboardDayFilter = day }
+    }
+
+    /// El día al que ↑↓ se limitan: el elegido en la vista calendario (`displayedGroups`), o ninguno.
+    private var keyboardDay: Date? {
+        recordsViewMode == .calendar ? selectedCalendarDay : nil
     }
 
     // MARK: - Filter Bar (panel style)
@@ -309,6 +315,7 @@ struct RecordsTabView: View {
                                     viewModel.toggleSelection(record.persistentModelID)
                                 }
                             )
+                            .modifier(RecordRowContextMenu(record: record, viewModel: viewModel))
                         }
                     } header: {
                         RecordDateSectionView(date: group.date)

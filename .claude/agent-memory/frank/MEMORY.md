@@ -188,6 +188,7 @@
 - [Un motivo que abre una pérdida hereda sus falsos positivos](feedback_un_motivo_que_abre_una_perdida_hereda_sus_falsos_positivos.md) — todo 401 era «caducada»; prueba aparte.
 - [El mecanismo nuevo quita la tolerancia del viejo](feedback_el_modificador_nuevo_quita_la_tolerancia.md) — `.hidden` en TabView abortó donde quitar la pestaña se toleraba.
 - [El fallo que se traga es gemelo del que aborta](feedback_el_fallo_que_se_traga_es_gemelo_del_que_aborta.md) — `_ = deleteFiles` dejaba el mismo bucle.
+- [El flag que enciendo lo lee la hoja](feedback_el_flag_que_enciendo_lo_lee_la_hoja.md) — «Editar» abría uno nuevo; la entrada nueva cruza las puertas del dedo.
 
 ## Estado del trabajo
 - [CI propio: aparcado](project_ci_propio_fases_4_a_7.md) — Yala sigue público (30-sep); runner con candados, sin uso; volver solo si pasa a privado.

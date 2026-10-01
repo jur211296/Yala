@@ -2922,6 +2922,13 @@ final class AppBootstrapper {
         enqueueSharedImage(firstImageURL)
     }
 
+    /// Un recibo soltado sobre Yala (iPad, fase 3 del carril adaptativo), ya guardado en `PendingImages/` por
+    /// `ReceiptDropHandler`. Entra por el MISMO camino que la extensión de compartir: consentimiento de IA incluido, y si
+    /// no llega a presentarse, la recuperación del arranque lo vuelve a intentar como a cualquier imagen compartida.
+    func presentDroppedReceipt(_ url: URL) {
+        enqueueSharedImage(url)
+    }
+
     /// Routes a shared-image URL through the router. Panel navigation and
     /// sheet presentation are separate intents so the mainTab consumer can
     /// switch tabs before the panel consumer presents the sheet (consumer
