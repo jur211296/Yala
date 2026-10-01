@@ -115,6 +115,7 @@ struct RecordRowView: View {
             .listRowCard()
         }
         .buttonStyle(.plain)
+        .pointerHighlight(cornerRadius: DS.Radius.card)
         .accessibilityLabel(accessibilityDescription)
         .accessibilityIdentifier("record_row")
         .accessibilityAddTraits(isSelected ? .isSelected : [])

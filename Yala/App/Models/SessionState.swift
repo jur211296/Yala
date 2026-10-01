@@ -72,6 +72,12 @@ enum DeepLinkDestination: Equatable, Hashable {
     case groupDetail(groupID: String)  // Grupo especifico
 }
 
+/// Lo que un atajo de teclado pide abrir sobre el Panel (ver `SessionState.pendingKeyboardPanelRequest`).
+enum KeyboardPanelRequest: Equatable {
+    case yalaAI
+    case settings
+}
+
 /// Global session state to manage synchronization between views
 @MainActor
 @Observable
@@ -578,6 +584,14 @@ class SessionState {
     /// el mismo flag: aquel exige un grupo elegible para consumirse y este existe precisamente porque
     /// todavía no hay ninguno. Lo consume `GroupsContainerView` al montar.
     var pendingNewGroupForm: Bool = false
+
+    /// ⌘K y ⌘, (iPad con teclado): lo que el Panel debe abrir al estar delante. Lo consume `PanelView`, que es quien
+    /// tiene Yala IA y Ajustes en una hoja propia; `RootCommandPerformer` lo pone junto con la selección del Panel.
+    var pendingKeyboardPanelRequest: KeyboardPanelRequest?
+
+    /// ⌘F: cada pulsación lo incrementa y `GlobalSearchView` enfoca su campo. Un contador y no un flag: la segunda
+    /// pulsación con Buscar ya delante también tiene que enfocar.
+    var keyboardSearchRequest: Int = 0
 
     /// URL of a shared image captured from the Share Extension. Not a flag —
     /// it's the payload that ImageSelectionView consumes once opened. The

@@ -482,20 +482,42 @@ struct GroupsContainerView: View {
     }
 
     private func groupCardRow(group: SplitGroup) -> some View {
-        GroupCardView(
+        let displayMode = GroupCardDisplayLogic.displayMode(
+            memberStatus: viewModel.currentMemberStatus(for: group),
+            migrationState: group.migrationState
+        )
+        return GroupCardView(
             group: group,
             memberCount: viewModel.memberCount(for: group),
             pendingCount: viewModel.pendingMemberCount(for: group),
             debts: viewModel.currentUserDebts(for: group),
-            displayMode: GroupCardDisplayLogic.displayMode(
-                memberStatus: viewModel.currentMemberStatus(for: group),
-                migrationState: group.migrationState
-            ),
+            displayMode: displayMode,
             action: { viewModel.openDetail(for: group) },
             onRejectedTap: { rejectedGroupPendingLeave = group },
             onPendingTap: { showPendingApprovalNotice = true }
         )
         .accessibilityIdentifier("group_card")
+        // Clic secundario en el iPad, pulsación larga en el iPhone: abrir y apuntar un gasto, por los caminos del
+        // toque y del FAB. «Abrir» solo donde el toque abre el detalle (no en una solicitud en revisión ni en una
+        // rechazada, que tienen su propia puerta); «Nuevo gasto» solo donde el composer deja apuntar.
+        .contextMenu {
+            if GroupContextActionLogic.offersOpen(displayMode) {
+                Button(L10n.Keyboard.openGroup, systemImage: "arrow.up.right.square") {
+                    viewModel.openDetail(for: group)
+                }
+            }
+            if let eligibles = expenseTargets(for: group) {
+                Button(L10n.Groups.Expense.newExpense, systemImage: "plus") {
+                    expenseComposerPayload = ExpenseComposerPayload(groups: eligibles, initialGroup: group)
+                }
+            }
+        }
+    }
+
+    /// Los grupos elegibles para el composer si `group` es uno de ellos; si no, `nil` (el menú no ofrece el gasto).
+    private func expenseTargets(for group: SplitGroup) -> [SplitGroup]? {
+        let eligibles = viewModel.eligibleGroupsForExpense()
+        return eligibles.contains(where: { $0.persistentModelID == group.persistentModelID }) ? eligibles : nil
     }
 
     // C-10: `handleMigratedRejoin(_:)` vivía aquí y se ELIMINÓ. Era la SEGUNDA entrada a la cadena de

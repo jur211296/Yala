@@ -118,6 +118,22 @@ struct AccountsCarouselView: View {
                 )
             }
             .buttonStyle(.plain)
+            .pointerHighlight(cornerRadius: DS.Radius.xl)
+            // Clic secundario en el iPad, pulsación larga en el iPhone: lo mismo que el toque y que el botón de ajustes
+            // de la tarjeta, que no existe en las cuentas de sistema.
+            .contextMenu {
+                // En modo exclusión el toque invierte su sentido; ahí «filtrar» confundiría, así que no se ofrece.
+                if !isSelected && !viewModel.isExcludeMode {
+                    Button(L10n.Keyboard.filterByAccount, systemImage: "line.3.horizontal.decrease.circle") {
+                        viewModel.selectedAccountID = account.persistentModelID
+                    }
+                }
+                if !account.isSystemAccount {
+                    Button(L10n.Account.edit, systemImage: "slider.horizontal.3") {
+                        onEditAccount(account)
+                    }
+                }
+            }
         } else {
             AddAccountCardView {
                 onAddAccount()

@@ -232,6 +232,19 @@ enum L10n {
 
     // MARK: - Panel
 
+    /// iPad con teclado: menús que salen al mantener ⌘, y los menús contextuales que añade la fase 3 del carril
+    /// adaptativo. Los verbos que ya existían (Editar, Eliminar, Duplicar, Buscar…) se reusan de `Action`/`Common`.
+    enum Keyboard {
+        static var goMenu: String { ls("keyboard.menu.go", comment: "Menú de teclado: ir a una sección") }
+        static var recordMenu: String { ls("keyboard.menu.record", comment: "Menú de teclado: el registro abierto") }
+        static var newGroupExpense: String { ls("keyboard.newGroupExpense", comment: "⌘⇧N: nuevo gasto de grupo") }
+        static var previousRecord: String { ls("keyboard.previousRecord", comment: "↑: registro anterior") }
+        static var nextRecord: String { ls("keyboard.nextRecord", comment: "↓: registro siguiente") }
+        static var changeCategory: String { ls("records.contextMenu.changeCategory", comment: "Menú contextual de registro") }
+        static var filterByAccount: String { ls("panel.accounts.filterByAccount", comment: "Menú contextual de cuenta") }
+        static var openGroup: String { ls("groups.contextMenu.open", comment: "Menú contextual de grupo") }
+    }
+
     enum Panel {
         static var accounts: String {
             ls("panel.accounts", comment: "Accounts section title")

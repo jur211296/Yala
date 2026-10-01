@@ -1,10 +1,13 @@
 ---
 id: ipad-keyboard-shortcuts-pointer-context-menus-and-drop
-status: backlog
+status: qa
 priority: low
 area: "platform, ipad, accessibility, records"
 created: 2026-09-26
-updated: 2026-09-27
+updated: 2026-09-30
+qa-status: needs-testing
+qa-date: 2026-09-30
+qa-notes: atajos, menus y flechas vistos en simulador; falta puntero, soltar desde el Mac y la lista al mantener cmd (guion abajo)
 source: "exploración iPad (docs/exploracion/ipad-nativo.md §5.3 y §8, fase 3), 2026-09-26"
 ---
 
@@ -44,6 +47,39 @@ aparta solo del pliegue. Los atajos y el puntero son de iPad con teclado; en iPh
   imagen.
 - Resaltado del puntero: no se captura bien en simulador; se anota en el guion de `qa` para un iPad real.
 - XCUITest de los atajos principales (⌘N, ⌘F) en el iPad, por UDID. Gate verde.
+
+## Hecho (2026-09-30)
+
+- **Atajos** en `.commands` (`YalaCommands`), con las acciones publicadas por cada ventana (`focusedSceneValue`):
+  ⌘N, ⌘⇧N, ⌘F, ⌘K, ⌘1…⌘6 (en el orden de la barra lateral), ⌘, y, en Registros con la ventana ancha y un registro
+  abierto, ⌘E, ⌫ (con confirmación) y ↑↓. Un atajo que abre algo no hace nada si ya hay otra cosa presentada.
+  En la shell de solo grupos no se ofrecen los que abren sobre el Panel.
+- **Menús contextuales**: registro (Editar, Duplicar, Cambiar categoría, Eliminar), presupuesto (Editar), grupo
+  (Abrir grupo, Nuevo gasto) y tarjeta de cuenta del Panel (Filtrar por esta cuenta, Editar cuenta). En un registro
+  de grupo no se ofrecen Duplicar ni Eliminar: el editor tampoco los deja.
+- **Puntero**: resaltado en filas de registro y de presupuesto, tarjetas de grupo y de cuenta, y chips de filtro.
+- **Soltar** una imagen o un PDF (su primera página) sobre Yala abre Nuevo registro por imagen, por el camino de la
+  extensión de compartir. Sin Pro, el aviso de Pro.
+- Evidencia: `qa/evidencia-adaptativo-20260930/ipad-keyboard-shortcuts-pointer-context-menus-and-drop/`.
+  XCUITest: `KeyboardShortcutsUITests` (⌘N, ⌘F, ⌘4 + ⌘E en el iPad; menú de registro y de presupuesto por
+  pulsación larga en iPad y iPhone). Unit: `KeyboardCommandLogicTests`.
+
+## Guion de QA para Jürgen (iPad con teclado y trackpad, ~5 min)
+
+Montaje: un iPad real con teclado físico y trackpad (o ratón), con la build de este PR. En el simulador vale casi todo
+salvo el puntero; ahí se conecta el teclado del Mac con «I/O › Keyboard › Connect Hardware Keyboard».
+
+1. **Mantén ⌘** en el Panel. Sale la lista con «Nuevo registro ⌘N», «Ir» (Buscar, Yala IA, las seis secciones) y
+   «Registro». Pasa: la lista aparece y los números de ⌘1…⌘6 coinciden con el orden de la barra lateral.
+2. **⌘4** (o la posición de Registros), toca un registro y pulsa **↓** dos veces y **↑** una. Pasa: el registro
+   abierto a la derecha cambia al siguiente, al siguiente y vuelve.
+3. Con un registro abierto, pulsa **⌫**. Pasa: sale «¿Eliminar 1 registro?». Pulsa Cancelar.
+4. Pasa el **puntero** sobre una fila de registro, una tarjeta de presupuesto, una tarjeta de cuenta del Panel y un
+   chip de filtro. Pasa: cada uno se resalta con su forma (esquinas redondeadas o cápsula), no con un rectángulo.
+5. **Clic secundario** (dos dedos en el trackpad) sobre un registro, un presupuesto, un grupo y una cuenta. Pasa:
+   sale el menú de cada uno; «Editar» del presupuesto abre ESE presupuesto.
+6. **Soltar**: desde Fotos u otra app en Split View, arrastra una foto de un recibo sobre Yala. Pasa: se abre Nuevo
+   registro por imagen con esa foto. Repite con un PDF desde Archivos: entra su primera página.
 
 ## Relacionados
 

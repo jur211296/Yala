@@ -213,3 +213,25 @@ paths:
   panel tapa la lista (`ZStackLayout`, la lista sigue montada) y su X la devuelve; al pasar a compacta con uno
   abierto, la hoja de siempre. El panel es `TransactionDetailSheet(presentation: .pane)`: cabecera propia con X y
   Editar, porque un `.toolbar` o el título inline ahí dentro cambiarían la barra de Estadísticas.
+
+## Teclado, puntero, menús contextuales y soltar (2026-09-30)
+
+- **Un atajo de teclado nuevo va en `YalaCommands` y su acción la publica la VENTANA** con `focusedSceneValue`
+  (`RootCommandActions` desde `MainTabView`, `RecordCommandActions` desde `RecordsStandaloneView`). No lo cuelgues de
+  un singleton: cada ventana del iPad manda sobre sí misma, los números de ⌘1…⌘6 siguen su barra lateral
+  (`KeyboardCommandLogic.sectionTabs`) y fuera de la app montada los atajos salen desactivados solos.
+- **Un atajo que ABRE algo pregunta primero `RootCommandPerformer.keyboardMayAct`** (sin `shellModalBlocker` y sin
+  nada presentado según `ModalPresentationProbe`). Un `.commands` dispara con una hoja encima, y encender otra
+  presentación con el anchor ocupado es la trampa de las «Presentaciones» de arriba.
+- **Reusa el camino del dedo**: ⌘N va por el router como el Centro de Control, ⌘⇧N por el FAB de grupos, ⌘K y ⌘,
+  por el Panel (`SessionState.pendingKeyboardPanelRequest`), soltar un recibo por `enqueueSharedImage` como la
+  extensión de compartir. Así heredan las puertas Pro y de consentimiento sin copiarlas.
+- **Un menú contextual nunca ofrece lo que el editor prohíbe** (`RecordContextActionLogic`). Y es más estricto que
+  el editor cuando no puede medir lo mismo: el editor habilita Borrar en un registro de grupo huérfano tras un fetch
+  al store de grupos; la fila no hace ese fetch, así que el menú no ofrece Borrar ni Duplicar en NINGÚN registro con
+  puntero de grupo. En modo selección no hay menú.
+- **Lo que un menú o un atajo presenta cuelga del host, no de la lista** (`RecordRowActionsPresenter` en
+  `RecordsStandaloneView` y `DetailContainerView`): en el iPad la lista puede estar apartada (`.detailOnly`) y una
+  confirmación anclada ahí no tendría dónde salir. Un solo anchor por observable.
+- **Resaltado del puntero = `.pointerHighlight(cornerRadius:)`** con el radio de la pieza (`nil` = cápsula): da la
+  forma al resaltado y a la vista previa del menú contextual. En iPhone no hace nada.

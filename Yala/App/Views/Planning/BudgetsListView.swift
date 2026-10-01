@@ -83,9 +83,12 @@ struct BudgetsListView: View {
             BudgetDetailDestination(budgetID: navID.id, viewModel: viewModel)
                 .announcesShownInDetailColumn()
         }
+        // `editingBudget`: `nil` crea (el FAB y el empty state lo ponen a `nil` antes); un presupuesto lo edita
+        // (menú contextual de la fila, fase 3). Hasta entonces nadie lo leía y la hoja creaba siempre.
         .sheet(isPresented: $viewModel.showBudgetEditor) {
-            BudgetEditorView(budget: nil)
+            BudgetEditorView(budget: viewModel.editingBudget)
                 .onDisappear {
+                    viewModel.editingBudget = nil
                     refreshData()
                 }
         }
@@ -190,6 +193,13 @@ struct BudgetsListView: View {
                             summary: summary,
                             currencyCode: summary.budget.currencyCode
                         )
+                        // Clic secundario en el iPad, pulsación larga en el iPhone: el editor de siempre.
+                        .contextMenu {
+                            Button(L10n.Action.edit, systemImage: "pencil") {
+                                viewModel.editingBudget = summary.budget
+                                viewModel.showBudgetEditor = true
+                            }
+                        }
                     }
                 }
             }

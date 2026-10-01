@@ -397,6 +397,16 @@ struct PanelView: View {
         .onChange(of: StoreKitManager.shared.isProUser) { _, _ in
             viewModel.retriggerHeroAI()
         }
+        .modifier(PanelKeyboardRequestObserver(sessionState: sessionState, open: openFromKeyboard))
+    }
+
+    /// ⌘K y ⌘, (iPad con teclado): Yala IA por su camino de siempre (Pro → presentación → consentimiento) y Ajustes
+    /// con la misma hoja que el botón de perfil.
+    private func openFromKeyboard(_ request: KeyboardPanelRequest) {
+        switch request {
+        case .yalaAI: startChat()
+        case .settings: sheets.isPresentingSettings = true
+        }
     }
 
     /// Drops unknown raw values so a legacy/future preference string doesn't
@@ -697,4 +707,23 @@ struct PanelView: View {
         DS.Haptic.light()
     }
 
+}
+
+/// Consume la petición de un atajo (`SessionState.pendingKeyboardPanelRequest`) cuando el Panel está delante. Se
+/// mira también al cambiar de pestaña: si el Panel no estaba en la barra, `selectMainTab` lo elige 50 ms después.
+private struct PanelKeyboardRequestObserver: ViewModifier {
+    let sessionState: SessionState
+    let open: (KeyboardPanelRequest) -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .onChange(of: sessionState.pendingKeyboardPanelRequest) { _, _ in consumeIfFront() }
+            .onChange(of: sessionState.selectedMainTab) { _, _ in consumeIfFront() }
+    }
+
+    private func consumeIfFront() {
+        guard sessionState.selectedMainTab == .panel, let request = sessionState.pendingKeyboardPanelRequest else { return }
+        sessionState.pendingKeyboardPanelRequest = nil
+        open(request)
+    }
 }

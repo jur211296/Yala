@@ -151,6 +151,8 @@ struct DetailContainerView: View {
                 )
             )
             .appliesPendingRemoteChanges(sessionState)
+            // Menú contextual de las filas de Registros: confirmación de borrado y selector de categoría.
+            .modifier(RecordRowActionsPresenter(viewModel: recordsViewModel))
             .onAppear {
                 dataViewModel.setContext(modelContext)
                 performRecalculation()
@@ -835,10 +837,13 @@ private struct DetailContainerSheets: ViewModifier {
             }
             .sheet(isPresented: $recordsViewModel.showEditTransaction) {
                 if let transaction = recordsViewModel.editingTransaction {
-                    NewTransactionView(transactionToEdit: transaction)
+                    NewTransactionView(
+                        transactionToEdit: transaction,
+                        startsAsDuplicate: recordsViewModel.editorStartsAsDuplicate)
                         .presentationDetents([.large])
                         .onDisappear {
                             recordsViewModel.editingTransaction = nil
+                            recordsViewModel.editorStartsAsDuplicate = false
                             reloadAndRecalculate()
                         }
                 }

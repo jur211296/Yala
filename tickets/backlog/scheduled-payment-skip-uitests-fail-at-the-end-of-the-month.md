@@ -4,6 +4,7 @@ status: backlog
 priority: medium
 area: "testing, planificación"
 created: 2026-09-29
+updated: 2026-09-30
 source: "gate de sheet-size-follows-the-device-not-the-window, 2026-09-29"
 ---
 
@@ -25,6 +26,8 @@ cae en el mes en curso.
 - **`2.1` en `435bd8eb`, sin cambios: 2 de 2 en rojo.** El árbol de `sheet-size-follows-the-device-not-the-window`: 2 de
   2 en rojo, mismo mensaje.
 - No se midió desde qué día del mes falla.
+- **Re-medido el 2026-09-30** en el gate de `ipad-keyboard-shortcuts-pointer-context-menus-and-drop`: 2 de 2 en rojo en
+  `2.1` (`6e3fdacc2`, worktree limpio) y en la rama, mismo mensaje. Los otros 182 casos de la suite, en verde.
 
 ## Qué hacer
 

@@ -3362,6 +3362,12 @@ struct MainTabView: View {
             .routerConsumer(.mainTab) {
                 drainMainTabIntents()
             }
+            // iPad con teclado y arrastrar: los atajos globales de esta ventana y soltar recibos (fase 3).
+            .modifier(RootCommandsModifier(
+                sessionState: sessionState,
+                sections: mountedTabs,
+                canSearch: showsSearchTab,
+                isGroupsOnly: reduceToGroupsOnly))
             // Re-drain al liberarse el shell (cerrar un cover superior no bumpea
             // revision — mismo racional que el gate del ChatSheet en PanelShell).
             .onChange(of: sessionState.shellModalBlocker) { _, newBlocker in
