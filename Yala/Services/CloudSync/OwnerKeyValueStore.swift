@@ -55,8 +55,9 @@
 //
 //  **Lo que esta puerta NO cubre, dicho entero:**
 //   · **La herencia del arranque neutro.** Tras «Cerrar sesión» nadie ha elegido todavía: ese arranque aplica
-//     las preferencias del Apple ID, y quien entra después por un grupo se las encuentra en local. La puerta
-//     no puede saber quién va a entrar. Ticket `neutral-boot-hands-owner-prefs-to-whoever-signs-in-next`.
+//     las preferencias del Apple ID, y la puerta no puede saber quién va a entrar. Lo cierran las dos altas
+//     solo-grupos, que las retiran en local al empezar (`GroupsOnlySignUpPreferenceReset`, 2026-10-01). Ticket
+//     `neutral-boot-hands-owner-prefs-to-whoever-signs-in-next`.
 //   · **La sesión en la nube completa (celda E).** Su eje vale `true`, y el faro y el cutover tienen que
 //     escribir aquí desde ella. Sus 36 preferencias van al backend salvo el idioma, que `LanguageManager`
 //     sigue escribiendo aquí. Ticket `language-override-bypasses-the-cloud-prefs-channel`.

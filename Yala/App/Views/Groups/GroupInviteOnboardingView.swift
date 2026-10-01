@@ -244,11 +244,17 @@ struct GroupInviteOnboardingView: View {
     ///
     /// El `didSeed` no es defensivo: `onAppear` vuelve a correr al reaparecer la vista, y sin él una
     /// re-siembra pisaría lo que la persona acabara de teclear. Y solo siembra sobre vacío, para no pisar
-    /// tampoco lo tecleado dentro de la misma aparición. Para un invitado FRESCO el perfil está vacío ⇒ el
-    /// campo queda como estaba y su recorrido no cambia.
+    /// tampoco lo tecleado dentro de la misma aparición.
+    ///
+    /// **Solo para quien ya tiene cuenta en este teléfono** (`hasCompletedOnboarding`, la misma pregunta que
+    /// bifurca el CTA). Al invitado FRESCO no se le siembra, y no porque su perfil esté vacío: tras «Cerrar
+    /// sesión» no lo está. El arranque neutro aplica el `userName` del iCloud-KV del Apple ID, que en un móvil
+    /// prestado es el del DUEÑO, y sembrarlo hacía que quien no tocara el campo entrara al grupo con el nombre
+    /// de otra persona (ticket `neutral-boot-hands-owner-prefs-to-whoever-signs-in-next`).
     private func seedNameFromProfileIfNeeded() {
         guard !didSeedName else { return }
         didSeedName = true
+        guard hasCompletedOnboarding else { return }
         guard userName.isEmpty else { return }
         userName = profileName.trimmingCharacters(in: .whitespacesAndNewlines)
     }
@@ -517,6 +523,12 @@ struct GroupInviteOnboardingView: View {
         // Armarla en las dos ramas apagaría iCloud a quien acepta una invitación desde su Yala de siempre.
         //
         StorageModePersistence.armGroupsOnlyNeutralMount()
+
+        // 0.5. **Lo que dejó el arranque neutro es del dueño del Apple ID, no del invitado** (ticket
+        // `neutral-boot-hands-owner-prefs-to-whoever-signs-in-next`): su idioma, su Panel, sus avisos… Hermano de
+        // la misma línea en `GroupsOrganizerOnboarding.writePreferences`. DESPUÉS del arm —sin el eje en `true`, con
+        // él la puerta del KV se cierra— y ANTES de escribir nombre, divisa y periodo, que si no se irían con lo demás.
+        GroupsOnlySignUpPreferenceReset.resetLive()
 
         let sync = PreferenceSyncService.shared
         let finalName = userName.trimmingCharacters(in: .whitespacesAndNewlines)

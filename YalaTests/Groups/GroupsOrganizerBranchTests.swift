@@ -60,10 +60,15 @@ private final class SpyPreferenceWriter: GroupsOrganizerPreferenceWriting {
         defaults.set(value, forKey: key)
     }
 
-    /// Se pregunta al MISMO store aislado, nunca a `.standard`: el host de los unit tests es la app, así
-    /// que `.standard` es el del simulador y la divisa que dejara ahí otra corrida decidiría este test.
-    func hasValue(forKey key: String) -> Bool {
-        defaults.object(forKey: key) != nil
+    /// La mitad de los ALMACENES del reset de producción, sobre el MISMO store aislado: nunca `.standard`,
+    /// que en el host de los unit tests es el del simulador. El idioma va a una suite aislada propia.
+    private(set) var resets = 0
+    func resetSyncedPreferences() {
+        resets += 1
+        GroupsOnlySignUpPreferenceReset.removeLocal(from: .init(
+            standard: defaults,
+            language: makeIsolatedDefaults(prefix: "g3.spy.lang"),
+            appGroup: nil))
     }
 }
 
@@ -266,24 +271,23 @@ struct GroupsOrganizerNoWriteTests {
         }
     }
 
-    @Test("G4 · una divisa YA escrita no se pisa — el invariante del parque")
-    func setupNeverOverwritesAnExistingCurrency() {
-        // `defaultCurrencyCode` es `synced: true`: en una instalación nueva de un Apple ID que ya usa Yala,
-        // el valor puede haber bajado por iKV ANTES de que el organizador toque nada. Pisarlo le cambiaría
-        // la divisa por la de la región donde esté hoy, y esa escritura viaja de vuelta a la CUENTA.
-        let defaults = makeIsolatedDefaults(prefix: "g4.alta.divisa.existente")
+    @Test("G4 · la divisa que ya había es la del DUEÑO del Apple ID, y se sustituye por la de la región")
+    func setupReplacesTheOwnersCurrencyWithTheRegionOne() {
+        // Hasta el 2026-10-01 aquí se fijaba lo contrario: «una divisa ya escrita no se pisa». La única que podía
+        // haber es la que aplicó el arranque neutro desde el iCloud-KV del Apple ID —la del DUEÑO, en un móvil
+        // prestado—, y el alta ahora la retira antes de escribir (ticket
+        // `neutral-boot-hands-owner-prefs-to-whoever-signs-in-next`). Pisarla tampoco viaja: con el neutro armado
+        // la puerta del KV está cerrada.
+        let defaults = makeIsolatedDefaults(prefix: "g4.alta.divisa.duenyo")
         defaults.set(CurrencyCode.eur.rawValue, forKey: AppPreferences.Keys.defaultCurrencyCode)
         let writer = SpyPreferenceWriter(defaults: defaults)
 
         GroupsOrganizerOnboarding.writePreferences(displayName: "Ana", writer: writer, regionCode: "US", defaults: defaults)
 
-        #expect(defaults.string(forKey: AppPreferences.Keys.defaultCurrencyCode) == CurrencyCode.eur.rawValue)
-        // Contar la escritura, no solo mirar el estado final: re-escribir el MISMO valor dejaría el store
-        // idéntico y un mutante sin guard pasaría en verde si el fixture casara con la región.
-        #expect(!writer.writes.contains(AppPreferences.Keys.defaultCurrencyCode),
-                "el alta escribió la divisa encima de una existente: \(writer.writes)")
-        // El resto del alta sí ocurre: el guard es de la divisa, no del alta entera.
-        #expect(defaults.bool(forKey: AppPreferences.Keys.groupsBetaUnlocked))
+        #expect(defaults.string(forKey: AppPreferences.Keys.defaultCurrencyCode) == CurrencyCode.usd.rawValue,
+                "el organizador sigue con la divisa del dueño")
+        #expect(writer.syncedWrites.contains(AppPreferences.Keys.defaultCurrencyCode))
+        #expect(writer.resets == 1, "el alta no retiró lo que dejó el arranque neutro")
     }
 }
 
