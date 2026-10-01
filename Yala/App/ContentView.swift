@@ -775,7 +775,12 @@ struct ContentView: View {
         // Fix carrera 2026-07-14: la fase de sign-out alimenta el blocker `signOutRelaunch`
         // como condición viva — cinturón explícito de recompute (leerla en el snapshot ya
         // registra el tracking @Observable; esto la hace grep-able junto a isWipingData).
-        .onChange(of: CloudSessionSignOut.shared.phase) { _, _ in updateContentViewReadiness() }
+        //
+        // Y **re-mira la cola** (ticket `superseding-intent-can-strand-the-sign-out-coordinator`): un intent que
+        // supersede el Welcome y llega con el cierre trabajando o bloqueado espera en la cola, y que la fase
+        // vuelva a reposo no bumpea la revisión (`markUnready` no bumpea). Sin el re-peek, la invitación se
+        // quedaba esperando un bump que no llega — el deadlock B4-04, en la salida del bloqueo.
+        .onChange(of: CloudSessionSignOut.shared.phase) { _, _ in signOutPhaseChanged() }
         // Cross-node: un sheet de MainTabView visible bloquea las presentaciones
         // del shell (el cover del inbox alert no debe montarse encima y ser
         // tumbado por su dismiss — variante cross-node del bug TestFlight).
@@ -1049,6 +1054,9 @@ struct ContentView: View {
             // Condición VIVA del dominio, no un `@State`: el gesto que pidió el cierre puede bajar su flag
             // en el tap y el cierre sigue corriendo segundos después (regla 4 de Presentaciones).
             isSignOutWorking: CloudSessionSignOut.shared.phase == .working,
+            // Tampoco un `@State`: el bloqueo dura lo que tarde la persona en elegir salida, y su pantalla puede
+            // ser un step del Welcome. No retiene el router; solo impide derribar esa cadena (ver el término).
+            isSignOutBlocked: signOutIsBlocked,
             hasActiveInviteError: activeInviteError != nil,
             hasActiveGroupSyncError: activeGroupSyncError != nil,
             hasActiveInboxAlert: !activeInboxNotification.isEmpty,
@@ -1101,6 +1109,25 @@ struct ContentView: View {
                     MetricsService.routingReadinessBlocked(blocker: blocker)
                 }
             }
+        }
+    }
+
+    /// `true` con el cierre de sesión en `.blocked`, sea cual sea su motivo. Lee la fase del coordinador, así que
+    /// `@Observable` la rastrea desde el snapshot.
+    @MainActor
+    private var signOutIsBlocked: Bool {
+        if case .blocked = CloudSessionSignOut.shared.phase { return true }
+        return false
+    }
+
+    /// La fase del cierre cambió: recomputa la matriz y, si el shell sigue tapado, re-mira la cola — el mismo
+    /// re-peek explícito que hacen `dismissSplash` y el asentamiento del arranque por el deadlock B4-04. Con el
+    /// shell libre no hace falta: `markReady` bumpea y el `.onChange(revision)` drena.
+    @MainActor
+    private func signOutPhaseChanged() {
+        updateContentViewReadiness()
+        if ContentViewReadinessLogic.blocker(state: currentShellReadinessState()) != nil {
+            drainContentViewIntents()
         }
     }
 

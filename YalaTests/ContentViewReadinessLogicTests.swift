@@ -5,6 +5,7 @@
 //  Pure-logic, no context, no singletons. Safe under parallel test execution.
 //
 
+import Foundation
 import Testing
 @testable import Yala
 
@@ -44,7 +45,8 @@ struct ContentViewReadinessLogicTests {
         isMainTabModalVisible: Bool = false,
         showLateICloudNotice: Bool = false,
         appleIDCloseNoticePending: Bool = false,
-        isSignOutWorking: Bool = false
+        isSignOutWorking: Bool = false,
+        isSignOutBlocked: Bool = false
     ) -> ShellReadinessState {
         ShellReadinessState(
             forceUpdateRequired: forceUpdateRequired,
@@ -62,6 +64,7 @@ struct ContentViewReadinessLogicTests {
             showRemoteWipeAlert: showRemoteWipeAlert, showICloudRestartAlert: showICloudRestartAlert,
             appleIDCloseNoticePending: appleIDCloseNoticePending,
             isSignOutWorking: isSignOutWorking,
+            isSignOutBlocked: isSignOutBlocked,
             hasActiveInviteError: hasActiveInviteError,
             hasActiveGroupSyncError: hasActiveGroupSyncError,
             hasActiveInboxAlert: hasActiveInboxAlert, showGroupInviteOnboarding: showGroupInviteOnboarding,
@@ -390,6 +393,54 @@ struct ContentViewReadinessLogicTests {
         #expect(!ContentViewReadinessLogic.isBlockedSolelyByWelcomeChain(state: make(showWelcomeFlow: true, hasActiveInviteError: true)))
     }
 
+    // MARK: - Un intent superseding no deja el cierre de sesión sin dueño
+
+    // Ticket `superseding-intent-can-strand-the-sign-out-coordinator`. La vuelta al neutro de la puerta de Grupos es un
+    // step del Welcome: si el intent que supersede la cadena la derriba, el step se desmonta y el coordinador se queda
+    // sin nadie que lo mire — y `signOut` empieza con `guard phase == .idle`, así que Ajustes vuelve mudo.
+
+    @Test func signOutBlocked_keepsEveryWelcomeCoverFromBeingTornDown() {
+        // El «espera agotada» de la puerta se enseña DENTRO del Welcome: derribarlo es dejar el `.blocked` huérfano.
+        // Los cuatro covers derribables, uno a uno: el guard va antes de mirar cuál es el blocker.
+        #expect(!ContentViewReadinessLogic.isBlockedSolelyByWelcomeChain(
+            state: make(showWelcomeFlow: true, isSignOutBlocked: true)))
+        #expect(!ContentViewReadinessLogic.isBlockedSolelyByWelcomeChain(
+            state: make(showWelcomeRestore: true, isSignOutBlocked: true)))
+        #expect(!ContentViewReadinessLogic.isBlockedSolelyByWelcomeChain(
+            state: make(showInviteRecovery: true, isSignOutBlocked: true)))
+        #expect(!ContentViewReadinessLogic.isBlockedSolelyByWelcomeChain(
+            state: make(showLanguageSelection: true, isSignOutBlocked: true)))
+    }
+
+    @Test func signOutBlocked_isNotABlocker() {
+        // La mitad que impide «arreglarlo» subiendo `.blocked` a la matriz: un bloqueo puede quedarse puesto, y
+        // retener el router con él lo dejaría muerto el resto del proceso. Solo cambia el derribo, no el blocker.
+        #expect(ContentViewReadinessLogic.isReady(state: make(isSignOutBlocked: true)))
+        #expect(ContentViewReadinessLogic.blocker(
+            state: make(showWelcomeFlow: true, isSignOutBlocked: true)) == "welcomeFlow")
+    }
+
+    @Test func signOutWorking_keepsTheWelcomeChainFromBeingTornDown() {
+        // La otra mitad de la ventana: mientras la espera corre, el desmontaje cancela su `.task` y la deja en un
+        // `.blocked` sin dueño — o, pasado `armAfterCredentials`, con la sesión soltada y sin borrado armado. Lo
+        // cubren DOS cosas: `signOutWorking` va por delante de la cadena en `blocker()`, y aunque bajara por debajo
+        // de `welcomeFlow` la copia limpia seguiría sin estar lista (medido: ese mutante sale verde, y es
+        // equivalente). Lo que este test caza es QUITAR el término de `blocker()`: entonces la copia limpia sí
+        // estaría lista y el Welcome se derribaría con el cierre corriendo.
+        #expect(!ContentViewReadinessLogic.isBlockedSolelyByWelcomeChain(
+            state: make(showWelcomeFlow: true, isSignOutWorking: true)))
+    }
+
+    @Test func welcomeChainCleared_keepsTheSignOutTerms() {
+        // La copia que usa el derribo no puede perder los dos términos del cierre: con cualquiera en `false`, el
+        // `isReady` de la copia diría que limpiar la cadena basta.
+        let cleared = make(showWelcomeFlow: true, isSignOutWorking: true, isSignOutBlocked: true)
+            .withWelcomeChainCleared()
+        #expect(cleared.isSignOutBlocked)
+        #expect(cleared.isSignOutWorking)
+        #expect(!cleared.showWelcomeFlow)
+    }
+
     // MARK: - Cierre por cambio de Apple ID (2026-09-14)
 
     @Test func appleIDCloseNotice_blocksDrain() {
@@ -416,5 +467,74 @@ struct ContentViewReadinessLogicTests {
         // `false` la matriz tiene que seguir dejando drenar — si no, la aserción de arriba pasaría por
         // un blocker ajeno y no mediría la línea nueva.
         #expect(ContentViewReadinessLogic.isReady(state: make()))
+    }
+}
+
+/// **El cableado del término en `ContentView`**, por source-scan: la matriz pura no ve de dónde sale cada campo, y un
+/// `isSignOutBlocked: false` en el snapshot dejaría verdes los tests de arriba con el bug vivo.
+@Suite("ContentView · el cierre bloqueado no se queda sin dueño")
+struct SignOutBlockedOwnershipWiringTests {
+
+    private static let repoRoot = URL(fileURLWithPath: #filePath)
+        .deletingLastPathComponent()   // …/YalaTests
+        .deletingLastPathComponent()   // raíz
+
+    /// Texto sin comentarios —también los de cola— y con los espacios colapsados a uno.
+    private static func code(_ path: String) throws -> String {
+        var raw = try String(contentsOf: repoRoot.appendingPathComponent(path), encoding: .utf8)
+        raw = raw.replacingOccurrences(of: #"/\*[\s\S]*?\*/"#, with: " ", options: .regularExpression)
+        raw = raw.replacingOccurrences(of: #"(?m)//.*$"#, with: " ", options: .regularExpression)
+        return raw.replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
+            .trimmingCharacters(in: .whitespaces)
+    }
+
+    /// El cuerpo entre llaves balanceadas que abre la primera `{` tras `marker`, sin las llaves de fuera.
+    private static func body(of marker: String, in source: String) throws -> String {
+        let start = try #require(source.range(of: marker), "marcador no encontrado: \(marker)")
+        let tail = source[start.upperBound...]
+        let open = try #require(tail.firstIndex(of: "{"), "sin llave tras el marcador: \(marker)")
+        var depth = 0
+        var index = open
+        while index < tail.endIndex {
+            if tail[index] == "{" { depth += 1 }
+            if tail[index] == "}" {
+                depth -= 1
+                if depth == 0 { break }
+            }
+            index = tail.index(after: index)
+        }
+        return String(tail[tail.index(after: open)..<index]).trimmingCharacters(in: .whitespaces)
+    }
+
+    @Test func snapshot_readsTheBlockedPhaseOfTheCoordinator() throws {
+        let vista = try Self.code("Yala/App/ContentView.swift")
+        let snapshot = try Self.body(of: "private func currentShellReadinessState() -> ShellReadinessState", in: vista)
+        #expect(snapshot.contains("isSignOutBlocked: signOutIsBlocked,"))
+        // El cuerpo ENTERO, no un `contains`: una condición antepuesta o un `case` más estrecho también contendría
+        // el literal.
+        let getter = try Self.body(of: "private var signOutIsBlocked: Bool", in: vista)
+        #expect(getter == "if case .blocked = CloudSessionSignOut.shared.phase { return true } return false")
+    }
+
+    @Test func phaseChange_rePeeksTheQueueWhileTheShellIsCovered() throws {
+        // Un intent que supersede el Welcome y llega con el cierre bloqueado espera en la cola. Al reconocer el
+        // bloqueo la fase vuelve a `.idle` sin bumpear la revisión, así que sin este re-peek la invitación no se
+        // presentaba hasta el siguiente intent: el deadlock B4-04, en la salida del bloqueo.
+        let vista = try Self.code("Yala/App/ContentView.swift")
+        #expect(vista.contains(
+            ".onChange(of: CloudSessionSignOut.shared.phase) { _, _ in signOutPhaseChanged() }"))
+        let cambio = try Self.body(of: "private func signOutPhaseChanged()", in: vista)
+        #expect(cambio == "updateContentViewReadiness() "
+            + "if ContentViewReadinessLogic.blocker(state: currentShellReadinessState()) != nil { "
+            + "drainContentViewIntents() }")
+    }
+
+    @Test func teardown_asksTheGuardWithTheLiveSnapshot() throws {
+        // El derribo tiene que seguir preguntando a la función que lleva el guard, y con el snapshot vivo.
+        let vista = try Self.code("Yala/App/ContentView.swift")
+        let drain = try Self.body(of: "private func drainContentViewIntents()", in: vista)
+        #expect(drain.contains("next.supersedesWelcomeChain, "
+            + "ContentViewReadinessLogic.isBlockedSolelyByWelcomeChain(state: currentShellReadinessState()) { "
+            + "dismissWelcomeChainForSupersedingIntent(for: next.id)"))
     }
 }
