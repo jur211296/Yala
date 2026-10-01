@@ -129,9 +129,14 @@ class SessionState {
 
     // MARK: - Financial Mindset
 
+    /// El enfoque de quien no ha elegido ninguno. Con nombre porque lo usan dos sitios: el valor inicial de abajo y
+    /// el reset de las altas solo-grupos (`GroupsOnlySignUpPreferenceReset`), que tiene que devolver la copia en
+    /// memoria a este mismo valor.
+    static let defaultFinancialMindset = "cashFlow"
+
     /// User's financial mindset chosen during onboarding: "cashFlow" (Día a día) or "patrimonial" (Control total).
     /// Affects educational UI (balance calculator variants, tips) but NOT features or calculations.
-    var financialMindset: String = UserDefaults.standard.string(forKey: AppPreferences.Keys.financialMindset) ?? "cashFlow" {
+    var financialMindset: String = UserDefaults.standard.string(forKey: AppPreferences.Keys.financialMindset) ?? SessionState.defaultFinancialMindset {
         didSet {
             guard oldValue != financialMindset else { return }
             UserDefaults.standard.set(financialMindset, forKey: AppPreferences.Keys.financialMindset)
