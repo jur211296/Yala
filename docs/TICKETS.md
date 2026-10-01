@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (717)
+## Index (719)
 
 | id | status | path |
 |---|---|---|
@@ -436,10 +436,11 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | ipad-settings-sheet-size-depends-on-where-it-opens | backlog | tickets/backlog/ipad-settings-sheet-size-depends-on-where-it-opens.md |
 | ipad-sidebar-and-list-detail-for-records-and-planning | qa | tickets/qa/ipad-sidebar-and-list-detail-for-records-and-planning.md |
 | iphone-duo-native-app | backlog | tickets/backlog/iphone-duo-native-app.md |
+| iphone-landscape-headers-fill-the-short-screen | backlog | tickets/backlog/iphone-landscape-headers-fill-the-short-screen.md |
 | iphone-large-models-use-the-extra-width | done | tickets/done/iphone-large-models-use-the-extra-width.md |
 | iphone-large-text-sizes-break-layouts | done | tickets/done/iphone-large-text-sizes-break-layouts.md |
 | iphone-small-screens-and-safe-areas-audit | done | tickets/done/iphone-small-screens-and-safe-areas-audit.md |
-| iphone-supports-landscape-orientation | backlog | tickets/backlog/iphone-supports-landscape-orientation.md |
+| iphone-supports-landscape-orientation | done | tickets/done/iphone-supports-landscape-orientation.md |
 | joiner-flag-residuals-cosmetic-and-service-guard | backlog | tickets/backlog/joiner-flag-residuals-cosmetic-and-service-guard.md |
 | journal-unreadable-card-says-reopen-when-a-downgrade-needs-an-update | backlog | tickets/backlog/journal-unreadable-card-says-reopen-when-a-downgrade-needs-an-update.md |
 | l10n-check-corre-13-de-17-tests | backlog | tickets/backlog/l10n-check-corre-13-de-17-tests.md |

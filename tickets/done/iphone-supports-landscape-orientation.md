@@ -1,15 +1,16 @@
 ---
 id: iphone-supports-landscape-orientation
-status: backlog
+status: done
 priority: low
 area: "platform, iphone, iphone-duo, adaptativo"
 created: 2026-09-27
+updated: 2026-10-01
 source: "plan adaptativo (docs/exploracion/adaptativo-ipad-duo.md §7), 2026-09-27"
 ---
 
 # iPhone · ¿Yala gira a horizontal? (decisión de producto)
 
-**Paso 11 de 13. Tamaño M. Necesita decisión de Jürgen antes de empezar.** Jürgen citó «horizontal» entre las mejoras
+**Paso 11 de 13. Tamaño M. Decidido por Jürgen el 2026-09-27: opción A. Hecho el 2026-10-01.** Jürgen citó «horizontal» entre las mejoras
 de iPhone del 27-sep; no entra como mejora de bajo riesgo por lo que sigue.
 
 ## La situación
@@ -35,6 +36,25 @@ de iPhone del 27-sep; no entra como mejora de bajo riesgo por lo que sigue.
   defecto y a AX5, de las pantallas principales.
 - Girar con un registro abierto y con un formulario a medias no pierde lo abierto ni lo escrito.
 - XCUITest de navegación en horizontal en los dos iPhone, por UDID. Gate verde.
+
+## Resultado (2026-10-01)
+
+**Yala gira en iPhone.** Vertical y horizontal a izquierda y derecha; boca abajo no (los iPhone con Face ID no lo
+hacen). Abierto en los cuatro build settings de `Yala` y `Yala Dev`. Ningún cambio de código: la app ya decidía la
+forma por el ancho de la ventana (fase 1), así que en el SE girado sigue la interfaz de iPhone y en el Pro Max girado
+(ancho regular) sale la de pantalla ancha: pestañas con las seis páginas, lista y detalle a la vez.
+
+- **Girar no pierde nada:** un registro abierto sigue abierto (abierto en vertical o en horizontal) y el formulario de
+  nuevo registro conserva lo escrito, al ir y al volver.
+- **XCUITest** `IPhoneLandscapeUITests` (4 casos), verde por UDID en SE y Pro Max, y en iPad mini como regresión.
+  Control negativo: con solo vertical, los 4 en rojo en la espera del giro.
+- **Capturas** SE y Pro Max × vertical/horizontal × texto por defecto/AX5, antes y después:
+  `qa/evidencia-adaptativo-20261001/iphone-supports-landscape-orientation/`. En vertical, 24 de 28 parejas a 0 px; las
+  otras cuatro, el punto animado «Hoy» y un aviso de Grupos con tope semanal.
+- **Encontrado y no tocado:** las cabeceras de Registros y Estadísticas llenan casi todo el alto en horizontal, y con
+  AX5 la columna de la lista del Pro Max girado queda estrecha → [[iphone-landscape-headers-fill-the-short-screen]].
+  El «+» flotante tapa un importe en el Pro Max girado → anotado en [[floating-buttons-cover-row-amounts-on-ipad-landscape]].
+- **Duo cerrado:** lo hereda; medirlo queda en [[iphone-duo-native-app]] (necesita Xcode 27.1).
 
 ## Relacionados
 

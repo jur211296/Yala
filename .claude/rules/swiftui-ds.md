@@ -130,6 +130,12 @@ paths:
   reordena la barra del iPhone, que el usuario ordena a mano (`TabBarConfigView`).
 - **En vertical el iPad pinta pestañas arriba y en horizontal barra lateral**: es el `.automatic` de Apple y se deja
   así (medido en el iPad Pro 13). La barra lateral está a un toque en vertical.
+- **El iPhone también gira (2026-10-01)**: vertical y horizontal a izquierda y derecha (`UISupportedInterfaceOrientations`
+  en los cuatro build settings de `Yala` y `Yala Dev`). Dos consecuencias para una pantalla nueva: (1) **un iPhone
+  grande girado es ancho REGULAR** —pestañas con las seis páginas, lista y detalle a la vez—, así que girar es
+  redimensionar y lo abierto tiene que vivir fuera de la forma; (2) **el alto puede ser de 375 pt** (SE girado), así
+  que nada que no quepa puede quedar fuera de un scroll. Nunca `if` por orientación: alto o ancho del contenedor.
+  Test: `YalaUITests/IPhoneLandscapeUITests` (girar con un registro abierto y con el formulario a medias).
 - **Lista y detalle = `ListDetailSplit`** (`Views/Shared/ListDetailSplit.swift`): un único `NavigationSplitView` de dos
   columnas, `.balanced`, que en compacta se pliega solo a la pila de siempre. Lo usan `RecordsStandaloneView` y
   `PlanningView`; una pantalla nueva con lista y detalle lo reusa en vez de montar su split. Lo que se abre en el
