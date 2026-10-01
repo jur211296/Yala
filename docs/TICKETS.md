@@ -435,7 +435,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | ipad-settings-sheet-size-depends-on-where-it-opens | backlog | tickets/backlog/ipad-settings-sheet-size-depends-on-where-it-opens.md |
 | ipad-sidebar-and-list-detail-for-records-and-planning | qa | tickets/qa/ipad-sidebar-and-list-detail-for-records-and-planning.md |
 | iphone-duo-native-app | backlog | tickets/backlog/iphone-duo-native-app.md |
-| iphone-large-models-use-the-extra-width | backlog | tickets/backlog/iphone-large-models-use-the-extra-width.md |
+| iphone-large-models-use-the-extra-width | done | tickets/done/iphone-large-models-use-the-extra-width.md |
 | iphone-large-text-sizes-break-layouts | done | tickets/done/iphone-large-text-sizes-break-layouts.md |
 | iphone-small-screens-and-safe-areas-audit | done | tickets/done/iphone-small-screens-and-safe-areas-audit.md |
 | iphone-supports-landscape-orientation | backlog | tickets/backlog/iphone-supports-landscape-orientation.md |

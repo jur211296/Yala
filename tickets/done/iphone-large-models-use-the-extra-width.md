@@ -1,9 +1,10 @@
 ---
 id: iphone-large-models-use-the-extra-width
-status: backlog
+status: done
 priority: low
 area: "design-system, iphone, adaptativo"
 created: 2026-09-27
+updated: 2026-10-01
 source: "plan adaptativo (docs/exploracion/adaptativo-ipad-duo.md §7, fase iPhone), 2026-09-27"
 ---
 
@@ -25,6 +26,32 @@ dos cuentas (`AccountsCarouselView.swift:23`, cuatro solo en ancho regular), y l
 2. Proponer en el ticket, antes de tocar, qué gana cada pantalla. Solo cambios de **cantidad** (una tarjeta más a la
    vista, una gráfica algo más alta), nunca de **sitio** ni de función.
 3. Decidir por el ancho del contenedor (`onGeometryChange`), no por el modelo de iPhone.
+
+## Medido y propuesto (2026-10-01, antes de tocar)
+
+Capturas de `2.1` en `f8c893cb3`, SE y Pro Max, texto por defecto y AX5 (`qa/evidencia-adaptativo-20261001/`).
+
+| Pantalla | Qué deja vacío el Pro Max | Qué gana |
+|---|---|---|
+| Panel · Tendencias | la gráfica pasa de ~311 a ~376 pt de ancho con los mismos 170 pt de alto: sale aplastada | **más alta**, en proporción al ancho (≈200 pt) |
+| Estadísticas · Tendencias | igual, en la gráfica de tendencia y en la de comparación | **más altas**, con la misma regla |
+| Panel · carrusel de cuentas | dos tarjetas de ~198 pt | **nada**: tres saldrían a ~128 pt, bajo el mínimo de 140 pt del propio carrusel, y el carrusel viene plegado |
+| Registros, Planificación | ya enseñan más filas por alto | **nada**: por ancho no hay qué añadir sin cambiar de sitio |
+
+La regla: `alto = 170 × clamp(ancho de la gráfica / 320, 1, 1,2)`, solo en ancho compacto. En el SE la gráfica mide
+menos de 320 pt, así que no cambia; en iPad (regular) tampoco.
+
+## Resultado (2026-10-01)
+
+- **Cambia**: en un iPhone grande, la gráfica de tendencia del Panel y las dos de Estadísticas › Tendencias (tendencia y
+  Comparativa) salen ~30 pt más altas (170 → 200 en el Pro Max). Decide el ancho medido de la gráfica
+  (`AdaptiveChartHeight`, `DS.Adaptive.chartHeight`), solo en ancho compacto.
+- **No cambia**: el SE (diff píxel a píxel, por defecto y AX5: solo el punto animado «Hoy», la semilla y la barra de
+  chips), el iPad, el carrusel de cuentas, Registros y Planificación. El porqué de cada uno, arriba.
+- **Red**: `YalaTests/AdaptiveChartHeightTests` (7) y `AdaptiveNavigationUITests.test_panelTrendChart_…` /
+  `test_statisticsTrendChart_growsWithTheWidth_onLargePhones`, verdes en SE, Pro Max e iPad mini; el mutante sin
+  crecimiento los pone rojos en el Pro Max.
+- **Evidencia**: `qa/evidencia-adaptativo-20261001/iphone-large-models-use-the-extra-width/`.
 
 ## Hecho cuando
 

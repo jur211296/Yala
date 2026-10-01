@@ -206,6 +206,12 @@ paths:
   `PanelFilterAndWidgetsSection`: el contenedor la sube a la banda sin mover a nadie de sitio en el árbol.
 - **Lo que va dentro de media columna decide por su ancho, no por el size class.** El carrusel de cuentas enseñaba 4
   tarjetas en regular: en la columna derecha de la cabecera eran 4 de ~110 pt. Ahora pide ancho para 4 de 140.
+- **Una gráfica de alto fijo que deba aprovechar un iPhone grande va dentro de `AdaptiveChartHeight(base:)`**
+  (2026-10-01): mide su propio ancho y le da `base × clamp(ancho / 320, 1, 1,2)` (`DS.Adaptive.chartHeight`), solo
+  en compacto. Medido: en el SE la gráfica de tendencia mide ~311 pt, así que no cambia; en el Pro Max ~376 → 200 pt.
+  Hoy la usan la tendencia del Panel y las dos de Estadísticas › Tendencias. **Qué NO ganó, y por qué**: el carrusel
+  de cuentas sigue a dos tarjetas en compacto (tres en un Pro Max saldrían a ~128 pt, bajo sus 140 de mínimo, y en el
+  SE el nombre ya se corta con dos).
 - **Un widget solo en su fila ocupa la fila entera solo si sabe repartir su contenido** (`WidgetConfigManager
   .spansRowWhenAloneTypes`, hoy `latestRecords`); los demás siguen en media fila.
 - **Estadísticas › Registros abre el registro en un panel, no en un split** (`DetailContainerView.recordsContent`):

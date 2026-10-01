@@ -465,6 +465,8 @@ struct TrendsTabView: View {
             }
 
             if hasTrendData {
+                // Más alta en los iPhone grandes, con la misma proporción que en el pequeño (`AdaptiveChartHeight`).
+                AdaptiveChartHeight(base: 170) { chartHeight in
                 TrendChartView(
                     trendPoints: trendsViewModel.trendPoints,
                     rawPoints: trendsViewModel.rawTrendPoints,
@@ -475,11 +477,12 @@ struct TrendsTabView: View {
                     trendType: mapMetricToTrendType(trendsViewModel.selectedMetric),
                     focusedDate: $trendsViewModel.focusedDate,
                     period: trendsViewModel.detailPeriod,
-                    chartHeight: 170,
+                    chartHeight: chartHeight,
                     liveAnchor: trendsViewModel.trendLiveAnchor,
                     liveAnchorBreakdown: trendsViewModel.trendLiveAnchorBreakdown,
                     liveAnchorIsApproximate: trendsViewModel.trendLiveAnchorIsApproximate
                 )
+                }
             } else {
                 chartEmptyState
             }
@@ -582,6 +585,7 @@ struct TrendsTabView: View {
                     .accessibilityElement(children: .combine)
                 }
 
+                AdaptiveChartHeight(base: 170) { chartHeight in
                 PeriodComparisonChartView(
                     currentPeriodPoints: currentPeriodPoints,
                     previousPeriodPoints: previousPeriodPoints,
@@ -595,10 +599,11 @@ struct TrendsTabView: View {
                     ),
                     currencyCode: defaultCurrencyCode,
                     trendType: mapMetricToTrendType(trendsViewModel.selectedMetric),
-                    chartHeight: 170,
+                    chartHeight: chartHeight,
                     period: trendsViewModel.detailPeriod,
                     comparisonMode: sessionState.comparisonMode
                 )
+                }
                 .padding(.top, DS.Spacing.sm)
             } else {
                 chartEmptyState
