@@ -65,7 +65,9 @@ modo compatible: sin llegar al borde de la pantalla en la interior.
 
 - [[ipad-native-app]] — paraguas del carril. [[apple-watch]] — la misma tanda de plataformas del 2026-09-09.
 - [[sheet-size-follows-the-device-not-the-window]] — sin él, las hojas del Duo abierto salen con tamaño de iPhone.
-- [[iphone-supports-landscape-orientation]] — el horizontal en el Duo cerrado.
+- [[iphone-supports-landscape-orientation]] — el horizontal en el Duo cerrado. **Hecho el 2026-10-01** (iPhone: vertical y
+  horizontal izquierda/derecha). Pendiente aquí: girar el Duo cerrado en `YalaLane-Adapt-iPhone-Duo` y comprobar que
+  sigue y conserva lo abierto (`IPhoneLandscapeUITests` por UDID).
 
 ## Reglas del carril adaptativo (obligatorias)
 

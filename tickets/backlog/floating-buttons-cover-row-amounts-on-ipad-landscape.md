@@ -66,3 +66,10 @@ Dynamic Type grande (`adaptativo-ipad-duo.md` §6.1).
 **Layout** (ADR «[2026-09-27] Yala se adapta por espacio, no por dispositivo»). Se decide por size class y ancho del
 contenedor, nunca por tipo de dispositivo ni orientación; un contenedor que se adapta, no un `if` por size class en
 la raíz; APIs de iOS 27.1 solo tras `if #available`.
+
+## iPhone en horizontal (2026-10-01)
+
+Desde el paso 11 del carril ([[iphone-supports-landscape-orientation]]) el iPhone gira, y pasa lo mismo: en el Pro Max
+girado, el «+» de Planificación tapa el importe del primer presupuesto, y en Registros Yala IA y «+» caen sobre la
+lista (`qa/evidencia-adaptativo-20261001/iphone-supports-landscape-orientation/despues/promax__03-planificacion-h.jpg`
+y `promax__04-registros-h.jpg`). El arreglo de aquí lo cubre: el margen inferior por área segura vale en los dos.
