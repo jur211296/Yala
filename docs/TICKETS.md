@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (718)
+## Index (719)
 
 | id | status | path |
 |---|---|---|
@@ -369,6 +369,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-only-private-restart-skips-the-wipe-alert | done | tickets/done/groups-only-private-restart-skips-the-wipe-alert.md |
 | groups-only-second-launch-mounts-icloud-mirror | qa | tickets/qa/groups-only-second-launch-mounts-icloud-mirror.md |
 | groups-only-session-storage-screen-says-data-lives-in-icloud | backlog | tickets/backlog/groups-only-session-storage-screen-says-data-lives-in-icloud.md |
+| groups-only-sign-up-drops-a-language-chosen-just-before-it | backlog | tickets/backlog/groups-only-sign-up-drops-a-language-chosen-just-before-it.md |
 | groups-organizer-gate-unavailable-sends-to-settings-from-the-welcome | backlog | tickets/backlog/groups-organizer-gate-unavailable-sends-to-settings-from-the-welcome.md |
 | groups-organizer-intent-is-lost-on-relaunch | backlog | tickets/backlog/groups-organizer-intent-is-lost-on-relaunch.md |
 | groups-outbox-rows-without-a-live-session-have-no-exit | done | tickets/done/groups-outbox-rows-without-a-live-session-have-no-exit.md |
@@ -487,7 +488,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | multi-currency-accounts | backlog | tickets/backlog/multi-currency-accounts.md |
 | navigation-uitests-look-for-the-iphone-tab-bar-on-ipad | backlog | tickets/backlog/navigation-uitests-look-for-the-iphone-tab-bar-on-ipad.md |
 | needsrelaunch-hides-the-groups-section | backlog | tickets/backlog/needsrelaunch-hides-the-groups-section.md |
-| neutral-boot-hands-owner-prefs-to-whoever-signs-in-next | backlog | tickets/backlog/neutral-boot-hands-owner-prefs-to-whoever-signs-in-next.md |
+| neutral-boot-hands-owner-prefs-to-whoever-signs-in-next | qa | tickets/qa/neutral-boot-hands-owner-prefs-to-whoever-signs-in-next.md |
 | neutral-mount-wiring-scan-is-red-on-2-1 | backlog | tickets/backlog/neutral-mount-wiring-scan-is-red-on-2-1.md |
 | no-hay-seed-con-miembro-rechazado | backlog | tickets/backlog/no-hay-seed-con-miembro-rechazado.md |
 | no-test-seam-for-account-exists-blocks-xcuitest-of-identity | backlog | tickets/backlog/no-test-seam-for-account-exists-blocks-xcuitest-of-identity.md |

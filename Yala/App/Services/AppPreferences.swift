@@ -1219,6 +1219,73 @@ final class AppPreferences {
         panelHeroKPIsCustomized = defaults.bool(forKey: Keys.panelHeroKPIsCustomized)
     }
 
+    // MARK: - Reset del espejo (alta solo-grupos)
+
+    /// Devuelve a su valor de fábrica las propiedades de las preferencias SINCRONIZADAS, y el centinela del Panel que
+    /// va con ellas. **No escribe**: corre bajo el mismo `isLoadingFromDefaults` que la carga.
+    ///
+    /// Existe porque `loadFromDefaults` relee por PRESENCIA: cuando una key desaparece, la propiedad se queda con el
+    /// valor que tenía. Lo usa `GroupsOnlySignUpPreferenceReset`, que retira en local las 36 del Apple ID al empezar
+    /// un alta solo-grupos; sin esto, quien entra por un grupo seguiría viendo el formato, el Panel o los avisos del
+    /// dueño hasta relanzar la app, y el Panel podría volver a materializarlos en disco.
+    ///
+    /// Los valores son los mismos que los de la declaración de cada propiedad, y
+    /// `GroupsOnlySignUpPreferenceResetTests` lo comprueba contra una instancia recién construida sobre un store vacío.
+    /// Si añades una propiedad `synced: true`, añádela aquí: ese test enumera `PrefSyncKey` y falla si falta.
+    func resetSyncedMirrorToFactoryDefaults() {
+        isLoadingFromDefaults = true
+        defer { isLoadingFromDefaults = false }
+
+        // Currency & Format
+        defaultCurrencyCode = .pen
+        secondaryCurrencies = []
+        currencyDisplayFormat = .symbol
+        decimalPlaces = 2
+
+        // Identity
+        userName = "Usuario"
+        userProfileIcon = ""
+        colorfulIcons = true
+
+        // Session / Period
+        defaultPeriod = .thisMonth
+        firstWeekday = .monday
+        accountsSortOrderNames = []
+
+        // Widget / Trend
+        showVariations = true
+        averageLineMode = 1
+
+        // Voice / AI
+        voiceLanguage = .system
+        insightsTone = .normal
+        insightsFocus = .balanced
+        autoFocusField = .none
+
+        // Budgets / Alerts / Grupos
+        budgetAlertsEnabled = false
+        groupSettlementRemindersEnabled = false
+        includeGroupTransactionsInFeed = true
+        includeGroupsInPanelTotal = true
+        includeGroupTransactionsInStats = true
+        bridgeGroupExpensesToPersonalAccounts = true
+
+        // UI
+        expensesOnlyMode = false
+
+        // Panel: las 8 sincronizadas, su centinela per-device y el colapso de Cuentas.
+        panelTendenciasOrder = []
+        panelTendenciasHidden = []
+        panelDistribucionOrder = []
+        panelDistribucionHidden = []
+        panelPlanificacionOrder = []
+        panelPlanificacionHidden = []
+        panelSectionsHidden = []
+        panelSectionsOrder = []
+        panelPrefsMigratedV2 = false
+        panelAccountsCollapsed = true
+    }
+
     /// Parses a comma-separated stored string into `[String]`. Returns `nil` when the
     /// key is absent (so callers can keep the hardcoded default) and `[]` when the
     /// stored value is an empty string (a valid state — e.g. user hid every entry).

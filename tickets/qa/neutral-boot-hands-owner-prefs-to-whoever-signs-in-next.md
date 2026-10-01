@@ -1,9 +1,11 @@
 ---
 id: neutral-boot-hands-owner-prefs-to-whoever-signs-in-next
-status: backlog
+status: qa
 priority: medium
 area: "sesiones, settings, sync"
 created: 2026-09-14
+updated: 2026-10-01
+qa-status: needs-testing
 source: "medido al reponer el guard del iCloud-KV (`icloud-kv-prefs-cross-sessions-on-a-lent-phone`): la mitad que esa puerta no puede cerrar"
 ---
 
@@ -57,6 +59,44 @@ toca a la sesión privada.
 
 ## Criterios de aceptación
 
-- [ ] Decidida la opción.
-- [ ] Si 2 o 3: quien entra por un grupo tras un «Cerrar sesión» ajeno no ve ninguna de las 36 preferencias
-      del dueño, y «Restaurar» sigue yendo directo a la app.
+- [x] Decidida la opción: **2** (Jürgen, en el encargo del 2026-10-01).
+- [x] Si 2 o 3: quien entra por un grupo tras un «Cerrar sesión» ajeno no ve ninguna de las 36 preferencias
+      del dueño, y «Restaurar» sigue yendo directo a la app. En unit; falta verlo en un iPhone (abajo).
+
+## Hecho (2026-10-01)
+
+Opción 2. Las dos altas solo-grupos retiran en LOCAL las 36 `PrefSyncKey` justo después de armar el neutro y
+antes de escribir lo suyo (`GroupsOnlySignUpPreferenceReset`), y reinician las copias en memoria: el espejo de
+`AppPreferences` (relee por presencia, así que quitar la key no bastaba), el modo solo-gastos y el enfoque de
+`SessionState`, el idioma (`languageDidChange`) y los espejos de widgets. Con las 8 del Panel se va su centinela
+per-device, para que el Panel arranque con el curado de una instalación nueva.
+
+Medido antes del arreglo con un test sobre stores aislados: tras el alta del organizador quedaban **33** keys del
+dueño y su divisa. Después, ninguna.
+
+Dos cosas del mismo objeto, decididas en el Paso 0:
+
+- **La divisa del organizador ya no es condicional.** La única que podía haber era la del dueño; ahora es siempre
+  la de la región. El test G4 que fijaba «no se pisa» se invirtió.
+- **La hoja del invitado ya no siembra el nombre del perfil a quien no tiene cuenta.** Tras «Cerrar sesión» ese
+  nombre era el del dueño, y si el invitado no tocaba el campo entraba al grupo con él.
+
+No se toca: la puerta del iCloud-KV (sigue abierta en el arranque neutro), Restaurar, el alta personal.
+
+## Device-QA (iPhone, no frena el merge)
+
+Montaje: un iPhone con Yala en sesión privada y preferencias propias visibles —idioma de la app en otro idioma
+(Perfil → Idioma), primer día de la semana en domingo, decimales a 0, algún widget del Panel oculto—, y un enlace
+de invitación a un grupo de otra cuenta.
+
+1. Perfil → «Cerrar sesión». La app vuelve a la bienvenida.
+2. Abre el enlace de invitación y, cuando la app lo pida, entra con **otra** cuenta (Google o Apple).
+3. En la hoja de bienvenida al grupo, mira el campo del nombre.
+   - Esperado: sale **vacío**, no con tu nombre. Escribe uno y toca «Unirme».
+4. Ya dentro:
+   - Esperado: la app en el idioma del **teléfono**, no en el que pusiste; en Ajustes, semana empezando en
+     lunes y dos decimales.
+5. Repite 1-4 entrando por «Vengo por un grupo → Crear un grupo» (organizador).
+   - Esperado: lo mismo, y la moneda del grupo nuevo es la de la región del teléfono, no la tuya.
+6. Control: «Cerrar sesión» otra vez y elige «Restaurar desde iCloud» con tu cuenta.
+   - Esperado: entra directo a la app con tu nombre y tus preferencias de antes.

@@ -21,17 +21,15 @@
 //  onboarding never-downgrade que viajaba al iKV del Apple ID, así que además se propagaba a los otros
 //  dispositivos de esa cuenta y no volvía. Hoy el eje es local y ese daño no existe; el orden se mantiene.
 //
-//  **La divisa (G4) es la ÚNICA escritura CONDICIONAL del alta, y esa condición es el invariante.**
-//  `defaultCurrencyCode = CurrencyDefaults.detectCurrencyFromRegion()` sigue el precedente vivo de
-//  `GroupInviteOnboardingView` («grupo primero, región después», `:374-376`), pero **solo si la key está
-//  AUSENTE**: el default global `.pen` de `AppPreferences` NO se toca —79 lectores, 3 de ellos
-//  pre-onboarding y 2 tests que lo pinnean— y quien ya tenga una divisa escrita no puede verla cambiar.
-//  Y «ya escrita» no es un caso raro: `defaultCurrencyCode` es `synced: true`, así que en una instalación
-//  nueva de un Apple ID con Yala en otro dispositivo el valor puede haber bajado por iKV ANTES de que el
-//  organizador toque nada; sobrescribirlo le cambiaría la divisa por la de la región donde esté hoy. Por
-//  eso el writer expone `hasValue(forKey:)` en vez de que el alta consulte `UserDefaults.standard`: la
-//  condición tiene que ser afirmable sobre un STORE inyectado, igual que el «cero escrituras» del gate.
-//  La divisa es editable en el grupo desde el primer minuto (`GroupFormView` / `GroupSettingsView`).
+//  **La divisa (G4) es la de la REGIÓN, siempre.** `defaultCurrencyCode = CurrencyDefaults.detectCurrencyFromRegion()`
+//  sigue el precedente vivo de `GroupInviteOnboardingView` («grupo primero, región después»); el default global `.pen`
+//  de `AppPreferences` NO se toca —79 lectores, 3 de ellos pre-onboarding y 2 tests que lo pinnean—. Hasta el
+//  2026-10-01 se escribía solo si la key estaba AUSENTE, para no pisar una divisa que hubiera bajado del iCloud-KV.
+//  Esa divisa era la del DUEÑO del Apple ID —la aplica el arranque neutro tras «Cerrar sesión»—, y el alta ahora
+//  retira en local las 36 sincronizadas antes de escribir (`GroupsOnlySignUpPreferenceReset`, ticket
+//  `neutral-boot-hands-owner-prefs-to-whoever-signs-in-next`), así que la condición ya no podía cumplirse nunca. Y
+//  pisarla tampoco viaja al dueño: con el neutro armado y sin el eje en `true`, `OwnerKeyValueGate` está cerrada. La
+//  divisa es editable en el grupo desde el primer minuto (`GroupFormView` / `GroupSettingsView`).
 //
 
 import Foundation
@@ -52,10 +50,10 @@ protocol GroupsOrganizerPreferenceWriting {
     func setSynced(_ value: String, forKey key: String)
     /// Preferencia PER-DEVICE: jamás viaja.
     func setLocal(_ value: Bool, forKey key: String)
-    /// ¿Este dispositivo ya tiene valor para esta key? Lo pide la divisa, la única escritura CONDICIONAL
-    /// del alta: sin lectura inyectable habría que preguntarle a `UserDefaults.standard`, y entonces el
-    /// test de «no se pisa una divisa existente» dependería del simulador en vez del store que le pasan.
-    func hasValue(forKey key: String) -> Bool
+    /// Retira en local las preferencias sincronizadas que dejó el arranque neutro, que son las del dueño del Apple
+    /// ID. Va por el writer para que el test lo ejerza sobre su store aislado: el de producción toca además las
+    /// copias en memoria del proceso vivo (`GroupsOnlySignUpPreferenceReset.resetLive`).
+    func resetSyncedPreferences()
 }
 
 /// El canal de producción: `PreferenceSyncService` para lo sincronizado, `UserDefaults` para lo del device.
@@ -72,11 +70,8 @@ struct LiveGroupsOrganizerPreferenceWriter: GroupsOrganizerPreferenceWriting {
         defaults.set(value, forKey: key)
     }
 
-    /// `.standard` es el espejo local también de lo sincronizado: `PreferenceSyncService.set(string:)`
-    /// escribe ahí antes de empujar al canal, y el merge de bajada aplica ahí lo que llega del iKV o del
-    /// backend. ⇒ es el sitio correcto para preguntar «¿este dispositivo ya sabe una divisa?».
-    func hasValue(forKey key: String) -> Bool {
-        defaults.object(forKey: key) != nil
+    func resetSyncedPreferences() {
+        GroupsOnlySignUpPreferenceReset.resetLive()
     }
 }
 
@@ -89,8 +84,6 @@ enum GroupsOrganizerOnboarding {
     /// el camino bloqueado con el mismo inventario que usa el camino que sí escribe — una lista duplicada a
     /// mano en el test se quedaría corta en cuanto alguien añadiera una escritura aquí.
     ///
-    /// - Note: `defaultCurrencyCode` es la única CONDICIONAL (solo si está ausente), así que el control
-    ///   positivo del test que compara contra este inventario tiene que correr sobre un store limpio.
     /// Las CINCO que viajan por el canal de PREFERENCIAS (el `writer`). Se publican aparte de
     /// `writtenKeys` porque el spy de los tests solo puede ver éstas: la sexta no pasa por el writer a
     /// propósito —no es una preferencia del usuario, es la decisión de mount de este teléfono, y
@@ -139,21 +132,23 @@ enum GroupsOrganizerOnboarding {
         // suite aislado, igual que ya hacen con el `writer`.
         StorageModePersistence.armGroupsOnlyNeutralMount(defaults)
 
+        // **Lo que dejó el arranque neutro es del dueño del Apple ID, no de quien entra** (ticket
+        // `neutral-boot-hands-owner-prefs-to-whoever-signs-in-next`). Va DESPUÉS del arm —sin el eje en `true`, con él
+        // la puerta del KV se cierra y nada lo vuelve a aplicar— y ANTES de escribir lo de esta persona, que si no se
+        // iría con lo demás.
+        writer.resetSyncedPreferences()
+
         let trimmed = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
         let effectiveName = trimmed.isEmpty ? L10n.Profile.defaultName : trimmed
 
         writer.setSynced(effectiveName, forKey: AppPreferences.Keys.userName)
         writer.setSynced(DetailPeriod.thisMonth.rawValue, forKey: AppPreferences.Keys.defaultPeriod)
 
-        // G4 · la divisa por región, en silencio y SOLO sobre una key ausente. El alta del organizador no
-        // pregunta la moneda (decisión del owner: solo nombre) y sin esta línea nacería en `.pen` —el
-        // default global, que NO se cambia— fuera de Perú. El guard es el invariante, no una optimización:
-        // esta key es `synced: true` y pisarla propagaría a la CUENTA la divisa de la región donde el
-        // usuario esté hoy, encima de la que ya eligió en otro dispositivo.
-        if !writer.hasValue(forKey: AppPreferences.Keys.defaultCurrencyCode) {
-            let currency = CurrencyDefaults.detectCurrencyFromRegion(regionCode: regionCode)
-            writer.setSynced(currency.rawValue, forKey: AppPreferences.Keys.defaultCurrencyCode)
-        }
+        // G4 · la divisa por región, en silencio. El alta del organizador no pregunta la moneda (decisión del
+        // owner: solo nombre) y sin esta línea nacería en `.pen` —el default global, que NO se cambia— fuera de
+        // Perú. Sin condición: la única divisa que podía haber aquí era la del dueño, y el reset de arriba la quitó.
+        let currency = CurrencyDefaults.detectCurrencyFromRegion(regionCode: regionCode)
+        writer.setSynced(currency.rawValue, forKey: AppPreferences.Keys.defaultCurrencyCode)
 
         // Adopción explícita del dominio Grupos. El eje 1 apagado ya la implica por el segundo término de
         // `GroupsDomainAdoptionLogic.isDomainOpen`, pero ese término muere si el usuario activa Yala
