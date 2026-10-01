@@ -49,6 +49,7 @@
 //  y editar el gasto en el grupo ya no lo actualiza. Tiene ticket propio.
 //
 
+import CoreData
 import Foundation
 import SwiftData
 
@@ -61,6 +62,13 @@ import SwiftData
 /// caduca porque lo que afirma —«este gasto ya está en el Panel»— no deja de ser cierto con el tiempo.
 /// Sí deja de serlo cuando se borran las filas: por eso `DataWipeService.wipeAllUserData` lo retira en cualquier
 /// alcance («Vaciar datos», los dos borrados de iCloud que conservan grupos).
+///
+/// **Y deja de serlo cuando la persona borra el movimiento conservado** (ticket `groups-detach-ledger-has-no-exit`).
+/// Ese movimiento es una transacción personal normal —editable y borrable, que es lo que se pidió al conservarla—
+/// y borrarla tiene decenas de caminos (la fila, el detalle, el lote, la cuenta, otro dispositivo). En vez de
+/// engancharlos todos, el libro guarda la IDENTIDAD de lo que conservó y el puente pregunta si sigue ahí
+/// (`stillHoldsBridge`): si ya no está, la entrada se retira y el gasto vuelve al circuito normal. El arranque
+/// hace la misma pregunta para los gastos que no vuelven a pasar por el puente (`reviveVanished`).
 nonisolated enum GroupsDetachedBridgeLedger {
 
     static let userDefaultsKey = "groups.conservedOnDetach"
@@ -71,23 +79,103 @@ nonisolated enum GroupsDetachedBridgeLedger {
         let sub: String
         var expenseIDs: Set<String>
         var settlementIDs: Set<String>
+        /// Las transacciones que cada gasto dejó en el Panel. Es lo que deja preguntar «¿sigue ahí?».
+        /// **Opcional** porque los libros escritos antes del 2026-10-01 no lo traen, y un gasto que no
+        /// aparece aquí no se puede comprobar: se trata como hasta entonces (atendido), que es el lado que
+        /// no duplica.
+        var expenseMovements: [String: [Movement]]?
+        var settlementMovements: [String: [Movement]]?
 
         var isEmpty: Bool { expenseIDs.isEmpty && settlementIDs.isEmpty }
+
+        private enum CodingKeys: String, CodingKey {
+            case sub, expenseIDs, settlementIDs, expenseMovements, settlementMovements
+        }
+
+        init(sub: String, expenseIDs: Set<String>, settlementIDs: Set<String>,
+             expenseMovements: [String: [Movement]]? = nil, settlementMovements: [String: [Movement]]? = nil) {
+            self.sub = sub
+            self.expenseIDs = expenseIDs
+            self.settlementIDs = settlementIDs
+            self.expenseMovements = expenseMovements
+            self.settlementMovements = settlementMovements
+        }
+
+        /// **Los movimientos se leen aparte, y si no se dejan leer se pierden SOLOS.** Llevan un
+        /// `PersistentIdentifier`, cuyo formato Codable es de Apple y puede cambiar con iOS; si un fallo
+        /// ahí tirara el libro entero (`read` descarta lo ilegible), se perderían también los
+        /// `expenseIDs` y re-asociar duplicaría todos los conservados. Sin movimientos, cada entrada
+        /// vuelve a `.unknown`: frena como antes de este cambio.
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            sub = try container.decode(String.self, forKey: .sub)
+            expenseIDs = try container.decode(Set<String>.self, forKey: .expenseIDs)
+            settlementIDs = try container.decode(Set<String>.self, forKey: .settlementIDs)
+            expenseMovements = Self.decodeMovements(container, .expenseMovements)
+            settlementMovements = Self.decodeMovements(container, .settlementMovements)
+        }
+
+        private static func decodeMovements(_ container: KeyedDecodingContainer<CodingKeys>,
+                                            _ key: CodingKeys) -> [String: [Movement]]? {
+            do {
+                return try container.decodeIfPresent([String: [Movement]].self, forKey: key)
+            } catch {
+                #if DEBUG
+                print("GroupsDetachedBridgeLedger: movimientos ilegibles, el libro sigue sin ellos: \(error)")
+                #endif
+                return nil
+            }
+        }
     }
 
     /// Registra lo conservado. **Reemplaza**, no acumula: un `sub` distinto es otra cuenta, y sus
     /// conservados no tienen nada que ver con los de la anterior.
+    ///
+    /// `expenseMovements`/`settlementMovements` nombran las transacciones que quedaron en el Panel. Un gasto
+    /// que conservó un BORRADOR no va ahí a propósito: aprobarlo lo convierte en una transacción nueva sin
+    /// enlace, así que su ausencia no prueba que el gasto se haya quedado sin movimiento.
     static func record(sub: String, expenseIDs: Set<String>, settlementIDs: Set<String>,
+                       expenseMovements: [String: [Movement]] = [:],
+                       settlementMovements: [String: [Movement]] = [:],
                        defaults: UserDefaults = .standard) {
-        let stored = Stored(sub: sub, expenseIDs: expenseIDs, settlementIDs: settlementIDs)
+        let stored = Stored(sub: sub, expenseIDs: expenseIDs, settlementIDs: settlementIDs,
+                            expenseMovements: expenseMovements.filter { expenseIDs.contains($0.key) && !$0.value.isEmpty },
+                            settlementMovements: settlementMovements.filter { settlementIDs.contains($0.key) && !$0.value.isEmpty })
+        write(stored, defaults: defaults)
+    }
+
+    /// Si el libro con movimientos no se deja codificar, se escribe sin ellos: perder los movimientos
+    /// solo devuelve el comportamiento de antes, y no escribir nada perdería los conservados enteros.
+    private static func write(_ stored: Stored, defaults: UserDefaults) {
         guard !stored.isEmpty else { return clear(defaults: defaults) }
         do {
             defaults.set(try JSONEncoder().encode(stored), forKey: userDefaultsKey)
         } catch {
             #if DEBUG
-            print("GroupsDetachedBridgeLedger: no se pudo escribir: \(error)")
+            print("GroupsDetachedBridgeLedger: no se pudo escribir con movimientos, se escribe sin ellos: \(error)")
             #endif
+            var bare = stored
+            bare.expenseMovements = nil
+            bare.settlementMovements = nil
+            do {
+                defaults.set(try JSONEncoder().encode(bare), forKey: userDefaultsKey)
+            } catch {
+                #if DEBUG
+                print("GroupsDetachedBridgeLedger: no se pudo escribir: \(error)")
+                #endif
+            }
         }
+    }
+
+    /// Saca del libro estos gastos y liquidaciones: su movimiento conservado ya no está, y lo que el libro
+    /// afirmaba de ellos ha dejado de ser cierto. El resto se queda como estaba.
+    static func retire(expenseIDs: Set<String>, settlementIDs: Set<String>, defaults: UserDefaults = .standard) {
+        guard !expenseIDs.isEmpty || !settlementIDs.isEmpty, var stored = read(defaults: defaults) else { return }
+        stored.expenseIDs.subtract(expenseIDs)
+        stored.settlementIDs.subtract(settlementIDs)
+        for id in expenseIDs { stored.expenseMovements?.removeValue(forKey: id) }
+        for id in settlementIDs { stored.settlementMovements?.removeValue(forKey: id) }
+        write(stored, defaults: defaults)
     }
 
     static func read(defaults: UserDefaults = .standard) -> Stored? {
@@ -126,6 +214,304 @@ nonisolated enum GroupsDetachedBridgeLedger {
             return false
         }
         return stored.settlementIDs.contains(settlementID)
+    }
+
+    // MARK: - ¿Sigue ahí el movimiento conservado?
+
+    /// Una transacción que el desasociar dejó en el Panel: su identidad en el store y su huella.
+    ///
+    /// **La identidad decide; la huella solo puede decir «sigue ahí».** El `persistentModelID` sobrevive a
+    /// que la persona edite el movimiento, pero no a que el store se recree o a que el espejo de CloudKit
+    /// lo purgue y lo vuelva a importar: la fila es la misma y lleva otra identidad. La huella —fecha,
+    /// importe, divisa y nota, sin puntero de grupo— cubre esos casos. Se combinan para que equivocarse
+    /// solo pueda caer del lado de hoy (atendido, sin duplicado): una huella que casa con otra transacción
+    /// idéntica deja el gasto frenado, que es lo que pasaba antes de este cambio.
+    ///
+    /// **Se re-ancla cada vez que se encuentra**: por identidad, refresca la huella (la persona pudo
+    /// editarlo, y una re-importación posterior ya no casaría con la vieja); por huella, toma la identidad
+    /// nueva (sin eso, tras recrear el store, borrarlo después no se vería nunca).
+    struct Movement: Codable, Equatable {
+        let id: PersistentIdentifier
+        let date: Date
+        let amount: Double
+        let currencyCode: String
+        let note: String?
+
+        init(_ tx: TransactionItem) {
+            id = tx.persistentModelID
+            date = tx.date
+            amount = tx.amount
+            currencyCode = tx.currencyCode
+            note = tx.note
+        }
+    }
+
+    /// Lo que se puede afirmar del movimiento que un gasto dejó en el Panel.
+    enum MovementPresence: Equatable {
+        /// Al menos una de sus transacciones sigue en el store (por identidad o por huella).
+        case present
+        /// Todas se buscaron en ESTE store, por identidad y por huella, y ninguna está: la persona las borró.
+        case vanished
+        /// No se puede afirmar nada, y se trata como `present`: entrada sin identidades (libro anterior al
+        /// 2026-10-01, o un borrador conservado), identidad de otro store que tampoco casa por huella (el
+        /// store se recreó y puede estar re-importando), store personal sin una sola transacción (la purga
+        /// del espejo lo vacía antes de re-importar), store en memoria, o un fetch que falló.
+        case unknown
+    }
+
+    /// Lo que devuelve una comprobación: el veredicto y, si al encontrar el movimiento cambió su identidad o
+    /// su huella, la lista re-anclada para guardarla.
+    struct PresenceCheck: Equatable {
+        let presence: MovementPresence
+        let reanchored: [Movement]?
+    }
+
+    /// Margen de la huella. La fecha viaja por CloudKit con precisión de milisegundo, así que la igualdad
+    /// exacta fallaría justo en el caso que la huella existe para cubrir.
+    private static let dateTolerance: TimeInterval = 1
+    private static let amountTolerance = 0.000_5
+
+    /// - Parameters:
+    ///   - claimedElsewhere: los movimientos que el libro atribuye a OTROS gastos. Una huella que casa con
+    ///     uno de ellos no cuenta: dos «Cena · −30» del mismo día, de dos gastos distintos, harían que borrar
+    ///     uno pareciera no haber borrado nada.
+    ///
+    ///     **Array y no `Set`, a propósito** (medido el 2026-10-01): un `PersistentIdentifier` decodificado
+    ///     del JSON es `==` al de la fila viva pero NO tiene su mismo hash, así que un `Set` lo encuentra o no
+    ///     según el cubo en que caiga — 1 fallo de cada 6 corridas del caso de los gemelos.
+    ///   - storeID: el de `personalStoreIdentifier`, leído una vez por pasada y no por movimiento (son los
+    ///     metadatos del fichero).
+    static func presence(of movements: [Movement]?, claimedElsewhere: [PersistentIdentifier] = [],
+                         storeID: String?, context: ModelContext) -> PresenceCheck {
+        let unknown = PresenceCheck(presence: .unknown, reanchored: nil)
+        guard let movements, !movements.isEmpty, let storeID else { return unknown }
+        do {
+            // Un store personal sin ninguna transacción no prueba que la persona borrara nada: es el estado
+            // de la purga del espejo antes de re-importar, y leerlo como borrado duplicaría lo que vuelve.
+            guard try context.fetchCount(FetchDescriptor<TransactionItem>()) > 0 else { return unknown }
+        } catch {
+            #if DEBUG
+            print("GroupsDetachedBridgeLedger: no se pudo contar el store personal: \(error)")
+            #endif
+            return unknown
+        }
+
+        var current = movements
+        var found = false
+        var everyOneChecked = true
+        for index in movements.indices {
+            let movement = movements[index]
+            do {
+                if movement.id.storeIdentifier == storeID, let live = try transaction(withID: movement.id, context: context) {
+                    found = true
+                    current[index] = Movement(live)
+                    continue
+                }
+                let taken = claimedElsewhere + current.indices.filter { $0 != index }.map { current[$0].id }
+                if let twin = try lookalike(of: movement, notAmong: taken, context: context) {
+                    found = true
+                    current[index] = Movement(twin)
+                    continue
+                }
+                // Una identidad de otro store sin huella que case no se puede dar por borrada: el store se
+                // recreó y la fila puede volver con la re-importación.
+                if movement.id.storeIdentifier != storeID { everyOneChecked = false }
+            } catch {
+                #if DEBUG
+                print("GroupsDetachedBridgeLedger: no se pudo comprobar el movimiento conservado: \(error)")
+                #endif
+                everyOneChecked = false
+            }
+        }
+        if found { return PresenceCheck(presence: .present, reanchored: current == movements ? nil : current) }
+        return everyOneChecked ? PresenceCheck(presence: .vanished, reanchored: nil) : unknown
+    }
+
+    private static func transaction(withID id: PersistentIdentifier, context: ModelContext) throws -> TransactionItem? {
+        var descriptor = FetchDescriptor<TransactionItem>(predicate: #Predicate { $0.persistentModelID == id })
+        descriptor.fetchLimit = 1
+        return try context.fetch(descriptor).first
+    }
+
+    /// La transacción con la huella de `movement`, sin puntero de grupo y que el libro no atribuya ya a otro
+    /// movimiento.
+    private static func lookalike(of movement: Movement, notAmong taken: [PersistentIdentifier],
+                                  context: ModelContext) throws -> TransactionItem? {
+        let lowDate = movement.date.addingTimeInterval(-dateTolerance)
+        let highDate = movement.date.addingTimeInterval(dateTolerance)
+        let lowAmount = movement.amount - amountTolerance
+        let highAmount = movement.amount + amountTolerance
+        let currency = movement.currencyCode
+        let note = movement.note
+        return try context.fetch(FetchDescriptor<TransactionItem>(
+            predicate: #Predicate {
+                $0.date >= lowDate && $0.date <= highDate
+                    && $0.amount >= lowAmount && $0.amount <= highAmount
+                    && $0.currencyCode == currency && $0.note == note
+                    && $0.splitExpenseID == nil && $0.splitSettlementID == nil
+            }))
+            .first { !taken.contains($0.persistentModelID) }
+    }
+
+    /// Las identidades que el libro atribuye a cualquier gasto o liquidación salvo `excluding`.
+    private static func claimedMovements(in stored: Stored, excludingExpense: String? = nil,
+                                         excludingSettlement: String? = nil) -> [PersistentIdentifier] {
+        var ids: [PersistentIdentifier] = []
+        for (key, movements) in stored.expenseMovements ?? [:] where key != excludingExpense {
+            ids += movements.map(\.id)
+        }
+        for (key, movements) in stored.settlementMovements ?? [:] where key != excludingSettlement {
+            ids += movements.map(\.id)
+        }
+        return ids
+    }
+
+    /// El identificador del store donde viven las `TransactionItem`, leído de los metadatos de su fichero —
+    /// es el mismo valor que `PersistentIdentifier.storeIdentifier` (medido el 2026-10-01). `nil` en un store
+    /// en memoria, o si el fichero no se deja leer: entonces no se puede afirmar «ya no está».
+    static func personalStoreIdentifier(context: ModelContext) -> String? {
+        let entityName = String(describing: TransactionItem.self)
+        guard let configuration = context.container.configurations.first(where: { configuration in
+            configuration.schema?.entities.contains { $0.name == entityName } ?? false
+        }) else { return nil }
+        do {
+            let metadata = try NSPersistentStoreCoordinator.metadataForPersistentStore(
+                type: .sqlite, at: configuration.url)
+            return metadata[NSStoreUUIDKey] as? String
+        } catch {
+            #if DEBUG
+            print("GroupsDetachedBridgeLedger: sin metadatos del store personal: \(error)")
+            #endif
+            return nil
+        }
+    }
+
+    /// El libro de la cuenta asociada, si se puede preguntar por él ahora.
+    ///
+    /// **Con un desasociar a medias de esa cuenta, no** (`GroupsDetachPendingPurge`): sus filas `Split*`
+    /// siguen vivas y su borrado está por venir, así que lo que el puente creara ahora apuntaría a una zona
+    /// que «Terminar de soltar» vacía sin volver a soltar el puente — dinero atrapado. Ahí el libro frena
+    /// como antes y nadie lo retira.
+    private static func ledgerToCheck(associatedSub: String?, defaults: UserDefaults) -> Stored? {
+        guard let stored = read(defaults: defaults), let associatedSub, stored.sub == associatedSub,
+              !GroupsDetachPendingPurge.isArmed(for: associatedSub, defaults: defaults) else { return nil }
+        return stored
+    }
+
+    /// **El guard del puente.** `true` si este gasto sigue en el Panel como movimiento conservado de la cuenta
+    /// asociada ahora, y el puente NO debe crearlo. Si el libro lo nombra pero su movimiento ya no está, retira
+    /// la entrada y devuelve `false`: el gasto vuelve al circuito normal y el puente lo crea en esta pasada.
+    ///
+    /// El retiro no espera al `save()` del puente a propósito: lo que lo justifica es que el movimiento ya no
+    /// está, y eso es cierto se guarde o no lo que el puente cree después.
+    static func stillHoldsBridge(expenseID: String, associatedSub: String?, context: ModelContext,
+                                 defaults: UserDefaults = .standard) -> Bool {
+        guard isConserved(expenseID: expenseID, associatedSub: associatedSub, defaults: defaults) else { return false }
+        guard var stored = ledgerToCheck(associatedSub: associatedSub, defaults: defaults) else { return true }
+        let check = presence(of: stored.expenseMovements?[expenseID],
+                             claimedElsewhere: claimedMovements(in: stored, excludingExpense: expenseID),
+                             storeID: personalStoreIdentifier(context: context), context: context)
+        switch check.presence {
+        case .vanished:
+            retire(expenseIDs: [expenseID], settlementIDs: [], defaults: defaults)
+            return false
+        case .present, .unknown:
+            if let reanchored = check.reanchored {
+                stored.expenseMovements?[expenseID] = reanchored
+                write(stored, defaults: defaults)
+            }
+            return true
+        }
+    }
+
+    /// Gemelo de `stillHoldsBridge(expenseID:…)` para las liquidaciones.
+    static func stillHoldsBridge(settlementID: String, associatedSub: String?, context: ModelContext,
+                                 defaults: UserDefaults = .standard) -> Bool {
+        guard isConserved(settlementID: settlementID, associatedSub: associatedSub, defaults: defaults) else {
+            return false
+        }
+        guard var stored = ledgerToCheck(associatedSub: associatedSub, defaults: defaults) else { return true }
+        let check = presence(of: stored.settlementMovements?[settlementID],
+                             claimedElsewhere: claimedMovements(in: stored, excludingSettlement: settlementID),
+                             storeID: personalStoreIdentifier(context: context), context: context)
+        switch check.presence {
+        case .vanished:
+            retire(expenseIDs: [], settlementIDs: [settlementID], defaults: defaults)
+            return false
+        case .present, .unknown:
+            if let reanchored = check.reanchored {
+                stored.settlementMovements?[settlementID] = reanchored
+                write(stored, defaults: defaults)
+            }
+            return true
+        }
+    }
+
+    /// Los gastos y liquidaciones del libro de la cuenta asociada cuyo movimiento conservado ya no está. Guarda
+    /// de paso lo re-anclado de los que siguen.
+    static func vanished(associatedSub: String?, context: ModelContext,
+                         defaults: UserDefaults = .standard) -> (expenseIDs: Set<String>, settlementIDs: Set<String>) {
+        guard var stored = ledgerToCheck(associatedSub: associatedSub, defaults: defaults) else { return ([], []) }
+        let storeID = personalStoreIdentifier(context: context)
+        var expenses: Set<String> = []
+        var settlements: Set<String> = []
+        var reanchoredAny = false
+        for expenseID in stored.expenseIDs {
+            let check = presence(of: stored.expenseMovements?[expenseID],
+                                 claimedElsewhere: claimedMovements(in: stored, excludingExpense: expenseID),
+                                 storeID: storeID, context: context)
+            if check.presence == .vanished { expenses.insert(expenseID) }
+            if let reanchored = check.reanchored {
+                stored.expenseMovements?[expenseID] = reanchored
+                reanchoredAny = true
+            }
+        }
+        for settlementID in stored.settlementIDs {
+            let check = presence(of: stored.settlementMovements?[settlementID],
+                                 claimedElsewhere: claimedMovements(in: stored, excludingSettlement: settlementID),
+                                 storeID: storeID, context: context)
+            if check.presence == .vanished { settlements.insert(settlementID) }
+            if let reanchored = check.reanchored {
+                stored.settlementMovements?[settlementID] = reanchored
+                reanchoredAny = true
+            }
+        }
+        if reanchoredAny { write(stored, defaults: defaults) }
+        return (expenses, settlements)
+    }
+}
+
+@MainActor
+extension GroupsDetachedBridgeLedger {
+
+    /// **El «ciclo siguiente» de un gasto conservado cuyo movimiento se borró.** Un gasto que nadie edita no
+    /// vuelve a pasar por el puente, así que el guard de `stillHoldsBridge` no lo vería nunca: el arranque
+    /// pregunta por todo el libro, y lo que ya no está pasa a la intención durable del puente para que su
+    /// retome —que corre justo después, en `AppBootstrapper.retryPendingBridges`— lo cree.
+    ///
+    /// **Primero se arma la intención y después se retira la entrada**, por si el proceso muere entre las dos:
+    /// con la intención armada y la entrada viva, el retome pasa por `stillHoldsBridge`, que vuelve a ver la
+    /// ausencia y retira. Al revés, el gasto se quedaría sin entrada y sin nadie que lo pidiera.
+    ///
+    /// Canal `.backend` porque el desasociar solo suelta zonas del canal backend
+    /// (`GroupsAssociationDetach.backendChannelZones`). Un gasto cuya fila ya no está (borrado en el grupo)
+    /// el retome lo da por abandonado sin cobrarle intentos, que es lo correcto.
+    @discardableResult
+    static func reviveVanished(context: ModelContext) -> (expenses: Int, settlements: Int) {
+        reviveVanished(context: context, associatedSub: GroupsAccountAssociation.shared.associatedSub)
+    }
+
+    @discardableResult
+    static func reviveVanished(context: ModelContext, associatedSub: String?,
+                               defaults: UserDefaults = .standard) -> (expenses: Int, settlements: Int) {
+        let gone = vanished(associatedSub: associatedSub, context: context, defaults: defaults)
+        guard !gone.expenseIDs.isEmpty || !gone.settlementIDs.isEmpty else { return (0, 0) }
+        GroupsPendingBridgeIntent.arm(
+            expenseIDs: Set(gone.expenseIDs.compactMap(UUID.init(uuidString:))),
+            settlementIDs: Set(gone.settlementIDs.compactMap(UUID.init(uuidString:))),
+            channel: .backend)
+        retire(expenseIDs: gone.expenseIDs, settlementIDs: gone.settlementIDs, defaults: defaults)
+        return (gone.expenseIDs.count, gone.settlementIDs.count)
     }
 }
 
@@ -318,12 +704,27 @@ enum GroupsAssociationDetach {
         // FASE 2 · aplicar.
         var conservedExpenses: Set<String> = []
         var conservedSettlements: Set<String> = []
+        // Lo que cada gasto deja en el Panel, para que el libro pueda preguntar después si sigue ahí. La
+        // transacción se apunta ANTES de soltar los punteros —después ya no dice de qué gasto era— y su
+        // identidad se lee DESPUÉS del `save()`: una fila que aún no estaba guardada lleva una identidad
+        // temporal, que no se puede buscar.
+        var expenseMovementRows: [String: [TransactionItem]] = [:]
+        var settlementMovementRows: [String: [TransactionItem]] = [:]
+        // Los gastos que conservaron un BORRADOR no se pueden comprobar: aprobarlo crea una transacción sin
+        // enlace, y su ausencia no probaría nada. Se quitan de los mapas al final.
+        var conservedThroughDraft: Set<String> = []
 
         for tx in txs {
             switch action(for: tx, choice: choice) {
             case .releasePointers:
-                if let expenseID = tx.splitExpenseID { conservedExpenses.insert(expenseID) }
-                if let settlementID = tx.splitSettlementID { conservedSettlements.insert(settlementID) }
+                if let expenseID = tx.splitExpenseID {
+                    conservedExpenses.insert(expenseID)
+                    expenseMovementRows[expenseID, default: []].append(tx)
+                }
+                if let settlementID = tx.splitSettlementID {
+                    conservedSettlements.insert(settlementID)
+                    settlementMovementRows[settlementID, default: []].append(tx)
+                }
                 tx.splitExpenseID = nil
                 tx.splitSettlementID = nil
                 tx.splitGroupZoneID = nil
@@ -346,6 +747,7 @@ enum GroupsAssociationDetach {
                 // entradas idénticas — aprobarlas mete el gasto dos veces en el Panel.
                 if let expenseID = draft.splitExpenseID { conservedExpenses.insert(expenseID) }
                 if let settlementID = draft.splitSettlementID { conservedSettlements.insert(settlementID) }
+                conservedThroughDraft.formUnion([draft.splitExpenseID, draft.splitSettlementID].compactMap { $0 })
                 convertToManual(draft, manualRaw: manualRaw)
                 outcome.draftsConverted += 1
             }
@@ -361,6 +763,7 @@ enum GroupsAssociationDetach {
             for draft in drafts where !planned.contains(ObjectIdentifier(draft)) {
                 if let expenseID = draft.splitExpenseID { conservedExpenses.insert(expenseID) }
                 if let settlementID = draft.splitSettlementID { conservedSettlements.insert(settlementID) }
+                conservedThroughDraft.formUnion([draft.splitExpenseID, draft.splitSettlementID].compactMap { $0 })
                 convertToManual(draft, manualRaw: manualRaw)
                 outcome.draftsConverted += 1
             }
@@ -406,6 +809,12 @@ enum GroupsAssociationDetach {
                     sub: associatedSub,
                     expenseIDs: conservedExpenses,
                     settlementIDs: conservedSettlements,
+                    expenseMovements: expenseMovementRows
+                        .filter { !conservedThroughDraft.contains($0.key) }
+                        .mapValues { $0.map(GroupsDetachedBridgeLedger.Movement.init) },
+                    settlementMovements: settlementMovementRows
+                        .filter { !conservedThroughDraft.contains($0.key) }
+                        .mapValues { $0.map(GroupsDetachedBridgeLedger.Movement.init) },
                     defaults: defaults)
             }
         case .remove:
