@@ -1,13 +1,23 @@
 ---
 id: iphone-landscape-headers-fill-the-short-screen
-status: backlog
+status: done
 priority: low
 area: "design-system, iphone, adaptativo, records, statistics"
 created: 2026-10-01
+updated: 2026-10-01
 source: "iphone-supports-landscape-orientation (carril adaptativo, paso 11), capturas del 2026-10-01"
 ---
 
 # En el iPhone girado, la cabecera de Registros y Estadísticas llena casi toda la pantalla
+
+**Hecho el 2026-10-01.** Con poco alto, la cabecera va en banda: la cifra a la izquierda y período, entradas y salidas
+y recuento a la derecha (si no cabe, el período al lado de la cifra; si tampoco, la pila de siempre con menos margen).
+Lo decide el alto del contenedor contando sus barras (`DS.Adaptive.shortContainerMaxHeight` = 500), nunca la
+orientación. En el SE girado la primera fila de Registros pasa de quedar bajo la barra de pestañas a verse y tocarse;
+en el Pro Max asoma 69 pt en vez de 19. El vertical no cambia (diff al píxel). Componente: `SummaryHeaderStack`.
+Tests: `IPhoneLandscapeUITests#test_shortHeight_*`, `ShortContainerHeightTests`. Evidencia:
+`qa/evidencia-adaptativo-20261001/iphone-landscape-headers-fill-the-short-screen/`. La columna estrecha con AX5 del
+Pro Max girado salió a su ticket: [[list-column-too-narrow-for-accessibility-text-on-a-turned-pro-max]].
 
 **Sale del paso 11 del carril adaptativo** ([[iphone-supports-landscape-orientation]]), que abrió la horizontal en
 iPhone y no tocó ninguna pantalla.

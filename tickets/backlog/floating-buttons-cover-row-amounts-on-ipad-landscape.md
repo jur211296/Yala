@@ -73,3 +73,8 @@ Desde el paso 11 del carril ([[iphone-supports-landscape-orientation]]) el iPhon
 girado, el «+» de Planificación tapa el importe del primer presupuesto, y en Registros Yala IA y «+» caen sobre la
 lista (`qa/evidencia-adaptativo-20261001/iphone-supports-landscape-orientation/despues/promax__03-planificacion-h.jpg`
 y `promax__04-registros-h.jpg`). El arreglo de aquí lo cubre: el margen inferior por área segura vale en los dos.
+
+**Visto otra vez (2026-10-01, [[iphone-landscape-headers-fill-the-short-screen]]).** Con la cabecera compactada, la
+primera fila de Registros sube a la vista en el SE y el Pro Max girados, y Yala IA y «+» tapan ahora su importe
+(`qa/evidencia-adaptativo-20261001/iphone-landscape-headers-fill-the-short-screen/comparativa-se-04-registros-horizontal.jpg`).
+No se tocó allí.

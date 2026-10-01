@@ -42,6 +42,8 @@ struct InsightsTabView: View {
     @State private var showInsightsConsentAlert = false
 
     @ScaledMetric(relativeTo: .largeTitle) private var summaryVerticalPadding: CGFloat = 12
+    /// El `ScrollView` tiene poco alto (iPhone girado): la cabecera va en banda (`SummaryHeaderStack`).
+    @State private var isShortContainer = false
 
     // Content split: bento Detalle (stats + commitments + need) vs Observaciones
     @State private var contentMode: InsightsContentMode = .detail
@@ -127,6 +129,7 @@ struct InsightsTabView: View {
                     .frame(maxWidth: .infinity, minHeight: 200)
             }
         }
+        .measuresShortContainer($isShortContainer)
         .scrollViewGlassEdges()
         .sheet(isPresented: $showCustomPeriodPicker) {
             CustomPeriodPickerSheet(
@@ -197,7 +200,8 @@ struct InsightsTabView: View {
         let hasRecords = summary.transactionCount > 0
         let period = trendsViewModel.detailPeriod
 
-        VStack(alignment: .center, spacing: DS.Spacing.xs) {
+        // Con poco alto (iPhone girado) va en banda: cifra y rótulo | período, entradas y salidas y recuento.
+        SummaryHeaderStack(isShort: isShortContainer, verticalPadding: summaryVerticalPadding) {
             TrendsPeriodMenu(
                 selectedPeriod: period,
                 customDateRange: sessionState.customDateRange,
@@ -205,7 +209,7 @@ struct InsightsTabView: View {
                 onCustomTapped: { showCustomPeriodPicker = true }
             )
             .equatable()
-
+        } figure: {
             if !sessionState.isExpensesOnlyMode && hasRecords {
                 AmountText(
                     value: summary.netBalance,
@@ -222,7 +226,7 @@ struct InsightsTabView: View {
                     .multilineTextAlignment(.center)
                     .accessibilityIdentifier("stats_hero_caption")
             }
-
+        } detail: {
             incomeExpenseChips(summary)
 
             if let sub = RecordsMotivationalLogic.subtitle(forCount: summary.transactionCount) {
@@ -231,9 +235,6 @@ struct InsightsTabView: View {
                     .foregroundStyle(.secondary)
             }
         }
-        .padding(.horizontal, DS.Spacing.lg)
-        .padding(.vertical, summaryVerticalPadding)
-        .frame(maxWidth: .infinity)
         .accessibilityElement(children: .contain)
         .accessibilityAddTraits(.isHeader)
     }
