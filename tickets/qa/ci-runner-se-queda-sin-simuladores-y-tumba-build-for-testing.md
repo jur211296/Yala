@@ -1,10 +1,10 @@
 ---
 id: ci-runner-se-queda-sin-simuladores-y-tumba-build-for-testing
-status: backlog
+status: qa
 priority: medium
 area: ci
 created: 2026-09-09
-updated: 2026-09-09
+updated: 2026-10-02
 source: aparecido al pasar el PR #116 (build 13 a TestFlight) por el CI
 ---
 
@@ -72,3 +72,10 @@ La 2 es la más barata y ataca la causa directa; la 1 es la robusta.
 
 Dos corridas seguidas del workflow en las que `Build for testing` pase, y una corrida forzada sin
 runtime disponible en la que el job diga explícitamente que la suite no llegó a correr.
+
+## Resolución (2026-10-02, PR #327)
+
+Duplicado de `ci-destination-assumes-a-simulator-that-may-not-exist`, que lleva la resolución y lo que
+falta para cerrarlo. De las opciones de aquí: se hizo la 1 en versión robusta (resolver/crear el device
+y, si no hay runtime, `xcodebuild -downloadPlatform iOS`) y la 3 (`::error title=Simulador::` en vez del
+exit 70). La 2 (`generic/platform`) se descartó; el porqué está en el otro ticket.

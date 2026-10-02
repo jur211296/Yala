@@ -1,9 +1,10 @@
 ---
 id: ci-destination-assumes-a-simulator-that-may-not-exist
-status: backlog
+status: qa
 priority: medium
 area: "ci, testing"
 created: 2026-09-07
+updated: 2026-10-02
 source: rojo del CI en el PR #94 (2026-09-07)
 ---
 
@@ -63,3 +64,28 @@ mirarlo. La primera vez que pasa se investiga; la tercera se asume que «el CI e
 - [ ] Si el device no se puede resolver, que el mensaje lo diga en una línea reconocible — hoy hay que
       abrir el log y leer el volcado de `xcodebuild` para distinguirlo de un test roto.
 - [ ] Comprobado relanzando el job: un rojo por esta causa no debe repetirse en el reintento.
+
+## Resolución (2026-10-02, PR #327)
+
+Volvió a pasar en `2.1` tras el #325 (run `37034199942`). Medido: es la 8.ª vez desde el 2026-08-18
+(8 de los 33 rojos de QA en ese tramo), y en las ocho el runner listaba **cero** simuladores, con la
+misma imagen y el mismo Xcode que las corridas verdes de alrededor. Absorbe
+`ci-runner-se-queda-sin-simuladores-y-tumba-build-for-testing`, que es el mismo fallo.
+
+Qué cambió, contra los AC:
+
+- [x] Device resuelto en tiempo de ejecución: paso «Simulador del runner» → `qa/scripts/ci-simulador.sh`.
+      Busca `iPhone 17 Pro` disponible (runtime del SDK primero), lo crea por tipo + runtime si falta,
+      reinicia CoreSimulator si no devuelve nada y, a la 3.ª vuelta sin runtime, descarga la
+      plataforma una vez. Los cuatro `xcodebuild` reciben `id=<udid>`.
+- [x] Mensaje reconocible: si no hay simulador, `::error title=Simulador::sin iPhone 17 Pro tras N
+      intentos` más la lista de runtimes. Ya no es el exit 70 de `xcodebuild`.
+- [ ] ~~`build-for-testing` con `generic/platform=iOS Simulator`~~ — descartado: sin device activo,
+      `ONLY_ACTIVE_ARCH = YES` no tiene a qué ceñirse y se compilan todas las arquitecturas en el paso
+      más largo del job. El UDID ya lo resuelve.
+- [ ] Comprobado relanzando: **pendiente**. Banco `qa/scripts/ci-simulador-test.sh` 8/8 y 9/9 mutantes
+      muertos, pero el banco simula la carrera, no la provoca.
+
+**Qué falta para cerrarlo:** que no vuelva a aparecer `Unable to find a device matching` en los runs de
+QA de las próximas semanas. Si aparece un aviso `Simulador::` en un run verde, el reintento hizo su
+trabajo: anotarlo aquí con el número de vueltas.
