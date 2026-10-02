@@ -6238,3 +6238,6 @@
 
 /* Botón: traer al frente la otra ventana */
 "window.follower.cta" = "Vai a quella finestra";
+
+/* Storage · Grupos: replaces the associate/sign-in button while the groups channel is paused server-side */
+"storage.groups.channelPausedNote" = "I gruppi sono in pausa al momento per una cosa nostra. Quando torneranno, potrai continuare da qui.";

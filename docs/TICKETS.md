@@ -106,7 +106,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | apppreferences-rewritten-on-launch | blocked | tickets/blocked/apppreferences-rewritten-on-launch.md |
 | approximate-mark-ors-over-whole-period | done | tickets/done/approximate-mark-ors-over-whole-period.md |
 | appstorage-onboarding-desarma-el-aislamiento-de-tests | backlog | tickets/backlog/appstorage-onboarding-desarma-el-aislamiento-de-tests.md |
-| associate-cta-ignores-the-groups-kill-switch | backlog | tickets/backlog/associate-cta-ignores-the-groups-kill-switch.md |
+| associate-cta-ignores-the-groups-kill-switch | qa | tickets/qa/associate-cta-ignores-the-groups-kill-switch.md |
 | association-read-writes-defaults-from-a-view-body | backlog | tickets/backlog/association-read-writes-defaults-from-a-view-body.md |
 | attest-gateway-reports-a-storage-failure-as-an-invalid-attestation | backlog | tickets/backlog/attest-gateway-reports-a-storage-failure-as-an-invalid-attestation.md |
 | attest-session-token-rejected-by-the-gateway-stays-cached | backlog | tickets/backlog/attest-session-token-rejected-by-the-gateway-stays-cached.md |

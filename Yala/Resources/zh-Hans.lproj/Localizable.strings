@@ -6240,3 +6240,6 @@
 
 /* Botón: traer al frente la otra ventana */
 "window.follower.cta" = "前往该窗口";
+
+/* Storage · Grupos: replaces the associate/sign-in button while the groups channel is paused server-side */
+"storage.groups.channelPausedNote" = "由于我们这边的问题，群组目前暂停中。恢复后，你可以从这里继续。";

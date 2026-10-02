@@ -5505,3 +5505,6 @@
 
 /* Botón: traer al frente la otra ventana */
 "window.follower.cta" = "Ir a esa ventana";
+
+/* Storage · Grupos: replaces the associate/sign-in button while the groups channel is paused server-side */
+"storage.groups.channelPausedNote" = "Ahora mismo los grupos están en pausa por algo de nuestro lado. Cuando vuelvan, podrás seguir desde aquí.";

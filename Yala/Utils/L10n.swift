@@ -7241,6 +7241,8 @@ enum L10n {
             }
             static var needsSignInUnnamedBody: String { ls("storage.groups.needsSignInUnnamedBody", comment: "") }
             static var signInButton: String { ls("storage.groups.signInButton", comment: "") }
+            /// Ocupa el sitio de «Asociar» / «Entrar» cuando el canal de Grupos está matado en remoto.
+            static var channelPausedNote: String { ls("storage.groups.channelPausedNote", comment: "") }
             static var detachButton: String { ls("storage.groups.detachButton", comment: "") }
             static var sameAccountBody: String { ls("storage.groups.sameAccountBody", comment: "") }
             static var detachTitle: String { ls("storage.groups.detachTitle", comment: "") }
