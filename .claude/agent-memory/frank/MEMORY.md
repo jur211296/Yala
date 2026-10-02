@@ -17,6 +17,7 @@
 - [El carril espera a Cola A](feedback_carril_espera_a_cola_a.md) — nada al simulador con Cola A viva; al acabar, validar que limpió.
 
 ## Cómo mido y cómo entrego
+- [Capturar widgets por galería](feedback_capturar_widgets_por_galeria.md) — un tamaño por página, vuelve a la 1 tras cada alta; seed + 2.º arranque.
 - [El final del ciclo borra la prueba](feedback_el_final_del_ciclo_borra_la_prueba.md) — «haz el ciclo y lee Y»: la purga de la cola borraba Y.
 - [El testigo se apunta ANTES de conducir](feedback_el_testigo_se_apunta_antes_de_conducir.md) — el kill de la 1.ª pasada; y…
 - [Un fail-closed sin reintento es permanente](feedback_un_fail_closed_sin_reintento_es_permanente.md) — el motor `.idle` que…

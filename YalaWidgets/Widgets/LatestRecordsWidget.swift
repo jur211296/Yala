@@ -3,7 +3,7 @@
 //  YalaWidgets
 //
 //  Widget showing the latest transactions.
-//  Supports Medium size with 3 records.
+//  Medium: 3 records. Large: 7 (misma fila, más alto).
 //
 //
 
@@ -75,6 +75,66 @@ struct LatestRecordsEntry: TimelineEntry {
                     isIncome: true,
                     amountInPreferredCurrency: 2500.00,
                     isExchangeRateProvisional: false
+                ),
+                WidgetTransaction(
+                    id: "4",
+                    date: Date().addingTimeInterval(-86400),
+                    amount: 89.90,
+                    currencyCode: "PEN",
+                    note: "Supermercado",
+                    categoryName: "Alimentación",
+                    categoryColor: "#FF6B6B",
+                    categoryIcon: "cart.fill",
+                    subcategoryIcon: "cart.fill",
+                    subcategoryName: "Supermercado",
+                    isIncome: false,
+                    amountInPreferredCurrency: 89.90,
+                    isExchangeRateProvisional: false
+                ),
+                WidgetTransaction(
+                    id: "5",
+                    date: Date().addingTimeInterval(-90000),
+                    amount: 35.00,
+                    currencyCode: "PEN",
+                    note: "Farmacia",
+                    categoryName: "Salud",
+                    categoryColor: "#EF4444",
+                    categoryIcon: "cross.case.fill",
+                    subcategoryIcon: "cross.case.fill",
+                    subcategoryName: "Farmacia",
+                    isIncome: false,
+                    amountInPreferredCurrency: 35.00,
+                    isExchangeRateProvisional: false
+                ),
+                WidgetTransaction(
+                    id: "6",
+                    date: Date().addingTimeInterval(-172800),
+                    amount: 120.00,
+                    currencyCode: "PEN",
+                    note: "Luz",
+                    categoryName: "Servicios",
+                    categoryColor: "#00C2CB",
+                    categoryIcon: "bolt.fill",
+                    subcategoryIcon: "bolt.fill",
+                    subcategoryName: "Electricidad",
+                    isIncome: false,
+                    amountInPreferredCurrency: 120.00,
+                    isExchangeRateProvisional: false
+                ),
+                WidgetTransaction(
+                    id: "7",
+                    date: Date().addingTimeInterval(-180000),
+                    amount: 18.50,
+                    currencyCode: "PEN",
+                    note: "Café",
+                    categoryName: "Alimentación",
+                    categoryColor: "#FF6B6B",
+                    categoryIcon: "cup.and.saucer.fill",
+                    subcategoryIcon: "cup.and.saucer.fill",
+                    subcategoryName: "Cafetería",
+                    isIncome: false,
+                    amountInPreferredCurrency: 18.50,
+                    isExchangeRateProvisional: false
                 )
             ],
             currencyDisplayFormat: "symbol",
@@ -97,17 +157,22 @@ struct LatestRecordsProvider: AppIntentTimelineProvider {
         if context.isPreview {
             return .placeholder
         }
-        return createEntry(for: configuration)
+        return createEntry(for: configuration, family: context.family)
     }
 
     func timeline(for configuration: LatestRecordsWidgetIntent, in context: Context) async -> Timeline<LatestRecordsEntry> {
-        let entry = createEntry(for: configuration)
+        let entry = createEntry(for: configuration, family: context.family)
         let refreshDate = Calendar.current.date(byAdding: .hour, value: 2, to: Date()) ?? Date()
         return Timeline(entries: [entry], policy: .after(refreshDate))
     }
 
-    private func createEntry(for configuration: LatestRecordsWidgetIntent) -> LatestRecordsEntry {
-        let transactions = WidgetDataService.getRecentTransactions(limit: 3)
+    /// Cuántas filas caben por tamaño.
+    static func recordLimit(for family: WidgetFamily) -> Int {
+        family == .systemLarge ? 7 : 3
+    }
+
+    private func createEntry(for configuration: LatestRecordsWidgetIntent, family: WidgetFamily) -> LatestRecordsEntry {
+        let transactions = WidgetDataService.getRecentTransactions(limit: Self.recordLimit(for: family))
         let displayFormat = WidgetDataService.getCurrencyDisplayFormat()
 
         return LatestRecordsEntry(
@@ -122,10 +187,11 @@ struct LatestRecordsProvider: AppIntentTimelineProvider {
 // MARK: - Widget View
 
 struct LatestRecordsWidgetView: View {
+    @Environment(\.widgetFamily) private var family
     var entry: LatestRecordsEntry
 
     var body: some View {
-        VStack(alignment: .leading, spacing: WDS.Spacing.sm) {
+        VStack(alignment: .leading, spacing: family == .systemLarge ? WDS.Spacing.md : WDS.Spacing.sm) {
             // Header
             WidgetHeader(
                 title: String(localized: "widget.ui.latestRecords", bundle: .main),
@@ -149,7 +215,7 @@ struct LatestRecordsWidgetView: View {
                 Spacer()
             } else {
                 // Transaction list
-                ForEach(Array(entry.transactions.prefix(3).enumerated()), id: \.element.id) { _, transaction in
+                ForEach(Array(entry.transactions.prefix(LatestRecordsProvider.recordLimit(for: family)).enumerated()), id: \.element.id) { _, transaction in
                     TransactionRowView(
                         transaction: transaction,
                         displayFormat: entry.currencyDisplayFormat
@@ -241,13 +307,19 @@ struct LatestRecordsWidget: Widget {
         }
         .configurationDisplayName("widget.gallery.latestRecords")
         .description("widget.gallery.latestRecords.desc")
-        .supportedFamilies([.systemMedium])
+        .supportedFamilies([.systemMedium, .systemLarge])
     }
 }
 
 // MARK: - Previews
 
 #Preview("Medium", as: .systemMedium) {
+    LatestRecordsWidget()
+} timeline: {
+    LatestRecordsEntry.placeholder
+}
+
+#Preview("Large", as: .systemLarge) {
     LatestRecordsWidget()
 } timeline: {
     LatestRecordsEntry.placeholder
