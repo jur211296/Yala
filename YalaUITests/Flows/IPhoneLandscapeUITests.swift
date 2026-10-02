@@ -8,6 +8,9 @@
 //  - Girar con un registro abierto no lo cierra, ni al ir ni al volver.
 //  - Girar con el formulario de nuevo registro a medias no pierde lo escrito.
 //
+//  - Con poco alto (girado), las cabeceras de Registros y de Estadísticas › Resumen se compactan y dejan ver el
+//    contenido: la primera fila de Registros asoma sobre la barra de pestañas y el resumen va en banda.
+//
 //  En un iPhone grande girar cambia el ANCHO de la ventana (compacto ↔ regular), y es ahí donde lo abierto podría
 //  perderse: la forma cambia y el estado tiene que vivir fuera de ella. Correr por UDID en `YalaLane-Adapt-iPhone-SE`
 //  y `YalaLane-Adapt-iPhone-ProMax` (reglas del carril). En iPad también vale: el iPad ya giraba.
@@ -114,6 +117,58 @@ final class IPhoneLandscapeUITests: XCTestCase {
 
         rotate(app, to: .portrait)
         XCTAssertTrue(edit.waitForExistence(timeout: 10), "Al volver a vertical se cerró el registro abierto en horizontal.")
+    }
+
+    /// Con poco alto, la cabecera de Registros deja ver la primera fila sin deslizar: al menos la mitad de la fila
+    /// queda por encima de la barra de pestañas. Antes, en el SE girado empezaba 47 pt por debajo de la barra y en el
+    /// Pro Max asomaba 19 pt (medido el 2026-10-01). En iPad no hay barra abajo y no aplica.
+    func test_shortHeight_recordsHeaderLeavesTheFirstRowInView() throws {
+        try XCTSkipUnless(UIDevice.current.userInterfaceIdiom == .phone, "En iPad la barra de pestañas no va abajo.")
+        let app = launch(deeplink: "records")
+        let row = app.buttons.matching(identifier: "record_row").firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 15), "No hay filas de registro.")
+        rotate(app, to: .landscapeLeft)
+        XCTAssertTrue(element(app, "stats_hero_caption").waitForExistence(timeout: 10), "En horizontal no se ve la cabecera.")
+
+        let tabBar = app.tabBars.firstMatch
+        XCTAssertTrue(tabBar.waitForExistence(timeout: 10), "En horizontal no hay barra de pestañas.")
+        // La cabecera cambia de forma al medir el alto: se espera a que la fila se asiente.
+        let deadline = Date().addingTimeInterval(5)
+        while Date() < deadline, row.frame.midY > tabBar.frame.minY { Thread.sleep(forTimeInterval: 0.25) }
+        XCTAssertLessThanOrEqual(
+            row.frame.midY, tabBar.frame.minY,
+            "Con poco alto la cabecera tapa la lista: la primera fila (\(row.frame)) queda bajo la barra de pestañas "
+                + "(\(tabBar.frame)).")
+    }
+
+    /// Con poco alto, el resumen de Estadísticas va en banda —entradas y salidas al lado de la cifra, no debajo— y
+    /// en vertical sigue apilado como siempre. Lo decide el alto del contenedor, así que las dos mitades se miran en
+    /// el mismo aparato.
+    func test_shortHeight_statisticsSummaryGoesInABand_andPortraitKeepsTheStack() throws {
+        try XCTSkipUnless(UIDevice.current.userInterfaceIdiom == .phone, "En iPad el alto no baja de 500.")
+        let app = launch(deeplink: "statistics")
+        let caption = element(app, "stats_hero_caption")
+        let expense = element(app, "stats_kpi_expense")
+        XCTAssertTrue(caption.waitForExistence(timeout: 20), "Estadísticas › Resumen no pintó su cabecera.")
+        XCTAssertTrue(expense.waitForExistence(timeout: 5), "La cabecera no enseña las salidas.")
+        XCTAssertGreaterThanOrEqual(
+            expense.frame.minY, caption.frame.maxY,
+            "En vertical las salidas tienen que ir debajo del rótulo, como siempre: \(expense.frame) vs \(caption.frame).")
+
+        rotate(app, to: .landscapeLeft)
+        let deadline = Date().addingTimeInterval(5)
+        while Date() < deadline, expense.frame.minY >= caption.frame.maxY { Thread.sleep(forTimeInterval: 0.25) }
+        XCTAssertLessThan(
+            expense.frame.minY, caption.frame.maxY,
+            "Con poco alto la cabecera sigue apilada: las salidas (\(expense.frame)) van bajo el rótulo "
+                + "(\(caption.frame)) en vez de al lado de la cifra.")
+
+        rotate(app, to: .portrait)
+        let back = Date().addingTimeInterval(5)
+        while Date() < back, expense.frame.minY < caption.frame.maxY { Thread.sleep(forTimeInterval: 0.25) }
+        XCTAssertGreaterThanOrEqual(
+            expense.frame.minY, caption.frame.maxY,
+            "Al volver a vertical la cabecera no volvió a apilarse: \(expense.frame) vs \(caption.frame).")
     }
 
     /// El formulario de nuevo registro a medias conserva lo escrito al girar y al volver.

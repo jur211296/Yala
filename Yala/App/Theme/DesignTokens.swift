@@ -486,6 +486,17 @@ enum DS {
         /// caben dos, una. Un pelo por debajo del contenido de un iPhone SE (343), donde las tarjetas ya están medidas,
         /// y por encima de las 290 que quedarían con Yala IA abierto al lado.
         static let pairedColumnMinWidth: CGFloat = 320
+
+        /// Por debajo de este alto, un contenedor tiene «poco alto» y la cabecera de resumen se compacta
+        /// (`SummaryHeaderStack`). El alto es el del contenedor CONTANDO las barras que se le superponen (navegación,
+        /// pestañas): lo visible a secas cambia con el título grande y en un SE vertical, bajo el título y los chips
+        /// de Estadísticas, ya bajaba de 420. Así medido (2026-10-01): girados ≤ ~440 (Pro Max), en vertical ≥ ~615
+        /// (Estadísticas en un SE). Queda en medio.
+        static let shortContainerMaxHeight: CGFloat = 500
+
+        static func isShortContainer(height: CGFloat) -> Bool {
+            height > 0 && height < shortContainerMaxHeight
+        }
     }
 
     // MARK: - Form Row Dimensions

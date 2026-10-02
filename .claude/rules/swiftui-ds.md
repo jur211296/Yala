@@ -220,6 +220,18 @@ paths:
   SE el nombre ya se corta con dos).
 - **Un widget solo en su fila ocupa la fila entera solo si sabe repartir su contenido** (`WidgetConfigManager
   .spansRowWhenAloneTypes`, hoy `latestRecords`); los demás siguen en media fila.
+- **Con poco ALTO, la cabecera de resumen se compacta: `SummaryHeaderStack(period:figure:detail:)`**
+  (`Views/Shared/SummaryHeaderStack.swift`, 2026-10-01). La usan Registros (y con ella Estadísticas › Registros) y
+  Estadísticas › Resumen. Con alto suficiente pinta la pila de siempre —el vertical no cambia, medido al píxel—; con
+  poco alto prueba, de la primera que quepa a lo ancho: banda (cifra | período y detalle), período al lado de la cifra,
+  detalle en una fila, la pila; las cuatro con 4 pt de margen vertical. Dos cosas medidas que no son obvias:
+  - **«Poco alto» es el alto del contenedor CONTANDO las barras que se le superponen** (`measuresShortContainer`:
+    tamaño + márgenes de seguridad, umbral `DS.Adaptive.shortContainerMaxHeight` = 500). El alto visible a secas no
+    vale: en un SE vertical, bajo el título grande y los chips de Estadísticas, ya baja de 420 y compactaba el
+    vertical. Girados quedan ≤ ~440; en vertical, ≥ ~615.
+  - **En la banda el período va a la derecha, no encima de la cifra**: encima, la columna izquierda volvía a tener tres
+    filas y la primera fila de Registros seguía bajo la barra en el SE girado (empezaba 47 pt por debajo).
+  Test: `IPhoneLandscapeUITests#test_shortHeight_*` (por UDID en SE y Pro Max) + `YalaTests/ShortContainerHeightTests`.
 - **Estadísticas › Registros abre el registro en un panel, no en un split** (`DetailContainerView.recordsContent`):
   el chip vive dentro de la pila de Estadísticas. Lista y panel lado a lado con dos anchos de iPhone; si no caben, el
   panel tapa la lista (`ZStackLayout`, la lista sigue montada) y su X la devuelve; al pasar a compacta con uno
