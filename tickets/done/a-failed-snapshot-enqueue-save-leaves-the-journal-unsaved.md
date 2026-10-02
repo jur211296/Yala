@@ -1,14 +1,52 @@
 ---
 id: a-failed-snapshot-enqueue-save-leaves-the-journal-unsaved
-status: backlog
+status: done
 priority: medium
 area: "modo-nube, migración"
 created: 2026-09-22
-updated: 2026-09-23
+updated: 2026-10-02
 source: "review adversarial de `snapshot-upload-has-no-ceiling-and-no-way-out` (2026-09-22), lente de lógica del techo"
 ---
 
 # Si al subir tus datos falla un guardado local, la app puede decir que se rindió sin haberlo guardado
+
+## Cerrado el 2026-10-02: medido, ese guardado no puede fallar por sus filas
+
+**Veredicto, en lenguaje de usuario:** el escenario no se da. El guardado del encolado solo puede fallar por algo que
+tumba también el guardado de la tarjeta (disco lleno, el almacenamiento que no responde). En ese caso la app no puede
+guardar nada, y deshacer las filas no cambiaría eso. Sin cambio de código; un test fija las dos premisas.
+
+**Medido (no inferido):**
+
+1. **Nada en las filas puede rechazarlas.** Ningún modelo de la app tiene `#Unique`/`.unique`, regla `.deny` ni
+   validación (grep en `Yala/`). `SyncOutbox`, `SyncCursor`, `SyncUnitClock` y `SyncIdentity` no tienen relaciones, y
+   todos sus atributos tienen valor por defecto.
+2. **Otro escritor no hace fallar el guardado.** Con dos contextos sobre el mismo SQLite, el que guarda con una
+   instantánea vieja de una fila que el otro **modificó** o **borró** no lanza: SwiftData resuelve el conflicto sin
+   error, y el guardado siguiente (el del journal) pasa y llega a disco. Medido primero en macOS con un binario y
+   fijado en iOS con `SnapshotEnqueueSaveFailurePremiseTests`. Además, en producción nadie más escribe el store
+   sync-meta: el único otro contexto (`MigrationPhaseStore.journaledPhaseRead`) solo lee.
+3. **Lo que queda comparte destino con el journal.** `MigrationState` vive en el MISMO store (`syncMetaSchema`) que
+   `SyncOutbox`, `SyncCursor`, `SyncUnitClock` y `SyncIdentity`. Disco lleno, E/S o un store que desaparece tumban el
+   guardado del journal igual, con rollback o sin él.
+
+**Los tres productores, mismo veredicto:**
+
+- **Subida del snapshot** (`MigrationSnapshotUploader` → `enqueueSnapshotRows`): solo filas sync-meta. Cerrado.
+- **Identidad, 35 %** (`MigrationWorkExecutor.assignIdentity`): además escribe `syncID` en filas de dominio (store
+  personal, con el espejo de iCloud vivo). El importador del espejo es otro contexto; su conflicto no lanza (pata 2 del
+  test, con filas modificadas y borradas). Cerrado.
+- **Backfill y huérfanas del adopt** (`runAdoptOrphanReconcile`: `backfillIdentities` + `enqueueSnapshotRows` en un
+  guardado): la misma forma que la identidad. Cerrado, sin ticket residual.
+
+**Por qué no se añadió un rollback acotado «por si acaso»:** no le devolvería el guardado al journal en ningún caso
+alcanzable (punto 3), y si el fallo fuera pasajero, dejar las filas en el contexto hace que el guardado siguiente las
+escriba juntas, con el reloj, que es la invariante lockstep D-3. Deshacerlas a mano reabriría esa invariante sin
+ganar nada.
+
+**Qué reabre esto:** que `MigrationState` salga del store sync-meta, que una tabla de estos tres caminos gane una
+restricción, relación obligatoria o validación, o que SwiftData cambie su política de merge. El primero y el
+último los caza el test, pero no el del medio: una restricción nueva no la ve (revisar este ticket al añadirla).
 
 ## El problema, en lenguaje de usuario
 
