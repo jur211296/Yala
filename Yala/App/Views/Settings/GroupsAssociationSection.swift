@@ -65,6 +65,26 @@ struct GroupsAssociationSection: View {
     /// (`CloudAuthService` no publica nada), así que la pantalla se refresca por toques, igual que el
     /// resto de esta fila, que vive de un poll de 1 s.
     @State private var refreshTick = false
+    /// El canal de Grupos salió apagado al tocar «Asociar» / «Entrar». Alerta con el copy que ya existe para
+    /// este hecho en la puerta del tab (`welcome.groups.channelOff*`): es transitorio, es cosa nuestra y no
+    /// se guardó nada.
+    @State private var showChannelOff = false
+    /// La comprobación del canal que lanzó el último toque. Mientras corre, el botón no acepta otro (dos
+    /// toques serían dos intents de sign-in), y si la sección se va antes de que termine se cancela: un
+    /// sign-in que aparece cuando la persona ya se fue de Ajustes no lo pidió nadie.
+    @State private var channelCheck: Task<Void, Never>?
+
+    /// El canal de Grupos, COMPUESTO (compilado && kill remoto): asociar o entrar son ENTRADAS al canal, y
+    /// las entradas leen el compuesto (`CloudSyncFlags.groupsBackendEnabled`, su docblock). Se re-lee con
+    /// cada `refreshTick`, como el resto de la sección.
+    private var channelOn: Bool {
+        _ = refreshTick
+        return CloudSyncFlags.groupsBackendEnabled
+    }
+
+    private var signInEntry: GroupsAssociationLogic.SignInEntry {
+        GroupsAssociationLogic.signInEntry(state, channelOn: channelOn)
+    }
 
     private var signOutCoordinator: CloudSessionSignOut { CloudSessionSignOut.shared }
 
@@ -147,6 +167,24 @@ struct GroupsAssociationSection: View {
             } message: {
                 Text(L10n.Storage.Groups.detachPurgeFailedBody)
             }
+            // Tercer alert de la cadena, y tampoco coincide con los otros dos: sale de un toque en «Asociar» /
+            // «Entrar», y esos botones no conviven con un desasociar en vuelo.
+            .alert(L10n.Welcome.Groups.channelOffTitle, isPresented: $showChannelOff) {
+                Button(L10n.Common.ok) { showChannelOff = false }
+            } message: {
+                Text(L10n.Welcome.Groups.channelOffBody)
+            }
+            // **Con la sección en pausa, se pregunta al servidor una vez al montar.** El snapshot del kill puede
+            // tener hasta 6 h y sin botón no hay toque que fuerce el refresco: sin esto, un canal ya reencendido
+            // seguiría diciendo «en pausa» hasta el siguiente refresco del arranque. Bajo `-uitest` no se toca
+            // red, igual que en el tab.
+            .task(id: signInEntry == .channelPaused) {
+                guard signInEntry == .channelPaused, !SwiftDataConfiguration.isUITesting else { return }
+                await RemoteConfigClient.shared.refreshIfDue(force: true)
+                guard !Task.isCancelled else { return }
+                refreshTick.toggle()
+            }
+            .onDisappear { channelCheck?.cancel() }
         }
     }
 
@@ -270,29 +308,44 @@ struct GroupsAssociationSection: View {
             }
             .accessibilityIdentifier("storage_groups_working")
         } else {
-            if GroupsAssociationLogic.offersAssociate(state), let onAssociate {
-                Button(action: onAssociate) {
-                    Text(L10n.Storage.Groups.associateButton)
-                        .font(DS.Typography.body.weight(.medium))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, DS.Spacing.sm)
-                        .contentShape(Rectangle())
+            switch signInEntry {
+            case .associate:
+                if onAssociate != nil {
+                    Button(action: requestSignIn) {
+                        Text(L10n.Storage.Groups.associateButton)
+                            .font(DS.Typography.body.weight(.medium))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, DS.Spacing.sm)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(channelCheck != nil)
+                    .accessibilityIdentifier("storage_groups_associate_button")
                 }
-                .buttonStyle(.bordered)
-                .accessibilityIdentifier("storage_groups_associate_button")
-            }
-            if state == .associatedNeedsSignIn, let onAssociate {
-                // La sesión no viajó, la asociación sí: entrar es el MISMO gesto que asociar (pasa por
-                // [I] con la cuenta que ya está registrada), así que no hay un camino nuevo que probar.
-                Button(action: onAssociate) {
-                    Text(L10n.Storage.Groups.signInButton)
-                        .font(DS.Typography.body.weight(.medium))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, DS.Spacing.sm)
-                        .contentShape(Rectangle())
+            case .signIn:
+                if onAssociate != nil {
+                    // La sesión no viajó, la asociación sí: entrar es el MISMO gesto que asociar (pasa por
+                    // [I] con la cuenta que ya está registrada), así que no hay un camino nuevo que probar.
+                    Button(action: requestSignIn) {
+                        Text(L10n.Storage.Groups.signInButton)
+                            .font(DS.Typography.body.weight(.medium))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, DS.Spacing.sm)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(channelCheck != nil)
+                    .accessibilityIdentifier("storage_groups_signin_button")
                 }
-                .buttonStyle(.bordered)
-                .accessibilityIdentifier("storage_groups_signin_button")
+            case .channelPaused:
+                // Sin botón: con el canal matado, el sign-in sería real contra un backend en pausa. Se dice
+                // por qué en vez de dejar un hueco donde estaba el botón.
+                Text(L10n.Storage.Groups.channelPausedNote)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("storage_groups_channel_paused_note")
+            case .none:
+                EmptyView()
             }
             if hasPendingPurge {
                 // **Sin hoja de confirmación, y es lo que distingue TERMINAR de repetir.** El puente ya
@@ -344,6 +397,34 @@ struct GroupsAssociationSection: View {
     private func detach(_ choice: GroupsAssociationDetach.BridgedRowsChoice) {
         Task { @MainActor in
             apply(await signOutCoordinator.detachGroupsAccount(context: modelContext, choice: choice))
+        }
+    }
+
+    /// «Asociar» / «Entrar»: **el canal se re-mide al tocar, y el refresco va ANTES de leer el flag.** El
+    /// snapshot del kill puede tener hasta 6 h, así que el botón pudo pintarse con un canal que ya no existe;
+    /// es la regla de `GroupsContainerView.requestCreateGroup` («la intención del usuario es evidencia»). Con el
+    /// canal encendido sigue el camino de siempre (`onAssociate`, que cierra la hoja y emite el intent); apagado,
+    /// no se emite nada, se dice por qué y la sección pasa a la nota de pausa.
+    ///
+    /// El gate vive AQUÍ y no en el drenado de `.presentGroupsSignIn` (`ContentView`): cada productor de ese
+    /// intent decide con el flag antes de emitirlo, y un drenado que lo descartara en silencio dejaría sin
+    /// respuesta un toque y sin salida los flujos ya abiertos que lo re-emiten.
+    private func requestSignIn() {
+        guard let onAssociate, channelCheck == nil else { return }
+        channelCheck = Task { @MainActor in
+            defer { channelCheck = nil }
+            // Hermeticidad: bajo `-uitest` no se toca red; el getter devuelve su default (ON en `Yala Dev`).
+            if !SwiftDataConfiguration.isUITesting {
+                await RemoteConfigClient.shared.refreshIfDue(force: true)
+            }
+            guard !Task.isCancelled else { return }
+            if CloudSyncFlags.groupsBackendEnabled {
+                onAssociate()
+            } else {
+                DS.Haptic.warning()
+                showChannelOff = true
+            }
+            refreshTick.toggle()
         }
     }
 

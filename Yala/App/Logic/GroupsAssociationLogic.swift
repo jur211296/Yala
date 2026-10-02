@@ -92,6 +92,39 @@ nonisolated enum GroupsAssociationLogic {
         state == .noAccount
     }
 
+    // MARK: - La puerta de entrada y el kill-switch de Grupos
+
+    /// Qué puerta hacia el sign-in de Grupos enseña la sección.
+    enum SignInEntry: Equatable {
+        /// La celda no ofrece entrar en ninguna cuenta.
+        case none
+        /// «Asociar una cuenta para grupos» (`.noAccount`).
+        case associate
+        /// «Entrar» con la cuenta que ya está asociada (`.associatedNeedsSignIn`).
+        case signIn
+        /// La celda ofrecería una de las dos, pero el canal de Grupos está matado en remoto. **No hay
+        /// botón**: la sección dice que los grupos están en pausa. Firmar ahí sería real, contra un
+        /// backend en pausa, y del otro lado no habría canal.
+        case channelPaused
+    }
+
+    /// - Parameter channelOn: `CloudSyncFlags.groupsBackendEnabled`, el getter COMPUESTO (compilado &&
+    ///   kill remoto). Es una ENTRADA al canal, y las entradas leen el compuesto (ver su docblock).
+    ///
+    /// El desasociar **no** pasa por aquí y sigue ofreciéndose con el canal apagado: es un teardown, y
+    /// cuando no puede terminar ya lo dice él (`BlockReason.channelPaused`).
+    static func signInEntry(_ state: SectionState, channelOn: Bool) -> SignInEntry {
+        let entry: SignInEntry
+        if offersAssociate(state) {
+            entry = .associate
+        } else if state == .associatedNeedsSignIn {
+            entry = .signIn
+        } else {
+            return .none
+        }
+        return channelOn ? entry : .channelPaused
+    }
+
     // MARK: - Cómo se nombra la cuenta en la fila
 
     /// Cómo se nombra la cuenta bajo «Grupos». **El `sub` no es una de las opciones**: es un

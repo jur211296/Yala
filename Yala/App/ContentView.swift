@@ -107,8 +107,8 @@ struct ContentView: View {
     /// poder decir «más tarde» sobre una invitación concreta.
     @State private var pendingInviteZone: String?
     /// G4-invites (A2): sheets del flujo backend sign-in → consent → join, drenados de
-    /// `.presentGroupsConsent` / `.presentGroupsSignIn`. DARK: con `groupsBackendEnabled`
-    /// OFF los intents jamás se submitean.
+    /// `.presentGroupsConsent` / `.presentGroupsSignIn`. Con `groupsBackendEnabled` OFF no se emiten, y
+    /// eso lo garantiza cada PRODUCTOR, no el drenado (ver el `case` del drenado).
     @State private var showGroupsConsent: Bool = false
     @State private var showGroupsSignIn: Bool = false
     /// **Bloque [I]** · el bloqueo «esa cuenta ya tiene Yala completo». Vive aquí y no en el modifier
@@ -1201,7 +1201,14 @@ struct ContentView: View {
         case .presentFullModeActivation:
             showFullModeActivation = true
         // G4-invites (A2): flujo backend sign-in → consent → (onboarding fresco) → join.
-        // DARK: con `groupsBackendEnabled` OFF los intents jamás se submitean. Las vistas
+        // **El drenado NO mira `groupsBackendEnabled`, y es a propósito.** El kill lo respeta cada PRODUCTOR
+        // antes de emitir: crear grupo y su form (`GroupCreateRoutingLogic`), los empty states y el educativo
+        // del tab (`flagOn`), las invitaciones (`GroupInviteChannelRoutingLogic`), re-unirse
+        // (`GroupBackendCapability.current`) y —desde 2026-10-02— «Asociar» / «Entrar» de Ajustes
+        // (`GroupsAssociationSection.requestSignIn`), que hasta ese día era el único que no lo miraba. Un
+        // guard aquí descartaría el intent EN SILENCIO: un toque sin respuesta, y sin salida los flujos ya
+        // abiertos que lo re-emiten («Usar otra cuenta»). Un productor nuevo decide él, con el flag leído
+        // después de `refreshIfDue(force: true)`. Las vistas
         // (GroupsBackendInviteModifier) son sheets del MISMO anchor — entran a la matriz
         // (`groupsConsent`/`groupsSignIn`) y el drain se retiene mientras un nodo superior tape.
         case .presentGroupsConsent(let zone):
