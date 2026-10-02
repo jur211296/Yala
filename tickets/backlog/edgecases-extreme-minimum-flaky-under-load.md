@@ -251,3 +251,23 @@ Disco: 5,8 GB libres.
 Gate de `late-remote-wipe-signal-also-wipes-rows-created-after-it`: 19 suites XCUITest en una invocación (46 tests), el
 centinela limpio (solo en el simulador), y cayó este caso con el mismo mensaje (`XCUIApplication+Yala.swift:270`, 36 s).
 Aislado, `EdgeCasesUITests` pasó 3 de 3. El cambio de esa sesión no toca el guardado de una transacción.
+
+---
+
+## Medición del 2026-10-01 (Frank, desde `groups-purge-save-crosses-two-stores-without-atomicity`) — falla SOLO y en el árbol base
+
+Tres corridas, centinela en 0 en las tres, sobre `2.1` en `a6b957630` (tras el merge de #318, el giro a
+horizontal en iPhone):
+
+| Corrida | Árbol | Alcance | Resultado |
+|---|---|---|---|
+| 1 | con el diff (solo toca el borrado de Grupos, nada de UI) | 5 suites del gate | 19 tests, **1 fallo** |
+| 2 | con el diff | `test_extremeMinimumAmountSaves` sola | **1 fallo** |
+| 3 | base `a6b957630`, limpio | `test_extremeMinimumAmountSaves` sola | **1 fallo** |
+
+El fallo es otro que el de las mediciones anteriores: `EdgeCasesUITests.swift:67`, `Failed to tap Button (First
+Match): No matches found … identifier BEGINSWITH "account_selector_row_"`. O sea: tras tocar
+`new_transaction_account_chip`, la hoja `AccountSelectorSheet` no enseña ninguna fila con ese identificador. Con
+`f96aae000` (atajos de iPad) y `0fbaabef2` (hojas dimensionadas por la ventana) tocando esa hoja en los últimos días,
+y #318 recién mergeado, la pista más barata es mirar el árbol de accesibilidad de esa hoja en iPhone 17 Pro. Sin
+comprobar. Aquí ya no vale «pasa solo»: hoy no pasa ni solo.
