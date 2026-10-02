@@ -17,6 +17,7 @@ struct DetailContainerView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(SessionState.self) private var sessionState
+    @Environment(SceneNavigation.self) private var navigation
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.yalaTheme) private var theme
     @Environment(\.scenePhase) private var scenePhase
@@ -176,19 +177,19 @@ struct DetailContainerView: View {
                 }
             }
             .task {
-                if selectedTab != sessionState.selectedDetailTab {
-                    selectedTab = sessionState.selectedDetailTab
+                if selectedTab != navigation.selectedDetailTab {
+                    selectedTab = navigation.selectedDetailTab
                 }
             }
-            .onChange(of: sessionState.selectedDetailTab) { _, newValue in
+            .onChange(of: navigation.selectedDetailTab) { _, newValue in
                 if selectedTab != newValue { selectedTab = newValue }
             }
             .onChange(of: selectedTab) { _, newTab in
                 if newTab != .records {
                     recordsViewModel.exitDuplicateMode()   // modo efímero: se apaga al salir del tab Registros
                 }
-                if sessionState.selectedDetailTab != newTab {
-                    sessionState.selectedDetailTab = newTab
+                if navigation.selectedDetailTab != newTab {
+                    navigation.selectedDetailTab = newTab
                 }
                 // .categories también consume insightData.periodSummary (gate >=5 tx
                 // del Distribution Insight Card) — disparar recalculation también ahí.
@@ -196,7 +197,7 @@ struct DetailContainerView: View {
                     scheduleRecalculation(reload: false)
                 }
             }
-            .onChange(of: sessionState.selectedMainTab) { _, newTab in
+            .onChange(of: navigation.selectedMainTab) { _, newTab in
                 // Sync filters when navigating to Statistics tab (view may already be mounted)
                 if newTab == .statistics && !isFromSearch {
                     recalculateData()
@@ -768,6 +769,7 @@ struct DetailContainerView: View {
     NavigationStack {
         DetailContainerView()
     }
+    .environment(SceneNavigation())
     .previewAppPreferences()
 }
 

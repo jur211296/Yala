@@ -10,6 +10,7 @@ import SwiftUI
 
 struct ScheduledPaymentsView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(SceneNavigation.self) private var navigation
     @Environment(SessionState.self) private var sessionState
     @Environment(\.yalaTheme) private var theme
     @Environment(\.scenePhase) private var scenePhase
@@ -90,8 +91,8 @@ struct ScheduledPaymentsView: View {
         // Peek first so we only drain intents this view handles —
         // BudgetsListView shares the .planning consumer.
         .routerConsumer(.planning) {
-            if case .autoOpenScheduledEditor = AppRouter.shared.peekNext(for: .planning) {
-                _ = AppRouter.shared.drainNext(for: .planning)
+            if case .autoOpenScheduledEditor = AppRouter.shared.peekNext(for: .planning, in: navigation.id) {
+                _ = AppRouter.shared.drainNext(for: .planning, in: navigation.id)
                 viewModel.editingPayment = nil
                 viewModel.showPaymentEditor = true
             }
@@ -180,4 +181,5 @@ private struct ScheduledPaymentDetailDestination: View {
     NavigationStack {
         ScheduledPaymentsView()
     }
+    .environment(SceneNavigation())
 }

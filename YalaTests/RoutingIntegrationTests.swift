@@ -82,21 +82,21 @@ struct RoutingIntegrationTests {
         router.enqueue(.showGroupSyncError("sync falló"))
 
         // Consumer listo → drena el primero (inviteError, prioridad más alta).
-        router.markReady(.contentView)
-        let first = router.drainNext(for: .contentView)
+        router.markReady(.contentView, in: nil)
+        let first = router.drainNext(for: .contentView, in: nil)
         guard case .showInviteError = first else {
             Issue.record("Esperaba showInviteError primero, drenó \(String(describing: first))")
             return
         }
 
         // El alert está visible → la matriz (hasActiveInviteError) marca unready.
-        router.markUnready(.contentView)
-        #expect(router.drainNext(for: .contentView) == nil)
+        router.markUnready(.contentView, in: nil)
+        #expect(router.drainNext(for: .contentView, in: nil) == nil)
         #expect(router.contains { if case .showGroupSyncError = $0 { return true }; return false })
 
         // OK del primer alert → flag a nil → recompute → markReady → drena el segundo.
-        router.markReady(.contentView)
-        let second = router.drainNext(for: .contentView)
+        router.markReady(.contentView, in: nil)
+        let second = router.drainNext(for: .contentView, in: nil)
         guard case .showGroupSyncError = second else {
             Issue.record("Esperaba showGroupSyncError segundo, drenó \(String(describing: second))")
             return
@@ -112,14 +112,14 @@ struct RoutingIntegrationTests {
     func panelIntent_heldWhileGateClosed_persistsInQueue() {
         let router = freshRouter()
         router.enqueue(.presentInboxSheet)
-        router.markReady(.panel)
+        router.markReady(.panel, in: nil)
 
         // Gate cerrado (paywall del shell arriba): el consumidor no drena.
         #expect(!RouterConsumerGateLogic.panelCanDrain(
             selectedTab: .panel, chatSheetOpen: false,
             shellBlocker: "proTrialOffer", mainTabModalVisible: false, panelModalVisible: false
         ))
-        #expect(router.peekNext(for: .panel) != nil)
+        #expect(router.peekNext(for: .panel, in: nil) != nil)
         #expect(router.contains { if case .presentInboxSheet = $0 { return true }; return false })
 
         // Paywall cierra → gate abierto → el intent retenido drena AHORA.
@@ -127,7 +127,7 @@ struct RoutingIntegrationTests {
             selectedTab: .panel, chatSheetOpen: false,
             shellBlocker: nil, mainTabModalVisible: false, panelModalVisible: false
         ))
-        let drained = router.drainNext(for: .panel)
+        let drained = router.drainNext(for: .panel, in: nil)
         guard case .presentInboxSheet = drained else {
             Issue.record("Esperaba presentInboxSheet, drenó \(String(describing: drained))")
             return
@@ -141,9 +141,9 @@ struct RoutingIntegrationTests {
     func mainTabModalIntent_peekFirst_doesNotConsumeOnHold() {
         let router = freshRouter()
         router.enqueue(.presentTrialExpired)
-        router.markReady(.mainTab)
+        router.markReady(.mainTab, in: nil)
 
-        guard let next = router.peekNext(for: .mainTab) else {
+        guard let next = router.peekNext(for: .mainTab, in: nil) else {
             Issue.record("Cola vacía tras enqueue")
             return
         }
@@ -156,7 +156,7 @@ struct RoutingIntegrationTests {
         #expect(RouterConsumerGateLogic.mainTabDecision(
             intent: next, shellBlocker: nil, ownModalVisible: false
         ) == .drain)
-        let drained = router.drainNext(for: .mainTab)
+        let drained = router.drainNext(for: .mainTab, in: nil)
         guard case .presentTrialExpired = drained else {
             Issue.record("Esperaba presentTrialExpired, drenó \(String(describing: drained))")
             return
@@ -252,17 +252,17 @@ struct RoutingIntegrationTests {
     @MainActor @Test
     func singleIntentDrain_pattern_stillIntact_afterRefactor() {
         let router = freshRouter()
-        router.markReady(.panel)
+        router.markReady(.panel, in: nil)
         router.enqueue(.presentInboxSheet)
 
-        let first = router.drainNext(for: .panel)
+        let first = router.drainNext(for: .panel, in: nil)
         #expect(first == .presentInboxSheet)
 
         // Handler enqueues another — drain pattern guarantees it queues for next tick.
         router.enqueue(.presentNewTransaction)
         #expect(router.queueSnapshot.count == 1)
 
-        let second = router.drainNext(for: .panel)
+        let second = router.drainNext(for: .panel, in: nil)
         #expect(second == .presentNewTransaction)
         #expect(router.queueSnapshot.isEmpty)
     }

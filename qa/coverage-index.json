@@ -641,7 +641,7 @@
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/DeeplinkRoutingUITests,PaywallInboxAlertRoutingUITests + unit:YalaTests/RouterConsumerGateLogicTests,RoutingIntegrationTests,RouterHoldCanaryTests (gate Clase D: intents de .mainTab/.panel retenidos en cola con un nodo superior tapando — peek-first, jamás consumidos tapados; canario D4 routingDrainHoldSustained para flags publicados pegados >45s) D1 (2026-07-20): derivador ÚNICO de shell ShellModeLogic.effective(onboardingMode:usageFocus:) (.groupsFocused si group-invite O usageFocus==.groupsOnly) alimenta la tab bar (TabBarConfiguration.forMode reduceToGroupsOnly + SessionState.selectMainTab/resetToDefaults); byte-idéntico con usageFocus=.full. Gate: unit ShellModeLogicTests (reescrito sobre el eje 1, 2026-09-13) (tabla 6 celdas) + TabBarConfigurationTests (reduceToGroupsOnly).",
       "owner": "",
-      "lastVerified": "2026-10-01"
+      "lastVerified": "2026-10-02"
     },
     {
       "area": "deferred-filters-apply-discard",
@@ -3230,7 +3230,29 @@
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/KeyboardShortcutsUITests (⌘N, ⌘F, ⌘4 + ⌘E en YalaLane-Adapt-iPad-Pro-13 por UDID; menú de registro por pulsación larga en iPad y en YalaLane-Adapt-iPhone-ProMax) + unit:YalaTests/KeyboardCommandLogicTests (orden de ⌘1…⌘6, cuándo actúa un atajo, ↑↓, qué ofrece el menú de un registro de grupo, candado Pro al soltar). 2026-09-30 fase 3 (ticket ipad-keyboard-shortcuts-pointer-context-menus-and-drop): atajos en `.commands` (⌘N, ⌘⇧N, ⌘F, ⌘K, ⌘1…⌘6, ⌘,, ⌘E, ⌫, ↑↓) publicados por la ventana con `focusedSceneValue`; menús contextuales en filas de registro (Editar, Duplicar, Cambiar categoría, Eliminar), presupuesto, grupo y tarjeta de cuenta; resaltado del puntero; soltar imagen/PDF de recibo → Nuevo registro por imagen. Resaltado del puntero y soltar desde el Mac: guion de qa en el ticket (el simulador no lo captura bien).",
       "owner": "",
-      "lastVerified": "2026-09-30"
+      "lastVerified": "2026-10-02"
+    },
+    {
+      "area": "adaptive-multiwindow-per-scene-state",
+      "codeGlobs": [
+        "Yala/App/Scenes/**",
+        "Yala/App/Models/SceneNavigation.swift",
+        "Yala/App/Models/SceneRegistry.swift",
+        "Yala/App/Logic/FollowerWindowGateLogic.swift",
+        "Yala/App/Models/AppRouter.swift",
+        "Yala/App/Views/Shared/RouterConsumer.swift",
+        "Yala/App/YalaApp.swift",
+        "Yala/Resources/Info.plist"
+      ],
+      "scenarioIDs": [
+        "F-NAV-ADAPT-MW-01",
+        "F-NAV-ADAPT-MW-02",
+        "F-NAV-ADAPT-MW-03"
+      ],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/MultiWindowUITests (YalaLane-Adapt-iPad-Pro-13 por UDID, «Apps en pantalla completa»: un registro abierto en ventana nueva aterriza con él y cada ventana conserva su sección; un enlace con dos ventanas llega a una sola) + unit:YalaTests/MultiWindowRoutingTests (sellado y drenaje por ventana, qué enseña una seguidora, quién lanzó el cierre de sesión, qué trae la líder al frente). Sin red automática: covers con dos ventanas a la vez y Split View/Stage Manager → guion del ticket ipad-real-multiwindow-with-per-scene-state.",
+      "owner": "",
+      "lastVerified": "2026-10-02"
     }
   ]
 }

@@ -1173,10 +1173,10 @@ final class PanelViewModel {
 
     /// Navigates to a Statistics detail tab. Visibility (and the
     /// temporaryTab + delay dance for tabs hidden in "More") is handled by
-    /// `SessionState.selectMainTab(_:)`.
-    func navigateToStatistics(_ detailTab: DetailViewTab) {
-        sessionState?.selectedDetailTab = detailTab
-        sessionState?.selectMainTab(.statistics)
+    /// `SceneNavigation.selectMainTab(_:)`. Recibe la navegación de la ventana del Panel que lo pide.
+    func navigateToStatistics(_ detailTab: DetailViewTab, in navigation: SceneNavigation) {
+        navigation.selectedDetailTab = detailTab
+        navigation.selectMainTab(.statistics)
     }
 
     /// Whether voice input can be used (requires active accounts and visible subcategories).

@@ -11,7 +11,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 struct RootCommandsModifier: ViewModifier {
-    let sessionState: SessionState
+    let navigation: SceneNavigation
     let sections: [ConfigurableTab]
     let canSearch: Bool
     let isGroupsOnly: Bool
@@ -20,18 +20,18 @@ struct RootCommandsModifier: ViewModifier {
         content
             .focusedSceneValue(\.rootCommands, actions)
             .onDrop(of: ReceiptDropHandler.acceptedTypes, isTargeted: nil) { providers in
-                ReceiptDropHandler.handle(providers, isGroupsOnly: isGroupsOnly)
+                ReceiptDropHandler.handle(providers, isGroupsOnly: isGroupsOnly, navigation: navigation)
             }
     }
 
     private var actions: RootCommandActions {
-        let sessionState = sessionState
+        let navigation = navigation
         let canSearch = canSearch
         return RootCommandActions(
             sections: KeyboardCommandLogic.sectionTabs(orderedTabs: sections),
             canSearch: canSearch,
             isGroupsOnly: isGroupsOnly,
-            perform: { RootCommandPerformer.perform($0, sessionState: sessionState, canSearch: canSearch) }
+            perform: { RootCommandPerformer.perform($0, navigation: navigation, canSearch: canSearch) }
         )
     }
 }
@@ -45,16 +45,20 @@ enum ReceiptDropHandler {
     static let acceptedTypes: [UTType] = [.image, .pdf]
 
     /// `true` si acepta el arrastre. Con algo presentado no lo acepta: el recibo se abriría debajo de esa hoja.
-    static func handle(_ providers: [NSItemProvider], isGroupsOnly: Bool) -> Bool {
+    static func handle(_ providers: [NSItemProvider], isGroupsOnly: Bool, navigation: SceneNavigation) -> Bool {
         guard ReceiptDropLogic.accepts(isGroupsOnly: isGroupsOnly) else { return false }
         guard KeyboardCommandLogic.globalCommandsAllowed(
-            shellBlocker: SessionState.shared.shellModalBlocker,
-            anythingPresented: ModalPresentationProbe.isAnythingPresented
+            shellBlocker: navigation.shellModalBlocker,
+            anythingPresented: ModalPresentationProbe.isAnythingPresented(
+                in: SceneRegistry.shared.windowScene(for: navigation.id))
         ) else { return false }
         guard let provider = providers.first(where: { provider in
             acceptedTypes.contains { provider.hasItemConformingToTypeIdentifier($0.identifier) }
         }) else { return false }
 
+        // El recibo se abre en la ventana sobre la que se soltó, que no tiene por qué ser la que está al frente.
+        let windowID = navigation.id
+        SceneRegistry.shared.noteFocused(windowID)
         switch ReceiptDropLogic.decide(canAccessImageInput: FeatureGateService.shared.canAccess(.imageInput)) {
         case .upgrade:
             RouterEntryGate.shared.submit(.navigate(.panel))
@@ -70,14 +74,14 @@ enum ReceiptDropHandler {
                     return
                 }
                 Task { @MainActor in
-                    receive(data, isPDF: isPDF)
+                    receive(data, isPDF: isPDF, windowID: windowID)
                 }
             }
         }
         return true
     }
 
-    private static func receive(_ data: Data, isPDF: Bool) {
+    private static func receive(_ data: Data, isPDF: Bool, windowID: UUID) {
         let jpeg = isPDF ? firstPageJPEG(pdfData: data) : UIImage(data: data)?.jpegData(compressionQuality: 0.9)
         guard let jpeg else {
             #if DEBUG
@@ -86,6 +90,8 @@ enum ReceiptDropHandler {
             return
         }
         guard let url = writePending(jpeg) else { return }
+        // La lectura es asíncrona: entretanto el usuario pudo poner otra ventana al frente.
+        SceneRegistry.shared.noteFocused(windowID)
         AppBootstrapper.shared.presentDroppedReceipt(url)
     }
 

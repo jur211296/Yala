@@ -14,6 +14,7 @@ struct ImageSelectionView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(SessionState.self) private var sessionState
+    @Environment(SceneNavigation.self) private var navigation
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(ImageVisionService.self) private var imageVisionService
     @Environment(\.yalaTheme) private var theme
@@ -230,11 +231,11 @@ struct ImageSelectionView: View {
 
     /// Check for pending shared image from Share Extension
     private func checkForSharedImage() {
-        guard let imageURL = sessionState.pendingSharedImageURL else { return }
+        guard let imageURL = navigation.pendingSharedImageURL else { return }
 
         // Clear URL immediately to prevent double processing
         // (shouldShowSharedImage was already reset by the one-shot observer)
-        sessionState.pendingSharedImageURL = nil
+        navigation.pendingSharedImageURL = nil
 
         Task {
             await loadSharedImage(from: imageURL)
@@ -957,5 +958,6 @@ struct ImageSelectionView: View {
 
 #Preview {
     ImageSelectionView()
+        .environment(SceneNavigation())
         .modelContainer(for: [InboxDraft.self, Account.self, Subcategory.self])
 }

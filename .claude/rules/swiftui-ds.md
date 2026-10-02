@@ -3,6 +3,10 @@ description: Reglas inviolables de SwiftUI, presentaciones, Design System y fond
 paths:
   - "Yala/App/Views/**"
   - "Yala/App/ContentView.swift"
+  - "Yala/App/YalaApp.swift"
+  - "Yala/App/Scenes/**"
+  - "Yala/App/Models/AppRouter.swift"
+  - "Yala/App/Models/SceneNavigation.swift"
   - "Yala/App/ViewModels/**"
   - "Yala/App/DesignSystem/**"
   - "Yala/App/Theme/**"
@@ -261,10 +265,11 @@ paths:
   un singleton: cada ventana del iPad manda sobre sí misma, los números de ⌘1…⌘6 siguen su barra lateral
   (`KeyboardCommandLogic.sectionTabs`) y fuera de la app montada los atajos salen desactivados solos.
 - **Un atajo que ABRE algo pregunta primero `RootCommandPerformer.keyboardMayAct`** (sin `shellModalBlocker` y sin
-  nada presentado según `ModalPresentationProbe`). Un `.commands` dispara con una hoja encima, y encender otra
-  presentación con el anchor ocupado es la trampa de las «Presentaciones» de arriba.
+  nada presentado EN ESA VENTANA según `ModalPresentationProbe.isAnythingPresented(in:)`). Un `.commands` dispara
+  con una hoja encima, y encender otra presentación con el anchor ocupado es la trampa de las «Presentaciones» de
+  arriba.
 - **Reusa el camino del dedo**: ⌘N va por el router como el Centro de Control, ⌘⇧N por el FAB de grupos, ⌘K y ⌘,
-  por el Panel (`SessionState.pendingKeyboardPanelRequest`), soltar un recibo por `enqueueSharedImage` como la
+  por el Panel (`SceneNavigation.pendingKeyboardPanelRequest`), soltar un recibo por `enqueueSharedImage` como la
   extensión de compartir. Así heredan las puertas Pro y de consentimiento sin copiarlas.
 - **Un menú contextual nunca ofrece lo que el editor prohíbe** (`RecordContextActionLogic`). Y es más estricto que
   el editor cuando no puede medir lo mismo: el editor habilita Borrar en un registro de grupo huérfano tras un fetch
@@ -275,3 +280,65 @@ paths:
   confirmación anclada ahí no tendría dónde salir. Un solo anchor por observable.
 - **Resaltado del puntero = `.pointerHighlight(cornerRadius:)`** con el radio de la pieza (`nil` = cápsula): da la
   forma al resaltado y a la vista previa del menú contextual. En iPhone no hace nada.
+
+## Varias ventanas (2026-10-02)
+
+Desde la fase 4 del carril adaptativo el iPad (y el iPhone Duo abierto) abre varias ventanas de Yala, cada una con su
+propia navegación. Lo que cualquier cambio nuevo tiene que respetar:
+
+- **La navegación es de la ventana, no del proceso: `SceneNavigation`** (`Yala/App/Models/SceneNavigation.swift`), una
+  por ventana, en el entorno (`@Environment(SceneNavigation.self)`). Pestaña, sub-pestañas, destinos pendientes
+  (`pendingGroupID`, `pendingRecordID`…), peticiones de teclado y lo que tapa la ventana (`shellModalBlocker`,
+  `isMainTabModalVisible`, `isInboxSheetVisible`). **Un estado de navegación nuevo va ahí, nunca a `SessionState`**:
+  en `SessionState` cambiaría la pestaña de todas las ventanas a la vez, que es el bug que esto cerró. Filtros y
+  período siguen globales a propósito. El código que no es una vista llega a la ventana que toca con
+  `SceneRegistry.shared.routingNavigation` (la que está delante) o recorre `allNavigations` si el cambio es del
+  teléfono (un borrado, la shell de solo grupos).
+- **Un solo `ContentView` por proceso: el de la ventana LÍDER** (`SceneRegistry.leaderID`, la viva más antigua;
+  `WindowRoleView`). Es el shell de proceso —arranque, Welcome, borrados remotos, cierre de sesión, alertas de
+  sistema, consumidor `.contentView`— y dos copias duplicarían esos flujos. Las demás ventanas montan
+  `FollowerWindowRoot`: sus pestañas y nada del shell. **Un flujo de proceso nuevo va en `ContentView`**, no en una
+  vista que pueda montarse dos veces. Si la líder se cierra, asciende la siguiente y monta `ContentView` (splash
+  incluido): el mismo camino que el remonte del swap.
+- **Un bloqueo nuevo de la matriz del shell se clasifica también en `FollowerWindowGateLogic`**: si es una pregunta
+  que hay que contestar en la líder antes de usar Yala, va a `attentionBlockers` (la seguidora enseña «Yala te espera
+  en otra ventana» y un botón que trae la líder); si es arranque, a `startingBlockers`; si es una hoja de la líder,
+  no se toca (la seguidora sigue operando). La seguidora **desmonta** su contenido en esos estados —tapar no basta:
+  una hoja presentada queda por encima de cualquier capa—. Test: `YalaTests/MultiWindowRoutingTests`.
+- **El router sella cada intent con su ventana al encolar** (`AppRouter.enqueue`): la que recibió el enlace
+  (`WindowURLEntry`), la notificación (`targetScene`), la tecla o el recibo soltado, y si no, la que el usuario tocó
+  la última (`WindowTouchObserver` en la sonda de `SceneRoot`, que no reconoce nada y no retrasa ningún toque; la
+  notificación de ventana `key` sola no basta entre escenas). Un intent que un manejador encadena va a la ventana que
+  lo drenó (`noteFocused` al principio de `handleMainTabIntent`/`handlePanelIntent`). **Un consumidor nuevo pasa SU ventana**: `markReady/markUnready/peekNext/drainNext(…, in:
+  navigation.id)` —`.routerConsumer(_:)` ya lo hace—. `in: nil` drena todo y solo lo usan los unit tests del router.
+  Un productor nuevo que no venga de un toque marca antes la ventana con `SceneRegistry.shared.noteFocused(_:)`.
+  `.contentView` no se sella: va siempre a la líder, y si lo pidió el usuario desde otra ventana
+  (`RouterIntent.bringsLeaderForward`), la trae al frente; un aviso de fondo no le quita la ventana a nadie.
+- **El cierre de sesión para todas las ventanas menos la que lo lanzó** (`SceneRegistry.signOutDriverID`, del
+  PROCESO: la que estaba al frente al entrar en `.working`, o la que lo pidió con `noteSignOutRequested()` si hay red
+  por medio, como el borrado de cuenta), porque subir los pendientes exige que nadie escriba más. Si la que lo lanzó se
+  cierra, las demás siguen paradas. La seguidora se desmonta; la líder no —cortaría su shell—: la tapa una `UIWindow`
+  de nivel alto en su escena (`LeaderSignOutBusyOverlay`), que queda por encima también de sus hojas y se queda el
+  teclado. Con una sola ventana que lo lanzó, nada cambia. Los covers terminales (cierre de sesión, forzado de
+  actualización, swap de contenedor) salen en todas.
+- **Lo que es una vez por proceso no cuelga de `ContentView`**: una ventana que asciende a líder monta otro. El
+  arranque tiene guarda de reentrada (`AppBootstrapper.isBootstrapping`), los chequeos de usuario que vuelve corren una
+  vez por contenedor (`SceneRegistry.claimBootChecks`) y los de volver a primer plano cuelgan del agregado del proceso
+  (`SceneRegistry.appActivations`, contado en `YalaApp.handleScenePhase`, que cuelga de los DOS `WindowGroup` y
+  descarta el aviso repetido), no del `scenePhase` de una vista, que es el de SU ventana.
+- **Un flag de «tengo una hoja abierta» se baja también al desmontarse** (`MainTabView.onDisappear`,
+  `InboxView.onDisappear`): con ventanas que pasan a esperar o ascienden, `onDismiss` no está garantizado, y un flag
+  colgado retiene el router el resto de la sesión.
+- **«Abrir en una ventana nueva» = `OpenInNewWindowButton(route:)`** (`WindowRoute.group` / `.record`), que solo
+  aparece con `supportsMultipleWindows`. La ventana nueva es una Yala completa que ATERRIZA en el destino por el
+  mismo camino que un enlace (sus puertas incluidas), no un detalle suelto. Una escena nueva (`WindowGroup` más)
+  envuelve su contenido en `SceneRoot` y pasa por `YalaApp.rootView`, o se queda sin navegación, sin registro y con
+  las hojas al tamaño del iPhone.
+- **La multiventana vive en `Yala/Resources/Info.plist`** (`UIApplicationSupportsMultipleScenes = true` en el
+  manifiesto escrito; el generado está apagado en las cuatro configuraciones). Se comprueba con
+  `plutil -p <.app>/Info.plist | grep -A1 SupportsMultipleScenes`.
+- **XCUITest con dos ventanas: «Apps en pantalla completa»** (`MultiWindowUITests`, iPad Pro 13 por UDID). Las dos se
+  distinguen por `app.windows` (incluye la de detrás). Medido el 2026-10-02 en iOS 27.0: con «Apps en ventanas», abrir
+  la segunda o arrastrar su barra tumba `backboardd` del simulador (SIGABRT en `MTLSimDevice newTextureWithDescriptor`;
+  la app sale con SIGKILL sin culpa suya) en 3 de 4 corridas. Y el iPad RESTAURA las ventanas entre arranques:
+  `-uitest-reset` descarta las restauradas (`SceneRegistry`, solo DEBUG).

@@ -37,6 +37,7 @@ struct PlanningView: View {
     // MARK: - Environment
 
     @Environment(SessionState.self) private var sessionState
+    @Environment(SceneNavigation.self) private var navigation
     @Environment(\.yalaTheme) private var theme
 
     // MARK: - State
@@ -111,11 +112,11 @@ struct PlanningView: View {
             }
             .onAppear {
                 // Sync with SessionState on appear
-                selectedTab = sessionState.selectedPlanningTab
+                selectedTab = navigation.selectedPlanningTab
             }
             .onChange(of: selectedTab) { _, newValue in
                 // Keep SessionState in sync
-                sessionState.selectedPlanningTab = newValue
+                navigation.selectedPlanningTab = newValue
             }
     }
 

@@ -6228,3 +6228,15 @@
 "panel.accounts.filterByAccount" = "この口座で絞り込む";
 /* Context menu on a group card: open the group */
 "groups.contextMenu.open" = "グループを開く";
+
+/* Menú contextual de grupo o registro */
+"window.openInNewWindow" = "新しいウインドウで開く";
+
+/* Ventana secundaria mientras la principal pregunta algo */
+"window.follower.title" = "Yalaは別のウインドウで待っています";
+
+/* Ventana secundaria: explicación */
+"window.follower.body" = "もう一方のYalaウインドウで回答が必要です。そちらが終わると、このウインドウは自動的に戻ります。";
+
+/* Botón: traer al frente la otra ventana */
+"window.follower.cta" = "そのウインドウへ移動";

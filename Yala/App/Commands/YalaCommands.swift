@@ -15,7 +15,7 @@ import SwiftUI
 
 // MARK: - Qué ofrece la ventana
 
-/// Un atajo global. Lo ejecuta `RootCommandPerformer` contra el `SessionState` de la ventana.
+/// Un atajo global. Lo ejecuta `RootCommandPerformer` contra la `SceneNavigation` de la ventana.
 enum RootCommand: Equatable {
     case newRecord
     case newGroupExpense
@@ -111,36 +111,39 @@ struct YalaCommands: Commands {
 
 /// Cada atajo global reusa el camino que ya existe para lo mismo con el dedo, con sus puertas Pro y de
 /// consentimiento: ⌘N el del Centro de Control, ⌘⇧N el del FAB de grupos. ⌘K y ⌘, los atiende el Panel
-/// (`SessionState.pendingKeyboardPanelRequest`), que es quien tiene Yala IA y Ajustes en una hoja propia.
+/// (`SceneNavigation.pendingKeyboardPanelRequest`), que es quien tiene Yala IA y Ajustes en una hoja propia.
 @MainActor
 enum RootCommandPerformer {
     /// ¿Puede un atajo abrir algo AHORA? No con el splash o un cover del shell, ni con otra cosa presentada.
-    static func keyboardMayAct(_ sessionState: SessionState) -> Bool {
+    static func keyboardMayAct(_ navigation: SceneNavigation) -> Bool {
         KeyboardCommandLogic.globalCommandsAllowed(
-            shellBlocker: sessionState.shellModalBlocker,
-            anythingPresented: ModalPresentationProbe.isAnythingPresented)
+            shellBlocker: navigation.shellModalBlocker,
+            anythingPresented: ModalPresentationProbe.isAnythingPresented(
+                in: SceneRegistry.shared.windowScene(for: navigation.id)))
     }
 
-    static func perform(_ command: RootCommand, sessionState: SessionState, canSearch: Bool) {
-        guard keyboardMayAct(sessionState) else { return }
+    static func perform(_ command: RootCommand, navigation: SceneNavigation, canSearch: Bool) {
+        guard keyboardMayAct(navigation) else { return }
+        // Lo que el atajo encole en el router va a ESTA ventana, la que recibió la tecla.
+        SceneRegistry.shared.noteFocused(navigation.id)
         switch command {
         case .newRecord:
             RouterEntryGate.shared.submit(.navigate(.panel))
             RouterEntryGate.shared.submit(.presentNewTransaction)
         case .newGroupExpense:
-            sessionState.navigateToGroupsAndComposeExpense()
+            navigation.navigateToGroupsAndComposeExpense()
         case .search:
             guard canSearch else { return }
-            sessionState.selectMainTab(.search)
-            sessionState.keyboardSearchRequest += 1
+            navigation.selectMainTab(.search)
+            navigation.keyboardSearchRequest += 1
         case .yalaAI:
-            sessionState.pendingKeyboardPanelRequest = .yalaAI
-            sessionState.selectMainTab(.panel)
+            navigation.pendingKeyboardPanelRequest = .yalaAI
+            navigation.selectMainTab(.panel)
         case .settings:
-            sessionState.pendingKeyboardPanelRequest = .settings
-            sessionState.selectMainTab(.panel)
+            navigation.pendingKeyboardPanelRequest = .settings
+            navigation.selectMainTab(.panel)
         case .section(let tab):
-            sessionState.selectMainTab(tab.appTab)
+            navigation.selectMainTab(tab.appTab)
         }
     }
 }
