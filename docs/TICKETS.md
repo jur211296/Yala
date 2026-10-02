@@ -492,7 +492,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | more-tab-missing-profile-button | backlog | tickets/backlog/more-tab-missing-profile-button.md |
 | multi-currency-accounts | backlog | tickets/backlog/multi-currency-accounts.md |
 | navigation-uitests-look-for-the-iphone-tab-bar-on-ipad | backlog | tickets/backlog/navigation-uitests-look-for-the-iphone-tab-bar-on-ipad.md |
-| needsrelaunch-hides-the-groups-section | backlog | tickets/backlog/needsrelaunch-hides-the-groups-section.md |
+| needsrelaunch-hides-the-groups-section | done | tickets/done/needsrelaunch-hides-the-groups-section.md |
 | neutral-boot-hands-owner-prefs-to-whoever-signs-in-next | qa | tickets/qa/neutral-boot-hands-owner-prefs-to-whoever-signs-in-next.md |
 | neutral-mount-wiring-scan-is-red-on-2-1 | backlog | tickets/backlog/neutral-mount-wiring-scan-is-red-on-2-1.md |
 | new-transaction-account-picker-uitests-fail-on-the-ios-27-lane-pro-max | backlog | tickets/backlog/new-transaction-account-picker-uitests-fail-on-the-ios-27-lane-pro-max.md |

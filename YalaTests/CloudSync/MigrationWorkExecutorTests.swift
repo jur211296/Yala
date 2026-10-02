@@ -1534,6 +1534,63 @@ struct MigrationWorkExecutorTests {
         #expect(StorageModePersistence.isMirrorOffArmed(defaults) == false)
     }
 
+    /// Ticket `needsrelaunch-hides-the-groups-section`. Almacenamiento no monta la sección de Grupos en `.needsRelaunch`, y
+    /// eso es seguro SOLO porque las aristas que pintan la tarjeta de relanzar dejan el modo en `.cloud`: con `.cloud` la
+    /// sección sería `.sameAccountAsPersonal`, que no ofrece soltar nada. El ticket suponía `.icloud` en la vuelta a iCloud
+    /// y, con él, una cuenta de grupos sin puerta hasta matar la app. Esto fija la cadena entera con los efectos reales: si
+    /// una arista escribe `.icloud` antes de relanzar, el `case` de la vista tiene que montar la sección.
+    @Test("MUTACIÓN: en .needsRelaunch el modo sigue en .cloud, así que esconder la sección de Grupos no quita ninguna puerta")
+    func needsRelaunch_keepsCloudMode_soTheGroupsSectionHasNoDoorToLose() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let defaults = makeIsolatedDefaults(prefix: "mwe.relaunch.groups")
+        // Modo Nube estable, de donde sale la vuelta a iCloud: el par entero.
+        StorageModePersistence.writeCloudArmed(defaults: defaults)
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    storageDefaults: defaults)
+
+        // La vuelta a iCloud: `reverseFreezeBackend → reverseMountMirror`, y el proceso sigue montado sin espejo.
+        try await executor.execute(.mountMirrorAndRelaunch)
+        let toICloud = CloudMigrationUIStateDeriver.derive(
+            storageMode: StorageModePersistence.read(defaults), phase: .reverseMountMirror,
+            mirrorOffArmed: StorageModePersistence.isMirrorOffArmed(defaults), mountedDecision: .cloudMirrorOff)
+        try #require(toICloud == .needsRelaunch(.toICloud), "control: no es el estado del ticket (\(toICloud))")
+        #expect(StorageModePersistence.read(defaults) == .cloud, """
+            la vuelta a iCloud escribió `.icloud` antes de relanzar: la sección de Grupos ofrecería desasociar y \
+            `StorageSettingsView` la esconde en `.needsRelaunch` — la cuenta de grupos se queda sin puerta hasta matar la app
+            """)
+        assertNoGroupsDoor(storageMode: StorageModePersistence.read(defaults), "needsRelaunch(.toICloud)")
+
+        // La salida de la espera de la vuelta (techo o «Cancelar»): re-arma el par con el espejo todavía montado.
+        try await executor.execute(.rearmMirrorOff)
+        let toCloud = CloudMigrationUIStateDeriver.derive(
+            storageMode: StorageModePersistence.read(defaults), phase: .done,
+            mirrorOffArmed: StorageModePersistence.isMirrorOffArmed(defaults), mountedDecision: .iCloudMirror)
+        try #require(toCloud == .needsRelaunch(.toCloud), "control: no es la tarjeta de relanzar (\(toCloud))")
+        #expect(StorageModePersistence.read(defaults) == .cloud)
+        assertNoGroupsDoor(storageMode: StorageModePersistence.read(defaults), "needsRelaunch(.toCloud)")
+    }
+
+    /// Con este modo, en ninguna combinación de sesión privada, registro de asociación y sesión de grupos la sección ofrece
+    /// soltar la cuenta.
+    private func assertNoGroupsDoor(storageMode: StorageMode, _ label: String) {
+        for hasPrivateSession in [false, true] {
+            let device = CloudIdentityRoutingLogic.deviceState(
+                hasCompletedOnboarding: true, storageMode: storageMode, hasPrivateSession: hasPrivateSession)
+            for hasAssociation in [false, true] {
+                for hasLiveSession in [false, true] {
+                    let state = GroupsAssociationLogic.sectionState(
+                        deviceState: device, hasPersistedAssociation: hasAssociation, hasLiveGroupsSession: hasLiveSession)
+                    #expect(!GroupsAssociationLogic.offersDetach(state), """
+                        \(label): la sección ofrecería desasociar (\(state)) y Almacenamiento no la monta en este estado
+                        """)
+                }
+            }
+        }
+    }
+
     @Test("execute(.persistICloudMode): retira los sentinels del drenaje iKV (#37) — TODOS los userIDs, keys ajenas intactas")
     func execute_persistICloudMode_clearsDrainSentinels() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
