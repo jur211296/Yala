@@ -7,7 +7,7 @@
 //  Registros y Planificación. Lo que resuelve aquí, medido en el iPad el 2026-09-29 (`swiftui-ds.md`):
 //
 //  - la columna de lista con el ancho de un iPhone SE como mínimo (sin tope propio el split la deja en ~280-320 y
-//    las filas se rompen);
+//    las filas se rompen), y más ancha con texto de accesibilidad (`DS.Adaptive.listColumnWidths`);
 //  - la visibilidad en manos del split (`@State`), para que pueda superponer la lista cuando no caben las dos
 //    (iPad mini en vertical) y retirarla;
 //  - al abrir algo con la lista superpuesta, la retira, para que se vea lo abierto.
@@ -26,6 +26,9 @@ final class ListDetailSplitState {
     /// Ventana ancha (split desplegado). La escribe `ListDetailSplit` con el size class de quien lo monta.
     @ObservationIgnored fileprivate var isRegularWidth = false
 
+    /// Ancho mínimo legible de la columna de lista: crece con el texto de accesibilidad. Lo escribe `ListDetailSplit`.
+    @ObservationIgnored fileprivate var minimumColumnWidth = DS.Adaptive.listColumnMinWidth
+
     /// Otra ventana (girar, redimensionar, abrir o cerrar Yala IA al lado): la lista vuelve a la vista y el split
     /// decide de nuevo si cabe al lado o encima — salvo que ya no quepa legible junto a lo abierto, y se aparta.
     fileprivate func splitWidthChanged(to newWidth: CGFloat) {
@@ -37,7 +40,7 @@ final class ListDetailSplitState {
     private var listYields: Bool {
         ListDetailOverlayLogic.listYieldsToDetail(
             splitWidth: splitWidth,
-            minimumColumnWidth: DS.Adaptive.listColumnMinWidth,
+            minimumColumnWidth: minimumColumnWidth,
             isRegularWidth: isRegularWidth,
             detailIsEmpty: detailIsEmpty)
     }
@@ -82,6 +85,14 @@ extension View {
         modifier(MarksEmptyDetailColumn())
     }
 
+    /// Para la página que monta un `ListDetailSplit`, desde FUERA (quien la monta): con texto de accesibilidad y una
+    /// ventana ancha donde no caben dos columnas que lo lean (Pro Max girado, iPad mini), la página entera ve compacto y
+    /// se comporta como en vertical — lista sola, lo abierto empujado o en hoja. Va fuera porque la página lee el size
+    /// class por su cuenta para decidir hoja o columna (`RecordsStandaloneView`, `GroupsContainerView`).
+    func foldsListDetailForAccessibilityText() -> some View {
+        modifier(FoldsListDetailForAccessibilityText())
+    }
+
     /// Marca una vista como «lo abierto» de la columna de detalle: al aparecer, si la lista la estaba tapando, el
     /// split la retira. En iPhone (split plegado) no hay lista encima y no pasa nada.
     func announcesShownInDetailColumn() -> some View {
@@ -94,6 +105,28 @@ private struct AnnouncesShownInDetailColumn: ViewModifier {
 
     func body(content: Content) -> some View {
         content.onAppear { split?.didShowDetail() }
+    }
+}
+
+private struct FoldsListDetailForAccessibilityText: ViewModifier {
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @State private var pageWidth: CGFloat = 0
+
+    private var folds: Bool {
+        ListDetailOverlayLogic.foldsForAccessibilityText(
+            pageWidth: pageWidth,
+            minimumColumnWidth: DS.Adaptive.listColumnWidths(isAccessibilityText: true).min,
+            isAccessibilityText: dynamicTypeSize.isAccessibilitySize,
+            isRegularWidth: horizontalSizeClass == .regular)
+    }
+
+    func body(content: Content) -> some View {
+        content
+            .environment(\.horizontalSizeClass, folds ? .compact : horizontalSizeClass)
+            // El ancho tal cual: ya viene sin la isla ni la barra lateral, aunque el proxy siga reportando esos
+            // márgenes (Pro Max girado: 832 con 62 + 62; restarlos los contaba dos veces).
+            .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { pageWidth = $0 }
     }
 }
 
@@ -115,6 +148,12 @@ struct ListDetailSplit<ListColumn: View, DetailColumn: View>: View {
     @State private var state = ListDetailSplitState()
     /// Size class de la VENTANA: se lee aquí, fuera del `NavigationSplitView` (dentro, la lista es compacta).
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    /// Con texto de accesibilidad la columna de lista se ensancha: es el tamaño del contenido, no el aparato.
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    private var columnWidths: DS.Adaptive.ListColumnWidths {
+        DS.Adaptive.listColumnWidths(isAccessibilityText: dynamicTypeSize.isAccessibilitySize)
+    }
 
     /// `preferredCompactColumn`: qué columna se ve con el split plegado. `nil` deja la del sistema (la lista, y lo
     /// empujado encima).
@@ -136,6 +175,7 @@ struct ListDetailSplit<ListColumn: View, DetailColumn: View>: View {
             .onChange(of: horizontalSizeClass, initial: true) { _, newClass in
                 state.isRegularWidth = newClass == .regular
             }
+            .onChange(of: columnWidths.min, initial: true) { _, newMin in state.minimumColumnWidth = newMin }
             .environment(\.listDetailSplit, state)
     }
 
@@ -159,10 +199,8 @@ struct ListDetailSplit<ListColumn: View, DetailColumn: View>: View {
     /// El ancho va DETRÁS de todo lo demás de la columna: con un `.toolbar(removing:)` detrás, el split lo ignora
     /// sin avisar (medido).
     private var listColumn: some View {
-        list.navigationSplitViewColumnWidth(
-            min: DS.Adaptive.listColumnMinWidth,
-            ideal: DS.Adaptive.listColumnIdealWidth,
-            max: DS.Adaptive.listColumnMaxWidth)
+        let widths = columnWidths
+        return list.navigationSplitViewColumnWidth(min: widths.min, ideal: widths.ideal, max: widths.max)
     }
 
     private var detailColumn: some View {

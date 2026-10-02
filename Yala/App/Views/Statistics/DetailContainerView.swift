@@ -22,6 +22,7 @@ struct DetailContainerView: View {
     @Environment(\.scenePhase) private var scenePhase
     /// Size class de la ventana: en ancha el chip Registros abre el registro en un panel al lado de la lista.
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     // MARK: - ViewModels
 
@@ -368,9 +369,14 @@ struct DetailContainerView: View {
     /// el molde de la página Registros). Sin `NavigationSplitView`: este chip vive dentro de la pila de Estadísticas.
     private var recordsOpensInPane: Bool { horizontalSizeClass == .regular }
 
+    /// Anchos de la lista, los de `ListDetailSplit`: más ancha con texto de accesibilidad.
+    private var recordsListWidths: DS.Adaptive.ListColumnWidths {
+        DS.Adaptive.listColumnWidths(isAccessibilityText: dynamicTypeSize.isAccessibilitySize)
+    }
+
     /// Lista y panel caben lado a lado: dos anchos de iPhone, la misma regla que `ListDetailSplit`.
     private var recordsSideBySide: Bool {
-        recordsOpensInPane && recordsWidth >= 2 * DS.Adaptive.listColumnMinWidth
+        recordsOpensInPane && recordsWidth >= 2 * recordsListWidths.min
     }
 
     /// Sin sitio para los dos, el registro abierto tapa la lista; su X la devuelve.
@@ -380,7 +386,7 @@ struct DetailContainerView: View {
 
     /// Ancho de la lista cuando va al lado del panel; `nil` (todo) si no.
     private var recordsListWidth: CGFloat? {
-        selectedTab == .records && recordsSideBySide ? DS.Adaptive.listColumnIdealWidth : nil
+        selectedTab == .records && recordsSideBySide ? recordsListWidths.ideal : nil
     }
 
     /// El registro abierto, resuelto contra lo cargado (nunca `model(for:)`, que fabrica un objeto aunque ya no
@@ -407,7 +413,7 @@ struct DetailContainerView: View {
                 defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue,
                 onFilterChange: { recalculateData() }
             )
-            .frame(width: sideBySide ? DS.Adaptive.listColumnIdealWidth : nil)
+            .frame(width: sideBySide ? recordsListWidths.ideal : nil)
             .overlay(alignment: .trailing) {
                 if sideBySide { Divider() }
             }

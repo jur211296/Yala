@@ -3539,8 +3539,10 @@ struct MainTabView: View {
             StatisticsView()
         case .planning:
             PlanningView()
+                .foldsListDetailForAccessibilityText()
         case .records:
             RecordsStandaloneView()
+                .foldsListDetailForAccessibilityText()
         case .reports:
             FinancialReportView()
         case .groups:
@@ -3555,6 +3557,7 @@ struct MainTabView: View {
             // de este branch. El gate del código beta «1050» también se retiró (2.1: Grupos abierto
             // para todos), y por eso el tab monta su contenido SIN condición.
             GroupsContainerView()
+                .foldsListDetailForAccessibilityText()
                 // Entrar al tab ES el acto de adopción del dominio: ocupa el hueco que dejó el
                 // código beta. Sin este escritor, un dispositivo SELLADO por «empiezo de cero» se
                 // queda sin nadie que escriba la key y el bridge le queda cerrado en silencio
