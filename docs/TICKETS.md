@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (722)
+## Index (723)
 
 | id | status | path |
 |---|---|---|
@@ -218,12 +218,13 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | debt-simplification-nondeterministic-ties | backlog | tickets/backlog/debt-simplification-nondeterministic-ties.md |
 | debt-tracking | backlog | tickets/backlog/debt-tracking.md |
 | debug-panel-shows-a-counter-the-reverse-no-longer-moves | backlog | tickets/backlog/debug-panel-shows-a-counter-the-reverse-no-longer-moves.md |
-| detach-blocked-phase-is-stranded-when-the-storage-sheet-closes-mid-wait | backlog | tickets/backlog/detach-blocked-phase-is-stranded-when-the-storage-sheet-closes-mid-wait.md |
+| detach-blocked-phase-is-stranded-when-the-storage-sheet-closes-mid-wait | qa | tickets/qa/detach-blocked-phase-is-stranded-when-the-storage-sheet-closes-mid-wait.md |
 | detach-does-not-verify-the-cloud-session-actually-closed | done | tickets/done/detach-does-not-verify-the-cloud-session-actually-closed.md |
 | detach-failure-looks-like-success | done | tickets/done/detach-failure-looks-like-success.md |
 | detach-history-replay-can-tombstone-groups-on-next-launch | done | tickets/done/detach-history-replay-can-tombstone-groups-on-next-launch.md |
 | detach-pending-purge-is-unreachable-without-an-association-record | backlog | tickets/backlog/detach-pending-purge-is-unreachable-without-an-association-record.md |
 | detach-postcondition-misses-a-token-refresh-that-lands-after-it | backlog | tickets/backlog/detach-postcondition-misses-a-token-refresh-that-lands-after-it.md |
+| detach-purge-retry-says-you-are-signing-out-when-the-session-came-back | backlog | tickets/backlog/detach-purge-retry-says-you-are-signing-out-when-the-session-came-back.md |
 | detach-quiescence-timeout-says-group-changes-are-pending | backlog | tickets/backlog/detach-quiescence-timeout-says-group-changes-are-pending.md |
 | detach-saves-the-personal-graph-outside-the-quiescence-window | done | tickets/done/detach-saves-the-personal-graph-outside-the-quiescence-window.md |
 | device-handover-groups-leak | discarded | tickets/discarded/device-handover-groups-leak.md |

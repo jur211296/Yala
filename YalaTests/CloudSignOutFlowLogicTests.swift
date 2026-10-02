@@ -1560,10 +1560,13 @@ struct AttestUnavailableSignOutWiringTests {
                 acceptedPersonalLoss = nil
             }
             """)), "`acknowledgeBlocked()` retira lo aceptado fuera del bloqueo")
-        // Y el aviso del desasociar se cierra una sola vez: su segunda llamada reconocía el bloqueo de un cierre ajeno.
+        // Y el aviso del desasociar NO reconoce la fase (2026-10-02, ticket
+        // `detach-blocked-phase-is-stranded-when-the-storage-sheet-closes-mid-wait`): el desasociar ya la soltó al bloquear,
+        // así que la que encontrara sería la de un cierre ajeno — la segunda llamada del binding ya reconocía uno así.
         let association = try Self.source("Yala/App/Views/Settings/GroupsAssociationSection.swift")
-        #expect(Self.squashed(try Self.body(of: "private func dismissBlocked() {", in: association))
-            .hasPrefix("guard blockedReason != nil else { return }"))
+        let dismiss = Self.squashed(try Self.body(of: "private func dismissBlocked() {", in: association))
+        #expect(!dismiss.contains("acknowledgeBlocked"), "cerrar el aviso del desasociar reconoce una fase que no es suya")
+        #expect(dismiss.contains("blockedReason = nil"), "cerrar el aviso del desasociar ya no lo baja")
     }
 
     @Test("MUTACIÓN: los dos push-all preguntan el testigo del attest CON el outcome: grupos al cliente, lo personal al runtime")

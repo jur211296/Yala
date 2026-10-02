@@ -46,12 +46,16 @@ final class CloudSessionSignOut {
     enum DetachOutcome: Equatable {
         /// La cuenta se soltó y el dominio Grupos ya no está en este teléfono.
         case detached
-        /// No se soltó nada, y no se escribió nada irreversible. La fase queda en `.blocked` con su
-        /// motivo y la pantalla lo lee de ahí, como antes. **No se llama `blockedByPush` a propósito**:
-        /// cubre también el abort por un puente que no se pudo ni mirar, que no tiene nada que ver con
-        /// subir cambios — y con ese nombre el mensaje que salía («quedan cambios sin subir, inténtalo en
-        /// un momento») describía un problema que no era y daba un consejo que no arreglaba nada.
-        case blockedBeforeWriting
+        /// No se soltó nada, y no se escribió nada irreversible. **El motivo viaja AQUÍ y la fase vuelve a
+        /// `.idle` antes de devolver** (ticket `detach-blocked-phase-is-stranded-when-the-storage-sheet-closes-mid-wait`):
+        /// hasta el 2026-10-02 la fase se quedaba en `.blocked` y la pantalla la leía de ahí, así que con la hoja de
+        /// Almacenamiento cerrada a mitad de la espera nadie la reconocía —su aviso se escribía en una vista ya
+        /// desmontada— y «Cerrar sesión» y el desasociar siguiente chocaban con un bloqueo que nadie iba a quitar.
+        /// Ver `releaseDetachBlock`. **No se llama `blockedByPush` a propósito**: cubre también el abort por un puente
+        /// que no se pudo ni mirar, que no tiene nada que ver con subir cambios — y con ese nombre el mensaje que salía
+        /// («quedan cambios sin subir, inténtalo en un momento») describía un problema que no era y daba un consejo
+        /// que no arreglaba nada.
+        case blockedBeforeWriting(reason: CloudSignOutFlowLogic.BlockReason)
         /// **La cuenta se cerró en la nube pero el borrado local NO entró.** Los grupos siguen en el
         /// teléfono y la asociación sigue en pie a propósito. Se le ofrece reintentar el borrado.
         case purgeFailed
@@ -60,6 +64,13 @@ final class CloudSessionSignOut {
     }
 
     private(set) var phase: Phase = .idle
+
+    /// `true` mientras corre un desasociar o su reintento del borrado. **Es del coordinador y no de la vista**: la hoja de
+    /// Almacenamiento puede cerrarse y volver a abrirse a mitad de la espera (hasta un minuto), y una sección nueva no
+    /// hereda el `@State` de la que lanzó el gesto. Sin esto, la reabierta no pintaba el spinner y un toque en
+    /// «Desasociar» chocaba con el gesto en vuelo y decía «Estás cerrando sesión», que es falso. No sirve `phase` a
+    /// secas: `.working` es también la de un cierre de sesión.
+    private(set) var isDetaching = false
 
     /// `true` mientras el sign-out solo-grupos ESPERA a que se asienten writes pendientes
     /// (quiescencia del import + retry interno con presupuesto, H-2026-07-18-6). La fila de
@@ -180,7 +191,8 @@ final class CloudSessionSignOut {
     ///     escribe el borrado — ver `purgeGroupsDomainForDetach`.
     ///
     /// El bloqueo por cambios sin subir se comporta como el del cierre —«nunca descarta»—: si el push-all
-    /// no vacía, la fase queda en `.blocked` y **no se suelta nada**. Reintentar es seguro porque hasta el
+    /// no vacía, el gesto devuelve `.blockedBeforeWriting` con el motivo y **no se suelta nada** (la fase vuelve a `.idle`:
+    /// `releaseDetachBlock`). Reintentar es seguro porque hasta el
     /// paso 2 no se ha escrito nada. Lo mismo si la sesión en la nube **sobrevive** a su cierre (`.sessionNotClosed`):
     /// el cierre va delante del paso 2 y se comprueba, porque con la sesión viva el borrado del paso 3 se deshace solo
     /// en el siguiente primer plano, y peor.
@@ -226,7 +238,11 @@ final class CloudSessionSignOut {
         // Con la subida de «Empezar de cero» en vuelo tampoco: sube el mismo outbox (`freshStartDrainInFlight`).
         guard phase == .idle, !freshStartDrainInFlight else { return .busy }
         phase = .working
-        defer { waitingForPending = false }
+        isDetaching = true
+        defer {
+            waitingForPending = false
+            isDetaching = false
+        }
         // El desasociar no hereda lo que un cierre aceptó perder, ni ofrece esa salida: ver `lossExit: nil` abajo.
         groupsLossExit = nil
         acceptedGroupsLoss = nil
@@ -241,7 +257,9 @@ final class CloudSessionSignOut {
         //
         // **`lossExit: nil` es la decisión de Jürgen** (2026-09-15): con el teléfono sin App Attest el desasociar enseña el
         // aviso terminal y NO ofrece soltar la cuenta perdiendo los cambios. Solo los cierres de sesión lo ofrecen.
-        guard await pushGroupsForSignOut(context: context, lossExit: nil) else { return .blockedBeforeWriting }
+        guard await pushGroupsForSignOut(context: context, lossExit: nil) else {
+            return .blockedBeforeWriting(reason: releaseDetachBlock())
+        }
 
         // Canal fuera + espejo del outbox del App Group purgado. Idempotente.
         GroupsSyncClient.shared.teardownForSignOut()
@@ -253,7 +271,7 @@ final class CloudSessionSignOut {
         guard residual == 0 else {
             phase = .blocked(pendingCount: residual, reason: .permanent)
             CloudSyncBreadcrumb.signOutPushBlocked(pending: residual)
-            return .blockedBeforeWriting
+            return .blockedBeforeWriting(reason: releaseDetachBlock())
         }
 
         // El consent de Grupos NO se limpia aquí, a diferencia del cierre de sesión. Es un snapshot
@@ -279,7 +297,7 @@ final class CloudSessionSignOut {
             // Fuera de `#if DEBUG`: el ticket dejó sin medir si esto pasa en la flota, y este es el sitio donde
             // se ve.
             MetricsService.canary(.groupsDetachSessionSurvived, detail: "choice=\(choice == .keep ? "keep" : "remove")")
-            return .blockedBeforeWriting
+            return .blockedBeforeWriting(reason: releaseDetachBlock())
         }
 
         // ── Punto de no retorno ──
@@ -304,7 +322,7 @@ final class CloudSessionSignOut {
             MetricsService.canary(
                 .groupsDetachSessionSurvived,
                 detail: "choice=\(choice == .keep ? "keep" : "remove") after=quiescence")
-            return .blockedBeforeWriting
+            return .blockedBeforeWriting(reason: releaseDetachBlock())
         case .notQuiescent, .bridgeUnreadable:
             // **Si el store no se quedó quieto, o el puente no se pudo ni mirar, se ABORTA sin escribir nada**:
             // seguir adelante borraría las filas de los grupos dejando las transacciones puenteadas apuntando a
@@ -319,7 +337,7 @@ final class CloudSessionSignOut {
             // movimientos del Panel sin revisar y nada soltado, y el aviso de `.bridgeUnreadable` dice exactamente
             // eso. `.transient` diría «quedan cambios de tus grupos sin subir», y aquí el push-all ya drenó.
             phase = .blocked(pendingCount: 0, reason: .bridgeUnreadable)
-            return .blockedBeforeWriting
+            return .blockedBeforeWriting(reason: releaseDetachBlock())
         case .purgeFailed:
             // **El borrado es la última CONDICIÓN del gesto, no su último paso.** Todo lo de abajo afirma que la
             // cuenta ya no está aquí, y eso solo es cierto si esto entró. Un `catch` que siguiera adelante —lo que
@@ -346,6 +364,27 @@ final class CloudSessionSignOut {
 
         finishDetach(context: context)
         return .detached
+    }
+
+    /// **El bloqueo del desasociar no se queda en la fase compartida**: devuelve su motivo y deja la fase en `.idle`, en el
+    /// mismo turno del main actor en que se puso (ticket
+    /// `detach-blocked-phase-is-stranded-when-the-storage-sheet-closes-mid-wait`). Todo `return .blockedBeforeWriting` de
+    /// `detachGroupsAccount` pasa por aquí, y es el ÚNICO sitio que suelta ese bloqueo.
+    ///
+    /// Por qué no se espera a que lo reconozca la pantalla, que era el contrato hasta el 2026-10-02: la fase es de seis
+    /// lectores y el desasociar no tiene dueño que la suelte. Con la hoja de Almacenamiento cerrada a mitad de la espera,
+    /// el `Task` de la sección escribía su aviso en una vista ya desmontada y nadie llamaba a `acknowledgeBlocked()`; Perfil
+    /// ignora a propósito los motivos del desasociar, así que «Cerrar sesión» no hacía nada y un desasociar nuevo devolvía
+    /// `.busy` («Estás cerrando sesión», falso). Solo salía matando la app.
+    ///
+    /// La fase pasa por `.blocked` y no se escribe el motivo directo porque `pushGroupsForSignOut` —compartido con los
+    /// cierres— lo deja ahí; las ramas propias del desasociar lo escriben igual para que el motivo tenga un solo camino. No
+    /// hay `await` entre esa escritura y esta lectura, así que ningún lector de la fase llega a ver el `.blocked`. El
+    /// `.transient` de reserva no es alcanzable: toda rama que llama aquí acaba de poner la fase en `.blocked`.
+    private func releaseDetachBlock() -> CloudSignOutFlowLogic.BlockReason {
+        defer { phase = .idle }
+        guard case .blocked(_, let reason) = phase else { return .transient }
+        return reason
     }
 
     /// **Terminar un desasociar cuyo borrado local no entró.** Es lo que ofrece el aviso «No pudimos
@@ -379,6 +418,8 @@ final class CloudSessionSignOut {
               CloudAuthService.shared.currentUserID != GroupsDetachPendingPurge.armedSub()
         else { return .busy }
         phase = .working
+        isDetaching = true
+        defer { isDetaching = false }
         // Un turno del main actor antes de trabajar. Sin él este método no suspende NUNCA —no tiene un
         // solo `await`— así que SwiftUI no re-renderiza entre `.working` y `.idle`: el spinner no llega a
         // salir, y un segundo fallo encendería el aviso en el MISMO turno en que el anterior se está

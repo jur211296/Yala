@@ -31,9 +31,11 @@ struct GroupsAssociationSection: View {
     @State private var confirmDetach = false
     /// El aviso de bloqueo de ESTE gesto. **Propio y no el de `ProfileView`**: aquel dice «No pudimos
     /// cerrar tu sesión», que es otra cosa y en una secundaria llega a ofrecer salir de la sesión entera a
-    /// quien solo pidió soltar una cuenta de grupos. Y sin él, `phase` se queda en `.blocked` y el toque
-    /// siguiente cae en el `guard phase == .idle` de `detachGroupsAccount`: **no pasa nada, sin un solo
-    /// mensaje**. Cerrarlo llama a `acknowledgeBlocked()`, que es lo que devuelve la fase a `.idle`.
+    /// quien solo pidió soltar una cuenta de grupos. **El motivo llega por el retorno del gesto, y cerrar el
+    /// aviso no toca la fase del coordinador** (2026-10-02, ticket
+    /// `detach-blocked-phase-is-stranded-when-the-storage-sheet-closes-mid-wait`): el coordinador ya la devolvió a
+    /// `.idle` al bloquear. Hasta ese día la soltaba este aviso, y con la hoja cerrada a mitad de la espera no salía
+    /// nunca: la fase se quedaba en `.blocked` y «Cerrar sesión» y el desasociar siguiente no hacían nada.
     @State private var blockedReason: CloudSignOutFlowLogic.BlockReason?
     /// **El borrado local falló y la cuenta ya se cerró en la nube.** Aviso propio, separado del de
     /// bloqueo: aquél dice «no se soltó nada» y éste dice «se soltó todo menos lo que importa» —los
@@ -148,19 +150,13 @@ struct GroupsAssociationSection: View {
         }
     }
 
-    /// El aviso se cierra soltando TAMBIÉN la fase del coordinador. Si solo se bajara el `@State`, el
-    /// `guard phase == .idle` dejaría inertes el desasociar Y el cierre de sesión de Ajustes.
+    /// El aviso se cierra bajando SOLO su `@State`. **No llama a `acknowledgeBlocked()`, y es a propósito**: el
+    /// desasociar ya no deja la fase en `.blocked` (`CloudSessionSignOut.releaseDetachBlock`), así que la fase que
+    /// encontrara aquí sería la de un cierre de sesión ajeno, y reconocerla le borraría además el `blockedExit` —lo que
+    /// recuerda dónde retomarlo—, con sus botones de «Esperar» / «Cerrar igualmente» saliendo sin hacer nada. Es lo que ya
+    /// pasaba con `.detachBusy` y lo que la review del 2026-09-15 cazó en el doble cierre del binding.
     private func dismissBlocked() {
-        // **Una sola vez por aviso** (review adversarial, 2026-09-15). Lo llaman el botón y el `set` del binding, y SwiftUI
-        // escribe `false` al pulsar CUALQUIER botón: la segunda llamada llegaba con `blockedReason` ya a `nil`, leía «no
-        // ajeno» y reconocía el bloqueo de un cierre de sesión que no era suyo.
-        guard blockedReason != nil else { return }
-        // `.detachBusy` es el ÚNICO motivo que NO puso este gesto: la fase es de un cierre de sesión
-        // ajeno, y soltarla aquí lo dejaría a medias —sin fase y sin `blockedExit`— con sus dos botones
-        // de «Esperar» / «Cerrar igualmente» saliendo por su `guard let` sin hacer nada.
-        let ajeno = blockedReason == .detachBusy
         blockedReason = nil
-        if !ajeno { signOutCoordinator.acknowledgeBlocked() }
     }
 
     /// **Exhaustivo a propósito: sin `default`.** Con uno, un motivo nuevo caía en «inténtalo en un
@@ -335,19 +331,18 @@ struct GroupsAssociationSection: View {
     }
 
     /// `phase` es del coordinador, que también lleva el cierre de sesión: un cierre en curso pintaría
-    /// «Desasociando…» aquí. `detachInFlight` acota el spinner a NUESTRO gesto.
-    @State private var detachInFlight = false
-
-    private var isWorking: Bool { detachInFlight && signOutCoordinator.phase == .working }
+    /// «Desasociando…» aquí. `isDetaching` acota el spinner al desasociar. **Lo lleva el coordinador y no un `@State`
+    /// de esta vista** (2026-10-02): la hoja puede cerrarse y reabrirse a mitad de la espera, y la sección nueva no
+    /// heredaba el `@State` de la que lanzó el gesto — sin spinner, un toque en «Desasociar» chocaba con el gesto en
+    /// vuelo y decía «Estás cerrando sesión».
+    private var isWorking: Bool { signOutCoordinator.isDetaching }
 
     /// **El veredicto viene por el RETORNO, no de leer la fase.** Un `.purgeFailed` deja el coordinador
     /// en `.idle` —es verdad: no está haciendo nada— así que mirar `phase` no lo distinguiría del éxito.
     /// Es exactamente la confusión que este ticket arregla, y leerla aquí la reintroduciría en la única
     /// pantalla que la sufre.
     private func detach(_ choice: GroupsAssociationDetach.BridgedRowsChoice) {
-        detachInFlight = true
         Task { @MainActor in
-            defer { detachInFlight = false }
             apply(await signOutCoordinator.detachGroupsAccount(context: modelContext, choice: choice))
         }
     }
@@ -355,18 +350,18 @@ struct GroupsAssociationSection: View {
     /// Terminar el borrado que quedó pendiente. **No repite el gesto**: ver
     /// `CloudSessionSignOut.retryDetachPurge`.
     private func retryPurge() {
-        detachInFlight = true
         Task { @MainActor in
-            defer { detachInFlight = false }
             apply(await signOutCoordinator.retryDetachPurge(context: modelContext))
         }
     }
 
     private func apply(_ outcome: CloudSessionSignOut.DetachOutcome) {
         switch outcome {
-        case .blockedBeforeWriting:
-            // La fase se lee DESPUÉS del `await`, que es cuando el coordinador ya la dejó puesta.
-            if case .blocked(_, let reason) = signOutCoordinator.phase { blockedReason = reason }
+        case .blockedBeforeWriting(let reason):
+            // **El motivo del RETORNO, no de la fase**: el coordinador ya la devolvió a `.idle`. Si esta sección se
+            // desmontó a mitad de la espera, la escritura cae en un `@State` muerto y el aviso de ESTE intento no sale
+            // —nadie lo está mirando—, pero ya no deja nada cogido: reintentar vuelve a decir el motivo.
+            blockedReason = reason
         case .purgeFailed:
             purgeFailed = true
         case .busy:
