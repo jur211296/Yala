@@ -362,11 +362,20 @@ jobs:
       #
       # Este paso lo pregunta el, con reintentos (detalle en el propio script): busca un
       # iPhone 17 Pro disponible, lo crea por tipo + runtime si falta —como `ci-sombra.yml`—
-      # y si CoreSimulator no devuelve nada lo reinicia y vuelve a mirar. Los `xcodebuild`
+      # y si CoreSimulator no devuelve nada lo reinicia y vuelve a mirar. Si a la tercera
+      # vuelta sigue sin runtime iOS, descarga la plataforma una vez: los logs de las caidas
+      # no distinguen «CoreSimulator tarda» de «la imagen vino sin runtime». Los `xcodebuild`
       # reciben el UDID, que ademas quita la ambiguedad si el nombre existe en dos runtimes.
+      #
+      # `build-for-testing` NO pasa a `generic/platform=iOS Simulator` (lo proponian los
+      # tickets): sin device activo, `ONLY_ACTIVE_ARCH = YES` no tiene arquitectura activa a
+      # la que ceñirse y Xcode compila todas las de `ARCHS` — comportamiento documentado, no
+      # medido en este runner —, y es el paso mas largo del job. El UDID ya lo resuelve.
+      #
+      # Tope de 25: el camino normal tarda segundos; la holgura es para la descarga.
       - name: Simulador del runner
         id: sim
-        timeout-minutes: 10
+        timeout-minutes: 25
         run: bash qa/scripts/ci-simulador.sh
       - name: Build for testing
         timeout-minutes: 25

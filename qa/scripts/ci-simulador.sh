@@ -11,13 +11,18 @@
 #      casa con el SDK de simulador del Xcode activo; si no, el runtime más nuevo.
 #   2. Si no hay device pero sí runtime iOS disponible, lo crea por tipo + runtime.
 #   3. Si CoreSimulator no devuelve ni device ni runtime, lo reinicia y vuelve a mirar.
+#   4. Si tras $SIM_DESCARGA_TRAS vueltas sigue sin runtime iOS, descarga la plataforma
+#      (`xcodebuild -downloadPlatform iOS`) UNA vez. Los logs de las caídas no distinguen
+#      «CoreSimulator tarda» de «la imagen vino sin runtime», así que se cubren los dos.
 #
 # Variables (todas con default):
 #   SIM_NAME        nombre del device              (iPhone 17 Pro)
 #   SIM_TYPE        device type para crearlo       (…SimDeviceType.iPhone-17-Pro)
-#   SIM_INTENTOS    vueltas antes de rendirse      (6)
+#   SIM_INTENTOS    vueltas antes de rendirse      (8)
+#   SIM_DESCARGA_TRAS  vuelta vacía tras la que se descarga la plataforma (3)
 #   SIM_ESPERA      segundos entre vueltas         (20)
 #   XCRUN           binario de xcrun; el banco lo sustituye por uno falso
+#   XCODEBUILD      binario de xcodebuild; el banco lo sustituye
 #   KILLALL         binario de killall; el banco lo sustituye para no tocar el
 #                   CoreSimulator de la máquina donde corre
 #   GITHUB_OUTPUT   donde escribir `udid=…`        (si falta, solo se imprime)
@@ -27,10 +32,12 @@ set -euo pipefail
 
 SIM_NAME="${SIM_NAME:-iPhone 17 Pro}"
 SIM_TYPE="${SIM_TYPE:-com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro}"
-SIM_INTENTOS="${SIM_INTENTOS:-6}"
+SIM_INTENTOS="${SIM_INTENTOS:-8}"
+SIM_DESCARGA_TRAS="${SIM_DESCARGA_TRAS:-3}"
 SIM_ESPERA="${SIM_ESPERA:-20}"
 XCRUN="${XCRUN:-xcrun}"
 KILLALL="${KILLALL:-killall}"
+XCODEBUILD="${XCODEBUILD:-xcodebuild}"
 
 SDK="$("$XCRUN" --sdk iphonesimulator --show-sdk-version 2>/dev/null || true)"
 echo "SDK de simulador: ${SDK:-desconocido}"
@@ -61,6 +68,8 @@ if rts:
 }
 
 UDID=""
+vacias=0
+descargado=no
 for intento in $(seq 1 "$SIM_INTENTOS"); do
   respuesta="$("$XCRUN" simctl list -j 2>/dev/null | elegir || true)"
   case "$respuesta" in
@@ -77,8 +86,14 @@ for intento in $(seq 1 "$SIM_INTENTOS"); do
       UDID=""
       echo "::warning title=Simulador::intento $intento: no se pudo crear $SIM_NAME en $RT" ;;
     *)
+      vacias=$((vacias+1))
       echo "::warning title=Simulador::intento $intento/$SIM_INTENTOS: CoreSimulator no devuelve devices ni runtimes iOS; se reinicia" ;;
   esac
+  if [ "$vacias" -ge "$SIM_DESCARGA_TRAS" ] && [ "$descargado" = no ]; then
+    descargado=si
+    echo "::warning title=Simulador::$vacias vueltas sin runtime iOS: se descarga la plataforma"
+    "$XCODEBUILD" -downloadPlatform iOS || echo "::warning title=Simulador::la descarga de la plataforma falló"
+  fi
   [ "$intento" -lt "$SIM_INTENTOS" ] || break
   # Solo procesos del usuario del runner: en el hospedado es una VM de un solo uso.
   "$KILLALL" -9 com.apple.CoreSimulator.CoreSimulatorService 2>/dev/null || true
