@@ -218,12 +218,14 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | debt-simplification-nondeterministic-ties | backlog | tickets/backlog/debt-simplification-nondeterministic-ties.md |
 | debt-tracking | backlog | tickets/backlog/debt-tracking.md |
 | debug-panel-shows-a-counter-the-reverse-no-longer-moves | backlog | tickets/backlog/debug-panel-shows-a-counter-the-reverse-no-longer-moves.md |
+| detach-blocked-phase-is-stranded-when-the-storage-sheet-closes-mid-wait | backlog | tickets/backlog/detach-blocked-phase-is-stranded-when-the-storage-sheet-closes-mid-wait.md |
 | detach-does-not-verify-the-cloud-session-actually-closed | done | tickets/done/detach-does-not-verify-the-cloud-session-actually-closed.md |
 | detach-failure-looks-like-success | done | tickets/done/detach-failure-looks-like-success.md |
 | detach-history-replay-can-tombstone-groups-on-next-launch | done | tickets/done/detach-history-replay-can-tombstone-groups-on-next-launch.md |
 | detach-pending-purge-is-unreachable-without-an-association-record | backlog | tickets/backlog/detach-pending-purge-is-unreachable-without-an-association-record.md |
 | detach-postcondition-misses-a-token-refresh-that-lands-after-it | backlog | tickets/backlog/detach-postcondition-misses-a-token-refresh-that-lands-after-it.md |
-| detach-saves-the-personal-graph-outside-the-quiescence-window | backlog | tickets/backlog/detach-saves-the-personal-graph-outside-the-quiescence-window.md |
+| detach-quiescence-timeout-says-group-changes-are-pending | backlog | tickets/backlog/detach-quiescence-timeout-says-group-changes-are-pending.md |
+| detach-saves-the-personal-graph-outside-the-quiescence-window | done | tickets/done/detach-saves-the-personal-graph-outside-the-quiescence-window.md |
 | device-handover-groups-leak | discarded | tickets/discarded/device-handover-groups-leak.md |
 | device-qa-activation-restore-start-fresh | done | tickets/done/device-qa-activation-restore-start-fresh.md |
 | device-qa-apple-id-change-closes-private-session | qa | tickets/qa/device-qa-apple-id-change-closes-private-session.md |

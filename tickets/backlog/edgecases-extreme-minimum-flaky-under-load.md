@@ -251,3 +251,17 @@ Disco: 5,8 GB libres.
 Gate de `late-remote-wipe-signal-also-wipes-rows-created-after-it`: 19 suites XCUITest en una invocación (46 tests), el
 centinela limpio (solo en el simulador), y cayó este caso con el mismo mensaje (`XCUIApplication+Yala.swift:270`, 36 s).
 Aislado, `EdgeCasesUITests` pasó 3 de 3. El cambio de esa sesión no toca el guardado de una transacción.
+
+## Medido el 2026-10-02: ya no es intermitente, falla también SOLO (Frank)
+
+En el gate de `detach-saves-the-personal-graph-outside-the-quiescence-window`, con el centinela a 0 (solo en el
+simulador) las tres veces:
+
+- en lote (cinco suites de XCUITest): falla;
+- **la suite `EdgeCasesUITests` aislada, en ese árbol: falla**;
+- **la misma suite aislada en un worktree limpio de `2.1` @ `7a9708657` (tras #318/#320, iPhone en horizontal): falla
+  igual**.
+
+El fallo es el mismo en los tres: `EdgeCasesUITests.swift:67` — `Failed to tap Button … identifier BEGINSWITH
+"account_selector_row_"`: el selector de cuenta del formulario no enseña ninguna fila. No es el entorno ni una corrida
+pisada; es determinista en `2.1`. Sospecha sin medir: los dos PR de orientación horizontal que entraron justo antes.
