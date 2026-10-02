@@ -686,9 +686,11 @@ final class DataWipeService {
         // corta ninguna generación. La otra mitad —el espejo del App Group— va en `resetSyncState`,
         // porque es disco y los tests lo sustituyen.
         //
-        // Va DENTRO de `deleteLocalGroupsRows` (2026-09-11) para seguir siendo UNA sola transacción ahora
-        // que el `save()` vive ahí: es esa función la que la firma con el autor del canal, y un save propio
-        // aquí volvería a escribir los deletes bajo el autor por defecto — traducibles a tombstones.
+        // Va DENTRO de `deleteLocalGroupsRows` (2026-09-11) porque el `save()` vive ahí: es esa función la que
+        // lo firma con el autor del canal, y un save propio aquí volvería a escribir los deletes bajo el autor
+        // por defecto — traducibles a tombstones. No es «la misma transacción» que las filas: ese `save()` cruza
+        // stores y no la tiene (medido el 2026-10-01). Va en su propio tramo, DELANTE del de Grupos: ver el
+        // corte 0 de `deleteLocalGroupsRows`.
         //
         // **Y desde el 2026-09-26 solo borra lo que ya no puede subir** (ticket
         // `fresh-start-wipe-kills-unsent-group-writes-silently`). En la puerta privada quien empieza de cero puede ser la
@@ -702,7 +704,7 @@ final class DataWipeService {
         // «¿seguro?» de «Empezar de cero y perderlos», por fila. Ni una más.
         try requireNoUnsentGroupWrites(in: context, witness: witness, accepting: acceptedGroupsLoss)
         try deleteLocalGroupsRows(in: context) {
-            for row in try context.fetch(FetchDescriptor<GroupSyncOutbox>()) { context.delete(row) }
+            try context.fetch(FetchDescriptor<GroupSyncOutbox>())
         }
 
         // **LA SESIÓN EN LA NUBE SE RETIRA.** Decisión de Jürgen (2026-09-17, ticket
@@ -800,9 +802,16 @@ final class DataWipeService {
     /// `detach-history-replay-can-tombstone-groups-on-next-launch`.
     ///
     /// Por eso la firma vive AQUÍ dentro y no en los dos llamadores: un tercer camino que borre estas filas
-    /// nace firmado sin tener que acordarse. Y por eso la función hace SIEMPRE el `save()` — con el autor
-    /// restaurado antes de un save ajeno, la firma no serviría de nada. Lo que el llamador quiera meter en
-    /// la MISMA transacción va en `alsoDeleting`.
+    /// nace firmado sin tener que acordarse. Y por eso la función hace SIEMPRE sus `save()` — con el autor
+    /// restaurado antes de un save ajeno, la firma no serviría de nada. Lo que el llamador quiera borrar con
+    /// la misma firma va en `alsoDeleting`.
+    ///
+    /// **Son varios `save()`, uno por tramo y en orden, no una transacción** (2026-10-01, ticket
+    /// `groups-purge-save-crosses-two-stores-without-atomicity`): un `save()` que cruza stores comitea store a
+    /// store, y medido, con uno de ellos en solo lectura los demás quedan escritos. El orden —outbox,
+    /// `GroupBridgePreference`, Grupos, cursor— está elegido para que cortarse en cualquier punto deje algo que
+    /// se repite o se repara, y nunca «cursor borrado + filas vivas». El porqué de cada posición está en el
+    /// cuerpo.
     ///
     /// **`GroupBridgePreference` NO cumple esa frase, y por eso es opcional.** Vive en el
     /// `personalSchema` (`SwiftDataConfiguration.swift:112`), que sí lleva el espejo de CloudKit: con el
@@ -813,11 +822,14 @@ final class DataWipeService {
     ///
     /// - Parameters:
     ///   - includingBridgePreferences: ver arriba. `true` solo en el relevo de humano.
-    ///   - alsoDeleting: lo que el llamador quiere borrar en la MISMA transacción (su outbox, su cursor).
-    ///     Corre con el autor del canal ya puesto y antes del único `save()`.
+    ///   - alsoDeleting: las filas que el llamador quiere borrar con la misma firma (su outbox, su cursor:
+    ///     store sync-meta). **Las LEE y las devuelve; no borra nada**: el borrado lo hace esta función, el
+    ///     outbox el PRIMERO y el resto (el cursor) el ÚLTIMO, detrás de las filas, cada uno en su `save()`. Corre en
+    ///     la fase de lecturas, antes de escribir nada, así que si lanza no se ha tocado ningún store. Que nadie
+    ///     devuelva aquí filas del store de Grupos: su borrado tiene su propio tramo.
     static func deleteLocalGroupsRows(
         in context: ModelContext, includingBridgePreferences: Bool = true,
-        alsoDeleting extra: () throws -> Void = {}
+        alsoDeleting extra: () throws -> [any PersistentModel] = { [] }
     ) throws {
         #if DEBUG
         // Seam de QA (`-uitest-fail-wipe`), y vive AQUÍ y no en los llamadores por lo mismo que la firma
@@ -835,36 +847,75 @@ final class DataWipeService {
 
         // El autor se fija ANTES del primer `delete` y se restaura pase lo que pase. Es propiedad del
         // CONTEXTO en el instante del save —un autosave que se colara a mitad también quedaría firmado—,
-        // así que el par fijar/restaurar tiene que envolver la transacción entera, no solo el `save()`.
+        // así que el par fijar/restaurar tiene que envolver todos los `save()`, no solo uno.
         let previousAuthor = context.author
         context.author = GroupsSyncClient.outboxSaveAuthor
         defer { context.author = previousAuthor }
 
-        // El `do` abarca desde el PRIMER `delete`, no solo el `save()`: un `fetch` que lance a mitad
-        // —`SplitShare` tras haber borrado ya los grupos, por ejemplo— deja los deletes anteriores SUCIOS
-        // en el contexto, y el siguiente `save()` de cualquier otro camino los comitea bajo el autor POR
-        // DEFECTO. Esa es exactamente la transacción traducible a tombstones que esta función existe para
-        // no escribir, así que el rollback tiene que cubrir el cuerpo entero.
+        // **Primero TODAS las lecturas, después los `save()`, uno por store y en orden** (ticket
+        // `groups-purge-save-crosses-two-stores-without-atomicity`). Hasta el 2026-10-01 esto era un solo
+        // `save()` que se anunciaba como «una transacción», y no lo era: un `ModelContext` con varias
+        // `ModelConfiguration` comitea store a store, y medido con tres stores on-disk y uno en solo lectura
+        // los otros DOS quedan comiteados igual — con el de Grupos cerrado salía «cursor borrado + filas
+        // vivas», el par que al volver a entrar re-emite un upsert con HLC nuevo por fila y pisa en el
+        // servidor lo que hayan editado los demás miembros. Como el `save()` cruzado no tiene atomicidad que
+        // dar, se elige dónde puede cortarse.
+        //
+        // **Las lecturas van todas delante** para que lo que falle ANTES de escribir siga siendo todo-o-nada:
+        // un `fetch` que lanza —el del cursor, el de una tabla de Grupos— no deja nada escrito ni sucio.
+        // Solo un `save()` que falla puede dejar el borrado a medias, y entonces el orden decide cómo:
+        //
+        //  0. **El outbox, antes que nada** (si el llamador lo devuelve). Si falla aquí, no se ha escrito
+        //     nada; si falla después, se fue con él lo que ya no puede subir: el llamador garantiza que no
+        //     quedan filas vivas, o son las que la persona aceptó perder. Va primero por el corte 3: el Merkle
+        //     de Grupos SALTA todo grupo con dead-letters en el outbox (guard [R7] de
+        //     `GroupsSyncClient.verifyGroupIntegrity`), y con ellas el par reparable dejaría de repararse.
+        //  1. **`GroupBridgePreference`** (solo en el relevo de humano). Vive en el store PERSONAL, que espeja
+        //     a iCloud: su borrado se exporta al Apple ID, y en el relevo eso es lo que se quiere. Va ANTES de
+        //     las filas de Grupos por lo que dice el punto 2.
+        //  2. **Las filas de Grupos, lo más tarde posible: son el TESTIGO de que falta borrar.** Los
+        //     reintentos de «Empiezo de cero» deciden si queda algo por borrar contando `SplitGroup`
+        //     (`ContentView.checkHasExistingData`): con los grupos ya fuera y otro tramo a medias, darían el
+        //     borrado por hecho y nadie volvería a escribir el sello ni a quitar lo que quedó. Mientras haya
+        //     filas, todo corte anterior se repite entero.
+        //  3. **El resto de lo del llamador al final** (`alsoDeleting`: el cursor del desasociar). Es lo único
+        //     que no puede irse antes que las filas. Si falla aquí, queda «filas borradas + cursor vivo», sin
+        //     outbox: local y reparable — el desasociar arma su reintento (`GroupsDetachPendingPurge`), y si la
+        //     persona vuelve a entrar en esa cuenta el Merkle de Grupos ve el grupo vacío en local, resetea su
+        //     cursor y lo re-baja (inferido del código, no medido en device). El inverso no tiene vuelta: el
+        //     servidor ya recibió los upserts.
+        //
+        // Un tramo que lanza hace `rollback()` de lo SUYO (lo anterior ya está en disco) y propaga, así que el
+        // llamador recibe un contexto limpio y el reintento parte de donde quedó: todo es idempotente.
+        //
+        // Los 5 `Split*` se vinculan por IDs planos (`groupZoneID`/`expenseID`/`memberID`), NO por
+        // `@Relationship` ⇒ sin orden de dependencias que respetar y sin cascadas que disparar.
+        var groupsRows: [any PersistentModel] = try context.fetch(FetchDescriptor<SplitGroup>())
+        groupsRows += try context.fetch(FetchDescriptor<SplitMember>()) as [any PersistentModel]
+        groupsRows += try context.fetch(FetchDescriptor<SplitExpense>()) as [any PersistentModel]
+        groupsRows += try context.fetch(FetchDescriptor<SplitShare>()) as [any PersistentModel]
+        groupsRows += try context.fetch(FetchDescriptor<SplitSettlement>()) as [any PersistentModel]
+        let callerRows = try extra()
+        // `GroupBridgePreference` vive en el `personalSchema` pero `wipeAllUserData` no la nombra
+        // (junto con `CloudMigrationMarker`, los 2 modelos personales que no borra). Es el override
+        // por-grupo del bridge: dejarla haría que el bridge del usuario nuevo heredara las
+        // decisiones «TX real sí/no» del anterior.
+        let bridgePreferences = includingBridgePreferences
+            ? try context.fetch(FetchDescriptor<GroupBridgePreference>()) : []
+
+        try deleteAndSave(callerRows.filter { $0 is GroupSyncOutbox }, in: context)
+        try deleteAndSave(bridgePreferences, in: context)
+        try deleteAndSave(groupsRows, in: context)
+        try deleteAndSave(callerRows.filter { !($0 is GroupSyncOutbox) }, in: context)
+    }
+
+    /// Un tramo de `deleteLocalGroupsRows`: borrar sus filas y hacer su `save()`, o `rollback()` y propagar.
+    /// El `rollback()` es lo que impide que unos deletes que no entraron se queden SUCIOS en el contexto: el
+    /// siguiente `save()` de cualquier otro camino los comitearía bajo el autor POR DEFECTO, que es la
+    /// transacción traducible a tombstones que `deleteLocalGroupsRows` existe para no escribir.
+    private static func deleteAndSave(_ rows: [any PersistentModel], in context: ModelContext) throws {
         do {
-            // Los 5 `Split*` se vinculan por IDs planos (`groupZoneID`/`expenseID`/`memberID`), NO por
-            // `@Relationship` ⇒ sin orden de dependencias que respetar y sin cascadas que disparar.
-            for group in try context.fetch(FetchDescriptor<SplitGroup>()) { context.delete(group) }
-            for member in try context.fetch(FetchDescriptor<SplitMember>()) { context.delete(member) }
-            for expense in try context.fetch(FetchDescriptor<SplitExpense>()) { context.delete(expense) }
-            for share in try context.fetch(FetchDescriptor<SplitShare>()) { context.delete(share) }
-            for settlement in try context.fetch(FetchDescriptor<SplitSettlement>()) { context.delete(settlement) }
-
-            // `GroupBridgePreference` vive en el `personalSchema` pero `wipeAllUserData` no la nombra
-            // (junto con `CloudMigrationMarker`, los 2 modelos personales que no borra). Es el override
-            // por-grupo del bridge: dejarla haría que el bridge del usuario nuevo heredara las
-            // decisiones «TX real sí/no» del anterior.
-            if includingBridgePreferences {
-                for pref in try context.fetch(FetchDescriptor<GroupBridgePreference>()) {
-                    context.delete(pref)
-                }
-            }
-
-            try extra()
+            for row in rows { context.delete(row) }
             try context.save()
         } catch {
             context.rollback()
