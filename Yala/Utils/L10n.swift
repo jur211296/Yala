@@ -245,6 +245,14 @@ enum L10n {
         static var openGroup: String { ls("groups.contextMenu.open", comment: "Menú contextual de grupo") }
     }
 
+    /// Varias ventanas (iPad, iPhone Duo abierto): fase 4 del carril adaptativo.
+    enum Window {
+        static var openInNewWindow: String { ls("window.openInNewWindow", comment: "Menú contextual de grupo o registro: abrirlo en una ventana nueva de Yala") }
+        static var followerTitle: String { ls("window.follower.title", comment: "Ventana secundaria mientras la principal pregunta algo que hay que contestar allí") }
+        static var followerBody: String { ls("window.follower.body", comment: "Ventana secundaria: explicación bajo el título") }
+        static var followerCta: String { ls("window.follower.cta", comment: "Botón: traer al frente la otra ventana de Yala") }
+    }
+
     enum Panel {
         static var accounts: String {
             ls("panel.accounts", comment: "Accounts section title")

@@ -59,7 +59,10 @@ final class CloudSessionSignOut {
         case busy
     }
 
-    private(set) var phase: Phase = .idle
+    private(set) var phase: Phase = .idle {
+        // Con varias ventanas, quién lanzó el cierre se fija al entrar en `.working` (fase 4 del carril adaptativo).
+        didSet { SceneRegistry.shared.signOutPhaseDidChange(from: oldValue, to: phase) }
+    }
 
     /// `true` mientras el sign-out solo-grupos ESPERA a que se asienten writes pendientes
     /// (quiescencia del import + retry interno con presupuesto, H-2026-07-18-6). La fila de

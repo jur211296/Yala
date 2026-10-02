@@ -15,6 +15,7 @@ struct UserDataResetView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(ExchangeRateService.self) private var exchangeRateService
     @Environment(SessionState.self) private var sessionState
+    @Environment(SceneNavigation.self) private var navigation
     @Environment(ThemeManager.self) private var themeManager
 
     // D4 (§3.3.1): paso 1 = hoja de alcance (`.sheet`, `DestructiveScopeSheet`). El botón destructivo fija
@@ -154,7 +155,7 @@ struct UserDataResetView: View {
                 // Selecciona el tab ANTES de cerrar (el estado vive en el singleton SessionState y sobrevive
                 // al cierre). `onRequestCloseSettings` cierra la hoja de Ajustes ENTERA (NO `dismiss()`, que
                 // solo haría *pop* a Profile dejando Ajustes tapando el tab — B1).
-                SessionState.shared.selectMainTab(.groups)
+                navigation.selectMainTab(.groups)
                 onRequestCloseSettings?()
             } else if goLeaveGroups {
                 // D10: flujo dedicado del batch (paso separado, NO dispara el vaciado — decisión B1).
@@ -243,7 +244,7 @@ struct UserDataResetView: View {
             sessionState.hasPrivateSession = false
             defaults.set(true, forKey: "hasShownWelcomeChooser")
             defaults.set(true, forKey: AppPreferences.Keys.hasCompletedOnboarding)
-            sessionState.selectMainTab(.groups)
+            navigation.selectMainTab(.groups)
         }
     }
 

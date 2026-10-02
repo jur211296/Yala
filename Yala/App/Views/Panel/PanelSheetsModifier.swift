@@ -20,6 +20,7 @@ struct PanelSheetsModifier: ViewModifier {
 
     /// Read lazily inside sheet closures — NOT during body evaluation.
     @Environment(SessionState.self) private var sessionState
+    @Environment(SceneNavigation.self) private var navigation
 
     @Environment(AppPreferences.self) private var appPreferences
 
@@ -83,15 +84,15 @@ struct PanelSheetsModifier: ViewModifier {
             }
             .sheet(
                 isPresented: Binding(
-                    get: { sessionState.showNewTransactionFromChat },
+                    get: { navigation.showNewTransactionFromChat },
                     set: { newValue in
-                        sessionState.showNewTransactionFromChat = newValue
-                        if !newValue { sessionState.pendingChatDraftPrefill = nil }
+                        navigation.showNewTransactionFromChat = newValue
+                        if !newValue { navigation.pendingChatDraftPrefill = nil }
                     }
                 ),
                 onDismiss: { viewModel.reloadAndRecalculate() }
             ) {
-                if let prefill = sessionState.pendingChatDraftPrefill {
+                if let prefill = navigation.pendingChatDraftPrefill {
                     NewTransactionView(prefillFromChatDraft: prefill)
                         .presentationDetents([.large])
                 }
@@ -149,13 +150,16 @@ struct PanelSheetsModifier: ViewModifier {
                 }
             }
             .sheet(isPresented: $sheets.showInbox, onDismiss: {
-                SessionState.shared.isInboxSheetVisible = false
+                navigation.isInboxSheetVisible = false
                 viewModel.reloadAndRecalculate()
             }) {
                 InboxView(onNavigateToRecords: {
-                    viewModel.navigateToStatistics(.records)
+                    viewModel.navigateToStatistics(.records, in: navigation)
                 })
-                .onAppear { SessionState.shared.isInboxSheetVisible = true }
+                .onAppear { navigation.isInboxSheetVisible = true }
+                // Si quien la presenta se desmonta (una ventana que pasa a esperar o asciende a líder), `onDismiss` no
+                // está garantizado: el flag no debe quedarse puesto (tiraría los avisos de bandeja de TODAS las ventanas).
+                .onDisappear { navigation.isInboxSheetVisible = false }
             }
             .sheet(isPresented: $sheets.showUpgradeForVoice) {
                 UpgradePromptSheet(feature: .voiceInput, context: .proFeature)

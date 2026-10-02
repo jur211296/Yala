@@ -12,6 +12,7 @@ import SwiftData
 import SwiftUI
 
 struct GroupBatchLeaveView: View {
+    @Environment(SceneNavigation.self) private var navigation
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
 
@@ -181,7 +182,7 @@ struct GroupBatchLeaveView: View {
 
             // Deep-link al tab Grupos (no al grupo específico — honesto: "requiere atención manual").
             YalaSecondaryButton(L10n.Settings.deleteAccountViewGroups) {
-                SessionState.shared.selectMainTab(.groups)
+                navigation.selectMainTab(.groups)
                 onRequestCloseSettings?()
                 dismiss()
             }

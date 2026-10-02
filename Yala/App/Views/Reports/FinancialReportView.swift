@@ -26,6 +26,7 @@ struct FinancialReportView: View {
     // MARK: - Environment
 
     @Environment(SessionState.self) private var sessionState
+    @Environment(SceneNavigation.self) private var navigation
     @Environment(\.modelContext) private var modelContext
     @Environment(\.yalaTheme) private var theme
     @Environment(\.scenePhase) private var scenePhase
@@ -57,7 +58,7 @@ struct FinancialReportView: View {
     /// Pestaña efectiva a renderizar: coacciona una selección oculta (`.flujoDeCaja` tras
     /// activar Solo Gastos) a la primera visible → la pantalla nunca queda en blanco.
     private var effectiveReportTab: ReportTab {
-        ReportTab.effectiveTab(selected: sessionState.selectedReportTab, expensesOnly: sessionState.isExpensesOnlyMode)
+        ReportTab.effectiveTab(selected: navigation.selectedReportTab, expensesOnly: sessionState.isExpensesOnlyMode)
     }
 
     // MARK: - Body
@@ -177,7 +178,7 @@ struct FinancialReportView: View {
             var transaction = Transaction()
             transaction.disablesAnimations = true
             withTransaction(transaction) {
-                sessionState.selectedReportTab = tab
+                navigation.selectedReportTab = tab
             }
         } label: {
             HStack(spacing: DS.Spacing.sm) {

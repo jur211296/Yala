@@ -6228,3 +6228,15 @@
 "panel.accounts.filterByAccount" = "按此账户筛选";
 /* Context menu on a group card: open the group */
 "groups.contextMenu.open" = "打开群组";
+
+/* Menú contextual de grupo o registro */
+"window.openInNewWindow" = "在新窗口中打开";
+
+/* Ventana secundaria mientras la principal pregunta algo */
+"window.follower.title" = "Yala 正在另一个窗口中等你";
+
+/* Ventana secundaria: explicación */
+"window.follower.body" = "另一个 Yala 窗口中有需要回答的内容。在那里完成后，此窗口会自动恢复。";
+
+/* Botón: traer al frente la otra ventana */
+"window.follower.cta" = "前往该窗口";

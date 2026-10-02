@@ -14,6 +14,8 @@ import SwiftUI
 
 struct ContentView: View {
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding: Bool = false
+    /// La navegación de la ventana líder, que es la única que monta este shell (fase 4 del carril adaptativo).
+    @Environment(SceneNavigation.self) private var navigation
     @AppStorage("hasShownWelcomeChooser") private var hasShownWelcomeChooser: Bool = false
     @AppStorage(AppPreferences.Keys.hasShownYalaAIOnboarding) private var hasShownYalaAIOnboarding: Bool = false
     @State private var showOnboarding: Bool = false
@@ -148,7 +150,6 @@ struct ContentView: View {
     @State private var activeInviteError: InviteAlertContent?
     /// Group bridge/sync error message, carried by .showGroupSyncError intent (P0-1).
     @State private var activeGroupSyncError: String?
-    @Environment(\.scenePhase) private var scenePhase
     @Environment(\.colorScheme) private var colorScheme
     @Environment(ThemeManager.self) private var themeManager
     @Environment(\.yalaTheme) private var theme
@@ -720,40 +721,13 @@ struct ContentView: View {
         .onChange(of: colorScheme) { _, newScheme in
             themeManager.systemColorScheme = newScheme
         }
-        .onChange(of: scenePhase) { _, newPhase in
-            switch newPhase {
-            case .active:
-                // GC-08: Recalculate user segment on each foreground activation
-                UserSegmentService.shared.recalculate()
-                // Cinturón del join intent: cubre "grupo ya local pero el reconcile
-                // de boot se difirió por quiescencia". El propio reconciler gatea
-                // por quiescencia y hace no-op sin intents.
-                Task { @MainActor in
-                    await GroupJoinReconciler.reconcile(trigger: .foreground)
-                }
-                // Batch "salir de todos mis grupos" (D10): reanuda un batch a medio ejecutar al volver a
-                // foreground. No-op sin trabajo pendiente; el orquestador gatea por quiescencia por grupo.
-                Task { @MainActor in
-                    await GroupBatchLeaveOrchestrator.resume(trigger: .foreground)
-                }
-                // Re-chequeo de actualización al volver a foreground (una app que no se mata en días
-                // no veía el banner). Barato: el cache de 24h de checkForUpdate hace no-op dentro de
-                // la ventana. Solo returning-users (paridad con el boot, runReturningUserPostChecks);
-                // un dismiss en sesión sobrevive (checkForUpdate no resetea dismissedInSession).
-                if hasCompletedOnboarding {
-                    Task { await AppUpdateService.shared.checkForUpdate() }
-                }
-                // Forzado de actualización: re-evalúa contra el último snapshot (que un fetch de
-                // foreground pudo refrescar). DARK en prod.
-                ForceUpdateGate.shared.recompute()
-            // El exit-on-background del relaunch terminal (decisión owner UX 2026-07-14)
-            // vive en YalaApp, NO aquí: el `\.scenePhase` de ContentView es POR-ESCENA
-            // (iPad multi-ventana: ocultar una ventana mataría el proceso con otra
-            // visible); el de YalaApp es el AGREGADO del proceso y ya guarda tests.
-            default:
-                break
-            }
+        // El proceso volvió a primer plano. **No el `scenePhase` de esta vista**: es el de SU ventana, y con varias el
+        // usuario puede volver por otra y la líder quedarse detrás (fase 4 del carril adaptativo). Lo cuenta `YalaApp`
+        // con el agregado del proceso; con una sola ventana dispara en el mismo momento que antes.
+        .onChange(of: SceneRegistry.shared.appActivations) { _, _ in
+            handleAppBecameActive()
         }
+
         .onChange(of: SessionState.shared.isWipingData) { _, _ in
             updateContentViewReadiness()
         }
@@ -784,7 +758,7 @@ struct ContentView: View {
         // Cross-node: un sheet de MainTabView visible bloquea las presentaciones
         // del shell (el cover del inbox alert no debe montarse encima y ser
         // tumbado por su dismiss — variante cross-node del bug TestFlight).
-        .onChange(of: SessionState.shared.isMainTabModalVisible) { _, _ in updateContentViewReadiness() }
+        .onChange(of: navigation.isMainTabModalVisible) { _, _ in updateContentViewReadiness() }
         // Shell-level modal flags gate readiness via pure-logic
         // ContentViewReadinessLogic. Encapsulated in a ViewModifier to keep
         // ContentView's body within the type-checker's budget.
@@ -1070,7 +1044,7 @@ struct ContentView: View {
             showProTrialOffer: showProTrialOffer,
             showWhatsNew: showWhatsNew,
             showSyncSettingsSheet: showSyncSettingsSheet,
-            isMainTabModalVisible: SessionState.shared.isMainTabModalVisible
+            isMainTabModalVisible: navigation.isMainTabModalVisible
         )
     }
 
@@ -1078,21 +1052,50 @@ struct ContentView: View {
     /// flag that can block shell presentation. Delegates to pure-logic
     /// `ContentViewReadinessLogic.isReady(state:)` so the gating matrix is
     /// testable independently of SwiftUI state.
+    /// El proceso volvió a primer plano (ver el `onChange(of: appActivations)` del cuerpo).
+    @MainActor
+    private func handleAppBecameActive() {
+        // GC-08: Recalculate user segment on each foreground activation
+        UserSegmentService.shared.recalculate()
+        // Cinturón del join intent: cubre "grupo ya local pero el reconcile
+        // de boot se difirió por quiescencia". El propio reconciler gatea
+        // por quiescencia y hace no-op sin intents.
+        Task { @MainActor in
+            await GroupJoinReconciler.reconcile(trigger: .foreground)
+        }
+        // Batch "salir de todos mis grupos" (D10): reanuda un batch a medio ejecutar al volver a
+        // foreground. No-op sin trabajo pendiente; el orquestador gatea por quiescencia por grupo.
+        Task { @MainActor in
+            await GroupBatchLeaveOrchestrator.resume(trigger: .foreground)
+        }
+        // Re-chequeo de actualización al volver a foreground (una app que no se mata en días
+        // no veía el banner). Barato: el cache de 24h de checkForUpdate hace no-op dentro de
+        // la ventana. Solo returning-users (paridad con el boot, runReturningUserPostChecks);
+        // un dismiss en sesión sobrevive (checkForUpdate no resetea dismissedInSession).
+        if hasCompletedOnboarding {
+            Task { await AppUpdateService.shared.checkForUpdate() }
+        }
+        // Forzado de actualización: re-evalúa contra el último snapshot (que un fetch de
+        // foreground pudo refrescar). DARK en prod.
+        ForceUpdateGate.shared.recompute()
+        // El exit-on-background del relaunch terminal (decisión owner UX 2026-07-14) vive en YalaApp, NO aquí.
+    }
+
     @MainActor
     private func updateContentViewReadiness() {
         let state = currentShellReadinessState()
         let currentBlocker = ContentViewReadinessLogic.blocker(state: state)
         // Publica el blocker para los guards de drain de .mainTab/.panel
         // (Clase D): con el shell tapado, sus intents esperan en cola.
-        // Choke point único — SessionState.shellModalBlocker no tiene otro escritor.
-        if SessionState.shared.shellModalBlocker != currentBlocker {
-            SessionState.shared.shellModalBlocker = currentBlocker
+        // Choke point único — en la ventana líder, `SceneNavigation.shellModalBlocker` no tiene otro escritor.
+        if navigation.shellModalBlocker != currentBlocker {
+            navigation.shellModalBlocker = currentBlocker
         }
         let ready = currentBlocker == nil
         if ready {
-            AppRouter.shared.markReady(.contentView)
+            AppRouter.shared.markReady(.contentView, in: navigation.id)
         } else {
-            AppRouter.shared.markUnready(.contentView)
+            AppRouter.shared.markUnready(.contentView, in: navigation.id)
             if let blocker = currentBlocker {
                 #if DEBUG
                 print("ContentView readiness blocked by: \(blocker)")
@@ -1140,13 +1143,13 @@ struct ContentView: View {
         // bloquea el readiness que necesita drenar ese intent → deadlock: el welcome
         // bloquea el propio intent que lo cerraría. Si la cadena welcome es el ÚNICO
         // blocker, ciérrala para que el drain (y la presentación) procedan.
-        if let next = AppRouter.shared.peekNext(for: .contentView),
+        if let next = AppRouter.shared.peekNext(for: .contentView, in: navigation.id),
            next.supersedesWelcomeChain,
            ContentViewReadinessLogic.isBlockedSolelyByWelcomeChain(state: currentShellReadinessState()) {
             dismissWelcomeChainForSupersedingIntent(for: next.id)
             updateContentViewReadiness()  // recompute síncrono → markReady(.contentView)
         }
-        guard let intent = AppRouter.shared.drainNext(for: .contentView) else { return }
+        guard let intent = AppRouter.shared.drainNext(for: .contentView, in: navigation.id) else { return }
         switch intent {
         case .showInboxAlert(let notif):
             activeInboxNotification = notif
@@ -1314,8 +1317,8 @@ struct ContentView: View {
             // `pendingNewGroupExpense`). Y si el usuario lo cancela, aterriza en el empty state estándar
             // con su CTA «crear grupo» — la red ya existía, por eso el último paso puede ser el form.
             groupsOrganizerFlowActive = false
-            SessionState.shared.selectedMainTab = .groups
-            SessionState.shared.pendingNewGroupForm = true
+            navigation.selectedMainTab = .groups
+            navigation.pendingNewGroupForm = true
         }
     }
 
@@ -1339,7 +1342,7 @@ struct ContentView: View {
         // La rama de Grupos se apaga: quien conduce a partir de aquí es la máquina de migración, y dejarla
         // encendida haría que un cancel del cover devolviera al usuario al Welcome de grupos.
         groupsOrganizerFlowActive = false
-        SessionState.shared.selectedMainTab = .groups
+        navigation.selectedMainTab = .groups
         // El proveedor con el que ACABA de firmar, leído del Keychain. `.apple` como último recurso: el
         // `Entry` solo elige el copy y el botón del intro, y ese intro no se muestra —`runSignInFlow` salta
         // el sign-in con la sesión viva—, así que un fallback aquí no puede mandar a nadie al proveedor
@@ -2247,6 +2250,10 @@ struct ContentView: View {
     /// Post-checks de returning user: trial pendiente, What's New, language, app update.
     /// Extraído para SSOT — antes vivía inline en `checkInitialSyncState`.
     private func runReturningUserPostChecks() {
+        // Una vez por contenedor, no por `ContentView`: con varias ventanas, la que asciende a líder monta uno nuevo
+        // a mitad de sesión, y repetir esto ofrecería otra vez la prueba y Novedades y reanudaría un borrado que la
+        // líder anterior quizá aún tiene en vuelo. El swap de contenedor sí lo repite: es un arranque nuevo.
+        guard SceneRegistry.shared.claimBootChecks(generation: PersonalContainerHost.shared.generation) else { return }
         resumeFullModeActivationIfPending()
         // GC-08: Skip trial/What's New for groupInvite users — they have no context yet
         if SessionState.shared.hasPrivateSession {
@@ -3212,6 +3219,8 @@ private struct GroupInviteModifier: ViewModifier {
 
 struct MainTabView: View {
     @Bindable private var sessionState: SessionState
+    /// La navegación de ESTA ventana: pestaña, sub-pestañas y lo que la tapa (fase 4 del carril adaptativo).
+    @Environment(SceneNavigation.self) private var navigation
     @Environment(\.requestReview) private var requestReview
     @Environment(\.yalaTheme) private var theme
     @Environment(\.modelContext) private var modelContext
@@ -3268,7 +3277,7 @@ struct MainTabView: View {
             layout: layout,
             orderedTabs: RootTabLayoutLogic.orderedTabs(activeTabs: modeConfig.activeTabs),
             tabBarTabs: visibleTabs,
-            selected: sessionState.selectedMainTab,
+            selected: navigation.selectedMainTab,
             reduceToGroupsOnly: reduceToGroupsOnly)
     }
 
@@ -3289,7 +3298,7 @@ struct MainTabView: View {
     /// Tabs to show in the TAB BAR: mode-aware config + temporary tab (if set and not already active)
     private var visibleTabs: [ConfigurableTab] {
         var tabs = modeConfig.activeTabs
-        if let temp = sessionState.temporaryTab, !tabs.contains(temp) {
+        if let temp = navigation.temporaryTab, !tabs.contains(temp) {
             tabs.append(temp)
         }
         return tabs
@@ -3325,10 +3334,11 @@ struct MainTabView: View {
     var body: some View {
         // IMPORTANT: When wiping data, completely unmount the TabView to deactivate all @Query observers
         // This prevents crashes from SwiftUI trying to access invalidated model instances
+        @Bindable var navigation = navigation
         if sessionState.isWipingData {
             wipingDataView
         } else {
-            TabView(selection: $sessionState.selectedMainTab) {
+            TabView(selection: $navigation.selectedMainTab) {
                 // Las seis páginas, montadas en los dos tamaños; la barra de pestañas oculta las que no tocan
                 // (la configuración + la temporal + la seleccionada quedan a la vista). Ver `RootTabLayoutLogic`.
                 ForEach(mountedTabs) { tab in
@@ -3391,22 +3401,26 @@ struct MainTabView: View {
             }
             // iPad con teclado y arrastrar: los atajos globales de esta ventana y soltar recibos (fase 3).
             .modifier(RootCommandsModifier(
-                sessionState: sessionState,
+                navigation: navigation,
                 sections: mountedTabs,
                 canSearch: showsSearchTab,
                 isGroupsOnly: reduceToGroupsOnly))
             // Re-drain al liberarse el shell (cerrar un cover superior no bumpea
             // revision — mismo racional que el gate del ChatSheet en PanelShell).
-            .onChange(of: sessionState.shellModalBlocker) { _, newBlocker in
+            .onChange(of: navigation.shellModalBlocker) { _, newBlocker in
                 if newBlocker == nil { drainMainTabIntents() }
             }
             // Más no existe en la barra lateral: si la ventana se ensancha con Más elegida, se vuelve al
             // Panel en vez de dejar la selección en una pestaña oculta.
             .onChange(of: layout) { _, newLayout in
-                if !RootTabLayoutLogic.showsMoreTab(layout: newLayout), sessionState.selectedMainTab == .more {
-                    sessionState.selectMainTab(.panel)
+                if !RootTabLayoutLogic.showsMoreTab(layout: newLayout), navigation.selectedMainTab == .more {
+                    navigation.selectMainTab(.panel)
                 }
             }
+            // Un `MainTabView` que se desmonta con una hoja propia abierta (una seguidora que pasa a esperar, una
+            // ventana que asciende a líder) no llega a publicar que se cerró: sin esto el flag se quedaba en `true` y
+            // retenía `.panel` y la matriz del shell para el resto de la sesión (review adversarial, 2026-10-02).
+            .onDisappear { navigation.isMainTabModalVisible = false }
             .onChange(of: showDowngradeResolution) { _, _ in publishMainTabModalVisibilityAndRedrain() }
             .onChange(of: showTrialExpired) { _, _ in publishMainTabModalVisibilityAndRedrain() }
             .onChange(of: activeMilestone) { _, _ in publishMainTabModalVisibilityAndRedrain() }
@@ -3421,8 +3435,8 @@ struct MainTabView: View {
     /// Publica la visibilidad para el guard de `.panel` y la matriz del shell,
     /// y re-drena al cerrar un sheet propio (el siguiente intent retenido entra).
     private func publishMainTabModalVisibilityAndRedrain() {
-        if sessionState.isMainTabModalVisible != ownModalVisible {
-            sessionState.isMainTabModalVisible = ownModalVisible
+        if navigation.isMainTabModalVisible != ownModalVisible {
+            navigation.isMainTabModalVisible = ownModalVisible
         }
         if !ownModalVisible { drainMainTabIntents() }
     }
@@ -3432,64 +3446,66 @@ struct MainTabView: View {
     /// sheet propio arriba — antes se consumía a ciegas y el sheet se seteaba
     /// tapado (one-shots quemados sin verse, presentaciones "que saltan").
     private func drainMainTabIntents() {
-        guard let next = AppRouter.shared.peekNext(for: .mainTab) else { return }
+        guard let next = AppRouter.shared.peekNext(for: .mainTab, in: navigation.id) else { return }
         let decision = RouterConsumerGateLogic.mainTabDecision(
             intent: next,
-            shellBlocker: sessionState.shellModalBlocker,
+            shellBlocker: navigation.shellModalBlocker,
             ownModalVisible: ownModalVisible
         )
         guard decision == .drain else {
             // Canario D4: solo los flags PUBLICADOS pueden quedar pegados
             // (shellModalBlocker); ownModalVisible es @State local atado a
             // sheets reales que SwiftUI resetea en el dismiss.
-            if let blocker = sessionState.shellModalBlocker {
+            if let blocker = navigation.shellModalBlocker {
                 RouterHoldCanary.shared.noteHold(intentID: next.id, blocker: blocker, consumer: "mainTab")
             }
             #if DEBUG
-            print("MainTabView drain hold: \(next.id) por \(sessionState.shellModalBlocker ?? "ownModal")")
+            print("MainTabView drain hold: \(next.id) por \(navigation.shellModalBlocker ?? "ownModal")")
             #endif
             return
         }
-        guard let intent = AppRouter.shared.drainNext(for: .mainTab) else { return }
+        guard let intent = AppRouter.shared.drainNext(for: .mainTab, in: navigation.id) else { return }
         RouterHoldCanary.shared.noteDrained(intentID: intent.id)
         handleMainTabIntent(intent)
     }
 
     private func handleMainTabIntent(_ intent: RouterIntent) {
+        // Lo que este intent encadene (`.navigate(.inbox)` → `.presentInboxSheet`) va a ESTA ventana, la que lo drenó.
+        SceneRegistry.shared.noteFocused(navigation.id)
         switch intent {
         case .navigate(let dest):
-            // GC-08 guard centralizado en SessionState.selectMainTab — los
+            // GC-08 guard centralizado en SceneNavigation.selectMainTab — los
             // intents no-groups en modo groupInvite se descartan ahí.
             switch dest {
             case .panel:
-                sessionState.selectMainTab(.panel)
+                navigation.selectMainTab(.panel)
             case .statistics:
-                sessionState.selectMainTab(.statistics)
+                navigation.selectMainTab(.statistics)
             case .records:
-                sessionState.selectedDetailTab = .records
-                sessionState.selectMainTab(.statistics)
+                navigation.selectedDetailTab = .records
+                navigation.selectMainTab(.statistics)
             case .categories:
-                sessionState.selectedDetailTab = .categories
-                sessionState.selectMainTab(.statistics)
+                navigation.selectedDetailTab = .categories
+                navigation.selectMainTab(.statistics)
             case .planning:
-                sessionState.selectMainTab(.planning)
+                navigation.selectMainTab(.planning)
             case .budgets:
-                sessionState.selectedPlanningTab = .budgets
-                sessionState.selectMainTab(.planning)
+                navigation.selectedPlanningTab = .budgets
+                navigation.selectMainTab(.planning)
             case .inbox:
-                sessionState.selectMainTab(.panel)
+                navigation.selectMainTab(.panel)
                 RouterEntryGate.shared.submit(.presentInboxSheet)
             case .scheduledPayments:
-                sessionState.selectedPlanningTab = .scheduledPayments
-                sessionState.selectMainTab(.planning)
+                navigation.selectedPlanningTab = .scheduledPayments
+                navigation.selectMainTab(.planning)
             case .recordsStandalone:
-                sessionState.selectMainTab(.records)
+                navigation.selectMainTab(.records)
             case .groups, .groupDetail:
                 sessionState.enteredViaGroupNotification = true
                 if case .groupDetail(let groupID) = dest {
-                    sessionState.pendingGroupID = groupID
+                    navigation.pendingGroupID = groupID
                 }
-                sessionState.selectMainTab(.groups)
+                navigation.selectMainTab(.groups)
             }
         case .presentDowngradeResolution:
             do {
@@ -3606,6 +3622,7 @@ enum AppTab: Hashable {
 
 #Preview {
     ContentView()
+        .environment(SceneNavigation())
         .modelContainer(
             for: [
                 Account.self,

@@ -19,6 +19,7 @@ struct PanelView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
     @Environment(SessionState.self) private var sessionState
+    @Environment(SceneNavigation.self) private var navigation
     @Environment(ExchangeRateService.self) private var exchangeRateService
     @Environment(CurrencyConverter.self) private var currencyConverter
 
@@ -216,7 +217,7 @@ struct PanelView: View {
         case .activateFullMode:
             RouterEntryGate.shared.submit(.presentFullModeActivation)
         case .openGroupDetail:
-            SessionState.shared.navigateToGroups()
+            navigation.navigateToGroups()
         case .openPanel, .dismiss:
             break
         }
@@ -709,21 +710,22 @@ struct PanelView: View {
 
 }
 
-/// Consume la petición de un atajo (`SessionState.pendingKeyboardPanelRequest`) cuando el Panel está delante. Se
+/// Consume la petición de un atajo (`SceneNavigation.pendingKeyboardPanelRequest`) cuando el Panel está delante. Se
 /// mira también al cambiar de pestaña: si el Panel no estaba en la barra, `selectMainTab` lo elige 50 ms después.
 private struct PanelKeyboardRequestObserver: ViewModifier {
     let sessionState: SessionState
+    @Environment(SceneNavigation.self) private var navigation
     let open: (KeyboardPanelRequest) -> Void
 
     func body(content: Content) -> some View {
         content
-            .onChange(of: sessionState.pendingKeyboardPanelRequest) { _, _ in consumeIfFront() }
-            .onChange(of: sessionState.selectedMainTab) { _, _ in consumeIfFront() }
+            .onChange(of: navigation.pendingKeyboardPanelRequest) { _, _ in consumeIfFront() }
+            .onChange(of: navigation.selectedMainTab) { _, _ in consumeIfFront() }
     }
 
     private func consumeIfFront() {
-        guard sessionState.selectedMainTab == .panel, let request = sessionState.pendingKeyboardPanelRequest else { return }
-        sessionState.pendingKeyboardPanelRequest = nil
+        guard navigation.selectedMainTab == .panel, let request = navigation.pendingKeyboardPanelRequest else { return }
+        navigation.pendingKeyboardPanelRequest = nil
         open(request)
     }
 }

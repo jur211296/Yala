@@ -152,6 +152,19 @@ extension RouterIntent {
     }
 
     /// Consumer view that owns this intent's drain logic.
+    /// Flujos del shell de proceso que pide el usuario con un toque (o un enlace que acaba de abrir): con varias
+    /// ventanas los presenta la líder, así que la traen al frente si el usuario está en otra. Los avisos de fondo, no.
+    var bringsLeaderForward: Bool {
+        switch self {
+        case .presentGroupsConsent, .presentGroupsSignIn, .presentFullModeActivation, .presentGroupsOrganizerStep,
+             .presentGroupsInviteNeutralGate, .presentGroupBackendInviteOnboarding, .showInviteError,
+             .showGroupArchivedNotice:
+            return true
+        default:
+            return false
+        }
+    }
+
     var handler: AppRouter.ConsumerID {
         switch self {
         case .presentLateICloudMirrorNotice: return .contentView

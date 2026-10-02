@@ -6228,3 +6228,15 @@
 "panel.accounts.filterByAccount" = "Filteren op deze rekening";
 /* Context menu on a group card: open the group */
 "groups.contextMenu.open" = "Groep openen";
+
+/* Menú contextual de grupo o registro */
+"window.openInNewWindow" = "Openen in nieuw venster";
+
+/* Ventana secundaria mientras la principal pregunta algo */
+"window.follower.title" = "Yala wacht in een ander venster";
+
+/* Ventana secundaria: explicación */
+"window.follower.body" = "Er is iets te beantwoorden in het andere Yala-venster. Als je daar klaar bent, komt dit venster vanzelf terug.";
+
+/* Botón: traer al frente la otra ventana */
+"window.follower.cta" = "Naar dat venster";

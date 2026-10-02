@@ -179,6 +179,8 @@ final class AccountDeletionService {
         }
         guard deps.canDelete() else { return }  // defensivo: sin sesión backend no hay nada que borrar
 
+        // El cierre local llega tras varias llamadas de red: la ventana que lo pidió se anota ya (varias ventanas).
+        SceneRegistry.shared.noteSignOutRequested()
         phase = .working
 
         // 1) Anonimizar/transferir grupos server-side — con el binario CAPAZ, aunque el canal esté
