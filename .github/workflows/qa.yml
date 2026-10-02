@@ -85,6 +85,11 @@ jobs:
       # sesión los vería; aquí el lock está siempre libre y no cuesta nada.
       - name: Cola del simulador (sim-lock.sh + sim-libre.sh)
         run: bash qa/scripts/sim-lock-test.sh
+      # El paso «Simulador del runner» del job `tests` solo se ejerce de verdad cuando
+      # CoreSimulator falla (8 de los 33 rojos de QA entre el 2026-08-18 y el 2026-10-02). Su banco simula esos
+      # casos con un `xcrun` falso, sin tocar ningún simulador.
+      - name: Simulador del runner (ci-simulador.sh)
+        run: bash qa/scripts/ci-simulador-test.sh
 
   # Suite del conector MCP de Claude (`mcp/`): typecheck y tests unitarios, sin red. Corre en
   # cada push, como `coverage-index`: es barata (Linux, segundos) y así un cambio de esquema que
@@ -346,13 +351,30 @@ jobs:
       # son agentic, fuera de CI).
       - name: Crear Secrets.xcconfig (placeholder para CI)
         run: cp Secrets.xcconfig.template Secrets.xcconfig
+      # EL SIMULADOR SE PIDE, NO SE SUPONE (2026-10-02). Hasta aqui los cuatro `xcodebuild`
+      # pedian `name=iPhone 17 Pro` y confiaban en que el runner ya lo tuviera listo. Casi
+      # siempre lo tiene, pero 8 corridas (la primera el 2026-08-18, la ultima la 37034199942)
+      # murieron en «Build for testing» con exit 70 y `Unable to find a device matching…`,
+      # listando SOLO los placeholders: cero simuladores, no un nombre distinto. La imagen
+      # (macos-26-arm64 20260907.0351) y el Xcode (26.6) eran los MISMOS que en la corrida
+      # verde de 35 minutos antes: el runner no perdio el device, CoreSimulator aun no lo
+      # habia cargado cuando `xcodebuild` pregunto.
+      #
+      # Este paso lo pregunta el, con reintentos (detalle en el propio script): busca un
+      # iPhone 17 Pro disponible, lo crea por tipo + runtime si falta —como `ci-sombra.yml`—
+      # y si CoreSimulator no devuelve nada lo reinicia y vuelve a mirar. Los `xcodebuild`
+      # reciben el UDID, que ademas quita la ambiguedad si el nombre existe en dos runtimes.
+      - name: Simulador del runner
+        id: sim
+        timeout-minutes: 10
+        run: bash qa/scripts/ci-simulador.sh
       - name: Build for testing
         timeout-minutes: 25
         run: |
           xcodebuild build-for-testing \
             -scheme "Yala Dev" \
             -project Yala.xcodeproj \
-            -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
+            -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.udid }}" \
             -derivedDataPath .ddp \
             -quiet
       # YalaTests SALVO las 7 clases que crean un ModelContext (paso advisory aparte). ADVISORY:
@@ -369,7 +391,7 @@ jobs:
           xcodebuild test-without-building \
             -scheme "Yala Dev" \
             -project Yala.xcodeproj \
-            -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
+            -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.udid }}" \
             -only-testing:YalaTests \
             -skip-testing:YalaTests/BudgetFilterRegressionTests \
             -skip-testing:YalaTests/CategoryDeduplicationServiceTests \
@@ -392,7 +414,7 @@ jobs:
           xcodebuild test-without-building \
             -scheme "Yala Dev" \
             -project Yala.xcodeproj \
-            -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
+            -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.udid }}" \
             -only-testing:YalaTests/BudgetFilterRegressionTests \
             -only-testing:YalaTests/CategoryDeduplicationServiceTests \
             -only-testing:YalaTests/ChatAssistantViewModelTests \
@@ -420,7 +442,7 @@ jobs:
           xcodebuild test-without-building \
             -scheme "Yala Dev" \
             -project Yala.xcodeproj \
-            -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
+            -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.udid }}" \
             -only-testing:YalaUITests \
             -derivedDataPath .ddp \
             -parallel-testing-enabled NO \
