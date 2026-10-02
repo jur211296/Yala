@@ -1,10 +1,10 @@
 ---
 id: ipad-large-and-extra-large-widgets
-status: backlog
+status: done
 priority: low
 area: "widgets, ipad"
 created: 2026-09-26
-updated: 2026-09-27
+updated: 2026-10-02
 source: "exploración iPad (docs/exploracion/ipad-nativo.md §5.5 y §8, fase 5), 2026-09-26"
 ---
 
@@ -54,3 +54,11 @@ Dynamic Type grande (`adaptativo-ipad-duo.md` §6.1).
 **Layout** (ADR «[2026-09-27] Yala se adapta por espacio, no por dispositivo»). Se decide por size class y ancho del
 contenedor, nunca por tipo de dispositivo ni orientación; un contenedor que se adapta, no un `if` por size class en
 la raíz; APIs de iOS 27.1 solo tras `if #available`.
+
+## Cierre (2026-10-02)
+
+- **Grande** en Presupuestos (6 filas), Últimos registros (7) y Pagos planificados (7). El mediano sigue con 3.
+- **Extragrande** nuevo, «Resumen del mes» (`MonthSummaryWidget`): balance y gasto del mes, donut con top 5 + «Otros», y los 4 presupuestos más apretados. Toque por columna: categorías → Estadísticas, presupuestos → Presupuestos; el resto → Panel.
+- **DTO sin tocar**: todo sale de campos que ya viajaban. `WidgetDTOParityTests` fija que las dos copias decodifican igual (scan estructural + round-trip con el escritor real), con dos mutantes en el lector verificados en rojo.
+- Capturas: `qa/evidencia-ipad-widgets-20261002/` (README con lo que hay y lo que no).
+- Duo: no investigado, fuera de alcance.

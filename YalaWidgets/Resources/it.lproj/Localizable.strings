@@ -144,3 +144,8 @@
 
 /* MARK: Release 2.0 — a11y & UI keys */
 "widget.ui.others" = "Altri";
+
+/* MARK: iPad — widget extragrande «Resumen del mes» */
+"widget.gallery.monthSummary" = "Riepilogo del mese";
+"widget.gallery.monthSummary.desc" = "Il tuo saldo, le spese per categoria e i budget del mese";
+"widget.ui.monthSummary" = "Riepilogo del mese";
