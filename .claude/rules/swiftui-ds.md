@@ -165,6 +165,22 @@ paths:
   detalle y el split por debajo de dos anchos de iPhone (750), `ListDetailSplit` pasa a `.detailOnly`
   (`ListDetailOverlayLogic.listYieldsToDetail`, con test); con «Elige un…» la lista se queda. Lo dispara abrir Yala IA
   al lado o estrechar la ventana. La lista sigue a un toque en el botón del sistema.
+- **Con texto de accesibilidad la columna se ensancha y, donde no caben dos, la página se pliega (2026-10-01).**
+  `DS.Adaptive.listColumnWidths(isAccessibilityText:)` da 440/460/520 con AX1–AX5 (los 408 pt de contenido del Pro
+  Max vertical, donde AX5 cabe, más márgenes); con texto de siempre, los 375/400/480 de antes. Dos cosas medidas en el
+  Pro Max girado que no son obvias: **el split SUMA la isla encima del ancho pedido** (pedida a 520, la columna midió
+  582), y **no pone AL LADO del detalle una columna que lea AX5** — a 522 y a 582 la superpuso sobre «Elige un…», que
+  quedaba medio tapado; la de 446 de siempre sí va al lado, pero ahí AX5 parte «Este mes». Por eso cada página con
+  `ListDetailSplit` lleva `.foldsListDetailForAccessibilityText()` puesto por QUIEN LA MONTA (`ContentView.viewForTab`):
+  con AX y sin ancho para dos columnas AX (`ListDetailOverlayLogic.foldsForAccessibilityText`), la página entera ve
+  ancho compacto y es la pila de vertical: el Pro Max girado (832) y el iPad mini (744 / 853); el iPad Pro 13 sigue en
+  split. **El ancho es el que mide la vista, sin restarle nada**: ya viene sin la isla ni la barra lateral, aunque el
+  proxy siga reportando esos márgenes (iPad Pro 13 girado: 1096 de ancho y 280 de margen). Restarlos los contaba dos
+  veces y apartaba la lista en el Pro 13 con AX. Va fuera porque Registros y Grupos leen el size class por su cuenta para
+  decidir hoja o columna. Una página nueva con `ListDetailSplit` lo lleva también (Ajustes no: va en su hoja, y ahí
+  el ancho lo decide la presentación; no está medido con AX). Test:
+  `IPhoneLandscapeUITests#test_accessibilityText_turnedLargeIPhone_planningHeaderStaysReadable` (por UDID en el Pro Max)
+  + `YalaTests/ListDetailOverlayLogicTests`.
 - **Un detalle que en compacta se empuja y en ancha va en columna** sabe cuál es (`GroupDetailView(presentation:)`,
   como `TransactionDetailSheet`): en columna no oculta la barra de pestañas ni pinta su chevron, y cerrar es vaciar la
   selección de quien lo monta (`onCloseColumn`), no `dismiss()`. Sin `if` de vistas entre los dos modos

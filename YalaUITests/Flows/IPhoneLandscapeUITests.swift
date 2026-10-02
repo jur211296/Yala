@@ -171,6 +171,55 @@ final class IPhoneLandscapeUITests: XCTestCase {
             "Al volver a vertical la cabecera no volvió a apilarse: \(expense.frame) vs \(caption.frame).")
     }
 
+    /// Con texto de accesibilidad, un iPhone grande girado (ventana ancha) deja leer la cabecera de Planificación: «Este
+    /// mes» en una línea, como en vertical, y el chip «Presupuestos» entero dentro de la lista. Antes la columna del
+    /// split partía «Este mes» (de 63 a 125 pt de alto) y cortaba el chip 22 pt; con la columna ensanchada, el split la
+    /// superponía sobre «Elige un…» (medido el 2026-10-01). Ahora, sin sitio para dos columnas que lean AX5, la página
+    /// se pliega a la lista sola, sin detalle al lado. En iPad vale como regresión: en el Pro 13 sigue el split, con la
+    /// columna más ancha. Donde girar deja la ventana compacta (SE) no había split y se salta.
+    func test_accessibilityText_turnedLargeIPhone_planningHeaderStaysReadable() throws {
+        let app = XCUIApplication()
+        app.launchForUITest(
+            pro: true, seed: "realista", deeplink: "planning",
+            extraArguments: ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"])
+        XCTAssertTrue(app.waitForUITestReady(timeout: 90), "uitest_ready ausente — bootstrap/seed no completó.")
+
+        let period = element(app, "period_navigation_label")
+        let chip = element(app, "planning_chip_budgets")
+        XCTAssertTrue(period.waitForExistence(timeout: 20), "Planificación no pintó el período.")
+        XCTAssertTrue(chip.waitForExistence(timeout: 5), "Planificación no pintó el chip de presupuestos.")
+        let portraitHeight = period.frame.height
+
+        rotate(app, to: .landscapeLeft)
+        try XCTSkipUnless(app.windows.firstMatch.frame.width >= 900, "Girado, este iPhone sigue en ventana compacta.")
+        // El split mide y decide tras girar: se espera a que el período se asiente.
+        let deadline = Date().addingTimeInterval(5)
+        while Date() < deadline, period.frame.height > portraitHeight + 1 { Thread.sleep(forTimeInterval: 0.25) }
+
+        XCTAssertLessThanOrEqual(
+            period.frame.height, portraitHeight + 1,
+            "Girado con texto grande, «Este mes» se parte: \(period.frame) contra \(portraitHeight) pt en vertical.")
+
+        // La columna de la lista es la barra de navegación que arranca más cerca del chip por su izquierda (en iPad, la
+        // barra lateral de pestañas va antes) y, de las que arrancan ahí, la más estrecha (la del detalle va debajo).
+        let bars = app.navigationBars.allElementsBoundByIndex
+            .filter { $0.frame.width > 0 && $0.frame.minX <= chip.frame.minX + 1 }
+        let start = bars.map(\.frame.minX).max() ?? 0
+        let listBar = bars.filter { abs($0.frame.minX - start) <= 1 }.min { $0.frame.width < $1.frame.width }
+        let listMaxX = try XCTUnwrap(listBar, "No hay barra de navegación de la lista.").frame.maxX
+        XCTAssertLessThanOrEqual(
+            chip.frame.maxX, listMaxX,
+            "El chip «Presupuestos» (\(chip.frame)) se sale de la columna de la lista (hasta x = \(listMaxX)).")
+
+        // En el iPhone girado no caben dos columnas que lean AX5: la lista va sola. Con el split, la superponía sobre
+        // «Elige un…» y lo tapaba a medias (el texto del vacío no se expone por separado: se mira que no esté).
+        if UIDevice.current.userInterfaceIdiom == .phone {
+            XCTAssertFalse(
+                element(app, "planning_detail_placeholder").exists,
+                "Girado con texto grande, la lista sigue en un split con «Elige un…» al lado: no caben las dos.")
+        }
+    }
+
     /// El formulario de nuevo registro a medias conserva lo escrito al girar y al volver.
     func test_rotatingKeepsAHalfWrittenNewRecord() {
         let app = launch(deeplink: "panel")

@@ -482,6 +482,33 @@ enum DS {
         static let listColumnIdealWidth: CGFloat = 400
         static let listColumnMaxWidth: CGFloat = 480
 
+        /// Los mismos anchos con tamaños de texto de accesibilidad (AX1–AX5). Con AX5, «Este mes» y el chip
+        /// «Presupuestos» (392 pt) caben en los 408 pt de contenido del Pro Max vertical y se parten en un SE:
+        /// 408 + 32 de márgenes = 440. El margen de la isla del iPhone girado NO cuenta: el split lo suma encima
+        /// (pedida a 520, la columna midió 582 en el Pro Max girado, medido 2026-10-01). El mínimo es también el
+        /// umbral de dos columnas: por debajo, la lista se aparta al abrir algo (`listYieldsToDetail`) y la página se
+        /// pliega a la pila (`foldsForAccessibilityText`) — en el Pro Max girado el split no la pone AL LADO del
+        /// detalle a ningún ancho que lea AX5 (a 522 y a 582 la superponía sobre «Elige un…»).
+        static let listColumnAccessibilityMinWidth: CGFloat = 440
+        static let listColumnAccessibilityIdealWidth: CGFloat = 460
+        static let listColumnAccessibilityMaxWidth: CGFloat = 520
+
+        /// Anchos de la columna de lista según el tamaño del texto: con los de accesibilidad, más ancha.
+        static func listColumnWidths(isAccessibilityText: Bool) -> ListColumnWidths {
+            isAccessibilityText
+                ? ListColumnWidths(
+                    min: listColumnAccessibilityMinWidth,
+                    ideal: listColumnAccessibilityIdealWidth,
+                    max: listColumnAccessibilityMaxWidth)
+                : ListColumnWidths(min: listColumnMinWidth, ideal: listColumnIdealWidth, max: listColumnMaxWidth)
+        }
+
+        struct ListColumnWidths: Equatable {
+            let min: CGFloat
+            let ideal: CGFloat
+            let max: CGFloat
+        }
+
         /// Ancho mínimo de cada columna de una rejilla en pares (`PairedColumnsLayout`, `HeaderBandLayout`): si no
         /// caben dos, una. Un pelo por debajo del contenido de un iPhone SE (343), donde las tarjetas ya están medidas,
         /// y por encima de las 290 que quedarían con Yala IA abierto al lado.
