@@ -169,12 +169,34 @@ final class SpikeR3Harness {
         let prefix = storeURL.path
         var buffer = [CChar](repeating: 0, count: Int(PATH_MAX))
         var count = 0
-        // 1024 cubre de sobra los descriptores de un proceso de app; `_SC_OPEN_MAX` puede ser enorme.
-        for descriptor in Int32(0)..<Int32(1024) {
+        for descriptor in Int32(0)..<descriptorScanCeiling() {
             guard fcntl(descriptor, F_GETPATH, &buffer) == 0 else { continue }
             if String(cString: buffer).hasPrefix(prefix) { count += 1 }
         }
         return count
+    }
+
+    /// Hasta dónde barre `openDescriptorCountForSpikeStore`: el límite real de descriptores del proceso.
+    ///
+    /// El techo era un 1024 fijo, y no cubría «de sobra»: en CI la suite se repite tres veces en el
+    /// MISMO proceso y en la tercera pasada ya hay más de 1024 descriptores abiertos, así que los del
+    /// store nacían fuera del barrido y el control positivo leía 0 con la conexión viva (runs
+    /// 37094436816 y 37095716630). Un descriptor nuevo nunca supera el límite blando de
+    /// `RLIMIT_NOFILE`; ese límite se acota con `kern.maxfilesperproc` porque puede venir enorme, y
+    /// no baja de 1024 para no barrer menos que antes. Si alguien bajara el límite blando con
+    /// descriptores ya abiertos por encima, el control positivo del eje 1 lo canta: falla en alto.
+    static func descriptorScanCeiling() -> Int32 {
+        var ceiling: rlim_t = 1024
+        var limit = rlimit()
+        if getrlimit(RLIMIT_NOFILE, &limit) == 0 { ceiling = limit.rlim_cur }
+        var perProcess: Int32 = 0
+        var size = MemoryLayout<Int32>.size
+        if sysctlbyname("kern.maxfilesperproc", &perProcess, &size, nil, 0) == 0, perProcess > 0 {
+            ceiling = min(ceiling, rlim_t(perProcess))
+        } else {
+            ceiling = min(ceiling, 65_536)
+        }
+        return Int32(clamping: max(ceiling, 1024))
     }
 
     /// Borra los 3 archivos del store DEL SPIKE. El guard del prefijo no es ceremonia: es lo único que
