@@ -324,7 +324,10 @@ struct RecordsTabView: View {
                 }
             }
             .padding(.top, DS.Spacing.sm)
-            .yalaSafeBottomPadding()
+            // Las dos páginas que montan esta lista (Registros y Estadísticas › Registros) le ponen encima Yala IA y
+            // «+»: al final del scroll, la última fila sube por encima de los dos. Dos aunque Yala IA esté oculto —
+            // sobrar 68 pt al final no se ve; quedarse corto tapa el importe.
+            .padding(.bottom, DS.Button.fabStackClearance(buttons: 2))
         }
     }
 
