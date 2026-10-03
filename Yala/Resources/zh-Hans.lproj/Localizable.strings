@@ -4742,7 +4742,11 @@
 "settings.signOutBlockedMessage" = "还有更改尚未上传到云端，我们不希望你丢失任何内容。请检查网络连接后重试。";
 
 /* Subtitle of the existing-account sub-chooser in Welcome */
-"welcome.existing.subtitle" = "选择找回数据的方式。";
+"welcome.existing.title" = "欢迎回来！";
+"welcome.existing.subtitle" = "使用你的 Yala 账户登录，或从 iCloud 找回数据。";
+"welcome.existing.firstTimeQuestion" = "第一次使用 Yala？";
+"welcome.existing.firstTimeAction" = "从这里开始";
+"welcome.form.or" = "或";
 
 /* Card title: restore from iCloud */
 "welcome.existing.restoreTitle" = "从 iCloud 恢复";

@@ -594,6 +594,9 @@ enum DS {
         // MARK: Headings
         /// Screen titles, large headers
         static let largeTitle = Font.largeTitle.weight(.semibold)
+        /// Titular de las pantallas de entrada del Welcome: serif del sistema (New York), cálido, en el
+        /// tamaño de `largeTitle` y con Dynamic Type. Solo para el Welcome (referencia del 15-sep).
+        static let welcomeHeadline = Font.system(.largeTitle, design: .serif, weight: .bold)
         /// Section headers
         static let title = Font.title2.weight(.semibold)
         /// Subsection headers

@@ -464,4 +464,47 @@ final class WelcomeChooserUITests: XCTestCase {
         let expectation = XCTNSPredicateExpectation(predicate: predicate, object: element)
         return XCTWaiter().wait(for: [expectation], timeout: timeout) == .completed
     }
+    /// **La pregunta de pie de «Ya tengo una cuenta»** (referencia del 15-sep): «¿Es tu primera vez en Yala?
+    /// Empieza aquí» lleva a la rama de «Es mi primera vez» por la MISMA puerta que la card del Chooser
+    /// (`handleNewBranch`). Con `fakeAttestSupport` y el opt-in del chooser hay dos opciones, así que la rama
+    /// monta el sub-chooser y sus dos cards prueban que se llegó ahí y no a otro sitio.
+    ///
+    /// También fija la forma de la pantalla: los tres caminos siguen siendo BOTONES con su identificador
+    /// (ahora dentro de una sola tarjeta) y el «Volver» es la píldora con la palabra visible.
+    func testExistingChooser_footerQuestion_opensTheFirstTimeBranch() throws {
+        let app = XCUIApplication()
+        app.launchForUITest(
+            reset: true,
+            skipOnboarding: false,
+            seed: nil,
+            fakeAttestSupport: true,
+            extraArguments: ["-uitest-cloud-chooser"]
+        )
+        let heroCTA = app.buttons["welcome_hero_cta"]
+        XCTAssertTrue(heroCTA.waitForExistence(timeout: 60), "No apareció el CTA del Hero.")
+        heroCTA.tap()
+
+        let restoreBranch = app.buttons["welcome_chooser_restore"]
+        XCTAssertTrue(restoreBranch.waitForExistence(timeout: 10), "No apareció la card 'Ya tengo una cuenta'.")
+        restoreBranch.tap()
+
+        XCTAssertTrue(app.buttons["welcome_existing_cloud"].waitForExistence(timeout: 10),
+                      "No apareció el botón de Apple de la tarjeta.")
+        XCTAssertTrue(app.buttons["welcome_existing_google"].exists, "No apareció el botón de Google.")
+        XCTAssertTrue(app.buttons["welcome_existing_restore"].exists, "No apareció Restaurar desde iCloud.")
+
+        let back = app.buttons["welcome_back_button"].firstMatch
+        XCTAssertTrue(back.exists, "No apareció el botón Volver.")
+        // El chevron suelto medía 44 pt de ancho (su marco de toque); la píldora con la palabra pasa de 80.
+        XCTAssertGreaterThan(back.frame.width, 60,
+                             "El Volver volvió a ser un chevron sin palabra: la píldora lleva el texto a la vista.")
+
+        let startNew = app.buttons["welcome_existing_start_new"]
+        XCTAssertTrue(startNew.exists, "No apareció la pregunta de pie «¿Es tu primera vez en Yala?».")
+        startNew.tap()
+
+        XCTAssertTrue(app.buttons["welcome_new_cloud"].waitForExistence(timeout: 10),
+                      "La pregunta de pie no llevó a «Es mi primera vez».")
+        XCTAssertTrue(app.buttons["welcome_new_private"].exists, "Falta la opción privada en «Es mi primera vez».")
+    }
 }

@@ -103,6 +103,15 @@ paths:
   van en el título de la cabecera (`rootIdentifier`) y en el título de cada paso (`step_guide_step_<n>`, con su estado
   en `value`): uno en la raíz pisaría los de dentro.
 
+- **Una pantalla de ENTRADA del Welcome es un `WelcomeFormScreen`** (`Views/Onboarding/WelcomeForm.swift`,
+  2026-10-02, referencia del 15-sep): titular serif (`DS.Typography.welcomeHeadline`) sin logo, lo que se elige en
+  UNA tarjeta (`welcomeFormCard()` o filas con `WelcomeOptionDivider`), y fuera solo la pregunta de pie. Fondo, el
+  degradado fijo de siempre. Pesos de botón con `WelcomeFormButton`: `.filled` (blanco) para lo que se propone,
+  `.outline` para la salida sin cuenta de Yala. Donde Jürgen decidió que nada se recomienda («Es mi primera vez»),
+  mismo peso para todas. El Hero y las fases de progreso/error siguen con logo. **El «Volver» del Welcome no crece
+  más allá de `xxxLarge`** (Large Content Viewer, como una barra de navegación): a AX5 medía ~80 pt y tapaba el
+  titular y el logo de las puertas.
+
 ## Backgrounds de vista
 - TODA View root, sheet, fullScreenCover NUEVA → `.yalaScreenBackground(_:ignoredEdges:)`.
 - NUNCA aplicar `.background(theme.background)`, `.background(.thBackground)` ni default iOS sin background.

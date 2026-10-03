@@ -4730,7 +4730,11 @@
 "settings.signOutBlockedMessage" = "Há alterações que ainda não subiram para a nuvem e não queremos que você perca nada. Verifique sua conexão e tente de novo.";
 
 /* Subtitle of the existing-account sub-chooser in Welcome */
-"welcome.existing.subtitle" = "Escolha como quer recuperar seus dados.";
+"welcome.existing.title" = "Que bom te ver de novo!";
+"welcome.existing.subtitle" = "Entre com sua conta Yala ou recupere seus dados do iCloud.";
+"welcome.existing.firstTimeQuestion" = "É sua primeira vez no Yala?";
+"welcome.existing.firstTimeAction" = "Comece aqui";
+"welcome.form.or" = "ou";
 
 /* Card title: restore from iCloud */
 "welcome.existing.restoreTitle" = "Restaurar do iCloud";

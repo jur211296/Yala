@@ -4742,7 +4742,11 @@
 "settings.signOutBlockedMessage" = "まだクラウドにアップロードされていない変更があります。大切なデータを失わないよう、接続を確認してからもう一度お試しください。";
 
 /* Subtitle of the existing-account sub-chooser in Welcome */
-"welcome.existing.subtitle" = "データの復元方法を選んでください。";
+"welcome.existing.title" = "おかえりなさい！";
+"welcome.existing.subtitle" = "Yalaアカウントでサインインするか、iCloudからデータを復元します。";
+"welcome.existing.firstTimeQuestion" = "Yalaは初めてですか？";
+"welcome.existing.firstTimeAction" = "ここから始める";
+"welcome.form.or" = "または";
 
 /* Card title: restore from iCloud */
 "welcome.existing.restoreTitle" = "iCloudから復元";
