@@ -5307,7 +5307,12 @@ enum L10n {
 
         /// Sub-chooser de "Ya tengo una cuenta" (2º nivel, H4).
         enum Existing {
+            /// Titular de «Ya tengo una cuenta» (referencia del 15-sep): el «¡Hola de nuevo!» de quien vuelve.
+            static var title: String { ls("welcome.existing.title", comment: "") }
             static var subtitle: String { ls("welcome.existing.subtitle", comment: "") }
+            /// Pregunta de pie, fuera de la tarjeta, y su acción: lleva a «Es mi primera vez».
+            static var firstTimeQuestion: String { ls("welcome.existing.firstTimeQuestion", comment: "") }
+            static var firstTimeAction: String { ls("welcome.existing.firstTimeAction", comment: "") }
             static var restoreTitle: String { ls("welcome.existing.restoreTitle", comment: "") }
             static var restoreBody: String { ls("welcome.existing.restoreBody", comment: "") }
             static var cloudTitle: String { ls("welcome.existing.cloudTitle", comment: "") }
@@ -5315,6 +5320,12 @@ enum L10n {
             // Sesión 2: tercera card — sign-in con Google.
             static var googleTitle: String { ls("welcome.existing.googleTitle", comment: "") }
             static var googleBody: String { ls("welcome.existing.googleBody", comment: "") }
+        }
+
+        /// Piezas compartidas de las pantallas de entrada del Welcome (`WelcomeForm.swift`).
+        enum Form {
+            /// El «o» entre dos caminos dentro de la tarjeta.
+            static var or: String { ls("welcome.form.or", comment: "") }
         }
 
         /// Sub-chooser de "Soy nuevo" (2º nivel, A4 de D-A7): dónde viven tus datos.

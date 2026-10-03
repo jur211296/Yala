@@ -4742,7 +4742,11 @@
 "settings.signOutBlockedMessage" = "Niektóre zmiany nie zostały jeszcze przesłane do chmury, a nie chcemy, żeby coś przepadło. Sprawdź połączenie i spróbuj ponownie.";
 
 /* Subtitle of the existing-account sub-chooser in Welcome */
-"welcome.existing.subtitle" = "Wybierz, jak chcesz odzyskać swoje dane.";
+"welcome.existing.title" = "Witaj ponownie!";
+"welcome.existing.subtitle" = "Zaloguj się na konto Yala lub odzyskaj dane z iCloud.";
+"welcome.existing.firstTimeQuestion" = "Pierwszy raz w Yala?";
+"welcome.existing.firstTimeAction" = "Zacznij tutaj";
+"welcome.form.or" = "lub";
 
 /* Card title: restore from iCloud */
 "welcome.existing.restoreTitle" = "Przywróć z iCloud";

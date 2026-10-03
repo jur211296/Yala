@@ -19,6 +19,10 @@
 //  matriz de readiness (regla 3 de Presentaciones, `.claude/rules/swiftui-ds.md`). El precedente literal
 //  es `.mirrorRelaunch`.
 //
+//  **Forma de la referencia del 15-sep (`WelcomeForm.swift`)**, como sus hermanos: titular serif sin logo
+//  y los dos caminos como filas de UNA tarjeta, con el mismo peso. Se abre desde el Chooser, así que
+//  quedarse con el logo y las cards sueltas cortaba el recorrido a mitad.
+//
 
 import SwiftUI
 
@@ -54,43 +58,16 @@ struct WelcomeGroupsChooserView: View {
     private var visiblePaths: [Path] { Path.allCases }
 
     var body: some View {
-        WelcomeFlowScreen { logoTopSpacing in
+        WelcomeFormScreen(title: L10n.Welcome.Groups.title, subtitle: L10n.Welcome.Groups.subtitle) {
             VStack(spacing: 0) {
-                Spacer(minLength: logoTopSpacing)
-
-                Image("YalaLogo")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(height: 128)
-                    .colorMultiply(.white)
-                    .accessibilityHidden(true)
-
-                Spacer(minLength: DS.Spacing.lg)
-
-                VStack(spacing: DS.Spacing.sm) {
-                    Text(L10n.Welcome.Groups.title)
-                        .font(DS.Typography.title2)
-                        .foregroundStyle(.white)
-                        .multilineTextAlignment(.center)
-
-                    Text(L10n.Welcome.Groups.subtitle)
-                        .font(DS.Typography.subheadline)
-                        .foregroundStyle(.white.opacity(0.7))
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, DS.Spacing.lg)
-                }
-
-                Spacer(minLength: DS.Spacing.lg)
-
-                VStack(spacing: DS.Spacing.md) {
-                    ForEach(visiblePaths, id: \.self) { path in
-                        pathCard(path)
+                ForEach(visiblePaths, id: \.self) { path in
+                    if path != visiblePaths.first {
+                        WelcomeOptionDivider()
                     }
+                    pathCard(path)
                 }
-                .padding(.horizontal, DS.Spacing.lg)
-
-                Spacer(minLength: DS.Spacing.xl)
             }
+            .welcomeFlowCard(radius: DS.Radius.xl)
         }
         .welcomeBackButton(tint: .white, action: onBack)
     }
@@ -143,7 +120,7 @@ struct WelcomeGroupsChooserView: View {
         ZStack {
             Circle()
                 .fill(tint.opacity(0.25))
-                .frame(width: 48, height: 48)
+                .frame(width: WelcomeOptionRowMetrics.iconSize, height: WelcomeOptionRowMetrics.iconSize)
             Image(systemName: name)
                 .font(.system(size: 22, weight: .semibold))
                 .foregroundStyle(tint)
@@ -185,7 +162,6 @@ struct WelcomeGroupsChooserView: View {
             }
             .frame(minHeight: evenCardHeight, alignment: .leading)
             .contentShape(Rectangle())
-            .welcomeFlowCard(radius: DS.Radius.xl)
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)

@@ -4000,7 +4000,11 @@
 "settings.signOutBlockedMessage" = "Há alterações que ainda não subiram para a nuvem e não queremos que percas nada. Verifica a tua ligação e tenta novamente.";
 
 /* Subtitle of the existing-account sub-chooser in Welcome */
-"welcome.existing.subtitle" = "Escolhe como queres recuperar os teus dados.";
+"welcome.existing.title" = "Olá de novo!";
+"welcome.existing.subtitle" = "Inicia sessão com a tua conta Yala ou recupera os teus dados do iCloud.";
+"welcome.existing.firstTimeQuestion" = "É a tua primeira vez no Yala?";
+"welcome.existing.firstTimeAction" = "Começa aqui";
+"welcome.form.or" = "ou";
 
 /* Card title: restore from iCloud */
 "welcome.existing.restoreTitle" = "Restaurar do iCloud";
