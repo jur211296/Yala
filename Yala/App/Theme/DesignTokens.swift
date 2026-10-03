@@ -376,6 +376,16 @@ enum DS {
 
         /// Icon size inside FAB menu buttons
         static let fabMenuIconSize: CGFloat = 24
+
+        /// Margen inferior que necesita el contenido de un scroll para que su última fila suba por encima de una pila
+        /// de `buttons` botones flotantes plegada: los botones, su separación (`Spacing.md`), su margen inferior
+        /// (`Spacing.xxl`) y `Spacing.lg` de aire. Va DENTRO del contenido del scroll, que ya suma el área segura por
+        /// debajo, así que es relativo a ella y no a una altura fija. Con un botón da 96 (el `Spacing.safeBottom` de
+        /// 100 ya lo cubre); con dos (Yala IA + «+», `FABStackView`), 164.
+        static func fabStackClearance(buttons: Int) -> CGFloat {
+            let count = CGFloat(max(buttons, 1))
+            return count * fabSize + (count - 1) * Spacing.md + Spacing.xxl + Spacing.lg
+        }
     }
 
     // MARK: - Icon Badge Dimensions

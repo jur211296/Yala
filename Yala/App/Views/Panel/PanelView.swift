@@ -603,7 +603,9 @@ struct PanelView: View {
                         .padding(.top, panoramaVisible ? DS.Spacing.xxl - DS.Spacing.lg : 0)
                     }
                     .padding(.top, DS.Spacing.lg)
-                    .padding(.bottom, DS.Spacing.xxxl)
+                    // Al final del scroll están a la vista Yala IA y «+» (`showFloatingActions`): el último widget
+                    // sube por encima de los dos.
+                    .padding(.bottom, DS.Button.fabStackClearance(buttons: 2))
                 }
                 .scrollViewGlassEdges(horizontalMargin: DS.Adaptive.horizontalPadding(sizeClass))
                 .onScrollGeometryChange(for: CGFloat.self) { geom in
