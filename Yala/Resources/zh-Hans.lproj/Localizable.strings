@@ -6243,3 +6243,17 @@
 
 /* Storage · Grupos: replaces the associate/sign-in button while the groups channel is paused server-side */
 "storage.groups.channelPausedNote" = "由于我们这边的问题，群组目前暂停中。恢复后，你可以从这里继续。";
+
+/* Guía por pasos (referencia del 2026-09-15): progreso, salidas y garantías */
+"stepGuide.progress" = "第 %1$d 步，共 %2$d 步";
+"stepGuide.markDone" = "已完成";
+"stepGuide.stuck" = "遇到问题";
+"stepGuide.whatYouWillSee" = "你将看到";
+"stepGuide.phaseDone" = "已完成";
+"stepGuide.phaseActive" = "当前步骤";
+"stepGuide.phaseUpcoming" = "待完成";
+"tutorials.applePay.openShortcuts" = "打开「快捷指令」";
+"tutorials.applePay.guarantee" = "每笔付款都会以草稿形式到达：你批准之前不会记录任何内容。";
+"tutorials.applePay.pendingDrafts" = "收件箱中的 Apple Pay 付款：%d";
+"faceIDGuide.guarantee" = "Yala 永远看不到你的面容，由 iOS 负责验证。";
+"faceIDGuide.previewAction" = "要求面容 ID";

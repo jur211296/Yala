@@ -6600,6 +6600,22 @@ enum L10n {
         static var step2Detail: String { ls("faceIDGuide.step2Detail", comment: "") }
         static var step3Title: String { ls("faceIDGuide.step3Title", comment: "") }
         static var step3Detail: String { ls("faceIDGuide.step3Detail", comment: "") }
+        static var guarantee: String { ls("faceIDGuide.guarantee", comment: "") }
+        /// El nombre que iOS da a la opción del menú del icono. Se pinta en «Lo que vas a ver».
+        static var previewAction: String { ls("faceIDGuide.previewAction", comment: "") }
+    }
+
+    // MARK: - Step Guide (flujo por pasos, referencia del 2026-09-15)
+    enum StepGuide {
+        static func progress(_ current: Int, _ total: Int) -> String {
+            String(format: ls("stepGuide.progress", comment: ""), current, total)
+        }
+        static var markDone: String { ls("stepGuide.markDone", comment: "") }
+        static var stuck: String { ls("stepGuide.stuck", comment: "") }
+        static var whatYouWillSee: String { ls("stepGuide.whatYouWillSee", comment: "") }
+        static var phaseDone: String { ls("stepGuide.phaseDone", comment: "") }
+        static var phaseActive: String { ls("stepGuide.phaseActive", comment: "") }
+        static var phaseUpcoming: String { ls("stepGuide.phaseUpcoming", comment: "") }
     }
 
     // MARK: - Subscription
@@ -6793,6 +6809,11 @@ enum L10n {
         static var applePayStep1Title: String { ls("tutorials.applePay.step1.title", comment: "") }
         static var applePayStep2Title: String { ls("tutorials.applePay.step2.title", comment: "") }
         static var applePayStep3Title: String { ls("tutorials.applePay.step3.title", comment: "") }
+        static var applePayOpenShortcuts: String { ls("tutorials.applePay.openShortcuts", comment: "") }
+        static var applePayGuarantee: String { ls("tutorials.applePay.guarantee", comment: "") }
+        static func applePayPendingDrafts(_ count: Int) -> String {
+            String(format: ls("tutorials.applePay.pendingDrafts", comment: ""), count)
+        }
         // Step Descriptions
         static var createAccountStep0Desc: String { ls("tutorials.createAccount.step0.desc", comment: "") }
         static var createAccountStep1Desc: String { ls("tutorials.createAccount.step1.desc", comment: "") }

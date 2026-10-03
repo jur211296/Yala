@@ -5508,3 +5508,17 @@
 
 /* Storage · Grupos: replaces the associate/sign-in button while the groups channel is paused server-side */
 "storage.groups.channelPausedNote" = "Ahora mismo los grupos están en pausa por algo de nuestro lado. Cuando vuelvan, podrás seguir desde aquí.";
+
+/* Guía por pasos (referencia del 2026-09-15): progreso, salidas y garantías */
+"stepGuide.progress" = "Paso %1$d de %2$d";
+"stepGuide.markDone" = "Hecho";
+"stepGuide.stuck" = "Me trabé";
+"stepGuide.whatYouWillSee" = "Lo que vas a ver";
+"stepGuide.phaseDone" = "Hecho";
+"stepGuide.phaseActive" = "Paso actual";
+"stepGuide.phaseUpcoming" = "Pendiente";
+"tutorials.applePay.openShortcuts" = "Abrir Atajos";
+"tutorials.applePay.guarantee" = "Cada pago llega como borrador: nada se registra sin que lo apruebes.";
+"tutorials.applePay.pendingDrafts" = "Pagos de Apple Pay en tu bandeja: %d";
+"faceIDGuide.guarantee" = "Yala nunca ve tu rostro: lo comprueba iOS.";
+"faceIDGuide.previewAction" = "Requerir Face ID";

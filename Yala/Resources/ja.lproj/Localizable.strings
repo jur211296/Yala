@@ -6243,3 +6243,17 @@
 
 /* Storage · Grupos: replaces the associate/sign-in button while the groups channel is paused server-side */
 "storage.groups.channelPausedNote" = "こちら側の問題で、グループは現在一時停止中です。再開したら、ここから続けられます。";
+
+/* Guía por pasos (referencia del 2026-09-15): progreso, salidas y garantías */
+"stepGuide.progress" = "ステップ %1$d / %2$d";
+"stepGuide.markDone" = "できた";
+"stepGuide.stuck" = "うまくいかない";
+"stepGuide.whatYouWillSee" = "表示される画面";
+"stepGuide.phaseDone" = "完了";
+"stepGuide.phaseActive" = "現在のステップ";
+"stepGuide.phaseUpcoming" = "未完了";
+"tutorials.applePay.openShortcuts" = "ショートカットを開く";
+"tutorials.applePay.guarantee" = "支払いはドラフトとして届きます。承認するまで記録されません。";
+"tutorials.applePay.pendingDrafts" = "受信箱のApple Pay支払い：%d件";
+"faceIDGuide.guarantee" = "Yalaがあなたの顔を見ることはありません。確認するのはiOSです。";
+"faceIDGuide.previewAction" = "Face IDを要求";

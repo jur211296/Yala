@@ -95,6 +95,14 @@ paths:
   toca `toggle.switches.firstMatch`. (3) **Un `NavigationLink` en `List` pinta su chevron**: quita el propio o salen
   dos. La lista monta solo las celdas visibles, así que un XCUITest que busca filas baja hasta ellas.
 
+- **Un flujo por pasos que se hace FUERA de Yala es un `YalaStepGuide`** (`DesignSystem/StepGuide.swift`,
+  2026-10-02, referencia del 15-sep en `docs/design/referencias/`): progreso doble en la barra, cabecera con datos,
+  pasos con hilo y un solo botón (el del paso activo), «Lo que vas a ver», garantía y dos salidas al pie. Hoy lo usan
+  Apple Pay (Tutoriales) y Face ID (Seguridad). iOS no le cuenta a Yala si un paso de fuera se hizo: avanza «Hecho», o
+  la acción del paso si hacerla ES el paso (abrir Atajos, y solo si `openURL` contesta que abrió). Los ids de XCUITest
+  van en el título de la cabecera (`rootIdentifier`) y en el título de cada paso (`step_guide_step_<n>`, con su estado
+  en `value`): uno en la raíz pisaría los de dentro.
+
 ## Backgrounds de vista
 - TODA View root, sheet, fullScreenCover NUEVA → `.yalaScreenBackground(_:ignoredEdges:)`.
 - NUNCA aplicar `.background(theme.background)`, `.background(.thBackground)` ni default iOS sin background.

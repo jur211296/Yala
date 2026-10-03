@@ -6,100 +6,101 @@
 //  (mantener presionado el ícono → "Requerir Face ID"). Reemplaza al antiguo
 //  bloqueo biométrico in-app. Sin LocalAuthentication — solo educación.
 //
+//  Desde el 2026-10-02 es una guía por pasos (`YalaStepGuide`, referencia del 2026-09-15). Los tres pasos se hacen
+//  en la pantalla de inicio y iOS no le dice a Yala si el bloqueo quedó puesto, así que cada paso se marca con
+//  «Hecho». «Lo que vas a ver» es el menú del icono con la opción que hay que tocar, con el icono que la persona
+//  tiene puesto.
+//
 
 import SwiftUI
 
 struct FaceIDProtectionGuideView: View {
     @Environment(\.dismiss) private var dismiss
+    @State private var showSupport = false
 
-    private struct Step: Identifiable {
-        let id: Int
-        let title: String
-        let detail: String
+    private var steps: [StepGuideStep] {
+        [
+            StepGuideStep(id: 0, title: L10n.FaceIDGuide.step1Title, detail: L10n.FaceIDGuide.step1Detail),
+            StepGuideStep(id: 1, title: L10n.FaceIDGuide.step2Title, detail: L10n.FaceIDGuide.step2Detail),
+            StepGuideStep(id: 2, title: L10n.FaceIDGuide.step3Title, detail: L10n.FaceIDGuide.step3Detail)
+        ]
     }
 
-    private let steps: [Step] = [
-        Step(id: 1, title: L10n.FaceIDGuide.step1Title, detail: L10n.FaceIDGuide.step1Detail),
-        Step(id: 2, title: L10n.FaceIDGuide.step2Title, detail: L10n.FaceIDGuide.step2Detail),
-        Step(id: 3, title: L10n.FaceIDGuide.step3Title, detail: L10n.FaceIDGuide.step3Detail)
-    ]
+    var body: some View {
+        YalaStepGuide(
+            navigationTitle: L10n.Settings.faceIDProtection,
+            rootIdentifier: "faceid_guide_root",
+            header: StepGuideHeader(
+                systemImage: "faceid",
+                tint: DS.Semantic.successForeground,
+                title: L10n.FaceIDGuide.title,
+                lines: [L10n.FaceIDGuide.subtitle]),
+            steps: steps,
+            guarantee: L10n.FaceIDGuide.guarantee,
+            successTitle: L10n.Action.done,
+            onSuccess: { dismiss() },
+            onStuck: { showSupport = true },
+            preview: { _ in HomeScreenMenuPreview() })
+        .sheet(isPresented: $showSupport) {
+            SupportFormSheet()
+        }
+    }
+}
+
+/// Réplica pequeña del menú que sale al mantener presionado el icono de Yala: el icono que la persona tiene puesto
+/// y la opción «Requerir Face ID». El nombre de la opción es el que iOS usa en cada idioma
+/// (`faceIDGuide.previewAction`, el mismo término que el paso 2).
+private struct HomeScreenMenuPreview: View {
+    @ScaledMetric(relativeTo: .body) private var iconSize: CGFloat = 44 // A11Y-DT: @ScaledMetric
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: DS.Spacing.xxl) {
-                // Header
-                VStack(spacing: DS.Spacing.sm) {
-                    Image(systemName: "faceid")
-                        .font(DS.Typography.amountLarge)
-                        .foregroundStyle(.thAccent)
-                        .padding(.bottom, DS.Spacing.sm)
-
-                    Text(L10n.FaceIDGuide.title)
-                        .font(.title2.bold())
-                        .foregroundStyle(.thPrimaryText)
-                        .multilineTextAlignment(.center)
-
-                    Text(L10n.FaceIDGuide.subtitle)
-                        .font(DS.Typography.body)
-                        .foregroundStyle(.thSecondaryText)
-                        .multilineTextAlignment(.center)
-                }
-                .padding(.top, DS.Spacing.xxxl)
-
-                // Steps
-                VStack(spacing: DS.Spacing.none) {
-                    ForEach(steps) { step in
-                        stepRow(step)
-
-                        if step.id < steps.count {
-                            Divider()
-                                .padding(.leading, DS.Spacing.xxxl)
-                        }
-                    }
-                }
-                .solidCard(radius: DS.Radius.lg)
-
-                Spacer()
+        VStack(alignment: .leading, spacing: DS.Spacing.none) {
+            HStack(spacing: DS.Spacing.md) {
+                appIcon
+                Text(verbatim: "Yala")
+                    .font(DS.Typography.bodyBold)
+                    .foregroundStyle(.thPrimaryText)
+                Spacer(minLength: 0)
             }
-            .padding(DS.Spacing.lg)
-        }
-        .yalaScreenBackground(.subtle)
-        .navigationTitle(L10n.Settings.faceIDProtection)
-        .navigationBarTitleDisplayMode(.inline)
-        .accessibilityIdentifier("faceid_guide_root")
-        .swipeBack()
-        .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back) {
-                    dismiss()
-                }
+            .padding(DS.Spacing.md)
+
+            Divider()
+
+            HStack {
+                Text(L10n.FaceIDGuide.previewAction)
+                    .font(DS.Typography.body)
+                    .foregroundStyle(.thPrimaryText)
+                Spacer(minLength: DS.Spacing.sm)
+                Image(systemName: "faceid")
+                    .font(DS.Typography.body)
+                    .foregroundStyle(.thPrimaryText)
+                    .accessibilityHidden(true)
             }
+            .padding(DS.Spacing.md)
         }
+        .solidCard()
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("step_guide_preview")
     }
 
     @ViewBuilder
-    private func stepRow(_ step: Step) -> some View {
-        HStack(spacing: DS.Spacing.md) {
-            Image(systemName: "\(step.id).circle.fill")
-                .font(.title2)
-                .foregroundStyle(.thAccent)
+    private var appIcon: some View {
+        let current = AppIconOption.allCases.first { $0.iconName == UIApplication.shared.alternateIconName }
+            ?? .original
+        if let image = UIImage(named: current.previewImageName)?
+            .imageAsset?.image(with: UITraitCollection(userInterfaceStyle: .light)) {
+            Image(uiImage: image)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: iconSize, height: iconSize)
+                .clipShape(RoundedRectangle(cornerRadius: iconSize * 0.225, style: .continuous))
                 .accessibilityHidden(true)
-
-            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                Text(step.title)
-                    .font(DS.Typography.body)
-                    .foregroundStyle(.thPrimaryText)
-
-                Text(step.detail)
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(.thSecondaryText)
-            }
-
-            Spacer(minLength: 0)
+        } else {
+            Image(systemName: "app.fill")
+                .font(DS.Typography.title2)
+                .foregroundStyle(.thAccent)
+                .frame(width: iconSize, height: iconSize)
+                .accessibilityHidden(true)
         }
-        .padding(.horizontal, DS.FormRow.paddingH)
-        .padding(.vertical, DS.Spacing.md)
-        .contentShape(Rectangle())
-        .accessibilityElement(children: .combine)
     }
 }
