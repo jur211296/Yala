@@ -56,7 +56,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | abandoned-restore-no-longer-clears-the-session-window-clock | done | tickets/done/abandoned-restore-no-longer-clears-the-session-window-clock.md |
 | account-currency-change-leaves-scheduled-and-favorites-stale | backlog | tickets/backlog/account-currency-change-leaves-scheduled-and-favorites-stale.md |
 | account-currency-conversion-overlay-has-no-ceiling | backlog | tickets/backlog/account-currency-conversion-overlay-has-no-ceiling.md |
-| account-form-as-medium-detent-sheet | backlog | tickets/backlog/account-form-as-medium-detent-sheet.md |
+| account-form-as-medium-detent-sheet | done | tickets/done/account-form-as-medium-detent-sheet.md |
 | account-goldens-freeze-read-test-times-out | backlog | tickets/backlog/account-goldens-freeze-read-test-times-out.md |
 | accounts-need-more-visibility-in-the-ui | backlog | tickets/backlog/accounts-need-more-visibility-in-the-ui.md |
 | activation-discard-gate-exits-without-wiping-when-icloud-is-unreachable | done | tickets/done/activation-discard-gate-exits-without-wiping-when-icloud-is-unreachable.md |
@@ -643,6 +643,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | scheduled-payment-once-labeled-monthly | backlog | tickets/backlog/scheduled-payment-once-labeled-monthly.md |
 | scheduled-payment-skip-uitests-fail-at-the-end-of-the-month | backlog | tickets/backlog/scheduled-payment-skip-uitests-fail-at-the-end-of-the-month.md |
 | scheduled-payments-notif-dedup | qa | tickets/qa/scheduled-payments-notif-dedup.md |
+| secondary-currency-prompt-uitest-red-on-iphone-se | backlog | tickets/backlog/secondary-currency-prompt-uitest-red-on-iphone-se.md |
 | secondary-entry-healing-writes-owner-not-session | discarded | tickets/discarded/secondary-entry-healing-writes-owner-not-session.md |
 | secondary-groups-off-wipes-owner | discarded | tickets/discarded/secondary-groups-off-wipes-owner.md |
 | secondary-guest-exit-lock-and-outbox | discarded | tickets/discarded/secondary-guest-exit-lock-and-outbox.md |
