@@ -49,3 +49,11 @@ Idea capturada, **sin spec**.
 
 - [[accounts-need-more-visibility-in-the-ui]] — la otra mitad del mismo deseo.
 - [[panel-accounts-redesign]] — ya pedía «clic abre sheet, editar dentro del sheet».
+
+## En iPad (heredado de `cola-b-redesigns-must-hold-up-at-ipad-width`, 2026-10-03)
+
+En una ventana ancha el detent medio no se aplica: `.yalaSheetDetents(_:)` fuerza `.large` cuando la ventana es de
+ancho regular (lo decide la ventana, no el aparato: [[sheet-size-follows-the-device-not-the-window]]). Decidirlo a
+propósito al hacer este ticket, y capturar en `YalaLane-Adapt-iPad-mini` y `-iPad-Pro-13`, y en iPhone en
+`YalaLane-Adapt-iPhone-SE` y `-ProMax` con texto por defecto y AX5 (`docs/exploracion/adaptativo-ipad-duo.md` §6.2).
+Nada decide por tipo de aparato ni por orientación.

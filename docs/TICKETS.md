@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (727)
+## Index (728)
 
 | id | status | path |
 |---|---|---|
@@ -201,7 +201,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | cloudsync-account-currency-orphans-receiver-history | backlog | tickets/backlog/cloudsync-account-currency-orphans-receiver-history.md |
 | cloudsync-witnesses-survive-the-sign-out-wipe | backlog | tickets/backlog/cloudsync-witnesses-survive-the-sign-out-wipe.md |
 | cobertura-ui-diaria-cuelga-del-push | backlog | tickets/backlog/cobertura-ui-diaria-cuelga-del-push.md |
-| cola-b-redesigns-must-hold-up-at-ipad-width | backlog | tickets/backlog/cola-b-redesigns-must-hold-up-at-ipad-width.md |
+| cola-b-redesigns-must-hold-up-at-ipad-width | done | tickets/done/cola-b-redesigns-must-hold-up-at-ipad-width.md |
 | completed-mode-escalates-a-second-groups-only-device | backlog | tickets/backlog/completed-mode-escalates-a-second-groups-only-device.md |
 | consecutive-wipes-whole-convergence-ignores-the-second-division | backlog | tickets/backlog/consecutive-wipes-whole-convergence-ignores-the-second-division.md |
 | converted-amount-sweep-blind-to-input-changes | backlog | tickets/backlog/converted-amount-sweep-blind-to-input-changes.md |
@@ -437,6 +437,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | ipad-narrowing-the-window-on-groups-crashes-the-app | done | tickets/done/ipad-narrowing-the-window-on-groups-crashes-the-app.md |
 | ipad-native-app | backlog | tickets/backlog/ipad-native-app.md |
 | ipad-real-multiwindow-with-per-scene-state | qa | tickets/qa/ipad-real-multiwindow-with-per-scene-state.md |
+| ipad-records-empty-detail-half-hidden-with-chat-open | backlog | tickets/backlog/ipad-records-empty-detail-half-hidden-with-chat-open.md |
 | ipad-reports-and-search-get-a-readable-width | backlog | tickets/backlog/ipad-reports-and-search-get-a-readable-width.md |
 | ipad-settings-sheet-size-depends-on-where-it-opens | backlog | tickets/backlog/ipad-settings-sheet-size-depends-on-where-it-opens.md |
 | ipad-sidebar-and-list-detail-for-records-and-planning | qa | tickets/qa/ipad-sidebar-and-list-detail-for-records-and-planning.md |
