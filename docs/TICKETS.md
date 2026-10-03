@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (723)
+## Index (726)
 
 | id | status | path |
 |---|---|---|
@@ -65,6 +65,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | activation-restore-start-fresh-keeps-the-imported-rows | done | tickets/done/activation-restore-start-fresh-keeps-the-imported-rows.md |
 | activation-resume-returns-to-restore-on-an-emptied-zone | backlog | tickets/backlog/activation-resume-returns-to-restore-on-an-emptied-zone.md |
 | activation-start-fresh-drops-group-settlement-legs | done | tickets/done/activation-start-fresh-drops-group-settlement-legs.md |
+| adjustment-hides-new-month-activity-from-available-and-widget | done | tickets/done/adjustment-hides-new-month-activity-from-available-and-widget.md |
 | adopt-after-the-cutover-needs-a-marker-the-leader-never-exported | done | tickets/done/adopt-after-the-cutover-needs-a-marker-the-leader-never-exported.md |
 | adopt-claim-stays-parked-with-no-ceiling | done | tickets/done/adopt-claim-stays-parked-with-no-ceiling.md |
 | adopt-effect-after-the-cloud-mode-retries-silently | backlog | tickets/backlog/adopt-effect-after-the-cloud-mode-retries-silently.md |
