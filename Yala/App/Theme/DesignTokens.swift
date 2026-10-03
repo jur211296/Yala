@@ -495,6 +495,21 @@ enum DS {
             return max(base, ((containerWidth - readableWidth) / 2).rounded(.down))
         }
 
+        /// Margen de cada lado de una lista agrupada de ajustes, contando lo que la tapa por ese lado: el margen
+        /// legible MÁS el área segura de ese lado. Hace falta sumarla a mano porque el sistema no lo hace: con
+        /// `contentMargins` se queda con el mayor de los dos, y al lado de la columna de lista de un split (área
+        /// segura de 400 pt en el iPad mini girado) el bloque arrancaba pegado a ella (medido 2026-10-03).
+        /// `containerWidth` es el que mide la vista, que ya viene sin el área segura.
+        static func readableListInsets(
+            containerWidth: CGFloat,
+            safeLeading: CGFloat,
+            safeTrailing: CGFloat,
+            sizeClass: UserInterfaceSizeClass?
+        ) -> (leading: CGFloat, trailing: CGFloat) {
+            let margin = readableListMargin(containerWidth: containerWidth, sizeClass: sizeClass)
+            return (max(safeLeading, 0) + margin, max(safeTrailing, 0) + margin)
+        }
+
         /// Anchos de la columna de lista de un `NavigationSplitView` (Registros, Planificación). El mínimo
         /// es el ancho del iPhone más estrecho (375): las filas ya están medidas ahí. Sin tope propio el split
         /// la deja en ~280-320 y las filas de presupuesto parten el importe en tres líneas (medido 2026-09-29).

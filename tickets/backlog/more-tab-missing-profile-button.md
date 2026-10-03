@@ -20,3 +20,8 @@ Hoy el perfil solo es evidente desde Panel; en Más hay que buscarlo. Misma chro
 ## Pista
 
 Reusar el control de perfil del Panel en la barra de Más (trailing), sin duplicar lógica de sesión/cuenta.
+
+## En iPad (heredado de `cola-b-redesigns-must-hold-up-at-ipad-width`, 2026-10-03)
+
+En ventana ancha Más deja de ser una pantalla: sus páginas van en la barra lateral. No invertir en rediseñar Más como
+pantalla para el iPad; lo que se haga aquí es para la barra de pestañas del iPhone (ancho compacto).

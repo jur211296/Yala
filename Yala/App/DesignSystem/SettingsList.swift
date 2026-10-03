@@ -26,7 +26,9 @@
 //    que la fila no dice. Si una fila necesita su ayuda y sus vecinas no, va al final del bloque o en un
 //    bloque propio sin cabecera (como «Escritura flotante» en iOS).
 //  - **Ancho legible.** En una ventana ancha el contenido no pasa de `DS.Adaptive.readableWidth` y queda
-//    centrado; en estrecha, el margen de siempre. Lo decide el ancho medido (`readableListMargin`).
+//    centrado; en estrecha, el margen de siempre. Lo decide el ancho medido (`readableListMargin`), y el margen
+//    se cuenta desde lo que tapa cada lado —la columna de lista en un split, la isla del iPhone girado—
+//    (`readableListInsets`).
 //
 
 import SwiftUI
@@ -35,11 +37,28 @@ import SwiftUI
 
 struct YalaSettingsList<Content: View>: View {
     @Environment(\.horizontalSizeClass) private var sizeClass
-    @State private var containerWidth: CGFloat = 0
+    @State private var geometry = ListGeometry()
     private let content: Content
 
     init(@ViewBuilder content: () -> Content) {
         self.content = content()
+    }
+
+    /// Lo que se mide de la lista: su ancho y el área segura de cada lado (la columna de lista de un split, la isla
+    /// del iPhone girado).
+    private nonisolated struct ListGeometry: Equatable, Sendable {
+        var width: CGFloat = 0
+        var safeLeading: CGFloat = 0
+        var safeTrailing: CGFloat = 0
+    }
+
+    private var insets: (leading: CGFloat, trailing: CGFloat) {
+        DS.Adaptive.readableListInsets(
+            containerWidth: geometry.width,
+            safeLeading: geometry.safeLeading,
+            safeTrailing: geometry.safeTrailing,
+            sizeClass: sizeClass
+        )
     }
 
     var body: some View {
@@ -48,15 +67,20 @@ struct YalaSettingsList<Content: View>: View {
         }
         .listStyle(.insetGrouped)
         .scrollContentBackground(.hidden)
-        .contentMargins(
-            .horizontal,
-            DS.Adaptive.readableListMargin(containerWidth: containerWidth, sizeClass: sizeClass),
-            for: .scrollContent
-        )
-        .onGeometryChange(for: CGFloat.self) { proxy in
-            proxy.size.width
-        } action: { width in
-            containerWidth = width
+        // Cada lado: margen legible + área segura de ese lado. `contentMargins` a secas no basta: el sistema se queda
+        // con el MAYOR entre él y el área segura, y junto a la columna de lista de un split el bloque arrancaba pegado
+        // a ella (medido 2026-10-03). `safeAreaPadding` tampoco: cambia el margen interior de las filas también en el
+        // iPhone, y en el Pro Max girado el bloque seguía pegado.
+        .contentMargins(.leading, insets.leading, for: .scrollContent)
+        .contentMargins(.trailing, insets.trailing, for: .scrollContent)
+        .onGeometryChange(for: ListGeometry.self) { proxy in
+            ListGeometry(
+                width: proxy.size.width,
+                safeLeading: proxy.safeAreaInsets.leading,
+                safeTrailing: proxy.safeAreaInsets.trailing
+            )
+        } action: { measured in
+            geometry = measured
         }
     }
 }

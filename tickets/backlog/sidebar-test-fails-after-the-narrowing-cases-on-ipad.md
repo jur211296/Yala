@@ -21,6 +21,11 @@ source: "gate de floating-buttons-cover-row-amounts-on-ipad-landscape, 2026-10-0
 - Solo: **2 de 2 en verde**, con el simulador ya caliente.
 - Centinela (`sim-libre.sh --vigilar`) a 0 en las cinco corridas: nadie corrió encima.
 
+- **Cuarta, el mismo día** (gate de `cola-b-redesigns-must-hold-up-at-ipad-width`, árbol sobre `0566959d0` de `2.1` con
+  ese PR encima): suite entera en rojo con el mismo mensaje y el mismo orden; `test_root…` solo, verde. Centinela a 0
+  en las dos. Dato de paso: el simulador venía de `simctl erase` y los casos de estrechar **no se saltaron** (103, 53 y
+  33 s), así que «Apps en ventanas» sobrevive a un `erase` (el §6.2 de la receta habla de simuladores *recreados*).
+
 ## Lo que se sabe, y lo que no
 
 Medido: en esas corridas los tres casos `test_narrowingTheWindow_*` **no se saltaron** (100+ s cada uno: el simulador
