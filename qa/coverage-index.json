@@ -767,7 +767,7 @@
       ],
       "scenarioIDs": [],
       "classification": "manual",
-      "coverage": "manual + unit:YalaTests/BiometricKeychainCleanupTests (idempotencia cleanup + delete de keys) + xcuitest:YalaUITests/SecurityFaceIDGuideUITests (fila Seguridad → FaceIDProtectionGuideView)",
+      "coverage": "manual + unit:YalaTests/BiometricKeychainCleanupTests (idempotencia cleanup + delete de keys) + xcuitest:YalaUITests/SecurityFaceIDGuideUITests (fila Seguridad → FaceIDProtectionGuideView) + 2026-10-02 (`step-flows-should-match-the-sep15-reference`): la guía es una guía por pasos (`YalaStepGuide`) — xcuitest:YalaUITests/StepGuideUITests#test_faceIDGuide_doneAdvancesTheOnlyActiveStep («Hecho» avanza el único paso accionable y «Listo» vuelve a Ajustes).",
       "owner": "",
       "lastVerified": "2026-10-02"
     },
@@ -1755,7 +1755,7 @@
       "classification": "agentic",
       "coverage": "device-qa",
       "owner": "",
-      "lastVerified": "2026-09-13"
+      "lastVerified": "2026-10-02"
     },
     {
       "area": "onboarding-redesign-flow",
@@ -3268,6 +3268,22 @@
       "scenarioIDs": [],
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/PersonalizationGroupedListUITests + unit:YalaTests/SettingsListLayoutTests — 2026-10-02 (`settings-redesign-as-grouped-lists-like-ios`): Ajustes como lista agrupada del sistema (`YalaSettingsList`). El XCUITest fija que Personalización es una List (sus filas cuelgan de un UICollectionView) y que ningún ajuste se perdió; el unit, el tope legible de 700 por ancho medido. Densidad y bloques blancos sobre fondo no blanco: device-qa del ticket.",
+      "owner": "",
+      "lastVerified": "2026-10-02"
+    },
+    {
+      "area": "step-guides",
+      "codeGlobs": [
+        "Yala/App/DesignSystem/StepGuide.swift",
+        "Yala/App/Logic/StepGuideLogic.swift",
+        "Yala/App/Views/Settings/ApplePayAutomationGuideView.swift",
+        "Yala/App/Views/Settings/FaceIDProtectionGuideView.swift",
+        "Yala/App/Views/Settings/TutorialsListView.swift",
+        "Yala/App/Models/TutorialCatalog.swift"
+      ],
+      "scenarioIDs": [],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/StepGuideUITests + unit:YalaTests/StepGuideLogicTests — 2026-10-02 (`step-flows-should-match-the-sep15-reference`): las guías por pasos con la forma de la referencia del 15-sep (progreso doble, un solo paso accionable, «Lo que vas a ver», garantía, dos salidas). Apple Pay (Tutoriales) ya no es el carrusel de vídeo; Face ID avanza con «Hecho». El unit fija el estado (paso activo, barras, toques tardíos); el XCUITest, el antes → después en las dos. Abrir Atajos y el aspecto en un iPhone real: device-qa del ticket.",
       "owner": "",
       "lastVerified": "2026-10-02"
     }

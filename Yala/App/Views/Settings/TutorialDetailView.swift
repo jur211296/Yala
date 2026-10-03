@@ -279,7 +279,9 @@ struct TutorialDetailView: View {
 
 // MARK: - Looping Video Player
 
-private struct LoopingVideoView: UIViewRepresentable {
+// Sin `private`: la guía por pasos de Apple Pay (`ApplePayAutomationGuideView`) enseña el vídeo del paso activo como
+// «Lo que vas a ver».
+struct LoopingVideoView: UIViewRepresentable {
     let step: TutorialStep
     @Binding var isPlaying: Bool
     var loopEnabled: Bool = true
@@ -306,7 +308,7 @@ private struct LoopingVideoView: UIViewRepresentable {
     }
 }
 
-private final class LoopingPlayerUIView: UIView {
+final class LoopingPlayerUIView: UIView {
     private var playerLayer = AVPlayerLayer()
     private var player: AVPlayer?
     private var currentURL: URL?

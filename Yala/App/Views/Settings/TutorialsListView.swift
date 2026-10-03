@@ -53,7 +53,13 @@ struct TutorialsListView: View {
             }
         }
         .navigationDestination(for: Tutorial.self) { tutorial in
-            TutorialDetailView(tutorial: tutorial)
+            // Apple Pay se hace fuera de Yala, en Atajos: es una guía por pasos (referencia del 2026-09-15), no el
+            // carrusel de vídeo de los tutoriales que se hacen dentro de la app.
+            if tutorial.usesStepGuide {
+                ApplePayAutomationGuideView()
+            } else {
+                TutorialDetailView(tutorial: tutorial)
+            }
         }
     }
 
@@ -67,6 +73,7 @@ struct TutorialsListView: View {
                 NavigationLink(value: tutorial) {
                     tutorialRow(tutorial)
                 }
+                .accessibilityIdentifier("tutorial_row_\(tutorial.rawValue)")
             }
         }
     }

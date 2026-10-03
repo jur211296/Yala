@@ -1600,6 +1600,7 @@ struct ProfileView: View {
                     profileRow(
                         icon: "book.fill", title: L10n.Settings.tutorials,
                         iconColor: .electricIndigo, destination: .tips)
+                    .accessibilityIdentifier("profile_help_tutorials")
                     .coachMarkAnchor("settingsTutorials")
                     SubsectionDivider()
                 }
