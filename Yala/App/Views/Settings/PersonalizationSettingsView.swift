@@ -82,6 +82,9 @@ struct PersonalizationSettingsView: View {
                         .foregroundStyle(.thSecondaryText)
                         .multilineTextAlignment(.center)
                 }
+                // Aire lateral: la fila no lleva márgenes, y con el texto a punto de caber en una línea SwiftUI recorta los bordes
+                // de los glifos (medido 2026-10-03: Tutoriales en el SE en vertical, Personalización en el Pro Max girado).
+                .padding(.horizontal, DS.Spacing.sm)
                 .frame(maxWidth: .infinity)
                 .padding(.top, DS.Spacing.lg)
                 .listRowBackground(Color.clear)

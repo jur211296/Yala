@@ -62,4 +62,38 @@ struct SettingsListLayoutTests {
         #expect(DS.Adaptive.readableListMargin(containerWidth: threshold, sizeClass: .regular) == DS.Spacing.xxxl)
         #expect(DS.Adaptive.readableListMargin(containerWidth: threshold + 2, sizeClass: .regular) == DS.Spacing.xxxl + 1)
     }
+
+    // MARK: - Lo que tapa cada lado: área segura
+
+    /// Al lado de la columna de lista de un split (iPad mini girado, medido 2026-10-03: 733 pt de ancho y 400 de área
+    /// segura a la izquierda), el margen se cuenta desde la columna y no desde el borde de la ventana. El sistema se
+    /// quedaba con el mayor de los dos y el bloque arrancaba pegado a la columna.
+    @Test func besideTheListColumn_marginStartsAtTheColumnEdge() {
+        let insets = DS.Adaptive.readableListInsets(
+            containerWidth: 733, safeLeading: 400, safeTrailing: 0, sizeClass: .regular)
+        #expect(insets.leading == 400 + DS.Spacing.xxxl)
+        #expect(insets.trailing == DS.Spacing.xxxl)
+    }
+
+    /// Sin nada que tape (iPhone en vertical, hoja de Ajustes), los márgenes de siempre: no cambia nada.
+    @Test(arguments: [(CGFloat(375), UserInterfaceSizeClass.compact), (440, .compact), (1024, .regular)])
+    func withoutSafeArea_keepsTheReadableMargin(width: CGFloat, sizeClass: UserInterfaceSizeClass) {
+        let margin = DS.Adaptive.readableListMargin(containerWidth: width, sizeClass: sizeClass)
+        let insets = DS.Adaptive.readableListInsets(
+            containerWidth: width, safeLeading: 0, safeTrailing: 0, sizeClass: sizeClass)
+        #expect(insets.leading == margin)
+        #expect(insets.trailing == margin)
+    }
+
+    /// Cada lado suma SU área segura (la isla del iPhone girado cae a un lado u otro), y lo que queda entre los dos
+    /// márgenes sigue sin pasar de 700.
+    @Test func eachSideAddsItsOwnSafeArea_andContentStaysReadable() {
+        let width: CGFloat = 768
+        let insets = DS.Adaptive.readableListInsets(
+            containerWidth: width, safeLeading: 504, safeTrailing: 59, sizeClass: .regular)
+        let margin = DS.Adaptive.readableListMargin(containerWidth: width, sizeClass: .regular)
+        #expect(insets.leading == 504 + margin)
+        #expect(insets.trailing == 59 + margin)
+        #expect(width - 2 * margin <= DS.Adaptive.readableWidth)
+    }
 }

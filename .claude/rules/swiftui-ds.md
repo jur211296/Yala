@@ -191,6 +191,17 @@ paths:
   iPhone no cambia de hoja a empuje. En columna, Editar abre el editor directo; el encadenado «cerrar hoja → editor»
   solo existe en la hoja.
 - Ancho legible: `DS.Adaptive.readableWidth` (700) en el contenido de una columna de detalle.
+- **Una `List` con `contentMargins` propios, en la columna de detalle, arranca pegada a la columna de lista**
+  (medido 2026-10-03, iPad mini y Pro 13, Pro Max girado). Junto a la columna la lista tiene área segura (400 pt en el
+  mini girado) y el sistema se queda con el MAYOR entre ese área y el margen, no con la suma: el margen desaparece justo
+  donde hay columna al lado. Un `ScrollView` con `contentMargins` sí los suma (el detalle de Grupos deja su aire). La
+  salida, en `YalaSettingsList`: medir el área segura de cada lado y pasarle a `contentMargins` área + margen
+  (`DS.Adaptive.readableListInsets`). Dos que NO valen: `safeAreaPadding` (cambia 2 pt el margen interior de las filas
+  también en el iPhone en vertical, y en el Pro Max girado seguía pegada) y rehacer la lista con `.id` cuando cambia el
+  área segura (no arregla nada). Y un efecto de la celda más estrecha: una fila sin márgenes propios
+  (`.listRowInsets(EdgeInsets())`) con un texto que casi cabe en una línea sale con los bordes de los glifos cortados
+  (la cabecera de Personalización a 384 pt, y ya en 2.1 la de Tutoriales en el SE en vertical): esas cabeceras llevan
+  `DS.Spacing.sm` de aire lateral.
 - **La lista se aparta sola cuando lo abierto no cabe legible a su lado** (fase 2, 2026-09-29): con algo abierto en el
   detalle y el split por debajo de dos anchos de iPhone (750), `ListDetailSplit` pasa a `.detailOnly`
   (`ListDetailOverlayLogic.listYieldsToDetail`, con test); con «Elige un…» la lista se queda. Lo dispara abrir Yala IA
