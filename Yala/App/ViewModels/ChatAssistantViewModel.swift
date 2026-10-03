@@ -66,7 +66,14 @@ final class ChatAssistantViewModel {
         let now = Date.now
         let messages = [
             ChatMessage(role: .user, text: "¿Cuánto gasté en transporte este mes?", timestamp: now),
-            ChatMessage(role: .assistant, text: "Este mes llevas S/ 120 en transporte.", timestamp: now),
+            // Con negritas y dos párrafos, como responde el asistente (reglas 5 y 7 de su prompt): así la captura del
+            // hilo enseña la jerarquía del texto dentro de la burbuja.
+            ChatMessage(
+                role: .assistant,
+                text: "Este mes llevas **S/ 120** en Transporte, un **20% más** que el mes pasado (antes S/ 100).\n\n"
+                    + "La mayor parte es **Taxi**: S/ 85 en 6 viajes.",
+                timestamp: now
+            ),
         ]
         do {
             let data = try JSONEncoder().encode(ChatPersistedSession(messages: messages, allTurns: []))
@@ -75,6 +82,13 @@ final class ChatAssistantViewModel {
             print("ChatAssistantViewModel: seedTodayConversationForUITest failed: \(error)")
         }
     }
+
+    /// `-uitest-chat-suggestions`: las tres sugerencias del chat vacío, fijas.
+    private static let uiTestSuggestions = [
+        ChatSuggestion(text: "¿Cómo se distribuyeron mis gastos en Hogar y Personal?", icon: "chart.pie", type: .biggestCategory),
+        ChatSuggestion(text: "¿Cuánto gasté en Restaurantes y Delivery este mes?", icon: "cart", type: .topMerchant),
+        ChatSuggestion(text: "¿Mi presupuesto de Compras Super fue suficiente?", icon: "dollarsign.circle", type: .activeBudget),
+    ]
     #endif
 
     // MARK: - Setup
@@ -109,6 +123,13 @@ final class ChatAssistantViewModel {
     /// vía `suggestionsFailed` para que la View muestre estado de no disponible.
     /// La View se encarga de deshabilitar funciones y ofrecer "Reintentar".
     func loadSuggestions() async {
+        #if DEBUG
+        if UITestHooks.chatSuggestions {
+            suggestionsFailed = false
+            suggestions = Self.uiTestSuggestions
+            return
+        }
+        #endif
         guard let context = modelContext else { return }
 
         suggestionsLoading = true

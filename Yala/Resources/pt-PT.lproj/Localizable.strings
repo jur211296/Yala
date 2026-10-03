@@ -1016,7 +1016,6 @@
 "category.vehicle" = "Veículo";
 "chat.assistantName" = "Yala IA";
 "chat.contextHint" = "Posso lembrar da sua última pergunta para dar seguimento";
-"chat.contextMemory" = "Yala IA lembra %d mensagens";
 "chat.dailyLimitReached" = "Você usou suas perguntas de hoje. Volte amanhã!";
 "chat.dailyResetSubtitle" = "Esta conversa apaga-se ao mudar o dia.";
 "chat.daySeparatorToday" = "HOJE";

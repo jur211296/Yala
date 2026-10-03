@@ -2850,9 +2850,6 @@ enum L10n {
         static var noVoiceDetected: String { ls("chat.noVoiceDetected", comment: "") }
         static var unavailable: String { ls("chat.unavailable", comment: "") }
         static var retry: String { ls("chat.retry", comment: "") }
-        static func contextMemory(_ count: Int) -> String {
-            String(format: ls("chat.contextMemory", comment: ""), count)
-        }
 
         enum Topics {
             static var title: String { ls("chat.topics.title", comment: "") }

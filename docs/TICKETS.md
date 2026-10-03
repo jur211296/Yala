@@ -85,7 +85,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | adopt-with-existing-session-skips-the-unreadable-journal-guard | backlog | tickets/backlog/adopt-with-existing-session-skips-the-unreadable-journal-guard.md |
 | adr-013-does-not-know-yala-has-its-own-commit-msg | backlog | tickets/backlog/adr-013-does-not-know-yala-has-its-own-commit-msg.md |
 | after-session-redesign-review-widgets-siri-applepay-and-web-copy | backlog | tickets/backlog/after-session-redesign-review-widgets-siri-applepay-and-web-copy.md |
-| ai-chat-reads-heavier-than-a-messaging-app | backlog | tickets/backlog/ai-chat-reads-heavier-than-a-messaging-app.md |
+| ai-chat-reads-heavier-than-a-messaging-app | qa | tickets/qa/ai-chat-reads-heavier-than-a-messaging-app.md |
 | ai-recommended-budgets | backlog | tickets/backlog/ai-recommended-budgets.md |
 | alternating-definitive-causes-never-reach-the-short-ceiling | done | tickets/done/alternating-definitive-causes-never-reach-the-short-ceiling.md |
 | an-incomplete-inventory-reads-as-the-whole-corpus | done | tickets/done/an-incomplete-inventory-reads-as-the-whole-corpus.md |

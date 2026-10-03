@@ -3398,7 +3398,6 @@
 "chat.unavailable" = "Yala KI ist gerade nicht verfügbar. Versuche es in ein paar Minuten erneut.";
 "chat.retry" = "Erneut versuchen";
 "chat.noVoiceDetected" = "Kein Audio erkannt. Versuche es erneut.";
-"chat.contextMemory" = "Yala KI erinnert sich an %d Nachrichten";
 
 // MARK: - Chat Draft (Yala IA Registrar)
 "chat.draft.chipExpense" = "Ausgabe";
