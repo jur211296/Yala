@@ -11,9 +11,9 @@ struct TutorialsListView: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: DS.Spacing.xxl) {
-                    // Header
+        YalaSettingsList {
+                // Header
+                Section {
                     VStack(spacing: DS.Spacing.sm) {
                         Image(systemName: "book.fill")
                             .font(DS.Typography.amountLarge)
@@ -29,15 +29,17 @@ struct TutorialsListView: View {
                             .foregroundStyle(.thSecondaryText)
                             .multilineTextAlignment(.center)
                     }
-                    .padding(.top, DS.Spacing.xxxl)
-
-                    // Sections
-                    ForEach(TutorialCategory.allCases) { category in
-                        categorySection(category)
-                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, DS.Spacing.lg)
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets())
+                    .listRowSeparator(.hidden)
                 }
-                .padding(.horizontal, DS.Spacing.lg)
-                .padding(.bottom, DS.Spacing.safeBottom)
+
+                // Sections
+                ForEach(TutorialCategory.allCases) { category in
+                    categorySection(category)
+                }
             }
         .yalaScreenBackground(.subtle)
         .navigationTitle(L10n.Settings.tutorials)
@@ -59,32 +61,13 @@ struct TutorialsListView: View {
 
     @ViewBuilder
     private func categorySection(_ category: TutorialCategory) -> some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-            Text(category.title)
-                .font(DS.Typography.headline)
-                .foregroundStyle(.thSecondaryText)
-                .textCase(.uppercase)
-                .padding(.horizontal, DS.Spacing.xs)
-
-            VStack(spacing: DS.Spacing.none) {
-                ForEach(Array(category.tutorials.enumerated()), id: \.element) { index, tutorial in
-                    NavigationLink(value: tutorial) {
-                        tutorialRow(tutorial)
-                    }
-                    .buttonStyle(.plain)
-
-                    if index < category.tutorials.count - 1 {
-                        Divider()
-                            .padding(.horizontal, DS.Spacing.lg)
-                    }
+        YalaSettingsSection(category.title) {
+            // En una `List`, el `NavigationLink` pinta su propio chevron: la fila ya no lleva el suyo.
+            ForEach(category.tutorials) { tutorial in
+                NavigationLink(value: tutorial) {
+                    tutorialRow(tutorial)
                 }
             }
-            .background(.thCard)
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.lg)
-                    .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-            )
         }
     }
 
@@ -119,13 +102,7 @@ struct TutorialsListView: View {
                     .font(DS.Typography.body)
                     .foregroundStyle(.thAccent)
             }
-
-            Image(systemName: "chevron.right")
-                .font(DS.Typography.labelSmall)
-                .foregroundStyle(.thSecondaryText)
         }
-        .padding(.horizontal, DS.Spacing.lg)
-        .padding(.vertical, DS.Spacing.md)
         .contentShape(Rectangle())
     }
 }
