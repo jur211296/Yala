@@ -361,6 +361,11 @@ final class UITestHooks {
     /// probar que redimensionar la ventana con Yala IA abierto no la pierde.
     nonisolated static var chatConversation: Bool { hasArg("-uitest-chat-conversation") }
 
+    /// `-uitest-chat-suggestions`: el chat vacío enseña tres sugerencias fijas en vez de pedirlas al LLM. Sin red las
+    /// sugerencias fallan, y con el fallo la caja de escribir se apaga: así el XCUITest y las capturas del chat vacío
+    /// no dependen de la red.
+    nonisolated static var chatSuggestions: Bool { hasArg("-uitest-chat-suggestions") }
+
     /// `-uitest-invite-onboarding`: presenta el cover de GroupInviteOnboarding directo
     /// (sin CKShare real — no funciona en sim). Combinar con `-uitest-join-phase` para
     /// congelar la fase del GroupJoinIntentTracker y testear cada step determinista.

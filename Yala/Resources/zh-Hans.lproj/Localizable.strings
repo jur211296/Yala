@@ -3409,7 +3409,6 @@
 "chat.unavailable" = "Yala AI 现在不可用。请几分钟后重试。";
 "chat.retry" = "重试";
 "chat.noVoiceDetected" = "没有检测到声音。请重试。";
-"chat.contextMemory" = "Yala AI 记住 %d 条消息";
 
 // MARK: - Chat Draft (Yala AI Register)
 "chat.draft.chipExpense" = "支出";

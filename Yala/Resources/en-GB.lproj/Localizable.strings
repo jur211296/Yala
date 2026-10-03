@@ -1095,7 +1095,6 @@
 "category.vehicle" = "Vehicle";
 "chat.assistantName" = "Yala AI";
 "chat.contextHint" = "I can remember your last question for follow-ups";
-"chat.contextMemory" = "Yala AI remembers %d messages";
 "chat.dailyLimitReached" = "You've used your questions for today. Come back tomorrow!";
 "chat.dailyResetSubtitle" = "This conversation clears when the day changes.";
 "chat.daySeparatorToday" = "TODAY";

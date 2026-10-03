@@ -3409,7 +3409,6 @@
 "chat.unavailable" = "Yala AI is op dit moment niet beschikbaar. Probeer het over een paar minuten opnieuw.";
 "chat.retry" = "Opnieuw proberen";
 "chat.noVoiceDetected" = "Ik heb geen audio gedetecteerd. Probeer opnieuw.";
-"chat.contextMemory" = "Yala AI onthoudt %d berichten";
 
 // MARK: - Chat Draft (Yala AI Register)
 "chat.draft.chipExpense" = "Uitgave";

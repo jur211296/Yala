@@ -1,9 +1,11 @@
 ---
 id: ai-chat-reads-heavier-than-a-messaging-app
-status: backlog
+status: qa
 priority: medium
 area: "chat, yala-ia, design-system"
 created: 2026-09-15
+updated: 2026-10-02
+qa-status: needs-testing
 source: Jürgen, comparación de capturas Yala IA vs chat de GrokBot (2026-09-15)
 ---
 
@@ -67,3 +69,47 @@ texto, no por el color de la burbuja.
 ## Nota Jürgen (2026-09-17)
 
 Al pedir «rediseño de Siri AI», se refería a **este** ticket (chat Yala AI en la app). No es Siri del sistema. El stub `siri-ai-visual-redesign` quedó descartado.
+
+## Hecho (2026-10-02)
+
+Decisiones de Jürgen (2026-10-02, las tres con la recomendada): sugerencias **dentro** de la burbuja del saludo;
+los dos avisos **juntos bajo la fecha**, arriba del hilo; «Reiniciar contexto» en **una sola línea**.
+
+Qué cambia para quien usa Yala IA:
+
+- El chat vacío es una sola burbuja blanca: el saludo y, debajo, las tres sugerencias como líneas tocables, sin
+  icono ni flecha.
+- Fecha, «se borra al cambiar de día» y «puede cometer errores» van en un único bloque pequeño arriba del hilo.
+  Debajo de la caja de escribir ya no hay nada.
+- Las burbujas tienen más radio y más aire; una respuesta con dos párrafos se pinta en dos párrafos, con la negrita
+  que ya pedía el prompt y las cifras con dígitos de ancho fijo.
+- La caja de escribir es una píldora: el «+» de Temas fuera, a la izquierda; dentro, el texto y el micro, que se
+  cambia por el botón de enviar en cuanto hay algo escrito.
+- Tras cada respuesta, «Reiniciar contexto» en una línea gris, sin el contador de mensajes.
+- Hilo y caja con tope de ancho legible (700 pt) centrados cuando el contenedor es ancho.
+
+Fuera de alcance, a propósito: la cabecera sigue siendo la barra nativa (la píldora con icono de GrokBot pediría un
+icono de Yala IA que no existe), sin avatar por mensaje, el prompt sin tocar y las tarjetas de borrador dentro del
+hilo, que son funcionales.
+
+Capturas antes/después (mismos datos, iPhone 17 Pro y iPad Pro 13 del carril, iOS 27.0) en
+`docs/design/referencias/2026-10-02-chat-yala-ia/`. Contando piezas en el chat vacío: antes 8 (saludo, aviso,
+3 tarjetas, caja con «+ Temas», micro y enviar, aviso de abajo); después 4 (bloque de avisos, una burbuja, «+»,
+píldora con micro).
+
+Tests: `YalaTests/ChatBubbleTextTests` (párrafos) y `YalaUITests/Flows/ChatMessagingLayoutUITests` (avisos arriba y
+ninguno bajo la caja; «+» fuera y micro → enviar; párrafos separados), verdes en iPhone y en iPad. Seam nuevo
+`-uitest-chat-suggestions` para que el chat vacío no dependa de la red.
+
+## Guion de QA en el iPhone (Jürgen)
+
+1. Instala el build de TestFlight que traiga este cambio y abre Yala.
+2. Toca «Pregúntale a Yala» (o la entrada IA del Panel). Comprueba: arriba, la fecha y los dos avisos en gris
+   pequeño; debajo, UNA burbuja blanca con el saludo y tres preguntas separadas por líneas finas.
+3. Toca una de las tres preguntas: se envía como si la hubieras escrito.
+4. Mira la respuesta: si trae dos párrafos, salen separados; las cifras clave en negrita.
+5. En la caja de abajo: el «+» va fuera, a la izquierda, y abre Temas. Con la caja vacía ves el micro; escribe una
+   letra y el micro se cambia por el botón de enviar; bórrala y vuelve el micro.
+6. Debajo de la caja no debe quedar ningún texto gris.
+7. Repite con el texto del sistema al máximo (Ajustes › Accesibilidad › Pantalla y tamaño del texto): las tres
+   preguntas se parten en varias líneas sin cortarse.

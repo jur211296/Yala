@@ -19,8 +19,10 @@ ahora no haya que rehacerlo en la fase 1 de iPad.
       ancha, y `DS.Adaptive.horizontalPadding` como margen. Hoy tiene **un solo uso** en `Yala/`.
 - [ ] [[settings-redesign-as-grouped-lists-like-ios]]: con `List` agrupada del sistema, no con tarjetas
       propias. Así la misma lista sirve como columna de una `NavigationSplitView` en iPad.
-- [ ] [[ai-chat-reads-heavier-than-a-messaging-app]]: la vista del chat no debe asumir que vive en una
-      hoja (sin tirador ni cierre dentro del hilo). En iPad irá en un `.inspector`.
+- [x] [[ai-chat-reads-heavier-than-a-messaging-app]]: la vista del chat no debe asumir que vive en una
+      hoja (sin tirador ni cierre dentro del hilo). En iPad irá en un `.inspector`. **Hecho 2026-10-02**: sin
+      tirador ni cierre en el hilo; en iPad va en columna propia (no `.inspector`, medido el 29-sep); hilo y caja
+      topados a `DS.Adaptive.readableWidth`; capturado en iPhone 17 Pro y en `YalaLane-Adapt-iPad-Pro-13`.
 - [ ] [[account-form-as-medium-detent-sheet]]: en iPad el detent medio no se aplica, porque
       `.yalaSheetDetents(_:)` fuerza `.large` en una ventana ancha (desde el 29-sep lo decide la ventana, no el
       aparato: [[sheet-size-follows-the-device-not-the-window]]). Decidirlo a propósito.

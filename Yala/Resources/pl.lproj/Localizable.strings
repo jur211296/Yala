@@ -3409,7 +3409,6 @@
 "chat.unavailable" = "Yala AI nie jest teraz dostępna. Spróbuj za kilka minut.";
 "chat.retry" = "Ponów";
 "chat.noVoiceDetected" = "Nie wykryłem dźwięku. Spróbuj ponownie.";
-"chat.contextMemory" = "Yala AI pamięta wiadomości: %d";
 
 // MARK: - Chat Draft (Yala AI Register)
 "chat.draft.chipExpense" = "Wydatek";
