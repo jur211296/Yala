@@ -72,64 +72,54 @@ struct UserDataResetView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: DS.Spacing.xxl) {
-                    SectionBox(title: L10n.Settings.resetData) {
-                        VStack(alignment: .leading, spacing: DS.Spacing.md) {
-                            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-                                Text(L10n.Settings.resetAllData)
-                                    .font(DS.Typography.title)
+        YalaSettingsList {
+            YalaSettingsSection(L10n.Settings.resetData) {
+                VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                    Text(L10n.Settings.resetAllData)
+                        .font(DS.Typography.title)
 
-                                // **Este texto lee UN término y `scopeOperation` lee DOS, así que NO
-                                // son el mismo eje** — medido en la review del 2026-09-13, que tumbó un
-                                // comentario anterior donde yo afirmaba lo contrario. La celda donde
-                                // divergen: sin sesión privada y con el store espejando a iCloud, la
-                                // hoja ejecuta un borrado COMPLETO (sale a iCloud y a los demás
-                                // dispositivos del Apple ID) mientras este párrafo promete «tu perfil y
-                                // tus preferencias». El defecto es anterior a este PR y no se arregla
-                                // aquí porque cambia lo que lee una pantalla, no el barrido: tiene
-                                // ticket propio (`wipe-copy-reads-one-axis-while-the-sheet-reads-two`).
-                                Text(
-                                    PrivateSessionMark.hasPrivateSession()
-                                        ? L10n.Settings.resetDataDescription
-                                        : L10n.Settings.resetDataDescriptionGroupsOnly
-                                )
-                                .font(DS.Typography.caption)
-                                .foregroundStyle(.secondary)
-                            }
-                            .padding(.horizontal, DS.Spacing.lg)
-                            .padding(.top, DS.Spacing.lg)
+                    // **Este texto lee UN término y `scopeOperation` lee DOS, así que NO
+                    // son el mismo eje** — medido en la review del 2026-09-13, que tumbó un
+                    // comentario anterior donde yo afirmaba lo contrario. La celda donde
+                    // divergen: sin sesión privada y con el store espejando a iCloud, la
+                    // hoja ejecuta un borrado COMPLETO (sale a iCloud y a los demás
+                    // dispositivos del Apple ID) mientras este párrafo promete «tu perfil y
+                    // tus preferencias». El defecto es anterior a este PR y no se arregla
+                    // aquí porque cambia lo que lee una pantalla, no el barrido: tiene
+                    // ticket propio (`wipe-copy-reads-one-axis-while-the-sheet-reads-two`).
+                    Text(
+                        PrivateSessionMark.hasPrivateSession()
+                            ? L10n.Settings.resetDataDescription
+                            : L10n.Settings.resetDataDescriptionGroupsOnly
+                    )
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+                }
+                .padding(.vertical, DS.Spacing.sm)
 
-                            SubsectionDivider()
-
-                            Button(role: .destructive) {
-                                // v2: detección READ-ONLY al TAP (molde D5) — alimenta la fila 👥 y el desvío
-                                // "Ver mis grupos". Cero saves (invariante de quiescencia (b) intacto).
-                                let summary = GroupService.shared.accountDeletionGroupsSummary()
-                                wipeScope = WipeScope(summary: summary)
-                            } label: {
-                                HStack {
-                                    if isProcessing {
-                                        ProgressView()
-                                            .progressViewStyle(.circular)
-                                    }
-
-                                    Text(L10n.Settings.deleteAllData)
-                                        .font(DS.Typography.body)
-
-                                    Spacer()
-                                }
-                                .padding(DS.Spacing.lg)
-                            }
-                            .disabled(isProcessing)
-                            .accessibilityIdentifier("wipe_data_start")
-                            .accessibilityHint(isProcessing ? L10n.Accessibility.processing : "")
+                Button(role: .destructive) {
+                    // v2: detección READ-ONLY al TAP (molde D5) — alimenta la fila 👥 y el desvío
+                    // "Ver mis grupos". Cero saves (invariante de quiescencia (b) intacto).
+                    let summary = GroupService.shared.accountDeletionGroupsSummary()
+                    wipeScope = WipeScope(summary: summary)
+                } label: {
+                    HStack {
+                        if isProcessing {
+                            ProgressView()
+                                .progressViewStyle(.circular)
                         }
+
+                        Text(L10n.Settings.deleteAllData)
+                            .font(DS.Typography.body)
+
+                        Spacer()
                     }
                 }
-                .padding(.horizontal, DS.Spacing.lg)
-                .padding(.vertical, DS.Spacing.xxl)
+                .disabled(isProcessing)
+                .accessibilityIdentifier("wipe_data_start")
+                .accessibilityHint(isProcessing ? L10n.Accessibility.processing : "")
             }
+        }
         .yalaScreenBackground(.subtle)
         .navigationTitle(L10n.Settings.resetData)
         .navigationBarTitleDisplayMode(.inline)

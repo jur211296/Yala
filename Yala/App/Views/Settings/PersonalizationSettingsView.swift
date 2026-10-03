@@ -64,544 +64,171 @@ struct PersonalizationSettingsView: View {
 
     var body: some View {
         @Bindable var prefs = appPreferences
-        return ScrollView {
-            VStack(spacing: DS.Spacing.xxl) {
-                    // Header
-                    VStack(spacing: DS.Spacing.sm) {
-                        Image(systemName: "slider.horizontal.3")
-                            .font(.system(size: heroIconSize))
-                            .foregroundStyle(.thAccent)
-                            .padding(.bottom, DS.Spacing.sm)
-
-                        Text(L10n.Settings.personalization)
-                            .font(.title2.bold())
-                            .foregroundStyle(.thPrimaryText)
-
-                        Text(L10n.Settings.personalizationDescription)
-                            .font(DS.Typography.body)
-                            .foregroundStyle(.thSecondaryText)
-                            .multilineTextAlignment(.center)
-                    }
-                    .padding(.top, DS.Spacing.xxxl)
-
-                    // MARK: - Modo de uso Section
-                    VStack(alignment: .leading, spacing: DS.Spacing.lg) {
-                        YalaSectionHeader(L10n.Settings.sectionUsageMode)
-
-                        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-                            HStack {
-                                Text(L10n.Settings.expensesOnlyMode)
-                                    .font(DS.Typography.body)
-                                    .foregroundStyle(.thPrimaryText)
-
-                                Spacer()
-
-                                Toggle(L10n.Settings.expensesOnlyMode, isOn: Binding(
-                                    get: { sessionState.isExpensesOnlyMode },
-                                    set: { _ in showingExpensesOnlyConfirmation = true }
-                                ))
-                                .labelsHidden()
-
-                            }
-                            .padding(.horizontal, DS.FormRow.paddingH)
-                            .padding(.vertical, DS.Spacing.sm)
-                            .background(.thCard)
-                            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: DS.Radius.lg)
-                                    .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-                            )
-
-                            Text(L10n.Settings.expensesOnlyModeDescription)
-                                .font(DS.Typography.caption)
-                                .foregroundStyle(.secondary)
-                                .padding(.horizontal, DS.Spacing.xxs)
-                        }
-                    }
-
-                    // MARK: - Interfaz Section
-                    VStack(alignment: .leading, spacing: DS.Spacing.lg) {
-                        YalaSectionHeader(L10n.Settings.sectionInterface)
-
-                        // App Language (only visible if override is active)
-                        if LanguageManager.overrideLanguage != nil {
-                            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-                                Button {
-                                    showingLanguagePicker = true
-                                } label: {
-                                    HStack {
-                                        Text(L10n.Settings.appLanguage)
-                                            .font(DS.Typography.body)
-                                            .foregroundStyle(.thPrimaryText)
-
-                                        Spacer()
-
-                                        Text(currentLanguageDisplayName)
-                                            .font(DS.Typography.body)
-                                            .foregroundStyle(.secondary)
-
-                                        Image(systemName: "chevron.right")
-                                            .font(DS.Typography.labelSmall.weight(.medium))
-                                            .foregroundStyle(.tertiary)
-                                    }
-                                    .padding(.horizontal, DS.FormRow.paddingH)
-                                    .padding(.vertical, DS.FormRow.paddingV)
-                                    .background(.thCard)
-                                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: DS.Radius.lg)
-                                            .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-                                    )
-                                }
-                                .buttonStyle(.plain)
-
-                                Text(L10n.Settings.appLanguageRestart)
-                                    .font(DS.Typography.caption)
-                                    .foregroundStyle(.secondary)
-                                    .padding(.horizontal, DS.Spacing.xxs)
-                            }
-                        }
-
-                        // Voice Language
-                        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-                            Menu {
-                                ForEach(VoiceLanguage.allCases) { language in
-                                    Button {
-                                        appPreferences.voiceLanguage = language
-                                    } label: {
-                                        HStack {
-                                            Text(language.displayName)
-                                            if appPreferences.voiceLanguage == language {
-                                                Image(systemName: "checkmark")
-                                            }
-                                        }
-                                    }
-                                    .accessibilityIdentifier("voice_language_option_\(language.rawValue)")
-                                    .accessibilityAddTraits(appPreferences.voiceLanguage == language ? [.isSelected] : [])
-                                }
-                            } label: {
-                                HStack {
-                                    Text(L10n.Settings.voiceLanguage)
-                                        .font(DS.Typography.body)
-                                        .foregroundStyle(.thPrimaryText)
-
-                                    Spacer()
-
-                                    Text(appPreferences.voiceLanguage.displayName)
-                                        .font(DS.Typography.body)
-                                        .foregroundStyle(.secondary)
-
-                                    Image(systemName: "chevron.up.chevron.down")
-                                        .font(DS.Typography.labelSmall.weight(.medium))
-                                        .foregroundStyle(.tertiary)
-                                }
-                                .padding(.horizontal, DS.FormRow.paddingH)
-                                .padding(.vertical, DS.FormRow.paddingV)
-                                .background(.thCard)
-                                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: DS.Radius.lg)
-                                        .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-                                )
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityIdentifier("voice_language_menu")
-                        }
-
-                        // Customize AI Summary
-                        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-                            Button {
-                                showingSmartInsightsSettings = true
-                            } label: {
-                                HStack {
-                                    Text(L10n.Settings.customizeAISummary)
-                                        .font(DS.Typography.body)
-                                        .foregroundStyle(.thPrimaryText)
-
-                                    Spacer()
-
-                                    Image(systemName: "chevron.right")
-                                        .font(DS.Typography.labelSmall.weight(.medium))
-                                        .foregroundStyle(.tertiary)
-                                }
-                                .padding(.horizontal, DS.FormRow.paddingH)
-                                .padding(.vertical, DS.FormRow.paddingV)
-                                .background(.thCard)
-                                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: DS.Radius.lg)
-                                        .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-                                )
-                            }
-                            .buttonStyle(.plain)
-
-                            Text(L10n.Settings.customizeAISummaryHint)
-                                .font(DS.Typography.caption)
-                                .foregroundStyle(.secondary)
-                                .padding(.horizontal, DS.Spacing.xxs)
-                        }
-
-                        // Chat FAB visibility (Free users only — Pro users manage it via per-section Panel preferences)
-                        if !isProUser {
-                            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-                                HStack {
-                                    Text(L10n.Widget.chatFabToggle)
-                                        .font(DS.Typography.body)
-                                        .foregroundStyle(.thPrimaryText)
-
-                                    ProBadge(size: .small)
-
-                                    Spacer()
-
-                                    Toggle(L10n.Widget.chatFabToggle, isOn: $prefs.chatFABVisible)
-                                        .labelsHidden()
-                                }
-                                .padding(.horizontal, DS.FormRow.paddingH)
-                                .padding(.vertical, DS.FormRow.paddingV)
-                                .background(.thCard)
-                                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: DS.Radius.lg)
-                                        .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-                                )
-
-                                Text(L10n.Widget.chatFabHint)
-                                    .font(DS.Typography.caption)
-                                    .foregroundStyle(.secondary)
-                                    .padding(.horizontal, DS.Spacing.xxs)
-                            }
-                        }
-
-                        // Colorful Icons Toggle
-                        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-                            HStack {
-                                Text(L10n.Settings.colorfulIcons)
-                                    .font(DS.Typography.body)
-                                    .foregroundStyle(forcesMonochromeIcons ? .thSecondaryText : .thPrimaryText)
-
-                                Spacer()
-
-                                Toggle(L10n.Settings.colorfulIcons, isOn: $prefs.colorfulIcons)
-                                    .labelsHidden()
-                                    .disabled(forcesMonochromeIcons)
-                                    .accessibilityHint(forcesMonochromeIcons ? L10n.Accessibility.systemMonochromeIcons : "")
-                                    .accessibilityIdentifier("settings_colorful_icons_toggle")
-
-                            }
-                            .padding(.horizontal, DS.FormRow.paddingH)
-                            .padding(.vertical, DS.Spacing.sm)
-                            .background(.thCard)
-                            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: DS.Radius.lg)
-                                    .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-                            )
-
-                            Text(forcesMonochromeIcons
-                                ? L10n.Settings.colorfulIconsDisabledByTheme
-                                : L10n.Settings.colorfulIconsDescription)
-                                .font(DS.Typography.caption)
-                                .foregroundStyle(.secondary)
-                                .padding(.horizontal, DS.Spacing.xxs)
-                        }
-                    }
-
-                    // MARK: - Calendario Section
-                    VStack(alignment: .leading, spacing: DS.Spacing.lg) {
-                        YalaSectionHeader(L10n.Settings.sectionCalendar)
-
-                        // Default Period
-                        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-                            Button {
-                                showingPeriodPicker = true
-                            } label: {
-                                HStack {
-                                    Text(L10n.Settings.defaultPeriod)
-                                        .font(DS.Typography.body)
-                                        .foregroundStyle(.thPrimaryText)
-
-                                    Spacer()
-
-                                    Text(appPreferences.defaultPeriod.displayName)
-                                        .font(DS.Typography.body)
-                                        .foregroundStyle(.secondary)
-
-                                    Image(systemName: "chevron.right")
-                                        .font(DS.Typography.labelSmall.weight(.medium))
-                                        .foregroundStyle(.tertiary)
-                                }
-                                .padding(.horizontal, DS.FormRow.paddingH)
-                                .padding(.vertical, DS.FormRow.paddingV)
-                                .background(.thCard)
-                                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: DS.Radius.lg)
-                                        .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-                                )
-                            }
-                            .buttonStyle(.plain)
-
-                            Text(L10n.Settings.defaultPeriodDescription)
-                                .font(DS.Typography.caption)
-                                .foregroundStyle(.secondary)
-                                .padding(.horizontal, DS.Spacing.xxs)
-                        }
-
-                        // First Weekday
-                        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-                            Button {
-                                showingWeekdayPicker = true
-                            } label: {
-                                HStack {
-                                    Text(L10n.Settings.firstWeekday)
-                                        .font(DS.Typography.body)
-                                        .foregroundStyle(.thPrimaryText)
-
-                                    Spacer()
-
-                                    Text(selectedWeekday.displayName)
-                                        .font(DS.Typography.body)
-                                        .foregroundStyle(.secondary)
-
-                                    Image(systemName: "chevron.right")
-                                        .font(DS.Typography.labelSmall.weight(.medium))
-                                        .foregroundStyle(.tertiary)
-                                }
-                                .padding(.horizontal, DS.FormRow.paddingH)
-                                .padding(.vertical, DS.FormRow.paddingV)
-                                .background(.thCard)
-                                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: DS.Radius.lg)
-                                        .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-                                )
-                            }
-                            .buttonStyle(.plain)
-
-                            Text(L10n.Settings.firstWeekdayDescription)
-                                .font(DS.Typography.caption)
-                                .foregroundStyle(.secondary)
-                                .padding(.horizontal, DS.Spacing.xxs)
-                        }
-                    }
-
-                    // MARK: - Indicadores Section
-                    VStack(alignment: .leading, spacing: DS.Spacing.lg) {
-                        YalaSectionHeader(L10n.Settings.sectionIndicators)
-
-                        // Widget Hints Toggle
-                        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-                            HStack {
-                                Text(L10n.Settings.widgetHints)
-                                    .font(DS.Typography.body)
-                                    .foregroundStyle(.thPrimaryText)
-
-                                Spacer()
-
-                                Toggle(L10n.Settings.widgetHints, isOn: $prefs.showWidgetHints)
-                                    .labelsHidden()
-
-                            }
-                            .padding(.horizontal, DS.FormRow.paddingH)
-                            .padding(.vertical, DS.Spacing.sm)
-                            .background(.thCard)
-                            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: DS.Radius.lg)
-                                    .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-                            )
-
-                            Text(L10n.Settings.widgetHintsDescription)
-                                .font(DS.Typography.caption)
-                                .foregroundStyle(.secondary)
-                                .padding(.horizontal, DS.Spacing.xxs)
-                        }
-
-                        // Show Variations Toggle
-                        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-                            HStack {
-                                Text(L10n.Settings.showVariations)
-                                    .font(DS.Typography.body)
-                                    .foregroundStyle(.thPrimaryText)
-
-                                Spacer()
-
-                                Toggle(L10n.Settings.showVariations, isOn: $prefs.showVariations)
-                                    .labelsHidden()
-
-                            }
-                            .padding(.horizontal, DS.FormRow.paddingH)
-                            .padding(.vertical, DS.Spacing.sm)
-                            .background(.thCard)
-                            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: DS.Radius.lg)
-                                    .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-                            )
-
-                            Text(L10n.Settings.showVariationsDescription)
-                                .font(DS.Typography.caption)
-                                .foregroundStyle(.secondary)
-                                .padding(.horizontal, DS.Spacing.xxs)
-                        }
-
-                        // Average Line Picker
-                        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-                            Button {
-                                showingAverageLinePicker = true
-                            } label: {
-                                HStack {
-                                    Text(L10n.Settings.averageLine)
-                                        .font(DS.Typography.body)
-                                        .foregroundStyle(.thPrimaryText)
-
-                                    Spacer()
-
-                                    Text(averageLineDisplayName)
-                                        .font(DS.Typography.body)
-                                        .foregroundStyle(.secondary)
-
-                                    Image(systemName: "chevron.right")
-                                        .font(DS.Typography.labelSmall.weight(.medium))
-                                        .foregroundStyle(.tertiary)
-                                }
-                                .padding(.horizontal, DS.FormRow.paddingH)
-                                .padding(.vertical, DS.FormRow.paddingV)
-                                .background(.thCard)
-                                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: DS.Radius.lg)
-                                        .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-                                )
-                            }
-                            .buttonStyle(.plain)
-
-                            Text(L10n.Settings.averageLineDescription)
-                                .font(DS.Typography.caption)
-                                .foregroundStyle(.secondary)
-                                .padding(.horizontal, DS.Spacing.xxs)
-                        }
-                    }
-
-                    // MARK: - Formato Section
-                    VStack(alignment: .leading, spacing: DS.Spacing.lg) {
-                        YalaSectionHeader(L10n.Settings.sectionFormat)
-
-                        // Decimal Places
-                        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-                            Button {
-                                showingDecimalsPicker = true
-                            } label: {
-                                HStack {
-                                    Text(L10n.Settings.decimalPlaces)
-                                        .font(DS.Typography.body)
-                                        .foregroundStyle(.thPrimaryText)
-
-                                    Spacer()
-
-                                    Text(decimalPlacesDisplayName)
-                                        .font(DS.Typography.body)
-                                        .foregroundStyle(.secondary)
-
-                                    Image(systemName: "chevron.right")
-                                        .font(DS.Typography.labelSmall.weight(.medium))
-                                        .foregroundStyle(.tertiary)
-                                }
-                                .padding(.horizontal, DS.FormRow.paddingH)
-                                .padding(.vertical, DS.FormRow.paddingV)
-                                .background(.thCard)
-                                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: DS.Radius.lg)
-                                        .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-                                )
-                            }
-                            .buttonStyle(.plain)
-
-                            Text(L10n.Settings.decimalPlacesDescription)
-                                .font(DS.Typography.caption)
-                                .foregroundStyle(.secondary)
-                                .padding(.horizontal, DS.Spacing.xxs)
-                        }
-
-                        // Currency Display Format
-                        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-                            Button {
-                                showingCurrencyFormatPicker = true
-                            } label: {
-                                HStack {
-                                    Text(L10n.Settings.currencyFormat)
-                                        .font(DS.Typography.body)
-                                        .foregroundStyle(.thPrimaryText)
-
-                                    Spacer()
-
-                                    Text(currencyFormatDisplayName)
-                                        .font(DS.Typography.body)
-                                        .foregroundStyle(.secondary)
-
-                                    Image(systemName: "chevron.right")
-                                        .font(DS.Typography.labelSmall.weight(.medium))
-                                        .foregroundStyle(.tertiary)
-                                }
-                                .padding(.horizontal, DS.FormRow.paddingH)
-                                .padding(.vertical, DS.FormRow.paddingV)
-                                .background(.thCard)
-                                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: DS.Radius.lg)
-                                        .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-                                )
-                            }
-                            .buttonStyle(.plain)
-
-                            Text(L10n.Settings.currencyFormatDescription)
-                                .font(DS.Typography.caption)
-                                .foregroundStyle(.secondary)
-                                .padding(.horizontal, DS.Spacing.xxs)
-                        }
-
-                        // Auto-Focus Field
-                        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-                            Button {
-                                showingAutoFocusPicker = true
-                            } label: {
-                                HStack {
-                                    Text(L10n.Settings.autoFocusField)
-                                        .font(DS.Typography.body)
-                                        .foregroundStyle(.thPrimaryText)
-
-                                    Spacer()
-
-                                    Text(appPreferences.autoFocusField.displayName)
-                                        .font(DS.Typography.body)
-                                        .foregroundStyle(.secondary)
-
-                                    Image(systemName: "chevron.right")
-                                        .font(DS.Typography.labelSmall.weight(.medium))
-                                        .foregroundStyle(.tertiary)
-                                }
-                                .padding(.horizontal, DS.FormRow.paddingH)
-                                .padding(.vertical, DS.FormRow.paddingV)
-                                .background(.thCard)
-                                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: DS.Radius.lg)
-                                        .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-                                )
-                            }
-                            .buttonStyle(.plain)
-
-                            Text(L10n.Settings.autoFocusFieldDescription)
-                                .font(DS.Typography.caption)
-                                .foregroundStyle(.secondary)
-                                .padding(.horizontal, DS.Spacing.xxs)
-                        }
-                    }
-
-                    Spacer()
+        return YalaSettingsList {
+            // Header
+            Section {
+                VStack(spacing: DS.Spacing.sm) {
+                    Image(systemName: "slider.horizontal.3")
+                        .font(.system(size: heroIconSize))
+                        .foregroundStyle(.thAccent)
+                        .padding(.bottom, DS.Spacing.sm)
+
+                    Text(L10n.Settings.personalization)
+                        .font(.title2.bold())
+                        .foregroundStyle(.thPrimaryText)
+
+                    Text(L10n.Settings.personalizationDescription)
+                        .font(DS.Typography.body)
+                        .foregroundStyle(.thSecondaryText)
+                        .multilineTextAlignment(.center)
                 }
-                .padding(DS.Spacing.lg)
+                .frame(maxWidth: .infinity)
+                .padding(.top, DS.Spacing.lg)
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets())
+                .listRowSeparator(.hidden)
+            }
+
+            // MARK: - Modo de uso
+            YalaSettingsSection(L10n.Settings.sectionUsageMode) {
+                YalaSettingsToggleRow(L10n.Settings.expensesOnlyMode, isOn: Binding(
+                    get: { sessionState.isExpensesOnlyMode },
+                    set: { _ in showingExpensesOnlyConfirmation = true }
+                ))
+                .accessibilityIdentifier("personalization_row_expenses_only")
+            } footer: {
+                Text(L10n.Settings.expensesOnlyModeDescription)
+            }
+
+            // MARK: - Interfaz
+            // El idioma de la app (solo con override activo) lleva su propia ayuda: va en su bloque, con la
+            // cabecera; si no está, la cabecera pasa al bloque siguiente.
+            if LanguageManager.overrideLanguage != nil {
+                YalaSettingsSection(L10n.Settings.sectionInterface) {
+                    YalaSettingsValueRow(L10n.Settings.appLanguage, value: currentLanguageDisplayName) {
+                        showingLanguagePicker = true
+                    }
+                    .accessibilityIdentifier("personalization_row_app_language")
+                } footer: {
+                    Text(L10n.Settings.appLanguageRestart)
+                }
+            }
+
+            YalaSettingsSection(LanguageManager.overrideLanguage == nil ? L10n.Settings.sectionInterface : nil) {
+                Menu {
+                    ForEach(VoiceLanguage.allCases) { language in
+                        Button {
+                            appPreferences.voiceLanguage = language
+                        } label: {
+                            HStack {
+                                Text(language.displayName)
+                                if appPreferences.voiceLanguage == language {
+                                    Image(systemName: "checkmark")
+                                }
+                            }
+                        }
+                        .accessibilityIdentifier("voice_language_option_\(language.rawValue)")
+                        .accessibilityAddTraits(appPreferences.voiceLanguage == language ? [.isSelected] : [])
+                    }
+                } label: {
+                    YalaSettingsRowLabel(
+                        title: L10n.Settings.voiceLanguage,
+                        value: appPreferences.voiceLanguage.displayName,
+                        accessory: "chevron.up.chevron.down"
+                    )
+                }
+                .accessibilityIdentifier("voice_language_menu")
+
+                YalaSettingsValueRow(L10n.Settings.customizeAISummary) {
+                    showingSmartInsightsSettings = true
+                }
+                .accessibilityIdentifier("personalization_row_ai_summary")
+
+                // Último del bloque: su ayuda (solo cuando el tema lo apaga) cae justo debajo.
+                YalaSettingsToggleRow(
+                    L10n.Settings.colorfulIcons,
+                    isOn: $prefs.colorfulIcons,
+                    isDisabled: forcesMonochromeIcons
+                )
+                .accessibilityHint(forcesMonochromeIcons ? L10n.Accessibility.systemMonochromeIcons : "")
+                .accessibilityIdentifier("settings_colorful_icons_toggle")
+            } footer: {
+                if forcesMonochromeIcons {
+                    Text(L10n.Settings.colorfulIconsDisabledByTheme)
+                }
+            }
+
+            // Chat FAB visibility (Free users only — Pro users manage it via per-section Panel preferences)
+            if !isProUser {
+                YalaSettingsSection {
+                    YalaSettingsToggleRow(L10n.Widget.chatFabToggle, isOn: $prefs.chatFABVisible) {
+                        ProBadge(size: .small)
+                    }
+                    .accessibilityIdentifier("personalization_row_chat_fab")
+                } footer: {
+                    Text(L10n.Widget.chatFabHint)
+                }
+            }
+
+            // MARK: - Calendario
+            YalaSettingsSection(L10n.Settings.sectionCalendar) {
+                YalaSettingsValueRow(L10n.Settings.defaultPeriod, value: appPreferences.defaultPeriod.displayName) {
+                    showingPeriodPicker = true
+                }
+                .accessibilityIdentifier("personalization_row_default_period")
+
+                YalaSettingsValueRow(L10n.Settings.firstWeekday, value: selectedWeekday.displayName) {
+                    showingWeekdayPicker = true
+                }
+                .accessibilityIdentifier("personalization_row_first_weekday")
+            } footer: {
+                // Nombra su fila («Este período…»): no hace falta que sea la última del bloque.
+                Text(L10n.Settings.defaultPeriodDescription)
+            }
+
+            // MARK: - Indicadores
+            YalaSettingsSection(L10n.Settings.sectionIndicators) {
+                YalaSettingsToggleRow(L10n.Settings.widgetHints, isOn: $prefs.showWidgetHints)
+                    .accessibilityIdentifier("personalization_row_widget_hints")
+            } footer: {
+                Text(L10n.Settings.widgetHintsDescription)
+            }
+
+            YalaSettingsSection {
+                YalaSettingsValueRow(L10n.Settings.averageLine, value: averageLineDisplayName) {
+                    showingAverageLinePicker = true
+                }
+                .accessibilityIdentifier("personalization_row_average_line")
+
+                YalaSettingsToggleRow(L10n.Settings.showVariations, isOn: $prefs.showVariations)
+                    .accessibilityIdentifier("personalization_row_variations")
+            } footer: {
+                Text(L10n.Settings.showVariationsDescription)
+            }
+
+            // MARK: - Formato
+            YalaSettingsSection(L10n.Settings.sectionFormat) {
+                YalaSettingsValueRow(L10n.Settings.currencyFormat, value: currencyFormatDisplayName) {
+                    showingCurrencyFormatPicker = true
+                }
+                .accessibilityIdentifier("personalization_row_currency_format")
+
+                YalaSettingsValueRow(L10n.Settings.decimalPlaces, value: decimalPlacesDisplayName) {
+                    showingDecimalsPicker = true
+                }
+                .accessibilityIdentifier("personalization_row_decimals")
+            } footer: {
+                Text(L10n.Settings.decimalPlacesDescription)
+            }
+
+            YalaSettingsSection {
+                YalaSettingsValueRow(L10n.Settings.autoFocusField, value: appPreferences.autoFocusField.displayName) {
+                    showingAutoFocusPicker = true
+                }
+                .accessibilityIdentifier("personalization_row_auto_focus")
+            } footer: {
+                Text(L10n.Settings.autoFocusFieldDescription)
+            }
         }
         .navigationTitle(L10n.Settings.personalization)
         .navigationBarTitleDisplayMode(.inline)
