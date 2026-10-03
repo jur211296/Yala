@@ -3268,9 +3268,9 @@
       ],
       "scenarioIDs": [],
       "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/PersonalizationGroupedListUITests + unit:YalaTests/SettingsListLayoutTests — 2026-10-02 (`settings-redesign-as-grouped-lists-like-ios`): Ajustes como lista agrupada del sistema (`YalaSettingsList`). El XCUITest fija que Personalización es una List (sus filas cuelgan de un UICollectionView) y que ningún ajuste se perdió; el unit, el tope legible de 700 por ancho medido. Densidad y bloques blancos sobre fondo no blanco: device-qa del ticket.",
+      "coverage": "xcuitest:YalaUITests/PersonalizationGroupedListUITests + unit:YalaTests/SettingsListLayoutTests — 2026-10-02 (`settings-redesign-as-grouped-lists-like-ios`): Ajustes como lista agrupada del sistema (`YalaSettingsList`). El XCUITest fija que Personalización es una List (sus filas cuelgan de un UICollectionView) y que ningún ajuste se perdió; el unit, el tope legible de 700 por ancho medido. Densidad y bloques blancos sobre fondo no blanco: device-qa del ticket. 2026-10-03 (`cola-b-redesigns-must-hold-up-at-ipad-width`): junto a la columna de lista de un split (iPad, Pro Max girado) el margen se cuenta desde la columna — área segura + margen legible por lado (`DS.Adaptive.readableListInsets`), porque el sistema se quedaba con el mayor y el bloque arrancaba pegado. Red: xcuitest:YalaUITests/AdaptiveNavigationUITests#test_settingsDetail_keepsItsMarginBesideTheListColumn_inWideWindow (por UDID en iPad) + 3 unit nuevos en SettingsListLayoutTests. Capturas antes/después en los 4 simuladores del carril.",
       "owner": "",
-      "lastVerified": "2026-10-02"
+      "lastVerified": "2026-10-03"
     },
     {
       "area": "step-guides",

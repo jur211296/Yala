@@ -18,6 +18,7 @@
 
 ## Cómo mido y cómo entrego
 - [Capturar widgets por galería](feedback_capturar_widgets_por_galeria.md) — un tamaño por página, vuelve a la 1 tras cada alta; seed + 2.º arranque.
+- [El marco de celda no es el bloque](feedback_el_marco_de_celda_no_es_el_bloque.md) — mide bordes de List en píxeles; los marcos XCUI mienten.
 - [El final del ciclo borra la prueba](feedback_el_final_del_ciclo_borra_la_prueba.md) — «haz el ciclo y lee Y»: la purga de la cola borraba Y.
 - [El final del scroll se mide hasta que para](feedback_el_final_del_scroll_se_mide_hasta_que_para.md) — N arrastres fijos no llegan (2 años, AX5); semilla corta.
 - [El testigo se apunta ANTES de conducir](feedback_el_testigo_se_apunta_antes_de_conducir.md) — el kill de la 1.ª pasada; y…
