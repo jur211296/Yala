@@ -656,7 +656,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | settings-adopt-stalled-before-the-claim-keeps-the-session | done | tickets/done/settings-adopt-stalled-before-the-claim-keeps-the-session.md |
 | settings-migrate-blocks-a-second-device-before-its-marker | backlog | tickets/backlog/settings-migrate-blocks-a-second-device-before-its-marker.md |
 | settings-migrate-to-cloud-adopts-silently-instead-of-migrating | done | tickets/done/settings-migrate-to-cloud-adopts-silently-instead-of-migrating.md |
-| settings-redesign-as-grouped-lists-like-ios | backlog | tickets/backlog/settings-redesign-as-grouped-lists-like-ios.md |
+| settings-redesign-as-grouped-lists-like-ios | qa | tickets/qa/settings-redesign-as-grouped-lists-like-ios.md |
 | settings-sign-out-scope-says-groups-stay-in-an-account-that-may-not-exist | backlog | tickets/backlog/settings-sign-out-scope-says-groups-stay-in-an-account-that-may-not-exist.md |
 | settlement-amount-edited-after-approval-leaves-the-bank-stale | backlog | tickets/backlog/settlement-amount-edited-after-approval-leaves-the-bank-stale.md |
 | settlement-approval-leaves-no-trace-so-a-rebridge-asks-again | done | tickets/done/settlement-approval-leaves-no-trace-so-a-rebridge-asks-again.md |

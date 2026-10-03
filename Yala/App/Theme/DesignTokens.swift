@@ -475,6 +475,16 @@ enum DS {
         /// ancha. Más allá, las filas se separan tanto que concepto e importe dejan de leerse juntos.
         static let readableWidth: CGFloat = 700
 
+        /// Margen lateral de una lista agrupada de ajustes (`YalaSettingsList`). Con la ventana estrecha, el
+        /// margen adaptativo de siempre (`horizontalPadding`); cuando el contenido pasaría de `readableWidth`, lo
+        /// que sobre a cada lado, para que los bloques queden centrados y no más anchos que eso. Decide el ancho
+        /// MEDIDO de la lista, no el aparato ni la orientación. Sin ancho medido todavía, el margen de siempre.
+        static func readableListMargin(containerWidth: CGFloat, sizeClass: UserInterfaceSizeClass?) -> CGFloat {
+            let base = horizontalPadding(sizeClass)
+            guard containerWidth > 0 else { return base }
+            return max(base, ((containerWidth - readableWidth) / 2).rounded(.down))
+        }
+
         /// Anchos de la columna de lista de un `NavigationSplitView` (Registros, Planificación). El mínimo
         /// es el ancho del iPhone más estrecho (375): las filas ya están medidas ahí. Sin tope propio el split
         /// la deja en ~280-320 y las filas de presupuesto parten el importe en tres líneas (medido 2026-09-29).

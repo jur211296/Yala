@@ -85,6 +85,15 @@ paths:
 - **Y colorea la excepción, no la norma.** En una lista de movimientos casi todo son gastos: teñirlos pinta la pantalla entera y el color deja de avisar de nada. Solo el ingreso lleva color (`RecentRecordsWidget`, `ScheduledPaymentsWidget`). Decisión del 2026-09-02 en `docs/DECISIONS.md`.
 - **Jerarquía del Panel: sección `title3` (20) › widget `subheadlineEmphasized` (15) › fila.** Hasta el 2026-09-02 la sección y el widget usaban el MISMO token y la fila (`headline`, 17) era el rótulo mayor de la pantalla. Y el aire va al revés que el tamaño: MÁS entre secciones (`xxl`) que del título a su contenido (`sm`), o por proximidad el título se lee como pie del bloque anterior.
 - Tablas DS.Semantic / DS.Gradients en SWIFT-STYLE.md.
+- **Una pantalla de ajustes es un `YalaSettingsList`** (`DesignSystem/SettingsList.swift`, 2026-10-02): `List`
+  agrupada del sistema, bloque `theme.card` por sección sobre el fondo de siempre, cabecera gris, ayuda en el pie
+  del bloque y solo si dice algo que la fila no dice. No vuelvas a la tarjeta por fila con su caption debajo. Tres
+  cosas medidas al migrar: (1) **`.secondary`/`.tertiary` dentro de un `Menu` o de un botón de `List` derivan del
+  tinte** — el valor de «Idioma de voz» salía en el color de acento; `YalaSettingsRowLabel` usa
+  `secondaryLabel`/`tertiaryLabel` fijos. (2) **Con `Toggle(isOn:) { título }` la fila entera es el switch, y tocar
+  su título no lo cambia** (como en Ajustes de iOS): un XCUITest que hacía `tap()` sobre el elemento quedó rojo; se
+  toca `toggle.switches.firstMatch`. (3) **Un `NavigationLink` en `List` pinta su chevron**: quita el propio o salen
+  dos. La lista monta solo las celdas visibles, así que un XCUITest que busca filas baja hasta ellas.
 
 ## Backgrounds de vista
 - TODA View root, sheet, fullScreenCover NUEVA → `.yalaScreenBackground(_:ignoredEdges:)`.
