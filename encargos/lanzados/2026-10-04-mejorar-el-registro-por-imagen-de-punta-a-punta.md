@@ -28,7 +28,8 @@ Entrada: cámara / galería / soltar imagen o PDF (`ImageSelectionView`, `ImageV
 
 Encargo de **propuestas + espera**: el rediseño elegido NO se implementa en esta sesión.
 
-- **Decisión de Jürgen (abierta):** cuál de A/B/C. La sesión para ahí y la pregunta.
+- **Decidido por Jürgen (2026-10-04):** propuesta **C**, y construirla en esta sesión (la pregunta fue «¿cuál
+  construyo?»). Compartir sin Pro es un hueco: se cierra.
 - **Asumido — lienzo:** un canvas de Design nuevo con el mismo lenguaje que el de voz
   (L34Tg6iimtk1xhsQG2vq57): hoja oscura a media altura, color del tema, fila con píldoras del #348.
 - **Asumido — capturas del antes:** solo lo que el simulador enseña sin red ni seam nuevo

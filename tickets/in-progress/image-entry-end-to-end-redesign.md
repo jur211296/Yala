@@ -11,7 +11,8 @@ source: encargo 2026-10-04-mejorar-el-registro-por-imagen-de-punta-a-punta · ta
 
 ## Por qué está parado
 
-**Espera la decisión de Jürgen: A, B o C** (lienzo: https://claude.ai/artifact/LGHvfUuCwQU4Fqzk4mF1eV). No se implementa nada hasta entonces.
+~~Espera la decisión de Jürgen~~ — **Decidido por Jürgen (2026-10-04): propuesta C** (lienzo:
+https://claude.ai/artifact/LGHvfUuCwQU4Fqzk4mF1eV). En construcción.
 
 ## Qué se ve hoy (recorrido del 2026-10-04, base `5a7f6f9e6`)
 

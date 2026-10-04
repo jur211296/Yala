@@ -18,5 +18,5 @@ solo mira el consentimiento de IA y emite `.presentSharedImage`, que abre la hoj
 
 ## Decisión que pide
 
-¿Es a propósito (compartir como gancho gratuito) o un hueco? Si es hueco, el arreglo es el mismo `canAccess`
-→ `.presentUpgradeSheet(.image)` que usa el router. No lo toco sin la respuesta.
+**Decidido por Jürgen (2026-10-04): es un hueco, se cierra.** El arreglo es el mismo `canAccess`
+→ `.presentUpgradeSheet(.image)` que usa el router; va con el rediseño C.
