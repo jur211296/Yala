@@ -6293,3 +6293,7 @@
 
 /* Account detail sheet: no records in the period */
 "accountDetail.empty" = "此期间没有记录";
+
+/* Note under Archive toggle when archiving turned on Exclude from statistics */
+"account.archiveExcludedNotice" = "归档后，此账户将不再计入你的总额和统计，其交易也会在“记录”中隐藏。如需继续计入，请关闭“从统计中排除”。";
+

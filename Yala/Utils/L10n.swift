@@ -3328,6 +3328,8 @@ enum L10n {
         static var excludeFromStats: String {
             ls("account.excludeFromStats", comment: "")
         }
+        /// Aviso bajo «Archivar cuenta» cuando archivar encendió «Excluir de las estadísticas».
+        static var archiveExcludedNotice: String { ls("account.archiveExcludedNotice", comment: "") }
         static var delete: String { ls("account.delete", comment: "") }
         static var deleteError: String { ls("account.deleteError", comment: "") }
         static var deleteBalanceError: String {

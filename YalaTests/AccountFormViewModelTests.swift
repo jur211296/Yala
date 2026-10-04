@@ -202,4 +202,82 @@ struct AccountFormViewModelTests {
         #expect(vm.balanceText.isEmpty) // cleared
         #expect(vm.isPositive == true)
     }
+
+    // MARK: - Archivar excluye de estadísticas (archived-accounts-still-count-in-the-panel-total)
+
+    private func makeAccount(excluded: Bool = false, archived: Bool = false) -> Account {
+        Account(name: "Ahorros", currencyCode: "PEN", colorHex: "#6366F1", iconName: "creditcard.fill",
+                type: "bank", excludeFromStatistics: excluded, isArchived: archived)
+    }
+
+    @MainActor @Test func archiving_turnsOnExclude_andShowsNotice() {
+        let vm = AccountFormViewModel(accountToEdit: makeAccount(), existingNames: [])
+        vm.isArchived = true
+        vm.setArchived(true)
+        #expect(vm.excludeFromStatistics == true)
+        #expect(vm.showsArchiveExclusionNotice == true)
+    }
+
+    @MainActor @Test func archiving_alreadyExcluded_noNotice() {
+        let vm = AccountFormViewModel(accountToEdit: makeAccount(excluded: true), existingNames: [])
+        vm.setArchived(true)
+        #expect(vm.excludeFromStatistics == true)
+        #expect(vm.showsArchiveExclusionNotice == false)
+    }
+
+    @MainActor @Test func unarchivingInSameEdit_undoesOnlyTheAutoExclude() {
+        let vm = AccountFormViewModel(accountToEdit: makeAccount(), existingNames: [])
+        vm.setArchived(true)
+        vm.setArchived(false)
+        #expect(vm.isArchived == false)
+        #expect(vm.excludeFromStatistics == false)
+        #expect(vm.showsArchiveExclusionNotice == false)
+    }
+
+    @MainActor @Test func unarchiving_whenExcludedByUser_keepsExclude() {
+        let vm = AccountFormViewModel(accountToEdit: makeAccount(excluded: true), existingNames: [])
+        vm.setArchived(true)
+        vm.setArchived(false)
+        #expect(vm.excludeFromStatistics == true)
+    }
+
+    @MainActor @Test func unarchiving_savedArchivedAccount_doesNotReinclude() {
+        // Archivada y excluida en una edición anterior: desarchivar ahora no toca el toggle.
+        let vm = AccountFormViewModel(accountToEdit: makeAccount(excluded: true, archived: true), existingNames: [])
+        #expect(vm.isArchived == true)
+        vm.setArchived(false)
+        #expect(vm.excludeFromStatistics == true)
+    }
+
+    @MainActor @Test func reincludingByHand_hidesNotice_andStaysIncluded() {
+        // El toggle de excluir sigue mandando: el usuario puede volver a incluir la archivada.
+        let vm = AccountFormViewModel(accountToEdit: makeAccount(), existingNames: [])
+        vm.setArchived(true)
+        vm.excludeFromStatistics = false
+        vm.excludeChanged(to: false)
+        #expect(vm.isArchived == true)
+        #expect(vm.excludeFromStatistics == false)
+        #expect(vm.showsArchiveExclusionNotice == false)
+    }
+
+    @MainActor @Test func loadingArchivedAccount_doesNotTouchExclude() {
+        let vm = AccountFormViewModel(accountToEdit: makeAccount(archived: true), existingNames: [])
+        #expect(vm.isArchived == true)
+        #expect(vm.excludeFromStatistics == false)
+        #expect(vm.showsArchiveExclusionNotice == false)
+    }
+
+    @MainActor @Test func reExcludingByHand_thenUnarchiving_keepsUsersExclude() {
+        // Archivar → re-incluir a mano → volver a excluir a mano → desarchivar: lo último que
+        // eligió el usuario es excluir, y desarchivar no se lo puede apagar.
+        let vm = AccountFormViewModel(accountToEdit: makeAccount(), existingNames: [])
+        vm.setArchived(true)
+        vm.excludeFromStatistics = false
+        vm.excludeChanged(to: false)
+        vm.excludeFromStatistics = true
+        vm.excludeChanged(to: true)
+        #expect(vm.showsArchiveExclusionNotice == false)
+        vm.setArchived(false)
+        #expect(vm.excludeFromStatistics == true)
+    }
 }

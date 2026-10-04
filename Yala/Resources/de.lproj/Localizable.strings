@@ -6281,3 +6281,7 @@
 
 /* Account detail sheet: no records in the period */
 "accountDetail.empty" = "Keine Bewegungen in diesem Zeitraum";
+
+/* Note under Archive toggle when archiving turned on Exclude from statistics */
+"account.archiveExcludedNotice" = "Archiviert zählt dieses Konto nicht mehr zu deinen Summen und Statistiken, und seine Buchungen werden in „Datensätze“ ausgeblendet. Damit es weiter zählt, deaktiviere „Aus Statistiken ausschließen“.";
+

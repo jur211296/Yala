@@ -6293,3 +6293,7 @@
 
 /* Account detail sheet: no records in the period */
 "accountDetail.empty" = "Brak operacji w tym okresie";
+
+/* Note under Archive toggle when archiving turned on Exclude from statistics */
+"account.archiveExcludedNotice" = "Po zarchiwizowaniu to konto przestaje się liczyć do sum i statystyk, a jego operacje są ukryte we „Wpisach”. Aby nadal się liczyło, wyłącz „Wyklucz ze statystyk”.";
+
