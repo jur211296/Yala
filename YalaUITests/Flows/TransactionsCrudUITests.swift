@@ -100,4 +100,69 @@ final class TransactionsCrudUITests: XCTestCase {
             "El formulario sigue abierto — el guardado no procesó."
         )
     }
+
+    /// Los selectores de cuenta, subcategoría y etiquetas abren a MEDIA altura desde Nuevo registro
+    /// (ticket `record-selectors-open-at-medium-detent`) y se estiran a grande con el gesto. Se mide por el marco
+    /// de la primera fila: a media altura cae por debajo del 40 % de la ventana; a pantalla completa queda arriba
+    /// (~20 %). Volver a `.large` pone rojo la primera aserción de cada selector.
+    func test_recordSelectorsOpenAtMediumDetent() {
+        let app = XCUIApplication()
+        app.launchForUITest()
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+
+        app.revealPanelFAB().tap()
+        let manual = app.buttons["fab_manual"]
+        XCTAssertTrue(manual.waitForExistence(timeout: 5), "No se expandió el menú del FAB (fab_manual).")
+        manual.tap()
+        XCTAssertTrue(
+            app.textFields["new_transaction_amount"].waitForExistence(timeout: 5),
+            "No se montó NewTransactionView (new_transaction_amount)."
+        )
+        let windowHeight = app.windows.firstMatch.frame.height
+
+        // Cómo se cierra cada uno sin tocar el formulario: cuenta y subcategoría se cierran al elegir una fila;
+        // etiquetas, con su «Guardar».
+        let selectors: [(chip: String, rowPrefix: String, closesOnRowTap: Bool)] = [
+            ("new_transaction_account_chip", "account_selector_row_", true),
+            ("new_transaction_subcategory_chip", "subcategory_selector_row_", true),
+            ("new_transaction_tags_chip", "tag_selector_row_", false),
+        ]
+        for selector in selectors {
+            let chip = app.buttons[selector.chip]
+            XCTAssertTrue(chip.waitForExistence(timeout: 5), "No apareció \(selector.chip).")
+            chip.tap()
+            let firstRow = app.buttons
+                .matching(NSPredicate(format: "identifier BEGINSWITH %@", selector.rowPrefix))
+                .firstMatch
+            XCTAssertTrue(firstRow.waitForExistence(timeout: 5), "No se montó el selector de \(selector.chip).")
+            XCTAssertGreaterThan(
+                firstRow.frame.minY, windowHeight * 0.4,
+                "El selector de \(selector.chip) abrió a pantalla completa, no a media altura."
+            )
+            // Estirar: un deslizamiento rápido hacia arriba dentro de la hoja la sube a grande. Desde la mitad baja de
+            // la ventana, que a media altura es hoja; arrastrar desde la fila no movía la hoja (medido).
+            let window = app.windows.firstMatch
+            window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.9)).press(
+                forDuration: 0.05,
+                thenDragTo: window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.2)),
+                withVelocity: .fast,
+                thenHoldForDuration: 0
+            )
+            // `frame` no se puede leer por predicado (no es KVC): se sondea el marco hasta 5 s.
+            let deadline = Date().addingTimeInterval(5)
+            while firstRow.frame.minY >= windowHeight * 0.4, Date() < deadline {
+                RunLoop.current.run(until: Date().addingTimeInterval(0.2))
+            }
+            XCTAssertLessThan(
+                firstRow.frame.minY, windowHeight * 0.4,
+                "El selector de \(selector.chip) no se estiró a grande."
+            )
+            if selector.closesOnRowTap {
+                firstRow.tap()
+            } else {
+                app.buttons["toolbar_save_button"].tap()
+            }
+            XCTAssertTrue(chip.waitForHittable(timeout: 5), "El selector de \(selector.chip) no se cerró.")
+        }
+    }
 }

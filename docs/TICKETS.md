@@ -579,6 +579,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | readme-index-lists-files-from-other-worktrees | discarded | tickets/discarded/readme-index-lists-files-from-other-worktrees.md |
 | readme-index-scans-internal-worktrees | discarded | tickets/discarded/readme-index-scans-internal-worktrees.md |
 | rebase-and-cherry-pick-skip-the-attribution-hook | backlog | tickets/backlog/rebase-and-cherry-pick-skip-the-attribution-hook.md |
+| record-selectors-open-at-medium-detent | qa | tickets/qa/record-selectors-open-at-medium-detent.md |
 | records-standalone-amount-discrepancy | backlog | tickets/backlog/records-standalone-amount-discrepancy.md |
 | records-summary-approximate-mark-fails-only-alongside-group-suites | backlog | tickets/backlog/records-summary-approximate-mark-fails-only-alongside-group-suites.md |
 | records-summary-chips-hide-their-amount-from-voiceover | backlog | tickets/backlog/records-summary-chips-hide-their-amount-from-voiceover.md |

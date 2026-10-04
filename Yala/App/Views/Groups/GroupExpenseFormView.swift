@@ -303,16 +303,16 @@ struct GroupExpenseFormView: View {
                 AccountSelectorSheet(
                     selectedAccount: $viewModel.selectedAccount,
                     title: L10n.Transaction.account,
-                    currencyFilter: viewModel.currencyCode
+                    currencyFilter: viewModel.currencyCode,
+                    sizing: .mediumFirst
                 )
-                .yalaSheetDetents([.medium, .large])
             }
             .sheet(isPresented: $showSubcategorySelector) {
                 SubcategorySelectorSheet(
                     selectedSubcategory: $viewModel.selectedSubcategory,
-                    transactionType: .expense
+                    transactionType: .expense,
+                    sizing: .mediumFirst
                 )
-                .yalaSheetDetents([.large])
             }
             .sheet(isPresented: $showSplitDetail, onDismiss: {
                 // Al cerrar: quien quedó sin valor en el tipo activo se deselecciona
