@@ -4288,6 +4288,19 @@
 "stats.trends.insight.stableExpense" = "支出は安定しています。";
 "stats.trends.insight.stableIncome" = "収入は安定しています。";
 "stats.trends.insight.stableBalance" = "残高は安定しています。";
+"stats.trends.insight.sustainedUpExpense %@" = "支出は%@連続で増えています。";
+"stats.trends.insight.sustainedDownExpense %@" = "支出は%@連続で減っています。";
+"stats.trends.insight.sustainedUpIncome %@" = "収入は%@連続で増えています。";
+"stats.trends.insight.sustainedDownIncome %@" = "収入は%@連続で減っています。";
+"stats.trends.insight.sustainedUpBalance %@" = "残高は%@連続で増えています。";
+"stats.trends.insight.sustainedDownBalance %@" = "残高は%@連続で減っています。";
+"stats.trends.insight.durationWeeks %d" = "%d週";
+"stats.trends.insight.durationMonths %d" = "%dか月";
+"stats.trends.insight.durationYears %d" = "%d年";
+"stats.trends.insight.cashFlowSurplus %d" = "収入で支出の%d%%をまかなえました。プラスで締めくくりました。";
+"stats.trends.insight.cashFlowDeficit %d" = "収入で支出の%d%%をまかないました。入ってきた額より多く使いました。";
+"stats.trends.insight.cashFlowNoIncome" = "この期間は支出のみで、収入の記録はありません。";
+"stats.trends.insight.weekdayPeak %@ %@" = "最もお金を使う曜日は%@です。平均%@です。";
 
 // MARK: - Stats WidgetInfo (periodComparison, sankey) — added 2026-05-18
 "panel.widgetInfo.periodComparison.title" = "期間の比較";

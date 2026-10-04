@@ -4262,6 +4262,19 @@
 "stats.trends.insight.stableExpense" = "Your expenses stay steady.";
 "stats.trends.insight.stableIncome" = "Your income stays steady.";
 "stats.trends.insight.stableBalance" = "Your balance stays steady.";
+"stats.trends.insight.sustainedUpExpense %@" = "Your expenses have been rising for %@.";
+"stats.trends.insight.sustainedDownExpense %@" = "Your expenses have been falling for %@.";
+"stats.trends.insight.sustainedUpIncome %@" = "Your income has been growing for %@.";
+"stats.trends.insight.sustainedDownIncome %@" = "Your income has been falling for %@.";
+"stats.trends.insight.sustainedUpBalance %@" = "Your balance has been growing for %@.";
+"stats.trends.insight.sustainedDownBalance %@" = "Your balance has been falling for %@.";
+"stats.trends.insight.durationWeeks %d" = "%d weeks";
+"stats.trends.insight.durationMonths %d" = "%d months";
+"stats.trends.insight.durationYears %d" = "%d years";
+"stats.trends.insight.cashFlowSurplus %d" = "Your income covered %d%% of your expenses: you closed in the green.";
+"stats.trends.insight.cashFlowDeficit %d" = "Your income covered %d%% of your expenses: you spent more than came in.";
+"stats.trends.insight.cashFlowNoIncome" = "This period you logged expenses but no income.";
+"stats.trends.insight.weekdayPeak %@ %@" = "%@ is your priciest day: you spend %@ on average.";
 
 // MARK: - Stats WidgetInfo (periodComparison, sankey) — added 2026-05-18
 "panel.widgetInfo.periodComparison.title" = "Period comparison";

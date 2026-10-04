@@ -4288,6 +4288,19 @@
 "stats.trends.insight.stableExpense" = "Je uitgaven blijven stabiel.";
 "stats.trends.insight.stableIncome" = "Je inkomen blijft stabiel.";
 "stats.trends.insight.stableBalance" = "Je saldo blijft stabiel.";
+"stats.trends.insight.sustainedUpExpense %@" = "Je uitgaven stijgen al %@.";
+"stats.trends.insight.sustainedDownExpense %@" = "Je uitgaven dalen al %@.";
+"stats.trends.insight.sustainedUpIncome %@" = "Je inkomen groeit al %@.";
+"stats.trends.insight.sustainedDownIncome %@" = "Je inkomen daalt al %@.";
+"stats.trends.insight.sustainedUpBalance %@" = "Je saldo groeit al %@.";
+"stats.trends.insight.sustainedDownBalance %@" = "Je saldo daalt al %@.";
+"stats.trends.insight.durationWeeks %d" = "%d weken";
+"stats.trends.insight.durationMonths %d" = "%d maanden";
+"stats.trends.insight.durationYears %d" = "%d jaar";
+"stats.trends.insight.cashFlowSurplus %d" = "Je inkomen dekte %d%% van je uitgaven: je sloot positief af.";
+"stats.trends.insight.cashFlowDeficit %d" = "Je inkomen dekte %d%% van je uitgaven: je gaf meer uit dan er binnenkwam.";
+"stats.trends.insight.cashFlowNoIncome" = "Deze periode heb je uitgaven geregistreerd, maar geen inkomen.";
+"stats.trends.insight.weekdayPeak %@ %@" = "Je duurste dag is %@: je geeft gemiddeld %@ uit.";
 
 // MARK: - Stats WidgetInfo (periodComparison, sankey) — added 2026-05-18
 "panel.widgetInfo.periodComparison.title" = "Periode-vergelijking";

@@ -4246,6 +4246,19 @@
 "stats.trends.insight.stableExpense" = "Tu gasto se mantiene estable.";
 "stats.trends.insight.stableIncome" = "Tus ingresos se mantienen estables.";
 "stats.trends.insight.stableBalance" = "Tu balance se mantiene estable.";
+"stats.trends.insight.sustainedUpExpense %@" = "Tu gasto viene subiendo desde hace %@.";
+"stats.trends.insight.sustainedDownExpense %@" = "Tu gasto viene bajando desde hace %@.";
+"stats.trends.insight.sustainedUpIncome %@" = "Tus ingresos vienen creciendo desde hace %@.";
+"stats.trends.insight.sustainedDownIncome %@" = "Tus ingresos vienen bajando desde hace %@.";
+"stats.trends.insight.sustainedUpBalance %@" = "Tu balance viene creciendo desde hace %@.";
+"stats.trends.insight.sustainedDownBalance %@" = "Tu balance viene bajando desde hace %@.";
+"stats.trends.insight.durationWeeks %d" = "%d semanas";
+"stats.trends.insight.durationMonths %d" = "%d meses";
+"stats.trends.insight.durationYears %d" = "%d años";
+"stats.trends.insight.cashFlowSurplus %d" = "Tus ingresos cubrieron el %d%% de tus gastos: cerraste en positivo.";
+"stats.trends.insight.cashFlowDeficit %d" = "Tus ingresos cubrieron el %d%% de tus gastos: gastaste más de lo que entró.";
+"stats.trends.insight.cashFlowNoIncome" = "En este período registraste gastos, pero ningún ingreso.";
+"stats.trends.insight.weekdayPeak %@ %@" = "El %@ es tu día más caro: gastas %@ en promedio.";
 
 // MARK: - Stats WidgetInfo (periodComparison, sankey) — added 2026-05-18
 "panel.widgetInfo.periodComparison.title" = "Comparativa de período";

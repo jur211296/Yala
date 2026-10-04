@@ -1,10 +1,10 @@
 ---
 id: trends-insight-card-v2-bullets
-status: backlog
+status: qa
 priority: medium
 area: stats
 created: 2026-05-13
-updated: 2026-08-26
+updated: 2026-10-03
 source: YalaWiki/Backlog/trends-insight-card-v2-bullets.md
 ---
 
@@ -322,3 +322,47 @@ Sprint medio: ~3-4 sesiones (data layer + AI service + rule-based + UI bullets
 - Cuando se cierre V2, archivar este ticket con prefix `ok_`.
 
 migrated from YalaWiki Backlog/trends-insight-card-v2-bullets.md @ 1934e8ad
+
+## Implementado (2026-10-03)
+
+Qué cambia para el usuario: el resumen del final de Tendencias deja de ser un párrafo y pasa a una
+lista, una frase por gráfica que tiene datos, en el orden de las gráficas:
+
+- **Tendencia**: solo si hay una racha de al menos 3 períodos completos seguidos («Tu gasto viene
+  subiendo desde hace 3 meses»). Sin racha, no sale.
+- **Comparativa**: la variación contra el período anterior (la frase de V1). No sale en «Todo el tiempo».
+- **Flujo de efectivo**: qué parte de los gastos cubrieron los ingresos y si cerraste en positivo.
+- **Día de la semana**: el día con más gasto promedio y su importe.
+
+Pro: «Generar análisis IA» pide un análisis propio de Tendencias (no el texto general de Resumen), con
+un bullet por gráfica e icono de la gráfica. «Regenerar» pide uno nuevo. Si falla, vuelven los bullets
+de reglas con un aviso y el botón para reintentar.
+
+Decisiones tomadas (Paso 0 del encargo, en el PR): ver el cuerpo del PR. Las dos que se apartan del
+boceto D4-bis: el bullet de Tendencia es la racha (el boceto le pasaba `previousTotal: nil` y salía
+siempre «onset»), y la card se monta con 1 bullet o más (no se fabrica un segundo).
+
+Un cambio colateral: el gate de «≥ 5 movimientos» ya no lee `insightData` de Resumen (que no se
+recalcula en Tendencias) sino `StatisticsViewModel.periodTransactionCount`.
+
+## Guion de device-QA (iPhone de Jürgen, build con este PR)
+
+La respuesta real de la IA no se puede probar en simulador (App Attest). Lo demás está cubierto por
+`TrendsInsightCardUITests`.
+
+1. Abre **Estadísticas → Tendencias** con «Este mes». Baja hasta el final: tarjeta con 2-4 frases con
+   viñeta, una por gráfica.
+2. Cambia a **«Todo el tiempo»**: desaparece la frase de la comparativa.
+3. Cambia a **«Mes pasado»** y elige la métrica **Gasto**: si tu gasto lleva 3+ meses seguidos
+   subiendo o bajando ≥ 5 %, sale primero la frase «Tu gasto viene … desde hace N meses». Si no, no sale
+   (es lo esperado).
+4. (Pro) Toca **«Generar análisis IA»**: sale el cargando y después 2-4 frases con icono (gráfica,
+   flechas, flechas arriba/abajo, calendario) que citan cifras de las gráficas.
+5. Toca **«Regenerar»**: vuelve a cargar y trae otro texto.
+6. Cambia el período: la tarjeta vuelve a las frases sin IA con el botón de generar.
+7. Modo avión y toca «Generar análisis IA»: siguen las frases sin IA con «Algo salió mal. Intenta de
+   nuevo.» debajo.
+8. Ajustes de texto al máximo (AX5): las frases no se cortan.
+
+Hallazgos abiertos en ticket aparte: `trends-hero-keeps-the-previous-period-after-changing-it-on-trends`,
+`trends-insight-title-capitalizes-the-period-mid-sentence`.

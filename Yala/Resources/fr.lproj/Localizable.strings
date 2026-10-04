@@ -4257,6 +4257,19 @@
 "stats.trends.insight.stableExpense" = "Vos dépenses restent stables.";
 "stats.trends.insight.stableIncome" = "Vos revenus restent stables.";
 "stats.trends.insight.stableBalance" = "Votre solde reste stable.";
+"stats.trends.insight.sustainedUpExpense %@" = "Vos dépenses augmentent depuis %@.";
+"stats.trends.insight.sustainedDownExpense %@" = "Vos dépenses baissent depuis %@.";
+"stats.trends.insight.sustainedUpIncome %@" = "Vos revenus progressent depuis %@.";
+"stats.trends.insight.sustainedDownIncome %@" = "Vos revenus baissent depuis %@.";
+"stats.trends.insight.sustainedUpBalance %@" = "Votre solde progresse depuis %@.";
+"stats.trends.insight.sustainedDownBalance %@" = "Votre solde baisse depuis %@.";
+"stats.trends.insight.durationWeeks %d" = "%d semaines";
+"stats.trends.insight.durationMonths %d" = "%d mois";
+"stats.trends.insight.durationYears %d" = "%d ans";
+"stats.trends.insight.cashFlowSurplus %d" = "Vos revenus ont couvert %d%% de vos dépenses : vous terminez dans le positif.";
+"stats.trends.insight.cashFlowDeficit %d" = "Vos revenus ont couvert %d%% de vos dépenses : vous avez dépensé plus que ce qui est entré.";
+"stats.trends.insight.cashFlowNoIncome" = "Sur cette période, vous avez enregistré des dépenses mais aucun revenu.";
+"stats.trends.insight.weekdayPeak %@ %@" = "Le %@ est votre jour le plus cher : vous dépensez %@ en moyenne.";
 
 // MARK: - Stats WidgetInfo (periodComparison, sankey) — added 2026-05-18
 "panel.widgetInfo.periodComparison.title" = "Comparaison de période";
