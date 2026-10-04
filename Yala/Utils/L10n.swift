@@ -245,6 +245,27 @@ enum L10n {
         static var openGroup: String { ls("groups.contextMenu.open", comment: "Menú contextual de grupo") }
     }
 
+    /// Etiqueta encima del importe de la tarjeta de cuenta del Panel: dice qué es ese número.
+    enum PanelAccountCard {
+        static var balance: String { ls("panel.accounts.card.balance", comment: "Label above the amount on a Panel account card") }
+        static var toPay: String { ls("panel.accounts.card.toPay", comment: "Label above the amount on a credit card account with debt") }
+        static func spentInPeriod(_ period: String) -> String {
+            String(format: ls("panel.accounts.card.spentInPeriod %@", comment: "Label above the amount in expenses-only mode"), period)
+        }
+    }
+
+    /// Vista de una cuenta (la hoja que abre el toque en su tarjeta del Panel).
+    enum AccountDetail {
+        static var moneyIn: String { ls("accountDetail.moneyIn", comment: "Money that came into the account in the period") }
+        static var moneyOut: String { ls("accountDetail.moneyOut", comment: "Money that left the account in the period") }
+        static var topCategories: String { ls("accountDetail.topCategories", comment: "Section with top expense categories") }
+        static var latest: String { ls("accountDetail.latest", comment: "Section with latest records") }
+        static var empty: String { ls("accountDetail.empty", comment: "No records in the period") }
+        static func chartLabel(account: String, period: String) -> String {
+            String(format: ls("accountDetail.chartLabel %@ %@", comment: "Accessibility label of the balance chart"), account, period)
+        }
+    }
+
     /// Varias ventanas (iPad, iPhone Duo abierto): fase 4 del carril adaptativo.
     enum Window {
         static var openInNewWindow: String { ls("window.openInNewWindow", comment: "Menú contextual de grupo o registro: abrirlo en una ventana nueva de Yala") }
@@ -832,36 +853,8 @@ enum L10n {
             }
         }
 
-        /// Hero del Panel (PP2-01). El `aiSubtitle` LLM es el KPI protagonista
-        /// cuando está disponible (Pro + consent); si no, el fallback rule-based
-        /// con cifras concretas sube al protagonista. El chip conserva el sufijo
-        /// de mes sólo durante la primera semana.
+        /// Hero del Panel (PP2-01). El chip conserva el sufijo de mes sólo durante la primera semana.
         enum Hero {
-            // MARK: Rule-based KPI fallback (aiSubtitle nil — Free / sin consent / offline / cache miss).
-            // Los montos llegan con `**` para render bold via `AttributedString(markdown:)`.
-            static func kpiMonthStart(income: String, daysRemaining: Int) -> String {
-                String(format: ls("panel.hero.kpi.monthStart %@ %d", comment: "Hero KPI fallback — month just started, markdown bold"), income, daysRemaining)
-            }
-            static func kpiOnTrack(income: String, spent: String, available: String, daysRemaining: Int) -> String {
-                String(format: ls("panel.hero.kpi.onTrack %@ %@ %@ %d", comment: "Hero KPI fallback — on track, markdown bold"), income, spent, available, daysRemaining)
-            }
-            static func kpiNeutral(income: String, spent: String, available: String, daysRemaining: Int) -> String {
-                String(format: ls("panel.hero.kpi.neutral %@ %@ %@ %d", comment: "Hero KPI fallback — neutral, markdown bold"), income, spent, available, daysRemaining)
-            }
-            static func kpiTight(spent: String, available: String, daysRemaining: Int) -> String {
-                String(format: ls("panel.hero.kpi.tight %@ %@ %d", comment: "Hero KPI fallback — budget tight, markdown bold"), spent, available, daysRemaining)
-            }
-            static func kpiOverBudget(spent: String, income: String) -> String {
-                String(format: ls("panel.hero.kpi.overBudget %@ %@", comment: "Hero KPI fallback — over budget, markdown bold"), spent, income)
-            }
-
-            // MARK: AI Hero
-            /// CTA inline visible cuando no hay aiSubtitle disponible y el user
-            /// aún puede "desbloquearlo" (Free → upgrade; Pro sin consent →
-            /// activar el toggle de Insights IA en Perfil).
-            static var upsellCTA: String {
-                ls("panel.hero.upsellCTA", comment: "Hero inline CTA — appears for Free and for Pro users without AI consent")
-            }
             /// Label inline arriba del monto disponible — desambigua qué
             /// representa el monto. Se compone con el `displayName` del
             /// período actual ("Disponible · Este mes", "Available · This year").
@@ -2955,7 +2948,6 @@ enum L10n {
         static var noTransactionsToExport: String { ls("accessibility.noTransactionsToExport", comment: "") }
         /// D6 (§3.3.6): "Exportar datos" deshabilitada en solo-grupos sin grupos activos.
         static var noGroupsToExport: String { ls("accessibility.noGroupsToExport", comment: "") }
-        static func accountCard(_ name: String, _ balance: String) -> String { String(format: ls("accessibility.accountCard %@ %@", comment: ""), name, balance) }
         static var editAccount: String { ls("accessibility.editAccount", comment: "") }
         static func pageIndicator(_ current: Int, _ total: Int) -> String { String(format: ls("accessibility.pageIndicator %d %d", comment: ""), current, total) }
         static func accountRow(_ name: String, _ currency: String) -> String { String(format: ls("accessibility.accountRow %@ %@", comment: ""), name, currency) }

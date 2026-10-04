@@ -118,13 +118,7 @@
 
 // KPI fallback (aiSubtitle takes the KPI slot when available)
 // Markdown bold (**amount**) renders via AttributedString(markdown:)
-"panel.hero.kpi.monthStart %@ %d" = "De maand begint, stap voor stap.";
-"panel.hero.kpi.onTrack %@ %@ %@ %d" = "Je zit lekker op schema deze maand, ga zo door.";
-"panel.hero.kpi.neutral %@ %@ %@ %d" = "Je maand loopt — alles in orde.";
-"panel.hero.kpi.tight %@ %@ %d" = "Krappe maand maar haalbaar, stap voor stap.";
-"panel.hero.kpi.overBudget %@ %@" = "Morgen beginnen we opnieuw, alles komt goed.";
 
-"panel.hero.upsellCTA" = "Personaliseer je bericht met AI";
 "panel.hero.availableLabel" = "Beschikbaar";
 
 // MARK: - Trend Widget
@@ -1688,7 +1682,6 @@
 "accessibility.skipSync" = "Wachten overslaan en doorgaan met instelling";
 "accessibility.tabLimitReached" = "Maximum aantal tabbladen bereikt";
 "accessibility.noTransactionsToExport" = "Geen transacties om te exporteren";
-"accessibility.accountCard %@ %@" = "Rekening %@, saldo %@";
 "accessibility.editAccount" = "Rekening bewerken";
 "accessibility.pageIndicator %d %d" = "Pagina %1$d van %2$d";
 "accessibility.accountRow %@ %@" = "Rekening %@, valuta %@";
@@ -6260,3 +6253,30 @@
 "tutorials.applePay.pendingDrafts" = "Apple Pay-betalingen in je inbox: %d";
 "faceIDGuide.guarantee" = "Yala ziet je gezicht nooit: dat controleert iOS.";
 "faceIDGuide.previewAction" = "Face ID vereisen";
+
+/* Label above the amount on a Panel account card */
+"panel.accounts.card.balance" = "Saldo";
+
+/* Label above the amount on a credit card account with debt */
+"panel.accounts.card.toPay" = "Te betalen";
+
+/* Label above the amount in expenses-only mode; %@ = period name like 'Este mes' */
+"panel.accounts.card.spentInPeriod %@" = "Uitgegeven · %@";
+
+/* Account detail sheet: money that came into the account in the period */
+"accountDetail.moneyIn" = "In";
+
+/* Account detail sheet: money that left the account in the period */
+"accountDetail.moneyOut" = "Uit";
+
+/* Account detail sheet: section with top expense categories */
+"accountDetail.topCategories" = "Waar het heen ging";
+
+/* Account detail sheet: section with latest records */
+"accountDetail.latest" = "Laatste transacties";
+
+/* Accessibility label of the balance chart; account name, period name */
+"accountDetail.chartLabel %@ %@" = "Saldo van %@ in %@";
+
+/* Account detail sheet: no records in the period */
+"accountDetail.empty" = "Geen transacties in deze periode";

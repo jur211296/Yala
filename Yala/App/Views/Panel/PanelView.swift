@@ -31,6 +31,8 @@ struct PanelView: View {
     /// condiciones las lee `CloudAttestNotice.isShowing` vivas, en el body (ticket
     /// `cloud-tab-does-not-say-this-phone-cannot-sync-personal-data`).
     @State private var attestVerdictIsTerminal = false
+    /// Solo para el punto del botón de filtros: lee los filtros de `SessionState`, no guarda nada.
+    @State private var panelFilters = PanelSessionFilters()
 
     /// Periodic banner visibility
     @State private var showPeriodicBanner = false
@@ -225,6 +227,21 @@ struct PanelView: View {
 
     // MARK: - Toolbar Buttons
 
+    /// Filtros del Panel: la misma hoja que Estadísticas e Informes, con todas las cuentas que quieras a la vez. El
+    /// punto dice que el usuario filtró algo (`hasUserFilters`).
+    private var filtersToolbarButton: some View {
+        Button {
+            sheets.showFilters = true
+        } label: {
+            Image(systemName: "line.3.horizontal.decrease")
+                .font(DS.Typography.body).fontWeight(.medium)
+                .foregroundStyle(.thToolbarIcon)
+        }
+        .filterBadge(isActive: panelFilters.hasUserFilters)
+        .accessibilityLabel(L10n.Accessibility.filters)
+        .accessibilityIdentifier("panel_filters_button")
+    }
+
     private var sectionsConfigButton: some View {
         Button {
             DS.Haptic.light()
@@ -281,6 +298,9 @@ struct PanelView: View {
                 .toolbar {
                     ToolbarItem(placement: .navigationBarLeading) {
                         inboxToolbarButton
+                    }
+                    ToolbarItem(placement: .topBarTrailing) {
+                        filtersToolbarButton
                     }
                     ToolbarItem(placement: .topBarTrailing) {
                         sectionsConfigButton
@@ -390,13 +410,6 @@ struct PanelView: View {
         }
         .onChange(of: viewModel.accounts.count) { _, _ in
             reconcileAccountsSortOrder()
-        }
-        // Regenera mensaje IA al togglear feature o cambiar estado Pro.
-        .onChange(of: appPreferences.aiInsightsConsentAccepted) { _, _ in
-            viewModel.retriggerHeroAI()
-        }
-        .onChange(of: StoreKitManager.shared.isProUser) { _, _ in
-            viewModel.retriggerHeroAI()
         }
         .modifier(PanelKeyboardRequestObserver(sessionState: sessionState, open: openFromKeyboard))
     }
@@ -583,6 +596,7 @@ struct PanelView: View {
                                 accountsVisible: panorama.accounts,
                                 healthVisible: panorama.health,
                                 accountFormSheet: $sheets.accountFormSheet,
+                                accountDetail: $sheets.accountDetail,
                                 showUpgradeForAccounts: $sheets.showUpgradeForAccounts
                             )
                             .headerBandColumn(.trailing)

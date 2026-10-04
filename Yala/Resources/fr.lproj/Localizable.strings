@@ -118,13 +118,7 @@
 
 // KPI fallback (aiSubtitle prend la place du KPI quand disponible)
 // Le gras markdown (**montant**) se rend via AttributedString(markdown:)
-"panel.hero.kpi.monthStart %@ %d" = "On démarre le mois, pas à pas.";
-"panel.hero.kpi.onTrack %@ %@ %@ %d" = "Bon rythme ce mois-ci, continue.";
-"panel.hero.kpi.neutral %@ %@ %@ %d" = "Ton mois en marche — tout va bien.";
-"panel.hero.kpi.tight %@ %@ %d" = "Mois serré mais gérable, pas à pas.";
-"panel.hero.kpi.overBudget %@ %@" = "Demain on repart à neuf, tout va bien.";
 
-"panel.hero.upsellCTA" = "Personnalise ton message avec l'IA";
 "panel.hero.availableLabel" = "Disponible";
 
 // MARK: - Trend Widget
@@ -1689,7 +1683,6 @@
 "accessibility.skipSync" = "Ignorer l'attente et continuer la configuration";
 "accessibility.tabLimitReached" = "Limite d'onglets atteinte";
 "accessibility.noTransactionsToExport" = "Aucune transaction à exporter";
-"accessibility.accountCard %@ %@" = "Compte %@, solde %@";
 "accessibility.editAccount" = "Modifier le compte";
 "accessibility.pageIndicator %d %d" = "Page %1$d sur %2$d";
 "accessibility.accountRow %@ %@" = "Compte %@, devise %@";
@@ -6249,3 +6242,30 @@
 "tutorials.applePay.pendingDrafts" = "Paiements Apple Pay dans ta boîte de réception : %d";
 "faceIDGuide.guarantee" = "Yala ne voit jamais ton visage : c'est iOS qui le vérifie.";
 "faceIDGuide.previewAction" = "Exiger Face ID";
+
+/* Label above the amount on a Panel account card */
+"panel.accounts.card.balance" = "Solde";
+
+/* Label above the amount on a credit card account with debt */
+"panel.accounts.card.toPay" = "À payer";
+
+/* Label above the amount in expenses-only mode; %@ = period name like 'Este mes' */
+"panel.accounts.card.spentInPeriod %@" = "Dépensé · %@";
+
+/* Account detail sheet: money that came into the account in the period */
+"accountDetail.moneyIn" = "Entrées";
+
+/* Account detail sheet: money that left the account in the period */
+"accountDetail.moneyOut" = "Sorties";
+
+/* Account detail sheet: section with top expense categories */
+"accountDetail.topCategories" = "Où est passé l’argent";
+
+/* Account detail sheet: section with latest records */
+"accountDetail.latest" = "Derniers mouvements";
+
+/* Accessibility label of the balance chart; account name, period name */
+"accountDetail.chartLabel %@ %@" = "Solde de %@ sur %@";
+
+/* Account detail sheet: no records in the period */
+"accountDetail.empty" = "Aucun mouvement sur cette période";
