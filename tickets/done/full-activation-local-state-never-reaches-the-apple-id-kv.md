@@ -1,12 +1,14 @@
 ---
 id: full-activation-local-state-never-reaches-the-apple-id-kv
-status: qa
-updated: 2026-09-30
-qa-status: needs-testing
+status: done
+updated: 2026-10-04
 priority: medium
 area: "sesiones, sync, settings"
 created: 2026-09-14
 source: "consecuencia medida del guard del iCloud-KV (`icloud-kv-prefs-cross-sessions-on-a-lent-phone`), review adversarial"
+qa-status: not-replicable
+qa-date: 2026-10-04
+qa-notes: barrido 2026-10-04 sin device-QA - pide un Apple ID de pruebas cuyo iCloud se borra y empezar de cero dentro de la activacion; C3 del guion ya recorre la activacion
 ---
 
 # Quien activa Yala completo desde solo-grupos no sube sus preferencias al iCloud de su Apple ID
@@ -97,3 +99,7 @@ Build de TestFlight que lleve este cambio. Una cuenta de Grupos (invitación o c
 
 Si en el paso 4 no sale «Ya tienes datos en tu iCloud», el paso 1 no llegó a subir a iCloud: espera un minuto con
 la app abierta tras el onboarding del paso 1 y repite desde el paso 2.
+
+## Barrido de `qa` · 2026-10-04 · cerrado sin device-QA
+
+Sale de la cola de device-QA por el barrido antes del QA del lunes (encargo `2026-10-04-barrido-qa-antes-del-qa-del-lunes`), con el criterio de #224 y #291. El guion pide un Apple ID de pruebas cuyo iCloud se borra en el paso 4, y elegir «Empezar de cero» dentro de la activación: no es el camino principal. La activación desde grupos ya la recorre C3 del guion (restaurando). La subida de preferencias al iCloud del Apple ID la fijan los unit tests del arreglo (commit `217dcbd13`).

@@ -1,11 +1,14 @@
 ---
 id: group-expense-edit-save-disabled-without-saying-the-account-is-missing
-status: qa
+status: done
 updated: 2026-10-04
 priority: medium
 area: "groups"
 created: 2026-10-04
 source: recorrido de group-expense-views-redesign (2026-10-04)
+qa-status: absorbed
+qa-date: 2026-10-04
+qa-notes: barrido 2026-10-04 - su comprobacion es el paso 5 de group-expense-views-redesign (R11 del guion), que sigue en qa
 ---
 
 # Al editar un gasto de grupo, «Guardar» queda apagado sin decir que falta la cuenta
@@ -41,3 +44,7 @@ como ya hace el monto con `amountRequiredTitle`). Si se elige la propuesta B de
 La cuenta pasó a la tarjeta «Pagado por · Reparto» del formulario, siempre visible cuando pagaste tú, y sin
 cuenta dice «Selecciona una cuenta» con el icono de aviso. Pin: `GroupsSmokeUITests#test_groupExpenseAccountRowFollowsThePayer`.
 QA en el iPhone: paso 5 del guion de `group-expense-views-redesign`.
+
+## Barrido de `qa` · 2026-10-04 · absorbido
+
+Sale de la cola de device-QA por el barrido antes del QA del lunes (encargo `2026-10-04-barrido-qa-antes-del-qa-del-lunes`). Se arregló dentro de `group-expense-views-redesign`, y su comprobación entera —un gasto que pagaste tú sin cuenta enlazada dice «Selecciona una cuenta» con aviso y Guardar apagado— es el paso 5 de ese ticket, que sigue en `qa` como R11 del guion.

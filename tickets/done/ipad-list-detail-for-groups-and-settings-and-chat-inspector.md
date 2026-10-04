@@ -1,14 +1,14 @@
 ---
 id: ipad-list-detail-for-groups-and-settings-and-chat-inspector
-status: qa
+status: done
 priority: low
 area: "platform, ipad, groups, settings, chat"
 created: 2026-09-26
-updated: 2026-09-29
-qa-status: needs-testing
-qa-date: 2026-09-29
-qa-notes: falta ver estrechar con un grupo abierto (bloqueado por un crash de la fase 1, ticket propio) y la vuelta a ancho; lo demás visto en simulador
+updated: 2026-10-04
 source: "exploración iPad (docs/exploracion/ipad-nativo.md §5.1, §5.2 y §8, fase 2), 2026-09-26"
+qa-status: not-replicable
+qa-date: 2026-10-04
+qa-notes: barrido 2026-10-04 sin device-QA - solo iPad estrechando la ventana; lo demas visto en simulador el 29-sep
 ---
 
 # iPad · fase 2: Grupos y Ajustes en dos columnas, y Yala IA al lado de los datos
@@ -93,3 +93,7 @@ la raíz; APIs de iOS 27.1 solo tras `if #available`.
    [[ipad-narrowing-the-window-on-groups-crashes-the-app]]): abre un grupo, estrecha y vuelve a ensanchar.
 
 Si en el paso 4 algo se pierde (el chat se cierra, el registro desaparece), apúntalo en este ticket.
+
+## Barrido de `qa` · 2026-10-04 · cerrado sin device-QA
+
+Sale de la cola de device-QA por el barrido antes del QA del lunes (encargo `2026-10-04-barrido-qa-antes-del-qa-del-lunes`), con el criterio de #224 y #291. Lo que falta (estrechar la ventana con un grupo abierto y volver a ancho) solo existe en un iPad: no tiene camino en un iPhone. Lo demás se vio en el simulador el 29-sep.

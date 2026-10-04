@@ -1,11 +1,14 @@
 ---
 id: list-column-too-narrow-for-accessibility-text-on-a-turned-pro-max
-status: qa
+status: done
 priority: low
 area: "design-system, iphone, adaptativo, records, planning, accessibility"
 created: 2026-10-01
-updated: 2026-10-01
+updated: 2026-10-04
 source: "iphone-landscape-headers-fill-the-short-screen (carril adaptativo), separado en su Paso 0 (D6)"
+qa-status: not-replicable
+qa-date: 2026-10-04
+qa-notes: barrido 2026-10-04 sin device-QA - solo falta el iPad con texto AX5 en una ventana estrechada; el iPhone girado se capturo el 1-oct
 ---
 
 # Con texto AX5 en el Pro Max girado, la columna de la lista se queda estrecha
@@ -70,3 +73,7 @@ View o «Apps en ventanas»).
 
 [[iphone-landscape-headers-fill-the-short-screen]] · [[iphone-supports-landscape-orientation]] ·
 [[large-text-leftovers-outside-the-main-iphone-screens]]
+
+## Barrido de `qa` · 2026-10-04 · cerrado sin device-QA
+
+Sale de la cola de device-QA por el barrido antes del QA del lunes (encargo `2026-10-04-barrido-qa-antes-del-qa-del-lunes`), con el criterio de #224 y #291. Lo único que no se capturó es el iPad con texto AX5 en una ventana estrechada (Split View): no tiene camino en un iPhone. El iPhone Pro Max girado con texto grande se capturó el 1-oct.

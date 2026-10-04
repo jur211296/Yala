@@ -1,10 +1,14 @@
 ---
 id: wipe-data-does-not-cancel-the-remote-wipe-grace
-status: qa
+status: done
 priority: medium
 area: "settings, sesiones"
 created: 2026-09-14
 source: "review adversarial de `wipe-alert-fires-on-a-session-that-no-longer-obeys-the-signal`, lente de caminos"
+updated: 2026-10-04
+qa-status: not-replicable
+qa-date: 2026-10-04
+qa-notes: barrido 2026-10-04 sin device-QA - pide dos dispositivos con el mismo Apple ID; el propio ticket lo da por opcional y lo fija aRealRemoteWipe_stillStartsTheGrace
 ---
 
 # «Vaciar datos» es el único borrado deliberado que no avisa a la cuenta atrás de los cinco segundos
@@ -116,3 +120,7 @@ Montaje: dos dispositivos con el mismo Apple ID e iCloud activo; Yala instalado 
 4. En A tras el paso 1 (y en una instalación solo-grupos que vacíe sus datos): **ningún** aviso a los 5-10 s.
 5. El vaciado remoto DE VERDAD (filas que desaparecen sin señal) no se puede provocar a mano de forma fiable: lo
    fijan los unitarios (`aRealRemoteWipe_stillStartsTheGrace`).
+
+## Barrido de `qa` · 2026-10-04 · cerrado sin device-QA
+
+Sale de la cola de device-QA por el barrido antes del QA del lunes (encargo `2026-10-04-barrido-qa-antes-del-qa-del-lunes`), con el criterio de #224 y #291. El guion pide dos dispositivos con el mismo Apple ID y el propio ticket lo marcaba opcional; el vaciado remoto de verdad no se provoca a mano. Lo fijan sus unit tests, entre ellos `aRealRemoteWipe_stillStartsTheGrace`. «Vaciar datos» en un solo iPhone ya lo recorre el bloque F del guion.

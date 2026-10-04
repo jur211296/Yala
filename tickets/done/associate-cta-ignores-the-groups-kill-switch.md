@@ -1,12 +1,14 @@
 ---
 id: associate-cta-ignores-the-groups-kill-switch
-status: qa
+status: done
 priority: medium
 area: "groups, settings, modo-nube"
 created: 2026-09-11
-updated: 2026-10-02
-qa-status: needs-testing
+updated: 2026-10-04
 source: "review adversarial de `cloud-killswitch-hides-the-only-door-to-detach-groups`, lente del incidente"
+qa-status: not-replicable
+qa-date: 2026-10-04
+qa-notes: barrido 2026-10-04 sin device-QA - pide bajar el rollout de grupos en el gateway de staging; cubierto por GroupsAssociationKillSwitchTests (4 mutantes) y la captura de simulador
 ---
 
 # «Asociar una cuenta para grupos» abre un sign-in contra un canal apagado
@@ -72,3 +74,7 @@ quieres tocarlo, este ticket se puede cerrar con la captura del simulador:
    aviso «Ahora mismo no podemos abrirte grupos» y la sección pasa a la nota. No se abre ningún inicio de
    sesión.
 6. Deja el percent en 100 al terminar.
+
+## Barrido de `qa` · 2026-10-04 · cerrado sin device-QA
+
+Sale de la cola de device-QA por el barrido antes del QA del lunes (encargo `2026-10-04-barrido-qa-antes-del-qa-del-lunes`), con el criterio de #224 y #291. El guion pide bajar `GROUPS_BACKEND_ROLLOUT_PERCENT` del gateway de staging y volver a subirlo con la pantalla abierta: no es un camino que un usuario recorra, y tocar el gateway es una decisión aparte. Lo fijan `GroupsAssociationKillSwitchTests` (tabla ON/OFF y cableado, 4 mutantes muertos) y la captura del estado apagado en `qa/evidencia-associate-cta-killswitch-20261002/`, que el propio ticket daba como cierre válido.
