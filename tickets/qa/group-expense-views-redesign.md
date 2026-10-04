@@ -39,6 +39,9 @@ source: encargo 2026-10-04-mejorar-vistas-del-registro-en-grupos · tablero tabl
 
 ## Guion de QA en el iPhone (Jürgen)
 
+**Dónde:** en el **TestFlight 15** (versión 2.1, subido el 2026-10-04 desde `2.1`), con tus grupos de verdad.
+Yala Dev no sirve: no tiene grupos de 3. Es el paso R11 de `qa/guion-tanda.md`.
+
 1. Grupos › un grupo de 3 › toca un gasto con partes iguales que pagó otra persona: «Tu parte · Le debes a
    <nombre>» y la lista de las tres personas, **sin barra**.
 2. Toca **Editar**: grupo y fecha en una línea pequeña; debajo del monto, «Pagado por <nombre> y dividido en

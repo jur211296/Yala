@@ -61,7 +61,7 @@ En el orden del guion. Una línea por ticket: qué pruebas y por qué no basta c
 | E1 | `reverse-cutover-cerrado-para-cuentas-born-cloud` | «Volver a iCloud» con una cuenta nacida en la nube sube TODO a iCloud | Es la única pieza del repo marcada «NO medido» |
 | F1 | `wipe-data-keeps-groups-but-drops-their-bridged-rows` | Tras «Vaciar datos», los gastos de tus grupos vuelven a tus cuentas, una sola vez | Toca dinero: sin el arreglo desaparecían de tus cuentas |
 
-**Si hoy solo tienes hora y media:** el bloque R (son los cambios que van en el próximo TestFlight y los más
+**Si hoy solo tienes hora y media:** el bloque R (son los cambios que van en el TestFlight 15 y los más
 recientes) y el D (los dos «muy alto»). Lo que no hagas sigue en `qa` y no pasa nada. **El bloque F va siempre el
 último**: «Vaciar datos» borra también el iCloud de Yala Dev que usan B y C.
 
@@ -87,7 +87,7 @@ recientes) y el D (los dos «muy alto»). Lo que no hagas sigue en `qa` y no pas
 6. **Acceso al SQL Editor de Supabase, proyecto de staging**, para una consulta en C2.
 7. **Para el bloque R:** dos o tres recibos de papel (o fotos de recibos en Fotos), un PDF de un recibo en
    Archivos, y otra app que suene (Música o Spotify).
-8. **Para R11:** el TestFlight que sale después de esta tanda, en tu iPhone, con tus grupos de verdad: un grupo
+8. **Para R11:** el **TestFlight 15** (versión 2.1), en tu iPhone, con tus grupos de verdad: un grupo
    de 3 o más personas y uno de 2, con algún gasto que pagó otra persona.
 
 ## Bloque A · Lo de todos los días (35 min, 10 de ellos esperando)
@@ -255,8 +255,8 @@ R11 es la excepción: va en el TestFlight, al final del bloque.
       procesar sale el spinner del sistema (R5, R7).
     - Devuelve el texto y el movimiento a como los tenías.
 12. **R11 · El gasto de grupo (en el TestFlight, no en Yala Dev).** Yala Dev no tiene grupos con más personas, y
-    montarlos pide una cuenta y un teléfono por persona. Por eso va en el **TestFlight que sale después de esta
-    tanda**, con tus grupos de verdad. **Lo que guardes ahí lo ven los demás del grupo**: si no quieres tocar un
+    montarlos pide una cuenta y un teléfono por persona. Por eso va en el **TestFlight 15** (versión
+    2.1, abre TestFlight → Yala → Instalar), con tus grupos de verdad. **Lo que guardes ahí lo ven los demás del grupo**: si no quieres tocar un
     gasto real, apunta uno de prueba de S/ 1 y bórralo al terminar.
     - Grupos → un grupo de 3 → toca un gasto con partes iguales que pagó otra persona. **PASA si** dice «Tu parte ·
       Le debes a <nombre>» y la lista de las tres personas con lo que pone cada una, **sin barra**.
@@ -438,7 +438,7 @@ demás. Parte de una sesión privada, la que dejó E u otra cualquiera de Yala D
   también «se ve mal: …» aunque funcione. El board lo muevo yo.
 - `previous-person-cloud-session-survives-fresh-start-and-reinstall`: su paso 4 es instalar un TestFlight
   **encima** del anterior, sin borrar, y comprobar que la sesión de la nube sigue abierta. Se hace con el
-  TestFlight que sale después de esta tanda: antes de pulsar «Actualizar», deja abierta una sesión de la nube en
-  el TestFlight que tienes. Si no tienes ninguna, ese paso se queda en `qa` y no frena nada.
+  **TestFlight 15** encima del 14: antes de pulsar «Actualizar», deja abierta una sesión de la nube en
+  el 14 que tienes. Si no tienes ninguna, ese paso se queda en `qa` y no frena nada.
 - Actualiza `docs/TICKETS.md` (la fila y el conteo) y este guion. El índice se comprueba con un diff
   contra el disco, no a ojo.
