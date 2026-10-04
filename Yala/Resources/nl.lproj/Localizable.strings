@@ -3424,7 +3424,6 @@
 "chat.draft.selectAccount" = "Selecteer rekening";
 "chat.draft.selectSubcategory" = "Selecteer subcategorie";
 "chat.draft.saveButton" = "Opslaan";
-"chat.draft.editButton" = "Bewerken";
 "chat.draft.failedSavingLine" = "Opslaan lukte niet.";
 "chat.draft.retryButton" = "Opnieuw proberen";
 "chat.draft.noAccountsBlocking" = "Maak vanuit je profiel een rekening aan voordat je kunt boeken.";
@@ -6297,3 +6296,12 @@
 /* Note under Archive toggle when archiving turned on Exclude from statistics */
 "account.archiveExcludedNotice" = "Na archiveren telt deze rekening niet meer mee in je totalen en statistieken, en worden haar transacties verborgen in Boekingen. Wil je dat ze blijft meetellen, zet dan „Uitsluiten van statistieken” uit.";
 
+
+/* Chat draft card (Yala IA) — redesign A */
+"chat.draft.detailsButton" = "Details";
+"chat.draft.detailsTitle" = "Voorgestelde boeking";
+"chat.draft.openFullForm" = "Openen in het volledige formulier";
+"chat.draft.missingSubcategory" = "Subcategorie ontbreekt";
+"chat.draft.missingAccount" = "Rekening ontbreekt";
+"chat.draft.missingAmount" = "Bedrag ontbreekt";
+"chat.draft.addTag" = "Label";

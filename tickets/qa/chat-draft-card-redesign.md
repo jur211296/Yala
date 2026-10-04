@@ -1,18 +1,41 @@
 ---
 id: chat-draft-card-redesign
-status: backlog
+status: qa
 priority: medium
 area: chat
 created: 2026-10-04
+updated: 2026-10-04
 source: encargo 2026-10-04-improve-new-record-cards-in-yala-ai (tablero-mejorar-cards-de-registros-nuevos-en-yal-rdfd)
 ---
 
 # Rediseño de la card de registro que propone Yala IA
 
-## Qué espera de Jürgen
+## Decidido (Jürgen, 2026-10-04)
 
-**Elegir una de las tres propuestas** (o una mezcla). Están en el lienzo, con el estado actual al lado y los
-mismos datos en todas: https://claude.ai/artifact/N4DsKVRoqKaupAqwg8Feic
+- **Propuesta A.** La card es la fila del registro con píldoras tocables.
+- **«Detalles» abre una hoja a media altura sobre el chat**, que sube a grande al arrastrarla o con el teclado. El
+  formulario completo queda como enlace al pie de la hoja.
+- **Cada dato se elige con el MISMO selector que Nuevo registro**, en la card y en la hoja: subcategoría con su
+  rejilla de iconos, cuenta, calendario y etiquetas. «Que la experiencia sea la misma».
+
+Implementado en la rama `encargo/2026-10-04-chat-draft-card-a`. Una consecuencia de usar el calendario de Nuevo
+registro: la fecha ya no puede ser futura, igual que allí (antes el selector de la card lo permitía).
+
+## Guion de QA en el iPhone
+
+1. Abre Yala IA y escribe «Gasté 45 en un taxi y 120 en el súper».
+2. Comprueba que cada registro sale como una fila (icono, nota, importe `S/ 45.00`) con píldoras debajo.
+3. Si alguno sale sin subcategoría: su «Guardar» se ve apagado y hay una píldora ámbar. Tócala: se abre la rejilla
+   de subcategorías de Nuevo registro. Elige una; la píldora desaparece y «Guardar» se enciende.
+4. Toca la píldora de la cuenta: sale el selector de cuentas de Nuevo registro. Elige otra con otra divisa y mira
+   que el importe cambia de símbolo.
+5. Toca la fecha: sale el calendario de Nuevo registro.
+6. Toca «Detalles»: hoja a media altura con el chat detrás. Cambia la nota y la fecha desde ahí; «Listo» cierra y
+   la card refleja los cambios.
+7. Desde «Detalles», «Abrir en el formulario completo»: se cierra el chat y abre Nuevo registro relleno.
+8. Pulsa «Guardar» en una card: queda la misma fila con «✓ Registrado».
+
+## Propuestas que se valoraron
 
 | | Qué es | A favor | En contra |
 |---|---|---|---|
@@ -20,7 +43,7 @@ mismos datos en todas: https://claude.ai/artifact/N4DsKVRoqKaupAqwg8Feic
 | **B · Recibo** | El importe grande y centrado; cuenta y fecha a la vista; etiquetas y nota plegadas; «Guardar» a todo lo ancho. | Lo más importante (cuánto) manda. | Más alta que A: con 3+ registros obliga a desplazar, y al guardar cambia de forma. |
 | **C · Compacta + hoja** | Cada registro es una fila con ✕ y ✓. Tocarla abre una hoja sobre el chat con todos los campos. | La más corta; escala a muchos registros. | Cambiar la cuenta cuesta un toque más. |
 
-Por qué A: el estado guardado de hoy (`compactRow`) **ya es** esa fila, así que la card pendiente y la guardada
+Por qué A (la recomendada): el estado guardado de hoy (`compactRow`) **ya es** esa fila, así que la card pendiente y la guardada
 pasan a ser la misma pieza; y se lee igual que el resto de la app.
 
 ## Lo que comparten las tres (y por eso no es parte de la elección)

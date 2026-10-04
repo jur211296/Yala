@@ -3413,7 +3413,6 @@
 "chat.draft.selectAccount" = "Konto auswählen";
 "chat.draft.selectSubcategory" = "Unterkategorie auswählen";
 "chat.draft.saveButton" = "Speichern";
-"chat.draft.editButton" = "Bearbeiten";
 "chat.draft.failedSavingLine" = "Speichern fehlgeschlagen.";
 "chat.draft.retryButton" = "Erneut versuchen";
 "chat.draft.noAccountsBlocking" = "Erstelle zuerst ein Konto im Profil, bevor du Einträge hinzufügst.";
@@ -6285,3 +6284,12 @@
 /* Note under Archive toggle when archiving turned on Exclude from statistics */
 "account.archiveExcludedNotice" = "Archiviert zählt dieses Konto nicht mehr zu deinen Summen und Statistiken, und seine Buchungen werden in „Datensätze“ ausgeblendet. Damit es weiter zählt, deaktiviere „Aus Statistiken ausschließen“.";
 
+
+/* Chat draft card (Yala IA) — redesign A */
+"chat.draft.detailsButton" = "Details";
+"chat.draft.detailsTitle" = "Vorgeschlagener Eintrag";
+"chat.draft.openFullForm" = "Im vollständigen Formular öffnen";
+"chat.draft.missingSubcategory" = "Unterkategorie fehlt";
+"chat.draft.missingAccount" = "Konto fehlt";
+"chat.draft.missingAmount" = "Betrag fehlt";
+"chat.draft.addTag" = "Tag";

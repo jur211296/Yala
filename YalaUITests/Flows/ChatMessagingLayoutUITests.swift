@@ -93,15 +93,57 @@ final class ChatMessagingLayoutUITests: XCTestCase {
     }
 
     /// `-uitest-chat-draft` abre el chat con dos registros propuestos: el completo deja guardar y el que no tiene
-    /// subcategoría no. Es el seam con el que se captura y se prueba la card sin red; si deja de sembrar, el rediseño
-    /// de la card (ticket chat-draft-card-redesign) se queda sin forma de verse.
+    /// subcategoría no. Es el seam con el que se captura y se prueba la card sin red.
     func test_draftSeam_showsTwoProposedRecords_onlyTheCompleteOneSaves() {
         let app = openChat(drafts: true)
 
-        let save = app.buttons.matching(identifier: "Guardar")
+        let save = app.buttons.matching(identifier: "chat_draft_save")
         XCTAssertTrue(save.firstMatch.waitForExistence(timeout: 10), "No sale ninguna card de registro propuesto.")
         XCTAssertEqual(save.count, 2, "El seam debe proponer dos registros.")
         XCTAssertTrue(save.element(boundBy: 0).isEnabled, "El registro completo debe poder guardarse.")
         XCTAssertFalse(save.element(boundBy: 1).isEnabled, "Sin subcategoría no se puede guardar.")
+    }
+
+    /// La píldora de lo que falta abre el MISMO selector de subcategoría que Nuevo registro, y al elegir una la card
+    /// queda lista para guardar (decisión de Jürgen, 2026-10-04: la experiencia es la de crear un registro a mano).
+    func test_draftChip_opensTheNewRecordSubcategorySelector_andCompletesTheDraft() {
+        let app = openChat(drafts: true)
+
+        let chip = app.buttons["chat_draft_chip_subcategory"]
+        XCTAssertTrue(chip.waitForExistence(timeout: 10), "La card sin subcategoría debe ofrecer elegirla.")
+        chip.tap()
+
+        let firstSubcategory = app.buttons
+            .matching(NSPredicate(format: "identifier BEGINSWITH %@", "subcategory_selector_row_"))
+            .firstMatch
+        XCTAssertTrue(firstSubcategory.waitForExistence(timeout: 10), "No se abrió el selector de subcategoría de Nuevo registro.")
+        firstSubcategory.tap()
+
+        XCTAssertTrue(chip.waitForNonExistence(timeout: 10), "Con subcategoría elegida, la píldora de lo que falta se va.")
+        let save = app.buttons.matching(identifier: "chat_draft_save")
+        XCTAssertEqual(save.count, 2)
+        XCTAssertTrue(save.element(boundBy: 1).isEnabled, "Con la subcategoría elegida, el registro se puede guardar.")
+    }
+
+    /// «Detalles» abre la hoja sobre el chat, y la cuenta se elige con el selector de cuentas de Nuevo registro.
+    func test_draftDetails_opensSheet_withTheNewRecordAccountSelector() {
+        let app = openChat(drafts: true)
+
+        let details = app.buttons.matching(identifier: "chat_draft_details").firstMatch
+        XCTAssertTrue(details.waitForExistence(timeout: 10), "Falta «Detalles» en la card.")
+        details.tap()
+
+        let accountRow = app.buttons["chat_draft_detail_account"]
+        XCTAssertTrue(accountRow.waitForExistence(timeout: 10), "No se abrió la hoja de detalles.")
+        XCTAssertTrue(app.textFields["chat_input"].exists, "La hoja va sobre el chat: el chat sigue montado debajo.")
+        accountRow.tap()
+
+        let anyAccount = app.buttons
+            .matching(NSPredicate(format: "identifier BEGINSWITH %@", "account_selector_row_"))
+            .firstMatch
+        XCTAssertTrue(anyAccount.waitForExistence(timeout: 10), "No se abrió el selector de cuentas de Nuevo registro.")
+        anyAccount.tap()
+
+        XCTAssertTrue(accountRow.waitForExistence(timeout: 10), "Tras elegir cuenta se vuelve a la hoja de detalles.")
     }
 }

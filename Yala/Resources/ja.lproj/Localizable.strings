@@ -3424,7 +3424,6 @@
 "chat.draft.selectAccount" = "口座を選択";
 "chat.draft.selectSubcategory" = "サブカテゴリーを選択";
 "chat.draft.saveButton" = "保存";
-"chat.draft.editButton" = "編集";
 "chat.draft.failedSavingLine" = "保存できませんでした。";
 "chat.draft.retryButton" = "再試行";
 "chat.draft.noAccountsBlocking" = "登録する前に、プロフィールから口座を作成してください。";
@@ -6297,3 +6296,12 @@
 /* Note under Archive toggle when archiving turned on Exclude from statistics */
 "account.archiveExcludedNotice" = "アーカイブすると、この口座は合計と統計に含まれなくなり、取引は「記録」に表示されなくなります。引き続き含めるには「統計から除外」をオフにしてください。";
 
+
+/* Chat draft card (Yala IA) — redesign A */
+"chat.draft.detailsButton" = "詳細";
+"chat.draft.detailsTitle" = "提案された記録";
+"chat.draft.openFullForm" = "フォームで開く";
+"chat.draft.missingSubcategory" = "サブカテゴリーが未選択";
+"chat.draft.missingAccount" = "口座が未選択";
+"chat.draft.missingAmount" = "金額が未入力";
+"chat.draft.addTag" = "タグ";
