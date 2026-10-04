@@ -110,6 +110,11 @@ struct MoreView: View {
                         .accessibilityIdentifier("more_editor_button")
                     }
                 }
+                // Mismo control de perfil que el Panel: el perfil queda a mano desde Más
+                // sin tener que buscar su tarjeta en Herramientas.
+                ProfileToolbarItem {
+                    showProfile = true
+                }
             }
         }
         .sheet(isPresented: $showProfile) {
