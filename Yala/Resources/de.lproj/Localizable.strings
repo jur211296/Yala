@@ -4256,6 +4256,19 @@
 "stats.trends.insight.stableExpense" = "Ihre Ausgaben bleiben stabil.";
 "stats.trends.insight.stableIncome" = "Ihre Einnahmen bleiben stabil.";
 "stats.trends.insight.stableBalance" = "Ihr Saldo bleibt stabil.";
+"stats.trends.insight.sustainedUpExpense %@" = "Ihre Ausgaben steigen seit %@.";
+"stats.trends.insight.sustainedDownExpense %@" = "Ihre Ausgaben sinken seit %@.";
+"stats.trends.insight.sustainedUpIncome %@" = "Ihre Einnahmen wachsen seit %@.";
+"stats.trends.insight.sustainedDownIncome %@" = "Ihre Einnahmen sinken seit %@.";
+"stats.trends.insight.sustainedUpBalance %@" = "Ihr Saldo wächst seit %@.";
+"stats.trends.insight.sustainedDownBalance %@" = "Ihr Saldo sinkt seit %@.";
+"stats.trends.insight.durationWeeks %d" = "%d Wochen";
+"stats.trends.insight.durationMonths %d" = "%d Monaten";
+"stats.trends.insight.durationYears %d" = "%d Jahren";
+"stats.trends.insight.cashFlowSurplus %d" = "Ihre Einnahmen deckten %d%% Ihrer Ausgaben: Sie liegen im Plus.";
+"stats.trends.insight.cashFlowDeficit %d" = "Ihre Einnahmen deckten %d%% Ihrer Ausgaben: Sie haben mehr ausgegeben, als hereinkam.";
+"stats.trends.insight.cashFlowNoIncome" = "In diesem Zeitraum haben Sie Ausgaben erfasst, aber keine Einnahmen.";
+"stats.trends.insight.weekdayPeak %@ %@" = "%@ ist Ihr teuerster Tag: Sie geben im Schnitt %@ aus.";
 
 // MARK: - Stats WidgetInfo (periodComparison, sankey) — added 2026-05-18
 "panel.widgetInfo.periodComparison.title" = "Zeitraum-Vergleich";

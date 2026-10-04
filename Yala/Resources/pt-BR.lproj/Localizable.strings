@@ -4256,6 +4256,19 @@
 "stats.trends.insight.stableExpense" = "Seus gastos se mantêm estáveis.";
 "stats.trends.insight.stableIncome" = "Sua renda se mantém estável.";
 "stats.trends.insight.stableBalance" = "Seu saldo se mantém estável.";
+"stats.trends.insight.sustainedUpExpense %@" = "Seus gastos vêm subindo há %@.";
+"stats.trends.insight.sustainedDownExpense %@" = "Seus gastos vêm caindo há %@.";
+"stats.trends.insight.sustainedUpIncome %@" = "Sua renda vem crescendo há %@.";
+"stats.trends.insight.sustainedDownIncome %@" = "Sua renda vem caindo há %@.";
+"stats.trends.insight.sustainedUpBalance %@" = "Seu saldo vem crescendo há %@.";
+"stats.trends.insight.sustainedDownBalance %@" = "Seu saldo vem caindo há %@.";
+"stats.trends.insight.durationWeeks %d" = "%d semanas";
+"stats.trends.insight.durationMonths %d" = "%d meses";
+"stats.trends.insight.durationYears %d" = "%d anos";
+"stats.trends.insight.cashFlowSurplus %d" = "Sua renda cobriu %d%% dos seus gastos: você fechou no positivo.";
+"stats.trends.insight.cashFlowDeficit %d" = "Sua renda cobriu %d%% dos seus gastos: você gastou mais do que entrou.";
+"stats.trends.insight.cashFlowNoIncome" = "Neste período você registrou gastos, mas nenhuma renda.";
+"stats.trends.insight.weekdayPeak %@ %@" = "Seu dia mais caro é %@: você gasta em média %@.";
 
 // MARK: - Stats WidgetInfo (periodComparison, sankey) — added 2026-05-18
 "panel.widgetInfo.periodComparison.title" = "Comparativo de período";

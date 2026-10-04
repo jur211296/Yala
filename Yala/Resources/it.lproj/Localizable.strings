@@ -4286,6 +4286,19 @@
 "stats.trends.insight.stableExpense" = "Le tue spese restano stabili.";
 "stats.trends.insight.stableIncome" = "Le tue entrate restano stabili.";
 "stats.trends.insight.stableBalance" = "Il tuo saldo resta stabile.";
+"stats.trends.insight.sustainedUpExpense %@" = "La tua spesa è in aumento da %@.";
+"stats.trends.insight.sustainedDownExpense %@" = "La tua spesa è in calo da %@.";
+"stats.trends.insight.sustainedUpIncome %@" = "Le tue entrate crescono da %@.";
+"stats.trends.insight.sustainedDownIncome %@" = "Le tue entrate sono in calo da %@.";
+"stats.trends.insight.sustainedUpBalance %@" = "Il tuo saldo cresce da %@.";
+"stats.trends.insight.sustainedDownBalance %@" = "Il tuo saldo è in calo da %@.";
+"stats.trends.insight.durationWeeks %d" = "%d settimane";
+"stats.trends.insight.durationMonths %d" = "%d mesi";
+"stats.trends.insight.durationYears %d" = "%d anni";
+"stats.trends.insight.cashFlowSurplus %d" = "Le tue entrate hanno coperto il %d%% delle spese: hai chiuso in positivo.";
+"stats.trends.insight.cashFlowDeficit %d" = "Le tue entrate hanno coperto il %d%% delle spese: hai speso più di quanto è entrato.";
+"stats.trends.insight.cashFlowNoIncome" = "In questo periodo hai registrato spese ma nessuna entrata.";
+"stats.trends.insight.weekdayPeak %@ %@" = "Giorno più caro: %@, con una spesa media di %@.";
 
 // MARK: - Stats WidgetInfo (periodComparison, sankey) — added 2026-05-18
 "panel.widgetInfo.periodComparison.title" = "Confronto periodo";

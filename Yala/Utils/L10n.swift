@@ -8061,6 +8061,48 @@ enum L10n {
                 static var stableBalance: String {
                     ls("stats.trends.insight.stableBalance", comment: "Trend Insight: balance holds stable (variation < 5%)")
                 }
+                // V2 — Tendencia: racha sostenida (%@ = duración, ej. «3 meses»).
+                static func sustainedUpExpense(_ duration: String) -> String {
+                    String(format: ls("stats.trends.insight.sustainedUpExpense %@", comment: "Trend Insight bullet: expense has risen for %@ (duration, e.g. '3 months') in a row"), duration)
+                }
+                static func sustainedDownExpense(_ duration: String) -> String {
+                    String(format: ls("stats.trends.insight.sustainedDownExpense %@", comment: "Trend Insight bullet: expense has fallen for %@ (duration) in a row"), duration)
+                }
+                static func sustainedUpIncome(_ duration: String) -> String {
+                    String(format: ls("stats.trends.insight.sustainedUpIncome %@", comment: "Trend Insight bullet: income has grown for %@ (duration) in a row"), duration)
+                }
+                static func sustainedDownIncome(_ duration: String) -> String {
+                    String(format: ls("stats.trends.insight.sustainedDownIncome %@", comment: "Trend Insight bullet: income has fallen for %@ (duration) in a row"), duration)
+                }
+                static func sustainedUpBalance(_ duration: String) -> String {
+                    String(format: ls("stats.trends.insight.sustainedUpBalance %@", comment: "Trend Insight bullet: balance has grown (positive net) for %@ (duration) in a row"), duration)
+                }
+                static func sustainedDownBalance(_ duration: String) -> String {
+                    String(format: ls("stats.trends.insight.sustainedDownBalance %@", comment: "Trend Insight bullet: balance has fallen (negative net) for %@ (duration) in a row"), duration)
+                }
+                static func durationWeeks(_ count: Int) -> String {
+                    String(format: ls("stats.trends.insight.durationWeeks %d", comment: "Duration inside the sustained-trend bullet: N weeks (N >= 3)"), count)
+                }
+                static func durationMonths(_ count: Int) -> String {
+                    String(format: ls("stats.trends.insight.durationMonths %d", comment: "Duration inside the sustained-trend bullet: N months (N >= 3)"), count)
+                }
+                static func durationYears(_ count: Int) -> String {
+                    String(format: ls("stats.trends.insight.durationYears %d", comment: "Duration inside the sustained-trend bullet: N years (N >= 3)"), count)
+                }
+                // V2 — Flujo de efectivo.
+                static func cashFlowSurplus(_ ratio: Int) -> String {
+                    String(format: ls("stats.trends.insight.cashFlowSurplus %d", comment: "Trend Insight bullet: income covered %d%% of expenses, net flow positive"), ratio)
+                }
+                static func cashFlowDeficit(_ ratio: Int) -> String {
+                    String(format: ls("stats.trends.insight.cashFlowDeficit %d", comment: "Trend Insight bullet: income covered %d%% of expenses, net flow negative"), ratio)
+                }
+                static var cashFlowNoIncome: String {
+                    ls("stats.trends.insight.cashFlowNoIncome", comment: "Trend Insight bullet: expenses logged but no income in the period")
+                }
+                // V2 — Día de la semana con mayor gasto promedio.
+                static func weekdayPeak(_ weekday: String, _ average: String) -> String {
+                    String(format: ls("stats.trends.insight.weekdayPeak %@ %@", comment: "Trend Insight bullet: %1$@ weekday name is the priciest day, %2$@ average spend amount"), weekday, average)
+                }
             }
         }
         enum Distribution {

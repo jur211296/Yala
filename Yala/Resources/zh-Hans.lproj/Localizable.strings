@@ -4288,6 +4288,19 @@
 "stats.trends.insight.stableExpense" = "你的支出保持稳定。";
 "stats.trends.insight.stableIncome" = "你的收入保持稳定。";
 "stats.trends.insight.stableBalance" = "你的余额保持稳定。";
+"stats.trends.insight.sustainedUpExpense %@" = "你的支出已连续%@上升。";
+"stats.trends.insight.sustainedDownExpense %@" = "你的支出已连续%@下降。";
+"stats.trends.insight.sustainedUpIncome %@" = "你的收入已连续%@增长。";
+"stats.trends.insight.sustainedDownIncome %@" = "你的收入已连续%@下降。";
+"stats.trends.insight.sustainedUpBalance %@" = "你的余额已连续%@增长。";
+"stats.trends.insight.sustainedDownBalance %@" = "你的余额已连续%@下降。";
+"stats.trends.insight.durationWeeks %d" = "%d周";
+"stats.trends.insight.durationMonths %d" = "%d个月";
+"stats.trends.insight.durationYears %d" = "%d年";
+"stats.trends.insight.cashFlowSurplus %d" = "你的收入覆盖了支出的 %d%%：本期结余为正。";
+"stats.trends.insight.cashFlowDeficit %d" = "你的收入覆盖了支出的 %d%%：花出去的比进来的多。";
+"stats.trends.insight.cashFlowNoIncome" = "本期只记录了支出，没有收入。";
+"stats.trends.insight.weekdayPeak %@ %@" = "%@是你花费最多的一天，平均 %@。";
 
 // MARK: - Stats WidgetInfo (periodComparison, sankey) — added 2026-05-18
 "panel.widgetInfo.periodComparison.title" = "期间对比";
