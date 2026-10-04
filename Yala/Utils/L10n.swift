@@ -2870,7 +2870,13 @@ enum L10n {
             static var selectAccount: String { ls("chat.draft.selectAccount", comment: "") }
             static var selectSubcategory: String { ls("chat.draft.selectSubcategory", comment: "") }
             static var saveButton: String { ls("chat.draft.saveButton", comment: "") }
-            static var editButton: String { ls("chat.draft.editButton", comment: "") }
+            static var detailsButton: String { ls("chat.draft.detailsButton", comment: "") }
+            static var detailsTitle: String { ls("chat.draft.detailsTitle", comment: "") }
+            static var openFullForm: String { ls("chat.draft.openFullForm", comment: "") }
+            static var missingSubcategory: String { ls("chat.draft.missingSubcategory", comment: "") }
+            static var missingAccount: String { ls("chat.draft.missingAccount", comment: "") }
+            static var missingAmount: String { ls("chat.draft.missingAmount", comment: "") }
+            static var addTag: String { ls("chat.draft.addTag", comment: "") }
             static var failedSavingLine: String { ls("chat.draft.failedSavingLine", comment: "") }
             static var retryButton: String { ls("chat.draft.retryButton", comment: "") }
             static var noAccountsBlocking: String { ls("chat.draft.noAccountsBlocking", comment: "") }

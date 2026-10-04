@@ -3424,7 +3424,6 @@
 "chat.draft.selectAccount" = "选择账户";
 "chat.draft.selectSubcategory" = "选择子类别";
 "chat.draft.saveButton" = "保存";
-"chat.draft.editButton" = "编辑";
 "chat.draft.failedSavingLine" = "无法保存。";
 "chat.draft.retryButton" = "重试";
 "chat.draft.noAccountsBlocking" = "登记前请先在个人资料中创建一个账户。";
@@ -6297,3 +6296,12 @@
 /* Note under Archive toggle when archiving turned on Exclude from statistics */
 "account.archiveExcludedNotice" = "归档后，此账户将不再计入你的总额和统计，其交易也会在“记录”中隐藏。如需继续计入，请关闭“从统计中排除”。";
 
+
+/* Chat draft card (Yala IA) — redesign A */
+"chat.draft.detailsButton" = "详情";
+"chat.draft.detailsTitle" = "建议的条目";
+"chat.draft.openFullForm" = "在完整表单中打开";
+"chat.draft.missingSubcategory" = "缺少子类别";
+"chat.draft.missingAccount" = "缺少账户";
+"chat.draft.missingAmount" = "缺少金额";
+"chat.draft.addTag" = "标签";
