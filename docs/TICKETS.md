@@ -496,7 +496,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | migration-started-during-a-sign-out-teardown-loses-its-session | backlog | tickets/backlog/migration-started-during-a-sign-out-teardown-loses-its-session.md |
 | migration-takeover-may-duplicate-rows-whose-leader-identities-never-arrived | done | tickets/done/migration-takeover-may-duplicate-rows-whose-leader-identities-never-arrived.md |
 | migration-takeover-uploads-without-a-lineage-check | done | tickets/done/migration-takeover-uploads-without-a-lineage-check.md |
-| more-tab-missing-profile-button | backlog | tickets/backlog/more-tab-missing-profile-button.md |
+| more-tab-missing-profile-button | done | tickets/done/more-tab-missing-profile-button.md |
 | multi-currency-accounts | backlog | tickets/backlog/multi-currency-accounts.md |
 | navigation-uitests-look-for-the-iphone-tab-bar-on-ipad | backlog | tickets/backlog/navigation-uitests-look-for-the-iphone-tab-bar-on-ipad.md |
 | needsrelaunch-hides-the-groups-section | done | tickets/done/needsrelaunch-hides-the-groups-section.md |
