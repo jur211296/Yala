@@ -154,7 +154,9 @@ struct TrendsTabView: View {
                         trendInsightCard            // mueve al final: cierre narrativo
                     }
                     .frame(maxWidth: .infinity)
-                    .yalaSafeBottomPadding()
+                    // Yala IA y «+» flotan encima en las cuatro pestañas de Estadísticas: al final del scroll, la última tarjeta sube
+                    // por encima de los dos (mismo margen que `RecordsTabView`).
+                    .padding(.bottom, DS.Button.fabStackClearance(buttons: 2))
                 }
             }
             .padding(.top, DS.Spacing.sm)
@@ -207,7 +209,7 @@ struct TrendsTabView: View {
         return (start, end)
     }
 
-    // MARK: - Hero Summary (edge-to-edge, paralelo a InsightsTabView)
+    // MARK: - Hero Summary (el del Panel: `HeroHeader`, compartido con las otras pestañas)
 
     @ViewBuilder
     private var heroSummary: some View {
@@ -215,7 +217,14 @@ struct TrendsTabView: View {
         let txCount = summary?.transactionCount ?? 0
         let hasRecords = txCount > 0
 
-        VStack(alignment: .center, spacing: DS.Spacing.xs) {
+        HeroHeader {
+            // Qué es la cifra. Sigue a la métrica: `heroKPIValue` devuelve uno
+            // de tres números, así que el rótulo no puede ser fijo.
+            if hasRecords, summary != nil {
+                HeroHeaderLabel(text: StatsHeroCaptionLogic.trends(metric: trendsViewModel.selectedMetric).text)
+                    .accessibilityIdentifier("stats_hero_caption")
+            }
+        } period: {
             TrendsPeriodMenu(
                 selectedPeriod: trendsViewModel.detailPeriod,
                 customDateRange: sessionState.customDateRange,
@@ -223,28 +232,18 @@ struct TrendsTabView: View {
                 onCustomTapped: { showCustomPeriodPicker = true }
             )
             .equatable()
-
+        } content: {
             if hasRecords, let summary {
                 // KPI period-specific (matches Insights hero). Card interno + chart
                 // preservan running balance — el hero refleja el agregado del período.
                 AmountText(
                     value: heroKPIValue(for: summary),
                     currencyCode: defaultCurrencyCode,
-                    font: DS.Typography.heroAmount, secondaryFont: DS.Typography.heroAmountSecondary,
+                    font: DS.Typography.panelHeroAmount, secondaryFont: DS.Typography.panelHeroAmountSecondary,
                     isEstimate: heroKPIIsApproximate(for: summary)
                 )
                 .contentTransition(.numericText())
 
-                // Qué es la cifra. Sigue a la métrica: `heroKPIValue` devuelve uno
-                // de tres números, así que el rótulo no puede ser fijo.
-                Text(StatsHeroCaptionLogic.trends(metric: trendsViewModel.selectedMetric).text)
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .accessibilityIdentifier("stats_hero_caption")
-            }
-
-            if hasRecords, let summary {
                 incomeExpenseChips(summary)
             }
 
@@ -252,12 +251,10 @@ struct TrendsTabView: View {
                 Text(text)
                     .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
             }
         }
-        .padding(.horizontal, DS.Spacing.lg)
+        // Sin margen lateral propio: el del scroll ya pone el eje izquierdo del resto de la pantalla.
         .padding(.vertical, summaryVerticalPadding)
-        .frame(maxWidth: .infinity)
         .accessibilityElement(children: .contain)
         .accessibilityAddTraits(.isHeader)
     }

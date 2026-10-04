@@ -279,10 +279,17 @@ paths:
   grande y la siguiente asomando, que da el sitio al nombre y al saldo sin depender del modelo de iPhone.
 - **Un widget solo en su fila ocupa la fila entera solo si sabe repartir su contenido** (`WidgetConfigManager
   .spansRowWhenAloneTypes`, hoy `latestRecords`); los demás siguen en media fila.
-- **Con poco ALTO, la cabecera de resumen se compacta: `SummaryHeaderStack(period:figure:detail:)`**
+- **Un hero (la cabecera con la cifra grande de una página) es un `HeroHeader`** (`Views/Shared/HeroHeader.swift`,
+  2026-10-04): rótulo de la cifra arriba a la izquierda (`HeroHeaderLabel`), píldora de período a su derecha, cifra
+  `panelHeroAmount` y detalle debajo. No trae margen lateral: lo pone quien lo monta, en el eje izquierdo del resto de
+  la pantalla (en Estadísticas ya lo da `scrollViewGlassEdges`; sumarle otro lo dejaba a 32 pt, medido). Lo usan el Panel, las
+  cuatro pestañas de Estadísticas, Registros y Pagos planificados. No montes otra pila centrada: había cinco heros
+  distintos y ninguno compartido (`distribution-subviews-miss-the-new-panel-hero`). El rótulo lleva
+  `stats_hero_caption` en Estadísticas y solo sale si sale la cifra.
+- **Con poco ALTO, la cabecera de resumen se compacta: `SummaryHeaderStack(period:caption:figure:detail:)`**
   (`Views/Shared/SummaryHeaderStack.swift`, 2026-10-01). La usan Registros (y con ella Estadísticas › Registros) y
-  Estadísticas › Resumen. Con alto suficiente pinta la pila de siempre —el vertical no cambia, medido al píxel—; con
-  poco alto prueba, de la primera que quepa a lo ancho: banda (cifra | período y detalle), período al lado de la cifra,
+  Estadísticas › Resumen. Con alto suficiente pinta el `HeroHeader` (desde el 2026-10-04; antes, una pila centrada);
+  con poco alto, el rótulo baja bajo la cifra y prueba, de la primera que quepa a lo ancho: banda (cifra | período y detalle), período al lado de la cifra,
   detalle en una fila, la pila; las cuatro con 4 pt de margen vertical. Dos cosas medidas que no son obvias:
   - **«Poco alto» es el alto del contenedor CONTANDO las barras que se le superponen** (`measuresShortContainer`:
     tamaño + márgenes de seguridad, umbral `DS.Adaptive.shortContainerMaxHeight` = 500). El alto visible a secas no
