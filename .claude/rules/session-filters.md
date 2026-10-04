@@ -76,6 +76,26 @@ ninguna cuenta contable —p. ej. la única elegida está excluida de estadísti
 `liveBalance_selectedAccountIDExcluded_fallsBackToTotal`. Ticket:
 `saldo-con-seleccion-no-contable-diverge-entre-panel-y-estadisticas`.
 
+## Archivar no decide la suma: la decide «Excluir de las estadísticas»
+
+Decisión de Jürgen (2026-10-03): una cuenta suma o no según `excludeFromStatistics`, nunca según
+`isArchived`. Archivar desde el formulario de cuenta solo **enciende** ese toggle y lo avisa
+(`AccountFormViewModel.setArchived`); el usuario puede volver a incluirla a mano. Por eso:
+
+- **Excluir no es solo «no suma»: también oculta sus movimientos en Registros** (`RecordsViewModel`
+  descarta las transacciones de cuentas excluidas). Un aviso que hable de excluir tiene que decirlo.
+- **Desarchivar no re-incluye.** Solo se deshace la auto-exclusión si el usuario desarchiva en la
+  misma edición en que archivó y no tocó el toggle entre medias.
+- **Un conteo de «cuentas que suman» filtra por el toggle, no por archivada**
+  (`PanelTotalAccountsLogic.countableAccounts`, el «en N cuentas» del panorama), salvo las cuentas
+  sistema de Grupos que archiva la propia app. Archivar sigue escondiendo la cuenta de listas y
+  selectores; eso no cambia.
+- **Dos sitios archivan SIN excluir, a propósito**: el downgrade de plan
+  (`DowngradeResolutionSheet.archiveExcessItems`; excluir ahí ocultaría el historial y nada lo
+  re-incluye al volver a Pro, decisión pendiente de Jürgen) y `GroupBridgeSystemEntities` (cuentas
+  sistema, que se desarchivan solas). Igual que las cuentas archivadas antes del 2026-10-03, que no
+  se migraron: si no están excluidas, siguen sumando y contando, coherentes entre sí.
+
 ## El toggle `includeGroupsInPanelTotal` es del total agregado
 
 `PanelTotalAccountsLogic.accountsForTotal(hasSelectedAccount:)` recorta las cuentas sistema de

@@ -64,9 +64,8 @@ struct PanelPanoramaSection: View {
     /// Conteo de cuentas del saldo total, coherente con `viewModel.panelTotalBalance`:
     /// excluye las cuentas sistema de grupos cuando `includeGroupsInPanelTotal` está OFF.
     private var totalAccountsCount: Int {
-        let active = viewModel.accounts.filter { !$0.isArchived }
-        return PanelTotalAccountsLogic.accountsForTotal(
-            active,
+        PanelTotalAccountsLogic.accountsForTotal(
+            PanelTotalAccountsLogic.countableAccounts(viewModel.accounts),
             includeGroups: appPreferences.includeGroupsInPanelTotal,
             hasSelectedAccount: PanelTotalAccountsLogic.hasAccountFilter(
                 selectedAccountIDs: viewModel.selectedAccountIDs,

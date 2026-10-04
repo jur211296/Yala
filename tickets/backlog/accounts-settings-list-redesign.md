@@ -26,5 +26,5 @@ Segunda entrega del rediseño de cuentas (la primera es `panel-accounts-redesign
 
 ## Antes de empezar
 
-- El subtítulo de Archivadas no puede decir «no suman al total» sin decidir `archived-accounts-still-count-in-the-panel-total`.
+- El subtítulo de Archivadas no puede decir «no suman al total» sin decidir `archived-accounts-still-count-in-the-panel-total`. Decidido el 2026-10-03: suma lo que no está excluido; archivar desde el formulario excluye, pero una archivada re-incluida (o archivada antes de ese día, o por el downgrade) suma. El subtítulo no puede afirmar «no suman» a secas.
 - Reordenar se queda (botón de la toolbar, como hoy).

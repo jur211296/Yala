@@ -669,6 +669,8 @@ struct AccountFormView: View {
                 Toggle(isOn: $viewModel.excludeFromStatistics) {
                     Text(L10n.Account.excludeFromStats)
                 }
+                .onChange(of: viewModel.excludeFromStatistics) { _, excluded in viewModel.excludeChanged(to: excluded) }
+                .accessibilityIdentifier("account_exclude_stats_toggle")
 
                 .padding()
 
@@ -677,8 +679,23 @@ struct AccountFormView: View {
                 Toggle(isOn: $viewModel.isArchived) {
                     Text(L10n.Account.archive)
                 }
+                .onChange(of: viewModel.isArchived) { _, archived in viewModel.setArchived(archived) }
+                .accessibilityIdentifier("account_archive_toggle")
 
                 .padding()
+
+                // Avisar sin confirmar: archivar no borra nada, cambia qué suma y qué se ve en
+                // Registros. El texto dice dónde se deshace: el toggle de arriba, en esta tarjeta.
+                if viewModel.showsArchiveExclusionNotice {
+                    Text(L10n.Account.archiveExcludedNotice)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal)
+                        .padding(.bottom)
+                        .accessibilityIdentifier("account_archive_excluded_notice")
+                }
 
                 if viewModel.isEditing {
                     SubsectionDivider()
