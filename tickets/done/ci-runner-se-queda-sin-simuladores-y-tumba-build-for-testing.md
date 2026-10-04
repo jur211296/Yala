@@ -1,11 +1,14 @@
 ---
 id: ci-runner-se-queda-sin-simuladores-y-tumba-build-for-testing
-status: qa
+status: done
 priority: medium
 area: ci
 created: 2026-09-09
-updated: 2026-10-02
+updated: 2026-10-04
 source: aparecido al pasar el PR #116 (build 13 a TestFlight) por el CI
+qa-status: not-replicable
+qa-date: 2026-10-04
+qa-notes: barrido 2026-10-04 sin device-QA - es del CI, sin camino en un iPhone; resuelto en PR 327 y lo vigila cada corrida del workflow
 ---
 
 # El runner del CI se queda sin simuladores y tumba `Build for testing` — y el rojo NO es advisory
@@ -79,3 +82,7 @@ Duplicado de `ci-destination-assumes-a-simulator-that-may-not-exist`, que lleva 
 falta para cerrarlo. De las opciones de aquí: se hizo la 1 en versión robusta (resolver/crear el device
 y, si no hay runtime, `xcodebuild -downloadPlatform iOS`) y la 3 (`::error title=Simulador::` en vez del
 exit 70). La 2 (`generic/platform`) se descartó; el porqué está en el otro ticket.
+
+## Barrido de `qa` · 2026-10-04 · cerrado sin device-QA
+
+Sale de la cola de device-QA por el barrido antes del QA del lunes (encargo `2026-10-04-barrido-qa-antes-del-qa-del-lunes`), con el criterio de #224 y #291. Es del CI: no hay nada que ver en un iPhone. Se resolvió en el PR #327 junto a `ci-destination-assumes-a-simulator-that-may-not-exist`, y cada corrida del workflow lo comprueba sola.

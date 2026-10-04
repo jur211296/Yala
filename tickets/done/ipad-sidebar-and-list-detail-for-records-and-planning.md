@@ -1,14 +1,14 @@
 ---
 id: ipad-sidebar-and-list-detail-for-records-and-planning
-status: qa
+status: done
 priority: medium
 area: "platform, ipad, navigation, records, planning"
-updated: 2026-09-29
+updated: 2026-10-04
 created: 2026-09-26
-qa-status: needs-testing
-qa-date: 2026-09-29
-qa-notes: falta solo la vuelta a ancho con un registro abierto (guion abajo); lo demas visto en simulador
 source: "exploración iPad (docs/exploracion/ipad-nativo.md §5.1 y §8, fase 1), 2026-09-26"
+qa-status: not-replicable
+qa-date: 2026-10-04
+qa-notes: barrido 2026-10-04 sin device-QA - solo iPad: falta la vuelta a ancho con un registro abierto; lo demas visto en simulador el 29-sep
 ---
 
 # iPad · fase 1: barra lateral y lista-detalle en Registros y Planificación
@@ -148,3 +148,7 @@ Dynamic Type grande (`adaptativo-ipad-duo.md` §6.1).
 **Layout** (ADR «[2026-09-27] Yala se adapta por espacio, no por dispositivo»). Se decide por size class y ancho del
 contenedor, nunca por tipo de dispositivo ni orientación; un contenedor que se adapta, no un `if` por size class en
 la raíz; APIs de iOS 27.1 solo tras `if #available`.
+
+## Barrido de `qa` · 2026-10-04 · cerrado sin device-QA
+
+Sale de la cola de device-QA por el barrido antes del QA del lunes (encargo `2026-10-04-barrido-qa-antes-del-qa-del-lunes`), con el criterio de #224 y #291. Solo faltaba la vuelta a ancho con un registro abierto, que existe en un iPad y no en un iPhone. Lo demás se vio en el simulador el 29-sep.

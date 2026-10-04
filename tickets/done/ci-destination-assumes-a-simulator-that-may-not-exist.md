@@ -1,11 +1,14 @@
 ---
 id: ci-destination-assumes-a-simulator-that-may-not-exist
-status: qa
+status: done
 priority: medium
 area: "ci, testing"
 created: 2026-09-07
-updated: 2026-10-02
+updated: 2026-10-04
 source: rojo del CI en el PR #94 (2026-09-07)
+qa-status: not-replicable
+qa-date: 2026-10-04
+qa-notes: barrido 2026-10-04 sin device-QA - es del CI, sin camino en un iPhone; resuelto en PR 327 y lo vigila cada corrida del workflow
 ---
 
 # El CI da por hecho que el runner trae el iPhone 17 Pro, y a veces no lo trae
@@ -89,3 +92,7 @@ Qué cambió, contra los AC:
 **Qué falta para cerrarlo:** que no vuelva a aparecer `Unable to find a device matching` en los runs de
 QA de las próximas semanas. Si aparece un aviso `Simulador::` en un run verde, el reintento hizo su
 trabajo: anotarlo aquí con el número de vueltas.
+
+## Barrido de `qa` · 2026-10-04 · cerrado sin device-QA
+
+Sale de la cola de device-QA por el barrido antes del QA del lunes (encargo `2026-10-04-barrido-qa-antes-del-qa-del-lunes`), con el criterio de #224 y #291. Es del CI: no hay nada que ver en un iPhone. Se resolvió en el PR #327 y cada corrida del workflow `qa.yml` lo comprueba sola; si vuelve a fallar, sale rojo en el siguiente PR.

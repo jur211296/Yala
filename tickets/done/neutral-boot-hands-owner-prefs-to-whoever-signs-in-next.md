@@ -1,12 +1,14 @@
 ---
 id: neutral-boot-hands-owner-prefs-to-whoever-signs-in-next
-status: qa
+status: done
 priority: medium
 area: "sesiones, settings, sync"
 created: 2026-09-14
-updated: 2026-10-01
-qa-status: needs-testing
+updated: 2026-10-04
 source: "medido al reponer el guard del iCloud-KV (`icloud-kv-prefs-cross-sessions-on-a-lent-phone`): la mitad que esa puerta no puede cerrar"
+qa-status: not-replicable
+qa-date: 2026-10-04
+qa-notes: barrido 2026-10-04 sin device-QA - pide un enlace de invitacion de otra cuenta y una segunda cuenta de Google tras cerrar sesion; caso de telefono compartido, cubierto por sus unit tests
 ---
 
 # Tras «Cerrar sesión», quien entra por un grupo hereda las preferencias del dueño
@@ -100,3 +102,7 @@ de invitación a un grupo de otra cuenta.
    - Esperado: lo mismo, y la moneda del grupo nuevo es la de la región del teléfono, no la tuya.
 6. Control: «Cerrar sesión» otra vez y elige «Restaurar desde iCloud» con tu cuenta.
    - Esperado: entra directo a la app con tu nombre y tus preferencias de antes.
+
+## Barrido de `qa` · 2026-10-04 · cerrado sin device-QA
+
+Sale de la cola de device-QA por el barrido antes del QA del lunes (encargo `2026-10-04-barrido-qa-antes-del-qa-del-lunes`), con el criterio de #224 y #291. El guion pide cerrar sesión y entrar con otra persona por una invitación de otra cuenta: el caso de un teléfono compartido entre dos personas, raro y con un montaje de dos cuentas. Lo fijan los unit tests del arreglo (commit `4d3e8158c`).

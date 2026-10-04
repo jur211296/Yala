@@ -1,11 +1,14 @@
 ---
 id: cloud-sign-out-with-an-expired-session-and-personal-changes-has-no-exit
-status: qa
+status: done
 priority: medium
 area: "modo-nube, sesión, settings"
 created: 2026-09-28
-updated: 2026-09-28
+updated: 2026-10-04
 source: "residual de `groups-outbox-rows-without-a-live-session-have-no-exit` (2026-09-28)"
+qa-status: not-replicable
+qa-date: 2026-10-04
+qa-notes: barrido 2026-10-04 sin device-QA - pide caducar la sesion con SQL contra auth.sessions de staging y una cuenta en la nube; caso raro, cubierto por sus unit tests
 ---
 
 # En la nube, con la sesión caducada y movimientos sin subir, no puedo cerrar sesión si no puedo volver a entrar
@@ -85,3 +88,7 @@ datos» dice nube). Apunta el id de la cuenta en el SQL Editor de Supabase (stag
 - [ ] «Ahora no» no borra nada.
 - [ ] Volviendo a entrar con la misma cuenta, los cambios suben y el cierre sigue sin aviso de pérdida.
 - [ ] «Cerrar sesión y perderlos» cierra la sesión.
+
+## Barrido de `qa` · 2026-10-04 · cerrado sin device-QA
+
+Sale de la cola de device-QA por el barrido antes del QA del lunes (encargo `2026-10-04-barrido-qa-antes-del-qa-del-lunes`), con el criterio de #224 y #291. El guion pide caducar la sesión de la nube a mano con un `delete from auth.sessions` en staging, con cambios pendientes sin subir: un caso raro que nadie provoca usando la app. El aviso y sus tres salidas los fijan los unit tests del arreglo (commit `159191c4f`).

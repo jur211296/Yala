@@ -1,10 +1,14 @@
 ---
 id: superseding-intent-can-strand-the-sign-out-coordinator
-status: qa
+status: done
 priority: medium
 area: "modo-nube, groups"
 created: 2026-09-11
 source: "review adversarial de la mitad 2 del paso 5 (`groups-entry-on-a-mirrored-store-still-blocks-the-owner`), lente de flujo de UI"
+updated: 2026-10-04
+qa-status: not-replicable
+qa-date: 2026-10-04
+qa-notes: barrido 2026-10-04 sin device-QA - carrera con modo avion y una invitacion abierta desde otro telefono sobre la espera agotada; cubierto por sus unit tests
 ---
 
 # Un intent que supera la cadena del Welcome puede dejar el coordinador del cierre cerrado con llave
@@ -99,3 +103,7 @@ privada), y un enlace de invitación a un grupo a mano (en Notas o Mensajes, abi
 4. Toca la flecha de volver de arriba a la izquierda (en esta rama el aviso no trae botón «Volver»; la flecha es su
    salida). **Esperado:** vuelves a los dos caminos y, enseguida, se presenta la invitación.
 5. Cierra la invitación, ve a Ajustes → «Cerrar sesión». **Esperado:** responde (no se queda mudo).
+
+## Barrido de `qa` · 2026-10-04 · cerrado sin device-QA
+
+Sale de la cola de device-QA por el barrido antes del QA del lunes (encargo `2026-10-04-barrido-qa-antes-del-qa-del-lunes`), con el criterio de #224 y #291. Es una carrera: abrir una invitación justo encima del aviso de espera agotada, con modo avión y otro teléfono para mandar el enlace. No se provoca de forma fiable a mano. Lo fijan los unit tests del arreglo (commit `03742d873`).

@@ -1,12 +1,14 @@
 ---
 id: detach-blocked-phase-is-stranded-when-the-storage-sheet-closes-mid-wait
-status: qa
+status: done
 priority: medium
 area: "modo-nube, settings, groups"
 created: 2026-10-02
-updated: 2026-10-02
-qa-status: needs-testing
+updated: 2026-10-04
 source: "review adversarial de `detach-saves-the-personal-graph-outside-the-quiescence-window` (lente de consumidores)"
+qa-status: not-replicable
+qa-date: 2026-10-04
+qa-notes: barrido 2026-10-04 sin device-QA - carrera: cerrar la hoja a mitad de la espera con Very Bad Network; cubierto por GroupsDetachBlockedPhaseTests (3 mutantes)
 ---
 
 # Si cierro Almacenamiento mientras el desasociar espera, cerrar sesión deja de funcionar hasta matar la app
@@ -71,3 +73,7 @@ Ajustes del iPhone → Desarrollador → Network Link Conditioner → «Very Bad
    - Si ya terminó bloqueado: se ve «Desasociar» otra vez.
 4. Cierra la hoja y toca «Cerrar sesión» en Perfil: abre su hoja de cierre (no se queda mudo). No confirmes: «Cancelar».
 5. Vuelve a «¿Dónde viven tus datos?» → «Desasociar» → «Conservar»: el aviso que salga NO dice «Estás cerrando sesión».
+
+## Barrido de `qa` · 2026-10-04 · cerrado sin device-QA
+
+Sale de la cola de device-QA por el barrido antes del QA del lunes (encargo `2026-10-04-barrido-qa-antes-del-qa-del-lunes`), con el criterio de #224 y #291. Es una carrera: cerrar la hoja de almacenamiento justo mientras «Desasociar» espera con la red degradada. No se provoca de forma fiable a mano. Lo fija `GroupsDetachBlockedPhaseTests` con el coordinador real (3 mutantes muertos) y pasó review adversarial de dos lentes.

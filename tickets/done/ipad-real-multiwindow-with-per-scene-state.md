@@ -1,11 +1,14 @@
 ---
 id: ipad-real-multiwindow-with-per-scene-state
-status: qa
+status: done
 priority: low
 area: "platform, ipad, navigation, modo-nube"
 created: 2026-09-26
-updated: 2026-10-02
+updated: 2026-10-04
 source: "exploración iPad (docs/exploracion/ipad-nativo.md §5.4, §6.1 y §8, fase 4), 2026-09-26"
+qa-status: not-replicable
+qa-date: 2026-10-04
+qa-notes: barrido 2026-10-04 sin device-QA - varias ventanas solo existen en iPad; sin camino en un iPhone
 ---
 
 # iPad · fase 4: varias ventanas de verdad, con estado por ventana
@@ -140,3 +143,7 @@ Dynamic Type grande (`adaptativo-ipad-duo.md` §6.1).
 **Layout** (ADR «[2026-09-27] Yala se adapta por espacio, no por dispositivo»). Se decide por size class y ancho del
 contenedor, nunca por tipo de dispositivo ni orientación; un contenedor que se adapta, no un `if` por size class en
 la raíz; APIs de iOS 27.1 solo tras `if #available`.
+
+## Barrido de `qa` · 2026-10-04 · cerrado sin device-QA
+
+Sale de la cola de device-QA por el barrido antes del QA del lunes (encargo `2026-10-04-barrido-qa-antes-del-qa-del-lunes`), con el criterio de #224 y #291. Varias ventanas de Yala, cada una con su navegación, solo existen en un iPad: no hay camino en un iPhone. Si quieres un pase de iPad antes de la release, es un guion aparte con su propio montaje.

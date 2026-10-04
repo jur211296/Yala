@@ -112,7 +112,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | appstorage-onboarding-desarma-el-aislamiento-de-tests | backlog | tickets/backlog/appstorage-onboarding-desarma-el-aislamiento-de-tests.md |
 | archived-accounts-still-count-in-the-panel-total | qa | tickets/qa/archived-accounts-still-count-in-the-panel-total.md |
 | archiving-exclusion-open-decisions | backlog | tickets/backlog/archiving-exclusion-open-decisions.md |
-| associate-cta-ignores-the-groups-kill-switch | qa | tickets/qa/associate-cta-ignores-the-groups-kill-switch.md |
+| associate-cta-ignores-the-groups-kill-switch | done | tickets/done/associate-cta-ignores-the-groups-kill-switch.md |
 | association-read-writes-defaults-from-a-view-body | backlog | tickets/backlog/association-read-writes-defaults-from-a-view-body.md |
 | attest-gateway-reports-a-storage-failure-as-an-invalid-attestation | backlog | tickets/backlog/attest-gateway-reports-a-storage-failure-as-an-invalid-attestation.md |
 | attest-session-token-rejected-by-the-gateway-stays-cached | backlog | tickets/backlog/attest-session-token-rejected-by-the-gateway-stays-cached.md |
@@ -153,9 +153,9 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | ci-allowlist-no-cubre-encargos-ni-qa-scripts | backlog | tickets/backlog/ci-allowlist-no-cubre-encargos-ni-qa-scripts.md |
 | ci-avisador-de-rojos-advisory-tiene-la-clave-mal | done | tickets/done/ci-avisador-de-rojos-advisory-tiene-la-clave-mal.md |
 | ci-checkout-v4-runs-on-deprecated-node | backlog | tickets/backlog/ci-checkout-v4-runs-on-deprecated-node.md |
-| ci-destination-assumes-a-simulator-that-may-not-exist | qa | tickets/qa/ci-destination-assumes-a-simulator-that-may-not-exist.md |
+| ci-destination-assumes-a-simulator-that-may-not-exist | done | tickets/done/ci-destination-assumes-a-simulator-that-may-not-exist.md |
 | ci-no-corre-la-suite-del-gateway | backlog | tickets/backlog/ci-no-corre-la-suite-del-gateway.md |
-| ci-runner-se-queda-sin-simuladores-y-tumba-build-for-testing | qa | tickets/qa/ci-runner-se-queda-sin-simuladores-y-tumba-build-for-testing.md |
+| ci-runner-se-queda-sin-simuladores-y-tumba-build-for-testing | done | tickets/done/ci-runner-se-queda-sin-simuladores-y-tumba-build-for-testing.md |
 | ci-runner-sesion-de-ci-arranca-servicios-que-no-usa | backlog | tickets/backlog/ci-runner-sesion-de-ci-arranca-servicios-que-no-usa.md |
 | ci-suite-simulador-duplicada-y-allowlist-incompleta | done | tickets/done/ci-suite-simulador-duplicada-y-allowlist-incompleta.md |
 | ci-verde-con-la-suite-en-rojo | done | tickets/done/ci-verde-con-la-suite-en-rojo.md |
@@ -192,7 +192,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | cloud-sign-in-discovers-account-kind | qa | tickets/qa/cloud-sign-in-discovers-account-kind.md |
 | cloud-sign-in-screen-offers-sign-up-to-a-phone-without-app-attest | done | tickets/done/cloud-sign-in-screen-offers-sign-up-to-a-phone-without-app-attest.md |
 | cloud-sign-out-final-recount-misses-edits-left-only-in-history | backlog | tickets/backlog/cloud-sign-out-final-recount-misses-edits-left-only-in-history.md |
-| cloud-sign-out-with-an-expired-session-and-personal-changes-has-no-exit | qa | tickets/qa/cloud-sign-out-with-an-expired-session-and-personal-changes-has-no-exit.md |
+| cloud-sign-out-with-an-expired-session-and-personal-changes-has-no-exit | done | tickets/done/cloud-sign-out-with-an-expired-session-and-personal-changes-has-no-exit.md |
 | cloud-sign-out-with-another-account-points-to-a-missing-sign-in-door | backlog | tickets/backlog/cloud-sign-out-with-another-account-points-to-a-missing-sign-in-door.md |
 | cloud-signout-collapses-a-groups-session-expiry-into-permanent | done | tickets/done/cloud-signout-collapses-a-groups-session-expiry-into-permanent.md |
 | cloud-signout-collapses-every-groups-transient-into-permanent | done | tickets/done/cloud-signout-collapses-every-groups-transient-into-permanent.md |
@@ -227,7 +227,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | debt-simplification-nondeterministic-ties | backlog | tickets/backlog/debt-simplification-nondeterministic-ties.md |
 | debt-tracking | backlog | tickets/backlog/debt-tracking.md |
 | debug-panel-shows-a-counter-the-reverse-no-longer-moves | backlog | tickets/backlog/debug-panel-shows-a-counter-the-reverse-no-longer-moves.md |
-| detach-blocked-phase-is-stranded-when-the-storage-sheet-closes-mid-wait | qa | tickets/qa/detach-blocked-phase-is-stranded-when-the-storage-sheet-closes-mid-wait.md |
+| detach-blocked-phase-is-stranded-when-the-storage-sheet-closes-mid-wait | done | tickets/done/detach-blocked-phase-is-stranded-when-the-storage-sheet-closes-mid-wait.md |
 | detach-does-not-verify-the-cloud-session-actually-closed | done | tickets/done/detach-does-not-verify-the-cloud-session-actually-closed.md |
 | detach-failure-looks-like-success | done | tickets/done/detach-failure-looks-like-success.md |
 | detach-history-replay-can-tombstone-groups-on-next-launch | done | tickets/done/detach-history-replay-can-tombstone-groups-on-next-launch.md |
@@ -300,7 +300,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | fresh-start-keeps-a-groups-session-that-migrate-promotes | done | tickets/done/fresh-start-keeps-a-groups-session-that-migrate-promotes.md |
 | fresh-start-wipe-kills-unsent-group-writes-silently | done | tickets/done/fresh-start-wipe-kills-unsent-group-writes-silently.md |
 | full-activation-cloud-adopt-when-account-already-complete | backlog | tickets/backlog/full-activation-cloud-adopt-when-account-already-complete.md |
-| full-activation-local-state-never-reaches-the-apple-id-kv | qa | tickets/qa/full-activation-local-state-never-reaches-the-apple-id-kv.md |
+| full-activation-local-state-never-reaches-the-apple-id-kv | done | tickets/done/full-activation-local-state-never-reaches-the-apple-id-kv.md |
 | full-activation-onboarding-signal-never-reaches-the-apple-id-kv | backlog | tickets/backlog/full-activation-onboarding-signal-never-reaches-the-apple-id-kv.md |
 | full-mode-activation-must-ask-where-personal-data-lives | qa | tickets/qa/full-mode-activation-must-ask-where-personal-data-lives.md |
 | fx-approximate-mark-missing-on-secondary-surfaces | done | tickets/done/fx-approximate-mark-missing-on-secondary-surfaces.md |
@@ -326,7 +326,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | generated-index-lands-above-yaml-frontmatter | backlog | tickets/backlog/generated-index-lands-above-yaml-frontmatter.md |
 | goldens-de-staging-solo-pasan-a-trozos | done | tickets/done/goldens-de-staging-solo-pasan-a-trozos.md |
 | group-balance-service-shares-not-deduped | backlog | tickets/backlog/group-balance-service-shares-not-deduped.md |
-| group-expense-edit-save-disabled-without-saying-the-account-is-missing | qa | tickets/qa/group-expense-edit-save-disabled-without-saying-the-account-is-missing.md |
+| group-expense-edit-save-disabled-without-saying-the-account-is-missing | done | tickets/done/group-expense-edit-save-disabled-without-saying-the-account-is-missing.md |
 | group-expense-views-redesign | qa | tickets/qa/group-expense-views-redesign.md |
 | group-joiner-flag-consumers-still-narrow | done | tickets/done/group-joiner-flag-consumers-still-narrow.md |
 | group-notif-credits-payer-not-editor | done | tickets/done/group-notif-credits-payer-not-editor.md |
@@ -445,18 +445,18 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | invite-refresh-forzado-es-noop-si-hay-otro-en-vuelo | done | tickets/done/invite-refresh-forzado-es-noop-si-hay-otro-en-vuelo.md |
 | ipad-and-duo-panel-and-statistics-use-the-width | done | tickets/done/ipad-and-duo-panel-and-statistics-use-the-width.md |
 | ipad-drop-unreadable-file-fails-silently | backlog | tickets/backlog/ipad-drop-unreadable-file-fails-silently.md |
-| ipad-keyboard-shortcuts-pointer-context-menus-and-drop | qa | tickets/qa/ipad-keyboard-shortcuts-pointer-context-menus-and-drop.md |
+| ipad-keyboard-shortcuts-pointer-context-menus-and-drop | done | tickets/done/ipad-keyboard-shortcuts-pointer-context-menus-and-drop.md |
 | ipad-large-and-extra-large-widgets | done | tickets/done/ipad-large-and-extra-large-widgets.md |
-| ipad-list-detail-for-groups-and-settings-and-chat-inspector | qa | tickets/qa/ipad-list-detail-for-groups-and-settings-and-chat-inspector.md |
+| ipad-list-detail-for-groups-and-settings-and-chat-inspector | done | tickets/done/ipad-list-detail-for-groups-and-settings-and-chat-inspector.md |
 | ipad-list-highlights-the-open-row | backlog | tickets/backlog/ipad-list-highlights-the-open-row.md |
 | ipad-multiple-windows-share-one-navigation-state | done | tickets/done/ipad-multiple-windows-share-one-navigation-state.md |
 | ipad-narrowing-the-window-on-groups-crashes-the-app | done | tickets/done/ipad-narrowing-the-window-on-groups-crashes-the-app.md |
 | ipad-native-app | backlog | tickets/backlog/ipad-native-app.md |
-| ipad-real-multiwindow-with-per-scene-state | qa | tickets/qa/ipad-real-multiwindow-with-per-scene-state.md |
+| ipad-real-multiwindow-with-per-scene-state | done | tickets/done/ipad-real-multiwindow-with-per-scene-state.md |
 | ipad-records-empty-detail-half-hidden-with-chat-open | backlog | tickets/backlog/ipad-records-empty-detail-half-hidden-with-chat-open.md |
 | ipad-reports-and-search-get-a-readable-width | backlog | tickets/backlog/ipad-reports-and-search-get-a-readable-width.md |
 | ipad-settings-sheet-size-depends-on-where-it-opens | backlog | tickets/backlog/ipad-settings-sheet-size-depends-on-where-it-opens.md |
-| ipad-sidebar-and-list-detail-for-records-and-planning | qa | tickets/qa/ipad-sidebar-and-list-detail-for-records-and-planning.md |
+| ipad-sidebar-and-list-detail-for-records-and-planning | done | tickets/done/ipad-sidebar-and-list-detail-for-records-and-planning.md |
 | iphone-duo-native-app | backlog | tickets/backlog/iphone-duo-native-app.md |
 | iphone-landscape-headers-fill-the-short-screen | done | tickets/done/iphone-landscape-headers-fill-the-short-screen.md |
 | iphone-large-models-use-the-extra-width | done | tickets/done/iphone-large-models-use-the-extra-width.md |
@@ -488,7 +488,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | leaving-and-reentering-restore-renews-the-hard-cap | done | tickets/done/leaving-and-reentering-restore-renews-the-hard-cap.md |
 | lineage-coverage-blocks-forever-after-a-row-deleted-during-the-wait | done | tickets/done/lineage-coverage-blocks-forever-after-a-row-deleted-during-the-wait.md |
 | lineage-enumeration-check-skips-tables-absent-from-the-merkle | backlog | tickets/backlog/lineage-enumeration-check-skips-tables-absent-from-the-merkle.md |
-| list-column-too-narrow-for-accessibility-text-on-a-turned-pro-max | qa | tickets/qa/list-column-too-narrow-for-accessibility-text-on-a-turned-pro-max.md |
+| list-column-too-narrow-for-accessibility-text-on-a-turned-pro-max | done | tickets/done/list-column-too-narrow-for-accessibility-text-on-a-turned-pro-max.md |
 | live-anchor-breakdown-doubles-the-approximate-glyph | backlog | tickets/backlog/live-anchor-breakdown-doubles-the-approximate-glyph.md |
 | local-wipes-other-than-sign-out-do-not-look-at-an-in-flight-migration | backlog | tickets/backlog/local-wipes-other-than-sign-out-do-not-look-at-an-in-flight-migration.md |
 | lost-cloud-signup-then-private-leaves-migrate-blocked | backlog | tickets/backlog/lost-cloud-signup-then-private-leaves-migrate-blocked.md |
@@ -511,7 +511,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | multi-currency-accounts | backlog | tickets/backlog/multi-currency-accounts.md |
 | navigation-uitests-look-for-the-iphone-tab-bar-on-ipad | backlog | tickets/backlog/navigation-uitests-look-for-the-iphone-tab-bar-on-ipad.md |
 | needsrelaunch-hides-the-groups-section | done | tickets/done/needsrelaunch-hides-the-groups-section.md |
-| neutral-boot-hands-owner-prefs-to-whoever-signs-in-next | qa | tickets/qa/neutral-boot-hands-owner-prefs-to-whoever-signs-in-next.md |
+| neutral-boot-hands-owner-prefs-to-whoever-signs-in-next | done | tickets/done/neutral-boot-hands-owner-prefs-to-whoever-signs-in-next.md |
 | neutral-mount-wiring-scan-is-red-on-2-1 | backlog | tickets/backlog/neutral-mount-wiring-scan-is-red-on-2-1.md |
 | new-transaction-account-picker-uitests-fail-on-the-ios-27-lane-pro-max | backlog | tickets/backlog/new-transaction-account-picker-uitests-fail-on-the-ios-27-lane-pro-max.md |
 | no-hay-seed-con-miembro-rechazado | backlog | tickets/backlog/no-hay-seed-con-miembro-rechazado.md |
@@ -722,7 +722,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | storage-sync-sign-in-count-has-no-plural | backlog | tickets/backlog/storage-sync-sign-in-count-has-no-plural.md |
 | storekit-appgroup-siri-pro-gate | done | tickets/done/storekit-appgroup-siri-pro-gate.md |
 | subscription-success-without-pro | done | tickets/done/subscription-success-without-pro.md |
-| superseding-intent-can-strand-the-sign-out-coordinator | qa | tickets/qa/superseding-intent-can-strand-the-sign-out-coordinator.md |
+| superseding-intent-can-strand-the-sign-out-coordinator | done | tickets/done/superseding-intent-can-strand-the-sign-out-coordinator.md |
 | sync-runtime-safety-note-assumes-every-prod-device-is-icloud | backlog | tickets/backlog/sync-runtime-safety-note-assumes-every-prod-device-is-icloud.md |
 | synced-prefs-outside-prefsynckey | discarded | tickets/discarded/synced-prefs-outside-prefsynckey.md |
 | tag-chips-change-order-on-every-launch | backlog | tickets/backlog/tag-chips-change-order-on-every-launch.md |
@@ -783,7 +783,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | widget-snapshot-visitor-overwrites-owner | discarded | tickets/discarded/widget-snapshot-visitor-overwrites-owner.md |
 | wipe-alert-fires-on-a-session-that-no-longer-obeys-the-signal | done | tickets/done/wipe-alert-fires-on-a-session-that-no-longer-obeys-the-signal.md |
 | wipe-copy-reads-one-axis-while-the-sheet-reads-two | backlog | tickets/backlog/wipe-copy-reads-one-axis-while-the-sheet-reads-two.md |
-| wipe-data-does-not-cancel-the-remote-wipe-grace | qa | tickets/qa/wipe-data-does-not-cancel-the-remote-wipe-grace.md |
+| wipe-data-does-not-cancel-the-remote-wipe-grace | done | tickets/done/wipe-data-does-not-cancel-the-remote-wipe-grace.md |
 | wipe-data-group-rows-return-only-on-the-next-cold-launch | backlog | tickets/backlog/wipe-data-group-rows-return-only-on-the-next-cold-launch.md |
 | wipe-data-keeps-groups-but-drops-their-bridged-rows | qa | tickets/qa/wipe-data-keeps-groups-but-drops-their-bridged-rows.md |
 | wipe-division-complement-can-be-bridged-twice | backlog | tickets/backlog/wipe-division-complement-can-be-bridged-twice.md |

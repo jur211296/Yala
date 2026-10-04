@@ -1,14 +1,14 @@
 ---
 id: ipad-keyboard-shortcuts-pointer-context-menus-and-drop
-status: qa
+status: done
 priority: low
 area: "platform, ipad, accessibility, records"
 created: 2026-09-26
-updated: 2026-09-30
-qa-status: needs-testing
-qa-date: 2026-09-30
-qa-notes: atajos, menus y flechas vistos en simulador; falta puntero, soltar desde el Mac y la lista al mantener cmd (guion abajo)
+updated: 2026-10-04
 source: "exploración iPad (docs/exploracion/ipad-nativo.md §5.3 y §8, fase 3), 2026-09-26"
+qa-status: not-replicable
+qa-date: 2026-10-04
+qa-notes: barrido 2026-10-04 sin device-QA - solo iPad con teclado y trackpad; atajos, menus y flechas vistos en simulador el 30-sep
 ---
 
 # iPad · fase 3: atajos de teclado, puntero, menús contextuales y soltar recibos
@@ -102,3 +102,7 @@ Dynamic Type grande (`adaptativo-ipad-duo.md` §6.1).
 **Layout** (ADR «[2026-09-27] Yala se adapta por espacio, no por dispositivo»). Se decide por size class y ancho del
 contenedor, nunca por tipo de dispositivo ni orientación; un contenedor que se adapta, no un `if` por size class en
 la raíz; APIs de iOS 27.1 solo tras `if #available`.
+
+## Barrido de `qa` · 2026-10-04 · cerrado sin device-QA
+
+Sale de la cola de device-QA por el barrido antes del QA del lunes (encargo `2026-10-04-barrido-qa-antes-del-qa-del-lunes`), con el criterio de #224 y #291. Lo que falta (puntero, soltar desde el Mac, la lista al mantener cmd) solo existe en un iPad con teclado y trackpad: no tiene camino en un iPhone. Los atajos, los menús contextuales y las flechas se vieron en el simulador el 30-sep.
