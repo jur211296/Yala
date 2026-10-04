@@ -83,6 +83,45 @@ final class ChatAssistantViewModel {
         }
     }
 
+    /// `-uitest-chat-draft`: una pregunta de registro y la respuesta del asistente con dos borradores. Necesita el
+    /// contexto porque los borradores apuntan a cuentas y subcategorías reales; por eso no va en el arranque con
+    /// `seedTodayConversationForUITest`, sino aquí, cuando el chat ya tiene el store. No persiste: vive en `messages`.
+    private func seedDraftConversationForUITest(_ ctx: ModelContext) {
+        let accounts: [Account]
+        let subcategories: [Subcategory]
+        do {
+            accounts = try ctx.fetch(FetchDescriptor<Account>(predicate: #Predicate { !$0.isArchived }))
+            subcategories = try ctx.fetch(FetchDescriptor<Subcategory>(predicate: #Predicate { $0.isVisible == true }))
+        } catch {
+            print("ChatAssistantViewModel: seedDraftConversationForUITest fetch failed: \(error)")
+            return
+        }
+        guard let account = accounts.first(where: { $0.currencyCode == "PEN" }) ?? accounts.first else { return }
+        let expenseSubs = subcategories.filter { !$0.safeCategory.isIncome }
+        let taxi = expenseSubs.first(where: { $0.name.localizedCaseInsensitiveContains("taxi") })
+            ?? expenseSubs.first(where: { $0.safeCategory.name.localizedCaseInsensitiveContains("transporte") })
+            ?? expenseSubs.first
+        let now = Date.now
+        let drafts = [
+            ChatTransactionDraft(
+                amount: 45, currencyCode: account.currencyCode, isExpense: true, note: "Taxi al aeropuerto",
+                date: now, accountID: account.persistentModelID, subcategoryID: taxi?.persistentModelID
+            ),
+            ChatTransactionDraft(
+                amount: Decimal(string: "120.50"), currencyCode: account.currencyCode, isExpense: true,
+                note: "Compras del súper", date: now, accountID: account.persistentModelID,
+                needsUserInput: ["subcategory"]
+            ),
+        ]
+        messages = [
+            ChatMessage(role: .user, text: "Gasté 45 en un taxi al aeropuerto y 120.50 en el súper", timestamp: now),
+            ChatMessage(
+                role: .assistant, text: L10n.Chat.Draft.confirmRegisterPlural, timestamp: now,
+                attachments: [.drafts(drafts)]
+            ),
+        ]
+    }
+
     /// `-uitest-chat-suggestions`: las tres sugerencias del chat vacío, fijas.
     private static let uiTestSuggestions = [
         ChatSuggestion(text: "¿Cómo se distribuyeron mis gastos en Hogar y Personal?", icon: "chart.pie", type: .biggestCategory),
@@ -96,6 +135,11 @@ final class ChatAssistantViewModel {
     func setContext(_ ctx: ModelContext, autoLoadSuggestions: Bool = true) {
         modelContext = ctx
         loadPersistedSession()
+        #if DEBUG
+        if UITestHooks.chatDraft && messages.isEmpty {
+            seedDraftConversationForUITest(ctx)
+        }
+        #endif
         // Restaurar signal persistido si NTV guardó mientras el chat estaba cerrado
         // (o la app fue matada entre NTV-save y reapertura).
         SessionState.shared.restoreChatDraftSavedSignalIfNeeded()
