@@ -1,9 +1,10 @@
 ---
 id: account-form-as-medium-detent-sheet
-status: backlog
+status: done
 priority: medium
 area: "accounts, ui"
 created: 2026-09-09
+updated: 2026-10-03
 source: idea Jürgen 2026-09-09
 ---
 
@@ -43,7 +44,17 @@ dos** usa medium, así que la pregunta sigue viva y no la contesta el código.
 
 ## Estado
 
-Idea capturada, **sin spec**.
+**Hecho (2026-10-03).** La pregunta de arriba la cerró el encargo: es el formulario **de cuenta**
+(alta y edición), no el alta de transacción.
+
+- Abre a media altura y se puede tirar hacia arriba (`[.medium, .large]`), declarado dentro de
+  `AccountFormView` con `.yalaSheetDetents`, así que cubre los tres sitios que lo presentan.
+- En ventana ancha (iPad a pantalla completa, Mac) el helper fuerza `.large`, como el resto de
+  formularios. Sin `UIDevice` ni orientación.
+- Con texto de accesibilidad (AX1–AX5) abre grande: a media altura en el SE solo cabía un campo.
+- Fondo: transparente a media altura, el `.subtle` de siempre cuando está grande.
+
+Evidencia: `qa/evidencia-adaptativo-20261003/account-form-as-medium-detent-sheet/`.
 
 ## Relacionados
 
