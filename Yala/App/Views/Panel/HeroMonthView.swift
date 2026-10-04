@@ -29,43 +29,36 @@ struct HeroMonthView: View {
     @Environment(SessionState.self) private var sessionState
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    // La maqueta (rótulo y período arriba, cifra y detalle debajo, todo a la izquierda) es `HeroHeader`, la misma
+    // que usan las pestañas de Estadísticas: así las dos cabeceras no pueden volver a divergir.
     var body: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.md) {
-            topRow
-            summaryRow
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .accessibilityElement(children: .contain)
-        .accessibilityAddTraits(.isHeader)
-        .accessibilityLabel(heroAccessibilityLabel)
-    }
-
-    // MARK: - Top row (label del KPI + period selector inline)
-    //
-    // El saludo salió del hero (2026-09-02, sesión de diseño): ocupaba la línea
-    // más grande de la pantalla para no decir ningún dato, y el nombre sigue
-    // apareciendo en el título de la barra al hacer scroll (`PanelView`).
-    // Su hueco lo ocupa el label del KPI, que antes vivía centrado dentro de
-    // `summaryRow` — así el hero tiene UN SOLO eje de lectura, el mismo margen
-    // izquierdo que el resto del Panel.
-
-    // A tamaños de accesibilidad la píldora del período baja bajo el label (`AdaptiveRowStack`): en fila no
-    // cabían los dos en el ancho de un iPhone SE y «Disponible» desaparecía (medido el 2026-09-28).
-    private var topRow: some View {
-        AdaptiveRowStack(spacing: DS.Spacing.xs, stackedSpacing: DS.Spacing.sm) {
-            Text(summaryLabel)
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-        } trailing: {
+        HeroHeader {
+            HeroHeaderLabel(text: summaryLabel)
+        } period: {
             TrendsPeriodMenu(
                 selectedPeriod: selectedPeriod,
                 customDateRange: customDateRange,
                 onSelect: onSelectPeriod,
                 onCustomTapped: onCustomPeriodTapped
             )
+        } content: {
+            summaryRow
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityAddTraits(.isHeader)
+        .accessibilityLabel(heroAccessibilityLabel)
     }
+
+    // MARK: - Rótulo del KPI
+    //
+    // El saludo salió del hero (2026-09-02, sesión de diseño): ocupaba la línea
+    // más grande de la pantalla para no decir ningún dato, y el nombre sigue
+    // apareciendo en el título de la barra al hacer scroll (`PanelView`).
+    // Su hueco lo ocupa el label del KPI, que antes vivía centrado dentro de
+    // `summaryRow` — así el hero tiene UN SOLO eje de lectura, el mismo margen
+    // izquierdo que el resto del Panel. A tamaños de accesibilidad la píldora
+    // del período baja bajo el label (`AdaptiveRowStack`, dentro de `HeroHeader`):
+    // en fila no cabían los dos en el ancho de un iPhone SE (medido el 2026-09-28).
 
     /// Label del KPI SIN el período: la píldora de `TrendsPeriodMenu` va al lado
     /// y ya lo dice. Compuesto con el período seguiría en el label accesible,
@@ -186,8 +179,6 @@ struct HeroMonthView: View {
                 }
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.vertical, DS.Spacing.xs)
         .contentShape(Rectangle())
     }
 

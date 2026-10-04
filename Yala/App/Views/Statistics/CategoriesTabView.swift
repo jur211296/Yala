@@ -315,7 +315,9 @@ struct CategoriesTabView: View {
 
             distributionInsightCard
         }
-        .yalaSafeBottomPadding()
+        // Yala IA y «+» flotan encima en las cuatro pestañas de Estadísticas: al final del scroll, la última tarjeta sube
+        // por encima de los dos (mismo margen que `RecordsTabView`).
+        .padding(.bottom, DS.Button.fabStackClearance(buttons: 2))
     }
 
     /// Date range of all transactions (for custom period picker limits)
@@ -326,7 +328,10 @@ struct CategoriesTabView: View {
         return (start, end)
     }
 
-    // MARK: - Hero Summary (edge-to-edge, paralelo a InsightsTabView/TrendsTabView)
+    // MARK: - Hero Summary (el del Panel: `HeroHeader`, compartido con las otras pestañas)
+    //
+    // Uno solo para todas las subvistas de Distribución —el carrusel categoría / subcategoría / etiquetas y el modo
+    // Gráficas / Detalle—: va encima de las dos ramas de `populatedScrollContent`, y ninguna lo sustituye ni lo oculta.
 
     @ViewBuilder
     private var heroSummary: some View {
@@ -341,7 +346,18 @@ struct CategoriesTabView: View {
         // enseñar, que es lo que el Panel decide con su propio `hasNoTrendData`.
         let showsAmount = isBalanceMode ? (balanceKPI?.hasDataInPeriod ?? false) : hasRecords
 
-        VStack(alignment: .center, spacing: DS.Spacing.xs) {
+        HeroHeader {
+            // Qué es la cifra. NO es fijo: fuera de `isBalanceMode` este hero
+            // vuelve al flujo del período (decisión del owner 2026-08-26), así
+            // que un rótulo fijo "Saldo de cuentas" mentiría en esos estados.
+            if showsAmount {
+                HeroHeaderLabel(text: StatsHeroCaptionLogic.distribution(
+                    isBalanceMode: isBalanceMode,
+                    natures: viewModel.selectedTransactionNatures
+                ).text)
+                    .accessibilityIdentifier("stats_hero_caption")
+            }
+        } period: {
             TrendsPeriodMenu(
                 selectedPeriod: viewModel.detailPeriod,
                 customDateRange: sessionState.customDateRange,
@@ -349,42 +365,28 @@ struct CategoriesTabView: View {
                 onCustomTapped: { showCustomPeriodPicker = true }
             )
             .equatable()
-
+        } content: {
             if showsAmount {
                 AmountText(
                     value: isBalanceMode ? (balanceKPI?.value ?? 0) : totalAmount,
                     currencyCode: defaultCurrencyCode,
-                    font: DS.Typography.heroAmount, secondaryFont: DS.Typography.heroAmountSecondary,
+                    font: DS.Typography.panelHeroAmount, secondaryFont: DS.Typography.panelHeroAmountSecondary,
                     // La marca sigue al número, que cambia de fuente con el modo. Fuera de Balance
                     // el hero es la suma de las tajadas del pie (`TopSpendingCategoriesCalculator`),
                     // que no acumula calidad de conversión: `fx-category-totals-unmarked`.
                     isEstimate: isBalanceMode ? (balanceKPI?.isApproximate ?? false) : false
                 )
                 .contentTransition(.numericText())
-
-                // Qué es la cifra. NO es fijo: fuera de `isBalanceMode` este hero
-                // vuelve al flujo del período (decisión del owner 2026-08-26), así
-                // que un rótulo fijo "Saldo de cuentas" mentiría en esos estados.
-                Text(StatsHeroCaptionLogic.distribution(
-                    isBalanceMode: isBalanceMode,
-                    natures: viewModel.selectedTransactionNatures
-                ).text)
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .accessibilityIdentifier("stats_hero_caption")
             }
 
             if hasRecords, let subtitle = heroDimensionalSubtitle() {
                 Text(subtitle)
                     .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
             }
         }
-        .padding(.horizontal, DS.Spacing.lg)
+        // Sin margen lateral propio: el del scroll ya pone el eje izquierdo del resto de la pantalla.
         .padding(.vertical, summaryVerticalPadding)
-        .frame(maxWidth: .infinity)
         .accessibilityElement(children: .contain)
         .accessibilityAddTraits(.isHeader)
     }
@@ -469,6 +471,9 @@ struct CategoriesTabView: View {
             labelProvider: { $0.label },
             selectedFillColorProvider: { _ in theme.accent }
         )
+        // En el contenedor: los dos segmentos lo heredan, en el orden de `DistributionContentMode` (Gráficas,
+        // Detalle). Lo usa `StatisticsHeroLikePanelUITests` para cambiar de modo sin depender del texto.
+        .accessibilityIdentifier("distribution_content_mode")
     }
 
     // MARK: - Charts Section (analysisHeader + chartsCarousel)
@@ -500,16 +505,19 @@ struct CategoriesTabView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(alignment: .top, spacing: DS.Spacing.md) {
                     categoryChartCard
+                        .accessibilityIdentifier("distribution_page_category")
                         .containerRelativeFrame(.horizontal, count: isWide ? 2 : 1, spacing: isWide ? DS.Spacing.md : 0)
                         .id("category")
 
                     subcategoryChartCard
+                        .accessibilityIdentifier("distribution_page_subcategory")
                         .containerRelativeFrame(.horizontal, count: isWide ? 2 : 1, spacing: isWide ? DS.Spacing.md : 0)
                         .id("subcategory")
 
                     // Tags Chart - on iPad, tags moves next to need (needsLargeSection HStack)
                     if !isWide {
                         tagChartCard
+                            .accessibilityIdentifier("distribution_page_tags")
                             .containerRelativeFrame(.horizontal)
                             .id("tags")
                     }

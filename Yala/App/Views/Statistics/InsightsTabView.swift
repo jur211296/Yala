@@ -120,7 +120,9 @@ struct InsightsTabView: View {
                             }
                         }
                         .frame(maxWidth: .infinity)
-                        .yalaSafeBottomPadding()
+                        // Yala IA y «+» flotan encima en las cuatro pestañas de Estadísticas: al final del scroll, la última tarjeta sube
+                        // por encima de los dos (mismo margen que `RecordsTabView`).
+                        .padding(.bottom, DS.Button.fabStackClearance(buttons: 2))
                     }
                 }
                 .padding(.top, DS.Spacing.sm)
@@ -200,6 +202,9 @@ struct InsightsTabView: View {
         let hasRecords = summary.transactionCount > 0
         let period = trendsViewModel.detailPeriod
 
+        let showsFigure = !sessionState.isExpensesOnlyMode && hasRecords
+
+        // El hero del Panel (`HeroHeader`): rótulo y período arriba, cifra y detalle debajo, a la izquierda.
         // Con poco alto (iPhone girado) va en banda: cifra y rótulo | período, entradas y salidas y recuento.
         SummaryHeaderStack(isShort: isShortContainer, verticalPadding: summaryVerticalPadding) {
             TrendsPeriodMenu(
@@ -209,22 +214,21 @@ struct InsightsTabView: View {
                 onCustomTapped: { showCustomPeriodPicker = true }
             )
             .equatable()
+        } caption: {
+            // Qué es la cifra. Aquí siempre es el neto: el hero no se pinta en
+            // modo solo-gastos, así que no hay caso de un solo lado.
+            if showsFigure {
+                HeroHeaderLabel(text: StatsHeroCaptionLogic.insights.text)
+                    .accessibilityIdentifier("stats_hero_caption")
+            }
         } figure: {
-            if !sessionState.isExpensesOnlyMode && hasRecords {
+            if showsFigure {
                 AmountText(
                     value: summary.netBalance,
                     currencyCode: defaultCurrencyCode,
-                    font: DS.Typography.heroAmount, secondaryFont: DS.Typography.heroAmountSecondary,
+                    font: DS.Typography.panelHeroAmount, secondaryFont: DS.Typography.panelHeroAmountSecondary,
                     isEstimate: summary.amountsAreApproximate
                 )
-
-                // Qué es la cifra. Aquí siempre es el neto: el hero no se pinta en
-                // modo solo-gastos, así que no hay caso de un solo lado.
-                Text(StatsHeroCaptionLogic.insights.text)
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .accessibilityIdentifier("stats_hero_caption")
             }
         } detail: {
             incomeExpenseChips(summary)
