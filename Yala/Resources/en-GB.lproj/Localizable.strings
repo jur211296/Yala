@@ -5536,3 +5536,7 @@
 
 /* Account detail sheet: no records in the period */
 "accountDetail.empty" = "No activity in this period";
+
+/* Note under Archive toggle when archiving turned on Exclude from statistics */
+"account.archiveExcludedNotice" = "Once archived, this account stops counting towards your totals and statistics, and its transactions are hidden in Records. To keep it counting, turn off \"Exclude from statistics\".";
+

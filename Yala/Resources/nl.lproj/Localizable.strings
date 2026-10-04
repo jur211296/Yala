@@ -6280,3 +6280,7 @@
 
 /* Account detail sheet: no records in the period */
 "accountDetail.empty" = "Geen transacties in deze periode";
+
+/* Note under Archive toggle when archiving turned on Exclude from statistics */
+"account.archiveExcludedNotice" = "Na archiveren telt deze rekening niet meer mee in je totalen en statistieken, en worden haar transacties verborgen in Boekingen. Wil je dat ze blijft meetellen, zet dan „Uitsluiten van statistieken” uit.";
+

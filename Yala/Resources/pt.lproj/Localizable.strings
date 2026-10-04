@@ -6268,3 +6268,7 @@
 
 /* Account detail sheet: no records in the period */
 "accountDetail.empty" = "Sem movimentações neste período";
+
+/* Note under Archive toggle when archiving turned on Exclude from statistics */
+"account.archiveExcludedNotice" = "Ao arquivar, esta conta deixa de contar nos seus totais e estatísticas, e as transações dela ficam ocultas em Registros. Para que continue contando, desative \"Excluir das estatisticas\".";
+
