@@ -2839,6 +2839,9 @@ enum L10n {
         static var resetContext: String { ls("chat.resetContext", comment: "") }
         static var listening: String { ls("chat.listening", comment: "") }
         static var transcribing: String { ls("chat.transcribing", comment: "") }
+        static var voiceHint: String { ls("chat.voice.hint", comment: "") }
+        static var voiceTranscribingHint: String { ls("chat.voice.transcribingHint", comment: "") }
+        static func voiceRecorded(_ duration: String) -> String { String(format: ls("chat.voice.recorded", comment: ""), duration) }
         static var preparingAI: String { ls("chat.preparingAI", comment: "") }
         static var noVoiceDetected: String { ls("chat.noVoiceDetected", comment: "") }
         static var unavailable: String { ls("chat.unavailable", comment: "") }
@@ -2900,6 +2903,7 @@ enum L10n {
         static var clearFilters: String { ls("accessibility.clearFilters", comment: "") }
         static var cancelRecording: String { ls("accessibility.cancelRecording", comment: "") }
         static var stopRecording: String { ls("accessibility.stopRecording", comment: "") }
+        static var discardRecording: String { ls("accessibility.discardRecording", comment: "") }
         static var startRecording: String { ls("accessibility.startRecording", comment: "") }
         static var cancelPreview: String { ls("accessibility.cancelPreview", comment: "") }
         static var cancelProcessing: String { ls("accessibility.cancelProcessing", comment: "") }

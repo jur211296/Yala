@@ -6319,3 +6319,15 @@
 "chat.draft.missingAccount" = "Falta la cuenta";
 "chat.draft.missingAmount" = "Falta el importe";
 "chat.draft.addTag" = "Etiqueta";
+
+/* Example shown while dictating to Yala AI */
+"chat.voice.hint" = "Prueba: «Gasté 25 en el almuerzo con la tarjeta»";
+
+/* Shown while the dictation is transcribed */
+"chat.voice.transcribingHint" = "Revisa tu texto antes de enviarlo.";
+
+/* Recorded duration while transcribing, e.g. 0:07 recorded */
+"chat.voice.recorded" = "%@ grabados";
+
+/* VoiceOver: discard the dictation without transcribing */
+"accessibility.discardRecording" = "Descartar grabación";

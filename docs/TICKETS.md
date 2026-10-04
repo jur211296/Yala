@@ -142,6 +142,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | chat-assistant-plants-exchange-rate-one | done | tickets/done/chat-assistant-plants-exchange-rate-one.md |
 | chat-context-treats-archived-accounts-as-excluded | backlog | tickets/backlog/chat-context-treats-archived-accounts-as-excluded.md |
 | chat-creates-only-one-transaction-per-message | backlog | tickets/backlog/chat-creates-only-one-transaction-per-message.md |
+| chat-dictation-looks-poor | qa | tickets/qa/chat-dictation-looks-poor.md |
 | chat-draft-card-redesign | qa | tickets/qa/chat-draft-card-redesign.md |
 | chat-draft-drops-the-expense-sign | qa | tickets/qa/chat-draft-drops-the-expense-sign.md |
 | chat-draft-sign-can-contradict-its-subcategory | done | tickets/done/chat-draft-sign-can-contradict-its-subcategory.md |

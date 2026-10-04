@@ -6305,3 +6305,15 @@
 "chat.draft.missingAccount" = "缺少账户";
 "chat.draft.missingAmount" = "缺少金额";
 "chat.draft.addTag" = "标签";
+
+/* Example shown while dictating to Yala AI */
+"chat.voice.hint" = "试试说：“午饭刷卡花了 25”";
+
+/* Shown while the dictation is transcribed */
+"chat.voice.transcribingHint" = "发送前请检查你的文字。";
+
+/* Recorded duration while transcribing, e.g. 0:07 recorded */
+"chat.voice.recorded" = "已录制 %@";
+
+/* VoiceOver: discard the dictation without transcribing */
+"accessibility.discardRecording" = "放弃录音";

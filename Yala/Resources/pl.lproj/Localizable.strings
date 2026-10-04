@@ -6305,3 +6305,15 @@
 "chat.draft.missingAccount" = "Brak konta";
 "chat.draft.missingAmount" = "Brak kwoty";
 "chat.draft.addTag" = "Etykieta";
+
+/* Example shown while dictating to Yala AI */
+"chat.voice.hint" = "Spróbuj: „Wydałem 25 na obiad kartą”";
+
+/* Shown while the dictation is transcribed */
+"chat.voice.transcribingHint" = "Sprawdź tekst przed wysłaniem.";
+
+/* Recorded duration while transcribing, e.g. 0:07 recorded */
+"chat.voice.recorded" = "Nagrano %@";
+
+/* VoiceOver: discard the dictation without transcribing */
+"accessibility.discardRecording" = "Odrzuć nagranie";

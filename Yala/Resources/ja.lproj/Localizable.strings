@@ -6305,3 +6305,15 @@
 "chat.draft.missingAccount" = "口座が未選択";
 "chat.draft.missingAmount" = "金額が未入力";
 "chat.draft.addTag" = "タグ";
+
+/* Example shown while dictating to Yala AI */
+"chat.voice.hint" = "例：「ランチにカードで25使った」";
+
+/* Shown while the dictation is transcribed */
+"chat.voice.transcribingHint" = "送信する前にテキストを確認してください。";
+
+/* Recorded duration while transcribing, e.g. 0:07 recorded */
+"chat.voice.recorded" = "%@ 録音済み";
+
+/* VoiceOver: discard the dictation without transcribing */
+"accessibility.discardRecording" = "録音を破棄";
