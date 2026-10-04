@@ -2357,6 +2357,10 @@ enum L10n {
             static var admin: String { ls("groups.member.admin", comment: "") }
             static var member: String { ls("groups.member.member", comment: "") }
             static var you: String { ls("groups.member.you", comment: "") }
+            /// "Tú" sin paréntesis: el nombre del usuario actual dentro de una lista o frase.
+            static var youName: String { ls("groups.member.youName", comment: "") }
+            /// «ti» tras preposición: «Pagado por ti».
+            static var youObject: String { ls("groups.member.youObject", comment: "") }
             static var deletedUser: String { ls("groups.member.deletedUser", comment: "") }
             static var left: String { ls("groups.member.left", comment: "") }
             static var removed: String { ls("groups.member.removed", comment: "") }
@@ -2410,6 +2414,14 @@ enum L10n {
             static var youOwe: String { ls("groups.expense.youOwe", comment: "") }
             /// Caption: "No participaste" — current user not in the split.
             static var notIncluded: String { ls("groups.expense.notIncluded", comment: "") }
+            /// Cabecera de la tarjeta con cuánto pone cada persona en el detalle del gasto.
+            static var breakdownTitle: String { ls("groups.expense.breakdownTitle", comment: "") }
+            /// "Pagó %@" — bajo el nombre de quien pagó, en el reparto del detalle.
+            static func paidAmount(_ amount: String) -> String {
+                String(format: ls("groups.expense.paidAmount", comment: ""), amount)
+            }
+            /// Fila del detalle con el movimiento personal enlazado (cuenta y monto).
+            static var inYourFinances: String { ls("groups.expense.inYourFinances", comment: "") }
             static var selectAll: String { ls("groups.expense.selectAll", comment: "") }
             static var deselectAll: String { ls("groups.expense.deselectAll", comment: "") }
             static func membersSelected(_ count: Int, _ total: Int) -> String {
@@ -2421,6 +2433,8 @@ enum L10n {
             static var dividePayment: String { ls("groups.expense.dividePayment", comment: "") }
             /// Label inline antes del chip de modo de división ("Dividido [en partes iguales]").
             static var dividedLabel: String { ls("groups.expense.dividedLabel", comment: "") }
+            /// «y dividido»: mitad de la frase «Pagado por <quién> y dividido <modo>» del formulario.
+            static var andDividedLabel: String { ls("groups.expense.andDividedLabel", comment: "") }
             /// Alert al tocar el chip "Dividido" (o la pre-pantalla de 2 personas) con monto 0:
             /// no se abre el sheet de división (dividir 0 no tiene sentido) y se pide el monto.
             static var amountRequiredTitle: String { ls("groups.expense.amountRequiredTitle", comment: "") }

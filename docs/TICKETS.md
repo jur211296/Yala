@@ -326,8 +326,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | generated-index-lands-above-yaml-frontmatter | backlog | tickets/backlog/generated-index-lands-above-yaml-frontmatter.md |
 | goldens-de-staging-solo-pasan-a-trozos | done | tickets/done/goldens-de-staging-solo-pasan-a-trozos.md |
 | group-balance-service-shares-not-deduped | backlog | tickets/backlog/group-balance-service-shares-not-deduped.md |
-| group-expense-edit-save-disabled-without-saying-the-account-is-missing | backlog | tickets/backlog/group-expense-edit-save-disabled-without-saying-the-account-is-missing.md |
-| group-expense-views-redesign | in-progress | tickets/in-progress/group-expense-views-redesign.md |
+| group-expense-edit-save-disabled-without-saying-the-account-is-missing | qa | tickets/qa/group-expense-edit-save-disabled-without-saying-the-account-is-missing.md |
+| group-expense-views-redesign | qa | tickets/qa/group-expense-views-redesign.md |
 | group-joiner-flag-consumers-still-narrow | done | tickets/done/group-joiner-flag-consumers-still-narrow.md |
 | group-notif-credits-payer-not-editor | done | tickets/done/group-notif-credits-payer-not-editor.md |
 | group-presence-predicates-disagree-on-archived-and-hidden | backlog | tickets/backlog/group-presence-predicates-disagree-on-archived-and-hidden.md |

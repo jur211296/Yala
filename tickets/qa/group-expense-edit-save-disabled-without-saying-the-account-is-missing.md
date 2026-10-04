@@ -1,6 +1,7 @@
 ---
 id: group-expense-edit-save-disabled-without-saying-the-account-is-missing
-status: backlog
+status: qa
+updated: 2026-10-04
 priority: medium
 area: "groups"
 created: 2026-10-04
@@ -34,3 +35,9 @@ personal enlazado.
 Que el formulario diga qué falta (el chip Cuenta marcado como pendiente, o un aviso al tocar Guardar
 como ya hace el monto con `amountRequiredTitle`). Si se elige la propuesta B de
 `group-expense-views-redesign`, cabe en el mismo trabajo.
+
+## Resuelto en `group-expense-views-redesign` (2026-10-04)
+
+La cuenta pasó a la tarjeta «Pagado por · Reparto» del formulario, siempre visible cuando pagaste tú, y sin
+cuenta dice «Selecciona una cuenta» con el icono de aviso. Pin: `GroupsSmokeUITests#test_groupExpenseAccountRowFollowsThePayer`.
+QA en el iPhone: paso 5 del guion de `group-expense-views-redesign`.

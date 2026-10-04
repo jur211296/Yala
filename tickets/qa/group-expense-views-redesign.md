@@ -1,6 +1,7 @@
 ---
 id: group-expense-views-redesign
-status: in-progress
+status: qa
+updated: 2026-10-04
 priority: medium
 area: "groups"
 created: 2026-10-04
@@ -9,10 +10,47 @@ source: encargo 2026-10-04-mejorar-vistas-del-registro-en-grupos · tablero tabl
 
 # Rediseñar lo que se ve al abrir un gasto de grupo (detalle y edición)
 
-## Por qué está parado
+## Qué se decidió
 
-Espera la decisión de Jürgen entre A, B y C (lienzo:
-https://claude.ai/artifact/V6KSmFBBVbxWRqEang9kPm). No se implementa hasta que elija.
+- **Propuesta B** (Jürgen, 2026-10-04), con la referencia que mandó de otra app: barra partida por persona
+  con su monto debajo.
+- **«B con aire»**, el mismo día, tras ver la B construida «demasiado apretada»: grupo y fecha en una línea
+  pequeña y las secciones plegables, abiertas de una en una.
+- **Frase tipo Splitwise**, tras un feedback externo («Splitwise es más fácil; la barra es ruido a primera
+  vista»): el editor plegado es la frase «Pagado por [Ana] y dividido [en partes iguales]», con las dos piezas
+  tocables. La barra solo aparece con «Reparto» abierto; en el detalle, solo si el reparto no es igual. En
+  grupos de 2, una pastilla con la frase entera abre las opciones rápidas, y «Más opciones» despliega el reparto.
+- **Piezas tocables con fondo** (última vuelta): en reposo, el tinte del tema; abiertas, el tema sólido.
+  Aprobado con ese único cambio.
+- Lienzo de las propuestas: https://claude.ai/artifact/V6KSmFBBVbxWRqEang9kPm. Capturas finales en
+  `~/Claude/worktrees/_capturas/2026-10-04-mejorar-vistas-del-registro-en-grupos/final/`.
+
+## Qué cambia para el usuario
+
+- **Al tocar un gasto** (detalle): «Tu parte» en una frase («Le debes a Ana» · S/ 40, o «Caro te debe»),
+  y la lista de quién pone cuánto, con quién pagó. Si el reparto no es igual, además la barra con un color por
+  persona. Si el gasto llegó a tu registro personal, una fila «En tus finanzas» con la cuenta y el monto.
+- **Al editar o crear**: grupo y fecha en una línea pequeña. Debajo del monto, «Pagado por [Ana] y dividido
+  [en partes iguales]»; cada pieza abre ahí mismo los avatares o el reparto (Iguales · % · Monto · Partes, la
+  barra y el cuadre). Sin hojas aparte. «Tú» sin paréntesis; color del tema en lugar del turquesa.
+- **Grupos de 2**: una pastilla «Pagado por ti y dividido en partes iguales» que abre las cuatro opciones
+  rápidas; «Más opciones» despliega el reparto completo.
+- **Si pagaste tú**, la cuenta se pide a la vista y, si falta, lo dice («Selecciona una cuenta» con aviso).
+
+## Guion de QA en el iPhone (Jürgen)
+
+1. Grupos › un grupo de 3 › toca un gasto con partes iguales que pagó otra persona: «Tu parte · Le debes a
+   <nombre>» y la lista de las tres personas, **sin barra**.
+2. Toca **Editar**: grupo y fecha en una línea pequeña; debajo del monto, «Pagado por <nombre> y dividido en
+   partes iguales», con las dos piezas en el tinte del tema.
+3. Toca la pieza del modo: se abre el reparto (pieza en tema sólido) con la barra. Cambia a **Porcentaje** y
+   pon montos distintos; toca la pieza del pagador: el reparto se pliega y salen los avatares. Elige otra
+   persona y **Guardar**. Vuelve a abrir el gasto: el detalle muestra ahora la barra.
+4. En un grupo de 2: la pastilla con la frase entera; tócala, elige «Pagó <otra> · es todo tuyo» y mira la
+   frase. Vuelve a tocarla › **Más opciones**: se abre el reparto completo.
+5. Un gasto que pagaste tú sin cuenta enlazada: «Cuenta · Selecciona una cuenta» con aviso y Guardar apagado;
+   al elegir cuenta, Guardar se enciende.
+6. Repite 1-2 con tamaño de texto grande y en modo claro (la frase pasa a dos líneas si no cabe).
 
 ## Qué se ve hoy (recorrido del 2026-10-04, base `2653f06fa`)
 
