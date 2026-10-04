@@ -20,6 +20,21 @@ struct TagSelectorSheet: View {
 
     @Binding var selectedTags: [Tag]
 
+    /// Cómo abre la hoja (`SelectorSheetSizing`): `.mediumFirst` desde un registro nuevo, `.large` en el resto.
+    var sizing: SelectorSheetSizing = .large
+    @State private var selectedDetent: PresentationDetent = .medium
+    @Environment(\.usesLargeSheets) private var usesLargeSheets
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    private var sheetBackground: YalaBackgroundVariant {
+        guard sizing == .mediumFirst else { return .subtle }
+        return sizing.background(
+            selectedDetent: selectedDetent,
+            usesLargeSheets: usesLargeSheets,
+            dynamicTypeSize: dynamicTypeSize
+        )
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -33,7 +48,7 @@ struct TagSelectorSheet: View {
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.Spacing.xxl)
             }
-            .yalaScreenBackground(.subtle)
+            .yalaScreenBackground(sheetBackground)
             .navigationTitle(L10n.Settings.tags)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -54,7 +69,7 @@ struct TagSelectorSheet: View {
                 TagFormView(existingTags: viewModel.tags)
             }
         }
-
+        .selectorSheetSizing(sizing, selectedDetent: $selectedDetent)
         .onAppear {
             viewModel.setContext(modelContext)
         }
@@ -184,6 +199,7 @@ struct TagSelectorRow: View {
         .buttonStyle(.plain)
         .accessibilityLabel(tag.name)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .accessibilityIdentifier("tag_selector_row_\(tag.name)")
     }
 }
 

@@ -68,17 +68,18 @@ struct ChatDraftFieldSheet: View {
         case .subcategory:
             SubcategorySelectorSheet(
                 selectedSubcategory: $subcategory,
-                transactionType: isExpense ? .expense : .income
+                transactionType: isExpense ? .expense : .income,
+                sizing: .mediumFirst
             )
             .onChange(of: subcategory) { _, new in editing.onSubcategoryChange(new?.persistentModelID) }
         case .account:
-            AccountSelectorSheet(selectedAccount: $account, title: L10n.Transaction.account)
+            AccountSelectorSheet(selectedAccount: $account, title: L10n.Transaction.account, sizing: .mediumFirst)
                 .onChange(of: account) { _, new in editing.onAccountChange(new?.persistentModelID) }
         case .date:
             DatePickerSheet(selectedDate: $date)
                 .onChange(of: date) { _, new in editing.onDateChange(new) }
         case .tags:
-            TagSelectorSheet(selectedTags: $tags)
+            TagSelectorSheet(selectedTags: $tags, sizing: .mediumFirst)
                 .onChange(of: tags) { _, new in editing.onTagsChange(new.map(\.persistentModelID)) }
         }
     }
