@@ -6294,3 +6294,15 @@
 "chat.draft.missingAccount" = "Compte manquant";
 "chat.draft.missingAmount" = "Montant manquant";
 "chat.draft.addTag" = "Étiquette";
+
+/* Example shown while dictating to Yala AI */
+"chat.voice.hint" = "Essayez : « J’ai dépensé 25 pour le déjeuner par carte »";
+
+/* Shown while the dictation is transcribed */
+"chat.voice.transcribingHint" = "Relisez votre texte avant de l’envoyer.";
+
+/* Recorded duration while transcribing, e.g. 0:07 recorded */
+"chat.voice.recorded" = "%@ enregistrées";
+
+/* VoiceOver: discard the dictation without transcribing */
+"accessibility.discardRecording" = "Supprimer l’enregistrement";

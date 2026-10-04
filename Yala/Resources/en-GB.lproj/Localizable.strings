@@ -5561,3 +5561,15 @@
 "chat.draft.missingAccount" = "Account missing";
 "chat.draft.missingAmount" = "Amount missing";
 "chat.draft.addTag" = "Tag";
+
+/* Example shown while dictating to Yala AI */
+"chat.voice.hint" = "Try: “I spent 25 on lunch with my card”";
+
+/* Shown while the dictation is transcribed */
+"chat.voice.transcribingHint" = "Review your text before sending it.";
+
+/* Recorded duration while transcribing, e.g. 0:07 recorded */
+"chat.voice.recorded" = "%@ recorded";
+
+/* VoiceOver: discard the dictation without transcribing */
+"accessibility.discardRecording" = "Discard recording";

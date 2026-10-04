@@ -17,6 +17,7 @@ struct ChatSheetView: View {
     @State private var viewModel = ChatAssistantViewModel()
     @State private var showAISettingsSheet = false
     @State private var showTopicsSheet = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// Cómo está montado el chat. `.sheet`: la hoja de siempre, con su barra de navegación (iPhone, ventana
     /// compacta). `.column`: la columna de Yala IA junto a los datos en una ventana ancha (`yalaAIChat`). Con
@@ -346,15 +347,22 @@ struct ChatSheetView: View {
 
     private var chatInputBar: some View {
         Group {
-            if viewModel.isRecording {
-                recordingInputBar
-            } else if viewModel.isTranscribing {
-                transcribingInputBar
+            if isVoiceActive {
+                VoiceListeningPanel(
+                    isTranscribing: viewModel.isTranscribing,
+                    duration: viewModel.isTranscribing ? viewModel.lastRecordingDuration : viewModel.recordingDuration,
+                    level: viewModel.recordingLevel,
+                    accent: theme.accent,
+                    reduceMotion: reduceMotion,
+                    onCancel: { viewModel.cancelVoiceInput() },
+                    onDone: { Task { await viewModel.stopVoiceInput() } }
+                )
+                .transition(.move(edge: .bottom).combined(with: .opacity))
             } else {
                 idleInputBar
             }
         }
-        .animation(.easeInOut(duration: 0.2), value: viewModel.isRecording)
+        .animation(.easeInOut(duration: 0.25), value: isVoiceActive)
         .animation(.easeInOut(duration: 0.2), value: viewModel.isTranscribing)
         .readableChatWidth()
     }
@@ -398,57 +406,6 @@ struct ChatSheetView: View {
             .clipShape(ChatBubbleShape())
         }
         .opacity(viewModel.isAIAvailable ? 1 : 0.5)
-        .padding(.horizontal, DS.Spacing.lg)
-        .padding(.vertical, DS.Spacing.sm)
-    }
-
-    private var recordingInputBar: some View {
-        HStack(spacing: DS.Spacing.md) {
-            HStack(spacing: DS.Spacing.sm) {
-                Image(systemName: "waveform")
-                    .font(.system(size: 20)) // A11Y-DT: dictation indicator
-                    .foregroundStyle(DS.Semantic.errorForeground)
-                    .symbolEffect(.variableColor.iterative, isActive: true)
-
-                Text(L10n.Chat.listening)
-                    .font(DS.Typography.body)
-                    .foregroundStyle(.secondary)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-
-            Button {
-                Task { await viewModel.stopVoiceInput() }
-            } label: {
-                Image(systemName: "stop.fill")
-                    .font(.system(size: 18, weight: .bold)) // A11Y-DT: stop icon
-                    .foregroundStyle(.white)
-                    .frame(width: 44, height: 44) // A11Y-DT: tap target grande
-                    .background(Circle().fill(DS.Semantic.errorForeground))
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(L10n.Accessibility.stopRecording)
-        }
-        .padding(DS.Spacing.md)
-        .background(.thCard)
-        .clipShape(ChatBubbleShape())
-        .padding(.horizontal, DS.Spacing.lg)
-        .padding(.vertical, DS.Spacing.sm)
-    }
-
-    private var transcribingInputBar: some View {
-        HStack(spacing: DS.Spacing.md) {
-            HStack(spacing: DS.Spacing.sm) {
-                ProgressView()
-                    .controlSize(.small)
-                Text(L10n.Chat.transcribing)
-                    .font(DS.Typography.body)
-                    .foregroundStyle(.secondary)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .padding(DS.Spacing.md)
-        .background(.thCard)
-        .clipShape(ChatBubbleShape())
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.vertical, DS.Spacing.sm)
     }

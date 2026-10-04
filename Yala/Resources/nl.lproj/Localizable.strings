@@ -6305,3 +6305,15 @@
 "chat.draft.missingAccount" = "Rekening ontbreekt";
 "chat.draft.missingAmount" = "Bedrag ontbreekt";
 "chat.draft.addTag" = "Label";
+
+/* Example shown while dictating to Yala AI */
+"chat.voice.hint" = "Probeer: ‘25 uitgegeven aan lunch met mijn pas’";
+
+/* Shown while the dictation is transcribed */
+"chat.voice.transcribingHint" = "Kijk je tekst na voordat je hem verstuurt.";
+
+/* Recorded duration while transcribing, e.g. 0:07 recorded */
+"chat.voice.recorded" = "%@ opgenomen";
+
+/* VoiceOver: discard the dictation without transcribing */
+"accessibility.discardRecording" = "Opname verwijderen";

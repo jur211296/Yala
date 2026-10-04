@@ -26,6 +26,12 @@ final class ChatAssistantViewModel {
     var isAIAvailable: Bool { !suggestionsFailed }
     private(set) var isRecording = false
     private(set) var isTranscribing = false
+    /// Lo que duró la última grabación; el panel de dictado lo enseña mientras transcribe.
+    private(set) var lastRecordingDuration: TimeInterval = 0
+
+    /// Tiempo y nivel de voz de la grabación en curso, para el panel de dictado.
+    var recordingDuration: TimeInterval { AudioRecorderService.shared.recordingDuration }
+    var recordingLevel: Double { AudioRecorderService.shared.audioLevel }
     private(set) var errorMessage: String?
     var inputText: String = ""
 
@@ -443,6 +449,7 @@ final class ChatAssistantViewModel {
     /// Si ya hay texto tipeado, hace append con espacio (preserva lo escrito por el user).
     func stopVoiceInput() async {
         guard isRecording else { return }
+        lastRecordingDuration = AudioRecorderService.shared.recordingDuration
         isRecording = false
         isTranscribing = true
         defer { isTranscribing = false }
