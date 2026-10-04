@@ -22,16 +22,33 @@ struct AccountSelectorSheet: View {
     var excludeAccount: Account?
     var currencyFilter: String?
 
+    /// Cómo abre la hoja (`SelectorSheetSizing`): `.mediumFirst` desde un registro nuevo, `.large` en el resto.
+    var sizing: SelectorSheetSizing = .large
+    @State private var selectedDetent: PresentationDetent = .medium
+    @Environment(\.usesLargeSheets) private var usesLargeSheets
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    private var sheetBackground: YalaBackgroundVariant {
+        guard sizing == .mediumFirst else { return .subtle }
+        return sizing.background(
+            selectedDetent: selectedDetent,
+            usesLargeSheets: usesLargeSheets,
+            dynamicTypeSize: dynamicTypeSize
+        )
+    }
+
     init(
         selectedAccount: Binding<Account?>,
         title: String? = nil,
         excludeAccount: Account? = nil,
-        currencyFilter: String? = nil
+        currencyFilter: String? = nil,
+        sizing: SelectorSheetSizing = .large
     ) {
         _selectedAccount = selectedAccount
         self.title = title ?? L10n.Account.selectAccount
         self.excludeAccount = excludeAccount
         self.currencyFilter = currencyFilter
+        self.sizing = sizing
     }
 
     var body: some View {
@@ -77,7 +94,7 @@ struct AccountSelectorSheet: View {
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.Spacing.xxl)
             }
-            .yalaScreenBackground(.subtle)
+            .yalaScreenBackground(sheetBackground)
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -88,7 +105,7 @@ struct AccountSelectorSheet: View {
                 }
             }
         }
-
+        .selectorSheetSizing(sizing, selectedDetent: $selectedDetent)
         .onAppear {
             viewModel.setContext(modelContext)
         }

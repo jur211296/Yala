@@ -117,6 +117,11 @@ final class ChatMessagingLayoutUITests: XCTestCase {
             .matching(NSPredicate(format: "identifier BEGINSWITH %@", "subcategory_selector_row_"))
             .firstMatch
         XCTAssertTrue(firstSubcategory.waitForExistence(timeout: 10), "No se abrió el selector de subcategoría de Nuevo registro.")
+        // Y abre a media altura, como desde Nuevo registro (ticket `record-selectors-open-at-medium-detent`).
+        XCTAssertGreaterThan(
+            firstSubcategory.frame.minY, app.windows.firstMatch.frame.height * 0.4,
+            "El selector de subcategoría abrió a pantalla completa, no a media altura."
+        )
         firstSubcategory.tap()
 
         XCTAssertTrue(chip.waitForNonExistence(timeout: 10), "Con subcategoría elegida, la píldora de lo que falta se va.")
