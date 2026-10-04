@@ -258,7 +258,10 @@ struct DetailContainerView: View {
                     .padding(.vertical, DS.Spacing.sm)
             }
 
-            if selectedTab == .records && !recordsViewModel.isSelectionMode && !recordPaneCoversList {
+            // Yala IA y «+» en las cuatro pestañas, no solo en Registros: en el Panel «Nuevo registro» está siempre a
+            // mano (la fila del hero o, al bajar, estos mismos flotantes), y Estadísticas lleva ya su hero
+            // (`HeroHeader`). Decisión del 2026-10-03, ticket `distribution-subviews-miss-the-new-panel-hero`.
+            if !recordsViewModel.isSelectionMode && !recordPaneCoversList {
                 VStack {
                     Spacer()
                     HStack {
