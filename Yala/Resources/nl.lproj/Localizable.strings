@@ -6317,3 +6317,48 @@
 
 /* VoiceOver: discard the dictation without transcribing */
 "accessibility.discardRecording" = "Opname verwijderen";
+
+/* Voice entry: second processing step, the transcript is being read for amount and category */
+"voice.processing.understanding" = "Je boeking wordt begrepen…";
+
+/* Voice entry: last processing step, the draft is being created */
+"voice.processing.preparing" = "Je boeking wordt voorbereid…";
+
+/* Voice entry: button to discard what was understood and record again */
+"voice.recordAgain" = "Opnieuw opnemen";
+
+/* Voice entry: title above the record understood from the recording */
+"voice.review.title" = "Dit heb ik begrepen";
+
+/* Voice entry: title when several records were understood, e.g. I heard 2 entries */
+"voice.review.titleMany" = "%d boekingen begrepen";
+
+/* Voice entry: button that saves several records, e.g. Save 2 */
+"voice.review.saveMany" = "%d opslaan";
+
+/* Voice entry: closing without saving leaves the drafts in the Inbox */
+"voice.review.inboxNote" = "Als je sluit zonder op te slaan, vind je het in je inbox.";
+
+/* Voice entry failure title: no internet */
+"voice.failure.noConnection.title" = "Geen verbinding";
+
+/* Voice entry failure title: microphone permission denied */
+"voice.failure.mic.title" = "Yala kan de microfoon niet gebruiken";
+
+/* Voice entry failure title: the recording was empty or too short */
+"voice.failure.noVoice.title" = "Ik heb je niet gehoord";
+
+/* Voice entry failure message: the recording was empty or too short */
+"voice.failure.noVoice.message" = "De opname was leeg of te kort. Probeer opnieuw.";
+
+/* Voice entry failure title: no amount was heard */
+"voice.failure.noAmount.title" = "Ik heb geen bedrag gehoord";
+
+/* Voice entry failure message: ask to say the amount, e.g. 25 */
+"voice.failure.noAmount.message" = "Zeg ook hoeveel het was, bijvoorbeeld ‘25’.";
+
+/* Voice entry failure title: something went wrong */
+"voice.failure.generic.title" = "Dat lukte deze keer niet";
+
+/* Voice entry failure message: something went wrong, try again */
+"voice.failure.generic.message" = "Er ging iets mis bij het verwerken van je stem. Probeer het zo opnieuw.";

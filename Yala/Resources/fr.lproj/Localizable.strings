@@ -6306,3 +6306,48 @@
 
 /* VoiceOver: discard the dictation without transcribing */
 "accessibility.discardRecording" = "Supprimer l’enregistrement";
+
+/* Voice entry: second processing step, the transcript is being read for amount and category */
+"voice.processing.understanding" = "Je comprends ton enregistrement…";
+
+/* Voice entry: last processing step, the draft is being created */
+"voice.processing.preparing" = "Je prépare ton enregistrement…";
+
+/* Voice entry: button to discard what was understood and record again */
+"voice.recordAgain" = "Réenregistrer";
+
+/* Voice entry: title above the record understood from the recording */
+"voice.review.title" = "Voici ce que j’ai compris";
+
+/* Voice entry: title when several records were understood, e.g. I heard 2 entries */
+"voice.review.titleMany" = "J’ai compris %d enregistrements";
+
+/* Voice entry: button that saves several records, e.g. Save 2 */
+"voice.review.saveMany" = "Enregistrer %d";
+
+/* Voice entry: closing without saving leaves the drafts in the Inbox */
+"voice.review.inboxNote" = "Si tu fermes sans enregistrer, tu le retrouveras dans ta boîte de réception.";
+
+/* Voice entry failure title: no internet */
+"voice.failure.noConnection.title" = "Pas de connexion";
+
+/* Voice entry failure title: microphone permission denied */
+"voice.failure.mic.title" = "Yala ne peut pas utiliser le micro";
+
+/* Voice entry failure title: the recording was empty or too short */
+"voice.failure.noVoice.title" = "Je ne t’ai pas entendu";
+
+/* Voice entry failure message: the recording was empty or too short */
+"voice.failure.noVoice.message" = "L’enregistrement était vide ou trop court. Réessaie.";
+
+/* Voice entry failure title: no amount was heard */
+"voice.failure.noAmount.title" = "Je n’ai pas entendu de montant";
+
+/* Voice entry failure message: ask to say the amount, e.g. 25 */
+"voice.failure.noAmount.message" = "Dis aussi combien c’était, par exemple « 25 ».";
+
+/* Voice entry failure title: something went wrong */
+"voice.failure.generic.title" = "Je n’ai pas pu te comprendre cette fois";
+
+/* Voice entry failure message: something went wrong, try again */
+"voice.failure.generic.message" = "Un problème est survenu en traitant ta voix. Réessaie dans un instant.";

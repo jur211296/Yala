@@ -65,7 +65,6 @@ struct PanelSheetState {
     var pendingAIInput: PendingAIInput = .voice
 
     // Navigation flags (post-dismiss)
-    var navigateToInboxAfterVoice = false
     var switchToImageAfterVoice = false
     var navigateToInboxAfterImage = false
 

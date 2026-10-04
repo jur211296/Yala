@@ -6317,3 +6317,48 @@
 
 /* VoiceOver: discard the dictation without transcribing */
 "accessibility.discardRecording" = "録音を破棄";
+
+/* Voice entry: second processing step, the transcript is being read for amount and category */
+"voice.processing.understanding" = "記録を読み取っています…";
+
+/* Voice entry: last processing step, the draft is being created */
+"voice.processing.preparing" = "記録を準備しています…";
+
+/* Voice entry: button to discard what was understood and record again */
+"voice.recordAgain" = "もう一度録音";
+
+/* Voice entry: title above the record understood from the recording */
+"voice.review.title" = "聞き取った内容";
+
+/* Voice entry: title when several records were understood, e.g. I heard 2 entries */
+"voice.review.titleMany" = "%d件の記録を聞き取りました";
+
+/* Voice entry: button that saves several records, e.g. Save 2 */
+"voice.review.saveMany" = "%d件を保存";
+
+/* Voice entry: closing without saving leaves the drafts in the Inbox */
+"voice.review.inboxNote" = "保存せずに閉じると、受信箱に残ります。";
+
+/* Voice entry failure title: no internet */
+"voice.failure.noConnection.title" = "接続がありません";
+
+/* Voice entry failure title: microphone permission denied */
+"voice.failure.mic.title" = "Yalaはマイクを使えません";
+
+/* Voice entry failure title: the recording was empty or too short */
+"voice.failure.noVoice.title" = "聞き取れませんでした";
+
+/* Voice entry failure message: the recording was empty or too short */
+"voice.failure.noVoice.message" = "録音が空か短すぎました。もう一度お試しください。";
+
+/* Voice entry failure title: no amount was heard */
+"voice.failure.noAmount.title" = "金額が聞き取れませんでした";
+
+/* Voice entry failure message: ask to say the amount, e.g. 25 */
+"voice.failure.noAmount.message" = "金額も言ってください（例：「25」）。";
+
+/* Voice entry failure title: something went wrong */
+"voice.failure.generic.title" = "今回はうまく聞き取れませんでした";
+
+/* Voice entry failure message: something went wrong, try again */
+"voice.failure.generic.message" = "音声の処理中に問題が発生しました。少し待ってからもう一度お試しください。";

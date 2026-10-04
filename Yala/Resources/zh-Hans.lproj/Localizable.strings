@@ -6317,3 +6317,48 @@
 
 /* VoiceOver: discard the dictation without transcribing */
 "accessibility.discardRecording" = "放弃录音";
+
+/* Voice entry: second processing step, the transcript is being read for amount and category */
+"voice.processing.understanding" = "正在理解你的记录…";
+
+/* Voice entry: last processing step, the draft is being created */
+"voice.processing.preparing" = "正在准备你的记录…";
+
+/* Voice entry: button to discard what was understood and record again */
+"voice.recordAgain" = "重新录音";
+
+/* Voice entry: title above the record understood from the recording */
+"voice.review.title" = "我听到的是";
+
+/* Voice entry: title when several records were understood, e.g. I heard 2 entries */
+"voice.review.titleMany" = "我听到了 %d 条记录";
+
+/* Voice entry: button that saves several records, e.g. Save 2 */
+"voice.review.saveMany" = "保存 %d 条";
+
+/* Voice entry: closing without saving leaves the drafts in the Inbox */
+"voice.review.inboxNote" = "如果不保存就关闭，可以在收件箱里找到它。";
+
+/* Voice entry failure title: no internet */
+"voice.failure.noConnection.title" = "没有网络连接";
+
+/* Voice entry failure title: microphone permission denied */
+"voice.failure.mic.title" = "Yala 无法使用麦克风";
+
+/* Voice entry failure title: the recording was empty or too short */
+"voice.failure.noVoice.title" = "没听清你说的话";
+
+/* Voice entry failure message: the recording was empty or too short */
+"voice.failure.noVoice.message" = "录音为空或太短。请重试。";
+
+/* Voice entry failure title: no amount was heard */
+"voice.failure.noAmount.title" = "没听到金额";
+
+/* Voice entry failure message: ask to say the amount, e.g. 25 */
+"voice.failure.noAmount.message" = "请同时说出金额，例如“25”。";
+
+/* Voice entry failure title: something went wrong */
+"voice.failure.generic.title" = "这次没能听懂";
+
+/* Voice entry failure message: something went wrong, try again */
+"voice.failure.generic.message" = "处理你的语音时出了点问题。请稍后重试。";

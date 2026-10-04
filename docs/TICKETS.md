@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (742)
+## Index (744)
 
 | id | status | path |
 |---|---|---|
@@ -746,6 +746,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | vigilante-calla-si-no-puede-comprobar-la-nocturna | backlog | tickets/backlog/vigilante-calla-si-no-puede-comprobar-la-nocturna.md |
 | vigilante-margen-menor-que-el-retraso-real-del-cron | backlog | tickets/backlog/vigilante-margen-menor-que-el-retraso-real-del-cron.md |
 | vision-amount-sign-contract-is-only-a-prompt-example | backlog | tickets/backlog/vision-amount-sign-contract-is-only-a-prompt-example.md |
+| voice-entry-end-to-end | qa | tickets/qa/voice-entry-end-to-end.md |
 | waiting-card-disables-stop-waiting-without-saying-why | backlog | tickets/backlog/waiting-card-disables-stop-waiting-without-saying-why.md |
 | web-domain-has-no-spf-dkim-dmarc | done | tickets/done/web-domain-has-no-spf-dkim-dmarc.md |
 | weekday-bar-daily-average-unmarked | backlog | tickets/backlog/weekday-bar-daily-average-unmarked.md |
