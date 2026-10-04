@@ -26,8 +26,9 @@ Escucha y confirma aquí**, con el **color del tema** (como el dictado del #350)
 Asumido por mí, sin preguntar (técnico o de proceso):
 
 - **Al tocar Voz, la hoja ya escucha.** Sin pantalla de reposo ni cuenta atrás 3-2-1: Cancelar la sustituye.
-- **La hoja abre a media altura** y pasa a grande con varios registros o con texto de accesibilidad
-  (`yalaSheetDetents`, como los selectores del #349).
+- **La hoja abre a media altura** (grande con texto de accesibilidad), con el mismo `mediumFirst` de los selectores
+  del #349. Con varios registros se desplaza dentro: agrandarla por código no movía la hoja en el simulador (medido
+  dos veces, también aplazándolo una vuelta), así que el usuario la estira si quiere.
 - **Escuchar reusa `VoiceListeningPanel` del #350** con un parámetro para ir sin tarjeta dentro de una hoja; la pista
   y los títulos reusan sus claves («Escuchando…», «Prueba: …»), ya traducidas.
 - **Procesar** = el orbe gira con el paso en curso y lo grabado; se puede cancelar, como hoy.

@@ -58,6 +58,13 @@ paths:
   -warn-long-expression-type-checking=20'` y buscar tu fichero en los avisos; lo nuevo debe salir por debajo de lo
   viejo que ya pasa el CI.
 
+- **Cambiar por código la `selection` de `.presentationDetents(_:selection:)` NO movió la hoja (medido 2026-10-04,
+  simulador iOS 27.0, `VoiceRecordingView`).** El binding sí cambió —el fondo que se deriva de él pasó a `.subtle`— pero
+  la hoja siguió a media altura, en la misma pasada que el cambio de fase y también aplazado una vuelta del main actor
+  con `withAnimation`. Causa sin aislar. ⇒ **no diseñes un flujo que dependa de agrandar la hoja por código**: que el
+  contenido quepa o se desplace dentro, y el usuario la estira. Si un fondo se deriva del detent elegido, fíjalo a la
+  altura real, no a la pedida.
+
 - **Forms con `TextField`/`TextEditor`/`SecureField`** (sin `Form`): obligatorio `dismissKeyboardOnTap()` desde el primer commit. Detalles en SWIFT-STYLE.md.
 
 - **Swift Charts `.annotation { }` NO propaga environment objects `@Observable`** → el contenido de una annotation de un mark (`BarMark`/`LineMark`/etc.) se hostea fuera del árbol de la vista; una sub-View que lea `@Environment(AppPreferences.self)` (ej. `AmountText`) NO lo resuelve y dispara `SIGTRAP` (`_assertionFailure` en `EnvironmentValues.subscript.getter`) al renderizar — sin crash log claro. Dentro de annotations usar `Text(...)` con el valor YA resuelto del callsite (`appPreferences.currency(...)` desde `self`) o un formatter estático (`YalaFormatter`), NUNCA una sub-View con `@Environment`. **`.chartOverlay { }` SÍ propaga** (ahí `AmountText` funciona, ej. `CashFlowWidget`). Causa del crash del chip Estadísticas en grupos (`8bb5ace8`).

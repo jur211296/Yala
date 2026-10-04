@@ -6,6 +6,9 @@
 //  tiempo que llevas y dos salidas claras — Cancelar (descarta sin transcribir) y Listo (transcribe y deja el texto en
 //  la caja). Al transcribir, el orbe gira y el panel recuerda que revises el texto antes de enviarlo.
 //
+//  El orbe y el tiempo son `VoiceListeningOrb`, que comparte con el registro por voz (`VoiceRecordingView`): las dos
+//  formas de hablarle a Yala se ven y se mueven igual.
+//
 
 import SwiftUI
 
@@ -19,12 +22,6 @@ struct VoiceListeningPanel: View {
     let onCancel: () -> Void
     let onDone: () -> Void
 
-    @State private var isPulsing = false
-    @State private var isSpinning = false
-
-    private let orbSize: CGFloat = 64 // A11Y-DT: orbe central del dictado
-    private let haloSize: CGFloat = 112 // A11Y-DT: halo que late con la voz
-    private let ringInset: CGFloat = 28 // A11Y-DT: halo interior y anillo de «transcribiendo»
     private let buttonHeight: CGFloat = 48 // A11Y-DT: tap target de Cancelar y Listo
 
     var body: some View {
@@ -40,9 +37,13 @@ struct VoiceListeningPanel: View {
             }
             .accessibilityElement(children: .combine)
 
-            orb
-
-            timeLabel
+            VoiceListeningOrb(
+                isTranscribing: isTranscribing,
+                duration: duration,
+                level: level,
+                accent: accent,
+                reduceMotion: reduceMotion
+            )
 
             if !isTranscribing {
                 HStack(spacing: DS.Spacing.md) {
@@ -81,6 +82,32 @@ struct VoiceListeningPanel: View {
         .padding(.vertical, DS.Spacing.sm)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("chat_voice_panel")
+    }
+}
+
+/// El orbe del dictado y, debajo, el tiempo. Grabando, el halo late con la voz y un punto rojo parpadea junto al
+/// tiempo; transcribiendo, un anillo gira y el tiempo pasa a «0:07 grabados». Con «Reducir movimiento», el halo se
+/// queda quieto y el anillo es el spinner del sistema.
+struct VoiceListeningOrb: View {
+    let isTranscribing: Bool
+    let duration: TimeInterval
+    /// Nivel de la voz, de 0 a 1.
+    let level: Double
+    let accent: Color
+    let reduceMotion: Bool
+
+    @State private var isPulsing = false
+    @State private var isSpinning = false
+
+    private let orbSize: CGFloat = 64 // A11Y-DT: orbe central del dictado
+    private let haloSize: CGFloat = 112 // A11Y-DT: halo que late con la voz
+    private let ringInset: CGFloat = 28 // A11Y-DT: halo interior y anillo de «transcribiendo»
+
+    var body: some View {
+        VStack(spacing: DS.Spacing.md) {
+            orb
+            timeLabel
+        }
         .onAppear {
             isPulsing = true
             isSpinning = true

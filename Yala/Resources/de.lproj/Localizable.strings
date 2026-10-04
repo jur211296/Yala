@@ -6305,3 +6305,48 @@
 
 /* VoiceOver: discard the dictation without transcribing */
 "accessibility.discardRecording" = "Aufnahme verwerfen";
+
+/* Voice entry: second processing step, the transcript is being read for amount and category */
+"voice.processing.understanding" = "Eintrag wird erkannt…";
+
+/* Voice entry: last processing step, the draft is being created */
+"voice.processing.preparing" = "Eintrag wird vorbereitet…";
+
+/* Voice entry: button to discard what was understood and record again */
+"voice.recordAgain" = "Erneut aufnehmen";
+
+/* Voice entry: title above the record understood from the recording */
+"voice.review.title" = "Das habe ich verstanden";
+
+/* Voice entry: title when several records were understood, e.g. I heard 2 entries */
+"voice.review.titleMany" = "%d Einträge verstanden";
+
+/* Voice entry: button that saves several records, e.g. Save 2 */
+"voice.review.saveMany" = "%d speichern";
+
+/* Voice entry: closing without saving leaves the drafts in the Inbox */
+"voice.review.inboxNote" = "Wenn du ohne Speichern schließt, findest du es im Posteingang.";
+
+/* Voice entry failure title: no internet */
+"voice.failure.noConnection.title" = "Keine Verbindung";
+
+/* Voice entry failure title: microphone permission denied */
+"voice.failure.mic.title" = "Yala kann das Mikrofon nicht nutzen";
+
+/* Voice entry failure title: the recording was empty or too short */
+"voice.failure.noVoice.title" = "Ich habe dich nicht gehört";
+
+/* Voice entry failure message: the recording was empty or too short */
+"voice.failure.noVoice.message" = "Die Aufnahme war leer oder zu kurz. Versuche es erneut.";
+
+/* Voice entry failure title: no amount was heard */
+"voice.failure.noAmount.title" = "Ich habe keinen Betrag gehört";
+
+/* Voice entry failure message: ask to say the amount, e.g. 25 */
+"voice.failure.noAmount.message" = "Sag auch, wie viel es war, zum Beispiel „25“.";
+
+/* Voice entry failure title: something went wrong */
+"voice.failure.generic.title" = "Das hat diesmal nicht geklappt";
+
+/* Voice entry failure message: something went wrong, try again */
+"voice.failure.generic.message" = "Beim Verarbeiten deiner Stimme ist etwas schiefgelaufen. Versuche es gleich noch einmal.";

@@ -115,9 +115,6 @@ struct PanelSheetsModifier: ViewModifier {
                 handleVoiceRecordingDismiss()
             }) {
                 VoiceRecordingView(
-                    onSavedToInbox: {
-                        sheets.navigateToInboxAfterVoice = true
-                    },
                     onSwitchToImage: {
                         sheets.switchToImageAfterVoice = true
                     },
@@ -239,10 +236,6 @@ struct PanelSheetsModifier: ViewModifier {
         if sheets.isVoiceSetupTrial {
             sheets.isVoiceSetupTrial = false
             FeatureGateService.shared.disableSetupTrial(for: .voiceInput)
-        }
-        if sheets.navigateToInboxAfterVoice {
-            sheets.navigateToInboxAfterVoice = false
-            sheets.showInbox = true
         }
         if sheets.switchToImageAfterVoice {
             sheets.switchToImageAfterVoice = false

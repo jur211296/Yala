@@ -6486,6 +6486,25 @@ enum L10n {
         static var tryImage: String {
             ls("voice.tryImage", comment: "")
         }
+        static var understanding: String { ls("voice.processing.understanding", comment: "") }
+        static var preparing: String { ls("voice.processing.preparing", comment: "") }
+        static var recordAgain: String { ls("voice.recordAgain", comment: "") }
+        static var reviewTitle: String { ls("voice.review.title", comment: "") }
+        static func reviewTitleMany(_ count: Int) -> String {
+            String(format: ls("voice.review.titleMany", comment: ""), count)
+        }
+        static func saveMany(_ count: Int) -> String {
+            String(format: ls("voice.review.saveMany", comment: ""), count)
+        }
+        static var reviewInboxNote: String { ls("voice.review.inboxNote", comment: "") }
+        static var failureNoConnectionTitle: String { ls("voice.failure.noConnection.title", comment: "") }
+        static var failureMicTitle: String { ls("voice.failure.mic.title", comment: "") }
+        static var failureNoVoiceTitle: String { ls("voice.failure.noVoice.title", comment: "") }
+        static var failureNoVoiceMessage: String { ls("voice.failure.noVoice.message", comment: "") }
+        static var failureNoAmountTitle: String { ls("voice.failure.noAmount.title", comment: "") }
+        static var failureNoAmountMessage: String { ls("voice.failure.noAmount.message", comment: "") }
+        static var failureGenericTitle: String { ls("voice.failure.generic.title", comment: "") }
+        static var failureGenericMessage: String { ls("voice.failure.generic.message", comment: "") }
     }
 
     // MARK: - Image Input

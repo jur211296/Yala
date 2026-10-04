@@ -31,7 +31,7 @@ directamente, y ese servicio no sabe nada de naturaleza —guarda `merchant → 
 | Dónde | La sugerencia | El signo |
 |---|---|---|
 | `ApplePayDraftService.swift:102` | `suggest(for: merchant)` sin filtro | `amount: -abs(parsed.amount)` (`:124`) — **siempre gasto** |
-| `VoiceRecordingView.swift:935` | `suggest(for: parsed.note)` sin filtro; el hint de arriba **sí** filtra (`findSubcategory(matching:isExpense:)`) | `parsed.isExpense ? -abs(value) : abs(value)` (`:908`) |
+| `VoiceRecordingView.swift:762` | `suggest(for: parsed.note)` sin filtro; el hint de arriba **sí** filtra (`findSubcategory(matching:isExpense:)`) | `parsed.isExpense ? -abs(value) : abs(value)` (`:738`) |
 | `InboxDraftEditSheet.swift:840` | `suggest(for: note)` sin filtro | `isExpense` ya está resuelto **doce líneas antes** (`:825`, `:828`) y no se consulta |
 
 Apple Pay es el más expuesto de los tres: el monto es negativo **siempre**, así que basta con que la

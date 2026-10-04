@@ -371,6 +371,19 @@ final class UITestHooks {
     /// en pantalla para capturar y probar su diseño.
     nonisolated static var chatDraft: Bool { hasArg("-uitest-chat-draft") }
 
+    /// Valor de `-uitest-voice-result <one|incomplete|two>`: el registro por voz no graba ni llama a la red. La hoja
+    /// abre escuchando sin pedir el micro y, al tocar Listo, «entiende» lo que diga el perfil, resuelto contra los datos
+    /// sembrados (`one`: un gasto completo · `incomplete`: sin subcategoría · `two`: dos gastos completos). Sin red no
+    /// hay transcripción, y hacen falta borradores en pantalla para capturar y probar «Lo entendido».
+    nonisolated static var voiceResult: String? {
+        #if DEBUG
+        guard isActive else { return nil }
+        return parseValue(after: "-uitest-voice-result", from: ProcessInfo.processInfo.arguments)
+        #else
+        return nil
+        #endif
+    }
+
     /// `-uitest-invite-onboarding`: presenta el cover de GroupInviteOnboarding directo
     /// (sin CKShare real — no funciona en sim). Combinar con `-uitest-join-phase` para
     /// congelar la fase del GroupJoinIntentTracker y testear cada step determinista.

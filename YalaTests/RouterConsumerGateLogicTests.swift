@@ -162,7 +162,6 @@ struct PanelSheetStateActivePresentationTests {
     // Flags de COORDINACIÓN post-dismiss / setup trial ⇒ false (no presentan).
     @Test func coordinationFlags_doNotActivate() {
         var s = PanelSheetState()
-        s.navigateToInboxAfterVoice = true
         s.switchToImageAfterVoice = true
         s.navigateToInboxAfterImage = true
         s.pendingOpenChatAfterOnboarding = true
