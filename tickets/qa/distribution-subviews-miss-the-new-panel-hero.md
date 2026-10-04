@@ -1,10 +1,11 @@
 ---
 id: distribution-subviews-miss-the-new-panel-hero
-status: backlog
+status: qa
 priority: medium
 area: "panel, statistics"
 created: 2026-09-09
-updated: 2026-09-17
+updated: 2026-10-04
+qa-status: needs-testing
 source: idea Jürgen 2026-09-09
 ---
 
@@ -47,7 +48,7 @@ juntos en pantalla.
 
 ## Estado
 
-Idea capturada, **sin spec**.
+**Hecho, pendiente de pasada en el iPhone** (2026-10-04). Ver «Decisión», «Qué cambió» y «Guion de QA» abajo.
 
 ## Relacionados
 
@@ -63,3 +64,45 @@ No solo Distribución: **alinear el Hero de Estadísticas (todas sus subvistas) 
 
 Esto ensancha el alcance del ticket: Panel hero + FABs como referencia única; Estadísticas completa; auditar otras pantallas con hero paralelo.
 
+
+## Decisión Jürgen (2026-10-03 ~22:29 Lima)
+
+El hero del Panel **se queda visible** en categoría, subcategoría, etiquetas y Gráficas/Detalle; los FABs los
+decide la sesión. Responde a «La pregunta que falta» de arriba: es **unificar** las cabeceras con la del Panel.
+
+## Qué cambió (2026-10-04)
+
+- **Una maqueta para todos los heros: `HeroHeader`** (`Yala/App/Views/Shared/HeroHeader.swift`). Rótulo de la cifra
+  arriba a la izquierda, píldora de período a su derecha, cifra (`panelHeroAmount`) y detalle debajo, todo en el
+  eje izquierdo de la pantalla. La usan el Panel (`HeroMonthView`, sin cambio visual), las cuatro pestañas de
+  Estadísticas, la página Registros (por `RecordsTabView`) y Pagos planificados.
+- **Ningún número cambia.** Cada pestaña sigue con su cifra y su rótulo (decisión del 06-sep,
+  [[hero-estadisticas-stock-vs-flujo-entre-pestanas]]); el rótulo solo sube al hueco de «Disponible».
+- **Distribución:** un solo hero para el carrusel y para Gráficas/Detalle, encima de todo; ninguna subvista lo
+  sustituye.
+- **FABs:** Yala IA y «+» pasan de solo Registros a **las cuatro pestañas** de Estadísticas, con el margen inferior
+  de dos botones (`fabStackClearance`). Motivo: en el Panel «Nuevo registro» está siempre a mano.
+- **iPhone girado:** Resumen y Registros conservan la banda (`SummaryHeaderStack`); solo cambia la vista vertical.
+- **Tests:** `StatisticsHeroLikePanelUITests` (nuevo: rótulo a la izquierda y los dos FABs en cada pestaña y en cada
+  subvista de Distribución) y `SmartRefinementFabUITests` (el caso que afirmaba el FAB ausente en Resumen pasa a
+  afirmarlo presente).
+
+## Guion de QA (iPhone)
+
+Montaje: build de TestFlight o `Yala Dev` desde Xcode en tu iPhone, con datos de varios meses.
+
+1. Abre **Panel** y fíjate en el hero: «Disponible» arriba a la izquierda, la píldora del período a la derecha, la
+   cifra grande debajo.
+2. Toca **Estadísticas**. En **Resumen**, la cabecera debe leerse igual: «Neto del período» arriba a la izquierda,
+   la píldora a la derecha, la cifra debajo, todo alineado con «Tu salud financiera».
+3. Repite en **Tendencias** y en **Registros** (desliza los chips para verlo).
+4. En **Distribución**: el rótulo dice «Saldo de cuentas». Desliza el carrusel de pies a **Subcategorías** y a
+   **Etiquetas**: la cabecera no se mueve ni cambia. Toca **Detalle** y vuelve a **Gráficas**: igual.
+5. En las cuatro pestañas, abajo a la derecha están **Yala IA** y **«+»**. Toca «+»: se abre Nuevo registro.
+   Ciérralo sin guardar.
+6. Baja hasta el final de cada pestaña: la última tarjeta queda por encima de los dos botones, no debajo.
+7. Gira el iPhone en **Resumen**: la cabecera pasa a la banda compacta de siempre (cifra a la izquierda, período y
+   entradas/salidas a la derecha). Vuelve a vertical.
+8. **Planificación → Pagos planificados**: «Total del mes · Este mes» arriba a la izquierda y la cifra debajo.
+
+Falla si en algún punto la cabecera sale centrada, si falta el rótulo o si en alguna pestaña no están los dos botones.

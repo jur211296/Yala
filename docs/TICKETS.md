@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (737)
+## Index (738)
 
 | id | status | path |
 |---|---|---|
@@ -251,7 +251,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | distribucion-recalcula-dos-veces-por-toque-y-sin-debounce | backlog | tickets/backlog/distribucion-recalcula-dos-veces-por-toque-y-sin-debounce.md |
 | distribution-balance-kpi-skips-fx | done | tickets/done/distribution-balance-kpi-skips-fx.md |
 | distribution-default-should-be-detail-not-charts | backlog | tickets/backlog/distribution-default-should-be-detail-not-charts.md |
-| distribution-subviews-miss-the-new-panel-hero | backlog | tickets/backlog/distribution-subviews-miss-the-new-panel-hero.md |
+| distribution-pie-totals-styled-differently-per-page | backlog | tickets/backlog/distribution-pie-totals-styled-differently-per-page.md |
+| distribution-subviews-miss-the-new-panel-hero | qa | tickets/qa/distribution-subviews-miss-the-new-panel-hero.md |
 | dmarc-sube-la-politica-tras-observar | backlog | tickets/backlog/dmarc-sube-la-politica-tras-observar.md |
 | doble-conteo-dia1-previo-thismonth | done | tickets/done/doble-conteo-dia1-previo-thismonth.md |
 | dormant-convergence-request-from-a-groups-only-wipe | backlog | tickets/backlog/dormant-convergence-request-from-a-groups-only-wipe.md |
