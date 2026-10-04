@@ -21,6 +21,7 @@ struct TrendsTabView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
 
     // MARK: - Data (passed from parent)
@@ -97,6 +98,7 @@ struct TrendsTabView: View {
     // Trend Insight Card (F4)
     @State private var showUpgradeSheet = false
     @State private var showInsightsConsentAlert = false
+    @State private var trendsAI = TrendsAIViewModel()
 
     @ScaledMetric(relativeTo: .largeTitle) private var summaryVerticalPadding: CGFloat = 12
 
@@ -193,7 +195,7 @@ struct TrendsTabView: View {
             UpgradePromptSheet(feature: .smartInsightsAI, context: .proFeature)
         }
         .insightsConsentAlert(isPresented: $showInsightsConsentAlert) {
-            Task { await insightsViewModel.triggerAIGeneration() }
+            Task { await trendsAI.generate(input: trendsAIInput, regenerate: false) }
         }
     }
 
@@ -706,28 +708,44 @@ struct TrendsTabView: View {
         FeatureGateService.shared.canAccess(.smartInsightsAI)
     }
 
-    @ViewBuilder
-    private var trendInsightCard: some View {
-        let txCount = insightsViewModel.insightData?.periodSummary.transactionCount ?? 0
-
-        // Gate: solo aparece con >= 5 tx en período actual
-        if txCount >= 5 {
-            if isProUser {
-                proTrendInsightCard
-            } else {
-                freeTrendInsightCard
-            }
-        }
+    /// Bullets rule-based de la card, uno por gráfica visible (V2, D1/D4).
+    private var insightBullets: [TrendInsightBullet] {
+        TrendInsightLogic.bullets(
+            metric: trendsViewModel.selectedMetric,
+            currentTotal: currentPeriodTotal,
+            previousTotal: previousPeriodTotal,
+            comparisonAvailable: trendsViewModel.detailPeriod != .allTime,
+            history: trendsViewModel.historicalTotals,
+            historyUnit: TrendHistoryLogic.unit(for: trendsViewModel.detailPeriod),
+            cashFlowSummary: cashFlowSummary,
+            weekdaySpending: weekdaySpending,
+            currencyCode: defaultCurrencyCode
+        )
     }
 
     @ViewBuilder
-    private var freeTrendInsightCard: some View {
-        let finding = TrendInsightLogic.finding(
-            metric: trendsViewModel.selectedMetric,
-            currentTotal: currentPeriodTotal,
-            previousTotal: previousPeriodTotal
-        )
+    private var trendInsightCard: some View {
+        // Gate de V1: solo con ≥ 5 movimientos en el período (conteo propio de
+        // Tendencias, no el de Resumen — ver `periodTransactionCount`).
+        let bullets = insightBullets
+        Group {
+            if trendsViewModel.periodTransactionCount >= 5, !bullets.isEmpty {
+                if isProUser {
+                    proTrendInsightCard(ruleBullets: bullets)
+                } else {
+                    freeTrendInsightCard(bullets: bullets)
+                }
+            }
+        }
+        // Dos cambios que no pasan por `scheduleTrendsRecalc`: otro rango personalizado
+        // (el período sigue siendo `.custom`) y una edición que no cambia el número de
+        // movimientos. Van aquí y no en la cadena del `body`, que ya va justa de tipado.
+        .onChange(of: sessionState.customDateRange) { trendsAI.reset() }
+        .onChange(of: sessionState.dataVersion) { trendsAI.reset() }
+    }
 
+    @ViewBuilder
+    private func freeTrendInsightCard(bullets: [TrendInsightBullet]) -> some View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
             HStack(spacing: DS.Spacing.sm) {
                 Image(systemName: "chart.line.uptrend.xyaxis")
@@ -737,12 +755,11 @@ struct TrendsTabView: View {
                 Text(L10n.Stats.Trends.insightTitleFree(periodDisplayName))
                     .font(DS.Typography.subheadlineEmphasized)
                     .foregroundStyle(.primary)
+                    .accessibilityAddTraits(.isHeader)
+                    .accessibilityIdentifier("trends_insight_title")
             }
 
-            Text(findingText(finding))
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.primary)
-                .lineLimit(3)
+            ruleBulletList(bullets)
 
             Button {
                 showUpgradeSheet = true
@@ -766,17 +783,17 @@ struct TrendsTabView: View {
     }
 
     @ViewBuilder
-    private var proTrendInsightCard: some View {
-        if insightsViewModel.aiActivated {
-            if insightsViewModel.isLoadingAI {
-                AIInsightCardComponents.loadingPlaceholder(accentColor: theme.accent)
-            } else if let aiHero = insightsViewModel.aiInsights?.heroText {
-                proAIInsightCard(aiHero: aiHero)
-            } else if let error = insightsViewModel.aiError {
-                AIInsightCardComponents.errorCard(error)
-            }
-        } else {
-            proPreAIInsightCard
+    private func proTrendInsightCard(ruleBullets: [TrendInsightBullet]) -> some View {
+        switch trendsAI.phase {
+        case .loading:
+            AIInsightCardComponents.loadingPlaceholder(accentColor: theme.accent)
+        case .loaded(let aiBullets) where !aiBullets.isEmpty:
+            proAIInsightCard(aiBullets: aiBullets)
+        case .loaded, .idle:
+            proPreAIInsightCard(ruleBullets: ruleBullets, failed: false)
+        case .failed:
+            // V2-06: si la IA falla, vuelven los bullets de reglas con el CTA para reintentar.
+            proPreAIInsightCard(ruleBullets: ruleBullets, failed: true)
         }
     }
 
@@ -791,19 +808,34 @@ struct TrendsTabView: View {
             Text(L10n.Stats.Trends.insightTitlePro)
                 .font(DS.Typography.subheadlineEmphasized)
                 .foregroundStyle(.primary)
+                .accessibilityAddTraits(.isHeader)
+                .accessibilityIdentifier("trends_insight_title")
         }
     }
 
     @ViewBuilder
-    private func proAIInsightCard(aiHero: String) -> some View {
+    private func proAIInsightCard(aiBullets: [TrendsAIBullet]) -> some View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
             proInsightHeader
 
-            Text(AIInsightCardComponents.markdownAttributed(aiHero))
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.primary)
-                .multilineTextAlignment(.leading)
-                .fixedSize(horizontal: false, vertical: true)
+            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                ForEach(aiBullets) { bullet in
+                    HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
+                        Image(systemName: bulletIcon(for: bullet.source))
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(theme.accent)
+                            .frame(minWidth: 16)
+                            .accessibilityHidden(true)
+                        Text(AIInsightCardComponents.markdownAttributed(bullet.text))
+                            .font(DS.Typography.subheadline)
+                            .foregroundStyle(.primary)
+                            .multilineTextAlignment(.leading)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .accessibilityElement(children: .combine)
+                    .accessibilityIdentifier("trends_insight_ai_bullet")
+                }
+            }
 
             // Footer balanceado: tag identitario izquierda + chip "Regenerar" derecha.
             HStack {
@@ -818,7 +850,7 @@ struct TrendsTabView: View {
                 Spacer()
 
                 Button {
-                    Task { await insightsViewModel.triggerAIGeneration() }
+                    Task { await trendsAI.generate(input: trendsAIInput, regenerate: true) }
                 } label: {
                     HStack(spacing: DS.Spacing.xs) {
                         Image(systemName: "arrow.clockwise")
@@ -840,24 +872,21 @@ struct TrendsTabView: View {
     }
 
     @ViewBuilder
-    private var proPreAIInsightCard: some View {
-        let finding = TrendInsightLogic.finding(
-            metric: trendsViewModel.selectedMetric,
-            currentTotal: currentPeriodTotal,
-            previousTotal: previousPeriodTotal
-        )
-
+    private func proPreAIInsightCard(ruleBullets: [TrendInsightBullet], failed: Bool) -> some View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
             proInsightHeader
 
-            Text(findingText(finding))
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.primary)
-                .lineLimit(3)
+            ruleBulletList(ruleBullets)
+
+            if failed {
+                Text(L10n.Chat.errorGeneric)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+            }
 
             Button {
                 if appPreferences.aiInsightsConsentAccepted {
-                    Task { await insightsViewModel.triggerAIGeneration() }
+                    Task { await trendsAI.generate(input: trendsAIInput, regenerate: false) }
                 } else {
                     showInsightsConsentAlert = true
                 }
@@ -875,9 +904,77 @@ struct TrendsTabView: View {
                 .clipShape(Capsule())
             }
             .buttonStyle(.plain)
+            .accessibilityIdentifier("trends_insight_generate_ai")
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .panelCard()
+    }
+
+    /// Lista de bullets rule-based: viñeta neutra (D5), un elemento de
+    /// VoiceOver por bullet (V2-10). Tres líneas como mucho a tamaño normal;
+    /// con texto de accesibilidad, sin tope, para no cortar la frase.
+    @ViewBuilder
+    private func ruleBulletList(_ bullets: [TrendInsightBullet]) -> some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            ForEach(bullets) { bullet in
+                HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
+                    Text(verbatim: "•")
+                        .font(DS.Typography.subheadline)
+                        .foregroundStyle(.secondary)
+                        .accessibilityHidden(true)
+                    Text(findingText(bullet.finding))
+                        .font(DS.Typography.subheadline)
+                        .foregroundStyle(.primary)
+                        .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 3)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .accessibilityElement(children: .combine)
+                .accessibilityIdentifier("trends_insight_bullet_\(bullet.id.rawValue)")
+            }
+        }
+    }
+
+    /// Icono contextual del bullet de IA, por gráfica (D5).
+    private func bulletIcon(for source: TrendInsightBullet.Source?) -> String {
+        switch source {
+        case .trend: return "chart.line.uptrend.xyaxis"
+        case .comparison: return "arrow.left.arrow.right"
+        case .cashFlow: return "arrow.up.arrow.down"
+        case .weekday: return "calendar"
+        case nil: return "sparkle"
+        }
+    }
+
+    /// Lo que pintan las cuatro gráficas, para el análisis con IA (D3).
+    private var trendsAIInput: TrendsAIInput {
+        let comparable = trendsViewModel.detailPeriod != .allTime
+        return TrendsAIInput(
+            metric: trendsViewModel.selectedMetric,
+            periodLabel: periodDisplayName,
+            comparisonLabel: comparable ? strippedComparisonLabel(comparisonPeriodText) : nil,
+            currentTotal: currentPeriodTotal,
+            previousTotal: comparable ? previousPeriodTotal : nil,
+            history: trendsViewModel.historicalTotals,
+            historyUnit: TrendHistoryLogic.unit(for: trendsViewModel.detailPeriod),
+            cashFlow: cashFlowSummary,
+            weekdaySpending: weekdaySpending,
+            weekdayNames: Dictionary(uniqueKeysWithValues: (1...7).map { ($0, weekdayName($0)) }),
+            currencyCode: defaultCurrencyCode,
+            currencyDisplay: appPreferences.currencyIdentifier(for: defaultCurrencyCode),
+            locale: AppLocale.identifier,
+            country: Locale.current.region?.identifier ?? "",
+            filtersActive: trendsViewModel.hasActiveFilters
+        )
+    }
+
+    /// Nombre del día en el idioma de la app, tal como va dentro de una frase
+    /// («sábado» en español, «Saturday» en inglés).
+    private func weekdayName(_ weekday: Int) -> String {
+        var calendar = Calendar.current
+        calendar.locale = AppLocale.current
+        let symbols = calendar.weekdaySymbols
+        guard weekday >= 1, weekday <= symbols.count else { return "" }
+        return symbols[weekday - 1]
     }
 
     /// Mapea TrendInsightFinding → string localizado. La localización vive en el
@@ -907,6 +1004,39 @@ struct TrendsTabView: View {
             case .income:  return L10n.Stats.Trends.Insight.stableIncome
             case .balance: return L10n.Stats.Trends.Insight.stableBalance
             }
+        case .sustainedUp(let periods, let unit, let metric):
+            let duration = durationText(periods, unit)
+            switch metric {
+            case .expense: return L10n.Stats.Trends.Insight.sustainedUpExpense(duration)
+            case .income:  return L10n.Stats.Trends.Insight.sustainedUpIncome(duration)
+            case .balance: return L10n.Stats.Trends.Insight.sustainedUpBalance(duration)
+            }
+        case .sustainedDown(let periods, let unit, let metric):
+            let duration = durationText(periods, unit)
+            switch metric {
+            case .expense: return L10n.Stats.Trends.Insight.sustainedDownExpense(duration)
+            case .income:  return L10n.Stats.Trends.Insight.sustainedDownIncome(duration)
+            case .balance: return L10n.Stats.Trends.Insight.sustainedDownBalance(duration)
+            }
+        case .cashFlowSurplus(let ratio):
+            return L10n.Stats.Trends.Insight.cashFlowSurplus(ratio)
+        case .cashFlowDeficit(let ratio):
+            return L10n.Stats.Trends.Insight.cashFlowDeficit(ratio)
+        case .cashFlowNoIncome:
+            return L10n.Stats.Trends.Insight.cashFlowNoIncome
+        case .weekdayPeak(let weekday, let average, let currencyCode):
+            return L10n.Stats.Trends.Insight.weekdayPeak(
+                weekdayName(weekday),
+                appPreferences.currency(average, currencyCode: currencyCode)
+            )
+        }
+    }
+
+    private func durationText(_ periods: Int, _ unit: TrendHistoryUnit) -> String {
+        switch unit {
+        case .weeks: return L10n.Stats.Trends.Insight.durationWeeks(periods)
+        case .months: return L10n.Stats.Trends.Insight.durationMonths(periods)
+        case .years: return L10n.Stats.Trends.Insight.durationYears(periods)
         }
     }
 
@@ -1272,12 +1402,18 @@ struct TrendsTabView: View {
     /// Default 200ms for filter changes; use 300ms for `allTransactions.count` to tolerate imports.
     private func scheduleTrendsRecalc(debounceMs: Int = 200) {
         recalcTask?.cancel()
+        // El análisis con IA describe lo que había: con otro período, filtro,
+        // métrica o datos vuelve el CTA (mismo contrato que `resetAIState`).
+        trendsAI.reset()
         recalcTask = Task { @MainActor in
             do { try await Task.sleep(for: .milliseconds(debounceMs)) } catch { return }
             guard !Task.isCancelled else { return }
             calculateCashFlowData()
             calculatePeriodComparisonData()
             calculateWeekdayData()
+            // Y otra vez al terminar: un «Generar» tocado durante el debounce se
+            // llevó los totales viejos con la etiqueta del período nuevo.
+            trendsAI.reset()
         }
     }
 

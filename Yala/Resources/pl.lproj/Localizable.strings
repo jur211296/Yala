@@ -4288,6 +4288,19 @@
 "stats.trends.insight.stableExpense" = "Twoje wydatki pozostają stabilne.";
 "stats.trends.insight.stableIncome" = "Twoje przychody pozostają stabilne.";
 "stats.trends.insight.stableBalance" = "Twoje saldo pozostaje stabilne.";
+"stats.trends.insight.sustainedUpExpense %@" = "Twoje wydatki rosną nieprzerwanie od %@.";
+"stats.trends.insight.sustainedDownExpense %@" = "Twoje wydatki spadają nieprzerwanie od %@.";
+"stats.trends.insight.sustainedUpIncome %@" = "Twoje przychody rosną nieprzerwanie od %@.";
+"stats.trends.insight.sustainedDownIncome %@" = "Twoje przychody spadają nieprzerwanie od %@.";
+"stats.trends.insight.sustainedUpBalance %@" = "Twoje saldo rośnie nieprzerwanie od %@.";
+"stats.trends.insight.sustainedDownBalance %@" = "Twoje saldo spada nieprzerwanie od %@.";
+"stats.trends.insight.durationWeeks %d" = "%d tyg.";
+"stats.trends.insight.durationMonths %d" = "%d mies.";
+"stats.trends.insight.durationYears %d" = "%d lat";
+"stats.trends.insight.cashFlowSurplus %d" = "Twoje przychody pokryły %d%% wydatków: zamykasz okres na plusie.";
+"stats.trends.insight.cashFlowDeficit %d" = "Twoje przychody pokryły %d%% wydatków: wydałeś więcej, niż wpłynęło.";
+"stats.trends.insight.cashFlowNoIncome" = "W tym okresie zapisałeś wydatki, ale żadnych przychodów.";
+"stats.trends.insight.weekdayPeak %@ %@" = "Najdroższy dzień: %@ — średnio wydajesz %@.";
 
 // MARK: - Stats WidgetInfo (periodComparison, sankey) — added 2026-05-18
 "panel.widgetInfo.periodComparison.title" = "Porównanie okresu";

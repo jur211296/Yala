@@ -295,7 +295,7 @@ final class InsightsLLMService {
 
     // MARK: - Tone & Focus Instructions
 
-    private static func toneInstruction(for tone: InsightTone, country: String = "") -> String {
+    static func toneInstruction(for tone: InsightTone, country: String = "") -> String {
         let regionHint = country.isEmpty ? "no especificado — usa español neutro" : country
         switch tone {
         case .normal:
@@ -345,7 +345,7 @@ final class InsightsLLMService {
         }
     }
 
-    private static func focusInstruction(for focus: InsightFocus) -> String {
+    static func focusInstruction(for focus: InsightFocus) -> String {
         switch focus {
         case .balanced:
             return """
