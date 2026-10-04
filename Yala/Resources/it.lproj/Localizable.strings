@@ -6408,3 +6408,20 @@
 "image.entry.failure.generic.title" = "Questa volta non sono riuscito a leggerla";
 /* Image entry failure: reading failed, the photo is fine */
 "image.entry.failure.generic.message" = "La foto va bene: la lettura non è riuscita. Riprova tra un momento.";
+/* Current user's name, no parentheses */
+"groups.member.youName" = "Tu";
+
+/* Header: how much each person puts in a group expense */
+"groups.expense.breakdownTitle" = "Ripartizione";
+
+/* Under the payer's name: Paid <amount> */
+"groups.expense.paidAmount" = "Ha pagato %@";
+
+/* Row title: where this expense landed in your personal records */
+"groups.expense.inYourFinances" = "Nelle tue finanze";
+
+/* Middle of the sentence: Paid by <name> and split <mode> */
+"groups.expense.andDividedLabel" = "e diviso";
+
+/* Current user after a preposition: Paid by <you> */
+"groups.member.youObject" = "te";

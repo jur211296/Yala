@@ -265,3 +265,19 @@ simulador) las tres veces:
 El fallo es el mismo en los tres: `EdgeCasesUITests.swift:67` — `Failed to tap Button … identifier BEGINSWITH
 "account_selector_row_"`: el selector de cuenta del formulario no enseña ninguna fila. No es el entorno ni una corrida
 pisada; es determinista en `2.1`. Sospecha sin medir: los dos PR de orientación horizontal que entraron justo antes.
+
+## 2026-10-04 — vuelve a ser intermitente, con la firma vieja (Frank)
+
+Gate de `group-expense-views-redesign`, con el centinela en 0 en todas las corridas:
+
+| Corrida | Árbol | Resultado |
+|---|---|---|
+| Lote de 6 suites (31 casos) | rama | **falla** (`XCUIApplication+Yala.swift:278`, sin `transaction_success_accept`) |
+| Aislado, 1.ª iteración | rama, mismo binario | **falla** igual |
+| Aislado | `origin/2.1` @ `7ab65f848` limpio | pasa |
+| Aislado, `-test-iterations 3` | rama, build siguiente | **3/3 pasa** |
+| Aislado, `-test-iterations 3` | `origin/2.1` limpio | **3/3 pasa** |
+
+La firma del 2-oct (`account_selector_row_` sin filas) **no se repitió**: hoy vuelve la de siempre. La rama solo toca
+Grupos (el gasto compartido), nada del registro personal. ⇒ Inestable; el «determinista en 2.1» del 2-oct no se
+sostiene en `7ab65f848`.

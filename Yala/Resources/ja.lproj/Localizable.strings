@@ -6410,3 +6410,20 @@
 "image.entry.failure.generic.title" = "今回は読み取れませんでした";
 /* Image entry failure: reading failed, the photo is fine */
 "image.entry.failure.generic.message" = "写真に問題はありません。読み取りに失敗しました。少ししてからもう一度お試しください。";
+/* Current user's name, no parentheses */
+"groups.member.youName" = "あなた";
+
+/* Header: how much each person puts in a group expense */
+"groups.expense.breakdownTitle" = "内訳";
+
+/* Under the payer's name: Paid <amount> */
+"groups.expense.paidAmount" = "%@を支払い";
+
+/* Row title: where this expense landed in your personal records */
+"groups.expense.inYourFinances" = "あなたの家計";
+
+/* Middle of the sentence: Paid by <name> and split <mode> */
+"groups.expense.andDividedLabel" = "・分け方";
+
+/* Current user after a preposition: Paid by <you> */
+"groups.member.youObject" = "あなた";

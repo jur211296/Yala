@@ -6410,3 +6410,20 @@
 "image.entry.failure.generic.title" = "Tym razem nie udało się odczytać";
 /* Image entry failure: reading failed, the photo is fine */
 "image.entry.failure.generic.message" = "Zdjęcie jest w porządku: odczyt się nie powiódł. Spróbuj za chwilę.";
+/* Current user's name, no parentheses */
+"groups.member.youName" = "Ty";
+
+/* Header: how much each person puts in a group expense */
+"groups.expense.breakdownTitle" = "Podział";
+
+/* Under the payer's name: Paid <amount> */
+"groups.expense.paidAmount" = "Zapłacono %@";
+
+/* Row title: where this expense landed in your personal records */
+"groups.expense.inYourFinances" = "W twoich finansach";
+
+/* Middle of the sentence: Paid by <name> and split <mode> */
+"groups.expense.andDividedLabel" = "i podzielono";
+
+/* Current user after a preposition: Paid by <you> */
+"groups.member.youObject" = "ciebie";

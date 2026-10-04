@@ -6410,3 +6410,20 @@
 "image.entry.failure.generic.title" = "这次没能读取";
 /* Image entry failure: reading failed, the photo is fine */
 "image.entry.failure.generic.message" = "照片没有问题：读取失败了。请稍后再试。";
+/* Current user's name, no parentheses */
+"groups.member.youName" = "你";
+
+/* Header: how much each person puts in a group expense */
+"groups.expense.breakdownTitle" = "分摊";
+
+/* Under the payer's name: Paid <amount> */
+"groups.expense.paidAmount" = "支付了 %@";
+
+/* Row title: where this expense landed in your personal records */
+"groups.expense.inYourFinances" = "你的个人财务";
+
+/* Middle of the sentence: Paid by <name> and split <mode> */
+"groups.expense.andDividedLabel" = "，分摊方式";
+
+/* Current user after a preposition: Paid by <you> */
+"groups.member.youObject" = "你";
