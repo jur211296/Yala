@@ -525,7 +525,6 @@
    Regenerado desde pt-BR.lproj — ver planning/L10N.md.
    ================================================================ */
 "Record from Apple Pay the fields amount: ${amount} and merchant: ${merchant}" = "Registrar do Apple Pay os campos valor: ${amount} e comerciante: ${merchant}";
-"accessibility.accountCard %@ %@" = "Conta %@, saldo %@";
 "accessibility.accountRow %@ %@" = "Conta %@, moeda %@";
 "accessibility.approveCompleteHint" = "Para aprovar, preencha conta, valor e categoria";
 "accessibility.authenticating" = "Autenticando";
@@ -2184,12 +2183,6 @@
 "panel.health.voiceover.score" = "%d de 100";
 "panel.health.voiceover.summary" = "Saúde financeira: %1$@. Orçamento %2$@. Atividade %3$@. Pagamentos %4$@.";
 "panel.hero.availableLabel" = "Disponível";
-"panel.hero.kpi.monthStart %@ %d" = "Começamos o mês, passo a passo.";
-"panel.hero.kpi.neutral %@ %@ %@ %d" = "Seu mês em andamento — tudo em ordem.";
-"panel.hero.kpi.onTrack %@ %@ %@ %d" = "Bom ritmo neste mês, continue assim.";
-"panel.hero.kpi.overBudget %@ %@" = "Amanhã recomeçamos, tudo em ordem.";
-"panel.hero.kpi.tight %@ %@ %d" = "Mês apertado mas manejável, passo a passo.";
-"panel.hero.upsellCTA" = "Personalize sua mensagem com IA";
 "panel.insightMenuDifferentAngle" = "Outro ângulo";
 "panel.insightMenuHideHour" = "Esconder por uma hora";
 "panel.insightMenuHideToday" = "Esconder hoje";
@@ -5521,3 +5514,30 @@
 "tutorials.applePay.pendingDrafts" = "Pagamentos Apple Pay na tua caixa de entrada: %d";
 "faceIDGuide.guarantee" = "O Yala nunca vê o teu rosto: quem verifica é o iOS.";
 "faceIDGuide.previewAction" = "Pedir Face ID";
+
+/* Label above the amount on a Panel account card */
+"panel.accounts.card.balance" = "Saldo";
+
+/* Label above the amount on a credit card account with debt */
+"panel.accounts.card.toPay" = "A pagar";
+
+/* Label above the amount in expenses-only mode; %@ = period name like 'Este mes' */
+"panel.accounts.card.spentInPeriod %@" = "Gasto · %@";
+
+/* Account detail sheet: money that came into the account in the period */
+"accountDetail.moneyIn" = "Entradas";
+
+/* Account detail sheet: money that left the account in the period */
+"accountDetail.moneyOut" = "Saídas";
+
+/* Account detail sheet: section with top expense categories */
+"accountDetail.topCategories" = "Para onde foi";
+
+/* Account detail sheet: section with latest records */
+"accountDetail.latest" = "Últimos movimentos";
+
+/* Accessibility label of the balance chart; account name, period name */
+"accountDetail.chartLabel %@ %@" = "Saldo de %@ em %@";
+
+/* Account detail sheet: no records in the period */
+"accountDetail.empty" = "Sem movimentos neste período";

@@ -118,13 +118,7 @@
 
 // KPI fallback (aiSubtitle takes the KPI slot when available)
 // Markdown bold (**amount**) renders via AttributedString(markdown:)
-"panel.hero.kpi.monthStart %@ %d" = "今月もスタート、一歩ずつ進めましょう。";
-"panel.hero.kpi.onTrack %@ %@ %@ %d" = "今月はいいリズムです、この調子で。";
-"panel.hero.kpi.neutral %@ %@ %@ %d" = "今月も順調に進んでいます。";
-"panel.hero.kpi.tight %@ %@ %d" = "やりくりは大変ですが、一歩ずつ進めましょう。";
-"panel.hero.kpi.overBudget %@ %@" = "明日からまた仕切り直し、大丈夫です。";
 
-"panel.hero.upsellCTA" = "AIでメッセージをカスタマイズ";
 "panel.hero.availableLabel" = "利用可能";
 
 // MARK: - Trend Widget
@@ -1688,7 +1682,6 @@
 "accessibility.skipSync" = "待機をスキップしてセットアップを続ける";
 "accessibility.tabLimitReached" = "タブの上限に達しました";
 "accessibility.noTransactionsToExport" = "エクスポートする取引がありません";
-"accessibility.accountCard %@ %@" = "口座%@、残高%@";
 "accessibility.editAccount" = "口座を編集";
 "accessibility.pageIndicator %d %d" = "%2$dページ中%1$dページ目";
 "accessibility.accountRow %@ %@" = "口座%@、通貨%@";
@@ -6260,3 +6253,30 @@
 "tutorials.applePay.pendingDrafts" = "受信箱のApple Pay支払い：%d件";
 "faceIDGuide.guarantee" = "Yalaがあなたの顔を見ることはありません。確認するのはiOSです。";
 "faceIDGuide.previewAction" = "Face IDを要求";
+
+/* Label above the amount on a Panel account card */
+"panel.accounts.card.balance" = "残高";
+
+/* Label above the amount on a credit card account with debt */
+"panel.accounts.card.toPay" = "未払い";
+
+/* Label above the amount in expenses-only mode; %@ = period name like 'Este mes' */
+"panel.accounts.card.spentInPeriod %@" = "支出 · %@";
+
+/* Account detail sheet: money that came into the account in the period */
+"accountDetail.moneyIn" = "入金";
+
+/* Account detail sheet: money that left the account in the period */
+"accountDetail.moneyOut" = "出金";
+
+/* Account detail sheet: section with top expense categories */
+"accountDetail.topCategories" = "使い道";
+
+/* Account detail sheet: section with latest records */
+"accountDetail.latest" = "最近の取引";
+
+/* Accessibility label of the balance chart; account name, period name */
+"accountDetail.chartLabel %@ %@" = "%@の残高（%@）";
+
+/* Account detail sheet: no records in the period */
+"accountDetail.empty" = "この期間の取引はありません";

@@ -118,13 +118,7 @@
 
 // KPI fallback (aiSubtitle prende lo slot KPI quando disponibile)
 // Il grassetto markdown (**importo**) viene renderizzato via AttributedString(markdown:)
-"panel.hero.kpi.monthStart %@ %d" = "Partiamo con il mese, un passo alla volta.";
-"panel.hero.kpi.onTrack %@ %@ %@ %d" = "Buon ritmo questo mese, continua così.";
-"panel.hero.kpi.neutral %@ %@ %@ %d" = "Il tuo mese in corso — tutto in ordine.";
-"panel.hero.kpi.tight %@ %@ %d" = "Mese stretto ma gestibile, un passo alla volta.";
-"panel.hero.kpi.overBudget %@ %@" = "Domani ripartiamo, tutto a posto.";
 
-"panel.hero.upsellCTA" = "Personalizza il tuo messaggio con IA";
 "panel.hero.availableLabel" = "Disponibile";
 
 // MARK: - Trend Widget
@@ -1689,7 +1683,6 @@
 "accessibility.skipSync" = "Salta l'attesa e continua la configurazione";
 "accessibility.tabLimitReached" = "Limite di schede raggiunto";
 "accessibility.noTransactionsToExport" = "Nessuna transazione da esportare";
-"accessibility.accountCard %@ %@" = "Conto %@, saldo %@";
 "accessibility.editAccount" = "Modifica conto";
 "accessibility.pageIndicator %d %d" = "Pagina %1$d di %2$d";
 "accessibility.accountRow %@ %@" = "Conto %@, valuta %@";
@@ -6258,3 +6251,30 @@
 "tutorials.applePay.pendingDrafts" = "Pagamenti Apple Pay nella tua casella: %d";
 "faceIDGuide.guarantee" = "Yala non vede mai il tuo volto: lo verifica iOS.";
 "faceIDGuide.previewAction" = "Richiedi Face ID";
+
+/* Label above the amount on a Panel account card */
+"panel.accounts.card.balance" = "Saldo";
+
+/* Label above the amount on a credit card account with debt */
+"panel.accounts.card.toPay" = "Da pagare";
+
+/* Label above the amount in expenses-only mode; %@ = period name like 'Este mes' */
+"panel.accounts.card.spentInPeriod %@" = "Speso · %@";
+
+/* Account detail sheet: money that came into the account in the period */
+"accountDetail.moneyIn" = "Entrate";
+
+/* Account detail sheet: money that left the account in the period */
+"accountDetail.moneyOut" = "Uscite";
+
+/* Account detail sheet: section with top expense categories */
+"accountDetail.topCategories" = "Dove sono finiti";
+
+/* Account detail sheet: section with latest records */
+"accountDetail.latest" = "Ultimi movimenti";
+
+/* Accessibility label of the balance chart; account name, period name */
+"accountDetail.chartLabel %@ %@" = "Saldo di %@ in %@";
+
+/* Account detail sheet: no records in the period */
+"accountDetail.empty" = "Nessun movimento in questo periodo";

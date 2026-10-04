@@ -118,13 +118,7 @@
 
 // KPI fallback (aiSubtitle takes the KPI slot when available)
 // Markdown bold (**amount**) renders via AttributedString(markdown:)
-"panel.hero.kpi.monthStart %@ %d" = "新的月份开始了,一步一步来。";
-"panel.hero.kpi.onTrack %@ %@ %@ %d" = "本月节奏不错,继续保持。";
-"panel.hero.kpi.neutral %@ %@ %@ %d" = "你的月份正在运转 — 一切井然有序。";
-"panel.hero.kpi.tight %@ %@ %d" = "本月有点紧但可控,一步一步来。";
-"panel.hero.kpi.overBudget %@ %@" = "明天重新开始,一切井然有序。";
 
-"panel.hero.upsellCTA" = "用 AI 个性化你的消息";
 "panel.hero.availableLabel" = "可用";
 
 // MARK: - Trend Widget
@@ -1688,7 +1682,6 @@
 "accessibility.skipSync" = "跳过等待并继续设置";
 "accessibility.tabLimitReached" = "已达标签上限";
 "accessibility.noTransactionsToExport" = "没有可导出的交易";
-"accessibility.accountCard %@ %@" = "账户 %@,余额 %@";
 "accessibility.editAccount" = "编辑账户";
 "accessibility.pageIndicator %d %d" = "第 %1$d 页 / 共 %2$d 页";
 "accessibility.accountRow %@ %@" = "账户 %@,货币 %@";
@@ -6260,3 +6253,30 @@
 "tutorials.applePay.pendingDrafts" = "收件箱中的 Apple Pay 付款：%d";
 "faceIDGuide.guarantee" = "Yala 永远看不到你的面容，由 iOS 负责验证。";
 "faceIDGuide.previewAction" = "要求面容 ID";
+
+/* Label above the amount on a Panel account card */
+"panel.accounts.card.balance" = "余额";
+
+/* Label above the amount on a credit card account with debt */
+"panel.accounts.card.toPay" = "待还款";
+
+/* Label above the amount in expenses-only mode; %@ = period name like 'Este mes' */
+"panel.accounts.card.spentInPeriod %@" = "支出 · %@";
+
+/* Account detail sheet: money that came into the account in the period */
+"accountDetail.moneyIn" = "流入";
+
+/* Account detail sheet: money that left the account in the period */
+"accountDetail.moneyOut" = "流出";
+
+/* Account detail sheet: section with top expense categories */
+"accountDetail.topCategories" = "钱花在哪儿";
+
+/* Account detail sheet: section with latest records */
+"accountDetail.latest" = "最近记录";
+
+/* Accessibility label of the balance chart; account name, period name */
+"accountDetail.chartLabel %@ %@" = "%@ 在 %@ 的余额";
+
+/* Account detail sheet: no records in the period */
+"accountDetail.empty" = "此期间没有记录";

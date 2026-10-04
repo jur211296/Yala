@@ -16,6 +16,12 @@ struct AccountFormSheet: Identifiable {
     let account: Account?
 }
 
+/// La ficha de una cuenta, que abre el toque en su tarjeta del Panel.
+struct AccountDetailPresentation: Identifiable {
+    let id = UUID()
+    let account: Account
+}
+
 /// Bundles all sheet-related state for PanelView.
 /// Owned as `@State` in PanelShell — SwiftUI tracks mutations internally,
 /// NOT through ObservationCenter, preventing the infinite render loop.
@@ -23,6 +29,9 @@ struct PanelSheetState {
     // Sheet presentations
     var isPresentingSettings = false
     var accountFormSheet: AccountFormSheet? = nil
+    var accountDetail: AccountDetailPresentation? = nil
+    /// Hoja de filtros (la misma de Estadísticas e Informes), desde la toolbar del Panel.
+    var showFilters = false
     /// Which section's preferences sheet is currently presented (P20-03).
     /// `nil` means no per-section prefs sheet is open. Driven via `.sheet(item:)`
     /// because `PanelSectionKind` conforms to `Identifiable`.
@@ -78,6 +87,8 @@ struct PanelSheetState {
     var hasActivePresentation: Bool {
         isPresentingSettings
             || accountFormSheet != nil
+            || accountDetail != nil
+            || showFilters
             || sectionPrefsPresentation != nil
             || showSectionsConfig
             || showNewTransaction

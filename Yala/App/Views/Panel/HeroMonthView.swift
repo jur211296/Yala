@@ -4,10 +4,7 @@
 //
 //  Hero del Panel (PP2-01). Sin card y edge-to-edge — aprovecha todo el
 //  ancho del Panel. Fila superior con saludo + `TrendsPeriodMenu`, y resumen
-//  "Disponible · Período". La frase motivacional (aiSubtitle / fallback
-//  rule-based) y el upsellCTA "Personaliza tu mensaje con IA" viven en el
-//  subtítulo de "Tus finanzas" — la lógica del KPI se expone vía
-//  `HeroMonthView.kpiText(...)` para que el callsite ahí pueda reusarla.
+//  "Disponible · Período".
 //
 //  Amounts use `appPreferences.currency(...)`, which is reactive: any change
 //  to decimalPlaces or currencyDisplayFormat invalidates the view immediately.
@@ -213,41 +210,6 @@ struct HeroMonthView: View {
             valor, currencyCode: currencyCode, isEstimate: esAproximado
         )
         return "\(summaryLabel) · \(selectedPeriod.displayName), \(monto)"
-    }
-
-    /// SSOT del KPI motivacional: LLM cuando disponible, si no un fallback
-    /// rule-based por estado (frase motivacional genérica; los montos income/
-    /// spent/available se pasan por compatibilidad de firma pero los strings
-    /// actuales no los interpolan). Static para reusarse desde otras secciones
-    /// del Panel (subtítulo de "Tus finanzas") sin duplicar la lógica.
-    static func kpiText(
-        data: HeroMonthData,
-        aiSubtitle: String?,
-        currencyCode: String,
-        appPreferences: AppPreferences
-    ) -> String {
-        if let aiSubtitle, !aiSubtitle.isEmpty { return aiSubtitle }
-        let income = appPreferences.currency(data.income, currencyCode: currencyCode)
-        let spent = appPreferences.currency(data.expense, currencyCode: currencyCode)
-        let available = appPreferences.currency(data.available, currencyCode: currencyCode)
-        switch data.state {
-        case .monthStart:
-            return L10n.Panel.Hero.kpiMonthStart(income: income, daysRemaining: data.daysRemaining)
-        case .onTrack:
-            return L10n.Panel.Hero.kpiOnTrack(
-                income: income, spent: spent, available: available, daysRemaining: data.daysRemaining
-            )
-        case .neutral:
-            return L10n.Panel.Hero.kpiNeutral(
-                income: income, spent: spent, available: available, daysRemaining: data.daysRemaining
-            )
-        case .tight:
-            return L10n.Panel.Hero.kpiTight(
-                spent: spent, available: available, daysRemaining: data.daysRemaining
-            )
-        case .overBudget:
-            return L10n.Panel.Hero.kpiOverBudget(spent: spent, income: income)
-        }
     }
 
 }

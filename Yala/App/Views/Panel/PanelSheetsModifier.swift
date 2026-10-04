@@ -26,6 +26,9 @@ struct PanelSheetsModifier: ViewModifier {
 
     @State private var showPracticeAlert = false
 
+    /// La hoja de filtros escribe en `SessionState` a través de este puente; el Panel recalcula solo al cambiar.
+    @State private var panelFilters = PanelSessionFilters()
+
     /// Deferred practice data — stored during callback, consumed in onDismiss.
     private struct DeferredPractice {
         let id: PersistentIdentifier
@@ -54,6 +57,17 @@ struct PanelSheetsModifier: ViewModifier {
                 .onDisappear {
                     viewModel.reloadAndRecalculate()
                 }
+            }
+            .sheet(item: $sheets.accountDetail) { presentation in
+                AccountDetailSheet(
+                    account: presentation.account,
+                    viewModel: viewModel,
+                    isExpensesOnlyMode: sessionState.isExpensesOnlyMode,
+                    onAccountChanged: { viewModel.reloadAndRecalculate() }
+                )
+            }
+            .sheet(isPresented: $sheets.showFilters) {
+                RecordsFiltersView(recordsViewModel: panelFilters)
             }
             .sheet(isPresented: $sheets.isPresentingSettings, onDismiss: {
                 viewModel.reloadAndRecalculate()
