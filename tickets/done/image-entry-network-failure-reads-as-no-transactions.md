@@ -1,6 +1,6 @@
 ---
 id: image-entry-network-failure-reads-as-no-transactions
-status: backlog
+status: done
 priority: high
 area: "image"
 created: 2026-10-04
@@ -34,3 +34,7 @@ Simulador (sin App Attest): Panel › «+» › Imagen › elegir cualquier foto
 Si Jürgen elige una de las propuestas del lienzo del registro por imagen, sus fallos «en lenguaje de usuario»
 (molde de `VoiceEntryFlowLogic`) cierran este ticket. Si no, el arreglo mínimo es distinguir el error del
 servicio de «no hay importes» y reusar `errorNoApiKey`.
+
+## Cerrado (2026-10-04)
+
+Lo arregla el rediseño C del registro por imagen (`image-entry-end-to-end-redesign`).

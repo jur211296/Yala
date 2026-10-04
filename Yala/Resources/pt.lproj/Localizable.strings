@@ -6350,3 +6350,51 @@
 
 /* Voice entry failure message: something went wrong, try again */
 "voice.failure.generic.message" = "Algo deu errado ao processar sua voz. Tente de novo em um instante.";
+
+/* Registro por imagen (propuesta C, 2026-10-04) */
+/* Image entry sheet title */
+"image.entry.title" = "Registrar com imagem";
+/* Image entry: what the user can bring and what Yala reads */
+"image.entry.subtitle" = "Um recibo, um print do banco ou um PDF. Eu tiro o valor, o estabelecimento e a data.";
+/* Image entry source: take a photo */
+"image.entry.camera" = "Câmera";
+/* Image entry source: pick from Photos */
+"image.entry.photos" = "Fotos";
+/* Image entry source: pick a file (image or PDF) */
+"image.entry.file" = "Arquivo";
+/* Image entry: hint that Photos allows up to 10 at once */
+"image.entry.multipleHint" = "Até 10 fotos de uma vez pelo Fotos";
+/* Image entry: reading one photo */
+"image.entry.readingOne" = "Lendo sua foto…";
+/* Image entry: reading several photos */
+"image.entry.readingMany" = "Lendo suas fotos…";
+/* Image entry: current reading step */
+"image.entry.readingStep" = "Procurando o valor";
+/* Image entry: photo %1 of %2 being read */
+"image.entry.readingProgress" = "Foto %1$d de %2$d";
+/* Image entry review title, one entry */
+"image.entry.reviewTitle" = "Isto é o que li";
+/* Image entry review title, %d entries */
+"image.entry.reviewTitleMany" = "Li %d registros";
+/* Image entry: one photo could not be read */
+"image.entry.photoFailedOne" = "1 foto não pôde ser lida";
+/* Image entry: %d photos could not be read */
+"image.entry.photoFailedMany" = "%d fotos não puderam ser lidas";
+/* Image entry: discard and pick another photo */
+"image.entry.otherPhoto" = "Outra foto";
+/* Accessibility: cancel reading the photo */
+"image.entry.cancelReading" = "Cancelar a leitura";
+/* Image entry failure: no amount found */
+"image.entry.failure.noAmount.title" = "Não encontrei um valor";
+/* Image entry failure: no amount found, what to try */
+"image.entry.failure.noAmount.message" = "Tente uma foto mais perto do total, ou outra imagem.";
+/* Image entry failure: the image could not be opened */
+"image.entry.failure.unreadable.title" = "Não consegui abrir esta imagem";
+/* Image entry failure: camera permission denied */
+"image.entry.failure.camera.title" = "O Yala não pode usar a câmera";
+/* Image entry failure: camera permission, how to fix */
+"image.entry.failure.camera.message" = "Permita nas Configurações para fotografar seus recibos.";
+/* Image entry failure: reading failed */
+"image.entry.failure.generic.title" = "Não consegui ler desta vez";
+/* Image entry failure: reading failed, the photo is fine */
+"image.entry.failure.generic.message" = "A foto está boa: a leitura falhou. Tente de novo daqui a pouco.";

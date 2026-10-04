@@ -6350,3 +6350,51 @@
 
 /* Voice entry failure message: something went wrong, try again */
 "voice.failure.generic.message" = "Beim Verarbeiten deiner Stimme ist etwas schiefgelaufen. Versuche es gleich noch einmal.";
+
+/* Registro por imagen (propuesta C, 2026-10-04) */
+/* Image entry sheet title */
+"image.entry.title" = "Mit Bild erfassen";
+/* Image entry: what the user can bring and what Yala reads */
+"image.entry.subtitle" = "Ein Beleg, ein Bank-Screenshot oder ein PDF. Ich lese Betrag, Händler und Datum heraus.";
+/* Image entry source: take a photo */
+"image.entry.camera" = "Kamera";
+/* Image entry source: pick from Photos */
+"image.entry.photos" = "Fotos";
+/* Image entry source: pick a file (image or PDF) */
+"image.entry.file" = "Datei";
+/* Image entry: hint that Photos allows up to 10 at once */
+"image.entry.multipleHint" = "Bis zu 10 Fotos auf einmal aus Fotos";
+/* Image entry: reading one photo */
+"image.entry.readingOne" = "Dein Foto wird gelesen …";
+/* Image entry: reading several photos */
+"image.entry.readingMany" = "Deine Fotos werden gelesen …";
+/* Image entry: current reading step */
+"image.entry.readingStep" = "Betrag wird gesucht";
+/* Image entry: photo %1 of %2 being read */
+"image.entry.readingProgress" = "Foto %1$d von %2$d";
+/* Image entry review title, one entry */
+"image.entry.reviewTitle" = "Das habe ich gelesen";
+/* Image entry review title, %d entries */
+"image.entry.reviewTitleMany" = "%d Einträge gelesen";
+/* Image entry: one photo could not be read */
+"image.entry.photoFailedOne" = "1 Foto konnte nicht gelesen werden";
+/* Image entry: %d photos could not be read */
+"image.entry.photoFailedMany" = "%d Fotos konnten nicht gelesen werden";
+/* Image entry: discard and pick another photo */
+"image.entry.otherPhoto" = "Anderes Foto";
+/* Accessibility: cancel reading the photo */
+"image.entry.cancelReading" = "Lesen abbrechen";
+/* Image entry failure: no amount found */
+"image.entry.failure.noAmount.title" = "Ich habe keinen Betrag gefunden";
+/* Image entry failure: no amount found, what to try */
+"image.entry.failure.noAmount.message" = "Versuch es mit einem Foto näher an der Summe oder mit einem anderen Bild.";
+/* Image entry failure: the image could not be opened */
+"image.entry.failure.unreadable.title" = "Ich konnte dieses Bild nicht öffnen";
+/* Image entry failure: camera permission denied */
+"image.entry.failure.camera.title" = "Yala kann die Kamera nicht nutzen";
+/* Image entry failure: camera permission, how to fix */
+"image.entry.failure.camera.message" = "Erlaube es in den Einstellungen, um deine Belege zu fotografieren.";
+/* Image entry failure: reading failed */
+"image.entry.failure.generic.title" = "Diesmal konnte ich es nicht lesen";
+/* Image entry failure: reading failed, the photo is fine */
+"image.entry.failure.generic.message" = "Das Foto ist in Ordnung: Das Lesen ist fehlgeschlagen. Versuch es gleich noch einmal.";

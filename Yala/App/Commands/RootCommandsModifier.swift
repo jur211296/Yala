@@ -95,8 +95,9 @@ enum ReceiptDropHandler {
         AppBootstrapper.shared.presentDroppedReceipt(url)
     }
 
-    /// La primera página del PDF como imagen, a 2× para que el texto del recibo se lea.
-    private static func firstPageJPEG(pdfData: Data) -> Data? {
+    /// La primera página del PDF como imagen, a 2× para que el texto del recibo se lea. También la usa Archivo en el
+    /// registro por imagen.
+    static func firstPageJPEG(pdfData: Data) -> Data? {
         guard let page = PDFDocument(data: pdfData)?.page(at: 0) else { return nil }
         let bounds = page.bounds(for: .mediaBox)
         let size = CGSize(width: bounds.width * 2, height: bounds.height * 2)

@@ -45,3 +45,28 @@ Encargo de **propuestas + espera**: el rediseño elegido NO se implementa en est
 - **Rebase:** Jürgen confirmó (2026-10-04) que el #351 no toca las pantallas de imagen: el build y las capturas
   del «antes» se hicieron sobre `origin/2.1` sin esperar su CI. El diff no compila nada, así que el rebase es
   solo de git.
+
+### Construcción de C (rama `encargo/2026-10-04-registro-por-imagen-propuesta-c`, PR propio)
+
+Ficheros (nota, no pregunta):
+- `Views/Image/ImageSelectionView.swift` — reescrita: fases elegir · leyendo · lo leído · fallo, a media altura
+  (`mediumFirst`), sin cuenta atrás ni alert.
+- `Views/Image/ImageCameraPicker.swift` (nuevo) — la cámara del sistema (`UIImagePickerController`).
+- `Logic/ImageEntryFlowLogic.swift` (nuevo) — error → fallo contado al usuario; qué hacer con las fotos que fallan.
+- `Views/Panel/PanelSheetsModifier.swift` + `PanelSheetState.swift` — fuera el salto a la Bandeja con varios.
+- `AppBootstrapper.swift` — compartir pasa por la puerta Pro.
+- `Commands/RootCommandsModifier.swift` — el render de la página 1 de un PDF, compartido con Archivo.
+- `UITestHooks.swift` — seam `-uitest-image-result one|incomplete|two|partial|none`.
+- `Info.plist` + 16 `InfoPlist.strings` — permiso de cámara (nuevo).
+- `L10n.swift` + 16 `Localizable.strings` — copy nuevo.
+- Tests: `ImageEntryFlowLogicTests`, `ImageEntryReviewUITests`; `qa/coverage-index.json`.
+
+Asumido:
+- **Reusar la fila de voz tal cual** (`VoiceDraftReviewCard`, `VoiceDraftReadiness`, `VoiceEntryFlowLogic.canSave`):
+  es la misma fila del registro; renombrarla es churn fuera de alcance.
+- **Cámara oculta si el aparato no tiene** (simulador incluido); permiso denegado → fallo con «Abrir Configuración».
+- **«Registrar a mano» del lienzo no entra**: sin importe, la salida es «Otra foto». Abrir Nuevo registro desde la
+  hoja pediría otra presentación encadenada.
+- **Práctica guiada**: tocar un ejemplo lo lee directamente (la foto ya se ve mientras se lee); fuera la hoja de
+  vista previa.
+- **El modelo y el proveedor de visión no cambian.**

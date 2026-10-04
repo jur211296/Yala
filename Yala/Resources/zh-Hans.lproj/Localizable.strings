@@ -6362,3 +6362,51 @@
 
 /* Voice entry failure message: something went wrong, try again */
 "voice.failure.generic.message" = "处理你的语音时出了点问题。请稍后重试。";
+
+/* Registro por imagen (propuesta C, 2026-10-04) */
+/* Image entry sheet title */
+"image.entry.title" = "用图片记账";
+/* Image entry: what the user can bring and what Yala reads */
+"image.entry.subtitle" = "收据、银行截图或 PDF 都可以。我会读出金额、商家和日期。";
+/* Image entry source: take a photo */
+"image.entry.camera" = "相机";
+/* Image entry source: pick from Photos */
+"image.entry.photos" = "照片";
+/* Image entry source: pick a file (image or PDF) */
+"image.entry.file" = "文件";
+/* Image entry: hint that Photos allows up to 10 at once */
+"image.entry.multipleHint" = "从照片一次最多选 10 张";
+/* Image entry: reading one photo */
+"image.entry.readingOne" = "正在读取你的照片…";
+/* Image entry: reading several photos */
+"image.entry.readingMany" = "正在读取你的照片…";
+/* Image entry: current reading step */
+"image.entry.readingStep" = "正在查找金额";
+/* Image entry: photo %1 of %2 being read */
+"image.entry.readingProgress" = "第 %1$d 张，共 %2$d 张";
+/* Image entry review title, one entry */
+"image.entry.reviewTitle" = "我读到的内容";
+/* Image entry review title, %d entries */
+"image.entry.reviewTitleMany" = "读到 %d 条记录";
+/* Image entry: one photo could not be read */
+"image.entry.photoFailedOne" = "有 1 张照片无法读取";
+/* Image entry: %d photos could not be read */
+"image.entry.photoFailedMany" = "有 %d 张照片无法读取";
+/* Image entry: discard and pick another photo */
+"image.entry.otherPhoto" = "换一张照片";
+/* Accessibility: cancel reading the photo */
+"image.entry.cancelReading" = "停止读取";
+/* Image entry failure: no amount found */
+"image.entry.failure.noAmount.title" = "没有找到金额";
+/* Image entry failure: no amount found, what to try */
+"image.entry.failure.noAmount.message" = "试试离总额更近的照片，或换一张图片。";
+/* Image entry failure: the image could not be opened */
+"image.entry.failure.unreadable.title" = "无法打开这张图片";
+/* Image entry failure: camera permission denied */
+"image.entry.failure.camera.title" = "Yala 无法使用相机";
+/* Image entry failure: camera permission, how to fix */
+"image.entry.failure.camera.message" = "请在设置中允许访问，以便拍摄你的收据。";
+/* Image entry failure: reading failed */
+"image.entry.failure.generic.title" = "这次没能读取";
+/* Image entry failure: reading failed, the photo is fine */
+"image.entry.failure.generic.message" = "照片没有问题：读取失败了。请稍后再试。";

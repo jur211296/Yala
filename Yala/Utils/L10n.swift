@@ -6618,6 +6618,40 @@ enum L10n {
         static var example3: String {
             ls("image.example3", comment: "")
         }
+
+        /// El registro por imagen de la propuesta C (2026-10-04): elegir, leer, revisar y fallar en la misma hoja.
+        enum Entry {
+            static var title: String { ls("image.entry.title", comment: "") }
+            static var subtitle: String { ls("image.entry.subtitle", comment: "") }
+            static var camera: String { ls("image.entry.camera", comment: "") }
+            static var photos: String { ls("image.entry.photos", comment: "") }
+            static var file: String { ls("image.entry.file", comment: "") }
+            static var multipleHint: String { ls("image.entry.multipleHint", comment: "") }
+            static var readingOne: String { ls("image.entry.readingOne", comment: "") }
+            static var readingMany: String { ls("image.entry.readingMany", comment: "") }
+            static var readingStep: String { ls("image.entry.readingStep", comment: "") }
+            static func readingProgress(_ current: Int, _ total: Int) -> String {
+                String(format: ls("image.entry.readingProgress", comment: ""), current, total)
+            }
+            static var reviewTitle: String { ls("image.entry.reviewTitle", comment: "") }
+            static func reviewTitleMany(_ count: Int) -> String {
+                String(format: ls("image.entry.reviewTitleMany", comment: ""), count)
+            }
+            static func photosFailed(_ count: Int) -> String {
+                count == 1
+                    ? ls("image.entry.photoFailedOne", comment: "")
+                    : String(format: ls("image.entry.photoFailedMany", comment: ""), count)
+            }
+            static var otherPhoto: String { ls("image.entry.otherPhoto", comment: "") }
+            static var cancelReading: String { ls("image.entry.cancelReading", comment: "") }
+            static var failureNoAmountTitle: String { ls("image.entry.failure.noAmount.title", comment: "") }
+            static var failureNoAmountMessage: String { ls("image.entry.failure.noAmount.message", comment: "") }
+            static var failureUnreadableTitle: String { ls("image.entry.failure.unreadable.title", comment: "") }
+            static var failureCameraTitle: String { ls("image.entry.failure.camera.title", comment: "") }
+            static var failureCameraMessage: String { ls("image.entry.failure.camera.message", comment: "") }
+            static var failureGenericTitle: String { ls("image.entry.failure.generic.title", comment: "") }
+            static var failureGenericMessage: String { ls("image.entry.failure.generic.message", comment: "") }
+        }
     }
 
     // MARK: - Face ID protection guide

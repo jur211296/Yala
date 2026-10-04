@@ -2,3 +2,4 @@
 "NSPhotoLibraryUsageDescription" = "Yala 使用你的照片从截图和收据中提取支出详情。所选图片将发送到 OpenAI。";
 "NSFaceIDUsageDescription" = "Yala 使用 Face ID 保护你的财务信息。";
 "NSPhotoLibraryAddUsageDescription" = "Yala 会把你选择保存的群组摘要存入相册。未经你的操作不会保存任何内容。";
+"NSCameraUsageDescription" = "Yala 使用相机拍摄你的收据并创建支出。照片会发送给 OpenAI 进行读取。";

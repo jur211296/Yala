@@ -2946,6 +2946,15 @@ final class AppBootstrapper {
     /// not accepted, presentation is deferred until the user accepts via the
     /// `aiConsentAlert` (whose callback opens the same image sheet).
     private func enqueueSharedImage(_ url: URL) {
+        // La misma puerta Pro que el resto de entradas (`executeAction(.imageEntry)`): hasta el 2026-10-04 compartir
+        // una foto registraba sin ser Pro. La foto se descarta: si se quedara en `PendingImages/`, la recuperación del
+        // arranque volvería a enseñar el aviso en cada vuelta a la app.
+        guard FeatureGateService.shared.canAccess(.imageInput) else {
+            SharedContainerService.removePendingImage(at: url)
+            RouterEntryGate.shared.submit(.navigate(.panel))
+            RouterEntryGate.shared.submit(.presentUpgradeSheet(.image))
+            return
+        }
         // En la ventana que está delante: es a la que el router sella los intents de abajo. El camino del
         // consentimiento abre la misma hoja después y la lee de ahí.
         SceneRegistry.shared.routingNavigation?.pendingSharedImageURL = url

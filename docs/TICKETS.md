@@ -421,9 +421,9 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | icloud-kv-prefs-cross-sessions-on-a-lent-phone | done | tickets/done/icloud-kv-prefs-cross-sessions-on-a-lent-phone.md |
 | icloud-sync-status-treats-non-ck-failures-as-success | backlog | tickets/backlog/icloud-sync-status-treats-non-ck-failures-as-success.md |
 | identity-uuid-repair-can-commit-half-done-after-a-read-failure | backlog | tickets/backlog/identity-uuid-repair-can-commit-half-done-after-a-read-failure.md |
-| image-entry-end-to-end-redesign | in-progress | tickets/in-progress/image-entry-end-to-end-redesign.md |
-| image-entry-multi-photo-drops-failures-silently | backlog | tickets/backlog/image-entry-multi-photo-drops-failures-silently.md |
-| image-entry-network-failure-reads-as-no-transactions | backlog | tickets/backlog/image-entry-network-failure-reads-as-no-transactions.md |
+| image-entry-end-to-end-redesign | qa | tickets/qa/image-entry-end-to-end-redesign.md |
+| image-entry-multi-photo-drops-failures-silently | done | tickets/done/image-entry-multi-photo-drops-failures-silently.md |
+| image-entry-network-failure-reads-as-no-transactions | done | tickets/done/image-entry-network-failure-reads-as-no-transactions.md |
 | import-activity-flag-describes-the-process-not-the-search | backlog | tickets/backlog/import-activity-flag-describes-the-process-not-the-search.md |
 | import-activity-latch-survives-an-icloud-account-change | backlog | tickets/backlog/import-activity-latch-survives-an-icloud-account-change.md |
 | inbox-convert-draft-to-group-expense | done | tickets/done/inbox-convert-draft-to-group-expense.md |
@@ -679,7 +679,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | settings-sign-out-scope-says-groups-stay-in-an-account-that-may-not-exist | backlog | tickets/backlog/settings-sign-out-scope-says-groups-stay-in-an-account-that-may-not-exist.md |
 | settlement-amount-edited-after-approval-leaves-the-bank-stale | backlog | tickets/backlog/settlement-amount-edited-after-approval-leaves-the-bank-stale.md |
 | settlement-approval-leaves-no-trace-so-a-rebridge-asks-again | done | tickets/done/settlement-approval-leaves-no-trace-so-a-rebridge-asks-again.md |
-| share-extension-image-skips-pro-gate | backlog | tickets/backlog/share-extension-image-skips-pro-gate.md |
+| share-extension-image-skips-pro-gate | done | tickets/done/share-extension-image-skips-pro-gate.md |
 | shared-state-guard-misses-wipelocalgroupsdomain | backlog | tickets/backlog/shared-state-guard-misses-wipelocalgroupsdomain.md |
 | sheet-size-follows-the-device-not-the-window | done | tickets/done/sheet-size-follows-the-device-not-the-window.md |
 | shell-and-wipe-alert-read-the-session-axis-differently | backlog | tickets/backlog/shell-and-wipe-alert-read-the-session-axis-differently.md |

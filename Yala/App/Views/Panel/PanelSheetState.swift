@@ -66,7 +66,6 @@ struct PanelSheetState {
 
     // Navigation flags (post-dismiss)
     var switchToImageAfterVoice = false
-    var navigateToInboxAfterImage = false
 
     // Setup trial
     var isVoiceSetupTrial = false
@@ -77,7 +76,7 @@ struct PanelSheetState {
     /// True si algún sheet/alert PROPIO del panel ocupa el presentation slot.
     /// Usado por el guard de drain de `.panel` (RouterConsumerGateLogic): con
     /// uno visible, drenar otro intent que setee un sheet lo descartaría.
-    /// NO incluye flags de coordinación post-dismiss (`navigateToInboxAfter*`,
+    /// NO incluye flags de coordinación post-dismiss (
     /// `switchToImageAfterVoice`, `pendingOpenChatAfterOnboarding`) ni estado
     /// de setup trial (`isVoiceSetupTrial`, `setupTrialExampleImages`,
     /// `practiceCleanupItem`) — no presentan nada por sí mismos.
