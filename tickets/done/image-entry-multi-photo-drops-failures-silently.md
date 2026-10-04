@@ -1,6 +1,6 @@
 ---
 id: image-entry-multi-photo-drops-failures-silently
-status: backlog
+status: done
 priority: medium
 area: "image"
 created: 2026-10-04
@@ -23,3 +23,7 @@ DEBUG y el resultado solo cuenta los borradores creados. No hay recuento de foto
 
 El resultado dice cuántas fotos no se pudieron leer y ofrece reintentarlas. Lo cubren las propuestas B y C del
 lienzo; con A queda igual.
+
+## Cerrado (2026-10-04)
+
+Lo arregla el rediseño C del registro por imagen (`image-entry-end-to-end-redesign`).

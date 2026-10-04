@@ -163,7 +163,6 @@ struct PanelSheetStateActivePresentationTests {
     @Test func coordinationFlags_doNotActivate() {
         var s = PanelSheetState()
         s.switchToImageAfterVoice = true
-        s.navigateToInboxAfterImage = true
         s.pendingOpenChatAfterOnboarding = true
         s.isVoiceSetupTrial = true
         s.isImageSetupTrial = true

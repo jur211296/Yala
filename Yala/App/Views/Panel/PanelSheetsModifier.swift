@@ -132,9 +132,6 @@ struct PanelSheetsModifier: ViewModifier {
                 handleImageSelectionDismiss()
             }) {
                 ImageSelectionView(
-                    onSavedToInbox: {
-                        sheets.navigateToInboxAfterImage = true
-                    },
                     exampleImages: sheets.setupTrialExampleImages,
                     onSetupTrialCompleted: sheets.isImageSetupTrial ? { itemID, itemName, kind, additionalIDs in
                         deferredImagePractice = DeferredPractice(
@@ -266,10 +263,6 @@ struct PanelSheetsModifier: ViewModifier {
             sheets.isImageSetupTrial = false
             sheets.setupTrialExampleImages = nil
             FeatureGateService.shared.disableSetupTrial(for: .imageInput)
-        }
-        if sheets.navigateToInboxAfterImage {
-            sheets.navigateToInboxAfterImage = false
-            sheets.showInbox = true
         }
 
         if let deferred = deferredImagePractice {

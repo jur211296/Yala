@@ -1,6 +1,6 @@
 ---
 id: share-extension-image-skips-pro-gate
-status: backlog
+status: done
 priority: medium
 area: "image"
 created: 2026-10-04
@@ -20,3 +20,7 @@ solo mira el consentimiento de IA y emite `.presentSharedImage`, que abre la hoj
 
 **Decidido por Jürgen (2026-10-04): es un hueco, se cierra.** El arreglo es el mismo `canAccess`
 → `.presentUpgradeSheet(.image)` que usa el router; va con el rediseño C.
+
+## Cerrado (2026-10-04)
+
+Lo arregla el rediseño C del registro por imagen (`image-entry-end-to-end-redesign`).

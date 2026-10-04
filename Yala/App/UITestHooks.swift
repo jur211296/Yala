@@ -384,6 +384,20 @@ final class UITestHooks {
         #endif
     }
 
+    /// Valor de `-uitest-image-result <one|incomplete|two|partial|none>`: el registro por imagen no abre Fotos ni llama
+    /// a la red. «Fotos» usa los recibos de ejemplo de la práctica guiada y la hoja «lee» lo que diga el perfil,
+    /// resuelto contra los datos sembrados (`one`: un gasto · `incomplete`: sin subcategoría · `two`: dos fotos, un gasto
+    /// cada una · `partial`: dos fotos y la segunda falla · `none`: ninguna trae importe). El selector de Fotos es de
+    /// otro proceso y en el simulador el servicio no contesta: sin esto no hay lectura que capturar ni probar.
+    nonisolated static var imageResult: String? {
+        #if DEBUG
+        guard isActive else { return nil }
+        return parseValue(after: "-uitest-image-result", from: ProcessInfo.processInfo.arguments)
+        #else
+        return nil
+        #endif
+    }
+
     /// `-uitest-invite-onboarding`: presenta el cover de GroupInviteOnboarding directo
     /// (sin CKShare real — no funciona en sim). Combinar con `-uitest-join-phase` para
     /// congelar la fase del GroupJoinIntentTracker y testear cada step determinista.

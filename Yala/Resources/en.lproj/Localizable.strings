@@ -6356,3 +6356,51 @@
 
 /* Voice entry failure message: something went wrong, try again */
 "voice.failure.generic.message" = "Something went wrong while processing your voice. Try again in a moment.";
+
+/* Registro por imagen (propuesta C, 2026-10-04) */
+/* Image entry sheet title */
+"image.entry.title" = "Add with an image";
+/* Image entry: what the user can bring and what Yala reads */
+"image.entry.subtitle" = "A receipt, a bank screenshot or a PDF. I’ll pick out the amount, the merchant and the date.";
+/* Image entry source: take a photo */
+"image.entry.camera" = "Camera";
+/* Image entry source: pick from Photos */
+"image.entry.photos" = "Photos";
+/* Image entry source: pick a file (image or PDF) */
+"image.entry.file" = "File";
+/* Image entry: hint that Photos allows up to 10 at once */
+"image.entry.multipleHint" = "Up to 10 photos at once from Photos";
+/* Image entry: reading one photo */
+"image.entry.readingOne" = "Reading your photo…";
+/* Image entry: reading several photos */
+"image.entry.readingMany" = "Reading your photos…";
+/* Image entry: current reading step */
+"image.entry.readingStep" = "Looking for the amount";
+/* Image entry: photo %1 of %2 being read */
+"image.entry.readingProgress" = "Photo %1$d of %2$d";
+/* Image entry review title, one entry */
+"image.entry.reviewTitle" = "Here’s what I read";
+/* Image entry review title, %d entries */
+"image.entry.reviewTitleMany" = "I read %d entries";
+/* Image entry: one photo could not be read */
+"image.entry.photoFailedOne" = "1 photo couldn’t be read";
+/* Image entry: %d photos could not be read */
+"image.entry.photoFailedMany" = "%d photos couldn’t be read";
+/* Image entry: discard and pick another photo */
+"image.entry.otherPhoto" = "Another photo";
+/* Accessibility: cancel reading the photo */
+"image.entry.cancelReading" = "Stop reading";
+/* Image entry failure: no amount found */
+"image.entry.failure.noAmount.title" = "I couldn’t find an amount";
+/* Image entry failure: no amount found, what to try */
+"image.entry.failure.noAmount.message" = "Try a photo closer to the total, or another image.";
+/* Image entry failure: the image could not be opened */
+"image.entry.failure.unreadable.title" = "I couldn’t open this image";
+/* Image entry failure: camera permission denied */
+"image.entry.failure.camera.title" = "Yala can’t use the camera";
+/* Image entry failure: camera permission, how to fix */
+"image.entry.failure.camera.message" = "Allow it in Settings to photograph your receipts.";
+/* Image entry failure: reading failed */
+"image.entry.failure.generic.title" = "I couldn’t read it this time";
+/* Image entry failure: reading failed, the photo is fine */
+"image.entry.failure.generic.message" = "The photo is fine: reading it failed. Try again in a moment.";
