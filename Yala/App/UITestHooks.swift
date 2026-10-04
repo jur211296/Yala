@@ -366,6 +366,11 @@ final class UITestHooks {
     /// no dependen de la red.
     nonisolated static var chatSuggestions: Bool { hasArg("-uitest-chat-suggestions") }
 
+    /// `-uitest-chat-draft`: el chat abre con un mensaje del asistente que propone dos registros —uno completo y otro
+    /// sin subcategoría— resueltos contra los datos sembrados. Sin red Yala IA no propone nada, y hace falta una card
+    /// en pantalla para capturar y probar su diseño.
+    nonisolated static var chatDraft: Bool { hasArg("-uitest-chat-draft") }
+
     /// `-uitest-invite-onboarding`: presenta el cover de GroupInviteOnboarding directo
     /// (sin CKShare real — no funciona en sim). Combinar con `-uitest-join-phase` para
     /// congelar la fase del GroupJoinIntentTracker y testear cada step determinista.

@@ -11,7 +11,8 @@
 //  - Respuesta: cada párrafo es su propio texto dentro de la burbuja.
 //
 //  Sin red no hay sugerencias ni respuestas: `-uitest-chat-suggestions` fija las tres sugerencias y
-//  `chatConversation` deja guardada una pregunta con su respuesta. Corre igual en iPhone (hoja) y en iPad (columna).
+//  `chatConversation` deja guardada una pregunta con su respuesta, y `-uitest-chat-draft` abre con dos registros
+//  propuestos. Corre igual en iPhone (hoja) y en iPad (columna).
 //
 
 import XCTest
@@ -23,14 +24,14 @@ final class ChatMessagingLayoutUITests: XCTestCase {
         XCUIDevice.shared.orientation = .portrait
     }
 
-    private func openChat(conversation: Bool = false) -> XCUIApplication {
+    private func openChat(conversation: Bool = false, drafts: Bool = false) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchForUITest(
             pro: true,
             deeplink: "records",
             aiChatReady: true,
             chatConversation: conversation,
-            extraArguments: ["-uitest-chat-suggestions"]
+            extraArguments: ["-uitest-chat-suggestions"] + (drafts ? ["-uitest-chat-draft"] : [])
         )
         XCTAssertTrue(app.waitForUITestReady(timeout: 90), "uitest_ready ausente — bootstrap/seed no completó.")
         let chatEntry = app.buttons["fab_chat"]
@@ -89,5 +90,18 @@ final class ChatMessagingLayoutUITests: XCTestCase {
         XCTAssertTrue(second.exists, "No se ve el segundo párrafo de la respuesta.")
         XCTAssertFalse(first.label.contains("La mayor parte es"), "Los dos párrafos salieron en un solo texto.")
         XCTAssertLessThan(first.frame.maxY, second.frame.minY, "El segundo párrafo debe ir debajo del primero.")
+    }
+
+    /// `-uitest-chat-draft` abre el chat con dos registros propuestos: el completo deja guardar y el que no tiene
+    /// subcategoría no. Es el seam con el que se captura y se prueba la card sin red; si deja de sembrar, el rediseño
+    /// de la card (ticket chat-draft-card-redesign) se queda sin forma de verse.
+    func test_draftSeam_showsTwoProposedRecords_onlyTheCompleteOneSaves() {
+        let app = openChat(drafts: true)
+
+        let save = app.buttons.matching(identifier: "Guardar")
+        XCTAssertTrue(save.firstMatch.waitForExistence(timeout: 10), "No sale ninguna card de registro propuesto.")
+        XCTAssertEqual(save.count, 2, "El seam debe proponer dos registros.")
+        XCTAssertTrue(save.element(boundBy: 0).isEnabled, "El registro completo debe poder guardarse.")
+        XCTAssertFalse(save.element(boundBy: 1).isEnabled, "Sin subcategoría no se puede guardar.")
     }
 }
