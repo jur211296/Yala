@@ -13,6 +13,7 @@ import SwiftUI
 struct GlobalSearchView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(SessionState.self) private var sessionState
+    @Environment(SceneNavigation.self) private var navigation
 
     @State private var searchText: String = ""
     @State private var isSearchActive: Bool = false
@@ -63,7 +64,7 @@ struct GlobalSearchView: View {
             }
         }
         // ⌘F (iPad con teclado): enfoca el campo aunque Buscar ya estuviera delante.
-        .onChange(of: sessionState.keyboardSearchRequest) { _, _ in isSearchActive = true }
+        .onChange(of: navigation.keyboardSearchRequest) { _, _ in isSearchActive = true }
     }
 }
 
@@ -72,6 +73,7 @@ struct GlobalSearchView: View {
 struct SearchContentView: View {
     @Environment(\.yalaTheme) private var theme
     @Environment(SessionState.self) private var sessionState
+    @Environment(SceneNavigation.self) private var navigation
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(\.tagCatalog) private var tagCatalog
@@ -225,7 +227,7 @@ struct SearchContentView: View {
                             // Navigate to Statistics > Records with search filter applied
                             sessionState.searchText = searchText
                             sessionState.selectedPeriod = .allTime
-                            sessionState.navigateToDetail(.records)
+                            navigation.navigateToDetail(.records)
                             // Clear local state - SessionState is now the source of truth
                             searchText = ""
                         } label: {
@@ -415,6 +417,7 @@ struct SearchResultRow: View {
 
 #Preview {
     GlobalSearchView()
+        .environment(SceneNavigation())
         .modelContainer(
             for: [
                 TransactionItem.self,

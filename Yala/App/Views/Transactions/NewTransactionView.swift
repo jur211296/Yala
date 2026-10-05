@@ -416,7 +416,8 @@ struct NewTransactionView: View {
                 AccountSelectorSheet(
                     selectedAccount: $viewModel.selectedAccount,
                     title: L10n.Transaction.account,
-                    currencyFilter: isBridgedCasoA ? transactionToEdit?.currencyCode : nil
+                    currencyFilter: isBridgedCasoA ? transactionToEdit?.currencyCode : nil,
+                    sizing: .mediumFirst
                 )
                 .onChange(of: viewModel.selectedAccount) { _, newAccount in
                     if let account = newAccount {
@@ -428,24 +429,27 @@ struct NewTransactionView: View {
                 AccountSelectorSheet(
                     selectedAccount: $viewModel.sourceAccount,
                     title: L10n.Transaction.sourceAccount,
-                    excludeAccount: viewModel.destinationAccount
+                    excludeAccount: viewModel.destinationAccount,
+                    sizing: .mediumFirst
                 )
             }
             .sheet(isPresented: $viewModel.showDestinationAccountSelector) {
                 AccountSelectorSheet(
                     selectedAccount: $viewModel.destinationAccount,
                     title: L10n.Transaction.destinationAccount,
-                    excludeAccount: viewModel.sourceAccount
+                    excludeAccount: viewModel.sourceAccount,
+                    sizing: .mediumFirst
                 )
             }
             .sheet(isPresented: $viewModel.showSubcategorySelector) {
                 SubcategorySelectorSheet(
                     selectedSubcategory: $viewModel.selectedSubcategory,
-                    transactionType: viewModel.transactionType
+                    transactionType: viewModel.transactionType,
+                    sizing: .mediumFirst
                 )
             }
             .sheet(isPresented: $viewModel.showTagSelector) {
-                TagSelectorSheet(selectedTags: $viewModel.selectedTags)
+                TagSelectorSheet(selectedTags: $viewModel.selectedTags, sizing: .mediumFirst)
             }
             .sheet(isPresented: $viewModel.showFavoritesSheet) {
                 FavoritesListView(mode: .select) { favorite in
@@ -1141,6 +1145,7 @@ struct NewTransactionView: View {
                             dismissKeyboard()
                             viewModel.showTagSelector = true
                         }
+                        .accessibilityIdentifier("new_transaction_tags_chip")
                     } else {
                         // Individual chip for each selected tag with remove button inside
                         // Styled to match SelectionChip size

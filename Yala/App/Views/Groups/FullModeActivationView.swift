@@ -40,6 +40,7 @@ struct FullModeActivationView: View {
 
     @Environment(\.modelContext) private var modelContext
     @Environment(SessionState.self) private var sessionState
+    @Environment(SceneNavigation.self) private var navigation
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -635,7 +636,7 @@ struct FullModeActivationView: View {
             TabBarConfiguration.default.toJSON(),
             forKey: TabBarConfiguration.storageKey
         )
-        sessionState.selectMainTab(.panel)
+        navigation.selectMainTab(.panel)
 
         onComplete()
     }

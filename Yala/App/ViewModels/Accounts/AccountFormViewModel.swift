@@ -48,7 +48,45 @@ final class AccountFormViewModel {
 
     // Actions
     var excludeFromStatistics: Bool = false
+    /// El toggle lo escribe por binding; la vista llama a `setArchived(_:)` en su `onChange` para
+    /// que archivar arrastre la exclusión de estadísticas.
     var isArchived: Bool = false
+
+    /// `true` si en ESTA edición fue archivar lo que encendió «Excluir de las estadísticas».
+    ///
+    /// Lo que decide si una cuenta suma es ese toggle, no estar archivada (decisión de Jürgen,
+    /// 2026-10-03). Archivar solo lo enciende por el usuario y se lo dice; este flag recuerda que
+    /// el cambio fue nuestro, para enseñar el aviso y para deshacerlo si desarchiva sin salir.
+    private(set) var excludedByArchiving: Bool = false
+
+    /// El aviso de «quedó excluida, puedes volver a incluirla» solo tiene sentido mientras siga
+    /// siendo verdad: archivada, excluida, y excluida por archivarla.
+    var showsArchiveExclusionNotice: Bool {
+        excludedByArchiving && isArchived && excludeFromStatistics
+    }
+
+    /// Archivar enciende «Excluir de las estadísticas» si estaba apagado. Desarchivar en la misma
+    /// edición deshace SOLO lo que hizo archivar; desarchivar una cuenta ya guardada como
+    /// archivada no la re-incluye, porque el toggle sigue siendo del usuario.
+    func setArchived(_ archived: Bool) {
+        isArchived = archived
+        if archived {
+            guard !excludeFromStatistics else { return }
+            excludeFromStatistics = true
+            excludedByArchiving = true
+        } else if excludedByArchiving {
+            excludeFromStatistics = false
+            excludedByArchiving = false
+        }
+    }
+
+    /// El usuario tocó «Excluir de las estadísticas». Si la vuelve a incluir, la exclusión deja de
+    /// ser obra de archivar: desde ahí el toggle es suyo, y desarchivar ya no lo apagará aunque
+    /// después lo vuelva a encender a mano. `setArchived` solo lo enciende, así que su propio
+    /// `onChange` (con `true`) no pasa por aquí.
+    func excludeChanged(to excluded: Bool) {
+        if !excluded { excludedByArchiving = false }
+    }
 
     // Credit card
     var creditCardPaymentReminder: Bool = false

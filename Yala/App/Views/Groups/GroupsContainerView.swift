@@ -14,6 +14,7 @@ struct GroupsContainerView: View {
     // MARK: - Environment
 
     @Environment(SessionState.self) private var sessionState
+    @Environment(SceneNavigation.self) private var navigation
     @Environment(\.modelContext) private var modelContext
     @Environment(\.yalaTheme) private var theme
     @Environment(\.openURL) private var openURL
@@ -317,15 +318,15 @@ struct GroupsContainerView: View {
                 maybeShowGroupsNotificationPrompt()
             }
             // Deep link: open a specific group detail once the group list is available.
-            .onChange(of: sessionState.pendingGroupID, initial: true) { _, _ in
+            .onChange(of: navigation.pendingGroupID, initial: true) { _, _ in
                 openPendingGroupIfAvailable()
             }
             // FAB del Panel ("Grupo"): abre el composer "Nuevo gasto" al llegar al tab.
-            .onChange(of: sessionState.pendingNewGroupExpense, initial: true) { _, _ in
+            .onChange(of: navigation.pendingNewGroupExpense, initial: true) { _, _ in
                 openExpenseComposerIfRequested()
             }
             // G3: último paso de la rama organizador del Welcome — el formulario de grupo, directo.
-            .onChange(of: sessionState.pendingNewGroupForm, initial: true) { _, _ in
+            .onChange(of: navigation.pendingNewGroupForm, initial: true) { _, _ in
                 openGroupFormIfRequested()
             }
             .onChange(of: viewModel.groups.count, initial: true) { _, _ in
@@ -505,6 +506,9 @@ struct GroupsContainerView: View {
                 Button(L10n.Keyboard.openGroup, systemImage: "arrow.up.right.square") {
                     viewModel.openDetail(for: group)
                 }
+                // Misma puerta que «Abrir»: la ventana nueva aterriza por `pendingGroupID`, que vuelve a pasar por
+                // la de aprobación pendiente.
+                OpenInNewWindowButton(route: .group(id: group.id.uuidString))
             }
             if let eligibles = expenseTargets(for: group) {
                 Button(L10n.Groups.Expense.newExpense, systemImage: "plus") {
@@ -552,7 +556,7 @@ struct GroupsContainerView: View {
         #endif
         let shouldShow = GroupsOnboardingLogic.shouldShow(
             hasSeenEducational: hasSeenGroupsEducational,
-            hasPendingGroupDeeplink: sessionState.pendingGroupID != nil
+            hasPendingGroupDeeplink: navigation.pendingGroupID != nil
         )
         if shouldShow {
             showGroupsOnboarding = true
@@ -560,12 +564,12 @@ struct GroupsContainerView: View {
     }
 
     private func openPendingGroupIfAvailable() {
-        guard let groupID = sessionState.pendingGroupID,
+        guard let groupID = navigation.pendingGroupID,
               let uuid = UUID(uuidString: groupID),
               let group = viewModel.activeGroups.first(where: { $0.id == uuid })
         else { return }
 
-        sessionState.pendingGroupID = nil
+        navigation.pendingGroupID = nil
 
         // La puerta también se cierra aquí (decisión owner 2026-09-06). `activeGroups` filtra por
         // archivado/oculto y NO por el status del miembro, así que sin este gate un deep link de
@@ -583,11 +587,11 @@ struct GroupsContainerView: View {
     /// no tiene ninguno), el flag persiste y el `.onChange(of: groups.count)` reintenta
     /// al llegar el primero — abriendo el composer tras crear el primer grupo.
     private func openExpenseComposerIfRequested() {
-        guard sessionState.pendingNewGroupExpense else { return }
+        guard navigation.pendingNewGroupExpense else { return }
         let eligibles = viewModel.eligibleGroupsForExpense()
         guard let first = eligibles.first else { return }
 
-        sessionState.pendingNewGroupExpense = false
+        navigation.pendingNewGroupExpense = false
         expenseComposerPayload = ExpenseComposerPayload(groups: eligibles, initialGroup: first)
     }
 
@@ -597,8 +601,8 @@ struct GroupsContainerView: View {
     /// que es justo el motivo de abrir el form. Si el sheet no llegara a presentarse, la red es el empty
     /// state estándar con su CTA «crear grupo», que ya existe.
     private func openGroupFormIfRequested() {
-        guard sessionState.pendingNewGroupForm else { return }
-        sessionState.pendingNewGroupForm = false
+        guard navigation.pendingNewGroupForm else { return }
+        navigation.pendingNewGroupForm = false
         Task { await requestCreateGroup() }
     }
 
@@ -610,7 +614,7 @@ struct GroupsContainerView: View {
     private func maybeShowGroupsNotificationPrompt() {
         guard !appPreferences.hasSeenGroupsNotificationPrompt,
               !viewModel.activeGroups.isEmpty,
-              !sessionState.pendingNewGroupExpense,
+              !navigation.pendingNewGroupExpense,
               expenseComposerPayload == nil
         else { return }
         showNotificationPrompt = true
@@ -621,7 +625,7 @@ struct GroupsContainerView: View {
         case .activateFullMode:
             RouterEntryGate.shared.submit(.presentFullModeActivation)
         case .openPanel:
-            sessionState.selectMainTab(.panel)
+            navigation.selectMainTab(.panel)
         case .openGroupDetail:
             // Tercera puerta. `activeGroups.first` puede ser perfectamente el grupo en el que aún
             // estoy pendiente —si es el único que tengo, lo es siempre—, así que se elige el primero

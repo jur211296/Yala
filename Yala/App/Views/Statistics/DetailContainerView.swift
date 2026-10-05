@@ -17,11 +17,13 @@ struct DetailContainerView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(SessionState.self) private var sessionState
+    @Environment(SceneNavigation.self) private var navigation
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.yalaTheme) private var theme
     @Environment(\.scenePhase) private var scenePhase
     /// Size class de la ventana: en ancha el chip Registros abre el registro en un panel al lado de la lista.
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     // MARK: - ViewModels
 
@@ -175,19 +177,19 @@ struct DetailContainerView: View {
                 }
             }
             .task {
-                if selectedTab != sessionState.selectedDetailTab {
-                    selectedTab = sessionState.selectedDetailTab
+                if selectedTab != navigation.selectedDetailTab {
+                    selectedTab = navigation.selectedDetailTab
                 }
             }
-            .onChange(of: sessionState.selectedDetailTab) { _, newValue in
+            .onChange(of: navigation.selectedDetailTab) { _, newValue in
                 if selectedTab != newValue { selectedTab = newValue }
             }
             .onChange(of: selectedTab) { _, newTab in
                 if newTab != .records {
                     recordsViewModel.exitDuplicateMode()   // modo efímero: se apaga al salir del tab Registros
                 }
-                if sessionState.selectedDetailTab != newTab {
-                    sessionState.selectedDetailTab = newTab
+                if navigation.selectedDetailTab != newTab {
+                    navigation.selectedDetailTab = newTab
                 }
                 // .categories también consume insightData.periodSummary (gate >=5 tx
                 // del Distribution Insight Card) — disparar recalculation también ahí.
@@ -195,7 +197,7 @@ struct DetailContainerView: View {
                     scheduleRecalculation(reload: false)
                 }
             }
-            .onChange(of: sessionState.selectedMainTab) { _, newTab in
+            .onChange(of: navigation.selectedMainTab) { _, newTab in
                 // Sync filters when navigating to Statistics tab (view may already be mounted)
                 if newTab == .statistics && !isFromSearch {
                     recalculateData()
@@ -256,7 +258,10 @@ struct DetailContainerView: View {
                     .padding(.vertical, DS.Spacing.sm)
             }
 
-            if selectedTab == .records && !recordsViewModel.isSelectionMode && !recordPaneCoversList {
+            // Yala IA y «+» en las cuatro pestañas, no solo en Registros: en el Panel «Nuevo registro» está siempre a
+            // mano (la fila del hero o, al bajar, estos mismos flotantes), y Estadísticas lleva ya su hero
+            // (`HeroHeader`). Decisión del 2026-10-03, ticket `distribution-subviews-miss-the-new-panel-hero`.
+            if !recordsViewModel.isSelectionMode && !recordPaneCoversList {
                 VStack {
                     Spacer()
                     HStack {
@@ -368,9 +373,14 @@ struct DetailContainerView: View {
     /// el molde de la página Registros). Sin `NavigationSplitView`: este chip vive dentro de la pila de Estadísticas.
     private var recordsOpensInPane: Bool { horizontalSizeClass == .regular }
 
+    /// Anchos de la lista, los de `ListDetailSplit`: más ancha con texto de accesibilidad.
+    private var recordsListWidths: DS.Adaptive.ListColumnWidths {
+        DS.Adaptive.listColumnWidths(isAccessibilityText: dynamicTypeSize.isAccessibilitySize)
+    }
+
     /// Lista y panel caben lado a lado: dos anchos de iPhone, la misma regla que `ListDetailSplit`.
     private var recordsSideBySide: Bool {
-        recordsOpensInPane && recordsWidth >= 2 * DS.Adaptive.listColumnMinWidth
+        recordsOpensInPane && recordsWidth >= 2 * recordsListWidths.min
     }
 
     /// Sin sitio para los dos, el registro abierto tapa la lista; su X la devuelve.
@@ -380,7 +390,7 @@ struct DetailContainerView: View {
 
     /// Ancho de la lista cuando va al lado del panel; `nil` (todo) si no.
     private var recordsListWidth: CGFloat? {
-        selectedTab == .records && recordsSideBySide ? DS.Adaptive.listColumnIdealWidth : nil
+        selectedTab == .records && recordsSideBySide ? recordsListWidths.ideal : nil
     }
 
     /// El registro abierto, resuelto contra lo cargado (nunca `model(for:)`, que fabrica un objeto aunque ya no
@@ -407,7 +417,7 @@ struct DetailContainerView: View {
                 defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue,
                 onFilterChange: { recalculateData() }
             )
-            .frame(width: sideBySide ? DS.Adaptive.listColumnIdealWidth : nil)
+            .frame(width: sideBySide ? recordsListWidths.ideal : nil)
             .overlay(alignment: .trailing) {
                 if sideBySide { Divider() }
             }
@@ -762,6 +772,7 @@ struct DetailContainerView: View {
     NavigationStack {
         DetailContainerView()
     }
+    .environment(SceneNavigation())
     .previewAppPreferences()
 }
 

@@ -2,3 +2,4 @@
 "NSPhotoLibraryUsageDescription" = "Yala używa twoich zdjęć do wyodrębniania szczegółów wydatków ze zrzutów ekranu i paragonów. Wybrane obrazy są wysyłane do OpenAI.";
 "NSFaceIDUsageDescription" = "Yala używa Face ID do ochrony twoich informacji finansowych.";
 "NSPhotoLibraryAddUsageDescription" = "Yala zapisuje w Twoich zdjęciach podsumowania grupy, które wybierzesz. Nic nie jest zapisywane bez Twojej prośby.";
+"NSCameraUsageDescription" = "Yala używa aparatu, aby fotografować paragony i tworzyć wydatki. Zdjęcie jest wysyłane do OpenAI w celu odczytu.";

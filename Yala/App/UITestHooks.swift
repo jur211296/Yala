@@ -361,6 +361,43 @@ final class UITestHooks {
     /// probar que redimensionar la ventana con Yala IA abierto no la pierde.
     nonisolated static var chatConversation: Bool { hasArg("-uitest-chat-conversation") }
 
+    /// `-uitest-chat-suggestions`: el chat vacío enseña tres sugerencias fijas en vez de pedirlas al LLM. Sin red las
+    /// sugerencias fallan, y con el fallo la caja de escribir se apaga: así el XCUITest y las capturas del chat vacío
+    /// no dependen de la red.
+    nonisolated static var chatSuggestions: Bool { hasArg("-uitest-chat-suggestions") }
+
+    /// `-uitest-chat-draft`: el chat abre con un mensaje del asistente que propone dos registros —uno completo y otro
+    /// sin subcategoría— resueltos contra los datos sembrados. Sin red Yala IA no propone nada, y hace falta una card
+    /// en pantalla para capturar y probar su diseño.
+    nonisolated static var chatDraft: Bool { hasArg("-uitest-chat-draft") }
+
+    /// Valor de `-uitest-voice-result <one|incomplete|two>`: el registro por voz no graba ni llama a la red. La hoja
+    /// abre escuchando sin pedir el micro y, al tocar Listo, «entiende» lo que diga el perfil, resuelto contra los datos
+    /// sembrados (`one`: un gasto completo · `incomplete`: sin subcategoría · `two`: dos gastos completos). Sin red no
+    /// hay transcripción, y hacen falta borradores en pantalla para capturar y probar «Lo entendido».
+    nonisolated static var voiceResult: String? {
+        #if DEBUG
+        guard isActive else { return nil }
+        return parseValue(after: "-uitest-voice-result", from: ProcessInfo.processInfo.arguments)
+        #else
+        return nil
+        #endif
+    }
+
+    /// Valor de `-uitest-image-result <one|incomplete|two|partial|none>`: el registro por imagen no abre Fotos ni llama
+    /// a la red. «Fotos» usa los recibos de ejemplo de la práctica guiada y la hoja «lee» lo que diga el perfil,
+    /// resuelto contra los datos sembrados (`one`: un gasto · `incomplete`: sin subcategoría · `two`: dos fotos, un gasto
+    /// cada una · `partial`: dos fotos y la segunda falla · `none`: ninguna trae importe). El selector de Fotos es de
+    /// otro proceso y en el simulador el servicio no contesta: sin esto no hay lectura que capturar ni probar.
+    nonisolated static var imageResult: String? {
+        #if DEBUG
+        guard isActive else { return nil }
+        return parseValue(after: "-uitest-image-result", from: ProcessInfo.processInfo.arguments)
+        #else
+        return nil
+        #endif
+    }
+
     /// `-uitest-invite-onboarding`: presenta el cover de GroupInviteOnboarding directo
     /// (sin CKShare real — no funciona en sim). Combinar con `-uitest-join-phase` para
     /// congelar la fase del GroupJoinIntentTracker y testear cada step determinista.

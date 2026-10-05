@@ -46,12 +46,16 @@ final class CloudSessionSignOut {
     enum DetachOutcome: Equatable {
         /// La cuenta se soltó y el dominio Grupos ya no está en este teléfono.
         case detached
-        /// No se soltó nada, y no se escribió nada irreversible. La fase queda en `.blocked` con su
-        /// motivo y la pantalla lo lee de ahí, como antes. **No se llama `blockedByPush` a propósito**:
-        /// cubre también el abort por un puente que no se pudo ni mirar, que no tiene nada que ver con
-        /// subir cambios — y con ese nombre el mensaje que salía («quedan cambios sin subir, inténtalo en
-        /// un momento») describía un problema que no era y daba un consejo que no arreglaba nada.
-        case blockedBeforeWriting
+        /// No se soltó nada, y no se escribió nada irreversible. **El motivo viaja AQUÍ y la fase vuelve a
+        /// `.idle` antes de devolver** (ticket `detach-blocked-phase-is-stranded-when-the-storage-sheet-closes-mid-wait`):
+        /// hasta el 2026-10-02 la fase se quedaba en `.blocked` y la pantalla la leía de ahí, así que con la hoja de
+        /// Almacenamiento cerrada a mitad de la espera nadie la reconocía —su aviso se escribía en una vista ya
+        /// desmontada— y «Cerrar sesión» y el desasociar siguiente chocaban con un bloqueo que nadie iba a quitar.
+        /// Ver `releaseDetachBlock`. **No se llama `blockedByPush` a propósito**: cubre también el abort por un puente
+        /// que no se pudo ni mirar, que no tiene nada que ver con subir cambios — y con ese nombre el mensaje que salía
+        /// («quedan cambios sin subir, inténtalo en un momento») describía un problema que no era y daba un consejo
+        /// que no arreglaba nada.
+        case blockedBeforeWriting(reason: CloudSignOutFlowLogic.BlockReason)
         /// **La cuenta se cerró en la nube pero el borrado local NO entró.** Los grupos siguen en el
         /// teléfono y la asociación sigue en pie a propósito. Se le ofrece reintentar el borrado.
         case purgeFailed
@@ -59,7 +63,17 @@ final class CloudSessionSignOut {
         case busy
     }
 
-    private(set) var phase: Phase = .idle
+    private(set) var phase: Phase = .idle {
+        // Con varias ventanas, quién lanzó el cierre se fija al entrar en `.working` (fase 4 del carril adaptativo).
+        didSet { SceneRegistry.shared.signOutPhaseDidChange(from: oldValue, to: phase) }
+    }
+
+    /// `true` mientras corre un desasociar o su reintento del borrado. **Es del coordinador y no de la vista**: la hoja de
+    /// Almacenamiento puede cerrarse y volver a abrirse a mitad de la espera (hasta un minuto), y una sección nueva no
+    /// hereda el `@State` de la que lanzó el gesto. Sin esto, la reabierta no pintaba el spinner y un toque en
+    /// «Desasociar» chocaba con el gesto en vuelo y decía «Estás cerrando sesión», que es falso. No sirve `phase` a
+    /// secas: `.working` es también la de un cierre de sesión.
+    private(set) var isDetaching = false
 
     /// `true` mientras el sign-out solo-grupos ESPERA a que se asienten writes pendientes
     /// (quiescencia del import + retry interno con presupuesto, H-2026-07-18-6). La fila de
@@ -180,7 +194,8 @@ final class CloudSessionSignOut {
     ///     escribe el borrado — ver `purgeGroupsDomainForDetach`.
     ///
     /// El bloqueo por cambios sin subir se comporta como el del cierre —«nunca descarta»—: si el push-all
-    /// no vacía, la fase queda en `.blocked` y **no se suelta nada**. Reintentar es seguro porque hasta el
+    /// no vacía, el gesto devuelve `.blockedBeforeWriting` con el motivo y **no se suelta nada** (la fase vuelve a `.idle`:
+    /// `releaseDetachBlock`). Reintentar es seguro porque hasta el
     /// paso 2 no se ha escrito nada. Lo mismo si la sesión en la nube **sobrevive** a su cierre (`.sessionNotClosed`):
     /// el cierre va delante del paso 2 y se comprueba, porque con la sesión viva el borrado del paso 3 se deshace solo
     /// en el siguiente primer plano, y peor.
@@ -226,7 +241,11 @@ final class CloudSessionSignOut {
         // Con la subida de «Empezar de cero» en vuelo tampoco: sube el mismo outbox (`freshStartDrainInFlight`).
         guard phase == .idle, !freshStartDrainInFlight else { return .busy }
         phase = .working
-        defer { waitingForPending = false }
+        isDetaching = true
+        defer {
+            waitingForPending = false
+            isDetaching = false
+        }
         // El desasociar no hereda lo que un cierre aceptó perder, ni ofrece esa salida: ver `lossExit: nil` abajo.
         groupsLossExit = nil
         acceptedGroupsLoss = nil
@@ -241,7 +260,9 @@ final class CloudSessionSignOut {
         //
         // **`lossExit: nil` es la decisión de Jürgen** (2026-09-15): con el teléfono sin App Attest el desasociar enseña el
         // aviso terminal y NO ofrece soltar la cuenta perdiendo los cambios. Solo los cierres de sesión lo ofrecen.
-        guard await pushGroupsForSignOut(context: context, lossExit: nil) else { return .blockedBeforeWriting }
+        guard await pushGroupsForSignOut(context: context, lossExit: nil) else {
+            return .blockedBeforeWriting(reason: releaseDetachBlock())
+        }
 
         // Canal fuera + espejo del outbox del App Group purgado. Idempotente.
         GroupsSyncClient.shared.teardownForSignOut()
@@ -253,7 +274,7 @@ final class CloudSessionSignOut {
         guard residual == 0 else {
             phase = .blocked(pendingCount: residual, reason: .permanent)
             CloudSyncBreadcrumb.signOutPushBlocked(pending: residual)
-            return .blockedBeforeWriting
+            return .blockedBeforeWriting(reason: releaseDetachBlock())
         }
 
         // El consent de Grupos NO se limpia aquí, a diferencia del cierre de sesión. Es un snapshot
@@ -279,59 +300,94 @@ final class CloudSessionSignOut {
             // Fuera de `#if DEBUG`: el ticket dejó sin medir si esto pasa en la flota, y este es el sitio donde
             // se ve.
             MetricsService.canary(.groupsDetachSessionSurvived, detail: "choice=\(choice == .keep ? "keep" : "remove")")
-            return .blockedBeforeWriting
+            return .blockedBeforeWriting(reason: releaseDetachBlock())
         }
 
         // ── Punto de no retorno ──
-
-        // (2) El puente, con las filas `Split*` todavía limpias. **Si no se pudo ni mirarlo, se ABORTA**:
-        // seguir adelante borraría las filas de los grupos dejando las transacciones puenteadas
-        // apuntando a una zona que ya no existe, y a ésas no las recoge ningún barrido — el veredicto de
-        // zona que `OrphanedBridgedTxSweeper` exige se construye de filas vivas. Sería dinero atrapado
-        // para siempre, y hasta aquí no se ha escrito nada irreversible. La sesión ya está cerrada, y eso no
-        // suelta nada: la asociación sigue en pie, la sección pasa a la celda del segundo móvil y el reintento
-        // no necesita sesión con el outbox vacío.
         //
-        // **Y «no se pudo mirar» incluye que su propio `save()` fallara**: `detachBridge` devuelve `nil`
-        // en los dos casos desde el 2026-09-11. Antes, un save fallido devolvía un `Outcome` vacío que
-        // este `guard` leía como éxito.
-        guard GroupsAssociationDetach.detachBridge(
-            context: context, choice: choice, associatedSub: associatedSub) != nil else {
+        // (2) y (3), el puente y el borrado, van JUNTOS por `writeDetachUnderQuiescence`, que vuelve a pedir la
+        // quiescencia del store personal pegada a sus dos `save()` (ticket
+        // `detach-saves-the-personal-graph-outside-the-quiescence-window`). La que se comprobó dentro del push-all ya
+        // no vale aquí: entre ella y estos `save()` hay hasta 20 ciclos con red, sus pausas y el `signOut()` de
+        // arriba, y en `.icloud` el espejo sigue vivo sobre el `mainContext` compartido. Un import que arranque en
+        // esa ventana y un `save()` del puente —que escribe el grafo PERSONAL, `TransactionItem` e `InboxDraft`—
+        // son el `_assertionFailure` que ningún `do/catch` atrapa, y este camino no termina en un boot-wipe que lo
+        // tape.
+        //
+        // **La sesión se vuelve a mirar DESPUÉS de la espera** (`stillMayWrite`): hasta 60 s con la app usable dejan
+        // volver a entrar, y escribir con la sesión de vuelta es el daño que la comprobación de arriba impide.
+        switch await Self.writeDetachUnderQuiescence(
+            context: context, bridge: .init(choice: choice, associatedSub: associatedSub),
+            stillMayWrite: { CloudAuthService.shared.storedSessionIsGone }) {
+        case .preconditionLost:
+            // La sesión volvió mientras se esperaba la quietud: lo mismo que si hubiera sobrevivido a su cierre.
+            phase = .blocked(pendingCount: 0, reason: .sessionNotClosed)
+            MetricsService.canary(
+                .groupsDetachSessionSurvived,
+                detail: "choice=\(choice == .keep ? "keep" : "remove") after=quiescence")
+            return .blockedBeforeWriting(reason: releaseDetachBlock())
+        case .notQuiescent, .bridgeUnreadable:
+            // **Si el store no se quedó quieto, o el puente no se pudo ni mirar, se ABORTA sin escribir nada**:
+            // seguir adelante borraría las filas de los grupos dejando las transacciones puenteadas apuntando a
+            // una zona que ya no existe, y a ésas no las recoge ningún barrido — el veredicto de zona que
+            // `OrphanedBridgedTxSweeper` exige se construye de filas vivas. Sería dinero atrapado para siempre, y
+            // hasta aquí no se ha escrito nada irreversible. La sesión ya está cerrada, y eso no suelta nada: la
+            // asociación sigue en pie, la sección pasa a la celda del segundo móvil y el reintento no necesita
+            // sesión con el outbox vacío.
+            //
+            // **«No se pudo mirar» incluye que el `save()` del puente fallara** (`detachBridge` devuelve `nil` en
+            // los dos casos desde el 2026-09-11) **y que el store no se quedara quieto a tiempo**: los dos dejan los
+            // movimientos del Panel sin revisar y nada soltado, y el aviso de `.bridgeUnreadable` dice exactamente
+            // eso. `.transient` diría «quedan cambios de tus grupos sin subir», y aquí el push-all ya drenó.
             phase = .blocked(pendingCount: 0, reason: .bridgeUnreadable)
-            return .blockedBeforeWriting
-        }
-
-        // (3) Con el canal cortado y sin credenciales: las filas, el outbox y el cursor, de una vez.
-        //
-        // **Es la última CONDICIÓN del gesto, no su último paso.** Todo lo de abajo afirma que la cuenta
-        // ya no está aquí, y eso solo es cierto si esto entró. Un `catch` que siguiera adelante —lo que
-        // había hasta el 2026-09-11— dejaba la asociación borrada sobre unos grupos enteros: la pantalla
-        // decía una cosa y el teléfono otra, y la que se equivocaba era la pantalla.
-        do {
-            try Self.purgeGroupsDomainForDetach(context: context)
-        } catch {
-            #if DEBUG
-            print("CloudSessionSignOut: borrado local del dominio de grupos falló: \(error)")
-            #endif
-            // **La marca es DURABLE porque la fase no lo es.** Sin ella, al reabrir la app la sección
-            // volvería a ofrecer el gesto entero con sus dos salidas, y la segunda ya no puede aplicarse:
-            // el puente está soltado. Ver `GroupsDetachPendingPurge`.
+            return .blockedBeforeWriting(reason: releaseDetachBlock())
+        case .purgeFailed:
+            // **El borrado es la última CONDICIÓN del gesto, no su último paso.** Todo lo de abajo afirma que la
+            // cuenta ya no está aquí, y eso solo es cierto si esto entró. Un `catch` que siguiera adelante —lo que
+            // había hasta el 2026-09-11— dejaba la asociación borrada sobre unos grupos enteros: la pantalla decía
+            // una cosa y el teléfono otra, y la que se equivocaba era la pantalla.
+            //
+            // **La marca es DURABLE porque la fase no lo es.** Sin ella, al reabrir la app la sección volvería a
+            // ofrecer el gesto entero con sus dos salidas, y la segunda ya no puede aplicarse: el puente está
+            // soltado. Ver `GroupsDetachPendingPurge`.
             GroupsDetachPendingPurge.arm(sub: associatedSub)
-            // Canario FUERA de `#if DEBUG`, molde `freshStartWipeFailed`: este fallo era invisible en
-            // producción y es su hermano exacto —un borrado que no ocurrió y una UI que decía que sí—.
-            // Sin PII: solo qué eligió la persona para el puente, que es lo que cambia el volumen de
-            // filas que la transacción tocaba.
+            // Canario FUERA de `#if DEBUG`, molde `freshStartWipeFailed`: este fallo era invisible en producción y
+            // es su hermano exacto —un borrado que no ocurrió y una UI que decía que sí—. Sin PII: solo qué eligió
+            // la persona para el puente, que es lo que cambia el volumen de filas que la transacción tocaba.
             MetricsService.canary(
                 .groupsDetachPurgeFailed,
                 detail: "choice=\(choice == .keep ? "keep" : "remove")")
-            // NADA de lo de abajo corre. La asociación se queda, y con la sesión ya cerrada la sección
-            // pasa a `.associatedNeedsSignIn` —la celda del segundo móvil—, que vuelve a ofrecer el gesto.
+            // NADA de lo de abajo corre. La asociación se queda, y con la sesión ya cerrada la sección pasa a
+            // `.associatedNeedsSignIn` —la celda del segundo móvil—, que vuelve a ofrecer el gesto.
             phase = .idle
             return .purgeFailed
+        case .written:
+            break
         }
 
         finishDetach(context: context)
         return .detached
+    }
+
+    /// **El bloqueo del desasociar no se queda en la fase compartida**: devuelve su motivo y deja la fase en `.idle`, en el
+    /// mismo turno del main actor en que se puso (ticket
+    /// `detach-blocked-phase-is-stranded-when-the-storage-sheet-closes-mid-wait`). Todo `return .blockedBeforeWriting` de
+    /// `detachGroupsAccount` pasa por aquí, y es el ÚNICO sitio que suelta ese bloqueo.
+    ///
+    /// Por qué no se espera a que lo reconozca la pantalla, que era el contrato hasta el 2026-10-02: la fase es de seis
+    /// lectores y el desasociar no tiene dueño que la suelte. Con la hoja de Almacenamiento cerrada a mitad de la espera,
+    /// el `Task` de la sección escribía su aviso en una vista ya desmontada y nadie llamaba a `acknowledgeBlocked()`; Perfil
+    /// ignora a propósito los motivos del desasociar, así que «Cerrar sesión» no hacía nada y un desasociar nuevo devolvía
+    /// `.busy` («Estás cerrando sesión», falso). Solo salía matando la app.
+    ///
+    /// La fase pasa por `.blocked` y no se escribe el motivo directo porque `pushGroupsForSignOut` —compartido con los
+    /// cierres— lo deja ahí; las ramas propias del desasociar lo escriben igual para que el motivo tenga un solo camino. No
+    /// hay `await` entre esa escritura y esta lectura, así que ningún lector de la fase llega a ver el `.blocked`. El
+    /// `.transient` de reserva no es alcanzable: toda rama que llama aquí acaba de poner la fase en `.blocked`.
+    private func releaseDetachBlock() -> CloudSignOutFlowLogic.BlockReason {
+        defer { phase = .idle }
+        guard case .blocked(_, let reason) = phase else { return .transient }
+        return reason
     }
 
     /// **Terminar un desasociar cuyo borrado local no entró.** Es lo que ofrece el aviso «No pudimos
@@ -365,18 +421,32 @@ final class CloudSessionSignOut {
               CloudAuthService.shared.currentUserID != GroupsDetachPendingPurge.armedSub()
         else { return .busy }
         phase = .working
+        isDetaching = true
+        defer { isDetaching = false }
         // Un turno del main actor antes de trabajar. Sin él este método no suspende NUNCA —no tiene un
         // solo `await`— así que SwiftUI no re-renderiza entre `.working` y `.idle`: el spinner no llega a
         // salir, y un segundo fallo encendería el aviso en el MISMO turno en que el anterior se está
         // desmontando, que es la carrera de dos presentaciones en un anchor que este repo ya pagó.
         await Task.yield()
-        do {
-            try Self.purgeGroupsDomainForDetach(context: context)
-        } catch {
-            #if DEBUG
-            print("CloudSessionSignOut: reintento del borrado del dominio de grupos falló: \(error)")
-            #endif
+        // El borrado pasa por la MISMA puerta que el del gesto: es un `save()` sobre el `mainContext` compartido, y
+        // en `.icloud` el espejo sigue vivo. Era la única purga de grupos de este coordinador sin quiescencia.
+        switch await Self.writeDetachUnderQuiescence(
+            context: context, bridge: nil,
+            // La condición del `guard` de arriba, otra vez tras la espera: la sesión de ESA cuenta pudo volver.
+            stillMayWrite: { CloudAuthService.shared.currentUserID != GroupsDetachPendingPurge.armedSub() }) {
+        case .written:
+            break
+        case .preconditionLost:
+            phase = .idle
+            return .busy
+        case .purgeFailed:
             MetricsService.canary(.groupsDetachPurgeFailed, detail: "retry")
+            phase = .idle
+            return .purgeFailed
+        case .notQuiescent, .bridgeUnreadable:
+            // No se borró nada y la marca sigue armada: el aviso «No pudimos soltar la cuenta… Vuelve a intentarlo
+            // para terminar» es exacto. Sin canario: el borrado no falló, no llegó a intentarse. (`.bridgeUnreadable`
+            // no puede salir sin puente; va aquí para que el `switch` siga siendo exhaustivo.)
             phase = .idle
             return .purgeFailed
         }
@@ -464,6 +534,93 @@ final class CloudSessionSignOut {
             return rows
         }
         SaveBreadcrumb.didSave("CloudSessionSignOut.detachGroupsAccount")
+    }
+
+    /// Lo que el desasociar ESCRIBE —el puente personal y el borrado del dominio Grupos— detrás de la quiescencia
+    /// del store personal, comprobada OTRA VEZ y pegada a esos `save()`.
+    enum DetachWrite: Equatable {
+        /// El store personal no se quedó quieto dentro del tope de la puerta. No se escribió nada.
+        case notQuiescent
+        /// La condición de quien llama dejó de cumplirse durante la espera (`stillMayWrite`). No se escribió nada.
+        case preconditionLost
+        /// `detachBridge` no pudo mirar el puente (su fetch lanzó o su `save()` no entró). No se escribió nada.
+        case bridgeUnreadable
+        /// El puente se soltó, pero el borrado del dominio Grupos lanzó. El contexto queda limpio
+        /// (`deleteLocalGroupsRows` hace `rollback()`).
+        case purgeFailed
+        /// Las dos cosas entraron.
+        case written
+    }
+
+    /// La salida del puente que eligió la persona y la cuenta que sella el libro de conservados. `nil` en el
+    /// reintento del borrado (`retryDetachPurge`), que ya no toca el puente.
+    struct DetachBridgeRelease: Equatable {
+        let choice: GroupsAssociationDetach.BridgedRowsChoice
+        let associatedSub: String?
+    }
+
+    /// La puerta de quiescencia, y después los `save()` del desasociar **sin un solo `await` entre medias**
+    /// (ticket `detach-saves-the-personal-graph-outside-the-quiescence-window`).
+    ///
+    /// **Por qué se vuelve a pedir la puerta, si el push-all ya la pidió.** Esa comprobación vive dentro de
+    /// `attemptGroupsOnlyClose`, antes del push-all, y entre ella y el `save()` del puente pueden pasar hasta 20
+    /// ciclos con red, sus pausas de 250 ms y el `signOut()` del desasociar. En `.icloud` el espejo de CloudKit
+    /// sigue vivo y el `mainContext` lo comparten los tres stores: un import que arranque en esa ventana deja el
+    /// store a medio asentar, y un `save()` encima es el `_assertionFailure` de SwiftData que no atrapa ningún
+    /// `do/catch`. Este camino es además el único de la familia que escribe el grafo PERSONAL (`TransactionItem`,
+    /// `InboxDraft`) y el único que no termina en un boot-wipe que tape el destrozo.
+    ///
+    /// **Lo que hace honesta la puerta es lo que va DESPUÉS de ella**: el `safe()` que devuelve se lee en el mismo
+    /// turno del main actor en que corren los dos `save()`. Un `await` entre la puerta y el puente —un
+    /// `Task.yield()`, un log asíncrono— reabre la ventana entera, porque el estado del import lo actualizan
+    /// notificaciones que se entregan en el main actor. El puente y el borrado van juntos aquí, y no el puente solo,
+    /// por eso mismo: con una vuelta al llamador entre los dos, el borrado volvería a quedar fuera.
+    ///
+    /// **No se mueve el puente delante del push-all**, que era la otra salida del ticket: con el push bloqueado el
+    /// puente quedaría soltado sin nada más hecho, y el reintento ofrecería las dos salidas cuando la segunda ya no
+    /// puede aplicarse. Esto conserva el orden.
+    ///
+    /// La puerta ESPERA (sondeo cada 2 s, tope 60 s; en uso normal contesta al instante) y, si no llega, no se
+    /// escribe nada. `awaitPersonalSaveSafe` es el seam de los tests; producción usa la de siempre.
+    ///
+    /// **`stillMayWrite` se evalúa tras la puerta, síncrono, y es obligatorio.** Antes de este escritor, entre la
+    /// comprobación de quien llama (la sesión cerrada, en el gesto; la sesión que no es la de la cuenta pendiente, en
+    /// el reintento) y los `save()` no había un solo `await`. La espera de la puerta abre esa ventana —hasta 60 s con
+    /// la app usable—, así que la condición se vuelve a mirar aquí, donde ya nada puede suspender. Sin valor por
+    /// defecto a propósito: un `{ true }` heredado sería una puerta que falla abierta.
+    static func writeDetachUnderQuiescence(
+        context: ModelContext,
+        bridge: DetachBridgeRelease?,
+        defaults: UserDefaults = .standard,
+        stillMayWrite: () -> Bool,
+        awaitPersonalSaveSafe: () async -> Bool = { await CloudSessionSignOut.awaitPersonalQuiescenceForGroupsSignOut() }
+    ) async -> DetachWrite {
+        guard await awaitPersonalSaveSafe() else { return .notQuiescent }
+
+        // ── Desde aquí, sin `await`. ──
+
+        guard stillMayWrite() else { return .preconditionLost }
+
+        // (2) El puente, con las filas `Split*` todavía limpias: ver el docblock de `detachGroupsAccount`.
+        if let bridge {
+            guard GroupsAssociationDetach.detachBridge(
+                context: context, choice: bridge.choice, associatedSub: bridge.associatedSub,
+                defaults: defaults) != nil else {
+                return .bridgeUnreadable
+            }
+        }
+
+        // (3) Las filas, el outbox y el cursor, de una vez. Lo que propague sale como `.purgeFailed`, y quien llama
+        // decide la marca y el canario.
+        do {
+            try purgeGroupsDomainForDetach(context: context)
+        } catch {
+            #if DEBUG
+            print("CloudSessionSignOut: borrado local del dominio de grupos falló: \(error)")
+            #endif
+            return .purgeFailed
+        }
+        return .written
     }
 
     // MARK: - Los tres cierres que borran por ARCHIVOS: privada (C), «equipo» (D) y solo grupos (F)

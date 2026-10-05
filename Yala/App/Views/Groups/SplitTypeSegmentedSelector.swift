@@ -4,13 +4,13 @@
 //
 //  Segmented control for SplitType (equal / percentage / exact / shares),
 //  rendered with short labels and no icons so the four segments fit one row.
-//  The full type name lives in the chip below the amount.
 //  Visual pattern matches TransactionTypeSelectorView (custom HStack with
 //  animated capsule fill) — chosen over Picker(.segmented) for control over
 //  DT XXL fallback and consistent look in iOS 26.
 //
-//  Lives at the top of the unified split sheet (GroupSplitSelectorView); the form
-//  below the amount only shows the "Dividido [modo]" chip that opens that sheet.
+//  Lives in the expense form's split card (GroupSplitEditorCard) and at the top of
+//  the split sheet of scheduled payments (GroupSplitSelectorView). Theme accent for
+//  the selected segment; the track is a neutral tint so it reads on a card too.
 //
 
 import SwiftUI
@@ -47,7 +47,7 @@ struct SplitTypeSegmentedSelector: View {
             }
         }
         .padding(DS.Spacing.xs)
-        .background(Capsule().fill(.thCard))
+        .background(Capsule().fill(Color.primary.opacity(0.06)))
     }
 
     private func pillLabel(for type: SplitType) -> some View {
@@ -60,7 +60,7 @@ struct SplitTypeSegmentedSelector: View {
             .padding(.vertical, DS.Spacing.sm)
             .background(
                 Capsule()
-                    .fill(selectedType == type ? DS.Semantic.splitMethodForeground : Color.clear)
+                    .fill(selectedType == type ? AnyShapeStyle(.thAccent) : AnyShapeStyle(Color.clear))
             )
     }
 
@@ -88,7 +88,7 @@ struct SplitTypeSegmentedSelector: View {
             .foregroundStyle(.white)
             .padding(.horizontal, DS.Spacing.md)
             .padding(.vertical, DS.Spacing.sm)
-            .background(Capsule().fill(DS.Semantic.splitMethodForeground))
+            .background(Capsule().fill(.thAccent))
         }
         .accessibilityLabel(selectedType.displayName)
     }

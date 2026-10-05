@@ -18,6 +18,7 @@ struct PanelThematicSection: View {
     let kind: PanelSectionKind
     let viewModel: PanelViewModel
     let sessionState: SessionState
+    @Environment(SceneNavigation.self) private var navigation
     let defaultCurrencyCodeRaw: String
     let showVariations: Bool
     @Binding var showBudgetFavoritesSettings: Bool
@@ -52,9 +53,9 @@ struct PanelThematicSection: View {
     private var seeMoreAction: (() -> Void)? {
         switch kind {
         case .tendencias:
-            return { viewModel.navigateToStatistics(.trends) }
+            return { viewModel.navigateToStatistics(.trends, in: navigation) }
         case .distribucion:
-            return { viewModel.navigateToStatistics(.categories) }
+            return { viewModel.navigateToStatistics(.categories, in: navigation) }
         case .latestRecords:
             return { sessionState.navigateToRecordsStandalone() }
         case .planificacion, .tools, .health, .accounts:
@@ -151,13 +152,13 @@ struct PanelThematicSection: View {
             PanelSectionFooterButton(
                 title: L10n.Panel.seeBudgets,
                 hint: L10n.Panel.seeMoreHintBudgets,
-                action: { sessionState.navigateToBudgets() }
+                action: { navigation.navigateToBudgets() }
             )
         case .scheduledPayments:
             PanelSectionFooterButton(
                 title: L10n.Panel.seeScheduledPayments,
                 hint: L10n.Panel.seeMoreHintScheduled,
-                action: { sessionState.navigateToScheduledPayments() }
+                action: { navigation.navigateToScheduledPayments() }
             )
         default:
             EmptyView()

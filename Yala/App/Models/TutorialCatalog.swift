@@ -145,6 +145,10 @@ enum Tutorial: String, CaseIterable, Identifiable, Hashable {
         }
     }
 
+    /// Si se enseña como guía por pasos (`YalaStepGuide`) en vez de como carrusel de vídeo. Solo los que se hacen
+    /// FUERA de Yala: ahí la persona necesita ver dónde va y qué le espera al salir.
+    var usesStepGuide: Bool { self == .applePay }
+
     /// UserDefaults key for tracking tutorial completion.
     var completionKey: String { "tutorial.completed.\(id)" }
 

@@ -558,8 +558,10 @@ final class CloudAuthService: NSObject {
     }
 
     /// La postcondición de `signOut()`: el llavero ya no guarda sesión. Sin el seam de `hasSession`, a propósito (ver el
-    /// docblock de `signOut()`); con el suyo propio, que solo cambia lo que se DEVUELVE.
-    private var storedSessionIsGone: Bool {
+    /// docblock de `signOut()`); con el suyo propio, que solo cambia lo que se DEVUELVE. No es `private` desde el
+    /// 2026-10-02: el desasociar la vuelve a leer, síncrona, justo antes de escribir (la espera de quiescencia que va en
+    /// medio deja volver a entrar).
+    var storedSessionIsGone: Bool {
         #if DEBUG
         if UITestHooks.signOutKeepsSession { return false }
         #endif

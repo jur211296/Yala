@@ -8,6 +8,7 @@ import SwiftUI
 struct FinancialScoreView: View {
     let score: FinancialScore
     let sessionState: SessionState
+    @Environment(SceneNavigation.self) private var navigation
     /// Subtítulo opcional bajo el título de la card. Se usa en Resumen para
     /// dejar claro que el score siempre refleja el mes en curso, aún cuando
     /// el selector de periodo de la pestaña esté en otro rango. Panel no lo
@@ -148,11 +149,11 @@ struct FinancialScoreView: View {
         case .total:
             return nil
         case .budget:
-            return { sessionState.navigateToBudgets() }
+            return { navigation.navigateToBudgets() }
         case .activity:
             return { sessionState.navigateToRecordsStandalone() }
         case .bills:
-            return { sessionState.navigateToScheduledPayments() }
+            return { navigation.navigateToScheduledPayments() }
         }
     }
 

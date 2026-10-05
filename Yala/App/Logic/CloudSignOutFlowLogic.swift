@@ -228,6 +228,12 @@ nonisolated enum CloudSignOutFlowLogic {
         /// no es y da un consejo que no arregla nada: no hay nada sin subir (se llega aquí con el
         /// push-all ya drenado y `pendingCount == 0`) y esperar no cambia que el store no responda.
         /// Review adversarial del 2026-09-11.
+        ///
+        /// **Desde el 2026-10-02 lo pone también el store personal que no se quedó quieto** a tiempo para el `save()`
+        /// del puente (`CloudSessionSignOut.writeDetachUnderQuiescence`, ticket
+        /// `detach-saves-the-personal-graph-outside-the-quiescence-window`). Ahí esperar SÍ lo arregla —el import
+        /// termina—, y el aviso sigue siendo verdad entero: no habla de esperar, dice que los movimientos del Panel no
+        /// se revisaron, que no se soltó nada y que se vuelva a intentar.
         case bridgeUnreadable
         /// **El coordinador estaba ocupado con OTRO gesto** cuando se pidió desasociar —un cierre de
         /// sesión del Perfil en curso o parado en su propio aviso—. No hay nada sin subir: el desasociar

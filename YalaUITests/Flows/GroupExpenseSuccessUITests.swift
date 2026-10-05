@@ -52,7 +52,7 @@ final class GroupExpenseSuccessUITests: XCTestCase {
         let app = launchOnGroups()
 
         // Detalle del grupo sembrado ("Viaje a Cusco" ordena primero y tiene 3 miembros →
-        // flujo de chips, no la pre-pantalla de 2 personas).
+        // sin opciones rápidas de 2 personas).
         let card = app.descendants(matching: .any).matching(identifier: "group_card").firstMatch
         XCTAssertTrue(card.waitForExistence(timeout: 10), "No apareció la tarjeta del grupo.")
         card.tap()
@@ -75,18 +75,14 @@ final class GroupExpenseSuccessUITests: XCTestCase {
         amount.typeText("120")
 
         // Cambiar el pagador a otro miembro (Caso B) → evita el requisito de cuenta del Caso A
-        // (bridge ON por default). Abrir el picker también cierra el teclado (patrón como en
-        // TransactionsCrudUITests: tras escribir, se tocan chips que abren sheets).
-        let paidBy = app.buttons["group_expense_paidby_chip"]
-        XCTAssertTrue(paidBy.waitForExistence(timeout: 5), "No apareció el chip 'Pagado por'.")
-        paidBy.tap()
-
-        // El selector lista Tú/Ana/Beto; tocar una fila la selecciona y cierra el sheet.
-        let anaRow = app.buttons.matching(
-            NSPredicate(format: "label CONTAINS[c] 'Ana'")
-        ).firstMatch
-        XCTAssertTrue(anaRow.waitForExistence(timeout: 5), "El selector de pagador no listó a 'Ana'.")
-        anaRow.tap()
+        // (bridge ON por default). El pagador se elige en la fila «Pagado por» del propio
+        // formulario: tocarla la abre (y cierra el teclado) y muestra los avatares.
+        let payerRow = app.buttons["group_expense_paidby_row"]
+        XCTAssertTrue(payerRow.waitForExistence(timeout: 5), "No apareció la fila «Pagado por».")
+        payerRow.tap()
+        let ana = app.buttons["group_expense_payer_Ana"]
+        XCTAssertTrue(ana.waitForExistence(timeout: 5), "No apareció el avatar de 'Ana' en «Pagado por».")
+        ana.tap()
 
         // Guardar: esperar a que el botón se habilite (canSave) y tocarlo.
         let save = app.buttons["group_expense_save"]

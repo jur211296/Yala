@@ -167,24 +167,7 @@ struct WelcomeCloudSignInView: View {
     @State private var cancelRequested = false
 
     var body: some View {
-        WelcomeFlowScreen { logoTopSpacing in
-            VStack(spacing: 0) {
-                Spacer(minLength: logoTopSpacing)
-
-                Image("YalaLogo")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(height: 128)
-                    .colorMultiply(.white)
-                    .accessibilityHidden(true)
-
-                Spacer(minLength: DS.Spacing.lg)
-
-                phaseContent
-
-                Spacer(minLength: DS.Spacing.xl)
-            }
-        }
+        screen
         .welcomeBackButton(tint: .white, action: canGoBack ? onBack : nil)
         .onAppear {
             // La sesión ya está firmada en otra puerta ⇒ el intro no tiene nada que pedir. Se abre el
@@ -354,11 +337,42 @@ struct WelcomeCloudSignInView: View {
 
     // MARK: - Contenido por fase
 
+    /// **El intro tiene la forma de la referencia del 15-sep** (`WelcomeForm.swift`): titular serif sin
+    /// logo y una tarjeta con lo que se pulsa. Las demás fases —progreso, error, relanzamiento— no son una
+    /// pantalla de entrada y se quedan con el logo centrado de siempre.
+    @ViewBuilder
+    private var screen: some View {
+        if phase == .intro {
+            introContent
+        } else {
+            WelcomeFlowScreen { logoTopSpacing in
+                VStack(spacing: 0) {
+                    Spacer(minLength: logoTopSpacing)
+
+                    Image("YalaLogo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 128)
+                        .colorMultiply(.white)
+                        .accessibilityHidden(true)
+
+                    Spacer(minLength: DS.Spacing.lg)
+
+                    phaseContent
+
+                    Spacer(minLength: DS.Spacing.xl)
+                }
+            }
+        }
+    }
+
     @ViewBuilder
     private var phaseContent: some View {
         switch phase {
         case .intro:
-            introContent
+            // Inalcanzable: `screen` pinta el intro por su cuenta, con la forma de entrada. Se deja el
+            // `case` explícito en vez de un `default` para que una fase nueva siga obligando a decidir.
+            EmptyView()
         case .checking:
             progressContent(L10n.Welcome.Cloud.checking, hint: nil)
         case .creating:
@@ -490,40 +504,30 @@ struct WelcomeCloudSignInView: View {
     /// significa nada para quien no ha usado ninguno: lo que sí informa aquí es la segunda, que la
     /// cuenta queda ligada al método que elija.
     private var bornCloudIntro: some View {
-        VStack(spacing: DS.Spacing.lg) {
-            VStack(spacing: DS.Spacing.sm) {
-                Text(L10n.Welcome.BornCloud.title)
-                    .font(DS.Typography.title2)
-                    .foregroundStyle(.white)
-                    .multilineTextAlignment(.center)
-                Text(L10n.Welcome.BornCloud.subtitle)
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(.white.opacity(0.7))
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, DS.Spacing.lg)
-            }
+        WelcomeFormScreen(title: L10n.Welcome.BornCloud.title, subtitle: L10n.Welcome.BornCloud.subtitle) {
             VStack(spacing: DS.Spacing.md) {
                 AppleSignInButton(type: .signUp) {
                     DS.Haptic.selection()
                     beginBornCloudSignUp(with: .apple)
                 }
-                .frame(height: 50)
+                .frame(height: WelcomeFormLayout.buttonHeight)
                 .accessibilityIdentifier("welcome_borncloud_signup_apple")
 
                 GoogleSignInButton(variant: .light, purpose: .signUp) {
                     DS.Haptic.selection()
                     beginBornCloudSignUp(with: .google)
                 }
-                .frame(height: 50)
+                .frame(height: WelcomeFormLayout.buttonHeight)
                 .accessibilityIdentifier("welcome_borncloud_signup_google")
-            }
-            .padding(.horizontal, DS.Spacing.xl)
 
-            Text(L10n.Welcome.BornCloud.providerNote)
-                .font(DS.Typography.caption)
-                .foregroundStyle(.white.opacity(0.6))
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, DS.Spacing.xl)
+                Text(L10n.Welcome.BornCloud.providerNote)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.white.opacity(0.6))
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity)
+            }
+            .welcomeFormCard()
         }
         // SIN identifier de contenedor a propósito: uno aplicado al `VStack` PISA el de sus hijos
         // —medido con `snapshot_ui`: los dos botones salían como `welcome_borncloud_intro` y sus
@@ -539,59 +543,51 @@ struct WelcomeCloudSignInView: View {
     }
 
     private var reentryIntro: some View {
-        VStack(spacing: DS.Spacing.lg) {
-            VStack(spacing: DS.Spacing.sm) {
-                Text(L10n.Welcome.Cloud.title)
-                    .font(DS.Typography.title2)
-                    .foregroundStyle(.white)
+        WelcomeFormScreen(
+            title: L10n.Welcome.Cloud.title,
+            subtitle: reentrySubtitle.text,
+            subtitleIdentifier: reentrySubtitle.identifier
+        ) {
+            VStack(spacing: DS.Spacing.md) {
+                // W4: aquí la cuenta YA existe ⇒ el verbo es iniciar sesión, en los dos botones.
+                switch provider {
+                case .apple:
+                    AppleSignInButton(type: .signIn) {
+                        DS.Haptic.selection()
+                        showConsent = true
+                    }
+                    .frame(height: WelcomeFormLayout.buttonHeight)
+                    .accessibilityIdentifier("welcome_cloud_signin_button")
+                case .google:
+                    GoogleSignInButton(variant: .light, purpose: .signIn) {
+                        DS.Haptic.selection()
+                        showConsent = true
+                    }
+                    .frame(height: WelcomeFormLayout.buttonHeight)
+                    .accessibilityIdentifier("welcome_cloud_signin_button_google")
+                }
+                // Nota §13 del primer sign-in (AMBOS providers): entra con el método que usaste, y la
+                // cuenta queda ligada a él. La primera mitad es lo que la separa de la del alta (W4).
+                Text(L10n.Welcome.Cloud.providerNote)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.white.opacity(0.6))
                     .multilineTextAlignment(.center)
-                Text(reentrySubtitle.text)
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(.white.opacity(0.7))
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, DS.Spacing.lg)
-                    .accessibilityIdentifier(reentrySubtitle.identifier)
-            }
-            // W4: aquí la cuenta YA existe ⇒ el verbo es iniciar sesión, en los dos botones.
-            switch provider {
-            case .apple:
-                AppleSignInButton(type: .signIn) {
-                    DS.Haptic.selection()
-                    showConsent = true
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity)
+                // **Paso 6 · el faro ENCAMINA, no decide** (ADR §10). Solo en la entrada a la que llevó el faro:
+                // quien entró por la card «Ya tengo cuenta» dijo que tenía una, y si no la tiene, «No
+                // encontramos una cuenta» ya le ofrece crearla cuando el teléfono puede darse de alta.
+                // Dentro de la tarjeta, tras el «o» y con CONTORNO (referencia del 15-sep): es la otra salida,
+                // a la vista, y encaminar sigue siendo lo que se propone —el botón de marca va lleno—.
+                if isBeaconRouted {
+                    WelcomeFormSeparator()
+                    WelcomeFormButton(title: L10n.Welcome.Cloud.createAnother, weight: .outline) {
+                        onCreateAnotherAccount()
+                    }
+                    .accessibilityIdentifier("welcome_cloud_create_another")
                 }
-                .frame(height: 50)
-                .padding(.horizontal, DS.Spacing.xl)
-                .accessibilityIdentifier("welcome_cloud_signin_button")
-            case .google:
-                GoogleSignInButton(variant: .light, purpose: .signIn) {
-                    DS.Haptic.selection()
-                    showConsent = true
-                }
-                .frame(height: 50)
-                .padding(.horizontal, DS.Spacing.xl)
-                .accessibilityIdentifier("welcome_cloud_signin_button_google")
             }
-            // Nota §13 del primer sign-in (AMBOS providers): entra con el método que usaste, y la
-            // cuenta queda ligada a él. La primera mitad es lo que la separa de la del alta (W4).
-            Text(L10n.Welcome.Cloud.providerNote)
-                .font(DS.Typography.caption)
-                .foregroundStyle(.white.opacity(0.6))
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, DS.Spacing.xl)
-            // **Paso 6 · el faro ENCAMINA, no decide** (ADR §10). Solo en la entrada a la que llevó el faro:
-            // quien entró por la card «Ya tengo cuenta» dijo que tenía una, y si no la tiene, «No encontramos
-            // una cuenta» ya le ofrece crearla cuando el teléfono puede darse de alta. Botón secundario, en el tono
-            // de «Continuar a la app»:
-            // encaminar sigue siendo lo que se propone.
-            if isBeaconRouted {
-                Button(L10n.Welcome.Cloud.createAnother) {
-                    DS.Haptic.selection()
-                    onCreateAnotherAccount()
-                }
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.white.opacity(0.8))
-                .accessibilityIdentifier("welcome_cloud_create_another")
-            }
+            .welcomeFormCard()
         }
     }
 

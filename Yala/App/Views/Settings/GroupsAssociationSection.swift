@@ -31,9 +31,11 @@ struct GroupsAssociationSection: View {
     @State private var confirmDetach = false
     /// El aviso de bloqueo de ESTE gesto. **Propio y no el de `ProfileView`**: aquel dice «No pudimos
     /// cerrar tu sesión», que es otra cosa y en una secundaria llega a ofrecer salir de la sesión entera a
-    /// quien solo pidió soltar una cuenta de grupos. Y sin él, `phase` se queda en `.blocked` y el toque
-    /// siguiente cae en el `guard phase == .idle` de `detachGroupsAccount`: **no pasa nada, sin un solo
-    /// mensaje**. Cerrarlo llama a `acknowledgeBlocked()`, que es lo que devuelve la fase a `.idle`.
+    /// quien solo pidió soltar una cuenta de grupos. **El motivo llega por el retorno del gesto, y cerrar el
+    /// aviso no toca la fase del coordinador** (2026-10-02, ticket
+    /// `detach-blocked-phase-is-stranded-when-the-storage-sheet-closes-mid-wait`): el coordinador ya la devolvió a
+    /// `.idle` al bloquear. Hasta ese día la soltaba este aviso, y con la hoja cerrada a mitad de la espera no salía
+    /// nunca: la fase se quedaba en `.blocked` y «Cerrar sesión» y el desasociar siguiente no hacían nada.
     @State private var blockedReason: CloudSignOutFlowLogic.BlockReason?
     /// **El borrado local falló y la cuenta ya se cerró en la nube.** Aviso propio, separado del de
     /// bloqueo: aquél dice «no se soltó nada» y éste dice «se soltó todo menos lo que importa» —los
@@ -63,6 +65,26 @@ struct GroupsAssociationSection: View {
     /// (`CloudAuthService` no publica nada), así que la pantalla se refresca por toques, igual que el
     /// resto de esta fila, que vive de un poll de 1 s.
     @State private var refreshTick = false
+    /// El canal de Grupos salió apagado al tocar «Asociar» / «Entrar». Alerta con el copy que ya existe para
+    /// este hecho en la puerta del tab (`welcome.groups.channelOff*`): es transitorio, es cosa nuestra y no
+    /// se guardó nada.
+    @State private var showChannelOff = false
+    /// La comprobación del canal que lanzó el último toque. Mientras corre, el botón no acepta otro (dos
+    /// toques serían dos intents de sign-in), y si la sección se va antes de que termine se cancela: un
+    /// sign-in que aparece cuando la persona ya se fue de Ajustes no lo pidió nadie.
+    @State private var channelCheck: Task<Void, Never>?
+
+    /// El canal de Grupos, COMPUESTO (compilado && kill remoto): asociar o entrar son ENTRADAS al canal, y
+    /// las entradas leen el compuesto (`CloudSyncFlags.groupsBackendEnabled`, su docblock). Se re-lee con
+    /// cada `refreshTick`, como el resto de la sección.
+    private var channelOn: Bool {
+        _ = refreshTick
+        return CloudSyncFlags.groupsBackendEnabled
+    }
+
+    private var signInEntry: GroupsAssociationLogic.SignInEntry {
+        GroupsAssociationLogic.signInEntry(state, channelOn: channelOn)
+    }
 
     private var signOutCoordinator: CloudSessionSignOut { CloudSessionSignOut.shared }
 
@@ -145,22 +167,34 @@ struct GroupsAssociationSection: View {
             } message: {
                 Text(L10n.Storage.Groups.detachPurgeFailedBody)
             }
+            // Tercer alert de la cadena, y tampoco coincide con los otros dos: sale de un toque en «Asociar» /
+            // «Entrar», y esos botones no conviven con un desasociar en vuelo.
+            .alert(L10n.Welcome.Groups.channelOffTitle, isPresented: $showChannelOff) {
+                Button(L10n.Common.ok) { showChannelOff = false }
+            } message: {
+                Text(L10n.Welcome.Groups.channelOffBody)
+            }
+            // **Con la sección en pausa, se pregunta al servidor una vez al montar.** El snapshot del kill puede
+            // tener hasta 6 h y sin botón no hay toque que fuerce el refresco: sin esto, un canal ya reencendido
+            // seguiría diciendo «en pausa» hasta el siguiente refresco del arranque. Bajo `-uitest` no se toca
+            // red, igual que en el tab.
+            .task(id: signInEntry == .channelPaused) {
+                guard signInEntry == .channelPaused, !SwiftDataConfiguration.isUITesting else { return }
+                await RemoteConfigClient.shared.refreshIfDue(force: true)
+                guard !Task.isCancelled else { return }
+                refreshTick.toggle()
+            }
+            .onDisappear { channelCheck?.cancel() }
         }
     }
 
-    /// El aviso se cierra soltando TAMBIÉN la fase del coordinador. Si solo se bajara el `@State`, el
-    /// `guard phase == .idle` dejaría inertes el desasociar Y el cierre de sesión de Ajustes.
+    /// El aviso se cierra bajando SOLO su `@State`. **No llama a `acknowledgeBlocked()`, y es a propósito**: el
+    /// desasociar ya no deja la fase en `.blocked` (`CloudSessionSignOut.releaseDetachBlock`), así que la fase que
+    /// encontrara aquí sería la de un cierre de sesión ajeno, y reconocerla le borraría además el `blockedExit` —lo que
+    /// recuerda dónde retomarlo—, con sus botones de «Esperar» / «Cerrar igualmente» saliendo sin hacer nada. Es lo que ya
+    /// pasaba con `.detachBusy` y lo que la review del 2026-09-15 cazó en el doble cierre del binding.
     private func dismissBlocked() {
-        // **Una sola vez por aviso** (review adversarial, 2026-09-15). Lo llaman el botón y el `set` del binding, y SwiftUI
-        // escribe `false` al pulsar CUALQUIER botón: la segunda llamada llegaba con `blockedReason` ya a `nil`, leía «no
-        // ajeno» y reconocía el bloqueo de un cierre de sesión que no era suyo.
-        guard blockedReason != nil else { return }
-        // `.detachBusy` es el ÚNICO motivo que NO puso este gesto: la fase es de un cierre de sesión
-        // ajeno, y soltarla aquí lo dejaría a medias —sin fase y sin `blockedExit`— con sus dos botones
-        // de «Esperar» / «Cerrar igualmente» saliendo por su `guard let` sin hacer nada.
-        let ajeno = blockedReason == .detachBusy
         blockedReason = nil
-        if !ajeno { signOutCoordinator.acknowledgeBlocked() }
     }
 
     /// **Exhaustivo a propósito: sin `default`.** Con uno, un motivo nuevo caía en «inténtalo en un
@@ -274,29 +308,44 @@ struct GroupsAssociationSection: View {
             }
             .accessibilityIdentifier("storage_groups_working")
         } else {
-            if GroupsAssociationLogic.offersAssociate(state), let onAssociate {
-                Button(action: onAssociate) {
-                    Text(L10n.Storage.Groups.associateButton)
-                        .font(DS.Typography.body.weight(.medium))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, DS.Spacing.sm)
-                        .contentShape(Rectangle())
+            switch signInEntry {
+            case .associate:
+                if onAssociate != nil {
+                    Button(action: requestSignIn) {
+                        Text(L10n.Storage.Groups.associateButton)
+                            .font(DS.Typography.body.weight(.medium))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, DS.Spacing.sm)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(channelCheck != nil)
+                    .accessibilityIdentifier("storage_groups_associate_button")
                 }
-                .buttonStyle(.bordered)
-                .accessibilityIdentifier("storage_groups_associate_button")
-            }
-            if state == .associatedNeedsSignIn, let onAssociate {
-                // La sesión no viajó, la asociación sí: entrar es el MISMO gesto que asociar (pasa por
-                // [I] con la cuenta que ya está registrada), así que no hay un camino nuevo que probar.
-                Button(action: onAssociate) {
-                    Text(L10n.Storage.Groups.signInButton)
-                        .font(DS.Typography.body.weight(.medium))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, DS.Spacing.sm)
-                        .contentShape(Rectangle())
+            case .signIn:
+                if onAssociate != nil {
+                    // La sesión no viajó, la asociación sí: entrar es el MISMO gesto que asociar (pasa por
+                    // [I] con la cuenta que ya está registrada), así que no hay un camino nuevo que probar.
+                    Button(action: requestSignIn) {
+                        Text(L10n.Storage.Groups.signInButton)
+                            .font(DS.Typography.body.weight(.medium))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, DS.Spacing.sm)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(channelCheck != nil)
+                    .accessibilityIdentifier("storage_groups_signin_button")
                 }
-                .buttonStyle(.bordered)
-                .accessibilityIdentifier("storage_groups_signin_button")
+            case .channelPaused:
+                // Sin botón: con el canal matado, el sign-in sería real contra un backend en pausa. Se dice
+                // por qué en vez de dejar un hueco donde estaba el botón.
+                Text(L10n.Storage.Groups.channelPausedNote)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("storage_groups_channel_paused_note")
+            case .none:
+                EmptyView()
             }
             if hasPendingPurge {
                 // **Sin hoja de confirmación, y es lo que distingue TERMINAR de repetir.** El puente ya
@@ -335,38 +384,65 @@ struct GroupsAssociationSection: View {
     }
 
     /// `phase` es del coordinador, que también lleva el cierre de sesión: un cierre en curso pintaría
-    /// «Desasociando…» aquí. `detachInFlight` acota el spinner a NUESTRO gesto.
-    @State private var detachInFlight = false
-
-    private var isWorking: Bool { detachInFlight && signOutCoordinator.phase == .working }
+    /// «Desasociando…» aquí. `isDetaching` acota el spinner al desasociar. **Lo lleva el coordinador y no un `@State`
+    /// de esta vista** (2026-10-02): la hoja puede cerrarse y reabrirse a mitad de la espera, y la sección nueva no
+    /// heredaba el `@State` de la que lanzó el gesto — sin spinner, un toque en «Desasociar» chocaba con el gesto en
+    /// vuelo y decía «Estás cerrando sesión».
+    private var isWorking: Bool { signOutCoordinator.isDetaching }
 
     /// **El veredicto viene por el RETORNO, no de leer la fase.** Un `.purgeFailed` deja el coordinador
     /// en `.idle` —es verdad: no está haciendo nada— así que mirar `phase` no lo distinguiría del éxito.
     /// Es exactamente la confusión que este ticket arregla, y leerla aquí la reintroduciría en la única
     /// pantalla que la sufre.
     private func detach(_ choice: GroupsAssociationDetach.BridgedRowsChoice) {
-        detachInFlight = true
         Task { @MainActor in
-            defer { detachInFlight = false }
             apply(await signOutCoordinator.detachGroupsAccount(context: modelContext, choice: choice))
+        }
+    }
+
+    /// «Asociar» / «Entrar»: **el canal se re-mide al tocar, y el refresco va ANTES de leer el flag.** El
+    /// snapshot del kill puede tener hasta 6 h, así que el botón pudo pintarse con un canal que ya no existe;
+    /// es la regla de `GroupsContainerView.requestCreateGroup` («la intención del usuario es evidencia»). Con el
+    /// canal encendido sigue el camino de siempre (`onAssociate`, que cierra la hoja y emite el intent); apagado,
+    /// no se emite nada, se dice por qué y la sección pasa a la nota de pausa.
+    ///
+    /// El gate vive AQUÍ y no en el drenado de `.presentGroupsSignIn` (`ContentView`): cada productor de ese
+    /// intent decide con el flag antes de emitirlo, y un drenado que lo descartara en silencio dejaría sin
+    /// respuesta un toque y sin salida los flujos ya abiertos que lo re-emiten.
+    private func requestSignIn() {
+        guard let onAssociate, channelCheck == nil else { return }
+        channelCheck = Task { @MainActor in
+            defer { channelCheck = nil }
+            // Hermeticidad: bajo `-uitest` no se toca red; el getter devuelve su default (ON en `Yala Dev`).
+            if !SwiftDataConfiguration.isUITesting {
+                await RemoteConfigClient.shared.refreshIfDue(force: true)
+            }
+            guard !Task.isCancelled else { return }
+            if CloudSyncFlags.groupsBackendEnabled {
+                onAssociate()
+            } else {
+                DS.Haptic.warning()
+                showChannelOff = true
+            }
+            refreshTick.toggle()
         }
     }
 
     /// Terminar el borrado que quedó pendiente. **No repite el gesto**: ver
     /// `CloudSessionSignOut.retryDetachPurge`.
     private func retryPurge() {
-        detachInFlight = true
         Task { @MainActor in
-            defer { detachInFlight = false }
             apply(await signOutCoordinator.retryDetachPurge(context: modelContext))
         }
     }
 
     private func apply(_ outcome: CloudSessionSignOut.DetachOutcome) {
         switch outcome {
-        case .blockedBeforeWriting:
-            // La fase se lee DESPUÉS del `await`, que es cuando el coordinador ya la dejó puesta.
-            if case .blocked(_, let reason) = signOutCoordinator.phase { blockedReason = reason }
+        case .blockedBeforeWriting(let reason):
+            // **El motivo del RETORNO, no de la fase**: el coordinador ya la devolvió a `.idle`. Si esta sección se
+            // desmontó a mitad de la espera, la escritura cae en un `@State` muerto y el aviso de ESTE intento no sale
+            // —nadie lo está mirando—, pero ya no deja nada cogido: reintentar vuelve a decir el motivo.
+            blockedReason = reason
         case .purgeFailed:
             purgeFailed = true
         case .busy:

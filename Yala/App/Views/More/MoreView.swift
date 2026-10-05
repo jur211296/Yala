@@ -50,6 +50,7 @@ struct MoreView: View {
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(SessionState.self) private var sessionState
+    @Environment(SceneNavigation.self) private var navigation
     @State private var showProfile = false
     @State private var showEditor = false
 
@@ -108,6 +109,11 @@ struct MoreView: View {
                         .accessibilityLabel(L10n.More.Editor.title)
                         .accessibilityIdentifier("more_editor_button")
                     }
+                }
+                // Mismo control de perfil que el Panel: el perfil queda a mano desde Más
+                // sin tener que buscar su tarjeta en Herramientas.
+                ProfileToolbarItem {
+                    showProfile = true
                 }
             }
         }
@@ -200,35 +206,35 @@ struct MoreView: View {
         case .statistics:
             return [
                 NavItem(id: "insights", icon: DetailViewTab.insights.icon, title: DetailViewTab.insights.title, subtitle: L10n.More.Subtitle.insights, iconColor: iconColor(.blue)) {
-                    SessionState.shared.navigateToDetail(.insights)
+                    navigation.navigateToDetail(.insights)
                 },
                 NavItem(id: "trends", icon: DetailViewTab.trends.icon, title: DetailViewTab.trends.title, subtitle: L10n.More.Subtitle.trends, iconColor: iconColor(.green)) {
-                    SessionState.shared.navigateToDetail(.trends)
+                    navigation.navigateToDetail(.trends)
                 },
                 NavItem(id: "categories", icon: DetailViewTab.categories.icon, title: DetailViewTab.categories.title, subtitle: L10n.More.Subtitle.distribution, iconColor: iconColor(.orange)) {
-                    SessionState.shared.navigateToDetail(.categories)
+                    navigation.navigateToDetail(.categories)
                 },
             ]
         case .planning:
             return [
                 NavItem(id: "budgets", icon: PlanningTab.budgets.icon, title: PlanningTab.budgets.displayName, subtitle: L10n.More.Subtitle.budgets, iconColor: iconColor(.purple)) {
-                    SessionState.shared.navigateToBudgets()
+                    navigation.navigateToBudgets()
                 },
                 NavItem(id: "scheduledPayments", icon: PlanningTab.scheduledPayments.icon, title: PlanningTab.scheduledPayments.displayName, subtitle: L10n.More.Subtitle.scheduledPayments, iconColor: iconColor(.mint)) {
-                    SessionState.shared.navigateToScheduledPayments()
+                    navigation.navigateToScheduledPayments()
                 },
             ]
         case .reports:
             var reports: [NavItem] = [
                 NavItem(id: "comparativa", icon: ReportTab.comparativa.icon, title: ReportTab.comparativa.title, subtitle: L10n.More.Subtitle.comparative, iconColor: iconColor(.brown)) {
-                    SessionState.shared.navigateToReport(.comparativa)
+                    navigation.navigateToReport(.comparativa)
                 },
             ]
             // En Solo Gastos, Flujo de Caja se oculta (SSOT compartido con el chip de Reportes).
             if ReportTab.visibleTabs(expensesOnly: SessionState.shared.isExpensesOnlyMode).contains(.flujoDeCaja) {
                 reports.append(
                     NavItem(id: "flujoDeCaja", icon: ReportTab.flujoDeCaja.icon, title: ReportTab.flujoDeCaja.title, subtitle: L10n.More.Subtitle.cashFlow, iconColor: iconColor(.cyan)) {
-                        SessionState.shared.navigateToReport(.flujoDeCaja)
+                        navigation.navigateToReport(.flujoDeCaja)
                     }
                 )
             }

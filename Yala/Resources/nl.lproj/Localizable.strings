@@ -118,13 +118,7 @@
 
 // KPI fallback (aiSubtitle takes the KPI slot when available)
 // Markdown bold (**amount**) renders via AttributedString(markdown:)
-"panel.hero.kpi.monthStart %@ %d" = "De maand begint, stap voor stap.";
-"panel.hero.kpi.onTrack %@ %@ %@ %d" = "Je zit lekker op schema deze maand, ga zo door.";
-"panel.hero.kpi.neutral %@ %@ %@ %d" = "Je maand loopt — alles in orde.";
-"panel.hero.kpi.tight %@ %@ %d" = "Krappe maand maar haalbaar, stap voor stap.";
-"panel.hero.kpi.overBudget %@ %@" = "Morgen beginnen we opnieuw, alles komt goed.";
 
-"panel.hero.upsellCTA" = "Personaliseer je bericht met AI";
 "panel.hero.availableLabel" = "Beschikbaar";
 
 // MARK: - Trend Widget
@@ -1688,7 +1682,6 @@
 "accessibility.skipSync" = "Wachten overslaan en doorgaan met instelling";
 "accessibility.tabLimitReached" = "Maximum aantal tabbladen bereikt";
 "accessibility.noTransactionsToExport" = "Geen transacties om te exporteren";
-"accessibility.accountCard %@ %@" = "Rekening %@, saldo %@";
 "accessibility.editAccount" = "Rekening bewerken";
 "accessibility.pageIndicator %d %d" = "Pagina %1$d van %2$d";
 "accessibility.accountRow %@ %@" = "Rekening %@, valuta %@";
@@ -3409,7 +3402,6 @@
 "chat.unavailable" = "Yala AI is op dit moment niet beschikbaar. Probeer het over een paar minuten opnieuw.";
 "chat.retry" = "Opnieuw proberen";
 "chat.noVoiceDetected" = "Ik heb geen audio gedetecteerd. Probeer opnieuw.";
-"chat.contextMemory" = "Yala AI onthoudt %d berichten";
 
 // MARK: - Chat Draft (Yala AI Register)
 "chat.draft.chipExpense" = "Uitgave";
@@ -3432,7 +3424,6 @@
 "chat.draft.selectAccount" = "Selecteer rekening";
 "chat.draft.selectSubcategory" = "Selecteer subcategorie";
 "chat.draft.saveButton" = "Opslaan";
-"chat.draft.editButton" = "Bewerken";
 "chat.draft.failedSavingLine" = "Opslaan lukte niet.";
 "chat.draft.retryButton" = "Opnieuw proberen";
 "chat.draft.noAccountsBlocking" = "Maak vanuit je profiel een rekening aan voordat je kunt boeken.";
@@ -4296,6 +4287,19 @@
 "stats.trends.insight.stableExpense" = "Je uitgaven blijven stabiel.";
 "stats.trends.insight.stableIncome" = "Je inkomen blijft stabiel.";
 "stats.trends.insight.stableBalance" = "Je saldo blijft stabiel.";
+"stats.trends.insight.sustainedUpExpense %@" = "Je uitgaven stijgen al %@.";
+"stats.trends.insight.sustainedDownExpense %@" = "Je uitgaven dalen al %@.";
+"stats.trends.insight.sustainedUpIncome %@" = "Je inkomen groeit al %@.";
+"stats.trends.insight.sustainedDownIncome %@" = "Je inkomen daalt al %@.";
+"stats.trends.insight.sustainedUpBalance %@" = "Je saldo groeit al %@.";
+"stats.trends.insight.sustainedDownBalance %@" = "Je saldo daalt al %@.";
+"stats.trends.insight.durationWeeks %d" = "%d weken";
+"stats.trends.insight.durationMonths %d" = "%d maanden";
+"stats.trends.insight.durationYears %d" = "%d jaar";
+"stats.trends.insight.cashFlowSurplus %d" = "Je inkomen dekte %d%% van je uitgaven: je sloot positief af.";
+"stats.trends.insight.cashFlowDeficit %d" = "Je inkomen dekte %d%% van je uitgaven: je gaf meer uit dan er binnenkwam.";
+"stats.trends.insight.cashFlowNoIncome" = "Deze periode heb je uitgaven geregistreerd, maar geen inkomen.";
+"stats.trends.insight.weekdayPeak %@ %@" = "Je duurste dag is %@: je geeft gemiddeld %@ uit.";
 
 // MARK: - Stats WidgetInfo (periodComparison, sankey) — added 2026-05-18
 "panel.widgetInfo.periodComparison.title" = "Periode-vergelijking";
@@ -4743,7 +4747,11 @@
 "settings.signOutBlockedMessage" = "Sommige wijzigingen zijn nog niet naar de cloud geüpload en we willen niet dat je iets kwijtraakt. Controleer je verbinding en probeer het opnieuw.";
 
 /* Subtitle of the existing-account sub-chooser in Welcome */
-"welcome.existing.subtitle" = "Kies hoe je je gegevens wilt terughalen.";
+"welcome.existing.title" = "Welkom terug!";
+"welcome.existing.subtitle" = "Log in met je Yala-account of haal je gegevens terug uit iCloud.";
+"welcome.existing.firstTimeQuestion" = "Voor het eerst in Yala?";
+"welcome.existing.firstTimeAction" = "Begin hier";
+"welcome.form.or" = "of";
 
 /* Card title: restore from iCloud */
 "welcome.existing.restoreTitle" = "Herstellen vanuit iCloud";
@@ -6228,3 +6236,194 @@
 "panel.accounts.filterByAccount" = "Filteren op deze rekening";
 /* Context menu on a group card: open the group */
 "groups.contextMenu.open" = "Groep openen";
+
+/* Menú contextual de grupo o registro */
+"window.openInNewWindow" = "Openen in nieuw venster";
+
+/* Ventana secundaria mientras la principal pregunta algo */
+"window.follower.title" = "Yala wacht in een ander venster";
+
+/* Ventana secundaria: explicación */
+"window.follower.body" = "Er is iets te beantwoorden in het andere Yala-venster. Als je daar klaar bent, komt dit venster vanzelf terug.";
+
+/* Botón: traer al frente la otra ventana */
+"window.follower.cta" = "Naar dat venster";
+
+/* Storage · Grupos: replaces the associate/sign-in button while the groups channel is paused server-side */
+"storage.groups.channelPausedNote" = "Groepen staan nu even op pauze; dat ligt aan ons. Zodra ze terug zijn, kun je hier verder.";
+
+/* Guía por pasos (referencia del 2026-09-15): progreso, salidas y garantías */
+"stepGuide.progress" = "Stap %1$d van %2$d";
+"stepGuide.markDone" = "Gedaan";
+"stepGuide.stuck" = "Ik kom er niet uit";
+"stepGuide.whatYouWillSee" = "Dit zie je";
+"stepGuide.phaseDone" = "Klaar";
+"stepGuide.phaseActive" = "Huidige stap";
+"stepGuide.phaseUpcoming" = "Nog te doen";
+"tutorials.applePay.openShortcuts" = "Open Opdrachten";
+"tutorials.applePay.guarantee" = "Elke betaling komt binnen als concept: er wordt niets geboekt tot je het goedkeurt.";
+"tutorials.applePay.pendingDrafts" = "Apple Pay-betalingen in je inbox: %d";
+"faceIDGuide.guarantee" = "Yala ziet je gezicht nooit: dat controleert iOS.";
+"faceIDGuide.previewAction" = "Face ID vereisen";
+
+/* Label above the amount on a Panel account card */
+"panel.accounts.card.balance" = "Saldo";
+
+/* Label above the amount on a credit card account with debt */
+"panel.accounts.card.toPay" = "Te betalen";
+
+/* Label above the amount in expenses-only mode; %@ = period name like 'Este mes' */
+"panel.accounts.card.spentInPeriod %@" = "Uitgegeven · %@";
+
+/* Account detail sheet: money that came into the account in the period */
+"accountDetail.moneyIn" = "In";
+
+/* Account detail sheet: money that left the account in the period */
+"accountDetail.moneyOut" = "Uit";
+
+/* Account detail sheet: section with top expense categories */
+"accountDetail.topCategories" = "Waar het heen ging";
+
+/* Account detail sheet: section with latest records */
+"accountDetail.latest" = "Laatste transacties";
+
+/* Accessibility label of the balance chart; account name, period name */
+"accountDetail.chartLabel %@ %@" = "Saldo van %@ in %@";
+
+/* Account detail sheet: no records in the period */
+"accountDetail.empty" = "Geen transacties in deze periode";
+
+/* Note under Archive toggle when archiving turned on Exclude from statistics */
+"account.archiveExcludedNotice" = "Na archiveren telt deze rekening niet meer mee in je totalen en statistieken, en worden haar transacties verborgen in Boekingen. Wil je dat ze blijft meetellen, zet dan „Uitsluiten van statistieken” uit.";
+
+
+/* Chat draft card (Yala IA) — redesign A */
+"chat.draft.detailsButton" = "Details";
+"chat.draft.detailsTitle" = "Voorgestelde boeking";
+"chat.draft.openFullForm" = "Openen in het volledige formulier";
+"chat.draft.missingSubcategory" = "Subcategorie ontbreekt";
+"chat.draft.missingAccount" = "Rekening ontbreekt";
+"chat.draft.missingAmount" = "Bedrag ontbreekt";
+"chat.draft.addTag" = "Label";
+
+/* Example shown while dictating to Yala AI */
+"chat.voice.hint" = "Probeer: ‘25 uitgegeven aan lunch met mijn pas’";
+
+/* Shown while the dictation is transcribed */
+"chat.voice.transcribingHint" = "Kijk je tekst na voordat je hem verstuurt.";
+
+/* Recorded duration while transcribing, e.g. 0:07 recorded */
+"chat.voice.recorded" = "%@ opgenomen";
+
+/* VoiceOver: discard the dictation without transcribing */
+"accessibility.discardRecording" = "Opname verwijderen";
+
+/* Voice entry: second processing step, the transcript is being read for amount and category */
+"voice.processing.understanding" = "Je boeking wordt begrepen…";
+
+/* Voice entry: last processing step, the draft is being created */
+"voice.processing.preparing" = "Je boeking wordt voorbereid…";
+
+/* Voice entry: button to discard what was understood and record again */
+"voice.recordAgain" = "Opnieuw opnemen";
+
+/* Voice entry: title above the record understood from the recording */
+"voice.review.title" = "Dit heb ik begrepen";
+
+/* Voice entry: title when several records were understood, e.g. I heard 2 entries */
+"voice.review.titleMany" = "%d boekingen begrepen";
+
+/* Voice entry: button that saves several records, e.g. Save 2 */
+"voice.review.saveMany" = "%d opslaan";
+
+/* Voice entry: closing without saving leaves the drafts in the Inbox */
+"voice.review.inboxNote" = "Als je sluit zonder op te slaan, vind je het in je inbox.";
+
+/* Voice entry failure title: no internet */
+"voice.failure.noConnection.title" = "Geen verbinding";
+
+/* Voice entry failure title: microphone permission denied */
+"voice.failure.mic.title" = "Yala kan de microfoon niet gebruiken";
+
+/* Voice entry failure title: the recording was empty or too short */
+"voice.failure.noVoice.title" = "Ik heb je niet gehoord";
+
+/* Voice entry failure message: the recording was empty or too short */
+"voice.failure.noVoice.message" = "De opname was leeg of te kort. Probeer opnieuw.";
+
+/* Voice entry failure title: no amount was heard */
+"voice.failure.noAmount.title" = "Ik heb geen bedrag gehoord";
+
+/* Voice entry failure message: ask to say the amount, e.g. 25 */
+"voice.failure.noAmount.message" = "Zeg ook hoeveel het was, bijvoorbeeld ‘25’.";
+
+/* Voice entry failure title: something went wrong */
+"voice.failure.generic.title" = "Dat lukte deze keer niet";
+
+/* Voice entry failure message: something went wrong, try again */
+"voice.failure.generic.message" = "Er ging iets mis bij het verwerken van je stem. Probeer het zo opnieuw.";
+
+/* Registro por imagen (propuesta C, 2026-10-04) */
+/* Image entry sheet title */
+"image.entry.title" = "Vastleggen met een afbeelding";
+/* Image entry: what the user can bring and what Yala reads */
+"image.entry.subtitle" = "Een bon, een bankscreenshot of een pdf. Ik haal er het bedrag, de winkel en de datum uit.";
+/* Image entry source: take a photo */
+"image.entry.camera" = "Camera";
+/* Image entry source: pick from Photos */
+"image.entry.photos" = "Foto’s";
+/* Image entry source: pick a file (image or PDF) */
+"image.entry.file" = "Bestand";
+/* Image entry: hint that Photos allows up to 10 at once */
+"image.entry.multipleHint" = "Tot 10 foto’s tegelijk uit Foto’s";
+/* Image entry: reading one photo */
+"image.entry.readingOne" = "Je foto wordt gelezen…";
+/* Image entry: reading several photos */
+"image.entry.readingMany" = "Je foto’s worden gelezen…";
+/* Image entry: current reading step */
+"image.entry.readingStep" = "Bedrag zoeken";
+/* Image entry: photo %1 of %2 being read */
+"image.entry.readingProgress" = "Foto %1$d van %2$d";
+/* Image entry review title, one entry */
+"image.entry.reviewTitle" = "Dit heb ik gelezen";
+/* Image entry review title, %d entries */
+"image.entry.reviewTitleMany" = "%d boekingen gelezen";
+/* Image entry: one photo could not be read */
+"image.entry.photoFailedOne" = "1 foto kon niet worden gelezen";
+/* Image entry: %d photos could not be read */
+"image.entry.photoFailedMany" = "%d foto’s konden niet worden gelezen";
+/* Image entry: discard and pick another photo */
+"image.entry.otherPhoto" = "Andere foto";
+/* Accessibility: cancel reading the photo */
+"image.entry.cancelReading" = "Lezen stoppen";
+/* Image entry failure: no amount found */
+"image.entry.failure.noAmount.title" = "Ik vond geen bedrag";
+/* Image entry failure: no amount found, what to try */
+"image.entry.failure.noAmount.message" = "Probeer een foto dichter bij het totaal, of een andere afbeelding.";
+/* Image entry failure: the image could not be opened */
+"image.entry.failure.unreadable.title" = "Ik kon deze afbeelding niet openen";
+/* Image entry failure: camera permission denied */
+"image.entry.failure.camera.title" = "Yala kan de camera niet gebruiken";
+/* Image entry failure: camera permission, how to fix */
+"image.entry.failure.camera.message" = "Sta het toe in Instellingen om je bonnen te fotograferen.";
+/* Image entry failure: reading failed */
+"image.entry.failure.generic.title" = "Deze keer kon ik hem niet lezen";
+/* Image entry failure: reading failed, the photo is fine */
+"image.entry.failure.generic.message" = "De foto is in orde: het lezen mislukte. Probeer het zo opnieuw.";
+/* Current user's name, no parentheses */
+"groups.member.youName" = "Jij";
+
+/* Header: how much each person puts in a group expense */
+"groups.expense.breakdownTitle" = "Verdeling";
+
+/* Under the payer's name: Paid <amount> */
+"groups.expense.paidAmount" = "Betaalde %@";
+
+/* Row title: where this expense landed in your personal records */
+"groups.expense.inYourFinances" = "In je financiën";
+
+/* Middle of the sentence: Paid by <name> and split <mode> */
+"groups.expense.andDividedLabel" = "en verdeeld";
+
+/* Current user after a preposition: Paid by <you> */
+"groups.member.youObject" = "jou";

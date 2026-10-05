@@ -2,7 +2,7 @@
 //  MainTabSelectionLogic.swift
 //  Yala
 //
-//  Pure-logic helper for SessionState.selectMainTab(_:). Decides whether
+//  Pure-logic helper for SceneNavigation.selectMainTab(_:). Decides whether
 //  a requested AppTab is currently visible in the TabView and, if not,
 //  which ConfigurableTab should be added as temporary so SwiftUI can
 //  mount the corresponding Tab(value:) before the binding selects it.

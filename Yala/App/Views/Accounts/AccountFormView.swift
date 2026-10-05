@@ -21,6 +21,22 @@ struct AccountFormView: View {
     @State private var showBalanceCalculator: Bool = false
     @State private var calcFieldState = BalanceCalculatorFieldState()
     @FocusState private var focusedField: Field?
+    /// Abre a media altura (ticket `account-form-as-medium-detent-sheet`); se puede tirar hacia arriba.
+    @State private var selectedDetent: PresentationDetent = .medium
+    @Environment(\.usesLargeSheets) private var usesLargeSheets
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    /// Con un tamaño de texto de accesibilidad, media altura enseña un solo campo: la hoja abre grande.
+    private var sheetDetents: Set<PresentationDetent> {
+        dynamicTypeSize.isAccessibilitySize ? [.large] : [.medium, .large]
+    }
+
+    /// Grande si el usuario la arrastró o si no hay medium que mostrar: la ventana ancha
+    /// (`.yalaSheetDetents` presenta `[.large]`) o el texto de accesibilidad. En esos dos casos
+    /// `selectedDetent` no tiene por qué dejar `.medium`.
+    private var isLargeDetent: Bool {
+        usesLargeSheets || !sheetDetents.contains(.medium) || selectedDetent == .large
+    }
 
     private enum Field {
         case name, accountNumber, balance
@@ -75,7 +91,7 @@ struct AccountFormView: View {
                     .dismissKeyboardOnTap()
                 }
                 .scrollDismissesKeyboard(.interactively)
-            .yalaScreenBackground(.subtle)
+            .yalaScreenBackground(isLargeDetent ? .subtle : .transparent)
             .navigationTitle(L10n.Account.configure)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -145,8 +161,8 @@ struct AccountFormView: View {
                 }
             }
         }
-
-
+        .yalaSheetDetents(sheetDetents, selection: $selectedDetent)
+        .presentationDragIndicator(.visible)
         .alert(
             L10n.Account.deleteError,
             isPresented: $viewModel.isShowingDeleteError,
@@ -653,6 +669,8 @@ struct AccountFormView: View {
                 Toggle(isOn: $viewModel.excludeFromStatistics) {
                     Text(L10n.Account.excludeFromStats)
                 }
+                .onChange(of: viewModel.excludeFromStatistics) { _, excluded in viewModel.excludeChanged(to: excluded) }
+                .accessibilityIdentifier("account_exclude_stats_toggle")
 
                 .padding()
 
@@ -661,8 +679,23 @@ struct AccountFormView: View {
                 Toggle(isOn: $viewModel.isArchived) {
                     Text(L10n.Account.archive)
                 }
+                .onChange(of: viewModel.isArchived) { _, archived in viewModel.setArchived(archived) }
+                .accessibilityIdentifier("account_archive_toggle")
 
                 .padding()
+
+                // Avisar sin confirmar: archivar no borra nada, cambia qué suma y qué se ve en
+                // Registros. El texto dice dónde se deshace: el toggle de arriba, en esta tarjeta.
+                if viewModel.showsArchiveExclusionNotice {
+                    Text(L10n.Account.archiveExcludedNotice)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal)
+                        .padding(.bottom)
+                        .accessibilityIdentifier("account_archive_excluded_notice")
+                }
 
                 if viewModel.isEditing {
                     SubsectionDivider()

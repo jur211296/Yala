@@ -32,6 +32,7 @@ struct ProfileView: View {
 
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(SessionState.self) private var sessionState
+    @Environment(SceneNavigation.self) private var navigation
     private var effectiveColorfulIcons: Bool {
         theme.forcesMonochromeIcons ? false : appPreferences.colorfulIcons
     }
@@ -821,7 +822,7 @@ struct ProfileView: View {
                 } else if goViewGroups {
                     // Selecciona el tab ANTES del dismiss (patrón de FullModeActivationView): el estado del
                     // tab vive en el singleton SessionState y sobrevive al cierre del sheet de Ajustes.
-                    SessionState.shared.selectMainTab(.groups)
+                    navigation.selectMainTab(.groups)
                     dismiss()
                 }
             }) { scope in
@@ -1599,6 +1600,7 @@ struct ProfileView: View {
                     profileRow(
                         icon: "book.fill", title: L10n.Settings.tutorials,
                         iconColor: .electricIndigo, destination: .tips)
+                    .accessibilityIdentifier("profile_help_tutorials")
                     .coachMarkAnchor("settingsTutorials")
                     SubsectionDivider()
                 }
@@ -1728,5 +1730,6 @@ struct ProfileView: View {
 
 #Preview {
     ProfileView()
+        .environment(SceneNavigation())
         .previewAppPreferences()
 }

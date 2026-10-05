@@ -118,13 +118,7 @@
 
 // KPI fallback (aiSubtitle prende lo slot KPI quando disponibile)
 // Il grassetto markdown (**importo**) viene renderizzato via AttributedString(markdown:)
-"panel.hero.kpi.monthStart %@ %d" = "Partiamo con il mese, un passo alla volta.";
-"panel.hero.kpi.onTrack %@ %@ %@ %d" = "Buon ritmo questo mese, continua così.";
-"panel.hero.kpi.neutral %@ %@ %@ %d" = "Il tuo mese in corso — tutto in ordine.";
-"panel.hero.kpi.tight %@ %@ %d" = "Mese stretto ma gestibile, un passo alla volta.";
-"panel.hero.kpi.overBudget %@ %@" = "Domani ripartiamo, tutto a posto.";
 
-"panel.hero.upsellCTA" = "Personalizza il tuo messaggio con IA";
 "panel.hero.availableLabel" = "Disponibile";
 
 // MARK: - Trend Widget
@@ -1689,7 +1683,6 @@
 "accessibility.skipSync" = "Salta l'attesa e continua la configurazione";
 "accessibility.tabLimitReached" = "Limite di schede raggiunto";
 "accessibility.noTransactionsToExport" = "Nessuna transazione da esportare";
-"accessibility.accountCard %@ %@" = "Conto %@, saldo %@";
 "accessibility.editAccount" = "Modifica conto";
 "accessibility.pageIndicator %d %d" = "Pagina %1$d di %2$d";
 "accessibility.accountRow %@ %@" = "Conto %@, valuta %@";
@@ -3407,7 +3400,6 @@
 "chat.unavailable" = "Yala IA non è disponibile. Riprova fra qualche minuto.";
 "chat.retry" = "Riprova";
 "chat.noVoiceDetected" = "Non ho rilevato audio. Riprova.";
-"chat.contextMemory" = "Yala IA ricorda %d messaggi";
 
 // MARK: - Chat Draft (Yala IA Registrar)
 "chat.draft.chipExpense" = "Spesa";
@@ -3430,7 +3422,6 @@
 "chat.draft.selectAccount" = "Seleziona conto";
 "chat.draft.selectSubcategory" = "Seleziona sottocategoria";
 "chat.draft.saveButton" = "Salva";
-"chat.draft.editButton" = "Modifica";
 "chat.draft.failedSavingLine" = "Salvataggio non riuscito.";
 "chat.draft.retryButton" = "Riprova";
 "chat.draft.noAccountsBlocking" = "Crea un conto dal profilo prima di registrare.";
@@ -4294,6 +4285,19 @@
 "stats.trends.insight.stableExpense" = "Le tue spese restano stabili.";
 "stats.trends.insight.stableIncome" = "Le tue entrate restano stabili.";
 "stats.trends.insight.stableBalance" = "Il tuo saldo resta stabile.";
+"stats.trends.insight.sustainedUpExpense %@" = "La tua spesa è in aumento da %@.";
+"stats.trends.insight.sustainedDownExpense %@" = "La tua spesa è in calo da %@.";
+"stats.trends.insight.sustainedUpIncome %@" = "Le tue entrate crescono da %@.";
+"stats.trends.insight.sustainedDownIncome %@" = "Le tue entrate sono in calo da %@.";
+"stats.trends.insight.sustainedUpBalance %@" = "Il tuo saldo cresce da %@.";
+"stats.trends.insight.sustainedDownBalance %@" = "Il tuo saldo è in calo da %@.";
+"stats.trends.insight.durationWeeks %d" = "%d settimane";
+"stats.trends.insight.durationMonths %d" = "%d mesi";
+"stats.trends.insight.durationYears %d" = "%d anni";
+"stats.trends.insight.cashFlowSurplus %d" = "Le tue entrate hanno coperto il %d%% delle spese: hai chiuso in positivo.";
+"stats.trends.insight.cashFlowDeficit %d" = "Le tue entrate hanno coperto il %d%% delle spese: hai speso più di quanto è entrato.";
+"stats.trends.insight.cashFlowNoIncome" = "In questo periodo hai registrato spese ma nessuna entrata.";
+"stats.trends.insight.weekdayPeak %@ %@" = "Giorno più caro: %@, con una spesa media di %@.";
 
 // MARK: - Stats WidgetInfo (periodComparison, sankey) — added 2026-05-18
 "panel.widgetInfo.periodComparison.title" = "Confronto periodo";
@@ -4741,7 +4745,11 @@
 "settings.signOutBlockedMessage" = "Alcune modifiche non sono ancora state caricate nel cloud e non vogliamo che tu perda nulla. Controlla la connessione e riprova.";
 
 /* Subtitle of the existing-account sub-chooser in Welcome */
-"welcome.existing.subtitle" = "Scegli come recuperare i tuoi dati.";
+"welcome.existing.title" = "Ciao di nuovo!";
+"welcome.existing.subtitle" = "Accedi con il tuo account Yala o recupera i tuoi dati da iCloud.";
+"welcome.existing.firstTimeQuestion" = "È la tua prima volta su Yala?";
+"welcome.existing.firstTimeAction" = "Inizia da qui";
+"welcome.form.or" = "o";
 
 /* Card title: restore from iCloud */
 "welcome.existing.restoreTitle" = "Ripristina da iCloud";
@@ -6226,3 +6234,194 @@
 "panel.accounts.filterByAccount" = "Filtra per questo conto";
 /* Context menu on a group card: open the group */
 "groups.contextMenu.open" = "Apri gruppo";
+
+/* Menú contextual de grupo o registro */
+"window.openInNewWindow" = "Apri in una nuova finestra";
+
+/* Ventana secundaria mientras la principal pregunta algo */
+"window.follower.title" = "Yala ti aspetta in un'altra finestra";
+
+/* Ventana secundaria: explicación */
+"window.follower.body" = "C'è qualcosa a cui rispondere nell'altra finestra di Yala. Quando hai finito lì, questa torna da sola.";
+
+/* Botón: traer al frente la otra ventana */
+"window.follower.cta" = "Vai a quella finestra";
+
+/* Storage · Grupos: replaces the associate/sign-in button while the groups channel is paused server-side */
+"storage.groups.channelPausedNote" = "I gruppi sono in pausa al momento per una cosa nostra. Quando torneranno, potrai continuare da qui.";
+
+/* Guía por pasos (referencia del 2026-09-15): progreso, salidas y garantías */
+"stepGuide.progress" = "Passo %1$d di %2$d";
+"stepGuide.markDone" = "Completato";
+"stepGuide.stuck" = "Non ci riesco";
+"stepGuide.whatYouWillSee" = "Cosa vedrai";
+"stepGuide.phaseDone" = "Completato";
+"stepGuide.phaseActive" = "Passo attuale";
+"stepGuide.phaseUpcoming" = "In attesa";
+"tutorials.applePay.openShortcuts" = "Apri Comandi Rapidi";
+"tutorials.applePay.guarantee" = "Ogni pagamento arriva come bozza: nulla viene registrato finché non lo approvi.";
+"tutorials.applePay.pendingDrafts" = "Pagamenti Apple Pay nella tua casella: %d";
+"faceIDGuide.guarantee" = "Yala non vede mai il tuo volto: lo verifica iOS.";
+"faceIDGuide.previewAction" = "Richiedi Face ID";
+
+/* Label above the amount on a Panel account card */
+"panel.accounts.card.balance" = "Saldo";
+
+/* Label above the amount on a credit card account with debt */
+"panel.accounts.card.toPay" = "Da pagare";
+
+/* Label above the amount in expenses-only mode; %@ = period name like 'Este mes' */
+"panel.accounts.card.spentInPeriod %@" = "Speso · %@";
+
+/* Account detail sheet: money that came into the account in the period */
+"accountDetail.moneyIn" = "Entrate";
+
+/* Account detail sheet: money that left the account in the period */
+"accountDetail.moneyOut" = "Uscite";
+
+/* Account detail sheet: section with top expense categories */
+"accountDetail.topCategories" = "Dove sono finiti";
+
+/* Account detail sheet: section with latest records */
+"accountDetail.latest" = "Ultimi movimenti";
+
+/* Accessibility label of the balance chart; account name, period name */
+"accountDetail.chartLabel %@ %@" = "Saldo di %@ in %@";
+
+/* Account detail sheet: no records in the period */
+"accountDetail.empty" = "Nessun movimento in questo periodo";
+
+/* Note under Archive toggle when archiving turned on Exclude from statistics */
+"account.archiveExcludedNotice" = "Una volta archiviato, questo conto non conta più nei tuoi totali e nelle statistiche, e i suoi movimenti vengono nascosti in Registri. Per continuare a includerlo, disattiva «Escludi dalle statistiche».";
+
+
+/* Chat draft card (Yala IA) — redesign A */
+"chat.draft.detailsButton" = "Dettagli";
+"chat.draft.detailsTitle" = "Registrazione proposta";
+"chat.draft.openFullForm" = "Apri nel modulo completo";
+"chat.draft.missingSubcategory" = "Manca la sottocategoria";
+"chat.draft.missingAccount" = "Manca il conto";
+"chat.draft.missingAmount" = "Manca l'importo";
+"chat.draft.addTag" = "Tag";
+
+/* Example shown while dictating to Yala AI */
+"chat.voice.hint" = "Prova: «Ho speso 25 per il pranzo con la carta»";
+
+/* Shown while the dictation is transcribed */
+"chat.voice.transcribingHint" = "Controlla il testo prima di inviarlo.";
+
+/* Recorded duration while transcribing, e.g. 0:07 recorded */
+"chat.voice.recorded" = "%@ registrati";
+
+/* VoiceOver: discard the dictation without transcribing */
+"accessibility.discardRecording" = "Elimina registrazione";
+
+/* Voice entry: second processing step, the transcript is being read for amount and category */
+"voice.processing.understanding" = "Sto capendo il tuo registro…";
+
+/* Voice entry: last processing step, the draft is being created */
+"voice.processing.preparing" = "Sto preparando il tuo registro…";
+
+/* Voice entry: button to discard what was understood and record again */
+"voice.recordAgain" = "Registra di nuovo";
+
+/* Voice entry: title above the record understood from the recording */
+"voice.review.title" = "Ecco cosa ho capito";
+
+/* Voice entry: title when several records were understood, e.g. I heard 2 entries */
+"voice.review.titleMany" = "Ho capito %d registri";
+
+/* Voice entry: button that saves several records, e.g. Save 2 */
+"voice.review.saveMany" = "Salva %d";
+
+/* Voice entry: closing without saving leaves the drafts in the Inbox */
+"voice.review.inboxNote" = "Se chiudi senza salvare, lo troverai in Posta in arrivo.";
+
+/* Voice entry failure title: no internet */
+"voice.failure.noConnection.title" = "Nessuna connessione";
+
+/* Voice entry failure title: microphone permission denied */
+"voice.failure.mic.title" = "Yala non può usare il microfono";
+
+/* Voice entry failure title: the recording was empty or too short */
+"voice.failure.noVoice.title" = "Non ti ho sentito";
+
+/* Voice entry failure message: the recording was empty or too short */
+"voice.failure.noVoice.message" = "La registrazione era vuota o troppo breve. Riprova.";
+
+/* Voice entry failure title: no amount was heard */
+"voice.failure.noAmount.title" = "Non ho sentito un importo";
+
+/* Voice entry failure message: ask to say the amount, e.g. 25 */
+"voice.failure.noAmount.message" = "Di’ anche quanto era, per esempio «25».";
+
+/* Voice entry failure title: something went wrong */
+"voice.failure.generic.title" = "Questa volta non ti ho capito";
+
+/* Voice entry failure message: something went wrong, try again */
+"voice.failure.generic.message" = "Qualcosa è andato storto elaborando la tua voce. Riprova tra un momento.";
+
+/* Registro por imagen (propuesta C, 2026-10-04) */
+/* Image entry sheet title */
+"image.entry.title" = "Registra con un’immagine";
+/* Image entry: what the user can bring and what Yala reads */
+"image.entry.subtitle" = "Uno scontrino, uno screenshot della banca o un PDF. Ne ricavo importo, esercente e data.";
+/* Image entry source: take a photo */
+"image.entry.camera" = "Fotocamera";
+/* Image entry source: pick from Photos */
+"image.entry.photos" = "Foto";
+/* Image entry source: pick a file (image or PDF) */
+"image.entry.file" = "File";
+/* Image entry: hint that Photos allows up to 10 at once */
+"image.entry.multipleHint" = "Fino a 10 foto alla volta da Foto";
+/* Image entry: reading one photo */
+"image.entry.readingOne" = "Sto leggendo la tua foto…";
+/* Image entry: reading several photos */
+"image.entry.readingMany" = "Sto leggendo le tue foto…";
+/* Image entry: current reading step */
+"image.entry.readingStep" = "Cerco l’importo";
+/* Image entry: photo %1 of %2 being read */
+"image.entry.readingProgress" = "Foto %1$d di %2$d";
+/* Image entry review title, one entry */
+"image.entry.reviewTitle" = "Ecco cosa ho letto";
+/* Image entry review title, %d entries */
+"image.entry.reviewTitleMany" = "Ho letto %d registri";
+/* Image entry: one photo could not be read */
+"image.entry.photoFailedOne" = "1 foto non si è potuta leggere";
+/* Image entry: %d photos could not be read */
+"image.entry.photoFailedMany" = "%d foto non si sono potute leggere";
+/* Image entry: discard and pick another photo */
+"image.entry.otherPhoto" = "Un’altra foto";
+/* Accessibility: cancel reading the photo */
+"image.entry.cancelReading" = "Interrompi la lettura";
+/* Image entry failure: no amount found */
+"image.entry.failure.noAmount.title" = "Non ho trovato un importo";
+/* Image entry failure: no amount found, what to try */
+"image.entry.failure.noAmount.message" = "Prova con una foto più vicina al totale, o con un’altra immagine.";
+/* Image entry failure: the image could not be opened */
+"image.entry.failure.unreadable.title" = "Non sono riuscito ad aprire questa immagine";
+/* Image entry failure: camera permission denied */
+"image.entry.failure.camera.title" = "Yala non può usare la fotocamera";
+/* Image entry failure: camera permission, how to fix */
+"image.entry.failure.camera.message" = "Consenti l’accesso nelle Impostazioni per fotografare i tuoi scontrini.";
+/* Image entry failure: reading failed */
+"image.entry.failure.generic.title" = "Questa volta non sono riuscito a leggerla";
+/* Image entry failure: reading failed, the photo is fine */
+"image.entry.failure.generic.message" = "La foto va bene: la lettura non è riuscita. Riprova tra un momento.";
+/* Current user's name, no parentheses */
+"groups.member.youName" = "Tu";
+
+/* Header: how much each person puts in a group expense */
+"groups.expense.breakdownTitle" = "Ripartizione";
+
+/* Under the payer's name: Paid <amount> */
+"groups.expense.paidAmount" = "Ha pagato %@";
+
+/* Row title: where this expense landed in your personal records */
+"groups.expense.inYourFinances" = "Nelle tue finanze";
+
+/* Middle of the sentence: Paid by <name> and split <mode> */
+"groups.expense.andDividedLabel" = "e diviso";
+
+/* Current user after a preposition: Paid by <you> */
+"groups.member.youObject" = "te";

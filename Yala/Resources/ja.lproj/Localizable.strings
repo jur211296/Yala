@@ -118,13 +118,7 @@
 
 // KPI fallback (aiSubtitle takes the KPI slot when available)
 // Markdown bold (**amount**) renders via AttributedString(markdown:)
-"panel.hero.kpi.monthStart %@ %d" = "今月もスタート、一歩ずつ進めましょう。";
-"panel.hero.kpi.onTrack %@ %@ %@ %d" = "今月はいいリズムです、この調子で。";
-"panel.hero.kpi.neutral %@ %@ %@ %d" = "今月も順調に進んでいます。";
-"panel.hero.kpi.tight %@ %@ %d" = "やりくりは大変ですが、一歩ずつ進めましょう。";
-"panel.hero.kpi.overBudget %@ %@" = "明日からまた仕切り直し、大丈夫です。";
 
-"panel.hero.upsellCTA" = "AIでメッセージをカスタマイズ";
 "panel.hero.availableLabel" = "利用可能";
 
 // MARK: - Trend Widget
@@ -1688,7 +1682,6 @@
 "accessibility.skipSync" = "待機をスキップしてセットアップを続ける";
 "accessibility.tabLimitReached" = "タブの上限に達しました";
 "accessibility.noTransactionsToExport" = "エクスポートする取引がありません";
-"accessibility.accountCard %@ %@" = "口座%@、残高%@";
 "accessibility.editAccount" = "口座を編集";
 "accessibility.pageIndicator %d %d" = "%2$dページ中%1$dページ目";
 "accessibility.accountRow %@ %@" = "口座%@、通貨%@";
@@ -3409,7 +3402,6 @@
 "chat.unavailable" = "Yala AIは現在利用できません。数分後にもう一度お試しください。";
 "chat.retry" = "再試行";
 "chat.noVoiceDetected" = "音声を検出できませんでした。もう一度お試しください。";
-"chat.contextMemory" = "Yala AIは%d件のメッセージを覚えています";
 
 // MARK: - Chat Draft (Yala AI Register)
 "chat.draft.chipExpense" = "支出";
@@ -3432,7 +3424,6 @@
 "chat.draft.selectAccount" = "口座を選択";
 "chat.draft.selectSubcategory" = "サブカテゴリーを選択";
 "chat.draft.saveButton" = "保存";
-"chat.draft.editButton" = "編集";
 "chat.draft.failedSavingLine" = "保存できませんでした。";
 "chat.draft.retryButton" = "再試行";
 "chat.draft.noAccountsBlocking" = "登録する前に、プロフィールから口座を作成してください。";
@@ -4296,6 +4287,19 @@
 "stats.trends.insight.stableExpense" = "支出は安定しています。";
 "stats.trends.insight.stableIncome" = "収入は安定しています。";
 "stats.trends.insight.stableBalance" = "残高は安定しています。";
+"stats.trends.insight.sustainedUpExpense %@" = "支出は%@連続で増えています。";
+"stats.trends.insight.sustainedDownExpense %@" = "支出は%@連続で減っています。";
+"stats.trends.insight.sustainedUpIncome %@" = "収入は%@連続で増えています。";
+"stats.trends.insight.sustainedDownIncome %@" = "収入は%@連続で減っています。";
+"stats.trends.insight.sustainedUpBalance %@" = "残高は%@連続で増えています。";
+"stats.trends.insight.sustainedDownBalance %@" = "残高は%@連続で減っています。";
+"stats.trends.insight.durationWeeks %d" = "%d週";
+"stats.trends.insight.durationMonths %d" = "%dか月";
+"stats.trends.insight.durationYears %d" = "%d年";
+"stats.trends.insight.cashFlowSurplus %d" = "収入で支出の%d%%をまかなえました。プラスで締めくくりました。";
+"stats.trends.insight.cashFlowDeficit %d" = "収入で支出の%d%%をまかないました。入ってきた額より多く使いました。";
+"stats.trends.insight.cashFlowNoIncome" = "この期間は支出のみで、収入の記録はありません。";
+"stats.trends.insight.weekdayPeak %@ %@" = "最もお金を使う曜日は%@です。平均%@です。";
 
 // MARK: - Stats WidgetInfo (periodComparison, sankey) — added 2026-05-18
 "panel.widgetInfo.periodComparison.title" = "期間の比較";
@@ -4743,7 +4747,11 @@
 "settings.signOutBlockedMessage" = "まだクラウドにアップロードされていない変更があります。大切なデータを失わないよう、接続を確認してからもう一度お試しください。";
 
 /* Subtitle of the existing-account sub-chooser in Welcome */
-"welcome.existing.subtitle" = "データの復元方法を選んでください。";
+"welcome.existing.title" = "おかえりなさい！";
+"welcome.existing.subtitle" = "Yalaアカウントでサインインするか、iCloudからデータを復元します。";
+"welcome.existing.firstTimeQuestion" = "Yalaは初めてですか？";
+"welcome.existing.firstTimeAction" = "ここから始める";
+"welcome.form.or" = "または";
 
 /* Card title: restore from iCloud */
 "welcome.existing.restoreTitle" = "iCloudから復元";
@@ -6228,3 +6236,194 @@
 "panel.accounts.filterByAccount" = "この口座で絞り込む";
 /* Context menu on a group card: open the group */
 "groups.contextMenu.open" = "グループを開く";
+
+/* Menú contextual de grupo o registro */
+"window.openInNewWindow" = "新しいウインドウで開く";
+
+/* Ventana secundaria mientras la principal pregunta algo */
+"window.follower.title" = "Yalaは別のウインドウで待っています";
+
+/* Ventana secundaria: explicación */
+"window.follower.body" = "もう一方のYalaウインドウで回答が必要です。そちらが終わると、このウインドウは自動的に戻ります。";
+
+/* Botón: traer al frente la otra ventana */
+"window.follower.cta" = "そのウインドウへ移動";
+
+/* Storage · Grupos: replaces the associate/sign-in button while the groups channel is paused server-side */
+"storage.groups.channelPausedNote" = "こちら側の問題で、グループは現在一時停止中です。再開したら、ここから続けられます。";
+
+/* Guía por pasos (referencia del 2026-09-15): progreso, salidas y garantías */
+"stepGuide.progress" = "ステップ %1$d / %2$d";
+"stepGuide.markDone" = "できた";
+"stepGuide.stuck" = "うまくいかない";
+"stepGuide.whatYouWillSee" = "表示される画面";
+"stepGuide.phaseDone" = "完了";
+"stepGuide.phaseActive" = "現在のステップ";
+"stepGuide.phaseUpcoming" = "未完了";
+"tutorials.applePay.openShortcuts" = "ショートカットを開く";
+"tutorials.applePay.guarantee" = "支払いはドラフトとして届きます。承認するまで記録されません。";
+"tutorials.applePay.pendingDrafts" = "受信箱のApple Pay支払い：%d件";
+"faceIDGuide.guarantee" = "Yalaがあなたの顔を見ることはありません。確認するのはiOSです。";
+"faceIDGuide.previewAction" = "Face IDを要求";
+
+/* Label above the amount on a Panel account card */
+"panel.accounts.card.balance" = "残高";
+
+/* Label above the amount on a credit card account with debt */
+"panel.accounts.card.toPay" = "未払い";
+
+/* Label above the amount in expenses-only mode; %@ = period name like 'Este mes' */
+"panel.accounts.card.spentInPeriod %@" = "支出 · %@";
+
+/* Account detail sheet: money that came into the account in the period */
+"accountDetail.moneyIn" = "入金";
+
+/* Account detail sheet: money that left the account in the period */
+"accountDetail.moneyOut" = "出金";
+
+/* Account detail sheet: section with top expense categories */
+"accountDetail.topCategories" = "使い道";
+
+/* Account detail sheet: section with latest records */
+"accountDetail.latest" = "最近の取引";
+
+/* Accessibility label of the balance chart; account name, period name */
+"accountDetail.chartLabel %@ %@" = "%@の残高（%@）";
+
+/* Account detail sheet: no records in the period */
+"accountDetail.empty" = "この期間の取引はありません";
+
+/* Note under Archive toggle when archiving turned on Exclude from statistics */
+"account.archiveExcludedNotice" = "アーカイブすると、この口座は合計と統計に含まれなくなり、取引は「記録」に表示されなくなります。引き続き含めるには「統計から除外」をオフにしてください。";
+
+
+/* Chat draft card (Yala IA) — redesign A */
+"chat.draft.detailsButton" = "詳細";
+"chat.draft.detailsTitle" = "提案された記録";
+"chat.draft.openFullForm" = "フォームで開く";
+"chat.draft.missingSubcategory" = "サブカテゴリーが未選択";
+"chat.draft.missingAccount" = "口座が未選択";
+"chat.draft.missingAmount" = "金額が未入力";
+"chat.draft.addTag" = "タグ";
+
+/* Example shown while dictating to Yala AI */
+"chat.voice.hint" = "例：「ランチにカードで25使った」";
+
+/* Shown while the dictation is transcribed */
+"chat.voice.transcribingHint" = "送信する前にテキストを確認してください。";
+
+/* Recorded duration while transcribing, e.g. 0:07 recorded */
+"chat.voice.recorded" = "%@ 録音済み";
+
+/* VoiceOver: discard the dictation without transcribing */
+"accessibility.discardRecording" = "録音を破棄";
+
+/* Voice entry: second processing step, the transcript is being read for amount and category */
+"voice.processing.understanding" = "記録を読み取っています…";
+
+/* Voice entry: last processing step, the draft is being created */
+"voice.processing.preparing" = "記録を準備しています…";
+
+/* Voice entry: button to discard what was understood and record again */
+"voice.recordAgain" = "もう一度録音";
+
+/* Voice entry: title above the record understood from the recording */
+"voice.review.title" = "聞き取った内容";
+
+/* Voice entry: title when several records were understood, e.g. I heard 2 entries */
+"voice.review.titleMany" = "%d件の記録を聞き取りました";
+
+/* Voice entry: button that saves several records, e.g. Save 2 */
+"voice.review.saveMany" = "%d件を保存";
+
+/* Voice entry: closing without saving leaves the drafts in the Inbox */
+"voice.review.inboxNote" = "保存せずに閉じると、受信箱に残ります。";
+
+/* Voice entry failure title: no internet */
+"voice.failure.noConnection.title" = "接続がありません";
+
+/* Voice entry failure title: microphone permission denied */
+"voice.failure.mic.title" = "Yalaはマイクを使えません";
+
+/* Voice entry failure title: the recording was empty or too short */
+"voice.failure.noVoice.title" = "聞き取れませんでした";
+
+/* Voice entry failure message: the recording was empty or too short */
+"voice.failure.noVoice.message" = "録音が空か短すぎました。もう一度お試しください。";
+
+/* Voice entry failure title: no amount was heard */
+"voice.failure.noAmount.title" = "金額が聞き取れませんでした";
+
+/* Voice entry failure message: ask to say the amount, e.g. 25 */
+"voice.failure.noAmount.message" = "金額も言ってください（例：「25」）。";
+
+/* Voice entry failure title: something went wrong */
+"voice.failure.generic.title" = "今回はうまく聞き取れませんでした";
+
+/* Voice entry failure message: something went wrong, try again */
+"voice.failure.generic.message" = "音声の処理中に問題が発生しました。少し待ってからもう一度お試しください。";
+
+/* Registro por imagen (propuesta C, 2026-10-04) */
+/* Image entry sheet title */
+"image.entry.title" = "画像で記録";
+/* Image entry: what the user can bring and what Yala reads */
+"image.entry.subtitle" = "レシート、銀行のスクリーンショット、PDF。金額・店舗・日付を読み取ります。";
+/* Image entry source: take a photo */
+"image.entry.camera" = "カメラ";
+/* Image entry source: pick from Photos */
+"image.entry.photos" = "写真";
+/* Image entry source: pick a file (image or PDF) */
+"image.entry.file" = "ファイル";
+/* Image entry: hint that Photos allows up to 10 at once */
+"image.entry.multipleHint" = "写真から一度に最大10枚まで";
+/* Image entry: reading one photo */
+"image.entry.readingOne" = "写真を読み取り中…";
+/* Image entry: reading several photos */
+"image.entry.readingMany" = "写真を読み取り中…";
+/* Image entry: current reading step */
+"image.entry.readingStep" = "金額を探しています";
+/* Image entry: photo %1 of %2 being read */
+"image.entry.readingProgress" = "%2$d枚中%1$d枚目";
+/* Image entry review title, one entry */
+"image.entry.reviewTitle" = "読み取った内容";
+/* Image entry review title, %d entries */
+"image.entry.reviewTitleMany" = "%d件の記録を読み取りました";
+/* Image entry: one photo could not be read */
+"image.entry.photoFailedOne" = "1枚の写真を読み取れませんでした";
+/* Image entry: %d photos could not be read */
+"image.entry.photoFailedMany" = "%d枚の写真を読み取れませんでした";
+/* Image entry: discard and pick another photo */
+"image.entry.otherPhoto" = "別の写真";
+/* Accessibility: cancel reading the photo */
+"image.entry.cancelReading" = "読み取りを中止";
+/* Image entry failure: no amount found */
+"image.entry.failure.noAmount.title" = "金額が見つかりませんでした";
+/* Image entry failure: no amount found, what to try */
+"image.entry.failure.noAmount.message" = "合計に近づけて撮った写真か、別の画像でお試しください。";
+/* Image entry failure: the image could not be opened */
+"image.entry.failure.unreadable.title" = "この画像を開けませんでした";
+/* Image entry failure: camera permission denied */
+"image.entry.failure.camera.title" = "Yalaはカメラを使用できません";
+/* Image entry failure: camera permission, how to fix */
+"image.entry.failure.camera.message" = "レシートを撮影するには、設定でアクセスを許可してください。";
+/* Image entry failure: reading failed */
+"image.entry.failure.generic.title" = "今回は読み取れませんでした";
+/* Image entry failure: reading failed, the photo is fine */
+"image.entry.failure.generic.message" = "写真に問題はありません。読み取りに失敗しました。少ししてからもう一度お試しください。";
+/* Current user's name, no parentheses */
+"groups.member.youName" = "あなた";
+
+/* Header: how much each person puts in a group expense */
+"groups.expense.breakdownTitle" = "内訳";
+
+/* Under the payer's name: Paid <amount> */
+"groups.expense.paidAmount" = "%@を支払い";
+
+/* Row title: where this expense landed in your personal records */
+"groups.expense.inYourFinances" = "あなたの家計";
+
+/* Middle of the sentence: Paid by <name> and split <mode> */
+"groups.expense.andDividedLabel" = "・分け方";
+
+/* Current user after a preposition: Paid by <you> */
+"groups.member.youObject" = "あなた";

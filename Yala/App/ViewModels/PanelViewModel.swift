@@ -545,12 +545,6 @@ final class PanelViewModel {
     var periodComparisonWidget = PanelPeriodComparisonData()
     var tagsWidget = PanelTagsData()
 
-    /// Reemplaza el rule-based `subtext` del hero cuando es Pro + consent y
-    /// hay cache hit o la API respondió. Nil ⇒ el view usa fallback
-    /// rule-based inmediato (también determina la visibilidad del badge
-    /// "Pro" en `PanelHeroSection`, derivado de `!= nil`).
-    var heroAISubtitle: String? = nil
-
     // Pre-computed account data — eliminates passing [TransactionItem] to AccountsCarouselView
     private(set) var accountBalances: [PersistentIdentifier: Double] = [:]
     private(set) var accountPeriodExpenses: [PersistentIdentifier: Double] = [:]
@@ -1173,10 +1167,10 @@ final class PanelViewModel {
 
     /// Navigates to a Statistics detail tab. Visibility (and the
     /// temporaryTab + delay dance for tabs hidden in "More") is handled by
-    /// `SessionState.selectMainTab(_:)`.
-    func navigateToStatistics(_ detailTab: DetailViewTab) {
-        sessionState?.selectedDetailTab = detailTab
-        sessionState?.selectMainTab(.statistics)
+    /// `SceneNavigation.selectMainTab(_:)`. Recibe la navegación de la ventana del Panel que lo pide.
+    func navigateToStatistics(_ detailTab: DetailViewTab, in navigation: SceneNavigation) {
+        navigation.selectedDetailTab = detailTab
+        navigation.selectMainTab(.statistics)
     }
 
     /// Whether voice input can be used (requires active accounts and visible subcategories).
@@ -2962,180 +2956,7 @@ final class PanelViewModel {
             totalMonthlyBudget: totalMonthlyBudget
         )
         let wrapped = PanelHeroData(data: newData)
-        let dataChanged = wrapped != heroWidget
-        if dataChanged { heroWidget = wrapped }
-
-        lastHeroTrendContext = TrendContext(
-            prevExpense: buckets.prevExpense,
-            prevHasAnyTx: buckets.prevHasAnyTx,
-            totalMonthlyBudget: totalMonthlyBudget,
-            monthInterval: monthInterval
-        )
-
-        // Re-generar IA cuando cambien los montos. Limpiar el cache aquí
-        // garantiza que el mensaje cite los montos actuales aunque el cambio
-        // sea menor que el bucket del hash (p.ej. una tx de <100 del bucket).
-        // El guard `dataChanged` evita spam de telemetría cuando
-        // performCalculation corre múltiples veces sin cambios reales.
-        if dataChanged {
-            HeroMessageCache.clear()
-            generateHeroAIIfEligible(data: newData)
-        }
-    }
-
-    // MARK: - Hero IA
-
-    /// Snapshot de los agregados del mes anterior + budget que necesita
-    /// `generateHeroAIIfEligible`. Recalculado en cada `calculateHeroWidget`
-    /// para que `retriggerHeroAI` (invocado por observadores de consent/Pro)
-    /// no tenga que re-iterar `transactions`.
-    private struct TrendContext {
-        let prevExpense: Double
-        let prevHasAnyTx: Bool
-        let totalMonthlyBudget: Double
-        let monthInterval: DateInterval
-    }
-
-    private var lastHeroTrendContext: TrendContext?
-
-    /// Task en vuelo — permite cancelar la anterior si llega otro trigger
-    /// (evita last-writer-wins stale cuando Pro/consent togglean en rápido).
-    private var heroAITask: Task<Void, Never>?
-
-    /// Reintenta la generación del mensaje IA usando el último `heroWidget`
-    /// computado. Lo llaman los observers de `PanelView` cuando cambia
-    /// consent o estado Pro.
-    func retriggerHeroAI() {
-        guard let data = heroWidget.data else { return }
-        generateHeroAIIfEligible(data: data)
-    }
-
-    /// Genera el mensaje IA si el usuario es Pro + tiene consent + feature activa.
-    /// Free, Pro sin consent, o Pro con feature apagada quedan en rule-based
-    /// silencioso (`heroAISubtitle = nil`).
-    private func generateHeroAIIfEligible(data: HeroMonthData) {
-        guard FeatureGateService.shared.canAccess(.smartInsightsAI),
-              appPreferences?.aiInsightsConsentAccepted == true,
-              let trend = lastHeroTrendContext else {
-            heroAITask?.cancel()
-            heroAITask = nil
-            heroAISubtitle = nil
-            return
-        }
-
-        let ctx = buildHeroContext(data: data, trend: trend)
-
-        if let cached = HeroMessageCache.read(),
-           cached.hash == HeroMessageCache.contextHash(ctx) {
-            heroAISubtitle = cached.text
-            return
-        }
-
-        heroAITask?.cancel()
-        heroAITask = Task { [weak self] in
-            guard let self else { return }
-            do {
-                let text = try await InsightsLLMService.shared.generateHeroMessage(context: ctx)
-                guard !Task.isCancelled else { return }
-                self.heroAISubtitle = text
-            } catch {
-                guard !Task.isCancelled else { return }
-                self.heroAISubtitle = nil
-            }
-        }
-    }
-
-    /// Construye el `HeroContext` a partir de los agregados ya calculados en
-    /// `calculateHeroWidget`. Cero fetches y cero iteraciones extra.
-    private func buildHeroContext(data: HeroMonthData, trend: TrendContext) -> HeroContext {
-        let spendingTrend: HeroSpendingTrend?
-        if !trend.prevHasAnyTx || trend.prevExpense <= 0 {
-            spendingTrend = nil
-        } else {
-            let ratio = data.expense / trend.prevExpense
-            if ratio > 1.05 { spendingTrend = .up }
-            else if ratio < 0.95 { spendingTrend = .down }
-            else { spendingTrend = .flat }
-        }
-
-        let percentBudget: Double? = trend.totalMonthlyBudget > 0
-            ? data.expense / trend.totalMonthlyBudget
-            : nil
-
-        let rawName = appPreferences?.userName ?? ""
-        let userName: String? = rawName.isEmpty ? nil : rawName
-
-        let currencyCode = defaultCurrencyCode
-
-        let formattedIncome = snapshotCurrency(data.income, code: currencyCode)
-        let formattedExpense = snapshotCurrency(data.expense, code: currencyCode)
-        let formattedAvailable = snapshotCurrency(data.available, code: currencyCode)
-
-        // Datos del mes anterior — solo cuando hay data real (prevHasAnyTx).
-        // Delta firmado: positivo gasta más, negativo gasta menos.
-        let previousExpense: Double? = trend.prevHasAnyTx ? trend.prevExpense : nil
-        let formattedPreviousExpense: String? = previousExpense.map { snapshotCurrency($0, code: currencyCode) }
-        let expenseDelta: Double? = previousExpense.map { data.expense - $0 }
-        let formattedExpenseDelta: String? = expenseDelta.map { snapshotCurrency(abs($0), code: currencyCode) }
-
-        // Enriquecimiento contextual — reusa computes ya realizados por los
-        // widgets de Distribución/Tendencias (zero overhead). Si el user
-        // oculta esos widgets los campos llegan nil y el prompt se adapta.
-        let topCat = topSpendingCategories.first
-        let topCategory: String? = topCat?.category.name
-        let formattedTopCategoryAmount: String? = topCat.map { snapshotCurrency($0.amount, code: currencyCode) }
-        // Reusa el helper canónico de variación (`PreviousPeriodHelper`) que el
-        // resto del Panel usa para chips/headers — evita divergencia semántica.
-        let topCategoryDeltaPercent: Double? = topCat?.variation
-
-        let topDay = weekdayWidget.weekdaySpending.max(by: { $0.average < $1.average })
-        let topWeekday: String? = topDay?.weekdayLongName
-        let formattedTopWeekdayAmount: String? = topDay.map { snapshotCurrency($0.average, code: currencyCode) }
-
-        let monthProgress = Double(data.daysElapsed) / Double(max(data.daysTotal, 1))
-
-        return HeroContext(
-            state: data.state,
-            financialScore: healthWidget.score.flatMap(\.total),
-            percentBudgetUsed: percentBudget,
-            spendingTrend: spendingTrend,
-            monthName: Self.monthNameFormatter.string(from: trend.monthInterval.start).localizedCapitalized,
-            userName: userName,
-            daysRemaining: data.daysRemaining,
-            daysElapsed: data.daysElapsed,
-            locale: AppLocale.current.identifier,
-            income: data.income,
-            expense: data.expense,
-            available: data.available,
-            formattedIncome: formattedIncome,
-            formattedExpense: formattedExpense,
-            formattedAvailable: formattedAvailable,
-            previousExpense: previousExpense,
-            formattedPreviousExpense: formattedPreviousExpense,
-            expenseDelta: expenseDelta,
-            formattedExpenseDelta: formattedExpenseDelta,
-            topCategory: topCategory,
-            formattedTopCategoryAmount: formattedTopCategoryAmount,
-            topCategoryDeltaPercent: topCategoryDeltaPercent,
-            topWeekday: topWeekday,
-            formattedTopWeekdayAmount: formattedTopWeekdayAmount,
-            monthProgress: monthProgress,
-            expensesOnly: SessionState.shared.isExpensesOnlyMode
-        )
-    }
-
-    private static let monthNameFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.locale = AppLocale.current
-        f.dateFormat = "MMMM"
-        return f
-    }()
-
-    /// Snapshot del payload IA — no reactivo. Usa `appPreferences.currency` cuando está
-    /// inyectado; en bootstrap (nil) cae al estático para preservar paridad de output.
-    private func snapshotCurrency(_ value: Double, code: String) -> String {
-        if let appPreferences { return appPreferences.currency(value, currencyCode: code) }
-        return YalaFormatterStatic.currency(value: value, currencyCode: code)
+        if wrapped != heroWidget { heroWidget = wrapped }
     }
 
     /// Pre-computes total account balances (not period-dependent).

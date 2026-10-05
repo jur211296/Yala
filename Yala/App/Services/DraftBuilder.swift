@@ -64,8 +64,8 @@ struct DraftBuilder {
     /// **Cuando el tipo y la categoría discrepan manda el tipo (`isExpense`), y la subcategoría se
     /// descarta** (decisión del ticket `chat-draft-sign-can-contradict-its-subcategory`). No es una
     /// preferencia nueva: es lo que ya hacían los otros cuatro puntos del borrador del chat, medidos
-    /// el 2026-09-08 en este árbol —el menú del card filtra por `draft.isExpense`
-    /// (`ChatTransactionDraftCard.filteredSubcategories`), `ChatAssistantViewModel.updateDraft`
+    /// el 2026-09-08 en este árbol —el selector de la card filtra por `draft.isExpense` (desde el 2026-10-04,
+    /// `SubcategorySelectorSheet` con `transactionType` vía `ChatDraftFieldSheet`), `ChatAssistantViewModel.updateDraft`
     /// rechaza contra él la subcategoría que el usuario elige a mano, `matchSubcategoryByHint` filtra
     /// por él, y `saveDraft` firma el monto con él—. El único que no lo respetaba era el fallback por
     /// comercio, y su sugerencia es lo MENOS parecido a una intención: no sale de lo que el usuario

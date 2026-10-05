@@ -2,16 +2,17 @@
 //  GroupExpenseDetailSheet.swift
 //  Yala
 //
-//  Sheet de detalle read-only de un gasto compartido (Grupos). Detent fijo:
-//  medium en iPhone (quick look estilo Wallet), large en iPad. La edición se
-//  alcanza con el botón Editar, que cierra este sheet y deja que el padre
-//  presente GroupExpenseFormView en su `onDismiss` (reemplazo de sheet nativo:
-//  este baja, el editor sube en large). Réplica del flujo de TransactionDetailSheet
-//  de Records, adaptado al modelo SplitExpense.
+//  Detalle read-only de un gasto compartido (Grupos), propuesta B de
+//  `group-expense-views-redesign` («recibo»): lo que se abre a buscar va primero.
 //
-//  Diseño neutro: sobre el fondo transparent del detent medium los tintes finos
-//  se pierden — montos, íconos y labels van en primary/secondary; el color solo
-//  vive en fills sólidos (badge de categoría/división) y en el monto de perspectiva.
+//  1. Cabecera: categoría, descripción, total y fecha.
+//  2. «Tu parte»: una frase con lo que te toca («Le debes a Ana» · S/ 40).
+//  3. «Reparto»: la lista de quién pone cuánto; la barra por persona, solo si no es a partes iguales.
+//  4. Detalles: categoría, nota y, si el gasto llegó a tu registro personal, dónde quedó.
+//
+//  La edición sigue siendo un paso aparte (botón Editar → el padre presenta
+//  GroupExpenseFormView en el `onDismiss`): un gasto de grupo lo ven todos los miembros,
+//  así que abrirlo no lo edita.
 //
 
 import SwiftData
@@ -30,7 +31,9 @@ struct GroupExpenseDetailSheet: View {
     let expense: SplitExpense
     /// Mi share en este gasto (nil si no participo → "No participaste").
     let share: SplitShare?
-    /// TX personal del bridge (si auto-match exitosa) — aporta subcategoría/categoría.
+    /// Todas las partes del gasto: alimentan la barra y la lista del reparto.
+    let allShares: [SplitShare]
+    /// TX personal del bridge (si auto-match exitosa) — aporta subcategoría/categoría y cuenta.
     let bridgeTransaction: TransactionItem?
     /// `[nombre normalizado de subcategoría: (icono, colorHex)]` de las subcategorías locales.
     /// Fallback self-contained del icono/categoría cuando no hay bridge (device fresco / no-participante):
@@ -46,17 +49,13 @@ struct GroupExpenseDetailSheet: View {
 
     @Environment(\.dismiss) private var dismiss
     @Environment(AppPreferences.self) private var appPreferences
-    @Environment(\.usesLargeSheets) private var usesLargeSheets
 
-    /// Detent fijo: medium en ventana compacta / large en ventana ancha. Mismo patrón que TransactionDetailSheet.
-    private var detent: PresentationDetent {
-        usesLargeSheets ? .large : .medium
-    }
+    @ScaledMetric(relativeTo: .body) private var avatarSize: CGFloat = 32 // A11Y-DT: @ScaledMetric
 
     var body: some View {
         detailContent
-            .presentationDetents([detent])
-            .presentationDragIndicator(.hidden)
+            .yalaSheetDetents([.large])
+            .presentationDragIndicator(.visible)
     }
 
     // MARK: - Detail content
@@ -65,11 +64,13 @@ struct GroupExpenseDetailSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: DS.Spacing.lg) {
-                    compactHero
+                    hero
+                    yourPartCard
+                    breakdownCard
                     detailsCard
                 }
-                .padding(.horizontal, DS.Spacing.xl)
-                .padding(.top, DS.Spacing.md)
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.top, DS.Spacing.sm)
                 .padding(.bottom, DS.Spacing.xl)
             }
             .scrollBounceBehavior(.basedOnSize)
@@ -90,7 +91,7 @@ struct GroupExpenseDetailSheet: View {
                     .accessibilityIdentifier("group_expense_detail_edit")
                 }
             }
-            .yalaScreenBackground(.partialSheet)
+            .yalaScreenBackground(.subtle)
         }
         .accessibilityIdentifier("group_expense_detail_sheet")
     }
@@ -109,10 +110,15 @@ struct GroupExpenseDetailSheet: View {
         )
     }
 
+    /// Nombre de una persona dentro del reparto: «Tú» para el usuario actual (sin paréntesis:
+    /// aquí es el nombre, no una marca junto a otro nombre).
+    private func displayName(for memberID: String) -> String {
+        if memberID == currentMemberID { return L10n.Groups.Member.youName }
+        return memberNameLookup[memberID] ?? "?"
+    }
+
     private var payerName: String {
-        // "(Tú)" — misma etiqueta que MemberPickerView/GroupMemberRow para el current
-        // user (no `Split.youLabel`, que es el posesivo "Tu" del chip de división).
-        isPayer ? L10n.Groups.Member.you : (memberNameLookup[expense.paidByMemberID] ?? "?")
+        displayName(for: expense.paidByMemberID)
     }
 
     private var splitTypeLabel: String {
@@ -162,136 +168,291 @@ struct GroupExpenseDetailSheet: View {
         bridgeSubcategory?.name ?? expense.subcategoryName ?? ""
     }
 
-    // MARK: - Hero compacto (badge + monto total en línea, descripción · fecha debajo)
+    // MARK: - Reparto (datos)
 
-    private var compactHero: some View {
+    /// Una fila del reparto. El pagador aparece aunque no tenga parte (pagó por otros).
+    private struct BreakdownEntry: Identifiable {
+        let id: String
+        let name: String
+        let amount: Double
+        let isPayer: Bool
+    }
+
+    /// Pagador primero; el resto por nombre (tú también), para que la lista no salte entre gastos.
+    private var breakdownEntries: [BreakdownEntry] {
+        var amountsByMember: [String: Double] = [:]
+        for share in allShares where share.amount.isFinite {
+            amountsByMember[share.memberID, default: 0] += share.amount
+        }
+        var entries = amountsByMember.map { memberID, amount in
+            BreakdownEntry(
+                id: memberID,
+                name: displayName(for: memberID),
+                amount: amount,
+                isPayer: memberID == expense.paidByMemberID
+            )
+        }
+        if amountsByMember[expense.paidByMemberID] == nil, !expense.paidByMemberID.isEmpty {
+            entries.append(BreakdownEntry(
+                id: expense.paidByMemberID,
+                name: payerName,
+                amount: 0,
+                isPayer: true
+            ))
+        }
+        return entries.sorted { lhs, rhs in
+            if lhs.isPayer != rhs.isPayer { return lhs.isPayer }
+            return lhs.name.localizedStandardCompare(rhs.name) == .orderedAscending
+        }
+    }
+
+    private var memberColors: [String: Color] {
+        let ids = Array(Set(Array(memberNameLookup.keys) + breakdownEntries.map(\.id)))
+        return GroupMemberPalette.colors(for: ids, currentMemberID: currentMemberID, names: memberNameLookup)
+    }
+
+    // MARK: - Hero
+
+    private var hero: some View {
         VStack(spacing: DS.Spacing.xs) {
-            HStack(spacing: DS.Spacing.sm) {
-                heroBadge
+            heroBadge
+                .padding(.bottom, DS.Spacing.xxs)
 
-                AmountText(
-                    value: expense.amount,
-                    currencyCode: expense.currencyCode,
-                    font: DS.Typography.largeTitle,
-                    secondaryFont: DS.Typography.body,
-                    tint: .primary,
-                    forceFullPrecision: true
-                )
+            let desc = expense.expenseDescription.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !desc.isEmpty {
+                Text(desc)
+                    .font(DS.Typography.headline)
+                    .foregroundStyle(.primary)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
             }
 
-            descriptionAndDateLine
+            AmountText(
+                value: expense.amount,
+                currencyCode: expense.currencyCode,
+                font: DS.Typography.largeTitle,
+                secondaryFont: DS.Typography.body,
+                tint: .primary,
+                forceFullPrecision: true
+            )
+
+            Text(Self.dateFormatter.string(from: expense.date))
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
         .accessibilityElement(children: .combine)
     }
 
-    /// "Descripción · fecha" en una línea; sin descripción queda solo la fecha.
-    private var descriptionAndDateLine: some View {
-        let dateText = Self.dateFormatter.string(from: expense.date)
-        let desc = expense.expenseDescription.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        let descPart = Text(desc).foregroundStyle(.primary)
-        let separatorPart = Text(" · ").foregroundStyle(.secondary)
-        let datePart = Text(dateText).foregroundStyle(.secondary)
-
-        return Group {
-            if desc.isEmpty {
-                datePart
-            } else {
-                Text("\(descPart)\(separatorPart)\(datePart)")
-            }
-        }
-        .font(DS.Typography.subheadline)
-        .lineLimit(1)
-        .truncationMode(.tail)
-    }
-
-    /// Fill sólido (legible sobre el fondo transparent): color de la categoría resuelta (bridge o
-    /// nombre del creador), sino un fill neutro con el ícono del tipo de división.
+    /// Fill sólido: color de la categoría resuelta (bridge o nombre del creador), sino un
+    /// fill neutro con el ícono del tipo de división.
     private var heroBadge: some View {
         let resolved = resolvedIcon
         let fillColor = resolved.colorHex.map { Color(hex: $0) } ?? Color(.secondaryLabel)
-        let iconName = resolved.iconName
-
         return ZStack {
             Circle()
                 .fill(fillColor)
                 .frame(width: DS.Icon.badgeLarge, height: DS.Icon.badgeLarge)
 
-            Image(systemName: iconName)
+            Image(systemName: resolved.iconName)
                 .font(DS.Typography.label)
                 .foregroundStyle(.white)
                 .accessibilityHidden(true)
         }
     }
 
-    // MARK: - Details card (filas neutras, patrón TransactionDetailSheet)
+    // MARK: - Tu parte
 
-    private var detailsCard: some View {
-        VStack(spacing: DS.Spacing.none) {
-            detailRow(
-                icon: "person.fill",
-                label: L10n.Groups.Expense.paidByTitle,
-                value: payerName
+    /// Lo que te toca en una frase. Sin identidad resuelta no se pinta: afirmar algo sin
+    /// saber quién eres es el bug de device del 2026-08-28 (`PersonalShareStatus`).
+    @ViewBuilder
+    private var yourPartCard: some View {
+        switch status {
+        case .youOwe(let amount):
+            yourPartContent(
+                sentence: L10n.Groups.Card.youOwe(payerName),
+                amount: amount,
+                tint: Color.hotPink
             )
-
-            perspectiveRow
-
-            detailRow(
-                icon: "divide.circle",
-                label: L10n.Groups.Expense.splitType,
-                value: splitTypeLabel
+        case .youAreOwed(let amount):
+            yourPartContent(
+                sentence: owedToYouSentence,
+                amount: amount,
+                tint: DS.Semantic.successForeground
             )
+        case .notIncluded:
+            yourPartContent(sentence: L10n.Groups.Expense.notIncluded, amount: nil, tint: .primary)
+        case .identityUnresolved:
+            EmptyView()
+        }
+    }
 
-            // Categoría: bridge (nombre + categoría padre) o, sin bridge, el nombre del creador
-            // (una línea — no tenemos la categoría padre sin el bridge). Genérico → sin fila.
-            if !resolvedIcon.isGeneric {
-                categoryRow(name: categoryDisplayName, parentName: bridgeSubcategory?.safeCategory.name)
+    /// «Ana te debe» si solo hay una persona más en el reparto; «Te deben» si son varias.
+    private var owedToYouSentence: String {
+        let debtors = breakdownEntries.filter { $0.id != currentMemberID && $0.amount > 0.004 }
+        if debtors.count == 1, let only = debtors.first {
+            return L10n.Groups.Card.theyOweYou(only.name)
+        }
+        return L10n.Groups.Summary.owedToMe
+    }
+
+    private func yourPartContent(sentence: String, amount: Double?, tint: Color) -> some View {
+        HStack(spacing: DS.Spacing.md) {
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                Text(L10n.Split.yourPortion)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+                Text(sentence)
+                    .font(DS.Typography.headline)
+                    .foregroundStyle(.primary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-
-            if let note = expense.note?.trimmingCharacters(in: .whitespacesAndNewlines),
-               !note.isEmpty {
-                detailRow(icon: "note.text", label: L10n.Groups.Expense.noteLabel, value: note)
+            Spacer(minLength: DS.Spacing.sm)
+            if let amount {
+                AmountText(
+                    value: amount,
+                    currencyCode: expense.currencyCode,
+                    font: DS.Typography.title3,
+                    secondaryFont: DS.Typography.caption,
+                    tint: .color(tint),
+                    forceFullPrecision: true
+                )
             }
         }
-        .padding(.vertical, DS.Spacing.sm)
+        .padding(DS.Spacing.lg)
         .background(
             RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
                 .fill(.thCard)
         )
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("group_expense_detail_your_part")
     }
 
-    // MARK: - Rows
+    // MARK: - Reparto
 
-    /// Perspectiva personal: monto coloreado (prestaste/te prestaron) o "No participaste".
+    private var breakdownCard: some View {
+        let entries = breakdownEntries
+        let colors = memberColors
+        return VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            HStack {
+                Text(L10n.Groups.Expense.breakdownTitle)
+                    .font(DS.Typography.subheadlineEmphasized)
+                    .foregroundStyle(.primary)
+                Spacer()
+                Text(splitTypeLabel)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            // La barra solo cuando el reparto no es igual: ahí la proporción informa. Con partes
+            // iguales repetía la lista y era ruido a primera vista (feedback del 2026-10-04).
+            if expense.splitType != SplitType.equal.rawValue {
+                GroupSplitBar(
+                    segments: entries.map {
+                        GroupSplitBarSegment(id: $0.id, amount: $0.amount, color: colors[$0.id] ?? .secondary)
+                    },
+                    currencyCode: expense.currencyCode
+                )
+            }
+
+            VStack(spacing: DS.Spacing.sm) {
+                ForEach(entries) { entry in
+                    breakdownRow(entry, color: colors[entry.id] ?? .secondary)
+                }
+            }
+        }
+        .padding(DS.Spacing.lg)
+        .background(
+            RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
+                .fill(.thCard)
+        )
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("group_expense_detail_breakdown")
+    }
+
+    private func breakdownRow(_ entry: BreakdownEntry, color: Color) -> some View {
+        HStack(spacing: DS.Spacing.md) {
+            ZStack {
+                Circle()
+                    .fill(color)
+                    .frame(width: avatarSize, height: avatarSize)
+                Text(String(entry.name.prefix(1)).uppercased())
+                    .font(DS.Typography.label)
+                    .foregroundStyle(.white)
+            }
+            .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                Text(entry.name)
+                    .font(DS.Typography.body)
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                if entry.isPayer {
+                    Text(payerCaption)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Spacer(minLength: DS.Spacing.sm)
+
+            AmountText(
+                value: entry.amount,
+                currencyCode: expense.currencyCode,
+                font: DS.Typography.label,
+                secondaryFont: DS.Typography.caption,
+                tint: .primary,
+                forceFullPrecision: true
+            )
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    /// «Pagaste S/ 120.00» si fuiste tú; «Pagó S/ 120.00» bajo el nombre de otra persona.
+    private var payerCaption: String {
+        let total = appPreferences.currency(expense.amount, currencyCode: expense.currencyCode)
+        return isPayer ? L10n.Groups.Expense.youPaid(total) : L10n.Groups.Expense.paidAmount(total)
+    }
+
+    // MARK: - Detalles
+
+    /// Cuenta del movimiento personal enlazado, si existe y es una cuenta real.
+    private var bridgeAccount: Account? {
+        guard let account = bridgeTransaction?.account, !account.isSystemAccount else { return nil }
+        return account
+    }
+
+    private var trimmedNote: String? {
+        guard let note = expense.note?.trimmingCharacters(in: .whitespacesAndNewlines), !note.isEmpty else {
+            return nil
+        }
+        return note
+    }
+
     @ViewBuilder
-    private var perspectiveRow: some View {
-        switch status {
-        case .youAreOwed(let amount):
-            amountRow(
-                icon: "arrow.up.circle",
-                label: L10n.Groups.Expense.youAreOwed,
-                amount: amount,
-                tint: DS.Semantic.successForeground
+    private var detailsCard: some View {
+        let showsCategory = !resolvedIcon.isGeneric
+        if showsCategory || trimmedNote != nil || bridgeAccount != nil {
+            VStack(spacing: DS.Spacing.none) {
+                // Categoría: bridge (nombre + categoría padre) o, sin bridge, el nombre del creador
+                // (una línea — no tenemos la categoría padre sin el bridge). Genérico → sin fila.
+                if showsCategory {
+                    categoryRow(name: categoryDisplayName, parentName: bridgeSubcategory?.safeCategory.name)
+                }
+
+                if let note = trimmedNote {
+                    detailRow(icon: "note.text", label: L10n.Groups.Expense.noteLabel, value: note)
+                }
+
+                if let account = bridgeAccount, let tx = bridgeTransaction {
+                    financesRow(account: account, transaction: tx)
+                }
+            }
+            .padding(.vertical, DS.Spacing.sm)
+            .background(
+                RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
+                    .fill(.thCard)
             )
-        case .youOwe(let amount):
-            amountRow(
-                icon: "arrow.down.circle",
-                label: L10n.Groups.Expense.youOwe,
-                amount: amount,
-                tint: Color.hotPink
-            )
-        case .notIncluded:
-            detailRow(
-                icon: "minus.circle",
-                label: L10n.Split.yourPortion,
-                value: L10n.Groups.Expense.notIncluded
-            )
-        case .identityUnresolved:
-            // No se sabe todavía quién soy en este grupo ⇒ la fila de «tu parte» NO se pinta.
-            // Callarse es correcto; afirmar «No participaste» sin saberlo es el bug de device del
-            // 2026-08-28, donde los dos teléfonos contaban el mismo gasto de forma distinta.
-            EmptyView()
         }
     }
 
@@ -318,31 +479,40 @@ struct GroupExpenseDetailSheet: View {
         .padding(.vertical, DS.FormRow.paddingV)
     }
 
-    private func amountRow(icon: String, label: String, amount: Double, tint: Color) -> some View {
+    /// Dónde quedó el gasto en tu registro personal: la cuenta y el monto que se apuntó.
+    private func financesRow(account: Account, transaction: TransactionItem) -> some View {
         HStack(spacing: DS.Spacing.md) {
-            Image(systemName: icon)
+            Image(systemName: "creditcard")
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
                 .frame(width: Self.rowIconWidth)
                 .accessibilityHidden(true)
 
-            Text(label)
+            Text(L10n.Groups.Expense.inYourFinances)
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
 
             Spacer()
 
-            AmountText(
-                value: amount,
-                currencyCode: expense.currencyCode,
-                font: DS.Typography.label,
-                secondaryFont: DS.Typography.caption,
-                tint: .color(tint),
-                forceFullPrecision: true
-            )
+            VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
+                AmountText(
+                    value: abs(transaction.amount),
+                    currencyCode: transaction.currencyCode,
+                    font: DS.Typography.label,
+                    secondaryFont: DS.Typography.caption,
+                    tint: .primary,
+                    forceFullPrecision: true
+                )
+                Text(account.name)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
         }
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.vertical, DS.FormRow.paddingV)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("group_expense_detail_finances")
     }
 
     private func categoryRow(name: String, parentName: String?) -> some View {

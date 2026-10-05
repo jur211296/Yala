@@ -33,7 +33,7 @@ enum IntentSupersessionLogic {
     /// Active rules (consumed by RouterEntryGate):
     ///   - `.navigate(.inbox)` drops queued `.showInboxAlert`
     ///   - `.presentInboxSheet` drops queued `.showInboxAlert`
-    ///     (plus a sibling check in the gate consults `SessionState.isInboxSheetVisible`
+    ///     (plus a sibling check in the gate consults `SceneNavigation.isInboxSheetVisible`
     ///     to also drop new `.showInboxAlert` arriving AFTER the sheet opened)
     ///   - `.presentTrialExpired` drops queued `.presentTrialOffer`
     ///   - `.remoteWipe(_)` drops all non-critical (priority < .critical)

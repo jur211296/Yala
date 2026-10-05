@@ -50,6 +50,8 @@ final class AppBootstrapper {
     // MARK: - State
 
     private(set) var isInitialized = false
+    /// Un `bootstrap` en curso. Ver la guarda al principio de `bootstrap(container:)`.
+    @ObservationIgnored private var isBootstrapping = false
     private var subscriptionCheckTask: Task<Void, Never>?
     /// C-8: sync del entitlement de CUENTA, fuera del camino crítico del boot (hace red).
     private var accountEntitlementTask: Task<Void, Never>?
@@ -91,6 +93,12 @@ final class AppBootstrapper {
     func bootstrap(container: ModelContainer) async {
         IntentSignalBreadcrumb.bootstrapEntered(alreadyInitialized: isInitialized)
         guard !isInitialized else { return }
+        // Con varias ventanas, si la líder se cierra a mitad del arranque la que asciende vuelve a llamar aquí: el
+        // primero sigue corriendo (casi ningún paso mira la cancelación), así que el segundo no arranca otro en
+        // paralelo. Va antes del `defer` de abajo: este `return` no debe dar el arranque por asentado.
+        guard !isBootstrapping else { return }
+        isBootstrapping = true
+        defer { isBootstrapping = false }
 
         // El shell no drena intents (ni monta covers) hasta que el arranque asienta: un
         // `fullScreenCover` montado con el bootstrap en curso se queda pegado y la app deja
@@ -878,7 +886,8 @@ final class AppBootstrapper {
             // la corrida anterior en ese simulador (o con el default conservador, que dice justo lo
             // contrario de lo que el test quiere montar).
             SessionState.shared.hasPrivateSession = false
-            SessionState.shared.selectedMainTab = .groups
+            // Esto corre en `YalaApp.init`, antes de que exista ninguna ventana: la pestaña la recoge la primera.
+            SceneRegistry.shared.firstWindowMainTab = .groups
         }
         // `-uitest-groups-consent`: consent de Grupos por sembrado DIRECTO de su snapshot local. NO se usa
         // `GroupsConsentRegistrar.register()` a propósito: ese camino arma el intent durable y lanza un
@@ -1745,6 +1754,11 @@ final class AppBootstrapper {
         //
         // El `onBridged` ponía al día el camino rápido en memoria del transporte CloudKit. La Fase 3 se
         // llevó ese argumento y el retome sigue en pie, que es exactamente lo que su diseño prometía.
+        //
+        // Justo antes, los gastos que la persona conservó al desasociar y cuyo movimiento ya borró: pasan a
+        // esa misma intención para que el retome los cree aquí (ticket `groups-detach-ledger-has-no-exit`).
+        // Sin esto, un gasto que nadie edita no volvía a pasar por el puente y se quedaba sin movimiento.
+        GroupsDetachedBridgeLedger.reviveVanished(context: context)
         GroupsPendingBridgeResume.resumeIfNeeded(context: context)
         // Paso 8 · la convergencia de los gastos de grupo tras restaurar dentro de «Activar Yala completo», si
         // quedó pendiente (el import no se asentó en la sheet, o la app murió). Aquí y no en un Task propio por
@@ -2937,7 +2951,18 @@ final class AppBootstrapper {
     /// not accepted, presentation is deferred until the user accepts via the
     /// `aiConsentAlert` (whose callback opens the same image sheet).
     private func enqueueSharedImage(_ url: URL) {
-        sessionState.pendingSharedImageURL = url
+        // La misma puerta Pro que el resto de entradas (`executeAction(.imageEntry)`): hasta el 2026-10-04 compartir
+        // una foto registraba sin ser Pro. La foto se descarta: si se quedara en `PendingImages/`, la recuperación del
+        // arranque volvería a enseñar el aviso en cada vuelta a la app.
+        guard FeatureGateService.shared.canAccess(.imageInput) else {
+            SharedContainerService.removePendingImage(at: url)
+            RouterEntryGate.shared.submit(.navigate(.panel))
+            RouterEntryGate.shared.submit(.presentUpgradeSheet(.image))
+            return
+        }
+        // En la ventana que está delante: es a la que el router sella los intents de abajo. El camino del
+        // consentimiento abre la misma hoja después y la lee de ahí.
+        SceneRegistry.shared.routingNavigation?.pendingSharedImageURL = url
         RouterEntryGate.shared.submit(.navigate(.panel))
         if UserDefaults.standard.bool(forKey: AppPreferences.Keys.aiDataConsentAccepted) {
             RouterEntryGate.shared.submit(.presentSharedImage(url))

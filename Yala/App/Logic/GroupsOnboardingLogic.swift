@@ -50,7 +50,7 @@ enum GroupsOnboardingLogic {
     ///   - hasSeenEducational: el resultado de `hasSeenAnyGroupsEducational`. **Es la MISMA señal que
     ///     alimenta a `GroupsGateLogic`**: el tab y las puertas de Grupos no pueden discrepar sobre si a esta
     ///     persona ya se le contó qué es un grupo.
-    ///   - hasPendingGroupDeeplink: `sessionState.pendingGroupID != nil`. Si hay
+    ///   - hasPendingGroupDeeplink: `navigation.pendingGroupID != nil`. Si hay
     ///     deeplink hacia un grupo específico, abrir el detail tiene prioridad UX
     ///     sobre el onboarding informativo.
     static func shouldShow(

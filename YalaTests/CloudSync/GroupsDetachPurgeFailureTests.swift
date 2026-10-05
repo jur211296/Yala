@@ -161,7 +161,8 @@ struct GroupsDetachPurgeFailureTests {
         #expect(!plano.contains("catch"), """
             Volvió a haber un `catch` dentro del borrado del desasociar. Ése era el bug: el error se \
             imprimía bajo `#if DEBUG` y el gesto seguía a `clear()` con los grupos enteros en el teléfono.
-            El `do/catch` vive en `detachGroupsAccount`, que es quien decide qué hacer con el fallo.
+            El `do/catch` vive en `writeDetachUnderQuiescence`, y quien decide qué hacer con el fallo es \
+            `detachGroupsAccount`.
             """)
     }
 
@@ -400,12 +401,12 @@ struct GroupsDetachPurgeFailureTests {
     func detachGroupsAccount_doesNotClearWhenPurgeThrows() throws {
         let body = try Self.detachBody()
 
-        guard let purge = body.range(of: "try Self.purgeGroupsDomainForDetach(context: context)"),
+        guard let purge = body.range(of: "case .purgeFailed:"),
               let failure = body.range(of: "return .purgeFailed"),
               let clear = body.range(of: "finishDetach(context: context)") else {
             Issue.record("""
                 El cableado del desasociar cambió de forma. Las tres piezas que este invariante exige son \
-                el borrado con `try`, el `return .purgeFailed` de su `catch`, y el remate \
+                la rama `.purgeFailed` del borrado, su `return .purgeFailed`, y el remate \
                 `finishDetach`. Si el método se reescribió, relee el ticket antes de reescribir este test: \
                 lo que se fija es que la asociación NO se limpie sobre unos datos que siguen ahí.
                 """)

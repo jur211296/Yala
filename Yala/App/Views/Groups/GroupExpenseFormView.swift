@@ -3,7 +3,9 @@
 //  Yala
 //
 //  Formulario de creación/edición de gastos compartidos.
-//  Layout hero centrado — identidad visual con NewTransactionView.
+//  Propuesta B de `group-expense-views-redesign`: arriba lo de siempre (grupo, fecha,
+//  descripción y monto); debajo, quién pagó con avatares y el reparto en la misma pantalla
+//  (`GroupSplitEditorCard`), sin hojas aparte para pagador ni división.
 //
 
 import SwiftUI
@@ -82,18 +84,14 @@ struct GroupExpenseFormView: View {
     @FocusState private var focusedField: ExpenseField?
 
     // Sheets
-    @State private var showPaidByPicker = false
     @State private var showCurrencyPicker = false
     @State private var showDatePicker = false
     @State private var showSubcategorySelector = false
-    @State private var showSplitDetail = false
     @State private var showAccountSelector = false  // M6 Caso A
-    // Two-person quick split (grupos de 2): pre-pantalla de 4 opciones ↔ editor detallado.
+    // Grupos de 2: hoja de cuatro opciones rápidas, desde «Opciones rápidas» del reparto.
     @State private var showTwoPersonSplit = false
-    @State private var pendingOpenAdvanced = false  // 4 opciones → "Más opciones"
-    @State private var pendingOpenSimple = false    // editor detallado → "Opciones rápidas"
-    // Gate de monto: tocar "Dividido" (o la pre-pantalla de 2) con monto 0 no abre el
-    // sheet de división — muestra un alert pidiendo ingresar el monto primero.
+    // Gate de monto: abrir las opciones rápidas con monto 0 no abre la hoja — muestra un
+    // alert pidiendo ingresar el monto primero.
     @State private var showAmountRequiredAlert = false
 
     // Opt-out: alert post-save cuando bridge effective OFF + Caso A.
@@ -115,7 +113,11 @@ struct GroupExpenseFormView: View {
     @State private var showSaveErrorAlert = false
 
     // Amount scaling
-    @ScaledMetric(relativeTo: .largeTitle) private var baseAmountSize: CGFloat = 64 // A11Y-DT: @ScaledMetric
+    @ScaledMetric(relativeTo: .largeTitle) private var baseAmountSize: CGFloat = 56 // A11Y-DT: @ScaledMetric
+    @ScaledMetric(relativeTo: .body) private var payerAvatarSize: CGFloat = 44 // A11Y-DT: @ScaledMetric
+
+    /// Parte abierta bajo la frase «Pagado por · dividido»; `nil` = las dos plegadas.
+    @State private var expandedSection: ExpandedSection?
 
     // MARK: - Init
 
@@ -175,29 +177,33 @@ struct GroupExpenseFormView: View {
 
     private var formView: some View {
         NavigationStack {
-            ZStack {
-                VStack(spacing: DS.Spacing.none) {
-                    groupContextChip
-                        .padding(.top, DS.Spacing.md)
+            ScrollView {
+                VStack(spacing: DS.Spacing.lg) {
+                    centralContent
+                        .padding(.horizontal, DS.Spacing.lg)
 
-                    Group {
-                        Spacer()
+                    whoPaysCard
+                        .padding(.horizontal, DS.Spacing.lg)
+                        .padding(.top, DS.Spacing.xl)
 
-                        centralContent
-
-                        Spacer()
-
-                        bottomChips
-                            .padding(.bottom, DS.Spacing.lg)
-
-                        migratedFrozenHint
-
-                        registerButton
-                            .padding(.horizontal, DS.Spacing.xl)
-                            .padding(.bottom, DS.Spacing.xxl)
-                    }
+                    bottomChips
                 }
-                .dismissKeyboardOnTap()
+                .padding(.top, DS.Spacing.md)
+                .padding(.bottom, DS.Spacing.lg)
+            }
+            .scrollBounceBehavior(.basedOnSize)
+            .scrollDismissesKeyboard(.interactively)
+            .dismissKeyboardOnTap()
+            .safeAreaInset(edge: .bottom) {
+                VStack(spacing: DS.Spacing.none) {
+                    migratedFrozenHint
+
+                    registerButton
+                        .padding(.horizontal, DS.Spacing.xl)
+                        .padding(.top, DS.Spacing.sm)
+                        .padding(.bottom, DS.Spacing.md)
+                }
+                .background(.thBackground)
             }
             .yalaScreenBackground(.subtle)
             .navigationTitle(viewModel.isEditMode ? L10n.Groups.Expense.editTitle : L10n.Groups.Expense.title)
@@ -282,14 +288,6 @@ struct GroupExpenseFormView: View {
             .sheet(isPresented: $showDatePicker) {
                 DatePickerSheet(selectedDate: $viewModel.date)
                 }
-            .sheet(isPresented: $showPaidByPicker) {
-                MemberPickerView(
-                    members: members,
-                    groupColorHex: group.colorHex,
-                    selectedMemberID: $viewModel.paidByMemberID
-                )
-                .yalaSheetDetents([.large])
-            }
             .sheet(isPresented: $showCurrencyPicker) {
                 // NavigationStack para que el .toolbar con la "X" de CurrencySelectorView
                 // se renderice (sin barra de navegación no hay dónde colocarlo).
@@ -303,43 +301,23 @@ struct GroupExpenseFormView: View {
                 AccountSelectorSheet(
                     selectedAccount: $viewModel.selectedAccount,
                     title: L10n.Transaction.account,
-                    currencyFilter: viewModel.currencyCode
+                    currencyFilter: viewModel.currencyCode,
+                    sizing: .mediumFirst
                 )
-                .yalaSheetDetents([.medium, .large])
             }
             .sheet(isPresented: $showSubcategorySelector) {
                 SubcategorySelectorSheet(
                     selectedSubcategory: $viewModel.selectedSubcategory,
-                    transactionType: .expense
-                )
-                .yalaSheetDetents([.large])
-            }
-            .sheet(isPresented: $showSplitDetail, onDismiss: {
-                // Al cerrar: quien quedó sin valor en el tipo activo se deselecciona
-                // del pago (no participa si no se le asignó porcentaje/monto/partes).
-                viewModel.purgeEmptyParticipants()
-                // Grupo de 2: "Opciones rápidas" pidió volver a la pre-pantalla (one-shot).
-                if pendingOpenSimple {
-                    pendingOpenSimple = false
-                    showTwoPersonSplit = true
-                }
-            }) {
-                GroupSplitSelectorView(
-                    viewModel: viewModel,
-                    onRequestSimpleOptions: viewModel.isTwoPersonGroup ? { pendingOpenSimple = true } : nil
+                    transactionType: .expense,
+                    sizing: .mediumFirst
                 )
             }
-            // Pre-pantalla de split rápido (solo grupos de 2). "Más opciones" baja esta y sube
-            // el editor detallado (dismiss-then-present, flag one-shot — sin Task.sleep).
-            .sheet(isPresented: $showTwoPersonSplit, onDismiss: {
-                if pendingOpenAdvanced {
-                    pendingOpenAdvanced = false
-                    showSplitDetail = true
-                }
-            }) {
+            // Grupos de 2: cuatro opciones rápidas. «Más opciones» cierra la hoja y despliega el
+            // reparto completo en el formulario.
+            .sheet(isPresented: $showTwoPersonSplit) {
                 GroupTwoPersonSplitView(viewModel: viewModel) {
-                    pendingOpenAdvanced = true
                     showTwoPersonSplit = false
+                    expandedSection = .split
                 }
             }
             // M6: si user cambia moneda y la cuenta seleccionada deja de ser compatible,
@@ -353,12 +331,16 @@ struct GroupExpenseFormView: View {
     // MARK: - Central Content
 
     private var centralContent: some View {
-        VStack(spacing: DS.Spacing.xxl) {
-            dateChip
+        VStack(spacing: DS.Spacing.lg) {
+            // Grupo y fecha en una sola línea pequeña: son contexto, no lo que se edita.
+            HStack(spacing: DS.Spacing.sm) {
+                groupContextChip
+                dateChip
+            }
+            .padding(.top, DS.Spacing.lg)
             descriptionField
+                .padding(.top, DS.Spacing.sm)
             amountDisplay
-            paidAndSplitLine
-            categoryChip
         }
     }
 
@@ -368,15 +350,16 @@ struct GroupExpenseFormView: View {
         Button {
             showDatePicker = true
         } label: {
-            HStack(spacing: DS.Spacing.sm) {
+            HStack(spacing: DS.Spacing.xs) {
                 Image(systemName: "calendar")
-                    .font(DS.Typography.label)
+                    .font(DS.Typography.caption)
                 Text(dateChipText)
-                    .font(DS.Typography.label)
+                    .font(DS.Typography.subheadline)
             }
             .foregroundStyle(.primary)
-            .padding(.horizontal, DS.Spacing.lg)
-            .padding(.vertical, DS.Spacing.md)
+            .padding(.horizontal, DS.Spacing.md)
+            .padding(.vertical, DS.Spacing.xs)
+            .contentShape(Capsule())
             .background(
                 Capsule()
                     .fill(Color.primary.opacity(0.08))
@@ -522,149 +505,303 @@ struct GroupExpenseFormView: View {
     }
 
     private func groupChipLabel(showsChevron: Bool) -> some View {
-        HStack(spacing: DS.Spacing.sm) {
+        // Sin cápsula: es contexto. El a11y label conserva «Grupo: <nombre>».
+        HStack(spacing: DS.Spacing.xs) {
             Image(systemName: group.iconName)
-                .font(DS.Typography.label)
+                .font(DS.Typography.caption)
                 .foregroundStyle(Color(hex: group.colorHex))
-            Text("\(L10n.Groups.groupLabel): \(group.name)")
-                .font(DS.Typography.headline)
-                .foregroundStyle(.primary)
+            Text(group.name)
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.secondary)
                 .lineLimit(1)
             if showsChevron {
                 Image(systemName: "chevron.down")
-                    .font(DS.Typography.labelSmall)
+                    .font(DS.Typography.labelTiny)
                     .foregroundStyle(.secondary)
             }
         }
-        .padding(.horizontal, DS.Spacing.lg)
-        .padding(.vertical, DS.Spacing.sm)
-        .background(Capsule().fill(.thCard))
-    }
-
-    // MARK: - Paid By / Split Line (debajo del monto)
-
-    /// Grupos de 2 con una de las 4 opciones rápidas activas → un solo chip-resumen en
-    /// lenguaje natural. En grupos de 3+ (o split personalizado) → las dos filas clásicas
-    /// "Pagado por [chip]" / "Dividido [chip]", cada una con su sheet.
-    @ViewBuilder
-    private var paidAndSplitLine: some View {
-        if viewModel.isTwoPersonGroup, let choice = viewModel.activeTwoPersonChoice {
-            twoPersonSummaryChip(choice)
-        } else {
-            VStack(spacing: DS.Spacing.sm) {
-                paidBySegment
-                splitSegment
-            }
-        }
-    }
-
-    /// Chip único de grupo de 2: muestra el resultado ("María te debe S/ 25") y abre la
-    /// pre-pantalla de 4 opciones. Con monto vacío cae a la acción elegida (sin monto).
-    private func twoPersonSummaryChip(_ choice: TwoPersonSplitOptions.Choice) -> some View {
-        // Sin label "Dividido": el texto natural ("Caro te debe S/ 25") ya es autoexplicativo.
-        Button {
-            openSplitIfAmountValid { showTwoPersonSplit = true }
-        } label: {
-            inlineChip(icon: "person.2.fill", text: twoPersonSummaryText(choice), warning: false)
-        }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier("group_expense_twoperson_chip")
-        .accessibilityLabel(twoPersonSummaryText(choice))
-    }
-
-    /// Resultado natural para el chip ("María te debe S/ 25"); con monto vacío cae a la acción.
-    private func twoPersonSummaryText(_ choice: TwoPersonSplitOptions.Choice) -> String {
-        let otherName = viewModel.otherActiveMemberName
-        guard viewModel.amount > 0 else { return choice.actionTitle(otherName: otherName) }
-        let amount = TwoPersonSplitOptions.debt(for: choice, total: viewModel.amount).amount
-        let amountStr = appPreferences.currency(amount, currencyCode: viewModel.currencyCode)
-        return choice.debtText(otherName: otherName, amountStr: amountStr)
-    }
-
-    private var paidBySegment: some View {
-        HStack(spacing: DS.Spacing.xs) {
-            Text(L10n.Groups.Expense.paidByTitle)
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.secondary)
-            payerChip
-        }
-    }
-
-    private var splitSegment: some View {
-        HStack(spacing: DS.Spacing.xs) {
-            Text(L10n.Groups.Expense.dividedLabel)
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.secondary)
-            modeChip
-        }
-    }
-
-    private var payerChip: some View {
-        Button {
-            dismissKeyboard()
-            showPaidByPicker = true
-        } label: {
-            inlineChip(icon: "person.fill", text: paidByChipText, warning: false)
-        }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier("group_expense_paidby_chip")
-        .accessibilityLabel("\(L10n.Groups.Expense.paidByTitle): \(paidByChipText)")
-    }
-
-    private var modeChip: some View {
-        Button {
-            openSplitIfAmountValid { showSplitDetail = true }
-        } label: {
-            inlineChip(
-                icon: viewModel.splitType.iconName,
-                text: viewModel.splitType.inlineLabel,
-                warning: viewModel.splitType != .equal && !viewModel.isSharesBalanced
-            )
-        }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier("group_expense_split_chip")
-        .accessibilityLabel("\(L10n.Groups.Expense.dividedLabel): \(viewModel.splitType.displayName)")
-    }
-
-    /// Capsula común de los dos chips de la línea (pagador / modo).
-    private func inlineChip(icon: String, text: String, warning: Bool) -> some View {
-        HStack(spacing: DS.Spacing.xxs) {
-            Image(systemName: icon)
-                .font(DS.Typography.labelSmall)
-            Text(text)
-                .font(DS.Typography.subheadline)
-                .lineLimit(1)
-            if warning {
-                Image(systemName: "exclamationmark.circle.fill")
-                    .font(DS.Typography.labelTiny)
-                    .foregroundStyle(Color.hotPink)
-            }
-        }
-        .foregroundStyle(DS.Semantic.splitMethodForeground)
-        .padding(.horizontal, DS.Spacing.md)
         .padding(.vertical, DS.Spacing.xs)
-        .background(Capsule().fill(DS.Semantic.splitMethodBackground))
+        .contentShape(Rectangle())
     }
 
-    // MARK: - Category Chip
+    // MARK: - Pagado por · Reparto (frase + secciones plegables)
 
-    @ViewBuilder
-    private var categoryChip: some View {
-        if let subcategory = viewModel.selectedSubcategory {
-            let category = subcategory.safeCategory
-            let categoryColor = Color(hex: category.colorHex)
-            HStack(spacing: DS.Spacing.xs) {
-                Image(systemName: category.iconName ?? "folder")
-                    .font(DS.Typography.labelTiny)
-                    .accessibilityHidden(true)
-                Text(category.name)
-                    .font(DS.Typography.labelTiny)
+    /// Qué parte está abierta debajo de la frase. Una a la vez: abrir una pliega la otra.
+    private enum ExpandedSection { case payer, split }
+
+    private var memberColors: [String: Color] {
+        GroupMemberPalette.colors(
+            for: members.map { $0.id.uuidString },
+            currentMemberID: viewModel.currentUserMemberID,
+            names: memberNameLookup
+        )
+    }
+
+    /// Quién pagó y cómo se reparte, dicho en una frase (molde de Splitwise, feedback del
+    /// 2026-10-04: menos ruido a primera vista). En grupos de 3+, «Pagado por [Ana] y dividido
+    /// [en partes iguales]» con las dos piezas tocables; cada una abre su parte debajo. En grupos
+    /// de 2, una sola pastilla con la frase entera que abre las cuatro opciones rápidas; «Más
+    /// opciones» despliega el reparto completo. La cuenta del Caso A va siempre a la vista: es lo
+    /// único que deja Guardar apagado en un gasto que pagaste tú.
+    private var whoPaysCard: some View {
+        let colors = memberColors
+        return VStack(spacing: DS.Spacing.lg) {
+            if viewModel.isTwoPersonGroup && expandedSection == nil {
+                twoPersonSentence
+            } else {
+                splitSentence
             }
-            .foregroundStyle(categoryColor)
-            .padding(.horizontal, DS.Chip.paddingH)
-            .padding(.vertical, DS.Chip.paddingV)
-            .background(Capsule().fill(categoryColor.opacity(0.12)))
+
+            if viewModel.isAccountRequired {
+                accountRow
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.vertical, DS.Spacing.md)
+                    .background(
+                        RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
+                            .fill(.thCard)
+                    )
+            }
+
+            if expandedSection == .payer {
+                payerPicker(colors: colors)
+                    .transition(.opacity)
+            }
+
+            if expandedSection == .split {
+                GroupSplitEditorCard(
+                    viewModel: viewModel,
+                    onRequestQuickOptions: viewModel.isTwoPersonGroup ? { openQuickOptions() } : nil
+                )
+                .padding(DS.Spacing.lg)
+                .background(
+                    RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
+                        .fill(.thCard)
+                )
+                .transition(.opacity)
+            }
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("group_expense_paidby_card")
+    }
+
+    private func toggle(_ section: ExpandedSection) {
+        dismissKeyboard()
+        dsWithAnimation(reduceMotion) {
+            expandedSection = expandedSection == section ? nil : section
+        }
+    }
+
+    /// Nombre del pagador dentro de la frase: «ti» para el usuario actual («Pagado por ti»).
+    private var payerSentenceName: String {
+        guard !viewModel.paidByMemberID.isEmpty else { return "—" }
+        if viewModel.paidByMemberID == viewModel.currentUserMemberID { return L10n.Groups.Member.youObject }
+        return memberNameLookup[viewModel.paidByMemberID] ?? "—"
+    }
+
+    /// Grupos de 3+: «Pagado por [Ana] y dividido [en partes iguales]». Si no cabe en una línea,
+    /// pasa a dos, partida por la «y».
+    private var splitSentence: some View {
+        let payerPiece = HStack(spacing: DS.Spacing.sm) {
+            Text(L10n.Groups.Expense.paidByTitle)
+                .foregroundStyle(.secondary)
+            sentenceToken(
+                text: payerSentenceName,
+                isOpen: expandedSection == .payer,
+                warning: false,
+                identifier: "group_expense_paidby_row",
+                a11yLabel: "\(L10n.Groups.Expense.paidByTitle): \(payerSentenceName)"
+            ) { toggle(.payer) }
+        }
+        let splitPiece = HStack(spacing: DS.Spacing.sm) {
+            Text(L10n.Groups.Expense.andDividedLabel)
+                .foregroundStyle(.secondary)
+            sentenceToken(
+                text: viewModel.splitType.inlineLabel,
+                isOpen: expandedSection == .split,
+                warning: !viewModel.isSharesBalanced,
+                identifier: "group_expense_split_row",
+                a11yLabel: "\(L10n.Groups.Expense.dividedLabel): \(viewModel.splitType.displayName)"
+            ) { toggle(.split) }
+        }
+        return ViewThatFits(in: .horizontal) {
+            HStack(spacing: DS.Spacing.sm) { payerPiece; splitPiece }
+            VStack(spacing: DS.Spacing.sm) { payerPiece; splitPiece }
+        }
+        .font(DS.Typography.body)
+        .frame(maxWidth: .infinity)
+    }
+
+    /// Una pieza tocable de la frase. Abierta, en el color del tema.
+    private func sentenceToken(
+        text: String,
+        isOpen: Bool,
+        warning: Bool,
+        identifier: String,
+        a11yLabel: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            HStack(spacing: DS.Spacing.xxs) {
+                Text(text)
+                    .lineLimit(1)
+                if warning {
+                    Image(systemName: "exclamationmark.circle.fill")
+                        .font(DS.Typography.labelTiny)
+                        .foregroundStyle(Color.hotPink)
+                        .accessibilityHidden(true)
+                }
+            }
+            // En reposo, el tinte del tema (se ve tocable); abierta, el tema sólido (se está
+            // editando). Decisión de Jürgen, 2026-10-04.
+            .foregroundStyle(isOpen ? Color.white : theme.accent)
+            .padding(.horizontal, DS.Spacing.md)
+            .padding(.vertical, DS.Spacing.xs)
+            .background(Capsule().fill(isOpen ? theme.accent : theme.accent.opacity(0.18)))
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(a11yLabel)
+        .accessibilityAddTraits(isOpen ? .isSelected : [])
+        .accessibilityIdentifier(identifier)
+    }
+
+    /// Grupos de 2: la frase entera en una pastilla. Abre las cuatro opciones rápidas.
+    private var twoPersonSentence: some View {
+        let text = "\(L10n.Groups.Expense.paidByTitle) \(payerSentenceName) \(L10n.Groups.Expense.andDividedLabel) \(viewModel.splitType.inlineLabel)"
+        return Button {
+            openQuickOptions()
+        } label: {
+            HStack(spacing: DS.Spacing.xs) {
+                Text(text)
+                    .multilineTextAlignment(.center)
+                if !viewModel.isSharesBalanced {
+                    Image(systemName: "exclamationmark.circle.fill")
+                        .font(DS.Typography.labelTiny)
+                        .foregroundStyle(Color.hotPink)
+                        .accessibilityHidden(true)
+                }
+            }
+            .font(DS.Typography.body)
+            .foregroundStyle(theme.accent)
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.Spacing.sm)
+            .background(Capsule().fill(theme.accent.opacity(0.18)))
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity)
+        .accessibilityLabel(text)
+        .accessibilityHint(L10n.Groups.Expense.TwoPerson.quickOptions)
+        .accessibilityIdentifier("group_expense_quick_options")
+    }
+
+    /// Avatares para elegir quién pagó.
+    private func payerPicker(colors: [String: Color]) -> some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(alignment: .top, spacing: DS.Spacing.lg) {
+                ForEach(members, id: \.id) { member in
+                    payerOption(member, color: colors[member.id.uuidString] ?? theme.accent)
+                }
+            }
+            .padding(.vertical, DS.Spacing.sm)
+            .padding(.horizontal, DS.Spacing.lg)
+        }
+        // El anillo del elegido sobresale del avatar: sin esto el scroll lo recorta.
+        .scrollClipDisabled()
+        .padding(.vertical, DS.Spacing.sm)
+        .background(
+            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
+                .fill(.thCard)
+        )
+    }
+
+    private func openQuickOptions() {
+        openSplitIfAmountValid { showTwoPersonSplit = true }
+    }
+
+    private func payerOption(_ member: SplitMember, color: Color) -> some View {
+        let id = member.id.uuidString
+        let isSelected = viewModel.paidByMemberID == id
+        let name = payerDisplayName(member)
+        return Button {
+            dismissKeyboard()
+            viewModel.paidByMemberID = id
+        } label: {
+            VStack(spacing: DS.Spacing.xs) {
+                ZStack {
+                    Circle()
+                        .fill(isSelected ? color : color.opacity(0.2))
+                        .frame(width: payerAvatarSize, height: payerAvatarSize)
+                    Text(String(member.resolvedDisplayName.prefix(1)).uppercased())
+                        .font(DS.Typography.headline)
+                        .foregroundStyle(isSelected ? Color.white : color)
+                }
+                .overlay {
+                    if isSelected {
+                        Circle()
+                            .stroke(color, lineWidth: 2)
+                            .padding(-DS.Spacing.xs)
+                    }
+                }
+                Text(name)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(isSelected ? .primary : .secondary)
+                    .lineLimit(1)
+                    .frame(maxWidth: payerAvatarSize + DS.Spacing.xl)
+            }
+            .opacity(member.isActive ? 1 : 0.5)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(name)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .accessibilityIdentifier("group_expense_payer_\(member.resolvedDisplayName)")
+    }
+
+    /// Cuenta de la que salió el pago. Sin cuenta, la fila lo pide en el color de aviso:
+    /// es lo único que deja Guardar apagado en un gasto que pagaste tú.
+    private var accountRow: some View {
+        let account = viewModel.selectedAccount
+        let isMissing = account == nil
+        return Button {
+            dismissKeyboard()
+            showAccountSelector = true
+        } label: {
+            HStack(spacing: DS.Spacing.md) {
+                Image(systemName: "creditcard")
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(account.map { Color(hex: $0.colorHex) } ?? Color.secondary)
+                    .accessibilityHidden(true)
+                Text(L10n.Transaction.account)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.secondary)
+                Spacer(minLength: DS.Spacing.sm)
+                if isMissing {
+                    Image(systemName: "exclamationmark.circle.fill")
+                        .font(DS.Typography.labelSmall)
+                        .foregroundStyle(Color.hotPink)
+                        .accessibilityHidden(true)
+                }
+                Text(account?.name ?? L10n.Validation.selectAccount)
+                    .font(DS.Typography.label)
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                Image(systemName: "chevron.right")
+                    .font(DS.Typography.labelSmall)
+                    .foregroundStyle(.tertiary)
+                    .accessibilityHidden(true)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("group_expense_account_row")
+    }
+
+    /// «Tú» para el usuario actual (sin paréntesis: aquí es el nombre); el resto, su nombre.
+    private func payerDisplayName(_ member: SplitMember) -> String {
+        if member.id.uuidString == viewModel.currentUserMemberID { return L10n.Groups.Member.youName }
+        return memberNameLookup[member.id.uuidString] ?? member.resolvedDisplayName
     }
 
     // MARK: - Bottom Chips
@@ -672,24 +809,8 @@ struct GroupExpenseFormView: View {
     private var bottomChips: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: DS.Spacing.sm) {
-                // M6: chip cuenta personal real PRIMERO cuando aplica (Caso A `.full/.completed`).
-                // Si no aplica (Caso B / sesión solo-grupos), los demás chips corren a la izquierda.
-                if viewModel.isAccountRequired {
-                    SelectionChip(
-                        icon: "creditcard",
-                        text: viewModel.selectedAccount?.name ?? L10n.Transaction.account,
-                        isSelected: viewModel.selectedAccount != nil,
-                        color: viewModel.selectedAccount.map { Color(hex: $0.colorHex) }
-                    ) {
-                        dismissKeyboard()
-                        showAccountSelector = true
-                    }
-                }
-
-                // Pagador y división viven ahora en la línea "Pagado por · Dividido"
-                // debajo del monto; aquí quedan solo cuenta (Caso A) y subcategoría.
-
-                // Subcategoría AL FINAL: es opcional, va después de los chips esenciales.
+                // La cuenta (Caso A) vive en la tarjeta «Pagado por»; aquí queda la subcategoría,
+                // que es opcional.
                 SelectionChip(
                     icon: "tag",
                     text: viewModel.selectedSubcategory?.name ?? L10n.Transaction.subcategory,
@@ -702,13 +823,6 @@ struct GroupExpenseFormView: View {
             }
             .padding(.horizontal, DS.Spacing.xl)
         }
-    }
-
-    private var paidByChipText: String {
-        if viewModel.paidByMemberID.isEmpty {
-            return L10n.Groups.Expense.paidByTitle
-        }
-        return memberNameLookup[viewModel.paidByMemberID] ?? "—"
     }
 
     private var subcategoryChipColor: Color? {
@@ -778,6 +892,10 @@ struct GroupExpenseFormView: View {
     // MARK: - Actions
 
     private func handleSave() {
+        dismissKeyboard()
+        // Quien quedó sin valor en %/monto/partes no participa. Antes lo hacía el cierre de la
+        // hoja de división; con el reparto en el formulario, se hace al guardar.
+        viewModel.purgeEmptyParticipants()
         guard viewModel.save() else {
             // El save falló (throw atrapado en el VM). Presenta el error en vez de morir mudo:
             // cubre el grupo congelado por migración, la carrera pull-congela-mientras-guardas
@@ -931,9 +1049,9 @@ struct GroupExpenseFormView: View {
         }
     }
 
-    /// Abre el sheet de división (`open`) solo si ya hay un monto válido. Con monto 0
+    /// Abre las opciones rápidas (`open`) solo si ya hay un monto válido. Con monto 0
     /// muestra el alert pidiéndolo: dividir 0 no tiene sentido (los montos por persona
-    /// quedarían en 0). Cubre ambos sheets — el detallado y la pre-pantalla de 2 personas.
+    /// quedarían en 0).
     private func openSplitIfAmountValid(_ open: () -> Void) {
         dismissKeyboard()
         guard viewModel.isAmountValid else {

@@ -3,7 +3,7 @@ id: ipad-settings-sheet-size-depends-on-where-it-opens
 status: backlog
 priority: low
 area: "ipad, settings, adaptativo"
-updated: 2026-09-29
+updated: 2026-10-03
 created: 2026-09-29
 source: "fase 2 del carril adaptativo (ipad-list-detail-for-groups-and-settings-and-chat-inspector), 2026-09-29"
 ---
@@ -24,6 +24,14 @@ Desde la fase 2, Ajustes es una lista y el ajuste abierto a la vez, dentro de su
 
 Un `PresentationSizing` propio que pide `.infinity` sale igual a 810: el sistema lo limita. Inferido, no medido: la
 diferencia la pone desde dónde se presenta la hoja.
+
+## Medido otra vez el 2026-10-03 (puede que ya no pase)
+
+Desde el **Panel**, en `YalaLane-Adapt-iPad-Pro-13` (iOS 27.0, árbol `b474ce098`): la hoja sale con lista y ajuste
+**lado a lado**, en vertical (a pantalla completa) y en horizontal (1168 pt de ancho, de 104 a 1272). En el iPad mini
+girado, también lado a lado; en el mini en vertical la lista flota, como estaba previsto (744 pt no dan para dos).
+Capturas en `qa/evidencia-adaptativo-20261003/cola-b-redesigns-must-hold-up-at-ipad-width/` (`*__01-ajustes-*`,
+`*__02-personalizacion-*`). Falta medir las otras cinco puertas antes de cerrarlo.
 
 ## Qué hacer
 

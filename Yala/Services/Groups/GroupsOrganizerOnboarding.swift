@@ -206,7 +206,10 @@ enum GroupsOrganizerOnboarding {
         PreferenceSyncService.shared.signalOnboardingCompleted()
 
         // Aterrizar en el tab Grupos: sin sesión privada el tab bar se reduce a [.groups] y el
-        // `selectedMainTab` persistido (.panel) no está montado (gotcha bde61bb2).
-        sessionState.selectedMainTab = .groups
+        // `selectedMainTab` persistido (.panel) no está montado (gotcha bde61bb2). En TODAS las ventanas: la
+        // barra se reduce en todas a la vez.
+        for navigation in SceneRegistry.shared.allNavigations {
+            navigation.selectedMainTab = .groups
+        }
     }
 }

@@ -2,3 +2,4 @@
 "NSPhotoLibraryUsageDescription" = "Yala usa tus fotos para extraer detalles de gastos desde capturas y recibos. Las imágenes seleccionadas se envían a OpenAI.";
 "NSFaceIDUsageDescription" = "Yala usa Face ID para proteger tu información financiera.";
 "NSPhotoLibraryAddUsageDescription" = "Yala guarda en tus fotos los resúmenes de grupo que elijas guardar. No se guarda nada sin que lo pidas.";
+"NSCameraUsageDescription" = "Yala usa la cámara para fotografiar tus recibos y crear gastos. La foto se envía a OpenAI para leerla.";

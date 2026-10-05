@@ -4,10 +4,7 @@
 //
 //  Hero del Panel (PP2-01). Sin card y edge-to-edge — aprovecha todo el
 //  ancho del Panel. Fila superior con saludo + `TrendsPeriodMenu`, y resumen
-//  "Disponible · Período". La frase motivacional (aiSubtitle / fallback
-//  rule-based) y el upsellCTA "Personaliza tu mensaje con IA" viven en el
-//  subtítulo de "Tus finanzas" — la lógica del KPI se expone vía
-//  `HeroMonthView.kpiText(...)` para que el callsite ahí pueda reusarla.
+//  "Disponible · Período".
 //
 //  Amounts use `appPreferences.currency(...)`, which is reactive: any change
 //  to decimalPlaces or currencyDisplayFormat invalidates the view immediately.
@@ -32,43 +29,36 @@ struct HeroMonthView: View {
     @Environment(SessionState.self) private var sessionState
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    // La maqueta (rótulo y período arriba, cifra y detalle debajo, todo a la izquierda) es `HeroHeader`, la misma
+    // que usan las pestañas de Estadísticas: así las dos cabeceras no pueden volver a divergir.
     var body: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.md) {
-            topRow
-            summaryRow
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .accessibilityElement(children: .contain)
-        .accessibilityAddTraits(.isHeader)
-        .accessibilityLabel(heroAccessibilityLabel)
-    }
-
-    // MARK: - Top row (label del KPI + period selector inline)
-    //
-    // El saludo salió del hero (2026-09-02, sesión de diseño): ocupaba la línea
-    // más grande de la pantalla para no decir ningún dato, y el nombre sigue
-    // apareciendo en el título de la barra al hacer scroll (`PanelView`).
-    // Su hueco lo ocupa el label del KPI, que antes vivía centrado dentro de
-    // `summaryRow` — así el hero tiene UN SOLO eje de lectura, el mismo margen
-    // izquierdo que el resto del Panel.
-
-    // A tamaños de accesibilidad la píldora del período baja bajo el label (`AdaptiveRowStack`): en fila no
-    // cabían los dos en el ancho de un iPhone SE y «Disponible» desaparecía (medido el 2026-09-28).
-    private var topRow: some View {
-        AdaptiveRowStack(spacing: DS.Spacing.xs, stackedSpacing: DS.Spacing.sm) {
-            Text(summaryLabel)
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-        } trailing: {
+        HeroHeader {
+            HeroHeaderLabel(text: summaryLabel)
+        } period: {
             TrendsPeriodMenu(
                 selectedPeriod: selectedPeriod,
                 customDateRange: customDateRange,
                 onSelect: onSelectPeriod,
                 onCustomTapped: onCustomPeriodTapped
             )
+        } content: {
+            summaryRow
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityAddTraits(.isHeader)
+        .accessibilityLabel(heroAccessibilityLabel)
     }
+
+    // MARK: - Rótulo del KPI
+    //
+    // El saludo salió del hero (2026-09-02, sesión de diseño): ocupaba la línea
+    // más grande de la pantalla para no decir ningún dato, y el nombre sigue
+    // apareciendo en el título de la barra al hacer scroll (`PanelView`).
+    // Su hueco lo ocupa el label del KPI, que antes vivía centrado dentro de
+    // `summaryRow` — así el hero tiene UN SOLO eje de lectura, el mismo margen
+    // izquierdo que el resto del Panel. A tamaños de accesibilidad la píldora
+    // del período baja bajo el label (`AdaptiveRowStack`, dentro de `HeroHeader`):
+    // en fila no cabían los dos en el ancho de un iPhone SE (medido el 2026-09-28).
 
     /// Label del KPI SIN el período: la píldora de `TrendsPeriodMenu` va al lado
     /// y ya lo dice. Compuesto con el período seguiría en el label accesible,
@@ -189,8 +179,6 @@ struct HeroMonthView: View {
                 }
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.vertical, DS.Spacing.xs)
         .contentShape(Rectangle())
     }
 
@@ -213,41 +201,6 @@ struct HeroMonthView: View {
             valor, currencyCode: currencyCode, isEstimate: esAproximado
         )
         return "\(summaryLabel) · \(selectedPeriod.displayName), \(monto)"
-    }
-
-    /// SSOT del KPI motivacional: LLM cuando disponible, si no un fallback
-    /// rule-based por estado (frase motivacional genérica; los montos income/
-    /// spent/available se pasan por compatibilidad de firma pero los strings
-    /// actuales no los interpolan). Static para reusarse desde otras secciones
-    /// del Panel (subtítulo de "Tus finanzas") sin duplicar la lógica.
-    static func kpiText(
-        data: HeroMonthData,
-        aiSubtitle: String?,
-        currencyCode: String,
-        appPreferences: AppPreferences
-    ) -> String {
-        if let aiSubtitle, !aiSubtitle.isEmpty { return aiSubtitle }
-        let income = appPreferences.currency(data.income, currencyCode: currencyCode)
-        let spent = appPreferences.currency(data.expense, currencyCode: currencyCode)
-        let available = appPreferences.currency(data.available, currencyCode: currencyCode)
-        switch data.state {
-        case .monthStart:
-            return L10n.Panel.Hero.kpiMonthStart(income: income, daysRemaining: data.daysRemaining)
-        case .onTrack:
-            return L10n.Panel.Hero.kpiOnTrack(
-                income: income, spent: spent, available: available, daysRemaining: data.daysRemaining
-            )
-        case .neutral:
-            return L10n.Panel.Hero.kpiNeutral(
-                income: income, spent: spent, available: available, daysRemaining: data.daysRemaining
-            )
-        case .tight:
-            return L10n.Panel.Hero.kpiTight(
-                spent: spent, available: available, daysRemaining: data.daysRemaining
-            )
-        case .overBudget:
-            return L10n.Panel.Hero.kpiOverBudget(spent: spent, income: income)
-        }
     }
 
 }

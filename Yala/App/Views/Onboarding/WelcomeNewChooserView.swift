@@ -42,6 +42,12 @@
 //  elegir y la decisión de Jürgen (2026-09-09) es enseñarle el chooser ENTERO; si en ese momento solo
 //  hubiera una card visible, se ve esa una — `evenCardHeight` ya contempla el caso.
 //
+//  **Forma de la referencia del 15-sep (`WelcomeForm.swift`), sin sus pesos.** Titular serif sin logo y
+//  las dos opciones como filas de UNA tarjeta, con el MISMO peso: la referencia pinta lleno el camino
+//  recomendado y con contorno la salida sin cuenta, y aquí eso contradiría la decisión 1 de arriba
+//  —ninguna se recomienda—. La opción privada es la salida sin cuenta de Yala y queda dentro de la
+//  tarjeta, que es lo que el rasgo 5 pide. La igualación de alto (punto 11) se conserva entre filas.
+//
 
 import SwiftUI
 
@@ -70,43 +76,16 @@ struct WelcomeNewChooserView: View {
     @State private var contentHeights: [WelcomeAccountChoiceLogic.NewOption: CGFloat] = [:]
 
     var body: some View {
-        WelcomeFlowScreen { logoTopSpacing in
+        WelcomeFormScreen(title: headerTitle, subtitle: headerSubtitle) {
             VStack(spacing: 0) {
-                Spacer(minLength: logoTopSpacing)
-
-                Image("YalaLogo")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(height: 128)
-                    .colorMultiply(.white)
-                    .accessibilityHidden(true)
-
-                Spacer(minLength: DS.Spacing.lg)
-
-                VStack(spacing: DS.Spacing.sm) {
-                    Text(headerTitle)
-                        .font(DS.Typography.title2)
-                        .foregroundStyle(.white)
-                        .multilineTextAlignment(.center)
-
-                    Text(headerSubtitle)
-                        .font(DS.Typography.subheadline)
-                        .foregroundStyle(.white.opacity(0.7))
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, DS.Spacing.lg)
-                }
-
-                Spacer(minLength: DS.Spacing.lg)
-
-                VStack(spacing: DS.Spacing.md) {
-                    ForEach(Self.displayOrder(options), id: \.self) { option in
-                        optionCard(option)
+                ForEach(Self.displayOrder(options), id: \.self) { option in
+                    if option != Self.displayOrder(options).first {
+                        WelcomeOptionDivider()
                     }
+                    optionCard(option)
                 }
-                .padding(.horizontal, DS.Spacing.lg)
-
-                Spacer(minLength: DS.Spacing.xl)
             }
+            .welcomeFlowCard(radius: DS.Radius.xl)
         }
         .welcomeBackButton(tint: .white, action: onBack)
     }
@@ -199,7 +178,7 @@ struct WelcomeNewChooserView: View {
         ZStack {
             Circle()
                 .fill(tint.opacity(0.25))
-                .frame(width: 48, height: 48)
+                .frame(width: WelcomeOptionRowMetrics.iconSize, height: WelcomeOptionRowMetrics.iconSize)
             Image(systemName: name)
                 .font(.system(size: 22, weight: .semibold))
                 .foregroundStyle(tint)
@@ -243,7 +222,6 @@ struct WelcomeNewChooserView: View {
             }
             .frame(minHeight: evenCardHeight, alignment: .leading)
             .contentShape(Rectangle())
-            .welcomeFlowCard(radius: DS.Radius.xl)
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)

@@ -26,13 +26,13 @@ struct AppBootstrapperTests {
     @Test func handleInviteLink_invalidURL_enqueuesShowInviteError() {
         #if DEBUG
         AppRouter.shared._testReset()
-        AppRouter.shared.markReady(.contentView)
+        AppRouter.shared.markReady(.contentView, in: nil)
         #endif
 
         let bad = URL(string: "https://yala-app.pe/invite?broken")!
         AppBootstrapper.shared.handleInviteLink(bad)
 
-        let peeked = AppRouter.shared.peekNext(for: .contentView)
+        let peeked = AppRouter.shared.peekNext(for: .contentView, in: nil)
         if case .showInviteError = peeked {
             #expect(true)
         } else {

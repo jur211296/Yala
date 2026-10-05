@@ -15,6 +15,7 @@ struct PanelShell: View {
     @State private var viewModel = PanelViewModel()
     @State private var sheets = PanelSheetState()
     @Environment(SessionState.self) private var sessionState
+    @Environment(SceneNavigation.self) private var navigation
 
     var body: some View {
         PanelView(viewModel: viewModel, sheets: $sheets)
@@ -40,32 +41,32 @@ struct PanelShell: View {
             .routerConsumer(.panel) {
                 drainPanelIfActive()
             }
-            .onChange(of: sessionState.selectedMainTab) { _, _ in
+            .onChange(of: navigation.selectedMainTab) { _, _ in
                 drainPanelIfActive()
             }
             // Gate .panel intents while ChatSheet is open: prevents draining
             // sheet-presenting intents before ChatSheet's dismiss animation completes.
             .onChange(of: sheets.showChatSheet) { _, isOpen in
                 if isOpen {
-                    AppRouter.shared.markUnready(.panel)
+                    AppRouter.shared.markUnready(.panel, in: navigation.id)
                 } else {
-                    AppRouter.shared.markReady(.panel)
+                    AppRouter.shared.markReady(.panel, in: navigation.id)
                     drainPanelIfActive()
                 }
             }
             // Re-drains de Clase D: liberar un blocker superior (cover del shell,
             // sheet de MainTab) o cerrar un sheet propio no bumpea revision — cada
             // dimensión del gate re-drena explícitamente (molde del ChatSheet).
-            .onChange(of: sessionState.shellModalBlocker) { _, newBlocker in
+            .onChange(of: navigation.shellModalBlocker) { _, newBlocker in
                 if newBlocker == nil { drainPanelIfActive() }
             }
-            .onChange(of: sessionState.isMainTabModalVisible) { _, visible in
+            .onChange(of: navigation.isMainTabModalVisible) { _, visible in
                 if !visible { drainPanelIfActive() }
             }
             .onChange(of: sheets.hasActivePresentation) { _, active in
                 if !active { drainPanelIfActive() }
             }
-            .onChange(of: sessionState.showNewTransactionFromChat) { _, showing in
+            .onChange(of: navigation.showNewTransactionFromChat) { _, showing in
                 if !showing { drainPanelIfActive() }
             }
     }
@@ -76,31 +77,31 @@ struct PanelShell: View {
         // `sheets.showInbox = true` bajo un paywall jamás presentaba (bug
         // TestFlight: tap de notificación que nunca abría la Bandeja).
         guard RouterConsumerGateLogic.panelCanDrain(
-            selectedTab: sessionState.selectedMainTab,
+            selectedTab: navigation.selectedMainTab,
             chatSheetOpen: sheets.showChatSheet,
-            shellBlocker: sessionState.shellModalBlocker,
-            mainTabModalVisible: sessionState.isMainTabModalVisible,
+            shellBlocker: navigation.shellModalBlocker,
+            mainTabModalVisible: navigation.isMainTabModalVisible,
             panelModalVisible: sheets.hasActivePresentation
-                || sessionState.showNewTransactionFromChat
+                || navigation.showNewTransactionFromChat
         ) else {
             // Canario D4: solo con el tab correcto y por flags PUBLICADOS
             // (shellModalBlocker / isMainTabModalVisible) — tab equivocado,
             // chat abierto o sheet propio del panel son estado local real
             // del usuario, no un flag pegado.
-            if sessionState.selectedMainTab == .panel,
-               let pending = AppRouter.shared.peekNext(for: .panel) {
-                if let blocker = sessionState.shellModalBlocker {
+            if navigation.selectedMainTab == .panel,
+               let pending = AppRouter.shared.peekNext(for: .panel, in: navigation.id) {
+                if let blocker = navigation.shellModalBlocker {
                     RouterHoldCanary.shared.noteHold(intentID: pending.id, blocker: blocker, consumer: "panel")
-                } else if sessionState.isMainTabModalVisible {
+                } else if navigation.isMainTabModalVisible {
                     RouterHoldCanary.shared.noteHold(intentID: pending.id, blocker: "mainTabModal", consumer: "panel")
                 }
                 #if DEBUG
-                print("PanelShell drain hold: \(pending.id) por \(sessionState.shellModalBlocker ?? "modal visible")")
+                print("PanelShell drain hold: \(pending.id) por \(navigation.shellModalBlocker ?? "modal visible")")
                 #endif
             }
             return
         }
-        guard let intent = AppRouter.shared.drainNext(for: .panel) else { return }
+        guard let intent = AppRouter.shared.drainNext(for: .panel, in: navigation.id) else { return }
         RouterHoldCanary.shared.noteDrained(intentID: intent.id)
         handlePanelIntent(intent)
     }
@@ -108,16 +109,20 @@ struct PanelShell: View {
     /// Drain handler for `.panel` intents. Mutates `sheets` which drive the
     /// `.sheet(isPresented:)` bindings in PanelSheetsModifier.
     private func handlePanelIntent(_ intent: RouterIntent) {
+        // Lo que este intent encadene va a ESTA ventana, la que lo drenó.
+        SceneRegistry.shared.noteFocused(navigation.id)
         switch intent {
         case .presentInboxSheet:
             sheets.showInbox = true
-        case .presentSharedImage:
+        case .presentSharedImage(let url):
+            // La imagen viaja en el intent: la deja en ESTA ventana, que es la que la va a abrir.
+            navigation.pendingSharedImageURL = url
             sheets.showImageSelection = true
         case .presentNewTransaction:
             sheets.showNewTransaction = true
         case .presentNewTransactionFromChatDraft(let prefill):
-            sessionState.pendingChatDraftPrefill = prefill
-            sessionState.showNewTransactionFromChat = true
+            navigation.pendingChatDraftPrefill = prefill
+            navigation.showNewTransactionFromChat = true
         case .presentVoiceEntry:
             sheets.showVoiceRecording = true
         case .presentImageEntry:

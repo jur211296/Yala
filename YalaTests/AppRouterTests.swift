@@ -74,16 +74,16 @@ struct AppRouterTests {
 
     @MainActor @Test func drainNext_emptyQueue_returnsNil() {
         let router = freshRouter()
-        router.markReady(.panel)
-        #expect(router.drainNext(for: .panel) == nil)
+        router.markReady(.panel, in: nil)
+        #expect(router.drainNext(for: .panel, in: nil) == nil)
     }
 
     @MainActor @Test func drainNext_readyConsumer_returnsMatchingIntent() {
         let router = freshRouter()
         router.enqueue(.presentInboxSheet)
-        router.markReady(.panel)
+        router.markReady(.panel, in: nil)
 
-        let intent = router.drainNext(for: .panel)
+        let intent = router.drainNext(for: .panel, in: nil)
         #expect(intent == .presentInboxSheet)
         #expect(router._testQueue.isEmpty)
     }
@@ -93,7 +93,7 @@ struct AppRouterTests {
         router.enqueue(.presentInboxSheet)
 
         // Consumer not ready
-        #expect(router.drainNext(for: .panel) == nil)
+        #expect(router.drainNext(for: .panel, in: nil) == nil)
         #expect(router._testQueue.count == 1)
     }
 
@@ -101,9 +101,9 @@ struct AppRouterTests {
         let router = freshRouter()
         router.enqueue(.presentInboxSheet)       // .panel
         router.enqueue(.presentTrialExpired)     // .mainTab
-        router.markReady(.mainTab)
+        router.markReady(.mainTab, in: nil)
 
-        let intent = router.drainNext(for: .mainTab)
+        let intent = router.drainNext(for: .mainTab, in: nil)
         #expect(intent == .presentTrialExpired)
         #expect(router._testQueue.count == 1)
         #expect(router._testQueue.first?.id == "inboxSheet")
@@ -112,9 +112,9 @@ struct AppRouterTests {
     @MainActor @Test func drainNext_removesReturnedIntent() {
         let router = freshRouter()
         router.enqueue(.presentInboxSheet)
-        router.markReady(.panel)
+        router.markReady(.panel, in: nil)
 
-        _ = router.drainNext(for: .panel)
+        _ = router.drainNext(for: .panel, in: nil)
         #expect(router._testQueue.isEmpty)
     }
 
@@ -123,15 +123,15 @@ struct AppRouterTests {
     @MainActor @Test func markReady_bumpsRevision() {
         let router = freshRouter()
         let before = router.revision
-        router.markReady(.panel)
+        router.markReady(.panel, in: nil)
         #expect(router.revision > before)
     }
 
     @MainActor @Test func markUnready_doesNotDropQueuedIntents() {
         let router = freshRouter()
-        router.markReady(.panel)
+        router.markReady(.panel, in: nil)
         router.enqueue(.presentInboxSheet)
-        router.markUnready(.panel)
+        router.markUnready(.panel, in: nil)
 
         // Intent still queued, consumer just unable to drain
         #expect(router._testQueue.count == 1)
@@ -142,10 +142,10 @@ struct AppRouterTests {
     /// permanecen en queue. Al cerrar el chat, markReady drena.
     @MainActor @Test func chatSheetUnreadyBlocksDrain_thenDrainsOnReady() {
         let router = freshRouter()
-        router.markReady(.panel)
+        router.markReady(.panel, in: nil)
 
         // Chat abre → unready
-        router.markUnready(.panel)
+        router.markUnready(.panel, in: nil)
 
         // User tap Edit → enqueue
         let prefill = ChatDraftPrefill(
@@ -163,12 +163,12 @@ struct AppRouterTests {
         router.enqueue(.presentNewTransactionFromChatDraft(prefill))
 
         // Intent queueado, drain bloqueado
-        #expect(router.drainNext(for: .panel) == nil)
+        #expect(router.drainNext(for: .panel, in: nil) == nil)
         #expect(router._testQueue.count == 1)
 
         // Chat cierra → ready → intent drenable
-        router.markReady(.panel)
-        let drained = router.drainNext(for: .panel)
+        router.markReady(.panel, in: nil)
+        let drained = router.drainNext(for: .panel, in: nil)
         #expect(drained != nil)
         if case .presentNewTransactionFromChatDraft = drained {
             // success
@@ -196,7 +196,7 @@ struct AppRouterTests {
     @MainActor @Test func resetAll_wipesEverything_resetsRevision() {
         let router = freshRouter()
         router.enqueue(.iCloudMismatch)
-        router.markReady(.panel)
+        router.markReady(.panel, in: nil)
 
         router.resetAll()
 
@@ -300,7 +300,7 @@ struct AppRouterTests {
     @MainActor @Test func _testReset_clearsStateBetweenTests() {
         let router = AppRouter.shared
         router.enqueue(.presentInboxSheet)
-        router.markReady(.panel)
+        router.markReady(.panel, in: nil)
         router._testReset()
 
         #expect(router._testQueue.isEmpty)
@@ -318,12 +318,12 @@ struct AppRouterTests {
     /// mid-dismissal.
     @MainActor @Test func drain_handlerEnqueuesNewIntent_doesNotProcessInSameTick() {
         let router = freshRouter()
-        router.markReady(.panel)
+        router.markReady(.panel, in: nil)
         router.enqueue(.presentInboxSheet)
 
         // Simulate the consumer's `.onChange(revision)` running:
         // Pull ONE intent, handler enqueues another, but we don't loop.
-        let firstIntent = router.drainNext(for: .panel)
+        let firstIntent = router.drainNext(for: .panel, in: nil)
         #expect(firstIntent == .presentInboxSheet)
 
         // Handler enqueues a follow-up (as if InboxAlertModal.onViewInbox)
@@ -335,7 +335,7 @@ struct AppRouterTests {
         #expect(router._testQueue.first?.id == "newTransaction")
 
         // Next tick drains it cleanly.
-        let secondIntent = router.drainNext(for: .panel)
+        let secondIntent = router.drainNext(for: .panel, in: nil)
         #expect(secondIntent == .presentNewTransaction)
         #expect(router._testQueue.isEmpty)
     }

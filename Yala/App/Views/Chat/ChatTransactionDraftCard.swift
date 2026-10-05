@@ -34,7 +34,9 @@ struct ChatTransactionDraftCard: View {
     @Query(filter: #Predicate<Subcategory> { $0.isVisible == true }) private var allSubcategories: [Subcategory]
     @Query private var allTags: [Tag]
 
-    @FocusState private var amountFocused: Bool
+    @State private var activeField: ChatDraftField?
+    @State private var showingDetails = false
+    @State private var fullFormRequested = false
 
     var body: some View {
         switch draft.status {
@@ -50,292 +52,226 @@ struct ChatTransactionDraftCard: View {
     }
 
     // MARK: - Editable card (.pending / .saving)
+    //
+    // Propuesta A (Jürgen, 2026-10-04): la card ES la fila que el registro tendrá en Registros —icono de categoría,
+    // nota, subcategoría, importe— y debajo píldoras tocables para lo que más se corrige. Cada píldora abre el MISMO
+    // selector que Nuevo registro (`ChatDraftFieldSheet`); «Detalles» abre la hoja con todo lo demás. Al guardar, la
+    // fila se queda donde estaba con su ✓ (`compactRow`): pendiente y guardado son la misma pieza.
 
     private var editableCard: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.md) {
-            header
+        VStack(alignment: .leading, spacing: DS.Spacing.none) {
+            Button {
+                showingDetails = true
+            } label: {
+                pendingRow
+            }
+            .buttonStyle(.plain)
+            .disabled(isSaving)
+            .accessibilityIdentifier("chat_draft_row")
+            chipsRow
             Divider()
-            menuRows
             footer
         }
-        .padding(DS.Spacing.md)
-        .background(.thCard)
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
-        // Tap en Save → cerrar teclado antes de guardar (UX más limpia).
-        // El cierre vía swipe-down lo provee `.scrollDismissesKeyboard(.interactively)`
-        // en el ScrollView de mensajes del ChatSheetView.
-    }
-
-    private var header: some View {
-        HStack {
-            Text(draft.isExpense ? L10n.Chat.Draft.chipExpense : L10n.Chat.Draft.chipIncome)
-                .font(DS.Typography.labelSmall)
-                .padding(.horizontal, DS.Spacing.sm)
-                .padding(.vertical, DS.Spacing.xs)
-                .background(draft.isExpense ? DS.Semantic.errorBackground : DS.Semantic.successBackground)
-                .foregroundStyle(draft.isExpense ? DS.Semantic.errorForeground : DS.Semantic.successForeground)
-                .clipShape(Capsule())
-
-            Spacer()
-
-            // SwiftUI sincroniza Binding<Decimal?> bidireccionalmente y rechaza
-            // input no parseable. Resuelve el desync entre amountText y draft.amount,
-            // y elimina la necesidad de `onAppear` con seed manual (que no se
-            // re-disparaba si el draft cambiaba externamente).
-            TextField(
-                L10n.Chat.Draft.amountPlaceholder,
-                value: Binding<Decimal?>(
-                    get: { draft.amount },
-                    set: { newValue in onAmountChange(newValue) }
-                ),
-                format: .number.precision(.fractionLength(0...2))
+        .background(
+            RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
+                .fill(.thCard)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
+        .sheet(item: $activeField) { field in
+            fieldSheet(field)
+        }
+        .sheet(isPresented: $showingDetails, onDismiss: openFullFormIfRequested) {
+            ChatDraftDetailSheet(
+                draft: draft, account: currentAccount, subcategory: currentSubcategory, tags: savedTagsResolved,
+                canSave: canSave, editing: editing,
+                onSave: { onSave(draft.id) },
+                onDiscard: { onDiscard(draft.id) },
+                onOpenFullForm: requestFullForm
             )
-            .keyboardType(.decimalPad)
-            .multilineTextAlignment(.trailing)
-            .font(DS.Typography.title)
-            .frame(maxWidth: 140)
-            .focused($amountFocused)
-            .disabled(draft.status == .saving)
-
-            // `draft.currencyCode` es la divisa EFECTIVA: el ViewModel la sincroniza con la de la
-            // cuenta al elegirla, así que elegir otra cuenta cambia esta etiqueta a la vista y la
-            // combinación imposible deja de poder guardarse en silencio.
-            Text(draft.currencyCode)
-                .font(DS.Typography.labelSmall)
-                .foregroundStyle(.thSecondaryText)
         }
     }
 
-    private var menuRows: some View {
-        VStack(spacing: DS.Spacing.sm) {
-            accountRow
-            subcategoryRow
-            dateRow
-            tagsRow
-            noteRow
-        }
-    }
+    private var pendingRow: some View {
+        HStack(spacing: DS.ListRow.spacing) {
+            ChatDraftCategoryIcon(subcategory: currentSubcategory)
 
-    private var tagsRow: some View {
-        Menu {
-            ForEach(sortedTags) { tag in
-                Button {
-                    var ids = draft.tagIDs
-                    if let idx = ids.firstIndex(of: tag.persistentModelID) {
-                        ids.remove(at: idx)
-                    } else {
-                        ids.append(tag.persistentModelID)
-                    }
-                    onTagsChange(ids)
-                } label: {
-                    HStack {
-                        Text(tag.name)
-                        if draft.tagIDs.contains(tag.persistentModelID) {
-                            Image(systemName: "checkmark")
-                        }
-                    }
-                }
+            VStack(alignment: .leading, spacing: 3) {
+                Text(pendingTitle)
+                    .font(DS.Typography.label)
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                Text(pendingSubtitle)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(
+                        currentSubcategory == nil
+                            ? AnyShapeStyle(DS.Semantic.warningForeground) : AnyShapeStyle(.secondary)
+                    )
+                    .lineLimit(1)
             }
-        } label: {
-            row(
-                icon: "number",
-                label: L10n.Chat.Draft.tagsLabel,
-                value: currentTagsLabel,
-                highlight: false
-            )
-        }
-        .disabled(draft.status == .saving)
-    }
 
-    private var sortedTags: [Tag] {
-        allTags.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
-    }
+            Spacer(minLength: DS.Spacing.sm)
 
-    private var currentTagsLabel: String {
-        let selected = allTags.filter { draft.tagIDs.contains($0.persistentModelID) }
-        if selected.isEmpty { return L10n.Chat.Draft.tagsNone }
-        return selected.map { $0.name }.sorted().joined(separator: ", ")
-    }
-
-    @ViewBuilder
-    private var accountRow: some View {
-        let needsInput = draft.needsUserInput.contains("account")
-        Menu {
-            ForEach(allAccounts) { account in
-                Button {
-                    onAccountChange(account.persistentModelID)
-                } label: {
-                    Text("\(account.name) · \(account.currencyCode)")
-                }
-            }
-        } label: {
-            row(
-                icon: "creditcard",
-                label: L10n.Chat.Draft.accountLabel,
-                value: currentAccountName ?? L10n.Chat.Draft.selectAccount,
-                highlight: needsInput
-            )
-        }
-        .disabled(draft.status == .saving)
-    }
-
-    @ViewBuilder
-    private var subcategoryRow: some View {
-        let needsInput = draft.needsUserInput.contains("subcategory")
-        Menu {
-            // Agrupado por categoría (A-Z) con subcategorías dentro (A-Z).
-            ForEach(groupedSubcategories, id: \.categoryID) { group in
-                Section(group.categoryName) {
-                    ForEach(group.subcategories) { sub in
-                        Button {
-                            onSubcategoryChange(sub.persistentModelID)
-                        } label: {
-                            Text(sub.name)
-                        }
-                    }
-                }
-            }
-        } label: {
-            row(
-                icon: "tag",
-                label: L10n.Chat.Draft.subcategoryLabel,
-                value: currentSubcategoryName ?? L10n.Chat.Draft.selectSubcategory,
-                highlight: needsInput
-            )
-        }
-        .disabled(draft.status == .saving)
-    }
-
-    private var dateRow: some View {
-        HStack(spacing: DS.Spacing.sm) {
-            Image(systemName: "calendar")
-                .foregroundStyle(AnyShapeStyle(.thSecondaryText))
-                .frame(width: 20)
-            Text(L10n.Chat.Draft.dateLabel)
-                .font(DS.Typography.caption)
-                .foregroundStyle(.thSecondaryText)
-            Spacer()
-            DatePicker(
-                "",
-                selection: Binding(get: { draft.date }, set: onDateChange),
-                displayedComponents: .date
-            )
-            .labelsHidden()
-            .disabled(draft.status == .saving)
-        }
-        .padding(.vertical, DS.Spacing.sm)
-        .padding(.horizontal, DS.Spacing.sm)
-    }
-
-    private var noteRow: some View {
-        HStack(spacing: DS.Spacing.sm) {
-            Image(systemName: "text.alignleft")
-                .foregroundStyle(AnyShapeStyle(.thSecondaryText))
-                .frame(width: 20)
-            Text(L10n.Chat.Draft.noteLabel)
-                .font(DS.Typography.caption)
-                .foregroundStyle(.thSecondaryText)
-            Spacer()
-            TextField(
-                L10n.Chat.Draft.noteLabel,
-                text: Binding(
-                    get: { draft.note },
-                    set: { onNoteChange($0) }
+            Text(draft.amount == nil ? L10n.Chat.Draft.missingAmount : savedFormattedAmount)
+                .font(draft.amount == nil ? DS.Typography.caption : DS.Typography.headline)
+                .foregroundStyle(
+                    draft.amount == nil ? AnyShapeStyle(DS.Semantic.warningForeground) : AnyShapeStyle(savedAmountColor)
                 )
-            )
-            .font(DS.Typography.body)
-            .foregroundStyle(.thPrimaryText)
-            .multilineTextAlignment(.trailing)
-            .submitLabel(.done)
-            .disabled(draft.status == .saving)
+                .monospacedDigit()
         }
-        .padding(.vertical, DS.Spacing.sm)
-        .padding(.horizontal, DS.Spacing.sm)
+        .padding(.top, DS.ListRow.paddingV)
+        .padding(.bottom, DS.Spacing.sm)
+        .padding(.horizontal, DS.ListRow.paddingH)
+        .contentShape(Rectangle())
+    }
+
+    /// La nota es lo que el usuario dijo («Taxi al aeropuerto»); sin nota, la subcategoría hace de título.
+    private var pendingTitle: String {
+        if !draft.note.isEmpty { return draft.note }
+        return currentSubcategoryShortName ?? L10n.Common.uncategorized
+    }
+
+    private var pendingSubtitle: String {
+        guard let sub = currentSubcategory else { return L10n.Chat.Draft.missingSubcategory }
+        return "\(sub.safeCategory.name) · \(sub.name)"
+    }
+
+    /// Lo que falta va primero y en ámbar; luego cuenta, fecha y etiquetas. La subcategoría ya elegida se cambia
+    /// desde «Detalles» (ya se lee en la fila).
+    private var chipsRow: some View {
+        FlowLayout(spacing: DS.Spacing.sm) {
+            if currentSubcategory == nil {
+                chip(.subcategory, title: L10n.Chat.Draft.selectSubcategory, isMissing: true)
+            }
+            chip(
+                .account,
+                title: currentAccountShortName ?? L10n.Chat.Draft.selectAccount,
+                isMissing: currentAccountShortName == nil
+            )
+            chip(.date, title: ChatDraftFormatting.dateLabel(draft.date), isMissing: false)
+            chip(
+                .tags,
+                title: savedTagsResolved.isEmpty
+                    ? "+ \(L10n.Chat.Draft.addTag)"
+                    : savedTagsResolved.map(\.name).sorted().joined(separator: ", "),
+                isMissing: false
+            )
+        }
+        .padding(.leading, DS.ListRow.paddingH + DS.ListRow.iconSize + DS.ListRow.spacing)
+        .padding(.trailing, DS.ListRow.paddingH)
+        .padding(.bottom, DS.Spacing.md)
+    }
+
+    private func chip(_ field: ChatDraftField, title: String, isMissing: Bool) -> some View {
+        Button {
+            activeField = field
+        } label: {
+            Text(title)
+                .font(DS.Typography.labelSmall)
+                .lineLimit(1)
+                .foregroundStyle(isMissing ? AnyShapeStyle(DS.Semantic.warningForeground) : AnyShapeStyle(.primary))
+                .padding(.horizontal, DS.Chip.paddingH)
+                .padding(.vertical, DS.Chip.paddingV)
+                .background(
+                    Capsule().fill(isMissing ? AnyShapeStyle(DS.Semantic.warningBackground) : AnyShapeStyle(.quaternary))
+                )
+                .overlay {
+                    if isMissing {
+                        Capsule().strokeBorder(DS.Semantic.warningForeground, lineWidth: 1)
+                    }
+                }
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .disabled(isSaving)
+        .accessibilityIdentifier("chat_draft_chip_\(field.rawValue)")
     }
 
     private var footer: some View {
-        HStack(spacing: DS.Spacing.sm) {
-            Button(role: .destructive) {
-                amountFocused = false
-                onDiscard(draft.id)
-            } label: {
-                Text(L10n.Chat.Draft.discardButton)
-                    .font(DS.Typography.labelSmall)
-                    .padding(.horizontal, DS.Spacing.md)
-                    .padding(.vertical, DS.Spacing.sm)
+        HStack(spacing: DS.Spacing.xs) {
+            Button(L10n.Chat.Draft.discardButton) {
+                    onDiscard(draft.id)
             }
-            .disabled(draft.status == .saving)
+            .font(DS.Typography.label)
+            .foregroundStyle(.secondary)
+            .frame(minHeight: 44)
+            .padding(.horizontal, DS.Spacing.sm)
+            .disabled(isSaving)
 
-            Button {
-                onEdit(draft.id)
-                dismiss()  // Cierra ChatSheet (agnóstico al padre — funciona en los 3 puntos de entrada)
-            } label: {
-                Text(L10n.Chat.Draft.editButton)
-                    .font(DS.Typography.labelSmall)
-                    .padding(.horizontal, DS.Spacing.md)
-                    .padding(.vertical, DS.Spacing.sm)
+            Button(L10n.Chat.Draft.detailsButton) {
+                    showingDetails = true
             }
-            .disabled(draft.status == .saving)
+            .font(DS.Typography.label)
+            .foregroundStyle(theme.accent)
+            .frame(minHeight: 44)
+            .padding(.horizontal, DS.Spacing.sm)
+            .disabled(isSaving)
+            .accessibilityIdentifier("chat_draft_details")
 
             Spacer()
 
             Button {
-                amountFocused = false  // cierra teclado antes de iniciar save
                 onSave(draft.id)
             } label: {
                 HStack(spacing: DS.Spacing.xs) {
-                    if draft.status == .saving {
+                    if isSaving {
                         ProgressView().controlSize(.small)
                     }
                     Text(L10n.Chat.Draft.saveButton)
-                        .font(DS.Typography.labelSmall)
+                        .font(DS.Typography.label)
                 }
-                .padding(.horizontal, DS.Spacing.md)
-                .padding(.vertical, DS.Spacing.sm)
-                .background(theme.accent)
-                .foregroundStyle(Color.contrastingText(for: theme.accent))
+                .padding(.horizontal, DS.Spacing.lg)
+                .frame(minHeight: 44)
+                // Apagado se VE apagado: con fondo y texto explícitos, `.disabled` no atenúa nada y el botón
+                // parecía activo sin hacer nada (medido el 2026-10-04 con la subcategoría sin elegir).
+                .background(canSave ? theme.accent : DS.Semantic.disabledForeground.opacity(0.35))
+                .foregroundStyle(canSave ? Color.contrastingText(for: theme.accent) : Color.secondary)
                 .clipShape(Capsule())
             }
-            .disabled(!canSave || draft.status == .saving)
+            .buttonStyle(.plain)
+            .disabled(!canSave || isSaving)
+            .accessibilityIdentifier("chat_draft_save")
         }
+        .padding(.horizontal, DS.Spacing.sm)
+        .padding(.vertical, DS.Spacing.xs)
     }
+
+    private var isSaving: Bool { draft.status == .saving }
 
     private var canSave: Bool {
         draft.amount != nil && draft.accountID != nil && draft.subcategoryID != nil
     }
 
-    // MARK: - Helper rows
+    private var editing: ChatDraftEditing {
+        ChatDraftEditing(
+            onAmountChange: onAmountChange,
+            onAccountChange: onAccountChange,
+            onSubcategoryChange: onSubcategoryChange,
+            onDateChange: onDateChange,
+            onTagsChange: onTagsChange,
+            onNoteChange: onNoteChange
+        )
+    }
 
-    @ViewBuilder
-    private func row(icon: String, label: String, value: String, highlight: Bool) -> some View {
-        HStack(spacing: DS.Spacing.sm) {
-            Image(systemName: icon)
-                .foregroundStyle(highlight ? AnyShapeStyle(DS.Semantic.warningForeground) : AnyShapeStyle(.thSecondaryText))
-                .frame(width: 20)
-            Text(label)
-                .font(DS.Typography.caption)
-                .foregroundStyle(.thSecondaryText)
-            Spacer()
-            Text(value)
-                .font(DS.Typography.body)
-                .foregroundStyle(.thPrimaryText)
-                .lineLimit(1)
-            Image(systemName: "chevron.up.chevron.down")
-                .font(DS.Typography.captionSmall)
-                .foregroundStyle(.thSecondaryText)
-        }
-        .padding(.vertical, DS.Spacing.sm)
-        .padding(.horizontal, DS.Spacing.sm)
-        .background {
-            if highlight {
-                RoundedRectangle(cornerRadius: DS.Radius.sm)
-                    .stroke(DS.Semantic.errorBorder, lineWidth: 1)
-                    .background(
-                        RoundedRectangle(cornerRadius: DS.Radius.sm)
-                            .fill(DS.Semantic.warningBackground.opacity(0.2))
-                    )
-            }
-        }
+    private func fieldSheet(_ field: ChatDraftField) -> ChatDraftFieldSheet {
+        ChatDraftFieldSheet(
+            field: field, isExpense: draft.isExpense, account: currentAccount, subcategory: currentSubcategory,
+            tags: savedTagsResolved, date: draft.date, editing: editing
+        )
+    }
+
+    // «Abrir en el formulario completo» cierra el chat. Primero se cierra la hoja de detalles y SOLO en su
+    // `onDismiss` se sigue: encadenar dos presentaciones a mano puede dejar una a medias
+    // (`.claude/rules/swiftui-ds.md`, «Presentaciones»).
+    private func requestFullForm() {
+        fullFormRequested = true
+        showingDetails = false
+    }
+
+    private func openFullFormIfRequested() {
+        guard fullFormRequested else { return }
+        fullFormRequested = false
+        onEdit(draft.id)
+        dismiss()  // Cierra ChatSheet (agnóstico al padre — funciona en los 3 puntos de entrada)
     }
 
     // MARK: - Compact row (estilo RecordRowView, para estados terminales del draft)
@@ -495,8 +431,10 @@ struct ChatTransactionDraftCard: View {
             dbl, currencyCode: draft.currencyCode, forceFullPrecision: true)
     }
 
+    /// Se colorea la excepción, no la norma: el gasto va en el color del texto y el ingreso en el tono oscurecido
+    /// que sí se lee sobre la tarjeta (`.claude/rules/swiftui-ds.md`).
     private var savedAmountColor: Color {
-        draft.isExpense ? Color.hotPink : Color.electricIndigo
+        draft.isExpense ? Color.primary : Color.incomeAmount
     }
 
     // MARK: - Failed row
@@ -521,11 +459,10 @@ struct ChatTransactionDraftCard: View {
 
     // MARK: - Lookups
 
-    private var currentAccountName: String? {
-        guard let id = draft.accountID,
-              let account = allAccounts.first(where: { $0.persistentModelID == id })
-        else { return nil }
-        return "\(account.name) · \(account.currencyCode)"
+    /// La cuenta del borrador para los selectores. Solo para PRESELECCIONAR: la divisa no se deduce de aquí (ver abajo).
+    private var currentAccount: Account? {
+        guard let id = draft.accountID else { return nil }
+        return allAccounts.first(where: { $0.persistentModelID == id })
     }
 
     // Aquí NO va un helper que resuelva la cuenta para deducir la divisa. `draft.currencyCode` ya es
@@ -537,34 +474,4 @@ struct ChatTransactionDraftCard: View {
     // guardar los dos lados discrepaban y volvía el bug que el cambio venía a cerrar. Dos criterios
     // para la misma pregunta son dos respuestas esperando a divergir; con un solo valor en el
     // borrador no hay nada que sincronizar.
-
-    private var currentSubcategoryName: String? {
-        guard let id = draft.subcategoryID,
-              let sub = allSubcategories.first(where: { $0.persistentModelID == id })
-        else { return nil }
-        return "\(sub.safeCategory.name) · \(sub.name)"
-    }
-
-    private var filteredSubcategories: [Subcategory] {
-        allSubcategories.filter { $0.safeCategory.isIncome != draft.isExpense }
-    }
-
-    /// Subcategorías agrupadas por categoría. Categorías ordenadas A-Z, y dentro
-    /// de cada categoría las subcategorías ordenadas A-Z.
-    private struct SubcategoryGroup: Identifiable {
-        let id: PersistentIdentifier
-        var categoryID: PersistentIdentifier { id }
-        let categoryName: String
-        let subcategories: [Subcategory]
-    }
-
-    private var groupedSubcategories: [SubcategoryGroup] {
-        let grouped = Dictionary(grouping: filteredSubcategories) { $0.safeCategory.persistentModelID }
-        return grouped.map { (categoryID, subs) in
-            let categoryName = subs.first?.safeCategory.name ?? ""
-            let sorted = subs.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
-            return SubcategoryGroup(id: categoryID, categoryName: categoryName, subcategories: sorted)
-        }
-        .sorted { $0.categoryName.localizedCaseInsensitiveCompare($1.categoryName) == .orderedAscending }
-    }
 }

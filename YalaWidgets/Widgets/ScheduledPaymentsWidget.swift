@@ -3,7 +3,7 @@
 //  YalaWidgets
 //
 //  Widget showing upcoming scheduled payments.
-//  Supports Medium size with default sorting (overdue first, then by date).
+//  Medium: 3 payments. Large: 7. Default sorting (overdue first, then by date).
 //  Configurable: selection mode (auto/custom).
 //
 
@@ -84,6 +84,54 @@ struct ScheduledPaymentsEntry: TimelineEntry {
                     isIncome: false,
                     iconName: "music.note",
                     colorHex: "#1DB954"
+                ),
+                WidgetScheduledPayment(
+                    id: "4",
+                    name: "Internet",
+                    amount: 119.00,
+                    currencyCode: "PEN",
+                    nextDueDate: Date().addingTimeInterval(86400 * 8),
+                    isOverdue: false,
+                    paymentCategory: "recurring",
+                    isIncome: false,
+                    iconName: "wifi",
+                    colorHex: "#00C2CB"
+                ),
+                WidgetScheduledPayment(
+                    id: "5",
+                    name: "Gimnasio",
+                    amount: 150.00,
+                    currencyCode: "PEN",
+                    nextDueDate: Date().addingTimeInterval(86400 * 12),
+                    isOverdue: false,
+                    paymentCategory: "subscription",
+                    isIncome: false,
+                    iconName: "figure.run",
+                    colorHex: "#F59E0B"
+                ),
+                WidgetScheduledPayment(
+                    id: "6",
+                    name: "iCloud+",
+                    amount: 9.90,
+                    currencyCode: "PEN",
+                    nextDueDate: Date().addingTimeInterval(86400 * 15),
+                    isOverdue: false,
+                    paymentCategory: "subscription",
+                    isIncome: false,
+                    iconName: "icloud.fill",
+                    colorHex: "#3B82F6"
+                ),
+                WidgetScheduledPayment(
+                    id: "7",
+                    name: "Seguro",
+                    amount: 210.00,
+                    currencyCode: "PEN",
+                    nextDueDate: Date().addingTimeInterval(86400 * 20),
+                    isOverdue: false,
+                    paymentCategory: "recurring",
+                    isIncome: false,
+                    iconName: "shield.fill",
+                    colorHex: "#8B5CF6"
                 )
             ],
             currencyDisplayFormat: "symbol",
@@ -106,11 +154,11 @@ struct ScheduledPaymentsProvider: AppIntentTimelineProvider {
         if context.isPreview {
             return .placeholder
         }
-        return createEntry(for: configuration)
+        return createEntry(for: configuration, family: context.family)
     }
 
     func timeline(for configuration: ScheduledPaymentsWidgetIntent, in context: Context) async -> Timeline<ScheduledPaymentsEntry> {
-        let entry = createEntry(for: configuration)
+        let entry = createEntry(for: configuration, family: context.family)
 
         // Refresh at midnight or after 4 hours
         let midnight = Calendar.current.startOfDay(for: Date().addingTimeInterval(86400))
@@ -120,7 +168,13 @@ struct ScheduledPaymentsProvider: AppIntentTimelineProvider {
         return Timeline(entries: [entry], policy: .after(refreshDate))
     }
 
-    private func createEntry(for configuration: ScheduledPaymentsWidgetIntent) -> ScheduledPaymentsEntry {
+    /// Cuántas filas caben por tamaño.
+    static func paymentLimit(for family: WidgetFamily) -> Int {
+        family == .systemLarge ? 7 : 3
+    }
+
+    private func createEntry(for configuration: ScheduledPaymentsWidgetIntent, family: WidgetFamily) -> ScheduledPaymentsEntry {
+        let limit = Self.paymentLimit(for: family)
         var payments: [WidgetScheduledPayment]
 
         if configuration.selectionMode == .custom,
@@ -131,10 +185,10 @@ struct ScheduledPaymentsProvider: AppIntentTimelineProvider {
             payments = selected.compactMap { entity in
                 allPayments.first { $0.id == entity.id }
             }
-            payments = Array(payments.prefix(3))
+            payments = Array(payments.prefix(limit))
         } else {
-            // Automatic mode: next 3 by date (overdue first)
-            payments = WidgetDataService.getScheduledPayments(filter: .all, limit: 3)
+            // Automatic mode: next N by date (overdue first)
+            payments = WidgetDataService.getScheduledPayments(filter: .all, limit: limit)
         }
 
         let displayFormat = WidgetDataService.getCurrencyDisplayFormat()
@@ -151,10 +205,11 @@ struct ScheduledPaymentsProvider: AppIntentTimelineProvider {
 // MARK: - Widget View
 
 struct ScheduledPaymentsWidgetView: View {
+    @Environment(\.widgetFamily) private var family
     var entry: ScheduledPaymentsEntry
 
     var body: some View {
-        VStack(alignment: .leading, spacing: WDS.Spacing.sm) {
+        VStack(alignment: .leading, spacing: family == .systemLarge ? WDS.Spacing.md : WDS.Spacing.sm) {
             // Header
             WidgetHeader(
                 title: String(localized: "widget.ui.upcomingPayments", bundle: .main),
@@ -178,7 +233,7 @@ struct ScheduledPaymentsWidgetView: View {
                 Spacer()
             } else {
                 // Payments list
-                ForEach(entry.payments, id: \.id) { payment in
+                ForEach(entry.payments.prefix(ScheduledPaymentsProvider.paymentLimit(for: family)), id: \.id) { payment in
                     PaymentRowView(
                         payment: payment,
                         displayFormat: entry.currencyDisplayFormat
@@ -310,13 +365,19 @@ struct ScheduledPaymentsWidget: Widget {
         }
         .configurationDisplayName("widget.gallery.scheduledPayments")
         .description("widget.gallery.scheduledPayments.desc")
-        .supportedFamilies([.systemMedium])
+        .supportedFamilies([.systemMedium, .systemLarge])
     }
 }
 
 // MARK: - Previews
 
 #Preview("Medium", as: .systemMedium) {
+    ScheduledPaymentsWidget()
+} timeline: {
+    ScheduledPaymentsEntry.placeholder
+}
+
+#Preview("Large", as: .systemLarge) {
     ScheduledPaymentsWidget()
 } timeline: {
     ScheduledPaymentsEntry.placeholder

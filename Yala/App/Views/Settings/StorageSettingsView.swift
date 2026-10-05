@@ -225,6 +225,13 @@ struct StorageSettingsView: View {
             progressCard(controller, step: step, reverse: true)
         case .needsRelaunch(let direction):
             relaunchCard(controller, direction)
+            // **Sin la sección de Grupos, y no por olvido** (ticket `needsrelaunch-hides-the-groups-section`, medido el
+            // 2026-10-02). Este estado es durable como `.waitingForLeader` y `.failed`, pero aquí no hay ninguna puerta que
+            // perder: las aristas que lo producen dejan el modo en `.cloud` —el cutover y el adopt arman el par,
+            // `.rearmMirrorOff` lo re-arma y `.mountMirrorAndRelaunch` solo desarma el flag, porque `.icloud` no llega
+            // hasta el cuarteto de cierre de `reverseUpload`—. Con `.cloud` la sección solo podría decir
+            // `.sameAccountAsPersonal`, que no ofrece soltar nada. Lo fija
+            // `MigrationWorkExecutorTests.needsRelaunch_keepsCloudMode_soTheGroupsSectionHasNoDoorToLose`.
         case .waitingForLeader:
             waitingCard(controller)
             // `.waitingForLeader` y `.failed` salen del journal PERSISTIDO: sobreviven al relanzamiento y

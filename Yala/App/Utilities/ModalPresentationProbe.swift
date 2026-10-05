@@ -40,4 +40,12 @@ enum ModalPresentationProbe {
         }
         return false
     }
+
+    /// Lo mismo, pero solo en la ventana `scene` (fase 4 del carril adaptativo): un atajo de teclado o un recibo
+    /// soltado en una ventana no debe quedarse sin efecto por una hoja abierta en OTRA. Sin escena conocida, la
+    /// pregunta conservadora de siempre.
+    static func isAnythingPresented(in scene: UIWindowScene?) -> Bool {
+        guard let scene else { return isAnythingPresented }
+        return scene.windows.contains { $0.rootViewController?.presentedViewController != nil }
+    }
 }

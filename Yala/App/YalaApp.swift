@@ -78,25 +78,11 @@ struct YalaApp: App {
     private let bootstrapper = AppBootstrapper.shared
 
     var body: some Scene {
+        // **Fase 4 del carril adaptativo: cada ventana con su navegación.** La raíz de cada ventana (`SceneRoot`) vive
+        // FUERA del remonte del swap: el registro de ventanas y cuál es la líder sobreviven al cambio de persona.
         WindowGroup {
-            // **R4 · la ventana del swap.** Con el container soltado NO se monta la jerarquía: es lo que
-            // se lleva los 37 ViewModels y los 67 `@Query` que retienen filas del store viejo, y sin eso
-            // el release verificado no tiene ninguna posibilidad de salir verde (spike R3, eje 1c: una
-            // fila `@Model` retenida mantiene vivo el container por sí sola).
-            //
-            // Lo que se muestra mientras tanto es el MISMO cover terminal del cierre de sesión, así que
-            // para el usuario no hay corte visual: la pantalla que ya estaba puesta sigue puesta, y si el
-            // swap aborta se queda ahí pidiendo el relanzamiento de siempre.
-            if let container = containerHost.container {
-                rootView(container: container)
-                    // El remonte cambia de container: sin `id` SwiftUI reusaría vistas cuyo estado interno
-                    // (ViewModels con filas del store anterior) sobreviviría al swap — filas huérfanas que
-                    // siguen legibles en memoria tras morir su store, que es la forma de mentir que el
-                    // eje 1c midió.
-                    .id(containerHost.generation)
-                    .modelContainer(container)
-            } else {
-                SignOutRelaunchView()
+            SceneRoot(route: nil, containerGeneration: containerHost.generation) {
+                windowContent()
             }
         }
         .onChange(of: scenePhase) { _, newPhase in
@@ -104,11 +90,50 @@ struct YalaApp: App {
         }
         // iPad con teclado: la lista de atajos que sale al mantener ⌘ (fase 3 del carril adaptativo).
         .commands { YalaCommands() }
+
+        // «Abrir en una ventana nueva» (grupo o registro): una ventana de Yala completa que aterriza en ese destino.
+        WindowGroup(for: WindowRoute.self) { $route in
+            SceneRoot(route: route, containerGeneration: containerHost.generation) {
+                windowContent()
+            }
+        }
+        // El ciclo de vida del PROCESO cuelga también de aquí: si solo queda abierta una ventana de este grupo, el de
+        // arriba puede no tener ninguna. Con los dos vivos, `handleScenePhase` descarta el aviso repetido.
+        .onChange(of: scenePhase) { _, newPhase in
+            handleScenePhase(newPhase)
+        }
+    }
+
+    @ViewBuilder
+    private func windowContent() -> some View {
+        // **R4 · la ventana del swap.** Con el container soltado NO se monta la jerarquía: es lo que
+        // se lleva los 37 ViewModels y los 67 `@Query` que retienen filas del store viejo, y sin eso
+        // el release verificado no tiene ninguna posibilidad de salir verde (spike R3, eje 1c: una
+        // fila `@Model` retenida mantiene vivo el container por sí sola).
+        //
+        // Lo que se muestra mientras tanto es el MISMO cover terminal del cierre de sesión, así que
+        // para el usuario no hay corte visual: la pantalla que ya estaba puesta sigue puesta, y si el
+        // swap aborta se queda ahí pidiendo el relanzamiento de siempre. Llega a TODAS las ventanas a la vez:
+        // todas leen el mismo host.
+        if let container = containerHost.container {
+            rootView(container: container)
+                // El remonte cambia de container: sin `id` SwiftUI reusaría vistas cuyo estado interno
+                // (ViewModels con filas del store anterior) sobreviviría al swap — filas huérfanas que
+                // siguen legibles en memoria tras morir su store, que es la forma de mentir que el
+                // eje 1c midió.
+                .id(containerHost.generation)
+                .modelContainer(container)
+        } else {
+            SignOutRelaunchView()
+        }
     }
 
     @ViewBuilder
     private func rootView(container: ModelContainer) -> some View {
-        ContentView()
+        WindowRoleView {
+            // Solo la ventana líder monta el shell de proceso y arranca la app (ver `WindowRoleView`).
+            leaderContent(container: container)
+        }
             // Las hojas se dimensionan por el espacio de ESTA ventana, no por el aparato.
             .sizesSheetsByWindow()
             .preferredColorScheme(themeManager.userChoice == .system ? nil : themeManager.resolved.baseColorScheme)
@@ -126,6 +151,19 @@ struct YalaApp: App {
             .environment(bootstrapper.entityDeletionService)
             .environment(bootstrapper.transactionService)
             .environment(bootstrapper.appPreferences)
+            .modifier(WindowURLEntry { url in
+                bootstrapper.handleIncomingURL(url)
+            })
+    }
+
+    /// El shell de proceso. **Solo en la ventana líder**: el arranque y la recarga de tipos de cambio corren una vez
+    /// por proceso, no una por ventana. Si la líder cambia, el `bootstrap` de la nueva es un no-op
+    /// (`isInitialized`); tras un swap vuelve a correr porque el remonte crea un `ContentView` nuevo.
+    @ViewBuilder
+    private func leaderContent(container: ModelContainer) -> some View {
+        ContentView()
+            // Con OTRA ventana cerrando la sesión, la líder deja de operar entera, hojas del shell incluidas.
+            .modifier(LeaderSignOutBusyOverlay())
             .task {
                 // Unit tests: saltar el bootstrap del host por completo (seeding,
                 // CKSyncEngine de grupos, exchange rates, etc.). En sims sin cuenta
@@ -152,15 +190,22 @@ struct YalaApp: App {
                     }
                 }
             }
-            .onOpenURL { url in
-                bootstrapper.handleIncomingURL(url)
-            }
     }
 
     private func handleScenePhase(_ newPhase: ScenePhase) {
         // Unit tests: el host no corre el ciclo became-active (sin bootstrap/sync).
         guard !SwiftDataConfiguration.isRunningTests else { return }
+        // Los dos `WindowGroup` avisan del mismo cambio del agregado: se atiende una vez.
+        let key: SceneRegistry.ScenePhaseKey
+        switch newPhase {
+        case .active: key = .active
+        case .background: key = .background
+        default: key = .inactive
+        }
+        guard SceneRegistry.shared.shouldHandleAppPhase(key) else { return }
         if newPhase == .active {
+            // Red de la desconexión de ventanas: una escena que se fue sin notificarlo deja de contar como líder.
+            SceneRegistry.shared.pruneDisconnected()
             // Durante la ventana del swap no hay contexto, y tampoco hay nada que reactivar: la app
             // está entre dos stores. El ciclo normal vuelve con el remonte.
             if let container = sharedModelContainer {
