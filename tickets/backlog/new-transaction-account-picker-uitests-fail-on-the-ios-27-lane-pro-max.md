@@ -4,7 +4,7 @@ status: backlog
 priority: medium
 area: "qa, xcuitest, transactions"
 created: 2026-10-02
-updated: 2026-10-02
+updated: 2026-10-05
 source: gate de list-column-too-narrow-for-accessibility-text-on-a-turned-pro-max (carril adaptativo)
 ---
 
@@ -40,3 +40,10 @@ falló una vez en lote y pasó dos aislado: ése sí es inestable bajo carga, no
 
 [[transaction-save-helper-flake-one-per-suite]] · [[edgecases-extreme-minimum-flaky-under-load]] ·
 [[list-column-too-narrow-for-accessibility-text-on-a-turned-pro-max]]
+
+## 2026-10-05 · También en el iPhone 17 Pro del gate (iOS 27.0)
+
+Medido en el gate de `groups-stuck-drain-on-a-healthy-phone-says-try-again-later` (árbol sobre `a7b37a5f2`, cuyo diff no toca
+Panel, «Nuevo registro» ni los selectores): `EdgeCasesUITests.test_extremeMinimumAmountSaves` falla en lote y **aislado**, con
+el mismo `Failed to tap Button … account_selector_row_` y el mismo «Automation type mismatch: computed Button from legacy
+attributes vs PopUpButton». Así que no es del Pro Max: es del runtime iOS 27.0 (inferido de dos modelos, no de más).

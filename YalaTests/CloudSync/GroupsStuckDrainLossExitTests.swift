@@ -241,14 +241,19 @@ struct GroupsStuckCaptureLogicTests {
                                       uncapturedAllHeldForAnotherAccount: true)
                 == .blocked(pendingCount: 0, reason: .groupsChangesFromAnotherAccount),
                 "la red caída no sube lo de otra cuenta tampoco")
-        // Algo es de esta sesión, o no se sabe: sin salida, como antes.
+        // Algo es de esta sesión, o no se sabe: sin salida, y con el motivo del drain que no termina (opción A de Jürgen,
+        // 2026-10-05). Hasta ese día salía `.uploadRetryLater`, «inténtalo en un rato», y esperar no lo cura.
         #expect(L.stuckCaptureVerdict(cycleReason: nil, livePendingCount: 0, uncapturedAllHeldForAnotherAccount: false)
-                == .blocked(pendingCount: Int.max, reason: .uploadRetryLater))
+                == .blocked(pendingCount: Int.max, reason: .groupsCaptureUnfinished))
         #expect(L.stuckCaptureVerdict(cycleReason: nil, livePendingCount: 0, uncapturedAllHeldForAnotherAccount: nil)
-                == .blocked(pendingCount: Int.max, reason: .uploadRetryLater))
+                == .blocked(pendingCount: Int.max, reason: .groupsCaptureUnfinished))
         #expect(L.stuckCaptureVerdict(cycleReason: .channelPaused, livePendingCount: 3,
                                       uncapturedAllHeldForAnotherAccount: false)
-                == .blocked(pendingCount: 3, reason: .uploadRetryLater))
+                == .blocked(pendingCount: 3, reason: .groupsCaptureUnfinished))
+        #expect(L.stuckCaptureVerdict(cycleReason: .uploadRetryLater, livePendingCount: 0,
+                                      uncapturedAllHeldForAnotherAccount: false)
+                == .blocked(pendingCount: Int.max, reason: .groupsCaptureUnfinished),
+                "con el drain atascado, que la red vuelva no sube lo que nunca llega al outbox")
     }
 
     /// Lo que se pierde, en dos mitades: la cifra las suma, y una que no se pudo leer es «no se pudo contar».
@@ -578,9 +583,10 @@ struct GroupsStuckDrainPushAllTests {
         #expect(!coordinator.acceptFreshStartGroupsLoss())
     }
 
-    /// **Con algo de esta sesión fuera, sin salida**: con attest y sesión buenos solo espera al drain (decisión A de
-    /// Jürgen). Es el texto de siempre, «inténtalo en un rato», que no promete segundos.
-    @Test func ownChanges_withAHealthyChannel_keepTheUploadRetryLaterWithoutTheExit() async throws {
+    /// **Con algo de esta sesión fuera, sin salida** (decisión A de Jürgen), **y con su propio motivo** (opción A del
+    /// 2026-10-05, ticket `groups-stuck-drain-on-a-healthy-phone-says-try-again-later`): con attest y sesión buenos lo único
+    /// que impide subir es este teléfono. Hasta ese día salía «inténtalo en un rato», y esperar no lo cura.
+    @Test func ownChanges_withAHealthyChannel_sayTheDrainIsStuckWithoutTheExit() async throws {
         let context = try makeTestContext()
         try clearOutbox(context)
         reset(context); defer { reset(context) }
@@ -590,8 +596,12 @@ struct GroupsStuckDrainPushAllTests {
 
         let verdict = await coordinator.drainGroupsBeforeFreshStart(context: context, witness: witness)
 
-        #expect(verdict == .blocked(Block(pendingCount: Int.max, reason: .uploadRetryLater)), "\(verdict)")
+        #expect(verdict == .blocked(Block(pendingCount: Int.max, reason: .groupsCaptureUnfinished)), "\(verdict)")
         #expect(!coordinator.acceptFreshStartGroupsLoss(), "sin oferta")
+        if case .blocked(let block) = verdict {
+            #expect(!block.offersLossExit, "«Empezar de cero» no ofrece perderlos: decisión A")
+            #expect(SignOutBlockedCopy.freshStartGroupsPendingMessage(block).hasSuffix(L10n.Groups.Errors.captureUnfinished))
+        }
     }
 
     /// **Lo pasajero que se cura dentro del gesto**: la captura falla una vez y termina en el intento siguiente. Con el
@@ -699,5 +709,95 @@ struct GroupsStuckDrainWiringTests {
         #expect(Self.count("witness.capture(context)", in: code) == 2,
                 "dentro de `captureGroupsForExit` y en `groupsOutboxIsSettledEmpty`; ninguna más")
         #expect(!code.contains("exitWitness.capture(context)"))
+    }
+}
+
+// MARK: - 5. El drain atascado en un teléfono sano tiene su motivo y su texto
+
+/// Ticket `groups-stuck-drain-on-a-healthy-phone-says-try-again-later` (opción A de Jürgen, 2026-10-05). Con el drain de
+/// Grupos atascado, App Attest, sesión y cambios propios, los tres gestos decían «no llegaron al servidor… inténtalo de nuevo
+/// en un rato» (`.uploadRetryLater`), y esperar no lo cura. Ahora es `.groupsCaptureUnfinished`, el gemelo de
+/// `.personalCaptureUnfinished` dicho de tus grupos, sin salida que los pierda.
+@MainActor
+@Suite("Grupos · el drain atascado en un teléfono sano dice lo que pasa, sin prometer que esperar lo cura")
+struct GroupsStuckDrainHealthyPhoneCopyTests {
+
+    private typealias L = CloudSignOutFlowLogic
+
+    /// El texto exacto que eligió Jürgen, en español.
+    private static let jurgen = "Algunos de los últimos cambios de tus grupos no se pudieron preparar para subirlos. "
+        + "Siguen guardados en este teléfono y no se pierden. Cierra y vuelve a abrir Yala; si sigue pasando, actualízala."
+
+    private static let locales = ["de", "en", "en-GB", "es", "es-419", "es-AR", "es-ES", "fr", "it", "ja", "nl", "pl",
+                                  "pt", "pt-BR", "pt-PT", "zh-Hans"]
+
+    /// El valor de `key` en el `.strings` de `locale`, leído del fichero fuente.
+    private static func value(_ key: String, locale: String) throws -> String? {
+        let root = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        let text = try String(contentsOf: root.appendingPathComponent("Yala/Resources/\(locale).lproj/Localizable.strings"),
+                              encoding: .utf8)
+        let prefix = "\"\(key)\" = \""
+        guard let line = text.split(separator: "\n").first(where: { $0.hasPrefix(prefix) }) else { return nil }
+        return String(line.dropFirst(prefix.count).dropLast(2))
+    }
+
+    @Test func theReason_hasItsOwnCopy_notTheFailedUploadOne() {
+        #expect(SignOutBlockedCopy.message(for: .groupsCaptureUnfinished) == L10n.Groups.Errors.captureUnfinished)
+        #expect(SignOutBlockedCopy.message(for: .groupsCaptureUnfinished) != L10n.Groups.Errors.uploadRetryLater)
+        #expect(SignOutBlockedCopy.message(for: .groupsCaptureUnfinished) != L10n.Settings.signOutCaptureUnfinished,
+                "el de tus datos no dice que son de tus grupos")
+        #expect(SignOutBlockedCopy.title(for: .groupsCaptureUnfinished) == L10n.Settings.signOutBlockedTitle,
+                "«No pudimos cerrar tu sesión»: el de «un momento más» promete segundos")
+        #expect(L.BlockReason.groupsCaptureUnfinished.breadcrumbSlug == "groups-capture-unfinished")
+    }
+
+    /// **Ninguna salida pierde datos** (decisión A): ni los cierres, ni «Empezar de cero», ni el paso 1 de la nube.
+    @Test func noExitLosesTheChanges() {
+        #expect(L.lossCause(.groupsCaptureUnfinished) == nil)
+        #expect(!L.freshStartOffersGroupsLossExit(.groupsCaptureUnfinished))
+        #expect(L.personalLossCause(.groupsCaptureUnfinished) == nil)
+        let block = CloudSessionSignOut.FreshStartGroupsBlock(pendingCount: 2, reason: .groupsCaptureUnfinished)
+        #expect(!block.offersLossExit)
+        #expect(SignOutBlockedCopy.groupsLossMessage(for: .groupsCaptureUnfinished, pending: 2)
+                == L10n.Groups.Errors.captureUnfinished, "sin causa de pérdida, el texto sin salida")
+    }
+
+    /// Se enseña al momento (el push-all ya probó el atasco) y la nube lo deja viajar tal cual.
+    @Test func surfacesAtOnce_andTravelsThroughTheCloudSignOut() {
+        for elapsed in [0.0, 44.0] {
+            #expect(GroupsSignOutRetryDecision.decide(elapsedSeconds: elapsed, budgetSeconds: 45,
+                                                      reason: .groupsCaptureUnfinished) == .surfacePermanent)
+        }
+        #expect(L.cloudSignOutGroupsBlockReason(.groupsCaptureUnfinished) == .groupsCaptureUnfinished)
+        #expect(L.personalPushAllShownReason(.groupsCaptureUnfinished) == .permanent, "el motor personal no lo emite")
+    }
+
+    /// **Lo legítimo no se mueve**: la subida que sí falló y la captura que no probó el atasco siguen en «un rato».
+    @Test func theLegitimateUploadRetryLater_staysPut() {
+        #expect(L.classify(.transient, channelKilled: false, attestUnavailable: false, uploadFailed: true) == .uploadRetryLater)
+        #expect(L.lossBlockAfterRecapture(reason: .attestUnavailable, capture: .unfinished, livePendingCount: 1,
+                                          unrehydratedMirrorCount: 0) == .blocked(pendingCount: 1, reason: .uploadRetryLater))
+        #expect(L.freshStartUncapturedReason == .uploadRetryLater)
+        #expect(SignOutBlockedCopy.message(for: .uploadRetryLater) == L10n.Groups.Errors.uploadRetryLater)
+    }
+
+    /// **Los 16 locales**, con el texto de Jürgen en español y nada que prometa que esperar lo arregla.
+    @Test func theCopy_existsInTheSixteenLocales_andNeverPromisesWaiting() throws {
+        for locale in Self.locales {
+            let copy = try #require(try Self.value("groups.errors.captureUnfinished", locale: locale),
+                                    "falta en \(locale)")
+            let upload = try #require(try Self.value("groups.errors.uploadRetryLater", locale: locale))
+            #expect(!copy.isEmpty && copy != upload, "\(locale): es el texto de la subida que falló")
+            #expect(!copy.contains("NEEDS_TRANSLATION"), "\(locale)")
+            #expect(copy.contains("Yala"), "\(locale): tiene que decir qué cerrar y abrir")
+        }
+        #expect(try Self.value("groups.errors.captureUnfinished", locale: "es") == Self.jurgen)
+        #expect(try Self.value("groups.errors.captureUnfinished", locale: "es-419") == Self.jurgen)
+        for locale in ["es", "es-419", "es-AR", "es-ES"] {
+            let copy = try #require(try Self.value("groups.errors.captureUnfinished", locale: locale))
+            #expect(!copy.contains("un rato") && !copy.contains("un momento"), "\(locale): promete que esperar lo cura")
+            #expect(copy.contains("grupos"), "\(locale): tiene que decir que son cambios de tus grupos")
+        }
     }
 }

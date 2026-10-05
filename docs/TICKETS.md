@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (758)
+## Index (760)
 
 | id | status | path |
 |---|---|---|
@@ -240,6 +240,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | detach-quiescence-timeout-says-group-changes-are-pending | backlog | tickets/backlog/detach-quiescence-timeout-says-group-changes-are-pending.md |
 | detach-saves-the-personal-graph-outside-the-quiescence-window | done | tickets/done/detach-saves-the-personal-graph-outside-the-quiescence-window.md |
 | detach-second-pass-replaces-the-conserved-ledger | backlog | tickets/backlog/detach-second-pass-replaces-the-conserved-ledger.md |
+| detach-with-a-stuck-groups-drain-names-only-the-first-of-two-causes | backlog | tickets/backlog/detach-with-a-stuck-groups-drain-names-only-the-first-of-two-causes.md |
 | device-handover-groups-leak | discarded | tickets/discarded/device-handover-groups-leak.md |
 | device-qa-activation-restore-start-fresh | done | tickets/done/device-qa-activation-restore-start-fresh.md |
 | device-qa-apple-id-change-closes-private-session | qa | tickets/qa/device-qa-apple-id-change-closes-private-session.md |
@@ -414,7 +415,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-sign-out-quiescence-gate-fails-open-with-drive-off | backlog | tickets/backlog/groups-sign-out-quiescence-gate-fails-open-with-drive-off.md |
 | groups-signout-reentry-banner-has-no-producer | backlog | tickets/backlog/groups-signout-reentry-banner-has-no-producer.md |
 | groups-stats-no-deduplica-gastos | backlog | tickets/backlog/groups-stats-no-deduplica-gastos.md |
-| groups-stuck-drain-on-a-healthy-phone-says-try-again-later | backlog | tickets/backlog/groups-stuck-drain-on-a-healthy-phone-says-try-again-later.md |
+| groups-stuck-drain-on-a-healthy-phone-says-try-again-later | qa | tickets/qa/groups-stuck-drain-on-a-healthy-phone-says-try-again-later.md |
 | groups-sync-reads-a-missing-attest-401-as-a-session-expiry | done | tickets/done/groups-sync-reads-a-missing-attest-401-as-a-session-expiry.md |
 | groups-sync-treats-an-infra-403-as-an-account-verdict | done | tickets/done/groups-sync-treats-an-infra-403-as-an-account-verdict.md |
 | groups-tab-does-not-say-this-phone-cannot-sync-groups | done | tickets/done/groups-tab-does-not-say-this-phone-cannot-sync-groups.md |

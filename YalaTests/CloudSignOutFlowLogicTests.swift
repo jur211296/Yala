@@ -395,6 +395,8 @@ struct CloudSignOutGroupsReasonTests {
             .groupsChangesFromAnotherAccount: .groupsChangesFromAnotherAccount,
             // El drain PERSONAL atascado es del paso 1 (2026-10-05): este productor no lo recibe nunca.
             .personalCaptureUnfinished: .permanent,
+            // El drain de GRUPOS atascado viaja tal cual (2026-10-05): en `.permanent` diría «revisa tu conexión».
+            .groupsCaptureUnfinished: .groupsCaptureUnfinished,
         ]
         #expect(CloudSignOutFlowLogic.BlockReason.allCases.count == esperado.count, """
             Hay un motivo de bloqueo sin traducción escrita para el cierre en la nube. Decídelo aquí: el
@@ -469,6 +471,8 @@ struct CloudSignOutGroupsReasonTests {
             .groupsChangesFromAnotherAccount: .permanent,
             // El drain personal atascado (2026-10-05), tal cual: su texto no promete segundos ni culpa a la conexión.
             .personalCaptureUnfinished: .personalCaptureUnfinished,
+            // El drain de GRUPOS atascado (2026-10-05): el motor personal no lo emite.
+            .groupsCaptureUnfinished: .permanent,
         ]
         #expect(CloudSignOutFlowLogic.BlockReason.allCases.count == esperado.count, """
             Hay un motivo de bloqueo sin decisión escrita para el paso 1 del cierre en la nube. Decide aquí si viaja.
@@ -564,6 +568,8 @@ struct GroupsSignOutRetryDecisionTests {
             .groupsChangesFromAnotherAccount: .surfacePermanent,
             // El drain personal atascado (2026-10-05): no pasa por aquí, y su aviso existe porque esperar no lo cura.
             .personalCaptureUnfinished: .surfacePermanent,
+            // El drain de GRUPOS atascado (2026-10-05) SÍ nace aquí: el push-all ya probó el atasco, y 45 s más no lo curan.
+            .groupsCaptureUnfinished: .surfacePermanent,
         ]
         #expect(CloudSignOutFlowLogic.BlockReason.allCases.count == esperado.count, """
             Hay un motivo de bloqueo sin decisión escrita. `decide` no es un `switch`, así que se lo va a
@@ -1018,7 +1024,7 @@ struct PausedChannelReasonWiringTests {
             of: "private func presentSignOutBlock(_ reason: CloudSignOutFlowLogic.BlockReason) {",
             in: profileFile))
         #expect(present.contains(Self.squashed("""
-            case .permanent, .channelPaused, .uploadRetryLater,
+            case .permanent, .channelPaused, .uploadRetryLater, .groupsCaptureUnfinished,
                  .syncStoppedNeedsUpdate, .syncStoppedMidMigration, .syncStoppedNeedsRelaunch, .personalUploadRetryLater,
                  .signOutSessionSurvived, .migrationInFlight, .migrationUnreadable, .personalCaptureUnfinished:
                 showSignOutBlockedAlert = true
@@ -1160,6 +1166,9 @@ struct WelcomeGateTransientBlockWiringTests {
          "welcome_groups_gate_neutral_pending", "el outbox que aún drena"),
         ("case .blocked(_, .uploadRetryLater):", "body: L10n.Groups.Errors.uploadRetryLater",
          "welcome_groups_gate_neutral_upload_retry", "la subida que no llegó al servidor"),
+        // El drain de grupos que no termina (2026-10-05): tampoco lo cura volver a entrar.
+        ("case .blocked(_, .groupsCaptureUnfinished):", "body: L10n.Groups.Errors.captureUnfinished",
+         "welcome_groups_gate_neutral_capture_unfinished", "el drain de grupos que no termina"),
     ]
 
     @Test("las dos ramas de lo pasajero van antes del catch-all y cada una enseña SU texto")
@@ -1222,6 +1231,13 @@ struct WelcomeGateTransientBlockWiringTests {
         let grupo = String(plano[inicio.lowerBound..<fin.lowerBound])
         #expect(!grupo.contains(".uploadRetryLater"), """
             La subida fallida volvió al grupo del texto genérico del desasociar: dos causas, un solo consejo.
+            """)
+        // El drain de grupos que no termina (2026-10-05): su texto propio, y fuera del «inténtalo en un momento».
+        #expect(section.contains("case .groupsCaptureUnfinished: return L10n.Groups.Errors.captureUnfinished"), """
+            El desasociar dejó de decir que este teléfono no consigue preparar los cambios de grupos.
+            """)
+        #expect(!grupo.contains(".groupsCaptureUnfinished"), """
+            El drain atascado volvió al texto genérico del desasociar, que promete que esperar un momento lo arregla.
             """)
     }
 }

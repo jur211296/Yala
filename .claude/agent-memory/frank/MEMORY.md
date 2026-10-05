@@ -21,6 +21,7 @@
 - [El atasco se prueba con segundos y el mismo cambio](feedback_el_atasco_se_prueba_con_segundos_y_el_mismo_cambio.md) — backoff de segundos + mismo fallo antes de abrir una salida que pierde datos.
 
 ## Cómo mido y cómo entrego
+- [`tablero --nota` sustituye](feedback_tablero_nota_sustituye.md) — lee la nota antes y concatena; borró una decisión.
 - [Capturar widgets por galería](feedback_capturar_widgets_por_galeria.md) — un tamaño por página, vuelve a la 1 tras cada alta; seed + 2.º arranque.
 - [El marco de celda no es el bloque](feedback_el_marco_de_celda_no_es_el_bloque.md) — mide bordes de List en píxeles; los marcos XCUI mienten.
 - [El final del ciclo borra la prueba](feedback_el_final_del_ciclo_borra_la_prueba.md) — «haz el ciclo y lee Y»: la purga de la cola borraba Y.

@@ -2478,8 +2478,8 @@ final class CloudSessionSignOut {
                 //
                 // **Y con la captura atascada decide quién apuntó lo que queda fuera** (2026-10-05,
                 // `CloudSignOutFlowLogic.stuckCaptureVerdict`): el motivo del ciclo si abre la salida —con el outbox a 0
-                // `pushAllVerdict` lo ignora—, los cambios de otra cuenta si todo lo de fuera es suyo, y si no, «inténtalo en
-                // un rato» sin salida, como antes.
+                // `pushAllVerdict` lo ignora—, los cambios de otra cuenta si todo lo de fuera es suyo, y si no, el drain que no
+                // termina (`.groupsCaptureUnfinished`), sin salida.
                 let captured = await captureGroupsForExit(context: context, witness: witness)
                 let live = Self.liveGroupsPendingCount(context: context)
                 let held = witness.heldForAnotherAccount(context)

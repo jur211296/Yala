@@ -484,6 +484,23 @@ struct WelcomeGroupsGateView: View {
                 YalaPrimaryButton(L10n.Welcome.Groups.gateBack) { leaveAfterBlock() }
                     .accessibilityIdentifier("welcome_groups_gate_neutral_upload_retry_back")
             }
+        case .blocked(_, .groupsCaptureUnfinished):
+            // **El drain de grupos que no termina** (2026-10-05, ticket
+            // `groups-stuck-drain-on-a-healthy-phone-says-try-again-later`, opción A de Jürgen). Este teléfono no consigue
+            // preparar para subir algunos cambios de grupos, y ni esperar ni volver a entrar lo cura: lo que puede curarlo es
+            // cerrar y abrir Yala, o actualizarla. Hasta ese día llegaba como `.uploadRetryLater` y salía por la rama de
+            // arriba, «inténtalo en un rato». **Sin rama propia caería en el catch-all de abajo**, que manda «vuelve y entra
+            // con esa cuenta»: el consejo equivocado. Sin salida que los pierda, también para el dueño.
+            //
+            // El mensaje es el de Ajustes para este motivo; el título, el de las otras ramas de esta pantalla que nombran el
+            // mismo hecho: faltan cambios por subir.
+            noticeShell(icon: "exclamationmark.triangle",
+                        title: L10n.Welcome.Groups.neutralBlockedTitle,
+                        body: L10n.Groups.Errors.captureUnfinished,
+                        identifier: "welcome_groups_gate_neutral_capture_unfinished") {
+                YalaPrimaryButton(L10n.Welcome.Groups.gateBack) { leaveAfterBlock() }
+                    .accessibilityIdentifier("welcome_groups_gate_neutral_capture_unfinished_back")
+            }
         case .blocked(_, .transient):
             // **Lo pasajero va aparte** (2026-09-15). Aquí llega, tras los 45 s de reintentos del cierre, lo que
             // se cura esperando y no volviendo a entrar. **Desde el 2026-09-16 es SOLO el outbox que aún drena**:

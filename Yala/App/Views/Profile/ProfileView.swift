@@ -245,8 +245,9 @@ struct ProfileView: View {
             // la nube, así que no los comparte ningún otro gesto. **Y la subida personal que no llegó**, por lo mismo que la de
             // grupos: el título es exacto y aquí nadie ha reintentado nada. **Y el drain personal que no termina**
             // (2026-10-05): hasta ese día salía por el alert de «un momento más», que prometía segundos a algo que esperar no
-            // cura. Solo lo pone el cierre en la nube.
-            case .permanent, .channelPaused, .uploadRetryLater,
+            // cura. Solo lo pone el cierre en la nube. **Y el drain de grupos que no termina** (2026-10-05): entra por donde
+            // entraba como `.uploadRetryLater`, con su propio mensaje.
+            case .permanent, .channelPaused, .uploadRetryLater, .groupsCaptureUnfinished,
                  .syncStoppedNeedsUpdate, .syncStoppedMidMigration, .syncStoppedNeedsRelaunch, .personalUploadRetryLater,
                  .signOutSessionSurvived, .migrationInFlight, .migrationUnreadable, .personalCaptureUnfinished:
                 showSignOutBlockedAlert = true

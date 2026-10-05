@@ -14,8 +14,8 @@
 //
 //  Dos suites:
 //   1. **Comportamiento**, con el coordinador real. El bloqueo se provoca sin red ni sesión: la captura de salida del canal
-//      (`GroupsExitWitness.capture`) dice «no terminé», y con el outbox vacío el push-all bloquea con `.uploadRetryLater`,
-//      que se enseña al momento. Desde el 2026-10-05 la captura atascada cicla una vez para saber la causa, contra un ciclo
+//      (`GroupsExitWitness.capture`) dice «no terminé», y con el outbox vacío el push-all bloquea con
+//      `.groupsCaptureUnfinished` (hasta el 2026-10-05, `.uploadRetryLater`), que se enseña al momento. Desde el 2026-10-05 la captura atascada cicla una vez para saber la causa, contra un ciclo
 //      sustituido (`GroupsExitWitness.cycle`) que no toca la red. Nada del gesto
 //      después del push-all llega a correr: ni teardown, ni `signOut()`, ni puente, ni borrado.
 //   2. **Cableado**, source-scan: que TODO bloqueo del desasociar pase por el único sitio que suelta la fase, y que la
@@ -42,7 +42,8 @@ struct GroupsDetachBlockedPhaseTests {
 
     /// La captura de salida no termina y lo que queda fuera es de esta sesión. Desde el 2026-10-05 la captura atascada cicla
     /// para saber la causa (`captureGroupsForExit`): el ciclo es el de un canal sano y no toca la red, y el desenlace es el
-    /// de siempre, `.uploadRetryLater` (`stuckCaptureVerdict`).
+    /// del drain atascado en un teléfono sano, `.groupsCaptureUnfinished` (`stuckCaptureVerdict`; hasta el 2026-10-05,
+    /// `.uploadRetryLater`).
     private func captureFails(observing: @escaping @MainActor () -> Void = {}) -> CloudSessionSignOut.GroupsExitWitness {
         coordinator.exitCaptureDelayOverride = .milliseconds(1)
         var witness = CloudSessionSignOut.GroupsExitWitness(
@@ -75,7 +76,7 @@ struct GroupsDetachBlockedPhaseTests {
         // La hoja cerrada: nadie llama a `acknowledgeBlocked()` entre los dos gestos.
         let first = await coordinator.detachGroupsAccount(context: context, choice: .keep)
 
-        #expect(first == .blockedBeforeWriting(reason: .uploadRetryLater), """
+        #expect(first == .blockedBeforeWriting(reason: .groupsCaptureUnfinished), """
             el motivo del bloqueo no viaja por el retorno: la sección no tendría de dónde leerlo con la fase ya libre
             """)
         #expect(coordinator.phase == .idle, """
@@ -85,7 +86,7 @@ struct GroupsDetachBlockedPhaseTests {
         #expect(!coordinator.isDetaching, "el desasociar terminó y el coordinador sigue diciendo que desasocia")
 
         let second = await coordinator.detachGroupsAccount(context: context, choice: .keep)
-        #expect(second == .blockedBeforeWriting(reason: .uploadRetryLater), """
+        #expect(second == .blockedBeforeWriting(reason: .groupsCaptureUnfinished), """
             el segundo desasociar no volvió a intentarlo (\(second)): `.busy` es el «Estás cerrando sesión» falso del ticket
             """)
         #expect(coordinator.phase == .idle)

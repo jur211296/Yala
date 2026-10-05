@@ -35,7 +35,7 @@ enum SignOutBlockedCopy {
              .channelPaused, .uploadRetryLater, .syncStoppedNeedsUpdate, .syncStoppedMidMigration,
              .syncStoppedNeedsRelaunch, .personalUploadRetryLater, .cloudSessionExpired, .sessionNotClosed,
              .signOutSessionSurvived, .migrationInFlight, .migrationUnreadable, .groupsChangesFromAnotherAccount,
-             .personalCaptureUnfinished:
+             .personalCaptureUnfinished, .groupsCaptureUnfinished:
             return L10n.Settings.signOutBlockedTitle
         }
     }
@@ -63,6 +63,8 @@ enum SignOutBlockedCopy {
     ///    ese día el cierre en la nube le decía «revisa tu conexión» a quien tenía el servidor fallando.
     ///  · **el drain de tus cambios no termina** (2026-10-05): «no se pudieron preparar», sin plazo; cerrar y abrir Yala o
     ///    actualizarla. Antes salía el de `.transient`, que prometía segundos a algo que esperar no cura.
+    ///  · **el drain de tus grupos no termina** (2026-10-05): lo mismo dicho de tus grupos. Antes salía el de la subida que
+    ///    no llegó, que pedía intentarlo «en un rato» a algo que esperar no cura.
     ///  · **la sesión en la nube caducó** (2026-09-25): el texto de la sesión caducada, pero diciendo DÓNDE se vuelve a
     ///    entrar —«Dónde viven tus datos», aquí en Perfil, y su «Iniciar sesión»—. Con solo cambios de grupos no había
     ///    ninguna puerta a la vista (ticket `cloud-session-expiry-with-only-group-changes-has-no-sign-in-door`).
@@ -98,6 +100,9 @@ enum SignOutBlockedCopy {
         // El drain de tus cambios no termina en ninguna vuelta (2026-10-05): esperar no lo arregla, así que no se dice «unos
         // segundos», y la conexión no tiene nada que ver. No se pierde nada; cerrar y abrir Yala, o actualizarla.
         case .personalCaptureUnfinished: return L10n.Settings.signOutCaptureUnfinished
+        // El de tus grupos (2026-10-05, opción A de Jürgen): mismo hecho, dicho de tus grupos. Lo enseñan también el
+        // desasociar, «Empezar de cero» y la puerta de Grupos del Welcome.
+        case .groupsCaptureUnfinished: return L10n.Groups.Errors.captureUnfinished
         case .permanent, .exportUnconfirmed, .bridgeUnreadable, .detachBusy, .sessionNotClosed, .none:
             return L10n.Settings.signOutBlockedMessage
         }
@@ -186,7 +191,7 @@ enum SignOutBlockedCopy {
         case .transient, .exportUnconfirmed, .bridgeUnreadable, .detachBusy, .channelPaused, .uploadRetryLater,
              .personalAttestUnavailable, .syncStoppedNeedsUpdate, .syncStoppedMidMigration, .syncStoppedNeedsRelaunch,
              .personalUploadRetryLater, .cloudSessionExpired, .sessionNotClosed, .signOutSessionSurvived,
-             .migrationInFlight, .migrationUnreadable, .personalCaptureUnfinished:
+             .migrationInFlight, .migrationUnreadable, .personalCaptureUnfinished, .groupsCaptureUnfinished:
             return message(for: block.reason)
         }
     }
