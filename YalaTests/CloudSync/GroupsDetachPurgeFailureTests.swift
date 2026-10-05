@@ -9,14 +9,15 @@
 //  bajo `#if DEBUG` y devolvía como si nada— y `detachGroupsAccount` seguía adelante a
 //  `GroupsAccountAssociation.shared.clear()`, el marker y `phase = .idle`. Estado resultante: **asociación
 //  borrada + los cinco `Split*`, el outbox y el cursor intactos**, con la pantalla diciendo que ya no hay
-//  cuenta. Y como el borrado es UNA transacción con rollback, el fallo es todo-o-nada: no queda a medias,
-//  queda ENTERO, que es justo lo que la pantalla negaba.
+//  cuenta. Un fallo de LECTURA es todo-o-nada —las lecturas van antes de escribir nada—: no queda a medias,
+//  queda ENTERO, que es justo lo que la pantalla negaba. Un fallo del `save()` puede cortarlo entre stores, y
+//  dónde se corta lo decide el orden (`GroupsPurgeCrossStoreOrderTests`).
 //
 //  ## Las tres redes, y por qué cada una es del tipo que es
 //
 //   1. **El veredicto** — comportamiento donde vive la garantía: `DataWipeService.deleteLocalGroupsRows`
 //      es el escritor de los tres caminos, y su `alsoDeleting` es un fallo REAL inyectable (el fetch del
-//      outbox o del cursor, que `purgeGroupsDomainForDetach` mete en esa misma transacción). Lo que ese
+//      outbox o del cursor, que `purgeGroupsDomainForDetach` lee en la fase de lecturas). Lo que ese
 //      escritor propague sale del desasociar, y que salga lo fija un escáner de UNA línea: que el
 //      borrado no haya recuperado su `catch`, que era exactamente el bug.
 //   2. **La re-entrancia del libro de conservados** — comportamiento, invocable. Es el camino que este
@@ -97,7 +98,7 @@ struct GroupsDetachPurgeFailureTests {
     // MARK: - (1) El veredicto
 
     /// Error de juguete para el `alsoDeleting` del borrado. Un fallo REAL del fetch del outbox o del
-    /// cursor —los dos que `purgeGroupsDomainForDetach` mete en esa misma transacción— llega aquí igual.
+    /// cursor —los dos que `purgeGroupsDomainForDetach` lee antes de escribir nada— llega aquí igual.
     private struct FalloDelStore: Error {}
 
     @Test("El escritor del dominio Grupos PROPAGA el fallo y deja el contexto limpio")
@@ -115,8 +116,10 @@ struct GroupsDetachPurgeFailureTests {
         try context.save()
         #expect(!context.hasChanges)
 
-        // El fallo llega DESPUÉS de los cinco `delete` y ANTES del `save()`: el peor sitio, el que deja
-        // el contexto con una transacción sucia si nadie hace rollback.
+        // El fallo llega en la fase de LECTURAS, antes de cualquier `delete` y de cualquier `save()` (desde el
+        // 2026-10-01: hasta ese día llegaba tras los cinco `delete`). Lo que este caso fija ahora es que una lectura
+        // que falla sigue siendo todo-o-nada; el rollback de un `save()` que falla lo miden los casos de
+        // `GroupsPurgeCrossStoreOrderTests`, que lo provocan en el disco.
         #expect(throws: FalloDelStore.self) {
             try DataWipeService.deleteLocalGroupsRows(in: context, includingBridgePreferences: false) {
                 throw FalloDelStore()

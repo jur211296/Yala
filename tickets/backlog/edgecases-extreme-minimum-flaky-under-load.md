@@ -252,6 +252,25 @@ Gate de `late-remote-wipe-signal-also-wipes-rows-created-after-it`: 19 suites XC
 centinela limpio (solo en el simulador), y cayó este caso con el mismo mensaje (`XCUIApplication+Yala.swift:270`, 36 s).
 Aislado, `EdgeCasesUITests` pasó 3 de 3. El cambio de esa sesión no toca el guardado de una transacción.
 
+
+## Medición del 2026-10-01 (Frank, desde `groups-purge-save-crosses-two-stores-without-atomicity`) — falla SOLO y en el árbol base
+
+Tres corridas, centinela en 0 en las tres, sobre `2.1` en `a6b957630` (tras el merge de #318, el giro a
+horizontal en iPhone):
+
+| Corrida | Árbol | Alcance | Resultado |
+|---|---|---|---|
+| 1 | con el diff (solo toca el borrado de Grupos, nada de UI) | 5 suites del gate | 19 tests, **1 fallo** |
+| 2 | con el diff | `test_extremeMinimumAmountSaves` sola | **1 fallo** |
+| 3 | base `a6b957630`, limpio | `test_extremeMinimumAmountSaves` sola | **1 fallo** |
+
+El fallo es otro que el de las mediciones anteriores: `EdgeCasesUITests.swift:67`, `Failed to tap Button (First
+Match): No matches found … identifier BEGINSWITH "account_selector_row_"`. O sea: tras tocar
+`new_transaction_account_chip`, la hoja `AccountSelectorSheet` no enseña ninguna fila con ese identificador. Con
+`f96aae000` (atajos de iPad) y `0fbaabef2` (hojas dimensionadas por la ventana) tocando esa hoja en los últimos días,
+y #318 recién mergeado, la pista más barata es mirar el árbol de accesibilidad de esa hoja en iPhone 17 Pro. Sin
+comprobar. Aquí ya no vale «pasa solo»: hoy no pasa ni solo.
+
 ## Medido el 2026-10-02: ya no es intermitente, falla también SOLO (Frank)
 
 En el gate de `detach-saves-the-personal-graph-outside-the-quiescence-window`, con el centinela a 0 (solo en el
@@ -295,4 +314,8 @@ iPhone 17 Pro con iOS 27.0 y Xcode 27.0, centinela en 0 las dos veces:
 - **El PR no lo alcanza**: su código nuevo (`GroupsDetachedBridgeLedger.reviveVanished` en el arranque y los guards
   del puente) sale en la primera línea sin libro de conservados, y este test no crea grupos.
 - La nocturna del CI sobre `3d74dbf6f` (ya con `67edfa1e2`, el selector de cuenta a media altura) lo **pasó** a la
-  primera. El CI usa Xcode 26.x; aquí es iOS 27.0. Sin medir: si en local falla también en `2.1` limpio con iOS 27.
+  primera. El CI usa Xcode 26.x; aquí es iOS 27.0.
+- **Medido después, en `2.1` limpio @ `7e666474a`** (worktree aparte, mismo simulador, centinela en 0): **falla igual**,
+  `EdgeCasesUITests.swift:67`, sin `account_selector_row_*`. Y en el gate de #321 (lote de 5 suites), también. ⇒ con
+  iOS 27.0 en local es determinista en `2.1`, 4 de 4 corridas hoy; la nocturna del CI (Xcode 26.x) lo pasa. La pista
+  barata sigue siendo el árbol de accesibilidad de `AccountSelectorSheet` a media altura (`67edfa1e2`) en iOS 27.

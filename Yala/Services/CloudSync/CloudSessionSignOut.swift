@@ -467,8 +467,13 @@ final class CloudSessionSignOut {
     }
 
     /// El borrado local del dominio Grupos del desasociar: las filas `Split*`, el outbox y la mitad del
-    /// cursor que es del PULL. **En UNA sola transacción** — morir entre dos `save()` dejaba el par
-    /// incoherente «cursor reseteado + filas vivas».
+    /// cursor que es del PULL. **Outbox, filas y cursor, en ese orden y cada uno en su `save()`** — no en uno,
+    /// porque uno que cruza stores no es una transacción: medido el 2026-10-01 con el store de Grupos en solo
+    /// lectura, el sync-meta quedaba comiteado igual y salía el par incoherente «cursor borrado + filas vivas»
+    /// (ticket `groups-purge-save-crosses-two-stores-without-atomicity`). Con el orden, el único corte dañino
+    /// posible es «filas borradas + cursor vivo» y sin outbox, que es local y tiene salida: el reintento que el
+    /// `catch` del desasociar arma, y el Merkle de Grupos si la persona vuelve a entrar (que salta los grupos
+    /// con dead-letters: por eso el outbox va primero). El orden lo pone `deleteLocalGroupsRows`.
     ///
     /// `static` y separada del coordinador para ser directamente testeable, como `purgeGroupsSyncState`:
     /// lo que la envuelve (credenciales, asociación, widgets) no lo es en unit test, y este borrado es
@@ -483,7 +488,7 @@ final class CloudSessionSignOut {
     ///     estos deletes a tombstones y borraría los gastos **para todos los miembros del grupo**.
     ///     Firmados, el drain los descarta antes de traducir, mire desde donde mire.
     ///
-    ///  2. **El cursor se borra ENTERO —filas y cursor en el mismo `save()`— y la firma es la ÚNICA defensa
+    ///  2. **El cursor se borra ENTERO —detrás de las filas, en su propio `save()`— y la firma es la ÚNICA defensa
     ///     de estos deletes. Conservar el ancla del drain se probó y se retiró, medido** (review adversarial
     ///     del 2026-09-11, tres lentes):
     ///      - **No los protege.** El ancla que sobreviviría es la del último drain ANTERIOR al desasociar, y
@@ -492,15 +497,16 @@ final class CloudSessionSignOut {
     ///      - **Lo que evitaría —re-barrer el History viejo— no produce nada aquí.** Con las filas ya
     ///        borradas, el `case` de insert/update no resuelve ninguna fila viva por `PersistentIdentifier`
     ///        y no emite. Medido: 0 filas. (Con las filas VIVAS sí re-emite, 1 upsert con HLC nuevo por
-    ///        fila — ése es el par «cursor borrado + filas vivas» que esta transacción única impide, y lo
-    ///        fija `GroupsDetachHistoryReplayTests`.)
+    ///        fila — ése es el par «cursor borrado + filas vivas» que el ORDEN de los `save()` impide, y
+    ///        lo fijan `GroupsDetachHistoryReplayTests` y `GroupsPurgeCrossStoreOrderTests`.)
     ///      - **Y cuesta.** `lastDrainedTxAt` es uno de los cuatro suelos del corte de purga del History
     ///        (`CloudSyncEngine.groupDrainedBoundary`). Conservarlo sin canal que lo avance —tras soltar la
     ///        cuenta no hay sesión, así que el loop no arranca— lo deja congelado en el instante del
     ///        desasociar: hoy es inocuo porque la purga solo corre con el runtime personal, que es de
     ///        `.cloud`, pero clavaría el corte para siempre en cuanto esa persona migrara a la nube.
-    ///     ⇒ el par coherente en esta frontera de CUENTA sigue siendo **«filas borradas + cursor borrado»,
-    ///     atómico** — lo mismo que antes del arreglo, con el borrado ahora firmado.
+    ///     ⇒ el par coherente en esta frontera de CUENTA sigue siendo **«filas borradas + cursor borrado»**,
+    ///     con el borrado firmado. Hasta el 2026-10-01 aquí decía «atómico», y no lo era: lo que hay es un
+    ///     ORDEN cuyo único corte posible es el par reparable (ver arriba).
     ///
     ///  3. **Nada de esto se apoya en que el drain corra ANTES del pull dentro de `syncCycleOnce`.** Eso
     ///     era lo único que cerraba el agujero hasta el 2026-09-11 —con las zonas sin repoblar,
@@ -523,8 +529,9 @@ final class CloudSessionSignOut {
     static func purgeGroupsDomainForDetach(context: ModelContext) throws {
         SaveBreadcrumb.willSave("CloudSessionSignOut.detachGroupsAccount")
         try DataWipeService.deleteLocalGroupsRows(in: context, includingBridgePreferences: false) {
-            for row in try context.fetch(FetchDescriptor<GroupSyncOutbox>()) { context.delete(row) }
-            for cursor in try context.fetch(FetchDescriptor<GroupSyncCursor>()) { context.delete(cursor) }
+            var rows: [any PersistentModel] = try context.fetch(FetchDescriptor<GroupSyncOutbox>())
+            rows += try context.fetch(FetchDescriptor<GroupSyncCursor>()) as [any PersistentModel]
+            return rows
         }
         SaveBreadcrumb.didSave("CloudSessionSignOut.detachGroupsAccount")
     }

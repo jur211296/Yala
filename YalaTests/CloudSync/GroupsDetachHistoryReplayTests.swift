@@ -14,12 +14,13 @@
 //  `SplitSettlement`; `SplitGroup` va `updateOnly` y `SplitMember` es pull-only, así que esos dos no salen.
 //  Server-side un tombstone de gasto lo borra PARA TODOS LOS MIEMBROS.
 //
-//  El arreglo es UNO y no depende del orden: `DataWipeService.deleteLocalGroupsRows` firma su transacción
+//  El arreglo es UNO y no depende del orden: `DataWipeService.deleteLocalGroupsRows` firma sus `save()`
 //  con `GroupsSyncClient.outboxSaveAuthor`, y el drain descarta por autor ANTES de traducir ⇒ estos deletes
 //  dejan de ser traducibles mire el History desde donde lo mire. Conservar además el ancla del drain se
 //  probó y se retiró: no protege estos deletes (son posteriores al ancla) y clavaba un suelo del corte de
-//  purga del History. Lo que sigue cargando peso es que el borrado sea UNA transacción — el test (4) mide
-//  el daño del par que la atomicidad impide.
+//  purga del History. Lo que sigue cargando peso es que el cursor no se vaya con las filas vivas — el test (4)
+//  mide el daño de ese par. Desde el 2026-10-01 eso no lo da una transacción (el `save()` cruzado no la tiene,
+//  medido) sino el ORDEN de los `save()`: lo fija `GroupsPurgeCrossStoreOrderTests`.
 //
 //  Ticket: `detach-history-replay-can-tombstone-groups-on-next-launch`.
 //
@@ -253,7 +254,7 @@ struct GroupsDetachHistoryReplayTests {
             El cursor se va con las filas: dejarlo vivo haría que al re-asociar el server mandara solo \
             deltas nuevos y los grupos no volvieran a materializarse.
             """)
-        #expect(!context.hasChanges, "una sola transacción: no queda nada sucio que otro save comitee")
+        #expect(!context.hasChanges, "todo guardado: no queda nada sucio que otro save comitee")
     }
 
     // MARK: - (4) Por qué los dos tienen que irse JUNTOS (semántica del drain)

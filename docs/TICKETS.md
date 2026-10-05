@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (753)
+## Index (755)
 
 | id | status | path |
 |---|---|---|
@@ -233,6 +233,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | detach-history-replay-can-tombstone-groups-on-next-launch | done | tickets/done/detach-history-replay-can-tombstone-groups-on-next-launch.md |
 | detach-pending-purge-is-unreachable-without-an-association-record | backlog | tickets/backlog/detach-pending-purge-is-unreachable-without-an-association-record.md |
 | detach-postcondition-misses-a-token-refresh-that-lands-after-it | backlog | tickets/backlog/detach-postcondition-misses-a-token-refresh-that-lands-after-it.md |
+| detach-purge-failed-copy-says-groups-remain-after-a-cursor-only-failure | backlog | tickets/backlog/detach-purge-failed-copy-says-groups-remain-after-a-cursor-only-failure.md |
 | detach-purge-retry-says-you-are-signing-out-when-the-session-came-back | backlog | tickets/backlog/detach-purge-retry-says-you-are-signing-out-when-the-session-came-back.md |
 | detach-quiescence-timeout-says-group-changes-are-pending | backlog | tickets/backlog/detach-quiescence-timeout-says-group-changes-are-pending.md |
 | detach-saves-the-personal-graph-outside-the-quiescence-window | done | tickets/done/detach-saves-the-personal-graph-outside-the-quiescence-window.md |
@@ -399,7 +400,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-pending-screen-says-nothing-was-deleted-after-a-halfway-wipe | backlog | tickets/backlog/groups-pending-screen-says-nothing-was-deleted-after-a-halfway-wipe.md |
 | groups-phone-that-never-attests-is-told-to-retry-forever | done | tickets/done/groups-phone-that-never-attests-is-told-to-retry-forever.md |
 | groups-pull-cuesta-cinco-viajes-por-grupo | backlog | tickets/backlog/groups-pull-cuesta-cinco-viajes-por-grupo.md |
-| groups-purge-save-crosses-two-stores-without-atomicity | backlog | tickets/backlog/groups-purge-save-crosses-two-stores-without-atomicity.md |
+| groups-purge-save-crosses-two-stores-without-atomicity | done | tickets/done/groups-purge-save-crosses-two-stores-without-atomicity.md |
 | groups-push-reads-an-offline-token-refresh-as-a-session-expiry | done | tickets/done/groups-push-reads-an-offline-token-refresh-as-a-session-expiry.md |
 | groups-reassociation-does-not-restore-the-bridge-link | backlog | tickets/backlog/groups-reassociation-does-not-restore-the-bridge-link.md |
 | groups-reconnect-prune-or-rewire | done | tickets/done/groups-reconnect-prune-or-rewire.md |
@@ -773,6 +774,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | welcome-destructive-buttons-are-plain-text-taps | backlog | tickets/backlog/welcome-destructive-buttons-are-plain-text-taps.md |
 | welcome-discard-gate-says-carry-on-right-after-asking-to-wipe | backlog | tickets/backlog/welcome-discard-gate-says-carry-on-right-after-asking-to-wipe.md |
 | welcome-fresh-start-alert-leaves-blank-screen | done | tickets/done/welcome-fresh-start-alert-leaves-blank-screen.md |
+| welcome-fresh-start-failed-copy-says-data-is-still-here-after-partial-wipe | backlog | tickets/backlog/welcome-fresh-start-failed-copy-says-data-is-still-here-after-partial-wipe.md |
 | welcome-groups-gate-button-identifiers-are-shadowed-by-their-screen | backlog | tickets/backlog/welcome-groups-gate-button-identifiers-are-shadowed-by-their-screen.md |
 | welcome-privacy-branch-has-no-secondary-door | discarded | tickets/discarded/welcome-privacy-branch-has-no-secondary-door.md |
 | welcome-private-card-promises-icloud-in-visit | discarded | tickets/discarded/welcome-private-card-promises-icloud-in-visit.md |
