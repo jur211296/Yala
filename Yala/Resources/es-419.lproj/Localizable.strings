@@ -6145,6 +6145,7 @@
 
 /* Sign-out blocked: sync stopped because this build can't read the migration record */
 "settings.signOutSyncStoppedNeedsUpdate" = "Hay cambios sin subir a la nube y no queremos que pierdas nada. No pudimos comprobar en qué punto va el paso de tus datos a la nube, así que por ahora no podemos subirlos. Cierra Yala del todo y vuelve a abrirla; si sigue igual, actualízala desde la App Store y vuelve a intentarlo.";
+"settings.signOutCaptureUnfinished" = "Algunos de tus últimos cambios no se pudieron preparar para subir a la nube. Siguen guardados en este teléfono y no se pierden. Cierra Yala del todo y vuelve a abrirla; si sigue igual, actualízala desde la App Store y vuelve a intentarlo.";
 
 /* Sign-out blocked: sync paused because the cloud/iCloud switch didn't finish */
 "settings.signOutSyncStoppedMidMigration" = "Hay cambios sin subir a la nube y no queremos que pierdas nada. La sincronización está en pausa porque el paso de tus datos entre la nube e iCloud no terminó. Abre «Dónde viven tus datos», aquí en Perfil, y termínalo desde ahí (si falló, toca «Reintentar»); después vuelve a intentarlo.";

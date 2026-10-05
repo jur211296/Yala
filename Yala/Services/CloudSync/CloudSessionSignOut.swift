@@ -687,9 +687,12 @@ final class CloudSessionSignOut {
     /// QUÉ filas de `SyncOutbox` contó el aviso, por su `clientMutationID` (`nil` si el recuento falló y el aviso salió sin
     /// cifra), y **por qué no suben** (`cause`, desde el 2026-09-28: el attest o la sesión que no hay, ticket
     /// `cloud-sign-out-with-an-expired-session-and-personal-changes-has-no-exit`). Siempre retoma el mismo sitio —el cierre en
-    /// la nube—, así que no guarda desde dónde.
+    /// la nube—, así que no guarda desde dónde. **Desde el 2026-10-05 cuenta también los cambios del History que el drain no
+    /// capturó** (`CloudSignOutFlowLogic.PersonalLoss`, ticket
+    /// `personal-drain-that-always-aborts-blocks-cloud-sign-out-with-a-wait-a-moment-copy`): con un drain que no termina nunca
+    /// esos cambios no llegan al outbox, y son lo que el borrado se lleva.
     private struct PersonalLossOffer {
-        let rows: Set<UUID>?
+        let loss: CloudSignOutFlowLogic.PersonalLoss
         let cause: CloudSignOutFlowLogic.LossCause
     }
     private var personalLossExit: PersonalLossOffer?
@@ -700,7 +703,7 @@ final class CloudSessionSignOut {
     /// **Sobrevive al aviso de grupos, a propósito**: con cambios de los dos lados salen dos avisos seguidos (decisión de
     /// Jürgen), y aceptar el de grupos retoma el cierre en la nube desde el paso 1, que tiene que seguir encontrando aquí lo
     /// aceptado. Lo retiran «Ahora no» (`acknowledgeBlocked`), un gesto nuevo y el propio paso 1 cuando vuelve a bloquear.
-    private var acceptedPersonalLoss: CloudSignOutFlowLogic.CausedLossAcceptance?
+    private var acceptedPersonalLoss: CloudSignOutFlowLogic.PersonalLossAcceptance?
 
     /// ¿El bloqueo en pantalla ofrece exportar y salir perdiendo los cambios personales? Solo un motivo que abre esa salida
     /// (`CloudSignOutFlowLogic.personalLossCause`: el attest, y desde el 2026-09-28 la sesión caducada) con la oferta viva de
@@ -949,10 +952,10 @@ final class CloudSessionSignOut {
     func exitDiscardingUnsyncedPersonalChanges(context: ModelContext) async {
         guard offersPersonalLossExit, case .blocked(let shown, _) = phase, let offer = personalLossExit else { return }
         personalLossExit = nil
-        // Lo aceptado son las filas que contó el aviso. Sin cifra honesta —el recuento falló— cubre cualquiera: es el «hay
-        // cambios que no llegaron» que se le enseñó. Con la causa del aviso: retomar solo sigue mientras el bloqueo sea de ESA.
-        acceptedPersonalLoss = CloudSignOutFlowLogic.CausedLossAcceptance(
-            rows: offer.rows.map { .rows($0) } ?? .uncounted, cause: offer.cause)
+        // Lo aceptado es lo que contó el aviso, en sus dos mitades: las filas del outbox y los cambios del History que el drain
+        // no capturó. Una mitad sin cifra honesta —su lectura falló— cubre cualquiera: es el «hay cambios que no llegaron» que
+        // se le enseñó. Con la causa del aviso: retomar solo sigue mientras el bloqueo sea de ESA.
+        acceptedPersonalLoss = CloudSignOutFlowLogic.PersonalLossAcceptance(offer: offer.loss, cause: offer.cause)
         CloudSyncBreadcrumb.signOutPersonalLossAccepted(pending: CloudSignOutFlowLogic.shownLossCount(shown))
         phase = .working
         await performCloudSecureSignOut(context: context)
@@ -1392,11 +1395,12 @@ final class CloudSessionSignOut {
         // traducido la abre (`personalLossCause`) y, si es la sesión, con la prueba de que la del dueño se fue
         // (`ownersSessionIsGone`). Una fila nueva, o un bloqueo por otra cosa, retira lo aceptado.
         if case .blocked(let pending, let reason) = await controller.pushAllPendingForSignOut() {
-            let rows = controller.livePendingUploadRowIDs()
+            // Lo que se perdería, en sus dos mitades: las filas del outbox y lo que el drain no capturó (2026-10-05).
+            let loss = controller.pendingPersonalLoss()
             // Sin runtime no hay a quién preguntar, y sin la prueba no se ofrece perder nada (`ownersSessionIsGone`).
             let ownersSessionIsGone = CloudSyncRuntime.shared?.ownersSessionIsGone ?? false
             switch CloudSignOutFlowLogic.personalUploadBlockDecision(
-                reason: reason, pendingRows: rows, acceptance: acceptedPersonalLoss, ownersSessionIsGone: ownersSessionIsGone) {
+                reason: reason, pending: loss, acceptance: acceptedPersonalLoss, ownersSessionIsGone: ownersSessionIsGone) {
             case .continueWithAcceptedLoss:
                 break
             case .block(let shown):
@@ -1408,12 +1412,13 @@ final class CloudSessionSignOut {
             case .offerLoss(let shown, let cause):
                 acceptedPersonalLoss = nil
                 // La oferta se anota ANTES de la fase, por lo mismo que la de grupos: quien reacciona a la fase pregunta
-                // `offersPersonalLossExit` y tiene que encontrarla ya. **Y la cifra sale de las MISMAS filas que se
-                // aceptarán**: con un recuento aparte, un fetch que fallara solo en una de las dos lecturas enseñaría un número
-                // y aceptaría cualquier fila. Con la sesión caducada, la puerta para volver a entrar se deja abierta igual:
-                // es el camino por defecto del aviso.
-                personalLossExit = PersonalLossOffer(rows: rows, cause: cause)
-                let shownCount = rows?.count ?? Int.max
+                // `offersPersonalLossExit` y tiene que encontrarla ya. **Y la cifra sale de lo MISMO que se aceptará**: con
+                // un recuento aparte, un fetch que fallara solo en una de las dos lecturas enseñaría un número y aceptaría
+                // cualquier fila. Desde el 2026-10-05 suma los cambios que el drain no capturó: con un drain atascado son lo
+                // que el borrado se lleva. Con la sesión caducada, la puerta para volver a entrar se deja abierta igual: es
+                // el camino por defecto del aviso.
+                personalLossExit = PersonalLossOffer(loss: loss, cause: cause)
+                let shownCount = loss.count
                 Self.leaveSignInDoorOpen(ifShown: shown, controller: controller)
                 phase = .blocked(pendingCount: shownCount, reason: shown)
                 CloudSyncBreadcrumb.signOutPushBlocked(pending: shownCount)
@@ -1485,19 +1490,24 @@ final class CloudSessionSignOut {
         // 4) S2 del review: re-verificar AMBOS outboxes tras cortar los motores y ANTES de soltar
         // credenciales — si un save concurrente encoló filas durante el push-all, se bloquea con la
         // sesión AÚN viva (reintentar funciona). Residual documentado: writes que queden solo en
-        // History (sin drain post-teardown) mueren con el wipe.
+        // History (sin drain post-teardown) mueren con el wipe — **salvo con la pérdida personal aceptada**, que desde el
+        // 2026-10-05 relee también lo que el drain no capturó (`residualUncapturedAllowsSignOut`): esa salida existe porque
+        // el aviso contó el History, y con el drain atascado lo apuntado después no llega nunca al outbox.
         let residualPersonal = controller.livePendingUploadCount()
         let residualGroups = Self.liveGroupsPendingCount(context: context)
+        let residualUncaptured = acceptedPersonalLoss == nil ? nil : controller.uncapturedPersonalChangeKeys()
         // Con la pérdida aceptada (el attest, la sesión que no hay), las filas de cada aviso ya no bloquean: las PERSONALES que contó
         // el de tus datos y las de GRUPOS que contó el suyo. **Cada aceptación cubre solo su outbox**, y una fila que no
         // estaba en su aviso bloquea como siempre.
         guard residualPersonal == 0 || CloudSignOutFlowLogic.continuesWithoutUploading(
                   pendingRows: controller.livePendingUploadRowIDs(), acceptance: acceptedPersonalLoss?.rows),
+              CloudSignOutFlowLogic.residualUncapturedAllowsSignOut(now: residualUncaptured, acceptance: acceptedPersonalLoss),
               residualGroups == 0 || CloudSignOutFlowLogic.continuesWithoutUploading(
                   pendingRows: Self.liveGroupsPendingRowIDs(context: context), acceptance: acceptedGroupsLoss?.rows) else {
-            // Suma que satura: los dos recuentos devuelven `Int.max` cuando su fetch falla, y un `+` atraparía.
+            // Suma que satura: los dos recuentos devuelven `Int.max` cuando su fetch falla, y un `+` atraparía. Si lo que
+            // bloquea es solo el History, no hay cifra de filas que dar: `Int.max`, el «no se pudo contar» del repo.
             let (sum, overflow) = residualPersonal.addingReportingOverflow(residualGroups)
-            let residual = overflow ? Int.max : sum
+            let residual = overflow || sum == 0 ? Int.max : sum
             phase = .blocked(pendingCount: residual, reason: .permanent)
             CloudSyncBreadcrumb.signOutPushBlocked(pending: residual)
             return

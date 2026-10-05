@@ -294,7 +294,7 @@ struct SyncSignInBannerLogicTests {
                 phase = .blocked(pendingCount: pending, reason: shown)
             """)), "paso 1, sin salida")
         #expect(body.contains(Self.squash("""
-            let shownCount = rows?.count ?? Int.max
+            let shownCount = loss.count
             Self.leaveSignInDoorOpen(ifShown: shown, controller: controller)
             phase = .blocked(pendingCount: shownCount, reason: shown)
             """)), "paso 1, con la salida de tus datos")

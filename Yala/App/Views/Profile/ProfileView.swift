@@ -243,10 +243,12 @@ struct ProfileView: View {
             //
             // **Los tres del motor parado, también** (2026-09-25): mismo título, su propio mensaje. Solo los pone el cierre en
             // la nube, así que no los comparte ningún otro gesto. **Y la subida personal que no llegó**, por lo mismo que la de
-            // grupos: el título es exacto y aquí nadie ha reintentado nada.
+            // grupos: el título es exacto y aquí nadie ha reintentado nada. **Y el drain personal que no termina**
+            // (2026-10-05): hasta ese día salía por el alert de «un momento más», que prometía segundos a algo que esperar no
+            // cura. Solo lo pone el cierre en la nube.
             case .permanent, .channelPaused, .uploadRetryLater,
                  .syncStoppedNeedsUpdate, .syncStoppedMidMigration, .syncStoppedNeedsRelaunch, .personalUploadRetryLater,
-                 .signOutSessionSurvived, .migrationInFlight, .migrationUnreadable:
+                 .signOutSessionSurvived, .migrationInFlight, .migrationUnreadable, .personalCaptureUnfinished:
                 showSignOutBlockedAlert = true
             // **Los dos motivos del DESASOCIAR no encienden nada aquí, y no es teoría: llegaban.**
             // `phase` es un singleton observable y esta pantalla escucha sus cambios; la de

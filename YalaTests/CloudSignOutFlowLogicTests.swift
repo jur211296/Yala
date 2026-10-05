@@ -393,6 +393,8 @@ struct CloudSignOutGroupsReasonTests {
             .migrationUnreadable: .permanent,
             // Los cambios de otra cuenta viajan tal cual (2026-09-28): la sesión está viva y su aviso ofrece perderlos.
             .groupsChangesFromAnotherAccount: .groupsChangesFromAnotherAccount,
+            // El drain PERSONAL atascado es del paso 1 (2026-10-05): este productor no lo recibe nunca.
+            .personalCaptureUnfinished: .permanent,
         ]
         #expect(CloudSignOutFlowLogic.BlockReason.allCases.count == esperado.count, """
             Hay un motivo de bloqueo sin traducción escrita para el cierre en la nube. Decídelo aquí: el
@@ -465,6 +467,8 @@ struct CloudSignOutGroupsReasonTests {
             .migrationUnreadable: .permanent,
             // Es de las filas de GRUPOS de otra cuenta (2026-09-28): el motor personal no lo emite.
             .groupsChangesFromAnotherAccount: .permanent,
+            // El drain personal atascado (2026-10-05), tal cual: su texto no promete segundos ni culpa a la conexión.
+            .personalCaptureUnfinished: .personalCaptureUnfinished,
         ]
         #expect(CloudSignOutFlowLogic.BlockReason.allCases.count == esperado.count, """
             Hay un motivo de bloqueo sin decisión escrita para el paso 1 del cierre en la nube. Decide aquí si viaja.
@@ -558,6 +562,8 @@ struct GroupsSignOutRetryDecisionTests {
             .migrationUnreadable: .retryAfter(seconds: GroupsSignOutRetryDecision.retryIntervalSeconds),
             // Los cambios de otra cuenta (2026-09-28): esta sesión no los sube nunca, así que se enseñan al momento.
             .groupsChangesFromAnotherAccount: .surfacePermanent,
+            // El drain personal atascado (2026-10-05): no pasa por aquí, y su aviso existe porque esperar no lo cura.
+            .personalCaptureUnfinished: .surfacePermanent,
         ]
         #expect(CloudSignOutFlowLogic.BlockReason.allCases.count == esperado.count, """
             Hay un motivo de bloqueo sin decisión escrita. `decide` no es un `switch`, así que se lo va a
@@ -1007,7 +1013,7 @@ struct PausedChannelReasonWiringTests {
         #expect(present.contains(Self.squashed("""
             case .permanent, .channelPaused, .uploadRetryLater,
                  .syncStoppedNeedsUpdate, .syncStoppedMidMigration, .syncStoppedNeedsRelaunch, .personalUploadRetryLater,
-                 .signOutSessionSurvived, .migrationInFlight, .migrationUnreadable:
+                 .signOutSessionSurvived, .migrationInFlight, .migrationUnreadable, .personalCaptureUnfinished:
                 showSignOutBlockedAlert = true
             """)), """
             El fallo pasajero de la subida, o uno de los tres del motor parado (2026-09-25), dejó de entrar por el \
@@ -1523,6 +1529,7 @@ struct AttestUnavailableSignOutWiringTests {
         #expect(cloud.contains(Self.squashed("""
             guard residualPersonal == 0 || CloudSignOutFlowLogic.continuesWithoutUploading(
                       pendingRows: controller.livePendingUploadRowIDs(), acceptance: acceptedPersonalLoss?.rows),
+                  CloudSignOutFlowLogic.residualUncapturedAllowsSignOut(now: residualUncaptured, acceptance: acceptedPersonalLoss),
                   residualGroups == 0 || CloudSignOutFlowLogic.continuesWithoutUploading(
                       pendingRows: Self.liveGroupsPendingRowIDs(context: context), acceptance: acceptedGroupsLoss?.rows) else {
             """)), "El residual de la nube cruzó las aceptaciones: cada outbox tiene que compararse con la suya.")

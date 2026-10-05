@@ -4562,6 +4562,10 @@ enum L10n {
         /// Cierre en la nube bloqueado con la sincronización parada porque no se pudo leer el registro de la migración
         /// (`CloudSignOutFlowLogic.BlockReason.syncStoppedNeedsUpdate`): la salida es reabrir o actualizar Yala, no la red.
         static var signOutSyncStoppedNeedsUpdate: String { ls("settings.signOutSyncStoppedNeedsUpdate", comment: "") }
+        /// Cierre en la nube bloqueado porque este teléfono no consigue preparar para subir algunos cambios: el drain no
+        /// termina en ninguna vuelta (`CloudSignOutFlowLogic.BlockReason.personalCaptureUnfinished`). No promete segundos: dice
+        /// que no se pierde nada y que se cierre y abra Yala, o se actualice.
+        static var signOutCaptureUnfinished: String { ls("settings.signOutCaptureUnfinished", comment: "") }
         /// Lo mismo con el paso entre la nube e iCloud a medias o fallido
         /// (`CloudSignOutFlowLogic.BlockReason.syncStoppedMidMigration`): la salida está en «Dónde viven tus datos».
         static var signOutSyncStoppedMidMigration: String { ls("settings.signOutSyncStoppedMidMigration", comment: "") }

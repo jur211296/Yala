@@ -359,6 +359,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-detach-save-breadcrumb-never-closes-on-throw | backlog | tickets/backlog/groups-detach-save-breadcrumb-never-closes-on-throw.md |
 | groups-drain-failure-reads-as-nothing-pending | done | tickets/done/groups-drain-failure-reads-as-nothing-pending.md |
 | groups-drain-has-no-rollback-and-keeps-the-mirror-of-a-failed-save | backlog | tickets/backlog/groups-drain-has-no-rollback-and-keeps-the-mirror-of-a-failed-save.md |
+| groups-drain-that-always-aborts-takes-the-loss-exit-away | backlog | tickets/backlog/groups-drain-that-always-aborts-takes-the-loss-exit-away.md |
 | groups-entry-on-a-mirrored-store-still-blocks-the-owner | qa | tickets/qa/groups-entry-on-a-mirrored-store-still-blocks-the-owner.md |
 | groups-equal-split-shows-not-participating-on-peer | done | tickets/done/groups-equal-split-shows-not-participating-on-peer.md |
 | groups-expense-notif-only-on-foreground | done | tickets/done/groups-expense-notif-only-on-foreground.md |
@@ -539,7 +540,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | pending-reverse-complete-runs-with-whatever-session-is-live | backlog | tickets/backlog/pending-reverse-complete-runs-with-whatever-session-is-live.md |
 | personal-clock-ahead-wins-every-conflict-until-real-time-catches-up | backlog | tickets/backlog/personal-clock-ahead-wins-every-conflict-until-real-time-catches-up.md |
 | personal-clock-rollback-wedges-the-drain-forever | done | tickets/done/personal-clock-rollback-wedges-the-drain-forever.md |
-| personal-drain-that-always-aborts-blocks-cloud-sign-out-with-a-wait-a-moment-copy | backlog | tickets/backlog/personal-drain-that-always-aborts-blocks-cloud-sign-out-with-a-wait-a-moment-copy.md |
+| personal-drain-that-always-aborts-blocks-cloud-sign-out-with-a-wait-a-moment-copy | qa | tickets/qa/personal-drain-that-always-aborts-blocks-cloud-sign-out-with-a-wait-a-moment-copy.md |
 | personal-sign-out-reads-an-unfinished-drain-as-nothing-pending | done | tickets/done/personal-sign-out-reads-an-unfinished-drain-as-nothing-pending.md |
 | personal-sync-does-not-retry-a-401-with-a-forced-token-refresh | backlog | tickets/backlog/personal-sync-does-not-retry-a-401-with-a-forced-token-refresh.md |
 | personal-sync-reads-an-offline-token-refresh-as-a-session-expiry | done | tickets/done/personal-sync-reads-an-offline-token-refresh-as-a-session-expiry.md |

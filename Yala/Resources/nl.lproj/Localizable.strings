@@ -6131,6 +6131,7 @@
 
 /* Sign-out blocked: sync stopped because this build can't read the migration record */
 "settings.signOutSyncStoppedNeedsUpdate" = "Sommige wijzigingen zijn nog niet naar de cloud geüpload en we willen niet dat je iets kwijtraakt. We konden niet controleren hoe ver de overstap van je gegevens naar de cloud is, dus we kunnen ze nu niet uploaden. Sluit Yala volledig af en open hem opnieuw; verandert er niets, werk hem dan bij via de App Store en probeer het opnieuw.";
+"settings.signOutCaptureUnfinished" = "Sommige van je laatste wijzigingen konden niet worden voorbereid om naar de cloud te uploaden. Ze blijven op deze telefoon staan en er gaat niets verloren. Sluit Yala volledig af en open hem opnieuw; verandert er niets, werk hem dan bij via de App Store en probeer het opnieuw.";
 
 /* Sign-out blocked: sync paused because the cloud/iCloud switch didn't finish */
 "settings.signOutSyncStoppedMidMigration" = "Sommige wijzigingen zijn nog niet naar de cloud geüpload en we willen niet dat je iets kwijtraakt. Synchroniseren is gepauzeerd omdat de overstap van je gegevens tussen de cloud en iCloud niet is afgerond. Open ‘Waar je gegevens staan’, hier in Profiel, en rond het daar af (als het mislukt is, tik op ‘Opnieuw proberen’); probeer het daarna opnieuw.";

@@ -6131,6 +6131,7 @@
 
 /* Sign-out blocked: sync stopped because this build can't read the migration record */
 "settings.signOutSyncStoppedNeedsUpdate" = "还有更改尚未上传到云端，我们不希望你丢失任何内容。我们无法确认你的数据迁移到云端的进度，所以暂时无法上传这些更改。请彻底关闭 Yala 后重新打开；如果仍然如此，请在 App Store 更新 Yala 后重试。";
+"settings.signOutCaptureUnfinished" = "你最近的部分更改无法准备好上传到云端。更改还在这台手机上，不会丢失。请彻底关闭 Yala 后重新打开；如果仍然如此，请在 App Store 更新 Yala 后重试。";
 
 /* Sign-out blocked: sync paused because the cloud/iCloud switch didn't finish */
 "settings.signOutSyncStoppedMidMigration" = "还有更改尚未上传到云端，我们不希望你丢失任何内容。由于你的数据在云端与 iCloud 之间的迁移尚未完成，同步已暂停。请打开本页“个人资料”中的“你的数据存放在哪里”，在那里完成迁移（如果失败，请轻点“重试”），然后再试一次。";
