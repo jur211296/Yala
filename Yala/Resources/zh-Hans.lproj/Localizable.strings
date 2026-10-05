@@ -5875,7 +5875,7 @@
 "storage.groups.detachBlockedSession" = "你的群组登录已过期。请重新登录后再试。";
 "storage.groups.detachBlockedSessionAndCaptureUnfinished" = "你的群组登录已过期，而且你最近的部分群组更改无法准备好上传。更改不会丢失。请重新登录，关闭 Yala 后重新打开（如果仍然如此，请更新 Yala），然后再试一次。";
 "storage.groups.detachBlockedAttestAndCaptureUnfinished" = "这台手机已经超过一天没能通过我们服务器要求的安全验证，而且你最近的部分群组更改无法准备好上传。更改不会丢失。要准备这些更改，请关闭 Yala 后重新打开（如果仍然如此，请更新 Yala）。";
-"storage.groups.detachBlockedOtherAccountAndCaptureUnfinished" = "这台手机上有一些群组更改是用另一个账户创建的，只能用那个账户上传。此外，其中一部分无法准备好上传。这些更改不会丢失。请关闭 Yala 后重新打开（如果仍然如此，请更新 Yala），然后用那个账户登录，以便上传。";
+"storage.groups.detachBlockedOtherAccountAndCaptureUnfinished" = "这台手机上有一些群组更改是用另一个账户创建的，只能用那个账户上传。此外，有些群组更改无法准备好上传。这些更改不会丢失。请关闭 Yala 后重新打开（如果仍然如此，请更新 Yala），然后再试一次；那个账户的更改只有用它登录后才会上传。";
 
 /* Puerta del invitado: vuelta al neutro antes de aceptar una invitación de grupo */
 "welcome.groups.inviteNeutralTitle" = "加入之前，这部手机会被清空";
@@ -6172,6 +6172,8 @@
 
 /* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
 "groups.errors.noSessionSignOutLossUnknown" = "还有尚未上传的群组更改。这些更改只能用创建它们的账户上传，而该账户的会话没有在这台手机上打开：请用那个账户重新登录来上传。如果无法登录，也可以直接退出登录，但这些更改会丢失，群组里的任何人都看不到。";
+"groups.errors.otherAccountAndCaptureUnfinishedSignOutLoss" = "尚未上传的群组更改：%d 项。其中一些是在这台手机上用另一个账户创建的，只能用那个账户上传；另外，有些更改无法准备好上传。请关闭 Yala 后重新打开（如果仍然如此，请更新 Yala），然后再试一次；另一个账户的更改只有用该账户登录后才会上传。如果无法做到，也可以直接退出登录，但这些更改会丢失，群组里的任何人都看不到。";
+"groups.errors.otherAccountAndCaptureUnfinishedSignOutLossUnknown" = "还有尚未上传的群组更改。其中一些是在这台手机上用另一个账户创建的，只能用那个账户上传；另外，有些更改无法准备好上传。请关闭 Yala 后重新打开（如果仍然如此，请更新 Yala），然后再试一次；另一个账户的更改只有用该账户登录后才会上传。如果无法做到，也可以直接退出登录，但这些更改会丢失，群组里的任何人都看不到。";
 
 /* Cerrar sesión en la nube con la sesión caducada; %d = cambios de grupos que se pierden */
 "settings.signOutCloudSessionExpiredGroupsLoss" = "你的登录已过期。尚未上传的群组更改：%d 项。要上传它们，请打开本页“个人资料”中的“你的数据存放在哪里”，轻点“登录”。如果无法登录，也可以直接退出登录，但这些更改会丢失，群组里的任何人都看不到。";
@@ -6184,9 +6186,12 @@
 
 /* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
 "welcome.groups.neutralNoSessionLossBodyUnknown" = "还有尚未上传的群组更改。这些更改只能用创建它们的账户上传，而该账户的会话没有在这台手机上打开。如果现在继续，这些更改会丢失，群组里的任何人都看不到。";
+"welcome.groups.neutralOtherAccountAndCaptureUnfinishedLossBody" = "尚未上传的群组更改：%d 项。其中一些是在这台手机上用另一个账户创建的，只能用那个账户上传；另外，有些更改无法准备好上传。如果现在继续，这些更改会丢失，群组里的任何人都看不到。";
+"welcome.groups.neutralOtherAccountAndCaptureUnfinishedLossBodyUnknown" = "还有尚未上传的群组更改。其中一些是在这台手机上用另一个账户创建的，只能用那个账户上传；另外，有些更改无法准备好上传。如果现在继续，这些更改会丢失，群组里的任何人都看不到。";
 
 /* Empezar de cero con cambios de grupos de otra cuenta: por qué no suben */
 "groups.freshStartPending.lossOtherAccount" = "这些更改只能用创建它们的账户上传，而这台手机上打开的会话属于另一个账户。如果你不会再用那个账户登录，可以从头开始并丢失这些更改：群组里的人都不会看到它们。";
+"groups.freshStartPending.lossOtherAccountAndCaptureUnfinished" = "其中一些是用另一个账户创建的，只能用那个账户上传；另外，有些更改无法准备好上传。请关闭 Yala 后重新打开（如果仍然如此，请更新 Yala），然后再试一次；另一个账户的更改只有用该账户登录后才会上传。如果你不打算这样做，可以从头开始并丢失这些更改：群组里的人都不会看到它们。";
 
 /* Cerrar sesión en la nube con la sesión caducada; %d = cambios personales que se pierden */
 "settings.signOutCloudSessionExpiredPersonalLoss" = "你的登录已过期。没有传到你云端账户的更改：%d 项。要上传它们，请打开本页“个人资料”中的“你的数据存放在哪里”，轻点“登录”。如果无法登录，做决定之前你可以先把交易导出到文件。现在退出登录，这些更改会丢失。";

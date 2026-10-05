@@ -557,14 +557,20 @@ struct WelcomeGroupsGateView: View {
             // `groups-outbox-rows-without-a-live-session-have-no-exit`): quien no puede volver a entrar con esa cuenta no
             // tenía salida. Solo con la sesión caducada o con cambios de otra cuenta (`lossCause`) y la salida de un cierre
             // (`offersGroupsLossExit`); **al INVITADO no**, por lo mismo que el attest de arriba: no son suyos.
+            //
+            // **Con otra cuenta y lo que el drain no capturó en la cifra, el texto nombra las dos causas** (2026-10-05, ticket
+            // `stuck-groups-drain-hides-held-rows-of-another-account`): lo atascado puede ser tuyo. También al INVITADO, sin la
+            // salida: con el texto de siempre volvería a enterarse de las causas de una en una (review adversarial).
             let cause = CloudSignOutFlowLogic.lossCause(reason)
             let offersLoss = purpose.invitedGroupID == nil && (cause == .noSession || cause == .otherAccount)
                 && CloudSessionSignOut.shared.offersGroupsLossExit
+            let namesBothCauses = cause == .otherAccount && CloudSessionSignOut.shared.groupsLossReadsUncaptured
             noticeShell(icon: "arrow.trianglehead.2.clockwise.rotate.90",
                         title: L10n.Welcome.Groups.neutralBlockedTitle,
                         body: offersLoss
-                            ? SignOutBlockedCopy.welcomeNoSessionLossMessage(pending: pending)
-                            : L10n.Welcome.Groups.neutralBlockedBody,
+                            ? SignOutBlockedCopy.welcomeNoSessionLossMessage(
+                                pending: pending, anotherAccountAndCaptureUnfinished: namesBothCauses)
+                            : SignOutBlockedCopy.welcomeBlockedMessage(anotherAccountAndCaptureUnfinished: namesBothCauses),
                         identifier: "welcome_groups_gate_neutral_blocked") {
                 VStack(spacing: DS.Spacing.sm) {
                     YalaPrimaryButton(L10n.Welcome.Groups.gateBack) { leaveAfterBlock() }

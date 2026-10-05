@@ -5136,7 +5136,7 @@
 "storage.groups.detachBlockedSession" = "A tua sessão de grupos expirou. Inicia sessão de novo e tenta outra vez.";
 "storage.groups.detachBlockedSessionAndCaptureUnfinished" = "A tua sessão de grupos expirou e não conseguimos preparar para envio algumas das últimas alterações dos teus grupos. Não se perde nada. Inicia sessão de novo, fecha o Yala e volta a abri-lo (se continuar a acontecer, atualiza-o) e tenta outra vez.";
 "storage.groups.detachBlockedAttestAndCaptureUnfinished" = "Este telemóvel está há mais de um dia sem conseguir passar na verificação de segurança exigida pelo nosso servidor, e não conseguimos preparar para envio algumas das últimas alterações dos teus grupos. Não se perde nada. Para as preparar, fecha o Yala e volta a abri-lo (se continuar a acontecer, atualiza-o).";
-"storage.groups.detachBlockedOtherAccountAndCaptureUnfinished" = "Algumas alterações de grupos neste telemóvel foram feitas com outra conta, e só podem ser enviadas com essa conta. Além disso, não conseguimos preparar para envio algumas delas. Não se perde nada. Fecha o Yala e volta a abri-lo (se continuar a acontecer, atualiza-o) e inicia sessão com essa conta para que sejam enviadas.";
+"storage.groups.detachBlockedOtherAccountAndCaptureUnfinished" = "Algumas alterações de grupos neste telemóvel foram feitas com outra conta, e só podem ser enviadas com essa conta. Além disso, não conseguimos preparar para envio algumas alterações de grupos. Não se perde nada. Fecha o Yala e volta a abri-lo (se continuar a acontecer, atualiza-o) e tenta novamente; as dessa conta só são enviadas se iniciares sessão com ela.";
 
 /* Puerta del invitado: vuelta al neutro antes de aceptar una invitación de grupo */
 "welcome.groups.inviteNeutralTitle" = "Antes de entrares, este telemóvel fica vazio";
@@ -5433,6 +5433,8 @@
 
 /* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
 "groups.errors.noSessionSignOutLossUnknown" = "Há alterações de grupos que ainda não foram enviadas. Só podem ser enviadas com a conta que as registou, e a sessão dessa conta não está aberta neste telemóvel: volta a entrar com essa conta para as enviar. Se não conseguires, termina a sessão na mesma e perdem-se; ninguém do grupo as vai ver.";
+"groups.errors.otherAccountAndCaptureUnfinishedSignOutLoss" = "Alterações de grupos ainda não enviadas: %d. Algumas foram feitas neste telemóvel com outra conta e só podem ser enviadas com essa conta, e não conseguimos preparar para envio algumas delas. Fecha o Yala e volta a abri-lo (se continuar a acontecer, atualiza-o) e tenta novamente; as da outra conta só são enviadas se entrares com ela. Se não conseguires, termina a sessão na mesma e perdem-se; ninguém do grupo as vai ver.";
+"groups.errors.otherAccountAndCaptureUnfinishedSignOutLossUnknown" = "Há alterações de grupos que ainda não foram enviadas. Algumas foram feitas neste telemóvel com outra conta e só podem ser enviadas com essa conta, e não conseguimos preparar para envio algumas delas. Fecha o Yala e volta a abri-lo (se continuar a acontecer, atualiza-o) e tenta novamente; as da outra conta só são enviadas se entrares com ela. Se não conseguires, termina a sessão na mesma e perdem-se; ninguém do grupo as vai ver.";
 
 /* Cerrar sesión en la nube con la sesión caducada; %d = cambios de grupos que se pierden */
 "settings.signOutCloudSessionExpiredGroupsLoss" = "A tua sessão expirou. Alterações dos teus grupos ainda não enviadas: %d. Para as enviares, abre “Onde vivem os teus dados”, aqui em Perfil, e toca em “Iniciar sessão”. Se não conseguires entrar, termina a sessão na mesma e perdem-se; ninguém do grupo as vai ver.";
@@ -5445,9 +5447,12 @@
 
 /* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
 "welcome.groups.neutralNoSessionLossBodyUnknown" = "Há alterações de grupos que ainda não foram enviadas. Só podem ser enviadas com a conta que as registou, e a sessão dessa conta não está aberta neste telemóvel. Se continuares agora, perdem-se e ninguém do grupo as vai ver.";
+"welcome.groups.neutralOtherAccountAndCaptureUnfinishedLossBody" = "Alterações de grupos ainda não enviadas: %d. Algumas foram feitas neste telemóvel com outra conta e só podem ser enviadas com essa conta, e não conseguimos preparar para envio algumas delas. Se continuares agora, perdem-se e ninguém do grupo as vai ver.";
+"welcome.groups.neutralOtherAccountAndCaptureUnfinishedLossBodyUnknown" = "Há alterações de grupos que ainda não foram enviadas. Algumas foram feitas neste telemóvel com outra conta e só podem ser enviadas com essa conta, e não conseguimos preparar para envio algumas delas. Se continuares agora, perdem-se e ninguém do grupo as vai ver.";
 
 /* Empezar de cero con cambios de grupos de otra cuenta: por qué no suben */
 "groups.freshStartPending.lossOtherAccount" = "Só podem ser enviadas com a conta que as registou, e a sessão aberta neste telemóvel é de outra conta. Se não vais voltar a entrar com essa conta, podes começar do zero e perdê-las: ninguém do grupo as verá.";
+"groups.freshStartPending.lossOtherAccountAndCaptureUnfinished" = "Algumas foram feitas com outra conta e só podem ser enviadas com essa conta, e não conseguimos preparar para envio algumas delas. Fecha o Yala e volta a abri-lo (se continuar a acontecer, atualiza-o) e tenta novamente; as da outra conta só são enviadas se entrares com ela. Se não o vais fazer, podes começar do zero e perdê-las: ninguém do grupo as verá.";
 
 /* Cerrar sesión en la nube con la sesión caducada; %d = cambios personales que se pierden */
 "settings.signOutCloudSessionExpiredPersonalLoss" = "A tua sessão expirou. Alterações que não chegaram à tua conta na nuvem: %d. Para as enviares, abre “Onde vivem os teus dados”, aqui em Perfil, e toca em “Iniciar sessão”. Se não conseguires entrar, antes de decidires podes exportar as tuas transações para um ficheiro. Se terminares sessão agora, essas alterações perdem-se.";

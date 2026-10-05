@@ -121,6 +121,9 @@ struct ProfileView: View {
     /// El motivo del bloqueo que ofrece perder los cambios de grupos (desde el 2026-09-28 no es solo el attest: también la
     /// sesión caducada y los cambios de otra cuenta). Elige título y mensaje del mismo aviso; el botón es el mismo.
     @State private var signOutGroupsLossReason: CloudSignOutFlowLogic.BlockReason = .attestUnavailable
+    /// Si la cifra de ese aviso cuenta también cambios que el drain no capturó (2026-10-05): con otra cuenta, el mensaje
+    /// nombra entonces las dos causas. Se anota con el motivo, de la misma oferta (`groupsLossReadsUncaptured`).
+    @State private var signOutGroupsLossReadsUncaptured = false
     /// El aviso de cerrar sesión en la nube con cambios PERSONALES sin subir y un teléfono sin App Attest (2026-09-15,
     /// decisión de Jürgen): exportar los movimientos, cerrar sesión perdiéndolos o dejarlo. Alert DEDICADO, por lo mismo
     /// que los dos de arriba: sus botones son literales.
@@ -151,6 +154,8 @@ struct ProfileView: View {
             if CloudSignOutFlowLogic.lossCause(reason) != nil {
                 signOutAttestLossPending = pending
                 signOutGroupsLossReason = reason
+                // La oferta se anota ANTES de la fase (`pushGroupsForSignOut`), así que aquí ya es la de este bloqueo.
+                signOutGroupsLossReadsUncaptured = signOutCoordinator.groupsLossReadsUncaptured
             }
             // Solo con la oferta de tus datos viva: `.cloudSessionExpired` lo pone también el paso 2 con la cifra de GRUPOS, y
             // anotarla aquí dejaría esa cifra en el estado del aviso de tus movimientos (review adversarial, 2026-09-28).
@@ -752,7 +757,8 @@ struct ProfileView: View {
                     CloudSessionSignOut.shared.acknowledgeBlocked()
                 }
             } message: {
-                Text(SignOutBlockedCopy.groupsLossMessage(for: signOutGroupsLossReason, pending: signOutAttestLossPending))
+                Text(SignOutBlockedCopy.groupsLossMessage(for: signOutGroupsLossReason, pending: signOutAttestLossPending,
+                                                          readsUncaptured: signOutGroupsLossReadsUncaptured))
             }
             // Tus datos en la nube con el teléfono sin App Attest (2026-09-15, decisión de Jürgen): el aviso cuenta los cambios
             // que no llegaron y ofrece, en este orden, exportar los movimientos, cerrar sesión perdiéndolos o dejarlo. Exportar

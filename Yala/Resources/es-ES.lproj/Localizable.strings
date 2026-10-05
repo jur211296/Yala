@@ -5147,7 +5147,7 @@
 "storage.groups.detachBlockedSession" = "Tu sesión de grupos caducó. Entra otra vez y vuelve a intentarlo.";
 "storage.groups.detachBlockedSessionAndCaptureUnfinished" = "Tu sesión de grupos ha caducado y algunos de los últimos cambios de tus grupos no se han podido preparar para subirlos. No se pierden. Entra otra vez, cierra y vuelve a abrir Yala (si sigue pasando, actualízala) y vuelve a intentarlo.";
 "storage.groups.detachBlockedAttestAndCaptureUnfinished" = "Este teléfono lleva más de un día sin conseguir la verificación de seguridad que pide nuestro servidor, y algunos de los últimos cambios de tus grupos no se han podido preparar para subirlos. No se pierden. Para que se preparen, cierra y vuelve a abrir Yala (si sigue pasando, actualízala).";
-"storage.groups.detachBlockedOtherAccountAndCaptureUnfinished" = "Hay cambios de grupos que se apuntaron en este teléfono con otra cuenta, y solo se pueden subir con ella. Además, algunos de ellos no se han podido preparar para subirlos. No se pierden. Cierra y vuelve a abrir Yala (si sigue pasando, actualízala) y entra con esa cuenta para que suban.";
+"storage.groups.detachBlockedOtherAccountAndCaptureUnfinished" = "Hay cambios de grupos que se apuntaron en este teléfono con otra cuenta, y solo se pueden subir con ella. Además, algunos cambios de grupos no se han podido preparar para subirlos. No se pierden. Cierra y vuelve a abrir Yala (si sigue pasando, actualízala) y vuelve a intentarlo; los de esa cuenta solo suben si entras con ella.";
 
 /* Puerta del invitado: vuelta al neutro antes de aceptar una invitación de grupo */
 "welcome.groups.inviteNeutralTitle" = "Antes de unirte, este teléfono queda en blanco";
@@ -5444,6 +5444,8 @@
 
 /* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
 "groups.errors.noSessionSignOutLossUnknown" = "Hay cambios de grupos sin subir. Solo se suben con la cuenta que los apuntó, y su sesión no está abierta en este teléfono: vuelve a entrar con esa cuenta para subirlos. Si no puedes, cierra sesión igualmente y se perderán; nadie del grupo los verá.";
+"groups.errors.otherAccountAndCaptureUnfinishedSignOutLoss" = "Cambios de grupos sin subir: %d. Algunos se apuntaron en este teléfono con otra cuenta y solo se suben con ella, y algunos no se han podido preparar para subirlos. Cierra y vuelve a abrir Yala (si sigue pasando, actualízala) y vuelve a intentarlo; los de la otra cuenta solo suben si entras con ella. Si no puedes, cierra sesión igualmente y se perderán; nadie del grupo los verá.";
+"groups.errors.otherAccountAndCaptureUnfinishedSignOutLossUnknown" = "Hay cambios de grupos sin subir. Algunos se apuntaron en este teléfono con otra cuenta y solo se suben con ella, y algunos no se han podido preparar para subirlos. Cierra y vuelve a abrir Yala (si sigue pasando, actualízala) y vuelve a intentarlo; los de la otra cuenta solo suben si entras con ella. Si no puedes, cierra sesión igualmente y se perderán; nadie del grupo los verá.";
 
 /* Cerrar sesión en la nube con la sesión caducada; %d = cambios de grupos que se pierden */
 "settings.signOutCloudSessionExpiredGroupsLoss" = "Tu sesión ha caducado. Cambios de tus grupos sin subir: %d. Para subirlos, abre «Dónde viven tus datos», aquí en Perfil, y toca «Iniciar sesión». Si no puedes entrar, cierra sesión igualmente y se perderán; nadie del grupo los verá.";
@@ -5456,9 +5458,12 @@
 
 /* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
 "welcome.groups.neutralNoSessionLossBodyUnknown" = "Hay cambios de grupos sin subir. Solo se suben con la cuenta que los apuntó, y su sesión no está abierta en este teléfono. Si continúas ahora, se perderán y nadie del grupo los verá.";
+"welcome.groups.neutralOtherAccountAndCaptureUnfinishedLossBody" = "Cambios de grupos sin subir: %d. Algunos se apuntaron en este teléfono con otra cuenta y solo se suben con ella, y algunos no se han podido preparar para subirlos. Si continúas ahora, se perderán y nadie del grupo los verá.";
+"welcome.groups.neutralOtherAccountAndCaptureUnfinishedLossBodyUnknown" = "Hay cambios de grupos sin subir. Algunos se apuntaron en este teléfono con otra cuenta y solo se suben con ella, y algunos no se han podido preparar para subirlos. Si continúas ahora, se perderán y nadie del grupo los verá.";
 
 /* Empezar de cero con cambios de grupos de otra cuenta: por qué no suben */
 "groups.freshStartPending.lossOtherAccount" = "Solo pueden subir con la cuenta que los apuntó, y la sesión abierta en este teléfono es de otra. Si no vas a volver a entrar con esa cuenta, puedes empezar de cero y perderlos: nadie del grupo los verá.";
+"groups.freshStartPending.lossOtherAccountAndCaptureUnfinished" = "Algunos se apuntaron con otra cuenta y solo pueden subir con ella, y algunos no se han podido preparar para subirlos. Cierra y vuelve a abrir Yala (si sigue pasando, actualízala) y vuelve a intentarlo; los de la otra cuenta solo suben si entras con ella. Si no vas a hacerlo, puedes empezar de cero y perderlos: nadie del grupo los verá.";
 
 /* Cerrar sesión en la nube con la sesión caducada; %d = cambios personales que se pierden */
 "settings.signOutCloudSessionExpiredPersonalLoss" = "Tu sesión ha caducado. Cambios que no han llegado a tu cuenta en la nube: %d. Para subirlos, abre «Dónde viven tus datos», aquí en Perfil, y toca «Iniciar sesión». Si no puedes entrar, antes de decidir puedes exportar tus movimientos a un archivo. Si cierras sesión ahora, esos cambios se pierden.";

@@ -605,7 +605,8 @@ struct AppleIDCloseNoticeAttestLossTests {
                 noticeBody(
                     icon: "exclamationmark.triangle",
                     title: SignOutBlockedCopy.groupsLossTitle(for: reason),
-                    message: SignOutBlockedCopy.groupsLossMessage(for: reason, pending: pending),
+                    message: SignOutBlockedCopy.groupsLossMessage(for: reason, pending: pending,
+                                                                  readsUncaptured: coordinator.groupsLossReadsUncaptured),
                     identifier: "apple_id_close_losing_group_changes") {
                     YalaPrimaryButton(L10n.iCloud.appleIDChangedLater) { later() }
                         .accessibilityIdentifier("apple_id_close_later")

@@ -532,8 +532,12 @@ struct GroupsOrganizerWiringTests {
             desapareció la pantalla del bloqueo por grupos pendientes: ese cierre no descarta nunca, así
             que sin pantalla la persona se queda mirando un progreso que ya no va a terminar.
             """)
-        #expect(view.contains("L10n.Welcome.Groups.neutralBlockedBody"),
+        // Desde el 2026-10-05 el texto lo elige `SignOutBlockedCopy.welcomeBlockedMessage` (con otra cuenta y el drain
+        // atascado, las dos causas; si no, el de siempre): la vista lo pide ahí y el copy conserva el de siempre.
+        #expect(view.contains("SignOutBlockedCopy.welcomeBlockedMessage(anotherAccountAndCaptureUnfinished:"),
                 "y tiene que decir CÓMO se desbloquea (volver a entrar con esa cuenta)")
+        let copy = try Self.code("Yala/App/Views/Shared/SignOutBlockedCopy.swift")
+        #expect(copy.contains(": L10n.Welcome.Groups.neutralBlockedBody"), "el texto de siempre se perdió del copy")
     }
 
     /// El container solo REENVÍA: si empezara a decidir, habría dos sitios donde escribir la condición.

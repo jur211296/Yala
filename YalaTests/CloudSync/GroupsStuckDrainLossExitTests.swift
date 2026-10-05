@@ -149,14 +149,26 @@ struct GroupsUncapturedHistoryProbeTests {
             .uncapturedGroupsChanges(context: context))
         #expect(!seenByB.isEmpty)
         #expect(seenByB.allSatisfy { $0.heldForAnotherAccount }, "lo apuntó sub-a: la sesión de sub-b no lo sube")
+        #expect(seenByB.allSatisfy { $0.provenAnotherAccount }, "el registro nombra a sub-a: otra cuenta probada")
 
         let seenByA = try #require(makeClient(mirrorDir: mirrorDir, session: "sub-a", log: byA)
             .uncapturedGroupsChanges(context: context))
         #expect(seenByA.allSatisfy { !$0.heldForAnotherAccount }, "lo apuntó la propia sesión")
+        #expect(seenByA.allSatisfy { !$0.provenAnotherAccount })
 
         let signedOut = try #require(makeClient(mirrorDir: mirrorDir, session: nil, log: byA)
             .uncapturedGroupsChanges(context: context))
         #expect(signedOut.allSatisfy { !$0.heldForAnotherAccount }, "sin sesión no hay otra cuenta: hay sesión caducada")
+        #expect(signedOut.allSatisfy { !$0.provenAnotherAccount })
+
+        // **Sin dueño en el registro** (lo apuntado antes de su primera entrada): retenido, pero NO otra cuenta probada. Es el
+        // ruido que, mezclado con cambios propios, no puede abrir la salida que pierde cambios (2026-10-05).
+        let later = SessionSignInLog(entries: [.init(sub: "sub-a", at: .distantFuture)])
+        let unowned = try #require(makeClient(mirrorDir: mirrorDir, session: "sub-b", log: later)
+            .uncapturedGroupsChanges(context: context))
+        #expect(!unowned.isEmpty)
+        #expect(unowned.allSatisfy { $0.heldForAnotherAccount }, "sin dueño probado: retenido, como el drain")
+        #expect(unowned.allSatisfy { !$0.provenAnotherAccount }, "sin dueño no es otra cuenta probada")
     }
 }
 
@@ -229,29 +241,29 @@ struct GroupsStuckCaptureLogicTests {
     @Test func stuckCaptureVerdict_table() {
         // El ciclo paró por un motivo que abre la salida: ese motivo.
         #expect(L.stuckCaptureVerdict(cycleReason: .sessionExpired, livePendingCount: 0,
-                                      uncapturedAllHeldForAnotherAccount: false)
+                                      heldRowsForAnotherAccount: 0, uncapturedPointsToAnotherAccount: false)
                 == .blocked(pendingCount: 0, reason: .sessionExpired))
         #expect(L.stuckCaptureVerdict(cycleReason: .attestUnavailable, livePendingCount: 2,
-                                      uncapturedAllHeldForAnotherAccount: nil)
+                                      heldRowsForAnotherAccount: 0, uncapturedPointsToAnotherAccount: nil)
                 == .blocked(pendingCount: 2, reason: .attestUnavailable))
-        // Todo lo de fuera es de otra cuenta: su motivo, con su salida.
-        #expect(L.stuckCaptureVerdict(cycleReason: nil, livePendingCount: 1, uncapturedAllHeldForAnotherAccount: true)
+        // Lo de fuera es de otra cuenta: su motivo, con su salida.
+        #expect(L.stuckCaptureVerdict(cycleReason: nil, livePendingCount: 1, heldRowsForAnotherAccount: 0, uncapturedPointsToAnotherAccount: true)
                 == .blocked(pendingCount: 1, reason: .groupsChangesFromAnotherAccount))
         #expect(L.stuckCaptureVerdict(cycleReason: .uploadRetryLater, livePendingCount: 0,
-                                      uncapturedAllHeldForAnotherAccount: true)
+                                      heldRowsForAnotherAccount: 0, uncapturedPointsToAnotherAccount: true)
                 == .blocked(pendingCount: 0, reason: .groupsChangesFromAnotherAccount),
                 "la red caída no sube lo de otra cuenta tampoco")
         // Algo es de esta sesión, o no se sabe: sin salida, y con el motivo del drain que no termina (opción A de Jürgen,
         // 2026-10-05). Hasta ese día salía `.uploadRetryLater`, «inténtalo en un rato», y esperar no lo cura.
-        #expect(L.stuckCaptureVerdict(cycleReason: nil, livePendingCount: 0, uncapturedAllHeldForAnotherAccount: false)
+        #expect(L.stuckCaptureVerdict(cycleReason: nil, livePendingCount: 0, heldRowsForAnotherAccount: 0, uncapturedPointsToAnotherAccount: false)
                 == .blocked(pendingCount: Int.max, reason: .groupsCaptureUnfinished))
-        #expect(L.stuckCaptureVerdict(cycleReason: nil, livePendingCount: 0, uncapturedAllHeldForAnotherAccount: nil)
+        #expect(L.stuckCaptureVerdict(cycleReason: nil, livePendingCount: 0, heldRowsForAnotherAccount: 0, uncapturedPointsToAnotherAccount: nil)
                 == .blocked(pendingCount: Int.max, reason: .groupsCaptureUnfinished))
         #expect(L.stuckCaptureVerdict(cycleReason: .channelPaused, livePendingCount: 3,
-                                      uncapturedAllHeldForAnotherAccount: false)
+                                      heldRowsForAnotherAccount: 0, uncapturedPointsToAnotherAccount: false)
                 == .blocked(pendingCount: 3, reason: .groupsCaptureUnfinished))
         #expect(L.stuckCaptureVerdict(cycleReason: .uploadRetryLater, livePendingCount: 0,
-                                      uncapturedAllHeldForAnotherAccount: false)
+                                      heldRowsForAnotherAccount: 0, uncapturedPointsToAnotherAccount: false)
                 == .blocked(pendingCount: Int.max, reason: .groupsCaptureUnfinished),
                 "con el drain atascado, que la red vuelva no sube lo que nunca llega al outbox")
     }
@@ -445,7 +457,7 @@ struct GroupsStuckDrainPushAllTests {
         let verdict = await coordinator.drainGroupsBeforeFreshStart(context: context, witness: witness)
 
         #expect(cycles.value == 1, "el attest se muestra al momento: un solo ciclo")
-        #expect(verdict == .blocked(Block(pendingCount: 5, reason: .attestUnavailable)), """
+        #expect(verdict == .blocked(Block(pendingCount: 5, reason: .attestUnavailable, readsUncaptured: true)), """
             el teléfono sin App Attest con el drain atascado tiene que ver su salida, contando las dos filas y los tres \
             cambios que el drain no capturó: \(verdict)
             """)
@@ -466,7 +478,7 @@ struct GroupsStuckDrainPushAllTests {
         let verdict = await coordinator.drainGroupsBeforeFreshStart(context: context, witness: witness)
 
         #expect(cycles.value >= 1, "con la captura atascada el pre-check tiene que ciclar para saber la causa")
-        #expect(verdict == .blocked(Block(pendingCount: 2, reason: .sessionExpired)), "\(verdict)")
+        #expect(verdict == .blocked(Block(pendingCount: 2, reason: .sessionExpired, readsUncaptured: true)), "\(verdict)")
         #expect(coordinator.acceptFreshStartGroupsLoss())
     }
 
@@ -481,7 +493,7 @@ struct GroupsStuckDrainPushAllTests {
 
         let verdict = await coordinator.drainGroupsBeforeFreshStart(context: context, witness: witness)
 
-        #expect(verdict == .blocked(Block(pendingCount: 3, reason: .groupsChangesFromAnotherAccount)), "\(verdict)")
+        #expect(verdict == .blocked(Block(pendingCount: 3, reason: .groupsChangesFromAnotherAccount, readsUncaptured: true)), "\(verdict)")
         #expect(coordinator.acceptFreshStartGroupsLoss())
     }
 
@@ -502,7 +514,7 @@ struct GroupsStuckDrainPushAllTests {
         let verdict = await coordinator.drainGroupsBeforeFreshStart(context: context, witness: witness)
 
         #expect(cycles.value == 2, "el ciclo coalescido no tenía que decidir: \(cycles.value) ciclos")
-        #expect(verdict == .blocked(Block(pendingCount: 2, reason: .sessionExpired)), "\(verdict)")
+        #expect(verdict == .blocked(Block(pendingCount: 2, reason: .sessionExpired, readsUncaptured: true)), "\(verdict)")
     }
 
     /// **Un fallo que no esconde nada no bloquea**: la captura falla en todos sus intentos, pero el History no guarda nada que
@@ -537,7 +549,7 @@ struct GroupsStuckDrainPushAllTests {
 
         let verdict = await coordinator.drainGroupsBeforeFreshStart(context: context, witness: witness)
 
-        #expect(verdict == .blocked(Block(pendingCount: 2, reason: .uploadRetryLater)), "\(verdict)")
+        #expect(verdict == .blocked(Block(pendingCount: 2, reason: .uploadRetryLater, readsUncaptured: false)), "\(verdict)")
         #expect(!coordinator.acceptFreshStartGroupsLoss(), "sin el mismo cambio fallando no hay salida")
         try clearOutbox(context)
     }
@@ -555,7 +567,7 @@ struct GroupsStuckDrainPushAllTests {
 
         let verdict = await coordinator.drainGroupsBeforeFreshStart(context: context, witness: witness)
 
-        #expect(verdict == .blocked(Block(pendingCount: 1, reason: .uploadRetryLater)), "\(verdict)")
+        #expect(verdict == .blocked(Block(pendingCount: 1, reason: .uploadRetryLater, readsUncaptured: false)), "\(verdict)")
         #expect(!coordinator.acceptFreshStartGroupsLoss())
         try clearOutbox(context)
     }
@@ -596,7 +608,7 @@ struct GroupsStuckDrainPushAllTests {
 
         let verdict = await coordinator.drainGroupsBeforeFreshStart(context: context, witness: witness)
 
-        #expect(verdict == .blocked(Block(pendingCount: Int.max, reason: .groupsCaptureUnfinished)), "\(verdict)")
+        #expect(verdict == .blocked(Block(pendingCount: Int.max, reason: .groupsCaptureUnfinished, readsUncaptured: false)), "\(verdict)")
         #expect(!coordinator.acceptFreshStartGroupsLoss(), "sin oferta")
         if case .blocked(let block) = verdict {
             #expect(!block.offersLossExit, "«Empezar de cero» no ofrece perderlos: decisión A")
@@ -624,7 +636,7 @@ struct GroupsStuckDrainPushAllTests {
 
         let verdict = await coordinator.drainGroupsBeforeFreshStart(context: context, witness: witness)
 
-        #expect(verdict == .blocked(Block(pendingCount: 2, reason: .attestUnavailable)), "\(verdict)")
+        #expect(verdict == .blocked(Block(pendingCount: 2, reason: .attestUnavailable, readsUncaptured: false)), "\(verdict)")
         #expect(historyReads.value == 2, "solo tras los dos intentos fallidos; con la captura completa la oferta no lo lee")
         try clearOutbox(context)
     }
@@ -757,9 +769,10 @@ struct GroupsStuckDrainHealthyPhoneCopyTests {
         #expect(L.lossCause(.groupsCaptureUnfinished) == nil)
         #expect(!L.freshStartOffersGroupsLossExit(.groupsCaptureUnfinished))
         #expect(L.personalLossCause(.groupsCaptureUnfinished) == nil)
-        let block = CloudSessionSignOut.FreshStartGroupsBlock(pendingCount: 2, reason: .groupsCaptureUnfinished)
+        let block = CloudSessionSignOut.FreshStartGroupsBlock(pendingCount: 2, reason: .groupsCaptureUnfinished,
+                                                             readsUncaptured: false)
         #expect(!block.offersLossExit)
-        #expect(SignOutBlockedCopy.groupsLossMessage(for: .groupsCaptureUnfinished, pending: 2)
+        #expect(SignOutBlockedCopy.groupsLossMessage(for: .groupsCaptureUnfinished, pending: 2, readsUncaptured: false)
                 == L10n.Groups.Errors.captureUnfinished, "sin causa de pérdida, el texto sin salida")
     }
 

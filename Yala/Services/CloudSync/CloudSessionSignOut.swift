@@ -717,6 +717,16 @@ final class CloudSessionSignOut {
         return offer.cause == cause
     }
 
+    /// **¿La oferta de perder los cambios de grupos cuenta también los que el drain no capturó?** (ticket
+    /// `stuck-groups-drain-hides-held-rows-of-another-account`, 2026-10-05). Lo preguntan las vistas que pintan la oferta para
+    /// elegir el texto (`SignOutBlockedCopy.groupsLossMessage`): con cambios de otra cuenta y la captura atascada, el aviso
+    /// nombra las dos causas. Sale de la MISMA oferta que se acepta, así que el texto describe la cifra que enseña. Sin
+    /// oferta viva (`offersGroupsLossExit`), `false`: no hay aviso de pérdida que elegir.
+    var groupsLossReadsUncaptured: Bool {
+        guard offersGroupsLossExit, let offer = groupsLossExit else { return false }
+        return offer.loss.readsUncaptured
+    }
+
     /// La salida ofrecida al cerrar sesión en la NUBE con cambios PERSONALES sin subir y un teléfono sin App Attest
     /// (`exitDiscardingUnsyncedPersonalChanges`, ticket `cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes`):
     /// QUÉ filas de `SyncOutbox` contó el aviso, por su `clientMutationID` (`nil` si el recuento falló y el aviso salió sin
@@ -1881,6 +1891,11 @@ final class CloudSessionSignOut {
         /// (`CloudSignOutFlowLogic.freshStartOffersGroupsLossExit`), y es a la vez lo que `drainGroupsBeforeFreshStart` usa
         /// para anotar la oferta: la vista no puede pintar un botón que el servicio no respalde.
         var offersLossExit: Bool { CloudSignOutFlowLogic.freshStartOffersGroupsLossExit(reason) }
+        /// **¿La cifra cuenta cambios que el drain no capturó?** Solo la oferta con la captura atascada
+        /// (`FreshStartGroupsLoss.readsUncaptured`); todo bloqueo que no lee el History lleva `false`. Decide si el texto de
+        /// «otra cuenta» nombra además el atasco (ticket `stuck-groups-drain-hides-held-rows-of-another-account`). Sin valor
+        /// por defecto a propósito: quien construye un bloqueo tiene que decir si su cifra leyó el History.
+        let readsUncaptured: Bool
     }
 
     /// Cómo acabó la subida previa al borrado.
@@ -2177,7 +2192,8 @@ final class CloudSessionSignOut {
                 reason: CloudSignOutFlowLogic.freshStartResidualReason(
                     livePendingCount: Self.liveGroupsPendingCount(context: context),
                     sessionMirrorCount: witness.mirrorPending(context, .sessionOwner),
-                    anotherAccountMirrorCount: witness.mirrorPendingOfAnotherAccount(context)))
+                    anotherAccountMirrorCount: witness.mirrorPendingOfAnotherAccount(context)),
+                readsUncaptured: false)
         }
         return await settleFreshStartBlock(block, accepted: accepted, context: context, witness: witness)
     }
@@ -2215,7 +2231,7 @@ final class CloudSessionSignOut {
         guard capture != .unfinished else {
             let uncaptured = FreshStartGroupsBlock(
                 pendingCount: Self.freshStartGroupsPendingCount(context: context, witness: witness),
-                reason: CloudSignOutFlowLogic.freshStartUncapturedReason)
+                reason: CloudSignOutFlowLogic.freshStartUncapturedReason, readsUncaptured: false)
             noteFreshStartBlocked(uncaptured)
             return .blocked(uncaptured)
         }
@@ -2224,7 +2240,8 @@ final class CloudSessionSignOut {
             Self.noteFreshStartGroupsDiscarded(loss, reason: block.reason)
             return .lossAccepted(loss)
         }
-        let offered = FreshStartGroupsBlock(pendingCount: loss.count, reason: block.reason)
+        let offered = FreshStartGroupsBlock(pendingCount: loss.count, reason: block.reason,
+                                            readsUncaptured: loss.readsUncaptured)
         freshStartLossOffer = loss
         noteFreshStartBlocked(offered)
         return .blocked(offered)
@@ -2241,7 +2258,8 @@ final class CloudSessionSignOut {
         // `Int.max` («no se pudo contar») más una cifra positiva desborda, y más cero se queda en `Int.max`: el
         // desbordamiento cubre las dos mitades sin comprobarlas aparte.
         let (sum, overflow) = block.pendingCount.addingReportingOverflow(anotherAccount)
-        return FreshStartGroupsBlock(pendingCount: overflow ? Int.max : sum, reason: block.reason)
+        return FreshStartGroupsBlock(pendingCount: overflow ? Int.max : sum, reason: block.reason,
+                                     readsUncaptured: block.readsUncaptured)
     }
 
     /// «Empezar de cero» va a borrar con cambios de grupos que la persona aceptó perder. Solo cuenta si queda alguno: con
@@ -2263,9 +2281,9 @@ final class CloudSessionSignOut {
         case .drained:
             return nil
         case .surfacePermanent(let pending, let reason):
-            return FreshStartGroupsBlock(pendingCount: pending, reason: reason)
+            return FreshStartGroupsBlock(pendingCount: pending, reason: reason, readsUncaptured: false)
         case .surfaceTransient(let pending), .cancelled(let pending):
-            return FreshStartGroupsBlock(pendingCount: pending, reason: .transient)
+            return FreshStartGroupsBlock(pendingCount: pending, reason: .transient, readsUncaptured: false)
         }
     }
 
@@ -2277,7 +2295,8 @@ final class CloudSessionSignOut {
         context: ModelContext, reason: CloudSignOutFlowLogic.BlockReason, witness: GroupsExitWitness = .live
     ) {
         noteFreshStartBlocked(FreshStartGroupsBlock(
-            pendingCount: Self.freshStartGroupsPendingCount(context: context, witness: witness), reason: reason))
+            pendingCount: Self.freshStartGroupsPendingCount(context: context, witness: witness), reason: reason,
+            readsUncaptured: false))
     }
 
     private func noteFreshStartBlocked(_ block: FreshStartGroupsBlock) {
@@ -2521,8 +2540,9 @@ final class CloudSessionSignOut {
                 //
                 // **Y con la captura atascada decide quién apuntó lo que queda fuera** (2026-10-05,
                 // `CloudSignOutFlowLogic.stuckCaptureVerdict`): el motivo del ciclo si abre la salida —con el outbox a 0
-                // `pushAllVerdict` lo ignora—, los cambios de otra cuenta si todo lo de fuera es suyo, y si no, el drain que no
-                // termina (`.groupsCaptureUnfinished`), sin salida.
+                // `pushAllVerdict` lo ignora—, los cambios de otra cuenta si queda algo suyo —filas retenidas en el outbox o lo
+                // que el History apunta a otra cuenta, ticket `stuck-groups-drain-hides-held-rows-of-another-account`—, y si no,
+                // el drain que no termina (`.groupsCaptureUnfinished`), sin salida.
                 let captured = await captureGroupsForExit(context: context, witness: witness)
                 let live = Self.liveGroupsPendingCount(context: context)
                 let held = witness.heldForAnotherAccount(context)
@@ -2536,9 +2556,8 @@ final class CloudSessionSignOut {
                                 real.outcome, channelKilled: real.channelKilled,
                                 attestUnavailable: real.attestUnavailable, uploadFailed: real.uploadFailed),
                             livePendingCount: live,
-                            uncapturedAllHeldForAnotherAccount: uncaptured.map {
-                                !$0.isEmpty && $0.allSatisfy(\.heldForAnotherAccount)
-                            })
+                            heldRowsForAnotherAccount: held,
+                            uncapturedPointsToAnotherAccount: CloudSignOutFlowLogic.uncapturedPointsToAnotherAccount(uncaptured))
                     }
                 } else if let settled = CloudSignOutFlowLogic.groupsCaptureVerdict(
                     captureCompleted: captured == .completed,

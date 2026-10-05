@@ -274,24 +274,24 @@ struct GroupsLossCauseLogicTests {
 
     @Test("El aviso cuenta con la cifra de su causa, y sin ella cuando no hay número honesto")
     func lossCopy_perCause() {
-        #expect(SignOutBlockedCopy.groupsLossMessage(for: .sessionExpired, pending: 3)
+        #expect(SignOutBlockedCopy.groupsLossMessage(for: .sessionExpired, pending: 3, readsUncaptured: false)
                 == L10n.Groups.Errors.noSessionSignOutLoss(3))
-        #expect(SignOutBlockedCopy.groupsLossMessage(for: .groupsChangesFromAnotherAccount, pending: 3)
+        #expect(SignOutBlockedCopy.groupsLossMessage(for: .groupsChangesFromAnotherAccount, pending: 3, readsUncaptured: false)
                 == L10n.Groups.Errors.noSessionSignOutLoss(3))
-        #expect(SignOutBlockedCopy.groupsLossMessage(for: .cloudSessionExpired, pending: 3)
+        #expect(SignOutBlockedCopy.groupsLossMessage(for: .cloudSessionExpired, pending: 3, readsUncaptured: false)
                 == L10n.Settings.signOutCloudSessionExpiredGroupsLoss(3))
-        #expect(SignOutBlockedCopy.groupsLossMessage(for: .attestUnavailable, pending: 3)
+        #expect(SignOutBlockedCopy.groupsLossMessage(for: .attestUnavailable, pending: 3, readsUncaptured: false)
                 == SignOutBlockedCopy.attestLossMessage(pending: 3))
-        #expect(SignOutBlockedCopy.groupsLossMessage(for: .sessionExpired, pending: .max)
+        #expect(SignOutBlockedCopy.groupsLossMessage(for: .sessionExpired, pending: .max, readsUncaptured: false)
                 == L10n.Groups.Errors.noSessionSignOutLossUnknown)
-        #expect(SignOutBlockedCopy.groupsLossMessage(for: .cloudSessionExpired, pending: .max)
+        #expect(SignOutBlockedCopy.groupsLossMessage(for: .cloudSessionExpired, pending: .max, readsUncaptured: false)
                 == L10n.Settings.signOutCloudSessionExpiredGroupsLossUnknown)
         #expect(SignOutBlockedCopy.groupsLossTitle(for: .attestUnavailable) == L10n.Groups.Errors.attestUnavailableTitle)
         #expect(SignOutBlockedCopy.groupsLossTitle(for: .sessionExpired) == L10n.Settings.signOutBlockedTitle)
         #expect(SignOutBlockedCopy.message(for: .groupsChangesFromAnotherAccount)
                 == L10n.Groups.Errors.groupsChangesFromAnotherAccount)
-        #expect(SignOutBlockedCopy.welcomeNoSessionLossMessage(pending: 2) == L10n.Welcome.Groups.neutralNoSessionLossBody(2))
-        #expect(SignOutBlockedCopy.welcomeNoSessionLossMessage(pending: .max) == L10n.Welcome.Groups.neutralNoSessionLossBodyUnknown)
+        #expect(SignOutBlockedCopy.welcomeNoSessionLossMessage(pending: 2, anotherAccountAndCaptureUnfinished: false) == L10n.Welcome.Groups.neutralNoSessionLossBody(2))
+        #expect(SignOutBlockedCopy.welcomeNoSessionLossMessage(pending: .max, anotherAccountAndCaptureUnfinished: false) == L10n.Welcome.Groups.neutralNoSessionLossBodyUnknown)
         #expect(!L10n.Groups.Errors.noSessionSignOutLoss(3).contains("%d"))
     }
 
@@ -662,6 +662,7 @@ struct GroupsNoSessionLossExitTests {
 
         #expect(coordinator.phase == .blocked(pendingCount: 2, reason: .sessionExpired))
         #expect(coordinator.offersGroupsLossExit)
+        #expect(!coordinator.groupsLossReadsUncaptured, "con la captura completa la oferta no cuenta el History")
         #expect(!StorageModePersistence.isSignOutWipeArmed())
     }
 
@@ -806,6 +807,10 @@ struct GroupsNoSessionLossExitTests {
             con el drain atascado el aviso tiene que contar la fila viva y los tres cambios del History: \(coordinator.phase)
             """)
         #expect(coordinator.offersGroupsLossExit, "la salida no volvió: esperar no cura un drain que no termina")
+        #expect(coordinator.groupsLossReadsUncaptured, """
+            la oferta cuenta el History y las vistas no lo saben: con otra cuenta el aviso nombraría una sola causa \
+            (ticket `stuck-groups-drain-hides-held-rows-of-another-account`)
+            """)
         #expect(!StorageModePersistence.isSignOutWipeArmed())
 
         await coordinator.exitDiscardingUnsyncedGroups(context: context)
