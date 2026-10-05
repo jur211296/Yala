@@ -29,6 +29,9 @@
 //  el drain, porque subiría con un HLC fresco y pisaría por LWW las ediciones más nuevas de la nube; el pull trae su versión.
 //  Vive y muere con el registro: la siembra lo quita, el adopt lo escribe después, y la retirada y la vuelta atrás lo borran.
 //
+//  Y con ello, por qué camino entró ese adopt (ticket `adopt-window-uploads-what-reaches-the-mirror-after-the-icloud-check`):
+//  el canario del drain lo pega a las altas que el backend no conocía, para separar al que entró sin prueba de linaje.
+//
 
 import Foundation
 import SwiftData
@@ -63,7 +66,7 @@ enum RelayIdentityLedger {
     /// Sin quitarla, una marca del adopt que sobrevivió a una salida haría que el runtime retirara el registro de una ida.
     /// LANZA si no puede leer el que había o escribir el nuevo.
     static func merge(_ entries: [String: UUID], into url: URL) throws {
-        for marker in [retireMarkerURL(for: url), adoptPinURL(for: url), adoptBackendKnownURL(for: url)]
+        for marker in [retireMarkerURL(for: url), adoptPinURL(for: url), adoptBackendKnownURL(for: url), adoptRouteURL(for: url)]
         where FileManager.default.fileExists(atPath: marker.path) {
             try FileManager.default.removeItem(at: marker)
         }
@@ -76,9 +79,9 @@ enum RelayIdentityLedger {
         try data.write(to: url, options: .atomic)
     }
 
-    /// Borra el registro, sus dos marcas y lo que el backend conocía en el adopt, si existen.
+    /// Borra el registro, sus dos marcas, lo que el backend conocía en el adopt y su camino de entrada, si existen.
     static func remove(at url: URL) throws {
-        for file in [url, retireMarkerURL(for: url), adoptPinURL(for: url), adoptBackendKnownURL(for: url)]
+        for file in [url, retireMarkerURL(for: url), adoptPinURL(for: url), adoptBackendKnownURL(for: url), adoptRouteURL(for: url)]
         where FileManager.default.fileExists(atPath: file.path) {
             try FileManager.default.removeItem(at: file)
         }
@@ -140,11 +143,12 @@ enum RelayIdentityLedger {
         return ids
     }
 
-    /// Quita lo que el backend conocía, si existe. LANZA si no puede borrarlo.
+    /// Quita lo que el backend conocía, si existe, y con ello el camino de entrada del adopt. LANZA si no puede borrarlo.
     static func clearAdoptBackendKnown(for url: URL) throws {
-        let file = adoptBackendKnownURL(for: url)
-        guard FileManager.default.fileExists(atPath: file.path) else { return }
-        try FileManager.default.removeItem(at: file)
+        for file in [adoptBackendKnownURL(for: url), adoptRouteURL(for: url)]
+        where FileManager.default.fileExists(atPath: file.path) {
+            try FileManager.default.removeItem(at: file)
+        }
     }
 
     static func hasAdoptBackendKnown(for url: URL) -> Bool {
@@ -153,5 +157,39 @@ enum RelayIdentityLedger {
 
     private static func adoptBackendKnownURL(for url: URL) -> URL {
         url.appendingPathExtension("backend-known")
+    }
+
+    // MARK: - Por qué camino entró el adopt (ticket `adopt-window-uploads-what-reaches-the-mirror-after-the-icloud-check`)
+
+    /// Cómo decidió el reconcile del adopt que podía entrar, visto desde iCloud. Es lo que separa en el canario
+    /// `cloudAdoptLateImportUnproven` al adopt que entró sin prueba de linaje (`none`, `noAccount`) del que la tuvo.
+    enum AdoptRoute: String, CaseIterable, Sendable {
+        /// La sonda de iCloud dijo que no había nada que probar.
+        case none
+        /// CloudKit dijo que no había cuenta de iCloud a la que preguntar.
+        case noAccount
+        /// La sonda encontró corpus y el adopt esperó a que el primer import terminara.
+        case found
+        /// Ya había filas locales que pedían linaje: la guarda decidió sin preguntar a iCloud.
+        case lineageRows
+        /// El espejo no estaba adjunto: no hay import que llegue en la ventana.
+        case noMirror
+    }
+
+    /// Guarda el camino de entrada. Va con lo que el backend conocía: lo escribe la misma pasada y lo borran los mismos.
+    /// LANZA si no puede escribir.
+    static func writeAdoptRoute(_ route: AdoptRoute, for url: URL) throws {
+        try Data(route.rawValue.utf8).write(to: adoptRouteURL(for: url), options: .atomic)
+    }
+
+    /// El camino de entrada. `nil` sin fichero o con un contenido que no es un camino conocido; LANZA si no se deja leer.
+    static func loadAdoptRoute(for url: URL) throws -> AdoptRoute? {
+        let file = adoptRouteURL(for: url)
+        guard FileManager.default.fileExists(atPath: file.path) else { return nil }
+        return AdoptRoute(rawValue: String(decoding: try Data(contentsOf: file), as: UTF8.self))
+    }
+
+    private static func adoptRouteURL(for url: URL) -> URL {
+        url.appendingPathExtension("adopt-route")
     }
 }

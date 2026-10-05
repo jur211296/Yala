@@ -286,6 +286,10 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     /// también lo está, y tras relanzar el espejo puede no volver a emitir un import que lo encienda. Un kill a mitad deja que
     /// la pasada siguiente juzgue lo que haya llegado, que es el residual (c) de siempre del import-lag.
     private var adoptICloudCorpusFound = false
+    /// Por qué camino decidió ESTA pasada del reconcile que podía entrar, visto desde iCloud (lo pone el paso 0-bis). Viaja al
+    /// registro del adopt con lo que el backend conocía, para el canario del drain tras el remonte (ticket
+    /// `adopt-window-uploads-what-reaches-the-mirror-after-the-icloud-check`). `nil` al empezar cada pasada.
+    private var adoptEntryRoute: RelayIdentityLedger.AdoptRoute?
     /// C-1: ¿hay cuenta iCloud? El MISMO predicado que gobierna el montaje del store
     /// (`SwiftDataConfiguration.isICloudAvailable()`), a propósito — introducir aquí
     /// `CKContainer.accountStatus()` (0 usos en el repo) crearía una segunda verdad que podría discrepar del
@@ -2124,6 +2128,7 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         // Merkle en cada reintento —el re-kick de Almacenamiento llega cada 30 s—. Solo es la puerta: el plan preliminar
         // se vuelve a leer DESPUÉS de la enumeración, porque el guard de abajo compara el backend con lo que hay ahora, y
         // lo creado o importado mientras se enumeraba también cuenta (hallazgo de la review).
+        adoptEntryRoute = nil
         let localInventory: [(table: String, syncID: UUID?)]
         do {
             localInventory = try collectAdoptInventory()
@@ -2253,7 +2258,7 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         // (`abortedEmptyBackend`) sale antes y no siembra: sin filas en el backend no hay identidad que el espejo pueda pisar.
         // Con él va lo que el backend conoce, para que el drain no traduzca lo que el espejo importe de esas filas hasta el
         // remonte (ticket `adopt-window-late-imports-overwrite-newer-cloud-edits`).
-        pinAdoptedIdentities(backendKnown: backendSyncIDs)
+        pinAdoptedIdentities(backendKnown: backendSyncIDs, route: adoptEntryRoute)
 
         // El relevo del marcador, en UN sitio y solo si el adopt terminó (ticket
         // `markerless-adopt-stays-blocked-while-another-device-writes-to-the-account`): después de guardar identidades y
@@ -2453,17 +2458,30 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     ///   dejaba el resto para el primer drain tras relanzar.
     /// - Con filas que piden linaje y sin un `.found` pendiente, no pregunta: decide la guarda como siempre, con el
     ///   import-lag que ya tenía (residual (c) del reconcile).
+    ///
+    /// Cada salida que deja seguir apunta su camino (`adoptEntryRoute`): es lo que el canario del drain tras el remonte pega a
+    /// las altas que el backend no conocía (ticket `adopt-window-uploads-what-reaches-the-mirror-after-the-icloud-check`).
     private func awaitICloudCorpusIfNotLocal(_ inventory: [(table: String, syncID: UUID?)]) async -> AdoptReconcileOutcome? {
-        guard adoptMirrorAttached() else { return nil }
+        guard adoptMirrorAttached() else {
+            adoptEntryRoute = .noMirror
+            return nil
+        }
         if adoptICloudCorpusFound && !adoptImportSettled() {
             CloudSyncBreadcrumb.adoptReconcileAwaitingICloudCorpus(reason: "importNotSettled")
             return .awaitingICloudCorpus
         }
-        guard !Self.adoptInventoryHasLineageRows(inventory) else { return nil }
+        guard !Self.adoptInventoryHasLineageRows(inventory) else {
+            adoptEntryRoute = adoptICloudCorpusFound ? .found : .lineageRows
+            return nil
+        }
         let check = await adoptICloudCorpusCheck()
         MetricsService.cloudAdoptICloudCorpusChecked(outcome: check.canaryDetail)
         switch check {
-        case .none, .noAccount:
+        case .none:
+            adoptEntryRoute = RelayIdentityLedger.AdoptRoute.none
+            return nil
+        case .noAccount:
+            adoptEntryRoute = .noAccount
             return nil
         case .found(let recordType):
             adoptICloudCorpusFound = true
@@ -2952,7 +2970,12 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     ///
     /// Best-effort, como la siembra de la ida: sin registro todo sigue como antes del ticket, y parar el adopt por esta red
     /// (un disco lleno) sería peor que el daño que cubre. Deja rastro.
-    private func pinAdoptedIdentities(backendKnown: Set<UUID>) {
+    ///
+    /// Y con ella, el camino por el que entró esta pasada (`route`, del paso 0-bis): el canario del drain lo pega a las altas
+    /// que el backend no conocía (ticket `adopt-window-uploads-what-reaches-the-mirror-after-the-icloud-check`). Sin camino, o
+    /// sin poder escribirlo, el canario dice `unknown`; un camino de una pasada ANTERIOR no puede quedarse, porque lo quita la
+    /// misma siembra que quita la lista.
+    private func pinAdoptedIdentities(backendKnown: Set<UUID>, route: RelayIdentityLedger.AdoptRoute?) {
         var pairs: [(id: PersistentIdentifier, row: SyncIdentity)] = []
         do {
             var rowsBySyncID: [UUID: SyncIdentity] = [:]
@@ -2990,6 +3013,14 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
             } catch {
                 CloudSyncBreadcrumb.relayIdentityLedgerUnavailable(step: "adopt-backend-known",
                                                                    errorType: String(describing: type(of: error)))
+            }
+            if let route {
+                do {
+                    try RelayIdentityLedger.writeAdoptRoute(route, for: relayIdentityLedgerURL)
+                } catch {
+                    CloudSyncBreadcrumb.relayIdentityLedgerUnavailable(step: "adopt-route",
+                                                                       errorType: String(describing: type(of: error)))
+                }
             }
         } catch {
             CloudSyncBreadcrumb.relayIdentityLedgerUnavailable(step: "adopt-mark", errorType: String(describing: type(of: error)))
