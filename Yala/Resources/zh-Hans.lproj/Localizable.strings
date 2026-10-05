@@ -6427,3 +6427,21 @@
 
 /* Current user after a preposition: Paid by <you> */
 "groups.member.youObject" = "你";
+
+/* Dialog title: activating the cloud while an iCloud deletion the user asked for has not finished */
+"storage.pendingICloudWipe.title" = "有一项删除尚未完成";
+
+/* Dialog body: the cloud cannot finish that deletion; activating now cancels it */
+"storage.pendingICloudWipe.body" = "你曾要求从头开始并删除 iCloud 中的数据，但删除尚未完成。如果启用云端，删除将被取消，未删除的数据可能会进入你的 Yala 账户。如果你等待，一切不变，删除仍处于待完成状态。";
+
+/* Dialog button: activate the cloud and cancel the pending iCloud deletion */
+"storage.pendingICloudWipe.proceed" = "启用云端但不删除";
+
+/* Dialog cancel button: do not activate the cloud, keep the pending iCloud deletion */
+"storage.pendingICloudWipe.wait" = "暂不";
+
+/* Sheet title on launch in cloud mode: a pending iCloud deletion was cancelled */
+"welcome.privateICloud.cancelledInCloudTitle" = "一项删除未完成";
+
+/* Sheet body: the deletion did not finish before the cloud was activated and will not happen */
+"welcome.privateICloud.cancelledInCloudBody" = "你曾要求从头开始并删除 iCloud 中的数据，但在你的数据转入云端前删除没有完成，之后也不会再进行。部分你想删除的数据可能仍在 iCloud 中，或已转入你的 Yala 账户。";

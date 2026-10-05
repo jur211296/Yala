@@ -260,6 +260,9 @@ final class DataWipeService {
         // el onboarding nuevo, el arranque ofrecía «Terminar de borrar» sobre el corpus recién creado (review adversarial
         // del 2026-09-26, ticket `late-icloud-notice-exit-after-a-failed-wipe-leaves-the-blind-resume-armed`).
         StorageModePersistence.clearICloudCorpusWipeLeftHalfway()
+        // Y el aviso de un borrado de iCloud cancelado en la nube que aún no se enseñó, por lo mismo: dice que algo de lo
+        // que la persona iba a borrar puede seguir en su cuenta, y con las filas fuera ya no es verdad.
+        StorageModePersistence.clearICloudCorpusWipeCancelledInCloudNotice()
         // Y el «no pudimos preparar este teléfono» de la puerta de Grupos, por lo mismo que su vecina: con las filas fuera,
         // la puerta que venga después no tiene nada que no pudiera borrar, y `cloudSync.*` la saca del barrido.
         GroupsGateWipeFailureMarker.clear()

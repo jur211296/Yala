@@ -582,6 +582,15 @@ struct FullModeActivationView: View {
         // reanudaría A CIEGAS —con el borrado local incluido— sobre el corpus que la persona acaba de crear o de
         // restaurar, y la mandaría al Welcome. A estas alturas la persona ya eligió dónde viven sus datos, que es
         // lo que deja sin efecto una petición de borrado anterior.
+        //
+        // **Si la activación llegó a la nube, se retira igual pero se CUENTA** (ticket
+        // `late-wipe-arm-is-dropped-silently-when-the-device-moves-to-the-cloud`): aquí no hubo diálogo de Ajustes, y el
+        // arranque en la nube ya no encontraría nada que contar. La marca del aviso va antes de retirar, y la lee ese
+        // arranque (`.tellCancelledInCloud`). En la rama privada la persona eligió quedarse en su iCloud y retirar a secas
+        // sigue siendo lo correcto.
+        if CloudSyncFlags.storageMode == .cloud {
+            StorageModePersistence.cancelPendingICloudCorpusWipeInTheCloud()
+        }
         StorageModePersistence.clearICloudCorpusWipeArm()
         // **Y el borrado que quedó a medias, por lo mismo y por algo peor** (ticket
         // `private-gate-leave-after-a-halfway-wipe-forgets-the-zone`). Mientras la sesión es solo-grupos, el aviso tardío

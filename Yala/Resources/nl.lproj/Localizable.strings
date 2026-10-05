@@ -6427,3 +6427,21 @@
 
 /* Current user after a preposition: Paid by <you> */
 "groups.member.youObject" = "jou";
+
+/* Dialog title: activating the cloud while an iCloud deletion the user asked for has not finished */
+"storage.pendingICloudWipe.title" = "Een verwijdering is niet klaar";
+
+/* Dialog body: the cloud cannot finish that deletion; activating now cancels it */
+"storage.pendingICloudWipe.body" = "Je wilde opnieuw beginnen en je iCloud-gegevens verwijderen, en dat is nog niet klaar. Als je de cloud inschakelt, wordt het geannuleerd en kan wat niet is verwijderd in je Yala-account terechtkomen. Als je wacht, verandert er niets en blijft het verwijderen openstaan.";
+
+/* Dialog button: activate the cloud and cancel the pending iCloud deletion */
+"storage.pendingICloudWipe.proceed" = "Cloud inschakelen zonder te verwijderen";
+
+/* Dialog cancel button: do not activate the cloud, keep the pending iCloud deletion */
+"storage.pendingICloudWipe.wait" = "Niet nu";
+
+/* Sheet title on launch in cloud mode: a pending iCloud deletion was cancelled */
+"welcome.privateICloud.cancelledInCloudTitle" = "Een verwijdering is niet afgerond";
+
+/* Sheet body: the deletion did not finish before the cloud was activated and will not happen */
+"welcome.privateICloud.cancelledInCloudBody" = "Je wilde opnieuw beginnen en je iCloud-gegevens verwijderen, maar dat was nog niet klaar toen je gegevens naar de cloud gingen, en het gebeurt nu niet meer. Een deel van wat je wilde verwijderen kan nog in iCloud staan of naar je Yala-account zijn gegaan.";

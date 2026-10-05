@@ -5450,6 +5450,11 @@ enum L10n {
             static var leftHalfwayTitle: String { ls("welcome.privateICloud.leftHalfwayTitle", comment: "") }
             static var leftHalfwayBody: String { ls("welcome.privateICloud.leftHalfwayBody", comment: "") }
             static var leftHalfwayFinish: String { ls("welcome.privateICloud.leftHalfwayFinish", comment: "") }
+            /// **Un borrado de iCloud pendiente se canceló al activar la nube** (ticket
+            /// `late-wipe-arm-is-dropped-silently-when-the-device-moves-to-the-cloud`). Lo enseña el arranque en la nube una
+            /// vez. Vale para el borrado armado y para el que quedó a medias, así que no afirma qué queda en iCloud.
+            static var cancelledInCloudTitle: String { ls("welcome.privateICloud.cancelledInCloudTitle", comment: "") }
+            static var cancelledInCloudBody: String { ls("welcome.privateICloud.cancelledInCloudBody", comment: "") }
             /// El «¿seguro?» de «Terminar de borrar»: dice qué se va (lo que queda en el teléfono, también lo nuevo).
             static var leftHalfwayConfirmBody: String {
                 ls("welcome.privateICloud.leftHalfwayConfirmBody", comment: "")
@@ -7636,6 +7641,17 @@ enum L10n {
             // El efecto del adopt que no pudo comprobar que los datos de este dispositivo vengan de esa cuenta (ticket
             // `adopt-uploads-a-foreign-corpus-without-a-lineage-check`). No subió nada, y lo dice.
             static var adoptEffectLineageUnproven: String { ls("storage.failed.adoptEffectLineageUnproven", comment: "") }
+        }
+
+        /// **Activar la nube con un borrado de iCloud pendiente** (ticket
+        /// `late-wipe-arm-is-dropped-silently-when-the-device-moves-to-the-cloud`). La nube no puede terminar ese borrado:
+        /// el diálogo deja elegir entre esperar y activarla sin borrar. El cuerpo no afirma qué queda dónde —el borrado
+        /// armado y el que quedó a medias dejan cosas distintas—, por eso dice «puede».
+        enum PendingICloudWipe {
+            static var title: String { ls("storage.pendingICloudWipe.title", comment: "") }
+            static var body: String { ls("storage.pendingICloudWipe.body", comment: "") }
+            static var proceed: String { ls("storage.pendingICloudWipe.proceed", comment: "") }
+            static var wait: String { ls("storage.pendingICloudWipe.wait", comment: "") }
         }
 
         enum Confirm {

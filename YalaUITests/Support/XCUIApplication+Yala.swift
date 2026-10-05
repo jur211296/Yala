@@ -43,6 +43,7 @@ extension XCUIApplication {
         groupsOutboxPending: Bool = false,
         groupsAttestTerminal: Bool = false,
         fakeAttestSupport: Bool = false,
+        pendingICloudWipe: Bool = false,
         fakeMigrationIdentity: String? = nil,
         pendingMigrationBlock: String? = nil,
         migrationJournalUnreadable: Bool = false,
@@ -136,6 +137,11 @@ extension XCUIApplication {
         // el test que prueba la condición va con `-uitest-cloud-chooser` y SIN este arg, así que un typo aquí dejaría a los
         // positivos cayendo con un rojo que culpa a la pantalla. Su nombre lo fija un test de paridad con `UITestHooks`.
         if fakeAttestSupport { args.append("-uitest-fake-attest-support") }
+        // Un borrado de iCloud pendiente, visto solo por la tarjeta de la nube de Ajustes. NOMBRADO por lo mismo que sus
+        // vecinos: un typo dejaría la tarjeta sin borrado pendiente, el toque iría directo al consentimiento y el caso
+        // positivo caería culpando al diálogo. Su nombre lo fija un test de paridad con `UITestHooks`
+        // (`PendingICloudWipeMigrationWiringTests`).
+        if pendingICloudWipe { args.append("-uitest-pending-icloud-wipe") }
         // La respuesta fingida de la puerta de identidad de «Migrar a la nube» (`personalData` o `proceed`). NOMBRADO por lo
         // mismo que sus vecinos: un typo en el arg dejaría la puerta preguntando de verdad, la comprobación no podría (sin
         // sesión real) y el flujo seguiría al consentimiento, un rojo que culparía a la hoja. Su nombre y sus valores los

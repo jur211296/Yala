@@ -6427,3 +6427,21 @@
 
 /* Current user after a preposition: Paid by <you> */
 "groups.member.youObject" = "ciebie";
+
+/* Dialog title: activating the cloud while an iCloud deletion the user asked for has not finished */
+"storage.pendingICloudWipe.title" = "Usuwanie nie zostało dokończone";
+
+/* Dialog body: the cloud cannot finish that deletion; activating now cancels it */
+"storage.pendingICloudWipe.body" = "Poprosiłeś o zaczęcie od zera i usunięcie danych z iCloud, a usuwanie jeszcze się nie zakończyło. Jeśli włączysz chmurę, zostanie anulowane, a to, czego nie usunięto, może trafić na Twoje konto Yala. Jeśli poczekasz, nic się nie zmieni i usuwanie pozostanie w toku.";
+
+/* Dialog button: activate the cloud and cancel the pending iCloud deletion */
+"storage.pendingICloudWipe.proceed" = "Włącz chmurę bez usuwania";
+
+/* Dialog cancel button: do not activate the cloud, keep the pending iCloud deletion */
+"storage.pendingICloudWipe.wait" = "Nie teraz";
+
+/* Sheet title on launch in cloud mode: a pending iCloud deletion was cancelled */
+"welcome.privateICloud.cancelledInCloudTitle" = "Usuwanie nie zostało dokończone";
+
+/* Sheet body: the deletion did not finish before the cloud was activated and will not happen */
+"welcome.privateICloud.cancelledInCloudBody" = "Poprosiłeś o zaczęcie od zera i usunięcie danych z iCloud, ale usuwanie nie zakończyło się, zanim Twoje dane przeszły do chmury, i już nie nastąpi. Część tego, co chciałeś usunąć, może nadal być w iCloud lub trafić na Twoje konto Yala.";

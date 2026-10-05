@@ -26,6 +26,13 @@ paths:
 
 ## Gotchas de vistas
 
+- **Un `.confirmationDialog` colgado de un BOTÓN no pinta el `Button(role: .cancel)` en iOS 26 (medido el 2026-10-04,
+  iPhone 17 Pro, iOS 27.0).** Sale anclado al botón y la salida de cancelar no aparece: `app.sheets.buttons[id]`
+  no la encuentra y la persona solo puede tocar fuera. Los diálogos colgados de la raíz de la pantalla
+  (`StorageConfirmations`) no tienen ese problema. ⇒ si la opción de «no hacer nada» tiene que verse —porque es
+  una decisión sobre datos—, dale un `Button` normal sin rol, o cuelga el diálogo de la raíz. Molde:
+  `StorageSettingsView`, diálogo del borrado de iCloud pendiente (`PendingICloudWipeMigrationUITests`).
+
 - **Cancelar una tarea que crea un `onChange` ANTES de cambiar su valor no la cancela (medido 2026-09-30).** El
   `onChange` corre en el render SIGUIENTE a la escritura, cuando el `cancel()` ya pasó, y la tarea nace después.
   Mordió en la gracia de 5 s del aviso de vaciado remoto de `ContentView`: los borrados deliberados la «cancelaban»

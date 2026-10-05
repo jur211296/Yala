@@ -66,6 +66,13 @@ final class UITestHooks {
     /// fingiera las dos cosas a la vez dejaría ciegos a todos sus tests (`.claude/rules/testing.md`). Solo DEBUG.
     nonisolated static var fakeAttestSupport: Bool { hasArg("-uitest-fake-attest-support") }
 
+    /// `-uitest-pending-icloud-wipe`: finge que la persona pidió borrar su iCloud y el borrado no ha terminado, **solo en
+    /// la tarjeta de «¿Dónde viven tus datos?»** (`StorageSettingsView.hasPendingICloudWipe`; ticket
+    /// `late-wipe-arm-is-dropped-silently-when-the-device-moves-to-the-cloud`). Finge la ENTRADA, no la decisión: el
+    /// diálogo y lo que hace cada botón son los de producción. No escribe el arm de verdad porque el arranque del XCUITest
+    /// lo reanudaría (`ContentView.runLateICloudMirrorCheck`) y borraría la semilla. Solo DEBUG.
+    nonisolated static var fakePendingICloudWipe: Bool { hasArg("-uitest-pending-icloud-wipe") }
+
     /// Valor de `-uitest-fake-beacon <apple|google|…>`: finge que el faro de iCloud-KV dice que este Apple ID
     /// YA tiene una cuenta en la nube creada con ese método (el `#if DEBUG` vive en las lecturas de
     /// `CloudBeacon`). Existe para el XCUITest de «Crear otra cuenta» (ticket

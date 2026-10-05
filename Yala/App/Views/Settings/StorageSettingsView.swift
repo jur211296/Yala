@@ -41,6 +41,16 @@ struct StorageSettingsView: View {
     /// One-shot del belt del chooser (C-7): el sheet se presentó con sesión viva y se cerró solo;
     /// el `onDismiss` arranca con `.reuseLiveSession`. Cancel/drag-dismiss no lo quema → no-op.
     @State private var reuseLiveSession = false
+    /// **El diálogo del borrado de iCloud pendiente** (ticket
+    /// `late-wipe-arm-is-dropped-silently-when-the-device-moves-to-the-cloud`). Sale al tocar «Activar la nube» o
+    /// «Activar en este dispositivo» si la persona pidió borrar su iCloud y el borrado no terminó: en la nube ya no se
+    /// puede terminar, así que se le pregunta en vez de retirarlo en silencio en el arranque.
+    @State private var confirmPendingICloudWipe = false
+    /// «Activar la nube sin borrar» de ESTE intento. Lo convierte en la renuncia durable `startActivation`, cuando la
+    /// migración arranca —echarse atrás antes, en el consentimiento o las confirmaciones, no deja nada—, y la renuncia no
+    /// retira el borrado: lo retira el arranque en la nube si el dispositivo llega (`retireWaivedInCloud`). Cada toque del
+    /// botón lo baja antes de volver a mirar.
+    @State private var pendingICloudWipeWaived = false
     @State private var confirmMigrate1 = false
     @State private var confirmMigrate2 = false
     @State private var confirmRevert1 = false
@@ -179,6 +189,11 @@ struct StorageSettingsView: View {
         }
         .onChange(of: controller?.canStopWaitingForLeader) { _, waiting in
             if waiting != true { confirmStopWaiting = false }
+        }
+        // Y el diálogo del borrado pendiente, que cuelga del botón de la tarjeta: si la tarjeta se va con él abierto —sale
+        // de `.idle` o se cierra la entrada—, no puede reaparecer solo cuando vuelva.
+        .onChange(of: showsMigrateCard) { _, shown in
+            if !shown { confirmPendingICloudWipe = false }
         }
     }
 
@@ -341,22 +356,82 @@ struct StorageSettingsView: View {
                 isDisabled: controller.isWorking || isBlockedOtherAccount(decision),
                 isLoading: controller.isCheckingMigrationIdentity
             ) {
-                consentPath = isAdopt ? .adopt : .migration
-                // Con sesión viva, «Migrar» pregunta por la cuenta ANTES del consentimiento y de las dos confirmaciones
-                // (Jürgen, 2026-09-16). Sin sesión hay que firmar primero, y la comprobación va entre firmar y el claim.
-                guard !isAdopt, case .reuseLiveSession = decision else {
-                    showConsent = true
+                // **Un borrado de iCloud pendiente se pregunta ANTES que todo lo demás**: es lo único de esta cadena que
+                // la nube no puede deshacer después, y la persona tiene que elegir con él delante. Sin borrado pendiente,
+                // la cadena de siempre.
+                pendingICloudWipeWaived = false
+                guard !hasPendingICloudWipe else {
+                    confirmPendingICloudWipe = true
                     return
                 }
-                Task {
-                    guard await controller.preflightMigrationIdentity() else { return }
-                    showConsent = true
-                }
+                beginActivation(controller, isAdopt: isAdopt)
             }
             .accessibilityIdentifier("storage_migrate_button")
+            .confirmationDialog(L10n.Storage.PendingICloudWipe.title,
+                                isPresented: $confirmPendingICloudWipe, titleVisibility: .visible) {
+                Button(L10n.Storage.PendingICloudWipe.proceed) {
+                    // El botón de la tarjeta pudo deshabilitarse con el diálogo abierto: no se arranca encima.
+                    guard !controller.isWorking else { return }
+                    pendingICloudWipeWaived = true
+                    beginActivation(controller, isAdopt: isAdopt)
+                }
+                .accessibilityIdentifier("storage_pending_icloud_wipe_proceed")
+                // «Ahora no» deja el borrado como estaba y retira una renuncia de un intento anterior que no llegó a la
+                // nube. **Sin `role: .cancel`, a propósito**: en iOS 26 el diálogo anclado al botón no pinta el de
+                // cancelar, y la única salida visible sería tocar fuera (medido con el XCUITest de esta pantalla).
+                Button(L10n.Storage.PendingICloudWipe.wait) {
+                    StorageModePersistence.clearICloudCorpusWipeWaiver()
+                }
+                .accessibilityIdentifier("storage_pending_icloud_wipe_wait")
+            } message: {
+                Text(L10n.Storage.PendingICloudWipe.body)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .storageCardStyle()
+    }
+
+    /// La tarjeta de la nube está en pantalla: la misma condición que el `if` de `case .idle`.
+    private var showsMigrateCard: Bool {
+        controller?.uiState == .idle && offersCloudMigrationEntry
+    }
+
+    /// ¿La persona pidió borrar su iCloud y el borrado no ha terminado? Armado o a medias, leído en vivo.
+    /// `-uitest-pending-icloud-wipe` finge la ENTRADA —el estado real arrancaría el borrado en el propio arranque del
+    /// XCUITest—; el diálogo, lo que hace cada botón y el retiro al arrancar la migración son los de producción.
+    private var hasPendingICloudWipe: Bool {
+        UITestHooks.fakePendingICloudWipe || StorageModePersistence.hasPendingICloudCorpusWipe()
+    }
+
+    /// El toque de «Activar la nube» / «Activar en este dispositivo», una vez resuelto el borrado pendiente. Es la cadena
+    /// de siempre: con sesión viva, «Migrar» pregunta por la cuenta ANTES del consentimiento y de las dos confirmaciones
+    /// (Jürgen, 2026-09-16); sin sesión hay que firmar primero, y la comprobación va entre firmar y el claim.
+    /// `isAdopt` es la cara de la tarjeta del render que pintó el botón o el diálogo; la decisión de sesión se relee viva.
+    private func beginActivation(_ controller: CloudMigrationController, isAdopt: Bool) {
+        consentPath = isAdopt ? .adopt : .migration
+        let decision = signInDecision(isAdopt: isAdopt)
+        guard !isAdopt, case .reuseLiveSession = decision else {
+            showConsent = true
+            return
+        }
+        Task {
+            guard await controller.preflightMigrationIdentity() else { return }
+            showConsent = true
+        }
+    }
+
+    /// **El único sitio que arranca la migración o el adopt desde esta pantalla.** Si la persona eligió «Activar la nube
+    /// sin borrar», aquí se apunta la renuncia durable (`waivePendingICloudCorpusWipeForTheCloud`). **No se retira el
+    /// borrado**: entre aquí y el cutover la migración puede volver a iCloud por media docena de salidas, y retirarlo
+    /// aquí lo perdía en silencio en todas (review adversarial del 2026-10-04). Lo retira el arranque en la nube, sin
+    /// contarlo; si el intento acaba sin nube, la renuncia caduca y se vuelve a preguntar.
+    private func startActivation(_ path: CloudMigrationController.ConsentPath,
+                                 _ plan: CloudMigrationController.SignInPlan) {
+        if pendingICloudWipeWaived {
+            pendingICloudWipeWaived = false
+            StorageModePersistence.waivePendingICloudCorpusWipeForTheCloud()
+        }
+        Task { await controller?.startMigration(consentPath: path, signIn: plan) }
     }
 
     // MARK: - Revert card
@@ -914,7 +989,7 @@ struct StorageSettingsView: View {
         let path = consentPath
         switch signInDecision(isAdopt: path == .adopt) {
         case .reuseLiveSession:
-            Task { await controller?.startMigration(consentPath: path, signIn: .reuseLiveSession) }
+            startActivation(path, .reuseLiveSession)
         case .askProvider:
             showSignInChooser = true
         case .blockedOtherAccount:
@@ -994,12 +1069,12 @@ struct StorageSettingsView: View {
         if reuseLiveSession {
             reuseLiveSession = false
             chosenProvider = nil          // el belt gana: jamás arrastrar una elección previa
-            Task { await controller?.startMigration(consentPath: path, signIn: .reuseLiveSession) }
+            startActivation(path, .reuseLiveSession)
             return
         }
         guard let provider = chosenProvider else { return }
         chosenProvider = nil
-        Task { await controller?.startMigration(consentPath: path, signIn: .authenticateWith(provider)) }
+        startActivation(path, .authenticateWith(provider))
     }
 }
 

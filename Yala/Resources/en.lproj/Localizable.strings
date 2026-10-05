@@ -6421,3 +6421,21 @@
 
 /* Current user after a preposition: Paid by <you> */
 "groups.member.youObject" = "you";
+
+/* Dialog title: activating the cloud while an iCloud deletion the user asked for has not finished */
+"storage.pendingICloudWipe.title" = "You have a deletion that didn't finish";
+
+/* Dialog body: the cloud cannot finish that deletion; activating now cancels it */
+"storage.pendingICloudWipe.body" = "You asked to start fresh and delete your iCloud data, and the deletion hasn't finished yet. If you turn on the cloud, that deletion is cancelled and whatever wasn't deleted may end up in your Yala account. If you wait, nothing changes and the deletion stays pending.";
+
+/* Dialog button: activate the cloud and cancel the pending iCloud deletion */
+"storage.pendingICloudWipe.proceed" = "Turn on the cloud without deleting";
+
+/* Dialog cancel button: do not activate the cloud, keep the pending iCloud deletion */
+"storage.pendingICloudWipe.wait" = "Not now";
+
+/* Sheet title on launch in cloud mode: a pending iCloud deletion was cancelled */
+"welcome.privateICloud.cancelledInCloudTitle" = "A deletion didn't finish";
+
+/* Sheet body: the deletion did not finish before the cloud was activated and will not happen */
+"welcome.privateICloud.cancelledInCloudBody" = "You asked to start fresh and delete your iCloud data, but the deletion didn't finish before your data moved to the cloud, and it won't happen now. Some of what you meant to delete may still be in iCloud or may have moved to your Yala account.";

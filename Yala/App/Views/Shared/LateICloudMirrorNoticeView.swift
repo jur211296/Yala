@@ -71,6 +71,7 @@ struct LateICloudMirrorNoticeView: View {
         switch notice {
         case .corpus: _phase = State(initialValue: .notice)
         case .wipeLeftHalfway: _phase = State(initialValue: .leftHalfway)
+        case .wipeCancelledInCloud: _phase = State(initialValue: .cancelledInCloud)
         }
     }
 
@@ -90,6 +91,10 @@ struct LateICloudMirrorNoticeView: View {
         /// `fresh-start-has-no-way-out-when-group-writes-can-never-upload`): solo desde un `.groupsPending` cuyo motivo
         /// ofrece la salida, con el mismo bloqueo dentro para volver a él sin re-medir.
         case confirmingGroupsLoss(CloudSessionSignOut.FreshStartGroupsBlock)
+        /// Un borrado de iCloud que la persona pidió se canceló al activar la nube (ticket
+        /// `late-wipe-arm-is-dropped-silently-when-the-device-moves-to-the-cloud`). Solo informa: el borrado ya se retiró
+        /// en el arranque, y en la nube no hay nada que ofrecer terminar —se llevaría los datos de la cuenta—.
+        case cancelledInCloud
     }
 
     var body: some View {
@@ -114,6 +119,10 @@ struct LateICloudMirrorNoticeView: View {
                             // 2026-09-26).
                             if isGroupsPending {
                                 leaveGroupsPending()
+                            } else if phase == .cancelledInCloud {
+                                // El aviso del borrado cancelado en la nube solo informa: `onKeep` retiraría un testigo
+                                // que no es suyo.
+                                dismiss()
                             } else if phase == .failed || phase == .leftHalfway || phase == .confirmingFinish {
                                 // Tras un fallo la barra es «luego», como «Dejarlo por ahora»: el arm ya se retiró al
                                 // entrar en la fase, y `onKeep` retiraría el testigo y el aviso no volvería a preguntar
@@ -130,6 +139,13 @@ struct LateICloudMirrorNoticeView: View {
             }
             // La fase conduce el trabajo, con cancelación real al desmontar (mismo criterio que la puerta).
             .task(id: phase) { await runPhase() }
+        }
+        // **El aviso del borrado cancelado se consume cuando la hoja MONTA**, no al pedirlo (regla 3 de presentaciones):
+        // si el anchor estaba ocupado o la app murió antes, la marca sigue y el arranque siguiente vuelve a contarlo.
+        .onAppear {
+            if notice == .wipeCancelledInCloud {
+                StorageModePersistence.clearICloudCorpusWipeCancelledInCloudNotice()
+            }
         }
         // Sin marcha atrás por swipe mientras se borra: el gesto interactivo desmontaría la vista con la
         // operación en vuelo, que es justo lo que el arm existe para no tener que adivinar.
@@ -247,6 +263,15 @@ struct LateICloudMirrorNoticeView: View {
                 primaryAction: { phase = .wiping },
                 destructive: L10n.Welcome.PrivateICloud.wipeFailedBack,
                 destructiveAction: leaveGroupsPending)
+        case .cancelledInCloud:
+            // Sin botón destructivo: no queda nada que decidir, solo que la persona lo sepa.
+            noticeBody(
+                icon: "icloud.slash",
+                title: L10n.Welcome.PrivateICloud.cancelledInCloudTitle,
+                body: L10n.Welcome.PrivateICloud.cancelledInCloudBody,
+                identifier: "late_icloud_cancelled_in_cloud",
+                primary: L10n.Common.understood,
+                primaryAction: { dismiss() })
         }
     }
 
@@ -280,13 +305,14 @@ struct LateICloudMirrorNoticeView: View {
     private var isGroupsPending: Bool {
         switch phase {
         case .groupsPending, .confirmingGroupsLoss: return true
-        case .notice, .confirming, .wiping, .failed, .leftHalfway, .confirmingFinish: return false
+        case .notice, .confirming, .wiping, .failed, .leftHalfway, .confirmingFinish, .cancelledInCloud: return false
         }
     }
 
     private func noticeBody(icon: String, title: String, body: String, identifier: String,
                             primary: String, primaryAction: @escaping () -> Void,
-                            destructive: String, destructiveAction: @escaping () -> Void) -> some View {
+                            destructive: String? = nil,
+                            destructiveAction: @escaping () -> Void = {}) -> some View {
         VStack(spacing: DS.Spacing.xl) {
             VStack(spacing: DS.Spacing.lg) {
                 Image(systemName: icon)
@@ -310,13 +336,15 @@ struct LateICloudMirrorNoticeView: View {
             VStack(spacing: DS.Spacing.sm) {
                 YalaPrimaryButton(primary) { primaryAction() }
                     .accessibilityIdentifier(identifier + "_primary")
-                Button(role: .destructive, action: destructiveAction) {
-                    Text(destructive)
-                        .font(DS.Typography.label)
-                        .frame(maxWidth: .infinity, minHeight: DS.Button.actionSize)
-                        .contentShape(Rectangle())
+                if let destructive {
+                    Button(role: .destructive, action: destructiveAction) {
+                        Text(destructive)
+                            .font(DS.Typography.label)
+                            .frame(maxWidth: .infinity, minHeight: DS.Button.actionSize)
+                            .contentShape(Rectangle())
+                    }
+                    .accessibilityIdentifier(identifier + "_destructive")
                 }
-                .accessibilityIdentifier(identifier + "_destructive")
             }
         }
     }

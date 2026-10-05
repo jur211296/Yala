@@ -1886,9 +1886,37 @@ struct ContentView: View {
         // `late-icloud-notice-exit-after-a-failed-wipe-leaves-the-blind-resume-armed`): la zona de iCloud ya no está, lo
         // del teléfono sí, y ella vio el fallo y salió. Eso no se termina a ciegas: se le pregunta. El arm gana si están
         // los dos, porque solo pasa cuando pulsó «Terminar de borrar» y un kill cortó ese intento.
+        //
+        // **Y con una migración a la nube en vuelo, el borrado pendiente se congela** (ticket
+        // `late-wipe-arm-is-dropped-silently-when-the-device-moves-to-the-cloud`): reanudarlo se llevaría lo que la ida está
+        // subiendo. «En reposo» es el MISMO predicado que la oferta del cambio de Apple ID y el cierre privado, y solo se
+        // paga con algo que decidir. Se espera al bootstrap antes de leerlo: sin el journal configurado la lectura dice
+        // `notStarted`, que es el lado que concede.
+        var migrationAtRest = true
+        if CloudSyncFlags.storageMode == .icloud,
+           StorageModePersistence.hasPendingICloudCorpusWipe()
+            || StorageModePersistence.isPendingICloudCorpusWipeWaivedForTheCloud() {
+            await waitForBootstrap()
+            guard !Task.isCancelled else { return }
+            migrationAtRest = AppleIDChangeCloseLogic.migrationAtRest(MigrationRestReading.live)
+        }
+        if WelcomePrivateICloudGateLogic.waiverLapses(
+            waivedForCloud: StorageModePersistence.isPendingICloudCorpusWipeWaivedForTheCloud(),
+            migrationAtRest: migrationAtRest, storageMode: CloudSyncFlags.storageMode) {
+            // El «Activar la nube sin borrar» terminó sin nube: la próxima vez se vuelve a preguntar.
+            StorageModePersistence.clearICloudCorpusWipeWaiver()
+        }
+        if WelcomePrivateICloudGateLogic.cancelledNoticeLapses(
+            noticePending: StorageModePersistence.isICloudCorpusWipeCancelledInCloudNoticePending(),
+            storageMode: CloudSyncFlags.storageMode) {
+            StorageModePersistence.clearICloudCorpusWipeCancelledInCloudNotice()
+        }
         switch WelcomePrivateICloudGateLogic.lateWipeLaunch(
             armed: StorageModePersistence.isICloudCorpusWipeArmed(),
             leftHalfway: StorageModePersistence.isICloudCorpusWipeLeftHalfway(),
+            cancelledInCloudNoticePending: StorageModePersistence.isICloudCorpusWipeCancelledInCloudNoticePending(),
+            waivedForCloud: StorageModePersistence.isPendingICloudCorpusWipeWaivedForTheCloud(),
+            migrationAtRest: migrationAtRest,
             storageMode: CloudSyncFlags.storageMode
         ) {
         case .none:
@@ -1897,8 +1925,12 @@ struct ContentView: View {
             // En la nube ni el arm ni la marca describen este store, y terminar ese borrado se llevaría los datos de la
             // cuenta y sus grupos. Se retiran los dos —el arm con su marca de zona— y sigue la comprobación de siempre,
             // que en la nube sale sola (no hay espejo).
-            StorageModePersistence.clearICloudCorpusWipeArm()
-            StorageModePersistence.clearICloudCorpusWipeLeftHalfway()
+            //
+            // **Pero no en silencio** (ticket `late-wipe-arm-is-dropped-silently-when-the-device-moves-to-the-cloud`): la
+            // persona pidió ese borrado y no se hizo. La marca del aviso se apunta ANTES de retirar —un kill entre medias
+            // no lo pierde— y la hoja la consume al montar. Por el router, como el resto de este aviso.
+            StorageModePersistence.cancelPendingICloudCorpusWipeInTheCloud()
+            RouterEntryGate.shared.submit(.presentLateICloudMirrorNotice(.wipeCancelledInCloud))
         case .askLeftHalfway:
             RouterEntryGate.shared.submit(.presentLateICloudMirrorNotice(.wipeLeftHalfway))
             return
@@ -1939,6 +1971,15 @@ struct ContentView: View {
             StorageModePersistence.clearICloudCorpusWipeLeftHalfway()
             StorageModePersistence.clearICloudCorpusWipeArm()
             settleAfterLateICloudWipe()
+            return
+        case .retireWaivedInCloud:
+            // La persona eligió «Activar la nube sin borrar» en Ajustes: ya lo sabe, se retira sin contarlo otra vez.
+            StorageModePersistence.retirePendingICloudCorpusWipeAsWaived()
+        case .tellCancelledInCloud:
+            // El borrado ya se retiró en un arranque anterior y la hoja no llegó a montar (un kill): se vuelve a contar.
+            RouterEntryGate.shared.submit(.presentLateICloudMirrorNotice(.wipeCancelledInCloud))
+        case .holdForMigration:
+            // Ni reanudar ni preguntar con la ida en vuelo; el borrado sigue pendiente para el arranque siguiente.
             return
         }
         let watching = StorageModePersistence.privateChoseWithoutICloud()

@@ -486,7 +486,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | late-remote-wipe-signal-also-wipes-rows-created-after-it | done | tickets/done/late-remote-wipe-signal-also-wipes-rows-created-after-it.md |
 | late-remote-wipe-signal-undoes-the-rows-the-origin-reconverged | done | tickets/done/late-remote-wipe-signal-undoes-the-rows-the-origin-reconverged.md |
 | late-remote-wipe-survivors-can-point-at-rows-the-origin-deleted | backlog | tickets/backlog/late-remote-wipe-survivors-can-point-at-rows-the-origin-deleted.md |
-| late-wipe-arm-is-dropped-silently-when-the-device-moves-to-the-cloud | backlog | tickets/backlog/late-wipe-arm-is-dropped-silently-when-the-device-moves-to-the-cloud.md |
+| late-wipe-arm-is-dropped-silently-when-the-device-moves-to-the-cloud | qa | tickets/qa/late-wipe-arm-is-dropped-silently-when-the-device-moves-to-the-cloud.md |
 | leader-displaced-after-the-cutover-pushes-its-residual-in-the-reconcile | done | tickets/done/leader-displaced-after-the-cutover-pushes-its-residual-in-the-reconcile.md |
 | leaving-and-reentering-restore-renews-the-hard-cap | done | tickets/done/leaving-and-reentering-restore-renews-the-hard-cap.md |
 | lineage-coverage-blocks-forever-after-a-row-deleted-during-the-wait | done | tickets/done/lineage-coverage-blocks-forever-after-a-row-deleted-during-the-wait.md |
