@@ -7029,6 +7029,326 @@ struct MigrationWorkExecutorTests {
         #expect(remounted.engine.drainOnce(context: remounted.context))
         #expect(try outboxUpserts(remounted.context).isSuperset(of: scene.skippedByTheFix))
     }
+
+    // MARK: - Lo que el espejo trae tras el chequeo del adopt y el backend NO conoce (ticket `adopt-window-uploads-what-reaches-the-mirror-after-the-icloud-check`)
+    //
+    // Canario, no política: el drain que cierra la ventana del adopt cuenta las altas que SUBE sin que el backend las
+    // conociera, por autor (espejo o este teléfono), el camino por el que entró el adopt y la clase (movimientos u otras).
+    // Lo que sale no cambia.
+
+    /// Arranca el spool de métricas aislado y devuelve cómo leer los canarios de altas sin linaje: `(detalle, cuántas)`.
+    /// Se llama JUSTO antes del drain, que es síncrono: entre un `await` y el drain otra suite podría resetear el servicio.
+    private func startUnprovenMetrics(_ prefix: String) -> () -> [(detail: String, count: Double)] {
+        let defaults = makeIsolatedDefaults(prefix: prefix)
+        MetricsService._testReset()
+        MetricsService.start(
+            client: MetricsClient(baseURL: URL(string: "https://gw.test")!, urlSession: MetricsDown()),
+            defaults: defaults)
+        return {
+            MetricsSpool.pending(defaults)
+                .filter { $0.e == "canary" && $0.n == "cloudAdoptLateImportUnproven" }
+                // El wire omite `x` cuando vale 1 (`MetricsEvent.canary`).
+                .map { (detail: $0.d ?? "", count: $0.x ?? 1) }
+        }
+    }
+
+    private func adoptRouteURL(_ dir: URL) -> URL { ledgerURL(dir).appendingPathExtension("adopt-route") }
+
+    /// Un movimiento como lo bajaría el espejo, con su identidad y sin cuenta.
+    private func mirrorTransaction(amount: Double, in context: ModelContext) -> UUID {
+        let tx = TransactionItem(date: fixedNow, amount: amount, currencyCode: "USD")
+        let id = UUID()
+        tx.syncID = id
+        context.insert(tx)
+        return id
+    }
+
+    /// **EL CASO DEL TICKET.** El adopt entra con el espejo adjunto y nada local que pida linaje, porque iCloud dijo que no
+    /// había nada (`none`) o que no había cuenta (`noAccount`). Después del chequeo el espejo baja dos categorías y un
+    /// movimiento de un corpus que el backend no conoce, y un tipo de cambio. Tras el remonte el primer drain SUBE todo (no
+    /// cambia) y el canario cuenta las tres altas que piden linaje, por clase y con su camino; el tipo de cambio no cuenta.
+    @Test("adopt: lo que el espejo baja tras el chequeo de iCloud y el backend no conoce sube y el canario lo cuenta con su camino")
+    func adoptLateImportUnproven_afterTheICloudCheck_countsWithItsRoute() async throws {
+        defer { MetricsService._testReset() }
+        for (answer, route) in [(ICloudAdoptCorpusCheck.none, "none"), (.noAccount, "noAccount")] {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let context = try makeContext(dir)
+            try seedBootstrapRates(in: context)
+            let stub = RoutingStub()
+            let source = try backend([("categories", UUID())], stub: stub)
+            let engine = CloudSyncEngine()
+            let executor = makeExecutor(context, engine, stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                        FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                        tombstoneSource: source(),
+                                        adoptMirrorAttached: { true }, adoptICloudCorpusCheck: { answer })
+            #expect(await executor.runAdoptOrphanReconcile() == .completed(uploaded: 1, identityAssigned: 1))
+            #expect(try RelayIdentityLedger.loadAdoptRoute(for: ledgerURL(dir))?.rawValue == route,
+                    "\(route): el reconcile deja el camino con la lista")
+            engine.fastForwardHistoryBaseline(context: context)
+
+            // Después del chequeo: el iPad del mismo Apple ID apunta algo, o se inicia sesión en un iCloud con años de datos.
+            let foreign = [UUID(), UUID()]
+            for (i, id) in foreign.enumerated() { _ = makeCategory("llegó después \(i)", syncID: id, in: context) }
+            let movement = mirrorTransaction(amount: 12.5, in: context)
+            let rate = try ExchangeRate(dateKey: "2026-09-26", base: "USD", ratesDictionary: ["EUR": 0.9])
+            let rateID = UUID()
+            rate.syncID = rateID
+            context.insert(rate)
+            try saveAsImported(context)
+            // Otra tanda del import, en otra transacción: la cuenta se suma entre transacciones.
+            let secondBatch = UUID()
+            _ = makeCategory("otra tanda", syncID: secondBatch, in: context)
+            try saveAsImported(context)
+
+            let remounted = try remount(dir)
+            #expect(remounted.engine.restoreAdoptedRelayIdentitiesIfPinned(context: remounted.context))
+            let canaries = startUnprovenMetrics("mwe.unproven.\(route)")
+            #expect(remounted.engine.drainOnce(context: remounted.context))
+            #expect(try outboxUpserts(remounted.context).isSuperset(of: Set(foreign + [movement, rateID, secondBatch])),
+                    "\(route): sube igual — canario, no política (y control: el tipo de cambio también se tradujo)")
+            let seen = canaries()
+            #expect(seen.map(\.detail) == ["mirror|\(route)|TransactionItem", "mirror|\(route)|other"],
+                    "\(route): por clase, con su camino, sin el tipo de cambio")
+            #expect(seen.map(\.count) == [1, 3], "\(route): el movimiento y las tres categorías, de dos tandas")
+        }
+    }
+
+    /// Las dos series y lo que NO cuenta, sobre la escena del ticket hermano (camino `noMirror`: el executor no declara el
+    /// espejo). Cuenta la que el espejo bajó y el backend no conoce (`mirror`) y la creada aquí en la ventana (`local`). No
+    /// cuentan las altas que el backend conocía (#250 ya no las sube), ni cambios ni borrados.
+    @Test("adopt: el canario cuenta por autor las altas que suben sin linaje y no las que el backend conocía")
+    func adoptLateImportUnproven_splitsByAuthorAndSkipsKnownRows() async throws {
+        defer { MetricsService._testReset() }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let scene = try await adoptThenLateImports(dir, stub: RoutingStub())
+        let remounted = try remount(dir)
+        #expect(remounted.engine.restoreAdoptedRelayIdentitiesIfPinned(context: remounted.context))
+        let canaries = startUnprovenMetrics("mwe.unproven.split")
+        #expect(remounted.engine.drainOnce(context: remounted.context))
+        #expect(try outboxUpserts(remounted.context).isSuperset(of: [scene.unknownImport, scene.createdHere]))
+        let seen = canaries()
+        #expect(seen.map(\.detail) == ["local|noMirror|other", "mirror|noMirror|other"])
+        #expect(seen.map(\.count) == [1, 1])
+    }
+
+    /// **Lo cazó la review.** Un re-anclaje del token relee un margen ANTERIOR al paso 3: lo que el espejo importó ahí no llegó
+    /// después del chequeo. Con el token roto, el primer drain sube las dos categorías (la de antes del ancla, por el margen)
+    /// y el canario cuenta solo la de después.
+    @Test("adopt: tras un re-anclaje del token, el canario no cuenta lo anterior al paso 3 aunque suba")
+    func adoptLateImportUnproven_ignoresWhatPrecedesTheBaseline() async throws {
+        defer { MetricsService._testReset() }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        try seedLeaderMarker(for: "sub-1", in: context)
+        let known = UUID()
+        _ = makeCategory("de la cuenta", syncID: known, in: context)
+        try saveAsImported(context)
+        let stub = RoutingStub()
+        let engine = CloudSyncEngine()
+        let executor = makeExecutor(context, engine, stub, FakeSession(token: "jwt", userID: "sub-1"), FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: try backend([("categories", known)], stub: stub)())
+        #expect(await executor.runAdoptOrphanReconcile() == .completed(uploaded: 0, identityAssigned: 0))
+        let before = UUID()
+        _ = makeCategory("antes del ancla", syncID: before, in: context)
+        try saveAsImported(context)
+        engine.fastForwardHistoryBaseline(context: context)
+        let after = UUID()
+        _ = makeCategory("después del ancla", syncID: after, in: context)
+        try saveAsImported(context)
+
+        // El token del cursor no se deja decodificar: la rama acotada relee desde el ancla menos el margen.
+        let cursor = try #require(try context.fetch(FetchDescriptor<SyncCursor>()).first)
+        #expect(cursor.lastDrainedTxAt != nil, "control: el paso 3 dejó el ancla")
+        context.author = CloudSyncEngine.outboxSaveAuthor
+        cursor.historyTokenData = Data("garbage-token".utf8)
+        try context.save()
+        context.author = nil
+
+        let remounted = try remount(dir)
+        #expect(remounted.engine.restoreAdoptedRelayIdentitiesIfPinned(context: remounted.context))
+        let canaries = startUnprovenMetrics("mwe.unproven.floor")
+        #expect(remounted.engine.drainOnce(context: remounted.context))
+        #expect(try outboxUpserts(remounted.context).isSuperset(of: [before, after]),
+                "control: el margen releyó la de antes del ancla y sube")
+        #expect(canaries().map(\.detail) == ["mirror|noMirror|other"])
+        #expect(canaries().map(\.count) == [1], "solo la de después del ancla")
+    }
+
+    /// Un alta que el códec rechaza no sube, y no cuenta: el canario dice lo que SUBE.
+    @Test("adopt: un alta que el códec rechaza no sube y el canario no la cuenta")
+    func adoptLateImportUnproven_skipsWhatTheCodecRejects() async throws {
+        defer { MetricsService._testReset() }
+        let dir = freshDir(); defer { cleanup(dir) }
+        _ = try await adoptThenLateImports(dir, stub: RoutingStub())
+        let context = try makeContext(dir)
+        let rejected = mirrorTransaction(amount: .infinity, in: context)
+        let accepted = mirrorTransaction(amount: 3, in: context)
+        try saveAsImported(context)
+        let remounted = try remount(dir)
+        #expect(remounted.engine.restoreAdoptedRelayIdentitiesIfPinned(context: remounted.context))
+        let canaries = startUnprovenMetrics("mwe.unproven.codec")
+        #expect(remounted.engine.drainOnce(context: remounted.context))
+        let upserts = try outboxUpserts(remounted.context)
+        #expect(upserts.contains(accepted) && !upserts.contains(rejected), "control: el códec la descartó")
+        #expect(canaries().filter { $0.detail == "mirror|noMirror|TransactionItem" }.map(\.count) == [1])
+    }
+
+    /// Un drain que guarda el outbox y muere antes del cursor no emite su canario. El siguiente re-lee la misma ventana y
+    /// vuelve a añadir sus filas (medido: el HLC lleva el reloj físico, no se deduplican): cuenta una vez.
+    @Test("adopt: tras un drain que muere antes del cursor, el siguiente cuenta las altas sin linaje una sola vez")
+    func adoptLateImportUnproven_countsOnceAfterADrainThatDiedBeforeTheCursor() async throws {
+        defer { MetricsService._testReset() }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let scene = try await adoptThenLateImports(dir, stub: RoutingStub())
+        let remounted = try remount(dir)
+        #expect(remounted.engine.restoreAdoptedRelayIdentitiesIfPinned(context: remounted.context))
+        let canaries = startUnprovenMetrics("mwe.unproven.replay")
+        remounted.engine._testThrowOnDrainCursorSave = true
+        #expect(!remounted.engine.drainOnce(context: remounted.context))
+        #expect(try outboxUpserts(remounted.context).contains(scene.unknownImport), "control: el outbox quedó guardado")
+        #expect(canaries().isEmpty, "control: la vuelta muerta no emitió")
+        remounted.engine._testThrowOnDrainCursorSave = false
+        #expect(remounted.engine.drainOnce(context: remounted.context))
+        #expect(canaries().map(\.detail) == ["local|noMirror|other", "mirror|noMirror|other"])
+        #expect(canaries().map(\.count) == [1, 1])
+    }
+
+    /// La ventana es la que cierra el primer drain tras la restauración del arranque. Sin esa marca no se cuenta; tras
+    /// retirarse, un alta nueva sube y no se cuenta; con la lista ilegible no se cuenta; sin el fichero del camino, `unknown`.
+    @Test("adopt: el canario de altas sin linaje cuenta solo en el drain que cierra la ventana, y sin camino dice unknown")
+    func adoptLateImportUnproven_windowBounds() async throws {
+        defer { MetricsService._testReset() }
+
+        // Sin la restauración del arranque (no hay marca de retirada): no cuenta.
+        do {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let scene = try await adoptThenLateImports(dir, stub: RoutingStub())
+            let remounted = try remount(dir)
+            let canaries = startUnprovenMetrics("mwe.unproven.nomark")
+            #expect(remounted.engine.drainOnce(context: remounted.context))
+            #expect(try outboxUpserts(remounted.context).contains(scene.unknownImport), "control: subió")
+            #expect(canaries().isEmpty, "sin la marca de retirada no hay ventana que cerrar")
+        }
+
+        // Con ella cuenta una vez; lo que llega después de retirarse sube y ya no cuenta.
+        do {
+            let dir = freshDir(); defer { cleanup(dir) }
+            _ = try await adoptThenLateImports(dir, stub: RoutingStub())
+            let remounted = try remount(dir)
+            #expect(remounted.engine.restoreAdoptedRelayIdentitiesIfPinned(context: remounted.context))
+            let canaries = startUnprovenMetrics("mwe.unproven.after")
+            #expect(remounted.engine.drainOnce(context: remounted.context))
+            #expect(canaries().count == 2, "control: la ventana contó")
+            #expect(!RelayIdentityLedger.hasAdoptBackendKnown(for: ledgerURL(dir)), "control: la ventana se retiró")
+            let later = UUID()
+            _ = makeCategory("después de la ventana", syncID: later, in: remounted.context)
+            try saveAsImported(remounted.context)
+            #expect(remounted.engine.drainOnce(context: remounted.context))
+            #expect(try outboxUpserts(remounted.context).contains(later), "control: subió")
+            #expect(canaries().count == 2, "retirada la ventana, no cuenta más")
+        }
+
+        // La lista ilegible: no sabe qué conocía el backend, no cuenta.
+        do {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let scene = try await adoptThenLateImports(dir, stub: RoutingStub())
+            try Data("no es json".utf8).write(to: ledgerURL(dir).appendingPathExtension("backend-known"))
+            let remounted = try remount(dir)
+            #expect(remounted.engine.restoreAdoptedRelayIdentitiesIfPinned(context: remounted.context))
+            let canaries = startUnprovenMetrics("mwe.unproven.unreadable")
+            #expect(remounted.engine.drainOnce(context: remounted.context))
+            #expect(try outboxUpserts(remounted.context).contains(scene.unknownImport), "control: subió")
+            #expect(canaries().isEmpty)
+        }
+
+        // Sin el fichero del camino (un build anterior, o su escritura falló): cuenta con `unknown`.
+        do {
+            let dir = freshDir(); defer { cleanup(dir) }
+            _ = try await adoptThenLateImports(dir, stub: RoutingStub())
+            #expect(FileManager.default.fileExists(atPath: adoptRouteURL(dir).path), "control: el camino estaba")
+            try FileManager.default.removeItem(at: adoptRouteURL(dir))
+            let remounted = try remount(dir)
+            #expect(remounted.engine.restoreAdoptedRelayIdentitiesIfPinned(context: remounted.context))
+            let canaries = startUnprovenMetrics("mwe.unproven.unknown")
+            #expect(remounted.engine.drainOnce(context: remounted.context))
+            #expect(canaries().map(\.detail) == ["local|unknown|other", "mirror|unknown|other"])
+        }
+    }
+
+    /// La agrupación del canario: por autor, camino y clase; suma tipos; descarta una clave mal formada.
+    @Test("adopt: el canario agrupa los conteos por autor, camino y clase")
+    func adoptLateImportUnproven_canaryGrouping() {
+        let grouped = CloudSyncEngine.adoptUnprovenCanaryDetails([
+            "TransactionItem|mirror|none": 4, "Category|mirror|none": 2, "Account|mirror|none": 1,
+            "Category|local|none": 3, "roto": 9,
+        ])
+        #expect(grouped == ["mirror|none|TransactionItem": 4, "mirror|none|other": 3, "local|none|other": 3])
+    }
+
+    /// El camino que deja cada salida del paso 0-bis que deja entrar: sin espejo, con filas que piden linaje, y tras esperar
+    /// al corpus que la sonda encontró.
+    @Test("adopt: el camino de entrada es noMirror, lineageRows o found según por dónde pasó el paso 0-bis")
+    func adoptLateImportUnproven_routeOfEachEntry() async throws {
+        // Espejo no adjunto.
+        let noMirrorDir = freshDir(); defer { cleanup(noMirrorDir) }
+        _ = try await adoptThenLateImports(noMirrorDir, stub: RoutingStub())
+        #expect(try RelayIdentityLedger.loadAdoptRoute(for: ledgerURL(noMirrorDir)) == .noMirror)
+
+        // Espejo adjunto y filas locales que piden linaje: no se pregunta a iCloud.
+        let lineageDir = freshDir(); defer { cleanup(lineageDir) }
+        let lineageContext = try makeContext(lineageDir)
+        try seedLeaderMarker(for: "sub-1", in: lineageContext)
+        let known = UUID()
+        _ = makeCategory("de la cuenta", syncID: known, in: lineageContext)
+        try lineageContext.save()
+        let lineageStub = RoutingStub()
+        let lineageSpy = ICloudCheckSpy(.none)
+        let lineageExecutor = makeExecutor(
+            lineageContext, CloudSyncEngine(), lineageStub, FakeSession(token: "jwt", userID: "sub-1"), FakeBeaconStore(),
+            personalStoreURL: lineageDir.appendingPathComponent("personal.sqlite"),
+            tombstoneSource: try backend([("categories", known)], stub: lineageStub)(),
+            adoptMirrorAttached: { true }, adoptICloudCorpusCheck: { await lineageSpy.ask() })
+        #expect(await lineageExecutor.runAdoptOrphanReconcile() == .completed(uploaded: 0, identityAssigned: 0))
+        #expect(lineageSpy.calls == 0, "control: no preguntó")
+        #expect(try RelayIdentityLedger.loadAdoptRoute(for: ledgerURL(lineageDir)) == .lineageRows)
+
+        // Espejo adjunto, sin nada local: la sonda encuentra corpus, se espera, llega y entra.
+        let foundDir = freshDir(); defer { cleanup(foundDir) }
+        let foundContext = try makeContext(foundDir)
+        try seedBootstrapRates(in: foundContext)
+        let foundStub = RoutingStub()
+        let accountID = UUID()
+        let foundSpy = ICloudCheckSpy(.found(recordType: "CD_Category"))
+        let foundExecutor = makeExecutor(
+            foundContext, CloudSyncEngine(), foundStub, FakeSession(token: "jwt", userID: "sub-1"), FakeBeaconStore(),
+            personalStoreURL: foundDir.appendingPathComponent("personal.sqlite"),
+            tombstoneSource: try backend([("categories", accountID)], stub: foundStub)(),
+            adoptMirrorAttached: { true }, adoptICloudCorpusCheck: { await foundSpy.ask() })
+        #expect(await foundExecutor.runAdoptOrphanReconcile() == .awaitingICloudCorpus)
+        _ = makeCategory("de la cuenta", syncID: accountID, in: foundContext)
+        try foundContext.save()
+        #expect(await foundExecutor.runAdoptOrphanReconcile() == .completed(uploaded: 1, identityAssigned: 1))
+        #expect(try RelayIdentityLedger.loadAdoptRoute(for: ledgerURL(foundDir)) == .found)
+    }
+
+    /// El camino vive y muere con la lista: la siembra de una ida, la vuelta atrás y quitar la lista lo borran. Un contenido
+    /// que no es un camino se lee `nil` (el drain dice `unknown`).
+    @Test("adopt: el camino de entrada se borra con lo que el backend conocía")
+    func adoptLateImportUnproven_routeLifecycle() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let url = ledgerURL(dir)
+        for clear in [{ try RelayIdentityLedger.merge([:], into: url) },
+                      { try RelayIdentityLedger.remove(at: url) },
+                      { try RelayIdentityLedger.clearAdoptBackendKnown(for: url) }] {
+            try RelayIdentityLedger.writeAdoptRoute(.noAccount, for: url)
+            #expect(try RelayIdentityLedger.loadAdoptRoute(for: url) == .noAccount)
+            try clear()
+            #expect(try RelayIdentityLedger.loadAdoptRoute(for: url) == nil)
+        }
+        try Data("otro".utf8).write(to: adoptRouteURL(dir))
+        #expect(try RelayIdentityLedger.loadAdoptRoute(for: url) == nil)
+    }
 }
 
 /// Caja para contar desde el closure del seam: el closure se guarda en el ejecutor y la cuenta tiene que sobrevivir a él.

@@ -1480,6 +1480,13 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSyncMigration adoptLateImportSkipped entity=\(entity, privacy: .public) count=\(count, privacy: .public) — importado tarde por el espejo de filas que el backend ya conoce: manda el backend")
     }
 
+    /// Altas que el drain que cierra la ventana del adopt SUBE con una identidad que el backend no conocía, en tablas que
+    /// piden linaje (ticket `adopt-window-uploads-what-reaches-the-mirror-after-the-icloud-check`). `detail` =
+    /// `<tipo>|<autor>|<camino>`, sin PII. Canario, no política: suben igual.
+    static func adoptLateImportUnproven(detail: String, count: Int) {
+        logger.notice("CloudSyncMigration adoptLateImportUnproven detail=\(detail, privacy: .public) count=\(count, privacy: .public) — altas sin linaje en la ventana del adopt: suben")
+    }
+
     static func relayTombstoneTranslated(entity: String) {
         logger.notice("CloudSyncMigration relayTombstoneTranslated entity=\(entity, privacy: .public) — tombstone con la identidad que el backend conoce")
     }
@@ -1775,11 +1782,27 @@ final class CloudSyncEngine {
     /// Lo que el backend conocía al terminar el adopt (`RelayIdentityLedger.loadAdoptBackendKnown`), leído en ESTA vuelta del
     /// drain: `nil` = aún no se leyó. Perezoso, con el primer cambio que lo necesite; ilegible se lee vacío, con rastro.
     private var drainAdoptBackendKnown: Set<UUID>?
+    /// La lista de arriba existía y NO se dejó leer en esta vuelta. Con ella el canario de las altas sin linaje no cuenta: sin
+    /// la lista no sabe cuáles conocía el backend.
+    private var drainAdoptBackendKnownUnreadable = false
+
+    /// La ventana del adopt para el canario de las altas que el backend no conocía (ticket
+    /// `adopt-window-uploads-what-reaches-the-mirror-after-the-icloud-check`), leída una vez por vuelta: `nil` = aún no se
+    /// miró; `.some(nil)` = no hay ventana que contar; `.some(camino)` = sí, y por qué camino entró el adopt.
+    private var drainAdoptUnprovenRoute: String??
+    /// El ancla del cursor al EMPEZAR esta vuelta (`lastDrainedTxAt`): en el primer drain tras el remonte es la del paso 3 del
+    /// adopt. El canario no cuenta lo que no sea posterior: un re-anclaje del token relee un margen anterior, y ahí están las
+    /// huérfanas que el adopt ya subió con prueba de linaje.
+    private var drainAdoptWindowFloor: Date?
 
     /// Los cambios de la transacción en curso que no se tradujeron por ser del backend, por tipo. Pasan a
     /// `drainAdoptSkipped` solo cuando la transacción se consume: una cortada (el HLC no se pudo estampar) se re-lee entera.
     private var drainTxAdoptSkipped: [String: Int] = [:]
     private var drainAdoptSkipped: [String: Int] = [:]
+    /// Las altas de la transacción en curso que el canario de las altas sin linaje cuenta, por `<tipo>|<autor>|<camino>`. Con
+    /// el mismo ciclo que `drainTxAdoptSkipped`: pasan a `drainAdoptUnproven` solo si la transacción se consume.
+    private var drainTxAdoptUnproven: [String: Int] = [:]
+    private var drainAdoptUnproven: [String: Int] = [:]
 
     // MARK: Init
 
@@ -1825,12 +1848,20 @@ final class CloudSyncEngine {
         drainContext = context
         drainRelayLedger = nil
         drainAdoptBackendKnown = nil
+        drainAdoptBackendKnownUnreadable = false
+        drainAdoptUnprovenRoute = nil
+        drainAdoptWindowFloor = nil
         drainAdoptSkipped = [:]
+        drainAdoptUnproven = [:]
         defer {
             drainContext = nil
             drainRelayLedger = nil
             drainAdoptBackendKnown = nil
+            drainAdoptBackendKnownUnreadable = false
+            drainAdoptUnprovenRoute = nil
+            drainAdoptWindowFloor = nil
             drainAdoptSkipped = [:]
+            drainAdoptUnproven = [:]
         }
         do {
             // 1) Cursor + token persistido. D-3: cargar el reloj persistido (send parte del estado
@@ -1838,6 +1869,7 @@ final class CloudSyncEngine {
             let cursor = try loadOrCreateCursor(context)
             loadClock(from: cursor)
             let tokenState = decodeToken(cursor.historyTokenData)
+            drainAdoptWindowFloor = cursor.lastDrainedTxAt
 
             // 2) Barrido defensivo: asigna syncID a las filas vivas de los 6 tipos que aún no lo tengan
             //    (SIN autor especial → la próxima vuelta captura ese cambio), y construye los índices
@@ -1904,6 +1936,7 @@ final class CloudSyncEngine {
                     let tombstoneReason = Self.classifyTombstoneReason(tx)
                     var txRows: [PendingOutboxRow] = []
                     drainTxAdoptSkipped = [:]
+                    drainTxAdoptUnproven = [:]
                     do {
                         for change in tx.changes {
                             let entityName = change.changedPersistentIdentifier.entityName
@@ -1931,6 +1964,7 @@ final class CloudSyncEngine {
                     }
                     rows.append(contentsOf: txRows)
                     drainAdoptSkipped.merge(drainTxAdoptSkipped, uniquingKeysWith: +)
+                    drainAdoptUnproven.merge(drainTxAdoptUnproven, uniquingKeysWith: +)
                 }
                 // El high-water SOLO se mueve con transacciones del STORE PERSONAL, y SÍ se mueve con el
                 // ECO. Son dos razones DISTINTAS para no avanzar y confundirlas en una sola línea costó el
@@ -2085,6 +2119,12 @@ final class CloudSyncEngine {
             for (entity, count) in drainAdoptSkipped.sorted(by: { $0.key < $1.key }) {
                 CloudSyncBreadcrumb.adoptLateImportSkipped(entity: entity, count: count)
                 MetricsService.cloudAdoptLateImportSkipped(entity: entity, count: count)
+            }
+            for (detail, count) in drainAdoptUnproven.sorted(by: { $0.key < $1.key }) {
+                CloudSyncBreadcrumb.adoptLateImportUnproven(detail: detail, count: count)
+            }
+            for (detail, count) in Self.adoptUnprovenCanaryDetails(drainAdoptUnproven).sorted(by: { $0.key < $1.key }) {
+                MetricsService.cloudAdoptLateImportUnproven(detail: detail, count: count)
             }
             if !translationAborted { retireRelayIdentityLedgerIfFinished() }
             lastDrainCutTranslation = translationAborted
@@ -2664,9 +2704,87 @@ final class CloudSyncEngine {
             CloudSyncBreadcrumb.relayIdentityLedgerUnavailable(step: "drain-backend-known",
                                                                errorType: String(describing: type(of: error)))
             loaded = []
+            drainAdoptBackendKnownUnreadable = true
         }
         drainAdoptBackendKnown = loaded
         return loaded
+    }
+
+    // MARK: - Lo que el espejo trae tras el chequeo del adopt y el backend no conoce (ticket `adopt-window-uploads-what-reaches-the-mirror-after-the-icloud-check`)
+
+    /// **Canario, no política.** Cuenta las altas que este drain va a SUBIR en la ventana del adopt, en las tablas que piden
+    /// linaje, con una identidad que el backend no conocía en el adopt. Es lo que el ticket no pudo contar en la flota: lo que
+    /// el espejo bajó después de que el adopt le preguntara a iCloud sube sin prueba de linaje. No cambia lo que sale.
+    ///
+    /// - **La ventana es la que cierra este drain**: lo que el backend conocía (`….backend-known`) existe, se dejó leer, y la
+    ///   restauración del arranque ya marcó el registro para retirar (`RelayIdentityLedger.isRetirable`). Eso es el primer drain
+    ///   completo tras el remonte; si el primero se corta, el siguiente cuenta lo que quedó. Sin la marca —la restauración
+    ///   lanzó— no cuenta: el espejo ya está apagado y lo que llegara serían las altas normales de este teléfono, drain tras
+    ///   drain. Se pierde ese caso raro, con su propio rastro (`relayIdentityLedgerUnavailable(step: "adopt-restore")`).
+    /// - **Las tablas exentas no cuentan** (`MigrationWorkExecutor.adoptLineageExemptTables`, los tipos de cambio): la guarda
+    ///   del adopt tampoco les pide linaje.
+    /// - **Dos autores**: `mirror` (la firma del espejo: bajó de iCloud) y `local` (cualquier otro: lo creado aquí en la
+    ///   ventana). Que el espejo firme sus imports no está medido en device; si no firmara, lo importado caería en `local` y la
+    ///   serie `mirror` en cero mentiría. Con las dos se lee igual en ambos casos.
+    /// - **El camino** lo dejó el reconcile del adopt (`RelayIdentityLedger.loadAdoptRoute`): `none` y `noAccount` son el
+    ///   adopt que entró sin nada que probar, la población del ticket. Sin fichero o ilegible, `unknown`.
+    ///
+    /// - **Solo lo posterior al ancla con que empezó la vuelta** (`drainAdoptWindowFloor`, el paso 3 en el primer drain): un
+    ///   re-anclaje del token (`recoverIfHistoryTokenIncomparable`, o el de token roto) relee un margen anterior, y lo de ahí
+    ///   no llegó después del chequeo —son, por ejemplo, las huérfanas que el adopt ya subió con prueba—.
+    ///
+    /// Sin PII: el tipo de entidad, dos literales y un conteo. El rastro lleva el tipo; el canario lo agrupa
+    /// (`adoptUnprovenCanaryDetails`).
+    private func countAdoptUnprovenInsert(entityType: String, table: String, tx: DefaultHistoryTransaction) {
+        guard !MigrationWorkExecutor.adoptLineageExemptTables.contains(table) else { return }
+        if let floor = drainAdoptWindowFloor, tx.timestamp <= floor { return }
+        guard let route = drainAdoptUnprovenWindowRoute() else { return }
+        let author = (tx.author?.hasPrefix(PrivateSignOutExportGateLogic.mirrorAuthorPrefix) ?? false) ? "mirror" : "local"
+        drainTxAdoptUnproven["\(entityType)|\(author)|\(route)", default: 0] += 1
+    }
+
+    /// Lo que el canario `cloudAdoptLateImportUnproven` emite a partir de los conteos de la vuelta (`<tipo>|<autor>|<camino>`):
+    /// `<autor>|<camino>|<clase>`, con la clase `TransactionItem` (movimientos) u `other`. Agrupa porque la vuelta que lo
+    /// emite es justo la que puede traer un corpus entero: por tipo serían hasta 30 eventos de golpe y el spool de métricas
+    /// (50, tira el más viejo) se llevaría canarios ajenos pendientes. El tipo exacto queda en el rastro del dispositivo.
+    static func adoptUnprovenCanaryDetails(_ counts: [String: Int]) -> [String: Int] {
+        var grouped: [String: Int] = [:]
+        for (key, count) in counts {
+            let parts = key.split(separator: "|", omittingEmptySubsequences: false)
+            guard parts.count == 3 else { continue }
+            let kind = parts[0] == Substring(SyncEntityType.transactionItem) ? SyncEntityType.transactionItem : "other"
+            grouped["\(parts[1])|\(parts[2])|\(kind)", default: 0] += count
+        }
+        return grouped
+    }
+
+    /// El camino del adopt si esta vuelta cierra su ventana (ver `countAdoptUnprovenInsert`); `nil` si no hay nada que contar.
+    private func drainAdoptUnprovenWindowRoute() -> String? {
+        if let drainAdoptUnprovenRoute { return drainAdoptUnprovenRoute }
+        let route: String?
+        if RelayIdentityLedger.hasAdoptBackendKnown(for: relayIdentityLedgerURL),
+           RelayIdentityLedger.isRetirable(relayIdentityLedgerURL) {
+            // La lista se lee aquí por si ningún cambio la pidió antes; ilegible, no se cuenta.
+            _ = drainAdoptBackendKnownIDs()
+            if drainAdoptBackendKnownUnreadable {
+                route = nil
+            } else {
+                do {
+                    route = try RelayIdentityLedger.loadAdoptRoute(for: relayIdentityLedgerURL)?.rawValue ?? "unknown"
+                } catch {
+                    #if DEBUG
+                    print("CloudSyncEngine: el camino del adopt no se deja leer: \(error)")
+                    #endif
+                    CloudSyncBreadcrumb.relayIdentityLedgerUnavailable(step: "drain-adopt-route",
+                                                                       errorType: String(describing: type(of: error)))
+                    route = "unknown"
+                }
+            }
+        } else {
+            route = nil
+        }
+        drainAdoptUnprovenRoute = .some(route)
+        return route
     }
 
     // MARK: - Clasificación del reason de tombstone (§c.1, drain-side)
@@ -2867,8 +2985,13 @@ final class CloudSyncEngine {
             guard !skipsAdoptBackendKnownRow([syncID], entityType: entityType, tx: tx, requiresMirrorAuthor: false) else { return }
             // INSERT = proyección COMPLETA de dominio (todas las columnas). Todas las unidades reciben
             // el HLC de la transacción. Los grupos de coherencia viajan enteros por construcción.
+            let rowsBefore = rows.count
             try appendUpsert(model: model, emission: emission, syncID: syncID, entityType: entityType,
                              changedColumns: emission.columns, tx: tx, rows: &rows, seen: &seen)
+            // Solo lo que de verdad sube: el códec puede descartar la fila (con su rastro `encodeRejected`). Tras un kill
+            // entre el outbox y el cursor el re-drain NO la deduplica —medido: el HLC lleva el reloj físico y sale otro—,
+            // así que esa vuelta vuelve a añadirla y la cuenta, y la muerta no había emitido.
+            if rows.count > rowsBefore { countAdoptUnprovenInsert(entityType: entityType, table: emission.table, tx: tx) }
 
         case .update(let update):
             guard let typed = update as? DefaultHistoryUpdate<T> else { return }

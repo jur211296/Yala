@@ -217,6 +217,13 @@ enum MetricsCanary: String {
     /// cuántos cambios. Distinto de cero mide lo que el ticket solo pudo inferir: que el import llega después del paso 3 del
     /// adopt, y cuántas ediciones de la nube se habrían pisado.
     case cloudAdoptLateImportSkipped
+    /// El drain que cierra la ventana del adopt SUBIÓ altas que el backend no conocía, en tablas que piden linaje (ticket
+    /// `adopt-window-uploads-what-reaches-the-mirror-after-the-icloud-check`). `detail` = `<autor>|<camino>|<clase>`: el autor es
+    /// `mirror` (bajó de iCloud) o `local` (creada en este teléfono en la ventana); el camino, cómo entró el adopt
+    /// (`none`, `noAccount`, `found`, `lineageRows`, `noMirror` o `unknown`); la clase, `TransactionItem` (movimientos) u
+    /// `other`. `value` = cuántas. Canario, no política: suben igual. `mirror` con `none` o `noAccount` es la población del
+    /// ticket: lo que llegó después de preguntar a iCloud, sin prueba de linaje.
+    case cloudAdoptLateImportUnproven
     /// Una observación de uno de esos tres pasos que no avanzó. Deja ver un atasco SISTÉMICO antes de que ningún teléfono
     /// llegue a sus 15 min o sus 72 h.
     case cloudForwardStepWaiting
@@ -818,6 +825,10 @@ extension MetricsService {
 
     static func cloudAdoptLateImportSkipped(entity: String, count: Int) {
         canary(.cloudAdoptLateImportSkipped, detail: entity, value: Double(count))
+    }
+
+    static func cloudAdoptLateImportUnproven(detail: String, count: Int) {
+        canary(.cloudAdoptLateImportUnproven, detail: detail, value: Double(count))
     }
 
     /// Una observación de uno de esos tres pasos que no avanzó. `detail` = `<paso>|<tramo de avance>|<tramo de causa>|<causa>`,

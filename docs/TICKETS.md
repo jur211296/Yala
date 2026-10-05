@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (755)
+## Index (758)
 
 | id | status | path |
 |---|---|---|
@@ -74,8 +74,10 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | adopt-effect-after-the-cloud-mode-retries-silently | backlog | tickets/backlog/adopt-effect-after-the-cloud-mode-retries-silently.md |
 | adopt-effect-ceiling-never-sees-an-import-that-never-settles | backlog | tickets/backlog/adopt-effect-ceiling-never-sees-an-import-that-never-settles.md |
 | adopt-effect-retries-forever-with-no-ceiling | done | tickets/done/adopt-effect-retries-forever-with-no-ceiling.md |
+| adopt-empty-backend-exit-leaves-the-window-unmeasured | backlog | tickets/backlog/adopt-empty-backend-exit-leaves-the-window-unmeasured.md |
 | adopt-exit-keeps-the-session-it-opened | done | tickets/done/adopt-exit-keeps-the-session-it-opened.md |
 | adopt-follower-waits-for-the-leader-with-no-ceiling | done | tickets/done/adopt-follower-waits-for-the-leader-with-no-ceiling.md |
+| adopt-imports-between-the-reconcile-and-the-baseline-are-never-drained | backlog | tickets/backlog/adopt-imports-between-the-reconcile-and-the-baseline-are-never-drained.md |
 | adopt-on-an-empty-store-uploads-what-the-mirror-imports-before-the-relaunch | done | tickets/done/adopt-on-an-empty-store-uploads-what-the-mirror-imports-before-the-relaunch.md |
 | adopt-orphan-with-a-fresh-hlc-beats-the-absent-leaders-edit | backlog | tickets/backlog/adopt-orphan-with-a-fresh-hlc-beats-the-absent-leaders-edit.md |
 | adopt-rekeyed-rows-without-a-unique-lineage-key-still-duplicate | backlog | tickets/backlog/adopt-rekeyed-rows-without-a-unique-lineage-key-still-duplicate.md |
@@ -84,7 +86,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | adopt-uploads-a-foreign-corpus-without-a-lineage-check | done | tickets/done/adopt-uploads-a-foreign-corpus-without-a-lineage-check.md |
 | adopt-window-late-imports-overwrite-newer-cloud-edits | done | tickets/done/adopt-window-late-imports-overwrite-newer-cloud-edits.md |
 | adopt-window-late-leader-identity-export-can-duplicate-after-the-remount | done | tickets/done/adopt-window-late-leader-identity-export-can-duplicate-after-the-remount.md |
-| adopt-window-uploads-what-reaches-the-mirror-after-the-icloud-check | backlog | tickets/backlog/adopt-window-uploads-what-reaches-the-mirror-after-the-icloud-check.md |
+| adopt-window-uploads-what-reaches-the-mirror-after-the-icloud-check | qa | tickets/qa/adopt-window-uploads-what-reaches-the-mirror-after-the-icloud-check.md |
 | adopt-window-user-edit-uploads-the-value-the-mirror-wrote-over-it | backlog | tickets/backlog/adopt-window-user-edit-uploads-the-value-the-mirror-wrote-over-it.md |
 | adopt-with-existing-session-skips-the-unreadable-journal-guard | backlog | tickets/backlog/adopt-with-existing-session-skips-the-unreadable-journal-guard.md |
 | adr-013-does-not-know-yala-has-its-own-commit-msg | backlog | tickets/backlog/adr-013-does-not-know-yala-has-its-own-commit-msg.md |
