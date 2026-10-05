@@ -211,9 +211,18 @@ nonisolated enum WelcomePrivateICloudGateLogic {
         case resume
         /// El borrado quedó a medias delante de la persona: se le pregunta, no se reanuda.
         case askLeftHalfway
+        /// **Hay una migración a la nube en vuelo** (ticket `late-wipe-arm-is-dropped-silently-when-the-device-moves-to-the-cloud`):
+        /// ni se reanuda ni se pregunta. Borrar el corpus en mitad de la ida se llevaría lo que la migración está
+        /// subiendo, y preguntar «terminar de borrar» con la nube a medio activar mezcla dos decisiones. El borrado sigue
+        /// pendiente: lo decide el arranque en la nube si la migración termina, o este mismo arranque cuando vuelva al reposo.
+        case holdForMigration
         /// Este dispositivo ya vive en la nube: ni el arm ni «a medias» describen su store, y los dos se retiran sin borrar
-        /// ni preguntar.
+        /// ni preguntar. **Pero se cuenta**: la persona pidió ese borrado y tiene que saber que no se hizo.
         case retireInCloud
+        /// Lo mismo, cuando la persona ya eligió «Activar la nube sin borrar» en Ajustes: se retira sin contarlo otra vez.
+        case retireWaivedInCloud
+        /// Un borrado ya retirado en la nube que la persona aún no ha visto contado (un kill antes de que la hoja montara).
+        case tellCancelledInCloud
         /// Nada pendiente: sigue la comprobación normal del espejo tardío.
         case none
     }
@@ -232,14 +241,37 @@ nonisolated enum WelcomePrivateICloudGateLogic {
     /// —que ya es de esa cuenta— y sus grupos, sin una sola pregunta. En la nube ningún camino arma ese borrado (el aviso
     /// tardío no sale sin espejo), así que un arm aquí siempre es una petición privada que sobrevivió al cambio de modo. La
     /// nube se mira PRIMERO por eso: el arm ya no gana en todos los modos.
-    static func lateWipeLaunch(armed: Bool, leftHalfway: Bool, storageMode: StorageMode) -> LateWipeLaunch {
+    ///
+    /// **Y en iCloud, una migración en vuelo congela el borrado pendiente; en la nube, se cuenta salvo renuncia** (ticket
+    /// `late-wipe-arm-is-dropped-silently-when-the-device-moves-to-the-cloud`). La renuncia y el aviso no cambian nada en
+    /// iCloud: allí caducan (`waiverLapses`, `cancelledNoticeLapses`).
+    static func lateWipeLaunch(armed: Bool, leftHalfway: Bool, cancelledInCloudNoticePending: Bool,
+                               waivedForCloud: Bool, migrationAtRest: Bool,
+                               storageMode: StorageMode) -> LateWipeLaunch {
         switch storageMode {
         case .cloud:
-            return (armed || leftHalfway) ? .retireInCloud : .none
+            if armed || leftHalfway { return waivedForCloud ? .retireWaivedInCloud : .retireInCloud }
+            return cancelledInCloudNoticePending ? .tellCancelledInCloud : .none
         case .icloud:
+            if (armed || leftHalfway) && !migrationAtRest { return .holdForMigration }
             if armed { return .resume }
-            return leftHalfway ? .askLeftHalfway : .none
+            if leftHalfway { return .askLeftHalfway }
+            return .none
         }
+    }
+
+    /// **La renuncia de «Activar la nube sin borrar» caduca cuando el intento termina sin nube**: en iCloud y con la
+    /// migración en reposo, esa activación ya no va a ocurrir, y la próxima vez se vuelve a preguntar. Con la migración en
+    /// vuelo se conserva: es lo que la nube leerá si llega.
+    static func waiverLapses(waivedForCloud: Bool, migrationAtRest: Bool, storageMode: StorageMode) -> Bool {
+        waivedForCloud && storageMode == .icloud && migrationAtRest
+    }
+
+    /// **El aviso del borrado cancelado solo se enseña en la nube.** Si el dispositivo volvió a iCloud antes de verlo,
+    /// «ya no se hará» deja de describir su store —ahí el aviso tardío puede volver a preguntar, o un borrado nuevo puede
+    /// haber terminado—, y la marca se retira sin contarlo.
+    static func cancelledNoticeLapses(noticePending: Bool, storageMode: StorageMode) -> Bool {
+        noticePending && storageMode == .icloud
     }
 
     // MARK: - El borrado de la puerta que queda a medias
@@ -333,11 +365,15 @@ nonisolated enum LateICloudNotice: Equatable, Sendable, Identifiable {
     case corpus(ICloudPersonalCorpus)
     /// Un borrado anterior quedó a medias: la zona de iCloud ya no está y lo del teléfono sí.
     case wipeLeftHalfway
+    /// Un borrado de iCloud que la persona pidió se canceló al activar la nube. Solo informa: en la nube no hay nada que
+    /// ofrecer terminar.
+    case wipeCancelledInCloud
 
     var id: String {
         switch self {
         case .corpus(let corpus): return "corpus:\(corpus.id)"
         case .wipeLeftHalfway: return "wipeLeftHalfway"
+        case .wipeCancelledInCloud: return "wipeCancelledInCloud"
         }
     }
 }

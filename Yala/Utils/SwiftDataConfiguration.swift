@@ -711,6 +711,10 @@ extension SwiftDataConfiguration {
         // Y el «borrado a medias» del mismo aviso, por lo mismo: describe el corpus de la vida que se cierra, y sin esto
         // la persona siguiente vería «El borrado quedó a medias» sobre unos datos que no son suyos.
         StorageModePersistence.clearICloudCorpusWipeLeftHalfway(defaults)
+        // Y el aviso de un borrado cancelado en la nube que aún no se enseñó: cuenta una petición de la vida que se cierra.
+        StorageModePersistence.clearICloudCorpusWipeCancelledInCloudNotice(defaults)
+        // Y la renuncia de «Activar la nube sin borrar»: la decidió la persona que se va.
+        StorageModePersistence.clearICloudCorpusWipeWaiver(defaults)
         // EL EJE 1 muere aquí, y por la misma razón que sus dos vecinas de arriba: describe la vida
         // que se cierra. `removeUserPreferenceKeys` excluye `cloudSync.*` a propósito —y para la
         // marca esa exclusión es deliberada, porque tiene que SOBREVIVIR a «Vaciar datos»— así que

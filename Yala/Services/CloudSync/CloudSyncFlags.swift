@@ -359,6 +359,7 @@ nonisolated enum StorageModePersistence {
         // El alcance describe el borrado pendiente, y «a medias» también lo es: solo se va si no queda ninguno.
         if !isICloudCorpusWipeLeftHalfway(defaults) {
             defaults.removeObject(forKey: icloudCorpusWipeScopeKey)
+            defaults.removeObject(forKey: icloudCorpusWipeWaivedForCloudKey)
         }
         if defaults.bool(forKey: icloudCorpusWipeOwnsNeutralMountKey) {
             clearNeutralMountArm(defaults)
@@ -426,7 +427,82 @@ nonisolated enum StorageModePersistence {
         // Mismo criterio que al desarmar: con el arm puesto, el borrado sigue pendiente y su alcance con él.
         if !isICloudCorpusWipeArmed(defaults) {
             defaults.removeObject(forKey: icloudCorpusWipeScopeKey)
+            defaults.removeObject(forKey: icloudCorpusWipeWaivedForCloudKey)
         }
+    }
+
+    // MARK: El borrado pendiente que se encuentra con la nube
+
+    /// **«Hay un borrado del iCloud privado que la persona pidió y no ha terminado»**: armado o a medias (ticket
+    /// `late-wipe-arm-is-dropped-silently-when-the-device-moves-to-the-cloud`). Es lo que la nube no puede terminar: los
+    /// dos son borrados `.handover`/`.importedRows` del iCloud privado, y en una cuenta de la nube lo del teléfono ya es de
+    /// esa cuenta. Lo leen la puerta de Ajustes antes de activar la nube y el arranque.
+    static func hasPendingICloudCorpusWipe(_ defaults: UserDefaults = .standard) -> Bool {
+        isICloudCorpusWipeArmed(defaults) || isICloudCorpusWipeLeftHalfway(defaults)
+    }
+
+    /// **«La persona aceptó que, si este dispositivo llega a la nube, el borrado pendiente no se haga»**: lo que eligió en
+    /// «Activar la nube sin borrar». **No retira nada**: el arm y «a medias» siguen puestos hasta que el dispositivo llega a
+    /// `.cloud`, que es lo único que hace verdad «ya no se hará». Hasta ahí la migración puede volver a iCloud por media
+    /// docena de salidas (la hoja de Apple o Google cancelada, la puerta de identidad, el claim rechazado, «Cancelar la
+    /// activación», su techo), y retirar el borrado al arrancarla lo perdía en silencio en todas: la review adversarial del
+    /// 2026-10-04 lo cazó con tres lentes.
+    ///
+    /// Lo consume el arranque en la nube (`retirePendingICloudCorpusWipeAsWaived`), que retira sin contarlo porque la
+    /// persona ya lo sabe; y caduca en un arranque en iCloud con la migración en reposo (el intento terminó sin nube: la
+    /// próxima vez se vuelve a preguntar). Es un sub-estado del borrado pendiente, como el alcance: sin borrado pendiente
+    /// no se escribe, y se va con el último de los dos.
+    static let icloudCorpusWipeWaivedForCloudKey = "cloudSync.icloudCorpusWipeWaivedForCloud"
+
+    static func waivePendingICloudCorpusWipeForTheCloud(_ defaults: UserDefaults = .standard) {
+        guard hasPendingICloudCorpusWipe(defaults) else { return }
+        defaults.set(true, forKey: icloudCorpusWipeWaivedForCloudKey)
+    }
+
+    static func isPendingICloudCorpusWipeWaivedForTheCloud(_ defaults: UserDefaults = .standard) -> Bool {
+        defaults.bool(forKey: icloudCorpusWipeWaivedForCloudKey)
+    }
+
+    static func clearICloudCorpusWipeWaiver(_ defaults: UserDefaults = .standard) {
+        defaults.removeObject(forKey: icloudCorpusWipeWaivedForCloudKey)
+    }
+
+    /// El arranque en la nube con la renuncia puesta: retira el borrado pendiente sin dejar el aviso.
+    static func retirePendingICloudCorpusWipeAsWaived(_ defaults: UserDefaults = .standard) {
+        clearICloudCorpusWipeArm(defaults)
+        clearICloudCorpusWipeLeftHalfway(defaults)
+        clearICloudCorpusWipeWaiver(defaults)
+    }
+
+    /// **«Al arrancar en la nube se canceló un borrado de iCloud que nadie le había contado»** (ticket
+    /// `late-wipe-arm-is-dropped-silently-when-the-device-moves-to-the-cloud`). Hasta ese ticket el arranque en `.cloud`
+    /// retiraba el arm y «a medias» en silencio, y quien había pedido el borrado no se enteraba nunca de que no se hizo.
+    /// Ahora se retiran igual —terminarlos se llevaría los datos de la cuenta— pero se le dice.
+    ///
+    /// **Es una marca durable y no un aviso en memoria**: se escribe ANTES de retirar las otras dos y la consume la hoja
+    /// cuando MONTA. Un kill entre retirar y enseñar dejaría a la persona sin saberlo, que es justo el bug.
+    ///
+    /// `cloudSync.*` como sus vecinas, y por eso muere en dos sitios a mano: el hook de cierre
+    /// (`SwiftDataConfiguration.performSignOutWipeIfArmed`) y `DataWipeService.wipeAllUserData`, porque cuenta un borrado
+    /// de la vida que se cierra o de unos datos que ya no están.
+    static let icloudCorpusWipeCancelledInCloudKey = "cloudSync.icloudCorpusWipeCancelledInCloud"
+
+    /// Retira el borrado pendiente en la nube **y deja apuntado que hay que contarlo**. La marca va primero: un kill entre
+    /// las dos deja el borrado puesto y el arranque siguiente vuelve aquí; al revés, se perdería el aviso. Sin borrado
+    /// pendiente no apunta nada: no hay nada que contar.
+    static func cancelPendingICloudCorpusWipeInTheCloud(_ defaults: UserDefaults = .standard) {
+        guard hasPendingICloudCorpusWipe(defaults) else { return }
+        defaults.set(true, forKey: icloudCorpusWipeCancelledInCloudKey)
+        clearICloudCorpusWipeArm(defaults)
+        clearICloudCorpusWipeLeftHalfway(defaults)
+    }
+
+    static func isICloudCorpusWipeCancelledInCloudNoticePending(_ defaults: UserDefaults = .standard) -> Bool {
+        defaults.bool(forKey: icloudCorpusWipeCancelledInCloudKey)
+    }
+
+    static func clearICloudCorpusWipeCancelledInCloudNotice(_ defaults: UserDefaults = .standard) {
+        defaults.removeObject(forKey: icloudCorpusWipeCancelledInCloudKey)
     }
 
     /// **«Con qué alcance entró el borrado pendiente»** (ticket

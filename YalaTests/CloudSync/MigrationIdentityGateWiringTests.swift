@@ -384,11 +384,26 @@ struct MigrationIdentityGateWiringTests {
     /// consentimiento como siempre.
     @Test func migrateButton_preflightOnlyForMigrationWithALiveSession() throws {
         let view = try Self.source(Self.viewPath)
-        let start = try #require(view.range(of: "consentPath = isAdopt ? .adopt : .migration"))
+        // Desde `late-wipe-arm-is-dropped-silently-when-the-device-moves-to-the-cloud` la cadena vive en `beginActivation`,
+        // que llaman el toque (tras mirar el borrado de iCloud pendiente) y el «Activar la nube sin borrar» del diálogo.
+        let start = try #require(view.range(of: "isLoading: controller.isCheckingMigrationIdentity\n            ) {"))
         let end = try #require(view.range(of: ".accessibilityIdentifier(\"storage_migrate_button\")"))
-        let action = String(view[start.lowerBound..<end.lowerBound])
+        #expect(start.lowerBound < end.lowerBound)
+        let tap = String(view[start.upperBound..<end.lowerBound])
+        #expect(Self.lines(tap) == [
+            "pendingICloudWipeWaived = false",
+            "guard !hasPendingICloudWipe else {",
+            "confirmPendingICloudWipe = true",
+            "return",
+            "}",
+            "beginActivation(controller, isAdopt: isAdopt)",
+            "}",
+        ])
+        let action = try Self.body(of: "private func beginActivation(_ controller: CloudMigrationController, isAdopt: Bool) {",
+                                   in: Self.viewPath)
         #expect(Self.lines(action) == [
             "consentPath = isAdopt ? .adopt : .migration",
+            "let decision = signInDecision(isAdopt: isAdopt)",
             "guard !isAdopt, case .reuseLiveSession = decision else {",
             "showConsent = true",
             "return",
@@ -397,9 +412,7 @@ struct MigrationIdentityGateWiringTests {
             "guard await controller.preflightMigrationIdentity() else { return }",
             "showConsent = true",
             "}",
-            "}",
         ])
-        #expect(view.contains("isLoading: controller.isCheckingMigrationIdentity"))
     }
 
     /// La hoja: «Usar otra cuenta» y solo él quema el one-shot; el aviso se suelta del controller cuando la hoja MONTA; la

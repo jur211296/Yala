@@ -129,6 +129,7 @@ struct PrivateGateHalfwayWipeFlagsTests {
         #expect(StorageModePersistence.isICloudCorpusWipeLeftHalfway(d), "salir olvidó que iCloud ya quedó vacío")
         #expect(Logic.lateWipeLaunch(armed: StorageModePersistence.isICloudCorpusWipeArmed(d),
                                      leftHalfway: StorageModePersistence.isICloudCorpusWipeLeftHalfway(d),
+                                     cancelledInCloudNoticePending: false, waivedForCloud: false, migrationAtRest: true,
                                      storageMode: .icloud) == .askLeftHalfway)
     }
 
@@ -391,19 +392,25 @@ struct PrivateGateHalfwayWipeWiringTests {
         #expect(restores == 2)
     }
 
-    /// En la nube la marca se retira, y ni se pregunta ni se borra.
-    @Test("el arranque en la nube retira el arm y la marca sin preguntar ni borrar")
+    /// En la nube la marca se retira y no se borra ni se pregunta por terminar. **Pero se cuenta** (ticket
+    /// `late-wipe-arm-is-dropped-silently-when-the-device-moves-to-the-cloud`): hasta ese ticket este scan exigía que no
+    /// saliera ningún aviso, y ese silencio era el bug.
+    @Test("el arranque en la nube retira el arm y la marca sin borrar, y lo cuenta")
     func launch_inTheCloudRetiresTheMark() throws {
         let check = try Self.body(of: "private func runLateICloudMirrorCheck() async {", in: try Self.code(Self.contentView))
         #expect(check.contains("storageMode: CloudSyncFlags.storageMode"))
         let retire = try Self.slice(from: "case .retireInCloud:", to: "case .askLeftHalfway:", in: check)
-        #expect(retire.contains("StorageModePersistence.clearICloudCorpusWipeLeftHalfway()"), "leído: \(retire)")
-        #expect(retire.contains("StorageModePersistence.clearICloudCorpusWipeArm()"), """
+        // El retiro de las dos marcas vive en `cancelPendingICloudCorpusWipeInTheCloud`; que se lleve las dos lo fija
+        // `PendingICloudWipeCloudFlagsTests`.
+        #expect(retire.contains("StorageModePersistence.cancelPendingICloudCorpusWipeInTheCloud()"), """
             en la nube el arm se queda puesto: `lateWipeLaunch` ya no lo reanuda, pero sigue ahí para el día que el
             dispositivo vuelva a iCloud y lo reanude sobre datos que ya no son los que se pidió borrar. Leído: \(retire)
             """)
-        #expect(!retire.contains("presentLateICloudMirrorNotice"))
+        #expect(retire.contains("RouterEntryGate.shared.submit(.presentLateICloudMirrorNotice(.wipeCancelledInCloud))"),
+                "el borrado se retira en silencio: quien lo pidió no se entera de que no se hizo. Leído: \(retire)")
+        #expect(!retire.contains(".wipeLeftHalfway"), "en la nube no se ofrece «Terminar de borrar»")
         #expect(!retire.contains("performICloudCorpusWipe"))
+        #expect(!retire.contains("performLateICloudWipe"))
     }
 
     /// El Welcome con espejo no mide el teléfono en la puerta: lo mide el onboarding privado. Solo la rama sin datos

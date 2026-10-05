@@ -5688,3 +5688,21 @@
 
 /* Current user after a preposition: Paid by <you> */
 "groups.member.youObject" = "si";
+
+/* Dialog title: activating the cloud while an iCloud deletion the user asked for has not finished */
+"storage.pendingICloudWipe.title" = "Tens algo que não terminámos de apagar";
+
+/* Dialog body: the cloud cannot finish that deletion; activating now cancels it */
+"storage.pendingICloudWipe.body" = "Pediste para começar do zero e apagar os teus dados do iCloud, e ainda não terminámos de apagar. Se ativares a nuvem, isso é cancelado e o que não foi apagado pode acabar na tua conta do Yala. Se esperares, nada muda e continua pendente.";
+
+/* Dialog button: activate the cloud and cancel the pending iCloud deletion */
+"storage.pendingICloudWipe.proceed" = "Ativar a nuvem sem apagar";
+
+/* Dialog cancel button: do not activate the cloud, keep the pending iCloud deletion */
+"storage.pendingICloudWipe.wait" = "Agora não";
+
+/* Sheet title on launch in cloud mode: a pending iCloud deletion was cancelled */
+"welcome.privateICloud.cancelledInCloudTitle" = "Não terminámos de apagar";
+
+/* Sheet body: the deletion did not finish before the cloud was activated and will not happen */
+"welcome.privateICloud.cancelledInCloudBody" = "Pediste para começar do zero e apagar os teus dados do iCloud, mas não terminámos de apagar antes de os teus dados passarem para a nuvem, e já não vai acontecer. Parte do que ias apagar pode continuar no iCloud ou ter passado para a tua conta do Yala.";

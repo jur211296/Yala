@@ -5692,3 +5692,21 @@
 
 /* Current user after a preposition: Paid by <you> */
 "groups.member.youObject" = "vos";
+
+/* Dialog title: activating the cloud while an iCloud deletion the user asked for has not finished */
+"storage.pendingICloudWipe.title" = "Tenés un borrado sin terminar";
+
+/* Dialog body: the cloud cannot finish that deletion; activating now cancels it */
+"storage.pendingICloudWipe.body" = "Pediste empezar de cero y borrar tus datos de iCloud, y el borrado todavía no termina. Si activás la nube, ese borrado se cancela y lo que no se llegó a borrar puede terminar en tu cuenta de Yala. Si esperás, no cambia nada y el borrado sigue pendiente.";
+
+/* Dialog button: activate the cloud and cancel the pending iCloud deletion */
+"storage.pendingICloudWipe.proceed" = "Activar la nube sin borrar";
+
+/* Dialog cancel button: do not activate the cloud, keep the pending iCloud deletion */
+"storage.pendingICloudWipe.wait" = "Ahora no";
+
+/* Sheet title on launch in cloud mode: a pending iCloud deletion was cancelled */
+"welcome.privateICloud.cancelledInCloudTitle" = "Un borrado no llegó a terminar";
+
+/* Sheet body: the deletion did not finish before the cloud was activated and will not happen */
+"welcome.privateICloud.cancelledInCloudBody" = "Pediste empezar de cero y borrar tus datos de iCloud, pero el borrado no terminó antes de que tus datos pasaran a la nube, y ya no se va a hacer. Puede que algo de lo que ibas a borrar siga en iCloud o haya pasado a tu cuenta de Yala.";
