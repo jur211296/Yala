@@ -5867,6 +5867,9 @@
 
 /* Aviso: sesión caducada al desasociar */
 "storage.groups.detachBlockedSession" = "Your groups session expired. Sign in again and give it another try.";
+"storage.groups.detachBlockedSessionAndCaptureUnfinished" = "Your groups session expired and some of your latest group changes couldn't be prepared for upload. Nothing is lost. Sign in again, close Yala and open it again (if it keeps happening, update it), and give it another try.";
+"storage.groups.detachBlockedAttestAndCaptureUnfinished" = "This phone has gone more than a day without passing the security check our server requires, and some of your latest group changes couldn't be prepared for upload. Nothing is lost. To get them ready, close Yala and open it again (if it keeps happening, update it).";
+"storage.groups.detachBlockedOtherAccountAndCaptureUnfinished" = "Some group changes on this phone were made with another account, and they can only upload with that account. On top of that, some of them couldn't be prepared for upload. Nothing is lost. Close Yala and open it again (if it keeps happening, update it), and sign in with that account so they can upload.";
 
 /* Puerta del invitado: vuelta al neutro antes de aceptar una invitación de grupo */
 "welcome.groups.inviteNeutralTitle" = "Before you join, this phone gets a clean slate";

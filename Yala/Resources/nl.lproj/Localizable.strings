@@ -5873,6 +5873,9 @@
 
 /* Aviso: sesión caducada al desasociar */
 "storage.groups.detachBlockedSession" = "Je sessie voor groepen is verlopen. Log opnieuw in en probeer het nog eens.";
+"storage.groups.detachBlockedSessionAndCaptureUnfinished" = "Je sessie voor groepen is verlopen en sommige van je laatste groepswijzigingen konden niet worden voorbereid om te uploaden. Er gaat niets verloren. Log opnieuw in, sluit Yala en open hem weer (blijft het gebeuren, werk hem dan bij) en probeer het nog eens.";
+"storage.groups.detachBlockedAttestAndCaptureUnfinished" = "Deze telefoon komt al meer dan een dag niet door de beveiligingscontrole die onze server vereist, en sommige van je laatste groepswijzigingen konden niet worden voorbereid om te uploaden. Er gaat niets verloren. Sluit Yala en open hem opnieuw om ze voor te bereiden (blijft het gebeuren, werk hem dan bij).";
+"storage.groups.detachBlockedOtherAccountAndCaptureUnfinished" = "Sommige groepswijzigingen op deze telefoon zijn met een ander account gemaakt en kunnen alleen met dat account worden geüpload. Bovendien konden sommige ervan niet worden voorbereid om te uploaden. Er gaat niets verloren. Sluit Yala en open hem opnieuw (blijft het gebeuren, werk hem dan bij) en log in met dat account zodat ze worden geüpload.";
 
 /* Puerta del invitado: vuelta al neutro antes de aceptar una invitación de grupo */
 "welcome.groups.inviteNeutralTitle" = "Voor je meedoet, wordt deze telefoon leeggemaakt";

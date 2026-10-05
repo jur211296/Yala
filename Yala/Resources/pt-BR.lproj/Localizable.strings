@@ -5861,6 +5861,9 @@
 
 /* Aviso: sesión caducada al desasociar */
 "storage.groups.detachBlockedSession" = "Sua sessão de grupos expirou. Entre de novo e tente outra vez.";
+"storage.groups.detachBlockedSessionAndCaptureUnfinished" = "Sua sessão de grupos expirou e não conseguimos preparar para envio algumas das últimas alterações dos seus grupos. Nada se perde. Entre novamente, feche e abra o Yala (se continuar acontecendo, atualize-o) e tente outra vez.";
+"storage.groups.detachBlockedAttestAndCaptureUnfinished" = "Este telefone está há mais de um dia sem conseguir passar na verificação de segurança exigida pelo nosso servidor, e não conseguimos preparar para envio algumas das últimas alterações dos seus grupos. Nada se perde. Para prepará-las, feche o Yala e abra de novo (se continuar acontecendo, atualize-o).";
+"storage.groups.detachBlockedOtherAccountAndCaptureUnfinished" = "Algumas alterações de grupos neste telefone foram feitas com outra conta, e só podem subir com essa conta. Além disso, não conseguimos preparar para envio algumas delas. Nada se perde. Feche o Yala e abra de novo (se continuar acontecendo, atualize-o) e entre com essa conta para que elas subam.";
 
 /* Puerta del invitado: vuelta al neutro antes de aceptar una invitación de grupo */
 "welcome.groups.inviteNeutralTitle" = "Antes de entrar, este celular fica zerado";

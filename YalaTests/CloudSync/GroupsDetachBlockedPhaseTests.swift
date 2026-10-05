@@ -76,7 +76,7 @@ struct GroupsDetachBlockedPhaseTests {
         // La hoja cerrada: nadie llama a `acknowledgeBlocked()` entre los dos gestos.
         let first = await coordinator.detachGroupsAccount(context: context, choice: .keep)
 
-        #expect(first == .blockedBeforeWriting(reason: .groupsCaptureUnfinished), """
+        #expect(first == .blockedBeforeWriting(notice: .reason(.groupsCaptureUnfinished)), """
             el motivo del bloqueo no viaja por el retorno: la sección no tendría de dónde leerlo con la fase ya libre
             """)
         #expect(coordinator.phase == .idle, """
@@ -86,7 +86,7 @@ struct GroupsDetachBlockedPhaseTests {
         #expect(!coordinator.isDetaching, "el desasociar terminó y el coordinador sigue diciendo que desasocia")
 
         let second = await coordinator.detachGroupsAccount(context: context, choice: .keep)
-        #expect(second == .blockedBeforeWriting(reason: .groupsCaptureUnfinished), """
+        #expect(second == .blockedBeforeWriting(notice: .reason(.groupsCaptureUnfinished)), """
             el segundo desasociar no volvió a intentarlo (\(second)): `.busy` es el «Estás cerrando sesión» falso del ticket
             """)
         #expect(coordinator.phase == .idle)
@@ -150,12 +150,12 @@ struct GroupsDetachBlockedPhaseWiringTests {
         return String(source[a.lowerBound..<b.lowerBound])
     }
 
-    private static let released = "return .blockedBeforeWriting(reason: releaseDetachBlock())"
+    private static let released = "return .blockedBeforeWriting(notice: releaseDetachBlock(captureStuck: "
 
     @Test("MUTACIÓN: todo bloqueo del desasociar suelta la fase por `releaseDetachBlock`, y nadie más lo devuelve")
     func everyDetachBlockReleasesThePhase() throws {
         let source = try Self.code("Yala/Services/CloudSync/CloudSessionSignOut.swift")
-        let detach = try Self.slice(from: "func detachGroupsAccount(", to: "private func releaseDetachBlock()", in: source)
+        let detach = try Self.slice(from: "func detachGroupsAccount(", to: "private func releaseDetachBlock(", in: source)
         let devueltos = detach.components(separatedBy: "return .blockedBeforeWriting(").count - 1
         let soltados = detach.components(separatedBy: Self.released).count - 1
         #expect(devueltos == 5, "el desasociar tiene \(devueltos) bloqueos; eran cinco (push-all, residual, sesión que sobrevive, sesión que vuelve, sin quietud)")
@@ -175,7 +175,8 @@ struct GroupsDetachBlockedPhaseWiringTests {
                               "el reintento del borrado no publica `isDetaching` con su `defer`")
         #expect(guardBusy.upperBound <= on.lowerBound, "`isDetaching` se enciende antes de los guards de `.busy`")
 
-        let release = try Self.body(of: "private func releaseDetachBlock() -> CloudSignOutFlowLogic.BlockReason {", in: source)
+        let release = try Self.body(
+            of: "private func releaseDetachBlock(captureStuck: Bool) -> CloudSignOutFlowLogic.DetachBlockedNotice {", in: source)
         #expect(release.contains("defer { phase = .idle }"), "`releaseDetachBlock` ya no devuelve la fase a `.idle`")
         #expect(!release.contains("await"), "`releaseDetachBlock` suspende: un lector de la fase vería el `.blocked`")
     }
@@ -187,9 +188,9 @@ struct GroupsDetachBlockedPhaseWiringTests {
             la sección vuelve a leer la fase del coordinador: el desasociar ya no deja su bloqueo ahí, y `.working` es \
             también la de un cierre de sesión
             """)
-        #expect(section.contains("case .blockedBeforeWriting(let reason):"), "la sección no lee el motivo del retorno")
-        #expect(try Self.slice(from: "case .blockedBeforeWriting(let reason):", to: "case .purgeFailed:", in: section)
-            .contains("blockedReason = reason"), "el motivo devuelto no llega al aviso")
+        #expect(section.contains("case .blockedBeforeWriting(let notice):"), "la sección no lee el aviso del retorno")
+        #expect(try Self.slice(from: "case .blockedBeforeWriting(let notice):", to: "case .purgeFailed:", in: section)
+            .contains("blockedNotice = notice"), "el aviso devuelto no llega a la pantalla")
         #expect(section.contains("private var isWorking: Bool { signOutCoordinator.isDetaching }"), """
             el spinner de la sección ya no lo decide el coordinador: la hoja reabierta a mitad de la espera no lo pinta
             """)
