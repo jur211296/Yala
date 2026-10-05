@@ -1,14 +1,130 @@
 ---
 id: groups-tab-missing-panel-perf
-status: backlog
+status: qa
 priority: high
 area: "groups, performance, cloudkit"
 created: 2026-04-17
-updated: 2026-09-16
+updated: 2026-10-05
+qa-status: needs-testing
+qa-notes: falta el guion de dos aparatos de la seccion 2026-10-05; el codigo y sus tests estan hechos
 source: YalaWiki/Bugs/qa_groups-tab-no-perf-patterns.md
 ---
 
 # Grupos — el freno del Panel ya está puesto; lo que quema ahora es la lista
+
+## 2026-10-05 — los Ajustes del grupo ya tienen freno; queda solo mirarlo con dos aparatos
+
+**Cerrado el punto 2.** Lo que queda abierto es el punto 3 —verlo con dos aparatos—, y por eso el ticket
+pasa a `qa` con el guion de abajo. El doble-load al entrar, que seguía pendiente de volver a decidirse,
+sale a su propio ticket: `tickets/backlog/groups-double-load-on-entry-needs-redeciding.md`.
+
+### Lo que cambia para quien usa la app
+
+Con los Ajustes de un grupo abiertos, cuando otro miembro mete varios gastos seguidos, la pantalla rehace
+sus cuentas **una vez** por tanda en vez de una por cambio, y si la cierras antes de que llegue ese momento
+no hace nada. Además, la sección «Resumen para compartir» aparece en cuanto llega el primer gasto de otro
+miembro: antes se calculaba con los datos de un instante antes de recargarlos y no salía hasta reabrir.
+
+### Lo medido, en HEAD `a7b37a5f2`
+
+- El recálculo de Ajustes colgaba de `.onChange(of: sessionState.dataVersion)` en `GroupSettingsView.swift:204-210`
+  (las coordenadas `:101-105` del cuerpo y las `:204-210` del barrido del 16-sep: estas eran las buenas).
+- `GroupSettingsView` se presenta desde **un solo** sitio, la hoja `.settings` de `GroupDetailView.swift:306`, y el
+  detalle sigue montado debajo con su propio `onChange(dataVersion)` → dismiss-first → `reloadAndRecalculate()`.
+- **Un desfase que el ticket no había visto:** `recomputeShareableSummary()` leía `viewModel.expenses` y compañía
+  en el acto del `dataVersion`, 150 ms antes de que el VM recargara, y nadie lo repetía después.
+- El freno de `GroupsViewModel` y `GroupDetailViewModel` era una copia idéntica en los dos, sin costura para el
+  `applicationState`.
+- En `Yala/App/Views/Groups` solo hay tres `onChange(of: sessionState.dataVersion)`: lista y detalle con freno,
+  Ajustes sin él. **No hay otra superficie de Grupos con el mismo patrón**: no hizo falta ticket nuevo.
+
+### Lo hecho
+
+1. **El freno es un tipo, `RecalculationDebouncer`** (`Yala/App/ViewModels/RecalculationDebouncer.swift`), y las dos
+   VMs de Grupos lo usan en vez de su copia. Mismo comportamiento —150 ms, el reload pedido en la ventana no se
+   pierde, segundo plano y app inactiva lo suprimen— con la espera y el «¿está la app activa?» inyectables. La tarea
+   ya no retiene la VM (`[weak self]`). En DEBUG imprime cuántas peticiones juntó cada recálculo: es lo que usa el
+   guion de abajo.
+2. **Los Ajustes cuelgan del freno del detalle.** `GroupDetailViewModel.coalescedReloadRevision` sube una vez cuando
+   su recálculo con freno publica, y `GroupSettingsView` recalcula en su `onChange` en vez de en el de `dataVersion`.
+   No hay un segundo freno: es el mismo, con su cancelación y su pausa en segundo plano.
+3. **Lo que sigue en el acto:** abrir la hoja, el pre-tap de archivar y de eliminar, la respuesta de «Transferir y
+   salir» y el error de salir del grupo. Y el `transferRefusedByServer = false` se queda en el `onChange(dataVersion)`,
+   sin recálculo detrás: si esperara al freno, un cambio llegado ANTES de la respuesta del servidor borraría el
+   rechazo y «Transferir y salir» volvería a salir.
+
+### Verificación (iPhone 17 Pro, iOS 27.0, Xcode 27.0)
+
+- **Builds:** `Yala` y `Yala Dev` sin avisos en los ficheros tocados. Medido el tiempo de tipado del `body` de los
+  Ajustes (`-warn-long-expression-type-checking=20`): por debajo de 20 ms; el único aviso del fichero es un
+  `#Predicate` que ya estaba (`:690`, 45 ms).
+- **Unit del gate:** 104 tests en 14 suites, verdes: las tres nuevas (`RecalculationDebouncerTests`,
+  `GroupsCoalescedRecalculationTests`, `GroupSettingsRecomputeWiringTests`) y las que tocan las dos VMs.
+- **Rojo antes, verde después.** El freno de las VMs ya coalescía, así que sus tests nacen verdes: lo que faltaba
+  era la red. El rojo contra el código de hoy es el de los Ajustes: con su reacción vieja puesta de vuelta,
+  `dataVersion_onlyResetsTheServerRefusal_withoutRecomputing` cae; con el cambio, pasa.
+- **18 mutantes, 18 muertos.** 11 de comportamiento compilados aparte (no cancelar la tarea anterior, sin el
+  `guard` de cancelación, `cancel()` vacío, segundo plano que no cancela o no olvida el reload, ignorar la app
+  inactiva, la revisión subiendo en `loadData()`, el reload pisado…) y 7 de cableado leídos del disco (la reacción
+  vieja de Ajustes, un `.task(id: dataVersion)` colado, los Ajustes recalculando solo la deuda, el detalle
+  agendando antes del dismiss-first, la lista recalculando en el acto además de frenar, el `.onAppear` detrás del
+  freno, el «app activa» por defecto a `true`). Control final en verde y fuentes comparadas con su copia.
+- **Review adversarial, tres lentes** (concurrencia, paridad de los Ajustes, los tests como red): sin regresiones.
+  Lo que salió está arreglado en los tests o abierto como ticket (abajo).
+
+### Encontrado y no tocado
+
+- **Al volver a primer plano, un `guard UIApplication.shared.applicationState == .active` puede dejar el freno en
+  pausa** hasta el siguiente cambio de fase (10 sitios en la app, no solo Grupos). Hipótesis de dos lentes, sin
+  medir; desde hoy los Ajustes la heredan del detalle. Ticket:
+  `tickets/backlog/scene-phase-active-guard-may-leave-the-brake-paused.md`.
+- **Los Ajustes recalculan también al volver a primer plano**, porque el detalle agenda un recálculo con freno en
+  ese momento. Antes no lo hacían. Es trabajo de más una vez por vuelta, no un valor distinto.
+
+### Guion de device-QA — dos aparatos con el mismo grupo
+
+**Qué se prueba:** que una tanda de gastos que llega de otro aparato se junta en un solo recálculo, en la lista,
+en el detalle y en los Ajustes. En pantalla no se ve, así que se mira en la consola de Xcode.
+
+**Montaje (una vez):**
+
+1. Dos aparatos: **A** es tu iPhone conectado al Mac por cable; **B**, cualquier otro (el iPad o un segundo iPhone)
+   con la build de TestFlight o Yala Dev.
+2. En el Mac, abre `Yala.xcodeproj` en Xcode, elige el scheme **Yala Dev** arriba a la izquierda y, como destino,
+   tu iPhone (A). Pulsa ⌘R. La traza solo sale en builds de depuración, por eso A va desde Xcode.
+3. Abre la consola de Xcode con ⇧⌘C y escribe `RecalculationDebouncer` en el filtro de abajo a la derecha.
+4. En A y en B, entra con **dos cuentas distintas de Yala en modo nube** y haz que las dos sean miembros del mismo
+   grupo (crea uno nuevo en A, «Invitar» y únete desde B). Usa un grupo **sin gastos**: hace falta para el paso 9.
+
+**Escenario 1 — la lista:**
+
+5. En A, quédate en la pestaña **Grupos** (la lista).
+6. En B, entra en el grupo y mete **tres gastos seguidos**, lo más rápido que puedas.
+7. En la consola de A tienen que salir líneas `RecalculationDebouncer[GroupsViewModel]: un recálculo para N
+   peticiones`. **Pasa** si hay menos líneas que gastos, o alguna con N > 1. **Falla** si sale una línea por cada
+   cambio y todas con N = 1 aunque los gastos llegaron juntos.
+
+**Escenario 2 — el detalle y los Ajustes abiertos:**
+
+8. En A, entra en el grupo y abre **Ajustes** (la rueda dentada). Déjala abierta.
+9. En B, mete **un** gasto. En A, sin cerrar los Ajustes, en unos segundos tiene que aparecer la sección **«Resumen
+   para compartir»**. Antes de este cambio no aparecía hasta cerrar y volver a abrir *(deducido leyendo el
+   código, no visto: es lo primero que este paso confirma o desmiente)*.
+10. En B, mete **tres gastos seguidos**. En la consola de A, las líneas de `GroupDetailViewModel` siguen la misma
+    regla que en el paso 7, y la hoja de Ajustes no se traba.
+11. Cierra los Ajustes y el grupo en A. Mete otro gasto en B: la consola de A puede imprimir la línea de la lista,
+    pero **ninguna** de `GroupDetailViewModel`.
+
+**Escenario 3 — segundo plano:**
+
+12. En A, abre el grupo y manda Yala a segundo plano (sube desde abajo hasta la pantalla de inicio).
+13. En B, mete dos gastos. Espera diez segundos.
+14. Vuelve a Yala en A. **Pasa** si el detalle enseña los dos gastos y, de `GroupDetailViewModel`, la consola
+    imprime una o dos líneas al volver, no una por cada cambio con N = 1. Mientras Yala estaba en segundo plano
+    no debe haber salido ninguna.
+
+Si algo falla, una captura de la consola con las líneas y la hora de cada gasto en B basta para seguirlo.
+
 
 ## 2026-09-06 — la lista ya no rehace las cuentas en cada tecla (hecho)
 
@@ -318,19 +434,24 @@ corrí `qa/validate-coverage.sh`)*.
       _(Inc.1 — `6982383b`; re-medido: `isReady` en `GroupDetailViewModel.swift:41`/`:201`, consumido en `GroupDetailView.swift:119`)_
 - [x] Build verde y unit tests verdes antes de cada commit incremental. _(consta en los tres commits de julio)_
 - [~] El doble-load al entrar (leer del disco al fijar el contexto **y** otra vez tras el refresh
-      remoto) sigue ahí, por decisión conservadora del owner.
+      remoto) sigue ahí, por decisión conservadora del owner. **Sale de este ticket el 2026-10-05** a
+      `tickets/backlog/groups-double-load-on-entry-needs-redeciding.md`: no tiene que ver con el freno y
+      no se cierra mirando.
       _(re-medido: `GroupsContainerView.swift:186` + `:206`; `GroupDetailView.swift:211` + `:214`)_
       **⚠️ La razón que lo difirió era una propiedad de `SplitSyncManager`, que ya no existe, y el
       transporte de hoy sí bumpea `dataVersion` — hay que volver a decidirlo, no heredarlo.**
 - [x] **La lista de grupos no rehace las deudas de las filas que no se ven, ni una vez por tecla
       del buscador.** _(2026-09-06 — `debtsByGroup` precalculado en `recalculate()` + `LazyVStack`
       alrededor de las tarjetas. Medido: 29,74 → 0,014 ms por tecla con 30 grupos.)_
-- [ ] **El `.onChange(of: dataVersion)` de `GroupSettingsView` (`:103-105`) tiene freno y
+- [x] **El `.onChange(of: dataVersion)` de `GroupSettingsView` (`:103-105`) tiene freno y
       cancelación, sin retrasar el valor que lee el diálogo de archivar/borrar.**
-      _(NUEVO 2026-09-02 — ver punto 2)_
+      _(2026-10-05 — cuelga de `GroupDetailViewModel.coalescedReloadRevision`; el pre-tap sigue en el acto)_
+- [x] **Test de coalescing determinista, sin `applicationState`, y test de que un recálculo cancelado no
+      publica.** _(2026-10-05 — `RecalculationDebouncerTests`, `GroupsCoalescedRecalculationTests`,
+      `GroupSettingsRecomputeWiringTests`)_
 - [ ] Escenario cruzado: dos aparatos con el mismo grupo, 3-5 gastos rápidos en uno; el otro
-      junta esos cambios en un solo recálculo. _(PENDIENTE — el motivo del bloqueo, «CKShare en
-      simulador», caducó con el transporte; hay que replantear cómo se prueba.)_
+      junta esos cambios en un solo recálculo. _(2026-10-05 — replanteado sobre el canal de hoy y con
+      traza DEBUG para contarlo: guion de device-QA arriba, en la sección del 2026-10-05.)_
 - [~] `qa/coverage-index.json`: `groups-crud-balances-settlements` (deterministic, XCUITest) y
       `groups-stats-multicurrency` (agentic, device-qa) son las áreas afectadas. **Sus
       `lastVerified` ya no están donde los dejó este ticket** — hoy `2026-08-18` y `2026-07-18`,
