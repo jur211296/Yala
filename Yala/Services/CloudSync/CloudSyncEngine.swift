@@ -454,6 +454,12 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSignOut groups loss exit offered cause=\(cause, privacy: .public) pending=\(pending ?? -1, privacy: .public)")
     }
 
+    /// La captura de grupos previa a una salida no terminó en ninguna de sus vueltas y el History guarda algo fuera del outbox
+    /// (ticket `groups-drain-that-always-aborts-takes-the-loss-exit-away`): el aviso contará esos cambios.
+    static func signOutGroupsCaptureStuck() {
+        logger.notice("CloudSignOut groups capture stuck")
+    }
+
     /// La persona eligió «Cerrar sesión y perderlos»: el cierre se retoma con esa cifra como tope aceptado.
     static func signOutGroupsLossAccepted(pending: Int?) {
         logger.notice("CloudSignOut groups loss accepted pending=\(pending ?? -1, privacy: .public)")

@@ -879,19 +879,203 @@ nonisolated enum CloudSignOutFlowLogic {
         return .blocked(pendingCount: livePendingCount, reason: .groupsChangesFromAnotherAccount)
     }
 
+    // MARK: - La captura de Grupos que no termina (ticket `groups-drain-that-always-aborts-takes-the-loss-exit-away`)
+
+    /// **Las esperas entre los reintentos de la captura previa a una salida, crecientes** (decisión de Jürgen del 2026-10-05:
+    /// «reintentos espaciados con espera creciente durante varios segundos, mismo cambio fallando; luego ofrece la salida con
+    /// la cifra»). Cinco intentos: el primero al momento y los otros tras 0,5 s, 1 s, 2 s y 4 s —7,5 s en total—.
+    ///
+    /// **Por qué crecientes y por qué esos.** La captura de Grupos es síncrona y local, y lo que la tumba de forma pasajera
+    /// —un `save` que choca con otra escritura, un drain re-entrante, un store un momento ocupado— se cura en cuestión de
+    /// milisegundos o de un par de segundos. Las primeras esperas cortas curan lo rápido sin hacer esperar a nadie; las
+    /// largas dan su ocasión a lo que tarda. Tras 7,5 s con el MISMO cambio fallando en cada intento, lo que queda no se
+    /// cura esperando dentro del gesto. El tope no sube más porque la persona está mirando «Guardando tus cambios
+    /// pendientes…», y el gesto puede repetir esta espera hasta tres veces (la captura inicial, la de tras el ciclo y la de
+    /// la oferta) si el atasco no se hubiera probado ya (`groupsCaptureStillStuck`).
+    static let groupsExitCaptureRetryDelays: [Duration] = [.milliseconds(500), .seconds(1), .seconds(2), .seconds(4)]
+
+    /// Cuántas veces se intenta la captura antes de darla por atascada: el primer intento y uno tras cada espera.
+    static var groupsExitCaptureAttempts: Int { groupsExitCaptureRetryDelays.count + 1 }
+
+    /// Cómo acabó la captura previa a una salida, con sus reintentos (`CloudSessionSignOut.captureGroupsForExit`).
+    enum GroupsExitCapture: Equatable {
+        /// Terminó en algún intento, o los que fallaron no dejaban nada fuera del outbox: todo lo local está en el outbox, o
+        /// en el espejo que el aviso ya cuenta.
+        case completed
+        /// **Atascada: no terminó en ningún intento y el MISMO cambio del History siguió sin capturar en todos** (`persistent`
+        /// lee las claves). Esperar no lo cura: el aviso de una salida cuenta esos cambios junto a las filas, con cifra
+        /// exacta (`GroupsLoss.uncaptured`).
+        case stuck
+        /// No terminó y no se probó el atasco: los reintentos se cortaron (el gesto se canceló, o el import dejó de estar
+        /// quieto), el History no se dejó leer en algún intento —sin él no hay cifra exacta ni «mismo cambio»—, o lo que
+        /// quedaba fuera cambió de un intento a otro. Es lo pasajero: no abre la salida del atasco.
+        case unfinished
+    }
+
+    /// **El veredicto de los reintentos, en puro.** `failedReadings` es lo que la sonda del History leyó tras cada intento
+    /// fallido, en orden (`nil` = no se pudo leer); `attempts`, cuántos intentos tocaban.
+    ///  · Un intento terminó → `.completed`.
+    ///  · El último intento fallido leyó el History vacío → `.completed`: el fallo no escondía ningún cambio.
+    ///  · No se dieron todos los intentos → `.unfinished`.
+    ///  · Algún intento no pudo leer el History → `.unfinished`: sin lectura no hay cifra exacta que enseñar.
+    ///  · Algún cambio siguió fuera en TODOS los intentos (la intersección no está vacía) → `.stuck`; si no, el drain avanzaba
+    ///    entre intentos y es `.unfinished`.
+    static func groupsExitCapture(completed: Bool, failedReadings: [Set<String>?],
+                                  attempts: Int = groupsExitCaptureAttempts) -> GroupsExitCapture {
+        if completed { return .completed }
+        if let last = failedReadings.last, last == [] { return .completed }
+        guard failedReadings.count >= attempts else { return .unfinished }
+        return groupsPersistentlyUncaptured(failedReadings).map { $0.isEmpty ? .unfinished : .stuck } ?? .unfinished
+    }
+
+    /// **Los cambios que siguieron sin capturar en TODOS los intentos**: la intersección de las lecturas. `nil` si alguna no se
+    /// pudo leer o no hay ninguna. Es «el mismo cambio fallando» de la decisión de Jürgen.
+    static func groupsPersistentlyUncaptured(_ failedReadings: [Set<String>?]) -> Set<String>? {
+        guard let first = failedReadings.first, var common = first else { return nil }
+        for reading in failedReadings.dropFirst() {
+            guard let reading else { return nil }
+            common.formIntersection(reading)
+        }
+        return common
+    }
+
+    /// **¿Sigue atascado lo que ya se probó atascado en este gesto?** Un gesto captura hasta tres veces (al empezar, tras el
+    /// ciclo y al ofrecer); con el atasco ya probado, repetir 7,5 s de reintentos en cada una no prueba nada nuevo. Basta un
+    /// intento que falle con alguno de esos MISMOS cambios todavía fuera. Si el cambio se capturó o cambió, se vuelve a
+    /// los reintentos completos.
+    static func groupsCaptureStillStuck(provenStuck: Set<String>, reading: Set<String>?) -> Bool {
+        guard let reading, !provenStuck.isEmpty else { return false }
+        return !reading.isDisjoint(with: provenStuck)
+    }
+
     /// **Un bloqueo que abre la salida de la pérdida, después de volver a capturar.** Son los únicos que un caller deja
     /// seguir —la pérdida aceptada compara las filas VIVAS con las que la persona aceptó perder
-    /// (`continuesAfterBlockedUpload`)—, así que solo se devuelven tal cual si no queda nada fuera del outbox. Si queda, es
-    /// una subida pendiente sin salida de pérdida: la persona no puede aceptar perder lo que el aviso no le enseñó (review
-    /// adversarial del 2026-09-26). La cifra es la del outbox después de capturar, que es la que el aviso va a enseñar.
+    /// (`continuesAfterBlockedUpload`)—, así que solo se devuelven tal cual si el aviso puede contar todo lo que se
+    /// perdería. Si no, es una subida pendiente sin salida de pérdida: la persona no puede aceptar perder lo que el aviso no
+    /// le enseñó (review adversarial del 2026-09-26). La cifra es la del outbox después de capturar.
     ///
     /// Nació para el attest (`attestBlockAfterRecapture`); desde el 2026-09-28 cubre también la sesión caducada y los
     /// cambios de otra cuenta, que abren la misma salida (`lossCause`). Un motivo que no la abre vuelve tal cual.
-    static func lossBlockAfterRecapture(reason: BlockReason, captureCompleted: Bool, livePendingCount: Int,
+    ///
+    /// **Con la captura atascada el motivo se CONSERVA desde el 2026-10-05** (ticket
+    /// `groups-drain-that-always-aborts-takes-the-loss-exit-away`): un drain que no termina en ninguna vuelta no se cura con
+    /// otro intento, y traducirlo a `.uploadRetryLater` le quitaba la salida para siempre al teléfono sin App Attest, a la
+    /// sesión caducada y a los cambios de otra cuenta. Lo que no está en el outbox lo cuenta el aviso por su clave del
+    /// History (`GroupsLoss.uncaptured`), y el espejo por su `clientMutationID`. **Lo pasajero sigue sin salida**: la captura
+    /// que terminó con entradas del espejo fuera del outbox (una rehidratación que no entró) y la que no probó el atasco
+    /// (`GroupsExitCapture.unfinished`).
+    static func lossBlockAfterRecapture(reason: BlockReason, capture: GroupsExitCapture, livePendingCount: Int,
                                         unrehydratedMirrorCount: Int) -> PushAllVerdict {
         guard lossCause(reason) != nil else { return .blocked(pendingCount: livePendingCount, reason: reason) }
-        let settled = captureCompleted && unrehydratedMirrorCount == 0
-        return .blocked(pendingCount: livePendingCount, reason: settled ? reason : .uploadRetryLater)
+        let keepsReason: Bool
+        switch capture {
+        case .completed: keepsReason = unrehydratedMirrorCount == 0
+        case .stuck: keepsReason = true
+        case .unfinished: keepsReason = false
+        }
+        return .blocked(pendingCount: livePendingCount, reason: keepsReason ? reason : .uploadRetryLater)
+    }
+
+    /// **Qué dice el push-all cuando el ciclo vació lo que esta sesión puede subir y la captura sigue atascada** (2026-10-05).
+    /// Lo que queda solo vive en el History, así que decide quién lo apuntó y qué paró el ciclo:
+    ///  · el ciclo paró por un motivo que abre la salida (sin App Attest, sin sesión): ese motivo. Con el outbox a 0 el
+    ///    veredicto del ciclo se ignoraba y la salida no se ofrecía nunca.
+    ///  · todo lo de fuera es de otra cuenta, o sin dueño probado (`uncapturedAllHeldForAnotherAccount`, fechado contra el
+    ///    registro de sesiones como hace el drain): `.groupsChangesFromAnotherAccount`, con su salida.
+    ///  · si algo es de esta sesión, `.uploadRetryLater` y sin salida: con attest y sesión buenos solo espera al drain, y la
+    ///    decisión A de Jürgen no da salida a un teléfono normal. `nil` (no se pudo leer) cuenta igual.
+    static func stuckCaptureVerdict(cycleReason: BlockReason?, livePendingCount: Int,
+                                    uncapturedAllHeldForAnotherAccount: Bool?) -> PushAllVerdict {
+        if let cycleReason, lossCause(cycleReason) != nil {
+            return .blocked(pendingCount: livePendingCount, reason: cycleReason)
+        }
+        if uncapturedAllHeldForAnotherAccount == true {
+            return .blocked(pendingCount: livePendingCount, reason: .groupsChangesFromAnotherAccount)
+        }
+        return .blocked(pendingCount: livePendingCount > 0 ? livePendingCount : Int.max, reason: .uploadRetryLater)
+    }
+
+    /// **Lo que un cierre se llevaría de grupos, en sus dos mitades** (2026-10-05, ticket
+    /// `groups-drain-that-always-aborts-takes-the-loss-exit-away`): las filas vivas del outbox y las entradas del espejo sin
+    /// fila, por su `clientMutationID` (`CloudSessionSignOut.groupsLossRowIDs`), y los cambios del History que ningún drain
+    /// capturó, por su clave (`GroupsSyncClient.uncapturedGroupsChanges`). `nil` en una mitad = no se pudo leer.
+    ///
+    /// **La segunda mitad solo se lee con la captura atascada**: con la captura completa es `[]` por construcción, y leer el
+    /// History de un teléfono sin cursor de Grupos contaría ediciones de la era CloudKit que nunca suben. Es `PersonalLoss`
+    /// para el outbox de grupos.
+    struct GroupsLoss: Equatable {
+        let rows: Set<UUID>?
+        let uncaptured: Set<String>?
+
+        /// La cifra del aviso: `Int.max` si alguna mitad no se pudo leer, el «no se pudo contar» del repo.
+        var count: Int {
+            guard let rows, let uncaptured else { return .max }
+            return rows.count + uncaptured.count
+        }
+
+        /// No hay nada que perder: las dos mitades leídas y vacías.
+        var isEmpty: Bool { rows?.isEmpty == true && uncaptured?.isEmpty == true }
+    }
+
+    /// **¿Deja el recuento final seguir con lo que el drain de Grupos no capturó?** El gemelo de
+    /// `residualUncapturedAllowsSignOut` (2026-10-05): con la pérdida aceptada sobre una captura atascada, lo apuntado después
+    /// del aviso no llega nunca al outbox y el borrado se lo llevaría sin contarlo. Sin aceptación, o con una aceptada sobre
+    /// una captura completa (`readsUncaptured == false`), no cambia nada: el History no se lee (`GroupsLoss`).
+    static func groupsResidualUncapturedAllowsSignOut(now: Set<String>?, acceptance: CausedLossAcceptance?) -> Bool {
+        guard let acceptance, acceptance.readsUncaptured else { return true }
+        return acceptance.coversUncaptured(now)
+    }
+
+    /// **El motivo por el que paró un ciclo del canal, o `nil` si no paró** (`.completed`/`.coalesced`). Es lo que la rama de
+    /// la captura atascada lee del último ciclo REAL del push-all (`stuckCaptureVerdict`): con el outbox a 0,
+    /// `pushAllVerdict` da `.drained` aunque el ciclo fallara, y ese fallo —sin App Attest, sin sesión— es justo lo que abre
+    /// la salida.
+    static func cycleBlockReason(_ outcome: SyncCadencePolicy.CadenceOutcome, channelKilled: Bool,
+                                 attestUnavailable: Bool, uploadFailed: Bool) -> BlockReason? {
+        switch outcome {
+        case .completed, .coalesced: return nil
+        case .transient, .sessionExpired, .accountUnavailable:
+            return classify(outcome, channelKilled: channelKilled, attestUnavailable: attestUnavailable,
+                            uploadFailed: uploadFailed)
+        }
+    }
+
+    /// **Qué History relee el recuento pegado al borrado** (`CloudSessionSignOut.groupsResidualUncaptured`): con lo aceptado
+    /// sobre una captura atascada, lo que lee la sonda (`read`); si no, `[]` y la sonda no se toca (`GroupsLoss`).
+    static func groupsResidualUncapturedToCheck(acceptance: CausedLossAcceptance?,
+                                                read: () -> Set<String>?) -> Set<String>? {
+        guard acceptance?.readsUncaptured == true else { return [] }
+        return read()
+    }
+
+    /// **Cuántos cambios de grupos se lleva un cierre con la pérdida aceptada**, para el canario: las filas que quedan más
+    /// los cambios del History que lo aceptado contó. `Int.max` si alguna mitad no tiene cifra (`shownLossCount`).
+    static func groupsDiscardedCount(rows: Int, acceptance: CausedLossAcceptance) -> Int {
+        guard rows < Int.max, let uncaptured = acceptance.uncaptured else { return Int.max }
+        let (sum, overflow) = rows.addingReportingOverflow(uncaptured.count)
+        return overflow ? Int.max : sum
+    }
+
+    /// **¿Sigue valiendo lo aceptado de grupos tras volver a subir?** Que el bloqueo sea de su causa y que lo que queda esté
+    /// entre lo aceptado, en las DOS mitades: las filas (`continuesAfterBlockedUpload`) y los cambios del History.
+    static func groupsLossAcceptanceContinues(_ acceptance: CausedLossAcceptance, reason: BlockReason,
+                                              pendingRows: Set<UUID>?, uncaptured: Set<String>?) -> Bool {
+        continuesAfterBlockedUpload(reason: reason, cause: acceptance.cause, pendingRows: pendingRows,
+                                    acceptance: acceptance.rows)
+            && acceptance.coversUncaptured(uncaptured)
+    }
+
+    /// **¿Cubre lo aceptado lo de ahora?**, para una mitad. Sin nada ahora, siempre; aceptado sin leer (el aviso salió sin
+    /// cifra), cualquiera; ahora sin leer, solo eso; y si no, todo lo de ahora tiene que estar entre lo aceptado.
+    ///
+    /// **Una sola función para las tres comparaciones** (2026-10-05): la mitad del History del cierre en la nube
+    /// (`PersonalLossAcceptance`), las mitades de «Empezar de cero» (`FreshStartGroupsLoss`) y la del History de Grupos
+    /// (`CausedLossAcceptance`) eran tres copias idénticas, y una que divergiera aceptaría lo que las otras rechazan.
+    static func lossHalfCovers<T: Hashable>(accepted: Set<T>?, now: Set<T>?) -> Bool {
+        if let now, now.isEmpty { return true }
+        guard let accepted else { return true }
+        guard let now else { return false }
+        return now.isSubset(of: accepted)
     }
 
     /// **Por qué «Empezar de cero» no borra lo que la subida dejó** (`CloudSessionSignOut.drainGroupsBeforeFreshStart`). Si
@@ -938,31 +1122,42 @@ nonisolated enum CloudSignOutFlowLogic {
     ///
     /// Es la instantánea que enseña el aviso y lo que la persona acepta perder. **Por fila y no por cifra**, por lo mismo
     /// que `LossAcceptance`: con la cifra, aceptar 2 cambios cubría cualquier par, y uno apuntado después se iba sin aviso.
+    ///
+    /// **Desde el 2026-10-05 tiene una tercera mitad** (ticket `groups-drain-that-always-aborts-takes-the-loss-exit-away`): los
+    /// cambios del History de Grupos que ningún drain capturó, por su clave (`uncaptured`). Con un drain que no termina nunca
+    /// esos cambios no llegan ni al outbox ni al espejo, y el borrado del dominio se los lleva igual. **Solo se lee con la
+    /// captura atascada** (`readsUncaptured`): con la captura completa es `[]`, por lo mismo que `GroupsLoss`.
     struct FreshStartGroupsLoss: Equatable {
         let rows: Set<UUID>?
         let mirrorKeys: Set<String>?
+        let uncaptured: Set<String>?
+
+        init(rows: Set<UUID>?, mirrorKeys: Set<String>?, uncaptured: Set<String>? = []) {
+            self.rows = rows
+            self.mirrorKeys = mirrorKeys
+            self.uncaptured = uncaptured
+        }
 
         /// La cifra del aviso: `Int.max` si alguna mitad no se pudo leer, el «no se pudo contar» del repo
         /// (`shownLossCount`).
         var count: Int {
-            guard let rows, let mirrorKeys else { return .max }
-            return rows.count + mirrorKeys.count
+            guard let rows, let mirrorKeys, let uncaptured else { return .max }
+            return rows.count + mirrorKeys.count + uncaptured.count
         }
 
-        var isEmpty: Bool { rows?.isEmpty == true && mirrorKeys?.isEmpty == true }
+        var isEmpty: Bool { rows?.isEmpty == true && mirrorKeys?.isEmpty == true && uncaptured?.isEmpty == true }
+
+        /// ¿Lo aceptado contó el History? Entonces el cinturón del borrado lo vuelve a leer antes de borrar
+        /// (`DataWipeService.requireNoUnsentGroupWrites`); si no, no lo lee.
+        var readsUncaptured: Bool { uncaptured != [] }
 
         /// ¿Aceptar ESTO cubre lo que hay AHORA? Cada mitad por separado: lo de ahora tiene que estar entre lo aceptado.
         /// Una mitad aceptada sin leer (`nil`, el aviso salió sin cifra) cubre cualquiera, como `LossAcceptance.uncounted`;
         /// una mitad de ahora que no se pudo leer solo la cubre eso.
         func covers(_ now: FreshStartGroupsLoss) -> Bool {
-            Self.covers(accepted: rows, now: now.rows) && Self.covers(accepted: mirrorKeys, now: now.mirrorKeys)
-        }
-
-        private static func covers<T: Hashable>(accepted: Set<T>?, now: Set<T>?) -> Bool {
-            if let now, now.isEmpty { return true }
-            guard let accepted else { return true }
-            guard let now else { return false }
-            return now.isSubset(of: accepted)
+            CloudSignOutFlowLogic.lossHalfCovers(accepted: rows, now: now.rows)
+                && CloudSignOutFlowLogic.lossHalfCovers(accepted: mirrorKeys, now: now.mirrorKeys)
+                && CloudSignOutFlowLogic.lossHalfCovers(accepted: uncaptured, now: now.uncaptured)
         }
     }
 
@@ -974,6 +1169,8 @@ nonisolated enum CloudSignOutFlowLogic {
     /// (`CloudSessionSignOut.settleFreshStartBlock`). Es el motivo de `groupsCaptureVerdict` para lo mismo —un drain o una
     /// rehidratación que otro intento cura— y no ofrece la salida: la persona no puede aceptar perder lo que el aviso no
     /// cuenta. Vive aquí y no escrito a mano en el coordinador, donde `.uploadRetryLater` lo decide el testigo del ciclo.
+    /// **Desde el 2026-10-05 solo lo produce la captura que no probó el atasco** (`GroupsExitCapture.unfinished`): la
+    /// atascada conserva el motivo y cuenta el History (`FreshStartGroupsLoss.uncaptured`).
     static let freshStartUncapturedReason: BlockReason = .uploadRetryLater
 
     static func freshStartContinuesDiscarding(reason: BlockReason, now: FreshStartGroupsLoss,
@@ -1044,9 +1241,35 @@ nonisolated enum CloudSignOutFlowLogic {
     /// dos lados**: los cambios de GRUPOS (`CloudSessionSignOut.acceptedGroupsLoss`) y, desde el 2026-09-28, los PERSONALES
     /// de la nube (`acceptedPersonalLoss`), que hasta ese día no llevaban causa porque su única salida era el attest (ticket
     /// `cloud-sign-out-with-an-expired-session-and-personal-changes-has-no-exit`).
+    ///
+    /// **Desde el 2026-10-05 lleva también la mitad del History** (`uncaptured`, ticket
+    /// `groups-drain-that-always-aborts-takes-the-loss-exit-away`): los cambios de grupos que el drain no capturó y que el aviso
+    /// contó (`GroupsLoss`). `[]` = el aviso salió con la captura completa y no leyó el History; `nil` = lo leyó y no pudo, y
+    /// lo aceptado cubre cualquier cambio de esa mitad, como `LossAcceptance.uncounted` con las filas.
     struct CausedLossAcceptance: Equatable {
         let rows: LossAcceptance
         let cause: LossCause
+        let uncaptured: Set<String>?
+
+        init(rows: LossAcceptance, cause: LossCause, uncaptured: Set<String>? = []) {
+            self.rows = rows
+            self.cause = cause
+            self.uncaptured = uncaptured
+        }
+
+        /// Lo aceptado al elegir «Cerrar sesión y perderlos» sobre lo que contó el aviso de grupos.
+        init(offer loss: GroupsLoss, cause: LossCause) {
+            self.init(rows: loss.rows.map { .rows($0) } ?? .uncounted, cause: cause, uncaptured: loss.uncaptured)
+        }
+
+        /// ¿El aviso contó el History? Entonces los recuentos finales lo vuelven a leer pegados al borrado
+        /// (`groupsResidualUncapturedAllowsSignOut`).
+        var readsUncaptured: Bool { uncaptured != [] }
+
+        /// ¿Cubre lo aceptado los cambios sin capturar de AHORA? (`lossHalfCovers`).
+        func coversUncaptured(_ now: Set<String>?) -> Bool {
+            CloudSignOutFlowLogic.lossHalfCovers(accepted: uncaptured, now: now)
+        }
     }
 
     /// **Lo que el cierre en la nube se llevaría de los cambios PERSONALES, en sus dos mitades** (2026-10-05, ticket
@@ -1093,10 +1316,7 @@ nonisolated enum CloudSignOutFlowLogic {
         /// ¿Cubre lo aceptado los cambios sin capturar de AHORA? Sin ninguno, siempre; aceptado sin leer, cualquiera; ahora
         /// sin leer, solo eso; y si no, todos tienen que estar entre los aceptados.
         func coversUncaptured(_ now: Set<String>?) -> Bool {
-            if let now, now.isEmpty { return true }
-            guard let uncaptured else { return true }
-            guard let now else { return false }
-            return now.isSubset(of: uncaptured)
+            CloudSignOutFlowLogic.lossHalfCovers(accepted: uncaptured, now: now)
         }
     }
 

@@ -181,7 +181,8 @@ terminal y, en los cierres de sesión, una salida que pierde esos cambios con co
   fila» de `swiftdata-cloudkit.md`)—: solo la ofrecen los cierres de sesión (Ajustes, la hoja del
   cambio de Apple ID y la puerta del Welcome, salvo al invitado). El desasociar pasa `lossExit: nil` y enseña el aviso sin
   salida. `exitDiscardingUnsyncedGroups` no borra nada: retoma el cierre con las FILAS que contó el aviso (por
-  `clientMutationID`) como lo aceptado, y los cambios mueren con el boot-wipe de siempre. Una fila que no estaba en el aviso
+  `clientMutationID`) —y, con el drain de Grupos atascado, los cambios del History que contó, por su clave (2026-10-05)— como
+  lo aceptado, y los cambios mueren con el boot-wipe de siempre. Una fila que no estaba en el aviso
   vuelve a avisar aunque la cifra no crezca: comparar por cifra se llevaba un cambio nuevo sin contarlo. En la nube, lo
   aceptado solo alcanza a los cambios de GRUPOS.
 - **Tests: aísla la tienda** (`let racha = try IsolatedAttestStreak(); defer { racha.restore() }`) en todo test cuyo stub

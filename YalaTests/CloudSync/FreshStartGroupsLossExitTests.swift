@@ -103,6 +103,9 @@ struct FreshStartGroupsLossServiceTests {
     typealias Block = CloudSessionSignOut.FreshStartGroupsBlock
     typealias Loss = CloudSignOutFlowLogic.FreshStartGroupsLoss
 
+    /// Cuenta llamadas desde los closures del testigo.
+    private final class Laps { var count = 0 }
+
     private func liveRow(_ group: String = "g1") -> GroupSyncOutbox {
         GroupSyncOutbox(
             syncID: UUID(), groupID: group, entityType: "SplitExpense",
@@ -131,7 +134,7 @@ struct FreshStartGroupsLossServiceTests {
     /// **Con un motivo que ofrece la salida, el bloqueo cuenta lo que el borrado se llevaría**: las filas vivas Y las
     /// entradas del espejo. Antes enseñaba solo lo que devolvía la subida, y el borrado purga el espejo entero.
     @Test(arguments: [CloudSignOutFlowLogic.BlockReason.sessionExpired, .permanent, .attestUnavailable])
-    func offeringReason_blocksWithTheWholeLoss_andRecordsTheOffer(reason: CloudSignOutFlowLogic.BlockReason) throws {
+    func offeringReason_blocksWithTheWholeLoss_andRecordsTheOffer(reason: CloudSignOutFlowLogic.BlockReason) async throws {
         let context = try makeTestContext()
         try clearOutbox(context)
         resetCoordinator(context)
@@ -139,7 +142,7 @@ struct FreshStartGroupsLossServiceTests {
         context.insert(liveRow("g2"))
         try context.save()
 
-        let verdict = CloudSessionSignOut.shared.settleFreshStartBlock(
+        let verdict = await CloudSessionSignOut.shared.settleFreshStartBlock(
             Block(pendingCount: 2, reason: reason), accepted: nil, context: context, witness: witness(mirror: ["m1"]))
 
         #expect(verdict == .blocked(Block(pendingCount: 3, reason: reason)), "dos filas y una entrada del espejo")
@@ -154,7 +157,7 @@ struct FreshStartGroupsLossServiceTests {
     @Test(arguments: CloudSignOutFlowLogic.BlockReason.allCases.filter {
         !CloudSignOutFlowLogic.freshStartOffersGroupsLossExit($0)
     })
-    func nonOfferingReason_keepsTheBlock_andIgnoresAnAcceptance(reason: CloudSignOutFlowLogic.BlockReason) throws {
+    func nonOfferingReason_keepsTheBlock_andIgnoresAnAcceptance(reason: CloudSignOutFlowLogic.BlockReason) async throws {
         let context = try makeTestContext()
         try clearOutbox(context)
         resetCoordinator(context)
@@ -163,7 +166,7 @@ struct FreshStartGroupsLossServiceTests {
         try context.save()
         let accepted = Loss(rows: [row.clientMutationID], mirrorKeys: [])
 
-        let verdict = CloudSessionSignOut.shared.settleFreshStartBlock(
+        let verdict = await CloudSessionSignOut.shared.settleFreshStartBlock(
             Block(pendingCount: 1, reason: reason), accepted: accepted, context: context, witness: .quiet)
 
         #expect(verdict == .blocked(Block(pendingCount: 1, reason: reason)))
@@ -172,7 +175,7 @@ struct FreshStartGroupsLossServiceTests {
     }
 
     /// **Aceptado y cubierto: sigue perdiendo exactamente eso.**
-    @Test func offeringReason_withACoveringAcceptance_proceedsWithTheLoss() throws {
+    @Test func offeringReason_withACoveringAcceptance_proceedsWithTheLoss() async throws {
         let context = try makeTestContext()
         try clearOutbox(context)
         resetCoordinator(context)
@@ -181,7 +184,7 @@ struct FreshStartGroupsLossServiceTests {
         try context.save()
         let accepted = Loss(rows: [row.clientMutationID], mirrorKeys: ["m1"])
 
-        let verdict = CloudSessionSignOut.shared.settleFreshStartBlock(
+        let verdict = await CloudSessionSignOut.shared.settleFreshStartBlock(
             Block(pendingCount: 1, reason: .sessionExpired), accepted: accepted, context: context,
             witness: witness(mirror: ["m1"]))
 
@@ -190,7 +193,7 @@ struct FreshStartGroupsLossServiceTests {
     }
 
     /// **Un cambio que el aviso no enseñó hace volver el aviso**, con la cifra nueva: nada se pierde sin haberse contado.
-    @Test func offeringReason_withANewRow_offersAgainWithTheNewCount() throws {
+    @Test func offeringReason_withANewRow_offersAgainWithTheNewCount() async throws {
         let context = try makeTestContext()
         try clearOutbox(context)
         resetCoordinator(context)
@@ -200,7 +203,7 @@ struct FreshStartGroupsLossServiceTests {
         try context.save()
         let accepted = Loss(rows: [shown.clientMutationID], mirrorKeys: [])
 
-        let verdict = CloudSessionSignOut.shared.settleFreshStartBlock(
+        let verdict = await CloudSessionSignOut.shared.settleFreshStartBlock(
             Block(pendingCount: 2, reason: .attestUnavailable), accepted: accepted, context: context, witness: .quiet)
 
         #expect(verdict == .blocked(Block(pendingCount: 2, reason: .attestUnavailable)))
@@ -219,7 +222,7 @@ struct FreshStartGroupsLossServiceTests {
 
         context.insert(liveRow())
         try context.save()
-        _ = CloudSessionSignOut.shared.settleFreshStartBlock(
+        _ = await CloudSessionSignOut.shared.settleFreshStartBlock(
             Block(pendingCount: 1, reason: .sessionExpired), accepted: nil, context: context, witness: .quiet)
         #expect(CloudSessionSignOut.shared.acceptFreshStartGroupsLoss())
         #expect(CloudSessionSignOut.shared.freshStartAcceptedLoss != nil, "control: lo aceptado está puesto")
@@ -236,37 +239,137 @@ struct FreshStartGroupsLossServiceTests {
         #expect(!CloudSessionSignOut.shared.acceptFreshStartGroupsLoss(), "y la oferta se fue con el intento")
     }
 
-    /// **Lo que un drain a medias dejó en el History no se puede aceptar perder** (review adversarial del 2026-09-26): el
-    /// ciclo solo re-captura tras un bloqueo por App Attest, así que con `.sessionExpired` o `.permanent` ese gasto no
-    /// estaba ni en las filas ni en el espejo, y el aviso no lo contaba. Con la captura a medias el bloqueo sale sin salida
-    /// de pérdida, también con algo aceptado; con la captura completa, la oferta de siempre.
+    /// **Lo que un drain a medias dejó en el History no se puede aceptar perder sin contarlo** (review adversarial del
+    /// 2026-09-26): el ciclo solo re-captura tras un bloqueo por App Attest, así que con `.sessionExpired` o `.permanent` ese
+    /// gasto no estaba ni en las filas ni en el espejo, y el aviso no lo contaba.
+    ///
+    /// **Desde el 2026-10-05 (ticket `groups-drain-that-always-aborts-takes-the-loss-exit-away`) la captura atascada no
+    /// quita la salida: la cuenta.** Un drain que no termina en ningún intento no se cura con otro intento, y hasta ese día
+    /// «Empezar de cero» se quedaba sin salida para siempre. La cifra suma filas, espejo y los cambios del History que el
+    /// drain no capturó (más de uno, a propósito), y lo aceptado los cubre por clave.
     @Test(arguments: [CloudSignOutFlowLogic.BlockReason.sessionExpired, .permanent, .attestUnavailable])
-    func offeringReason_withAnUnfinishedCapture_blocksWithoutTheExit(reason: CloudSignOutFlowLogic.BlockReason) throws {
+    func offeringReason_withAStuckCapture_offersTheLossCountingTheHistory(
+        reason: CloudSignOutFlowLogic.BlockReason
+    ) async throws {
+        let context = try makeTestContext()
+        try clearOutbox(context)
+        resetCoordinator(context)
+        CloudSessionSignOut.shared.exitCaptureDelayOverride = .milliseconds(1)
+        defer { CloudSessionSignOut.shared.exitCaptureDelayOverride = nil }
+        let row = liveRow()
+        context.insert(row)
+        try context.save()
+        let laps = Laps()
+        var stuck = CloudSessionSignOut.GroupsExitWitness(
+            capture: { _ in laps.count += 1; return false },
+            mirrorPending: { _, _ in 1 }, mirrorPendingKeys: { _, _ in ["m1"] })
+        stuck.uncapturedChanges = { _ in Self.history(["h1", "h2", "h3"]) }
+
+        let verdict = await CloudSessionSignOut.shared.settleFreshStartBlock(
+            Block(pendingCount: 1, reason: reason), accepted: nil, context: context, witness: stuck)
+
+        #expect(laps.count == CloudSignOutFlowLogic.groupsExitCaptureAttempts, "la captura no dio todos sus intentos")
+        #expect(verdict == .blocked(Block(pendingCount: 5, reason: reason)), """
+            con la captura atascada el aviso tiene que contar la fila, la entrada del espejo y los tres cambios del History \
+            que el drain no capturó: \(verdict)
+            """)
+        #expect(CloudSessionSignOut.shared.acceptFreshStartGroupsLoss(), "la salida se ofrece: esperar no la cura")
+        let accepted = try #require(CloudSessionSignOut.shared.takeFreshStartAcceptedLoss())
+        #expect(accepted.uncaptured == ["h1", "h2", "h3"])
+
+        // Lo aceptado cubre exactamente eso: otro intento con lo mismo sigue perdiéndolo…
+        let again = await CloudSessionSignOut.shared.settleFreshStartBlock(
+            Block(pendingCount: 1, reason: reason), accepted: accepted, context: context, witness: stuck)
+        #expect(again == .lossAccepted(accepted))
+
+        // …y un cambio nuevo en el History, que el aviso no enseñó, hace volver el aviso con la cifra nueva.
+        stuck.uncapturedChanges = { _ in Self.history(["h1", "h2", "h3", "h4"]) }
+        let newer = await CloudSessionSignOut.shared.settleFreshStartBlock(
+            Block(pendingCount: 1, reason: reason), accepted: accepted, context: context, witness: stuck)
+        #expect(newer == .blocked(Block(pendingCount: 6, reason: reason)))
+
+        // El cinturón del borrado vuelve a leer el History cuando lo aceptado lo contó: el cambio nuevo no pasa.
+        #expect(throws: DataWipeService.GroupsDomainWipeError.unsentGroupWrites(pendingCount: 6)) {
+            try DataWipeService.requireNoUnsentGroupWrites(in: context, witness: stuck, accepting: accepted)
+        }
+        try clearOutbox(context)
+        resetCoordinator(context)
+    }
+
+    /// **Lo pasajero sigue sin salida** (2026-10-05): una captura cuyos reintentos se cortan —el gesto se canceló— no sabe si
+    /// el drain está atascado, y el aviso no puede contar lo que no se capturó. Bloquea con «inténtalo en un rato», también
+    /// con algo aceptado.
+    @Test(arguments: [CloudSignOutFlowLogic.BlockReason.sessionExpired, .permanent, .attestUnavailable])
+    func offeringReason_withAnUnfinishedCapture_blocksWithoutTheExit(
+        reason: CloudSignOutFlowLogic.BlockReason
+    ) async throws {
         let context = try makeTestContext()
         try clearOutbox(context)
         resetCoordinator(context)
         let row = liveRow()
         context.insert(row)
         try context.save()
-        let unfinished = CloudSessionSignOut.GroupsExitWitness(
+        var unfinished = CloudSessionSignOut.GroupsExitWitness(
             capture: { _ in false }, mirrorPending: { _, _ in 0 }, mirrorPendingKeys: { _, _ in [] })
+        unfinished.uncapturedChanges = { _ in Self.history(["h1"]) }
 
-        let verdict = CloudSessionSignOut.shared.settleFreshStartBlock(
-            Block(pendingCount: 1, reason: reason),
-            accepted: Loss(rows: [row.clientMutationID], mirrorKeys: []), context: context, witness: unfinished)
+        // La cancelación corta la pausa entre el primer intento y el segundo.
+        let task = Task { @MainActor in
+            await CloudSessionSignOut.shared.settleFreshStartBlock(
+                Block(pendingCount: 1, reason: reason),
+                accepted: Loss(rows: [row.clientMutationID], mirrorKeys: []), context: context, witness: unfinished)
+        }
+        task.cancel()
+        let verdict = await task.value
 
         #expect(verdict == .blocked(Block(pendingCount: 1, reason: .uploadRetryLater)))
         #expect(!CloudSessionSignOut.shared.acceptFreshStartGroupsLoss(), "sin oferta: no se enseñó todo")
         try clearOutbox(context)
     }
 
+    /// **Y la captura que falla una vez y termina en el intento siguiente es lo pasajero que se cura**: la oferta cuenta lo
+    /// que hay de verdad —las filas—, sin leer el History.
+    @Test func offeringReason_withACaptureThatHealsOnTheNextLap_offersTheExactRows() async throws {
+        let context = try makeTestContext()
+        try clearOutbox(context)
+        resetCoordinator(context)
+        CloudSessionSignOut.shared.exitCaptureDelayOverride = .milliseconds(1)
+        defer { CloudSessionSignOut.shared.exitCaptureDelayOverride = nil }
+        context.insert(liveRow("g1"))
+        context.insert(liveRow("g2"))
+        try context.save()
+        let laps = Laps()
+        let historyReads = Laps()
+        var heals = CloudSessionSignOut.GroupsExitWitness(
+            capture: { _ in laps.count += 1; return laps.count > 1 },
+            mirrorPending: { _, _ in 0 }, mirrorPendingKeys: { _, _ in [] })
+        heals.uncapturedChanges = { _ in
+            historyReads.count += 1
+            return Self.history(["h1"])
+        }
+
+        let verdict = await CloudSessionSignOut.shared.settleFreshStartBlock(
+            Block(pendingCount: 2, reason: .sessionExpired), accepted: nil, context: context, witness: heals)
+
+        #expect(laps.count == 2, "el segundo intento terminó: no hacía falta un tercero")
+        #expect(verdict == .blocked(Block(pendingCount: 2, reason: .sessionExpired)), "\(verdict)")
+        #expect(historyReads.count == 1, "solo tras el intento fallido; con la captura completa la oferta no lo lee ni lo cuenta")
+        try clearOutbox(context)
+        resetCoordinator(context)
+    }
+
+    /// Cambios del History de esta sesión, por clave.
+    private static func history(_ keys: [String]) -> [GroupsSyncClient.UncapturedChange] {
+        keys.map { GroupsSyncClient.UncapturedChange(key: $0, heldForAnotherAccount: false) }
+    }
+
     /// Un intento nuevo del alert del shell tampoco hereda lo aceptado.
-    @Test func settledEmptyPreCheck_dropsTheOfferAndTheAcceptance() throws {
+    @Test func settledEmptyPreCheck_dropsTheOfferAndTheAcceptance() async throws {
         let context = try makeTestContext()
         try clearOutbox(context)
         context.insert(liveRow())
         try context.save()
-        _ = CloudSessionSignOut.shared.settleFreshStartBlock(
+        _ = await CloudSessionSignOut.shared.settleFreshStartBlock(
             Block(pendingCount: 1, reason: .permanent), accepted: nil, context: context, witness: .quiet)
         #expect(CloudSessionSignOut.shared.acceptFreshStartGroupsLoss())
 

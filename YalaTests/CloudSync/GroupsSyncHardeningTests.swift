@@ -582,9 +582,11 @@ struct GroupsSyncHardeningTests {
             .appendingPathComponent("Yala/Services/CloudSync/CloudSessionSignOut.swift"), encoding: .utf8)
         let start = try #require(source.range(of: "private func pushAllPendingGroupsForSignOut("))
         let body = String(source[start.lowerBound...])
-        let capture = try #require(body.range(of: "let captured = witness.capture(context)"),
+        // Desde el 2026-10-05 la captura da sus vueltas (`captureGroupsForExit`) y, atascada, el pre-check cicla.
+        let capture = try #require(body.range(of: "let initialCapture = await captureGroupsForExit(context: context, witness: witness)"),
                                    "el push-all del sign-out empuja el outbox sin capturar antes")
-        let preCheck = try #require(body.range(of: "if let settled = CloudSignOutFlowLogic.groupsCaptureVerdict("))
+        let preCheck = try #require(body.range(
+            of: "if initialCapture != .stuck, let settled = CloudSignOutFlowLogic.groupsCaptureVerdict("))
         #expect(capture.lowerBound < preCheck.lowerBound, "la captura va ANTES del pre-check de pendientes")
 
         let liveStart = try #require(source.range(of: "static var live: GroupsExitWitness {"))

@@ -14,8 +14,9 @@
 //
 //  Dos suites:
 //   1. **Comportamiento**, con el coordinador real. El bloqueo se provoca sin red ni sesión: la captura de salida del canal
-//      (`GroupsExitWitness.capture`) dice «no terminé», y con el outbox vacío el push-all bloquea en su pre-check
-//      (`groupsCaptureVerdict` → `.uploadRetryLater`, que se enseña al momento) **sin un solo ciclo**. Nada del gesto
+//      (`GroupsExitWitness.capture`) dice «no terminé», y con el outbox vacío el push-all bloquea con `.uploadRetryLater`,
+//      que se enseña al momento. Desde el 2026-10-05 la captura atascada cicla una vez para saber la causa, contra un ciclo
+//      sustituido (`GroupsExitWitness.cycle`) que no toca la red. Nada del gesto
 //      después del push-all llega a correr: ni teardown, ni `signOut()`, ni puente, ni borrado.
 //   2. **Cableado**, source-scan: que TODO bloqueo del desasociar pase por el único sitio que suelta la fase, y que la
 //      sección lea el motivo del retorno, el spinner del coordinador, y no reconozca una fase que ya no es suya.
@@ -36,13 +37,23 @@ struct GroupsDetachBlockedPhaseTests {
     private func reset() {
         coordinator.acknowledgeBlocked()
         coordinator.exitWitnessOverride = nil
+        coordinator.exitCaptureDelayOverride = nil
     }
 
-    /// La captura de salida no termina: el push-all bloquea en su pre-check sin tocar la red.
+    /// La captura de salida no termina y lo que queda fuera es de esta sesión. Desde el 2026-10-05 la captura atascada cicla
+    /// para saber la causa (`captureGroupsForExit`): el ciclo es el de un canal sano y no toca la red, y el desenlace es el
+    /// de siempre, `.uploadRetryLater` (`stuckCaptureVerdict`).
     private func captureFails(observing: @escaping @MainActor () -> Void = {}) -> CloudSessionSignOut.GroupsExitWitness {
-        CloudSessionSignOut.GroupsExitWitness(
+        coordinator.exitCaptureDelayOverride = .milliseconds(1)
+        var witness = CloudSessionSignOut.GroupsExitWitness(
             capture: { _ in observing(); return false },
             mirrorPending: { _, _ in 0 }, mirrorPendingKeys: { _, _ in [] })
+        witness.uncapturedChanges = { _ in [.init(key: "h1", heldForAnotherAccount: false)] }
+        witness.cycle = { _ in
+            CloudSessionSignOut.GroupsCycleReading(
+                outcome: .completed, channelKilled: false, attestUnavailable: false, uploadFailed: false)
+        }
+        return witness
     }
 
     /// Con una fila viva el pre-check no corta y el push-all ciclaría contra el cliente real: se exige el outbox vacío.

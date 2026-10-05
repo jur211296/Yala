@@ -770,7 +770,10 @@ final class DataWipeService {
         accepting: CloudSignOutFlowLogic.FreshStartGroupsLoss? = nil
     ) throws {
         if let accepting {
-            let now = CloudSessionSignOut.freshStartGroupsLoss(context: context, witness: witness)
+            // Con lo aceptado sobre una captura atascada se relee también el History (2026-10-05, ticket
+            // `groups-drain-that-always-aborts-takes-the-loss-exit-away`): lo apuntado tras el aviso no llega nunca al outbox.
+            let now = CloudSessionSignOut.freshStartGroupsLoss(
+                context: context, witness: witness, readsUncaptured: accepting.readsUncaptured)
             guard accepting.covers(now) else {
                 throw GroupsDomainWipeError.unsentGroupWrites(pendingCount: now.count)
             }

@@ -882,6 +882,74 @@ final class GroupsSyncClient {
         }
     }
 
+    // MARK: - Lo que el drain no capturó (solo lectura, `groups-drain-that-always-aborts-takes-the-loss-exit-away`)
+
+    /// Un cambio del History de Grupos que ningún drain ha capturado: su clave y si la sesión de ahora no lo podría subir.
+    struct UncapturedChange: Equatable {
+        /// La clave estable del cambio (`CloudSyncEngine.uncapturedChangeKey`: store, transacción y cambio). Es lo que el
+        /// aviso cuenta y lo que la persona acepta perder; una edición posterior es otra transacción y no queda cubierta.
+        let key: String
+        /// La transacción es de otra cuenta, o sin dueño probado, según el registro de sesiones a su fecha
+        /// (`GroupsOutboxOwnershipLogic`): la fila que el drain le daría no la subiría esta sesión. Sin sesión, `false`.
+        let heldForAnotherAccount: Bool
+    }
+
+    /// **Los cambios del History de Grupos que ningún drain ha capturado**, uno por clave (2026-10-05, ticket
+    /// `groups-drain-that-always-aborts-takes-the-loss-exit-away`). Es el gemelo de `CloudSyncEngine.uncapturedPersonalChangeKeys`:
+    /// con un drain que no termina en ninguna vuelta esos cambios no llegan nunca al outbox, así que el aviso de una salida
+    /// los cuenta junto a las filas y la persona acepta perder exactamente esos.
+    ///
+    /// **Solo LEE**: ni crea el cursor (`loadOrCreateCursor` lo inserta y guarda), ni drena, ni re-ancla. La ventana es la del
+    /// drain siguiente —el token anclado en el store de Grupos o, sin él, el suelo por timestamp (`fetchHistory`)— más el
+    /// paso 3-bis del guard (`recoverIfHistoryTokenIncomparable`): mientras ningún drain haya validado el token en este
+    /// proceso, lo posterior al ancla también cuenta. Sin cursor, el History entero.
+    ///
+    /// **Más ancho que lo que el drain emitiría, a propósito**: cuenta todo cambio de una entidad del store de Grupos que no
+    /// escribió el propio canal, también de un grupo de la era CloudKit que el drain no traduce. Es la dirección segura —el
+    /// aviso enseña más de lo que se perdería, nunca menos— y por eso sus llamadores solo la leen con la captura atascada:
+    /// con un drain sano esos cambios ya están consumidos y fuera de la ventana.
+    ///
+    /// `nil` = un fetch lanzó; quien decida con esto lo trata como «no se pudo contar».
+    func uncapturedGroupsChanges(context: ModelContext) -> [UncapturedChange]? {
+        do {
+            var cursorDescriptor = FetchDescriptor<GroupSyncCursor>()
+            cursorDescriptor.fetchLimit = 1
+            let txns: [DefaultHistoryTransaction]
+            if let cursor = try context.fetch(cursorDescriptor).first {
+                var window = try fetchHistory(after: anchoredHistoryToken(cursor), cursor: cursor, context: context)
+                if !historyTokenValidated, cursor.historyTokenData != nil, let anchor = cursor.lastDrainedTxAt {
+                    window += try context.fetchHistory(
+                        HistoryDescriptor<DefaultHistoryTransaction>(predicate: #Predicate { $0.timestamp > anchor }))
+                }
+                txns = window
+            } else {
+                txns = try context.fetchHistory(HistoryDescriptor<DefaultHistoryTransaction>())
+            }
+            let sessionOwner = currentUserIDProvider()
+            let log = signInLogProvider()
+            var seen = Set<String>()
+            var changes: [UncapturedChange] = []
+            for tx in txns where tx.author != Self.outboxSaveAuthor {
+                let held = GroupsOutboxOwnershipLogic.isHeldForAnotherAccount(
+                    rowOwner: GroupsOutboxOwnershipLogic.owner(transactionAt: tx.timestamp, log: log),
+                    sessionOwner: sessionOwner)
+                for (index, change) in tx.changes.enumerated()
+                where Self.groupEntityNames.contains(change.changedPersistentIdentifier.entityName) {
+                    let key = CloudSyncEngine.uncapturedChangeKey(tx: tx, change: change, index: index)
+                    if seen.insert(key).inserted {
+                        changes.append(UncapturedChange(key: key, heldForAnotherAccount: held))
+                    }
+                }
+            }
+            return changes
+        } catch {
+            #if DEBUG
+            logger.error("GroupsSync: no se pudo leer el History sin capturar: \(error)")
+            #endif
+            return nil
+        }
+    }
+
     // MARK: - El dueño de cada fila (`groups-outbox-rows-without-a-live-session-have-no-exit`)
 
     /// **Filas VIVAS que la sesión de ahora no puede subir porque no son suyas**: de otra cuenta, o sin dueño probado. Es lo
