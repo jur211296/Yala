@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (760)
+## Index (763)
 
 | id | status | path |
 |---|---|---|
@@ -240,7 +240,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | detach-quiescence-timeout-says-group-changes-are-pending | backlog | tickets/backlog/detach-quiescence-timeout-says-group-changes-are-pending.md |
 | detach-saves-the-personal-graph-outside-the-quiescence-window | done | tickets/done/detach-saves-the-personal-graph-outside-the-quiescence-window.md |
 | detach-second-pass-replaces-the-conserved-ledger | backlog | tickets/backlog/detach-second-pass-replaces-the-conserved-ledger.md |
-| detach-with-a-stuck-groups-drain-names-only-the-first-of-two-causes | backlog | tickets/backlog/detach-with-a-stuck-groups-drain-names-only-the-first-of-two-causes.md |
+| detach-with-a-stuck-groups-drain-names-only-the-first-of-two-causes | done | tickets/done/detach-with-a-stuck-groups-drain-names-only-the-first-of-two-causes.md |
 | device-handover-groups-leak | discarded | tickets/discarded/device-handover-groups-leak.md |
 | device-qa-activation-restore-start-fresh | done | tickets/done/device-qa-activation-restore-start-fresh.md |
 | device-qa-apple-id-change-closes-private-session | qa | tickets/qa/device-qa-apple-id-change-closes-private-session.md |
@@ -731,6 +731,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | storage-row-gate-comment-says-rollout-zero | backlog | tickets/backlog/storage-row-gate-comment-says-rollout-zero.md |
 | storage-sync-sign-in-count-has-no-plural | backlog | tickets/backlog/storage-sync-sign-in-count-has-no-plural.md |
 | storekit-appgroup-siri-pro-gate | done | tickets/done/storekit-appgroup-siri-pro-gate.md |
+| stuck-groups-drain-hides-held-rows-of-another-account | backlog | tickets/backlog/stuck-groups-drain-hides-held-rows-of-another-account.md |
 | subscription-success-without-pro | done | tickets/done/subscription-success-without-pro.md |
 | superseding-intent-can-strand-the-sign-out-coordinator | done | tickets/done/superseding-intent-can-strand-the-sign-out-coordinator.md |
 | sync-runtime-safety-note-assumes-every-prod-device-is-icloud | backlog | tickets/backlog/sync-runtime-safety-note-assumes-every-prod-device-is-icloud.md |

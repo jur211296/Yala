@@ -1018,6 +1018,36 @@ nonisolated enum CloudSignOutFlowLogic {
         return .blocked(pendingCount: livePendingCount > 0 ? livePendingCount : Int.max, reason: .groupsCaptureUnfinished)
     }
 
+    /// **Lo que dice el aviso del desasociar bloqueado: una causa, o dos** (ticket
+    /// `detach-with-a-stuck-groups-drain-names-only-the-first-of-two-causes`, opción B de Jürgen del 2026-10-05).
+    ///
+    /// Va aparte de `BlockReason` a propósito. `BlockReason` es por qué paró el push-all, y lo comparten los cierres, el
+    /// desasociar y «Empezar de cero» con una docena de `switch` exhaustivos; las dos causas a la vez solo cambian el TEXTO de
+    /// un gesto, el que no tiene salida que pierda nada. Un case nuevo allí obligaría a cada lector a declarar que no le llega.
+    enum DetachBlockedNotice: Equatable {
+        /// Una causa, con el texto de ese motivo.
+        case reason(BlockReason)
+        /// **Dos causas a la vez**: lo que en un cierre abriría la salida que pierde los cambios (`lossCause`: sin sesión, sin
+        /// App Attest, otra cuenta) y, además, la captura de grupos atascada en este teléfono (lo que sería
+        /// `.groupsCaptureUnfinished`). Los cierres lo resuelven todo con «Cerrar sesión y perderlos»; el desasociar no la
+        /// ofrece (decisión del 2026-09-15), así que con un solo motivo la persona arreglaba uno y al reintentar le salía el
+        /// otro. Su texto nombra los dos y dice qué hacer para todo.
+        case alsoCaptureUnfinished(LossCause)
+    }
+
+    /// **Qué aviso enseña el desasociar** para el motivo con el que bloqueó y si la última captura de grupos del gesto se
+    /// quedó atascada (`CloudSessionSignOut.groupsCaptureStuck`).
+    ///
+    /// Dos causas solo cuando las dos están probadas: la captura atascada (lo que no se cura con otro intento) y un motivo
+    /// de la salida (`lossCause`). Ese motivo con la captura atascada lo producen los dos caminos del push-all que lo
+    /// conservan: `stuckCaptureVerdict` con el outbox a 0 y `lossBlockAfterRecapture` con filas vivas. Sin el atasco, el
+    /// motivo va solo; y un motivo que no abre la salida también, porque o ya nombra el drain (`.groupsCaptureUnfinished`) o
+    /// no es una causa que la persona pueda arreglar aparte.
+    static func detachBlockedNotice(reason: BlockReason, captureStuck: Bool) -> DetachBlockedNotice {
+        guard captureStuck, let cause = lossCause(reason) else { return .reason(reason) }
+        return .alsoCaptureUnfinished(cause)
+    }
+
     /// **Lo que un cierre se llevaría de grupos, en sus dos mitades** (2026-10-05, ticket
     /// `groups-drain-that-always-aborts-takes-the-loss-exit-away`): las filas vivas del outbox y las entradas del espejo sin
     /// fila, por su `clientMutationID` (`CloudSessionSignOut.groupsLossRowIDs`), y los cambios del History que ningún drain

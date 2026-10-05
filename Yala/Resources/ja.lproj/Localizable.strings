@@ -5873,6 +5873,9 @@
 
 /* Aviso: sesión caducada al desasociar */
 "storage.groups.detachBlockedSession" = "グループのセッションの有効期限が切れました。もう一度サインインしてお試しください。";
+"storage.groups.detachBlockedSessionAndCaptureUnfinished" = "グループのセッションの有効期限が切れ、グループの最近の変更の一部をアップロード用に準備できませんでした。変更は失われません。再度サインインし、Yala を閉じて開き直してから（解決しない場合はアップデート）、もう一度お試しください。";
+"storage.groups.detachBlockedAttestAndCaptureUnfinished" = "この端末は1日以上、サーバーが求めるセキュリティ確認を通過できておらず、グループの最近の変更の一部もアップロード用に準備できませんでした。変更は失われません。準備するには、Yala を閉じて開き直してください（解決しない場合はアップデート）。";
+"storage.groups.detachBlockedOtherAccountAndCaptureUnfinished" = "この端末には、別のアカウントで作成されたグループの変更があり、そのアカウントでしかアップロードできません。さらに、その一部はアップロード用に準備できませんでした。変更は失われません。Yala を閉じて開き直し（解決しない場合はアップデート）、そのアカウントでサインインするとアップロードされます。";
 
 /* Puerta del invitado: vuelta al neutro antes de aceptar una invitación de grupo */
 "welcome.groups.inviteNeutralTitle" = "参加する前に、この端末を空にします";

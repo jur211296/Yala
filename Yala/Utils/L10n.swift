@@ -7369,6 +7369,25 @@ enum L10n {
             static var detachBlockedTransient: String { ls("storage.groups.detachBlockedTransient", comment: "") }
             static var detachBlockedPermanent: String { ls("storage.groups.detachBlockedPermanent", comment: "") }
             static var detachBlockedSession: String { ls("storage.groups.detachBlockedSession", comment: "") }
+            /// **Dos causas a la vez en el desasociar** (2026-10-05, opción B de Jürgen, ticket
+            /// `detach-with-a-stuck-groups-drain-names-only-the-first-of-two-causes`): la captura de grupos atascada
+            /// (`Groups.Errors.captureUnfinished`) y, además, lo que en un cierre abriría la salida de perderlos. El desasociar no
+            /// ofrece esa salida, así que el texto nombra las dos causas y dice qué hacer para todo
+            /// (`CloudSignOutFlowLogic.DetachBlockedNotice.alsoCaptureUnfinished`). Este, con la sesión caducada; texto literal
+            /// de Jürgen.
+            static var detachBlockedSessionAndCaptureUnfinished: String {
+                ls("storage.groups.detachBlockedSessionAndCaptureUnfinished", comment: "")
+            }
+            /// El gemelo del teléfono sin App Attest: arranca con el hecho de `Groups.Errors.attestUnavailable`. **No termina en
+            /// «vuelve a intentarlo»**: reabrir Yala cura el drain, no la verificación, y prometerlo era falso (review del
+            /// 2026-10-05). El aviso del App Attest a secas tampoco promete nada.
+            static var detachBlockedAttestAndCaptureUnfinished: String {
+                ls("storage.groups.detachBlockedAttestAndCaptureUnfinished", comment: "")
+            }
+            /// El gemelo de los cambios de otra cuenta: arranca con el hecho de `Groups.Errors.groupsChangesFromAnotherAccount`.
+            static var detachBlockedOtherAccountAndCaptureUnfinished: String {
+                ls("storage.groups.detachBlockedOtherAccountAndCaptureUnfinished", comment: "")
+            }
             static var detachPurgeFailedTitle: String { ls("storage.groups.detachPurgeFailedTitle", comment: "") }
             static var detachPurgeFailedBody: String { ls("storage.groups.detachPurgeFailedBody", comment: "") }
             static var detachBlockedBridge: String { ls("storage.groups.detachBlockedBridge", comment: "") }

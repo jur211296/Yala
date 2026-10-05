@@ -5873,6 +5873,9 @@
 
 /* Aviso: sesión caducada al desasociar */
 "storage.groups.detachBlockedSession" = "你的群组登录已过期。请重新登录后再试。";
+"storage.groups.detachBlockedSessionAndCaptureUnfinished" = "你的群组登录已过期，而且你最近的部分群组更改无法准备好上传。更改不会丢失。请重新登录，关闭 Yala 后重新打开（如果仍然如此，请更新 Yala），然后再试一次。";
+"storage.groups.detachBlockedAttestAndCaptureUnfinished" = "这台手机已经超过一天没能通过我们服务器要求的安全验证，而且你最近的部分群组更改无法准备好上传。更改不会丢失。要准备这些更改，请关闭 Yala 后重新打开（如果仍然如此，请更新 Yala）。";
+"storage.groups.detachBlockedOtherAccountAndCaptureUnfinished" = "这台手机上有一些群组更改是用另一个账户创建的，只能用那个账户上传。此外，其中一部分无法准备好上传。这些更改不会丢失。请关闭 Yala 后重新打开（如果仍然如此，请更新 Yala），然后用那个账户登录，以便上传。";
 
 /* Puerta del invitado: vuelta al neutro antes de aceptar una invitación de grupo */
 "welcome.groups.inviteNeutralTitle" = "加入之前，这部手机会被清空";

@@ -36,7 +36,10 @@ struct GroupsAssociationSection: View {
     /// `detach-blocked-phase-is-stranded-when-the-storage-sheet-closes-mid-wait`): el coordinador ya la devolvió a
     /// `.idle` al bloquear. Hasta ese día la soltaba este aviso, y con la hoja cerrada a mitad de la espera no salía
     /// nunca: la fase se quedaba en `.blocked` y «Cerrar sesión» y el desasociar siguiente no hacían nada.
-    @State private var blockedReason: CloudSignOutFlowLogic.BlockReason?
+    ///
+    /// **Es el aviso entero y no solo el motivo** (2026-10-05): con la captura de grupos atascada y la sesión caducada, sin
+    /// App Attest o con cambios de otra cuenta, nombra las dos causas (`CloudSignOutFlowLogic.DetachBlockedNotice`).
+    @State private var blockedNotice: CloudSignOutFlowLogic.DetachBlockedNotice?
     /// **El borrado local falló y la cuenta ya se cerró en la nube.** Aviso propio, separado del de
     /// bloqueo: aquél dice «no se soltó nada» y éste dice «se soltó todo menos lo que importa» —los
     /// grupos siguen aquí—. Y lo que ofrecen es distinto: aquél que lo intente en un momento, éste un
@@ -139,7 +142,7 @@ struct GroupsAssociationSection: View {
             .alert(
                 L10n.Storage.Groups.detachBlockedTitle,
                 isPresented: Binding(
-                    get: { blockedReason != nil },
+                    get: { blockedNotice != nil },
                     set: { if !$0 { dismissBlocked() } })
             ) {
                 // Texto LITERAL en los botones del alert: un label que dependa del `@State` rompe flujos
@@ -194,7 +197,7 @@ struct GroupsAssociationSection: View {
     /// recuerda dónde retomarlo—, con sus botones de «Esperar» / «Cerrar igualmente» saliendo sin hacer nada. Es lo que ya
     /// pasaba con `.detachBusy` y lo que la review del 2026-09-15 cazó en el doble cierre del binding.
     private func dismissBlocked() {
-        blockedReason = nil
+        blockedNotice = nil
     }
 
     /// **Exhaustivo a propósito: sin `default`.** Con uno, un motivo nuevo caía en «inténtalo en un
@@ -202,6 +205,20 @@ struct GroupsAssociationSection: View {
     /// un problema de la cuenta. Aquí el compilador obliga a que cada motivo se pronuncie, y ninguna
     /// prueba puede dar esa garantía: el mapeo vive dentro de la vista.
     private var blockedMessage: String {
+        // `nil` no llega con el aviso presentado (el binding lo enciende justo con el aviso puesto): el texto que no afirma
+        // ninguna causa concreta, como antes.
+        guard let blockedNotice else { return L10n.Storage.Groups.detachBlockedTransient }
+        let blockedReason: CloudSignOutFlowLogic.BlockReason
+        switch blockedNotice {
+        // **Dos causas a la vez** (2026-10-05, opción B de Jürgen, ticket
+        // `detach-with-a-stuck-groups-drain-names-only-the-first-of-two-causes`): la captura de grupos atascada y, además, lo
+        // que en un cierre abriría la salida de perderlos. El desasociar no tiene esa salida, así que con un solo motivo la
+        // persona arreglaba uno y al reintentar le salía el otro. El texto nombra los dos y dice qué hacer para todo.
+        case .alsoCaptureUnfinished(.noSession): return L10n.Storage.Groups.detachBlockedSessionAndCaptureUnfinished
+        case .alsoCaptureUnfinished(.attestUnavailable): return L10n.Storage.Groups.detachBlockedAttestAndCaptureUnfinished
+        case .alsoCaptureUnfinished(.otherAccount): return L10n.Storage.Groups.detachBlockedOtherAccountAndCaptureUnfinished
+        case .reason(let reason): blockedReason = reason
+        }
         switch blockedReason {
         case .sessionExpired: return L10n.Storage.Groups.detachBlockedSession
         case .permanent: return L10n.Storage.Groups.detachBlockedPermanent
@@ -234,9 +251,8 @@ struct GroupsAssociationSection: View {
         case .groupsCaptureUnfinished: return L10n.Groups.Errors.captureUnfinished
         // `.transient` es el caso corriente, y desde el 2026-09-16 es SOLO el outbox que aún drena: aquí
         // «inténtalo de nuevo en un momento» es exacto. `.exportUnconfirmed` es del cierre PRIVADO y no puede
-        // llegar a este gesto —el desasociar no espera a iCloud—, y `nil` tampoco con el aviso presentado (el
-        // binding lo enciende justo con el motivo puesto); los dos caen en el copy que no afirma ninguna
-        // causa concreta, que es lo correcto si alguna vez llegaran.
+        // llegar a este gesto —el desasociar no espera a iCloud— y cae en el copy que no afirma ninguna causa
+        // concreta, que es lo correcto si alguna vez llegara (el aviso `nil`, igual, en el `guard` de arriba).
         // `.personalAttestUnavailable` tampoco llega: lo pone solo el paso 1 del cierre en la NUBE, sobre el outbox personal,
         // y el desasociar no sube nada personal (2026-09-15). Los tres del motor parado, igual (2026-09-25): solo los pone ese
         // mismo paso 1, y la subida personal que no llegó también. `.cloudSessionExpired`, igual (2026-09-25): solo lo traducen
@@ -246,7 +262,7 @@ struct GroupsAssociationSection: View {
         // solo el paso 1 del cierre en la nube, sobre el drain personal.
         case .transient, .exportUnconfirmed, .personalAttestUnavailable, .syncStoppedNeedsUpdate, .syncStoppedMidMigration,
              .syncStoppedNeedsRelaunch, .personalUploadRetryLater, .cloudSessionExpired, .signOutSessionSurvived,
-             .migrationInFlight, .migrationUnreadable, .personalCaptureUnfinished, .none:
+             .migrationInFlight, .migrationUnreadable, .personalCaptureUnfinished:
             return L10n.Storage.Groups.detachBlockedTransient
         }
     }
@@ -443,11 +459,11 @@ struct GroupsAssociationSection: View {
 
     private func apply(_ outcome: CloudSessionSignOut.DetachOutcome) {
         switch outcome {
-        case .blockedBeforeWriting(let reason):
+        case .blockedBeforeWriting(let notice):
             // **El motivo del RETORNO, no de la fase**: el coordinador ya la devolvió a `.idle`. Si esta sección se
             // desmontó a mitad de la espera, la escritura cae en un `@State` muerto y el aviso de ESTE intento no sale
             // —nadie lo está mirando—, pero ya no deja nada cogido: reintentar vuelve a decir el motivo.
-            blockedReason = reason
+            blockedNotice = notice
         case .purgeFailed:
             purgeFailed = true
         case .busy:
@@ -460,7 +476,7 @@ struct GroupsAssociationSection: View {
             // problema. Y su cierre **no toca la fase del coordinador**: la puso un gesto ajeno, y
             // `acknowledgeBlocked()` le borraría además el `blockedExit`, que es lo que recuerda dónde
             // retomar un cierre parado en la espera del export.
-            blockedReason = .detachBusy
+            blockedNotice = .reason(.detachBusy)
         case .detached:
             break
         }

@@ -55,7 +55,12 @@ final class CloudSessionSignOut {
         /// que no se pudo ni mirar, que no tiene nada que ver con subir cambios — y con ese nombre el mensaje que salía
         /// («quedan cambios sin subir, inténtalo en un momento») describía un problema que no era y daba un consejo
         /// que no arreglaba nada.
-        case blockedBeforeWriting(reason: CloudSignOutFlowLogic.BlockReason)
+        ///
+        /// **Lleva el aviso ya decidido, no el motivo a secas** (2026-10-05, ticket
+        /// `detach-with-a-stuck-groups-drain-names-only-the-first-of-two-causes`): con la captura de grupos atascada y un
+        /// motivo que en un cierre abriría la salida (sin sesión, sin App Attest, otra cuenta), el aviso nombra las dos causas
+        /// (`CloudSignOutFlowLogic.detachBlockedNotice`). El testigo de la captura vive en el coordinador, así que lo decide él.
+        case blockedBeforeWriting(notice: CloudSignOutFlowLogic.DetachBlockedNotice)
         /// **La cuenta se cerró en la nube pero el borrado local NO entró.** Los grupos siguen en el
         /// teléfono y la asociación sigue en pie a propósito. Se le ofrece reintentar el borrado.
         case purgeFailed
@@ -266,8 +271,11 @@ final class CloudSessionSignOut {
         //
         // **`lossExit: nil` es la decisión de Jürgen** (2026-09-15): con el teléfono sin App Attest el desasociar enseña el
         // aviso terminal y NO ofrece soltar la cuenta perdiendo los cambios. Solo los cierres de sesión lo ofrecen.
+        //
+        // **El único bloqueo que puede llevar dos causas** (2026-10-05): el push-all deja puesto si su última captura se quedó
+        // atascada, sin `await` entre esa captura y aquí.
         guard await pushGroupsForSignOut(context: context, lossExit: nil) else {
-            return .blockedBeforeWriting(reason: releaseDetachBlock())
+            return .blockedBeforeWriting(notice: releaseDetachBlock(captureStuck: groupsCaptureStuck))
         }
 
         // Canal fuera + espejo del outbox del App Group purgado. Idempotente.
@@ -280,7 +288,7 @@ final class CloudSessionSignOut {
         guard residual == 0 else {
             phase = .blocked(pendingCount: residual, reason: .permanent)
             CloudSyncBreadcrumb.signOutPushBlocked(pending: residual)
-            return .blockedBeforeWriting(reason: releaseDetachBlock())
+            return .blockedBeforeWriting(notice: releaseDetachBlock(captureStuck: false))
         }
 
         // El consent de Grupos NO se limpia aquí, a diferencia del cierre de sesión. Es un snapshot
@@ -306,7 +314,7 @@ final class CloudSessionSignOut {
             // Fuera de `#if DEBUG`: el ticket dejó sin medir si esto pasa en la flota, y este es el sitio donde
             // se ve.
             MetricsService.canary(.groupsDetachSessionSurvived, detail: "choice=\(choice == .keep ? "keep" : "remove")")
-            return .blockedBeforeWriting(reason: releaseDetachBlock())
+            return .blockedBeforeWriting(notice: releaseDetachBlock(captureStuck: false))
         }
 
         // ── Punto de no retorno ──
@@ -331,7 +339,7 @@ final class CloudSessionSignOut {
             MetricsService.canary(
                 .groupsDetachSessionSurvived,
                 detail: "choice=\(choice == .keep ? "keep" : "remove") after=quiescence")
-            return .blockedBeforeWriting(reason: releaseDetachBlock())
+            return .blockedBeforeWriting(notice: releaseDetachBlock(captureStuck: false))
         case .notQuiescent, .bridgeUnreadable:
             // **Si el store no se quedó quieto, o el puente no se pudo ni mirar, se ABORTA sin escribir nada**:
             // seguir adelante borraría las filas de los grupos dejando las transacciones puenteadas apuntando a
@@ -346,7 +354,7 @@ final class CloudSessionSignOut {
             // movimientos del Panel sin revisar y nada soltado, y el aviso de `.bridgeUnreadable` dice exactamente
             // eso. `.transient` diría «quedan cambios de tus grupos sin subir», y aquí el push-all ya drenó.
             phase = .blocked(pendingCount: 0, reason: .bridgeUnreadable)
-            return .blockedBeforeWriting(reason: releaseDetachBlock())
+            return .blockedBeforeWriting(notice: releaseDetachBlock(captureStuck: false))
         case .purgeFailed:
             // **El borrado es la última CONDICIÓN del gesto, no su último paso.** Todo lo de abajo afirma que la
             // cuenta ya no está aquí, y eso solo es cierto si esto entró. Un `catch` que siguiera adelante —lo que
@@ -390,10 +398,14 @@ final class CloudSessionSignOut {
     /// cierres— lo deja ahí; las ramas propias del desasociar lo escriben igual para que el motivo tenga un solo camino. No
     /// hay `await` entre esa escritura y esta lectura, así que ningún lector de la fase llega a ver el `.blocked`. El
     /// `.transient` de reserva no es alcanzable: toda rama que llama aquí acaba de poner la fase en `.blocked`.
-    private func releaseDetachBlock() -> CloudSignOutFlowLogic.BlockReason {
+    ///
+    /// `captureStuck` lo pasa cada llamada, sin valor por defecto: solo el bloqueo del push-all puede venir con la captura
+    /// de grupos atascada (`groupsCaptureStuck`); los demás bloquean después de que el push-all drenara y pasan `false`. El
+    /// aviso lo decide `CloudSignOutFlowLogic.detachBlockedNotice`.
+    private func releaseDetachBlock(captureStuck: Bool) -> CloudSignOutFlowLogic.DetachBlockedNotice {
         defer { phase = .idle }
-        guard case .blocked(_, let reason) = phase else { return .transient }
-        return reason
+        guard case .blocked(_, let reason) = phase else { return .reason(.transient) }
+        return CloudSignOutFlowLogic.detachBlockedNotice(reason: reason, captureStuck: captureStuck)
     }
 
     /// **Terminar un desasociar cuyo borrado local no entró.** Es lo que ofrece el aviso «No pudimos

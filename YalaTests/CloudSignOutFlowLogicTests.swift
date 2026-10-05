@@ -1599,7 +1599,7 @@ struct AttestUnavailableSignOutWiringTests {
         let association = try Self.source("Yala/App/Views/Settings/GroupsAssociationSection.swift")
         let dismiss = Self.squashed(try Self.body(of: "private func dismissBlocked() {", in: association))
         #expect(!dismiss.contains("acknowledgeBlocked"), "cerrar el aviso del desasociar reconoce una fase que no es suya")
-        #expect(dismiss.contains("blockedReason = nil"), "cerrar el aviso del desasociar ya no lo baja")
+        #expect(dismiss.contains("blockedNotice = nil"), "cerrar el aviso del desasociar ya no lo baja")
     }
 
     @Test("MUTACIÓN: los dos push-all preguntan el testigo del attest CON el outcome: grupos al cliente, lo personal al runtime")
