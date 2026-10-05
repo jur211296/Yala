@@ -1838,6 +1838,11 @@ enum L10n {
             /// La sesión abierta es de OTRA cuenta que la que los apuntó (`.groupsChangesFromAnotherAccount`, ticket
             /// `groups-outbox-rows-without-a-live-session-have-no-exit`).
             static var lossOtherAccount: String { ls("groups.freshStartPending.lossOtherAccount", comment: "") }
+            /// Lo mismo cuando la cifra cuenta además cambios que el drain no capturó (2026-10-05, ticket
+            /// `stuck-groups-drain-hides-held-rows-of-another-account`): pueden ser tuyos, así que nombra las dos causas.
+            static var lossOtherAccountAndCaptureUnfinished: String {
+                ls("groups.freshStartPending.lossOtherAccountAndCaptureUnfinished", comment: "")
+            }
             /// Más de un día sin App Attest (`.attestUnavailable`), con las palabras de `Groups.Errors.attestUnavailable`.
             static var lossAttest: String { ls("groups.freshStartPending.lossAttest", comment: "") }
             /// El botón destructivo del aviso, que lleva al «¿seguro?».
@@ -2268,6 +2273,17 @@ enum L10n {
             }
             /// Sin cifra: el recuento del outbox de Grupos falló.
             static var noSessionSignOutLossUnknown: String { ls("groups.errors.noSessionSignOutLossUnknown", comment: "") }
+            /// **Otra cuenta y la captura atascada, en el aviso que ofrece perderlos** (ticket
+            /// `stuck-groups-drain-hides-held-rows-of-another-account`, decisión A de Jürgen del 2026-10-05): la cifra suma lo
+            /// de la otra cuenta y lo que el drain no capturó, que puede ser tuyo. Nombra las dos causas, dice qué hace subir
+            /// cada parte y ofrece perderlos, sin plazo. Lo elige `SignOutBlockedCopy.groupsLossMessage`.
+            static func otherAccountAndCaptureUnfinishedSignOutLoss(_ count: Int) -> String {
+                String(format: ls("groups.errors.otherAccountAndCaptureUnfinishedSignOutLoss", comment: "Cerrar sesión con cambios de grupos de otra cuenta y otros que no se pudieron preparar; %d = cambios de grupos que se pierden"), count)
+            }
+            /// Sin cifra: alguna mitad de lo que se perdería no se pudo leer.
+            static var otherAccountAndCaptureUnfinishedSignOutLossUnknown: String {
+                ls("groups.errors.otherAccountAndCaptureUnfinishedSignOutLossUnknown", comment: "")
+            }
             /// Salir de un grupo con el attest ya terminal (`GroupLeaveErrorLogic.Kind.deviceCannotSyncGroups`): no hay
             /// salida local, así que no ofrece nada.
             static var leaveAttestUnavailable: String { ls("groups.errors.leaveAttestUnavailable", comment: "") }
@@ -5578,6 +5594,15 @@ enum L10n {
             }
             /// Sin cifra: el recuento del outbox de Grupos falló.
             static var neutralNoSessionLossBodyUnknown: String { ls("welcome.groups.neutralNoSessionLossBodyUnknown", comment: "") }
+            /// El gemelo de `Groups.Errors.otherAccountAndCaptureUnfinishedSignOutLoss` en esta pantalla (2026-10-05): «si
+            /// continúas ahora», como `neutralNoSessionLossBody`.
+            static func neutralOtherAccountAndCaptureUnfinishedLossBody(_ count: Int) -> String {
+                String(format: ls("welcome.groups.neutralOtherAccountAndCaptureUnfinishedLossBody", comment: "Vuelta al neutro con cambios de grupos de otra cuenta y otros que no se pudieron preparar; %d = cambios de grupos que se pierden"), count)
+            }
+            /// Sin cifra.
+            static var neutralOtherAccountAndCaptureUnfinishedLossBodyUnknown: String {
+                ls("welcome.groups.neutralOtherAccountAndCaptureUnfinishedLossBodyUnknown", comment: "")
+            }
             /// Quedaron cambios de GRUPOS sin subir de una sesión que caducó. No se descartan nunca, así
             /// que la única salida honesta es volver a entrar con esa cuenta.
             static var neutralBlockedTitle: String { ls("welcome.groups.neutralBlockedTitle", comment: "") }
@@ -7385,6 +7410,9 @@ enum L10n {
                 ls("storage.groups.detachBlockedAttestAndCaptureUnfinished", comment: "")
             }
             /// El gemelo de los cambios de otra cuenta: arranca con el hecho de `Groups.Errors.groupsChangesFromAnotherAccount`.
+            /// **Desde el 2026-10-05 no dice «algunos de ellos»** (ticket `stuck-groups-drain-hides-held-rows-of-another-account`):
+            /// lo atascado puede ser tuyo —filas de otra cuenta en el outbox y un cambio propio que el drain no captura—, y
+            /// entonces «ellos», los de la otra cuenta, era falso. Vale para los dos casos.
             static var detachBlockedOtherAccountAndCaptureUnfinished: String {
                 ls("storage.groups.detachBlockedOtherAccountAndCaptureUnfinished", comment: "")
             }

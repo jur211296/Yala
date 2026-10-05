@@ -1000,22 +1000,48 @@ nonisolated enum CloudSignOutFlowLogic {
     /// Lo que queda solo vive en el History, así que decide quién lo apuntó y qué paró el ciclo:
     ///  · el ciclo paró por un motivo que abre la salida (sin App Attest, sin sesión): ese motivo. Con el outbox a 0 el
     ///    veredicto del ciclo se ignoraba y la salida no se ofrecía nunca.
-    ///  · todo lo de fuera es de otra cuenta, o sin dueño probado (`uncapturedAllHeldForAnotherAccount`, fechado contra el
-    ///    registro de sesiones como hace el drain): `.groupsChangesFromAnotherAccount`, con su salida.
-    ///  · si algo es de esta sesión, `.groupsCaptureUnfinished` y sin salida: con attest y sesión buenos lo único que impide
-    ///    subir es este teléfono, y la decisión A de Jürgen no da salida a un teléfono normal. `nil` (no se pudo leer) cuenta
-    ///    igual, y también un ciclo que paró por algo que no abre la salida (el canal en pausa, una subida fallida): lo que el
-    ///    drain no captura no llega al outbox aunque eso se arregle. Hasta el 2026-10-05 esta rama decía `.uploadRetryLater`,
-    ///    «inténtalo en un rato», y esperar no lo cura (ticket `groups-stuck-drain-on-a-healthy-phone-says-try-again-later`).
-    static func stuckCaptureVerdict(cycleReason: BlockReason?, livePendingCount: Int,
-                                    uncapturedAllHeldForAnotherAccount: Bool?) -> PushAllVerdict {
+    ///  · queda algo de otra cuenta: filas retenidas en el outbox (`heldRowsForAnotherAccount`) o lo que el History apunta a
+    ///    otra cuenta (`uncapturedPointsToAnotherAccount`, fechado contra el registro de sesiones como hace el drain):
+    ///    `.groupsChangesFromAnotherAccount`, con su salida, que pierde lo ajeno y lo atascado.
+    ///  · si no, `.groupsCaptureUnfinished` y sin salida: con attest y sesión buenos lo único que impide subir es este
+    ///    teléfono, y la decisión A de Jürgen no da salida a un teléfono normal. También un ciclo que paró por algo que no abre
+    ///    la salida (el canal en pausa, una subida fallida): lo que el drain no captura no llega al outbox aunque eso se
+    ///    arregle. Hasta el 2026-10-05 esta rama decía `.uploadRetryLater`, «inténtalo en un rato», y esperar no lo cura (ticket
+    ///    `groups-stuck-drain-on-a-healthy-phone-says-try-again-later`).
+    ///
+    /// **Las filas retenidas del outbox también cuentan** (ticket `stuck-groups-drain-hides-held-rows-of-another-account`,
+    /// decisión A de Jürgen del 2026-10-05). Hasta ese día no se miraban: con un cambio propio atascado salía solo el atasco, la
+    /// persona lo arreglaba y al reintentar le salía «otra cuenta». Las dos causas, de una en una. Ahora sale «otra cuenta» y
+    /// el aviso cuenta también lo atascado (`GroupsLoss.readsUncaptured`), y su texto nombra las dos.
+    ///
+    /// **Falla cerrado ante lo que no se sabe** (review adversarial del 2026-10-05, lente de datos), porque lo que decide aquí
+    /// abre una salida que PIERDE cambios:
+    ///  · un recuento de filas ajenas que falló (`Int.max`) no prueba nada;
+    ///  · un History ilegible (`nil`) tampoco deja abrirla, haya o no filas ajenas: sin él, lo aceptado sin cifra cubriría
+    ///    también lo propio que se apunte después del aviso. Es el atasco, sin salida.
+    static func stuckCaptureVerdict(cycleReason: BlockReason?, livePendingCount: Int, heldRowsForAnotherAccount: Int,
+                                    uncapturedPointsToAnotherAccount: Bool?) -> PushAllVerdict {
         if let cycleReason, lossCause(cycleReason) != nil {
             return .blocked(pendingCount: livePendingCount, reason: cycleReason)
         }
-        if uncapturedAllHeldForAnotherAccount == true {
-            return .blocked(pendingCount: livePendingCount, reason: .groupsChangesFromAnotherAccount)
+        if let uncapturedPointsToAnotherAccount {
+            let heldRowsProven = heldRowsForAnotherAccount > 0 && heldRowsForAnotherAccount < Int.max
+            if heldRowsProven || uncapturedPointsToAnotherAccount {
+                return .blocked(pendingCount: livePendingCount, reason: .groupsChangesFromAnotherAccount)
+            }
         }
         return .blocked(pendingCount: livePendingCount > 0 ? livePendingCount : Int.max, reason: .groupsCaptureUnfinished)
+    }
+
+    /// **¿Apunta lo que el drain no capturó a otra cuenta?** (2026-10-05). Sí si TODO es de otra cuenta o sin dueño probado
+    /// —el criterio de siempre: entonces nada de eso lo sube esta sesión—, o si ALGO es de otra cuenta CONCRETA
+    /// (`UncapturedChange.provenAnotherAccount`). Lo «sin dueño» mezclado con cambios propios no cuenta: la sonda es ancha a
+    /// propósito y lee también cambios anteriores al registro de sesiones, y ese ruido abriría la salida que pierde cambios a
+    /// un teléfono cuyo único problema es su drain (review adversarial, lente de datos). `nil` = no se pudo leer.
+    static func uncapturedPointsToAnotherAccount(_ changes: [GroupsSyncClient.UncapturedChange]?) -> Bool? {
+        guard let changes else { return nil }
+        if !changes.isEmpty, changes.allSatisfy(\.heldForAnotherAccount) { return true }
+        return changes.contains(where: \.provenAnotherAccount)
     }
 
     /// **Lo que dice el aviso del desasociar bloqueado: una causa, o dos** (ticket
@@ -1068,6 +1094,12 @@ nonisolated enum CloudSignOutFlowLogic {
 
         /// No hay nada que perder: las dos mitades leídas y vacías.
         var isEmpty: Bool { rows?.isEmpty == true && uncaptured?.isEmpty == true }
+
+        /// **¿El aviso cuenta cambios que el drain no capturó?** Algo leído, o la mitad sin leer (`nil`), que también puede
+        /// tenerlos. Es el gemelo de `CausedLossAcceptance.readsUncaptured` para la oferta, y decide si el aviso de «otra
+        /// cuenta» nombra además el atasco (`SignOutBlockedCopy.groupsLossMessage`, 2026-10-05): con cambios propios
+        /// atascados, «solo se suben con la cuenta que los apuntó» sería falso para ellos.
+        var readsUncaptured: Bool { uncaptured != [] }
     }
 
     /// **¿Deja el recuento final seguir con lo que el drain de Grupos no capturó?** El gemelo de

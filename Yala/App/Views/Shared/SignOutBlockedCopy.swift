@@ -129,7 +129,14 @@ enum SignOutBlockedCopy {
     /// **El mensaje del aviso que OFRECE perder los cambios de grupos**, por la causa que lo abre, en Ajustes y en la hoja
     /// del cambio de Apple ID. Sin sesión y con otra cuenta van juntos —los dos se arreglan entrando con la cuenta que los
     /// apuntó—, salvo en la nube, donde el texto nombra la puerta para entrar («Dónde viven tus datos»).
-    static func groupsLossMessage(for reason: CloudSignOutFlowLogic.BlockReason, pending: Int) -> String {
+    ///
+    /// **Con otra cuenta y la cifra contando cambios que el drain no capturó, las dos causas** (`readsUncaptured`, ticket
+    /// `stuck-groups-drain-hides-held-rows-of-another-account`, 2026-10-05): lo atascado puede ser tuyo, y para eso «solo se
+    /// suben con la cuenta que los apuntó» es falso. Sin sesión y sin App Attest no cambian: ahí nada sube, sea de quien sea.
+    /// Sin valor por defecto: quien pinta la oferta tiene que decir qué cuenta su cifra
+    /// (`CloudSessionSignOut.groupsLossReadsUncaptured`).
+    static func groupsLossMessage(for reason: CloudSignOutFlowLogic.BlockReason, pending: Int,
+                                  readsUncaptured: Bool) -> String {
         let count = CloudSignOutFlowLogic.shownLossCount(pending)
         switch CloudSignOutFlowLogic.lossCause(reason) {
         case .attestUnavailable:
@@ -137,6 +144,9 @@ enum SignOutBlockedCopy {
         case .noSession where reason == .cloudSessionExpired:
             return count.map { L10n.Settings.signOutCloudSessionExpiredGroupsLoss($0) }
                 ?? L10n.Settings.signOutCloudSessionExpiredGroupsLossUnknown
+        case .otherAccount where readsUncaptured:
+            return count.map { L10n.Groups.Errors.otherAccountAndCaptureUnfinishedSignOutLoss($0) }
+                ?? L10n.Groups.Errors.otherAccountAndCaptureUnfinishedSignOutLossUnknown
         case .noSession, .otherAccount:
             return count.map { L10n.Groups.Errors.noSessionSignOutLoss($0) } ?? L10n.Groups.Errors.noSessionSignOutLossUnknown
         case nil:
@@ -155,11 +165,27 @@ enum SignOutBlockedCopy {
 
     /// Lo mismo, en la puerta de Grupos del Welcome, con los cambios que solo suben con una sesión que no está (ticket
     /// `groups-outbox-rows-without-a-live-session-have-no-exit`).
-    static func welcomeNoSessionLossMessage(pending: Int) -> String {
-        guard let count = CloudSignOutFlowLogic.shownLossCount(pending) else {
-            return L10n.Welcome.Groups.neutralNoSessionLossBodyUnknown
+    ///
+    /// **Con otra cuenta y la cifra contando lo que el drain no capturó, las dos causas**, por lo mismo que
+    /// `groupsLossMessage` (2026-10-05). `anotherAccountAndCaptureUnfinished` lo decide quien pinta: la causa es otra cuenta
+    /// y la oferta lee el History (`CloudSessionSignOut.groupsLossReadsUncaptured`).
+    static func welcomeNoSessionLossMessage(pending: Int, anotherAccountAndCaptureUnfinished: Bool) -> String {
+        let count = CloudSignOutFlowLogic.shownLossCount(pending)
+        if anotherAccountAndCaptureUnfinished {
+            return count.map { L10n.Welcome.Groups.neutralOtherAccountAndCaptureUnfinishedLossBody($0) }
+                ?? L10n.Welcome.Groups.neutralOtherAccountAndCaptureUnfinishedLossBodyUnknown
         }
+        guard let count else { return L10n.Welcome.Groups.neutralNoSessionLossBodyUnknown }
         return L10n.Welcome.Groups.neutralNoSessionLossBody(count)
+    }
+
+    /// **El bloqueo de la puerta de Grupos del Welcome SIN la salida** —el invitado, o un gesto que la retiró—. Con otra cuenta
+    /// y la captura atascada nombra las dos causas con el texto del desasociar, que es ese mismo caso sin salida y no habla de
+    /// desasociar (2026-10-05, ticket `stuck-groups-drain-hides-held-rows-of-another-account`); si no, el de siempre.
+    static func welcomeBlockedMessage(anotherAccountAndCaptureUnfinished: Bool) -> String {
+        anotherAccountAndCaptureUnfinished
+            ? L10n.Storage.Groups.detachBlockedOtherAccountAndCaptureUnfinished
+            : L10n.Welcome.Groups.neutralBlockedBody
     }
 
     /// **«Empezar de cero» no borró porque quedan cambios de grupos sin subir** (ticket
@@ -187,7 +213,11 @@ enum SignOutBlockedCopy {
         case .sessionExpired: return L10n.Groups.FreshStartPending.lossSessionExpired
         case .permanent: return L10n.Groups.FreshStartPending.lossPermanent
         case .attestUnavailable: return L10n.Groups.FreshStartPending.lossAttest
-        case .groupsChangesFromAnotherAccount: return L10n.Groups.FreshStartPending.lossOtherAccount
+        // Con la cifra contando lo que el drain no capturó, las dos causas (2026-10-05): lo atascado puede ser tuyo.
+        case .groupsChangesFromAnotherAccount:
+            return block.readsUncaptured
+                ? L10n.Groups.FreshStartPending.lossOtherAccountAndCaptureUnfinished
+                : L10n.Groups.FreshStartPending.lossOtherAccount
         case .transient, .exportUnconfirmed, .bridgeUnreadable, .detachBusy, .channelPaused, .uploadRetryLater,
              .personalAttestUnavailable, .syncStoppedNeedsUpdate, .syncStoppedMidMigration, .syncStoppedNeedsRelaunch,
              .personalUploadRetryLater, .cloudSessionExpired, .sessionNotClosed, .signOutSessionSurvived,

@@ -906,6 +906,12 @@ final class GroupsSyncClient {
         /// La transacción es de otra cuenta, o sin dueño probado, según el registro de sesiones a su fecha
         /// (`GroupsOutboxOwnershipLogic`): la fila que el drain le daría no la subiría esta sesión. Sin sesión, `false`.
         let heldForAnotherAccount: Bool
+        /// **De OTRA cuenta concreta**, no solo sin dueño probado: el registro de sesiones nombra a su fecha una cuenta que no
+        /// es la de la sesión (2026-10-05, ticket `stuck-groups-drain-hides-held-rows-of-another-account`). Lo «sin dueño»
+        /// incluye ruido —cambios anteriores al registro, de la era CloudKit, que la sonda cuenta a propósito—, y basta UN
+        /// cambio así para abrir la salida que pierde cambios (`CloudSignOutFlowLogic.uncapturedPointsToAnotherAccount`), así
+        /// que ahí solo cuenta lo probado. `false` por defecto: el lado que no abre nada.
+        var provenAnotherAccount: Bool = false
     }
 
     /// **Los cambios del History de Grupos que ningún drain ha capturado**, uno por clave (2026-10-05, ticket
@@ -944,14 +950,14 @@ final class GroupsSyncClient {
             var seen = Set<String>()
             var changes: [UncapturedChange] = []
             for tx in txns where tx.author != Self.outboxSaveAuthor {
-                let held = GroupsOutboxOwnershipLogic.isHeldForAnotherAccount(
-                    rowOwner: GroupsOutboxOwnershipLogic.owner(transactionAt: tx.timestamp, log: log),
-                    sessionOwner: sessionOwner)
+                let rowOwner = GroupsOutboxOwnershipLogic.owner(transactionAt: tx.timestamp, log: log)
+                let held = GroupsOutboxOwnershipLogic.isHeldForAnotherAccount(rowOwner: rowOwner, sessionOwner: sessionOwner)
                 for (index, change) in tx.changes.enumerated()
                 where Self.groupEntityNames.contains(change.changedPersistentIdentifier.entityName) {
                     let key = CloudSyncEngine.uncapturedChangeKey(tx: tx, change: change, index: index)
                     if seen.insert(key).inserted {
-                        changes.append(UncapturedChange(key: key, heldForAnotherAccount: held))
+                        changes.append(UncapturedChange(key: key, heldForAnotherAccount: held,
+                                                        provenAnotherAccount: held && rowOwner != nil))
                     }
                 }
             }

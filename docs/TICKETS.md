@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (764)
+## Index (766)
 
 | id | status | path |
 |---|---|---|
@@ -732,7 +732,9 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | storage-row-gate-comment-says-rollout-zero | backlog | tickets/backlog/storage-row-gate-comment-says-rollout-zero.md |
 | storage-sync-sign-in-count-has-no-plural | backlog | tickets/backlog/storage-sync-sign-in-count-has-no-plural.md |
 | storekit-appgroup-siri-pro-gate | done | tickets/done/storekit-appgroup-siri-pro-gate.md |
-| stuck-groups-drain-hides-held-rows-of-another-account | backlog | tickets/backlog/stuck-groups-drain-hides-held-rows-of-another-account.md |
+| stuck-groups-drain-hides-held-rows-of-another-account | done | tickets/done/stuck-groups-drain-hides-held-rows-of-another-account.md |
+| stuck-groups-drain-with-another-account-and-a-cycle-reason-names-two-of-three-causes | backlog | tickets/backlog/stuck-groups-drain-with-another-account-and-a-cycle-reason-names-two-of-three-causes.md |
+| stuck-groups-loss-without-a-count-covers-own-edits-made-after-the-notice | backlog | tickets/backlog/stuck-groups-loss-without-a-count-covers-own-edits-made-after-the-notice.md |
 | subscription-success-without-pro | done | tickets/done/subscription-success-without-pro.md |
 | superseding-intent-can-strand-the-sign-out-coordinator | done | tickets/done/superseding-intent-can-strand-the-sign-out-coordinator.md |
 | sync-runtime-safety-note-assumes-every-prod-device-is-icloud | backlog | tickets/backlog/sync-runtime-safety-note-assumes-every-prod-device-is-icloud.md |

@@ -113,7 +113,7 @@ struct FreshStartForeignMirrorEntriesTests {
         let mirror = try mirror(foreign: 2, in: dir)
         let verdict = await CloudSessionSignOut.shared.drainGroupsBeforeFreshStart(
             context: context, witness: witness(mirror, owner: "sub-a"))
-        let expected = Block(pendingCount: 2, reason: .groupsChangesFromAnotherAccount)
+        let expected = Block(pendingCount: 2, reason: .groupsChangesFromAnotherAccount, readsUncaptured: false)
         #expect(verdict == .blocked(expected))
         #expect(CloudSessionSignOut.shared.freshStartGroupsBlock == expected)
         #expect(expected.offersLossExit, "la salida «perderlos» está en pantalla")
@@ -190,7 +190,7 @@ struct FreshStartForeignMirrorEntriesTests {
         let mirror = try mirror(own: 1, foreign: 2, in: dir)
         let verdict = await CloudSessionSignOut.shared.drainGroupsBeforeFreshStart(
             context: context, witness: witness(mirror, owner: "sub-a"))
-        #expect(verdict == .blocked(Block(pendingCount: 3, reason: .uploadRetryLater)))
+        #expect(verdict == .blocked(Block(pendingCount: 3, reason: .uploadRetryLater, readsUncaptured: false)))
     }
 
     /// **El residuo no las cuenta dos veces** (review adversarial del 2026-10-05, lente de copy). La subida termina y DESPUÉS
@@ -224,7 +224,7 @@ struct FreshStartForeignMirrorEntriesTests {
         }
         let verdict = await CloudSessionSignOut.shared.drainGroupsBeforeFreshStart(context: context, witness: witness)
         #expect(calls.sessionOwner >= 2, "control: la subida preguntó antes de que apareciera, y el residuo después")
-        #expect(verdict == .blocked(Block(pendingCount: 3, reason: .uploadRetryLater)))
+        #expect(verdict == .blocked(Block(pendingCount: 3, reason: .uploadRetryLater, readsUncaptured: false)))
     }
 
     /// **Con un motivo que ofrece perderlos, la oferta cuenta propias y ajenas**: el aviso enseña lo que el borrado se
@@ -236,9 +236,9 @@ struct FreshStartForeignMirrorEntriesTests {
         let dir = freshDir(); defer { cleanup(dir) }
         let mirror = try mirror(own: 1, foreign: 2, in: dir)
         let verdict = await CloudSessionSignOut.shared.settleFreshStartBlock(
-            Block(pendingCount: 1, reason: .attestUnavailable), accepted: nil,
+            Block(pendingCount: 1, reason: .attestUnavailable, readsUncaptured: false), accepted: nil,
             context: context, witness: witness(mirror, owner: "sub-a"))
-        #expect(verdict == .blocked(Block(pendingCount: 3, reason: .attestUnavailable)))
+        #expect(verdict == .blocked(Block(pendingCount: 3, reason: .attestUnavailable, readsUncaptured: false)))
     }
 
     /// La suma no inventa un número: si cualquiera de las dos mitades no se pudo contar, «no se pudo contar».
@@ -248,7 +248,7 @@ struct FreshStartForeignMirrorEntriesTests {
             var witness = CloudSessionSignOut.GroupsExitWitness.quiet
             witness.mirrorPendingOfAnotherAccount = { _ in foreign }
             return CloudSessionSignOut.freshStartBlockCountingAnotherAccount(
-                Block(pendingCount: pending, reason: .transient), context: context, witness: witness).pendingCount
+                Block(pendingCount: pending, reason: .transient, readsUncaptured: false), context: context, witness: witness).pendingCount
         }
         #expect(counted(1, foreign: 0) == 1)
         #expect(counted(1, foreign: 2) == 3)
@@ -279,7 +279,7 @@ struct FreshStartForeignMirrorEntriesTests {
         resetCoordinator(context)
         let dir = freshDir(); defer { cleanup(dir) }
         let mirror = try mirror(foreign: 0, in: dir)
-        let block = Block(pendingCount: 4, reason: .channelPaused)
+        let block = Block(pendingCount: 4, reason: .channelPaused, readsUncaptured: false)
         let verdict = await CloudSessionSignOut.shared.settleFreshStartBlock(
             block, accepted: nil, context: context, witness: witness(mirror, owner: "sub-a"))
         #expect(verdict == .blocked(block))
@@ -294,6 +294,6 @@ struct FreshStartForeignMirrorEntriesTests {
         let mirror = try mirror(own: 1, foreign: 2, in: dir)
         let verdict = await CloudSessionSignOut.shared.drainGroupsBeforeFreshStart(
             context: context, witness: witness(mirror, owner: nil))
-        #expect(verdict == .blocked(Block(pendingCount: 3, reason: .sessionExpired)))
+        #expect(verdict == .blocked(Block(pendingCount: 3, reason: .sessionExpired, readsUncaptured: false)))
     }
 }

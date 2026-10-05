@@ -1649,7 +1649,8 @@ struct AttestUnavailableSignOutWiringTests {
                     CloudSessionSignOut.shared.acknowledgeBlocked()
                 }
             } message: {
-                Text(SignOutBlockedCopy.groupsLossMessage(for: signOutGroupsLossReason, pending: signOutAttestLossPending))
+                Text(SignOutBlockedCopy.groupsLossMessage(for: signOutGroupsLossReason, pending: signOutAttestLossPending,
+                                                          readsUncaptured: signOutGroupsLossReadsUncaptured))
             }
             """)))
     }
@@ -1692,11 +1693,13 @@ struct AttestUnavailableSignOutWiringTests {
             let cause = CloudSignOutFlowLogic.lossCause(reason)
             let offersLoss = purpose.invitedGroupID == nil && (cause == .noSession || cause == .otherAccount)
                 && CloudSessionSignOut.shared.offersGroupsLossExit
+            let namesBothCauses = cause == .otherAccount && CloudSessionSignOut.shared.groupsLossReadsUncaptured
             noticeShell(icon: "arrow.trianglehead.2.clockwise.rotate.90",
                         title: L10n.Welcome.Groups.neutralBlockedTitle,
                         body: offersLoss
-                            ? SignOutBlockedCopy.welcomeNoSessionLossMessage(pending: pending)
-                            : L10n.Welcome.Groups.neutralBlockedBody,
+                            ? SignOutBlockedCopy.welcomeNoSessionLossMessage(
+                                pending: pending, anotherAccountAndCaptureUnfinished: namesBothCauses)
+                            : SignOutBlockedCopy.welcomeBlockedMessage(anotherAccountAndCaptureUnfinished: namesBothCauses),
                         identifier: "welcome_groups_gate_neutral_blocked") {
                 VStack(spacing: DS.Spacing.sm) {
                     YalaPrimaryButton(L10n.Welcome.Groups.gateBack) { leaveAfterBlock() }
@@ -1721,6 +1724,7 @@ struct AttestUnavailableSignOutWiringTests {
             if CloudSignOutFlowLogic.lossCause(reason) != nil {
                 signOutAttestLossPending = pending
                 signOutGroupsLossReason = reason
+                signOutGroupsLossReadsUncaptured = signOutCoordinator.groupsLossReadsUncaptured
             }
             """)), """
             Ajustes dejó de guardar la cifra del bloqueo: el aviso saldría siempre sin cifra y la persona aceptaría \

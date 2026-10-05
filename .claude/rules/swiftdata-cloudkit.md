@@ -429,8 +429,15 @@ paths:
     gesto basta un intento con alguno de esos mismos cambios fuera (`groupsCaptureStillStuck`); (2) **atascada, el motivo que abre la salida
     se conserva** (`lossBlockAfterRecapture`), el push-all **cicla aunque el outbox esté a 0** para saber la causa, y tras un
     ciclo que lo vacía decide `stuckCaptureVerdict` con el último ciclo REAL (uno `.coalesced` no decide): el motivo del
-    ciclo si abre la salida, los cambios de otra cuenta si TODO lo de fuera es de otra cuenta (fechado contra
-    `SessionSignInLog`, como el drain), y si no `.groupsCaptureUnfinished` sin salida — un teléfono con attest y sesión no
+    ciclo si abre la salida, los cambios de otra cuenta si quedan filas retenidas en el outbox o el History apunta a otra
+    cuenta (`uncapturedPointsToAnotherAccount`: TODO lo de fuera ajeno o sin dueño, o ALGO de otra cuenta CONCRETA según
+    `SessionSignInLog`; lo «sin dueño» mezclado con lo propio es ruido de la sonda y no abre nada) —desde el 2026-10-05,
+    ticket `stuck-groups-drain-hides-held-rows-of-another-account`: hasta ese día el outbox no se miraba y las dos causas
+    salían de una en una; un recuento de filas ajenas que falla (`Int.max`) o un History ilegible no prueban nada y no abren
+    la salida—, y entonces la oferta pierde lo ajeno y lo atascado y su texto nombra las dos causas
+    (`GroupsLoss.readsUncaptured` decide el texto en cierres, Welcome —también al invitado, sin salida— y «Empezar de cero»;
+    el desasociar, `DetachBlockedNotice`), y si no
+    `.groupsCaptureUnfinished` sin salida — un teléfono con attest y sesión no
     la tiene, decisión A de Jürgen; su texto no promete plazo, dice cerrar y abrir Yala o actualizarla (opción A del
     2026-10-05). Llega a los tres gestos, y la puerta de Grupos del Welcome necesita su rama: su catch-all no es exhaustivo;
     (3) **el aviso cuenta el History**: lo que se pierde son dos mitades (`GroupsLoss`, y una tercera en

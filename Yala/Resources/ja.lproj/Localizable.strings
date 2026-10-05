@@ -5875,7 +5875,7 @@
 "storage.groups.detachBlockedSession" = "グループのセッションの有効期限が切れました。もう一度サインインしてお試しください。";
 "storage.groups.detachBlockedSessionAndCaptureUnfinished" = "グループのセッションの有効期限が切れ、グループの最近の変更の一部をアップロード用に準備できませんでした。変更は失われません。再度サインインし、Yala を閉じて開き直してから（解決しない場合はアップデート）、もう一度お試しください。";
 "storage.groups.detachBlockedAttestAndCaptureUnfinished" = "この端末は1日以上、サーバーが求めるセキュリティ確認を通過できておらず、グループの最近の変更の一部もアップロード用に準備できませんでした。変更は失われません。準備するには、Yala を閉じて開き直してください（解決しない場合はアップデート）。";
-"storage.groups.detachBlockedOtherAccountAndCaptureUnfinished" = "この端末には、別のアカウントで作成されたグループの変更があり、そのアカウントでしかアップロードできません。さらに、その一部はアップロード用に準備できませんでした。変更は失われません。Yala を閉じて開き直し（解決しない場合はアップデート）、そのアカウントでサインインするとアップロードされます。";
+"storage.groups.detachBlockedOtherAccountAndCaptureUnfinished" = "この端末には、別のアカウントで作成されたグループの変更があり、そのアカウントでしかアップロードできません。さらに、グループの変更の一部はアップロード用に準備できませんでした。変更は失われません。Yala を閉じて開き直し（解決しない場合はアップデート）、もう一度お試しください。そのアカウントの変更は、そのアカウントでサインインした場合にのみアップロードされます。";
 
 /* Puerta del invitado: vuelta al neutro antes de aceptar una invitación de grupo */
 "welcome.groups.inviteNeutralTitle" = "参加する前に、この端末を空にします";
@@ -6172,6 +6172,8 @@
 
 /* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
 "groups.errors.noSessionSignOutLossUnknown" = "まだアップロードされていないグループの変更があります。これらは作成したアカウントでしかアップロードできず、そのアカウントのセッションはこの端末で開かれていません。アップロードするには、そのアカウントで再度サインインしてください。できない場合はこのままサインアウトできますが、変更は失われ、グループの誰にも表示されません。";
+"groups.errors.otherAccountAndCaptureUnfinishedSignOutLoss" = "未アップロードのグループの変更：%d件。一部はこの端末で別のアカウントで作成されたもので、そのアカウントでしかアップロードできません。また、一部はアップロード用に準備できませんでした。Yala を閉じて開き直し（解決しない場合はアップデート）、もう一度お試しください。別のアカウントの変更は、そのアカウントでサインインした場合にのみアップロードされます。できない場合はこのままサインアウトできますが、変更は失われ、グループの誰にも表示されません。";
+"groups.errors.otherAccountAndCaptureUnfinishedSignOutLossUnknown" = "まだアップロードされていないグループの変更があります。一部はこの端末で別のアカウントで作成されたもので、そのアカウントでしかアップロードできません。また、一部はアップロード用に準備できませんでした。Yala を閉じて開き直し（解決しない場合はアップデート）、もう一度お試しください。別のアカウントの変更は、そのアカウントでサインインした場合にのみアップロードされます。できない場合はこのままサインアウトできますが、変更は失われ、グループの誰にも表示されません。";
 
 /* Cerrar sesión en la nube con la sesión caducada; %d = cambios de grupos que se pierden */
 "settings.signOutCloudSessionExpiredGroupsLoss" = "セッションの有効期限が切れました。未アップロードのグループの変更：%d件。アップロードするには、このプロフィール画面の「データの保存先」を開いて「サインイン」をタップしてください。サインインできない場合はこのままサインアウトできますが、変更は失われ、グループの誰にも表示されません。";
@@ -6184,9 +6186,12 @@
 
 /* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
 "welcome.groups.neutralNoSessionLossBodyUnknown" = "まだアップロードされていないグループの変更があります。これらは作成したアカウントでしかアップロードできず、そのアカウントのセッションはこの端末で開かれていません。今続けると失われ、グループの誰にも表示されません。";
+"welcome.groups.neutralOtherAccountAndCaptureUnfinishedLossBody" = "未アップロードのグループの変更：%d件。一部はこの端末で別のアカウントで作成されたもので、そのアカウントでしかアップロードできません。また、一部はアップロード用に準備できませんでした。今続けると失われ、グループの誰にも表示されません。";
+"welcome.groups.neutralOtherAccountAndCaptureUnfinishedLossBodyUnknown" = "まだアップロードされていないグループの変更があります。一部はこの端末で別のアカウントで作成されたもので、そのアカウントでしかアップロードできません。また、一部はアップロード用に準備できませんでした。今続けると失われ、グループの誰にも表示されません。";
 
 /* Empezar de cero con cambios de grupos de otra cuenta: por qué no suben */
 "groups.freshStartPending.lossOtherAccount" = "これらは作成したアカウントでしかアップロードできませんが、この端末で開いているセッションは別のアカウントのものです。そのアカウントで再度サインインしないなら、変更を失って最初からやり直せます。グループの誰にも表示されません。";
+"groups.freshStartPending.lossOtherAccountAndCaptureUnfinished" = "一部は別のアカウントで作成されたもので、そのアカウントでしかアップロードできません。また、一部はアップロード用に準備できませんでした。Yala を閉じて開き直し（解決しない場合はアップデート）、もう一度お試しください。別のアカウントの変更は、そのアカウントでサインインした場合にのみアップロードされます。そうしないなら、変更を失って最初からやり直せます。グループの誰にも表示されません。";
 
 /* Cerrar sesión en la nube con la sesión caducada; %d = cambios personales que se pierden */
 "settings.signOutCloudSessionExpiredPersonalLoss" = "セッションの有効期限が切れました。クラウドのアカウントに届かなかった変更：%d件。アップロードするには、このプロフィール画面の「データの保存先」を開いて「サインイン」をタップしてください。サインインできない場合は、決める前に取引をファイルにエクスポートできます。今サインアウトすると、これらの変更は失われます。";

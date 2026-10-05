@@ -5873,7 +5873,7 @@
 "storage.groups.detachBlockedSession" = "La tua sessione dei gruppi è scaduta. Accedi di nuovo e riprova.";
 "storage.groups.detachBlockedSessionAndCaptureUnfinished" = "La tua sessione dei gruppi è scaduta e non è stato possibile preparare per il caricamento alcune delle ultime modifiche dei tuoi gruppi. Non si perde nulla. Accedi di nuovo, chiudi e riapri Yala (se continua a succedere, aggiornala) e riprova.";
 "storage.groups.detachBlockedAttestAndCaptureUnfinished" = "Da più di un giorno questo telefono non riesce a superare la verifica di sicurezza richiesta dal nostro server, e non è stato possibile preparare per il caricamento alcune delle ultime modifiche dei tuoi gruppi. Non si perde nulla. Per prepararle, chiudi e riapri Yala (se continua a succedere, aggiornala).";
-"storage.groups.detachBlockedOtherAccountAndCaptureUnfinished" = "Alcune modifiche dei gruppi su questo telefono sono state fatte con un altro account e si possono caricare solo con quell'account. Inoltre, non è stato possibile preparare per il caricamento alcune di esse. Non si perde nulla. Chiudi e riapri Yala (se continua a succedere, aggiornala) e accedi con quell'account per caricarle.";
+"storage.groups.detachBlockedOtherAccountAndCaptureUnfinished" = "Alcune modifiche dei gruppi su questo telefono sono state fatte con un altro account e si possono caricare solo con quell'account. Inoltre, non è stato possibile preparare per il caricamento alcune modifiche dei gruppi. Non si perde nulla. Chiudi e riapri Yala (se continua a succedere, aggiornala) e riprova; quelle di quell'account si caricano solo se accedi con esso.";
 
 /* Puerta del invitado: vuelta al neutro antes de aceptar una invitación de grupo */
 "welcome.groups.inviteNeutralTitle" = "Prima di unirti, questo telefono riparte da zero";
@@ -6170,6 +6170,8 @@
 
 /* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
 "groups.errors.noSessionSignOutLossUnknown" = "Alcune modifiche dei gruppi non sono ancora state caricate. Si caricano solo con l'account che le ha create, e la sua sessione non è aperta su questo telefono: rientra con quell'account per caricarle. Se non puoi, esci comunque e andranno perse; nessuno del gruppo le vedrà.";
+"groups.errors.otherAccountAndCaptureUnfinishedSignOutLoss" = "Modifiche dei gruppi non ancora caricate: %d. Alcune sono state fatte su questo telefono con un altro account e si caricano solo con quell'account, e non è stato possibile preparare per il caricamento alcune di esse. Chiudi e riapri Yala (se continua a succedere, aggiornala) e riprova; quelle dell'altro account si caricano solo se accedi con esso. Se non puoi, esci comunque e andranno perse; nessuno del gruppo le vedrà.";
+"groups.errors.otherAccountAndCaptureUnfinishedSignOutLossUnknown" = "Alcune modifiche dei gruppi non sono ancora state caricate. Una parte è stata fatta su questo telefono con un altro account e si carica solo con quell'account, e non è stato possibile preparare per il caricamento alcune di esse. Chiudi e riapri Yala (se continua a succedere, aggiornala) e riprova; quelle dell'altro account si caricano solo se accedi con esso. Se non puoi, esci comunque e andranno perse; nessuno del gruppo le vedrà.";
 
 /* Cerrar sesión en la nube con la sesión caducada; %d = cambios de grupos que se pierden */
 "settings.signOutCloudSessionExpiredGroupsLoss" = "La tua sessione è scaduta. Modifiche dei tuoi gruppi non ancora caricate: %d. Per caricarle, apri «Dove si trovano i tuoi dati», qui in Profilo, e tocca «Accedi». Se non riesci ad accedere, esci comunque e andranno perse; nessuno del gruppo le vedrà.";
@@ -6182,9 +6184,12 @@
 
 /* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
 "welcome.groups.neutralNoSessionLossBodyUnknown" = "Alcune modifiche dei gruppi non sono ancora state caricate. Si caricano solo con l'account che le ha create, e la sua sessione non è aperta su questo telefono. Se continui ora, andranno perse e nessuno del gruppo le vedrà.";
+"welcome.groups.neutralOtherAccountAndCaptureUnfinishedLossBody" = "Modifiche dei gruppi non ancora caricate: %d. Alcune sono state fatte su questo telefono con un altro account e si caricano solo con quell'account, e non è stato possibile preparare per il caricamento alcune di esse. Se continui ora, andranno perse e nessuno del gruppo le vedrà.";
+"welcome.groups.neutralOtherAccountAndCaptureUnfinishedLossBodyUnknown" = "Alcune modifiche dei gruppi non sono ancora state caricate. Una parte è stata fatta su questo telefono con un altro account e si carica solo con quell'account, e non è stato possibile preparare per il caricamento alcune di esse. Se continui ora, andranno perse e nessuno del gruppo le vedrà.";
 
 /* Empezar de cero con cambios de grupos de otra cuenta: por qué no suben */
 "groups.freshStartPending.lossOtherAccount" = "Si possono caricare solo con l'account che le ha create, e la sessione aperta su questo telefono è di un altro account. Se non rientrerai con quell'account, puoi ricominciare da zero e perderle: nessuno del gruppo le vedrà.";
+"groups.freshStartPending.lossOtherAccountAndCaptureUnfinished" = "Alcune sono state fatte con un altro account e si possono caricare solo con quell'account, e non è stato possibile preparare per il caricamento alcune di esse. Chiudi e riapri Yala (se continua a succedere, aggiornala) e riprova; quelle dell'altro account si caricano solo se accedi con esso. Se non lo farai, puoi ricominciare da zero e perderle: nessuno del gruppo le vedrà.";
 
 /* Cerrar sesión en la nube con la sesión caducada; %d = cambios personales que se pierden */
 "settings.signOutCloudSessionExpiredPersonalLoss" = "La tua sessione è scaduta. Modifiche che non sono arrivate al tuo account nel cloud: %d. Per caricarle, apri «Dove si trovano i tuoi dati», qui in Profilo, e tocca «Accedi». Se non riesci ad accedere, prima di decidere puoi esportare le tue transazioni in un file. Se esci ora, queste modifiche andranno perse.";

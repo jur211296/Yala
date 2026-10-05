@@ -5131,7 +5131,7 @@
 "storage.groups.detachBlockedSession" = "Your groups session has expired. Sign in again and give it another try.";
 "storage.groups.detachBlockedSessionAndCaptureUnfinished" = "Your groups session has expired and some of your latest group changes couldn't be prepared for upload. Nothing is lost. Sign in again, close Yala and open it again (if it keeps happening, update it), and give it another try.";
 "storage.groups.detachBlockedAttestAndCaptureUnfinished" = "This phone has gone more than a day without passing the security check our server requires, and some of your latest group changes couldn't be prepared for upload. Nothing is lost. To get them ready, close Yala and open it again (if it keeps happening, update it).";
-"storage.groups.detachBlockedOtherAccountAndCaptureUnfinished" = "Some group changes on this phone were made with another account, and they can only upload with that account. On top of that, some of them couldn't be prepared for upload. Nothing is lost. Close Yala and open it again (if it keeps happening, update it), and sign in with that account so they can upload.";
+"storage.groups.detachBlockedOtherAccountAndCaptureUnfinished" = "Some group changes on this phone were made with another account, and they can only upload with that account. On top of that, some group changes couldn't be prepared for upload. Nothing is lost. Close Yala and open it again (if it keeps happening, update it) and try again; that account's changes only upload if you sign in with it.";
 
 /* Puerta del invitado: vuelta al neutro antes de aceptar una invitación de grupo */
 "welcome.groups.inviteNeutralTitle" = "Before you join, this phone gets a clean slate";
@@ -5428,6 +5428,8 @@
 
 /* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
 "groups.errors.noSessionSignOutLossUnknown" = "Some group changes haven't been uploaded yet. They only upload with the account that made them, and its session isn't open on this phone: sign back in with that account to upload them. If you can't, sign out anyway and they'll be lost; no one in the group will see them.";
+"groups.errors.otherAccountAndCaptureUnfinishedSignOutLoss" = "Group changes not uploaded yet: %d. Some were made on this phone with another account and only upload with that account, and some couldn't be prepared for upload. Close Yala and open it again (if it keeps happening, update it) and try again; the other account's changes only upload if you sign in with it. If you can't, sign out anyway and they'll be lost; no one in the group will see them.";
+"groups.errors.otherAccountAndCaptureUnfinishedSignOutLossUnknown" = "There are group changes that haven't been uploaded yet. Some were made on this phone with another account and only upload with that account, and some couldn't be prepared for upload. Close Yala and open it again (if it keeps happening, update it) and try again; the other account's changes only upload if you sign in with it. If you can't, sign out anyway and they'll be lost; no one in the group will see them.";
 
 /* Cerrar sesión en la nube con la sesión caducada; %d = cambios de grupos que se pierden */
 "settings.signOutCloudSessionExpiredGroupsLoss" = "Your session has expired. Group changes not uploaded yet: %d. To upload them, open “Where your data lives”, here in Profile, and tap “Sign in”. If you can't sign in, sign out anyway and they'll be lost; no one in the group will see them.";
@@ -5440,9 +5442,12 @@
 
 /* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
 "welcome.groups.neutralNoSessionLossBodyUnknown" = "Some group changes haven't been uploaded yet. They only upload with the account that made them, and its session isn't open on this phone. If you continue now, they'll be lost and no one in the group will see them.";
+"welcome.groups.neutralOtherAccountAndCaptureUnfinishedLossBody" = "Group changes not uploaded yet: %d. Some were made on this phone with another account and only upload with that account, and some couldn't be prepared for upload. If you continue now, they'll be lost and no one in the group will see them.";
+"welcome.groups.neutralOtherAccountAndCaptureUnfinishedLossBodyUnknown" = "There are group changes that haven't been uploaded yet. Some were made on this phone with another account and only upload with that account, and some couldn't be prepared for upload. If you continue now, they'll be lost and no one in the group will see them.";
 
 /* Empezar de cero con cambios de grupos de otra cuenta: por qué no suben */
 "groups.freshStartPending.lossOtherAccount" = "They can only upload with the account that made them, and the session open on this phone belongs to another one. If you're not going to sign back in with that account, you can start from scratch and lose them: no one in the group will see them.";
+"groups.freshStartPending.lossOtherAccountAndCaptureUnfinished" = "Some were made with another account and can only upload with that account, and some couldn't be prepared for upload. Close Yala and open it again (if it keeps happening, update it) and try again; the other account's changes only upload if you sign in with it. If you're not going to, you can start from scratch and lose them: no one in the group will see them.";
 
 /* Cerrar sesión en la nube con la sesión caducada; %d = cambios personales que se pierden */
 "settings.signOutCloudSessionExpiredPersonalLoss" = "Your session has expired. Changes that didn't reach your account in the cloud: %d. To upload them, open “Where your data lives”, here in Profile, and tap “Sign in”. If you can't sign in, you can export your transactions to a file before you decide. If you sign out now, those changes will be lost.";

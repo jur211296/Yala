@@ -273,7 +273,8 @@ struct AppleIDCloseNoticeView: View {
         noticeBody(
             icon: "exclamationmark.triangle",
             title: SignOutBlockedCopy.groupsLossTitle(for: reason),
-            message: SignOutBlockedCopy.groupsLossMessage(for: reason, pending: pending),
+            message: SignOutBlockedCopy.groupsLossMessage(for: reason, pending: pending,
+                                                          readsUncaptured: coordinator.groupsLossReadsUncaptured),
             // Identificador propio: el mismo motivo sin salida lleva `apple_id_close_blocked_attest-unavailable`, y los dos
             // textos son distintos.
             identifier: "apple_id_close_losing_group_changes") {

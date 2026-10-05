@@ -5875,7 +5875,7 @@
 "storage.groups.detachBlockedSession" = "Twoja sesja grup wygasła. Zaloguj się ponownie i spróbuj jeszcze raz.";
 "storage.groups.detachBlockedSessionAndCaptureUnfinished" = "Twoja sesja grup wygasła, a części ostatnich zmian w Twoich grupach nie udało się przygotować do przesłania. Nic nie ginie. Zaloguj się ponownie, zamknij i otwórz Yala jeszcze raz (jeśli to się powtarza, zaktualizuj ją) i spróbuj znowu.";
 "storage.groups.detachBlockedAttestAndCaptureUnfinished" = "Ten telefon od ponad doby nie przechodzi weryfikacji bezpieczeństwa, której wymaga nasz serwer, a części ostatnich zmian w Twoich grupach nie udało się przygotować do przesłania. Nic nie ginie. Aby je przygotować, zamknij Yala i otwórz ponownie (jeśli to się powtarza, zaktualizuj ją).";
-"storage.groups.detachBlockedOtherAccountAndCaptureUnfinished" = "Niektóre zmiany w grupach na tym telefonie zapisano z innego konta i można je wysłać tylko z tego konta. Do tego części z nich nie udało się przygotować do przesłania. Nic nie ginie. Zamknij Yala i otwórz ponownie (jeśli to się powtarza, zaktualizuj ją) i zaloguj się na to konto, żeby je wysłać.";
+"storage.groups.detachBlockedOtherAccountAndCaptureUnfinished" = "Niektóre zmiany w grupach na tym telefonie zapisano z innego konta i można je wysłać tylko z tego konta. Do tego części zmian w grupach nie udało się przygotować do przesłania. Nic nie ginie. Zamknij Yala i otwórz ponownie (jeśli to się powtarza, zaktualizuj ją) i spróbuj jeszcze raz; zmiany z tamtego konta zostaną wysłane tylko po zalogowaniu się na nie.";
 
 /* Puerta del invitado: vuelta al neutro antes de aceptar una invitación de grupo */
 "welcome.groups.inviteNeutralTitle" = "Zanim dołączysz, ten telefon zostanie wyczyszczony";
@@ -6172,6 +6172,8 @@
 
 /* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
 "groups.errors.noSessionSignOutLossUnknown" = "Niektóre zmiany w grupach nie zostały jeszcze wysłane. Można je wysłać tylko z konta, które je zapisało, a jego sesja nie jest otwarta na tym telefonie: zaloguj się ponownie na to konto, aby je wysłać. Jeśli nie możesz, wyloguj się mimo to – zostaną utracone i nikt w grupie ich nie zobaczy.";
+"groups.errors.otherAccountAndCaptureUnfinishedSignOutLoss" = "Niewysłane zmiany w grupach: %d. Część zapisano na tym telefonie z innego konta i można je wysłać tylko z tego konta, a części nie udało się przygotować do przesłania. Zamknij Yala i otwórz ponownie (jeśli to się powtarza, zaktualizuj ją) i spróbuj jeszcze raz; zmiany z drugiego konta zostaną wysłane tylko po zalogowaniu się na nie. Jeśli nie możesz, wyloguj się mimo to – zostaną utracone i nikt w grupie ich nie zobaczy.";
+"groups.errors.otherAccountAndCaptureUnfinishedSignOutLossUnknown" = "Niektóre zmiany w grupach nie zostały jeszcze wysłane. Część zapisano na tym telefonie z innego konta i można je wysłać tylko z tego konta, a części nie udało się przygotować do przesłania. Zamknij Yala i otwórz ponownie (jeśli to się powtarza, zaktualizuj ją) i spróbuj jeszcze raz; zmiany z drugiego konta zostaną wysłane tylko po zalogowaniu się na nie. Jeśli nie możesz, wyloguj się mimo to – zostaną utracone i nikt w grupie ich nie zobaczy.";
 
 /* Cerrar sesión en la nube con la sesión caducada; %d = cambios de grupos que se pierden */
 "settings.signOutCloudSessionExpiredGroupsLoss" = "Twoja sesja wygasła. Niewysłane zmiany w Twoich grupach: %d. Aby je wysłać, otwórz „Gdzie są Twoje dane”, tutaj w Profilu, i stuknij „Zaloguj się”. Jeśli nie możesz się zalogować, wyloguj się mimo to – zostaną utracone i nikt w grupie ich nie zobaczy.";
@@ -6184,9 +6186,12 @@
 
 /* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
 "welcome.groups.neutralNoSessionLossBodyUnknown" = "Niektóre zmiany w grupach nie zostały jeszcze wysłane. Można je wysłać tylko z konta, które je zapisało, a jego sesja nie jest otwarta na tym telefonie. Jeśli teraz przejdziesz dalej, zostaną utracone i nikt z grupy ich nie zobaczy.";
+"welcome.groups.neutralOtherAccountAndCaptureUnfinishedLossBody" = "Niewysłane zmiany w grupach: %d. Część zapisano na tym telefonie z innego konta i można je wysłać tylko z tego konta, a części nie udało się przygotować do przesłania. Jeśli teraz przejdziesz dalej, zostaną utracone i nikt z grupy ich nie zobaczy.";
+"welcome.groups.neutralOtherAccountAndCaptureUnfinishedLossBodyUnknown" = "Niektóre zmiany w grupach nie zostały jeszcze wysłane. Część zapisano na tym telefonie z innego konta i można je wysłać tylko z tego konta, a części nie udało się przygotować do przesłania. Jeśli teraz przejdziesz dalej, zostaną utracone i nikt z grupy ich nie zobaczy.";
 
 /* Empezar de cero con cambios de grupos de otra cuenta: por qué no suben */
 "groups.freshStartPending.lossOtherAccount" = "Można je wysłać tylko z konta, które je zapisało, a sesja otwarta na tym telefonie należy do innego konta. Jeśli nie zalogujesz się ponownie na to konto, możesz zacząć od zera i je stracić: nikt w grupie ich nie zobaczy.";
+"groups.freshStartPending.lossOtherAccountAndCaptureUnfinished" = "Część zapisano z innego konta i można je wysłać tylko z tego konta, a części nie udało się przygotować do przesłania. Zamknij Yala i otwórz ponownie (jeśli to się powtarza, zaktualizuj ją) i spróbuj jeszcze raz; zmiany z drugiego konta zostaną wysłane tylko po zalogowaniu się na nie. Jeśli nie zamierzasz tego robić, możesz zacząć od zera i je stracić: nikt w grupie ich nie zobaczy.";
 
 /* Cerrar sesión en la nube con la sesión caducada; %d = cambios personales que se pierden */
 "settings.signOutCloudSessionExpiredPersonalLoss" = "Twoja sesja wygasła. Zmiany, które nie dotarły na Twoje konto w chmurze: %d. Aby je wysłać, otwórz „Gdzie są Twoje dane”, tutaj w Profilu, i stuknij „Zaloguj się”. Jeśli nie możesz się zalogować, zanim zdecydujesz, możesz wyeksportować swoje transakcje do pliku. Jeśli wylogujesz się teraz, te zmiany zostaną utracone.";
