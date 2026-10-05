@@ -19,12 +19,13 @@ final class GroupsViewModel {
 
     // MARK: - Recalculation State (debounce — espejo de PanelViewModel)
 
-    /// Task de recálculo debounced — coalesce ráfagas de `onChange(dataVersion)` del sync remoto.
-    private var recalculateTask: Task<Void, Never>?
-    /// Un reload solicitado dentro de la ventana de debounce no se pierde (se ejecuta al disparar).
-    private var pendingReload = false
-    /// Suprime el recálculo en background (evita trabajo inútil / traps de snapshot).
-    private(set) var isInBackground = false
+    /// El freno compartido de Grupos: coalesce ráfagas de `onChange(dataVersion)` del sync remoto en
+    /// un solo recálculo. Inyectable para que el coalescing se pruebe sin `applicationState`.
+    @ObservationIgnored private let debouncer: RecalculationDebouncer
+
+    init(debouncer: RecalculationDebouncer? = nil) {
+        self.debouncer = debouncer ?? RecalculationDebouncer(label: "GroupsViewModel")
+    }
 
     // MARK: - Data
 
@@ -252,31 +253,19 @@ final class GroupsViewModel {
 
     /// Cancela cualquier recálculo pendiente (llamado desde `.onDisappear`).
     func cancelRecalculation() {
-        recalculateTask?.cancel()
+        debouncer.cancel()
     }
 
     /// Estado de background — suprime el recálculo mientras la app no está activa.
     func setBackground(_ value: Bool) {
-        isInBackground = value
-        if value {
-            recalculateTask?.cancel()
-            recalculateTask = nil
-            pendingReload = false
-        }
+        debouncer.setBackground(value)
     }
 
-    /// Debounce compartido (150ms). `pendingReload` asegura que un reload solicitado dentro de la
-    /// ventana no se pierda. Gateado por `isInBackground` + `applicationState`.
+    /// Debounce compartido (150ms, `RecalculationDebouncer`): un reload pedido dentro de la ventana no
+    /// se pierde, y la espera la suprimen el segundo plano y la app inactiva.
     private func scheduleRecalculation(reload: Bool) {
-        guard !isInBackground else { return }
-        guard UIApplication.shared.applicationState == .active else { return }
-        if reload { pendingReload = true }
-        recalculateTask?.cancel()
-        recalculateTask = Task { @MainActor in
-            do { try await Task.sleep(for: .milliseconds(150)) } catch { return }
-            guard !Task.isCancelled else { return }
-            let shouldReload = pendingReload
-            pendingReload = false
+        debouncer.schedule(reload: reload) { [weak self] shouldReload in
+            guard let self else { return }
             if shouldReload {
                 fetchData()
             }
