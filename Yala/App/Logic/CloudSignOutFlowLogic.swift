@@ -1132,12 +1132,18 @@ nonisolated enum CloudSignOutFlowLogic {
     }
 
     /// **Por qué «Empezar de cero» no borra lo que la subida dejó** (`CloudSessionSignOut.drainGroupsBeforeFreshStart`). Si
-    /// solo quedan entradas del espejo que esta sesión no puede subir —sin sesión, el borrado las cuenta todas y la
-    /// rehidratación no toca ninguna—, esperar no las sube nunca: lo que las sube es volver a entrar con su cuenta, y eso
-    /// dice `.sessionExpired`, el mismo motivo que el push-all ya da a las filas vivas sin sesión. Con filas vivas nuevas, o
-    /// entradas de la sesión que no se pudieron rehidratar, otro intento sí lo cura (review adversarial del 2026-09-26).
-    static func freshStartResidualReason(livePendingCount: Int, sessionMirrorCount: Int) -> BlockReason {
-        livePendingCount == 0 && sessionMirrorCount == 0 ? .sessionExpired : .uploadRetryLater
+    /// solo quedan entradas del espejo que esta sesión no puede subir —el borrado las cuenta todas y la rehidratación solo
+    /// toca las de la sesión—, esperar no las sube nunca: lo que las sube es volver a entrar con su cuenta. Sin sesión eso
+    /// dice `.sessionExpired`, el mismo motivo que el push-all ya da a las filas vivas sin sesión; con la sesión de OTRA
+    /// cuenta abierta (`anotherAccountMirrorCount > 0`, ticket
+    /// `fresh-start-drops-mirror-entries-of-another-identity-without-counting-them`) dice `.groupsChangesFromAnotherAccount`,
+    /// cuyo texto es justo ese caso: «su sesión ya no está» sería falso con una sesión abierta. Los dos ofrecen perderlos.
+    /// Con filas vivas nuevas, o entradas de la sesión que no se pudieron rehidratar, otro intento sí lo cura (review
+    /// adversarial del 2026-09-26).
+    static func freshStartResidualReason(livePendingCount: Int, sessionMirrorCount: Int,
+                                         anotherAccountMirrorCount: Int) -> BlockReason {
+        guard livePendingCount == 0, sessionMirrorCount == 0 else { return .uploadRetryLater }
+        return anotherAccountMirrorCount > 0 ? .groupsChangesFromAnotherAccount : .sessionExpired
     }
 
     // MARK: - «Empezar de cero y perderlos» (ticket `fresh-start-has-no-way-out-when-group-writes-can-never-upload`)

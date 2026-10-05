@@ -756,7 +756,8 @@ final class DataWipeService {
     /// **Y el espejo del App Group tampoco guarda nada sin fila** (ticket `groups-drain-failure-reads-as-nothing-pending`).
     /// Un kill o un `save` fallido del drain deja el cambio solo en el espejo, y `resetSyncState`, unas líneas más abajo
     /// de `wipeLocalGroupsDomain`, lo purga ENTERO: con el recuento del outbox a 0 se iba sin que nada lo contara. Por eso
-    /// aquí cuentan las de la sesión y, sin sesión, todas (`CloudSessionSignOut.freshStartGroupsPendingCount`).
+    /// aquí cuentan todas, también las de otra cuenta con la sesión abierta (`CloudSessionSignOut.freshStartGroupsPendingCount`,
+    /// desde el 2026-10-05 con `.wholeMirror`).
     ///
     /// La llama `wipeLocalGroupsDomain` como su primera línea, y los callers de «Empezar de cero» ANTES de
     /// `wipeAllUserData`: sin eso, una fila aparecida tras la subida dejaría borrado lo personal y los grupos enteros.

@@ -1966,9 +1966,10 @@ final class CloudSessionSignOut {
     ///
     /// **Y un drain que no terminó NO es «nada que subir»** (ticket `groups-drain-failure-reads-as-nothing-pending`): hasta
     /// ese día el recuento de después daba 0 con el gasto todavía en el History, y el borrado seguía. Tampoco lo es una
-    /// entrada del espejo que no llegó a su fila: el borrado purga el espejo entero, así que aquí cuentan también las de
-    /// cualquier identidad cuando no hay sesión (`.sessionOwnerOrEveryoneWhenSignedOut`). Con cualquiera de las dos el
-    /// botón pasa por `drainGroupsBeforeFreshStart`, que lo dice.
+    /// entrada del espejo que no llegó a su fila: el borrado purga el espejo entero, así que aquí cuentan todas, también
+    /// las de otra cuenta con la sesión abierta (`.wholeMirror`, ticket
+    /// `fresh-start-drops-mirror-entries-of-another-identity-without-counting-them`). Con cualquiera de las dos el botón pasa
+    /// por `drainGroupsBeforeFreshStart`, que lo dice.
     func groupsOutboxIsSettledEmpty(context: ModelContext, witness: GroupsExitWitness = .live) -> Bool {
         freshStartGroupsBlock = nil
         // Un intento nuevo tampoco hereda la oferta ni lo aceptado del anterior.
@@ -1980,7 +1981,7 @@ final class CloudSessionSignOut {
         return CloudSignOutFlowLogic.groupsCaptureVerdict(
             captureCompleted: captured,
             livePendingCount: Self.liveGroupsPendingCount(context: context),
-            unrehydratedMirrorCount: witness.mirrorPending(context, .sessionOwnerOrEveryoneWhenSignedOut)
+            unrehydratedMirrorCount: witness.mirrorPending(context, .wholeMirror)
         ) == .drained
     }
 
@@ -2017,6 +2018,11 @@ final class CloudSessionSignOut {
         /// (`GroupsSyncClient.liveRowsHeldForAnotherAccount`, ticket `groups-outbox-rows-without-a-live-session-have-no-exit`).
         /// Con valor por defecto —ninguna— para los testigos de los tests que no las siembran.
         var heldForAnotherAccount: @MainActor (ModelContext) -> Int = { _ in 0 }
+        /// Las entradas del espejo sin fila de OTRA cuenta que la de la sesión (`.anotherAccount`; sin sesión, ninguna). Lo
+        /// que «Empezar de cero» lee para decir por qué no suben (`freshStartResidualReason`) y para sumarlas a un bloqueo que
+        /// no ofrece perderlas (ticket `fresh-start-drops-mirror-entries-of-another-identity-without-counting-them`). `Int.max`
+        /// = no se pudo leer. Con valor por defecto —ninguna— para los testigos de los tests que no las siembran.
+        var mirrorPendingOfAnotherAccount: @MainActor (ModelContext) -> Int = { _ in 0 }
         /// Las entradas del espejo sin fila, por su `clientMutationID`
         /// (`GroupsSyncClient.mirrorEntryMutationIDsMissingFromOutbox`): lo que la oferta de perder los cambios suma a las
         /// filas vivas. `nil` = no se pudo leer. Con valor por defecto —ninguna— para los testigos de los tests.
@@ -2062,6 +2068,10 @@ final class CloudSessionSignOut {
                     guard CloudSyncFlags.groupsBackendCompiledCapability else { return 0 }
                     return GroupsSyncClient.shared.liveRowsHeldForAnotherAccount(context: context)
                 },
+                mirrorPendingOfAnotherAccount: { context in
+                    guard CloudSyncFlags.groupsBackendCompiledCapability else { return 0 }
+                    return GroupsSyncClient.shared.mirrorEntriesMissingFromOutbox(context: context, scope: .anotherAccount)
+                },
                 mirrorPendingMutationIDs: { context, scope in
                     guard CloudSyncFlags.groupsBackendCompiledCapability else { return [] }
                     return GroupsSyncClient.shared.mirrorEntryMutationIDsMissingFromOutbox(context: context, scope: scope)
@@ -2073,19 +2083,20 @@ final class CloudSessionSignOut {
         }
     }
 
-    /// Lo que «Empezar de cero» se llevaría de grupos: las filas vivas y las entradas del espejo sin fila. La cifra que
-    /// enseña su bloqueo, y la que exige a cero el cinturón del escritor (`DataWipeService.requireNoUnsentGroupWrites`).
-    /// `Int.max` si alguna de las dos no se pudo contar.
+    /// Lo que «Empezar de cero» se llevaría de grupos: las filas vivas y las entradas del espejo sin fila, **de cualquier
+    /// cuenta** (`.wholeMirror`): el borrado purga el espejo entero. La cifra que enseña su bloqueo, y la que exige a cero
+    /// el cinturón del escritor (`DataWipeService.requireNoUnsentGroupWrites`). `Int.max` si alguna de las dos no se pudo
+    /// contar.
     static func freshStartGroupsPendingCount(context: ModelContext, witness: GroupsExitWitness = .live) -> Int {
         let live = liveGroupsPendingCount(context: context)
-        let mirror = witness.mirrorPending(context, .sessionOwnerOrEveryoneWhenSignedOut)
+        let mirror = witness.mirrorPending(context, .wholeMirror)
         guard live < Int.max, mirror < Int.max else { return Int.max }
         return live + mirror
     }
 
     /// Lo mismo que `freshStartGroupsPendingCount`, **por fila**: lo que «Empezar de cero y perderlos» enseña y lo que la
     /// persona acepta perder (ticket `fresh-start-has-no-way-out-when-group-writes-can-never-upload`). Mismo alcance del
-    /// espejo que el recuento y que el cinturón: el borrado lo purga entero.
+    /// espejo que el recuento y que el cinturón, `.wholeMirror`: el borrado lo purga entero, también lo de otra cuenta.
     ///
     /// `readsUncaptured` (2026-10-05): con la captura atascada, o con lo aceptado sobre una, la tercera mitad —los cambios del
     /// History que el drain no capturó— se lee; si no, es `[]` y el History no se toca (`FreshStartGroupsLoss`). Sin valor por
@@ -2095,7 +2106,7 @@ final class CloudSessionSignOut {
     ) -> CloudSignOutFlowLogic.FreshStartGroupsLoss {
         CloudSignOutFlowLogic.FreshStartGroupsLoss(
             rows: liveGroupsPendingRowIDs(context: context),
-            mirrorKeys: witness.mirrorPendingKeys(context, .sessionOwnerOrEveryoneWhenSignedOut),
+            mirrorKeys: witness.mirrorPendingKeys(context, .wholeMirror),
             uncaptured: readsUncaptured ? witness.uncapturedChanges(context).map { Set($0.map(\.key)) } : [])
     }
 
@@ -2148,12 +2159,16 @@ final class CloudSessionSignOut {
         let block: FreshStartGroupsBlock
         if let pushed = Self.freshStartBlock(
             for: await pushGroupsWithinBudget(context: context, witness: witness)) {
-            block = pushed
+            // La cifra de la subida es lo que ESTA sesión puede subir; el borrado se lleva también lo de otra cuenta
+            // (ticket `fresh-start-drops-mirror-entries-of-another-identity-without-counting-them`). Aquí y no en
+            // `settleFreshStartBlock`: el residuo de abajo ya cuenta el espejo entero, y sumarlo allí lo contaba dos veces.
+            block = Self.freshStartBlockCountingAnotherAccount(pushed, context: context, witness: witness)
         } else {
             // **La subida solo mira el espejo de la sesión, y el borrado que viene detrás purga el de TODOS** (ticket
             // `groups-drain-failure-reads-as-nothing-pending`). Sin este paso, una entrada sin fila que no es de la sesión
             // —o cualquiera, sin sesión— pasaba aquí como `.drained` y el cinturón del escritor saltaba DESPUÉS: en la
-            // puerta privada, con la zona de iCloud ya borrada. Se mide con el mismo recuento que el cinturón.
+            // puerta privada, con la zona de iCloud ya borrada. Se mide con el mismo recuento que el cinturón, que desde el
+            // 2026-10-05 cuenta también las de otra cuenta con la sesión abierta.
             let residual = Self.freshStartGroupsPendingCount(context: context, witness: witness)
             guard residual != 0 else { return .drained }
             // El motivo dice lo que lo cura: volver a entrar, o intentarlo en un rato (`freshStartResidualReason`).
@@ -2161,7 +2176,8 @@ final class CloudSessionSignOut {
                 pendingCount: residual,
                 reason: CloudSignOutFlowLogic.freshStartResidualReason(
                     livePendingCount: Self.liveGroupsPendingCount(context: context),
-                    sessionMirrorCount: witness.mirrorPending(context, .sessionOwner)))
+                    sessionMirrorCount: witness.mirrorPending(context, .sessionOwner),
+                    anotherAccountMirrorCount: witness.mirrorPendingOfAnotherAccount(context)))
         }
         return await settleFreshStartBlock(block, accepted: accepted, context: context, witness: witness)
     }
@@ -2169,7 +2185,8 @@ final class CloudSessionSignOut {
     /// **Qué hace «Empezar de cero» con un bloqueo** (ticket `fresh-start-has-no-way-out-when-group-writes-can-never-upload`).
     ///
     ///  · **Un motivo que no ofrece la salida** (`.channelPaused`, lo pasajero): el bloqueo de siempre, con su cifra y su
-    ///    texto. Lo aceptado, si lo había, no cuenta: la persona aceptó perderlos porque no podían subir, y ahora sí pueden.
+    ///    texto (la de la subida ya lleva sumadas las entradas de otra cuenta, `freshStartBlockCountingAnotherAccount`). Lo
+    ///    aceptado, si lo había, no cuenta: la persona aceptó perderlos porque no podían subir, y ahora sí pueden.
     ///  · **Un motivo que la ofrece, con lo que queda dentro de lo aceptado**: sigue sin ello (`.lossAccepted`). El motivo es
     ///    el de ESTE intento, así que el aviso no se hereda.
     ///  · **Un motivo que la ofrece, sin aceptar o con algo nuevo**: el bloqueo, con la cifra de lo que el borrado se
@@ -2211,6 +2228,20 @@ final class CloudSessionSignOut {
         freshStartLossOffer = loss
         noteFreshStartBlocked(offered)
         return .blocked(offered)
+    }
+
+    /// **El bloqueo sin salida de pérdida, con las entradas del espejo de otra cuenta sumadas** (ticket
+    /// `fresh-start-drops-mirror-entries-of-another-identity-without-counting-them`, decisión A de Jürgen). La cifra de la
+    /// subida es lo que ESTA sesión puede subir; el texto dice «empezar de cero se los llevaría», y el borrado purga también
+    /// lo de otra cuenta. Sin entradas ajenas, el bloqueo tal cual. Si alguna mitad no se pudo contar, `Int.max`.
+    static func freshStartBlockCountingAnotherAccount(
+        _ block: FreshStartGroupsBlock, context: ModelContext, witness: GroupsExitWitness
+    ) -> FreshStartGroupsBlock {
+        let anotherAccount = witness.mirrorPendingOfAnotherAccount(context)
+        // `Int.max` («no se pudo contar») más una cifra positiva desborda, y más cero se queda en `Int.max`: el
+        // desbordamiento cubre las dos mitades sin comprobarlas aparte.
+        let (sum, overflow) = block.pendingCount.addingReportingOverflow(anotherAccount)
+        return FreshStartGroupsBlock(pendingCount: overflow ? Int.max : sum, reason: block.reason)
     }
 
     /// «Empezar de cero» va a borrar con cambios de grupos que la persona aceptó perder. Solo cuenta si queda alguno: con

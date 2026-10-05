@@ -172,9 +172,10 @@ nonisolated struct GroupsOutboxMirror {
             .map(\.entry)
     }
 
-    /// TODAS las entries, de cualquier identidad, ordenadas como `entriesForUser`. No re-inserta ni borra nada: la usa
-    /// el cinturón de «Empezar de cero» para CONTAR lo que el borrado del espejo se llevaría cuando no hay sesión que diga
-    /// de quién son (`GroupsSyncClient.mirrorEntriesMissingFromOutbox`). El M1 sigue en pie: nadie las sube por aquí.
+    /// TODAS las entries, de cualquier identidad, ordenadas como `entriesForUser`. No re-inserta ni borra nada: la usan
+    /// «Empezar de cero» para CONTAR lo que el borrado del espejo se llevaría, haya sesión o no, y la oferta del cierre
+    /// cuando no hay sesión que diga de quién son (`GroupsSyncClient.mirrorEntriesMissingFromOutbox`). El M1 sigue en pie:
+    /// nadie las sube por aquí.
     func allEntries() -> [GroupsOutboxMirrorEntry] {
         allDecoded()
             .sorted { $0.creationDate < $1.creationDate }
