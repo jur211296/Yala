@@ -197,9 +197,14 @@ final class GroupTransactionBridge {
         //
         // El libro está SELLADO con el `sub` de la cuenta que se fue: con otra cuenta asociada no frena
         // nada, que es lo que hace que «asociar otra cuenta» reciba sus gastos limpios.
-        guard !GroupsDetachedBridgeLedger.isConserved(
+        //
+        // Y solo frena **mientras el movimiento conservado siga en el Panel** (ticket
+        // `groups-detach-ledger-has-no-exit`): si la persona lo borró, el libro retira la entrada y el gasto
+        // sigue por aquí abajo como cualquier otro. Es también lo que desbloquea una edición remota del gasto.
+        guard !GroupsDetachedBridgeLedger.stillHoldsBridge(
             expenseID: expense.id.uuidString,
-            associatedSub: GroupsAccountAssociation.shared.associatedSub) else {
+            associatedSub: GroupsAccountAssociation.shared.associatedSub,
+            context: context) else {
             Self.logger.info("bridgeExpense: skip — expense kept as a personal movement on a previous detach")
             return true
         }
@@ -1072,10 +1077,12 @@ final class GroupTransactionBridge {
         }
 
         // Paso 10 · gemelo del de `bridgeExpense`: esta liquidación ya está en el Panel como movimiento
-        // personal conservado en una desasociación anterior de ESTA misma cuenta. Ver allí el racional.
-        guard !GroupsDetachedBridgeLedger.isConserved(
+        // personal conservado en una desasociación anterior de ESTA misma cuenta. Ver allí el racional,
+        // incluido que deja de frenar cuando el movimiento conservado ya no está.
+        guard !GroupsDetachedBridgeLedger.stillHoldsBridge(
             settlementID: settlement.id.uuidString,
-            associatedSub: GroupsAccountAssociation.shared.associatedSub) else {
+            associatedSub: GroupsAccountAssociation.shared.associatedSub,
+            context: context) else {
             Self.logger.info("bridgeSettlement: skip — settlement kept as a personal movement on a previous detach")
             return true
         }
