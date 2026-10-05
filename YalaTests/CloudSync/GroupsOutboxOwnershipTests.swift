@@ -598,15 +598,26 @@ struct GroupsNoSessionLossExitTests {
         coordinator.acknowledgeBlocked()
         coordinator.migrationRestReadingOverride = nil
         coordinator.exitWitnessOverride = nil
+        coordinator.exitCaptureDelayOverride = nil
     }
+
+    /// Cambios del History que el drain no capturó, por clave.
+    private static func history(_ keys: [String]) -> [GroupsSyncClient.UncapturedChange] {
+        keys.map { GroupsSyncClient.UncapturedChange(key: $0, heldForAnotherAccount: false) }
+    }
+
+    private final class History { var keys: [String] = [] }
 
     /// El canal, hermético: la captura no toca el cliente compartido y el espejo es el de la prueba (el REAL del simulador
     /// guarda lo que otras suites dejan, y sin sesión el recuento de la pérdida lo contaría entero).
     private func hermeticWitness(capture: @escaping @MainActor (ModelContext) -> Bool = { _ in true },
-                                 mirror: Set<UUID>? = []) -> CloudSessionSignOut.GroupsExitWitness {
+                                 mirror: Set<UUID>? = [],
+                                 uncaptured: @escaping @MainActor () -> [GroupsSyncClient.UncapturedChange]? = { [] })
+        -> CloudSessionSignOut.GroupsExitWitness {
         var witness = CloudSessionSignOut.GroupsExitWitness(
             capture: capture, mirrorPending: { _, _ in mirror?.count ?? .max }, mirrorPendingKeys: { _, _ in [] })
         witness.mirrorPendingMutationIDs = { _, _ in mirror }
+        witness.uncapturedChanges = { _ in uncaptured() }
         return witness
     }
 
@@ -772,20 +783,113 @@ struct GroupsNoSessionLossExitTests {
         #expect(coordinator.offersGroupsLossExit)
     }
 
-    @Test("MUTACIÓN: con la captura a medias no se ofrece perder nada: el aviso no podría contarlo")
-    func lossExit_notOffered_whenTheCaptureDidNotFinish() async throws {
+    /// **Con el drain atascado y sin sesión, la salida vuelve y cuenta el History** (2026-10-05, ticket
+    /// `groups-drain-that-always-aborts-takes-the-loss-exit-away`). Hasta ese día la captura a medias bloqueaba con «inténtalo
+    /// en un rato» en cada intento: esperar no cura un drain que no termina, y sin sesión no había otra salida. Ahora el
+    /// aviso suma la fila viva y los tres cambios del History que el drain no capturó, y aceptarlos deja seguir el cierre.
+    @Test("MUTACIÓN: con la captura atascada se ofrece perder también lo que el drain no capturó, y aceptarlo sigue")
+    func lossExit_withAStuckCapture_countsTheHistory_andAcceptingContinues() async throws {
         reset(); defer { reset(); disarmIfArmed() }
         try #require(coordinator.phase == .idle)
         try requirePrivateOnlyCell()
+        coordinator.exitCaptureDelayOverride = .milliseconds(1)
         let dir = F.freshDir(); defer { F.cleanup(dir) }
         let context = try F.makeContext(dir)
         try F.seedRow(context, owner: "user-a")
-        try await blockOnGroups(context, calls: Calls(), witness: hermeticWitness(capture: { _ in false }))
+        let history = History()
+        history.keys = ["h1", "h2", "h3"]
+        let witness = hermeticWitness(capture: { _ in false }, uncaptured: { Self.history(history.keys) })
+        // 1 = el cierre; 2 = el cierre retomado; 3 = la entrada de `finalizeSessionExit`, que se para aquí.
+        try await blockOnGroups(context, calls: Calls(), inFlightFrom: 3, witness: witness)
 
-        #expect(coordinator.phase == .blocked(pendingCount: 1, reason: .uploadRetryLater))
-        #expect(!coordinator.offersGroupsLossExit)
+        #expect(coordinator.phase == .blocked(pendingCount: 4, reason: .sessionExpired), """
+            con el drain atascado el aviso tiene que contar la fila viva y los tres cambios del History: \(coordinator.phase)
+            """)
+        #expect(coordinator.offersGroupsLossExit, "la salida no volvió: esperar no cura un drain que no termina")
         #expect(!StorageModePersistence.isSignOutWipeArmed())
+
+        await coordinator.exitDiscardingUnsyncedGroups(context: context)
+        #expect(coordinator.phase == .blocked(pendingCount: 0, reason: .migrationInFlight), """
+            lo aceptado no cubrió las dos mitades del aviso y el cierre no siguió: \(coordinator.phase)
+            """)
     }
+
+    /// **Un cambio que llega al History después del aviso hace volver el aviso**, con la cifra nueva: lo aceptado cubre por
+    /// clave, no por cifra.
+    @Test("MUTACIÓN: con la captura atascada, un cambio nuevo del History tras aceptar vuelve a avisar")
+    func lossExit_withAStuckCapture_aNewHistoryChangeOffersAgain() async throws {
+        reset(); defer { reset(); disarmIfArmed() }
+        try #require(coordinator.phase == .idle)
+        try requirePrivateOnlyCell()
+        coordinator.exitCaptureDelayOverride = .milliseconds(1)
+        let dir = F.freshDir(); defer { F.cleanup(dir) }
+        let context = try F.makeContext(dir)
+        try F.seedRow(context, owner: "user-a")
+        let history = History()
+        history.keys = ["h1", "h2"]
+        let witness = hermeticWitness(capture: { _ in false }, uncaptured: { Self.history(history.keys) })
+        try await blockOnGroups(context, calls: Calls(), inFlightFrom: 3, witness: witness)
+        try #require(coordinator.phase == .blocked(pendingCount: 3, reason: .sessionExpired))
+
+        history.keys = ["h1", "h2", "h3"]
+        await coordinator.exitDiscardingUnsyncedGroups(context: context)
+
+        #expect(coordinator.phase == .blocked(pendingCount: 4, reason: .sessionExpired), """
+            el cambio que el aviso no enseñó se iba con el borrado: \(coordinator.phase)
+            """)
+        #expect(coordinator.offersGroupsLossExit)
+    }
+
+    /// **Lo que vio la captura de un gesto no lo hereda el siguiente** (review adversarial del 2026-10-05, lente 3): un cierre
+    /// cuya captura se atascó, y otro después sin nada de grupos —la celda C no captura—, no puede contar el History por el
+    /// atasco viejo.
+    @Test("MUTACIÓN: un gesto nuevo no hereda la captura atascada del anterior")
+    func aNewGesture_doesNotInheritAStuckCapture() async throws {
+        reset(); defer { reset(); disarmIfArmed() }
+        try #require(coordinator.phase == .idle)
+        try requirePrivateOnlyCell()
+        coordinator.exitCaptureDelayOverride = .milliseconds(1)
+        let dir = F.freshDir(); defer { F.cleanup(dir) }
+        let context = try F.makeContext(dir)
+        let row = try F.seedRow(context, owner: "user-a")
+        let witness = hermeticWitness(capture: { _ in false }, uncaptured: { Self.history(["h1"]) })
+        try await blockOnGroups(context, calls: Calls(), witness: witness)
+        try #require(coordinator.phase == .blocked(pendingCount: 2, reason: .sessionExpired), "control: el atasco se vio")
+        coordinator.acknowledgeBlocked()
+
+        // Sin filas ni grupos del canal: la celda C no captura, así que nada vuelve a mirar el History… salvo un atasco viejo.
+        context.delete(row)
+        try context.save()
+        try await blockOnGroups(context, calls: Calls(), inFlightFrom: 2, witness: witness)
+
+        #expect(coordinator.phase == .blocked(pendingCount: 0, reason: .migrationInFlight), """
+            el gesto nuevo contó el History por la captura atascada del anterior: \(coordinator.phase)
+            """)
+    }
+
+    /// **Lo pasajero se cura con otro intento** (2026-10-05): una captura que falla una vez y termina en la siguiente no
+    /// cuenta el History y no lo lee; el aviso cuenta la fila, como con la captura completa.
+    @Test("MUTACIÓN: la captura que falla una vez y termina en el intento siguiente cuenta solo las filas")
+    func lossExit_withACaptureThatHeals_countsOnlyTheRows() async throws {
+        reset(); defer { reset(); disarmIfArmed() }
+        try #require(coordinator.phase == .idle)
+        try requirePrivateOnlyCell()
+        coordinator.exitCaptureDelayOverride = .milliseconds(1)
+        let dir = F.freshDir(); defer { F.cleanup(dir) }
+        let context = try F.makeContext(dir)
+        try F.seedRow(context, owner: "user-a")
+        try F.seedRow(context, owner: "user-a")
+        let laps = Calls()
+        let historyReads = Calls()
+        let witness = hermeticWitness(
+            capture: { _ in laps.count += 1; return laps.count % 2 == 0 },
+            uncaptured: { historyReads.count += 1; return Self.history(["h1"]) })
+        try await blockOnGroups(context, calls: Calls(), witness: witness)
+
+        #expect(coordinator.phase == .blocked(pendingCount: 2, reason: .sessionExpired), "\(coordinator.phase)")
+        #expect(historyReads.count == 1, "solo tras el intento fallido; con la captura completa la oferta no lo lee ni lo cuenta")
+    }
+
 }
 
 // MARK: - 5 · El registro de sesiones, en los sitios que abren y cierran una sesión

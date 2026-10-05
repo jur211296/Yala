@@ -860,9 +860,16 @@ struct PausedChannelReasonWiringTests {
     /// sin que ninguna aserción de `classify` se enterase: la función pura seguiría siendo correcta.
     @Test("el push-all de grupos lee el testigo del kill, no un literal")
     func groupsPushAllReadsTheKillWitness() throws {
-        let pushAll = try Self.body(
-            of: Self.groupsPushAllMarker, in: try Self.source(Self.signOutPath))
-        #expect(pushAll.contains("channelKilled: GroupsSyncClient.shared.stoppedByChannelKill(for: outcome)"), """
+        let source = try Self.source(Self.signOutPath)
+        let pushAll = try Self.body(of: Self.groupsPushAllMarker, in: source)
+        // Desde el 2026-10-05 el ciclo y sus testigos llegan juntos por el testigo de salida (`GroupsExitWitness.cycle`, para
+        // poder sustituir el ciclo en los tests): el push-all lee el del ciclo, y el ciclo real se lo pide al cliente.
+        #expect(pushAll.contains("let reading = await witness.cycle(context)")
+                && pushAll.contains("channelKilled: channelKilled,")
+                && pushAll.contains("let channelKilled = reading.channelKilled"), "el push-all no usa el testigo de SU ciclo")
+        let liveCycle = try Self.body(
+            of: "static func liveCycle(context: ModelContext) async -> GroupsCycleReading {", in: source)
+        #expect(liveCycle.contains("channelKilled: GroupsSyncClient.shared.stoppedByChannelKill(for: outcome)"), """
             El push-all de grupos dejó de preguntar al cliente cuál de los dos 403 paró el ciclo. Con el \
             kill-switch puesto, a quien tiene cambios sin subir se le vuelve a decir que el problema es su \
             cuenta. Y tiene que preguntarlo CON el outcome: el testigo suelto puede ser de un ciclo ajeno.
@@ -1453,8 +1460,7 @@ struct AttestUnavailableSignOutWiringTests {
             ofrecido, o desde un bloqueo que puso el desasociar.
             """)
         #expect(exit.contains(Self.squashed("""
-            acceptedGroupsLoss = CloudSignOutFlowLogic.CausedLossAcceptance(
-                rows: offer.rows.map { .rows($0) } ?? .uncounted, cause: offer.cause)
+            acceptedGroupsLoss = CloudSignOutFlowLogic.CausedLossAcceptance(offer: offer.loss, cause: offer.cause)
             """)), """
             Lo aceptado dejó de ser las filas que contó el aviso, o perdió su causa: con una cifra, una fila nueva de la \
             misma cuenta se perdería sin que nadie la avisara; sin causa, un reintento que falla por otra cosa se la llevaría.
@@ -1489,9 +1495,9 @@ struct AttestUnavailableSignOutWiringTests {
             let lossCause = CloudSignOutFlowLogic.lossCause(reason)
             var shown = pending
             if let lossCause, let lossExit {
-                let rows = groupsLossRowIDs(context: context)
-                groupsLossExit = GroupsLossOffer(resume: lossExit, rows: rows, cause: lossCause)
-                shown = rows?.count ?? Int.max
+                let loss = groupsLoss(context: context)
+                groupsLossExit = GroupsLossOffer(resume: lossExit, loss: loss, cause: lossCause)
+                shown = loss.count
             }
             """)))
         let phase = try #require(push.range(of: "phase = .blocked(pendingCount: shown, reason: reason)"))
@@ -1502,12 +1508,12 @@ struct AttestUnavailableSignOutWiringTests {
         let cloud = Self.squashed(try Self.body(
             of: "private func performCloudSecureSignOut(context: ModelContext) async {", in: source))
         let cloudNote = try #require(cloud.range(of: Self.squashed("""
-            let offerRows = groupsLossRowIDs(context: context)
+            let offerLoss = groupsLoss(context: context)
             let lossCause = CloudSignOutFlowLogic.lossCause(shown)
             if let lossCause {
-                groupsLossExit = GroupsLossOffer(resume: .cloud, rows: offerRows, cause: lossCause)
+                groupsLossExit = GroupsLossOffer(resume: .cloud, loss: offerLoss, cause: lossCause)
             }
-            let shownCount = lossCause == nil ? pending : (offerRows?.count ?? Int.max)
+            let shownCount = lossCause == nil ? pending : offerLoss.count
             """)))
         // Desde el 2026-09-25 el paso 1 también escribe `phase = .blocked(pendingCount: pending, reason: shown)` (la puerta
         // de la sesión caducada), así que la fase del paso 2 se busca DESPUÉS de su propia traducción.
@@ -1531,14 +1537,18 @@ struct AttestUnavailableSignOutWiringTests {
                       pendingRows: controller.livePendingUploadRowIDs(), acceptance: acceptedPersonalLoss?.rows),
                   CloudSignOutFlowLogic.residualUncapturedAllowsSignOut(now: residualUncaptured, acceptance: acceptedPersonalLoss),
                   residualGroups == 0 || CloudSignOutFlowLogic.continuesWithoutUploading(
-                      pendingRows: Self.liveGroupsPendingRowIDs(context: context), acceptance: acceptedGroupsLoss?.rows) else {
+                      pendingRows: Self.liveGroupsPendingRowIDs(context: context), acceptance: acceptedGroupsLoss?.rows),
+                  CloudSignOutFlowLogic.groupsResidualUncapturedAllowsSignOut(
+                      now: groupsResidualUncaptured(context: context), acceptance: acceptedGroupsLoss) else {
             """)), "El residual de la nube cruzó las aceptaciones: cada outbox tiene que compararse con la suya.")
         let finalize = Self.squashed(try Self.body(
             of: "private func finalizeSessionExit(context: ModelContext, kind: CloudSignOutFlowLogic.ExitKind, export: ExportPolicy) async {",
             in: source))
         #expect(finalize.contains(Self.squashed("""
             guard residual == 0 || CloudSignOutFlowLogic.continuesWithoutUploading(
-                pendingRows: Self.liveGroupsPendingRowIDs(context: context), acceptance: acceptedGroupsLoss?.rows) else {
+                pendingRows: Self.liveGroupsPendingRowIDs(context: context), acceptance: acceptedGroupsLoss?.rows),
+                CloudSignOutFlowLogic.groupsResidualUncapturedAllowsSignOut(
+                    now: groupsResidualUncaptured(context: context), acceptance: acceptedGroupsLoss) else {
             """)))
     }
 

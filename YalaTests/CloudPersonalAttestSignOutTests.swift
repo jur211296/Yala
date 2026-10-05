@@ -520,7 +520,9 @@ struct CloudPersonalAttestSignOutWiringTests {
         let source = Self.squashed(try Self.source(Self.signOutPath))
         // Dos en el coordinador —el paso 2 de la nube y `pushGroupsForSignOut`—; el tercero, el del paso 1, vive desde el
         // 2026-09-28 dentro de `personalUploadBlockDecision`, que es pura y se prueba en `CloudExpiredSessionPersonalLossLogicTests`.
-        #expect(source.components(separatedBy: "CloudSignOutFlowLogic.continuesAfterBlockedUpload(").count - 1 == 2)
+        // Desde el 2026-10-05 los dos de grupos pasan por `groupsLossAcceptanceContinues`, que es `continuesAfterBlockedUpload`
+        // más la mitad del History (`groups-drain-that-always-aborts-takes-the-loss-exit-away`); su cuerpo se fija abajo.
+        #expect(source.components(separatedBy: "CloudSignOutFlowLogic.groupsLossAcceptanceContinues(").count - 1 == 2)
         #expect(source.components(separatedBy: "CloudSignOutFlowLogic.personalUploadBlockDecision(").count - 1 == 1)
         #expect(source.components(separatedBy: "CloudSignOutFlowLogic.continuesWithoutUploading(").count - 1 == 4, """
             La comparación por filas a secas solo vale donde no hay subida que contradiga lo aceptado: los recuentos finales \
@@ -530,22 +532,29 @@ struct CloudPersonalAttestSignOutWiringTests {
             """)
         #expect(source.contains(Self.squashed("""
             case .blocked(_, let reason) where acceptedGroupsLoss.map {
-                CloudSignOutFlowLogic.continuesAfterBlockedUpload(
-                    reason: reason, cause: $0.cause, pendingRows: groupsLossRowIDs(context: context),
-                    acceptance: $0.rows)
+                CloudSignOutFlowLogic.groupsLossAcceptanceContinues(
+                    $0, reason: reason, pendingRows: groupsLossRowIDs(context: context),
+                    uncaptured: groupsLossUncaptured(context: context))
             } ?? false:
             """)))
         #expect(source.contains(Self.squashed("""
             case .blocked(_, let reason):
-                if CloudSignOutFlowLogic.continuesAfterBlockedUpload(
-                    reason: reason, cause: accepted.cause,
-                    pendingRows: groupsLossRowIDs(context: context), acceptance: accepted.rows) {
+                if CloudSignOutFlowLogic.groupsLossAcceptanceContinues(
+                    accepted, reason: reason, pendingRows: groupsLossRowIDs(context: context),
+                    uncaptured: groupsLossUncaptured(context: context)) {
                     return true
                 }
             """)))
+        let logic = Self.squashed(try Self.source("Yala/App/Logic/CloudSignOutFlowLogic.swift"))
+        #expect(logic.contains(Self.squashed("""
+            continuesAfterBlockedUpload(reason: reason, cause: acceptance.cause, pendingRows: pendingRows,
+                                        acceptance: acceptance.rows)
+                && acceptance.coversUncaptured(uncaptured)
+            """)), "la comparación de grupos dejó de exigir la causa aceptada")
         #expect(source.contains(Self.squashed("""
             if let accepted = acceptedGroupsLoss, accepted.cause == .noSession,
-               CloudSignOutFlowLogic.continuesWithoutUploading(pendingRows: rows, acceptance: accepted.rows) {
+               CloudSignOutFlowLogic.continuesWithoutUploading(pendingRows: loss.rows, acceptance: accepted.rows),
+               accepted.coversUncaptured(loss.uncaptured) {
                 return false
             }
             """)), "la celda privada acepta perder por una causa que no es la suya")
