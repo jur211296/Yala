@@ -798,8 +798,17 @@ final class GroupsSyncClient {
         /// garantiza es que la rehidratación no las re-inserta.
         case sessionOwner
         /// Las de la sesión y, **sin sesión, todas**: nadie puede probar que no sean de quien vuelve a entrar. Es el alcance
-        /// del borrado de «Empezar de cero», que purga el espejo ENTERO (`DataWipeService.wipeLocalGroupsDomain`).
+        /// de la oferta de pérdida del cierre de sesión (`CloudSessionSignOut.groupsLossRowIDs`), decisión B2.
         case sessionOwnerOrEveryoneWhenSignedOut
+        /// **Todas, haya sesión o no** (ticket `fresh-start-drops-mirror-entries-of-another-identity-without-counting-them`,
+        /// decisión A de Jürgen del 2026-10-04). Es el alcance de «Empezar de cero», que purga el espejo ENTERO
+        /// (`DataWipeService.wipeLocalGroupsDomain`): con el de arriba, con sesión, las entradas de otra cuenta se borraban
+        /// sin que el aviso ni la cifra de «perderlos» las contaran.
+        case wholeMirror
+        /// **Las de otra cuenta que la de la sesión.** Sin sesión, ninguna: ahí no hay «otra», hay sesión caducada. Es lo
+        /// que dice a «Empezar de cero» si lo que queda solo lo sube otra cuenta (`.groupsChangesFromAnotherAccount`) y
+        /// cuánto suma a un bloqueo que no ofrece perderlos.
+        case anotherAccount
     }
 
     /// **Entradas del espejo que NO están en el outbox**: cambios que sobrevivieron a su fila y que un borrado del espejo
@@ -860,6 +869,11 @@ final class GroupsSyncClient {
         guard let mirror else { return [] }
         let entries: [GroupsOutboxMirrorEntry]
         switch (ownerID, scope) {
+        // Antes que la sesión: el borrado entero no mira de quién son.
+        case (_, .wholeMirror): entries = mirror.allEntries()
+        // Mismo criterio de «hay sesión» que `liveRowsHeldForAnotherAccount`: una identidad vacía no es sesión.
+        case (let owner?, .anotherAccount) where !owner.isEmpty: entries = mirror.allEntries().filter { $0.userID != owner }
+        case (_, .anotherAccount): return []
         case (let owner?, _): entries = mirror.entriesForUser(owner)
         case (nil, .sessionOwner): return []
         case (nil, .sessionOwnerOrEveryoneWhenSignedOut): entries = mirror.allEntries()

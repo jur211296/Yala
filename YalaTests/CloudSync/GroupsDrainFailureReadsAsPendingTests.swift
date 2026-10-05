@@ -217,6 +217,14 @@ struct GroupsDrainCaptureTests {
         #expect(count(nil, .sessionOwner) == 0, "sin sesión, el push-all no puede subir ninguna")
         #expect(count(nil, .sessionOwnerOrEveryoneWhenSignedOut) == 3, "sin sesión, el borrado cuenta las de todos")
         #expect(count("sub-b", .sessionOwner) == 2)
+        // «Empezar de cero» (2026-10-05, `fresh-start-drops-mirror-entries-of-another-identity-without-counting-them`): el
+        // borrado se lleva las de todos haya sesión o no, y las de otra cuenta solo existen con sesión.
+        #expect(count("sub-a", .wholeMirror) == 3, "con sesión, el borrado cuenta también las de otra cuenta")
+        #expect(count(nil, .wholeMirror) == 3)
+        #expect(count("sub-a", .anotherAccount) == 2)
+        #expect(count("sub-b", .anotherAccount) == 1)
+        #expect(count(nil, .anotherAccount) == 0, "sin sesión no hay «otra cuenta»: hay sesión caducada")
+        #expect(count("", .anotherAccount) == 0, "una identidad vacía no es sesión")
         #expect(GroupsSyncClient.mirrorEntriesMissingFromOutbox(
             mirror: nil, ownerID: nil, scope: .sessionOwnerOrEveryoneWhenSignedOut, context: context) == 0,
                 "sin App Group no hay espejo que contar")
@@ -286,12 +294,21 @@ struct GroupsCaptureVerdictTests {
         }
     }
 
-    /// El motivo del residuo de «Empezar de cero»: solo entradas que esta sesión no puede subir ⇒ volver a entrar; con
-    /// filas vivas o entradas de la sesión, otro intento.
+    /// El motivo del residuo de «Empezar de cero»: solo entradas que esta sesión no puede subir ⇒ volver a entrar con su
+    /// cuenta (sin sesión, la caducada; con la de otra abierta, «la sesión abierta es de otra»); con filas vivas o entradas
+    /// de la sesión, otro intento.
     @Test func freshStartResidual_namesWhatCuresIt() {
-        #expect(CloudSignOutFlowLogic.freshStartResidualReason(livePendingCount: 0, sessionMirrorCount: 0) == .sessionExpired)
-        #expect(CloudSignOutFlowLogic.freshStartResidualReason(livePendingCount: 1, sessionMirrorCount: 0) == .uploadRetryLater)
-        #expect(CloudSignOutFlowLogic.freshStartResidualReason(livePendingCount: 0, sessionMirrorCount: 2) == .uploadRetryLater)
+        func reason(_ live: Int, _ own: Int, _ other: Int) -> CloudSignOutFlowLogic.BlockReason {
+            CloudSignOutFlowLogic.freshStartResidualReason(
+                livePendingCount: live, sessionMirrorCount: own, anotherAccountMirrorCount: other)
+        }
+        #expect(reason(0, 0, 0) == .sessionExpired)
+        #expect(reason(0, 0, 2) == .groupsChangesFromAnotherAccount)
+        #expect(reason(0, 0, Int.max) == .groupsChangesFromAnotherAccount, "no se pudieron contar: siguen sin ser de la sesión")
+        #expect(reason(1, 0, 0) == .uploadRetryLater)
+        #expect(reason(0, 2, 0) == .uploadRetryLater)
+        #expect(reason(1, 0, 2) == .uploadRetryLater, "lo de la sesión que otro intento cura, primero")
+        #expect(reason(0, 2, 2) == .uploadRetryLater)
     }
 
     /// El gemelo: entradas del espejo sin fila bloquean, con su cifra si la hay.
@@ -365,7 +382,7 @@ struct GroupsExitGesturesCaptureTests {
         let scopes = Scopes()
         #expect(!CloudSessionSignOut.shared.groupsOutboxIsSettledEmpty(
             context: context, witness: witness(capture: true, mirror: { _ in 2 }, scopes: scopes)))
-        #expect(scopes.asked == [.sessionOwnerOrEveryoneWhenSignedOut])
+        #expect(scopes.asked == [.wholeMirror])
     }
 
     /// La subida de «Empezar de cero» con la captura a medias: bloquea con «no llegaron, inténtalo en un rato» y sin cifra,
