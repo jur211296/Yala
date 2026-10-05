@@ -20,12 +20,9 @@ final class GroupDetailViewModel {
 
     // MARK: - Recalculation State (debounce — espejo de PanelViewModel)
 
-    /// Task de recálculo debounced — coalesce ráfagas de `onChange(dataVersion)` del sync remoto.
-    private var recalculateTask: Task<Void, Never>?
-    /// Un reload solicitado dentro de la ventana de debounce no se pierde (se ejecuta al disparar).
-    private var pendingReload = false
-    /// Suprime el recálculo en background (evita trabajo inútil / traps de snapshot).
-    private(set) var isInBackground = false
+    /// El freno compartido de Grupos: coalesce ráfagas de `onChange(dataVersion)` del sync remoto en
+    /// un solo recálculo. Inyectable para que el coalescing se pruebe sin `applicationState`.
+    @ObservationIgnored private let debouncer: RecalculationDebouncer
 
     // MARK: - Data
 
@@ -44,6 +41,12 @@ final class GroupDetailViewModel {
     /// `true` tras el primer `fetchData()` con éxito. Mientras es `false` el detalle muestra un
     /// skeleton en vez de contenido a medio poblar (espejo de `GroupsViewModel.hasLoadedOnce`).
     private(set) var isReady: Bool = false
+
+    /// Sube una vez por cada recálculo CON FRENO que llega a publicar (sync remoto, vuelta a primer
+    /// plano); no sube con el `loadData()` directo de los gestos locales. Los Ajustes del grupo cuelgan
+    /// de aquí y no de `dataVersion`: una ráfaga de N cambios remotos les cuesta un recálculo, no N, y
+    /// leen los datos del VM cuando ya están recargados. Un recálculo cancelado no la sube.
+    private(set) var coalescedReloadRevision: Int = 0
 
     /// Drives `isEstimate` del `AmountText` para prefijar "≈" solo cuando hubo conversión
     /// real (al menos un balance/debt original tenía currency ≠ `group.currencyCode`).
@@ -128,8 +131,9 @@ final class GroupDetailViewModel {
 
     // MARK: - Init
 
-    init(group: SplitGroup) {
+    init(group: SplitGroup, debouncer: RecalculationDebouncer? = nil) {
         self.group = group
+        self.debouncer = debouncer ?? RecalculationDebouncer(label: "GroupDetailViewModel")
     }
 
     // MARK: - Context
@@ -162,35 +166,27 @@ final class GroupDetailViewModel {
 
     /// Cancela cualquier recálculo pendiente (llamado desde `.onDisappear`).
     func cancelRecalculation() {
-        recalculateTask?.cancel()
+        debouncer.cancel()
     }
 
     /// Estado de background — suprime el recálculo mientras la app no está activa.
     func setBackground(_ value: Bool) {
-        isInBackground = value
-        if value {
-            recalculateTask?.cancel()
-            recalculateTask = nil
-            pendingReload = false
-        }
+        debouncer.setBackground(value)
     }
 
-    /// Debounce compartido (150ms). `pendingReload` asegura que un reload solicitado dentro de la
-    /// ventana no se pierda. Gateado por `isInBackground` + `applicationState`.
+    /// Debounce compartido (150ms, `RecalculationDebouncer`): un reload pedido dentro de la ventana no
+    /// se pierde, y la espera la suprimen el segundo plano y la app inactiva.
+    ///
+    /// Al publicar sube `coalescedReloadRevision`: es la señal de la que cuelgan los Ajustes del grupo,
+    /// que así recalculan una vez por ráfaga y sobre los datos ya recargados.
     private func scheduleRecalculation(reload: Bool) {
-        guard !isInBackground else { return }
-        guard UIApplication.shared.applicationState == .active else { return }
-        if reload { pendingReload = true }
-        recalculateTask?.cancel()
-        recalculateTask = Task { @MainActor in
-            do { try await Task.sleep(for: .milliseconds(150)) } catch { return }
-            guard !Task.isCancelled else { return }
-            let shouldReload = pendingReload
-            pendingReload = false
+        debouncer.schedule(reload: reload) { [weak self] shouldReload in
+            guard let self else { return }
             if shouldReload {
                 fetchData()
             }
             recalculate()
+            coalescedReloadRevision &+= 1
         }
     }
 

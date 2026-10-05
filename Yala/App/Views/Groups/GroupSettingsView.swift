@@ -49,8 +49,8 @@ struct GroupSettingsView: View {
     @State private var showArchiveConfirm = false
 
     /// Cache del check `anyMemberHasOutstandingBalance` para evitar 4 fetches SwiftData
-    /// por cada re-evaluación del body de SwiftUI. Se recalcula en `.onAppear` +
-    /// `.onChange(of: sessionState.dataVersion)`.
+    /// por cada re-evaluación del body de SwiftUI. Se recalcula en `.onAppear` y tras cada recálculo
+    /// con freno del detalle (`viewModel.coalescedReloadRevision`).
     @State private var hasOutstandingDebt: Bool = false
 
     // Leave group
@@ -201,13 +201,15 @@ struct GroupSettingsView: View {
                 recomputeOwnerExit()
                 recomputeShareableSummary()
             }
-            .onChange(of: sessionState.dataVersion) { _, _ in
-                // Llegó dato nuevo: el rechazo del servidor deja de ser la información más fresca
-                // que tenemos, así que la oferta puede volver a evaluarse con los conteos de ahora.
-                transferRefusedByServer = false
-                recomputeOwnerExit()
-                recomputeShareableSummary()
-            }
+            // Llegó dato nuevo: el rechazo del servidor deja de ser la información más fresca que
+            // tenemos. Se apunta AQUÍ, en el acto, y no tras el freno: si esperara 150 ms, un cambio
+            // que llegó ANTES de la respuesta del servidor borraría el rechazo y «Transferir y salir»
+            // volvería a salir. Lo caro no va aquí — ver el `onChange` siguiente.
+            .onChange(of: sessionState.dataVersion) { _, _ in transferRefusedByServer = false }
+            // El recálculo cuelga del freno del detalle, no de cada `dataVersion`: una ráfaga de
+            // cambios remotos cuesta UN recálculo, uno cancelado no publica, y el resumen compartible
+            // lee los datos del VM ya recargados (con `dataVersion` los leía 150 ms antes de la recarga).
+            .onChange(of: viewModel.coalescedReloadRevision) { _, _ in recomputeAfterRemoteChange() }
             .navigationTitle(L10n.Groups.Settings.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -713,7 +715,7 @@ struct GroupSettingsView: View {
     // MARK: - Resumen compartible («cierre del viaje»)
 
     /// Si se ofrece el resumen compartible. Es un cache, recalculado en los MISMOS sitios que
-    /// `hasOutstandingDebt` (`.onAppear` + `onChange(dataVersion)`), para no armar el snapshot en
+    /// `hasOutstandingDebt` (`.onAppear` + `onChange(coalescedReloadRevision)`), para no armar el snapshot en
     /// cada evaluación del body.
     ///
     /// Lo decide el SNAPSHOT y no `!viewModel.expenses.isEmpty`, que era un proxy y no coincidía:
@@ -998,7 +1000,7 @@ struct GroupSettingsView: View {
     /// in depth para casos donde `loadData` no haya corrido al momento del tap archive
     /// (race con sync, cold launch del settings, etc). Fallback graceful al cache del VM
     /// si los fetches throw. El resultado se cachea en `hasOutstandingDebt`
-    /// (recalculado en `.onAppear` + `onChange(dataVersion)` + pre-tap de archive/delete)
+    /// (recalculado en `.onAppear` + `onChange(coalescedReloadRevision)` + pre-tap de archive/delete)
     /// para evitar fetches por cada re-evaluación del body de SwiftUI.
     private func recomputeOutstandingDebt() {
         let zoneID = group.cloudKitZoneID
@@ -1041,6 +1043,14 @@ struct GroupSettingsView: View {
         }
     }
 
+    /// Lo que se recalcula cuando llegan cambios remotos, una vez por ráfaga. Los gestos de la propia
+    /// persona (abrir, el pre-tap de archivar y eliminar, la respuesta de transferir o salir) siguen
+    /// llamando a `recomputeOwnerExit()` directo: el diálogo que abren depende del valor de ESE momento.
+    private func recomputeAfterRemoteChange() {
+        recomputeOwnerExit()
+        recomputeShareableSummary()
+    }
+
     /// Recalcula la deuda del grupo Y, con ella, qué salida se le ofrece al dueño. Van juntos porque
     /// el offer DEPENDE de la deuda: calcularlos por separado dejaría un frame en el que el botón de
     /// eliminar y su hint discrepan sobre si hay saldos.
@@ -1064,8 +1074,8 @@ struct GroupSettingsView: View {
             // —sin transferencia— y el dueño con deuda vuelve a ver las tres salidas cerradas. No se
             // puede hacer mejor sin los datos que el fetch no trajo: la alternativa sería ofrecer una
             // transferencia sin saber si hay heredero, y eso acaba en un `no_eligible_owner` tras
-            // confirmar. El estado es recuperable —cualquier `dataVersion` reintenta— y degrada al
-            // comportamiento anterior al ticket, no a uno peor.
+            // confirmar. El estado es recuperable —cualquier cambio remoto reintenta, tras el freno del
+            // detalle— y degrada al comportamiento anterior al ticket, no a uno peor.
         }
     }
 
