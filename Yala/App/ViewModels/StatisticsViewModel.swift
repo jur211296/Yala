@@ -211,9 +211,11 @@ final class StatisticsViewModel: Filterable {
     private(set) var historicalTotals: [TrendHistoryPoint] = []
 
     /// Movimientos del período seleccionado con los filtros activos — el gate
-    /// «≥ 5 movimientos» del Trend Insight Card. Se calcula aquí y no se lee de
-    /// `InsightsViewModel.insightData`, que solo se recalcula en Resumen y
-    /// Distribución: en Tendencias quedaba con el conteo del período anterior.
+    /// «≥ 5 movimientos» del Trend Insight Card. Se calcula aquí porque, cuando se
+    /// escribió, `InsightsViewModel.insightData` solo se recalculaba en Resumen y
+    /// Distribución y en Tendencias quedaba con el conteo del período anterior.
+    /// Desde el 2026-10-05 `insightData` sigue al período en todas las pestañas
+    /// (`StatisticsRecalculation`); este conteo se mantiene porque es correcto.
     private(set) var periodTransactionCount: Int = 0
 
     /// Firma de las entradas del último `calculateHistoricalTotals`: si no cambia,
