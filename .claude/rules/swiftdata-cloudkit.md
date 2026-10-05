@@ -430,8 +430,9 @@ paths:
     se conserva** (`lossBlockAfterRecapture`), el push-all **cicla aunque el outbox esté a 0** para saber la causa, y tras un
     ciclo que lo vacía decide `stuckCaptureVerdict` con el último ciclo REAL (uno `.coalesced` no decide): el motivo del
     ciclo si abre la salida, los cambios de otra cuenta si TODO lo de fuera es de otra cuenta (fechado contra
-    `SessionSignInLog`, como el drain), y si no `.uploadRetryLater` sin salida — un teléfono con attest y sesión no la tiene,
-    decisión A de Jürgen; su texto promete «un rato», con ticket (`groups-stuck-drain-on-a-healthy-phone-says-try-again-later`);
+    `SessionSignInLog`, como el drain), y si no `.groupsCaptureUnfinished` sin salida — un teléfono con attest y sesión no
+    la tiene, decisión A de Jürgen; su texto no promete plazo, dice cerrar y abrir Yala o actualizarla (opción A del
+    2026-10-05). Llega a los tres gestos, y la puerta de Grupos del Welcome necesita su rama: su catch-all no es exhaustivo;
     (3) **el aviso cuenta el History**: lo que se pierde son dos mitades (`GroupsLoss`, y una tercera en
     `FreshStartGroupsLoss`), lo aceptado las cubre por clave (`CausedLossAcceptance.uncaptured`) y los recuentos pegados al
     borrado —los dos de los cierres, el de la celda C pegado al arm y el cinturón de «Empezar de cero»— lo releen; (4) **el

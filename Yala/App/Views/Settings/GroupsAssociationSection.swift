@@ -228,6 +228,10 @@ struct GroupsAssociationSection: View {
         // Copy compartido con el cierre de sesión: el hecho es el mismo y el título de arriba ya dice cuál de
         // los dos gestos falló, igual que con el canal en pausa.
         case .uploadRetryLater: return L10n.Groups.Errors.uploadRetryLater
+        // **El drain de grupos que no termina** (2026-10-05, opción A de Jürgen): el desasociar comparte el push-all, así
+        // que lo recibe igual que los cierres. Hasta ese día salía como la subida que no llegó, «inténtalo en un rato»,
+        // y esperar no lo cura. Sin salida, como todo el desasociar.
+        case .groupsCaptureUnfinished: return L10n.Groups.Errors.captureUnfinished
         // `.transient` es el caso corriente, y desde el 2026-09-16 es SOLO el outbox que aún drena: aquí
         // «inténtalo de nuevo en un momento» es exacto. `.exportUnconfirmed` es del cierre PRIVADO y no puede
         // llegar a este gesto —el desasociar no espera a iCloud—, y `nil` tampoco con el aviso presentado (el

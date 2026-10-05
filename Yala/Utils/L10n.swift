@@ -2230,6 +2230,11 @@ enum L10n {
             /// que mandaba a buscar un fallo que no existe. Ver
             /// `CloudSignOutFlowLogic.BlockReason.uploadRetryLater`.
             static var uploadRetryLater: String { ls("groups.errors.uploadRetryLater", comment: "") }
+            /// **Este teléfono no consigue preparar para subir algunos cambios de grupos**: el drain no termina en ninguna
+            /// vuelta y nada abre la salida que los pierde (`CloudSignOutFlowLogic.BlockReason.groupsCaptureUnfinished`,
+            /// opción A de Jürgen del 2026-10-05). `Settings.signOutCaptureUnfinished` dicho de tus grupos: no promete
+            /// plazo, dice que no se pierde nada y que se cierre y abra Yala, o se actualice.
+            static var captureUnfinished: String { ls("groups.errors.captureUnfinished", comment: "") }
             /// **Este teléfono lleva más de un día sin conseguir App Attest** (2026-09-15, ticket
             /// `groups-phone-that-never-attests-is-told-to-retry-forever`). Título del aviso en Ajustes, en la hoja del
             /// cambio de Apple ID y en la puerta de Grupos del Welcome. Ver `CloudSignOutFlowLogic.BlockReason.attestUnavailable`.

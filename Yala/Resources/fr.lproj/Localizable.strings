@@ -5921,6 +5921,9 @@
 /* Sign-out blocked: the groups upload failed for a transient reason (network, 5xx, WAF) and this path does not retry */
 "groups.errors.uploadRetryLater" = "Les dernières modifications de tes groupes ne sont pas arrivées au serveur. Elles restent enregistrées sur ce téléphone et rien n'est perdu ; réessaie dans un moment.";
 
+/* Sign-out, detach and fresh start blocked: this phone cannot prepare some group changes for upload (the groups drain never finishes) */
+"groups.errors.captureUnfinished" = "Certaines des dernières modifications de tes groupes n'ont pas pu être préparées pour l'envoi. Elles restent enregistrées sur ce téléphone et rien n'est perdu. Ferme Yala puis rouvre-la ; si ça continue, mets-la à jour.";
+
 /* Alert: el Apple ID del telefono cambio y hay que cerrar la sesion privada */
 "icloud.appleIDChanged.title" = "Vous avez changé de compte iCloud";
 

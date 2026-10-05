@@ -445,6 +445,22 @@ nonisolated enum CloudSignOutFlowLogic {
         /// teléfono que atesta y con sesión, el camino es el de arriba. El teléfono sin App Attest y la sesión caducada con el
         /// drain atascado conservan su propio motivo, con su salida. Al final del `enum` por lo mismo que los anteriores.
         case personalCaptureUnfinished
+        /// **Este teléfono no consigue preparar para subir algunos cambios de GRUPOS: el drain no termina en ninguna vuelta, y
+        /// nada de lo que queda fuera abre la salida que los pierde** (ticket
+        /// `groups-stuck-drain-on-a-healthy-phone-says-try-again-later`, opción A de Jürgen del 2026-10-05). Es
+        /// `.personalCaptureUnfinished` dicho de tus grupos: el teléfono tiene App Attest, la sesión vale y lo de fuera es
+        /// suyo, así que lo único que impide subir es este teléfono.
+        ///
+        /// Va aparte de `.uploadRetryLater` porque aquel texto —«no llegaron al servidor, inténtalo en un rato»— promete que
+        /// esperar lo cura, y no lo cura: la subida no tiene nada que ver. Su texto dice que no se pierde nada y lo único que
+        /// puede curarlo —cerrar y abrir Yala, y si sigue, actualizarla—, sin plazo.
+        ///
+        /// Lo produce SOLO el push-all de grupos con la captura atascada (`stuckCaptureVerdict`), así que llega a los tres
+        /// gestos que lo comparten: los cierres de sesión, el desasociar y «Empezar de cero». **No abre salida de pérdida**
+        /// (decisión A: un teléfono con attest y sesión no la tiene). El teléfono sin App Attest, la sesión caducada y los
+        /// cambios de otra cuenta conservan su propio motivo, con su salida. Al final del `enum` por lo mismo que los
+        /// anteriores.
+        case groupsCaptureUnfinished
 
         /// Slug corto para los logs (`CloudSyncBreadcrumb.signOutGroupsBlocked`). Va aquí y no en el
         /// emisor para que un motivo nuevo tenga que nombrarse una sola vez: el `switch` es exhaustivo.
@@ -471,6 +487,7 @@ nonisolated enum CloudSignOutFlowLogic {
             case .migrationUnreadable: return "migration-unreadable"
             case .groupsChangesFromAnotherAccount: return "groups-changes-from-another-account"
             case .personalCaptureUnfinished: return "personal-capture-unfinished"
+            case .groupsCaptureUnfinished: return "groups-capture-unfinished"
             }
         }
     }
@@ -550,6 +567,9 @@ nonisolated enum CloudSignOutFlowLogic {
         // Los cambios de otra cuenta, tal cual (2026-09-28): la sesión de la nube está viva, así que ni «tu sesión caducó»
         // ni «revisa tu conexión» son verdad. Su aviso ofrece perderlos.
         case .groupsChangesFromAnotherAccount: return .groupsChangesFromAnotherAccount
+        // El drain de grupos que no termina, tal cual (2026-10-05): colapsado en `.permanent` diría «revisa tu conexión» a
+        // quien tiene la conexión bien y un drain que esperar no cura.
+        case .groupsCaptureUnfinished: return .groupsCaptureUnfinished
         case .permanent: return .permanent
         // `.personalAttestUnavailable` es del paso 1, sobre el outbox PERSONAL: este productor, que traduce el de grupos, no
         // lo recibe nunca.
@@ -601,7 +621,7 @@ nonisolated enum CloudSignOutFlowLogic {
         case .personalCaptureUnfinished: return .personalCaptureUnfinished
         case .permanent, .exportUnconfirmed, .bridgeUnreadable, .detachBusy, .channelPaused, .attestUnavailable,
              .personalAttestUnavailable, .sessionNotClosed, .signOutSessionSurvived, .migrationInFlight, .migrationUnreadable,
-             .groupsChangesFromAnotherAccount:
+             .groupsChangesFromAnotherAccount, .groupsCaptureUnfinished:
             return .permanent
         }
     }
@@ -982,8 +1002,11 @@ nonisolated enum CloudSignOutFlowLogic {
     ///    veredicto del ciclo se ignoraba y la salida no se ofrecía nunca.
     ///  · todo lo de fuera es de otra cuenta, o sin dueño probado (`uncapturedAllHeldForAnotherAccount`, fechado contra el
     ///    registro de sesiones como hace el drain): `.groupsChangesFromAnotherAccount`, con su salida.
-    ///  · si algo es de esta sesión, `.uploadRetryLater` y sin salida: con attest y sesión buenos solo espera al drain, y la
-    ///    decisión A de Jürgen no da salida a un teléfono normal. `nil` (no se pudo leer) cuenta igual.
+    ///  · si algo es de esta sesión, `.groupsCaptureUnfinished` y sin salida: con attest y sesión buenos lo único que impide
+    ///    subir es este teléfono, y la decisión A de Jürgen no da salida a un teléfono normal. `nil` (no se pudo leer) cuenta
+    ///    igual, y también un ciclo que paró por algo que no abre la salida (el canal en pausa, una subida fallida): lo que el
+    ///    drain no captura no llega al outbox aunque eso se arregle. Hasta el 2026-10-05 esta rama decía `.uploadRetryLater`,
+    ///    «inténtalo en un rato», y esperar no lo cura (ticket `groups-stuck-drain-on-a-healthy-phone-says-try-again-later`).
     static func stuckCaptureVerdict(cycleReason: BlockReason?, livePendingCount: Int,
                                     uncapturedAllHeldForAnotherAccount: Bool?) -> PushAllVerdict {
         if let cycleReason, lossCause(cycleReason) != nil {
@@ -992,7 +1015,7 @@ nonisolated enum CloudSignOutFlowLogic {
         if uncapturedAllHeldForAnotherAccount == true {
             return .blocked(pendingCount: livePendingCount, reason: .groupsChangesFromAnotherAccount)
         }
-        return .blocked(pendingCount: livePendingCount > 0 ? livePendingCount : Int.max, reason: .uploadRetryLater)
+        return .blocked(pendingCount: livePendingCount > 0 ? livePendingCount : Int.max, reason: .groupsCaptureUnfinished)
     }
 
     /// **Lo que un cierre se llevaría de grupos, en sus dos mitades** (2026-10-05, ticket
@@ -1111,7 +1134,9 @@ nonisolated enum CloudSignOutFlowLogic {
         case .transient, .exportUnconfirmed, .bridgeUnreadable, .detachBusy, .channelPaused, .uploadRetryLater,
              .personalAttestUnavailable, .syncStoppedNeedsUpdate, .syncStoppedMidMigration, .syncStoppedNeedsRelaunch,
              .personalUploadRetryLater, .cloudSessionExpired, .sessionNotClosed, .signOutSessionSurvived,
-             .migrationInFlight, .migrationUnreadable, .personalCaptureUnfinished:
+             .migrationInFlight, .migrationUnreadable, .personalCaptureUnfinished,
+             // El drain de grupos que no termina (2026-10-05): decisión A de Jürgen, ninguna salida pierde esos cambios.
+             .groupsCaptureUnfinished:
             return false
         }
     }
@@ -1232,7 +1257,9 @@ nonisolated enum CloudSignOutFlowLogic {
         case .transient, .permanent, .exportUnconfirmed, .bridgeUnreadable, .detachBusy, .channelPaused,
              .uploadRetryLater, .personalAttestUnavailable, .syncStoppedNeedsUpdate, .syncStoppedMidMigration,
              .syncStoppedNeedsRelaunch, .personalUploadRetryLater, .sessionNotClosed, .signOutSessionSurvived,
-             .migrationInFlight, .migrationUnreadable, .personalCaptureUnfinished:
+             .migrationInFlight, .migrationUnreadable, .personalCaptureUnfinished,
+             // El drain de grupos que no termina (2026-10-05): sin salida, decisión A de Jürgen.
+             .groupsCaptureUnfinished:
             return nil
         }
     }
@@ -1338,7 +1365,8 @@ nonisolated enum CloudSignOutFlowLogic {
         case .transient, .permanent, .exportUnconfirmed, .sessionExpired, .bridgeUnreadable, .detachBusy, .channelPaused,
              .uploadRetryLater, .attestUnavailable, .syncStoppedNeedsUpdate, .syncStoppedMidMigration,
              .syncStoppedNeedsRelaunch, .personalUploadRetryLater, .sessionNotClosed, .signOutSessionSurvived,
-             .migrationInFlight, .migrationUnreadable, .groupsChangesFromAnotherAccount, .personalCaptureUnfinished:
+             .migrationInFlight, .migrationUnreadable, .groupsChangesFromAnotherAccount, .personalCaptureUnfinished,
+             .groupsCaptureUnfinished:
             return nil
         }
     }
@@ -1508,12 +1536,16 @@ nonisolated enum GroupsSignOutRetryDecision {
         //
         // **Y el drain personal que no termina** (2026-10-05), que tampoco nace aquí: su aviso existe justo porque esperar no
         // lo arregla.
+        //
+        // **Y el de grupos, que SÍ nace aquí** (2026-10-05, ticket `groups-stuck-drain-on-a-healthy-phone-says-try-again-later`):
+        // el push-all ya probó el atasco con sus reintentos espaciados, y 45 s más de «Guardando…» no lo curan. Hasta ese día
+        // salía como `.uploadRetryLater`, que también se enseñaba al momento, así que el tiempo hasta el aviso no cambia.
         if reason == .permanent || reason == .sessionExpired || reason == .channelPaused
             || reason == .uploadRetryLater || reason == .attestUnavailable || reason == .personalAttestUnavailable
             || reason == .syncStoppedNeedsUpdate || reason == .syncStoppedMidMigration
             || reason == .syncStoppedNeedsRelaunch || reason == .personalUploadRetryLater
             || reason == .cloudSessionExpired || reason == .groupsChangesFromAnotherAccount
-            || reason == .personalCaptureUnfinished {
+            || reason == .personalCaptureUnfinished || reason == .groupsCaptureUnfinished {
             return .surfacePermanent
         }
         if elapsedSeconds < budgetSeconds { return .retryAfter(seconds: retryIntervalSeconds) }
