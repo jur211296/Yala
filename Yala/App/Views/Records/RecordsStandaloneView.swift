@@ -17,6 +17,7 @@ struct RecordsStandaloneView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(SessionState.self) private var sessionState
+    @Environment(SceneNavigation.self) private var navigation
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
     /// Size class de la VENTANA (se lee fuera del split: dentro, la columna de lista es compacta).
@@ -110,6 +111,12 @@ struct RecordsStandaloneView: View {
                 horizontalSizeClass: horizontalSizeClass,
                 allTransactions: dataViewModel.allTransactions
             ))
+            // Una ventana abierta con «Abrir en una ventana nueva» desde un registro aterriza con él abierto.
+            .modifier(RecordsPendingRecordObserver(
+                recordsViewModel: recordsViewModel,
+                horizontalSizeClass: horizontalSizeClass,
+                allTransactions: dataViewModel.allTransactions
+            ))
             .onAppear {
                 dataViewModel.setContext(modelContext)
                 performRecalculation()
@@ -161,28 +168,28 @@ struct RecordsStandaloneView: View {
     /// ⌘E, ⌫ y ↑↓ (iPad con teclado): solo con Registros delante, la ventana ancha y fuera del modo selección. Ahí el
     /// registro se abre en la columna de detalle; en compacta es una hoja y no hay «registro abierto» al que apuntar.
     private var recordCommands: RecordCommandActions? {
-        guard sessionState.selectedMainTab == .records,
+        guard navigation.selectedMainTab == .records,
               horizontalSizeClass == .regular,
               !recordsViewModel.isSelectionMode
         else { return nil }
         let record = openRecord
         let viewModel = recordsViewModel
-        let sessionState = sessionState
+        let navigation = navigation
         return RecordCommandActions(
             hasOpenRecord: record != nil,
             canDeleteOpenRecord: record.map { RecordContextActionLogic.actions(.init(record: $0)).canDelete } ?? false,
             editOpenRecord: {
-                guard let record, RootCommandPerformer.keyboardMayAct(sessionState) else { return }
+                guard let record, RootCommandPerformer.keyboardMayAct(navigation) else { return }
                 viewModel.editOpenRecord(record)
             },
             deleteOpenRecord: {
-                guard let record, RootCommandPerformer.keyboardMayAct(sessionState),
+                guard let record, RootCommandPerformer.keyboardMayAct(navigation),
                       RecordContextActionLogic.actions(.init(record: record)).canDelete
                 else { return }
                 viewModel.requestDelete(record)
             },
             move: { direction in
-                guard RootCommandPerformer.keyboardMayAct(sessionState) else { return }
+                guard RootCommandPerformer.keyboardMayAct(navigation) else { return }
                 viewModel.openNeighbor(direction)
             }
         )
@@ -625,14 +632,41 @@ private struct RecordsOpenRecordObservers: ViewModifier {
     }
 }
 
+/// El registro que la ventana trae pedido (`SceneNavigation.pendingRecordID`, fase 4 del carril adaptativo): se abre
+/// en cuanto lo cargado lo contiene, por el MISMO camino que un toque en su fila (columna en ancha, hoja en compacta).
+/// Si lo cargado ya no lo contiene, se olvida: lo borraron entre el gesto y la ventana nueva.
+private struct RecordsPendingRecordObserver: ViewModifier {
+    let recordsViewModel: RecordsViewModel
+    let horizontalSizeClass: UserInterfaceSizeClass?
+    let allTransactions: [TransactionItem]
+    @Environment(SceneNavigation.self) private var navigation
+
+    func body(content: Content) -> some View {
+        content
+            .onChange(of: navigation.pendingRecordID, initial: true) { openPendingRecord() }
+            .onChange(of: allTransactions) { openPendingRecord() }
+    }
+
+    private func openPendingRecord() {
+        guard let id = navigation.pendingRecordID, !allTransactions.isEmpty else { return }
+        navigation.pendingRecordID = nil
+        guard let record = allTransactions.first(where: { $0.persistentModelID == id }) else { return }
+        // El tamaño se fija aquí y no se espera al `onAppear` de la columna: en el primer montaje los dos corren en la
+        // misma pasada y el orden no está garantizado.
+        recordsViewModel.opensDetailInColumn = horizontalSizeClass == .regular
+        recordsViewModel.showRecordDetail(record)
+    }
+}
+
 /// Session state navigation observer
 private struct RecordsNavObserver: ViewModifier {
     let sessionState: SessionState
+    @Environment(SceneNavigation.self) private var navigation
     let recalculateData: () -> Void
 
     func body(content: Content) -> some View {
         content
-            .onChange(of: sessionState.selectedMainTab) { _, newTab in
+            .onChange(of: navigation.selectedMainTab) { _, newTab in
                 if newTab == .records { recalculateData() }
             }
     }
@@ -758,5 +792,6 @@ private struct RecordsStandaloneObservers: ViewModifier {
 
 #Preview {
     RecordsStandaloneView()
+        .environment(SceneNavigation())
         .environment(SessionState.shared)
 }

@@ -3,7 +3,7 @@
 //  YalaWidgets
 //
 //  Widget showing budget progress.
-//  Supports Medium size with top 3 budgets sorted by usage.
+//  Medium: top 3 budgets sorted by usage. Large: top 6 (más filas, mismo diseño de fila).
 //  Configurable: selection mode (auto/custom).
 //
 
@@ -81,6 +81,39 @@ struct BudgetsEntry: TimelineEntry {
                     percentUsed: 30,
                     iconName: "car.fill",
                     colorHex: "#4ECDC4"
+                ),
+                WidgetBudget(
+                    id: "4",
+                    name: "Salud",
+                    limitAmount: 250,
+                    spentAmount: 60,
+                    currencyCode: "PEN",
+                    periodType: "monthly",
+                    percentUsed: 24,
+                    iconName: "heart.fill",
+                    colorHex: "#EF4444"
+                ),
+                WidgetBudget(
+                    id: "5",
+                    name: "Hogar",
+                    limitAmount: 600,
+                    spentAmount: 120,
+                    currencyCode: "PEN",
+                    periodType: "monthly",
+                    percentUsed: 20,
+                    iconName: "house.fill",
+                    colorHex: "#10B981"
+                ),
+                WidgetBudget(
+                    id: "6",
+                    name: "Educación",
+                    limitAmount: 500,
+                    spentAmount: 50,
+                    currencyCode: "PEN",
+                    periodType: "monthly",
+                    percentUsed: 10,
+                    iconName: "book.fill",
+                    colorHex: "#8B5CF6"
                 )
             ],
             currencyDisplayFormat: "symbol",
@@ -103,11 +136,11 @@ struct BudgetsWidgetProvider: AppIntentTimelineProvider {
         if context.isPreview {
             return .placeholder
         }
-        return createEntry(for: configuration)
+        return createEntry(for: configuration, family: context.family)
     }
 
     func timeline(for configuration: BudgetsWidgetIntent, in context: Context) async -> Timeline<BudgetsEntry> {
-        let entry = createEntry(for: configuration)
+        let entry = createEntry(for: configuration, family: context.family)
 
         // Refresh every 4 hours
         let refreshDate = Calendar.current.date(byAdding: .hour, value: 4, to: Date()) ?? Date()
@@ -115,7 +148,13 @@ struct BudgetsWidgetProvider: AppIntentTimelineProvider {
         return Timeline(entries: [entry], policy: .after(refreshDate))
     }
 
-    private func createEntry(for configuration: BudgetsWidgetIntent) -> BudgetsEntry {
+    /// Cuántas filas caben por tamaño. El grande dobla el mediano: misma fila, el doble de alto.
+    static func budgetLimit(for family: WidgetFamily) -> Int {
+        family == .systemLarge ? 6 : 3
+    }
+
+    private func createEntry(for configuration: BudgetsWidgetIntent, family: WidgetFamily) -> BudgetsEntry {
+        let limit = Self.budgetLimit(for: family)
         var budgets: [WidgetBudget]
 
         if configuration.selectionMode == .custom,
@@ -129,11 +168,11 @@ struct BudgetsWidgetProvider: AppIntentTimelineProvider {
             budgets = selected.compactMap { entity in
                 allBudgets.first { $0.id == entity.id }
             }
-            budgets = Array(budgets.prefix(3))
+            budgets = Array(budgets.prefix(limit))
         } else {
-            // Automatic mode: top 3 by % used
+            // Automatic mode: top N by % used
             budgets = WidgetDataService.getBudgets(sortByCritical: true)
-            budgets = Array(budgets.prefix(3))
+            budgets = Array(budgets.prefix(limit))
         }
 
         let displayFormat = WidgetDataService.getCurrencyDisplayFormat()
@@ -150,10 +189,11 @@ struct BudgetsWidgetProvider: AppIntentTimelineProvider {
 // MARK: - Widget View
 
 struct BudgetsWidgetView: View {
+    @Environment(\.widgetFamily) private var family
     var entry: BudgetsEntry
 
     var body: some View {
-        VStack(alignment: .leading, spacing: WDS.Spacing.sm) {
+        VStack(alignment: .leading, spacing: family == .systemLarge ? WDS.Spacing.lg : WDS.Spacing.sm) {
             // Header
             WidgetHeader(
                 title: String(localized: "widget.ui.budgets", bundle: .main),
@@ -176,8 +216,8 @@ struct BudgetsWidgetView: View {
                 }
                 Spacer()
             } else {
-                // Budget list
-                ForEach(entry.budgets, id: \.id) { budget in
+                // Budget list (el provider ya recortó a lo que cabe en este tamaño)
+                ForEach(entry.budgets.prefix(BudgetsWidgetProvider.budgetLimit(for: family)), id: \.id) { budget in
                     BudgetRowView(
                         budget: budget,
                         displayFormat: entry.currencyDisplayFormat
@@ -291,13 +331,19 @@ struct BudgetsWidget: Widget {
         }
         .configurationDisplayName("widget.gallery.budgets")
         .description("widget.gallery.budgets.desc")
-        .supportedFamilies([.systemMedium])
+        .supportedFamilies([.systemMedium, .systemLarge])
     }
 }
 
 // MARK: - Previews
 
 #Preview("Medium", as: .systemMedium) {
+    BudgetsWidget()
+} timeline: {
+    BudgetsEntry.placeholder
+}
+
+#Preview("Large", as: .systemLarge) {
     BudgetsWidget()
 } timeline: {
     BudgetsEntry.placeholder

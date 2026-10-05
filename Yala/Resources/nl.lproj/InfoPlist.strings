@@ -2,3 +2,4 @@
 "NSPhotoLibraryUsageDescription" = "Yala gebruikt je foto's om uitgavendetails te extraheren uit screenshots en bonnetjes. Geselecteerde afbeeldingen worden naar OpenAI gestuurd.";
 "NSFaceIDUsageDescription" = "Yala gebruikt Face ID om je financiële informatie te beschermen.";
 "NSPhotoLibraryAddUsageDescription" = "Yala bewaart de groepsoverzichten die je wilt opslaan in je fotobibliotheek. Er wordt niets opgeslagen zonder dat je erom vraagt.";
+"NSCameraUsageDescription" = "Yala gebruikt de camera om je bonnen te fotograferen en uitgaven aan te maken. De foto wordt naar OpenAI gestuurd om te lezen.";

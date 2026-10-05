@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftData
+import UIKit
 import UserNotifications
 
 // MARK: - NotificationService
@@ -41,10 +42,16 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
         let userInfo = response.notification.request.content.userInfo
+        // Con varias ventanas, la notificación tocada trae la escena a la que el sistema la entrega: lo que encole va
+        // sellado a ESA ventana (fase 4 del carril adaptativo).
+        let targetSessionID = response.targetScene?.session.persistentIdentifier
 
         if let destination = userInfo["deepLink"] as? String,
            let dest = Self.parseDestination(destination) {
             Task { @MainActor in
+                if let targetSessionID {
+                    SceneRegistry.shared.noteFocused(sessionID: targetSessionID)
+                }
                 RouterEntryGate.shared.submit(.navigate(dest))
             }
         }

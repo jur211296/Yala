@@ -341,16 +341,18 @@ nonisolated enum GroupsDetachedBridgeLedger {
         let highDate = movement.date.addingTimeInterval(dateTolerance)
         let lowAmount = movement.amount - amountTolerance
         let highAmount = movement.amount + amountTolerance
-        let currency = movement.currencyCode
-        let note = movement.note
-        return try context.fetch(FetchDescriptor<TransactionItem>(
-            predicate: #Predicate {
-                $0.date >= lowDate && $0.date <= highDate
-                    && $0.amount >= lowAmount && $0.amount <= highAmount
-                    && $0.currencyCode == currency && $0.note == note
-                    && $0.splitExpenseID == nil && $0.splitSettlementID == nil
-            }))
-            .first { !taken.contains($0.persistentModelID) }
+        // El store filtra solo la ventana de fecha e importe (±1 s, ±0,0005: pocas filas); el resto de la
+        // huella se compara en memoria. Con los ocho términos en un único `#Predicate`, el compilador del
+        // CI agotaba su tope de type-check en esta expresión («unable to type-check this expression in
+        // reasonable time», 2026-10-01) y el build de tests no llegaba a arrancar.
+        let window = #Predicate<TransactionItem> { tx in
+            tx.date >= lowDate && tx.date <= highDate && tx.amount >= lowAmount && tx.amount <= highAmount
+        }
+        return try context.fetch(FetchDescriptor<TransactionItem>(predicate: window)).first { tx in
+            tx.currencyCode == movement.currencyCode && tx.note == movement.note
+                && tx.splitExpenseID == nil && tx.splitSettlementID == nil
+                && !taken.contains(tx.persistentModelID)
+        }
     }
 
     /// Las identidades que el libro atribuye a cualquier gasto o liquidación salvo `excluding`.

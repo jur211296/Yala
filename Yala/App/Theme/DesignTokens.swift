@@ -204,9 +204,6 @@ enum DS {
         static let infoForeground = Color.blue
         static let undoForeground = Color.teal
         static let imageAccent = Color.teal
-        // Group expense split-method chip — teal con mejor contraste que infoBackground (azul) en dark mode.
-        static let splitMethodBackground = Color.teal.opacity(0.18)
-        static let splitMethodForeground = Color.teal
     }
 
     // MARK: - Shadow
@@ -376,6 +373,16 @@ enum DS {
 
         /// Icon size inside FAB menu buttons
         static let fabMenuIconSize: CGFloat = 24
+
+        /// Margen inferior que necesita el contenido de un scroll para que su última fila suba por encima de una pila
+        /// de `buttons` botones flotantes plegada: los botones, su separación (`Spacing.md`), su margen inferior
+        /// (`Spacing.xxl`) y `Spacing.lg` de aire. Va DENTRO del contenido del scroll, que ya suma el área segura por
+        /// debajo, así que es relativo a ella y no a una altura fija. Con un botón da 96 (el `Spacing.safeBottom` de
+        /// 100 ya lo cubre); con dos (Yala IA + «+», `FABStackView`), 164.
+        static func fabStackClearance(buttons: Int) -> CGFloat {
+            let count = CGFloat(max(buttons, 1))
+            return count * fabSize + (count - 1) * Spacing.md + Spacing.xxl + Spacing.lg
+        }
     }
 
     // MARK: - Icon Badge Dimensions
@@ -475,6 +482,31 @@ enum DS {
         /// ancha. Más allá, las filas se separan tanto que concepto e importe dejan de leerse juntos.
         static let readableWidth: CGFloat = 700
 
+        /// Margen lateral de una lista agrupada de ajustes (`YalaSettingsList`). Con la ventana estrecha, el
+        /// margen adaptativo de siempre (`horizontalPadding`); cuando el contenido pasaría de `readableWidth`, lo
+        /// que sobre a cada lado, para que los bloques queden centrados y no más anchos que eso. Decide el ancho
+        /// MEDIDO de la lista, no el aparato ni la orientación. Sin ancho medido todavía, el margen de siempre.
+        static func readableListMargin(containerWidth: CGFloat, sizeClass: UserInterfaceSizeClass?) -> CGFloat {
+            let base = horizontalPadding(sizeClass)
+            guard containerWidth > 0 else { return base }
+            return max(base, ((containerWidth - readableWidth) / 2).rounded(.down))
+        }
+
+        /// Margen de cada lado de una lista agrupada de ajustes, contando lo que la tapa por ese lado: el margen
+        /// legible MÁS el área segura de ese lado. Hace falta sumarla a mano porque el sistema no lo hace: con
+        /// `contentMargins` se queda con el mayor de los dos, y al lado de la columna de lista de un split (área
+        /// segura de 400 pt en el iPad mini girado) el bloque arrancaba pegado a ella (medido 2026-10-03).
+        /// `containerWidth` es el que mide la vista, que ya viene sin el área segura.
+        static func readableListInsets(
+            containerWidth: CGFloat,
+            safeLeading: CGFloat,
+            safeTrailing: CGFloat,
+            sizeClass: UserInterfaceSizeClass?
+        ) -> (leading: CGFloat, trailing: CGFloat) {
+            let margin = readableListMargin(containerWidth: containerWidth, sizeClass: sizeClass)
+            return (max(safeLeading, 0) + margin, max(safeTrailing, 0) + margin)
+        }
+
         /// Anchos de la columna de lista de un `NavigationSplitView` (Registros, Planificación). El mínimo
         /// es el ancho del iPhone más estrecho (375): las filas ya están medidas ahí. Sin tope propio el split
         /// la deja en ~280-320 y las filas de presupuesto parten el importe en tres líneas (medido 2026-09-29).
@@ -482,10 +514,48 @@ enum DS {
         static let listColumnIdealWidth: CGFloat = 400
         static let listColumnMaxWidth: CGFloat = 480
 
+        /// Los mismos anchos con tamaños de texto de accesibilidad (AX1–AX5). Con AX5, «Este mes» y el chip
+        /// «Presupuestos» (392 pt) caben en los 408 pt de contenido del Pro Max vertical y se parten en un SE:
+        /// 408 + 32 de márgenes = 440. El margen de la isla del iPhone girado NO cuenta: el split lo suma encima
+        /// (pedida a 520, la columna midió 582 en el Pro Max girado, medido 2026-10-01). El mínimo es también el
+        /// umbral de dos columnas: por debajo, la lista se aparta al abrir algo (`listYieldsToDetail`) y la página se
+        /// pliega a la pila (`foldsForAccessibilityText`) — en el Pro Max girado el split no la pone AL LADO del
+        /// detalle a ningún ancho que lea AX5 (a 522 y a 582 la superponía sobre «Elige un…»).
+        static let listColumnAccessibilityMinWidth: CGFloat = 440
+        static let listColumnAccessibilityIdealWidth: CGFloat = 460
+        static let listColumnAccessibilityMaxWidth: CGFloat = 520
+
+        /// Anchos de la columna de lista según el tamaño del texto: con los de accesibilidad, más ancha.
+        static func listColumnWidths(isAccessibilityText: Bool) -> ListColumnWidths {
+            isAccessibilityText
+                ? ListColumnWidths(
+                    min: listColumnAccessibilityMinWidth,
+                    ideal: listColumnAccessibilityIdealWidth,
+                    max: listColumnAccessibilityMaxWidth)
+                : ListColumnWidths(min: listColumnMinWidth, ideal: listColumnIdealWidth, max: listColumnMaxWidth)
+        }
+
+        struct ListColumnWidths: Equatable {
+            let min: CGFloat
+            let ideal: CGFloat
+            let max: CGFloat
+        }
+
         /// Ancho mínimo de cada columna de una rejilla en pares (`PairedColumnsLayout`, `HeaderBandLayout`): si no
         /// caben dos, una. Un pelo por debajo del contenido de un iPhone SE (343), donde las tarjetas ya están medidas,
         /// y por encima de las 290 que quedarían con Yala IA abierto al lado.
         static let pairedColumnMinWidth: CGFloat = 320
+
+        /// Por debajo de este alto, un contenedor tiene «poco alto» y la cabecera de resumen se compacta
+        /// (`SummaryHeaderStack`). El alto es el del contenedor CONTANDO las barras que se le superponen (navegación,
+        /// pestañas): lo visible a secas cambia con el título grande y en un SE vertical, bajo el título y los chips
+        /// de Estadísticas, ya bajaba de 420. Así medido (2026-10-01): girados ≤ ~440 (Pro Max), en vertical ≥ ~615
+        /// (Estadísticas en un SE). Queda en medio.
+        static let shortContainerMaxHeight: CGFloat = 500
+
+        static func isShortContainer(height: CGFloat) -> Bool {
+            height > 0 && height < shortContainerMaxHeight
+        }
     }
 
     // MARK: - Form Row Dimensions
@@ -546,6 +616,9 @@ enum DS {
         // MARK: Headings
         /// Screen titles, large headers
         static let largeTitle = Font.largeTitle.weight(.semibold)
+        /// Titular de las pantallas de entrada del Welcome: serif del sistema (New York), cálido, en el
+        /// tamaño de `largeTitle` y con Dynamic Type. Solo para el Welcome (referencia del 15-sep).
+        static let welcomeHeadline = Font.system(.largeTitle, design: .serif, weight: .bold)
         /// Section headers
         static let title = Font.title2.weight(.semibold)
         /// Subsection headers

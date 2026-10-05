@@ -131,8 +131,8 @@ struct GroupNotificationServiceTests {
         // Simulate NotificationService.didReceive routing via AppRouter
         router.enqueue(.navigate(destination!))
 
-        router.markReady(.mainTab)
-        let intent = router.drainNext(for: .mainTab)
+        router.markReady(.mainTab, in: nil)
+        let intent = router.drainNext(for: .mainTab, in: nil)
         if case .navigate(.groupDetail(let id)) = intent {
             #expect(id == groupID)
         } else {

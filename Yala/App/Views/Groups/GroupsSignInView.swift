@@ -33,8 +33,10 @@
 //  spinner y cierra al volver la red. Sin el spinner, esa ventana re-ofrecería el sign-in con sesión viva,
 //  que es justo lo que la regla dura prohíbe.
 //
-//  DARK: solo la presenta el drain de `.presentGroupsSignIn` (flag `groupsBackendEnabled` OFF ⇒ el
-//  intent jamás se submitea).
+//  Solo la presenta el drenado de `.presentGroupsSignIn`, y ese drenado NO mira `groupsBackendEnabled`: con
+//  el canal matado no aparece porque cada productor del intent decide con el flag antes de emitirlo. El
+//  último que no lo hacía era «Asociar» / «Entrar» de Ajustes, cerrado el 2026-10-02
+//  (`GroupsAssociationSection.requestSignIn`). La lista y el porqué, en el `case` del drenado en `ContentView`.
 //
 
 import AuthenticationServices

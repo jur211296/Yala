@@ -251,3 +251,48 @@ Disco: 5,8 GB libres.
 Gate de `late-remote-wipe-signal-also-wipes-rows-created-after-it`: 19 suites XCUITest en una invocación (46 tests), el
 centinela limpio (solo en el simulador), y cayó este caso con el mismo mensaje (`XCUIApplication+Yala.swift:270`, 36 s).
 Aislado, `EdgeCasesUITests` pasó 3 de 3. El cambio de esa sesión no toca el guardado de una transacción.
+
+## Medido el 2026-10-02: ya no es intermitente, falla también SOLO (Frank)
+
+En el gate de `detach-saves-the-personal-graph-outside-the-quiescence-window`, con el centinela a 0 (solo en el
+simulador) las tres veces:
+
+- en lote (cinco suites de XCUITest): falla;
+- **la suite `EdgeCasesUITests` aislada, en ese árbol: falla**;
+- **la misma suite aislada en un worktree limpio de `2.1` @ `7a9708657` (tras #318/#320, iPhone en horizontal): falla
+  igual**.
+
+El fallo es el mismo en los tres: `EdgeCasesUITests.swift:67` — `Failed to tap Button … identifier BEGINSWITH
+"account_selector_row_"`: el selector de cuenta del formulario no enseña ninguna fila. No es el entorno ni una corrida
+pisada; es determinista en `2.1`. Sospecha sin medir: los dos PR de orientación horizontal que entraron justo antes.
+
+## 2026-10-04 — vuelve a ser intermitente, con la firma vieja (Frank)
+
+Gate de `group-expense-views-redesign`, con el centinela en 0 en todas las corridas:
+
+| Corrida | Árbol | Resultado |
+|---|---|---|
+| Lote de 6 suites (31 casos) | rama | **falla** (`XCUIApplication+Yala.swift:278`, sin `transaction_success_accept`) |
+| Aislado, 1.ª iteración | rama, mismo binario | **falla** igual |
+| Aislado | `origin/2.1` @ `7ab65f848` limpio | pasa |
+| Aislado, `-test-iterations 3` | rama, build siguiente | **3/3 pasa** |
+| Aislado, `-test-iterations 3` | `origin/2.1` limpio | **3/3 pasa** |
+
+La firma del 2-oct (`account_selector_row_` sin filas) **no se repitió**: hoy vuelve la de siempre. La rama solo toca
+Grupos (el gasto compartido), nada del registro personal. ⇒ Inestable; el «determinista en 2.1» del 2-oct no se
+sostiene en `7ab65f848`.
+
+## 2026-10-04 (noche) — la firma del 2-oct otra vez, 2 de 2 (Frank)
+
+Gate de `groups-detach-ledger-has-no-exit` (#319 puesto al día con `2.1` @ `027504980`, tras #356), simulador propio
+iPhone 17 Pro con iOS 27.0 y Xcode 27.0, centinela en 0 las dos veces:
+
+| Corrida | Resultado |
+|---|---|
+| Lote de 6 suites (22 casos) | **falla**: `EdgeCasesUITests.swift:67`, ninguna `account_selector_row_*` |
+| `EdgeCasesUITests` aislada | **falla** igual (el tap llega 0,25 s después de abrir el selector; 3 reintentos sin filas) |
+
+- **El PR no lo alcanza**: su código nuevo (`GroupsDetachedBridgeLedger.reviveVanished` en el arranque y los guards
+  del puente) sale en la primera línea sin libro de conservados, y este test no crea grupos.
+- La nocturna del CI sobre `3d74dbf6f` (ya con `67edfa1e2`, el selector de cuenta a media altura) lo **pasó** a la
+  primera. El CI usa Xcode 26.x; aquí es iOS 27.0. Sin medir: si en local falla también en `2.1` limpio con iOS 27.

@@ -17,6 +17,7 @@ struct ChatSheetView: View {
     @State private var viewModel = ChatAssistantViewModel()
     @State private var showAISettingsSheet = false
     @State private var showTopicsSheet = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// Cómo está montado el chat. `.sheet`: la hoja de siempre, con su barra de navegación (iPhone, ventana
     /// compacta). `.column`: la columna de Yala IA junto a los datos en una ventana ancha (`yalaAIChat`). Con
@@ -102,8 +103,6 @@ struct ChatSheetView: View {
             }
 
             chatInputBar
-
-            disclaimerFooter
         }
         .dismissKeyboardOnTap()
         .yalaScreenBackground(.subtle)
@@ -160,37 +159,43 @@ struct ChatSheetView: View {
     private var emptyState: some View {
         ScrollView {
             VStack(spacing: DS.Spacing.lg) {
-                Text(daySeparatorText)
-                    .font(DS.Typography.captionSmall)
-                    .foregroundStyle(.secondary)
+                threadHeader
                     .padding(.top, DS.Spacing.md)
 
-                // Bubble del assistant con saludo (mismo styling que ChatMessageBubble)
-                HStack {
-                    Text(L10n.Chat.greeting)
-                        .font(DS.Typography.body)
-                        .foregroundStyle(.thPrimaryText)
-                        .padding(.horizontal, DS.Spacing.md)
-                        .padding(.vertical, DS.Spacing.sm)
-                        .background(.thCard)
-                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-                    Spacer(minLength: DS.Spacing.xxl)
+                if viewModel.suggestionsFailed {
+                    ChatGreetingBubble(suggestions: [], isPreparing: false, onSelect: sendSuggestion)
+                    unavailableState
+                } else {
+                    ChatGreetingBubble(
+                        suggestions: Array(viewModel.suggestions.prefix(3)),
+                        isPreparing: viewModel.suggestions.isEmpty && viewModel.suggestionsLoading,
+                        onSelect: sendSuggestion
+                    )
                 }
-                .padding(.horizontal, DS.Spacing.lg)
-
-                Text(L10n.Chat.dailyResetSubtitle)
-                    .font(DS.Typography.captionSmall)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, DS.Spacing.lg)
-
-                chipsOrSkeleton
-                    .padding(.horizontal, DS.Spacing.lg)
-
-                Spacer(minLength: 0)
             }
-            .frame(maxWidth: .infinity)
+            .padding(.horizontal, DS.Spacing.lg)
+            .readableChatWidth()
         }
+    }
+
+    private func sendSuggestion(_ suggestion: ChatSuggestion) {
+        Task { await viewModel.sendSuggestion(suggestion) }
+    }
+
+    /// Lo único que interrumpe el hilo: la fecha y, debajo, los dos avisos de la conversación en el mismo gris pequeño.
+    /// Va arriba del hilo y se va con el scroll; debajo de la caja de escribir no queda nada.
+    private var threadHeader: some View {
+        VStack(spacing: DS.Spacing.xxs) {
+            Text(daySeparatorText)
+            Text(L10n.Chat.dailyResetSubtitle)
+            Text(L10n.Chat.disclaimer)
+        }
+        .font(DS.Typography.captionSmall)
+        .foregroundStyle(.secondary)
+        .multilineTextAlignment(.center)
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("chat_thread_header")
     }
 
     private static let timeOfDayFormatter: DateFormatter = {
@@ -208,66 +213,24 @@ struct ChatSheetView: View {
         viewModel.isRecording || viewModel.isTranscribing
     }
 
-    private var disclaimerFooter: some View {
-        Text(L10n.Chat.disclaimer)
-            .font(DS.Typography.captionSmall)
-            .foregroundStyle(.secondary)
-            .padding(.bottom, DS.Spacing.xs)
-    }
-
-    /// Bloque centrado al final del último mensaje del assistant — botón clicable
-    /// "Reiniciar contexto" + caption con contador de mensajes recordados.
+    /// Una sola línea centrada al final del hilo: «Reiniciar contexto». Sin contador debajo, para que entre respuesta y
+    /// respuesta no haya más interrupciones grises que la fecha de arriba.
     private var resetContextRow: some View {
-        VStack(spacing: DS.Spacing.xs) {
-            Button {
-                withAnimation(.easeInOut(duration: 0.25)) {
-                    viewModel.resetConversationContext()
-                }
-            } label: {
-                HStack(spacing: DS.Spacing.xs) {
-                    Image(systemName: "arrow.counterclockwise")
-                    Text(L10n.Chat.resetContext)
-                }
-                .font(DS.Typography.caption)
-                .foregroundStyle(.thPrimaryText)
+        Button {
+            withAnimation(.easeInOut(duration: 0.25)) {
+                viewModel.resetConversationContext()
             }
-            .buttonStyle(.plain)
-
-            Text(L10n.Chat.contextMemory(viewModel.messages.count))
-                .font(DS.Typography.captionSmall)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.top, DS.Spacing.md)
-    }
-
-    @ViewBuilder
-    private var chipsOrSkeleton: some View {
-        if viewModel.suggestionsFailed {
-            unavailableState
-        } else if viewModel.suggestions.isEmpty && viewModel.suggestionsLoading {
-            preparingAIState
-        } else {
-            VStack(spacing: DS.Spacing.sm) {
-                ForEach(viewModel.suggestions.prefix(3)) { suggestion in
-                    ChatSuggestionChip(suggestion: suggestion) {
-                        Task { await viewModel.sendSuggestion(suggestion) }
-                    }
-                }
+        } label: {
+            HStack(spacing: DS.Spacing.xs) {
+                Image(systemName: "arrow.counterclockwise")
+                Text(L10n.Chat.resetContext)
             }
+            .font(DS.Typography.caption)
+            .foregroundStyle(.secondary)
         }
-    }
-
-    private var preparingAIState: some View {
-        HStack(spacing: DS.Spacing.sm) {
-            ProgressView()
-                .controlSize(.small)
-            Text(L10n.Chat.preparingAI)
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.secondary)
-        }
+        .buttonStyle(.plain)
         .frame(maxWidth: .infinity)
-        .padding(.vertical, DS.Spacing.lg)
+        .padding(.top, DS.Spacing.sm)
     }
 
     private var unavailableState: some View {
@@ -304,10 +267,7 @@ struct ChatSheetView: View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(spacing: DS.Spacing.md) {
-                    Text(daySeparatorText)
-                        .font(DS.Typography.captionSmall)
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity)
+                    threadHeader
                         .padding(.bottom, DS.Spacing.xs)
 
                     ForEach(viewModel.messages) { message in
@@ -339,6 +299,7 @@ struct ChatSheetView: View {
                 }
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.Spacing.md)
+                .readableChatWidth()
             }
             .scrollDismissesKeyboard(.interactively)
             .onChange(of: viewModel.messages.count) { _, _ in
@@ -382,93 +343,69 @@ struct ChatSheetView: View {
             .padding(.horizontal, DS.Spacing.lg)
     }
 
-    // MARK: - Input Bar (Claude-style: TextField arriba, fila botones abajo)
+    // MARK: - Input Bar (mensajería: «+» fuera, píldora con el texto y un solo botón dentro)
 
     private var chatInputBar: some View {
         Group {
-            if viewModel.isRecording {
-                recordingInputBar
-            } else if viewModel.isTranscribing {
-                transcribingInputBar
+            if isVoiceActive {
+                VoiceListeningPanel(
+                    isTranscribing: viewModel.isTranscribing,
+                    duration: viewModel.isTranscribing ? viewModel.lastRecordingDuration : viewModel.recordingDuration,
+                    level: viewModel.recordingLevel,
+                    accent: theme.accent,
+                    reduceMotion: reduceMotion,
+                    onCancel: { viewModel.cancelVoiceInput() },
+                    onDone: { Task { await viewModel.stopVoiceInput() } }
+                )
+                .transition(.move(edge: .bottom).combined(with: .opacity))
             } else {
                 idleInputBar
             }
         }
-        .animation(.easeInOut(duration: 0.2), value: viewModel.isRecording)
+        .animation(.easeInOut(duration: 0.25), value: isVoiceActive)
         .animation(.easeInOut(duration: 0.2), value: viewModel.isTranscribing)
+        .readableChatWidth()
     }
 
+    /// Lado del micro y de enviar dentro de la píldora; con su margen, la píldora mide lo mismo que el «+».
+    private let inputControlSize: CGFloat = 36 // A11Y-DT: control circular de la barra de escribir
+    private let topicsButtonSize: CGFloat = 44 // A11Y-DT: tap target del «+»
+
+    private var hasTypedText: Bool {
+        !viewModel.inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    /// El «+» de Temas fuera, a la izquierda; dentro de la píldora, el texto y UN botón: el micro mientras no hay nada
+    /// escrito y enviar en cuanto lo hay, como en una app de mensajería.
     private var idleInputBar: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-            TextField(L10n.Chat.inputPlaceholder, text: $viewModel.inputText, axis: .vertical)
-                .font(DS.Typography.body)
-                .lineLimit(1...4)
-                .textFieldStyle(.plain)
-                .disabled(!viewModel.isAIAvailable)
-                .accessibilityIdentifier("chat_input")
+        HStack(alignment: .bottom, spacing: DS.Spacing.sm) {
+            topicsButton
 
-            HStack(spacing: DS.Spacing.sm) {
-                topicsButton
-                Spacer()
-                micButton
-                sendButton
+            HStack(alignment: .bottom, spacing: DS.Spacing.sm) {
+                TextField(L10n.Chat.inputPlaceholder, text: $viewModel.inputText, axis: .vertical)
+                    .font(DS.Typography.body)
+                    .lineLimit(1...4)
+                    .textFieldStyle(.plain)
+                    .frame(minHeight: inputControlSize)
+                    .disabled(!viewModel.isAIAvailable)
+                    .accessibilityIdentifier("chat_input")
+
+                if hasTypedText {
+                    sendButton
+                        .transition(.scale.combined(with: .opacity))
+                } else {
+                    micButton
+                        .transition(.scale.combined(with: .opacity))
+                }
             }
+            .animation(.easeOut(duration: 0.15), value: hasTypedText)
+            .padding(.leading, DS.Spacing.lg)
+            .padding(.trailing, DS.Spacing.xs)
+            .padding(.vertical, DS.Spacing.xs)
+            .background(.thCard)
+            .clipShape(ChatBubbleShape())
         }
-        .padding(DS.Spacing.md)
-        .background(.thCard)
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
         .opacity(viewModel.isAIAvailable ? 1 : 0.5)
-        .padding(.horizontal, DS.Spacing.lg)
-        .padding(.vertical, DS.Spacing.sm)
-    }
-
-    private var recordingInputBar: some View {
-        HStack(spacing: DS.Spacing.md) {
-            HStack(spacing: DS.Spacing.sm) {
-                Image(systemName: "waveform")
-                    .font(.system(size: 20)) // A11Y-DT: dictation indicator
-                    .foregroundStyle(DS.Semantic.errorForeground)
-                    .symbolEffect(.variableColor.iterative, isActive: true)
-
-                Text(L10n.Chat.listening)
-                    .font(DS.Typography.body)
-                    .foregroundStyle(.secondary)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-
-            Button {
-                Task { await viewModel.stopVoiceInput() }
-            } label: {
-                Image(systemName: "stop.fill")
-                    .font(.system(size: 18, weight: .bold)) // A11Y-DT: stop icon
-                    .foregroundStyle(.white)
-                    .frame(width: 44, height: 44) // A11Y-DT: tap target grande
-                    .background(Circle().fill(DS.Semantic.errorForeground))
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(L10n.Accessibility.stopRecording)
-        }
-        .padding(DS.Spacing.md)
-        .background(.thCard)
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-        .padding(.horizontal, DS.Spacing.lg)
-        .padding(.vertical, DS.Spacing.sm)
-    }
-
-    private var transcribingInputBar: some View {
-        HStack(spacing: DS.Spacing.md) {
-            HStack(spacing: DS.Spacing.sm) {
-                ProgressView()
-                    .controlSize(.small)
-                Text(L10n.Chat.transcribing)
-                    .font(DS.Typography.body)
-                    .foregroundStyle(.secondary)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .padding(DS.Spacing.md)
-        .background(.thCard)
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.vertical, DS.Spacing.sm)
     }
@@ -477,28 +414,32 @@ struct ChatSheetView: View {
         Button {
             showTopicsSheet = true
         } label: {
-            HStack(spacing: DS.Spacing.xs) {
-                Image(systemName: "plus")
-                Text(L10n.Chat.topicsButton)
-            }
-            .font(DS.Typography.label)
-            .foregroundStyle(.thPrimaryText)
+            Image(systemName: "plus")
+                .font(DS.Typography.iconMedium)
+                .foregroundStyle(.thPrimaryText)
+                .frame(width: topicsButtonSize, height: topicsButtonSize)
+                .background(Circle().fill(.thCard))
         }
         .buttonStyle(.plain)
         .disabled(isVoiceActive || !viewModel.isAIAvailable)
+        .accessibilityLabel(L10n.Chat.topicsButton)
+        .accessibilityIdentifier("chat_topics")
     }
 
     private var micButton: some View {
         Button {
             Task { await toggleVoiceInput() }
         } label: {
-            Image(systemName: viewModel.isRecording ? "mic.circle.fill" : "mic")
-                .font(.system(size: 24)) // A11Y-DT: input bar control
-                .foregroundStyle(viewModel.isRecording ? AnyShapeStyle(DS.Semantic.errorForeground) : AnyShapeStyle(.thPrimaryText))
-                .symbolEffect(.pulse, isActive: viewModel.isRecording)
+            Image(systemName: "mic")
+                .font(.system(size: 18, weight: .medium)) // A11Y-DT: input bar control
+                .foregroundStyle(.thPrimaryText)
+                .frame(width: inputControlSize, height: inputControlSize)
+                .contentShape(Circle())
         }
+        .buttonStyle(.plain)
         .disabled(viewModel.isTranscribing || viewModel.isLoading || !viewModel.isAIAvailable)
-        .accessibilityLabel(viewModel.isRecording ? L10n.Accessibility.stopRecording : L10n.Accessibility.startRecording)
+        .accessibilityLabel(L10n.Accessibility.startRecording)
+        .accessibilityIdentifier("chat_mic")
     }
 
     private var sendButton: some View {
@@ -508,12 +449,14 @@ struct ChatSheetView: View {
             Image(systemName: "arrow.up")
                 .font(.system(size: 16, weight: .bold)) // A11Y-DT: send icon
                 .foregroundStyle(Color.contrastingText(for: theme.accent))
-                .frame(width: 32, height: 32) // A11Y-DT: tap target circular
+                .frame(width: inputControlSize, height: inputControlSize)
                 .background(Circle().fill(theme.accent))
         }
+        .buttonStyle(.plain)
         .accessibilityLabel(L10n.Chat.send)
+        .accessibilityIdentifier("chat_send")
         .disabled(
-            viewModel.inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            !hasTypedText
             || viewModel.isLoading
             || viewModel.isRecording
             || viewModel.isTranscribing
@@ -528,5 +471,15 @@ struct ChatSheetView: View {
         } else {
             await viewModel.startVoiceInput()
         }
+    }
+}
+
+private extension View {
+    /// El hilo y la barra de escribir no pasan del ancho legible y van centrados cuando el contenedor es ancho (una
+    /// hoja grande, una ventana ancha). En la hoja del iPhone y en la columna del iPad no cambia nada: son más
+    /// estrechas que el tope.
+    func readableChatWidth() -> some View {
+        frame(maxWidth: DS.Adaptive.readableWidth)
+            .frame(maxWidth: .infinity)
     }
 }

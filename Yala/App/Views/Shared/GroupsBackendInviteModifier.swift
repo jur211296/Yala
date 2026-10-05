@@ -12,8 +12,8 @@
 //  siguiente paso (consent → onboarding-fresco → join). Un cancel (toolbar/swipe) NO continúa: el
 //  intent persiste en `PendingJoinStore` y el próximo trigger del reconciler re-evalúa (TTL 7d).
 //
-//  DARK: con `groupsBackendEnabled` OFF los intents jamás se submitean ⇒ estos sheets no se
-//  presentan nunca.
+//  Con `groupsBackendEnabled` OFF estos sheets no se presentan porque ningún productor emite sus intents:
+//  el gate es de cada productor, no del drenado (el porqué, en el `case` del drenado en `ContentView`).
 //
 //  ## C2 · el EDUCATIVO vive aquí, y no en un modifier propio
 //

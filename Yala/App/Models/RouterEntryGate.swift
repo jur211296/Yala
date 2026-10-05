@@ -68,8 +68,9 @@ final class RouterEntryGate {
         // sheet open would queue a fullScreenCover behind the sheet and
         // surface tardío on dismiss. Drop silently when the sheet is visible
         // (the data is in the sheet already).
+        // Con varias ventanas: basta con que la bandeja esté abierta en una — lo que el aviso contaría ya se ve.
         if case .showInboxAlert = intent,
-           SessionState.shared.isInboxSheetVisible {
+           SceneRegistry.shared.allNavigations.contains(where: \.isInboxSheetVisible) {
             #if DEBUG
             logger.debug("RouterEntryGate: drop \(intent.id, privacy: .public) — inbox sheet already visible")
             #endif

@@ -20,6 +20,21 @@ struct SubcategorySelectorSheet: View {
     @Binding var selectedSubcategory: Subcategory?
     let transactionType: TransactionType
 
+    /// Cómo abre la hoja (`SelectorSheetSizing`): `.mediumFirst` desde un registro nuevo, `.large` en el resto.
+    var sizing: SelectorSheetSizing = .large
+    @State private var selectedDetent: PresentationDetent = .medium
+    @Environment(\.usesLargeSheets) private var usesLargeSheets
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    private var sheetBackground: YalaBackgroundVariant {
+        guard sizing == .mediumFirst else { return .subtle }
+        return sizing.background(
+            selectedDetent: selectedDetent,
+            usesLargeSheets: usesLargeSheets,
+            dynamicTypeSize: dynamicTypeSize
+        )
+    }
+
     private let columns = [
         GridItem(.flexible(), spacing: DS.Spacing.md),
         GridItem(.flexible(), spacing: DS.Spacing.md),
@@ -99,7 +114,7 @@ struct SubcategorySelectorSheet: View {
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.Spacing.xl)
             }
-            .yalaScreenBackground(.subtle)
+            .yalaScreenBackground(sheetBackground)
             .navigationTitle(L10n.Transaction.subcategory)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -110,7 +125,7 @@ struct SubcategorySelectorSheet: View {
                 }
             }
         }
-
+        .selectorSheetSizing(sizing, selectedDetent: $selectedDetent)
         .onAppear {
             viewModel.setContext(modelContext, transactionType: transactionType)
         }

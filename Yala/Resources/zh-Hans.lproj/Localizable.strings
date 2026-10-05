@@ -118,13 +118,7 @@
 
 // KPI fallback (aiSubtitle takes the KPI slot when available)
 // Markdown bold (**amount**) renders via AttributedString(markdown:)
-"panel.hero.kpi.monthStart %@ %d" = "新的月份开始了,一步一步来。";
-"panel.hero.kpi.onTrack %@ %@ %@ %d" = "本月节奏不错,继续保持。";
-"panel.hero.kpi.neutral %@ %@ %@ %d" = "你的月份正在运转 — 一切井然有序。";
-"panel.hero.kpi.tight %@ %@ %d" = "本月有点紧但可控,一步一步来。";
-"panel.hero.kpi.overBudget %@ %@" = "明天重新开始,一切井然有序。";
 
-"panel.hero.upsellCTA" = "用 AI 个性化你的消息";
 "panel.hero.availableLabel" = "可用";
 
 // MARK: - Trend Widget
@@ -1688,7 +1682,6 @@
 "accessibility.skipSync" = "跳过等待并继续设置";
 "accessibility.tabLimitReached" = "已达标签上限";
 "accessibility.noTransactionsToExport" = "没有可导出的交易";
-"accessibility.accountCard %@ %@" = "账户 %@,余额 %@";
 "accessibility.editAccount" = "编辑账户";
 "accessibility.pageIndicator %d %d" = "第 %1$d 页 / 共 %2$d 页";
 "accessibility.accountRow %@ %@" = "账户 %@,货币 %@";
@@ -3409,7 +3402,6 @@
 "chat.unavailable" = "Yala AI 现在不可用。请几分钟后重试。";
 "chat.retry" = "重试";
 "chat.noVoiceDetected" = "没有检测到声音。请重试。";
-"chat.contextMemory" = "Yala AI 记住 %d 条消息";
 
 // MARK: - Chat Draft (Yala AI Register)
 "chat.draft.chipExpense" = "支出";
@@ -3432,7 +3424,6 @@
 "chat.draft.selectAccount" = "选择账户";
 "chat.draft.selectSubcategory" = "选择子类别";
 "chat.draft.saveButton" = "保存";
-"chat.draft.editButton" = "编辑";
 "chat.draft.failedSavingLine" = "无法保存。";
 "chat.draft.retryButton" = "重试";
 "chat.draft.noAccountsBlocking" = "登记前请先在个人资料中创建一个账户。";
@@ -4296,6 +4287,19 @@
 "stats.trends.insight.stableExpense" = "你的支出保持稳定。";
 "stats.trends.insight.stableIncome" = "你的收入保持稳定。";
 "stats.trends.insight.stableBalance" = "你的余额保持稳定。";
+"stats.trends.insight.sustainedUpExpense %@" = "你的支出已连续%@上升。";
+"stats.trends.insight.sustainedDownExpense %@" = "你的支出已连续%@下降。";
+"stats.trends.insight.sustainedUpIncome %@" = "你的收入已连续%@增长。";
+"stats.trends.insight.sustainedDownIncome %@" = "你的收入已连续%@下降。";
+"stats.trends.insight.sustainedUpBalance %@" = "你的余额已连续%@增长。";
+"stats.trends.insight.sustainedDownBalance %@" = "你的余额已连续%@下降。";
+"stats.trends.insight.durationWeeks %d" = "%d周";
+"stats.trends.insight.durationMonths %d" = "%d个月";
+"stats.trends.insight.durationYears %d" = "%d年";
+"stats.trends.insight.cashFlowSurplus %d" = "你的收入覆盖了支出的 %d%%：本期结余为正。";
+"stats.trends.insight.cashFlowDeficit %d" = "你的收入覆盖了支出的 %d%%：花出去的比进来的多。";
+"stats.trends.insight.cashFlowNoIncome" = "本期只记录了支出，没有收入。";
+"stats.trends.insight.weekdayPeak %@ %@" = "%@是你花费最多的一天，平均 %@。";
 
 // MARK: - Stats WidgetInfo (periodComparison, sankey) — added 2026-05-18
 "panel.widgetInfo.periodComparison.title" = "期间对比";
@@ -4743,7 +4747,11 @@
 "settings.signOutBlockedMessage" = "还有更改尚未上传到云端，我们不希望你丢失任何内容。请检查网络连接后重试。";
 
 /* Subtitle of the existing-account sub-chooser in Welcome */
-"welcome.existing.subtitle" = "选择找回数据的方式。";
+"welcome.existing.title" = "欢迎回来！";
+"welcome.existing.subtitle" = "使用你的 Yala 账户登录，或从 iCloud 找回数据。";
+"welcome.existing.firstTimeQuestion" = "第一次使用 Yala？";
+"welcome.existing.firstTimeAction" = "从这里开始";
+"welcome.form.or" = "或";
 
 /* Card title: restore from iCloud */
 "welcome.existing.restoreTitle" = "从 iCloud 恢复";
@@ -6228,3 +6236,194 @@
 "panel.accounts.filterByAccount" = "按此账户筛选";
 /* Context menu on a group card: open the group */
 "groups.contextMenu.open" = "打开群组";
+
+/* Menú contextual de grupo o registro */
+"window.openInNewWindow" = "在新窗口中打开";
+
+/* Ventana secundaria mientras la principal pregunta algo */
+"window.follower.title" = "Yala 正在另一个窗口中等你";
+
+/* Ventana secundaria: explicación */
+"window.follower.body" = "另一个 Yala 窗口中有需要回答的内容。在那里完成后，此窗口会自动恢复。";
+
+/* Botón: traer al frente la otra ventana */
+"window.follower.cta" = "前往该窗口";
+
+/* Storage · Grupos: replaces the associate/sign-in button while the groups channel is paused server-side */
+"storage.groups.channelPausedNote" = "由于我们这边的问题，群组目前暂停中。恢复后，你可以从这里继续。";
+
+/* Guía por pasos (referencia del 2026-09-15): progreso, salidas y garantías */
+"stepGuide.progress" = "第 %1$d 步，共 %2$d 步";
+"stepGuide.markDone" = "已完成";
+"stepGuide.stuck" = "遇到问题";
+"stepGuide.whatYouWillSee" = "你将看到";
+"stepGuide.phaseDone" = "已完成";
+"stepGuide.phaseActive" = "当前步骤";
+"stepGuide.phaseUpcoming" = "待完成";
+"tutorials.applePay.openShortcuts" = "打开「快捷指令」";
+"tutorials.applePay.guarantee" = "每笔付款都会以草稿形式到达：你批准之前不会记录任何内容。";
+"tutorials.applePay.pendingDrafts" = "收件箱中的 Apple Pay 付款：%d";
+"faceIDGuide.guarantee" = "Yala 永远看不到你的面容，由 iOS 负责验证。";
+"faceIDGuide.previewAction" = "要求面容 ID";
+
+/* Label above the amount on a Panel account card */
+"panel.accounts.card.balance" = "余额";
+
+/* Label above the amount on a credit card account with debt */
+"panel.accounts.card.toPay" = "待还款";
+
+/* Label above the amount in expenses-only mode; %@ = period name like 'Este mes' */
+"panel.accounts.card.spentInPeriod %@" = "支出 · %@";
+
+/* Account detail sheet: money that came into the account in the period */
+"accountDetail.moneyIn" = "流入";
+
+/* Account detail sheet: money that left the account in the period */
+"accountDetail.moneyOut" = "流出";
+
+/* Account detail sheet: section with top expense categories */
+"accountDetail.topCategories" = "钱花在哪儿";
+
+/* Account detail sheet: section with latest records */
+"accountDetail.latest" = "最近记录";
+
+/* Accessibility label of the balance chart; account name, period name */
+"accountDetail.chartLabel %@ %@" = "%@ 在 %@ 的余额";
+
+/* Account detail sheet: no records in the period */
+"accountDetail.empty" = "此期间没有记录";
+
+/* Note under Archive toggle when archiving turned on Exclude from statistics */
+"account.archiveExcludedNotice" = "归档后，此账户将不再计入你的总额和统计，其交易也会在“记录”中隐藏。如需继续计入，请关闭“从统计中排除”。";
+
+
+/* Chat draft card (Yala IA) — redesign A */
+"chat.draft.detailsButton" = "详情";
+"chat.draft.detailsTitle" = "建议的条目";
+"chat.draft.openFullForm" = "在完整表单中打开";
+"chat.draft.missingSubcategory" = "缺少子类别";
+"chat.draft.missingAccount" = "缺少账户";
+"chat.draft.missingAmount" = "缺少金额";
+"chat.draft.addTag" = "标签";
+
+/* Example shown while dictating to Yala AI */
+"chat.voice.hint" = "试试说：“午饭刷卡花了 25”";
+
+/* Shown while the dictation is transcribed */
+"chat.voice.transcribingHint" = "发送前请检查你的文字。";
+
+/* Recorded duration while transcribing, e.g. 0:07 recorded */
+"chat.voice.recorded" = "已录制 %@";
+
+/* VoiceOver: discard the dictation without transcribing */
+"accessibility.discardRecording" = "放弃录音";
+
+/* Voice entry: second processing step, the transcript is being read for amount and category */
+"voice.processing.understanding" = "正在理解你的记录…";
+
+/* Voice entry: last processing step, the draft is being created */
+"voice.processing.preparing" = "正在准备你的记录…";
+
+/* Voice entry: button to discard what was understood and record again */
+"voice.recordAgain" = "重新录音";
+
+/* Voice entry: title above the record understood from the recording */
+"voice.review.title" = "我听到的是";
+
+/* Voice entry: title when several records were understood, e.g. I heard 2 entries */
+"voice.review.titleMany" = "我听到了 %d 条记录";
+
+/* Voice entry: button that saves several records, e.g. Save 2 */
+"voice.review.saveMany" = "保存 %d 条";
+
+/* Voice entry: closing without saving leaves the drafts in the Inbox */
+"voice.review.inboxNote" = "如果不保存就关闭，可以在收件箱里找到它。";
+
+/* Voice entry failure title: no internet */
+"voice.failure.noConnection.title" = "没有网络连接";
+
+/* Voice entry failure title: microphone permission denied */
+"voice.failure.mic.title" = "Yala 无法使用麦克风";
+
+/* Voice entry failure title: the recording was empty or too short */
+"voice.failure.noVoice.title" = "没听清你说的话";
+
+/* Voice entry failure message: the recording was empty or too short */
+"voice.failure.noVoice.message" = "录音为空或太短。请重试。";
+
+/* Voice entry failure title: no amount was heard */
+"voice.failure.noAmount.title" = "没听到金额";
+
+/* Voice entry failure message: ask to say the amount, e.g. 25 */
+"voice.failure.noAmount.message" = "请同时说出金额，例如“25”。";
+
+/* Voice entry failure title: something went wrong */
+"voice.failure.generic.title" = "这次没能听懂";
+
+/* Voice entry failure message: something went wrong, try again */
+"voice.failure.generic.message" = "处理你的语音时出了点问题。请稍后重试。";
+
+/* Registro por imagen (propuesta C, 2026-10-04) */
+/* Image entry sheet title */
+"image.entry.title" = "用图片记账";
+/* Image entry: what the user can bring and what Yala reads */
+"image.entry.subtitle" = "收据、银行截图或 PDF 都可以。我会读出金额、商家和日期。";
+/* Image entry source: take a photo */
+"image.entry.camera" = "相机";
+/* Image entry source: pick from Photos */
+"image.entry.photos" = "照片";
+/* Image entry source: pick a file (image or PDF) */
+"image.entry.file" = "文件";
+/* Image entry: hint that Photos allows up to 10 at once */
+"image.entry.multipleHint" = "从照片一次最多选 10 张";
+/* Image entry: reading one photo */
+"image.entry.readingOne" = "正在读取你的照片…";
+/* Image entry: reading several photos */
+"image.entry.readingMany" = "正在读取你的照片…";
+/* Image entry: current reading step */
+"image.entry.readingStep" = "正在查找金额";
+/* Image entry: photo %1 of %2 being read */
+"image.entry.readingProgress" = "第 %1$d 张，共 %2$d 张";
+/* Image entry review title, one entry */
+"image.entry.reviewTitle" = "我读到的内容";
+/* Image entry review title, %d entries */
+"image.entry.reviewTitleMany" = "读到 %d 条记录";
+/* Image entry: one photo could not be read */
+"image.entry.photoFailedOne" = "有 1 张照片无法读取";
+/* Image entry: %d photos could not be read */
+"image.entry.photoFailedMany" = "有 %d 张照片无法读取";
+/* Image entry: discard and pick another photo */
+"image.entry.otherPhoto" = "换一张照片";
+/* Accessibility: cancel reading the photo */
+"image.entry.cancelReading" = "停止读取";
+/* Image entry failure: no amount found */
+"image.entry.failure.noAmount.title" = "没有找到金额";
+/* Image entry failure: no amount found, what to try */
+"image.entry.failure.noAmount.message" = "试试离总额更近的照片，或换一张图片。";
+/* Image entry failure: the image could not be opened */
+"image.entry.failure.unreadable.title" = "无法打开这张图片";
+/* Image entry failure: camera permission denied */
+"image.entry.failure.camera.title" = "Yala 无法使用相机";
+/* Image entry failure: camera permission, how to fix */
+"image.entry.failure.camera.message" = "请在设置中允许访问，以便拍摄你的收据。";
+/* Image entry failure: reading failed */
+"image.entry.failure.generic.title" = "这次没能读取";
+/* Image entry failure: reading failed, the photo is fine */
+"image.entry.failure.generic.message" = "照片没有问题：读取失败了。请稍后再试。";
+/* Current user's name, no parentheses */
+"groups.member.youName" = "你";
+
+/* Header: how much each person puts in a group expense */
+"groups.expense.breakdownTitle" = "分摊";
+
+/* Under the payer's name: Paid <amount> */
+"groups.expense.paidAmount" = "支付了 %@";
+
+/* Row title: where this expense landed in your personal records */
+"groups.expense.inYourFinances" = "你的个人财务";
+
+/* Middle of the sentence: Paid by <name> and split <mode> */
+"groups.expense.andDividedLabel" = "，分摊方式";
+
+/* Current user after a preposition: Paid by <you> */
+"groups.member.youObject" = "你";

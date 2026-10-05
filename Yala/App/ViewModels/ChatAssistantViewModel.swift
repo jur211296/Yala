@@ -26,6 +26,12 @@ final class ChatAssistantViewModel {
     var isAIAvailable: Bool { !suggestionsFailed }
     private(set) var isRecording = false
     private(set) var isTranscribing = false
+    /// Lo que duró la última grabación; el panel de dictado lo enseña mientras transcribe.
+    private(set) var lastRecordingDuration: TimeInterval = 0
+
+    /// Tiempo y nivel de voz de la grabación en curso, para el panel de dictado.
+    var recordingDuration: TimeInterval { AudioRecorderService.shared.recordingDuration }
+    var recordingLevel: Double { AudioRecorderService.shared.audioLevel }
     private(set) var errorMessage: String?
     var inputText: String = ""
 
@@ -66,7 +72,14 @@ final class ChatAssistantViewModel {
         let now = Date.now
         let messages = [
             ChatMessage(role: .user, text: "¿Cuánto gasté en transporte este mes?", timestamp: now),
-            ChatMessage(role: .assistant, text: "Este mes llevas S/ 120 en transporte.", timestamp: now),
+            // Con negritas y dos párrafos, como responde el asistente (reglas 5 y 7 de su prompt): así la captura del
+            // hilo enseña la jerarquía del texto dentro de la burbuja.
+            ChatMessage(
+                role: .assistant,
+                text: "Este mes llevas **S/ 120** en Transporte, un **20% más** que el mes pasado (antes S/ 100).\n\n"
+                    + "La mayor parte es **Taxi**: S/ 85 en 6 viajes.",
+                timestamp: now
+            ),
         ]
         do {
             let data = try JSONEncoder().encode(ChatPersistedSession(messages: messages, allTurns: []))
@@ -75,6 +88,52 @@ final class ChatAssistantViewModel {
             print("ChatAssistantViewModel: seedTodayConversationForUITest failed: \(error)")
         }
     }
+
+    /// `-uitest-chat-draft`: una pregunta de registro y la respuesta del asistente con dos borradores. Necesita el
+    /// contexto porque los borradores apuntan a cuentas y subcategorías reales; por eso no va en el arranque con
+    /// `seedTodayConversationForUITest`, sino aquí, cuando el chat ya tiene el store. No persiste: vive en `messages`.
+    private func seedDraftConversationForUITest(_ ctx: ModelContext) {
+        let accounts: [Account]
+        let subcategories: [Subcategory]
+        do {
+            accounts = try ctx.fetch(FetchDescriptor<Account>(predicate: #Predicate { !$0.isArchived }))
+            subcategories = try ctx.fetch(FetchDescriptor<Subcategory>(predicate: #Predicate { $0.isVisible == true }))
+        } catch {
+            print("ChatAssistantViewModel: seedDraftConversationForUITest fetch failed: \(error)")
+            return
+        }
+        guard let account = accounts.first(where: { $0.currencyCode == "PEN" }) ?? accounts.first else { return }
+        let expenseSubs = subcategories.filter { !$0.safeCategory.isIncome }
+        let taxi = expenseSubs.first(where: { $0.name.localizedCaseInsensitiveContains("taxi") })
+            ?? expenseSubs.first(where: { $0.safeCategory.name.localizedCaseInsensitiveContains("transporte") })
+            ?? expenseSubs.first
+        let now = Date.now
+        let drafts = [
+            ChatTransactionDraft(
+                amount: 45, currencyCode: account.currencyCode, isExpense: true, note: "Taxi al aeropuerto",
+                date: now, accountID: account.persistentModelID, subcategoryID: taxi?.persistentModelID
+            ),
+            ChatTransactionDraft(
+                amount: Decimal(string: "120.50"), currencyCode: account.currencyCode, isExpense: true,
+                note: "Compras del súper", date: now, accountID: account.persistentModelID,
+                needsUserInput: ["subcategory"]
+            ),
+        ]
+        messages = [
+            ChatMessage(role: .user, text: "Gasté 45 en un taxi al aeropuerto y 120.50 en el súper", timestamp: now),
+            ChatMessage(
+                role: .assistant, text: L10n.Chat.Draft.confirmRegisterPlural, timestamp: now,
+                attachments: [.drafts(drafts)]
+            ),
+        ]
+    }
+
+    /// `-uitest-chat-suggestions`: las tres sugerencias del chat vacío, fijas.
+    private static let uiTestSuggestions = [
+        ChatSuggestion(text: "¿Cómo se distribuyeron mis gastos en Hogar y Personal?", icon: "chart.pie", type: .biggestCategory),
+        ChatSuggestion(text: "¿Cuánto gasté en Restaurantes y Delivery este mes?", icon: "cart", type: .topMerchant),
+        ChatSuggestion(text: "¿Mi presupuesto de Compras Super fue suficiente?", icon: "dollarsign.circle", type: .activeBudget),
+    ]
     #endif
 
     // MARK: - Setup
@@ -82,6 +141,11 @@ final class ChatAssistantViewModel {
     func setContext(_ ctx: ModelContext, autoLoadSuggestions: Bool = true) {
         modelContext = ctx
         loadPersistedSession()
+        #if DEBUG
+        if UITestHooks.chatDraft && messages.isEmpty {
+            seedDraftConversationForUITest(ctx)
+        }
+        #endif
         // Restaurar signal persistido si NTV guardó mientras el chat estaba cerrado
         // (o la app fue matada entre NTV-save y reapertura).
         SessionState.shared.restoreChatDraftSavedSignalIfNeeded()
@@ -109,6 +173,13 @@ final class ChatAssistantViewModel {
     /// vía `suggestionsFailed` para que la View muestre estado de no disponible.
     /// La View se encarga de deshabilitar funciones y ofrecer "Reintentar".
     func loadSuggestions() async {
+        #if DEBUG
+        if UITestHooks.chatSuggestions {
+            suggestionsFailed = false
+            suggestions = Self.uiTestSuggestions
+            return
+        }
+        #endif
         guard let context = modelContext else { return }
 
         suggestionsLoading = true
@@ -378,6 +449,7 @@ final class ChatAssistantViewModel {
     /// Si ya hay texto tipeado, hace append con espacio (preserva lo escrito por el user).
     func stopVoiceInput() async {
         guard isRecording else { return }
+        lastRecordingDuration = AudioRecorderService.shared.recordingDuration
         isRecording = false
         isTranscribing = true
         defer { isTranscribing = false }

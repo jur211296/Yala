@@ -40,6 +40,7 @@ struct RecordRowContextMenu: ViewModifier {
         Button(L10n.Action.edit, systemImage: "pencil") {
             viewModel.editOpenRecord(record)
         }
+        OpenInNewWindowButton(route: .record(id: record.persistentModelID))
         if actions.canDuplicate {
             Button(L10n.Action.duplicate, systemImage: "doc.on.doc") {
                 viewModel.duplicateRecord(record)

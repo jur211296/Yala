@@ -9,6 +9,9 @@
 //  El flag `hasShownWelcomeChooser` se setea SOLO tras tap consciente en una de
 //  las 3 cards (no en dismissals programáticos por race con CKShare).
 //
+//  Forma de la referencia del 15-sep (`WelcomeForm.swift`): titular serif sin logo y las tres ramas
+//  como filas de UNA tarjeta. Sin pesos de botón: son tres caminos, ninguno se recomienda.
+//
 
 import SwiftUI
 
@@ -44,8 +47,6 @@ struct WelcomeChooserView: View {
         }
     }
 
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
     var onSelect: (Branch) -> Void
     var onBack: (() -> Void)? = nil
 
@@ -58,51 +59,27 @@ struct WelcomeChooserView: View {
     }
 
     var body: some View {
-        WelcomeFlowScreen { logoTopSpacing in
+        WelcomeFormScreen(
+            title: L10n.Welcome.Chooser.title,
+            subtitle: L10n.Welcome.Chooser.subtitle
+        ) {
             VStack(spacing: 0) {
-                Spacer(minLength: logoTopSpacing)
-
-                Image("YalaLogo")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(height: 128)
-                    .colorMultiply(.white)
-                    .accessibilityHidden(true)
-
-                Spacer(minLength: DS.Spacing.lg)
-
-                VStack(spacing: DS.Spacing.sm) {
-                    Text(L10n.Welcome.Chooser.title)
-                        .font(DS.Typography.title2)
-                        .foregroundStyle(.white)
-                        .multilineTextAlignment(.center)
-
-                    Text(L10n.Welcome.Chooser.subtitle)
-                        .font(DS.Typography.subheadline)
-                        .foregroundStyle(.white.opacity(0.7))
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, DS.Spacing.lg)
-                }
-
-                Spacer(minLength: DS.Spacing.lg)
-
-                VStack(spacing: DS.Spacing.md) {
-                    ForEach(Branch.allCases, id: \.self) { branch in
-                        chooserCard(
-                            icon: branch.icon,
-                            iconTint: iconTint(for: branch),
-                            title: branch.title,
-                            body: branch.body,
-                            action: { handleSelect(branch) }
-                        )
-                        // Identifier aditivo de navegación XCUI (sesión 2 Google).
-                        .accessibilityIdentifier("welcome_chooser_\(branch.rawValue)")
+                ForEach(Branch.allCases, id: \.self) { branch in
+                    if branch != Branch.allCases.first {
+                        WelcomeOptionDivider()
                     }
+                    chooserCard(
+                        icon: branch.icon,
+                        iconTint: iconTint(for: branch),
+                        title: branch.title,
+                        body: branch.body,
+                        action: { handleSelect(branch) }
+                    )
+                    // Identifier aditivo de navegación XCUI (sesión 2 Google).
+                    .accessibilityIdentifier("welcome_chooser_\(branch.rawValue)")
                 }
-                .padding(.horizontal, DS.Spacing.lg)
-
-                Spacer(minLength: DS.Spacing.xl)
             }
+            .welcomeFlowCard(radius: DS.Radius.xl)
         }
         .welcomeBackButton(tint: .white, action: onBack)
     }
@@ -124,7 +101,7 @@ struct WelcomeChooserView: View {
                 ZStack {
                     Circle()
                         .fill(iconTint.opacity(0.25))
-                        .frame(width: 48, height: 48)
+                        .frame(width: WelcomeOptionRowMetrics.iconSize, height: WelcomeOptionRowMetrics.iconSize)
                     Image(systemName: icon)
                         .font(.system(size: 22, weight: .semibold))
                         .foregroundStyle(iconTint)
@@ -153,7 +130,6 @@ struct WelcomeChooserView: View {
             .padding(.vertical, DS.Spacing.md)
             .frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(Rectangle())
-            .welcomeFlowCard(radius: DS.Radius.xl)
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)

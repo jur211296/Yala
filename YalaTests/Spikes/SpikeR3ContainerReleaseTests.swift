@@ -116,6 +116,56 @@ struct SpikeR3ContainerReleaseTests {
                 "el superviviente ya no escribe tras el wipe ⇒ re-medir la resurrección del archivo")
     }
 
+    // MARK: - Instrumento de descriptores
+
+    /// **El techo del barrido de descriptores es el del proceso, no 1024.** En CI la suite se repite
+    /// tres veces en el MISMO proceso (25 872 tests en los runs 37094436816 y 37095716630) y en la
+    /// tercera pasada el proceso ya tiene más de 1024 descriptores abiertos: los del store nacían por
+    /// encima del barrido fijo y el control positivo del eje 1 leía «0 con la conexión viva». Aquí se
+    /// ocupa el tramo bajo a propósito para que el descriptor del store nazca por encima de 1024.
+    @Test("R3 · instrumento · cuenta el descriptor del store aunque nazca por encima de 1024")
+    func instrumento_cuentaDescriptoresAltos() throws {
+        let objetivo: rlim_t = 1100
+        var original = rlimit()
+        try #require(getrlimit(RLIMIT_NOFILE, &original) == 0)
+        try #require(original.rlim_max >= objetivo + 64, "el límite duro no deja abrir \(objetivo) descriptores")
+        if original.rlim_cur < objetivo + 64 {
+            var ampliado = original
+            ampliado.rlim_cur = objetivo + 64
+            try #require(setrlimit(RLIMIT_NOFILE, &ampliado) == 0)
+        }
+        var ocupados: [Int32] = []
+        defer {
+            for descriptor in ocupados { close(descriptor) }
+            var restaurado = original
+            _ = setrlimit(RLIMIT_NOFILE, &restaurado)
+        }
+
+        SpikeR3Harness.deleteSpikeStoreFiles()
+        defer { SpikeR3Harness.deleteSpikeStoreFiles() }
+        let path = SpikeR3Harness.storeURL.path
+        try FileManager.default.createDirectory(
+            at: SpikeR3Harness.storeURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try #require(FileManager.default.createFile(atPath: path, contents: Data()))
+
+        while true {
+            let descriptor = open("/dev/null", O_RDONLY)
+            try #require(descriptor >= 0, "no se pudo ocupar el tramo bajo (errno \(errno))")
+            ocupados.append(descriptor)
+            if descriptor >= Int32(objetivo) { break }
+        }
+        // Diferencial, no absoluto: un eje anterior de la suite (el 4b) puede dejar conexiones zombi
+        // sobre este mismo path, así que lo que se exige es que el descriptor NUEVO se cuente.
+        let antes = SpikeR3Harness.openDescriptorCountForSpikeStore()
+        let delStore = open(path, O_RDONLY)
+        try #require(delStore >= 0, "no se pudo abrir el archivo del store (errno \(errno))")
+        ocupados.append(delStore)
+        try #require(delStore > 1024, "el descriptor del store nació en \(delStore): el caso no mide el techo")
+
+        #expect(SpikeR3Harness.openDescriptorCountForSpikeStore() == antes + 1,
+                "el barrido no ve un descriptor del store por encima de 1024 ⇒ el control positivo del eje 1 vuelve a leer 0 con la conexión viva")
+    }
+
     // MARK: - Gating del harness
 
     /// El harness es inalcanzable desde la UI sin el launch arg — el host de tests no lo lleva.

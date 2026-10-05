@@ -333,8 +333,12 @@ struct PrivateSessionMarkWiringTests {
     /// distinto del que ejecuta — que es el daño que `wipeOperation` existe para cerrar.
     @Test("MUTACIÓN: la copy de «Vaciar datos» sale del mismo eje que su alcance")
     func theWipeCopyReadsTheSameAxisAsItsScope() throws {
+        // Con los espacios colapsados: lo que se fija es QUÉ lee la descripción, no la sangría. Con la
+        // sangría dentro del literal, el refactor que pasó la pantalla a lista agrupada (2c9f800d2) la
+        // bajó de 40 a 28 espacios y este caso se puso rojo con el cableado intacto.
         let vista = try Self.code("Yala/App/Views/Settings/UserDataResetView.swift")
-        #expect(vista.contains("PrivateSessionMark.hasPrivateSession()\n                                        ? L10n.Settings.resetDataDescription"), """
+            .split(whereSeparator: \.isWhitespace).joined(separator: " ")
+        #expect(vista.contains("PrivateSessionMark.hasPrivateSession() ? L10n.Settings.resetDataDescription :"), """
             la descripción de la pantalla volvió a leer otra cosa mientras el alcance lee la marca.
             Divergen justo en el caso del eje: una sesión solo-grupos leía «solo tu perfil y tus
             preferencias» sobre un `.wipeDataFull`.

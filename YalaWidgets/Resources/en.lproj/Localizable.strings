@@ -144,3 +144,8 @@
 
 /* MARK: Release 2.0 — a11y & UI keys */
 "widget.ui.others" = "Others";
+
+/* MARK: iPad — widget extragrande «Resumen del mes» */
+"widget.gallery.monthSummary" = "Monthly Summary";
+"widget.gallery.monthSummary.desc" = "Your balance, spending by category and budgets this month";
+"widget.ui.monthSummary" = "Monthly Summary";

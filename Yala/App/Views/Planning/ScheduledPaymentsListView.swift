@@ -89,19 +89,20 @@ struct ScheduledPaymentsListView: View {
         let paidTotal = viewModel.monthlyTotalPaid(preferredCurrencyCode: currencyCode)
         let pendingTotal = viewModel.monthlyTotalPending(preferredCurrencyCode: currencyCode)
 
-        return VStack(alignment: .center, spacing: DS.Spacing.sm) {
-            // Total label + monto (centrado)
-            VStack(alignment: .center, spacing: DS.Spacing.xxs) {
-                Text("\(L10n.Planning.Scheduled.totalLabel) · \(viewModel.monthYearLabel)")
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(.secondary)
-                AmountText(
-                    value: monthlyTotal,
-                    currencyCode: currencyCode,
-                    font: DS.Typography.heroAmount, secondaryFont: DS.Typography.heroAmountSecondary
-                )
-                .contentTransition(.numericText())
-            }
+        // El hero del Panel (`HeroHeader`): rótulo arriba, cifra y detalle debajo, todo a la izquierda. Sin píldora
+        // de período: aquí el mes lo elige el navegador de debajo, así que el rótulo lo dice (ticket
+        // `distribution-subviews-miss-the-new-panel-hero`, 2026-10-03).
+        return HeroHeader {
+            HeroHeaderLabel(text: "\(L10n.Planning.Scheduled.totalLabel) · \(viewModel.monthYearLabel)")
+        } period: {
+            EmptyView()
+        } content: {
+            AmountText(
+                value: monthlyTotal,
+                currencyCode: currencyCode,
+                font: DS.Typography.panelHeroAmount, secondaryFont: DS.Typography.panelHeroAmountSecondary
+            )
+            .contentTransition(.numericText())
 
             // Paid / Pending chips (tap toggles filter)
             HStack(spacing: DS.Spacing.lg) {
@@ -119,7 +120,6 @@ struct ScheduledPaymentsListView: View {
                 )
             }
         }
-        .frame(maxWidth: .infinity)
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.top, DS.Spacing.md)
         .accessibilityElement(children: .contain)

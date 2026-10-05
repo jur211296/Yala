@@ -266,12 +266,80 @@ final class GroupsSmokeUITests: XCTestCase {
             "El detalle read-only no debería exponer el campo editable de monto."
         )
 
-        // Fase 2: Editar baja el detalle y sube el editor (large) con el campo de monto.
+        // Propuesta B: «Tu parte» en una frase y el reparto con cada persona. En el seed, Ana
+        // pagó «Mercado» (S/ 120) a partes iguales entre tres → le debes a Ana.
+        XCTAssertTrue(
+            app.staticTexts["Le debes a Ana"].waitForExistence(timeout: 5),
+            "El detalle no dijo lo que te toca («Le debes a Ana»)."
+        )
+        let breakdown = app.descendants(matching: .any).matching(identifier: "group_expense_detail_breakdown").firstMatch
+        XCTAssertTrue(breakdown.exists, "El detalle no mostró el reparto.")
+        XCTAssertTrue(breakdown.staticTexts["Beto"].exists, "El reparto no listó a Beto, que no pagó.")
+
+        // Fase 2: Editar baja el detalle y sube el editor (large) con el campo de monto, y con
+        // pagador y reparto en el propio formulario (sin hojas aparte), plegados.
         editButton.tap()
         XCTAssertTrue(
             app.textFields["group_expense_amount"].waitForExistence(timeout: 5),
             "El editor no montó tras tocar Editar en el detalle."
         )
+        let payerRow = app.buttons["group_expense_paidby_row"]
+        XCTAssertTrue(payerRow.label.contains("Ana"), "Plegada, la fila «Pagado por» no dijo que pagó Ana: \(payerRow.label)")
+
+        // Abrir «Reparto» lo despliega ahí mismo; abrir «Pagado por» lo vuelve a plegar (uno a la vez).
+        app.buttons["group_expense_split_row"].tap()
+        let splitCard = app.descendants(matching: .any).matching(identifier: "group_expense_split_card").firstMatch
+        XCTAssertTrue(splitCard.waitForExistence(timeout: 5), "Abrir «Reparto» no mostró el reparto en línea.")
+        payerRow.tap()
+        XCTAssertTrue(
+            app.buttons["group_expense_payer_Ana"].waitForExistence(timeout: 5),
+            "Abrir «Pagado por» no mostró los avatares."
+        )
+        XCTAssertTrue(app.buttons["group_expense_payer_Ana"].isSelected, "El editor no marcó a Ana como quien pagó.")
+        let folded = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: splitCard)
+        XCTAssertEqual(XCTWaiter().wait(for: [folded], timeout: 5), .completed,
+                       "Abrir «Pagado por» debería plegar «Reparto» (una fila abierta a la vez).")
+    }
+
+    /// groups-expense-form: si pagaste tú, la cuenta de la que salió se pide a la vista bajo la
+    /// frase (Guardar apagado). Elegir a otra persona como pagadora la retira y habilita Guardar. Seed: «Hotel Miraflores» (Viaje a Lima) lo pagaste tú y no tiene
+    /// movimiento personal enlazado, así que no hay cuenta que recuperar.
+    func test_groupExpenseAccountRowFollowsThePayer() {
+        let app = launchOnGroups()
+
+        let lima = app.buttons.matching(identifier: "group_card")
+            .matching(NSPredicate(format: "label BEGINSWITH 'Viaje a Lima'")).firstMatch
+        XCTAssertTrue(lima.waitForExistence(timeout: 10), "No apareció la tarjeta de «Viaje a Lima».")
+        lima.tap()
+
+        let expenseRow = app.buttons["group_expense_row_Hotel Miraflores"]
+        XCTAssertTrue(expenseRow.waitForExistence(timeout: 10), "No apareció «Hotel Miraflores».")
+        expenseRow.tap()
+
+        let editButton = app.buttons["group_expense_detail_edit"]
+        XCTAssertTrue(editButton.waitForExistence(timeout: 5), "No montó el detalle del gasto.")
+        editButton.tap()
+
+        let accountRow = app.buttons["group_expense_account_row"]
+        XCTAssertTrue(accountRow.waitForExistence(timeout: 5), "Pagaste tú y no apareció la fila de cuenta.")
+        let save = app.buttons["group_expense_save"]
+        XCTAssertFalse(save.isEnabled, "Sin cuenta, Guardar debería quedar apagado.")
+
+        // Grupo de 2: una sola pastilla con la frase entera; tocarla abre las opciones rápidas,
+        // y elegir que pagó Caro cambia el pagador sin pasar por el reparto completo.
+        let pill = app.buttons["group_expense_quick_options"]
+        XCTAssertTrue(pill.exists, "En un grupo de 2 debería verse la pastilla «Pagado por … y dividido …».")
+        pill.tap()
+        let caroPaid = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Pagó Caro · partes iguales")).firstMatch
+        XCTAssertTrue(caroPaid.waitForExistence(timeout: 5), "Las opciones rápidas no ofrecieron «Pagó Caro · partes iguales».")
+        caroPaid.tap()
+
+        let gone = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: accountRow)
+        XCTAssertEqual(XCTWaiter().wait(for: [gone], timeout: 5), .completed,
+                       "Con Caro como pagadora, la fila de cuenta debería desaparecer.")
+        let enabled = XCTNSPredicateExpectation(predicate: NSPredicate(format: "isEnabled == true"), object: save)
+        XCTAssertEqual(XCTWaiter().wait(for: [enabled], timeout: 5), .completed,
+                       "Con Caro como pagadora, Guardar debería habilitarse.")
     }
 
     /// groups-expense-form: editar un gasto del feed → botón papelera del toolbar →

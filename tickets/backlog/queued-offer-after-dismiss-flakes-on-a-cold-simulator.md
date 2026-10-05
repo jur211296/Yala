@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "testing, xcuitest, presentaciones"
 created: 2026-09-15
-updated: 2026-09-28
+updated: 2026-10-04
 source: "gate de `cloud-signout-collapses-a-groups-session-expiry-into-permanent` (2026-09-15)"
 ---
 
@@ -136,3 +136,12 @@ gate (68 s) y pasó **3 de 3** aislado con el mismo binario (`test-without-build
 0). El cambio de ese gate no toca presentaciones ni el router (Inbox y bridge de liquidaciones); entró al lote porque
 `AppBootstrapper.swift` casa con el área `session-sign-out`.
 
+
+## Tercer dato (2026-10-04, gate del registro por imagen)
+
+`RemoteWipeNoticeRoutingUITests.test_notice_keepWaiting_leavesTheAppWhereItWas` cayó en su línea 110
+(`trial_offer_dismiss` no apareció en 45 s tras «Seguir esperando») **dentro de un lote de 16 suites / 43 casos**,
+con el centinela limpio (179 muestreos, un solo runner) y el simulador caliente. Aislado, el mismo binario pasó
+**4 de 4** (el caso solo ×2 y su suite entera). El cambio de ese gate no toca el aviso ni la oferta (rediseño del
+registro por imagen; en `AppBootstrapper` solo la puerta Pro de compartir una foto). Es la misma forma que los dos
+datos de arriba: la oferta retenida no llega tras cerrar lo que la tapaba, con carga y no en frío.

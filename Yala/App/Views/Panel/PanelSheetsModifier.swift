@@ -20,10 +20,14 @@ struct PanelSheetsModifier: ViewModifier {
 
     /// Read lazily inside sheet closures — NOT during body evaluation.
     @Environment(SessionState.self) private var sessionState
+    @Environment(SceneNavigation.self) private var navigation
 
     @Environment(AppPreferences.self) private var appPreferences
 
     @State private var showPracticeAlert = false
+
+    /// La hoja de filtros escribe en `SessionState` a través de este puente; el Panel recalcula solo al cambiar.
+    @State private var panelFilters = PanelSessionFilters()
 
     /// Deferred practice data — stored during callback, consumed in onDismiss.
     private struct DeferredPractice {
@@ -54,6 +58,17 @@ struct PanelSheetsModifier: ViewModifier {
                     viewModel.reloadAndRecalculate()
                 }
             }
+            .sheet(item: $sheets.accountDetail) { presentation in
+                AccountDetailSheet(
+                    account: presentation.account,
+                    viewModel: viewModel,
+                    isExpensesOnlyMode: sessionState.isExpensesOnlyMode,
+                    onAccountChanged: { viewModel.reloadAndRecalculate() }
+                )
+            }
+            .sheet(isPresented: $sheets.showFilters) {
+                RecordsFiltersView(recordsViewModel: panelFilters)
+            }
             .sheet(isPresented: $sheets.isPresentingSettings, onDismiss: {
                 viewModel.reloadAndRecalculate()
             }) {
@@ -83,15 +98,15 @@ struct PanelSheetsModifier: ViewModifier {
             }
             .sheet(
                 isPresented: Binding(
-                    get: { sessionState.showNewTransactionFromChat },
+                    get: { navigation.showNewTransactionFromChat },
                     set: { newValue in
-                        sessionState.showNewTransactionFromChat = newValue
-                        if !newValue { sessionState.pendingChatDraftPrefill = nil }
+                        navigation.showNewTransactionFromChat = newValue
+                        if !newValue { navigation.pendingChatDraftPrefill = nil }
                     }
                 ),
                 onDismiss: { viewModel.reloadAndRecalculate() }
             ) {
-                if let prefill = sessionState.pendingChatDraftPrefill {
+                if let prefill = navigation.pendingChatDraftPrefill {
                     NewTransactionView(prefillFromChatDraft: prefill)
                         .presentationDetents([.large])
                 }
@@ -100,9 +115,6 @@ struct PanelSheetsModifier: ViewModifier {
                 handleVoiceRecordingDismiss()
             }) {
                 VoiceRecordingView(
-                    onSavedToInbox: {
-                        sheets.navigateToInboxAfterVoice = true
-                    },
                     onSwitchToImage: {
                         sheets.switchToImageAfterVoice = true
                     },
@@ -120,9 +132,6 @@ struct PanelSheetsModifier: ViewModifier {
                 handleImageSelectionDismiss()
             }) {
                 ImageSelectionView(
-                    onSavedToInbox: {
-                        sheets.navigateToInboxAfterImage = true
-                    },
                     exampleImages: sheets.setupTrialExampleImages,
                     onSetupTrialCompleted: sheets.isImageSetupTrial ? { itemID, itemName, kind, additionalIDs in
                         deferredImagePractice = DeferredPractice(
@@ -149,13 +158,16 @@ struct PanelSheetsModifier: ViewModifier {
                 }
             }
             .sheet(isPresented: $sheets.showInbox, onDismiss: {
-                SessionState.shared.isInboxSheetVisible = false
+                navigation.isInboxSheetVisible = false
                 viewModel.reloadAndRecalculate()
             }) {
                 InboxView(onNavigateToRecords: {
-                    viewModel.navigateToStatistics(.records)
+                    viewModel.navigateToStatistics(.records, in: navigation)
                 })
-                .onAppear { SessionState.shared.isInboxSheetVisible = true }
+                .onAppear { navigation.isInboxSheetVisible = true }
+                // Si quien la presenta se desmonta (una ventana que pasa a esperar o asciende a líder), `onDismiss` no
+                // está garantizado: el flag no debe quedarse puesto (tiraría los avisos de bandeja de TODAS las ventanas).
+                .onDisappear { navigation.isInboxSheetVisible = false }
             }
             .sheet(isPresented: $sheets.showUpgradeForVoice) {
                 UpgradePromptSheet(feature: .voiceInput, context: .proFeature)
@@ -222,10 +234,6 @@ struct PanelSheetsModifier: ViewModifier {
             sheets.isVoiceSetupTrial = false
             FeatureGateService.shared.disableSetupTrial(for: .voiceInput)
         }
-        if sheets.navigateToInboxAfterVoice {
-            sheets.navigateToInboxAfterVoice = false
-            sheets.showInbox = true
-        }
         if sheets.switchToImageAfterVoice {
             sheets.switchToImageAfterVoice = false
             Task {
@@ -255,10 +263,6 @@ struct PanelSheetsModifier: ViewModifier {
             sheets.isImageSetupTrial = false
             sheets.setupTrialExampleImages = nil
             FeatureGateService.shared.disableSetupTrial(for: .imageInput)
-        }
-        if sheets.navigateToInboxAfterImage {
-            sheets.navigateToInboxAfterImage = false
-            sheets.showInbox = true
         }
 
         if let deferred = deferredImagePractice {

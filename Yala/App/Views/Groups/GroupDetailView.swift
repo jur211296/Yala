@@ -322,11 +322,12 @@ struct GroupDetailView: View {
             .presentationDragIndicator(.visible)
 
         case .expenseDetail(let expense):
-            // Fase 1: detalle read-only en medium. El botón Editar sube el editor
-            // en large (vía pendingEdit consumido en el onDismiss del sheet).
+            // Fase 1: detalle read-only. El botón Editar sube el editor
+            // (vía pendingEdit consumido en el onDismiss del sheet).
             GroupExpenseDetailSheet(
                 expense: expense,
                 share: viewModel.mySharesByExpense[expense.id],
+                allShares: viewModel.sharesForExpense(expense),
                 bridgeTransaction: viewModel.txBridgeMap[expense.id.uuidString],
                 subcategoryNameLookup: viewModel.subcategoryNameLookup,
                 memberNameLookup: viewModel.memberNameLookup,

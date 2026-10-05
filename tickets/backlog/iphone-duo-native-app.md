@@ -4,7 +4,7 @@ status: backlog
 priority: medium
 area: "platform, iphone-duo, adaptativo"
 created: 2026-09-09
-updated: 2026-09-27
+updated: 2026-10-02
 source: idea Jürgen 2026-09-09; plan adaptativo (docs/exploracion/adaptativo-ipad-duo.md §5 y §7), 2026-09-27
 ---
 
@@ -33,6 +33,10 @@ modo compatible: sin llegar al borde de la pantalla en la interior.
 - **Pantalla completa**: solo compilando con el SDK de 27.1.
 - **Ventanas**: el Duo abierto deja abrir varias ventanas de la misma app si el iPad lo deja. Lo cubren
   [[ipad-multiple-windows-share-one-navigation-state]] (fase 0) y [[ipad-real-multiwindow-with-per-scene-state]].
+  **Pendiente de medir aquí (2026-10-02)**, cuando exista `YalaLane-Adapt-iPhone-Duo`: la multiventana ya está
+  encendida con estado por ventana. Comprobar que, cerrado, el menú contextual de un registro o un grupo NO ofrece
+  «Abrir en una ventana nueva» (`OpenInNewWindowButton`, gateado por `supportsMultipleWindows`) y que, abierto, sí; y
+  que la ventana nueva aparece en la pantalla interior.
 
 ## Lo no documentado, que esta fase mide primero
 
@@ -65,7 +69,9 @@ modo compatible: sin llegar al borde de la pantalla en la interior.
 
 - [[ipad-native-app]] — paraguas del carril. [[apple-watch]] — la misma tanda de plataformas del 2026-09-09.
 - [[sheet-size-follows-the-device-not-the-window]] — sin él, las hojas del Duo abierto salen con tamaño de iPhone.
-- [[iphone-supports-landscape-orientation]] — el horizontal en el Duo cerrado.
+- [[iphone-supports-landscape-orientation]] — el horizontal en el Duo cerrado. **Hecho el 2026-10-01** (iPhone: vertical y
+  horizontal izquierda/derecha). Pendiente aquí: girar el Duo cerrado en `YalaLane-Adapt-iPhone-Duo` y comprobar que
+  sigue y conserva lo abierto (`IPhoneLandscapeUITests` por UDID).
 
 ## Reglas del carril adaptativo (obligatorias)
 

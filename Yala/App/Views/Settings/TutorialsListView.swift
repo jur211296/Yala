@@ -11,9 +11,9 @@ struct TutorialsListView: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: DS.Spacing.xxl) {
-                    // Header
+        YalaSettingsList {
+                // Header
+                Section {
                     VStack(spacing: DS.Spacing.sm) {
                         Image(systemName: "book.fill")
                             .font(DS.Typography.amountLarge)
@@ -29,15 +29,20 @@ struct TutorialsListView: View {
                             .foregroundStyle(.thSecondaryText)
                             .multilineTextAlignment(.center)
                     }
-                    .padding(.top, DS.Spacing.xxxl)
-
-                    // Sections
-                    ForEach(TutorialCategory.allCases) { category in
-                        categorySection(category)
-                    }
+                    // Aire lateral: la fila no lleva márgenes, y con el texto a punto de caber en una línea SwiftUI recorta los bordes
+                    // de los glifos (medido 2026-10-03: Tutoriales en el SE en vertical, Personalización en el Pro Max girado).
+                    .padding(.horizontal, DS.Spacing.sm)
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, DS.Spacing.lg)
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets())
+                    .listRowSeparator(.hidden)
                 }
-                .padding(.horizontal, DS.Spacing.lg)
-                .padding(.bottom, DS.Spacing.safeBottom)
+
+                // Sections
+                ForEach(TutorialCategory.allCases) { category in
+                    categorySection(category)
+                }
             }
         .yalaScreenBackground(.subtle)
         .navigationTitle(L10n.Settings.tutorials)
@@ -51,7 +56,13 @@ struct TutorialsListView: View {
             }
         }
         .navigationDestination(for: Tutorial.self) { tutorial in
-            TutorialDetailView(tutorial: tutorial)
+            // Apple Pay se hace fuera de Yala, en Atajos: es una guía por pasos (referencia del 2026-09-15), no el
+            // carrusel de vídeo de los tutoriales que se hacen dentro de la app.
+            if tutorial.usesStepGuide {
+                ApplePayAutomationGuideView()
+            } else {
+                TutorialDetailView(tutorial: tutorial)
+            }
         }
     }
 
@@ -59,32 +70,14 @@ struct TutorialsListView: View {
 
     @ViewBuilder
     private func categorySection(_ category: TutorialCategory) -> some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-            Text(category.title)
-                .font(DS.Typography.headline)
-                .foregroundStyle(.thSecondaryText)
-                .textCase(.uppercase)
-                .padding(.horizontal, DS.Spacing.xs)
-
-            VStack(spacing: DS.Spacing.none) {
-                ForEach(Array(category.tutorials.enumerated()), id: \.element) { index, tutorial in
-                    NavigationLink(value: tutorial) {
-                        tutorialRow(tutorial)
-                    }
-                    .buttonStyle(.plain)
-
-                    if index < category.tutorials.count - 1 {
-                        Divider()
-                            .padding(.horizontal, DS.Spacing.lg)
-                    }
+        YalaSettingsSection(category.title) {
+            // En una `List`, el `NavigationLink` pinta su propio chevron: la fila ya no lleva el suyo.
+            ForEach(category.tutorials) { tutorial in
+                NavigationLink(value: tutorial) {
+                    tutorialRow(tutorial)
                 }
+                .accessibilityIdentifier("tutorial_row_\(tutorial.rawValue)")
             }
-            .background(.thCard)
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.lg)
-                    .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-            )
         }
     }
 
@@ -119,13 +112,7 @@ struct TutorialsListView: View {
                     .font(DS.Typography.body)
                     .foregroundStyle(.thAccent)
             }
-
-            Image(systemName: "chevron.right")
-                .font(DS.Typography.labelSmall)
-                .foregroundStyle(.thSecondaryText)
         }
-        .padding(.horizontal, DS.Spacing.lg)
-        .padding(.vertical, DS.Spacing.md)
         .contentShape(Rectangle())
     }
 }

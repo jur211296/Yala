@@ -122,8 +122,7 @@ struct GroupsDetachSessionSurvivesTests {
         guard let teardown = body.range(of: "GroupsSyncClient.shared.teardownForSignOut()"),
               let residual = body.range(of: "reason: .permanent)"),
               let check = body.range(of: Self.checkedSignOut),
-              let bridge = body.range(of: "GroupsAssociationDetach.detachBridge("),
-              let purge = body.range(of: "try Self.purgeGroupsDomainForDetach(context: context)"),
+              let write = body.range(of: "await Self.writeDetachUnderQuiescence("),
               let finish = body.range(of: "finishDetach(context: context)") else {
             Issue.record("""
                 El desasociar cambió de forma. Lo que este invariante exige es un cierre de sesión cuyo resultado se \
@@ -137,13 +136,13 @@ struct GroupsDetachSessionSurvivesTests {
             El cierre de sesión se adelantó al teardown o al recuento de lo que quedó sin subir. Sin sesión, una fila \
             pendiente ya no sube hasta volver a entrar; con ella viva, la sube el loop del siguiente primer plano.
             """)
-        #expect(check.lowerBound < bridge.lowerBound, """
+        #expect(check.lowerBound < write.lowerBound, """
             La comprobación del cierre de sesión ya no va delante del puente. Si la sesión sobrevive, el puente queda \
             soltado con la asociación en pie, y el reintento vuelve a ofrecer las dos salidas cuando la segunda ya no \
             puede aplicarse.
             """)
-        #expect(bridge.lowerBound < purge.lowerBound && purge.lowerBound < finish.lowerBound,
-                "el puente, el borrado y el remate cambiaron de orden")
+        #expect(write.lowerBound < finish.lowerBound,
+                "el puente y el borrado (`writeDetachUnderQuiescence`) ya no van delante del remate")
 
         // Una sola llamada: con otra suelta, el gesto podría seguir con una sesión que la segunda no verificó.
         #expect(body.components(separatedBy: "CloudAuthService.shared.signOut()").count - 1 == 1, """
@@ -175,7 +174,8 @@ struct GroupsDetachSessionSurvivesTests {
             La rama que se para ya no emite `groupsDetachSessionSurvived`. Es la única medición de si esto pasa en la \
             flota, que el ticket no pudo hacer.
             """)
-        for prohibido in ["detachBridge", "purgeGroupsDomainForDetach", "finishDetach", "GroupsDetachPendingPurge.arm",
+        for prohibido in ["detachBridge", "purgeGroupsDomainForDetach", "writeDetachUnderQuiescence", "finishDetach",
+                          "GroupsDetachPendingPurge.arm",
                           "GroupsAccountAssociation.shared.clear()"] {
             #expect(!branch.contains(prohibido), """
                 La rama que se para hace `\(prohibido)`: el gesto escribe algo del dominio Grupos con la sesión viva, \
@@ -224,7 +224,7 @@ struct GroupsDetachSessionSurvivesTests {
         }
 
         let source = try Self.code(Self.authPath)
-        guard let start = source.range(of: "private var storedSessionIsGone: Bool {") else {
+        guard let start = source.range(of: "    var storedSessionIsGone: Bool {") else {
             Issue.record("`storedSessionIsGone` desapareció"); return
         }
         let tail = source[start.lowerBound...]
@@ -234,7 +234,7 @@ struct GroupsDetachSessionSurvivesTests {
         let normalized = witnessBody
             .split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
         #expect(normalized == [
-            "private var storedSessionIsGone: Bool {",
+            "var storedSessionIsGone: Bool {",
             "#if DEBUG",
             "if UITestHooks.signOutKeepsSession { return false }",
             "#endif",

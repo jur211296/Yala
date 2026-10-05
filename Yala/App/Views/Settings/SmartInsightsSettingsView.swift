@@ -15,54 +15,38 @@ struct SmartInsightsSettingsView: View {
     var body: some View {
         @Bindable var prefs = appPreferences
         return NavigationStack {
-            ScrollView {
-                VStack(spacing: DS.Spacing.xxl) {
-                        // Metrics Section
-                        SectionBox(title: L10n.Insights.metricsSection) {
-                            VStack(spacing: DS.Spacing.none) {
-                                settingsToggle(L10n.Insights.quickStats, isOn: $prefs.insightsShowQuickStats)
-                            }
-                        }
+            YalaSettingsList {
+                YalaSettingsSection(L10n.Insights.metricsSection) {
+                    YalaSettingsToggleRow(L10n.Insights.quickStats, isOn: $prefs.insightsShowQuickStats)
+                }
 
-                        // Commitments Section
-                        SectionBox(title: L10n.Insights.commitments) {
-                            VStack(spacing: DS.Spacing.none) {
-                                settingsToggle(L10n.Insights.pendingPayments, isOn: $prefs.insightsShowPendingPayments)
-                                SubsectionDivider()
-                                settingsToggle(L10n.Insights.activeSubscriptions, isOn: $prefs.insightsShowSubscriptions)
-                                SubsectionDivider()
-                                settingsToggle(L10n.Insights.budgetsAtRisk, isOn: $prefs.insightsShowBudgetsAtRisk)
-                            }
-                        }
+                YalaSettingsSection(L10n.Insights.commitments) {
+                    YalaSettingsToggleRow(L10n.Insights.pendingPayments, isOn: $prefs.insightsShowPendingPayments)
+                    YalaSettingsToggleRow(L10n.Insights.activeSubscriptions, isOn: $prefs.insightsShowSubscriptions)
+                    YalaSettingsToggleRow(L10n.Insights.budgetsAtRisk, isOn: $prefs.insightsShowBudgetsAtRisk)
+                }
 
-                        // Charts Section
-                        SectionBox(title: L10n.Insights.chartsSection) {
-                            VStack(spacing: DS.Spacing.none) {
-                                settingsToggle(L10n.Insights.weekdayAverage, isOn: $prefs.insightsShowWeekday)
-                            }
-                        }
+                YalaSettingsSection(L10n.Insights.chartsSection) {
+                    YalaSettingsToggleRow(L10n.Insights.weekdayAverage, isOn: $prefs.insightsShowWeekday)
+                }
 
-                        // Analysis Section
-                        SectionBox(title: L10n.Insights.analysisSection) {
-                            VStack(spacing: DS.Spacing.none) {
-                                settingsToggle(L10n.Insights.needDistribution, isOn: $prefs.insightsShowNature)
-                                SubsectionDivider()
-                                settingsToggle(L10n.Insights.intelligentInsights, isOn: $prefs.insightsShowTexts)
-                            }
-                        }
+                YalaSettingsSection(L10n.Insights.analysisSection) {
+                    YalaSettingsToggleRow(L10n.Insights.needDistribution, isOn: $prefs.insightsShowNature)
+                    YalaSettingsToggleRow(L10n.Insights.intelligentInsights, isOn: $prefs.insightsShowTexts)
+                }
 
-                        // Restore Defaults
-                        Button {
-                            restoreDefaults()
-                        } label: {
-                            Text(L10n.Insights.restoreDefaults)
-                                .font(DS.Typography.body)
-                                .foregroundStyle(theme.accent)
-                        }
-                        .padding(.top, DS.Spacing.md)
+                // Restore Defaults: suelto bajo los bloques, sin fondo, como antes.
+                Section {
+                    Button {
+                        restoreDefaults()
+                    } label: {
+                        Text(L10n.Insights.restoreDefaults)
+                            .font(DS.Typography.body)
+                            .foregroundStyle(theme.accent)
                     }
-                    .padding(.horizontal, DS.Spacing.lg)
-                    .padding(.vertical, DS.Spacing.xxl)
+                    .frame(maxWidth: .infinity)
+                    .listRowBackground(Color.clear)
+                }
             }
             .navigationTitle(L10n.Settings.customizeAISummary)
             .navigationBarTitleDisplayMode(.inline)
@@ -73,21 +57,6 @@ struct SmartInsightsSettingsView: View {
                 }
             }
         }
-    }
-
-    // MARK: - Toggle Row
-
-    private func settingsToggle(_ title: String, isOn: Binding<Bool>) -> some View {
-        HStack {
-            Text(title)
-                .font(DS.Typography.body)
-                .foregroundStyle(.primary)
-            Spacer()
-            Toggle("", isOn: isOn)
-                .labelsHidden()
-        }
-        .padding(.horizontal, DS.Spacing.lg)
-        .padding(.vertical, DS.FormRow.paddingV)
     }
 
     // MARK: - Restore Defaults

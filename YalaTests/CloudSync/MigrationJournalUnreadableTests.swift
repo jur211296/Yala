@@ -822,6 +822,27 @@ struct MigrationJournalUnreadableWiringTests {
         ])
     }
 
+    /// Ticket `needsrelaunch-hides-the-groups-section`: los tres estados durables vecinos, de una vez. La tarjeta de
+    /// relanzar va SOLA —su sección de Grupos no tendría puerta que ofrecer, lo fija
+    /// `MigrationWorkExecutorTests.needsRelaunch_keepsCloudMode_soTheGroupsSectionHasNoDoorToLose`— y la espera del
+    /// seguidor y el fallo conservan la sección, que en ellos sí es la única puerta para soltar la cuenta.
+    @Test func storageScreen_durableCases_keepTheirCardAndTheGroupsSectionWhereItIsADoor() throws {
+        let content = try Self.body(of: "private func content(_ controller: CloudMigrationController) -> some View {",
+                                    in: "Yala/App/Views/Settings/StorageSettingsView.swift")
+        let code = Self.lines(content)
+        let start = try #require(code.firstIndex(of: "case .needsRelaunch(let direction):"))
+        #expect(Array(code[start..<(start + 8)]) == [
+            "case .needsRelaunch(let direction):",
+            "relaunchCard(controller, direction)",
+            "case .waitingForLeader:",
+            "waitingCard(controller)",
+            "GroupsAssociationSection(onAssociate: onAssociateGroupsAccount)",
+            "case .failed(let kind):",
+            "failedCard(controller, kind: kind)",
+            "GroupsAssociationSection(onAssociate: onAssociateGroupsAccount)",
+        ])
+    }
+
     /// El arg del seam de XCUITest casa en los dos lados: un typo lo dejaría fuera y el caso positivo caería culpando a la
     /// pantalla.
     @Test func uitestSeam_argNameMatchesTheLauncher() throws {

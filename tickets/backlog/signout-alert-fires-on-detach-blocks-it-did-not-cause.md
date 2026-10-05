@@ -4,6 +4,7 @@ status: backlog
 priority: medium
 area: "modo-nube, settings, groups"
 created: 2026-09-13
+updated: 2026-10-02
 source: "review adversarial de `groups-killswitch-403-blocks-detach-forever`, lentes de producto y de sync"
 ---
 
@@ -58,3 +59,17 @@ saberlo al priorizar: la población que lo ve es la misma que el otro ticket vin
 ahí el aviso SÍ tiene que salir — cortarlo por motivo deja al cierre sin su aviso. Y el coordinador sigue sin
 publicar el gesto: `phase` y `waitingForPending` son lo único observable
 (`CloudSessionSignOut.swift:62` y `:68`), así que la pieza que falta es la que este ticket ya pide.
+
+## El desasociar ya no deja su bloqueo en la fase (2026-10-02)
+
+Ticket `detach-blocked-phase-is-stranded-when-the-storage-sheet-closes-mid-wait`. `detachGroupsAccount` devuelve el
+motivo por el retorno (`.blockedBeforeWriting(reason:)`) y vuelve la fase a `.idle` en el mismo turno del main actor
+(`CloudSessionSignOut.releaseDetachBlock`), sin `await` entre la escritura del `.blocked` y su vuelta. Es «que el
+desasociar deje de usar `phase` para su bloqueo», la segunda salida que este ticket propone.
+
+**Inferido, sin medir en pantalla:** el aviso colateral de Perfil ya no debería salir. Aunque SwiftUI llegara a ver el
+`.blocked`, `presentSignOutBlock` lo re-mira 0,35 s después con `guard case .blocked(_, let live) = phase, live ==
+reason`, y para entonces la fase es `.idle`. Falta verlo con los ojos (desasociar bloqueado por cambios sin subir, sin
+red) antes de cerrar este ticket. **Y los comentarios de `ProfileView.presentSignOutBlock` que describen el agujero
+siguen diciendo que el desasociar escribe esa fase**: no se tocaron a propósito (un cambio de comentario en `ProfileView`
+dispara en el gate ~25 suites XCUITest). Al cerrar este ticket, corregirlos.

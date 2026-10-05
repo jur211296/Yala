@@ -45,10 +45,9 @@ struct CurrencySettingsView: View {
     var body: some View {
         ZStack {
             // Main Content
-            ScrollView {
-                VStack(spacing: DS.Spacing.xxl) {
-
-                    // Header
+            YalaSettingsList {
+                // Header
+                Section {
                     VStack(spacing: DS.Spacing.sm) {
                         Image(systemName: "arrow.triangle.2.circlepath")
                             .font(.system(size: heroIconSize))
@@ -64,16 +63,19 @@ struct CurrencySettingsView: View {
                             .foregroundStyle(.thSecondaryText)
                             .multilineTextAlignment(.center)
                     }
-                    .padding(.top, DS.Spacing.xxxl)
-
-                    VStack(spacing: DS.Spacing.xxl) {
-                        preferredCurrencySection
-                        secondaryCurrenciesSection
-                        exchangeRatesSection
-                    }
+                    // Aire lateral: la fila no lleva márgenes, y con el texto a punto de caber en una línea SwiftUI recorta los bordes
+                    // de los glifos (medido 2026-10-03: Tutoriales en el SE en vertical, Personalización en el Pro Max girado).
+                    .padding(.horizontal, DS.Spacing.sm)
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, DS.Spacing.lg)
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets())
+                    .listRowSeparator(.hidden)
                 }
-                .padding(.horizontal, DS.Spacing.lg)
-                .padding(.vertical, DS.Spacing.xxl)
+
+                preferredCurrencySection
+                secondaryCurrenciesSection
+                exchangeRatesSection
             }
             .blur(radius: isUpdating ? 3 : 0)
             .disabled(isUpdating)
@@ -134,7 +136,7 @@ struct CurrencySettingsView: View {
     // MARK: - Preferred Currency Section
 
     private var preferredCurrencySection: some View {
-        SectionBox(title: L10n.Settings.preferredCurrency) {
+        YalaSettingsSection(L10n.Settings.preferredCurrency) {
             Button {
                 tempPreferredCurrency = preferredCurrency
                 showPreferredCurrencySheet = true
@@ -159,8 +161,6 @@ struct CurrencySettingsView: View {
                         .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                 }
-                .padding(.horizontal, DS.FormRow.paddingH)
-                .padding(.vertical, DS.FormRow.paddingV)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -170,104 +170,84 @@ struct CurrencySettingsView: View {
     // MARK: - Secondary Currencies Section
 
     private var secondaryCurrenciesSection: some View {
-        VStack(spacing: DS.Spacing.sm) {
-            SectionBox(title: L10n.Settings.secondaryCurrencies) {
-                Button {
-                    tempSecondaryCurrencies = secondaryCurrencies
-                    showSecondaryCurrenciesSheet = true
-                } label: {
-                    HStack(spacing: DS.Spacing.md) {
-                        // Show selected currencies or "None"
-                        if secondaryCurrencies.isEmpty {
-                            Text(L10n.Common.none)
-                                .font(DS.Typography.body)
-                                .foregroundStyle(.secondary)
-                        } else {
-                            let sorted = secondaryCurrencies.sorted {
-                                $0.localizedName < $1.localizedName
-                            }
-                            HStack(spacing: DS.Spacing.sm) {
-                                ForEach(sorted, id: \.self) { currency in
-                                    let info = currencyInfo(for: currency)
-                                    HStack(spacing: DS.Spacing.xxs) {
-                                        Text(info.flag)
-                                            .font(DS.Typography.title)
-                                        Text(info.code)
-                                            .font(DS.Typography.body)
-                                            .foregroundStyle(.primary)
-                                    }
+        YalaSettingsSection(L10n.Settings.secondaryCurrencies) {
+            Button {
+                tempSecondaryCurrencies = secondaryCurrencies
+                showSecondaryCurrenciesSheet = true
+            } label: {
+                HStack(spacing: DS.Spacing.md) {
+                    // Show selected currencies or "None"
+                    if secondaryCurrencies.isEmpty {
+                        Text(L10n.Common.none)
+                            .font(DS.Typography.body)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        let sorted = secondaryCurrencies.sorted {
+                            $0.localizedName < $1.localizedName
+                        }
+                        HStack(spacing: DS.Spacing.sm) {
+                            ForEach(sorted, id: \.self) { currency in
+                                let info = currencyInfo(for: currency)
+                                HStack(spacing: DS.Spacing.xxs) {
+                                    Text(info.flag)
+                                        .font(DS.Typography.title)
+                                    Text(info.code)
+                                        .font(DS.Typography.body)
+                                        .foregroundStyle(.primary)
                                 }
                             }
                         }
-
-                        Spacer()
-
-                        Image(systemName: "chevron.right")
-                            .font(DS.Typography.caption)
-                            .foregroundStyle(.secondary)
                     }
-                    .padding(.horizontal, DS.FormRow.paddingH)
-                    .padding(.vertical, DS.FormRow.paddingV)
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("currency_secondary_button")
-            }
 
-            // Hint text
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("currency_secondary_button")
+        } footer: {
             Text(L10n.Settings.secondaryCurrenciesHint)
-                .font(DS.Typography.caption)
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, alignment: .center)
         }
     }
 
     // MARK: - Exchange Rates Section
 
     private var exchangeRatesSection: some View {
-        VStack(spacing: DS.Spacing.sm) {
-            SectionBox(title: L10n.Settings.exchangeRate) {
-                VStack(spacing: DS.Spacing.none) {
-                    // Show secondary currencies inline (or first 2 if none selected)
-                    let displayCurrencies: [CurrencyCode] = {
-                        if secondaryCurrencies.isEmpty {
-                            return Array(
-                                CurrencyCode.allCases.filter { $0 != preferredCurrency }.prefix(2))
-                        }
-                        return secondaryCurrencies.sorted { $0.localizedName < $1.localizedName }
-                    }()
-
-                    ForEach(Array(displayCurrencies.enumerated()), id: \.element) {
-                        index, currency in
-                        if index > 0 {
-                            SubsectionDivider()
-                        }
-                        exchangeRateRow(currency: currency)
-                    }
-
-                    SubsectionDivider()
-
-                    // "See all" button
-                    Button {
-                        showExchangeRatesSheet = true
-                    } label: {
-                        HStack {
-                            Text(L10n.Common.seeAll)
-                                .font(DS.Typography.body)
-                                .foregroundStyle(.primary)
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .font(DS.Typography.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        .padding(.horizontal, DS.FormRow.paddingH)
-                        .padding(.vertical, DS.FormRow.paddingV)
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
+        YalaSettingsSection(L10n.Settings.exchangeRate) {
+            // Show secondary currencies inline (or first 2 if none selected)
+            let displayCurrencies: [CurrencyCode] = {
+                if secondaryCurrencies.isEmpty {
+                    return Array(
+                        CurrencyCode.allCases.filter { $0 != preferredCurrency }.prefix(2))
                 }
+                return secondaryCurrencies.sorted { $0.localizedName < $1.localizedName }
+            }()
+
+            ForEach(displayCurrencies, id: \.self) { currency in
+                exchangeRateRow(currency: currency)
             }
 
+            // "See all" button
+            Button {
+                showExchangeRatesSheet = true
+            } label: {
+                HStack {
+                    Text(L10n.Common.seeAll)
+                        .font(DS.Typography.body)
+                        .foregroundStyle(.primary)
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+        } footer: {
             // Last updated disclaimer
             if let latestRate = exchangeRateService.getLatestRate(context: modelContext) {
                 let rateDate: Date? =
@@ -276,9 +256,6 @@ struct CurrencySettingsView: View {
 
                 if let date = rateDate {
                     Text("\(L10n.Common.lastUpdate) \(formatLastUpdated(date))")
-                        .font(DS.Typography.caption)
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, alignment: .center)
                 }
             }
         }
@@ -315,8 +292,6 @@ struct CurrencySettingsView: View {
                     .foregroundStyle(.secondary)
             }
         }
-        .padding(.horizontal, DS.Spacing.lg)
-        .padding(.vertical, DS.FormRow.paddingV)
         .contentShape(Rectangle())
     }
 

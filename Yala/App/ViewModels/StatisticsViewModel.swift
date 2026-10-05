@@ -204,6 +204,22 @@ final class StatisticsViewModel: Filterable {
     /// deps change (see `sankeyInputKey`). Tap-filtering does NOT invalidate this.
     private(set) var sankeyData: SankeyData = .empty
 
+    /// Totales de los últimos 12 períodos COMPLETOS anteriores al seleccionado,
+    /// del más antiguo al más reciente (ticket trends-insight-card-v2-bullets, D2).
+    /// Alimenta la racha del Trend Insight Card y el contexto de la IA de
+    /// Tendencias. Vacío en Todo el tiempo / Personalizado.
+    private(set) var historicalTotals: [TrendHistoryPoint] = []
+
+    /// Movimientos del período seleccionado con los filtros activos — el gate
+    /// «≥ 5 movimientos» del Trend Insight Card. Se calcula aquí y no se lee de
+    /// `InsightsViewModel.insightData`, que solo se recalcula en Resumen y
+    /// Distribución: en Tendencias quedaba con el conteo del período anterior.
+    private(set) var periodTransactionCount: Int = 0
+
+    /// Firma de las entradas del último `calculateHistoricalTotals`: si no cambia,
+    /// no se recalcula (R-V2-4 — cambiar de métrica no la invalida).
+    @ObservationIgnored private var historicalTotalsSignature: Int?
+
     /// Maximum number of records to show
     let maxRecentRecords: Int = 10
 
@@ -414,6 +430,90 @@ final class StatisticsViewModel: Filterable {
 
         // Calculate recent records
         buildRecentRecords(from: filtered)
+
+        // `filtered` no lleva recorte de fecha con la métrica Saldo: se cuenta
+        // dentro del intervalo para que el gate no dependa de la métrica.
+        let count = filtered.reduce(0) { partial, tx in
+            interval.contains(tx.date) && tx.balanceAdjustmentType == nil ? partial + 1 : partial
+        }
+        if count != periodTransactionCount { periodTransactionCount = count }
+
+        calculateHistoricalTotals(
+            accounts: accounts,
+            transactions: transactions,
+            allTags: allTags,
+            defaultCurrencyCode: defaultCurrencyCode,
+            adjustment: adjustment
+        )
+    }
+
+    // MARK: - Historical Totals (Trend Insight Card V2)
+
+    /// Recalcula `historicalTotals` si cambió alguna entrada. Usa los mismos
+    /// filtros que la tendencia (sin recorte de métrica) y la misma clasificación
+    /// que `calculateTotals`: la categoría decide el bucket y la acumulación es
+    /// signed, con la proyección «mi parte» de los gastos de grupo.
+    func calculateHistoricalTotals(
+        accounts: [Account],
+        transactions: [TransactionItem],
+        allTags: [Tag],
+        defaultCurrencyCode: String,
+        adjustment: GroupBridgeStatsAdjustment = .none
+    ) {
+        let calendar = userConfiguredCalendar()
+        let intervals = TrendHistoryLogic.previousIntervals(
+            for: detailPeriod,
+            anchor: TrendHistoryLogic.historyAnchor(for: detailPeriod, interval: panelDateInterval),
+            calendar: calendar
+        )
+        guard let first = intervals.first, let last = intervals.last else {
+            historicalTotalsSignature = nil
+            if !historicalTotals.isEmpty { historicalTotals = [] }
+            return
+        }
+
+        var criteria = FilterCriteria(
+            selectedAccounts: selectedAccounts,
+            selectedCategories: selectedCategories,
+            selectedSubcategories: selectedSubcategories,
+            selectedTags: selectedTags,
+            selectedNeeds: selectedNeeds,
+            selectedCurrencies: selectedCurrencies,
+            isExcludeMode: isExcludeMode,
+            transactionTypeFilter: .all,
+            amountCondition: amountCondition,
+            searchText: searchText,
+            dateInterval: DateInterval(start: first.start, end: last.end)
+        )
+        criteria.populateTagUUIDs(
+            from: allTags.filter { selectedTags.contains($0.persistentModelID) }
+        )
+
+        var hasher = Hasher()
+        hasher.combine(criteria.hashValue)
+        hasher.combine(SessionState.shared.dataVersion)
+        hasher.combine(transactions.count)
+        hasher.combine(defaultCurrencyCode)
+        // El toggle «incluir gastos de grupo en estadísticas» cambia qué filas cuentan
+        // (mismo motivo que la firma de InsightsViewModel.calculateInsightsData).
+        hasher.combine((UserDefaults.standard.object(forKey: AppPreferences.Keys.includeGroupTransactionsInStats) as? Bool) ?? true)
+        let signature = hasher.finalize()
+        guard signature != historicalTotalsSignature else { return }
+        historicalTotalsSignature = signature
+
+        let filtered = FilterService.filterForTrends(
+            transactions: transactions,
+            accounts: accounts,
+            criteria: criteria
+        )
+        let entries: [TrendHistoryEntry] = filtered.compactMap { tx in
+            guard tx.balanceAdjustmentType == nil, !adjustment.isSuppressed(tx) else { return nil }
+            let isIncome = TransactionClassificationLogic.isIncome(tx)
+            let amount = adjustment.amountInPreferredCurrency(tx)
+            return TrendHistoryEntry(date: tx.date, isIncome: isIncome, amount: isIncome ? amount : -amount)
+        }
+        let points = TrendHistoryLogic.aggregate(entries: entries, intervals: intervals)
+        if points != historicalTotals { historicalTotals = points }
     }
 
     // MARK: - Sankey Data

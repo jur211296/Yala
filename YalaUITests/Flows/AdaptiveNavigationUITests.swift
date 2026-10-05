@@ -189,6 +189,38 @@ final class AdaptiveNavigationUITests: XCTestCase {
         }
     }
 
+    /// Ajustes en ancho: el ajuste abierto deja su margen junto a la columna de la lista, no arranca pegado a ella
+    /// (`YalaSettingsList`, ticket `cola-b-redesigns-must-hold-up-at-ipad-width`). Se mide del borde derecho de una
+    /// fila de la lista al texto de la primera fila del ajuste: la tarjeta de la lista (16), el margen (32) y el de
+    /// la fila (16). Sin el margen salían ~38 pt (medido 2026-10-03 en el iPad Pro 13 y el mini); con él, ~70. En iPhone
+    /// no aplica: el ajuste se empuja sobre la lista. Por UDID en `YalaLane-Adapt-iPad-Pro-13`.
+    func test_settingsDetail_keepsItsMarginBesideTheListColumn_inWideWindow() throws {
+        guard expectsWideWindow else { throw XCTSkip("Solo en ventana ancha: en iPhone el ajuste tapa la lista.") }
+        let app = XCUIApplication()
+        app.launchForUITest()
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+        app.openProfile()
+
+        let listRow = app.buttons["profile_accounts"]
+        XCTAssertTrue(listRow.waitForExistence(timeout: 10), "No apareció la lista de Ajustes.")
+        app.openSettingsSection("profile_personalization")
+
+        let firstRow = app.switches["personalization_row_expenses_only"]
+        XCTAssertTrue(firstRow.waitForExistence(timeout: 10), "No se abrió Personalización.")
+        let rowText = firstRow.staticTexts.firstMatch
+        XCTAssertTrue(rowText.exists, "La fila «Solo gastos» no tiene texto.")
+        // Donde lista y ajuste no caben a la vez (iPad mini en vertical) la lista flota y se aparta al abrir el ajuste:
+        // no hay columna al lado que medir. Que la lista siga a la vista donde sí caben lo fija el caso de arriba.
+        guard listRow.isHittable else {
+            throw XCTSkip("La lista se apartó al abrir el ajuste (no caben dos columnas): no hay columna al lado.")
+        }
+
+        let gap = rowText.frame.minX - listRow.frame.maxX
+        XCTAssertGreaterThanOrEqual(
+            gap, 56,
+            "El ajuste arranca pegado a la columna de la lista: \(Int(gap)) pt entre la lista y el texto de la fila.")
+    }
+
     /// Yala IA: en ancho, columna al lado de Registros, que sigue a la vista y se puede tocar; al abrir un
     /// registro con el chat al lado, la lista se aparta para que el registro se lea entero, y el chat sigue. Su X lo
     /// cierra. En iPhone, la hoja de siempre, que tapa la lista.

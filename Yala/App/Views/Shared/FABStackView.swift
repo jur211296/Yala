@@ -42,6 +42,7 @@ struct FABStackView: View {
     @Environment(\.yalaTheme) private var theme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(SessionState.self) private var sessionState
+    @Environment(SceneNavigation.self) private var navigation
 
     // MARK: - Animation Constants
 
@@ -79,7 +80,7 @@ struct FABStackView: View {
             }
             .padding(.trailing, DS.Spacing.xl)
             .padding(.bottom, DS.Spacing.xxl)
-            .onChange(of: sessionState.selectedMainTab) { _, _ in
+            .onChange(of: navigation.selectedMainTab) { _, _ in
                 guard showFABMenu else { return }
                 dismissMenu()
             }
@@ -181,7 +182,7 @@ struct FABStackView: View {
             // siempre.
             fabMenuButton(icon: "person.2.fill", text: L10n.Panel.fabGroup, color: .priorityNeedNew) {
                 dismissMenu()
-                sessionState.navigateToGroupsAndComposeExpense()
+                navigation.navigateToGroupsAndComposeExpense()
             }
             .accessibilityIdentifier("panel_fab_group")
 

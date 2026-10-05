@@ -2,7 +2,17 @@
 //  VoiceRecordingView.swift
 //  Yala
 //
-//  Sheet view for recording voice input and creating transaction drafts.
+//  El registro por voz (propuesta C, elegida por Jürgen el 2026-10-04): una hoja que ya escucha al abrirse y que, al
+//  terminar, enseña lo entendido como la fila del registro para guardarlo ahí mismo.
+//
+//  Cuatro fases en la misma hoja, sin presentaciones encadenadas:
+//  1. **Escuchando** — el orbe del dictado de Yala IA (`VoiceListeningOrb`), el tiempo y Cancelar / Listo.
+//  2. **Procesando** — el orbe gira y dice el paso; Cancelar cierra.
+//  3. **Lo entendido** — una `VoiceDraftReviewCard` por borrador. «Guardar» los aprueba por el camino de la Bandeja
+//     (`DraftService.approveDraft`); cerrar sin guardar los deja en la Bandeja, como siempre.
+//  4. **Fallo** — qué pasó en lenguaje de usuario y una salida (`VoiceEntryFailure`).
+//
+//  Sin pantalla de reposo ni cuenta atrás: Cancelar hace lo que hacía la cuenta atrás (arrepentirse antes de procesar).
 //
 
 import SwiftData
@@ -12,499 +22,384 @@ struct VoiceRecordingView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.usesLargeSheets) private var usesLargeSheets
+    @Environment(\.yalaTheme) private var theme
     @Environment(VoiceTranscriptionService.self) private var voiceTranscriptionService
     @Environment(TranscriptionParserService.self) private var transcriptionParserService
     @Environment(AppPreferences.self) private var appPreferences
+    @Environment(CurrencyConverter.self) private var currencyConverter
 
     @State private var recorder = AudioRecorderService.shared
     @State private var networkMonitor = NetworkMonitor.shared
 
-    @State private var errorMessage: String?
-    @State private var errorType: VoiceErrorType?
-    @State private var isProcessing = false
-    @State private var processingStatus: String = ""
-    @State private var processingStepIndex: Int = 0
-    @State private var createdDraft: InboxDraft?
-    @State private var createdDrafts: [InboxDraft] = []
-    @State private var draftWasApproved = false
-
-    // Preview state (after recording, before processing)
-    @State private var isPreviewMode = false
-    @State private var previewDuration: TimeInterval = 0
-    @State private var countdownValue = 3
-    @State private var countdownTimer: Timer?
+    @State private var phase: Phase = .starting
+    @State private var processingStep = 0
+    @State private var recordedDuration: TimeInterval = 0
     @State private var pendingAudioData: Data?
-
-    // Processing cancellation
     @State private var processingTask: Task<Void, Never>?
+    @State private var drafts: [InboxDraft] = []
+    @State private var transcription = ""
+    @State private var detailDraft: InboxDraft?
+    @State private var saveFailed = false
+    @State private var trialReported = false
+    @State private var selectedDetent: PresentationDetent = .medium
 
-    /// Callback when draft is saved but not approved (user should go to Inbox)
-    var onSavedToInbox: (() -> Void)?
-
-    /// Callback to switch to image input mode
+    /// Para cambiar a la entrada por imagen cuando no hay conexión.
     var onSwitchToImage: (() -> Void)?
 
-    /// Setup trial: called when step completes (draft created or approved).
-    /// Passes the item ID, name, and kind (.transaction if approved, .draft if saved to inbox).
+    /// Práctica guiada: se llama cuando el paso se cumple (borrador creado o aprobado), con el ID del registro, su
+    /// nombre y su tipo (`.transaction` si se aprobó, `.draft` si quedó en la Bandeja).
     var onSetupTrialCompleted: ((PersistentIdentifier, String, PracticeItemKind) -> Void)?
 
-    /// Setup trial: called when user taps "Ahora no" to skip
+    /// Práctica guiada: «Ahora no».
     var onSetupTrialSkipped: (() -> Void)?
 
-    /// Types of errors that need special handling
-    private enum VoiceErrorType {
-        case noApiKey
-        case noConnection
-        case micPermission
-        case generic
+    private enum Phase: Equatable {
+        /// Pidiendo el micro: se ve como escuchando, con Listo apagado.
+        case starting
+        case listening
+        case processing
+        case review
+        case failure(VoiceEntryFailure)
     }
 
-    private var voiceLanguage: VoiceLanguage {
-        appPreferences.voiceLanguage
-    }
-
-    private var preferredCurrencyName: String {
-        appPreferences.defaultCurrencyCode.shortPluralName
-    }
+    private let buttonHeight: CGFloat = 48 // A11Y-DT: tap target de los botones de la hoja
 
     var body: some View {
-        NavigationStack {
-            VStack(spacing: DS.Spacing.xxl) {
-                if isProcessing {
-                    // Stepped progress view for voice processing
-                    ProcessingProgressView(
-                        mode: .stepped(
-                            currentStep: processingStepIndex,
-                            steps: [
-                                L10n.Voice.analyzing,
-                                L10n.Voice.parsing,
-                                L10n.Voice.saving
-                            ]
-                        ),
-                        accentColor: .hotPink,
-                        statusText: processingStatus
-                    )
-                    .transition(.scale.combined(with: .opacity))
-                } else {
-                    Spacer()
+        VStack(spacing: DS.Spacing.none) {
+            header
+            content
+        }
+        .padding(.horizontal, DS.Spacing.xl)
+        .padding(.bottom, DS.Spacing.lg)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .dsAnimation(.easeInOut(duration: 0.25), value: phase, reduceMotion: reduceMotion)
+        .yalaScreenBackground(
+            SelectorSheetSizing.mediumFirst.background(
+                selectedDetent: selectedDetent,
+                usesLargeSheets: usesLargeSheets,
+                dynamicTypeSize: dynamicTypeSize
+            )
+        )
+        .selectorSheetSizing(.mediumFirst, selectedDetent: $selectedDetent)
+        .interactiveDismissDisabled(isBusy)
+        .task { await startListening() }
+        .onDisappear(perform: tearDown)
+        .sheet(item: $detailDraft, onDismiss: afterDetails) { draft in
+            InboxDraftEditSheet(draft: draft)
+        }
+    }
 
-                    // Recording visualization
-                    recordingVisualization
-                        .transition(.scale.combined(with: .opacity))
+    private var isBusy: Bool {
+        phase == .starting || phase == .listening || phase == .processing
+    }
 
-                    // Status text
-                    statusText
-                        .transition(.opacity)
+    private var isSetupTrial: Bool { onSetupTrialCompleted != nil }
 
-                    // Error message with action buttons
-                    if let error = errorMessage {
-                        errorView(message: error)
-                            .transition(.move(edge: .bottom).combined(with: .opacity))
-                    }
+    // MARK: - Cabecera
 
-                    Spacer()
-                }
-
-                // Action buttons (always shown)
-                actionButtons
-                    .transition(.scale.combined(with: .opacity))
-            }
-            .padding(DS.Spacing.xl)
-            .dsAnimation(.easeInOut(duration: 0.3), value: recorder.state, reduceMotion: reduceMotion)
-            .dsAnimation(.easeInOut(duration: 0.3), value: isPreviewMode, reduceMotion: reduceMotion)
-            .dsAnimation(.easeInOut(duration: 0.3), value: isProcessing, reduceMotion: reduceMotion)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .yalaScreenBackground(.subtle)
-            .navigationTitle(L10n.Voice.title)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                // Only show X when idle (during recording/preview/processing, there's an X below)
-                if recorder.state == .idle && !isPreviewMode && !isProcessing {
-                    if onSetupTrialSkipped != nil {
-                        ToolbarItem(placement: .topBarLeading) {
-                            Button(L10n.SetupChecklist.skipStep) {
-                                onSetupTrialSkipped?()
-                                recorder.cancelRecording()
-                                dismiss()
-                            }
-                            .font(DS.Typography.label)
-                        }
-                    }
-                    ToolbarItem(placement: .topBarTrailing) {
-                        YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
-                            recorder.cancelRecording()
-                            dismiss()
-                        }
-                    }
-                }
-            }
-            .interactiveDismissDisabled(recorder.state != .idle || createdDraft != nil)
-            .sheet(item: $createdDraft) { draft in
-                InboxDraftEditSheet(draft: draft) {
-                    // onApproved callback - mark as approved and dismiss voice view
-                    draftWasApproved = true
-                    // Setup trial: capture approved transaction for practice cleanup
-                    if let callback = onSetupTrialCompleted,
-                       let transaction = draft.approvedTransaction {
-                        callback(transaction.persistentModelID, draft.note, .transaction)
-                    }
+    /// Cerrar solo cuando no hay un Cancelar abajo; «Ahora no» de la práctica, mientras no haya nada que revisar.
+    private var header: some View {
+        HStack {
+            if let skip = onSetupTrialSkipped, phase != .review, phase != .processing {
+                Button(L10n.SetupChecklist.skipStep) {
+                    recorder.cancelRecording()
+                    skip()
                     dismiss()
                 }
+                .font(DS.Typography.label)
+                .frame(minHeight: 44)
             }
-            .onChange(of: createdDraft) { oldValue, newValue in
-                // Detect when EditSheet is dismissed (draft becomes nil)
-                if oldValue != nil && newValue == nil && !draftWasApproved {
-                    // Setup trial: draft created = step complete. Cleanup targets the draft.
-                    // Only fires for drafts — approved path handled above.
-                    if let oldDraft = oldValue {
-                        onSetupTrialCompleted?(oldDraft.persistentModelID, oldDraft.note, .draft)
-                    }
-                    dismiss()
-                }
-                // Reset flag for next use
-                if newValue == nil {
-                    draftWasApproved = false
-                }
-            }
-            .onDisappear {
-                countdownTimer?.invalidate()
-                countdownTimer = nil
-                processingTask?.cancel()
-                processingTask = nil
-            }
-        }
-    }
-
-    // MARK: - Recording Visualization
-
-    private var recordingVisualization: some View {
-        ZStack {
-            // Pulsing rings when recording
-            if recorder.state == .recording {
-                ForEach(0..<3, id: \.self) { index in
-                    Circle()
-                        .stroke(
-                            Color.hotPink.opacity(0.3 - Double(index) * 0.1),
-                            lineWidth: 2
-                        )
-                        .frame(width: 140 + CGFloat(index) * 30, height: 140 + CGFloat(index) * 30)
-                        .scaleEffect(1.0 + sin(recorder.recordingDuration * 3 - Double(index) * 0.5) * 0.08)
-                        .dsAnimation(.easeInOut(duration: 0.3), value: recorder.recordingDuration, reduceMotion: reduceMotion)
-                }
-            }
-
-            // Outer glow when recording
-            if recorder.state == .recording {
-                Circle()
-                    .fill(
-                        RadialGradient(
-                            colors: [Color.hotPink.opacity(0.3), Color.clear],
-                            center: .center,
-                            startRadius: 50,
-                            endRadius: 90
-                        )
-                    )
-                    .frame(width: 180, height: 180)
-                    .blur(radius: 10)
-            }
-
-            // Progress ring when recording
-            if recorder.state == .recording {
-                Circle()
-                    .trim(from: 0, to: CGFloat(fmod(recorder.recordingDuration / 60.0, 1.0)))
-                    .stroke(Color.hotPink.opacity(0.6), style: StrokeStyle(lineWidth: 3, lineCap: .round))
-                    .frame(width: 148, height: 148)
-                    .rotationEffect(.degrees(-90))
-            }
-
-            // Main circle with gradient
-            Circle()
-                .fill(circleGradient)
-                .frame(width: 120, height: 120)
-                .shadow(color: circleColor.opacity(0.4), radius: 20, x: 0, y: 8)
-
-            // Glass overlay
-            Circle()
-                .fill(DS.Colors.backgroundSubtle)
-                .frame(width: 120, height: 120)
-                .mask(
-                    LinearGradient(
-                        colors: [.white, .clear],
-                        startPoint: .top,
-                        endPoint: .center
-                    )
-                )
-
-            // Icon
-            Image(systemName: recorder.state == .recording ? "waveform" : "mic.fill")
-                .font(DS.Typography.amountLarge)
-                .foregroundStyle(.white)
-                .symbolEffect(.variableColor.iterative, isActive: recorder.state == .recording)
-                .accessibilityHidden(true)
-        }
-    }
-
-    private var circleColor: Color {
-        switch recorder.state {
-        case .idle:
-            return .hotPink
-        case .recording:
-            return .hotPink
-        case .processing:
-            return .hotPink
-        }
-    }
-
-    private var circleGradient: LinearGradient {
-        switch recorder.state {
-        case .idle:
-            return LinearGradient(
-                colors: [Color.hotPink, Color.hotPink.opacity(0.8)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        case .recording:
-            return LinearGradient(
-                colors: [Color.hotPink, Color.hotPink.opacity(0.8)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        case .processing:
-            return LinearGradient(
-                colors: [Color.hotPink.opacity(0.8), Color.hotPink.opacity(0.6)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        }
-    }
-
-    // MARK: - Status Text
-
-    private var statusText: some View {
-        VStack(spacing: DS.Spacing.sm) {
-            if recorder.state == .recording {
-                // Glass capsule timer
-                Text(formatDuration(recorder.recordingDuration))
-                    .font(DS.Typography.amountLarge)
-                    .foregroundStyle(.primary)
-                    .padding(.horizontal, DS.Spacing.xl)
-                    .padding(.vertical, DS.Spacing.sm)
-                    .background(.ultraThinMaterial)
-                    .clipShape(Capsule())
-                    .glassEffect()
-
-                Text(L10n.Voice.recording)
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(.secondary)
-            } else if isPreviewMode {
-                // Preview mode: countdown ring inside main circle area
-                ZStack {
-                    // Depleting ring
-                    Circle()
-                        .stroke(Color.hotPink.opacity(0.2), lineWidth: 4)
-                        .frame(width: 80, height: 80)
-
-                    Circle()
-                        .trim(from: 0, to: CGFloat(countdownValue) / 3.0)
-                        .stroke(Color.hotPink, style: StrokeStyle(lineWidth: 4, lineCap: .round))
-                        .frame(width: 80, height: 80)
-                        .rotationEffect(.degrees(-90))
-                        .animation(.easeInOut(duration: 1.0), value: countdownValue)
-
-                    Text("\(countdownValue)")
-                        .font(DS.Typography.amountLarge)
-                        .foregroundStyle(Color.hotPink)
-                        .contentTransition(.numericText())
-                }
-
-                // Glass recorded label
-                Text(L10n.Voice.recorded)
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, DS.Spacing.lg)
-                    .padding(.vertical, DS.Spacing.xs)
-                    .background(.ultraThinMaterial)
-                    .clipShape(Capsule())
-                    .glassEffect()
-            } else {
-                instructionsView
-            }
-        }
-    }
-
-    // MARK: - Instructions View
-
-    private var instructionsView: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(spacing: DS.Spacing.lg) {
-                Text(L10n.Voice.tapToRecord)
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(.primary)
-
-                // Hints grid
-                hintsSection
-
-                // Examples
-                examplesSection
-            }
-            .padding(.horizontal, DS.Spacing.lg)
-        }
-    }
-
-    private var hintsSection: some View {
-        VStack(alignment: .center, spacing: DS.Spacing.sm) {
-            Text(L10n.Voice.youCanSay)
-                .font(DS.Typography.labelSmall)
-                .foregroundStyle(.secondary)
-                .textCase(.uppercase)
-
-            LazyVGrid(columns: [
-                GridItem(.flexible()),
-                GridItem(.flexible())
-            ], spacing: DS.Spacing.sm) {
-                hintChip(icon: "arrow.left.arrow.right", text: L10n.Voice.hintTypeExample)
-                hintChip(icon: "dollarsign.circle", text: String(format: L10n.Voice.hintAmountExample, preferredCurrencyName))
-                hintChip(icon: "folder", text: L10n.Voice.hintSubcategoryExample)
-                hintChip(icon: "mappin", text: L10n.Voice.hintMerchantExample)
-                hintChip(icon: "tag", text: L10n.Voice.hintTagExample)
-                hintChip(icon: "calendar", text: L10n.Voice.hintDateExample)
-            }
-        }
-        .padding(DS.Spacing.md)
-        .background(.thCard)
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
-    }
-
-    private func hintChip(icon: String, text: String) -> some View {
-        HStack(spacing: DS.Spacing.xs) {
-            Image(systemName: icon)
-                .font(DS.Typography.captionSmall)
-                .foregroundStyle(Color.hotPink)
-                .accessibilityHidden(true)
-
-            Text(text)
-                .font(DS.Typography.caption)
-                .foregroundStyle(.primary)
-                .lineLimit(1)
-        }
-        .padding(.horizontal, DS.Spacing.sm)
-        .padding(.vertical, DS.Spacing.xs)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.hotPink.opacity(0.08))
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm))
-    }
-
-    private var examplesSection: some View {
-        VStack(alignment: .center, spacing: DS.Spacing.sm) {
-            Text(L10n.Voice.exampleLabel)
-                .font(DS.Typography.labelSmall)
-                .foregroundStyle(.secondary)
-                .textCase(.uppercase)
-
-            VStack(spacing: DS.Spacing.xs) {
-                exampleRow(text: String(format: L10n.Voice.example1, preferredCurrencyName))
-                exampleRow(text: String(format: L10n.Voice.example2, preferredCurrencyName))
-                exampleRow(text: String(format: L10n.Voice.example3, preferredCurrencyName))
-            }
-        }
-        .padding(DS.Spacing.md)
-        .background(.thCard)
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
-        .accessibilityIdentifier("voice_examples")
-    }
-
-    private func exampleRow(text: String) -> some View {
-        HStack(spacing: DS.Spacing.sm) {
-            Image(systemName: "text.quote")
-                .font(DS.Typography.caption)
-                .foregroundStyle(Color.hotPink)
-                .accessibilityHidden(true)
-
-            Text(text)
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.primary)
-                .italic()
-
             Spacer()
+            if phase == .review || isFailure {
+                YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
+                    dismiss()
+                }
+                .buttonStyle(.glass)
+                .accessibilityIdentifier("voice_close")
+            }
         }
-        .padding(.vertical, DS.Spacing.sm)
-        .padding(.horizontal, DS.Spacing.md)
-        .background(
-            RoundedRectangle(cornerRadius: DS.Radius.sm)
-                .stroke(Color.hotPink.opacity(0.2), lineWidth: 1)
+        .frame(minHeight: 44)
+        .padding(.top, DS.Spacing.md)
+    }
+
+    private var isFailure: Bool {
+        if case .failure = phase { return true }
+        return false
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        switch phase {
+        case .starting, .listening:
+            listeningContent
+        case .processing:
+            processingContent
+        case .review:
+            reviewContent
+        case .failure(let failure):
+            failureContent(failure)
+        }
+    }
+
+    // MARK: - Escuchando
+
+    private var listeningContent: some View {
+        VStack(spacing: DS.Spacing.md) {
+            VStack(spacing: DS.Spacing.xs) {
+                Text(L10n.Chat.listening)
+                    .font(DS.Typography.title3)
+                    .foregroundStyle(.thPrimaryText)
+                Text(L10n.Chat.voiceHint)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+            .accessibilityElement(children: .combine)
+
+            VoiceListeningOrb(
+                isTranscribing: false,
+                duration: recorder.recordingDuration,
+                level: recorder.audioLevel,
+                accent: theme.accent,
+                reduceMotion: reduceMotion
+            )
+            .padding(.top, DS.Spacing.sm)
+
+            Spacer(minLength: DS.Spacing.lg)
+
+            HStack(spacing: DS.Spacing.md) {
+                secondaryButton(L10n.Action.cancel, identifier: "voice_cancel", action: cancelListening)
+                    .accessibilityLabel(L10n.Accessibility.discardRecording)
+                primaryButton(L10n.Action.done, isEnabled: phase == .listening, identifier: "voice_done") {
+                    Task { await finishListening() }
+                }
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("voice_listening_panel")
+    }
+
+    // MARK: - Procesando
+
+    private var processingContent: some View {
+        VStack(spacing: DS.Spacing.md) {
+            Text(processingTitle)
+                .font(DS.Typography.title3)
+                .foregroundStyle(.thPrimaryText)
+                .contentTransition(.opacity)
+
+            VoiceListeningOrb(
+                isTranscribing: true,
+                duration: recordedDuration,
+                level: 0,
+                accent: theme.accent,
+                reduceMotion: reduceMotion
+            )
+            .padding(.top, DS.Spacing.sm)
+
+            Spacer(minLength: DS.Spacing.lg)
+
+            Button(L10n.Action.cancel, action: cancelProcessing)
+                .font(DS.Typography.body)
+                .foregroundStyle(.secondary)
+                .frame(minHeight: buttonHeight)
+                .accessibilityLabel(L10n.Accessibility.cancelProcessing)
+                .accessibilityIdentifier("voice_cancel_processing")
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("voice_processing")
+    }
+
+    private var processingTitle: String {
+        switch processingStep {
+        case 0: L10n.Chat.transcribing
+        case 1: L10n.Voice.understanding
+        default: L10n.Voice.preparing
+        }
+    }
+
+    // MARK: - Lo entendido
+
+    private var pendingDrafts: [InboxDraft] {
+        drafts.filter { $0.status == .pending }
+    }
+
+    private var allSaved: Bool {
+        !drafts.isEmpty && pendingDrafts.isEmpty
+    }
+
+    private var canSave: Bool {
+        VoiceEntryFlowLogic.canSave(pendingDrafts.map(readiness))
+    }
+
+    private var reviewContent: some View {
+        VStack(spacing: DS.Spacing.md) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: DS.Spacing.md) {
+                    VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                        Text(reviewTitle)
+                            .font(DS.Typography.title3)
+                            .foregroundStyle(.thPrimaryText)
+                            .accessibilityAddTraits(.isHeader)
+                            .accessibilityIdentifier("voice_review_title")
+                        if !transcription.isEmpty {
+                            Text(transcription)
+                                .font(DS.Typography.subheadline)
+                                .italic()
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
+                    ForEach(drafts, id: \.persistentModelID) { draft in
+                        VoiceDraftReviewCard(draft: draft) {
+                            detailDraft = draft
+                        }
+                    }
+
+                    if !allSaved {
+                        Text(L10n.Voice.reviewInboxNote)
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .scrollBounceBehavior(.basedOnSize)
+
+            if saveFailed {
+                Text(L10n.Chat.Draft.saveFailedGeneric)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(DS.Semantic.errorForeground)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
+            HStack(spacing: DS.Spacing.md) {
+                if allSaved {
+                    primaryButton(L10n.Action.done, isEnabled: true, identifier: "voice_finish") {
+                        dismiss()
+                    }
+                } else {
+                    secondaryButton(L10n.Voice.recordAgain, identifier: "voice_record_again", action: recordAgain)
+                    primaryButton(saveTitle, isEnabled: canSave, identifier: "voice_save", action: saveAll)
+                }
+            }
+        }
+        .padding(.top, DS.Spacing.xs)
+    }
+
+    private var reviewTitle: String {
+        if allSaved { return L10n.Chat.Draft.savedBadge }
+        return drafts.count > 1 ? L10n.Voice.reviewTitleMany(drafts.count) : L10n.Voice.reviewTitle
+    }
+
+    private var saveTitle: String {
+        pendingDrafts.count > 1 ? L10n.Voice.saveMany(pendingDrafts.count) : L10n.Chat.Draft.saveButton
+    }
+
+    private func readiness(_ draft: InboxDraft) -> VoiceDraftReadiness {
+        VoiceDraftReadiness(
+            hasAmount: draft.amount != nil,
+            hasAccount: draft.account != nil,
+            accountIsArchived: draft.account?.isArchived ?? false,
+            hasSubcategory: draft.subcategory != nil,
+            isFutureDate: draft.effectiveDate > Date.now
         )
     }
 
-    private func formatDuration(_ duration: TimeInterval) -> String {
-        let minutes = Int(duration) / 60
-        let seconds = Int(duration) % 60
-        let tenths = Int((duration.truncatingRemainder(dividingBy: 1)) * 10)
-        return String(format: "%d:%02d.%d", minutes, seconds, tenths)
-    }
+    // MARK: - Fallo
 
-    // MARK: - Error View
-
-    private func errorView(message: String) -> some View {
+    private func failureContent(_ failure: VoiceEntryFailure) -> some View {
         VStack(spacing: DS.Spacing.md) {
-            Text(message)
-                .font(DS.Typography.caption)
-                .foregroundStyle(DS.Semantic.errorForeground)
-                .multilineTextAlignment(.center)
+            Image(systemName: failureIcon(failure))
+                .font(DS.Typography.title)
+                .foregroundStyle(DS.Semantic.warningForeground)
+                .frame(width: 72, height: 72) // A11Y-DT: disco del icono del fallo
+                .background(Circle().fill(DS.Semantic.warningBackground))
+                .accessibilityHidden(true)
+                .padding(.top, DS.Spacing.sm)
 
-            // Action buttons based on error type
+            VStack(spacing: DS.Spacing.xs) {
+                Text(failureTitle(failure))
+                    .font(DS.Typography.title3)
+                    .foregroundStyle(.thPrimaryText)
+                    .multilineTextAlignment(.center)
+                    .accessibilityIdentifier("voice_failure_title")
+                Text(failureMessage(failure))
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+            .accessibilityElement(children: .combine)
+
+            Spacer(minLength: DS.Spacing.lg)
+
             HStack(spacing: DS.Spacing.md) {
-                switch errorType {
-                case .noApiKey:
-                    // No action available - feature requires build-time configuration
-                    EmptyView()
-
-                case .noConnection:
-                    // Suggest using image (works offline)
-                    if onSwitchToImage != nil {
-                        Button {
-                            dismiss()
-                            onSwitchToImage?()
-                        } label: {
-                            HStack(spacing: DS.Spacing.xs) {
-                                Image(systemName: "photo")
-                                Text(L10n.Voice.tryImage)
-                            }
-                            .font(DS.Typography.label)
-                            .foregroundStyle(Color.hotPink)
-                        }
-                    }
-
-                case .micPermission:
-                    // Open system Settings
-                    Button {
-                        openSystemSettings()
-                    } label: {
-                        HStack(spacing: DS.Spacing.xs) {
-                            Image(systemName: "gear")
-                            Text(L10n.Voice.openSettings)
-                        }
-                        .font(DS.Typography.label)
-                        .foregroundStyle(Color.hotPink)
-                    }
-
-                case .generic, .none:
-                    // Show retry button if we have pending audio
-                    if pendingAudioData != nil {
-                        Button {
-                            retryProcessing()
-                        } label: {
-                            HStack(spacing: DS.Spacing.xs) {
-                                Image(systemName: "arrow.clockwise")
-                                Text(L10n.Action.retry)
-                            }
-                            .font(DS.Typography.label)
-                            .foregroundStyle(Color.hotPink)
-                        }
-                    }
-                }
+                failureActions(failure)
             }
         }
-        .padding(.horizontal, DS.Spacing.xl)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("voice_failure")
+    }
+
+    @ViewBuilder
+    private func failureActions(_ failure: VoiceEntryFailure) -> some View {
+        switch failure {
+        case .micPermission:
+            primaryButton(L10n.Voice.openSettings, isEnabled: true, identifier: "voice_open_settings", action: openSystemSettings)
+        case .serviceUnavailable:
+            primaryButton(L10n.Action.close, isEnabled: true, identifier: "voice_failure_close") { dismiss() }
+        case .noConnection:
+            if let switchToImage = onSwitchToImage {
+                secondaryButton(L10n.Voice.tryImage, identifier: "voice_try_image") {
+                    dismiss()
+                    switchToImage()
+                }
+            }
+            primaryButton(L10n.Voice.recordAgain, isEnabled: true, identifier: "voice_record_again", action: recordAgain)
+        case .noVoice, .noAmount:
+            primaryButton(L10n.Voice.recordAgain, isEnabled: true, identifier: "voice_record_again", action: recordAgain)
+        case .generic, .saveFailed:
+            if failure.retriesSameAudio, pendingAudioData != nil {
+                secondaryButton(L10n.Voice.recordAgain, identifier: "voice_record_again", action: recordAgain)
+                primaryButton(L10n.Action.retry, isEnabled: true, identifier: "voice_retry", action: retryProcessing)
+            } else {
+                primaryButton(L10n.Voice.recordAgain, isEnabled: true, identifier: "voice_record_again", action: recordAgain)
+            }
+        }
+    }
+
+    private func failureIcon(_ failure: VoiceEntryFailure) -> String {
+        switch failure {
+        case .noConnection: "wifi.slash"
+        case .micPermission: "mic.slash"
+        case .noVoice: "waveform.slash"
+        case .noAmount: "questionmark"
+        case .serviceUnavailable, .saveFailed, .generic: "exclamationmark"
+        }
+    }
+
+    private func failureTitle(_ failure: VoiceEntryFailure) -> String {
+        switch failure {
+        case .noConnection: L10n.Voice.failureNoConnectionTitle
+        case .micPermission: L10n.Voice.failureMicTitle
+        case .noVoice: L10n.Voice.failureNoVoiceTitle
+        case .noAmount: L10n.Voice.failureNoAmountTitle
+        case .serviceUnavailable, .saveFailed, .generic: L10n.Voice.failureGenericTitle
+        }
+    }
+
+    private func failureMessage(_ failure: VoiceEntryFailure) -> String {
+        switch failure {
+        case .noConnection: L10n.Voice.errorNoConnection
+        case .micPermission: L10n.Voice.errorMicPermission
+        case .noVoice: L10n.Voice.failureNoVoiceMessage
+        case .noAmount: L10n.Voice.failureNoAmountMessage
+        case .serviceUnavailable: L10n.Voice.errorNoApiKey
+        case .saveFailed: L10n.Voice.errorSaveFailed
+        case .generic: L10n.Voice.failureGenericMessage
+        }
     }
 
     private func openSystemSettings() {
@@ -512,403 +407,337 @@ struct VoiceRecordingView: View {
         UIApplication.shared.open(settingsURL)
     }
 
-    // MARK: - Action Buttons
+    // MARK: - Botones
 
-    private var actionButtons: some View {
-        HStack(spacing: DS.Spacing.xxl) {
-            if recorder.state == .recording {
-                // Cancel button
-                Button {
-                    recorder.cancelRecording()
-                } label: {
-                    Image(systemName: "xmark")
-                        .font(.title2.weight(.medium))
-                        .foregroundStyle(.secondary)
-                        .frame(width: DS.Button.fabSize, height: DS.Button.fabSize)
-                        .background(.ultraThinMaterial)
-                        .clipShape(Circle())
-                        .overlay(
-                            Circle()
-                                .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
-                        )
-                }
-                .accessibilityLabel(L10n.Accessibility.cancelRecording)
-
-                // Stop and enter preview mode
-                Button {
-                    Task {
-                        await stopAndEnterPreview()
-                    }
-                } label: {
-                    Image(systemName: "checkmark")
-                        .font(DS.Typography.title)
-                        .foregroundStyle(.white)
-                        .frame(width: 72, height: 72)
-                        .background(
-                            LinearGradient(
-                                colors: [Color.hotPink, Color.hotPink.opacity(0.85)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .clipShape(Circle())
-                        .shadow(color: Color.hotPink.opacity(0.4), radius: 12, x: 0, y: 6)
-                }
-                .accessibilityLabel(L10n.Accessibility.stopRecording)
-            } else if isPreviewMode {
-                // Cancel button (stops countdown and returns to idle)
-                Button {
-                    cancelPreview()
-                } label: {
-                    Image(systemName: "xmark")
-                        .font(.title2.weight(.medium))
-                        .foregroundStyle(.secondary)
-                        .frame(width: DS.Button.fabSize, height: DS.Button.fabSize)
-                        .background(.ultraThinMaterial)
-                        .clipShape(Circle())
-                        .overlay(
-                            Circle()
-                                .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
-                        )
-                }
-                .accessibilityLabel(L10n.Accessibility.cancelPreview)
-
-                // Process now button (skips countdown)
-                Button {
-                    processNow()
-                } label: {
-                    Image(systemName: "arrow.right")
-                        .font(DS.Typography.title)
-                        .foregroundStyle(.white)
-                        .frame(width: 72, height: 72)
-                        .background(
-                            LinearGradient(
-                                colors: [Color.hotPink, Color.hotPink.opacity(0.85)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .clipShape(Circle())
-                        .shadow(color: Color.hotPink.opacity(0.4), radius: 12, x: 0, y: 6)
-                }
-                .accessibilityLabel(L10n.Accessibility.processAudio)
-            } else if isProcessing {
-                // Cancel processing button
-                Button {
-                    cancelProcessing()
-                } label: {
-                    Image(systemName: "xmark")
-                        .font(.title2.weight(.medium))
-                        .foregroundStyle(.secondary)
-                        .frame(width: DS.Button.fabSize, height: DS.Button.fabSize)
-                        .background(.ultraThinMaterial)
-                        .clipShape(Circle())
-                        .overlay(
-                            Circle()
-                                .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
-                        )
-                }
-                .accessibilityLabel(L10n.Accessibility.cancelProcessing)
-            } else {
-                // Start recording button
-                Button {
-                    Task {
-                        await startRecording()
-                    }
-                } label: {
-                    Image(systemName: "mic.fill")
-                        .font(DS.Typography.title)
-                        .foregroundStyle(.white)
-                        .frame(width: 80, height: 80)
-                        .background(
-                            LinearGradient(
-                                colors: [Color.hotPink, Color.hotPink.opacity(0.85)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .clipShape(Circle())
-                        .shadow(color: Color.hotPink.opacity(0.4), radius: 16, x: 0, y: 8)
-                }
-                .accessibilityLabel(L10n.Accessibility.startRecording)
-            }
+    private func primaryButton(
+        _ title: String,
+        isEnabled: Bool,
+        identifier: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(DS.Typography.body.weight(.semibold))
+                .lineLimit(2)
+                .multilineTextAlignment(.center)
+                // Apagado se VE apagado: con fondo explícito, `.disabled` no atenúa nada (#348).
+                .foregroundStyle(isEnabled ? Color.contrastingText(for: theme.accent) : Color.secondary)
+                .frame(maxWidth: .infinity, minHeight: buttonHeight)
+                .padding(.horizontal, DS.Spacing.sm)
+                .background(
+                    Capsule().fill(isEnabled ? theme.accent : DS.Semantic.disabledForeground.opacity(0.35))
+                )
+                .contentShape(Capsule())
         }
-        .padding(.bottom, DS.Spacing.xxl)
+        .buttonStyle(.plain)
+        .disabled(!isEnabled)
+        .accessibilityIdentifier(identifier)
     }
 
-    // MARK: - Recording Actions
+    private func secondaryButton(_ title: String, identifier: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(DS.Typography.body.weight(.medium))
+                .lineLimit(2)
+                .multilineTextAlignment(.center)
+                .foregroundStyle(.thPrimaryText)
+                .frame(maxWidth: .infinity, minHeight: buttonHeight)
+                .padding(.horizontal, DS.Spacing.sm)
+                .background(Capsule().fill(Color(.tertiarySystemFill)))
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier(identifier)
+    }
 
-    private func startRecording() async {
-        errorMessage = nil
-        errorType = nil
+    // MARK: - Grabar
 
-        // Check for network connection
+    private func startListening() async {
+        saveFailed = false
         guard networkMonitor.isConnected else {
-            errorType = .noConnection
-            errorMessage = L10n.Voice.errorNoConnection
+            phase = .failure(.noConnection)
             return
         }
-
+        phase = .starting
+        #if DEBUG
+        if UITestHooks.voiceResult != nil {
+            phase = .listening
+            return
+        }
+        #endif
         do {
             try await recorder.startRecording()
-            // Haptic feedback on start
+            phase = .listening
             UIImpactFeedbackGenerator(style: .medium).impactOccurred()
         } catch let error as RecordingError {
-            handleRecordingError(error)
+            phase = .failure(VoiceEntryFlowLogic.failure(for: error))
         } catch {
-            errorType = .generic
-            errorMessage = error.localizedDescription
+            #if DEBUG
+            print("VoiceRecordingView: Error starting recording: \(error)")
+            #endif
+            phase = .failure(.generic)
         }
     }
 
-    private func handleRecordingError(_ error: RecordingError) {
-        switch error {
-        case .microphonePermissionDenied, .microphonePermissionRestricted:
-            errorType = .micPermission
-            errorMessage = L10n.Voice.errorMicPermission
-        default:
-            errorType = .generic
-            errorMessage = error.localizedDescription
+    private func finishListening() async {
+        recordedDuration = recorder.recordingDuration
+        #if DEBUG
+        if UITestHooks.voiceResult != nil {
+            startProcessing(Data())
+            return
         }
-    }
-
-    private func stopAndEnterPreview() async {
-        errorMessage = nil
-
+        #endif
         do {
-            // Stop recording and get audio data
-            previewDuration = recorder.recordingDuration
             let audioData = try await recorder.stopRecording()
-            pendingAudioData = audioData
-
-            // Haptic feedback on stop
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
-
-            // Enter preview mode with countdown
-            dsWithAnimation(reduceMotion, .easeOut(duration: 0.3)) {
-                isPreviewMode = true
-                countdownValue = 3
-            }
-
-            // Start countdown timer
-            startCountdown()
-
+            pendingAudioData = audioData
+            startProcessing(audioData)
         } catch let error as RecordingError {
-            errorMessage = error.localizedDescription
+            phase = .failure(VoiceEntryFlowLogic.failure(for: error))
         } catch {
-            errorMessage = error.localizedDescription
+            #if DEBUG
+            print("VoiceRecordingView: Error stopping recording: \(error)")
+            #endif
+            phase = .failure(.generic)
         }
     }
 
-    private func startCountdown() {
-        countdownTimer?.invalidate()
-        countdownTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
-            // Haptic feedback on each tick
-            UIImpactFeedbackGenerator(style: .soft).impactOccurred()
+    /// Cancelar mientras escucha descarta sin transcribir y cierra: no hay otra cosa que hacer en esta hoja.
+    private func cancelListening() {
+        recorder.cancelRecording()
+        dismiss()
+    }
 
-            if countdownValue > 1 {
-                dsWithAnimation(reduceMotion, .easeInOut(duration: 0.2)) {
-                    countdownValue -= 1
-                }
-            } else {
-                countdownTimer?.invalidate()
-                countdownTimer = nil
-                processNow()
+    /// Lo que se borra al grabar otra vez son los borradores pendientes de ESTA grabación: si se quedaran, la Bandeja
+    /// acabaría con el mismo gasto dos veces. Los ya guardados no se tocan.
+    private func recordAgain() {
+        for draft in pendingDrafts {
+            modelContext.delete(draft)
+        }
+        if !pendingDrafts.isEmpty {
+            do {
+                try modelContext.save()
+            } catch {
+                #if DEBUG
+                print("VoiceRecordingView: Error discarding drafts to record again: \(error)")
+                #endif
             }
         }
-    }
-
-    private func cancelPreview() {
-        countdownTimer?.invalidate()
-        countdownTimer = nil
+        drafts = []
+        transcription = ""
         pendingAudioData = nil
-        dsWithAnimation(reduceMotion, .easeOut(duration: 0.3)) {
-            isPreviewMode = false
-            previewDuration = 0
-            countdownValue = 3
-        }
+        Task { await startListening() }
     }
 
-    private func processNow() {
-        countdownTimer?.invalidate()
-        countdownTimer = nil
+    // MARK: - Procesar
 
-        guard let audioData = pendingAudioData else { return }
-
-        dsWithAnimation(reduceMotion, .easeOut(duration: 0.3)) {
-            isPreviewMode = false
-        }
-
+    private func startProcessing(_ audioData: Data) {
+        processingStep = 0
+        phase = .processing
         processingTask = Task {
             await processAudio(audioData)
         }
-    }
-
-    private func cancelProcessing() {
-        processingTask?.cancel()
-        processingTask = nil
-        isProcessing = false
-        pendingAudioData = nil
-        errorMessage = nil
     }
 
     private func retryProcessing() {
         guard let audioData = pendingAudioData else { return }
-        errorMessage = nil
+        startProcessing(audioData)
+    }
 
-        processingTask = Task {
-            await processAudio(audioData)
-        }
+    /// Cancelar a media transcripción cierra la hoja: la petición en curso termina sola y su resultado se ignora.
+    private func cancelProcessing() {
+        processingTask?.cancel()
+        processingTask = nil
+        dismiss()
     }
 
     private func processAudio(_ audioData: Data) async {
-        errorMessage = nil
-        isProcessing = true
-
         do {
-            // Step 1: Transcribe audio
-            processingStepIndex = 0
-            processingStatus = L10n.Voice.analyzing
-            let transcription = try await voiceTranscriptionService.transcribe(
-                audioData: audioData,
-                language: voiceLanguage
-            )
+            let (text, parsedTransactions) = try await understand(audioData)
+            guard !Task.isCancelled else { return }
 
-            // Check cancellation after transcription
-            guard !Task.isCancelled else {
-                isProcessing = false
-                return
-            }
-
-            // Step 2: Parse transcription (supports multiple transactions)
-            processingStepIndex = 1
-            processingStatus = L10n.Voice.parsing
-
-            // Get user's subcategories for intelligent matching
-            let (expenseSubcategories, incomeSubcategories) = fetchSubcategoryNames()
-
-            let parsedTransactions = try await transcriptionParserService.parseMultiple(
-                text: transcription.text,
-                expenseSubcategories: expenseSubcategories,
-                incomeSubcategories: incomeSubcategories
-            )
-
-            // Check cancellation after parsing
-            guard !Task.isCancelled else {
-                isProcessing = false
-                return
-            }
-
-            // Filter only transactions with amounts
             let validTransactions = parsedTransactions.filter { $0.amount != nil }
-
-            // Validate: At least one transaction must have amount
             guard !validTransactions.isEmpty else {
-                isProcessing = false
-                errorMessage = L10n.Voice.errorNoAmount
+                phase = .failure(.noAmount)
                 return
             }
 
-            // Snapshot existing pending drafts BEFORE creating new ones
-            // to avoid SwiftData auto-insert interference with deduplication
+            // Foto de los pendientes ANTES de crear los nuevos, para que el auto-insert de SwiftData no se cuele en la
+            // deduplicación.
             let existingDrafts = fetchPendingDrafts()
 
-            // Step 3: Create InboxDrafts (only if not cancelled)
-            processingStepIndex = 2
-            processingStatus = L10n.Voice.saving
+            processingStep = 2
             let newDrafts = validTransactions.map { parsed in
-                createInboxDraft(from: parsed, transcription: transcription.text, insertInContext: false)
+                createInboxDraft(from: parsed, transcription: text, insertInContext: false)
             }
-
-            // Deduplicate against pre-existing pending drafts
-            let uniqueDrafts = DraftDeduplicationService.deduplicate(
-                newDrafts: newDrafts,
-                existingDrafts: existingDrafts
-            )
-
-            // If all are duplicates, use originals (SwiftData may have auto-inserted them)
-            let drafts = uniqueDrafts.isEmpty ? newDrafts : uniqueDrafts
-
-            // Insert drafts (no-op if SwiftData already auto-inserted)
-            for draft in drafts {
+            let uniqueDrafts = DraftDeduplicationService.deduplicate(newDrafts: newDrafts, existingDrafts: existingDrafts)
+            // Si todos parecen duplicados, son los propios (SwiftData pudo insertarlos ya).
+            let created = uniqueDrafts.isEmpty ? newDrafts : uniqueDrafts
+            for draft in created {
                 modelContext.insert(draft)
             }
-
-            // Save all drafts to persistent storage
             do {
                 try modelContext.save()
             } catch {
-                isProcessing = false
-                errorType = .generic
-                errorMessage = L10n.Voice.errorSaveFailed
+                #if DEBUG
+                print("VoiceRecordingView: Error saving drafts: \(error)")
+                #endif
+                phase = .failure(.saveFailed)
                 return
             }
 
-            isProcessing = false
             pendingAudioData = nil
-
-            // Navigation based on number of drafts
-            if onSetupTrialCompleted != nil {
-                // Setup trial: always single draft, discard extras
-                createdDraft = drafts.first
-            } else if drafts.count == 1 {
-                // Single draft: open edit sheet directly
-                createdDraft = drafts.first
-            } else {
-                // Multiple drafts: save and navigate to Inbox
-                createdDrafts = drafts
-                onSavedToInbox?()
-                dismiss()
-            }
-
+            // La práctica guiada es de UN registro: se revisa el primero; los demás quedan en la Bandeja, como antes.
+            drafts = isSetupTrial ? Array(created.prefix(1)) : created
+            transcription = text
+            phase = .review
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
         } catch let error as TranscriptionError {
-            isProcessing = false
-            handleTranscriptionError(error)
+            phase = .failure(VoiceEntryFlowLogic.failure(for: error, isConnected: networkMonitor.isConnected))
         } catch let error as ParserError {
-            isProcessing = false
-            errorType = .generic
-            errorMessage = error.localizedDescription
+            phase = .failure(VoiceEntryFlowLogic.failure(for: error, isConnected: networkMonitor.isConnected))
         } catch {
-            isProcessing = false
-            // Check if it's a network error
-            if !networkMonitor.isConnected {
-                errorType = .noConnection
-                errorMessage = L10n.Voice.errorNoConnection
-            } else {
-                errorType = .generic
-                errorMessage = error.localizedDescription
-            }
+            #if DEBUG
+            print("VoiceRecordingView: Error processing audio: \(error)")
+            #endif
+            phase = .failure(VoiceEntryFlowLogic.failure(forUnknownErrorWhenConnected: networkMonitor.isConnected))
         }
     }
 
-    private func handleTranscriptionError(_ error: TranscriptionError) {
-        switch error {
-        case .noAPIKey:
-            errorType = .noApiKey
-            errorMessage = L10n.Voice.errorNoApiKey
-        case .networkError:
-            if !networkMonitor.isConnected {
-                errorType = .noConnection
-                errorMessage = L10n.Voice.errorNoConnection
-            } else {
-                errorType = .generic
-                errorMessage = error.localizedDescription
-            }
+    /// Transcribe y lee el audio: el texto dicho y los registros que contiene.
+    private func understand(_ audioData: Data) async throws -> (text: String, parsed: [ParsedTransaction]) {
+        #if DEBUG
+        if let profile = UITestHooks.voiceResult {
+            return uiTestResult(profile)
+        }
+        #endif
+        processingStep = 0
+        let result = try await voiceTranscriptionService.transcribe(
+            audioData: audioData,
+            language: appPreferences.voiceLanguage
+        )
+        guard !Task.isCancelled else { return (result.text, []) }
+
+        processingStep = 1
+        let (expenseSubcategories, incomeSubcategories) = fetchSubcategoryNames()
+        let parsed = try await transcriptionParserService.parseMultiple(
+            text: result.text,
+            expenseSubcategories: expenseSubcategories,
+            incomeSubcategories: incomeSubcategories
+        )
+        return (result.text, parsed)
+    }
+
+    #if DEBUG
+    /// `-uitest-voice-result`: lo que la hoja «entiende» sin red, resuelto contra los datos sembrados para que la
+    /// cuenta y la subcategoría casen (la divisa principal si hay una cuenta en ella; Restaurantes si existe).
+    private func uiTestResult(_ profile: String) -> (text: String, parsed: [ParsedTransaction]) {
+        let currency = fetchFirstActiveAccountCurrency()
+        let expenseNames = fetchSubcategoryNames().expense.sorted()
+        let subcategory = expenseNames.first { $0.hasPrefix("Restaurant") } ?? expenseNames.first
+        let confidence = ParsedTransaction.TransactionConfidence(amount: 1, date: 1, merchant: 1, subcategory: 1, tags: 1)
+        func expense(_ note: String, _ amount: Decimal, subcategory: String?) -> ParsedTransaction {
+            ParsedTransaction(
+                amount: amount, date: Date.now, note: note, isExpense: true, subcategoryHint: subcategory,
+                tagHints: [], currencyHint: currency, confidence: confidence
+            )
+        }
+        switch profile {
+        case "incomplete":
+            return ("Almuerzo 25 con la tarjeta", [expense("Almuerzo", 25, subcategory: nil)])
+        case "two":
+            return (
+                "Taxi 12 y café 8 con la tarjeta",
+                [expense("Taxi", 12, subcategory: subcategory), expense("Café", 8, subcategory: subcategory)]
+            )
         default:
-            errorType = .generic
-            errorMessage = error.localizedDescription
+            return ("Almuerzo 25 con la tarjeta", [expense("Almuerzo", 25, subcategory: subcategory)])
         }
     }
+
+    private func fetchFirstActiveAccountCurrency() -> String? {
+        let descriptor = FetchDescriptor<Account>(
+            predicate: #Predicate<Account> { account in account.isArchived == false && account.isSystemAccount == false },
+            sortBy: [SortDescriptor(\.name)]
+        )
+        do {
+            let codes = try modelContext.fetch(descriptor).map(\.currencyCode)
+            let preferred = appPreferences.defaultCurrencyCode.rawValue
+            return codes.contains(preferred) ? preferred : codes.first
+        } catch {
+            print("VoiceRecordingView: Error fetching accounts for the UI-test seam: \(error)")
+            return nil
+        }
+    }
+    #endif
+
+    // MARK: - Guardar
+
+    /// Aprueba los pendientes por el mismo camino que la Bandeja: transacción, memoria del comercio, widgets y avisos de
+    /// presupuesto. Si uno falla, los anteriores ya quedaron guardados y el resto sigue pendiente.
+    private func saveAll() {
+        saveFailed = false
+        DraftService.shared.setContext(modelContext)
+        for draft in pendingDrafts {
+            do {
+                let transaction = try DraftService.shared.approveDraft(draft, currencyConverter: currencyConverter)
+                reportTrial(id: transaction.persistentModelID, name: draft.note, kind: .transaction)
+            } catch {
+                #if DEBUG
+                print("VoiceRecordingView: Error approving draft: \(error)")
+                #endif
+                saveFailed = true
+                break
+            }
+        }
+        if !saveFailed {
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+        }
+    }
+
+    /// Al volver del formulario completo: si allí se aprobó, la fila ya sale guardada. Si se rechazó o se borró, sale
+    /// de la lista; y si no queda ninguno, la hoja ya no tiene nada que enseñar.
+    private func afterDetails() {
+        drafts.removeAll { $0.isDeleted || $0.status == .rejected }
+        if let approved = drafts.first(where: { $0.status == .approved }), let transaction = approved.approvedTransaction {
+            reportTrial(id: transaction.persistentModelID, name: approved.note, kind: .transaction)
+        }
+        if drafts.isEmpty {
+            dismiss()
+        }
+    }
+
+    // MARK: - Práctica guiada y cierre
+
+    private func reportTrial(id: PersistentIdentifier, name: String, kind: PracticeItemKind) {
+        guard let callback = onSetupTrialCompleted, !trialReported else { return }
+        trialReported = true
+        callback(id, name, kind)
+    }
+
+    /// Al cerrar: suelta el micro si seguía abierto, corta lo que se estuviera procesando y, en la práctica guiada, da
+    /// el paso por cumplido con el borrador que quedó en la Bandeja.
+    private func tearDown() {
+        if recorder.state == .recording {
+            recorder.cancelRecording()
+        }
+        processingTask?.cancel()
+        processingTask = nil
+        if let pending = pendingDrafts.first {
+            reportTrial(id: pending.persistentModelID, name: pending.note, kind: .draft)
+        }
+    }
+
+    // MARK: - Borradores
 
     private func createInboxDraft(from parsed: ParsedTransaction, transcription: String, insertInContext: Bool = true) -> InboxDraft {
-        // Convert Decimal to Double for amount, apply sign based on isExpense
-        var amountDouble: Double? = nil
+        // Importe con signo: negativo es gasto.
+        var amountDouble: Double?
         if let amount = parsed.amount {
             let value = NSDecimalNumber(decimal: amount).doubleValue
             amountDouble = parsed.isExpense ? -abs(value) : abs(value)
         }
 
-        // Try to match account by currency hint
         var matchedAccount: Account?
         var needsUserInputFields = ["account", "subcategory"]
 
@@ -919,9 +748,7 @@ struct VoiceRecordingView: View {
             }
         }
 
-        // Try to match subcategory hint with existing subcategories
         var matchedSubcategory: Subcategory?
-
         if let hint = parsed.subcategoryHint, !hint.isEmpty {
             matchedSubcategory = findSubcategory(matching: hint, isExpense: parsed.isExpense)
             if matchedSubcategory != nil {
@@ -929,11 +756,10 @@ struct VoiceRecordingView: View {
             }
         }
 
-        // Merchant Memory fallback: suggest subcategory if LLM didn't match one
+        // Memoria del comercio: sugiere la subcategoría si el modelo no la encontró.
         if matchedSubcategory == nil && !parsed.note.trimmingCharacters(in: .whitespaces).isEmpty {
             let merchantService = MerchantMemoryService(modelContext: modelContext)
-            let suggestion = merchantService.suggest(for: parsed.note)
-            switch suggestion {
+            switch merchantService.suggest(for: parsed.note) {
             case .suggest(let sub), .autoAssign(let sub):
                 matchedSubcategory = sub
                 needsUserInputFields.removeAll { $0 == "subcategory" }
@@ -942,7 +768,6 @@ struct VoiceRecordingView: View {
             }
         }
 
-        // Try to match tag hints with existing tags
         var matchedTags: [Tag] = []
         var newlyCreatedTagNames: [String] = []
         if !parsed.tagHints.isEmpty {
@@ -973,8 +798,6 @@ struct VoiceRecordingView: View {
         return draft
     }
 
-    // MARK: - Deduplication Helpers
-
     private func fetchPendingDrafts() -> [InboxDraft] {
         let descriptor = FetchDescriptor<InboxDraft>(
             predicate: #Predicate<InboxDraft> { draft in
@@ -991,16 +814,13 @@ struct VoiceRecordingView: View {
         }
     }
 
-    // MARK: - Subcategory Helpers
-
-    /// Fetches all visible subcategory names, separated by expense/income
+    /// Los nombres de las subcategorías visibles, separados en gasto e ingreso, para que el modelo elija entre ellas.
     private func fetchSubcategoryNames() -> (expense: [String], income: [String]) {
         let descriptor = FetchDescriptor<Subcategory>(
             predicate: #Predicate<Subcategory> { subcategory in
                 subcategory.isVisible == true
             }
         )
-
         let subcategories: [Subcategory]
         do {
             subcategories = try modelContext.fetch(descriptor)
@@ -1010,38 +830,29 @@ struct VoiceRecordingView: View {
             #endif
             return ([], [])
         }
-
-        let expenseNames = subcategories
-            .filter { !$0.safeCategory.isIncome }
-            .map { $0.name }
-
-        let incomeNames = subcategories
-            .filter { $0.safeCategory.isIncome }
-            .map { $0.name }
-
+        let expenseNames = subcategories.filter { !$0.safeCategory.isIncome }.map(\.name)
+        let incomeNames = subcategories.filter { $0.safeCategory.isIncome }.map(\.name)
         return (expenseNames, incomeNames)
     }
 
-    // MARK: - Entity Matching
+    // MARK: - Emparejar con lo que ya existe
 
-    /// Normalizes a string for accent-insensitive comparison (lowercased, trimmed, diacritics removed)
+    /// Minúsculas, sin espacios a los lados y sin tildes.
     private func normalizeForMatching(_ text: String) -> String {
         text.lowercased()
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .folding(options: .diacriticInsensitive, locale: .current)
     }
 
-    /// Finds a subcategory matching the hint (case-insensitive, accent-insensitive, partial match)
-    /// Returns nil if multiple matches found (ambiguous) to let user choose manually
+    /// La subcategoría que coincide con la pista (exacta, luego parcial en los dos sentidos). Si hay más de una, nil:
+    /// que elija el usuario.
     private func findSubcategory(matching hint: String, isExpense: Bool) -> Subcategory? {
         let normalizedHint = normalizeForMatching(hint)
-
         let descriptor = FetchDescriptor<Subcategory>(
             predicate: #Predicate<Subcategory> { subcategory in
                 subcategory.isVisible == true
             }
         )
-
         let subcategories: [Subcategory]
         do {
             subcategories = try modelContext.fetch(descriptor)
@@ -1052,50 +863,30 @@ struct VoiceRecordingView: View {
             return nil
         }
 
-        // Filter by expense type (subcategories in expense categories for expenses, income for income)
         let filtered = subcategories.filter { sub in
-            let category = sub.safeCategory
-            return isExpense ? !category.isIncome : category.isIncome
+            isExpense ? !sub.safeCategory.isIncome : sub.safeCategory.isIncome
         }
 
-        // Try exact match first - check for duplicates
         let exactMatches = filtered.filter { normalizeForMatching($0.name) == normalizedHint }
-        if exactMatches.count == 1 {
-            return exactMatches.first
-        } else if exactMatches.count > 1 {
-            // Ambiguous: multiple subcategories with same name in different categories
-            return nil
-        }
+        if exactMatches.count == 1 { return exactMatches.first }
+        if exactMatches.count > 1 { return nil }
 
-        // Try contains match - check for duplicates
         let partialMatches = filtered.filter { normalizeForMatching($0.name).contains(normalizedHint) }
-        if partialMatches.count == 1 {
-            return partialMatches.first
-        } else if partialMatches.count > 1 {
-            // Ambiguous: multiple matches
-            return nil
-        }
+        if partialMatches.count == 1 { return partialMatches.first }
+        if partialMatches.count > 1 { return nil }
 
-        // Try if hint contains subcategory name - check for duplicates
         let reverseMatches = filtered.filter { normalizedHint.contains(normalizeForMatching($0.name)) }
-        if reverseMatches.count == 1 {
-            return reverseMatches.first
-        }
-        // Multiple reverse matches = ambiguous, return nil
-
+        if reverseMatches.count == 1 { return reverseMatches.first }
         return nil
     }
 
-    /// Finds or creates tags matching the hints (case-insensitive, accent-insensitive)
-    /// Creates new tags if they don't exist
-    /// Returns tuple: (matched tags, names of newly created tags)
+    /// Las etiquetas que coinciden con las pistas; las que no existen se crean.
     private func findTags(matching hints: [String]) -> (tags: [Tag], newlyCreatedNames: [String]) {
         let descriptor = FetchDescriptor<Tag>(
             predicate: #Predicate<Tag> { tag in
                 tag.isActive == true
             }
         )
-
         let allTags: [Tag]
         do {
             allTags = try modelContext.fetch(descriptor)
@@ -1114,15 +905,12 @@ struct VoiceRecordingView: View {
             let normalizedHint = normalizeForMatching(hint)
             guard !normalizedHint.isEmpty else { continue }
 
-            // Try exact match first
             if let exact = allTags.first(where: { normalizeForMatching($0.name) == normalizedHint }) {
                 if !matched.contains(where: { $0.persistentModelID == exact.persistentModelID }) {
                     matched.append(exact)
                 }
                 continue
             }
-
-            // Try contains match
             if let partial = allTags.first(where: { normalizeForMatching($0.name).contains(normalizedHint) }) {
                 if !matched.contains(where: { $0.persistentModelID == partial.persistentModelID }) {
                     matched.append(partial)
@@ -1130,7 +918,6 @@ struct VoiceRecordingView: View {
                 continue
             }
 
-            // No match found - create new tag
             let capitalizedName = hint.trimmingCharacters(in: .whitespacesAndNewlines).capitalized
             let nextColor = Tag.nextAvailableColor(excluding: usedColors)
             let newTag = Tag(name: capitalizedName, colorHex: nextColor)
@@ -1143,17 +930,14 @@ struct VoiceRecordingView: View {
         return (matched, newlyCreatedNames)
     }
 
-    /// Finds an account matching the currency code
-    /// Returns nil if no match or multiple matches (ambiguous)
+    /// La cuenta de esa divisa, solo si hay exactamente una.
     private func findAccount(byCurrency currencyCode: String) -> Account? {
         let normalizedCode = currencyCode.uppercased().trimmingCharacters(in: .whitespacesAndNewlines)
-
         let descriptor = FetchDescriptor<Account>(
             predicate: #Predicate<Account> { account in
                 account.isArchived == false
             }
         )
-
         let accounts: [Account]
         do {
             accounts = try modelContext.fetch(descriptor)
@@ -1163,16 +947,8 @@ struct VoiceRecordingView: View {
             #endif
             return nil
         }
-
-        // Find accounts with matching currency
         let matches = accounts.filter { $0.currencyCode.uppercased() == normalizedCode }
-
-        // Return only if exactly one match
-        if matches.count == 1 {
-            return matches.first
-        }
-
-        return nil
+        return matches.count == 1 ? matches.first : nil
     }
 }
 

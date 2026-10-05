@@ -144,3 +144,8 @@
 
 /* MARK: Release 2.0 — a11y & UI keys */
 "widget.ui.others" = "其他";
+
+/* MARK: iPad — widget extragrande «Resumen del mes» */
+"widget.gallery.monthSummary" = "本月概览";
+"widget.gallery.monthSummary.desc" = "本月的余额、按类别的支出和预算";
+"widget.ui.monthSummary" = "本月概览";

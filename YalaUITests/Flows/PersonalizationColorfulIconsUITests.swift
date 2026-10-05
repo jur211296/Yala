@@ -35,7 +35,11 @@ final class PersonalizationColorfulIconsUITests: XCTestCase {
         let toggle = app.switches["settings_colorful_icons_toggle"]
         XCTAssertTrue(toggle.waitForExistence(timeout: 10), "No apareció settings_colorful_icons_toggle.")
         let before = toggle.value as? String
-        toggle.tap()
+        // En la lista agrupada la fila entera es el interruptor y tocar su título no lo cambia (como en
+        // Ajustes de iOS): se toca el control, que cuelga de la fila como un switch sin id.
+        let knob = toggle.switches.firstMatch
+        XCTAssertTrue(knob.exists, "El interruptor de «Iconos coloridos» no expone su control.")
+        knob.tap()
         // Esperar el cambio de valor (Toggle de SwiftUI → el sub-switch refleja el nuevo estado).
         let changed = NSPredicate(format: "value != %@", before ?? "")
         expectation(for: changed, evaluatedWith: toggle)

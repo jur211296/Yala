@@ -38,9 +38,10 @@ final class SecurityFaceIDGuideUITests: XCTestCase {
         securityRow.tap()
 
         // Se abre la guía (no un lock in-app).
+        // Desde el 2026-10-02 el id va en el título de la cabecera de la guía por pasos (un id en la raíz pisaría
+        // los de sus hijos), así que se busca en cualquier tipo de elemento.
         XCTAssertTrue(
-            app.otherElements["faceid_guide_root"].waitForExistence(timeout: 5)
-                || app.scrollViews["faceid_guide_root"].waitForExistence(timeout: 1),
+            app.descendants(matching: .any)["faceid_guide_root"].waitForExistence(timeout: 5),
             "No se abrió FaceIDProtectionGuideView (faceid_guide_root)."
         )
     }

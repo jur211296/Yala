@@ -242,7 +242,10 @@ struct WelcomeFlowContainer: View {
                 WelcomeExistingChooserView(
                     options: visibleExistingOptions,
                     onSelect: { option in handleExistingOption(option) },
-                    onBack: { goTo(.chooser) }
+                    onBack: { goTo(.chooser) },
+                    // La pregunta de pie («¿Es tu primera vez en Yala?») entra por la MISMA puerta que la card
+                    // «Es mi primera vez» del Chooser: el faro se consulta igual y el bypass también.
+                    onStartNew: { handleNewBranch() }
                 )
                 .transition(.opacity)
             case .newChooser:

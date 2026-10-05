@@ -32,6 +32,8 @@ struct RecordsTabView: View {
     var onFilterChange: () -> Void
 
     @State private var showCustomPeriodPicker: Bool = false
+    /// El `ScrollView` tiene poco alto (iPhone girado): la cabecera va en banda (`SummaryHeaderStack`).
+    @State private var isShortContainer = false
     @State private var recordsViewMode: RecordsViewMode = .list
     @State private var selectedCalendarDay: Date?
     @State private var calendarMonth: Date = .now
@@ -73,6 +75,7 @@ struct RecordsTabView: View {
             }
             .padding(.top, DS.Spacing.sm)
         }
+        .measuresShortContainer($isShortContainer)
         .scrollViewGlassEdges()
         .sheet(isPresented: $showCustomPeriodPicker) {
             CustomPeriodPickerSheet(
@@ -144,31 +147,34 @@ struct RecordsTabView: View {
     private var heroSummary: some View {
         let hasRecords = viewModel.filteredCount > 0
 
-        return VStack(alignment: .center, spacing: DS.Spacing.xs) {
-            periodSelector
+        let showsFigure = !sessionState.isExpensesOnlyMode && hasRecords
 
-            if !sessionState.isExpensesOnlyMode && hasRecords {
+        // El hero del Panel (`HeroHeader`): rótulo y período arriba, cifra y detalle debajo, a la izquierda.
+        // Con poco alto (iPhone girado) va en banda: cifra y rótulo | período, entradas y salidas y recuento.
+        return SummaryHeaderStack(isShort: isShortContainer, verticalPadding: summaryVerticalPadding) {
+            periodSelector
+        } caption: {
+            // Qué es la cifra. Con un chip de naturaleza activo el otro lado es
+            // 0 y `recordsSummary.balance` deja de ser un neto, así que el
+            // rótulo sigue al filtro. (El hero no se pinta en solo-gastos, de
+            // modo que las naturalezas efectivas son las seleccionadas.)
+            if showsFigure {
+                HeroHeaderLabel(text: StatsHeroCaptionLogic.records(
+                    natures: viewModel.selectedTransactionNatures
+                ).text)
+                    .accessibilityIdentifier("stats_hero_caption")
+            }
+        } figure: {
+            if showsFigure {
                 AmountText(
                     value: recordsSummary.balance,
                     currencyCode: defaultCurrencyCode,
-                    font: DS.Typography.heroAmount, secondaryFont: DS.Typography.heroAmountSecondary,
+                    font: DS.Typography.panelHeroAmount, secondaryFont: DS.Typography.panelHeroAmountSecondary,
                     isEstimate: recordsSummary.balanceIsApproximate
                 )
                 .accessibilityIdentifier("records_summary_balance")
-
-                // Qué es la cifra. Con un chip de naturaleza activo el otro lado es
-                // 0 y `recordsSummary.balance` deja de ser un neto, así que el
-                // rótulo sigue al filtro. (El hero no se pinta en solo-gastos, de
-                // modo que las naturalezas efectivas son las seleccionadas.)
-                Text(StatsHeroCaptionLogic.records(
-                    natures: viewModel.selectedTransactionNatures
-                ).text)
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .accessibilityIdentifier("stats_hero_caption")
             }
-
+        } detail: {
             incomeExpenseChips
 
             if let subtitle = RecordsMotivationalLogic.subtitle(forCount: viewModel.filteredCount) {
@@ -177,9 +183,6 @@ struct RecordsTabView: View {
                     .foregroundStyle(.secondary)
             }
         }
-        .padding(.horizontal, DS.Spacing.lg)
-        .padding(.vertical, summaryVerticalPadding)
-        .frame(maxWidth: .infinity)
         .accessibilityElement(children: .contain)
         .accessibilityAddTraits(.isHeader)
     }
@@ -323,7 +326,10 @@ struct RecordsTabView: View {
                 }
             }
             .padding(.top, DS.Spacing.sm)
-            .yalaSafeBottomPadding()
+            // Las dos páginas que montan esta lista (Registros y Estadísticas › Registros) le ponen encima Yala IA y
+            // «+»: al final del scroll, la última fila sube por encima de los dos. Dos aunque Yala IA esté oculto —
+            // sobrar 68 pt al final no se ve; quedarse corto tapa el importe.
+            .padding(.bottom, DS.Button.fabStackClearance(buttons: 2))
         }
     }
 

@@ -19,6 +19,7 @@ struct PanelView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
     @Environment(SessionState.self) private var sessionState
+    @Environment(SceneNavigation.self) private var navigation
     @Environment(ExchangeRateService.self) private var exchangeRateService
     @Environment(CurrencyConverter.self) private var currencyConverter
 
@@ -30,6 +31,8 @@ struct PanelView: View {
     /// condiciones las lee `CloudAttestNotice.isShowing` vivas, en el body (ticket
     /// `cloud-tab-does-not-say-this-phone-cannot-sync-personal-data`).
     @State private var attestVerdictIsTerminal = false
+    /// Solo para el punto del botón de filtros: lee los filtros de `SessionState`, no guarda nada.
+    @State private var panelFilters = PanelSessionFilters()
 
     /// Periodic banner visibility
     @State private var showPeriodicBanner = false
@@ -216,13 +219,28 @@ struct PanelView: View {
         case .activateFullMode:
             RouterEntryGate.shared.submit(.presentFullModeActivation)
         case .openGroupDetail:
-            SessionState.shared.navigateToGroups()
+            navigation.navigateToGroups()
         case .openPanel, .dismiss:
             break
         }
     }
 
     // MARK: - Toolbar Buttons
+
+    /// Filtros del Panel: la misma hoja que Estadísticas e Informes, con todas las cuentas que quieras a la vez. El
+    /// punto dice que el usuario filtró algo (`hasUserFilters`).
+    private var filtersToolbarButton: some View {
+        Button {
+            sheets.showFilters = true
+        } label: {
+            Image(systemName: "line.3.horizontal.decrease")
+                .font(DS.Typography.body).fontWeight(.medium)
+                .foregroundStyle(.thToolbarIcon)
+        }
+        .filterBadge(isActive: panelFilters.hasUserFilters)
+        .accessibilityLabel(L10n.Accessibility.filters)
+        .accessibilityIdentifier("panel_filters_button")
+    }
 
     private var sectionsConfigButton: some View {
         Button {
@@ -280,6 +298,9 @@ struct PanelView: View {
                 .toolbar {
                     ToolbarItem(placement: .navigationBarLeading) {
                         inboxToolbarButton
+                    }
+                    ToolbarItem(placement: .topBarTrailing) {
+                        filtersToolbarButton
                     }
                     ToolbarItem(placement: .topBarTrailing) {
                         sectionsConfigButton
@@ -389,13 +410,6 @@ struct PanelView: View {
         }
         .onChange(of: viewModel.accounts.count) { _, _ in
             reconcileAccountsSortOrder()
-        }
-        // Regenera mensaje IA al togglear feature o cambiar estado Pro.
-        .onChange(of: appPreferences.aiInsightsConsentAccepted) { _, _ in
-            viewModel.retriggerHeroAI()
-        }
-        .onChange(of: StoreKitManager.shared.isProUser) { _, _ in
-            viewModel.retriggerHeroAI()
         }
         .modifier(PanelKeyboardRequestObserver(sessionState: sessionState, open: openFromKeyboard))
     }
@@ -582,6 +596,7 @@ struct PanelView: View {
                                 accountsVisible: panorama.accounts,
                                 healthVisible: panorama.health,
                                 accountFormSheet: $sheets.accountFormSheet,
+                                accountDetail: $sheets.accountDetail,
                                 showUpgradeForAccounts: $sheets.showUpgradeForAccounts
                             )
                             .headerBandColumn(.trailing)
@@ -602,7 +617,9 @@ struct PanelView: View {
                         .padding(.top, panoramaVisible ? DS.Spacing.xxl - DS.Spacing.lg : 0)
                     }
                     .padding(.top, DS.Spacing.lg)
-                    .padding(.bottom, DS.Spacing.xxxl)
+                    // Al final del scroll están a la vista Yala IA y «+» (`showFloatingActions`): el último widget
+                    // sube por encima de los dos.
+                    .padding(.bottom, DS.Button.fabStackClearance(buttons: 2))
                 }
                 .scrollViewGlassEdges(horizontalMargin: DS.Adaptive.horizontalPadding(sizeClass))
                 .onScrollGeometryChange(for: CGFloat.self) { geom in
@@ -709,21 +726,22 @@ struct PanelView: View {
 
 }
 
-/// Consume la petición de un atajo (`SessionState.pendingKeyboardPanelRequest`) cuando el Panel está delante. Se
+/// Consume la petición de un atajo (`SceneNavigation.pendingKeyboardPanelRequest`) cuando el Panel está delante. Se
 /// mira también al cambiar de pestaña: si el Panel no estaba en la barra, `selectMainTab` lo elige 50 ms después.
 private struct PanelKeyboardRequestObserver: ViewModifier {
     let sessionState: SessionState
+    @Environment(SceneNavigation.self) private var navigation
     let open: (KeyboardPanelRequest) -> Void
 
     func body(content: Content) -> some View {
         content
-            .onChange(of: sessionState.pendingKeyboardPanelRequest) { _, _ in consumeIfFront() }
-            .onChange(of: sessionState.selectedMainTab) { _, _ in consumeIfFront() }
+            .onChange(of: navigation.pendingKeyboardPanelRequest) { _, _ in consumeIfFront() }
+            .onChange(of: navigation.selectedMainTab) { _, _ in consumeIfFront() }
     }
 
     private func consumeIfFront() {
-        guard sessionState.selectedMainTab == .panel, let request = sessionState.pendingKeyboardPanelRequest else { return }
-        sessionState.pendingKeyboardPanelRequest = nil
+        guard navigation.selectedMainTab == .panel, let request = navigation.pendingKeyboardPanelRequest else { return }
+        navigation.pendingKeyboardPanelRequest = nil
         open(request)
     }
 }

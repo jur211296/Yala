@@ -118,6 +118,11 @@ struct PanelSheetStateActivePresentationTests {
         #expect(s.hasActivePresentation)
         s = PanelSheetState(); s.accountFormSheet = AccountFormSheet(account: nil)
         #expect(s.hasActivePresentation)
+        s = PanelSheetState(); s.accountDetail = AccountDetailPresentation(account: Account(
+            name: "Sueldo", currencyCode: "PEN", colorHex: "#4F46E5", iconName: "banknote", type: "Efectivo"))
+        #expect(s.hasActivePresentation)
+        s = PanelSheetState(); s.showFilters = true
+        #expect(s.hasActivePresentation)
         s = PanelSheetState(); s.sectionPrefsPresentation = .accounts
         #expect(s.hasActivePresentation)
         s = PanelSheetState(); s.showSectionsConfig = true
@@ -157,9 +162,7 @@ struct PanelSheetStateActivePresentationTests {
     // Flags de COORDINACIÓN post-dismiss / setup trial ⇒ false (no presentan).
     @Test func coordinationFlags_doNotActivate() {
         var s = PanelSheetState()
-        s.navigateToInboxAfterVoice = true
         s.switchToImageAfterVoice = true
-        s.navigateToInboxAfterImage = true
         s.pendingOpenChatAfterOnboarding = true
         s.isVoiceSetupTrial = true
         s.isImageSetupTrial = true

@@ -3,6 +3,10 @@ description: Reglas inviolables de SwiftUI, presentaciones, Design System y fond
 paths:
   - "Yala/App/Views/**"
   - "Yala/App/ContentView.swift"
+  - "Yala/App/YalaApp.swift"
+  - "Yala/App/Scenes/**"
+  - "Yala/App/Models/AppRouter.swift"
+  - "Yala/App/Models/SceneNavigation.swift"
   - "Yala/App/ViewModels/**"
   - "Yala/App/DesignSystem/**"
   - "Yala/App/Theme/**"
@@ -54,6 +58,13 @@ paths:
   -warn-long-expression-type-checking=20'` y buscar tu fichero en los avisos; lo nuevo debe salir por debajo de lo
   viejo que ya pasa el CI.
 
+- **Cambiar por código la `selection` de `.presentationDetents(_:selection:)` NO movió la hoja (medido 2026-10-04,
+  simulador iOS 27.0, `VoiceRecordingView`).** El binding sí cambió —el fondo que se deriva de él pasó a `.subtle`— pero
+  la hoja siguió a media altura, en la misma pasada que el cambio de fase y también aplazado una vuelta del main actor
+  con `withAnimation`. Causa sin aislar. ⇒ **no diseñes un flujo que dependa de agrandar la hoja por código**: que el
+  contenido quepa o se desplace dentro, y el usuario la estira. Si un fondo se deriva del detent elegido, fíjalo a la
+  altura real, no a la pedida.
+
 - **Forms con `TextField`/`TextEditor`/`SecureField`** (sin `Form`): obligatorio `dismissKeyboardOnTap()` desde el primer commit. Detalles en SWIFT-STYLE.md.
 
 - **Swift Charts `.annotation { }` NO propaga environment objects `@Observable`** → el contenido de una annotation de un mark (`BarMark`/`LineMark`/etc.) se hostea fuera del árbol de la vista; una sub-View que lea `@Environment(AppPreferences.self)` (ej. `AmountText`) NO lo resuelve y dispara `SIGTRAP` (`_assertionFailure` en `EnvironmentValues.subscript.getter`) al renderizar — sin crash log claro. Dentro de annotations usar `Text(...)` con el valor YA resuelto del callsite (`appPreferences.currency(...)` desde `self`) o un formatter estático (`YalaFormatter`), NUNCA una sub-View con `@Environment`. **`.chartOverlay { }` SÍ propaga** (ahí `AmountText` funciona, ej. `CashFlowWidget`). Causa del crash del chip Estadísticas en grupos (`8bb5ace8`).
@@ -81,6 +92,32 @@ paths:
 - **Y colorea la excepción, no la norma.** En una lista de movimientos casi todo son gastos: teñirlos pinta la pantalla entera y el color deja de avisar de nada. Solo el ingreso lleva color (`RecentRecordsWidget`, `ScheduledPaymentsWidget`). Decisión del 2026-09-02 en `docs/DECISIONS.md`.
 - **Jerarquía del Panel: sección `title3` (20) › widget `subheadlineEmphasized` (15) › fila.** Hasta el 2026-09-02 la sección y el widget usaban el MISMO token y la fila (`headline`, 17) era el rótulo mayor de la pantalla. Y el aire va al revés que el tamaño: MÁS entre secciones (`xxl`) que del título a su contenido (`sm`), o por proximidad el título se lee como pie del bloque anterior.
 - Tablas DS.Semantic / DS.Gradients en SWIFT-STYLE.md.
+- **Una pantalla de ajustes es un `YalaSettingsList`** (`DesignSystem/SettingsList.swift`, 2026-10-02): `List`
+  agrupada del sistema, bloque `theme.card` por sección sobre el fondo de siempre, cabecera gris, ayuda en el pie
+  del bloque y solo si dice algo que la fila no dice. No vuelvas a la tarjeta por fila con su caption debajo. Tres
+  cosas medidas al migrar: (1) **`.secondary`/`.tertiary` dentro de un `Menu` o de un botón de `List` derivan del
+  tinte** — el valor de «Idioma de voz» salía en el color de acento; `YalaSettingsRowLabel` usa
+  `secondaryLabel`/`tertiaryLabel` fijos. (2) **Con `Toggle(isOn:) { título }` la fila entera es el switch, y tocar
+  su título no lo cambia** (como en Ajustes de iOS): un XCUITest que hacía `tap()` sobre el elemento quedó rojo; se
+  toca `toggle.switches.firstMatch`. (3) **Un `NavigationLink` en `List` pinta su chevron**: quita el propio o salen
+  dos. La lista monta solo las celdas visibles, así que un XCUITest que busca filas baja hasta ellas.
+
+- **Un flujo por pasos que se hace FUERA de Yala es un `YalaStepGuide`** (`DesignSystem/StepGuide.swift`,
+  2026-10-02, referencia del 15-sep en `docs/design/referencias/`): progreso doble en la barra, cabecera con datos,
+  pasos con hilo y un solo botón (el del paso activo), «Lo que vas a ver», garantía y dos salidas al pie. Hoy lo usan
+  Apple Pay (Tutoriales) y Face ID (Seguridad). iOS no le cuenta a Yala si un paso de fuera se hizo: avanza «Hecho», o
+  la acción del paso si hacerla ES el paso (abrir Atajos, y solo si `openURL` contesta que abrió). Los ids de XCUITest
+  van en el título de la cabecera (`rootIdentifier`) y en el título de cada paso (`step_guide_step_<n>`, con su estado
+  en `value`): uno en la raíz pisaría los de dentro.
+
+- **Una pantalla de ENTRADA del Welcome es un `WelcomeFormScreen`** (`Views/Onboarding/WelcomeForm.swift`,
+  2026-10-02, referencia del 15-sep): titular serif (`DS.Typography.welcomeHeadline`) sin logo, lo que se elige en
+  UNA tarjeta (`welcomeFormCard()` o filas con `WelcomeOptionDivider`), y fuera solo la pregunta de pie. Fondo, el
+  degradado fijo de siempre. Pesos de botón con `WelcomeFormButton`: `.filled` (blanco) para lo que se propone,
+  `.outline` para la salida sin cuenta de Yala. Donde Jürgen decidió que nada se recomienda («Es mi primera vez»),
+  mismo peso para todas. El Hero y las fases de progreso/error siguen con logo. **El «Volver» del Welcome no crece
+  más allá de `xxxLarge`** (Large Content Viewer, como una barra de navegación): a AX5 medía ~80 pt y tapaba el
+  titular y el logo de las puertas.
 
 ## Backgrounds de vista
 - TODA View root, sheet, fullScreenCover NUEVA → `.yalaScreenBackground(_:ignoredEdges:)`.
@@ -130,6 +167,12 @@ paths:
   reordena la barra del iPhone, que el usuario ordena a mano (`TabBarConfigView`).
 - **En vertical el iPad pinta pestañas arriba y en horizontal barra lateral**: es el `.automatic` de Apple y se deja
   así (medido en el iPad Pro 13). La barra lateral está a un toque en vertical.
+- **El iPhone también gira (2026-10-01)**: vertical y horizontal a izquierda y derecha (`UISupportedInterfaceOrientations`
+  en los cuatro build settings de `Yala` y `Yala Dev`). Dos consecuencias para una pantalla nueva: (1) **un iPhone
+  grande girado es ancho REGULAR** —pestañas con las seis páginas, lista y detalle a la vez—, así que girar es
+  redimensionar y lo abierto tiene que vivir fuera de la forma; (2) **el alto puede ser de 375 pt** (SE girado), así
+  que nada que no quepa puede quedar fuera de un scroll. Nunca `if` por orientación: alto o ancho del contenedor.
+  Test: `YalaUITests/IPhoneLandscapeUITests` (girar con un registro abierto y con el formulario a medias).
 - **Lista y detalle = `ListDetailSplit`** (`Views/Shared/ListDetailSplit.swift`): un único `NavigationSplitView` de dos
   columnas, `.balanced`, que en compacta se pliega solo a la pila de siempre. Lo usan `RecordsStandaloneView` y
   `PlanningView`; una pantalla nueva con lista y detalle lo reusa en vez de montar su split. Lo que se abre en el
@@ -155,10 +198,37 @@ paths:
   iPhone no cambia de hoja a empuje. En columna, Editar abre el editor directo; el encadenado «cerrar hoja → editor»
   solo existe en la hoja.
 - Ancho legible: `DS.Adaptive.readableWidth` (700) en el contenido de una columna de detalle.
+- **Una `List` con `contentMargins` propios, en la columna de detalle, arranca pegada a la columna de lista**
+  (medido 2026-10-03, iPad mini y Pro 13, Pro Max girado). Junto a la columna la lista tiene área segura (400 pt en el
+  mini girado) y el sistema se queda con el MAYOR entre ese área y el margen, no con la suma: el margen desaparece justo
+  donde hay columna al lado. Un `ScrollView` con `contentMargins` sí los suma (el detalle de Grupos deja su aire). La
+  salida, en `YalaSettingsList`: medir el área segura de cada lado y pasarle a `contentMargins` área + margen
+  (`DS.Adaptive.readableListInsets`). Dos que NO valen: `safeAreaPadding` (cambia 2 pt el margen interior de las filas
+  también en el iPhone en vertical, y en el Pro Max girado seguía pegada) y rehacer la lista con `.id` cuando cambia el
+  área segura (no arregla nada). Y un efecto de la celda más estrecha: una fila sin márgenes propios
+  (`.listRowInsets(EdgeInsets())`) con un texto que casi cabe en una línea sale con los bordes de los glifos cortados
+  (la cabecera de Personalización a 384 pt, y ya en 2.1 la de Tutoriales en el SE en vertical): esas cabeceras llevan
+  `DS.Spacing.sm` de aire lateral.
 - **La lista se aparta sola cuando lo abierto no cabe legible a su lado** (fase 2, 2026-09-29): con algo abierto en el
   detalle y el split por debajo de dos anchos de iPhone (750), `ListDetailSplit` pasa a `.detailOnly`
   (`ListDetailOverlayLogic.listYieldsToDetail`, con test); con «Elige un…» la lista se queda. Lo dispara abrir Yala IA
   al lado o estrechar la ventana. La lista sigue a un toque en el botón del sistema.
+- **Con texto de accesibilidad la columna se ensancha y, donde no caben dos, la página se pliega (2026-10-01).**
+  `DS.Adaptive.listColumnWidths(isAccessibilityText:)` da 440/460/520 con AX1–AX5 (los 408 pt de contenido del Pro
+  Max vertical, donde AX5 cabe, más márgenes); con texto de siempre, los 375/400/480 de antes. Dos cosas medidas en el
+  Pro Max girado que no son obvias: **el split SUMA la isla encima del ancho pedido** (pedida a 520, la columna midió
+  582), y **no pone AL LADO del detalle una columna que lea AX5** — a 522 y a 582 la superpuso sobre «Elige un…», que
+  quedaba medio tapado; la de 446 de siempre sí va al lado, pero ahí AX5 parte «Este mes». Por eso cada página con
+  `ListDetailSplit` lleva `.foldsListDetailForAccessibilityText()` puesto por QUIEN LA MONTA (`ContentView.viewForTab`):
+  con AX y sin ancho para dos columnas AX (`ListDetailOverlayLogic.foldsForAccessibilityText`), la página entera ve
+  ancho compacto y es la pila de vertical: el Pro Max girado (832) y el iPad mini (744 / 853); el iPad Pro 13 sigue en
+  split. **El ancho es el que mide la vista, sin restarle nada**: ya viene sin la isla ni la barra lateral, aunque el
+  proxy siga reportando esos márgenes (iPad Pro 13 girado: 1096 de ancho y 280 de margen). Restarlos los contaba dos
+  veces y apartaba la lista en el Pro 13 con AX. Va fuera porque Registros y Grupos leen el size class por su cuenta para
+  decidir hoja o columna. Una página nueva con `ListDetailSplit` lo lleva también (Ajustes no: va en su hoja, y ahí
+  el ancho lo decide la presentación; no está medido con AX). Test:
+  `IPhoneLandscapeUITests#test_accessibilityText_turnedLargeIPhone_planningHeaderStaysReadable` (por UDID en el Pro Max)
+  + `YalaTests/ListDetailOverlayLogicTests`.
 - **Un detalle que en compacta se empuja y en ancha va en columna** sabe cuál es (`GroupDetailView(presentation:)`,
   como `TransactionDetailSheet`): en columna no oculta la barra de pestañas ni pinta su chevron, y cerrar es vaciar la
   selección de quien lo monta (`onCloseColumn`), no `dismiss()`. Sin `if` de vistas entre los dos modos
@@ -205,15 +275,36 @@ paths:
   debajo según su orden. Por eso «Tus finanzas» vive en `PanelView`, entre los avisos y la barra de filtros, y no en
   `PanelFilterAndWidgetsSection`: el contenedor la sube a la banda sin mover a nadie de sitio en el árbol.
 - **Lo que va dentro de media columna decide por su ancho, no por el size class.** El carrusel de cuentas enseñaba 4
-  tarjetas en regular: en la columna derecha de la cabecera eran 4 de ~110 pt. Ahora pide ancho para 4 de 140.
+  tarjetas en regular: en la columna derecha de la cabecera eran 4 de ~110 pt. Desde el 2026-10-03
+  (`panel-accounts-redesign`) cada tarjeta mide el 80 % del ancho del carrusel con techo de 320 pt
+  (`PanelAccountCardLogic.cardWidth`): siempre asoma la siguiente, en el iPhone y en la columna del iPad.
 - **Una gráfica de alto fijo que deba aprovechar un iPhone grande va dentro de `AdaptiveChartHeight(base:)`**
   (2026-10-01): mide su propio ancho y le da `base × clamp(ancho / 320, 1, 1,2)` (`DS.Adaptive.chartHeight`), solo
   en compacto. Medido: en el SE la gráfica de tendencia mide ~311 pt, así que no cambia; en el Pro Max ~376 → 200 pt.
-  Hoy la usan la tendencia del Panel y las dos de Estadísticas › Tendencias. **Qué NO ganó, y por qué**: el carrusel
-  de cuentas sigue a dos tarjetas en compacto (tres en un Pro Max saldrían a ~128 pt, bajo sus 140 de mínimo, y en el
-  SE el nombre ya se corta con dos).
+  Hoy la usan la tendencia del Panel y las dos de Estadísticas › Tendencias. **Qué NO ganó, y por qué** (hasta el
+  2026-10-03): tres tarjetas de cuenta en un Pro Max (saldrían a ~128 pt). Ese día el carrusel pasó a una tarjeta
+  grande y la siguiente asomando, que da el sitio al nombre y al saldo sin depender del modelo de iPhone.
 - **Un widget solo en su fila ocupa la fila entera solo si sabe repartir su contenido** (`WidgetConfigManager
   .spansRowWhenAloneTypes`, hoy `latestRecords`); los demás siguen en media fila.
+- **Un hero (la cabecera con la cifra grande de una página) es un `HeroHeader`** (`Views/Shared/HeroHeader.swift`,
+  2026-10-04): rótulo de la cifra arriba a la izquierda (`HeroHeaderLabel`), píldora de período a su derecha, cifra
+  `panelHeroAmount` y detalle debajo. No trae margen lateral: lo pone quien lo monta, en el eje izquierdo del resto de
+  la pantalla (en Estadísticas ya lo da `scrollViewGlassEdges`; sumarle otro lo dejaba a 32 pt, medido). Lo usan el Panel, las
+  cuatro pestañas de Estadísticas, Registros y Pagos planificados. No montes otra pila centrada: había cinco heros
+  distintos y ninguno compartido (`distribution-subviews-miss-the-new-panel-hero`). El rótulo lleva
+  `stats_hero_caption` en Estadísticas y solo sale si sale la cifra.
+- **Con poco ALTO, la cabecera de resumen se compacta: `SummaryHeaderStack(period:caption:figure:detail:)`**
+  (`Views/Shared/SummaryHeaderStack.swift`, 2026-10-01). La usan Registros (y con ella Estadísticas › Registros) y
+  Estadísticas › Resumen. Con alto suficiente pinta el `HeroHeader` (desde el 2026-10-04; antes, una pila centrada);
+  con poco alto, el rótulo baja bajo la cifra y prueba, de la primera que quepa a lo ancho: banda (cifra | período y detalle), período al lado de la cifra,
+  detalle en una fila, la pila; las cuatro con 4 pt de margen vertical. Dos cosas medidas que no son obvias:
+  - **«Poco alto» es el alto del contenedor CONTANDO las barras que se le superponen** (`measuresShortContainer`:
+    tamaño + márgenes de seguridad, umbral `DS.Adaptive.shortContainerMaxHeight` = 500). El alto visible a secas no
+    vale: en un SE vertical, bajo el título grande y los chips de Estadísticas, ya baja de 420 y compactaba el
+    vertical. Girados quedan ≤ ~440; en vertical, ≥ ~615.
+  - **En la banda el período va a la derecha, no encima de la cifra**: encima, la columna izquierda volvía a tener tres
+    filas y la primera fila de Registros seguía bajo la barra en el SE girado (empezaba 47 pt por debajo).
+  Test: `IPhoneLandscapeUITests#test_shortHeight_*` (por UDID en SE y Pro Max) + `YalaTests/ShortContainerHeightTests`.
 - **Estadísticas › Registros abre el registro en un panel, no en un split** (`DetailContainerView.recordsContent`):
   el chip vive dentro de la pila de Estadísticas. Lista y panel lado a lado con dos anchos de iPhone; si no caben, el
   panel tapa la lista (`ZStackLayout`, la lista sigue montada) y su X la devuelve; al pasar a compacta con uno
@@ -227,10 +318,11 @@ paths:
   un singleton: cada ventana del iPad manda sobre sí misma, los números de ⌘1…⌘6 siguen su barra lateral
   (`KeyboardCommandLogic.sectionTabs`) y fuera de la app montada los atajos salen desactivados solos.
 - **Un atajo que ABRE algo pregunta primero `RootCommandPerformer.keyboardMayAct`** (sin `shellModalBlocker` y sin
-  nada presentado según `ModalPresentationProbe`). Un `.commands` dispara con una hoja encima, y encender otra
-  presentación con el anchor ocupado es la trampa de las «Presentaciones» de arriba.
+  nada presentado EN ESA VENTANA según `ModalPresentationProbe.isAnythingPresented(in:)`). Un `.commands` dispara
+  con una hoja encima, y encender otra presentación con el anchor ocupado es la trampa de las «Presentaciones» de
+  arriba.
 - **Reusa el camino del dedo**: ⌘N va por el router como el Centro de Control, ⌘⇧N por el FAB de grupos, ⌘K y ⌘,
-  por el Panel (`SessionState.pendingKeyboardPanelRequest`), soltar un recibo por `enqueueSharedImage` como la
+  por el Panel (`SceneNavigation.pendingKeyboardPanelRequest`), soltar un recibo por `enqueueSharedImage` como la
   extensión de compartir. Así heredan las puertas Pro y de consentimiento sin copiarlas.
 - **Un menú contextual nunca ofrece lo que el editor prohíbe** (`RecordContextActionLogic`). Y es más estricto que
   el editor cuando no puede medir lo mismo: el editor habilita Borrar en un registro de grupo huérfano tras un fetch
@@ -241,3 +333,65 @@ paths:
   confirmación anclada ahí no tendría dónde salir. Un solo anchor por observable.
 - **Resaltado del puntero = `.pointerHighlight(cornerRadius:)`** con el radio de la pieza (`nil` = cápsula): da la
   forma al resaltado y a la vista previa del menú contextual. En iPhone no hace nada.
+
+## Varias ventanas (2026-10-02)
+
+Desde la fase 4 del carril adaptativo el iPad (y el iPhone Duo abierto) abre varias ventanas de Yala, cada una con su
+propia navegación. Lo que cualquier cambio nuevo tiene que respetar:
+
+- **La navegación es de la ventana, no del proceso: `SceneNavigation`** (`Yala/App/Models/SceneNavigation.swift`), una
+  por ventana, en el entorno (`@Environment(SceneNavigation.self)`). Pestaña, sub-pestañas, destinos pendientes
+  (`pendingGroupID`, `pendingRecordID`…), peticiones de teclado y lo que tapa la ventana (`shellModalBlocker`,
+  `isMainTabModalVisible`, `isInboxSheetVisible`). **Un estado de navegación nuevo va ahí, nunca a `SessionState`**:
+  en `SessionState` cambiaría la pestaña de todas las ventanas a la vez, que es el bug que esto cerró. Filtros y
+  período siguen globales a propósito. El código que no es una vista llega a la ventana que toca con
+  `SceneRegistry.shared.routingNavigation` (la que está delante) o recorre `allNavigations` si el cambio es del
+  teléfono (un borrado, la shell de solo grupos).
+- **Un solo `ContentView` por proceso: el de la ventana LÍDER** (`SceneRegistry.leaderID`, la viva más antigua;
+  `WindowRoleView`). Es el shell de proceso —arranque, Welcome, borrados remotos, cierre de sesión, alertas de
+  sistema, consumidor `.contentView`— y dos copias duplicarían esos flujos. Las demás ventanas montan
+  `FollowerWindowRoot`: sus pestañas y nada del shell. **Un flujo de proceso nuevo va en `ContentView`**, no en una
+  vista que pueda montarse dos veces. Si la líder se cierra, asciende la siguiente y monta `ContentView` (splash
+  incluido): el mismo camino que el remonte del swap.
+- **Un bloqueo nuevo de la matriz del shell se clasifica también en `FollowerWindowGateLogic`**: si es una pregunta
+  que hay que contestar en la líder antes de usar Yala, va a `attentionBlockers` (la seguidora enseña «Yala te espera
+  en otra ventana» y un botón que trae la líder); si es arranque, a `startingBlockers`; si es una hoja de la líder,
+  no se toca (la seguidora sigue operando). La seguidora **desmonta** su contenido en esos estados —tapar no basta:
+  una hoja presentada queda por encima de cualquier capa—. Test: `YalaTests/MultiWindowRoutingTests`.
+- **El router sella cada intent con su ventana al encolar** (`AppRouter.enqueue`): la que recibió el enlace
+  (`WindowURLEntry`), la notificación (`targetScene`), la tecla o el recibo soltado, y si no, la que el usuario tocó
+  la última (`WindowTouchObserver` en la sonda de `SceneRoot`, que no reconoce nada y no retrasa ningún toque; la
+  notificación de ventana `key` sola no basta entre escenas). Un intent que un manejador encadena va a la ventana que
+  lo drenó (`noteFocused` al principio de `handleMainTabIntent`/`handlePanelIntent`). **Un consumidor nuevo pasa SU ventana**: `markReady/markUnready/peekNext/drainNext(…, in:
+  navigation.id)` —`.routerConsumer(_:)` ya lo hace—. `in: nil` drena todo y solo lo usan los unit tests del router.
+  Un productor nuevo que no venga de un toque marca antes la ventana con `SceneRegistry.shared.noteFocused(_:)`.
+  `.contentView` no se sella: va siempre a la líder, y si lo pidió el usuario desde otra ventana
+  (`RouterIntent.bringsLeaderForward`), la trae al frente; un aviso de fondo no le quita la ventana a nadie.
+- **El cierre de sesión para todas las ventanas menos la que lo lanzó** (`SceneRegistry.signOutDriverID`, del
+  PROCESO: la que estaba al frente al entrar en `.working`, o la que lo pidió con `noteSignOutRequested()` si hay red
+  por medio, como el borrado de cuenta), porque subir los pendientes exige que nadie escriba más. Si la que lo lanzó se
+  cierra, las demás siguen paradas. La seguidora se desmonta; la líder no —cortaría su shell—: la tapa una `UIWindow`
+  de nivel alto en su escena (`LeaderSignOutBusyOverlay`), que queda por encima también de sus hojas y se queda el
+  teclado. Con una sola ventana que lo lanzó, nada cambia. Los covers terminales (cierre de sesión, forzado de
+  actualización, swap de contenedor) salen en todas.
+- **Lo que es una vez por proceso no cuelga de `ContentView`**: una ventana que asciende a líder monta otro. El
+  arranque tiene guarda de reentrada (`AppBootstrapper.isBootstrapping`), los chequeos de usuario que vuelve corren una
+  vez por contenedor (`SceneRegistry.claimBootChecks`) y los de volver a primer plano cuelgan del agregado del proceso
+  (`SceneRegistry.appActivations`, contado en `YalaApp.handleScenePhase`, que cuelga de los DOS `WindowGroup` y
+  descarta el aviso repetido), no del `scenePhase` de una vista, que es el de SU ventana.
+- **Un flag de «tengo una hoja abierta» se baja también al desmontarse** (`MainTabView.onDisappear`,
+  `InboxView.onDisappear`): con ventanas que pasan a esperar o ascienden, `onDismiss` no está garantizado, y un flag
+  colgado retiene el router el resto de la sesión.
+- **«Abrir en una ventana nueva» = `OpenInNewWindowButton(route:)`** (`WindowRoute.group` / `.record`), que solo
+  aparece con `supportsMultipleWindows`. La ventana nueva es una Yala completa que ATERRIZA en el destino por el
+  mismo camino que un enlace (sus puertas incluidas), no un detalle suelto. Una escena nueva (`WindowGroup` más)
+  envuelve su contenido en `SceneRoot` y pasa por `YalaApp.rootView`, o se queda sin navegación, sin registro y con
+  las hojas al tamaño del iPhone.
+- **La multiventana vive en `Yala/Resources/Info.plist`** (`UIApplicationSupportsMultipleScenes = true` en el
+  manifiesto escrito; el generado está apagado en las cuatro configuraciones). Se comprueba con
+  `plutil -p <.app>/Info.plist | grep -A1 SupportsMultipleScenes`.
+- **XCUITest con dos ventanas: «Apps en pantalla completa»** (`MultiWindowUITests`, iPad Pro 13 por UDID). Las dos se
+  distinguen por `app.windows` (incluye la de detrás). Medido el 2026-10-02 en iOS 27.0: con «Apps en ventanas», abrir
+  la segunda o arrastrar su barra tumba `backboardd` del simulador (SIGABRT en `MTLSimDevice newTextureWithDescriptor`;
+  la app sale con SIGKILL sin culpa suya) en 3 de 4 corridas. Y el iPad RESTAURA las ventanas entre arranques:
+  `-uitest-reset` descarta las restauradas (`SceneRegistry`, solo DEBUG).

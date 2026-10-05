@@ -43,3 +43,13 @@ Aislada, la suite pasa 2/2, y las tres corridas completas anteriores del mismo d
 forma que el 4b: el spike cuenta descriptores del proceso, y lo que corrió antes deja algunos abiertos. El release verificado
 que sostiene (sentinel nil **y** cero descriptores) sigue fallando cerrado en producción —aborta el borrado—; lo inestable es
 el test.
+
+## 2026-10-03 · cae en la PRIMERA corrida tras arrancar el simulador
+
+Medido en la Mini (iPhone 17 Pro, iOS 27.0) durante `fix-ci-pure-logic-advisory-on-2-1`, corriendo solo
+`SpikeR3ContainerReleaseTests` + las dos suites de `PrivateSessionMark` (26 casos): con el scheme `Yala`, la
+corrida inmediatamente posterior a `simctl boot` dio el mismo rojo del 4b —(ii) lee 25 filas, (iii) el save
+lanza 134030— **2 de 2 veces**; la corrida siguiente, sin tocar nada, verde (y `Yala Dev` verde también).
+Encaja con la regla «la primera corrida tras bootear no cuenta» de `testing.md`, y apunta a que lo que
+cambia el modo de fallo es la temperatura del simulador, no el orden de las suites. No es la causa del
+rojo de CI de ese día: allí el 4b pasó en las tres pasadas de los dos runs.
