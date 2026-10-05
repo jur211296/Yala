@@ -44,10 +44,8 @@ struct DetailContainerView: View {
     @State private var recalculateTask: Task<Void, Never>?
     @State private var pendingReload = false
     @State private var isInBackground = false
-    /// Gate para `calculateFinancialScore`: el score depende solo de
-    /// dataVersion + mes en curso, no de filtros/periodo. Evita los 2 fetches
-    /// de SwiftData (`loadPaidAmounts`) en cada cambio de chip.
-    @State private var lastScoreSignature: Int = 0
+    /// La pasada de cálculo de las cuatro pestañas (y la firma de la Salud Financiera, que vive con ella).
+    @State private var recalculation = StatisticsRecalculation()
     /// Ancho del chip Registros: decide si lista y registro abierto caben lado a lado.
     @State private var recordsWidth: CGFloat = 0
     private let isFromSearch: Bool  // Skip session sync when coming from global search
@@ -648,104 +646,25 @@ struct DetailContainerView: View {
 
     /// Runs all calculations from cached ViewModel data (no SwiftData fetch).
     private func performCalculation() {
-        // Proyección "mi parte" (neto) desde el set AMPLIO (con AMBAS hermanas del bridge) —
-        // compartida por todas las superficies de stats de esta pantalla.
-        let adjustment = GroupBridgeStatsAdjustment.build(
-            from: dataViewModel.allTransactions, context: modelContext)
-        recordsViewModel.applyFilters(
-            transactions: dataViewModel.allTransactions,
-            accounts: dataViewModel.accounts,
-            categories: dataViewModel.categories,
-            tags: dataViewModel.tags,
-            context: modelContext
-        )
-        trendsViewModel.calculateTrendData(
-            accounts: dataViewModel.accounts,
-            transactions: dataViewModel.allTransactions,
-            allTags: dataViewModel.tags,
-            defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue,
-            adjustment: adjustment
-        )
-        // Distribution Insight Card también requiere insightData.periodSummary
-        // para el gate >=5 tx — calcular cuando estamos en cualquiera de las 2 tabs.
-        if selectedTab == .insights || selectedTab == .categories {
-            calculateInsightsData()
-        }
-    }
-
-    private func calculateInsightsData() {
-        guard selectedTab == .insights || selectedTab == .categories else { return }
-        // Proyección "mi parte" (neto) del set AMPLIO (ambas hermanas del bridge), compartida por
-        // insightData y el Financial Score.
-        let adjustment = GroupBridgeStatsAdjustment.build(
-            from: dataViewModel.allTransactions, context: modelContext)
-        insightsViewModel.calculateInsightsData(
-            transactions: dataViewModel.allTransactions,
-            accounts: dataViewModel.accounts,
-            categories: dataViewModel.categories,
-            budgets: dataViewModel.budgets,
-            scheduledPayments: dataViewModel.scheduledPayments,
-            period: sessionState.selectedPeriod,
-            criteria: trendsViewModel.filterCriteria(withTagCatalog: dataViewModel.tags),
-            currencyCode: appPreferences.defaultCurrencyCode.rawValue,
-            customRange: sessionState.customDateRange,
-            comparisonMode: sessionState.comparisonMode,
-            adjustment: adjustment
-        )
-
-        // Salud Financiera period-aware. El score depende de dataVersion +
-        // período seleccionado (interval). Cambios de filtros (cuenta/categoría/
-        // etiqueta) NO afectan al score — solo el dataset y el interval lo hacen.
-        // El gate evita re-fetches SwiftData de `loadPaidAmounts` en cada cambio
-        // de chip de filtro.
-        let scoreInterval = trendsViewModel.detailPeriod.dateInterval(
-            customRange: trendsViewModel.customDateRange
-        )
-        var scoreHasher = Hasher()
-        scoreHasher.combine(sessionState.dataVersion)
-        scoreHasher.combine(scoreInterval.start)
-        scoreHasher.combine(scoreInterval.end)
-        // El toggle de grupos altera el dataset del score (incluye/excluye TX
-        // bridgeadas) — sin esto, cambiarlo no invalidaría el gate y "Salud
-        // Financiera" quedaría stale hasta cambiar de período.
-        scoreHasher.combine(appPreferences.includeGroupTransactionsInStats)
-        let scoreSignature = scoreHasher.finalize()
-        if scoreSignature != lastScoreSignature {
-            lastScoreSignature = scoreSignature
-            let activePayments = dataViewModel.scheduledPayments.filter(\.isActive)
-            let paidAmounts = ScheduledPaymentPaidStatusHelper.loadPaidAmounts(
-                for: activePayments,
-                interval: scoreInterval,
-                context: modelContext
-            )
-            insightsViewModel.calculateFinancialScore(
+        recalculation.run(
+            StatisticsRecalculation.Inputs(
                 transactions: dataViewModel.allTransactions,
+                accounts: dataViewModel.accounts,
+                categories: dataViewModel.categories,
+                tags: dataViewModel.tags,
                 budgets: dataViewModel.budgets,
                 scheduledPayments: dataViewModel.scheduledPayments,
-                accounts: dataViewModel.accounts,
-                paidAmounts: paidAmounts,
-                period: trendsViewModel.detailPeriod,
-                customRange: trendsViewModel.customDateRange,
-                preferredCurrencyCode: appPreferences.defaultCurrencyCode.rawValue,
-                adjustment: adjustment
-            )
-        }
-
-        // Reset AI state on context change (button must be pressed again)
-        insightsViewModel.resetAIState()
-
-        // Store context for on-demand AI generation via button
-        let criteria = trendsViewModel.filterCriteria(withTagCatalog: dataViewModel.tags)
-        insightsViewModel.storeGenerationContext(
-            period: sessionState.selectedPeriod,
-            filterHash: criteria.hashValue,
-            txnCount: dataViewModel.allTransactions.count,
-            currencyCode: appPreferences.defaultCurrencyCode.rawValue,
-            comparisonMode: sessionState.comparisonMode,
-            criteria: criteria,
-            accounts: dataViewModel.accounts,
-            categories: dataViewModel.categories,
-            tags: dataViewModel.tags
+                period: sessionState.selectedPeriod,
+                customRange: sessionState.customDateRange,
+                comparisonMode: sessionState.comparisonMode,
+                currencyCode: appPreferences.defaultCurrencyCode.rawValue,
+                dataVersion: sessionState.dataVersion,
+                includeGroupTransactionsInStats: appPreferences.includeGroupTransactionsInStats
+            ),
+            records: recordsViewModel,
+            trends: trendsViewModel,
+            insights: insightsViewModel,
+            context: modelContext
         )
     }
 

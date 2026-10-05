@@ -84,6 +84,25 @@ final class StatisticsHeroLikePanelUITests: XCTestCase {
         assertPanelHero(app, in: "Registros")
     }
 
+    /// «Ver más en Tendencias» abre Estadísticas directamente en Tendencias, sin pasar por Resumen. El hero de
+    /// Tendencias lee el resumen del período que antes solo se calculaba con Resumen o Distribución a la vista, así
+    /// que entrando por aquí salía vacío: sin rótulo y sin cifra (medido el 2026-10-05). Ticket
+    /// `trends-hero-keeps-the-previous-period-after-changing-it-on-trends`.
+    func test_trendsOpenedFromThePanelShowsItsHero() {
+        let app = XCUIApplication()
+        app.launchForUITest(pro: true)
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+
+        let seeMore = app.buttons["Ver más en Tendencias"]
+        XCTAssertTrue(seeMore.waitForExistence(timeout: 15), "No está «Ver más en Tendencias» en el Panel.")
+        seeMore.tap()
+
+        XCTAssertTrue(
+            app.descendants(matching: .any)["stats_tab_trends"].waitForExistence(timeout: 10),
+            "«Ver más en Tendencias» no abrió Estadísticas › Tendencias.")
+        assertPanelHero(app, in: "Tendencias abierta desde el Panel")
+    }
+
     /// Distribución tiene un solo hero para el carrusel (categoría, subcategoría, etiquetas) y para Gráficas/Detalle:
     /// ninguna subvista lo sustituye ni lo oculta.
     func test_distributionSubviewsKeepThePanelHero() {
