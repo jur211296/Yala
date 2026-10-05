@@ -184,6 +184,15 @@ final class CloudSyncRuntime {
     /// con backoff. Con la racha terminal manda `.attestUnavailable`, que `classify` mira antes.
     private var lastCycleFailedUpload = false
 
+    /// **¿Dejó el drain del último ciclo cambios locales fuera del outbox?** Testigo por ciclo, el tercero del molde:
+    /// `performCycle` lo baja al entrar y lo enciende el drain del paso 1 si no terminó (`drainOnce` devuelve `false`: un
+    /// `save` del outbox o del cursor que falla, un reloj por unidad o un testigo del relevo que no se deja leer) **o si
+    /// terminó con la traducción cortada** (`CloudSyncEngine.lastDrainCutTranslation`, que devuelve `true` a propósito). Lo lee
+    /// el push-all del cierre en la nube para no prometer «espera unos segundos» a un drain que no termina en ninguna vuelta
+    /// (ticket `personal-drain-that-always-aborts-blocks-cloud-sign-out-with-a-wait-a-moment-copy`). El drain interno del pull
+    /// no cuenta: corre después, y si el del paso 1 terminó, lo que quede lo captura la vuelta siguiente.
+    private var lastCycleCaptureUnfinished = false
+
     /// Cuando `true`, `liveOutboxRows(_:)` LANZA. Mismo molde y mismo porqué que sus dos gemelos de la
     /// migración. SOLO tests.
     var _testThrowOnOutboxFetch = false
@@ -219,6 +228,15 @@ final class CloudSyncRuntime {
         outcome == .transient && lastCycleFailedUpload
     }
 
+    /// ¿Dejó el ciclo que acaba de correr cambios locales sin capturar porque su drain no terminó? Es la señal que el push-all
+    /// previo a cerrar sesión en la nube necesita para separar el drain atascado —que esperar no cura— del cambio escrito
+    /// DESPUÉS de un drain sano, que la vuelta siguiente captura (`CloudSignOutFlowLogic.personalVerdictAfterProbe`). Cuenta con
+    /// cualquier outcome menos `.coalesced`, que describe un ciclo ajeno: el drain corre al entrar y su resultado no depende de
+    /// cómo acabó el resto del ciclo.
+    func stoppedWithUnfinishedCapture(for outcome: SyncCadencePolicy.CadenceOutcome) -> Bool {
+        outcome != .coalesced && lastCycleCaptureUnfinished
+    }
+
     // MARK: Init
 
     init(
@@ -249,6 +267,12 @@ final class CloudSyncRuntime {
     /// capturó? Solo lectura (`CloudSyncEngine.hasUncapturedPersonalChanges`); `nil` = no se pudo saber.
     func hasUncapturedPersonalChanges(context: ModelContext) -> Bool? {
         engine.hasUncapturedPersonalChanges(context: context)
+    }
+
+    /// Las mismas ediciones, una clave por cambio (`CloudSyncEngine.uncapturedPersonalChangeKeys`): lo que el aviso del cierre
+    /// en la nube cuenta y deja aceptar perder cuando el drain no las captura nunca. `nil` = no se pudo leer.
+    func uncapturedPersonalChangeKeys(context: ModelContext) -> Set<String>? {
+        engine.uncapturedPersonalChangeKeys(context: context)
     }
 
     // MARK: - Emisión de IdentityRemap (DIFERIDOS #29, §b.4)
@@ -641,11 +665,15 @@ final class CloudSyncRuntime {
         // El testigo del attest es de ESTE ciclo (ver `lastCycleStoppedAtAttestGate`), también si sale sin contexto.
         lastCycleStoppedAtAttestGate = false
         lastCycleFailedUpload = false
+        lastCycleCaptureUnfinished = false
         guard let context else { return .transient }
         let epoch = sessionEpoch
 
-        // 1) Drain SÍNCRONO al entrar (captura escrituras locales pendientes antes de tocar la red).
-        engine.drainOnce(context: context)
+        // 1) Drain SÍNCRONO al entrar (captura escrituras locales pendientes antes de tocar la red). Si no termina —o termina
+        //    con la traducción cortada—, el testigo lo apunta: el ciclo sigue igual, pero lo que se quedó en el History no
+        //    está en el outbox que el resto del ciclo sube (ver `lastCycleCaptureUnfinished`).
+        let drainCompleted = engine.drainOnce(context: context)
+        lastCycleCaptureUnfinished = !drainCompleted || engine.lastDrainCutTranslation
 
         // 1.5) **La sesión tiene que ser la del dueño del motor** (2026-09-25, ticket
         //      `cloud-session-expiry-with-only-group-changes-has-no-sign-in-door`). El outbox no lleva dueño y el servidor

@@ -431,6 +431,20 @@ nonisolated enum CloudSignOutFlowLogic {
         /// que los pierde** en los cierres y en «Empezar de cero» (`lossCause`, `freshStartOffersGroupsLossExit`); el
         /// desasociar no la ofrece, como con el attest. Al final del `enum` por lo mismo que los anteriores.
         case groupsChangesFromAnotherAccount
+        /// **Este teléfono no consigue preparar para subir algunos cambios PERSONALES: el drain no termina en ninguna vuelta**
+        /// (ticket `personal-drain-that-always-aborts-blocks-cloud-sign-out-with-a-wait-a-moment-copy`, decisión A de Jürgen del
+        /// 2026-10-04). Un `save` del outbox que falla siempre, un reloj por unidad o un testigo del relevo que no se dejan
+        /// leer, o una traducción que se corta en cada vuelta: el cambio se queda en el History y no llega nunca al outbox.
+        ///
+        /// Va aparte de `.transient` porque «espera unos segundos» no es verdad: esperar no lo arregla. Y aparte de
+        /// `.personalUploadRetryLater` porque la subida no tiene nada que ver: el fallo es de este teléfono. Su texto dice que
+        /// no se pierde nada y lo único que puede curarlo —cerrar y abrir Yala, y si sigue, actualizarla—, sin prometer plazo.
+        ///
+        /// Lo produce SOLO el push-all del cierre en la nube (`personalVerdictAfterProbe`), con el testigo del ciclo
+        /// (`CloudSyncRuntime.stoppedWithUnfinishedCapture(for:)`) y la sonda del History. **No abre salida de pérdida**: en un
+        /// teléfono que atesta y con sesión, el camino es el de arriba. El teléfono sin App Attest y la sesión caducada con el
+        /// drain atascado conservan su propio motivo, con su salida. Al final del `enum` por lo mismo que los anteriores.
+        case personalCaptureUnfinished
 
         /// Slug corto para los logs (`CloudSyncBreadcrumb.signOutGroupsBlocked`). Va aquí y no en el
         /// emisor para que un motivo nuevo tenga que nombrarse una sola vez: el `switch` es exhaustivo.
@@ -456,6 +470,7 @@ nonisolated enum CloudSignOutFlowLogic {
             case .migrationInFlight: return "migration-in-flight"
             case .migrationUnreadable: return "migration-unreadable"
             case .groupsChangesFromAnotherAccount: return "groups-changes-from-another-account"
+            case .personalCaptureUnfinished: return "personal-capture-unfinished"
             }
         }
     }
@@ -542,7 +557,8 @@ nonisolated enum CloudSignOutFlowLogic {
              .signOutSessionSurvived: return .permanent
         // Los del motor parado y la subida personal que no llegó son del paso 1, sobre el outbox PERSONAL: este productor no
         // los recibe nunca.
-        case .syncStoppedNeedsUpdate, .syncStoppedMidMigration, .syncStoppedNeedsRelaunch, .personalUploadRetryLater:
+        case .syncStoppedNeedsUpdate, .syncStoppedMidMigration, .syncStoppedNeedsRelaunch, .personalUploadRetryLater,
+             .personalCaptureUnfinished:
             return .permanent
         // Los de la migración los pone solo el cierre PRIVADO, antes del push-all o pegados al arm: este productor, que es
         // de la nube, no los recibe nunca (2026-09-27).
@@ -581,6 +597,8 @@ nonisolated enum CloudSignOutFlowLogic {
         case .syncStoppedNeedsUpdate: return .syncStoppedNeedsUpdate
         case .syncStoppedMidMigration: return .syncStoppedMidMigration
         case .syncStoppedNeedsRelaunch: return .syncStoppedNeedsRelaunch
+        // El drain que no termina, tal cual (2026-10-05): su texto no promete segundos y no culpa a la conexión.
+        case .personalCaptureUnfinished: return .personalCaptureUnfinished
         case .permanent, .exportUnconfirmed, .bridgeUnreadable, .detachBusy, .channelPaused, .attestUnavailable,
              .personalAttestUnavailable, .sessionNotClosed, .signOutSessionSurvived, .migrationInFlight, .migrationUnreadable,
              .groupsChangesFromAnotherAccount:
@@ -750,31 +768,77 @@ nonisolated enum CloudSignOutFlowLogic {
     /// History (`CloudSyncRuntime.hasUncapturedPersonalChanges`) — ticket
     /// `personal-sign-out-reads-an-unfinished-drain-as-nothing-pending`, gemelo de `groupsCaptureVerdict`.
     ///
-    /// El outbox a 0 tras un ciclo no prueba que no quede nada: el drain del ciclo no viaja en su outcome, y uno que aborta
-    /// (una lectura o un `save` que falla) hace `rollback()` y deja la edición solo en el History. El borrado que viene
-    /// detrás se la llevaría sin aviso. Solo se relee en los dos veredictos que un caller deja seguir:
+    /// El outbox a 0 tras un ciclo no prueba que no quede nada: un drain que aborta (una lectura o un `save` que falla) hace
+    /// `rollback()` y deja la edición solo en el History. El borrado que viene detrás se la llevaría sin aviso. Se relee en:
     ///  · `.drained` — el cierre sigue hasta el borrado.
     ///  · `.blocked(_, .attestUnavailable)` y, desde el 2026-09-28, `.blocked(_, .sessionExpired)` — el paso 1 ofrece
-    ///    perder las filas VIVAS que enseña el aviso (`personalUploadBlockDecision`); una edición fuera del outbox no sale en
-    ///    él, y la persona no puede aceptar perder lo que no se le enseñó (el molde es `attestBlockAfterRecapture`). Sale como
-    ///    bloqueo sin salida de pérdida, con la cifra del outbox.
+    ///    perder lo que enseña el aviso (`personalUploadBlockDecision`), y lo que no sale en él no se puede aceptar perder.
+    ///  · `.blocked(_, .transient)`, solo con el drain atascado (2026-10-05): ver abajo.
     /// El resto de bloqueos no descarta nada y no pregunta: la sonda es una lectura del History, no gratis.
     ///
-    /// `true` o `nil` (no se pudo leer) bloquean. La sonda no distingue un drain que abortó de una escritura posterior al
-    /// drain —que el drain siguiente captura—, así que el push-all da otra vuelta mientras le quede tope y devuelve esto
-    /// solo en la última. **El motivo es `.transient`** —«un momento más, espera unos segundos»—, el del guardado que se
-    /// asienta: lo que falló es un guardado de este teléfono, no la subida. La cifra de `.drained` es `Int.max`, el «no se
-    /// pudo contar» del repo.
+    /// **Lo que decide es el testigo del ciclo, `captureUnfinished`** (`CloudSyncRuntime.stoppedWithUnfinishedCapture(for:)`,
+    /// ticket `personal-drain-that-always-aborts-blocks-cloud-sign-out-with-a-wait-a-moment-copy`). La sonda sola no distingue
+    /// un drain que no termina de una escritura POSTERIOR a un drain que sí terminó —los reconciliadores del pull, el puente
+    /// de Grupos, un ciclo que coalesció—, que el drain siguiente captura:
+    ///  · **con el drain sano**, lo que queda es pasajero: `.transient` —«un momento más»—, y el push-all da otra vuelta
+    ///    mientras le quede tope. Con el attest o la sesión, igual: ese cambio entrará en el outbox y el aviso lo contará.
+    ///  · **con el drain atascado**, esperar no lo cura. El teléfono sin App Attest y la sesión caducada CONSERVAN su motivo
+    ///    —su puerta de «Iniciar sesión» y su salida de pérdida—, también cuando el outbox está vacío (`.drained`, releído con
+    ///    el motivo del ciclo, `cycleReason`): el paso 1 cuenta entonces los cambios del History junto a las filas
+    ///    (`PersonalLoss`). Cualquier otro sale `.personalCaptureUnfinished`, cuyo texto no promete segundos.
+    ///
+    /// `true` o `nil` (no se pudo leer) cuentan como «queda algo». La cifra de `.drained` es `Int.max`, el «no se pudo contar»
+    /// del repo.
     static func personalVerdictAfterProbe(_ verdict: PushAllVerdict,
+                                          cycleReason: BlockReason,
+                                          captureUnfinished: Bool,
                                           uncapturedChanges: () -> Bool?) -> PushAllVerdict {
         switch verdict {
         case .drained:
-            return uncapturedChanges() == false ? .drained : .blocked(pendingCount: .max, reason: .transient)
+            guard uncapturedChanges() != false else { return .drained }
+            let reason: BlockReason
+            if !captureUnfinished {
+                reason = .transient
+            } else if cycleReason == .attestUnavailable || cycleReason == .sessionExpired {
+                reason = cycleReason
+            } else {
+                reason = .personalCaptureUnfinished
+            }
+            return .blocked(pendingCount: .max, reason: reason)
         case .blocked(let pending, .attestUnavailable), .blocked(let pending, .sessionExpired):
-            return uncapturedChanges() == false ? verdict : .blocked(pendingCount: pending, reason: .transient)
+            guard !captureUnfinished, uncapturedChanges() != false else { return verdict }
+            return .blocked(pendingCount: pending, reason: .transient)
+        case .blocked(let pending, .transient):
+            guard captureUnfinished, uncapturedChanges() != false else { return verdict }
+            return .blocked(pendingCount: pending, reason: .personalCaptureUnfinished)
         case .blocked:
             return verdict
         }
+    }
+
+    /// **¿Sigue atascado el drain, vuelta a vuelta del push-all?** El testigo de un ciclo `.coalesced` no habla de ese ciclo
+    /// —`CloudSyncRuntime.stoppedWithUnfinishedCapture(for:)` da `false`—, así que esa vuelta conserva lo que vio la última
+    /// que corrió de verdad. Sin esto, un ciclo de la cadencia en vuelo en la última vuelta devolvía «un momento más» a un
+    /// drain que llevaba diecinueve vueltas atascado (review adversarial del 2026-10-05, lente 1).
+    static func captureUnfinishedAfterLap(previous: Bool, outcome: SyncCadencePolicy.CadenceOutcome,
+                                          cycleWitness: Bool) -> Bool {
+        outcome == .coalesced ? previous : cycleWitness
+    }
+
+    /// **¿Deja el recuento final seguir con lo que el drain no capturó?** El paso 4 del cierre en la nube relee el outbox
+    /// tras cortar los motores; con la pérdida personal ACEPTADA relee también el History (review adversarial del
+    /// 2026-10-05, lente 2): con el drain atascado, un cambio apuntado entre el paso 1 y el borrado —mientras suben los
+    /// grupos, una captura de Siri que se materializa— no llega nunca al outbox, y sin esta relectura el borrado se lo
+    /// llevaba sin que ningún aviso lo contara. Tiene que estar entre lo aceptado (`coversUncaptured`); un History que no
+    /// se deja leer solo lo cubre una aceptación sin cifra.
+    ///
+    /// **Sin aceptación no cambia nada, a propósito**: ese hueco —lo escrito tras el último drain, con el drain sano— es el
+    /// del ticket `cloud-sign-out-final-recount-misses-edits-left-only-in-history`, y bloquear ahí por cualquier «sí» de la
+    /// sonda cerraría el cierre por la frontera del respaldo del token. Con la pérdida aceptada, en cambio, la salida solo
+    /// existe porque el aviso CONTÓ el History, y lo que llegue después tiene que volver a contarse.
+    static func residualUncapturedAllowsSignOut(now: Set<String>?, acceptance: PersonalLossAcceptance?) -> Bool {
+        guard let acceptance else { return true }
+        return acceptance.coversUncaptured(now)
     }
 
     /// **¿Queda algo de grupos fuera del outbox?** El veredicto de la captura previa a una salida (ticket
@@ -863,7 +927,7 @@ nonisolated enum CloudSignOutFlowLogic {
         case .transient, .exportUnconfirmed, .bridgeUnreadable, .detachBusy, .channelPaused, .uploadRetryLater,
              .personalAttestUnavailable, .syncStoppedNeedsUpdate, .syncStoppedMidMigration, .syncStoppedNeedsRelaunch,
              .personalUploadRetryLater, .cloudSessionExpired, .sessionNotClosed, .signOutSessionSurvived,
-             .migrationInFlight, .migrationUnreadable:
+             .migrationInFlight, .migrationUnreadable, .personalCaptureUnfinished:
             return false
         }
     }
@@ -971,7 +1035,7 @@ nonisolated enum CloudSignOutFlowLogic {
         case .transient, .permanent, .exportUnconfirmed, .bridgeUnreadable, .detachBusy, .channelPaused,
              .uploadRetryLater, .personalAttestUnavailable, .syncStoppedNeedsUpdate, .syncStoppedMidMigration,
              .syncStoppedNeedsRelaunch, .personalUploadRetryLater, .sessionNotClosed, .signOutSessionSurvived,
-             .migrationInFlight, .migrationUnreadable:
+             .migrationInFlight, .migrationUnreadable, .personalCaptureUnfinished:
             return nil
         }
     }
@@ -983,6 +1047,57 @@ nonisolated enum CloudSignOutFlowLogic {
     struct CausedLossAcceptance: Equatable {
         let rows: LossAcceptance
         let cause: LossCause
+    }
+
+    /// **Lo que el cierre en la nube se llevaría de los cambios PERSONALES, en sus dos mitades** (2026-10-05, ticket
+    /// `personal-drain-that-always-aborts-blocks-cloud-sign-out-with-a-wait-a-moment-copy`): las filas vivas del outbox, por su
+    /// `clientMutationID`, y los cambios del History que ningún drain capturó, por su clave
+    /// (`CloudSyncEngine.uncapturedPersonalChangeKeys`). `nil` en cualquiera de las dos = no se pudo leer.
+    ///
+    /// **La segunda mitad es la que hace honesto el aviso cuando el drain no termina nunca**: esos cambios no llegan al
+    /// outbox, el borrado se los lleva igual y, contando solo las filas, la persona aceptaba perder «2 cambios» y perdía los
+    /// que el aviso no le enseñó. El molde es `FreshStartGroupsLoss` (filas + espejo).
+    struct PersonalLoss: Equatable {
+        let rows: Set<UUID>?
+        let uncaptured: Set<String>?
+
+        /// La cifra del aviso: `Int.max` si alguna mitad no se pudo leer, el «no se pudo contar» del repo (`shownLossCount`).
+        var count: Int {
+            guard let rows, let uncaptured else { return .max }
+            return rows.count + uncaptured.count
+        }
+    }
+
+    /// Lo que la persona aceptó perder de sus cambios PERSONALES en el cierre en la nube, con la causa del aviso que lo
+    /// enseñó. Es `CausedLossAcceptance` con la mitad del History (2026-10-05): **cada mitad se compara con la suya**, y una
+    /// fila o un cambio que no estaban en el aviso hacen que vuelva. `uncaptured == nil` = el aviso salió sin poder leer el
+    /// History, y lo aceptado cubre cualquier cambio de esa mitad, como `LossAcceptance.uncounted` con las filas.
+    struct PersonalLossAcceptance: Equatable {
+        let rows: LossAcceptance
+        let uncaptured: Set<String>?
+        let cause: LossCause
+
+        /// Lo aceptado al elegir «Cerrar sesión y perderlos» sobre lo que contó el aviso.
+        init(offer loss: PersonalLoss, cause: LossCause) {
+            self.rows = loss.rows.map { .rows($0) } ?? .uncounted
+            self.uncaptured = loss.uncaptured
+            self.cause = cause
+        }
+
+        init(rows: LossAcceptance, uncaptured: Set<String>?, cause: LossCause) {
+            self.rows = rows
+            self.uncaptured = uncaptured
+            self.cause = cause
+        }
+
+        /// ¿Cubre lo aceptado los cambios sin capturar de AHORA? Sin ninguno, siempre; aceptado sin leer, cualquiera; ahora
+        /// sin leer, solo eso; y si no, todos tienen que estar entre los aceptados.
+        func coversUncaptured(_ now: Set<String>?) -> Bool {
+            if let now, now.isEmpty { return true }
+            guard let uncaptured else { return true }
+            guard let now else { return false }
+            return now.isSubset(of: uncaptured)
+        }
     }
 
     /// **¿Abre este motivo YA TRADUCIDO la salida que pierde los cambios PERSONALES del cierre en la nube?** Es la tabla
@@ -1003,7 +1118,7 @@ nonisolated enum CloudSignOutFlowLogic {
         case .transient, .permanent, .exportUnconfirmed, .sessionExpired, .bridgeUnreadable, .detachBusy, .channelPaused,
              .uploadRetryLater, .attestUnavailable, .syncStoppedNeedsUpdate, .syncStoppedMidMigration,
              .syncStoppedNeedsRelaunch, .personalUploadRetryLater, .sessionNotClosed, .signOutSessionSurvived,
-             .migrationInFlight, .migrationUnreadable, .groupsChangesFromAnotherAccount:
+             .migrationInFlight, .migrationUnreadable, .groupsChangesFromAnotherAccount, .personalCaptureUnfinished:
             return nil
         }
     }
@@ -1019,13 +1134,15 @@ nonisolated enum CloudSignOutFlowLogic {
     }
 
     /// **La decisión del paso 1 del cierre en la nube, pura** (2026-09-28): hasta ese día vivía en el coordinador, con el
-    /// attest escrito a mano como única salida. `reason` es el motivo CRUDO del push-all personal; `pendingRows`, las filas
-    /// vivas de su outbox (`nil` = no se pudieron leer); `acceptance`, lo que la persona aceptó perder en este cierre; y
+    /// attest escrito a mano como única salida. `reason` es el motivo CRUDO del push-all personal; `pending`, lo que se
+    /// perdería —las filas vivas de su outbox y, desde el 2026-10-05, los cambios del History que el drain no capturó
+    /// (`PersonalLoss`)—; `acceptance`, lo que la persona aceptó perder en este cierre; y
     /// `ownersSessionIsGone`, si de verdad no queda sesión del dueño con la que subir (`CloudSyncRuntime.ownersSessionIsGone`:
     /// el SDK la borró, o la abierta es de otra cuenta).
     ///
-    /// 1. **Lo aceptado solo cubre su causa y sus filas** (`continuesAfterBlockedUpload`). Aceptado sin sesión, si la persona
-    ///    volvió a entrar y la subida falla por la red, bloquea como siempre: esos cambios ya pueden subir.
+    /// 1. **Lo aceptado solo cubre su causa, sus filas y sus cambios sin capturar** (`continuesAfterBlockedUpload`,
+    ///    `PersonalLossAcceptance.coversUncaptured`). Aceptado sin sesión, si la persona volvió a entrar y la subida falla por
+    ///    la red, bloquea como siempre: esos cambios ya pueden subir.
     /// 2. **El motivo se traduce**: el attest a `.personalAttestUnavailable` —el push-all lo trae como `.attestUnavailable`
     ///    con el testigo del motor personal—, y el resto con `personalPushAllShownReason`.
     /// 3. **Ofrece la pérdida solo si el motivo traducido la abre** (`personalLossCause`).
@@ -1033,11 +1150,12 @@ nonisolated enum CloudSignOutFlowLogic {
     ///    `.sessionExpired`, también con la sesión guardada y renovable: un deploy roto o un reloj desfasado lo daría a toda la
     ///    flota, y ofrecer ahí perder los movimientos se llevaría lo que un arreglo del servidor habría subido. Sin la prueba,
     ///    el aviso de siempre —«vuelve a entrar», que no pierde nada—; y lo aceptado sin sesión deja de cubrir.
-    static func personalUploadBlockDecision(reason: BlockReason, pendingRows: Set<UUID>?,
-                                            acceptance: CausedLossAcceptance?,
+    static func personalUploadBlockDecision(reason: BlockReason, pending: PersonalLoss,
+                                            acceptance: PersonalLossAcceptance?,
                                             ownersSessionIsGone: Bool) -> PersonalUploadBlockDecision {
         if let acceptance, acceptance.cause != .noSession || ownersSessionIsGone, continuesAfterBlockedUpload(
-            reason: reason, cause: acceptance.cause, pendingRows: pendingRows, acceptance: acceptance.rows) {
+            reason: reason, cause: acceptance.cause, pendingRows: pending.rows, acceptance: acceptance.rows),
+           acceptance.coversUncaptured(pending.uncaptured) {
             return .continueWithAcceptedLoss
         }
         let shown = reason == .attestUnavailable ? .personalAttestUnavailable : personalPushAllShownReason(reason)
@@ -1167,11 +1285,15 @@ nonisolated enum GroupsSignOutRetryDecision {
         //
         // **Y los cambios de otra cuenta** (2026-09-28): la sesión de ahora no los sube nunca, así que 45 s de reintentos
         // serían 45 s de «Guardando…» sin guardar nada.
+        //
+        // **Y el drain personal que no termina** (2026-10-05), que tampoco nace aquí: su aviso existe justo porque esperar no
+        // lo arregla.
         if reason == .permanent || reason == .sessionExpired || reason == .channelPaused
             || reason == .uploadRetryLater || reason == .attestUnavailable || reason == .personalAttestUnavailable
             || reason == .syncStoppedNeedsUpdate || reason == .syncStoppedMidMigration
             || reason == .syncStoppedNeedsRelaunch || reason == .personalUploadRetryLater
-            || reason == .cloudSessionExpired || reason == .groupsChangesFromAnotherAccount {
+            || reason == .cloudSessionExpired || reason == .groupsChangesFromAnotherAccount
+            || reason == .personalCaptureUnfinished {
             return .surfacePermanent
         }
         if elapsedSeconds < budgetSeconds { return .retryAfter(seconds: retryIntervalSeconds) }

@@ -1071,6 +1071,9 @@ final class CloudMigrationController {
         maxIterations: Int,
         pause: Duration = .milliseconds(250)
     ) async -> CloudSignOutFlowLogic.PushAllVerdict {
+        // El testigo del drain, vuelta a vuelta: un ciclo coalescido conserva lo que vio la última vuelta real
+        // (`captureUnfinishedAfterLap`).
+        var captureUnfinished = false
         for iteration in 1...maxIterations {
             // Sin runtime, o con el candado del dominio cerrado, no hay motor que pueda subir: solo es seguro cerrar sin
             // pendientes —en el outbox y en el History sin capturar—, y con ellos se bloquea sin descartar
@@ -1093,6 +1096,9 @@ final class CloudMigrationController {
                     reason: CloudSignOutFlowLogic.engineStoppedReason(read: journalRead()))
             }
             let outcome = await runtime.syncCycle(context: context)
+            captureUnfinished = CloudSignOutFlowLogic.captureUnfinishedAfterLap(
+                previous: captureUnfinished, outcome: outcome,
+                cycleWitness: runtime.stoppedWithUnfinishedCapture(for: outcome))
             if let verdict = CloudSignOutFlowLogic.pushAllVerdict(
                 livePendingCount: livePendingCount(),
                 cycleOutcome: outcome,
@@ -1117,13 +1123,25 @@ final class CloudMigrationController {
             ) {
                 // **El outbox a 0 no prueba que no quede nada** (ticket
                 // `personal-sign-out-reads-an-unfinished-drain-as-nothing-pending`): un drain que aborta deja la edición solo
-                // en el History. Se relee aquí, sin escribir, en los dos veredictos que el paso 1 deja seguir.
-                let probed = CloudSignOutFlowLogic.personalVerdictAfterProbe(verdict) {
+                // en el History. Se relee aquí, sin escribir, en los veredictos que el paso 1 deja seguir. **Y con el testigo
+                // del drain del ciclo** (2026-10-05, ticket
+                // `personal-drain-that-always-aborts-blocks-cloud-sign-out-with-a-wait-a-moment-copy`): un drain atascado no
+                // se cura esperando, así que no sale «un momento más», y el teléfono sin App Attest o la sesión caducada
+                // conservan su motivo —con el del ciclo si el outbox quedó vacío—.
+                let probed = CloudSignOutFlowLogic.personalVerdictAfterProbe(
+                    verdict,
+                    cycleReason: CloudSignOutFlowLogic.classify(
+                        outcome, channelKilled: false,
+                        attestUnavailable: runtime.stoppedByUnavailableAttest(for: outcome),
+                        uploadFailed: runtime.stoppedByFailedUpload(for: outcome)),
+                    captureUnfinished: captureUnfinished
+                ) {
                     runtime.hasUncapturedPersonalChanges(context: context)
                 }
                 // Lo que la sonda ve puede haber llegado DESPUÉS del drain del ciclo —los reconciliadores del pull, el puente
                 // de Grupos del paso 5.6, un ciclo de la cadencia que coalesció—, y eso lo captura el drain de la vuelta
-                // siguiente. Otra vuelta, con el tope del bucle: un drain que aborta siempre llega a él y bloquea igual.
+                // siguiente. Otra vuelta, con el tope del bucle: un drain que aborta siempre llega a él y bloquea con su
+                // propio motivo, y uno que aborta a ratos tiene sus vueltas para terminar.
                 if probed == verdict || iteration >= maxIterations { return probed }
             }
             // S1 del review: un ciclo de la cadencia EN VUELO devuelve `.coalesced`
@@ -1156,6 +1174,20 @@ final class CloudMigrationController {
             // Conservador: un conteo ilegible jamás debe habilitar un cierre con pendientes.
             return Int.max
         }
+    }
+
+    /// **Lo que el cierre en la nube se llevaría de los cambios personales, en sus dos mitades** (`CloudSignOutFlowLogic.PersonalLoss`,
+    /// 2026-10-05): las filas vivas del outbox y los cambios del History que ningún drain capturó. Sin runtime no hay a quién
+    /// preguntar por el History, y esa mitad sale `nil` («no se pudo contar»): nunca se lee como «no queda nada».
+    func pendingPersonalLoss() -> CloudSignOutFlowLogic.PersonalLoss {
+        CloudSignOutFlowLogic.PersonalLoss(rows: livePendingUploadRowIDs(), uncaptured: uncapturedPersonalChangeKeys())
+    }
+
+    /// La mitad del History de `pendingPersonalLoss`, sola: el recuento final del cierre la relee pegada al borrado
+    /// (`CloudSignOutFlowLogic.residualUncapturedAllowsSignOut`). El runtime sigue ahí tras su teardown: solo corta la
+    /// cadencia y la sesión, no el motor que lee el History. `nil` = no se pudo leer, o no hay runtime.
+    func uncapturedPersonalChangeKeys() -> Set<String>? {
+        CloudSyncRuntime.shared?.uncapturedPersonalChangeKeys(context: context)
     }
 
     /// Las filas vivas del outbox, por su `clientMutationID`: lo que el cierre compara con lo que la persona aceptó perder al

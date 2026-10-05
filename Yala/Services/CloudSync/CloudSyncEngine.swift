@@ -1686,6 +1686,14 @@ final class CloudSyncEngine {
     private var isDraining = false
     private var pendingDrain = false
 
+    /// **¿Terminó la última vuelta del drain con la traducción CORTADA?** Es la mitad que el `Bool` de `drainOnce` no dice a
+    /// propósito: esa vuelta persiste lo que tradujo y devuelve `true`, pero lo que viene detrás del corte se queda solo en el
+    /// History. La lee `CloudSyncRuntime` para su testigo del ciclo (`stoppedWithUnfinishedCapture(for:)`, ticket
+    /// `personal-drain-that-always-aborts-blocks-cloud-sign-out-with-a-wait-a-moment-copy`): un corte que se repite en cada
+    /// vuelta deja el cierre en la nube atascado igual que un drain que aborta. `performDrain` la baja al entrar, así que
+    /// describe siempre la última vuelta que corrió de verdad.
+    private(set) var lastDrainCutTranslation = false
+
     /// Expuesto para el guard D-2 de `pullAndApplyOnce` (extensión `SyncApplyEngine`): nunca aplicar
     /// deltas remotos con un drain EN CURSO (History sin drenar → laundering en el re-drain).
     var isDrainInProgress: Bool { isDraining }
@@ -1813,6 +1821,7 @@ final class CloudSyncEngine {
 
     private func performDrain(context: ModelContext) -> Bool {
         drainSeq += 1
+        lastDrainCutTranslation = false
         drainContext = context
         drainRelayLedger = nil
         drainAdoptBackendKnown = nil
@@ -2078,6 +2087,7 @@ final class CloudSyncEngine {
                 MetricsService.cloudAdoptLateImportSkipped(entity: entity, count: count)
             }
             if !translationAborted { retireRelayIdentityLedgerIfFinished() }
+            lastDrainCutTranslation = translationAborted
             return true
         } catch {
             CloudSyncBreadcrumb.drainAborted(errorType: String(describing: type(of: error)))
@@ -2111,6 +2121,64 @@ final class CloudSyncEngine {
     /// `nil` = no se pudo saber (un fetch que lanza). Quien decida con esto lo trata como «sí».
     func hasUncapturedPersonalChanges(context: ModelContext) -> Bool? {
         do {
+            return try !uncapturedPersonalTransactions(context: context).isEmpty
+        } catch {
+            #if DEBUG
+            print("CloudSyncEngine: Error leyendo el History sin capturar: \(error)")
+            #endif
+            return nil
+        }
+    }
+
+    /// **Los cambios del History que ningún drain ha capturado, uno por clave** — la misma ventana y el mismo filtro que
+    /// `hasUncapturedPersonalChanges`, contados. Es lo que el cierre en la nube enseña y deja aceptar perder cuando el drain
+    /// no termina en ninguna vuelta (ticket `personal-drain-that-always-aborts-blocks-cloud-sign-out-with-a-wait-a-moment-copy`):
+    /// esos cambios no llegan nunca al outbox, así que contar solo sus filas dejaba fuera justo lo que se perdería.
+    ///
+    /// **La clave es POR CAMBIO, no por objeto** (`store|transacción|cambio`): una edición posterior al aviso es otra
+    /// transacción, así que no queda cubierta por lo aceptado y el aviso vuelve con la cifra nueva — el molde de las filas
+    /// del outbox (`clientMutationID`). Solo cuentan los cambios de entidades del store personal, como la sonda; un cambio
+    /// que solo asigna `syncID` cuenta igual, y la frontera del respaldo del token puede re-leer alguno ya consumido: las dos
+    /// cosas cuentan de más, que es la dirección segura (se enseña más de lo que se perdería, nunca menos).
+    ///
+    /// `nil` = no se pudo leer. Quien decida con esto lo trata como «no se pudo contar».
+    func uncapturedPersonalChangeKeys(context: ModelContext) -> Set<String>? {
+        do {
+            var keys = Set<String>()
+            for tx in try uncapturedPersonalTransactions(context: context) {
+                for (index, change) in tx.changes.enumerated()
+                where Self.personalEntityNames.contains(change.changedPersistentIdentifier.entityName) {
+                    keys.insert(Self.uncapturedChangeKey(tx: tx, change: change, index: index))
+                }
+            }
+            return keys
+        } catch {
+            #if DEBUG
+            print("CloudSyncEngine: Error contando el History sin capturar: \(error)")
+            #endif
+            return nil
+        }
+    }
+
+    /// La clave estable de un cambio del History: el `changeIdentifier` de Core Data, que es único en su store y no cambia
+    /// entre lecturas. Si el tipo no fuera el de `DefaultHistory*` (`Int64`), cae a la posición dentro de su transacción,
+    /// que es igual de estable para una transacción ya escrita.
+    nonisolated static func uncapturedChangeKey(tx: DefaultHistoryTransaction, change: HistoryChange, index: Int) -> String {
+        let changeID: Int64?
+        switch change {
+        case .insert(let insert): changeID = insert.changeIdentifier as? Int64
+        case .update(let update): changeID = update.changeIdentifier as? Int64
+        case .delete(let delete): changeID = delete.changeIdentifier as? Int64
+        @unknown default: changeID = nil  // un tipo de cambio nuevo cae a la posición, igual de estable
+        }
+        let suffix = changeID.map { "c\($0)" } ?? "i\(index)"
+        return "\(tx.storeIdentifier)|\(tx.transactionIdentifier)|\(suffix)"
+    }
+
+    /// Las transacciones de la ventana del drain siguiente que la sonda cuenta como «sin capturar»: del store personal en
+    /// grueso, que no escribió el propio motor y que tocan alguna de sus entidades. LANZA si un fetch lanza.
+    private func uncapturedPersonalTransactions(context: ModelContext) throws -> [DefaultHistoryTransaction] {
+        do {
             var cursorDescriptor = FetchDescriptor<SyncCursor>()
             cursorDescriptor.fetchLimit = 1
             let cursor = try context.fetch(cursorDescriptor).first
@@ -2139,15 +2207,10 @@ final class CloudSyncEngine {
             case .broken:
                 txns = try uncapturedProbeBrokenWindow(anchor: anchor, context: context)
             }
-            return txns.contains { tx in
+            return txns.filter { tx in
                 tx.author != Self.outboxSaveAuthor
                     && tx.changes.contains { Self.personalEntityNames.contains($0.changedPersistentIdentifier.entityName) }
             }
-        } catch {
-            #if DEBUG
-            print("CloudSyncEngine: Error leyendo el History sin capturar: \(error)")
-            #endif
-            return nil
         }
     }
 

@@ -53,3 +53,10 @@ lanza 134030— **2 de 2 veces**; la corrida siguiente, sin tocar nada, verde (y
 Encaja con la regla «la primera corrida tras bootear no cuenta» de `testing.md`, y apunta a que lo que
 cambia el modo de fallo es la temperatura del simulador, no el orden de las suites. No es la causa del
 rojo de CI de ese día: allí el 4b pasó en las tres pasadas de los dos runs.
+
+## 2026-10-05 · otra vez el 4a, y aislado también cae
+
+Gate de `personal-drain-that-always-aborts-blocks-cloud-sign-out-with-a-wait-a-moment-copy` (8886 casos, 865 suites,
+`Yala Dev`, iPhone 17 Pro iOS 27.0, simulador con dos corridas encima): cayó **solo** el 4a con `quedan 3 descriptores
+abiertos`. Aislada, con el MISMO binario, la suite dio **rojo y luego verde** (1 de 2). O sea que no hace falta la suite
+completa para que caiga: basta el estado del proceso de test de esa corrida.

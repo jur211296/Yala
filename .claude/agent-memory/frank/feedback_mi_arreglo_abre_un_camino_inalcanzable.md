@@ -55,3 +55,11 @@ no, tu arreglo convierte una política («el kill corta la entrada») en una exc
 empezado: consent → confirmación → chooser → `startMigration` no volvía a preguntar por el flag, así que
 quien tapeaba justo antes de que aterrizara el snapshot nuevo migraba con el kill puesto. El mismo
 término va también en el último punto antes del efecto.
+
+## La tercera forma: la SALIDA nueva lleva al residual que el bloqueo tapaba (2026-10-05)
+
+En `personal-drain-that-always-aborts-…` di salida de pérdida a un teléfono que antes bloqueaba siempre. El
+residual viejo «el recuento final solo mira el outbox» era inofensivo para esa población porque **nunca
+llegaba al borrado**; con mi salida llegaba, y con el drain atascado lo apuntado entre el aviso y el arm se
+perdía sin contarse. Lo cazó la lente de pérdida de datos, no yo. ⇒ al abrir una salida, lista los
+residuales ya escritos del camino que hay DETRÁS y pregunta si tu población los alcanzaba antes.

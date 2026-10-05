@@ -149,19 +149,19 @@ struct CloudExpiredSessionPersonalLossLogicTests {
     @Test("MUTACIÓN: sin aceptar nada, la sesión caducada ofrece la pérdida; el resto bloquea con su motivo de siempre")
     func withoutAcceptance_onlyAttestAndExpiredSessionOfferTheLoss() {
         let a = UUID()
-        #expect(L.personalUploadBlockDecision(reason: .sessionExpired, pendingRows: [a], acceptance: nil, ownersSessionIsGone: true)
+        #expect(L.personalUploadBlockDecision(reason: .sessionExpired, pending: L.PersonalLoss(rows: [a], uncaptured: []), acceptance: nil, ownersSessionIsGone: true)
                 == .offerLoss(shown: .cloudSessionExpired, cause: .noSession))
-        #expect(L.personalUploadBlockDecision(reason: .cloudSessionExpired, pendingRows: [a], acceptance: nil, ownersSessionIsGone: true)
+        #expect(L.personalUploadBlockDecision(reason: .cloudSessionExpired, pending: L.PersonalLoss(rows: [a], uncaptured: []), acceptance: nil, ownersSessionIsGone: true)
                 == .offerLoss(shown: .cloudSessionExpired, cause: .noSession))
-        #expect(L.personalUploadBlockDecision(reason: .attestUnavailable, pendingRows: [a], acceptance: nil, ownersSessionIsGone: true)
+        #expect(L.personalUploadBlockDecision(reason: .attestUnavailable, pending: L.PersonalLoss(rows: [a], uncaptured: []), acceptance: nil, ownersSessionIsGone: true)
                 == .offerLoss(shown: .personalAttestUnavailable, cause: .attestUnavailable))
         for reason in L.BlockReason.allCases
         where ![.sessionExpired, .cloudSessionExpired, .attestUnavailable].contains(reason) {
-            #expect(L.personalUploadBlockDecision(reason: reason, pendingRows: [a], acceptance: nil, ownersSessionIsGone: true)
+            #expect(L.personalUploadBlockDecision(reason: reason, pending: L.PersonalLoss(rows: [a], uncaptured: []), acceptance: nil, ownersSessionIsGone: true)
                     == .block(shown: L.personalPushAllShownReason(reason)), "\(reason)")
         }
         // Sin cifra (el recuento falló) también se ofrece: el aviso sale sin número y lo aceptado cubre cualquiera.
-        #expect(L.personalUploadBlockDecision(reason: .sessionExpired, pendingRows: nil, acceptance: nil, ownersSessionIsGone: true)
+        #expect(L.personalUploadBlockDecision(reason: .sessionExpired, pending: L.PersonalLoss(rows: nil, uncaptured: []), acceptance: nil, ownersSessionIsGone: true)
                 == .offerLoss(shown: .cloudSessionExpired, cause: .noSession))
     }
 
@@ -170,27 +170,27 @@ struct CloudExpiredSessionPersonalLossLogicTests {
     @Test("MUTACIÓN: lo aceptado sin sesión sigue solo sin sesión y con sus filas; con otro fallo, bloquea como siempre")
     func acceptedWithoutSession_onlyCoversTheSameCause() {
         let a = UUID(), b = UUID()
-        let sinSesion = L.CausedLossAcceptance(rows: .rows([a, b]), cause: .noSession)
+        let sinSesion = L.PersonalLossAcceptance(rows: .rows([a, b]), uncaptured: [], cause: .noSession)
         for reason in [L.BlockReason.sessionExpired, .cloudSessionExpired] {
-            #expect(L.personalUploadBlockDecision(reason: reason, pendingRows: [a], acceptance: sinSesion, ownersSessionIsGone: true)
+            #expect(L.personalUploadBlockDecision(reason: reason, pending: L.PersonalLoss(rows: [a], uncaptured: []), acceptance: sinSesion, ownersSessionIsGone: true)
                     == .continueWithAcceptedLoss, "\(reason)")
         }
         // Una fila que no estaba en el aviso vuelve a avisar, con la cifra nueva.
-        #expect(L.personalUploadBlockDecision(reason: .sessionExpired, pendingRows: [a, UUID()], acceptance: sinSesion, ownersSessionIsGone: true)
+        #expect(L.personalUploadBlockDecision(reason: .sessionExpired, pending: L.PersonalLoss(rows: [a, UUID()], uncaptured: []), acceptance: sinSesion, ownersSessionIsGone: true)
                 == .offerLoss(shown: .cloudSessionExpired, cause: .noSession))
         // Volvió a entrar y la red falla: esos cambios ya pueden subir, así que no se pierden.
-        #expect(L.personalUploadBlockDecision(reason: .uploadRetryLater, pendingRows: [a], acceptance: sinSesion, ownersSessionIsGone: true)
+        #expect(L.personalUploadBlockDecision(reason: .uploadRetryLater, pending: L.PersonalLoss(rows: [a], uncaptured: []), acceptance: sinSesion, ownersSessionIsGone: true)
                 == .block(shown: .personalUploadRetryLater))
-        #expect(L.personalUploadBlockDecision(reason: .transient, pendingRows: [a], acceptance: sinSesion, ownersSessionIsGone: true)
+        #expect(L.personalUploadBlockDecision(reason: .transient, pending: L.PersonalLoss(rows: [a], uncaptured: []), acceptance: sinSesion, ownersSessionIsGone: true)
                 == .block(shown: .transient))
         // Y el teléfono sin App Attest es OTRA causa: lo aceptado sin sesión no lo cubre, sale su propio aviso.
-        #expect(L.personalUploadBlockDecision(reason: .attestUnavailable, pendingRows: [a], acceptance: sinSesion, ownersSessionIsGone: true)
+        #expect(L.personalUploadBlockDecision(reason: .attestUnavailable, pending: L.PersonalLoss(rows: [a], uncaptured: []), acceptance: sinSesion, ownersSessionIsGone: true)
                 == .offerLoss(shown: .personalAttestUnavailable, cause: .attestUnavailable))
         // Al revés tampoco: lo aceptado por el attest no cubre la sesión caducada.
-        let porAttest = L.CausedLossAcceptance(rows: .rows([a]), cause: .attestUnavailable)
-        #expect(L.personalUploadBlockDecision(reason: .sessionExpired, pendingRows: [a], acceptance: porAttest, ownersSessionIsGone: true)
+        let porAttest = L.PersonalLossAcceptance(rows: .rows([a]), uncaptured: [], cause: .attestUnavailable)
+        #expect(L.personalUploadBlockDecision(reason: .sessionExpired, pending: L.PersonalLoss(rows: [a], uncaptured: []), acceptance: porAttest, ownersSessionIsGone: true)
                 == .offerLoss(shown: .cloudSessionExpired, cause: .noSession))
-        #expect(L.personalUploadBlockDecision(reason: .attestUnavailable, pendingRows: [a], acceptance: porAttest, ownersSessionIsGone: true)
+        #expect(L.personalUploadBlockDecision(reason: .attestUnavailable, pending: L.PersonalLoss(rows: [a], uncaptured: []), acceptance: porAttest, ownersSessionIsGone: true)
                 == .continueWithAcceptedLoss)
     }
 
@@ -201,19 +201,19 @@ struct CloudExpiredSessionPersonalLossLogicTests {
     func withARenewableSession_theExpiredSessionNeverOffersTheLoss() {
         let a = UUID()
         for reason in [L.BlockReason.sessionExpired, .cloudSessionExpired] {
-            #expect(L.personalUploadBlockDecision(reason: reason, pendingRows: [a], acceptance: nil, ownersSessionIsGone: false)
+            #expect(L.personalUploadBlockDecision(reason: reason, pending: L.PersonalLoss(rows: [a], uncaptured: []), acceptance: nil, ownersSessionIsGone: false)
                     == .block(shown: .cloudSessionExpired), "\(reason)")
-            let sinSesion = L.CausedLossAcceptance(rows: .rows([a]), cause: .noSession)
-            #expect(L.personalUploadBlockDecision(reason: reason, pendingRows: [a], acceptance: sinSesion,
+            let sinSesion = L.PersonalLossAcceptance(rows: .rows([a]), uncaptured: [], cause: .noSession)
+            #expect(L.personalUploadBlockDecision(reason: reason, pending: L.PersonalLoss(rows: [a], uncaptured: []), acceptance: sinSesion,
                                                   ownersSessionIsGone: false) == .block(shown: .cloudSessionExpired),
                     "lo aceptado sin sesión siguió con la sesión de vuelta: \(reason)")
         }
         // El teléfono sin App Attest no depende de la sesión.
-        #expect(L.personalUploadBlockDecision(reason: .attestUnavailable, pendingRows: [a], acceptance: nil,
+        #expect(L.personalUploadBlockDecision(reason: .attestUnavailable, pending: L.PersonalLoss(rows: [a], uncaptured: []), acceptance: nil,
                                               ownersSessionIsGone: false)
                 == .offerLoss(shown: .personalAttestUnavailable, cause: .attestUnavailable))
-        let porAttest = L.CausedLossAcceptance(rows: .rows([a]), cause: .attestUnavailable)
-        #expect(L.personalUploadBlockDecision(reason: .attestUnavailable, pendingRows: [a], acceptance: porAttest,
+        let porAttest = L.PersonalLossAcceptance(rows: .rows([a]), uncaptured: [], cause: .attestUnavailable)
+        #expect(L.personalUploadBlockDecision(reason: .attestUnavailable, pending: L.PersonalLoss(rows: [a], uncaptured: []), acceptance: porAttest,
                                               ownersSessionIsGone: false) == .continueWithAcceptedLoss)
     }
 
@@ -245,6 +245,109 @@ struct CloudExpiredSessionPersonalLossLogicTests {
         #expect(!conCifra.contains("settings."))
         #expect(conCifra.contains("7"))
         #expect(!L10n.Settings.signOutCloudSessionExpiredPersonalLossUnknown.contains("settings."))
+    }
+}
+
+@Suite("Nube con el drain atascado — lo que se cuenta, lo que se acepta y su texto")
+struct CloudStuckDrainPersonalLossLogicTests {
+
+    typealias L = CloudSignOutFlowLogic
+
+    /// Ticket `personal-drain-that-always-aborts-blocks-cloud-sign-out-with-a-wait-a-moment-copy`. La cifra del aviso suma las
+    /// dos mitades, y si una no se pudo leer no hay número honesto.
+    @Test("la cifra suma filas y cambios sin capturar; una mitad sin leer es «no se pudo contar»")
+    func personalLossCount() {
+        #expect(L.PersonalLoss(rows: [UUID(), UUID()], uncaptured: ["a", "b", "c"]).count == 5)
+        #expect(L.PersonalLoss(rows: [], uncaptured: []).count == 0)
+        #expect(L.PersonalLoss(rows: nil, uncaptured: ["a"]).count == .max)
+        #expect(L.PersonalLoss(rows: [UUID()], uncaptured: nil).count == .max)
+        #expect(L.shownLossCount(L.PersonalLoss(rows: [UUID()], uncaptured: nil).count) == nil, "el aviso sale sin cifra")
+    }
+
+    /// Lo aceptado cubre cada mitad por separado: una fila nueva o un cambio nuevo del History hacen volver el aviso, aunque la
+    /// cifra total no crezca. Sin la mitad del History, aceptar «2 cambios» se llevaba los que el drain no capturó.
+    @Test("MUTACIÓN: lo aceptado de lo personal cubre cada mitad por separado; un cambio nuevo del History hace volver el aviso")
+    func personalAcceptanceCoversEachHalf() {
+        let a = UUID(), b = UUID()
+        let oferta = L.PersonalLoss(rows: [a], uncaptured: ["k1", "k2"])
+        let aceptado = L.PersonalLossAcceptance(offer: oferta, cause: .attestUnavailable)
+        func decide(_ now: L.PersonalLoss) -> L.PersonalUploadBlockDecision {
+            L.personalUploadBlockDecision(reason: .attestUnavailable, pending: now, acceptance: aceptado,
+                                          ownersSessionIsGone: false)
+        }
+        #expect(decide(oferta) == .continueWithAcceptedLoss)
+        #expect(decide(.init(rows: [a], uncaptured: ["k1"])) == .continueWithAcceptedLoss, "lo que ya subió no estorba")
+        #expect(decide(.init(rows: [], uncaptured: [])) == .continueWithAcceptedLoss)
+        // Un cambio nuevo del History, con la cifra igual: vuelve el aviso.
+        #expect(decide(.init(rows: [a], uncaptured: ["k1", "k3"]))
+                == .offerLoss(shown: .personalAttestUnavailable, cause: .attestUnavailable))
+        // Una fila nueva, igual que antes.
+        #expect(decide(.init(rows: [a, b], uncaptured: ["k1"]))
+                == .offerLoss(shown: .personalAttestUnavailable, cause: .attestUnavailable))
+        // El History que no se deja leer ahora no lo cubre una aceptación que sí lo contó.
+        #expect(decide(.init(rows: [a], uncaptured: nil))
+                == .offerLoss(shown: .personalAttestUnavailable, cause: .attestUnavailable))
+
+        // Aceptado SIN poder leer el History (el aviso salió sin cifra): cubre cualquier cambio de esa mitad, no las filas.
+        let sinCifra = L.PersonalLossAcceptance(offer: .init(rows: [a], uncaptured: nil), cause: .attestUnavailable)
+        #expect(sinCifra.coversUncaptured(["x", "y"]) && sinCifra.coversUncaptured(nil))
+        #expect(L.personalUploadBlockDecision(reason: .attestUnavailable, pending: .init(rows: [a, b], uncaptured: ["x"]),
+                                              acceptance: sinCifra, ownersSessionIsGone: false)
+                == .offerLoss(shown: .personalAttestUnavailable, cause: .attestUnavailable))
+        // Y las filas sin leer, `.uncounted`, como siempre.
+        #expect(L.PersonalLossAcceptance(offer: .init(rows: nil, uncaptured: []), cause: .noSession).rows == .uncounted)
+    }
+
+    /// El drain atascado no abre ninguna salida por sí solo: la abren el attest y la sesión que no hay.
+    @Test("el drain atascado no deja perder nada por sí solo, y el cierre que reintenta no gasta su presupuesto con él")
+    func captureUnfinishedOpensNoExit() {
+        #expect(L.personalLossCause(.personalCaptureUnfinished) == nil)
+        #expect(L.lossCause(.personalCaptureUnfinished) == nil)
+        #expect(!L.freshStartOffersGroupsLossExit(.personalCaptureUnfinished))
+        #expect(L.personalPushAllShownReason(.personalCaptureUnfinished) == .personalCaptureUnfinished)
+        #expect(L.personalUploadBlockDecision(reason: .personalCaptureUnfinished, pending: .init(rows: [], uncaptured: ["k"]),
+                                              acceptance: nil, ownersSessionIsGone: true)
+                == .block(shown: .personalCaptureUnfinished))
+        #expect(GroupsSignOutRetryDecision.decide(elapsedSeconds: 0, budgetSeconds: 45, reason: .personalCaptureUnfinished)
+                == .surfacePermanent)
+    }
+
+    /// Lente 1 de la review del 2026-10-05: el testigo de un ciclo coalescido no habla de ese ciclo, así que la vuelta
+    /// conserva lo que vio la última que corrió. Sin esto, un ciclo de la cadencia en la última vuelta devolvía «un momento más».
+    @Test("MUTACIÓN: una vuelta coalescida conserva el testigo de la última vuelta real; cualquier otra lo sustituye")
+    func captureUnfinishedSurvivesACoalescedLap() {
+        #expect(L.captureUnfinishedAfterLap(previous: true, outcome: .coalesced, cycleWitness: false))
+        #expect(!L.captureUnfinishedAfterLap(previous: false, outcome: .coalesced, cycleWitness: false))
+        for outcome in [SyncCadencePolicy.CadenceOutcome.completed, .transient, .sessionExpired, .accountUnavailable] {
+            #expect(!L.captureUnfinishedAfterLap(previous: true, outcome: outcome, cycleWitness: false), "\(outcome)")
+            #expect(L.captureUnfinishedAfterLap(previous: false, outcome: outcome, cycleWitness: true), "\(outcome)")
+        }
+    }
+
+    /// Lente 2 de la review del 2026-10-05: con la pérdida aceptada, el recuento final exige que lo que el drain no capturó
+    /// esté entre lo aceptado. Sin aceptación no cambia nada: ese hueco es de otro ticket.
+    @Test("MUTACIÓN: el recuento final con la pérdida aceptada bloquea un cambio del History que el aviso no contó")
+    func residualUncapturedNeedsTheAcceptance() {
+        let aceptado = L.PersonalLossAcceptance(rows: .rows([]), uncaptured: ["k1"], cause: .attestUnavailable)
+        #expect(L.residualUncapturedAllowsSignOut(now: ["k1"], acceptance: aceptado))
+        #expect(L.residualUncapturedAllowsSignOut(now: [], acceptance: aceptado))
+        #expect(!L.residualUncapturedAllowsSignOut(now: ["k1", "k2"], acceptance: aceptado), "k2 llegó después del aviso")
+        #expect(!L.residualUncapturedAllowsSignOut(now: nil, acceptance: aceptado), "un History sin leer no se borra a ciegas")
+        let sinCifra = L.PersonalLossAcceptance(rows: .uncounted, uncaptured: nil, cause: .attestUnavailable)
+        #expect(L.residualUncapturedAllowsSignOut(now: nil, acceptance: sinCifra))
+        #expect(L.residualUncapturedAllowsSignOut(now: ["x"], acceptance: nil), "sin aceptación, como antes")
+    }
+
+    @MainActor
+    @Test("MUTACIÓN: el drain atascado tiene su texto, que no promete segundos ni es el de la conexión")
+    func captureUnfinishedCopy() {
+        let message = SignOutBlockedCopy.message(for: .personalCaptureUnfinished)
+        #expect(message == L10n.Settings.signOutCaptureUnfinished)
+        #expect(message != L10n.Settings.signOutPendingMessage)
+        #expect(message != L10n.Settings.signOutUploadRetryLater)
+        #expect(message != L10n.Settings.signOutBlockedMessage)
+        #expect(SignOutBlockedCopy.title(for: .personalCaptureUnfinished) == L10n.Settings.signOutBlockedTitle,
+                "«un momento más» es el título del guardado que se asienta")
     }
 }
 
@@ -368,10 +471,10 @@ struct CloudPersonalAttestSignOutWiringTests {
         let cloud = try Self.cloudSignOut()
         #expect(cloud.contains(Self.squashed("""
             if case .blocked(let pending, let reason) = await controller.pushAllPendingForSignOut() {
-                let rows = controller.livePendingUploadRowIDs()
+                let loss = controller.pendingPersonalLoss()
                 let ownersSessionIsGone = CloudSyncRuntime.shared?.ownersSessionIsGone ?? false
                 switch CloudSignOutFlowLogic.personalUploadBlockDecision(
-                    reason: reason, pendingRows: rows, acceptance: acceptedPersonalLoss, ownersSessionIsGone: ownersSessionIsGone) {
+                    reason: reason, pending: loss, acceptance: acceptedPersonalLoss, ownersSessionIsGone: ownersSessionIsGone) {
                 case .continueWithAcceptedLoss:
                     break
                 case .block(let shown):
@@ -382,8 +485,8 @@ struct CloudPersonalAttestSignOutWiringTests {
                     return
                 case .offerLoss(let shown, let cause):
                     acceptedPersonalLoss = nil
-                    personalLossExit = PersonalLossOffer(rows: rows, cause: cause)
-                    let shownCount = rows?.count ?? Int.max
+                    personalLossExit = PersonalLossOffer(loss: loss, cause: cause)
+                    let shownCount = loss.count
                     Self.leaveSignInDoorOpen(ifShown: shown, controller: controller)
                     phase = .blocked(pendingCount: shownCount, reason: shown)
                     CloudSyncBreadcrumb.signOutPushBlocked(pending: shownCount)
@@ -457,8 +560,7 @@ struct CloudPersonalAttestSignOutWiringTests {
             Sin el guard, «Cerrar sesión y perderlos» descartaría cambios personales sin que ningún aviso lo haya ofrecido.
             """)
         #expect(exit.contains(Self.squashed("""
-            acceptedPersonalLoss = CloudSignOutFlowLogic.CausedLossAcceptance(
-                rows: offer.rows.map { .rows($0) } ?? .uncounted, cause: offer.cause)
+            acceptedPersonalLoss = CloudSignOutFlowLogic.PersonalLossAcceptance(offer: offer.loss, cause: offer.cause)
             """)), "lo aceptado perdió la causa del aviso: un reintento que falla por otra cosa se llevaría los cambios")
         #expect(exit.contains("await performCloudSecureSignOut(context: context)"))
     }
@@ -470,6 +572,15 @@ struct CloudPersonalAttestSignOutWiringTests {
             guard residualPersonal == 0 || CloudSignOutFlowLogic.continuesWithoutUploading(
                       pendingRows: controller.livePendingUploadRowIDs(), acceptance: acceptedPersonalLoss?.rows),
             """)), "El último recuento dejó de respetar lo aceptado de lo personal: el cierre se pararía tras soltar el canal.")
+        // Con la pérdida aceptada, el History se relee en el mismo `guard` (review adversarial del 2026-10-05, lente 2): con
+        // el drain atascado, lo apuntado después del paso 1 no llega al outbox y el borrado se lo llevaría sin contarlo.
+        #expect(cloud.contains(Self.squashed("""
+            let residualUncaptured = acceptedPersonalLoss == nil ? nil : controller.uncapturedPersonalChangeKeys()
+            """)))
+        #expect(cloud.contains(Self.squashed("""
+                      pendingRows: controller.livePendingUploadRowIDs(), acceptance: acceptedPersonalLoss?.rows),
+                  CloudSignOutFlowLogic.residualUncapturedAllowsSignOut(now: residualUncaptured, acceptance: acceptedPersonalLoss),
+            """)), "el recuento final dejó de releer el History con la pérdida aceptada")
         let nota = try #require(cloud.range(of: Self.squashed(
             "if let accepted = acceptedPersonalLoss { Self.notePersonalDiscarded(pending: residualPersonal, cause: accepted.cause) }")))
         let arm = try #require(cloud.range(of: "StorageModePersistence.armSignOutWipe()"))
@@ -516,10 +627,12 @@ struct CloudPersonalAttestSignOutWiringTests {
         let cycle = Self.squashed(try Self.body(
             of: "private func performCycle() async -> SyncCadencePolicy.CadenceOutcome {",
             in: Self.source("Yala/Services/CloudSync/CloudSyncRuntime.swift")))
-        // Los DOS testigos del ciclo se bajan antes de cualquier salida: el del attest y, desde el 2026-09-25, el de la subida
-        // que no llegó (`cloud-signout-collapses-the-personal-push-all-reason-into-permanent`).
+        // Los TRES testigos del ciclo se bajan antes de cualquier salida: el del attest, desde el 2026-09-25 el de la subida
+        // que no llegó (`cloud-signout-collapses-the-personal-push-all-reason-into-permanent`) y desde el 2026-10-05 el del
+        // drain que no terminó (`personal-drain-that-always-aborts-blocks-cloud-sign-out-with-a-wait-a-moment-copy`).
         #expect(cycle.hasPrefix(
-            "lastCycleStoppedAtAttestGate = false lastCycleFailedUpload = false guard let context else { return .transient }"))
+            "lastCycleStoppedAtAttestGate = false lastCycleFailedUpload = false lastCycleCaptureUnfinished = false "
+                + "guard let context else { return .transient }"))
         #expect(try Self.source("Yala/Services/CloudSync/CloudMigrationController.swift")
             .contains("uploadFailed: runtime.stoppedByFailedUpload(for: outcome),"))
     }

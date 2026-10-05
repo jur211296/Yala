@@ -405,7 +405,7 @@ struct PrivateSignOutMigrationWiringTests {
     @Test("Ajustes enseña el aviso con los dos motivos; la puerta del Welcome, su rama propia antes del catch-all")
     func pantallas() throws {
         let profile = try Self.code("Yala/App/Views/Profile/ProfileView.swift")
-        #expect(profile.contains(".signOutSessionSurvived, .migrationInFlight, .migrationUnreadable:\n                showSignOutBlockedAlert = true"))
+        #expect(profile.contains(".signOutSessionSurvived, .migrationInFlight, .migrationUnreadable, .personalCaptureUnfinished:\n                showSignOutBlockedAlert = true"))
         let welcome = try Self.code("Yala/App/Views/Onboarding/WelcomeGroupsGateView.swift")
         let rama = try #require(welcome.range(of: "case .blocked(_, .migrationInFlight), .blocked(_, .migrationUnreadable):"))
         let catchAll = try #require(welcome.range(of: "        case .blocked(let pending, let reason):\n"))

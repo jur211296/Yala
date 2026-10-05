@@ -1734,7 +1734,10 @@ struct CloudSyncRuntimeTests {
         try context.save()
     }
 
-    @Test("MUTACIÓN: un drain que aborta no deja el cierre en `.drained`: bloquea «un momento más» sin descartar")
+    /// Desde el 2026-10-05 (ticket `personal-drain-that-always-aborts-blocks-cloud-sign-out-with-a-wait-a-moment-copy`) el
+    /// bloqueo de un drain que aborta en TODAS las vueltas ya no es «un momento más, espera unos segundos»: esperar no lo
+    /// cura. Este test fijaba ese texto como contrato; ahora fija el contrario.
+    @Test("MUTACIÓN: un drain que aborta en todas las vueltas bloquea sin descartar y sin prometer segundos")
     func signOutPushAll_drainAborts_blocksInsteadOfDraining() async throws {
         let racha = try IsolatedAttestStreak(); defer { racha.restore() }
         let dir = freshDir(); defer { cleanup(dir) }
@@ -1751,9 +1754,10 @@ struct CloudSyncRuntimeTests {
             livePendingCount: { liveCount(context) }, maxIterations: 3, pause: .zero)
 
         #expect(liveCount(context) == 0, "control de escenario: el drain abortó y el outbox quedó vacío")
-        #expect(pull.callCount == 3, "da las vueltas del tope —otra vuelta cura lo escrito tras el drain— y ahí bloquea")
-        #expect(verdict == .blocked(pendingCount: .max, reason: .transient), "la edición no se pierde en silencio")
-        #expect(shownMessage(verdict) == L10n.Settings.signOutPendingMessage, "el aviso es el del guardado que se asienta")
+        #expect(pull.callCount == 3, "da las vueltas del tope —un drain que aborta a ratos tiene ahí su ocasión— y bloquea")
+        #expect(verdict == .blocked(pendingCount: .max, reason: .personalCaptureUnfinished), "la edición no se pierde en silencio")
+        #expect(shownMessage(verdict) == L10n.Settings.signOutCaptureUnfinished, "el aviso es el del drain atascado")
+        #expect(shownMessage(verdict) != L10n.Settings.signOutPendingMessage, "y no promete «unos segundos»")
         #expect(push.callCount == 0, "no había nada en el outbox que subir")
         #expect(runtime.hasUncapturedPersonalChanges(context: context) == true, "la edición sigue en el History")
 
@@ -1785,7 +1789,8 @@ struct CloudSyncRuntimeTests {
             livePendingCount: { liveCount(context) }, maxIterations: 20, pause: .zero)
 
         #expect(liveCount(context) == 0, "control de escenario: la edición no llegó al outbox")
-        #expect(verdict == .blocked(pendingCount: .max, reason: .transient))
+        #expect(verdict == .blocked(pendingCount: .max, reason: .personalCaptureUnfinished),
+                "el corte se repite en cada vuelta: tampoco es «un momento más»")
     }
 
     /// El segundo criterio del ticket: sin nada que se quede fuera, el cierre es el de siempre — un ciclo, una subida, un
@@ -1850,11 +1855,11 @@ struct CloudSyncRuntimeTests {
         #expect(pull.callCount == 2, "una vuelta más, y no el tope")
     }
 
-    /// El bloqueo por App Attest es el único que el paso 1 deja seguir perdiendo las filas del aviso. Con una edición fuera
-    /// del outbox, el aviso no la enseñaría y la pérdida aceptada se la llevaría: sale como «un momento más», sin salida de
-    /// pérdida, hasta que un drain la capture y el aviso la cuente.
-    @Test("MUTACIÓN: el bloqueo por App Attest con una edición sin capturar no ofrece perder: «un momento más»")
-    func signOutPushAll_attestBlockWithUncapturedEdit_isNotTheLossOffer() async throws {
+    /// El bloqueo por App Attest abre la salida que pierde lo que enseña el aviso. Hasta el 2026-10-05, con una edición fuera
+    /// del outbox salía como «un momento más» sin salida, y con el drain atascado eso era para siempre. Ahora conserva su
+    /// motivo, y el paso 1 cuenta esa edición junto a las filas (`PersonalLoss`): se enseña y se acepta, o no se pierde.
+    @Test("MUTACIÓN: con el drain atascado, el bloqueo por App Attest conserva su salida y cuenta lo que el drain no capturó")
+    func signOutPushAll_attestBlockWithUncapturedEdit_keepsItsExitAndCountsTheEdit() async throws {
         let racha = try IsolatedAttestStreak(); defer { racha.restore() }
         try racha.seedTerminal()
         let dir = freshDir(); defer { cleanup(dir) }
@@ -1875,50 +1880,274 @@ struct CloudSyncRuntimeTests {
         let conEdicion = await CloudMigrationController.pushAllForSignOut(
             runtime: runtime, context: context, domainGateOpen: { true }, journalRead: { .unreadable },
             livePendingCount: { liveCount(context) }, maxIterations: 20, pause: .zero)
-        #expect(conEdicion == .blocked(pendingCount: 1, reason: .transient))
+        #expect(conEdicion == .blocked(pendingCount: 1, reason: .attestUnavailable), "conserva el motivo que abre su salida")
+
+        // Lo que el aviso cuenta y deja aceptar: la fila del outbox Y la edición que el drain no capturó.
+        let rows = Set(try context.fetch(FetchDescriptor<SyncOutbox>()).map(\.clientMutationID))
+        let keys = try #require(runtime.uncapturedPersonalChangeKeys(context: context))
+        #expect(!keys.isEmpty, "la edición sigue en el History y se cuenta")
+        let loss = CloudSignOutFlowLogic.PersonalLoss(rows: rows, uncaptured: keys)
+        #expect(loss.count == 1 + keys.count)
+        #expect(CloudSignOutFlowLogic.personalUploadBlockDecision(
+            reason: .attestUnavailable, pending: loss, acceptance: nil, ownersSessionIsGone: false)
+                == .offerLoss(shown: .personalAttestUnavailable, cause: .attestUnavailable))
+        let aceptado = CloudSignOutFlowLogic.PersonalLossAcceptance(offer: loss, cause: .attestUnavailable)
+        #expect(CloudSignOutFlowLogic.personalUploadBlockDecision(
+            reason: .attestUnavailable, pending: loss, acceptance: aceptado, ownersSessionIsGone: false)
+                == .continueWithAcceptedLoss)
+
+        // Una edición posterior al aviso es otra transacción: no está entre lo aceptado y el aviso vuelve con la cifra nueva.
+        try localEdit(context)
+        let despues = try #require(runtime.uncapturedPersonalChangeKeys(context: context))
+        #expect(despues.count > keys.count)
+        #expect(CloudSignOutFlowLogic.personalUploadBlockDecision(
+            reason: .attestUnavailable, pending: .init(rows: rows, uncaptured: despues), acceptance: aceptado,
+            ownersSessionIsGone: false) == .offerLoss(shown: .personalAttestUnavailable, cause: .attestUnavailable))
 
         // Control: capturada la edición, el aviso de la pérdida vuelve y la cuenta.
         engine._testThrowOnDrainOutboxSave = false
         let capturada = await CloudMigrationController.pushAllForSignOut(
             runtime: runtime, context: context, domainGateOpen: { true }, journalRead: { .unreadable },
             livePendingCount: { liveCount(context) }, maxIterations: 20, pause: .zero)
-        #expect(capturada == .blocked(pendingCount: 2, reason: .attestUnavailable))
+        #expect(capturada == .blocked(pendingCount: 3, reason: .attestUnavailable), "la fila de antes y las dos ediciones")
     }
 
-    @Test("personalVerdictAfterProbe: solo relee `.drained` y los bloqueos que ofrecen perder; lo que no se pudo leer bloquea")
+    @Test("personalVerdictAfterProbe: el testigo del drain separa lo que esperar cura de lo que no, y no relee de más")
     func personalVerdictAfterProbe_table() {
         typealias L = CloudSignOutFlowLogic
         var asked = 0
         func probe(_ answer: Bool?) -> () -> Bool? { { asked += 1; return answer } }
+        func read(_ verdict: L.PushAllVerdict, cycle: L.BlockReason = .transient, stuck: Bool, _ answer: Bool?)
+            -> L.PushAllVerdict {
+            L.personalVerdictAfterProbe(verdict, cycleReason: cycle, captureUnfinished: stuck, uncapturedChanges: probe(answer))
+        }
 
-        #expect(L.personalVerdictAfterProbe(.drained, uncapturedChanges: probe(false)) == .drained)
-        #expect(L.personalVerdictAfterProbe(.drained, uncapturedChanges: probe(true))
-            == .blocked(pendingCount: .max, reason: .transient))
-        #expect(L.personalVerdictAfterProbe(.drained, uncapturedChanges: probe(nil))
-            == .blocked(pendingCount: .max, reason: .transient))
+        // `.drained` con el drain sano: lo que queda es pasajero (escrito tras el drain) y es «un momento más».
+        #expect(read(.drained, stuck: false, false) == .drained)
+        #expect(read(.drained, stuck: false, true) == .blocked(pendingCount: .max, reason: .transient))
+        #expect(read(.drained, stuck: false, nil) == .blocked(pendingCount: .max, reason: .transient))
+        // Con el drain atascado no se promete nada: su motivo propio…
+        #expect(read(.drained, stuck: true, false) == .drained, "un drain que abortó sin nada fuera del outbox no bloquea")
+        #expect(read(.drained, stuck: true, true) == .blocked(pendingCount: .max, reason: .personalCaptureUnfinished))
+        #expect(read(.drained, stuck: true, nil) == .blocked(pendingCount: .max, reason: .personalCaptureUnfinished))
+        // …salvo que el ciclo hable del attest o de la sesión: entonces conserva ESE motivo, que abre su salida.
+        #expect(read(.drained, cycle: .attestUnavailable, stuck: true, true)
+                == .blocked(pendingCount: .max, reason: .attestUnavailable))
+        #expect(read(.drained, cycle: .sessionExpired, stuck: true, true)
+                == .blocked(pendingCount: .max, reason: .sessionExpired))
+        // Con el drain sano el motivo del ciclo no cuenta: la vuelta siguiente lo captura y el aviso lo contará.
+        #expect(read(.drained, cycle: .attestUnavailable, stuck: false, true) == .blocked(pendingCount: .max, reason: .transient))
+        for cycle in L.BlockReason.allCases where cycle != .attestUnavailable && cycle != .sessionExpired {
+            #expect(read(.drained, cycle: cycle, stuck: true, true)
+                    == .blocked(pendingCount: .max, reason: .personalCaptureUnfinished), "\(cycle)")
+        }
 
-        let attest = L.PushAllVerdict.blocked(pendingCount: 3, reason: .attestUnavailable)
-        #expect(L.personalVerdictAfterProbe(attest, uncapturedChanges: probe(false)) == attest)
-        #expect(L.personalVerdictAfterProbe(attest, uncapturedChanges: probe(true)) == .blocked(pendingCount: 3, reason: .transient))
-        #expect(L.personalVerdictAfterProbe(attest, uncapturedChanges: probe(nil)) == .blocked(pendingCount: 3, reason: .transient))
-        #expect(asked == 6)
+        // Los dos bloqueos que ofrecen perder: con el drain sano, lo de fuera es pasajero; atascado, conservan su motivo.
+        for reason in [L.BlockReason.attestUnavailable, .sessionExpired] {
+            let verdict = L.PushAllVerdict.blocked(pendingCount: 3, reason: reason)
+            #expect(read(verdict, stuck: false, false) == verdict, "\(reason)")
+            #expect(read(verdict, stuck: false, true) == .blocked(pendingCount: 3, reason: .transient), "\(reason)")
+            #expect(read(verdict, stuck: false, nil) == .blocked(pendingCount: 3, reason: .transient), "\(reason)")
+            asked = 0
+            #expect(read(verdict, stuck: true, true) == verdict, "\(reason)")
+            #expect(asked == 0, "atascado, la respuesta no cambia nada: no se lee el History")
+        }
 
-        // La sesión caducada, igual desde el 2026-09-28: su aviso también ofrece perder las filas que cuenta (ticket
-        // `cloud-sign-out-with-an-expired-session-and-personal-changes-has-no-exit`).
+        // `.transient` con filas: solo el drain atascado lo cambia, y solo si queda algo fuera.
+        let transient = L.PushAllVerdict.blocked(pendingCount: 2, reason: .transient)
         asked = 0
-        let caducada = L.PushAllVerdict.blocked(pendingCount: 2, reason: .sessionExpired)
-        #expect(L.personalVerdictAfterProbe(caducada, uncapturedChanges: probe(false)) == caducada)
-        #expect(L.personalVerdictAfterProbe(caducada, uncapturedChanges: probe(true)) == .blocked(pendingCount: 2, reason: .transient))
-        #expect(L.personalVerdictAfterProbe(caducada, uncapturedChanges: probe(nil)) == .blocked(pendingCount: 2, reason: .transient))
-        #expect(asked == 3)
+        #expect(read(transient, stuck: false, true) == transient)
+        #expect(asked == 0, "con el drain sano no se relee")
+        #expect(read(transient, stuck: true, false) == transient)
+        #expect(read(transient, stuck: true, true) == .blocked(pendingCount: 2, reason: .personalCaptureUnfinished))
+        #expect(read(transient, stuck: true, nil) == .blocked(pendingCount: 2, reason: .personalCaptureUnfinished))
 
-        // El resto de bloqueos no descarta nada: pasan tal cual y ni preguntan.
+        // El resto de bloqueos no descarta nada ni promete segundos: pasan tal cual y ni preguntan, atascado o no.
         asked = 0
-        for reason in L.BlockReason.allCases where reason != .attestUnavailable && reason != .sessionExpired {
+        for reason in L.BlockReason.allCases where ![.attestUnavailable, .sessionExpired, .transient].contains(reason) {
             let verdict = L.PushAllVerdict.blocked(pendingCount: 2, reason: reason)
-            #expect(L.personalVerdictAfterProbe(verdict, uncapturedChanges: probe(true)) == verdict, "\(reason)")
+            #expect(read(verdict, stuck: true, true) == verdict, "\(reason)")
+            #expect(read(verdict, stuck: false, true) == verdict, "\(reason)")
         }
         #expect(asked == 0, "la sonda es una lectura del History: solo se hace cuando decide algo")
+    }
+
+    // MARK: - El drain que aborta en TODAS las vueltas (2026-10-05)
+
+    // Ticket `personal-drain-that-always-aborts-blocks-cloud-sign-out-with-a-wait-a-moment-copy`, decisión A de Jürgen: un
+    // texto que no prometa segundos, y que el teléfono sin App Attest y la sesión caducada no pierdan su salida.
+
+    @Test("MUTACIÓN: el testigo del ciclo se enciende con el drain que aborta o se corta, se baja al entrar y no cuenta un ciclo ajeno")
+    func unfinishedCaptureWitness_followsTheCycleDrain() async throws {
+        let racha = try IsolatedAttestStreak(); defer { racha.restore() }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        let runtime = makeRuntime(engine: engine, push: EchoAppliedSession(), pull: StubSession(body: emptyPageJSON()),
+                                  session: StubCloudSession(userID: "u1"))
+
+        // Sin nada que capturar, el drain termina: testigo apagado.
+        let sano = await runtime.syncCycle(context: context)
+        #expect(!runtime.stoppedWithUnfinishedCapture(for: sano))
+
+        // El save del outbox falla: el drain no termina.
+        try localEdit(context)
+        engine._testThrowOnDrainOutboxSave = true
+        let abortado = await runtime.syncCycle(context: context)
+        #expect(runtime.stoppedWithUnfinishedCapture(for: abortado))
+        #expect(!runtime.stoppedWithUnfinishedCapture(for: .coalesced), "un `.coalesced` describe un ciclo ajeno")
+
+        // La traducción cortada devuelve `true` a propósito, y aun así deja la edición fuera: también enciende.
+        engine._testThrowOnDrainOutboxSave = false
+        engine._testThrowOnClockStamp = true
+        let cortado = await runtime.syncCycle(context: context)
+        #expect(engine.lastDrainCutTranslation, "control de escenario: la vuelta se cortó")
+        #expect(runtime.stoppedWithUnfinishedCapture(for: cortado))
+
+        // Curado, el ciclo siguiente lo baja al entrar: no arrastra el de antes.
+        engine._testThrowOnClockStamp = false
+        let curado = await runtime.syncCycle(context: context)
+        #expect(!engine.lastDrainCutTranslation)
+        #expect(!runtime.stoppedWithUnfinishedCapture(for: curado))
+        #expect(runtime.hasUncapturedPersonalChanges(context: context) == false, "control: la edición se capturó")
+    }
+
+    /// El otro criterio del ticket: un drain que aborta UNA vez y luego termina —el caso pasajero— sigue curándose solo con
+    /// otra vuelta, sin aviso.
+    @Test("MUTACIÓN: un drain que aborta una vez y luego termina sube la edición en la vuelta siguiente y el cierre sigue")
+    func signOutPushAll_drainAbortsOnce_isCuredByTheNextLap() async throws {
+        let racha = try IsolatedAttestStreak(); defer { racha.restore() }
+        CloudSyncFlags.groupsBackendEnabled = true
+        defer { CloudSyncFlags._testResetGroupsBackendEnabledOverride() }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        let push = EchoAppliedSession()
+        let pull = StubSession(body: emptyPageJSON())
+        let runtime = makeRuntime(engine: engine, push: push, pull: pull, session: StubCloudSession(userID: "u1"))
+        try localEdit(context)
+        engine._testThrowOnDrainOutboxSave = true
+        // El paso 5.6 corre tras el drain del ciclo: ahí se cura, como se curaría un fallo pasajero del store.
+        runtime.groupsSyncCycleRunner = { _ in engine._testThrowOnDrainOutboxSave = false }
+
+        let verdict = await CloudMigrationController.pushAllForSignOut(
+            runtime: runtime, context: context, domainGateOpen: { true }, journalRead: { .unreadable },
+            livePendingCount: { liveCount(context) }, maxIterations: 20, pause: .zero)
+
+        #expect(verdict == .drained)
+        #expect(push.appliedCount == 1, "la edición subió en la segunda vuelta")
+        #expect(pull.callCount == 2, "una vuelta más, y no el tope")
+    }
+
+    /// La sesión caducada con el drain atascado: hasta este ticket salía «un momento más» —el paso 1 no para el motor con
+    /// `.transient`, así que tampoco dejaba encendida la puerta de «Iniciar sesión»— y sin la salida de perderlos. Con el
+    /// outbox vacío también: el motivo sale del ciclo.
+    @Test("MUTACIÓN: caducada con el drain atascado conserva su motivo —puerta y salida— y cuenta lo que el drain no capturó")
+    func signOutPushAll_expiredSessionWithAStuckDrain_keepsItsDoorAndItsExit() async throws {
+        let racha = try IsolatedAttestStreak(); defer { racha.restore() }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        let session = StubCloudSession(userID: "u1", canRenew: false)
+        let runtime = makeRuntime(engine: engine, push: EchoAppliedSession(), pull: StubSession(status: 401),
+                                  session: session)
+        try localEdit(context)
+        engine._testThrowOnDrainOutboxSave = true
+
+        // Outbox vacío: el `.drained` se relee con el motivo del ciclo.
+        let vacio = await CloudMigrationController.pushAllForSignOut(
+            runtime: runtime, context: context, domainGateOpen: { true }, journalRead: { .unreadable },
+            livePendingCount: { liveCount(context) }, maxIterations: 3, pause: .zero)
+        #expect(liveCount(context) == 0, "control de escenario: nada llegó al outbox")
+        #expect(vacio == .blocked(pendingCount: .max, reason: .sessionExpired))
+        #expect(CloudSignOutFlowLogic.personalPushAllShownReason(.sessionExpired) == .cloudSessionExpired,
+                "el motivo que nombra la puerta de «Iniciar sesión» y que el paso 1 usa para dejarla encendida")
+        let keys = try #require(runtime.uncapturedPersonalChangeKeys(context: context))
+        let loss = CloudSignOutFlowLogic.PersonalLoss(rows: [], uncaptured: keys)
+        #expect(loss.count == keys.count && loss.count > 0, "lo que se perdería se cuenta, no se oculta")
+        #expect(CloudSignOutFlowLogic.personalUploadBlockDecision(
+            reason: .sessionExpired, pending: loss, acceptance: nil, ownersSessionIsGone: runtime.ownersSessionIsGone)
+                == .offerLoss(shown: .cloudSessionExpired, cause: .noSession))
+
+        // Con filas en el outbox, igual: conserva el motivo.
+        _ = try liveRow(context, entityType: SyncEntityType.transactionItem, h: hlc(1))
+        let conFilas = await CloudMigrationController.pushAllForSignOut(
+            runtime: runtime, context: context, domainGateOpen: { true }, journalRead: { .unreadable },
+            livePendingCount: { liveCount(context) }, maxIterations: 3, pause: .zero)
+        #expect(conFilas == .blocked(pendingCount: 1, reason: .sessionExpired))
+    }
+
+    /// El teléfono sin App Attest con el outbox VACÍO y el drain atascado: todo lo pendiente vive en el History. Antes salía
+    /// «un momento más» para siempre y sin salida; ahora sale su aviso, con la cifra de lo que el drain no capturó.
+    @Test("MUTACIÓN: sin App Attest, outbox vacío y drain atascado: el aviso del attest, con lo del History contado")
+    func signOutPushAll_attestWithEmptyOutboxAndAStuckDrain_offersTheCountedLoss() async throws {
+        let racha = try IsolatedAttestStreak(); defer { racha.restore() }
+        try racha.seedTerminal()
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        let runtime = makeRuntime(engine: engine, push: EchoAppliedSession(), pull: StubSession(body: emptyPageJSON()),
+                                  session: StubCloudSession(userID: "u1", attestError: .unavailable))
+        try localEdit(context)
+        engine._testThrowOnDrainOutboxSave = true
+
+        let verdict = await CloudMigrationController.pushAllForSignOut(
+            runtime: runtime, context: context, domainGateOpen: { true }, journalRead: { .unreadable },
+            livePendingCount: { liveCount(context) }, maxIterations: 3, pause: .zero)
+        #expect(verdict == .blocked(pendingCount: .max, reason: .attestUnavailable))
+        let keys = try #require(runtime.uncapturedPersonalChangeKeys(context: context))
+        let loss = CloudSignOutFlowLogic.PersonalLoss(rows: [], uncaptured: keys)
+        guard case .offerLoss(let shown, let cause) = CloudSignOutFlowLogic.personalUploadBlockDecision(
+            reason: .attestUnavailable, pending: loss, acceptance: nil, ownersSessionIsGone: false) else {
+            Issue.record("el teléfono sin App Attest se quedó sin salida")
+            return
+        }
+        #expect(shown == .personalAttestUnavailable && cause == .attestUnavailable)
+        #expect(SignOutBlockedCopy.personalLossMessage(for: cause, pending: loss.count)
+                == L10n.Settings.signOutAttestMessage(keys.count), "el aviso dice cuántos se pierden")
+    }
+
+    /// El push-all pasa el testigo vuelta a vuelta por `captureUnfinishedAfterLap` (lente 1 de la review del 2026-10-05):
+    /// leído a pelo, un `.coalesced` en la última vuelta borraba lo que vieron las anteriores.
+    @Test("MUTACIÓN: el push-all arrastra el testigo entre vueltas y la sonda lo lee de ahí")
+    func signOutPushAll_carriesTheWitnessAcrossLaps() throws {
+        let root = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        let text = try String(contentsOf: root.appendingPathComponent(
+            "Yala/Services/CloudSync/CloudMigrationController.swift"), encoding: .utf8)
+        let squashed = text.split(whereSeparator: \.isWhitespace).joined(separator: " ")
+        func sq(_ s: String) -> String { s.split(whereSeparator: \.isWhitespace).joined(separator: " ") }
+        #expect(squashed.contains(sq("""
+            captureUnfinished = CloudSignOutFlowLogic.captureUnfinishedAfterLap(
+                previous: captureUnfinished, outcome: outcome,
+                cycleWitness: runtime.stoppedWithUnfinishedCapture(for: outcome))
+            """)))
+        #expect(squashed.contains(sq("captureUnfinished: captureUnfinished ) {")))
+        #expect(squashed.components(separatedBy: "stoppedWithUnfinishedCapture(for:").count - 1 == 1,
+                "nadie lee el testigo del ciclo a pelo")
+    }
+
+    @Test("sonda por claves: una por cambio, sin el eco del motor, y una edición nueva añade la suya")
+    func uncapturedChangeKeys_countEachChangeAndIgnoreEngineWrites() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let runtime = makeRuntime(session: StubCloudSession(userID: "u1"))
+        #expect(runtime.uncapturedPersonalChangeKeys(context: context) == [], "store sin ediciones")
+
+        context.insert(TransactionItem(date: Date(timeIntervalSince1970: 1_700_000_000), amount: 5, currencyCode: "USD"))
+        context.author = CloudSyncEngine.outboxSaveAuthor
+        try context.save()
+        context.author = nil
+        #expect(runtime.uncapturedPersonalChangeKeys(context: context) == [], "el eco del motor no cuenta")
+
+        try localEdit(context)
+        let una = try #require(runtime.uncapturedPersonalChangeKeys(context: context))
+        #expect(una.count == 1)
+        #expect(runtime.uncapturedPersonalChangeKeys(context: context) == una, "la misma lectura da las mismas claves")
+        try localEdit(context)
+        let dos = try #require(runtime.uncapturedPersonalChangeKeys(context: context))
+        #expect(dos.count == 2 && una.isSubset(of: dos), "la edición nueva añade su clave y no cambia la de antes")
+        #expect(runtime.hasUncapturedPersonalChanges(context: context) == true, "las dos lecturas miran la misma ventana")
     }
 
     // MARK: - La puerta de la nube con la sesión caducada
@@ -2163,7 +2392,8 @@ struct CloudSyncRuntimeTests {
         #expect(rows.count == 2)
         #expect(runtime.ownersSessionIsGone, "el SDK borró la sesión: no queda con qué subir")
         #expect(CloudSignOutFlowLogic.personalUploadBlockDecision(
-            reason: .sessionExpired, pendingRows: rows, acceptance: nil, ownersSessionIsGone: runtime.ownersSessionIsGone)
+            reason: .sessionExpired, pending: .init(rows: rows, uncaptured: []), acceptance: nil,
+            ownersSessionIsGone: runtime.ownersSessionIsGone)
                 == .offerLoss(shown: .cloudSessionExpired, cause: .noSession))
 
         // Puede entrar: la sesión vuelve y el mismo cierre sube lo pendiente y drena. No hay aviso ni pérdida.
@@ -2195,12 +2425,13 @@ struct CloudSyncRuntimeTests {
             #expect(push.callCount == before, "el outbox del dueño no sube con el JWT de otra cuenta")
             #expect(runtime.ownersSessionIsGone, "la sesión abierta es de otra cuenta")
             #expect(CloudSignOutFlowLogic.personalUploadBlockDecision(
-                reason: .sessionExpired, pendingRows: rows, acceptance: nil, ownersSessionIsGone: runtime.ownersSessionIsGone)
+                reason: .sessionExpired, pending: .init(rows: rows, uncaptured: []), acceptance: nil,
+            ownersSessionIsGone: runtime.ownersSessionIsGone)
                     == .offerLoss(shown: .cloudSessionExpired, cause: .noSession))
 
             // Aceptada la pérdida, el cierre retomado vuelve a intentarlo: sigue sin subir con la otra cuenta, y lo aceptado
             // le deja seguir.
-            let aceptado = CloudSignOutFlowLogic.CausedLossAcceptance(rows: .rows(rows), cause: .noSession)
+            let aceptado = CloudSignOutFlowLogic.PersonalLossAcceptance(rows: .rows(rows), uncaptured: [], cause: .noSession)
             let retomada = await CloudMigrationController.pushAllForSignOut(
                 runtime: runtime, context: context, domainGateOpen: { true }, journalRead: { .unreadable },
                 livePendingCount: { liveCount(context) }, maxIterations: 20, pause: .zero)
@@ -2210,7 +2441,8 @@ struct CloudSyncRuntimeTests {
                 return
             }
             #expect(CloudSignOutFlowLogic.personalUploadBlockDecision(
-                reason: reason, pendingRows: rows, acceptance: aceptado, ownersSessionIsGone: runtime.ownersSessionIsGone)
+                reason: reason, pending: .init(rows: rows, uncaptured: []), acceptance: aceptado,
+                ownersSessionIsGone: runtime.ownersSessionIsGone)
                     == .continueWithAcceptedLoss)
 
             // Control: con la cuenta del dueño, sí sale la subida, y su sesión no se da por ida.

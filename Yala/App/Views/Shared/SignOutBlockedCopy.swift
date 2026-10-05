@@ -34,7 +34,8 @@ enum SignOutBlockedCopy {
         case .permanent, .exportUnconfirmed, .sessionExpired, .bridgeUnreadable, .detachBusy,
              .channelPaused, .uploadRetryLater, .syncStoppedNeedsUpdate, .syncStoppedMidMigration,
              .syncStoppedNeedsRelaunch, .personalUploadRetryLater, .cloudSessionExpired, .sessionNotClosed,
-             .signOutSessionSurvived, .migrationInFlight, .migrationUnreadable, .groupsChangesFromAnotherAccount:
+             .signOutSessionSurvived, .migrationInFlight, .migrationUnreadable, .groupsChangesFromAnotherAccount,
+             .personalCaptureUnfinished:
             return L10n.Settings.signOutBlockedTitle
         }
     }
@@ -60,6 +61,8 @@ enum SignOutBlockedCopy {
     ///    montado, reabrir la app.
     ///  · **la subida de tus cambios a la nube no llegó** (2026-09-25): el texto de la de grupos, dicho de tus datos. Hasta
     ///    ese día el cierre en la nube le decía «revisa tu conexión» a quien tenía el servidor fallando.
+    ///  · **el drain de tus cambios no termina** (2026-10-05): «no se pudieron preparar», sin plazo; cerrar y abrir Yala o
+    ///    actualizarla. Antes salía el de `.transient`, que prometía segundos a algo que esperar no cura.
     ///  · **la sesión en la nube caducó** (2026-09-25): el texto de la sesión caducada, pero diciendo DÓNDE se vuelve a
     ///    entrar —«Dónde viven tus datos», aquí en Perfil, y su «Iniciar sesión»—. Con solo cambios de grupos no había
     ///    ninguna puerta a la vista (ticket `cloud-session-expiry-with-only-group-changes-has-no-sign-in-door`).
@@ -92,6 +95,9 @@ enum SignOutBlockedCopy {
         // Cambios de grupos de otra cuenta (2026-09-28): la sesión está viva, así que ni «caducó» ni «revisa tu conexión».
         // Este es el texto SIN salida; el aviso que ofrece perderlos usa `groupsLossMessage`.
         case .groupsChangesFromAnotherAccount: return L10n.Groups.Errors.groupsChangesFromAnotherAccount
+        // El drain de tus cambios no termina en ninguna vuelta (2026-10-05): esperar no lo arregla, así que no se dice «unos
+        // segundos», y la conexión no tiene nada que ver. No se pierde nada; cerrar y abrir Yala, o actualizarla.
+        case .personalCaptureUnfinished: return L10n.Settings.signOutCaptureUnfinished
         case .permanent, .exportUnconfirmed, .bridgeUnreadable, .detachBusy, .sessionNotClosed, .none:
             return L10n.Settings.signOutBlockedMessage
         }
@@ -180,7 +186,7 @@ enum SignOutBlockedCopy {
         case .transient, .exportUnconfirmed, .bridgeUnreadable, .detachBusy, .channelPaused, .uploadRetryLater,
              .personalAttestUnavailable, .syncStoppedNeedsUpdate, .syncStoppedMidMigration, .syncStoppedNeedsRelaunch,
              .personalUploadRetryLater, .cloudSessionExpired, .sessionNotClosed, .signOutSessionSurvived,
-             .migrationInFlight, .migrationUnreadable:
+             .migrationInFlight, .migrationUnreadable, .personalCaptureUnfinished:
             return message(for: block.reason)
         }
     }

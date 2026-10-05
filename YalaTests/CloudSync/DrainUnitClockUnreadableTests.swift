@@ -442,8 +442,9 @@ struct DrainUnitClockUnreadableTests {
             #expect(code.components(separatedBy: needle).count - 1 == count, "\(path): \(needle)")
         }
         // Sin comprobar, a propósito: la entrada del pull (lo cubre el re-drain previo al apply), la del ciclo del
-        // runtime (su pull re-drena antes de aplicar) y la captura paralela del cutover (un ancla más atrás re-lee
-        // de más, no pierde nada).
+        // runtime (su pull re-drena antes de aplicar; desde el 2026-10-05 su resultado se apunta en el testigo del ciclo,
+        // `lastCycleCaptureUnfinished`, pero el ciclo no se corta) y la captura paralela del cutover (un ancla más atrás
+        // re-lee de más, no pierde nada).
         let unguarded = [
             ("Yala/Services/CloudSync/SyncApplyEngine.swift", 2),
             ("Yala/Services/CloudSync/CloudSyncRuntime.swift", 2),
