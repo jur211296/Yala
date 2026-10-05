@@ -30,6 +30,13 @@ Medido el 2026-10-02 en el mismo simulador: **2.1 limpio (`7a9708657`) falla igu
 aisladas; la rama del PR, también dos rondas. `RemoteWipeNoticeRoutingUITests.test_notice_keepWaiting_leavesTheAppWhereItWas`
 falló una vez en lote y pasó dos aislado: ése sí es inestable bajo carga, no de este grupo.
 
+## Medido también en el iPhone 17 Pro del gate (2026-10-05)
+
+`EdgeCasesUITests.test_extremeMinimumAmountSaves` falla igual en el `iPhone 17 Pro` de iOS 27.0 que usa el `/gate`
+(`BD413F36`), con el mismo «Automation type mismatch … PopUpButton»: en lote y otra vez aislado, con el centinela en 0
+(solo en el simulador). Sesión `fresh-start-drops-mirror-entries-of-another-identity-without-counting-them`, que no toca el
+formulario de registro. Así que no es del Pro Max: es del runtime iOS 27.0.
+
 ## Qué falta medir
 
 - Si pasa en el `iPhone 17 Pro` del gate de siempre y en el runtime del CI: hoy solo está medido en el Pro Max de iOS 27.0.
