@@ -693,6 +693,8 @@ struct StorageSettingsView: View {
             return L10n.Storage.Progress.reverseICloudUnavailable
         case .icloudMaybeOff:
             return L10n.Storage.Progress.reverseICloudMaybeOff
+        case .localFailure:
+            return L10n.Storage.Progress.reverseLocalFailure
         }
     }
 

@@ -24,6 +24,9 @@ nonisolated enum ReverseUploadWaitingCopyLogic {
         /// No hay token de iCloud y CloudKit no dijo nada. El token mide iCloud DRIVE, así que el mensaje es
         /// CONDICIONAL: con Drive apagado CloudKit puede estar subiendo, y afirmar que no llega sería falso.
         case icloudMaybeOff
+        /// Este teléfono no pudo leer su propia muestra (`ReverseUploadBlocker.localFailure`). No dice «subiendo»: no se
+        /// sabe si sube, y esperar no lo arregla (ticket `reverse-upload-unreadable-sample-waits-the-long-ceiling`).
+        case localFailure
     }
 
     /// Lo que pinta la espera: el mensaje y, si ya se observó en este proceso, cuántas filas faltan.
@@ -34,7 +37,8 @@ nonisolated enum ReverseUploadWaitingCopyLogic {
 
     /// El caso de la espera. La cifra va con TODOS los mensajes: es lo que deja ver que la subida avanza aunque el
     /// mensaje hable de un problema, y esconderla empujaba a cancelar una subida que iba bien. Sin observación
-    /// todavía —recién abierta la app, antes del primer sondeo— solo se sabe que está subiendo.
+    /// todavía —recién abierta la app, antes del primer sondeo— solo se sabe que está subiendo. Una observación sin cifra
+    /// —la espera empezó con la muestra ilegible— lleva el mensaje de su motivo y ninguna cifra.
     static func waitingCopy(sample: ReverseUploadSample?) -> WaitingCopy {
         guard let sample else { return WaitingCopy(message: .uploading, pending: nil) }
         let message: Message
@@ -45,6 +49,8 @@ nonisolated enum ReverseUploadWaitingCopyLogic {
             message = .icloudUnavailable
         case .icloudOff:
             message = .icloudMaybeOff
+        case .localFailure:
+            message = .localFailure
         case .unknown:
             message = .uploading
         }

@@ -156,8 +156,8 @@ final class MigrationState {
     var reverseUploadCauseAccruedSeconds: Double?
 
     /// Desde cuándo corre el tramo ABIERTO del reloj de «cualquier motivo definitivo»
-    /// (`CauseStallClock.observeAnyDefinitive`): el que decide el techo CORTO. Suma `icloudFull` e `icloudUnusable`
-    /// aunque se turnen; `icloudOff` y `unknown` lo PAUSAN, así que las horas sin cuenta no se las cobra nadie. `nil` =
+    /// (`CauseStallClock.observeAnyDefinitive`): el que decide el techo CORTO. Suma `icloudFull`, `icloudUnusable` y
+    /// `localFailure` aunque se turnen; `icloudOff` y `unknown` lo PAUSAN, así que las horas sin cuenta no se las cobra nadie. `nil` =
     /// tramo cerrado o nunca abierto, o una fila de un build anterior a la v15: el corto le cuenta desde que este build
     /// la mira.
     var reverseUploadDefinitiveAt: Date?

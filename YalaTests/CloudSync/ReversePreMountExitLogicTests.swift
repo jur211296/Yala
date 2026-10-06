@@ -224,7 +224,7 @@ struct ReversePreMountExitLogicTests {
     /// motivos nuevos SÍ la dejan.
     @Test func abortNote_cancelledIsStillTheOnlySilentReason() {
         let all: [ReverseAbortReason] = [
-            .cancelled, .icloudFull, .icloudUnavailable, .stalled,
+            .cancelled, .icloudFull, .icloudUnavailable, .stalled, .localFailure,
             .claimRetryLater, .claimRefused, .otherDeviceReverting,
             .preMountRefused, .preMountStalled, .preMountOtherDevice,
         ]

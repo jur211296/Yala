@@ -663,7 +663,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | reverse-upload-has-no-ceiling-and-no-exit | done | tickets/done/reverse-upload-has-no-ceiling-and-no-exit.md |
 | reverse-upload-sample-reads-unreadable-rows-as-drained | done | tickets/done/reverse-upload-sample-reads-unreadable-rows-as-drained.md |
 | reverse-upload-sample-walks-every-row-twice-on-the-main-thread | backlog | tickets/backlog/reverse-upload-sample-walks-every-row-twice-on-the-main-thread.md |
-| reverse-upload-unreadable-sample-waits-the-long-ceiling | backlog | tickets/backlog/reverse-upload-unreadable-sample-waits-the-long-ceiling.md |
+| reverse-upload-unreadable-sample-waits-the-long-ceiling | qa | tickets/qa/reverse-upload-unreadable-sample-waits-the-long-ceiling.md |
 | reverse-verify-network-bucket-hides-a-definitive-server-no | done | tickets/done/reverse-verify-network-bucket-hides-a-definitive-server-no.md |
 | reverse-zombie-sweep-reads-an-expired-session-as-network | backlog | tickets/backlog/reverse-zombie-sweep-reads-an-expired-session-as-network.md |
 | revert-card-copy-says-datos-regresan-a-quien-nunca-estuvo | backlog | tickets/backlog/revert-card-copy-says-datos-regresan-a-quien-nunca-estuvo.md |
