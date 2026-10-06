@@ -7528,6 +7528,17 @@ enum L10n {
             static var accountReuseNoteGeneric: String {
                 ls("storage.migrate.accountReuseNoteGeneric", comment: "")
             }
+            /// La nota que sustituye a `accountReuseNote` cuando la comprobación ya rechazó la cuenta de la sesión viva
+            /// (ticket `migrate-card-keeps-promising-an-account-the-check-refused`): el motivo y la salida que ya daba la
+            /// hoja, sin su «No cambiamos nada», que habla del toque y no de la tarjeta.
+            static func refusedNote(for reason: StorageMigrationIdentityGateLogic.Block) -> String {
+                switch reason {
+                case .accountHasPersonalData:         return ls("storage.migrate.refusedPersonalData", comment: "")
+                case .anotherGroupsAccountAssociated: return ls("storage.migrate.refusedOtherGroups", comment: "")
+                case .accountReturnedToICloud:        return ls("storage.migrate.refusedReturned", comment: "")
+                case .sessionFromBeforeFreshStart:    return ls("storage.migrate.refusedFreshStart", comment: "")
+                }
+            }
         }
 
         enum Adopt {

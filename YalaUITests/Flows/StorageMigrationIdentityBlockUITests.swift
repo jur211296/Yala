@@ -70,7 +70,8 @@ final class StorageMigrationIdentityBlockUITests: XCTestCase {
     }
 
     /// Cuenta con finanzas personales y la sesión de sus grupos: la hoja sale al tocar, sin consentimiento detrás, solo con
-    /// «Entendido» —cambiar de cuenta exige desasociar primero— y al cerrarla la tarjeta sigue ahí.
+    /// «Entendido» —cambiar de cuenta exige desasociar primero— y al cerrarla la tarjeta sigue ahí, pero ya no promete esa
+    /// cuenta: dice el motivo y apaga el botón.
     func test_liveSession_accountWithPersonalData_blocksBeforeTheConsent() {
         let (app, migrate) = openMigrateCard(fakeMigrationIdentity: "personalData")
         migrate.tap()
@@ -99,6 +100,21 @@ final class StorageMigrationIdentityBlockUITests: XCTestCase {
         XCTAssertFalse(app.buttons["storage_consent_accept"].waitForExistence(timeout: 3),
                        "Cerrar el aviso abrió el consentimiento: el toque siguió aunque la comprobación dijo que no.")
         XCTAssertFalse(title.waitForExistence(timeout: 2), "El aviso volvió a salir: la hoja no lo soltó al montar.")
+
+        // Ticket `migrate-card-keeps-promising-an-account-the-check-refused` (decisión A de Jürgen): con la misma sesión, la
+        // tarjeta ya no promete la cuenta que el aviso acaba de rechazar, dice por qué y no deja volver a pedirla.
+        let refused = app.staticTexts["storage_account_refused_note"]
+        XCTAssertTrue(refused.waitForExistence(timeout: 5), """
+            Tras «Entendido» la tarjeta no dice por qué ya no se puede activar la nube con esta cuenta: el rechazo no se \
+            recordó.
+            """)
+        XCTAssertTrue(refused.label.contains("finanzas personales"), "La nota no da el motivo del aviso: \(refused.label)")
+        XCTAssertFalse(app.descendants(matching: .any)["storage_account_reuse_note"].exists, """
+            La tarjeta sigue prometiendo «Usarás tu cuenta de Yala actual», la misma que el aviso acaba de rechazar.
+            """)
+        XCTAssertFalse(migrate.isEnabled, """
+            «Activar la nube» sigue activo con la cuenta rechazada: cada toque volvería a preguntar y a enseñar el mismo aviso.
+            """)
     }
 
     /// El gemelo que hace discriminante al de arriba: con una cuenta que sí puede recibir la migración, el MISMO toque llega

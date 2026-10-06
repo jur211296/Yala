@@ -5297,6 +5297,18 @@
 /* Generic fallback of storage.migrate.accountReuseNote when the sign-in method is unknown */
 "storage.migrate.accountReuseNoteGeneric" = "現在の Yala アカウントをそのまま使います。データもグループも同じアカウントにまとまります。";
 
+/* Storage migrate card, after the identity check refused the live account: it already has personal finances */
+"storage.migrate.refusedPersonalData" = "現在の Yala アカウントにはすでに個人の家計データがあるため、このデバイスのデータを受け取れません。データを別のアカウントに移すには、先に「グループ」でこのアカウントのリンクを解除してください。";
+
+/* Storage migrate card, after the identity check refused the live account: the device's groups use another account */
+"storage.migrate.refusedOtherGroups" = "グループは別のアカウントを使っていて、このデバイスで使えるクラウドアカウントは1つだけです。データをクラウドに移すには、グループのアカウントでサインインするか、先に「グループ」でリンクを解除してください。";
+
+/* Storage migrate card, after the identity check refused the live account: the account went back to iCloud */
+"storage.migrate.refusedReturned" = "現在の Yala アカウントはiCloudに戻っていて、このアカウントでクラウドに戻すことはまだできません。";
+
+/* Storage migrate card, after the identity check refused the live account: it was signed in before a fresh start */
+"storage.migrate.refusedFreshStart" = "現在の Yala アカウントは別の人のものかもしれません。このデバイスを最初から始め直したときに、すでにサインインしていたアカウントです。ご自身のアカウントを選ぶには、「グループ」でリンクを解除してから、もう一度「クラウドを有効化」をタップしてください。";
+
 /* Storage adopt card: the live session is a different Yala account than the one that migrated (%@ = Apple|Google) */
 "storage.adopt.otherAccountNote" = "このクラウドのコピーは別の Yala アカウント（%@）のものです。サインアウトして、そのアカウントでサインインしてください。";
 

@@ -285,6 +285,56 @@ struct StorageMigrationIdentityGateLogicTests {
         #expect(Set(Logic.Block.allCases.map(\.slug)).count == Logic.Block.allCases.count)
     }
 
+    // MARK: - Lo que la tarjeta recuerda (ticket `migrate-card-keeps-promising-an-account-the-check-refused`)
+
+    private func session(_ sub: String?, epoch: Int, live: Bool = true) -> Logic.LiveSession {
+        Logic.LiveSession(hasSession: live, sub: sub, sessionEpoch: epoch)
+    }
+
+    /// El bug del ticket: tras «Entendido» la tarjeta seguía prometiendo la cuenta rechazada. Con la misma sesión viva, el
+    /// rechazo se recuerda y la tarjeta lo enseña, con su motivo.
+    @Test("la misma sesión viva recuerda el rechazo, con su motivo",
+          arguments: StorageMigrationIdentityGateLogic.Block.allCases)
+    func mismaSesionRecuerda(reason: StorageMigrationIdentityGateLogic.Block) {
+        let remembered = Logic.refusalToRemember(reason: reason, session: session("sub-a", epoch: 3))
+        #expect(remembered == Logic.RefusedSession(reason: reason, sub: "sub-a", sessionEpoch: 3))
+        #expect(Logic.cardRefusal(remembered: remembered, session: session("sub-a", epoch: 3)) == reason)
+    }
+
+    /// La sesión que abrió el intento se cierra antes del aviso: sin sesión viva no hay cuenta que la tarjeta prometa, y
+    /// recordar algo ahí lo ataría a «ninguna sesión».
+    @Test("sin sesión viva al avisar, no se recuerda nada")
+    func sinSesionNoRecuerda() {
+        #expect(Logic.refusalToRemember(reason: .accountHasPersonalData, session: session(nil, epoch: 4, live: false)) == nil)
+    }
+
+    /// Otra cuenta, u otra sesión de la misma cuenta, olvidan: cerrar y volver a entrar puede cambiar la respuesta.
+    @Test("otra cuenta u otra sesión olvidan el rechazo")
+    func otraSesionOlvida() {
+        let remembered = Logic.RefusedSession(reason: .accountHasPersonalData, sub: "sub-a", sessionEpoch: 3)
+        #expect(Logic.cardRefusal(remembered: remembered, session: session("sub-b", epoch: 3)) == nil,
+                "otra cuenta con la misma época")
+        #expect(Logic.cardRefusal(remembered: remembered, session: session("sub-a", epoch: 5)) == nil,
+                "la misma cuenta en otra sesión")
+        #expect(Logic.cardRefusal(remembered: remembered, session: session(nil, epoch: 3)) == nil,
+                "sin `sub` legible no es la misma cuenta")
+        #expect(Logic.cardRefusal(remembered: remembered, session: session("sub-a", epoch: 3, live: false)) == nil,
+                "sin sesión viva la tarjeta no promete nada que apagar")
+        #expect(Logic.cardRefusal(remembered: nil, session: session("sub-a", epoch: 3)) == nil)
+    }
+
+    /// La nota de la tarjeta: una por motivo, resuelta, y ninguna repite el «No cambiamos nada» de la hoja.
+    @Test("la nota de la tarjeta, resuelta y distinta por motivo")
+    func notaDeLaTarjeta() {
+        let notes = Logic.Block.allCases.map { L10n.Storage.Migrate.refusedNote(for: $0) }
+        for note in notes {
+            #expect(!note.isEmpty)
+            #expect(!note.hasPrefix("storage."), "clave sin traducir: \(note)")
+        }
+        #expect(Set(notes).count == notes.count, "dos motivos con la misma nota")
+        #expect(!notes.contains(L10n.Storage.Migrate.accountReuseNoteGeneric))
+    }
+
     // MARK: - Los textos
 
     private typealias Copy = L10n.Storage.MigrateBlock
