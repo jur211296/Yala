@@ -51,7 +51,10 @@ on:
         options: ['no', 'si']
 
 # Serializa. Sin esto, dos pushes casi simultáneos abren dos vigilantes que leen «no hay
-# corrida» a la vez y lanzan DOS nocturnas de 150 minutos.
+# corrida» a la vez y lanzan DOS nocturnas de 150 minutos. Ojo, medido el 2026-10-06: GitHub
+# deja UN solo run pendiente por grupo y cancela el pendiente anterior cuando llega otro (con
+# cuatro dispatches seguidos, el 2.º y el 3.º salieron «cancelled»). Aquí no hace daño —todos
+# deciden lo mismo y decide el último—, pero al probar, lánzalos de uno en uno.
 concurrency:
   group: nocturna-vigilante
   cancel-in-progress: false

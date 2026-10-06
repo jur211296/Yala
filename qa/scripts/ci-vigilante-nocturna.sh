@@ -168,10 +168,11 @@ lanzar() {
   # El instante ANTES de disparar es el ancla del respaldo: sin él, un dispatch ajeno reciente
   # pasaría por el nuestro.
   antes=$(iso "$(jq -n 'now | floor')")
-  # `workflow_dispatch` es la excepción documentada a «el GITHUB_TOKEN no crea runs». La API
-  # contesta con el id del run creado; con él se comprueba que nació sin depender de los listados
-  # que mienten (punto 1 de arriba).
-  if ! resp=$("$GH" api -X POST "repos/$REPO/actions/workflows/$WF/dispatches" -f "ref=$RAMA"); then
+  # `workflow_dispatch` es la excepción documentada a «el GITHUB_TOKEN no crea runs». Con
+  # `return_run_details` la API contesta 200 con el id del run creado (sin él, 204 y nada: medido
+  # en el runner el 2026-10-06), y con ese id se comprueba que nació sin depender de los listados
+  # que mienten (punto 1 de arriba). Es lo mismo que manda `gh workflow run` desde la 2.8x.
+  if ! resp=$("$GH" api -X POST "repos/$REPO/actions/workflows/$WF/dispatches" -f "ref=$RAMA" -F return_run_details=true); then
     error "El dispatch de $WF en $RAMA falló."
     salida nacio no; exit 1
   fi

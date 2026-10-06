@@ -238,6 +238,8 @@ espera "el dispatch devuelve el id y el run existe ⇒ nació" nacio si
 espera "… con su id" run_id 4242
 n=$((n+1)); grep -q "dispatches -f ref=2.1" "$E/llamadas" && echo "  ok  … lanzado sobre la rama" \
   || { echo "  MAL el dispatch no llevó ref=2.1"; fallos=$((fallos+1)); }
+n=$((n+1)); grep -q "dispatches .*-F return_run_details=true" "$E/llamadas" && echo "  ok  … pidiendo el id del run (sin eso la API contesta 204 vacío)" \
+  || { echo "  MAL el dispatch no pidió return_run_details"; fallos=$((fallos+1)); }
 
 nuevo lanzar-run-tarda
 echo '{"workflow_run_id": 4242}' > "$E/dispatch"
