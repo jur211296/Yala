@@ -410,6 +410,12 @@ jobs:
       # nombra el `.xcresult`, hasta 3 vueltas como antes; si no puede leerlos, no repite nada.
       # Los nombres de los que siguen en rojo salen en `outputs.rojos` y el aviso los cita.
       # Ticket: ci-one-red-in-pure-logic-triples-the-step-and-the-job-ceiling-cancels-it.
+      #
+      # `-collect-test-diagnostics never`: medido en la Mini (Xcode 27), cada corrida con un
+      # rojo lanza un `simctl diagnose --timeout=600` y gasta 10 min en él — también una
+      # repetición de 4 tests que corren en 0,03 s. En los logs del runner (Xcode 26) no sale,
+      # pero si una imagen lo trae, tres vueltas volverían a rozar el tope. Nadie sube esos
+      # diagnósticos: el `.xcresult` y el log bastan.
       - name: Unit tests (YalaTests pure-logic) — advisory (flaky crash SwiftData in-memory; ver Lista Negra)
         id: unit_pure
         continue-on-error: true
@@ -422,6 +428,7 @@ jobs:
             -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.udid }}" \
             -derivedDataPath .ddp \
             -parallel-testing-enabled NO \
+            -collect-test-diagnostics never \
             --- \
             -only-testing:YalaTests \
             -skip-testing:YalaTests/BudgetFilterRegressionTests \

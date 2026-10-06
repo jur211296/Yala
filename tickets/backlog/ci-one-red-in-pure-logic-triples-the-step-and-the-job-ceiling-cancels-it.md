@@ -93,4 +93,9 @@ Decisiones:
 - **El aviso nombra los tests**: el script publica `rojos` en `$GITHUB_OUTPUT` (ya tras la primera vuelta, por si algo
   corta la repetición, y otra vez al final), el job `tests` lo expone como `unit_pure_rojos` y el aviso lo añade a la
   línea de pure-logic. Los rescatados salen como anotación `warning` del run.
+- **`-collect-test-diagnostics never`** en el paso. Medido en la Mini con el script real sobre Yala y
+  `TEST_RUNNER_TZ=UTC` (4 rojos deterministas en `WidgetDataServiceIntervalTests`): la vuelta 1 (8 981 tests) tardó
+  14 min 15 s y la vuelta 2, con solo los 4 rojos que corren en 0,03 s, **10 min 34 s**. La diferencia era un
+  `simctl diagnose --timeout=600` que `xcodebuild` lanza tras cada corrida con un rojo. En los logs del runner
+  (Xcode 26) no aparece, pero con él las tres vueltas volverían a rozar el tope; nadie sube esos diagnósticos.
 - El paso sigue `continue-on-error` y con su tope de 30 min; el del job (45) no se toca.

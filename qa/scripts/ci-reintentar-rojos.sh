@@ -38,6 +38,11 @@
 # los casos de detrás; el `.xcresult` marca `Failed` solo el que estaba corriendo. Por eso basta
 # con repetir los rojos: no hay casos «sin ejecutar» que la primera vuelta se haya saltado.
 #
+# PÁSALE `-collect-test-diagnostics never` entre los comunes. Medido en la Mini (Xcode 27): cada
+# corrida con un rojo lanza un `simctl diagnose --timeout=600` y gasta 10 min en él, también una
+# repetición de 4 tests que corren en 0,03 s. Sin el flag, «repetir solo los rojos» cuesta lo mismo
+# que repetir la suite.
+#
 # Salida en `$GITHUB_OUTPUT` (si existe): `rojos` (los que siguen en rojo, separados por «; »),
 # `rescatados`, `vueltas` (las que corrieron) y `tests_primera` (casos de la primera vuelta).
 # Exit: 0 si todo verde o todo rescatado; 1 si queda algún rojo tras repetirlo; el código de la
