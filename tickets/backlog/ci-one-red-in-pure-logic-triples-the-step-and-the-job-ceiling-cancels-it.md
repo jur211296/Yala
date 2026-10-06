@@ -53,3 +53,44 @@ vuelta («passed after 1510 seconds») y aun así el job se canceló.
 
 Antes de elegir, medir si el reintento repite la suite entera también con XCTest o solo con Swift Testing: aquí
 solo se midió el segundo.
+
+## XCTest frente a Swift Testing (medido el 2026-10-06)
+
+**El reintento repite la suite entera SOLO con Swift Testing.** Con XCTest repite únicamente el caso rojo:
+
+- Nocturna 37346159546, paso de UI (`YalaUITests`, XCTest, mismo `-retry-tests-on-failure`): 171 líneas
+  `Test Case … passed|failed` para 165 casos distintos. Los 3 que salen más de una vez son los 3 rojos, ×3 cada uno;
+  ningún caso verde se repite.
+- Paso pure-logic de 37325431444 (`YalaTests`, Swift Testing entero): `Test run with 26511 tests in 2589 suites`,
+  tres vueltas completas, y en cada una falló un eje distinto de `SpikeR3ContainerReleaseTests` (4b y luego 1+2).
+
+Por eso solo el paso pure-logic cambia. Context-based también es Swift Testing, pero dura 2-3 min con tope de paso de
+10: su reintento puede agotar SU tope (que `continue-on-error` sí rescata), no el del job. La UI es XCTest.
+
+## Qué se hizo: opción 1
+
+`qa/scripts/ci-reintentar-rojos.sh` corre la selección una vez, sin `-retry-tests-on-failure`. Si sale en rojo, lee
+del `.xcresult` (`xcrun xcresulttool get test-results tests`) los casos con `result: Failed` y los repite solos con
+`-only-testing:YalaTests/<nodeIdentifier>`, hasta 3 vueltas en total; cada vuelta repite solo lo que sigue en rojo.
+Banco: `qa/scripts/ci-reintentar-rojos-test.sh`, en el job `coverage-index`.
+
+Medido con un paquete sonda de Swift Testing (Xcode 27) y `xcodebuild` real antes de decidir:
+
+- `nodeIdentifier` es `Suite/test()` también para un `@Test("nombre visible")`, y sirve tal cual en `-only-testing`
+  con el bundle delante.
+- **Un crash no deja casos sin correr**: `xcodebuild` relanza el proceso («Restarting after unexpected exit, crash, or
+  test timeout») y sigue con los de detrás; solo el que corría queda `Failed`. Repetir los rojos basta.
+- **Un `-only-testing` que no casa con nada sale exit 0 con cero casos.** Por eso un rojo cuenta como rescatado solo
+  si aparece `Passed` en el `.xcresult` de la repetición, nunca por el exit.
+- De punta a punta con la sonda: un flaky (falla la 1.ª vez) y un determinista. Vuelta 1: 5 casos, exit 65. Vuelta 2:
+  solo los 2 rojos. Vuelta 3: solo el determinista. Salida: rescatado el flaky, rojo el determinista, exit 1.
+
+Decisiones:
+
+- **Caída segura**: `.xcresult` que falta o no se lee, JSON sin la forma esperada, exit ≠ 0 sin ningún caso rojo (un
+  fallo de lanzamiento) o más de 100 rojos (eso ya no es un flaky) ⇒ no se repite nada y el paso sale con el código de
+  la primera vuelta. Nunca cae a repetir la suite entera.
+- **El aviso nombra los tests**: el script publica `rojos` en `$GITHUB_OUTPUT` (ya tras la primera vuelta, por si algo
+  corta la repetición, y otra vez al final), el job `tests` lo expone como `unit_pure_rojos` y el aviso lo añade a la
+  línea de pure-logic. Los rescatados salen como anotación `warning` del run.
+- El paso sigue `continue-on-error` y con su tope de 30 min; el del job (45) no se toca.

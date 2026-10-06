@@ -90,6 +90,12 @@ jobs:
       # casos con un `xcrun` falso, sin tocar ningún simulador.
       - name: Simulador del runner (ci-simulador.sh)
         run: bash qa/scripts/ci-simulador-test.sh
+      # El paso pure-logic del job `tests` repite SOLO sus rojos con este script. Lo que decide
+      # si un rojo se da por rescatado, y que un `.xcresult` raro nunca acabe repitiendo la suite
+      # entera, solo se ejerce cuando algo falla; su banco lo simula con `xcodebuild` y `xcrun`
+      # falsos.
+      - name: Reintento de rojos (ci-reintentar-rojos.sh)
+        run: bash qa/scripts/ci-reintentar-rojos-test.sh
 
   # Suite del conector MCP de Claude (`mcp/`): typecheck y tests unitarios, sin red. Corre en
   # cada push, como `coverage-index`: es barata (Linux, segundos) y así un cambio de esquema que
@@ -315,6 +321,8 @@ jobs:
     # que devolvio el comando; `conclusion` es el que `continue-on-error` pinta de verde.
     outputs:
       unit_pure: ${{ steps.unit_pure.outcome }}
+      # Los tests que siguen en rojo tras repetirlos solos (`ci-reintentar-rojos.sh`).
+      unit_pure_rojos: ${{ steps.unit_pure.outputs.rojos }}
       unit_context: ${{ steps.unit_context.outcome }}
       ui: ${{ steps.ui.outcome }}
       ui_tocaba: ${{ steps.contexto.outputs.ui_tocaba }}
@@ -390,17 +398,31 @@ jobs:
       # los 7 tests stale ya están arreglados (f1575df7) y el subset es determinista en lo
       # reproducible, PERO el EXC_BREAKPOINT flaky de SwiftData in-memory ALCANZA al subset
       # pure-logic (crashea ~1 de N runs — 26963873224 lo probó: cascade NewTransactionVM/
-      # CurrencyDefaults). Bloquear aquí = rojos aleatorios. -retry no converge. Volver a
-      # bloqueante exige resolver ese crash primero (TESTING-STRATEGY.md).
+      # CurrencyDefaults). Bloquear aquí = rojos aleatorios. Volver a bloqueante exige
+      # resolver ese crash primero (TESTING-STRATEGY.md).
+      #
+      # SIN `-retry-tests-on-failure` (2026-10-06). Con Swift Testing —YalaTests lo es entero—
+      # ese flag no repite el test rojo: repite la SUITE ENTERA hasta 3 veces. Un solo rojo
+      # llevaba este paso de ~13 a 27-30 min (26 889 tests = 3 × 8 963), el tope de 45 min del
+      # JOB lo cancelaba, y `continue-on-error` no rescata una cancelación: el rojo advisory
+      # acababa poniendo `tests` en rojo y bloqueando el auto-merge (10-03, 10-05 y 10-06).
+      # `ci-reintentar-rojos.sh` corre la selección UNA vez y repite solo los casos rojos que
+      # nombra el `.xcresult`, hasta 3 vueltas como antes; si no puede leerlos, no repite nada.
+      # Los nombres de los que siguen en rojo salen en `outputs.rojos` y el aviso los cita.
+      # Ticket: ci-one-red-in-pure-logic-triples-the-step-and-the-job-ceiling-cancels-it.
       - name: Unit tests (YalaTests pure-logic) — advisory (flaky crash SwiftData in-memory; ver Lista Negra)
         id: unit_pure
         continue-on-error: true
         timeout-minutes: 30
         run: |
-          xcodebuild test-without-building \
+          bash qa/scripts/ci-reintentar-rojos.sh --vueltas 3 -- \
+            test-without-building \
             -scheme "Yala Dev" \
             -project Yala.xcodeproj \
             -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.udid }}" \
+            -derivedDataPath .ddp \
+            -parallel-testing-enabled NO \
+            --- \
             -only-testing:YalaTests \
             -skip-testing:YalaTests/BudgetFilterRegressionTests \
             -skip-testing:YalaTests/CategoryDeduplicationServiceTests \
@@ -408,10 +430,7 @@ jobs:
             -skip-testing:YalaTests/CurrencyConverterCacheTests \
             -skip-testing:YalaTests/ICloudAccountSummaryTests \
             -skip-testing:YalaTests/InitialBalanceServiceTests \
-            -skip-testing:YalaTests/UserSegmentServiceTests \
-            -derivedDataPath .ddp \
-            -parallel-testing-enabled NO \
-            -retry-tests-on-failure
+            -skip-testing:YalaTests/UserSegmentServiceTests
       # ADVISORY: las 7 clases context-based (crean ModelContext in-memory). Corren para
       # visibilidad (cuando pasan confirman no-regresión); no bloquean por el insert-trap
       # flaky de SwiftData en el runner de CI. Plan de migración en TESTING-STRATEGY.md.
@@ -517,6 +536,7 @@ jobs:
         id: componer
         env:
           R_UNIT_PURE: ${{ needs.tests.outputs.unit_pure }}
+          R_UNIT_PURE_ROJOS: ${{ needs.tests.outputs.unit_pure_rojos }}
           R_UNIT_CONTEXT: ${{ needs.tests.outputs.unit_context }}
           R_UI: ${{ needs.tests.outputs.ui }}
           UI_TOCABA: ${{ needs.tests.outputs.ui_tocaba }}
@@ -529,7 +549,15 @@ jobs:
           set -euo pipefail
 
           fallidos=""
-          [ "$R_UNIT_PURE" != "failure" ]    || fallidos="$fallidos\n- Unit tests (pure-logic)"
+          # pure-logic dice QUÉ tests siguen en rojo tras repetirlos solos (`ci-reintentar-rojos.sh`).
+          # Sin nombres —el tope del paso cortó antes de publicarlos— queda la línea de siempre.
+          if [ "$R_UNIT_PURE" = "failure" ]; then
+            if [ -n "${R_UNIT_PURE_ROJOS:-}" ]; then
+              fallidos="$fallidos\n- Unit tests (pure-logic): $R_UNIT_PURE_ROJOS"
+            else
+              fallidos="$fallidos\n- Unit tests (pure-logic)"
+            fi
+          fi
           [ "$R_UNIT_CONTEXT" != "failure" ] || fallidos="$fallidos\n- Unit tests (context-based)"
           [ "$R_UI" != "failure" ]           || fallidos="$fallidos\n- UI tests (YalaUITests)"
 
