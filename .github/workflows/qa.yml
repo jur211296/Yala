@@ -327,7 +327,7 @@ jobs:
       ui: ${{ steps.ui.outcome }}
       ui_tocaba: ${{ steps.contexto.outputs.ui_tocaba }}
     env:
-      TEST_RUNNER_TZ: UTC  # TEMPORAL: rojo provocado para probar el reintento; se revierte en este PR
+      TEST_RUNNER_TZ: America/Lima
       # Unica fuente de «esta corrida lleva UI». La gobierna el paso de UI (`if:`) y la
       # lee el JOB `aviso` de mas abajo para no confundir «saltado a proposito» con «no
       # llego a correr» — dos cosas que en `steps.<id>.outcome` se llaman IGUAL: `skipped`.
