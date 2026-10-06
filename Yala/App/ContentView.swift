@@ -77,6 +77,11 @@ struct ContentView: View {
     /// decide `AppleIDCloseNoticeLogic` con la fase del coordinador de cierre.
     @State private var appleIDCloseNotice: AppleIDCloseNotice?
     @State private var showFreshStartWipeAlert: Bool = false
+    /// **¿Había un Welcome debajo cuando se encendió el alert de arriba?** Lo escribe su disparador
+    /// (`startFreshPrivateOnboarding`) y lo lee la ruta de su botón destructivo con cambios de grupos pendientes
+    /// (`FreshStartAlertRoutingLogic`). Se captura al disparar porque presentar el alert desmonta el cover: al pulsar,
+    /// `showWelcomeFlow` ya es `false`.
+    @State private var freshStartAlertPresentedOverWelcome: Bool = false
     /// El wipe de «empiezo de cero» LANZÓ (cualquiera de los dos caminos que borran). Blocker de la
     /// matriz de readiness como sus hermanos: mientras esté puesto, nada del router presenta debajo.
     @State private var showFreshStartWipeFailedAlert: Bool = false
@@ -450,6 +455,7 @@ struct ContentView: View {
             showICloudRestartAlert: $showICloudRestartAlert,
             showFreshStartWipeAlert: $showFreshStartWipeAlert,
             showFreshStartWipeFailedAlert: $showFreshStartWipeFailedAlert,
+            freshStartAlertPresentedOverWelcome: freshStartAlertPresentedOverWelcome,
             hasCompletedOnboarding: $hasCompletedOnboarding,
             hasExistingData: $hasExistingData,
             hasPersonalData: $hasPersonalData,
@@ -498,6 +504,7 @@ struct ContentView: View {
             hasShownWelcomeChooser: $hasShownWelcomeChooser,
             hasCompletedOnboarding: $hasCompletedOnboarding,
             showFreshStartWipeAlert: $showFreshStartWipeAlert,
+            freshStartAlertPresentedOverWelcome: $freshStartAlertPresentedOverWelcome,
             groupsOrganizerFlowActive: $groupsOrganizerFlowActive,
             offersFullActivationAfterGroupsEntry: $offersFullActivationAfterGroupsEntry,
             hasExistingData: hasExistingData,
@@ -2507,6 +2514,8 @@ private struct WelcomeFlowModifier: ViewModifier {
     @Binding var hasShownWelcomeChooser: Bool
     @Binding var hasCompletedOnboarding: Bool
     @Binding var showFreshStartWipeAlert: Bool
+    /// El testigo de «había Welcome debajo» del alert de arriba: lo escribe `startFreshPrivateOnboarding` al encenderlo.
+    @Binding var freshStartAlertPresentedOverWelcome: Bool
     /// G3: la rama organizador arranca aquí y la conduce `ContentView` desde su drain — este modifier solo
     /// la ENCIENDE, porque es quien tiene el callback del portal.
     @Binding var groupsOrganizerFlowActive: Bool
@@ -2911,6 +2920,11 @@ private struct WelcomeFlowModifier: ViewModifier {
         // ANTES del borrado. Con él, a quien acababa de confirmar el borrado dos veces le salía un tercer
         // alert pidiéndole borrar lo que ya no existía — y su «Cancelar» lo dejaba plantado en el Welcome.
         if hasLocalDataNow() {
+            // **El testigo ANTES de encender el alert**: presentarlo desmonta el cover del Welcome y baja
+            // `showWelcomeFlow`, así que es ahora o nunca. Lo lee la ruta de «Borrar todo y continuar» con cambios de
+            // grupos pendientes: con el Welcome debajo sigue en la puerta privada aunque el onboarding esté completo,
+            // que es lo que deja cualquier salida de un adopt (`FreshStartAlertRoutingLogic`).
+            freshStartAlertPresentedOverWelcome = showWelcomeFlow
             showFreshStartWipeAlert = true
             // welcomeFlow sigue visible hasta resolver el alert
         } else {
