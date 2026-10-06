@@ -310,6 +310,8 @@ struct MigrationIdentityGateWiringTests {
             "rejectedProvider: rejectedProvider)",
             "CloudSyncBreadcrumb.migrationIdentityBlocked(reason: reason.slug, stage: stage)",
             "MetricsService.cloudMigrationExistingAccountBlocked(reason: reason.slug, stage: stage)",
+            "readLiveSession()",
+            "refusedSession = StorageMigrationIdentityGateLogic.refusalToRemember(reason: reason, session: liveSession)",
         ])
     }
 
@@ -485,6 +487,89 @@ struct MigrationIdentityGateWiringTests {
             "}",
             ".accessibilityIdentifier(\"storage_migrate_block_close\")",
             "}",
+        ])
+    }
+
+    // MARK: - Lo que la tarjeta recuerda (ticket `migrate-card-keeps-promising-an-account-the-check-refused`)
+
+    /// El controller recuerda el rechazo solo en `publishBlock` —el único sitio que publica un aviso de la hoja, venga de la
+    /// comprobación o del claim— y lo lee la tarjeta con la sesión de AHORA. «No pudimos comprobar» no pasa por ahí.
+    @Test func refusal_rememberedAtPublishAndReadAgainstTheLiveSession() throws {
+        let code = Self.lines(try Self.source(Self.controllerPath)).joined(separator: "\n")
+        #expect(Self.occurrences(of: "refusedSession = ", in: code) == 1, "un solo escritor del recuerdo")
+        #expect(Self.occurrences(of: "publishBlock(", in: code) == 3, "la firma y los dos avisos de la hoja")
+        #expect(code.contains("private var refusedSession: StorageMigrationIdentityGateLogic.RefusedSession?"),
+                "el recuerdo vive en memoria: ningún relanzamiento lo hereda")
+
+        let read = try Self.body(of: "var liveSessionRefusal: StorageMigrationIdentityGateLogic.Block? {",
+                                 in: Self.controllerPath)
+        #expect(Self.lines(read) == [
+            "StorageMigrationIdentityGateLogic.cardRefusal(remembered: refusedSession, session: liveSession)",
+        ])
+    }
+
+    /// La tarjeta lee una COPIA observable de la sesión (`CloudAuthService` no lo es), y la copia se renueva en `refresh()`
+    /// —el tick de 1 s de la pantalla— y en cada aviso. Sin la del tick, desasociar en «Grupos» cerraba la sesión y el botón
+    /// se quedaba apagado hasta salir y volver a entrar.
+    @Test func liveSession_isCopiedOnEveryRefreshAndEveryNotice() throws {
+        let copy = try Self.body(of: "private func readLiveSession() {", in: Self.controllerPath)
+        #expect(Self.lines(copy) == [
+            "liveSession = StorageMigrationIdentityGateLogic.LiveSession(",
+            "hasSession: CloudAuthService.shared.hasSession,",
+            "sub: CloudAuthService.shared.currentUserID,",
+            "sessionEpoch: CloudAuthService.shared.sessionEpoch)",
+        ])
+        let code = Self.lines(try Self.source(Self.controllerPath)).joined(separator: "\n")
+        #expect(Self.occurrences(of: "\nliveSession = ", in: code) == 1, "un solo escritor de la copia")
+        #expect(Self.occurrences(of: "readLiveSession()", in: code) == 3, "la firma, `refresh()` y `publishBlock`")
+        let refresh = Self.lines(try Self.body(of: "func refresh() {", in: Self.controllerPath))
+        #expect(refresh.contains("readLiveSession()"))
+    }
+
+    /// La época sube en los dos canjes que abren sesión y en `signOut()`, antes de su `guard`: sin eso, cerrar y volver a
+    /// entrar con la misma cuenta heredaría el rechazo de la sesión anterior.
+    @Test func sessionEpoch_bumpsOnEverySignInAndSignOut() throws {
+        let auth = Self.lines(try Self.source("Yala/Services/CloudSync/CloudAuthService.swift")).joined(separator: "\n")
+        #expect(Self.occurrences(of: "sessionEpoch += 1", in: auth) == 3)
+        #expect(Self.occurrences(of: "signInWithIdToken(", in: auth) == 2, "un canje nuevo tiene que subir la época")
+        #expect(auth.contains("""
+            CloudSyncBreadcrumb.authSignedIn()
+            AdoptSessionOwnership.record(nil)
+            sessionEpoch += 1
+            """), "el canje de Google")
+        #expect(auth.contains("""
+            CloudSyncBreadcrumb.authSignedIn()
+            AdoptSessionOwnership.record(nil)
+            self.sessionEpoch += 1
+            """), "el canje de Apple")
+        let signOut = try Self.body(of: "func signOut(returningToPreviousAccount: Bool = false) async -> Bool {",
+                                    in: "Yala/Services/CloudSync/CloudAuthService.swift")
+        let bump = try #require(signOut.range(of: "sessionEpoch += 1"))
+        let guardClient = try #require(signOut.range(of: "guard let client else { return storedSessionIsGone }"))
+        #expect(bump.lowerBound < guardClient.lowerBound, "también sin backend, y aunque el cierre falle")
+    }
+
+    /// La tarjeta de «Migrar», con el rechazo de la sesión viva: la nota del motivo SUSTITUYE a la promesa de la cuenta, y
+    /// el botón se apaga solo si reusaría esa sesión. El adopt no lo lee.
+    @Test func migrateCard_refusalReplacesThePromiseAndDisablesTheButton() throws {
+        let view = Self.lines(try Self.source(Self.viewPath)).joined(separator: "\n")
+        #expect(view.contains("let refusal = isAdopt ? nil : controller.liveSessionRefusal"))
+        #expect(view.contains("""
+            case .reuseLiveSession(let provider):
+            if let refusal {
+            Text(L10n.Storage.Migrate.refusedNote(for: refusal))
+            .font(DS.Typography.caption)
+            .foregroundStyle(DS.Semantic.warningForeground)
+            .accessibilityIdentifier("storage_account_refused_note")
+            } else {
+            Text(accountReuseNote(provider))
+            """), "con el rechazo, la tarjeta no promete la cuenta")
+        #expect(view.contains(
+            "isDisabled: controller.isWorking || isBlockedOtherAccount(decision) || isRefused(decision, refusal),"))
+        let refused = try Self.body(of: "_ refusal: StorageMigrationIdentityGateLogic.Block?) -> Bool {", in: Self.viewPath)
+        #expect(Self.lines(refused) == [
+            "guard refusal != nil, case .reuseLiveSession = decision else { return false }",
+            "return true",
         ])
     }
 

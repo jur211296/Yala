@@ -538,6 +538,32 @@ final class CloudMigrationController {
     /// lo presenta y lo vacía; si la persona no la tenía delante, sale al volver a ella.
     var migrationIdentityBlock: MigrationIdentityBlock?
 
+    /// El último rechazo de la comprobación que recibió una sesión que siguió viva (ticket
+    /// `migrate-card-keeps-promising-an-account-the-check-refused`). **En memoria a propósito**: un rechazo persistido que se
+    /// quedara viejo apagaría «Activar la nube» para siempre; uno en memoria, tras relanzar, solo repite el aviso una vez.
+    private var refusedSession: StorageMigrationIdentityGateLogic.RefusedSession?
+
+    /// La sesión de nube viva, copiada aquí porque `CloudAuthService` no es observable. La renuevan `refresh()` —el tick de
+    /// 1 s de la pantalla— y cada aviso. Sin la copia, desasociar en «Grupos» cerraba la sesión y la tarjeta no se repintaba:
+    /// el botón se quedaba apagado hasta salir y volver a entrar (lo cazó la review). Al ser `Equatable`, solo repinta cuando
+    /// la sesión cambia de verdad.
+    private var liveSession = StorageMigrationIdentityGateLogic.LiveSession(hasSession: false, sub: nil, sessionEpoch: 0)
+
+    /// Por qué la tarjeta de «Migrar» ya no ofrece la cuenta de la sesión viva: la comprobación la rechazó en esta misma
+    /// sesión. `nil` = nada que recordar, o el rechazo era de otra cuenta u otra sesión. Lo lee la tarjeta, que con él apaga
+    /// el botón y dice el motivo en vez de prometer esa cuenta.
+    var liveSessionRefusal: StorageMigrationIdentityGateLogic.Block? {
+        StorageMigrationIdentityGateLogic.cardRefusal(remembered: refusedSession, session: liveSession)
+    }
+
+    /// Copia la sesión de nube viva de `CloudAuthService` (ver `liveSession`).
+    private func readLiveSession() {
+        liveSession = StorageMigrationIdentityGateLogic.LiveSession(
+            hasSession: CloudAuthService.shared.hasSession,
+            sub: CloudAuthService.shared.currentUserID,
+            sessionEpoch: CloudAuthService.shared.sessionEpoch)
+    }
+
     /// La comprobación adelantada al toque está en vuelo (`preflightMigrationIdentity`): el botón enseña que trabaja.
     private(set) var isCheckingMigrationIdentity = false
 
@@ -987,6 +1013,10 @@ final class CloudMigrationController {
             rejectedProvider: rejectedProvider)
         CloudSyncBreadcrumb.migrationIdentityBlocked(reason: reason.slug, stage: stage)
         MetricsService.cloudMigrationExistingAccountBlocked(reason: reason.slug, stage: stage)
+        // Después del cierre de la sesión que abrió el intento: la que queda viva es la que se comprobó, y es la que la
+        // tarjeta seguiría prometiendo. Un `signOut` que no cerró la deja viva, y entonces también se recuerda.
+        readLiveSession()
+        refusedSession = StorageMigrationIdentityGateLogic.refusalToRemember(reason: reason, session: liveSession)
     }
 
     /// Adopt desde el Welcome (H4/pieza 2): conduce la máquina asumiendo una sesión SIWA YA viva —
@@ -1677,6 +1707,7 @@ final class CloudMigrationController {
         claimDefinitiveCause = _runner?.lastClaimDefinitiveCause
         reverseUploadSample = _runner?.lastReverseUploadSample
         reverseSessionExpiry = _runner?.lastReverseSessionExpiry
+        readLiveSession()
 
         refreshSyncBanner()
     }

@@ -579,6 +579,7 @@ struct MigrationJournalUnreadableWiringTests {
             "claimDefinitiveCause = _runner?.lastClaimDefinitiveCause",
             "reverseUploadSample = _runner?.lastReverseUploadSample",
             "reverseSessionExpiry = _runner?.lastReverseSessionExpiry",
+            "readLiveSession()",
             "refreshSyncBanner()",
         ])
     }

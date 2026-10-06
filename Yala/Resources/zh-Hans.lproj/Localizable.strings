@@ -5297,6 +5297,18 @@
 /* Generic fallback of storage.migrate.accountReuseNote when the sign-in method is unknown */
 "storage.migrate.accountReuseNoteGeneric" = "将继续使用你当前的 Yala 账户，这样你的数据和群组都在同一个账户里。";
 
+/* Storage migrate card, after the identity check refused the live account: it already has personal finances */
+"storage.migrate.refusedPersonalData" = "你当前的 Yala 账户已有个人财务数据，无法接收此设备的数据。要把你的数据移到其他账户，请先在“群组”中取消关联此账户。";
+
+/* Storage migrate card, after the identity check refused the live account: the device's groups use another account */
+"storage.migrate.refusedOtherGroups" = "你的群组使用的是另一个账户，而此设备只能有一个云端账户。要把你的数据移到云端，请用群组的账户登录，或先在“群组”中取消关联。";
+
+/* Storage migrate card, after the identity check refused the live account: the account went back to iCloud */
+"storage.migrate.refusedReturned" = "你当前的 Yala 账户已回到 iCloud，目前还无法用此账户回到云端。";
+
+/* Storage migrate card, after the identity check refused the live account: it was signed in before a fresh start */
+"storage.migrate.refusedFreshStart" = "你当前的 Yala 账户可能属于其他人：此设备从零开始时它就已登录。要选择你自己的账户，请先在“群组”中取消关联，再点一次“启用云端”。";
+
 /* Storage adopt card: the live session is a different Yala account than the one that migrated (%@ = Apple|Google) */
 "storage.adopt.otherAccountNote" = "这份云端副本属于另一个 Yala 账户（%@）。请退出登录，并使用该账户登录后继续。";
 
