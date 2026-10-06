@@ -6184,8 +6184,20 @@
 "welcome.groups.neutralOtherAccountAndCaptureUnfinishedLossBodyUnknown" = "There are group changes that haven't been uploaded yet. Some were made on this phone with another account and only upload with that account, and some couldn't be prepared for upload. If you continue now, they'll be lost and no one in the group will see them.";
 
 /* Empezar de cero con cambios de grupos de otra cuenta: por qué no suben */
-"groups.freshStartPending.lossOtherAccount" = "They can only upload with the account that made them, and the session open on this phone belongs to another one. If you're not going to sign back in with that account, you can start from scratch and lose them: no one in the group will see them.";
+"groups.freshStartPending.lossOtherAccount" = "They can only upload by signing in with the account that made each one, and the session open on this phone belongs to another account. If that's not going to happen, you can start from scratch and lose them: no one in the group will see them.";
 "groups.freshStartPending.lossOtherAccountAndCaptureUnfinished" = "Some were made with another account and can only upload with that account, and some couldn't be prepared for upload. Close Yala and open it again (if it keeps happening, update it) and try again; the other account's changes only upload if you sign in with it. If you're not going to, you can start from scratch and lose them: no one in the group will see them.";
+"groups.freshStartPending.titleNeutral" = "Some group changes still need to be uploaded";
+"groups.freshStartPending.leadNeutral" = "We didn't erase anything: some group changes haven't reached our server yet (%d), and starting from scratch would take them with it.";
+"groups.freshStartPending.leadNeutralUnknown" = "We didn't erase anything: some group changes haven't reached our server yet, and starting from scratch would take them with it.";
+"groups.freshStartPending.leadSplit" = "We didn't erase anything: some group changes haven't reached our server yet, and starting from scratch would take them with it. Yours: %1$d. Made with another account: %2$d.";
+"groups.freshStartPending.splitOwnPermanent" = "Your account can no longer upload yours, and trying again won't fix it.";
+"groups.freshStartPending.splitOwnSessionExpired" = "Yours can only upload with the account that made them, and its session on this phone is no longer valid.";
+"groups.freshStartPending.splitAnotherAccount" = "The ones made with another account can only upload by signing in with the account that made each one; waiting or trying again won't upload them.";
+"groups.freshStartPending.splitLossTail" = "You can start from scratch and lose them all: no one in the group will see them.";
+"groups.freshStartPending.splitAfterOwnUpload" = "If yours get uploaded, you'll be able to start from scratch and lose only the ones made with another account.";
+"groups.freshStartPending.lossConfirmBodySplit" = "Group changes that will be lost — yours: %1$d; made with another account: %2$d. They're erased from this phone without reaching the server, no one in the group will see them, and they can't be recovered.";
+"groups.freshStartPending.lossConfirmBodyNeutral" = "Group changes that will be lost: %d. They're erased from this phone without reaching the server, no one in the group will see them, and they can't be recovered.";
+"groups.freshStartPending.lossConfirmBodyNeutralUnknown" = "The group changes that didn't reach the server are erased from this phone. No one in the group will see them, and they can't be recovered.";
 
 /* Cerrar sesión en la nube con la sesión caducada; %d = cambios personales que se pierden */
 "settings.signOutCloudSessionExpiredPersonalLoss" = "Your session expired. Changes that didn't reach your account in the cloud: %d. To upload them, open “Where your data lives”, here in Profile, and tap “Sign in”. If you can't sign in, you can export your transactions to a file before you decide. If you sign out now, those changes will be lost.";

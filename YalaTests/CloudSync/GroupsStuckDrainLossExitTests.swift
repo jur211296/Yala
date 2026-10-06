@@ -460,7 +460,7 @@ struct GroupsStuckDrainPushAllTests {
         let verdict = await coordinator.drainGroupsBeforeFreshStart(context: context, witness: witness)
 
         #expect(cycles.value == 1, "el attest se muestra al momento: un solo ciclo")
-        #expect(verdict == .blocked(Block(pendingCount: 5, reason: .attestUnavailable, readsUncaptured: true)), """
+        #expect(verdict == .blocked(Block(pendingCount: 5, reason: .attestUnavailable, readsUncaptured: true, anotherAccountCount: 0)), """
             el teléfono sin App Attest con el drain atascado tiene que ver su salida, contando las dos filas y los tres \
             cambios que el drain no capturó: \(verdict)
             """)
@@ -481,7 +481,7 @@ struct GroupsStuckDrainPushAllTests {
         let verdict = await coordinator.drainGroupsBeforeFreshStart(context: context, witness: witness)
 
         #expect(cycles.value >= 1, "con la captura atascada el pre-check tiene que ciclar para saber la causa")
-        #expect(verdict == .blocked(Block(pendingCount: 2, reason: .sessionExpired, readsUncaptured: true)), "\(verdict)")
+        #expect(verdict == .blocked(Block(pendingCount: 2, reason: .sessionExpired, readsUncaptured: true, anotherAccountCount: 0)), "\(verdict)")
         #expect(coordinator.acceptFreshStartGroupsLoss())
     }
 
@@ -496,7 +496,8 @@ struct GroupsStuckDrainPushAllTests {
 
         let verdict = await coordinator.drainGroupsBeforeFreshStart(context: context, witness: witness)
 
-        #expect(verdict == .blocked(Block(pendingCount: 3, reason: .groupsChangesFromAnotherAccount, readsUncaptured: true)), "\(verdict)")
+        // Los tres cambios del History los apuntó otra cuenta: los tres son la parte de otra cuenta (2026-10-05).
+        #expect(verdict == .blocked(Block(pendingCount: 3, reason: .groupsChangesFromAnotherAccount, readsUncaptured: true, anotherAccountCount: 3)), "\(verdict)")
         #expect(coordinator.acceptFreshStartGroupsLoss())
     }
 
@@ -517,7 +518,7 @@ struct GroupsStuckDrainPushAllTests {
         let verdict = await coordinator.drainGroupsBeforeFreshStart(context: context, witness: witness)
 
         #expect(cycles.value == 2, "el ciclo coalescido no tenía que decidir: \(cycles.value) ciclos")
-        #expect(verdict == .blocked(Block(pendingCount: 2, reason: .sessionExpired, readsUncaptured: true)), "\(verdict)")
+        #expect(verdict == .blocked(Block(pendingCount: 2, reason: .sessionExpired, readsUncaptured: true, anotherAccountCount: 0)), "\(verdict)")
     }
 
     /// **Un fallo que no esconde nada no bloquea**: la captura falla en todos sus intentos, pero el History no guarda nada que
@@ -552,7 +553,7 @@ struct GroupsStuckDrainPushAllTests {
 
         let verdict = await coordinator.drainGroupsBeforeFreshStart(context: context, witness: witness)
 
-        #expect(verdict == .blocked(Block(pendingCount: 2, reason: .uploadRetryLater, readsUncaptured: false)), "\(verdict)")
+        #expect(verdict == .blocked(Block(pendingCount: 2, reason: .uploadRetryLater, readsUncaptured: false, anotherAccountCount: 0)), "\(verdict)")
         #expect(!coordinator.acceptFreshStartGroupsLoss(), "sin el mismo cambio fallando no hay salida")
         try clearOutbox(context)
     }
@@ -570,7 +571,7 @@ struct GroupsStuckDrainPushAllTests {
 
         let verdict = await coordinator.drainGroupsBeforeFreshStart(context: context, witness: witness)
 
-        #expect(verdict == .blocked(Block(pendingCount: 1, reason: .uploadRetryLater, readsUncaptured: false)), "\(verdict)")
+        #expect(verdict == .blocked(Block(pendingCount: 1, reason: .uploadRetryLater, readsUncaptured: false, anotherAccountCount: 0)), "\(verdict)")
         #expect(!coordinator.acceptFreshStartGroupsLoss())
         try clearOutbox(context)
     }
@@ -611,11 +612,11 @@ struct GroupsStuckDrainPushAllTests {
 
         let verdict = await coordinator.drainGroupsBeforeFreshStart(context: context, witness: witness)
 
-        #expect(verdict == .blocked(Block(pendingCount: Int.max, reason: .groupsCaptureUnfinished, readsUncaptured: false)), "\(verdict)")
+        #expect(verdict == .blocked(Block(pendingCount: Int.max, reason: .groupsCaptureUnfinished, readsUncaptured: false, anotherAccountCount: 0)), "\(verdict)")
         #expect(!coordinator.acceptFreshStartGroupsLoss(), "sin oferta")
         if case .blocked(let block) = verdict {
             #expect(!block.offersLossExit, "«Empezar de cero» no ofrece perderlos: decisión A")
-            #expect(SignOutBlockedCopy.freshStartGroupsPendingMessage(block).hasSuffix(L10n.Groups.Errors.captureUnfinished))
+            #expect(SignOutBlockedCopy.freshStartGroupsPendingMessage(block, retryOffersTheLossExit: true).hasSuffix(L10n.Groups.Errors.captureUnfinished))
         }
     }
 
@@ -639,7 +640,7 @@ struct GroupsStuckDrainPushAllTests {
 
         let verdict = await coordinator.drainGroupsBeforeFreshStart(context: context, witness: witness)
 
-        #expect(verdict == .blocked(Block(pendingCount: 2, reason: .attestUnavailable, readsUncaptured: false)), "\(verdict)")
+        #expect(verdict == .blocked(Block(pendingCount: 2, reason: .attestUnavailable, readsUncaptured: false, anotherAccountCount: 0)), "\(verdict)")
         #expect(historyReads.value == 2, "solo tras los dos intentos fallidos; con la captura completa la oferta no lo lee")
         try clearOutbox(context)
     }
@@ -773,7 +774,7 @@ struct GroupsStuckDrainHealthyPhoneCopyTests {
         #expect(!L.freshStartOffersGroupsLossExit(.groupsCaptureUnfinished))
         #expect(L.personalLossCause(.groupsCaptureUnfinished) == nil)
         let block = CloudSessionSignOut.FreshStartGroupsBlock(pendingCount: 2, reason: .groupsCaptureUnfinished,
-                                                             readsUncaptured: false)
+                                                             readsUncaptured: false, anotherAccountCount: 0)
         #expect(!block.offersLossExit)
         #expect(SignOutBlockedCopy.groupsLossMessage(for: .groupsCaptureUnfinished, pending: 2, readsUncaptured: false)
                 == L10n.Groups.Errors.captureUnfinished, "sin causa de pérdida, el texto sin salida")

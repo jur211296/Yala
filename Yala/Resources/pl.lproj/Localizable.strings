@@ -6190,8 +6190,20 @@
 "welcome.groups.neutralOtherAccountAndCaptureUnfinishedLossBodyUnknown" = "Niektóre zmiany w grupach nie zostały jeszcze wysłane. Część zapisano na tym telefonie z innego konta i można je wysłać tylko z tego konta, a części nie udało się przygotować do przesłania. Jeśli teraz przejdziesz dalej, zostaną utracone i nikt z grupy ich nie zobaczy.";
 
 /* Empezar de cero con cambios de grupos de otra cuenta: por qué no suben */
-"groups.freshStartPending.lossOtherAccount" = "Można je wysłać tylko z konta, które je zapisało, a sesja otwarta na tym telefonie należy do innego konta. Jeśli nie zalogujesz się ponownie na to konto, możesz zacząć od zera i je stracić: nikt w grupie ich nie zobaczy.";
+"groups.freshStartPending.lossOtherAccount" = "Można je wysłać tylko po zalogowaniu się na konto, które zapisało każdą z nich, a sesja otwarta na tym telefonie należy do innego konta. Jeśli to nie nastąpi, możesz zacząć od zera i je stracić: nikt w grupie ich nie zobaczy.";
 "groups.freshStartPending.lossOtherAccountAndCaptureUnfinished" = "Część zapisano z innego konta i można je wysłać tylko z tego konta, a części nie udało się przygotować do przesłania. Zamknij Yala i otwórz ponownie (jeśli to się powtarza, zaktualizuj ją) i spróbuj jeszcze raz; zmiany z drugiego konta zostaną wysłane tylko po zalogowaniu się na nie. Jeśli nie zamierzasz tego robić, możesz zacząć od zera i je stracić: nikt w grupie ich nie zobaczy.";
+"groups.freshStartPending.titleNeutral" = "Część zmian w grupach nie została jeszcze wysłana";
+"groups.freshStartPending.leadNeutral" = "Niczego nie usunęliśmy: część zmian w grupach nie dotarła jeszcze na nasz serwer (%d), a rozpoczęcie od zera by je zabrało.";
+"groups.freshStartPending.leadNeutralUnknown" = "Niczego nie usunęliśmy: część zmian w grupach nie dotarła jeszcze na nasz serwer, a rozpoczęcie od zera by je zabrało.";
+"groups.freshStartPending.leadSplit" = "Niczego nie usunęliśmy: część zmian w grupach nie dotarła jeszcze na nasz serwer, a rozpoczęcie od zera by je zabrało. Twoje: %1$d. Zapisane z innego konta: %2$d.";
+"groups.freshStartPending.splitOwnPermanent" = "Twoje konto nie może już wysłać twoich, a ponowna próba tego nie naprawi.";
+"groups.freshStartPending.splitOwnSessionExpired" = "Twoje można wysłać tylko z konta, które je zapisało, a jego sesja na tym telefonie nie jest już ważna.";
+"groups.freshStartPending.splitAnotherAccount" = "Te zapisane z innego konta można wysłać tylko po zalogowaniu się na konto, które zapisało każdą z nich; czekanie ani ponowna próba ich nie wyślą.";
+"groups.freshStartPending.splitLossTail" = "Możesz zacząć od zera i stracić je wszystkie: nikt w grupie ich nie zobaczy.";
+"groups.freshStartPending.splitAfterOwnUpload" = "Jeśli twoje zostaną wysłane, możesz zacząć od zera i stracić tylko te zapisane z innego konta.";
+"groups.freshStartPending.lossConfirmBodySplit" = "Zmiany w grupach, które zostaną utracone — twoje: %1$d; zapisane z innego konta: %2$d. Zostaną usunięte z tego telefonu bez wysłania na serwer, nikt w grupie ich nie zobaczy i nie da się ich odzyskać.";
+"groups.freshStartPending.lossConfirmBodyNeutral" = "Zmiany w grupach, które zostaną utracone: %d. Zostaną usunięte z tego telefonu bez wysłania na serwer, nikt w grupie ich nie zobaczy i nie da się ich odzyskać.";
+"groups.freshStartPending.lossConfirmBodyNeutralUnknown" = "Zmiany w grupach, które nie dotarły na serwer, zostaną usunięte z tego telefonu. Nikt w grupie ich nie zobaczy i nie da się ich odzyskać.";
 
 /* Cerrar sesión en la nube con la sesión caducada; %d = cambios personales que se pierden */
 "settings.signOutCloudSessionExpiredPersonalLoss" = "Twoja sesja wygasła. Zmiany, które nie dotarły na Twoje konto w chmurze: %d. Aby je wysłać, otwórz „Gdzie są Twoje dane”, tutaj w Profilu, i stuknij „Zaloguj się”. Jeśli nie możesz się zalogować, zanim zdecydujesz, możesz wyeksportować swoje transakcje do pliku. Jeśli wylogujesz się teraz, te zmiany zostaną utracone.";

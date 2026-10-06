@@ -1240,6 +1240,32 @@ nonisolated enum CloudSignOutFlowLogic {
         }
     }
 
+    /// **Cómo se explica la cifra de «Empezar de cero»** (ticket
+    /// `fresh-start-copy-for-another-accounts-group-changes-borrows-the-own-reason`, decisión A de Jürgen del 2026-10-05).
+    /// Desde ese día la cifra cuenta también lo de OTRA cuenta que el borrado se lleva, y el motivo del bloqueo es el de lo
+    /// tuyo: con las dos clases a la vez, «volver a intentarlo no lo va a arreglar» o «inténtalo en un rato» se leían de los
+    /// dos. La persona no puede aceptar perder lo que el aviso no le explicó bien.
+    enum FreshStartGroupsCopyShape: Equatable {
+        /// Nada de otra cuenta: el texto de siempre, con «tus grupos».
+        case own
+        /// Todo lo que se cuenta solo lo sube otra cuenta (el motivo «otra cuenta», o la parte tuya a cero): sin «tus».
+        case anotherAccount
+        /// De las dos clases. La cifra partida, cada parte con su motivo; `nil` en las dos = no se pudo partir.
+        case mixed(own: Int?, anotherAccount: Int?)
+    }
+
+    /// La forma del texto, en puro. `anotherAccountCount` es cuántos de `pendingCount` solo los sube otra cuenta
+    /// (`CloudSessionSignOut.FreshStartGroupsBlock.anotherAccountCount`); `Int.max` en cualquiera = no se pudo contar.
+    /// **No cambia la cifra ni la salida**: solo cómo se explican.
+    static func freshStartGroupsCopyShape(pendingCount: Int, anotherAccountCount: Int,
+                                          reason: BlockReason) -> FreshStartGroupsCopyShape {
+        if reason == .groupsChangesFromAnotherAccount { return .anotherAccount }
+        guard anotherAccountCount != 0 else { return .own }
+        guard pendingCount < Int.max, anotherAccountCount < Int.max else { return .mixed(own: nil, anotherAccount: nil) }
+        guard anotherAccountCount < pendingCount else { return .anotherAccount }
+        return .mixed(own: pendingCount - anotherAccountCount, anotherAccount: anotherAccountCount)
+    }
+
     /// **Lo que «Empezar de cero» se llevaría de grupos, por fila.** El borrado purga el outbox y el espejo del App Group,
     /// así que cuentan las dos cosas: las filas VIVAS del outbox por su `clientMutationID`, y las entradas del espejo sin
     /// fila por su clave `(syncID, hlc, op)`. `nil` en cualquiera de las dos = no se pudo leer.

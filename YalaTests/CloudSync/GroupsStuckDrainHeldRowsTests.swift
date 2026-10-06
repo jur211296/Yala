@@ -209,13 +209,13 @@ struct StuckDrainHeldRowsGestureTests {
             context: context, witness: witness(held: 2, history: history, cycles: cycles))
 
         #expect(cycles.value >= 1, "control: la captura atascada tiene que ciclar para saber la causa")
-        let expected = Block(pendingCount: 3, reason: .groupsChangesFromAnotherAccount, readsUncaptured: true)
+        let expected = Block(pendingCount: 3, reason: .groupsChangesFromAnotherAccount, readsUncaptured: true, anotherAccountCount: 2)
         #expect(verdict == .blocked(expected), """
             con filas de otra cuenta y un cambio propio atascado, «Empezar de cero» tiene que ofrecer perder las dos filas y \
             el cambio: \(verdict)
             """)
         #expect(expected.offersLossExit)
-        #expect(SignOutBlockedCopy.freshStartGroupsPendingMessage(expected)
+        #expect(SignOutBlockedCopy.freshStartGroupsPendingMessage(expected, retryOffersTheLossExit: true)
                     .hasSuffix(L10n.Groups.FreshStartPending.lossOtherAccountAndCaptureUnfinished),
                 "el texto nombra una sola causa")
         #expect(coordinator.acceptFreshStartGroupsLoss(), "la oferta quedó anotada")
@@ -233,7 +233,7 @@ struct StuckDrainHeldRowsGestureTests {
         let newer = await coordinator.drainGroupsBeforeFreshStart(
             context: context, witness: witness(held: 2, history: history), accepted: accepted)
         #expect(newer == .blocked(Block(pendingCount: 4, reason: .groupsChangesFromAnotherAccount,
-                                        readsUncaptured: true)), "\(newer)")
+                                        readsUncaptured: true, anotherAccountCount: 2)), "\(newer)")
     }
 
     /// Control: las mismas filas de otra cuenta sin atasco —la captura termina— siguen saliendo como antes: otra cuenta, sin
@@ -248,9 +248,9 @@ struct StuckDrainHeldRowsGestureTests {
         let verdict = await coordinator.drainGroupsBeforeFreshStart(
             context: context, witness: witness(held: 2, history: History(), captureCompletes: true))
 
-        let expected = Block(pendingCount: 2, reason: .groupsChangesFromAnotherAccount, readsUncaptured: false)
+        let expected = Block(pendingCount: 2, reason: .groupsChangesFromAnotherAccount, readsUncaptured: false, anotherAccountCount: 2)
         #expect(verdict == .blocked(expected), "\(verdict)")
-        #expect(SignOutBlockedCopy.freshStartGroupsPendingMessage(expected)
+        #expect(SignOutBlockedCopy.freshStartGroupsPendingMessage(expected, retryOffersTheLossExit: true)
                     .hasSuffix(L10n.Groups.FreshStartPending.lossOtherAccount))
     }
 
@@ -388,13 +388,13 @@ struct StuckDrainHeldRowsCopyTests {
     @Test("MUTACIÓN: «Empezar de cero» elige las dos causas solo con otra cuenta y el History en la cifra")
     func freshStartMessage_picksTheTwoCauses() {
         typealias Block = CloudSessionSignOut.FreshStartGroupsBlock
-        let both = Block(pendingCount: 3, reason: .groupsChangesFromAnotherAccount, readsUncaptured: true)
-        #expect(Copy.freshStartGroupsPendingMessage(both)
-                == L10n.Groups.FreshStartPending.lead(3) + " " + L10n.Groups.FreshStartPending.lossOtherAccountAndCaptureUnfinished)
-        let one = Block(pendingCount: 3, reason: .groupsChangesFromAnotherAccount, readsUncaptured: false)
-        #expect(Copy.freshStartGroupsPendingMessage(one).hasSuffix(L10n.Groups.FreshStartPending.lossOtherAccount))
-        let session = Block(pendingCount: 3, reason: .sessionExpired, readsUncaptured: true)
-        #expect(Copy.freshStartGroupsPendingMessage(session).hasSuffix(L10n.Groups.FreshStartPending.lossSessionExpired))
+        let both = Block(pendingCount: 3, reason: .groupsChangesFromAnotherAccount, readsUncaptured: true, anotherAccountCount: 0)
+        #expect(Copy.freshStartGroupsPendingMessage(both, retryOffersTheLossExit: true)
+                == L10n.Groups.FreshStartPending.leadNeutral(3) + " " + L10n.Groups.FreshStartPending.lossOtherAccountAndCaptureUnfinished)
+        let one = Block(pendingCount: 3, reason: .groupsChangesFromAnotherAccount, readsUncaptured: false, anotherAccountCount: 0)
+        #expect(Copy.freshStartGroupsPendingMessage(one, retryOffersTheLossExit: true).hasSuffix(L10n.Groups.FreshStartPending.lossOtherAccount))
+        let session = Block(pendingCount: 3, reason: .sessionExpired, readsUncaptured: true, anotherAccountCount: 0)
+        #expect(Copy.freshStartGroupsPendingMessage(session, retryOffersTheLossExit: true).hasSuffix(L10n.Groups.FreshStartPending.lossSessionExpired))
     }
 
     @Test("MUTACIÓN: las tres vistas que pintan la oferta pasan lo que cuenta la oferta, no un literal")
@@ -419,7 +419,7 @@ struct StuckDrainHeldRowsCopyTests {
         #expect(coordinator.contains(
             "guard offersGroupsLossExit, let offer = groupsLossExit else { return false } return offer.loss.readsUncaptured"))
         #expect(coordinator.contains("let offered = FreshStartGroupsBlock(pendingCount: loss.count, reason: block.reason, "
-                                     + "readsUncaptured: loss.readsUncaptured)"))
+                                     + "readsUncaptured: loss.readsUncaptured, anotherAccountCount:"))
     }
 
     @Test("el español dice las dos causas, sin plazo, y el gemelo del desasociar ya no dice «de ellos»")

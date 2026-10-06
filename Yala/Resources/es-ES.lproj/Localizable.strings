@@ -5462,8 +5462,20 @@
 "welcome.groups.neutralOtherAccountAndCaptureUnfinishedLossBodyUnknown" = "Hay cambios de grupos sin subir. Algunos se apuntaron en este teléfono con otra cuenta y solo se suben con ella, y algunos no se han podido preparar para subirlos. Si continúas ahora, se perderán y nadie del grupo los verá.";
 
 /* Empezar de cero con cambios de grupos de otra cuenta: por qué no suben */
-"groups.freshStartPending.lossOtherAccount" = "Solo pueden subir con la cuenta que los apuntó, y la sesión abierta en este teléfono es de otra. Si no vas a volver a entrar con esa cuenta, puedes empezar de cero y perderlos: nadie del grupo los verá.";
+"groups.freshStartPending.lossOtherAccount" = "Solo pueden subir entrando con la cuenta que apuntó cada uno, y la sesión abierta en este teléfono es de otra. Si eso no va a pasar, puedes empezar de cero y perderlos: nadie del grupo los verá.";
 "groups.freshStartPending.lossOtherAccountAndCaptureUnfinished" = "Algunos se apuntaron con otra cuenta y solo pueden subir con ella, y algunos no se han podido preparar para subirlos. Cierra y vuelve a abrir Yala (si sigue pasando, actualízala) y vuelve a intentarlo; los de la otra cuenta solo suben si entras con ella. Si no vas a hacerlo, puedes empezar de cero y perderlos: nadie del grupo los verá.";
+"groups.freshStartPending.titleNeutral" = "Faltan cambios de grupos por subir";
+"groups.freshStartPending.leadNeutral" = "No hemos borrado nada: hay cambios de grupos que aún no han llegado al servidor (%d) y empezar de cero se los llevaría.";
+"groups.freshStartPending.leadNeutralUnknown" = "No hemos borrado nada: hay cambios de grupos que aún no han llegado al servidor y empezar de cero se los llevaría.";
+"groups.freshStartPending.leadSplit" = "No hemos borrado nada: hay cambios de grupos que aún no han llegado al servidor y empezar de cero se los llevaría. Tuyos: %1$d. Apuntados con otra cuenta: %2$d.";
+"groups.freshStartPending.splitOwnPermanent" = "Tu cuenta ya no puede subir los tuyos, y volver a intentarlo no lo va a arreglar.";
+"groups.freshStartPending.splitOwnSessionExpired" = "Los tuyos solo pueden subir con la cuenta que los apuntó, y su sesión en este teléfono ya no es válida.";
+"groups.freshStartPending.splitAnotherAccount" = "Los apuntados con otra cuenta solo pueden subir entrando con la cuenta que apuntó cada uno; esperar o volver a intentarlo no los sube.";
+"groups.freshStartPending.splitLossTail" = "Puedes empezar de cero y perderlos todos: nadie del grupo los verá.";
+"groups.freshStartPending.splitAfterOwnUpload" = "Si los tuyos llegan a subir, podrás empezar de cero y perder solo los apuntados con otra cuenta.";
+"groups.freshStartPending.lossConfirmBodySplit" = "Cambios de grupos que se pierden — tuyos: %1$d; apuntados con otra cuenta: %2$d. Se borran de este teléfono sin llegar al servidor, nadie del grupo los verá y no se pueden recuperar.";
+"groups.freshStartPending.lossConfirmBodyNeutral" = "Cambios de grupos que se pierden: %d. Se borran de este teléfono sin llegar al servidor, nadie del grupo los verá y no se pueden recuperar.";
+"groups.freshStartPending.lossConfirmBodyNeutralUnknown" = "Los cambios de grupos que no han llegado al servidor se borran de este teléfono. Nadie del grupo los verá y no se pueden recuperar.";
 
 /* Cerrar sesión en la nube con la sesión caducada; %d = cambios personales que se pierden */
 "settings.signOutCloudSessionExpiredPersonalLoss" = "Tu sesión ha caducado. Cambios que no han llegado a tu cuenta en la nube: %d. Para subirlos, abre «Dónde viven tus datos», aquí en Perfil, y toca «Iniciar sesión». Si no puedes entrar, antes de decidir puedes exportar tus movimientos a un archivo. Si cierras sesión ahora, esos cambios se pierden.";

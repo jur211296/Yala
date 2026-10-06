@@ -342,8 +342,8 @@ struct WelcomePrivateICloudGateView: View {
             // motivo que se cura esperando no hay salida «perderlos» (`CloudSignOutFlowLogic.freshStartOffersGroupsLossExit`).
             twoWayNoticeContent(
                 icon: "exclamationmark.triangle",
-                title: L10n.Groups.FreshStartPending.title,
-                body: SignOutBlockedCopy.freshStartGroupsPendingMessage(block),
+                title: SignOutBlockedCopy.freshStartGroupsPendingTitle(block),
+                body: SignOutBlockedCopy.freshStartGroupsPendingMessage(block, retryOffersTheLossExit: true),
                 primary: L10n.Welcome.PrivateICloud.wipeRetry,
                 secondary: L10n.Welcome.PrivateICloud.wipeFailedBack,
                 identifier: "welcome_private_icloud_groups_pending",
@@ -359,8 +359,8 @@ struct WelcomePrivateICloudGateView: View {
     private func groupsLossOfferContent(_ block: CloudSessionSignOut.FreshStartGroupsBlock,
                                         retry: GroupsPendingRetry) -> some View {
         noticeShell(icon: "exclamationmark.triangle",
-                    title: L10n.Groups.FreshStartPending.title,
-                    body: SignOutBlockedCopy.freshStartGroupsPendingMessage(block),
+                    title: SignOutBlockedCopy.freshStartGroupsPendingTitle(block),
+                    body: SignOutBlockedCopy.freshStartGroupsPendingMessage(block, retryOffersTheLossExit: true),
                     identifier: "welcome_private_icloud_groups_pending") {
             VStack(spacing: DS.Spacing.sm) {
                 YalaPrimaryButton(L10n.Welcome.PrivateICloud.wipeFailedBack) { leaveGate() }

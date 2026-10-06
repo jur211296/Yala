@@ -6188,8 +6188,20 @@
 "welcome.groups.neutralOtherAccountAndCaptureUnfinishedLossBodyUnknown" = "Alcune modifiche dei gruppi non sono ancora state caricate. Una parte è stata fatta su questo telefono con un altro account e si carica solo con quell'account, e non è stato possibile preparare per il caricamento alcune di esse. Se continui ora, andranno perse e nessuno del gruppo le vedrà.";
 
 /* Empezar de cero con cambios de grupos de otra cuenta: por qué no suben */
-"groups.freshStartPending.lossOtherAccount" = "Si possono caricare solo con l'account che le ha create, e la sessione aperta su questo telefono è di un altro account. Se non rientrerai con quell'account, puoi ricominciare da zero e perderle: nessuno del gruppo le vedrà.";
+"groups.freshStartPending.lossOtherAccount" = "Si possono caricare solo accedendo con l'account che ha fatto ciascuna, e la sessione aperta su questo telefono è di un altro account. Se non succederà, puoi ricominciare da zero e perderle: nessuno del gruppo le vedrà.";
 "groups.freshStartPending.lossOtherAccountAndCaptureUnfinished" = "Alcune sono state fatte con un altro account e si possono caricare solo con quell'account, e non è stato possibile preparare per il caricamento alcune di esse. Chiudi e riapri Yala (se continua a succedere, aggiornala) e riprova; quelle dell'altro account si caricano solo se accedi con esso. Se non lo farai, puoi ricominciare da zero e perderle: nessuno del gruppo le vedrà.";
+"groups.freshStartPending.titleNeutral" = "Alcune modifiche dei gruppi devono ancora essere caricate";
+"groups.freshStartPending.leadNeutral" = "Non abbiamo cancellato nulla: alcune modifiche dei gruppi non sono ancora arrivate al nostro server (%d) e ricominciare da zero le porterebbe via.";
+"groups.freshStartPending.leadNeutralUnknown" = "Non abbiamo cancellato nulla: alcune modifiche dei gruppi non sono ancora arrivate al nostro server e ricominciare da zero le porterebbe via.";
+"groups.freshStartPending.leadSplit" = "Non abbiamo cancellato nulla: alcune modifiche dei gruppi non sono ancora arrivate al nostro server e ricominciare da zero le porterebbe via. Tue: %1$d. Fatte con un altro account: %2$d.";
+"groups.freshStartPending.splitOwnPermanent" = "Il tuo account non può più caricare le tue, e riprovare non risolverà.";
+"groups.freshStartPending.splitOwnSessionExpired" = "Le tue si possono caricare solo con l'account che le ha fatte, e la sua sessione su questo telefono non è più valida.";
+"groups.freshStartPending.splitAnotherAccount" = "Quelle fatte con un altro account si possono caricare solo accedendo con l'account che ha fatto ciascuna; aspettare o riprovare non le carica.";
+"groups.freshStartPending.splitLossTail" = "Puoi ricominciare da zero e perderle tutte: nessuno del gruppo le vedrà.";
+"groups.freshStartPending.splitAfterOwnUpload" = "Se le tue verranno caricate, potrai ricominciare da zero e perdere solo quelle fatte con un altro account.";
+"groups.freshStartPending.lossConfirmBodySplit" = "Modifiche dei gruppi che vanno perse — tue: %1$d; fatte con un altro account: %2$d. Vengono cancellate da questo telefono senza arrivare al server, nessuno del gruppo le vedrà e non si possono recuperare.";
+"groups.freshStartPending.lossConfirmBodyNeutral" = "Modifiche dei gruppi che vanno perse: %d. Vengono cancellate da questo telefono senza arrivare al server, nessuno del gruppo le vedrà e non si possono recuperare.";
+"groups.freshStartPending.lossConfirmBodyNeutralUnknown" = "Le modifiche dei gruppi che non sono arrivate al server vengono cancellate da questo telefono. Nessuno del gruppo le vedrà e non si possono recuperare.";
 
 /* Cerrar sesión en la nube con la sesión caducada; %d = cambios personales que se pierden */
 "settings.signOutCloudSessionExpiredPersonalLoss" = "La tua sessione è scaduta. Modifiche che non sono arrivate al tuo account nel cloud: %d. Per caricarle, apri «Dove si trovano i tuoi dati», qui in Profilo, e tocca «Accedi». Se non riesci ad accedere, prima di decidere puoi esportare le tue transazioni in un file. Se esci ora, queste modifiche andranno perse.";

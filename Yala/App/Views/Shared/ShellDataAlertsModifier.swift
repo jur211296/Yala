@@ -157,8 +157,8 @@ struct ShellDataAlertsModifier: ViewModifier {
             // lo dice con su cifra y su motivo. El botón sigue literal —`.claude/rules/swiftui-ds.md`: lo que puede
             // variar en un `.alert` es el título y el mensaje—.
             .alert(
-                freshStartGroupsBlock == nil
-                    ? L10n.Welcome.FreshStart.failedTitle : L10n.Groups.FreshStartPending.title,
+                freshStartGroupsBlock.map { SignOutBlockedCopy.freshStartGroupsPendingTitle($0) }
+                    ?? L10n.Welcome.FreshStart.failedTitle,
                 isPresented: $showFreshStartWipeFailedAlert
             ) {
                 // Mismo problema y mismo remedio que sus dos vecinos: este alert también se presenta
@@ -179,7 +179,11 @@ struct ShellDataAlertsModifier: ViewModifier {
                 }
                     .tint(.primary)  // A11Y-DM: el indigo global se pierde sobre el Welcome oscuro
             } message: {
-                Text(freshStartGroupsBlock.map { SignOutBlockedCopy.freshStartGroupsPendingMessage($0) }
+                // Sin `retryOffersTheLossExit`: este alert nunca ofrece perderlos (lo hace la puerta, ver
+                // `continueInTheGateWhileGroupsArePending`), así que no promete que el intento siguiente lo hará.
+                Text(freshStartGroupsBlock.map {
+                    SignOutBlockedCopy.freshStartGroupsPendingMessage($0, retryOffersTheLossExit: false)
+                }
                      ?? L10n.Welcome.FreshStart.failedMessage)
             }
     }
