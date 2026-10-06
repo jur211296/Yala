@@ -89,3 +89,21 @@ ficheros** — la familia exacta del «SUCCEEDED con cero tests».
 **Y `!` dentro de comillas dobles en zsh se come el grep.** `grep -n "if: \${{ !cancelled"` no
 encontró una línea que estaba ahí. Comillas simples, o `grep -n 'cancelled()'`. Familia de
 [[zsh-no-divide-variables]].
+
+## Un job «cortado por tiempo» se diagnostica contando tests, no buscando el cuelgue
+
+**2026-10-06, PR #369.** El encargo decía «pure-logic se cuelga en CI». No había cuelgue: el log decía
+`Test run with 26 889 tests` contra los 8 963 de un run sano. Con Swift Testing,
+`-retry-tests-on-failure` repite la suite **entera** hasta tres veces, así que un solo rojo determinista
+triplicaba el paso y el tope del job lo cancelaba. Tres greps lo zanjaron: el conteo, el `✘ … recorded an
+issue at`, y los tiempos por paso de la API comparados con 8 runs sanos.
+
+**How to apply:**
+
+- Ante un corte por tiempo, lo primero es `grep "Test run with"` en el log del job y compararlo con un run
+  sano. Un múltiplo exacto es el reintento, no un cuelgue.
+- Un rojo que solo sale en CI y no en el gate: el runner arranca en **inglés**. Se reproduce con
+  `-testLanguage en -testRegion US`, y el control es correr el test ORIGINAL así y verlo caer en la misma
+  línea que el CI.
+- Las tandas de mutantes, otra vez sin `-collect-test-diagnostics never`: tercera vez (ver
+  [[mutantes-sin-diagnose-y-con-copia]]). Cada mutante cazado costó 600 s de `simctl diagnose`.
