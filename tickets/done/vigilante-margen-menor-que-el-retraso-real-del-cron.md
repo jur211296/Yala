@@ -1,10 +1,10 @@
 ---
 id: vigilante-margen-menor-que-el-retraso-real-del-cron
-status: backlog
+status: done
 priority: medium
 area: ci
 created: 2026-09-08
-updated: 2026-09-08
+updated: 2026-10-06
 source: medido al preparar la decisión de `cobertura-ui-diaria-cuelga-del-push` (2026-09-08)
 ---
 
@@ -61,3 +61,33 @@ cinco horas de retraso, y sigue siendo falso el día que de verdad no corrió.
   pase** con esa decisión: si el cron sirve, este falso rojo aparece; si no sirve, el vigilante sigue
   colgando del push.
 - [[la-nocturna-de-ui-no-ha-disparado-ni-una-vez]] — el abuelo, que midió que el `schedule` no servía.
+
+---
+
+## Cierre — 2026-10-06
+
+Cuando se escribió, el vigilante ya había pasado a una ventana deslizante de 26 h, que es lo que
+este ticket proponía. Medido el 6-oct, **esa ventana tampoco aguantaba**: con la nocturna naciendo
+entre 3,9 y 8,9 h tarde, tres huecos entre nocturnas consecutivas pasaron de 26 h. Y el fallo que
+de verdad disparaba no era el margen: los **22** lanzamientos del vigilante entre el 8-sep y el
+6-oct sobraban todos, porque la API de runs filtrada omitía corridas que existían.
+
+Lo que quedó (`qa/scripts/ci-vigilante-nocturna.sh`, PR del encargo
+`2026-10-06-ci-full-ui-suite-on-2-1-misses-its-schedule`):
+
+- Pregunta por la corrida **de hoy**, con el día anclado al cron de `qa.yml` (leído del fichero), y
+  no actúa antes de 12 h desde ese cron. Es un plazo, sí, pero no apuesta a que la nocturna nazca
+  antes de él: si nace más tarde, cuenta igual; el plazo solo decide cuándo se deja de esperar.
+- Lee de dos fuentes en hasta tres rondas y une lo visto.
+
+AC, contra lo hecho:
+
+- [x] No depende de que la nocturna nazca antes de una hora fija: cualquier corrida nacida desde el
+      inicio del día cuenta. Banco: «a las 03:24 UTC el día es el que empezó AYER».
+- [x] Un run nacido con retraso no avisa: ensayo real (run 37495989016) en el instante del falso
+      lanzamiento del 6-oct a las 03:24 ⇒ `cubierta`.
+- [x] Un día sin run sí avisa: ensayo real (run 37496265862) sobre el 7-sep ⇒ `lanzar/falta`, con el
+      aviso compuesto y sin enviar por ser ensayo. El input `horas` ya no existe: lo sustituyen
+      `ahora` (ensayo) y `forzar`.
+- [x] Verificado con corridas reales: los ensayos de arriba, más un lanzamiento forzado (run
+      37496798487) que creó la nocturna 37496862474 y la comprobó por su id.

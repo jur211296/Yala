@@ -1,9 +1,10 @@
 ---
 id: vigilante-calla-si-no-puede-comprobar-la-nocturna
-status: backlog
+status: done
 priority: medium
 area: "ci, observabilidad"
 created: 2026-09-09
+updated: 2026-10-06
 source: leído al migrar los avisadores a la action compartida (PR #123)
 ---
 
@@ -51,3 +52,18 @@ ha demostrado que es casi lo mismo (el avisador de push encadenó 37 rojos en d�
 - [ ] Comprobarlo de verdad, no por inspección: el workflow ya admite `horas` como input **para
       poder ejercitar el camino** — el mismo criterio sirve aquí (un `REPO` inexistente fuerza el
       fallo de `gh api` sin tocar nada más).
+
+---
+
+## Cierre — 2026-10-06
+
+Se cerró al reescribir ese mismo paso (encargo `2026-10-06-ci-full-ui-suite-on-2-1-misses-its-schedule`):
+
+- [x] La incertidumbre ya no es «cubierta»: cada fuente que falla se cuenta como ilegible, el paso no
+      muere, y si ninguna responde la decisión es `sin_lectura`, que pasado el plazo **lanza**.
+- [x] El aviso distingue «no había corrido» de «no he podido comprobar si corrió», y hay un tercer
+      aviso si el vigilante falla antes de decidir (`steps.decidir.outcome == 'failure'`).
+- [x] Comprobado en el banco (`qa/scripts/ci-vigilante-nocturna-test.sh`, en el job
+      `coverage-index`) con un `gh` falso que devuelve errores, JSON roto y listas vacías — y con un
+      mutante que trata una página vacía como lectura válida, que el banco mata. No se forzó contra
+      GitHub: `REPO` sale de `github.repository` y no es un input.

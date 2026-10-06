@@ -1,10 +1,10 @@
 ---
 id: cobertura-ui-diaria-cuelga-del-push
-status: backlog
+status: discarded
 priority: medium
 area: ci
 created: 2026-09-08
-updated: 2026-09-08
+updated: 2026-10-06
 source: medido al cerrar `la-nocturna-de-ui-no-ha-disparado-ni-una-vez`
 ---
 
@@ -173,3 +173,26 @@ gh api 'repos/jur211296/Yala/actions/runs?event=schedule&per_page=100' \
 **Este ticket NO cierra el del vigilante.** `vigilante-margen-menor-que-el-retraso-real-del-cron` se
 arregla pase lo que pase: si el cron sirve, su falso rojo aparece; si no sirve, el vigilante sigue
 colgando del push.
+
+---
+
+## Cierre — 2026-10-06: `discarded` por su propio criterio
+
+La re-medida que pedía la decisión (prevista para el 22-sep) se hizo el 6-oct, con más muestra:
+**la nocturna de `qa.yml` nació por `schedule` los 29 días del 8-sep al 6-oct** (≥10/14 ⇒ el reloj
+sirve). El hueco que describía este ticket se cerró solo.
+
+```bash
+gh api 'repos/jur211296/Yala/actions/workflows/286940687/runs?event=schedule&per_page=100' \
+  --jq '.workflow_runs[] | .created_at'
+```
+
+Dos matices medidos el mismo día, que cambian cómo se lee ese comando:
+
+- **El reloj sirve, pero tarde**: entre 3,9 y 8,9 h después de las 08:17 UTC (07:10–12:10 en Lima).
+- **La consulta de arriba miente a ratos**: el endpoint filtrado por evento devolvió `total_count:
+  0` y, un minuto después, 29. Por eso el vigilante lanzó 22 nocturnas de más en ese tiempo. Si
+  vuelves a medir esto, repite la consulta y usa el id del workflow, no te fíes de una sola lectura.
+
+El arreglo del vigilante va en el encargo `2026-10-06-ci-full-ui-suite-on-2-1-misses-its-schedule`
+(ver [[vigilante-margen-menor-que-el-retraso-real-del-cron]]).
