@@ -781,7 +781,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | waiting-card-disables-stop-waiting-without-saying-why | backlog | tickets/backlog/waiting-card-disables-stop-waiting-without-saying-why.md |
 | web-domain-has-no-spf-dkim-dmarc | done | tickets/done/web-domain-has-no-spf-dkim-dmarc.md |
 | weekday-bar-daily-average-unmarked | backlog | tickets/backlog/weekday-bar-daily-average-unmarked.md |
-| welcome-adopt-cancel-dialog-says-from-here | backlog | tickets/backlog/welcome-adopt-cancel-dialog-says-from-here.md |
+| welcome-adopt-cancel-dialog-says-from-here | qa | tickets/qa/welcome-adopt-cancel-dialog-says-from-here.md |
 | welcome-adopt-effect-failure-has-no-reason-and-no-cancel | done | tickets/done/welcome-adopt-effect-failure-has-no-reason-and-no-cancel.md |
 | welcome-adopt-exit-offers-retry-on-a-blocked-account | backlog | tickets/backlog/welcome-adopt-exit-offers-retry-on-a-blocked-account.md |
 | welcome-adopt-stalled-session-is-kept-when-settings-reuses-it | backlog | tickets/backlog/welcome-adopt-stalled-session-is-kept-when-settings-reuses-it.md |

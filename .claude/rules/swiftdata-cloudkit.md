@@ -738,7 +738,9 @@ paths:
   desde el 2026-09-23: regla «Y la sesión que abrió el adopt», más abajo. **La bienvenida lee la misma marca y cancela por el mismo camino** desde
   `welcome-adopt-effect-failure-has-no-reason-and-no-cancel`: el texto de cada salida y el cuerpo del diálogo salen de
   `StorageFailureCopyLogic.adoptExitMessage` / `cancelMigrationBody`, que comparten las dos pantallas, así que un motivo
-  nuevo se añade ahí y aparece en las dos. **Y `notStarted` no prueba que una cancelación aterrizara**: es también el
+  nuevo se añade ahí y aparece en las dos. El cuerpo del diálogo elige la fase en un solo sitio, pero en las dos fases del
+  adopt la segunda frase es de cada pantalla (`surface`, sin default): en la bienvenida, al confirmar, se vuelve al
+  selector, y el «desde aquí» de Almacenamiento sería falso (ticket `welcome-adopt-cancel-dialog-says-from-here`). **Y `notStarted` no prueba que una cancelación aterrizara**: es también el
   efecto pendiente ANTES de cancelar y el adopt que terminó bien. La huella es `notStarted` + sin `.adoptBackendAccount`
   pendiente + marca `.cancelled` (`WelcomeAdoptCancel.afterCancel`), y se mira en cada vuelta del poll, porque con la
   pre-espera del import vencida el «sí» lo ejecuta una pasada posterior. Mientras tanto el `uiState` es `.idle`, que el

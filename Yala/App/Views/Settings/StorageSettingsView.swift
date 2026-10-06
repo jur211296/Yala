@@ -749,7 +749,8 @@ struct StorageSettingsView: View {
             // El cuerpo por fase —claim del adopt, efecto del adopt, «Migrar»— lo elige `StorageFailureCopyLogic`, que es
             // también quien lo elige en la barra del adopt de la bienvenida.
             Text(StorageFailureCopyLogic.cancelMigrationBody(
-                isAdoptClaim: controller.isAdoptClaim, isAdoptEffectPending: controller.isAdoptEffectPending))
+                isAdoptClaim: controller.isAdoptClaim, isAdoptEffectPending: controller.isAdoptEffectPending,
+                surface: .storage))
         }
     }
 

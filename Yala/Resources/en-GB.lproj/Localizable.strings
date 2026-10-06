@@ -4070,6 +4070,8 @@
 
 /* Chip shown while the secondary (guest) session pulls its account data after relaunch */
 "welcome.cloud.hydrationBanner" = "Downloading your data…";
+"welcome.cloud.cancelAdoptBody" = "This device didn’t change anything you have in the cloud. You’ll go back to the start. Whenever you like, you can sign in to your account again with “I already have an account”.";
+"welcome.cloud.cancelAdoptEffectBody" = "What you have on this device is still here, as before. You’ll go back to the start. Whenever you like, you can sign in to your account again with “I already have an account”.";
 
 /* Title of the proactive gate shown in the Groups tab when the device has no iCloud account */
 "groups.icloud.gate.title" = "Groups needs iCloud";
