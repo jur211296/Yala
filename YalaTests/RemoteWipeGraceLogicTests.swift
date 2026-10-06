@@ -223,9 +223,10 @@ struct RemoteWipeGraceLogicTests {
                                + "settleSignalsAfterDeliberateWipe() }"), """
             `ContentView` ya no atiende las peticiones de asentamiento: «Vaciar datos» las pide y nadie las oye.
             """)
-        #expect(Self.count("settleSignalsAfterDeliberateWipe()", in: vista) == 3, """
+        #expect(Self.count("settleSignalsAfterDeliberateWipe()", in: vista) == 6, """
             el asentamiento tiene un número inesperado de apariciones: la definición, el observador de «Vaciar \
-            datos» y el receptor de la señal remota.
+            datos», el receptor de la señal remota y, desde el 2026-10-06, los tres borrados del Welcome que \
+            conservan los grupos del aviso tardío (el de iCloud, el del teléfono y el del alert, por su closure).
             """)
     }
 

@@ -793,7 +793,9 @@ struct WelcomePrivateICloudGateWiringTests {
         #expect(gate.contains("wipe: { await performDeviceCorpusWipe() }"), """
             el aviso sin su borrado es un camino muerto: la persona confirma dos veces y no se borra nada.
             """)
-        #expect(gate.contains("hasData: { hasLocalDataNow() }"), """
+        // El detector del Welcome desde el 2026-10-06 (`groups-kept-by-the-late-notice-are-purged-by-the-welcome-fresh-start`):
+        // el mismo fetch VIVO, que con la marca del aviso tardío deja fuera los grupos que ese aviso conservó.
+        #expect(gate.contains("hasData: { welcomeDeviceDataNow() }"), """
             el fetch tiene que ir VIVO: el espejo puede estar re-importando mientras esta pantalla está
             montada, y un snapshot del arranque diría «no hay datos» sobre un store que se está llenando.
             """)

@@ -324,7 +324,10 @@ struct FreshStartUnsentGroupWritesWiringTests {
     @Test("el alert del shell solo borra con el outbox vacío, y si no sigue en la puerta")
     func shellAlert_refusesWhileGroupsArePending() throws {
         let src = try Self.source(Self.shellAlerts)
-        #expect(src.contains("if CloudSessionSignOut.shared.groupsOutboxIsSettledEmpty(context: modelContext) {\n"
+        // Con la marca del aviso tardío el borrado no toca los grupos y no espera a subirlos
+        // (`groups-kept-by-the-late-notice-are-purged-by-the-welcome-fresh-start`); sin ella, como siempre.
+        #expect(src.contains("if !Self.purgesGroupsDomainNow()\n"
+                             + "                        || CloudSessionSignOut.shared.groupsOutboxIsSettledEmpty(context: modelContext) {\n"
                              + "                        performFreshStartWipe()\n"
                              + "                    } else {\n"
                              + "                        continueInTheGateWhileGroupsArePending()"),

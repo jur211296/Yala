@@ -51,6 +51,7 @@ extension XCUIApplication {
         groupsGateMirrorLive: Bool = false,
         groupsGateWipeFailed: Bool = false,
         settlementAmountChange: Bool = false,
+        lateNoticeKeptGroups: Bool = false,
         extraArguments: [String] = []
     ) -> XCUIApplication {
         var args = ["-uitest"]
@@ -65,6 +66,10 @@ extension XCUIApplication {
         // Liquidación aprobada cuyo importe cambia después (`DevSeedSettlementAmountChange`). NOMBRADO por lo mismo que
         // sus vecinos: un typo dejaría el Inbox sin aviso y el rojo culparía a la pantalla.
         if settlementAmountChange { args.append("-uitest-seed-settlement-amount-change") }
+        // La marca de los grupos que conservó el aviso tardío (`LateNoticeKeptGroupsMark`). NOMBRADO por lo mismo que sus
+        // vecinos, y con su agravante: el caso del handover real se lanza SIN él, así que un typo que lo dejara fuera
+        // pondría verde el control y rojo el caso, culpando al Welcome.
+        if lateNoticeKeptGroups { args.append("-uitest-late-notice-kept-groups") }
         if let deeplink {
             args.append("-uitest-deeplink")
             args.append(deeplink)

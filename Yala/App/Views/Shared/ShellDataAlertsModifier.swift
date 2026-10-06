@@ -55,6 +55,10 @@ struct ShellDataAlertsModifier: ViewModifier {
     /// **«Ahora no» del aviso de vaciado remoto.** Apaga el aviso y su condición viva; la persona se
     /// queda donde estaba.
     var onRemoteWipeDismiss: () -> Void
+    /// **Las señales tras un borrado que conserva los grupos** (`ContentView.settleSignalsAfterDeliberateWipe`): con los
+    /// grupos vivos no se pueden bajar a ciegas —`hasExistingData` los cuenta— y la gracia del wipe remoto hay que
+    /// absorberla. Ticket `groups-kept-by-the-late-notice-are-purged-by-the-welcome-fresh-start`.
+    var onSettleSignalsAfterWipeKeepingGroups: () -> Void
     /// Por qué el último «Empezar de cero» no borró, si fue por cambios de grupos sin subir. Lo pone la subida.
     private var freshStartGroupsBlock: CloudSessionSignOut.FreshStartGroupsBlock? {
         CloudSessionSignOut.shared.freshStartGroupsBlock
@@ -119,7 +123,10 @@ struct ShellDataAlertsModifier: ViewModifier {
                     // **Antes de borrar nada, los cambios de grupos** (2026-09-26). Sin nada pendiente el borrado sigue
                     // en ESTE tap, como siempre; con algo pendiente sigue en la puerta, que los sube
                     // (`continueInTheGateWhileGroupsArePending`).
-                    if CloudSessionSignOut.shared.groupsOutboxIsSettledEmpty(context: modelContext) {
+                    // Con los grupos que conservó el aviso tardío, el borrado no los toca: no hay cambios de grupos que
+                    // subir antes (`groups-kept-by-the-late-notice-are-purged-by-the-welcome-fresh-start`).
+                    if !Self.purgesGroupsDomainNow()
+                        || CloudSessionSignOut.shared.groupsOutboxIsSettledEmpty(context: modelContext) {
                         performFreshStartWipe()
                     } else {
                         continueInTheGateWhileGroupsArePending()
@@ -248,14 +255,28 @@ struct ShellDataAlertsModifier: ViewModifier {
 
     /// El borrado del alert, con el outbox de grupos ya vacío. Es el cuerpo que el botón tenía hasta el 2026-09-26,
     /// literal salvo el cinturón del principio y su `catch`.
+    /// **¿Este borrado es el handover?** Sin la marca del aviso tardío, sí. Con ella, los grupos son de quien está
+    /// delante y el borrado se lleva solo lo personal, como el propio aviso (decisión A de Jürgen, ticket
+    /// `groups-kept-by-the-late-notice-are-purged-by-the-welcome-fresh-start`). Se lee una vez por gesto.
+    private static func purgesGroupsDomainNow() -> Bool {
+        WelcomeKeptGroupsLogic.deviceWipePurgesTheGroupsDomain(
+            groupsKeptForThisPerson: LateNoticeKeptGroupsMark.vouchesNow())
+    }
+
     private func performFreshStartWipe() {
+        let purgesGroups = Self.purgesGroupsDomainNow()
         do {
             // El cinturón del escritor, ANTES del primer borrado: si lanzara dentro de `wipeLocalGroupsDomain`, lo
-            // personal ya estaría borrado y los grupos enteros.
-            try DataWipeService.requireNoUnsentGroupWrites(in: modelContext)
+            // personal ya estaría borrado y los grupos enteros. Sin purga no hay outbox que perder.
+            if purgesGroups {
+                try DataWipeService.requireNoUnsentGroupWrites(in: modelContext)
+            }
+            // Con los grupos conservados, las preferencias se quedan, como en el borrado del propio aviso
+            // (`.importedRows`): son de la misma persona.
             try DataWipeService.wipeAllUserData(
                 in: modelContext,
-                broadcastSignal: false
+                broadcastSignal: false,
+                resetsPreferences: purgesGroups
             )
             // La limpieza de prefs residuales vive AQUÍ y no en el disparador del alert:
             // corriendo antes del `if`, «Cancelar» no la deshacía y el usuario perdía
@@ -268,13 +289,20 @@ struct ShellDataAlertsModifier: ViewModifier {
             // wipe por diseño, se purga LOCALMENTE aquí — si no, el usuario nuevo hereda
             // los grupos del anterior (mismo Apple ID ⇒ ninguna señal de identidad los
             // distingue) y el bridge le mete sus gastos en Panel, Inbox y presupuestos.
-            try DataWipeService.wipeLocalGroupsDomain(in: modelContext)
-            hasExistingData = false
-            // El wipe es DELIBERADO: cancelar la gracia antes de bajar la señal, para que
-            // el true→false no se lea como wipe remoto y se apile un alert sobre el
-            // onboarding que este mismo camino está abriendo.
-            onCancelWipeGrace()
-            hasPersonalData = false
+            if purgesGroups {
+                try DataWipeService.wipeLocalGroupsDomain(in: modelContext)
+                hasExistingData = false
+                // El wipe es DELIBERADO: cancelar la gracia antes de bajar la señal, para que
+                // el true→false no se lea como wipe remoto y se apile un alert sobre el
+                // onboarding que este mismo camino está abriendo.
+                onCancelWipeGrace()
+                hasPersonalData = false
+            } else {
+                // Los grupos se quedan y sus filas puenteadas no: el par de la convergencia, como el aviso tardío.
+                GroupsBridgeRestoreConvergenceStore.markSettlementLegsPending()
+                GroupsBridgeRestoreConvergenceStore.markPending()
+                onSettleSignalsAfterWipeKeepingGroups()
+            }
             // La navegación al onboarding cuelga del camino que SÍ borró. Vivía fuera
             // del `do/catch` y corría igual cuando el wipe lanzaba: la app metía a la
             // persona en un onboarding «de cero» sobre sus datos intactos, sin decir

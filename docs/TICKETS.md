@@ -388,7 +388,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-join-intent-reconciler | blocked | tickets/blocked/groups-join-intent-reconciler.md |
 | groups-join-is-not-retried-when-the-network-returns | backlog | tickets/backlog/groups-join-is-not-retried-when-the-network-returns.md |
 | groups-join-reconcile-can-clear-an-invite-while-its-join-is-in-flight | backlog | tickets/backlog/groups-join-reconcile-can-clear-an-invite-while-its-join-is-in-flight.md |
-| groups-kept-by-the-late-notice-are-purged-by-the-welcome-fresh-start | backlog | tickets/backlog/groups-kept-by-the-late-notice-are-purged-by-the-welcome-fresh-start.md |
+| groups-kept-by-the-late-notice-are-purged-by-the-welcome-fresh-start | qa | tickets/qa/groups-kept-by-the-late-notice-are-purged-by-the-welcome-fresh-start.md |
 | groups-killswitch-403-blocks-detach-forever | done | tickets/done/groups-killswitch-403-blocks-detach-forever.md |
 | groups-leave-rpc-error-10 | done | tickets/done/groups-leave-rpc-error-10.md |
 | groups-log-expense-via-chat-voice | backlog | tickets/backlog/groups-log-expense-via-chat-voice.md |

@@ -287,7 +287,7 @@ struct ActivationLateNoticeKeepsGroupsTests {
         let src = try Self.code("Yala/App/ContentView.swift")
         let wrapper = try Self.body(of: "performICloudCorpusWipe: {\n                cancelWipeGrace()", in: src)
         try Self.expectOrder("PrivateSessionMark.clearBornFromFullActivation()",
-                             before: "await performICloudCorpusWipe(.handover)", in: wrapper, """
+                             before: "await performICloudCorpusWipe(scope)", in: wrapper, """
             el borrado del Welcome es `.handover`: con la marca viva, un corte a medias lo terminaría el aviso tardío con
             `.importedRows`, sin sellar el dominio de Grupos
             """)

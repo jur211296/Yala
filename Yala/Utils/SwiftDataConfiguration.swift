@@ -729,6 +729,9 @@ extension SwiftDataConfiguration {
         // converge: el arranque siguiente compara la cuenta nueva contra el testigo del humano anterior y
         // vuelve a pedir un cierre ya hecho.
         PrivateSessionMark.clear(defaults)
+        // Y la marca de los grupos que conservó el aviso tardío: el cierre se lleva la sesión y el teléfono vuelve a
+        // «recién instalado» (`groups-kept-by-the-late-notice-are-purged-by-the-welcome-fresh-start`).
+        LateNoticeKeptGroupsMark.clear(defaults)
 
         // El consent de GRUPOS (§C5) es un registro de la CUENTA y `removeUserPreferenceKeys` no lo
         // nombra (ni en su lista ni en sus exclusiones deliberadas): sin esto sobrevive al wipe y la

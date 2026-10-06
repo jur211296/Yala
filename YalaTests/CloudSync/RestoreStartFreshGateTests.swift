@@ -227,7 +227,7 @@ struct RestoreStartFreshGateTests {
         let modifier = try Self.call(of: "WelcomeFlowModifier(", in: src)
         let wrapper = try Self.body(of: "performICloudCorpusWipe: {", in: modifier)
 
-        #expect(wrapper.contains("await performICloudCorpusWipe(.handover)"), """
+        #expect(wrapper.contains("await performICloudCorpusWipe(scope)"), """
             el envoltorio dejó de llamar al borrado del CORPUS. Su hermana `performDeviceCorpusWipe` borra
             las filas del teléfono y NO toca la zona de iCloud: con ella, el espejo vuelve a bajar el
             corpus entero y además se bajan las dos señales diciendo que no hay datos.
@@ -256,7 +256,7 @@ struct RestoreStartFreshGateTests {
         // aviso pasó a viajar por la cola del router, así que las dos mitades —cancelar y retirar el
         // intent ya encolado— viven en esa función.
         try Self.expectOrder("cancelWipeGrace()",
-                             before: "await performICloudCorpusWipe(.handover)", in: wrapper, """
+                             before: "await performICloudCorpusWipe(scope)", in: wrapper, """
             la gracia del wipe remoto se cancela DESPUÉS del borrado: un borrado que lanza a media lista
             deja las filas borradas y la gracia viva, y el alert «te borraron los datos en otro
             dispositivo» desmonta el cover del Welcome.

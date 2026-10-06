@@ -46,6 +46,10 @@ final class UITestHooks {
     /// en este dispositivo), con onboarding saltado y el tab Grupos seleccionado. Para testear el
     /// Perfil reducido.
     nonisolated static var forceGroupInvite: Bool { hasArg("-uitest-group-invite") }
+    /// Siembra la marca de los grupos que conservó el aviso tardío (`LateNoticeKeptGroupsMark`), atada a «sin sesión».
+    /// Con `-uitest-seed solo-grupos` y el Welcome visible monta el estado del ticket
+    /// `groups-kept-by-the-late-notice-are-purged-by-the-welcome-fresh-start` sin pasar por iCloud, que el simulador no tiene.
+    nonisolated static var lateNoticeKeptGroups: Bool { hasArg("-uitest-late-notice-kept-groups") }
 
     /// `-uitest-cloud-chooser`: destapa las cards de sign-in cloud (Apple/Google) del
     /// 2º nivel del Welcome bajo uitest — opt-in EXPLÍCITO del XCUITest del chooser
