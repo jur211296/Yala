@@ -95,6 +95,7 @@
 - [Los mutantes compilan solo YalaTests](feedback_mutantes_compilan_solo_yalatests.md) — sin `-only-testing` en el build, 15…
 - [El script de mutantes revierte mi trabajo](feedback_el_script_de_mutantes_revierte_mi_trabajo.md) — LÉELO antes de lanzar: copia, techo, y vaciar Dead/ por vuelta.
 - [Mutantes: sin diagnose y con copia](feedback_mutantes_sin_diagnose_y_con_copia.md) — iOS 27 gasta 600 s por mutante muerto; un corte deja el mutante puesto.
+- [No editar un script en marcha](feedback_no_editar_un_script_en_marcha.md) — bash lo lee a trozos: lanza una copia congelada.
 - [El mutante de un scan vive en el disco](feedback_el_mutante_de_un_scan_vive_en_el_disco.md) — el scan lee al correr; build+restaurar los da por vivos.
 - [Reponer estado incluye lo ausente](feedback_reponer_estado_incluye_lo_ausente.md) — si el remoto gana, la clave que falta se borra, o vuelve la vieja.
 - [El source-scan de dos literales no es una red](feedback_el_source_scan_de_dos_literales_no_es_una_red.md) — fija el cuerpo…

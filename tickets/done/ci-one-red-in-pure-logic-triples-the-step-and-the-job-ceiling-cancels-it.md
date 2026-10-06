@@ -1,6 +1,6 @@
 ---
 id: ci-one-red-in-pure-logic-triples-the-step-and-the-job-ceiling-cancels-it
-status: backlog
+status: done
 priority: high
 area: ci
 created: 2026-10-06
@@ -99,3 +99,20 @@ Decisiones:
   `simctl diagnose --timeout=600` que `xcodebuild` lanza tras cada corrida con un rojo. En los logs del runner
   (Xcode 26) no aparece, pero con él las tres vueltas volverían a rozar el tope; nadie sube esos diagnósticos.
 - El paso sigue `continue-on-error` y con su tope de 30 min; el del job (45) no se toca.
+
+## Probado en el CI del PR #373
+
+| corrida | qué | paso pure-logic | tests ejecutados | job `tests` |
+|---|---|---|---|---|
+| 37471905924 | sana | 14 min 29 s, una vuelta | 8 981 | 34 min 24 s, success |
+| 37479038308 | rojo provocado (`TEST_RUNNER_TZ: UTC`, commit revertido) | 18 min 57 s: 13 min 49 s + 2 min 25 s + 2 min 23 s | 8 981 + 4 + 4 | 39 min 53 s, success |
+
+En la provocada, la vuelta 1 dejó 4 rojos deterministas de `WidgetDataServiceIntervalTests` y las vueltas 2 y 3
+repitieron SOLO esos 4. El paso salió `outcome: failure` con una anotación `error` por test, el job terminó dentro
+del tope, y el aviso de rojos advisory entregó «hay tests en rojo» con los 4 nombres en la línea de pure-logic.
+Con el `-retry-tests-on-failure` de antes, esa misma corrida habría ejecutado ~26 900 tests y el job se habría
+cancelado. El flaky de `SpikeR3ContainerReleaseTests` no apareció en ninguna de las dos: el rescate de un flaky está
+probado con la sonda y el banco, no en el CI.
+
+Margen que queda: con el build más lento visto hoy (17 min), un rojo determinista deja el job en ~40-42 min de 45.
+Cada repetición cuesta ~2,4 min en el runner (instalar y lanzar la app), no los tests.

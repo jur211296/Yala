@@ -18,6 +18,9 @@ aplicado en producción (`if true {`), que un `git diff` para la review habría 
 caduca a los 30 min y mata el script — quedó puesto el mutante 4 (un `.filter` borrado). La tanda va con `nohup` en un
 Bash de fondo, nunca colgada de un `Monitor`, y el flag se comprueba en el script antes de lanzar.
 
+**No es solo de mutantes** (2026-10-06, #373): cualquier `xcodebuild test` con un rojo lo paga — una repetición de
+4 tests tardaba 10 min 34 s y con el flag 1 min 23 s. Por eso el paso pure-logic del CI lo lleva.
+
 **How to apply:** guarda copias en el scratchpad antes de lanzar, `cmp` contra ellas al terminar y tras cada corte,
 y nunca `git checkout` para restaurar (ver [[el-script-de-mutantes-revierte-mi-trabajo]]). Si una corrida de un
 solo mutante pasa de 5 min, mira si hay un `simctl diagnose` hijo del `xcodebuild` antes de pensar en un cuelgue.
