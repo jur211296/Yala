@@ -333,7 +333,7 @@ final class DataWipeService {
         in context: ModelContext,
         broadcastSignal: Bool,
         defaults: UserDefaults = .standard,
-        divisionStore: OwnerKeyValueWriting = GroupsRemoteWipeReturn.defaultStore
+        divisionStore: OwnerKeyValueWriting = GroupsRemoteWipeDivision.defaultStore
     ) throws {
         GroupsBridgeRestoreConvergenceStore.markSettlementLegsPending(defaults)
         GroupsBridgeRestoreConvergenceStore.markPending(defaults)
@@ -372,9 +372,8 @@ final class DataWipeService {
     /// ESTA señal: el arranque pide la suya sin lo que repone el origen (`GroupsRemoteWipeDivision.resolveIfArrived`). Un
     /// origen sin grupos, o con una parte, ya no deja sin reponer lo que no tiene. Antes del borrado, como las peticiones.
     ///
-    /// **Ya no declara al parque** (ticket `late-remote-wipe-on-a-device-without-groups-cannot-return-the-rows`):
-    /// declaraba las filas POSTERIORES que se llevaba, y ya no se lleva ninguna. El atendedor de declaraciones sigue en el
-    /// arranque sin productor: ticket `late-remote-wipe-return-has-no-producer-left`.
+    /// **No declara nada al parque.** Hasta el 2026-09-28 declaraba las filas POSTERIORES que se llevaba; con el corte ya
+    /// no se lleva ninguna, y el mecanismo que las atendía se retiró (ticket `late-remote-wipe-return-has-no-producer-left`).
     ///
     /// La señal NO se vuelve a emitir: es la respuesta a una señal, y re-emitirla haría rebotar el vaciado entre
     /// dispositivos. Por eso el parámetro no existe aquí.
@@ -969,8 +968,6 @@ final class DataWipeService {
         // Y la convergencia pendiente del bridge, con su petición de liquidaciones, por lo mismo: la pidió un borrado del
         // humano ANTERIOR (o su activación a medias), y correría sobre los grupos del nuevo en cuanto tenga sesión privada.
         GroupsBridgeRestoreConvergenceStore.clear(defaults)
-        // Y lo que este dispositivo atendió de las declaraciones de vaciado tardío (o la suya propia), por lo mismo.
-        GroupsRemoteWipeReturnStore.clearHandled(defaults)
         // Y el reparto que esperaba del origen de un vaciado: pediría la convergencia sobre los grupos del nuevo.
         GroupsRemoteWipeDivisionStore.clearAwaiting(defaults)
         // Y lo que dejó en manos del origen de un vaciado: pasado el techo lo re-puentearía sobre los grupos del nuevo.

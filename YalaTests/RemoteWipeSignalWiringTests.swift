@@ -491,47 +491,12 @@ struct RemoteWipeSignalWiringTests {
             """)
     }
 
-    // MARK: - Quien repone lo que un receptor sin grupos declaró
-
-    /// **El arranque atiende las declaraciones de vaciado tardío, y en su sitio** (ticket
-    /// `late-remote-wipe-on-a-device-without-groups-cannot-return-the-rows`). Los casos de comportamiento llaman a
-    /// `returnIfDeclared` a mano; lo que no ven es que `retryPendingBridges` lo llame, ni dónde. Sin la llamada, el receptor
-    /// sin grupos declara y nadie repone: el bug entero, en verde. Detrás del store listo (un `save()` durante el import es
-    /// el SIGTRAP de la quiescencia), del dominio abierto y DESPUÉS de la convergencia: lo que ella repone ya está presente
-    /// y no se vuelve a pedir.
-    @Test("MUTACIÓN: el arranque atiende las declaraciones tras la convergencia, detrás de sus gates")
-    func theBootReturnsDeclaredRowsAfterTheConvergence() throws {
-        let llamada = "GroupsRemoteWipeReturn.returnIfDeclared(context: context)"
-        #expect(try Self.countInProduction(llamada) == 1, "el arranque ya no atiende las declaraciones, o las atiende dos veces")
-        let boot = try Self.code("Yala/App/AppBootstrapper.swift")
-        let inicio = try #require(boot.range(of: "func retryPendingBridges(context: ModelContext) async {"))
-        let cuerpo = boot[inicio.upperBound...]
-        let atiende = try #require(cuerpo.range(of: llamada), "retryPendingBridges no atiende las declaraciones")
-        for antes in ["guard await awaitPersonalStoreReady() else", "guard GroupTransactionBridge.isDomainOpenForBridge() else",
-                      "GroupsBridgeRestoreConvergence.convergeIfPending(context: context)"] {
-            let r = try #require(cuerpo.range(of: antes), "no existe «\(antes)» en retryPendingBridges")
-            #expect(r.upperBound <= atiende.lowerBound, "las declaraciones se atienden antes de «\(antes)»")
-        }
-
-        let fuente = try Self.code("Yala/Services/Groups/GroupsRemoteWipeReturn.swift")
-        let funcion = try #require(fuente.range(of: "static func returnIfDeclared("))
-        let resto = fuente[funcion.upperBound...]
-        let escribe = try #require(resto.range(of: "bridgeRemoteExpenses(ids:"))
-        for guarda in ["guard SessionState.shared.hasPrivateSession, obeysWipeSignal else { return }",
-                       "guard GroupTransactionBridge.isDomainOpenForBridge(defaults: defaults) else { return }"] {
-            let r = try #require(resto.range(of: guarda), "returnIfDeclared perdió «\(guarda)»")
-            #expect(r.upperBound <= escribe.lowerBound, """
-                returnIfDeclared re-puentea antes de «\(guarda)»: en solo-grupos el bridge borra las transacciones reales \
-                que re-puentea, y con el dominio cerrado no se toca nada
-                """)
-        }
-    }
-
     /// **El arranque poda los borradores de liquidación que otro dispositivo creó antes de ver la marca de aprobación**
     /// (ticket `settlement-approval-leaves-no-trace-so-a-rebridge-asks-again`). Sin la llamada, el Inbox vuelve a preguntar
-    /// por un pago ya registrado. Detrás de los mismos gates y DESPUÉS de la devolución: lo que ella re-puentea ya sustituye
-    /// sus pendientes, y un `save()` durante el import es el SIGTRAP de la quiescencia.
-    @Test("MUTACIÓN: el arranque poda los borradores de una liquidación ya resuelta, tras la devolución y sus gates")
+    /// por un pago ya registrado. Detrás de los mismos gates y DESPUÉS de todo lo que re-puentea en el arranque —la
+    /// convergencia y la retoma de lo que el origen de un vaciado prometió—: lo que ellas re-puentean ya sustituye sus
+    /// pendientes, y un `save()` durante el import es el SIGTRAP de la quiescencia.
+    @Test("MUTACIÓN: el arranque poda los borradores de una liquidación ya resuelta, tras lo que re-puentea y sus gates")
     func theBootPrunesSettlementDraftsAlreadyResolved() throws {
         let llamada = "GroupTransactionBridge.pruneSettlementDraftsAlreadyResolved(context: context)"
         #expect(try Self.countInProduction(llamada) == 1, "el arranque ya no poda los borradores, o los poda dos veces")
@@ -540,19 +505,19 @@ struct RemoteWipeSignalWiringTests {
         let cuerpo = boot[inicio.upperBound...]
         let poda = try #require(cuerpo.range(of: llamada), "retryPendingBridges no poda los borradores")
         for antes in ["guard await awaitPersonalStoreReady() else", "guard GroupTransactionBridge.isDomainOpenForBridge() else",
-                      "GroupsRemoteWipeReturn.returnIfDeclared(context: context)"] {
+                      "GroupsBridgeRestoreConvergence.convergeIfPending(context: context)",
+                      "GroupsRemoteWipeDivision.takeOverIfOverdue(context: context)"] {
             let r = try #require(cuerpo.range(of: antes), "no existe «\(antes)» en retryPendingBridges")
             #expect(r.upperBound <= poda.lowerBound, "la poda corre antes de «\(antes)»")
         }
     }
 
-    /// **El receptor pide la convergencia ANTES de borrar, borra con el corte y no declara** (tickets
+    /// **El receptor pide la convergencia ANTES de borrar y borra con el corte** (tickets
     /// `late-remote-wipe-signal-undoes-the-rows-the-origin-reconverged` y `late-remote-wipe-signal-also-wipes-rows-
-    /// created-after-it`). Pedir después dejaría que un corte entre las dos cosas perdiera la petición; declarar ya no
-    /// tiene nada que declarar, porque lo posterior a la señal se queda. Los casos de comportamiento lo ven con sus
-    /// fixtures; este scan ve el orden en la función entera.
-    @Test("MUTACIÓN: el receptor pide antes de borrar, borra con el corte y no declara")
-    func theReceiverAsksBeforeWiping_withTheCut_andDoesNotDeclare() throws {
+    /// created-after-it`). Pedir después dejaría que un corte entre las dos cosas perdiera la petición. Los casos de
+    /// comportamiento lo ven con sus fixtures; este scan ve el orden en la función entera.
+    @Test("MUTACIÓN: el receptor pide antes de borrar y borra con el corte")
+    func theReceiverAsksBeforeWiping_withTheCut() throws {
         let abre = "("
         let fuente = try Self.code("Yala/Utils/DataWipeService.swift")
         let inicio = try #require(fuente.range(of: "static func wipeLocallyForRemoteWipeSignal" + abre))
@@ -569,8 +534,7 @@ struct RemoteWipeSignalWiringTests {
         #expect(pide.upperBound <= borra.lowerBound, "el receptor pide después de borrar: un corte en medio pierde la petición")
         #expect(Self.count("let cut = RemoteWipeCutLogic.cut(signaledAt: signaledAt, fleetStartedOver: fleetStartedOver)",
                            in: cuerpo) == 1, "el corte ya no sale de la hora de ESTA señal")
-        for prohibido in ["GroupsRemoteWipeReturn.declare" + abre, "wipePersonalDataKeepingGroups" + abre,
-                          "signalWipeInitiated"] {
+        for prohibido in ["wipePersonalDataKeepingGroups" + abre, "signalWipeInitiated"] {
             #expect(!cuerpo.contains(prohibido), "el receptor volvió a llamar a «\(prohibido)»")
         }
     }
@@ -708,16 +672,5 @@ struct RemoteWipeSignalWiringTests {
             la petición con exclusión ya no escribe el alcance justo antes que la marca: un corte entre las dos dejaría \
             una convergencia entera
             """)
-    }
-
-    /// Quien repone solo lo hace en una sesión que obedece la señal de vaciado: el valor por defecto de producción es el
-    /// predicado del receptor. Los casos de comportamiento lo pasan a mano, así que solo este scan ve que sigue ahí.
-    @Test("MUTACIÓN: quien repone decide con el mismo predicado que obedece la señal")
-    func theReturnerUsesTheWipeSignalPredicate() throws {
-        let fuente = try Self.code("Yala/Services/Groups/GroupsRemoteWipeReturn.swift")
-        #expect(fuente.contains("obeysWipeSignal: Bool = DestructiveScopeLogic.wipeSignalObeyedByThisSession( "
-                                + "confirmedPrivateSession: PrivateSessionMark.confirmedPrivateSession(), "
-                                + "storageMode: CloudSyncFlags.storageMode)"),
-                "el valor por defecto de `obeysWipeSignal` ya no es el predicado del receptor de la señal")
     }
 }

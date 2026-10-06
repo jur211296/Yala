@@ -82,7 +82,7 @@ struct OwnerKeyValueWiringTests {
         "GroupsAccountAssociation.swift",             // la cuenta de grupos asociada, con el correo en claro
         "AppBootstrapper.swift",                      // el bloque de `-uitest-reset` (las claves del Panel)
         "PanelPreferencesMigration.swift",            // «¿hay Panel remoto?»
-        "GroupsRemoteWipeReturn.swift",               // lo que un vaciado tardío se llevó en un dispositivo sin grupos
+        "GroupsRemoteWipeDivision.swift",             // el reparto de «Vaciar datos» entre el origen y el receptor
         "PrivateBirthKeyValueHandover.swift",         // lo guardado en solo-grupos, al nacer la sesión privada NUEVA
     ]
 

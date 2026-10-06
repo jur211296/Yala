@@ -22,8 +22,8 @@
 //  **Por qué ids y no un «sí puedo / no puedo».** Un sí/no no cubre al origen con una parte de los grupos, ni el gasto que
 //  el origen aún no conocía al vaciar: el corte del receptor se lo lleva (es anterior a la señal) y nadie lo repondría.
 //
-//  **Por qué ids y no filas** (como las declaraciones de `GroupsRemoteWipeReturn`). El receptor ya se llevó con su corte
-//  todo lo anterior a la señal: no queda ningún borrado del espejo que esperar antes de reponer.
+//  **Por qué ids y no filas.** El receptor ya se llevó con su corte todo lo anterior a la señal: no queda ningún borrado
+//  del espejo que esperar antes de reponer.
 //
 //  **El orden tardío no pasa por aquí.** Con filas de grupo posteriores a la señal, el receptor pide la convergencia entera
 //  (`GroupsBridgeRestoreConvergenceLogic.remoteWipeTakesRowsTheOriginReconverged`), que ya cubría este caso.
@@ -81,9 +81,9 @@ nonisolated enum GroupsRemoteWipeDivisionLogic {
         case giveUp
     }
 
-    /// **Cuánto se espera un reparto que no llega.** El del KV de las declaraciones: cubre los arranques en frío hasta que
-    /// el iCloud-KV sincroniza, y no deja una espera abierta para siempre.
-    static let lifetime: TimeInterval = GroupsRemoteWipeReturnLogic.lifetime
+    /// **Cuánto se espera un reparto que no llega.** Cubre los arranques en frío hasta que el iCloud-KV sincroniza, y no
+    /// deja una espera abierta para siempre.
+    static let lifetime: TimeInterval = 30 * 24 * 60 * 60
 
     /// **El reparto es el de ESTA señal.** La hora viaja como `Double` por el KV y el receptor la pasa por `Date`. La vuelta
     /// es exacta (medido en la review sobre 4 millones de valores), así que el margen es defensivo: cubre una hora que algún
@@ -255,13 +255,17 @@ enum GroupsRemoteWipeDivision {
 
     private static let logger = Logger(subsystem: "com.yala", category: "CloudSync")
 
+    /// El iCloud-KV de producción, siempre por la puerta. Los llamadores lo reciben como valor por defecto sin nombrarla.
+    /// `nonisolated` porque un valor por defecto se evalúa en el contexto del llamador; la fachada no tiene estado.
+    nonisolated static var defaultStore: OwnerKeyValueWriting { OwnerKeyValueStore.shared }
+
     /// **El origen escribe lo que va a reponer.** Lo llama «Vaciar datos» antes de borrar y antes de la señal, con la hora
     /// de la señal. Si no se puede escribir, deja rastro y el borrado sigue: el receptor espera, y a los 30 días lo suelta.
     /// `domainOpen` sin valor por defecto: es la puerta de la convergencia del origen, con SUS `defaults`
     /// (`GroupTransactionBridge.isDomainOpenForBridge(defaults:)`), y el llamador la tiene que nombrar.
     static func declare(
         context: ModelContext, signaledAt: Date,
-        kv: OwnerKeyValueWriting = GroupsRemoteWipeReturn.defaultStore,
+        kv: OwnerKeyValueWriting = defaultStore,
         domainOpen: Bool
     ) {
         do {
@@ -305,7 +309,7 @@ enum GroupsRemoteWipeDivision {
     /// todo lo local. Y no pide las liquidaciones: la de restaurar dentro de «Activar Yala completo» las deja fuera a
     /// propósito, porque re-puentearlas con el corpus aún bajando borraría las reales que vuelven.
     static func resolveIfArrived(
-        kv: OwnerKeyValueWriting = GroupsRemoteWipeReturn.defaultStore,
+        kv: OwnerKeyValueWriting = defaultStore,
         defaults: UserDefaults = .standard, now: Date = .now
     ) {
         guard let awaiting = GroupsRemoteWipeDivisionStore.awaiting(defaults) else { return }

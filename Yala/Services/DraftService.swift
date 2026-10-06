@@ -106,7 +106,7 @@ final class DraftService {
 
     /// **La marca de que el borrador de una liquidación ya se aprobó** (ticket
     /// `settlement-approval-leaves-no-trace-so-a-rebridge-asks-again`). La transacción real no lleva `splitSettlementID`
-    /// (D7), así que sin esto el re-puente de la liquidación —convergencia, devolución del borrado tardío, retome— no veía
+    /// (D7), así que sin esto el re-puente de la liquidación —convergencia, retome— no veía
     /// el pago ya registrado y volvía a preguntar: aprobado dos veces, el banco lo cuenta doble.
     ///
     /// La marca es un borrador APROBADO de la liquidación enlazado a su transacción, el mecanismo del camino personal,
