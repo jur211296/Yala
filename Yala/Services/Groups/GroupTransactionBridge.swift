@@ -1123,12 +1123,16 @@ final class GroupTransactionBridge {
         // registró en una cuenta, y el rechazado, la de que la persona no quiere registrarla. Borrarlos aquí
         // era lo que hacía volver a preguntar tras un borrado tardío (ticket
         // `settlement-approval-leaves-no-trace-so-a-rebridge-asks-again`).
+        //
+        // Los avisos de importe cambiado (`isSettlementAmountChangeNotice`) no cuentan aquí ni se sustituyen: no dicen
+        // si la liquidación se registró, y los gestiona `reconcileAmountChangeNotices` al final.
         let resolution = GroupSettlementDraftResolutionLogic.resolution(
-            of: existingDrafts.map(\.status))
+            of: existingDrafts.filter { !$0.isSettlementAmountChangeNotice }.map(\.status))
         // Lo que baja por el espejo de otro dispositivo puede traer un pendiente junto a la marca: el re-puente ya lo
         // sustituye arriba; en frío lo poda `pruneSettlementDraftsAlreadyResolved`.
-        for draft in existingDrafts where GroupSettlementDraftResolutionLogic.isReplacedOnReBridge(
-            status: draft.status, optInPersonalOnly: draft.optInPersonalOnly) {
+        for draft in existingDrafts where !draft.isSettlementAmountChangeNotice
+            && GroupSettlementDraftResolutionLogic.isReplacedOnReBridge(
+                status: draft.status, optInPersonalOnly: draft.optInPersonalOnly) {
             context.delete(draft)
         }
 
@@ -1266,12 +1270,200 @@ final class GroupTransactionBridge {
             }
         }
 
+        // Ticket `settlement-amount-edited-after-approval-leaves-the-bank-stale`: si el importe cambió y la persona ya lo
+        // registró en una cuenta real, el Inbox avisa. La transacción real no se toca aquí (D7): solo si acepta el aviso.
+        if hasPrivateSession {
+            let counterpartID = isCaseC ? settlement.toMemberID : settlement.fromMemberID
+            Self.reconcileAmountChangeNotices(
+                for: settlement,
+                expectsOutflow: isCaseC,
+                drafts: existingDrafts.filter { $0.isSettlementAmountChangeNotice || $0.status != .pending },
+                counterpartName: resolveMemberDisplayName(memberID: counterpartID, in: group, context: context),
+                groupName: group.name,
+                context: context)
+        }
+
         if shouldSave {
             try context.save()
             SessionState.shared.incrementDataVersion()
             WidgetDataCache.updateCache(context: context)
         }
         return true
+    }
+
+    // MARK: - Aviso de importe cambiado tras aprobar
+
+    /// **Aplica `GroupSettlementAmountChangeLogic` a una liquidación**: pone al día el aviso pendiente, lo crea o retira los
+    /// que sobran. No guarda. `drafts` son los borradores de esa liquidación que siguen vivos (las marcas y los avisos; los
+    /// pendientes de «¿a qué cuenta llegó?» no cuentan). `expectsOutflow` es el sentido que la liquidación tiene HOY para
+    /// mí (yo pago ⇒ `true`), `nil` si no se pudo resolver. Devuelve si escribió algo.
+    ///
+    /// El aviso lleva la cuenta y la subcategoría de la transacción real (solo para enseñarlo) y NO se enlaza a ella
+    /// (`InboxDraft.isSettlementAmountChangeNotice` dice por qué): ajustar la resuelve por la marca.
+    @discardableResult
+    static func reconcileAmountChangeNotices(
+        for settlement: SplitSettlement,
+        expectsOutflow: Bool?,
+        drafts: [InboxDraft],
+        counterpartName: String?,
+        groupName: String,
+        context: ModelContext
+    ) -> Bool {
+        let marks = drafts.filter {
+            $0.sourceType == .groupSettlement && $0.status == .approved && !$0.isSettlementAmountChangeNotice
+        }
+        // Orden estable, el más antiguo primero: dos dispositivos con los mismos avisos conservan el mismo.
+        let notices = drafts.filter(\.isSettlementAmountChangeNotice).sorted {
+            if $0.createdAt != $1.createdAt { return $0.createdAt < $1.createdAt }
+            return ($0.syncID?.uuidString ?? "") < ($1.syncID?.uuidString ?? "")
+        }
+        guard !marks.isEmpty || !notices.isEmpty else { return false }
+
+        let plan = GroupSettlementAmountChangeLogic.plan(
+            settlementAmount: settlement.amount,
+            settlementCurrency: settlement.currencyCode,
+            expectsOutflow: expectsOutflow,
+            marks: marks.map {
+                .init(amount: $0.amount,
+                      transactionAmount: $0.approvedTransaction?.amount,
+                      transactionCurrency: $0.approvedTransaction?.currencyCode)
+            },
+            notices: notices.map { .init(status: $0.status, amount: $0.amount) })
+
+        var wrote = false
+        if let amount = plan.pendingAmount,
+           let mark = marks.first(where: { $0.approvedTransaction != nil }),
+           let transaction = mark.approvedTransaction {
+            if let index = plan.keepPendingIndex {
+                // Solo lo que cambia: el arranque pasa por aquí cada vez, y una reescritura idéntica guardaría para nada.
+                let notice = notices[index]
+                var changed = false
+                if notice.amount != amount { notice.amount = amount; changed = true }
+                if let account = transaction.account, notice.account?.persistentModelID != account.persistentModelID {
+                    notice.account = account
+                    changed = true
+                }
+                if let counterpartName, notice.originActorName != counterpartName {
+                    notice.originActorName = counterpartName
+                    changed = true
+                }
+                if !groupName.isEmpty, notice.originGroupName != groupName {
+                    notice.originGroupName = groupName
+                    changed = true
+                }
+                if changed {
+                    notice.updatedAt = Date.now
+                    wrote = true
+                }
+            } else {
+                let notice = InboxDraft(
+                    note: settlement.note ?? mark.note,
+                    amount: amount,
+                    date: settlement.date,
+                    account: transaction.account,
+                    subcategory: transaction.subcategory ?? mark.subcategory,
+                    sourceType: .groupSettlement,
+                    confidenceAmount: 1.0,
+                    confidenceDate: 1.0,
+                    confidenceMerchant: 1.0,
+                    confidenceSubcategory: 1.0,
+                    needsUserInput: [],
+                    splitGroupZoneID: settlement.groupZoneID,
+                    splitSettlementID: settlement.id.uuidString,
+                    originReasonKey: DraftOriginReason.settlementAmountChanged.rawValue,
+                    originActorName: counterpartName,
+                    originGroupName: groupName
+                )
+                context.insert(notice)
+                logger.notice("settlementAmountChange: notice created")
+                wrote = true
+            }
+        }
+        for index in plan.deleteIndices {
+            InboxRowPruneCoordinator.shared.pruneRow(notices[index].persistentModelID)
+            context.delete(notices[index])
+            wrote = true
+        }
+        return wrote
+    }
+
+    /// **En frío, pone al día los avisos de importe cambiado de todas las liquidaciones con marca o aviso.** Cubre lo que el
+    /// re-puente no ve: la transacción real que llega por CloudKit después de la marca, el aviso duplicado que creó otro
+    /// dispositivo y el que borró una versión anterior de la app. Corre en `AppBootstrapper.retryPendingBridges`, detrás de
+    /// sus gates, y solo con vida personal en este teléfono. Una liquidación que ya no existe retira sus avisos pendientes.
+    @discardableResult
+    static func reconcileSettlementAmountChangeNotices(context: ModelContext) throws -> Int {
+        guard SessionState.shared.hasPrivateSession else { return 0 }
+        let settlementRaw = DraftSourceType.groupSettlement.rawValue
+        let approvedRaw = DraftStatus.approved.rawValue
+        let noticeKey = DraftOriginReason.settlementAmountChanged.rawValue
+        let drafts = try context.fetch(FetchDescriptor<InboxDraft>(
+            predicate: #Predicate {
+                $0.sourceTypeRaw == settlementRaw && $0.splitSettlementID != nil
+                    && ($0.statusRaw == approvedRaw || $0.originReasonKey == noticeKey)
+            }))
+        guard !drafts.isEmpty else { return 0 }
+        let byID = Dictionary(grouping: drafts) { $0.splitSettlementID ?? "" }
+
+        var touched = 0
+        for (idString, group) in byID {
+            guard let uuid = UUID(uuidString: idString) else { continue }
+            var descriptor = FetchDescriptor<SplitSettlement>(predicate: #Predicate { $0.id == uuid })
+            descriptor.fetchLimit = 1
+            guard let settlement = try context.fetch(descriptor).first else {
+                for notice in group where notice.isSettlementAmountChangeNotice && notice.status == .pending {
+                    InboxRowPruneCoordinator.shared.pruneRow(notice.persistentModelID)
+                    context.delete(notice)
+                    touched += 1
+                }
+                continue
+            }
+            let zoneID = settlement.groupZoneID
+            var groupDescriptor = FetchDescriptor<SplitGroup>(predicate: #Predicate { $0.cloudKitZoneID == zoneID })
+            groupDescriptor.fetchLimit = 1
+            // Sin grupo, u oculto, no hay a quién seguir: se retiran los pendientes, como el re-puente que no corre.
+            guard let splitGroup = try context.fetch(groupDescriptor).first, !splitGroup.isHiddenForAll else {
+                for notice in group where notice.isSettlementAmountChangeNotice && notice.status == .pending {
+                    InboxRowPruneCoordinator.shared.pruneRow(notice.persistentModelID)
+                    context.delete(notice)
+                    touched += 1
+                }
+                continue
+            }
+            let me = try GroupExpenseService.resolveCurrentUserMember(inZone: zoneID, context: context)
+            let myID = me?.id.uuidString
+            // Ya no soy parte de la liquidación (la editaron a otros dos): nada que ajustar, fuera los pendientes.
+            if let myID, myID != settlement.fromMemberID, myID != settlement.toMemberID {
+                for notice in group where notice.isSettlementAmountChangeNotice && notice.status == .pending {
+                    InboxRowPruneCoordinator.shared.pruneRow(notice.persistentModelID)
+                    context.delete(notice)
+                    touched += 1
+                }
+                continue
+            }
+            let expectsOutflow = myID.map { $0 == settlement.fromMemberID }
+            let counterpartID = myID.map { $0 == settlement.fromMemberID
+                ? settlement.toMemberID : settlement.fromMemberID }
+            let counterpartName: String?
+            if let counterpartID, let memberUUID = UUID(uuidString: counterpartID) {
+                var memberDescriptor = FetchDescriptor<SplitMember>(
+                    predicate: #Predicate { $0.groupZoneID == zoneID && $0.id == memberUUID })
+                memberDescriptor.fetchLimit = 1
+                counterpartName = try context.fetch(memberDescriptor).first?.displayName
+            } else {
+                counterpartName = nil
+            }
+            if reconcileAmountChangeNotices(
+                for: settlement, expectsOutflow: expectsOutflow, drafts: group, counterpartName: counterpartName,
+                groupName: splitGroup.name, context: context) {
+                touched += 1
+            }
+        }
+        guard touched > 0 else { return 0 }
+        try context.save()
+        SessionState.shared.incrementDataVersion()
+        logger.notice("reconcileSettlementAmountChangeNotices touched=\(touched, privacy: .public)")
+        return touched
     }
 
     /// Bridge remote settlements received via sync. Llamado desde SplitSyncManager.
@@ -1351,6 +1543,26 @@ final class GroupTransactionBridge {
         WidgetDataCache.updateCache(context: context)
     }
 
+    // MARK: - Transacción que ajusta un aviso de importe cambiado
+
+    /// **La transacción real que ajusta el aviso de importe cambiado, resuelta por la marca**: la única marca viva
+    /// (aprobada, con transacción) de esa liquidación. `nil` si no hay ninguna o hay dos (dos dispositivos que aprobaron el
+    /// mismo pago: no se elige una a ciegas). La usan `DraftService` al ajustar, la hoja y la fila del Inbox.
+    static func amountChangeTarget(
+        settlementID: String?, in context: ModelContext
+    ) throws -> (mark: InboxDraft, transaction: TransactionItem)? {
+        guard let settlementID else { return nil }
+        let settlementRaw = DraftSourceType.groupSettlement.rawValue
+        let approvedRaw = DraftStatus.approved.rawValue
+        let live = try context.fetch(FetchDescriptor<InboxDraft>(
+            predicate: #Predicate {
+                $0.sourceTypeRaw == settlementRaw && $0.splitSettlementID == settlementID && $0.statusRaw == approvedRaw
+            }))
+            .filter { !$0.isSettlementAmountChangeNotice && $0.approvedTransaction != nil }
+        guard live.count == 1, let mark = live.first, let transaction = mark.approvedTransaction else { return nil }
+        return (mark, transaction)
+    }
+
     // MARK: - Poda de borradores de liquidación ya aprobada
 
     /// **En frío, retira los borradores pendientes de una liquidación que la persona ya resolvió**
@@ -1359,8 +1571,10 @@ final class GroupTransactionBridge {
     @discardableResult
     static func pruneSettlementDraftsAlreadyResolved(context: ModelContext) throws -> Int {
         let settlementRaw = DraftSourceType.groupSettlement.rawValue
+        // Los avisos de importe cambiado no son borradores de «¿a qué cuenta llegó?»: ni resuelven ni se podan aquí.
         let drafts = try context.fetch(FetchDescriptor<InboxDraft>(
             predicate: #Predicate { $0.sourceTypeRaw == settlementRaw && $0.splitSettlementID != nil }))
+            .filter { !$0.isSettlementAmountChangeNotice }
         let redundant = GroupSettlementDraftResolutionLogic.redundantPendingDrafts(
             drafts.map { ($0.splitSettlementID, $0.status, $0.optInPersonalOnly) })
         guard !redundant.isEmpty else { return 0 }
@@ -1497,6 +1711,12 @@ final class GroupTransactionBridge {
         var draftsToConvert: [InboxDraft] = []
         var draftsToDelete: [InboxDraft] = []
         for draft in drafts where draft.sourceTypeRaw == groupExpenseRaw || draft.sourceTypeRaw == groupSettlementRaw {
+            // El aviso de importe cambiado de una liquidación ya aprobada ofrece ajustar una transacción que ya existe:
+            // convertido a manual, aprobarlo crearía OTRA. Se borra, con su liquidación fuera ya no hay nada que avisar.
+            if draft.isSettlementAmountChangeNotice {
+                draftsToDelete.append(draft)
+                continue
+            }
             // Puntero de clasificación: draft `.groupExpense` que SOLO pide subcategoría (no cuenta)
             // y apunta a una TX existente vía `splitExpenseID`. Esa TX se preserva en el freeze (la
             // real, liberada arriba; o la virtual sistema, intacta), así que el user la clasifica

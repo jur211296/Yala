@@ -441,6 +441,11 @@ final class UITestHooks {
     /// lanza SIN perfil para no contaminar los totales. Ver `DevSeedTransactions.createDesyncFixtures`.
     nonisolated static var seedDesync: Bool { hasArg("-uitest-seed-desync") }
 
+    /// `-uitest-seed-settlement-amount-change`: una liquidación que Ana me pagó, aprobada a «Banco QA» por 25, cuyo importe
+    /// pasa después a 30 como lo deja una edición remota (`DevSeedSettlementAmountChange`). Deja en el Inbox el aviso de
+    /// importe cambiado (`settlement-amount-edited-after-approval-leaves-the-bank-stale`).
+    nonisolated static var seedSettlementAmountChange: Bool { hasArg("-uitest-seed-settlement-amount-change") }
+
     /// `-uitest-scheduled-due-today`: añade al seed UN pago planificado «una sola vez» que vence
     /// HOY (`DevSeedScheduledPayments.dueTodayName`). Los 8 del fixture base se reparten por el
     /// mes y `min(day, 28)` capa los días 29-31, así que NINGUNO vence hoy de forma garantizada.

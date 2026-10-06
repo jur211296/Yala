@@ -20,6 +20,7 @@ struct InboxDraftRowView: View {
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(\.tagCatalog) private var tagCatalog
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.modelContext) private var modelContext
 
     var body: some View {
         Button(action: onTap) {
@@ -61,8 +62,15 @@ struct InboxDraftRowView: View {
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(L10n.Accessibility.draftRow(draft.note.isEmpty ? L10n.Inbox.noDescription : draft.note, draft.amount.map { appPreferences.currency($0, currencyCode: currencyCode) } ?? L10n.Inbox.noAmount, draft.status.rawValue))
+        .accessibilityLabel(accessibilityText)
         .accessibilityIdentifier("inbox_draft_row_\(draft.note)")
+    }
+
+    /// La etiqueta de siempre y, en el aviso de importe cambiado, su segunda línea: sin ella VoiceOver no dice qué cambió.
+    private var accessibilityText: String {
+        let base = L10n.Accessibility.draftRow(draft.note.isEmpty ? L10n.Inbox.noDescription : draft.note, draft.amount.map { appPreferences.currency($0, currencyCode: currencyCode) } ?? L10n.Inbox.noAmount, draft.status.rawValue)
+        guard let detail = settlementAmountChangeDetail(accountName: draft.displayAccountName ?? "") else { return base }
+        return "\(base), \(detail)"
     }
 
     // MARK: - Complete Content View (like RecordRowView)
@@ -80,8 +88,8 @@ struct InboxDraftRowView: View {
                 .foregroundStyle(.primary)
                 .lineLimit(conceptLineLimit)
 
-            // Line 2: Subcategory • Account
-            Text("\(subcategoryName) • \(accountName)")
+            // Line 2: Subcategory • Account (el aviso de importe cambiado: la cuenta y lo que tiene ahora)
+            Text(settlementAmountChangeDetail(accountName: accountName) ?? "\(subcategoryName) • \(accountName)")
                 .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
@@ -94,7 +102,7 @@ struct InboxDraftRowView: View {
 
             // Line 2: Account name
             if !accountName.isEmpty {
-                Text(accountName)
+                Text(settlementAmountChangeDetail(accountName: accountName) ?? accountName)
                     .font(DS.Typography.caption)
                     .foregroundStyle(.tertiary)
                     .lineLimit(1)
@@ -108,6 +116,27 @@ struct InboxDraftRowView: View {
                 tagsRow(resolvedTags)
             }
         }
+    }
+
+    /// Segunda línea del aviso de importe cambiado pendiente: la cuenta de la transacción y lo que tiene ahora, leídos por
+    /// la marca (`GroupTransactionBridge.amountChangeTarget`), no por el aviso. Solo pendiente: un archivado no lee
+    /// relaciones (pueden estar invalidadas) y cae a la línea de siempre.
+    private func settlementAmountChangeDetail(accountName: String) -> String? {
+        guard draft.isSettlementAmountChangeNotice, draft.status == .pending else { return nil }
+        let resolved: (mark: InboxDraft, transaction: TransactionItem)?
+        do {
+            resolved = try GroupTransactionBridge.amountChangeTarget(
+                settlementID: draft.splitSettlementID, in: modelContext)
+        } catch {
+            #if DEBUG
+            print("InboxDraftRowView: amountChangeTarget: Error: \(error)")
+            #endif
+            return nil
+        }
+        guard let transaction = resolved?.transaction else { return nil }
+        let inAccount = appPreferences.currency(
+            abs(transaction.amount), currencyCode: transaction.currencyCode, forceFullPrecision: true)
+        return L10n.Inbox.GroupSettlementAmountChange.rowDetail(transaction.account?.name ?? accountName, inAccount)
     }
 
     /// Una línea a los tamaños normales; dos a los de accesibilidad, donde el concepto ya tiene la fila entera.

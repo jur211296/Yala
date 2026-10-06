@@ -6445,3 +6445,27 @@
 
 /* Sheet body: the deletion did not finish before the cloud was activated and will not happen */
 "welcome.privateICloud.cancelledInCloudBody" = "Du wolltest neu anfangen und deine iCloud-Daten löschen, aber das Löschen war nicht fertig, bevor deine Daten in die Cloud gewechselt sind, und wird jetzt nicht mehr ausgeführt. Ein Teil dessen, was du löschen wolltest, kann noch in iCloud sein oder in dein Yala-Konto gewechselt sein.";
+
+/* Inbox: title of the notice that a settlement already approved to a real account changed its amount */
+"inbox.groupSettlementAmountChange.title" = "Betrag geändert";
+
+/* Notice banner, the other person paid me. 1 person, 2 group, 3 amount reviewed, 4 new amount, 5 account, 6 amount in that account */
+"inbox.groupSettlementAmountChange.bannerReceived" = "Die Zahlung von %1$@ in „%2$@“ wurde geändert: vorher %3$@, jetzt %4$@. In %5$@ sind %6$@ erfasst.";
+
+/* Notice banner, I paid the other person. 1 person, 2 group, 3 amount reviewed, 4 new amount, 5 account, 6 amount in that account */
+"inbox.groupSettlementAmountChange.bannerSent" = "Ihre Zahlung an %1$@ in „%2$@“ wurde geändert: vorher %3$@, jetzt %4$@. In %5$@ sind %6$@ erfasst.";
+
+/* Notice banner without the other person name. 1 group, 2 amount reviewed, 3 new amount, 4 account, 5 amount in that account */
+"inbox.groupSettlementAmountChange.bannerUnnamed" = "Diese Abrechnung in „%1$@“ wurde geändert: vorher %2$@, jetzt %3$@. In %4$@ sind %5$@ erfasst.";
+
+/* Primary button: set my transaction to the new amount */
+"inbox.groupSettlementAmountChange.adjust" = "Auf %@ anpassen";
+
+/* Secondary button: leave my transaction at its amount */
+"inbox.groupSettlementAmountChange.keep" = "Bei %@ lassen";
+
+/* Inbox row second line for the notice: account, amount in that account */
+"inbox.groupSettlementAmountChange.rowDetail" = "%2$@ in %1$@ erfasst";
+
+/* Error when the notice can no longer be applied: the transaction is gone, duplicated or in another currency */
+"inbox.groupSettlementAmountChange.transactionGone" = "Dieser Hinweis lässt sich nicht mehr anwenden: Die Transaktion hat sich geändert oder ist nicht mehr in Ihren Konten.";

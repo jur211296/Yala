@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (766)
+## Index (769)
 
 | id | status | path |
 |---|---|---|
@@ -690,8 +690,11 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | settings-migrate-to-cloud-adopts-silently-instead-of-migrating | done | tickets/done/settings-migrate-to-cloud-adopts-silently-instead-of-migrating.md |
 | settings-redesign-as-grouped-lists-like-ios | qa | tickets/qa/settings-redesign-as-grouped-lists-like-ios.md |
 | settings-sign-out-scope-says-groups-stay-in-an-account-that-may-not-exist | backlog | tickets/backlog/settings-sign-out-scope-says-groups-stay-in-an-account-that-may-not-exist.md |
-| settlement-amount-edited-after-approval-leaves-the-bank-stale | backlog | tickets/backlog/settlement-amount-edited-after-approval-leaves-the-bank-stale.md |
+| settlement-amount-change-notice-archived-row-reads-as-a-rejected-payment | backlog | tickets/backlog/settlement-amount-change-notice-archived-row-reads-as-a-rejected-payment.md |
+| settlement-amount-change-notice-on-a-build-before-the-approval-mark | backlog | tickets/backlog/settlement-amount-change-notice-on-a-build-before-the-approval-mark.md |
+| settlement-amount-edited-after-approval-leaves-the-bank-stale | done | tickets/done/settlement-amount-edited-after-approval-leaves-the-bank-stale.md |
 | settlement-approval-leaves-no-trace-so-a-rebridge-asks-again | done | tickets/done/settlement-approval-leaves-no-trace-so-a-rebridge-asks-again.md |
+| settlement-direction-edited-after-approval-leaves-the-bank-stale | backlog | tickets/backlog/settlement-direction-edited-after-approval-leaves-the-bank-stale.md |
 | share-extension-image-skips-pro-gate | done | tickets/done/share-extension-image-skips-pro-gate.md |
 | shared-state-guard-misses-wipelocalgroupsdomain | backlog | tickets/backlog/shared-state-guard-misses-wipelocalgroupsdomain.md |
 | sheet-size-follows-the-device-not-the-window | done | tickets/done/sheet-size-follows-the-device-not-the-window.md |

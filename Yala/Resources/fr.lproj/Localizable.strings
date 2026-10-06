@@ -6446,3 +6446,27 @@
 
 /* Sheet body: the deletion did not finish before the cloud was activated and will not happen */
 "welcome.privateICloud.cancelledInCloudBody" = "Tu as demandé à repartir de zéro et à supprimer tes données iCloud, mais la suppression n'était pas terminée quand tes données sont passées dans le cloud, et elle n'aura plus lieu. Une partie de ce que tu voulais supprimer peut encore être dans iCloud ou être passée dans ton compte Yala.";
+
+/* Inbox: title of the notice that a settlement already approved to a real account changed its amount */
+"inbox.groupSettlementAmountChange.title" = "Montant modifié";
+
+/* Notice banner, the other person paid me. 1 person, 2 group, 3 amount reviewed, 4 new amount, 5 account, 6 amount in that account */
+"inbox.groupSettlementAmountChange.bannerReceived" = "Le paiement de %1$@ dans « %2$@ » a changé : il était de %3$@ et il est maintenant de %4$@. Dans %5$@, vous avez %6$@ enregistrés.";
+
+/* Notice banner, I paid the other person. 1 person, 2 group, 3 amount reviewed, 4 new amount, 5 account, 6 amount in that account */
+"inbox.groupSettlementAmountChange.bannerSent" = "Votre paiement à %1$@ dans « %2$@ » a changé : il était de %3$@ et il est maintenant de %4$@. Dans %5$@, vous avez %6$@ enregistrés.";
+
+/* Notice banner without the other person name. 1 group, 2 amount reviewed, 3 new amount, 4 account, 5 amount in that account */
+"inbox.groupSettlementAmountChange.bannerUnnamed" = "Ce règlement dans « %1$@ » a changé : il était de %2$@ et il est maintenant de %3$@. Dans %4$@, vous avez %5$@ enregistrés.";
+
+/* Primary button: set my transaction to the new amount */
+"inbox.groupSettlementAmountChange.adjust" = "Ajuster à %@";
+
+/* Secondary button: leave my transaction at its amount */
+"inbox.groupSettlementAmountChange.keep" = "Garder %@";
+
+/* Inbox row second line for the notice: account, amount in that account */
+"inbox.groupSettlementAmountChange.rowDetail" = "%2$@ enregistrés dans %1$@";
+
+/* Error when the notice can no longer be applied: the transaction is gone, duplicated or in another currency */
+"inbox.groupSettlementAmountChange.transactionGone" = "Cet avis ne peut plus être appliqué : la transaction a changé ou n’est plus dans vos comptes.";

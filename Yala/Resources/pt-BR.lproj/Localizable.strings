@@ -6445,3 +6445,27 @@
 
 /* Sheet body: the deletion did not finish before the cloud was activated and will not happen */
 "welcome.privateICloud.cancelledInCloudBody" = "Você pediu para começar do zero e apagar seus dados do iCloud, mas não terminamos de apagar antes de seus dados passarem para a nuvem, e isso não vai mais acontecer. Parte do que você ia apagar pode continuar no iCloud ou ter passado para a sua conta do Yala.";
+
+/* Inbox: title of the notice that a settlement already approved to a real account changed its amount */
+"inbox.groupSettlementAmountChange.title" = "Valor alterado";
+
+/* Notice banner, the other person paid me. 1 person, 2 group, 3 amount reviewed, 4 new amount, 5 account, 6 amount in that account */
+"inbox.groupSettlementAmountChange.bannerReceived" = "O pagamento de %1$@ em “%2$@” mudou: era %3$@ e agora é %4$@. Em %5$@ você tem %6$@ registrados.";
+
+/* Notice banner, I paid the other person. 1 person, 2 group, 3 amount reviewed, 4 new amount, 5 account, 6 amount in that account */
+"inbox.groupSettlementAmountChange.bannerSent" = "Seu pagamento para %1$@ em “%2$@” mudou: era %3$@ e agora é %4$@. Em %5$@ você tem %6$@ registrados.";
+
+/* Notice banner without the other person name. 1 group, 2 amount reviewed, 3 new amount, 4 account, 5 amount in that account */
+"inbox.groupSettlementAmountChange.bannerUnnamed" = "Esta liquidação em “%1$@” mudou: era %2$@ e agora é %3$@. Em %4$@ você tem %5$@ registrados.";
+
+/* Primary button: set my transaction to the new amount */
+"inbox.groupSettlementAmountChange.adjust" = "Ajustar para %@";
+
+/* Secondary button: leave my transaction at its amount */
+"inbox.groupSettlementAmountChange.keep" = "Manter %@";
+
+/* Inbox row second line for the notice: account, amount in that account */
+"inbox.groupSettlementAmountChange.rowDetail" = "%2$@ registrados em %1$@";
+
+/* Error when the notice can no longer be applied: the transaction is gone, duplicated or in another currency */
+"inbox.groupSettlementAmountChange.transactionGone" = "Este aviso não pode mais ser aplicado: a transação mudou ou não está mais nas suas contas.";

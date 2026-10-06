@@ -5713,3 +5713,27 @@
 
 /* Sheet body: the deletion did not finish before the cloud was activated and will not happen */
 "welcome.privateICloud.cancelledInCloudBody" = "You asked to start fresh and delete your iCloud data, but the deletion didn't finish before your data moved to the cloud, and it won't happen now. Some of what you meant to delete may still be in iCloud or may have moved to your Yala account.";
+
+/* Inbox: title of the notice that a settlement already approved to a real account changed its amount */
+"inbox.groupSettlementAmountChange.title" = "Amount changed";
+
+/* Notice banner, the other person paid me. 1 person, 2 group, 3 amount reviewed, 4 new amount, 5 account, 6 amount in that account */
+"inbox.groupSettlementAmountChange.bannerReceived" = "%1$@’s payment in “%2$@” changed: it was %3$@ and is now %4$@. You have %6$@ recorded in %5$@.";
+
+/* Notice banner, I paid the other person. 1 person, 2 group, 3 amount reviewed, 4 new amount, 5 account, 6 amount in that account */
+"inbox.groupSettlementAmountChange.bannerSent" = "Your payment to %1$@ in “%2$@” changed: it was %3$@ and is now %4$@. You have %6$@ recorded in %5$@.";
+
+/* Notice banner without the other person name. 1 group, 2 amount reviewed, 3 new amount, 4 account, 5 amount in that account */
+"inbox.groupSettlementAmountChange.bannerUnnamed" = "This settlement in “%1$@” changed: it was %2$@ and is now %3$@. You have %5$@ recorded in %4$@.";
+
+/* Primary button: set my transaction to the new amount */
+"inbox.groupSettlementAmountChange.adjust" = "Adjust to %@";
+
+/* Secondary button: leave my transaction at its amount */
+"inbox.groupSettlementAmountChange.keep" = "Keep %@";
+
+/* Inbox row second line for the notice: account, amount in that account */
+"inbox.groupSettlementAmountChange.rowDetail" = "%2$@ recorded in %1$@";
+
+/* Error when the notice can no longer be applied: the transaction is gone, duplicated or in another currency */
+"inbox.groupSettlementAmountChange.transactionGone" = "This notice can no longer be applied: the transaction changed or is no longer in your accounts.";

@@ -31,6 +31,10 @@ struct GroupDraftFinalizationScaffold<Selector: View>: View {
     var hint: String? = nil
     let finalizeDisabled: Bool
     let onFinalize: () -> Void
+    /// Texto del botón principal; sin él, «Finalizar».
+    var finalizeTitle: String? = nil
+    /// Acción secundaria opcional bajo el botón principal (el «Dejar en…» del aviso de importe cambiado).
+    var secondaryAction: (title: String, action: () -> Void)? = nil
     /// Selector interactivo de la pieza que falta (un `SelectionChip`).
     @ViewBuilder let selector: () -> Selector
 
@@ -59,12 +63,21 @@ struct GroupDraftFinalizationScaffold<Selector: View>: View {
                     .padding(.bottom, DS.Spacing.md)
             }
 
-            YalaPrimaryButton(L10n.Inbox.GroupDraft.finalize, icon: "checkmark.circle.fill") {
+            YalaPrimaryButton(finalizeTitle ?? L10n.Inbox.GroupDraft.finalize, icon: "checkmark.circle.fill") {
                 onFinalize()
             }
             .disabled(finalizeDisabled)
             .padding(.horizontal, DS.Spacing.xl)
-            .padding(.bottom, DS.Spacing.xxl)
+            .padding(.bottom, secondaryAction == nil ? DS.Spacing.xxl : DS.Spacing.sm)
+
+            if let secondaryAction {
+                YalaSecondaryButton(secondaryAction.title) {
+                    secondaryAction.action()
+                }
+                .accessibilityIdentifier("group_draft_secondary_button")
+                .padding(.horizontal, DS.Spacing.xl)
+                .padding(.bottom, DS.Spacing.xxl)
+            }
         }
         // Sheet full-height (sin detents en InboxView) → .subtle, igual que
         // InboxDraftEditSheet. El `.partialSheet` (subtle solo si la ventana fuerza `.large`)
