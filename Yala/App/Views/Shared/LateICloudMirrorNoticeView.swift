@@ -229,8 +229,8 @@ struct LateICloudMirrorNoticeView: View {
             // vuelve a subir antes de perder nada.
             noticeBody(
                 icon: "exclamationmark.triangle",
-                title: L10n.Groups.FreshStartPending.title,
-                body: SignOutBlockedCopy.freshStartGroupsPendingMessage(block),
+                title: SignOutBlockedCopy.freshStartGroupsPendingTitle(block),
+                body: SignOutBlockedCopy.freshStartGroupsPendingMessage(block, retryOffersTheLossExit: true),
                 identifier: "late_icloud_groups_pending",
                 primary: L10n.Welcome.PrivateICloud.wipeFailedBack,
                 primaryAction: leaveGroupsPending,
@@ -256,8 +256,8 @@ struct LateICloudMirrorNoticeView: View {
             // cuántos y qué hacer. `wipeRetry` y no `Restore.retry` («Reintentar búsqueda»): aquí no se busca nada.
             noticeBody(
                 icon: "exclamationmark.triangle",
-                title: L10n.Groups.FreshStartPending.title,
-                body: SignOutBlockedCopy.freshStartGroupsPendingMessage(block),
+                title: SignOutBlockedCopy.freshStartGroupsPendingTitle(block),
+                body: SignOutBlockedCopy.freshStartGroupsPendingMessage(block, retryOffersTheLossExit: true),
                 identifier: "late_icloud_groups_pending",
                 primary: L10n.Welcome.PrivateICloud.wipeRetry,
                 primaryAction: { phase = .wiping },

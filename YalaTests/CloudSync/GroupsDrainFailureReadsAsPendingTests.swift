@@ -401,7 +401,7 @@ struct GroupsExitGesturesCaptureTests {
         let verdict = await CloudSessionSignOut.shared.drainGroupsBeforeFreshStart(
             context: context, witness: witness(capture: false, scopes: scopes, uncaptured: nil))
         let expected = CloudSessionSignOut.FreshStartGroupsBlock(pendingCount: Int.max, reason: .uploadRetryLater,
-                                                                readsUncaptured: false)
+                                                                readsUncaptured: false, anotherAccountCount: 0)
         #expect(verdict == .blocked(expected))
         #expect(CloudSessionSignOut.shared.freshStartGroupsBlock == expected)
         #expect(scopes.asked.contains(.sessionOwner), "el push-all mira lo que esta sesión puede subir")
@@ -417,7 +417,7 @@ struct GroupsExitGesturesCaptureTests {
         let onlyTheWipeSees: (GroupsSyncClient.MirrorPendingScope) -> Int = { $0 == .sessionOwner ? 0 : 3 }
         let verdict = await CloudSessionSignOut.shared.drainGroupsBeforeFreshStart(
             context: context, witness: witness(capture: true, mirror: onlyTheWipeSees))
-        #expect(verdict == .blocked(.init(pendingCount: 3, reason: .sessionExpired, readsUncaptured: false)))
+        #expect(verdict == .blocked(.init(pendingCount: 3, reason: .sessionExpired, readsUncaptured: false, anotherAccountCount: 0)))
     }
 
     /// El cinturón del escritor cuenta el espejo: con el outbox a 0 y dos entradas sin fila, se niega, y el borrado del

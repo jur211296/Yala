@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (769)
+## Index (775)
 
 | id | status | path |
 |---|---|---|
@@ -97,6 +97,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | an-incomplete-inventory-reads-as-the-whole-corpus | done | tickets/done/an-incomplete-inventory-reads-as-the-whole-corpus.md |
 | an-undecodable-migration-phase-reads-as-never-started | done | tickets/done/an-undecodable-migration-phase-reads-as-never-started.md |
 | an-unreadable-migration-journal-reads-as-never-started | done | tickets/done/an-unreadable-migration-journal-reads-as-never-started.md |
+| another-account-group-copy-assumes-a-single-other-account | backlog | tickets/backlog/another-account-group-copy-assumes-a-single-other-account.md |
 | app-uploads-its-timezone-to-the-cloud | backlog | tickets/backlog/app-uploads-its-timezone-to-the-cloud.md |
 | apple-id-change-boot-check-is-lost-when-the-journal-is-unreadable-at-launch | backlog | tickets/backlog/apple-id-change-boot-check-is-lost-when-the-journal-is-unreadable-at-launch.md |
 | apple-id-change-boot-check-runs-before-the-migration-guard-can-see | done | tickets/done/apple-id-change-boot-check-runs-before-the-migration-guard-can-see.md |
@@ -157,6 +158,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | ci-checkout-v4-runs-on-deprecated-node | backlog | tickets/backlog/ci-checkout-v4-runs-on-deprecated-node.md |
 | ci-destination-assumes-a-simulator-that-may-not-exist | done | tickets/done/ci-destination-assumes-a-simulator-that-may-not-exist.md |
 | ci-no-corre-la-suite-del-gateway | backlog | tickets/backlog/ci-no-corre-la-suite-del-gateway.md |
+| ci-one-red-in-pure-logic-triples-the-step-and-the-job-ceiling-cancels-it | backlog | tickets/backlog/ci-one-red-in-pure-logic-triples-the-step-and-the-job-ceiling-cancels-it.md |
 | ci-runner-se-queda-sin-simuladores-y-tumba-build-for-testing | done | tickets/done/ci-runner-se-queda-sin-simuladores-y-tumba-build-for-testing.md |
 | ci-runner-sesion-de-ci-arranca-servicios-que-no-usa | backlog | tickets/backlog/ci-runner-sesion-de-ci-arranca-servicios-que-no-usa.md |
 | ci-suite-simulador-duplicada-y-allowlist-incompleta | done | tickets/done/ci-suite-simulador-duplicada-y-allowlist-incompleta.md |
@@ -300,10 +302,12 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | forward-migration-steps-have-no-ceiling-and-no-exit | qa | tickets/qa/forward-migration-steps-have-no-ceiling-and-no-exit.md |
 | forward-step-ceiling-wins-over-a-cancel-given-in-the-same-pass | backlog | tickets/backlog/forward-step-ceiling-wins-over-a-cancel-given-in-the-same-pass.md |
 | forward-verify-reads-an-expired-session-as-network | backlog | tickets/backlog/forward-verify-reads-an-expired-session-as-network.md |
-| fresh-start-copy-for-another-accounts-group-changes-borrows-the-own-reason | backlog | tickets/backlog/fresh-start-copy-for-another-accounts-group-changes-borrows-the-own-reason.md |
+| fresh-start-block-count-without-the-loss-exit-sometimes-omits-held-rows | backlog | tickets/backlog/fresh-start-block-count-without-the-loss-exit-sometimes-omits-held-rows.md |
+| fresh-start-copy-for-another-accounts-group-changes-borrows-the-own-reason | done | tickets/done/fresh-start-copy-for-another-accounts-group-changes-borrows-the-own-reason.md |
 | fresh-start-drops-mirror-entries-of-another-identity-without-counting-them | done | tickets/done/fresh-start-drops-mirror-entries-of-another-identity-without-counting-them.md |
 | fresh-start-has-no-way-out-when-group-writes-can-never-upload | done | tickets/done/fresh-start-has-no-way-out-when-group-writes-can-never-upload.md |
 | fresh-start-keeps-a-groups-session-that-migrate-promotes | done | tickets/done/fresh-start-keeps-a-groups-session-that-migrate-promotes.md |
+| fresh-start-shell-alert-after-an-adopt-exit-has-no-way-out-for-group-changes | backlog | tickets/backlog/fresh-start-shell-alert-after-an-adopt-exit-has-no-way-out-for-group-changes.md |
 | fresh-start-wipe-kills-unsent-group-writes-silently | done | tickets/done/fresh-start-wipe-kills-unsent-group-writes-silently.md |
 | full-activation-cloud-adopt-when-account-already-complete | backlog | tickets/backlog/full-activation-cloud-adopt-when-account-already-complete.md |
 | full-activation-local-state-never-reaches-the-apple-id-kv | done | tickets/done/full-activation-local-state-never-reaches-the-apple-id-kv.md |

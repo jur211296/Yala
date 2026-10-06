@@ -1914,6 +1914,18 @@ final class CloudSessionSignOut {
         /// «otra cuenta» nombra además el atasco (ticket `stuck-groups-drain-hides-held-rows-of-another-account`). Sin valor
         /// por defecto a propósito: quien construye un bloqueo tiene que decir si su cifra leyó el History.
         let readsUncaptured: Bool
+        /// **Cuántos de `pendingCount` solo los sube otra cuenta**: filas del outbox retenidas para otra cuenta y entradas
+        /// del espejo de otra cuenta (`freshStartAnotherAccountCount`). `Int.max` = no se pudo contar. Decide cómo se
+        /// explica la cifra (`copyShape`, ticket `fresh-start-copy-for-another-accounts-group-changes-borrows-the-own-reason`,
+        /// decisión A de Jürgen del 2026-10-05); no cambia la cifra ni la salida. Sin valor por defecto, como
+        /// `readsUncaptured`: quien construye un bloqueo tiene que decir cuánto de su cifra es de otra cuenta.
+        let anotherAccountCount: Int
+
+        /// Cómo explican las pantallas la cifra: solo tuyos, solo de otra cuenta, o las dos clases partidas.
+        var copyShape: CloudSignOutFlowLogic.FreshStartGroupsCopyShape {
+            CloudSignOutFlowLogic.freshStartGroupsCopyShape(
+                pendingCount: pendingCount, anotherAccountCount: anotherAccountCount, reason: reason)
+        }
     }
 
     /// Cómo acabó la subida previa al borrado.
@@ -2127,6 +2139,29 @@ final class CloudSessionSignOut {
         return live + mirror
     }
 
+    /// **Lo que de esa cifra solo sube otra cuenta**: las filas vivas retenidas para otra cuenta
+    /// (`GroupsSyncClient.liveRowsHeldForAnotherAccount`, también las sin dueño probado) y las entradas del espejo de otra
+    /// cuenta (`.anotherAccount`). Sin sesión, 0: ahí no hay «otra», hay sesión caducada. `Int.max` si alguna de las dos no
+    /// se pudo contar. Es la parte que el aviso explica aparte (`FreshStartGroupsBlock.anotherAccountCount`).
+    ///
+    /// `uncapturedKeys`: los cambios del History que la cifra cuenta (`FreshStartGroupsLoss.uncaptured`). `[]` = la cifra no
+    /// leyó el History. Si lo leyó, los suyos que el registro de sesiones atribuye a otra cuenta o a nadie
+    /// (`UncapturedChange.heldForAnotherAccount`, el mismo criterio que las filas retenidas) son también de otra cuenta
+    /// (review adversarial del 2026-10-05, lente de datos: sin esto salían como «tuyos»). `nil`, o un History que ahora no se
+    /// deja leer, no deja atribuir esa mitad: con algo de otra cuenta ya contado, «no se pudo contar» (la cifra no se parte);
+    /// sin nada, 0, y el texto es el de siempre —no se inventa otra cuenta donde no consta ninguna—.
+    static func freshStartAnotherAccountCount(context: ModelContext, witness: GroupsExitWitness,
+                                              uncapturedKeys: Set<String>? = []) -> Int {
+        let (sum, overflow) = witness.heldForAnotherAccount(context)
+            .addingReportingOverflow(witness.mirrorPendingOfAnotherAccount(context))
+        guard !overflow else { return Int.max }
+        guard uncapturedKeys != [] else { return sum }
+        guard let uncapturedKeys, let changes = witness.uncapturedChanges(context) else { return sum == 0 ? 0 : Int.max }
+        let another = changes.filter { $0.heldForAnotherAccount && uncapturedKeys.contains($0.key) }.count
+        let (total, totalOverflow) = sum.addingReportingOverflow(another)
+        return totalOverflow ? Int.max : total
+    }
+
     /// Lo mismo que `freshStartGroupsPendingCount`, **por fila**: lo que «Empezar de cero y perderlos» enseña y lo que la
     /// persona acepta perder (ticket `fresh-start-has-no-way-out-when-group-writes-can-never-upload`). Mismo alcance del
     /// espejo que el recuento y que el cinturón, `.wholeMirror`: el borrado lo purga entero, también lo de otra cuenta.
@@ -2211,7 +2246,8 @@ final class CloudSessionSignOut {
                     livePendingCount: Self.liveGroupsPendingCount(context: context),
                     sessionMirrorCount: witness.mirrorPending(context, .sessionOwner),
                     anotherAccountMirrorCount: witness.mirrorPendingOfAnotherAccount(context)),
-                readsUncaptured: false)
+                readsUncaptured: false,
+                anotherAccountCount: Self.freshStartAnotherAccountCount(context: context, witness: witness))
         }
         return await settleFreshStartBlock(block, accepted: accepted, context: context, witness: witness)
     }
@@ -2249,7 +2285,8 @@ final class CloudSessionSignOut {
         guard capture != .unfinished else {
             let uncaptured = FreshStartGroupsBlock(
                 pendingCount: Self.freshStartGroupsPendingCount(context: context, witness: witness),
-                reason: CloudSignOutFlowLogic.freshStartUncapturedReason, readsUncaptured: false)
+                reason: CloudSignOutFlowLogic.freshStartUncapturedReason, readsUncaptured: false,
+                anotherAccountCount: Self.freshStartAnotherAccountCount(context: context, witness: witness))
             noteFreshStartBlocked(uncaptured)
             return .blocked(uncaptured)
         }
@@ -2263,12 +2300,18 @@ final class CloudSessionSignOut {
         let shownReason = CloudSignOutFlowLogic.groupsLossShownReason(
             block.reason, opensExit: block.offersLossExit, uncaptured: loss.uncaptured)
         guard shownReason == block.reason else {
-            let stuck = FreshStartGroupsBlock(pendingCount: loss.count, reason: shownReason, readsUncaptured: false)
+            // Sin el History leído no se sabe qué parte es de otra cuenta: `nil` da «no se pudo contar» y el aviso no parte.
+            let stuck = FreshStartGroupsBlock(pendingCount: loss.count, reason: shownReason, readsUncaptured: false,
+                                              anotherAccountCount: Self.freshStartAnotherAccountCount(
+                                                  context: context, witness: witness, uncapturedKeys: loss.uncaptured))
             noteFreshStartBlocked(stuck)
             return .blocked(stuck)
         }
+        // La parte de otra cuenta se lee en el mismo tramo síncrono que la pérdida: las dos describen el mismo instante.
         let offered = FreshStartGroupsBlock(pendingCount: loss.count, reason: block.reason,
-                                            readsUncaptured: loss.readsUncaptured)
+                                            readsUncaptured: loss.readsUncaptured,
+                                            anotherAccountCount: Self.freshStartAnotherAccountCount(
+                                                context: context, witness: witness, uncapturedKeys: loss.uncaptured))
         freshStartLossOffer = loss
         noteFreshStartBlocked(offered)
         return .blocked(offered)
@@ -2278,6 +2321,12 @@ final class CloudSessionSignOut {
     /// `fresh-start-drops-mirror-entries-of-another-identity-without-counting-them`, decisión A de Jürgen). La cifra de la
     /// subida es lo que ESTA sesión puede subir; el texto dice «empezar de cero se los llevaría», y el borrado purga también
     /// lo de otra cuenta. Sin entradas ajenas, el bloqueo tal cual. Si alguna mitad no se pudo contar, `Int.max`.
+    ///
+    /// **Lo sumado es lo que el aviso explica como «de otra cuenta»** (`anotherAccountCount`, 2026-10-05): la cifra de la
+    /// subida es la de lo tuyo con su motivo. Las filas retenidas no se suman aquí y no cambian (ticket
+    /// `fresh-start-block-count-without-the-loss-exit-sometimes-omits-held-rows`): la cifra de la subida unas veces las
+    /// incluye y otras no, así que **con alguna, la cifra no se parte** (`Int.max`, texto sin «tus» y sin «Tuyos: N»):
+    /// llamarlas tuyas o contarlas dos veces serían las dos falsas (review adversarial del 2026-10-05, lente de datos).
     static func freshStartBlockCountingAnotherAccount(
         _ block: FreshStartGroupsBlock, context: ModelContext, witness: GroupsExitWitness
     ) -> FreshStartGroupsBlock {
@@ -2285,8 +2334,11 @@ final class CloudSessionSignOut {
         // `Int.max` («no se pudo contar») más una cifra positiva desborda, y más cero se queda en `Int.max`: el
         // desbordamiento cubre las dos mitades sin comprobarlas aparte.
         let (sum, overflow) = block.pendingCount.addingReportingOverflow(anotherAccount)
+        let (anotherSum, anotherOverflow) = block.anotherAccountCount.addingReportingOverflow(anotherAccount)
+        let heldRows = witness.heldForAnotherAccount(context)
         return FreshStartGroupsBlock(pendingCount: overflow ? Int.max : sum, reason: block.reason,
-                                     readsUncaptured: block.readsUncaptured)
+                                     readsUncaptured: block.readsUncaptured,
+                                     anotherAccountCount: anotherOverflow || heldRows != 0 ? Int.max : anotherSum)
     }
 
     /// «Empezar de cero» va a borrar con cambios de grupos que la persona aceptó perder. Solo cuenta si queda alguno: con
@@ -2307,10 +2359,13 @@ final class CloudSessionSignOut {
         switch push {
         case .drained:
             return nil
+        // Sin nada de otra cuenta todavía: lo suma `freshStartBlockCountingAnotherAccount`, que es quien lo cuenta.
         case .surfacePermanent(let pending, let reason):
-            return FreshStartGroupsBlock(pendingCount: pending, reason: reason, readsUncaptured: false)
+            return FreshStartGroupsBlock(pendingCount: pending, reason: reason, readsUncaptured: false,
+                                         anotherAccountCount: 0)
         case .surfaceTransient(let pending), .cancelled(let pending):
-            return FreshStartGroupsBlock(pendingCount: pending, reason: .transient, readsUncaptured: false)
+            return FreshStartGroupsBlock(pendingCount: pending, reason: .transient, readsUncaptured: false,
+                                         anotherAccountCount: 0)
         }
     }
 
@@ -2323,7 +2378,8 @@ final class CloudSessionSignOut {
     ) {
         noteFreshStartBlocked(FreshStartGroupsBlock(
             pendingCount: Self.freshStartGroupsPendingCount(context: context, witness: witness), reason: reason,
-            readsUncaptured: false))
+            readsUncaptured: false,
+            anotherAccountCount: Self.freshStartAnotherAccountCount(context: context, witness: witness)))
     }
 
     private func noteFreshStartBlocked(_ block: FreshStartGroupsBlock) {

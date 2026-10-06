@@ -6190,8 +6190,20 @@
 "welcome.groups.neutralOtherAccountAndCaptureUnfinishedLossBodyUnknown" = "Há alterações de grupos que ainda não foram enviadas. Algumas foram feitas neste telefone com outra conta e só sobem com essa conta, e não conseguimos preparar para envio algumas delas. Se você continuar agora, elas serão perdidas e ninguém do grupo vai vê-las.";
 
 /* Empezar de cero con cambios de grupos de otra cuenta: por qué no suben */
-"groups.freshStartPending.lossOtherAccount" = "Elas só podem subir com a conta que as registrou, e a sessão aberta neste telefone é de outra conta. Se você não vai voltar a entrar com essa conta, pode começar do zero e perdê-las: ninguém do grupo vai vê-las.";
+"groups.freshStartPending.lossOtherAccount" = "Elas só podem subir entrando com a conta que registrou cada uma, e a sessão aberta neste telefone é de outra conta. Se isso não for acontecer, você pode começar do zero e perdê-las: ninguém do grupo vai vê-las.";
 "groups.freshStartPending.lossOtherAccountAndCaptureUnfinished" = "Algumas foram feitas com outra conta e só podem subir com essa conta, e não conseguimos preparar para envio algumas delas. Feche o Yala e abra de novo (se continuar acontecendo, atualize-o) e tente de novo; as da outra conta só sobem se você entrar com ela. Se você não vai fazer isso, pode começar do zero e perdê-las: ninguém do grupo vai vê-las.";
+"groups.freshStartPending.titleNeutral" = "Faltam mudanças de grupos para subir";
+"groups.freshStartPending.leadNeutral" = "Não apagamos nada: há mudanças de grupos que ainda não chegaram ao servidor (%d), e começar do zero as levaria junto.";
+"groups.freshStartPending.leadNeutralUnknown" = "Não apagamos nada: há mudanças de grupos que ainda não chegaram ao servidor, e começar do zero as levaria junto.";
+"groups.freshStartPending.leadSplit" = "Não apagamos nada: há mudanças de grupos que ainda não chegaram ao servidor, e começar do zero as levaria junto. Suas: %1$d. Registradas com outra conta: %2$d.";
+"groups.freshStartPending.splitOwnPermanent" = "Sua conta não consegue mais enviar as suas, e tentar de novo não vai resolver.";
+"groups.freshStartPending.splitOwnSessionExpired" = "As suas só podem subir com a conta que as registrou, e a sessão dela neste telefone não é mais válida.";
+"groups.freshStartPending.splitAnotherAccount" = "As registradas com outra conta só podem subir entrando com a conta que registrou cada uma; esperar ou tentar de novo não as envia.";
+"groups.freshStartPending.splitLossTail" = "Você pode começar do zero e perder todas: ninguém do grupo vai vê-las.";
+"groups.freshStartPending.splitAfterOwnUpload" = "Se as suas chegarem a subir, você vai poder começar do zero e perder só as registradas com outra conta.";
+"groups.freshStartPending.lossConfirmBodySplit" = "Mudanças de grupos que se perdem — suas: %1$d; registradas com outra conta: %2$d. Elas são apagadas deste telefone sem chegar ao servidor, ninguém do grupo vai vê-las e não dá para recuperá-las.";
+"groups.freshStartPending.lossConfirmBodyNeutral" = "Mudanças de grupos que se perdem: %d. Elas são apagadas deste telefone sem chegar ao servidor, ninguém do grupo vai vê-las e não dá para recuperá-las.";
+"groups.freshStartPending.lossConfirmBodyNeutralUnknown" = "As mudanças de grupos que não chegaram ao servidor são apagadas deste telefone. Ninguém do grupo vai vê-las e não dá para recuperá-las.";
 
 /* Cerrar sesión en la nube con la sesión caducada; %d = cambios personales que se pierden */
 "settings.signOutCloudSessionExpiredPersonalLoss" = "Sua sessão expirou. Alterações que não chegaram à sua conta na nuvem: %d. Para enviá-las, abra “Onde ficam seus dados”, aqui em Perfil, e toque em “Entrar”. Se não conseguir entrar, antes de decidir você pode exportar suas transações para um arquivo. Se você sair agora, essas alterações serão perdidas.";

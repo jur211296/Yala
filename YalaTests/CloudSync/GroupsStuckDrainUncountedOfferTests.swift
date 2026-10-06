@@ -164,7 +164,7 @@ struct GroupsUncountedFreshStartOfferTests {
         let verdict = await coordinator.drainGroupsBeforeFreshStart(
             context: context, witness: witness(history: history, reads: reads, cycle: cycle))
 
-        #expect(verdict == .blocked(Block(pendingCount: Int.max, reason: .groupsCaptureUnfinished, readsUncaptured: false)),
+        #expect(verdict == .blocked(Block(pendingCount: Int.max, reason: .groupsCaptureUnfinished, readsUncaptured: false, anotherAccountCount: 0)),
                 "con el History ilegible en la oferta, el aviso no puede contar lo que se perdería: \(verdict)")
         #expect(!coordinator.acceptFreshStartGroupsLoss(), "sin cifra no queda oferta que aceptar")
 
@@ -172,7 +172,7 @@ struct GroupsUncountedFreshStartOfferTests {
         reads.failsAfterTheCapture = false
         let readable = await coordinator.drainGroupsBeforeFreshStart(
             context: context, witness: witness(history: history, reads: reads, cycle: cycle))
-        #expect(readable == .blocked(Block(pendingCount: 3, reason: .attestUnavailable, readsUncaptured: true)),
+        #expect(readable == .blocked(Block(pendingCount: 3, reason: .attestUnavailable, readsUncaptured: true, anotherAccountCount: 0)),
                 "\(readable)")
         #expect(coordinator.acceptFreshStartGroupsLoss())
         let accepted = try #require(coordinator.takeFreshStartAcceptedLoss())
@@ -182,7 +182,7 @@ struct GroupsUncountedFreshStartOfferTests {
         history.keys = ["h1", "h2", "h3"]
         let newer = await coordinator.drainGroupsBeforeFreshStart(
             context: context, witness: witness(history: history, reads: reads, cycle: cycle), accepted: accepted)
-        #expect(newer == .blocked(Block(pendingCount: 4, reason: .attestUnavailable, readsUncaptured: true)),
+        #expect(newer == .blocked(Block(pendingCount: 4, reason: .attestUnavailable, readsUncaptured: true, anotherAccountCount: 0)),
                 "el cambio apuntado después del aviso se iba con el borrado: \(newer)")
     }
 
@@ -200,7 +200,7 @@ struct GroupsUncountedFreshStartOfferTests {
         let verdict = await coordinator.drainGroupsBeforeFreshStart(
             context: context, witness: witness(history: history, reads: Reads(), cycle: Self.reading(.sessionExpired)))
 
-        #expect(verdict == .blocked(Block(pendingCount: Int.max, reason: .groupsCaptureUnfinished, readsUncaptured: false)),
+        #expect(verdict == .blocked(Block(pendingCount: Int.max, reason: .groupsCaptureUnfinished, readsUncaptured: false, anotherAccountCount: 0)),
                 "\(verdict)")
         #expect(!coordinator.acceptFreshStartGroupsLoss())
     }
@@ -223,7 +223,7 @@ struct GroupsUncountedFreshStartOfferTests {
             context: context, witness: witness(history: history, reads: reads, cycle: Self.reading(.sessionExpired)),
             accepted: old)
 
-        #expect(verdict == .blocked(Block(pendingCount: 1, reason: .sessionExpired, readsUncaptured: true)), """
+        #expect(verdict == .blocked(Block(pendingCount: 1, reason: .sessionExpired, readsUncaptured: true, anotherAccountCount: 0)), """
             un cambio que ningún aviso contó se iba con el borrado bajo una aceptación sin cifra: \(verdict)
             """)
     }

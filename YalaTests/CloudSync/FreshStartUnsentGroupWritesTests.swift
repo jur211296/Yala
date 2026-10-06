@@ -146,12 +146,12 @@ struct FreshStartUnsentGroupWritesTests {
         for reason in [CloudSignOutFlowLogic.BlockReason.sessionExpired, .channelPaused, .uploadRetryLater,
                        .attestUnavailable, .permanent] {
             #expect(CloudSessionSignOut.freshStartBlock(for: Push.surfacePermanent(pending: 2, reason: reason))
-                    == .init(pendingCount: 2, reason: reason, readsUncaptured: false))
+                    == .init(pendingCount: 2, reason: reason, readsUncaptured: false, anotherAccountCount: 0))
         }
         #expect(CloudSessionSignOut.freshStartBlock(for: Push.surfaceTransient(pending: 3))
-                == .init(pendingCount: 3, reason: .transient, readsUncaptured: false))
+                == .init(pendingCount: 3, reason: .transient, readsUncaptured: false, anotherAccountCount: 0))
         #expect(CloudSessionSignOut.freshStartBlock(for: Push.cancelled(pending: 4))
-                == .init(pendingCount: 4, reason: .transient, readsUncaptured: false))
+                == .init(pendingCount: 4, reason: .transient, readsUncaptured: false, anotherAccountCount: 0))
     }
 
     /// Lo que el alert del shell y el cinturón dejan cuando no van a esperar: la cifra VIVA y el motivo que se pasa.
@@ -164,7 +164,7 @@ struct FreshStartUnsentGroupWritesTests {
         try context.save()
         CloudSessionSignOut.shared.noteFreshStartGroupsPending(
             context: context, reason: .uploadRetryLater, witness: .quiet)
-        #expect(CloudSessionSignOut.shared.freshStartGroupsBlock == .init(pendingCount: 2, reason: .uploadRetryLater, readsUncaptured: false))
+        #expect(CloudSessionSignOut.shared.freshStartGroupsBlock == .init(pendingCount: 2, reason: .uploadRetryLater, readsUncaptured: false, anotherAccountCount: 0))
         try clearOutbox(context)
         #expect(CloudSessionSignOut.shared.groupsOutboxIsSettledEmpty(context: context, witness: .quiet))
         #expect(CloudSessionSignOut.shared.freshStartGroupsBlock == nil, "el intento nuevo retira el bloqueo")
@@ -191,15 +191,15 @@ struct FreshStartUnsentGroupWritesTests {
 
     /// Primero lo que importa —no se borró nada, y cuántos cambios—, detrás el motivo con el texto del cierre de sesión.
     @Test func pendingMessage_leadsWithTheCount_thenTheReason() {
-        let block = CloudSessionSignOut.FreshStartGroupsBlock(pendingCount: 3, reason: .uploadRetryLater, readsUncaptured: false)
-        #expect(SignOutBlockedCopy.freshStartGroupsPendingMessage(block)
+        let block = CloudSessionSignOut.FreshStartGroupsBlock(pendingCount: 3, reason: .uploadRetryLater, readsUncaptured: false, anotherAccountCount: 0)
+        #expect(SignOutBlockedCopy.freshStartGroupsPendingMessage(block, retryOffersTheLossExit: true)
                 == L10n.Groups.FreshStartPending.lead(3) + " " + L10n.Groups.Errors.uploadRetryLater)
     }
 
     /// `Int.max` es «no se pudo contar»: el texto va sin cifra, nunca con un número imposible.
     @Test func pendingMessage_withoutAnHonestCount_dropsTheNumber() {
-        let block = CloudSessionSignOut.FreshStartGroupsBlock(pendingCount: Int.max, reason: .sessionExpired, readsUncaptured: false)
-        let message = SignOutBlockedCopy.freshStartGroupsPendingMessage(block)
+        let block = CloudSessionSignOut.FreshStartGroupsBlock(pendingCount: Int.max, reason: .sessionExpired, readsUncaptured: false, anotherAccountCount: 0)
+        let message = SignOutBlockedCopy.freshStartGroupsPendingMessage(block, retryOffersTheLossExit: true)
         #expect(message.hasPrefix(L10n.Groups.FreshStartPending.leadUnknown))
         #expect(!message.contains(String(Int.max)))
     }

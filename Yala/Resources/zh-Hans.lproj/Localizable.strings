@@ -6202,8 +6202,20 @@
 "welcome.groups.neutralOtherAccountAndCaptureUnfinishedLossBodyUnknown" = "还有尚未上传的群组更改。其中一些是在这台手机上用另一个账户创建的，只能用那个账户上传；另外，有些更改无法准备好上传。如果现在继续，这些更改会丢失，群组里的任何人都看不到。";
 
 /* Empezar de cero con cambios de grupos de otra cuenta: por qué no suben */
-"groups.freshStartPending.lossOtherAccount" = "这些更改只能用创建它们的账户上传，而这台手机上打开的会话属于另一个账户。如果你不会再用那个账户登录，可以从头开始并丢失这些更改：群组里的人都不会看到它们。";
+"groups.freshStartPending.lossOtherAccount" = "这些更改只有用创建它们的那个账户登录才能上传，而这台手机上打开的会话属于另一个账户。如果做不到，可以从头开始并丢失这些更改：群组里的人都不会看到它们。";
 "groups.freshStartPending.lossOtherAccountAndCaptureUnfinished" = "其中一些是用另一个账户创建的，只能用那个账户上传；另外，有些更改无法准备好上传。请关闭 Yala 后重新打开（如果仍然如此，请更新 Yala），然后再试一次；另一个账户的更改只有用该账户登录后才会上传。如果你不打算这样做，可以从头开始并丢失这些更改：群组里的人都不会看到它们。";
+"groups.freshStartPending.titleNeutral" = "还有群组更改尚未上传";
+"groups.freshStartPending.leadNeutral" = "我们没有删除任何内容：有部分群组更改尚未到达我们的服务器（%d 项），从头开始会把它们一起清除。";
+"groups.freshStartPending.leadNeutralUnknown" = "我们没有删除任何内容：有部分群组更改尚未到达我们的服务器，从头开始会把它们一起清除。";
+"groups.freshStartPending.leadSplit" = "我们没有删除任何内容：有部分群组更改尚未到达我们的服务器，从头开始会把它们一起清除。你的：%1$d 项。用其他账户创建的：%2$d 项。";
+"groups.freshStartPending.splitOwnPermanent" = "你的账户已无法上传你的更改，重试也解决不了。";
+"groups.freshStartPending.splitOwnSessionExpired" = "你的更改只能用创建它们的账户上传，而它在这台手机上的会话已失效。";
+"groups.freshStartPending.splitAnotherAccount" = "用其他账户创建的更改，只有用创建它们的那个账户登录才能上传；等待或重试都不会上传它们。";
+"groups.freshStartPending.splitLossTail" = "你可以从头开始并丢失全部更改：群组里的人都不会看到它们。";
+"groups.freshStartPending.splitAfterOwnUpload" = "如果你的更改能上传，你就可以从头开始，只丢失用其他账户创建的更改。";
+"groups.freshStartPending.lossConfirmBodySplit" = "将丢失的群组更改——你的：%1$d 项；用其他账户创建的：%2$d 项。它们会在未到达服务器的情况下从这台手机上删除，群组里的人都不会看到，也无法恢复。";
+"groups.freshStartPending.lossConfirmBodyNeutral" = "将丢失的群组更改：%d 项。它们会在未到达服务器的情况下从这台手机上删除，群组里的人都不会看到，也无法恢复。";
+"groups.freshStartPending.lossConfirmBodyNeutralUnknown" = "未到达服务器的群组更改会从这台手机上删除。群组里的人都不会看到，也无法恢复。";
 
 /* Cerrar sesión en la nube con la sesión caducada; %d = cambios personales que se pierden */
 "settings.signOutCloudSessionExpiredPersonalLoss" = "你的登录已过期。没有传到你云端账户的更改：%d 项。要上传它们，请打开本页“个人资料”中的“你的数据存放在哪里”，轻点“登录”。如果无法登录，做决定之前你可以先把交易导出到文件。现在退出登录，这些更改会丢失。";

@@ -6191,8 +6191,20 @@
 "welcome.groups.neutralOtherAccountAndCaptureUnfinishedLossBodyUnknown" = "Certaines modifications de groupe n'ont pas encore été envoyées. Une partie a été faite sur ce téléphone avec un autre compte et ne s'envoie qu'avec ce compte, et certaines n'ont pas pu être préparées pour l'envoi. Si tu continues maintenant, elles seront perdues et personne dans le groupe ne les verra.";
 
 /* Empezar de cero con cambios de grupos de otra cuenta: por qué no suben */
-"groups.freshStartPending.lossOtherAccount" = "Elles ne peuvent être envoyées qu'avec le compte qui les a créées, et la session ouverte sur ce téléphone est celle d'un autre compte. Si tu ne vas pas te reconnecter avec ce compte, tu peux repartir de zéro et les perdre : personne dans le groupe ne les verra.";
+"groups.freshStartPending.lossOtherAccount" = "Elles ne peuvent être envoyées qu'en se connectant avec le compte qui a fait chacune, et la session ouverte sur ce téléphone est celle d'un autre compte. Si ça ne doit pas arriver, tu peux repartir de zéro et les perdre : personne dans le groupe ne les verra.";
 "groups.freshStartPending.lossOtherAccountAndCaptureUnfinished" = "Certaines ont été faites avec un autre compte et ne peuvent être envoyées qu'avec ce compte, et certaines n'ont pas pu être préparées pour l'envoi. Ferme Yala puis rouvre-la (si ça continue, mets-la à jour) et réessaie ; celles de l'autre compte ne s'envoient que si tu te connectes avec lui. Si tu ne comptes pas le faire, tu peux repartir de zéro et les perdre : personne dans le groupe ne les verra.";
+"groups.freshStartPending.titleNeutral" = "Des modifications de groupe restent à envoyer";
+"groups.freshStartPending.leadNeutral" = "On n'a rien effacé : des modifications de groupe ne sont pas encore arrivées sur notre serveur (%d), et repartir de zéro les emporterait.";
+"groups.freshStartPending.leadNeutralUnknown" = "On n'a rien effacé : des modifications de groupe ne sont pas encore arrivées sur notre serveur, et repartir de zéro les emporterait.";
+"groups.freshStartPending.leadSplit" = "On n'a rien effacé : des modifications de groupe ne sont pas encore arrivées sur notre serveur, et repartir de zéro les emporterait. Les tiennes : %1$d. Faites avec un autre compte : %2$d.";
+"groups.freshStartPending.splitOwnPermanent" = "Ton compte ne peut plus envoyer les tiennes, et réessayer n'y changera rien.";
+"groups.freshStartPending.splitOwnSessionExpired" = "Les tiennes ne peuvent être envoyées qu'avec le compte qui les a faites, et sa session sur ce téléphone n'est plus valide.";
+"groups.freshStartPending.splitAnotherAccount" = "Celles faites avec un autre compte ne peuvent être envoyées qu'en se connectant avec le compte qui a fait chacune ; attendre ou réessayer ne les envoie pas.";
+"groups.freshStartPending.splitLossTail" = "Tu peux repartir de zéro et toutes les perdre : personne dans le groupe ne les verra.";
+"groups.freshStartPending.splitAfterOwnUpload" = "Si les tiennes finissent par être envoyées, tu pourras repartir de zéro et perdre seulement celles faites avec un autre compte.";
+"groups.freshStartPending.lossConfirmBodySplit" = "Modifications de groupe perdues — les tiennes : %1$d ; faites avec un autre compte : %2$d. Elles sont effacées de ce téléphone sans arriver au serveur, personne dans le groupe ne les verra et elles ne pourront pas être récupérées.";
+"groups.freshStartPending.lossConfirmBodyNeutral" = "Modifications de groupe perdues : %d. Elles sont effacées de ce téléphone sans arriver au serveur, personne dans le groupe ne les verra et elles ne pourront pas être récupérées.";
+"groups.freshStartPending.lossConfirmBodyNeutralUnknown" = "Les modifications de groupe qui ne sont pas arrivées au serveur sont effacées de ce téléphone. Personne dans le groupe ne les verra et elles ne pourront pas être récupérées.";
 
 /* Cerrar sesión en la nube con la sesión caducada; %d = cambios personales que se pierden */
 "settings.signOutCloudSessionExpiredPersonalLoss" = "Ta session a expiré. Modifications qui ne sont pas arrivées sur ton compte dans le cloud : %d. Pour les envoyer, ouvre « Où vivent tes données », ici dans Profil, et touche « Se connecter ». Si tu ne peux pas te connecter, tu peux d'abord exporter tes transactions dans un fichier. Si tu te déconnectes maintenant, ces modifications seront perdues.";

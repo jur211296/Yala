@@ -68,3 +68,9 @@ simulador propio de la sesión) falló solo «R3 eje 4a»: `EJE 4a ❌ ABORTADO:
 «verificado en 0 ms». La suite sola, tres veces seguidas sobre el mismo árbol: **rojo, verde, verde**. Ya no hace falta la
 suite completa para verlo, así que no depende solo de lo que corriera antes en el proceso. La corrida completa del mismo
 cambio antes del rebase lo pasó.
+
+## 2026-10-05 · eje 4a, dos corridas completas seguidas
+
+En el gate de `fresh-start-copy-for-another-accounts-group-changes-borrows-the-own-reason` (9049 y 9060 casos, iPhone 17 Pro
+iOS 27.0) falló el eje 4a en las dos corridas completas (`harness.log.contains("EJE 4a ✅")`). La suite aislada pasó 2/2
+justo después, sin recompilar. El cambio de esa sesión no toca el container ni el App Group.

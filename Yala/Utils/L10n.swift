@@ -1836,7 +1836,8 @@ enum L10n {
             /// La cuenta que los apuntó ya no puede subirlos (`.permanent`).
             static var lossPermanent: String { ls("groups.freshStartPending.lossPermanent", comment: "") }
             /// La sesión abierta es de OTRA cuenta que la que los apuntó (`.groupsChangesFromAnotherAccount`, ticket
-            /// `groups-outbox-rows-without-a-live-session-have-no-exit`).
+            /// `groups-outbox-rows-without-a-live-session-have-no-exit`). Sin número de cuentas desde el 2026-10-05: pueden
+            /// ser de varias, y decía «esa cuenta».
             static var lossOtherAccount: String { ls("groups.freshStartPending.lossOtherAccount", comment: "") }
             /// Lo mismo cuando la cifra cuenta además cambios que el drain no capturó (2026-10-05, ticket
             /// `stuck-groups-drain-hides-held-rows-of-another-account`): pueden ser tuyos, así que nombra las dos causas.
@@ -1856,6 +1857,44 @@ enum L10n {
             static var lossConfirmBodyUnknown: String { ls("groups.freshStartPending.lossConfirmBodyUnknown", comment: "") }
             /// El botón que borra perdiéndolos. Es el único de todo el gesto que acepta la pérdida.
             static var lossConfirmAction: String { ls("groups.freshStartPending.lossConfirmAction", comment: "") }
+
+            // MARK: Cambios tuyos y de otra cuenta (ticket
+            // `fresh-start-copy-for-another-accounts-group-changes-borrows-the-own-reason`, decisión A de Jürgen, 2026-10-05)
+            //
+            // Con cambios de otra cuenta en la cifra, el aviso no dice «tus grupos», y si además hay tuyos parte la cifra y da
+            // a cada parte su motivo (`SignOutBlockedCopy.freshStartGroupsPendingMessage`). Plurales con «Etiqueta: %d.»,
+            // el patrón de `lossConfirmBody`: las variantes no tienen stringsdict.
+            static var titleNeutral: String { ls("groups.freshStartPending.titleNeutral", comment: "") }
+            static func leadNeutral(_ count: Int) -> String {
+                String(format: ls("groups.freshStartPending.leadNeutral", comment: ""), count)
+            }
+            static var leadNeutralUnknown: String { ls("groups.freshStartPending.leadNeutralUnknown", comment: "") }
+            /// La cifra partida: los tuyos y los apuntados con otra cuenta.
+            static func leadSplit(own: Int, anotherAccount: Int) -> String {
+                String(format: ls("groups.freshStartPending.leadSplit", comment: ""), own, anotherAccount)
+            }
+            /// El motivo de los tuyos con `.permanent`: `lossPermanent` habla de «los» (todos).
+            static var splitOwnPermanent: String { ls("groups.freshStartPending.splitOwnPermanent", comment: "") }
+            /// El motivo de los tuyos con `.sessionExpired`, sin pedir que vuelva a entrar (como `lossSessionExpired`).
+            static var splitOwnSessionExpired: String {
+                ls("groups.freshStartPending.splitOwnSessionExpired", comment: "")
+            }
+            /// El motivo de los de otra cuenta: solo suben con la cuenta que apuntó cada uno, y esperar no los sube.
+            static var splitAnotherAccount: String { ls("groups.freshStartPending.splitAnotherAccount", comment: "") }
+            /// La cola con la salida en pantalla: el botón pierde los dos.
+            static var splitLossTail: String { ls("groups.freshStartPending.splitLossTail", comment: "") }
+            /// La cola sin la salida: cuando suban los tuyos, el intento siguiente ofrece perder solo los de otra cuenta
+            /// (`CloudSignOutFlowLogic.heldRowsVerdict` y `freshStartResidualReason` dan entonces «otra cuenta»).
+            static var splitAfterOwnUpload: String { ls("groups.freshStartPending.splitAfterOwnUpload", comment: "") }
+            static func lossConfirmBodySplit(own: Int, anotherAccount: Int) -> String {
+                String(format: ls("groups.freshStartPending.lossConfirmBodySplit", comment: ""), own, anotherAccount)
+            }
+            static func lossConfirmBodyNeutral(_ count: Int) -> String {
+                String(format: ls("groups.freshStartPending.lossConfirmBodyNeutral", comment: ""), count)
+            }
+            static var lossConfirmBodyNeutralUnknown: String {
+                ls("groups.freshStartPending.lossConfirmBodyNeutralUnknown", comment: "")
+            }
         }
 
         static var title: String { ls("groups.title", comment: "") }

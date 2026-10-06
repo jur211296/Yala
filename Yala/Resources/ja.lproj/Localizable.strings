@@ -6202,8 +6202,20 @@
 "welcome.groups.neutralOtherAccountAndCaptureUnfinishedLossBodyUnknown" = "まだアップロードされていないグループの変更があります。一部はこの端末で別のアカウントで作成されたもので、そのアカウントでしかアップロードできません。また、一部はアップロード用に準備できませんでした。今続けると失われ、グループの誰にも表示されません。";
 
 /* Empezar de cero con cambios de grupos de otra cuenta: por qué no suben */
-"groups.freshStartPending.lossOtherAccount" = "これらは作成したアカウントでしかアップロードできませんが、この端末で開いているセッションは別のアカウントのものです。そのアカウントで再度サインインしないなら、変更を失って最初からやり直せます。グループの誰にも表示されません。";
+"groups.freshStartPending.lossOtherAccount" = "これらは、それぞれを作成したアカウントでサインインしないとアップロードできませんが、この端末で開いているセッションは別のアカウントのものです。それが無理なら、変更を失って最初からやり直せます。グループの誰にも表示されません。";
 "groups.freshStartPending.lossOtherAccountAndCaptureUnfinished" = "一部は別のアカウントで作成されたもので、そのアカウントでしかアップロードできません。また、一部はアップロード用に準備できませんでした。Yala を閉じて開き直し（解決しない場合はアップデート）、もう一度お試しください。別のアカウントの変更は、そのアカウントでサインインした場合にのみアップロードされます。そうしないなら、変更を失って最初からやり直せます。グループの誰にも表示されません。";
+"groups.freshStartPending.titleNeutral" = "グループの変更でまだアップロードされていないものがあります";
+"groups.freshStartPending.leadNeutral" = "何も消去していません。グループの変更の一部（%d件）がまだサーバーに届いておらず、最初からやり直すとそれらも失われます。";
+"groups.freshStartPending.leadNeutralUnknown" = "何も消去していません。グループの変更の一部がまだサーバーに届いておらず、最初からやり直すとそれらも失われます。";
+"groups.freshStartPending.leadSplit" = "何も消去していません。グループの変更の一部がまだサーバーに届いておらず、最初からやり直すとそれらも失われます。あなたの変更：%1$d件。別のアカウントで作成された変更：%2$d件。";
+"groups.freshStartPending.splitOwnPermanent" = "あなたのアカウントではもうあなたの変更をアップロードできず、再試行しても解決しません。";
+"groups.freshStartPending.splitOwnSessionExpired" = "あなたの変更は作成したアカウントでしかアップロードできませんが、この端末でのそのセッションはもう有効ではありません。";
+"groups.freshStartPending.splitAnotherAccount" = "別のアカウントで作成された変更は、それぞれを作成したアカウントでサインインしないとアップロードできません。待っても再試行してもアップロードされません。";
+"groups.freshStartPending.splitLossTail" = "すべての変更を失って最初からやり直せます。グループの誰にも表示されません。";
+"groups.freshStartPending.splitAfterOwnUpload" = "あなたの変更がアップロードできた場合は、別のアカウントで作成された変更だけを失って最初からやり直せるようになります。";
+"groups.freshStartPending.lossConfirmBodySplit" = "失われるグループの変更：あなたの変更 %1$d件、別のアカウントで作成された変更 %2$d件。サーバーに届かないままこの端末から消去され、グループの誰にも表示されず、復元もできません。";
+"groups.freshStartPending.lossConfirmBodyNeutral" = "失われるグループの変更：%d件。サーバーに届かないままこの端末から消去され、グループの誰にも表示されず、復元もできません。";
+"groups.freshStartPending.lossConfirmBodyNeutralUnknown" = "サーバーに届かなかったグループの変更はこの端末から消去されます。グループの誰にも表示されず、復元もできません。";
 
 /* Cerrar sesión en la nube con la sesión caducada; %d = cambios personales que se pierden */
 "settings.signOutCloudSessionExpiredPersonalLoss" = "セッションの有効期限が切れました。クラウドのアカウントに届かなかった変更：%d件。アップロードするには、このプロフィール画面の「データの保存先」を開いて「サインイン」をタップしてください。サインインできない場合は、決める前に取引をファイルにエクスポートできます。今サインアウトすると、これらの変更は失われます。";

@@ -198,10 +198,94 @@ enum SignOutBlockedCopy {
     /// `fresh-start-has-no-way-out-when-group-writes-can-never-upload`): dice por qué no van a subir y ofrece perderlos, que
     /// es lo que el botón de al lado hace. Con `.sessionExpired` ya no pide «vuelve a iniciar sesión»: en un iPhone heredado
     /// la cuenta que los apuntó no es de quien empieza de cero.
-    static func freshStartGroupsPendingMessage(_ block: CloudSessionSignOut.FreshStartGroupsBlock) -> String {
-        let lead = CloudSignOutFlowLogic.shownLossCount(block.pendingCount)
-            .map { L10n.Groups.FreshStartPending.lead($0) } ?? L10n.Groups.FreshStartPending.leadUnknown
-        return lead + " " + freshStartReasonText(block)
+    ///
+    /// **Con cambios de otra cuenta en la cifra, cada parte con su motivo** (ticket
+    /// `fresh-start-copy-for-another-accounts-group-changes-borrows-the-own-reason`, decisión A de Jürgen del 2026-10-05,
+    /// `FreshStartGroupsBlock.copyShape`). Sin «tus grupos»; y si además hay tuyos, la cifra partida, el motivo de los tuyos,
+    /// que los de otra cuenta solo suben con la cuenta que apuntó cada uno, y la cola que dice qué hace el botón —o, sin
+    /// botón, que cuando suban los tuyos se podrá perder solo esos—. Con una sola clase de lo tuyo, el texto de siempre.
+    ///
+    /// `retryOffersTheLossExit`: ¿esta pantalla, al volver a intentarlo, puede ofrecer perderlos? La puerta privada y el
+    /// aviso del espejo tardío sí (su reintento vuelve a subir y, con solo lo de otra cuenta, ofrece la salida); el alert
+    /// del shell no, nunca: sin eso la cola «cuando suban los tuyos, podrás perder solo esos» prometería una salida que
+    /// ahí no existe (ticket `fresh-start-shell-alert-after-an-adopt-exit-has-no-way-out-for-group-changes`). Sin valor
+    /// por defecto: quien pinta el aviso tiene que saber qué ofrece su reintento.
+    static func freshStartGroupsPendingMessage(_ block: CloudSessionSignOut.FreshStartGroupsBlock,
+                                               retryOffersTheLossExit: Bool) -> String {
+        let count = CloudSignOutFlowLogic.shownLossCount(block.pendingCount)
+        switch block.copyShape {
+        case .own:
+            let lead = count.map { L10n.Groups.FreshStartPending.lead($0) } ?? L10n.Groups.FreshStartPending.leadUnknown
+            return lead + " " + freshStartReasonText(block)
+        case .anotherAccount:
+            let lead = count.map { L10n.Groups.FreshStartPending.leadNeutral($0) }
+                ?? L10n.Groups.FreshStartPending.leadNeutralUnknown
+            return lead + " " + freshStartAnotherAccountReasonText(block)
+        case .mixed(let own, let anotherAccount):
+            let lead: String
+            if let own, let anotherAccount {
+                lead = L10n.Groups.FreshStartPending.leadSplit(own: own, anotherAccount: anotherAccount)
+            } else {
+                lead = count.map { L10n.Groups.FreshStartPending.leadNeutral($0) }
+                    ?? L10n.Groups.FreshStartPending.leadNeutralUnknown
+            }
+            let tail: String?
+            if block.offersLossExit {
+                tail = L10n.Groups.FreshStartPending.splitLossTail
+            } else {
+                tail = retryOffersTheLossExit ? L10n.Groups.FreshStartPending.splitAfterOwnUpload : nil
+            }
+            return [lead, freshStartOwnReasonText(block), L10n.Groups.FreshStartPending.splitAnotherAccount, tail]
+                .compactMap { $0 }.joined(separator: " ")
+        }
+    }
+
+    /// **El título del aviso**: sin «tus» cuando hay cambios de otra cuenta en la cifra (`copyShape`). Lo leen las tres
+    /// pantallas del gesto.
+    static func freshStartGroupsPendingTitle(_ block: CloudSessionSignOut.FreshStartGroupsBlock) -> String {
+        block.copyShape == .own ? L10n.Groups.FreshStartPending.title : L10n.Groups.FreshStartPending.titleNeutral
+    }
+
+    /// Lo que va detrás de la cifra cuando TODO es de otra cuenta. Con su motivo, el texto de siempre de ese motivo. Con
+    /// otro motivo (la parte tuya a cero) el motivo habla de lo tuyo, que no hay, así que no se usa su texto (review
+    /// adversarial del 2026-10-05, lente de copy: volvían «tus grupos» y «en un rato»):
+    ///  · sin App Attest, el del teléfono, que es verdad para todos y ofrece perderlos (`lossAttest`);
+    ///  · con otra salida (`.permanent`, `.sessionExpired`: el problema es de tu cuenta, no de la suya), el de otra cuenta;
+    ///  · sin salida, solo que esos no suben esperando (`splitAnotherAccount`).
+    private static func freshStartAnotherAccountReasonText(_ block: CloudSessionSignOut.FreshStartGroupsBlock) -> String {
+        switch block.reason {
+        case .groupsChangesFromAnotherAccount:
+            return block.readsUncaptured
+                ? L10n.Groups.FreshStartPending.lossOtherAccountAndCaptureUnfinished
+                : L10n.Groups.FreshStartPending.lossOtherAccount
+        case .attestUnavailable:
+            return L10n.Groups.FreshStartPending.lossAttest
+        case .permanent, .sessionExpired:
+            return L10n.Groups.FreshStartPending.lossOtherAccount
+        case .transient, .exportUnconfirmed, .bridgeUnreadable, .detachBusy, .channelPaused, .uploadRetryLater,
+             .personalAttestUnavailable, .syncStoppedNeedsUpdate, .syncStoppedMidMigration, .syncStoppedNeedsRelaunch,
+             .personalUploadRetryLater, .cloudSessionExpired, .sessionNotClosed, .signOutSessionSurvived,
+             .migrationInFlight, .migrationUnreadable, .personalCaptureUnfinished, .groupsCaptureUnfinished:
+            return L10n.Groups.FreshStartPending.splitAnotherAccount
+        }
+    }
+
+    /// **El motivo de los TUYOS**, en el aviso partido: sin la cola de «puedes perderlos» (va detrás, de los dos) y sin
+    /// hablar de «los» (todos). Los textos del cierre ya dicen la verdad de lo tuyo y se reusan; `.permanent` y
+    /// `.sessionExpired` tienen el suyo, porque los de la salida hablan de todos. Exhaustivo y sin `default`.
+    private static func freshStartOwnReasonText(_ block: CloudSessionSignOut.FreshStartGroupsBlock) -> String {
+        switch block.reason {
+        case .permanent: return L10n.Groups.FreshStartPending.splitOwnPermanent
+        case .sessionExpired: return L10n.Groups.FreshStartPending.splitOwnSessionExpired
+        // Ya habla de «tus cambios de grupos» y no ofrece nada: el teléfono es el mismo para las dos clases.
+        case .attestUnavailable: return L10n.Groups.Errors.attestUnavailable
+        case .groupsChangesFromAnotherAccount, .transient, .exportUnconfirmed, .bridgeUnreadable, .detachBusy,
+             .channelPaused, .uploadRetryLater, .personalAttestUnavailable, .syncStoppedNeedsUpdate,
+             .syncStoppedMidMigration, .syncStoppedNeedsRelaunch, .personalUploadRetryLater, .cloudSessionExpired,
+             .sessionNotClosed, .signOutSessionSurvived, .migrationInFlight, .migrationUnreadable,
+             .personalCaptureUnfinished, .groupsCaptureUnfinished:
+            return message(for: block.reason)
+        }
     }
 
     /// Lo que va detrás de la cifra. Los tres motivos que ofrecen perderlos tienen el suyo; el resto, el del cierre de
@@ -227,12 +311,20 @@ enum SignOutBlockedCopy {
     }
 
     /// **El «¿seguro?» de «Empezar de cero y perderlos»**: cuántos cambios se pierden y que no hay vuelta. La cifra es la
-    /// del aviso —lo que la persona acepta—, o ninguna si no hay número honesto.
+    /// del aviso —lo que la persona acepta—, o ninguna si no hay número honesto. Con cambios de otra cuenta, sin «tus», y
+    /// partida si el aviso la partió (`copyShape`, 2026-10-05).
     static func freshStartGroupsLossConfirmMessage(_ block: CloudSessionSignOut.FreshStartGroupsBlock) -> String {
-        guard let count = CloudSignOutFlowLogic.shownLossCount(block.pendingCount) else {
-            return L10n.Groups.FreshStartPending.lossConfirmBodyUnknown
+        let count = CloudSignOutFlowLogic.shownLossCount(block.pendingCount)
+        switch block.copyShape {
+        case .own:
+            return count.map { L10n.Groups.FreshStartPending.lossConfirmBody($0) }
+                ?? L10n.Groups.FreshStartPending.lossConfirmBodyUnknown
+        case .mixed(let own?, let anotherAccount?):
+            return L10n.Groups.FreshStartPending.lossConfirmBodySplit(own: own, anotherAccount: anotherAccount)
+        case .anotherAccount, .mixed:
+            return count.map { L10n.Groups.FreshStartPending.lossConfirmBodyNeutral($0) }
+                ?? L10n.Groups.FreshStartPending.lossConfirmBodyNeutralUnknown
         }
-        return L10n.Groups.FreshStartPending.lossConfirmBody(count)
     }
 
     /// El mensaje del aviso que OFRECE exportar los movimientos y cerrar sesión perdiendo los cambios personales

@@ -6202,8 +6202,20 @@
 "welcome.groups.neutralOtherAccountAndCaptureUnfinishedLossBodyUnknown" = "Sommige groepswijzigingen zijn nog niet geüpload. Een deel is op deze telefoon met een ander account gemaakt en wordt alleen met dat account geüpload, en sommige konden niet worden voorbereid om te uploaden. Als je nu doorgaat, gaan ze verloren en krijgt niemand in de groep ze te zien.";
 
 /* Empezar de cero con cambios de grupos de otra cuenta: por qué no suben */
-"groups.freshStartPending.lossOtherAccount" = "Ze kunnen alleen worden geüpload met het account dat ze heeft gemaakt, en de sessie op deze telefoon is van een ander account. Als je niet opnieuw inlogt met dat account, kun je opnieuw beginnen en ze verliezen: niemand in de groep zal ze zien.";
+"groups.freshStartPending.lossOtherAccount" = "Ze kunnen alleen worden geüpload door in te loggen met het account dat elk ervan heeft gemaakt, en de sessie op deze telefoon is van een ander account. Als dat niet gaat gebeuren, kun je opnieuw beginnen en ze verliezen: niemand in de groep zal ze zien.";
 "groups.freshStartPending.lossOtherAccountAndCaptureUnfinished" = "Sommige zijn met een ander account gemaakt en kunnen alleen met dat account worden geüpload, en sommige konden niet worden voorbereid om te uploaden. Sluit Yala en open hem opnieuw (blijft het gebeuren, werk hem dan bij) en probeer het opnieuw; die van het andere account worden alleen geüpload als je daarmee inlogt. Ben je dat niet van plan, dan kun je opnieuw beginnen en ze verliezen: niemand in de groep zal ze zien.";
+"groups.freshStartPending.titleNeutral" = "Er moeten nog groepswijzigingen worden geüpload";
+"groups.freshStartPending.leadNeutral" = "We hebben niets gewist: sommige groepswijzigingen hebben onze server nog niet bereikt (%d), en opnieuw beginnen zou ze meenemen.";
+"groups.freshStartPending.leadNeutralUnknown" = "We hebben niets gewist: sommige groepswijzigingen hebben onze server nog niet bereikt, en opnieuw beginnen zou ze meenemen.";
+"groups.freshStartPending.leadSplit" = "We hebben niets gewist: sommige groepswijzigingen hebben onze server nog niet bereikt, en opnieuw beginnen zou ze meenemen. Van jou: %1$d. Gemaakt met een ander account: %2$d.";
+"groups.freshStartPending.splitOwnPermanent" = "Je account kan die van jou niet meer uploaden, en opnieuw proberen lost dat niet op.";
+"groups.freshStartPending.splitOwnSessionExpired" = "Die van jou kunnen alleen worden geüpload met het account dat ze heeft gemaakt, en de sessie daarvan op deze telefoon is niet meer geldig.";
+"groups.freshStartPending.splitAnotherAccount" = "Die gemaakt met een ander account kunnen alleen worden geüpload door in te loggen met het account dat elk ervan heeft gemaakt; wachten of opnieuw proberen uploadt ze niet.";
+"groups.freshStartPending.splitLossTail" = "Je kunt opnieuw beginnen en ze allemaal verliezen: niemand in de groep zal ze zien.";
+"groups.freshStartPending.splitAfterOwnUpload" = "Als die van jou worden geüpload, kun je opnieuw beginnen en alleen die gemaakt met een ander account verliezen.";
+"groups.freshStartPending.lossConfirmBodySplit" = "Groepswijzigingen die verloren gaan — van jou: %1$d; gemaakt met een ander account: %2$d. Ze worden van deze telefoon gewist zonder de server te bereiken, niemand in de groep zal ze zien en ze kunnen niet worden hersteld.";
+"groups.freshStartPending.lossConfirmBodyNeutral" = "Groepswijzigingen die verloren gaan: %d. Ze worden van deze telefoon gewist zonder de server te bereiken, niemand in de groep zal ze zien en ze kunnen niet worden hersteld.";
+"groups.freshStartPending.lossConfirmBodyNeutralUnknown" = "De groepswijzigingen die de server niet hebben bereikt, worden van deze telefoon gewist. Niemand in de groep zal ze zien en ze kunnen niet worden hersteld.";
 
 /* Cerrar sesión en la nube con la sesión caducada; %d = cambios personales que se pierden */
 "settings.signOutCloudSessionExpiredPersonalLoss" = "Je sessie is verlopen. Wijzigingen die niet in je account in de cloud zijn aangekomen: %d. Open ‘Waar je gegevens staan’, hier in Profiel, en tik op ‘Aanmelden’ om ze te uploaden. Lukt aanmelden niet, dan kun je je transacties eerst naar een bestand exporteren. Als je nu uitlogt, gaan deze wijzigingen verloren.";
