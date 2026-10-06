@@ -350,7 +350,7 @@ nonisolated enum MigrationEvent: Equatable {
     ///    (`MigrationState.reverseUploadProgressAt`)—, no desde que empezó la espera: un corpus grande que sube despacio
     ///    avanza y nunca lo agota. Gobierna el LARGO, con cualquier motivo;
     ///  · `definitiveStalledSeconds` es el de «cualquier motivo definitivo» —lo ACUMULADO desde el último avance bajo
-    ///    `icloudFull` o `icloudUnusable`, sean el mismo o se turnen; `icloudOff` y `unknown` lo pausan— y gobierna el
+    ///    `icloudFull`, `icloudUnusable` o `localFailure`, sean el mismo o se turnen; `icloudOff` y `unknown` lo pausan— y gobierna el
     ///    CORTO, que solo se aplica cuando `cause == .definitive`.
     ///
     /// Hasta ese ticket venía uno solo y el corto se aplicaba a él: tres horas sin cuenta de iCloud y un
@@ -503,10 +503,11 @@ nonisolated struct MigrationPolicy: Equatable {
     var markerExportUnknownBudgetSeconds: Double = 259_200
 
     /// Techo de la espera de `reverseUpload` contra el reloj de lo DEFINITIVO, y solo cuando CloudKit YA dijo que no
-    /// entra (iCloud lleno, cuenta inutilizable): 15 min ACUMULADOS desde el último avance bajo esos motivos, sean el
-    /// mismo o se turnen. Las horas sin cuenta de iCloud (`icloudOff`) o sin saber por qué (`unknown`) no cuentan.
-    /// Decisión de Jürgen (2026-09-16) para el número; `reverse-upload-ceiling-charges-a-wait-to-whoever-stops-it-last`
-    /// para el reloj. Mientras tanto la nube de Yala está congelada y lo que la persona escribe vive solo en el teléfono.
+    /// entra (iCloud lleno, cuenta inutilizable) o este teléfono no puede leer su propia muestra (`localFailure`, desde el
+    /// 2026-10-06: el mismo plazo que la avería local de la ida): 15 min ACUMULADOS desde el último avance bajo esos
+    /// motivos, sean el mismo o se turnen. Las horas sin cuenta de iCloud (`icloudOff`) o sin saber por qué (`unknown`)
+    /// no cuentan. Decisión de Jürgen (2026-09-16) para el número; `reverse-upload-ceiling-charges-a-wait-to-whoever-stops-it-last`
+    /// para el reloj; `reverse-upload-unreadable-sample-waits-the-long-ceiling` (Jürgen, 2026-10-04) para la avería local. Mientras tanto la nube de Yala está congelada y lo que la persona escribe vive solo en el teléfono.
     ///
     /// El mismo número decide también el TEXTO, contra el reloj de UNA causa: si un solo motivo llegó a él, la salida
     /// lleva el suyo; si no, `stalled` (`MigrationRunner.reverseUploadExitReason`).

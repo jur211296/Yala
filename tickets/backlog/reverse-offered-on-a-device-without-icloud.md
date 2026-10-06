@@ -61,3 +61,12 @@ Drive nunca bloquea solo.
 
 - `reverse-upload-has-no-ceiling-and-no-exit` — el techo y la salida de esta misma espera.
 - `reverse-hidden-on-a-born-cloud-second-device` — la otra puerta de la misma card.
+
+## Nota 2026-10-06 · la muestra ilegible sin cuenta de iCloud (de `reverse-upload-unreadable-sample-waits-the-long-ceiling`)
+
+Desde ese ticket una muestra ilegible espera el techo CORTO (15 min) con el texto «Este dispositivo no pudo preparar tus
+datos para subirlos a iCloud», y manda sobre `icloudOff`. **Sin medir**: si el espejo de un teléfono sin cuenta de iCloud
+no crea sus tablas de metadatos (`CKIdentityCapture` → `no-record-metadata-table`), ese teléfono cae ahí y pierde el aviso
+condicional de «Si iCloud no está activo…», que para él sería el texto verdadero. Sale antes que con las 72 h de antes,
+pero culpando al teléfono. Medirlo en un iPhone sin iCloud (o leer el `reason` del canario
+`cloudReverseUploadSampleUnreadable` en la flota) antes de decidir; si cae ahí, el texto es decisión de Jürgen.

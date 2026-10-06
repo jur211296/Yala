@@ -51,3 +51,11 @@ Tiene que ser una decisión para toda la familia: «un solo mecanismo para todos
 
 - `reverse-upload-ceiling-charges-a-wait-to-whoever-stops-it-last`: la review que lo cazó.
 - `alternating-definitive-causes-never-reach-the-short-ceiling`: el que fijó que el hueco no observado cuenta.
+
+## Nota 2026-10-06 · un motivo más entra en la familia (de `reverse-upload-unreadable-sample-waits-the-long-ceiling`)
+
+La espera de la vuelta suma `localFailure` (muestra ilegible) a sus motivos definitivos. Antes una pasada ilegible tomaba el
+motivo del canal —casi siempre `unknown`— y no abría el tramo corto; ahora sí. Medido en el código por la review: una pasada
+ilegible SUELTA, la app cerrada dos horas y otra pasada mala suelta al volver (ilegible, o el `notAuthenticated` de una
+pasada) sacan de la vuelta en el acto, cobrándose las horas cerradas. Mismo mecanismo que ya tenían `icloudFull` e
+`icloudUnusable`; una lectura ilegible transitoria es rara (el SQLite que no abre o falta su tabla suele ser persistente).

@@ -613,15 +613,21 @@ nonisolated enum ReverseUploadStatus: Equatable {
     /// La muestra no pudo leer una de sus tablas (ticket `an-incomplete-inventory-reads-as-the-whole-corpus`). No es
     /// `.drained` —sus filas pueden ser justo las pendientes— ni una cifra: una muestra parcial cuenta MENOS y el techo
     /// lo leería como avance. El runner sigue esperando: no mueve un reloj ya sellado ni el mínimo (si es la primera
-    /// observación del intento, sella el reloj como cualquier otra).
+    /// observación del intento, sella el reloj como cualquier otra). Desde el 2026-10-06 la espera la mide con el motivo
+    /// `ReverseUploadBlocker.localFailure` y su techo CORTO (ticket `reverse-upload-unreadable-sample-waits-the-long-ceiling`).
     case unreadable
 }
 
 /// Lo último que se vio de la espera de `reverseUpload` en ESTE proceso: cuántas filas faltan y por qué no drena.
 /// En memoria, molde de `lastClaimBlocker`: describe la observación, no el estado durable, y la pantalla lo lee
 /// para decir algo verdadero mientras espera (ticket `reverse-upload-has-no-ceiling-and-no-exit`).
+///
+/// **`pending` es opcional desde el 2026-10-06** (ticket `reverse-upload-unreadable-sample-waits-the-long-ceiling`): una
+/// espera que EMPIEZA con la muestra ilegible no tiene cifra, pero sí motivo. Con la cifra obligatoria esa observación no
+/// se guardaba, y la tarjeta decía «Subiendo tus datos a iCloud» sin ningún motivo. `nil` = ninguna cifra buena todavía en
+/// este proceso; con una previa, la muestra ilegible conserva esa.
 nonisolated struct ReverseUploadSample: Equatable {
-    let pending: Int
+    let pending: Int?
     let blocker: ReverseUploadBlocker
 }
 
@@ -2485,8 +2491,9 @@ final class MigrationRunner {
         case .unreadable:
             // Ni se cierra ni se cuenta: una muestra que no leyó una tabla cuenta menos pendientes, y como cifra valía
             // un avance falso que reiniciaba el reloj del techo (ticket `an-incomplete-inventory-reads-as-the-whole-corpus`).
-            // Se sigue esperando con el reloj que había; si la avería persiste, el techo saca la vuelta al origen en modo
-            // nube, con los datos a salvo en el backend. El rastro, con la tabla, ya lo dejó el executor.
+            // Se sigue esperando con el reloj que había; si la avería persiste, el techo CORTO (`localFailure`) saca la
+            // vuelta al origen en modo nube, con los datos a salvo en el backend. El rastro, con la tabla, ya lo dejó el
+            // executor.
             await executor.sendLeaseHeartbeatIfDue()
             return try await observeReverseUploadWait(pending: nil)
         }
@@ -2502,12 +2509,18 @@ final class MigrationRunner {
     /// la espera terminó (para que `drive()` relea la fase).
     ///
     /// `count == nil` es una muestra ILEGIBLE (`ReverseUploadStatus.unreadable`): nunca avanza, no toca la cifra más
-    /// baja y la pantalla conserva la última observación buena.
+    /// baja y la pantalla conserva la última cifra buena, si la hubo.
+    ///
+    /// **Y su motivo es `localFailure`, sin preguntar al canal iCloud** (ticket
+    /// `reverse-upload-unreadable-sample-waits-the-long-ceiling`, decisión de Jürgen del 2026-10-04): es una avería de este
+    /// teléfono, y esperar no la arregla. Con el motivo del canal, `icloudOff` y `unknown` pausaban el reloj corto —72 h con
+    /// el texto de «subiendo»— y un `icloudFull` vigente salía a los 15 min culpando a iCloud. Como motivo definitivo entra
+    /// en el reloj de «cualquier motivo definitivo» con los de iCloud: turnándose con ellos, sale con `stalled`.
     ///
     /// **Tres relojes, molde de `observeReversePreMountStall` y `observeSnapshotStall`** (ticket
     /// `reverse-upload-ceiling-charges-a-wait-to-whoever-stops-it-last`). El de AVANCE —el de arriba— gobierna las 72 h
     /// con cualquier motivo. El de «CUALQUIER motivo DEFINITIVO» acumula desde el último avance lo que la espera lleva
-    /// bajo `icloudFull` o `icloudUnusable`, sean el mismo o se turnen, y gobierna los 15 min. El de CAUSA acumula bajo
+    /// bajo `icloudFull`, `icloudUnusable` o `localFailure`, sean el mismo o se turnen, y gobierna los 15 min. El de CAUSA acumula bajo
     /// UN motivo y solo elige el texto de la salida (`reverseUploadExitReason`). Con uno solo de avance —lo que había—,
     /// tres horas sin cuenta de iCloud y el `notAuthenticated` de una pasada que CloudKit suelta justo al entrar sacaban
     /// de la vuelta en ese mismo instante: se cobraban las tres horas contra los 15 min del motivo de la última pasada.
@@ -2519,14 +2532,12 @@ final class MigrationRunner {
     /// **Un AVANCE reinicia los dos acumulados**: la cifra bajó, así que algo subió, y lo acumulado antes describía una
     /// espera que ya no es la de ahora. La misma observación abre el tramo nuevo desde cero si trae motivo definitivo.
     private func observeReverseUploadWait(pending count: Int?) async throws -> Bool {
-        let blocker = executor.reverseUploadBlocker()
-        if let count {
-            lastReverseUploadSample = ReverseUploadSample(pending: count, blocker: blocker)
-        } else if let last = lastReverseUploadSample {
-            // Sin cifra nueva, la pantalla conserva la última buena; el motivo sí es el de AHORA (lente de la review:
-            // congelado, seguía diciendo «iCloud lleno» después de liberar espacio).
-            lastReverseUploadSample = ReverseUploadSample(pending: last.pending, blocker: blocker)
-        }
+        let blocker: ReverseUploadBlocker = count == nil ? .localFailure : executor.reverseUploadBlocker()
+        // Sin cifra nueva, la pantalla conserva la última buena —o ninguna, si la espera empezó ilegible—; el motivo sí es
+        // el de AHORA (lente de la review: congelado, seguía diciendo «iCloud lleno» después de liberar espacio). Se guarda
+        // también sin cifra previa: si no, la tarjeta perdía el motivo y decía «subiendo».
+        lastReverseUploadSample = ReverseUploadSample(
+            pending: count ?? lastReverseUploadSample?.pending, blocker: blocker)
         let state = try loadState()
         let observedAt = now()
         let lowest = state.reverseUploadLowestPending

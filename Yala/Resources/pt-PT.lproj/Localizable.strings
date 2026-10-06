@@ -5300,6 +5300,9 @@
 "storage.reverseAbort.claimRefused" = "Não conseguimos iniciar o regresso ao iCloud: a sua conta não o permitia. Essa tentativa não alterou nada. Escreva-nos para %@ e vamos analisar a situação consigo.";
 "storage.reverseAbort.otherDeviceReverting" = "Não conseguimos iniciar o regresso ao iCloud: outro dos seus dispositivos já estava a regressar ao iCloud. Quando terminar, poderá fazê-lo neste.";
 "storage.progress.reverseICloudMaybeOff" = "Se o iCloud não estiver ativo neste dispositivo, os seus dados não conseguem chegar ao iCloud. Ative-o nas Definições ou cancele para continuar na nuvem.";
+/* Vuelta a iCloud: la muestra no se deja leer en este dispositivo (espera y salida) */
+"storage.progress.reverseLocalFailure" = "Este dispositivo não conseguiu preparar os seus dados para o envio para o iCloud. Se isto não se resolver dentro de alguns minutos, continuará na nuvem e poderá tentar novamente.";
+"storage.reverseAbort.localFailure" = "Não conseguimos concluir o regresso ao iCloud: este dispositivo não conseguiu preparar os seus dados para o envio. Continua na nuvem; tente novamente daqui a pouco.";
 "storage.errors.reversePendingExit" = "Ainda não é possível regressar ao iCloud: falta concluir a reativação da sua nuvem. Tente novamente dentro de instantes.";
 
 /* «Migrar a la nube» se paró sin escribir nada: la cuenta ya tiene datos (settings-migrate-to-cloud-adopts-silently-instead-of-migrating) */

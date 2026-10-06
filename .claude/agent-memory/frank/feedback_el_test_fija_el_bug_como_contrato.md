@@ -23,3 +23,8 @@ golden que llegue a ella tiene que fijar por PATCH TODAS las columnas que la ram
 `qa/cloud`; por cada acierto, ¿describe el caso nuevo o el viejo? Y los tests que saltan por estado previo se leen
 enteros: su verde no dice nada. Relacionado: [[el-predicado-del-ticket-no-es-el-criterio]],
 [[mis-mediciones-fallan-por-el-filtro]].
+
+**2026-10-06, reincidencia por el ESCENARIO, no por el valor**: cambié el motivo de una muestra `.unreadable` y grepeé
+el tipo de la muestra y un prefijo de nombre (`reverseUploadCeiling_unreadable`). El test que fijaba la salida vieja se
+llamaba `reverseUploadClocks_anUnreadableSample_…` y esperaba `"icloudFull"`: lo cazó la lente de tests. ⇒ el grep es del
+ESCENARIO que el cambio toca (`\.unreadable` en `YalaTests/`, todos los aciertos), no del prefijo de los tests que conozco.

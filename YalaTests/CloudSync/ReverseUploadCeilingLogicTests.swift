@@ -94,6 +94,26 @@ struct ReverseUploadCeilingLogicTests {
         #expect(ReverseUploadBlocker.icloudUnusable.abortReason == .icloudUnavailable)
         #expect(ReverseUploadBlocker.icloudOff.abortReason == .stalled)
         #expect(ReverseUploadBlocker.unknown.abortReason == .stalled)
+        #expect(ReverseUploadBlocker.localFailure.abortReason == .localFailure)
+    }
+
+    /// La muestra ilegible es una avería de este teléfono, y esperar no la arregla (ticket
+    /// `reverse-upload-unreadable-sample-waits-the-long-ceiling`): techo CORTO, el mismo número que la avería local de la
+    /// ida. Y `ReverseUploadBlockerLogic` no la produce nunca: solo ve el canal iCloud, y la elige el runner.
+    @Test func blocker_localFailure_isDefinitive_withTheForwardShortCeiling() {
+        #expect(ReverseUploadBlocker.localFailure.stallCause == .definitive)
+        let policy = MigrationPolicy.default
+        #expect(policy.reverseUploadDefinitiveBudgetSeconds == policy.snapshotCauseBudgetSeconds,
+                "el corto de la vuelta es el de la ida: si uno se mueve, esta avería deja de esperar lo mismo en los dos")
+        #expect(policy.reverseUploadDefinitiveCeilingReached(stalledSeconds: 900, cause: .definitive))
+        #expect(!policy.reverseUploadDefinitiveCeilingReached(stalledSeconds: 899, cause: .definitive))
+        for available in [true, false] {
+            for notAuthenticated in [true, false] {
+                for error: CKError.Code? in [nil, .quotaExceeded, .networkFailure] {
+                    #expect(decide(available: available, error: error, notAuthenticated: notAuthenticated) != .localFailure)
+                }
+            }
+        }
     }
 
     // MARK: - Copy de la espera
@@ -113,6 +133,94 @@ struct ReverseUploadCeilingLogicTests {
         #expect(copy(.icloudFull) == .init(message: .icloudFull, pending: 42))
         #expect(copy(.icloudUnusable) == .init(message: .icloudUnavailable, pending: 42))
         #expect(copy(.icloudOff) == .init(message: .icloudMaybeOff, pending: 42))
+        #expect(copy(.localFailure) == .init(message: .localFailure, pending: 42))
+    }
+
+    /// La espera que EMPIEZA con la muestra ilegible tiene motivo y no cifra: la pantalla dice el motivo, no «subiendo».
+    @Test func waitingCopy_sampleWithoutCount_saysItsReason_withoutANumber() {
+        #expect(ReverseUploadWaitingCopyLogic.waitingCopy(sample: ReverseUploadSample(pending: nil, blocker: .localFailure))
+            == .init(message: .localFailure, pending: nil))
+    }
+
+    /// El último eslabón: la vista traduce cada mensaje a su texto (`StorageSettingsView.reverseUploadMessage`). Ningún test
+    /// pasa por esa función —es `private` y la pantalla no se monta en la simulación—, así que se fija su cuerpo ENTERO,
+    /// caso a caso y en orden: un `contains` suelto no cazaría `.localFailure` devolviendo el texto de «subiendo» ni dos
+    /// casos intercambiados (`.claude/rules/testing.md`, regla del source-scan).
+    @Test func viewMapping_eachMessageGoesToItsOwnText() throws {
+        let root = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        let text = try String(contentsOf: root.appendingPathComponent("Yala/App/Views/Settings/StorageSettingsView.swift"),
+                              encoding: .utf8)
+        let marker = "private func reverseUploadMessage(_ message: ReverseUploadWaitingCopyLogic.Message) -> String {"
+        let start = try #require(text.range(of: marker), "la firma de reverseUploadMessage cambió")
+        let chars = Array(text[start.upperBound...])
+        var depth = 1
+        var i = 0
+        while i < chars.count {
+            if chars[i] == "{" { depth += 1 }
+            if chars[i] == "}" { depth -= 1; if depth == 0 { break } }
+            i += 1
+        }
+        let body = String(chars[0..<min(i, chars.count)])
+            .split(separator: "\n")
+            .map { line -> String in
+                var code = String(line)
+                if let comment = code.range(of: "//") { code = String(code[..<comment.lowerBound]) }
+                return code.trimmingCharacters(in: .whitespaces)
+            }
+            .filter { !$0.isEmpty }
+        #expect(body == [
+            "switch message {",
+            "case .uploading:",
+            "return L10n.Storage.Progress.reverseUploading",
+            "case .icloudFull:",
+            "return L10n.Storage.Progress.reverseICloudFull",
+            "case .icloudUnavailable:",
+            "return L10n.Storage.Progress.reverseICloudUnavailable",
+            "case .icloudMaybeOff:",
+            "return L10n.Storage.Progress.reverseICloudMaybeOff",
+            "case .localFailure:",
+            "return L10n.Storage.Progress.reverseLocalFailure",
+            "}",
+        ], "cada mensaje con su texto; la avería local nunca con el de «subiendo»")
+    }
+
+    /// El texto de la espera y el de la salida de la avería local: resueltos, propios, y sin las dos afirmaciones que no son
+    /// verdad aquí. La espera no dice «subiendo» —no se sabe si sube— y la salida no culpa a iCloud ni a la conexión, que
+    /// es lo que dice `stalled`. Se mide sobre `es-419`, el locale de referencia, porque `L10n` resuelve en el idioma del
+    /// simulador; y en `L10n`, que cada motivo salga con su clave.
+    @Test func localFailureCopy_ownTexts_neitherUploadingNorBlamingICloud() throws {
+        let waiting = L10n.Storage.Progress.reverseLocalFailure
+        let note = L10n.Storage.ReverseAbort.note(for: .localFailure)
+        for text in [waiting, note] {
+            #expect(!text.isEmpty)
+            #expect(!text.hasPrefix("storage."), "la key cruda: falta en el idioma del simulador")
+        }
+        #expect(waiting != L10n.Storage.Progress.reverseUploading)
+        #expect(note == L10n.Storage.ReverseAbort.localFailure, "el motivo sale con SU clave")
+        #expect(note != L10n.Storage.ReverseAbort.note(for: .stalled))
+        #expect(!note.contains(AppConstants.supportEmail), "como la ida: volver a intentarlo sí puede funcionar")
+
+        let reference = try String(
+            contentsOf: URL(fileURLWithPath: #filePath)
+                .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+                .appendingPathComponent("Yala/Resources/es-419.lproj/Localizable.strings"),
+            encoding: .utf8)
+        func es(_ key: String) throws -> String {
+            let line = try #require(reference.split(separator: "\n").first { $0.hasPrefix("\"\(key)\" = ") },
+                                    "falta \(key) en es-419")
+            return String(line)
+        }
+        let esWaiting = try es("storage.progress.reverseLocalFailure")
+        let esNote = try es("storage.reverseAbort.localFailure")
+        #expect(try es("storage.progress.reverseUploading").contains("Subiendo"),
+                "control positivo: el texto de la subida SÍ dice «subiendo»")
+        #expect(!esWaiting.localizedCaseInsensitiveContains("subiendo"), "no dice «subiendo»: \(esWaiting)")
+        #expect(esWaiting.contains("este dispositivo") || esWaiting.contains("Este dispositivo"),
+                "nombra al teléfono como la ida: \(esWaiting)")
+        #expect(esNote.contains("este dispositivo no pudo preparar tus datos"), "calco de la ida: \(esNote)")
+        #expect(!esNote.contains("conexión") && !esNote.contains("iCloud no recibió"),
+                "no culpa a iCloud ni a la red: \(esNote)")
     }
 
     /// La nota explica una salida que la persona no pidió. La que pidió no lleva nota. Las salidas del claim
@@ -120,7 +228,7 @@ struct ReverseUploadCeilingLogicTests {
     @Test func abortNote_skipsNothingAndCancelled() {
         #expect(ReverseUploadWaitingCopyLogic.abortNote(nil) == nil)
         #expect(ReverseUploadWaitingCopyLogic.abortNote(.cancelled) == nil)
-        for reason: ReverseAbortReason in [.icloudFull, .icloudUnavailable, .stalled,
+        for reason: ReverseAbortReason in [.icloudFull, .icloudUnavailable, .stalled, .localFailure,
                                            .claimRetryLater, .claimRefused, .otherDeviceReverting] {
             #expect(ReverseUploadWaitingCopyLogic.abortNote(reason) == reason)
         }
@@ -194,6 +302,7 @@ struct ReverseUploadCeilingLogicTests {
         #expect(detail(.stalled, 259_199) == "mixedCauses")
         #expect(detail(.stalled, 259_200) == "stalled")
         #expect(detail(.icloudFull, 900) == "icloudFull")
+        #expect(detail(.localFailure, 900) == "localFailure", "la avería local no se confunde con los motivos turnándose")
         #expect(detail(.icloudUnavailable, 259_200) == "icloudUnavailable")
         #expect(detail(.cancelled, 10) == "cancelled")
     }

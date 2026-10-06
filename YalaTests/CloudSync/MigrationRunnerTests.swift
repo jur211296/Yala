@@ -1944,7 +1944,11 @@ struct MigrationRunnerTests {
     /// La muestra ilegible como PRIMERA observación del intento: sella el reloj como cualquier primera observación, pero no
     /// inventa un mínimo. Con un mínimo de 0, ninguna cifra posterior contaría nunca como avance y el techo vencería
     /// sobre una subida sana. Y cuando el motivo cambia entre observaciones, la pantalla dice el de ahora.
-    @Test func reverseUploadCeiling_unreadableFirstObservation_sealsClockButNoLowest() async throws {
+    ///
+    /// **Hasta el 2026-10-06 fijaba que la pantalla se quedaba SIN muestra** y decía «subiendo» (ticket
+    /// `reverse-upload-unreadable-sample-waits-the-long-ceiling`): sin cifra no se guardaba nada. Ahora guarda la muestra
+    /// sin cifra y con su motivo, que en una muestra ilegible es siempre `localFailure`.
+    @Test func reverseUploadCeiling_unreadableFirstObservation_sealsClockButNoLowest_keepsTheReason() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
         let fake = FakeExecutor()
@@ -1959,7 +1963,8 @@ struct MigrationRunnerTests {
         #expect(j.readPhase().phase == .reverseUpload)
         #expect(j.reverseUploadLowestPending == nil, "sin cifra no hay mínimo que inventar")
         #expect(j.reverseUploadProgressAt == fixedNow, "el reloj se sella como en cualquier primera observación")
-        #expect(r.lastReverseUploadSample == nil, "sin observación buena, la pantalla dice «subiendo»")
+        #expect(r.lastReverseUploadSample == ReverseUploadSample(pending: nil, blocker: .localFailure),
+                "sin cifra buena, la pantalla conserva el motivo: la avería de este teléfono, no «subiendo»")
 
         fake.reverseUploadStatuses = [.pending(count: 5)]
         clock.value = fixedNow.addingTimeInterval(300)
@@ -1972,8 +1977,8 @@ struct MigrationRunnerTests {
         fake.reverseUploadStatuses = [.unreadable]
         clock.value = fixedNow.addingTimeInterval(400)
         await r.resume()
-        #expect(r.lastReverseUploadSample == ReverseUploadSample(pending: 5, blocker: .unknown),
-                "la cifra es la última buena; el motivo, el de ahora")
+        #expect(r.lastReverseUploadSample == ReverseUploadSample(pending: 5, blocker: .localFailure),
+                "la cifra es la última buena; el motivo, el de ahora: la muestra no se dejó leer")
     }
 
     /// Una muestra que no pudo leer una tabla (ticket `an-incomplete-inventory-reads-as-the-whole-corpus`). No cierra la
@@ -2001,8 +2006,8 @@ struct MigrationRunnerTests {
         #expect(fake.executedEffects.isEmpty, "ni el cuarteto de cierre ni la salida")
         #expect(j.reverseUploadLowestPending == 10, "no toca el mínimo: una muestra parcial no es una cifra")
         #expect(j.reverseUploadProgressAt == fixedNow, "no es avance: el reloj del techo sigue donde estaba")
-        #expect(r.lastReverseUploadSample == ReverseUploadSample(pending: 10, blocker: .icloudFull),
-                "la pantalla conserva la última observación buena")
+        #expect(r.lastReverseUploadSample == ReverseUploadSample(pending: 10, blocker: .localFailure),
+                "la pantalla conserva la última cifra buena, con el motivo de ahora")
         #expect(fake.heartbeatCallCount == 2, "sigue latiendo: la espera sigue viva")
 
         // Y el techo no se suspende: con la avería persistente, a los 900 s del último avance la vuelta sale al origen.
@@ -2011,6 +2016,115 @@ struct MigrationRunnerTests {
         j = try journal(context)
         #expect(j.readPhase().phase == .done, "la avería persistente no deja la vuelta colgada")
         #expect(fake.executedEffects == [.rearmMirrorOff, .reverseRollback])
+        #expect(j.reverseAbortReasonRaw == "stalled",
+                "600 s de iCloud lleno y 300 de avería local: ninguno agotó solo el plazo, así que ningún motivo es el texto")
+    }
+
+    // MARK: - 13-ter. La muestra ilegible espera el techo CORTO (ticket `reverse-upload-unreadable-sample-waits-the-long-ceiling`)
+
+    /// **EL test del ticket.** Una muestra que este teléfono no puede leer es una avería suya, y esperar no la arregla
+    /// (decisión de Jürgen del 2026-10-04: el techo corto, como la ida). Con las señales del canal que PAUSAN el reloj
+    /// corto —sin token de iCloud, o sin saber por qué—, la vuelta esperaba las 72 h con el texto de «subiendo». Ahora sale
+    /// a los 900 s con su propio motivo.
+    ///
+    /// El control va en el mismo bucle y con el mismo reloj: la misma espera con una cifra que se lee y no baja sigue en
+    /// el techo largo. Sin él, un techo corto aplicado a todo pasaría este test.
+    @Test func reverseUploadUnreadable_channelSignalsThatPause_stillLeaveAtTheShortCeiling_readableControlDoesNot() async throws {
+        for channel: ReverseUploadBlocker in [.icloudOff, .unknown] {
+            for readable in [false, true] {
+                let dir = freshDir(); defer { cleanup(dir) }
+                let context = try makeContext(dir)
+                let fake = FakeExecutor()
+                fake.reverseBlocker = channel
+                let status: ReverseUploadStatus = readable ? .pending(count: 7) : .unreadable
+                let label = "\(channel) · \(readable ? "legible (control)" : "ilegible")"
+                try seedJournal(context, phase: .reverseUpload, reverseOriginRaw: "done")
+                let clock = MutableClock(fixedNow)
+                let r = makeRunner(context, fake, now: { clock.value })
+
+                fake.reverseUploadStatuses = [status]
+                await r.resume()
+                #expect(try journal(context).readPhase().phase == .reverseUpload, "\(label): la 1.ª observación espera")
+                #expect(r.lastReverseUploadSample == (readable
+                    ? ReverseUploadSample(pending: 7, blocker: channel)
+                    : ReverseUploadSample(pending: nil, blocker: .localFailure)), "\(label): lo que lee la pantalla")
+
+                fake.reverseUploadStatuses = [status]
+                clock.value = fixedNow.addingTimeInterval(899)
+                await r.resume()
+                #expect(try journal(context).readPhase().phase == .reverseUpload, "\(label): 899 s no son 900")
+                #expect(fake.executedEffects.isEmpty, "\(label)")
+
+                fake.reverseUploadStatuses = [status]
+                clock.value = fixedNow.addingTimeInterval(900)
+                await r.resume()
+                let j = try journal(context)
+                if readable {
+                    #expect(j.readPhase().phase == .reverseUpload, "\(label): una cifra legible y parada sigue en el largo")
+                    #expect(fake.executedEffects.isEmpty, "\(label)")
+                    #expect(j.reverseUploadDefinitiveAt == nil, "\(label): ningún reloj corto abierto")
+                } else {
+                    #expect(j.readPhase().phase == .done, "\(label): la avería local sale a los 900 s")
+                    #expect(fake.executedEffects == [.rearmMirrorOff, .reverseRollback], "\(label)")
+                    #expect(j.reverseAbortReasonRaw == "localFailure", "\(label): con el texto de la avería, no «stalled»")
+                }
+            }
+        }
+    }
+
+    /// El otro lado: con iCloud lleno VIGENTE, la muestra ilegible no culpa a iCloud. Antes salía a los 900 s con «iCloud no
+    /// tiene espacio» por una avería que es de este teléfono. Y no se le pregunta al canal: el motivo de una muestra
+    /// ilegible es siempre el suyo.
+    @Test func reverseUploadUnreadable_withICloudFullCurrent_leavesWithTheLocalReason_notICloudFull() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.reverseBlocker = .icloudFull
+        try seedJournal(context, phase: .reverseUpload, reverseOriginRaw: "done")
+        let clock = MutableClock(fixedNow)
+        let r = makeRunner(context, fake, now: { clock.value })
+
+        fake.reverseUploadStatuses = [.unreadable]
+        await r.resume()
+        var j = try journal(context)
+        #expect(j.reverseUploadCauseRaw == "localFailure", "el reloj de causa mide la avería local, no iCloud lleno")
+        #expect(r.lastReverseUploadSample?.blocker == .localFailure)
+
+        fake.reverseUploadStatuses = [.unreadable]
+        clock.value = fixedNow.addingTimeInterval(900)
+        await r.resume()
+        j = try journal(context)
+        #expect(j.readPhase().phase == .done)
+        #expect(j.reverseAbortReasonRaw == "localFailure", "un solo motivo agotó el plazo, y es el de este teléfono")
+    }
+
+    /// Una muestra ilegible SUELTA no saca de la vuelta: la siguiente legible sin motivo definitivo pausa el reloj corto,
+    /// y la espera vuelve a medirse con el largo. Es lo que separa «este teléfono no puede leer» de «una pasada falló».
+    @Test func reverseUploadUnreadable_aSingleUnreadablePass_thenReadable_pausesTheShortClock() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.reverseBlocker = .unknown
+        try seedJournal(context, phase: .reverseUpload, reverseOriginRaw: "done")
+        let clock = MutableClock(fixedNow)
+        let r = makeRunner(context, fake, now: { clock.value })
+
+        fake.reverseUploadStatuses = [.unreadable]
+        await r.resume()
+        fake.reverseUploadStatuses = [.pending(count: 4)]
+        clock.value = fixedNow.addingTimeInterval(60)
+        await r.resume()
+        #expect(r.lastReverseUploadSample == ReverseUploadSample(pending: 4, blocker: .unknown),
+                "con la muestra legible otra vez, la pantalla vuelve a «subiendo»")
+
+        fake.reverseUploadStatuses = [.pending(count: 4)]
+        clock.value = fixedNow.addingTimeInterval(5_000)
+        await r.resume()
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .reverseUpload, "60 s de avería local acumulados, y el resto sin motivo definitivo")
+        #expect(fake.executedEffects.isEmpty)
+        #expect(j.reverseUploadDefinitiveAt == nil, "el tramo corto quedó cerrado")
+        #expect(j.reverseUploadDefinitiveAccruedSeconds == 60)
     }
 
     /// Techo agotado con la palabra de CloudKit: vuelta al ORIGEN, los dos efectos en orden, el motivo journaleado
@@ -2368,8 +2482,12 @@ struct MigrationRunnerTests {
         #expect(j.reverseAbortReasonRaw == "icloudFull")
     }
 
-    /// Una muestra ILEGIBLE no es avance, y el motivo definitivo que trae SÍ acumula: la avería de la muestra no puede
-    /// suspender el techo corto. Sin cifra buena desde el principio, los 900 s de iCloud lleno siguen sacando.
+    /// Una muestra ILEGIBLE no es avance, y su motivo SÍ acumula: la avería de la muestra no puede suspender el techo
+    /// corto. Sin cifra buena desde el principio, a los 900 s sale.
+    ///
+    /// **Hasta el 2026-10-06 salía con «iCloud lleno»**, el motivo del canal que traía la pasada (ticket
+    /// `reverse-upload-unreadable-sample-waits-the-long-ceiling`, decisión A de Jürgen): una muestra ilegible es una avería
+    /// de este teléfono, y su motivo es `localFailure` aunque CloudKit tenga un error vigente.
     @Test func reverseUploadClocks_anUnreadableSample_stillAccruesItsDefinitiveCause() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
@@ -2388,7 +2506,7 @@ struct MigrationRunnerTests {
         await makeRunner(context, fake, now: { self.fixedNow.addingTimeInterval(900) }).resume()
         j = try journal(context)
         #expect(j.readPhase().phase == .done)
-        #expect(j.reverseAbortReasonRaw == "icloudFull")
+        #expect(j.reverseAbortReasonRaw == "localFailure", "la avería es del teléfono, no de iCloud")
     }
 
     /// **Una fila de un build anterior (v14) a mitad de espera**, SEMBRADA como la deja ese build: tres horas de reloj de

@@ -7592,6 +7592,9 @@ enum L10n {
                 ls("storage.progress.reverseICloudUnavailable", comment: "")
             }
             static var reverseICloudMaybeOff: String { ls("storage.progress.reverseICloudMaybeOff", comment: "") }
+            /// La muestra de la vuelta no se deja leer en este teléfono (ticket
+            /// `reverse-upload-unreadable-sample-waits-the-long-ceiling`): calco del `snapshotLocalFailure` de la ida.
+            static var reverseLocalFailure: String { ls("storage.progress.reverseLocalFailure", comment: "") }
             static var cancelReverse: String { ls("storage.progress.cancelReverse", comment: "") }
             /// «Cancelar la activación» durante la subida del snapshot de la ida (ticket
             /// `snapshot-upload-has-no-ceiling-and-no-way-out`).
@@ -7620,6 +7623,9 @@ enum L10n {
             static var icloudFull: String { ls("storage.reverseAbort.icloudFull", comment: "") }
             static var icloudUnavailable: String { ls("storage.reverseAbort.icloudUnavailable", comment: "") }
             static var stalled: String { ls("storage.reverseAbort.stalled", comment: "") }
+            /// Sin correo de soporte, como la ida (`storage.failed.snapshotLocalFailure`): volver a intentarlo sí puede
+            /// funcionar.
+            static var localFailure: String { ls("storage.reverseAbort.localFailure", comment: "") }
             static var claimRetryLater: String { ls("storage.reverseAbort.claimRetryLater", comment: "") }
             /// Con el correo de soporte (`AppConstants.supportEmail`), molde de `welcome.cloud.accountBlockedBody`:
             /// reintentar no cambia este rechazo, así que el texto dice a quién acudir.
@@ -7647,6 +7653,8 @@ enum L10n {
                     // `cancelled` no llega aquí (`ReverseUploadWaitingCopyLogic.abortNote` lo filtra); se agrupa con
                     // `stalled` para que el switch sea exhaustivo sin un `default` que se trague un motivo nuevo.
                     return stalled
+                case .localFailure:
+                    return localFailure
                 case .claimRetryLater:
                     return claimRetryLater
                 case .claimRefused:

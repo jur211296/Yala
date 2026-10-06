@@ -121,14 +121,26 @@ nonisolated enum ReverseUploadBlocker: String, Equatable, Sendable {
     case icloudOff
     /// No se sabe: red, un mirror lento o un mirror que no exporta sin decir por qué.
     case unknown
+    /// La muestra de este teléfono no pudo leer sus propias tablas (`ReverseUploadStatus.unreadable`): la avería es del
+    /// dispositivo, no de iCloud (ticket `reverse-upload-unreadable-sample-waits-the-long-ceiling`, decisión de Jürgen del
+    /// 2026-10-04). Es el análogo de `SnapshotStallBlocker.localFailure` en la ida.
+    ///
+    /// **No lo produce `ReverseUploadBlockerLogic`**, que solo ve el canal iCloud: lo elige el runner cuando la muestra sale
+    /// ilegible, y entonces manda sobre cualquier señal del canal. Si no mandara, `icloudOff` o `unknown` PAUSARÍAN su
+    /// reloj corto y la persona esperaría 72 h con el texto de «subiendo»; y un `icloudFull` vigente culparía a iCloud de
+    /// una avería que es de este teléfono.
+    case localFailure
 
-    /// FAIL-OPEN: solo la palabra de CloudKit acorta la espera. Es MÁS permisiva que la ida, no igual: allí,
-    /// sin token y con huella CloudKit local (`noAccountWithFootprint`), el paso 4 sí baja a 900 s sin que
-    /// CloudKit diga nada. Aquí, sin Drive y sin error, la persona lee el aviso condicional y tiene «Cancelar» a
+    /// FAIL-OPEN con el canal iCloud: de sus señales, solo la palabra de CloudKit acorta la espera. Es MÁS permisiva que
+    /// la ida, no igual: allí, sin token y con huella CloudKit local (`noAccountWithFootprint`), el paso 4 sí baja a 900 s
+    /// sin que CloudKit diga nada. Aquí, sin Drive y sin error, la persona lee el aviso condicional y tiene «Cancelar» a
     /// mano; el techo sigue siendo el largo.
+    ///
+    /// `localFailure` acorta por el criterio de `ReversePreMountBlocker`, no por el de CloudKit: esperar no arregla una
+    /// tabla que este teléfono no puede leer.
     var stallCause: MarkerExportStall {
         switch self {
-        case .icloudFull, .icloudUnusable:
+        case .icloudFull, .icloudUnusable, .localFailure:
             return .definitive
         case .icloudOff, .unknown:
             return .unknown
@@ -147,6 +159,8 @@ nonisolated enum ReverseUploadBlocker: String, Equatable, Sendable {
             return .icloudFull
         case .icloudUnusable:
             return .icloudUnavailable
+        case .localFailure:
+            return .localFailure
         case .icloudOff, .unknown:
             return .stalled
         }
@@ -169,10 +183,14 @@ nonisolated enum ReverseAbortReason: String, Equatable, Sendable {
     /// CloudKit dijo que la cuenta de iCloud no sirve en este dispositivo.
     case icloudUnavailable
     /// La espera terminó por su techo sin que UN motivo concreto lo explique entero: las 72 h sin avanzar (con cualquier
-    /// motivo, también sin token de iCloud Drive) o los 15 min con `icloudFull` e `icloudUnusable` turnándose (ticket
+    /// motivo, también sin token de iCloud Drive) o los 15 min con motivos definitivos —`icloudFull`, `icloudUnusable`, `localFailure`— turnándose (ticket
     /// `reverse-upload-ceiling-charges-a-wait-to-whoever-stops-it-last`). **Su texto no puede afirmar días ni motivo**:
     /// también sale a los 15 min, y ningún motivo solo es verdad entero.
     case stalled
+    /// La muestra de este teléfono no pudo leer sus propias tablas durante el plazo corto (`ReverseUploadBlocker.localFailure`,
+    /// ticket `reverse-upload-unreadable-sample-waits-the-long-ceiling`). Texto propio y no `stalled`: aquel culpa a iCloud
+    /// y pide revisar la conexión, y aquí ni iCloud ni la red tienen nada que ver.
+    case localFailure
 
     // MARK: Salidas del claim (`reverseClaimLeader`)
 

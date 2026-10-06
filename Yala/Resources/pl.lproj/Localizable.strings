@@ -6039,6 +6039,9 @@
 "storage.reverseAbort.claimRefused" = "Nie udało się rozpocząć powrotu do iCloud: Twoje konto na to nie pozwalało. Ta próba niczego nie zmieniła. Napisz do nas na %@, a sprawdzimy to razem.";
 "storage.reverseAbort.otherDeviceReverting" = "Nie udało się rozpocząć powrotu do iCloud: inne z Twoich urządzeń już wracało do iCloud. Gdy skończy, będzie można zrobić to na tym urządzeniu.";
 "storage.progress.reverseICloudMaybeOff" = "Jeśli iCloud nie jest włączony na tym urządzeniu, Twoje dane nie mogą trafić do iCloud. Włącz go w Ustawieniach lub anuluj, aby zostać w chmurze.";
+/* Vuelta a iCloud: la muestra no se deja leer en este dispositivo (espera y salida) */
+"storage.progress.reverseLocalFailure" = "To urządzenie nie mogło przygotować Twoich danych do przesłania do iCloud. Jeśli nie rozwiąże się to w ciągu kilku minut, zostaniesz w chmurze, a potem możesz spróbować ponownie.";
+"storage.reverseAbort.localFailure" = "Nie udało się dokończyć powrotu do iCloud: to urządzenie nie mogło przygotować Twoich danych do przesłania. Zostajesz w chmurze — spróbuj ponownie za chwilę.";
 "storage.errors.reversePendingExit" = "Nie można jeszcze wrócić do iCloud: Twoja chmura musi najpierw zostać ponownie w pełni aktywowana. Spróbuj ponownie za chwilę.";
 
 /* «Migrar a la nube» se paró sin escribir nada: la cuenta ya tiene datos (settings-migrate-to-cloud-adopts-silently-instead-of-migrating) */
