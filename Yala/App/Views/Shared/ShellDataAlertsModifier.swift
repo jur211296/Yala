@@ -34,6 +34,9 @@ struct ShellDataAlertsModifier: ViewModifier {
     /// El wipe de cualquiera de los DOS caminos de «empiezo de cero» lanzó. Se presenta en vez de
     /// navegar al onboarding: la app llevaba mintiendo sobre un borrado que no ocurrió.
     @Binding var showFreshStartWipeFailedAlert: Bool
+    /// Si el Welcome estaba montado cuando se encendió el alert de «empiezo de cero». Lo captura su disparador, porque
+    /// presentarlo desmonta el cover; decide a dónde sigue el borrado con cambios de grupos pendientes.
+    let freshStartAlertPresentedOverWelcome: Bool
     @Binding var hasCompletedOnboarding: Bool
     @Binding var hasExistingData: Bool
     @Binding var hasPersonalData: Bool
@@ -142,6 +145,12 @@ struct ShellDataAlertsModifier: ViewModifier {
                     // onboarding ya está completo, este alert vino de un camino donde el Welcome NO
                     // estaba montado, y reabrirlo le plantaría el flujo de bienvenida a alguien que
                     // ya usa la app.
+                    //
+                    // **Esa premisa no es cierta tras salir de un adopt** (medido el 2026-10-06): el Welcome sí estaba
+                    // montado y el flag ya está en `true`. El botón destructivo dejó de confiar en ella
+                    // (`FreshStartAlertRoutingLogic`); este y el «OK» del aviso de fallo siguen igual a propósito —el
+                    // encargo de ese cambio pedía no tocar las demás salidas— y tienen su ticket:
+                    // `fresh-start-alert-cancel-after-an-adopt-exit-lands-in-the-app`.
                     if !hasCompletedOnboarding {
                         welcomeFlowInitialStep = .chooser
                         showWelcomeFlow = true
@@ -201,10 +210,16 @@ struct ShellDataAlertsModifier: ViewModifier {
     /// desmontó el Welcome, y lo único que deja algo montado debajo es volver a encenderlo. No es una presentación nueva
     /// sobre el anchor: es el mismo cover, ya en la matriz de readiness (`welcomeFlow`).
     ///
-    /// Con el onboarding ya completo el Welcome no estaba montado (la guarda de «Cancelar»): ahí se sigue negando en el
-    /// sitio, como hasta ahora.
+    /// **Con el onboarding completo también, si había Welcome debajo** (ticket
+    /// `fresh-start-shell-alert-after-an-adopt-exit-has-no-way-out-for-group-changes`). La guarda era
+    /// `hasCompletedOnboarding`, que se tomaba por «el Welcome no estaba montado», y las salidas de un adopt vuelven al
+    /// Welcome con el flag en `true`: ahí se negaba para siempre. La pregunta real la contesta
+    /// `FreshStartAlertRoutingLogic` con el testigo que el disparador capturó. Sin Welcome debajo se seguiría negando en
+    /// el sitio, como hasta ahora; hoy ese caso no lo produce ningún camino (el alert solo se dispara desde el Welcome).
     private func continueInTheGateWhileGroupsArePending() {
-        guard !hasCompletedOnboarding else {
+        guard FreshStartAlertRoutingLogic.pendingGroupsRoute(
+            hasCompletedOnboarding: hasCompletedOnboarding,
+            presentedOverWelcome: freshStartAlertPresentedOverWelcome) == .privateGate else {
             refuseWhileGroupsArePending()
             return
         }

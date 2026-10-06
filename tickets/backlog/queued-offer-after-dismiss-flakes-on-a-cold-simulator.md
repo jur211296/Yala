@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "testing, xcuitest, presentaciones"
 created: 2026-09-15
-updated: 2026-10-04
+updated: 2026-10-06
 source: "gate de `cloud-signout-collapses-a-groups-session-expiry-into-permanent` (2026-09-15)"
 ---
 
@@ -145,3 +145,11 @@ con el centinela limpio (179 muestreos, un solo runner) y el simulador caliente.
 **4 de 4** (el caso solo ×2 y su suite entera). El cambio de ese gate no toca el aviso ni la oferta (rediseño del
 registro por imagen; en `AppBootstrapper` solo la puerta Pro de compartir una foto). Es la misma forma que los dos
 datos de arriba: la oferta retenida no llega tras cerrar lo que la tapaba, con carga y no en frío.
+
+### 2026-10-06: sigue vivo, con la misma firma
+
+Gate de `fresh-start-shell-alert-after-an-adopt-exit-has-no-way-out-for-group-changes` (el diff no toca la hoja del
+cambio de Apple ID, la cola ni la matriz). Tres corridas del caso, centinela en 0 en la del gate: **falla 68,8 s** (dentro
+de las 6 suites del gate) · **falla 70,0 s** · **pasa 23,4 s** (las dos últimas aisladas, mismo binario, simulador
+caliente). La bimodalidad 23 s / 68-70 s es la de septiembre. Con 2 de 3 la tasa sube respecto a 1 de 3, pero N=3 no
+separa eso del azar.
