@@ -443,7 +443,16 @@ paths:
     2026-10-05). Llega a los tres gestos, y la puerta de Grupos del Welcome necesita su rama: su catch-all no es exhaustivo;
     (3) **el aviso cuenta el History**: lo que se pierde son dos mitades (`GroupsLoss`, y una tercera en
     `FreshStartGroupsLoss`), lo aceptado las cubre por clave (`CausedLossAcceptance.uncaptured`) y los recuentos pegados al
-    borrado —los dos de los cierres, el de la celda C pegado al arm y el cinturón de «Empezar de cero»— lo releen; (4) **el
+    borrado —los dos de los cierres, el de la celda C pegado al arm y el cinturón de «Empezar de cero»— lo releen. **Sin
+    cifra no hay oferta** (2026-10-05, decisión A de Jürgen, ticket
+    `stuck-groups-loss-without-a-count-covers-own-edits-made-after-the-notice`): la oferta RELEE el History y esa lectura
+    puede fallar aunque la captura lo leyera bien; con un motivo que abre la salida y esa mitad en `nil`, las cuatro ofertas
+    (celda C, paso 2 de la nube, `pushGroupsForSignOut`, `settleFreshStartBlock`) enseñan `.groupsCaptureUnfinished` sin
+    salida (`CloudSignOutFlowLogic.groupsLossShownReason`), y lo aceptado con esa mitad sin leer ya no cubre ningún cambio
+    nuevo (`groupsHistoryHalfCovers`; las filas y el espejo siguen con `lossHalfCovers`). **Una oferta nueva de grupos pasa
+    por esa función.** La celda C cuenta su oferta con lo aceptado todavía puesto, a propósito: así lee el History aunque su
+    captura terminara, y la comprobación pegada al arm —que no captura— ve un cambio apuntado tras el aviso. La mitad personal
+    tiene el mismo hueco abierto: `personal-loss-without-a-count-covers-own-edits-made-after-the-notice`; (4) **el
     History solo se lee con la captura atascada** (o con lo aceptado sobre una): sin cursor de Grupos la sonda lee el History
     entero, y en un teléfono con grupos de la era CloudKit contaría ediciones que nunca suben. Lo pasajero sigue sin salida:
     los reintentos que no prueban el atasco y la captura que terminó con el espejo fuera del outbox. El ciclo del push-all es sustituible en los

@@ -89,6 +89,14 @@ private enum OwnershipFixture {
     }
 }
 
+/// Transporte de métricas que siempre falla: así los canarios se quedan en el spool y el test los puede leer.
+private final class FailingMetricsSession: SyncHTTPSession, @unchecked Sendable {
+    func data(for request: URLRequest) async throws -> (Data, URLResponse) {
+        let response = HTTPURLResponse(url: request.url!, statusCode: 500, httpVersion: nil, headerFields: nil)!
+        return (Data(), response)
+    }
+}
+
 /// Stub del transporte que guarda cada request y contesta siempre lo mismo.
 private final class OwnershipStubSession: SyncHTTPSession, @unchecked Sendable {
     var requests: [URLRequest] = []
@@ -893,6 +901,105 @@ struct GroupsNoSessionLossExitTests {
 
         #expect(coordinator.phase == .blocked(pendingCount: 2, reason: .sessionExpired), "\(coordinator.phase)")
         #expect(historyReads.count == 1, "solo tras el intento fallido; con la captura completa la oferta no lo lee ni lo cuenta")
+    }
+
+    /// El History se lee bien justo después de cada intento de captura, y falla en la lectura siguiente mientras
+    /// `failsAfterTheCapture`: así la captura prueba el atasco y es la OFERTA la que no puede contar.
+    private final class HistoryReads {
+        var sinceCapture = 0
+        var failsAfterTheCapture = true
+        var unreadable = false
+        var captureCompletes = false
+    }
+
+    private func witnessFailingAtTheOffer(_ reads: HistoryReads, keys: [String]) -> CloudSessionSignOut.GroupsExitWitness {
+        hermeticWitness(
+            capture: { _ in reads.sinceCapture = 0; return reads.captureCompletes },
+            uncaptured: {
+                reads.sinceCapture += 1
+                guard !reads.unreadable, reads.sinceCapture == 1 || !reads.failsAfterTheCapture else { return nil }
+                return Self.history(keys)
+            })
+    }
+
+    /// **El caso del ticket `stuck-groups-loss-without-a-count-covers-own-edits-made-after-the-notice` en la celda C**
+    /// (decisión A de Jürgen, 2026-10-05). Sin sesión, con la captura atascada y el History ilegible justo al contar, el aviso
+    /// salía «Cerrar sesión y perderlos» sin cifra, y lo aceptado cubría cualquier cambio del History, también uno apuntado
+    /// después. Ahora sale el atasco, sin salida; cuando el History vuelve a leerse, la salida vuelve con su cifra.
+    @Test("MUTACIÓN: con el History ilegible al contar, el atasco sin salida; legible otra vez, la salida con la cifra exacta")
+    func lossExit_withAnUnreadHistoryAtTheOffer_showsTheStuckNoticeUntilItCanCount() async throws {
+        reset(); defer { reset(); disarmIfArmed() }
+        try #require(coordinator.phase == .idle)
+        try requirePrivateOnlyCell()
+        coordinator.exitCaptureDelayOverride = .milliseconds(1)
+        let dir = F.freshDir(); defer { F.cleanup(dir) }
+        let context = try F.makeContext(dir)
+        try F.seedRow(context, owner: "user-a")
+        let reads = HistoryReads()
+        let witness = witnessFailingAtTheOffer(reads, keys: ["h1", "h2"])
+        let calls = Calls()
+        // El canario de la oferta enseñada mide cuántos teléfonos VIERON la salida: sin oferta no se emite.
+        let metrics = makeIsolatedDefaults(prefix: "groupsLoss.uncounted.metrics")
+        MetricsService._testReset()
+        MetricsService.start(client: MetricsClient(baseURL: URL(string: "https://gw.test")!,
+                                                   urlSession: FailingMetricsSession()), defaults: metrics)
+        defer { MetricsService._testReset() }
+        func offeredCanaries() -> Int {
+            MetricsSpool.pending(metrics).filter { $0.e == "canary" && $0.n == "groupsSignOutLossOffered" }.count
+        }
+        // Con el bug, el botón retomaba el cierre: la tercera consulta (la entrada de `finalizeSessionExit`) lo para ahí.
+        try await blockOnGroups(context, calls: calls, inFlightFrom: 3, witness: witness)
+
+        #expect(coordinator.phase == .blocked(pendingCount: Int.max, reason: .groupsCaptureUnfinished), """
+            con el History ilegible al contar, el aviso no puede enseñar lo que se perdería: \(coordinator.phase)
+            """)
+        #expect(!coordinator.offersGroupsLossExit, "sin cifra no se ofrece perder nada")
+        #expect(offeredCanaries() == 0, "el canario contó una oferta que no se enseñó")
+        await coordinator.exitDiscardingUnsyncedGroups(context: context)
+        #expect(calls.count == 1, "el botón que llegara tarde retomó el cierre")
+        #expect(coordinator.phase == .blocked(pendingCount: Int.max, reason: .groupsCaptureUnfinished))
+        #expect(!StorageModePersistence.isSignOutWipeArmed())
+
+        // El History vuelve a leerse: la salida, con la fila y los dos cambios; aceptarla sigue hasta el borrado.
+        coordinator.acknowledgeBlocked()
+        reads.failsAfterTheCapture = false
+        try await blockOnGroups(context, calls: Calls(), inFlightFrom: 3, witness: witness)
+        #expect(coordinator.phase == .blocked(pendingCount: 3, reason: .sessionExpired), "\(coordinator.phase)")
+        #expect(coordinator.offersGroupsLossExit)
+        #expect(offeredCanaries() == 1, "control: con la oferta enseñada el canario sí cuenta")
+        await coordinator.exitDiscardingUnsyncedGroups(context: context)
+        #expect(coordinator.phase == .blocked(pendingCount: 0, reason: .migrationInFlight), "\(coordinator.phase)")
+    }
+
+    /// **Con lo aceptado puesto la oferta sigue mirando el History** (review adversarial del 2026-10-05, lente de datos).
+    /// Aceptada la pérdida sobre una captura atascada, si al retomar la captura TERMINA y el History no se deja leer, lo
+    /// aceptado no cubre y vuelve el aviso: el del atasco, sin salida. Una oferta solo con las filas —contada sin lo
+    /// aceptado— dejaba de leer el History, y en la comprobación pegada al arm, que no captura, un cambio apuntado después
+    /// del aviso se iba con el borrado.
+    @Test("MUTACIÓN: tras aceptar, con la captura terminada y el History ilegible, el atasco sin salida, no las filas solas")
+    func lossExit_afterAccepting_anUnreadHistoryStillBlocksWithoutTheExit() async throws {
+        reset(); defer { reset(); disarmIfArmed() }
+        try #require(coordinator.phase == .idle)
+        try requirePrivateOnlyCell()
+        coordinator.exitCaptureDelayOverride = .milliseconds(1)
+        let dir = F.freshDir(); defer { F.cleanup(dir) }
+        let context = try F.makeContext(dir)
+        try F.seedRow(context, owner: "user-a")
+        let reads = HistoryReads()
+        reads.failsAfterTheCapture = false
+        let witness = witnessFailingAtTheOffer(reads, keys: ["h1"])
+        // 1 = el cierre; 2 = el cierre retomado, que se para en el aviso; 3, si lo aceptado dejara pasar, se para ahí.
+        try await blockOnGroups(context, calls: Calls(), inFlightFrom: 3, witness: witness)
+        try #require(coordinator.phase == .blocked(pendingCount: 2, reason: .sessionExpired), "control: el atasco contado")
+
+        reads.captureCompletes = true
+        reads.unreadable = true
+        await coordinator.exitDiscardingUnsyncedGroups(context: context)
+
+        #expect(coordinator.phase == .blocked(pendingCount: Int.max, reason: .groupsCaptureUnfinished), """
+            con lo aceptado puesto la oferta tiene que seguir leyendo el History, y sin poder leerlo no hay salida: \(coordinator.phase)
+            """)
+        #expect(!coordinator.offersGroupsLossExit)
     }
 
 }
