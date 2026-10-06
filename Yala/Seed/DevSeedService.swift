@@ -50,6 +50,12 @@ enum DevSeedProfile: String {
     /// rico de `DevSeedGroups.create` (2 grupos multi-moneda); para la perspectiva invitado/deudor
     /// combina `.gruposInvitado` con el flag.
     case soloGrupos = "solo-grupos"
+    /// **El teléfono tal como lo deja el aviso tardío al conservar los grupos**: los grupos de `.soloGrupos` y NADA
+    /// personal, tampoco las categorías propias que el seed necesita para construirse (se retiran al final, como las
+    /// retira ese borrado). Con `-uitest-late-notice-kept-groups` monta el estado del ticket
+    /// `groups-kept-by-the-late-notice-are-purged-by-the-welcome-fresh-start`; sin él, es el control del handover real:
+    /// el Welcome solo ve grupos, así que su alert sale por ellos y no por las categorías.
+    case soloGruposTrasAviso = "solo-grupos-tras-aviso"
     /// Fixture AISLADO para el AC (c) de `qa_groups-tx-fantasma-al-borrar-gasto-de-grupo`:
     /// una TX personal de cuenta REAL cuyo `splitExpenseID` no resuelve, en una zona
     /// asentada SIN canal backend (para que el editor la trate como puntero muerto).
@@ -63,7 +69,7 @@ enum DevSeedProfile: String {
     var daysBack: Int {
         switch self {
         case .minimal, .grupos, .gruposInvitado, .gruposSaldado, .soloGrupos, .deadPointer,
-             .gruposSinFlag, .gruposPendiente: return 7
+             .gruposSinFlag, .gruposPendiente, .soloGruposTrasAviso: return 7
         case .realista: return 730
         case .pesado: return 3650
         }
@@ -72,12 +78,12 @@ enum DevSeedProfile: String {
     /// Si además siembra un grupo de gastos compartidos (DevSeedGroups).
     var seedsGroups: Bool {
         self == .grupos || self == .gruposInvitado || self == .gruposSaldado || self == .soloGrupos
-            || self == .gruposSinFlag || self == .gruposPendiente
+            || self == .gruposSinFlag || self == .gruposPendiente || self == .soloGruposTrasAviso
     }
 
     /// Si siembra vida personal (cuentas, transacciones, presupuestos, tags, pagos, drafts).
     /// `.soloGrupos` no — sólo grupos. `.deadPointer` tampoco: va por su fixture aislado.
-    var seedsPersonalData: Bool { self != .soloGrupos && self != .deadPointer }
+    var seedsPersonalData: Bool { self != .soloGrupos && self != .deadPointer && self != .soloGruposTrasAviso }
 }
 
 @MainActor @Observable
@@ -209,6 +215,18 @@ final class DevSeedService {
             case .gruposPendiente: DevSeedGroups.createAsPendingMember(in: context)
             case .gruposSaldado:  DevSeedGroups.createSettled(in: context)
             default:              DevSeedGroups.create(in: context)
+            }
+        }
+
+        // Step 10-bis: lo que el aviso tardío se lleva. Sin las categorías propias el Welcome solo ve grupos, que es lo
+        // que tiene que distinguir con la marca y sin ella.
+        if profile == .soloGruposTrasAviso {
+            do {
+                for category in try context.fetch(FetchDescriptor<Category>(predicate: #Predicate { !$0.isSystem })) {
+                    context.delete(category)
+                }
+            } catch {
+                print("DevSeedService: Error removing user categories for solo-grupos-tras-aviso: \(error)")
             }
         }
 

@@ -165,7 +165,8 @@ struct FreshStartAfterAdoptExitWiringTests {
         let confirm = Self.flat(try Self.slice(from: "Button(L10n.Welcome.FreshStart.alertConfirm, role: .destructive) {",
                                                to: "Button(L10n.Action.cancel, role: .cancel) {", in: src))
         #expect(confirm == "showFreshStartWipeAlert = false "
-                + "if CloudSessionSignOut.shared.groupsOutboxIsSettledEmpty(context: modelContext) { performFreshStartWipe() } "
+                + "if !Self.purgesGroupsDomainNow() "
+                + "|| CloudSessionSignOut.shared.groupsOutboxIsSettledEmpty(context: modelContext) { performFreshStartWipe() } "
                 + "else { continueInTheGateWhileGroupsArePending() } }", "Borrar todo: \(confirm)")
     }
 }

@@ -97,9 +97,11 @@ struct FreshStartWipeAlertTests {
         // `hasExistingData` por VALOR, así que tras un borrado hecho desde la puerta de iCloud —que con
         // el espejo adjunto no relanza— seguía valiendo el `true` de antes y levantaba este mismo alert
         // sobre un store ya vacío. `hasLocalDataNow()` es el fetch que el propio docblock del modifier
-        // recomienda desde el review S5.
+        // recomienda desde el review S5. **Y desde el 2026-10-06 es el detector del WELCOME**
+        // (`welcomeDeviceDataNow()`, `groups-kept-by-the-late-notice-are-purged-by-the-welcome-fresh-start`): el mismo
+        // fetch vivo, que con la marca del aviso tardío deja fuera los grupos que ese aviso conservó.
         let gate = try #require(
-            fresh.range(of: "if hasLocalDataNow()"),
+            fresh.range(of: "if welcomeDeviceDataNow()"),
             """
             `startFreshPrivateOnboarding` dejó de consultar si hay datos: sin esa pregunta no \
             hay alert que cancelar y el borrado de residuales es incondicional. Y si volvió al \

@@ -444,7 +444,10 @@ struct CloudSessionRetirementWiringTests {
     /// sale por el relanzamiento y no por `onSelectPrivateAccount`. No pasa por ningún escritor común.
     @Test func theMirrorRelaunchBranchArmsTheRetirement() throws {
         let src = try Self.code("Yala/App/ContentView.swift")
-        let rama = try Self.body(of: "if destination == .privateOnboarding {", in: src)
+        // Desde el 2026-10-06 la rama exige además que los grupos no sean de quien está delante
+        // (`groups-kept-by-the-late-notice-are-purged-by-the-welcome-fresh-start`); el cableado de ese término lo fija
+        // `WelcomeKeptGroupsTests.mirrorRelaunch_wiring`.
+        let rama = try Self.body(of: "groupsKeptForThisPerson: groupsKeptForThisPersonNow()) {", in: src)
         #expect(rama.contains("CloudSessionRetirement.arm(defaults: .standard)"), """
             sin esto, el camino que relanza para adjuntar el espejo aterriza en el onboarding con el
             llavero de la persona anterior intacto — el bug del ticket por la puerta que nadie miró.

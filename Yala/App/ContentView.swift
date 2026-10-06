@@ -285,6 +285,10 @@ struct ContentView: View {
             // si lo que quedó montado es de verdad solo-grupos: desde otro modo la activación no tiene chooser.
             // El eje se lee de la marca persistida y no del espejo en memoria: el alta del organizador
             // la escribe ahí antes de que esta transición ocurra.
+            // **La marca de los grupos que conservó el aviso tardío vive lo que tarda el onboarding** (ticket
+            // `groups-kept-by-the-late-notice-are-purged-by-the-welcome-fresh-start`): con él completo ya no describe a
+            // nadie que esté en el Welcome, y dejarla puesta le daría los grupos a quien llegue al Welcome otro día.
+            if newValue { LateNoticeKeptGroupsMark.clear() }
             if newValue, offersFullActivationAfterGroupsEntry {
                 offersFullActivationAfterGroupsEntry = false
                 if !PrivateSessionMark.hasPrivateSession() {
@@ -464,7 +468,8 @@ struct ContentView: View {
             welcomeFlowInitialStep: $welcomeFlowInitialStep,
             onCancelWipeGrace: { cancelWipeGrace() },
             onRemoteWipeStartFresh: { startFreshAfterRemoteWipeNotice() },
-            onRemoteWipeDismiss: { dismissRemoteWipeNotice() }
+            onRemoteWipeDismiss: { dismissRemoteWipeNotice() },
+            onSettleSignalsAfterWipeKeepingGroups: { settleSignalsAfterDeliberateWipe() }
         ))
         // **El cambio de Apple ID es una hoja con fases, no un alert** (2026-09-15): pregunta, cierra y, si el
         // cierre se bloquea, lo enseña con su motivo. El modifier es el dueño de la presentación y de su red;
@@ -509,6 +514,8 @@ struct ContentView: View {
             offersFullActivationAfterGroupsEntry: $offersFullActivationAfterGroupsEntry,
             hasExistingData: hasExistingData,
             hasLocalDataNow: { checkHasExistingData() },
+            welcomeDeviceDataNow: { checkHasWelcomeDeviceData() },
+            groupsKeptForThisPersonNow: { LateNoticeKeptGroupsMark.vouchesNow() },
             // **Las dos señales de «hay datos» bajan aquí**: son `@State` de esta vista y
             // `wipeAllUserData` no llama a `incrementDataVersion`, así que el `.onChange(of: dataVersion)`
             // que las recomputa NO dispara. Los OTROS consumidores del mismo borrado ya lo compensan
@@ -541,10 +548,23 @@ struct ContentView: View {
                 // «la sesión nació de la activación» sale ANTES, o ese final sería `.importedRows`
                 // (`PrivateSessionMark.clearBornFromFullActivation`).
                 PrivateSessionMark.clearBornFromFullActivation()
-                let failure = await performICloudCorpusWipe(.handover)
+                // **Con los grupos que conservó el aviso tardío, no es la frontera de otra persona** (ticket
+                // `groups-kept-by-the-late-notice-are-purged-by-the-welcome-fresh-start`): es la misma persona limpiando
+                // lo suyo, con el alcance del propio aviso. Sin la marca, `.handover`, como siempre.
+                let scope = WelcomeKeptGroupsLogic.welcomeICloudWipeScope(
+                    groupsKeptForThisPerson: LateNoticeKeptGroupsMark.vouchesNow())
+                let failure = await performICloudCorpusWipe(scope)
                 guard failure == nil else { return failure }
-                hasExistingData = false
-                hasPersonalData = false
+                if scope.purgesGroupsDomain {
+                    hasExistingData = false
+                    hasPersonalData = false
+                } else {
+                    // Los grupos se quedan y sus filas puenteadas no: el mismo par que el aviso tardío
+                    // (`performLateICloudWipe`), y las señales se RE-MIDEN, que `hasExistingData` cuenta los grupos.
+                    GroupsBridgeRestoreConvergenceStore.markSettlementLegsPending()
+                    GroupsBridgeRestoreConvergenceStore.markPending()
+                    settleSignalsAfterDeliberateWipe()
+                }
                 return nil
             },
             performDeviceCorpusWipe: { await performDeviceCorpusWipe() },
@@ -1462,6 +1482,37 @@ struct ContentView: View {
         }
     }
 
+    /// La otra mitad de `checkHasExistingData`: **grupos y filas puenteadas**, con la misma falla CERRADA. Juntas suman
+    /// lo mismo que aquélla; separadas dejan al Welcome preguntar por cada mitad (`checkHasWelcomeDeviceData`).
+    private func checkHasGroupsData() -> Bool {
+        let groupDescriptor = FetchDescriptor<SplitGroup>()
+        let bridgedDescriptor = FetchDescriptor<TransactionItem>(
+            predicate: #Predicate<TransactionItem> { $0.splitExpenseID != nil }
+        )
+        do {
+            let groupCount = try modelContext.fetchCount(groupDescriptor)
+            let bridgedCount = try modelContext.fetchCount(bridgedDescriptor)
+            return groupCount > 0 || bridgedCount > 0
+        } catch {
+            #if DEBUG
+            print("ContentView: checkHasGroupsData failed — assuming data exists: \(error)")
+            #endif
+            return true
+        }
+    }
+
+    /// **Lo que el Welcome trata como datos de OTRA persona** (ticket
+    /// `groups-kept-by-the-late-notice-are-purged-by-the-welcome-fresh-start`). Sin la marca del aviso tardío es
+    /// `checkHasExistingData`, como siempre; con ella, los grupos que el aviso conservó son de quien está delante y solo
+    /// cuenta lo personal. Lo leen el alert de «Es mi primera vez», la pregunta del corpus del teléfono con mount neutro y
+    /// las puertas de organizador e invitación. **El guard cross-cuenta de la nube NO**: sigue con el detector entero.
+    private func checkHasWelcomeDeviceData() -> Bool {
+        WelcomeKeptGroupsLogic.deviceDataForWelcome(
+            hasPersonalData: checkHasPersonalData(),
+            hasGroupsData: checkHasGroupsData(),
+            groupsKeptForThisPerson: LateNoticeKeptGroupsMark.vouchesNow())
+    }
+
     /// Show a positive confirmation toast for ~3s. Used for remote onboarding
     /// completed and remote restore completed — the only events where a brief
     /// "your data is here" reassurance is worth interrupting the silent sync rule.
@@ -1828,7 +1879,12 @@ struct ContentView: View {
         // esa ventana es «corpus SIN espejo y sin onboarding completado», que en los estados donde esta
         // puerta actúa no es alcanzable: el neutro durable borra el corpus y una instalación fresca no lo
         // tiene.
-        GroupBackendInviteEntryHandler.hasLocalDataProvider = { checkHasExistingData() }
+        //
+        // **Y con los grupos que conservó el aviso tardío, el detector del Welcome** (ticket
+        // `groups-kept-by-the-late-notice-are-purged-by-the-welcome-fresh-start`): esta puerta solo mira el corpus con el
+        // onboarding sin completar, que es justo cuando la marca vive, y esos grupos son de quien está delante. El
+        // término del espejo no cambia.
+        GroupBackendInviteEntryHandler.hasLocalDataProvider = { checkHasWelcomeDeviceData() }
         // **Y el término que distingue «sesión privada viva» de «Welcome visible».** Lo cablea aquí y el
         // handler no nombra la key: así el handler no puede elegir dominio por su cuenta.
         // (Hasta el 2026-09-12 el par vivía en un dominio por sesión y separarlos era obligatorio; hoy hay
@@ -2048,6 +2104,11 @@ struct ContentView: View {
             // necesita esperar a la sesión privada, y la convergencia solo toca las que se quedaron sin ninguna pata.
             GroupsBridgeRestoreConvergenceStore.markSettlementLegsPending()
             GroupsBridgeRestoreConvergenceStore.markPending()
+            // **Y el Welcome tiene que saber que estos grupos son de quien vuelve al onboarding** (ticket
+            // `groups-kept-by-the-late-notice-are-purged-by-the-welcome-fresh-start`, decisión A de Jürgen): si cancela el
+            // onboarding y vuelve a elegir privado, no son de otra persona. Aquí, antes de que el llamador desarme el
+            // borrado: un kill entre medias lo reanuda y vuelve a pasar por esta línea.
+            LateNoticeKeptGroupsMark.recordNow()
         }
         return nil
     }
@@ -2248,6 +2309,12 @@ struct ContentView: View {
     private func performDeviceCorpusWipe() async -> String? {
         // Lo aceptado se toma ANTES del primer `await`, como en su hermana (`takeFreshStartAcceptedLoss`).
         let acceptedInGesture = CloudSessionSignOut.shared.takeFreshStartAcceptedLoss()
+        // **¿Es el handover?** Sin la marca del aviso tardío, sí. Con ella, los grupos son de quien está delante y este
+        // borrado se lleva solo lo personal que haya vuelto al teléfono, como el propio aviso (ticket
+        // `groups-kept-by-the-late-notice-are-purged-by-the-welcome-fresh-start`). Se decide aquí, antes del primer
+        // `await`: es lo que la persona confirmó.
+        let purgesGroups = WelcomeKeptGroupsLogic.deviceWipePurgesTheGroupsDomain(
+            groupsKeptForThisPerson: LateNoticeKeptGroupsMark.vouchesNow())
         // **Si el import está en vuelo, NO se borra.** Mismo gate y mismo motivo que su hermana: un
         // `save()` durante un import de CloudKit dispara el SIGTRAP. En el camino de este ticket el mount
         // es neutro y `mirrorWillSync()` es `false`, así que no cuesta nada; en el otro —la puerta
@@ -2266,10 +2333,12 @@ struct ContentView: View {
         // **Los cambios de grupos suben ANTES de borrar nada** (ticket
         // `fresh-start-wipe-kills-unsent-group-writes-silently`): el borrado de abajo se lleva el outbox, y quien elige
         // «Es mi primera vez» desde una sesión solo-grupos es la persona que los apuntó. Si no drenan, no se borra nada.
-        let acceptedGroupsLoss: CloudSignOutFlowLogic.FreshStartGroupsLoss?
-        switch await drainGroupsBeforeFreshStart(accepted: acceptedInGesture) {
-        case .stop(let failure): return failure
-        case .proceed(let accepted): acceptedGroupsLoss = accepted
+        var acceptedGroupsLoss: CloudSignOutFlowLogic.FreshStartGroupsLoss?
+        if purgesGroups {
+            switch await drainGroupsBeforeFreshStart(accepted: acceptedInGesture) {
+            case .stop(let failure): return failure
+            case .proceed(let accepted): acceptedGroupsLoss = accepted
+            }
         }
         // **La gracia se cancela ANTES de borrar, no después, y eso es una corrección de la review.**
         // `wipeAllUserData` hace `save()` incrementales, así que un borrado que lanza a media lista deja
@@ -2282,12 +2351,17 @@ struct ContentView: View {
             // El cinturón del escritor, ANTES del primer borrado: si lanzara dentro de `wipeLocalGroupsDomain`, lo
             // personal ya estaría borrado y los grupos enteros.
             // Con lo aceptado en «Empezar de cero y perderlos», deja pasar exactamente eso.
-            try DataWipeService.requireNoUnsentGroupWrites(in: modelContext, accepting: acceptedGroupsLoss)
-            try DataWipeService.wipeAllUserData(in: modelContext, broadcastSignal: false)
+            if purgesGroups {
+                try DataWipeService.requireNoUnsentGroupWrites(in: modelContext, accepting: acceptedGroupsLoss)
+            }
+            // Con los grupos conservados, las preferencias se quedan: son de la misma persona (`.importedRows`).
+            try DataWipeService.wipeAllUserData(in: modelContext, broadcastSignal: false, resetsPreferences: purgesGroups)
             // El handover: los grupos de la etapa anterior se van de este teléfono y el dominio queda
             // SELLADO hasta que el usuario nuevo adopte Grupos. Va DESPUÉS del borrado personal y dentro
             // del mismo `do`, como en el alert gemelo: si el primero lanza, el segundo no debe correr.
-            try DataWipeService.wipeLocalGroupsDomain(in: modelContext, acceptedGroupsLoss: acceptedGroupsLoss)
+            if purgesGroups {
+                try DataWipeService.wipeLocalGroupsDomain(in: modelContext, acceptedGroupsLoss: acceptedGroupsLoss)
+            }
         } catch is DataWipeService.GroupsDomainWipeError {
             // El cinturón saltó ANTES del primer borrado (va delante de `wipeAllUserData`): no se tocó nada, y lo que
             // hay que decir es «faltan cambios de grupos», no «puede que parte de tus datos ya no esté».
@@ -2297,8 +2371,16 @@ struct ContentView: View {
             MetricsService.canary(.freshStartWipeFailed, detail: "deviceCorpusWipe")
             return "deviceWipeFailed"
         }
-        hasExistingData = false
-        hasPersonalData = false
+        if purgesGroups {
+            hasExistingData = false
+            hasPersonalData = false
+        } else {
+            // Los grupos se quedan y sus filas puenteadas no: el par de la convergencia, como el aviso tardío. Y las
+            // señales se RE-MIDEN, que `hasExistingData` cuenta los grupos.
+            GroupsBridgeRestoreConvergenceStore.markSettlementLegsPending()
+            GroupsBridgeRestoreConvergenceStore.markPending()
+            settleSignalsAfterDeliberateWipe()
+        }
         return nil
     }
 
@@ -2527,6 +2609,14 @@ private struct WelcomeFlowModifier: ViewModifier {
     /// momento de la decisión (fetch vivo), no el snapshot `hasExistingData` — el
     /// mirror de iCloud puede estar re-importando en background durante el Welcome.
     let hasLocalDataNow: @MainActor @Sendable () -> Bool
+    /// **Lo que el Welcome trata como datos de OTRA persona** (`ContentView.checkHasWelcomeDeviceData`): sin la marca del
+    /// aviso tardío es `hasLocalDataNow`; con ella, los grupos que el aviso conservó no cuentan. Lo leen el alert de
+    /// «Es mi primera vez», la pregunta del corpus del teléfono con mount neutro y la puerta del organizador. El guard
+    /// cross-cuenta de la nube sigue con `hasLocalDataNow`.
+    let welcomeDeviceDataNow: @MainActor @Sendable () -> Bool
+    /// ¿Son de quien está delante los grupos de este teléfono? La marca del aviso tardío, leída en el momento
+    /// (`LateNoticeKeptGroupsMark.vouchesNow`). Con ella, «Es mi primera vez → privado» no es la frontera de otra persona.
+    let groupsKeptForThisPersonNow: @MainActor @Sendable () -> Bool
     /// Paso 4: el borrado del corpus de iCloud, que vive en `ContentView` porque necesita el
     /// `modelContext`. Este modifier solo lo reenvía al container, y el container a la puerta.
     let performICloudCorpusWipe: @MainActor () async -> String?
@@ -2661,7 +2751,14 @@ private struct WelcomeFlowModifier: ViewModifier {
                         // la caducidad por `hasShownWelcomeChooser` cierra para la marca hermana y que
                         // ésta, al no caducar, tiene que cerrar aquí.
                         StorageModePersistence.clearGroupsOnlyNeutralMount()
-                        if destination == .privateOnboarding {
+                        // **Salvo que los grupos de este teléfono sean de quien está delante** (ticket
+                        // `groups-kept-by-the-late-notice-are-purged-by-the-welcome-fresh-start`): tras el aviso tardío que
+                        // los conservó, «Soy nuevo → privado» es la misma persona, y retirarle la sesión de Grupos en el
+                        // arranque siguiente es el borrado que ese aviso acababa de evitar. Mismo criterio que
+                        // `startFreshPrivateOnboarding`.
+                        if destination == .privateOnboarding,
+                           WelcomeKeptGroupsLogic.freshStartRetiresThePreviousPerson(
+                               groupsKeptForThisPerson: groupsKeptForThisPersonNow()) {
                             OnboardingResetHelper.clearResidualPreferencesForFreshStart()
                             // **Y la sesión en la nube de la persona anterior, armada.** Este callback es
                             // la QUINTA declaración de «empiezo de cero» del shell, y la única que no pasa
@@ -2746,6 +2843,7 @@ private struct WelcomeFlowModifier: ViewModifier {
                         }
                     },
                     hasLocalDataNow: hasLocalDataNow,
+                    welcomeDeviceDataNow: welcomeDeviceDataNow,
                     // Paso 4: el borrado vive aquí porque necesita el `modelContext`. La puerta solo
                     // decide y enseña.
                     //
@@ -2919,7 +3017,13 @@ private struct WelcomeFlowModifier: ViewModifier {
         // relanzar (el mount ya espeja), así que este modifier sigue con el `let` que capturó el `body`
         // ANTES del borrado. Con él, a quien acababa de confirmar el borrado dos veces le salía un tercer
         // alert pidiéndole borrar lo que ya no existía — y su «Cancelar» lo dejaba plantado en el Welcome.
-        if hasLocalDataNow() {
+        //
+        // **Y lo que pregunta es por datos de OTRA persona** (ticket
+        // `groups-kept-by-the-late-notice-are-purged-by-the-welcome-fresh-start`, decisión A de Jürgen): los grupos que
+        // el aviso tardío acaba de conservar son de quien cancela el onboarding y vuelve aquí, y contarlos le ofrecía el
+        // borrado del handover —grupos, sesión y sello— con el copy de «aquí empieza otro usuario».
+        let groupsKeptForThisPerson = groupsKeptForThisPersonNow()
+        if welcomeDeviceDataNow() {
             // **El testigo ANTES de encender el alert**: presentarlo desmonta el cover del Welcome y baja
             // `showWelcomeFlow`, así que es ahora o nunca. Lo lee la ruta de «Borrar todo y continuar» con cambios de
             // grupos pendientes: con el Welcome debajo sigue en la puerta privada aunque el onboarding esté completo,
@@ -2935,26 +3039,34 @@ private struct WelcomeFlowModifier: ViewModifier {
             // Y el efecto era DIFERIDO —`AppPreferences.loadFromDefaults()` solo corre en el
             // `init` y descarta los vacíos— así que lo percibía un arranque en frío después.
             // Se limpia cuando se BORRA, no cuando se pregunta.
-            OnboardingResetHelper.clearResidualPreferencesForFreshStart()
-            // **Y la sesión en la nube se retira también por aquí.** Esta rama es la que declara «soy
-            // nuevo» cuando no hay NADA que borrar, así que no pasa por `wipeLocalGroupsDomain` y hasta
-            // el 2026-09-17 se iba al onboarding con la sesión de la persona anterior intacta — el
-            // camino que este ticket mide como reinstalación sin sello.
             //
-            // **Solo el retiro, no el sello ni la purga del dominio de Grupos**, y la asimetría es
-            // deliberada: aquí no hay grupos que purgar (`hasLocalDataNow()` los cuenta, y dijo que no),
-            // y el sello es irreversible en este teléfono — se lo comería quien reinstala su PROPIA app
-            // y dice «soy nuevo», quitándole la asociación de Grupos de su Apple ID para siempre.
-            CloudSessionRetirement.retireForHandover()
-            // Y lo que este teléfono RECORDABA de esa cuenta, que sobrevive al store vacío porque no son
-            // filas: el espejo local de la asociación le enseñaría a la persona nueva **el correo del
-            // anterior** en la fila de Ajustes, y el latch de «aquí hubo sesión de Grupos» le diría
-            // «vuelve a tu cuenta» en un empty state que no es suyo. Mismo par y mismo motivo que borra
-            // `SwiftDataConfiguration.performSignOutWipeIfArmed` cuando el cierre se lleva los grupos.
-            // La copia del iCloud-KV NO se toca: es del Apple ID, y es el camino de vuelta de quien
-            // reinstala lo suyo.
-            UserDefaults.standard.removeObject(forKey: GroupsAccountAssociation.localKey)
-            UserDefaults.standard.removeObject(forKey: GroupsSessionHistoryMarker.key)
+            // **Las cuatro limpiezas de la persona anterior, y no con los grupos que conservó el aviso tardío** (ticket
+            // `groups-kept-by-the-late-notice-are-purged-by-the-welcome-fresh-start`): ahí quien está delante ES esa
+            // persona, y retirarle la sesión de Grupos, su asociación y su nombre y divisa es el handover que la decisión A
+            // de Jürgen le quitó a este camino. Vuelve al onboarding como el aviso la dejó.
+            if WelcomeKeptGroupsLogic.freshStartRetiresThePreviousPerson(
+                groupsKeptForThisPerson: groupsKeptForThisPerson) {
+                OnboardingResetHelper.clearResidualPreferencesForFreshStart()
+                // **Y la sesión en la nube se retira también por aquí.** Esta rama es la que declara «soy
+                // nuevo» cuando no hay NADA que borrar, así que no pasa por `wipeLocalGroupsDomain` y hasta
+                // el 2026-09-17 se iba al onboarding con la sesión de la persona anterior intacta — el
+                // camino que este ticket mide como reinstalación sin sello.
+                //
+                // **Solo el retiro, no el sello ni la purga del dominio de Grupos**, y la asimetría es
+                // deliberada: aquí no hay grupos que purgar (sin la marca, `welcomeDeviceDataNow()` los cuenta y dijo que no),
+                // y el sello es irreversible en este teléfono — se lo comería quien reinstala su PROPIA app
+                // y dice «soy nuevo», quitándole la asociación de Grupos de su Apple ID para siempre.
+                CloudSessionRetirement.retireForHandover()
+                // Y lo que este teléfono RECORDABA de esa cuenta, que sobrevive al store vacío porque no son
+                // filas: el espejo local de la asociación le enseñaría a la persona nueva **el correo del
+                // anterior** en la fila de Ajustes, y el latch de «aquí hubo sesión de Grupos» le diría
+                // «vuelve a tu cuenta» en un empty state que no es suyo. Mismo par y mismo motivo que borra
+                // `SwiftDataConfiguration.performSignOutWipeIfArmed` cuando el cierre se lleva los grupos.
+                // La copia del iCloud-KV NO se toca: es del Apple ID, y es el camino de vuelta de quien
+                // reinstala lo suyo.
+                UserDefaults.standard.removeObject(forKey: GroupsAccountAssociation.localKey)
+                UserDefaults.standard.removeObject(forKey: GroupsSessionHistoryMarker.key)
+            }
             // **Y un borrado a medias de la puerta del Welcome deja de estarlo** (ticket
             // `private-gate-leave-after-a-halfway-wipe-forgets-the-zone`). La marca dice «iCloud vacío y lo del teléfono
             // no», y aquí se acaba de medir el teléfono vacío. Con el espejo puesto, la puerta no mide el teléfono y su

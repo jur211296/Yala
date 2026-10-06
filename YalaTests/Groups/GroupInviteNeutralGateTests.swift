@@ -534,7 +534,10 @@ struct GroupInviteNeutralGateWiringTests {
     @Test("`ContentView` instala los dos providers que el handler no puede resolver solo")
     func contentViewWiresBothProviders() throws {
         let code = try Self.source("Yala/App/ContentView.swift")
-        #expect(code.contains("GroupBackendInviteEntryHandler.hasLocalDataProvider = { checkHasExistingData() }"),
+        // El detector del Welcome desde el 2026-10-06: esta puerta solo mira el corpus con el onboarding sin completar,
+        // que es cuando vive la marca de los grupos que conservó el aviso tardío
+        // (`groups-kept-by-the-late-notice-are-purged-by-the-welcome-fresh-start`).
+        #expect(code.contains("GroupBackendInviteEntryHandler.hasLocalDataProvider = { checkHasWelcomeDeviceData() }"),
                 "sin este cableado la puerta no ve el corpus y solo caza el caso del espejo")
         #expect(code.contains("GroupBackendInviteEntryHandler.hasCompletedPersonalOnboardingProvider"),
                 "sin este cableado la puerta no sabe distinguir al dueño del recién llegado")

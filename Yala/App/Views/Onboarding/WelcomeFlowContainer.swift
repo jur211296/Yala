@@ -107,6 +107,12 @@ struct WelcomeFlowContainer: View {
     /// G3: fetch VIVO del corpus local para la puerta (mismo closure que alimenta el guard cross-cuenta
     /// del sign-in de nube — un snapshot no vale, el mirror puede estar re-importando).
     var hasLocalDataNow: @MainActor @Sendable () -> Bool
+    /// **Lo que el Welcome trata como datos de OTRA persona** (ticket
+    /// `groups-kept-by-the-late-notice-are-purged-by-the-welcome-fresh-start`): sin la marca del aviso tardío es
+    /// `hasLocalDataNow`; con ella, los grupos que el aviso conservó son de quien está delante y no cuentan. Lo leen la
+    /// puerta del organizador y la pregunta del corpus del teléfono con mount neutro (`deviceCorpusGate`). El borrado
+    /// del teléfono ya decidido (`.freshStartDeviceWipe`) sigue con `hasLocalDataNow`: ahí se pregunta qué queda.
+    var welcomeDeviceDataNow: @MainActor @Sendable () -> Bool
     /// Paso 4: el borrado del corpus de iCloud. Vive en `ContentView` —es quien tiene el `modelContext`,
     /// y el borrado tiene que llevarse también las filas que el espejo hubiera bajado ya—; el container
     /// solo lo reenvía a la puerta.
@@ -133,6 +139,7 @@ struct WelcomeFlowContainer: View {
         onGroupsGateNeutralReturnArmed: @escaping (WelcomeGroupsGateView.Purpose) -> Void,
         onGroupsGateInviteProceed: @escaping (String) -> Void,
         hasLocalDataNow: @escaping @MainActor @Sendable () -> Bool,
+        welcomeDeviceDataNow: @escaping @MainActor @Sendable () -> Bool,
         performICloudCorpusWipe: @escaping @MainActor () async -> String?,
         performDeviceCorpusWipe: @escaping @MainActor () async -> String?
     ) {
@@ -147,6 +154,7 @@ struct WelcomeFlowContainer: View {
         self.onGroupsGateNeutralReturnArmed = onGroupsGateNeutralReturnArmed
         self.onGroupsGateInviteProceed = onGroupsGateInviteProceed
         self.hasLocalDataNow = hasLocalDataNow
+        self.welcomeDeviceDataNow = welcomeDeviceDataNow
         self.performICloudCorpusWipe = performICloudCorpusWipe
         self.performDeviceCorpusWipe = performDeviceCorpusWipe
         self._step = State(initialValue: initialStep)
@@ -222,7 +230,9 @@ struct WelcomeFlowContainer: View {
                     // Re-envuelto en vez de reenviado: pasar la property directa convierte un valor de
                     // función no-Sendable y avisa (`may introduce data races`). El closure nuevo nace ya en
                     // este contexto y no cruza ninguna frontera.
-                    hasLocalDataNow: { hasLocalDataNow() },
+                    // El detector del WELCOME, no el entero: los grupos que conservó el aviso tardío son de quien está
+                    // delante (`groups-kept-by-the-late-notice-are-purged-by-the-welcome-fresh-start`).
+                    hasLocalDataNow: { welcomeDeviceDataNow() },
                     onProceed: {
                         // El destino del `.proceed` lo decide el propósito, y por eso la rama del invitado
                         // NO pasa por `leaveWelcome`: aquel evalúa si el destino elegido necesita el mirror
@@ -294,8 +304,9 @@ struct WelcomeFlowContainer: View {
                     // camino muerto: las otras dos ramas del chooser también necesitan red. El testigo
                     // aplaza la validación al primer arranque en que se pueda hacer.
                     unverifiedExit: .proceedWatchingTheMirror,
-                    // **El borrado a medias lo termina el aviso tardío**: su «Terminar de borrar» es `.handover`, el mismo
-                    // borrado de esta puerta. Salir lo deja escrito en vez de olvidar que iCloud ya quedó vacío.
+                    // **El borrado a medias lo termina el aviso tardío**: su «Terminar de borrar» usa el alcance que este
+                    // borrado apuntó al entrar —`.handover`, o `.importedRows` con los grupos que conservó un aviso
+                    // anterior—. Salir lo deja escrito en vez de olvidar que iCloud ya quedó vacío.
                     halfwayWipe: .leaveForLateNotice
                 )
                 .transition(.opacity)
@@ -474,7 +485,9 @@ struct WelcomeFlowContainer: View {
         guard WelcomeMirrorRelaunchLogic.shouldRelaunch(
             destination: .privateOnboarding,
             mountedDecision: SwiftDataConfiguration.personalStoreMountedDecision) else { return nil }
-        return .init(hasData: { hasLocalDataNow() },
+        // El detector del WELCOME: con los grupos que conservó el aviso tardío, no se pregunta por ellos — el borrado que
+        // cuelga de aquí los purga y sella (`groups-kept-by-the-late-notice-are-purged-by-the-welcome-fresh-start`).
+        return .init(hasData: { welcomeDeviceDataNow() },
                      wipe: { await performDeviceCorpusWipe() })
     }
 

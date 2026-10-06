@@ -730,6 +730,10 @@ final class DataWipeService {
 
         removeGroupsDomainPreferenceKeys(from: defaults)
         clearHandoverPrivateSessionMark(from: defaults)
+        // **Y la marca de los grupos que conservó el aviso tardío**: describía estos grupos, que acaban de irse, y sin
+        // esto avalaría los de quien entre después (`groups-kept-by-the-late-notice-are-purged-by-the-welcome-fresh-start`).
+        // Aquí y no en los llamadores: es el escritor del dominio, y un borrado nuevo del dominio la hereda.
+        LateNoticeKeptGroupsMark.clear(defaults)
         resetSyncState()
 
         // SELLO: el borrado de arriba es local, y el reset de los tokens hace que el motor

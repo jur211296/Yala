@@ -141,6 +141,11 @@ final class AppBootstrapper {
             hasGroupsOnlyNeutralMount: StorageModePersistence.isGroupsOnlyNeutralMountArmed(),
             hasCompletedOnboarding: UserDefaults.standard.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding))
 
+        // 0.0-bis-2. La marca de los grupos que conservó el aviso tardío, fuera si el onboarding ya está completo
+        // (`groups-kept-by-the-late-notice-are-purged-by-the-welcome-fresh-start`). La retira la transición del
+        // onboarding en `ContentView`; esto recoge la que un kill dejó atrás, antes de que nada del Welcome la lea.
+        LateNoticeKeptGroupsMark.retireIfOnboardingCompleted()
+
         // 0.0-ter. Y el espejo del eje al día, DESPUÉS del backfill y de los hooks pre-mount.
         //
         // `SessionState.shared` se construye en el prólogo de `YalaApp`, antes de que corra nada de esto,
@@ -798,6 +803,10 @@ final class AppBootstrapper {
             //    quedaba en el simulador — `cloudSync.*`, fuera del barrido — y la puerta siguiente decía «no pudimos»
             //    sin haber intentado nada.
             GroupsGateWipeFailureMarker.clear()
+            //  · la marca de los grupos que conservó el aviso tardío: la siembra `-uitest-late-notice-kept-groups` más
+            //    abajo, y es `cloudSync.*`, fuera del barrido — sin esto la corrida siguiente vería los grupos de su seed
+            //    como de quien está delante y no saldría el alert de «Es mi primera vez».
+            LateNoticeKeptGroupsMark.clear()
             //  · identidad iCloud sembrada por `-uitest-icloud-identity`: se PERSISTE en defaults,
             //    así que sin esto una corrida con el arg dejaba al siguiente XCUITest resolviendo
             //    identidad contra un member que no es suyo. Es la trampa que `.claude/rules/
@@ -880,6 +889,12 @@ final class AppBootstrapper {
         // vez del comportamiento.
         if UITestHooks.seedICloudIdentity {
             GroupICloudIdentitySeed.adopt(UITestHooks.uitestICloudRecordName)
+        }
+        // El estado que deja el aviso tardío al conservar los grupos: la marca, atada a la sesión que haya —el llavero del
+        // simulador puede guardar una real de otra corrida, y con «sin sesión» apuntado no valdría—. Va con el seed
+        // `solo-grupos-tras-aviso` y el Welcome visible (`groups-kept-by-the-late-notice-are-purged-by-the-welcome-fresh-start`).
+        if UITestHooks.lateNoticeKeptGroups {
+            LateNoticeKeptGroupsMark.recordNow()
         }
         if UITestHooks.forceGroupInvite {
             // El seam siembra la celda ENTERA, o el XCUITest solo-grupos correría con la marca que dejó

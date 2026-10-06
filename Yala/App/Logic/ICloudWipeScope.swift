@@ -94,7 +94,8 @@ nonisolated enum ICloudWipeScope: String, Equatable, CaseIterable {
     /// **Empezar de cero es `.importedRows`, venga de donde venga la sesión.** Quien contesta al aviso es la persona
     /// de esta sesión privada, y los grupos que hay en el teléfono son suyos. El testigo del aviso solo lo dejan dos
     /// puertas: la del Welcome, que sigue al onboarding privado —y ése solo arranca sobre un teléfono sin datos, grupos
-    /// incluidos: `startFreshPrivateOnboarding` los cuenta y, si los hay, pide borrarlos con el handover—, y la de
+    /// incluidos: `startFreshPrivateOnboarding` los cuenta y, si los hay, pide borrarlos con el handover; salvo los que
+    /// conservó un aviso tardío anterior, que son de la misma persona (`LateNoticeKeptGroupsMark`)—, y la de
     /// «Activar Yala completo», que existe para conservarlos. Así que todo grupo que haya al llegar el aviso es uno al
     /// que la persona se unió DESPUÉS de elegir privado, o uno que trajo la activación. El `.handover` se los llevaba,
     /// con su sesión de Grupos y el sello, mientras el copy solo nombra «tus registros, tus cuentas y tus presupuestos».

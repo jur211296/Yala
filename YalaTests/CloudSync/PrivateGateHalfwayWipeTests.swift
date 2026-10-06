@@ -418,7 +418,7 @@ struct PrivateGateHalfwayWipeWiringTests {
     @Test("el onboarding privado que arranca con el teléfono vacío retira la marca")
     func freshPrivateStart_retiresOnlyWhenThePhoneIsEmpty() throws {
         let start = try Self.body(of: "private func startFreshPrivateOnboarding() {", in: try Self.code(Self.contentView))
-        let conDatos = try Self.slice(from: "if hasLocalDataNow() {", to: "} else {", in: start)
+        let conDatos = try Self.slice(from: "if welcomeDeviceDataNow() {", to: "} else {", in: start)
         #expect(!conDatos.contains("clearICloudCorpusWipeLeftHalfway"), "con datos en el teléfono sigue a medias")
         let sinDatos = String(start[try #require(start.range(of: "} else {")).upperBound...])
         try Self.expectOrder("StorageModePersistence.clearICloudCorpusWipeLeftHalfway()", before: "showOnboarding = true",
