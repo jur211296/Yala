@@ -6457,3 +6457,27 @@
 
 /* Sheet body: the deletion did not finish before the cloud was activated and will not happen */
 "welcome.privateICloud.cancelledInCloudBody" = "Poprosiłeś o zaczęcie od zera i usunięcie danych z iCloud, ale usuwanie nie zakończyło się, zanim Twoje dane przeszły do chmury, i już nie nastąpi. Część tego, co chciałeś usunąć, może nadal być w iCloud lub trafić na Twoje konto Yala.";
+
+/* Inbox: title of the notice that a settlement already approved to a real account changed its amount */
+"inbox.groupSettlementAmountChange.title" = "Kwota zmieniona";
+
+/* Notice banner, the other person paid me. 1 person, 2 group, 3 amount reviewed, 4 new amount, 5 account, 6 amount in that account */
+"inbox.groupSettlementAmountChange.bannerReceived" = "Płatność od %1$@ w „%2$@” się zmieniła: było %3$@, teraz jest %4$@. Na koncie %5$@ masz zapisane %6$@.";
+
+/* Notice banner, I paid the other person. 1 person, 2 group, 3 amount reviewed, 4 new amount, 5 account, 6 amount in that account */
+"inbox.groupSettlementAmountChange.bannerSent" = "Twoja płatność dla %1$@ w „%2$@” się zmieniła: było %3$@, teraz jest %4$@. Na koncie %5$@ masz zapisane %6$@.";
+
+/* Notice banner without the other person name. 1 group, 2 amount reviewed, 3 new amount, 4 account, 5 amount in that account */
+"inbox.groupSettlementAmountChange.bannerUnnamed" = "To rozliczenie w „%1$@” się zmieniło: było %2$@, teraz jest %3$@. Na koncie %4$@ masz zapisane %5$@.";
+
+/* Primary button: set my transaction to the new amount */
+"inbox.groupSettlementAmountChange.adjust" = "Dostosuj do %@";
+
+/* Secondary button: leave my transaction at its amount */
+"inbox.groupSettlementAmountChange.keep" = "Zostaw %@";
+
+/* Inbox row second line for the notice: account, amount in that account */
+"inbox.groupSettlementAmountChange.rowDetail" = "%2$@ zapisane na koncie %1$@";
+
+/* Error when the notice can no longer be applied: the transaction is gone, duplicated or in another currency */
+"inbox.groupSettlementAmountChange.transactionGone" = "Tego powiadomienia nie można już zastosować: transakcja się zmieniła albo nie ma jej już na Twoich kontach.";

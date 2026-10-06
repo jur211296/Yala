@@ -6457,3 +6457,27 @@
 
 /* Sheet body: the deletion did not finish before the cloud was activated and will not happen */
 "welcome.privateICloud.cancelledInCloudBody" = "你曾要求从头开始并删除 iCloud 中的数据，但在你的数据转入云端前删除没有完成，之后也不会再进行。部分你想删除的数据可能仍在 iCloud 中，或已转入你的 Yala 账户。";
+
+/* Inbox: title of the notice that a settlement already approved to a real account changed its amount */
+"inbox.groupSettlementAmountChange.title" = "金额已更改";
+
+/* Notice banner, the other person paid me. 1 person, 2 group, 3 amount reviewed, 4 new amount, 5 account, 6 amount in that account */
+"inbox.groupSettlementAmountChange.bannerReceived" = "「%2$@」中 %1$@ 的付款已更改：原为 %3$@，现为 %4$@。%5$@ 中记录的是 %6$@。";
+
+/* Notice banner, I paid the other person. 1 person, 2 group, 3 amount reviewed, 4 new amount, 5 account, 6 amount in that account */
+"inbox.groupSettlementAmountChange.bannerSent" = "「%2$@」中你付给 %1$@ 的款项已更改：原为 %3$@，现为 %4$@。%5$@ 中记录的是 %6$@。";
+
+/* Notice banner without the other person name. 1 group, 2 amount reviewed, 3 new amount, 4 account, 5 amount in that account */
+"inbox.groupSettlementAmountChange.bannerUnnamed" = "「%1$@」中的这笔结算已更改：原为 %2$@，现为 %3$@。%4$@ 中记录的是 %5$@。";
+
+/* Primary button: set my transaction to the new amount */
+"inbox.groupSettlementAmountChange.adjust" = "调整为 %@";
+
+/* Secondary button: leave my transaction at its amount */
+"inbox.groupSettlementAmountChange.keep" = "保持 %@";
+
+/* Inbox row second line for the notice: account, amount in that account */
+"inbox.groupSettlementAmountChange.rowDetail" = "%1$@ 中记录为 %2$@";
+
+/* Error when the notice can no longer be applied: the transaction is gone, duplicated or in another currency */
+"inbox.groupSettlementAmountChange.transactionGone" = "此提醒已无法应用：该交易已更改或不在你的账户中。";

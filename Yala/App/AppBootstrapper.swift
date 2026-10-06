@@ -1026,6 +1026,10 @@ final class AppBootstrapper {
         if let iso = UITestHooks.groupBridgeFXCurrency {
             DevSeedService().seedGroupBridgeFXLegs(currencyCode: iso, in: context)
         }
+        // Liquidación aprobada cuyo importe cambia después: el aviso de importe cambiado en el Inbox.
+        if UITestHooks.seedSettlementAmountChange {
+            DevSeedSettlementAmountChange.create(in: context)
+        }
         // Deeplink simulado en uitest: encola la navegación al tab destino (el gate la
         // drena cuando el routing esté listo). Ejercita el wiring de tabs ocultos.
         if let dest = uitestDeeplinkDestination() {
@@ -1784,6 +1788,15 @@ final class AppBootstrapper {
         } catch {
             #if DEBUG
             print("AppBootstrapper: pruneSettlementDraftsAlreadyResolved: Error: \(error)")
+            #endif
+        }
+        // Y los avisos de importe cambiado de las liquidaciones ya aprobadas: la transacción real que llegó después de la
+        // marca, o el aviso que duplicó otro dispositivo (`reconcileSettlementAmountChangeNotices`). Mismos gates.
+        do {
+            try GroupTransactionBridge.reconcileSettlementAmountChangeNotices(context: context)
+        } catch {
+            #if DEBUG
+            print("AppBootstrapper: reconcileSettlementAmountChangeNotices: Error: \(error)")
             #endif
         }
 

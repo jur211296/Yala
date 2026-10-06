@@ -50,6 +50,7 @@ extension XCUIApplication {
         signOutKeepsSession: Bool = false,
         groupsGateMirrorLive: Bool = false,
         groupsGateWipeFailed: Bool = false,
+        settlementAmountChange: Bool = false,
         extraArguments: [String] = []
     ) -> XCUIApplication {
         var args = ["-uitest"]
@@ -61,6 +62,9 @@ extension XCUIApplication {
             args.append(seed)
         }
         if seedDesync { args.append("-uitest-seed-desync") }
+        // Liquidación aprobada cuyo importe cambia después (`DevSeedSettlementAmountChange`). NOMBRADO por lo mismo que
+        // sus vecinos: un typo dejaría el Inbox sin aviso y el rojo culparía a la pantalla.
+        if settlementAmountChange { args.append("-uitest-seed-settlement-amount-change") }
         if let deeplink {
             args.append("-uitest-deeplink")
             args.append(deeplink)

@@ -143,6 +143,57 @@ final class DraftService {
         context.insert(mark)
     }
 
+    // MARK: - Aviso de importe cambiado tras aprobar
+
+    /// **«Ajustar» del aviso de importe cambiado** (ticket `settlement-amount-edited-after-approval-leaves-the-bank-stale`):
+    /// pone la transacción real en el importe nuevo, y la marca de aprobación con ella, para que el re-puente no vuelva a
+    /// avisar de la misma corrección. Es un AJUSTE, no una suma: aplicarlo dos veces (dos avisos de dos dispositivos) deja
+    /// el mismo importe. Retira todos los avisos de esa liquidación en el mismo guardado.
+    ///
+    /// La transacción se resuelve por la marca (`GroupTransactionBridge.amountChangeTarget`), nunca por el aviso, y tiene
+    /// que seguir en la divisa de la liquidación: si la persona cambió la divisa de la cuenta, el importe del aviso ya no
+    /// significa lo mismo. La transacción sigue siendo independiente (D7): sin `splitSettlementID`, solo cambia porque la
+    /// persona lo aceptó aquí.
+    private func applySettlementAmountChange(_ notice: InboxDraft, context: ModelContext) throws -> TransactionItem {
+        guard let amount = notice.amount else { throw DraftServiceError.missingAmount }
+        guard let target = try GroupTransactionBridge.amountChangeTarget(
+            settlementID: notice.splitSettlementID, in: context),
+              let settlementUUID = notice.splitSettlementID.flatMap(UUID.init(uuidString:)) else {
+            throw DraftServiceError.settlementAmountChangeTransactionGone
+        }
+        var settlementDescriptor = FetchDescriptor<SplitSettlement>(predicate: #Predicate { $0.id == settlementUUID })
+        settlementDescriptor.fetchLimit = 1
+        guard let settlement = try context.fetch(settlementDescriptor).first,
+              target.transaction.currencyCode == settlement.currencyCode else {
+            throw DraftServiceError.settlementAmountChangeTransactionGone
+        }
+        let transaction = target.transaction
+
+        if transaction.amount != amount {
+            transaction.amount = amount
+            transaction.recalculatePreferredCurrency(context: context)
+        }
+        if target.mark.amount != amount {
+            target.mark.amount = amount
+            target.mark.updatedAt = Date.now
+        }
+
+        let settlementID = notice.splitSettlementID
+        let settlementRaw = DraftSourceType.groupSettlement.rawValue
+        let siblings = try context.fetch(FetchDescriptor<InboxDraft>(
+            predicate: #Predicate { $0.sourceTypeRaw == settlementRaw && $0.splitSettlementID == settlementID }))
+        for other in siblings where other.isSettlementAmountChangeNotice
+            && other.persistentModelID != notice.persistentModelID {
+            deleteInboxDraftPruningRow(other, in: context)
+        }
+        deleteInboxDraftPruningRow(notice, in: context)
+        try context.save()
+
+        SessionState.shared.incrementDataVersion()
+        WidgetDataCache.updateCache(context: context)
+        return transaction
+    }
+
     /// **Aprobar una liquidación ya aprobada no crea otra transacción.** Un borrador pendiente puede convivir con la marca:
     /// otro dispositivo lo creó antes de que la marca le llegara por el espejo, o lo creó una versión anterior de la app.
     /// Si hay marca de la misma liquidación, se rechaza con un error que se lo dice a la persona, y el pendiente se queda
@@ -202,6 +253,13 @@ final class DraftService {
         // excluyen (requiresApprovalForm); esto cubre cualquier otro caller.
         guard draft.sourceType != .groupScheduledExpense else {
             throw DraftServiceError.groupScheduledExpenseRequiresForm
+        }
+
+        // Aviso de importe cambiado de una liquidación ya aprobada: aprobarlo es AJUSTAR la transacción que ya existe, nunca
+        // crear otra. Va antes que todo lo demás porque el aviso es un `.groupSettlement` con cuenta, importe y subcategoría,
+        // y el camino de la liquidación de abajo lo leería como un pago por registrar.
+        if draft.isSettlementAmountChangeNotice {
+            return try applySettlementAmountChange(draft, context: context)
         }
 
         // Draft opt-in de settlement (bridge OFF): crea TX manual independiente SIN bridge —
@@ -618,7 +676,10 @@ final class DraftService {
     func deleteDraft(_ draft: InboxDraft) throws {
         // A0-Bridge: los punteros `.groupExpense` no se eliminan desde Inbox: solo al borrar el gasto
         // origen en el grupo. Los de liquidación sí (`blocksInboxDismissal`).
-        if draft.sourceType.blocksInboxDismissal || draft.isLiveSettlementApprovalMark {
+        // El aviso de importe cambiado tampoco: se resuelve ajustando o dejándolo (rechazar). Borrado, el siguiente
+        // re-puente volvería a preguntar por la misma corrección.
+        if draft.sourceType.blocksInboxDismissal || draft.isLiveSettlementApprovalMark
+            || draft.isSettlementAmountChangeNotice {
             throw DraftServiceError.cannotDeleteGroupDraft
         }
         let context = try requireContext()
@@ -632,7 +693,8 @@ final class DraftService {
         for draft in drafts {
             // A0-Bridge: skip de los que no se pueden descartar (silent skip en bulk). La marca viva de una
             // liquidación tampoco: sin ella el siguiente re-puente volvería a preguntar por el pago.
-            if draft.sourceType.blocksInboxDismissal || draft.isLiveSettlementApprovalMark { continue }
+            if draft.sourceType.blocksInboxDismissal || draft.isLiveSettlementApprovalMark
+                || draft.isSettlementAmountChangeNotice { continue }
             skipGroupScheduledOccurrence(for: draft, in: context)
             context.delete(draft)
         }
@@ -702,7 +764,8 @@ final class DraftService {
     func bulkUpdateAccount(_ drafts: [InboxDraft], account: Account) throws {
         let context = try requireContext()
 
-        for draft in drafts {
+        // El aviso de importe cambiado ajusta una transacción concreta: su cuenta es la de ella y no se cambia en lote.
+        for draft in drafts where !draft.isSettlementAmountChangeNotice {
             draft.account = account
             draft.updatedAt = Date.now
             updateNeedsUserInput(draft)
@@ -714,7 +777,7 @@ final class DraftService {
     func bulkUpdateSubcategory(_ drafts: [InboxDraft], subcategory: Subcategory) throws {
         let context = try requireContext()
 
-        for draft in drafts {
+        for draft in drafts where !draft.isSettlementAmountChangeNotice {
             draft.subcategory = subcategory
             draft.updatedAt = Date.now
             updateNeedsUserInput(draft)
@@ -1043,6 +1106,8 @@ enum DraftServiceError: LocalizedError {
     case groupScheduledExpenseRequiresForm
     /// El borrador de una liquidación cuyo pago ya se registró (hay marca de aprobación): aprobarlo lo contaría dos veces.
     case groupSettlementAlreadyRegistered
+    /// El aviso de importe cambiado ya no se puede aplicar: su transacción ya no está, hay dos, o cambió de divisa.
+    case settlementAmountChangeTransactionGone
 
     var errorDescription: String? {
         switch self {
@@ -1066,6 +1131,8 @@ enum DraftServiceError: LocalizedError {
             return "DraftService: group scheduled expense must be approved via the group form"
         case .groupSettlementAlreadyRegistered:
             return L10n.Inbox.GroupSettlementDraft.alreadyRegistered
+        case .settlementAmountChangeTransactionGone:
+            return L10n.Inbox.GroupSettlementAmountChange.transactionGone
         }
     }
 }

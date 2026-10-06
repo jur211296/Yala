@@ -346,8 +346,15 @@ struct InboxView: View {
                         }
                     }
                 case .groupSettlement:
-                    GroupSettlementDraftFinalizationSheet(draft: draft) {
-                        shouldDismissAfterApproval = true
+                    // El aviso de importe cambiado de una liquidación ya aprobada tiene su hoja: ajustar o dejarla.
+                    if draft.isSettlementAmountChangeNotice {
+                        GroupSettlementAmountChangeSheet(draft: draft) {
+                            shouldDismissAfterApproval = true
+                        }
+                    } else {
+                        GroupSettlementDraftFinalizationSheet(draft: draft) {
+                            shouldDismissAfterApproval = true
+                        }
                     }
                 case .groupScheduledExpense:
                     // F4: abre el form de gasto de grupo prellenado desde el pago planificado.
@@ -733,13 +740,16 @@ struct InboxView: View {
         .swipeActions(edge: .trailing, allowsFullSwipe: !isSelectionMode && (selectedFilter == .pending || draft.status == .rejected)) {
             if !isSelectionMode {
                 if selectedFilter == .pending {
-                    // Pending: Delete + Reject
-                    Button {
-                        deleteDraftPermanently(draft)
-                    } label: {
-                        Label(L10n.Inbox.delete, systemImage: "trash")
+                    // Pending: Delete + Reject. El aviso de importe cambiado no se borra (`DraftService.deleteDraft`):
+                    // rechazarlo es «dejarla como está».
+                    if !draft.isSettlementAmountChangeNotice {
+                        Button {
+                            deleteDraftPermanently(draft)
+                        } label: {
+                            Label(L10n.Inbox.delete, systemImage: "trash")
+                        }
+                        .tint(DS.Semantic.errorForeground)
                     }
-                    .tint(DS.Semantic.errorForeground)
 
                     Button {
                         rejectDraft(draft)
@@ -747,7 +757,7 @@ struct InboxView: View {
                         Label(L10n.Inbox.reject, systemImage: "xmark.circle")
                     }
                     .tint(DS.Semantic.warningForeground)
-                } else if draft.status == .rejected {
+                } else if draft.status == .rejected && !draft.isSettlementAmountChangeNotice {
                     // Archived (rejected only): Delete
                     Button {
                         deleteDraftPermanently(draft)

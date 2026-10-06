@@ -5729,3 +5729,27 @@
 
 /* Sheet body: the deletion did not finish before the cloud was activated and will not happen */
 "welcome.privateICloud.cancelledInCloudBody" = "Pediste empezar de cero y borrar tus datos de iCloud, pero el borrado no terminó antes de que tus datos pasaran a la nube, y ya no se hará. Puede que algo de lo que ibas a borrar siga en iCloud o haya pasado a tu cuenta de Yala.";
+
+/* Inbox: title of the notice that a settlement already approved to a real account changed its amount */
+"inbox.groupSettlementAmountChange.title" = "Ha cambiado el monto";
+
+/* Notice banner, the other person paid me. 1 person, 2 group, 3 amount reviewed, 4 new amount, 5 account, 6 amount in that account */
+"inbox.groupSettlementAmountChange.bannerReceived" = "Ha cambiado el pago de %1$@ en «%2$@»: era %3$@ y ahora es %4$@. En %5$@ tienes registrados %6$@.";
+
+/* Notice banner, I paid the other person. 1 person, 2 group, 3 amount reviewed, 4 new amount, 5 account, 6 amount in that account */
+"inbox.groupSettlementAmountChange.bannerSent" = "Ha cambiado tu pago a %1$@ en «%2$@»: era %3$@ y ahora es %4$@. En %5$@ tienes registrados %6$@.";
+
+/* Notice banner without the other person name. 1 group, 2 amount reviewed, 3 new amount, 4 account, 5 amount in that account */
+"inbox.groupSettlementAmountChange.bannerUnnamed" = "Ha cambiado esta liquidación de «%1$@»: era %2$@ y ahora es %3$@. En %4$@ tienes registrados %5$@.";
+
+/* Primary button: set my transaction to the new amount */
+"inbox.groupSettlementAmountChange.adjust" = "Ajustar a %@";
+
+/* Secondary button: leave my transaction at its amount */
+"inbox.groupSettlementAmountChange.keep" = "Dejar en %@";
+
+/* Inbox row second line for the notice: account, amount in that account */
+"inbox.groupSettlementAmountChange.rowDetail" = "%1$@ · tienes %2$@";
+
+/* Error when the notice can no longer be applied: the transaction is gone, duplicated or in another currency */
+"inbox.groupSettlementAmountChange.transactionGone" = "Este aviso ya no se puede aplicar: el movimiento ha cambiado o ya no está en tus cuentas.";

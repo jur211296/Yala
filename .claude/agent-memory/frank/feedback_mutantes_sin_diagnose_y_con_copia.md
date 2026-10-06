@@ -14,6 +14,10 @@ cuesta ~12 min con la máquina en reposo (load 1,3 — parece colgado). Con el f
 veces que se cortó la tanda (timeout del background, y TaskStop), el `finally` de Python no corrió: quedó un mutante
 aplicado en producción (`if true {`), que un `git diff` para la review habría capturado como código real.
 
+**Volvió a pasar el 2026-10-05** con las dos mitades a la vez: lancé la tanda SIN el flag y dentro de un `Monitor`, que
+caduca a los 30 min y mata el script — quedó puesto el mutante 4 (un `.filter` borrado). La tanda va con `nohup` en un
+Bash de fondo, nunca colgada de un `Monitor`, y el flag se comprueba en el script antes de lanzar.
+
 **How to apply:** guarda copias en el scratchpad antes de lanzar, `cmp` contra ellas al terminar y tras cada corte,
 y nunca `git checkout` para restaurar (ver [[el-script-de-mutantes-revierte-mi-trabajo]]). Si una corrida de un
 solo mutante pasa de 5 min, mira si hay un `simctl diagnose` hijo del `xcodebuild` antes de pensar en un cuelgue.

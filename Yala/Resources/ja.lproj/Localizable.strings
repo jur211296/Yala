@@ -6457,3 +6457,27 @@
 
 /* Sheet body: the deletion did not finish before the cloud was activated and will not happen */
 "welcome.privateICloud.cancelledInCloudBody" = "最初からやり直してiCloudのデータを削除するよう依頼しましたが、データがクラウドに移る前に削除が完了せず、今後も実行されません。削除するはずだったデータの一部が、iCloudに残っているか、Yalaアカウントに移っている可能性があります。";
+
+/* Inbox: title of the notice that a settlement already approved to a real account changed its amount */
+"inbox.groupSettlementAmountChange.title" = "金額が変更されました";
+
+/* Notice banner, the other person paid me. 1 person, 2 group, 3 amount reviewed, 4 new amount, 5 account, 6 amount in that account */
+"inbox.groupSettlementAmountChange.bannerReceived" = "「%2$@」の%1$@さんからの支払いが変更されました：%3$@から%4$@になりました。%5$@には%6$@が記録されています。";
+
+/* Notice banner, I paid the other person. 1 person, 2 group, 3 amount reviewed, 4 new amount, 5 account, 6 amount in that account */
+"inbox.groupSettlementAmountChange.bannerSent" = "「%2$@」の%1$@さんへの支払いが変更されました：%3$@から%4$@になりました。%5$@には%6$@が記録されています。";
+
+/* Notice banner without the other person name. 1 group, 2 amount reviewed, 3 new amount, 4 account, 5 amount in that account */
+"inbox.groupSettlementAmountChange.bannerUnnamed" = "「%1$@」のこの精算が変更されました：%2$@から%3$@になりました。%4$@には%5$@が記録されています。";
+
+/* Primary button: set my transaction to the new amount */
+"inbox.groupSettlementAmountChange.adjust" = "%@に調整";
+
+/* Secondary button: leave my transaction at its amount */
+"inbox.groupSettlementAmountChange.keep" = "%@のままにする";
+
+/* Inbox row second line for the notice: account, amount in that account */
+"inbox.groupSettlementAmountChange.rowDetail" = "%1$@に%2$@が記録済み";
+
+/* Error when the notice can no longer be applied: the transaction is gone, duplicated or in another currency */
+"inbox.groupSettlementAmountChange.transactionGone" = "この通知はもう適用できません。取引が変更されたか、口座にありません。";

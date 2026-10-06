@@ -5718,3 +5718,27 @@
 
 /* Sheet body: the deletion did not finish before the cloud was activated and will not happen */
 "welcome.privateICloud.cancelledInCloudBody" = "Pediste para começar do zero e apagar os teus dados do iCloud, mas não terminámos de apagar antes de os teus dados passarem para a nuvem, e já não vai acontecer. Parte do que ias apagar pode continuar no iCloud ou ter passado para a tua conta do Yala.";
+
+/* Inbox: title of the notice that a settlement already approved to a real account changed its amount */
+"inbox.groupSettlementAmountChange.title" = "Valor alterado";
+
+/* Notice banner, the other person paid me. 1 person, 2 group, 3 amount reviewed, 4 new amount, 5 account, 6 amount in that account */
+"inbox.groupSettlementAmountChange.bannerReceived" = "O pagamento de %1$@ em “%2$@” mudou: era %3$@ e agora é %4$@. Em %5$@ tens %6$@ registados.";
+
+/* Notice banner, I paid the other person. 1 person, 2 group, 3 amount reviewed, 4 new amount, 5 account, 6 amount in that account */
+"inbox.groupSettlementAmountChange.bannerSent" = "O teu pagamento a %1$@ em “%2$@” mudou: era %3$@ e agora é %4$@. Em %5$@ tens %6$@ registados.";
+
+/* Notice banner without the other person name. 1 group, 2 amount reviewed, 3 new amount, 4 account, 5 amount in that account */
+"inbox.groupSettlementAmountChange.bannerUnnamed" = "Esta liquidação em “%1$@” mudou: era %2$@ e agora é %3$@. Em %4$@ tens %5$@ registados.";
+
+/* Primary button: set my transaction to the new amount */
+"inbox.groupSettlementAmountChange.adjust" = "Ajustar para %@";
+
+/* Secondary button: leave my transaction at its amount */
+"inbox.groupSettlementAmountChange.keep" = "Manter %@";
+
+/* Inbox row second line for the notice: account, amount in that account */
+"inbox.groupSettlementAmountChange.rowDetail" = "%2$@ registados em %1$@";
+
+/* Error when the notice can no longer be applied: the transaction is gone, duplicated or in another currency */
+"inbox.groupSettlementAmountChange.transactionGone" = "Este aviso já não pode ser aplicado: o movimento mudou ou já não está nas tuas contas.";

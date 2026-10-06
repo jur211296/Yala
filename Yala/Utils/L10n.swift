@@ -6191,6 +6191,43 @@ enum L10n {
             static var alreadyRegistered: String { ls("inbox.groupSettlementDraft.alreadyRegistered", comment: "") }
         }
 
+        /// Aviso de que cambió el importe de una liquidación ya aprobada a una cuenta real (ticket
+        /// `settlement-amount-edited-after-approval-leaves-the-bank-stale`).
+        enum GroupSettlementAmountChange {
+            static var title: String { ls("inbox.groupSettlementAmountChange.title", comment: "") }
+            /// La otra persona me pagó. Formato: persona, grupo, importe revisado, importe nuevo, cuenta, importe en la cuenta.
+            static func bannerReceived(_ person: String, _ group: String, _ before: String, _ now: String,
+                                       _ account: String, _ inAccount: String) -> String {
+                String(format: ls("inbox.groupSettlementAmountChange.bannerReceived", comment: ""),
+                       person, group, before, now, account, inAccount)
+            }
+            /// Yo le pagué a la otra persona. Mismo formato.
+            static func bannerSent(_ person: String, _ group: String, _ before: String, _ now: String,
+                                   _ account: String, _ inAccount: String) -> String {
+                String(format: ls("inbox.groupSettlementAmountChange.bannerSent", comment: ""),
+                       person, group, before, now, account, inAccount)
+            }
+            /// Sin el nombre de la otra persona. Formato: grupo, importe revisado, importe nuevo, cuenta, importe en la cuenta.
+            static func bannerUnnamed(_ group: String, _ before: String, _ now: String,
+                                      _ account: String, _ inAccount: String) -> String {
+                String(format: ls("inbox.groupSettlementAmountChange.bannerUnnamed", comment: ""),
+                       group, before, now, account, inAccount)
+            }
+            /// Botón principal. Formato: importe nuevo.
+            static func adjust(_ amount: String) -> String {
+                String(format: ls("inbox.groupSettlementAmountChange.adjust", comment: ""), amount)
+            }
+            /// Botón secundario. Formato: importe en la cuenta.
+            static func keep(_ amount: String) -> String {
+                String(format: ls("inbox.groupSettlementAmountChange.keep", comment: ""), amount)
+            }
+            /// Segunda línea de la fila. Formato: cuenta, importe en la cuenta.
+            static func rowDetail(_ account: String, _ inAccount: String) -> String {
+                String(format: ls("inbox.groupSettlementAmountChange.rowDetail", comment: ""), account, inAccount)
+            }
+            static var transactionGone: String { ls("inbox.groupSettlementAmountChange.transactionGone", comment: "") }
+        }
+
         // M6: sheet finalización Caso A pendiente cuenta.
         enum GroupExpenseAccountDraft {
             static var title: String { ls("inbox.groupExpenseAccountDraft.title", comment: "") }

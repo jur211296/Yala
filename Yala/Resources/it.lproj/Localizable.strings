@@ -6455,3 +6455,27 @@
 
 /* Sheet body: the deletion did not finish before the cloud was activated and will not happen */
 "welcome.privateICloud.cancelledInCloudBody" = "Hai chiesto di ricominciare da zero ed eliminare i tuoi dati da iCloud, ma l'eliminazione non era finita quando i tuoi dati sono passati al cloud, e ormai non verrà fatta. Parte di ciò che volevi eliminare può essere ancora in iCloud o essere passata al tuo account Yala.";
+
+/* Inbox: title of the notice that a settlement already approved to a real account changed its amount */
+"inbox.groupSettlementAmountChange.title" = "Importo modificato";
+
+/* Notice banner, the other person paid me. 1 person, 2 group, 3 amount reviewed, 4 new amount, 5 account, 6 amount in that account */
+"inbox.groupSettlementAmountChange.bannerReceived" = "Il pagamento di %1$@ in «%2$@» è cambiato: era %3$@ e ora è %4$@. In %5$@ hai registrato %6$@.";
+
+/* Notice banner, I paid the other person. 1 person, 2 group, 3 amount reviewed, 4 new amount, 5 account, 6 amount in that account */
+"inbox.groupSettlementAmountChange.bannerSent" = "Il tuo pagamento a %1$@ in «%2$@» è cambiato: era %3$@ e ora è %4$@. In %5$@ hai registrato %6$@.";
+
+/* Notice banner without the other person name. 1 group, 2 amount reviewed, 3 new amount, 4 account, 5 amount in that account */
+"inbox.groupSettlementAmountChange.bannerUnnamed" = "Questa liquidazione in «%1$@» è cambiata: era %2$@ e ora è %3$@. In %4$@ hai registrato %5$@.";
+
+/* Primary button: set my transaction to the new amount */
+"inbox.groupSettlementAmountChange.adjust" = "Adegua a %@";
+
+/* Secondary button: leave my transaction at its amount */
+"inbox.groupSettlementAmountChange.keep" = "Mantieni %@";
+
+/* Inbox row second line for the notice: account, amount in that account */
+"inbox.groupSettlementAmountChange.rowDetail" = "%2$@ registrati in %1$@";
+
+/* Error when the notice can no longer be applied: the transaction is gone, duplicated or in another currency */
+"inbox.groupSettlementAmountChange.transactionGone" = "Questo avviso non si può più applicare: il movimento è cambiato o non è più nei tuoi conti.";
