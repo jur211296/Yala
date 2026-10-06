@@ -4817,6 +4817,8 @@
 
 /* Chip shown while the secondary (guest) session pulls its account data after relaunch */
 "welcome.cloud.hydrationBanner" = "データをダウンロード中…";
+"welcome.cloud.cancelAdoptBody" = "この端末はクラウドのデータを何も変更していません。最初の画面に戻ります。いつでも「すでにアカウントがあります」からアカウントに再度ログインできます。";
+"welcome.cloud.cancelAdoptEffectBody" = "この端末のデータはこれまでどおり残っています。最初の画面に戻ります。いつでも「すでにアカウントがあります」からアカウントに再度ログインできます。";
 
 /* Title of the proactive gate shown in the Groups tab when the device has no iCloud account */
 "groups.icloud.gate.title" = "グループには iCloud が必要です";

@@ -104,17 +104,71 @@ struct WelcomeAdoptExitTests {
         #expect(L10n.Storage.Errors.adoptICloudNotSettled != "storage.errors.adoptICloudNotSettled", "clave cruda")
     }
 
-    /// El cuerpo del diálogo de cancelar, por fase, compartido por las dos pantallas.
-    @Test func cancelBody_perPhase() {
-        #expect(StorageFailureCopyLogic.cancelMigrationBody(isAdoptClaim: true, isAdoptEffectPending: false)
-                == L10n.Storage.Confirm.cancelAdoptBody)
-        #expect(StorageFailureCopyLogic.cancelMigrationBody(isAdoptClaim: false, isAdoptEffectPending: true)
-                == L10n.Storage.Confirm.cancelAdoptEffectBody)
-        #expect(StorageFailureCopyLogic.cancelMigrationBody(isAdoptClaim: false, isAdoptEffectPending: false)
-                == L10n.Storage.Confirm.cancelMigrationBody)
+    /// El cuerpo del diálogo de cancelar, por fase y por pantalla. La fase la elige la misma función para las dos; las dos
+    /// del adopt llevan en la bienvenida su propio texto (ticket `welcome-adopt-cancel-dialog-says-from-here`), y la de
+    /// «Migrar» es la misma.
+    @Test func cancelBody_perPhase_andPerSurface() {
+        typealias Surface = StorageFailureCopyLogic.CancelDialogSurface
+        func body(_ claim: Bool, _ effect: Bool, _ surface: Surface) -> String {
+            StorageFailureCopyLogic.cancelMigrationBody(isAdoptClaim: claim, isAdoptEffectPending: effect, surface: surface)
+        }
+        // Almacenamiento, igual que antes del ticket.
+        #expect(body(true, false, .storage) == L10n.Storage.Confirm.cancelAdoptBody)
+        #expect(body(false, true, .storage) == L10n.Storage.Confirm.cancelAdoptEffectBody)
+        #expect(body(false, false, .storage) == L10n.Storage.Confirm.cancelMigrationBody)
+        // La bienvenida, con los suyos.
+        #expect(body(true, false, .welcome) == L10n.Welcome.Cloud.cancelAdoptBody)
+        #expect(body(false, true, .welcome) == L10n.Welcome.Cloud.cancelAdoptEffectBody)
+        #expect(body(false, false, .welcome) == L10n.Storage.Confirm.cancelMigrationBody)
         // Las dos a la vez no ocurren (el efecto es `notStarted`, el claim no), pero si ocurrieran manda el claim.
-        #expect(StorageFailureCopyLogic.cancelMigrationBody(isAdoptClaim: true, isAdoptEffectPending: true)
-                == L10n.Storage.Confirm.cancelAdoptBody)
+        #expect(body(true, true, .storage) == L10n.Storage.Confirm.cancelAdoptBody)
+        #expect(body(true, true, .welcome) == L10n.Welcome.Cloud.cancelAdoptBody)
+        // Control: los cuatro textos del adopt son distintos y están traducidos, o las igualdades de arriba no distinguen.
+        let adopt = [L10n.Storage.Confirm.cancelAdoptBody, L10n.Storage.Confirm.cancelAdoptEffectBody,
+                     L10n.Welcome.Cloud.cancelAdoptBody, L10n.Welcome.Cloud.cancelAdoptEffectBody]
+        #expect(Set(adopt).count == adopt.count)
+        for text in adopt { #expect(!text.hasPrefix("storage.") && !text.hasPrefix("welcome."), "clave cruda: \(text)") }
+    }
+
+    /// **Los dos cuerpos de la bienvenida, en los 16 idiomas.** Al confirmar, la pantalla vuelve al selector: no pueden
+    /// llevar la frase de Almacenamiento («puedes volver a activar la nube… desde aquí»). Conservan su primera frase, que
+    /// es la que dice qué pasó con los datos, y nombran el botón por el que se vuelve a entrar con el texto EXACTO que
+    /// tiene en el selector de ese idioma: si alguien lo renombra, esto cae. Y heredan las prohibiciones de los suyos: el
+    /// del efecto no afirma que la nube no cambió, y ninguno promete «tus datos siguen en este dispositivo». Se lee del
+    /// fichero de cada locale, porque la corrida solo ve uno.
+    @Test func welcomeBodies_inEveryLocale_dropTheFromHereSentence_andNameTheChooserButton() throws {
+        let pairs = [("welcome.cloud.cancelAdoptBody", "storage.confirm.cancelAdoptBody"),
+                     ("welcome.cloud.cancelAdoptEffectBody", "storage.confirm.cancelAdoptEffectBody")]
+        let resources = Self.repoRoot.appendingPathComponent("Yala/Resources")
+        let locales = try FileManager.default.contentsOfDirectory(atPath: resources.path).filter { $0.hasSuffix(".lproj") }
+        #expect(locales.count == 16)
+        let sentenceEnd = CharacterSet(charactersIn: ".。")
+        for locale in locales {
+            let url = resources.appendingPathComponent("\(locale)/Localizable.strings")
+            let table = try #require(NSDictionary(contentsOf: url) as? [String: String], "\(locale)")
+            let button = try #require(table["welcome.chooser.optionExisting.title"], "\(locale)")
+            let untouched = try #require(table["storage.confirm.cancelAdoptBody"], "\(locale)")
+                .components(separatedBy: sentenceEnd).first ?? ""
+            let localData = try #require(table["storage.confirm.cancelMigrationBody"], "\(locale)")
+                .components(separatedBy: CharacterSet(charactersIn: ".。,，、;；")).first ?? ""
+            #expect(!button.isEmpty && !untouched.isEmpty && !localData.isEmpty, "\(locale): control de los cortes")
+            for (key, storageKey) in pairs {
+                let value = try #require(table[key], "\(locale) · \(key)")
+                let storage = try #require(table[storageKey], "\(locale) · \(storageKey)")
+                #expect(!value.isEmpty && !value.contains("NEEDS_TRANSLATION"), "\(locale) · \(key)")
+                // La primera frase, la de Almacenamiento; lo que sigue en Almacenamiento —el «desde aquí»—, fuera.
+                let first = try #require(storage.components(separatedBy: sentenceEnd).first, "\(locale) · \(storageKey)")
+                let fromHere = String(storage.dropFirst(first.count + 1)).trimmingCharacters(in: .whitespaces)
+                #expect(!fromHere.isEmpty, "\(locale) · \(storageKey): control del corte")
+                #expect(value.hasPrefix(first), "\(locale) · \(key) no empieza por «\(first)»")
+                #expect(!value.contains(fromHere), "\(locale) · \(key) repite «\(fromHere)»")
+                #expect(value != storage, "\(locale) · \(key)")
+                #expect(value.contains(button), "\(locale) · \(key) no nombra «\(button)»")
+                #expect(!value.contains(localData), "\(locale) · \(key) repite «\(localData)»")
+            }
+            let effect = try #require(table["welcome.cloud.cancelAdoptEffectBody"], "\(locale)")
+            #expect(!effect.contains(untouched), "\(locale) · el efecto repite «\(untouched)»")
+        }
     }
 
     // MARK: - La salida durante el adopt
@@ -277,7 +331,7 @@ struct WelcomeAdoptExitTests {
         for needle in ["isPresented: $confirmCancelAdopt, titleVisibility: .visible) {",
                        "Button(L10n.Storage.Confirm.cancelMigrationConfirm) { cancelRequested = true launchFlow { await cancelAdopt() } }",
                        "Button(L10n.Storage.Confirm.cancelMigrationKeep, role: .cancel) {}",
-                       "isAdoptClaim: controller.isAdoptClaim, isAdoptEffectPending: controller.isAdoptEffectPending))",
+                       "isAdoptClaim: controller.isAdoptClaim, isAdoptEffectPending: controller.isAdoptEffectPending, surface: .welcome))",
                        ".onChange(of: offersAdoptCancel) { _, offers in if !offers { confirmCancelAdopt = false } }"] {
             #expect(src.contains(needle), "\(needle)")
         }

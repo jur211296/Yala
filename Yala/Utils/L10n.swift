@@ -5780,6 +5780,13 @@ enum L10n {
             static var waitingBody: String { ls("welcome.cloud.waitingBody", comment: "") }
             static var continueToApp: String { ls("welcome.cloud.continueToApp", comment: "") }
             static var hydrationBanner: String { ls("welcome.cloud.hydrationBanner", comment: "") }
+            /// Los dos cuerpos de «Cancelar la activación» en la barra del adopt de la bienvenida (ticket
+            /// `welcome-adopt-cancel-dialog-says-from-here`, decisión B de Jürgen del 2026-10-04). Llevan la primera frase
+            /// de los de Almacenamiento (`Storage.Confirm.cancelAdoptBody` / `cancelAdoptEffectBody`) y cambian la segunda:
+            /// al confirmar, la pantalla vuelve al selector, así que no hay «desde aquí»; nombran «Ya tengo una cuenta»
+            /// con el texto exacto de `welcome.chooser.optionExisting.title` de cada idioma.
+            static var cancelAdoptBody: String { ls("welcome.cloud.cancelAdoptBody", comment: "") }
+            static var cancelAdoptEffectBody: String { ls("welcome.cloud.cancelAdoptEffectBody", comment: "") }
         }
 
         enum Restore {

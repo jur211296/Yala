@@ -207,7 +207,8 @@ struct WelcomeCloudSignInView: View {
         } message: {
             if let controller = CloudMigrationController.shared {
                 Text(StorageFailureCopyLogic.cancelMigrationBody(
-                    isAdoptClaim: controller.isAdoptClaim, isAdoptEffectPending: controller.isAdoptEffectPending))
+                    isAdoptClaim: controller.isAdoptClaim, isAdoptEffectPending: controller.isAdoptEffectPending,
+                    surface: .welcome))
             }
         }
         .onChange(of: offersAdoptCancel) { _, offers in
@@ -804,7 +805,8 @@ struct WelcomeCloudSignInView: View {
 
     /// «Cancelar la activación» durante el adopt (ticket `welcome-adopt-effect-failure-has-no-reason-and-no-cancel`,
     /// decisión de Jürgen del 2026-09-23). El MISMO gesto que Almacenamiento: su predicado (`canCancelMigration`), su
-    /// diálogo (en el `body`), su cuerpo por fase y su `cancelMigration()`. Deshabilitado con trabajo en vuelo, como allí,
+    /// diálogo (en el `body`), su cuerpo por fase y su `cancelMigration()`. Del cuerpo, la segunda frase es propia
+    /// (`surface: .welcome`, ticket `welcome-adopt-cancel-dialog-says-from-here`): al confirmar se vuelve al selector. Deshabilitado con trabajo en vuelo, como allí,
     /// y atenuado entonces: con el color puesto a mano SwiftUI no lo atenúa solo, y parecía activo sin hacer nada.
     private func cancelAdoptButton(_ controller: CloudMigrationController) -> some View {
         Button(L10n.Storage.Progress.cancelMigration) {

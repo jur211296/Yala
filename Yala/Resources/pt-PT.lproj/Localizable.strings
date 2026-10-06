@@ -4075,6 +4075,8 @@
 
 /* Chip shown while the secondary (guest) session pulls its account data after relaunch */
 "welcome.cloud.hydrationBanner" = "A transferir os teus dados…";
+"welcome.cloud.cancelAdoptBody" = "Este dispositivo não alterou nada do que tem na nuvem. Vai voltar ao início. Quando quiser, pode entrar de novo na sua conta com «Já tenho conta».";
+"welcome.cloud.cancelAdoptEffectBody" = "O que tem neste dispositivo continua aqui, como até agora. Vai voltar ao início. Quando quiser, pode entrar de novo na sua conta com «Já tenho conta».";
 
 /* Title of the proactive gate shown in the Groups tab when the device has no iCloud account */
 "groups.icloud.gate.title" = "Os Grupos precisam do iCloud";

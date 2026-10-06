@@ -143,9 +143,33 @@ enum StorageFailureCopyLogic {
     /// tiene que decir lo mismo en las dos. En el claim de un ADOPT, el suyo —quien entraba en su cuenta puede estar en un
     /// teléfono recién instalado, y «tus datos siguen en este dispositivo» sería falso—; en el EFECTO, otro —el del claim
     /// afirma que este dispositivo no cambió nada en la nube, y el reconcile puede haber subido algo antes de fallar—.
-    static func cancelMigrationBody(isAdoptClaim: Bool, isAdoptEffectPending: Bool) -> String {
-        if isAdoptClaim { return L10n.Storage.Confirm.cancelAdoptBody }
-        if isAdoptEffectPending { return L10n.Storage.Confirm.cancelAdoptEffectBody }
+    ///
+    /// **La fase la elige esta función para las dos pantallas; la segunda frase, cada pantalla** (ticket
+    /// `welcome-adopt-cancel-dialog-says-from-here`, decisión B de Jürgen del 2026-10-04). Las dos del adopt de
+    /// Almacenamiento terminan en «puedes volver a activar la nube… desde aquí», y en la bienvenida, al confirmar, la
+    /// pantalla vuelve al selector: ese «aquí» ya no existe. Por eso `surface` no tiene default: quien pinte este diálogo
+    /// declara dónde está. La rama de «Migrar» es la misma en las dos: no habla de «aquí».
+    static func cancelMigrationBody(isAdoptClaim: Bool, isAdoptEffectPending: Bool, surface: CancelDialogSurface) -> String {
+        if isAdoptClaim {
+            switch surface {
+            case .storage: return L10n.Storage.Confirm.cancelAdoptBody
+            case .welcome: return L10n.Welcome.Cloud.cancelAdoptBody
+            }
+        }
+        if isAdoptEffectPending {
+            switch surface {
+            case .storage: return L10n.Storage.Confirm.cancelAdoptEffectBody
+            case .welcome: return L10n.Welcome.Cloud.cancelAdoptEffectBody
+            }
+        }
         return L10n.Storage.Confirm.cancelMigrationBody
+    }
+
+    /// Qué pantalla pinta el diálogo de «Cancelar la activación».
+    enum CancelDialogSurface {
+        /// La tarjeta de Almacenamiento: tras cancelar, la persona sigue en ella.
+        case storage
+        /// La barra del adopt en la bienvenida: tras cancelar, la pantalla vuelve al selector.
+        case welcome
     }
 }
