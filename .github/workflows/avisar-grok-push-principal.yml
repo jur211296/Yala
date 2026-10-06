@@ -1,9 +1,19 @@
-name: Avisar a Grok (push a principal)
+name: Avisar a Grok (resumen diario de 2.1)
 
-# Cubre el hueco que deja el listener de GitHub de Grok: ese ya ve el merge y el CI de
-# `2.1`, pero NO el push directo a principal. Y en este repo el push directo a `2.1` es
-# la via normal de entrega de una sesion en el arbol principal (CLAUDE.md, «Donde se
-# commitea»), asi que sin esto una parte del trabajo que aterriza no genera ningun aviso.
+# Un solo aviso al dia, a las 19:00 de Lima, con lo que entro en `2.1` en las 24 h anteriores:
+# los PRs mergeados y los commits directos que no vinieron de un PR. Si no entro nada, no se
+# envia nada — ni un «hoy no hubo nada», que es ruido con acuse de recibo.
+#
+# HISTORIA. Hasta el 2026-10-06 este workflow avisaba en CADA push a `2.1`. Nacio para cubrir
+# el hueco del listener de GitHub de Grok, que ve los PRs pero no el push directo, y en este
+# repo el push directo es la via de entrega del arbol principal (CLAUDE.md, «Donde se
+# commitea»). Con la cola autonoma (ADR-054 de casa) cada merge y cada push de docs era un
+# aviso. Dan propuso el resumen y Jurgen lo aprobo el 2026-10-06. El nombre del fichero se
+# queda: lo citan la action de envio, el ping y varios tickets.
+#
+# LO QUE NO CAMBIA. Los avisos de CI en ROJO siguen saliendo al momento: viven en `qa.yml`,
+# `nocturna-vigilante.yml` y `ping-avisador.yml`, no aqui. Esto es la cronica del dia, no una
+# alarma.
 #
 # ---------------------------------------------------------------------------------
 # QUE TIENE QUE ESTAR PUESTO PARA QUE ESTO FUNCIONE  (Settings > Secrets and variables
@@ -21,113 +31,171 @@ name: Avisar a Grok (push a principal)
 # que rehacer la routine los rompe A LOS CUATRO a la vez: es lo que paso el 2026-09-08 y
 # este workflow encadeno 37 runs en rojo hasta el dia siguiente sin que nadie lo mirara.
 #
-# Por eso el envio ya no vive aqui sino en `.github/actions/avisar`, que si el webhook no
+# Por eso el envio no vive aqui sino en `.github/actions/avisar`, que si el webhook no
 # responde deja el aviso escrito en un issue (etiqueta `aviso-ci`) en vez de morir en rojo.
 # ---------------------------------------------------------------------------------
 
 on:
-  push:
-    # SOLO principal. `origin/HEAD` apunta a `2.1` y no existe rama `main` (comprobado el
-    # 2026-09-02). Las ramas de encargo NO disparan: su aviso ya lo da el PR, y duplicarlo
-    # convertiria el canal en ruido, que es como muere un canal de avisos.
-    branches: ["2.1"]
+  schedule:
+    # 00:00 UTC = 19:00 en Lima (UTC-5 todo el año: Peru no tiene horario de verano).
+    #
+    # EL CRON NO ES UN RELOJ FIABLE: el 2026-09-08 disparo con 4 h 35 min de retraso. Por eso
+    # la ventana NO es «las 24 h antes de que arranque el run» sino un tramo FIJO que acaba en
+    # la medianoche UTC del dia en que corre. Un run que llega tarde cubre el mismo tramo que
+    # uno puntual, y dos dias seguidos no se pisan ni dejan hueco entre ellos.
+    - cron: "0 0 * * *"
+  # Para probarlo a mano. A mano la ventana acaba AHORA y `horas` la alarga o la acorta: un
+  # valor pequeño es la forma de probar el caso «no entro nada» sin esperar a un dia quieto.
+  workflow_dispatch:
+    inputs:
+      horas:
+        description: "Cuantas horas hacia atras mira (la ventana acaba ahora)."
+        type: string
+        default: "24"
 
-# Minimo indispensable. Lo que se ENVIA sigue viniendo entero del payload del evento; el
-# checkout de abajo solo trae la action local que hace la entrega.
 permissions:
   contents: read
+  # Para listar los PRs mergeados con su titulo.
+  pull-requests: read
   # El canal de respaldo escribe un issue. El permiso por defecto de Actions en este repo
   # es `read`, asi que sin esta linea el respaldo no puede entregar nada.
   issues: write
 
-# NO se declara `concurrency` con `cancel-in-progress` a proposito. Cada push es un evento
-# que Grok debe conocer; cancelar el aviso de un push porque llego otro detras perderia
-# avisos en silencio, que es justo lo que este workflow existe para evitar.
-
 jobs:
   avisar:
-    name: Avisar del push a principal
+    name: Resumen diario de 2.1
     runs-on: ubuntu-latest
-    # Un borrado de rama tambien llega como `push`, y ahi no hay commit que anunciar.
-    if: ${{ !github.event.deleted }}
     steps:
-      # Hace falta para poder usar la action local `.github/actions/avisar`. Antes este job
-      # no hacia checkout a proposito (todo lo que envia viene del payload del evento); el
-      # coste son unos segundos y a cambio el envio deja de estar duplicado.
+      # Historia entera: el resumen la recorre con `git log` sobre `origin/2.1`. El checkout
+      # es de la rama que dispara (la action local `.github/actions/avisar` sale de ahi), pero
+      # lo que se resume es SIEMPRE `2.1`, tambien en una prueba manual desde otra rama.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      # El mensaje de commit, el nombre del autor y el de la rama son TEXTO ARBITRARIO
-      # escrito por quien commitea. Por eso NO se interpolan con ${{ }} dentro de `run:`
-      # —eso seria inyeccion de shell: un mensaje con `$(...)` se ejecutaria en el runner—
-      # sino que entran por `env:` y se leen como variables. (El JSON lo arma la action con
-      # `jq --arg`, por lo mismo: un mensaje con comillas o saltos de linea rompería un JSON
-      # concatenado a mano.)
-      - name: Componer el aviso
+      # Los titulos de PR, los mensajes de commit y los autores son TEXTO ARBITRARIO escrito
+      # por terceros. Por eso NO se interpolan con ${{ }} dentro de `run:` —eso seria
+      # inyeccion de shell: un mensaje con `$(...)` se ejecutaria en el runner—: se leen de
+      # git y de la API a variables, y por `env:` solo entran datos del evento. (El JSON del
+      # envio lo arma la action con `jq --arg`, por lo mismo.)
+      - name: Componer el resumen
         id: componer
         env:
+          GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
-          RAMA: ${{ github.ref_name }}
-          QUIEN: ${{ github.event.pusher.name }}
-          SHA: ${{ github.sha }}
-          FORZADO: ${{ github.event.forced }}
-          COMPARE: ${{ github.event.compare }}
+          SERVER: ${{ github.server_url }}
+          EVENTO: ${{ github.event_name }}
+          HORAS: ${{ inputs.horas }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          COMMITS_JSON: ${{ toJSON(github.event.commits) }}
         run: |
           set -euo pipefail
+          RAMA="2.1"
+          iso() { date -u -d "@$1" +%Y-%m-%dT%H:%M:%SZ; }
+          lima() { date -u -d "@$(( $1 - 5 * 3600 ))" +'%d-%m %H:%M'; }
 
-          # Hasta 10 commits y 200 caracteres de la PRIMERA linea de cada mensaje: el aviso
-          # es un aviso, no un volcado. `// []` cubre el payload sin lista de commits.
-          lista=$(printf '%s' "$COMMITS_JSON" | jq -r '
-            (. // [])
-            | .[-10:]
-            | map("- " + (.id[0:7]) + " " + ((.message // "(sin mensaje)") | split("\n")[0] | .[0:200]))
-            | join("\n")
-          ')
-          total=$(printf '%s' "$COMMITS_JSON" | jq -r '(. // []) | length')
-          [ -n "$lista" ] || lista="(el evento no traia lista de commits)"
+          # ---------- La ventana: [inicio, fin) ----------
+          if [ "$EVENTO" = "schedule" ]; then
+            fin_s=$(date -u -d "$(date -u +%Y-%m-%d)T00:00:00Z" +%s)
+            horas=24
+          else
+            fin_s=$(date -u +%s)
+            horas="${HORAS:-24}"
+            case "$horas" in
+              ''|*[!0-9]*) echo "::error title=horas no valido::'$horas' no es un numero entero de horas."; exit 1 ;;
+            esac
+          fi
+          inicio_s=$(( fin_s - horas * 3600 ))
+          inicio=$(iso "$inicio_s"); fin=$(iso "$fin_s")
+          echo "Ventana: [$inicio, $fin) — $horas h"
 
-          forzado_txt="no"
-          [ "$FORZADO" != "true" ] || forzado_txt="SI — se reescribio historia en $RAMA"
+          # ---------- PRs mergeados en la ventana ----------
+          # La busqueda acota en el servidor y el `select` deja el tramo semiabierto exacto: un
+          # merge en el segundo frontera cae en un dia, no en los dos. Las fechas van en el
+          # mismo formato `...Z`, asi que compararlas como texto es compararlas como fecha.
+          prs_json=$(gh pr list --repo "$REPO" --state merged --base "$RAMA" \
+            --search "merged:$inicio..$fin" --limit 100 \
+            --json number,title,mergedAt,mergeCommit \
+            | jq --arg i "$inicio" --arg f "$fin" \
+                '[.[] | select(.mergedAt >= $i and .mergedAt < $f)] | sort_by(.mergedAt)')
+          n_prs=$(printf '%s' "$prs_json" | jq 'length')
 
-          texto=$(printf '%s\n' \
-            "Push directo a $RAMA en $REPO (entrega sin PR)." \
-            "" \
-            "Quien empujo: $QUIEN" \
-            "Commits en este push: $total" \
-            "HEAD: $SHA" \
-            "Force push: $forzado_txt" \
-            "Comparar: $COMPARE" \
-            "Run de esta notificacion: $RUN_URL" \
-            "" \
-            "Commits:" \
-            "$lista")
+          # ---------- Commits directos en la ventana ----------
+          # Primer padre de `2.1` sin merges: cada PR entra como un commit de merge en la linea
+          # principal, y lo que queda en ella sin serlo es lo que entro por push directo. Se
+          # descartan ademas los que sean el `mergeCommit` de un PR, por si alguno se mergeo
+          # con squash o rebase (ahi el commit del PR no es un merge). `--until` es inclusivo,
+          # por eso el tope es `fin - 1`.
+          shas_pr=$(printf '%s' "$prs_json" | jq -r '.[].mergeCommit.oid // empty')
+          directos=""
+          n_directos=0
+          while IFS=$'\t' read -r sha autor asunto; do
+            [ -n "$sha" ] || continue
+            if [ -n "$shas_pr" ] && printf '%s\n' "$shas_pr" | grep -qx "$sha"; then continue; fi
+            n_directos=$((n_directos + 1))
+            [ "$n_directos" -le 30 ] || continue
+            directos+="- ${sha:0:7} ${asunto:0:200} — $autor"$'\n'
+          done < <(git log --first-parent --no-merges \
+                     --since="@$inicio_s" --until="@$(( fin_s - 1 ))" \
+                     --format='%H%x09%an%x09%s' "origin/$RAMA")
+          [ "$n_directos" -le 30 ] || directos+="- …y $((n_directos - 30)) mas (ver el compare)"$'\n'
 
-          echo "Aviso compuesto ($total commit(s)):"
+          echo "PRs mergeados: $n_prs · commits directos: $n_directos"
+          if [ "$n_prs" -eq 0 ] && [ "$n_directos" -eq 0 ]; then
+            echo "::notice title=Sin actividad::No entro nada en $RAMA entre $inicio y $fin. No se envia aviso."
+            echo "hay=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # ---------- Compare ----------
+          # De la linea principal: el ultimo commit ANTERIOR a la ventana contra el ultimo
+          # DENTRO de ella. No contra la punta de hoy: un run tardio veria ahi lo que entro
+          # despues de las 19:00, que es del resumen de mañana.
+          base=$(git rev-list -1 --first-parent --before="@$(( inicio_s - 1 ))" "origin/$RAMA" || true)
+          punta=$(git rev-list -1 --first-parent --before="@$(( fin_s - 1 ))" "origin/$RAMA")
+          if [ -n "$base" ]; then
+            compare="$SERVER/$REPO/compare/${base:0:12}...${punta:0:12}"
+          else
+            compare="$SERVER/$REPO/commits/$RAMA"
+          fi
+
+          lista_prs=$(printf '%s' "$prs_json" | jq -r '
+            .[:30] | map("- #\(.number) \(.title | split("\n")[0] | .[0:200])") | join("\n")')
+          [ "$n_prs" -le 30 ] || lista_prs+=$'\n'"- …y $((n_prs - 30)) mas (ver el compare)"
+
+          bloques=("Resumen de $RAMA en $REPO: lo que entro del $(lima "$inicio_s") al $(lima "$fin_s") (hora de Lima)." "")
+          if [ "$n_prs" -gt 0 ]; then
+            bloques+=("PRs mergeados ($n_prs):" "$lista_prs" "")
+          fi
+          if [ "$n_directos" -gt 0 ]; then
+            bloques+=("Commits directos, sin PR ($n_directos):" "${directos%$'\n'}" "")
+          fi
+          bloques+=("Comparar: $compare" "Run de este resumen: $RUN_URL")
+          texto=$(printf '%s\n' "${bloques[@]}")
+
+          echo "Resumen compuesto:"
           printf '%s\n' "$texto" | sed 's/^/  /'
 
-          # Un texto de varias lineas necesita delimitador; sin el, `$GITHUB_OUTPUT` se
-          # queda con la primera linea y el aviso viaja decapitado.
-          #
-          # Y el delimitador es ALEATORIO, no una constante, porque este es el unico de los
-          # tres avisadores cuyo texto lleva contenido escrito por terceros: los mensajes de
-          # commit. Con un delimitador fijo y publico, un commit cuya primera linea fuera
-          # exactamente esa palabra cerraria el bloque antes de tiempo y lo que viniera detras
-          # se leeria como claves nuevas de `$GITHUB_OUTPUT`. Hoy no puede pasar porque el
-          # `map(...)` de arriba antepone `- <sha> ` a cada linea, pero eso es una proteccion
-          # de rebote: depende de un prefijo que alguien puede quitar sin ver la relacion.
+          # Un texto de varias lineas necesita delimitador; sin el, `$GITHUB_OUTPUT` se queda
+          # con la primera linea y el aviso viaja decapitado. Y el delimitador es ALEATORIO
+          # porque el texto lleva contenido de terceros (titulos y mensajes de commit): con uno
+          # fijo y publico, un titulo que fuera exactamente esa palabra cerraria el bloque
+          # antes de tiempo y lo de detras se leeria como claves nuevas de `$GITHUB_OUTPUT`.
           FIN="FIN_$(openssl rand -hex 12)"
           {
+            echo "hay=true"
             echo "texto<<$FIN"
             printf '%s\n' "$texto"
             echo "$FIN"
           } >> "$GITHUB_OUTPUT"
 
+      # NO hay `concurrency` con `cancel-in-progress`: dos resumenes no se pisan (cada uno
+      # tiene su ventana) y cancelar uno perderia un dia entero de cronica.
       - name: Enviar al webhook, y al respaldo si no responde
+        if: steps.componer.outputs.hay == 'true'
         uses: ./.github/actions/avisar
         with:
           webhook-url: ${{ secrets.GROK_WEBHOOK_URL }}
           sender-key: ${{ secrets.GROK_WEBHOOK_SENDER_KEY }}
           github-token: ${{ github.token }}
-          asunto: push directo a ${{ github.ref_name }} (entrega sin PR)
+          asunto: resumen diario de lo que entro en 2.1
           texto: ${{ steps.componer.outputs.texto }}
