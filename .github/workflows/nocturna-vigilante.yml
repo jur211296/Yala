@@ -1,54 +1,60 @@
 name: Vigilante de la nocturna
 
-# QUÉ VIGILA: que la suite completa de UI corra al menos una vez al día sobre `2.1`.
+# QUÉ VIGILA: que la suite completa de UI corra una vez al día sobre la rama por defecto.
 #
-# POR QUÉ EXISTE: la nocturna (`qa.yml`, cron '17 8 * * *') falla en silencio. Si su
-# ventana se pierde, no hay rojo, no hay aviso y no hay run: no hay NADA. La única señal
-# es una ausencia, y una ausencia no se nota. Medido el 2026-09-08, el día siguiente a
-# mudar la UI a la nocturna:
+# POR QUÉ EXISTE: la nocturna (`qa.yml`, por `schedule`) falla en silencio. Si su ventana se
+# pierde, no hay rojo, ni aviso, ni run: no hay NADA, y una ausencia no se nota. Este workflow
+# lo dice — y, ya puestos, lo arregla: si a la nocturna de hoy se le pasó el plazo, la lanza él.
 #
-#   runs de QA por día, y cuántos llevaban la suite de UI dentro
-#     2026-09-06   39 runs   27 con UI
-#     2026-09-07   39 runs   24 con UI
-#     2026-09-08   31 runs    1 con UI   ← y esa una fue un dispatch a mano
+# LA LÓGICA VIVE EN `qa/scripts/ci-vigilante-nocturna.sh`, con su banco
+# (`ci-vigilante-nocturna-test.sh`, en el job `coverage-index` de `qa.yml`). Allí está escrito
+# por qué decide como decide. En corto, lo que se midió el 2026-10-06:
 #
-# De 24-31 corridas de UI al día a cero automáticas, sin que nada lo dijera. Este
-# workflow es lo que lo dice — y, ya puestos, lo arregla: si le toca correr y no corrió,
-# la lanza él.
+#   · El `schedule` de `qa.yml` SÍ corre: 29 de 29 días desde el 2026-09-08, pero entre 3,9 y
+#     8,9 h después de su cron.
+#   · El vigilante anterior lanzó 22 nocturnas en ese tiempo y LAS 22 SOBRABAN: siempre había
+#     una corrida de UI en las 26 h previas. La API de runs filtrada por evento devuelve
+#     subconjuntos distintos llamada a llamada, y él hacía una sola lectura en cada push.
 #
-# DOS RELOJES QUE FALLAN DE FORMA DISTINTA, y ahí está el diseño:
+# Ahora pregunta «¿ha nacido la corrida de HOY?», con «hoy» anclado al cron de `qa.yml`; lee de
+# dos fuentes en varias rondas; y no actúa nunca antes de un plazo de 12 h desde el cron.
 #
-#   · `schedule` — el reloj natural, pero es EL MISMO mecanismo que vigila. Si el cron de
-#     Actions deja de disparar, este workflow se queda mudo con él. Por sí solo no vale.
-#   · `push` a `2.1` — no depende del cron para nada. Cubre justo el caso que importa:
-#     que todo commit que entra en la rama por defecto acabe teniendo una corrida
-#     completa de UI. Es más ruidoso (corre en cada push) pero cuesta segundos de Linux.
+# DOS RELOJES, porque fallan de forma distinta:
 #
-# Su punto ciego, medido y aceptado: en los últimos 30 días hubo 8 sin ningún commit en
-# `2.1`, con rachas de hasta 3 seguidos. En esos días el reloj de push no suena — pero
-# tampoco hay código nuevo que probar, así que el hueco es de vigilancia del entorno, no
-# de cobertura del código.
+#   · `schedule` — puesto DESPUÉS del plazo (20:17 UTC con el cron de hoy de qa.yml), para que
+#     cuando despierte ya pueda decidir algo. Llega con horas de retraso, como el de la
+#     nocturna; mientras nazca antes de las 08:17 UTC del día siguiente, mira el día correcto.
+#     Son dos por redundancia: cuestan segundos de Linux.
+#   · `push` a `2.1` — no depende del cron. Antes del plazo cada push lee una vez y no hace
+#     nada; después, el primero que llegue lanza si falta. Es la red si el cron muere.
+#
+# SI MUEVES EL CRON DE `qa.yml`: el vigilante lo lee solo y corre su «día» con él, pero sus
+# propios crons de aquí abajo están puestos a mano tras el plazo. Muévelos también.
 
 on:
   schedule:
-    # 11:43 UTC = 3 h 26 min después de la ventana de la nocturna (08:17 UTC). Margen de
-    # sobra para el retraso con el que GitHub sirve los `schedule` bajo carga: la
-    # comprobación de abajo cuenta los runs por su hora de creación, así que basta con que
-    # la nocturna haya NACIDO, no con que haya terminado sus 90 minutos.
-    - cron: '43 11 * * *'
+    - cron: '47 20 * * *'
+    - cron: '47 23 * * *'
   push:
     branches: ["2.1"]
   workflow_dispatch:
     inputs:
-      horas:
-        description: 'Ventana en horas. Bajala a 1 para forzar el camino del disparo y verificar que el mecanismo entero funciona.'
+      ahora:
+        description: 'ENSAYO: decide como si fuera esta hora (AAAA-MM-DDTHH:MM:SSZ). Con esto NUNCA se lanza nada; sirve para recorrer cada camino de la decisión.'
         required: false
-        default: '26'
+        default: ''
+      forzar:
+        description: 'si = lanza la nocturna aunque ya haya corrido, para verificar el disparo de punta a punta. No envía aviso.'
+        required: false
+        default: 'no'
+        type: choice
+        options: ['no', 'si']
 
 # Serializa. Sin esto, dos pushes casi simultáneos abren dos vigilantes que leen «no hay
-# corrida» a la vez y lanzan DOS nocturnas de 90 minutos. `cancel-in-progress: false`
-# porque cada ejecución dura segundos y encolarlas sale más barato que razonar sobre qué
-# pasa si se cancela una a medio disparar.
+# corrida» a la vez y lanzan DOS nocturnas de 150 minutos. Ojo, medido el 2026-10-06: GitHub
+# deja UN solo run pendiente por grupo y cancela el pendiente anterior cuando llega otro (con
+# cuatro dispatches seguidos, el 2.º y el 3.º salieron «cancelled»). Aquí no hace daño —todos
+# deciden lo mismo y decide el último—, pero al probar, lánzalos de uno en uno.
 concurrency:
   group: nocturna-vigilante
   cancel-in-progress: false
@@ -56,181 +62,90 @@ concurrency:
 permissions:
   # Leer los runs y poder disparar `qa.yml`.
   actions: write
-  # Para el checkout que trae `.github/actions/avisar`, que es quien entrega el aviso.
+  # Para el checkout que trae el script, `qa.yml` (de donde sale el cron) y `.github/actions/avisar`.
   contents: read
-  # El canal de respaldo de esa action escribe un issue cuando el webhook no responde. El
-  # permiso por defecto de Actions en este repo es `read`, asi que sin esta linea el
-  # respaldo no puede entregar nada — y este workflow avisa justo de lo que nadie ve.
+  # El canal de respaldo de `avisar` escribe un issue cuando el webhook no responde.
   issues: write
 
 jobs:
   comprobar:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     env:
       GH_TOKEN: ${{ github.token }}
       REPO: ${{ github.repository }}
-      # 26 y no 24: dos horas de holgura para que el retraso normal del `schedule` no
-      # cuente como ausencia y dispare una nocturna de más cada mañana.
-      #
-      # Es parametrizable SOLO para poder verificarlo: con la ventana por defecto, el
-      # camino que lanza la nocturna únicamente se recorre el día que algo va mal, y un
-      # mecanismo de emergencia que solo se ejercita durante la emergencia no está
-      # probado. Con `horas: 1` se fuerza y se comprueba entero.
-      HORAS: ${{ github.event.inputs.horas || 26 }}
     steps:
-      # Primero y sin condicion, aunque casi siempre no haga falta: la entrega de abajo lleva
-      # `always()` —tiene que avisar aunque el paso de lanzar la nocturna falle—, y `always()`
-      # tambien corre cuando el paso anterior FALLO. Con el checkout condicionado detras, un
-      # blip de red en `actions/checkout` dejaba al paso de entrega buscando una action que no
-      # esta en el workspace: muere con un error de runner que no dice ni el asunto ni el
-      # motivo, y el aviso de «hoy no hay cobertura de UI» se pierde. Unos segundos de clon
-      # cuestan menos que eso.
+      # Primero y sin condición: la entrega del aviso lleva `always()` y necesita la action local
+      # en el workspace aunque un paso anterior haya fallado.
       - uses: actions/checkout@v4
 
-      - name: ¿Corrió la suite de UI dentro de la ventana?
-        id: comprobar
-        run: |
-          set -euo pipefail
+      - name: ¿Ha nacido la corrida de UI de hoy?
+        id: decidir
+        env:
+          # Por `env:` y no interpolados con `${{ }}` dentro del `run:`: son texto libre de quien
+          # lanza el dispatch, y dentro de comillas dobles de bash se ejecutaría.
+          AHORA: ${{ github.event.inputs.ahora }}
+          FORZAR: ${{ github.event.inputs.forzar || 'no' }}
+        run: bash qa/scripts/ci-vigilante-nocturna.sh decidir
 
-          # QUÉ SE PREGUNTA, y por qué así. Dos cosas que el silencio confunde:
-          #
-          #   «¿corrió la UI?»      la contestan `schedule` Y `workflow_dispatch` — los dos
-          #                         ponen UI_TOCABA=true y ejecutan la suite entera.
-          #   «¿funciona el reloj?» la contesta SOLO `schedule`.
-          #
-          # Aquí se pregunta la PRIMERA: lo que se vigila es la cobertura, y para eso una
-          # corrida lanzada a mano cuenta igual. (Leer un dispatch manual como prueba de
-          # que el reloj vive es otro error, y ya se cometió una vez en este repo.)
-          #
-          # NO se filtra por `conclusion`: un run EN VUELO cuenta. Uno lanzado hace diez
-          # minutos lleva ochenta por delante, y si no contara, el siguiente push lanzaría
-          # una segunda nocturna encima de la primera.
-          #
-          # Y se usa el endpoint POR WORKFLOW con el filtro de evento EN EL SERVIDOR, no
-          # `/actions/runs?per_page=100` filtrado aquí: medido el 2026-09-08, esos 100 runs
-          # mezclados abarcaban 28 h justas. Un día movido (el 2026-09-05 hubo 74 commits)
-          # los desborda, y entonces la respuesta sería «no hubo corrida de UI» habiéndola
-          # habido. `total_count` del endpoint filtrado no depende de la ventana.
-          CORTE=$(date -u -d "$HORAS hours ago" '+%Y-%m-%dT%H:%M:%SZ')
-
-          # La rama se PREGUNTA, no se supone. Un `schedule` corre siempre sobre la rama
-          # por defecto del repositorio y no se puede elegir otra, así que fijar «2.1» aquí
-          # crearía justo el fallo que `qa.yml` ya avisa de que existe: el día que cambie la
-          # rama por defecto, la nocturna se muda con ella y el vigilante se quedaría
-          # mirando una rama en la que ya no corre nada — y diría que no hay cobertura
-          # todos los días, o peor, que la hay cuando no la hay.
-          #
-          # (El filtro `push: branches` de arriba sí está fijado, porque ahí no se admiten
-          # expresiones. Si cambia la rama por defecto, hay que tocarlo a mano.)
-          RAMA=$(gh api "repos/$REPO" --jq '.default_branch')
-          echo "Ventana: desde $CORTE (hace $HORAS h) hasta ahora, sobre la rama por defecto ($RAMA)."
-          echo "rama=$RAMA" >> "$GITHUB_OUTPUT"
-
-          recientes=0
-          for EV in schedule workflow_dispatch; do
-            n=$(gh api "repos/$REPO/actions/workflows/qa.yml/runs?event=$EV&branch=$RAMA&per_page=100" \
-                  --jq "[.workflow_runs[] | select(.created_at > \"$CORTE\")] | length")
-            echo "  event=$EV → $n run(s) dentro de la ventana"
-            recientes=$(( recientes + n ))
-          done
-
-          echo "corridas_ui=$recientes" >> "$GITHUB_OUTPUT"
-          if [ "$recientes" -gt 0 ]; then
-            echo "::notice title=La UI tiene cobertura::$recientes corrida(s) de la suite completa en las últimas $HORAS h."
-          else
-            echo "::warning title=La UI lleva mas de $HORAS h sin correr::La nocturna no ha corrido. Se lanza desde aqui."
-          fi
-
-      - name: Lanzar la nocturna si falta
+      - name: Lanzar la nocturna y comprobar que nace
         id: lanzar
-        if: ${{ steps.comprobar.outputs.corridas_ui == '0' }}
+        if: ${{ steps.decidir.outputs.decision == 'lanzar' && steps.decidir.outputs.ensayo != 'si' }}
         env:
-          # Por `env:` y no interpolado dentro del `run:`: ver la nota de `RAMA` mas abajo.
-          RAMA: ${{ steps.comprobar.outputs.rama }}
-        run: |
-          set -euo pipefail
-          # Un `workflow_dispatch` corre EXACTAMENTE lo mismo que la nocturna, UI incluida:
-          # `UI_TOCABA` en qa.yml es `schedule || workflow_dispatch`.
-          #
-          # Que esto funcione con el GITHUB_TOKEN no es evidente: GitHub NO crea runs a
-          # partir de eventos disparados con ese token, precisamente para cortar cascadas
-          # infinitas. `workflow_dispatch` y `repository_dispatch` son la excepción
-          # documentada a esa regla, y es la que se usa aquí. Si algún día deja de valer,
-          # el síntoma será este paso en verde y ninguna nocturna naciendo detrás — por eso
-          # el paso siguiente COMPRUEBA que nació en vez de darlo por hecho.
-          # El instante ANTES de disparar es el ancla: sin el, el paso siguiente
-          # confundiria un dispatch ajeno reciente con el suyo y cantaria victoria sin
-          # haber creado nada.
-          echo "antes=$(date -u '+%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_OUTPUT"
-          gh workflow run qa.yml --repo "$REPO" --ref "$RAMA"
-          echo "Dispatch enviado."
-
-      - name: Comprobar que la nocturna nació de verdad
-        id: verificar
-        if: ${{ steps.lanzar.outcome == 'success' }}
-        env:
-          RAMA: ${{ steps.comprobar.outputs.rama }}
-          ANTES_RUNS: ${{ steps.lanzar.outputs.antes }}
-        run: |
-          set -euo pipefail
-          # «Comando en verde» no es «run creado». El dispatch es asíncrono: se le da un
-          # margen y se mira si apareció. Sin esto, el modo de fallo sería un vigilante que
-          # informa de que ha lanzado la nocturna todos los días sin lanzarla ninguno.
-          ANTES="$ANTES_RUNS"
-          echo "Buscando un run de qa.yml creado despues de $ANTES."
-          for _ in $(seq 1 12); do
-            sleep 5
-            n=$(gh api "repos/$REPO/actions/workflows/qa.yml/runs?event=workflow_dispatch&branch=$RAMA&per_page=10" \
-                  --jq "[.workflow_runs[] | select(.created_at >= \"$ANTES\")] | length")
-            if [ "$n" -gt 0 ]; then
-              echo "nacio=si" >> "$GITHUB_OUTPUT"
-              echo "::notice title=Nocturna lanzada::El run existe. La suite de UI corre ahora."
-              exit 0
-            fi
-          done
-          echo "nacio=no" >> "$GITHUB_OUTPUT"
-          echo "::error title=El dispatch no creo ningun run::gh salio en verde pero no hay run nuevo tras 60 s."
+          RAMA: ${{ steps.decidir.outputs.rama }}
+        run: bash qa/scripts/ci-vigilante-nocturna.sh lanzar
 
       - name: Componer el aviso
         id: componer
-        if: ${{ always() && steps.comprobar.outputs.corridas_ui == '0' }}
+        # Avisa cuando lanza de verdad (no en un lanzamiento forzado, que es una prueba) y cuando
+        # el vigilante no ha podido ni decidir: callar en ese caso sería fallar abierto.
+        if: >-
+          ${{ always() && (
+            (steps.decidir.outputs.decision == 'lanzar' && steps.decidir.outputs.motivo != 'forzada')
+            || steps.decidir.outcome == 'failure') }}
         env:
-          # `RAMA` viene de `gh api .default_branch` y ANTES se interpolaba con `${{ }}` dentro
-          # del `run:`. Un nombre de rama admite `$`, backticks y `(...)`, y dentro de comillas
-          # dobles de bash eso se ejecuta. Cambiar la rama por defecto exige permiso de escritura
-          # sobre el repo, asi que el riesgo real es bajo — pero la disciplina esta escrita en
-          # `avisar-grok-push-principal.yml` («NO se interpolan con ${{ }} dentro de run:») y
-          # sostenerla en un fichero y romperla en el de al lado es como deja de sostenerse.
-          RAMA: ${{ steps.comprobar.outputs.rama }}
-          NACIO: ${{ steps.verificar.outputs.nacio }}
+          RAMA: ${{ steps.decidir.outputs.rama }}
+          MOTIVO: ${{ steps.decidir.outputs.motivo }}
+          DESDE: ${{ steps.decidir.outputs.desde }}
+          LIMITE: ${{ steps.decidir.outputs.limite }}
+          ENSAYO: ${{ steps.decidir.outputs.ensayo }}
+          DECIDIR: ${{ steps.decidir.outcome }}
+          NACIO: ${{ steps.lanzar.outputs.nacio }}
+          NUEVO_RUN: ${{ steps.lanzar.outputs.run_url }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           set -euo pipefail
 
-          if [ "${NACIO:-no}" = "si" ]; then
-            asunto="la nocturna no habia corrido y se ha lanzado sola"
+          if [ "$DECIDIR" = failure ]; then
+            asunto="el vigilante de la nocturna no ha podido decidir"
             detalle=$(printf '%s\n' \
-              "CI de $REPO ($RAMA): la suite completa de UI llevaba mas de $HORAS h sin correr." \
-              "" \
-              "El vigilante la ha lanzado y el run existe, asi que la cobertura de hoy esta cubierta." \
-              "Lo que NO esta resuelto es por que no corrio sola: si esto se repite varios dias," \
-              "el cron de Actions no esta sirviendo la ventana y hay que dejar de depender de el.")
+              "CI de $REPO: el vigilante falló antes de saber si la suite de UI de hoy corrió." \
+              "No se ha lanzado nada. Lo más probable: el cron de qa.yml cambió de forma o la API no responde." )
           else
-            asunto="la nocturna no ha corrido y NO se ha podido lanzar"
-            detalle=$(printf '%s\n' \
-              "CI de $REPO ($RAMA): la suite completa de UI lleva mas de $HORAS h sin correr y el" \
-              "intento de lanzarla desde el vigilante no ha creado ningun run." \
-              "" \
-              "Es decir: hoy NO hay cobertura de UI, y el mecanismo de respaldo tampoco funciona." \
-              "Mira el log — lo mas probable es que el GITHUB_TOKEN haya dejado de poder disparar" \
-              "workflow_dispatch, y entonces esto necesita un token propio.")
+            if [ "$MOTIVO" = sin_lectura ]; then
+              que="no he podido leer los runs de qa.yml, así que no sé si la nocturna de hoy corrió"
+            else
+              que="la nocturna de hoy (día desde $DESDE) no había nacido al vencer el plazo ($LIMITE)"
+            fi
+            if [ "$ENSAYO" = si ]; then
+              asunto="[ensayo] el vigilante habría lanzado la nocturna"
+              resultado="Es un ENSAYO: no se ha lanzado nada."
+            elif [ "${NACIO:-no}" = si ]; then
+              asunto="la nocturna no había corrido y se ha lanzado sola"
+              [ "$MOTIVO" = sin_lectura ] && asunto="no he podido comprobar la nocturna y la he lanzado por si acaso"
+              resultado="La he lanzado y el run existe: $NUEVO_RUN"
+            else
+              asunto="la nocturna no ha corrido y NO se ha podido lanzar"
+              resultado="El lanzamiento no ha creado ningún run: hoy NO hay cobertura de UI. Si el dispatch falla con el GITHUB_TOKEN, esto necesita un token propio."
+            fi
+            detalle=$(printf '%s\n' "CI de $REPO ($RAMA): $que." "" "$resultado" \
+              "" "Si se repite varios días, el schedule de Actions no está sirviendo la nocturna.")
           fi
 
-          # Un texto de varias lineas necesita delimitador; sin el, `$GITHUB_OUTPUT` se
-          # queda con la primera linea y el aviso viaja decapitado.
+          # Un texto de varias líneas necesita delimitador; sin él, `$GITHUB_OUTPUT` se queda
+          # con la primera línea y el aviso viaja decapitado.
           texto=$(printf '%s\n' "$detalle" "" "Log completo: $RUN_URL")
-          printf '%s\n' "$texto" | sed 's/^/  /'
+          printf '%s\n' "$asunto" "$texto" | sed 's/^/  /'
           {
             echo "asunto=$asunto"
             echo "texto<<FIN_DEL_AVISO"
@@ -239,7 +154,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Enviar al webhook, y al respaldo si no responde
-        if: ${{ always() && steps.comprobar.outputs.corridas_ui == '0' }}
+        if: ${{ always() && steps.componer.outcome == 'success' && steps.decidir.outputs.ensayo != 'si' }}
         uses: ./.github/actions/avisar
         with:
           webhook-url: ${{ secrets.GROK_WEBHOOK_URL }}

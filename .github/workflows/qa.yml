@@ -26,7 +26,12 @@ on:
   #
   # El minuto 17 no es decorativo: los cron en punto son los mas congestionados de GitHub
   # y es cuando mas se retrasa el disparo. 08:17 UTC = 03:17 en Lima (UTC-5 todo el ano,
-  # Peru no cambia la hora), asi que el resultado esta listo antes de que empiece el dia.
+  # Peru no cambia la hora). Pero GitHub NO lo sirve a esa hora: medido del 2026-09-08 al
+  # 2026-10-06, la nocturna nacio los 29 dias, entre 3,9 y 8,9 h tarde (07:10-12:10 en Lima).
+  #
+  # `nocturna-vigilante.yml` LEE ESTA LINEA: el «dia» que vigila empieza a esta hora, y le da
+  # 12 h de plazo antes de lanzarla el. Tiene que haber un solo cron y ser diario a hora fija;
+  # si no, el vigilante falla y avisa. Si lo mueves, mueve tambien los crons del vigilante.
   #
   # UN APAGADO SILENCIOSO QUE CONVIENE CONOCER: en un repositorio PUBLICO —y este lo es,
   # comprobado el 2026-09-07— GitHub deshabilita solo los workflows programados cuando el
@@ -96,6 +101,11 @@ jobs:
       # falsos.
       - name: Reintento de rojos (ci-reintentar-rojos.sh)
         run: bash qa/scripts/ci-reintentar-rojos-test.sh
+      # El vigilante de la nocturna decide con una API que omite runs (medido el 2026-10-06: 22 de
+      # 22 lanzamientos suyos sobraban). Lo que decide si lanza solo se ejerce el dia que algo va
+      # mal; su banco lo simula con un `gh` falso que miente a proposito.
+      - name: Vigilante de la nocturna (ci-vigilante-nocturna.sh)
+        run: bash qa/scripts/ci-vigilante-nocturna-test.sh
 
   # Suite del conector MCP de Claude (`mcp/`): typecheck y tests unitarios, sin red. Corre en
   # cada push, como `coverage-index`: es barata (Linux, segundos) y así un cambio de esquema que
