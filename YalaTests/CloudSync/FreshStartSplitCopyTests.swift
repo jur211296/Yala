@@ -204,10 +204,13 @@ struct FreshStartSplitCopyTests {
         let block = try #require(blocked(await CloudSessionSignOut.shared.drainGroupsBeforeFreshStart(
             context: context, witness: witness(mirror, owner: "sub-a"))))
         #expect(block.reason == .groupsChangesFromAnotherAccount)
-        #expect(!Copy.freshStartGroupsPendingMessage(block, retryOffersTheLossExit: true).contains(Text.lead(2)))
-        #expect(Copy.freshStartGroupsLossConfirmMessage(block) != Text.lossConfirmBody(2))
 
-        // El verde exacto: sin «tus», y el texto de otra cuenta sin número de cuentas.
+        // El verde exacto: sin «tus», y el texto de otra cuenta sin número de cuentas. Se compara contra la variante NEUTRA,
+        // nunca con un `!=` contra la «tuya»: las dos son traducciones del idioma del simulador y en 9 de los 16 coinciden
+        // (en inglés la «tuya» ya decía «Group changes that will be lost»), así que ese `!=` medía la traducción y no la
+        // lógica, y salía rojo en el runner de CI, que arranca en inglés. Que en español las dos SÍ difieren lo fija
+        // `otherAccountText_doesNotAssumeOneAccount` leyendo los `.strings`; con eso, estas igualdades cazan en español al
+        // mutante que vuelve a la «tuya».
         #expect(block.copyShape == .anotherAccount)
         #expect(Copy.freshStartGroupsPendingMessage(block, retryOffersTheLossExit: true) == Text.leadNeutral(2) + " " + Text.lossOtherAccount)
         #expect(Copy.freshStartGroupsLossConfirmMessage(block) == Text.lossConfirmBodyNeutral(2))
@@ -348,6 +351,12 @@ struct FreshStartSplitCopyTests {
             let table = try #require(NSDictionary(contentsOf: url) as? [String: String])
             let text = try #require(table["groups.freshStartPending.lossOtherAccount"])
             #expect(!text.contains("esa cuenta"), "\(locale): \(text)")
+            // Control positivo: la variante «tuya» SÍ dice «tus grupos». Es lo que hace que las igualdades contra la neutra
+            // de los casos de arriba distingan las dos variantes en español, el idioma del gate; en inglés coinciden.
+            for key in ["lead", "lossConfirmBody", "title"] {
+                let value = try #require(table["groups.freshStartPending.\(key)"], "\(locale) sin \(key)")
+                #expect(value.contains("tus grupos"), "\(locale).\(key) ya no dice «tus grupos»")
+            }
             for key in ["leadSplit", "lossConfirmBodySplit", "splitAnotherAccount", "splitAfterOwnUpload", "titleNeutral",
                         "leadNeutral", "lossConfirmBodyNeutral", "lossConfirmBodyNeutralUnknown", "leadNeutralUnknown"] {
                 let value = try #require(table["groups.freshStartPending.\(key)"], "\(locale) sin \(key)")
