@@ -494,7 +494,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | late-remote-wipe-cut-keeps-what-it-cannot-date-until-the-mirror-decides | backlog | tickets/backlog/late-remote-wipe-cut-keeps-what-it-cannot-date-until-the-mirror-decides.md |
 | late-remote-wipe-infers-the-origin-converged-from-row-dates | backlog | tickets/backlog/late-remote-wipe-infers-the-origin-converged-from-row-dates.md |
 | late-remote-wipe-on-a-device-without-groups-cannot-return-the-rows | done | tickets/done/late-remote-wipe-on-a-device-without-groups-cannot-return-the-rows.md |
-| late-remote-wipe-return-has-no-producer-left | backlog | tickets/backlog/late-remote-wipe-return-has-no-producer-left.md |
+| late-remote-wipe-return-has-no-producer-left | done | tickets/done/late-remote-wipe-return-has-no-producer-left.md |
 | late-remote-wipe-signal-also-wipes-rows-created-after-it | done | tickets/done/late-remote-wipe-signal-also-wipes-rows-created-after-it.md |
 | late-remote-wipe-signal-undoes-the-rows-the-origin-reconverged | done | tickets/done/late-remote-wipe-signal-undoes-the-rows-the-origin-reconverged.md |
 | late-remote-wipe-survivors-can-point-at-rows-the-origin-deleted | backlog | tickets/backlog/late-remote-wipe-survivors-can-point-at-rows-the-origin-deleted.md |

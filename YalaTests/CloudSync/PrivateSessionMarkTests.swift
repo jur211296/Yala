@@ -254,8 +254,8 @@ struct PrivateSessionMarkWiringTests {
         // un consumidor que pasara su propio `UserDefaults` —que es lo que hace el servicio de
         // preferencias— no lo contaba nadie: se colaba un lector de la estricta sin pasar por esta
         // decisión. El prefijo `PrivateSessionMark.` deja fuera la declaración del propio tipo.
-        #expect(Self.countInProduction("PrivateSessionMark.confirmedPrivateSession(") == 9, """
-            `confirmedPrivateSession` tiene NUEVE lecturas en toda la app, y todas comparten el SIGNO
+        #expect(Self.countInProduction("PrivateSessionMark.confirmedPrivateSession(") == 8, """
+            `confirmedPrivateSession` tiene OCHO lecturas en toda la app, y todas comparten el SIGNO
             de su error: hacia `true` se DAÑA —se borra, o se afirma un hecho falso sobre datos
             ajenos—, hacia `false` solo se conserva de más o se calla. Si aparece una más, decide a
             conciencia de qué lado cae — si equivocarse hacia `true` no destruye nada ni miente, la
@@ -304,12 +304,8 @@ struct PrivateSessionMarkWiringTests {
             solo-grupos empezada. La permisiva sola no servía: la puerta del organizador escribe nombre
             y periodo con la marca todavía ausente.
 
-            La NOVENA (2026-09-27) es la tercera cara de la señal de vaciado: quien REPONE lo que un
-            receptor tardío sin grupos declaró (`GroupsRemoteWipeReturn.returnIfDeclared`, valor por
-            defecto de `obeysWipeSignal`). La declaración habla del espejo de iCloud de ese Apple ID, así
-            que la atiende quien obedece la señal: el mismo predicado que el receptor. Su `true` de más
-            re-puentea gastos de grupo en lo personal de una sesión que no es la del dueño —el signo de
-            la familia—.
+            Fueron NUEVE del 2026-09-27 al 2026-10-06: quien reponía lo que un receptor tardío sin grupos
+            declaraba al parque. Se retiró sin productor (ticket `late-remote-wipe-return-has-no-producer-left`).
             """)
     }
 

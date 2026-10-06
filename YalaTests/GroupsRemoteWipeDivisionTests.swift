@@ -48,7 +48,7 @@ struct GroupsRemoteWipeDivisionTests {
                 == .init(signaledAt: 1_800_000_000.5, expenseIDs: ["a"], settlementIDs: ["s"]))
     }
 
-    /// El plazo de la espera es el de las declaraciones, 30 días. Los tests del plazo lo leen por su símbolo, así que sin
+    /// El plazo de la espera son 30 días. Los tests del plazo lo leen por su símbolo, así que sin
     /// esta línea un plazo de un minuto soltaría la espera antes de que el iCloud-KV sincronizara.
     @Test("el plazo de la espera son 30 días")
     func lifetimeIsThirtyDays() {
