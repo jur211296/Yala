@@ -295,6 +295,9 @@ struct StorageSettingsView: View {
         // persona quería ENTRAR en esa cuenta, y «Migrar» la para la puerta de identidad. Esta tarjeta es su salida.
         let isAdopt = controller.offersAdoptReentry || controller.markerDecision() == .secondaryDeviceCloudLogin
         let decision = signInDecision(isAdopt: isAdopt)
+        // La comprobación ya rechazó la cuenta de esta sesión: la tarjeta no la promete y no deja volver a pedirla
+        // (ticket `migrate-card-keeps-promising-an-account-the-check-refused`). Solo en «Migrar»: el adopt no pasa por ella.
+        let refusal = isAdopt ? nil : controller.liveSessionRefusal
         return VStack(alignment: .leading, spacing: DS.Spacing.md) {
             Text(isAdopt ? L10n.Storage.Adopt.title : L10n.Storage.Migrate.title)
                 .font(DS.Typography.headline)
@@ -305,12 +308,19 @@ struct StorageSettingsView: View {
 
             switch decision {
             case .reuseLiveSession(let provider):
-                // C-7: con sesión viva no se pregunta el método — decirlo ANTES, para que saltarse
-                // el chooser no sea una sorpresa. Cumple la promesa de `groups.signin.accountNote`.
-                Text(accountReuseNote(provider))
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(.secondary)
-                    .accessibilityIdentifier("storage_account_reuse_note")
+                if let refusal {
+                    Text(L10n.Storage.Migrate.refusedNote(for: refusal))
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(DS.Semantic.warningForeground)
+                        .accessibilityIdentifier("storage_account_refused_note")
+                } else {
+                    // C-7: con sesión viva no se pregunta el método — decirlo ANTES, para que saltarse
+                    // el chooser no sea una sorpresa. Cumple la promesa de `groups.signin.accountNote`.
+                    Text(accountReuseNote(provider))
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                        .accessibilityIdentifier("storage_account_reuse_note")
+                }
             case .blockedOtherAccount(let provider):
                 // Esta copia pertenece a otra cuenta de Yala: adoptarla desde la sesión actual
                 // mezclaría dos identidades. Se explica y se deshabilita el botón.
@@ -353,7 +363,7 @@ struct StorageSettingsView: View {
             YalaPrimaryButton(
                 isAdopt ? L10n.Storage.Adopt.button : L10n.Storage.Migrate.button,
                 icon: "arrow.up.to.line",
-                isDisabled: controller.isWorking || isBlockedOtherAccount(decision),
+                isDisabled: controller.isWorking || isBlockedOtherAccount(decision) || isRefused(decision, refusal),
                 isLoading: controller.isCheckingMigrationIdentity
             ) {
                 // **Un borrado de iCloud pendiente se pregunta ANTES que todo lo demás**: es lo único de esta cadena que
@@ -1019,6 +1029,14 @@ struct StorageSettingsView: View {
     private func isBlockedOtherAccount(_ decision: StorageMigrationSignInLogic.Decision) -> Bool {
         if case .blockedOtherAccount = decision { return true }
         return false
+    }
+
+    /// ¿La tarjeta reusaría la cuenta que la comprobación ya rechazó? Solo con sesión viva: sin ella el toque abre la elección
+    /// de Apple o Google, que puede llevar a otra cuenta.
+    private func isRefused(_ decision: StorageMigrationSignInLogic.Decision,
+                           _ refusal: StorageMigrationIdentityGateLogic.Block?) -> Bool {
+        guard refusal != nil, case .reuseLiveSession = decision else { return false }
+        return true
     }
 
     /// Decisión viva del paso de auth. Se re-evalúa en cada lectura (la sesión puede aparecer o

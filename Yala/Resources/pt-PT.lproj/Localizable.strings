@@ -4555,6 +4555,18 @@
 /* Generic fallback of storage.migrate.accountReuseNote when the sign-in method is unknown */
 "storage.migrate.accountReuseNoteGeneric" = "Vais usar a tua conta Yala atual: assim os teus dados e os teus grupos ficam na mesma conta.";
 
+/* Storage migrate card, after the identity check refused the live account: it already has personal finances */
+"storage.migrate.refusedPersonalData" = "A tua conta Yala atual já tem finanças pessoais, por isso não pode receber as deste dispositivo. Para levares os teus dados para outra conta, desvincula primeiro esta em “Grupos”.";
+
+/* Storage migrate card, after the identity check refused the live account: the device's groups use another account */
+"storage.migrate.refusedOtherGroups" = "Os teus grupos usam outra conta, e neste dispositivo só pode haver uma conta na nuvem. Para levares os teus dados para a nuvem, entra com a conta dos teus grupos ou desvincula-a antes em “Grupos”.";
+
+/* Storage migrate card, after the identity check refused the live account: the account went back to iCloud */
+"storage.migrate.refusedReturned" = "A tua conta Yala atual voltou ao iCloud, e voltar à nuvem com ela ainda não está disponível.";
+
+/* Storage migrate card, after the identity check refused the live account: it was signed in before a fresh start */
+"storage.migrate.refusedFreshStart" = "A tua conta Yala atual pode ser de outra pessoa: já tinha sessão iniciada quando aqui se começou do zero. Para escolheres a tua, desvincula-a em “Grupos” e toca de novo em “Ativar a nuvem”.";
+
 /* Storage adopt card: the live session is a different Yala account than the one that migrated (%@ = Apple|Google) */
 "storage.adopt.otherAccountNote" = "Esta cópia na nuvem pertence a outra conta Yala, a de %@. Sai e entra com essa conta para continuares.";
 

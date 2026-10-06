@@ -201,6 +201,12 @@ final class CloudAuthService: NSObject {
         client?.currentSession?.user.id.uuidString.lowercased()
     }
 
+    /// **Cuántas veces cambió la sesión en este proceso**: sube con cada inicio de sesión que entra y con cada `signOut()`.
+    /// En memoria a propósito —un relanzamiento vuelve a 0— y sin el seam de `hasSession`. Lo lee la tarjeta de «Migrar a la
+    /// nube» para atar un rechazo de la comprobación a la sesión que lo recibió, no solo a la cuenta: cerrar y volver a
+    /// entrar con la misma puede cambiar la respuesta (ticket `migrate-card-keeps-promising-an-account-the-check-refused`).
+    private(set) var sessionEpoch = 0
+
     /// ¿Hay una sesión almacenada (con refresh token)?
     ///
     /// Seam DEBUG-only (`-uitest-fake-cloud-session`): en release el `#if` no existe y el cuerpo es
@@ -407,6 +413,7 @@ final class CloudAuthService: NSObject {
         CloudSyncBreadcrumb.authSignedIn()
         // Sesión nueva: la marca del adopt describía la anterior (`AdoptSessionOwnership`).
         AdoptSessionOwnership.record(nil)
+        sessionEpoch += 1
         // Cuándo entró esta cuenta: separa los cambios de grupos escritos ANTES —de la cuenta anterior— de los suyos
         // (`GroupsOutboxOwnershipLogic.owner`, ticket `groups-outbox-rows-without-a-live-session-have-no-exit`).
         SessionSignInLog.recordSignIn(sub: currentUserID, previousSub: previousUserID, at: Date())
@@ -512,6 +519,8 @@ final class CloudAuthService: NSObject {
         AccountKindService.shared.handleSignOut()
         // La marca del adopt describe ESTA sesión (`AdoptSessionOwnership`): muere con ella, también sin backend.
         AdoptSessionOwnership.record(nil)
+        // Antes del guard y aunque el cierre falle: olvidar un rechazo de más solo cuesta volver a preguntar.
+        sessionEpoch += 1
         guard let client else { return storedSessionIsGone }
         // La cuenta que se cierra, antes de cerrarla: el registro de sesiones vuelve a la de antes si se va de verdad.
         let closingUserID = currentUserID
@@ -845,6 +854,7 @@ extension CloudAuthService: ASAuthorizationControllerDelegate {
                     CloudSyncBreadcrumb.authSignedIn()
                     // Sesión nueva: la marca del adopt describía la anterior (`AdoptSessionOwnership`).
                     AdoptSessionOwnership.record(nil)
+                    self.sessionEpoch += 1
                     // Cuándo entró esta cuenta, para el dueño de los cambios de grupos (ver el gemelo de Google).
                     SessionSignInLog.recordSignIn(sub: self.currentUserID, previousSub: previousUserID, at: Date())
                     // Provider de la sesión (fuente del claim) — espejo del write en signInWithGoogle.

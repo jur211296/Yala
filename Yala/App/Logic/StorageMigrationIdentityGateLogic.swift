@@ -171,6 +171,41 @@ nonisolated enum StorageMigrationIdentityGateLogic {
         }
     }
 
+    // MARK: - Lo que la tarjeta recuerda de un rechazo
+
+    /// La sesión de nube viva, tal como se ve ahora. La sesión es el `sub` MÁS la época de `CloudAuthService.sessionEpoch`:
+    /// cerrar y volver a entrar con la misma cuenta puede cambiar la respuesta de la comprobación (la asociación de grupos,
+    /// el sello de «Empezar desde cero»), así que cuenta como otra sesión.
+    struct LiveSession: Equatable {
+        let hasSession: Bool
+        let sub: String?
+        let sessionEpoch: Int
+    }
+
+    /// Un rechazo de la comprobación, atado a la sesión que lo recibió (ticket
+    /// `migrate-card-keeps-promising-an-account-the-check-refused`, decisión A de Jürgen del 2026-10-04). Sin esto, tras
+    /// «Entendido» la tarjeta seguía prometiendo esa misma cuenta con el botón activo, y cada toque repetía el aviso.
+    struct RefusedSession: Equatable {
+        let reason: Block
+        let sub: String?
+        let sessionEpoch: Int
+    }
+
+    /// Qué recordar al publicar un aviso: solo si queda una sesión viva, que es la que se comprobó. La sesión que abrió el
+    /// intento ya se cerró antes del aviso, y sin sesión la tarjeta no promete ninguna cuenta: no hay nada que recordar.
+    static func refusalToRemember(reason: Block, session: LiveSession) -> RefusedSession? {
+        guard session.hasSession else { return nil }
+        return RefusedSession(reason: reason, sub: session.sub, sessionEpoch: session.sessionEpoch)
+    }
+
+    /// El motivo que enseña la tarjeta, si el rechazo recordado es de la sesión viva de AHORA. Otra cuenta u otra sesión de
+    /// la misma cuenta lo olvidan: la tarjeta vuelve a lo de siempre y el toque vuelve a preguntar.
+    static func cardRefusal(remembered: RefusedSession?, session: LiveSession) -> Block? {
+        guard session.hasSession, let remembered,
+              remembered.sub == session.sub, remembered.sessionEpoch == session.sessionEpoch else { return nil }
+        return remembered.reason
+    }
+
     /// El aviso cuando la comprobación dejó pasar y el claim devolvió el intento al inicio.
     ///
     /// `claiming_in_progress` es otro dispositivo migrando esa cuenta: ya tiene, o está recibiendo, finanzas personales
