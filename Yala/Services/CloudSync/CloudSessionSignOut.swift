@@ -1212,12 +1212,19 @@ final class CloudSessionSignOut {
             return false
         }
         acceptedGroupsLoss = nil
+        // Con el History sin leer no hay cifra, y sin cifra no se ofrece perder nada: el atasco, sin salida
+        // (`groupsLossShownReason`, decisión A de Jürgen del 2026-10-05). **La oferta se cuenta con lo aceptado todavía
+        // puesto, a propósito**: así se lee el History aunque la captura de este paso terminara, y la comprobación pegada al
+        // arm —que no captura— sigue viendo un cambio apuntado tras el aviso (review adversarial del 2026-10-05, lente de
+        // datos: recontar sin lo aceptado lo dejaba fuera y el borrado se lo llevaba).
+        let reason = CloudSignOutFlowLogic.groupsLossShownReason(.sessionExpired, opensExit: true, uncaptured: loss.uncaptured)
         let shown = loss.count
+        let offers = reason == .sessionExpired
         // La oferta ANTES de la fase: quien reacciona a la fase pregunta `offersGroupsLossExit` y tiene que encontrarla ya.
-        groupsLossExit = GroupsLossOffer(resume: lossExit, loss: loss, cause: .noSession)
-        phase = .blocked(pendingCount: shown, reason: .sessionExpired)
+        if offers { groupsLossExit = GroupsLossOffer(resume: lossExit, loss: loss, cause: .noSession) }
+        phase = .blocked(pendingCount: shown, reason: reason)
         CloudSyncBreadcrumb.signOutPushBlocked(pending: shown)
-        Self.noteGroupsLossOffered(pending: shown, cause: .noSession)
+        if offers { Self.noteGroupsLossOffered(pending: shown, cause: .noSession) }
         return true
     }
 
@@ -1623,17 +1630,21 @@ final class CloudSessionSignOut {
             break
         case .blocked(let pending, let reason):
             acceptedGroupsLoss = nil
-            let shown = CloudSignOutFlowLogic.cloudSignOutGroupsBlockReason(reason)
+            let cycleShown = CloudSignOutFlowLogic.cloudSignOutGroupsBlockReason(reason)
             // Un motivo que abre la salida la anota ANTES de la fase, por lo mismo que en `pushGroupsForSignOut`. **Y la
             // cifra sale de las MISMAS filas que se aceptarán** (2026-09-28): con filas de otra cuenta, el recuento del
             // push-all y las filas vivas pueden no ser lo mismo.
-            // Desde el 2026-10-05, con la captura atascada, también lo que el drain no capturó (`groupsLoss`).
+            // Desde el 2026-10-05, con la captura atascada, también lo que el drain no capturó (`groupsLoss`). **Y si ese
+            // History no se deja leer, no se ofrece perder nada** (`groupsLossShownReason`): el atasco, sin salida.
             let offerLoss = groupsLoss(context: context)
+            let cycleLossCause = CloudSignOutFlowLogic.lossCause(cycleShown)
+            let shown = CloudSignOutFlowLogic.groupsLossShownReason(
+                cycleShown, opensExit: cycleLossCause != nil, uncaptured: offerLoss.uncaptured)
             let lossCause = CloudSignOutFlowLogic.lossCause(shown)
             if let lossCause {
                 groupsLossExit = GroupsLossOffer(resume: .cloud, loss: offerLoss, cause: lossCause)
             }
-            let shownCount = lossCause == nil ? pending : offerLoss.count
+            let shownCount = cycleLossCause == nil ? pending : offerLoss.count
             Self.leaveSignInDoorOpen(ifShown: shown, controller: controller)
             phase = .blocked(pendingCount: shownCount, reason: shown)
             CloudSyncBreadcrumb.signOutPushBlocked(pending: shownCount)
@@ -1800,17 +1811,24 @@ final class CloudSessionSignOut {
             // push-all no es el de las filas vivas.
             let lossCause = CloudSignOutFlowLogic.lossCause(reason)
             var shown = pending
+            var shownReason = reason
+            var offered: CloudSignOutFlowLogic.LossCause?
             //
             // **Y desde el 2026-10-05, con la captura atascada, también lo que el drain no capturó** (`groupsLoss`, ticket
-            // `groups-drain-that-always-aborts-takes-the-loss-exit-away`).
-            if let lossCause, let lossExit {
+            // `groups-drain-that-always-aborts-takes-the-loss-exit-away`). **Si ese History no se deja leer, no se ofrece
+            // perder nada** (`groupsLossShownReason`, decisión A del 2026-10-05): el atasco, sin salida. El desasociar
+            // (`lossExit == nil`) no ofrece nada y no se toca.
+            if lossCause != nil, let lossExit {
                 let loss = groupsLoss(context: context)
-                groupsLossExit = GroupsLossOffer(resume: lossExit, loss: loss, cause: lossCause)
+                shownReason = CloudSignOutFlowLogic.groupsLossShownReason(
+                    reason, opensExit: lossCause != nil, uncaptured: loss.uncaptured)
+                offered = CloudSignOutFlowLogic.lossCause(shownReason)
+                if let offered { groupsLossExit = GroupsLossOffer(resume: lossExit, loss: loss, cause: offered) }
                 shown = loss.count
             }
-            phase = .blocked(pendingCount: shown, reason: reason)
+            phase = .blocked(pendingCount: shown, reason: shownReason)
             CloudSyncBreadcrumb.signOutPushBlocked(pending: shown)
-            if let lossCause, lossExit != nil { Self.noteGroupsLossOffered(pending: shown, cause: lossCause) }
+            if let offered { Self.noteGroupsLossOffered(pending: shown, cause: offered) }
             return false
         case .surfaceTransient(let pending):
             phase = .blocked(pendingCount: pending, reason: .transient)
@@ -2239,6 +2257,15 @@ final class CloudSessionSignOut {
         if CloudSignOutFlowLogic.freshStartContinuesDiscarding(reason: block.reason, now: loss, accepted: accepted) {
             Self.noteFreshStartGroupsDiscarded(loss, reason: block.reason)
             return .lossAccepted(loss)
+        }
+        // **Con el History sin leer no hay cifra, y sin cifra no se ofrece perder nada** (`groupsLossShownReason`, decisión
+        // A de Jürgen del 2026-10-05): la captura lo leyó bien, la oferta no. El atasco, sin salida, hasta otro intento.
+        let shownReason = CloudSignOutFlowLogic.groupsLossShownReason(
+            block.reason, opensExit: block.offersLossExit, uncaptured: loss.uncaptured)
+        guard shownReason == block.reason else {
+            let stuck = FreshStartGroupsBlock(pendingCount: loss.count, reason: shownReason, readsUncaptured: false)
+            noteFreshStartBlocked(stuck)
+            return .blocked(stuck)
         }
         let offered = FreshStartGroupsBlock(pendingCount: loss.count, reason: block.reason,
                                             readsUncaptured: loss.readsUncaptured)

@@ -60,3 +60,11 @@ Gate de `personal-drain-that-always-aborts-blocks-cloud-sign-out-with-a-wait-a-m
 `Yala Dev`, iPhone 17 Pro iOS 27.0, simulador con dos corridas encima): cayó **solo** el 4a con `quedan 3 descriptores
 abiertos`. Aislada, con el MISMO binario, la suite dio **rojo y luego verde** (1 de 2). O sea que no hace falta la suite
 completa para que caiga: basta el estado del proceso de test de esa corrida.
+
+## 2026-10-05 · el eje 4a falla también AISLADO
+
+En el gate de `stuck-groups-loss-without-a-count-covers-own-edits-made-after-the-notice` (9043 casos, 887 suites, iOS 27.0,
+simulador propio de la sesión) falló solo «R3 eje 4a»: `EJE 4a ❌ ABORTADO: quedan 3 descriptores abiertos` tras un release
+«verificado en 0 ms». La suite sola, tres veces seguidas sobre el mismo árbol: **rojo, verde, verde**. Ya no hace falta la
+suite completa para verlo, así que no depende solo de lo que corriera antes en el proceso. La corrida completa del mismo
+cambio antes del rebase lo pasó.

@@ -906,7 +906,12 @@ struct PausedChannelReasonWiringTests {
             of: "private func pushGroupsForSignOut(context: ModelContext, lossExit: GroupsLossResume?) async -> Bool {",
             in: try Self.source(Self.signOutPath))
         // Desde el 2026-09-28 la cifra es `shown`: la de las filas que la oferta acepta, cuando el motivo abre la salida.
-        #expect(push.contains("phase = .blocked(pendingCount: shown, reason: reason)"), """
+        // Desde el 2026-10-05 el motivo es `shownReason`, que nace `reason` y solo lo cambia `groupsLossShownReason` (una
+        // oferta sin el History leído enseña el atasco, sin salida).
+        #expect(push.contains("var shownReason = reason"))
+        #expect(push.components(separatedBy: "shownReason = ").count - 1 == 2, "otro sitio cambia el motivo del bloqueo")
+        #expect(push.contains("shownReason = CloudSignOutFlowLogic.groupsLossShownReason("))
+        #expect(push.contains("phase = .blocked(pendingCount: shown, reason: shownReason)"), """
             El bloqueo del push-all dejó de propagar su motivo. Todo lo que `decide` manda mostrar al \
             momento —sesión caducada, cuenta no disponible y canal en pausa— llega a la pantalla como el \
             mismo aviso.
@@ -950,8 +955,9 @@ struct PausedChannelReasonWiringTests {
             of: "private func performCloudSecureSignOut(context: ModelContext) async {",
             in: try Self.source(Self.signOutPath))
         let traduce = Self.squashed(cloud)
+        // Desde el 2026-10-05 lo traducido pasa además por `groupsLossShownReason` (sin History leído, sin salida).
         #expect(traduce.contains(Self.squashed("""
-            let shown = CloudSignOutFlowLogic.cloudSignOutGroupsBlockReason(reason)
+            let cycleShown = CloudSignOutFlowLogic.cloudSignOutGroupsBlockReason(reason)
             """)), """
             El paso 2 del cierre en la nube dejó de traducir el motivo del push-all de grupos. Con un \
             literal o un ternario, un corte de red, un 5xx y un cortafuegos vuelven a salir los tres como \
@@ -1508,15 +1514,17 @@ struct AttestUnavailableSignOutWiringTests {
             of: "private func pushGroupsForSignOut(context: ModelContext, lossExit: GroupsLossResume?) async -> Bool {",
             in: source))
         let note = try #require(push.range(of: Self.squashed("""
-            let lossCause = CloudSignOutFlowLogic.lossCause(reason)
-            var shown = pending
-            if let lossCause, let lossExit {
+            if lossCause != nil, let lossExit {
                 let loss = groupsLoss(context: context)
-                groupsLossExit = GroupsLossOffer(resume: lossExit, loss: loss, cause: lossCause)
+                shownReason = CloudSignOutFlowLogic.groupsLossShownReason(
+                    reason, opensExit: lossCause != nil, uncaptured: loss.uncaptured)
+                offered = CloudSignOutFlowLogic.lossCause(shownReason)
+                if let offered { groupsLossExit = GroupsLossOffer(resume: lossExit, loss: loss, cause: offered) }
                 shown = loss.count
             }
             """)))
-        let phase = try #require(push.range(of: "phase = .blocked(pendingCount: shown, reason: reason)"))
+        // Desde el 2026-10-05 la oferta sale solo con el History leído (`groupsLossShownReason`); la fase lleva ese motivo.
+        let phase = try #require(push.range(of: "phase = .blocked(pendingCount: shown, reason: shownReason)"))
         #expect(note.lowerBound < phase.lowerBound, """
             La salida se anota DESPUÉS de la fase: quien reacciona a la fase pregunta `offersGroupsLossExit`, no la \
             encuentra, y el aviso sale sin su botón.
@@ -1525,16 +1533,19 @@ struct AttestUnavailableSignOutWiringTests {
             of: "private func performCloudSecureSignOut(context: ModelContext) async {", in: source))
         let cloudNote = try #require(cloud.range(of: Self.squashed("""
             let offerLoss = groupsLoss(context: context)
+            let cycleLossCause = CloudSignOutFlowLogic.lossCause(cycleShown)
+            let shown = CloudSignOutFlowLogic.groupsLossShownReason(
+                cycleShown, opensExit: cycleLossCause != nil, uncaptured: offerLoss.uncaptured)
             let lossCause = CloudSignOutFlowLogic.lossCause(shown)
             if let lossCause {
                 groupsLossExit = GroupsLossOffer(resume: .cloud, loss: offerLoss, cause: lossCause)
             }
-            let shownCount = lossCause == nil ? pending : offerLoss.count
+            let shownCount = cycleLossCause == nil ? pending : offerLoss.count
             """)))
         // Desde el 2026-09-25 el paso 1 también escribe `phase = .blocked(pendingCount: pending, reason: shown)` (la puerta
         // de la sesión caducada), así que la fase del paso 2 se busca DESPUÉS de su propia traducción.
         let groupsShown = try #require(cloud.range(
-            of: "let shown = CloudSignOutFlowLogic.cloudSignOutGroupsBlockReason(reason)"))
+            of: "let cycleShown = CloudSignOutFlowLogic.cloudSignOutGroupsBlockReason(reason)"))
         let cloudPhase = try #require(cloud.range(of: "phase = .blocked(pendingCount: shownCount, reason: shown)",
                                                   range: groupsShown.upperBound..<cloud.endIndex))
         #expect(groupsShown.upperBound <= cloudNote.lowerBound)

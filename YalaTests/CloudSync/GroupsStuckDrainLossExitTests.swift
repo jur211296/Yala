@@ -301,7 +301,10 @@ struct GroupsStuckCaptureLogicTests {
 
         let uncounted = L.CausedLossAcceptance(offer: L.GroupsLoss(rows: nil, uncaptured: nil), cause: .otherAccount)
         #expect(uncounted.rows == .uncounted)
-        #expect(uncounted.coversUncaptured(["h7"]), "aceptado sin cifra: cubre cualquiera")
+        // Hasta el 2026-10-05 «aceptado sin cifra: cubre cualquiera»; desde la decisión A de Jürgen
+        // (`stuck-groups-loss-without-a-count-covers-own-edits-made-after-the-notice`) solo cubre que no quede nada.
+        #expect(!uncounted.coversUncaptured(["h7"]), "un cambio que ningún aviso contó no se pierde por una cifra que faltó")
+        #expect(uncounted.coversUncaptured([]))
     }
 
     /// Seguir con lo aceptado tras volver a subir exige la causa, las filas y el History.

@@ -1033,6 +1033,24 @@ nonisolated enum CloudSignOutFlowLogic {
         return .blocked(pendingCount: livePendingCount > 0 ? livePendingCount : Int.max, reason: .groupsCaptureUnfinished)
     }
 
+    /// **El motivo que enseña una oferta de perder los cambios de grupos, con la mitad del History que va a ofrecer** (ticket
+    /// `stuck-groups-loss-without-a-count-covers-own-edits-made-after-the-notice`, decisión A de Jürgen del 2026-10-05).
+    ///
+    /// Con la captura atascada la oferta vuelve a leer el History para contar lo que el drain no capturó, y esa lectura puede
+    /// fallar (`nil`) aunque la captura lo leyera bien. Hasta ese día el aviso salía entonces sin cifra y lo aceptado cubría
+    /// cualquier cambio del History, también uno apuntado después del aviso. Ahora un motivo que abre la salida (`opensExit`:
+    /// `lossCause` en los cierres, `freshStartOffersGroupsLossExit` en «Empezar de cero») con el History sin leer es
+    /// `.groupsCaptureUnfinished`: el atasco, sin salida, hasta que la persona vuelva a intentarlo y se pueda contar. La
+    /// persona no puede aceptar perder lo que el aviso no le enseñó.
+    ///
+    /// Vale para todas las causas, también la otra cuenta: el PR #366 cerró el `nil` de la lectura del veredicto
+    /// (`stuckCaptureVerdict`), y éste es el de la lectura de la oferta. Con el History leído, o un motivo que no abre la
+    /// salida, el motivo vuelve tal cual. `[]` es «leído y vacío» (o «no se lee», con la captura completa): no es esto.
+    static func groupsLossShownReason(_ reason: BlockReason, opensExit: Bool, uncaptured: Set<String>?) -> BlockReason {
+        guard opensExit, uncaptured == nil else { return reason }
+        return .groupsCaptureUnfinished
+    }
+
     /// **¿Apunta lo que el drain no capturó a otra cuenta?** (2026-10-05). Sí si TODO es de otra cuenta o sin dueño probado
     /// —el criterio de siempre: entonces nada de eso lo sube esta sesión—, o si ALGO es de otra cuenta CONCRETA
     /// (`UncapturedChange.provenAnotherAccount`). Lo «sin dueño» mezclado con cambios propios no cuenta: la sonda es ancha a
@@ -1163,6 +1181,19 @@ nonisolated enum CloudSignOutFlowLogic {
         return now.isSubset(of: accepted)
     }
 
+    /// **La mitad del History de Grupos: lo aceptado sin leer no cubre nada nuevo** (ticket
+    /// `stuck-groups-loss-without-a-count-covers-own-edits-made-after-the-notice`, decisión A de Jürgen del 2026-10-05). Desde
+    /// ese día ninguna oferta de grupos sale con esa mitad sin leer (`groupsLossShownReason`), así que una aceptación así solo
+    /// puede venir de antes. A diferencia de `lossHalfCovers` —que las filas y el espejo conservan, decisión B2—, aquí
+    /// «aceptado sin cifra» solo cubre que no quede nada fuera del outbox: un cambio del History que ningún aviso contó no se
+    /// pierde por una aceptación que no lo vio. La usan `CausedLossAcceptance.coversUncaptured` y la tercera mitad de
+    /// `FreshStartGroupsLoss.covers`. La mitad personal (`PersonalLossAcceptance`) sigue con `lossHalfCovers`: ticket
+    /// `personal-loss-without-a-count-covers-own-edits-made-after-the-notice`.
+    static func groupsHistoryHalfCovers(accepted: Set<String>?, now: Set<String>?) -> Bool {
+        guard accepted != nil else { return now?.isEmpty == true }
+        return lossHalfCovers(accepted: accepted, now: now)
+    }
+
     /// **Por qué «Empezar de cero» no borra lo que la subida dejó** (`CloudSessionSignOut.drainGroupsBeforeFreshStart`). Si
     /// solo quedan entradas del espejo que esta sesión no puede subir —el borrado las cuenta todas y la rehidratación solo
     /// toca las de la sesión—, esperar no las sube nunca: lo que las sube es volver a entrar con su cuenta. Sin sesión eso
@@ -1245,12 +1276,13 @@ nonisolated enum CloudSignOutFlowLogic {
         var readsUncaptured: Bool { uncaptured != [] }
 
         /// ¿Aceptar ESTO cubre lo que hay AHORA? Cada mitad por separado: lo de ahora tiene que estar entre lo aceptado.
-        /// Una mitad aceptada sin leer (`nil`, el aviso salió sin cifra) cubre cualquiera, como `LossAcceptance.uncounted`;
-        /// una mitad de ahora que no se pudo leer solo la cubre eso.
+        /// Una fila o una entrada del espejo aceptadas sin leer (`nil`, el aviso salió sin cifra) cubren cualquiera, como
+        /// `LossAcceptance.uncounted`; una mitad de ahora que no se pudo leer solo la cubre eso. **La del History no**: sin
+        /// leer solo cubre «nada fuera del outbox» (`groupsHistoryHalfCovers`, 2026-10-05).
         func covers(_ now: FreshStartGroupsLoss) -> Bool {
             CloudSignOutFlowLogic.lossHalfCovers(accepted: rows, now: now.rows)
                 && CloudSignOutFlowLogic.lossHalfCovers(accepted: mirrorKeys, now: now.mirrorKeys)
-                && CloudSignOutFlowLogic.lossHalfCovers(accepted: uncaptured, now: now.uncaptured)
+                && CloudSignOutFlowLogic.groupsHistoryHalfCovers(accepted: uncaptured, now: now.uncaptured)
         }
     }
 
@@ -1339,8 +1371,9 @@ nonisolated enum CloudSignOutFlowLogic {
     ///
     /// **Desde el 2026-10-05 lleva también la mitad del History** (`uncaptured`, ticket
     /// `groups-drain-that-always-aborts-takes-the-loss-exit-away`): los cambios de grupos que el drain no capturó y que el aviso
-    /// contó (`GroupsLoss`). `[]` = el aviso salió con la captura completa y no leyó el History; `nil` = lo leyó y no pudo, y
-    /// lo aceptado cubre cualquier cambio de esa mitad, como `LossAcceptance.uncounted` con las filas.
+    /// contó (`GroupsLoss`). `[]` = el aviso salió con la captura completa y no leyó el History; `nil` = lo leyó y no pudo. Desde
+    /// el 2026-10-05 una oferta así no se hace (`groupsLossShownReason`), y una aceptación vieja con `nil` no cubre ningún
+    /// cambio nuevo de esa mitad (`groupsHistoryHalfCovers`).
     struct CausedLossAcceptance: Equatable {
         let rows: LossAcceptance
         let cause: LossCause
@@ -1361,9 +1394,10 @@ nonisolated enum CloudSignOutFlowLogic {
         /// (`groupsResidualUncapturedAllowsSignOut`).
         var readsUncaptured: Bool { uncaptured != [] }
 
-        /// ¿Cubre lo aceptado los cambios sin capturar de AHORA? (`lossHalfCovers`).
+        /// ¿Cubre lo aceptado los cambios sin capturar de AHORA? (`groupsHistoryHalfCovers`: lo aceptado sin leer no cubre
+        /// nada nuevo desde el 2026-10-05).
         func coversUncaptured(_ now: Set<String>?) -> Bool {
-            CloudSignOutFlowLogic.lossHalfCovers(accepted: uncaptured, now: now)
+            CloudSignOutFlowLogic.groupsHistoryHalfCovers(accepted: uncaptured, now: now)
         }
     }
 

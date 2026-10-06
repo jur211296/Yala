@@ -547,6 +547,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | personal-clock-ahead-wins-every-conflict-until-real-time-catches-up | backlog | tickets/backlog/personal-clock-ahead-wins-every-conflict-until-real-time-catches-up.md |
 | personal-clock-rollback-wedges-the-drain-forever | done | tickets/done/personal-clock-rollback-wedges-the-drain-forever.md |
 | personal-drain-that-always-aborts-blocks-cloud-sign-out-with-a-wait-a-moment-copy | qa | tickets/qa/personal-drain-that-always-aborts-blocks-cloud-sign-out-with-a-wait-a-moment-copy.md |
+| personal-loss-without-a-count-covers-own-edits-made-after-the-notice | backlog | tickets/backlog/personal-loss-without-a-count-covers-own-edits-made-after-the-notice.md |
 | personal-sign-out-reads-an-unfinished-drain-as-nothing-pending | done | tickets/done/personal-sign-out-reads-an-unfinished-drain-as-nothing-pending.md |
 | personal-sync-does-not-retry-a-401-with-a-forced-token-refresh | backlog | tickets/backlog/personal-sync-does-not-retry-a-401-with-a-forced-token-refresh.md |
 | personal-sync-reads-an-offline-token-refresh-as-a-session-expiry | done | tickets/done/personal-sync-reads-an-offline-token-refresh-as-a-session-expiry.md |
@@ -737,7 +738,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | storekit-appgroup-siri-pro-gate | done | tickets/done/storekit-appgroup-siri-pro-gate.md |
 | stuck-groups-drain-hides-held-rows-of-another-account | done | tickets/done/stuck-groups-drain-hides-held-rows-of-another-account.md |
 | stuck-groups-drain-with-another-account-and-a-cycle-reason-names-two-of-three-causes | backlog | tickets/backlog/stuck-groups-drain-with-another-account-and-a-cycle-reason-names-two-of-three-causes.md |
-| stuck-groups-loss-without-a-count-covers-own-edits-made-after-the-notice | backlog | tickets/backlog/stuck-groups-loss-without-a-count-covers-own-edits-made-after-the-notice.md |
+| stuck-groups-loss-without-a-count-covers-own-edits-made-after-the-notice | done | tickets/done/stuck-groups-loss-without-a-count-covers-own-edits-made-after-the-notice.md |
+| stuck-groups-unread-history-with-another-account-names-one-cause | backlog | tickets/backlog/stuck-groups-unread-history-with-another-account-names-one-cause.md |
 | subscription-success-without-pro | done | tickets/done/subscription-success-without-pro.md |
 | superseding-intent-can-strand-the-sign-out-coordinator | done | tickets/done/superseding-intent-can-strand-the-sign-out-coordinator.md |
 | sync-runtime-safety-note-assumes-every-prod-device-is-icloud | backlog | tickets/backlog/sync-runtime-safety-note-assumes-every-prod-device-is-icloud.md |
