@@ -165,8 +165,8 @@ describe("CONTROL: las tres tareas de gpt-4.1-nano ya no salen con gpt-4.1-nano 
 
   it("ninguna fila de la tabla apunta a gpt-4.1-nano", () => {
     for (const [task, route] of Object.entries(ROUTES) as [TaskId, Route][]) {
-      if (route.mode === "managed") expect(route.model, task).not.toBe("gpt-4.1-nano");
-      else expect(route.allowedModels, task).not.toContain("gpt-4.1-nano");
+      if (route.mode === "passthrough") expect(route.allowedModels, task).not.toContain("gpt-4.1-nano");
+      else expect(route.model, task).not.toBe("gpt-4.1-nano");
     }
   });
 });

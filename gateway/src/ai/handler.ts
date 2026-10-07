@@ -6,6 +6,7 @@ import { gateAIRequest, isProviderFailure, refundQuota } from "../ratelimit";
 import type { Category } from "../policy";
 import { ADAPTERS } from "./providers";
 import { OPENAI_BASE, openAIUsage } from "./providers/openai";
+import { sendTranscription } from "./providers/transcription";
 import type { OpenAIChatBody, ProviderKeys, Usage } from "./providers/types";
 import { type ChatBody, multipartField, resolveChatTask, resolveTranscriptionTask } from "./resolve";
 import { routeFor } from "./routes";
@@ -173,6 +174,9 @@ export async function handleChatCompletions(c: Ctx): Promise<Response> {
   if (shape) return shape;
 
   const route = routeFor(res.task, res.how === "header");
+  if (route.mode === "transcription") {
+    return jsonError("yala_unavailable", `La tarea ${res.task} no va por el chat.`, 503);
+  }
   const requested = typeof body.model === "string" ? body.model : null;
   // Antes de la cuota: una petición que se va a rechazar no gasta del cubo del usuario.
   if (route.mode === "passthrough" && (!requested || !route.allowedModels.includes(requested))) {
@@ -227,14 +231,27 @@ export async function handleAudioTranscriptions(c: Ctx): Promise<Response> {
   const shape = shapeError(info, res.task, bytes.length, null);
   if (shape) return shape;
 
-  // Hoy una sola fila y en passthrough; `routeFor` se consulta igual para que el banco de voz cambie solo la tabla.
   const route = routeFor(res.task, res.how === "header");
-  if (route.mode !== "passthrough") {
-    return jsonError("yala_unavailable", "La transcripción solo admite passthrough en esta versión del gateway.", 503);
+  if (route.mode === "managed") {
+    return jsonError("yala_unavailable", "La transcripción no admite una fila de chat.", 503);
+  }
+  if (route.mode === "transcription" && route.provider !== "openai") {
+    // Defensa: el adaptador de transcripción de hoy solo habla con OpenAI. Otro proveedor entra con el suyo.
+    return jsonError("yala_unavailable", `La transcripción con ${route.provider} no está disponible en esta versión del gateway.`, 503);
   }
   const gate = await gateAIRequest(c.env, claims, category, info.notePairing);
   if (gate.blocked) return gate.blocked;
   const started = Date.now();
+
+  if (route.mode === "transcription") {
+    const result = await sendTranscription(bytes, c.req.header("content-type") ?? "", route, c.env.OPENAI_API_KEY);
+    const refunded = isProviderFailure(result.status);
+    if (refunded) await refundQuota(c.env, claims, category, gate.ticket);
+    logRoute({ task: res.task, how: res.how, headerUnknown: res.headerUnknown, category, quota: quotaLabel(gate.ticket, refunded), provider: route.provider, requested: model, model: route.model, status: result.status, ms: Date.now() - started, usage: null, attempts: 1 });
+    if (result.status >= 400) console.log(`[gw-ai] ${res.task} ${route.provider} ${result.status} ${upstreamErrorKind(result.body)}`);
+    return new Response(result.body, { status: result.status, headers: { "content-type": "application/json" } });
+  }
+
   const { resp } = await passthrough(c, "/audio/transcriptions", bytes);
   const refunded = isProviderFailure(resp.status);
   if (refunded) await refundQuota(c.env, claims, category, gate.ticket);

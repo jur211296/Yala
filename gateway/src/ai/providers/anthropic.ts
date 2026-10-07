@@ -8,14 +8,23 @@ import type { AdapterContext, AdapterResult, ChatAdapter, OpenAIChatBody, Usage 
  *
  * - Sin modo «JSON libre»: con `jsonSchema` en la fila se usa `output_config.format` (salida que no puede
  *   romper el esquema); sin él, se confía en el prompt y se recorta al objeto.
- * - Razonamiento: Haiku 4.5 va sin thinking por defecto y lo enciende con presupuesto; la familia 5.5 lo
- *   apaga con `between_tools` y lo gradúa con `output_config.effort`.
+ * - Razonamiento: Haiku 4.5 va sin thinking por defecto y lo enciende con presupuesto; Sonnet 5.5 lo apaga con
+ *   `between_tools`, Haiku 5.5 con `disabled` (`thinkingOff`), y los dos lo gradúan con `output_config.effort`.
  */
 const ANTHROPIC_BASE = "https://api.anthropic.com/v1";
 const DEFAULT_MAX_TOKENS = 4096;
 
 function isHaiku45(model: string): boolean {
   return model.startsWith("claude-haiku-4-5");
+}
+
+/**
+ * Cómo se apaga el razonamiento en la familia 4.6+: solo Sonnet 5.5 acepta `between_tools`; el resto (Claude
+ * Haiku 5.5, Sonnet 5, Opus 5 a esfuerzo `high` o menos) acepta `disabled` y rechaza `between_tools` con un 400.
+ * Opus 5.5 y Fable rechazan las dos: con ellos no se pide `none` (skill claude-api, tabla de razonamiento, 2026-10-06).
+ */
+function thinkingOff(model: string): Record<string, unknown> {
+  return model.startsWith("claude-sonnet-5-5") ? { type: "between_tools" } : { type: "disabled" };
 }
 
 export function buildAnthropicBody(body: OpenAIChatBody, route: ManagedRoute): Record<string, unknown> {
@@ -53,7 +62,7 @@ export function buildAnthropicBody(body: OpenAIChatBody, route: ManagedRoute): R
         delete out.temperature; // con thinking, Haiku 4.5 solo acepta la temperatura por defecto
       }
     } else if (p.reasoningEffort === "none") {
-      out.thinking = { type: "between_tools" };
+      out.thinking = thinkingOff(route.model);
     } else {
       outputConfig.effort = p.reasoningEffort === "minimal" ? "low" : p.reasoningEffort;
     }

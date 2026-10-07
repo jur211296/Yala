@@ -28,7 +28,8 @@ export interface TaskInfo {
   /**
    * Tope del cuerpo de la petición, en bytes (sesión 2, `gateway-proxies-any-model-and-any-length`). Medido con
    * margen sobre lo que manda la app: el texto cabe en decenas de KB; la foto, reducida a 1536 px, en ~1 MB de
-   * base64, y una foto ORIGINAL de 12 MP de una versión instalada en unos 4-6 MB.
+   * base64. Las versiones instaladas mandan la foto ORIGINAL: una de 48 MP pasa a JPEG de ~15 MB y a ~20 MB en base64,
+   * así que el tope de la foto va holgado (32 MB) para no romperles lo que hoy funciona.
    */
   readonly maxBodyBytes: number;
   /** La petición tiene que traer una imagen (si no, es otra cosa colándose en el cubo de visión). */
@@ -47,7 +48,7 @@ const MB = 1024 * KB;
 
 export const TASKS = {
   // --- Las tres de gpt-4.1-nano (apagado el 2026-10-23): las enruta la tabla desde la sesión 1 ---
-  "photo.read": { category: "vision", endpoint: "chat", legacyModel: "gpt-4.1-nano", source: "ImageVisionService.analyze", maxBodyBytes: 12 * MB, requiresImage: true },
+  "photo.read": { category: "vision", endpoint: "chat", legacyModel: "gpt-4.1-nano", source: "ImageVisionService.analyze", maxBodyBytes: 32 * MB, requiresImage: true },
   "chat.intent": { category: "suggestions", endpoint: "chat", legacyModel: "gpt-4.1-nano", source: "ChatIntentClassifierService.classifyWithLLM", maxBodyBytes: 32 * KB },
   "chat.suggestions": { category: "suggestions", endpoint: "chat", legacyModel: "gpt-4.1-nano", source: "ChatSuggestionsLLMService.generate", maxBodyBytes: 64 * KB },
 

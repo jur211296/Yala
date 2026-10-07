@@ -1,3 +1,4 @@
+import { CHAT_REWRITE_SCHEMA } from "./schemas";
 import type { TaskId } from "./tasks";
 
 /**
@@ -64,7 +65,27 @@ export interface PassthroughRoute {
   readonly allowedModels: readonly string[];
 }
 
-export type Route = ManagedRoute | PassthroughRoute;
+/** Parámetros de una transcripción gestionada (`voice.transcribe`, sesión 2). */
+export interface TranscriptionParams {
+  /** Cómo se pasa el idioma que elige la app: `languages[]` (gpt-transcribe) o `language` (whisper-1). */
+  readonly languageField: "languages" | "language";
+  /**
+   * Cuántos términos del usuario (comercios y subcategorías que la app manda en `prompt`, uno por línea) se pasan como
+   * `keywords[]`. 0 = ninguno (el modelo no los admite o el banco no los justifica).
+   */
+  readonly maxKeywords: number;
+  /** Contexto fijo para el modelo (no lo manda la app). */
+  readonly prompt?: string;
+}
+
+export interface TranscriptionRoute {
+  readonly mode: "transcription";
+  readonly provider: ProviderId;
+  readonly model: string;
+  readonly params: TranscriptionParams;
+}
+
+export type Route = ManagedRoute | PassthroughRoute | TranscriptionRoute;
 
 const PASS_MINI: PassthroughRoute = { mode: "passthrough", allowedModels: ["gpt-4.1-mini"] };
 
@@ -190,9 +211,35 @@ export const ROUTES: Readonly<Record<TaskId, Route>> = {
   // --- Sesión 2: el gateway decide también las de gpt-4.1-mini. Hasta que su banco elija, cada fila reproduce
   // EXACTAMENTE lo que la app manda hoy (modelo, temperatura y formato), así que pasar de passthrough a managed no
   // cambia la respuesta; lo único nuevo es el tope de salida, holgado. ---
-  "chat.answer": miniToday({ temperature: 0.4, responseFormat: "text", maxOutputTokens: 2048 }),
-  "chat.rewrite": miniToday({ temperature: 0.3, responseFormat: "json_object", maxOutputTokens: 1024 }),
-  "text.parse": miniToday({ temperature: 0.1, responseFormat: "text", maxOutputTokens: 2048 }),
+  // Banco del 2026-10-07 (sesión 2; informe en gateway/bench/results/2026-10-07/REPORT-chat-y-nota.md): 100 % en 33
+  // preguntas × 2 de 14 locales (criterio determinista de cifras e idioma + juez con 96–100 % de acuerdo con una muestra
+  // puntuada a mano), frente al 98,5 % de gpt-4.1-mini; p95 2,1 s contra el corte de 20 s; 0,20 USD por 1 000 (mini:
+  // 1,46). Tope: p99 de salida 67 tokens; 512 deja sitio a respuestas largas que el banco no tiene.
+  "chat.answer": {
+    mode: "managed",
+    provider: "openai",
+    model: "gpt-6-luna",
+    params: { reasoningEffort: "none", responseFormat: "text", maxOutputTokens: 512 },
+    retries: 0,
+  },
+  // 100 % en 14 reescrituras × 2 (igual que mini), p95 2,1 s contra el corte de 8 s, 0,056 USD por 1 000 (mini: 0,198).
+  "chat.rewrite": {
+    mode: "managed",
+    provider: "openai",
+    model: "gpt-6-luna",
+    params: { reasoningEffort: "none", responseFormat: "json_object", jsonSchema: CHAT_REWRITE_SCHEMA, maxOutputTokens: 300 },
+    retries: 0,
+  },
+  // 97,7 % en 44 frases × 2 de 14 locales (mini: 90,9 %); sin razonar se queda en 85,7 %, por eso esfuerzo `low`. p95
+  // 3,7 s; 0,146 USD por 1 000 (mini: 0,589). El tope cuenta el razonamiento: p99 373 tokens; 1500 cubre notas de 5
+  // movimientos, que el banco no tiene. Lo que falla: jerga («18 lucas») y divisas que el prompt no enseña.
+  "text.parse": {
+    mode: "managed",
+    provider: "openai",
+    model: "gpt-6-luna",
+    params: { reasoningEffort: "low", responseFormat: "text", maxOutputTokens: 1500 },
+    retries: 0,
+  },
   "voice.transcribe": { mode: "passthrough", allowedModels: ["whisper-1"] },
   "insights.cards": miniToday({ temperature: 0.4, responseFormat: "json_object", maxOutputTokens: 2048 }),
   "insights.cashflow": miniToday({ temperature: 0.4, responseFormat: "json_object", maxOutputTokens: 1024 }),
@@ -214,7 +261,7 @@ export const LEGACY_OVERRIDES: Readonly<Partial<Record<TaskId, ManagedRoute>>> =
 export function routeFor(task: TaskId, viaHeader: boolean, table: Readonly<Record<TaskId, Route>> = ROUTES,
   legacy: Readonly<Partial<Record<TaskId, ManagedRoute>>> = LEGACY_OVERRIDES): Route {
   const route = viaHeader ? table[task] : (legacy[task] ?? table[task]);
-  if (!viaHeader && route.mode === "managed" && route.provider !== "openai") {
+  if (!viaHeader && route.mode !== "passthrough" && route.provider !== "openai") {
     // Defensa en profundidad: la tabla está mal y una versión que promete OpenAI saldría a otro sitio.
     throw new Error(`routeFor: ${task} sin cabecera resuelve a ${route.provider}; falta su LEGACY_OVERRIDE de OpenAI`);
   }
