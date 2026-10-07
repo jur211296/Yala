@@ -1521,8 +1521,12 @@ struct ScheduledPaymentEditorView: View {
                 let descriptor = FetchDescriptor<ScheduledPayment>(predicate: #Predicate { $0.id == id })
                 do {
                     if let persistentID = try modelContext.fetch(descriptor).first?.persistentModelID {
-                        SetupChecklistManager.shared.markCompleted(
+                        // «¿Era de prueba?» solo si es el ÚNICO pago planificado (ver
+                        // `markFirstCreation`). Mismo criterio que `autoDetect` desde el Panel: todos.
+                        let total = try modelContext.fetchCount(FetchDescriptor<ScheduledPayment>())
+                        SetupChecklistManager.shared.markFirstCreation(
                             .scheduledPayment,
+                            totalOfKind: total,
                             practiceItem: PracticeCleanupItem(
                                 stepID: .scheduledPayment,
                                 itemName: name,
