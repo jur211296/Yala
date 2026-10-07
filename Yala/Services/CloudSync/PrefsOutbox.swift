@@ -261,12 +261,83 @@ nonisolated struct PrefsOutbox {
         }
     }
 
-    /// Avanza el cursor del pull. Crea el archivo si no existía (preserva nodeID/entries si ya estaba).
+    /// Avanza el cursor del pull sin integrar nada en el reloj: es `recordPull` sin HLC, y por eso comparte con él la
+    /// lectura y la escritura (los casos de archivo ilegible y corrupto de `PrefsOutboxTests` cubren los dos). No escribe
+    /// si el cursor no cambia.
     /// - Throws: `.readFailed` sin escribir si el archivo no se deja leer; `.persistFailed` en la escritura.
     func setPullCursor(_ value: Int64) throws {
+        try recordPull(newCursor: value, pulledHLCs: [])
+    }
+
+    /// Cierra la lectura de una página del pull de prefs en UNA escritura: avanza el cursor (si `newCursor` no es `nil`) e
+    /// integra en el reloj (`lastIssuedHLC`) los HLC que bajaron (`HLCClock.observePulled`). Escribe solo si algo cambió.
+    ///
+    /// Integrar es lo que impide que este teléfono, tras VER una preferencia que otro dispositivo cambió, la cambie con un HLC
+    /// más bajo, pierda en el servidor (`noop/stale`), purgue su cambio y se quede mostrando un valor que el servidor no
+    /// tiene (`personal-clock-ahead-wins-every-conflict-until-real-time-catches-up`). Hasta este cambio el reloj de prefs solo
+    /// lo avanzaban sus propios `enqueue`. El servidor acota todo HLC guardado a `now() + 60 s`
+    /// (`qa/cloud/hlc01_cap_future_hlc.sql`), así que la guarda de 5 min solo deja fuera un remoto de verdad adelantado.
+    /// - Returns: el motivo de cada HLC que no se pudo integrar (para el rastro del llamador). Uno que no supera al reloj
+    ///   propio no cuenta; uno que no parsea, tampoco (no es un reloj que mover).
+    /// - Throws: `.readFailed` sin escribir si el archivo no se deja leer; `.persistFailed` en la escritura.
+    @discardableResult
+    func recordPull(newCursor: Int64?, pulledHLCs: [String], now: Date = .now) throws -> [String] {
         var state = try loadOrCreateState()
-        state.pullCursor = value
-        try persist(state)
+        var changed = false
+        if let newCursor, newCursor != state.pullCursor {
+            state.pullCursor = newCursor
+            changed = true
+        }
+
+        var rejected: [String] = []
+        // Un `nodeID` del archivo que no valida no frena el cursor: sin él la misma página se volvería a bajar y a fusionar
+        // (gana el remoto) en cada ciclo. Se integra con uno de paso: el reloj solo se usa aquí para `max`, y el
+        // `enqueue` siguiente lanza con el mismo `nodeID` igual que antes de este cambio.
+        let nodeID: NodeID
+        do {
+            nodeID = try NodeID(validating: state.nodeID)
+        } catch {
+            #if DEBUG
+            print("PrefsOutbox: recordPull — nodeID del archivo inválido, se integra con uno de paso: \(error)")
+            #endif
+            nodeID = NodeID.generate()
+        }
+        if !pulledHLCs.isEmpty {
+            var latest: HLC?
+            if let raw = state.lastIssuedHLC {
+                do {
+                    latest = try HLC.parse(raw)
+                } catch {
+                    // Mismo trato que `enqueue`: un reloj durable corrupto arranca fresco (con log, nunca en silencio).
+                    #if DEBUG
+                    print("PrefsOutbox: recordPull — lastIssuedHLC corrupto (\(raw)), reloj reiniciado: \(error)")
+                    #endif
+                    latest = nil
+                }
+            }
+            var clock = HLCClock(nodeID: nodeID, latest: latest)
+            for raw in pulledHLCs {
+                let remote: HLC
+                do {
+                    remote = try HLC.parse(raw)
+                } catch {
+                    #if DEBUG
+                    print("PrefsOutbox: recordPull — HLC bajado que no parsea (\(raw)): \(error)")
+                    #endif
+                    continue
+                }
+                if case .rejected(let reason) = clock.observePulled(remote, now: now) {
+                    rejected.append(reason)
+                }
+            }
+            if let advanced = clock.latest, advanced != latest {
+                state.lastIssuedHLC = advanced.description
+                changed = true
+            }
+        }
+
+        if changed { try persist(state) }
+        return rejected
     }
 
     // MARK: Teardown (M1)

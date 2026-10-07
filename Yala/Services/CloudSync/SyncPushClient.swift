@@ -297,6 +297,10 @@ final class SyncPushClient {
     func push(_ rows: [SyncOutbox], continueWhile: (@MainActor () -> Bool)? = nil) async -> PushOutcome {
         lastPushFailedAtServer = false
         guard !rows.isEmpty else { return .completed([]) }
+        // En orden de HLC: con el reloj adelantado, el servidor solo conserva el orden propio si los cambios LLEGAN en
+        // orden (`HLC.uploadOrder`). El fetch del outbox no lleva orden, y los resultados se correlacionan por
+        // `client_mutation_id`, así que reordenar no cambia nada más.
+        let rows = HLC.uploadOrder(rows, hlc: \.hlc, createdAt: \.createdAt)
 
         // Sin token no se sube (los datos están a salvo en local), y el porqué lo dice el SDK: si CONSERVA la sesión, la
         // renovación no volvió (sin red, un 5xx del servidor de auth) y es pasajero; solo si la BORRÓ es sesión caducada.

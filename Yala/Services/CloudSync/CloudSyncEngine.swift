@@ -3251,14 +3251,23 @@ final class CloudSyncEngine {
     /// previo. SEMÁNTICA INTENCIONAL (F-5): el guard de drift existe para NO envenenar el reloj local con
     /// un remoto insano (>5min en el futuro); la pérdida de causalidad bajo skew extremo es un residual
     /// DOCUMENTADO vigilado server-side por `cloudSyncSuspectClockWin` — aquí solo se hace visible.
+    /// Desde `qa/cloud/hlc01_cap_future_hlc.sql` el servidor guarda todo HLC acotado a `now() + 60 s`, así que un remoto
+    /// honrado ya no salta la guarda: integrarlo es lo que hace que la edición siguiente de este teléfono, tras VER la fila,
+    /// gane en el servidor en vez de perder en silencio y quedarse divergente (`HLCClock.observePulled`).
     func receiveRemoteClock(_ remote: HLC, now: Date) {
-        do {
-            _ = try clock.receive(remote: remote, now: now)
-        } catch {
-            CloudSyncBreadcrumb.clockReceiveRejected(reason: "\(error)")
-            MetricsService.cloudSyncClockReceiveRejected(reason: "\(error)")
+        switch clock.observePulled(remote, now: now) {
+        case .integrated:
+            break
+        case .alreadyAhead:
+            // La deriva es del reloj PROPIO (el teléfono tuvo la hora adelantada): el remoto no lo supera y no hay nada que
+            // integrar. Sin canario: con el reloj adelantado salía uno por fila bajada durante todo el adelanto
+            // (`personal-clock-ahead-wins-every-conflict-until-real-time-catches-up`).
+            break
+        case .rejected(let reason):
+            CloudSyncBreadcrumb.clockReceiveRejected(reason: reason)
+            MetricsService.cloudSyncClockReceiveRejected(reason: reason)
             #if DEBUG
-            print("CloudSyncEngine: receiveRemoteClock falló para \(remote): \(error)")
+            print("CloudSyncEngine: receiveRemoteClock falló para \(remote): \(reason)")
             #endif
         }
     }

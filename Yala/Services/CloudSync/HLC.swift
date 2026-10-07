@@ -192,6 +192,41 @@ nonisolated struct HLC: Comparable, Hashable, Sendable, Codable, CustomStringCon
         return try HLC(physicalMs: physicalMs, counter: counter, nodeID: nodeID)
     }
 
+    /// Orden de SUBIDA de un outbox: por HLC (comparación estructurada), y lo que no parsea al final, por `createdAt`. Orden
+    /// estable: a igualdad conserva el de entrada.
+    ///
+    /// El servidor decide con el HLC entrante sin acotar y guarda el acotado a `now() + 60 s`
+    /// (`qa/cloud/hlc01_cap_future_hlc.sql`). Con el reloj más de un minuto adelantado, un cambio VIEJO de este teléfono
+    /// que llegue DESPUÉS de uno nuevo de la misma unidad le gana: su HLC sin acotar supera al nuevo ya guardado acotado.
+    /// Subir en orden de HLC es lo que conserva el orden propio. Por `createdAt` (la hora de pared al drenar) se invertía
+    /// justo en el caso del ticket: un cambio drenado con la hora adelantada queda fechado DESPUÉS de los que se drenan
+    /// cuando la hora vuelve. Ticket `groups-clock-ahead-wins-every-conflict-until-real-time-catches-up`.
+    static func uploadOrder<Row>(_ rows: [Row], hlc: (Row) -> String, createdAt: (Row) -> Date) -> [Row] {
+        let keyed: [(offset: Int, row: Row, parsed: HLC?)] = rows.enumerated().map { item in
+            let parsed: HLC?
+            do {
+                parsed = try HLC.parse(hlc(item.element))
+            } catch {
+                parsed = nil
+            }
+            return (item.offset, item.element, parsed)
+        }
+        return keyed.sorted { lhs, rhs in
+            switch (lhs.parsed, rhs.parsed) {
+            case let (l?, r?):
+                if l != r { return l < r }
+            case (.some, .none):
+                return true
+            case (.none, .some):
+                return false
+            case (.none, .none):
+                let lc = createdAt(lhs.row), rc = createdAt(rhs.row)
+                if lc != rc { return lc < rc }
+            }
+            return lhs.offset < rhs.offset
+        }.map(\.row)
+    }
+
     /// Parsea 4 hex lowercase → UInt16. Rechaza mayúsculas y no-hex.
     private static func parseCounterHex(_ part: String) throws -> UInt16 {
         let scalars = Array(part.unicodeScalars)
@@ -271,10 +306,12 @@ nonisolated struct HLCClock {
     ///   cambio propio hecho con la hora puesta por delante, y `eventTime` es la fecha fija de una transacción ya guardada:
     ///   ni `l` baja ni esa fecha sube, así que la guarda cortaba en el mismo cambio para siempre. Emitir por encima de la
     ///   hora de pared es lo que un HLC hace ante un retroceso: conserva el orden de este teléfono mientras su reloj
-    ///   persistido viva (en Grupos, `GroupSyncCursor.clockLatestHLC`, que el cierre de sesión borra; en el canal personal,
-    ///   `SyncCursor.clockLatestHLC`, que no se encontró quién borra; en las preferencias, el `lastIssuedHLC` de
-    ///   `PrefsOutbox`). El precio: hasta que la hora real alcance a `l`, lo que este teléfono escriba gana por LWW a lo que
-    ///   otros escriban en esas filas (tickets `groups-clock-ahead-wins-…` y `personal-clock-ahead-wins-…`).
+    ///   persistido viva (en Grupos, `GroupSyncCursor.clockLatestHLC`; en el canal personal, `SyncCursor.clockLatestHLC`;
+    ///   los dos mueren con el archivo sync-meta al cerrar sesión; en las preferencias, el `lastIssuedHLC` de
+    ///   `PrefsOutbox`). El precio lo paga el servidor desde `qa/cloud/hlc01_cap_future_hlc.sql`: guarda ese HLC acotado a
+    ///   `now() + 60 s`, así que frente a los demás cuenta el orden de llegada y no la hora adelantada. El servidor decide
+    ///   con el HLC sin acotar, de modo que el segundo cambio de este teléfono gana al primero si llega después: por eso
+    ///   los outbox suben en orden de HLC (`HLC.uploadOrder`).
     /// - **Un contador agotado avanza el milisegundo** en vez de lanzar. Con `l` por delante el contador crece con cada
     ///   cambio hasta que la hora alcance a `l`, y con el reloj puesto meses adelante los 65 536 valores se agotan.
     ///
@@ -323,6 +360,37 @@ nonisolated struct HLCClock {
         let result = try makeTimestamp(physicalMs: newPhysical, counter: newCounter, wallMs: wallMs)
         latest = result
         return result
+    }
+
+    /// Lo que pasó al integrar un HLC que BAJÓ del servidor (`observePulled`).
+    enum PulledOutcome: Equatable {
+        /// El reloj lo integró (`receive` sin error).
+        case integrated
+        /// El remoto no supera al reloj propio: no hay nada que integrar, porque `sendLocal` ya emite por encima de él.
+        /// Es el caso del teléfono que tuvo la hora adelantada: la guarda de deriva salta por SU reloj, no por el remoto.
+        case alreadyAhead
+        /// El remoto va por delante y no se pudo integrar (deriva > 5 min, contador agotado o año fuera de rango).
+        case rejected(reason: String)
+    }
+
+    /// Integra un HLC que bajó del servidor (pull de los tres canales: personal, Grupos y preferencias). Es `receive`
+    /// sin lanzar, con una distinción que el llamador necesita para no ensuciar el canario
+    /// (`personal-clock-ahead-wins-every-conflict-until-real-time-catches-up`): si falla y el remoto no supera al reloj
+    /// propio, la culpa es del reloj propio adelantado y no hay nada que integrar → `.alreadyAhead`. Solo un remoto que de
+    /// verdad va por delante y no entra es `.rejected`.
+    ///
+    /// El servidor acota todo HLC guardado a `now() + 60 s` (`qa/cloud/hlc01_cap_future_hlc.sql`), así que con su reloj
+    /// en hora un teléfono integra cualquier cosa que baje: la guarda de 5 min deja de saltar por un remoto honrado.
+    /// Integrar es lo que hace que, tras VER una fila, el cambio siguiente de este teléfono se estampe por encima de ella
+    /// y gane en el servidor en vez de perder en silencio y quedarse divergente.
+    mutating func observePulled(_ remote: HLC, now: Date) -> PulledOutcome {
+        do {
+            _ = try receive(remote: remote, now: now)
+            return .integrated
+        } catch {
+            if let latest, remote <= latest { return .alreadyAhead }
+            return .rejected(reason: "\(error)")
+        }
     }
 
     /// Valida drift y overflow, y construye el HLC con el nodeID local. NO muta `latest` (lo hace el
