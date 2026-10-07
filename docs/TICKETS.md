@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (806)
+## Index (808)
 
 | id | status | path |
 |---|---|---|
@@ -351,7 +351,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | gateway-typecheck-roto-y-fuera-del-ci | backlog | tickets/backlog/gateway-typecheck-roto-y-fuera-del-ci.md |
 | generated-index-lands-above-yaml-frontmatter | backlog | tickets/backlog/generated-index-lands-above-yaml-frontmatter.md |
 | goldens-de-staging-solo-pasan-a-trozos | done | tickets/done/goldens-de-staging-solo-pasan-a-trozos.md |
-| gpt-4-1-nano-shuts-down-on-october-23 | backlog | tickets/backlog/gpt-4-1-nano-shuts-down-on-october-23.md |
+| gpt-4-1-nano-shuts-down-on-october-23 | done | tickets/done/gpt-4-1-nano-shuts-down-on-october-23.md |
 | group-balance-service-shares-not-deduped | backlog | tickets/backlog/group-balance-service-shares-not-deduped.md |
 | group-expense-edit-save-disabled-without-saying-the-account-is-missing | done | tickets/done/group-expense-edit-save-disabled-without-saying-the-account-is-missing.md |
 | group-expense-views-redesign | qa | tickets/qa/group-expense-views-redesign.md |
@@ -456,6 +456,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | identity-uuid-repair-can-commit-half-done-after-a-read-failure | backlog | tickets/backlog/identity-uuid-repair-can-commit-half-done-after-a-read-failure.md |
 | image-entry-end-to-end-redesign | qa | tickets/qa/image-entry-end-to-end-redesign.md |
 | image-entry-multi-photo-drops-failures-silently | done | tickets/done/image-entry-multi-photo-drops-failures-silently.md |
+| image-entry-name-says-image-but-takes-files | backlog | tickets/backlog/image-entry-name-says-image-but-takes-files.md |
 | image-entry-network-failure-reads-as-no-transactions | done | tickets/done/image-entry-network-failure-reads-as-no-transactions.md |
 | image-entry-uitests-cannot-reach-the-fab-on-ipad | backlog | tickets/backlog/image-entry-uitests-cannot-reach-the-fab-on-ipad.md |
 | image-entry-uitests-save-stays-off-for-a-complete-record | backlog | tickets/backlog/image-entry-uitests-save-stays-off-for-a-complete-record.md |
@@ -571,6 +572,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | panel-spent-per-account-counts-refunds-as-spending | backlog | tickets/backlog/panel-spent-per-account-counts-refunds-as-spending.md |
 | partial-sheets-that-never-adapted-to-the-window | backlog | tickets/backlog/partial-sheets-that-never-adapted-to-the-window.md |
 | paywall-inbox-routing-uitest-misses-the-held-paywall-in-a-batch | backlog | tickets/backlog/paywall-inbox-routing-uitest-misses-the-held-paywall-in-a-batch.md |
+| pdf-statement-reads-only-the-first-page | backlog | tickets/backlog/pdf-statement-reads-only-the-first-page.md |
 | pending-reverse-complete-runs-with-whatever-session-is-live | backlog | tickets/backlog/pending-reverse-complete-runs-with-whatever-session-is-live.md |
 | personal-clock-ahead-wins-every-conflict-until-real-time-catches-up | qa | tickets/qa/personal-clock-ahead-wins-every-conflict-until-real-time-catches-up.md |
 | personal-clock-rollback-wedges-the-drain-forever | done | tickets/done/personal-clock-rollback-wedges-the-drain-forever.md |

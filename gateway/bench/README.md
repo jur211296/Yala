@@ -28,6 +28,11 @@ Antes de una revisión:
    (`--task photo.read --edges 0`) y después el barrido de resolución y detalle solo de los que pasan
    (`--only openai:gpt-6-luna,… --edges 0,2048,1536,1024,768 --details low,high`).
 
+4. **Latencia: mídela en serie.** Con `--concurrency` > 1 y fotos subiendo a la vez, la subida satura la conexión y
+   las latencias de TODO lo que corre en paralelo salen infladas (medido el 2026-10-07: sugerencias de 17–30 s que en
+   serie eran de 3–4 s). Primero criba en paralelo; después, para las finalistas, `--reps 2 --concurrency 1` sin nada
+   más corriendo, y lee la latencia solo de esa pasada.
+
 ## Opciones
 
 | Opción | Qué hace |
