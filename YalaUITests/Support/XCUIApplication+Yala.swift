@@ -53,6 +53,7 @@ extension XCUIApplication {
         groupsGateWipeFailed: Bool = false,
         settlementAmountChange: Bool = false,
         lateNoticeKeptGroups: Bool = false,
+        welcomeAfterAdoptExit: Bool = false,
         extraArguments: [String] = []
     ) -> XCUIApplication {
         var args = ["-uitest"]
@@ -71,6 +72,7 @@ extension XCUIApplication {
         // vecinos, y con su agravante: el caso del handover real se lanza SIN él, así que un typo que lo dejara fuera
         // pondría verde el control y rojo el caso, culpando al Welcome.
         if lateNoticeKeptGroups { args.append("-uitest-late-notice-kept-groups") }
+        if welcomeAfterAdoptExit { args.append("-uitest-welcome-after-adopt-exit") }
         if let deeplink {
             args.append("-uitest-deeplink")
             args.append(deeplink)

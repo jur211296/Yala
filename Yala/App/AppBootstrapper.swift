@@ -879,7 +879,7 @@ final class AppBootstrapper {
         // tras cualquier XCUITest abrir la app A MANO en ese simulador saltaba las dos pantallas.
         // El porqué completo está en `UITestEphemeralDefaults`.
         UITestEphemeralDefaults.applyOnboardingAlreadySeen(
-            UITestHooks.skipOnboarding || UITestHooks.forceGroupInvite
+            UITestHooks.skipOnboarding || UITestHooks.forceGroupInvite || UITestHooks.welcomeAfterAdoptExit
         )
         // Modo solo-grupos determinista: onboarding saltado (arriba) + eje 1 apagado + tab Grupos
         // seleccionado. El init de SessionState no deriva el tab, así que se setea explícitamente

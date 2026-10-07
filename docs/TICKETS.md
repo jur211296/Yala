@@ -303,7 +303,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | forward-migration-steps-have-no-ceiling-and-no-exit | qa | tickets/qa/forward-migration-steps-have-no-ceiling-and-no-exit.md |
 | forward-step-ceiling-wins-over-a-cancel-given-in-the-same-pass | backlog | tickets/backlog/forward-step-ceiling-wins-over-a-cancel-given-in-the-same-pass.md |
 | forward-verify-reads-an-expired-session-as-network | backlog | tickets/backlog/forward-verify-reads-an-expired-session-as-network.md |
-| fresh-start-alert-cancel-after-an-adopt-exit-lands-in-the-app | backlog | tickets/backlog/fresh-start-alert-cancel-after-an-adopt-exit-lands-in-the-app.md |
+| fresh-start-alert-cancel-after-an-adopt-exit-lands-in-the-app | qa | tickets/qa/fresh-start-alert-cancel-after-an-adopt-exit-lands-in-the-app.md |
 | fresh-start-block-count-without-the-loss-exit-sometimes-omits-held-rows | backlog | tickets/backlog/fresh-start-block-count-without-the-loss-exit-sometimes-omits-held-rows.md |
 | fresh-start-copy-for-another-accounts-group-changes-borrows-the-own-reason | done | tickets/done/fresh-start-copy-for-another-accounts-group-changes-borrows-the-own-reason.md |
 | fresh-start-drops-mirror-entries-of-another-identity-without-counting-them | done | tickets/done/fresh-start-drops-mirror-entries-of-another-identity-without-counting-them.md |

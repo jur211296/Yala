@@ -7,8 +7,9 @@
 
 import Foundation
 
-/// Decisión pura de a dónde sigue el botón destructivo del alert «empiezo de cero» (`ShellDataAlertsModifier`) cuando
-/// el outbox de grupos no está vacío.
+/// Decisión pura de a dónde siguen las salidas del alert «empiezo de cero» (`ShellDataAlertsModifier`): el botón
+/// destructivo cuando el outbox de grupos no está vacío, y desde el 2026-10-07 también «Cancelar» y el «OK» del aviso
+/// de fallo (`dismissReopensTheWelcome`).
 ///
 /// **La pregunta es «¿había un Welcome debajo?», no «¿está completo el onboarding?»** (ticket
 /// `fresh-start-shell-alert-after-an-adopt-exit-has-no-way-out-for-group-changes`, decisión A de Jürgen del 2026-10-06).
@@ -48,7 +49,27 @@ enum FreshStartAlertRoutingLogic {
     /// **`!hasCompletedOnboarding` se queda como término**: es la guarda de antes, y con él ninguna celda que hoy iba a
     /// la puerta deja de ir. Lo nuevo es la segunda mitad.
     static func pendingGroupsRoute(hasCompletedOnboarding: Bool, presentedOverWelcome: Bool) -> PendingGroupsRoute {
-        if !hasCompletedOnboarding || presentedOverWelcome { return .privateGate }
-        return .refuseInPlace
+        welcomeIsThereToReopen(hasCompletedOnboarding: hasCompletedOnboarding,
+                               presentedOverWelcome: presentedOverWelcome) ? .privateGate : .refuseInPlace
+    }
+
+    /// **«Cancelar» y el «OK» del aviso de fallo: ¿vuelven al Welcome en `.chooser`?** (ticket
+    /// `fresh-start-alert-cancel-after-an-adopt-exit-lands-in-the-app`, 2026-10-07). Las dos salidas que no borran.
+    /// Hasta ese día reabrían solo `if !hasCompletedOnboarding`, y tras salir de un adopt el flag ya es `true`: la
+    /// persona aterrizaba dentro de la app, sobre los datos que acababa de decidir no borrar. Decisión de esa noche
+    /// (la que recomendaba el ticket): lo correcto es la bienvenida, de donde venía.
+    static func dismissReopensTheWelcome(hasCompletedOnboarding: Bool, presentedOverWelcome: Bool) -> Bool {
+        welcomeIsThereToReopen(hasCompletedOnboarding: hasCompletedOnboarding, presentedOverWelcome: presentedOverWelcome)
+    }
+
+    /// **La pregunta que comparten las tres salidas del alert**: ¿había un Welcome debajo al encenderlo? Presentar el
+    /// alert lo desmonta, así que la única forma de seguir en él —la puerta privada, o volver a elegir— es reabrirlo.
+    ///
+    /// **`!hasCompletedOnboarding` se queda como término**: es la guarda de antes, y con él ninguna celda que ya
+    /// reabría deja de hacerlo. Sin onboarding completo no hay app debajo, así que reabrir es lo único que no deja la
+    /// pantalla negra. Con el onboarding completo y sin testigo —hoy ningún camino lo produce— no se reabre: plantaría
+    /// la bienvenida a alguien que ya usa la app.
+    private static func welcomeIsThereToReopen(hasCompletedOnboarding: Bool, presentedOverWelcome: Bool) -> Bool {
+        !hasCompletedOnboarding || presentedOverWelcome
     }
 }

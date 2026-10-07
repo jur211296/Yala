@@ -1907,6 +1907,13 @@ struct ContentView: View {
         if hasCompletedOnboarding {
             // Returning user este device — ya completó onboarding antes.
             runReturningUserPostChecks()
+            #if DEBUG
+            // uitest: el Welcome de vuelta tras salir de un adopt, con el trío de su `onBack` (ver `UITestHooks`).
+            if UITestHooks.welcomeAfterAdoptExit {
+                welcomeFlowInitialStep = .chooser
+                showWelcomeFlow = true
+            }
+            #endif
             isInitialCheckDone = true
             return
         }
