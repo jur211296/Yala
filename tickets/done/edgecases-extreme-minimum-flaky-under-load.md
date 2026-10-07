@@ -1,10 +1,10 @@
 ---
 id: edgecases-extreme-minimum-flaky-under-load
-status: backlog
+status: done
 priority: low
 area: testing
 created: 2026-09-05
-updated: 2026-09-28
+updated: 2026-10-07
 source: rojo clasificado en el gate de group-joiner-flag-consumers-still-narrow
 ---
 
@@ -319,3 +319,14 @@ iPhone 17 Pro con iOS 27.0 y Xcode 27.0, centinela en 0 las dos veces:
   `EdgeCasesUITests.swift:67`, sin `account_selector_row_*`. Y en el gate de #321 (lote de 5 suites), también. ⇒ con
   iOS 27.0 en local es determinista en `2.1`, 4 de 4 corridas hoy; la nocturna del CI (Xcode 26.x) lo pasa. La pista
   barata sigue siendo el árbol de accesibilidad de `AccountSelectorSheet` a media altura (`67edfa1e2`) en iOS 27.
+
+## Cerrado el 2026-10-07 — era una carrera del producto, no del test
+
+Medido en [[advisory-ui-tests-fail-every-retry]]. La firma de `transaction_success_accept` era la guía de primeros
+pasos: el Panel marca «primer gasto» al aparecer con los registros que tenga cargados en ese instante; si el seed
+llega después, la marca queda sin poner y guardar un registro más disparaba la alerta «¡Listo! Creaste tu primer
+gasto — ¿era de prueba?», que cerraba el formulario antes de la pantalla de éxito. Por eso dependía de la carga:
+cuanto más lenta la máquina, más probable que el Panel apareciera antes que el seed. Arreglado en el producto
+(`SetupChecklistManager.markFirstCreation` decide con el recuento real del store), con control rojo determinista
+forzando la carrera. La otra firma de este ticket (`account_selector_row_` sin filas, iOS 27) no salió en ninguna
+corrida del 7-oct y no se toca aquí.

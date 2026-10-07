@@ -1410,14 +1410,28 @@ struct NewTransactionView: View {
         if let saved = viewModel.save(context: modelContext), let first = saved.first {
             // Mark setup checklist step 2 with practice cleanup option
             if SetupChecklistManager.shared.stepCompleted[.firstExpense] != true {
-                SetupChecklistManager.shared.markCompleted(
-                    .firstExpense,
-                    practiceItem: PracticeCleanupItem(
-                        stepID: .firstExpense,
-                        itemName: first.note ?? "",
-                        persistentID: first.persistentModelID
+                // «¿Era de prueba?» solo si este es el ÚNICO registro: la marca del paso puede
+                // seguir sin poner con historial (ver `markFirstCreation`). Mismo criterio que
+                // `autoDetect` desde el Panel: todos los `TransactionItem`.
+                do {
+                    let total = try modelContext.fetchCount(FetchDescriptor<TransactionItem>())
+                    SetupChecklistManager.shared.markFirstCreation(
+                        .firstExpense,
+                        totalOfKind: total,
+                        justSaved: saved.count,
+                        practiceItem: PracticeCleanupItem(
+                            stepID: .firstExpense,
+                            itemName: first.note ?? "",
+                            persistentID: first.persistentModelID
+                        )
                     )
-                )
+                } catch {
+                    #if DEBUG
+                    print("NewTransactionView: Error counting transactions: \(error)")
+                    #endif
+                    // Sin recuento no se sabe si es el primero: no se ofrece borrarlo como prueba.
+                    SetupChecklistManager.shared.markCompleted(.firstExpense)
+                }
             } else {
                 SetupChecklistManager.shared.markCompleted(.firstExpense)
             }
