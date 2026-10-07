@@ -62,7 +62,8 @@ export function photoSystemPrompt(todayIso: string): string {
   return interpolate(tpl, { dateContext: dateContext(todayIso) });
 }
 
-export function photoReadBody(jpegBase64: string, todayIso: string): Record<string, unknown> {
+/** `currencyContext`: la divisa principal y las de las cuentas del usuario, como las manda la app (sesión 2, D9). */
+export function photoReadBody(jpegBase64: string, todayIso: string, _currencyContext?: string): Record<string, unknown> {
   const wd = new Date(`${todayIso}T12:00:00Z`).getUTCDay();
   return {
     messages: [
