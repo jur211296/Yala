@@ -436,6 +436,19 @@ final class UITestHooks {
         #endif
     }
 
+    /// Valor de `-uitest-receipt-drop <unreadable|readable>`: en cuanto la ventana queda libre, suelta un recibo por el
+    /// camino real del `onDrop` (`ReceiptDropHandler.handle`). `unreadable`: un «PDF» que no lo es · `readable`: el recibo de
+    /// ejemplo como imagen (con `-uitest-image-result` para que la hoja «lea» sin red). El arrastre entre apps no se puede
+    /// conducir desde XCUITest; esto prueba todo lo que hay detrás de soltar.
+    nonisolated static var receiptDrop: String? {
+        #if DEBUG
+        guard isActive else { return nil }
+        return parseValue(after: "-uitest-receipt-drop", from: ProcessInfo.processInfo.arguments)
+        #else
+        return nil
+        #endif
+    }
+
     /// `-uitest-invite-onboarding`: presenta el cover de GroupInviteOnboarding directo
     /// (sin CKShare real — no funciona en sim). Combinar con `-uitest-join-phase` para
     /// congelar la fase del GroupJoinIntentTracker y testear cada step determinista.

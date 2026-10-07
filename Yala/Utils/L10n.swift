@@ -6783,6 +6783,10 @@ enum L10n {
             static var failureNoAmountTitle: String { ls("image.entry.failure.noAmount.title", comment: "") }
             static var failureNoAmountMessage: String { ls("image.entry.failure.noAmount.message", comment: "") }
             static var failureUnreadableTitle: String { ls("image.entry.failure.unreadable.title", comment: "") }
+            static var failureUnreadableFileTitle: String { ls("image.entry.failure.unreadableFile.title", comment: "") }
+            static var failureUnreadableFileMessage: String {
+                ls("image.entry.failure.unreadableFile.message", comment: "")
+            }
             static var failureCameraTitle: String { ls("image.entry.failure.camera.title", comment: "") }
             static var failureCameraMessage: String { ls("image.entry.failure.camera.message", comment: "") }
             static var failureGenericTitle: String { ls("image.entry.failure.generic.title", comment: "") }

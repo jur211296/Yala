@@ -6508,3 +6508,9 @@
 
 /* Error when the notice can no longer be applied: the transaction is gone, duplicated or in another currency */
 "inbox.groupSettlementAmountChange.transactionGone" = "Questo avviso non si può più applicare: il movimento è cambiato o non è più nei tuoi conti.";
+
+/* Image entry failure: a dropped or imported file (photo or PDF) could not be opened */
+"image.entry.failure.unreadableFile.title" = "Non sono riuscito ad aprire questo file";
+
+/* Image entry failure: unreadable file, why and what to try */
+"image.entry.failure.unreadableFile.message" = "Potrebbe essere vuoto, danneggiato o protetto da password. Prova con un’altra foto o un altro PDF dello scontrino.";

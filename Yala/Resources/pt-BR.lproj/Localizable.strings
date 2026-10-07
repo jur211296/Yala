@@ -6498,3 +6498,9 @@
 
 /* Error when the notice can no longer be applied: the transaction is gone, duplicated or in another currency */
 "inbox.groupSettlementAmountChange.transactionGone" = "Este aviso não pode mais ser aplicado: a transação mudou ou não está mais nas suas contas.";
+
+/* Image entry failure: a dropped or imported file (photo or PDF) could not be opened */
+"image.entry.failure.unreadableFile.title" = "Não consegui abrir este arquivo";
+
+/* Image entry failure: unreadable file, why and what to try */
+"image.entry.failure.unreadableFile.message" = "Ele pode estar vazio, danificado ou protegido por senha. Tente outra foto ou outro PDF do recibo.";

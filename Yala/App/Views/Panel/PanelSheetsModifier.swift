@@ -207,6 +207,13 @@ struct PanelSheetsModifier: ViewModifier {
                 case .image: sheets.showImageSelection = true
                 }
             }
+            .onChange(of: sheets.showAIConsentAlert) { _, showing in
+                // Sin aceptar (Cancelar o la política de privacidad), el fallo de un soltar no espera a la próxima vez
+                // que se abra el registro por imagen: ahí ya no explicaría nada.
+                if !showing, !UserDefaults.standard.bool(forKey: AppPreferences.Keys.aiDataConsentAccepted) {
+                    navigation.pendingImageEntryFailure = nil
+                }
+            }
             .onChange(of: sheets.practiceCleanupItem?.id) { _, newValue in
                 showPracticeAlert = newValue != nil
             }

@@ -512,7 +512,7 @@ struct ImageSelectionView: View {
             primaryButton(L10n.Image.openSettings, isEnabled: true, identifier: "image_open_settings", action: openSystemSettings)
         case .serviceUnavailable:
             primaryButton(L10n.Action.close, isEnabled: true, identifier: "image_failure_close") { dismiss() }
-        case .noAmount, .unreadable:
+        case .noAmount, .unreadable, .unreadableFile:
             primaryButton(L10n.Image.Entry.otherPhoto, isEnabled: true, identifier: "image_other_photo", action: chooseAnother)
         case .noConnection, .generic, .saveFailed:
             if failure.retriesSamePhotos, !readingImages.isEmpty {
@@ -532,6 +532,7 @@ struct ImageSelectionView: View {
         case .cameraPermission: "camera"
         case .noAmount: "questionmark"
         case .unreadable: "photo"
+        case .unreadableFile: "doc"
         case .serviceUnavailable, .saveFailed, .generic: "exclamationmark"
         }
     }
@@ -542,6 +543,7 @@ struct ImageSelectionView: View {
         case .cameraPermission: L10n.Image.Entry.failureCameraTitle
         case .noAmount: L10n.Image.Entry.failureNoAmountTitle
         case .unreadable: L10n.Image.Entry.failureUnreadableTitle
+        case .unreadableFile: L10n.Image.Entry.failureUnreadableFileTitle
         case .serviceUnavailable, .saveFailed, .generic: L10n.Image.Entry.failureGenericTitle
         }
     }
@@ -552,6 +554,7 @@ struct ImageSelectionView: View {
         case .cameraPermission: L10n.Image.Entry.failureCameraMessage
         case .noAmount: L10n.Image.Entry.failureNoAmountMessage
         case .unreadable: L10n.Image.errorCorrupted
+        case .unreadableFile: L10n.Image.Entry.failureUnreadableFileMessage
         case .serviceUnavailable: L10n.Image.errorNoApiKey
         case .saveFailed: L10n.Image.errorSaveFailed
         case .generic: L10n.Image.Entry.failureGenericMessage
@@ -663,7 +666,7 @@ struct ImageSelectionView: View {
             guard !urls.isEmpty else { return }
             let loaded = urls.prefix(maxPhotos).compactMap(loadImage(from:))
             guard !loaded.isEmpty else {
-                phase = .failure(.unreadable)
+                phase = .failure(.unreadableFile)
                 return
             }
             startReading(loaded)
@@ -671,7 +674,7 @@ struct ImageSelectionView: View {
             #if DEBUG
             print("ImageSelectionView: Error importing files: \(error)")
             #endif
-            phase = .failure(.unreadable)
+            phase = .failure(.unreadableFile)
         }
     }
 
@@ -695,8 +698,14 @@ struct ImageSelectionView: View {
         }
     }
 
-    /// Una foto compartida desde otra app (o soltada en el iPad) llega ya elegida: se lee directamente.
+    /// Una foto compartida desde otra app (o soltada en el iPad) llega ya elegida: se lee directamente. Lo soltado que no
+    /// se pudo abrir llega como su fallo (`ReceiptDropHandler`) y se enseña sin pasar por elegir.
     private func checkForSharedImage() {
+        if let failure = navigation.pendingImageEntryFailure {
+            navigation.pendingImageEntryFailure = nil
+            phase = .failure(failure)
+            return
+        }
         guard let url = navigation.pendingSharedImageURL else { return }
         navigation.pendingSharedImageURL = nil
         do {
