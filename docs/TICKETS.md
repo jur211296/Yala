@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (805)
+## Index (806)
 
 | id | status | path |
 |---|---|---|
@@ -95,6 +95,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | ai-calls-have-no-output-token-cap | backlog | tickets/backlog/ai-calls-have-no-output-token-cap.md |
 | ai-chat-reads-heavier-than-a-messaging-app | qa | tickets/qa/ai-chat-reads-heavier-than-a-messaging-app.md |
 | ai-comments-ignore-the-app-language | backlog | tickets/backlog/ai-comments-ignore-the-app-language.md |
+| ai-every-call-sends-its-task-and-passes-the-bench | backlog | tickets/backlog/ai-every-call-sends-its-task-and-passes-the-bench.md |
 | ai-insights-error-card-shows-raw-english-errors | backlog | tickets/backlog/ai-insights-error-card-shows-raw-english-errors.md |
 | ai-model-choice-lives-in-the-app-binary | backlog | tickets/backlog/ai-model-choice-lives-in-the-app-binary.md |
 | ai-recommended-budgets | backlog | tickets/backlog/ai-recommended-budgets.md |

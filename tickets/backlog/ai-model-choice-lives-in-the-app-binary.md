@@ -41,3 +41,23 @@ partir la IA por modo. B absorbe `gateway-proxies-any-model-and-any-length`.
 
 - Opción B: tabla en el gateway con tests; la app actual funciona sin cambios.
 - Opción A: además, cabecera de tarea en la app y la elección de modelo documentada en el gateway.
+
+## Decisión de Jürgen (2026-10-07, 10:03 Lima): opción A ya, calidad primero
+
+> «Quiero ya la solución robusta y correcta a largo plazo, no parcheemos por parchar ni dejemos pendientes… no usamos
+> modelos que no vayan a hacer bien la tarea. Si debe ser un modelo mayor, no importa, a cambio de asegurar calidad.»
+> Y a las 10:05: «ampliemos la comparación a todos los mercados y elijamos el mejor modelo para cada tarea, sea de quien
+> sea. Y deberemos ir revisando cada cierto tiempo estos modelos.»
+
+**Sesión 1, hecha (2026-10-07):**
+
+- Tabla tarea → {proveedor, modelo, parámetros} en el gateway (`gateway/src/ai/routes.ts`).
+- Cabecera `X-Yala-Task`, y deducción de la tarea para las versiones que no la mandan.
+- Adaptadores de OpenAI, Gemini, Anthropic, xAI y Workers AI.
+- Banco de calidad (`gateway/bench/`).
+- Las tres tareas de `gpt-4.1-nano` pasan a `gpt-6-luna`.
+- Decisión registrada en `docs/DECISIONS.md` (2026-10-07).
+
+**Sesión 2, pendiente:** `ai-every-call-sends-its-task-and-passes-the-bench`. La app manda la cabecera en las 12 llamadas,
+los parámetros salen de la app, y las demás tareas, la voz y la cuota free pasan por el banco. Este ticket se cierra
+cuando se cierre aquél.

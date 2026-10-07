@@ -61,6 +61,12 @@ proveedor (claves, cuotas, privacidad, revisión del texto de consentimiento). N
 juego de pruebas; después mover las tareas acotadas; el chat, el último. Si el gateway elige el modelo
 (`ai-model-choice-lives-in-the-app-binary`), B se puede probar con un % de usuarios sin release.
 
+## 2026-10-07: el banco ya existe
+
+`gateway/bench/` mide cualquier modelo de cualquier proveedor con las peticiones reales de la app. Las tres tareas de
+`gpt-4.1-nano` ya están elegidas (`docs/ai-model-bench-2026-10.md`); las 8 de `gpt-4.1-mini` son el paso 3 de
+`ai-every-call-sends-its-task-and-passes-the-bench`.
+
 ## Hecho cuando
 
 - Decisión anotada aquí.

@@ -38,6 +38,17 @@ tercera nota incluso se transcribe y luego falla al leerla, gastando la quinta u
 **B**: una nota de voz es una acción para el usuario y debe contar como una. Si se quiere algo para ya,
 A es un cambio de una línea en el gateway.
 
+## Corrección del 2026-10-07 (sesión gpt-4-1-nano-shuts-down-on-october-23)
+
+**La premisa de este ticket no era cierta en producción hasta ese día.** La lectura de la nota (`TranscriptionParserService`,
+`X-Yala-Category: voice`) va a `/v1/chat/completions`, y esa ruta del gateway no aceptaba `voice`: caía al cubo
+`chat`, que en free **no existe**. Resultado: desde el 2026-06-15 la prueba de voz free **fallaba entera** (403 «requiere
+Pro» al interpretar la nota), y un Pro gastaba esa lectura de su cupo de chat. Lo arregló la sesión del 7-oct por decisión
+de Jürgen (`voice` entra en la lista). Desde entonces el título sí es cierto: cada nota gasta 2 usos de voz.
+
+**Decisión de Jürgen (2026-10-07, 10:19, opción B):** una nota = 1 uso, y la cuota free pasa a ser un cupo de prueba de
+5 notas y 5 fotos **en total por dispositivo**. Va en `ai-every-call-sends-its-task-and-passes-the-bench`, paso 5.
+
 ## Hecho cuando
 
 - Decisión anotada aquí.
