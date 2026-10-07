@@ -11,3 +11,8 @@ su texto) al apuntar el PR; se repuso a mano porque la salida del comando imprim
 **Why:** la nota de una tarjeta suele guardar la decisión de Jürgen, y no vive en otro sitio del tablero.
 
 **How to apply:** antes de `--nota`, `tablero ver <id>` y escribe `<nota vieja> | <fecha>: <lo nuevo>`.
+
+**Y la nota es multilínea (2026-10-07):** `tablero ver <id> | sed -n 's/^note *//p'` solo captura el
+PRIMER párrafo; los siguientes vienen sin el prefijo `note` y se pierden al concatenar. Pasó así y hubo
+que reponer dos párrafos a mano. Lee el bloque `/^note/,/^<campo siguiente>/` entero, o copia la nota del
+`ver` completo, antes de reescribirla.
