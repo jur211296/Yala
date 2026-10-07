@@ -904,12 +904,21 @@ final class CloudSyncRuntime {
         guard epoch == sessionEpoch else { return }
         if case .page(let page) = pullOutcome {
             PreferenceSyncService.shared.applyPulledPrefs(page.prefs)
-            if page.maxServerSeq > since {
-                do { try prefsOutbox.setPullCursor(page.maxServerSeq) } catch {
-                    #if DEBUG
-                    print("CloudSyncRuntime.syncPrefsOnce: setPullCursor falló: \(error)")
-                    #endif
+            // Cursor y reloj en UNA escritura: el reloj integra lo que bajó para que el cambio siguiente de este teléfono
+            // sobre una preferencia ya vista gane en el servidor (`PrefsOutbox.recordPull`). Sin nada que cambiar no escribe.
+            do {
+                let rejected = try prefsOutbox.recordPull(
+                    newCursor: page.maxServerSeq > since ? page.maxServerSeq : nil,
+                    pulledHLCs: page.prefs.map(\.hlc)
+                )
+                // Una línea por página, no por preferencia.
+                if let first = rejected.first {
+                    CloudSyncBreadcrumb.clockReceiveRejected(reason: "prefs x\(rejected.count) \(first)")
                 }
+            } catch {
+                #if DEBUG
+                print("CloudSyncRuntime.syncPrefsOnce: recordPull falló: \(error)")
+                #endif
             }
         }
     }

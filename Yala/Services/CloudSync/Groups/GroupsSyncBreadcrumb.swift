@@ -93,6 +93,15 @@ enum GroupsSyncBreadcrumb {
         logger.notice("GroupsSync groupTombstonesPurged rows=\(rows, privacy: .public) mirror=\(mirror, privacy: .public) — tombstones de split_groups encolados por un build previo al guard; retirados antes del push")
     }
 
+    /// Una página del pull de Grupos traía `count` filas cuyo HLC no se pudo integrar en el reloj: van más de 5 min por
+    /// delante de la hora de este teléfono (o el contador se agotó). Las filas se aplican igual; solo no mueven el reloj.
+    /// UNA línea por página, no por fila. Con el tope del servidor (`qa/cloud/hlc01_cap_future_hlc.sql`) no debería
+    /// salir: si sale en la flota, el servidor no tiene el tope o el reloj del teléfono va atrasado. `reason` = el error
+    /// del reloj de la primera, sin PII. Un HLC que no supera al reloj propio NO cuenta (`HLCClock.PulledOutcome.alreadyAhead`).
+    static func groupsClockReceiveRejected(count: Int, reason: String) {
+        logger.notice("GroupsSync clockReceiveRejected count=\(count, privacy: .public) reason=\(reason, privacy: .public)")
+    }
+
     // MARK: - Merkle (endurecimiento B1)
 
     /// El fetch de `/groups/merkle` falló (transporte / respuesta no-HTTP / decode / HTTP 5xx). `reason` =

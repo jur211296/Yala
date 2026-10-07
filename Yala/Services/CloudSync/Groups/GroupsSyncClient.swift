@@ -1494,6 +1494,37 @@ final class GroupsSyncClient {
         }
     }
 
+    /// El pull toma el reloj persistido solo si va por DELANTE del de memoria (o si éste no tiene nada): nunca lo baja.
+    private func adoptPersistedClockIfAhead(_ cursor: GroupSyncCursor) {
+        guard let raw = cursor.clockLatestHLC else { return }
+        do {
+            let persisted = try HLC.parse(raw)
+            if let current = clock.latest, current >= persisted { return }
+            clock = HLCClock(nodeID: clock.nodeID, latest: persisted)
+        } catch {
+            #if DEBUG
+            logger.error("GroupsSync: el reloj persistido no parsea (\(raw, privacy: .public)): \(error)")
+            #endif
+        }
+    }
+
+    /// Integra en el reloj el HLC de una fila bajada (`HLCClock.observePulled`). Devuelve el motivo si el remoto va más de
+    /// 5 min por delante de la hora del teléfono y no se integró (el llamador lo cuenta y deja UN rastro por página); un HLC
+    /// que no supera al reloj propio no es un rechazo. La fila se aplica igual en los tres casos.
+    private func integratePulledClock(_ raw: String) -> String? {
+        let remote: HLC
+        do {
+            remote = try HLC.parse(raw)
+        } catch {
+            #if DEBUG
+            logger.error("GroupsSync: HLC de fila bajada no parsea (\(raw, privacy: .public)): \(error)")
+            #endif
+            return nil
+        }
+        if case .rejected(let reason) = clock.observePulled(remote, now: now()) { return reason }
+        return nil
+    }
+
     private func loadClock(from cursor: GroupSyncCursor) {
         guard let raw = cursor.clockLatestHLC else { return }
         do {
@@ -1946,9 +1977,12 @@ final class GroupsSyncClient {
         // o lo pierde el cierre de sesión con el aviso que lo cuenta (`CloudSessionSignOut`). Sin sesión no se filtra: el
         // token de abajo es quien dice «sesión caducada».
         let sessionOwner = currentUserIDProvider()
-        let rows = live.filter {
+        // En orden de HLC y no de `createdAt` (`HLC.uploadOrder`): un cambio drenado con la hora adelantada queda fechado
+        // después de los que se drenan cuando la hora vuelve, y llegando después le ganaba al cambio nuevo de la misma
+        // unidad (`groups-clock-ahead-wins-every-conflict-until-real-time-catches-up`).
+        let rows = HLC.uploadOrder(live.filter {
             GroupsOutboxOwnershipLogic.isUploadable(rowOwner: $0.ownerUserID, sessionOwner: sessionOwner)
-        }
+        }, hlc: \.hlc, createdAt: \.createdAt)
         if rows.count < live.count {
             GroupsSyncBreadcrumb.groupsOutboxHeldForAnotherAccount(count: live.count - rows.count)
         }
@@ -2487,9 +2521,21 @@ final class GroupsSyncClient {
             return true
         }
 
+        // El reloj del pull parte del persistido si va por delante del de memoria: el drain lo carga, pero un pull que llegue
+        // sin drain previo en este proceso escribiría abajo (`clockLatestHLC`) un reloj fresco encima del adelantado.
+        adoptPersistedClockIfAhead(cursor)
+        var clockRejections: (count: Int, firstReason: String?) = (0, nil)
         do {
             try saveWithAuthor(context) {
                 for delta in page.deltas {
+                    // Integra el HLC de la fila ANTES de aplicarla, como el canal personal (D-3): el cambio siguiente de este
+                    // teléfono sobre una fila que ya VIO se estampa por encima de ella y gana en el servidor, en vez de perder
+                    // y quedarse divergente (`groups-clock-ahead-wins-every-conflict-until-real-time-catches-up`). Persiste con
+                    // el cursor, en este mismo save.
+                    if let reason = integratePulledClock(delta.hlc) {
+                        clockRejections.count += 1
+                        if clockRejections.firstReason == nil { clockRejections.firstReason = reason }
+                    }
                     try applyDelta(delta, context: context,
                                    bridgeExpenseIDs: &bridgeExpenseIDs,
                                    bridgeSettlementIDs: &bridgeSettlementIDs,
@@ -2557,6 +2603,10 @@ final class GroupsSyncClient {
         // esta línea las filas YA están en disco con el cursor avanzado: cualquier hueco entre ambas cosas
         // es una ventana donde el gasto existe y su intención no.
         armBridgeIntent(expenseIDs: bridgeExpenseIDs, settlementIDs: bridgeSettlementIDs)
+        if clockRejections.count > 0 {
+            GroupsSyncBreadcrumb.groupsClockReceiveRejected(count: clockRejections.count,
+                                                            reason: clockRejections.firstReason ?? "")
+        }
 
         // H-2026-07-18-3: canario del reset por re-join (solo tras un save exitoso — el catch retornó arriba).
         if !cursorResetGroupIDs.isEmpty {
