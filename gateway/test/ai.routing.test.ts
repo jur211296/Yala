@@ -330,36 +330,44 @@ describe("las de gpt-4.1-mini: las decide la tabla, con los parámetros de hoy h
     expect(new TextDecoder().decode(sent[0].bytes)).toBe(raw);
   });
 
-  it("transcripción: multipart idéntico, y otro modelo que no sea whisper-1 → 400", async () => {
+  it("transcripción: sale con el modelo de la fila (gpt-transcribe), languages[] y sin language; otro modelo que no sea whisper-1 → 400", async () => {
     const boundary = "----yala-unit";
     const audio = new Uint8Array([0, 1, 2, 255, 13, 10, 13, 10, 7]);
     const enc = new TextEncoder();
-    const build = (model: string) => {
+    const build = (model: string, extra = "") => {
       const head = enc.encode(
         `--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="a.m4a"\r\nContent-Type: audio/m4a\r\n\r\n`,
       );
-      const tail = enc.encode(`\r\n--${boundary}\r\nContent-Disposition: form-data; name="model"\r\n\r\n${model}\r\n--${boundary}\r\nContent-Disposition: form-data; name="language"\r\n\r\nes\r\n--${boundary}--\r\n`);
+      const tail = enc.encode(`\r\n--${boundary}\r\nContent-Disposition: form-data; name="model"\r\n\r\n${model}\r\n--${boundary}\r\nContent-Disposition: form-data; name="language"\r\n\r\nes${extra}\r\n--${boundary}--\r\n`);
       const all = new Uint8Array(head.length + audio.length + tail.length);
       all.set(head, 0);
       all.set(audio, head.length);
       all.set(tail, head.length + audio.length);
       return all;
     };
-    const post = async (bytes: Uint8Array) =>
+    const post = async (bytes: Uint8Array, headers: Record<string, string> = {}) =>
       await app.fetch(
         new Request("https://gw.local/v1/audio/transcriptions", {
           method: "POST",
-          headers: { Authorization: await bearer(), "Content-Type": `multipart/form-data; boundary=${boundary}`, "X-Yala-Category": "voice" },
+          headers: { Authorization: await bearer(), "Content-Type": `multipart/form-data; boundary=${boundary}`, "X-Yala-Category": "voice", ...headers },
           body: bytes,
         }),
         makeEnv(),
         NOOP_CTX,
       );
-    const ok = build("whisper-1");
-    expect((await post(ok)).status).toBe(200);
+    // La versión instalada (sin cabecera, sin términos) también sale por la fila.
+    expect((await post(build("whisper-1"))).status).toBe(200);
     expect(sent).toHaveLength(1);
-    expect(Array.from(sent[0].bytes)).toEqual(Array.from(ok));
-    expect(sent[0].headers.get("content-type")).toBe(`multipart/form-data; boundary=${boundary}`);
+    expect(sent[0].url).toBe("https://api.openai.com/v1/audio/transcriptions");
+    const body = new TextDecoder("latin1").decode(sent[0].bytes);
+    expect(body).toContain('name="model"\r\n\r\ngpt-transcribe');
+    expect(body).toContain('name="languages[]"\r\n\r\nes');
+    expect(body).not.toContain('name="language"\r\n');
+    expect(body).toContain('name="prompt"\r\n\r\nPersonal finance voice note.');
+    expect(body).not.toContain('name="keywords[]"');
+    // El audio viaja intacto.
+    expect(Array.from(sent[0].bytes).join(",")).toContain(Array.from(audio).join(","));
+    expect(sent[0].headers.get("authorization")).toBe("Bearer sk-unit-openai");
     expect((await post(build("gpt-4o-mini-transcribe"))).status).toBe(400);
     expect(sent).toHaveLength(1);
   });

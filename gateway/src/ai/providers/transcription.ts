@@ -27,12 +27,15 @@ export function sanitizeKeyword(raw: string): string | null {
   return k.length >= 2 && k.length <= 64 ? k : null;
 }
 
-/** Los términos del usuario desde el `prompt` de la app: uno por línea (o separados por coma), sin repetir. */
+/**
+ * Los términos del usuario desde el `prompt` de la app: uno por línea, sin repetir. Solo por línea: un nombre que la
+ * persona escribió con coma («Pollos, Brasas y Más») es un término, no tres.
+ */
 export function keywordsFrom(prompt: string | null, max: number): string[] {
   if (!prompt) return [];
   const seen = new Set<string>();
   const out: string[] = [];
-  for (const part of prompt.split(/[\n,]/)) {
+  for (const part of prompt.split("\n")) {
     const k = sanitizeKeyword(part);
     if (!k || seen.has(k.toLowerCase())) continue;
     seen.add(k.toLowerCase());

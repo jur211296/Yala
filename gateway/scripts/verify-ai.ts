@@ -69,6 +69,25 @@ const PROBES: Probe[] = [
     body: suggestionsBody({ language: "es-PE", topCategories: ["Comida"], subcategoryNames: ["Mercado"], merchantNames: ["Plaza Vea"], activeBudgets: [], tagNames: [], recurringPaidNames: [], totalIncome: 3000, totalExpense: 1200 }),
   },
   { task: "text.parse", category: "voice", body: PARSE },
+  {
+    task: "chat.answer",
+    category: "chat",
+    body: { model: "gpt-4.1-mini", messages: [{ role: "system", content: "Eres Yala IA. Contexto: gastos del mes 1200 PEN." }, { role: "user", content: "¿Cuánto gasté este mes?" }], temperature: 0.4, stream: false },
+  },
+  {
+    task: "chat.rewrite",
+    category: "suggestions",
+    body: {
+      model: "gpt-4.1-mini",
+      messages: [
+        { role: "system", content: "You rewrite chat suggestion phrases for a personal finance app. Reply as JSON {\"rewritten\": [..]}." },
+        { role: "user", content: "Rewrite: ¿Cuánto gasté en Starbucks?" },
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.3,
+      stream: false,
+    },
+  },
 ];
 
 async function chat(tok: string, p: Probe): Promise<{ status: number; type?: string; model?: string; ms: number }> {

@@ -240,7 +240,22 @@ export const ROUTES: Readonly<Record<TaskId, Route>> = {
     params: { reasoningEffort: "low", responseFormat: "text", maxOutputTokens: 1500 },
     retries: 0,
   },
-  "voice.transcribe": { mode: "passthrough", allowedModels: ["whisper-1"] },
+  // Banco de voz del 2026-10-07 (docs/ai-voice-bench-2026-10.md): de 15 variantes medidas, la que menos se equivoca.
+  // Error por palabra 2,7 % con los términos del usuario (whisper-1: 9,0 %), comercio bien escrito en el 96,9 % de las
+  // notas (75 %), mejor que whisper-1 en las 14 variantes de idioma; p95 1,2 s en serie; 0,27 USD por hora (0,36).
+  // El prompt fijo pide cifras: sin él deja importes en letra («cincuenta y seis veinte») que la lectura de la nota no
+  // entiende. Las versiones instaladas también ganan sin mandar términos (3,7 % frente a 6,7 % en limpio), y whisper-1
+  // se apaga el 2027-02-26. OpenAI: sin segundo proveedor ni cambio en los textos de permisos.
+  "voice.transcribe": {
+    mode: "transcription",
+    provider: "openai",
+    model: "gpt-transcribe",
+    params: {
+      languageField: "languages",
+      maxKeywords: 100,
+      prompt: "Personal finance voice note. Write every amount with digits, for example 12.50, 56.20 or 1,250.",
+    },
+  },
   "insights.cards": miniToday({ temperature: 0.4, responseFormat: "json_object", maxOutputTokens: 2048 }),
   "insights.cashflow": miniToday({ temperature: 0.4, responseFormat: "json_object", maxOutputTokens: 1024 }),
   "insights.deviation": miniToday({ temperature: 0.4, responseFormat: "json_object", maxOutputTokens: 1024 }),

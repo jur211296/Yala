@@ -68,7 +68,9 @@ describe("saneado de lo que manda la app", () => {
   it("keywords: sin <, > ni saltos, sin repetir (mayúsculas aparte), con tope", () => {
     expect(sanitizeKeyword("  <Wong>  ")).toBe("Wong");
     expect(sanitizeKeyword("a")).toBeNull();
-    expect(keywordsFrom("Wong\nwong\nTottus, Metro\n\n", 10)).toEqual(["Wong", "Tottus", "Metro"]);
+    expect(keywordsFrom("Wong\nwong\nTottus\n\n", 10)).toEqual(["Wong", "Tottus"]);
+    // Un nombre con coma es un solo término.
+    expect(keywordsFrom("Pollos, Brasas y Más\nRappi", 10)).toEqual(["Pollos, Brasas y Más", "Rappi"]);
     expect(keywordsFrom(Array.from({ length: 50 }, (_, i) => `Comercio ${i}`).join("\n"), 30)).toHaveLength(30);
   });
 
