@@ -158,7 +158,12 @@ final class InboxConvertToGroupUITests: XCTestCase {
             Calendar.current.date(byAdding: .day, value: -3, to: Date.now),
             "No se pudo construir la fecha esperada a partir de hoy."
         )
-        let expected = expectedDate.formatted(.dateTime.day().month(.abbreviated))
+        // Con el locale que se FIJA a la app, no con el del runner: en el CI el runner corre en
+        // inglés y la expectativa salía «Oct 3» frente al «3 oct.» correcto de la app.
+        let expected = expectedDate.formatted(
+            .dateTime.day().month(.abbreviated)
+                .locale(Locale(identifier: XCUIApplication.uiTestLocaleIdentifier))
+        )
 
         let dateChip = app.buttons["group_expense_date_chip"]
         XCTAssertTrue(dateChip.waitForExistence(timeout: 5), "No apareció el chip de fecha del form de grupo.")
@@ -166,8 +171,8 @@ final class InboxConvertToGroupUITests: XCTestCase {
             dateChip.label,
             expected,
             """
-            El form de conversión no conservó la fecha del borrador (esperado «\(expected)», \
-            visto «\(dateChip.label)»). Si dice «Hoy», ha vuelto el bug de 2026-08-14: revisa que \
+            El chip de fecha del form de conversión no coincide con la del borrador (esperado \
+            «\(expected)», visto «\(dateChip.label)»). Si dice «Hoy», ha vuelto el bug de 2026-08-14: revisa que \
             los productores de GroupExpensePrefillTemplate sigan pasando `draft.effectiveDate` y \
             que nadie haya dado a `date` un valor por defecto.
             """

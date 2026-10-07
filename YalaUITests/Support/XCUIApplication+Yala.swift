@@ -10,6 +10,14 @@
 import XCTest
 
 extension XCUIApplication {
+    /// El locale que `launchForUITest` FIJA a la app (`-AppleLocale`). Un test que construya
+    /// una expectativa con formato (fechas, meses) la formatea con ÉSTE, no con `Locale.current`:
+    /// `Locale.current` es el del proceso del RUNNER, que hereda el idioma del simulador, y en el
+    /// CI ese idioma es inglés. Medido el 2026-10-06 (run 37485294893): la app pintaba «3 oct.»
+    /// —la fecha correcta— y la expectativa decía «Oct 3», así que el rojo acusaba a la
+    /// conversión de borradores de algo que no hacía.
+    static let uiTestLocaleIdentifier = "es_PE"
+
     /// Lanza la app en modo UI-test con los launch args indicados.
     /// Por defecto: estado limpio + onboarding saltado + seed minimal (rápido).
     @discardableResult
@@ -197,7 +205,7 @@ extension XCUIApplication {
         // se verificó en un idioma, así que se declara en vez de heredarlo del entorno.
         // Los CUATRO elementos son necesarios y el valor de `-AppleLanguages` va entre paréntesis
         // porque es un array serializado; sin ellos el argumento se ignora EN SILENCIO.
-        args += ["-AppleLanguages", "(es)", "-AppleLocale", "es_PE"]
+        args += ["-AppleLanguages", "(es)", "-AppleLocale", Self.uiTestLocaleIdentifier]
         launchArguments = args
         launch()
         return self

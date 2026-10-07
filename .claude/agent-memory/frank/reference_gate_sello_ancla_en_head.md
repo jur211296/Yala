@@ -39,3 +39,7 @@ arranca, que es el otro efecto de que `2.1` avance mientras trabajas).
 el lado nuevo, así que sellar con un `git mv` en el índice y luego sacarlo con `git restore --staged` da «el código
 cambió». Si el disco no cambió —compruébalo volviendo a poner el rename en el índice: la huella tiene que volver—,
 re-sellar es legítimo. Mejor: haz el `git mv` DESPUÉS del commit de código, o no lo toques del índice.
+
+**Reincidí el 2026-10-07** (`advisory-ui-tests-fail-every-retry`): `git mv` de dos tickets a `done/` antes de commitear el
+código, y el commit del fix se llevó los dos renombrados. ⇒ **mueve tickets con `mv` plano y entran con `git add -A
+tickets` en el commit de docs**; nunca `git mv` mientras quede un commit de código por hacer.

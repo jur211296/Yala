@@ -871,14 +871,28 @@ struct BudgetEditorView: View {
         if let savedID = saved {
             sessionState.needsBudgetsWidgetRefresh = true
             if budget == nil, SetupChecklistManager.shared.stepCompleted[.firstBudget] != true {
-                SetupChecklistManager.shared.markCompleted(
-                    .firstBudget,
-                    practiceItem: PracticeCleanupItem(
-                        stepID: .firstBudget,
-                        itemName: name,
-                        persistentID: savedID
+                // «¿Era de prueba?» solo si este es el ÚNICO presupuesto (ver `markFirstCreation`).
+                // Mismo criterio que `autoDetect` desde el Panel: los presupuestos activos.
+                do {
+                    let total = try modelContext.fetchCount(
+                        FetchDescriptor<Budget>(predicate: #Predicate<Budget> { $0.isActive })
                     )
-                )
+                    SetupChecklistManager.shared.markFirstCreation(
+                        .firstBudget,
+                        totalOfKind: total,
+                        practiceItem: PracticeCleanupItem(
+                            stepID: .firstBudget,
+                            itemName: name,
+                            persistentID: savedID
+                        )
+                    )
+                } catch {
+                    #if DEBUG
+                    print("BudgetEditorView: Error counting budgets: \(error)")
+                    #endif
+                    // Sin recuento no se sabe si es el primero: no se ofrece borrarlo como prueba.
+                    SetupChecklistManager.shared.markCompleted(.firstBudget)
+                }
             } else {
                 SetupChecklistManager.shared.markCompleted(.firstBudget)
             }
