@@ -62,12 +62,12 @@ export function applyCheck(stored: DOState, req: CheckRequest, now: number): Rat
 
   const burstExceeded = stored.burst.length >= req.burstPerMin;
 
-  // Leer una nota abierta: la nota ya gastó su uso al transcribirse. Ni el día ni el cupo se miran (la 5.ª nota
-  // tiene que poder leerse aunque el cupo ya esté en 5); la ráfaga sí, que es anti-flood.
+  // Leer una nota abierta: la nota ya gastó su uso —y su hueco de ráfaga— al transcribirse. Ni el día, ni el cupo, ni
+  // la ráfaga se miran: la 5.ª nota tiene que poder leerse aunque el cupo esté en 5, y contar la lectura en la ráfaga
+  // hacía que dos notas seguidas (4 llamadas) rozaran el tope de 5 por minuto del plan free. No abre un flood: cada
+  // lectura sin gasto consume una nota, y las notas solo las abre una transcripción, que sí cuenta.
   if (req.notePairing === "consume" && notes.length > 0) {
-    if (burstExceeded) return { allowed: false, reason: "burst" };
     const consumedNoteAt = notes.shift() ?? null;
-    stored.burst.push(now);
     return { allowed: true, reason: null, ticket: { counted: null, grantedNoteAt: null, consumedNoteAt } };
   }
 

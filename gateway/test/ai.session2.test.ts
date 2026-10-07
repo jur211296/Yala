@@ -311,7 +311,7 @@ describe("limitador (lógica pura)", () => {
     expect(applyCheck(s, { category: "rates", daily: 3, burstPerMin: 100 }, t0 + 86_400_000).allowed).toBe(true);
   });
 
-  it("leer con nota abierta no mira el cupo pero sí la ráfaga", () => {
+  it("leer con nota abierta no mira el cupo ni la ráfaga, y no ocupa hueco de ráfaga", () => {
     const s = base();
     for (let i = 0; i < 5; i++) applyCheck(s, { category: "voice", trial: 5, burstPerMin: 100, notePairing: "grant" }, t0 + i);
     expect(s.trial?.voice).toBe(5);
@@ -319,7 +319,17 @@ describe("limitador (lógica pura)", () => {
     const burst = base();
     burst.notes = [t0];
     burst.burst = [t0, t0, t0];
-    expect(applyCheck(burst, { category: "voice", trial: 5, burstPerMin: 3, notePairing: "consume" }, t0 + 1).reason).toBe("burst");
+    expect(applyCheck(burst, { category: "voice", trial: 5, burstPerMin: 3, notePairing: "consume" }, t0 + 1).allowed).toBe(true);
+    expect(burst.burst).toHaveLength(3);
+  });
+
+  it("dos notas seguidas (4 llamadas) caben en la ráfaga de 5 por minuto del plan free", () => {
+    const s = base();
+    for (let i = 0; i < 2; i++) {
+      expect(applyCheck(s, { category: "voice", trial: 5, burstPerMin: 5, notePairing: "grant" }, t0 + i * 2).allowed).toBe(true);
+      expect(applyCheck(s, { category: "voice", trial: 5, burstPerMin: 5, notePairing: "consume" }, t0 + i * 2 + 1).allowed).toBe(true);
+    }
+    expect(s.burst).toHaveLength(2);
   });
 
   it("un rechazo no gasta (los reintentos no se castigan solos)", () => {
