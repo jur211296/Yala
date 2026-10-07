@@ -9,8 +9,8 @@ import type { TaskId } from "./tasks";
  *
  * Dos modos:
  * - `passthrough`: el cuerpo de la app sale BYTE A BYTE a OpenAI, como antes de la tabla. Solo se
- *   acepta el modelo de `allowedModels` (el que la app escribe hoy). Es el modo de las 9 llamadas que no
- *   usaban gpt-4.1-nano, hasta que la sesión 2 las pase por el banco.
+ *   acepta el modelo de `allowedModels` (el que la app escribe hoy). Desde la sesión 2 solo lo usan lo que
+ *   mandan versiones viejas sin huella reconocible (`insights.hero`, `legacy.passthrough`).
  * - `managed`: el gateway decide proveedor, modelo y parámetros; de la app solo usa los mensajes.
  *
  * Proveedor sin cabecera de tarea = solo OpenAI (Paso 0, D6): las versiones instaladas dicen al usuario
@@ -67,6 +67,11 @@ export interface PassthroughRoute {
 export type Route = ManagedRoute | PassthroughRoute;
 
 const PASS_MINI: PassthroughRoute = { mode: "passthrough", allowedModels: ["gpt-4.1-mini"] };
+
+/** Fila managed que reproduce la llamada de hoy con `gpt-4.1-mini`: se usa hasta que el banco de la tarea decida. */
+function miniToday(params: ChatParams): ManagedRoute {
+  return { mode: "managed", provider: "openai", model: "gpt-4.1-mini", params, retries: 0 };
+}
 
 // Esquemas de las tres tareas = lo que parsea la app (ver bench/tasks/*.ts, que replica los parsers).
 const PHOTO_SCHEMA = {
@@ -182,15 +187,19 @@ export const ROUTES: Readonly<Record<TaskId, Route>> = {
     retries: 0,
   },
 
-  "chat.answer": PASS_MINI,
-  "chat.rewrite": PASS_MINI,
-  "text.parse": PASS_MINI,
+  // --- Sesión 2: el gateway decide también las de gpt-4.1-mini. Hasta que su banco elija, cada fila reproduce
+  // EXACTAMENTE lo que la app manda hoy (modelo, temperatura y formato), así que pasar de passthrough a managed no
+  // cambia la respuesta; lo único nuevo es el tope de salida, holgado. ---
+  "chat.answer": miniToday({ temperature: 0.4, responseFormat: "text", maxOutputTokens: 2048 }),
+  "chat.rewrite": miniToday({ temperature: 0.3, responseFormat: "json_object", maxOutputTokens: 1024 }),
+  "text.parse": miniToday({ temperature: 0.1, responseFormat: "text", maxOutputTokens: 2048 }),
   "voice.transcribe": { mode: "passthrough", allowedModels: ["whisper-1"] },
-  "insights.cards": PASS_MINI,
-  "insights.cashflow": PASS_MINI,
-  "insights.deviation": PASS_MINI,
-  "insights.contextual": PASS_MINI,
-  "trends.summary": PASS_MINI,
+  "insights.cards": miniToday({ temperature: 0.4, responseFormat: "json_object", maxOutputTokens: 2048 }),
+  "insights.cashflow": miniToday({ temperature: 0.4, responseFormat: "json_object", maxOutputTokens: 1024 }),
+  "insights.deviation": miniToday({ temperature: 0.4, responseFormat: "json_object", maxOutputTokens: 1024 }),
+  "trends.summary": miniToday({ temperature: 0.4, responseFormat: "json_object", maxOutputTokens: 1024 }),
+  // Solo las mandan versiones anteriores al 2026-10-03 o peticiones sin huella: salen byte a byte como siempre.
+  // `gpt-4.1-mini` no tiene apagado anunciado (developers.openai.com/api/docs/deprecations, 2026-10-07).
   "insights.hero": PASS_MINI,
   "legacy.passthrough": PASS_MINI,
 };

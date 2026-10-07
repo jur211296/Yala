@@ -1,5 +1,6 @@
 import type { Context } from "hono";
 import type { Env } from "./env";
+import { ROUTES } from "./ai/routes";
 
 type Ctx = Context<{ Bindings: Env }>;
 
@@ -52,6 +53,15 @@ export function parseMinBuild(raw: string | undefined): number {
   return Math.max(0, n);
 }
 
+/**
+ * Lado mayor, en px, al que la app reduce una foto antes de leerla (sesión 2, paso 6). Sale de la fila `photo.read`
+ * de la tabla: si la fila cambia de modelo, el tamaño viaja con ella sin release. `null` = la fila no fija uno.
+ */
+export function photoMaxEdge(): number | null {
+  const r = ROUTES["photo.read"];
+  return r.mode === "managed" ? (r.params.image?.maxEdge ?? null) : null;
+}
+
 export function handleConfig(c: Ctx): Response {
   const body = {
     v: 1,
@@ -66,6 +76,10 @@ export function handleConfig(c: Ctx): Response {
     // test/wrangler.forceupdate.test.ts.
     forceUpdate: {
       minSupportedBuild: parseMinBuild(c.env.MIN_SUPPORTED_BUILD),
+    },
+    // IA: lo que la app necesita saber de la tabla tarea → modelo para preparar la petición (sesión 2).
+    ai: {
+      photoMaxEdge: photoMaxEdge(),
     },
   };
   return new Response(JSON.stringify(body), {

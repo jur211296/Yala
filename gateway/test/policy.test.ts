@@ -17,9 +17,16 @@ describe("política de cuota", () => {
     expect(limitsFor("free", "suggestions")).toBeNull();
   });
 
-  it("Free: voz/imagen tienen cuota de trial pequeña (no rompe el setup-checklist)", () => {
-    expect(limitsFor("free", "vision")?.daily).toBe(5);
-    expect(limitsFor("free", "voice")?.daily).toBe(5);
+  it("Free: voz/imagen son un CUPO DE PRUEBA de 5 en total, sin reposición diaria (sesión 2, opción B)", () => {
+    expect(limitsFor("free", "vision")).toMatchObject({ trial: 5 });
+    expect(limitsFor("free", "voice")).toMatchObject({ trial: 5 });
+    expect(limitsFor("free", "vision")?.daily).toBeUndefined();
+    expect(limitsFor("free", "voice")?.daily).toBeUndefined();
+  });
+
+  it("Pro sigue con cuota diaria (el cupo de prueba es solo del plan free)", () => {
+    expect(limitsFor("pro", "voice")?.trial).toBeUndefined();
+    expect(limitsFor("pro", "vision")?.trial).toBeUndefined();
   });
 
   it("Free: tasas abiertas a cualquier device atestado", () => {

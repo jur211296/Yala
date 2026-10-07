@@ -32,7 +32,12 @@ export type YalaErrorType =
   /// IA: la cabecera `X-Yala-Task` nombra una tarea de otro cubo de cuota u otra ruta.
   | "yala_task_mismatch"
   /// IA: el proveedor elegido por la tabla falló (lo emiten los adaptadores, src/ai/providers/common.ts).
-  | "yala_upstream_error";
+  | "yala_upstream_error"
+  /// Cupo de prueba del plan free agotado (5 notas de voz o 5 fotos en total por instalación, sesión 2). 403: no se
+  /// repone esperando; la app ofrece pasarse a Pro.
+  | "yala_trial_exhausted"
+  /// IA: el cuerpo supera el tope de su tarea (`maxBodyBytes` en src/ai/tasks.ts).
+  | "yala_too_large";
 
 interface OpenAIErrorBody {
   error: {

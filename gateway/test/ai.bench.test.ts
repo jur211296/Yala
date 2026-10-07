@@ -64,7 +64,6 @@ describe("prompts del banco = prompts de la app", () => {
       "chat.suggestions": "Yala/App/Services/ChatSuggestionsLLMService.swift",
       "chat.rewrite": "Yala/App/Services/SuggestionsRewriterService.swift",
       "insights.cards": "Yala/Services/InsightsLLMService.swift",
-      "insights.contextual": "Yala/Services/InsightsLLMService.swift",
       "insights.cashflow": "Yala/Services/InsightsLLMService.swift",
       "insights.deviation": "Yala/Services/InsightsLLMService.swift",
       "trends.summary": "Yala/Services/TrendsAIService.swift",
