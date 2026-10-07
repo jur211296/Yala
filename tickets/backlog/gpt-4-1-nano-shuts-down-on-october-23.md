@@ -61,3 +61,19 @@ modelo (`ai-model-choice-lives-in-the-app-binary`).
   del cuerpo intacto (imagen incluida).
 - Staging: foto, clasificación y sugerencias funcionan con el build de la tienda **sin recompilar**.
 - Producción desplegada antes del 2026-10-23.
+
+## Decisión de Jürgen (2026-10-07, 10:03 Lima) y lo hecho
+
+> «Quiero ya la solución robusta y correcta a largo plazo, no parcheemos por parchar ni dejemos pendientes. Quiero
+> eficiencia en tokens y en costos, pero asegurarnos de que la tarea se realiza bien; no usamos modelos que no vayan a
+> hacer bien la tarea. Si debe ser un modelo mayor, no importa, a cambio de asegurar calidad.»
+
+No se tomó ni la A ni la B de arriba. Se hizo la opción A de `ai-model-choice-lives-in-the-app-binary`: el **gateway
+decide el modelo por tarea** y las tres tareas de nano se eligieron con un banco de calidad, comparando con todo el
+mercado (ampliación de las 10:05).
+
+- **Elegido: `gpt-6-luna` en las tres.** La foto pasa del 42 % al 96 % de acierto (100 % en importe, fecha y número de
+  movimientos) y cuesta menos que nano. El clasificador y las sugerencias quedan al 100 %. Detalle y porqué en
+  `docs/ai-model-bench-2026-10.md`.
+- **Llega a todas las versiones instaladas sin release:** sin cabecera, el gateway deduce la tarea por la huella del prompt.
+- La opción A de este ticket (`gpt-4.1-mini`) habría acertado el 96 % en la foto a 4 veces el coste de `gpt-6-luna`.

@@ -88,3 +88,19 @@ del gateway — no existe ninguno, ni para `typecheck` ni para `npm test`. Crear
 `ci-no-corre-la-suite-del-gateway`, así que este ticket **depende** de aquél y no puede cerrarse
 antes.
 
+
+## 2026-10-07: el typecheck ya sale verde; queda el CI
+
+Lo arregló la sesión `gpt-4-1-nano-shuts-down-on-october-23`, que necesitaba `npm run typecheck` verde.
+Ese día eran **6** errores, todos de esta familia: los 5 de arriba, con la línea de `config.test.ts` en
+otra coordenada, más el de `groups.consent.test.ts`. Se tomó la vía acotada que proponía este ticket, sin
+`@types/node`:
+
+- `tsconfig.json` ya solo incluye `src/`, con los tipos de Workers. Una sonda con `process` en `src/` da
+  error, como debe.
+- `tsconfig.test.json` extiende el anterior para `test/` y `bench/`, y añade `test/node-shim.d.ts`: los
+  tipos mínimos de Node que usan los tests y el banco.
+- `npm run typecheck` corre los dos.
+- `groups.consent.test.ts`: el parámetro `headers` del helper `rpc` pasa a `Record<string, string>`.
+
+**Sigue abierto el punto 3** (que el CI lo corra y bloquee). Depende de `ci-no-corre-la-suite-del-gateway`.

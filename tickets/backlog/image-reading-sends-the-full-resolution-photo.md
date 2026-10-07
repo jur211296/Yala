@@ -48,6 +48,12 @@ Ojo: `gpt-4.1-nano` se apaga el 23-oct (`gpt-4-1-nano-shuts-down-on-october-23`)
 prueba de 20-30 fotos reales (recibos, capturas, extractos). C solo si el modo privado lo pide (card de
 partir la IA por modo).
 
+## Medido el 2026-10-07 (banco de la sesión gpt-4-1-nano-shuts-down-on-october-23)
+
+Resolución y `detail` se midieron como parte de la elección del modelo de `photo.read`: resultados y el `maxEdge` elegido
+en `docs/ai-model-bench-2026-10.md`. El reescalado en la app es el paso 6 de
+`ai-every-call-sends-its-task-and-passes-the-bench`.
+
 ## Hecho cuando
 
 - Decisión anotada aquí.

@@ -51,6 +51,12 @@ confirmado.
 **C** dentro de la card de partir la IA por modo (modo privado), con una prueba de calidad en los seis
 idiomas antes de decidir. B no se recomienda.
 
+## 2026-10-07: va a la sesión 2
+
+Decisión de Jürgen (10:06): «la mejor opción que haya en el mercado… no vayamos por el más barato así nomás». La
+comparación (incluido xAI, que Jürgen nota mejor en el dictado de Grok) y el arreglo del selector de idioma de voz son el
+paso 4 de `ai-every-call-sends-its-task-and-passes-the-bench`.
+
 ## Hecho cuando
 
 - Decisión anotada aquí.

@@ -80,7 +80,7 @@ function stubUpstream(rpcBody: unknown = {}, status = 200): Upstream[] {
   return calls;
 }
 
-async function rpc(env: Env, fn: string, body: Record<string, unknown> = {}, headers = AUTH): Promise<Response> {
+async function rpc(env: Env, fn: string, body: Record<string, unknown> = {}, headers: Record<string, string> = AUTH): Promise<Response> {
   return await app.fetch(
     new Request(`https://gw.local/groups/rpc/${fn}`, { method: "POST", headers, body: JSON.stringify(body) }),
     env,

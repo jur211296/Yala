@@ -37,6 +37,14 @@ esto— pero el coste del peor caso no está acotado en ningún sitio del servid
 2. Imponer un tope de `max_completion_tokens` por categoría.
 3. `vision` solo si el mensaje lleva una imagen.
 
+## Avance del 2026-10-07
+
+- **Modelo: cerrado.** El gateway resuelve cada petición a una tarea (`gateway/src/ai/`) y rechaza con 400
+  `yala_model_not_allowed` un modelo que no está en la tabla ni se deduce, sin gastar cuota.
+- **Categoría:** con la cabecera `X-Yala-Task`, una tarea de otro cubo que el declarado → 400. Falta que el cubo salga
+  de la tarea (sesión 2: `ai-every-call-sends-its-task-and-passes-the-bench`, paso 1).
+- **Longitud:** sigue abierta (tope de cuerpo y de `max_completion_tokens` por tarea).
+
 ## Hecho cuando
 
 - Tests del gateway: modelo fuera de lista → 400; `vision` sin imagen → 400; tope aplicado.

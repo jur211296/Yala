@@ -26,7 +26,13 @@ export type YalaErrorType =
   | "yala_siwa_not_configured"
   /// C-8: el JWS declara (`appAccountToken`) una cuenta de Yala distinta a la del JWT — la
   /// suscripción ya tiene dueño y el bind no la reasigna.
-  | "yala_entitlement_owner_mismatch";
+  | "yala_entitlement_owner_mismatch"
+  /// IA (tabla tarea → modelo, 2026-10-07): el modelo pedido no está en la tabla ni es deducible.
+  | "yala_model_not_allowed"
+  /// IA: la cabecera `X-Yala-Task` nombra una tarea de otro cubo de cuota u otra ruta.
+  | "yala_task_mismatch"
+  /// IA: el proveedor elegido por la tabla falló (lo emiten los adaptadores, src/ai/providers/common.ts).
+  | "yala_upstream_error";
 
 interface OpenAIErrorBody {
   error: {
