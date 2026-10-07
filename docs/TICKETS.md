@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (783)
+## Index (787)
 
 | id | status | path |
 |---|---|---|
@@ -233,6 +233,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | debt-simplification-nondeterministic-ties | backlog | tickets/backlog/debt-simplification-nondeterministic-ties.md |
 | debt-tracking | backlog | tickets/backlog/debt-tracking.md |
 | debug-panel-shows-a-counter-the-reverse-no-longer-moves | backlog | tickets/backlog/debug-panel-shows-a-counter-the-reverse-no-longer-moves.md |
+| declining-ai-consent-keeps-a-dropped-or-shared-photo-pending | backlog | tickets/backlog/declining-ai-consent-keeps-a-dropped-or-shared-photo-pending.md |
 | detach-blocked-phase-is-stranded-when-the-storage-sheet-closes-mid-wait | done | tickets/done/detach-blocked-phase-is-stranded-when-the-storage-sheet-closes-mid-wait.md |
 | detach-does-not-verify-the-cloud-session-actually-closed | done | tickets/done/detach-does-not-verify-the-cloud-session-actually-closed.md |
 | detach-failure-looks-like-success | done | tickets/done/detach-failure-looks-like-success.md |
@@ -443,6 +444,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | image-entry-end-to-end-redesign | qa | tickets/qa/image-entry-end-to-end-redesign.md |
 | image-entry-multi-photo-drops-failures-silently | done | tickets/done/image-entry-multi-photo-drops-failures-silently.md |
 | image-entry-network-failure-reads-as-no-transactions | done | tickets/done/image-entry-network-failure-reads-as-no-transactions.md |
+| image-entry-uitests-cannot-reach-the-fab-on-ipad | backlog | tickets/backlog/image-entry-uitests-cannot-reach-the-fab-on-ipad.md |
+| image-entry-uitests-save-stays-off-for-a-complete-record | backlog | tickets/backlog/image-entry-uitests-save-stays-off-for-a-complete-record.md |
 | import-activity-flag-describes-the-process-not-the-search | backlog | tickets/backlog/import-activity-flag-describes-the-process-not-the-search.md |
 | import-activity-latch-survives-an-icloud-account-change | backlog | tickets/backlog/import-activity-latch-survives-an-icloud-account-change.md |
 | inbox-convert-draft-to-group-expense | done | tickets/done/inbox-convert-draft-to-group-expense.md |
@@ -461,7 +464,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | invite-recovery-relaunches-for-a-mirror-it-never-uses | backlog | tickets/backlog/invite-recovery-relaunches-for-a-mirror-it-never-uses.md |
 | invite-refresh-forzado-es-noop-si-hay-otro-en-vuelo | done | tickets/done/invite-refresh-forzado-es-noop-si-hay-otro-en-vuelo.md |
 | ipad-and-duo-panel-and-statistics-use-the-width | done | tickets/done/ipad-and-duo-panel-and-statistics-use-the-width.md |
-| ipad-drop-unreadable-file-fails-silently | backlog | tickets/backlog/ipad-drop-unreadable-file-fails-silently.md |
+| ipad-drop-unreadable-file-fails-silently | qa | tickets/qa/ipad-drop-unreadable-file-fails-silently.md |
 | ipad-keyboard-shortcuts-pointer-context-menus-and-drop | done | tickets/done/ipad-keyboard-shortcuts-pointer-context-menus-and-drop.md |
 | ipad-large-and-extra-large-widgets | done | tickets/done/ipad-large-and-extra-large-widgets.md |
 | ipad-list-detail-for-groups-and-settings-and-chat-inspector | done | tickets/done/ipad-list-detail-for-groups-and-settings-and-chat-inspector.md |
@@ -482,6 +485,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | iphone-supports-landscape-orientation | done | tickets/done/iphone-supports-landscape-orientation.md |
 | joiner-flag-residuals-cosmetic-and-service-guard | backlog | tickets/backlog/joiner-flag-residuals-cosmetic-and-service-guard.md |
 | journal-unreadable-card-says-reopen-when-a-downgrade-needs-an-update | backlog | tickets/backlog/journal-unreadable-card-says-reopen-when-a-downgrade-needs-an-update.md |
+| keyboard-shortcut-command-f-uitest-goes-red-on-a-used-ipad-simulator | backlog | tickets/backlog/keyboard-shortcut-command-f-uitest-goes-red-on-a-used-ipad-simulator.md |
 | l10n-check-corre-13-de-17-tests | backlog | tickets/backlog/l10n-check-corre-13-de-17-tests.md |
 | la-nocturna-de-ui-no-ha-disparado-ni-una-vez | done | tickets/done/la-nocturna-de-ui-no-ha-disparado-ni-una-vez.md |
 | language-override-bypasses-the-cloud-prefs-channel | backlog | tickets/backlog/language-override-bypasses-the-cloud-prefs-channel.md |

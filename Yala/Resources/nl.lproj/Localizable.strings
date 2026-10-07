@@ -6510,3 +6510,9 @@
 
 /* Error when the notice can no longer be applied: the transaction is gone, duplicated or in another currency */
 "inbox.groupSettlementAmountChange.transactionGone" = "Deze melding kan niet meer worden toegepast: de transactie is gewijzigd of staat niet meer in je rekeningen.";
+
+/* Image entry failure: a dropped or imported file (photo or PDF) could not be opened */
+"image.entry.failure.unreadableFile.title" = "Ik kon dit bestand niet openen";
+
+/* Image entry failure: unreadable file, why and what to try */
+"image.entry.failure.unreadableFile.message" = "Het is misschien leeg, beschadigd of met een wachtwoord beveiligd. Probeer een andere foto of pdf van het bonnetje.";

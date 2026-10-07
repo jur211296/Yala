@@ -6510,3 +6510,9 @@
 
 /* Error when the notice can no longer be applied: the transaction is gone, duplicated or in another currency */
 "inbox.groupSettlementAmountChange.transactionGone" = "此提醒已无法应用：该交易已更改或不在你的账户中。";
+
+/* Image entry failure: a dropped or imported file (photo or PDF) could not be opened */
+"image.entry.failure.unreadableFile.title" = "无法打开这个文件";
+
+/* Image entry failure: unreadable file, why and what to try */
+"image.entry.failure.unreadableFile.message" = "它可能是空的、已损坏或受密码保护。试试这张收据的其他照片或 PDF。";

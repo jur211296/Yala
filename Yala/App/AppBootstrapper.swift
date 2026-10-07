@@ -2972,6 +2972,20 @@ final class AppBootstrapper {
         enqueueSharedImage(url)
     }
 
+    /// Lo soltado no se pudo abrir (PDF vacío o protegido, imagen dañada) o no se pudo guardar. Abre el registro por
+    /// imagen en ese fallo, la misma pantalla que enseña Archivo desde dentro, por el mismo camino que un recibo legible:
+    /// el router y el consentimiento de IA, porque desde el fallo «Otra foto» lleva a leer. La puerta Pro ya la
+    /// pasó `ReceiptDropHandler` antes de leer lo soltado.
+    func presentDroppedReceiptFailure(_ failure: ImageEntryFailure) {
+        SceneRegistry.shared.routingNavigation?.pendingImageEntryFailure = failure
+        RouterEntryGate.shared.submit(.navigate(.panel))
+        if UserDefaults.standard.bool(forKey: AppPreferences.Keys.aiDataConsentAccepted) {
+            RouterEntryGate.shared.submit(.presentImageEntry)
+        } else {
+            RouterEntryGate.shared.submit(.requestAIConsent(.image))
+        }
+    }
+
     /// Routes a shared-image URL through the router. Panel navigation and
     /// sheet presentation are separate intents so the mainTab consumer can
     /// switch tabs before the panel consumer presents the sheet (consumer

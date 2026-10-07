@@ -171,6 +171,12 @@ final class SceneNavigation: Identifiable {
     /// .presentSharedImage router intent sets this alongside the sheet.
     var pendingSharedImageURL: URL?
 
+    /// Lo soltado en el iPad que no se pudo abrir (PDF vacío o protegido, imagen dañada): el registro por imagen se abre
+    /// en este fallo en vez de en Elegir. Lo pone `AppBootstrapper.presentDroppedReceiptFailure` junto con el intent que
+    /// abre la hoja, y lo consume `ImageSelectionView` al aparecer. Si el usuario no acepta el consentimiento de IA, lo
+    /// retira `PanelSheetsModifier`: si no, la próxima vez que abriera el registro por imagen vería un fallo viejo.
+    var pendingImageEntryFailure: ImageEntryFailure?
+
     /// Prefill payload del chat para abrir NewTransactionView con datos pre-llenados.
     /// El `.presentNewTransactionFromChatDraft(...)` router intent setea este payload
     /// junto con `showNewTransactionFromChat = true`.
