@@ -143,6 +143,58 @@ struct MigrationPhaseStoreJournalTests {
         #expect(store.currentPhaseRead == .phase(.notStarted))
     }
 
+    /// Ticket `apple-id-change-check-stays-off-after-a-failed-migration`: la fase y los pendientes salen del MISMO fetch.
+    /// Un `failedRollback` con su `.rollback` sin ejecutar no está asentado; tras drenarlo, sí.
+    @Test func journalRead_carriesThePendingEffectsOfTheSameRow() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let container = try makeContainer(dir)
+        let context = ModelContext(container)
+        let state = MigrationState()
+        state.setPhase(.failedRollback)
+        state.setPendingEffects([.rollback])
+        context.insert(state)
+        try context.save()
+        let store = makeStore()
+        store.configure(container: container)
+
+        #expect(store.currentJournalRead == .read(phase: .failedRollback, hasPendingEffects: true))
+        #expect(store.currentJournalRead.hasPendingEffects)
+        #expect(store.currentPhaseRead == .phase(.failedRollback))
+
+        state.setPendingEffects([])
+        try context.save()
+        #expect(store.currentJournalRead == .read(phase: .failedRollback, hasPendingEffects: false))
+        #expect(!store.currentJournalRead.hasPendingEffects)
+
+        // Cualquier efecto cuenta, no solo `.rollback`: el aborto del paso 4 deja `.persistICloudMode` delante, y ese es
+        // el que devuelve el modo a `.icloud` (mutante de la review: contar solo `.rollback`).
+        state.setPendingEffects([.persistICloudMode])
+        try context.save()
+        #expect(store.currentJournalRead == .read(phase: .failedRollback, hasPendingEffects: true))
+    }
+
+    @Test func journalRead_withoutRowOrContainer_hasNothingPending() throws {
+        #expect(makeStore().currentJournalRead == .read(phase: .notStarted, hasPendingEffects: false))
+        let dir = freshDir(); defer { cleanup(dir) }
+        let container = try makeContainer(dir)
+        let store = makeStore()
+        store.configure(container: container)
+        #expect(store.currentJournalRead == .read(phase: .notStarted, hasPendingEffects: false))
+    }
+
+    /// Ilegible no lleva valores, y quien pregunte por los pendientes recibe el lado que no concede.
+    @Test func journalRead_unreadable_countsAsPending() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let container = try makeContainer(dir)
+        try seedJournal(container, phase: .failedRollback)
+        let store = makeStore()
+        store.configure(container: container)
+        store._testJournalFetchThrows = true
+        #expect(store.currentJournalRead == .unreadable)
+        #expect(store.currentJournalRead.hasPendingEffects)
+        #expect(store.currentJournalRead.phaseRead == .unreadable)
+    }
+
     @Test func configure_derivesIdentityCaptureEnabled_inWindow() throws {
         let original = CloudSyncFlags.identityCaptureEnabled
         defer { CloudSyncFlags.identityCaptureEnabled = original }

@@ -14,8 +14,9 @@
 //  La E (nube completa) no tiene seam de `storageMode == .cloud` y la cubre la tabla unitaria
 //  (`CloudSignOutFlowLogicTests`, `DestructiveScopeLogicTests`).
 //
-//  Solo DOS tests CONFIRMAN el cierre, y los dos con el seam que lo para antes del arm: el de la sesión que sobrevive a su
-//  cierre (`-uitest-sign-out-keeps-session`) y el de la migración fuera de reposo, que lo lleva de freno. Los demás abren la
+//  Solo TRES tests CONFIRMAN el cierre, y los tres con el seam que lo para antes del arm: el de la sesión que sobrevive a su
+//  cierre (`-uitest-sign-out-keeps-session`), y los de la migración fuera de reposo y de la ida fallida, que lo llevan de
+//  freno. Los demás abren la
 //  hoja, leen su escenario y la cancelan: el seam de la sesión no crea una real, y un cierre que llegara al arm borraría el
 //  store del simulador en el siguiente arranque MANUAL.
 //
@@ -237,5 +238,61 @@ final class SessionExitsPerCellUITests: XCTestCase {
         XCTAssertTrue(app.buttons["destructive_scope_confirm"].waitForExistence(timeout: 10),
                       "Tras cerrar el aviso, «Cerrar sesión» no vuelve a abrir su hoja: el reintento no tiene puerta.")
         app.buttons["destructive_scope_cancel"].tap()
+    }
+
+    /// Ticket `apple-id-change-check-stays-off-after-a-failed-migration`, decisión A de Jürgen. Con una ida a la nube que
+    /// terminó en fallo y ya no tiene nada pendiente, «Cerrar sesión» deja de pararse por la migración: hasta este ticket
+    /// salía «El paso de tus datos… todavía no terminó» y había que volver a Almacenamiento a pulsar «Reintentar». El seam
+    /// `-uitest-migration-failed` finge la fila del journal en los dos fetch de producción; lo que se pinta y lo que el
+    /// cierre decide lo sigue decidiendo su código.
+    ///
+    /// **El control va primero, en la misma corrida**: Almacenamiento enseña la tarjeta del fallo con «Reintentar». Sin él,
+    /// un seam que no montara nada dejaría el journal en reposo y el cierre pasaría por la razón equivocada. **Y el freno es
+    /// el de sus vecinos**: `-uitest-sign-out-keeps-session` para el cierre en `signOut()`, antes del arm, con «sigue
+    /// abierta». Que salga ESE aviso, y no el de la migración, es la prueba de que la puerta de la migración dejó pasar.
+    /// Scheme `Yala Dev`, como sus vecinos: con `Yala` la fila de Almacenamiento no existe bajo `-uitest`.
+    func test_privateCell_C_signOutAfterAFailedMigrationWithNothingPending_isNoLongerStoppedByIt() {
+        let app = XCUIApplication()
+        app.launchForUITest(seed: "minimal", migrationFailed: true, signOutKeepsSession: true)
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap no completó.")
+        app.openProfile()
+
+        // Control: la ida fallida está montada.
+        let storageRow = scrollTo(app, "storage_settings_row")
+        XCTAssertTrue(storageRow.waitForExistence(timeout: 5), """
+            No aparece la fila «¿Dónde viven tus datos?». Si la corrida usa el scheme `Yala`, es el kill de la nube bajo \
+            `-uitest`: este caso va con `Yala Dev`.
+            """)
+        storageRow.tap()
+        XCTAssertTrue(app.buttons["storage_retry_button"].waitForExistence(timeout: 10), """
+            Almacenamiento no enseña la tarjeta del fallo con «Reintentar»: el seam no montó la ida fallida y el resto del \
+            test no mediría nada.
+            """)
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+
+        scrollTo(app, "profile_security_signout").tap()
+        let confirm = app.buttons["destructive_scope_confirm"]
+        XCTAssertTrue(confirm.waitForExistence(timeout: 10), "La hoja de «Cerrar sesión» no ofrece confirmar.")
+        confirm.tap()
+
+        let migration = app.alerts.staticTexts
+            .matching(NSPredicate(format: "label CONTAINS %@", "todavía no terminó")).firstMatch
+        let survived = app.alerts.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "sigue abierta")).firstMatch
+        let exportPending = app.alerts.buttons["Cerrar sesión igualmente"].firstMatch
+        let deadline = Date().addingTimeInterval(120)
+        while !survived.exists && !migration.exists && Date() < deadline {
+            if exportPending.exists { exportPending.tap() }
+            _ = survived.waitForExistence(timeout: 2)
+        }
+        XCTAssertFalse(migration.exists, """
+            El cierre se paró por la migración con una ida fallida y sin nada pendiente: es el comportamiento de antes del \
+            ticket.
+            """)
+        XCTAssertTrue(survived.exists, """
+            No salió el aviso de que la sesión sigue abierta: el cierre se paró en otro sitio, en silencio, o armó el borrado.
+            """)
+        XCTAssertFalse(app.descendants(matching: .any)["signout_relaunch_screen"].exists,
+                       "Salió la pantalla de reabrir: el cierre armó el borrado. Borra el arm del simulador.")
+        app.alerts.buttons.firstMatch.tap()
     }
 }

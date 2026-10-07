@@ -1358,16 +1358,20 @@ final class AppBootstrapper {
         }
     }
 
-    /// **¿El paso de los datos a la nube está en reposo?** Las dos fuentes —el controller y el journal—
-    /// por `AppleIDChangeCloseLogic.migrationAtRest`. Sin controller —antes del 14.6, sin backend configurado,
+    /// **¿El paso de los datos a la nube deja cerrar la sesión privada?** Reposo, o una ida fallida sin nada pendiente.
+    /// Las dos fuentes —el controller y el journal— por `AppleIDChangeCloseLogic.migrationAllowsPrivateSessionClose`. Sin controller —antes del 14.6, sin backend configurado,
     /// en el swap de persona— el `?? .idle` de antes concedía siempre. En el swap tampoco hay journal
     /// (`currentPhaseRead` sin container da `notStarted`) y concede: inferido que es verdad, porque el swap
     /// acaba de borrar ese journal. `isWorking` sin controller es `false`: la fuente que queda es el journal.
     ///
-    /// Las seis lecturas viven en `MigrationRestReading.live` desde el 2026-09-27: el cierre de la sesión privada hace
+    /// Las lecturas viven en `MigrationRestReading.live` desde el 2026-09-27: el cierre de la sesión privada hace
     /// la misma pregunta (ticket `private-sign-out-proceeds-with-a-migration-in-flight`) y lee por el mismo sitio.
+    ///
+    /// **Y desde el 2026-10-06 la misma decisión**, `migrationAllowsPrivateSessionClose`: reposo, o una ida fallida sin
+    /// nada pendiente (ticket `apple-id-change-check-stays-off-after-a-failed-migration`). El nombre del helper se queda:
+    /// lo fijan los scans de cableado.
     private func migrationAtRestForAppleIDChange() -> Bool {
-        AppleIDChangeCloseLogic.migrationAtRest(.live)
+        AppleIDChangeCloseLogic.migrationAllowsPrivateSessionClose(.live)
     }
 
     // MARK: - M6: Race Cleaner Hook

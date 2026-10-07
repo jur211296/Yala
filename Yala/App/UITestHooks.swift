@@ -189,6 +189,26 @@ final class UITestHooks {
     /// toca `MigrationPhaseStore`, que tiene su propio seam de tests. Solo DEBUG.
     nonisolated static var migrationJournalUnreadable: Bool { hasArg("-uitest-migration-journal-unreadable") }
 
+    /// `-uitest-migration-failed`: los DOS fetch del journal de producción —el de `CloudMigrationController` y el de
+    /// `MigrationPhaseStore`— devuelven una fila en `failedRollback` y SIN efectos pendientes, la de una ida que salió por
+    /// un fallo y ya ejecutó su `.rollback` (ticket `apple-id-change-check-stays-off-after-a-failed-migration`). Existe para
+    /// el XCUITest de «tras una migración fallida, Cerrar sesión ya no se para»: el simulador no puede llevar una ida real
+    /// hasta su techo.
+    ///
+    /// **Finge la ENTRADA, no la decisión**, molde de `-uitest-migration-journal-unreadable`: la pantalla y el cierre siguen
+    /// derivando con su código. La fila no se inserta en ningún store —se construye en cada lectura—, así que no sobrevive a
+    /// la corrida. Los fetch del runner (`loadState`) no la ven: ningún gesto que la conduzca entra en el test. Solo DEBUG.
+    nonisolated static var migrationFailed: Bool { hasArg("-uitest-migration-failed") }
+
+    /// La fila que devuelven esos dos fetch con `-uitest-migration-failed`, o `nil` sin él.
+    static var failedMigrationJournalRow: MigrationState? {
+        guard migrationFailed else { return nil }
+        let state = MigrationState()
+        state.setPhase(.failedRollback)
+        state.setPendingEffects([])
+        return state
+    }
+
     /// `-uitest-icloud-identity`: siembra la identidad iCloud de Grupos con un recordName fijo
     /// (`uitestICloudRecordName`), síncrono y SIN red — `GroupICloudIdentitySeed.adopt` no toca
     /// CloudKit.

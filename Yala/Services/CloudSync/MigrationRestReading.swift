@@ -2,8 +2,9 @@
 //  MigrationRestReading.swift
 //  Yala
 //
-//  Los seis insumos con los que se decide si el paso de los datos entre iCloud y la nube está en REPOSO
-//  (`AppleIDChangeCloseLogic.migrationAtRest`), leídos en un solo sitio.
+//  Los siete insumos con los que se decide si el paso de los datos entre iCloud y la nube está en REPOSO
+//  (`AppleIDChangeCloseLogic.migrationAtRest`) o en un fallo ya asentado (`migrationAllowsPrivateSessionClose`), leídos en
+//  un solo sitio.
 //
 //  POR QUÉ EXISTE. Hasta el ticket `private-sign-out-proceeds-with-a-migration-in-flight` (2026-09-27) esa lectura
 //  vivía dentro de `AppBootstrapper`, y su único lector era la oferta automática del cambio de Apple ID. El cierre de
@@ -22,6 +23,10 @@ nonisolated struct MigrationRestReading: Equatable {
     let controllerIsWorking: Bool
     /// La fase del journal, o que no se pudo leer.
     let journalRead: JournaledPhaseRead
+    /// El journal lleva efectos pendientes que un resume ejecutaría, leído en el MISMO fetch que `journalRead`. Con el
+    /// journal ilegible vale `true`. Solo lo mira el término del fallo asentado
+    /// (`AppleIDChangeCloseLogic.migrationFailedAndSettled`): `failedRollback` con un `.rollback` sin ejecutar no lo está.
+    let journalHasPendingEffects: Bool
     let persistedStorageMode: StorageMode
     let mirrorOffArmed: Bool
     let mountedDecision: SwiftDataConfiguration.PersonalStoreDecision
@@ -31,10 +36,12 @@ extension MigrationRestReading {
     /// La lectura de producción. La comparten la oferta del cambio de Apple ID (`AppBootstrapper`) y el cierre de la
     /// sesión privada (`CloudSessionSignOut`).
     @MainActor static var live: MigrationRestReading {
-        MigrationRestReading(
+        let journal = MigrationPhaseStore.shared.currentJournalRead
+        return MigrationRestReading(
             controllerState: CloudMigrationController.shared?.uiState,
             controllerIsWorking: CloudMigrationController.shared?.isWorking ?? false,
-            journalRead: MigrationPhaseStore.shared.currentPhaseRead,
+            journalRead: journal.phaseRead,
+            journalHasPendingEffects: journal.hasPendingEffects,
             persistedStorageMode: StorageModePersistence.read(),
             mirrorOffArmed: StorageModePersistence.isMirrorOffArmed(),
             mountedDecision: SwiftDataConfiguration.personalStoreMountedDecision)

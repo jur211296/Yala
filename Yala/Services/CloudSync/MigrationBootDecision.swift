@@ -40,6 +40,34 @@ nonisolated enum JournaledPhaseRead: Equatable {
     case unreadable
 }
 
+/// La fase journaleada Y si quedan efectos pendientes, **de la MISMA fila y del mismo fetch** (ticket
+/// `apple-id-change-check-stays-off-after-a-failed-migration`). Lo necesita quien decide si un terminal de fallo está
+/// asentado: `failedRollback` con un `.rollback` journaleado y sin ejecutar no lo está —el resume del arranque lo ejecuta—,
+/// y leer la fase y los pendientes en dos fetch permitiría casar una fase de un instante con los pendientes de otro.
+///
+/// **Ilegible no lleva valores**, como `JournaledPhaseRead`: quien pregunte por los pendientes de una lectura que no se
+/// hizo recibe `true` (`hasPendingEffects`), el lado que no concede.
+nonisolated enum JournaledMigrationRead: Equatable {
+    case read(phase: MigrationPhase, hasPendingEffects: Bool)
+    case unreadable
+
+    /// La fase de esta lectura, para los consumidores que solo necesitan eso.
+    var phaseRead: JournaledPhaseRead {
+        switch self {
+        case .read(let phase, _): return .phase(phase)
+        case .unreadable: return .unreadable
+        }
+    }
+
+    /// ¿Quedan efectos journaleados que un resume ejecutaría? **Ilegible ⇒ `true`**: no saber si quedan no es saber que no.
+    var hasPendingEffects: Bool {
+        switch self {
+        case .read(_, let hasPendingEffects): return hasPendingEffects
+        case .unreadable: return true
+        }
+    }
+}
+
 // MARK: - Gate de fase del runtime del dominio (P0)
 
 /// El gate PURO de "¿puede el runtime del dominio correr en esta fase?" que `CloudSyncRuntime.start()`

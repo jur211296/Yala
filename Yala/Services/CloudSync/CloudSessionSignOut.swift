@@ -1387,9 +1387,11 @@ final class CloudSessionSignOut {
     }
 
     /// **Con el paso de los datos entre iCloud y la nube fuera de reposo, el cierre de una sesión privada se para**
-    /// (ticket `private-sign-out-proceeds-with-a-migration-in-flight`). Cerrar ahí borra lo local mientras sube. La
+    /// (ticket `private-sign-out-proceeds-with-a-migration-in-flight`), **salvo una ida fallida sin nada pendiente**
+    /// (`apple-id-change-check-stays-off-after-a-failed-migration`). Cerrar a mitad borra lo local mientras sube. La
     /// decisión es `CloudSignOutFlowLogic.migrationBlockReason`, que es el predicado de la oferta del cambio de Apple ID
-    /// (`AppleIDChangeCloseLogic.migrationAtRest`) más el texto que toca. Lo hace el ESCRITOR y no cada pantalla: Ajustes,
+    /// (`AppleIDChangeCloseLogic.migrationAllowsPrivateSessionClose`: reposo, o una ida fallida sin nada pendiente) más el
+    /// texto que toca. Lo hace el ESCRITOR y no cada pantalla: Ajustes,
     /// la hoja del cambio de Apple ID y la puerta de Grupos del Welcome entran todas por aquí.
     ///
     /// **Tres sitios**: al empezar el cierre (antes de subir grupos o esperar a iCloud), al entrar en `finalizeSessionExit`

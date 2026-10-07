@@ -334,6 +334,114 @@ struct AppleIDChangeMigrationAtRestTests {
     }
 }
 
+// MARK: - Tras una ida fallida y sin nada pendiente, el cierre se ofrece
+
+/// Ticket `apple-id-change-check-stays-off-after-a-failed-migration`, decisión A de Jürgen (2026-10-04): con una ida que
+/// terminó en `failedRollback` y ya no tiene efectos pendientes, la oferta del cambio de Apple ID y el cierre manual de la
+/// sesión privada se abren —los dos leen `migrationAllowsPrivateSessionClose`—. Con efectos pendientes o con una
+/// migración en curso siguen cerrados, como antes. Y `migrationAtRest`, el que lee el borrado pendiente del iCloud privado
+/// del arranque, se queda estricto.
+@Suite("Apple ID cambiado · tras una ida fallida sin nada pendiente")
+struct AppleIDChangeFailedMigrationCloseTests {
+
+    private func reading(controllerState: CloudMigrationUIState? = nil,
+                         controllerIsWorking: Bool = false,
+                         journalRead: JournaledPhaseRead = .phase(.failedRollback),
+                         journalHasPendingEffects: Bool = false,
+                         persistedStorageMode: StorageMode = .icloud,
+                         mirrorOffArmed: Bool = false,
+                         mountedDecision: SwiftDataConfiguration.PersonalStoreDecision = .iCloudMirror) -> MigrationRestReading {
+        MigrationRestReading(controllerState: controllerState, controllerIsWorking: controllerIsWorking,
+                             journalRead: journalRead, journalHasPendingEffects: journalHasPendingEffects,
+                             persistedStorageMode: persistedStorageMode, mirrorOffArmed: mirrorOffArmed,
+                             mountedDecision: mountedDecision)
+    }
+
+    private func allows(_ reading: MigrationRestReading) -> Bool {
+        AppleIDChangeCloseLogic.migrationAllowsPrivateSessionClose(reading)
+    }
+
+    // MARK: La tabla del encargo
+
+    @Test("Fallida sin efectos pendientes ⇒ se ofrece, sin controller y con el controller pintando el fallo")
+    func fallidaSinPendientes_seOfrece() {
+        #expect(allows(reading()))
+        #expect(allows(reading(controllerState: .failed(.migration))))
+        #expect(AppleIDChangeCloseLogic.migrationFailedAndSettled(reading()))
+    }
+
+    @Test("MUTACIÓN: fallida CON efectos pendientes ⇒ no: el resume del arranque los ejecuta")
+    func fallidaConPendientes_noSeOfrece() {
+        #expect(!allows(reading(journalHasPendingEffects: true)))
+        #expect(!allows(reading(controllerState: .failed(.migration), journalHasPendingEffects: true)))
+    }
+
+    @Test("En curso ⇒ no, aunque no haya pendientes", arguments: AppleIDChangeMigrationAtRestTests.fasesNoEnReposo.filter {
+        $0 != .failedRollback
+    })
+    func enCurso_noSeOfrece(_ phase: MigrationPhase) {
+        #expect(!allows(reading(journalRead: .phase(phase))), "fase \(phase)")
+    }
+
+    @Test("En reposo ⇒ sí, con pendientes o sin ellos (el término nuevo no estrecha el reposo)")
+    func enReposo_seOfrece() {
+        #expect(allows(reading(journalRead: .phase(.notStarted))))
+        #expect(allows(reading(controllerState: .idle, journalRead: .phase(.notStarted))))
+        #expect(allows(reading(journalRead: .phase(.icloudActive))))
+        // `migrationAtRest` no mira los pendientes, y este predicado no se los añade: lo que hoy era reposo lo sigue siendo.
+        #expect(allows(reading(journalRead: .phase(.notStarted), journalHasPendingEffects: true)))
+    }
+
+    // MARK: Cada término, con su mutante
+
+    @Test("MUTACIÓN: el controller trabajando no concede (un «Reintentar» que está drenando)")
+    func controllerTrabajando_noConcede() {
+        #expect(!allows(reading(controllerIsWorking: true)))
+        #expect(!allows(reading(controllerState: .failed(.migration), controllerIsWorking: true)))
+    }
+
+    @Test("MUTACIÓN: un controller en otro estado no concede, tampoco un `.idle` desfasado con el journal en fallo")
+    func controllerEnOtroEstado_noConcede() {
+        #expect(!allows(reading(controllerState: .idle)))
+        #expect(!allows(reading(controllerState: .migrating(MigrationUIStep(fraction: 0.55, phase: .uploadingSnapshot)))))
+        #expect(!allows(reading(controllerState: .failed(.reverse))))
+        #expect(!allows(reading(controllerState: .journalUnreadable)))
+        #expect(!allows(reading(controllerState: .needsRelaunch(.toCloud))))
+    }
+
+    @Test("MUTACIÓN: con `.cloud` persistido no concede — lo local podría no estar en ningún iCloud")
+    func modoNube_noConcede() {
+        #expect(!allows(reading(persistedStorageMode: .cloud)))
+        #expect(!allows(reading(controllerState: .failed(.migration), persistedStorageMode: .cloud)))
+    }
+
+    @Test("MUTACIÓN: la vuelta fallida, el relanzamiento pendiente y el journal ilegible no conceden")
+    func otrosFallos_noConceden() {
+        #expect(!allows(reading(journalRead: .phase(.reverseFailedRollback))))
+        #expect(!allows(reading(controllerState: .failed(.migration), journalRead: .phase(.reverseFailedRollback))))
+        // El mirror-off armado con el espejo montado pide relanzar, y eso gana a la fase.
+        #expect(!allows(reading(mirrorOffArmed: true, mountedDecision: .iCloudMirror)))
+        #expect(!allows(reading(journalRead: .unreadable)))
+    }
+
+    @Test("MUTACIÓN: el journal manda aunque el controller pinte el fallo")
+    func journalEnCursoConControllerEnFallo_noConcede() {
+        // Un «Reintentar» que ya arrancó otra ida, con el controller sin repintar.
+        #expect(!allows(reading(controllerState: .failed(.migration), journalRead: .phase(.uploadingSnapshot))))
+        // Y el desfase al revés tampoco concede: el controller dice fallo y el journal ya volvió a `notStarted`. El
+        // `refresh()` siguiente lo repinta `.idle` y entonces sí: fallar cerrado cuesta un tick, no una salida.
+        #expect(!allows(reading(controllerState: .failed(.migration), journalRead: .phase(.notStarted))))
+    }
+
+    // MARK: El tercer lector se queda como estaba
+
+    @Test("`migrationAtRest` sigue estricto con el fallo: el borrado pendiente del iCloud privado no se reanuda")
+    func migrationAtRest_sigueEstricto() {
+        #expect(!AppleIDChangeCloseLogic.migrationAtRest(reading()))
+        #expect(!AppleIDChangeCloseLogic.migrationAtRest(reading(controllerState: .failed(.migration))))
+    }
+}
+
 // MARK: - Cableado (source-scan)
 
 /// **Las cuatro líneas que no tiene ningún test de comportamiento, y las cuatro destruyen o ciegan.**
@@ -429,18 +537,20 @@ struct AppleIDChangeWiringTests {
         let src = try Self.code("Yala/App/AppBootstrapper.swift")
         let normalizado = { (s: String) in s.split(whereSeparator: \.isWhitespace).joined(separator: " ") }
 
-        // Desde el 2026-09-27 las seis lecturas viven en `MigrationRestReading.live`, que comparte con el cierre de la sesión
+        // Desde el 2026-09-27 las lecturas viven en `MigrationRestReading.live`, que comparte con el cierre de la sesión
         // privada (`private-sign-out-proceeds-with-a-migration-in-flight`). Se fijan las dos mitades: que el guard lee por
         // ahí, y qué lee eso.
         let helper = try Self.body(of: "private func migrationAtRestForAppleIDChange() -> Bool {", in: src)
-        #expect(normalizado(helper) == "AppleIDChangeCloseLogic.migrationAtRest(.live)")
+        #expect(normalizado(helper) == "AppleIDChangeCloseLogic.migrationAllowsPrivateSessionClose(.live)")
         let lectura = try Self.body(of: "@MainActor static var live: MigrationRestReading {",
                                     in: try Self.code("Yala/Services/CloudSync/MigrationRestReading.swift"))
         let esperado = """
-            MigrationRestReading(
+            let journal = MigrationPhaseStore.shared.currentJournalRead
+            return MigrationRestReading(
                 controllerState: CloudMigrationController.shared?.uiState,
                 controllerIsWorking: CloudMigrationController.shared?.isWorking ?? false,
-                journalRead: MigrationPhaseStore.shared.currentPhaseRead,
+                journalRead: journal.phaseRead,
+                journalHasPendingEffects: journal.hasPendingEffects,
                 persistedStorageMode: StorageModePersistence.read(),
                 mirrorOffArmed: StorageModePersistence.isMirrorOffArmed(),
                 mountedDecision: SwiftDataConfiguration.personalStoreMountedDecision)

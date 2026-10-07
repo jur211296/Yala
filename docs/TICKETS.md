@@ -101,7 +101,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | app-uploads-its-timezone-to-the-cloud | backlog | tickets/backlog/app-uploads-its-timezone-to-the-cloud.md |
 | apple-id-change-boot-check-is-lost-when-the-journal-is-unreadable-at-launch | backlog | tickets/backlog/apple-id-change-boot-check-is-lost-when-the-journal-is-unreadable-at-launch.md |
 | apple-id-change-boot-check-runs-before-the-migration-guard-can-see | done | tickets/done/apple-id-change-boot-check-runs-before-the-migration-guard-can-see.md |
-| apple-id-change-check-stays-off-after-a-failed-migration | backlog | tickets/backlog/apple-id-change-check-stays-off-after-a-failed-migration.md |
+| apple-id-change-check-stays-off-after-a-failed-migration | qa | tickets/qa/apple-id-change-check-stays-off-after-a-failed-migration.md |
 | apple-id-change-should-close-the-private-session | done | tickets/done/apple-id-change-should-close-the-private-session.md |
 | apple-id-close-blocked-has-no-visible-outcome | done | tickets/done/apple-id-close-blocked-has-no-visible-outcome.md |
 | apple-id-close-loss-notice-uitest-fails-on-2-1 | backlog | tickets/backlog/apple-id-close-loss-notice-uitest-fails-on-2-1.md |
@@ -489,6 +489,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | late-icloud-sheet-buttons-may-leave-the-screen-at-large-dynamic-type | backlog | tickets/backlog/late-icloud-sheet-buttons-may-leave-the-screen-at-large-dynamic-type.md |
 | late-icloud-wipe-can-re-export-between-its-two-halves | backlog | tickets/backlog/late-icloud-wipe-can-re-export-between-its-two-halves.md |
 | late-icloud-wipe-failure-does-not-settle-the-remote-wipe-grace | backlog | tickets/backlog/late-icloud-wipe-failure-does-not-settle-the-remote-wipe-grace.md |
+| late-icloud-wipe-stays-frozen-after-a-settled-failed-migration | backlog | tickets/backlog/late-icloud-wipe-stays-frozen-after-a-settled-failed-migration.md |
 | late-notice-of-a-welcome-private-session-purges-groups-joined-later | done | tickets/done/late-notice-of-a-welcome-private-session-purges-groups-joined-later.md |
 | late-notice-witness-survives-a-welcome-restore-over-device-data | backlog | tickets/backlog/late-notice-witness-survives-a-welcome-restore-over-device-data.md |
 | late-remote-wipe-cut-keeps-what-it-cannot-date-until-the-mirror-decides | backlog | tickets/backlog/late-remote-wipe-cut-keeps-what-it-cannot-date-until-the-mirror-decides.md |
