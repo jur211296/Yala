@@ -41,6 +41,11 @@ export interface Env {
 
   // --- Secrets (wrangler secret put — NUNCA en el repo) ---
   OPENAI_API_KEY: string;
+  // Proveedores de IA además de OpenAI (tabla tarea → modelo, src/ai/routes.ts). AUSENTES hoy: ninguna fila
+  // de producción los usa. Una fila que los pida sin la clave responde 503 desde su adaptador.
+  GEMINI_API_KEY?: string;
+  ANTHROPIC_API_KEY?: string;
+  XAI_API_KEY?: string;
   EXCHANGE_RATE_API_KEY: string;
   JWT_SIGNING_SECRET: string;
   DEV_SHARED_SECRET: string; // bypass de dev/test; solo honrado en staging

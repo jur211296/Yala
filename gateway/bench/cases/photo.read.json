@@ -1,0 +1,967 @@
+{
+ "task": "photo.read",
+ "criterion": "Acierta si la app acepta la respuesta (decodifica VisionResponse) y produce EXACTAMENTE los movimientos esperados: mismo número de movimientos con importe (los de importe nulo no cuentan) y cada uno emparejado por importe con su signo (gasto negativo, ingreso positivo), fecha YYYY-MM-DD y divisa ISO. El comercio y el imageType se miden aparte y no deciden. `amountAlt` lista lecturas también correctas (total con y sin propina; el abono de una tarjeta, que es un caso dudoso).",
+ "cases": [
+  {
+   "id": "app-receipt-es",
+   "file": "../../../../Yala/Resources/Assets.xcassets/ExampleImages/example-receipt-es.imageset/example-receipt-es.png",
+   "today": "2026-10-07",
+   "kind": "recibo fotografiado",
+   "lang": "es",
+   "source": "ejemplo que enseña la app (Assets.xcassets/ExampleImages)",
+   "expect": {
+    "imageType": "receipt",
+    "transactions": [
+     {
+      "amount": -251.81,
+      "date": "2026-03-30",
+      "currency": "PEN",
+      "merchant": "Buen Gusto",
+      "amountAlt": [
+       -228.92
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "app-receipt-en",
+   "file": "../../../../Yala/Resources/Assets.xcassets/ExampleImages/example-receipt-en.imageset/example-receipt-en.png",
+   "today": "2026-10-07",
+   "kind": "recibo fotografiado",
+   "lang": "en",
+   "source": "ejemplo que enseña la app (Assets.xcassets/ExampleImages)",
+   "expect": {
+    "imageType": "receipt",
+    "transactions": [
+     {
+      "amount": -251.81,
+      "date": "2026-03-30",
+      "currency": "PEN",
+      "merchant": "Good Taste",
+      "amountAlt": [
+       -228.92
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "app-receipt-de",
+   "file": "../../../../Yala/Resources/Assets.xcassets/ExampleImages/example-receipt-de.imageset/example-receipt-de.png",
+   "today": "2026-10-07",
+   "kind": "recibo fotografiado",
+   "lang": "de",
+   "source": "ejemplo que enseña la app (Assets.xcassets/ExampleImages)",
+   "expect": {
+    "imageType": "receipt",
+    "transactions": [
+     {
+      "amount": -251.81,
+      "date": "2026-03-30",
+      "currency": "PEN",
+      "merchant": "Buen Gusto",
+      "amountAlt": [
+       -228.92
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "app-bank-alert-es",
+   "file": "../../../../Yala/Resources/Assets.xcassets/ExampleImages/example-bank-alert-es.imageset/example-bank-alert-es.png",
+   "today": "2026-10-07",
+   "kind": "alerta bancaria (captura)",
+   "lang": "es",
+   "source": "ejemplo que enseña la app",
+   "expect": {
+    "imageType": "single",
+    "transactions": [
+     {
+      "amount": -150.0,
+      "date": "2026-03-28",
+      "currency": "PEN",
+      "merchant": "Plaza Viva"
+     }
+    ]
+   }
+  },
+  {
+   "id": "app-bank-alert-fr",
+   "file": "../../../../Yala/Resources/Assets.xcassets/ExampleImages/example-bank-alert-fr.imageset/example-bank-alert-fr.png",
+   "today": "2026-10-07",
+   "kind": "alerta bancaria (captura)",
+   "lang": "fr",
+   "source": "ejemplo que enseña la app",
+   "expect": {
+    "imageType": "single",
+    "transactions": [
+     {
+      "amount": -150.0,
+      "date": "2026-03-28",
+      "currency": "PEN",
+      "merchant": "Plaza Viva"
+     }
+    ]
+   }
+  },
+  {
+   "id": "app-bank-alert-pt",
+   "file": "../../../../Yala/Resources/Assets.xcassets/ExampleImages/example-bank-alert-pt.imageset/example-bank-alert-pt.png",
+   "today": "2026-10-07",
+   "kind": "alerta bancaria (captura)",
+   "lang": "pt",
+   "source": "ejemplo que enseña la app",
+   "expect": {
+    "imageType": "single",
+    "transactions": [
+     {
+      "amount": -150.0,
+      "date": "2026-03-28",
+      "currency": "PEN",
+      "merchant": "Plaza Viva"
+     }
+    ]
+   }
+  },
+  {
+   "id": "app-list-es",
+   "file": "../../../../Yala/Resources/Assets.xcassets/ExampleImages/example-transaction-list-es.imageset/example-transaction-list-es.png",
+   "today": "2026-10-07",
+   "kind": "historial de movimientos (captura, 8 filas, una cortada arriba)",
+   "lang": "es",
+   "source": "ejemplo que enseña la app",
+   "expect": {
+    "imageType": "list",
+    "transactions": [
+     {
+      "amount": -450.75,
+      "date": "2026-01-25",
+      "currency": "PEN"
+     },
+     {
+      "amount": -35.9,
+      "date": "2026-01-24",
+      "currency": "PEN"
+     },
+     {
+      "amount": -15000.0,
+      "date": "2026-01-23",
+      "currency": "PEN"
+     },
+     {
+      "amount": 12300.5,
+      "date": "2026-01-23",
+      "currency": "PEN"
+     },
+     {
+      "amount": -89.99,
+      "date": "2026-01-22",
+      "currency": "PEN"
+     },
+     {
+      "amount": 4500.0,
+      "date": "2026-01-21",
+      "currency": "PEN"
+     },
+     {
+      "amount": -120.0,
+      "date": "2026-01-19",
+      "currency": "PEN"
+     },
+     {
+      "amount": -5800.0,
+      "date": "2026-01-17",
+      "currency": "PEN"
+     }
+    ]
+   }
+  },
+  {
+   "id": "app-list-en",
+   "file": "../../../../Yala/Resources/Assets.xcassets/ExampleImages/example-transaction-list-en.imageset/example-transaction-list-en.png",
+   "today": "2026-10-07",
+   "kind": "historial de movimientos (captura, 8 filas, una cortada arriba)",
+   "lang": "en",
+   "source": "ejemplo que enseña la app",
+   "expect": {
+    "imageType": "list",
+    "transactions": [
+     {
+      "amount": -450.75,
+      "date": "2026-01-25",
+      "currency": "PEN"
+     },
+     {
+      "amount": -35.9,
+      "date": "2026-01-24",
+      "currency": "PEN"
+     },
+     {
+      "amount": -15000.0,
+      "date": "2026-01-23",
+      "currency": "PEN"
+     },
+     {
+      "amount": 12300.5,
+      "date": "2026-01-23",
+      "currency": "PEN"
+     },
+     {
+      "amount": -89.99,
+      "date": "2026-01-22",
+      "currency": "PEN"
+     },
+     {
+      "amount": 4500.0,
+      "date": "2026-01-21",
+      "currency": "PEN"
+     },
+     {
+      "amount": -120.0,
+      "date": "2026-01-19",
+      "currency": "PEN"
+     },
+     {
+      "amount": -5800.0,
+      "date": "2026-01-17",
+      "currency": "PEN"
+     }
+    ]
+   }
+  },
+  {
+   "id": "app-list-de",
+   "file": "../../../../Yala/Resources/Assets.xcassets/ExampleImages/example-transaction-list-de.imageset/example-transaction-list-de.png",
+   "today": "2026-10-07",
+   "kind": "historial de movimientos (captura, 8 filas, una cortada arriba)",
+   "lang": "de",
+   "source": "ejemplo que enseña la app",
+   "expect": {
+    "imageType": "list",
+    "transactions": [
+     {
+      "amount": -450.75,
+      "date": "2026-01-25",
+      "currency": "PEN"
+     },
+     {
+      "amount": -35.9,
+      "date": "2026-01-24",
+      "currency": "PEN"
+     },
+     {
+      "amount": -15000.0,
+      "date": "2026-01-23",
+      "currency": "PEN"
+     },
+     {
+      "amount": 12300.5,
+      "date": "2026-01-23",
+      "currency": "PEN"
+     },
+     {
+      "amount": -89.99,
+      "date": "2026-01-22",
+      "currency": "PEN"
+     },
+     {
+      "amount": 4500.0,
+      "date": "2026-01-21",
+      "currency": "PEN"
+     },
+     {
+      "amount": -120.0,
+      "date": "2026-01-19",
+      "currency": "PEN"
+     },
+     {
+      "amount": -5800.0,
+      "date": "2026-01-17",
+      "currency": "PEN"
+     }
+    ]
+   }
+  },
+  {
+   "id": "app-list-fr",
+   "file": "../../../../Yala/Resources/Assets.xcassets/ExampleImages/example-transaction-list-fr.imageset/example-transaction-list-fr.png",
+   "today": "2026-10-07",
+   "kind": "historial de movimientos (captura, 8 filas, una cortada arriba)",
+   "lang": "fr",
+   "source": "ejemplo que enseña la app",
+   "expect": {
+    "imageType": "list",
+    "transactions": [
+     {
+      "amount": -450.75,
+      "date": "2026-01-25",
+      "currency": "PEN"
+     },
+     {
+      "amount": -35.9,
+      "date": "2026-01-24",
+      "currency": "PEN"
+     },
+     {
+      "amount": -15000.0,
+      "date": "2026-01-23",
+      "currency": "PEN"
+     },
+     {
+      "amount": 12300.5,
+      "date": "2026-01-23",
+      "currency": "PEN"
+     },
+     {
+      "amount": -89.99,
+      "date": "2026-01-22",
+      "currency": "PEN"
+     },
+     {
+      "amount": 4500.0,
+      "date": "2026-01-21",
+      "currency": "PEN"
+     },
+     {
+      "amount": -120.0,
+      "date": "2026-01-19",
+      "currency": "PEN"
+     },
+     {
+      "amount": -5800.0,
+      "date": "2026-01-17",
+      "currency": "PEN"
+     }
+    ]
+   }
+  },
+  {
+   "id": "app-list-it",
+   "file": "../../../../Yala/Resources/Assets.xcassets/ExampleImages/example-transaction-list-it.imageset/example-transaction-list-it.png",
+   "today": "2026-10-07",
+   "kind": "historial de movimientos (captura, 8 filas, una cortada arriba)",
+   "lang": "it",
+   "source": "ejemplo que enseña la app",
+   "expect": {
+    "imageType": "list",
+    "transactions": [
+     {
+      "amount": -450.75,
+      "date": "2026-01-25",
+      "currency": "PEN"
+     },
+     {
+      "amount": -35.9,
+      "date": "2026-01-24",
+      "currency": "PEN"
+     },
+     {
+      "amount": -15000.0,
+      "date": "2026-01-23",
+      "currency": "PEN"
+     },
+     {
+      "amount": 12300.5,
+      "date": "2026-01-23",
+      "currency": "PEN"
+     },
+     {
+      "amount": -89.99,
+      "date": "2026-01-22",
+      "currency": "PEN"
+     },
+     {
+      "amount": 4500.0,
+      "date": "2026-01-21",
+      "currency": "PEN"
+     },
+     {
+      "amount": -120.0,
+      "date": "2026-01-19",
+      "currency": "PEN"
+     },
+     {
+      "amount": -5800.0,
+      "date": "2026-01-17",
+      "currency": "PEN"
+     }
+    ]
+   }
+  },
+  {
+   "id": "app-list-pt",
+   "file": "../../../../Yala/Resources/Assets.xcassets/ExampleImages/example-transaction-list-pt.imageset/example-transaction-list-pt.png",
+   "today": "2026-10-07",
+   "kind": "historial de movimientos (captura, 8 filas, una cortada arriba)",
+   "lang": "pt",
+   "source": "ejemplo que enseña la app",
+   "expect": {
+    "imageType": "list",
+    "transactions": [
+     {
+      "amount": -450.75,
+      "date": "2026-01-25",
+      "currency": "PEN"
+     },
+     {
+      "amount": -35.9,
+      "date": "2026-01-24",
+      "currency": "PEN"
+     },
+     {
+      "amount": -15000.0,
+      "date": "2026-01-23",
+      "currency": "PEN"
+     },
+     {
+      "amount": 12300.5,
+      "date": "2026-01-23",
+      "currency": "PEN"
+     },
+     {
+      "amount": -89.99,
+      "date": "2026-01-22",
+      "currency": "PEN"
+     },
+     {
+      "amount": 4500.0,
+      "date": "2026-01-21",
+      "currency": "PEN"
+     },
+     {
+      "amount": -120.0,
+      "date": "2026-01-19",
+      "currency": "PEN"
+     },
+     {
+      "amount": -5800.0,
+      "date": "2026-01-17",
+      "currency": "PEN"
+     }
+    ]
+   }
+  },
+  {
+   "id": "s01-lockscreen",
+   "file": "s01-lockscreen-notifs-es-PE.png",
+   "today": "2026-10-07",
+   "kind": "pantalla bloqueada, 3 notificaciones, fechas relativas",
+   "lang": "es-PE",
+   "source": "sintética (fixtures/make_photos.py)",
+   "expect": {
+    "imageType": "list",
+    "transactions": [
+     {
+      "amount": -89.9,
+      "date": "2026-10-07",
+      "currency": "PEN",
+      "merchant": "RAPPI"
+     },
+     {
+      "amount": -12.5,
+      "date": "2026-10-07",
+      "currency": "PEN",
+      "merchant": "DON LUCHO"
+     },
+     {
+      "amount": -246.3,
+      "date": "2026-10-06",
+      "currency": "PEN",
+      "merchant": "TOTTUS"
+     }
+    ]
+   }
+  },
+  {
+   "id": "s02-statement",
+   "file": "s02-statement-es-ES.png",
+   "today": "2026-10-07",
+   "kind": "extracto de cuenta, 20 filas, columna de saldo como distractor",
+   "lang": "es-ES",
+   "source": "sintética",
+   "expect": {
+    "imageType": "list",
+    "transactions": [
+     {
+      "amount": -58.34,
+      "date": "2026-09-01",
+      "currency": "EUR",
+      "merchant": "LUZ"
+     },
+     {
+      "amount": 1950.0,
+      "date": "2026-09-01",
+      "currency": "EUR",
+      "merchant": "NÓMINA"
+     },
+     {
+      "amount": -43.12,
+      "date": "2026-09-02",
+      "currency": "EUR",
+      "merchant": "MERCADONA"
+     },
+     {
+      "amount": 15.0,
+      "date": "2026-09-03",
+      "currency": "EUR",
+      "merchant": "BIZUM"
+     },
+     {
+      "amount": -9.8,
+      "date": "2026-09-03",
+      "currency": "EUR",
+      "merchant": "FARMACIA"
+     },
+     {
+      "amount": -850.0,
+      "date": "2026-09-05",
+      "currency": "EUR",
+      "merchant": "ALQUILER"
+     },
+     {
+      "amount": -62.1,
+      "date": "2026-09-06",
+      "currency": "EUR",
+      "merchant": "REPSOL"
+     },
+     {
+      "amount": -37.5,
+      "date": "2026-09-07",
+      "currency": "EUR",
+      "merchant": "FAROL"
+     },
+     {
+      "amount": -10.99,
+      "date": "2026-09-09",
+      "currency": "EUR",
+      "merchant": "SPOTIFY"
+     },
+     {
+      "amount": -24.99,
+      "date": "2026-09-10",
+      "currency": "EUR",
+      "merchant": "AMAZON"
+     },
+     {
+      "amount": -60.0,
+      "date": "2026-09-12",
+      "currency": "EUR",
+      "merchant": "CAJERO"
+     },
+     {
+      "amount": -31.45,
+      "date": "2026-09-13",
+      "currency": "EUR",
+      "merchant": "LIDL"
+     },
+     {
+      "amount": -21.3,
+      "date": "2026-09-15",
+      "currency": "EUR",
+      "merchant": "SEGURO"
+     },
+     {
+      "amount": 24.99,
+      "date": "2026-09-16",
+      "currency": "EUR",
+      "merchant": "DEVOLUCION"
+     },
+     {
+      "amount": -79.9,
+      "date": "2026-09-18",
+      "currency": "EUR",
+      "merchant": "CORTE INGLES"
+     },
+     {
+      "amount": -17.4,
+      "date": "2026-09-20",
+      "currency": "EUR",
+      "merchant": "YELMO"
+     },
+     {
+      "amount": -34.9,
+      "date": "2026-09-22",
+      "currency": "EUR",
+      "merchant": "GIMNASIO"
+     },
+     {
+      "amount": -52.77,
+      "date": "2026-09-24",
+      "currency": "EUR",
+      "merchant": "MERCADONA"
+     },
+     {
+      "amount": -100.0,
+      "date": "2026-09-27",
+      "currency": "EUR",
+      "merchant": "PEDRO"
+     },
+     {
+      "amount": -19.99,
+      "date": "2026-09-29",
+      "currency": "EUR",
+      "merchant": "TELCO"
+     }
+    ]
+   }
+  },
+  {
+   "id": "s03-card-statement",
+   "file": "s03-card-statement-en-US.png",
+   "today": "2026-10-07",
+   "kind": "extracto de tarjeta, 16 filas, cargos en positivo y un abono",
+   "lang": "en-US",
+   "source": "sintética",
+   "expect": {
+    "imageType": "list",
+    "transactions": [
+     {
+      "amount": -54.21,
+      "date": "2026-09-02",
+      "currency": "USD",
+      "merchant": "WHOLE FOODS"
+     },
+     {
+      "amount": -38.9,
+      "date": "2026-09-03",
+      "currency": "USD",
+      "merchant": "SHELL"
+     },
+     {
+      "amount": -15.49,
+      "date": "2026-09-04",
+      "currency": "USD",
+      "merchant": "NETFLIX"
+     },
+     {
+      "amount": -23.75,
+      "date": "2026-09-06",
+      "currency": "USD",
+      "merchant": "UBER"
+     },
+     {
+      "amount": -6.85,
+      "date": "2026-09-07",
+      "currency": "USD",
+      "merchant": "STARBUCKS"
+     },
+     {
+      "amount": -112.37,
+      "date": "2026-09-09",
+      "currency": "USD",
+      "merchant": "AMAZON"
+     },
+     {
+      "amount": -47.06,
+      "date": "2026-09-11",
+      "currency": "USD",
+      "merchant": "TARGET"
+     },
+     {
+      "amount": -14.2,
+      "date": "2026-09-14",
+      "currency": "USD",
+      "merchant": "CHIPOTLE"
+     },
+     {
+      "amount": -11.48,
+      "date": "2026-09-16",
+      "currency": "USD",
+      "merchant": "CVS"
+     },
+     {
+      "amount": -289.4,
+      "date": "2026-09-19",
+      "currency": "USD",
+      "merchant": "DELTA"
+     },
+     {
+      "amount": -412.88,
+      "date": "2026-09-21",
+      "currency": "USD",
+      "merchant": "MARRIOTT"
+     },
+     {
+      "amount": -11.99,
+      "date": "2026-09-23",
+      "currency": "USD",
+      "merchant": "SPOTIFY"
+     },
+     {
+      "amount": -68.31,
+      "date": "2026-09-25",
+      "currency": "USD",
+      "merchant": "TRADER JOE"
+     },
+     {
+      "amount": -2.99,
+      "date": "2026-09-27",
+      "currency": "USD",
+      "merchant": "APPLE"
+     },
+     {
+      "amount": -203.57,
+      "date": "2026-09-29",
+      "currency": "USD",
+      "merchant": "COSTCO"
+     },
+     {
+      "amount": 500.0,
+      "date": "2026-09-12",
+      "currency": "USD",
+      "merchant": "PAYMENT",
+      "amountAlt": [
+       -500.0
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "s04-long-receipt",
+   "file": "s04-long-receipt-photo-es-PE.jpg",
+   "today": "2026-10-07",
+   "kind": "boleta larga de supermercado (29 líneas) fotografiada",
+   "lang": "es-PE",
+   "source": "sintética",
+   "expect": {
+    "imageType": "receipt",
+    "transactions": [
+     {
+      "amount": -321.85,
+      "date": "2026-10-04",
+      "currency": "PEN",
+      "merchant": "La Economía"
+     }
+    ]
+   }
+  },
+  {
+   "id": "s05-notif-pt-BR",
+   "file": "s05-notif-pt-BR.png",
+   "today": "2026-10-07",
+   "kind": "notificación, real con coma decimal",
+   "lang": "pt-BR",
+   "source": "sintética",
+   "expect": {
+    "imageType": "single",
+    "transactions": [
+     {
+      "amount": -89.9,
+      "date": "2026-10-06",
+      "currency": "BRL",
+      "merchant": "PADARIA PAO QUENTE"
+     }
+    ]
+   }
+  },
+  {
+   "id": "s06-receipt-de-dim",
+   "file": "s06-receipt-photo-de-dim.jpg",
+   "today": "2026-10-07",
+   "kind": "ticket alemán fotografiado con poca luz",
+   "lang": "de",
+   "source": "sintética",
+   "expect": {
+    "imageType": "receipt",
+    "transactions": [
+     {
+      "amount": -34.5,
+      "date": "2026-10-03",
+      "currency": "EUR",
+      "merchant": "Frischmarkt"
+     }
+    ]
+   }
+  },
+  {
+   "id": "s07-card-ja",
+   "file": "s07-card-notice-ja.png",
+   "today": "2026-10-07",
+   "kind": "aviso de tarjeta japonés",
+   "lang": "ja",
+   "source": "sintética",
+   "expect": {
+    "imageType": "single",
+    "transactions": [
+     {
+      "amount": -3280,
+      "date": "2026-10-05",
+      "currency": "JPY",
+      "merchant": "ファミリーマート"
+     }
+    ]
+   }
+  },
+  {
+   "id": "s08-payment-zh",
+   "file": "s08-payment-zh.png",
+   "today": "2026-10-07",
+   "kind": "comprobante de pago móvil chino (¥ = CNY)",
+   "lang": "zh-Hans",
+   "source": "sintética",
+   "expect": {
+    "imageType": "single",
+    "transactions": [
+     {
+      "amount": -128.0,
+      "date": "2026-10-06",
+      "currency": "CNY",
+      "merchant": "盒马鲜生"
+     }
+    ]
+   }
+  },
+  {
+   "id": "s09-receipt-pl",
+   "file": "s09-receipt-photo-pl.jpg",
+   "today": "2026-10-07",
+   "kind": "paragon polaco fotografiado",
+   "lang": "pl",
+   "source": "sintética",
+   "expect": {
+    "imageType": "receipt",
+    "transactions": [
+     {
+      "amount": -83.4,
+      "date": "2026-10-02",
+      "currency": "PLN",
+      "merchant": "POD LIPĄ"
+     }
+    ]
+   }
+  },
+  {
+   "id": "s10-bank-detail-nl",
+   "file": "s10-bank-detail-nl.png",
+   "today": "2026-10-07",
+   "kind": "detalle de movimiento en app bancaria",
+   "lang": "nl",
+   "source": "sintética",
+   "expect": {
+    "imageType": "single",
+    "transactions": [
+     {
+      "amount": -34.12,
+      "date": "2026-10-04",
+      "currency": "EUR",
+      "merchant": "Albert Heijn"
+     }
+    ]
+   }
+  },
+  {
+   "id": "s11-notif-dark",
+   "file": "s11-notif-dark-es-ES.png",
+   "today": "2026-10-07",
+   "kind": "notificación en modo oscuro",
+   "lang": "es-ES",
+   "source": "sintética",
+   "expect": {
+    "imageType": "single",
+    "transactions": [
+     {
+      "amount": -12.5,
+      "date": "2026-10-07",
+      "currency": "EUR",
+      "merchant": "CAFETERÍA LUNA"
+     }
+    ]
+   }
+  },
+  {
+   "id": "s12-not-financial",
+   "file": "s12-not-financial-chat.png",
+   "today": "2026-10-07",
+   "kind": "captura de un chat, nada financiero",
+   "lang": "es-PE",
+   "source": "sintética",
+   "expect": {
+    "imageType": "unknown",
+    "transactions": []
+   }
+  },
+  {
+   "id": "s13-income",
+   "file": "s13-income-notif-es-PE.png",
+   "today": "2026-10-06",
+   "kind": "ingreso recibido (importe positivo)",
+   "lang": "es-PE",
+   "source": "sintética",
+   "expect": {
+    "imageType": "single",
+    "transactions": [
+     {
+      "amount": 1250.0,
+      "date": "2026-10-06",
+      "currency": "PEN",
+      "merchant": "MARIA FERNANDA"
+     }
+    ]
+   }
+  },
+  {
+   "id": "s14-wallet-history",
+   "file": "s14-wallet-history-es-PE.png",
+   "today": "2026-10-07",
+   "kind": "historial de billetera con «Hoy», «Ayer» y fecha corta",
+   "lang": "es-PE",
+   "source": "sintética",
+   "expect": {
+    "imageType": "list",
+    "transactions": [
+     {
+      "amount": -25.0,
+      "date": "2026-10-07",
+      "currency": "PEN",
+      "merchant": "Juan"
+     },
+     {
+      "amount": 40.0,
+      "date": "2026-10-07",
+      "currency": "PEN",
+      "merchant": "Ana"
+     },
+     {
+      "amount": -58.0,
+      "date": "2026-10-07",
+      "currency": "PEN",
+      "merchant": "Pollería"
+     },
+     {
+      "amount": -18.0,
+      "date": "2026-10-06",
+      "currency": "PEN",
+      "merchant": "Taxi"
+     },
+     {
+      "amount": -7.4,
+      "date": "2026-10-06",
+      "currency": "PEN",
+      "merchant": "Minimarket"
+     },
+     {
+      "amount": 150.0,
+      "date": "2026-10-04",
+      "currency": "PEN",
+      "merchant": "Carlos"
+     },
+     {
+      "amount": -32.9,
+      "date": "2026-10-04",
+      "currency": "PEN",
+      "merchant": "Farmacia"
+     },
+     {
+      "amount": -26.0,
+      "date": "2026-10-04",
+      "currency": "PEN",
+      "merchant": "Cine"
+     }
+    ]
+   }
+  }
+ ]
+}

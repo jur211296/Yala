@@ -4,7 +4,7 @@ import { handleConfig } from "./config";
 import { handleMetrics } from "./metrics";
 import { jsonError } from "./errors";
 import { handleAssert, handleChallenge, handleDevToken, handleRegister } from "./attest/routes";
-import { handleAudioTranscriptions, handleChatCompletions } from "./proxy/openai";
+import { handleAudioTranscriptions, handleChatCompletions } from "./ai/handler";
 import { handleRatesLive, handleRatesTimeframe } from "./proxy/rates";
 import { handleAppStoreWebhook } from "./proxy/webhook";
 import {
@@ -57,7 +57,7 @@ app.post("/v1/debug/push", handleDebugPush);
 app.post("/push/register", handlePushRegister);
 app.post("/push/unregister", handlePushUnregister);
 
-// --- Proxy OpenAI (task #5): chat + vision + transcripción ---
+// --- IA: chat + visión + transcripción. La tarea decide proveedor y modelo (src/ai/routes.ts) ---
 app.post("/v1/chat/completions", handleChatCompletions);
 app.post("/v1/audio/transcriptions", handleAudioTranscriptions);
 

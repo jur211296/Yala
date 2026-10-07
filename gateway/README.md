@@ -97,6 +97,35 @@ npm run deploy:production    # wrangler deploy --env production
 
 Privacidad: el Worker **no loguea bodies** (contexto financiero/audio/imagen); solo metadata operativa.
 
+## IA: el gateway decide el modelo de cada tarea (2026-10-07)
+
+`/v1/chat/completions` y `/v1/audio/transcriptions` ya no reenvían a ciegas: cada petición se resuelve a
+una **tarea** (`src/ai/tasks.ts`) y la tarea elige proveedor, modelo y parámetros en una **tabla única**
+(`src/ai/routes.ts`). Cambiar de modelo = editar su fila + `npm test` + deploy. Ninguna release.
+
+| Cómo llega | Qué decide |
+|---|---|
+| Con `X-Yala-Task: <tarea>` (la app desde la sesión 2) | La fila de esa tarea. El `model` del cuerpo se ignora. Una tarea de otro cubo de cuota que `X-Yala-Category` → 400 `yala_task_mismatch`; una tarea que este gateway no conoce se ignora y se deduce |
+| Sin cabecera (todas las versiones instaladas hoy) | Se **deduce** por categoría + modelo + huella del prompt de sistema (`src/ai/resolve.ts`). Las tres tareas de `gpt-4.1-nano` salen con el modelo de su fila; `gpt-4.1-mini` y `whisper-1` salen **byte a byte** como antes |
+| Un modelo que no está en la tabla ni se deduce | 400 `yala_model_not_allowed`, sin llamar a nadie ni gastar cuota |
+
+- **Sin cabecera, solo OpenAI.** Las versiones instaladas dicen al usuario que la foto «se envía a OpenAI».
+  Si una fila pasa a otro proveedor, su sustituto de OpenAI va en `LEGACY_OVERRIDES`; sin él, `routeFor`
+  lanza (y lo fija un test).
+- **Adaptadores** (`src/ai/providers/`): OpenAI, Gemini, Anthropic y Workers AI. Todos devuelven a la app la
+  forma `chat.completion` de OpenAI y el sobre de error que su SDK decodifica. Sus claves son secrets
+  opcionales (`GEMINI_API_KEY`, `ANTHROPIC_API_KEY`); hoy ninguna fila de producción los usa.
+- **Log por petición**, para `wrangler tail`: una línea `{"evt":"ai_route","task":…,"how":…,"provider":…,"model":…,"status":…,"ms":…,"in":…,"out":…}`.
+  `how` = `header` · `fingerprint` · `category` · `heuristic`. Sin contenido del usuario.
+- **El modelo de cada fila sale del banco** (`bench/README.md`): primero calidad medida, después precio.
+  Resultados y porqué de la elección: `../docs/ai-model-bench-2026-10.md`.
+
+Verificar en vivo qué modelo sale (y que ninguno es `gpt-4.1-nano`):
+
+```sh
+npx wrangler tail --env production --format json | grep -o '"evt":"ai_route"[^}]*'
+```
+
 ### `POST /metrics` — telemetría propia mínima (sustituye TelemetryDeck)
 
 Ingestión PÚBLICA (molde `/config`: sin auth/attest) de 3 eventos: `ping` (activos/día), `register`
