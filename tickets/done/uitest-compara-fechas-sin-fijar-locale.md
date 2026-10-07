@@ -1,9 +1,10 @@
 ---
 id: uitest-compara-fechas-sin-fijar-locale
-status: backlog
+status: done
 priority: medium
 area: testing
 created: 2026-09-05
+updated: 2026-10-07
 source: medido al clasificar los rojos del CI en el PR #64
 ---
 
@@ -111,3 +112,11 @@ en las dos reproducciones. Es el mismo trío que aquí se explicaba por «fragil
 ⇒ Al clasificar un CI o un gate en rojo, el `grep -c "Test Case .* failed"` separa las dos familias
 antes de mirar ningún test. Y el paso de UI del CI sigue siendo `continue-on-error`, así que el
 aviso de este ticket —«el verde del CI no dice que los XCUITest pasaran»— vale igual.
+
+## Cerrado el 2026-10-07
+
+Arreglado en [[advisory-ui-tests-fail-every-retry]]: la expectativa se formatea con el locale que se fija a la app
+(`XCUIApplication.uiTestLocaleIdentifier`), y el mensaje del assert dice «no coincide» en vez de «no conservó».
+Control rojo 2/2 con la expectativa vieja y el runner en inglés (`-testLanguage en`). Los otros rojos que este
+ticket listaba no compartían causa: `EdgeCases` y `QuickActionsFavorites` eran la carrera de la guía de primeros
+pasos (mismo ticket).
