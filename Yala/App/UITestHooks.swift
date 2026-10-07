@@ -50,6 +50,13 @@ final class UITestHooks {
     /// Con `-uitest-seed solo-grupos` y el Welcome visible monta el estado del ticket
     /// `groups-kept-by-the-late-notice-are-purged-by-the-welcome-fresh-start` sin pasar por iCloud, que el simulador no tiene.
     nonisolated static var lateNoticeKeptGroups: Bool { hasArg("-uitest-late-notice-kept-groups") }
+    /// `-uitest-welcome-after-adopt-exit`: arranca en el estado que deja cualquier salida de un adopt (error,
+    /// `.adoptExit`, `.lineageExit` o «Cancelar la activación»): el onboarding dado por completo —el `true` temprano de
+    /// `onAdoptStarted`, efímero aquí— y el Welcome reabierto en `.chooser`, con el mismo trío que su `onBack`. Existe
+    /// para el XCUITest de `fresh-start-alert-cancel-after-an-adopt-exit-lands-in-the-app`: en el simulador no hay SIWA
+    /// y el adopt real no se puede conducir. **Finge la ENTRADA, no la decisión**: el alert de «empiezo de cero», sus
+    /// botones y el testigo `freshStartAlertPresentedOverWelcome` son los de producción. Solo DEBUG.
+    nonisolated static var welcomeAfterAdoptExit: Bool { hasArg("-uitest-welcome-after-adopt-exit") }
 
     /// `-uitest-cloud-chooser`: destapa las cards de sign-in cloud (Apple/Google) del
     /// 2º nivel del Welcome bajo uitest — opt-in EXPLÍCITO del XCUITest del chooser

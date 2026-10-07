@@ -103,4 +103,60 @@ final class WelcomeFreshStartAlertUITests: XCTestCase {
             inerte: el flag del alert se quedó arriba y su `isPresented` no puede volver a subir.
             """)
     }
+
+    // MARK: - Tras salir de un adopt (onboarding ya completo, Welcome debajo)
+
+    /// Ticket `fresh-start-alert-cancel-after-an-adopt-exit-lands-in-the-app`. El adopt deja `hasCompletedOnboarding` en
+    /// `true` (kill-safety de `onAdoptStarted`) y sus salidas vuelven al Welcome sin bajarlo. Con la guarda vieja,
+    /// «Cancelar» no reabría nada y la persona aterrizaba en la app, sobre los datos que acababa de decidir no borrar.
+    ///
+    /// El seam `-uitest-welcome-after-adopt-exit` finge ese estado de ENTRADA (en el simulador no hay SIWA); el alert, sus
+    /// botones y el testigo son los de producción. Seed `minimal`: basta con datos personales para que salga el alert.
+    func testAfterAnAdoptExit_cancelReturnsToTheChooser_notIntoTheApp() throws {
+        let app = XCUIApplication()
+        app.launchForUITest(reset: true, skipOnboarding: false, seed: "minimal", welcomeAfterAdoptExit: true)
+
+        // El seam abre el Welcome directamente en la elección, como el `onBack` de un adopt.
+        let newBranch = app.buttons["welcome_chooser_new"]
+        XCTAssertTrue(newBranch.waitForExistence(timeout: 60), "El Welcome de vuelta de un adopt no apareció en la elección.")
+        newBranch.tap()
+
+        let cancelButton = app.alerts.buttons.element(boundBy: 1)
+        XCTAssertTrue(cancelButton.waitForExistence(timeout: 10),
+                      "No apareció «¿Borrar todo y continuar?» — ¿el seed dejó de producir datos personales?")
+        cancelButton.tap()
+
+        XCTAssertTrue(app.buttons["welcome_chooser_new"].waitForExistence(timeout: 10), """
+            Tras salir de un adopt, «Cancelar» no volvió a la elección privado/nube: la persona aterrizó dentro de la app. \
+            Con el onboarding ya completo, la guarda vieja (`if !hasCompletedOnboarding`) no reabría el Welcome.
+            """)
+        XCTAssertTrue(app.buttons["welcome_chooser_restore"].exists, "La elección volvió a medias: falta «Ya tengo una cuenta».")
+    }
+
+    /// El «OK» del aviso de que el borrado falló, en el mismo estado. `-uitest-fail-wipe` hace lanzar el borrado antes
+    /// de tocar nada, así que el aviso sale y los datos siguen ahí: volver a la elección es lo único honesto.
+    func testAfterAnAdoptExit_failedWipeOKReturnsToTheChooser_notIntoTheApp() throws {
+        let app = XCUIApplication()
+        app.launchForUITest(reset: true, skipOnboarding: false, seed: "minimal", welcomeAfterAdoptExit: true,
+                            extraArguments: ["-uitest-fail-wipe"])
+
+        let newBranch = app.buttons["welcome_chooser_new"]
+        XCTAssertTrue(newBranch.waitForExistence(timeout: 60), "El Welcome de vuelta de un adopt no apareció en la elección.")
+        newBranch.tap()
+
+        let confirm = app.alerts.buttons.element(boundBy: 0)
+        XCTAssertTrue(confirm.waitForExistence(timeout: 10), "No apareció «¿Borrar todo y continuar?».")
+        confirm.tap()
+
+        // Control positivo del montaje: el aviso de fallo tiene que salir, o el «OK» no prueba nada.
+        let ok = app.alerts.buttons.element(boundBy: 0)
+        XCTAssertTrue(ok.waitForExistence(timeout: 10), "No apareció el aviso de que el borrado falló.")
+        XCTAssertEqual(app.alerts.buttons.count, 1, "El aviso de fallo tiene un único botón; esto es otro alert.")
+        ok.tap()
+
+        XCTAssertTrue(app.buttons["welcome_chooser_new"].waitForExistence(timeout: 10), """
+            Tras salir de un adopt, el «OK» del aviso de fallo no volvió a la elección: la persona aterrizó en la app \
+            sobre unos datos que el borrado no llegó a tocar.
+            """)
+    }
 }

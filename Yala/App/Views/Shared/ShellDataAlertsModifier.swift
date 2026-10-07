@@ -35,7 +35,8 @@ struct ShellDataAlertsModifier: ViewModifier {
     /// navegar al onboarding: la app llevaba mintiendo sobre un borrado que no ocurrió.
     @Binding var showFreshStartWipeFailedAlert: Bool
     /// Si el Welcome estaba montado cuando se encendió el alert de «empiezo de cero». Lo captura su disparador, porque
-    /// presentarlo desmonta el cover; decide a dónde sigue el borrado con cambios de grupos pendientes.
+    /// presentarlo desmonta el cover; decide a dónde sigue el borrado con cambios de grupos pendientes y, desde el
+    /// 2026-10-07, a dónde vuelven «Cancelar» y el «OK» del aviso de fallo.
     let freshStartAlertPresentedOverWelcome: Bool
     @Binding var hasCompletedOnboarding: Bool
     @Binding var hasExistingData: Bool
@@ -144,21 +145,19 @@ struct ShellDataAlertsModifier: ViewModifier {
                 // cobraría un paso extra por haber preguntado.
                 //
                 // El molde se repite en el alert de «el wipe falló», al final de este mismo fichero:
-                // también reabre el Chooser, y con el mismo `if !hasCompletedOnboarding`. Este se
-                // quedó sin ello hasta que la traza de arriba explicó por qué hacía falta.
+                // también reabre el Chooser, y con la misma pregunta. Este se quedó sin ello hasta que la
+                // traza de arriba explicó por qué hacía falta.
                 Button(L10n.Action.cancel, role: .cancel) {
                     showFreshStartWipeAlert = false
-                    // El guard no es decorativo, y es el mismo que el del alert de abajo: si el
-                    // onboarding ya está completo, este alert vino de un camino donde el Welcome NO
-                    // estaba montado, y reabrirlo le plantaría el flujo de bienvenida a alguien que
-                    // ya usa la app.
-                    //
-                    // **Esa premisa no es cierta tras salir de un adopt** (medido el 2026-10-06): el Welcome sí estaba
-                    // montado y el flag ya está en `true`. El botón destructivo dejó de confiar en ella
-                    // (`FreshStartAlertRoutingLogic`); este y el «OK» del aviso de fallo siguen igual a propósito —el
-                    // encargo de ese cambio pedía no tocar las demás salidas— y tienen su ticket:
-                    // `fresh-start-alert-cancel-after-an-adopt-exit-lands-in-the-app`.
-                    if !hasCompletedOnboarding {
+                    // La guarda no es decorativa, y es la misma que la del alert de abajo y la del botón
+                    // destructivo: ¿había un Welcome debajo? (`FreshStartAlertRoutingLogic`). Hasta el 2026-10-07
+                    // era `if !hasCompletedOnboarding`, que daba por hecho que con el onboarding completo el Welcome
+                    // NO estaba montado. Tras salir de un adopt sí lo estaba, con el flag ya en `true` (kill-safety
+                    // de `onAdoptStarted`), y la persona aterrizaba dentro de la app sobre los datos que acababa de
+                    // decidir no borrar. Ticket `fresh-start-alert-cancel-after-an-adopt-exit-lands-in-the-app`.
+                    if FreshStartAlertRoutingLogic.dismissReopensTheWelcome(
+                        hasCompletedOnboarding: hasCompletedOnboarding,
+                        presentedOverWelcome: freshStartAlertPresentedOverWelcome) {
                         welcomeFlowInitialStep = .chooser
                         showWelcomeFlow = true
                     }
@@ -186,9 +185,15 @@ struct ShellDataAlertsModifier: ViewModifier {
                 // datos siguen ahí, y la persona tiene que poder elegir otra cosa. Mandarla al
                 // onboarding sería continuar como si se hubiera borrado, que es justo la mentira que
                 // el `do/catch` de arriba existe para evitar.
+                //
+                // **El testigo también vale aquí**: este aviso solo lo encienden `performFreshStartWipe` y
+                // `refuseWhileGroupsArePending`, los dos detrás del botón destructivo del alert de arriba, así
+                // que el testigo es el que capturó ese mismo intento.
                 Button(L10n.Common.ok, role: .cancel) {
                     showFreshStartWipeFailedAlert = false
-                    if !hasCompletedOnboarding {
+                    if FreshStartAlertRoutingLogic.dismissReopensTheWelcome(
+                        hasCompletedOnboarding: hasCompletedOnboarding,
+                        presentedOverWelcome: freshStartAlertPresentedOverWelcome) {
                         welcomeFlowInitialStep = .chooser
                         showWelcomeFlow = true
                     }

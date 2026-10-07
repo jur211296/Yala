@@ -8,6 +8,9 @@
 //  «Borrar todo y continuar» se negaba para siempre: el adopt deja `hasCompletedOnboarding` en `true`, y el alert lo
 //  tomaba por «no hay Welcome debajo». Desde aquí sigue en la puerta privada, que ofrece perderlos con su cifra.
 //
+//  Desde el 2026-10-07 también «Cancelar» y el «OK» del aviso de fallo (ticket
+//  `fresh-start-alert-cancel-after-an-adopt-exit-lands-in-the-app`): vuelven a la bienvenida, no a la app.
+//
 //  Tres capas: la decisión pura (la celda del ticket sale roja con la guarda vieja: mutante M0), el cableado que la
 //  alimenta (source-scan, porque el testigo vive en `@State` de SwiftUI) y la mitad de la puerta con cambios de OTRA
 //  cuenta (espejo y filas reales: oferta con su cifra, y aceptarla borra).
@@ -49,6 +52,51 @@ struct FreshStartAfterAdoptExitRoutingTests {
     /// había Welcome. Es la celda que hoy iba a la puerta y no debe dejar de ir.
     @Test func incompleteOnboarding_withoutTheWitness_keepsGoingToTheGate() {
         #expect(Logic.pendingGroupsRoute(hasCompletedOnboarding: false, presentedOverWelcome: false) == .privateGate)
+    }
+}
+
+// MARK: - Las salidas que no borran
+
+/// Ticket `fresh-start-alert-cancel-after-an-adopt-exit-lands-in-the-app` (2026-10-07). «Cancelar» del «¿Borrar todo y
+/// continuar?» y el «OK» del aviso de que el borrado falló. Reabrían el Welcome solo sin onboarding completo; tras salir
+/// de un adopt el flag ya es `true` y la persona aterrizaba en la app. Ahora preguntan lo mismo que el botón destructivo.
+@Suite("«Empezar de cero» tras salir de un adopt · Cancelar y el OK del fallo vuelven a la bienvenida")
+struct FreshStartAfterAdoptExitDismissTests {
+
+    typealias Logic = FreshStartAlertRoutingLogic
+
+    /// **El caso del ticket**: el adopt salió y dejó el onboarding completo; el alert se encendió con el Welcome debajo.
+    /// Vuelve a la elección privado/nube, no a la app.
+    @Test func afterAnAdoptExit_withTheWelcomeUnderneath_reopensTheWelcome() {
+        #expect(Logic.dismissReopensTheWelcome(hasCompletedOnboarding: true, presentedOverWelcome: true))
+    }
+
+    /// **Control: el camino de siempre**, sin cambio — onboarding sin completar, desde el Welcome.
+    @Test func freshInstall_fromTheWelcome_reopensTheWelcome() {
+        #expect(Logic.dismissReopensTheWelcome(hasCompletedOnboarding: false, presentedOverWelcome: true))
+    }
+
+    /// **La guarda vieja sigue siendo término**: sin onboarding completo reabre aunque el testigo diga que no había
+    /// Welcome. No hay app debajo, y no reabrir sería la pantalla negra que el molde existe para evitar.
+    @Test func incompleteOnboarding_withoutTheWitness_stillReopens() {
+        #expect(Logic.dismissReopensTheWelcome(hasCompletedOnboarding: false, presentedOverWelcome: false))
+    }
+
+    /// **Sin Welcome debajo y con el onboarding completo, se queda en la app**: reabrir le plantaría la bienvenida a
+    /// alguien que ya la usa. Hoy ningún camino produce esta celda (el alert solo se dispara desde el Welcome).
+    @Test func completedOnboarding_withoutTheWelcome_staysInTheApp() {
+        #expect(!Logic.dismissReopensTheWelcome(hasCompletedOnboarding: true, presentedOverWelcome: false))
+    }
+
+    /// **Las tres salidas contestan la misma pregunta**: donde se reabre al cancelar, el destructivo sigue en la puerta,
+    /// y donde no, se niega en el sitio. Si un día divergen, una de ellas deja a la persona en un sitio que la otra no.
+    @Test(arguments: [false, true], [false, true])
+    func theThreeExits_answerTheSameQuestion(hasCompletedOnboarding: Bool, presentedOverWelcome: Bool) {
+        let reopens = Logic.dismissReopensTheWelcome(hasCompletedOnboarding: hasCompletedOnboarding,
+                                                     presentedOverWelcome: presentedOverWelcome)
+        let route = Logic.pendingGroupsRoute(hasCompletedOnboarding: hasCompletedOnboarding,
+                                             presentedOverWelcome: presentedOverWelcome)
+        #expect(reopens == (route == .privateGate))
     }
 }
 
@@ -152,22 +200,58 @@ struct FreshStartAfterAdoptExitWiringTests {
         #expect(started.contains("hasCompletedOnboarding = true"))
     }
 
-    /// **Las demás salidas del alert no cambian**: «Cancelar» y el «OK» del aviso de fallo, con su cuerpo entero (el
-    /// mismo `if !hasCompletedOnboarding` de antes; tienen su ticket aparte), y el botón destructivo, que sin pendientes
-    /// borra en el mismo tap.
-    @Test func theOtherExits_areUnchanged() throws {
+    /// **«Cancelar» y el «OK» del aviso de fallo preguntan a la lógica con el testigo** (ticket
+    /// `fresh-start-alert-cancel-after-an-adopt-exit-lands-in-the-app`), con su cuerpo entero: bajar su alert y, si había
+    /// Welcome debajo, reabrirlo en `.chooser`. La guarda vieja —`if !hasCompletedOnboarding {`— ya no decide sola en
+    /// ninguna salida del fichero. Y el botón destructivo, como lo dejó #372: sin pendientes borra en el mismo tap.
+    @Test func theDismissExits_askTheLogicWithTheWitness_andTheDestructiveIsUnchanged() throws {
         let src = Self.code(try Self.source(Self.shell))
-        let reopen = "if !hasCompletedOnboarding { welcomeFlowInitialStep = .chooser showWelcomeFlow = true }"
+        let reopen = "if FreshStartAlertRoutingLogic.dismissReopensTheWelcome( "
+            + "hasCompletedOnboarding: hasCompletedOnboarding, "
+            + "presentedOverWelcome: freshStartAlertPresentedOverWelcome) { "
+            + "welcomeFlowInitialStep = .chooser showWelcomeFlow = true }"
         let cancel = Self.flat(try Self.slice(from: "Button(L10n.Action.cancel, role: .cancel) {", to: ".tint(.primary)", in: src))
         #expect(cancel == "showFreshStartWipeAlert = false " + reopen + " }", "Cancelar: \(cancel)")
         let ok = Self.flat(try Self.slice(from: "Button(L10n.Common.ok, role: .cancel) {", to: ".tint(.primary)", in: src))
         #expect(ok == "showFreshStartWipeFailedAlert = false " + reopen + " }", "OK: \(ok)")
+        #expect(!src.contains("if !hasCompletedOnboarding"), "la guarda vieja volvió a decidir sola alguna salida")
+        // Las dos salidas, y solo ellas, preguntan esto: el destructivo pregunta por su ruta.
+        #expect(src.components(separatedBy: "FreshStartAlertRoutingLogic.dismissReopensTheWelcome(").count - 1 == 2)
+
         let confirm = Self.flat(try Self.slice(from: "Button(L10n.Welcome.FreshStart.alertConfirm, role: .destructive) {",
                                                to: "Button(L10n.Action.cancel, role: .cancel) {", in: src))
         #expect(confirm == "showFreshStartWipeAlert = false "
                 + "if !Self.purgesGroupsDomainNow() "
                 + "|| CloudSessionSignOut.shared.groupsOutboxIsSettledEmpty(context: modelContext) { performFreshStartWipe() } "
                 + "else { continueInTheGateWhileGroupsArePending() } }", "Borrar todo: \(confirm)")
+    }
+
+    /// **El aviso de fallo solo lo encienden dos escritores, los dos detrás del botón destructivo del mismo alert**: es
+    /// lo que hace que el testigo que lee su «OK» sea el de ESTE intento. Un tercero que lo encendiera desde otro sitio
+    /// leería el testigo de un intento anterior.
+    @Test func theFailedNotice_isOnlyShownFromBehindTheDestructiveButton() throws {
+        let shell = Self.code(try Self.source(Self.shell))
+        #expect(shell.components(separatedBy: "showFreshStartWipeFailedAlert = true").count - 1 == 2)
+        let refuse = try Self.slice(from: "private func refuseWhileGroupsArePending() {", to: "\n    }\n", in: shell)
+        #expect(refuse.contains("showFreshStartWipeFailedAlert = true"))
+        let wipe = try Self.slice(from: "private func performFreshStartWipe() {", to: "\n    }\n", in: shell)
+        #expect(wipe.contains("showFreshStartWipeFailedAlert = true"))
+        let content = Self.code(try Self.source(Self.contentView))
+        #expect(!content.contains("showFreshStartWipeFailedAlert = true"), "un disparador fuera del alert")
+    }
+
+    /// **El seam del XCUITest finge la entrada y nada más**: onboarding dado por visto (efímero) y el Welcome reabierto
+    /// con el trío de `onBack`, dentro de la rama de quien ya completó el onboarding. Sin él, el XCUITest de abajo no
+    /// tendría el estado; con más, probaría otra cosa.
+    @Test func theAdoptExitSeam_onlyFakesTheEntry() throws {
+        let content = try Self.source(Self.contentView)
+        let branch = Self.flat(Self.code(try Self.slice(from: "        if hasCompletedOnboarding {\n            // Returning user",
+                                                        to: "\n        }\n", in: content)))
+        #expect(branch.contains("#if DEBUG if UITestHooks.welcomeAfterAdoptExit { "
+                                + "welcomeFlowInitialStep = .chooser showWelcomeFlow = true } #endif"),
+                "el seam: \(branch)")
+        let boot = try Self.source("Yala/App/AppBootstrapper.swift")
+        #expect(boot.contains("UITestHooks.skipOnboarding || UITestHooks.forceGroupInvite || UITestHooks.welcomeAfterAdoptExit"))
     }
 }
 
