@@ -6510,3 +6510,9 @@
 
 /* Error when the notice can no longer be applied: the transaction is gone, duplicated or in another currency */
 "inbox.groupSettlementAmountChange.transactionGone" = "この通知はもう適用できません。取引が変更されたか、口座にありません。";
+
+/* Image entry failure: a dropped or imported file (photo or PDF) could not be opened */
+"image.entry.failure.unreadableFile.title" = "このファイルを開けませんでした";
+
+/* Image entry failure: unreadable file, why and what to try */
+"image.entry.failure.unreadableFile.message" = "空、破損、またはパスワードで保護されている可能性があります。レシートの別の写真かPDFでお試しください。";

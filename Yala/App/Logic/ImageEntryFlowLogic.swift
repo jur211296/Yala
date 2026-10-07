@@ -22,6 +22,9 @@ enum ImageEntryFailure: Equatable {
     case saveFailed
     /// La foto está bien y falló la lectura (timeout, pasarela, respuesta rota).
     case generic
+    /// Un ARCHIVO que no se pudo abrir: un PDF vacío o protegido, o una imagen dañada, soltados sobre Yala en el iPad o
+    /// elegidos desde Archivo. Es `.unreadable` con su copy: «esta imagen» no vale para un PDF.
+    case unreadableFile
 
     /// Si tiene sentido volver a mandar las MISMAS fotos. Sin importe o ilegible, la foto es el problema; sin servicio,
     /// repetir falla igual. Sin conexión sí: a diferencia de la voz, la foto no se repite, y al volver la red basta con
@@ -29,7 +32,7 @@ enum ImageEntryFailure: Equatable {
     var retriesSamePhotos: Bool {
         switch self {
         case .generic, .saveFailed, .noConnection: true
-        case .noAmount, .unreadable, .cameraPermission, .serviceUnavailable: false
+        case .noAmount, .unreadable, .unreadableFile, .cameraPermission, .serviceUnavailable: false
         }
     }
 }
@@ -82,7 +85,8 @@ enum ImageEntryFlowLogic {
             return .review(failedPhotos: failures.count)
         }
         let priority: [ImageEntryFailure] = [
-            .noConnection, .serviceUnavailable, .generic, .saveFailed, .noAmount, .unreadable, .cameraPermission
+            .noConnection, .serviceUnavailable, .generic, .saveFailed, .noAmount, .unreadable, .unreadableFile,
+            .cameraPermission
         ]
         let worst = priority.first { failures.contains($0) } ?? .generic
         return .failure(worst)

@@ -6499,3 +6499,9 @@
 
 /* Error when the notice can no longer be applied: the transaction is gone, duplicated or in another currency */
 "inbox.groupSettlementAmountChange.transactionGone" = "Cet avis ne peut plus être appliqué : la transaction a changé ou n’est plus dans vos comptes.";
+
+/* Image entry failure: a dropped or imported file (photo or PDF) could not be opened */
+"image.entry.failure.unreadableFile.title" = "Je n’ai pas pu ouvrir ce fichier";
+
+/* Image entry failure: unreadable file, why and what to try */
+"image.entry.failure.unreadableFile.message" = "Il est peut-être vide, endommagé ou protégé par un mot de passe. Essaie une autre photo ou un autre PDF du reçu.";

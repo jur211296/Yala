@@ -90,6 +90,7 @@ extension SceneNavigation {
         pendingNewGroupForm = false
         pendingKeyboardPanelRequest = nil
         pendingSharedImageURL = nil
+        pendingImageEntryFailure = nil
         pendingChatDraftPrefill = nil
         showNewTransactionFromChat = false
         isInboxSheetVisible = false

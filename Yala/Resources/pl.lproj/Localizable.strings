@@ -6510,3 +6510,9 @@
 
 /* Error when the notice can no longer be applied: the transaction is gone, duplicated or in another currency */
 "inbox.groupSettlementAmountChange.transactionGone" = "Tego powiadomienia nie można już zastosować: transakcja się zmieniła albo nie ma jej już na Twoich kontach.";
+
+/* Image entry failure: a dropped or imported file (photo or PDF) could not be opened */
+"image.entry.failure.unreadableFile.title" = "Nie udało się otworzyć tego pliku";
+
+/* Image entry failure: unreadable file, why and what to try */
+"image.entry.failure.unreadableFile.message" = "Może być pusty, uszkodzony albo chroniony hasłem. Spróbuj innego zdjęcia lub pliku PDF paragonu.";

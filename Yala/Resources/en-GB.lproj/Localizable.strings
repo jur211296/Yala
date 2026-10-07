@@ -5766,3 +5766,9 @@
 
 /* Error when the notice can no longer be applied: the transaction is gone, duplicated or in another currency */
 "inbox.groupSettlementAmountChange.transactionGone" = "This notice can no longer be applied: the transaction changed or is no longer in your accounts.";
+
+/* Image entry failure: a dropped or imported file (photo or PDF) could not be opened */
+"image.entry.failure.unreadableFile.title" = "I couldn’t open this file";
+
+/* Image entry failure: unreadable file, why and what to try */
+"image.entry.failure.unreadableFile.message" = "It may be empty, damaged or password-protected. Try another photo or PDF of the receipt.";
