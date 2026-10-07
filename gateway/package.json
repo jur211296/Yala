@@ -14,7 +14,7 @@
     "predeploy:production": "npm run sync:manifest",
     "deploy:production": "wrangler deploy --env production",
     "pretypecheck": "npm run sync:manifest",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
     "pretest": "npm run sync:manifest",
     "test": "vitest run"
   },

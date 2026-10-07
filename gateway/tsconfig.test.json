@@ -1,0 +1,7 @@
+{
+  // Tests y banco: el mismo código del Worker MÁS los tipos mínimos de Node que usan (test/node-shim.d.ts).
+  // Van aparte para que `src/` se compruebe sin `process`, `Buffer` ni `node:*` en su ámbito: ahí un uso de
+  // Node compilaría y reventaría en el Worker (ticket gateway-typecheck-roto-y-fuera-del-ci).
+  "extends": "./tsconfig.json",
+  "include": ["src/**/*.ts", "test/**/*.ts", "bench/**/*.ts"]
+}
