@@ -141,9 +141,11 @@ nonisolated enum AppleIDChangeCloseLogic {
     ///
     /// Reposo = la derivación da `.idle`. Cualquier otro estado —progreso, relanzamiento pendiente, fallo, seguidor,
     /// nube activa, journal ilegible— no lo es. En la nube el predicado ya no participa, así que exigir `.idle` no quita
-    /// ninguna oferta que fuera a salir. **`failedRollback` tampoco es reposo, a propósito**: es el criterio que el
-    /// controller ya aplicaba, y abrirlo es una decisión de producto con ticket
-    /// (`apple-id-change-check-stays-off-after-a-failed-migration`).
+    /// ninguna oferta que fuera a salir. **`failedRollback` tampoco es reposo, y sigue sin serlo aquí**: el cierre de la
+    /// sesión privada lo acepta asentado por su propio predicado (`migrationAllowsPrivateSessionClose`), y este se queda
+    /// estricto porque tiene un tercer lector que borra con otra lógica —el borrado pendiente del iCloud privado del
+    /// arranque (`ContentView`)—, para el que un fallo con «Reintentar» a la vista no es «la activación ya no va a
+    /// ocurrir».
     static func migrationAtRest(controllerState: CloudMigrationUIState?,
                                 controllerIsWorking: Bool,
                                 journalRead: JournaledPhaseRead,
@@ -158,9 +160,8 @@ nonisolated enum AppleIDChangeCloseLogic {
         return journalState == .idle
     }
 
-    /// El mismo predicado con la lectura en un solo valor (`MigrationRestReading`). Desde el 2026-09-27 lo usan DOS
-    /// lectores —esta oferta y el cierre de la sesión privada (`CloudSignOutFlowLogic.migrationBlockReason`)— y los dos
-    /// leen por aquí, así que no hay una segunda definición de «reposo» que pueda divergir.
+    /// El mismo predicado con la lectura en un solo valor (`MigrationRestReading`). Lo usan el borrado pendiente del iCloud
+    /// privado del arranque (`ContentView`) y, a través de `migrationAllowsPrivateSessionClose`, los dos lectores del cierre.
     static func migrationAtRest(_ reading: MigrationRestReading) -> Bool {
         migrationAtRest(controllerState: reading.controllerState,
                         controllerIsWorking: reading.controllerIsWorking,
@@ -168,5 +169,40 @@ nonisolated enum AppleIDChangeCloseLogic {
                         persistedStorageMode: reading.persistedStorageMode,
                         mirrorOffArmed: reading.mirrorOffArmed,
                         mountedDecision: reading.mountedDecision)
+    }
+
+    /// **¿Se puede cerrar la sesión privada sin pisar el paso de los datos a la nube?** Reposo, o una ida que FALLÓ y ya
+    /// no tiene nada pendiente (ticket `apple-id-change-check-stays-off-after-a-failed-migration`, decisión A de Jürgen del
+    /// 2026-10-04). Lo leen los DOS lectores del cierre y solo ellos: la oferta del cambio de Apple ID
+    /// (`AppBootstrapper.migrationAtRestForAppleIDChange`) y el cierre manual (`CloudSignOutFlowLogic.migrationBlockReason`),
+    /// así que se abren y se cierran a la vez. Hasta ese ticket exigían reposo, y quien no volvía a Almacenamiento a pulsar
+    /// «Reintentar» se quedaba con la copia de otra cuenta en el teléfono, sin oferta y sin poder cerrar a mano.
+    static func migrationAllowsPrivateSessionClose(_ reading: MigrationRestReading) -> Bool {
+        migrationAtRest(reading) || migrationFailedAndSettled(reading)
+    }
+
+    /// **La ida terminó en `failedRollback` y no queda nada que un resume vaya a ejecutar.** Antes del cutover el teléfono
+    /// está intacto (`MigrationWorkExecutor`, efecto `.rollback`), y el abort del paso 4 devuelve el modo a `.icloud` como
+    /// PRIMER efecto; con los pendientes drenados, el teléfono está como empezó y cerrar no pisa nada. Cada término falla
+    /// hacia «no se ofrece», que es como estaba:
+    ///
+    /// - **El controller no trabaja**, y su estado es `nil` o `.failed(.migration)`. Un `.idle` con el journal en fallo es
+    ///   un `uiState` desfasado (solo se repinta en `refresh()`): no concede. Cualquier otro estado, tampoco.
+    /// - **La derivación del journal da `.failed(.migration)`**, por la misma función que pinta la pantalla. Deja fuera la
+    ///   vuelta fallida (`.failed(.reverse)`, que no entra en la decisión) y el relanzamiento pendiente, que gana a la fase.
+    /// - **Sin efectos pendientes** (`journalHasPendingEffects`, del mismo fetch que la fase): un `.rollback` o un
+    ///   `.persistICloudMode` journaleado y sin ejecutar lo ejecuta el resume del arranque; hasta entonces el fallo no está
+    ///   asentado. Ilegible ya no llega aquí (la derivación da `.journalUnreadable`) y, si llegara, cuenta como pendiente.
+    /// - **Modo persistido `.icloud`**: la máquina no sale a `failedRollback` con `.cloud` persistido (`MigrationRunner`), y
+    ///   el término lo fija por si eso cambia. Con `.cloud`, lo local podría no estar en ningún iCloud.
+    static func migrationFailedAndSettled(_ reading: MigrationRestReading) -> Bool {
+        if reading.controllerIsWorking { return false }
+        if let controllerState = reading.controllerState, controllerState != .failed(.migration) { return false }
+        if reading.journalHasPendingEffects { return false }
+        guard reading.persistedStorageMode == .icloud else { return false }
+        let journalState = CloudMigrationUIStateDeriver.derive(
+            storageMode: reading.persistedStorageMode, read: reading.journalRead,
+            mirrorOffArmed: reading.mirrorOffArmed, mountedDecision: reading.mountedDecision)
+        return journalState == .failed(.migration)
     }
 }

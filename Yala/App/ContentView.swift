@@ -1952,8 +1952,10 @@ struct ContentView: View {
         //
         // **Y con una migración a la nube en vuelo, el borrado pendiente se congela** (ticket
         // `late-wipe-arm-is-dropped-silently-when-the-device-moves-to-the-cloud`): reanudarlo se llevaría lo que la ida está
-        // subiendo. «En reposo» es el MISMO predicado que la oferta del cambio de Apple ID y el cierre privado, y solo se
-        // paga con algo que decidir. Se espera al bootstrap antes de leerlo: sin el journal configurado la lectura dice
+        // subiendo. «En reposo» es `migrationAtRest`, el estricto: la oferta del cambio de Apple ID y el cierre privado
+        // aceptan además una ida fallida sin nada pendiente (`migrationAllowsPrivateSessionClose`), y aquí no, porque con
+        // «Reintentar» a la vista la renuncia de «Activar la nube sin borrar» todavía puede servir. Solo se paga con algo
+        // que decidir. Se espera al bootstrap antes de leerlo: sin el journal configurado la lectura dice
         // `notStarted`, que es el lado que concede.
         var migrationAtRest = true
         if CloudSyncFlags.storageMode == .icloud,

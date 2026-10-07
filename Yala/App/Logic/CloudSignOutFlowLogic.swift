@@ -496,7 +496,10 @@ nonisolated enum CloudSignOutFlowLogic {
     /// `nil` = sigue. Ticket `private-sign-out-proceeds-with-a-migration-in-flight` (2026-09-27).
     ///
     /// **La decisión es la del predicado compartido y nada más**: devuelve `nil` exactamente cuando
-    /// `AppleIDChangeCloseLogic.migrationAtRest` dice reposo. Lo que se añade aquí es solo QUÉ texto toca.
+    /// `AppleIDChangeCloseLogic.migrationAllowsPrivateSessionClose` deja cerrar —reposo, o una ida fallida sin nada
+    /// pendiente (ticket `apple-id-change-check-stays-off-after-a-failed-migration`)—, el mismo que gobierna la oferta del
+    /// cambio de Apple ID. Lo que se añade aquí es solo QUÉ texto toca. Un fallo con efectos pendientes sigue parando con
+    /// `.migrationInFlight`, como antes.
     ///
     /// - **Vale para las tres celdas que borran por archivos, solo-grupos incluida.** La primera versión la excluía («su
     ///   store es el neutro vacío») y la review lo midió falso: nada impide migrar desde una sesión solo-grupos —la fila de
@@ -506,7 +509,7 @@ nonisolated enum CloudSignOutFlowLogic {
     /// - `.migrationUnreadable` solo cuando nadie sabe más que «el journal no se lee»: ni el controller trabaja ni enseña
     ///   otro estado. Si el controller sabe algo, manda él: su estado es el que pinta la pantalla a la que se envía.
     static func migrationBlockReason(kind: ExitKind, reading: MigrationRestReading) -> BlockReason? {
-        guard !AppleIDChangeCloseLogic.migrationAtRest(reading) else { return nil }
+        guard !AppleIDChangeCloseLogic.migrationAllowsPrivateSessionClose(reading) else { return nil }
         if reading.controllerIsWorking { return .migrationInFlight }
         let state: CloudMigrationUIState
         if let controllerState = reading.controllerState, controllerState != .idle {

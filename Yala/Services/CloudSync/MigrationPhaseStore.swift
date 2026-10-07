@@ -58,7 +58,7 @@ final class MigrationPhaseStore {
     /// cada primer plano la provoca (`deriveDeferredIdentityCaptureIfNeeded`).
     func configure(container: ModelContainer) {
         self.container = container
-        deriveIdentityCapture(from: journaledPhaseRead(container: container))
+        deriveIdentityCapture(from: journaledRead(container: container).phaseRead)
         // w8 (DIFERIDOS #30): el drenaje único iKV→outbox del cutover se dispara AQUÍ porque configure
         // corre post-journal (el gate líder-only necesita la fase real) y antes de cualquier ciclo de
         // prefs del runtime. Internamente re-verifica todo (storageMode/fase/userID/sentinel) → no-op
@@ -137,21 +137,33 @@ final class MigrationPhaseStore {
     /// remap de identidad se emitía, todo sobre un journal que no se había leído. Con el tipo nuevo cada consumidor
     /// está obligado por el compilador a decidir qué hace sin fase, y los siete deciden hacia el lado que no concede.
     var currentPhaseRead: JournaledPhaseRead {
+        currentJournalRead.phaseRead
+    }
+
+    /// La fase Y si quedan efectos pendientes, del mismo fetch (ticket
+    /// `apple-id-change-check-stays-off-after-a-failed-migration`). Misma precedencia y misma derivación aplazada de la
+    /// captura de identidad que `currentPhaseRead`, que es esta lectura sin los pendientes. La lee `MigrationRestReading.live`:
+    /// el cierre de la sesión privada necesita saber si un `failedRollback` está ASENTADO (sin un `.rollback` que el resume
+    /// del arranque ejecutaría), y casar la fase de un fetch con los pendientes de otro no lo diría.
+    var currentJournalRead: JournaledMigrationRead {
         #if DEBUG
-        if let simulated = simulatedPhase?.migrationPhase { return .phase(simulated) }
+        if let simulated = simulatedPhase?.migrationPhase { return .read(phase: simulated, hasPendingEffects: false) }
         #endif
-        guard let container else { return .phase(.notStarted) }
-        let read = journaledPhaseRead(container: container)
-        if identityCaptureDerivationPending { deriveIdentityCapture(from: read) }
+        guard let container else { return .read(phase: .notStarted, hasPendingEffects: false) }
+        let read = journaledRead(container: container)
+        if identityCaptureDerivationPending { deriveIdentityCapture(from: read.phaseRead) }
         return read
     }
 
-    /// Lee la fase journaleada single-row del store sync-meta (lectura barata — sin import CloudKit).
+    /// Lee la fila single-row del journal del store sync-meta (lectura barata — sin import CloudKit).
     /// SOLO lectura: NO crea la fila (a diferencia de `loadOrCreate`).
-    private func journaledPhaseRead(container: ModelContainer) -> JournaledPhaseRead {
+    private func journaledRead(container: ModelContainer) -> JournaledMigrationRead {
         let context = ModelContext(container)
-        return Self.phaseRead {
+        return Self.journalRead {
             if _testJournalFetchThrows { throw MigrationJournalSeamError.fetchFailed }
+            #if DEBUG
+            if let seeded = UITestHooks.failedMigrationJournalRow { return seeded }
+            #endif
             var descriptor = FetchDescriptor<MigrationState>()
             descriptor.fetchLimit = 1
             return try context.fetch(descriptor).first
@@ -165,13 +177,20 @@ final class MigrationPhaseStore {
     /// `an-undecodable-migration-phase-reads-as-never-started`): hasta ese ticket salía el `.notStarted` de relleno de
     /// `readPhase()`, la fase estable más ancha.
     static func phaseRead(fetch: () throws -> MigrationState?) -> JournaledPhaseRead {
+        journalRead(fetch: fetch).phaseRead
+    }
+
+    /// `phaseRead` con los pendientes de la MISMA fila. Es el núcleo: `phaseRead` es esta lectura sin ellos, así que la fase
+    /// y el `catch` no tienen dos versiones que puedan divergir. Una fila cuyos pendientes no decodifican ya es `.unreadable`
+    /// (`isJournalUndecodable`), así que `readPendingEffects()` aquí no puede devolver el `[]` de relleno.
+    static func journalRead(fetch: () throws -> MigrationState?) -> JournaledMigrationRead {
         do {
-            guard let state = try fetch() else { return .phase(.notStarted) }
+            guard let state = try fetch() else { return .read(phase: .notStarted, hasPendingEffects: false) }
             guard !state.isJournalUndecodable else {
                 CloudSyncBreadcrumb.migrationJournalUndecodable(reader: "phase-store")
                 return .unreadable
             }
-            return .phase(state.readPhase().phase)
+            return .read(phase: state.readPhase().phase, hasPendingEffects: !state.readPendingEffects().isEmpty)
         } catch {
             #if DEBUG
             print("MigrationPhaseStore: fetch(MigrationState) falló: \(error)")

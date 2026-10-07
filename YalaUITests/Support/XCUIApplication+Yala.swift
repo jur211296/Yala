@@ -47,6 +47,7 @@ extension XCUIApplication {
         fakeMigrationIdentity: String? = nil,
         pendingMigrationBlock: String? = nil,
         migrationJournalUnreadable: Bool = false,
+        migrationFailed: Bool = false,
         signOutKeepsSession: Bool = false,
         groupsGateMirrorLive: Bool = false,
         groupsGateWipeFailed: Bool = false,
@@ -171,6 +172,10 @@ extension XCUIApplication {
         // culpando a la pantalla. Su nombre lo fija un test de paridad con `UITestHooks`
         // (`MigrationJournalUnreadableWiringTests`).
         if migrationJournalUnreadable { args.append("-uitest-migration-journal-unreadable") }
+        // Los dos fetch del journal devuelven una ida en `failedRollback` y sin efectos pendientes. NOMBRADO por lo mismo:
+        // un typo dejaría el journal en reposo y el caso caería culpando al cierre. Su nombre lo fija
+        // `PrivateSignOutMigrationWiringTests.seamDeLaIdaFallida`.
+        if migrationFailed { args.append("-uitest-migration-failed") }
         // El cierre de la sesión en la nube devuelve «sigue guardada»: el desasociar tiene que pararse antes de soltar nada.
         // NOMBRADO por lo mismo que sus vecinos: un typo dejaría el cierre diciendo que terminó, el gesto seguiría hasta el
         // final y el caso caería culpando al aviso. Su nombre lo fija un test de paridad con `UITestHooks`

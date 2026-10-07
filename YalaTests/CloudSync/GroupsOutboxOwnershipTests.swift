@@ -597,10 +597,10 @@ struct GroupsNoSessionLossExitTests {
 
     private static let atRest = MigrationRestReading(
         controllerState: nil, controllerIsWorking: false, journalRead: .phase(.notStarted),
-        persistedStorageMode: .icloud, mirrorOffArmed: false, mountedDecision: .iCloudMirror)
+        journalHasPendingEffects: false, persistedStorageMode: .icloud, mirrorOffArmed: false, mountedDecision: .iCloudMirror)
     private static let inFlight = MigrationRestReading(
         controllerState: nil, controllerIsWorking: false, journalRead: .phase(.uploadingSnapshot),
-        persistedStorageMode: .icloud, mirrorOffArmed: false, mountedDecision: .iCloudMirror)
+        journalHasPendingEffects: false, persistedStorageMode: .icloud, mirrorOffArmed: false, mountedDecision: .iCloudMirror)
 
     private func reset() {
         coordinator.acknowledgeBlocked()

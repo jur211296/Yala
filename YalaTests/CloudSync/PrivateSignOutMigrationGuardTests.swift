@@ -27,16 +27,23 @@ private enum Reading {
     static func make(controllerState: CloudMigrationUIState? = nil,
                      controllerIsWorking: Bool = false,
                      journalRead: JournaledPhaseRead = .phase(.notStarted),
+                     journalHasPendingEffects: Bool = false,
                      persistedStorageMode: StorageMode = .icloud,
                      mirrorOffArmed: Bool = false,
                      mountedDecision: SwiftDataConfiguration.PersonalStoreDecision = .iCloudMirror) -> MigrationRestReading {
         MigrationRestReading(controllerState: controllerState, controllerIsWorking: controllerIsWorking,
-                             journalRead: journalRead, persistedStorageMode: persistedStorageMode,
+                             journalRead: journalRead, journalHasPendingEffects: journalHasPendingEffects,
+                             persistedStorageMode: persistedStorageMode,
                              mirrorOffArmed: mirrorOffArmed, mountedDecision: mountedDecision)
     }
 
     static let atRest = make()
     static let uploading = make(journalRead: .phase(.uploadingSnapshot))
+    /// Una ida que salió por un fallo y ya ejecutó su `.rollback`: lo que el ticket
+    /// `apple-id-change-check-stays-off-after-a-failed-migration` abre.
+    static let failedSettled = make(journalRead: .phase(.failedRollback))
+    /// La misma salida con el `.rollback` aún journaleado: el resume del arranque lo ejecutará.
+    static let failedWithPending = make(journalRead: .phase(.failedRollback), journalHasPendingEffects: true)
 }
 
 // MARK: - 1 · La lógica pura
@@ -90,12 +97,22 @@ struct PrivateSignOutMigrationReasonTests {
         }
     }
 
-    @Test("MUTACIÓN: una migración FALLIDA también para el cierre — es el predicado compartido, y su salida es «Reintentar»")
-    func migracionFallida_tambienPara() {
-        // Abrirlo es la decisión pendiente de `apple-id-change-check-stays-off-after-a-failed-migration`: este test cae el
-        // día que se tome, y tiene que caer en los DOS lectores a la vez.
-        #expect(Logic.migrationBlockReason(kind: .privateOnly, reading: Reading.make(journalRead: .phase(.failedRollback)))
-                == .migrationInFlight)
+    /// Ticket `apple-id-change-check-stays-off-after-a-failed-migration`, decisión A de Jürgen (2026-10-04). Este test
+    /// decía «una migración FALLIDA también para el cierre» y estaba escrito para caer el día que se tomara la decisión, en
+    /// los DOS lectores a la vez: el de la oferta lo fija `AppleIDChangeFailedMigrationCloseTests`.
+    @Test("MUTACIÓN: una ida FALLIDA y sin nada pendiente ya no para el cierre; con un efecto pendiente, sí")
+    func migracionFallida_sinPendientesSigue_conPendientesPara() {
+        for kind in Self.privateKinds {
+            #expect(Logic.migrationBlockReason(kind: kind, reading: Reading.failedSettled) == nil, "\(kind)")
+            // El controller ya pintó el fallo: es la pantalla que la persona vio.
+            #expect(Logic.migrationBlockReason(kind: kind, reading: Reading.make(controllerState: .failed(.migration),
+                                                                                 journalRead: .phase(.failedRollback)))
+                    == nil, "\(kind)")
+            // Con el `.rollback` sin ejecutar, como hoy: lo que pare, para con su motivo de siempre.
+            #expect(Logic.migrationBlockReason(kind: kind, reading: Reading.failedWithPending) == .migrationInFlight,
+                    "\(kind)")
+        }
+        // La VUELTA fallida no entra en la decisión: sigue parando.
         #expect(Logic.migrationBlockReason(kind: .privateOnly,
                                            reading: Reading.make(journalRead: .phase(.reverseFailedRollback)))
                 == .migrationInFlight)
@@ -135,32 +152,46 @@ struct PrivateSignOutMigrationReasonTests {
 
     /// **La decisión es la del predicado compartido, y nada más.** Sobre una rejilla de lecturas, el cierre privado se para
     /// exactamente cuando la oferta del cambio de Apple ID diría «ahora no». Si alguien añade aquí un término propio, los
-    /// dos lectores dejan de contestar la misma pregunta y esto se pone rojo.
-    @Test("El cierre se para exactamente cuando `migrationAtRest` dice que no")
+    /// dos lectores dejan de contestar la misma pregunta y esto se pone rojo. Desde el 2026-10-06 la pregunta compartida es
+    /// `migrationAllowsPrivateSessionClose`, y la rejilla lleva los pendientes.
+    @Test("El cierre se para exactamente cuando `migrationAllowsPrivateSessionClose` dice que no")
     func mismaDecisionQueElPredicadoCompartido() {
         let states: [CloudMigrationUIState?] = [nil, .idle, .journalUnreadable, .cloudActive, .waitingForLeader,
-                                                .failed(.migration), .needsRelaunch(.toCloud)]
+                                                .failed(.migration), .failed(.reverse), .needsRelaunch(.toCloud)]
         let reads: [JournaledPhaseRead] = [.phase(.notStarted), .phase(.uploadingSnapshot), .phase(.failedRollback),
-                                           .phase(.icloudActive), .phase(.done), .unreadable]
+                                           .phase(.reverseFailedRollback), .phase(.icloudActive), .phase(.done), .unreadable]
         var casos = 0
+        var abiertosPorElFallo = 0
         for state in states {
             for working in [false, true] {
                 for read in reads {
-                    for mode in [StorageMode.icloud, .cloud] {
-                        for armed in [false, true] {
-                            let reading = Reading.make(controllerState: state, controllerIsWorking: working, journalRead: read,
-                                                       persistedStorageMode: mode, mirrorOffArmed: armed)
-                            for kind in Self.privateKinds {
-                                #expect((Logic.migrationBlockReason(kind: kind, reading: reading) == nil)
-                                        == AppleIDChangeCloseLogic.migrationAtRest(reading), "\(reading)")
-                                casos += 1
+                    for pending in [false, true] {
+                        for mode in [StorageMode.icloud, .cloud] {
+                            for armed in [false, true] {
+                                let reading = Reading.make(controllerState: state, controllerIsWorking: working,
+                                                           journalRead: read, journalHasPendingEffects: pending,
+                                                           persistedStorageMode: mode, mirrorOffArmed: armed)
+                                for kind in Self.privateKinds {
+                                    #expect((Logic.migrationBlockReason(kind: kind, reading: reading) == nil)
+                                            == AppleIDChangeCloseLogic.migrationAllowsPrivateSessionClose(reading),
+                                            "\(reading)")
+                                    casos += 1
+                                }
+                                if AppleIDChangeCloseLogic.migrationAllowsPrivateSessionClose(reading),
+                                   !AppleIDChangeCloseLogic.migrationAtRest(reading) {
+                                    abiertosPorElFallo += 1
+                                }
                             }
                         }
                     }
                 }
             }
         }
-        #expect(casos == 7 * 2 * 6 * 2 * 2 * 3)
+        #expect(casos == 8 * 2 * 7 * 2 * 2 * 2 * 3)
+        // La rejilla pasa por la rama nueva: sin esto, una rejilla que no la tocara saldría verde con cualquier predicado.
+        // nil y `.failed(.migration)` × no trabaja × `failedRollback` × sin pendientes × `.icloud` × sin armar (armado, con
+        // el espejo montado, pide relanzar y no es un fallo asentado).
+        #expect(abiertosPorElFallo == 2)
     }
 
     @Test("Los dos motivos tienen texto propio en Ajustes, distinto del genérico y entre sí")
@@ -260,6 +291,31 @@ struct PrivateSignOutMigrationWriterTests {
         for kind in [CloudSignOutFlowLogic.ExitKind.privateOnly, .privateWithGroups, .groupsOnly] {
             reset()
             coordinator.migrationRestReadingOverride = { Reading.uploading }
+            #expect(coordinator.blockIfMigrationNotAtRest(kind: kind), "\(kind)")
+            #expect(coordinator.phase == .blocked(pendingCount: 0, reason: .migrationInFlight), "\(kind)")
+        }
+        reset()
+    }
+
+    /// Ticket `apple-id-change-check-stays-off-after-a-failed-migration`: el escritor es el que decide en los tres caminos
+    /// de entrada (Ajustes, la hoja del cambio de Apple ID y la puerta de Grupos del Welcome), así que el cierre manual y el
+    /// de la oferta se abren aquí a la vez.
+    @Test("MUTACIÓN: tras una ida fallida sin nada pendiente, la puerta del escritor deja pasar en las tres celdas")
+    func puerta_fallidaAsentada_dejaPasar() {
+        reset()
+        defer { reset() }
+        coordinator.migrationRestReadingOverride = { Reading.failedSettled }
+        for kind in [CloudSignOutFlowLogic.ExitKind.privateOnly, .privateWithGroups, .groupsOnly] {
+            #expect(!coordinator.blockIfMigrationNotAtRest(kind: kind), "\(kind)")
+            #expect(coordinator.phase == .idle)
+        }
+    }
+
+    @Test("Con el `.rollback` todavía pendiente, la puerta del escritor se para como antes")
+    func puerta_fallidaConPendientes_sePara() {
+        for kind in [CloudSignOutFlowLogic.ExitKind.privateOnly, .privateWithGroups, .groupsOnly] {
+            reset()
+            coordinator.migrationRestReadingOverride = { Reading.failedWithPending }
             #expect(coordinator.blockIfMigrationNotAtRest(kind: kind), "\(kind)")
             #expect(coordinator.phase == .blocked(pendingCount: 0, reason: .migrationInFlight), "\(kind)")
         }
@@ -379,7 +435,7 @@ struct PrivateSignOutMigrationWiringTests {
         let logic = try Self.code("Yala/App/Logic/CloudSignOutFlowLogic.swift")
         let reason = try Self.body(of: "static func migrationBlockReason(kind: ExitKind, reading: MigrationRestReading) -> BlockReason? {",
                                    in: logic)
-        #expect(reason.contains("guard !AppleIDChangeCloseLogic.migrationAtRest(reading) else { return nil }"))
+        #expect(reason.contains("guard !AppleIDChangeCloseLogic.migrationAllowsPrivateSessionClose(reading) else { return nil }"))
     }
 
     @Test("MUTACIÓN: la lectura de producción lee las DOS fuentes, y la oferta del Apple ID lee por el mismo sitio")
@@ -388,10 +444,12 @@ struct PrivateSignOutMigrationWiringTests {
         let reading = try Self.body(of: "@MainActor static var live: MigrationRestReading {",
                                     in: try Self.code("Yala/Services/CloudSync/MigrationRestReading.swift"))
         let esperado = """
-            MigrationRestReading(
+            let journal = MigrationPhaseStore.shared.currentJournalRead
+            return MigrationRestReading(
                 controllerState: CloudMigrationController.shared?.uiState,
                 controllerIsWorking: CloudMigrationController.shared?.isWorking ?? false,
-                journalRead: MigrationPhaseStore.shared.currentPhaseRead,
+                journalRead: journal.phaseRead,
+                journalHasPendingEffects: journal.hasPendingEffects,
                 persistedStorageMode: StorageModePersistence.read(),
                 mirrorOffArmed: StorageModePersistence.isMirrorOffArmed(),
                 mountedDecision: SwiftDataConfiguration.personalStoreMountedDecision)
@@ -399,7 +457,29 @@ struct PrivateSignOutMigrationWiringTests {
         #expect(normalizado(reading) == normalizado(esperado))
         let boot = try Self.body(of: "private func migrationAtRestForAppleIDChange() -> Bool {",
                                  in: try Self.code("Yala/App/AppBootstrapper.swift"))
-        #expect(normalizado(boot) == "AppleIDChangeCloseLogic.migrationAtRest(.live)")
+        #expect(normalizado(boot) == "AppleIDChangeCloseLogic.migrationAllowsPrivateSessionClose(.live)")
+    }
+
+    /// El seam del XCUITest de la ida fallida (ticket `apple-id-change-check-stays-off-after-a-failed-migration`). Casa en
+    /// los dos lados —un typo dejaría el journal en reposo y el caso caería culpando al cierre— y finge la entrada de los
+    /// DOS fetch de producción: si solo la fingiera el controller, el cierre leería el `MigrationPhaseStore` en reposo y el
+    /// test pasaría sin medir la rama nueva.
+    @Test("MUTACIÓN: el seam `-uitest-migration-failed` casa en los dos lados y finge los DOS fetch del journal")
+    func seamDeLaIdaFallida() throws {
+        let arg = "\"-uitest-migration-failed\""
+        #expect(try Self.code("Yala/App/UITestHooks.swift").contains(arg))
+        #expect(try Self.code("YalaUITests/Support/XCUIApplication+Yala.swift").contains(arg))
+        let line = "if let seeded = UITestHooks.failedMigrationJournalRow { return seeded }"
+        #expect(try Self.code("Yala/Services/CloudSync/CloudMigrationController.swift")
+            .components(separatedBy: line).count - 1 == 1)
+        #expect(try Self.code("Yala/Services/CloudSync/MigrationPhaseStore.swift")
+            .components(separatedBy: line).count - 1 == 1)
+    }
+
+    @Test("Sin el arg, el seam no devuelve fila: el host de unit lee el journal de verdad")
+    @MainActor
+    func seamApagadoSinArg() {
+        #expect(UITestHooks.failedMigrationJournalRow == nil)
     }
 
     @Test("Ajustes enseña el aviso con los dos motivos; la puerta del Welcome, su rama propia antes del catch-all")

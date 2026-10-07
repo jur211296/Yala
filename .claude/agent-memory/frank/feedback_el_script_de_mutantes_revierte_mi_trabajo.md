@@ -57,3 +57,8 @@ simulador (`docs/aprendizajes-tecnicos.md`, escrito EL DÍA ANTES). Con 121 MB l
 con ENOSPC y dejó `DataWipeService.swift` mutado; lo cazó el `cmp`. ⇒ **el runner vacía `Dead/` al empezar cada vuelta**
 (`find <device>/data/Library/Caches/com.apple.containermanagerd/Dead -mindepth 1 -delete`; `rm -rf` con glob lo deniega
 el permiso), y un `INFRA` sin `Test run with` se lee con `df -h /` antes que como veredicto.
+
+**2026-10-07: el patrón de nombres entre comillas pierde los tests SIN título.** `✘ Test "[^"]*"` solo casa los
+`@Test("…")`; uno escrito `@Test func x()` sale como `✘ Test x() recorded an issue…` y el runner contó «MUERTO 0»
+(M7, M8, M14 de #273). El veredicto venía bien de la línea `Test run with … failed`, pero un 0 se lee como sospecha.
+Usa `✘ Test ("[^"]*"|[A-Za-z_]+\(\))`.

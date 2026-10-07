@@ -426,6 +426,7 @@ struct MigrationJournalUnreadableWiringTests {
             "let read = MigrationJournalRead.read {",
             "#if DEBUG",
             "if UITestHooks.migrationJournalUnreadable { throw MigrationJournalSeamError.fetchFailed }",
+            "if let seeded = UITestHooks.failedMigrationJournalRow { return seeded }",
             "#endif",
             "var descriptor = FetchDescriptor<MigrationState>()",
             "descriptor.fetchLimit = 1",
@@ -466,13 +467,19 @@ struct MigrationJournalUnreadableWiringTests {
     /// El lector de `MigrationPhaseStore`, entero: su seam lanza ANTES del fetch real, así que un `catch` que devolviera
     /// `nil` dentro del closure pasaría los tests de comportamiento (lente de mutantes de la review).
     @Test func phaseStore_readerIsTheRealFetch() throws {
+        // Desde el 2026-10-06 (ticket `apple-id-change-check-stays-off-after-a-failed-migration`) el lector trae también los
+        // pendientes de la misma fila, y lleva el seam DEBUG del XCUITest de la ida fallida, que solo devuelve fila con su
+        // arg (`-uitest-migration-failed`). `phaseRead(fetch:)` es esa lectura sin los pendientes.
         let body = Self.lines(try Self.body(
-            of: "private func journaledPhaseRead(container: ModelContainer) -> JournaledPhaseRead {",
+            of: "private func journaledRead(container: ModelContainer) -> JournaledMigrationRead {",
             in: "Yala/Services/CloudSync/MigrationPhaseStore.swift"))
         #expect(body == [
             "let context = ModelContext(container)",
-            "return Self.phaseRead {",
+            "return Self.journalRead {",
             "if _testJournalFetchThrows { throw MigrationJournalSeamError.fetchFailed }",
+            "#if DEBUG",
+            "if let seeded = UITestHooks.failedMigrationJournalRow { return seeded }",
+            "#endif",
             "var descriptor = FetchDescriptor<MigrationState>()",
             "descriptor.fetchLimit = 1",
             "return try context.fetch(descriptor).first",
@@ -480,15 +487,22 @@ struct MigrationJournalUnreadableWiringTests {
         ])
         let getter = Self.lines(try Self.body(of: "var currentPhaseRead: JournaledPhaseRead {",
                                               in: "Yala/Services/CloudSync/MigrationPhaseStore.swift"))
-        #expect(getter == [
+        #expect(getter == ["currentJournalRead.phaseRead"])
+        let journalGetter = Self.lines(try Self.body(of: "var currentJournalRead: JournaledMigrationRead {",
+                                                     in: "Yala/Services/CloudSync/MigrationPhaseStore.swift"))
+        #expect(journalGetter == [
             "#if DEBUG",
-            "if let simulated = simulatedPhase?.migrationPhase { return .phase(simulated) }",
+            "if let simulated = simulatedPhase?.migrationPhase { return .read(phase: simulated, hasPendingEffects: false) }",
             "#endif",
-            "guard let container else { return .phase(.notStarted) }",
-            "let read = journaledPhaseRead(container: container)",
-            "if identityCaptureDerivationPending { deriveIdentityCapture(from: read) }",
+            "guard let container else { return .read(phase: .notStarted, hasPendingEffects: false) }",
+            "let read = journaledRead(container: container)",
+            "if identityCaptureDerivationPending { deriveIdentityCapture(from: read.phaseRead) }",
             "return read",
         ])
+        let phaseRead = Self.lines(try Self.body(
+            of: "static func phaseRead(fetch: () throws -> MigrationState?) -> JournaledPhaseRead {",
+            in: "Yala/Services/CloudSync/MigrationPhaseStore.swift"))
+        #expect(phaseRead == ["journalRead(fetch: fetch).phaseRead"])
     }
 
     /// Las tres decisiones del arranque y el primer plano no deciden nada sin journal.
@@ -727,8 +741,17 @@ struct MigrationJournalUnreadableWiringTests {
             if decides > 0 { phaseDecideUses[name] = decides }
         }
         #expect(readUses == ["BackgroundTaskManager.swift": 4, "CloudSyncRuntime.swift": 1, "CloudSyncEngine.swift": 1,
-                             "PreferenceSyncService.swift": 1, "CloudMigrationController.swift": 1,
-                             "MigrationRestReading.swift": 1])
+                             "PreferenceSyncService.swift": 1, "CloudMigrationController.swift": 1])
+        // La lectura del reposo se mudó a `currentJournalRead` el 2026-10-06 (ticket
+        // `apple-id-change-check-stays-off-after-a-failed-migration`): fase y pendientes del mismo fetch. Sigue siendo UNA,
+        // y su lector la pasa por `MigrationRestReading`, cuyos predicados derivan con `derive(read:)`: ilegible no concede.
+        var journalReadUses: [String: Int] = [:]
+        for url in files {
+            let code = Self.lines(try String(contentsOf: url, encoding: .utf8)).joined(separator: "\n")
+            let reads = Self.occurrences(of: "currentJournalRead", in: code)
+            if reads > 0, url.lastPathComponent != "MigrationPhaseStore.swift" { journalReadUses[url.lastPathComponent] = reads }
+        }
+        #expect(journalReadUses == ["MigrationRestReading.swift": 1])
         #expect(phaseDecideUses == ["BGTaskMigrationGate.swift": 1, "CloudSyncDebugView.swift": 1])
     }
 

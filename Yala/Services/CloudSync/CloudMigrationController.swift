@@ -1853,6 +1853,7 @@ final class CloudMigrationController {
         let read = MigrationJournalRead.read {
             #if DEBUG
             if UITestHooks.migrationJournalUnreadable { throw MigrationJournalSeamError.fetchFailed }
+            if let seeded = UITestHooks.failedMigrationJournalRow { return seeded }
             #endif
             var descriptor = FetchDescriptor<MigrationState>()
             descriptor.fetchLimit = 1
