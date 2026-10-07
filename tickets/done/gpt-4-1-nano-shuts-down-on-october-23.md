@@ -1,6 +1,6 @@
 ---
 id: gpt-4-1-nano-shuts-down-on-october-23
-status: backlog
+status: done
 priority: very-high
 area: ai, gateway, image, chat
 created: 2026-10-07
@@ -77,3 +77,14 @@ mercado (ampliación de las 10:05).
   `docs/ai-model-bench-2026-10.md`.
 - **Llega a todas las versiones instaladas sin release:** sin cabecera, el gateway deduce la tarea por la huella del prompt.
 - La opción A de este ticket (`gpt-4.1-mini`) habría acertado el 96 % en la foto a 4 veces el coste de `gpt-6-luna`.
+
+## Cerrado el 2026-10-07
+
+Desplegado en producción (PR #387, versión `48bf0c79`; rollback a `034e1074`), antes del 20-oct. Verificado con
+`wrangler tail`:
+- **Staging:** con tráfico real desde Yala Dev en el iPhone de Jürgen.
+- **Producción:** con las peticiones exactas de la app.
+
+Foto, clasificador y sugerencias salen con `gpt-6-luna`, y ninguna llamada va a `gpt-4.1-nano`. Las versiones
+instaladas no necesitan actualizarse. No queda device-QA: la prueba en el teléfono ya se hizo contra staging, con el
+mismo código.
