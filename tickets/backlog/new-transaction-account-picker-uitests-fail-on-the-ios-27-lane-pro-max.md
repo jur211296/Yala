@@ -82,3 +82,9 @@ Gate de `account-currency-change-leaves-scheduled-and-favorites-stale` (sobre `2
 `test_saveAsFavoriteFromTransactionAppearsInList`) con «No se montó AccountSelectorSheet con filas» / `account_selector_row_`
 y el «Automation type mismatch … PopUpButton». Como ese diff toca `NewTransactionView`, se bisecó: con
 `NewTransactionView.swift` y `NewTransactionViewModel.swift` devueltos a `HEAD`, los tres fallan igual. No es de esa rama.
+
+## Otra vez en el gate de `inbox-dismiss-x-does-not-delete-the-draft-for-good` (2026-10-08)
+
+`EdgeCasesUITests.test_extremeMinimumAmountSaves`, iPhone 17 Pro de iOS 27.0 (`46287CFE`), en lote de 10 suites (31
+casos, 30 verdes), centinela en 0 (solo en el simulador), mismo «Automation type mismatch … PopUpButton». Ese cambio
+no toca el formulario de registro.
