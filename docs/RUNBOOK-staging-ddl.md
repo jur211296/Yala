@@ -1,5 +1,5 @@
 ---
-updated: 2026-09-26
+updated: 2026-10-08
 tags: [runbook, staging, ddl, owner]
 ---
 
@@ -338,9 +338,14 @@ a `false`, por el mismo `PATCH` de la Management API. Es defensa en profundidad;
 
 ---
 
-## `hlc01_cap_future_hlc.sql` — tope a un HLC del futuro (staging y producción, PENDIENTE desde el 2026-10-07)
+## `hlc01_cap_future_hlc.sql` — tope a un HLC del futuro (staging y producción, 2026-10-07)
 
-**Sin aplicar en ningún entorno.** La escribió una sesión nocturna sin credencial de escritura: el token de
+**Aplicada en staging (`fostjbbwstyuunmmefuk`) y en producción (`kefvaiymtgytemwbltlz`) el 2026-10-07.** Verificado:
+**22** triggers `cap_future_hlc` y la sonda `qa/cloud/hlc01-cap-staging-probe.sh` **4/4**. No constan en el repo la
+hora, el número de filas normalizadas ni quién la corrió. Lo de abajo queda como registro de cómo se aplica y de qué
+comprobar si hay que repetirlo.
+
+La escribió una sesión nocturna sin credencial de escritura: el token de
 gestión de `~/Secrets/yala-supabase-mgmt/pat` daba **401** en los dos proyectos y el conector Supabase de Claude
 pedía OAuth. Tickets `personal-clock-ahead-wins-every-conflict-until-real-time-catches-up` y
 `groups-clock-ahead-wins-every-conflict-until-real-time-catches-up`; las decisiones, en el Paso 0 del encargo
@@ -363,9 +368,9 @@ alguna de las 22 tablas.
    `all_units_stale`).
 3. **Producción.** Lo mismo en `kefvaiymtgytemwbltlz`. No hay usuarios de test ahí; se verifica con
    `select count(*) from pg_trigger where tgname = 'cap_future_hlc' and not tgisinternal;` → **22**.
-4. **Después, lo hace Frank:** añadir el trigger a los dos snapshots (`supabase-staging.ddl` y
-   `supabase-groups-staging.ddl`). El banco local (`bash qa/cloud/hlc01-cap-test.sh`, 33 casos) lo tolera: retira
-   el tope antes de sembrar.
+4. ✅ **Hecho el 2026-10-08:** el trigger y sus funciones están en los dos snapshots (`supabase-staging.ddl`, al
+   final, y `supabase-groups-staging.ddl` §10). El banco local (`bash qa/cloud/hlc01-cap-test.sh`) sigue en 33/33:
+   retira el tope antes de sembrar.
 
 **Marcha atrás:** `qa/cloud/hlc01_rollback.sql` (quita los 22 triggers y las 3 funciones). La normalización no se
 deshace y no hace falta: solo acotó HLC por encima de `now() + 60 s`, nunca un valor.

@@ -2,9 +2,9 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (34 entradas)
+## Índice (35 entradas)
 
-> **No hace falta leer este fichero entero** — son 140 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 142 KB. Localiza la entrada
 > aquí y salta a ella.
 
 - `—` [Running the RLS gate](#running-the-rls-gate)
@@ -28,6 +28,7 @@
 - `—` [I14 — UI real de migración + consent + claimAction + relaunch asistido + encendido de flags](#i14--ui-real-de-migracin--consent--claimaction--relaunch-asistido--encendido-de-flags)
 - `—` [transfer_group_ownership (G10 / D10) — batch "salir de todos mis grupos" — APLICADA EN AMBOS ENVS ✅](#transfergroupownership-g10--d10--batch-salir-de-todos-mis-grupos--aplicada-en-ambos-envs)
 - `—` [G7 — cifrado pgcrypto de columnas † de grupos (data-at-rest)](#g7--cifrado-pgcrypto-de-columnas--de-grupos-data-at-rest)
+- `2026-10-07` [hlc01 — tope a un HLC del futuro, canal personal + Grupos (2026-10-07)](#hlc01--tope-a-un-hlc-del-futuro-canal-personal--grupos-2026-10-07)
 - `2026-09-24` [g16_04 — después del cutover no hay relevo: quien llega entra en la cuenta (2026-09-24)](#g1604--despus-del-cutover-no-hay-relevo-quien-llega-entra-en-la-cuenta-2026-09-24)
 - `2026-09-24` [g16_03 — el claim que da el turno dice si la cuenta ya tiene datos personales (2026-09-24)](#g1603--el-claim-que-da-el-turno-dice-si-la-cuenta-ya-tiene-datos-personales-2026-09-24)
 - `2026-09-24` [g16_02 — el reintento de un alta ya no siembra al lado de un teléfono que entró (2026-09-24)](#g1602--el-reintento-de-un-alta-ya-no-siembra-al-lado-de-un-telfono-que-entr-2026-09-24)
@@ -1702,6 +1703,19 @@ querying schema»**. El golden 28 hace `ctx.skip()` si `profiles[subC]` ya exist
 ```sql
 delete from public.profiles where id = (select id from auth.users where email='i5-user-c@test.yala');
 ```
+
+## hlc01 — tope a un HLC del futuro, canal personal + Grupos (2026-10-07)
+
+**Aplicada en STAGING y en PRODUCCIÓN el 2026-10-07.** Fichero: `qa/cloud/hlc01_cap_future_hlc.sql`; marcha atrás
+`qa/cloud/hlc01_rollback.sql`. Tickets: `personal-clock-ahead-wins-every-conflict-until-real-time-catches-up` y
+`groups-clock-ahead-wins-every-conflict-until-real-time-catches-up` (Paso 0 en
+`encargos/lanzados/2026-10-07-clock-ahead-wins-every-conflict-server-cap.md`).
+
+Qué cambia: un trigger `BEFORE INSERT OR UPDATE` `cap_future_hlc` en las 22 tablas sincronizadas (17 personales + 5 de
+Grupos) guarda todo HLC acotado a «ahora + 60 s». No toca ningún RPC. Verificado tras aplicar: 22 triggers y
+`bash qa/cloud/hlc01-cap-staging-probe.sh` 4/4. Banco local sin red: `bash qa/cloud/hlc01-cap-test.sh` (33/33). En los
+snapshots: al final de `supabase-staging.ddl` y en `supabase-groups-staging.ddl` §10. El procedimiento completo está en
+`docs/RUNBOOK-staging-ddl.md`.
 
 ## g16_04 — después del cutover no hay relevo: quien llega entra en la cuenta (2026-09-24)
 
