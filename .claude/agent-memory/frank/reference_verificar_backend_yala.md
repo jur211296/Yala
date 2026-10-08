@@ -78,6 +78,12 @@ ese día sí dio 0 de verdad. En staging `execute_sql` entra como `postgres` y e
 **2026-09-24, 3.ª sesión: staging SÍ contestó** (`execute_sql` como `postgres`, `apply_migration` escribe). El «no contesta»
 de la mañana era del conector, no permanente: vuelve a probar antes de heredarlo.
 
+**2026-10-08: sin ninguna vía de lectura.** El PAT de gestión (`~/Secrets/yala-supabase-mgmt/pat`) responde
+`{"message":"Invalid access token"}` a `GET /v1/projects`, y Jürgen lo había autorizado **solo para staging** (26-sep):
+aunque valiera, no sirve para medir producción. El conector `claude_ai_Supabase` de la sesión solo ofrecía
+`authenticate`. Medir producción exige que Jürgen reautentique el conector o dé un token de lectura: se pide en el
+ticket, sin bloquear la sesión.
+
 ## La vía que sí verifica: sandbox transaccional contra producción
 
 Postgres tiene **DDL transaccional**, así que `create or replace function` dentro de `begin … rollback`
