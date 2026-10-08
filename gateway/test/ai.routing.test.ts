@@ -20,7 +20,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import app from "../src/index";
 import type { Env } from "../src/env";
 import { issueSessionToken } from "../src/attest/session";
-import { ROUTES, routeFor, type ManagedRoute, type Route } from "../src/ai/routes";
+import { PREPARED_ROUTES, ROUTES, routeFor, type ManagedRoute, type Route } from "../src/ai/routes";
 import { TASKS, type TaskId } from "../src/ai/tasks";
 import { intentBody, photoReadBody, suggestionsBody } from "../bench/lib/appRequests";
 
@@ -400,6 +400,15 @@ describe("sin cabecera, solo OpenAI", () => {
     for (const task of Object.keys(TASKS) as TaskId[]) {
       const r = routeFor(task, false);
       if (r.mode === "managed") expect(r.provider, task).toBe("openai");
+    }
+  });
+
+  it("lo preparado y apagado (otro proveedor que ganó el banco) no se sirve: la fila activa de esa tarea es de OpenAI", () => {
+    expect(Object.keys(PREPARED_ROUTES).length).toBeGreaterThan(0);
+    for (const [task, prepared] of Object.entries(PREPARED_ROUTES) as [TaskId, ManagedRoute][]) {
+      expect(prepared.provider, task).not.toBe("openai");
+      const active = ROUTES[task];
+      expect(active.mode !== "passthrough" && active.provider, task).toBe("openai");
     }
   });
 

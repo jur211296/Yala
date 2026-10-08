@@ -256,14 +256,70 @@ export const ROUTES: Readonly<Record<TaskId, Route>> = {
       prompt: "Personal finance voice note. Write every amount with digits, for example 12.50, 56.20 or 1,250.",
     },
   },
-  "insights.cards": miniToday({ temperature: 0.4, responseFormat: "json_object", maxOutputTokens: 2048 }),
-  "insights.cashflow": miniToday({ temperature: 0.4, responseFormat: "json_object", maxOutputTokens: 1024 }),
-  "insights.deviation": miniToday({ temperature: 0.4, responseFormat: "json_object", maxOutputTokens: 1024 }),
-  "trends.summary": miniToday({ temperature: 0.4, responseFormat: "json_object", maxOutputTokens: 1024 }),
+  // Banco del 2026-10-07 (gateway/bench/results/2026-10-07/REPORT-insights-y-tendencias.md). Ningún juez llegó al acuerdo
+  // mínimo con la muestra a mano, así que deciden el criterio determinista (cero cifras inventadas, idioma, pantalla) y la
+  // lectura a mano de las respuestas.
+  // 90,6 % en 16 casos × 2 de 14 locales (mini: 56,3 %), cero cifras inventadas y una contradicción en 16 leídas; p95
+  // 9,4 s contra el corte de 20 s; 0,48 USD por 1 000 (mini: 1,37). Tope: p99 1009 tokens con razonamiento, ×2.
+  "insights.cards": {
+    mode: "managed",
+    provider: "openai",
+    model: "gpt-6-luna",
+    params: { reasoningEffort: "low", responseFormat: "json_object", maxOutputTokens: 2020 },
+    retries: 0,
+  },
+  // Flujo de caja y desviaciones: todos los candidatos aciertan el 100 % sin contar el idioma; con él, gpt-6-luna iguala o
+  // supera a mini (25 % y 21,4 %) por 3-4 veces menos (0,052 y 0,048 USD por 1 000). El idioma falla con todos porque el
+  // prompt de la app no lo pide: ticket insights-cashflow-and-deviation-prompts-do-not-ask-for-the-language. Tope: p99 51-56
+  // tokens; 256 da margen.
+  "insights.cashflow": {
+    mode: "managed",
+    provider: "openai",
+    model: "gpt-6-luna",
+    params: { reasoningEffort: "none", responseFormat: "json_object", maxOutputTokens: 256 },
+    retries: 0,
+  },
+  "insights.deviation": {
+    mode: "managed",
+    provider: "openai",
+    model: "gpt-6-luna",
+    params: { reasoningEffort: "none", responseFormat: "json_object", maxOutputTokens: 256 },
+    retries: 0,
+  },
+  // Tendencias: solo Gemini 3.8 Flash y gpt-6.1-sol sacan el 100 % (mini: 68,8 %; gpt-6-luna: 68,8 %). Gana Gemini, que no
+  // se puede encender todavía (ver PREPARED_ROUTES), así que sirve la mejor de OpenAI: primero calidad, aunque cueste más
+  // (4,49 USD por 1 000 frente a 0,60; la app guarda el resumen 24 h). p95 9,8 s. Tope: p99 510 tokens con razonamiento,
+  // ×2. gpt-6.1-sol no admite esfuerzo `none`.
+  "trends.summary": {
+    mode: "managed",
+    provider: "openai",
+    model: "gpt-6.1-sol",
+    params: { reasoningEffort: "low", responseFormat: "json_object", maxOutputTokens: 1020 },
+    retries: 0,
+  },
   // Solo las mandan versiones anteriores al 2026-10-03 o peticiones sin huella: salen byte a byte como siempre.
   // `gpt-4.1-mini` no tiene apagado anunciado (developers.openai.com/api/docs/deprecations, 2026-10-07).
   "insights.hero": PASS_MINI,
   "legacy.passthrough": PASS_MINI,
+};
+
+/**
+ * Filas que el banco eligió y todavía NO se pueden encender: son de otro proveedor y falta lo que pide el paso 7 de
+ * `ai-every-call-sends-its-task-and-passes-the-bench` (textos de permisos y consentimiento en los 16 idiomas, la
+ * política de privacidad web publicada, DPA y nivel de pago, la clave como secret del Worker y su `LEGACY_OVERRIDES` de
+ * OpenAI). No las lee ningún código: encender una = moverla a `ROUTES` y poner en `LEGACY_OVERRIDES` la fila de OpenAI
+ * que hoy está en `ROUTES`.
+ */
+export const PREPARED_ROUTES: Readonly<Partial<Record<TaskId, ManagedRoute>>> = {
+  // Tendencias, banco del 2026-10-07: 100 % como gpt-6.1-sol, a un tercio del precio (1,47 USD por 1 000; ~2,95 desde el
+  // 2027-01-01) y la mitad de latencia (p95 4,2 s). Hubo 429 y 503 en el banco. Apagado anunciado: sin comprobar.
+  "trends.summary": {
+    mode: "managed",
+    provider: "gemini",
+    model: "gemini-3.8-flash",
+    params: { temperature: 0.4, reasoningEffort: "low", responseFormat: "json_object", maxOutputTokens: 460 },
+    retries: 0,
+  },
 };
 
 /**
