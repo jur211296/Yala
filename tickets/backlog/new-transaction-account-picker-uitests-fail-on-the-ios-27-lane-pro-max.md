@@ -67,3 +67,10 @@ attributes vs PopUpButton». Así que no es del Pro Max: es del runtime iOS 27.0
 Gate de `ai-every-call-sends-its-task-and-passes-the-bench` (árbol sobre `2890d1353`, sin cambios en Panel, «Nuevo
 registro», selectores ni semilla), simulador `iPhone 17 Pro` de iOS 27.0: falla en lote (36 de 37 en verde) y otra vez
 aislado, con el centinela en 0 y el mismo «Automation type mismatch … PopUpButton».
+
+## 2026-10-08 (tarde) · otra vez en el gate, sobre `34f126415`
+
+Sesión `wire-decoder-accepts-non-finite-money` (toca el apply del pull, no el formulario de registro), `iPhone 17 Pro`
+iOS 27.0 `46287CFE`: `EdgeCasesUITests.test_extremeMinimumAmountSaves` falla en lote (con el centinela en 0) y aislado,
+con el mismo `Failed to tap Button … account_selector_row_` y el «Automation type mismatch … PopUpButton». Los otros 9
+casos de las tres suites del gate pasan.
