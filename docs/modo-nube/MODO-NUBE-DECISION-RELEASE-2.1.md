@@ -1,3 +1,13 @@
+---
+created: 2026-07-28
+updated: 2026-08-04
+tags: [modo-nube, decision, release, 2.1]
+---
+
+# Modo Nube — Decisión de release: todo en 2.1, encendido, sin escalonado
+
+> **SUPERSEDE [[MODO-NUBE-ESTRATEGIA-RELEASE]] por completo.** Ese documento describe dark shipping sobre trunk único con `cloudModeEnabled` apagado y publicación de 2.x con el código dormido. **Eso ya no es el plan.** Lo único que sobrevive de él son los **3 vectores de no-regresión** (migración de schema SwiftData · deploy de schema CloudKit · código compartido) y su checklist: siguen aplicando, porque un usuario de 2.1 que NO migre debe seguir funcionando igual que en 2.0.
+
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
 ## Índice (13 entradas)
@@ -20,16 +30,6 @@
 - `2026-07-30` [Paso 2 · EJECUTADO el 2026-07-30 — el flip y los 8 sitios de teardown](#paso-2--ejecutado-el-2026-07-30--el-flip-y-los-8-sitios-de-teardown)
 
 <!-- INDICE:fin -->
-
----
-created: 2026-07-28
-updated: 2026-08-04
-tags: [modo-nube, decision, release, 2.1]
----
-
-# Modo Nube — Decisión de release: todo en 2.1, encendido, sin escalonado
-
-> **SUPERSEDE [[MODO-NUBE-ESTRATEGIA-RELEASE]] por completo.** Ese documento describe dark shipping sobre trunk único con `cloudModeEnabled` apagado y publicación de 2.x con el código dormido. **Eso ya no es el plan.** Lo único que sobrevive de él son los **3 vectores de no-regresión** (migración de schema SwiftData · deploy de schema CloudKit · código compartido) y su checklist: siguen aplicando, porque un usuario de 2.1 que NO migre debe seguir funcionando igual que en 2.0.
 
 **Decisión del owner (2026-07-28), textual:** «todo lo que estamos montando en 2.0.5 será directamente release 2.1 con flag encendida y todo ON, ya no haremos escalonado. Todo de una, con pruebas en TestFlight primero. Todo en v1. Ya no aplacemos nada ni pensemos que subiremos una versión en dark.»
 

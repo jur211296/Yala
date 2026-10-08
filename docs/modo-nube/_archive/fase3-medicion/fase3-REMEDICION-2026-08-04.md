@@ -1,3 +1,12 @@
+---
+created: 2026-08-04
+updated: 2026-08-04
+tags: [modo-nube, grupos, fase3, medicion, chip-a1]
+status: active
+---
+
+# Fase 3 — re-medición completa contra HEAD (chip A1)
+
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
 ## Índice (36 entradas)
@@ -43,15 +52,6 @@
 - `—` [6.5 · Los tests híbridos — el hueco que el brief no tiene](#65--los-tests-hbridos--el-hueco-que-el-brief-no-tiene)
 
 <!-- INDICE:fin -->
-
----
-created: 2026-08-04
-updated: 2026-08-04
-tags: [modo-nube, grupos, fase3, medicion, chip-a1]
-status: active
----
-
-# Fase 3 — re-medición completa contra HEAD (chip A1)
 
 **Medido el 2026-08-04 contra `dbb0bab3`** (rama `2.0.5`, árbol limpio, `origin/2.0.5` sincronizado).
 Sustituye como fuente de coordenadas a `MODO-NUBE-FASE3-BRIEF.md` y a los 8 informes de esta carpeta,
