@@ -6508,3 +6508,21 @@
 
 /* Image entry failure: unreadable file, why and what to try */
 "image.entry.failure.unreadableFile.message" = "Il est peut-être vide, endommagé ou protégé par un mot de passe. Essaie une autre photo ou un autre PDF du reçu.";
+
+/* Account currency change: title of the confirmation when the account has no movements but has scheduled payments or favorites to convert. %@ = new currency code */
+"account.currencyChange.confirmTitleNoHistory" = "Changer la devise en %@ ?";
+
+/* Account currency change confirmation: pending inbox drafts converted with their own date's rate. %1$d = count, %2$@ = new currency code */
+"account.currencyChange.draftsLine" = "Brouillons en attente dans la boîte de réception : %1$d. Ils passent en %2$@ au taux de change de leur date.";
+
+/* Account currency change confirmation: header before the list of scheduled payments and favorites converted at today's rate. %@ = new currency code */
+"account.currencyChange.plansHeader" = "Paiements programmés et favoris qui passent en %@ au taux de change du jour :";
+
+/* Account currency change confirmation: one scheduled payment or favorite. %1$@ = its name, %2$@ = amount before, %3$@ = amount after */
+"account.currencyChange.planItem" = "• %1$@ : %2$@ → %3$@";
+
+/* Account currency change confirmation: how many more scheduled payments or favorites are converted beyond the ones listed. %d = count */
+"account.currencyChange.plansMore" = "et %d de plus";
+
+/* Account currency change confirmation: closing sentence when there are no movements to convert */
+"account.currencyChange.cannotUndo" = "Cette action est irréversible.";

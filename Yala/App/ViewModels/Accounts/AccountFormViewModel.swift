@@ -25,6 +25,21 @@ final class AccountFormViewModel {
     var existingNames: [String] = []
     private(set) var allTransactions: [TransactionItem] = []
 
+    /// Lo que no es historial y también cuelga de una cuenta: se convierte con ella al cambiar su
+    /// divisa (ticket `account-currency-change-leaves-scheduled-and-favorites-stale`).
+    private(set) var allScheduledPayments: [ScheduledPayment] = []
+    private(set) var allFavoritePayments: [FavoritePayment] = []
+    /// Solo los PENDIENTES: aprobados y rechazados guardan su propia divisa.
+    private(set) var pendingInboxDrafts: [InboxDraft] = []
+
+    /// Los borradores que esta conversión ya reexpresó.
+    ///
+    /// **A diferencia de una transacción, un borrador no guarda divisa**: no hay estado que diga «ya
+    /// está en la nueva». Sin esta marca, el re-chequeo de `saveAccount` justo después de convertir
+    /// los volvía a contar como pendientes y la cuenta no se guardaba nunca; y un segundo «Convertir»
+    /// los habría convertido dos veces.
+    private var reexpressedDraftIDs: Set<PersistentIdentifier> = []
+
     // MARK: - Form State
     var name: String = ""
     var selectedType: AccountType = .general
@@ -127,6 +142,10 @@ final class AccountFormViewModel {
     /// El último `fetch` de transacciones falló. No es lo mismo que no tener ninguna.
     private(set) var didFailToLoadTransactions: Bool = false
 
+    /// El último `fetch` de programados, favoritos o borradores falló. Bloquea igual que el de
+    /// transacciones: «no hay nada que convertir» y «no pude saberlo» llevan a decisiones opuestas.
+    private(set) var didFailToLoadPlans: Bool = false
+
     #if DEBUG
     /// Finge un fetch fallido para poder fijar con un test que el gate falla **cerrado**.
     ///
@@ -144,7 +163,29 @@ final class AccountFormViewModel {
         let rowCount: Int
         let fromCurrencyCode: String
         let toCurrencyCode: String
+        /// Borradores pendientes de la Bandeja que se convierten con la tasa de su fecha.
+        var draftCount: Int = 0
+        /// Pagos programados y favoritos con importe que pasan a la tasa de hoy.
+        var planCount: Int = 0
+        /// Los primeros de esos, con su importe antes y después, para enseñarlos en el aviso.
+        var planPreview: [PlanPreviewItem] = []
+
+        /// ¿Hay algo que el aviso tenga que enseñar? Sin nada, no se pregunta (decisión D6).
+        var hasAnythingToConvert: Bool { rowCount > 0 || draftCount > 0 || planCount > 0 }
     }
+
+    /// Un pago programado o favorito tal como lo enseña el aviso: «Alquiler: PEN 3.500 → USD 930».
+    struct PlanPreviewItem: Equatable {
+        let name: String
+        let fromCurrencyCode: String
+        let fromAmount: Double
+        let toAmount: Double
+        /// La tasa de hoy aún no era la exacta al pintar el aviso: el importe sale con «≈».
+        let isEstimate: Bool
+    }
+
+    /// Cuántos programados y favoritos se enseñan con su importe en el aviso. El resto se cuenta.
+    static let planPreviewLimit = 3
 
     // MARK: - Secondary Currency Suggestion
     var currencyToSuggestAsSecondary: CurrencyCode? = nil
@@ -211,11 +252,20 @@ final class AccountFormViewModel {
 
     // MARK: - Initialization
 
-    init(accountToEdit: Account?, existingNames: [String], allTransactions: [TransactionItem] = [])
-    {
+    init(
+        accountToEdit: Account?,
+        existingNames: [String],
+        allTransactions: [TransactionItem] = [],
+        scheduledPayments: [ScheduledPayment] = [],
+        favoritePayments: [FavoritePayment] = [],
+        pendingInboxDrafts: [InboxDraft] = []
+    ) {
         self.accountToEdit = accountToEdit
         self.existingNames = existingNames
         self.allTransactions = allTransactions
+        self.allScheduledPayments = scheduledPayments
+        self.allFavoritePayments = favoritePayments
+        self.pendingInboxDrafts = pendingInboxDrafts
         self.originalCurrencyCode = accountToEdit.map { normalizeCurrencyCode($0.currencyCode) }
 
         if let account = accountToEdit {
@@ -256,7 +306,33 @@ final class AccountFormViewModel {
     func setContext(_ context: ModelContext) {
         self.modelContext = context
         loadTransactions()
+        loadPlans()
         initializeBalanceIfNeeded()
+    }
+
+    /// Carga lo que se convierte con la cuenta además del historial.
+    ///
+    /// Se filtra por cuenta en memoria, como `accountTransactions`: un `#Predicate` sobre la
+    /// relación (`$0.account?.persistentModelID`) es justo la forma que SwiftData no garantiza, y
+    /// estas tablas son pequeñas.
+    func loadPlans() {
+        guard let context = modelContext else { return }
+        do {
+            allScheduledPayments = try context.fetch(FetchDescriptor<ScheduledPayment>())
+            allFavoritePayments = try context.fetch(FetchDescriptor<FavoritePayment>())
+            let pending = DraftStatus.pending.rawValue
+            pendingInboxDrafts = try context.fetch(
+                FetchDescriptor<InboxDraft>(predicate: #Predicate { $0.statusRaw == pending }))
+            didFailToLoadPlans = false
+        } catch {
+            #if DEBUG
+            print("AccountFormViewModel: Error loading plans: \(error)")
+            #endif
+            allScheduledPayments = []
+            allFavoritePayments = []
+            pendingInboxDrafts = []
+            didFailToLoadPlans = true
+        }
     }
 
     func loadTransactions() {
@@ -372,6 +448,47 @@ final class AccountFormViewModel {
         guard let account = accountToEdit else { return [] }
         return allTransactions.filter {
             $0.account?.persistentModelID == account.persistentModelID
+        }
+    }
+
+    /// Los pagos programados de la cuenta que se convierten con ella: los personales
+    /// (`AccountCurrencyPlanLogic.convertsScheduledPayment`) que no están ya en la divisa elegida.
+    var scheduledPendingReexpression: [ScheduledPayment] {
+        guard let account = accountToEdit else { return [] }
+        let target = normalizeCurrencyCode(selectedCurrency.rawValue)
+        return allScheduledPayments.filter {
+            $0.account?.persistentModelID == account.persistentModelID
+                && AccountCurrencyPlanLogic.convertsScheduledPayment(isGroupPayment: $0.isGroupPayment)
+                && normalizeCurrencyCode($0.currencyCode) != target
+        }
+    }
+
+    /// Los favoritos de la cuenta que no están ya en la divisa elegida. Un favorito sin divisa se lee
+    /// en la de la cuenta al abrir, que es la que usaba al precargarse.
+    var favoritesPendingReexpression: [FavoritePayment] {
+        guard let account = accountToEdit else { return [] }
+        let target = normalizeCurrencyCode(selectedCurrency.rawValue)
+        let fallback = originalCurrencyCode ?? target
+        return allFavoritePayments.filter {
+            $0.account?.persistentModelID == account.persistentModelID
+                && normalizeCurrencyCode($0.currencyCode ?? fallback) != target
+        }
+    }
+
+    /// Los borradores pendientes de la cuenta que se convierten con el historial (decisión D1).
+    var draftsPendingReexpression: [InboxDraft] {
+        guard let account = accountToEdit, isCurrencyChangeRequested else { return [] }
+        return pendingInboxDrafts.filter {
+            $0.account?.persistentModelID == account.persistentModelID
+                && !reexpressedDraftIDs.contains($0.persistentModelID)
+                && AccountCurrencyPlanLogic.convertsDraft(.init(
+                    isPending: $0.status == .pending,
+                    sourceType: $0.sourceType,
+                    hasGroupPointer: $0.splitExpenseID != nil
+                        || $0.splitSettlementID != nil
+                        || $0.splitGroupZoneID != nil,
+                    hasAmount: $0.amount != nil
+                ))
         }
     }
 
@@ -555,23 +672,29 @@ final class AccountFormViewModel {
 
         // Sin saber qué cuelga de la cuenta no se puede decidir nada, y la lista vacía de un fetch
         // fallido se lee igual que una cuenta sin movimientos. Se bloquea.
-        guard !didFailToLoadTransactions else {
+        guard !didFailToLoadTransactions, !didFailToLoadPlans else {
             isShowingCurrencyChangeBlocked = true
             return false
         }
 
         switch currencyChangeVerdict {
-        case .free:
-            // Sin movimientos no hay histórico que desemparejar: la divisa se cambia y ya está.
-            return true
-
         case .blocked:
             isShowingCurrencyChangeBlocked = true
             return false
 
-        case .needsConversion:
-            let pending = rowsPendingReexpression
-            guard !pending.isEmpty else { return true }
+        case .free, .needsConversion:
+            // **`.free` ya no es «cambia sin preguntar»**: una cuenta sin movimientos puede tener un
+            // alquiler programado o un favorito, y sus importes también se reescriben. Se pregunta en
+            // cuanto hay ALGO que convertir; sin nada, la divisa se cambia como siempre (D6).
+            let pending = makePendingConversion()
+            guard pending.hasAnythingToConvert else { return true }
+            // El saldo tecleado solo se descarta cuando hay MOVIMIENTOS que reexpresar (lo de abajo).
+            // Sin ellos —solo programados, favoritos o borradores— no hay nada contra lo que compararlo
+            // y borrarlo perdía el saldo inicial que la persona acababa de escribir.
+            guard pending.rowCount > 0 else {
+                pendingCurrencyConversion = pending
+                return false
+            }
             // **El importe tecleado en la sección de saldo se descarta al pedir la conversión.**
             // `balanceText` está en la divisa VIEJA —lo escribió el usuario, o lo plantó
             // `adjustmentModeChanged` desde `existingInitialBalance`— mientras que `currentBalance` y
@@ -581,13 +704,71 @@ final class AccountFormViewModel {
             // el saldo inicial multiplicado por el tipo de cambio. La sección va deshabilitada en la
             // vista mientras hay cambio de divisa pendiente; esto es la mitad que no depende de la UI.
             balanceText = ""
-            pendingCurrencyConversion = PendingCurrencyConversion(
-                rowCount: pending.count,
-                fromCurrencyCode: originalCurrencyCode ?? "",
-                toCurrencyCode: normalizeCurrencyCode(selectedCurrency.rawValue)
-            )
+            pendingCurrencyConversion = pending
             return false
         }
+    }
+
+    /// Lo que la confirmación va a enseñar: cuántos movimientos y borradores, y los programados y
+    /// favoritos con su importe antes y después.
+    ///
+    /// Los importes «después» salen de `AccountCurrencyMigrationService.convertToday`, la MISMA
+    /// función que los escribe al confirmar: si el aviso calculara por otro camino, la persona
+    /// confirmaría una cifra y se guardaría otra. Si la tasa de hoy aún no es la exacta, el importe
+    /// sale con «≈» y la conversión real espera a traerla (decisión D2).
+    func makePendingConversion(now: Date = .now) -> PendingCurrencyConversion {
+        let target = normalizeCurrencyCode(selectedCurrency.rawValue)
+        let source = originalCurrencyCode ?? target
+
+        let scheduled = scheduledPendingReexpression.sorted {
+            $0.name.localizedStandardCompare($1.name) == .orderedAscending
+        }
+        let favorites = favoritesPendingReexpression
+            .filter { $0.amount != nil }
+            .sorted { $0.displayOrder < $1.displayOrder }
+        // El recuento no depende del contexto: sin él no habría vista previa, pero la pregunta tiene
+        // que salir igual — un recuento a cero cambiaría la divisa sin convertir nada.
+        let planCount = scheduled.count + favorites.count
+
+        var preview: [PlanPreviewItem] = []
+        if let context = modelContext ?? accountToEdit?.modelContext {
+            for payment in scheduled {
+                guard preview.count < Self.planPreviewLimit else { break }
+                let from = normalizeCurrencyCode(payment.currencyCode)
+                let result = AccountCurrencyMigrationService.convertToday(
+                    payment.amount, from: from, to: target, context: context, now: now)
+                preview.append(PlanPreviewItem(
+                    name: payment.name,
+                    fromCurrencyCode: from,
+                    fromAmount: payment.amount,
+                    toAmount: (result.to as NSDecimalNumber).doubleValue,
+                    isEstimate: !result.isExact
+                ))
+            }
+            for favorite in favorites {
+                guard preview.count < Self.planPreviewLimit else { break }
+                guard let amount = favorite.amount else { continue }
+                let from = normalizeCurrencyCode(favorite.currencyCode ?? source)
+                let result = AccountCurrencyMigrationService.convertToday(
+                    amount, from: from, to: target, context: context, now: now)
+                preview.append(PlanPreviewItem(
+                    name: favorite.name,
+                    fromCurrencyCode: from,
+                    fromAmount: amount,
+                    toAmount: (result.to as NSDecimalNumber).doubleValue,
+                    isEstimate: !result.isExact
+                ))
+            }
+        }
+
+        return PendingCurrencyConversion(
+            rowCount: rowsPendingReexpression.count,
+            fromCurrencyCode: source,
+            toCurrencyCode: target,
+            draftCount: draftsPendingReexpression.count,
+            planCount: planCount,
+            planPreview: preview
+        )
     }
 
     /// El usuario ha confirmado: refresca las tasas, reexpresa el histórico y guarda la cuenta.
@@ -620,6 +801,7 @@ final class AccountFormViewModel {
 
         let ratesReady = await AccountCurrencyMigrationService.prepareRates(
             rows: rowsPendingReexpression,
+            extra: planRateNeeds(),
             to: pending.toCurrencyCode,
             context: context
         )
@@ -638,19 +820,81 @@ final class AccountFormViewModel {
         // divisa anterior, y el gate volvería a leer el mismo array congelado y la daría por
         // convertida. Es lo que ya hace `CurrencyChangeService`, que fetchea fresco justo antes.
         loadTransactions()
-        guard !didFailToLoadTransactions else {
+        loadPlans()
+        guard !didFailToLoadTransactions, !didFailToLoadPlans else {
             isShowingSaveError = true
             cancelCurrencyConversion()
             return false
         }
+
+        // **El veredicto se vuelve a pedir ANTES de convertir, no solo en `saveAccount`.** En la
+        // ventana del `await` el sync puede traer una transferencia o un gasto de grupo de esta
+        // cuenta: el gate de `saveAccount` lo bloquearía, pero DESPUÉS de haber reescrito en memoria
+        // historial, programados y borradores, que el siguiente guardado (o el autosave) persistiría
+        // bajo la divisa vieja. Un borrador no lleva etiqueta de divisa: ese daño sería invisible.
+        if case .blocked = currencyChangeVerdict {
+            isShowingCurrencyChangeBlocked = true
+            return false
+        }
+
+        // **Se vuelve a medir la cobertura con lo refetcheado**: en la ventana del `await` el sync
+        // pudo traer un programado en una tercera divisa o un borrador de otra fecha, y convertirlo
+        // sin su tasa lo sellaría con la tabla estática. Sin red no hay nada que esperar: si falta,
+        // no se convierte nada, como el historial (D2).
+        guard AccountCurrencyMigrationService.missingRateDates(
+            rows: rowsPendingReexpression,
+            extra: planRateNeeds(),
+            to: pending.toCurrencyCode,
+            context: context
+        ).isEmpty else {
+            isShowingCurrencyRatesUnavailable = true
+            cancelCurrencyConversion()
+            return false
+        }
+
+        // Los borradores y los programados se leen ANTES de convertir el historial: sus filtros
+        // comparan contra la divisa elegida, y no cambian con él, pero así el orden no depende de eso.
+        let drafts = draftsPendingReexpression
+        let scheduled = scheduledPendingReexpression
+        let favorites = favoritesPendingReexpression
+        let source = originalCurrencyCode ?? pending.fromCurrencyCode
 
         AccountCurrencyMigrationService.convertHistory(
             rows: rowsPendingReexpression,
             to: pending.toCurrencyCode,
             context: context
         )
+        AccountCurrencyMigrationService.convertPendingDrafts(
+            drafts, from: source, to: pending.toCurrencyCode, context: context)
+        reexpressedDraftIDs.formUnion(drafts.map(\.persistentModelID))
+        AccountCurrencyMigrationService.convertPlans(
+            scheduled: scheduled,
+            favorites: favorites,
+            fallbackSourceCode: source,
+            to: pending.toCurrencyCode,
+            context: context
+        )
 
         return saveAccount(context: context)
+    }
+
+    /// Las fechas y divisas que piden los borradores (su fecha, en la divisa de la cuenta) y los
+    /// programados y favoritos (hoy, en su divisa).
+    private func planRateNeeds() -> AccountCurrencyMigrationService.RateNeeds {
+        var needs = AccountCurrencyMigrationService.RateNeeds()
+        let source = originalCurrencyCode ?? normalizeCurrencyCode(selectedCurrency.rawValue)
+        let drafts = draftsPendingReexpression
+        if !drafts.isEmpty {
+            needs.currencies.insert(source)
+            for draft in drafts { needs.dates.insert(draft.date ?? draft.createdAt) }
+        }
+        for payment in scheduledPendingReexpression {
+            needs.currencies.insert(normalizeCurrencyCode(payment.currencyCode))
+        }
+        for favorite in favoritesPendingReexpression where favorite.amount != nil {
+            needs.currencies.insert(normalizeCurrencyCode(favorite.currencyCode ?? source))
+        }
+        return needs
     }
 
     /// Descarta el cambio de divisa y deja el formulario como estaba al abrirlo.

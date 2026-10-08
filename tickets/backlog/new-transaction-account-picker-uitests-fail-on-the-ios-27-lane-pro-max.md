@@ -74,3 +74,11 @@ Sesión `wire-decoder-accepts-non-finite-money` (toca el apply del pull, no el f
 iOS 27.0 `46287CFE`: `EdgeCasesUITests.test_extremeMinimumAmountSaves` falla en lote (con el centinela en 0) y aislado,
 con el mismo `Failed to tap Button … account_selector_row_` y el «Automation type mismatch … PopUpButton». Los otros 9
 casos de las tres suites del gate pasan.
+
+## 2026-10-08 (mediodía) · los tres, bisecado contra el árbol base
+
+Gate de `account-currency-change-leaves-scheduled-and-favorites-stale` (sobre `2ddb5d28e`), `iPhone 17 Pro` iOS 27.0
+`46287CFE`, centinela en 0: fallan **los tres** (`test_extremeMinimumAmountSaves`, `test_createTransaction`,
+`test_saveAsFavoriteFromTransactionAppearsInList`) con «No se montó AccountSelectorSheet con filas» / `account_selector_row_`
+y el «Automation type mismatch … PopUpButton». Como ese diff toca `NewTransactionView`, se bisecó: con
+`NewTransactionView.swift` y `NewTransactionViewModel.swift` devueltos a `HEAD`, los tres fallan igual. No es de esa rama.

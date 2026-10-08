@@ -210,9 +210,7 @@ struct AccountFormView: View {
             }
         )
         .alert(
-            viewModel.pendingCurrencyConversion.map {
-                L10n.Account.CurrencyChange.confirmTitle($0.rowCount)
-            } ?? "",
+            viewModel.pendingCurrencyConversion.map { Self.currencyConversionTitle($0) } ?? "",
             isPresented: Binding(
                 get: { viewModel.pendingCurrencyConversion != nil },
                 // **El setter solo cierra el alert; NO revierte la divisa.** En iOS un alert no tiene
@@ -239,10 +237,7 @@ struct AccountFormView: View {
             },
             message: {
                 if let pending = viewModel.pendingCurrencyConversion {
-                    Text(L10n.Account.CurrencyChange.confirmMessage(
-                        pending.fromCurrencyCode,
-                        pending.toCurrencyCode
-                    ))
+                    Text(Self.currencyConversionMessage(pending))
                 }
             }
         )
@@ -276,6 +271,65 @@ struct AccountFormView: View {
         // A media conversión el histórico está partido entre dos divisas: cerrar el formulario ahí
         // dejaría la cuenta en un estado que ninguna pantalla sabe leer.
         .interactiveDismissDisabled(viewModel.isConvertingCurrency)
+    }
+
+    // MARK: - Texto del aviso de conversión
+
+    /// Con movimientos, el título de siempre («¿Convertir N movimientos?»); sin ellos —solo
+    /// programados, favoritos o borradores—, «¿Cambiar la divisa a USD?».
+    static func currencyConversionTitle(
+        _ pending: AccountFormViewModel.PendingCurrencyConversion
+    ) -> String {
+        pending.rowCount > 0
+            ? L10n.Account.CurrencyChange.confirmTitle(pending.rowCount)
+            : L10n.Account.CurrencyChange.confirmTitleNoHistory(pending.toCurrencyCode)
+    }
+
+    /// El cuerpo del aviso: qué se convierte y con qué tasa (decisión D7).
+    ///
+    /// Va en un solo `Text` con saltos de línea: es el `message` de un `.alert`, y ahí no caben
+    /// vistas propias. Los importes se rotulan con el código ISO, no con el símbolo: el aviso pone
+    /// dos divisas una al lado de la otra y «$» no dice cuál de las dos es.
+    static func currencyConversionMessage(
+        _ pending: AccountFormViewModel.PendingCurrencyConversion
+    ) -> String {
+        var paragraphs: [String] = []
+        if pending.rowCount > 0 {
+            paragraphs.append(L10n.Account.CurrencyChange.confirmMessage(
+                pending.fromCurrencyCode, pending.toCurrencyCode))
+        }
+        if pending.draftCount > 0 {
+            paragraphs.append(L10n.Account.CurrencyChange.draftsLine(
+                pending.draftCount, pending.toCurrencyCode))
+        }
+        if pending.planCount > 0 {
+            var lines = [L10n.Account.CurrencyChange.plansHeader(pending.toCurrencyCode)]
+            for item in pending.planPreview {
+                lines.append(L10n.Account.CurrencyChange.planItem(
+                    item.name,
+                    formatPlanAmount(item.fromAmount, currencyCode: item.fromCurrencyCode, isEstimate: false),
+                    formatPlanAmount(item.toAmount, currencyCode: pending.toCurrencyCode, isEstimate: item.isEstimate)
+                ))
+            }
+            let more = pending.planCount - pending.planPreview.count
+            if more > 0 { lines.append(L10n.Account.CurrencyChange.plansMore(more)) }
+            paragraphs.append(lines.joined(separator: "\n"))
+        }
+        // El «no se puede deshacer» ya va dentro del texto de los movimientos; sin ellos, se dice aparte.
+        if pending.rowCount == 0 {
+            paragraphs.append(L10n.Account.CurrencyChange.cannotUndo)
+        }
+        return paragraphs.joined(separator: "\n\n")
+    }
+
+    private static func formatPlanAmount(_ value: Double, currencyCode: String, isEstimate: Bool) -> String {
+        CurrencyFormattingHelper.currency(
+            value,
+            decimals: AccountCurrencyPlanLogic.fractionDigits(for: currencyCode),
+            identifier: currencyCode,
+            forceSign: false,
+            isEstimate: isEstimate
+        )
     }
 
     /// Tapa la pantalla mientras se reexpresa el histórico. Espeja el overlay del cambio de divisa

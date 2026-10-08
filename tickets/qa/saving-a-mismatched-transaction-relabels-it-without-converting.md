@@ -1,10 +1,10 @@
 ---
 id: saving-a-mismatched-transaction-relabels-it-without-converting
-status: backlog
+status: qa
 priority: medium
 area: "transactions, currency, fx"
 created: 2026-09-08
-updated: 2026-10-07
+updated: 2026-10-08
 source: barrido de chat-draft-stamps-its-own-currency-not-the-account (2026-09-08)
 ---
 
@@ -47,9 +47,9 @@ perdiendo dinero.
 
 ## Criterio de hecho (AC)
 
-- [ ] Decidido qué hace Guardar ante una fila cuya divisa no es la de su cuenta: convertir el
+- [x] Decidido qué hace Guardar ante una fila cuya divisa no es la de su cuenta: convertir el
       importe, avisar, o dejarlo como está.
-- [ ] Test con una transacción desemparejada de partida que fije la decisión.
+- [x] Test con una transacción desemparejada de partida que fije la decisión.
 
 ## Relacionados
 
@@ -71,3 +71,32 @@ cuya divisa no es la de su cuenta». La parte de la decisión que le toca es **�
 sesión, por confirmar antes de implementar: una transacción ya guardada no se reetiqueta ni se re-expresa al darle a
 Guardar sin cambios; conserva su importe y su divisa. Lo que hoy hace Guardar (reetiquetar con la divisa de la cuenta)
 es justo lo que la decisión prohíbe.
+
+**Confirmado por Jürgen el 2026-10-08 (04:00 Lima):** el historial se queda como está. La lectura de arriba —Guardar sin
+cambios conserva importe y divisa— queda confirmada.
+
+## Lo que se hizo (2026-10-08)
+
+**Para la persona:** un movimiento de 50 USD dentro de una cuenta en soles se abre enseñando «$ 50» (antes «S/ 50») y,
+guardado sin tocar nada, sigue siendo 50 USD. Si cambia el importe a 60, se guarda 60 USD: la divisa que la pantalla le
+enseña. Si elige otra cuenta, manda la divisa de esa cuenta, como siempre (mover de cuenta es
+`bulk-update-account-leaves-converted-amount-stale`).
+
+**Código:** `NewTransactionViewModel.amountCurrencyCode` (la de la transacción al editar sin cambiar de cuenta; si no,
+la de la cuenta) decide el símbolo del importe, la calculadora de split, la pantalla de éxito y lo que se guarda,
+incluida la conversión a la divisa preferida. Los atajos «guardar como favorito / programado» siguen con la divisa de
+la cuenta: no se tocó lo adyacente.
+
+**Tests:** `MismatchedTransactionSaveTests` (4). Control rojo: con el guardado viejo (divisa de la cuenta) caen los dos
+casos de la fila desemparejada.
+
+## Device-QA (iPhone, ~2 min, solo si tienes la fila)
+
+Hoy ninguna ruta de la app CREA una fila desemparejada (el chat se cerró en septiembre y el cambio de divisa de cuenta
+convierte), y ningún seed la siembra. Así que esto solo se puede mirar con una fila vieja: un movimiento de antes de
+septiembre en una cuenta cuya divisa cambiaste, o uno que llegó por el chat antiguo. Si no tienes ninguna, el ticket se
+cierra con los tests (`MismatchedTransactionSaveTests`).
+
+1. Abre ese movimiento: el importe sale con el símbolo de SU divisa (p. ej. «$ 50» en una cuenta en soles).
+2. Guardar sin tocar nada › en Registros el importe y su símbolo no cambian.
+3. Ábrelo otra vez, cambia el importe › Guardar: queda con el símbolo que enseñaba la pantalla.

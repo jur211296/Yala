@@ -4,7 +4,7 @@ status: backlog
 priority: medium
 area: "cloudsync, accounts, currency, fx"
 created: 2026-09-09
-updated: 2026-10-07
+updated: 2026-10-08
 source: AC nº4 de changing-an-account-currency-orphans-its-whole-history (2026-09-09)
 ---
 
@@ -98,3 +98,8 @@ cuando la divisa de una cuenta cambia y sus transacciones locales no coinciden (
 que le toca es **«el historial no se toca»**: el receptor no re-expresa por su cuenta el histórico local. Lectura de esta
 sesión, por confirmar antes de implementar. Los pagos programados y favoritos que el emisor convierta viajan como filas
 convertidas. Siguen abiertos los AC 2 y 3 (medir la ventana por orden de llegada y el test con receptor con histórico).
+
+**2026-10-08 — lo que ya quedó hecho en el EMISOR** (PR de `account-currency-change-leaves-scheduled-and-favorites-stale`):
+el teléfono que cambia la divisa convierte, en el mismo guardado, historial (tasa de su fecha), borradores pendientes
+(tasa de su fecha), pagos programados personales y favoritos (tasa de hoy), y el aviso lo enumera antes. Este ticket
+sigue abierto por el RECEPTOR: el applier de `accounts` escribe la divisa nueva sin mirar lo que el otro teléfono tiene.

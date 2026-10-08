@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "qa, gate"
 created: 2026-09-23
-updated: 2026-09-23
+updated: 2026-10-08
 source: "cierre de `dangling-ref-repair-is-lost-when-its-row-cannot-be-read` (2026-09-23), medido al commitear"
 ---
 
@@ -36,3 +36,9 @@ huella mientras forme parte de un rename en el índice (lo que se sella no descr
 
 - [ ] Mover un rename entre índice y árbol no cambia la huella.
 - [ ] El lado borrado de un rename aparece en la huella.
+
+## 2026-10-08 · otra vez, en un commit con tickets movidos
+
+`account-currency-change-leaves-scheduled-and-favorites-stale`: dos tickets movidos `backlog/` → `qa/` con `git mv`; tras
+el `git add`, el hook bloqueó el commit. Con `diff.renames=false` la huella calculada era idéntica a la sellada (medido),
+así que el disco no había cambiado. Se re-selló sobre el mismo contenido.
