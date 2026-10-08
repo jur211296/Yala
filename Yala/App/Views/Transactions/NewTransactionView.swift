@@ -850,7 +850,7 @@ struct NewTransactionView: View {
     /// Currency display for amount field - respects user preference (code vs symbol)
     private var currencySymbol: String? {
         guard viewModel.effectiveAccount != nil else { return nil }
-        return appPreferences.currencyIdentifier(for: viewModel.effectiveCurrencyCode)
+        return appPreferences.currencyIdentifier(for: viewModel.amountCurrencyCode)
     }
 
     /// Exchange rate chip showing the converted amount and rate
@@ -1013,7 +1013,7 @@ struct NewTransactionView: View {
     private var splitCalculatorSheetContent: some View {
         SplitCalculatorSheet(
             currencySymbol: viewModel.effectiveAccount != nil
-                ? CurrencyCode(rawValue: viewModel.effectiveCurrencyCode)?.symbol ?? viewModel.effectiveCurrencyCode
+                ? CurrencyCode(rawValue: viewModel.amountCurrencyCode)?.symbol ?? viewModel.amountCurrencyCode
                 : nil,
             fieldState: splitFieldState,
             onUseSplit: { amount, splitType, totalAmount, myValue, divisor in
@@ -1465,7 +1465,7 @@ struct NewTransactionView: View {
             accountColorHex: account?.colorHex ?? AppConstants.defaultColorHex,
             note: viewModel.note,
             amount: Decimal(viewModel.amount),
-            currencyCode: viewModel.effectiveCurrencyCode,
+            currencyCode: viewModel.amountCurrencyCode,
             subcategoryName: viewModel.selectedSubcategory?.name,
             subcategoryColorHex: viewModel.selectedSubcategory?.colorHex,
             categoryName: viewModel.selectedSubcategory?.safeCategory.name,

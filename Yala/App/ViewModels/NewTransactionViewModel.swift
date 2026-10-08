@@ -171,6 +171,27 @@ final class NewTransactionViewModel {
         return currencyCode
     }
 
+    /// La divisa en la que está el IMPORTE que el formulario enseña y guarda.
+    ///
+    /// **Al editar sin cambiar de cuenta es la de la transacción, no la de la cuenta.** Una fila
+    /// desemparejada —50 USD dentro de una cuenta en soles, que dejaba un cambio de divisa de cuenta
+    /// o el chat antiguo— se pintaba «S/ 50» y se guardaba como 50 PEN: el número se quedaba y la
+    /// divisa cambiaba, sin convertir (ticket `saving-a-mismatched-transaction-relabels-it-without-converting`).
+    /// Ahora se pinta, se guarda y se convierte a la preferida en la divisa en la que está. Si la
+    /// persona elige otra cuenta, o crea un movimiento, manda la cuenta, como siempre: mover una fila
+    /// de cuenta es otro problema (`bulk-update-account-leaves-converted-amount-stale`).
+    ///
+    /// Las transferencias no entran: cada pata vive en su cuenta y su divisa la fija la cuenta.
+    var amountCurrencyCode: String {
+        if !isTransfer,
+           let editing = editingTransaction,
+           let account = selectedAccount,
+           editing.account?.persistentModelID == account.persistentModelID {
+            return normalizeCurrencyCode(editing.currencyCode)
+        }
+        return effectiveCurrencyCode
+    }
+
     // MARK: - Context Setup
 
     func setContext(_ context: ModelContext) {
@@ -601,12 +622,15 @@ final class NewTransactionViewModel {
 
         let finalAmount = transactionType.isNegative ? -amount : amount
         let preferredCode = CurrencyDefaults.currentPreferred
+        // Se lee ANTES de tocar `editingTransaction`: es la divisa en la que la pantalla enseñaba el
+        // importe, y es la que se guarda.
+        let stampedCurrency = amountCurrencyCode
 
         // `convertChecked`: el flujo principal de la app PERSISTE este número. `convert` tira la
         // calidad de la tasa, así que una conversión aproximada nacía sellada como definitiva.
         let outcome = CurrencyConverter.shared.convertChecked(
             Decimal(finalAmount),
-            from: account.currencyCode,
+            from: stampedCurrency,
             to: preferredCode,
             on: transactionDate,
             context: context
@@ -638,7 +662,7 @@ final class NewTransactionViewModel {
             transaction = existing
             transaction.date = transactionDate
             transaction.amount = finalAmount
-            transaction.currencyCode = account.currencyCode
+            transaction.currencyCode = stampedCurrency
             transaction.note = note.isEmpty ? nil : note
             transaction.category = subcategory.safeCategory
             transaction.subcategory = subcategory
@@ -655,7 +679,7 @@ final class NewTransactionViewModel {
             transaction = TransactionItem(
                 date: transactionDate,
                 amount: finalAmount,
-                currencyCode: account.currencyCode,
+                currencyCode: stampedCurrency,
                 note: note.isEmpty ? nil : note,
                 category: subcategory.category,
                 subcategory: subcategory,

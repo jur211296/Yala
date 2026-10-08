@@ -6519,3 +6519,21 @@
 
 /* Image entry failure: unreadable file, why and what to try */
 "image.entry.failure.unreadableFile.message" = "空、破損、またはパスワードで保護されている可能性があります。レシートの別の写真かPDFでお試しください。";
+
+/* Account currency change: title of the confirmation when the account has no movements but has scheduled payments or favorites to convert. %@ = new currency code */
+"account.currencyChange.confirmTitleNoHistory" = "通貨を%@に変更しますか？";
+
+/* Account currency change confirmation: pending inbox drafts converted with their own date's rate. %1$d = count, %2$@ = new currency code */
+"account.currencyChange.draftsLine" = "受信箱の保留中の下書き：%1$d件。それぞれの日付の為替レートで%2$@に換算されます。";
+
+/* Account currency change confirmation: header before the list of scheduled payments and favorites converted at today's rate. %@ = new currency code */
+"account.currencyChange.plansHeader" = "今日の為替レートで%@に換算される予定支払いとお気に入り：";
+
+/* Account currency change confirmation: one scheduled payment or favorite. %1$@ = its name, %2$@ = amount before, %3$@ = amount after */
+"account.currencyChange.planItem" = "• %1$@：%2$@ → %3$@";
+
+/* Account currency change confirmation: how many more scheduled payments or favorites are converted beyond the ones listed. %d = count */
+"account.currencyChange.plansMore" = "ほか%d件";
+
+/* Account currency change confirmation: closing sentence when there are no movements to convert */
+"account.currencyChange.cannotUndo" = "この操作は取り消せません。";

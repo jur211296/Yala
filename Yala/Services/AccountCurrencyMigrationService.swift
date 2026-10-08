@@ -66,14 +66,22 @@ enum AccountCurrencyMigrationService {
     /// desemparejada puede tener filas en una tercera divisa —caso que `convertHistory` soporta a
     /// propósito— y pedir cobertura solo del par daría por cubierta una fecha que a esa tercera le
     /// falta.
+    ///
+    /// **`extra` cubre lo que no es historial** (ticket
+    /// `account-currency-change-leaves-scheduled-and-favorites-stale`): las fechas de los borradores
+    /// pendientes y las divisas de los programados y favoritos, que se convierten con la tasa de HOY.
+    /// Hoy entra siempre que haya algo que pedir, así que una cuenta sin movimientos pero con un
+    /// alquiler programado también exige la fila de hoy antes de tocar nada — la misma regla
+    /// todo-o-nada que el historial (decisión D2).
     static func prepareRates(
         rows: [TransactionItem],
+        extra: RateNeeds = .none,
         to newCurrencyCode: String,
         context: ModelContext
     ) async -> Bool {
-        guard !rows.isEmpty else { return true }
+        guard !rows.isEmpty || !extra.isEmpty else { return true }
 
-        let missing = missingRateDates(rows: rows, to: newCurrencyCode, context: context)
+        let missing = missingRateDates(rows: rows, extra: extra, to: newCurrencyCode, context: context)
         if missing.isEmpty { return true }
 
         _ = await ExchangeRateService.shared.fetchRates(for: missing, context: context)
@@ -87,7 +95,18 @@ enum AccountCurrencyMigrationService {
         // las peticiones salieron bien, no si el proveedor trajo las divisas pedidas: los dos fallos
         // llevan al mismo sitio —convertir con la tabla estática— pero solo uno se ve en el `catch`.
         // La pregunta que de verdad decide es la misma que decide la calidad de la conversión.
-        return missingRateDates(rows: rows, to: newCurrencyCode, context: context).isEmpty
+        return missingRateDates(rows: rows, extra: extra, to: newCurrencyCode, context: context).isEmpty
+    }
+
+    /// Lo que la conversión necesita además de las filas del historial.
+    nonisolated struct RateNeeds: Equatable, Sendable {
+        /// Fechas propias que no son de una `TransactionItem` (los borradores pendientes).
+        var dates: Set<Date> = []
+        /// Divisas de origen de esas fechas y de lo que se convierte con la tasa de hoy.
+        var currencies: Set<String> = []
+
+        static let none = RateNeeds()
+        var isEmpty: Bool { dates.isEmpty && currencies.isEmpty }
     }
 
     /// Las fechas a las que les falta alguna de las divisas en juego. **No toca la red.**
@@ -103,18 +122,21 @@ enum AccountCurrencyMigrationService {
     /// falta.
     static func missingRateDates(
         rows: [TransactionItem],
+        extra: RateNeeds = .none,
         to newCurrencyCode: String,
         context: ModelContext
     ) -> [Date] {
-        guard !rows.isEmpty else { return [] }
+        guard !rows.isEmpty || !extra.isEmpty else { return [] }
 
         var needed: Set<String> = [normalizeCurrencyCode(newCurrencyCode)]
         for row in rows { needed.insert(normalizeCurrencyCode(row.currencyCode)) }
+        for code in extra.currencies { needed.insert(normalizeCurrencyCode(code)) }
 
         // Hoy entra siempre, aunque el histórico acabe antes: es la tasa con la que el resto de la
         // app pinta el saldo vivo, y dejarla fuera haría que la cuenta recién convertida se leyera
-        // con una tasa más vieja que la que acaba de sellar cada fila.
-        let wanted = Set(rows.map(\.date)).union([Date.now])
+        // con una tasa más vieja que la que acaba de sellar cada fila. Y es la tasa con la que se
+        // convierten los programados y los favoritos.
+        let wanted = Set(rows.map(\.date)).union(extra.dates).union([Date.now])
         return ExchangeRateService.shared.uncoveredDates(
             among: wanted, needing: needed, context: context)
     }
@@ -182,6 +204,139 @@ enum AccountCurrencyMigrationService {
         print("AccountCurrencyMigrationService: reexpresadas \(converted) filas a \(target) (\(approximate) con tasa aproximada)")
         #endif
 
+        return Outcome(convertedCount: converted, approximateCount: approximate)
+    }
+
+    // MARK: - Lo que no es historial
+
+    /// Un importe convertido con la tasa de HOY, para enseñarlo en el aviso y para escribirlo.
+    ///
+    /// Una sola función para los dos usos a propósito: si el aviso calculara su número por un camino
+    /// y la conversión por otro, la persona confirmaría una cifra y se guardaría otra.
+    struct TodayConversion: Equatable, Sendable {
+        let from: Decimal
+        let to: Decimal
+        /// La tasa de hoy era la exacta. `false` = arrastrada de otro día o de la tabla estática.
+        let isExact: Bool
+    }
+
+    /// Convierte `amount` de `source` a `target` con la tasa de hoy y lo redondea a los decimales de
+    /// `target` (decisión D5). Misma divisa: el importe tal cual, exacto.
+    static func convertToday(
+        _ amount: Double,
+        from source: String,
+        to target: String,
+        context: ModelContext,
+        now: Date = .now
+    ) -> TodayConversion {
+        let from = normalizeCurrencyCode(source)
+        let to = normalizeCurrencyCode(target)
+        let original = Decimal(amount)
+        guard from != to else {
+            return TodayConversion(from: original, to: original, isExact: true)
+        }
+        let outcome = CurrencyConverter.shared.convertChecked(
+            original, from: from, to: to, on: now, context: context)
+        return TodayConversion(
+            from: original,
+            to: AccountCurrencyPlanLogic.rounded(outcome.amount, to: to),
+            isExact: outcome.quality.isExact
+        )
+    }
+
+    /// Pasa los pagos programados y los favoritos de la cuenta a `newCurrencyCode` con la tasa de hoy.
+    ///
+    /// **El origen es la divisa de CADA uno, no la vieja de la cuenta** —el mismo criterio que
+    /// `convertHistory`—: un programado que ya venía desemparejado se convierte desde la divisa en la
+    /// que de verdad está. Un favorito sin divisa (los antiguos) se lee en `fallbackSourceCode`, la de
+    /// la cuenta al abrir el formulario, que es la que usaba al precargarse.
+    ///
+    /// Qué programados entran lo decide el llamador con `AccountCurrencyPlanLogic`; aquí no se vuelve
+    /// a mirar. No llama a `context.save()`: va en el mismo guardado que la cuenta.
+    @discardableResult
+    static func convertPlans(
+        scheduled: [ScheduledPayment],
+        favorites: [FavoritePayment],
+        fallbackSourceCode: String,
+        to newCurrencyCode: String,
+        context: ModelContext,
+        now: Date = .now
+    ) -> Outcome {
+        let target = normalizeCurrencyCode(newCurrencyCode)
+        var converted = 0
+        var approximate = 0
+
+        for payment in scheduled {
+            let source = normalizeCurrencyCode(payment.currencyCode)
+            guard source != target else { continue }
+            let result = convertToday(payment.amount, from: source, to: target, context: context, now: now)
+            payment.amount = (result.to as NSDecimalNumber).doubleValue
+            payment.currencyCode = target
+            converted += 1
+            if !result.isExact { approximate += 1 }
+        }
+
+        for favorite in favorites {
+            let source = normalizeCurrencyCode(favorite.currencyCode ?? fallbackSourceCode)
+            guard source != target else {
+                // Un favorito sin divisa que ya estaba en la nueva: se le pone la etiqueta y nada más.
+                if favorite.currencyCode == nil { favorite.currencyCode = target }
+                continue
+            }
+            if let amount = favorite.amount {
+                let result = convertToday(amount, from: source, to: target, context: context, now: now)
+                favorite.amount = (result.to as NSDecimalNumber).doubleValue
+                if !result.isExact { approximate += 1 }
+            }
+            favorite.currencyCode = target
+            converted += 1
+        }
+
+        #if DEBUG
+        print("AccountCurrencyMigrationService: \(converted) programados/favoritos a \(target) (\(approximate) con tasa aproximada)")
+        #endif
+        return Outcome(convertedCount: converted, approximateCount: approximate)
+    }
+
+    /// Reexpresa los borradores pendientes de la cuenta con la tasa de **su** fecha (decisión D1 de
+    /// Jürgen, 2026-10-08): son movimientos que aún no se aprobaron y se tratan como el historial.
+    ///
+    /// El borrador no guarda divisa: la toma de la cuenta al aprobarse. Su importe está en
+    /// `sourceCode`, la divisa de la cuenta al abrir el formulario. Sin redondeo, como el historial.
+    @discardableResult
+    static func convertPendingDrafts(
+        _ drafts: [InboxDraft],
+        from sourceCode: String,
+        to newCurrencyCode: String,
+        context: ModelContext
+    ) -> Outcome {
+        let source = normalizeCurrencyCode(sourceCode)
+        let target = normalizeCurrencyCode(newCurrencyCode)
+        guard source != target else { return .empty }
+        var converted = 0
+        var approximate = 0
+
+        for draft in drafts {
+            guard let amount = draft.amount else { continue }
+            let outcome = CurrencyConverter.shared.convertChecked(
+                Decimal(amount),
+                from: source,
+                to: target,
+                on: draft.date ?? draft.createdAt,
+                context: context
+            )
+            draft.amount = (outcome.amount as NSDecimalNumber).doubleValue
+            // Un borrador rechazado y devuelto a pendientes conserva la divisa con la que se archivó
+            // (`returnToPending` no la limpia), y «Convertir a gasto de grupo» la lee: sin esto, el
+            // importe ya en dólares se precargaría como soles.
+            if draft.cachedCurrencyCode != nil { draft.cachedCurrencyCode = target }
+            converted += 1
+            if !outcome.quality.isExact { approximate += 1 }
+        }
+
+        #if DEBUG
+        print("AccountCurrencyMigrationService: \(converted) borradores a \(target) (\(approximate) con tasa aproximada)")
+        #endif
         return Outcome(convertedCount: converted, approximateCount: approximate)
     }
 

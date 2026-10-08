@@ -3526,6 +3526,26 @@ enum L10n {
             static var ratesUnavailableMessage: String {
                 ls("account.currencyChange.ratesUnavailableMessage", comment: "")
             }
+            // Programados, favoritos y borradores (ticket
+            // `account-currency-change-leaves-scheduled-and-favorites-stale`).
+            static func confirmTitleNoHistory(_ to: String) -> String {
+                String(format: ls("account.currencyChange.confirmTitleNoHistory", comment: ""), to)
+            }
+            static func draftsLine(_ count: Int, _ to: String) -> String {
+                String(format: ls("account.currencyChange.draftsLine", comment: ""), count, to)
+            }
+            static func plansHeader(_ to: String) -> String {
+                String(format: ls("account.currencyChange.plansHeader", comment: ""), to)
+            }
+            static func planItem(_ name: String, _ before: String, _ after: String) -> String {
+                String(format: ls("account.currencyChange.planItem", comment: ""), name, before, after)
+            }
+            static func plansMore(_ count: Int) -> String {
+                String(format: ls("account.currencyChange.plansMore", comment: ""), count)
+            }
+            static var cannotUndo: String {
+                ls("account.currencyChange.cannotUndo", comment: "")
+            }
         }
 
         // MARK: - Credit Card
