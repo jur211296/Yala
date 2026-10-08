@@ -4,6 +4,7 @@ status: backlog
 priority: low
 area: "groups, sesión"
 created: 2026-09-17
+updated: 2026-10-08
 source: "review adversarial de `groups-actions-read-an-offline-token-refresh-as-a-session-expiry` (lentes de lógica y de lo que ve la persona), 2026-09-17"
 ---
 
@@ -46,3 +47,11 @@ ambigüedad «quizá se aplicó», pero hay que medirlo en la guard antes de dar
 
 - `personal-sync-does-not-retry-a-401-with-a-forced-token-refresh` — lo mismo en el canal personal.
 - `groups-actions-read-an-offline-token-refresh-as-a-session-expiry` — el token nulo sin red, ya separado.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `GroupsMembershipClient.call` sigue convirtiendo un 401 que no es de App Attest en `.sessionExpired` directo, sin refresh forzado ni reintento. Sin commits en el fichero desde el 2026-09-17.
+- El gateway sigue sin `clockTolerance` en `gateway/src` (`verifyUserToken`).
+- El bucle de la hoja de inicio de sesión dura como mucho lo que va atrasado el reloj: cuando el SDK renueva, sale. No es un callejón. Hermano: `personal-sync-does-not-retry-a-401-with-a-forced-token-refresh` (low).
+
+Triage 2026-10-08: abierto · low → low · las acciones de Grupos siguen leyendo el 401 como sesión caducada; requiere el reloj atrasado más de 30 s y se cura sola al renovar el token.

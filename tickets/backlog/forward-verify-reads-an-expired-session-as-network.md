@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, migración"
 created: 2026-09-17
-updated: 2026-09-21
+updated: 2026-10-08
 source: "D6 del Paso 0 de `reverse-before-mount-stays-stuck-with-an-expired-session`, 2026-09-17: alcance dejado fuera a propósito"
 ---
 
@@ -65,3 +65,12 @@ re-escriben juntos si esto se hace, y ninguno se borra.
 - `reverse-before-mount-stays-stuck-with-an-expired-session` — la vuelta, ya cerrada.
 - `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry` — de dónde sale que el token ausente sin red no es
   una sesión caducada.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `MigrationRunner.driveVerify` agrupa hoy `case .networkTimeout, .sessionExpired, .blocked:` y gasta `verifyNetworkRetries`; el comentario del `case` cita este ticket como el residual. Lo fijan `forwardVerify_sessionExpired_spendsNetworkRetry` y `forwardVerify_typedMerkleOutcomes_stillSpendTheNetworkBudget`.
+- Desde el 2026-09-22 también caen aquí el 401, el 403 y los `blocked` del Merkle: la asimetría con la vuelta es ya el `case` entero.
+- No es un callejón: al tope degrada a `failedRollback`, que limpia el servidor y deja reintentar.
+- **Decisión pendiente (Jürgen).** A) La ida corta retomable como la vuelta (exige construirle un techo de etapa). B) La ida sigue degradando, pero una sesión caducada o un 403 degradan al instante, sin gastar reintentos, con un motivo propio y un texto que diga «vuelve a entrar». C) Se queda como está. **Recomendada: B**, que mantiene el terminal que sí limpia y solo corrige lo que se le dice a la persona.
+
+Triage 2026-10-08: abierto · low → low · driveVerify sigue gastando los reintentos de red con sesión caducada y con 403, pero degrada a un fallo con reintento, no a un callejón.

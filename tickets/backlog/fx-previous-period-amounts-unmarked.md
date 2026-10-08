@@ -4,6 +4,7 @@ status: backlog
 priority: low
 area: currency
 created: 2026-09-09
+updated: 2026-10-08
 source: hallazgo de camino en fx-approximate-mark-missing-on-secondary-surfaces (2026-09-09)
 ---
 
@@ -35,3 +36,10 @@ de los dos.
       lleve las dos cosas juntas y no puedan separarse.
 - [ ] Decidido qué hace `VariationChip` con dos señales: marcar el porcentaje, o no marcar y
       dejarlo escrito.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `CashFlowWidget` sigue recibiendo `previousAmount: Double?` suelto; su marca (`kpiValueIsApproximate`) describe solo el período actual.
+- Los productores de `previousAmount` en `InsightsCalculator` (gasto, ingreso, neto y promedio diario del período anterior) pasan el número sin la señal, aunque `prevCashFlow` ya la calcula. `VariationChip` no tiene marca.
+
+Triage 2026-10-08: abierto · low → low · previousAmount sigue viajando sin su señal y VariationChip sin decisión; información que falta, no falsa.

@@ -4,6 +4,7 @@ status: backlog
 priority: low
 area: currency
 created: 2026-09-09
+updated: 2026-10-08
 source: hallazgo de camino en fx-approximate-mark-missing-on-secondary-surfaces (2026-09-09)
 ---
 
@@ -36,3 +37,10 @@ juntos: los dos piden que un calculador que hoy agrega en una dimensión pase a 
       transacciones de ESE bucket.
 - [ ] El tooltip y las etiquetas de las barras la pasan.
 - [ ] Un test que fije que un día exacto dentro de un mes marcado **no** se marca.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `CashFlowData` (`CashFlowCalculator.swift`) sigue con `date`, `income`, `expense` y `net`, sin señal por bucket. Ningún commit sobre `CashFlowCalculator.swift` desde el 2026-09-09.
+- Conviene hacerlo junto a `fx-category-totals-unmarked`: los dos piden agregar la calidad en una segunda dimensión.
+
+Triage 2026-10-08: abierto · low → low · CashFlowData sigue sin señal por bucket; el total del período sí avisa y el tooltip es una consulta puntual.

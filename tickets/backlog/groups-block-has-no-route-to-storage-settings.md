@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "onboarding, groups, settings"
 created: 2026-09-10
-updated: 2026-09-16
+updated: 2026-10-08
 source: "medido durante `cloud-sign-in-discovers-account-kind` (bloque [I])"
 ---
 
@@ -57,3 +57,10 @@ ya tiene Yala completo. A esos teléfonos Grupos tampoco les sincroniza.
 - [ ] El bloqueo de Grupos cambia su instrucción por un botón real.
 - [ ] Un XCUITest recorre botón → fila de almacenamiento.
 - [ ] La salida solo se ofrece cuando Ajustes ofrece la tarjeta (sin App Attest, o con el kill, no sale).
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `RouterIntent` sigue sin ningún caso que abra Ajustes y `DeepLinkDestination` tampoco tiene uno (el `.settings` de `SessionState.swift` es de `KeyboardPanelRequest`, un atajo de teclado del iPad).
+- `GroupsAccountIsCompleteBlockView` sigue mostrando `L10n.Groups.AccountIsComplete.settingsHint` como texto y sin condicionarlo a `StorageRowGateLogic.offersCloudMigrationEntry`.
+
+Triage 2026-10-08: abierto · low → low · la segunda salida sigue siendo texto y sin router hacia Ajustes; la persona tiene la otra salida como botón.

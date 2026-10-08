@@ -4,6 +4,7 @@ status: backlog
 priority: low
 area: currency
 created: 2026-09-09
+updated: 2026-10-08
 source: hallazgo de camino en fx-approximate-mark-missing-on-secondary-surfaces (2026-09-09)
 ---
 
@@ -43,3 +44,10 @@ falta, no información falsa.
 - [ ] Cada fila del desglose lleva su propia marca, medida con `ApproximateMarkThreshold` sobre las
       transacciones de ESA categoría.
 - [ ] Un test que fije que una categoría exacta bajo un total marcado **no** se marca.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `TopSpendingCategoriesCalculator` no tiene ningún campo de calidad (cero coincidencias de `approx`), e `InsightsCalculator.calculateNeedDistribution` tampoco. `WidgetDataCache` marca ingresos, gastos, flujo y saldo, no las filas de categorías.
+- Ningún commit desde el 2026-09-09 toca la marca en estos calculadores. Hermano con otra superficie: `pie-header-total-unmarked` (medium, el total del pie).
+
+Triage 2026-10-08: abierto · low → low · los desgloses por categoría siguen sin marca; es información que falta, no falsa, porque el total sí avisa.

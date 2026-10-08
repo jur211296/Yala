@@ -4,6 +4,7 @@ status: backlog
 priority: low
 area: "sesiones, sync"
 created: 2026-09-30
+updated: 2026-10-08
 source: "residual de `full-activation-local-state-never-reaches-the-apple-id-kv`"
 ---
 
@@ -31,3 +32,11 @@ dispositivo terminó el onboarding» que normalmente le cierra el Welcome.
 Si la subida al nacer la sesión privada reemite también la señal (con la hora de la activación), o se acepta.
 Ojo con el ticket hermano `remote-onboarding-signal-ignores-the-session-axis`: el receptor de esa señal todavía
 no mira el eje de sesión.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `PreferenceSyncService.signalOnboardingCompleted` sigue escribiendo `lastOnboardingTimestamp` por el KV con la puerta cerrada, y `OwnerKeyValueStore` lo documenta hoy como hueco conocido («la señal de onboarding de esa activación, que tampoco llega»).
+- `PrivateBirthKeyValueHandover` sube las preferencias y el espejo del interruptor maestro; la señal sigue fuera.
+- **Decisión pendiente (Jürgen).** A) El handover reemite la señal con la hora de la activación. B) Se acepta y se documenta. **Recomendada: A**, pero junto con `remote-onboarding-signal-ignores-the-session-axis` (low), porque el receptor todavía no mira el eje de sesión.
+
+Triage 2026-10-08: abierto · low → low · la señal sigue sin llegar (OwnerKeyValueStore lo documenta como hueco) y solo afecta a otro dispositivo con un vaciado pendiente.

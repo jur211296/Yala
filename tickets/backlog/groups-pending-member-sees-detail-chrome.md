@@ -1,10 +1,10 @@
 ---
 id: groups-pending-member-sees-detail-chrome
 status: backlog
-priority: low
+priority: very-low
 area: groups
 created: 2026-09-06
-updated: 2026-09-06
+updated: 2026-10-08
 ---
 
 # Dentro del grupo, Miembros y Ajustes no miran el estado del miembro
@@ -69,3 +69,10 @@ fix pendiente:
 
 - `tickets/qa/groups-pending-member-can-open-group.md` — la puerta. De ahí sale esto.
 - `tickets/qa/guest-decline-has-no-screen.md` — la sala de espera y su copy.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `GroupDetailView` sigue gateando solo las escrituras por `canCurrentUserParticipate` (`GroupDetailViewModel.swift:101`); Miembros, Ajustes, los chips y la banda de balance siguen sin mirar el estado, y el ViewModel sigue sin `isCurrentUserPending`.
+- Las tres vías al detalle siguen pasando por `GroupCardDisplayLogic.allowsDetailEntry` (vía `GroupsViewModel`), así que sigue siendo inalcanzable: defensa en profundidad sin síntoma.
+
+Triage 2026-10-08: abierto · low → very-low · sigue sin gate por estado dentro del detalle, pero ninguna vía lleva ahí a un pendiente; es defensa en profundidad.

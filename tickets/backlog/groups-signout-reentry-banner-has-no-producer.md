@@ -1,9 +1,10 @@
 ---
 id: groups-signout-reentry-banner-has-no-producer
 status: backlog
-priority: low
+priority: very-low
 area: "groups"
 created: 2026-09-11
+updated: 2026-10-08
 source: "paso 9 del rediseño de sesiones (`session-exits-one-verb-per-session`)"
 ---
 
@@ -17,3 +18,10 @@ marca que nadie escribe; un dispositivo actualizado con la marca puesta la verá
 ## Qué hacer
 
 Retirar la marca, el banner y sus strings, o reusarlo si algún cierre vuelve a aterrizar en Grupos.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `GroupsSignOutBannerMarker.markPending` solo se llama desde `YalaTests/GroupsSignOutBannerMarkerTests.swift`; en `Yala/` no tiene productor. El lector (`GroupsContainerView`, `showGroupsSignOutReentryBanner`) y tres `clear()` siguen vivos.
+- Es código muerto con un único efecto: un teléfono actualizado con la marca puesta ve el banner una vez.
+
+Triage 2026-10-08: abierto · low → very-low · el banner sigue sin productor; es código muerto que retirar.

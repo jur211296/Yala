@@ -4,6 +4,7 @@ status: backlog
 priority: low
 area: "groups, modo-nube, sync"
 created: 2026-09-16
+updated: 2026-10-08
 source: "review adversarial de `groups-loop-in-backoff-ignores-the-return-to-foreground` (2026-09-16), lente del criterio"
 ---
 
@@ -52,3 +53,11 @@ y arreglarla toca a qué le pregunta el gate, no al sueño.
 
 - `groups-loop-in-backoff-ignores-the-return-to-foreground` — el hermano que cerró la mitad del loop vivo.
 - `cloud-tab-does-not-say-this-phone-cannot-sync-personal-data` — el aviso de ese mismo motor parado.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `GroupsSyncClient.startIfEligible` sigue absteniéndose con `CloudSyncFlags.syncRuntimeEnabled && CloudSyncRuntime.canRunDomain()` (hoy en la línea 449), y `canRunDomain()` sigue sin mirar el `state` del runtime.
+- `CloudSyncRuntime.handleBecameActive` sigue retornando sin ciclar en `.stoppedUntilRelaunch`, `.idle` y `.idleSignedOut`. Ninguno de los commits posteriores sobre el runtime cambió esa abstención.
+- Los datos de grupos no se pierden (siguen en el teléfono); dejan de moverse mientras el motor personal esté parado por un 403 o un attest terminal.
+
+Triage 2026-10-08: abierto · low → low · el gate de abstención sigue sin mirar si el runtime personal cadencia; población probablemente pequeña (403 o attest terminal en modo nube).

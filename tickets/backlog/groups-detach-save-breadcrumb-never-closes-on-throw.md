@@ -1,9 +1,10 @@
 ---
 id: groups-detach-save-breadcrumb-never-closes-on-throw
 status: backlog
-priority: low
+priority: very-low
 area: "modo-nube, groups, settings"
 created: 2026-09-11
+updated: 2026-10-08
 source: "review adversarial de `detach-failure-looks-like-success` (tres lentes)"
 ---
 
@@ -27,3 +28,10 @@ Perfil. Queda solo el cabo (1).
 
 Se dejó como ticket propio y no dentro de aquél porque el breadcrumb es de otra familia: hay más sitios
 con la misma forma y merecen mirarse juntos.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `CloudSessionSignOut.purgeGroupsDomainForDetach` sigue abriendo `SaveBreadcrumb.willSave` y llamando a `didSave` solo si el borrado no lanza.
+- `SaveBreadcrumb` sigue sin forma de cerrar en fallo: solo `willSave`, `didSave` y `deferred`. Es una línea de log de diagnóstico; un `SAVE` sin `SAVED` puede leerse como un crash en ese sitio.
+
+Triage 2026-10-08: abierto · low → very-low · el par de breadcrumbs sigue desbalanceado al lanzar, pero solo afecta a cómo se lee un log de diagnóstico.

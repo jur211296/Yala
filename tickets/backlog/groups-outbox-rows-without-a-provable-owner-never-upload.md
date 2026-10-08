@@ -4,6 +4,7 @@ status: backlog
 priority: low
 area: "groups, modo-nube"
 created: 2026-09-28
+updated: 2026-10-08
 source: "residual de `groups-outbox-rows-without-a-live-session-have-no-exit` (review adversarial, 2026-09-28)"
 ---
 
@@ -31,3 +32,11 @@ no suben, y al cerrar sesión Yala me dice que son de otra cuenta.
 
 Una prueba más de dueño para esa población, o un gesto explícito «estos cambios son míos» que la persona confirme. Medir
 antes cuántos teléfonos caen aquí: hoy no hay canario.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `GroupsSyncClient.adoptOwnersForUnownedRows` sigue siendo la única prueba de dueño (espejo o registro de sesiones, con `GroupsOutboxOwnershipLogic.maxEntries = 64`); lo que no explica, no sube, y la retiene `liveRowsHeldForAnotherAccount`.
+- Sigue sin canario que mida la población. Sin commits sobre el mecanismo desde `70b8c1e67` (el que lo creó).
+- No hay pérdida silenciosa: el cierre de sesión las cuenta y ofrece perderlas con aviso.
+
+Triage 2026-10-08: abierto · low → low · las filas sin dueño probado siguen sin subir por diseño, con aviso al cerrar sesión; población sin medir y probablemente muy pequeña.

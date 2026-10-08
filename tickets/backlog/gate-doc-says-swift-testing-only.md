@@ -1,10 +1,10 @@
 ---
 id: gate-doc-says-swift-testing-only
 status: backlog
-priority: low
+priority: very-low
 area: qa, docs
 created: 2026-09-03
-updated: 2026-09-03
+updated: 2026-10-08
 source: falsa alarma al leer un gate (2026-09-03)
 ---
 
@@ -36,3 +36,10 @@ Un matiz de una línea: la afirmación vale para `YalaTests`; `YalaUITests` es X
 
 `.claude/` es lo único que el `CLAUDE.md` manda por PR aunque sea documentación, y desde el árbol
 principal no hay PR. Queda para quien pueda abrirlo.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `.claude/commands/gate.md` (paso 2) sigue diciendo «este repo es Swift Testing entero». Los tres commits posteriores sobre el fichero (`6edefca09`, `c7fa850fe`, `a4454b8e2`) no tocaron la frase.
+- El paso 3 cuenta bien los XCUITest; lo que engaña es la frase. Va por PR porque vive en `.claude/`.
+
+Triage 2026-10-08: abierto · low → very-low · la frase falsa sigue en el paso 2 del gate; es una línea de documentación interna, el gate cuenta bien.
