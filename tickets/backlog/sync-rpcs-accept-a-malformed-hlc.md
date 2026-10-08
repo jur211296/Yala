@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, sync, backend"
 created: 2026-10-07
-updated: 2026-10-07
+updated: 2026-10-08
 source: "medido al cerrar `personal-clock-ahead-wins-every-conflict-until-real-time-catches-up` (2026-10-07), sonda REST contra staging"
 ---
 
@@ -23,7 +23,7 @@ o los de su grupo).
 
 ## Lo que ya lo acota
 
-Desde `qa/cloud/hlc01_cap_future_hlc.sql` (pendiente de aplicar) el trigger `cap_future_hlc` reescribe un valor mal
+Desde `qa/cloud/hlc01_cap_future_hlc.sql` (aplicada en staging y producción el 2026-10-07) el trigger `cap_future_hlc` reescribe un valor mal
 formado que ordene por encima de `now() + 60 s` como `<tope>-0000-0000000000000000`, y la normalización de esa misma
 migración arregla la key de la sonda. Lo que queda: un valor mal formado que ordene por DEBAJO (`'0'`, `''`) se guarda
 y pierde contra todo, en silencio.

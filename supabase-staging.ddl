@@ -459,3 +459,131 @@ CREATE FUNCTION claim_report(p_report_type TEXT, p_local_day DATE) RETURNS boole
 BEGIN INSERT INTO report_claims (user_id, report_type, local_day)
   VALUES ((select auth.uid()), p_report_type, p_local_day)
   ON CONFLICT (user_id, report_type, local_day) DO NOTHING; RETURN FOUND; END; $$;
+
+-- ============ hlc01 future-HLC cap (applied to staging AND production 2026-10-07; qa/cloud/hlc01_cap_future_hlc.sql) ============
+-- Every HLC stored in a synced table is capped to "now + 60 s" (clock_timestamp()) by a BEFORE INSERT OR UPDATE trigger
+-- cap_future_hlc on the 17 tables below (the 5 Groups tables carry it too: supabase-groups-staging.ddl §10). Verified
+-- after applying: 22 cap_future_hlc triggers, qa/cloud/hlc01-cap-staging-probe.sh 4/4. The one-off normalisation
+-- (update ... set hlc = hlc) is data, not schema, and is not reproduced here. Rollback: qa/cloud/hlc01_rollback.sql.
+-- Functions + revoke, verbatim from the migration:
+-- ------------------------------------------------------------------------------------------- el margen, en un sitio
+create or replace function public.hlc_cap_margin() returns interval
+language sql immutable set search_path = public as
+$$ select interval '60 seconds' $$;
+
+-- El tope de AHORA: instante canónico de 24 chars (`YYYY-MM-DDTHH:MI:SS.MSZ`) de `clock_timestamp() + margen`.
+create or replace function public.hlc_cap_instant() returns text
+language sql volatile set search_path = public as
+$$ select to_char((clock_timestamp() at time zone 'utc') + public.hlc_cap_margin(), 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') $$;
+
+-- --------------------------------------------------------------------------------------------- el valor acotado
+-- Un c1 válido cuyo prefijo es igual al tope ordena por encima en "C" (46 chars > 24) y la rama de abajo devuelve
+-- exactamente el mismo string.
+create or replace function public.hlc_cap_value(p_hlc text, p_cap text) returns text
+language sql immutable set search_path = public as
+$$
+  select case
+    when p_hlc is null or p_hlc = '' then p_hlc
+    when p_hlc !~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{3}Z-[0-9a-f]{4}-[0-9a-f]{16}$'
+      then p_cap || '-0000-0000000000000000'
+    when p_hlc collate "C" <= p_cap collate "C" then p_hlc
+    else p_cap || substr(p_hlc, 25)
+  end
+$$;
+
+-- ------------------------------------------------------------------------------------------ el parche de una fila
+create or replace function public.hlc_cap_patch(p_row jsonb, p_cap text) returns jsonb
+language plpgsql immutable set search_path = public as
+$$
+declare
+  v_patch   jsonb := '{}'::jsonb;
+  v_hlc     text;
+  v_capped  text;
+  v_fh      jsonb := p_row -> 'field_hlcs';
+  v_new_fh  jsonb;
+  v_max     text;
+begin
+  if p_row ? 'hlc' then
+    v_hlc := p_row ->> 'hlc';
+    v_capped := public.hlc_cap_value(v_hlc, p_cap);
+    if v_capped is distinct from v_hlc then
+      v_patch := v_patch || jsonb_build_object('hlc', v_capped);
+    end if;
+  end if;
+
+  if p_row ? 'deleted_hlc' then
+    v_capped := public.hlc_cap_value(p_row ->> 'deleted_hlc', p_cap);
+    if v_capped is distinct from (p_row ->> 'deleted_hlc') then
+      v_patch := v_patch || jsonb_build_object('deleted_hlc', v_capped);
+    end if;
+  end if;
+
+  if v_fh is not null and jsonb_typeof(v_fh) = 'object' then
+    select coalesce(jsonb_object_agg(e.key,
+             case jsonb_typeof(e.value)
+               when 'null'   then e.value
+               when 'string' then to_jsonb(public.hlc_cap_value(e.value #>> '{}', p_cap))
+               else to_jsonb(p_cap || '-0000-0000000000000000')
+             end), '{}'::jsonb)
+      into v_new_fh
+      from jsonb_each(v_fh) e;
+    if v_new_fh <> v_fh then
+      v_patch := v_patch || jsonb_build_object('field_hlcs', v_new_fh);
+      -- El `hlc` de fila nunca por debajo de una unidad: acotadas al mismo milisegundo, manda el contador.
+      if p_row ? 'hlc' then
+        select max(x collate "C") into v_max
+          from (select coalesce(v_patch ->> 'hlc', v_hlc) as x
+                union all
+                select e.value #>> '{}' from jsonb_each(v_new_fh) e where jsonb_typeof(e.value) = 'string') u
+         where x is not null;
+        if v_max is distinct from v_hlc then
+          v_patch := v_patch || jsonb_build_object('hlc', v_max);
+        end if;
+      end if;
+    end if;
+  end if;
+
+  return v_patch;
+end
+$$;
+
+-- ------------------------------------------------------------------------------------------------- el trigger
+-- SECURITY DEFINER: solo calcula (no lee ni escribe tablas), y así las funciones de arriba pueden quedar sin EXECUTE para
+-- los clientes. Genérico por jsonb: cada tabla tiene un subconjunto distinto de (hlc, deleted_hlc, field_hlcs), y
+-- `jsonb_populate_record(new, patch)` solo toca las claves del parche (las columnas bytea cifradas no se re-castean).
+create or replace function public.cap_future_hlc() returns trigger
+language plpgsql security definer set search_path = public as
+$$
+declare
+  v_patch jsonb := public.hlc_cap_patch(to_jsonb(new), public.hlc_cap_instant());
+begin
+  if v_patch <> '{}'::jsonb then
+    new := jsonb_populate_record(new, v_patch);
+  end if;
+  return new;
+end
+$$;
+
+-- Higiene (molde g12_02): ninguna se llama desde un cliente.
+revoke all on function public.hlc_cap_margin(), public.hlc_cap_instant(), public.hlc_cap_value(text, text),
+  public.hlc_cap_patch(jsonb, text), public.cap_future_hlc()
+  from public, anon, authenticated;
+
+-- Triggers (the migration's do $$ loop, expanded): 16 domain entities + user_preferences.
+CREATE TRIGGER cap_future_hlc BEFORE INSERT OR UPDATE ON accounts FOR EACH ROW EXECUTE FUNCTION cap_future_hlc();
+CREATE TRIGGER cap_future_hlc BEFORE INSERT OR UPDATE ON budgets FOR EACH ROW EXECUTE FUNCTION cap_future_hlc();
+CREATE TRIGGER cap_future_hlc BEFORE INSERT OR UPDATE ON cashflow_lines FOR EACH ROW EXECUTE FUNCTION cap_future_hlc();
+CREATE TRIGGER cap_future_hlc BEFORE INSERT OR UPDATE ON cashflow_overrides FOR EACH ROW EXECUTE FUNCTION cap_future_hlc();
+CREATE TRIGGER cap_future_hlc BEFORE INSERT OR UPDATE ON cashflow_plans FOR EACH ROW EXECUTE FUNCTION cap_future_hlc();
+CREATE TRIGGER cap_future_hlc BEFORE INSERT OR UPDATE ON categories FOR EACH ROW EXECUTE FUNCTION cap_future_hlc();
+CREATE TRIGGER cap_future_hlc BEFORE INSERT OR UPDATE ON exchange_rates FOR EACH ROW EXECUTE FUNCTION cap_future_hlc();
+CREATE TRIGGER cap_future_hlc BEFORE INSERT OR UPDATE ON favorite_payments FOR EACH ROW EXECUTE FUNCTION cap_future_hlc();
+CREATE TRIGGER cap_future_hlc BEFORE INSERT OR UPDATE ON group_bridge_prefs FOR EACH ROW EXECUTE FUNCTION cap_future_hlc();
+CREATE TRIGGER cap_future_hlc BEFORE INSERT OR UPDATE ON inbox_drafts FOR EACH ROW EXECUTE FUNCTION cap_future_hlc();
+CREATE TRIGGER cap_future_hlc BEFORE INSERT OR UPDATE ON merchant_memory FOR EACH ROW EXECUTE FUNCTION cap_future_hlc();
+CREATE TRIGGER cap_future_hlc BEFORE INSERT OR UPDATE ON notification_items FOR EACH ROW EXECUTE FUNCTION cap_future_hlc();
+CREATE TRIGGER cap_future_hlc BEFORE INSERT OR UPDATE ON scheduled_payments FOR EACH ROW EXECUTE FUNCTION cap_future_hlc();
+CREATE TRIGGER cap_future_hlc BEFORE INSERT OR UPDATE ON subcategories FOR EACH ROW EXECUTE FUNCTION cap_future_hlc();
+CREATE TRIGGER cap_future_hlc BEFORE INSERT OR UPDATE ON tags FOR EACH ROW EXECUTE FUNCTION cap_future_hlc();
+CREATE TRIGGER cap_future_hlc BEFORE INSERT OR UPDATE ON tx_items FOR EACH ROW EXECUTE FUNCTION cap_future_hlc();
+CREATE TRIGGER cap_future_hlc BEFORE INSERT OR UPDATE ON user_preferences FOR EACH ROW EXECUTE FUNCTION cap_future_hlc();

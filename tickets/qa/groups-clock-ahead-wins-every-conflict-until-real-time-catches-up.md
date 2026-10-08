@@ -4,7 +4,7 @@ status: qa
 priority: low
 area: "groups, sync"
 created: 2026-09-26
-updated: 2026-10-07
+updated: 2026-10-08
 source: "review adversarial de `groups-clock-rollback-wedges-the-drain-forever` (2026-09-26), lentes HLC y regresión"
 ---
 
@@ -62,6 +62,9 @@ Decisión de Jürgen (2026-10-04): **tope en el servidor**. Los detalles los dec
 
 **Pendiente de Jürgen: aplicar la migración** (staging → sonda → producción), pasos en `docs/RUNBOOK-staging-ddl.md`,
 sección `hlc01_cap_future_hlc.sql`. Sin ella, el cliente nuevo se comporta como el de antes.
+
+**2026-10-08:** la migración está aplicada en staging y producción desde el 2026-10-07 (22 triggers, sonda 4/4;
+registro en `docs/RUNBOOK-staging-ddl.md`). Queda el device-QA de abajo.
 
 Verificado: banco local `bash qa/cloud/hlc01-cap-test.sh` (33/33 con `apply_group_delta` real; el control sin la
 migración reproduce el bug; 9 mutantes muertos), sonda de staging antes de aplicar (1/4: el bug existe hoy),
