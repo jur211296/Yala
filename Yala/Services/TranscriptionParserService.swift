@@ -244,7 +244,7 @@ final class TranscriptionParserService {
     ) async throws -> [ParsedTransaction] {
         let client: OpenAI
         do {
-            client = try await ProxyClientFactory.makeOpenAI(category: .voice)
+            client = try await ProxyClientFactory.makeOpenAI(task: .textParse)
         } catch {
             throw ParserError.networkError(error)
         }

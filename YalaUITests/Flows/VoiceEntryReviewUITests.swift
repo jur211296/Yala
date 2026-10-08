@@ -114,4 +114,25 @@ final class VoiceEntryReviewUITests: XCTestCase {
         XCTAssertTrue(app.buttons["voice_done"].waitForExistence(timeout: 10), "Volver a grabar no volvió a escuchar.")
         XCTAssertFalse(app.staticTexts["voice_review_title"].exists, "Lo entendido tenía que desaparecer.")
     }
+
+    /// Cupo de prueba agotado (sesión 2 del gateway de IA): el 403 `yala_trial_exhausted` no se cuenta como un fallo
+    /// cualquiera, sino como lo que es, con una salida a Yala Pro y sin «Reintentar» (repetir el audio falla igual).
+    func test_trialUsedUp_saysSo_andOffersPro() {
+        let app = XCUIApplication()
+        app.launchForUITest(pro: true, aiConsent: true, extraArguments: ["-uitest-voice-result", "trial-used-up"])
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+        app.revealPanelFAB().tap()
+        let voice = app.buttons["fab_voice"]
+        XCTAssertTrue(voice.waitForExistence(timeout: 5), "El menú del FAB no ofreció voz (fab_voice).")
+        voice.tap()
+        let done = app.buttons["voice_done"]
+        XCTAssertTrue(done.waitForExistence(timeout: 15), "La hoja no abrió escuchando (voice_done).")
+        done.tap()
+
+        let seePro = app.buttons["voice_trial_see_pro"]
+        XCTAssertTrue(seePro.waitForExistence(timeout: 15), "El cupo agotado no ofreció Yala Pro (voice_trial_see_pro).")
+        XCTAssertFalse(app.buttons["voice_retry"].exists, "Con el cupo agotado, reintentar el mismo audio no sirve.")
+        seePro.tap()
+        XCTAssertTrue(app.buttons["upgrade_prompt_cta"].waitForExistence(timeout: 10), "«Ver Yala Pro» no abrió Yala Pro.")
+    }
 }

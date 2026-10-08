@@ -82,7 +82,7 @@ final class SuggestionsRewriterService {
         // Hay inválidas → re-prompt al LLM
         let client: OpenAI
         do {
-            client = try await ProxyClientFactory.makeOpenAI(category: .suggestions)
+            client = try await ProxyClientFactory.makeOpenAI(task: .chatRewrite)
         } catch {
             throw ChatSuggestionsLLMError.noAPIKey
         }

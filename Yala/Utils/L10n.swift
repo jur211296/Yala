@@ -6200,14 +6200,9 @@ enum L10n {
     // MARK: - Voice Language
 
     enum VoiceLanguage {
-        static var system: String {
-            ls("voiceLanguage.system", comment: "")
-        }
-        static var spanish: String {
-            ls("voiceLanguage.spanish", comment: "")
-        }
-        static var english: String {
-            ls("voiceLanguage.english", comment: "")
+        /// «Idioma de la app»: la voz se transcribe en el idioma elegido en Yala.
+        static var appLanguage: String {
+            ls("voiceLanguage.appLanguage", comment: "Voice language option that follows the language chosen in the app")
         }
     }
 
@@ -6641,6 +6636,11 @@ enum L10n {
         static var failureNoAmountMessage: String { ls("voice.failure.noAmount.message", comment: "") }
         static var failureGenericTitle: String { ls("voice.failure.generic.title", comment: "") }
         static var failureGenericMessage: String { ls("voice.failure.generic.message", comment: "") }
+        /// El plan free probó la voz con su cupo de prueba entero (lo decide el gateway: `yala_trial_exhausted`).
+        static var failureTrialUsedUpTitle: String { ls("voice.failure.trialUsedUp.title", comment: "Free plan used up its trial voice notes") }
+        static var failureTrialUsedUpMessage: String { ls("voice.failure.trialUsedUp.message", comment: "Free plan used up its trial voice notes: Pro has no limit") }
+        /// Botón que abre la hoja de Yala Pro desde el cupo de prueba agotado (voz y foto).
+        static var trialSeePro: String { ls("ai.trial.seePro", comment: "Button that opens Yala Pro when the trial is used up") }
     }
 
     // MARK: - Image Input
@@ -6791,6 +6791,9 @@ enum L10n {
             static var failureCameraMessage: String { ls("image.entry.failure.camera.message", comment: "") }
             static var failureGenericTitle: String { ls("image.entry.failure.generic.title", comment: "") }
             static var failureGenericMessage: String { ls("image.entry.failure.generic.message", comment: "") }
+            /// El plan free probó la foto con su cupo de prueba entero (`yala_trial_exhausted` del gateway).
+            static var failureTrialUsedUpTitle: String { ls("image.entry.failure.trialUsedUp.title", comment: "Free plan used up its trial photos") }
+            static var failureTrialUsedUpMessage: String { ls("image.entry.failure.trialUsedUp.message", comment: "Free plan used up its trial photos: Pro has no limit") }
         }
     }
 

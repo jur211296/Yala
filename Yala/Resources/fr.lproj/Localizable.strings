@@ -1976,9 +1976,7 @@
 "bulkEdit.availableTags" = "Disponibles à ajouter";
 
 // MARK: - Voice Language
-"voiceLanguage.system" = "Système";
-"voiceLanguage.spanish" = "Espagnol";
-"voiceLanguage.english" = "Anglais";
+"voiceLanguage.appLanguage" = "Langue de l'app";
 
 // MARK: - Voice Input
 "voice.title" = "Note vocale";
@@ -6392,6 +6390,9 @@
 
 /* Voice entry failure message: something went wrong, try again */
 "voice.failure.generic.message" = "Un problème est survenu en traitant ta voix. Réessaie dans un instant.";
+"voice.failure.trialUsedUp.title" = "Tu as utilisé tes notes vocales d’essai";
+"voice.failure.trialUsedUp.message" = "Avec Yala Pro, enregistre tes dépenses à la voix sans limite.";
+"ai.trial.seePro" = "Voir Yala Pro";
 
 /* Registro por imagen (propuesta C, 2026-10-04) */
 /* Image entry sheet title */
@@ -6440,6 +6441,8 @@
 "image.entry.failure.generic.title" = "Je n’ai pas pu la lire cette fois";
 /* Image entry failure: reading failed, the photo is fine */
 "image.entry.failure.generic.message" = "La photo est bonne : la lecture a échoué. Réessaie dans un instant.";
+"image.entry.failure.trialUsedUp.title" = "Tu as utilisé tes photos d’essai";
+"image.entry.failure.trialUsedUp.message" = "Avec Yala Pro, enregistre tes reçus en photo sans limite.";
 /* Current user's name, no parentheses */
 "groups.member.youName" = "Vous";
 

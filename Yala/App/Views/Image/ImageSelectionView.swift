@@ -52,6 +52,7 @@ struct ImageSelectionView: View {
     @State private var showPhotosPicker = false
     @State private var showFileImporter = false
     @State private var showCamera = false
+    @State private var showUpgrade = false
 
     /// Práctica guiada: recibos de ejemplo que se pueden leer sin tener uno a mano.
     var exampleImages: [UIImage]?
@@ -106,6 +107,9 @@ struct ImageSelectionView: View {
         .fullScreenCover(isPresented: $showCamera) {
             ImageCameraPicker(onFinish: cameraFinished)
                 .ignoresSafeArea()
+        }
+        .sheet(isPresented: $showUpgrade) {
+            UpgradePromptSheet(feature: .imageInput, context: .proFeature)
         }
         .sheet(item: $detailDraft, onDismiss: afterDetails) { draft in
             InboxDraftEditSheet(draft: draft)
@@ -512,6 +516,9 @@ struct ImageSelectionView: View {
             primaryButton(L10n.Image.openSettings, isEnabled: true, identifier: "image_open_settings", action: openSystemSettings)
         case .serviceUnavailable:
             primaryButton(L10n.Action.close, isEnabled: true, identifier: "image_failure_close") { dismiss() }
+        case .trialUsedUp:
+            secondaryButton(L10n.Action.close, identifier: "image_failure_close") { dismiss() }
+            primaryButton(L10n.Voice.trialSeePro, isEnabled: true, identifier: "image_trial_see_pro") { showUpgrade = true }
         case .noAmount, .unreadable, .unreadableFile:
             primaryButton(L10n.Image.Entry.otherPhoto, isEnabled: true, identifier: "image_other_photo", action: chooseAnother)
         case .noConnection, .generic, .saveFailed:
@@ -533,6 +540,7 @@ struct ImageSelectionView: View {
         case .noAmount: "questionmark"
         case .unreadable: "photo"
         case .unreadableFile: "doc"
+        case .trialUsedUp: "sparkles"
         case .serviceUnavailable, .saveFailed, .generic: "exclamationmark"
         }
     }
@@ -544,6 +552,7 @@ struct ImageSelectionView: View {
         case .noAmount: L10n.Image.Entry.failureNoAmountTitle
         case .unreadable: L10n.Image.Entry.failureUnreadableTitle
         case .unreadableFile: L10n.Image.Entry.failureUnreadableFileTitle
+        case .trialUsedUp: L10n.Image.Entry.failureTrialUsedUpTitle
         case .serviceUnavailable, .saveFailed, .generic: L10n.Image.Entry.failureGenericTitle
         }
     }
@@ -558,6 +567,7 @@ struct ImageSelectionView: View {
         case .serviceUnavailable: L10n.Image.errorNoApiKey
         case .saveFailed: L10n.Image.errorSaveFailed
         case .generic: L10n.Image.Entry.failureGenericMessage
+        case .trialUsedUp: L10n.Image.Entry.failureTrialUsedUpMessage
         }
     }
 
@@ -856,12 +866,32 @@ struct ImageSelectionView: View {
     private func analyze(_ image: UIImage, index: Int) async throws -> [InboxDraft] {
         #if DEBUG
         if let profile = UITestHooks.imageResult {
+            // `trial-used-up`: el gateway contesta que el cupo de prueba de fotos se agotó (403 yala_trial_exhausted).
+            if profile == "trial-used-up" { throw VisionError.networkError(ProxyErrorMapper.trialExhaustedResponse()) }
             return try await uiTestDrafts(profile, index: index)
         }
         #endif
-        let response = try await imageVisionService.analyze(image: image)
+        let response = try await imageVisionService.analyze(image: image, currency: visionCurrencyContext())
         guard !response.transactions.isEmpty, response.imageType != "unknown" else { return [] }
         return VisionDraftFactory.makeDrafts(from: response, rawText: nil, context: modelContext)
+    }
+
+    /// Las divisas del usuario para la lectura: la principal (decide qué es un «$» a secas) y las de sus cuentas activas.
+    private func visionCurrencyContext() -> VisionCurrencyContext {
+        let main = appPreferences.defaultCurrencyCode.rawValue
+        let descriptor = FetchDescriptor<Account>(
+            predicate: #Predicate<Account> { account in account.isArchived == false && account.isSystemAccount == false }
+        )
+        do {
+            let codes = try modelContext.fetch(descriptor).map(\.currencyCode)
+            var seen = Set<String>()
+            return VisionCurrencyContext(mainCurrency: main, accountCurrencies: codes.filter { seen.insert($0).inserted })
+        } catch {
+            #if DEBUG
+            print("ImageSelectionView: Error fetching account currencies: \(error)")
+            #endif
+            return VisionCurrencyContext(mainCurrency: main, accountCurrencies: [])
+        }
     }
 
     /// «Otra foto»: lo pendiente de esta vez se descarta —si se quedara, la Bandeja acabaría con el mismo gasto dos

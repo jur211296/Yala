@@ -3511,9 +3511,7 @@
 "voice.title" = "Nota de Voz";
 "voice.tryImage" = "Usar imagen";
 "voice.youCanSay" = "Puedes decir:";
-"voiceLanguage.english" = "Inglés";
-"voiceLanguage.spanish" = "Español";
-"voiceLanguage.system" = "Sistema";
+"voiceLanguage.appLanguage" = "Idioma de la app";
 "weekday.friday" = "Viernes";
 "weekday.monday" = "Lunes";
 "weekday.saturday" = "Sábado";
@@ -5675,6 +5673,9 @@
 
 /* Voice entry failure message: something went wrong, try again */
 "voice.failure.generic.message" = "Algo salió mal al procesar tu voz. Intenta de nuevo en un momento.";
+"voice.failure.trialUsedUp.title" = "Ya usaste tus notas de voz de prueba";
+"voice.failure.trialUsedUp.message" = "Con Yala Pro registras tus gastos por voz sin límite.";
+"ai.trial.seePro" = "Ver Yala Pro";
 
 /* Registro por imagen (propuesta C, 2026-10-04) */
 /* Image entry sheet title */
@@ -5723,6 +5724,8 @@
 "image.entry.failure.generic.title" = "No pude leerla esta vez";
 /* Image entry failure: reading failed, the photo is fine */
 "image.entry.failure.generic.message" = "La foto está bien: falló la lectura. Vuelve a intentarlo en un momento.";
+"image.entry.failure.trialUsedUp.title" = "Ya usaste tus fotos de prueba";
+"image.entry.failure.trialUsedUp.message" = "Con Yala Pro registras tus recibos por foto sin límite.";
 /* Current user's name, no parentheses */
 "groups.member.youName" = "Tú";
 

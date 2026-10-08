@@ -44,6 +44,10 @@ nonisolated struct RemoteFlagsSnapshot: Codable, Equatable {
     /// Optional con default ⇒ snapshots viejos cacheados (sin este campo) decodifican a nil y los
     /// call-sites previos no rompen. Ausente/0 = desactivado (`ForceUpdateDecisionLogic` fail-open).
     var minSupportedBuild: Int? = nil
+    /// IA (sesión 2 del gateway): lado mayor, en px, al que la app reduce una foto antes de leerla. Sale de la fila
+    /// `photo.read` del gateway. Optional con default: snapshots viejos decodifican a nil (`PhotoUploadSizing` cae a
+    /// su valor por defecto).
+    var photoMaxEdge: Int? = nil
     var fetchedAt: Date
 }
 
@@ -59,9 +63,14 @@ nonisolated struct RemoteConfigWireResponse: Codable {
         var minSupportedBuild: Int?
     }
 
+    struct AI: Codable {
+        var photoMaxEdge: Int?
+    }
+
     var v: Int?
     var flags: Flags?
     var forceUpdate: ForceUpdate?
+    var ai: AI?
 }
 
 // MARK: - Store (UserDefaults.standard, prefijo `cloudSync.`)
@@ -339,6 +348,7 @@ final class RemoteConfigClient {
                 cloudOnboardingChoiceRolloutPercent: wire.flags?.cloudOnboardingChoiceRolloutPercent,
                 groupsBackendRolloutPercent: wire.flags?.groupsBackendRolloutPercent,
                 minSupportedBuild: wire.forceUpdate?.minSupportedBuild,
+                photoMaxEdge: wire.ai?.photoMaxEdge,
                 fetchedAt: now
             )
             CloudRemoteConfigStore.writeSnapshot(snapshot, defaults: defaults)

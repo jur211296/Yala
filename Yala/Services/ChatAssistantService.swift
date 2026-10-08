@@ -82,7 +82,7 @@ final class ChatAssistantService {
         // === Common guards (apply to all 3 paths) ===
         let client: OpenAI
         do {
-            client = try await ProxyClientFactory.makeOpenAI(category: .chat)
+            client = try await ProxyClientFactory.makeOpenAI(task: .chatAnswer)
         } catch {
             throw ChatAssistantError.networkError(error)
         }

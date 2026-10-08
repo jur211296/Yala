@@ -141,4 +141,14 @@ final class ImageEntryReviewUITests: XCTestCase {
         other.tap()
         XCTAssertTrue(app.buttons["image_source_photos"].waitForExistence(timeout: 10), "«Otra foto» no volvió a elegir.")
     }
+
+    /// Cupo de prueba de fotos agotado (sesión 2 del gateway de IA): salida a Yala Pro y sin «Reintentar».
+    func test_trialUsedUp_saysSo_andOffersPro() {
+        let app = openAndRead("trial-used-up")
+        let seePro = app.buttons["image_trial_see_pro"]
+        XCTAssertTrue(seePro.waitForExistence(timeout: 15), "El cupo agotado no ofreció Yala Pro (image_trial_see_pro).")
+        XCTAssertFalse(app.buttons["image_retry"].exists, "Con el cupo agotado, reintentar las mismas fotos no sirve.")
+        seePro.tap()
+        XCTAssertTrue(app.buttons["upgrade_prompt_cta"].waitForExistence(timeout: 10), "«Ver Yala Pro» no abrió Yala Pro.")
+    }
 }
