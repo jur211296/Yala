@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "welcome, icloud, restore"
 created: 2026-09-20
-updated: 2026-09-20
+updated: 2026-10-08
 source: "review adversarial (lente de poblaciones) de `restore-says-no-data-when-the-icloud-import-never-settled`, 2026-09-20"
 ---
 
@@ -45,3 +45,10 @@ la señal responde a una pregunta más ancha que la que dice responder.
 ## Relación con otros tickets
 
 - `restore-says-no-data-when-the-icloud-import-never-settled` — de donde sale.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `iCloudSyncService.hasObservedImportActivity` sigue siendo un latch del proceso (solo lo baja `_testReset`). Desde `2ed5cdda2` existe su hermano con fecha, `lastImportActivityAt`, pero solo lo consume `WelcomeRestoreView` (`ICloudRestoreInProgressLogic.hasLiveImportActivity`).
+- `RestoreProgressView` lee `sawImport = hasObservedImportActivity` y con él resuelve `RestoreImportSettlement` y `closesTheSessionWindow`: la señal sigue sin acotarse a la ventana de esta búsqueda. Una vía de arreglo es reusar `lastImportActivityAt` contra el inicio del intento.
+
+Triage 2026-10-08: abierto · low → low · `RestoreProgressView` sigue alimentando `RestoreImportSettlement.resolve` con `hasObservedImportActivity`, latch monótono del proceso; el hermano con fecha `lastImportActivityAt` solo lo usa `WelcomeRestoreView`.

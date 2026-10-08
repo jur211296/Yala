@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, migración"
 created: 2026-09-23
-updated: 2026-09-23
+updated: 2026-10-08
 source: "Paso 0 de `adopt-claim-stays-parked-with-no-ceiling` (2026-09-23), D4"
 ---
 
@@ -31,3 +31,10 @@ misma causa en el mismo reloj (`MigrationState.forwardStepStallCauseRaw`), así 
 
 - [ ] Decisión de Jürgen.
 - [ ] Si se hace: el predicado sale de `AdoptClaimScope.notice` a uno de la fase, con su test.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- Sin cambios: `AdoptClaimScope.notice` empieza con `guard isAdoptClaim(phase, claimIntent:)`, y la tarjeta (`StorageSettingsView`) solo pinta `adoptClaimNotice`. La causa ya está en `MigrationRunner.lastClaimDefinitiveCause`, así que el dato existe para «Migrar».
+- Decisión pendiente. A) el mismo aviso en «Migrar», con su copy revisado contra BRAND-VOICE; B) dejarlo como está. Recomendada: A, porque el dato ya existe y esperar 15 minutos sin saber que no sirve es justo lo que el aviso del adopt corrigió. Con A sigue en `low`.
+
+Triage 2026-10-08: abierto · low → low · `AdoptClaimScope.notice` (MigrationRunner.swift) sigue saliendo con `nil` si el claim no es de un adopt (`isAdoptClaim` exige `.adoptIfExisting`), y `CloudMigrationController.adoptClaimNotice` es el único aviso; falta la decisión de Jürgen.

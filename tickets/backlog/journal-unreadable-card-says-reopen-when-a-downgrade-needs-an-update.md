@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, migración, copy"
 created: 2026-09-25
-updated: 2026-09-25
+updated: 2026-10-08
 source: "residual de `an-undecodable-migration-phase-reads-as-never-started` (2026-09-25)"
 ---
 
@@ -38,3 +38,9 @@ Solo quien baja de versión. En App Store no se puede elegir un build anterior, 
 
 - [ ] Con una fila que no se entiende, la tarjeta pide actualizar Yala, no reabrirla.
 - [ ] Con un `fetch` que lanza, sigue el texto de hoy.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `MigrationJournalRead` sigue con un solo `case unreadable`, y `read(fetch:)` devuelve ese mismo caso para el `isJournalUndecodable` y para el `catch` del fetch: la tarjeta no puede distinguir las dos causas.
+
+Triage 2026-10-08: abierto · low → low · `MigrationJournalRead.read` (CloudMigrationController.swift) sigue devolviendo el mismo `.unreadable` para un fetch que lanza y para `isJournalUndecodable`; solo afecta a quien baja de build en TestFlight.

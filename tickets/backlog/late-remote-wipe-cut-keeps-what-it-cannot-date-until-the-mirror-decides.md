@@ -1,9 +1,10 @@
 ---
 id: late-remote-wipe-cut-keeps-what-it-cannot-date-until-the-mirror-decides
 status: backlog
-priority: low
+priority: very-low
 area: "sync, settings"
 created: 2026-09-28
+updated: 2026-10-08
 source: "encargo y review adversarial de `late-remote-wipe-signal-also-wipes-rows-created-after-it` (2026-09-28); medido leyendo código, NO reproducido"
 ---
 
@@ -34,3 +35,10 @@ Production, y las filas de builds viejos seguirían sin él) o aceptar el residu
 
 - [[late-remote-wipe-signal-also-wipes-rows-created-after-it]]
 - [[late-remote-wipe-survivors-can-point-at-rows-the-origin-deleted]]
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- Sin cambios: `Account`, `Category`, `Subcategory` y `ExchangeRate` siguen sin `createdAt`, y `RemoteWipeCutLogic.takesUndated` sigue con la misma regla (uso → se queda; sin uso → según `fleetStartedOver`).
+- Decisión pendiente. A) añadir un campo de creación a los cuatro modelos (migración SwiftData, schema de CloudKit en Production, y las filas de builds viejos seguirían sin él); B) aceptar el residual y dejarlo escrito en la regla de área. Recomendada: B, porque A cuesta una migración con schema en producción para cuatro casos raros que no pierden datos. Con B baja a `very-low`.
+
+Triage 2026-10-08: abierto · low → very-low · `RemoteWipeCutLogic.takesUndated` sigue decidiendo por uso y `Account`, `Category`, `Subcategory` y `ExchangeRate` siguen sin fecha de creación; los cuatro casos son raros y no se reproducen.

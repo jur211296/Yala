@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, settings"
 created: 2026-09-16
-updated: 2026-09-17
+updated: 2026-10-08
 source: "review adversarial de `settings-migrate-to-cloud-adopts-silently-instead-of-migrating` (lente de identidad, hallazgo 3), 2026-09-16"
 ---
 
@@ -48,3 +48,10 @@ sea una cuenta que ya tenía finanzas de otra persona. Y «Activar la nube» ya 
 
 - [ ] Un relanzamiento a mitad del intento no deja asociada como cuenta de grupos la cuenta con la que se firmó.
 - [ ] La sesión de grupos que ya había antes del intento no se cierra nunca.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `GroupsAccountAssociation.syncFromLiveSessionIfNeeded` excluye hoy la sesión de un adopt (`AdoptSessionOwnership.ownsLiveSession`, `5a805a8cd`, 2026-09-24) y la de un teléfono sellado, pero no la de un «Migrar» a medias.
+- El propio docblock de `AdoptSessionOwnership` lo dice: «Migrar a la nube» cierra su sesión con `closeSessionIfOpened`, pero su testigo vive en memoria. `AdoptSessionOwnership` es el molde para la primera de las dos opciones del ticket.
+
+Triage 2026-10-08: abierto · low → low · El testigo de la sesión que abrió «Migrar» sigue en memoria (`CloudMigrationController.migrationAttempt`); `AdoptSessionOwnership` (5a805a8cd) persistió ese testigo solo para el adopt, y el registrador solo excluye la sesión del adopt.

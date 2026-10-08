@@ -4,6 +4,7 @@ status: backlog
 priority: low
 area: "groups, testing, seeds"
 created: 2026-09-08
+updated: 2026-10-08
 source: barrido de QA en simulador del 2026-09-08 (hallazgo de camino)
 ---
 
@@ -35,3 +36,9 @@ para poder ver el banner y comprobar que su botón quita el grupo de **este** te
 
 Con ese perfil, el tab Grupos muestra la tarjeta, el detalle trae el banner de rechazo con su copy,
 y su botón deja la lista sin ese grupo.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- El banner sigue cableado en `GroupDetailView` (`PendingApprovalBanner(state: .rejected, onLeave: { discardRejectedGroup() })`), y en `Yala/Seed/DevSeedGroups.swift` el único `rejected` es el `rejectedReason` del outbox, no el estado de un miembro. No existe ningún perfil `grupos-rechazado`.
+
+Triage 2026-10-08: abierto · low → low · `DevSeedGroups` sigue sin ningún perfil que escriba `status = .rejected`; `GroupDetailView` sigue cableando `PendingApprovalBanner(state: .rejected)`.

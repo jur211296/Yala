@@ -1,9 +1,10 @@
 ---
 id: migrate-before-the-groups-association-arrives-splits-the-accounts
 status: backlog
-priority: low
+priority: very-low
 area: "modo-nube, settings, groups"
 created: 2026-09-16
+updated: 2026-10-08
 source: "segunda pasada de la review de `settings-migrate-to-cloud-adopts-silently-instead-of-migrating` (lente de controller y vista, hallazgo 8), 2026-09-16"
 ---
 
@@ -37,3 +38,11 @@ es la marca de CloudKit; aquí, la asociación del iCloud-KV.
 
 - [ ] «Activar la nube» no migra a una cuenta nueva mientras la asociación de grupos del Apple ID no se ha podido leer, o
       el caso se decide y se documenta como aceptado.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- Sin cambios: ningún sitio de `Yala/` mira `NSUbiquitousKeyValueStoreInitialSyncChange`, y una cuenta nueva con `isAssociated == nil` sigue recibiendo el cutover en la fila de Ajustes (D3 y D13 del 2026-09-16).
+- Gemelo, no duplicado, de `settings-migrate-blocks-a-second-device-before-its-marker` (high): allí falta la marca de CloudKit; aquí, la asociación del iCloud-KV.
+- Decisión pendiente. A) tratar el `nil` como `false` hasta la primera sincronización del iCloud-KV; B) aceptarlo y documentarlo. Recomendada: B, porque A puede repetir el bloqueo del gemelo high (con el KV sin datos, la primera sincronización puede no anunciarse) para una población muy pequeña que se arregla desasociando. Con B baja a `very-low`.
+
+Triage 2026-10-08: abierto · low → very-low · Nada en `Yala/` espera la primera sincronización del iCloud-KV (`initialSyncChange` no aparece), y `CloudIdentityRoutingLogic` sigue dando el cutover a una cuenta nueva con asociación `nil`; ventana inferida y sin medir.

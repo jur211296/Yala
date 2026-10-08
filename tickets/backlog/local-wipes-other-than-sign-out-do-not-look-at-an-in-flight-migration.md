@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "sesiones, modo-nube"
 created: 2026-09-27
-updated: 2026-09-27
+updated: 2026-10-08
 source: "review adversarial de `private-sign-out-proceeds-with-a-migration-in-flight` (2026-09-27)"
 ---
 
@@ -27,3 +27,10 @@ marcha, la nube puede quedarse con lo que se quiso borrar, o el borrado cortar l
 
 - [ ] Decidido, por borrado, si se para con la migración fuera de reposo. Si se para, con la MISMA lectura
   (`MigrationRestReading.live` + `AppleIDChangeCloseLogic.migrationAtRest`), no con una copia.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `MigrationRestReading` / `migrationAtRest` solo se leen hoy en `AppBootstrapper`, `ContentView`, `AppleIDChangeCloseLogic`, `CloudSignOutFlowLogic`, `WelcomePrivateICloudGateLogic`, `CloudSessionSignOut` y `MigrationPhaseStore`. `UserDataResetView.handleWipeAllData` y `ShellDataAlertsModifier` no los leen.
+- En `ContentView` la única lectura está en la reanudación del borrado tardío de iCloud (`lateWipeLaunch`, que devuelve `.holdForMigration`): ese caso del ticket (`armICloudCorpusWipe`) ya espera con la migración en vuelo. Los demás siguen igual.
+
+Triage 2026-10-08: abierto · low → low · `UserDataResetView`, `ShellDataAlertsModifier` y `performLocalWipeForRemoteSync` siguen sin leer `MigrationRestReading`; solo la reanudación del borrado tardío (`lateWipeLaunch` → `.holdForMigration`) espera ya a la migración.

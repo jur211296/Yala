@@ -4,6 +4,7 @@ status: backlog
 priority: low
 area: "sync, settings"
 created: 2026-09-28
+updated: 2026-10-08
 source: "review adversarial de `late-remote-wipe-signal-also-wipes-rows-created-after-it` (lentes de sync y de tests, 2026-09-28); inferido leyendo código, NO reproducido"
 ---
 
@@ -39,3 +40,10 @@ huérfanas— o conservarlas con lo que usan, resucitando en el origen esas cuen
 ## Relacionados
 
 - [[late-remote-wipe-signal-also-wipes-rows-created-after-it]]
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- Sin cambios en `RemoteWipeCutLogic` desde el ticket: lo fechado (etiquetas incluidas) se corta por `createdAt`, y lo no fechado por uso (`takesUndated`).
+- Decisión pendiente. A) «Vaciar datos» gana y esas filas se quedan huérfanas o se van; B) se conservan con lo que usan y esas cuentas y etiquetas resucitan en el origen. Recomendada: B, porque ante la duda no se pierde lo que la persona apuntó después del vaciado. Con B sigue en `low`.
+
+Triage 2026-10-08: abierto · low → low · `RemoteWipeCutLogic` sigue cortando las etiquetas por fecha y conservando cuentas y categorías por uso, que el origen ya borró; la decisión de producto sigue sin tomar.

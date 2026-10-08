@@ -4,6 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, migración"
 created: 2026-09-27
+updated: 2026-10-08
 source: "decisión del Paso 0 de `migration-activation-drops-pending-effects-it-never-restores` (2026-09-27)"
 ---
 
@@ -37,3 +38,9 @@ la limpieza S2 el campo compartido solo para la ida, y decidir qué hace `startA
 - [ ] Con `.completeReverseServer` pendiente en `icloudActive`, activar, vencer el techo del claim y tocar «Reintentar»
       deja el pendiente en `notStarted`, y el siguiente `resume` lo ejecuta.
 - [ ] Un `.adoptBackendAccount` guardado nunca se ejecuta en `failedRollback`.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `ForwardOriginPendingEffects.step` termina en `return next == .notStarted ? .restore : .discard`: la entrada en `failedRollback` por el techo del claim sigue descartando lo guardado. Ningún commit de código lo tocó desde el 2026-09-27.
+
+Triage 2026-10-08: abierto · low → low · `ForwardOriginPendingEffects.step` (MigrationRunner.swift) sigue devolviendo `.discard` en toda transición que no va a `notStarted`, así que `failedRollback` tira los pendientes del origen; caso raro que pide red para llegar al claim y ninguna para el pendiente.

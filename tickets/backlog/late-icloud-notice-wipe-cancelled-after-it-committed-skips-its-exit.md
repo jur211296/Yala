@@ -4,6 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, onboarding"
 created: 2026-09-27
+updated: 2026-10-08
 source: "búsqueda de instancias del mismo patrón en `private-gate-remote-wipe-can-strand-its-arm`, 2026-09-27"
 ---
 
@@ -48,3 +49,9 @@ Desde ese ticket, «Empezar de cero» del aviso con el corpus es `.importedRows`
 camino. Pero si la hoja se desmonta por otra causa tras un borrado que terminó, el «por qué es `low`» ya no vale entero:
 la persona se queda en la app con lo personal vacío y el arm puesto, y el arranque siguiente reanuda el borrado **sobre lo
 que haya creado entretanto**. Sigue acotado por `interactiveDismissDisabled` y por no haber botón de cerrar en `.wiping`.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `LateICloudMirrorNoticeView.runPhase` mantiene el `guard !Task.isCancelled` tras `performWipe()`. Los tres commits posteriores sobre el fichero (`c934e526c`, `b26cebed2`, `e403c93c2`) cambian las ramas de fallo, no este corte. El desmontaje de la hoja sigue sin medirse.
+
+Triage 2026-10-08: abierto · low → low · `LateICloudMirrorNoticeView.runPhase` sigue con `guard !Task.isCancelled else { return }` justo después de `await performWipe()`, sin el corte de `gateWipeSettles`; sigue inferido.

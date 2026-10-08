@@ -3,7 +3,7 @@ id: ipad-list-highlights-the-open-row
 status: backlog
 priority: low
 area: "ipad, records, planning, adaptativo"
-updated: 2026-09-29
+updated: 2026-10-08
 created: 2026-09-29
 source: "fase 1 del carril adaptativo (ipad-sidebar-and-list-detail-for-records-and-planning), 2026-09-29"
 ---
@@ -32,3 +32,9 @@ Apple (Mail, Notas) la dejan resaltada.
 ## Relacionados
 
 - [[ipad-sidebar-and-list-detail-for-records-and-planning]] — la fase que abrió el detalle al lado.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `openRecordID` solo se lee en `RecordsStandaloneView` y `DetailContainerView` para montar o cerrar el detalle; ninguna vista de fila lo consulta. Ningún commit posterior al 2026-09-29 añade un resaltado de la fila abierta.
+
+Triage 2026-10-08: abierto · low → low · Ninguna fila de Registros mira `RecordsViewModel.openRecordID` (solo lo usan `RecordsStandaloneView` y `DetailContainerView` para el detalle); Planificación sigue sin estado del presupuesto abierto.

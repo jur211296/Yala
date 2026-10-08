@@ -4,6 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, onboarding"
 created: 2026-09-24
+updated: 2026-10-08
 source: "review adversarial de `claim-promotion-lost-response-blocks-the-retry` (2026-09-24), lente de consumidores"
 ---
 
@@ -32,3 +33,10 @@ finanzas personales». No las tiene.
 
 - [ ] Alta en la nube perdida + iCloud privado + «Migrar a la nube» con la misma cuenta → migra.
 - [ ] Una cuenta `complete` con datos sigue bloqueando «Migrar».
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- Desde el ticket, `check` ganó `hasUnansweredMigrationClaim` (claim de «Migrar» sin respuesta), pero esa marca es de la migración, no del alta del Welcome: una cuenta `complete` vacía creada por un alta perdida sigue cayendo en el bloqueo. Los dos commits posteriores al fichero (`73a16599b`, `edc92f5af`) no tocan este caso.
+- No es un callejón: la persona puede migrar con otra cuenta o seguir en iCloud. Por eso sigue en `low`.
+
+Triage 2026-10-08: abierto · low → low · `StorageMigrationIdentityGateLogic.check` solo deja pasar una cuenta `complete` con el sello `.proceedMigration` o un claim de «Migrar» sin respuesta; el alta perdida del Welcome no deja ninguno de los dos.
