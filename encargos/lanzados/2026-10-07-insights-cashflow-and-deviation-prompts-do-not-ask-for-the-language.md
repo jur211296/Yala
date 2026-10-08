@@ -70,5 +70,6 @@ Decidido antes de tocar código (sesión autónoma, sin preguntas: nada de esto 
   banco cambia sus marcadores (`gateway/bench/lib/insightsRequests.ts`), no el gateway.
 - **Banco**: solo la fila activa de cada tarea (`gpt-6-luna`, el esfuerzo de su fila), `--reps 2`, en
   `gateway/bench/results/2026-10-07-idioma/`, junto a los de la sesión 2.
-- **Capturas**: el comentario sale de una llamada real al gateway, que el simulador no puede autenticar sin App Attest;
-  no se ve sin inventar datos ⇒ sin capturas. El device-QA queda para Jürgen.
+- **Capturas**: sí se ven. Con `Yala Dev`, el secreto de staging (`~/Secrets/yala-gateway/staging-dev-shared-secret`), el
+  seed `realista`, el iPhone en español-Perú y el idioma de Yala forzado a inglés, el resumen de Insights salía en español
+  (antes) y sale en inglés (después). El flujo de caja no tiene plan sembrado: no se capturó.

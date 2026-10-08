@@ -58,14 +58,14 @@ español aunque la app esté en alemán. Esto último es **inferido**, no medido
 
 ## Guion de device-QA (Jürgen)
 
-Hace falta Pro, el consentimiento de IA aceptado y red. Con un iPhone real, build de TestFlight.
+Hace falta Pro, el consentimiento de IA aceptado y red. Con un iPhone real, build de TestFlight. El caso del idioma
+forzado dentro de Yala con el iPhone en otro idioma está visto en el simulador (capturas del PR) y fijado en test; aquí se
+mira lo que ve casi todo el mundo.
 
-1. Ajustes del iPhone → General → Idioma y región: deja la región en **Perú** e idioma del iPhone **Español**.
-2. En Yala: Perfil → Ajustes → Idioma → **English**.
-3. Estadísticas → pestaña **Insights**: el análisis de la IA (frase grande y tarjetas) tiene que salir en **inglés**.
-4. Informes → **Flujo de caja** (con un plan creado) → abre las gráficas: el comentario de la IA bajo la proyección sale en
-   **inglés**, y si te pasaste en alguna línea del plan, el comentario de desviaciones también.
-5. Cambia el idioma de Yala a **Deutsch** y vuelve a abrir las dos pantallas: los comentarios salen en **alemán**, sin
-   palabras sueltas en español («gasto», «presupuesto»). Antes de este arreglo, la caché devolvía el comentario viejo hasta
-   24 h.
-6. Devuelve Yala a «Idioma del sistema».
+1. Ajustes del iPhone → Apps → **Yala** → Idioma → **English** (el iPhone puede seguir en español y en región Perú).
+2. En Yala, Estadísticas → **Resumen** → toca «Smart summary»: el análisis de la IA sale en **inglés**.
+3. Planificación → **Flujo de caja** (con un plan creado) → abre las gráficas: el comentario de la IA bajo la proyección
+   sale en **inglés**, y si te pasaste en alguna línea del plan, el de desviaciones también. Antes salían en español.
+4. Vuelve a Ajustes del iPhone → Yala → Idioma → **Deutsch**, abre Yala y repite 2 y 3: todo en **alemán**, sin palabras
+   sueltas en español («gasto», «presupuesto») y sin el comentario en inglés de antes.
+5. Devuelve el idioma de Yala al que tenías.
