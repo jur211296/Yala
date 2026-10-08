@@ -4,7 +4,7 @@ status: backlog
 priority: medium
 area: testing
 created: 2026-10-07
-updated: 2026-10-07
+updated: 2026-10-08
 source: hallazgo de advisory-ui-tests-fail-every-retry (run 37485294893)
 ---
 
@@ -42,3 +42,16 @@ alcanza para entrar en 110 min.
 Medir cuánto dura la suite entera en el runner y elegir: subir el tope, partir la suite en dos pasos o dos
 noches, o quitar el reintento de los casos que tardan. Cualquiera toca `qa.yml`, que el encargo que lo encontró
 tenía vetado.
+
+## Medido otra vez el 2026-10-08 (run 37644787793, QA programada del 7-oct sobre `beed3a2`)
+
+- El paso de UI arrancó a las 16:10:33 y se cortó a las 18:00:49 («has timed out after 110 minutes»), con **179
+  casos pasados y 1 rojo** (`AdvancedFiltersUITests.test_excludeModePersistsAfterApply`) de los 244 `func test` que
+  hay en `YalaUITests`. Media de 35 s por caso pasado; iba por `StatisticsHeroLikePanelUITests` (orden alfabético). El
+  log avanza hasta el último segundo: es lentitud, no un cuelgue.
+- **Esta vez el JOB también se canceló** (`tests` cancelled, 15:33:13 → 18:04:53, 151,7 min frente al tope de 150 de
+  la nocturna). Lo que lo empujó por encima fue el rojo de unit de esa misma noche
+  (`upload-order-sorts-by-hlc-test-fails-in-ci`): sus vueltas 2 y 3 sumaron ~5,5 min antes del paso de UI, y la
+  limpieza de procesos huérfanos tras el corte gastó otros ~3,5 min. Sin ese rojo el job habría acabado hacia los 146
+  min: dentro, pero con 4 min de margen. Ese margen es el problema de este ticket: cualquier rojo de unit con
+  reintentos cancela el job de la nocturna.
