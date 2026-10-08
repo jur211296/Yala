@@ -216,6 +216,16 @@ nonisolated enum WelcomePrivateICloudGateLogic {
         /// subiendo, y preguntar «terminar de borrar» con la nube a medio activar mezcla dos decisiones. El borrado sigue
         /// pendiente: lo decide el arranque en la nube si la migración termina, o este mismo arranque cuando vuelva al reposo.
         case holdForMigration
+        /// **La ida terminó en un fallo ASENTADO y la persona dejó puesta la renuncia de «Activar la nube sin borrar»**
+        /// (ticket `late-icloud-wipe-stays-frozen-after-a-settled-failed-migration`, decisión B de Jürgen del 2026-10-07):
+        /// gana la renuncia, ni se pregunta ni se borra. El borrado sigue pendiente y la renuncia no caduca: con «Reintentar»
+        /// a la vista todavía puede servir (`waiverLapses` sigue exigiendo reposo estricto).
+        case holdForWaiver
+        /// **La ida terminó en un fallo ASENTADO y el borrado estaba ARMADO** (mismo ticket): no se reanuda a ciegas, se
+        /// vuelve a preguntar. Quien lo atiende lo clasifica como un borrado que falló (`classifyLateWipeFailure`): con la
+        /// zona de iCloud ya ida pasa a «a medias» y se enseña esa pantalla; sin tocar nada se desarma y el aviso del espejo
+        /// tardío vuelve a preguntar con el corpus. El motivo del congelado —la ida está subiendo— no aplica: no sube nada.
+        case askAfterFailedMigration
         /// Este dispositivo ya vive en la nube: ni el arm ni «a medias» describen su store, y los dos se retiran sin borrar
         /// ni preguntar. **Pero se cuenta**: la persona pidió ese borrado y tiene que saber que no se hizo.
         case retireInCloud
@@ -245,18 +255,28 @@ nonisolated enum WelcomePrivateICloudGateLogic {
     /// **Y en iCloud, una migración en vuelo congela el borrado pendiente; en la nube, se cuenta salvo renuncia** (ticket
     /// `late-wipe-arm-is-dropped-silently-when-the-device-moves-to-the-cloud`). La renuncia y el aviso no cambian nada en
     /// iCloud: allí caducan (`waiverLapses`, `cancelledNoticeLapses`).
+    ///
+    /// **Y una ida que FALLÓ y ya está asentada no congela: vuelve a preguntar** (ticket
+    /// `late-icloud-wipe-stays-frozen-after-a-settled-failed-migration`, decisión B de Jürgen del 2026-10-07). Son dos
+    /// lecturas del MISMO `MigrationRestReading` y son excluyentes (el journal deriva a `.idle` o a `.failed(.migration)`):
+    /// `migrationAtRest`, el estricto, y `migrationFailedAndSettled`. Con el fallo asentado no se reanuda nunca —el arm
+    /// pregunta (`.askAfterFailedMigration`) y «a medias» pregunta como siempre—, salvo con la renuncia puesta, que gana
+    /// (`.holdForWaiver`). Hasta ese ticket el borrado se quedaba congelado hasta que la persona pulsara «Reintentar».
     static func lateWipeLaunch(armed: Bool, leftHalfway: Bool, cancelledInCloudNoticePending: Bool,
-                               waivedForCloud: Bool, migrationAtRest: Bool,
+                               waivedForCloud: Bool, migrationAtRest: Bool, migrationFailedAndSettled: Bool,
                                storageMode: StorageMode) -> LateWipeLaunch {
         switch storageMode {
         case .cloud:
             if armed || leftHalfway { return waivedForCloud ? .retireWaivedInCloud : .retireInCloud }
             return cancelledInCloudNoticePending ? .tellCancelledInCloud : .none
         case .icloud:
-            if (armed || leftHalfway) && !migrationAtRest { return .holdForMigration }
-            if armed { return .resume }
-            if leftHalfway { return .askLeftHalfway }
-            return .none
+            guard armed || leftHalfway else { return .none }
+            if !migrationAtRest {
+                guard migrationFailedAndSettled else { return .holdForMigration }
+                if waivedForCloud { return .holdForWaiver }
+                return armed ? .askAfterFailedMigration : .askLeftHalfway
+            }
+            return armed ? .resume : .askLeftHalfway
         }
     }
 
