@@ -1,10 +1,10 @@
 ---
 id: debounce-sync-imported-transactions
 status: backlog
-priority: low
+priority: very-low
 area: groups-bridge
 created: 2026-05-25
-updated: 2026-08-26
+updated: 2026-10-08
 source: YalaWiki/Backlog/debounce-transactions-imported-from-sync-observer.md
 ---
 
@@ -91,3 +91,10 @@ private var pendingRaceCleanerTask: Task<Void, Never>?
 - [ ] Build verde + test-smart (no hay tests unitarios de este observer específico — es orquestación de `AppBootstrapper`, no lógica pura; no se espera añadir tests nuevos para este ticket puntual).
 
 migrated from YalaWiki Backlog/debounce-transactions-imported-from-sync-observer.md @ 1934e8ad
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `AppBootstrapper.observeTransactionsImportedFromSync` (hoy hacia la línea 1382, sin parámetro `context`) sigue llamando a `GroupBridgeRaceCleaner.cleanupPendingDraftsWithMatchingTX` en cada aviso, sin `Task` cancelable ni espera.
+- La notificación se posta hoy en `iCloudSyncService.swift` hacia la línea 413 (no 283-289); las coordenadas del cuerpo están desfasadas.
+
+Triage 2026-10-08: abierto · low → very-low · sigue sin debounce, pero cada pasada es barata y sale pronto si el import no está quieto: es pulido de rendimiento.

@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, migración"
 created: 2026-09-21
-updated: 2026-09-21
+updated: 2026-10-08
 source: "review adversarial de `reverse-pre-mount-ceiling-has-no-alert-and-leaves-network-verify-out` (2026-09-21), lente de la máquina"
 ---
 
@@ -47,3 +47,10 @@ device-QA de los tickets de la vuelta se apoya en ella.
 
 - `reverse-pre-mount-ceiling-has-no-alert-and-leaves-network-verify-out` — el que dejó el contador quieto.
 - `reverse-before-mount-has-no-way-to-abandon-the-return` — el que introdujo el reloj que falta por pintar.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `CloudSyncDebugView.swift` sigue pintando `mismatch … · red \(state.verifyNetworkRetries) · leader … · seqCut …` y no menciona `reversePreMount` en ninguna línea.
+- El único commit posterior al fichero (`ee95d7902`) no toca la etiqueta.
+
+Triage 2026-10-08: abierto · low → low · el panel DEV sigue sin el reloj del techo y afirma «red 0»; no es producción, pero el device-QA de la vuelta se apoya en él.

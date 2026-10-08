@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, cierre de sesión, migración"
 created: 2026-09-25
-updated: 2026-09-27
+updated: 2026-10-08
 source: "review adversarial de `sign-out-push-all-runs-a-sync-cycle-past-the-migration-gate` (2026-09-25)"
 ---
 
@@ -34,3 +34,11 @@ adelante y arma el borrado aunque el proceso de la migración siga trabajando. I
 migración fuera de reposo. Queda la celda de la nube (`.cloudSecureSignOut`, modo `.cloud`), que es este ticket: una vuelta
 a iCloud en vuelo antes de persistir `.icloud`. `migrationAtRest` no sirve aquí tal cual —en `.cloud` deriva `.cloudActive`
 y bloquearía todo cierre en la nube—; habría que distinguir `.cloudActive` estable de una fase de la vuelta.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `CloudSessionSignOut.blockIfMigrationNotAtRest` se llama en tres sitios, todos del cierre por archivos (`performSessionExit`, `finalizeSessionExit` y el arm); `performCloudSecureSignOut` sigue sin llamarlo ni leer `MigrationRestReading`.
+- El único commit posterior que toca la migración en el cierre es `2d3f07202` (cierre privado tras una ida fallida), que no cambia la celda de la nube.
+- Sigue sin medir si Perfil deja llegar a «Cerrar sesión» con una vuelta a iCloud en vuelo; el criterio de aceptación sigue vigente.
+
+Triage 2026-10-08: abierto · low → low · la celda de la nube (`performCloudSecureSignOut`) sigue sin mirar la migración; inferido y sin reproducir, la cuenta conserva los datos en el servidor.

@@ -5,6 +5,7 @@ priority: low
 area: "grupos, sesiones"
 created: 2026-09-17
 source: "review adversarial de `fresh-start-keeps-a-groups-session-that-migrate-promotes` (lente de puertas, H8), 2026-09-17"
+updated: 2026-10-08
 ---
 
 # Si soltar la cuenta de grupos falla a medias sin asociación guardada, «Terminar de soltar» no sale nunca
@@ -37,3 +38,11 @@ armar.
 
 - [ ] Un desasociar que falla a medias sin asociación registrada ofrece terminar de soltar la cuenta.
 - [ ] El reintento sigue sin poder borrar los grupos de una cuenta distinta de la que quedó a medias.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `detachGroupsAccount` sigue resolviendo `associatedSub` con `GroupsAccountAssociation.shared.associatedSub ?? CloudAuthService.shared.currentUserID` y arma `GroupsDetachPendingPurge.arm(sub:)` con él en `.purgeFailed`.
+- `GroupsDetachPendingPurge.isArmed(for:)` sigue exigiendo los dos `sub` presentes, y `GroupsAssociationSection` y `retryDetachPurge` le pasan `GroupsAccountAssociation.shared.associatedSub`: sin registro responde `false`.
+- Los commits posteriores sobre el desasociar (`4b29e9ed5`, `6464cf54c`, `6f2aaa186`) no tocan esta comparación. Sigue sin medir qué hace fallar el `save()` del borrado.
+
+Triage 2026-10-08: abierto · low → low · la marca sigue invisible sin asociación registrada; los grupos se quedan en el teléfono (sin pérdida) y exige que falle el `save()` del borrado.

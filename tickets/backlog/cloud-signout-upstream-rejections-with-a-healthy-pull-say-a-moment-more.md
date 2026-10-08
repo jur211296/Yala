@@ -5,6 +5,7 @@ priority: low
 area: "modo-nube, sesión"
 created: 2026-09-25
 source: "review adversarial de `cloud-signout-collapses-the-personal-push-all-reason-into-permanent` (2026-09-25)"
+updated: 2026-10-08
 ---
 
 # Con el Postgres del servidor fallando y el pull sano, cerrar sesión dice «un momento más»
@@ -29,3 +30,11 @@ lo mismo: no es un guardado que se asienta, es el servidor.
 ## Lo que hay que decidir
 
 ¿El tope de iteraciones con el testigo encendido es `.uploadRetryLater` en los dos canales, o solo en el personal?
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `CloudSignOutFlowLogic.classify` sigue devolviendo `.transient` para `.completed`/`.coalesced` sin mirar `uploadFailed`, y el test `theStillDrainingOutboxIgnoresTheUploadWitness` lo sigue fijando.
+- Los cambios se quedan en el teléfono: el bloqueo no descarta nada; lo que falla es el texto.
+- Sigue pendiente la decisión. Recomendación: `.uploadRetryLater` en el tope con el testigo encendido, en los dos canales (el texto «inténtalo en un rato» es verdad para los dos).
+
+Triage 2026-10-08: abierto · low → low · `classify(.completed)` sigue ignorando el testigo; el texto miente sobre la causa pero no se pierde nada y exige una caída del Postgres del servidor.

@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, sync"
 created: 2026-09-23
-updated: 2026-09-23
+updated: 2026-10-08
 source: "review adversarial de `drain-duplicates-the-unit-clock-when-its-row-cannot-be-read` (2026-09-23), lentes de rollback y de equivalencia"
 ---
 
@@ -27,3 +27,10 @@ salva. Solo alcanza a la creación del cursor: primer drain de la instalación o
 
 - [ ] Medir si en el primer drain puede haber cambios pendientes del usuario en el contexto.
 - [ ] Si sí: guardar lo pendiente con el autor por defecto antes de crear el cursor (o crearlo sin arrastrarlo).
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `CloudSyncEngine.loadOrCreateCursor` sigue insertando el `SyncCursor` y guardando con `saveWithAuthor(context, Self.outboxSaveAuthor) { }`, que arrastra todo lo pendiente del contexto bajo el autor del motor.
+- Ningún commit posterior al 2026-09-23 toca esa función. El primer criterio (medir si puede haber cambios pendientes del usuario en ese instante) sigue sin hacerse.
+
+Triage 2026-10-08: abierto · low → low · la creación del cursor sigue guardando lo pendiente bajo el autor del motor; solo ocurre una vez por instalación y sigue sin medir si hay algo pendiente en ese instante.

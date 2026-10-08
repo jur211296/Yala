@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, groups, sesiones"
 created: 2026-09-26
-updated: 2026-09-26
+updated: 2026-10-08
 source: "review adversarial de `detach-does-not-verify-the-cloud-session-actually-closed` (2026-09-26), lentes de secuencia y del testigo"
 ---
 
@@ -43,3 +43,11 @@ borrado corre con el SDK vivo: `retireForSignOutWipe` purga y relee (`isEmpty()`
 relectura deja la sesión repuesta con el retiro ya desarmado. Además el remonte llama `CloudSessionRetirement.purgeIfArmed()`,
 que no relee el llavero (su docblock da por hecho que el SDK no existe, y en el remonte sí). Inferido, sin medir: la ventana
 es la misma que la del desasociar. El arreglo de raíz es el mismo: parar el auto-refresco antes del cierre.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `stopAutoRefreshToken` sigue sin usarse en el repo (solo aparece en comentarios de `CloudAuthKeychainStorage` y `CloudSessionRetirement`).
+- `CloudSessionRetirement.purgeIfArmed` sigue sin releer el llavero (su docblock da por hecho que el SDK no existe), que es la mitad del swap sin relanzar.
+- `b10a672ed` y `73a16599b` endurecen el cierre y el sello del claim, pero ninguno cubre un refresco que aterriza después de la comprobación del desasociar.
+
+Triage 2026-10-08: abierto · low → low · nadie para el auto-refresco antes de soltar la sesión; la ventana es estrecha salvo con mala red, y la sesión repuesta es de la propia persona.

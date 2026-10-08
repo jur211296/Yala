@@ -5,6 +5,7 @@ priority: low
 area: "modo-nube, settings, groups"
 created: 2026-10-02
 source: "hallazgo de `detach-blocked-phase-is-stranded-when-the-storage-sheet-closes-mid-wait`"
+updated: 2026-10-08
 ---
 
 # «Terminar de soltar la cuenta» puede decir «Estás cerrando sesión» cuando lo que pasó es que volviste a entrar
@@ -29,3 +30,10 @@ sesión en este momento. Termina eso primero y vuelve a intentarlo». No estoy c
 
 Que la sesión que volvió tenga su propio desenlace y su propio texto (copy nuevo en los idiomas: decisión de producto),
 o que la sección simplemente se re-pinte en silencio, porque con la sesión de esa cuenta viva ya no ofrece terminar.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `CloudSessionSignOut.retryDetachPurge` sigue devolviendo `.busy` en `.preconditionLost` tras `writeDetachUnderQuiescence` (con `stillMayWrite` comparando `currentUserID` con `GroupsDetachPendingPurge.armedSub()`).
+- `GroupsAssociationSection.apply` sigue pintando todo `.busy` como `.detachBusy` («Estás cerrando sesión»).
+
+Triage 2026-10-08: abierto · low → low · `.preconditionLost` sigue saliendo como `.busy` y se pinta «Estás cerrando sesión»; texto falso en una carrera de hasta un minuto, sin riesgo para los datos.

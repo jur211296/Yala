@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, sync"
 created: 2026-09-26
-updated: 2026-09-26
+updated: 2026-10-08
 source: "`personal-sign-out-reads-an-unfinished-drain-as-nothing-pending` (2026-09-26), al buscar todas las instancias del patrón"
 ---
 
@@ -45,3 +45,10 @@ Con la pérdida aceptada por la sesión caducada (`cloud-sign-out-with-an-expire
 motor ya está parado (`stopUntilSignIn`): nada drena lo que entre durante el `await` del paso 2 —una importación de la cola
 de Siri o Apple Pay—, y el recuento del paso 4 solo mira el outbox. Esas ediciones se irían con el borrado sin que ningún aviso
 las cuente (inferido en la review adversarial, lente 2, hallazgo 4; sin medir).
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- La sección del 2026-09-28 (pérdida aceptada con la sesión caducada) ya está cubierta: desde `87c462469` (2026-10-05) el paso 4 de `CloudSessionSignOut.performCloudSecureSignOut` relee el History con `controller.uncapturedPersonalChangeKeys()` y `CloudSignOutFlowLogic.residualUncapturedAllowsSignOut` cuando hay pérdida aceptada.
+- El camino normal, sin pérdida aceptada, sigue igual: `residualUncaptured` es `nil` y `residualUncapturedAllowsSignOut(now:acceptance: nil)` devuelve `true`, así que solo cuenta `livePendingUploadCount()`. El comentario «Residual documentado: writes que queden solo en History… mueren con el wipe» sigue ahí.
+
+Triage 2026-10-08: abierto · low → low · el addendum del 28-sep quedó cubierto por 87c462469; el camino normal sigue sin leer el History en el paso 4, con una ventana de milisegundos.

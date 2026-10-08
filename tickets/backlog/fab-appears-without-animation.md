@@ -1,10 +1,11 @@
 ---
 id: fab-appears-without-animation
 status: backlog
-priority: low
+priority: very-low
 area: ui
 created: 2026-09-09
 source: idea Jürgen 2026-09-09
+updated: 2026-10-08
 ---
 
 # El botón flotante de nuevo registro aparece de golpe
@@ -48,3 +49,10 @@ Idea capturada, **sin spec**. Polish visual: no toca lógica ni datos.
 
 `low` a propósito, y es la única de las cinco de esta tanda que no va en `medium`: no bloquea nada
 ni corrige nada incorrecto. Si Jürgen la quiere antes, es cambiar una línea de este frontmatter.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `FABStackView.transactionFAB` sigue sin `.transition(Self.fabScaleTransition)`, que sí llevan el FAB de IA y los botones del menú.
+- `DetailContainerView.swift` sigue con cero `.transition(` y el bloque del FAB de `RecordsStandaloneView` tampoco lleva transición propia. Los commits posteriores (iPad, observadores de Registros) no tocan la entrada del FAB.
+
+Triage 2026-10-08: abierto · low → very-low · el «+» sigue entrando sin transición en Estadísticas y Registros; es pulido visual que no corrige nada incorrecto (lo dice el propio ticket).
