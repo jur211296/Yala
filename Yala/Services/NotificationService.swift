@@ -205,15 +205,13 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
 
     /// Cancel a scheduled notification
     func cancelNotification(for item: NotificationItem) async {
-        // Cancel main request
-        var identifiers = [item.id.uuidString]
+        notificationCenter.removePendingNotificationRequests(withIdentifiers: Self.scheduledRequestIdentifiers(for: item.id))
+    }
 
-        // Also cancel any weekday-specific requests (1-7)
-        for weekday in 1...7 {
-            identifiers.append("\(item.id.uuidString)-\(weekday)")
-        }
-
-        notificationCenter.removePendingNotificationRequests(withIdentifiers: identifiers)
+    /// Los identificadores con los que `scheduleNotification` programa un aviso: el del aviso y uno por día de la semana
+    /// (1-7). Quien borra una fila de `NotificationItem` sin quitarlos deja un aviso repetitivo vivo que nadie apaga.
+    nonisolated static func scheduledRequestIdentifiers(for id: UUID) -> [String] {
+        [id.uuidString] + (1...7).map { "\(id.uuidString)-\($0)" }
     }
 
     /// Send an immediate notification with optional deep link
@@ -587,10 +585,15 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
         }
     }
 
-    /// Remove duplicate NotificationItems by typeRaw, keeping the one with isActive = true preference.
+    /// Borra los avisos de sistema duplicados y se queda con uno por tipo (el activo, si lo hay). Qué se junta lo decide
+    /// `NotificationDeduplicationLogic`: los recordatorios de la persona (`custom`) no se juntan nunca.
     /// R9: Guards against CloudKit delivering synced notifications between fetch and save in onboarding.
+    ///
+    /// Lo que borra también lo desprograma, tras guardar: sin eso el aviso repetitivo de la fila borrada seguía sonando
+    /// hasta que alguien abriera Ajustes › Notificaciones. `removePendingRequests` es el seam de los tests; en producción,
+    /// el centro de notificaciones.
     @MainActor
-    func deduplicateNotifications(context: ModelContext) {
+    func deduplicateNotifications(context: ModelContext, removePendingRequests: (([String]) -> Void)? = nil) {
         // Gate de quiescencia: save del store personal — diferir durante el import del restore.
         // Dedupe tras la quiescencia ve el estado final del import (mejor que a mitad de camino).
         guard iCloudSyncService.shared.isImportQuiescent else {
@@ -608,29 +611,28 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
             return
         }
 
-        let grouped = Dictionary(grouping: all) { $0.typeRaw }
-        var removed = 0
-        for (_, group) in grouped where group.count > 1 {
-            // Keep the active one (or first if both same)
-            let sorted = group.sorted { ($0.isActive ? 1 : 0) > ($1.isActive ? 1 : 0) }
-            for dup in sorted.dropFirst() {
-                context.delete(dup)
-                removed += 1
-            }
+        let candidates = all.map { NotificationDeduplicationLogic.Candidate(typeRaw: $0.typeRaw, isActive: $0.isActive) }
+        let duplicates = NotificationDeduplicationLogic.indicesToDelete(candidates).map { all[$0] }
+        guard !duplicates.isEmpty else { return }
+        let identifiers = duplicates.flatMap { Self.scheduledRequestIdentifiers(for: $0.id) }
+        for duplicate in duplicates {
+            context.delete(duplicate)
         }
-        if removed > 0 {
-            do {
-                SaveBreadcrumb.willSave("NotificationService.dedupe")
-                try context.save()
-                SaveBreadcrumb.didSave("NotificationService.dedupe")
-                #if DEBUG
-                print("NotificationService: Deduplicated \(removed) notification(s)")
-                #endif
-            } catch {
-                #if DEBUG
-                print("NotificationService: Error deduplicating: \(error)")
-                #endif
+        do {
+            SaveBreadcrumb.willSave("NotificationService.dedupe")
+            try context.save()
+            SaveBreadcrumb.didSave("NotificationService.dedupe")
+            let remove = removePendingRequests ?? { [notificationCenter] in
+                notificationCenter.removePendingNotificationRequests(withIdentifiers: $0)
             }
+            remove(identifiers)
+            #if DEBUG
+            print("NotificationService: Deduplicated \(duplicates.count) notification(s)")
+            #endif
+        } catch {
+            #if DEBUG
+            print("NotificationService: Error deduplicating: \(error)")
+            #endif
         }
     }
 
