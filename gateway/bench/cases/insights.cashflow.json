@@ -1,0 +1,242 @@
+{
+  "task": "insights.cashflow",
+  "criterion": "Comentario de una oración sobre la proyección de flujo de caja. Pasa si: (1) la app lo lee (`{\"comment\": …}`); (2) hay comentario (`null` solo vale en los casos con `allowNull`); (3) ≤ 180 caracteres visibles (el prompt pide 150; por encima de 150 × 1,2 ya no es «una sola oración corta»; el ≤ 150 estricto va aparte); (4) en el idioma de la app del usuario (OJO: el prompt de la app no lo manda); (5) ningún número sin respaldo en los datos; (6) la divisa nunca va detrás del número. Datos inventados: proyecciones de 1 a 12 meses, mes en curso = octubre de 2026, nombres de mes en el idioma del iPhone.",
+  "cases": [
+    {
+      "id": "f01-es-PE-healthy",
+      "locale": "es-PE",
+      "note": "Sano: siempre en positivo, diciembre con más gasto.",
+      "input": {
+        "currency": "PEN", "deviceLocale": "es-PE", "startingBalance": 3200,
+        "months": [
+          { "month": "2026-07", "income": 5600, "expense": 4300 },
+          { "month": "2026-08", "income": 5600, "expense": 4550 },
+          { "month": "2026-09", "income": 5600, "expense": 3842.5 },
+          { "month": "2026-10", "income": 5600, "expense": 4800, "isCurrent": true },
+          { "month": "2026-11", "income": 5600, "expense": 4400 },
+          { "month": "2026-12", "income": 5600, "expense": 6100 }
+        ]
+      }
+    },
+    {
+      "id": "f02-es-ES-goes-negative",
+      "locale": "es-ES",
+      "note": "Se pone en negativo en diciembre y enero.",
+      "input": {
+        "currency": "EUR", "deviceLocale": "es-ES", "startingBalance": 800,
+        "months": [
+          { "month": "2026-08", "income": 2450, "expense": 2300 },
+          { "month": "2026-09", "income": 2450, "expense": 2700 },
+          { "month": "2026-10", "income": 2450, "expense": 2650, "isCurrent": true },
+          { "month": "2026-11", "income": 2450, "expense": 2600 },
+          { "month": "2026-12", "income": 2450, "expense": 3200 },
+          { "month": "2027-01", "income": 2450, "expense": 2500 }
+        ]
+      }
+    },
+    {
+      "id": "f03-es-AR-big-numbers",
+      "locale": "es-AR",
+      "note": "Pesos con millones; aguinaldo en diciembre.",
+      "input": {
+        "currency": "ARS", "deviceLocale": "es-AR", "startingBalance": 950000,
+        "months": [
+          { "month": "2026-09", "income": 2100000, "expense": 1854300 },
+          { "month": "2026-10", "income": 2100000, "expense": 2050000, "isCurrent": true },
+          { "month": "2026-11", "income": 2300000, "expense": 2150000 },
+          { "month": "2026-12", "income": 3450000, "expense": 2700000 },
+          { "month": "2027-01", "income": 2300000, "expense": 2400000 },
+          { "month": "2027-02", "income": 2300000, "expense": 2250000 }
+        ]
+      }
+    },
+    {
+      "id": "f04-en-irregular-income",
+      "locale": "en",
+      "note": "Ingresos irregulares (freelance): un mes sin ingresos.",
+      "input": {
+        "currency": "USD", "deviceLocale": "en-US", "startingBalance": 5200,
+        "months": [
+          { "month": "2026-08", "income": 6500, "expense": 4100 },
+          { "month": "2026-09", "income": 1850, "expense": 4100 },
+          { "month": "2026-10", "income": 7200, "expense": 4100, "isCurrent": true },
+          { "month": "2026-11", "income": 0, "expense": 4100 },
+          { "month": "2026-12", "income": 4800, "expense": 4100 },
+          { "month": "2027-01", "income": 3000, "expense": 4100 }
+        ]
+      }
+    },
+    {
+      "id": "f05-en-GB-thin-margin",
+      "locale": "en-GB",
+      "note": "Doce meses con margen mínimo; el saldo se va comiendo.",
+      "input": {
+        "currency": "GBP", "deviceLocale": "en-GB", "startingBalance": 400,
+        "months": [
+          { "month": "2026-09", "income": 3400, "expense": 3350 },
+          { "month": "2026-10", "income": 3400, "expense": 3380, "isCurrent": true },
+          { "month": "2026-11", "income": 3400, "expense": 3390 },
+          { "month": "2026-12", "income": 3400, "expense": 3600 },
+          { "month": "2027-01", "income": 3400, "expense": 3300 },
+          { "month": "2027-02", "income": 3400, "expense": 3380 },
+          { "month": "2027-03", "income": 3400, "expense": 3390 },
+          { "month": "2027-04", "income": 3400, "expense": 3350 },
+          { "month": "2027-05", "income": 3400, "expense": 3400 },
+          { "month": "2027-06", "income": 3400, "expense": 3380 },
+          { "month": "2027-07", "income": 3400, "expense": 3360 },
+          { "month": "2027-08", "income": 3400, "expense": 3420 }
+        ]
+      }
+    },
+    {
+      "id": "f06-pt-BR-dip-middle",
+      "locale": "pt-BR",
+      "note": "Positivo, pero con el punto más bajo en febrero (viaje, IPVA, material escolar).",
+      "input": {
+        "currency": "BRL", "deviceLocale": "pt-BR", "startingBalance": 6000,
+        "months": [
+          { "month": "2026-10", "income": 7800, "expense": 5230, "isCurrent": true },
+          { "month": "2026-11", "income": 7800, "expense": 7600 },
+          { "month": "2026-12", "income": 7800, "expense": 11200 },
+          { "month": "2027-01", "income": 7800, "expense": 9800 },
+          { "month": "2027-02", "income": 7800, "expense": 8300 },
+          { "month": "2027-03", "income": 7800, "expense": 7200 }
+        ]
+      }
+    },
+    {
+      "id": "f07-pt-PT-all-negative",
+      "locale": "pt-PT",
+      "note": "Empieza en descubierto y nunca sale.",
+      "input": {
+        "currency": "EUR", "deviceLocale": "pt-PT", "startingBalance": -350,
+        "months": [
+          { "month": "2026-10", "income": 1900, "expense": 2050, "isCurrent": true },
+          { "month": "2026-11", "income": 1900, "expense": 1980 },
+          { "month": "2026-12", "income": 2850, "expense": 2400 },
+          { "month": "2027-01", "income": 1900, "expense": 2100 },
+          { "month": "2027-02", "income": 1900, "expense": 1950 },
+          { "month": "2027-03", "income": 1900, "expense": 1990 }
+        ]
+      }
+    },
+    {
+      "id": "f08-fr-single-month",
+      "locale": "fr",
+      "allowNull": true,
+      "note": "Mínimo: solo el mes en curso. Un comentario vale y `null` también.",
+      "input": {
+        "currency": "EUR", "deviceLocale": "fr-FR", "startingBalance": 1500,
+        "months": [{ "month": "2026-10", "income": 3150, "expense": 2690, "isCurrent": true }]
+      }
+    },
+    {
+      "id": "f09-de-long-healthy",
+      "locale": "de",
+      "note": "Doce meses sanos; saldo inicial con decimales (Double).",
+      "input": {
+        "currency": "EUR", "deviceLocale": "de-DE", "startingBalance": 12500.75,
+        "months": [
+          { "month": "2026-10", "income": 3900, "expense": 3120, "isCurrent": true },
+          { "month": "2026-11", "income": 3900, "expense": 2950 },
+          { "month": "2026-12", "income": 5400, "expense": 3900 },
+          { "month": "2027-01", "income": 3900, "expense": 3050 },
+          { "month": "2027-02", "income": 3900, "expense": 2980 },
+          { "month": "2027-03", "income": 3900, "expense": 3010 },
+          { "month": "2027-04", "income": 3900, "expense": 3100 },
+          { "month": "2027-05", "income": 3900, "expense": 2990 },
+          { "month": "2027-06", "income": 3900, "expense": 3400 },
+          { "month": "2027-07", "income": 3900, "expense": 4200 },
+          { "month": "2027-08", "income": 3900, "expense": 3050 },
+          { "month": "2027-09", "income": 3900, "expense": 3000 }
+        ]
+      }
+    },
+    {
+      "id": "f10-it-balance-starts-later",
+      "locale": "it",
+      "note": "Los dos primeros meses son anteriores a la fecha del saldo inicial (sin acumulado).",
+      "input": {
+        "currency": "EUR", "deviceLocale": "it-IT", "startingBalance": 2000, "balanceFrom": 2,
+        "months": [
+          { "month": "2026-08", "income": 2200, "expense": 1900 },
+          { "month": "2026-09", "income": 2200, "expense": 2050 },
+          { "month": "2026-10", "income": 2200, "expense": 2100, "isCurrent": true },
+          { "month": "2026-11", "income": 2200, "expense": 2000 },
+          { "month": "2026-12", "income": 3300, "expense": 2600 },
+          { "month": "2027-01", "income": 2200, "expense": 2150 }
+        ]
+      }
+    },
+    {
+      "id": "f11-nl-december-dip",
+      "locale": "nl",
+      "note": "Diciembre en negativo y se recupera después.",
+      "input": {
+        "currency": "EUR", "deviceLocale": "nl-NL", "startingBalance": 900,
+        "months": [
+          { "month": "2026-10", "income": 3200, "expense": 3000, "isCurrent": true },
+          { "month": "2026-11", "income": 3200, "expense": 3100 },
+          { "month": "2026-12", "income": 3200, "expense": 4600 },
+          { "month": "2027-01", "income": 3200, "expense": 2800 },
+          { "month": "2027-02", "income": 3200, "expense": 2900 },
+          { "month": "2027-03", "income": 3200, "expense": 3000 }
+        ]
+      }
+    },
+    {
+      "id": "f12-pl-laptop-month",
+      "locale": "pl",
+      "note": "El mes en curso tiene un gasto grande; el resto, holgado.",
+      "input": {
+        "currency": "PLN", "deviceLocale": "pl-PL", "startingBalance": 4000,
+        "months": [
+          { "month": "2026-09", "income": 8200, "expense": 6200 },
+          { "month": "2026-10", "income": 8200, "expense": 9840, "isCurrent": true },
+          { "month": "2026-11", "income": 8200, "expense": 6400 },
+          { "month": "2026-12", "income": 8200, "expense": 7900 },
+          { "month": "2027-01", "income": 8200, "expense": 6300 },
+          { "month": "2027-02", "income": 8200, "expense": 6200 }
+        ]
+      }
+    },
+    {
+      "id": "f13-ja-bonus-months",
+      "locale": "ja",
+      "note": "Doce meses en yenes con dos pagas extra (diciembre y junio) y una mudanza en abril.",
+      "input": {
+        "currency": "JPY", "deviceLocale": "ja-JP", "startingBalance": 850000,
+        "months": [
+          { "month": "2026-10", "income": 340000, "expense": 286000, "isCurrent": true },
+          { "month": "2026-11", "income": 340000, "expense": 286000 },
+          { "month": "2026-12", "income": 940000, "expense": 420000 },
+          { "month": "2027-01", "income": 340000, "expense": 286000 },
+          { "month": "2027-02", "income": 340000, "expense": 286000 },
+          { "month": "2027-03", "income": 340000, "expense": 286000 },
+          { "month": "2027-04", "income": 340000, "expense": 380000 },
+          { "month": "2027-05", "income": 340000, "expense": 286000 },
+          { "month": "2027-06", "income": 900000, "expense": 286000 },
+          { "month": "2027-07", "income": 340000, "expense": 286000 },
+          { "month": "2027-08", "income": 340000, "expense": 330000 },
+          { "month": "2027-09", "income": 340000, "expense": 286000 }
+        ]
+      }
+    },
+    {
+      "id": "f14-zh-sliding-negative",
+      "locale": "zh-Hans",
+      "note": "Baja poco a poco y se pone en negativo desde la Fiesta de la Primavera.",
+      "input": {
+        "currency": "CNY", "deviceLocale": "zh-Hans-CN", "startingBalance": 2000,
+        "months": [
+          { "month": "2026-10", "income": 9000, "expense": 8640, "isCurrent": true },
+          { "month": "2026-11", "income": 9000, "expense": 9500 },
+          { "month": "2026-12", "income": 9000, "expense": 9800 },
+          { "month": "2027-01", "income": 9000, "expense": 12000 },
+          { "month": "2027-02", "income": 9000, "expense": 9400 },
+          { "month": "2027-03", "income": 9000, "expense": 9300 }
+        ]
+      }
+    }
+  ]
+}

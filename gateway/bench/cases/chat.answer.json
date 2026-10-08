@@ -1,0 +1,439 @@
+{
+  "task": "chat.answer",
+  "criterion": "Primero lo que hace la app: enseña el texto tal cual, así que solo es fallo de la app una respuesta vacía. Después, determinista: (a) FIDELIDAD — toda cifra de la respuesta sale del contexto que recibe el modelo: exacta, redondeada o truncada como la escribiría una persona, o una operación simple documentada en bench/lib/chatAnswer.ts (explainedValues: sumas, diferencias, medias y variaciones % de los totales de un mismo objeto y entre meses o semanas; lo que queda de un presupuesto y por día; la suma de lo pagado y lo pendiente, de dos en dos, por tipo y por fecha; % de cada categoría y necesidad; y sumas, diferencias, medias y % de las cifras del caso). Los enteros de 0 a 31, el 100 y los años 2024–2027 no cuentan (días, meses, «100 %»). (b) IDIOMA — el de la app (detector determinista bench/lib/lang.ts sobre la respuesta sin los nombres del usuario). (c) RESPONDE — en las preguntas con dato, al menos una de las cifras esperadas aparece (y los nombres esperados, si el caso los pide); en las fuera de tema, solo fidelidad e idioma (que redirija lo decide el juez). Lo que el determinista no ve (una cifra real atribuida a otra cosa, decir que no hay datos cuando sí los hay) lo decide un juez de OTRO proveedor solo si su acuerdo con la muestra puntuada a mano es alto (ver REPORT-chat-y-nota.md).",
+  "habitTemplates": {
+    "urban": [
+      { "sub": "supermarkets", "perMonth": 6, "min": 15, "max": 95 },
+      { "sub": "restaurants", "perMonth": 7, "min": 7, "max": 38 },
+      { "sub": "delivery", "perMonth": 3.5, "min": 9, "max": 32 },
+      { "sub": "rideshare", "perMonth": 5, "min": 3, "max": 16 },
+      { "sub": "publicTransport", "perMonth": 6, "min": 1, "max": 3.5 },
+      { "sub": "pharmacy", "perMonth": 1.3, "min": 4, "max": 28 },
+      { "sub": "personalCare", "perMonth": 1, "min": 5, "max": 30 },
+      { "sub": "clothing", "perMonth": 0.6, "min": 20, "max": 90 },
+      { "sub": "bars", "perMonth": 2.2, "min": 8, "max": 35 },
+      { "sub": "shows", "perMonth": 0.7, "min": 8, "max": 30 },
+      { "sub": "utilities", "perMonth": 2, "min": 22, "max": 70 },
+      { "sub": "health", "perMonth": 0.4, "min": 25, "max": 90 },
+      { "sub": "gifts", "perMonth": 0.4, "min": 15, "max": 70 },
+      { "sub": "tech", "perMonth": 0.25, "min": 40, "max": 260 },
+      { "sub": "homeDecor", "perMonth": 0.5, "min": 10, "max": 60 },
+      { "sub": "parking", "perMonth": 1.5, "min": 2, "max": 7 },
+      { "sub": "fuel", "perMonth": 1.6, "min": 28, "max": 60 }
+    ]
+  },
+  "personas": [
+    {
+      "id": "pe", "language": "es-PE", "country": "PE", "currency": "PEN", "today": "2026-10-18", "seed": 101, "decimals": 2,
+      "habits": "urban", "scale": 3.7,
+      "accounts": [
+        { "name": "BCP Ahorro Sueldo", "type": "Cuenta de ahorros", "balance": 6230.45 },
+        { "name": "Visa Interbank", "type": "Tarjeta de crédito", "balance": -1840.2 },
+        { "name": "Efectivo", "type": "Efectivo", "balance": 312.5 },
+        { "name": "Cuenta dólares BBVA", "type": "Cuenta de ahorros", "balance": 2500, "currency": "USD", "rate": 3.72 }
+      ],
+      "income": [{ "sub": "salary", "amount": 5800, "day": 15, "note": "Sueldo" }],
+      "merchants": {
+        "supermarkets": ["Plaza Vea", "Wong", "Tottus", "Tambo"], "restaurants": ["La Lucha", "Bembos", "Pardos Chicken", "Menú de la esquina"],
+        "delivery": ["Rappi", "PedidosYa"], "rideshare": ["Uber", "Cabify", "InDrive"], "publicTransport": ["Metropolitano", "Línea 1"],
+        "pharmacy": ["Inkafarma", "Mifarma"], "fuel": ["Primax", "Repsol"], "bars": ["Barranco Beer"], "shows": ["Cineplanet"],
+        "clothing": ["Saga Falabella", "Zara"], "tech": ["Hiraoka"], "utilities": ["Luz del Sur", "Sedapal"], "personalCare": ["Mass"]
+      },
+      "budgets": [{ "name": "Comida fuera", "subs": ["restaurants", "delivery"], "limit": 650 }, { "name": "Súper", "subs": ["supermarkets"], "limit": 1300 }],
+      "scheduled": [
+        { "name": "Alquiler", "amount": 1800, "sub": "rent", "day": 1, "kind": "recurring" },
+        { "name": "Smart Fit", "amount": 99, "sub": "fitness", "day": 3, "kind": "subscription" },
+        { "name": "Netflix", "amount": 44.9, "sub": "streaming", "day": 5, "kind": "subscription" },
+        { "name": "Spotify", "amount": 20.9, "sub": "streaming", "day": 12, "kind": "subscription" },
+        { "name": "Claro Hogar", "amount": 119.9, "sub": "phone", "day": 20, "kind": "recurring" }
+      ],
+      "tags": [{ "name": "viaje cusco", "subs": ["restaurants", "rideshare"], "monthsAgo": 1 }]
+    },
+    {
+      "id": "es", "language": "es-ES", "country": "ES", "currency": "EUR", "today": "2026-10-07", "seed": 202, "decimals": 2,
+      "habits": "urban", "scale": 0.92,
+      "accounts": [
+        { "name": "BBVA Nómina", "type": "Cuenta corriente", "balance": 2140.33 },
+        { "name": "Revolut", "type": "General", "balance": 412.8 },
+        { "name": "Tarjeta Santander", "type": "Tarjeta de crédito", "balance": -386.4 }
+      ],
+      "income": [{ "sub": "salary", "amount": 2150, "day": 28, "note": "Nómina" }],
+      "merchants": {
+        "supermarkets": ["Mercadona", "Carrefour", "Día", "Lidl"], "restaurants": ["Taberna La Concha", "Telepizza", "VIPS", "Bar Manolo"],
+        "delivery": ["Glovo", "Just Eat"], "rideshare": ["Cabify", "Uber", "FreeNow"], "publicTransport": ["Metro de Madrid", "EMT"],
+        "pharmacy": ["Farmacia Lavapiés"], "fuel": ["Repsol", "Cepsa"], "bars": ["Cervecería 100 Montaditos"], "shows": ["Yelmo Cines"],
+        "clothing": ["Zara", "Primark"], "tech": ["MediaMarkt"], "utilities": ["Iberdrola", "Canal de Isabel II"], "personalCare": ["Druni"]
+      },
+      "budgets": [{ "name": "Supermercado", "subs": ["supermarkets"], "limit": 380 }, { "name": "Ocio", "subs": ["bars", "shows", "nightlife"], "limit": 150 }],
+      "scheduled": [
+        { "name": "Alquiler", "amount": 950, "sub": "rent", "day": 1, "kind": "recurring" },
+        { "name": "Gimnasio", "amount": 39.9, "sub": "fitness", "day": 2, "kind": "subscription" },
+        { "name": "Netflix", "amount": 12.99, "sub": "streaming", "day": 9, "kind": "subscription" },
+        { "name": "Vodafone", "amount": 35, "sub": "phone", "day": 15, "kind": "recurring" },
+        { "name": "Spotify", "amount": 10.99, "sub": "streaming", "day": 21, "kind": "subscription" }
+      ],
+      "tags": []
+    },
+    {
+      "id": "ar", "language": "es-AR", "country": "AR", "currency": "ARS", "today": "2026-10-24", "seed": 303, "decimals": 0,
+      "habits": "urban", "scale": 1100,
+      "accounts": [
+        { "name": "Galicia Sueldo", "type": "Cuenta corriente", "balance": 1250000 },
+        { "name": "Mercado Pago", "type": "General", "balance": 384500 },
+        { "name": "Visa Galicia", "type": "Tarjeta de crédito", "balance": -642300 }
+      ],
+      "income": [{ "sub": "salary", "amount": 1850000, "day": 1, "note": "Sueldo" }],
+      "merchants": {
+        "supermarkets": ["Coto", "Carrefour", "Día", "Jumbo"], "restaurants": ["La Parolaccia", "Kansas", "El Club de la Milanesa"],
+        "delivery": ["PedidosYa", "Rappi"], "rideshare": ["Uber", "Cabify", "DiDi"], "publicTransport": ["SUBE"],
+        "pharmacy": ["Farmacity"], "fuel": ["YPF", "Shell"], "bars": ["Antares"], "shows": ["Hoyts"],
+        "clothing": ["Falabella"], "tech": ["Frávega"], "utilities": ["Edenor", "AySA", "Metrogas"], "personalCare": ["Farmacity"]
+      },
+      "budgets": [{ "name": "Súper", "subs": ["supermarkets"], "limit": 520000 }, { "name": "Salidas", "subs": ["restaurants", "bars"], "limit": 180000 }],
+      "scheduled": [
+        { "name": "Alquiler", "amount": 650000, "sub": "rent", "day": 10, "kind": "recurring" },
+        { "name": "Expensas", "amount": 95000, "sub": "otherHousing", "day": 10, "kind": "recurring" },
+        { "name": "Netflix", "amount": 9999, "sub": "streaming", "day": 14, "kind": "subscription" },
+        { "name": "Personal", "amount": 18500, "sub": "phone", "day": 27, "kind": "recurring" }
+      ],
+      "tags": []
+    },
+    {
+      "id": "us", "language": "en-US", "country": "US", "currency": "USD", "today": "2026-10-18", "seed": 404, "decimals": 2,
+      "habits": "urban", "scale": 1.15,
+      "accounts": [
+        { "name": "Chase Checking", "type": "Cuenta corriente", "balance": 4321.77 },
+        { "name": "Ally Savings", "type": "Cuenta de ahorros", "balance": 12500 },
+        { "name": "Amex Gold", "type": "Tarjeta de crédito", "balance": -1288.4 }
+      ],
+      "income": [{ "sub": "salary", "amount": 2650, "day": 1, "note": "Payroll" }, { "sub": "salary", "amount": 2650, "day": 15, "note": "Payroll" }],
+      "merchants": {
+        "supermarkets": ["Trader Joe's", "Whole Foods", "Safeway", "Costco"], "restaurants": ["Chipotle", "Sweetgreen", "Shake Shack", "Joe's Pizza"],
+        "delivery": ["DoorDash", "Uber Eats"], "rideshare": ["Uber", "Lyft"], "publicTransport": ["MTA"],
+        "pharmacy": ["CVS", "Walgreens"], "fuel": ["Shell", "Chevron"], "bars": ["The Dead Rabbit"], "shows": ["AMC"],
+        "clothing": ["Uniqlo", "Target"], "tech": ["Best Buy", "Apple Store"], "utilities": ["Con Edison", "Comcast"], "personalCare": ["Sephora"]
+      },
+      "budgets": [{ "name": "Groceries", "subs": ["supermarkets"], "limit": 600 }, { "name": "Eating out", "subs": ["restaurants", "delivery", "bars"], "limit": 350 }],
+      "scheduled": [
+        { "name": "Rent", "amount": 1950, "sub": "rent", "day": 1, "kind": "recurring" },
+        { "name": "Netflix", "amount": 17.99, "sub": "streaming", "day": 8, "kind": "subscription" },
+        { "name": "Planet Fitness", "amount": 24.99, "sub": "fitness", "day": 17, "kind": "subscription" },
+        { "name": "Spotify", "amount": 11.99, "sub": "streaming", "day": 22, "kind": "subscription" },
+        { "name": "Verizon", "amount": 65, "sub": "phone", "day": 25, "kind": "recurring" }
+      ],
+      "tags": [{ "name": "work trip", "subs": ["restaurants", "rideshare"], "monthsAgo": 0 }]
+    },
+    {
+      "id": "gb", "language": "en-GB", "country": "GB", "currency": "GBP", "today": "2026-10-29", "seed": 505, "decimals": 2,
+      "habits": "urban", "scale": 0.8,
+      "accounts": [
+        { "name": "Barclays Current", "type": "Cuenta corriente", "balance": 2874.1 },
+        { "name": "Monzo", "type": "General", "balance": 1260.4 },
+        { "name": "Amex", "type": "Tarjeta de crédito", "balance": -412.75 }
+      ],
+      "income": [{ "sub": "salary", "amount": 2600, "day": 25, "note": "Salary" }],
+      "merchants": {
+        "supermarkets": ["Tesco", "Sainsbury's", "Aldi", "Waitrose"], "restaurants": ["Pret", "Nando's", "Wagamama", "Greggs"],
+        "delivery": ["Deliveroo", "Just Eat"], "rideshare": ["Uber", "Bolt"], "publicTransport": ["TfL"],
+        "pharmacy": ["Boots"], "fuel": ["BP", "Shell"], "bars": ["The Crown"], "shows": ["Odeon"],
+        "clothing": ["Marks & Spencer", "Next"], "tech": ["Currys"], "utilities": ["Octopus Energy", "Thames Water"], "personalCare": ["Superdrug"]
+      },
+      "budgets": [{ "name": "Takeaway", "subs": ["delivery"], "limit": 120 }, { "name": "Groceries", "subs": ["supermarkets"], "limit": 320 }],
+      "scheduled": [
+        { "name": "Rent", "amount": 1350, "sub": "rent", "day": 1, "kind": "recurring" },
+        { "name": "Council tax", "amount": 156, "sub": "taxes", "day": 1, "kind": "recurring" },
+        { "name": "PureGym", "amount": 24.99, "sub": "fitness", "day": 5, "kind": "subscription" },
+        { "name": "Netflix", "amount": 10.99, "sub": "streaming", "day": 9, "kind": "subscription" },
+        { "name": "Three", "amount": 18, "sub": "phone", "day": 12, "kind": "recurring" }
+      ],
+      "tags": []
+    },
+    {
+      "id": "br", "language": "pt-BR", "country": "BR", "currency": "BRL", "today": "2026-10-24", "seed": 606, "decimals": 2,
+      "habits": "urban", "scale": 5.2,
+      "accounts": [
+        { "name": "Nubank", "type": "Cuenta corriente", "balance": 3810.55 },
+        { "name": "Itaú", "type": "Cuenta de ahorros", "balance": 1290 },
+        { "name": "Cartão Nubank", "type": "Tarjeta de crédito", "balance": -2240.3 }
+      ],
+      "income": [{ "sub": "salary", "amount": 6500, "day": 5, "note": "Salário" }],
+      "merchants": {
+        "supermarkets": ["Pão de Açúcar", "Carrefour", "Assaí", "Dia"], "restaurants": ["Outback", "Madero", "Padaria Bella Paulista", "Habib's"],
+        "delivery": ["iFood", "Rappi"], "rideshare": ["Uber", "99"], "publicTransport": ["Bilhete Único"],
+        "pharmacy": ["Drogasil", "Droga Raia"], "fuel": ["Shell", "Ipiranga"], "bars": ["Boteco São Bento"], "shows": ["Cinemark"],
+        "clothing": ["Renner", "C&A"], "tech": ["Magazine Luiza"], "utilities": ["Enel", "Sabesp"], "personalCare": ["O Boticário"]
+      },
+      "budgets": [{ "name": "Alimentação", "subs": ["supermarkets", "restaurants", "delivery"], "limit": 2200 }, { "name": "Lazer", "subs": ["bars", "shows"], "limit": 400 }],
+      "scheduled": [
+        { "name": "Aluguel", "amount": 1800, "sub": "rent", "day": 1, "kind": "recurring" },
+        { "name": "Netflix", "amount": 44.9, "sub": "streaming", "day": 8, "kind": "subscription" },
+        { "name": "Smart Fit", "amount": 119.9, "sub": "fitness", "day": 10, "kind": "subscription" },
+        { "name": "Vivo Fibra", "amount": 129.9, "sub": "utilities", "day": 15, "kind": "recurring" }
+      ],
+      "tags": []
+    },
+    {
+      "id": "pt", "language": "pt-PT", "country": "PT", "currency": "EUR", "today": "2026-10-07", "seed": 707, "decimals": 2,
+      "habits": "urban", "scale": 0.85,
+      "accounts": [
+        { "name": "Millennium BCP", "type": "Cuenta corriente", "balance": 1450.2 },
+        { "name": "Revolut", "type": "General", "balance": 230 }
+      ],
+      "income": [{ "sub": "salary", "amount": 1500, "day": 23, "note": "Salário" }],
+      "merchants": {
+        "supermarkets": ["Continente", "Pingo Doce", "Lidl"], "restaurants": ["Tasca do Zé", "Pastelaria Versailles", "Vitaminas"],
+        "delivery": ["Uber Eats", "Bolt Food"], "rideshare": ["Bolt", "Uber"], "publicTransport": ["Carris", "Metro de Lisboa"],
+        "pharmacy": ["Farmácia Estácio"], "fuel": ["Galp", "BP"], "bars": ["Cervejaria Trindade"], "shows": ["Cinemas NOS"],
+        "clothing": ["Zara"], "tech": ["Worten"], "utilities": ["EDP", "EPAL"], "personalCare": ["Wells"]
+      },
+      "budgets": [{ "name": "Restauração", "subs": ["restaurants", "delivery"], "limit": 180 }],
+      "scheduled": [
+        { "name": "Netflix", "amount": 13.99, "sub": "streaming", "day": 2, "kind": "subscription" },
+        { "name": "Renda", "amount": 750, "sub": "rent", "day": 8, "kind": "recurring" },
+        { "name": "MEO", "amount": 45.99, "sub": "phone", "day": 20, "kind": "recurring" }
+      ],
+      "tags": []
+    },
+    {
+      "id": "fr", "language": "fr-FR", "country": "FR", "currency": "EUR", "today": "2026-10-18", "seed": 808, "decimals": 2,
+      "habits": "urban", "scale": 0.95,
+      "accounts": [
+        { "name": "Compte courant BNP", "type": "Cuenta corriente", "balance": 1890.4 },
+        { "name": "Livret A", "type": "Cuenta de ahorros", "balance": 7400 },
+        { "name": "Boursorama", "type": "General", "balance": 512.3 }
+      ],
+      "income": [{ "sub": "salary", "amount": 2800, "day": 2, "note": "Salaire" }],
+      "merchants": {
+        "supermarkets": ["Carrefour", "Monoprix", "Franprix", "Picard"], "restaurants": ["Le Petit Bistrot", "Big Mamma", "Boulangerie Paul", "Bouillon Chartier"],
+        "delivery": ["Uber Eats", "Deliveroo"], "rideshare": ["Uber", "G7"], "publicTransport": ["RATP"],
+        "pharmacy": ["Pharmacie Lafayette"], "fuel": ["TotalEnergies"], "bars": ["Le Comptoir"], "shows": ["UGC"],
+        "clothing": ["Zara", "Decathlon"], "tech": ["Fnac", "Darty"], "utilities": ["EDF", "Engie"], "personalCare": ["Sephora"]
+      },
+      "budgets": [{ "name": "Courses", "subs": ["supermarkets"], "limit": 420 }, { "name": "Sorties", "subs": ["bars", "restaurants", "shows"], "limit": 250 }],
+      "scheduled": [
+        { "name": "Navigo", "amount": 86.4, "sub": "publicTransport", "day": 1, "kind": "recurring" },
+        { "name": "Loyer", "amount": 1100, "sub": "rent", "day": 5, "kind": "recurring" },
+        { "name": "Free Mobile", "amount": 19.99, "sub": "phone", "day": 10, "kind": "recurring" },
+        { "name": "Netflix", "amount": 13.49, "sub": "streaming", "day": 26, "kind": "subscription" }
+      ],
+      "tags": []
+    },
+    {
+      "id": "de", "language": "de-DE", "country": "DE", "currency": "EUR", "today": "2026-10-24", "seed": 909, "decimals": 2,
+      "habits": "urban", "scale": 0.95,
+      "accounts": [
+        { "name": "Girokonto Sparkasse", "type": "Cuenta corriente", "balance": 2380.6 },
+        { "name": "Tagesgeld ING", "type": "Cuenta de ahorros", "balance": 9100 },
+        { "name": "Bargeld", "type": "Efectivo", "balance": 85 }
+      ],
+      "income": [{ "sub": "salary", "amount": 3400, "day": 30, "note": "Gehalt" }],
+      "merchants": {
+        "supermarkets": ["Rewe", "Lidl", "Edeka", "Aldi"], "restaurants": ["Vapiano", "Döner Kebab Haus", "L'Osteria", "Bäckerei Kamps"],
+        "delivery": ["Lieferando", "Wolt"], "rideshare": ["Uber", "Bolt"], "publicTransport": ["BVG"],
+        "pharmacy": ["Apotheke am Markt"], "fuel": ["Aral", "Shell"], "bars": ["Biergarten"], "shows": ["CinemaxX"],
+        "clothing": ["H&M", "Zalando"], "tech": ["MediaMarkt", "Saturn"], "utilities": ["Vattenfall", "Stadtwerke"], "personalCare": ["dm", "Rossmann"]
+      },
+      "budgets": [{ "name": "Lebensmittel", "subs": ["supermarkets"], "limit": 450 }, { "name": "Freizeit", "subs": ["bars", "shows", "hobbies"], "limit": 200 }],
+      "scheduled": [
+        { "name": "Miete", "amount": 1050, "sub": "rent", "day": 1, "kind": "recurring" },
+        { "name": "Deutschlandticket", "amount": 58, "sub": "publicTransport", "day": 1, "kind": "subscription" },
+        { "name": "Urban Sports Club", "amount": 49, "sub": "fitness", "day": 3, "kind": "subscription" },
+        { "name": "Netflix", "amount": 13.99, "sub": "streaming", "day": 11, "kind": "subscription" },
+        { "name": "Telekom", "amount": 39.95, "sub": "phone", "day": 15, "kind": "recurring" }
+      ],
+      "tags": []
+    },
+    {
+      "id": "it", "language": "it-IT", "country": "IT", "currency": "EUR", "today": "2026-10-29", "seed": 1010, "decimals": 2,
+      "habits": "urban", "scale": 0.9,
+      "accounts": [
+        { "name": "Intesa Sanpaolo", "type": "Cuenta corriente", "balance": 1734.2 },
+        { "name": "Fineco", "type": "Cuenta de ahorros", "balance": 4200 },
+        { "name": "Satispay", "type": "General", "balance": 64.3 }
+      ],
+      "income": [{ "sub": "salary", "amount": 1900, "day": 27, "note": "Stipendio" }],
+      "merchants": {
+        "supermarkets": ["Esselunga", "Coop", "Carrefour Market", "Lidl"], "restaurants": ["Trattoria da Mario", "Spontini", "Bar Centrale", "Sushi Ko"],
+        "delivery": ["Glovo", "Deliveroo"], "rideshare": ["FreeNow", "Uber"], "publicTransport": ["ATM Milano"],
+        "pharmacy": ["Farmacia Comunale"], "fuel": ["Eni", "Q8"], "bars": ["Bar Basso"], "shows": ["UCI Cinemas"],
+        "clothing": ["OVS", "Zara"], "tech": ["MediaWorld"], "utilities": ["Enel Energia", "A2A"], "personalCare": ["Acqua & Sapone"]
+      },
+      "budgets": [{ "name": "Spesa", "subs": ["supermarkets"], "limit": 380 }, { "name": "Ristoranti", "subs": ["restaurants", "delivery"], "limit": 220 }],
+      "scheduled": [
+        { "name": "Affitto", "amount": 750, "sub": "rent", "day": 1, "kind": "recurring" },
+        { "name": "Palestra", "amount": 45, "sub": "fitness", "day": 5, "kind": "subscription" },
+        { "name": "TIM", "amount": 29.99, "sub": "phone", "day": 18, "kind": "recurring" },
+        { "name": "Netflix", "amount": 12.99, "sub": "streaming", "day": 22, "kind": "subscription" }
+      ],
+      "tags": [],
+      "extra": [{ "date": "2026-10-12", "amount": -64.35, "sub": "supermarkets", "note": "Esselunga" }]
+    },
+    {
+      "id": "nl", "language": "nl-NL", "country": "NL", "currency": "EUR", "today": "2026-10-07", "seed": 1111, "decimals": 2,
+      "habits": "urban", "scale": 0.95,
+      "accounts": [
+        { "name": "ING Betaalrekening", "type": "Cuenta corriente", "balance": 1984.5 },
+        { "name": "Spaarrekening", "type": "Cuenta de ahorros", "balance": 6500 }
+      ],
+      "income": [{ "sub": "salary", "amount": 3200, "day": 24, "note": "Salaris" }],
+      "merchants": {
+        "supermarkets": ["Albert Heijn", "Jumbo", "Lidl", "Dirk"], "restaurants": ["Febo", "Café de Jaren", "Vapiano", "Bakker Bart"],
+        "delivery": ["Thuisbezorgd"], "rideshare": ["Uber", "Bolt"], "publicTransport": ["NS", "GVB"],
+        "pharmacy": ["Kruidvat"], "fuel": ["Shell", "Tango"], "bars": ["Brouwerij 't IJ"], "shows": ["Pathé"],
+        "clothing": ["HEMA", "Zara"], "tech": ["Coolblue"], "utilities": ["Vattenfall", "Waternet"], "personalCare": ["Etos"]
+      },
+      "budgets": [{ "name": "Boodschappen", "subs": ["supermarkets"], "limit": 450 }, { "name": "Uitgaan", "subs": ["bars", "restaurants"], "limit": 220 }],
+      "scheduled": [
+        { "name": "Huur", "amount": 1250, "sub": "rent", "day": 1, "kind": "recurring" },
+        { "name": "Zorgverzekering", "amount": 138.5, "sub": "insurance", "day": 1, "kind": "recurring" },
+        { "name": "Netflix", "amount": 13.99, "sub": "streaming", "day": 4, "kind": "subscription" },
+        { "name": "Odido", "amount": 25, "sub": "phone", "day": 12, "kind": "recurring" }
+      ],
+      "tags": []
+    },
+    {
+      "id": "pl", "language": "pl-PL", "country": "PL", "currency": "PLN", "today": "2026-10-18", "seed": 1212, "decimals": 2,
+      "habits": "urban", "scale": 4,
+      "accounts": [
+        { "name": "mBank", "type": "Cuenta corriente", "balance": 8420.15 },
+        { "name": "PKO BP", "type": "Cuenta de ahorros", "balance": 3120 },
+        { "name": "Revolut", "type": "General", "balance": 410.5 }
+      ],
+      "income": [{ "sub": "salary", "amount": 7200, "day": 10, "note": "Wynagrodzenie" }],
+      "merchants": {
+        "supermarkets": ["Biedronka", "Lidl", "Żabka", "Carrefour"], "restaurants": ["Pierogarnia", "Bar Mleczny", "Pizza Hut", "Sushi Kushi"],
+        "delivery": ["Pyszne.pl", "Glovo"], "rideshare": ["Bolt", "Uber"], "publicTransport": ["ZTM"],
+        "pharmacy": ["Apteka Gemini"], "fuel": ["Orlen", "Shell"], "bars": ["Pub Lolek"], "shows": ["Cinema City"],
+        "clothing": ["Reserved", "Zalando"], "tech": ["Media Expert"], "utilities": ["PGE", "MPWiK"], "personalCare": ["Rossmann"]
+      },
+      "budgets": [{ "name": "Jedzenie", "subs": ["supermarkets", "restaurants"], "limit": 2400 }, { "name": "Rozrywka", "subs": ["shows", "bars", "hobbies"], "limit": 500 }],
+      "scheduled": [
+        { "name": "Czynsz", "amount": 2900, "sub": "rent", "day": 1, "kind": "recurring" },
+        { "name": "Multisport", "amount": 159, "sub": "fitness", "day": 2, "kind": "subscription" },
+        { "name": "Netflix", "amount": 49, "sub": "streaming", "day": 7, "kind": "subscription" },
+        { "name": "Orange", "amount": 55, "sub": "phone", "day": 25, "kind": "recurring" }
+      ],
+      "tags": []
+    },
+    {
+      "id": "ja", "language": "ja-JP", "country": "JP", "currency": "JPY", "today": "2026-10-24", "seed": 1313, "decimals": 0,
+      "habits": "urban", "scale": 150,
+      "accounts": [
+        { "name": "三井住友銀行", "type": "Cuenta corriente", "balance": 482300 },
+        { "name": "楽天カード", "type": "Tarjeta de crédito", "balance": -86400 },
+        { "name": "現金", "type": "Efectivo", "balance": 23000 }
+      ],
+      "income": [{ "sub": "salary", "amount": 320000, "day": 25, "note": "給与" }],
+      "merchants": {
+        "supermarkets": ["イオン", "セブンイレブン", "ライフ", "ファミリーマート"], "restaurants": ["吉野家", "スシロー", "サイゼリヤ", "スターバックス"],
+        "delivery": ["Uber Eats", "出前館"], "rideshare": ["GO"], "publicTransport": ["Suica"],
+        "pharmacy": ["マツモトキヨシ"], "fuel": ["ENEOS"], "bars": ["鳥貴族"], "shows": ["TOHOシネマズ"],
+        "clothing": ["ユニクロ", "GU"], "tech": ["ビックカメラ"], "utilities": ["東京電力", "東京ガス"], "personalCare": ["ドン・キホーテ"]
+      },
+      "budgets": [{ "name": "食費", "subs": ["supermarkets", "restaurants", "delivery"], "limit": 70000 }, { "name": "娯楽", "subs": ["shows", "bars", "hobbies"], "limit": 20000 }],
+      "scheduled": [
+        { "name": "Netflix", "amount": 1590, "sub": "streaming", "day": 3, "kind": "subscription" },
+        { "name": "ドコモ", "amount": 4950, "sub": "phone", "day": 15, "kind": "recurring" },
+        { "name": "電気代", "amount": 8200, "sub": "utilities", "day": 20, "kind": "recurring" },
+        { "name": "家賃", "amount": 98000, "sub": "rent", "day": 27, "kind": "recurring" }
+      ],
+      "tags": []
+    },
+    {
+      "id": "zh", "language": "zh-Hans", "country": "CN", "currency": "CNY", "today": "2026-10-18", "seed": 1414, "decimals": 2,
+      "habits": "urban", "scale": 7.1,
+      "accounts": [
+        { "name": "招商银行", "type": "Cuenta corriente", "balance": 24600.5 },
+        { "name": "支付宝", "type": "General", "balance": 3820.2 },
+        { "name": "信用卡", "type": "Tarjeta de crédito", "balance": -4210 }
+      ],
+      "income": [{ "sub": "salary", "amount": 15000, "day": 10, "note": "工资" }],
+      "merchants": {
+        "supermarkets": ["盒马", "永辉超市", "全家"], "restaurants": ["海底捞", "瑞幸咖啡", "西贝", "沙县小吃"],
+        "delivery": ["美团", "饿了么"], "rideshare": ["滴滴"], "publicTransport": ["地铁"],
+        "pharmacy": ["大参林"], "fuel": ["中石化"], "bars": ["小酒馆"], "shows": ["万达影城"],
+        "clothing": ["优衣库"], "tech": ["京东"], "utilities": ["国家电网"], "personalCare": ["屈臣氏"]
+      },
+      "budgets": [{ "name": "餐饮", "subs": ["restaurants", "delivery"], "limit": 2500 }, { "name": "购物", "subs": ["clothing", "tech", "homeDecor"], "limit": 1500 }],
+      "scheduled": [
+        { "name": "房租", "amount": 4500, "sub": "rent", "day": 5, "kind": "recurring" },
+        { "name": "视频会员", "amount": 25, "sub": "streaming", "day": 12, "kind": "subscription" },
+        { "name": "话费", "amount": 58, "sub": "phone", "day": 20, "kind": "recurring" }
+      ],
+      "tags": []
+    }
+  ],
+  "cases": [
+    { "id": "pe-01-budget", "persona": "pe", "kind": "data", "question": "¿Cuánto me queda del presupuesto de Comida fuera?",
+      "expect": { "numbers": [{ "op": "sub", "a": "budgets[name=Comida fuera].limit", "b": "budgets[name=Comida fuera].spent" }, { "op": "pctchange", "a": "budgets[name=Comida fuera].spent", "b": "budgets[name=Comida fuera].limit" }, "budgets[name=Comida fuera].spent"] },
+      "operands": ["budgets[name=Comida fuera].spent", "budgets[name=Comida fuera].limit", "budgets[name=Comida fuera].usage_percent"] },
+    { "id": "pe-02-balance", "persona": "pe", "kind": "data", "question": "¿Cuánta plata tengo en total sumando todas mis cuentas?",
+      "expect": { "numbers": ["balances.total_balance"] } },
+    { "id": "pe-03-nodata", "persona": "pe", "kind": "nodata", "question": "¿Cuánto gasté en mi viaje a Cusco del año pasado?" },
+    { "id": "pe-04-offtopic", "persona": "pe", "kind": "offtopic", "question": "¿Me pasas una receta fácil de ceviche?" },
+    { "id": "es-01-sub-vs-last", "persona": "es", "kind": "data", "question": "¿Cuánto llevo gastado en Restaurantes este mes y cómo va comparado con el mes pasado?",
+      "expect": { "numbers": ["categories[name=@food].subcategories[name=@restaurants].total_current_month"] },
+      "operands": ["categories[name=@food].subcategories[name=@restaurants].total_last_month"] },
+    { "id": "es-02-recurring-paid", "persona": "es", "kind": "data", "question": "¿Cuánto llevo pagado en gastos fijos este mes?",
+      "expect": { "numbers": ["sum:recurring.paid_this_month[*].amount"] } },
+    { "id": "ar-01-month-total", "persona": "ar", "kind": "data", "question": "¿Cuánta guita gasté en total este mes?",
+      "expect": { "numbers": ["periods.current_month.expense"] } },
+    { "id": "ar-02-top-merchant", "persona": "ar", "kind": "data", "question": "¿En qué comercio gasté más plata este mes?",
+      "expect": { "numbers": ["merchants_top_20[0].total_current_month", "maxnot:merchants_top_20|total_current_month|total_current_month|recurring.paid_this_month|name"], "names": ["merchants_top_20[0].name", "maxnot:merchants_top_20|total_current_month|name|recurring.paid_this_month|name"] } },
+    { "id": "ar-03-followup", "persona": "ar", "kind": "data", "question": "¿Y el mes pasado?",
+      "turns": [{ "q": "¿Cuánto gasté en Delivery este mes?", "a": "Este mes llevás **${{categories[name=@food].subcategories[name=@delivery].total_current_month|0}}** en Delivery, repartidos en {{categories[name=@food].subcategories[name=@delivery].tx_count_current_month|0}} pedidos." }],
+      "expect": { "numbers": ["categories[name=@food].subcategories[name=@delivery].total_last_month"] },
+      "operands": ["categories[name=@food].subcategories[name=@delivery].total_current_month"] },
+    { "id": "us-01-month-vs-last", "persona": "us", "kind": "data", "question": "Am I spending more this month than last month?",
+      "expect": { "numbers": ["periods.current_month.expense", "periods.last_month.expense"] } },
+    { "id": "us-02-offtopic", "persona": "us", "kind": "offtopic", "question": "Who won the 2022 World Cup?" },
+    { "id": "us-03-followup", "persona": "us", "kind": "data", "question": "And last month?",
+      "turns": [{ "q": "How much have I spent on groceries this month?", "a": "You've spent **${{categories[name=@food].subcategories[name=@supermarkets].total_current_month|2}}** on Supermarkets & groceries so far this month." }],
+      "expect": { "numbers": ["categories[name=@food].subcategories[name=@supermarkets].total_last_month"] },
+      "operands": ["categories[name=@food].subcategories[name=@supermarkets].total_current_month"] },
+    { "id": "gb-01-daily-avg", "persona": "gb", "kind": "data", "question": "What's my average daily spend this month?",
+      "expect": { "numbers": ["periods.current_month.daily_avg"] } },
+    { "id": "gb-02-upcoming", "persona": "gb", "kind": "data", "question": "What bills have I got coming up over the next month, and how much is that in total?",
+      "expect": { "numbers": ["sum:recurring.pending_next_30_days[*].amount"] } },
+    { "id": "br-01-category", "persona": "br", "kind": "data", "question": "Quanto gastei com alimentação este mês?",
+      "expect": { "numbers": ["categories[name=@food].total_current_month"] } },
+    { "id": "br-02-budget", "persona": "br", "kind": "data", "question": "Quanto ainda tenho no orçamento de Lazer?",
+      "expect": { "numbers": [{ "op": "sub", "a": "budgets[name=Lazer].limit", "b": "budgets[name=Lazer].spent" }, { "op": "pctchange", "a": "budgets[name=Lazer].spent", "b": "budgets[name=Lazer].limit" }, "budgets[name=Lazer].spent"] },
+      "operands": ["budgets[name=Lazer].spent", "budgets[name=Lazer].limit", "budgets[name=Lazer].usage_percent"] },
+    { "id": "pt-01-savings-last-month", "persona": "pt", "kind": "data", "question": "Quanto consegui poupar no mês passado?",
+      "expect": { "numbers": ["periods.last_month.balance", "periods.last_month.savings_rate_percent"] } },
+    { "id": "pt-02-upcoming", "persona": "pt", "kind": "data", "question": "Que pagamentos tenho nos próximos dias?",
+      "expect": { "numbers": ["recurring.pending_next_30_days[0].amount", "sum:recurring.pending_next_30_days[*].amount"] } },
+    { "id": "fr-01-top-category", "persona": "fr", "kind": "data", "question": "Dans quelle catégorie ai-je le plus dépensé ce mois-ci ?",
+      "expect": { "numbers": ["categories[0].total_current_month"], "names": ["categories[0].name"] } },
+    { "id": "fr-02-sub-vs-last", "persona": "fr", "kind": "data", "question": "Est-ce que mes dépenses de supermarché ont augmenté par rapport au mois dernier ?",
+      "expect": { "numbers": ["categories[name=@food].subcategories[name=@supermarkets].total_current_month", "categories[name=@food].subcategories[name=@supermarkets].total_last_month"] } },
+    { "id": "de-01-weekday", "persona": "de", "kind": "data", "question": "An welchem Wochentag gebe ich am meisten aus?",
+      "expect": { "names": ["maxby:patterns.weekday_pattern_30_days|total|weekday", "maxby:patterns.weekday_pattern_30_days|avg_per_day|weekday"], "numbers": ["maxby:patterns.weekday_pattern_30_days|total|total", "maxby:patterns.weekday_pattern_30_days|total|avg_per_day", "maxby:patterns.weekday_pattern_30_days|avg_per_day|avg_per_day"] } },
+    { "id": "de-02-month-vs-last", "persona": "de", "kind": "data", "question": "Wie viel habe ich diesen Monat schon ausgegeben, und wie viel war es im Vormonat?",
+      "expect": { "numbers": ["periods.current_month.expense", "periods.last_month.expense"] } },
+    { "id": "it-01-budget", "persona": "it", "kind": "data", "question": "Quanto mi resta del budget Spesa?",
+      "expect": { "numbers": [{ "op": "sub", "a": "budgets[name=Spesa].limit", "b": "budgets[name=Spesa].spent" }, { "op": "pctchange", "a": "budgets[name=Spesa].spent", "b": "budgets[name=Spesa].limit" }, "budgets[name=Spesa].spent"] },
+      "operands": ["budgets[name=Spesa].spent", "budgets[name=Spesa].limit", "budgets[name=Spesa].usage_percent"] },
+    { "id": "it-02-merchant", "persona": "it", "kind": "data", "question": "Quanto ho speso da Esselunga questo mese?",
+      "expect": { "numbers": ["merchants_top_20[name=ESSELUNGA].total_current_month"] } },
+    { "id": "nl-01-groceries", "persona": "nl", "kind": "data", "question": "Hoeveel heb ik deze maand aan boodschappen uitgegeven?",
+      "expect": { "numbers": ["categories[name=@food].subcategories[name=@supermarkets].total_current_month"] } },
+    { "id": "nl-02-balance", "persona": "nl", "kind": "data", "question": "Wat is mijn totale saldo op dit moment?",
+      "expect": { "numbers": ["balances.total_balance"] } },
+    { "id": "pl-01-month-vs-last", "persona": "pl", "kind": "data", "question": "Czy w tym miesiącu wydaję więcej niż w poprzednim?",
+      "expect": { "numbers": ["periods.current_month.expense", "periods.last_month.expense"] } },
+    { "id": "pl-02-nodata", "persona": "pl", "kind": "nodata", "question": "Ile wydałem na wakacje w 2024 roku?" },
+    { "id": "ja-01-eating-out", "persona": "ja", "kind": "data", "question": "今月の外食費はいくら？",
+      "expect": { "numbers": ["categories[name=@food].subcategories[name=@restaurants].total_current_month"] },
+      "operands": ["categories[name=@food].subcategories[name=@delivery].total_current_month"] },
+    { "id": "ja-02-recurring-paid", "persona": "ja", "kind": "data", "question": "今月、固定費はもういくら払った？",
+      "expect": { "numbers": ["sum:recurring.paid_this_month[*].amount"] } },
+    { "id": "ja-03-nodata", "persona": "ja", "kind": "nodata", "question": "去年の12月はいくら使った？" },
+    { "id": "zh-01-budget", "persona": "zh", "kind": "data", "question": "餐饮预算还剩多少？",
+      "expect": { "numbers": [{ "op": "sub", "a": "budgets[name=餐饮].limit", "b": "budgets[name=餐饮].spent" }, { "op": "pctchange", "a": "budgets[name=餐饮].spent", "b": "budgets[name=餐饮].limit" }, "budgets[name=餐饮].spent"] },
+      "operands": ["budgets[name=餐饮].spent", "budgets[name=餐饮].limit", "budgets[name=餐饮].usage_percent"] },
+    { "id": "zh-02-top-merchant", "persona": "zh", "kind": "data", "question": "这个月我在哪家店花钱最多？",
+      "expect": { "numbers": ["merchants_top_20[0].total_current_month", "maxnot:merchants_top_20|total_current_month|total_current_month|recurring.paid_this_month|name"], "names": ["merchants_top_20[0].name", "maxnot:merchants_top_20|total_current_month|name|recurring.paid_this_month|name"] } }
+  ]
+}

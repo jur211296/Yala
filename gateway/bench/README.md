@@ -4,12 +4,23 @@ Mide qué modelo hace bien cada tarea de IA de Yala, y a qué coste. De aquí sa
 tarea → modelo del gateway (`src/ai/routes.ts`). El principio es **primero calidad medida, después
 precio**: gana el modelo más barato que pase el listón de su tarea.
 
+## Revisión periódica: cuándo y quién
+
+- **Cada trimestre, el día 6 de enero, abril, julio y octubre.** La dispara una rutina de Frank (el agente de Yala), que ya
+  existe; no hace falta acordarse. La revisión corre el comando de abajo con los candidatos del día y, si una fila cambia,
+  la propone con su tabla en un PR.
+- **Y además, siempre que OpenAI anuncie un apagado** que toque un modelo de la tabla
+  (https://developers.openai.com/api/docs/deprecations). Un apagado del modelo de una fila es urgente aunque falten meses
+  para el trimestre: el 2026-10-07 la página anunciaba el de `gpt-4.1-nano` a 16 días.
+- Lo que se mira, por este orden: (1) la página de apagados del proveedor de cada fila; (2) los modelos nuevos del
+  mercado, que entran como una línea en `candidates.ts`; (3) los precios del día.
+
 ## Revisión periódica: un comando
 
 ```bash
 cd gateway
 npm ci
-npm run bench -- --task all          # las tres tareas, todos los candidatos con clave
+npm run bench -- --task all          # todas las tareas registradas, todos los candidatos con clave
 npm run bench -- --report            # rehace las tablas desde los .jsonl sin llamar a nadie
 ```
 
@@ -63,9 +74,29 @@ Antes de una revisión:
   render, así que una captura sintética es igual de real). Fotos reales de recibos de usuarios, si se
   añaden, van anonimizadas.
 
-## Añadir una tarea (sesión 2)
+## Añadir una tarea
 
-1. Su cuerpo en `lib/appRequests.ts` (prompts desde Swift), su criterio en `lib/grading.ts`, sus casos en
-   `cases/<tarea>.json`.
-2. Sus parámetros base en `baseParams()` de `run.ts` y su esquema en `TASK_SCHEMAS` (`src/ai/routes.ts`).
-3. `npm run bench -- --task <tarea>` y, con el resultado, su fila en `ROUTES`.
+1. Su fichero en `tasks/<tarea>.ts` (un `BenchTask`: el cuerpo exacto de la app con los prompts leídos del Swift, los
+   parámetros de hoy y el criterio, que replica primero el parser de la app) y una línea en `tasks/index.ts`.
+2. Sus casos en `cases/<tarea>.json`, con su campo `criterion`.
+3. `npm run bench -- --task <tarea>` y, con el resultado, su fila en `ROUTES` (`src/ai/routes.ts`). Si el proveedor no
+   tiene JSON libre (Anthropic), su esquema va con los demás.
+
+## `chat.answer`: el juez va aparte (sesión 2 · chat y nota)
+
+`npm run bench -- --task chat.answer` aplica solo el criterio determinista (cifras que salen del contexto, idioma,
+la cifra que se preguntó). Lo que eso no ve —una cifra real atribuida a otra cosa, una comparación al revés— lo decide
+un juez de OTRO proveedor, después y solo si su acuerdo con una muestra puntuada a mano es alto:
+
+```bash
+npx vite-node bench/tasks/chat.answer.judge.ts -- sample --n 36        # plantilla: se puntúa A MANO antes de ver al juez
+npx vite-node bench/tasks/chat.answer.judge.ts -- agree --judges gemini:gemini-3.8-flash,anthropic:claude-sonnet-5-5
+npx vite-node bench/tasks/chat.answer.judge.ts -- apply --judges gemini:gemini-3.8-flash,anthropic:claude-sonnet-5-5 --first
+npm run bench -- --report --task chat.answer
+```
+
+`--first` usa el primer juez que no sea del proveedor del candidato (Gemini juzga a todos menos a Google; Sonnet, a
+Google). Los juicios quedan en `<tarea>.judge.jsonl`, con su coste (lo cuenta `--spend`), y no se pagan dos veces.
+Si se corrige un criterio después de medir, `chat.answer.judge.ts -- regrade` y `text.regrade.ts -- --task
+text.parse|chat.rewrite` vuelven a puntuar con la respuesta guardada, sin llamar a nadie. Informe de la sesión 2:
+`results/2026-10-07/REPORT-chat-y-nota.md`.

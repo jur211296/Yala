@@ -75,6 +75,26 @@ const PROBES: Probe[] = [
     body: { model: "gpt-4.1-mini", messages: [{ role: "system", content: "Eres Yala IA. Contexto: gastos del mes 1200 PEN." }, { role: "user", content: "¿Cuánto gasté este mes?" }], temperature: 0.4, stream: false },
   },
   {
+    task: "insights.cards",
+    category: "insights",
+    body: { model: "gpt-4.1-mini", messages: [{ role: "system", content: "Analizas EXCLUSIVAMENTE los datos agregados proporcionados. Responde SOLO JSON con la clave comment." }, { role: "user", content: "Datos: gastos 1200 PEN, ingresos 3000 PEN." }], response_format: { type: "json_object" }, temperature: 0.4, stream: false },
+  },
+  {
+    task: "insights.cashflow",
+    category: "insights",
+    body: { model: "gpt-4.1-mini", messages: [{ role: "system", content: "Genera UNA SOLA oración corta sobre la proyección de flujo de caja del usuario. Responde SOLO JSON con la clave comment." }, { role: "user", content: "Datos: gastos 1200 PEN, ingresos 3000 PEN." }], response_format: { type: "json_object" }, temperature: 0.4, stream: false },
+  },
+  {
+    task: "insights.deviation",
+    category: "insights",
+    body: { model: "gpt-4.1-mini", messages: [{ role: "system", content: "Genera UNA SOLA oración corta sobre las subcategorías donde el usuario gastó más de lo planeado. Responde SOLO JSON con la clave comment." }, { role: "user", content: "Datos: gastos 1200 PEN, ingresos 3000 PEN." }], response_format: { type: "json_object" }, temperature: 0.4, stream: false },
+  },
+  {
+    task: "trends.summary",
+    category: "insights",
+    body: { model: "gpt-4.1-mini", messages: [{ role: "system", content: "Eres un analista financiero personal. El usuario está mirando la pestaña Tendencias de su app, con estas gráficas: Responde SOLO JSON con la clave comment." }, { role: "user", content: "Datos: gastos 1200 PEN, ingresos 3000 PEN." }], response_format: { type: "json_object" }, temperature: 0.4, stream: false },
+  },
+  {
     task: "chat.rewrite",
     category: "suggestions",
     body: {

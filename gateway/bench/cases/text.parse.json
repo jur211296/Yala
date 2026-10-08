@@ -1,0 +1,149 @@
+{
+  "task": "text.parse",
+  "criterion": "Pasa si la frase produce EXACTAMENTE los movimientos esperados tal como los guardaría la app. Primero la app: `parseMultipleResponse` (quita ```json y decodifica con JSONDecoder estricto: `note` e `isExpense` obligatorios y `confidence` con sus cinco números; un tipo incorrecto tumba la respuesta entera) y el filtro del chat (importe no nulo, > 0 y < 1 000 000). Después, cada movimiento esperado emparejado con uno recibido por importe (±0,01), tipo gasto/ingreso, fecha efectiva (la del modelo si es yyyy-MM-dd; si no, hoy), divisa efectiva (`currencyHint` o la principal del usuario) y subcategoría resuelta con `DraftBuilder.matchSubcategoryByHint` contra la lista que manda la app (las 53 + 9 subcategorías del seed en el idioma del usuario, más las suyas). Ningún movimiento de más. El comercio (nota) y las etiquetas se miden aparte: se corrigen en el borrador; un importe, una fecha o una divisa mal leídos se cuelan. Donde la fecha de un segundo movimiento es ambigua (la palabra «ayer» no lo rige con claridad), valen las dos lecturas y el caso lo dice en `note`. Hoy es miércoles 2026-10-07: ayer 10-06, anteayer y «el lunes» 10-05, «el viernes» 10-02, «el sábado» 10-03, «el jueves» 10-01.",
+  "cases": [
+    { "id": "es-PE-01", "locale": "es-PE", "today": "2026-10-07", "defaultCurrency": "PEN", "text": "Ayer gasté 45.50 en Wong y 12 soles en un taxi",
+      "expect": [
+        { "amount": 45.5, "isExpense": true, "date": "2026-10-06", "currency": "PEN", "sub": ["supermarkets"], "merchant": "Wong" },
+        { "amount": 12, "isExpense": true, "date": "2026-10-06", "currency": "PEN", "sub": ["rideshare"] } ] },
+    { "id": "es-PE-02", "locale": "es-PE", "today": "2026-10-07", "defaultCurrency": "PEN", "text": "Me depositaron el sueldo, 3,250 soles",
+      "expect": [ { "amount": 3250, "isExpense": false, "date": "2026-10-07", "currency": "PEN", "sub": ["salary"] } ] },
+    { "id": "es-PE-03", "locale": "es-PE", "today": "2026-10-07", "defaultCurrency": "PEN", "text": "almuerzo 18 lucas en el menú de la esquina, con la etiqueta chamba",
+      "extraExpense": ["Menús"],
+      "note": "En Perú una «luca» es un sol. La subcategoría propia «Menús» es la mejor; Restaurantes también vale.",
+      "expect": [ { "amount": 18, "isExpense": true, "date": "2026-10-07", "currency": "PEN", "sub": ["custom:Menús", "restaurants"], "tags": ["chamba"] } ] },
+    { "id": "es-PE-04", "locale": "es-PE", "today": "2026-10-07", "defaultCurrency": "PEN", "text": "pagué 25 dólares de Netflix el viernes",
+      "expect": [ { "amount": 25, "isExpense": true, "date": "2026-10-02", "currency": "USD", "sub": ["streaming", "leisureSubs"], "merchant": "Netflix" } ] },
+    { "id": "es-PE-05", "locale": "es-PE", "today": "2026-10-07", "defaultCurrency": "PEN", "text": "el lunes pagué 89.90 de luz y 39.90 de recarga del celular",
+      "expect": [
+        { "amount": 89.9, "isExpense": true, "date": "2026-10-05", "currency": "PEN", "sub": ["utilities"] },
+        { "amount": 39.9, "isExpense": true, "date": "2026-10-05", "currency": "PEN", "sub": ["phone"] } ] },
+
+    { "id": "es-ES-01", "locale": "es-ES", "today": "2026-10-07", "defaultCurrency": "EUR", "text": "Ayer 23,45 € en Mercadona y 1,80 de un café",
+      "expect": [
+        { "amount": 23.45, "isExpense": true, "date": "2026-10-06", "currency": "EUR", "sub": ["supermarkets"], "merchant": "Mercadona" },
+        { "amount": 1.8, "isExpense": true, "date": "2026-10-06", "currency": "EUR", "sub": ["restaurants", "bars"] } ] },
+    { "id": "es-ES-02", "locale": "es-ES", "today": "2026-10-07", "defaultCurrency": "EUR", "text": "He cobrado la nómina, 1.850 euros",
+      "expect": [ { "amount": 1850, "isExpense": false, "date": "2026-10-07", "currency": "EUR", "sub": ["salary"] } ] },
+    { "id": "es-ES-03", "locale": "es-ES", "today": "2026-10-07", "defaultCurrency": "EUR", "text": "Gasolina en Repsol, 62,30, el sábado",
+      "expect": [ { "amount": 62.3, "isExpense": true, "date": "2026-10-03", "currency": "EUR", "sub": ["fuel"], "merchant": "Repsol" } ] },
+
+    { "id": "es-AR-01", "locale": "es-AR", "today": "2026-10-07", "defaultCurrency": "ARS", "text": "gasté 15 lucas en el súper",
+      "note": "En Argentina una «luca» son mil pesos.",
+      "expect": [ { "amount": 15000, "isExpense": true, "date": "2026-10-07", "currency": "ARS", "sub": ["supermarkets"] } ] },
+    { "id": "es-AR-02", "locale": "es-AR", "today": "2026-10-07", "defaultCurrency": "ARS", "text": "cargué nafta en YPF por 48.500 pesos",
+      "note": "«pesos» a secas, en Argentina: pesos argentinos (o la divisa principal, sin pista). El prompt solo enseña los mexicanos y los colombianos.",
+      "expect": [ { "amount": 48500, "isExpense": true, "date": "2026-10-07", "currency": "ARS", "sub": ["fuel"], "merchant": "YPF" } ] },
+    { "id": "es-AR-03", "locale": "es-AR", "today": "2026-10-07", "defaultCurrency": "ARS", "text": "anteayer pagué el alquiler, 450 mil, y 32.000 de expensas",
+      "expect": [
+        { "amount": 450000, "isExpense": true, "date": "2026-10-05", "currency": "ARS", "sub": ["rent"] },
+        { "amount": 32000, "isExpense": true, "date": "2026-10-05", "currency": "ARS", "sub": ["otherHousing", "maintenance", "utilities"] } ] },
+
+    { "id": "en-01", "locale": "en", "today": "2026-10-07", "defaultCurrency": "USD", "text": "spent $1,249.99 on a new laptop at Best Buy yesterday",
+      "expect": [ { "amount": 1249.99, "isExpense": true, "date": "2026-10-06", "currency": "USD", "sub": ["tech"], "merchant": "Best Buy" } ] },
+    { "id": "en-02", "locale": "en", "today": "2026-10-07", "defaultCurrency": "USD", "text": "lunch was twenty bucks and I put 45 in gas at Shell",
+      "expect": [
+        { "amount": 20, "isExpense": true, "date": "2026-10-07", "currency": "USD", "sub": ["restaurants"] },
+        { "amount": 45, "isExpense": true, "date": "2026-10-07", "currency": "USD", "sub": ["fuel"], "merchant": "Shell" } ] },
+    { "id": "en-03", "locale": "en", "today": "2026-10-07", "defaultCurrency": "USD", "text": "got paid 2,400 by a freelance client on Monday",
+      "expect": [ { "amount": 2400, "isExpense": false, "date": "2026-10-05", "currency": "USD", "sub": ["freelance"] } ] },
+    { "id": "en-04", "locale": "en", "today": "2026-10-07", "defaultCurrency": "USD", "text": "€30 for dinner in Paris on Saturday",
+      "expect": [ { "amount": 30, "isExpense": true, "date": "2026-10-03", "currency": "EUR", "sub": ["restaurants", "travel"] } ] },
+
+    { "id": "en-GB-01", "locale": "en-GB", "today": "2026-10-07", "defaultCurrency": "GBP", "text": "£12.50 at Tesco and a fiver for the bus",
+      "expect": [
+        { "amount": 12.5, "isExpense": true, "date": "2026-10-07", "currency": "GBP", "sub": ["supermarkets"], "merchant": "Tesco" },
+        { "amount": 5, "isExpense": true, "date": "2026-10-07", "currency": "GBP", "sub": ["publicTransport"] } ] },
+    { "id": "en-GB-02", "locale": "en-GB", "today": "2026-10-07", "defaultCurrency": "GBP", "text": "council tax 156 quid, paid it on the 1st",
+      "expect": [ { "amount": 156, "isExpense": true, "date": "2026-10-01", "currency": "GBP", "sub": ["taxes", "utilities", "otherHousing"] } ] },
+    { "id": "en-GB-03", "locale": "en-GB", "today": "2026-10-07", "defaultCurrency": "GBP", "text": "Pret coffee 3.40 yesterday, tag it work",
+      "expect": [ { "amount": 3.4, "isExpense": true, "date": "2026-10-06", "currency": "GBP", "sub": ["restaurants", "bars"], "merchant": "Pret", "tags": ["work"] } ] },
+
+    { "id": "pt-BR-01", "locale": "pt-BR", "today": "2026-10-07", "defaultCurrency": "BRL", "text": "gastei R$ 87,90 no Pão de Açúcar ontem e 25 reais de Uber",
+      "note": "«ontem» va detrás del primero: la fecha del Uber es ambigua y valen ayer y hoy.",
+      "expect": [
+        { "amount": 87.9, "isExpense": true, "date": "2026-10-06", "currency": "BRL", "sub": ["supermarkets"], "merchant": "Pão de Açúcar" },
+        { "amount": 25, "isExpense": true, "date": ["2026-10-06", "2026-10-07"], "currency": "BRL", "sub": ["rideshare"], "merchant": "Uber" } ] },
+    { "id": "pt-BR-02", "locale": "pt-BR", "today": "2026-10-07", "defaultCurrency": "BRL", "text": "recebi 4.500 de salário",
+      "expect": [ { "amount": 4500, "isExpense": false, "date": "2026-10-07", "currency": "BRL", "sub": ["salary"] } ] },
+    { "id": "pt-BR-03", "locale": "pt-BR", "today": "2026-10-07", "defaultCurrency": "BRL", "text": "paguei 1.200 de aluguel e 189,90 de internet no dia 5",
+      "expect": [
+        { "amount": 1200, "isExpense": true, "date": "2026-10-05", "currency": "BRL", "sub": ["rent"] },
+        { "amount": 189.9, "isExpense": true, "date": "2026-10-05", "currency": "BRL", "sub": ["utilities", "phone", "utilitySubs"] } ] },
+
+    { "id": "pt-PT-01", "locale": "pt-PT", "today": "2026-10-07", "defaultCurrency": "EUR", "text": "Paguei 3,20 € num café e 54,30 € no Continente",
+      "expect": [
+        { "amount": 3.2, "isExpense": true, "date": "2026-10-07", "currency": "EUR", "sub": ["restaurants", "bars"] },
+        { "amount": 54.3, "isExpense": true, "date": "2026-10-07", "currency": "EUR", "sub": ["supermarkets"], "merchant": "Continente" } ] },
+    { "id": "pt-PT-02", "locale": "pt-PT", "today": "2026-10-07", "defaultCurrency": "EUR", "text": "Recebi 120 euros de reembolso do seguro na sexta",
+      "expect": [ { "amount": 120, "isExpense": false, "date": "2026-10-02", "currency": "EUR", "sub": ["refunds"] } ] },
+
+    { "id": "fr-01", "locale": "fr", "today": "2026-10-07", "defaultCurrency": "EUR", "text": "45,80 € chez Carrefour hier",
+      "expect": [ { "amount": 45.8, "isExpense": true, "date": "2026-10-06", "currency": "EUR", "sub": ["supermarkets"], "merchant": "Carrefour" } ] },
+    { "id": "fr-02", "locale": "fr", "today": "2026-10-07", "defaultCurrency": "EUR", "text": "J'ai reçu mon salaire, 2 350 €",
+      "expect": [ { "amount": 2350, "isExpense": false, "date": "2026-10-07", "currency": "EUR", "sub": ["salary"] } ] },
+    { "id": "fr-03", "locale": "fr", "today": "2026-10-07", "defaultCurrency": "EUR", "text": "Ciné 11,50 € samedi et un kebab à 9 € le même soir",
+      "expect": [
+        { "amount": 11.5, "isExpense": true, "date": "2026-10-03", "currency": "EUR", "sub": ["shows", "hobbies"] },
+        { "amount": 9, "isExpense": true, "date": "2026-10-03", "currency": "EUR", "sub": ["restaurants", "delivery"] } ] },
+
+    { "id": "de-01", "locale": "de", "today": "2026-10-07", "defaultCurrency": "EUR", "text": "Gestern 34,95 € bei Rewe und 4,20 beim Bäcker",
+      "extraExpense": ["Bäckerei"],
+      "expect": [
+        { "amount": 34.95, "isExpense": true, "date": "2026-10-06", "currency": "EUR", "sub": ["supermarkets"], "merchant": "Rewe" },
+        { "amount": 4.2, "isExpense": true, "date": "2026-10-06", "currency": "EUR", "sub": ["custom:Bäckerei", "supermarkets", "restaurants"] } ] },
+    { "id": "de-02", "locale": "de", "today": "2026-10-07", "defaultCurrency": "EUR", "text": "Miete 1.150 € überwiesen",
+      "expect": [ { "amount": 1150, "isExpense": true, "date": "2026-10-07", "currency": "EUR", "sub": ["rent"] } ] },
+    { "id": "de-03", "locale": "de", "today": "2026-10-07", "defaultCurrency": "EUR", "text": "Tanken bei Aral für 72 Euro am Montag",
+      "expect": [ { "amount": 72, "isExpense": true, "date": "2026-10-05", "currency": "EUR", "sub": ["fuel"], "merchant": "Aral" } ] },
+    { "id": "de-04", "locale": "de", "today": "2026-10-07", "defaultCurrency": "EUR", "text": "Im Urlaub in Zürich 18 Franken für einen Kaffee",
+      "note": "Franken = CHF; el prompt no la enseña.",
+      "expect": [ { "amount": 18, "isExpense": true, "date": "2026-10-07", "currency": "CHF", "sub": ["restaurants", "bars", "travel"] } ] },
+
+    { "id": "it-01", "locale": "it", "today": "2026-10-07", "defaultCurrency": "EUR", "text": "Ho speso 23,40 euro all'Esselunga ieri",
+      "expect": [ { "amount": 23.4, "isExpense": true, "date": "2026-10-06", "currency": "EUR", "sub": ["supermarkets"], "merchant": "Esselunga" } ] },
+    { "id": "it-02", "locale": "it", "today": "2026-10-07", "defaultCurrency": "EUR", "text": "benzina 60 euro e parcheggio 3,50",
+      "expect": [
+        { "amount": 60, "isExpense": true, "date": "2026-10-07", "currency": "EUR", "sub": ["fuel"] },
+        { "amount": 3.5, "isExpense": true, "date": "2026-10-07", "currency": "EUR", "sub": ["parking"] } ] },
+    { "id": "it-03", "locale": "it", "today": "2026-10-07", "defaultCurrency": "EUR", "text": "Mi hanno pagato 800 euro per un lavoro da freelance giovedì",
+      "expect": [ { "amount": 800, "isExpense": false, "date": "2026-10-01", "currency": "EUR", "sub": ["freelance"] } ] },
+
+    { "id": "nl-01", "locale": "nl", "today": "2026-10-07", "defaultCurrency": "EUR", "text": "Gisteren 34,95 bij Albert Heijn",
+      "expect": [ { "amount": 34.95, "isExpense": true, "date": "2026-10-06", "currency": "EUR", "sub": ["supermarkets"], "merchant": "Albert Heijn" } ] },
+    { "id": "nl-02", "locale": "nl", "today": "2026-10-07", "defaultCurrency": "EUR", "text": "NS treinkaartje 12,40 en een broodje van 4,95",
+      "expect": [
+        { "amount": 12.4, "isExpense": true, "date": "2026-10-07", "currency": "EUR", "sub": ["publicTransport"], "merchant": "NS" },
+        { "amount": 4.95, "isExpense": true, "date": "2026-10-07", "currency": "EUR", "sub": ["restaurants", "supermarkets"] } ] },
+
+    { "id": "pl-01", "locale": "pl", "today": "2026-10-07", "defaultCurrency": "PLN", "text": "Wczoraj 89,99 zł w Biedronce i 15 zł za parking",
+      "expect": [
+        { "amount": 89.99, "isExpense": true, "date": "2026-10-06", "currency": "PLN", "sub": ["supermarkets"], "merchant": "Biedron" },
+        { "amount": 15, "isExpense": true, "date": "2026-10-06", "currency": "PLN", "sub": ["parking"] } ] },
+    { "id": "pl-02", "locale": "pl", "today": "2026-10-07", "defaultCurrency": "PLN", "text": "Dostałem wypłatę 6 800 zł",
+      "expect": [ { "amount": 6800, "isExpense": false, "date": "2026-10-07", "currency": "PLN", "sub": ["salary"] } ] },
+    { "id": "pl-03", "locale": "pl", "today": "2026-10-07", "defaultCurrency": "PLN", "text": "Tankowanie na Orlenie 250 złotych w sobotę",
+      "expect": [ { "amount": 250, "isExpense": true, "date": "2026-10-03", "currency": "PLN", "sub": ["fuel"], "merchant": "Orlen" } ] },
+
+    { "id": "ja-01", "locale": "ja", "today": "2026-10-07", "defaultCurrency": "JPY", "text": "昨日セブンイレブンで540円、ランチは1,200円",
+      "note": "«ランチは» abre otro tema tras la coma: la fecha del almuerzo es ambigua y valen ayer y hoy.",
+      "extraExpense": ["コンビニ"],
+      "expect": [
+        { "amount": 540, "isExpense": true, "date": "2026-10-06", "currency": "JPY", "sub": ["custom:コンビニ", "supermarkets"], "merchant": "セブンイレブン" },
+        { "amount": 1200, "isExpense": true, "date": ["2026-10-06", "2026-10-07"], "currency": "JPY", "sub": ["restaurants"] } ] },
+    { "id": "ja-02", "locale": "ja", "today": "2026-10-07", "defaultCurrency": "JPY", "text": "給料が28万円入った",
+      "expect": [ { "amount": 280000, "isExpense": false, "date": "2026-10-07", "currency": "JPY", "sub": ["salary"] } ] },
+    { "id": "ja-03", "locale": "ja", "today": "2026-10-07", "defaultCurrency": "JPY", "text": "ハワイで45ドルのディナー",
+      "expect": [ { "amount": 45, "isExpense": true, "date": "2026-10-07", "currency": "USD", "sub": ["restaurants", "travel"] } ] },
+
+    { "id": "zh-01", "locale": "zh-Hans", "today": "2026-10-07", "defaultCurrency": "CNY", "text": "昨天在美团点外卖花了45.5元，打车32块",
+      "note": "El taxi va en otra cláusula: su fecha es ambigua y valen ayer y hoy.",
+      "expect": [
+        { "amount": 45.5, "isExpense": true, "date": "2026-10-06", "currency": "CNY", "sub": ["delivery"], "merchant": "美团" },
+        { "amount": 32, "isExpense": true, "date": ["2026-10-06", "2026-10-07"], "currency": "CNY", "sub": ["rideshare"] } ] },
+    { "id": "zh-02", "locale": "zh-Hans", "today": "2026-10-07", "defaultCurrency": "CNY", "text": "这个月工资到账一万二",
+      "expect": [ { "amount": 12000, "isExpense": false, "date": "2026-10-07", "currency": "CNY", "sub": ["salary"] } ] },
+    { "id": "zh-03", "locale": "zh-Hans", "today": "2026-10-07", "defaultCurrency": "CNY", "text": "上周五在盒马买菜花了168.8",
+      "expect": [ { "amount": 168.8, "isExpense": true, "date": "2026-10-02", "currency": "CNY", "sub": ["supermarkets"], "merchant": "盒马" } ] }
+  ]
+}

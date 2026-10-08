@@ -1,6 +1,13 @@
 import { intentTask } from "./chat.intent";
 import { suggestionsTask } from "./chat.suggestions";
 import { photoTask } from "./photo.read";
+import { textParseTask } from "./text.parse";
+import { chatAnswerTask } from "./chat.answer";
+import { chatRewriteTask } from "./chat.rewrite";
+import { insightsCardsTask } from "./insights.cards";
+import { insightsCashflowTask } from "./insights.cashflow";
+import { insightsDeviationTask } from "./insights.deviation";
+import { trendsSummaryTask } from "./trends.summary";
 import type { BenchTask } from "./types";
 
 /**
@@ -14,7 +21,14 @@ export const TASK_REGISTRY: readonly BenchTask<any>[] = [
   suggestionsTask,
   photoTask,
   // --- sesión 2 · chat y nota (trabajador A): añade aquí ---
+  textParseTask,
+  chatAnswerTask,
+  chatRewriteTask,
   // --- sesión 2 · Insights y Tendencias (trabajador B): añade aquí ---
+  insightsCardsTask,
+  insightsCashflowTask,
+  insightsDeviationTask,
+  trendsSummaryTask,
 ];
 
 export function taskByName(name: string): BenchTask {

@@ -121,8 +121,8 @@ export interface PhotoCase {
   kind: string;
   lang: string;
   source: string;
-  /** Divisas del usuario que la app pasa al prompt (sesión 2): p. ej. «MXN» para un «$» mexicano. */
-  currencyContext?: string;
+  /** Divisas del usuario que la app pasa al prompt (sesión 2): p. ej. MXN decide un «$» mexicano. */
+  currencyContext?: { main: string | null; accounts: string[] };
   expect: { imageType: string; transactions: ExpectedTx[] };
 }
 

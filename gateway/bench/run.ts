@@ -293,7 +293,9 @@ export function summarize(task: TaskName): string | null {
 /** Gasto acumulado de la corrida (por proveedor), desde los .jsonl: para no pasarse del presupuesto. */
 function spend(): void {
   const total: Record<string, { calls: number; usd: number }> = {};
-  for (const t of TASKS) {
+  // `--task a,b` acota el gasto a esas tareas; `<tarea>.judge.jsonl` es lo que gastan sus jueces (chat.answer).
+  const only = arg("task")?.split(",");
+  for (const t of TASKS.filter((x) => !only || only.includes(x)).flatMap((x) => [x, `${x}.judge`])) {
     const f = new URL(`${t}.jsonl`, RESULTS);
     if (!existsSync(f)) continue;
     for (const line of readFileSync(f, "utf8").split("\n").filter(Boolean)) {

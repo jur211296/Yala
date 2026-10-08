@@ -1,0 +1,266 @@
+{
+  "task": "trends.summary",
+  "criterion": "Viñetas del análisis de Tendencias. Pasa si: (1) la app las lee (`bullets` con al menos un `text`); (2) una viñeta por gráfica PRESENTE en los datos (history_completed_periods→trend, comparison, cash_flow→cashflow, weekday_avg_expense→weekday), sin repetir ni inventar gráficas y con `chart` válido (si no, la viñeta sale sin su icono); (3) cada viñeta cita al menos una cifra de los datos; (4) ≤ 132 caracteres visibles por viñeta (el prompt pide 110; fallo por encima de 110 × 1,2; el estricto va aparte); (5) en el idioma de la app; (6) ningún número sin respaldo en los datos; (7) la divisa nunca va detrás del número. Datos inventados: el mes en curso es octubre de 2026.",
+  "cases": [
+    {
+      "id": "t01-es-PE-all-blocks",
+      "note": "Mes en curso, las cuatro gráficas.",
+      "input": {
+        "metric": "expense", "periodLabel": "octubre 2026", "comparisonLabel": "Sept 26", "currentTotal": 1820.4, "previousTotal": 1695.2,
+        "history": [
+          { "start": "2026-04-01", "income": 5600, "expense": 4120, "net": 1480 },
+          { "start": "2026-05-01", "income": 5600, "expense": 3980, "net": 1620 },
+          { "start": "2026-06-01", "income": 5600, "expense": 4410, "net": 1190 },
+          { "start": "2026-07-01", "income": 5600, "expense": 4050, "net": 1550 },
+          { "start": "2026-08-01", "income": 5600, "expense": 4195.6, "net": 1404.4 },
+          { "start": "2026-09-01", "income": 5600, "expense": 3842.5, "net": 1757.5 }
+        ],
+        "historyUnit": "months", "cashFlow": { "income": 5600, "expense": 1820.4, "net": 3779.6 },
+        "weekdaySpending": [{ "weekday": 1, "average": 85.2 }, { "weekday": 2, "average": 52.1 }, { "weekday": 3, "average": 47.8 }, { "weekday": 4, "average": 61.3 }, { "weekday": 5, "average": 58.9 }, { "weekday": 6, "average": 96.4 }, { "weekday": 7, "average": 132.7 }],
+        "currency": "PEN", "currencyDisplayFormat": "code", "locale": "es-PE", "country": "PE", "filtersActive": false, "tone": "normal", "focus": "balanced"
+      }
+    },
+    {
+      "id": "t02-es-ES-filters-cautious",
+      "note": "Filtros activos; histórico con saldos negativos crecientes; enfoque precavido.",
+      "input": {
+        "metric": "expense", "periodLabel": "octubre de 2026", "comparisonLabel": "Sept 26", "currentTotal": 1420.6, "previousTotal": 1180,
+        "history": [
+          { "start": "2026-04-01", "income": 2450, "expense": 2380, "net": 70 },
+          { "start": "2026-05-01", "income": 2450, "expense": 2510, "net": -60 },
+          { "start": "2026-06-01", "income": 2450, "expense": 2620, "net": -170 },
+          { "start": "2026-07-01", "income": 2450, "expense": 2700, "net": -250 },
+          { "start": "2026-08-01", "income": 2450, "expense": 2655, "net": -205 },
+          { "start": "2026-09-01", "income": 2450, "expense": 2875.4, "net": -425.4 }
+        ],
+        "historyUnit": "months", "cashFlow": { "income": 2450, "expense": 1420.6, "net": 1029.4 },
+        "weekdaySpending": [{ "weekday": 1, "average": 62.4 }, { "weekday": 2, "average": 38.5 }, { "weekday": 3, "average": 41.2 }, { "weekday": 4, "average": 44 }, { "weekday": 5, "average": 39.9 }, { "weekday": 6, "average": 88.7 }, { "weekday": 7, "average": 121.3 }],
+        "currency": "EUR", "currencyDisplayFormat": "symbol", "locale": "es-ES", "country": "ES", "filtersActive": true, "tone": "considerate", "focus": "cautious"
+      }
+    },
+    {
+      "id": "t03-es-AR-balance",
+      "note": "Métrica balance, mes cerrado, pesos con números grandes; tono de amigo, enfoque ahorro.",
+      "input": {
+        "metric": "balance", "periodLabel": "septiembre 2026", "comparisonLabel": "Ago 26", "currentTotal": 245700, "previousTotal": 345500,
+        "history": [
+          { "start": "2026-03-01", "income": 1450000, "expense": 1290000, "net": 160000 },
+          { "start": "2026-04-01", "income": 1500000, "expense": 1385000, "net": 115000 },
+          { "start": "2026-05-01", "income": 1600000, "expense": 1410000, "net": 190000 },
+          { "start": "2026-06-01", "income": 1700000, "expense": 1530000, "net": 170000 },
+          { "start": "2026-07-01", "income": 1800000, "expense": 1605000, "net": 195000 },
+          { "start": "2026-08-01", "income": 1650000, "expense": 1304500, "net": 345500 }
+        ],
+        "historyUnit": "months", "cashFlow": { "income": 2100000, "expense": 1854300, "net": 245700 },
+        "weekdaySpending": [{ "weekday": 1, "average": 52300 }, { "weekday": 2, "average": 41800 }, { "weekday": 3, "average": 39500 }, { "weekday": 4, "average": 45100 }, { "weekday": 5, "average": 61200 }, { "weekday": 6, "average": 98500 }, { "weekday": 7, "average": 87400 }],
+        "currency": "ARS", "currencyDisplayFormat": "code", "locale": "es-AR", "country": "AR", "filtersActive": false, "tone": "sarcastic", "focus": "saver"
+      }
+    },
+    {
+      "id": "t04-en-income-irregular",
+      "note": "Métrica ingresos, freelance con meses muy distintos.",
+      "input": {
+        "metric": "income", "periodLabel": "September 2026", "comparisonLabel": "Aug 26", "currentTotal": 1850, "previousTotal": 4920,
+        "history": [
+          { "start": "2026-03-01", "income": 6500, "expense": 4050, "net": 2450 },
+          { "start": "2026-04-01", "income": 2300, "expense": 3980, "net": -1680 },
+          { "start": "2026-05-01", "income": 5800, "expense": 4200, "net": 1600 },
+          { "start": "2026-06-01", "income": 7200, "expense": 4150, "net": 3050 },
+          { "start": "2026-07-01", "income": 3100, "expense": 3990, "net": -890 },
+          { "start": "2026-08-01", "income": 4920, "expense": 3992, "net": 928 }
+        ],
+        "historyUnit": "months", "cashFlow": { "income": 1850, "expense": 4120.75, "net": -2270.75 },
+        "weekdaySpending": [{ "weekday": 1, "average": 98.4 }, { "weekday": 2, "average": 120.3 }, { "weekday": 3, "average": 101.7 }, { "weekday": 4, "average": 115.2 }, { "weekday": 5, "average": 133.8 }, { "weekday": 6, "average": 189.5 }, { "weekday": 7, "average": 210 }],
+        "currency": "USD", "currencyDisplayFormat": "code", "locale": "en", "country": "US", "filtersActive": false, "tone": "considerate", "focus": "balanced"
+      }
+    },
+    {
+      "id": "t05-en-GB-week",
+      "note": "Semana en curso, histórico por semanas con sueldo quincenal; solo tres días con gasto.",
+      "input": {
+        "metric": "expense", "periodLabel": "5–11 Oct 2026", "comparisonLabel": "28 Sept–4 Oct", "currentTotal": 286.4, "previousTotal": 512.9,
+        "history": [
+          { "start": "2026-08-24", "income": 0, "expense": 498.2, "net": -498.2 },
+          { "start": "2026-08-31", "income": 1700, "expense": 1360.5, "net": 339.5 },
+          { "start": "2026-09-07", "income": 0, "expense": 455.1, "net": -455.1 },
+          { "start": "2026-09-14", "income": 0, "expense": 530.6, "net": -530.6 },
+          { "start": "2026-09-21", "income": 1700, "expense": 1402.3, "net": 297.7 },
+          { "start": "2026-09-28", "income": 0, "expense": 512.9, "net": -512.9 }
+        ],
+        "historyUnit": "weeks", "cashFlow": { "income": 0, "expense": 286.4, "net": -286.4 },
+        "weekdaySpending": [{ "weekday": 2, "average": 96.3 }, { "weekday": 3, "average": 120.1 }, { "weekday": 4, "average": 70 }],
+        "currency": "GBP", "currencyDisplayFormat": "symbol", "locale": "en-GB", "country": "GB", "filtersActive": false, "tone": "normal", "focus": "balanced"
+      }
+    },
+    {
+      "id": "t06-pt-BR-year",
+      "note": "Año en curso contra el anterior, histórico por años.",
+      "input": {
+        "metric": "expense", "periodLabel": "2026", "comparisonLabel": "2025", "currentTotal": 48650.3, "previousTotal": 45210.8,
+        "history": [
+          { "start": "2023-01-01", "income": 61200, "expense": 52400, "net": 8800 },
+          { "start": "2024-01-01", "income": 68400, "expense": 58950, "net": 9450 },
+          { "start": "2025-01-01", "income": 74100, "expense": 63800, "net": 10300 }
+        ],
+        "historyUnit": "years", "cashFlow": { "income": 62400, "expense": 48650.3, "net": 13749.7 },
+        "weekdaySpending": [{ "weekday": 1, "average": 160.2 }, { "weekday": 2, "average": 120.5 }, { "weekday": 3, "average": 118.9 }, { "weekday": 4, "average": 131.4 }, { "weekday": 5, "average": 142.7 }, { "weekday": 6, "average": 210.3 }, { "weekday": 7, "average": 248.6 }],
+        "currency": "BRL", "currencyDisplayFormat": "symbol", "locale": "pt-BR", "country": "BR", "filtersActive": false, "tone": "normal", "focus": "balanced"
+      }
+    },
+    {
+      "id": "t07-pt-PT-all-time",
+      "note": "Todo el período: sin comparativa ni histórico; solo flujo y día de la semana (dos viñetas).",
+      "input": {
+        "metric": "expense", "periodLabel": "Todo o período", "comparisonLabel": null, "currentTotal": 28450.6, "previousTotal": null,
+        "history": [], "historyUnit": null, "cashFlow": { "income": 34100, "expense": 28450.6, "net": 5649.4 },
+        "weekdaySpending": [{ "weekday": 1, "average": 31.2 }, { "weekday": 2, "average": 24.8 }, { "weekday": 3, "average": 22.1 }, { "weekday": 4, "average": 26.4 }, { "weekday": 5, "average": 29.9 }, { "weekday": 6, "average": 47.5 }, { "weekday": 7, "average": 52.3 }],
+        "currency": "EUR", "currencyDisplayFormat": "code", "locale": "pt-PT", "country": "PT", "filtersActive": false, "tone": "normal", "focus": "balanced"
+      }
+    },
+    {
+      "id": "t08-fr-previous-zero",
+      "note": "Usuario nuevo: el período anterior fue 0 (sin variation_pct) y no hay histórico.",
+      "input": {
+        "metric": "expense", "periodLabel": "octobre 2026", "comparisonLabel": "Sept 26", "currentTotal": 845.2, "previousTotal": 0,
+        "history": [], "historyUnit": "months", "cashFlow": { "income": 3150, "expense": 845.2, "net": 2304.8 },
+        "weekdaySpending": [{ "weekday": 1, "average": 70.1 }, { "weekday": 2, "average": 45 }, { "weekday": 3, "average": 62.3 }, { "weekday": 4, "average": 38.9 }, { "weekday": 5, "average": 51.2 }, { "weekday": 6, "average": 98.4 }, { "weekday": 7, "average": 120.6 }],
+        "currency": "EUR", "currencyDisplayFormat": "symbol", "locale": "fr", "country": "FR", "filtersActive": false, "tone": "normal", "focus": "balanced"
+      }
+    },
+    {
+      "id": "t09-de-sparse-weekdays",
+      "note": "Solo cuatro días con gasto; tono de amigo y enfoque ahorro.",
+      "input": {
+        "metric": "expense", "periodLabel": "Oktober 2026", "comparisonLabel": "Sept 26", "currentTotal": 1310.4, "previousTotal": 1105.7,
+        "history": [
+          { "start": "2026-04-01", "income": 3900, "expense": 2980, "net": 920 },
+          { "start": "2026-05-01", "income": 3900, "expense": 3050, "net": 850 },
+          { "start": "2026-06-01", "income": 3900, "expense": 2890, "net": 1010 },
+          { "start": "2026-07-01", "income": 3900, "expense": 3210, "net": 690 },
+          { "start": "2026-08-01", "income": 3900, "expense": 2630, "net": 1270 },
+          { "start": "2026-09-01", "income": 3900, "expense": 3120.4, "net": 779.6 }
+        ],
+        "historyUnit": "months", "cashFlow": { "income": 3900, "expense": 1310.4, "net": 2589.6 },
+        "weekdaySpending": [{ "weekday": 1, "average": 64.2 }, { "weekday": 2, "average": 0 }, { "weekday": 3, "average": 0 }, { "weekday": 4, "average": 85.3 }, { "weekday": 5, "average": 0 }, { "weekday": 6, "average": 156.8 }, { "weekday": 7, "average": 210.4 }],
+        "currency": "EUR", "currencyDisplayFormat": "code", "locale": "de", "country": "DE", "filtersActive": false, "tone": "sarcastic", "focus": "saver"
+      }
+    },
+    {
+      "id": "t10-it-no-history",
+      "note": "Sin histórico completo todavía: comparativa, flujo y día de la semana.",
+      "input": {
+        "metric": "expense", "periodLabel": "ottobre 2026", "comparisonLabel": "Set 26", "currentTotal": 642.7, "previousTotal": 590.1,
+        "history": [], "historyUnit": "months", "cashFlow": { "income": 2200, "expense": 642.7, "net": 1557.3 },
+        "weekdaySpending": [{ "weekday": 1, "average": 30.2 }, { "weekday": 2, "average": 22.4 }, { "weekday": 3, "average": 25.6 }, { "weekday": 4, "average": 19.8 }, { "weekday": 5, "average": 41.3 }, { "weekday": 6, "average": 66 }, { "weekday": 7, "average": 58.7 }],
+        "currency": "EUR", "currencyDisplayFormat": "code", "locale": "it", "country": "IT", "filtersActive": false, "tone": "normal", "focus": "balanced"
+      }
+    },
+    {
+      "id": "t11-nl-negative-balance",
+      "note": "Métrica balance en negativo tras un mes positivo.",
+      "input": {
+        "metric": "balance", "periodLabel": "september 2026", "comparisonLabel": "Aug 26", "currentTotal": -420.5, "previousTotal": 380.2,
+        "history": [
+          { "start": "2026-03-01", "income": 3200, "expense": 2950, "net": 250 },
+          { "start": "2026-04-01", "income": 3200, "expense": 3120, "net": 80 },
+          { "start": "2026-05-01", "income": 3200, "expense": 3080, "net": 120 },
+          { "start": "2026-06-01", "income": 3200, "expense": 3400, "net": -200 },
+          { "start": "2026-07-01", "income": 3200, "expense": 3350, "net": -150 },
+          { "start": "2026-08-01", "income": 3200, "expense": 2819.8, "net": 380.2 }
+        ],
+        "historyUnit": "months", "cashFlow": { "income": 3200, "expense": 3620.5, "net": -420.5 },
+        "weekdaySpending": [{ "weekday": 1, "average": 95.1 }, { "weekday": 2, "average": 101.2 }, { "weekday": 3, "average": 99.4 }, { "weekday": 4, "average": 112.8 }, { "weekday": 5, "average": 120.3 }, { "weekday": 6, "average": 175.6 }, { "weekday": 7, "average": 160.2 }],
+        "currency": "EUR", "currencyDisplayFormat": "code", "locale": "nl", "country": "NL", "filtersActive": false, "tone": "considerate", "focus": "balanced"
+      }
+    },
+    {
+      "id": "t12-pl-spike-in-history",
+      "note": "El último mes completo tuvo un gasto puntual grande.",
+      "input": {
+        "metric": "expense", "periodLabel": "październik 2026", "comparisonLabel": "Wrz 26", "currentTotal": 2310.5, "previousTotal": 6120.4,
+        "history": [
+          { "start": "2026-04-01", "income": 8200, "expense": 6050, "net": 2150 },
+          { "start": "2026-05-01", "income": 8200, "expense": 6320, "net": 1880 },
+          { "start": "2026-06-01", "income": 8200, "expense": 5980, "net": 2220 },
+          { "start": "2026-07-01", "income": 8200, "expense": 6210, "net": 1990 },
+          { "start": "2026-08-01", "income": 8200, "expense": 6150, "net": 2050 },
+          { "start": "2026-09-01", "income": 8200, "expense": 9840.5, "net": -1640.5 }
+        ],
+        "historyUnit": "months", "cashFlow": { "income": 8200, "expense": 2310.5, "net": 5889.5 },
+        "weekdaySpending": [{ "weekday": 1, "average": 210.4 }, { "weekday": 2, "average": 180.2 }, { "weekday": 3, "average": 165.3 }, { "weekday": 4, "average": 175.5 }, { "weekday": 5, "average": 190.1 }, { "weekday": 6, "average": 260.3 }, { "weekday": 7, "average": 240.8 }],
+        "currency": "PLN", "currencyDisplayFormat": "symbol", "locale": "pl", "country": "PL", "filtersActive": false, "tone": "normal", "focus": "balanced"
+      }
+    },
+    {
+      "id": "t13-ja-month",
+      "input": {
+        "metric": "expense", "periodLabel": "2026年10月", "comparisonLabel": "9月 26", "currentTotal": 98400, "previousTotal": 91200,
+        "history": [
+          { "start": "2026-04-01", "income": 340000, "expense": 281000, "net": 59000 },
+          { "start": "2026-05-01", "income": 340000, "expense": 279500, "net": 60500 },
+          { "start": "2026-06-01", "income": 340000, "expense": 302000, "net": 38000 },
+          { "start": "2026-07-01", "income": 340000, "expense": 295400, "net": 44600 },
+          { "start": "2026-08-01", "income": 340000, "expense": 275100, "net": 64900 },
+          { "start": "2026-09-01", "income": 340000, "expense": 286450, "net": 53550 }
+        ],
+        "historyUnit": "months", "cashFlow": { "income": 340000, "expense": 98400, "net": 241600 },
+        "weekdaySpending": [{ "weekday": 1, "average": 4200 }, { "weekday": 2, "average": 2900 }, { "weekday": 3, "average": 3100 }, { "weekday": 4, "average": 3300 }, { "weekday": 5, "average": 5100 }, { "weekday": 6, "average": 7800 }, { "weekday": 7, "average": 6900 }],
+        "currency": "JPY", "currencyDisplayFormat": "code", "locale": "ja", "country": "JP", "filtersActive": false, "tone": "normal", "focus": "balanced"
+      }
+    },
+    {
+      "id": "t14-zh-cautious",
+      "note": "Gasto al alza con fin de semana caro; tono cuidadoso, enfoque precavido.",
+      "input": {
+        "metric": "expense", "periodLabel": "2026年10月", "comparisonLabel": "9月 26", "currentTotal": 3120.8, "previousTotal": 2645,
+        "history": [
+          { "start": "2026-04-01", "income": 9000, "expense": 8100, "net": 900 },
+          { "start": "2026-05-01", "income": 9000, "expense": 8450, "net": 550 },
+          { "start": "2026-06-01", "income": 9000, "expense": 8900, "net": 100 },
+          { "start": "2026-07-01", "income": 9000, "expense": 9300, "net": -300 },
+          { "start": "2026-08-01", "income": 9000, "expense": 8120, "net": 880 },
+          { "start": "2026-09-01", "income": 9000, "expense": 8640.3, "net": 359.7 }
+        ],
+        "historyUnit": "months", "cashFlow": { "income": 9000, "expense": 3120.8, "net": 5879.2 },
+        "weekdaySpending": [{ "weekday": 1, "average": 160.2 }, { "weekday": 2, "average": 98.3 }, { "weekday": 3, "average": 102.6 }, { "weekday": 4, "average": 95.1 }, { "weekday": 5, "average": 130.8 }, { "weekday": 6, "average": 452 }, { "weekday": 7, "average": 380.5 }],
+        "currency": "CNY", "currencyDisplayFormat": "symbol", "locale": "zh-Hans", "country": "CN", "filtersActive": false, "tone": "considerate", "focus": "cautious"
+      }
+    },
+    {
+      "id": "t15-es-PE-no-income",
+      "note": "Usuario que no registra ingresos: cash_flow con ingreso 0.",
+      "input": {
+        "metric": "expense", "periodLabel": "octubre 2026", "comparisonLabel": "Sept 26", "currentTotal": 512.3, "previousTotal": 498.7,
+        "history": [
+          { "start": "2026-04-01", "income": 0, "expense": 2100, "net": -2100 },
+          { "start": "2026-05-01", "income": 0, "expense": 1980, "net": -1980 },
+          { "start": "2026-06-01", "income": 0, "expense": 2240, "net": -2240 },
+          { "start": "2026-07-01", "income": 0, "expense": 2050, "net": -2050 },
+          { "start": "2026-08-01", "income": 0, "expense": 2180, "net": -2180 },
+          { "start": "2026-09-01", "income": 0, "expense": 2075, "net": -2075 }
+        ],
+        "historyUnit": "months", "cashFlow": { "income": 0, "expense": 512.3, "net": -512.3 },
+        "weekdaySpending": [{ "weekday": 1, "average": 40.5 }, { "weekday": 2, "average": 22.1 }, { "weekday": 3, "average": 25.8 }, { "weekday": 4, "average": 19.6 }, { "weekday": 5, "average": 28.3 }, { "weekday": 6, "average": 55.2 }, { "weekday": 7, "average": 61 }],
+        "currency": "PEN", "currencyDisplayFormat": "code", "locale": "es-PE", "country": "PE", "filtersActive": false, "tone": "normal", "focus": "balanced"
+      }
+    },
+    {
+      "id": "t16-en-closed-month-saver",
+      "note": "Mes cerrado con bonus; enfoque ahorro.",
+      "input": {
+        "metric": "expense", "periodLabel": "September 2026", "comparisonLabel": "Aug 26", "currentTotal": 3380, "previousTotal": 3528,
+        "history": [
+          { "start": "2026-03-01", "income": 5200, "expense": 3610, "net": 1590 },
+          { "start": "2026-04-01", "income": 5000, "expense": 3720, "net": 1280 },
+          { "start": "2026-05-01", "income": 5000, "expense": 3480, "net": 1520 },
+          { "start": "2026-06-01", "income": 5000, "expense": 3910, "net": 1090 },
+          { "start": "2026-07-01", "income": 5000, "expense": 3650, "net": 1350 },
+          { "start": "2026-08-01", "income": 5000, "expense": 3528, "net": 1472 }
+        ],
+        "historyUnit": "months", "cashFlow": { "income": 9200, "expense": 3380, "net": 5820 },
+        "weekdaySpending": [{ "weekday": 1, "average": 178 }, { "weekday": 2, "average": 85.4 }, { "weekday": 3, "average": 92.1 }, { "weekday": 4, "average": 88.7 }, { "weekday": 5, "average": 101.3 }, { "weekday": 6, "average": 140.2 }, { "weekday": 7, "average": 165.8 }],
+        "currency": "USD", "currencyDisplayFormat": "symbol", "locale": "en", "country": "US", "filtersActive": false, "tone": "normal", "focus": "saver"
+      }
+    }
+  ]
+}
