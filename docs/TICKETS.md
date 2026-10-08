@@ -596,7 +596,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | prefs-push-purge-drops-a-change-made-during-the-upload | done | tickets/done/prefs-push-purge-drops-a-change-made-during-the-upload.md |
 | prefs-push-retries-a-rejected-key-forever | backlog | tickets/backlog/prefs-push-retries-a-rejected-key-forever.md |
 | prefs-synced-keys-upload-not-download | backlog | tickets/backlog/prefs-synced-keys-upload-not-download.md |
-| presentation-net-desarm-has-no-automated-net | backlog | tickets/backlog/presentation-net-desarm-has-no-automated-net.md |
+| presentation-net-desarm-has-no-automated-net | done | tickets/done/presentation-net-desarm-has-no-automated-net.md |
 | previous-person-cloud-session-survives-fresh-start-and-reinstall | qa | tickets/qa/previous-person-cloud-session-survives-fresh-start-and-reinstall.md |
 | private-exit-export-wait-cached-zero-misses-outside-writes | backlog | tickets/backlog/private-exit-export-wait-cached-zero-misses-outside-writes.md |
 | private-exit-loses-unmaterialized-inbound-captures | done | tickets/done/private-exit-loses-unmaterialized-inbound-captures.md |

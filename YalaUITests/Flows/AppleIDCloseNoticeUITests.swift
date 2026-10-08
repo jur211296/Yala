@@ -10,6 +10,9 @@
 //   2. Que «Ahora no» suelta la CONDICIÓN VIVA y no solo la hoja: lo que esperaba en la cola presenta después.
 //   3. Que si el cierre se bloquea la persona VE el motivo, y que al salir el coordinador queda en `.idle`:
 //      Ajustes abre sin re-enseñar el aviso de bloqueo, y su «Cerrar sesión» abre la hoja de alcance.
+//   4. El DESARME de la red: si la hoja no llega a montarse, la red agota su cap, suelta la condición viva y lo
+//      retenido presenta (ticket `presentation-net-desarm-has-no-automated-net`). Ese caso entra por un seam
+//      propio, `-uitest-apple-id-close-never-mounts`; los demás corren sin él.
 //
 //  **Lo que NO discrimina, medido con mutantes el 2026-09-15**: que la matriz retenga la cola MIENTRAS la hoja
 //  está arriba. Con la condición viva fuera de la matriz, en este runtime la oferta de prueba espera igual y
@@ -96,6 +99,50 @@ final class AppleIDCloseNoticeUITests: XCTestCase {
             Lo retenido no presentó al contestar la hoja: la condición viva (`appleIDCloseNotice`) se quedó \
             puesta, o la matriz no se recalculó al soltarla, y el router sigue retenido.
             """)
+    }
+
+    /// **El DESARME: si la hoja no llega a montarse, la red agota su cap y suelta la condición viva** (ticket
+    /// `presentation-net-desarm-has-no-automated-net`). Sin esto, una hoja que UIKit descarta deja la matriz de
+    /// readiness retenida por `appleIDCloseNotice` el resto de la sesión: ni bandeja, ni ofertas, ni invitaciones.
+    ///
+    /// `-uitest-apple-id-close-never-mounts` enciende la condición viva y deja la hoja sin montar en el armado y en
+    /// cada reintento; la red, la tabla de `AppleIDCloseNoticeLogic` y el desarme son los de producción. Este caso
+    /// NO sustituye al de la presentación normal de arriba, que corre sin el seam (regla `L103` de `testing.md`).
+    ///
+    /// Se afirman las dos consecuencias, y las dos con su control:
+    ///  · **mientras la red reintenta, lo retenido espera** — la oferta no está a los 4 s. Si la matriz colgara del
+    ///    `showSheet` en vez de la condición viva, con la hoja sin montar la oferta saldría al instante;
+    ///  · **al agotarse, la condición viva se suelta** — la oferta presenta sin que nadie conteste nada. Medido el
+    ///    2026-10-07: la red suelta a los ~9,4 s del drenaje; sin el desarme, la oferta no sale nunca.
+    func test_sheetThatNeverMounts_netExhausts_andReleasesTheRouter() {
+        let app = XCUIApplication()
+        app.launchForUITest(seed: "minimal", trialOffer: true, appleIDChanged: true, appleIDCloseNeverMounts: true)
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap no completó.")
+
+        let asking = stage(app, "apple_id_close_asking")
+        let offer = app.buttons["trial_offer_dismiss"]
+        let offerAppears = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == true"), object: offer)
+        XCTAssertEqual(XCTWaiter().wait(for: [offerAppears], timeout: 4), .timedOut, """
+            La oferta de prueba presentó mientras la red de la hoja seguía reintentando: la matriz no está retenida \
+            por la condición viva (`appleIDCloseNotice`), o el seam dejó de encenderla.
+            """)
+        XCTAssertFalse(asking.exists, """
+            La hoja se montó con `-uitest-apple-id-close-never-mounts`: el seam no alcanza a quien la enciende y este \
+            caso no está midiendo el desarme.
+            """)
+
+        // 45 s como en el caso de arriba: el cap son ~9 s, y lo demás es el desmontaje y el drenaje siguiente.
+        XCTAssertTrue(offer.waitForExistence(timeout: 45), """
+            Lo retenido no presentó tras agotarse la red: el desarme no soltó la condición viva y el router se \
+            quedó retenido por una hoja que nunca se vio — el brick que esta red existe para impedir.
+            """)
+        XCTAssertFalse(asking.exists, "La hoja apareció a la vez que la oferta: el aviso se soltó y siguió montándose.")
+
+        // Y la app sigue viva: nada quedó pegado por encima, y el aviso soltado no vuelve.
+        offer.tap()
+        XCTAssertTrue(app.buttons["panel_inbox_button"].waitForExistence(timeout: 10),
+                      "El Panel no quedó accesible tras el desarme y la oferta.")
+        XCTAssertFalse(asking.exists, "El aviso soltado por la red volvió a presentarse.")
     }
 
     /// **Sin sesión y con cambios de grupos, el aviso ofrece perderlos y «Ahora no» no pierde nada** (ticket
