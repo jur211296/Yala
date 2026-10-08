@@ -196,8 +196,14 @@ enum DetailPeriod: String, CaseIterable, Identifiable {
     /// - Parameters:
     ///   - customRange: Optional custom date range for .custom period
     ///   - now: Fecha de referencia (por defecto `.now`); inyectable para tests.
-    func dateInterval(customRange: DateInterval? = nil, now: Date = .now) -> DateInterval {
-        let calendar = userConfiguredCalendar()
+    ///   - calendar: Calendario con el que se cortan los límites (por defecto el del usuario,
+    ///     `userConfiguredCalendar()`, en la zona del proceso). Inyectable para que un test fije
+    ///     zona y `firstWeekday` y no dependa de la zona horaria del runner.
+    func dateInterval(
+        customRange: DateInterval? = nil,
+        now: Date = .now,
+        calendar: Calendar = userConfiguredCalendar()
+    ) -> DateInterval {
         let startOfToday = calendar.startOfDay(for: now)
 
         // End of today (start of tomorrow) to include all transactions from today

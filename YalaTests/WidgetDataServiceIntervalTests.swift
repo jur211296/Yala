@@ -22,12 +22,14 @@
 //    `now`, que el original toma de `WidgetDataService.widgetConfiguredCalendar()`
 //    y `Date()` sin inyección).
 //  - PARIDAD: para cada período la réplica del widget == el SSOT REAL alcanzable
-//    `DetailPeriod.dateInterval(now:)`. Como el SSOT usa `userConfiguredCalendar()`
-//    (lee `firstWeekday` de `.standard`), la paridad exacta se comprueba sobre los
-//    períodos INDEPENDIENTES de `firstWeekday` (todos menos `.thisWeek`); para
-//    `.thisWeek` se verifica que la réplica del widget coincide con una réplica del
-//    SSOT usando el MISMO calendario inyectado (prueba que ambos algoritmos son
-//    idénticos incluso en el caso dependiente de la semana).
+//    `DetailPeriod.dateInterval(now:calendar:)`, los dos con el MISMO calendario
+//    inyectado (zona America/Lima fijada en `makeCalendar`). Sin inyectar, el SSOT
+//    usaría `userConfiguredCalendar()` en la zona del PROCESO: con el runner en UTC
+//    cortaba 5 h desplazado respecto al `now` y a los límites armados en Lima, y estos
+//    tests salían rojos (medido el 2026-10-08 con `TEST_RUNNER_TZ=UTC`). La paridad
+//    exacta se comprueba sobre los períodos que no dependen de `firstWeekday` (todos
+//    menos `.thisWeek`); para `.thisWeek` se verifica que la réplica del widget
+//    coincide con una réplica del SSOT usando el mismo calendario inyectado.
 //  - EXCLUSIÓN medianoche: sobre el SSOT real y sobre la réplica del widget, que el
 //    `end` de "mes pasado"/"año pasado" lleve el -1 segundo (excluye la medianoche
 //    del día 1 del período actual — regla `DateInterval` cerrado en ambos extremos).
@@ -139,7 +141,7 @@ struct WidgetDataServiceIntervalTests {
         let startOfThisMonth = calendar.date(
             from: calendar.dateComponents([.year, .month], from: now))!
 
-        let interval = DetailPeriod.lastMonth.dateInterval(now: now)
+        let interval = DetailPeriod.lastMonth.dateInterval(now: now, calendar: calendar)
 
         // El `end` es la medianoche del día 1 del mes actual MENOS 1 segundo.
         #expect(interval.end == calendar.date(byAdding: .second, value: -1, to: startOfThisMonth))
@@ -153,7 +155,7 @@ struct WidgetDataServiceIntervalTests {
         let startOfThisYear = calendar.date(
             from: calendar.dateComponents([.year], from: now))!
 
-        let interval = DetailPeriod.lastYear.dateInterval(now: now)
+        let interval = DetailPeriod.lastYear.dateInterval(now: now, calendar: calendar)
 
         #expect(interval.end == calendar.date(byAdding: .second, value: -1, to: startOfThisYear))
         #expect(!interval.contains(startOfThisYear))
@@ -191,7 +193,7 @@ struct WidgetDataServiceIntervalTests {
         let startOfThisMonth = calendar.date(
             from: calendar.dateComponents([.year, .month], from: now))!
 
-        let end = DetailPeriod.lastMonth.dateInterval(now: now).end
+        let end = DetailPeriod.lastMonth.dateInterval(now: now, calendar: calendar).end
 
         #expect(startOfThisMonth.timeIntervalSince(end) == 1)
     }
@@ -204,7 +206,7 @@ struct WidgetDataServiceIntervalTests {
 
         for period in mirroredPeriods where period != .thisWeek {
             let widget = widgetDateInterval(period, calendar: calendar, now: now)
-            let ssot = period.dateInterval(now: now)  // usa userConfiguredCalendar() real
+            let ssot = period.dateInterval(now: now, calendar: calendar)  // SSOT real, mismo calendario
             #expect(
                 widget == ssot,
                 "Drift widget↔SSOT en \(period.rawValue): widget=\(widget) ssot=\(ssot)"
@@ -212,9 +214,10 @@ struct WidgetDataServiceIntervalTests {
         }
     }
 
-    /// `.thisWeek` depende de `firstWeekday`; el SSOT real lo lee de `.standard`,
-    /// no inyectable aquí. Se prueba que ambos ALGORITMOS coinciden usando el mismo
-    /// calendario inyectado (réplica del widget vs réplica del SSOT).
+    /// `.thisWeek` depende de `firstWeekday`. Se prueba que ambos ALGORITMOS coinciden
+    /// usando el mismo calendario inyectado (réplica del widget vs réplica del SSOT).
+    /// Desde 2026-10-08 el SSOT real acepta `calendar:` y este caso podría compararse
+    /// contra él directamente; se deja como estaba (fuera del alcance de aquel cambio).
     @Test func parity_thisWeek_algorithms_match_with_shared_calendar() {
         let calendar = makeCalendar(firstWeekday: 2)  // lunes
         let now = fixedNow(calendar)
@@ -271,7 +274,7 @@ struct WidgetDataServiceIntervalTests {
         let expectedStart = calendar.date(byAdding: .year, value: -10, to: now)!
 
         let widget = widgetDateInterval(.allTime, calendar: calendar, now: now)
-        let ssot = DetailPeriod.allTime.dateInterval(now: now)
+        let ssot = DetailPeriod.allTime.dateInterval(now: now, calendar: calendar)
 
         #expect(widget.start == expectedStart)
         #expect(ssot.start == expectedStart)
