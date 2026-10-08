@@ -1,3 +1,14 @@
+---
+status: spec-ready
+priority: critica
+area: groups
+tags: [modo-nube, grupos, backend, replaneo, v1]
+created: 2026-07-14
+updated: 2026-07-14
+---
+
+# Grupos al backend nube EN v1 (replaneo)
+
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
 ## Índice (21 entradas)
@@ -28,17 +39,6 @@
 - `2026-07-14` [SPIKE A: VEREDICTO HTTP/2 POSITIVO ✅ (transporte despejado SIN esperar el device)](#2026-07-14-3-tanda--spike-a-veredicto-http2-positivo--transporte-despejado-sin-esperar-el-device)
 
 <!-- INDICE:fin -->
-
----
-status: spec-ready
-priority: critica
-area: groups
-tags: [modo-nube, grupos, backend, replaneo, v1]
-created: 2026-07-14
-updated: 2026-07-14
----
-
-# Grupos al backend nube EN v1 (replaneo)
 
 **Decisión owner (2026-07-14, durante el device-QA del batch M1):** Grupos deja CloudKit y migra al backend nube (Supabase/gateway) DENTRO de v1 — revierte la dirección (4) de [[MODO-NUBE-GRUPOS-V1-DECISION]] (que lo programaba post-v1). Verbatim del owner: "esto de los grupos me está complicando demasiado la vida, es confuso para los usuarios. Vamos a integrar lo de grupos a v1 y no importa que signifique replanear muchas cosas".
 

@@ -86,8 +86,11 @@ def indice_vinetas(f, s, vin, apply):
     b += filas(desplaz)
     b += ['', '<!-- INDICE:fin -->']
     bloque = '\n'.join(b)
-    m = re.match(r'(?s)(\A---\n.*?\n---\n+)?(#[^\n]*\n+)((?:>[^\n]*\n|\n)*)', s)
-    cab = m.group(0) if m else ''
+    # Frontmatter y titulo son opcionales cada uno: con frontmatter y sin titulo, el
+    # indice va igualmente DEBAJO del frontmatter, que solo es frontmatter en la linea 1.
+    # El titulo es un h1: un '## Seccion' no es titulo y el indice no va debajo de el.
+    m = re.match(r'(?s)\A(?:---\n.*?\n---\n+)?(?:#[ \t][^\n]*\n+(?:>[^\n]*\n|\n)*)?', s)
+    cab = m.group(0)
     out = cab + bloque + '\n\n' + s[len(cab):]
     print('  %s: %d reglas en vinetas, la mayor de %.1f KB' % (f, len(idx), max(p for _, _, p in idx) / 1024.0))
     if apply:
@@ -173,8 +176,12 @@ def main():
     bloque = '\n'.join(b)
 
     s = re.sub(r'(?s)<!-- INDICE:inicio.*?<!-- INDICE:fin -->\n*', '', s)
-    m = re.match(r'(?s)(\A#[^\n]*\n+(?:>[^\n]*\n)*\n*)', s)
-    out = (m.group(1) + bloque + '\n\n' + s[m.end():]) if m else bloque + '\n\n' + s
+    # El indice va detras del frontmatter YAML (si el fichero abre con '---') y del
+    # '# Titulo' con sus citas (si lo hay; h1, un '## Seccion' no es titulo). Encima del
+    # frontmatter lo dejaria de ser: los lectores de frontmatter (rules de Claude Code,
+    # recuento de tickets) lo buscan en la linea 1.
+    m = re.match(r'(?s)\A(?:---\n.*?\n---\n+)?(?:#[ \t][^\n]*\n+(?:>[^\n]*\n)*\n*)?', s)
+    out = s[:m.end()] + bloque + '\n\n' + s[m.end():]
     print('  %s: %d entradas en %d temas' % (f, len(ents), len(por)))
     for t in orden:
         if t in por: print('     %-30s %3d' % (t, len(por[t])))

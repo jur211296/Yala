@@ -351,7 +351,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | gateway-has-no-telemetry | backlog | tickets/backlog/gateway-has-no-telemetry.md |
 | gateway-proxies-any-model-and-any-length | done | tickets/done/gateway-proxies-any-model-and-any-length.md |
 | gateway-typecheck-roto-y-fuera-del-ci | backlog | tickets/backlog/gateway-typecheck-roto-y-fuera-del-ci.md |
-| generated-index-lands-above-yaml-frontmatter | backlog | tickets/backlog/generated-index-lands-above-yaml-frontmatter.md |
+| generated-index-lands-above-yaml-frontmatter | done | tickets/done/generated-index-lands-above-yaml-frontmatter.md |
 | goldens-de-staging-solo-pasan-a-trozos | done | tickets/done/goldens-de-staging-solo-pasan-a-trozos.md |
 | gpt-4-1-nano-shuts-down-on-october-23 | done | tickets/done/gpt-4-1-nano-shuts-down-on-october-23.md |
 | group-balance-service-shares-not-deduped | backlog | tickets/backlog/group-balance-service-shares-not-deduped.md |

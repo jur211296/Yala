@@ -1,3 +1,25 @@
+---
+id: groups-consent-door-spec
+status: qa
+created: 2026-08-11
+updated: 2026-09-23
+source: YalaWiki/Backlog/modo-nube/qa_MODO-NUBE-SPEC-CONSENT-GRUPOS.md
+---
+
+
+# SPEC · La puerta de Grupos: educativo → login → consent, y el consent viaja con la cuenta (2.1)
+
+> **Entregable de la sesión de EXPLORACIÓN + SPEC del 2026-08-11.** Responde a los 10 puntos de
+> [[MODO-NUBE-EXPLORACION-CONSENT-GRUPOS]]. **Cero código de producción tocado.**
+>
+> **Árbol de medición:** `/Users/jur/Yala`, branch `2.0.5`, HEAD **`b5dab36d`** (pull hecho, «Already up
+> to date»). Todas las coordenadas **MEDIDO** son de ESTE árbol y se re-midieron una a una: la
+> exploración las traía contra el mismo commit y aun así **doce resultaron falsas o imprecisas** (§0).
+>
+> **Cómo leer las etiquetas:** **MEDIDO** = leído en el árbol, con fichero:línea. **INFERIDO** = decisión
+> de diseño o consecuencia razonada; no está en el código y puede estar equivocada. Ninguna
+> recomendación de este spec se apoya en una coordenada que no se haya vuelto a abrir.
+
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
 ## Índice (23 entradas)
@@ -30,28 +52,6 @@
 - `2026-08-11` [C1 · El registro del consent contra la cuenta — 🟢 HECHO (`bc0bb256`, validado 11-08) · ⚠️ SQL SIN AP](#c1--el-registro-del-consent-contra-la-cuenta---hecho-bc0bb256-validado-11-08---sql-sin-aplicar-en-stagingprod---hecho-2026-08-11---worker-desplegado-2026-08-12-prod-1f72f6a5-staging-645b6820)
 
 <!-- INDICE:fin -->
-
----
-id: groups-consent-door-spec
-status: qa
-created: 2026-08-11
-updated: 2026-09-23
-source: YalaWiki/Backlog/modo-nube/qa_MODO-NUBE-SPEC-CONSENT-GRUPOS.md
----
-
-
-# SPEC · La puerta de Grupos: educativo → login → consent, y el consent viaja con la cuenta (2.1)
-
-> **Entregable de la sesión de EXPLORACIÓN + SPEC del 2026-08-11.** Responde a los 10 puntos de
-> [[MODO-NUBE-EXPLORACION-CONSENT-GRUPOS]]. **Cero código de producción tocado.**
->
-> **Árbol de medición:** `/Users/jur/Yala`, branch `2.0.5`, HEAD **`b5dab36d`** (pull hecho, «Already up
-> to date»). Todas las coordenadas **MEDIDO** son de ESTE árbol y se re-midieron una a una: la
-> exploración las traía contra el mismo commit y aun así **doce resultaron falsas o imprecisas** (§0).
->
-> **Cómo leer las etiquetas:** **MEDIDO** = leído en el árbol, con fichero:línea. **INFERIDO** = decisión
-> de diseño o consecuencia razonada; no está en el código y puede estar equivocada. Ninguna
-> recomendación de este spec se apoya en una coordenada que no se haya vuelto a abrir.
 
 ---
 

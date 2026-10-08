@@ -1,3 +1,14 @@
+---
+description: Los hooks de git de Yala — por qué el repo tiene su propio commit-msg, qué bloquea y qué no, y la trampa de core.hooksPath. Se cargan al tocar .githooks/ o los scripts del gate.
+paths:
+  - ".githooks/**"
+  - "qa/scripts/commit-msg-test.sh"
+  - "qa/scripts/precommit-gate.sh"
+  - "qa/scripts/worktree-stamp*.sh"
+---
+
+# Hooks de git en Yala
+
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
 ## Índice (10 entradas)
@@ -17,17 +28,6 @@
 - `—` [Las rutas del repo se borran del texto antes de buscar atribución](#las-rutas-del-repo-se-borran-del-texto-antes-de-buscar-atribucin)
 
 <!-- INDICE:fin -->
-
----
-description: Los hooks de git de Yala — por qué el repo tiene su propio commit-msg, qué bloquea y qué no, y la trampa de core.hooksPath. Se cargan al tocar .githooks/ o los scripts del gate.
-paths:
-  - ".githooks/**"
-  - "qa/scripts/commit-msg-test.sh"
-  - "qa/scripts/precommit-gate.sh"
-  - "qa/scripts/worktree-stamp*.sh"
----
-
-# Hooks de git en Yala
 
 ## `core.hooksPath` NO es acumulativo: el local SUSTITUYE al global
 

@@ -1,3 +1,11 @@
+---
+created: 2026-07-03
+updated: 2026-08-09
+tags: [modo-nube, diferidos, registro]
+---
+
+# Modo Nube — Registro de DIFERIDOS
+
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
 ## Índice (40 entradas)
@@ -47,14 +55,6 @@
 - `2026-07-11` [31. Reparación de metadata CloudKit huérfana (canario D4) + veredicto de la matriz de propagación de](#31-reparacin-de-metadata-cloudkit-hurfana-canario-d4--veredicto-de-la-matriz-de-propagacin-de-borrados-hallazgo-3-de-la-corrida-device-2026-07-11)
 
 <!-- INDICE:fin -->
-
----
-created: 2026-07-03
-updated: 2026-08-09
-tags: [modo-nube, diferidos, registro]
----
-
-# Modo Nube — Registro de DIFERIDOS
 
 Registro vivo de todo lo pospuesto, descartado-revisable, o marcado como futuro dentro de la épica **Modo Nube** ([[modo-nube-epic]]), para que nada de lo que no entra en v1 se pierda de vista. No es un backlog de trabajo — es una lista de vigilancia: cada item tiene un gatillo de reconsideración explícito. Se revisa en cada cierre de fase de la épica y antes de cada release que la toque. El objetivo declarado por el owner: "que nunca se pierda algo que no salga en v1" — por eso este documento prefiere pecar de incluir de más antes que resumir de menos.
 
