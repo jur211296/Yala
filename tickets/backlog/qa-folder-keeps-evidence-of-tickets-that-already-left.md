@@ -4,7 +4,7 @@ status: backlog
 priority: very-low
 area: "proceso, board"
 created: 2026-09-23
-updated: 2026-09-23
+updated: 2026-10-08
 source: "barrido de `qa` del 2026-09-23 (encargo `2026-09-23-barrido-qa-in-qa-pre-device`)"
 ---
 
@@ -30,3 +30,9 @@ Decidir una de dos: que la evidencia viaje con el ticket al moverlo, o que viva 
 (`tickets/_evidencia/`) que no dependa del estado. Y mover las dos que ya están descolocadas.
 
 No es urgente: no rompe nada, solo ensucia la carpeta que Jürgen mira para saber qué le toca probar.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- Siguen en `tickets/qa/`: `evidencia-welcome-privacy-secondary/` (su ticket está en `discarded`), `qa-hero-caption-distribucion-gastos-20260907.jpg` (en `done`) y `evidencia-groups-only-mount/` (sus dos tickets siguen en `qa`).
+
+Triage 2026-10-08: abierto · very-low → very-low · higiene de carpeta; no rompe nada.

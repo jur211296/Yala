@@ -4,6 +4,7 @@ status: backlog
 priority: low
 area: "testing, groups"
 created: 2026-09-30
+updated: 2026-10-08
 source: "XCUITest de `sign-out-wipe-abort-loops-the-groups-gate` (medido en el árbol de la corrida)"
 ---
 
@@ -28,3 +29,9 @@ regla de `testing.md` sobre identifiers en contenedores). Cambio de accesibilida
 
 - [ ] Los botones de las pantallas de la puerta salen con su propio identificador en el árbol.
 - [ ] Los XCUITest que buscan por el id de la pantalla siguen encontrándola.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `WelcomeGroupsGateView.noticeShell` sigue con `.accessibilityIdentifier(identifier)` sobre el `VStack` y sin `.accessibilityElement(children: .contain)`.
+
+Triage 2026-10-08: abierto · low → low · noticeShell no ha cambiado; afecta a los XCUITest, no a la persona.

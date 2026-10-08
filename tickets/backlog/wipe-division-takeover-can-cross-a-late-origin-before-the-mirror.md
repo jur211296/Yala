@@ -4,6 +4,7 @@ status: backlog
 priority: low
 area: "groups, sync"
 created: 2026-09-28
+updated: 2026-10-08
 source: "review adversarial de `wipe-division-exclusion-trusts-the-origin-to-converge` (lente de sync y dinero, 2026-09-28); inferido leyendo código, NO reproducido"
 ---
 
@@ -34,3 +35,10 @@ el pago ya esté registrado. Lo segundo cubre también `wipe-division-complement
 
 - [[wipe-division-exclusion-trusts-the-origin-to-converge]]
 - [[wipe-division-complement-can-be-bridged-twice]]
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `GroupsRemoteWipeDivision.takeOverIfOverdue` y `pruneSettlementDraftsAlreadyResolved` (`AppBootstrapper`, ~1798-1803) siguen sin conciliar dos pendientes de la misma liquidación.
+- Aprobar sigue sin comprobar si el gasto ya tiene transacción real: el mismo hueco que `wipe-division-complement-can-be-bridged-twice`.
+
+Triage 2026-10-08: abierto · low → low · sigue igual; es una ventana de segundos a minutos tras 72 h de espera.

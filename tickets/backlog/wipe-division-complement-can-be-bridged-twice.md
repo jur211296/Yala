@@ -4,6 +4,7 @@ status: backlog
 priority: low
 area: "groups, sync"
 created: 2026-09-28
+updated: 2026-10-08
 source: "review adversarial de `a-wipe-on-a-device-without-the-groups-loses-their-rows-everywhere` (lente de grupos, 2026-09-28); inferido leyendo código, NO reproducido"
 ---
 
@@ -33,3 +34,10 @@ el dinero doble para este caso y para el residual general de «cada dispositivo 
 ## Relacionados
 
 - [[a-wipe-on-a-device-without-the-groups-loses-their-rows-everywhere]]
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `DraftService.approveGroupExpenseAccountDraft` (~905-975) sigue insertando la transacción real sin buscar una existente con el mismo `splitExpenseID`.
+- `GroupsRemoteWipeDivision.swift` solo cambió desde el 2026-09-28 por `50ab2e890` (retirada de la devolución tardía), que no toca el reparto.
+
+Triage 2026-10-08: abierto · low → low · aprobar sigue sin comprobar la transacción existente; hace falta vaciar con los grupos aún poniéndose al día.

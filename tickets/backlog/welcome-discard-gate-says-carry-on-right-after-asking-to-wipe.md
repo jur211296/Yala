@@ -4,6 +4,7 @@ status: backlog
 priority: low
 area: "onboarding, modo-nube, copy"
 created: 2026-09-14
+updated: 2026-10-08
 source: "review adversarial del PR de `activation-discard-gate-exits-without-wiping-when-icloud-is-unreachable` (3 lentes, 2026-09-14); NO reproducido en device"
 ---
 
@@ -56,3 +57,11 @@ que en el Welcome la frase valga para los dos? El material ya existe: las tres c
 
 - [[activation-discard-gate-exits-without-wiping-when-icloud-is-unreachable]] — el ticket padre, que
   arregló la mitad de la activación y estrenó el copy.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `ContentView` (~943) sigue llevando el `onStartFresh` de Restaurar a `.privateICloudGate`, y `WelcomeFlowContainer` (~306) lo monta con `unverifiedExit: .proceedWatchingTheMirror`: cuerpos `noAccountBody` y `errorBody`.
+- Las claves `discardUnverified*` solo las usa `.returnWithoutClaimingAWipe` (`WelcomePrivateICloudGateView.noICloudBody` y `unreachableBody`).
+- El paso es el mismo para «vengo de elegir privado» y «vengo de pedir un borrado»: el arreglo necesita que la puerta sepa de dónde viene.
+
+Triage 2026-10-08: abierto · low → low · el copy sigue diciendo «Puedes seguir», pero sin datos locales que borrar no miente sobre ellos.

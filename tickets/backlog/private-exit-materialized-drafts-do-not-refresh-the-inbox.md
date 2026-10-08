@@ -4,6 +4,7 @@ status: backlog
 priority: very-low
 area: "inbox, settings"
 created: 2026-09-26
+updated: 2026-10-08
 source: "review adversarial de `private-exit-loses-unmaterialized-inbound-captures` (lente de efectos colaterales)"
 ---
 
@@ -19,3 +20,9 @@ no» y vuelvo a la app. La Bandeja no lo enseña hasta que salgo y vuelvo, o has
 `InboundCaptureDrain.forSignOut` crea borradores desde `CloudSessionSignOut`, que no toca `sessionState`, y
 `InboxView` refresca con `dataVersion`. Los otros drenados (arranque, foreground, remote-change) sí incrementan
 `dataVersion`. Solo cosmético: el borrador está en el store.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `CloudSessionSignOut` (~797 y ~1250) sigue llamando a `InboundCaptureDrain.forSignOut` sin incrementar `dataVersion`.
+
+Triage 2026-10-08: abierto · very-low → very-low · cosmético: el borrador está en el store.

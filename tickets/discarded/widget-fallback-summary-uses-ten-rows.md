@@ -1,11 +1,14 @@
 ---
 id: widget-fallback-summary-uses-ten-rows
-status: backlog
+status: discarded
 priority: low
 area: "widgets, currency"
 created: 2026-09-09
+updated: 2026-10-08
 source: hallazgo de camino en bridge-de-grupos-pierde-la-marca-de-sus-patas (2026-09-09)
 ---
+
+Why: Discarded 2026-10-08. El camino de emergencia es inalcanzable en cualquier build publicado. Desde `919166a2d` (2026-02-04, antes de `v1.0.0`) `WidgetDataCache` escribe `periodSummaries` con los ocho períodos (`thisWeek` … `allTime`), con los mismos `rawValue` que `WidgetPeriod`, y `WidgetDataService.calculateSummary` lo devuelve en su primer `if`. Un snapshot que no se deja leer devuelve `nil`, no el cálculo. Lo que queda es código muerto, no un número falso en pantalla.
 
 # El widget puede presentar el total del mes calculado sobre diez transacciones
 
@@ -47,3 +50,5 @@ y un número presentado sin salvedad es peor que un hueco.
 
 - [[widget-period-balance-ignores-group-bridge-adjustment]] — el otro desajuste de conjunto del mismo
   snapshot, en el bucle del saldo.
+
+Triage 2026-10-08: descartado · low → — · el cálculo sobre diez filas no se alcanza con ningún snapshot que haya escrito un build publicado.

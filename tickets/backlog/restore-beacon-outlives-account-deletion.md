@@ -1,7 +1,9 @@
 ---
 id: restore-beacon-outlives-account-deletion
 status: backlog
+priority: medium
 created: 2026-09-07
+updated: 2026-10-08
 source: review adversarial de `reentry-killswitch-closes-both-doors` (2026-09-07)
 ---
 
@@ -100,3 +102,12 @@ saber qué cerró el paso 6 y qué no.
 
 - [[reentry-killswitch-closes-both-doors]] — el chip del que sale
 - [[beacon-routes-only-never-blocks]] — cubrió el faro huérfano que [I] puede probar; no el del kill
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- El faro solo lo limpian `AccountDeletionService` (best-effort), `CloudIdentityDiscovery` y la reversa; bajo el kill-switch no corre ningún descubrimiento (§1).
+- `welcome.restore.cloudPausedBody` sigue diciendo «Tus datos siguen a salvo en tu cuenta de Yala» (`es-419`:5558), e `iCloudDisabledBody` sigue pidiendo iCloud a quien nació en la nube (§2).
+- `WelcomeRestoreView.resolveEmptyState` solo mira el faro en la rama vacía, así que el migrado con copia congelada sigue saliendo `.found` sin aviso (§3).
+- Sube a `medium`: copy que puede afirmar algo falso sobre los datos (§1) y una copia vieja que se restaura como si fuera la buena (§3).
+
+Triage 2026-10-08: abierto · sin prioridad → medium · el copy puede afirmar que los datos están a salvo en una cuenta borrada y el migrado restaura su copia vieja sin aviso.

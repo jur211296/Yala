@@ -4,7 +4,7 @@ status: backlog
 priority: very-low
 area: "grupos, copy"
 created: 2026-10-05
-updated: 2026-10-05
+updated: 2026-10-08
 source: "medido al implementar `fresh-start-copy-for-another-accounts-group-changes-borrows-the-own-reason` (2026-10-05)"
 ---
 
@@ -31,3 +31,9 @@ que cambiarlos pide tocar ese test a la vez.
 ## Por dónde va
 
 El molde de `lossOtherAccount`: «la cuenta que apuntó cada uno» y «si eso no va a pasar». En los 16 locales.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- Las claves del ticket siguen diciendo «con ella» en `es-419.lproj` (`groups.errors.groupsChangesFromAnotherAccount`:6197, `…SignOutLoss`:6204, `welcome.groups.neutral…LossBody`:6218, `storage.groups.detachBlocked…`:5904).
+
+Triage 2026-10-08: abierto · very-low → very-low · el copy sigue igual; es pulido.

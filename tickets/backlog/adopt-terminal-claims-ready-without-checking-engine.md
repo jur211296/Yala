@@ -1,7 +1,9 @@
 ---
 id: adopt-terminal-claims-ready-without-checking-engine
 status: backlog
+priority: low
 created: 2026-09-07
+updated: 2026-10-08
 source: review adversarial de `reentry-killswitch-closes-both-doors` (2026-09-07)
 ---
 
@@ -53,3 +55,10 @@ proceso** en vez de matarlo en el minuto uno.
 ## Relacionados
 
 - [[reentry-killswitch-closes-both-doors]] — el chip del que sale
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `CloudWelcomeSignInFlow.phase(for:)` sigue derivando `.reentryReady` del `uiState` (~200), y `readyContent` no mira `CloudSyncRuntime`.
+- El residual hermano sigue: `shouldOfferICloudRestart` usa `isCloudModeMount`, que da `false` con `.neutralNoMirror`; sale una vez por proceso (`iCloudMismatchAlreadyDetected`).
+
+Triage 2026-10-08: abierto · sin prioridad → low · degradación temporal: resumeIfNeeded y rekickIfParked reintentan en el siguiente primer plano.

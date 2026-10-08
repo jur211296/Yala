@@ -4,6 +4,7 @@ status: backlog
 priority: low
 area: "ui, onboarding, a11y"
 created: 2026-09-10
+updated: 2026-10-08
 source: "review adversarial del paso 4, lente de SwiftUI/DS"
 ---
 
@@ -35,3 +36,10 @@ molde original.
 
 - [ ] Todo botón destructivo del flujo Welcome tiene `role: .destructive` y ≥44 pt de área táctil.
 - [ ] El peso visual sigue por debajo del primario (la salida que no destruye sigue siendo la evidente).
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `WelcomeRestoreView`: el botón «Empezar desde cero» bajo «Continuar» (~388) y el secundario de `emptyStateView` (~794) siguen siendo `Button` con un `Text` suelto, sin `role: .destructive` ni área de 44 pt.
+- La confirmación que abren (`showStartFreshConfirm`, ~215) sí lleva `role: .destructive`: el borrado no ocurre con un solo toque.
+
+Triage 2026-10-08: abierto · low → low · siguen siendo texto suelto, pero el borrado pasa por una confirmación destructiva.
