@@ -4,6 +4,7 @@ status: backlog
 priority: medium
 area: "testing, modo-nube, onboarding"
 created: 2026-09-10
+updated: 2026-10-08
 source: "medido durante `cloud-sign-in-discovers-account-kind` (bloque [I])"
 ---
 
@@ -44,3 +45,12 @@ que hoy solo verifica el owner en device pasan a ser deterministas.
       de Grupos queda escrita.
 - [ ] El área `cloud-born-cloud-signup` de `qa/coverage-index.json` deja de ser `manual` en la parte
       que este seam cubre, y el ratchet baja.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- Sigue sin haber seam de `exists` para el bloque [I] del Welcome: `UITestHooks.swift` no tiene ningún `-uitest-*` que finja el tipo de cuenta en el sign-in.
+- Hay un seam vecino, y conviene no confundirlo: `-uitest-fake-migration-identity` (`UITestHooks.swift:161`) finge solo la respuesta de la puerta de «Migrar a la nube» de Ajustes. Lo usa `StorageMigrationIdentityBlockUITests` (4 casos). No cubre ninguna celda del Welcome.
+- `WelcomeChooserUITests` tiene hoy 10 casos (antes 4), y ninguno pasa del sign-in.
+- El área `cloud-born-cloud-signup` de `qa/coverage-index.json` sigue `manual`.
+
+Triage 2026-10-08: abierto · medium → medium · sigue sin seam de `/account/exists` para el Welcome; el único seam de identidad (`-uitest-fake-migration-identity`) cubre solo la puerta de Ajustes.

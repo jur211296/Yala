@@ -4,7 +4,7 @@ status: backlog
 priority: medium
 area: grupos, notifications
 created: 2026-09-03
-updated: 2026-09-03
+updated: 2026-10-08
 source: medido al cablear el push de membresía (g8_03, 2026-09-03)
 ---
 
@@ -49,3 +49,11 @@ Swift, que es justo como divergen.
 El banner **ya suena** sin esto: el push es `alert` y lo pinta iOS. Esto mejora qué pasa al tocarlo y
 evita trabajo inútil, pero el problema de fondo —que el aviso dependiera de que la app corriese— ya
 está resuelto.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- Sigue. `YalaAppDelegate.swift:67-68` lee `yala.kind` solo para `PushBreadcrumb`, y `:76` llama a `syncNowFromPush` para cualquier push con la key `yala`.
+- El fan-out (`gateway/src/groups/routes.ts:289`) manda `yala: { kind: "groups-sync" }` y sigue sin `deepLink`.
+- `NotificationService.swift:64-66` sí entiende `groups/<uuid>`.
+
+Triage 2026-10-08: abierto · medium → medium · el gateway sigue sin mandar `deepLink` (`routes.ts:289`) y el cliente no hace `switch` por `kind` (`YalaAppDelegate.swift:67-76`).

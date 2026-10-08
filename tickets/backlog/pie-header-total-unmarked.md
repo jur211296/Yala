@@ -4,6 +4,7 @@ status: backlog
 priority: medium
 area: "currency, ui"
 created: 2026-09-09
+updated: 2026-10-08
 source: device-QA de fx-approximate-mark-missing-on-secondary-surfaces (2026-09-09)
 ---
 
@@ -72,3 +73,11 @@ Cuando se cierre éste, la frase de aquél queda por fin cierta y su `low` justi
 - [[fx-approximate-mark-missing-on-secondary-surfaces]] — la tanda que cubrió las otras superficies.
 - [[fx-category-totals-unmarked]] — las filas del desglose; premisa corregida arriba.
 - [[weekday-bar-daily-average-unmarked]] — el otro agregado de período sin marca, hallado a la vez.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- Sigue. `PieChartVariationHeader.swift:73` y `:87` llaman a `AmountText` sin `isEstimate:`.
+- `CategoriesPieWidget.swift` (header en `:509`, rama sin comparativa en `:545`), `SubcategoriesPieWidget.swift:497` y `TagsPieWidget.swift:456` tienen cero `isEstimate`.
+- No hay commits sobre estos ficheros desde el 2026-09-09.
+
+Triage 2026-10-08: abierto · medium → medium · `PieChartVariationHeader.swift:73` sigue sin `isEstimate:` y los tres pies no tienen ni un `isEstimate`.

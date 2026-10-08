@@ -1,10 +1,10 @@
 ---
 id: ipad-native-app
-status: backlog
+status: done
 priority: medium
 area: platform
 created: 2026-09-09
-updated: 2026-09-27
+updated: 2026-10-08
 source: idea Jürgen 2026-09-09
 ---
 
@@ -90,3 +90,5 @@ Dynamic Type grande (`adaptativo-ipad-duo.md` §6.1).
 **Layout** (ADR «[2026-09-27] Yala se adapta por espacio, no por dispositivo»). Se decide por size class y ancho del
 contenedor, nunca por tipo de dispositivo ni orientación; un contenedor que se adapta, no un `if` por size class en
 la raíz; APIs de iOS 27.1 solo tras `if #available`.
+
+Triage 2026-10-08: resuelto · medium → — · su propio criterio de cierre (la fase 1) se cumplió con el PR #299 (`TabView` `.sidebarAdaptable`, `ContentView.swift:3599`); las 12 filas de iPad e iPhone del carril están en `done/` y solo queda la del Duo, que vive en `iphone-duo-native-app`.

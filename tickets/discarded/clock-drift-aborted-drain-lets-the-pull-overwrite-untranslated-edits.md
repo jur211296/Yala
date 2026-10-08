@@ -1,12 +1,14 @@
 ---
 id: clock-drift-aborted-drain-lets-the-pull-overwrite-untranslated-edits
-status: backlog
+status: discarded
 priority: low
 area: "modo-nube, sync"
 created: 2026-09-23
-updated: 2026-09-26
+updated: 2026-10-08
 source: "`drain-duplicates-the-unit-clock-when-its-row-cannot-be-read` (2026-09-23), al fijar qué es «un drain que terminó»"
 ---
+
+Why: Discarded 2026-10-08. Decisión de Jürgen del 2026-10-04 (card `tablero-decidir-se-descarta-el-ticket-del-reloj-8xjw`, opción A: «La causa ya no está»): el drain personal estampa con `HLCClock.sendLocal` (`CloudSyncEngine.swift:3138`), que no lanza por deriva; el corte de la traducción solo queda para un año fuera de 0001–9999.
 
 # Con el reloj del teléfono muy desajustado, un cambio tuyo puede pisarse al bajar cambios de otro dispositivo
 
@@ -38,3 +40,5 @@ otra forma de cortar la traducción con `true`.
 ## Criterios de aceptación
 
 - [ ] Con la traducción cortada, una edición no traducida no la pisa una página remota.
+
+Triage 2026-10-08: descartado · low → — · decisión de Jürgen 2026-10-04 (card 8xjw) y `sendLocal` medido en `CloudSyncEngine.swift:3138`; la única causa conocida ya no se da.

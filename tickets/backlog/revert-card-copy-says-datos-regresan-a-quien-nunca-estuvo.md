@@ -1,9 +1,10 @@
 ---
 id: revert-card-copy-says-datos-regresan-a-quien-nunca-estuvo
 status: backlog
-priority: medium
+priority: low
 area: "copy, l10n, modo-nube"
 created: 2026-09-10
+updated: 2026-10-08
 source: "review del alcance de `reverse-cutover-cerrado-para-cuentas-born-cloud` (2026-09-10), decisión D6"
 ---
 
@@ -70,3 +71,23 @@ Se descartó arreglarlo dentro del ticket que abrió la puerta, por dos razones:
 
 El copy de la web, la FAQ y la ficha de la App Store — eso es de Lola (`marketing/`, `Web/`) y va por
 `session-redesign-web-and-store-copy`.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- Las coordenadas cambiaron. `storage.revert.body` está en `es.lproj/Localizable.strings:4663`. El mensaje de confirmación
+  hoy se llama `storage.confirm.revertBody` (`:4685`), no `storage.revert.confirm.message`.
+- `revertCard`: `StorageSettingsView.swift:450`, body en `:456`. Sin rama por born-cloud.
+
+## Pregunta para Jürgen (triage 2026-10-08)
+
+El copy de «Volver a iCloud» para quien nació en la nube:
+
+- **A** · Un texto verdadero para las dos poblaciones («pasan a vivir en tu dispositivo y en tu iCloud»): un string por
+  locale, en las dos claves.
+- **B** · Una variante para born-cloud, con una rama en `revertCard` y un aviso de espacio.
+- **C** · No tocar y cerrar como `discarded`.
+
+**Recomendación: A.** Arregla lo falso con el mínimo de superficie: dos claves por 16 locales, sin ramas que testear.
+Con A, `low`.
+
+Triage 2026-10-08: abierto · medium → low · storage.revert.body y storage.confirm.revertBody siguen diciendo «regresan/volverán» y revertCard no distingue born-cloud; falta que Jürgen elija A, B o C.

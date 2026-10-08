@@ -1,11 +1,11 @@
 ---
 id: ci-no-corre-la-suite-del-gateway
 status: backlog
-priority: medium
+priority: high
 area: platform
 created: 2026-09-04
 source: medido al abrir el PR #63 (rejoin-tap-renotifies-admins), 2026-09-04
-updated: 2026-09-15
+updated: 2026-10-08
 ---
 
 # El CI no ejecuta ni un test del gateway — y sí gasta 100 minutos de simulador por tocar el índice
@@ -117,3 +117,11 @@ dos lo fija `gateway/test/groups.attest401.test.ts`, offline y en menos de un se
 una guard devolviera `yala_attest_required` con el JWT caducado, el cliente reintentaría para siempre sin pedir
 volver a entrar, y ni el CI ni la suite de iOS lo verían.
 
+## Medido en 2.1 (triage 2026-10-08)
+
+- Jobs de `.github/workflows/qa.yml` hoy: `coverage-index` (:69), `mcp` (:114), `changes` (:148), `tests` (:253), `aviso` (:519). El `npm ci`/`npm test` de `:127-129` es del job `mcp`, que sirve de molde exacto (Ubuntu, Node 22, segundos).
+- `gateway/*` sigue en la allowlist que salta la suite iOS (`qa.yml:212`) y nada lo sustituye. `gateway/package.json`: `deploy:production` solo tiene `predeploy` = `sync:manifest`, sin `npm test`.
+- Siguen sin correr: `wrangler.forceupdate.test.ts`, `config.test.ts` (percents de producción) y `groups.attest401.test.ts`.
+- La mitad de la allowlist (`encargos/*`) la lleva también `encargos-markdown-triggers-the-whole-ios-suite`; el job del gateway es solo de este ticket.
+
+Triage 2026-10-08: abierto · medium → high · sigue sin job de vitest para `gateway/` (`qa.yml` solo tiene coverage-index, mcp, changes, tests y aviso) y `deploy:production` tampoco corre tests: los guards anti-deploy destructivo no los ejecuta nadie.

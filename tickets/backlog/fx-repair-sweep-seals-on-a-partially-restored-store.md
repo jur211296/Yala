@@ -1,10 +1,11 @@
 ---
 id: fx-repair-sweep-seals-on-a-partially-restored-store
 status: backlog
-priority: medium
+priority: low
 area: "currency, sync"
 created: 2026-09-08
 source: residual declarado en chat-rows-sealed-before-the-fix-have-no-repair-path (2026-09-08)
+updated: 2026-10-08
 ---
 
 # El barrido de tasas puede sellarse con el restore a medio bajar
@@ -50,3 +51,11 @@ barrido. Eso es una decisión de arranque, no un residual de aquel arreglo.
 - [ ] La decisión sobre `loadExchangeRates` queda escrita: o se mueve entero detrás del gate, o el
       barrido se saca de ahí y se difiere como su vecino `repairUnsignedChatExpensesIfNeeded`.
 - [ ] Un test del caso: store parcial → no sella; corpus completo en el arranque siguiente → cura.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- Sin cambios desde el 08-sep. El barrido (`TransactionUpdateService.swift:127`) solo pasa el gate de `isImportQuiescent` (`:137`), y su docblock (`:105-111`) ya declara el residual del store parcial.
+- Sigue colgando del paso 2: `AppBootstrapper.loadExchangeRates` (`:2624-2638`) lo llama en `:2634`, antes de cualquier gate de store-ready.
+- Ventana estrecha: hacen falta filas con 1:1 envenenado por un build viejo y un primer arranque del build nuevo con el restore a medias.
+
+Triage 2026-10-08: abierto · medium → low · `repairLegacyOneToOneRatesIfNeeded` sigue gateado solo por `isImportQuiescent` y se llama en el paso 2 (`AppBootstrapper.swift:2634`); residual declarado en su propio docblock, con una ventana estrecha.

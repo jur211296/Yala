@@ -1,9 +1,10 @@
 ---
 id: apple-id-close-loss-notice-uitest-fails-on-2-1
 status: backlog
-priority: medium
+priority: low
 area: "testing, sesiones, grupos"
 created: 2026-09-29
+updated: 2026-10-08
 source: "gate de sheet-size-follows-the-device-not-the-window, 2026-09-29"
 ---
 
@@ -35,3 +36,10 @@ de que llegue la cifra, o el texto se pinta primero con la copia «sin cifra», 
 ## Relacionados
 
 - [[queued-offer-after-dismiss-flakes-on-a-cold-simulator]] — otro caso del mismo fichero, distinto modo de fallo.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- La aserción sin espera sigue igual, ahora en `YalaUITests/Flows/AppleIDCloseNoticeUITests.swift:172-173` (era `:117`).
+- En la nocturna de `2.1` del 2026-10-08 (run `37802106095`, iOS 26.5) el caso pasa a la primera. El rojo del ticket se midió en iOS 27.0 (ProMax), y no se ha vuelto a medir ahí.
+
+Triage 2026-10-08: abierto · medium → low · pasa en el CI de 2.1 (iOS 26.5, run 37802106095) pero la aserción sigue sin esperar (:172-173) y el rojo de iOS 27.0 no se ha re-medido.

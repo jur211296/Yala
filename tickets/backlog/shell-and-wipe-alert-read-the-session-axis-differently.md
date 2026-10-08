@@ -1,9 +1,10 @@
 ---
 id: shell-and-wipe-alert-read-the-session-axis-differently
 status: backlog
-priority: medium
+priority: very-low
 area: "sesiones"
 created: 2026-09-14
+updated: 2026-10-08
 source: "review adversarial de `wipe-alert-fires-on-a-session-that-no-longer-obeys-the-signal`, lente de producto"
 ---
 
@@ -38,3 +39,24 @@ que lea el eje elegirá una de las dos lecturas sin saber que la otra existe al 
 - [ ] Decidido si la combinación «shell `.full` + aviso callado» es aceptable o necesita un tercer
       comportamiento (por ejemplo, que la shell también falle cerrado cuando no hay marca).
 - [ ] La asimetría queda escrita donde la vea quien añada el siguiente consumidor del eje.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- Shell: `ContentView.swift:3486-3489` (`reduceToGroupsOnly`, `sessionState.hasPrivateSession`). Aviso: `ContentView.swift:1588-1594`
+  (`presentRemoteWipeNoticeIfStillTrue`, `confirmedPrivateSession()`).
+- El 2.º criterio está casi hecho. Los docblocks de `PrivateSessionMark.hasPrivateSession`/`confirmedPrivateSession`
+  (`PrivateSessionMark.swift:82-107`) explican qué lectura elegir según el signo del error. Falta nombrar la combinación.
+- `very-low`: exige perder la marca después del backfill de arranque.
+
+## Pregunta para Jürgen (triage 2026-10-08)
+
+¿Es aceptable «pestañas completas + aviso callado» cuando falta la marca de sesión?
+
+- **A** · Aceptarlo y añadir una frase en el docblock de `PrivateSessionMark` que nombre esta combinación.
+- **B** · Que la shell también falle cerrado sin marca (solo grupos). Esconde la vida personal de un dueño legítimo.
+- **C** · Un tercer comportamiento: un aviso propio para «sin marca y sin datos».
+
+**Recomendación: A.** La ventana exige perder la marca después del backfill, y B daña al caso común para cubrir el raro.
+Con A queda en `very-low`, y el ticket se cierra con esa frase.
+
+Triage 2026-10-08: abierto · medium → very-low · La shell sigue leyendo SessionState.hasPrivateSession (ausente ⇒ true) y el aviso confirmedPrivateSession (ausente ⇒ false); el criterio general ya está escrito en PrivateSessionMark, pero la combinación no se ha decidido.

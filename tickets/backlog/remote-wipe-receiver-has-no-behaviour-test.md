@@ -1,9 +1,10 @@
 ---
 id: remote-wipe-receiver-has-no-behaviour-test
 status: backlog
-priority: medium
+priority: low
 area: "testing, modo-nube"
 created: 2026-09-14
+updated: 2026-10-08
 source: "review adversarial de `remote-wipe-signal-honored-by-any-session`, lente de tests"
 ---
 
@@ -43,3 +44,13 @@ tres agujeros que el source-scan solo puede cerrar por texto.
 - [ ] Existe un test que ejercita la detección con el eje apagado y afirma que no se encola el intent.
 - [ ] Su control positivo (sesión privada ⇒ sí se encola) está en el mismo fichero.
 - [ ] `RemoteWipeSignalWiringTests` dice cuáles de sus scans pasan a ser redundantes.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `PreferenceSyncService.checkForRemoteWipeSignal` sigue `private` (`PreferenceSyncService.swift:505`), con `private init()` (`:94`).
+- Ningún test lo ejercita: los que lo nombran son comentarios (`RemoteWipeSignalDeciderTests.swift:105`, `PrivateSessionMarkTests.swift:267`).
+- Precedente útil desde el 30-sep (`217dcbd13`): el servicio ya expone `readRemote(_:from:)`/`readLocal(_:from:)` como
+  estáticos para tests, que es el mismo patrón de extracción que pide este ticket.
+- `low`: es un hueco de tests; el decisor puro y el source-scan siguen siendo red.
+
+Triage 2026-10-08: abierto · medium → low · checkForRemoteWipeSignal sigue private en un singleton con private init y ningún test ejercita la detección; solo cubren el decisor puro y el source-scan del cableado.

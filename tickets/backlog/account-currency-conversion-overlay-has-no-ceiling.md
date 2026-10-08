@@ -4,6 +4,7 @@ status: backlog
 priority: medium
 area: "accounts, currency, fx, ux"
 created: 2026-09-09
+updated: 2026-10-08
 source: review adversarial de changing-an-account-currency-orphans-its-whole-history (2026-09-09)
 ---
 
@@ -39,3 +40,11 @@ El contraste lo invoca el propio código: el overlay del cambio de divisa **pref
 ## Relacionados
 
 - `changing-an-account-currency-orphans-its-whole-history` — de donde sale.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- El velo sigue indeterminado: `ProgressView()` sin valor en `currencyConversionOverlay` (`Yala/App/Views/Accounts/AccountFormView.swift:337-343`), sin cancelar, con `.interactiveDismissDisabled` (`:273`).
+- `confirmCurrencyConversion` (`AccountFormViewModel.swift:790-810`) entra directo a `AccountCurrencyMigrationService.prepareRates` (`:76-100`) sin guard de red; `ExchangeRateService.fetchRates` (`:317-334`) sigue secuencial por rango con `Task.sleep(0.3)`, timeouts en `ExchangeRateAPIService.swift:86,177`.
+- El PR #400 (`4ec6f0c5e`) añadió fechas a pedir (`RateNeeds` de programados, favoritos y borradores), no progreso ni cota.
+
+Triage 2026-10-08: abierto · medium → medium · el velo sigue sin progreso, sin cancelar y sin guard de red; el PR #400 solo añadió fechas a la misma espera.

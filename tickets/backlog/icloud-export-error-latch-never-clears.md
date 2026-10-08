@@ -1,10 +1,11 @@
 ---
 id: icloud-export-error-latch-never-clears
 status: backlog
-priority: medium
+priority: low
 area: "modo-nube, sync"
 created: 2026-09-10
 source: "review adversarial de la primera pasada de `groups-entry-on-a-mirrored-store-still-blocks-the-owner` (2026-09-10); rescatado a `2.1` el 2026-09-11 — vivía solo en una rama sin PR"
+updated: 2026-10-08
 ---
 
 # Un export con éxito no limpia `lastExportError`, así que un blip de red envenena el resto del proceso
@@ -48,3 +49,11 @@ falla es que su rastro no caduque.
       actual y pasan a leer una marca con fecha).
 - [ ] `ICloudCutoverGateLogic` no clasifica por un error anterior al último éxito.
 - [ ] Test con un fallo seguido de un éxito que hoy quedaría verde con el latch puesto.
+
+## Medido en 2.1 (triage 2026-10-08)
+- `lastExportError` se escribe solo en `iCloudSyncService.swift:422` y se pone a `nil` solo en el reset de tests (`:751`).
+- Lectores como estado actual: `hasFailureHistory` (`:534`) y `ICloudCutoverGateLogic.decide`, que recibe el código sin fecha (`MigrationWorkExecutor.swift:1505-1512`).
+- Matiz medido: `decide` (`ICloudCutoverGateLogic.swift:86-105`) solo acorta con `quotaExceeded`, `notAuthenticated`, `managedAccountRestricted` y `userDeletedZone`; un blip de red es retriable y cae en `.healthy`. El daño al cutover exige un error definitivo viejo.
+- `lastExportErrorAt` ya existe: es la vía para cerrar los dos lectores que faltan.
+
+Triage 2026-10-08: abierto · medium → low · lastExportError sigue sin limpiarse con un export bueno; la vuelta a iCloud ya lo lee con fecha, pero el banner y la puerta del cutover no. Solo un error definitivo viejo acorta el cutover; un blip de red no.

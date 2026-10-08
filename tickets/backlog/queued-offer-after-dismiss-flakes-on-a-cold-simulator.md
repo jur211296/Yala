@@ -1,7 +1,7 @@
 ---
 id: queued-offer-after-dismiss-flakes-on-a-cold-simulator
 status: backlog
-priority: medium
+priority: high
 area: "testing, xcuitest, presentaciones"
 created: 2026-09-15
 updated: 2026-10-08
@@ -227,3 +227,11 @@ arreglo. Dueño: Frank. Revisar antes del **2026-10-22**.
 
 Un rojo de cualquiera de estos con la firma «la oferta no apareció en 45 s» y el centinela en 0 es este ticket, no
 una regresión. Cualquier otra línea de fallo sí lo es.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- No se ha aplicado ninguna de las propuestas A, B ni C. `ReadinessGateObservers.swift:93` sigue llamando a `recompute()` en el mismo `onChange(of: appleIDCloseNoticePending)`, durante la actualización de la vista.
+- El drenaje sigue colgando de `.onChange(of: AppRouter.shared.revision)` (`ContentView.swift:835`), y `AppRouter.markReady` está en `AppRouter.swift:110`.
+- Sube a `high` porque una persona se queda sin el aviso en cola (paywall, aviso de bandeja, invitación) hasta relanzar la app. Además, tumba cuatro XCUITest del gate.
+
+Triage 2026-10-08: abierto · medium → high · 6647d173b midió que es producto: `markReady` sube la revisión dentro del update y el `onChange` no llega (`ReadinessGateObservers.swift:93`, `ContentView.swift:835`); sin arreglo.

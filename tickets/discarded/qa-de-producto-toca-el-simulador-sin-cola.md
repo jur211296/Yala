@@ -1,12 +1,14 @@
 ---
 id: qa-de-producto-toca-el-simulador-sin-cola
-status: backlog
+status: discarded
 priority: medium
 area: qa
 created: 2026-09-12
-updated: 2026-09-12
+updated: 2026-10-08
 source: lente adversarial de la sesión de la cola del simulador (2026-09-12)
 ---
+
+Why: Discarded 2026-10-08. Duplicado. El mismo hueco que prompts-de-traduccion-corren-xcodebuild-sin-cola (simulador compartido fuera de la cola de a4454b8e2), que se conserva con la fusión
 
 # El `/qa` de producto instala en el simulador sin hacer cola, y nadie puede verlo
 
@@ -52,3 +54,5 @@ tuyo» cuando no lo es.
 - [[diez-worktrees-comparten-un-simulador]] — la cola, y la exención explícita de `/qa`
 - [[prompts-de-traduccion-corren-xcodebuild-sin-cola]] — la otra familia que quedó fuera
 - `.claude/rules/testing.md` — las dos firmas que el centinela conoce
+
+Triage 2026-10-08: duplicado · medium → — · es el mismo hueco (trabajo en el simulador compartido fuera de la cola de `a4454b8e2`, invisible para `sim-libre.sh`); se conserva `prompts-de-traduccion-corren-xcodebuild-sin-cola`, donde queda fusionado.

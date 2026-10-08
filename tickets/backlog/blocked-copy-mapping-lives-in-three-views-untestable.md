@@ -1,9 +1,10 @@
 ---
 id: blocked-copy-mapping-lives-in-three-views-untestable
 status: backlog
-priority: medium
+priority: low
 area: "modo-nube, settings, testing"
 created: 2026-09-13
+updated: 2026-10-08
 source: "review adversarial de `groups-killswitch-403-blocks-detach-forever`, lente de tests"
 ---
 
@@ -30,3 +31,10 @@ a esa función», que es una línea estable y no una lista de literales que enve
 
 **Nota de alcance:** el `gesture` que esa firma pide es el mismo que falta en
 `signout-alert-fires-on-detach-blocks-it-did-not-cause`. Los dos tickets quieren la misma pieza.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- Dos de las tres vistas ya leen una fuente pura y testeable, `SignOutBlockedCopy` (`Yala/App/Views/Shared/SignOutBlockedCopy.swift`): `ProfileView.signOutBlockedMessage` (`:333`) y `WelcomeGroupsGateView` (`:427`, `:516`).
+- Queda `GroupsAssociationSection.blockedMessage` (`Yala/App/Views/Settings/GroupsAssociationSection.swift:207`), un `switch` privado de la vista. El `gesture` sigue pendiente en `signout-alert-fires-on-detach-blocks-it-did-not-cause`.
+
+Triage 2026-10-08: abierto · medium → low · en parte hecho: Ajustes y la puerta del Welcome ya usan SignOutBlockedCopy; falta el mensaje del desasociar (GroupsAssociationSection.swift:207).

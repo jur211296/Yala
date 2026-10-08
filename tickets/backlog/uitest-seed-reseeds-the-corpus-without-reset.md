@@ -1,9 +1,10 @@
 ---
 id: uitest-seed-reseeds-the-corpus-without-reset
 status: backlog
-priority: medium
+priority: low
 area: "testing, seed"
 created: 2026-09-09
+updated: 2026-10-08
 source: hallazgo de camino en el device-QA de chat-rows-sealed-before-the-fix-have-no-repair-path (2026-09-09)
 ---
 
@@ -74,3 +75,11 @@ el mismo arreglo de una línea que llevan sus hermanos.
 - [[chat-rows-sealed-before-the-fix-have-no-repair-path]] — el veredicto que destapó esto.
 - [[fx-repair-sweep-is-the-only-boot-sweep-without-a-uitest-gate]] — el otro roce entre los barridos
   de arranque y el montaje de QA.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `DevSeedService.seed(in:profile:)` solo comprueba `!isSeeding` (`DevSeedService.swift:101`). `devSeedDataExecuted` se escribe en `:240` y solo alimenta `hasSeeded` (`:96`), que pinta el botón de Perfil (`ProfileView.swift:1524`). No aborta ninguna siembra.
+- `DevSeedForeignCurrencyAccount.create` sigue sin buscar si ya existe «QA FX»: no hay ningún `fetch` en el fichero.
+- Por qué low: es una trampa de QA que lleva a falsos positivos. No afecta a producción.
+
+Triage 2026-10-08: abierto · medium → low · DevSeedService.seed sigue protegido solo contra la reentrada (!isSeeding), y DevSeedForeignCurrencyAccount sigue sin guard de presencia

@@ -1,10 +1,10 @@
 ---
 id: fx-unknown-currency-code-collapses-to-usd
 status: backlog
-priority: medium
+priority: low
 area: currency
 created: 2026-09-06
-updated: 2026-09-06
+updated: 2026-10-08
 source: review adversarial de fx-presentation-still-shows-1to1 (2026-09-06)
 ---
 
@@ -48,3 +48,11 @@ cerrarlo en el mismo cambio.
       se declara aproximado, o se rechaza en la entrada.
 - [ ] `GroupBalanceService` normaliza antes de convertir.
 - [ ] Test con un código fuera del catálogo que hoy devuelve el monto crudo con `.exact`.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `normalizeCurrencyCode` vive ahora en `CurrencyUtils.swift:755`, y el fallback a USD está en `:782-783`. `convertChecked` sigue normalizando las dos puntas antes de la identidad (`CurrencyConverter.swift:235-239`).
+- `GroupBalanceService.swift` sigue pasando `balance.currencyCode` y `debt.currencyCode` crudos a `convertWithLatestRate` (`:338-347`, `:373-375`).
+- Los `return (merged, .exact)` de `resolveRates` están en `CurrencyConverter.swift:457` y `:488`. Ningún commit en esos ficheros desde el 06-sep.
+
+Triage 2026-10-08: abierto · medium → low · `normalizeCurrencyCode` sigue cayendo a USD (`CurrencyUtils.swift:782`) y `GroupBalanceService` convierte códigos crudos (`:338-375`); baja frecuencia, fuera de las 54 divisas.

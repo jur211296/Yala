@@ -4,6 +4,7 @@ status: backlog
 priority: medium
 area: "modo-nube, groups"
 created: 2026-09-11
+updated: 2026-10-08
 source: "medido de camino en la mitad 2 de `groups-entry-on-a-mirrored-store-still-blocks-the-owner` (2026-09-11)"
 ---
 
@@ -49,3 +50,5 @@ que su hermana `.groupsOrganizer` está en la lista de `false`, y las dos cards 
 - Unit: la tabla de `requiresMirror` y sus consumidores.
 - XCUITest: la card de unirse desde una instalación fresca no monta el step `.mirrorRelaunch`.
 - Device-QA: que el store del invitado no espeje (panel DEBUG, `personalStoreMountedDecision`).
+
+Triage 2026-10-08: abierto · medium → medium · `requiresMirror` sigue devolviendo `true` para `.inviteRecovery` con el docblock viejo (`WelcomeMirrorRelaunchLogic.swift:98`); el único cambio posterior es `5bb3b4ea5`, del mismo 11-sep.

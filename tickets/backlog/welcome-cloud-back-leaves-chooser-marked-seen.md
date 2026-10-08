@@ -4,6 +4,7 @@ status: backlog
 priority: medium
 area: "onboarding, modo-nube"
 created: 2026-09-10
+updated: 2026-10-08
 source: "review adversarial (lente de flujo) de `beacon-routes-only-never-blocks`, 2026-09-10"
 ---
 
@@ -42,3 +43,12 @@ del cover, y cambiarlo es otro objeto.
   card, no antes.
 - La alternativa de fondo: marcarlo al COMPROMETERSE (firmar, o aceptar el consentimiento) y no al
   encaminar, como ya hace G3.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- El `onBack` del cover de nube (`ContentView.swift:3046-3050`) sigue sin `hasShownWelcomeChooser = false`.
+- Tres entradas marcan el flag al encaminar, antes de firmar nada: `onSelectExistingOption` (`:2717`), `onBeaconRoutesToCloudSignIn` (`:2775`) y también la card de alta en la nube, `onSelectCloudAccount` (`:2750`), que el ticket no nombraba.
+- Solo `onCreateAnotherAccount` (`:3041`) lo devuelve a `false`.
+- `isFreshInstallForNeutralMount` (`Utils/SwiftDataConfiguration.swift:260-269`) sigue exigiendo `!hasShownWelcomeChooser`.
+
+Triage 2026-10-08: abierto · medium → medium · El onBack del cover de nube sigue sin devolver hasShownWelcomeChooser a false, y las tres entradas lo marcan al encaminar; solo onCreateAnotherAccount lo resetea

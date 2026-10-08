@@ -4,6 +4,7 @@ status: backlog
 priority: medium
 area: "modo-nube, migración"
 created: 2026-09-10
+updated: 2026-10-08
 source: "residual CONOCIDO y aceptado de `reverse-cutover-cerrado-para-cuentas-born-cloud` (2026-09-10), decisión D4"
 ---
 
@@ -70,3 +71,22 @@ justamente la operación peligrosa que el guardarraíl evita.
 - La otra mitad del mismo círculo, abierta desde antes y ahora la única población que ve
   `storage.revert.ineligible`: el **migrado que perdió el mapa**, brecha `N2` de
   `docs/modo-nube/MODO-NUBE-AUDITORIA-ESCENARIOS.md`.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `ReverseEligibility.decide` (`MigrationWorkExecutor.swift:180-199`): `isBornCloud` ⇒ `.eligible`; si no, exige el mapa.
+  La marca sigue siendo local (`CloudMigrationController.swift:1906`, `StorageModePersistence.isBornCloud()`).
+- Desde el ticket hay un caso nuevo, `.mapUnreadable`, que no cambia el problema.
+
+## Pregunta para Jürgen (triage 2026-10-08)
+
+Cómo sabe el segundo dispositivo que la cuenta nació en la nube:
+
+- **A** · Exponer `migrated` en `/account/exists` y guardarlo con el descubrimiento de identidad (backend + Worker + cliente).
+- **B** · Usar el faro del iCloud-KV. Va contra la decisión del 2026-09-06 («el faro solo encamina, nunca bloquea»).
+- **C** · Dejarlo: el primer dispositivo sí puede volver.
+
+**Recomendación: A.** Es un dato de la cuenta y la única fuente fiable es el servidor. B convierte una señal de
+encaminamiento en autorización justo en el guardarraíl que evita resucitar datos borrados. Con A, `medium`.
+
+Triage 2026-10-08: abierto · medium → medium · ReverseEligibility.decide sigue abriendo la puerta solo con la marca local isBornCloud, y la cuenta no expone migrated_at; pendiente elegir vía A o B.

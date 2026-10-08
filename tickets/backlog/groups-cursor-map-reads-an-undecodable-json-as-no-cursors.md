@@ -1,10 +1,10 @@
 ---
 id: groups-cursor-map-reads-an-undecodable-json-as-no-cursors
 status: backlog
-priority: medium
+priority: low
 area: "grupos, modo-nube"
 created: 2026-09-23
-updated: 2026-09-23
+updated: 2026-10-08
 source: "review adversarial de `groups-merkle-reads-an-unreadable-table-as-an-empty-one` (2026-09-23)"
 ---
 
@@ -46,3 +46,10 @@ La corrupción es improbable (el JSON solo lo escribe `encodeCursors`), por eso 
 ## Relacionado
 
 - `groups-merkle-reads-an-unreadable-table-as-an-empty-one` — el Merkle de grupos, cerrado el 2026-09-23.
+
+## Medido en 2.1 (triage 2026-10-08)
+- `decodeCursors` → `GroupsSyncClient.swift:3597-3601` (`try?` → `[:]`); `encodeCursors` → `:3603-3608` (`try?` → `"{}"`).
+- `resetGroupCursors` → `:3849-3860`: lee con `decodeCursors` y reescribe el mapa entero.
+- Sin commits en esas funciones desde el 2026-09-23. Baja a `low`: corrupción improbable y sin pérdida de datos (solo tráfico).
+
+Triage 2026-10-08: abierto · medium → low · decodeCursors y encodeCursors siguen con try? que devuelve [:] / "{}", y resetGroupCursors pisa el mapa con ese vacío.

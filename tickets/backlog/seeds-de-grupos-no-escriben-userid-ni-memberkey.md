@@ -1,9 +1,10 @@
 ---
 id: seeds-de-grupos-no-escriben-userid-ni-memberkey
 status: backlog
-priority: medium
+priority: low
 area: "groups, testing, seeds"
 created: 2026-09-08
+updated: 2026-10-08
 source: barrido de QA en simulador del 2026-09-08 (hallazgo de camino)
 ---
 
@@ -61,3 +62,13 @@ escribe— necesitaría otro perfil. Los dos casos son complementarios y hacen f
   **«Transferir y salir»** con el nombre del heredero.
 - Sigue existiendo un perfil que produce `eligibleHeirCount == 0`, para no perder el caso del
   callejón sin salida.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `grep -c 'userID\|memberKey' Yala/Seed/DevSeedGroups.swift` sigue en 0.
+- Las coordenadas cambiaron. El offer de salida está en `Yala/Services/Groups/GroupService.swift:972-990` y hoy exige
+  `userID` **y** `memberKey` no nulos. El conteo por lotes está en `:1006-1011` y exige solo `userID`.
+- Los seeds sí marcan `isBackendGroup = true`, así que basta con poblar los dos campos.
+- `groups-owner-transfer-and-leave` ya está en `done`: esto es solo tooling de QA, `low`.
+
+Triage 2026-10-08: abierto · medium → low · DevSeedGroups.swift sigue con 0 userID/memberKey y el offer exige userID y memberKey no nulos; el ticket groups-owner-transfer-and-leave ya está en done, así que solo queda el hueco de QA.

@@ -4,7 +4,7 @@ status: backlog
 priority: medium
 area: "transactions, panel, presentaciones"
 created: 2026-09-28
-updated: 2026-10-07
+updated: 2026-10-08
 source: "iphone-small-screens-and-safe-areas-audit (carril adaptativo, paso 3), visto en simulador el 2026-09-28"
 ---
 
@@ -52,3 +52,9 @@ mecanismo de este ticket**: `PanelView` sigue consumiendo `pendingPracticeCleanu
 cero registros, la alerta se sigue armando y, por el código, sigue cerrando el formulario antes de la pantalla de éxito.
 Inferido del código, sin verificar en simulador. Sigue en backlog con el «Qué hacer» de arriba.
 
+## Medido en 2.1 (triage 2026-10-08)
+
+- `PanelView.consumePendingPracticeCleanup()` (`PanelView.swift:103-108`) pasa el aviso a `sheets.practiceCleanupItem` sin mirar si hay una hoja encima. Se llama en el `onAppear` (`:669`) y en `.onChange(of: pendingPracticeCleanup?.id)` (`:671-674`).
+- `PanelSheetsModifier.swift:217-219` enciende `showPracticeAlert` en el acto. Ningún commit posterior al #384 toca este camino.
+
+Triage 2026-10-08: abierto · medium → medium · `PanelView.swift:671-674` sigue consumiendo `pendingPracticeCleanup` con la hoja de Nuevo registro encima; el #384 (`17e0281cb`) solo cambió cuándo se arma.

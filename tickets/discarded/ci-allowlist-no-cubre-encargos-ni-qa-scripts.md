@@ -1,12 +1,14 @@
 ---
 id: ci-allowlist-no-cubre-encargos-ni-qa-scripts
-status: backlog
+status: discarded
 priority: low
 area: ci
 created: 2026-09-07
-updated: 2026-09-07
+updated: 2026-10-08
 source: medido de camino en rojo-xcuitest-runner-muere-tras-el-primer-caso (PR #96)
 ---
+
+Why: Discarded 2026-10-08. Duplicado de `encargos-markdown-triggers-the-whole-ios-suite` (mismo hueco: `encargos/*` fuera del `case` del job `changes`, `qa.yml:203-216`, medido hoy). Sus mediciones de los PR #96 y #120 y su comprobación por `grep` se fusionaron allí; su propuesta de `qa/scripts/` no, porque `qa.yml` la descarta a propósito.
 
 # Un fichero de texto de `encargos/` dispara 1,5 h de suite en `macos-26`
 
@@ -68,3 +70,5 @@ El PR se mergeó igual sin esperar: el propio workflow declara la suite **adviso
 ## Relacionados
 
 - [[rojo-xcuitest-runner-muere-tras-el-primer-caso]] — el PR donde se observó
+
+Triage 2026-10-08: duplicado · low → — · se conserva `encargos-markdown-triggers-the-whole-ios-suite`, que recibe la fusión; `encargos/*` sigue fuera del allowlist de `qa.yml:203-216`.

@@ -1,9 +1,10 @@
 ---
 id: neutral-mount-wiring-scan-is-red-on-2-1
-status: backlog
+status: done
 priority: medium
 area: "testing, modo-nube"
 created: 2026-09-17
+updated: 2026-10-08
 source: "medido el 2026-09-17 al correr la suite completa desde `reverse-before-mount-stays-stuck-with-an-expired-session`"
 ---
 
@@ -72,3 +73,11 @@ faltaba: en el PR #195 (2026-09-21) el job `tests` del CI pasó **en verde**, 32
 mismo caso rojo en local sobre el mismo árbol. ⇒ no es que el CI lo vea y lo tolere: **no lo
 ejecuta**, o lo ejecuta con un filtro que no lo alcanza. Ahí es donde hay que mirar
 (`.github/workflows/qa.yml`, el job `tests` y su lista de `-only-testing`).
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- Marcador ya corregido en `6a956325a`: `NeutralMountRelaunchZeroTests.swift:363` ancla en `static func personalStoreFileExists() -> Bool {`, que es la firma de hoy (`SwiftDataConfiguration.swift:945`). Las tres aserciones siguen intactas y el cuerpo (`:945-948`) las cumple.
+- Verde en el CI de `2.1`: run `37828026712` (merge del PR #400, `e755b0d64`) → `✔ Test "R2 (a): el predicado NO construye un container…" passed`.
+- Por qué no salió antes, medido: el CI SÍ lo ejecutaba. En el run `35561496053` (PR #195) falló en las tres vueltas y el paso salió con 65, pero los pasos de test llevan `continue-on-error: true` a propósito (decisión del owner del 2026-09-09, `.github/workflows/qa.yml:498`), así que el run se pinta `success` y el rojo viaja por el job `aviso`. La premisa «no lo ejecuta» era falsa.
+
+Triage 2026-10-08: resuelto · medium → — · el marcador sigue a la firma vigente desde 6a956325a y el caso pasa en el CI de 2.1 (run 37828026712); el CI sí lo veía, como rojo advisory.

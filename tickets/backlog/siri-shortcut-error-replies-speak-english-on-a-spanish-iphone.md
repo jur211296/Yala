@@ -4,7 +4,7 @@ status: backlog
 priority: medium
 area: "intents, siri, l10n"
 created: 2026-09-16
-updated: 2026-09-16
+updated: 2026-10-08
 source: "barrido /qa del 2026-09-16 (`storekit-appgroup-siri-pro-gate`), visto en simulador"
 ---
 
@@ -55,3 +55,11 @@ Try: 'Note 50 dollars on coffee'…». En cambio, cuando sí crea el borrador, m
       idioma del sistema.
 - [ ] Hay una red que avisa si una respuesta nueva vuelve a salir en inglés o, si no se puede testear,
       el motivo queda escrito aquí.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `QuickExpenseIntent.swift`: las respuestas de error siguen como clave literal en `.result(dialog:)`, en `:201` (noText), `:209`
+  (proRequired), `:224` (noAccount) y `:261` (parsingFailedHelp). El éxito usa `String(localized:)` (`:292-314`).
+- La causa sigue sin medir.
+
+Triage 2026-10-08: abierto · medium → medium · Las 4 respuestas de error de QuickExpenseIntent siguen con la clave literal en .result(dialog:), y el éxito con String(localized:); el único commit posterior en Intents (33878deb5) no las tocó.

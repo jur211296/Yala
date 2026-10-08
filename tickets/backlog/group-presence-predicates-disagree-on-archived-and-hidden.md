@@ -1,10 +1,10 @@
 ---
 id: group-presence-predicates-disagree-on-archived-and-hidden
 status: backlog
-priority: medium
+priority: low
 area: "groups, welcome, icloud"
 created: 2026-09-21
-updated: 2026-09-21
+updated: 2026-10-08
 source: "review adversarial de `restore-treats-budgets-and-groups-as-no-data` (2026-09-21): las dos lentes lo cazaron por separado"
 ---
 
@@ -52,3 +52,11 @@ no por omisión.
 ## Relación con otros tickets
 
 - `restore-treats-budgets-and-groups-as-no-data` — de donde sale.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `ICloudAccountSummary.groups` sigue contando `!$0.isArchived` (`iCloudSyncService.swift:900-902`). Lo pintan `WelcomeRestoreView.swift:439-441` y `RestoreProgressView.swift:164`.
+- `ContentView.checkHasExistingData()` se ha movido a `:1442`, y su `FetchDescriptor<SplitGroup>()` sigue sin predicado (`:1449`). Su docblock (`:1427-1441`) ya justifica contar grupos y bridgeados, pero no dice nada de los ocultos ni de los archivados.
+- El criterio mayoritario `!isHiddenForAll` sigue en `AppBootstrapper.swift:463`, `BridgeDeactivationSheet.swift:137` y `GroupService.swift:716`/`:1650`, y no hay un helper común. Matiz: `ScheduledPaymentEditorView.swift:1218` usa `!isArchived && !isHiddenForAll`, así que hay un cuarto criterio.
+
+Triage 2026-10-08: abierto · medium → low · `groupsCount` sigue con `!isArchived` (`iCloudSyncService.swift:901`) frente al `!isHiddenForAll` mayoritario y sin helper; solo cambia qué card enseña la pantalla de restaurar.

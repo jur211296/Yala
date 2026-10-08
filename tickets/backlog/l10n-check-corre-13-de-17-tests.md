@@ -1,10 +1,10 @@
 ---
 id: l10n-check-corre-13-de-17-tests
 status: backlog
-priority: medium
+priority: low
 area: qa, l10n
 created: 2026-09-12
-updated: 2026-09-12
+updated: 2026-10-08
 source: lente adversarial de la sesión de la cola del simulador (2026-09-12)
 ---
 
@@ -56,3 +56,5 @@ fallo «cero casos con exit 0 y `TEST SUCCEEDED`» es **indetectable** en `/l10n
 - [[only-testing-filters-may-be-silently-empty]] — el mecanismo general, ya en backlog desde el
   3-sep. Esto es su instancia medida en la batería de l10n.
 - `.claude/rules/testing.md` — la regla del filtro por tipo, y la de `-quiet`
+
+Triage 2026-10-08: abierto · medium → low · `.claude/commands/l10n-check.md` sigue diciendo «(15 tests)», sigue con `-quiet` y solo pide `LocalizationParityTests` y la del widget; el fichero declara tres suites (`LocalizationParityTests.swift:15`, `:264`, `:277`).

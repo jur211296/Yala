@@ -1,9 +1,10 @@
 ---
 id: welcome-beacon-origin-contradicts-not-found-copy
 status: backlog
-priority: medium
+priority: low
 area: "onboarding, modo-nube, copy"
 created: 2026-09-10
+updated: 2026-10-08
 source: "review adversarial (lente de producto) de `beacon-routes-only-never-blocks`, 2026-09-10"
 ---
 
@@ -38,3 +39,24 @@ para los dos métodos.
 - Un `notFoundBody` que no diga «Apple ID» cuando se firmó con Google.
 - Mismatch con el sujeto del faro y no de la persona: «La cuenta de Yala de este Apple ID se creó con
   Apple».
+
+## Pregunta para Jürgen (triage 2026-10-08)
+
+La frase del origen es literal tuya (2026-09-09), así que el cambio no se hace sin ti.
+
+- **A.** La propuesta de la lente, entera:
+  - el origen, en pasado: «Con este Apple ID ya se creó una cuenta de Yala con Google»;
+  - un `notFoundBody` que no nombra el «Apple ID» a quien firmó con Google;
+  - el mismatch, con el faro de sujeto: «La cuenta de Yala de este Apple ID se creó con Apple».
+- **B.** Solo el `notFoundBody` por método. Es el texto que hoy es falso, y tu frase de origen se queda como está.
+- **C.** Dejarlo como está.
+
+**Recomendación: A.** Las tres frases se contradicen entre sí, y arreglar solo una deja las otras dos chocando. Con A la prioridad es `low`: es copy en 16 locales y sin riesgo.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- Los textos siguen iguales en `es-419.lproj/Localizable.strings`: `welcome.cloud.notFoundBody` (`:4790`), `providerMismatchTitle` (`:4955`), `providerMismatchBody` (`:4958`) y `beaconOrigin` (`:4964`).
+- El último commit que los toca es `db1c4b72a` (2026-09-10), el mismo PR que abrió el ticket.
+- Por qué low: el texto confunde, pero los dos caminos tienen salida y no se pierde nada.
+
+Triage 2026-10-08: abierto · medium → low · Los cuatro textos implicados siguen como estaban, y cambiarlos es una decisión de copy de Jürgen

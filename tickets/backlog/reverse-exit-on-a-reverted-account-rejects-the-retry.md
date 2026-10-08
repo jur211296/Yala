@@ -1,10 +1,10 @@
 ---
 id: reverse-exit-on-a-reverted-account-rejects-the-retry
 status: backlog
-priority: medium
+priority: high
 area: "modo-nube, migración, backend"
 created: 2026-09-16
-updated: 2026-09-16
+updated: 2026-10-08
 source: "review adversarial de `reverse-upload-has-no-ceiling-and-no-exit` (2026-09-16), lente de datos — H1; decisión D17 (b) de Jürgen: ticket aparte"
 ---
 
@@ -75,3 +75,14 @@ los tres. Otra opción que cierra solo el segundo y el tercero: evaluar reserva,
 ## Relacionado
 
 - `reverse-upload-has-no-ceiling-and-no-exit` (D17) · `reverse-claim-rejection-has-no-way-out-in-the-client`.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- Backend: ningún SQL posterior a `g15_02` (último commit `8dcc15d31`, 10-sep) cambia `reverse_claim` ni `reverse_abort`.
+  Los `g16_*` son de la ida.
+- Cliente: el rechazo tiene salida a soporte desde `13a20e6fb`. El canario `cloudReverseClaimRejected` (`MetricsService.swift:683`)
+  cuenta los `not_complete`.
+- `high`: el segundo camino, un claim con éxito cuya respuesta se pierde, solo necesita mala red. Deja a la persona sin poder
+  volver a iCloud en ese dispositivo, y su única salida es escribir a soporte.
+
+Triage 2026-10-08: abierto · medium → high · El arreglo es de backend y no existe: ningún SQL posterior a g15_02 (10-sep) cambia el reset de reverted_at en el claim fresco; el cliente solo tiene la salida a soporte de 13a20e6fb.

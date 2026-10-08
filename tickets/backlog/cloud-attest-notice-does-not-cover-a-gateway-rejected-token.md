@@ -1,10 +1,10 @@
 ---
 id: cloud-attest-notice-does-not-cover-a-gateway-rejected-token
 status: backlog
-priority: medium
+priority: low
 area: "modo-nube, attest, avisos"
 created: 2026-09-16
-updated: 2026-09-16
+updated: 2026-10-08
 source: "review adversarial de `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry` (2026-09-16), decisión D15 de su Paso 0"
 ---
 
@@ -56,3 +56,15 @@ teléfono, y merece la pena si el canario enseña que la población existe.
 - `cloud-tab-does-not-say-this-phone-cannot-sync-personal-data` — el aviso fijo (#177).
 - `attest-session-token-rejected-by-the-gateway-stays-cached` — el token que el servidor ya rechaza sigue en la caché.
 - `cloud-sync-status-says-all-synced-with-changes-still-pending` — «Todo sincronizado» con cambios sin subir.
+
+## Pregunta para Jürgen (triage 2026-10-08)
+
+El teléfono atesta bien pero el servidor rechaza su token; los cambios no suben y no hay aviso. ¿Qué hacemos?
+
+- **A. Dejarlo así** y vigilar el canario `cloudSyncAttestRequired`, que ya se emite en push, pull, merkle y prefs. Lo que ve la persona («Todo sincronizado») lo arregla `cloud-sync-status-says-all-synced-with-changes-still-pending`.
+- **B. Un aviso distinto, sin salida con pérdida**, tras N horas de 401 sin un 200: «No podemos sincronizar tus datos ahora mismo», con texto nuevo en los 16 idiomas.
+- **C. Contarlo en la racha como en Grupos**, aceptando los tres falsos positivos medidos (reloj atrasado, regresión de build, fallo persistente ajeno).
+
+Recomendación: **A**, con un cambio pequeño: que el canario distinga el motor de la migración y el adopt. Con A la prioridad es `low`. Si el canario enseña población real, se pasa a B.
+
+Triage 2026-10-08: abierto · medium → low · sin cambios desde el 09-16: el 401 `yala_attest_required` del motor solo cuenta el canario (`cloudSyncAttestRequired`, push/pull/merkle/prefs) y no suma a la racha; falta que Jürgen elija (pregunta abajo).
