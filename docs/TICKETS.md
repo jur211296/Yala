@@ -510,12 +510,13 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | la-nocturna-de-ui-no-ha-disparado-ni-una-vez | done | tickets/done/la-nocturna-de-ui-no-ha-disparado-ni-una-vez.md |
 | language-override-bypasses-the-cloud-prefs-channel | backlog | tickets/backlog/language-override-bypasses-the-cloud-prefs-channel.md |
 | large-text-leftovers-outside-the-main-iphone-screens | backlog | tickets/backlog/large-text-leftovers-outside-the-main-iphone-screens.md |
+| late-icloud-notice-can-wipe-while-a-migration-is-uploading | backlog | tickets/backlog/late-icloud-notice-can-wipe-while-a-migration-is-uploading.md |
 | late-icloud-notice-exit-after-a-failed-wipe-leaves-the-blind-resume-armed | done | tickets/done/late-icloud-notice-exit-after-a-failed-wipe-leaves-the-blind-resume-armed.md |
 | late-icloud-notice-wipe-cancelled-after-it-committed-skips-its-exit | backlog | tickets/backlog/late-icloud-notice-wipe-cancelled-after-it-committed-skips-its-exit.md |
 | late-icloud-sheet-buttons-may-leave-the-screen-at-large-dynamic-type | backlog | tickets/backlog/late-icloud-sheet-buttons-may-leave-the-screen-at-large-dynamic-type.md |
 | late-icloud-wipe-can-re-export-between-its-two-halves | backlog | tickets/backlog/late-icloud-wipe-can-re-export-between-its-two-halves.md |
 | late-icloud-wipe-failure-does-not-settle-the-remote-wipe-grace | backlog | tickets/backlog/late-icloud-wipe-failure-does-not-settle-the-remote-wipe-grace.md |
-| late-icloud-wipe-stays-frozen-after-a-settled-failed-migration | backlog | tickets/backlog/late-icloud-wipe-stays-frozen-after-a-settled-failed-migration.md |
+| late-icloud-wipe-stays-frozen-after-a-settled-failed-migration | done | tickets/done/late-icloud-wipe-stays-frozen-after-a-settled-failed-migration.md |
 | late-notice-of-a-welcome-private-session-purges-groups-joined-later | done | tickets/done/late-notice-of-a-welcome-private-session-purges-groups-joined-later.md |
 | late-notice-witness-survives-a-welcome-restore-over-device-data | backlog | tickets/backlog/late-notice-witness-survives-a-welcome-restore-over-device-data.md |
 | late-remote-wipe-cut-keeps-what-it-cannot-date-until-the-mirror-decides | backlog | tickets/backlog/late-remote-wipe-cut-keeps-what-it-cannot-date-until-the-mirror-decides.md |
@@ -671,6 +672,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | restore-treats-budgets-and-groups-as-no-data | qa | tickets/qa/restore-treats-budgets-and-groups-as-no-data.md |
 | restore-unverified-message-depends-on-a-single-gateway-host | backlog | tickets/backlog/restore-unverified-message-depends-on-a-single-gateway-host.md |
 | retire-guest-vocabulary-for-session-terms | done | tickets/done/retire-guest-vocabulary-for-session-terms.md |
+| retry-after-a-failed-migration-resumes-the-pending-icloud-wipe-blindly | backlog | tickets/backlog/retry-after-a-failed-migration-resumes-the-pending-icloud-wipe-blindly.md |
 | reverse-abort-rejected-leaves-a-frozen-cloud-saying-up-to-date | backlog | tickets/backlog/reverse-abort-rejected-leaves-a-frozen-cloud-saying-up-to-date.md |
 | reverse-before-mount-has-no-way-to-abandon-the-return | done | tickets/done/reverse-before-mount-has-no-way-to-abandon-the-return.md |
 | reverse-before-mount-stays-stuck-with-an-expired-session | done | tickets/done/reverse-before-mount-stays-stuck-with-an-expired-session.md |
