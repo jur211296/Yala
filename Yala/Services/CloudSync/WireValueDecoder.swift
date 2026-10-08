@@ -9,7 +9,8 @@
 //
 //  Contrato de wire (§d.6 + notas DIFERIDOS): el pull NO castea a `::text`, así que los valores llegan
 //  con la forma NATIVA de PostgREST y el decoder DEBE tolerar las dos caras de cada tipo:
-//   - **money/rate**: STRING decimal (`"12.5000"`) O número JSON (`12.5`) — `wireDouble` acepta ambos.
+//   - **money/rate**: STRING decimal (`"12.5000"`) O número JSON (`12.5`) — `wireDouble` acepta ambos. Un no
+//     finito (`"NaN"`, `"Infinity"`) es `nil`, con el criterio del emisor (`Canonc1Codec`).
 //   - **timestamptz**: texto ISO de PostgREST — puede traer `+00:00` en vez de `Z` y microsegundos →
 //     `millisFromISO` normaliza (aritmética entera, FLOOR sub-ms, nunca `DateFormatter`/locale; D-2c).
 //   - **uuid[]**: array JSON o `null` (ambos = "sin filtro" — NULL ≡ `'{}'`, DIFERIDOS #25).
@@ -74,22 +75,50 @@ nonisolated enum WireValue: Sendable, Equatable, Decodable, Encodable {
 nonisolated enum WireValueDecoder {
 
     /// `Double` de una columna money/rate: acepta STRING decimal (`"12.5000"`) o número JSON (`12.5`).
-    /// `null`/otro → `nil`.
+    /// `null`/otro → `nil`. **Un valor NO FINITO también es `nil`**: es el criterio con el que
+    /// `Canonc1Codec.decimalFixed` rechaza al EMITIR (`guard x.isFinite`), así que lo que entra es lo que podría
+    /// volver a salir. Sin esto, `Double("NaN")` —la forma en que Postgres sirve un `NaN` de un `NUMERIC`— entraba
+    /// tal cual al `@Model`, rompía todo total que lo sumara y la fila ya no podía subir nunca (ticket
+    /// `wire-decoder-accepts-non-finite-money`). `Double(String)` acepta `nan`/`inf`/`infinity` en cualquier caja
+    /// y convierte `1e400` en `inf` (medido). Un número JSON no finito no llega: `JSONDecoder` lo rechaza antes.
+    /// Quién decide qué hacer con la fila es el llamador: `isNonFiniteNumber` le dice que el `nil` fue por esto.
     static func double(_ value: WireValue) -> Double? {
         switch value {
-        case .number(let d): return d
-        case .string(let s): return Double(s)
+        case .number(let d): return d.isFinite ? d : nil
+        case .string(let s):
+            guard let d = Double(s), d.isFinite else { return nil }
+            return d
         default: return nil
         }
     }
 
+    /// `true` si el valor es un número que `double` rechaza por NO FINITO (`NaN`, `±inf`, o un decimal que
+    /// desborda a `inf`). Separa ese caso de un `null` o un tipo equivocado, que siguen su trato de siempre.
+    static func isNonFiniteNumber(_ value: WireValue) -> Bool {
+        switch value {
+        case .number(let d): return !d.isFinite
+        case .string(let s):
+            guard let d = Double(s) else { return false }
+            return !d.isFinite
+        default: return false
+        }
+    }
+
     /// `Int` de una columna entera (`sort_order`/…): número JSON (truncado) o string decimal. `null` → `nil`.
+    /// Un no finito o un valor fuera de `Int` también es `nil`: `Int(Double)` sobre `nan`, `inf` o `1e300`
+    /// ABORTA el proceso, y el apply corre en cada pull (misma familia que `double`).
     static func int(_ value: WireValue) -> Int? {
         switch value {
-        case .number(let d): return Int(d)
-        case .string(let s): return Int(s) ?? Double(s).map(Int.init)
+        case .number(let d): return truncatedInt(d)
+        case .string(let s): return Int(s) ?? Double(s).flatMap(truncatedInt)
         default: return nil
         }
+    }
+
+    /// Trunca hacia cero sin abortar: `nil` si el `Double` no es finito o no cabe en `Int`.
+    private static func truncatedInt(_ d: Double) -> Int? {
+        guard d.isFinite else { return nil }
+        return Int(exactly: d.rounded(.towardZero))
     }
 
     /// `Bool` tri-estado de una columna booleana. Solo `.bool` → valor; el resto → `nil` ("no aplicar").

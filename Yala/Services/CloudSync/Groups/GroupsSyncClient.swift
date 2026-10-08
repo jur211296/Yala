@@ -3057,6 +3057,8 @@ final class GroupsSyncClient {
             bridgeExpenseIDs.removeAll { $0 == id }
             return
         }
+        // Un importe no finito no entra: la fila local se queda como estaba (o no nace), sin puentear ni avisar.
+        if skipsNonFiniteMoney(delta, columns: ["amount"]) { return }
         unbridgeExpenseIDs.remove(id)
         // 2.1: nuevo vs modificado, igual que la clasificación del fetch CloudKit (que lo decidía con el
         // pre-fetch de IDs del batch). El filtro de participación —y la exclusión de los opening balances
@@ -3091,6 +3093,7 @@ final class GroupsSyncClient {
             if let existing { context.delete(existing) }
             return
         }
+        if skipsNonFiniteMoney(delta, columns: ["amount"]) { return }
         let model = existing ?? SplitShare()
         model.id = id
         model.groupZoneID = delta.groupID
@@ -3116,6 +3119,7 @@ final class GroupsSyncClient {
             bridgeSettlementIDs.removeAll { $0 == id }
             return
         }
+        if skipsNonFiniteMoney(delta, columns: ["amount"]) { return }
         unbridgeSettlementIDs.remove(id)
         // 2.1: solo las liquidaciones NUEVAS notifican (el canal CloudKit tampoco clasificaba las
         // modificaciones de settlement).
@@ -3213,7 +3217,15 @@ final class GroupsSyncClient {
             // la clave AUSENTE significa "este delta no habla del presupuesto" (PATCH parcial) y no se
             // toca. Con el `if let v = wireDouble(...)` de las líneas de arriba, quitar un presupuesto no
             // llegaría jamás a los demás miembros. Mismo molde que `note`/`subcategory_name` en applyDelta.
-            if let v = f["budget_limit_amount"] { model.budgetLimitAmount = wireDouble(v) }
+            // Un límite no finito no se aplica: con `wireDouble` a `nil` QUITARÍA el presupuesto a todos. Se queda
+            // el que había (ticket `wire-decoder-accepts-non-finite-money`).
+            if let v = f["budget_limit_amount"] {
+                if WireValueDecoder.isNonFiniteNumber(v) {
+                    reportNonFiniteMoney(delta, columns: ["budget_limit_amount"])
+                } else {
+                    model.budgetLimitAmount = wireDouble(v)
+                }
+            }
             if let v = wireDate(f["created_at"]) { model.createdAt = v }
         }
         if isBorn, let model = models.first {
@@ -3603,6 +3615,25 @@ final class GroupsSyncClient {
         return nil
     }
     private func wireDouble(_ v: WireValue?) -> Double? { v.flatMap(WireValueDecoder.double) }
+
+    /// `true` si el upsert trae un importe NO FINITO en `columns`: entonces no se aplica (ticket
+    /// `wire-decoder-accepts-non-finite-money`). Grupos no tiene cuarentena: el patrón para un delta que no se puede
+    /// materializar es saltarlo con rastro (`groupsApplySkippedDelta`). Aplicarlo sin el importe dejaría un gasto en 0
+    /// en el balance de todos; con él, `NaN` rompería cada total que lo sume. La fila se arregla sola cuando llega una
+    /// versión posterior con un importe finito.
+    private func skipsNonFiniteMoney(_ delta: GroupPulledDelta, columns: [String]) -> Bool {
+        let bad = columns.filter { column in delta.fields[column].map(WireValueDecoder.isNonFiniteNumber) ?? false }
+        guard !bad.isEmpty else { return false }
+        reportNonFiniteMoney(delta, columns: bad)
+        return true
+    }
+
+    /// Rastro y canario de un importe no finito que no se aplicó. Salen dentro del save de la página: con un rollback
+    /// se reportaría un salto que no se confirmó, y el re-pull lo vuelve a ver (el canario va una vez por proceso).
+    private func reportNonFiniteMoney(_ delta: GroupPulledDelta, columns: [String]) {
+        GroupsSyncBreadcrumb.groupsApplyNonFiniteMoney(entity: delta.entityType, columns: columns)
+        MetricsService.cloudSyncPullNonFiniteMoney(channel: "groups", table: delta.entityType)
+    }
     private func wireBool(_ v: WireValue?) -> Bool? {
         guard let v else { return nil }
         if case .bool(let b) = v { return b }

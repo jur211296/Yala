@@ -42,7 +42,13 @@ import SwiftData
 @MainActor
 struct ColumnApplier<Model: AnyObject> {
     let apply: (Model, WireValue, ModelContext) throws -> Void
-    init(_ apply: @escaping (Model, WireValue, ModelContext) throws -> Void) { self.apply = apply }
+    /// Columna de dinero o tasa (`Apply.moneyReq`/`moneyOpt`): la que el emisor rechaza si no es finita. Un delta
+    /// que trae aquí un no finito no se aplica: va a cuarentena (`EntityApply.nonFiniteMoneyColumns`).
+    let isMoney: Bool
+    init(isMoney: Bool = false, _ apply: @escaping (Model, WireValue, ModelContext) throws -> Void) {
+        self.isMoney = isMoney
+        self.apply = apply
+    }
 }
 
 /// Proyección inversa de una entidad cableada: tabla, factory born-remote, setter de `syncID`, fetch por
@@ -66,19 +72,32 @@ struct EntityApply<Model: PersistentModel> {
     /// Unidad de coherencia de una columna = su grupo (si lo tiene) o la columna misma (singleton). Para
     /// el guard LWW por-unidad del apply (D-1).
     func unit(for column: String) -> String { groupByColumn[column] ?? column }
+
+    /// Columnas de dinero o tasa de `fields` cuyo valor no es finito, ordenadas. Vacío = el delta se puede aplicar.
+    /// Con alguna, el apply manda el delta ENTERO a cuarentena (ticket `wire-decoder-accepts-non-finite-money`):
+    /// aplicarlo sin esa columna dejaría un born-remote en 0 o un grupo `money` mezclado, y con ella el valor
+    /// rompería cualquier total y no podría volver a subir (`Canonc1Codec` lo rechaza al emitir).
+    func nonFiniteMoneyColumns(in fields: [String: WireValue]) -> [String] {
+        fields.compactMap { column, value in
+            guard let applier = appliers[column], applier.isMoney,
+                  WireValueDecoder.isNonFiniteNumber(value) else { return nil }
+            return column
+        }.sorted()
+    }
 }
 
 // MARK: - Factories de applier (reducen boilerplate; ReferenceWritableKeyPath concreto)
 
 @MainActor
 private enum Apply {
-    /// money/rate → `Double` requerido (columna non-optional). `null`/no-parseable → no toca (default).
+    /// money/rate → `Double` requerido (columna non-optional). `null`/no-parseable → no toca (default). Un no
+    /// finito no llega aquí: el apply cuarentena el delta antes (`isMoney`).
     static func moneyReq<M>(_ kp: ReferenceWritableKeyPath<M, Double>) -> ColumnApplier<M> {
-        ColumnApplier { m, v, _ in if let d = WireValueDecoder.double(v) { m[keyPath: kp] = d } }
+        ColumnApplier(isMoney: true) { m, v, _ in if let d = WireValueDecoder.double(v) { m[keyPath: kp] = d } }
     }
-    /// money → `Double?` (columna optional). `null` → `nil`; número/string → valor.
+    /// money → `Double?` (columna optional). `null` → `nil`; número/string → valor. Un no finito, como arriba.
     static func moneyOpt<M>(_ kp: ReferenceWritableKeyPath<M, Double?>) -> ColumnApplier<M> {
-        ColumnApplier { m, v, _ in m[keyPath: kp] = WireValueDecoder.double(v) }
+        ColumnApplier(isMoney: true) { m, v, _ in m[keyPath: kp] = WireValueDecoder.double(v) }
     }
     /// confidence (`Double?` almacenado, TEXT en el wire) → `Double?`.
     static func doubleTextOpt<M>(_ kp: ReferenceWritableKeyPath<M, Double?>) -> ColumnApplier<M> {
@@ -995,6 +1014,31 @@ enum EntityApplyMap {
             return true
         default:
             return false
+        }
+    }
+
+    /// Columnas de dinero o tasa con un valor no finito en un UPSERT de una tabla cableada (ticket
+    /// `wire-decoder-accepts-non-finite-money`). Vacío = se puede aplicar; con alguna, el delta va a cuarentena en
+    /// vez de al `@Model`. Un tombstone no trae `fields`, y una tabla sin cablear ya va a cuarentena por `isWired`.
+    static func nonFiniteMoneyColumns(table: String, fields: [String: WireValue]) -> [String] {
+        switch table {
+        case transactionItem.table:       return transactionItem.nonFiniteMoneyColumns(in: fields)
+        case inboxDraft.table:            return inboxDraft.nonFiniteMoneyColumns(in: fields)
+        case category.table:              return category.nonFiniteMoneyColumns(in: fields)
+        case favoritePayment.table:       return favoritePayment.nonFiniteMoneyColumns(in: fields)
+        case merchantMemory.table:        return merchantMemory.nonFiniteMoneyColumns(in: fields)
+        case exchangeRate.table:          return exchangeRate.nonFiniteMoneyColumns(in: fields)
+        case budget.table:                return budget.nonFiniteMoneyColumns(in: fields)
+        case scheduledPayment.table:      return scheduledPayment.nonFiniteMoneyColumns(in: fields)
+        case account.table:               return account.nonFiniteMoneyColumns(in: fields)
+        case subcategory.table:           return subcategory.nonFiniteMoneyColumns(in: fields)
+        case tag.table:                   return tag.nonFiniteMoneyColumns(in: fields)
+        case notificationItem.table:      return notificationItem.nonFiniteMoneyColumns(in: fields)
+        case cashFlowPlan.table:          return cashFlowPlan.nonFiniteMoneyColumns(in: fields)
+        case cashFlowLine.table:          return cashFlowLine.nonFiniteMoneyColumns(in: fields)
+        case cashFlowOverride.table:      return cashFlowOverride.nonFiniteMoneyColumns(in: fields)
+        case groupBridgePreference.table: return groupBridgePreference.nonFiniteMoneyColumns(in: fields)
+        default:                          return []
         }
     }
 

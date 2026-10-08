@@ -67,6 +67,14 @@ struct SplitConfigCodecTests {
         #expect(SplitConfigCodec.decodeValues(csv) == [a: 40])
     }
 
+    /// `split_values_raw` baja del servidor como texto y `Double(String)` acepta `nan`/`inf`: un no finito se descarta
+    /// como cualquier par malformado (ticket `wire-decoder-accepts-non-finite-money`).
+    @Test func decodeValues_dropsNonFiniteValues() {
+        let a = UUID(), b = UUID(), c = UUID(), d = UUID()
+        let csv = "\(a.uuidString):nan,\(b.uuidString):inf,\(c.uuidString):-Infinity,\(d.uuidString):25.5"
+        #expect(SplitConfigCodec.decodeValues(csv) == [d: 25.5])
+    }
+
     @Test func values_pairingIsOrderIndependent() {
         // El pareo uuid→valor es explícito, no depende de dos CSV paralelos.
         let a = UUID(); let b = UUID()

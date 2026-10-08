@@ -265,6 +265,18 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSyncApply quarantined \(entity, privacy: .public) serverSeq=\(serverSeq, privacy: .public)")
     }
 
+    /// Un upsert traía dinero o una tasa NO FINITOS (`columns`, sin valores) y fue a cuarentena en vez de al
+    /// `@Model` (ticket `wire-decoder-accepts-non-finite-money`). El cursor avanza; la fila se retira sola cuando
+    /// llega una versión posterior de esa fila.
+    static func applyNonFiniteQuarantined(entity: String, serverSeq: Int64, columns: [String]) {
+        logger.notice("CloudSyncApply nonFiniteMoney quarantined \(entity, privacy: .public) serverSeq=\(serverSeq, privacy: .public) columns=\(columns.joined(separator: ","), privacy: .public)")
+    }
+
+    /// Una versión posterior de una fila retiró sus deltas viejos de la cuarentena (`count`).
+    static func quarantineSuperseded(entity: String, count: Int) {
+        logger.notice("CloudSyncQuarantine superseded \(entity, privacy: .public) count=\(count, privacy: .public)")
+    }
+
     /// F-3: el `save()` de una página del apply FALLÓ → rollback ejecutado, cursor NO avanzó, el ciclo
     /// corta con `.transient`. Producción (fuera de #if DEBUG): un fallo repetido aquí = pull atascado.
     static func applyPageFailed(reason: String) {
