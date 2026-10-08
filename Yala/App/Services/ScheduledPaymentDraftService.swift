@@ -47,7 +47,8 @@ struct ScheduledPaymentDraftService {
         }
 
         var draftsCreated = 0
-        var hasChanges = false
+        // Antes de crear nada: los pendientes de una ocurrencia que la persona ya descartó se archivan.
+        var hasChanges = archiveDraftsOfDismissedOccurrences(context: context)
 
         for payment in duePayments {
             // Skip if this date has been pre-skipped by user
@@ -113,6 +114,48 @@ struct ScheduledPaymentDraftService {
         }
 
         return draftsCreated
+    }
+
+    // MARK: - Dismissed Occurrences
+
+    /// Archiva (rechaza, no borra) cada borrador PENDIENTE de un pago programado cuya ocurrencia está saltada.
+    ///
+    /// Es el caso de dos dispositivos: el otro teléfono corrió `processDuePayments` antes de enterarse de que la
+    /// persona descartó ese vencimiento aquí, y su borrador llega por el espejo de iCloud o por el pull de la nube
+    /// (o aquí llega el salto y el borrador es el propio). Es la misma ocurrencia que la persona ya descartó, así
+    /// que se archiva como hace Planificación al saltar. «Volver a pendientes» quita la marca
+    /// (`DraftService.returnToPending`), así que un borrador devuelto no vuelve a caer aquí. Devuelve si cambió algo.
+    private static func archiveDraftsOfDismissedOccurrences(context: ModelContext) -> Bool {
+        let drafts: [InboxDraft]
+        let payments: [ScheduledPayment]
+        do {
+            drafts = try context.fetch(FetchDescriptor<InboxDraft>(predicate: #Predicate<InboxDraft> {
+                $0.statusRaw == "pending" && $0.sourceScheduledPaymentID != nil
+            }))
+            guard !drafts.isEmpty else { return false }
+            payments = try context.fetch(FetchDescriptor<ScheduledPayment>())
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentDraftService: Error fetching drafts of dismissed occurrences: \(error)")
+            #endif
+            return false
+        }
+        let paymentsByID = Dictionary(payments.map { ($0.id.uuidString, $0) }, uniquingKeysWith: { first, _ in first })
+
+        var changed = false
+        for draft in drafts where ScheduledDraftOccurrenceLogic.holdsAnOccurrence(draft.sourceType) {
+            guard let paymentID = draft.sourceScheduledPaymentID, let payment = paymentsByID[paymentID],
+                  !payment.skippedDatesRaw.isEmpty,
+                  ScheduledDraftOccurrenceLogic.belongsToADismissedOccurrence(
+                    draftDate: draft.date ?? draft.createdAt, schedule: payment.occurrenceSchedule,
+                    isSkipped: payment.isDateSkipped
+                  ) else { continue }
+            DraftService.cacheArchiveDisplayValues(draft)
+            draft.status = .rejected
+            draft.updatedAt = Date.now
+            changed = true
+        }
+        return changed
     }
 
     // MARK: - Draft Creation
@@ -452,18 +495,33 @@ struct ScheduledPaymentDraftService {
             return
         }
 
-        // Update paid date (use draft's date for retroactive approvals)
-        payment.lastPaidDate = draft.date ?? Date.now
+        // Paid date (use draft's date for retroactive approvals) + advance to next due date. Antes de enlazar la
+        // transacción: la propia no cuenta como «otra que ya cubre la ocurrencia».
+        recordPaidOccurrence(of: draft, on: payment, context: context)
 
         // Link approved transaction to this scheduled payment
         draft.approvedTransaction?.scheduledPaymentID = payment.id.uuidString
 
-        // Advance to next due date
-        advanceToNextDueDate(payment: payment)
-
         // Re-plan de las summaries agendadas (la aprobación cambia el conteo de hoy y
         // la próxima ocurrencia).
         ScheduledPaymentNotificationService.shared.requestSummaryReplan()
+    }
+
+    /// Marca pagada la ocurrencia del borrador aprobado y avanza la próxima fecha, salvo que el borrador sea de una
+    /// ocurrencia que la próxima fecha ya dejó atrás sin cubrirla (se rechazó, la app pasó de largo y volvió a
+    /// pendientes desde Archivados): avanzar ahí se comería la ocurrencia siguiente. Una ocurrencia cuenta como
+    /// cubierta si está saltada o tiene OTRA transacción enlazada (la ventana de `hasLinkedTransaction`). La fecha
+    /// de pago nunca retrocede. Llamar ANTES de enlazar la transacción del borrador.
+    private static func recordPaidOccurrence(of draft: InboxDraft, on payment: ScheduledPayment, context: ModelContext) {
+        let paidDate = draft.date ?? Date.now
+        let advances = ScheduledDraftOccurrenceLogic.approvalAdvancesPointer(
+            draftDate: paidDate, schedule: payment.occurrenceSchedule,
+            isAccountedFor: { day in
+                payment.isDateSkipped(day) || hasLinkedTransaction(for: payment, on: day, context: context)
+            }
+        )
+        payment.lastPaidDate = max(payment.lastPaidDate ?? paidDate, paidDate)
+        if advances { advanceToNextDueDate(payment: payment) }
     }
 
     /// Cierra el ciclo tras crear el SplitExpense desde un draft `.groupScheduledExpense`
@@ -478,8 +536,7 @@ struct ScheduledPaymentDraftService {
             descriptor.fetchLimit = 1
             do {
                 if let payment = try context.fetch(descriptor).first {
-                    payment.lastPaidDate = draft.date ?? Date.now
-                    advanceToNextDueDate(payment: payment)
+                    recordPaidOccurrence(of: draft, on: payment, context: context)
                 }
             } catch {
                 #if DEBUG

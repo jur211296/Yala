@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (816)
+## Index (822)
 
 | id | status | path |
 |---|---|---|
@@ -469,6 +469,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | import-activity-latch-survives-an-icloud-account-change | backlog | tickets/backlog/import-activity-latch-survives-an-icloud-account-change.md |
 | inbox-convert-draft-to-group-expense | done | tickets/done/inbox-convert-draft-to-group-expense.md |
 | inbox-crash-convert-to-group-expense | done | tickets/done/inbox-crash-convert-to-group-expense.md |
+| inbox-dismiss-x-does-not-delete-the-draft-for-good | qa | tickets/qa/inbox-dismiss-x-does-not-delete-the-draft-for-good.md |
 | inbox-header-leaves-no-room-for-drafts-at-large-text | backlog | tickets/backlog/inbox-header-leaves-no-room-for-drafts-at-large-text.md |
 | income-amount-color-is-dim-in-dark-mode | backlog | tickets/backlog/income-amount-color-is-dim-in-dark-mode.md |
 | indice-readme-barre-worktrees-anidados | discarded | tickets/discarded/indice-readme-barre-worktrees-anidados.md |

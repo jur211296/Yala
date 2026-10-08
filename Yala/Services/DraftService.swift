@@ -48,6 +48,12 @@ final class DraftService {
 
     /// Caches display values on a draft for when relationships are deleted
     private func cacheDisplayValues(_ draft: InboxDraft) {
+        Self.cacheArchiveDisplayValues(draft)
+    }
+
+    /// Lo mismo, para quien archiva un borrador fuera del servicio (el barrido de `processDuePayments`): sin estos
+    /// valores un rechazado no sale en Archivados (`InboxDraft.isShownInArchive`) y no se puede devolver.
+    static func cacheArchiveDisplayValues(_ draft: InboxDraft) {
         if let account = draft.account {
             draft.cachedAccountName = account.name
             draft.cachedCurrencyCode = account.currencyCode
@@ -644,8 +650,10 @@ final class DraftService {
 
         let context = try requireContext()
 
-        // Gasto planificado de grupo: rechazar = saltar la ocurrencia (evita que reaparezca).
-        skipGroupScheduledOccurrence(for: draft, in: context)
+        // Pago programado (personal, suscripción o de grupo): rechazar = saltar la ocurrencia que retiene, o
+        // `processDuePayments` lo recrea en el arranque siguiente. Antes de cambiar el estado: solo un pendiente
+        // retiene una ocurrencia.
+        let skipped = dismissScheduledOccurrence(of: draft, in: context, keepsTheOccurrenceDate: true)
 
         // Cache values for display in archived list
         cacheDisplayValues(draft)
@@ -654,21 +662,24 @@ final class DraftService {
         draft.updatedAt = Date.now
 
         try context.save()
+        if skipped { ScheduledPaymentNotificationService.shared.requestSummaryReplan() }
     }
 
     func bulkReject(_ drafts: [InboxDraft]) throws {
         let context = try requireContext()
 
+        var skipped = false
         for draft in drafts {
             // A0-Bridge: skip de los que no se pueden descartar (silent skip en bulk).
             if draft.sourceType.blocksInboxDismissal { continue }
-            skipGroupScheduledOccurrence(for: draft, in: context)
+            if dismissScheduledOccurrence(of: draft, in: context, keepsTheOccurrenceDate: true) { skipped = true }
             cacheDisplayValues(draft)
             draft.status = .rejected
             draft.updatedAt = Date.now
         }
 
         try context.save()
+        if skipped { ScheduledPaymentNotificationService.shared.requestSummaryReplan() }
     }
 
     // MARK: - Delete Operations
@@ -683,42 +694,117 @@ final class DraftService {
             throw DraftServiceError.cannotDeleteGroupDraft
         }
         let context = try requireContext()
-        skipGroupScheduledOccurrence(for: draft, in: context)
+        let skipped = dismissScheduledOccurrence(of: draft, in: context)
         context.delete(draft)
         try context.save()
+        if skipped { ScheduledPaymentNotificationService.shared.requestSummaryReplan() }
     }
 
     func bulkDelete(_ drafts: [InboxDraft]) throws {
         let context = try requireContext()
+        var skipped = false
         for draft in drafts {
             // A0-Bridge: skip de los que no se pueden descartar (silent skip en bulk). La marca viva de una
             // liquidación tampoco: sin ella el siguiente re-puente volvería a preguntar por el pago.
             if draft.sourceType.blocksInboxDismissal || draft.isLiveSettlementApprovalMark
                 || draft.isSettlementAmountChangeNotice { continue }
-            skipGroupScheduledOccurrence(for: draft, in: context)
+            if dismissScheduledOccurrence(of: draft, in: context) { skipped = true }
             context.delete(draft)
         }
         try context.save()
+        if skipped { ScheduledPaymentNotificationService.shared.requestSummaryReplan() }
     }
 
-    /// Gasto planificado de grupo (F5): descartar/rechazar un draft `.groupScheduledExpense`
-    /// debe saltar la ocurrencia del pago — si no, `processDuePayments` la recrea al día
-    /// siguiente. No-op para cualquier otro sourceType. No hace save (lo hace el caller).
-    private func skipGroupScheduledOccurrence(for draft: InboxDraft, in context: ModelContext) {
-        guard draft.sourceType == .groupScheduledExpense,
-              let paymentIDString = draft.sourceScheduledPaymentID,
-              let paymentUUID = UUID(uuidString: paymentIDString) else { return }
-        var descriptor = FetchDescriptor<ScheduledPayment>(predicate: #Predicate { $0.id == paymentUUID })
-        descriptor.fetchLimit = 1
+    /// Descartar (rechazar o borrar) el borrador PENDIENTE de un pago programado salta la ocurrencia que retiene
+    /// (`ScheduledDraftOccurrenceLogic`): si no, `processDuePayments` la recrea en el arranque siguiente. Vale para
+    /// los tres orígenes —pago programado, suscripción y de grupo— y es la misma marca que «Saltar» en
+    /// Planificación. Un borrador ya archivado no retiene nada (borrarlo desde Archivados no salta otra
+    /// ocurrencia), y el duplicado de una ocurrencia ya pagada tampoco.
+    ///
+    /// Los demás pendientes de ESA ocurrencia —los que creó otro dispositivo antes de saber del descarte— se
+    /// archivan con él (rechazados, recuperables), como hace Planificación al saltar. No hace save (lo hace el
+    /// caller). Devuelve si saltó algo, para re-planear los avisos.
+    ///
+    /// Si la ocurrencia saltada es la próxima fecha y ya venció, la próxima fecha avanza en el acto, igual que hace
+    /// `processDuePayments` con una fecha saltada: si esperara al arranque siguiente, «Adelantar» en Planificación
+    /// en la misma sesión pagaría la siguiente y `processDuePayments` la volvería a crear (doble pago). Y el
+    /// rechazado vuelve a la fecha de su vencimiento (`keepsTheOccurrenceDate`): la x guarda antes la fecha
+    /// editada, y una fecha fuera del calendario del pago no diría, al devolverlo, qué ocurrencia era.
+    @discardableResult
+    private func dismissScheduledOccurrence(
+        of draft: InboxDraft, in context: ModelContext, keepsTheOccurrenceDate: Bool = false
+    ) -> Bool {
+        guard draft.status == .pending,
+              ScheduledDraftOccurrenceLogic.holdsAnOccurrence(draft.sourceType),
+              let payment = scheduledPayment(of: draft, in: context) else { return false }
+        let draftDate = draft.date ?? draft.createdAt
+        let schedule = payment.occurrenceSchedule
+        guard let occurrence = ScheduledDraftOccurrenceLogic.occurrenceToSkipOnDismiss(
+            draftDate: draftDate, schedule: schedule
+        ) else { return false }
+        payment.skipDate(occurrence)
+
+        let paymentID = payment.id.uuidString
+        let draftID = draft.persistentModelID
         do {
-            if let payment = try context.fetch(descriptor).first {
-                payment.skipDate(draft.date ?? Date.now)
+            let siblings = try context.fetch(FetchDescriptor<InboxDraft>(predicate: #Predicate<InboxDraft> {
+                $0.sourceScheduledPaymentID == paymentID && $0.statusRaw == "pending"
+            }))
+            for sibling in siblings where sibling.persistentModelID != draftID
+                && ScheduledDraftOccurrenceLogic.holdsAnOccurrence(sibling.sourceType)
+                && ScheduledDraftOccurrenceLogic.heldOccurrence(
+                    draftDate: sibling.date ?? sibling.createdAt, schedule: schedule
+                ) == occurrence {
+                cacheDisplayValues(sibling)
+                sibling.status = .rejected
+                sibling.updatedAt = Date.now
             }
         } catch {
             #if DEBUG
-            print("DraftService: error skipping group scheduled occurrence: \(error)")
+            print("DraftService: error fetching sibling drafts of a dismissed occurrence: \(error)")
             #endif
         }
+
+        let today = Calendar.current.startOfDay(for: Date.now)
+        if keepsTheOccurrenceDate, occurrence <= today,
+           !Calendar.current.isDate(draftDate, inSameDayAs: occurrence) {
+            draft.date = occurrence
+        }
+        if Calendar.current.isDate(occurrence, inSameDayAs: schedule.nextDueDate), occurrence <= today {
+            ScheduledPaymentDraftService.advanceToNextDueDate(payment: payment)
+        }
+        return true
+    }
+
+    /// El pago programado del borrador, o `nil`.
+    private func scheduledPayment(of draft: InboxDraft, in context: ModelContext) -> ScheduledPayment? {
+        guard let paymentIDString = draft.sourceScheduledPaymentID,
+              let paymentUUID = UUID(uuidString: paymentIDString) else { return nil }
+        var descriptor = FetchDescriptor<ScheduledPayment>(predicate: #Predicate { $0.id == paymentUUID })
+        descriptor.fetchLimit = 1
+        do {
+            return try context.fetch(descriptor).first
+        } catch {
+            #if DEBUG
+            print("DraftService: error fetching the scheduled payment of a draft: \(error)")
+            #endif
+            return nil
+        }
+    }
+
+    /// «Volver a pendientes» deshace el salto que hizo el descarte: la persona quiere esa ocurrencia. Si la app ya
+    /// pasó de largo, aprobarla no vuelve a avanzar la próxima fecha (`ScheduledDraftOccurrenceLogic
+    /// .approvalAdvancesPointer`). Devuelve si deshizo algo.
+    @discardableResult
+    private func restoreScheduledOccurrence(of draft: InboxDraft, in context: ModelContext) -> Bool {
+        guard ScheduledDraftOccurrenceLogic.holdsAnOccurrence(draft.sourceType),
+              let payment = scheduledPayment(of: draft, in: context),
+              let occurrence = ScheduledDraftOccurrenceLogic.occurrenceToRestoreOnReturn(
+                draftDate: draft.date ?? draft.createdAt, schedule: payment.occurrenceSchedule,
+                isSkipped: payment.isDateSkipped
+              ) else { return false }
+        payment.unskipDate(occurrence)
+        return true
     }
 
     // MARK: - Return to Pending
@@ -728,24 +814,29 @@ final class DraftService {
         // La marca viva de una liquidación no vuelve a pendientes: aprobarla otra vez sería el mismo pago dos veces.
         guard !draft.isLiveSettlementApprovalMark else { return }
 
+        let restored = draft.status != .pending && restoreScheduledOccurrence(of: draft, in: context)
         draft.status = .pending
         draft.updatedAt = Date.now
         updateNeedsUserInput(draft)
 
         try context.save()
+        if restored { ScheduledPaymentNotificationService.shared.requestSummaryReplan() }
     }
 
     func bulkReturnToPending(_ drafts: [InboxDraft]) throws {
         let context = try requireContext()
 
         // La marca viva de una liquidación se salta (silent skip en bulk), como en `returnToPending`.
+        var restored = false
         for draft in drafts where !draft.isLiveSettlementApprovalMark {
+            if draft.status != .pending, restoreScheduledOccurrence(of: draft, in: context) { restored = true }
             draft.status = .pending
             draft.updatedAt = Date.now
             updateNeedsUserInput(draft)
         }
 
         try context.save()
+        if restored { ScheduledPaymentNotificationService.shared.requestSummaryReplan() }
     }
 
     // MARK: - Save (without approve)
