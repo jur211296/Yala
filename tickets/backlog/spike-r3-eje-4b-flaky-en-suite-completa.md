@@ -5,6 +5,7 @@ priority: low
 area: "testing"
 created: 2026-09-11
 source: "corrida completa de YalaTests durante `detach-history-replay-can-tombstone-groups-on-next-launch`"
+updated: 2026-10-08
 ---
 
 # `SpikeR3ContainerReleaseTests` «eje 4b» se pone rojo en la suite completa y verde en solitario
@@ -74,3 +75,10 @@ cambio antes del rebase lo pasó.
 En el gate de `fresh-start-copy-for-another-accounts-group-changes-borrows-the-own-reason` (9049 y 9060 casos, iPhone 17 Pro
 iOS 27.0) falló el eje 4a en las dos corridas completas (`harness.log.contains("EJE 4a ✅")`). La suite aislada pasó 2/2
 justo después, sin recompilar. El cambio de esa sesión no toca el container ni el App Group.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `53636fdba` (2026-10-03) arregló el contador de descriptores del eje 1-2 (techo fijo de 1024 → `RLIMIT_NOFILE`), no el 4a ni el 4b: las cuatro notas del 2026-10-05 son posteriores.
+- `b48dafcea` (2026-10-05) aún cita en su gate «rojo: flaky conocido SpikeR3 eje 4a, con ticket». Sigue sin entrada en la Lista Negra de `.claude/rules/testing.md`.
+
+Triage 2026-10-08: abierto · low → low · sigue cayendo en gates del 5-oct y no se ha tocado su causa, pero es un rojo de instrumento y el borrado real sigue fallando cerrado.

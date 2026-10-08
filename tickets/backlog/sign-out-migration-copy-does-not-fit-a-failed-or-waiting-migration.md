@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "sesiones, modo-nube"
 created: 2026-09-27
-updated: 2026-09-27
+updated: 2026-10-08
 source: "review adversarial de `private-sign-out-proceeds-with-a-migration-in-flight` (2026-09-27)"
 ---
 
@@ -26,3 +26,10 @@ en los que no es exacto:
 
 - [ ] Texto por estado (o uno que no afirme la causa), en los 16 idiomas. Se decide junto con
   `apple-id-change-check-stays-off-after-a-failed-migration`: si se abre el cierre tras un fallo, la primera mitad desaparece.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `2d3f07202` (decisión A del 2026-10-04) ya deja cerrar sesión tras una migración fallida sin nada pendiente (`AppleIDChangeCloseLogic.migrationAllowsPrivateSessionClose`), así que la primera viñeta solo queda para el fallo CON efectos pendientes.
+- `CloudSignOutFlowLogic.migrationBlockReason` sigue devolviendo `.migrationInFlight` para cualquier otro estado, `waitingForLeader` incluido, y `settings.signOutMigrationInFlight` sigue diciendo «termínalo desde ahí (si falló, toca «Reintentar»)».
+
+Triage 2026-10-08: abierto · low → low · la mitad del fallo asentado ya no aplica (2d3f07202), pero esperando a otro dispositivo el aviso sigue pidiendo algo que no se puede hacer; es copy de una situación de paso.

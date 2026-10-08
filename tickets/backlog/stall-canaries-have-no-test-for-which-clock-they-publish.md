@@ -1,10 +1,10 @@
 ---
 id: stall-canaries-have-no-test-for-which-clock-they-publish
 status: backlog
-priority: low
+priority: very-low
 area: "modo-nube, migración, métricas"
 created: 2026-09-23
-updated: 2026-09-23
+updated: 2026-10-08
 source: "review adversarial de `snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling` (2026-09-23), lente de tests"
 ---
 
@@ -34,3 +34,9 @@ motivos turnándose, el segmento de causa sigue en `lt_15m` mientras el reloj de
 
 - [ ] Un mutante que publique el reloj de lo definitivo en el canario de la subida muere.
 - [ ] Lo mismo en el canario de la vuelta.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `YalaTests/` sigue sin ninguna referencia a `cloudSnapshotUploadWaiting` ni a `cloudReversePreMountWaiting`; los emisores siguen en `MigrationRunner.swift` (hacia `:2051` y `:2802`).
+
+Triage 2026-10-08: abierto · low → very-low · sigue sin test, pero solo protege el significado de una serie del dashboard y no cambia nada de lo que ve quien usa la app.

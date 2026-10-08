@@ -1,6 +1,6 @@
 ---
 id: sync-rpcs-accept-a-malformed-hlc
-status: backlog
+status: done
 priority: low
 area: "modo-nube, sync, backend"
 created: 2026-10-07
@@ -38,3 +38,11 @@ y pierde contra todo, en silencio.
 
 - [ ] Decisión escrita.
 - [ ] Un HLC que no cumple el formato c1 no se guarda, en los tres RPC.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- El ticket nació en el mismo commit que `hlc01` (`a1b7297c5`) y describe una versión anterior del trigger. La que se aplicó (verbatim en `supabase-staging.ddl:482` y en el de Grupos, `e616ec41a`) sustituye **cualquier** valor que no sea c1 por `<tope>-0000-0000000000000000` **sin mirar su orden**, en `hlc`, `deleted_hlc` y cada `field_hlcs`, con 22 triggers `cap_future_hlc` en los tres canales.
+- `qa/cloud/hlc01-cap-test.sql` fija justo el resto que el ticket daba por vivo: «prefs: un mal formado que ordena por DEBAJO también se sustituye (sin mirar su orden)», con `hlc = '0'`.
+- La decisión que pedía el primer criterio está escrita en la cabecera de `hlc01_cap_future_hlc.sql`: se reescribe, no se rechaza («nada se rechaza ni va a dead-letter»). Solo `''` y `null` pasan tal cual, a propósito: `''` es el valor que la rama de tombstone de `apply_group_delta` escribe.
+
+Triage 2026-10-08: resuelto · low → — · hlc01, aplicada en staging y producción, ya sustituye cualquier HLC que no sea c1 sin mirar su orden, y un test lo fija.

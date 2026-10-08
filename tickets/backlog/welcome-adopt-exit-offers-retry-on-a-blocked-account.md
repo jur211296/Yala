@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, onboarding, adopt"
 created: 2026-09-23
-updated: 2026-09-23
+updated: 2026-10-08
 source: "review adversarial de `welcome-adopt-effect-failure-has-no-reason-and-no-cancel` (2026-09-23), lente de SwiftUI y copy"
 ---
 
@@ -25,3 +25,9 @@ es inferido y raro: ocurre solo si el proceso perdió ese estado sin perder la p
 ## Qué habría que hacer
 
 Mapear `.adoptExit(.accountUnavailable)` a `.accountBlocked`, o quitar «Reintentar» en ese motivo. Técnico, low.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `CloudWelcomeSignInFlow` sigue derivando `.adoptExit(adoptClaimExit)` para cualquier salida salvo `.cancelled`, y `WelcomeCloudSignInView` pinta en `.adoptExit` el mismo `YalaPrimaryButton(L10n.Welcome.Cloud.retry)` sea cual sea el motivo.
+
+Triage 2026-10-08: abierto · low → low · sigue igual en el código, pero hace falta perder el bloqueo en memoria sin perder la pantalla, y reintentar no daña nada.

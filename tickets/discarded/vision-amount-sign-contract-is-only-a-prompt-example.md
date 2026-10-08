@@ -1,11 +1,14 @@
 ---
 id: vision-amount-sign-contract-is-only-a-prompt-example
-status: backlog
+status: discarded
 priority: low
 area: "inbox, image"
 created: 2026-09-08
 source: hallazgo de camino en chat-draft-drops-the-expense-sign (2026-09-08)
+updated: 2026-10-08
 ---
+
+Why: Discarded 2026-10-08. La premisa era falsa ya el día que se escribió. `ImageVisionService.systemPrompt` enuncia la regla en «Rules»: «Amounts: No currency symbol, expenses are NEGATIVE, income is POSITIVE» (hoy `:131`; en el árbol del 2026-09-08, `:98`), desde `d9cfe973d` (2026-01-25), y no solo en el JSON de ejemplo. Eso es exactamente el arreglo «barato y suficiente» que pedía el primer criterio. El segundo ya lo cubre `VisionDraftFactoryTests`, que fija las dos polaridades del signo (`createDraft_rememberedIncomeSubcategory_expenseAmount_leavesItEmpty` y su control con el importe positivo). El DTO con `isExpense` explícito era la opción opcional, sin ningún fallo medido que la pida.
 
 # El signo del monto de una foto depende de un ejemplo del prompt, y no hay red debajo
 
@@ -66,3 +69,5 @@ positivos»), que hoy solo está insinuada por un ejemplo. Lo robusto: que el DT
 
 - [ ] La regla de signo está enunciada en el prompt de `ImageVisionService`, no solo en el ejemplo.
 - [ ] Test que fije el comportamiento cuando el modelo devuelve un positivo para un gasto.
+
+Triage 2026-10-08: descartado · low → — · la regla de signo que pedía ya está en el prompt desde enero (ImageVisionService.swift:131) y los tests fijan las dos polaridades.

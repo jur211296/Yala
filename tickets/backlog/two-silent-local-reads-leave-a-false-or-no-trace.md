@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, grupos"
 created: 2026-09-23
-updated: 2026-09-23
+updated: 2026-10-08
 source: "barrido del patrón durante `an-incomplete-inventory-reads-as-the-whole-corpus` (2026-09-23)"
 ---
 
@@ -40,3 +40,10 @@ El primero además es un `try?` que silencia, que las reglas del repo prohíben.
 ## Relacionado
 
 - `an-incomplete-inventory-reads-as-the-whole-corpus` — donde se midieron los dos.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- El belt del marcador sigue siendo `(try? context.fetchCount(FetchDescriptor<CloudMigrationMarker>())) ?? 0` con el rastro «marker absent (belt)» (`MigrationWorkExecutor.swift`, hacia `:2395`). Es un `try?` que silencia, prohibido por las reglas del repo.
+- `GroupsSyncClient.rehydrateOutboxFromMirror` (`Groups/GroupsSyncClient.swift:1795`) sigue con el `logger.error` dentro de `#if DEBUG` y nada en producción, y `verifyRebinds` sigue devolviendo `0` en el `catch`.
+
+Triage 2026-10-08: abierto · low → low · las cinco lecturas siguen igual, pero ninguna decide mal con los datos: solo engañan a quien diagnostica (aunque una es un try? prohibido).

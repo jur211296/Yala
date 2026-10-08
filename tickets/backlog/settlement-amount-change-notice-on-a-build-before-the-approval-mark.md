@@ -5,6 +5,7 @@ priority: low
 area: "groups, sync, inbox"
 created: 2026-10-05
 source: "review adversarial de `settlement-amount-edited-after-approval-leaves-the-bank-stale` (2026-10-05, lentes de dinero y de consumidores); leído en código, NO reproducido"
+updated: 2026-10-08
 ---
 
 # Un dispositivo con una versión de antes del 28-sep puede registrar dos veces el pago de un aviso de importe cambiado
@@ -33,3 +34,11 @@ finalizo, o si en el iPad salgo del grupo y el aviso pasa a borrador manual y lo
 ## Relacionados
 
 - [[settlement-amount-edited-after-approval-leaves-the-bank-stale]]
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- El aviso se sigue creando como `.groupSettlement` pendiente con cuenta e importe (`GroupTransactionBridge.reconcileAmountChangeNotices`). Ningún commit lo toca tras `e1b3999bc`.
+- La versión en la tienda (`v2.0.4`) ya tiene `InboxDraftType.groupSettlement` y no tiene `groupSettlementAlreadyRegistered`, así que la población es real al publicar 2.1: quien siga en iCloud privado con un segundo dispositivo sin actualizar.
+- Recomendación: la segunda opción, crear el aviso sin cuenta ni subcategoría, porque la fila y la hoja ya leen la cuenta por la marca. Sigue en low: hace falta aprobar a mano en el dispositivo viejo un borrador que parece repetido, y el doble registro se ve y se borra.
+
+Triage 2026-10-08: abierto · low → low · sigue pasando y la versión publicada 2.0.4 no tiene el freno, pero exige aprobar a mano en el dispositivo sin actualizar y el pago repetido se ve y se borra.

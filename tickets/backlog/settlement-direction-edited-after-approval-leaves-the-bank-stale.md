@@ -1,10 +1,11 @@
 ---
 id: settlement-direction-edited-after-approval-leaves-the-bank-stale
 status: backlog
-priority: low
+priority: very-low
 area: "groups, sync"
 created: 2026-10-05
 source: "review adversarial de `settlement-amount-edited-after-approval-leaves-the-bank-stale` (2026-10-05, lente de dinero); leído en código, NO reproducido"
+updated: 2026-10-08
 ---
 
 # Si otra persona cambia el sentido o la divisa de una liquidación que ya aprobé, mi banco no se entera
@@ -31,3 +32,10 @@ el Inbox no me avisa.
 ## Relacionados
 
 - [[settlement-amount-edited-after-approval-leaves-the-bank-stale]]
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `GroupSettlementAmountChangeLogic.plan` sigue callándose con `expectsOutflow` invertido y con otra divisa; el fichero no tiene commits tras `e1b3999bc`.
+- Confirmado que la app iOS no edita liquidaciones: `SettlementFormView` solo crea, y no hay otro cliente de grupos en 2.1. Hoy nadie puede provocar el cambio de sentido o de divisa.
+
+Triage 2026-10-08: abierto · low → very-low · sigue sin avisar, pero ningún cliente de 2.1 puede editar el sentido o la divisa de una liquidación, así que hoy no es alcanzable.

@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, sync"
 created: 2026-09-23
-updated: 2026-09-23
+updated: 2026-10-08
 source: "Paso 0 de `drain-duplicates-the-unit-clock-when-its-row-cannot-be-read` (2026-09-23)"
 ---
 
@@ -37,3 +37,9 @@ Probablemente cero o casi cero teléfonos. Por eso `low`.
 
 - [ ] Con dos `SyncUnitClock` para un `syncID`, tras el arreglo queda uno con el MAX por unidad de los dos.
 - [ ] Un tombstone de ese `syncID` no deja ninguno.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `SyncUnitClockStore.findRow` (`SyncUnitClock.swift`) sigue con `fetchLimit = 1` sin `sortBy`, y no hay barrido ni fusión de duplicados en ningún escritor.
+
+Triage 2026-10-08: abierto · low → low · sigue sin fundir duplicados, pero solo existen si un fetch lanzó en el drain antes del 23-sep, cosa no vista en producción.

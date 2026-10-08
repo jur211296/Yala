@@ -49,4 +49,11 @@ iCloud» a la vista.
 - `CloudMigrationController.startReverse`: `isWorking = true` y `defer { isWorking = false }` sin `guard` ni espera; luego dos `await r.submit(…)`. `cancelReverseUpload` sigue siendo el único que espera.
 - Desde hoy es el ticket conservado de `storage-actions-release-the-working-flag-under-a-running-resume` (descartado como duplicado en otro lote), que añade el mismo patrón en `resetAfterRollback`.
 
+## Fusionado de `storage-actions-release-the-working-flag-under-a-running-resume` (triage 2026-10-08)
+
+- El mismo patrón está en `CloudMigrationController.resetAfterRollback`: pone `isWorking = true` sin
+  `guard !isWorking` y su `defer` lo baja con un `resume()` todavía en vuelo.
+- El arreglo (esperar a que suelte, molde `cancelReverseUpload`) debería cubrir `startReverse` y
+  `resetAfterRollback` a la vez, y comprobar que ninguna acción baja `isWorking` mientras otra lo tiene tomado.
+
 Triage 2026-10-08: abierto · low → low · ventana estrecha (re-kick o pre-espera en marcha) y un segundo toque la arranca; no pierde datos.

@@ -5,6 +5,7 @@ priority: low
 area: "design-system, iphone, adaptativo"
 created: 2026-09-28
 source: "iphone-small-screens-and-safe-areas-audit (carril adaptativo, paso 3), capturas del 2026-09-28"
+updated: 2026-10-08
 ---
 
 # En el iPhone más pequeño, lo que la auditoría vio y no arregló
@@ -50,3 +51,10 @@ del borde.
   [[floating-buttons-cover-row-amounts-on-ipad-landscape]].
 - Rótulos del selector de tipo y de la fila de acciones de Nuevo registro, filtros de la Bandeja, widgets pequeños
   del Panel y la píldora «Nuevo registro» contra el borde: [[large-text-leftovers-outside-the-main-iphone-screens]].
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `CoachMarkOverlay` sigue con `tooltipGap: CGFloat = 80` y sin `onGeometryChange` ni área segura. `SubscriptionSuccessView` e `InboxBulkApproveSuccessView` siguen sin `ScrollView`. Ninguno de los tres ficheros tiene commits desde el 2026-09-28.
+- De los enlazados, `floating-buttons-cover-row-amounts-on-ipad-landscape` ya está en `done`; los otros tres siguen en backlog.
+
+Triage 2026-10-08: abierto · low → low · los cinco puntos siguen sin tocar, pero ninguno impide usar la app: son textos cortados a AX5 y dos pantallas por medir.

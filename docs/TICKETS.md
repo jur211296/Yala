@@ -771,7 +771,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | stats-filter-segment-tap-should-ask-include-or-exclude | backlog | tickets/backlog/stats-filter-segment-tap-should-ask-include-or-exclude.md |
 | stats-per-account-branch-keeps-stale-live-anchor | backlog | tickets/backlog/stats-per-account-branch-keeps-stale-live-anchor.md |
 | step-flows-should-match-the-sep15-reference | qa | tickets/qa/step-flows-should-match-the-sep15-reference.md |
-| storage-actions-release-the-working-flag-under-a-running-resume | backlog | tickets/backlog/storage-actions-release-the-working-flag-under-a-running-resume.md |
+| storage-actions-release-the-working-flag-under-a-running-resume | discarded | tickets/discarded/storage-actions-release-the-working-flag-under-a-running-resume.md |
 | storage-groups-section-stays-active-during-the-migrate-check | backlog | tickets/backlog/storage-groups-section-stays-active-during-the-migrate-check.md |
 | storage-mode-is-a-proxy-for-the-mirror-in-the-wipe-signal | backlog | tickets/backlog/storage-mode-is-a-proxy-for-the-mirror-in-the-wipe-signal.md |
 | storage-mode-unknown-raw-reads-as-icloud | backlog | tickets/backlog/storage-mode-unknown-raw-reads-as-icloud.md |
@@ -785,7 +785,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | subscription-success-without-pro | done | tickets/done/subscription-success-without-pro.md |
 | suggestions-rewriter-drops-german-and-polish-rewrites | backlog | tickets/backlog/suggestions-rewriter-drops-german-and-polish-rewrites.md |
 | superseding-intent-can-strand-the-sign-out-coordinator | done | tickets/done/superseding-intent-can-strand-the-sign-out-coordinator.md |
-| sync-rpcs-accept-a-malformed-hlc | backlog | tickets/backlog/sync-rpcs-accept-a-malformed-hlc.md |
+| sync-rpcs-accept-a-malformed-hlc | done | tickets/done/sync-rpcs-accept-a-malformed-hlc.md |
 | sync-runtime-safety-note-assumes-every-prod-device-is-icloud | backlog | tickets/backlog/sync-runtime-safety-note-assumes-every-prod-device-is-icloud.md |
 | synced-prefs-outside-prefsynckey | discarded | tickets/discarded/synced-prefs-outside-prefsynckey.md |
 | tag-chips-change-order-on-every-launch | backlog | tickets/backlog/tag-chips-change-order-on-every-launch.md |
@@ -817,7 +817,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | verify-reads-a-failed-local-fetch-as-an-empty-outbox | done | tickets/done/verify-reads-a-failed-local-fetch-as-an-empty-outbox.md |
 | vigilante-calla-si-no-puede-comprobar-la-nocturna | done | tickets/done/vigilante-calla-si-no-puede-comprobar-la-nocturna.md |
 | vigilante-margen-menor-que-el-retraso-real-del-cron | done | tickets/done/vigilante-margen-menor-que-el-retraso-real-del-cron.md |
-| vision-amount-sign-contract-is-only-a-prompt-example | backlog | tickets/backlog/vision-amount-sign-contract-is-only-a-prompt-example.md |
+| vision-amount-sign-contract-is-only-a-prompt-example | discarded | tickets/discarded/vision-amount-sign-contract-is-only-a-prompt-example.md |
 | vision-reads-every-dollar-sign-as-usd | qa | tickets/qa/vision-reads-every-dollar-sign-as-usd.md |
 | voice-entry-end-to-end | qa | tickets/qa/voice-entry-end-to-end.md |
 | voice-language-and-silence-handling-differ-between-chat-and-sheet | backlog | tickets/backlog/voice-language-and-silence-handling-differ-between-chat-and-sheet.md |
