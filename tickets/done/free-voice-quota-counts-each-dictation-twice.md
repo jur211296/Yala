@@ -1,6 +1,6 @@
 ---
 id: free-voice-quota-counts-each-dictation-twice
-status: backlog
+status: done
 priority: medium
 area: voice, gateway, monetization
 created: 2026-10-07
@@ -53,3 +53,7 @@ de Jürgen (`voice` entra en la lista). Desde entonces el título sí es cierto:
 
 - Decisión anotada aquí.
 - Test del gateway: una nota de voz completa (transcribir + leer) descuenta 1 unidad del free.
+
+## Cierre
+
+Resuelto en la sesión 2 (2026-10-07), opción B: una nota de voz = 1 uso, y el plan free es un cupo de prueba de 5 notas y 5 fotos en total por instalación. Tests: `gateway/test/ai.session2.test.ts` (la 5.ª nota completa funciona y la 6.ª da `yala_trial_exhausted`); verificado en producción con un dispositivo ficticio.

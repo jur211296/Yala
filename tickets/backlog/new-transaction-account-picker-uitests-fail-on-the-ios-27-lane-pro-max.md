@@ -4,7 +4,7 @@ status: backlog
 priority: medium
 area: "qa, xcuitest, transactions"
 created: 2026-10-02
-updated: 2026-10-05
+updated: 2026-10-07
 source: gate de list-column-too-narrow-for-accessibility-text-on-a-turned-pro-max (carril adaptativo)
 ---
 
@@ -54,3 +54,9 @@ Medido en el gate de `groups-stuck-drain-on-a-healthy-phone-says-try-again-later
 Panel, «Nuevo registro» ni los selectores): `EdgeCasesUITests.test_extremeMinimumAmountSaves` falla en lote y **aislado**, con
 el mismo `Failed to tap Button … account_selector_row_` y el mismo «Automation type mismatch: computed Button from legacy
 attributes vs PopUpButton». Así que no es del Pro Max: es del runtime iOS 27.0 (inferido de dos modelos, no de más).
+
+## 2026-10-07 · Tercera sesión que lo ve, mismo runtime
+
+Gate de `ai-every-call-sends-its-task-and-passes-the-bench` (árbol sobre `2890d1353`, sin cambios en Panel, «Nuevo
+registro», selectores ni semilla), simulador `iPhone 17 Pro` de iOS 27.0: falla en lote (36 de 37 en verde) y otra vez
+aislado, con el centinela en 0 y el mismo «Automation type mismatch … PopUpButton».

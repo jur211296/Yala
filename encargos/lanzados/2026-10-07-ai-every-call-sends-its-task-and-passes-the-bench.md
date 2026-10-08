@@ -89,3 +89,12 @@ jul y oct) y el disparo extra ante un apagado anunciado.
   las recoge si llegan y sigue mientras con el resto.
 - **J3 · Paso 9** → lo hago yo desde su Chrome con la sesión de platform.openai.com del correo de Yala.
 - **J4 · Cupo** → por instalación (la identidad de App Attest): reinstalar da otro cupo.
+
+**Cómo acabó (desvíos sobre lo decidido):**
+
+- **J3** → la creación de las claves en platform.openai.com la denegó el clasificador de la sesión (escritura de
+  secretos); las creó Jürgen y yo hice el resto (secrets del Worker y verificación).
+- **D7** → la devolución cubre también 429 y 408, no solo 5xx y red. Y leer una nota abierta tampoco ocupa hueco de
+  ráfaga: la ráfaga free (5/min) cortaba la 3.ª nota seguida.
+- **D11** → el banco costó ≈ 15 USD, no 35.
+- **D10** → el banco eligió Gemini 3.8 Flash para Tendencias: queda en `PREPARED_ROUTES`, apagado, y sirve `gpt-6.1-sol`.

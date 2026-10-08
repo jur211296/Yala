@@ -1,6 +1,6 @@
 ---
 id: ai-model-choice-lives-in-the-app-binary
-status: backlog
+status: done
 priority: high
 area: ai, gateway
 created: 2026-10-07
@@ -61,3 +61,7 @@ partir la IA por modo. B absorbe `gateway-proxies-any-model-and-any-length`.
 **Sesión 2, pendiente:** `ai-every-call-sends-its-task-and-passes-the-bench`. La app manda la cabecera en las 12 llamadas,
 los parámetros salen de la app, y las demás tareas, la voz y la cuota free pasan por el banco. Este ticket se cierra
 cuando se cierre aquél.
+
+## Cierre
+
+Resuelto en la sesión 2 (`ai-every-call-sends-its-task-and-passes-the-bench`, 2026-10-07): las 12 llamadas dicen su tarea (`X-Yala-Task`) y el gateway decide proveedor, modelo y parámetros de todas (`gateway/src/ai/routes.ts`). Cambiar de modelo es un deploy del Worker, también para las versiones instaladas.

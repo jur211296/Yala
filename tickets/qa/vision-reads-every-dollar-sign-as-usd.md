@@ -1,10 +1,11 @@
 ---
 id: vision-reads-every-dollar-sign-as-usd
-status: backlog
+status: qa
 priority: medium
 area: image, ai
 created: 2026-10-07
 updated: 2026-10-07
+qa-status: needs-testing
 source: revisión del uso de IA (docs/ai-usage-review-2026-10.md, hallazgo H4)
 ---
 
@@ -36,3 +37,7 @@ dólares, se la asigna. Lo mismo en Colombia, Chile, Argentina o Uruguay, que ta
 - Test de prompt puro: con divisa principal MXN, el prompt dice que «$» es MXN; con PEN, que «$» solo
   no decide.
 - Device-QA: ticket mexicano con «$» y cuenta en MXN → borrador en MXN y en esa cuenta.
+
+## Hecho en la sesión 2 (2026-10-07)
+
+La app pasa al prompt la divisa principal y las de las cuentas (`VisionCurrencyContext`): «$» a secas es la divisa principal si se escribe con «$» y `null` si no. Tests: `VisionCurrencySession2Tests` (MXN → MXN; PEN → no decide) y `gateway/test/ai.bench.test.ts`. Device-QA: paso 5 del guion de `ai-every-call-sends-its-task-and-passes-the-bench`.

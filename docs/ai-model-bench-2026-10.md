@@ -5,6 +5,35 @@
 > `gateway/bench/results/2026-10-07/`. Precios comprobados ese día en las páginas oficiales (enlazadas en
 > `gateway/bench/candidates.ts`). Gasto total del banco: ≈ 6 USD.
 
+## Sesión 2 (2026-10-07): las 12 llamadas por el banco
+
+La sesión 2 (`ai-every-call-sends-its-task-and-passes-the-bench`) pasó por el banco las tareas que seguían en
+`gpt-4.1-mini` y `whisper-1`, con el mismo principio (primero calidad medida, después precio) y el mismo método: la
+petición exacta de la app, casos sin datos personales en 14 locales, criterio que replica primero el parser de la app,
+candidatos de OpenAI, Google, Anthropic, xAI y Workers AI, criba en paralelo y latencia en serie. Gasto ≈ 15 USD.
+
+| Tarea | Antes | Ahora | Acierto antes → ahora | USD por 1 000 antes → ahora | p95 | Informe |
+|---|---|---|---|---|---|---|
+| Leer una nota (`text.parse`) | `gpt-4.1-mini` | `gpt-6-luna`, `low` | 90,9 % → **97,7 %** | 0,589 → 0,146 | 3,7 s | `REPORT-chat-y-nota.md` |
+| Responder en el chat (`chat.answer`) | `gpt-4.1-mini` | `gpt-6-luna`, `none` | 98,5 % → **100 %** | 1,455 → 0,203 | 2,1 s | ídem |
+| Reescribir sugerencias (`chat.rewrite`) | `gpt-4.1-mini` | `gpt-6-luna`, `none` | 100 % → **100 %** | 0,198 → 0,056 | 2,1 s | ídem |
+| Tarjetas de Insights (`insights.cards`) | `gpt-4.1-mini` | `gpt-6-luna`, `low` | 56,3 % → **90,6 %** | 1,369 → 0,482 | 9,4 s | `REPORT-insights-y-tendencias.md` |
+| Flujo de caja (`insights.cashflow`) | `gpt-4.1-mini` | `gpt-6-luna`, `none` | 21,4 % → 25,0 % (100 % sin idioma) | 0,194 → 0,052 | 2,1 s | ídem |
+| Desviaciones (`insights.deviation`) | `gpt-4.1-mini` | `gpt-6-luna`, `none` | 21,4 % → 21,4 % (100 % sin idioma) | 0,166 → 0,048 | 2,8 s | ídem |
+| Tendencias (`trends.summary`) | `gpt-4.1-mini` | `gpt-6.1-sol`, `low` | 68,8 % → **100 %** | 0,601 → 4,490 | 9,8 s | ídem |
+| Transcribir la voz (`voice.transcribe`) | `whisper-1` | `gpt-transcribe` + términos | error por palabra 9,0 % → **2,7 %** | 0,36 → 0,27 USD/h | 1,2 s | `docs/ai-voice-bench-2026-10.md` |
+| Leer una foto (`photo.read`) | `gpt-6-luna` | igual, con el prompt de divisas y la foto a 1536 px | 94,2 % → **100 %** | 0,379 → 0,40 | 6,5 s | abajo |
+
+Los informes `REPORT-*.md` están en `gateway/bench/results/2026-10-07/`, con listón, casos, criterio, tablas de todos
+los candidatos y lo que no se midió.
+
+- **Todo sigue en OpenAI.** El único proveedor que gana una tarea es Gemini 3.8 Flash en Tendencias, con el mismo 100 %
+  que `gpt-6.1-sol` a un tercio del precio; queda preparado y apagado (`PREPARED_ROUTES`) hasta cumplir el paso 7.
+- **El idioma de flujo de caja y desviaciones falla con todos los modelos**: el prompt de la app no lo pide (ticket
+  `insights-cashflow-and-deviation-prompts-do-not-ask-for-the-language`).
+- **Los jueces.** En el chat, Gemini 3.8 Flash y Claude Sonnet 5.5 casan con la muestra puntuada a mano (96–100 %). En
+  Insights ninguno llega al mínimo y deciden el criterio determinista y la lectura a mano.
+
 ## Resultado
 
 OpenAI apaga `gpt-4.1-nano` el 23-oct-2026. Sus tres tareas pasan a **`gpt-6-luna`** en el gateway, para todas las
@@ -134,6 +163,20 @@ sobrelectura de esta tabla: con 26 casos, un caso son 4 puntos, y los fallos de 
 a resolución original. **`maxEdge = 1536`** deja margen para fotos reales de papel térmico gastado, que el banco
 representa poco, con un 38 % menos de tokens que la original. La app reducirá la foto en la sesión 2. Hasta entonces la
 foto llega entera y `gpt-6-luna` la reduce por su cuenta.
+
+### Sesión 2: divisas en el prompt y la foto a 1536 px (2026-10-07)
+
+El prompt de la foto aprendió los símbolos de los 10 idiomas (¥ según el texto, R$, zł, CHF y los «$» con prefijo) y el
+«$» a secas pasó a decidirlo la divisa principal del usuario, que la app manda ahora en el prompt
+(`VisionCurrencyContext`; cada caso del banco lleva la de su usuario). La app sube la foto reducida a 1536 px.
+
+| Modelo | Lado mayor | Llamadas | Acierto | Tokens de entrada | USD por 1 000 |
+|---|---|---|---|---|---|
+| `gpt-6-luna` (antes, prompt viejo) | 1536 | 52 | 94,2 % | 2377 | 0,379 |
+| `gpt-6-luna` (prompt nuevo) | 1536 | 52 | **100 %** | 2666 | 0,349 |
+
+Los fallos de ¥ y zł desaparecen y no aparece ninguno nuevo. En serie (26 llamadas, una cada vez): 100 %, p50 2,8 s y
+p95 6,5 s, lejos del corte de 20 s. Datos: `gateway/bench/results/2026-10-07-divisas/` y `…-divisas-serie/`.
 
 ## Clasificar el mensaje del chat (`chat.intent`)
 

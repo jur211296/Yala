@@ -1,6 +1,6 @@
 ---
 id: ai-text-model-generation-upgrade
-status: backlog
+status: done
 priority: medium
 area: ai, cost
 created: 2026-10-07
@@ -71,3 +71,7 @@ juego de pruebas; después mover las tareas acotadas; el chat, el último. Si el
 
 - Decisión anotada aquí.
 - Si B: juego de pruebas en el repo, resultado de la comparación y cambio desplegado por tarea.
+
+## Cierre
+
+Resuelto en la sesión 2 (2026-10-07): las siete llamadas de `gpt-4.1-mini` pasaron por el banco. Chat, reescritura, lectura de la nota e Insights a `gpt-6-luna`; Tendencias a `gpt-6.1-sol`. Tablas en `docs/ai-model-bench-2026-10.md` (sección «Sesión 2»).

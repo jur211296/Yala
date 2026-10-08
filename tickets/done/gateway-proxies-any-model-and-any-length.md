@@ -1,6 +1,6 @@
 ---
 id: gateway-proxies-any-model-and-any-length
-status: backlog
+status: done
 priority: low
 area: gateway, ai, security
 created: 2026-10-07
@@ -49,3 +49,7 @@ esto— pero el coste del peor caso no está acotado en ningún sitio del servid
 
 - Tests del gateway: modelo fuera de lista → 400; `vision` sin imagen → 400; tope aplicado.
 - La app actual pasa sin cambios (test con los cuerpos que manda hoy cada servicio).
+
+## Cierre
+
+Resuelto en la sesión 2 (2026-10-07): con cabecera el cubo sale de la tarea; las filas managed fijan el tope de salida; cada tarea tiene tope de cuerpo (413 `yala_too_large`) y la foto exige imagen. Tests: `gateway/test/ai.session2.test.ts`.

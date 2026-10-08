@@ -1,10 +1,11 @@
 ---
 id: ai-every-call-sends-its-task-and-passes-the-bench
-status: backlog
+status: qa
 priority: high
 area: ai, gateway, app, voice, image, quota
 created: 2026-10-07
 updated: 2026-10-07
+qa-status: needs-testing
 source: sesión 1 de ai-model-choice-lives-in-the-app-binary (encargo gpt-4-1-nano-shuts-down-on-october-23)
 ---
 
@@ -115,3 +116,41 @@ está cerrado; falta la longitud y la categoría por tarea).
 - La voz sigue el idioma de la app en los 10 idiomas, con el motor elegido por calidad medida.
 - La cuota free es un cupo de 5 notas y 5 fotos por dispositivo, con sus tests.
 - La foto viaja reducida al `maxEdge` de su fila.
+
+## Hecho (sesión 2, 2026-10-07)
+
+- **Las 12 llamadas por la tabla.** La app manda `X-Yala-Task` en las 11 que quedan (`ProxyTask`; `insights.contextual` se
+  retiró: su llamador se fue el 2026-04-12). Con cabecera el cubo sale de la tarea. Las versiones instaladas se enrutan
+  por deducción a las mismas filas.
+- **Filas del banco** (`gateway/src/ai/routes.ts`, informes en `docs/ai-model-bench-2026-10.md`,
+  `docs/ai-voice-bench-2026-10.md` y `gateway/bench/results/2026-10-07/REPORT-*.md`): chat, reescritura y lectura de la
+  nota a `gpt-6-luna`; la voz a `gpt-transcribe` con los términos del usuario; Insights a `gpt-6-luna` y Tendencias a
+  `gpt-6.1-sol`. Todo sigue en OpenAI: Gemini 3.8 Flash empata en Tendencias a un tercio del precio y queda preparado y
+  apagado (`PREPARED_ROUTES`) hasta cumplir el paso 7.
+- **Cupo de prueba**: 5 notas y 5 fotos en total por instalación, una nota = un uso, el fallo del proveedor devuelve el
+  uso, y la app enseña «Ya usaste tus notas/fotos de prueba» con «Ver Yala Pro». Verificado en producción con un
+  dispositivo ficticio: la 6.ª nota y la 6.ª foto dan 403 `yala_trial_exhausted`.
+- **Voz**: «Idioma de la app» (sigue al de Yala) y los 10 idiomas; nada cae a inglés.
+- **Foto**: sube reducida al `maxEdge` de su fila (1536 px, publicado en `/config`); el prompt enseña ¥, R$, zł y CHF, y
+  el «$» lo decide la divisa principal. En el banco, del 94,2 % al 100 %.
+- **Cuenta de OpenAI de Yala**: el gateway de staging y el de producción usan claves de cuenta de servicio de la
+  organización de Yala (proyectos propio de staging y «Yala - Production»).
+
+## Device-QA (iPhone, con el build que lleve esta sesión)
+
+Lo del gateway ya está en producción y no necesita build: las versiones instaladas ya leen fotos, notas y chat con los
+modelos nuevos. Lo que sí necesita el build nuevo:
+
+1. **Selector de voz.** Ajustes › Personalización › Idioma de voz. Esperado: «Idioma de la app» marcado y los 10
+   idiomas con su nombre (Español, English, Português, Français, Deutsch, Italiano, Nederlands, Polski, 日本語, 中文).
+2. **Nota con un comercio tuyo.** Con «Idioma de la app», dicta «Ayer 25 soles con 50 en <un comercio que uses mucho>».
+   Esperado: importe 25,50 y el comercio bien escrito en el borrador.
+3. **Dictar en otro idioma.** Elige English en el selector y dicta «Coffee 4.50 at Starbucks». Esperado: borrador de
+   4,50. Vuelve a «Idioma de la app».
+4. **Foto de un recibo real.** Esperado: lee el total en unos segundos (la foto sube reducida).
+5. **«$» a secas** (`vision-reads-every-dollar-sign-as-usd`). Con la divisa principal en PEN, foto de un ticket que diga
+   solo «$ 25.00». Esperado: el borrador sale sin divisa decidida (la eliges tú), no en USD.
+6. Avísame cuando lo pruebes y miro `wrangler tail`: cada llamada debe salir con `how: "header"`.
+
+El cupo de prueba agotado no se puede ver con una cuenta Pro: está verificado en producción y por XCUITest
+(`VoiceEntryReviewUITests` / `ImageEntryReviewUITests#test_trialUsedUp_saysSo_andOffersPro`).

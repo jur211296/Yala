@@ -1,6 +1,6 @@
 ---
 id: image-reading-sends-the-full-resolution-photo
-status: backlog
+status: done
 priority: medium
 area: image, ai, cost
 created: 2026-10-07
@@ -58,3 +58,7 @@ en `docs/ai-model-bench-2026-10.md`. El reescalado en la app es el paso 6 de
 
 - Decisión anotada aquí.
 - Si A: test que fija el lado mayor ≤ 2 048 px en la imagen que se manda.
+
+## Cierre
+
+Resuelto en la sesión 2 (2026-10-07): la app reduce la foto al `maxEdge` de la fila `photo.read` (1536 px), que el gateway publica en `/config`. Test: `ProxyTaskHeaderTests#photoRead` (la imagen que sale mide 1536 px de lado mayor) y `PhotoUploadSizingSession2Tests`.

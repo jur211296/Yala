@@ -1,6 +1,6 @@
 ---
 id: voice-transcription-model-choice
-status: backlog
+status: done
 priority: medium
 area: voice, ai, cost
 created: 2026-10-07
@@ -61,3 +61,7 @@ paso 4 de `ai-every-call-sends-its-task-and-passes-the-bench`.
 
 - Decisión anotada aquí.
 - Si A: la app (o el gateway) deja de pedir `whisper-1` antes del 2027-02-26, con test de la petición.
+
+## Cierre
+
+Resuelto en la sesión 2 (2026-10-07): la voz pasa a `gpt-transcribe` con los términos del usuario (`keywords[]`), elegido por calidad medida entre 15 variantes de 9 motores (`docs/ai-voice-bench-2026-10.md`). La app deja de depender de `whisper-1`: el gateway lo sustituye para todas las versiones.
