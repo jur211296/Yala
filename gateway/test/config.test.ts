@@ -18,6 +18,9 @@ interface ConfigBody {
   forceUpdate: {
     minSupportedBuild: number;
   };
+  ai: {
+    photoMaxEdge: number | null;
+  };
 }
 
 function getConfig(env: Record<string, string>): Response | Promise<Response> {
@@ -43,6 +46,10 @@ describe("GET /config — shape y semántica fail-closed", () => {
       },
       forceUpdate: {
         minSupportedBuild: 137,
+      },
+      // Sale de la fila photo.read (sesión 2): la app reduce la foto a esto antes de subirla.
+      ai: {
+        photoMaxEdge: 1536,
       },
     });
   });

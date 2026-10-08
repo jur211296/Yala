@@ -57,16 +57,40 @@ export function dateContext(todayIso: string): string {
   });
 }
 
-export function photoSystemPrompt(todayIso: string): string {
-  const tpl = swiftMultilineAfter(readRepoFile(PATHS.vision), "private var systemPrompt: String {");
-  return interpolate(tpl, { dateContext: dateContext(todayIso) });
+/** Las divisas del usuario que la app pasa al prompt de la foto (`VisionCurrencyContext`, sesión 2). */
+export interface CurrencyContext {
+  main: string | null;
+  accounts: string[];
 }
 
-export function photoReadBody(jpegBase64: string, todayIso: string): Record<string, unknown> {
+/** Las divisas que la app escribe con «$» a secas, leídas de `CurrencyUtils.swift` (`case .usd: return "$"`). */
+export function dollarCurrencies(): Set<string> {
+  const src = readRepoFile("Yala/Utils/CurrencyUtils.swift");
+  return new Set([...src.matchAll(/case \.([a-z]{3}): return "\$"/g)].map((m) => m[1].toUpperCase()));
+}
+
+/** Réplica de `VisionCurrencyContext.dollarRule` y `.userCurrencies`. */
+export function currencyPromptValues(ctx: CurrencyContext): { dollarRule: string; userCurrencies: string } {
+  const dollar = ctx.main && dollarCurrencies().has(ctx.main) ? ctx.main : null;
+  const dollarRule = dollar ? `"${dollar}" (the user's main currency is written with $)` : `null (a "$" alone does not say which dollar it is)`;
+  const accounts = ctx.accounts.length ? ctx.accounts.join(", ") : ctx.main;
+  const userCurrencies = ctx.main
+    ? `The user's main currency is ${ctx.main} and their accounts use ${accounts}. Use this ONLY to choose between currencies that share a symbol.`
+    : "";
+  return { dollarRule, userCurrencies };
+}
+
+export function photoSystemPrompt(todayIso: string, currency: CurrencyContext = { main: null, accounts: [] }): string {
+  const tpl = swiftMultilineAfter(readRepoFile(PATHS.vision), "func systemPrompt(currency: VisionCurrencyContext) -> String {");
+  return interpolate(tpl, { dateContext: dateContext(todayIso), ...currencyPromptValues(currency) });
+}
+
+/** `currency`: la divisa principal y las de las cuentas del usuario, como las manda la app (sesión 2, paso 6 bis). */
+export function photoReadBody(jpegBase64: string, todayIso: string, currency?: CurrencyContext): Record<string, unknown> {
   const wd = new Date(`${todayIso}T12:00:00Z`).getUTCDay();
   return {
     messages: [
-      { role: "system", content: photoSystemPrompt(todayIso) },
+      { role: "system", content: photoSystemPrompt(todayIso, currency) },
       {
         role: "user",
         content: [

@@ -34,6 +34,37 @@ struct VisionResponse: Codable {
     let confidence: VisionConfidence
 }
 
+// MARK: - Divisas del usuario
+
+/// Lo que la lectura de la foto necesita saber de las divisas del usuario para un símbolo que la imagen no aclara
+/// (sesión 2 del gateway de IA, paso 6 bis, con `vision-reads-every-dollar-sign-as-usd`). Un «$» a secas es dólar en
+/// EE. UU. y peso en México, Colombia, Chile, Argentina o Uruguay: lo decide la divisa principal del usuario.
+nonisolated struct VisionCurrencyContext: Equatable, Sendable {
+    let mainCurrency: String?
+    let accountCurrencies: [String]
+
+    static let unknown = VisionCurrencyContext(mainCurrency: nil, accountCurrencies: [])
+
+    /// «$» a secas → la divisa principal si se escribe con «$»; si no, `nil` (el usuario elige en la revisión).
+    /// En el actor principal porque `CurrencyCode.symbol` vive ahí; la usa el prompt, que también.
+    @MainActor var dollarAlone: String? {
+        guard let main = mainCurrency, CurrencyCode(rawValue: main)?.symbol == "$" else { return nil }
+        return main
+    }
+
+    /// La regla del «$» como la lee el modelo.
+    @MainActor var dollarRule: String {
+        dollarAlone.map { "\"\($0)\" (the user's main currency is written with $)" } ?? "null (a \"$\" alone does not say which dollar it is)"
+    }
+
+    /// Las divisas del usuario, para desempatar símbolos compartidos. Vacío si no se saben.
+    var userCurrencies: String {
+        guard let main = mainCurrency else { return "" }
+        let accounts = accountCurrencies.isEmpty ? main : accountCurrencies.joined(separator: ", ")
+        return "The user's main currency is \(main) and their accounts use \(accounts). Use this ONLY to choose between currencies that share a symbol."
+    }
+}
+
 // MARK: - Errors
 
 enum VisionError: Error, LocalizedError {
@@ -82,8 +113,10 @@ final class ImageVisionService {
 
     // MARK: - System Prompt
 
-    private var systemPrompt: String {
+    func systemPrompt(currency: VisionCurrencyContext) -> String {
         let dateContext = DateContextProvider.buildDateContext()
+        let dollarRule = currency.dollarRule
+        let userCurrencies = currency.userCurrencies
 
         return """
         You are a financial transaction extractor. Analyze images and extract transaction data.
@@ -99,15 +132,27 @@ final class ImageVisionService {
         - Dates: ALWAYS convert to YYYY-MM-DD format
         - Currency: Extract from symbols or explicit mentions
 
-        Currency extraction rules:
-        - "$" symbol alone or "US$" → "USD"
+        Currency extraction rules (always answer an ISO 4217 code or null):
+        - "US$" → "USD"
+        - "$" symbol alone → \(dollarRule)
         - "€" symbol → "EUR"
         - "S/" symbol → "PEN"
         - "£" symbol → "GBP"
+        - "R$" symbol → "BRL"
+        - "zł" or "PLN" → "PLN"
+        - "¥", "円" or "JP¥" in a Japanese text → "JPY"
+        - "¥", "元", "CN¥" or "RMB" in a Chinese text → "CNY"
+        - "CHF" or "Fr." → "CHF"
+        - "MX$" → "MXN", "COL$" → "COP", "CLP$" → "CLP", "C$" or "CA$" → "CAD", "A$" or "AU$" → "AUD"
         - Explicit mentions: "dollars", "dólares", "USD" → "USD"
         - Explicit mentions: "soles", "PEN" → "PEN"
         - Explicit mentions: "euros", "EUR" → "EUR"
+        - Explicit mentions: "reais", "real", "BRL" → "BRL"
+        - Explicit mentions: "złotych", "złoty" → "PLN"
+        - Explicit mentions: "yen", "円" → "JPY"; "yuan", "元", "人民币" → "CNY"
+        - Any other ISO 4217 code written in the image (e.g. "MXN", "COP", "ARS", "CAD") → that code
         - If no currency indicator found → null
+        \(userCurrencies)
 
         \(dateContext)
 
@@ -139,16 +184,17 @@ final class ImageVisionService {
     /// - Parameter image: UIImage to analyze
     /// - Returns: VisionResponse with extracted transactions
     /// - Throws: VisionError if analysis fails
-    func analyze(image: UIImage) async throws -> VisionResponse {
+    func analyze(image: UIImage, currency: VisionCurrencyContext = .unknown) async throws -> VisionResponse {
         let client: OpenAI
         do {
-            client = try await ProxyClientFactory.makeOpenAI(category: .vision)
+            client = try await ProxyClientFactory.makeOpenAI(task: .photoRead)
         } catch {
             throw VisionError.networkError(error)
         }
 
-        // Encode image to base64
-        guard let imageData = image.jpegData(compressionQuality: 0.8) else {
+        // Reducir al lado mayor que aprovecha el modelo (lo publica el gateway en /config) y codificar.
+        let maxEdge = PhotoUploadSizing.maxEdge(remote: CloudRemoteConfigStore.readSnapshot()?.photoMaxEdge)
+        guard let imageData = Self.uploadJPEG(image, maxEdge: maxEdge) else {
             throw VisionError.imageEncodingFailed
         }
 
@@ -163,7 +209,7 @@ final class ImageVisionService {
         // Build the chat request with vision
         let query = ChatQuery(
             messages: [
-                .system(.init(content: .textContent(systemPrompt))),
+                .system(.init(content: .textContent(systemPrompt(currency: currency)))),
                 .user(.init(content: .contentParts([.text(textPart), .image(imagePart)])))
             ],
             model: .gpt4_1_nano,
@@ -195,6 +241,21 @@ final class ImageVisionService {
     }
 
     // MARK: - Private Methods
+
+    /// La foto como sube: reducida a `maxEdge` px de lado mayor (nunca ampliada) y en JPEG al 80 %. El renderer con
+    /// escala 1 trabaja en píxeles y aplica la orientación de la foto.
+    static func uploadJPEG(_ image: UIImage, maxEdge: Int) -> Data? {
+        let pixels = CGSize(width: image.size.width * image.scale, height: image.size.height * image.scale)
+        guard let target = PhotoUploadSizing.targetPixelSize(for: pixels, maxEdge: maxEdge) else {
+            return image.jpegData(compressionQuality: 0.8)
+        }
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        let resized = UIGraphicsImageRenderer(size: target, format: format).image { _ in
+            image.draw(in: CGRect(origin: .zero, size: target))
+        }
+        return resized.jpegData(compressionQuality: 0.8)
+    }
 
     private func currentDayAndDateString() -> String {
         let dayFmt = DateFormatter()

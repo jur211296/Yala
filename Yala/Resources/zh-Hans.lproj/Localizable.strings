@@ -1978,9 +1978,7 @@
 "bulkEdit.availableTags" = "可添加";
 
 // MARK: - Voice Language
-"voiceLanguage.system" = "系统";
-"voiceLanguage.spanish" = "西班牙语";
-"voiceLanguage.english" = "英语";
+"voiceLanguage.appLanguage" = "应用语言";
 
 // MARK: - Voice Input
 "voice.title" = "语音备注";
@@ -6403,6 +6401,9 @@
 
 /* Voice entry failure message: something went wrong, try again */
 "voice.failure.generic.message" = "处理你的语音时出了点问题。请稍后重试。";
+"voice.failure.trialUsedUp.title" = "你已用完试用语音记录";
+"voice.failure.trialUsedUp.message" = "升级 Yala Pro，即可无限次用语音记录支出。";
+"ai.trial.seePro" = "查看 Yala Pro";
 
 /* Registro por imagen (propuesta C, 2026-10-04) */
 /* Image entry sheet title */
@@ -6451,6 +6452,8 @@
 "image.entry.failure.generic.title" = "这次没能读取";
 /* Image entry failure: reading failed, the photo is fine */
 "image.entry.failure.generic.message" = "照片没有问题：读取失败了。请稍后再试。";
+"image.entry.failure.trialUsedUp.title" = "你已用完试用照片识别";
+"image.entry.failure.trialUsedUp.message" = "升级 Yala Pro，即可无限次拍照记录收据。";
 /* Current user's name, no parentheses */
 "groups.member.youName" = "你";
 

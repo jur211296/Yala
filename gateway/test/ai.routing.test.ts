@@ -11,7 +11,8 @@
  * 3. Con cabecera manda la tabla; una cabecera desconocida se ignora; una de otro cubo se rechaza.
  * 4. Modelo fuera de la tabla → 400, y no se gasta cuota ni se llama a nadie.
  * 5. Los parámetros salen según la fila (y no los de la app).
- * 6. Las llamadas que no eran de nano salen BYTE A BYTE como antes.
+ * 6. Las llamadas que no eran de nano: desde la sesión 2 las decide la tabla (con los parámetros de hoy hasta que su
+ *    banco elija); solo lo que ninguna huella reconoce sale BYTE A BYTE como antes.
  * 7. Sin cabecera, nunca un proveedor que no sea OpenAI (las versiones instaladas lo prometen).
  */
 import { readFileSync } from "node:fs";
@@ -19,7 +20,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import app from "../src/index";
 import type { Env } from "../src/env";
 import { issueSessionToken } from "../src/attest/session";
-import { ROUTES, routeFor, type ManagedRoute, type Route } from "../src/ai/routes";
+import { PREPARED_ROUTES, ROUTES, routeFor, type ManagedRoute, type Route } from "../src/ai/routes";
 import { TASKS, type TaskId } from "../src/ai/tasks";
 import { intentBody, photoReadBody, suggestionsBody } from "../bench/lib/appRequests";
 
@@ -164,8 +165,8 @@ describe("CONTROL: las tres tareas de gpt-4.1-nano ya no salen con gpt-4.1-nano 
 
   it("ninguna fila de la tabla apunta a gpt-4.1-nano", () => {
     for (const [task, route] of Object.entries(ROUTES) as [TaskId, Route][]) {
-      if (route.mode === "managed") expect(route.model, task).not.toBe("gpt-4.1-nano");
-      else expect(route.allowedModels, task).not.toContain("gpt-4.1-nano");
+      if (route.mode === "passthrough") expect(route.allowedModels, task).not.toContain("gpt-4.1-nano");
+      else expect(route.model, task).not.toBe("gpt-4.1-nano");
     }
   });
 });
@@ -238,8 +239,11 @@ describe("cabecera X-Yala-Task", () => {
     expect(sent).toHaveLength(0);
   });
 
-  it("tarea passthrough con un modelo que no es el suyo → 400, sin gastar cuota", async () => {
-    const res = await chat({ model: "gpt-5", messages: [{ role: "user", content: "hola" }] }, "chat", { "X-Yala-Task": "chat.answer" });
+  it("una tarea que solo se deduce (legacy.passthrough, insights.hero) no se puede pedir por cabecera: se ignora", async () => {
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const res = await chat({ model: "gpt-5", messages: [{ role: "user", content: "hola" }] }, "chat", { "X-Yala-Task": "legacy.passthrough" });
+    log.mockRestore();
+    // Sin la cabecera, gpt-5 no se deduce a nada: 400 sin gastar cuota.
     expect(res.status).toBe(400);
     expect(sent).toHaveLength(0);
     expect(gateCalls).toBe(0);
@@ -286,55 +290,84 @@ describe("parámetros según la fila", () => {
   });
 });
 
-describe("las 9 llamadas que no eran de nano salen como hoy", () => {
-  const MINI_CASES: [string, Record<string, unknown>][] = [
-    ["chat", { model: "gpt-4.1-mini", messages: [{ role: "system", content: "Eres Yala IA…" }, { role: "user", content: "¿cuánto gasté?" }], temperature: 0.4, stream: false }],
-    ["voice", { model: "gpt-4.1-mini", messages: [{ role: "system", content: "parser" }, { role: "user", content: "50 en taxi" }], temperature: 0.1, stream: false }],
-    ["insights", { model: "gpt-4.1-mini", messages: [{ role: "system", content: "Eres un analista financiero personal. El usuario está mirando la pestaña Tendencias de su app, con estas gráficas:" }], response_format: { type: "json_object" }, temperature: 0.4, stream: false }],
-    ["suggestions", { model: "gpt-4.1-mini", messages: [{ role: "system", content: "You rewrite chat suggestion phrases for a personal finance app." }], response_format: { type: "json_object" }, temperature: 0.3, stream: false }],
+describe("las de gpt-4.1-mini: las decide la tabla, con los parámetros de hoy hasta su banco (sesión 2)", () => {
+  const MINI_CASES: [string, TaskId, Record<string, unknown>][] = [
+    ["chat", "chat.answer", { model: "gpt-4.1-mini", messages: [{ role: "system", content: "Eres Yala IA…" }, { role: "user", content: "¿cuánto gasté?" }], temperature: 0.4, stream: false }],
+    ["voice", "text.parse", { model: "gpt-4.1-mini", messages: [{ role: "system", content: "parser" }, { role: "user", content: "50 en taxi" }], temperature: 0.1, stream: false }],
+    ["insights", "trends.summary", { model: "gpt-4.1-mini", messages: [{ role: "system", content: "Eres un analista financiero personal. El usuario está mirando la pestaña Tendencias de su app, con estas gráficas:" }], response_format: { type: "json_object" }, temperature: 0.4, stream: false }],
+    ["suggestions", "chat.rewrite", { model: "gpt-4.1-mini", messages: [{ role: "system", content: "You rewrite chat suggestion phrases for a personal finance app." }], response_format: { type: "json_object" }, temperature: 0.3, stream: false }],
   ];
-  for (const [category, body] of MINI_CASES) {
-    it(`${category} + gpt-4.1-mini: bytes idénticos hacia OpenAI`, async () => {
-      // Espacios y orden raros a propósito: si el gateway re-serializara, cambiarían.
-      const raw = JSON.stringify(body, null, 3);
-      const res = await chat(raw, category);
+  for (const [category, task, body] of MINI_CASES) {
+    it(`${task} (sin cabecera): mensajes de la app intactos + modelo, temperatura y formato de la fila`, async () => {
+      const res = await chat(body, category);
       expect(res.status).toBe(200);
       expect(sent).toHaveLength(1);
       expect(sent[0].url).toBe("https://api.openai.com/v1/chat/completions");
-      expect(new TextDecoder().decode(sent[0].bytes)).toBe(raw);
+      const r = managed(task);
+      const out = sent[0].json ?? {};
+      expect(out.messages).toEqual(body.messages);
+      expect(out.model).toBe(r.model);
+      expect(out.temperature).toBe(r.params.temperature);
+      expect(out.max_completion_tokens).toBe(r.params.maxOutputTokens);
+      expect(out.response_format).toEqual(body.response_format);
     });
   }
 
-  it("transcripción: multipart idéntico, y otro modelo que no sea whisper-1 → 400", async () => {
+  it("mientras su banco no decida, cada fila reproduce la llamada de hoy (gpt-4.1-mini, misma temperatura y formato)", () => {
+    for (const [, task, body] of MINI_CASES) {
+      const r = managed(task);
+      if (r.model !== "gpt-4.1-mini") continue; // ya decidida por su banco: la fija su propio test
+      expect(r.params.temperature, task).toBe(body.temperature);
+      expect(r.params.responseFormat, task).toBe(body.response_format ? "json_object" : "text");
+    }
+  });
+
+  it("una petición con gpt-4.1-mini que ninguna huella reconoce sale BYTE A BYTE como siempre (legacy.passthrough)", async () => {
+    const body = { model: "gpt-4.1-mini", messages: [{ role: "system", content: "un prompt que no es de esta app" }], response_format: { type: "json_object" }, temperature: 0.2, stream: false };
+    const raw = JSON.stringify(body, null, 3);
+    const res = await chat(raw, "suggestions");
+    expect(res.status).toBe(200);
+    expect(new TextDecoder().decode(sent[0].bytes)).toBe(raw);
+  });
+
+  it("transcripción: sale con el modelo de la fila (gpt-transcribe), languages[] y sin language; otro modelo que no sea whisper-1 → 400", async () => {
     const boundary = "----yala-unit";
     const audio = new Uint8Array([0, 1, 2, 255, 13, 10, 13, 10, 7]);
     const enc = new TextEncoder();
-    const build = (model: string) => {
+    const build = (model: string, extra = "") => {
       const head = enc.encode(
         `--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="a.m4a"\r\nContent-Type: audio/m4a\r\n\r\n`,
       );
-      const tail = enc.encode(`\r\n--${boundary}\r\nContent-Disposition: form-data; name="model"\r\n\r\n${model}\r\n--${boundary}\r\nContent-Disposition: form-data; name="language"\r\n\r\nes\r\n--${boundary}--\r\n`);
+      const tail = enc.encode(`\r\n--${boundary}\r\nContent-Disposition: form-data; name="model"\r\n\r\n${model}\r\n--${boundary}\r\nContent-Disposition: form-data; name="language"\r\n\r\nes${extra}\r\n--${boundary}--\r\n`);
       const all = new Uint8Array(head.length + audio.length + tail.length);
       all.set(head, 0);
       all.set(audio, head.length);
       all.set(tail, head.length + audio.length);
       return all;
     };
-    const post = async (bytes: Uint8Array) =>
+    const post = async (bytes: Uint8Array, headers: Record<string, string> = {}) =>
       await app.fetch(
         new Request("https://gw.local/v1/audio/transcriptions", {
           method: "POST",
-          headers: { Authorization: await bearer(), "Content-Type": `multipart/form-data; boundary=${boundary}`, "X-Yala-Category": "voice" },
+          headers: { Authorization: await bearer(), "Content-Type": `multipart/form-data; boundary=${boundary}`, "X-Yala-Category": "voice", ...headers },
           body: bytes,
         }),
         makeEnv(),
         NOOP_CTX,
       );
-    const ok = build("whisper-1");
-    expect((await post(ok)).status).toBe(200);
+    // La versión instalada (sin cabecera, sin términos) también sale por la fila.
+    expect((await post(build("whisper-1"))).status).toBe(200);
     expect(sent).toHaveLength(1);
-    expect(Array.from(sent[0].bytes)).toEqual(Array.from(ok));
-    expect(sent[0].headers.get("content-type")).toBe(`multipart/form-data; boundary=${boundary}`);
+    expect(sent[0].url).toBe("https://api.openai.com/v1/audio/transcriptions");
+    const body = new TextDecoder("latin1").decode(sent[0].bytes);
+    expect(body).toContain('name="model"\r\n\r\ngpt-transcribe');
+    expect(body).toContain('name="languages[]"\r\n\r\nes');
+    expect(body).not.toContain('name="language"\r\n');
+    expect(body).toContain('name="prompt"\r\n\r\nPersonal finance voice note.');
+    expect(body).not.toContain('name="keywords[]"');
+    // El audio viaja intacto.
+    expect(Array.from(sent[0].bytes).join(",")).toContain(Array.from(audio).join(","));
+    expect(sent[0].headers.get("authorization")).toBe("Bearer sk-unit-openai");
     expect((await post(build("gpt-4o-mini-transcribe"))).status).toBe(400);
     expect(sent).toHaveLength(1);
   });
@@ -367,6 +400,15 @@ describe("sin cabecera, solo OpenAI", () => {
     for (const task of Object.keys(TASKS) as TaskId[]) {
       const r = routeFor(task, false);
       if (r.mode === "managed") expect(r.provider, task).toBe("openai");
+    }
+  });
+
+  it("lo preparado y apagado (otro proveedor que ganó el banco) no se sirve: la fila activa de esa tarea es de OpenAI", () => {
+    expect(Object.keys(PREPARED_ROUTES).length).toBeGreaterThan(0);
+    for (const [task, prepared] of Object.entries(PREPARED_ROUTES) as [TaskId, ManagedRoute][]) {
+      expect(prepared.provider, task).not.toBe("openai");
+      const active = ROUTES[task];
+      expect(active.mode !== "passthrough" && active.provider, task).toBe("openai");
     }
   });
 

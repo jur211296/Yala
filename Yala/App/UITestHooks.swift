@@ -409,9 +409,10 @@ final class UITestHooks {
     /// en pantalla para capturar y probar su diseño.
     nonisolated static var chatDraft: Bool { hasArg("-uitest-chat-draft") }
 
-    /// Valor de `-uitest-voice-result <one|incomplete|two>`: el registro por voz no graba ni llama a la red. La hoja
-    /// abre escuchando sin pedir el micro y, al tocar Listo, «entiende» lo que diga el perfil, resuelto contra los datos
-    /// sembrados (`one`: un gasto completo · `incomplete`: sin subcategoría · `two`: dos gastos completos). Sin red no
+    /// Valor de `-uitest-voice-result <one|incomplete|two|trial-used-up>`: el registro por voz no graba ni llama a la red.
+    /// La hoja abre escuchando sin pedir el micro y, al tocar Listo, «entiende» lo que diga el perfil, resuelto contra los
+    /// datos sembrados (`one`: un gasto completo · `incomplete`: sin subcategoría · `two`: dos gastos completos ·
+    /// `trial-used-up`: el gateway contesta que el cupo de prueba de voz se agotó). Sin red no
     /// hay transcripción, y hacen falta borradores en pantalla para capturar y probar «Lo entendido».
     nonisolated static var voiceResult: String? {
         #if DEBUG
@@ -422,8 +423,8 @@ final class UITestHooks {
         #endif
     }
 
-    /// Valor de `-uitest-image-result <one|incomplete|two|partial|none>`: el registro por imagen no abre Fotos ni llama
-    /// a la red. «Fotos» usa los recibos de ejemplo de la práctica guiada y la hoja «lee» lo que diga el perfil,
+    /// Valor de `-uitest-image-result <one|incomplete|two|partial|none|trial-used-up>`: el registro por imagen no abre
+    /// Fotos ni llama a la red (`trial-used-up`: el gateway contesta que el cupo de prueba de fotos se agotó). «Fotos» usa los recibos de ejemplo de la práctica guiada y la hoja «lee» lo que diga el perfil,
     /// resuelto contra los datos sembrados (`one`: un gasto · `incomplete`: sin subcategoría · `two`: dos fotos, un gasto
     /// cada una · `partial`: dos fotos y la segunda falla · `none`: ninguna trae importe). El selector de Fotos es de
     /// otro proceso y en el simulador el servicio no contesta: sin esto no hay lectura que capturar ni probar.

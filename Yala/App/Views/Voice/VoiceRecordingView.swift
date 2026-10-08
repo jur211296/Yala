@@ -44,6 +44,7 @@ struct VoiceRecordingView: View {
     @State private var saveFailed = false
     @State private var trialReported = false
     @State private var selectedDetent: PresentationDetent = .medium
+    @State private var showUpgrade = false
 
     /// Para cambiar a la entrada por imagen cuando no hay conexión.
     var onSwitchToImage: (() -> Void)?
@@ -88,6 +89,9 @@ struct VoiceRecordingView: View {
         .onDisappear(perform: tearDown)
         .sheet(item: $detailDraft, onDismiss: afterDetails) { draft in
             InboxDraftEditSheet(draft: draft)
+        }
+        .sheet(isPresented: $showUpgrade) {
+            UpgradePromptSheet(feature: .voiceInput, context: .proFeature)
         }
     }
 
@@ -348,6 +352,9 @@ struct VoiceRecordingView: View {
         switch failure {
         case .micPermission:
             primaryButton(L10n.Voice.openSettings, isEnabled: true, identifier: "voice_open_settings", action: openSystemSettings)
+        case .trialUsedUp:
+            secondaryButton(L10n.Action.close, identifier: "voice_failure_close") { dismiss() }
+            primaryButton(L10n.Voice.trialSeePro, isEnabled: true, identifier: "voice_trial_see_pro") { showUpgrade = true }
         case .serviceUnavailable:
             primaryButton(L10n.Action.close, isEnabled: true, identifier: "voice_failure_close") { dismiss() }
         case .noConnection:
@@ -376,6 +383,7 @@ struct VoiceRecordingView: View {
         case .micPermission: "mic.slash"
         case .noVoice: "waveform.slash"
         case .noAmount: "questionmark"
+        case .trialUsedUp: "sparkles"
         case .serviceUnavailable, .saveFailed, .generic: "exclamationmark"
         }
     }
@@ -386,6 +394,7 @@ struct VoiceRecordingView: View {
         case .micPermission: L10n.Voice.failureMicTitle
         case .noVoice: L10n.Voice.failureNoVoiceTitle
         case .noAmount: L10n.Voice.failureNoAmountTitle
+        case .trialUsedUp: L10n.Voice.failureTrialUsedUpTitle
         case .serviceUnavailable, .saveFailed, .generic: L10n.Voice.failureGenericTitle
         }
     }
@@ -399,6 +408,7 @@ struct VoiceRecordingView: View {
         case .serviceUnavailable: L10n.Voice.errorNoApiKey
         case .saveFailed: L10n.Voice.errorSaveFailed
         case .generic: L10n.Voice.failureGenericMessage
+        case .trialUsedUp: L10n.Voice.failureTrialUsedUpMessage
         }
     }
 
@@ -608,13 +618,17 @@ struct VoiceRecordingView: View {
     private func understand(_ audioData: Data) async throws -> (text: String, parsed: [ParsedTransaction]) {
         #if DEBUG
         if let profile = UITestHooks.voiceResult {
+            // `trial-used-up`: el gateway contesta que el cupo de prueba de voz se agotó (403 yala_trial_exhausted).
+            if profile == "trial-used-up" { throw TranscriptionError.networkError(ProxyErrorMapper.trialExhaustedResponse()) }
             return uiTestResult(profile)
         }
         #endif
         processingStep = 0
+        let (subcategoriesForKeywords, _) = fetchSubcategoryNames()
         let result = try await voiceTranscriptionService.transcribe(
             audioData: audioData,
-            language: appPreferences.voiceLanguage
+            language: appPreferences.voiceLanguage,
+            keywords: VoiceTranscriptionKeywords.terms(merchants: fetchFrequentMerchantNames(), subcategories: subcategoriesForKeywords)
         )
         guard !Task.isCancelled else { return (result.text, []) }
 
@@ -833,6 +847,20 @@ struct VoiceRecordingView: View {
         let expenseNames = subcategories.filter { !$0.safeCategory.isIncome }.map(\.name)
         let incomeNames = subcategories.filter { $0.safeCategory.isIncome }.map(\.name)
         return (expenseNames, incomeNames)
+    }
+
+    /// Los comercios que más aprueba el usuario, con el nombre como lo escribió (no el canónico en minúsculas).
+    private func fetchFrequentMerchantNames() -> [String] {
+        var descriptor = FetchDescriptor<MerchantMemory>(sortBy: [SortDescriptor(\.countApproved, order: .reverse)])
+        descriptor.fetchLimit = 20
+        do {
+            return try modelContext.fetch(descriptor).map { $0.aliases.first ?? $0.merchantCanonical }
+        } catch {
+            #if DEBUG
+            print("VoiceRecordingView: Error fetching merchant names: \(error)")
+            #endif
+            return []
+        }
     }
 
     // MARK: - Emparejar con lo que ya existe

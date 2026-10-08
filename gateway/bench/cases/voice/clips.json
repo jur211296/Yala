@@ -1,0 +1,1745 @@
+{
+ "note": "Clips limpios generados por voice/corpus.py tts. `tts` = motor que generó el audio.",
+ "clips": [
+  {
+   "clip": "de-DE-01.gemini",
+   "note": "de-DE-01",
+   "locale": "de-DE",
+   "tts": "gemini",
+   "voice": "de-de-advisor-1",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/de-DE-01.gemini.m4a",
+   "seconds": 3.68
+  },
+  {
+   "clip": "de-DE-01.say",
+   "note": "de-DE-01",
+   "locale": "de-DE",
+   "tts": "say",
+   "voice": "Anna",
+   "model": "macOS say",
+   "file": "audio/de-DE-01.say.m4a",
+   "seconds": 4.38
+  },
+  {
+   "clip": "de-DE-02.gemini",
+   "note": "de-DE-02",
+   "locale": "de-DE",
+   "tts": "gemini",
+   "voice": "de-de-advisor-10",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/de-DE-02.gemini.m4a",
+   "seconds": 4.0
+  },
+  {
+   "clip": "de-DE-02.say",
+   "note": "de-DE-02",
+   "locale": "de-DE",
+   "tts": "say",
+   "voice": "Eddy (Alemán (Alemania))",
+   "model": "macOS say",
+   "file": "audio/de-DE-02.say.m4a",
+   "seconds": 4.1
+  },
+  {
+   "clip": "de-DE-03.gemini",
+   "note": "de-DE-03",
+   "locale": "de-DE",
+   "tts": "gemini",
+   "voice": "de-de-advisor-1",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/de-DE-03.gemini.m4a",
+   "seconds": 4.04
+  },
+  {
+   "clip": "de-DE-03.say",
+   "note": "de-DE-03",
+   "locale": "de-DE",
+   "tts": "say",
+   "voice": "Anna",
+   "model": "macOS say",
+   "file": "audio/de-DE-03.say.m4a",
+   "seconds": 4.45
+  },
+  {
+   "clip": "de-DE-04.gemini",
+   "note": "de-DE-04",
+   "locale": "de-DE",
+   "tts": "gemini",
+   "voice": "de-de-advisor-10",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/de-DE-04.gemini.m4a",
+   "seconds": 2.84
+  },
+  {
+   "clip": "de-DE-04.say",
+   "note": "de-DE-04",
+   "locale": "de-DE",
+   "tts": "say",
+   "voice": "Eddy (Alemán (Alemania))",
+   "model": "macOS say",
+   "file": "audio/de-DE-04.say.m4a",
+   "seconds": 3.37
+  },
+  {
+   "clip": "de-DE-05.gemini",
+   "note": "de-DE-05",
+   "locale": "de-DE",
+   "tts": "gemini",
+   "voice": "de-de-advisor-1",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/de-DE-05.gemini.m4a",
+   "seconds": 5.12
+  },
+  {
+   "clip": "de-DE-05.say",
+   "note": "de-DE-05",
+   "locale": "de-DE",
+   "tts": "say",
+   "voice": "Anna",
+   "model": "macOS say",
+   "file": "audio/de-DE-05.say.m4a",
+   "seconds": 5.66
+  },
+  {
+   "clip": "de-DE-06.gemini",
+   "note": "de-DE-06",
+   "locale": "de-DE",
+   "tts": "gemini",
+   "voice": "de-de-advisor-10",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/de-DE-06.gemini.m4a",
+   "seconds": 3.32
+  },
+  {
+   "clip": "de-DE-06.say",
+   "note": "de-DE-06",
+   "locale": "de-DE",
+   "tts": "say",
+   "voice": "Eddy (Alemán (Alemania))",
+   "model": "macOS say",
+   "file": "audio/de-DE-06.say.m4a",
+   "seconds": 3.8
+  },
+  {
+   "clip": "en-GB-01.gemini",
+   "note": "en-GB-01",
+   "locale": "en-GB",
+   "tts": "gemini",
+   "voice": "en-gb-advisor-1",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/en-GB-01.gemini.m4a",
+   "seconds": 4.2
+  },
+  {
+   "clip": "en-GB-01.say",
+   "note": "en-GB-01",
+   "locale": "en-GB",
+   "tts": "say",
+   "voice": "Daniel",
+   "model": "macOS say",
+   "file": "audio/en-GB-01.say.m4a",
+   "seconds": 3.4
+  },
+  {
+   "clip": "en-GB-02.gemini",
+   "note": "en-GB-02",
+   "locale": "en-GB",
+   "tts": "gemini",
+   "voice": "en-gb-advisor-10",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/en-GB-02.gemini.m4a",
+   "seconds": 4.4
+  },
+  {
+   "clip": "en-GB-02.say",
+   "note": "en-GB-02",
+   "locale": "en-GB",
+   "tts": "say",
+   "voice": "Flo (Inglés (RU))",
+   "model": "macOS say",
+   "file": "audio/en-GB-02.say.m4a",
+   "seconds": 3.38
+  },
+  {
+   "clip": "en-GB-03.gemini",
+   "note": "en-GB-03",
+   "locale": "en-GB",
+   "tts": "gemini",
+   "voice": "en-gb-advisor-1",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/en-GB-03.gemini.m4a",
+   "seconds": 4.92
+  },
+  {
+   "clip": "en-GB-03.say",
+   "note": "en-GB-03",
+   "locale": "en-GB",
+   "tts": "say",
+   "voice": "Daniel",
+   "model": "macOS say",
+   "file": "audio/en-GB-03.say.m4a",
+   "seconds": 4.42
+  },
+  {
+   "clip": "en-GB-04.gemini",
+   "note": "en-GB-04",
+   "locale": "en-GB",
+   "tts": "gemini",
+   "voice": "en-gb-advisor-10",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/en-GB-04.gemini.m4a",
+   "seconds": 4.32
+  },
+  {
+   "clip": "en-GB-04.say",
+   "note": "en-GB-04",
+   "locale": "en-GB",
+   "tts": "say",
+   "voice": "Flo (Inglés (RU))",
+   "model": "macOS say",
+   "file": "audio/en-GB-04.say.m4a",
+   "seconds": 4.28
+  },
+  {
+   "clip": "en-GB-05.gemini",
+   "note": "en-GB-05",
+   "locale": "en-GB",
+   "tts": "gemini",
+   "voice": "en-gb-advisor-1",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/en-GB-05.gemini.m4a",
+   "seconds": 5.76
+  },
+  {
+   "clip": "en-GB-05.say",
+   "note": "en-GB-05",
+   "locale": "en-GB",
+   "tts": "say",
+   "voice": "Daniel",
+   "model": "macOS say",
+   "file": "audio/en-GB-05.say.m4a",
+   "seconds": 3.96
+  },
+  {
+   "clip": "en-GB-06.gemini",
+   "note": "en-GB-06",
+   "locale": "en-GB",
+   "tts": "gemini",
+   "voice": "en-gb-advisor-10",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/en-GB-06.gemini.m4a",
+   "seconds": 4.24
+  },
+  {
+   "clip": "en-GB-06.say",
+   "note": "en-GB-06",
+   "locale": "en-GB",
+   "tts": "say",
+   "voice": "Flo (Inglés (RU))",
+   "model": "macOS say",
+   "file": "audio/en-GB-06.say.m4a",
+   "seconds": 3.75
+  },
+  {
+   "clip": "en-US-01.gemini",
+   "note": "en-US-01",
+   "locale": "en-US",
+   "tts": "gemini",
+   "voice": "achernar",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/en-US-01.gemini.m4a",
+   "seconds": 3.96
+  },
+  {
+   "clip": "en-US-01.say",
+   "note": "en-US-01",
+   "locale": "en-US",
+   "tts": "say",
+   "voice": "Samantha",
+   "model": "macOS say",
+   "file": "audio/en-US-01.say.m4a",
+   "seconds": 3.22
+  },
+  {
+   "clip": "en-US-02.gemini",
+   "note": "en-US-02",
+   "locale": "en-US",
+   "tts": "gemini",
+   "voice": "achird",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/en-US-02.gemini.m4a",
+   "seconds": 4.68
+  },
+  {
+   "clip": "en-US-02.say",
+   "note": "en-US-02",
+   "locale": "en-US",
+   "tts": "say",
+   "voice": "Reed (Inglés (EE. UU.))",
+   "model": "macOS say",
+   "file": "audio/en-US-02.say.m4a",
+   "seconds": 3.73
+  },
+  {
+   "clip": "en-US-03.gemini",
+   "note": "en-US-03",
+   "locale": "en-US",
+   "tts": "gemini",
+   "voice": "achernar",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/en-US-03.gemini.m4a",
+   "seconds": 4.24
+  },
+  {
+   "clip": "en-US-03.say",
+   "note": "en-US-03",
+   "locale": "en-US",
+   "tts": "say",
+   "voice": "Samantha",
+   "model": "macOS say",
+   "file": "audio/en-US-03.say.m4a",
+   "seconds": 2.79
+  },
+  {
+   "clip": "en-US-04.gemini",
+   "note": "en-US-04",
+   "locale": "en-US",
+   "tts": "gemini",
+   "voice": "achird",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/en-US-04.gemini.m4a",
+   "seconds": 3.12
+  },
+  {
+   "clip": "en-US-04.say",
+   "note": "en-US-04",
+   "locale": "en-US",
+   "tts": "say",
+   "voice": "Reed (Inglés (EE. UU.))",
+   "model": "macOS say",
+   "file": "audio/en-US-04.say.m4a",
+   "seconds": 3.17
+  },
+  {
+   "clip": "en-US-05.gemini",
+   "note": "en-US-05",
+   "locale": "en-US",
+   "tts": "gemini",
+   "voice": "achernar",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/en-US-05.gemini.m4a",
+   "seconds": 4.2
+  },
+  {
+   "clip": "en-US-05.say",
+   "note": "en-US-05",
+   "locale": "en-US",
+   "tts": "say",
+   "voice": "Samantha",
+   "model": "macOS say",
+   "file": "audio/en-US-05.say.m4a",
+   "seconds": 4.01
+  },
+  {
+   "clip": "en-US-06.gemini",
+   "note": "en-US-06",
+   "locale": "en-US",
+   "tts": "gemini",
+   "voice": "achird",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/en-US-06.gemini.m4a",
+   "seconds": 3.52
+  },
+  {
+   "clip": "en-US-06.say",
+   "note": "en-US-06",
+   "locale": "en-US",
+   "tts": "say",
+   "voice": "Reed (Inglés (EE. UU.))",
+   "model": "macOS say",
+   "file": "audio/en-US-06.say.m4a",
+   "seconds": 3.81
+  },
+  {
+   "clip": "es-AR-01.gemini",
+   "note": "es-AR-01",
+   "locale": "es-AR",
+   "tts": "gemini",
+   "voice": "es-419-assistant-5",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/es-AR-01.gemini.m4a",
+   "seconds": 3.28
+  },
+  {
+   "clip": "es-AR-01.say",
+   "note": "es-AR-01",
+   "locale": "es-AR",
+   "tts": "say",
+   "voice": "Reed (Español (México))",
+   "model": "macOS say",
+   "file": "audio/es-AR-01.say.m4a",
+   "seconds": 3.04
+  },
+  {
+   "clip": "es-AR-02.gemini",
+   "note": "es-AR-02",
+   "locale": "es-AR",
+   "tts": "gemini",
+   "voice": "es-419-advisor-1",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/es-AR-02.gemini.m4a",
+   "seconds": 4.88
+  },
+  {
+   "clip": "es-AR-02.say",
+   "note": "es-AR-02",
+   "locale": "es-AR",
+   "tts": "say",
+   "voice": "Sandy (Español (México))",
+   "model": "macOS say",
+   "file": "audio/es-AR-02.say.m4a",
+   "seconds": 5.27
+  },
+  {
+   "clip": "es-AR-03.gemini",
+   "note": "es-AR-03",
+   "locale": "es-AR",
+   "tts": "gemini",
+   "voice": "es-419-assistant-5",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/es-AR-03.gemini.m4a",
+   "seconds": 4.76
+  },
+  {
+   "clip": "es-AR-03.say",
+   "note": "es-AR-03",
+   "locale": "es-AR",
+   "tts": "say",
+   "voice": "Reed (Español (México))",
+   "model": "macOS say",
+   "file": "audio/es-AR-03.say.m4a",
+   "seconds": 4.71
+  },
+  {
+   "clip": "es-AR-04.gemini",
+   "note": "es-AR-04",
+   "locale": "es-AR",
+   "tts": "gemini",
+   "voice": "es-419-advisor-1",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/es-AR-04.gemini.m4a",
+   "seconds": 3.64
+  },
+  {
+   "clip": "es-AR-04.say",
+   "note": "es-AR-04",
+   "locale": "es-AR",
+   "tts": "say",
+   "voice": "Sandy (Español (México))",
+   "model": "macOS say",
+   "file": "audio/es-AR-04.say.m4a",
+   "seconds": 3.78
+  },
+  {
+   "clip": "es-AR-05.gemini",
+   "note": "es-AR-05",
+   "locale": "es-AR",
+   "tts": "gemini",
+   "voice": "es-419-assistant-5",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/es-AR-05.gemini.m4a",
+   "seconds": 3.88
+  },
+  {
+   "clip": "es-AR-05.say",
+   "note": "es-AR-05",
+   "locale": "es-AR",
+   "tts": "say",
+   "voice": "Reed (Español (México))",
+   "model": "macOS say",
+   "file": "audio/es-AR-05.say.m4a",
+   "seconds": 4.03
+  },
+  {
+   "clip": "es-AR-06.gemini",
+   "note": "es-AR-06",
+   "locale": "es-AR",
+   "tts": "gemini",
+   "voice": "es-419-advisor-1",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/es-AR-06.gemini.m4a",
+   "seconds": 2.72
+  },
+  {
+   "clip": "es-AR-06.say",
+   "note": "es-AR-06",
+   "locale": "es-AR",
+   "tts": "say",
+   "voice": "Sandy (Español (México))",
+   "model": "macOS say",
+   "file": "audio/es-AR-06.say.m4a",
+   "seconds": 2.96
+  },
+  {
+   "clip": "es-ES-01.gemini",
+   "note": "es-ES-01",
+   "locale": "es-ES",
+   "tts": "gemini",
+   "voice": "es-es-commercial-3",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/es-ES-01.gemini.m4a",
+   "seconds": 3.04
+  },
+  {
+   "clip": "es-ES-01.say",
+   "note": "es-ES-01",
+   "locale": "es-ES",
+   "tts": "say",
+   "voice": "Mónica",
+   "model": "macOS say",
+   "file": "audio/es-ES-01.say.m4a",
+   "seconds": 2.78
+  },
+  {
+   "clip": "es-ES-02.gemini",
+   "note": "es-ES-02",
+   "locale": "es-ES",
+   "tts": "gemini",
+   "voice": "es-es-advisor-2",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/es-ES-02.gemini.m4a",
+   "seconds": 4.04
+  },
+  {
+   "clip": "es-ES-02.say",
+   "note": "es-ES-02",
+   "locale": "es-ES",
+   "tts": "say",
+   "voice": "Eddy (Español (España))",
+   "model": "macOS say",
+   "file": "audio/es-ES-02.say.m4a",
+   "seconds": 3.24
+  },
+  {
+   "clip": "es-ES-03.gemini",
+   "note": "es-ES-03",
+   "locale": "es-ES",
+   "tts": "gemini",
+   "voice": "es-es-commercial-3",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/es-ES-03.gemini.m4a",
+   "seconds": 3.92
+  },
+  {
+   "clip": "es-ES-03.say",
+   "note": "es-ES-03",
+   "locale": "es-ES",
+   "tts": "say",
+   "voice": "Mónica",
+   "model": "macOS say",
+   "file": "audio/es-ES-03.say.m4a",
+   "seconds": 3.84
+  },
+  {
+   "clip": "es-ES-04.gemini",
+   "note": "es-ES-04",
+   "locale": "es-ES",
+   "tts": "gemini",
+   "voice": "es-es-advisor-2",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/es-ES-04.gemini.m4a",
+   "seconds": 2.76
+  },
+  {
+   "clip": "es-ES-04.say",
+   "note": "es-ES-04",
+   "locale": "es-ES",
+   "tts": "say",
+   "voice": "Eddy (Español (España))",
+   "model": "macOS say",
+   "file": "audio/es-ES-04.say.m4a",
+   "seconds": 2.89
+  },
+  {
+   "clip": "es-ES-05.gemini",
+   "note": "es-ES-05",
+   "locale": "es-ES",
+   "tts": "gemini",
+   "voice": "es-es-commercial-3",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/es-ES-05.gemini.m4a",
+   "seconds": 4.44
+  },
+  {
+   "clip": "es-ES-05.say",
+   "note": "es-ES-05",
+   "locale": "es-ES",
+   "tts": "say",
+   "voice": "Mónica",
+   "model": "macOS say",
+   "file": "audio/es-ES-05.say.m4a",
+   "seconds": 3.29
+  },
+  {
+   "clip": "es-ES-06.gemini",
+   "note": "es-ES-06",
+   "locale": "es-ES",
+   "tts": "gemini",
+   "voice": "es-es-advisor-2",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/es-ES-06.gemini.m4a",
+   "seconds": 3.6
+  },
+  {
+   "clip": "es-ES-06.say",
+   "note": "es-ES-06",
+   "locale": "es-ES",
+   "tts": "say",
+   "voice": "Eddy (Español (España))",
+   "model": "macOS say",
+   "file": "audio/es-ES-06.say.m4a",
+   "seconds": 3.27
+  },
+  {
+   "clip": "es-PE-01.gemini",
+   "note": "es-PE-01",
+   "locale": "es-PE",
+   "tts": "gemini",
+   "voice": "es-419-assistant-1",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/es-PE-01.gemini.m4a",
+   "seconds": 3.84
+  },
+  {
+   "clip": "es-PE-01.openai",
+   "note": "es-PE-01",
+   "locale": "es-PE",
+   "tts": "openai",
+   "voice": "coral",
+   "model": "gpt-4o-mini-tts",
+   "file": "audio/es-PE-01.openai.m4a",
+   "seconds": 5.15
+  },
+  {
+   "clip": "es-PE-01.say",
+   "note": "es-PE-01",
+   "locale": "es-PE",
+   "tts": "say",
+   "voice": "Paulina",
+   "model": "macOS say",
+   "file": "audio/es-PE-01.say.m4a",
+   "seconds": 3.68
+  },
+  {
+   "clip": "es-PE-02.gemini",
+   "note": "es-PE-02",
+   "locale": "es-PE",
+   "tts": "gemini",
+   "voice": "es-419-advisor-4",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/es-PE-02.gemini.m4a",
+   "seconds": 4.36
+  },
+  {
+   "clip": "es-PE-02.openai",
+   "note": "es-PE-02",
+   "locale": "es-PE",
+   "tts": "openai",
+   "voice": "ash",
+   "model": "gpt-4o-mini-tts",
+   "file": "audio/es-PE-02.openai.m4a",
+   "seconds": 5.35
+  },
+  {
+   "clip": "es-PE-02.say",
+   "note": "es-PE-02",
+   "locale": "es-PE",
+   "tts": "say",
+   "voice": "Eddy (Español (México))",
+   "model": "macOS say",
+   "file": "audio/es-PE-02.say.m4a",
+   "seconds": 3.88
+  },
+  {
+   "clip": "es-PE-03.gemini",
+   "note": "es-PE-03",
+   "locale": "es-PE",
+   "tts": "gemini",
+   "voice": "es-419-assistant-1",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/es-PE-03.gemini.m4a",
+   "seconds": 4.08
+  },
+  {
+   "clip": "es-PE-03.openai",
+   "note": "es-PE-03",
+   "locale": "es-PE",
+   "tts": "openai",
+   "voice": "coral",
+   "model": "gpt-4o-mini-tts",
+   "file": "audio/es-PE-03.openai.m4a",
+   "seconds": 5.8
+  },
+  {
+   "clip": "es-PE-03.say",
+   "note": "es-PE-03",
+   "locale": "es-PE",
+   "tts": "say",
+   "voice": "Paulina",
+   "model": "macOS say",
+   "file": "audio/es-PE-03.say.m4a",
+   "seconds": 4.08
+  },
+  {
+   "clip": "es-PE-04.gemini",
+   "note": "es-PE-04",
+   "locale": "es-PE",
+   "tts": "gemini",
+   "voice": "es-419-advisor-4",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/es-PE-04.gemini.m4a",
+   "seconds": 3.04
+  },
+  {
+   "clip": "es-PE-04.openai",
+   "note": "es-PE-04",
+   "locale": "es-PE",
+   "tts": "openai",
+   "voice": "ash",
+   "model": "gpt-4o-mini-tts",
+   "file": "audio/es-PE-04.openai.m4a",
+   "seconds": 4.4
+  },
+  {
+   "clip": "es-PE-04.say",
+   "note": "es-PE-04",
+   "locale": "es-PE",
+   "tts": "say",
+   "voice": "Eddy (Español (México))",
+   "model": "macOS say",
+   "file": "audio/es-PE-04.say.m4a",
+   "seconds": 3.32
+  },
+  {
+   "clip": "es-PE-05.gemini",
+   "note": "es-PE-05",
+   "locale": "es-PE",
+   "tts": "gemini",
+   "voice": "es-419-assistant-1",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/es-PE-05.gemini.m4a",
+   "seconds": 5.0
+  },
+  {
+   "clip": "es-PE-05.openai",
+   "note": "es-PE-05",
+   "locale": "es-PE",
+   "tts": "openai",
+   "voice": "coral",
+   "model": "gpt-4o-mini-tts",
+   "file": "audio/es-PE-05.openai.m4a",
+   "seconds": 6.25
+  },
+  {
+   "clip": "es-PE-05.say",
+   "note": "es-PE-05",
+   "locale": "es-PE",
+   "tts": "say",
+   "voice": "Paulina",
+   "model": "macOS say",
+   "file": "audio/es-PE-05.say.m4a",
+   "seconds": 5.11
+  },
+  {
+   "clip": "es-PE-06.gemini",
+   "note": "es-PE-06",
+   "locale": "es-PE",
+   "tts": "gemini",
+   "voice": "es-419-advisor-4",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/es-PE-06.gemini.m4a",
+   "seconds": 3.88
+  },
+  {
+   "clip": "es-PE-06.openai",
+   "note": "es-PE-06",
+   "locale": "es-PE",
+   "tts": "openai",
+   "voice": "ash",
+   "model": "gpt-4o-mini-tts",
+   "file": "audio/es-PE-06.openai.m4a",
+   "seconds": 5.2
+  },
+  {
+   "clip": "es-PE-06.say",
+   "note": "es-PE-06",
+   "locale": "es-PE",
+   "tts": "say",
+   "voice": "Eddy (Español (México))",
+   "model": "macOS say",
+   "file": "audio/es-PE-06.say.m4a",
+   "seconds": 4.06
+  },
+  {
+   "clip": "fr-FR-01.gemini",
+   "note": "fr-FR-01",
+   "locale": "fr-FR",
+   "tts": "gemini",
+   "voice": "fr-fr-advisor-1",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/fr-FR-01.gemini.m4a",
+   "seconds": 3.4
+  },
+  {
+   "clip": "fr-FR-01.say",
+   "note": "fr-FR-01",
+   "locale": "fr-FR",
+   "tts": "say",
+   "voice": "Thomas",
+   "model": "macOS say",
+   "file": "audio/fr-FR-01.say.m4a",
+   "seconds": 4.0
+  },
+  {
+   "clip": "fr-FR-02.gemini",
+   "note": "fr-FR-02",
+   "locale": "fr-FR",
+   "tts": "gemini",
+   "voice": "fr-fr-advisor-2",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/fr-FR-02.gemini.m4a",
+   "seconds": 3.68
+  },
+  {
+   "clip": "fr-FR-02.say",
+   "note": "fr-FR-02",
+   "locale": "fr-FR",
+   "tts": "say",
+   "voice": "Jacques",
+   "model": "macOS say",
+   "file": "audio/fr-FR-02.say.m4a",
+   "seconds": 3.92
+  },
+  {
+   "clip": "fr-FR-03.gemini",
+   "note": "fr-FR-03",
+   "locale": "fr-FR",
+   "tts": "gemini",
+   "voice": "fr-fr-advisor-1",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/fr-FR-03.gemini.m4a",
+   "seconds": 3.2
+  },
+  {
+   "clip": "fr-FR-03.say",
+   "note": "fr-FR-03",
+   "locale": "fr-FR",
+   "tts": "say",
+   "voice": "Thomas",
+   "model": "macOS say",
+   "file": "audio/fr-FR-03.say.m4a",
+   "seconds": 3.27
+  },
+  {
+   "clip": "fr-FR-04.gemini",
+   "note": "fr-FR-04",
+   "locale": "fr-FR",
+   "tts": "gemini",
+   "voice": "fr-fr-advisor-2",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/fr-FR-04.gemini.m4a",
+   "seconds": 2.24
+  },
+  {
+   "clip": "fr-FR-04.say",
+   "note": "fr-FR-04",
+   "locale": "fr-FR",
+   "tts": "say",
+   "voice": "Jacques",
+   "model": "macOS say",
+   "file": "audio/fr-FR-04.say.m4a",
+   "seconds": 2.89
+  },
+  {
+   "clip": "fr-FR-05.gemini",
+   "note": "fr-FR-05",
+   "locale": "fr-FR",
+   "tts": "gemini",
+   "voice": "fr-fr-advisor-1",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/fr-FR-05.gemini.m4a",
+   "seconds": 4.24
+  },
+  {
+   "clip": "fr-FR-05.say",
+   "note": "fr-FR-05",
+   "locale": "fr-FR",
+   "tts": "say",
+   "voice": "Thomas",
+   "model": "macOS say",
+   "file": "audio/fr-FR-05.say.m4a",
+   "seconds": 4.6
+  },
+  {
+   "clip": "fr-FR-06.gemini",
+   "note": "fr-FR-06",
+   "locale": "fr-FR",
+   "tts": "gemini",
+   "voice": "fr-fr-advisor-2",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/fr-FR-06.gemini.m4a",
+   "seconds": 4.68
+  },
+  {
+   "clip": "fr-FR-06.say",
+   "note": "fr-FR-06",
+   "locale": "fr-FR",
+   "tts": "say",
+   "voice": "Jacques",
+   "model": "macOS say",
+   "file": "audio/fr-FR-06.say.m4a",
+   "seconds": 4.51
+  },
+  {
+   "clip": "it-IT-01.gemini",
+   "note": "it-IT-01",
+   "locale": "it-IT",
+   "tts": "gemini",
+   "voice": "it-it-advisor-1",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/it-IT-01.gemini.m4a",
+   "seconds": 3.2
+  },
+  {
+   "clip": "it-IT-01.say",
+   "note": "it-IT-01",
+   "locale": "it-IT",
+   "tts": "say",
+   "voice": "Alice",
+   "model": "macOS say",
+   "file": "audio/it-IT-01.say.m4a",
+   "seconds": 2.83
+  },
+  {
+   "clip": "it-IT-02.gemini",
+   "note": "it-IT-02",
+   "locale": "it-IT",
+   "tts": "gemini",
+   "voice": "it-it-advisor-2",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/it-IT-02.gemini.m4a",
+   "seconds": 3.84
+  },
+  {
+   "clip": "it-IT-02.say",
+   "note": "it-IT-02",
+   "locale": "it-IT",
+   "tts": "say",
+   "voice": "Eddy (Italiano (Italia))",
+   "model": "macOS say",
+   "file": "audio/it-IT-02.say.m4a",
+   "seconds": 3.47
+  },
+  {
+   "clip": "it-IT-03.gemini",
+   "note": "it-IT-03",
+   "locale": "it-IT",
+   "tts": "gemini",
+   "voice": "it-it-advisor-1",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/it-IT-03.gemini.m4a",
+   "seconds": 3.52
+  },
+  {
+   "clip": "it-IT-03.say",
+   "note": "it-IT-03",
+   "locale": "it-IT",
+   "tts": "say",
+   "voice": "Alice",
+   "model": "macOS say",
+   "file": "audio/it-IT-03.say.m4a",
+   "seconds": 3.13
+  },
+  {
+   "clip": "it-IT-04.gemini",
+   "note": "it-IT-04",
+   "locale": "it-IT",
+   "tts": "gemini",
+   "voice": "it-it-advisor-2",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/it-IT-04.gemini.m4a",
+   "seconds": 2.88
+  },
+  {
+   "clip": "it-IT-04.say",
+   "note": "it-IT-04",
+   "locale": "it-IT",
+   "tts": "say",
+   "voice": "Eddy (Italiano (Italia))",
+   "model": "macOS say",
+   "file": "audio/it-IT-04.say.m4a",
+   "seconds": 3.07
+  },
+  {
+   "clip": "it-IT-05.gemini",
+   "note": "it-IT-05",
+   "locale": "it-IT",
+   "tts": "gemini",
+   "voice": "it-it-advisor-1",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/it-IT-05.gemini.m4a",
+   "seconds": 5.2
+  },
+  {
+   "clip": "it-IT-05.say",
+   "note": "it-IT-05",
+   "locale": "it-IT",
+   "tts": "say",
+   "voice": "Alice",
+   "model": "macOS say",
+   "file": "audio/it-IT-05.say.m4a",
+   "seconds": 3.49
+  },
+  {
+   "clip": "it-IT-06.gemini",
+   "note": "it-IT-06",
+   "locale": "it-IT",
+   "tts": "gemini",
+   "voice": "it-it-advisor-2",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/it-IT-06.gemini.m4a",
+   "seconds": 3.4
+  },
+  {
+   "clip": "it-IT-06.say",
+   "note": "it-IT-06",
+   "locale": "it-IT",
+   "tts": "say",
+   "voice": "Eddy (Italiano (Italia))",
+   "model": "macOS say",
+   "file": "audio/it-IT-06.say.m4a",
+   "seconds": 3.17
+  },
+  {
+   "clip": "ja-JP-01.gemini",
+   "note": "ja-JP-01",
+   "locale": "ja-JP",
+   "tts": "gemini",
+   "voice": "ja-jp-advisor-11",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/ja-JP-01.gemini.m4a",
+   "seconds": 2.84
+  },
+  {
+   "clip": "ja-JP-01.say",
+   "note": "ja-JP-01",
+   "locale": "ja-JP",
+   "tts": "say",
+   "voice": "Kyoko",
+   "model": "macOS say",
+   "file": "audio/ja-JP-01.say.m4a",
+   "seconds": 3.55
+  },
+  {
+   "clip": "ja-JP-02.gemini",
+   "note": "ja-JP-02",
+   "locale": "ja-JP",
+   "tts": "gemini",
+   "voice": "ja-jp-advisor-1",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/ja-JP-02.gemini.m4a",
+   "seconds": 4.04
+  },
+  {
+   "clip": "ja-JP-02.say",
+   "note": "ja-JP-02",
+   "locale": "ja-JP",
+   "tts": "say",
+   "voice": "Eddy (Japonés (Japón))",
+   "model": "macOS say",
+   "file": "audio/ja-JP-02.say.m4a",
+   "seconds": 5.16
+  },
+  {
+   "clip": "ja-JP-03.gemini",
+   "note": "ja-JP-03",
+   "locale": "ja-JP",
+   "tts": "gemini",
+   "voice": "ja-jp-advisor-11",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/ja-JP-03.gemini.m4a",
+   "seconds": 3.84
+  },
+  {
+   "clip": "ja-JP-03.say",
+   "note": "ja-JP-03",
+   "locale": "ja-JP",
+   "tts": "say",
+   "voice": "Kyoko",
+   "model": "macOS say",
+   "file": "audio/ja-JP-03.say.m4a",
+   "seconds": 4.56
+  },
+  {
+   "clip": "ja-JP-04.gemini",
+   "note": "ja-JP-04",
+   "locale": "ja-JP",
+   "tts": "gemini",
+   "voice": "ja-jp-advisor-1",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/ja-JP-04.gemini.m4a",
+   "seconds": 2.36
+  },
+  {
+   "clip": "ja-JP-04.say",
+   "note": "ja-JP-04",
+   "locale": "ja-JP",
+   "tts": "say",
+   "voice": "Eddy (Japonés (Japón))",
+   "model": "macOS say",
+   "file": "audio/ja-JP-04.say.m4a",
+   "seconds": 3.32
+  },
+  {
+   "clip": "ja-JP-05.gemini",
+   "note": "ja-JP-05",
+   "locale": "ja-JP",
+   "tts": "gemini",
+   "voice": "ja-jp-advisor-11",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/ja-JP-05.gemini.m4a",
+   "seconds": 3.84
+  },
+  {
+   "clip": "ja-JP-05.say",
+   "note": "ja-JP-05",
+   "locale": "ja-JP",
+   "tts": "say",
+   "voice": "Kyoko",
+   "model": "macOS say",
+   "file": "audio/ja-JP-05.say.m4a",
+   "seconds": 4.26
+  },
+  {
+   "clip": "ja-JP-06.gemini",
+   "note": "ja-JP-06",
+   "locale": "ja-JP",
+   "tts": "gemini",
+   "voice": "ja-jp-advisor-1",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/ja-JP-06.gemini.m4a",
+   "seconds": 3.2
+  },
+  {
+   "clip": "ja-JP-06.say",
+   "note": "ja-JP-06",
+   "locale": "ja-JP",
+   "tts": "say",
+   "voice": "Eddy (Japonés (Japón))",
+   "model": "macOS say",
+   "file": "audio/ja-JP-06.say.m4a",
+   "seconds": 3.92
+  },
+  {
+   "clip": "nl-NL-01.gemini",
+   "note": "nl-NL-01",
+   "locale": "nl-NL",
+   "tts": "gemini",
+   "voice": "nl-nl-advisor-1",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/nl-NL-01.gemini.m4a",
+   "seconds": 4.92
+  },
+  {
+   "clip": "nl-NL-01.say",
+   "note": "nl-NL-01",
+   "locale": "nl-NL",
+   "tts": "say",
+   "voice": "Xander",
+   "model": "macOS say",
+   "file": "audio/nl-NL-01.say.m4a",
+   "seconds": 3.79
+  },
+  {
+   "clip": "nl-NL-02.gemini",
+   "note": "nl-NL-02",
+   "locale": "nl-NL",
+   "tts": "gemini",
+   "voice": "nl-nl-advisor-2",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/nl-NL-02.gemini.m4a",
+   "seconds": 4.56
+  },
+  {
+   "clip": "nl-NL-02.say",
+   "note": "nl-NL-02",
+   "locale": "nl-NL",
+   "tts": "say",
+   "voice": "Ellen",
+   "model": "macOS say",
+   "file": "audio/nl-NL-02.say.m4a",
+   "seconds": 3.7
+  },
+  {
+   "clip": "nl-NL-03.gemini",
+   "note": "nl-NL-03",
+   "locale": "nl-NL",
+   "tts": "gemini",
+   "voice": "nl-nl-advisor-1",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/nl-NL-03.gemini.m4a",
+   "seconds": 4.52
+  },
+  {
+   "clip": "nl-NL-03.say",
+   "note": "nl-NL-03",
+   "locale": "nl-NL",
+   "tts": "say",
+   "voice": "Xander",
+   "model": "macOS say",
+   "file": "audio/nl-NL-03.say.m4a",
+   "seconds": 3.43
+  },
+  {
+   "clip": "nl-NL-04.gemini",
+   "note": "nl-NL-04",
+   "locale": "nl-NL",
+   "tts": "gemini",
+   "voice": "nl-nl-advisor-2",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/nl-NL-04.gemini.m4a",
+   "seconds": 3.24
+  },
+  {
+   "clip": "nl-NL-04.say",
+   "note": "nl-NL-04",
+   "locale": "nl-NL",
+   "tts": "say",
+   "voice": "Ellen",
+   "model": "macOS say",
+   "file": "audio/nl-NL-04.say.m4a",
+   "seconds": 3.42
+  },
+  {
+   "clip": "nl-NL-05.gemini",
+   "note": "nl-NL-05",
+   "locale": "nl-NL",
+   "tts": "gemini",
+   "voice": "nl-nl-advisor-1",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/nl-NL-05.gemini.m4a",
+   "seconds": 4.84
+  },
+  {
+   "clip": "nl-NL-05.say",
+   "note": "nl-NL-05",
+   "locale": "nl-NL",
+   "tts": "say",
+   "voice": "Xander",
+   "model": "macOS say",
+   "file": "audio/nl-NL-05.say.m4a",
+   "seconds": 4.34
+  },
+  {
+   "clip": "nl-NL-06.gemini",
+   "note": "nl-NL-06",
+   "locale": "nl-NL",
+   "tts": "gemini",
+   "voice": "nl-nl-advisor-2",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/nl-NL-06.gemini.m4a",
+   "seconds": 4.0
+  },
+  {
+   "clip": "nl-NL-06.say",
+   "note": "nl-NL-06",
+   "locale": "nl-NL",
+   "tts": "say",
+   "voice": "Ellen",
+   "model": "macOS say",
+   "file": "audio/nl-NL-06.say.m4a",
+   "seconds": 3.63
+  },
+  {
+   "clip": "pl-PL-01.gemini",
+   "note": "pl-PL-01",
+   "locale": "pl-PL",
+   "tts": "gemini",
+   "voice": "pl-pl-advisor-2",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/pl-PL-01.gemini.m4a",
+   "seconds": 3.44
+  },
+  {
+   "clip": "pl-PL-01.say",
+   "note": "pl-PL-01",
+   "locale": "pl-PL",
+   "tts": "say",
+   "voice": "Zosia",
+   "model": "macOS say",
+   "file": "audio/pl-PL-01.say.m4a",
+   "seconds": 3.45
+  },
+  {
+   "clip": "pl-PL-02.gemini",
+   "note": "pl-PL-02",
+   "locale": "pl-PL",
+   "tts": "gemini",
+   "voice": "pl-pl-advisor-1",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/pl-PL-02.gemini.m4a",
+   "seconds": 4.92
+  },
+  {
+   "clip": "pl-PL-02.say",
+   "note": "pl-PL-02",
+   "locale": "pl-PL",
+   "tts": "say",
+   "voice": "Zosia",
+   "model": "macOS say",
+   "file": "audio/pl-PL-02.say.m4a",
+   "seconds": 4.77
+  },
+  {
+   "clip": "pl-PL-03.gemini",
+   "note": "pl-PL-03",
+   "locale": "pl-PL",
+   "tts": "gemini",
+   "voice": "pl-pl-advisor-2",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/pl-PL-03.gemini.m4a",
+   "seconds": 4.08
+  },
+  {
+   "clip": "pl-PL-03.say",
+   "note": "pl-PL-03",
+   "locale": "pl-PL",
+   "tts": "say",
+   "voice": "Zosia",
+   "model": "macOS say",
+   "file": "audio/pl-PL-03.say.m4a",
+   "seconds": 4.42
+  },
+  {
+   "clip": "pl-PL-04.gemini",
+   "note": "pl-PL-04",
+   "locale": "pl-PL",
+   "tts": "gemini",
+   "voice": "pl-pl-advisor-1",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/pl-PL-04.gemini.m4a",
+   "seconds": 3.44
+  },
+  {
+   "clip": "pl-PL-04.say",
+   "note": "pl-PL-04",
+   "locale": "pl-PL",
+   "tts": "say",
+   "voice": "Zosia",
+   "model": "macOS say",
+   "file": "audio/pl-PL-04.say.m4a",
+   "seconds": 3.78
+  },
+  {
+   "clip": "pl-PL-05.gemini",
+   "note": "pl-PL-05",
+   "locale": "pl-PL",
+   "tts": "gemini",
+   "voice": "pl-pl-advisor-2",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/pl-PL-05.gemini.m4a",
+   "seconds": 4.28
+  },
+  {
+   "clip": "pl-PL-05.say",
+   "note": "pl-PL-05",
+   "locale": "pl-PL",
+   "tts": "say",
+   "voice": "Zosia",
+   "model": "macOS say",
+   "file": "audio/pl-PL-05.say.m4a",
+   "seconds": 4.18
+  },
+  {
+   "clip": "pl-PL-06.gemini",
+   "note": "pl-PL-06",
+   "locale": "pl-PL",
+   "tts": "gemini",
+   "voice": "pl-pl-advisor-1",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/pl-PL-06.gemini.m4a",
+   "seconds": 4.32
+  },
+  {
+   "clip": "pl-PL-06.say",
+   "note": "pl-PL-06",
+   "locale": "pl-PL",
+   "tts": "say",
+   "voice": "Zosia",
+   "model": "macOS say",
+   "file": "audio/pl-PL-06.say.m4a",
+   "seconds": 4.22
+  },
+  {
+   "clip": "pt-BR-01.gemini",
+   "note": "pt-BR-01",
+   "locale": "pt-BR",
+   "tts": "gemini",
+   "voice": "pt-br-advisor-1",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/pt-BR-01.gemini.m4a",
+   "seconds": 3.32
+  },
+  {
+   "clip": "pt-BR-01.say",
+   "note": "pt-BR-01",
+   "locale": "pt-BR",
+   "tts": "say",
+   "voice": "Luciana",
+   "model": "macOS say",
+   "file": "audio/pt-BR-01.say.m4a",
+   "seconds": 3.88
+  },
+  {
+   "clip": "pt-BR-02.gemini",
+   "note": "pt-BR-02",
+   "locale": "pt-BR",
+   "tts": "gemini",
+   "voice": "pt-br-advisor-10",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/pt-BR-02.gemini.m4a",
+   "seconds": 3.36
+  },
+  {
+   "clip": "pt-BR-02.say",
+   "note": "pt-BR-02",
+   "locale": "pt-BR",
+   "tts": "say",
+   "voice": "Eddy (Portugués (Brasil))",
+   "model": "macOS say",
+   "file": "audio/pt-BR-02.say.m4a",
+   "seconds": 3.86
+  },
+  {
+   "clip": "pt-BR-03.gemini",
+   "note": "pt-BR-03",
+   "locale": "pt-BR",
+   "tts": "gemini",
+   "voice": "pt-br-advisor-1",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/pt-BR-03.gemini.m4a",
+   "seconds": 3.88
+  },
+  {
+   "clip": "pt-BR-03.say",
+   "note": "pt-BR-03",
+   "locale": "pt-BR",
+   "tts": "say",
+   "voice": "Luciana",
+   "model": "macOS say",
+   "file": "audio/pt-BR-03.say.m4a",
+   "seconds": 4.18
+  },
+  {
+   "clip": "pt-BR-04.gemini",
+   "note": "pt-BR-04",
+   "locale": "pt-BR",
+   "tts": "gemini",
+   "voice": "pt-br-advisor-10",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/pt-BR-04.gemini.m4a",
+   "seconds": 2.84
+  },
+  {
+   "clip": "pt-BR-04.say",
+   "note": "pt-BR-04",
+   "locale": "pt-BR",
+   "tts": "say",
+   "voice": "Eddy (Portugués (Brasil))",
+   "model": "macOS say",
+   "file": "audio/pt-BR-04.say.m4a",
+   "seconds": 3.59
+  },
+  {
+   "clip": "pt-BR-05.gemini",
+   "note": "pt-BR-05",
+   "locale": "pt-BR",
+   "tts": "gemini",
+   "voice": "pt-br-advisor-1",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/pt-BR-05.gemini.m4a",
+   "seconds": 5.04
+  },
+  {
+   "clip": "pt-BR-05.say",
+   "note": "pt-BR-05",
+   "locale": "pt-BR",
+   "tts": "say",
+   "voice": "Luciana",
+   "model": "macOS say",
+   "file": "audio/pt-BR-05.say.m4a",
+   "seconds": 5.58
+  },
+  {
+   "clip": "pt-BR-06.gemini",
+   "note": "pt-BR-06",
+   "locale": "pt-BR",
+   "tts": "gemini",
+   "voice": "pt-br-advisor-10",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/pt-BR-06.gemini.m4a",
+   "seconds": 3.76
+  },
+  {
+   "clip": "pt-BR-06.say",
+   "note": "pt-BR-06",
+   "locale": "pt-BR",
+   "tts": "say",
+   "voice": "Eddy (Portugués (Brasil))",
+   "model": "macOS say",
+   "file": "audio/pt-BR-06.say.m4a",
+   "seconds": 3.95
+  },
+  {
+   "clip": "pt-PT-01.gemini",
+   "note": "pt-PT-01",
+   "locale": "pt-PT",
+   "tts": "gemini",
+   "voice": "pt-pt-advisor-2",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/pt-PT-01.gemini.m4a",
+   "seconds": 3.44
+  },
+  {
+   "clip": "pt-PT-01.say",
+   "note": "pt-PT-01",
+   "locale": "pt-PT",
+   "tts": "say",
+   "voice": "Joana",
+   "model": "macOS say",
+   "file": "audio/pt-PT-01.say.m4a",
+   "seconds": 3.54
+  },
+  {
+   "clip": "pt-PT-02.gemini",
+   "note": "pt-PT-02",
+   "locale": "pt-PT",
+   "tts": "gemini",
+   "voice": "pt-pt-advisor-1",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/pt-PT-02.gemini.m4a",
+   "seconds": 3.56
+  },
+  {
+   "clip": "pt-PT-02.say",
+   "note": "pt-PT-02",
+   "locale": "pt-PT",
+   "tts": "say",
+   "voice": "Joana",
+   "model": "macOS say",
+   "file": "audio/pt-PT-02.say.m4a",
+   "seconds": 3.87
+  },
+  {
+   "clip": "pt-PT-03.gemini",
+   "note": "pt-PT-03",
+   "locale": "pt-PT",
+   "tts": "gemini",
+   "voice": "pt-pt-advisor-2",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/pt-PT-03.gemini.m4a",
+   "seconds": 4.68
+  },
+  {
+   "clip": "pt-PT-03.say",
+   "note": "pt-PT-03",
+   "locale": "pt-PT",
+   "tts": "say",
+   "voice": "Joana",
+   "model": "macOS say",
+   "file": "audio/pt-PT-03.say.m4a",
+   "seconds": 4.84
+  },
+  {
+   "clip": "pt-PT-04.gemini",
+   "note": "pt-PT-04",
+   "locale": "pt-PT",
+   "tts": "gemini",
+   "voice": "pt-pt-advisor-1",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/pt-PT-04.gemini.m4a",
+   "seconds": 2.4
+  },
+  {
+   "clip": "pt-PT-04.say",
+   "note": "pt-PT-04",
+   "locale": "pt-PT",
+   "tts": "say",
+   "voice": "Joana",
+   "model": "macOS say",
+   "file": "audio/pt-PT-04.say.m4a",
+   "seconds": 2.88
+  },
+  {
+   "clip": "pt-PT-05.gemini",
+   "note": "pt-PT-05",
+   "locale": "pt-PT",
+   "tts": "gemini",
+   "voice": "pt-pt-advisor-2",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/pt-PT-05.gemini.m4a",
+   "seconds": 5.08
+  },
+  {
+   "clip": "pt-PT-05.say",
+   "note": "pt-PT-05",
+   "locale": "pt-PT",
+   "tts": "say",
+   "voice": "Joana",
+   "model": "macOS say",
+   "file": "audio/pt-PT-05.say.m4a",
+   "seconds": 5.11
+  },
+  {
+   "clip": "pt-PT-06.gemini",
+   "note": "pt-PT-06",
+   "locale": "pt-PT",
+   "tts": "gemini",
+   "voice": "pt-pt-advisor-1",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/pt-PT-06.gemini.m4a",
+   "seconds": 3.6
+  },
+  {
+   "clip": "pt-PT-06.say",
+   "note": "pt-PT-06",
+   "locale": "pt-PT",
+   "tts": "say",
+   "voice": "Joana",
+   "model": "macOS say",
+   "file": "audio/pt-PT-06.say.m4a",
+   "seconds": 3.7
+  },
+  {
+   "clip": "zh-Hans-01.gemini",
+   "note": "zh-Hans-01",
+   "locale": "zh-Hans",
+   "tts": "gemini",
+   "voice": "Kore",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/zh-Hans-01.gemini.m4a",
+   "seconds": 4.8
+  },
+  {
+   "clip": "zh-Hans-01.say",
+   "note": "zh-Hans-01",
+   "locale": "zh-Hans",
+   "tts": "say",
+   "voice": "Tingting",
+   "model": "macOS say",
+   "file": "audio/zh-Hans-01.say.m4a",
+   "seconds": 4.12
+  },
+  {
+   "clip": "zh-Hans-02.gemini",
+   "note": "zh-Hans-02",
+   "locale": "zh-Hans",
+   "tts": "gemini",
+   "voice": "Puck",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/zh-Hans-02.gemini.m4a",
+   "seconds": 4.8
+  },
+  {
+   "clip": "zh-Hans-02.say",
+   "note": "zh-Hans-02",
+   "locale": "zh-Hans",
+   "tts": "say",
+   "voice": "Eddy (Chino (China continental))",
+   "model": "macOS say",
+   "file": "audio/zh-Hans-02.say.m4a",
+   "seconds": 4.93
+  },
+  {
+   "clip": "zh-Hans-03.gemini",
+   "note": "zh-Hans-03",
+   "locale": "zh-Hans",
+   "tts": "gemini",
+   "voice": "Kore",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/zh-Hans-03.gemini.m4a",
+   "seconds": 4.28
+  },
+  {
+   "clip": "zh-Hans-03.say",
+   "note": "zh-Hans-03",
+   "locale": "zh-Hans",
+   "tts": "say",
+   "voice": "Tingting",
+   "model": "macOS say",
+   "file": "audio/zh-Hans-03.say.m4a",
+   "seconds": 4.58
+  },
+  {
+   "clip": "zh-Hans-04.gemini",
+   "note": "zh-Hans-04",
+   "locale": "zh-Hans",
+   "tts": "gemini",
+   "voice": "Puck",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/zh-Hans-04.gemini.m4a",
+   "seconds": 3.4
+  },
+  {
+   "clip": "zh-Hans-04.say",
+   "note": "zh-Hans-04",
+   "locale": "zh-Hans",
+   "tts": "say",
+   "voice": "Eddy (Chino (China continental))",
+   "model": "macOS say",
+   "file": "audio/zh-Hans-04.say.m4a",
+   "seconds": 3.35
+  },
+  {
+   "clip": "zh-Hans-05.gemini",
+   "note": "zh-Hans-05",
+   "locale": "zh-Hans",
+   "tts": "gemini",
+   "voice": "Kore",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/zh-Hans-05.gemini.m4a",
+   "seconds": 5.32
+  },
+  {
+   "clip": "zh-Hans-05.say",
+   "note": "zh-Hans-05",
+   "locale": "zh-Hans",
+   "tts": "say",
+   "voice": "Tingting",
+   "model": "macOS say",
+   "file": "audio/zh-Hans-05.say.m4a",
+   "seconds": 5.83
+  },
+  {
+   "clip": "zh-Hans-06.gemini",
+   "note": "zh-Hans-06",
+   "locale": "zh-Hans",
+   "tts": "gemini",
+   "voice": "Puck",
+   "model": "gemini-3.8-flash-lite-tts",
+   "file": "audio/zh-Hans-06.gemini.m4a",
+   "seconds": 3.72
+  },
+  {
+   "clip": "zh-Hans-06.say",
+   "note": "zh-Hans-06",
+   "locale": "zh-Hans",
+   "tts": "say",
+   "voice": "Eddy (Chino (China continental))",
+   "model": "macOS say",
+   "file": "audio/zh-Hans-06.say.m4a",
+   "seconds": 3.6
+  }
+ ]
+}

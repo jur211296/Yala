@@ -130,7 +130,7 @@ final class ChatSuggestionsLLMService {
     private func generate(context: ChatSuggestionsContext) async throws -> [ChatSuggestion] {
         let client: OpenAI
         do {
-            client = try await ProxyClientFactory.makeOpenAI(category: .suggestions)
+            client = try await ProxyClientFactory.makeOpenAI(task: .chatSuggestions)
         } catch {
             throw ChatSuggestionsLLMError.noAPIKey
         }

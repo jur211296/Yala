@@ -1,0 +1,388 @@
+{
+  "task": "insights.cards",
+  "criterion": "Análisis de Insights (hero + 3-6 tarjetas). Pasa si: (1) el parser de la app la acepta (`hero` string); (2) 3-6 tarjetas con texto, como pide el prompt; (3) todos los iconos existen en SF Symbols de iOS 26 (si no, la tarjeta sale sin icono); (4) el texto visible está en el idioma de la app del usuario; (5) ningún número sin respaldo en los datos (tal cual, redondeado o con una operación simple: ver `derivableValues`); (6) el hero cita al menos una cifra de los datos; (7) la divisa nunca va detrás del número. Datos financieros inventados: periodo = septiembre de 2026, comparado con agosto (o con septiembre de 2025 en modo año). Lo que no se mide así (¿contradice los datos?, ¿es útil?) lo mira el juez.",
+  "cases": [
+    {
+      "id": "c01-es-PE-good-month",
+      "locale": "es-PE",
+      "note": "Mes bueno, ahorro del 31 %, Comida al 93 % del presupuesto.",
+      "input": {
+        "currency": "PEN", "currencyDisplayFormat": "symbol", "language": "es", "country": "PE", "comparisonMode": "month", "tone": "normal", "focus": "balanced",
+        "summary": { "totalExpense": 3842.5, "totalIncome": 5600, "netBalance": 1757.5, "expenseVariation": -8.4, "incomeVariation": 0, "dailyAverageVariation": -8.4, "balanceVariation": 15.2, "transactionCount": 58, "previousPeriodLabel": "vs Ago 26" },
+        "dailyAverage": 128.08,
+        "topCategories": [
+          { "name": "Comida", "amount": 1310, "percentage": 34.09 },
+          { "name": "Casa", "amount": 1150, "percentage": 29.93 },
+          { "name": "Transporte", "amount": 520, "percentage": 13.53 },
+          { "name": "Ocio", "amount": 410, "percentage": 10.67 },
+          { "name": "Salud", "amount": 260, "percentage": 6.77 }
+        ],
+        "topSubcategory": { "name": "Supermercado", "amount": 760 },
+        "categoryTree": ["Comida (Supermercado, Restaurantes, Delivery)", "Casa (Alquiler, Luz, Agua, Internet)", "Transporte (Taxi, Combustible)", "Ocio (Cine, Salidas)", "Salud (Farmacia)"],
+        "highestExpense": { "amount": 950, "note": "Alquiler de septiembre" },
+        "highestAvgWeekday": { "day": "sábado", "average": 245 },
+        "subscriptions": { "count": 3, "monthly": 89.9 },
+        "recurring": { "count": 2, "monthly": 1035 },
+        "needs": { "essential": 2260, "priority": 750, "optional": 832.5 },
+        "budgetsAtRisk": [{ "name": "Comida", "spent": 1310, "limit": 1400, "usagePercent": 93.57 }]
+      }
+    },
+    {
+      "id": "c02-es-ES-bad-month",
+      "locale": "es-ES",
+      "note": "Gastos por encima de los ingresos; Ocio pasado de presupuesto; tono cuidadoso y enfoque precavido.",
+      "input": {
+        "currency": "EUR", "currencyDisplayFormat": "symbol", "language": "es", "country": "ES", "comparisonMode": "month", "tone": "considerate", "focus": "cautious",
+        "summary": { "totalExpense": 2875.4, "totalIncome": 2450, "netBalance": -425.4, "expenseVariation": 22.6, "incomeVariation": -5.8, "dailyAverageVariation": 22.6, "balanceVariation": -180.3, "transactionCount": 71, "previousPeriodLabel": "vs Ago 26" },
+        "dailyAverage": 95.85,
+        "topCategories": [
+          { "name": "Vivienda", "amount": 950, "percentage": 33.04 },
+          { "name": "Alimentación", "amount": 640, "percentage": 22.26 },
+          { "name": "Ocio", "amount": 520, "percentage": 18.08 },
+          { "name": "Transporte", "amount": 310, "percentage": 10.78 },
+          { "name": "Ropa", "amount": 285, "percentage": 9.91 }
+        ],
+        "topSubcategory": { "name": "Restaurantes", "amount": 410 },
+        "categoryTree": ["Vivienda (Alquiler, Suministros)", "Alimentación (Supermercado, Restaurantes)", "Ocio (Conciertos, Viajes)", "Transporte (Metro, Gasolina)", "Ropa"],
+        "highestExpense": { "amount": 320, "note": "Entradas concierto" },
+        "highestAvgWeekday": { "day": "viernes", "average": 168 },
+        "subscriptions": { "count": 5, "monthly": 64.95 },
+        "pending": { "count": 2, "amount": 180 },
+        "needs": { "essential": 1600, "priority": 400, "optional": 875.4 },
+        "budgetsAtRisk": [
+          { "name": "Ocio", "spent": 520, "limit": 400, "usagePercent": 130 },
+          { "name": "Restaurantes", "spent": 410, "limit": 450, "usagePercent": 91.11 }
+        ]
+      }
+    },
+    {
+      "id": "c03-es-AR-inflation",
+      "locale": "es-AR",
+      "note": "Pesos con números grandes, gasto +41 %; tono de amigo cercano y enfoque ahorro.",
+      "input": {
+        "currency": "ARS", "currencyDisplayFormat": "code", "language": "es", "country": "AR", "comparisonMode": "month", "tone": "sarcastic", "focus": "saver",
+        "summary": { "totalExpense": 1854300, "totalIncome": 2100000, "netBalance": 245700, "expenseVariation": 41.7, "incomeVariation": 30, "dailyAverageVariation": 41.7, "balanceVariation": -28.9, "transactionCount": 96, "previousPeriodLabel": "vs Ago 26" },
+        "dailyAverage": 61810,
+        "topCategories": [
+          { "name": "Comida", "amount": 640000, "percentage": 34.51 },
+          { "name": "Servicios", "amount": 380000, "percentage": 20.49 },
+          { "name": "Salidas", "amount": 290000, "percentage": 15.64 },
+          { "name": "Transporte", "amount": 255000, "percentage": 13.75 },
+          { "name": "Salud", "amount": 140000, "percentage": 7.55 }
+        ],
+        "topSubcategory": { "name": "Delivery", "amount": 210000 },
+        "categoryTree": ["Comida (Súper, Delivery, Carnicería)", "Servicios (Luz, Gas, Internet, Expensas)", "Salidas (Bares, Recitales)", "Transporte (Nafta, SUBE)", "Salud (Prepaga, Farmacia)"],
+        "highestExpense": { "amount": 180000, "note": "Cuota prepaga" },
+        "highestAvgWeekday": { "day": "viernes", "average": 98500 },
+        "subscriptions": { "count": 6, "monthly": 52400 },
+        "recurring": { "count": 4, "monthly": 610000 },
+        "needs": { "essential": 1160000, "priority": 260000, "optional": 434300 },
+        "budgetsAtRisk": [{ "name": "Delivery", "spent": 210000, "limit": 180000, "usagePercent": 116.67 }]
+      }
+    },
+    {
+      "id": "c04-en-irregular-income",
+      "locale": "en",
+      "note": "Freelance: los ingresos caen un 62 % y el mes cierra en negativo.",
+      "input": {
+        "currency": "USD", "currencyDisplayFormat": "code", "language": "en", "country": "US", "comparisonMode": "month", "tone": "considerate", "focus": "balanced",
+        "summary": { "totalExpense": 4120.75, "totalIncome": 1850, "netBalance": -2270.75, "expenseVariation": 3.2, "incomeVariation": -62.4, "dailyAverageVariation": 3.2, "balanceVariation": -310, "transactionCount": 64, "previousPeriodLabel": "vs Aug 26" },
+        "dailyAverage": 137.36,
+        "topCategories": [
+          { "name": "Housing", "amount": 1650, "percentage": 40.04 },
+          { "name": "Groceries", "amount": 620, "percentage": 15.05 },
+          { "name": "Dining Out", "amount": 480, "percentage": 11.65 },
+          { "name": "Transportation", "amount": 390, "percentage": 9.46 },
+          { "name": "Insurance", "amount": 310, "percentage": 7.52 }
+        ],
+        "topSubcategory": { "name": "Rent", "amount": 1500 },
+        "categoryTree": ["Housing (Rent, Utilities)", "Groceries", "Dining Out (Restaurants, Coffee)", "Transportation (Gas, Parking)", "Insurance (Health, Car)"],
+        "highestExpense": { "amount": 1500, "note": "Rent September" },
+        "highestAvgWeekday": { "day": "Saturday", "average": 210 },
+        "subscriptions": { "count": 7, "monthly": 96.43 },
+        "recurring": { "count": 3, "monthly": 1810 },
+        "pending": { "count": 1, "amount": 310 },
+        "needs": { "essential": 3100, "priority": 520, "optional": 500.75 },
+        "budgetsAtRisk": [{ "name": "Dining Out", "spent": 480, "limit": 500, "usagePercent": 96 }]
+      }
+    },
+    {
+      "id": "c05-en-GB-year-compare",
+      "locale": "en-GB",
+      "note": "Comparación con el mismo mes del año anterior (modo año) y bloque year_ago.",
+      "input": {
+        "currency": "GBP", "currencyDisplayFormat": "symbol", "language": "en", "country": "GB", "comparisonMode": "year", "tone": "normal", "focus": "balanced",
+        "summary": { "totalExpense": 2310.2, "totalIncome": 3400, "netBalance": 1089.8, "expenseVariation": -6.1, "incomeVariation": 4.6, "dailyAverageVariation": -6.1, "balanceVariation": 31.4, "transactionCount": 49, "previousPeriodLabel": "vs Sep 25" },
+        "dailyAverage": 77.01,
+        "topCategories": [
+          { "name": "Home", "amount": 1150, "percentage": 49.78 },
+          { "name": "Groceries", "amount": 410, "percentage": 17.75 },
+          { "name": "Transport", "amount": 230, "percentage": 9.96 },
+          { "name": "Eating Out", "amount": 190, "percentage": 8.22 },
+          { "name": "Utilities", "amount": 160, "percentage": 6.93 }
+        ],
+        "topSubcategory": { "name": "Rent", "amount": 1050 },
+        "categoryTree": ["Home (Rent, Council Tax)", "Groceries (Supermarket)", "Transport (Train, Oyster)", "Eating Out", "Utilities (Energy, Broadband)"],
+        "highestExpense": { "amount": 1050, "note": "Monthly rent" },
+        "highestAvgWeekday": { "day": "Friday", "average": 104 },
+        "subscriptions": { "count": 4, "monthly": 38.96 },
+        "needs": { "essential": 1860, "priority": 220, "optional": 230.2 },
+        "yearOverYear": { "current": 2310.2, "previous": 2460, "variation": -6.1 }
+      }
+    },
+    {
+      "id": "c06-pt-BR-shared",
+      "locale": "pt-BR",
+      "note": "Con gastos compartidos en dos grupos y deuda pendiente.",
+      "input": {
+        "currency": "BRL", "currencyDisplayFormat": "symbol", "language": "pt", "country": "BR", "comparisonMode": "month", "tone": "normal", "focus": "balanced",
+        "summary": { "totalExpense": 5230.6, "totalIncome": 7800, "netBalance": 2569.4, "expenseVariation": 9.8, "incomeVariation": 0, "dailyAverageVariation": 9.8, "balanceVariation": -8.3, "transactionCount": 83, "previousPeriodLabel": "vs Ago 26" },
+        "dailyAverage": 174.35,
+        "topCategories": [
+          { "name": "Moradia", "amount": 1800, "percentage": 34.41 },
+          { "name": "Alimentação", "amount": 1350, "percentage": 25.81 },
+          { "name": "Lazer", "amount": 760, "percentage": 14.53 },
+          { "name": "Transporte", "amount": 540, "percentage": 10.32 },
+          { "name": "Saúde", "amount": 380, "percentage": 7.26 }
+        ],
+        "topSubcategory": { "name": "Delivery", "amount": 520 },
+        "categoryTree": ["Moradia (Aluguel, Condomínio, Luz)", "Alimentação (Mercado, Delivery, Restaurantes)", "Lazer (Bares, Shows)", "Transporte (Uber, Combustível)", "Saúde (Farmácia, Plano)"],
+        "highestExpense": { "amount": 1500, "note": "Aluguel" },
+        "highestAvgWeekday": { "day": "sábado", "average": 290 },
+        "subscriptions": { "count": 5, "monthly": 119.5 },
+        "needs": { "essential": 3400, "priority": 900, "optional": 930.6 },
+        "shared": {
+          "totalShared": 980, "totalPersonal": 4250.6, "sharedCount": 12, "groupCount": 2,
+          "byGroup": [{ "name": "República", "total": 610 }, { "name": "Viagem Floripa", "total": 370 }],
+          "topSharedCategories": [{ "category": "Alimentação", "amount": 450 }, { "category": "Lazer", "amount": 330 }],
+          "pendingDebt": 215
+        }
+      }
+    },
+    {
+      "id": "c07-pt-PT-exclude-filter",
+      "locale": "pt-PT",
+      "note": "Filtro de exclusión (sin Habitação): los porcentajes son del subconjunto visible.",
+      "input": {
+        "currency": "EUR", "currencyDisplayFormat": "code", "language": "pt", "country": "PT", "comparisonMode": "month", "tone": "considerate", "focus": "saver",
+        "summary": { "totalExpense": 1240.3, "totalIncome": 2100, "netBalance": 859.7, "expenseVariation": -12.5, "incomeVariation": 0, "dailyAverageVariation": -12.5, "balanceVariation": 18.9, "transactionCount": 47, "previousPeriodLabel": "vs Ago 26" },
+        "dailyAverage": 41.34,
+        "topCategories": [
+          { "name": "Alimentação", "amount": 520, "percentage": 41.93 },
+          { "name": "Transportes", "amount": 260, "percentage": 20.96 },
+          { "name": "Lazer", "amount": 210, "percentage": 16.93 },
+          { "name": "Saúde", "amount": 140, "percentage": 11.29 },
+          { "name": "Educação", "amount": 90, "percentage": 7.26 }
+        ],
+        "topSubcategory": { "name": "Supermercado", "amount": 380 },
+        "categoryTree": ["Habitação (Renda, Eletricidade)", "Alimentação (Supermercado, Restaurantes)", "Transportes (Combustível, Portagens)", "Lazer (Cinema, Viagens)", "Saúde (Farmácia)", "Educação (Explicações)"],
+        "highestExpense": { "amount": 145, "note": "Revisão do carro" },
+        "highestAvgWeekday": { "day": "sábado", "average": 72 },
+        "subscriptions": { "count": 3, "monthly": 31.97 },
+        "needs": { "essential": 820, "priority": 230, "optional": 190.3 },
+        "filters": { "mode": "exclude", "categories": ["Habitação"] }
+      }
+    },
+    {
+      "id": "c08-fr-budgets-at-risk",
+      "locale": "fr",
+      "note": "Dos presupuestos al 91-95 % y pagos pendientes; enfoque precavido.",
+      "input": {
+        "currency": "EUR", "currencyDisplayFormat": "symbol", "language": "fr", "country": "FR", "comparisonMode": "month", "tone": "normal", "focus": "cautious",
+        "summary": { "totalExpense": 2685.9, "totalIncome": 3150, "netBalance": 464.1, "expenseVariation": 14.3, "incomeVariation": 0, "dailyAverageVariation": 14.3, "balanceVariation": -45.2, "transactionCount": 66, "previousPeriodLabel": "vs Août 26" },
+        "dailyAverage": 89.53,
+        "topCategories": [
+          { "name": "Logement", "amount": 1050, "percentage": 39.09 },
+          { "name": "Alimentation", "amount": 620, "percentage": 23.08 },
+          { "name": "Loisirs", "amount": 380, "percentage": 14.15 },
+          { "name": "Transport", "amount": 260, "percentage": 9.68 },
+          { "name": "Shopping", "amount": 210, "percentage": 7.82 }
+        ],
+        "topSubcategory": { "name": "Courses", "amount": 455 },
+        "categoryTree": ["Logement (Loyer, Électricité)", "Alimentation (Courses, Restaurants)", "Loisirs (Sorties, Voyages)", "Transport (Navigo, Essence)", "Shopping (Vêtements)"],
+        "highestExpense": { "amount": 900, "note": "Loyer septembre" },
+        "highestAvgWeekday": { "day": "samedi", "average": 131 },
+        "recurring": { "count": 2, "monthly": 975 },
+        "pending": { "count": 3, "amount": 410 },
+        "needs": { "essential": 1800, "priority": 420, "optional": 465.9 },
+        "budgetsAtRisk": [
+          { "name": "Loisirs", "spent": 380, "limit": 400, "usagePercent": 95 },
+          { "name": "Courses", "spent": 455, "limit": 500, "usagePercent": 91 }
+        ]
+      }
+    },
+    {
+      "id": "c09-de-optional-heavy",
+      "locale": "de",
+      "note": "Lo opcional supera a lo esencial; 8 suscripciones; enfoque ahorro.",
+      "input": {
+        "currency": "EUR", "currencyDisplayFormat": "code", "language": "de", "country": "DE", "comparisonMode": "month", "tone": "normal", "focus": "saver",
+        "summary": { "totalExpense": 3120.4, "totalIncome": 3900, "netBalance": 779.6, "expenseVariation": 18.7, "incomeVariation": 2.6, "dailyAverageVariation": 18.7, "balanceVariation": -36.2, "transactionCount": 74, "previousPeriodLabel": "vs Aug 26" },
+        "dailyAverage": 104.01,
+        "topCategories": [
+          { "name": "Freizeit", "amount": 980, "percentage": 31.41 },
+          { "name": "Wohnen", "amount": 890, "percentage": 28.52 },
+          { "name": "Lebensmittel", "amount": 540, "percentage": 17.31 },
+          { "name": "Mobilität", "amount": 330, "percentage": 10.58 },
+          { "name": "Abos", "amount": 180, "percentage": 5.77 }
+        ],
+        "topSubcategory": { "name": "Restaurants", "amount": 520 },
+        "categoryTree": ["Freizeit (Restaurants, Konzerte, Reisen)", "Wohnen (Miete, Strom)", "Lebensmittel (Supermarkt)", "Mobilität (ÖPNV, Tanken)", "Abos (Streaming, Fitnessstudio)"],
+        "highestExpense": { "amount": 290, "note": "Konzerttickets" },
+        "highestAvgWeekday": { "day": "Freitag", "average": 152 },
+        "subscriptions": { "count": 8, "monthly": 179.9 },
+        "needs": { "essential": 1350, "priority": 400, "optional": 1370.4 }
+      }
+    },
+    {
+      "id": "c10-it-low-data",
+      "locale": "it",
+      "note": "Datos insuficientes: 4 gastos, sin ingresos, variaciones N/A.",
+      "input": {
+        "currency": "EUR", "currencyDisplayFormat": "code", "language": "it", "country": "IT", "comparisonMode": "month", "tone": "normal", "focus": "balanced",
+        "summary": { "totalExpense": 86.4, "totalIncome": 0, "netBalance": -86.4, "expenseVariation": null, "incomeVariation": null, "dailyAverageVariation": null, "balanceVariation": null, "transactionCount": 4, "previousPeriodLabel": "vs Ago 26" },
+        "dailyAverage": 12.34,
+        "topCategories": [
+          { "name": "Alimentari", "amount": 52.3, "percentage": 60.53 },
+          { "name": "Trasporti", "amount": 34.1, "percentage": 39.47 }
+        ],
+        "topSubcategory": { "name": "Supermercato", "amount": 52.3 },
+        "categoryTree": ["Alimentari (Supermercato, Bar)", "Trasporti (Benzina)"],
+        "highestExpense": { "amount": 34.1, "note": "Benzina" },
+        "needs": { "essential": 86.4, "priority": 0, "optional": 0 }
+      }
+    },
+    {
+      "id": "c11-nl-include-filter",
+      "locale": "nl",
+      "note": "Filtro de inclusión: solo Boodschappen (sin ingresos en el subconjunto).",
+      "input": {
+        "currency": "EUR", "currencyDisplayFormat": "code", "language": "nl", "country": "NL", "comparisonMode": "month", "tone": "considerate", "focus": "balanced",
+        "summary": { "totalExpense": 612.8, "totalIncome": 0, "netBalance": -612.8, "expenseVariation": 7.9, "incomeVariation": null, "dailyAverageVariation": 7.9, "balanceVariation": null, "transactionCount": 21, "previousPeriodLabel": "vs Aug 26" },
+        "dailyAverage": 20.43,
+        "topCategories": [{ "name": "Boodschappen", "amount": 612.8, "percentage": 100 }],
+        "topSubcategory": { "name": "Supermarkt", "amount": 488.6 },
+        "categoryTree": ["Boodschappen (Supermarkt, Markt, Bakker)", "Wonen (Huur)", "Vervoer (OV, Fiets)"],
+        "highestExpense": { "amount": 96.4, "note": "Weekboodschappen" },
+        "highestAvgWeekday": { "day": "zaterdag", "average": 41 },
+        "needs": { "essential": 540.2, "priority": 0, "optional": 72.6 },
+        "budgetsAtRisk": [{ "name": "Boodschappen", "spent": 612.8, "limit": 650, "usagePercent": 94.28 }],
+        "filters": { "mode": "include", "categories": ["Boodschappen"] }
+      }
+    },
+    {
+      "id": "c12-pl-one-off",
+      "locale": "pl",
+      "note": "Un gasto puntual grande (portátil) dispara el mes un 58 %.",
+      "input": {
+        "currency": "PLN", "currencyDisplayFormat": "symbol", "language": "pl", "country": "PL", "comparisonMode": "month", "tone": "normal", "focus": "balanced",
+        "summary": { "totalExpense": 9840.5, "totalIncome": 8200, "netBalance": -1640.5, "expenseVariation": 58.3, "incomeVariation": 0, "dailyAverageVariation": 58.3, "balanceVariation": -207.1, "transactionCount": 61, "previousPeriodLabel": "vs Sie 26" },
+        "dailyAverage": 328.02,
+        "topCategories": [
+          { "name": "Elektronika", "amount": 4299, "percentage": 43.69 },
+          { "name": "Mieszkanie", "amount": 2600, "percentage": 26.42 },
+          { "name": "Jedzenie", "amount": 1450, "percentage": 14.73 },
+          { "name": "Transport", "amount": 610, "percentage": 6.2 },
+          { "name": "Rozrywka", "amount": 480, "percentage": 4.88 }
+        ],
+        "topSubcategory": { "name": "Laptop", "amount": 4299 },
+        "categoryTree": ["Elektronika (Laptop, Akcesoria)", "Mieszkanie (Czynsz, Prąd)", "Jedzenie (Zakupy, Restauracje)", "Transport (Paliwo, Bilety)", "Rozrywka (Kino, Gry)"],
+        "highestExpense": { "amount": 4299, "note": "Nowy laptop do pracy" },
+        "highestAvgWeekday": { "day": "środa", "average": 1460 },
+        "needs": { "essential": 4050, "priority": 4299, "optional": 1491.5 }
+      }
+    },
+    {
+      "id": "c13-ja-steady",
+      "locale": "ja",
+      "note": "Yenes sin decimales; mes estable.",
+      "input": {
+        "currency": "JPY", "currencyDisplayFormat": "code", "language": "ja", "country": "JP", "comparisonMode": "month", "tone": "normal", "focus": "balanced",
+        "summary": { "totalExpense": 286450, "totalIncome": 340000, "netBalance": 53550, "expenseVariation": 4.1, "incomeVariation": 0, "dailyAverageVariation": 4.1, "balanceVariation": -17.6, "transactionCount": 88, "previousPeriodLabel": "vs 8月 26" },
+        "dailyAverage": 9548,
+        "topCategories": [
+          { "name": "住居", "amount": 95000, "percentage": 33.16 },
+          { "name": "食費", "amount": 68400, "percentage": 23.88 },
+          { "name": "交通", "amount": 31200, "percentage": 10.89 },
+          { "name": "交際費", "amount": 28700, "percentage": 10.02 },
+          { "name": "日用品", "amount": 19800, "percentage": 6.91 }
+        ],
+        "topSubcategory": { "name": "外食", "amount": 32600 },
+        "categoryTree": ["住居 (家賃, 光熱費)", "食費 (スーパー, 外食)", "交通 (電車, タクシー)", "交際費 (飲み会)", "日用品"],
+        "highestExpense": { "amount": 85000, "note": "9月分家賃" },
+        "highestAvgWeekday": { "day": "金曜日", "average": 13400 },
+        "subscriptions": { "count": 4, "monthly": 4380 },
+        "needs": { "essential": 198000, "priority": 40000, "optional": 48450 }
+      }
+    },
+    {
+      "id": "c14-zh-no-income",
+      "locale": "zh-Hans",
+      "note": "Sin ingresos registrados; un presupuesto pasado (125 %) y otro al 95 %; enfoque precavido.",
+      "input": {
+        "currency": "CNY", "currencyDisplayFormat": "symbol", "language": "zh", "country": "CN", "comparisonMode": "month", "tone": "normal", "focus": "cautious",
+        "summary": { "totalExpense": 8640.3, "totalIncome": 0, "netBalance": -8640.3, "expenseVariation": 6.4, "incomeVariation": null, "dailyAverageVariation": 6.4, "balanceVariation": null, "transactionCount": 102, "previousPeriodLabel": "vs 8月 26" },
+        "dailyAverage": 288.01,
+        "topCategories": [
+          { "name": "住房", "amount": 3200, "percentage": 37.04 },
+          { "name": "餐饮", "amount": 2860, "percentage": 33.1 },
+          { "name": "购物", "amount": 1250, "percentage": 14.47 },
+          { "name": "交通", "amount": 680, "percentage": 7.87 },
+          { "name": "娱乐", "amount": 420, "percentage": 4.86 }
+        ],
+        "topSubcategory": { "name": "外卖", "amount": 1430 },
+        "categoryTree": ["住房 (房租, 水电)", "餐饮 (外卖, 买菜, 咖啡)", "购物 (服饰, 数码)", "交通 (地铁, 打车)", "娱乐 (电影)"],
+        "highestExpense": { "amount": 3000, "note": "九月房租" },
+        "highestAvgWeekday": { "day": "星期六", "average": 452 },
+        "pending": { "count": 1, "amount": 3000 },
+        "needs": { "essential": 4600, "priority": 1400, "optional": 2640.3 },
+        "budgetsAtRisk": [
+          { "name": "餐饮", "spent": 2860, "limit": 3000, "usagePercent": 95.33 },
+          { "name": "购物", "spent": 1250, "limit": 1000, "usagePercent": 125 }
+        ]
+      }
+    },
+    {
+      "id": "c15-es-PE-almost-empty",
+      "locale": "es-PE",
+      "note": "Casi vacío: dos gastos, sin ingresos, sin comparaciones.",
+      "input": {
+        "currency": "PEN", "currencyDisplayFormat": "code", "language": "es", "country": "PE", "comparisonMode": "month", "tone": "normal", "focus": "balanced",
+        "summary": { "totalExpense": 47.5, "totalIncome": 0, "netBalance": -47.5, "expenseVariation": null, "incomeVariation": null, "dailyAverageVariation": null, "balanceVariation": null, "transactionCount": 2, "previousPeriodLabel": "vs Sept 26" },
+        "dailyAverage": 15.83,
+        "topCategories": [
+          { "name": "Comida", "amount": 35, "percentage": 73.68 },
+          { "name": "Transporte", "amount": 12.5, "percentage": 26.32 }
+        ],
+        "topSubcategory": { "name": "Menú", "amount": 35 },
+        "categoryTree": ["Comida (Menú, Mercado)", "Transporte (Combi, Taxi)"],
+        "highestExpense": { "amount": 35, "note": "Almuerzo" },
+        "needs": { "essential": 47.5, "priority": 0, "optional": 0 }
+      }
+    },
+    {
+      "id": "c16-en-bonus-year",
+      "locale": "en",
+      "note": "Mes con bonus (+84 % de ingresos), comparado con el año anterior; tono de amigo.",
+      "input": {
+        "currency": "USD", "currencyDisplayFormat": "symbol", "language": "en", "country": "US", "comparisonMode": "year", "tone": "sarcastic", "focus": "balanced",
+        "summary": { "totalExpense": 3380, "totalIncome": 9200, "netBalance": 5820, "expenseVariation": -4.2, "incomeVariation": 84, "dailyAverageVariation": -4.2, "balanceVariation": 312.5, "transactionCount": 57, "previousPeriodLabel": "vs Sep 25" },
+        "dailyAverage": 112.67,
+        "topCategories": [
+          { "name": "Housing", "amount": 1400, "percentage": 41.42 },
+          { "name": "Groceries", "amount": 560, "percentage": 16.57 },
+          { "name": "Travel", "amount": 450, "percentage": 13.31 },
+          { "name": "Dining Out", "amount": 380, "percentage": 11.24 },
+          { "name": "Health", "amount": 210, "percentage": 6.21 }
+        ],
+        "topSubcategory": { "name": "Rent", "amount": 1300 },
+        "categoryTree": ["Housing (Rent, Utilities)", "Groceries", "Travel (Flights, Hotels)", "Dining Out", "Health (Gym, Pharmacy)"],
+        "highestExpense": { "amount": 1300, "note": "September rent" },
+        "highestAvgWeekday": { "day": "Sunday", "average": 178 },
+        "subscriptions": { "count": 6, "monthly": 84.94 },
+        "needs": { "essential": 2170, "priority": 460, "optional": 750 },
+        "yearOverYear": { "current": 3380, "previous": 3528, "variation": -4.2 }
+      }
+    }
+  ]
+}

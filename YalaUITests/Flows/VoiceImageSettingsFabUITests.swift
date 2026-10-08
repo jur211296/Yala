@@ -55,6 +55,22 @@ final class VoiceImageSettingsFabUITests: XCTestCase {
         )
     }
 
+    /// La voz cubre los 10 idiomas de la app y, por defecto, sigue al idioma de Yala (sesión 2 del gateway de IA:
+    /// antes solo había «Sistema», español e inglés).
+    func test_voiceLanguageSelector_offersAppLanguageAndTheTen() {
+        let app = XCUIApplication()
+        app.launchForUITest(pro: false)
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+        app.openProfile()
+        app.openSettingsSection("profile_personalization")
+        let menu = app.buttons["voice_language_menu"]
+        XCTAssertTrue(menu.waitForExistence(timeout: 5), "No apareció el selector de idioma de voz.")
+        menu.tap()
+        for code in ["system", "es", "en", "pt", "fr", "de", "it", "nl", "pl", "ja", "zh"] {
+            XCTAssertTrue(app.buttons["voice_language_option_\(code)"].waitForExistence(timeout: 5), "Falta el idioma de voz \(code).")
+        }
+    }
+
     /// Con voz/imagen como features (FAB condicional), el menú del FAB ofrece las
     /// 3 entradas: voz, imagen y manual (locked con ProBadge si free, pero existen).
     func test_fabMenuShowsVoiceImageManualOptions() {

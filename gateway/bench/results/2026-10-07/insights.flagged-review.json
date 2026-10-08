@@ -1,0 +1,293 @@
+{
+ "reviewer": "Frank (sesión 2, trabajador B), leyendo cada cifra contra los datos del caso",
+ "criteria": "derivado = aritmética correcta que el verificador no admite sola (entre bloques, de varios pasos); sugerencia = importe propuesto como consejo, que no afirma nada de los datos; inventado = cifra falsa o sin base (media mal calculada, fecha futura, ahorro estimado, valor anterior que no está).",
+ "items": [
+  {
+   "task": "insights.cards",
+   "key": "c14-zh-no-income|openai:gpt-6-luna|none|0",
+   "number": "10.4",
+   "verdict": "derivado",
+   "nota": "3.000 / 288 = 10,42 (gasto más alto / media diaria)"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c03-es-AR-inflation|openai:gpt-5.6-luna|none|0",
+   "number": "662,400",
+   "verdict": "derivado",
+   "nota": "610.000 + 52.400 (recurrentes + suscripciones)"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c05-en-GB-year-compare|openai:gpt-5.6-luna|none|0",
+   "number": "27",
+   "verdict": "derivado",
+   "nota": "104 − 77 (viernes − media diaria)"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c01-es-PE-good-month|anthropic:claude-haiku-5-5|low|0",
+   "number": "118",
+   "verdict": "derivado",
+   "nota": "950 − 832 (alquiler − opcional)"
+  },
+  {
+   "task": "trends.summary",
+   "key": "t12-pl-spike-in-history|openai:gpt-4.1-mini|-|0",
+   "number": "6,718",
+   "verdict": "inventado",
+   "nota": "media de los 6 meses = 6.758,5; 6.718 no sale de nada"
+  },
+  {
+   "task": "trends.summary",
+   "key": "t09-de-sparse-weekdays|gemini:gemini-3.1-flash-lite|-|0",
+   "number": "2,976",
+   "verdict": "inventado",
+   "nota": "media de los 6 meses = 2.980 exacta; «etwa 2.976» es una media mal calculada (error de 4 €)"
+  },
+  {
+   "task": "trends.summary",
+   "key": "t05-en-GB-week|anthropic:claude-haiku-5-5:none|none|0",
+   "number": "694",
+   "verdict": "inventado",
+   "nota": "media semanal de las 6 semanas = 793,3; 694 no sale de nada"
+  },
+  {
+   "task": "trends.summary",
+   "key": "t15-es-PE-no-income|anthropic:claude-haiku-5-5:none|none|0",
+   "number": "2,108",
+   "verdict": "inventado",
+   "nota": "media de los 6 meses = 2.104,2; «cercano a 2.108» es una media mal calculada"
+  },
+  {
+   "task": "trends.summary",
+   "key": "t14-zh-cautious|openai:gpt-4.1-mini|-|1",
+   "number": "8,400",
+   "verdict": "inventado",
+   "nota": "media de los 6 meses = 8.585; además compara octubre en curso con esa media («低于平均水平»)"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c02-es-ES-bad-month|openai:gpt-6-luna|low|0",
+   "number": "62%",
+   "verdict": "derivado",
+   "nota": "320 / 520 = 61,5 % (entradas de concierto / Ocio)"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c03-es-AR-inflation|openai:gpt-5.6-luna|low|1",
+   "number": "1,565,000",
+   "verdict": "derivado",
+   "nota": "640.000 + 380.000 + 290.000 + 255.000 (cuatro categorías)"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c03-es-AR-inflation|openai:gpt-5.6-luna|low|1",
+   "number": "84%",
+   "verdict": "derivado",
+   "nota": "1.565.000 / 1.854.300 = 84,4 %"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c03-es-AR-inflation|openai:gpt-5.6-luna|low|1",
+   "number": "662,400",
+   "verdict": "derivado",
+   "nota": "610.000 + 52.400"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c03-es-AR-inflation|openai:gpt-6-luna|low|1",
+   "number": "36,690",
+   "verdict": "derivado",
+   "nota": "98.500 − 61.810"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c04-en-irregular-income|openai:gpt-6-luna|none|0",
+   "number": "73",
+   "verdict": "derivado",
+   "nota": "210 − 137"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c05-en-GB-year-compare|gemini:gemini-3.1-flash-lite|-|1",
+   "number": "20",
+   "verdict": "inventado",
+   "nota": "«este equilibrio 80/20 entre esenciales y opcionales»: lo opcional es el 9 %, no el 20 %"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c05-en-GB-year-compare|openai:gpt-6-luna|low|1",
+   "number": "27",
+   "verdict": "derivado",
+   "nota": "104 − 77"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c06-pt-BR-shared|openai:gpt-6-luna|low|1",
+   "number": "116",
+   "verdict": "derivado",
+   "nota": "290 − 174"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c08-fr-budgets-at-risk|openai:gpt-6-luna|none|1",
+   "number": "54",
+   "verdict": "derivado",
+   "nota": "464 − 410 (saldo − pendientes)"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c09-de-optional-heavy|anthropic:claude-haiku-5-5:none|none|0",
+   "number": "2,800",
+   "verdict": "sugerencia",
+   "nota": "límite propuesto «un 10 % menos» (3.120 × 0,9 ≈ 2.808)"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c09-de-optional-heavy|anthropic:claude-haiku-5-5:none|none|0",
+   "number": "80",
+   "verdict": "sugerencia",
+   "nota": "«un presupuesto fijo para el viernes, unos EUR 80»"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c09-de-optional-heavy|anthropic:claude-haiku-5-5:none|none|1",
+   "number": "2,800",
+   "verdict": "sugerencia",
+   "nota": "límite propuesto «un 10 % menos»"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c09-de-optional-heavy|anthropic:claude-haiku-5-5|low|0",
+   "number": "80",
+   "verdict": "sugerencia",
+   "nota": "«un pequeño presupuesto para el viernes, unos EUR 80»"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c09-de-optional-heavy|anthropic:claude-haiku-5-5|low|1",
+   "number": "2,600",
+   "verdict": "sugerencia",
+   "nota": "límite propuesto para el mes siguiente"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c09-de-optional-heavy|anthropic:claude-haiku-5-5|low|1",
+   "number": "80",
+   "verdict": "sugerencia",
+   "nota": "«un presupuesto fijo para el viernes, unos EUR 80»"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c09-de-optional-heavy|openai:gpt-5.6-luna|low|0",
+   "number": "59%",
+   "verdict": "derivado",
+   "nota": "(980 + 890) / 3.120 = 59,9 %, truncado"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c09-de-optional-heavy|openai:gpt-5.6-luna|low|1",
+   "number": "59 %",
+   "verdict": "derivado",
+   "nota": "(980 + 890) / 3.120 = 59,9 %, truncado"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c09-de-optional-heavy|openai:gpt-6-luna|none|0",
+   "number": "59 %",
+   "verdict": "derivado",
+   "nota": "(980 + 890) / 3.120 = 59,9 %, truncado"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c11-nl-include-filter|openai:gpt-6-luna|none|1",
+   "number": "124",
+   "verdict": "derivado",
+   "nota": "612 − 488"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c12-pl-one-off|openai:gpt-5.6-luna|low|1",
+   "number": "69%",
+   "verdict": "derivado",
+   "nota": "43 % + 26 % (suma de los porcentajes mostrados; el real es 70,1 %)"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c13-ja-steady|anthropic:claude-haiku-5-5:none|none|0",
+   "number": "61,300",
+   "verdict": "derivado",
+   "nota": "32.600 + 28.700"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c13-ja-steady|gemini:gemini-3.5-flash-lite|none|0",
+   "number": "286,550",
+   "verdict": "inventado",
+   "nota": "el gasto total es 286.450; 286.550 no sale de nada (y el saldo que cita, 53.550, sí es el real)"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c13-ja-steady|openai:gpt-5.6-luna|low|0",
+   "number": "56%",
+   "verdict": "derivado",
+   "nota": "33 % + 23 % (suma de los porcentajes mostrados; el real es 57,0 %)"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c13-ja-steady|openai:gpt-5.6-luna|low|0",
+   "number": "3,852",
+   "verdict": "derivado",
+   "nota": "13.400 − 9.548"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c13-ja-steady|openai:gpt-6-luna|low|0",
+   "number": "56%",
+   "verdict": "derivado",
+   "nota": "33 % + 23 %"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c13-ja-steady|openai:gpt-6-luna|low|1",
+   "number": "56%",
+   "verdict": "derivado",
+   "nota": "33 % + 23 %"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c13-ja-steady|openai:gpt-6-luna|none|0",
+   "number": "56%",
+   "verdict": "derivado",
+   "nota": "33 % + 23 %"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c14-zh-no-income|openai:gpt-6-luna|low|1",
+   "number": "164",
+   "verdict": "derivado",
+   "nota": "452 − 288"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c04-en-irregular-income|gemini:gemini-3.8-flash|low|1",
+   "number": "53%",
+   "verdict": "derivado",
+   "nota": "(210 − 137) / 137 = 53,3 %"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c09-de-optional-heavy|gemini:gemini-3.8-flash|low|1",
+   "number": "48",
+   "verdict": "sugerencia",
+   "nota": "«48 horas para pensarlo» antes de comprar: un consejo, no un dato"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c09-de-optional-heavy|openai:gpt-6.1-sol|low|1",
+   "number": "48",
+   "verdict": "sugerencia",
+   "nota": "«una espera de 48 horas» antes de comprar: un consejo, no un dato"
+  }
+ ]
+}

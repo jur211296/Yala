@@ -49,6 +49,23 @@ describe("prompts del banco = prompts de la app", () => {
     expect(p).not.toMatch(/\\\(/);
   });
 
+  it("foto (sesión 2): la regla del «$» y las divisas del usuario, como VisionCurrencyContext", () => {
+    const mx = photoSystemPrompt("2026-10-07", { main: "MXN", accounts: ["MXN", "USD"] });
+    expect(mx).toContain('- "$" symbol alone → "MXN" (the user\'s main currency is written with $)');
+    expect(mx).toContain("The user's main currency is MXN and their accounts use MXN, USD.");
+    const pe = photoSystemPrompt("2026-10-07", { main: "PEN", accounts: ["PEN", "USD"] });
+    expect(pe).toContain('- "$" symbol alone → null (a "$" alone does not say which dollar it is)');
+    expect(photoSystemPrompt("2026-10-07")).not.toContain("The user's main currency");
+    // El bloque de divisas, línea a línea, está en el Swift tal cual (salvo las dos que rellena la app).
+    const src = swift("Yala/App/Services/ImageVision/ImageVisionService.swift");
+    const lines = pe.split("\n");
+    const start = lines.findIndex((l) => l.startsWith("Currency extraction rules"));
+    expect(start).toBeGreaterThan(0);
+    const block = lines.slice(start, lines.indexOf("", start));
+    expect(block.length).toBeGreaterThan(15);
+    for (const line of block.filter((l) => !l.includes("symbol alone") && !l.includes("user's main"))) expect(src, line).toContain(line.trim());
+  });
+
   it("contexto de fechas: el lunes pasado y la semana pasada, como DateContextProvider", () => {
     const c = dateContext("2026-10-07");
     expect(c).toContain('- "el lunes" / "Monday" → 2026-10-05');
@@ -64,7 +81,6 @@ describe("prompts del banco = prompts de la app", () => {
       "chat.suggestions": "Yala/App/Services/ChatSuggestionsLLMService.swift",
       "chat.rewrite": "Yala/App/Services/SuggestionsRewriterService.swift",
       "insights.cards": "Yala/Services/InsightsLLMService.swift",
-      "insights.contextual": "Yala/Services/InsightsLLMService.swift",
       "insights.cashflow": "Yala/Services/InsightsLLMService.swift",
       "insights.deviation": "Yala/Services/InsightsLLMService.swift",
       "trends.summary": "Yala/Services/TrendsAIService.swift",
@@ -130,5 +146,213 @@ describe("criterios", () => {
     expect(g([t(-10, "2026-10-01"), t(5, "2026-10-02", "USD")]).pass).toBe(false); // divisa
     expect(g([t(-10, "2026-10-01"), t(5, "2026-10-02"), t(-1, "2026-10-02")]).pass).toBe(false); // de más
     expect(g([t(-10, "2026-10-01"), t(5, "2026-10-02"), { ...t(0, "2026-10-02"), amount: null }]).pass).toBe(true); // sin importe: no cuenta
+  });
+});
+
+// ---------- sesión 2 · chat y nota (trabajador A): text.parse, chat.answer, chat.rewrite ----------
+
+import { categoryName, currencySymbol, seedSubcategoryNames, subcategoryName } from "../bench/lib/appCatalog";
+import { chatDynamicPrompt, chatRegister, chatStaticPrompt, extractNumbers, fidelity, gradeChatAnswer, matchesValue, personaContext, triggersAnomalies } from "../bench/lib/chatAnswer";
+import { toAppJSON } from "../bench/lib/chatContext";
+import { gradeRewrite, isValidSuggestion, parseRewritten, rewriteBody, type RewriteCase } from "../bench/lib/chatRewrite";
+import { gradeTextParse, matchSubcategory, parseNoteResponse, textParseBody, type TextParseCase } from "../bench/lib/textParse";
+import { PERSONAS } from "../bench/tasks/chat.answer";
+
+const caseFile = <T>(name: string): { cases: T[] } => JSON.parse(readFileSync(new URL(`../bench/cases/${name}`, import.meta.url), "utf8"));
+const swiftLines = (file: string) => new Set(swift(file).replace(/\\"/g, '"').split("\n").map((l) => l.trim()).filter(Boolean));
+
+describe("text.parse: el cuerpo de TranscriptionParserService", () => {
+  const c = caseFile<TextParseCase>("text.parse.json").cases[0];
+  const body = textParseBody(c) as { messages: { role: string; content: string }[]; temperature: number; model: string };
+  const prompt = body.messages[0].content;
+
+  it("el prompt sale del Swift: toda línea fija está allí, sin interpolaciones sueltas", () => {
+    const src = swiftLines("Yala/Services/TranscriptionParserService.swift");
+    expect(prompt.startsWith("Eres un parser de gastos para una app de finanzas personales.")).toBe(true);
+    expect(prompt).not.toMatch(/\\\(/);
+    const fromDateContext = new Set(dateContext("2026-10-07").split("\n").map((l) => l.trim()));
+    for (const line of prompt.split("\n").map((l) => l.trim()).filter(Boolean)) {
+      if (fromDateContext.has(line) || line.startsWith("Output:") || line.split(", ").length > 8) continue;
+      expect(src.has(line), line).toBe(true);
+    }
+    expect(body.temperature).toBe(0.1);
+    expect(body.model).toBe("gpt-4.1-mini");
+    expect(body).not.toHaveProperty("response_format");
+  });
+
+  it("los ejemplos llevan la fecha de hoy y las listas son las subcategorías sembradas en el idioma del usuario", () => {
+    expect(prompt).toContain('"date":"2026-10-07"');
+    const es = seedSubcategoryNames("es-419");
+    expect(prompt).toContain(es.expense.join(", "));
+    expect(prompt).toContain(es.income.join(", "));
+    expect(subcategoryName("de", "supermarkets")).toBe("Supermärkte & Lebensmittel");
+    expect(categoryName("ja", "food")).toBe("食事");
+  });
+
+  it("parser de la app: quita las vallas, exige note/isExpense/confidence y tumba la respuesta por un tipo malo", () => {
+    const tx = { amount: 12, date: "2026-10-06", note: "taxi", isExpense: true, subcategoryHint: "Taxis y apps", tagHints: [], currencyHint: null, confidence: { amount: 1, date: 1, merchant: 1, subcategory: 1, tags: 0 } };
+    expect(parseNoteResponse("```json\n" + JSON.stringify({ transactions: [tx] }) + "\n```")).toHaveLength(1);
+    expect(parseNoteResponse(JSON.stringify({ transactions: [{ ...tx, note: null }] }))).toBeNull();
+    expect(parseNoteResponse(JSON.stringify({ transactions: [{ ...tx, amount: "12" }] }))).toBeNull();
+    expect(parseNoteResponse(JSON.stringify({ transactions: [{ ...tx, confidence: { amount: 1 } }] }))).toBeNull();
+    expect(parseNoteResponse("Aquí tienes: {}")).toBeNull();
+  });
+
+  it("subcategoría como DraftBuilder: exacta, parcial y ambigua = ninguna", () => {
+    const list = ["Restaurantes", "Taxis y apps", "Otros", "Otros", "Supermercados y bodegas"];
+    expect(matchSubcategory("restaurantes", list)).toBe("Restaurantes");
+    expect(matchSubcategory("Taxis", list)).toBe("Taxis y apps");
+    expect(matchSubcategory("Otros", list)).toBeNull();
+    expect(matchSubcategory("Supermercados y bodegas (Wong)", list)).toBe("Supermercados y bodegas");
+  });
+
+  it("criterio: fecha y divisa por defecto como la app, signo, subcategoría y ningún movimiento de más", () => {
+    const tx = (o: Record<string, unknown>) => ({ amount: 45.5, date: null, note: "Wong", isExpense: true, subcategoryHint: "Supermercados y bodegas", tagHints: [], currencyHint: null, confidence: { amount: 1, date: 1, merchant: 1, subcategory: 1, tags: 0 }, ...o });
+    const k: TextParseCase = { id: "x", locale: "es-PE", today: "2026-10-07", defaultCurrency: "PEN", text: "", expect: [{ amount: 45.5, isExpense: true, date: "2026-10-07", currency: "PEN", sub: ["supermarkets"], merchant: "Wong" }] };
+    const g = (txs: unknown[]) => gradeTextParse(JSON.stringify({ transactions: txs }), k);
+    expect(g([tx({})]).pass).toBe(true); // sin fecha = hoy; sin divisa = la principal
+    expect(g([tx({ date: "2026-10-07T10:00:00" })]).pass).toBe(true); // la app no la lee: hoy
+    expect(g([tx({ currencyHint: "S/" })]).pass).toBe(false);
+    expect(g([tx({ isExpense: false })]).pass).toBe(false);
+    expect(g([tx({ amount: -45.5 })]).pass).toBe(false); // el chat descarta importes ≤ 0
+    expect(g([tx({ subcategoryHint: "Comida" })]).pass).toBe(false);
+    expect(g([tx({}), tx({ amount: 3 })]).pass).toBe(false);
+  });
+});
+
+describe("chat.answer: el cuerpo de ChatAssistantService.runAskFlow", () => {
+  const pe = PERSONAS.get("pe")!;
+
+  it("parte estática del Swift, con idioma, divisa y registro de la app", () => {
+    const p = chatStaticPrompt("es-PE", "S/");
+    const src = swiftLines("Yala/Services/ChatAssistantService.swift");
+    expect(p.startsWith("Eres el asistente financiero de Yala.")).toBe(true);
+    expect(p).toContain("3. Responde en el idioma del usuario: es-PE.");
+    expect(p).toContain("**S/45.50**");
+    expect(p).not.toMatch(/\\\(|16\. Tono|17\. Enfoque/);
+    for (const line of p.split("\n").map((l) => l.trim()).filter((l) => l && !/S\/|es-PE|tuteo/.test(l))) expect(src.has(line), line).toBe(true);
+    expect(chatRegister("es-PE")).toBe("tuteo (tú)");
+    expect(chatRegister("es-ES")).toBe("informal you"); // `SupportedLocale.from` da «es-ES» y el switch solo mira «es»
+    expect(chatRegister("de-DE")).toBe("du");
+    expect(chatRegister("pt-BR")).toBe("informal you");
+  });
+
+  it("parte dinámica: el JSON como lo escribe JSONEncoder (claves ordenadas, nil fuera, barra escapada) y las fechas", () => {
+    const b = personaContext(pe);
+    const d = chatDynamicPrompt(b.json, pe.today);
+    expect(d.startsWith("DATOS DEL USUARIO (JSON):\n{")).toBe(true);
+    expect(d).toContain('"currency_display":"S\\/"');
+    expect(d).toContain("CONTEXTO DE FECHA:\nReglas de fecha:");
+    expect(toAppJSON({ b: 1, a: { d: undefined, c: "x/y" } })).toBe('{"a":{"c":"x\\/y"},"b":1}');
+    expect(currencySymbol("PLN")).toBe("zł");
+  });
+
+  it("el contexto es coherente: categorías, presupuestos y recurrentes cuadran con el gasto del mes", () => {
+    for (const p of PERSONAS.values()) {
+      const ctx = personaContext(p).context;
+      const cats = ctx.categories.reduce((a: number, c: { total_current_month: number }) => a + c.total_current_month, 0);
+      expect(cats, p.id).toBeCloseTo(ctx.periods.current_month.expense, 6);
+      expect(ctx.patterns.needs_breakdown_current_month.total, p.id).toBeCloseTo(ctx.periods.current_month.expense, 6);
+      for (const c of ctx.categories) {
+        const subs = c.subcategories.reduce((a: number, s: { total_last_month: number }) => a + s.total_last_month, 0);
+        expect(subs, `${p.id} ${c.name}`).toBeCloseTo(c.total_last_month, 6);
+      }
+      expect(ctx.metadata.date_today).toBe(p.today);
+      expect(ctx.anomalies).toBeUndefined();
+    }
+  });
+
+  it("ninguna pregunta activa las anomalías (la app las añadiría y el banco no las replica)", () => {
+    for (const c of caseFile<{ id: string; question: string }>("chat.answer.json").cases) expect(triggersAnomalies(c.question), c.id).toBe(false);
+    expect(triggersAnomalies("¿Hay algún gasto raro este mes?")).toBe(true);
+  });
+
+  it("lee las cifras en cualquier convención y sabe que «1.234» puede ser las dos cosas", () => {
+    const vals = (s: string) => extractNumbers(s).map((t) => t.readings.map((r) => r.values.join("+")).join("|"));
+    expect(vals("**S/ 1,234.56**")).toEqual(["1234.56"]);
+    expect(vals("1.234,56 €")).toEqual(["1234.56"]);
+    expect(vals("2 350 €")).toEqual(["2+350|2350"]);
+    expect(vals("28万円")).toEqual(["280000"]);
+    expect(vals("450 mil pesos")).toEqual(["450000"]);
+    expect(vals("S/1.234")).toEqual(["1234|1.234"]);
+    expect(matchesValue(1235, 0, 1234.56)).toBe(true);
+    expect(matchesValue(1200, 0, 1234.56)).toBe(true); // «unos 1200»
+    expect(matchesValue(1250, 0, 1234.56)).toBe(false);
+    expect(matchesValue(45.34, 2, 45.3333)).toBe(true);
+  });
+
+  it("fidelidad: una cifra que no sale del contexto ni de una operación documentada es inventada", () => {
+    expect(fidelity("Gastaste **S/ 1,092.95**, un **68%** más que tu límite de S/650.", [1092.95, 650, 168.1538, 68.1538]).ok).toBe(true);
+    const bad = fidelity("Gastaste **S/ 1,180.40** en Comida fuera.", [1092.95, 650]);
+    expect(bad.ok).toBe(false);
+    expect(bad.unexplained).toEqual(["1,180.40"]);
+  });
+
+  it("criterio: cifra esperada, idioma y fidelidad; y lo vacío es fallo de la app", () => {
+    const c = { id: "x", persona: "pe", kind: "data" as const, question: "¿Cuánto tengo en total?", expect: { numbers: ["balances.total_balance"] } };
+    const total = personaContext(pe).context.balances.total_balance as number;
+    expect(gradeChatAnswer(`Tienes **S/ ${total.toFixed(2)}** en total sumando tus cuentas.`, c, pe).pass).toBe(true);
+    expect(gradeChatAnswer(`You have **S/ ${total.toFixed(2)}** in total across your accounts.`, c, pe).pass).toBe(false);
+    expect(gradeChatAnswer("Tienes **S/ 99,999.00** en total.", c, pe).pass).toBe(false);
+    expect(gradeChatAnswer("  ", c, pe).appParsed).toBe(false);
+  });
+});
+
+describe("chat.rewrite: el cuerpo de SuggestionsRewriterService.rewrite", () => {
+  const cases = caseFile<RewriteCase>("chat.rewrite.json").cases;
+
+  it("prompts del Swift: sistema con el idioma, usuario con la lista de nombres y las frases numeradas", () => {
+    const body = rewriteBody(cases[0]) as { messages: { content: string }[]; response_format: unknown; temperature: number };
+    expect(body.messages[0].content.startsWith(FINGERPRINTS["chat.rewrite"])).toBe(true);
+    expect(body.messages[0].content).toContain("RESPOND ONLY IN es-PE.");
+    expect(body.messages[1].content).toContain("Categorías: Comida, Transporte, Hogar, Entretenimiento\nSubcategorías: Mercado");
+    expect(body.messages[1].content).toContain('1. "¿Cuánto gasté en Cafeterías este mes?"\n2. "¿Cuánto llevo gastado en Ropa?"');
+    expect(body.messages[1].content).not.toMatch(/\\\(/);
+    expect(body.response_format).toEqual({ type: "json_object" });
+    expect(body.temperature).toBe(0.3);
+  });
+
+  it("las inválidas de cada caso son exactamente las que el isValid de la app manda a reescribir", () => {
+    for (const c of cases) expect(c.suggestions.filter((s) => !isValidSuggestion(s, c.whitelist)), c.id).toEqual(c.invalid);
+  });
+
+  it("parseRewritten y el criterio", () => {
+    expect(parseRewritten('{"suggestions":["a",2]}')).toBeNull();
+    expect(parseRewritten('{"suggestions":[]}')).toBeNull();
+    const c = cases[0];
+    const good = ["¿Cuánto gasté en Restaurantes este mes?", "¿Cuánto llevo gastado en Mercado?", "¿Gasté más en Plaza Vea o en Tambo la semana pasada?"];
+    expect(gradeRewrite(JSON.stringify({ suggestions: good }), c).pass).toBe(true);
+    expect(gradeRewrite(JSON.stringify({ suggestions: [...good.slice(0, 2), "¿Gasté más en Wong o en Tambo?"] }), c).pass).toBe(false);
+    expect(gradeRewrite(JSON.stringify({ suggestions: good.slice(0, 2) }), c).pass).toBe(false);
+    expect(gradeRewrite(JSON.stringify({ suggestions: [...good.slice(0, 2), "How much did I spend at Tambo last week?"] }), c).pass).toBe(false);
+  });
+});
+
+describe("chat.rewrite: nombres declinados e idioma de frases cortas", () => {
+  it("«w Biedronce» usa «Biedronka»; «Rozrywkę», «Rozrywka»; un nombre parecido no vale", async () => {
+    const { usesName } = await import("../bench/lib/chatRewrite");
+    expect(usesName("Ile wydałem w Biedronce w tym miesiącu?", "Biedronka")).toBe(true);
+    expect(usesName("Ile wydałem na Rozrywkę?", "Rozrywka")).toBe(true);
+    expect(usesName("Ile wydałem na Zakupy spożywcze?", "Zakupy spożywcze")).toBe(true);
+    expect(usesName("Ile wydałem w Biedronce?", "Lidl")).toBe(false);
+    expect(usesName("¿Cuánto gasté en Restaurantes?", "Restauración")).toBe(false);
+  });
+
+  it("una pregunta portuguesa corta no empata con el italiano", async () => {
+    const { detectLangWithFallback } = await import("../bench/lib/chatAnswer");
+    expect(detectLangWithFallback("Quanto paguei de ?")).toBe("pt");
+  });
+});
+
+describe("chat.answer: idioma de respuestas largas", () => {
+  it("una respuesta portuguesa no sale española por «que», «o» y «gasto»", async () => {
+    const { answerLanguage } = await import("../bench/lib/chatAnswer");
+    const pt = "No mês passado, o teu saldo foi de **-€230.09**, o que significa que não houve poupança, mas sim um saldo negativo. A tua taxa de poupança foi de **-15.34%**.";
+    expect(answerLanguage(pt, [])).toBe("pt");
+    expect(answerLanguage("Solo puedo ayudarte con tus finanzas personales — gastos, ingresos, presupuestos, patrones, etc. ¿Algo de eso?", [])).toBe("es");
+    expect(answerLanguage("You've spent **$2,597.05** so far in October, versus **$3,019.03** for all of September.", [])).toBe("en");
+    // Medidos el 2026-10-07: seis «de» la hacían neerlandesa y tres «a», inglesa.
+    expect(answerLanguage("Nos próximos dias, tens o pagamento de **Renda** de **€750**, previsto para **8 de outubro**. Depois, está previsto o pagamento de **MEO** de **€45,99** em **20 de outubro**.", ["Renda", "MEO"])).toBe("pt");
+    expect(answerLanguage("Nos próximos 30 dias tens **3 pagamentos recorrentes pendentes**, que somam **€809.98**:\n\n- **Renda**: **€750** a 8 de outubro\n- **MEO**: **€45.99** a 20 de outubro", ["Renda", "MEO"])).toBe("pt");
   });
 });

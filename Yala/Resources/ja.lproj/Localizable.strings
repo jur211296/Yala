@@ -1978,9 +1978,7 @@
 "bulkEdit.availableTags" = "追加可能";
 
 // MARK: - Voice Language
-"voiceLanguage.system" = "システム";
-"voiceLanguage.spanish" = "スペイン語";
-"voiceLanguage.english" = "英語";
+"voiceLanguage.appLanguage" = "アプリの言語";
 
 // MARK: - Voice Input
 "voice.title" = "音声メモ";
@@ -6403,6 +6401,9 @@
 
 /* Voice entry failure message: something went wrong, try again */
 "voice.failure.generic.message" = "音声の処理中に問題が発生しました。少し待ってからもう一度お試しください。";
+"voice.failure.trialUsedUp.title" = "お試しの音声メモを使い切りました";
+"voice.failure.trialUsedUp.message" = "Yala Pro なら、音声で支出を無制限に記録できます。";
+"ai.trial.seePro" = "Yala Pro を見る";
 
 /* Registro por imagen (propuesta C, 2026-10-04) */
 /* Image entry sheet title */
@@ -6451,6 +6452,8 @@
 "image.entry.failure.generic.title" = "今回は読み取れませんでした";
 /* Image entry failure: reading failed, the photo is fine */
 "image.entry.failure.generic.message" = "写真に問題はありません。読み取りに失敗しました。少ししてからもう一度お試しください。";
+"image.entry.failure.trialUsedUp.title" = "お試しの写真を使い切りました";
+"image.entry.failure.trialUsedUp.message" = "Yala Pro なら、写真でレシートを無制限に記録できます。";
 /* Current user's name, no parentheses */
 "groups.member.youName" = "あなた";
 

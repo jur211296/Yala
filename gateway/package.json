@@ -17,7 +17,8 @@
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
     "pretest": "npm run sync:manifest",
     "test": "vitest run",
-    "bench": "vite-node bench/run.ts --"
+    "bench": "vite-node bench/run.ts --",
+    "bench:voice": "vite-node bench/voice/run.ts --"
   },
   "dependencies": {
     "@levischuck/tiny-cbor": "^0.2.11",

@@ -20,13 +20,15 @@ enum VoiceEntryFailure: Equatable {
     case serviceUnavailable
     case saveFailed
     case generic
+    /// El plan free ya usó su cupo de prueba de notas de voz: la salida es Yala Pro (no se repone esperando).
+    case trialUsedUp
 
     /// Si tiene sentido volver a mandar el MISMO audio. Con la conexión caída o sin clave, repetir falla igual; sin
     /// voz o sin importe, el audio es el problema y hay que grabar otra vez.
     var retriesSameAudio: Bool {
         switch self {
         case .generic, .saveFailed: true
-        case .noConnection, .micPermission, .noVoice, .noAmount, .serviceUnavailable: false
+        case .noConnection, .micPermission, .noVoice, .noAmount, .serviceUnavailable, .trialUsedUp: false
         }
     }
 }
@@ -61,7 +63,7 @@ enum VoiceEntryFlowLogic {
         switch error {
         case .noAPIKey: .serviceUnavailable
         case .emptyAudio: .noVoice
-        case .networkError: isConnected ? .generic : .noConnection
+        case .networkError(let inner): ProxyErrorMapper.isTrialExhausted(inner) ? .trialUsedUp : (isConnected ? .generic : .noConnection)
         case .transcriptionFailed: .generic
         }
     }
@@ -70,7 +72,7 @@ enum VoiceEntryFlowLogic {
         switch error {
         case .noAPIKey: .serviceUnavailable
         case .emptyText: .noVoice
-        case .networkError: isConnected ? .generic : .noConnection
+        case .networkError(let inner): ProxyErrorMapper.isTrialExhausted(inner) ? .trialUsedUp : (isConnected ? .generic : .noConnection)
         case .parsingFailed, .invalidResponse: .generic
         }
     }

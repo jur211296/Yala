@@ -63,6 +63,29 @@ export const CANDIDATES: Candidate[] = [
   { id: "workersai:llama-4-scout", provider: "workersai", model: "@cf/meta/llama-4-scout-17b-16e-instruct", price: { input: 0.27, cachedInput: 0.27, output: 0.85 }, temperature: true, vision: true, details: ["auto"] },
   { id: "workersai:mistral-small-3.1", provider: "workersai", model: "@cf/mistralai/mistral-small-3.1-24b-instruct", price: { input: 0.351, cachedInput: 0.351, output: 0.555 }, temperature: true, vision: true, details: ["auto"] },
   { id: "workersai:gpt-oss-20b", provider: "workersai", model: "@cf/openai/gpt-oss-20b", price: { input: 0.2, cachedInput: 0.2, output: 0.3 }, efforts: ["low"], temperature: false, vision: false },
+
+  // --- sesión 2 (trabajador B) ---
+  // Vigentes el 2026-10-07 que faltaban. Precios de las páginas oficiales de ese día: OpenAI (developers.openai.com/api/docs/pricing;
+  // ninguno con apagado anunciado en /deprecations), Anthropic (platform.claude.com/docs/en/about-claude/pricing; Haiku 5.5 hasta
+  // 100k tokens de prompt; retirada «no antes de» sep-oct 2027), xAI (docs.x.ai/docs/models, < 200k tokens) y Workers AI
+  // (developers.cloudflare.com/workers-ai/platform/pricing). `vision: false` en los abiertos: no se han medido con la foto.
+  // `none` no existe en gpt-6.1-sol ni gpt-6-astra (la API solo admite low/medium/high/xhigh). Haiku 5.5 y Opus 5.5 van con
+  // `low` porque el adaptador mandaba `between_tools` con `none` y lo rechazaban; el trabajador A lo corrigió el mismo día
+  // (`thinking: disabled`) y Haiku 5.5 sin razonamiento es su línea `:none`, más abajo. Medidos y descartados ese día:
+  // DeepSeek V4 Flash y Gemma 4 26B de Workers AI (2048 tokens razonando, contenido vacío, 31 y 72 s).
+  { id: "openai:gpt-6.1-sol", provider: "openai", model: "gpt-6.1-sol", price: { input: 2.0, cachedInput: 0.1, output: 10.0 }, efforts: ["low"], temperature: false, vision: true, details: ["low", "high"] },
+  { id: "openai:gpt-5.5", provider: "openai", model: "gpt-5.5", price: { input: 5.0, cachedInput: 0.5, output: 30.0 }, efforts: ["none", "low"], temperature: false, vision: true, details: ["low", "high"] },
+  { id: "openai:gpt-6-astra", provider: "openai", model: "gpt-6-astra", price: { input: 10.0, cachedInput: 1.0, output: 50.0 }, efforts: ["low"], temperature: false, vision: true, details: ["low", "high"] },
+  { id: "anthropic:claude-haiku-5-5", provider: "anthropic", model: "claude-haiku-5-5", price: { input: 0.1, cachedInput: 0.01, output: 0.5 }, efforts: ["low"], temperature: false, vision: true, details: ["auto"] },
+  { id: "anthropic:claude-opus-5-5", provider: "anthropic", model: "claude-opus-5-5", price: { input: 4.0, cachedInput: 0.2, output: 20.0 }, efforts: ["low"], temperature: false, vision: true, details: ["auto"] },
+  { id: "xai:grok-4.7", provider: "xai", model: "grok-4.7", price: { input: 2.0, cachedInput: 0.5, output: 6.0 }, temperature: true, vision: true, details: ["high"] },
+  { id: "workersai:gpt-oss-120b", provider: "workersai", model: "@cf/openai/gpt-oss-120b", price: { input: 0.35, cachedInput: 0.35, output: 0.75 }, efforts: ["low"], temperature: false, vision: false },
+
+  // --- sesión 2 (trabajador A) ---
+  // Lo que faltaba del mercado ya lo añadió el bloque de arriba. Aquí solo Claude Haiku 5.5 SIN razonamiento: el adaptador
+  // de Anthropic lo apaga desde el 2026-10-07 con `thinking: disabled` (`between_tools` es solo de Sonnet 5.5; test en
+  // test/ai.anthropic.thinking.test.ts). Mismo precio que la línea de `low` (platform.claude.com/docs, ≤ 100k tokens de prompt).
+  { id: "anthropic:claude-haiku-5-5:none", provider: "anthropic", model: "claude-haiku-5-5", price: { input: 0.1, cachedInput: 0.01, output: 0.5 }, efforts: ["none"], temperature: false, vision: true, details: ["auto"], note: "sin razonamiento (thinking: disabled)" },
 ];
 
 export function costUSD(price: Price, usage: { inputTokens: number; cachedInputTokens: number; outputTokens: number } | null): number | null {

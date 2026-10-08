@@ -107,7 +107,7 @@ final class InsightsLLMService {
     ) async throws -> LLMInsightResponse {
         let client: OpenAI
         do {
-            client = try await ProxyClientFactory.makeOpenAI(category: .insights)
+            client = try await ProxyClientFactory.makeOpenAI(task: .insightsCards)
         } catch {
             throw InsightsLLMError.networkError(error)
         }
@@ -444,116 +444,6 @@ final class InsightsLLMService {
         return others.randomElement() ?? current
     }
 
-    /// Generate a single-sentence contextual insight for PanelView.
-    /// Internal 30-min TTL cache — caller only provides cacheKey.
-    func generateContextualInsight(
-        aggregatedData: [String: Any],
-        cacheKey key: String,
-        tone: InsightTone = .normal,
-        focus: InsightFocus = .balanced,
-        excludeText: String? = nil,
-        forcedAngle: String? = nil
-    ) async throws -> String? {
-        let client: OpenAI
-        do {
-            client = try await ProxyClientFactory.makeOpenAI(category: .insights)
-        } catch {
-            throw InsightsLLMError.networkError(error)
-        }
-
-        // Rate limit: 5s between contextual calls (independent from main insights)
-        if let lastCall = lastContextualCallTime,
-           Date.now.timeIntervalSince(lastCall) < 5 {
-            throw InsightsLLMError.rateLimited
-        }
-
-        // Evict expired contextual entries (30 min default, 24h for cash flow)
-        let now = Date.now
-        contextualCache = contextualCache.filter { entry in
-            let ttl: TimeInterval = entry.key.hasPrefix("cashflow_") ? 86400 : 1800
-            return now.timeIntervalSince(entry.value.timestamp) < ttl
-        }
-
-        // Check cache (eviction above guarantees all entries are < 30 min)
-        if let entry = contextualCache[key] {
-            return entry.text
-        }
-
-        lastContextualCallTime = Date.now
-
-        // Build JSON payload
-        let jsonData = try JSONSerialization.data(withJSONObject: aggregatedData)
-        let jsonString = String(data: jsonData, encoding: .utf8) ?? "{}"
-
-        let locale = aggregatedData["locale"] as? String ?? "es"
-        let country = aggregatedData["country"] as? String ?? ""
-
-        // Use forced angle if provided, otherwise rotate daily
-        let focusHint: String
-        if let forcedAngle {
-            focusHint = forcedAngle
-        } else {
-            let dayOfYear = Calendar.current.ordinality(of: .day, in: .year, for: Date.now) ?? 1
-            focusHint = Self.contextualFocusAngles[dayOfYear % Self.contextualFocusAngles.count]
-        }
-
-        let toneInstruction = Self.toneInstruction(for: tone, country: country)
-        let focusInstruction = Self.focusInstruction(for: focus)
-
-        let currencyCode = aggregatedData["currency"] as? String ?? "USD"
-        let currencyDisplay = aggregatedData["currency_display"] as? String ?? currencyCode
-
-        let systemPrompt = """
-        Eres un analista financiero personal. Genera UNA SOLA oración corta (máximo 150 caracteres) sobre las finanzas del usuario.
-
-        REGLAS CRÍTICAS:
-        - SOLO menciona datos presentes en el JSON. NUNCA inventes categorías, montos o relaciones
-        - Cada afirmación debe corresponder a un campo específico de los datos
-
-        IDIOMA: \(locale). Tutea ("tú"), lidera con el dato, nunca regañes ni juzgues, nunca hagas preguntas. NUNCA uses "Debes...", "Tienes que...", "Obviamente...". Usa "gasto"/"ingreso", no "transacción". Siempre constructivo y orientado a solución.
-
-        ÁNGULO HOY: Prioriza observaciones sobre "\(focusHint)". Si no hay dato relevante, elige el dato más notable.
-        \(excludeText.map { "PROHIBIDO repetir esta observación: \"\($0)\". Genera una COMPLETAMENTE diferente.\n" } ?? "")\(toneInstruction)\(focusInstruction)
-        REGLA DE ANCLAJE: Tu oración DEBE citar al menos un número específico de los datos (monto, porcentaje o conteo).
-
-        Usa **negritas** para la cifra clave. Los montos están en \(currencyCode). SIEMPRE formatea: \(currencyDisplay) NÚMERO (ej: \(currencyDisplay) 4,500). La divisa SIEMPRE va ANTES del número, NUNCA después.
-
-        JSON: {"comment": "una oración"} o {"comment": null} si no hay nada interesante.
-        """
-
-        let userMessage = "Datos financieros del periodo:\n\(jsonString)"
-
-        let query = ChatQuery(
-            messages: try buildChatMessages(system: systemPrompt, user: userMessage),
-            model: .gpt4_1_mini,
-            responseFormat: .jsonObject,
-            temperature: 0.4
-        )
-
-        do {
-            let result = try await client.chats(query: query)
-
-            guard let content = result.choices.first?.message.content,
-                  let data = content.data(using: .utf8),
-                  let dict = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-                throw InsightsLLMError.parseFailed
-            }
-
-            // comment can be null → no insight
-            let comment = dict["comment"] as? String
-
-            if let comment {
-                contextualCache[key] = ContextualCacheEntry(text: comment, timestamp: Date.now)
-            }
-
-            return comment
-        } catch let error as InsightsLLMError {
-            throw error
-        } catch {
-            throw InsightsLLMError.networkError(error)
-        }
-    }
-
     // MARK: - Cash Flow Projection Insight
 
     /// Generate a single-sentence insight about the cash flow projection.
@@ -564,7 +454,7 @@ final class InsightsLLMService {
     ) async throws -> String? {
         let client: OpenAI
         do {
-            client = try await ProxyClientFactory.makeOpenAI(category: .insights)
+            client = try await ProxyClientFactory.makeOpenAI(task: .insightsCashflow)
         } catch {
             throw InsightsLLMError.networkError(error)
         }
@@ -704,7 +594,7 @@ final class InsightsLLMService {
     ) async throws -> String? {
         let client: OpenAI
         do {
-            client = try await ProxyClientFactory.makeOpenAI(category: .insights)
+            client = try await ProxyClientFactory.makeOpenAI(task: .insightsDeviation)
         } catch {
             throw InsightsLLMError.networkError(error)
         }

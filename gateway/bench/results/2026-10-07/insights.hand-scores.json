@@ -1,0 +1,327 @@
+{
+ "scorer": "Frank (sesión 2, trabajador B), leyendo cada respuesta ANTES de ver al juez",
+ "rubric": "contradice = alguna afirmación falsa o sin apoyo en los datos; util = dice algo concreto y relevante sobre estos datos; voz = no regaña, no pregunta. Pasa = !contradice && util.",
+ "items": [
+  {
+   "task": "insights.cards",
+   "key": "c01-es-PE-good-month|anthropic:claude-haiku-4-5|none|0",
+   "contradice": true,
+   "util": true,
+   "voz": false,
+   "nota": "«el alquiler de S/ 950 representa el 24% de tu ingreso mensual»: es el 17 % del ingreso (24 % es del gasto); da por hecho que los 2 recurrentes son alquiler + servicios; un consejo es una pregunta («¿todas activas?»)"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c03-es-AR-inflation|gemini:gemini-3.5-flash-lite|none|0",
+   "contradice": true,
+   "util": true,
+   "voz": true,
+   "nota": "dato curioso inventa la causa: el viernes «coincide con tus salidas a Bares y Recitales» (no hay dato que lo una); el resto cuadra"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c05-en-GB-year-compare|openai:gpt-5.6-luna|none|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "todo cuadra (el £ 27 es 104 − 77; el alquiler es más de 4 veces lo opcional); consejos algo planos"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c08-fr-budgets-at-risk|workersai:gpt-oss-20b|low|0",
+   "contradice": true,
+   "util": true,
+   "voz": true,
+   "nota": "«de € 2 685 à € 3 076»: 2.685 es el gasto ACTUAL, el 3.076 no existe; «un paiement en attente» cuando son 3"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c12-pl-one-off|anthropic:claude-haiku-5-5|low|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "cifras correctas (2.600 + 1.450 = 4.050; 43 % + 26 % > 2/3); mezcla palabras en español (eso lo mide el criterio determinista, no el juez)"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c14-zh-no-income|gemini:gemini-3.8-flash|low|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "todo correcto; buen dato curioso (外卖 es justo la mitad de 餐饮)"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c01-es-PE-good-month|openai:gpt-5.6-terra|none|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto; «63 %» suma dos porcentajes truncados (34 + 29; el real es 64,0 %): redondeo, no contradicción"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c03-es-AR-inflation|workersai:llama-4-scout|-|0",
+   "contradice": true,
+   "util": true,
+   "voz": true,
+   "nota": "«El gasto en Delivery creció»: no hay dato anterior de Delivery (comparación sin apoyo); consejos genéricos"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c05-en-GB-year-compare|anthropic:claude-opus-5-5|low|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "todo cuadra (410 + 190 = 600; £ 38 < la mitad de £ 104); el «£ 80 por ejemplo» es una sugerencia, no un dato"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c08-fr-budgets-at-risk|openai:gpt-4.1-mini|-|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto; consejos algo genéricos"
+  },
+  {
+   "task": "insights.cashflow",
+   "key": "f01-es-PE-healthy|anthropic:claude-haiku-4-5|none|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto"
+  },
+  {
+   "task": "insights.cashflow",
+   "key": "f02-es-ES-goes-negative|gemini:gemini-3.5-flash-lite|none|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto y al grano (enero en −450)"
+  },
+  {
+   "task": "insights.cashflow",
+   "key": "f04-en-irregular-income|openai:gpt-5.6-luna|none|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "cifras correctas; el conector «pese a» es raro pero no falso; en español a un usuario en inglés (lo mide el criterio)"
+  },
+  {
+   "task": "insights.cashflow",
+   "key": "f06-pt-BR-dip-middle|workersai:llama-4-scout|-|0",
+   "contradice": false,
+   "util": false,
+   "voz": true,
+   "nota": "«tu saldo inicial de R$ 6.000 generará un acumulado de R$ 3.470» suena a crecimiento y esconde la caída y el mínimo de febrero"
+  },
+  {
+   "task": "insights.cashflow",
+   "key": "f09-de-long-healthy|anthropic:claude-opus-5-5|low|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto"
+  },
+  {
+   "task": "insights.cashflow",
+   "key": "f13-ja-bonus-months|openai:gpt-4.1-mini|-|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto"
+  },
+  {
+   "task": "insights.cashflow",
+   "key": "f14-zh-sliding-negative|openai:gpt-6-astra|low|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "«flujo negativo en 3 de los 6 meses» lee monthsNegative al pie de la letra (son meses con acumulado negativo); aceptable con los datos que ve"
+  },
+  {
+   "task": "insights.cashflow",
+   "key": "f01-es-PE-healthy|xai:grok-4.20-non-reasoning|-|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto"
+  },
+  {
+   "task": "insights.cashflow",
+   "key": "f02-es-ES-goes-negative|anthropic:claude-sonnet-5-5|none|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto"
+  },
+  {
+   "task": "insights.cashflow",
+   "key": "f04-en-irregular-income|openai:gpt-5.4-mini|none|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto"
+  },
+  {
+   "task": "insights.deviation",
+   "key": "d01-es-PE-two-lines|anthropic:claude-haiku-4-5|none|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto"
+  },
+  {
+   "task": "insights.deviation",
+   "key": "d03-es-AR-three-lines|openai:gpt-4.1-mini|-|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto"
+  },
+  {
+   "task": "insights.deviation",
+   "key": "d05-en-GB-three-lines|openai:gpt-6-astra|low|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto"
+  },
+  {
+   "task": "insights.deviation",
+   "key": "d08-fr-big-and-tiny|xai:grok-4.20-non-reasoning|-|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto"
+  },
+  {
+   "task": "insights.deviation",
+   "key": "d09-de-five-lines|gemini:gemini-3.5-flash-lite|low|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "cita lo gastado (€ 520) y no el exceso (€ 270), pero no es falso"
+  },
+  {
+   "task": "insights.deviation",
+   "key": "d12-pl-three-lines|openai:gpt-5.6-luna|low|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto"
+  },
+  {
+   "task": "insights.deviation",
+   "key": "d13-ja-three-lines|workersai:gpt-oss-120b|low|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "cifras correctas; en español a un usuario japonés (lo mide el criterio)"
+  },
+  {
+   "task": "insights.deviation",
+   "key": "d01-es-PE-two-lines|anthropic:claude-sonnet-5-5|low|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto"
+  },
+  {
+   "task": "insights.deviation",
+   "key": "d03-es-AR-three-lines|openai:gpt-5.4-mini|low|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto (178.000 = suma de excesos)"
+  },
+  {
+   "task": "insights.deviation",
+   "key": "d05-en-GB-three-lines|openai:gpt-6-luna|low|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto"
+  },
+  {
+   "task": "trends.summary",
+   "key": "t01-es-PE-all-blocks|anthropic:claude-haiku-4-5|none|0",
+   "contradice": true,
+   "util": true,
+   "voz": true,
+   "nota": "compara octubre EN CURSO (1.820) con la media de meses completos (4.100) y concluye «ritmo más contenido»: justo lo que el prompt prohíbe"
+  },
+  {
+   "task": "trends.summary",
+   "key": "t05-en-GB-week|gemini:gemini-3.5-flash-lite|none|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "cifras correctas; en español a un usuario en inglés (lo mide el criterio)"
+  },
+  {
+   "task": "trends.summary",
+   "key": "t03-es-AR-balance|openai:gpt-5.6-luna|none|0",
+   "contradice": true,
+   "util": true,
+   "voz": true,
+   "nota": "«El viernes promedia ARS 98.500, casi el doble que el martes»: es 2,5 veces (39.500); el resto cuadra (99.800 = 345.500 − 245.700)"
+  },
+  {
+   "task": "trends.summary",
+   "key": "t07-pt-PT-all-time|workersai:gpt-oss-20b|low|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "cifras correctas; mezcla español y portugués (lo mide el criterio)"
+  },
+  {
+   "task": "trends.summary",
+   "key": "t09-de-sparse-weekdays|anthropic:claude-haiku-5-5|low|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto (media 2.980 exacta; dice que el mes sigue en curso)"
+  },
+  {
+   "task": "trends.summary",
+   "key": "t12-pl-spike-in-history|gemini:gemini-3.8-flash|low|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto; el «wzrosły» de abril a septiembre esconde que fue un pico puntual, pero no es falso"
+  },
+  {
+   "task": "trends.summary",
+   "key": "t13-ja-month|openai:gpt-5.6-terra|none|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto; lee «9月 26» como «26 de septiembre»: la etiqueta de la app es ambigua, no lo cuento"
+  },
+  {
+   "task": "trends.summary",
+   "key": "t14-zh-cautious|workersai:llama-4-scout|-|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto, redacción torpe"
+  },
+  {
+   "task": "trends.summary",
+   "key": "t01-es-PE-all-blocks|anthropic:claude-opus-5-5|low|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto y cuidadoso («al mismo corte de septiembre», «en lo que va del mes»)"
+  },
+  {
+   "task": "trends.summary",
+   "key": "t03-es-AR-balance|openai:gpt-4.1-mini|-|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto"
+  }
+ ],
+ "scored_at": "2026-10-07, antes de lanzar ningún juez sobre estas respuestas"
+}

@@ -1978,9 +1978,7 @@
 "bulkEdit.availableTags" = "Beschikbaar om toe te voegen";
 
 // MARK: - Voice Language
-"voiceLanguage.system" = "Systeem";
-"voiceLanguage.spanish" = "Spaans";
-"voiceLanguage.english" = "Engels";
+"voiceLanguage.appLanguage" = "Taal van de app";
 
 // MARK: - Voice Input
 "voice.title" = "Spraaknotitie";
@@ -6403,6 +6401,9 @@
 
 /* Voice entry failure message: something went wrong, try again */
 "voice.failure.generic.message" = "Er ging iets mis bij het verwerken van je stem. Probeer het zo opnieuw.";
+"voice.failure.trialUsedUp.title" = "Je proefspraaknotities zijn op";
+"voice.failure.trialUsedUp.message" = "Met Yala Pro leg je je uitgaven onbeperkt met je stem vast.";
+"ai.trial.seePro" = "Bekijk Yala Pro";
 
 /* Registro por imagen (propuesta C, 2026-10-04) */
 /* Image entry sheet title */
@@ -6451,6 +6452,8 @@
 "image.entry.failure.generic.title" = "Deze keer kon ik hem niet lezen";
 /* Image entry failure: reading failed, the photo is fine */
 "image.entry.failure.generic.message" = "De foto is in orde: het lezen mislukte. Probeer het zo opnieuw.";
+"image.entry.failure.trialUsedUp.title" = "Je proeffoto’s zijn op";
+"image.entry.failure.trialUsedUp.message" = "Met Yala Pro leg je je bonnetjes onbeperkt met een foto vast.";
 /* Current user's name, no parentheses */
 "groups.member.youName" = "Jij";
 

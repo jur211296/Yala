@@ -104,7 +104,7 @@ final class TrendsAIService {
 
         let client: OpenAI
         do {
-            client = try await ProxyClientFactory.makeOpenAI(category: .insights)
+            client = try await ProxyClientFactory.makeOpenAI(task: .trendsSummary)
         } catch {
             throw InsightsLLMError.networkError(error)
         }

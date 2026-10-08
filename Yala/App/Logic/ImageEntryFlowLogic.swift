@@ -25,6 +25,8 @@ enum ImageEntryFailure: Equatable {
     /// Un ARCHIVO que no se pudo abrir: un PDF vacío o protegido, o una imagen dañada, soltados sobre Yala en el iPad o
     /// elegidos desde Archivo. Es `.unreadable` con su copy: «esta imagen» no vale para un PDF.
     case unreadableFile
+    /// El plan free ya usó su cupo de prueba de fotos: la salida es Yala Pro (no se repone esperando).
+    case trialUsedUp
 
     /// Si tiene sentido volver a mandar las MISMAS fotos. Sin importe o ilegible, la foto es el problema; sin servicio,
     /// repetir falla igual. Sin conexión sí: a diferencia de la voz, la foto no se repite, y al volver la red basta con
@@ -32,7 +34,7 @@ enum ImageEntryFailure: Equatable {
     var retriesSamePhotos: Bool {
         switch self {
         case .generic, .saveFailed, .noConnection: true
-        case .noAmount, .unreadable, .unreadableFile, .cameraPermission, .serviceUnavailable: false
+        case .noAmount, .unreadable, .unreadableFile, .cameraPermission, .serviceUnavailable, .trialUsedUp: false
         }
     }
 }
@@ -60,7 +62,7 @@ enum ImageEntryFlowLogic {
         switch error {
         case .noAPIKey: .serviceUnavailable
         case .imageEncodingFailed: .unreadable
-        case .networkError: isConnected ? .generic : .noConnection
+        case .networkError(let inner): ProxyErrorMapper.isTrialExhausted(inner) ? .trialUsedUp : (isConnected ? .generic : .noConnection)
         case .invalidResponse: .generic
         case .noTransactionsFound: .noAmount
         }
@@ -84,8 +86,10 @@ enum ImageEntryFlowLogic {
         if failures.count < outcomes.count {
             return .review(failedPhotos: failures.count)
         }
+        // El cupo agotado va primero: si una foto lo agotó, las siguientes también fallarán, y lo único que lo arregla
+        // es Yala Pro.
         let priority: [ImageEntryFailure] = [
-            .noConnection, .serviceUnavailable, .generic, .saveFailed, .noAmount, .unreadable, .unreadableFile,
+            .trialUsedUp, .noConnection, .serviceUnavailable, .generic, .saveFailed, .noAmount, .unreadable, .unreadableFile,
             .cameraPermission
         ]
         let worst = priority.first { failures.contains($0) } ?? .generic
