@@ -1,10 +1,10 @@
 ---
 id: queued-offer-after-dismiss-flakes-on-a-cold-simulator
 status: backlog
-priority: low
+priority: medium
 area: "testing, xcuitest, presentaciones"
 created: 2026-09-15
-updated: 2026-10-06
+updated: 2026-10-08
 source: "gate de `cloud-signout-collapses-a-groups-session-expiry-into-permanent` (2026-09-15)"
 ---
 
@@ -153,3 +153,77 @@ cambio de Apple ID, la cola ni la matriz). Tres corridas del caso, centinela en 
 de las 6 suites del gate) · **falla 70,0 s** · **pasa 23,4 s** (las dos últimas aisladas, mismo binario, simulador
 caliente). La bimodalidad 23 s / 68-70 s es la de septiembre. Con 2 de 3 la tasa sube respecto a 1 de 3, pero N=3 no
 separa eso del azar.
+
+## 2026-10-08: NO es el entorno — el drenaje no corre porque `onChange(revision)` no dispara (medido)
+
+Sesión de `presentation-net-desarm-has-no-automated-net`. El punto 2 de «Lo que hay que medir», hecho: se instrumentó
+la matriz (`updateContentViewReadiness`), el drenaje (`drainContentViewIntents`), `AppRouter.markReady` y el
+`.onChange(of: AppRouter.shared.revision)` de `ContentView`, y se lanzó la app a mano (`simctl launch --console-pty`,
+un solo simulador, sin XCUITest) con la hoja del cambio de Apple ID que no monta y la oferta en cola.
+
+**Lo que se ve en el arranque que se atasca** (los que pasan son idénticos hasta la última línea):
+
+```
+14.35 DIAGNET verdict … attempt=8 -> exhausted        ← la red suelta la condición viva
+14.35 DIAGNET onChange notice=nil                      ← el modificador lo ve
+15.29 DIAGREADY blocker=nil rev=8                      ← la matriz queda LIBRE
+15.30 DIAGROUTER markReady bumped -> 9                 ← y el router sube la revisión
+      (nada más: ni `DIAGREV onChange revision=9`, ni drenaje, en los 7 s restantes)
+```
+
+En los que pasan, a esa misma línea le sigue `DIAGREV onChange revision=9` → `DIAGDRAIN drained trialOffer`.
+
+⇒ **La matriz recalcula y el router bumpea; lo que falta es que SwiftUI entregue el `onChange` de la revisión.** El
+bump ocurre dentro del `onChange(of: appleIDCloseNoticePending)` de `ReadinessGateObservers`, es decir, durante la
+actualización de la vista (eso es inferido: no hay traza de SwiftUI que lo diga). Sin otro bump, la cola no vuelve
+a drenar: la persona se queda sin el aviso que esperaba —paywall, aviso de bandeja, invitación— hasta que algo
+encole otro intent o la app pase por segundo plano.
+
+**Tasas medidas, mismo binario, simulador caliente, máquina sin otras corridas:**
+
+| Configuración | Atascados |
+|---|---|
+| hoja con el seam `-uitest-apple-id-close-never-mounts` (sin instrumentar) | 1 de 6 |
+| ídem, instrumentada solo la red | 3 de 10 |
+| ídem, instrumentada además la matriz y el drenaje | 1 de 14 |
+| **receta original del 2026-09-14, SIN seam** (`.sheet(isPresented: .constant(false))`) | **1 de 16** |
+
+La última fila es la que descarta que sea un artefacto del seam.
+
+**Y no es solo la hoja: el aviso de vaciado remoto se atasca igual.** Con `-uitest-remote-wipe-notice-never-mounts`
+e instrumentado, 1 de 40 arranques: `DIAGNET remote wipe exhausted` → `blocker=nil rev=8` → `markReady bumped -> 9`
+y nada más. El gate de esa sesión cayó así una vez en el lote de 40 suites (131 de 132, centinela 0) y el mismo caso
+pasó 3 de 3 aislado sobre la misma build. Y es la misma firma que los rojos de arriba
+(«Ahora no» suelta la condición viva por el mismo camino): la hoja se cierra y la oferta no llega.
+
+**`RemoteWipeNoticeRoutingUITests.test_notice_keepWaiting_…`** (su flaky 1/3 de la suite advisory) cae por la
+misma puerta según la firma —«Seguir esperando» → la oferta no presenta en 45 s; cayó 1 vez en esta sesión y pasó
+5 de 5 después—, pero esa rama no se instrumentó: inferido, no medido.
+
+### Propuesta (no se toca en `presentation-net-desarm-has-no-automated-net`: era solo cobertura)
+
+- **A — sacar el recálculo de la matriz de la actualización de la vista** (recomendada): los `onChange` de
+  `ReadinessGateObservers` llaman a `recompute` diferido una vuelta del main actor, de modo que `markReady` bumpee
+  fuera del update. Hay que comprobar que no reabre la ventana de «dos drains en el mismo tick» que avisa el
+  comentario de `isBootstrapSettled`.
+- **B — que el router no dependa de `onChange` para drenar**: `markReady` notifica a un consumidor por
+  `AsyncStream`/`.task`, y el drenaje deja de colgar de la observación de una propiedad.
+- **C — re-mirar la cola cuando la matriz pasa a libre**, como ya hacen `dismissSplash` y `signOutPhaseChanged`
+  con el shell tapado. Es el parche más pequeño, pero es justo el doble drenaje que el código evita hoy.
+
+Cualquiera de las tres se valida con la instrumentación de arriba (diff guardado en el PR de esa sesión) y N ≥ 20
+arranques antes y después, no con una corrida: a 1 de 7-16, N=3 no dice nada. Y el título de este ticket conviene
+cambiarlo: no es «cold simulator», es el drenaje que no llega tras soltar un bloqueo de la matriz.
+
+### Casos que caen por este bug (registro, en lugar de la Lista Negra del vault)
+
+Ninguno se desactiva: todos afirman justo lo que el bug rompe, y deben ponerse verdes de forma estable con el
+arreglo. Dueño: Frank. Revisar antes del **2026-10-22**.
+
+- `AppleIDCloseNoticeUITests.test_notice_presentsThroughTheQueue_andLaterReleasesTheRouter`
+- `AppleIDCloseNoticeUITests.test_sheetThatNeverMounts_netExhausts_andReleasesTheRouter`
+- `RemoteWipeNoticeRoutingUITests.test_notice_keepWaiting_leavesTheAppWhereItWas`
+- `RemoteWipeNoticeRoutingUITests.test_noticeThatNeverMounts_netExhausts_andReleasesTheRouter`
+
+Un rojo de cualquiera de estos con la firma «la oferta no apareció en 45 s» y el centinela en 0 es este ticket, no
+una regresión. Cualquier otra línea de fallo sí lo es.
