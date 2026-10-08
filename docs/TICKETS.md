@@ -561,7 +561,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | no-hay-seed-con-miembro-rechazado | backlog | tickets/backlog/no-hay-seed-con-miembro-rechazado.md |
 | no-test-seam-for-account-exists-blocks-xcuitest-of-identity | backlog | tickets/backlog/no-test-seam-for-account-exists-blocks-xcuitest-of-identity.md |
 | nocturna-del-9-sep-dejo-cuatro-xcuitest-en-rojo | discarded | tickets/discarded/nocturna-del-9-sep-dejo-cuatro-xcuitest-en-rojo.md |
-| notification-dedup-deletes-all-custom-reminders-but-one | backlog | tickets/backlog/notification-dedup-deletes-all-custom-reminders-but-one.md |
+| notification-dedup-deletes-all-custom-reminders-but-one | done | tickets/done/notification-dedup-deletes-all-custom-reminders-but-one.md |
 | notifications-not-delivered-testflight | done | tickets/done/notifications-not-delivered-testflight.md |
 | onboarding-login-should-match-the-sep15-reference | qa | tickets/qa/onboarding-login-should-match-the-sep15-reference.md |
 | onboarding-purpose-drops-groups-card | done | tickets/done/onboarding-purpose-drops-groups-card.md |
