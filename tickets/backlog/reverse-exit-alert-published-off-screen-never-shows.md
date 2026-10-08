@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, migración"
 created: 2026-09-21
-updated: 2026-09-21
+updated: 2026-10-08
 source: "review adversarial de `reverse-pre-mount-ceiling-has-no-alert-and-leaves-network-verify-out` (2026-09-21), lente del aviso"
 ---
 
@@ -57,3 +57,10 @@ decisión de producto, no un arreglo.
 
 - `reverse-pre-mount-ceiling-has-no-alert-and-leaves-network-verify-out` — el aviso nuevo que hereda la asimetría.
 - `reverse-claim-rejection-has-no-way-out-in-the-client` — de donde viene la decisión escrita.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `StorageSettingsView`: `.onChange(of: controller?.lastError) { _, newValue in showError = … }` sin `initial: true`; el aviso hermano `.onChange(of: controller?.migrationIdentityBlock?.id, initial: true)` sí lo lleva.
+- Recomendación sobre la decisión: **sí debe esperar a la persona**, pero solo dentro del mismo proceso (no sobrevive a relanzar, así no sale uno de hace tres días) y consumible una vez, para los dos avisos que escriben `lastError`. Que una vuelta a iCloud fallida quede solo en una nota pequeña es fácil de no ver. La prioridad es la de esa opción.
+
+Triage 2026-10-08: abierto · low → low · la nota de la tarjeta sigue diciendo lo que pasó; falta decidir si el aviso espera.

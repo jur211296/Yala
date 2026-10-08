@@ -4,6 +4,7 @@ status: backlog
 priority: low
 area: "groups, sesión, settings"
 created: 2026-09-25
+updated: 2026-10-08
 source: "residual de `cloud-session-expiry-with-only-group-changes-has-no-sign-in-door` (2026-09-25)"
 ---
 
@@ -30,3 +31,11 @@ Toco «Cerrar sesión» y Yala me dice «Tu sesión caducó. Vuelve a iniciar se
 
 ¿Un texto por celda que nombre su puerta, y una puerta para la sesión guardada que el servidor rechaza? El molde está en la
 nube: la puerta prueba con un ciclo antes de firmar y ata la firma a la cuenta.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- Desde 70b8c1e67 (PR #294) el aviso con cambios de grupos ya ofrece «Cerrar sesión y perderlos» (`groups.errors.noSessionSignOutLoss`), así que no es un callejón sin salida; pero sigue diciendo «vuelve a entrar con esa cuenta» sin nombrar «Dónde viven tus datos».
+- `SignOutBlockedCopy.message(.sessionExpired)` sigue siendo `groups.errors.sessionExpired`, y solo `.cloudSessionExpired` nombra la puerta.
+- `GroupsAssociationLogic.sectionState`: con `hasLiveGroupsSession` (el `hasSession` del SDK) a `true` y el token rechazado por el servidor sale `.associated`, sin «Entrar».
+
+Triage 2026-10-08: abierto · low → low · el copy sigue sin nombrar la puerta, pero desde el PR #294 hay salida con aviso: no deja a nadie atrapado.

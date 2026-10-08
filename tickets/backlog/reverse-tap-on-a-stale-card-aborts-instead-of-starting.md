@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, migración"
 created: 2026-09-21
-updated: 2026-09-21
+updated: 2026-10-08
 source: "review adversarial de `reverse-pre-mount-ceiling-has-no-alert-and-leaves-network-verify-out` (2026-09-21), lente del aviso — medido con el test del propio ticket"
 ---
 
@@ -56,3 +56,11 @@ La opción 3 es la que cierra la clase entera; las otras dos tapan este síntoma
 - `reverse-tap-is-lost-while-a-resume-is-running` — el mismo botón, el caso de «hay un resume en vuelo». Distinto: allí
   el runner ignora la acción por reentrada; aquí la ejecuta sobre la fase equivocada.
 - `reverse-pre-mount-ceiling-has-no-alert-and-leaves-network-verify-out` — el que lo midió.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `CloudMigrationController.startReverse` sigue con los dos `await r.submit(…)` sin comprobar la fase del journal antes; `StorageSettingsView` lo llama desde `onRevert`.
+- `MigrationRunnerTests.startReversePair_exitsTheCeilingOnlyWhenTheJournalWasAlreadyInTheStage`, caso B, sigue esperando `.done` y una `lastReversePreMountExit` anotada tras el toque.
+- Recomendación sobre la decisión: la **opción 3** (no ofrecer «Volver a iCloud» con el journal en una fase de vuelta), que el propio ticket señala como la que cierra la clase. La prioridad es la de esa opción.
+
+Triage 2026-10-08: abierto · low → low · un segundo toque arranca la vuelta y el aviso ya no es silencio; molesto, sin pérdida de datos.

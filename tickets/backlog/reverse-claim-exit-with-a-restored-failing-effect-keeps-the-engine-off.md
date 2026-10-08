@@ -4,6 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, sync, migración"
 created: 2026-09-16
+updated: 2026-10-08
 source: "segunda pasada de review adversarial de `reverse-claim-rejection-has-no-way-out-in-the-client` (2026-09-16), lente de reposición de pendientes — hallazgo 1, aceptado como residual"
 ---
 
@@ -53,3 +54,10 @@ pendientes. Este ticket es la primera vez que la diferencia se nota justo despu�
 - `reverse-claim-rejection-has-no-way-out-in-the-client` (D13) · `reverse-abort-rejected-leaves-a-frozen-cloud-saying-up-to-date`
   (la pantalla dice «Todo al día» en ese mismo estado) · `cloud-engine-can-start-with-a-reverse-abort-pending` (el caso
   contrario: el motor arranca con un pendiente que no debería).
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `CloudSyncRuntime.canRunDomain` → `MigrationRuntimeGate.canRun(read:…)`, sin término de efectos pendientes; `CloudMigrationController.startRuntimeIfStable` sigue con `!hasPending` en su guard.
+- Ningún commit desde el 2026-09-16 unifica los dos criterios; su caso contrario sigue abierto en `cloud-engine-can-start-with-a-reverse-abort-pending`.
+
+Triage 2026-10-08: abierto · low → low · exige un líder desplazado con un pendiente que falla siempre y un claim que falla por red; se cura al reabrir Yala.

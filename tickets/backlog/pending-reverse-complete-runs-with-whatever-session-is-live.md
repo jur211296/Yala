@@ -4,6 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, migración"
 created: 2026-09-27
+updated: 2026-10-08
 source: "review adversarial de `migration-activation-drops-pending-effects-it-never-restores` (lentes de runner y de consumidores, 2026-09-27)"
 ---
 
@@ -37,3 +38,10 @@ ese caso.
 
 - [ ] Con `.completeReverseServer` pendiente de la cuenta A y la sesión de B viva, el efecto no llama al servidor.
 - [ ] Con la sesión de A, se ejecuta como hoy.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `MigrationWorkExecutor.swift`, `case .completeReverseServer`: `await session.accessToken()` y `migrationProgress(action: "reverse_complete")` sin ninguna comparación con la cuenta que cerró la vuelta. El efecto (`MigrationStateMachine.swift`, `case completeReverseServer`) sigue sin payload de cuenta.
+- Ningún commit desde el 2026-09-27 toca ese efecto (`git log -S completeReverseServer`).
+
+Triage 2026-10-08: abierto · low → low · sigue sin atar a la cuenta, pero exige vuelta sin red y entrar después con otra cuenta antes del drenaje, y el efecto del RPC en B está sin medir.

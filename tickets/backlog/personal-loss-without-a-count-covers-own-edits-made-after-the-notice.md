@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "nube, sync, datos"
 created: 2026-10-05
-updated: 2026-10-05
+updated: 2026-10-08
 source: "medición del encargo `stuck-groups-loss-without-a-count-covers-own-edits-made-after-the-notice` (2026-10-05): el gemelo personal del mismo hueco"
 ---
 
@@ -38,3 +38,11 @@ salir también con el drain sano.
   poder contar. Y lo aceptado sin leer deja de cubrir cambios nuevos.
 - **B.** Ofrecerla igual, pero que lo aceptado sin leer solo cubra «nada nuevo» (relectura buena antes del borrado).
 - **C.** Dejarlo: hacen falta un fallo de lectura en la oferta y un cambio apuntado justo después.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `CloudSignOutFlowLogic.lossHalfCovers`: `guard let accepted else { return true }` sigue; el docblock de `groupsHistoryHalfCovers` dice que la mitad personal sigue así y remite a este ticket.
+- El gemelo de Grupos se cerró con b48dafcea (decisión A del 2026-10-05); la mitad personal no se tocó.
+- Recomendación: **A**, la misma regla que Grupos (sin poder contar, no se ofrece perder; lo aceptado sin leer deja de cubrir cambios nuevos). Tener dos reglas distintas para la misma pregunta es justo lo que `lossHalfCovers` quiso evitar. La prioridad es la que tendría con A.
+
+Triage 2026-10-08: abierto · low → low · el hueco sigue (lossHalfCovers), pero exige un fallo de lectura del History en la oferta y un cambio sin preparar justo después; decisión pendiente, recomendada A.

@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, sync, groups"
 created: 2026-10-07
-updated: 2026-10-07
+updated: 2026-10-08
 source: "residual de `personal-clock-ahead-wins-every-conflict-until-real-time-catches-up` y `groups-clock-ahead-wins-every-conflict-until-real-time-catches-up` (2026-10-07)"
 ---
 
@@ -39,3 +39,10 @@ servidor (su HLC está en el pasado).
 
 - [ ] Decisión escrita.
 - [ ] Test: con el reloj una hora atrasado, la edición de una fila ya vista no se pierde en silencio.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `HLC.swift` `observePulled` sigue llamando a `receive(remote:now:)` con su guarda de deriva y devuelve `.rejected` sin integrar; lo usan `CloudSyncEngine.receiveRemoteClock`, `GroupsSyncClient` y `PrefsOutbox`.
+- Recomendación sobre la decisión: integrar sin guarda solo lo que baja del servidor con el tope de `hlc01` puesto (acota el salto a la hora real + 1 min), y mantener la guarda contra un servidor legacy. La prioridad es la que tendría con esa opción.
+
+Triage 2026-10-08: abierto · low → low · el hueco sigue, pero exige el reloj atrasado más de 5 min a mano; mismo peldaño que sus gemelos del reloj adelantado, en qa como low.

@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, sync, sesión"
 created: 2026-09-16
-updated: 2026-09-16
+updated: 2026-10-08
 source: "decisión D12 del Paso 0 de `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry` (2026-09-16)"
 ---
 
@@ -46,3 +46,11 @@ que vuelve vacío (`canRenewSession`). Es técnico y tiene molde; no hay copy nu
 - [ ] Con el mismo token, o sin token y con la sesión borrada, sigue siendo `.sessionExpired` (tests en la dirección
       contraria).
 - [ ] El 401 `yala_attest_required` no fuerza ningún refresh.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `forceRefreshAccessToken()` solo se usa en `GroupsSyncClient` y en `CloudMigrationController.signInToResumeReverse`; `SyncPushClient`, `SyncPullClient` (`case 401: return .sessionExpired`) y `PrefsSyncClient` no reintentan.
+- `gateway/src/sync/userauth.ts` `verifyUserToken` sigue con `jwtVerify` sin `clockTolerance`, sin commits desde el 2026-09-16.
+- `signInToResumeSync` sigue despertando con `accessToken() != nil`, el mismo JWT rechazado.
+
+Triage 2026-10-08: abierto · low → low · el hueco sigue igual, pero solo muerde con el reloj atrasado más de 30 s y no pierde datos: los cambios esperan en el outbox.

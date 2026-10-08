@@ -4,6 +4,7 @@ status: backlog
 priority: low
 area: "onboarding, grupos"
 created: 2026-09-27
+updated: 2026-10-08
 source: "review adversarial de `private-gate-remote-wipe-can-strand-its-arm` (lente de montajes), 2026-09-27"
 ---
 
@@ -35,3 +36,9 @@ El molde que cerró `private-gate-remote-wipe-can-strand-its-arm` en `wipe()`: l
 durable se aplica siempre y la navegación solo con la puerta montada. Aquí lo durable incluye
 `markPrivateChoseWithoutICloud()`, que hoy va dentro de `continueWithoutValidating()` junto a `onProceed()`: hay que
 separarlos sin duplicar el único escritor del testigo (lo fija `lateWitness_writtenOnContinueOnly`).
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `WelcomePrivateICloudGateView.wipeDevice(iCloudUnverified:)`: tras `await deviceCorpus.wipe()` navega con `onProceed()` o `continueWithoutValidating()` sin leer la cancelación ni el montaje; el único commit posterior (e403c93c2) no toca esta función.
+
+Triage 2026-10-08: abierto · low → low · exige que la invitación llegue justo durante un borrado local corto; inferido, sin reproducir.

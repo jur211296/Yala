@@ -1,9 +1,10 @@
 ---
 id: restore-unverified-message-depends-on-a-single-gateway-host
 status: backlog
-priority: low
+priority: very-low
 area: "welcome, remote-config, gateway"
 created: 2026-09-17
+updated: 2026-10-08
 source: "review adversarial de `reinstall-without-network-has-no-cloud-door` (lente de poblaciones), 2026-09-17"
 ---
 
@@ -45,3 +46,10 @@ daño que esa guarda dice estar previniendo.
 
 - `reinstall-without-network-has-no-cloud-door` — introdujo la guarda.
 - `gateway-has-no-telemetry` — sin telemetría, una caída del gateway no se ve.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `CloudRemoteConfig.swift` `cloudConfigKnown`: `isConfigKnown(hasSnapshot:backendConfigured: CloudBackendConfig.isConfigured, isTestHost:)`; `isConfigKnown` sigue con `if !backendConfigured { return true }`. Sin commits que lo toquen desde el 2026-09-17.
+- Decisión: recomendada la **opción 1** (dejarlo y escribirlo): la rama solo importa si el gateway cambia de host con Supabase configurado, y ese día se rompen también la IA, los tipos de cambio y Grupos, que es el incidente de verdad. Con la opción 1 solo queda escribir la decisión: por eso `very-low`.
+
+Triage 2026-10-08: abierto · low → very-low · hipotético (exige retirar o mover el gateway); la opción recomendada no cambia código.

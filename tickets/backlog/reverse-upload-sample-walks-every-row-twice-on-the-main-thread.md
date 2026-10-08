@@ -4,6 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, migración, rendimiento"
 created: 2026-09-16
+updated: 2026-10-08
 source: "segunda pasada de review de `reverse-upload-has-no-ceiling-and-no-exit` (2026-09-16), lente de código — H4"
 ---
 
@@ -42,3 +43,10 @@ DEBUG. Un test de paridad entre las dos construcciones fija que cuentan lo mismo
 ## Relacionado
 
 - `reverse-upload-has-no-ceiling-and-no-exit` (D15) · `reverse-upload-sample-reads-unreadable-rows-as-drained`.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `MigrationWorkExecutor.reverseUploadStatus`: `pairs = try collectReverseUploadPairs()` y, más abajo, `liveByEntityName: Self.collectLiveByEntityName(…)`; sigue sin construirse desde la primera pasada.
+- Sigue sin medirse en device cuánto dura una observación con un corpus grande (primer criterio).
+
+Triage 2026-10-08: abierto · low → low · rendimiento sin medir en device, solo durante la espera de la vuelta a iCloud.

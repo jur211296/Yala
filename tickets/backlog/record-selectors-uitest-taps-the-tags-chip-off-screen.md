@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: testing
 created: 2026-10-07
-updated: 2026-10-07
+updated: 2026-10-08
 source: rojo del gate de advisory-ui-tests-fail-every-retry, bisecado contra la base
 ---
 
@@ -36,3 +36,10 @@ porque esa suite cae entre las que no llegan a correr antes del tope de 110 min
 Hacer visible el chip antes de tocarlo (desplazar la fila de chips) o elegirlo por una vía que no dependa de
 dónde cae en la fila. Mirar antes si en un iPhone de 402 pt la fila enseña algún indicio de que hay un chip más a
 la derecha: si no lo enseña, es también de producto.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `YalaUITests/Flows/TransactionsCrudUITests.swift` `test_recordSelectorsOpenAtMediumDetent`: la tabla sigue con `("new_transaction_tags_chip", "tag_selector_row_", false)` y el bucle hace `chip.tap()` tras `waitForExistence`, sin hacerlo visible. Sin commits en el fichero desde el 2026-10-07.
+- Sigue sin mirarse la pregunta de producto (si la fila enseña que hay un chip más a la derecha en 402 pt).
+
+Triage 2026-10-08: abierto · low → low · rojo determinista de un test, no de la app; ensucia los gates que corren esa suite, pero no los deja ciegos.
