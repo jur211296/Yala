@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (815)
+## Index (816)
 
 | id | status | path |
 |---|---|---|
@@ -806,6 +806,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | unit-tests-clear-the-attest-streak-of-a-device-qa-in-progress | backlog | tickets/backlog/unit-tests-clear-the-attest-streak-of-a-device-qa-in-progress.md |
 | unit-tests-write-group-amounts-into-the-real-app-group-mirror | backlog | tickets/backlog/unit-tests-write-group-amounts-into-the-real-app-group-mirror.md |
 | update-banner-appstore-criteria | done | tickets/done/update-banner-appstore-criteria.md |
+| upload-order-sorts-by-hlc-test-fails-in-ci | done | tickets/done/upload-order-sorts-by-hlc-test-fails-in-ci.md |
 | verify-dual-channel-zone-in-supabase | backlog | tickets/backlog/verify-dual-channel-zone-in-supabase.md |
 | verify-reads-a-failed-local-fetch-as-an-empty-outbox | done | tickets/done/verify-reads-a-failed-local-fetch-as-an-empty-outbox.md |
 | vigilante-calla-si-no-puede-comprobar-la-nocturna | done | tickets/done/vigilante-calla-si-no-puede-comprobar-la-nocturna.md |

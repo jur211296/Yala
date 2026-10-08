@@ -26,9 +26,14 @@ import Testing
 
 private let oneDay: TimeInterval = 86_400
 
-/// Un HLC c1 a `offset` segundos de ahora, de un nodo AJENO.
-private func remoteHLC(offset: TimeInterval, counter: UInt16 = 0, node: String = "00000000000000aa") throws -> HLC {
-    try HLC(physicalMs: CanonicalTime.physicalMillis(from: Date().addingTimeInterval(offset)),
+/// Un HLC c1 a `offset` segundos de `base` (por defecto, ahora), de un nodo AJENO.
+///
+/// Dos HLC que solo deben diferir en el contador se construyen con la MISMA `base`: con `Date()` en cada llamada, la
+/// segunda puede caer un milisegundo después y su física gana al contador. Así salía rojo en CI
+/// `pure_sortsByHLC_notByCreatedAt_andMalformedLast`.
+private func remoteHLC(offset: TimeInterval, counter: UInt16 = 0, node: String = "00000000000000aa",
+                       base: Date = Date()) throws -> HLC {
+    try HLC(physicalMs: CanonicalTime.physicalMillis(from: base.addingTimeInterval(offset)),
             counter: counter, nodeID: NodeID(validating: node))
 }
 
@@ -174,19 +179,23 @@ struct PersonalPullIntegratesTheCappedClockTests {
 @MainActor
 struct UploadOrderTests {
 
-    private let tomorrow = Date().addingTimeInterval(oneDay)
+    /// Un único instante por prueba. «Viejo» y «nuevo» comparten la física (un día por delante de `now`) y solo difieren
+    /// en el contador, que es lo que fija el orden por HLC. Leer el reloj en cada fila hacía que el orden esperado
+    /// dependiera de la velocidad de la máquina.
+    private let now = Date()
+    private var tomorrow: Date { now.addingTimeInterval(oneDay) }
 
     private func hlcString(_ offset: TimeInterval, _ counter: UInt16) throws -> String {
-        try remoteHLC(offset: offset, counter: counter, node: "00000000000000aa").description
+        try remoteHLC(offset: offset, counter: counter, node: "00000000000000aa", base: now).description
     }
 
     @Test func pure_sortsByHLC_notByCreatedAt_andMalformedLast() throws {
         struct Row { let id: String; let hlc: String; let createdAt: Date }
         let rows = [
-            Row(id: "nuevo", hlc: try hlcString(oneDay, 1), createdAt: Date()),
-            Row(id: "malformado-b", hlc: "zz", createdAt: Date().addingTimeInterval(5)),
+            Row(id: "nuevo", hlc: try hlcString(oneDay, 1), createdAt: now),
+            Row(id: "malformado-b", hlc: "zz", createdAt: now.addingTimeInterval(5)),
             Row(id: "viejo", hlc: try hlcString(oneDay, 0), createdAt: tomorrow),
-            Row(id: "malformado-a", hlc: "", createdAt: Date().addingTimeInterval(1)),
+            Row(id: "malformado-a", hlc: "", createdAt: now.addingTimeInterval(1)),
         ]
         let ordered = HLC.uploadOrder(rows, hlc: \.hlc, createdAt: \.createdAt).map(\.id)
         #expect(ordered == ["viejo", "nuevo", "malformado-a", "malformado-b"])
@@ -214,7 +223,7 @@ struct UploadOrderTests {
         let viejo = try hlcString(oneDay, 0), nuevo = try hlcString(oneDay, 1)
         let rows = [
             SyncOutbox(syncID: tag, entityType: SyncEntityType.tag, op: .upsert, hlc: nuevo,
-                       fieldsJSON: "{}", fieldHlcsJSON: "{}", author: "", createdAt: Date()),
+                       fieldsJSON: "{}", fieldHlcsJSON: "{}", author: "", createdAt: now),
             SyncOutbox(syncID: tag, entityType: SyncEntityType.tag, op: .upsert, hlc: viejo,
                        fieldsJSON: "{}", fieldHlcsJSON: "{}", author: "", createdAt: tomorrow),
         ]
@@ -246,7 +255,7 @@ struct UploadOrderTests {
                                        createdAt: tomorrow, ownerUserID: "sub-b"))
         context.insert(GroupSyncOutbox(syncID: share, groupID: "SplitGroup-A", entityType: GroupSyncEntityType.splitShare,
                                        op: .upsert, hlc: nuevo, fieldsJSON: "{}", fieldHlcsJSON: "{}", author: "",
-                                       createdAt: Date(), ownerUserID: "sub-b"))
+                                       createdAt: now, ownerUserID: "sub-b"))
         try context.save()
 
         let session = CapturingSession()
