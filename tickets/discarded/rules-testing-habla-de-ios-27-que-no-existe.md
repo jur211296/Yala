@@ -1,14 +1,16 @@
 ---
 id: rules-testing-habla-de-ios-27-que-no-existe
-status: backlog
+status: discarded
 priority: medium
 area: testing
 created: 2026-09-07
-updated: 2026-09-07
+updated: 2026-10-07
 source: medido de camino en rojo-xcuitest-runner-muere-tras-el-primer-caso
 ---
 
 # `.claude/rules/testing.md` da por vigente un iOS 27.0 que esta máquina no tiene
+
+Why: Discarded 2026-10-07, con OK de Jürgen (2026-10-07, 21:50 Lima). La premisa se invirtió: esta Mac ya tiene iOS 27.0 (`xcrun simctl list runtimes` el 2026-10-07 da `iOS 27.0 (27.0 - 24A434)`, con un `iPhone 17 Pro` creado en él), así que la regla de `.claude/rules/testing.md` vuelve a describir este equipo.
 
 ## Lo medido (2026-09-07)
 

@@ -149,7 +149,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | cashflow-spend-prediction | backlog | tickets/backlog/cashflow-spend-prediction.md |
 | cerrar-total-para-ante-un-check-rojo-que-no-bloquea | backlog | tickets/backlog/cerrar-total-para-ante-un-check-rojo-que-no-bloquea.md |
 | changing-an-account-currency-orphans-its-whole-history | qa | tickets/qa/changing-an-account-currency-orphans-its-whole-history.md |
-| chat-assistant-is-down | backlog | tickets/backlog/chat-assistant-is-down.md |
+| chat-assistant-is-down | discarded | tickets/discarded/chat-assistant-is-down.md |
 | chat-assistant-plants-exchange-rate-one | done | tickets/done/chat-assistant-plants-exchange-rate-one.md |
 | chat-compares-with-the-month-in-progress | backlog | tickets/backlog/chat-compares-with-the-month-in-progress.md |
 | chat-context-encoding-failure-is-silent | backlog | tickets/backlog/chat-context-encoding-failure-is-silent.md |
@@ -350,7 +350,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | gateway-does-not-record-ai-token-usage | backlog | tickets/backlog/gateway-does-not-record-ai-token-usage.md |
 | gateway-has-no-telemetry | backlog | tickets/backlog/gateway-has-no-telemetry.md |
 | gateway-proxies-any-model-and-any-length | done | tickets/done/gateway-proxies-any-model-and-any-length.md |
-| gateway-typecheck-roto-y-fuera-del-ci | backlog | tickets/backlog/gateway-typecheck-roto-y-fuera-del-ci.md |
+| gateway-typecheck-roto-y-fuera-del-ci | discarded | tickets/discarded/gateway-typecheck-roto-y-fuera-del-ci.md |
 | generated-index-lands-above-yaml-frontmatter | done | tickets/done/generated-index-lands-above-yaml-frontmatter.md |
 | goldens-de-staging-solo-pasan-a-trozos | done | tickets/done/goldens-de-staging-solo-pasan-a-trozos.md |
 | gpt-4-1-nano-shuts-down-on-october-23 | done | tickets/done/gpt-4-1-nano-shuts-down-on-october-23.md |
@@ -450,7 +450,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | guest-journey-dead-screens | done | tickets/done/guest-journey-dead-screens.md |
 | handover-leaves-the-storage-mode-without-a-session | backlog | tickets/backlog/handover-leaves-the-storage-mode-without-a-session.md |
 | hero-estadisticas-stock-vs-flujo-entre-pestanas | done | tickets/done/hero-estadisticas-stock-vs-flujo-entre-pestanas.md |
-| history-token-guard-echo-blind-spot | backlog | tickets/backlog/history-token-guard-echo-blind-spot.md |
+| history-token-guard-echo-blind-spot | discarded | tickets/discarded/history-token-guard-echo-blind-spot.md |
 | hoja-del-saldo-vivo-ignora-los-filtros-de-sesion | backlog | tickets/backlog/hoja-del-saldo-vivo-ignora-los-filtros-de-sesion.md |
 | icloud-export-error-latch-never-clears | backlog | tickets/backlog/icloud-export-error-latch-never-clears.md |
 | icloud-kv-prefs-cross-sessions-on-a-lent-phone | done | tickets/done/icloud-kv-prefs-cross-sessions-on-a-lent-phone.md |
@@ -469,8 +469,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | inbox-crash-convert-to-group-expense | done | tickets/done/inbox-crash-convert-to-group-expense.md |
 | inbox-header-leaves-no-room-for-drafts-at-large-text | backlog | tickets/backlog/inbox-header-leaves-no-room-for-drafts-at-large-text.md |
 | income-amount-color-is-dim-in-dark-mode | backlog | tickets/backlog/income-amount-color-is-dim-in-dark-mode.md |
-| indice-readme-barre-worktrees-anidados | backlog | tickets/backlog/indice-readme-barre-worktrees-anidados.md |
-| indice-readme-cuenta-los-ficheros-de-los-worktrees-anidados | backlog | tickets/backlog/indice-readme-cuenta-los-ficheros-de-los-worktrees-anidados.md |
+| indice-readme-barre-worktrees-anidados | discarded | tickets/discarded/indice-readme-barre-worktrees-anidados.md |
+| indice-readme-cuenta-los-ficheros-de-los-worktrees-anidados | discarded | tickets/discarded/indice-readme-cuenta-los-ficheros-de-los-worktrees-anidados.md |
 | initial-balance-date-move-leaves-converted-amount-stale | backlog | tickets/backlog/initial-balance-date-move-leaves-converted-amount-stale.md |
 | insights-and-trends-payload-labels-mislead-the-model | backlog | tickets/backlog/insights-and-trends-payload-labels-mislead-the-model.md |
 | insights-cashflow-and-deviation-prompts-do-not-ask-for-the-language | backlog | tickets/backlog/insights-cashflow-and-deviation-prompts-do-not-ask-for-the-language.md |
@@ -559,7 +559,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | nightly-ui-suite-hits-its-110-minute-cap-every-night | backlog | tickets/backlog/nightly-ui-suite-hits-its-110-minute-cap-every-night.md |
 | no-hay-seed-con-miembro-rechazado | backlog | tickets/backlog/no-hay-seed-con-miembro-rechazado.md |
 | no-test-seam-for-account-exists-blocks-xcuitest-of-identity | backlog | tickets/backlog/no-test-seam-for-account-exists-blocks-xcuitest-of-identity.md |
-| nocturna-del-9-sep-dejo-cuatro-xcuitest-en-rojo | backlog | tickets/backlog/nocturna-del-9-sep-dejo-cuatro-xcuitest-en-rojo.md |
+| nocturna-del-9-sep-dejo-cuatro-xcuitest-en-rojo | discarded | tickets/discarded/nocturna-del-9-sep-dejo-cuatro-xcuitest-en-rojo.md |
 | notification-dedup-deletes-all-custom-reminders-but-one | backlog | tickets/backlog/notification-dedup-deletes-all-custom-reminders-but-one.md |
 | notifications-not-delivered-testflight | done | tickets/done/notifications-not-delivered-testflight.md |
 | onboarding-login-should-match-the-sep15-reference | qa | tickets/qa/onboarding-login-should-match-the-sep15-reference.md |
@@ -623,11 +623,11 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | qa-folder-keeps-evidence-of-tickets-that-already-left | backlog | tickets/backlog/qa-folder-keeps-evidence-of-tickets-that-already-left.md |
 | qa-guion-tanda-no-cubre-17-tickets | backlog | tickets/backlog/qa-guion-tanda-no-cubre-17-tickets.md |
 | qa-no-puede-crear-cuenta-en-otra-divisa | done | tickets/done/qa-no-puede-crear-cuenta-en-otra-divisa.md |
-| qa-yml-no-cancela-la-corrida-anterior-de-la-misma-rama | backlog | tickets/backlog/qa-yml-no-cancela-la-corrida-anterior-de-la-misma-rama.md |
+| qa-yml-no-cancela-la-corrida-anterior-de-la-misma-rama | discarded | tickets/discarded/qa-yml-no-cancela-la-corrida-anterior-de-la-misma-rama.md |
 | queued-offer-after-dismiss-flakes-on-a-cold-simulator | backlog | tickets/backlog/queued-offer-after-dismiss-flakes-on-a-cold-simulator.md |
 | readme-index-duplicates-internal-worktree-files | backlog | tickets/backlog/readme-index-duplicates-internal-worktree-files.md |
 | readme-index-generator-counts-worktree-copies | discarded | tickets/discarded/readme-index-generator-counts-worktree-copies.md |
-| readme-index-generator-walks-into-claude-worktrees | backlog | tickets/backlog/readme-index-generator-walks-into-claude-worktrees.md |
+| readme-index-generator-walks-into-claude-worktrees | discarded | tickets/discarded/readme-index-generator-walks-into-claude-worktrees.md |
 | readme-index-lists-files-from-other-worktrees | discarded | tickets/discarded/readme-index-lists-files-from-other-worktrees.md |
 | readme-index-scans-internal-worktrees | discarded | tickets/discarded/readme-index-scans-internal-worktrees.md |
 | rebase-and-cherry-pick-skip-the-attribution-hook | backlog | tickets/backlog/rebase-and-cherry-pick-skip-the-attribution-hook.md |
@@ -701,7 +701,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | rojo-heroBuckets-thisWeek-trailing-window | done | tickets/done/rojo-heroBuckets-thisWeek-trailing-window.md |
 | rojo-xcuitest-runner-muere-tras-el-primer-caso | done | tickets/done/rojo-xcuitest-runner-muere-tras-el-primer-caso.md |
 | row-deleted-during-the-relief-wait-comes-back-after-the-relief | backlog | tickets/backlog/row-deleted-during-the-relief-wait-comes-back-after-the-relief.md |
-| rules-testing-habla-de-ios-27-que-no-existe | backlog | tickets/backlog/rules-testing-habla-de-ios-27-que-no-existe.md |
+| rules-testing-habla-de-ios-27-que-no-existe | discarded | tickets/discarded/rules-testing-habla-de-ios-27-que-no-existe.md |
 | saldo-con-seleccion-no-contable-diverge-entre-panel-y-estadisticas | backlog | tickets/backlog/saldo-con-seleccion-no-contable-diverge-entre-panel-y-estadisticas.md |
 | save-error-alert-lies-when-the-context-autosaves | backlog | tickets/backlog/save-error-alert-lies-when-the-context-autosaves.md |
 | saving-a-mismatched-transaction-relabels-it-without-converting | backlog | tickets/backlog/saving-a-mismatched-transaction-relabels-it-without-converting.md |
@@ -784,9 +784,9 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | synced-prefs-outside-prefsynckey | discarded | tickets/discarded/synced-prefs-outside-prefsynckey.md |
 | tag-chips-change-order-on-every-launch | backlog | tickets/backlog/tag-chips-change-order-on-every-launch.md |
 | tests-borran-el-store-sqlite-abierto | backlog | tickets/backlog/tests-borran-el-store-sqlite-abierto.md |
-| the-gate-destination-no-longer-resolves-on-this-mac | backlog | tickets/backlog/the-gate-destination-no-longer-resolves-on-this-mac.md |
+| the-gate-destination-no-longer-resolves-on-this-mac | discarded | tickets/discarded/the-gate-destination-no-longer-resolves-on-this-mac.md |
 | the-gate-stamp-hides-the-deleted-side-of-a-staged-rename | backlog | tickets/backlog/the-gate-stamp-hides-the-deleted-side-of-a-staged-rename.md |
-| transaction-save-helper-flake-one-per-suite | backlog | tickets/backlog/transaction-save-helper-flake-one-per-suite.md |
+| transaction-save-helper-flake-one-per-suite | discarded | tickets/discarded/transaction-save-helper-flake-one-per-suite.md |
 | transaction-service-bulk-block-is-dead-code | backlog | tickets/backlog/transaction-service-bulk-block-is-dead-code.md |
 | trends-comparison-kpi-vs-curve | done | tickets/done/trends-comparison-kpi-vs-curve.md |
 | trends-hero-keeps-the-previous-period-after-changing-it-on-trends | qa | tickets/qa/trends-hero-keeps-the-previous-period-after-changing-it-on-trends.md |

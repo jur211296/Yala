@@ -4,6 +4,7 @@ status: backlog
 priority: medium
 area: "onboarding, modo-nube, copy"
 created: 2026-09-10
+updated: 2026-10-07
 source: "review adversarial (lente de producto) de `beacon-routes-only-never-blocks`, 2026-09-10"
 ---
 
@@ -34,3 +35,12 @@ otra persona, con sus finanzas.
   entrado en ella»? Hoy comparte `.reentryReady` («¡Tu cuenta está lista!») con la re-entrada.
 - ¿O el intro del alta, cuando llega desde «Crear otra cuenta» con faro de Apple, avisa de que con Apple
   se entra en la existente? Ojo con la decisión del 2026-09-09: pide no añadir avisos que nadie pidió.
+
+## Decisión de Jürgen (2026-10-07)
+
+Sí. Se avisa: **«Ya tenías una cuenta, has entrado en ella»**.
+
+A qué parte corresponde: es la primera de las dos preguntas de «Qué hay que decidir»: la terminal del alta que acaba en
+`existing_stable` deja de compartir «¡Tu cuenta está lista!» con la re-entrada y dice ese texto. La segunda pregunta
+(avisar ya en el intro del alta) no se elige. El texto, con las palabras de Jürgen, se lleva a todos los idiomas de la
+app.

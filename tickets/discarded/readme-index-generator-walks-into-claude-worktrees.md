@@ -1,13 +1,16 @@
 ---
 id: readme-index-generator-walks-into-claude-worktrees
-status: backlog
+status: discarded
 priority: low
 area: "docs, scripts"
 created: 2026-09-15
+updated: 2026-10-07
 source: "hallazgo del cierre de `groups-tab-does-not-say-this-phone-cannot-sync-groups` (2026-09-15)"
 ---
 
 # El generador del índice del README recorre un worktree interno de Claude Code y mete sus ficheros en la lista
+
+Why: Discarded 2026-10-07, con OK de Jürgen (2026-10-07, 21:50 Lima). Duplicado de `readme-index-duplicates-internal-worktree-files`, que es el que se conserva. Sus datos (`.git/info/exclude` ya lo excluye, y la opción de barrer con `git ls-files`) están copiados allí.
 
 ## El problema
 

@@ -1,13 +1,16 @@
 ---
 id: qa-yml-no-cancela-la-corrida-anterior-de-la-misma-rama
-status: backlog
+status: discarded
 priority: medium
 area: ci
 created: 2026-09-09
+updated: 2026-10-07
 source: medido al hacer varios pushes en el PR #123
 ---
 
 # Cada push a una rama de PR encola otra suite entera y no cancela la anterior
+
+Why: Discarded 2026-10-07, con OK de Jürgen (2026-10-07, 21:50 Lima). `qa.yml` ya cancela la corrida anterior de un PR (`25a71f999`, 2026-09-30): `concurrency` agrupa por número de PR con `cancel-in-progress` solo en `pull_request`, y en `2.1` cada push conserva su corrida, como pedía este ticket.
 
 ## Qué pasa
 

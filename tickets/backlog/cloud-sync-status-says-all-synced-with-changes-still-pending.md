@@ -4,7 +4,7 @@ status: backlog
 priority: medium
 area: "modo-nube, sync, ajustes"
 created: 2026-09-16
-updated: 2026-09-16
+updated: 2026-10-07
 source: "decisión D11 del Paso 0 de `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry` (2026-09-16), ampliada por su review adversarial"
 ---
 
@@ -56,3 +56,14 @@ si esa población lleva su propia frase (`cloud-attest-notice-does-not-cover-a-g
 - [ ] Sin red y con cambios pendientes, la sección no enseña «Todo sincronizado» (test de la lógica de la sección).
 - [ ] Con el outbox vacío y el último ciclo completado, sí (test en la dirección contraria).
 - [ ] Las ramas del attest y de `syncNeedsSignIn` conservan su prioridad.
+
+## Decisión de Jürgen (2026-10-07)
+
+Sí a la opción recomendada, la 1: el estado muestra **«N cambios esperando conexión»**, con el texto nuevo en todos los
+idiomas de la app.
+
+Para quien lo implemente: cuenta las filas vivas del outbox (`livePendingUploadCount`) siempre que el modo sea `.cloud`;
+con alguna pendiente y sin `.completed` reciente del motor, ese texto sustituye al check verde. Los criterios de aceptación
+de arriba («si se elige la 1») pasan a ser los del ticket. La decisión **no** dice si quien tiene el attest rechazado por el
+gateway lleva su propia frase, que la recomendación dejaba abierto: ese caso sigue en
+`cloud-attest-notice-does-not-cover-a-gateway-rejected-token`.

@@ -4,6 +4,7 @@ status: backlog
 priority: medium
 area: "transactions, currency, fx"
 created: 2026-09-08
+updated: 2026-10-07
 source: barrido de chat-draft-stamps-its-own-currency-not-the-account (2026-09-08)
 ---
 
@@ -54,3 +55,19 @@ perdiendo dinero.
 
 - `changing-an-account-currency-orphans-its-whole-history` (high) — quien las produce hoy.
 - `bulk-update-account-leaves-converted-amount-stale` — el mismo patrón en la ruta de servicio.
+
+## Decisión de Jürgen (2026-10-07)
+
+Opción 2A, la misma en los tres tickets de moneda: **antes de cambiar la moneda de una cuenta, Yala avisa y muestra qué se
+va a convertir; los pagos programados y los favoritos se convierten a la tasa de hoy; el historial no se toca.**
+
+Los tres tickets que la comparten:
+- `account-currency-change-leaves-scheduled-and-favorites-stale`
+- `saving-a-mismatched-transaction-relabels-it-without-converting`
+- `cloudsync-account-currency-orphans-receiver-history`
+
+A qué parte corresponde: este ticket no tiene opciones con nombre; su AC es «decidido qué hace Guardar ante una fila
+cuya divisa no es la de su cuenta». La parte de la decisión que le toca es **«el historial no se toca»**. Lectura de esta
+sesión, por confirmar antes de implementar: una transacción ya guardada no se reetiqueta ni se re-expresa al darle a
+Guardar sin cambios; conserva su importe y su divisa. Lo que hoy hace Guardar (reetiquetar con la divisa de la cuenta)
+es justo lo que la decisión prohíbe.

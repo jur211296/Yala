@@ -1,13 +1,16 @@
 ---
 id: chat-assistant-is-down
-status: backlog
+status: discarded
 priority: high
 area: chat
 created: 2026-09-09
+updated: 2026-10-07
 source: reporte de Jürgen 2026-09-09
 ---
 
 # El chat de IA está caído
+
+Why: Discarded 2026-10-07, con OK de Jürgen (2026-10-07, 21:50 Lima). Reporte del 2026-09-09 sin diagnóstico ni reproducción. Desde entonces el chat se rehízo (card de registro, dictado) y sus llamadas pasan por el banco del gateway (`gateway/bench/cases/chat.*.json`, `f0f0db03b` y `ce4d56b5e`). Si vuelve a fallar, ticket nuevo con lo que se vea.
 
 ## Qué le pasa al usuario
 

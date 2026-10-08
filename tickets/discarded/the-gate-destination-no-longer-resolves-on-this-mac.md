@@ -1,14 +1,16 @@
 ---
 id: the-gate-destination-no-longer-resolves-on-this-mac
-status: backlog
+status: discarded
 priority: high
 area: "qa, entorno"
 created: 2026-09-22
-updated: 2026-09-30
+updated: 2026-10-07
 source: "medido al correr el gate de `verify-reads-a-failed-local-fetch-as-an-empty-outbox` (2026-09-22)"
 ---
 
 # El destino que usan el gate y `/verify-ios` no resuelve en esta Mac desde que se actualizó Xcode
+
+Why: Discarded 2026-10-07, con OK de Jürgen (2026-10-07, 21:50 Lima). El destino del gate vuelve a resolver desde el 2026-09-30 (lo dice la cabecera de este ticket). Medido otra vez el 2026-10-07: hay un solo `iPhone 17 Pro` disponible, en iOS 27.0 (`46287CFE`), así que `name=iPhone 17 Pro` casa sin ambigüedad.
 
 > **La premisa ha cambiado (medido el 2026-09-30, sesión del #306).** `name=iPhone 17 Pro` vuelve a
 > casar con el `9EDA6AAF` de iOS 27.0, así que el destino del gate resuelve. Antes de trabajar

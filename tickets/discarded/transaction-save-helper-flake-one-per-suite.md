@@ -1,13 +1,15 @@
 ---
 id: transaction-save-helper-flake-one-per-suite
-status: backlog
+status: discarded
 priority: medium
 area: qa
 created: 2026-09-07
-updated: 2026-09-14
+updated: 2026-10-07
 ---
 
 # Un rojo por corrida completa en el helper que guarda transacciones, y la víctima cambia
+
+Why: Discarded 2026-10-07, con OK de Jürgen (2026-10-07, 21:50 Lima). La misma carrera, arreglada en el PR #384 (`17e0281cb`): la guía de primeros pasos daba por «primer gasto» un guardado con historial sembrado y su alerta tapaba `transaction_success_accept`. El PR fija el rojo con un control que fuerza la carrera (rojo con la decisión vieja, verde con la nueva) y cierra `edgecases-extreme-minimum-flaky-under-load`.
 
 ## El síntoma
 

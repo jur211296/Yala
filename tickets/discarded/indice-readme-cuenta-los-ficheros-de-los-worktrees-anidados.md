@@ -1,14 +1,16 @@
 ---
 id: indice-readme-cuenta-los-ficheros-de-los-worktrees-anidados
-status: backlog
+status: discarded
 priority: very-low
 area: "documentación, tooling"
 created: 2026-09-16
-updated: 2026-09-16
+updated: 2026-10-07
 source: "cierre de `cloud-tab-does-not-say-this-phone-cannot-sync-personal-data` (2026-09-16): el generador metió copias en el índice y el diff se revirtió"
 ---
 
 # `indice_readme.py` lista los ficheros grandes de los worktrees anidados como si fueran del repo
+
+Why: Discarded 2026-10-07, con OK de Jürgen (2026-10-07, 21:50 Lima). Duplicado de `readme-index-duplicates-internal-worktree-files`, que es el que se conserva. Sus datos (la reapertura del 2026-09-16 y que expulsó del índice a `.claude/rules/swiftdata-cloudkit.md`) están copiados allí.
 
 Esto no lo ve nadie que use la app: lo paga quien lee el README, y **lo paga cada cierre**, porque el generador
 corre en el paso de reindexar y deja un diff que hay que decidir si se commitea.

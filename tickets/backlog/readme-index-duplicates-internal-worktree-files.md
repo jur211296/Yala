@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "docs"
 created: 2026-09-09
-updated: 2026-09-14
+updated: 2026-10-07
 source: visto al reindexar en el cierre del candado anti-atribución
 ---
 
@@ -71,3 +71,21 @@ frecuencia** — cinco cierres seguidos han corrido el generador, han leído un 
 han revertido a mano. El arreglo es una línea en el `dirs[:]` de `scripts/indice_readme.py:90`, que hoy
 excluye `.git`, `node_modules`, `.build` y `DerivedData` y no `.claude/worktrees`. Sigue en `low`; si el
 sexto cierre vuelve a tropezar, el coste acumulado ya no es `low`.
+
+## Tres duplicados más, retirados el 2026-10-07
+
+`readme-index-generator-walks-into-claude-worktrees` (2026-09-15), `indice-readme-cuenta-los-ficheros-de-los-worktrees-anidados`
+(2026-09-16) e `indice-readme-barre-worktrees-anidados` (2026-09-21) pasan a `discarded` apuntando aquí. Lo que traían y
+este ticket no tenía:
+
+- **Git ya sabe que no es del repo**: `.claude/worktrees/elastic-ritchie-9f2188` está en `.git/info/exclude:18` (medido el
+  2026-09-15). De ahí la opción que cierra la familia entera: barrer solo lo que git conoce (`git ls-files`), en vez de
+  acordarse del siguiente directorio que aparezca.
+- **Otro fichero expulsado de la lista**: el 2026-09-16 las copias sacaron del índice a las cinco últimas entradas reales,
+  entre ellas `.claude/rules/swiftdata-cloudkit.md`.
+- **Las cifras reales se quedan desfasadas**: como cada cierre revierte el diff entero, los cambios de tamaño verdaderos
+  (`aprendizajes-tecnicos.md` 205→207 KB, `groups-consent-door-spec.md` 96→98, el 2026-09-21) tampoco entran.
+- **Un hermano más que mirar**: además de `frescura.py` y `glosario.py`, `reorg_docs.py`, que corre en el mismo paso del
+  cierre. En esas corridas ninguno ensució nada, pero no se midió si es por diseño o por suerte.
+- Reaperturas: con éstas son ocho cierres que tropezaron con el mismo diff.
+
