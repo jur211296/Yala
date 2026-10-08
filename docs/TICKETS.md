@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (814)
+## Index (815)
 
 | id | status | path |
 |---|---|---|
@@ -94,7 +94,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | after-session-redesign-review-widgets-siri-applepay-and-web-copy | backlog | tickets/backlog/after-session-redesign-review-widgets-siri-applepay-and-web-copy.md |
 | ai-calls-have-no-output-token-cap | backlog | tickets/backlog/ai-calls-have-no-output-token-cap.md |
 | ai-chat-reads-heavier-than-a-messaging-app | qa | tickets/qa/ai-chat-reads-heavier-than-a-messaging-app.md |
-| ai-comments-ignore-the-app-language | backlog | tickets/backlog/ai-comments-ignore-the-app-language.md |
+| ai-comments-ignore-the-app-language | qa | tickets/qa/ai-comments-ignore-the-app-language.md |
 | ai-every-call-sends-its-task-and-passes-the-bench | qa | tickets/qa/ai-every-call-sends-its-task-and-passes-the-bench.md |
 | ai-insights-error-card-shows-raw-english-errors | backlog | tickets/backlog/ai-insights-error-card-shows-raw-english-errors.md |
 | ai-model-choice-lives-in-the-app-binary | done | tickets/done/ai-model-choice-lives-in-the-app-binary.md |
@@ -473,7 +473,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | indice-readme-cuenta-los-ficheros-de-los-worktrees-anidados | backlog | tickets/backlog/indice-readme-cuenta-los-ficheros-de-los-worktrees-anidados.md |
 | initial-balance-date-move-leaves-converted-amount-stale | backlog | tickets/backlog/initial-balance-date-move-leaves-converted-amount-stale.md |
 | insights-and-trends-payload-labels-mislead-the-model | backlog | tickets/backlog/insights-and-trends-payload-labels-mislead-the-model.md |
-| insights-cashflow-and-deviation-prompts-do-not-ask-for-the-language | backlog | tickets/backlog/insights-cashflow-and-deviation-prompts-do-not-ask-for-the-language.md |
+| insights-cashflow-and-deviation-prompts-do-not-ask-for-the-language | done | tickets/done/insights-cashflow-and-deviation-prompts-do-not-ask-for-the-language.md |
 | insights-precomputed-icon-lookup | backlog | tickets/backlog/insights-precomputed-icon-lookup.md |
 | insights-rate-limit-runs-before-the-cache | backlog | tickets/backlog/insights-rate-limit-runs-before-the-cache.md |
 | invite-aasa-requires-s-param | backlog | tickets/backlog/invite-aasa-requires-s-param.md |
@@ -792,6 +792,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | trends-hero-keeps-the-previous-period-after-changing-it-on-trends | qa | tickets/qa/trends-hero-keeps-the-previous-period-after-changing-it-on-trends.md |
 | trends-insight-card-v2-bullets | qa | tickets/qa/trends-insight-card-v2-bullets.md |
 | trends-insight-title-capitalizes-the-period-mid-sentence | backlog | tickets/backlog/trends-insight-title-capitalizes-the-period-mid-sentence.md |
+| trends-prompt-asks-the-language-by-bare-code | backlog | tickets/backlog/trends-prompt-asks-the-language-by-bare-code.md |
 | two-qa-benches-nobody-runs | backlog | tickets/backlog/two-qa-benches-nobody-runs.md |
 | two-silent-local-reads-leave-a-false-or-no-trace | backlog | tickets/backlog/two-silent-local-reads-leave-a-false-or-no-trace.md |
 | uitest-compara-fechas-sin-fijar-locale | done | tickets/done/uitest-compara-fechas-sin-fijar-locale.md |

@@ -18,6 +18,9 @@ Con Yala en es-ES, es-AR, pt-BR, pt-PT o en-GB, el prompt del chat pide «inform
 
 - El `switch` del registro del chat solo mira códigos sin región (`es`, `pt`, `en`), así que las variantes caen al caso
   por defecto.
+- Desde el 2026-10-07 la tabla vive en `AIPromptLanguage.informalRegister(forBaseLanguage:)`, compartida con Insights.
+  Insights le pasa el código base (`AIPromptLanguage.baseCode`) y no tiene el fallo; el chat sigue pasándole
+  `SupportedLocale.from(language)?.code`, que conserva la región. El arreglo es el código base en el chat.
 
 ## Hecho cuando
 
