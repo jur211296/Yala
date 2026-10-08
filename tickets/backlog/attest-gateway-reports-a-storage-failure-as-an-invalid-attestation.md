@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "attest, gateway"
 created: 2026-09-15
-updated: 2026-09-15
+updated: 2026-10-08
 source: "review adversarial de `cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes` (2026-09-15)"
 ---
 
@@ -36,3 +36,9 @@ entiende que su atestación no vale, y si el problema dura un día acaba oyendo 
 
 - `cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes` — donde empezó a contar.
 - `.claude/rules/gateway-attest.md` — qué cuenta en la racha del teléfono.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `gateway/src/attest/routes.ts`: `insertAttestKey` (register) y `updateCounter` (assert) siguen dentro del mismo `try` que la verificación, y su `catch` responde 401 `yala_attest_invalid`. Ningún commit toca `gateway/src/attest/` desde el 2026-09-15.
+
+Triage 2026-10-08: abierto · low → low · la escritura en D1 sigue dentro del `try` que responde 401; hace falta un fallo de D1 sostenido 24 h para que importe.

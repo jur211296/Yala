@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: ci
 created: 2026-09-07
-updated: 2026-09-07
+updated: 2026-10-08
 source: anotación del propio CI, vista de camino en el-job-de-tests-del-ci-no-tiene-timeout
 ---
 
@@ -52,3 +52,10 @@ y la anotación desaparecer. Verificar de paso que `setup-xcode@v1` no empieza a
 - [ ] Un run posterior no trae la anotación de Node 20 (comprobado en `check-runs/<job_id>/annotations`,
       no a ojo en la UI).
 - [ ] Comprobado si `maxim-lobanov/setup-xcode@v1` necesita el mismo trato.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `grep -rn "uses:" .github/workflows/` da hoy siete `actions/checkout@v4`, no dos: cuatro en `qa.yml` (`:72`, `:121`, `:362`, `:550`) y una en cada uno de `ping-avisador.yml`, `nocturna-vigilante.yml`, `ci-sombra.yml` y `avisar-grok-push-principal.yml` (este ya hace checkout).
+- Aparece además `actions/setup-node@v4` (`qa.yml:122`), que habría que mirar con el mismo criterio que `setup-xcode@v1`.
+
+Triage 2026-10-08: abierto · low → low · todos los checkouts siguen en `@v4` y ahora son siete; hoy no rompe nada, pero el CI es la red del auto-merge.

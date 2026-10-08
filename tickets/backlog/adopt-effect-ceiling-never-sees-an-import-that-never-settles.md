@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, migración, adopt"
 created: 2026-09-23
-updated: 2026-09-23
+updated: 2026-10-08
 source: "review adversarial de `adopt-effect-retries-forever-with-no-ceiling` (2026-09-23), lente de relojes"
 ---
 
@@ -24,3 +24,11 @@ pre-espera. Es la misma forma que ya tienen las fases de la ida; aquí lo hace v
 ## Relacionado
 
 - `adopt-effect-retries-forever-with-no-ceiling`.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `MigrationRunner.cancelMigration` sigue empezando por `guard await awaitQuiescence()` (tope 120 s): sin import quieto el «sí» queda apuntado y no se ejecuta.
+- `submit` y `resume` siguen con la misma puerta, así que ninguna pasada observa el efecto y el reloj de 72 h no se sella.
+- Caso hermano en otra superficie: `detach-quiescence-timeout-says-group-changes-are-pending`.
+
+Triage 2026-10-08: abierto · low → low · la puerta de quiescencia sigue delante de `cancelMigration` y de cada pasada; requiere un import de iCloud que no se asiente nunca, y el teléfono sigue usable en iCloud.

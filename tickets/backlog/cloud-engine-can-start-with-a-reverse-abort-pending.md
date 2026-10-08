@@ -5,7 +5,7 @@ priority: low
 area: "modo-nube, sync"
 created: 2026-09-16
 source: "review de `reverse-upload-has-no-ceiling-and-no-exit` (2026-09-16), decisión D12(d)"
-updated: 2026-09-25
+updated: 2026-10-08
 ---
 
 # El motor de la nube puede arrancar con un `reverse_abort` pendiente y pararse hasta el siguiente resume
@@ -57,3 +57,10 @@ independientes). Dos consecuencias:
 
 Si se decide que `canRunDomain` exija no tener pendientes, pesa el otro lado: un reconcile que falle para siempre (una
 avería local, un `complete` rechazado) dejaría el motor parado para siempre, cuando hoy sincroniza igual.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `CloudSyncRuntime.canRunDomain()` sigue mirando modo, fase legible y estable, par y mount, pero no los efectos pendientes; `startRuntimeIfStable` (`CloudMigrationController`) sí los mira.
+- La decisión del primer criterio sigue sin tomar.
+
+Triage 2026-10-08: abierto · low → low · `canRunDomain` sigue sin mirar los pendientes; se cura en el siguiente resume y no se pierde nada.

@@ -5,6 +5,7 @@ priority: low
 area: "onboarding, modo-nube"
 created: 2026-09-14
 source: "review adversarial del PR de `activation-restore-start-fresh-keeps-the-imported-rows` (2026-09-14); NO reproducido en device"
+updated: 2026-10-08
 ---
 
 # Matar la app justo después de borrar devuelve a «Restaurar», sobre una cuenta ya vacía
@@ -33,3 +34,11 @@ de vaciar. Me dice que no encuentra nada.
 ## Relacionados
 
 - [[activation-restore-start-fresh-keeps-the-imported-rows]]
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `FullModeActivationResumeStore.set` solo se llama desde el arranque (`ContentView`, `resolveAtBoot`); ningún sitio la reescribe a `.privateOnboarding` tras el borrado.
+- El `onProceed` de `.restoreDiscardGate` (`FullModeActivationView`) llama a `proceed(to: .fullActivationPrivate, otherwise: .onboarding(.freshPrivate))`; tras un relanzamiento `shouldRelaunch` da `false` y cae en `go(to:)` sin tocar la marca, que sigue en `.restore`.
+- `FullModeActivationFlowLogic.initialScreen` con `.restore` sigue abriendo `.restore`.
+
+Triage 2026-10-08: abierto · low → low · la marca de reanudación sigue en `.restore` tras el borrado confirmado; recuperable con «Empezar desde cero», solo confunde.

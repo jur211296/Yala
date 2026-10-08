@@ -1,10 +1,11 @@
 ---
 id: ci-volumen-no-cabe-en-la-mini
 status: backlog
-priority: low
+priority: very-low
 area: platform
 created: 2026-09-30
 source: PR #309 (CI propio fase 4, r2) — decisión de Jürgen de aparcar el runner
+updated: 2026-10-08
 ---
 
 # El volumen de CI de hoy no cabe en la Mini
@@ -30,3 +31,9 @@ Spotlight a la vez llevaron la carga a ~37 y tumbaron las sesiones.
 Hay una cifra de minutos al día que la Mini absorbe sin pasar de la carga que fija
 `guardia.sh`, y un plan para bajar hasta ella. Solo tiene sentido si Jürgen decide pasar a
 privado.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `qa.yml` sigue corriendo en `ubuntu-latest` y `macos-26` de GitHub; el runner de la Mini solo lo usa `ci-sombra.yml`, a mano. No hay decisión de pasar a privado.
+
+Triage 2026-10-08: abierto · low → very-low · solo tiene sentido si Jürgen decide pasar Yala a privado, y no lo ha decidido: tooling lejano.

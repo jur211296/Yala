@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: ai
 created: 2026-10-07
-updated: 2026-10-07
+updated: 2026-10-08
 source: revisión del uso de IA (docs/ai-usage-review-2026-10.md, hallazgo H7)
 ---
 
@@ -36,3 +36,9 @@ Si la respuesta llega cortada (`finish_reason == "length"`), tratarlo como error
 
 - Cada `ChatQuery` lleva `maxCompletionTokens` (test por servicio).
 - `finish_reason == "length"` tiene su rama y su copy.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `git grep "maxCompletionTokens\|maxTokens" -- Yala` sigue dando 0 resultados; el gateway tampoco impone `max_tokens` fuera de `gateway/bench/`.
+
+Triage 2026-10-08: abierto · low → low · sigue sin `maxCompletionTokens` en ninguna llamada; es coste y peor caso, no datos ni bloqueo.

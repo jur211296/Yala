@@ -1,10 +1,10 @@
 ---
 id: ci-workflow-cites-missing-testing-strategy
 status: backlog
-priority: low
+priority: very-low
 area: ci
 created: 2026-09-07
-updated: 2026-09-07
+updated: 2026-10-08
 source: medido de camino en el-job-de-tests-del-ci-no-tiene-timeout
 ---
 
@@ -73,3 +73,10 @@ Barrer de paso las otras citas sin ruta: `tickets/backlog/unit-suite-nondetermin
       existe desde el repo.
 - [ ] Decidido cuál de las dos vías, y escrito el porqué en el propio ticket.
 - [ ] Las otras cuatro citas sin ruta, barridas con el mismo criterio.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- Las tres citas siguen en `.github/workflows/qa.yml:250`, `:412` y `:453`.
+- Las otras citas sin ruta se movieron: `.claude/rules/testing.md:62` y `:90`, `.claude/commands/cerrar.md:39`. `unit-suite-nondeterministic-reds` ya está en `tickets/done/`.
+
+Triage 2026-10-08: abierto · low → very-low · las citas rotas siguen, pero es documentación de mantenimiento que no ciega al CI.

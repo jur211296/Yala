@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, migración, adopt"
 created: 2026-09-24
-updated: 2026-09-24
+updated: 2026-10-08
 source: "review adversarial de `claim-grants-a-takeover-after-the-leader-passed-the-cutover` (2026-09-24), lente de consumidores"
 ---
 
@@ -29,3 +29,10 @@ la copia que subió B, y un gasto que A borró puede reaparecer.
 
 - [ ] Medido con un test si la edición del líder que vuelve pierde contra la huérfana del adoptador, y decidido si se
       corrige o se acepta como residual.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `CloudSyncEngine.enqueueSnapshotRows`, la vía de las huérfanas del adopt, sigue acuñando el HLC con `clock.send(now:)` en el momento de encolar.
+- Sigue sin test que mida la edición del líder que vuelve contra la huérfana del adoptador: ningún test ni commit cita este ticket.
+
+Triage 2026-10-08: abierto · low → low · el HLC fresco de las huérfanas sigue igual y falta el test que pide el criterio; secuencia rara (líder que edita sin red y no vuelve a abrir mientras otro adopta).

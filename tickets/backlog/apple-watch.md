@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: platform
 created: 2026-07-01
-updated: 2026-09-09
+updated: 2026-10-08
 source: YalaWiki/Ideas/Integración con Apple Watch.md
 ---
 
@@ -35,3 +35,9 @@ eso va detrás de iPad.
 - [[ipad-native-app]] y [[iphone-duo-native-app]] — la misma tanda de plataformas del 2026-09-09.
 
 migrated from YalaWiki Ideas/Integración con Apple Watch.md @ 1934e8ad
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- No hay target de watchOS: `grep -ci "watchos\|WatchKit" Yala.xcodeproj/project.pbxproj` da 0. Sigue sin spec ni medida de qué necesita (App Group, SwiftData, sync).
+
+Triage 2026-10-08: abierto · low → low · idea sin empezar (ningún target de watchOS) con la prioridad `low` que le dio Jürgen el 2026-09-09.

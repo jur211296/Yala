@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: chat, ai, l10n
 created: 2026-10-07
-updated: 2026-10-07
+updated: 2026-10-08
 source: banco de chat.answer (sesión 2 del gateway de IA, gateway/bench/results/2026-10-07/REPORT-chat-y-nota.md)
 ---
 
@@ -25,3 +25,10 @@ Con Yala en es-ES, es-AR, pt-BR, pt-PT o en-GB, el prompt del chat pide «inform
 ## Hecho cuando
 
 - Cada variante recibe su registro (es-AR con voseo, según `docs/planning/BRAND-VOICE.md` §9.4), con test del prompt.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `ChatAssistantService` (≈`:411`) sigue pasando `SupportedLocale.from(language)?.code`, que conserva la región, a `AIPromptLanguage.informalRegister(forBaseLanguage:)`; Insights ya pasa `AIPromptLanguage.baseCode`.
+- Inferido al leer `SupportedLocale.from`: también `es-419`, la base hispana de Yala, casa exacto y cae a «informal you» si el sistema o el override dan ese identificador.
+
+Triage 2026-10-08: abierto · low → low · el chat sigue pasando el código con región; afecta al tono, no a datos.

@@ -116,7 +116,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | apple-id-close-notice-does-not-say-what-else-the-close-does | done | tickets/done/apple-id-close-notice-does-not-say-what-else-the-close-does.md |
 | apple-watch | backlog | tickets/backlog/apple-watch.md |
 | applepay-shortcut-warm-launch-empty-data | done | tickets/done/applepay-shortcut-warm-launch-empty-data.md |
-| apply-better-ui-emil-design-eng-rules-to-redesigns | backlog | tickets/backlog/apply-better-ui-emil-design-eng-rules-to-redesigns.md |
+| apply-better-ui-emil-design-eng-rules-to-redesigns | discarded | tickets/discarded/apply-better-ui-emil-design-eng-rules-to-redesigns.md |
 | apply-overwrites-a-pending-local-write-without-its-guards | done | tickets/done/apply-overwrites-a-pending-local-write-without-its-guards.md |
 | apppreferences-rewritten-on-launch | blocked | tickets/blocked/apppreferences-rewritten-on-launch.md |
 | approximate-mark-ors-over-whole-period | done | tickets/done/approximate-mark-ors-over-whole-period.md |

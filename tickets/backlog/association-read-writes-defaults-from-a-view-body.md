@@ -5,6 +5,7 @@ priority: low
 area: "groups, modo-nube"
 created: 2026-09-11
 source: "review adversarial de `cloud-killswitch-hides-the-only-door-to-detach-groups`, lente de estados"
+updated: 2026-10-08
 ---
 
 # Leer la cuenta de grupos asociada puede ESCRIBIR en preferencias, y se lee desde un body
@@ -40,3 +41,10 @@ clase de escritura que este repo ya pagó una vez (el «lavado» documentado en 
    escritura, o no limpiarlo: el decode ya devuelve `nil` y el iCloud-KV es la copia autoritativa).
 2. Valorar una caché corta para la lectura del iCloud-KV, o que el `read()` de la fila salga del mismo
    tick que el de la sección.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `GroupsAccountAssociation.readLocal()` (`Yala/Services/CloudSync/GroupsAccountAssociation.swift`, se mudó desde `Services/Groups`) sigue con `defaults.removeObject(forKey: Self.localKey)` en el `catch` del decode.
+- `GroupsAssociationSection.accountDisplayName`, una computed property del body, sigue llamando a `GroupsAccountAssociation.shared.read()`, y `read()` sigue cayendo a `readICloud()` sin caché.
+
+Triage 2026-10-08: abierto · low → low · la escritura en el camino de lectura y la lectura desde el body siguen; sin efecto visible medido, es higiene.
