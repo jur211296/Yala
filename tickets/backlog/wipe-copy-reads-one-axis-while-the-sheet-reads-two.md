@@ -4,6 +4,7 @@ status: backlog
 priority: medium
 area: "sesiones, settings, copy"
 created: 2026-09-13
+updated: 2026-10-07
 source: "review adversarial del PR-B del paso 12 (`shell-derives-from-two-session-axes`), lente «lo que borra datos»"
 ---
 
@@ -52,3 +53,8 @@ ninguna prometa alcance. Eso no cabe en un PR cuyo objeto era retirar código.
       del ADR 2026-09-09, y hay un test que recorre las cuatro (hoy `DestructiveScopeLogicTests` cubre
       `wipeOperation` con sus dos variables, pero **nada** cubre la pareja texto ↔ operación).
 - [ ] El comentario de `UserDataResetView` que hoy apunta a este ticket se actualiza o se retira.
+
+## Decisión de Jürgen (2026-10-07)
+
+Opción A: **el texto sale de lo mismo que decide qué se borra**. El párrafo de la pantalla deriva de `scopeOperation`,
+igual que la hoja; una sola fuente. Los criterios de aceptación de arriba no cambian.

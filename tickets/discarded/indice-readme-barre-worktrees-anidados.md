@@ -1,14 +1,16 @@
 ---
 id: indice-readme-barre-worktrees-anidados
-status: backlog
+status: discarded
 priority: very-low
 area: "tooling, docs"
 created: 2026-09-21
-updated: 2026-09-21
+updated: 2026-10-07
 source: "medido al correr los regeneradores en el cierre de `restore-says-no-data-when-the-icloud-import-never-settled`, 2026-09-21"
 ---
 
 # `indice_readme.py` mete en el README los ficheros de un worktree anidado
+
+Why: Discarded 2026-10-07, con OK de Jürgen (2026-10-07, 21:50 Lima). Duplicado de `readme-index-duplicates-internal-worktree-files`, que es el que se conserva. Sus datos (la tercera reapertura y los regeneradores hermanos que mirar) están copiados allí.
 
 ## Medido (2026-09-21)
 

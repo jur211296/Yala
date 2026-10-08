@@ -4,6 +4,7 @@ status: backlog
 priority: medium
 area: "transactions, panel, presentaciones"
 created: 2026-09-28
+updated: 2026-10-07
 source: "iphone-small-screens-and-safe-areas-audit (carril adaptativo, paso 3), visto en simulador el 2026-09-28"
 ---
 
@@ -40,3 +41,14 @@ Que el Panel no consuma el aviso mientras tenga una hoja presentada: consumirlo 
 `onDismiss` de la hoja de Nuevo registro), o que lo presente el propio formulario después de su pantalla de
 éxito. Test de la condición: arranque con seed vacío, guardar un gasto y afirmar que aparece
 `transaction_success_accept` y que el aviso llega después de «Aceptar».
+
+## 2026-10-07 · El PR #384 no lo cierra: arregla el caso con historial, no el primer gasto de verdad
+
+Se propuso descartarlo como arreglado en el #384 (`17e0281cb`). Medido en `origin/2.1`, ese arreglo cambia **cuándo** se
+ofrece «¿era de prueba?»: `SetupChecklistManager.markFirstCreation` solo lo arma si lo recién guardado es lo único de su
+tipo en el store. Eso quita la alerta a quien ya tenía registros (el rojo de la QA programada), pero **no toca el
+mecanismo de este ticket**: `PanelView` sigue consumiendo `pendingPracticeCleanup` en su `.onChange` en el acto
+(`consumePendingPracticeCleanup`), con la hoja de Nuevo registro todavía encima. Para un usuario nuevo de verdad, con
+cero registros, la alerta se sigue armando y, por el código, sigue cerrando el formulario antes de la pantalla de éxito.
+Inferido del código, sin verificar en simulador. Sigue en backlog con el «Qué hacer» de arriba.
+

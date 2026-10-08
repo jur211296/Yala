@@ -1,14 +1,16 @@
 ---
 id: history-token-guard-echo-blind-spot
-status: backlog
+status: discarded
 area: sync
 priority: low
 created: 2026-08-29
-updated: 2026-08-29
+updated: 2026-10-07
 source: docs/aprendizajes-tecnicos.md
 ---
 
 # ACEPTADO · el guard del token tiene el mismo punto ciego del eco
+
+Why: Discarded 2026-10-07, con OK de Jürgen (2026-10-07, 21:50 Lima). El propio ticket lo marca ACEPTADO: es un límite asumido, no deuda pendiente.
 
 ## Estado: aceptado, no es deuda por olvido
 

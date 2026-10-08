@@ -50,3 +50,16 @@ Sube su estado de cuenta en PDF (**+** › Registrar con imagen › Archivo, o s
 - Un PDF de N páginas (hasta el tope) produce los movimientos de todas, sin duplicar saldos ni subtotales.
 - Un PDF con contraseña pide la contraseña y se lee. Si falla, dice «contraseña incorrecta», no «ilegible».
 - XCUITest con un PDF de 3 páginas sembrado, y casos multipágina en el banco.
+
+## Decisión de Jürgen (2026-10-07)
+
+Opción 1B: se leen **hasta 10 páginas por PDF**, y **cada página cuenta como una foto** en la cuota gratuita.
+
+A qué parte corresponde: este ticket no nombra sus opciones con letras. «1B» es el punto 1 de «Qué hay que decidir y hacer»
+(todas las páginas), en concreto **el tope de páginas** (10) y **la cuota** (una página = un uso de foto, como hoy). Lo que
+la decisión no dice y sigue abierto para quien lo implemente, con el criterio del propio ticket:
+
+- Cómo se quitan los duplicados entre páginas (saldo arrastrado, subtotales).
+- Si una página sin movimientos cuenta como fallo o se ignora.
+- Qué pasa con un PDF de más de 10 páginas: que el usuario lo sepa (no leerlo en silencio).
+- El punto 2 (contraseña) y el 3 (casos multipágina en el banco) no cambian.

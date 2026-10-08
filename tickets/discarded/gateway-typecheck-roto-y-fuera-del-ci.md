@@ -1,14 +1,16 @@
 ---
 id: gateway-typecheck-roto-y-fuera-del-ci
-status: backlog
+status: discarded
 priority: low
 area: "gateway, ci, tooling"
 created: 2026-09-07
-updated: 2026-09-10
+updated: 2026-10-07
 source: hallazgo lateral de groups-budget (2026-09-07)
 ---
 
 # El `typecheck` del gateway falla, y nadie se entera porque el CI no lo corre
+
+Why: Discarded 2026-10-07, con OK de Jürgen (2026-10-07, 21:50 Lima). El typecheck sale verde (`275822811`, 2026-10-07). Lo que queda, que el CI lo corra y bloquee, vive en `ci-no-corre-la-suite-del-gateway`.
 
 ## Qué pasa
 

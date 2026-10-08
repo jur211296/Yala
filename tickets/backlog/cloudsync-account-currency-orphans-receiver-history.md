@@ -4,6 +4,7 @@ status: backlog
 priority: medium
 area: "cloudsync, accounts, currency, fx"
 created: 2026-09-09
+updated: 2026-10-07
 source: AC nº4 de changing-an-account-currency-orphans-its-whole-history (2026-09-09)
 ---
 
@@ -81,3 +82,19 @@ cuenta sin convertir nada, y ése es el caso que hay que acotar.
 - `changing-an-account-currency-orphans-its-whole-history` — el lado local, ya cerrado.
 - `saving-a-mismatched-transaction-relabels-it-without-converting` — qué hace Guardar sobre una fila
   ya desemparejada, que es como se vería este caso desde la UI del receptor.
+
+## Decisión de Jürgen (2026-10-07)
+
+Opción 2A, la misma en los tres tickets de moneda: **antes de cambiar la moneda de una cuenta, Yala avisa y muestra qué se
+va a convertir; los pagos programados y los favoritos se convierten a la tasa de hoy; el historial no se toca.**
+
+Los tres tickets que la comparten:
+- `account-currency-change-leaves-scheduled-and-favorites-stale`
+- `saving-a-mismatched-transaction-relabels-it-without-converting`
+- `cloudsync-account-currency-orphans-receiver-history`
+
+A qué parte corresponde: este ticket no tiene opciones con nombre; su primer AC pide decidir qué hace **el receptor**
+cuando la divisa de una cuenta cambia y sus transacciones locales no coinciden (esperar, reexpresar o marcar). La parte
+que le toca es **«el historial no se toca»**: el receptor no re-expresa por su cuenta el histórico local. Lectura de esta
+sesión, por confirmar antes de implementar. Los pagos programados y favoritos que el emisor convierta viajan como filas
+convertidas. Siguen abiertos los AC 2 y 3 (medir la ventana por orden de llegada y el test con receptor con histórico).

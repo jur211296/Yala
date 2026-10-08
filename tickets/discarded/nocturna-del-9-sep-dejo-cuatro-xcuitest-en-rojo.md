@@ -1,14 +1,16 @@
 ---
 id: nocturna-del-9-sep-dejo-cuatro-xcuitest-en-rojo
-status: backlog
+status: discarded
 priority: high
 area: "testing, qa"
 created: 2026-09-09
-updated: 2026-10-01
+updated: 2026-10-07
 source: run 34354119553 (nocturna de 2.1, 2026-09-09) — encontrado al arreglar el avisador
 ---
 
 # La nocturna del 9-sep dejó cuatro XCUITest en rojo y nadie se enteró
+
+Why: Discarded 2026-10-07, con OK de Jürgen (2026-10-07, 21:50 Lima). Tres de los cuatro (`test_extremeMinimumAmountSaves`, `test_convertDraftToGroupExpense_preservesDraftDate`, `test_saveAsFavoriteFromTransactionAppearsInList`) los arregló el PR #384 (`17e0281cb` y el locale de la fecha). El cuarto, `TransactionsCrudUITests.test_createTransaction`, sigue en `new-transaction-account-picker-uitests-fail-on-the-ios-27-lane-pro-max` (comprobado: es la primera fila de su tabla). Lo medido de `test_freshInstallShowsFourSectionsByDefault` en el iPhone SE (2026-10-01) queda en el cuerpo de este ticket.
 
 ## Qué pasa
 

@@ -4,6 +4,7 @@ status: backlog
 priority: medium
 area: "accounts, currency, fx, planning"
 created: 2026-09-09
+updated: 2026-10-07
 source: review adversarial de changing-an-account-currency-orphans-its-whole-history (2026-09-09)
 ---
 
@@ -48,3 +49,24 @@ programado no tiene fecha pasada con la que convertir, así que ni siquiera est�
 ## Relacionados
 
 - `changing-an-account-currency-orphans-its-whole-history` — el histórico, ya cerrado.
+
+## Decisión de Jürgen (2026-10-07)
+
+Opción 2A, la misma en los tres tickets de moneda: **antes de cambiar la moneda de una cuenta, Yala avisa y muestra qué se
+va a convertir; los pagos programados y los favoritos se convierten a la tasa de hoy; el historial no se toca.**
+
+Los tres tickets que la comparten:
+- `account-currency-change-leaves-scheduled-and-favorites-stale`
+- `saving-a-mismatched-transaction-relabels-it-without-converting`
+- `cloudsync-account-currency-orphans-receiver-history`
+
+A qué parte corresponde: es la respuesta directa a los dos primeros AC de este ticket. `ScheduledPayment` y
+`FavoritePayment` **se convierten a la tasa de hoy** (lo que el ticket dejaba abierto: «¿con qué tasa?», y qué pasa con
+los que no tienen fecha), y el aviso previo enumera qué se va a convertir.
+
+Lo que la decisión no nombra y hay que resolver al implementar, sin cambiarla:
+- Los `InboxDraft` pendientes de esa cuenta, que este ticket también lista.
+- «El historial no se toca» frente a lo que ya hace `changing-an-account-currency-orphans-its-whole-history` (en `qa`):
+  hoy Guardar ofrece convertir los movimientos pasados, cada uno a la tasa de **su** fecha. Lectura de esta sesión, por
+  confirmar con Jürgen antes de tocar código: la decisión no cambia ese comportamiento, solo añade programados y favoritos
+  al aviso. La otra lectura —dejar de convertir el histórico— deshace una decisión suya del 2026-09-09.
