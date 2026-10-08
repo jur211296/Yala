@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, migración"
 created: 2026-09-22
-updated: 2026-09-23
+updated: 2026-10-08
 source: "review adversarial de `apply-overwrites-a-pending-local-write-without-its-guards` (2026-09-22), lente de atomicidad — hallazgo 1"
 ---
 
@@ -38,3 +38,11 @@ M2M (`Tag`, `Account`, `Subcategory`). El caso local a distinguir es el mismo.
 ## Criterios de aceptación
 
 - [ ] Una lectura local ilegible durante la migración no gasta el presupuesto de red ni muestra «sin conexión».
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `PullApplyOutcome` (`SyncApplyEngine.swift`) sigue sin caso local: su doc comment cita este ticket y mete la lectura local ilegible en `.transient`.
+- En la ida, `MigrationWorkExecutor.verify` mapea `.busy, .transient` del pull a `.networkTimeout` salvo cuando la avería es la del pin de identidades (`relayIdentityPinUnreadable`); el resto de lecturas locales del apply siguen saliendo como red.
+- En la vuelta, `reverseDrainAll` mapea `.busy, .transient` del pull a `.transient` sin distinguir.
+
+Triage 2026-10-08: abierto · low → low · `PullApplyOutcome` sigue sin caso local y `verify`/`reverseDrainAll` lo leen como red; avería local rara, reintenta y no pierde datos.

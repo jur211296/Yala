@@ -5,6 +5,7 @@ priority: low
 area: "testing, records, bulk-edit, adaptativo"
 created: 2026-10-01
 source: "gate de iphone-landscape-headers-fill-the-short-screen (carril adaptativo), 2026-10-01"
+updated: 2026-10-08
 ---
 
 # Los dos casos de `BulkEditUITests` caen en el iPhone SE
@@ -26,3 +27,9 @@ dos toques, o mirando el `record_row` 1 contra el marco de la barra.
 
 Si la hipótesis se confirma, el test debe asegurarse de que la segunda fila es tocable (desplazar antes, o elegir
 filas visibles) — es del test, no del producto: con el dedo la fila se alcanza deslizando.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `YalaUITests/Flows/BulkEditUITests.swift` no tiene commits desde el 2026-10-01 y no desplaza antes de tocar la segunda fila; los dos asserts siguen en `:61` y `:85`. Sin re-medir en el SE (aquí no se compila).
+
+Triage 2026-10-08: abierto · low → low · el test no ha cambiado desde la medida; es del test y del carril adaptativo, no del producto.

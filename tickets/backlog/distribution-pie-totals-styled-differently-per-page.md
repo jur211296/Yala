@@ -1,10 +1,11 @@
 ---
 id: distribution-pie-totals-styled-differently-per-page
 status: backlog
-priority: low
+priority: very-low
 area: "statistics, design-system"
 created: 2026-10-04
 source: hallazgo de distribution-subviews-miss-the-new-panel-hero (2026-10-04)
+updated: 2026-10-08
 ---
 
 # El total de cada página del carrusel de Distribución se pinta distinto
@@ -37,3 +38,10 @@ Con comparativa los tres usan `PieChartVariationHeader` y no se nota.
 
 - [[pie-header-total-unmarked]] — mismo hueco, la marca de aproximado. Arreglarlos juntos: si
   subcategorías y etiquetas pasan a `AmountText`, el `isEstimate:` va en la misma línea.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- Rama «Original header without comparison»: `CategoriesPieWidget.swift` usa `AmountText(` (~L545) y `SubcategoriesPieWidget.swift` (~L533) y `TagsPieWidget.swift` (~L492) siguen con `Text(formattedCurrency(filteredTotalExpense))`. Sin commits en esos dos ficheros desde el 2026-10-04.
+- Se arregla en la misma línea que `pie-header-total-unmarked` (medium): si los dos pasan a `AmountText`, el `isEstimate:` va con él.
+
+Triage 2026-10-08: abierto · low → very-low · subcategorías y etiquetas siguen pintando el total con `Text` y no con `AmountText`; inconsistencia visual sin efecto sobre los números.

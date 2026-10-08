@@ -4,6 +4,7 @@ status: backlog
 priority: low
 area: groups
 created: 2026-09-05
+updated: 2026-10-08
 source: residual medido al cerrar group-joiner-flag-consumers-still-narrow
 ---
 
@@ -83,3 +84,11 @@ UNA (la de `min(joinedAt)`): comparar solo contra ella dejaría la otra fila pro
 
 Por ese mismo motivo el escáner de `GroupJoinerIdentityConsumerTests` no cubre las vistas: prohibiría
 un patrón que ahí es correcto.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- Siguen con el flag pelado: el badge de `GroupMemberRow`, `MemberPickerView`, las dos ramas de `InviteLinkService` y el guard `cannotRemoveSelf` de `GroupService.removeMember`.
+- `GroupSplitSelectorView` ya no lee el flag. El reparto vive ahora en `GroupSplitEditorCard` (`96f214220`, 2026-10-04), cuyo `memberName` repite el mismo `if member.isCurrentUser` pelado.
+- `AppBootstrapper` (bloque «Removed-self») sigue con el `#Predicate` original y el comentario que remite a este ticket: la decisión del 2026-09-06 («solo si ninguna fila mía está `active`», con `resolveAllCurrentUserMembers`) está tomada y sin implementar.
+
+Triage 2026-10-08: abierto · low → low · `GroupMemberRow`, `GroupSplitEditorCard`, `MemberPickerView`, `InviteLinkService` (×2) y `GroupService.removeMember` siguen leyendo `isCurrentUser` a pelo, y el cleanup de expulsado de `AppBootstrapper` sigue sin la regla que Jürgen decidió el 2026-09-06.

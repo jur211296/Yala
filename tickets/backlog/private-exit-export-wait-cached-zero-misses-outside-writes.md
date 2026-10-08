@@ -4,6 +4,7 @@ status: backlog
 priority: low
 area: "settings, modo-nube"
 created: 2026-09-26
+updated: 2026-10-08
 source: "review adversarial de `private-exit-loses-unmaterialized-inbound-captures` (lentes de pérdida de datos y de efectos colaterales)"
 ---
 
@@ -31,3 +32,10 @@ programado). La espera da el cierre por bueno, suelta la sesión y, justo antes 
 
 Invalidar la caché por un testigo barato de «el historial cambió» (el token o el timestamp de la última
 transacción), no por una lista de escritores.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `CloudSessionSignOut.confirmExportOrBlock`: `withoutAnchor` se reinicia solo con `storeChanged`, con la cola del App Group que encoge o con un ancla nueva; el docblock dice «Otras escrituras ajenas no la tiran» y cita este ticket.
+- Sin pérdida: el recuento pegado al arm sigue sin caché.
+
+Triage 2026-10-08: abierto · low → low · sigue igual, sin pérdida de datos: solo cambia el momento del aviso.

@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, sesión, preferencias"
 created: 2026-09-15
-updated: 2026-09-15
+updated: 2026-10-08
 source: "hallazgo de `cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes` (2026-09-15)"
 ---
 
@@ -36,3 +36,11 @@ otro teléfono esa preferencia sigue como estaba.
 
 - `cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes` — el aviso cuya cifra no las incluye.
 - `prefs-synced-keys-upload-not-download` y `language-override-bypasses-the-cloud-prefs-channel` — el mismo canal.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `CloudSyncRuntime.teardownGuestSession` sigue haciendo `prefsOutbox?.purgeAll()` sin mirar, y ni `CloudSessionSignOut` ni `CloudSignOutFlowLogic` ni `CloudMigrationController` mencionan `PrefsOutbox`.
+- Los commits posteriores sobre el canal (`099aa010a`, `c8d703f3b`, `a1b7297c5`) arreglan la subida, no el purgado del cierre.
+- Sigue pendiente la decisión 1/2/3. Recomendación: la 2 (contarlas en los avisos de pérdida, sin bloquear); con ella sigue `low`.
+
+Triage 2026-10-08: abierto · low → low · el teardown sigue purgando el outbox de preferencias sin contarlo; son preferencias, no datos financieros, y la cuenta conserva el último valor subido.

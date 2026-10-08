@@ -4,6 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, a11y"
 created: 2026-09-26
+updated: 2026-10-08
 source: "review adversarial de `late-icloud-notice-exit-after-a-failed-wipe-leaves-the-blind-resume-armed` (2026-09-26)"
 ---
 
@@ -25,3 +26,9 @@ fases anteriores; la fase nueva lo agrava porque se presenta sola en el arranque
 
 Medirlo en el pase de estrés (iPhone más pequeño, Dynamic Type máximo, alemán). Si se confirma, envolver el contenido en
 un `ScrollView` con los botones fuera.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `noticeBody` sigue igual: título y cuerpo con `.fixedSize(horizontal: false, vertical: true)` y los botones en el mismo `VStack`; no hay ningún `ScrollView` en `LateICloudMirrorNoticeView.swift`. Sigue pendiente de verlo en el pase de estrés (iPhone pequeño, Dynamic Type máximo, alemán).
+
+Triage 2026-10-08: abierto · low → low · `LateICloudMirrorNoticeView.noticeBody` sigue siendo un `VStack` con `fixedSize` y sin `ScrollView` en todo el fichero; sin medir en el pase de estrés.

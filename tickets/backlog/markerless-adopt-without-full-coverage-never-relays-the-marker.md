@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, migración"
 created: 2026-09-25
-updated: 2026-09-25
+updated: 2026-10-08
 source: "residual de `markerless-adopt-stays-blocked-while-another-device-writes-to-the-account` (2026-09-25), review adversarial, lente de reglas"
 ---
 
@@ -42,3 +42,10 @@ marcador lo cree el siguiente sin mirar nada, así que no puede certificar lo qu
 
 - [ ] Un adoptador al que solo le faltan filas que él mismo borró releva el marcador sin abrir el duplicado que la
       cobertura total evita.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `relayAdoptMarkerIfCovered` sigue con `guard Self.adoptCoverageComplete(inventory:liveByTable:)`; ningún commit posterior al 2026-09-25 cambió `adoptCoverageComplete`.
+- Choca con `row-deleted-during-the-relief-wait-comes-back-after-the-relief`, que sigue abierto (low): una de las dos ideas del ticket depende de cómo se cierre aquel.
+
+Triage 2026-10-08: abierto · low → low · `MigrationWorkExecutor.relayAdoptMarkerIfCovered` sigue exigiendo `adoptCoverageComplete` (cobertura total), sin distinguir las filas que el adoptador borró; pide marcador ausente, un borrado durante la espera y un tercer dispositivo.

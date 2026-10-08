@@ -4,6 +4,7 @@ status: backlog
 priority: low
 area: "groups, sync"
 created: 2026-09-27
+updated: 2026-10-08
 source: "re-review adversarial de `late-remote-wipe-signal-undoes-the-rows-the-origin-reconverged` (2026-09-27); inferido por lectura, NO reproducido"
 ---
 
@@ -34,3 +35,11 @@ pide y vuelve la pérdida del ticket padre.
 ## Relacionados
 
 - [[late-remote-wipe-signal-undoes-the-rows-the-origin-reconverged]]
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `wipeLocallyForRemoteWipeSignal` sigue decidiendo con `GroupsBridgeRestoreConvergenceLogic.remoteWipeTakesRowsTheOriginReconverged(bridgedRowsCreatedAt:signaledAt:)`. Si no hay filas posteriores, ahora espera el reparto del origen (`GroupsRemoteWipeDivision.awaitOrigin`), que puede cambiar el «hueco vecino» del ticket; no se midió.
+- `50ab2e890` (2026-10-06) retiró `GroupsRemoteWipeReturn`, pero no esta inferencia.
+- Decisión pendiente. A) sello positivo en el iCloud-KV («convergí para el vaciado T»); B) dejarlo como está. Recomendada: B, porque A trae de vuelta la pérdida del ticket padre cuando el KV llega después que el espejo, y un duplicado visible se corrige a mano. Con B sigue en `low` mientras el duplicado sea posible.
+
+Triage 2026-10-08: abierto · low → low · `DataWipeService.wipeLocallyForRemoteWipeSignal` sigue pidiendo la convergencia por `remoteWipeTakesRowsTheOriginReconverged(bridgedRowsCreatedAt:)`, que se fía de la fecha de las filas puenteadas; sigue inferido.

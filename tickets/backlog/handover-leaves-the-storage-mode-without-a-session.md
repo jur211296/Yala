@@ -4,6 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, sesiones, handover"
 created: 2026-09-17
+updated: 2026-10-08
 source: "review adversarial de `previous-person-cloud-session-survives-fresh-start-and-reinstall` (lente de escritores), 2026-09-17"
 ---
 
@@ -31,3 +32,10 @@ alcanzable después de un cierre de sesión.
 
 - [ ] Medido si el par es alcanzable. Si lo es, el relevo devuelve el modo a `.icloud` (que es lo que hace
       `performSignOutWipeIfArmed` en su camino); si no lo es, se escribe por qué y se cierra.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `CloudSessionRetirement.retireForHandover` y `arm` siguen sin tocar `CloudSyncFlags.storageMode`: el par `.cloud` + sin sesión sigue siendo posible en el código.
+- Una entrada candidata descartada al medir: el vaciado remoto del Apple ID (`ContentView.handleRemoteWipeSignal`, que baja `hasCompletedOnboarding`) no lo obedece una sesión en la nube (`DestructiveScopeLogic.wipeSignalObeyedByThisSession` recibe `storageMode`).
+
+Triage 2026-10-08: abierto · low → low · `CloudSessionRetirement.retireForHandover` (ContentView.swift, dos llamadas) sigue sin tocar `storageMode`; la entrada al par `.cloud` + Welcome sigue sin encontrarse, así que no hay callejón medido.

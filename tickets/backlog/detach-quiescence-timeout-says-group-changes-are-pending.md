@@ -5,6 +5,7 @@ priority: low
 area: "modo-nube, settings, groups"
 created: 2026-10-02
 source: "review adversarial de `detach-saves-the-personal-graph-outside-the-quiescence-window` (lente de consumidores)"
+updated: 2026-10-08
 ---
 
 # Cuando iCloud aún está bajando datos, el desasociar dice «quedan cambios de tus grupos sin subir»
@@ -32,3 +33,11 @@ movimientos de tus grupos» (el bloqueo de la segunda puerta, desde el 2026-10-0
 Un motivo propio para «iCloud aún está bajando tus datos», con su texto, que salga desde las dos puertas del
 desasociar; y un canario fuera de `#if DEBUG` cuando la espera agota el tope. Es copy nuevo en los 9 idiomas: decisión
 de producto.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `CloudSessionSignOut.attemptGroupsOnlyClose` sigue devolviendo `.blocked(pendingCount:…, reason: .transient)` cuando `awaitPersonalQuiescenceForGroupsSignOut` agota el tope, y `GroupsAssociationSection` lo pinta con `detachBlockedTransient`.
+- Sigue sin canario ni breadcrumb al agotar el tope de quiescencia; no hay commits sobre la quiescencia del desasociar desde el 2026-10-02.
+- Sigue pendiente la decisión de copy (motivo propio «iCloud aún está bajando tus datos»).
+
+Triage 2026-10-08: abierto · low → low · el tope de quiescencia sigue saliendo como `.transient` («quedan cambios sin subir») y sin canario; texto inexacto, reintentar funciona.

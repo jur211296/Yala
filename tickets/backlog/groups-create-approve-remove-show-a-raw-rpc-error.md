@@ -1,9 +1,10 @@
 ---
 id: groups-create-approve-remove-show-a-raw-rpc-error
 status: backlog
-priority: low
+priority: medium
 area: "groups, copy"
 created: 2026-09-17
+updated: 2026-10-08
 source: "inventario de consumidores de `groups-actions-read-an-offline-token-refresh-as-a-session-expiry` (2026-09-17); ya anotado como residual en `groups-leave-rpc-error-10`"
 ---
 
@@ -39,3 +40,11 @@ necesita a Jürgen y `BRAND-VOICE.md`.
 
 - `groups-leave-rpc-error-10` — el mismo defecto al salir de un grupo, ya arreglado; aquí vive su residual.
 - `groups-actions-read-an-offline-token-refresh-as-a-session-expiry` — cambió qué número ve la persona sin red.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- Siguen pintando `error.localizedDescription` crudo: `GroupFormView.swift:333` (crear grupo) y `GroupMembersView.swift` en cuatro `catch` (aprobar: líneas 276 y 299; expulsar: 513 y 528). `GroupsRPCError` sigue sin conformar `LocalizedError`.
+- Ningún commit desde el 2026-09-17 cambió esos `catch` (`0fbaabef2` solo tocó el tamaño de las hojas).
+- **Decisión de copy (Jürgen).** A) Reutilizar los textos que ya usa `GroupLeaveErrorLogic` (sin conexión / el servidor falló / vuelve a entrar) con un clasificador por acción. B) Copy nuevo por acción. **Recomendada: A**, que no pide copy nuevo salvo para los `yala_*` propios de cada RPC.
+
+Triage 2026-10-08: abierto · low → medium · tres acciones de Grupos enseñan «Error de Yala.GroupsRPCError 1» en el uso normal sin conexión; mismo nivel que ai-insights-error-card-shows-raw-english-errors.

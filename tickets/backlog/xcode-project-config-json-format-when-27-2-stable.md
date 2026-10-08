@@ -4,6 +4,7 @@ status: backlog
 priority: very-low
 area: "tooling, xcode"
 created: 2026-09-20
+updated: 2026-10-08
 source: "Apple docs (Beta) vía Dan — Jürgen 2026-09-20; captura Frank"
 ---
 
@@ -32,3 +33,9 @@ Hoy el project file es frágil para diffs y para Claude/agentes. Cuando el toolc
 ## Referencia
 
 Apple Developer Documentation (Beta): *Updating your Xcode project configuration file format* — Xcode 27.2+.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- En la Mini está Xcode 27.0 (`/Applications/Xcode.app`) y `project.pbxproj` sigue en `objectVersion = 77`. La condición del ticket, 27.2 estable, no se cumple.
+
+Triage 2026-10-08: abierto · very-low → very-low · espera a Xcode 27.2 estable.

@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, migración"
 created: 2026-09-26
-updated: 2026-09-26
+updated: 2026-10-08
 source: "review adversarial (lente de consumidores) de `adopt-window-late-imports-overwrite-newer-cloud-edits`, 2026-09-26"
 ---
 
@@ -34,3 +34,10 @@ después, iCloud termina de bajar una versión vieja de ese gasto con 4,00. Al r
 ## Relación
 
 - Surge de `adopt-window-late-imports-overwrite-newer-cloud-edits` (regla «Y lo que el espejo importa TARDE…», punto 4).
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `CloudSyncEngine.appendUpsert(model:…)` sigue construyendo el delta con `DeltaEmitter.emit(model:)` sobre la fila viva, no con el valor de la transacción.
+- `skipsAdoptBackendKnownRow` solo salta los cambios con autor del espejo (`requiresMirrorAuthor`); la edición del usuario sobre la misma fila sigue saliendo, con el valor que dejó el espejo.
+
+Triage 2026-10-08: abierto · low → low · el drain sigue leyendo la fila viva y solo salta lo del espejo; exige editar justo esa fila entre el paso 3 del adopt y el relanzamiento.

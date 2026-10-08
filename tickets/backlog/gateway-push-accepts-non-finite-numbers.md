@@ -4,6 +4,7 @@ status: backlog
 priority: low
 area: "cloud-backend, gateway"
 created: 2026-10-08
+updated: 2026-10-08
 source: medido en wire-decoder-accepts-non-finite-money (2026-10-08)
 ---
 
@@ -38,3 +39,10 @@ actualice sus filas).
 - [ ] Test en `gateway/test/` con `"NaN"`, `"Infinity"` y `"-Infinity"`.
 
 Fuera de alcance de la sesión que lo encontró: no se toca el servidor ni las migraciones de `qa/cloud/`.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `validateUpsertShape` (`gateway/src/sync/manifest.ts` y su espejo `gateway/src/groups/manifest.ts`) no comprueba valores no finitos; en `gateway/src` solo `canon.ts` los rechaza, y lo hace al re-serializar (lanza), no al aceptar el push.
+- Ninguna app de Yala lo emite (`Canonc1Codec`); hace falta un cliente propio o PostgREST. En Grupos un miembro podría dejar sin verificación de integridad al grupo entero.
+
+Triage 2026-10-08: abierto · low → low · el push sigue sin validar el valor; solo lo alcanza un cliente que no sea la app.

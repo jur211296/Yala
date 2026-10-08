@@ -1,10 +1,11 @@
 ---
 id: stats-per-account-branch-keeps-stale-live-anchor
 status: backlog
-priority: low
+priority: very-low
 area: statistics
 created: 2026-09-09
 source: hallazgo de camino en fx-approximate-mark-missing-on-secondary-surfaces (2026-09-09)
+updated: 2026-10-08
 ---
 
 # La rama por-cuenta de Estadísticas se queda con el saldo vivo del cálculo anterior
@@ -37,3 +38,10 @@ como está.
 
 - [ ] Medido si el anchor pegado llega a verse en la rama por-cuenta.
 - [ ] `calculatePerAccountTrend` limpia los tres campos (o los calcula), y un test lo fija.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- Medido el primer criterio: la rama es **inalcanzable**. `StatisticsViewModel.isAggregatedView` nace en `true` y nada en `Yala/` lo pone a `false` (solo lo leen la propia rama y un `.onChange` en `DetailContainerView`), y así estaba ya el 2026-09-09.
+- `calculatePerAccountTrend` sigue sin tocar `trendLiveAnchor`, `trendLiveAnchorBreakdown` ni `trendLiveAnchorIsApproximate`. Según el propio ticket, lo que queda es el `nil` explícito con su comentario, o retirar la rama muerta.
+
+Triage 2026-10-08: abierto · low → very-low · el saldo pegado sigue en el código, pero ninguna pantalla puede poner Tendencias en vista por cuenta (isAggregatedView nunca pasa a false), así que nadie lo ve.

@@ -4,6 +4,7 @@ status: backlog
 priority: low
 area: accessibility
 created: 2026-09-09
+updated: 2026-10-08
 source: hallazgo de camino en fx-approximate-mark-missing-on-secondary-surfaces (2026-09-09)
 ---
 
@@ -33,3 +34,10 @@ candidatos, y hay más.
 - [ ] Cada control que envuelve un importe lo anuncia (label descriptivo + `accessibilityValue` con
       el número, marca incluida).
 - [ ] Un source-scan al molde de `ApproximateMarkWiringTests` que impida que vuelva a perderse.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- 29 ficheros de `Yala/` usan `AmountText` y `.accessibilityLabel(` a la vez; nadie ha hecho la lista de instancias ni el source-scan del tercer criterio.
+- Candidato revisado: los chips de ingresos y gastos del hero (`HeroMonthView`) no llevan `accessibilityLabel` propio, así que el importe sí se oye; les falta lo contrario, decir si es ingreso o gasto (la flecha va con `accessibilityHidden`). Es un caso hermano para el mismo barrido.
+
+Triage 2026-10-08: abierto · low → low · accesibilidad sin barrer; los dos chips de Registros ya se arreglaron y el resto sigue sin medir.

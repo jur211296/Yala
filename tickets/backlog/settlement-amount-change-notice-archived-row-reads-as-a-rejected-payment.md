@@ -5,6 +5,7 @@ priority: low
 area: "inbox, copy"
 created: 2026-10-05
 source: "review adversarial de `settlement-amount-edited-after-approval-leaves-the-bank-stale` (2026-10-05, lente de copy); NO reproducido"
+updated: 2026-10-08
 ---
 
 # En Archivados, el aviso que dejé como estaba parece un pago rechazado
@@ -28,3 +29,9 @@ explica.
 ## Relacionados
 
 - [[settlement-amount-edited-after-approval-leaves-the-bank-stale]]
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `InboxDraftRowView.settlementAmountChangeDetail` sigue con `guard draft.isSettlementAmountChangeNotice, draft.status == .pending`, así que el aviso archivado cae a «subcategoría • cuenta». El último commit del fichero es el que creó el aviso (`e1b3999bc`).
+
+Triage 2026-10-08: abierto · low → low · sigue pasando (el detalle propio solo se pinta en pendiente), pero tocar la fila abre la hoja que explica el cambio.

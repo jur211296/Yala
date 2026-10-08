@@ -5,6 +5,7 @@ priority: low
 area: "modo-nube, sync, copy"
 created: 2026-09-17
 source: "Paso 0 (D9) y review adversarial de `cloud-hydration-spinner-never-gives-up-without-attest` (2026-09-17)"
+updated: 2026-10-08
 ---
 
 # «Descargando tus datos…» sigue girando cuando el motor de la nube ya se ha parado
@@ -54,3 +55,11 @@ se emite, y quedarse sin sesión en `.cloud` con la app vacía es raro.
   dejó este fuera a propósito.
 - `cloud-hydration-banner-does-not-see-data-that-arrives-after-mount` — el otro término del banner que no se re-evalúa.
 - `groups-has-no-cadence-when-the-personal-runtime-is-stopped` — el mismo motor parado, visto desde Grupos.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `CloudHydrationLogic.showBanner` sigue con los mismos cuatro términos (primer pull, `storageMode == .cloud`, app vacía, veredicto de attest); ninguno lee `CloudSyncRuntime.state`.
+- Ningún commit posterior al 2026-09-17 toca `CloudHydrationBanner.swift`.
+- Sigue pendiente la decisión 1/2/3 del cuerpo. Recomendación: la 3 (dejarlo) mientras el gateway no emita 403 en `/sync/*`; la población es casi solo el simulador.
+
+Triage 2026-10-08: abierto · low → low · el banner sigue sin mirar el estado del motor; población pequeña (simulador sin attest, sesión ausente en .cloud con la app vacía).

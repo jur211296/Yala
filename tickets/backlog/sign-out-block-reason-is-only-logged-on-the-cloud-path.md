@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "sesión, observabilidad"
 created: 2026-09-16
-updated: 2026-09-16
+updated: 2026-10-08
 source: "review adversarial de `signout-pending-copy-says-wait-seconds-when-offline` (2026-09-16)"
 ---
 
@@ -52,3 +52,10 @@ sesión que nadie pidió. Es el mismo discriminador que pide
   llamen los otros tres caminos.
 - `signout-alert-fires-on-detach-blocks-it-did-not-cause` — comparte la pieza que falta: el coordinador no
   publica qué gesto puso la fase.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `CloudSyncBreadcrumb.signOutGroupsBlocked(reason:)` sigue con un único emisor, el cierre en la nube (`CloudSessionSignOut.swift`, ahora hacia `:1655`).
+- `pushGroupsForSignOut` (ahora `:1774`) solo emite `signOutPushBlocked(pending:)` en `.surfacePermanent` y `.surfaceTransient`.
+
+Triage 2026-10-08: abierto · low → low · sigue igual (un solo emisor del motivo) y solo afecta a quien lee los rastros, no a quien usa la app.

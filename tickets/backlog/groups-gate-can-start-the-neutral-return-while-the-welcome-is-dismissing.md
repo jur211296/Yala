@@ -4,6 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, groups"
 created: 2026-10-01
+updated: 2026-10-08
 source: "review adversarial de `superseding-intent-can-strand-the-sign-out-coordinator`, lente de flujo"
 ---
 
@@ -28,3 +29,11 @@ Si SwiftUI relanza un `.task(id:)` en una vista que se está desmontando. Si no 
 
 Que la puerta no arranque la vuelta al neutro si su cover ya no está pedido (`showWelcomeFlow == false`), o que el
 derribo no ocurra con la puerta en `.checking`.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `ContentView.dismissWelcomeChainForSupersedingIntent` sigue poniendo `showWelcomeFlow = false` sin mirar la fase de la puerta, y `WelcomeGroupsGateView.evaluate()` sigue con solo el guard `!Task.isCancelled` antes de pasar a `.returningToNeutral`. Ningún commit desde el 2026-10-01 toca ese derribo.
+- Sigue sin medir lo que decide el ticket: si SwiftUI deja correr el `.task` durante la animación de cierre del cover. No se puede medir sin simulador; queda abierto con la misma pregunta.
+- El síntoma (Ajustes mudo) dura hasta relanzar: no es un callejón.
+
+Triage 2026-10-08: abierto · low → low · carrera inferida y sin medir en una ventana de animación; el síntoma se cura al relanzar.

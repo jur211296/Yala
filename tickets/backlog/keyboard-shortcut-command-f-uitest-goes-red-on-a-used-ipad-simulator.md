@@ -4,6 +4,7 @@ status: backlog
 priority: low
 area: "testing"
 created: 2026-10-07
+updated: 2026-10-08
 source: hallazgo del encargo 2026-10-07-ipad-drop-unreadable-file-fails-silently
 ---
 
@@ -21,3 +22,9 @@ Buscar»; el vídeo del resultado enseña el Panel sin cambios tras ⌘F. Los ot
   encargo.
 - No se averiguó qué estado del simulador lo cambia. El test pulsa ⌘F en cuanto hay una barra de navegación, sin
   esperar a `uitest_ready`; es la primera hipótesis a medir, no una causa comprobada.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- El test no ha cambiado desde `f96aae000`: espera `navigationBars.firstMatch` y pulsa ⌘F sin esperar a `uitest_ready`. La hipótesis del ticket sigue sin medir.
+
+Triage 2026-10-08: abierto · low → low · `test_commandF_opensSearch` (YalaUITests/Flows/KeyboardShortcutsUITests.swift) sigue pulsando ⌘F en cuanto hay barra de navegación, sin esperar a `uitest_ready`; solo corre en iPad, fuera del gate.

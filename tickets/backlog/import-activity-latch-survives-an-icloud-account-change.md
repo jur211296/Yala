@@ -4,6 +4,7 @@ status: backlog
 priority: low
 area: "icloud, sync"
 created: 2026-09-21
+updated: 2026-10-08
 source: "review adversarial de `leaving-and-reentering-restore-renews-the-hard-cap`, 2026-09-21"
 ---
 
@@ -39,3 +40,9 @@ de los dos testigos de import.
 ## Relación con otros tickets
 
 - `leaving-and-reentering-restore-renews-the-hard-cap` — de donde sale; cerró la mitad del sello.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `iCloudSyncService.accountDidChange` sigue igual: limpia `lastImportActivityAt` y deja `hasObservedImportActivity` con un comentario que lo justifica. Sus consumidores siguen siendo `BootSaveGateLogic` y el gate de `AppBootstrapper`; ninguno tiene caso de cambio de cuenta.
+
+Triage 2026-10-08: abierto · low → low · `iCloudSyncService.accountDidChange` sigue limpiando `lastImportActivityAt` y dejando `hasObservedImportActivity` a propósito; sin síntoma visible medido.

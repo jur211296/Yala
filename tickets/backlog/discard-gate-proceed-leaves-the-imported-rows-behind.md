@@ -5,6 +5,7 @@ priority: low
 area: "onboarding, modo-nube"
 created: 2026-09-14
 source: "review adversarial del PR de `activation-discard-gate-exits-without-wiping-when-icloud-is-unreachable` (3 lentes, 2026-09-14); NO reproducido en device"
+updated: 2026-10-08
 ---
 
 # Si la zona se vacía sola, «Empezar desde cero» sale sin llevarse las filas que ya bajaron
@@ -61,3 +62,10 @@ El caso más probable de «zona vacía con las filas importadas dentro» era el 
 un corte) después de vaciar iCloud. Ese ya no sigue al onboarding: con la marca «a medias» o la de la zona puesta, la
 rama `.proceed` termina el borrado `.importedRows` (`HalfwayWipe.finishOnReentry`). Queda abierto lo de este ticket:
 iCloud vaciado desde otro dispositivo, sin ninguna marca en este.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- En `WelcomePrivateICloudGateView.measure()`, rama `.proceed`, `WelcomePrivateICloudGateLogic.afterEmptyMeasure` solo termina el borrado (`.finishHalfwayWipe`) con la marca «a medias» o la de la zona puestas; sin marcas sale por `.proceed(retiresHalfway: false)` → `discardPendingWipe()` + `onProceed()`, sin borrar las filas importadas.
+- Es exactamente el resto que deja abierto el añadido del 2026-09-27: iCloud vaciado desde otro dispositivo, sin marcas en este.
+
+Triage 2026-10-08: abierto · low → low · sin marcas, la rama `.proceed` de la puerta sigue saliendo sin borrar las filas importadas; exige que otro dispositivo vacíe iCloud en esa ventana y no pierde datos.

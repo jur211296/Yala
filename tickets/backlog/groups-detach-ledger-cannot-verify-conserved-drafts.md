@@ -4,6 +4,7 @@ status: backlog
 priority: low
 area: "groups, modo-nube"
 created: 2026-10-01
+updated: 2026-10-08
 source: "residual de `groups-detach-ledger-has-no-exit`"
 ---
 
@@ -33,3 +34,11 @@ fuera a propósito, porque ahí no se puede afirmar «ya no está» y equivocars
 
 Para los borradores, la vía honesta es la del enlace de `groups-reassociation-does-not-restore-the-bridge-link`
 (un campo con deploy de schema coordinado): con él, el borrador aprobado hereda el puntero y el libro deja de hacer falta.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `GroupsDetachedBridgeLedger` (`GroupsAssociationDetach.swift`) sigue excluyendo a propósito los borradores conservados: su docblock lo dice («que conservó un BORRADOR no va ahí a propósito»). El único commit posterior que lo toca (`4b29e9ed5`) es de la quiescencia del guardado.
+- La vía que el ticket da por honesta depende de `groups-reassociation-does-not-restore-the-bridge-link`, que sigue en backlog como very-low.
+- Pide tres pasos de la persona (soltar conservando con un borrador, volver a asociar la misma cuenta, borrar ese borrador o su movimiento), y lo que se pierde es el movimiento personal, no el gasto del grupo.
+
+Triage 2026-10-08: abierto · low → low · los borradores conservados siguen fuera del libro por diseño; la cadena que lo dispara es larga y depende de un ticket very-low.

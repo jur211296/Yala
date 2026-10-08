@@ -4,6 +4,7 @@ status: backlog
 priority: low
 area: "settings, groups"
 created: 2026-09-28
+updated: 2026-10-08
 source: "residual de `groups-outbox-rows-without-a-live-session-have-no-exit` (review adversarial, 2026-09-28)"
 ---
 
@@ -28,3 +29,11 @@ app y apunto un gasto en un grupo. El cierre termina y ese gasto se pierde sin q
 
 Capturar tras la segunda espera y antes del tramo sin `await`, o una lectura del History sin escribir, como
 `CloudSyncEngine.hasUncapturedPersonalChanges`, para el recuento pegado al arm.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `CloudSessionSignOut.armAfterCredentials`: tras el bucle `.confirm` de `confirmExportOrBlock` va directo a `blockIfGroupsCannotUpload`, sin `captureGroupsBeforeCountingThem` en medio.
+- `groupsLossUncaptured` solo lee el History con la captura atascada o con una pérdida aceptada que lo lea; en un cierre normal devuelve `[]`, así que lo apuntado en esa espera no cuenta.
+- Su hermano `private-sign-out-counts-group-writes-without-capturing-them` se cierra hoy como resuelto (PR #294): este es el resto que dejó fuera.
+
+Triage 2026-10-08: abierto · low → low · pérdida real pero exige apuntar un gasto de grupo, sin sesión de grupos, justo durante la espera final del cierre.

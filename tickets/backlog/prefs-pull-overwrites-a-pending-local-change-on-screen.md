@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, sync, preferencias"
 created: 2026-09-26
-updated: 2026-09-26
+updated: 2026-10-08
 source: "Paso 0 de `prefs-push-purge-drops-a-change-made-during-the-upload` (2026-09-26); previo a ese diff"
 ---
 
@@ -38,3 +38,10 @@ vuelve al valor anterior. En el ciclo siguiente tu cambio sube y reaparece. No s
 - La comparación tiene que usar el mismo orden que el LWW del servidor (HLC c1), o el cliente decidirá distinto que él.
 - El drenaje iKV→outbox encola con HLC fresco sin escribir local: revisar que el filtro no deje la pantalla con un valor
   que no es ni el local ni el remoto.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `CloudSyncRuntime.syncPrefsOnce` sigue haciendo push (purga solo resultados sin `reason`) y pull en el mismo ciclo; `PreferenceSyncService.applyPulledPrefs` llama a `PreferenceMergeLogic.decide(key:remote:local:)`, que no recibe ni consulta el outbox.
+- 099aa010a (el arreglo hermano) solo cambió la purga por HLC; el pull no se tocó.
+
+Triage 2026-10-08: abierto · low → low · parpadeo de un ciclo sin pérdida: el cambio sube y reaparece en el siguiente.

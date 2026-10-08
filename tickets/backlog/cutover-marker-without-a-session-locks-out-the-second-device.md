@@ -1,10 +1,10 @@
 ---
 id: cutover-marker-without-a-session-locks-out-the-second-device
 status: backlog
-priority: low
+priority: very-low
 area: "modo-nube, migración"
 created: 2026-09-24
-updated: 2026-09-25
+updated: 2026-10-08
 source: "review adversarial de `adopt-uploads-a-foreign-corpus-without-a-lineage-check` (lente del dispositivo legítimo, H2), 2026-09-24"
 ---
 
@@ -45,3 +45,9 @@ Queda el criterio de abajo como higiene del marcador (sigue siendo la primera pr
 Un marcador con el hash vacío no es el de la cuenta. El primer adoptador que entra con cobertura total releva uno con el
 hash bueno, y los teléfonos siguientes entran por él. El criterio de este ticket sigue abierto como higiene.
 
+## Medido en 2.1 (triage 2026-10-08)
+
+- El síntoma del título ya no pasa (las dos actualizaciones del cuerpo): el adopt acepta una fila viva de la cuenta como linaje y el primer adoptador releva el marcador con el hash bueno.
+- El resto sigue: `MigrationWorkExecutor`, efecto `.writeCloudKitMarker`, escribe `accountHash: session.currentUserID.map { CloudBeacon.hash($0) } ?? ""`. El criterio de aceptación queda como higiene del marcador.
+
+Triage 2026-10-08: abierto · low → very-low · nadie queda fuera desde los dos tickets de linaje del 24 y 25-sep; queda la higiene de `?? ""` en `.writeCloudKitMarker`.

@@ -4,6 +4,7 @@ status: backlog
 priority: low
 area: "settings, modo-nube"
 created: 2026-09-11
+updated: 2026-10-08
 source: "review adversarial del paso 9 (`session-exits-one-verb-per-session`), lentes de pérdida de datos y de reglas"
 ---
 
@@ -31,3 +32,11 @@ se pierde sin aviso.
 
 - [ ] Con el store espejando, el borrado de cuenta en F pasa por la misma espera y la misma salida avisada.
 - [ ] El breadcrumb distingue F de la nube.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `AccountDeletionService.deleteAccount` sigue mandando la celda F (`!hasPrivateSession`) por `closeLocalCloud` → `CloudSessionSignOut.closeLocalAfterAccountDeletionCloud`, que no espera al export de iCloud.
+- El breadcrumb sigue diciendo `account-delete-cloud` para F; la métrica `accountDeletionCompleted` sí distingue (`groupsOnlyNoPrivate`).
+- El único commit posterior que toca esa función (`b10a672ed`) no añadió la espera. Población estrecha: solo-grupos con el store espejando.
+
+Triage 2026-10-08: abierto · low → low · el borrado de cuenta en F sigue sin la espera del export; población estrecha y la persona está borrando su cuenta.

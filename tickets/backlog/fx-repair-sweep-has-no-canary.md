@@ -4,6 +4,7 @@ status: backlog
 priority: low
 area: "currency, telemetría"
 created: 2026-09-08
+updated: 2026-10-08
 source: hallazgo de camino en chat-rows-sealed-before-the-fix-have-no-repair-path (2026-09-08)
 ---
 
@@ -34,3 +35,10 @@ mirar».
 - [ ] Emite también el caso de «no sellado por falta de corpus», que es el que avisaría de un sellado
       prematuro sistemático.
 - [ ] El caso nuevo va **al final** del enum de canarios, no en medio: su posición se lee fuera.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `TransactionUpdateService.repairLegacyOneToOneRatesIfNeeded` sigue sin `MetricsService`: solo `print` bajo `#if DEBUG` (incluido el «store sin transacciones; el barrido se reintenta»).
+- Sigue colgando de `AppBootstrapper.loadExchangeRates`, justo antes de `updateProvisionalTransactions`.
+
+Triage 2026-10-08: abierto · low → low · el barrido one-shot sigue sin canario; es telemetría, no un daño visible.

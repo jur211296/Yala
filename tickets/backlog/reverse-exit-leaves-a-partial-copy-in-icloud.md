@@ -4,6 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, migración"
 created: 2026-09-16
+updated: 2026-10-08
 source: "review adversarial de `reverse-upload-has-no-ceiling-and-no-exit` (2026-09-16), lente de datos — H4"
 ---
 
@@ -36,3 +37,10 @@ iCloud» APROVECHA esa copia (el espejo conserva su metadata y solo sube lo que 
 ## Relacionado
 
 - `reverse-upload-has-no-ceiling-and-no-exit` · `reverse-cancel-pushes-what-the-mirror-imported-during-the-wait`.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `MigrationStateMachine` sigue saliendo de `reverseUpload` con `effects: [.rearmMirrorOff, .reverseRollback]`; ninguno toca la zona ni deja marcador de dueño. Sin commits que lo cambien desde el 2026-09-16.
+- Recomendación sobre la decisión: **conservar la copia** (un reintento de «Volver a iCloud» la aprovecha) y que la vuelta al modo privado o un dispositivo en privado avise antes de importarla como la buena, que es el segundo criterio. La prioridad es la de esa opción.
+
+Triage 2026-10-08: abierto · low → low · exige salir a mitad de la vuelta y, después, volver a privado o abrir otro dispositivo en privado con el mismo Apple ID.

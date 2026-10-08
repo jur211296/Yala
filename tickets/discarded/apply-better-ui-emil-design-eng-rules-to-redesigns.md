@@ -1,11 +1,14 @@
 ---
 id: apply-better-ui-emil-design-eng-rules-to-redesigns
-status: backlog
+status: discarded
 priority: low
 area: "design-system, process"
 created: 2026-09-17
 source: "Pack UI 15-sep (Dan) — Jürgen 2026-09-17: cada punto del pack = ticket aparte"
+updated: 2026-10-08
 ---
+
+Why: Discarded 2026-10-08. Es una convención sin fin, no un trabajo: ya vive en `.claude/agent-memory/frank/reference_skills_pulido_ui.md`, con un «How to apply» que pide exactamente esto en los rediseños, y los cuatro rediseños que cita (`ai-chat-reads-heavier-than-a-messaging-app`, `settings-redesign-as-grouped-lists-like-ios`, `step-flows-should-match-the-sep15-reference`, `onboarding-login-should-match-the-sep15-reference`) ya están construidos y en `tickets/qa/`.
 
 # Aplicar las reglas de better-ui / emil-design-eng en los rediseños de UI
 
@@ -23,3 +26,5 @@ Que los PRs de rediseño del pack 15-sep (y los que vengan) **contrasten la prop
 - `settings-redesign-as-grouped-lists-like-ios`
 - `step-flows-should-match-the-sep15-reference`
 - `onboarding-login-should-match-the-sep15-reference`
+
+Triage 2026-10-08: descartado · low → — · convención ya escrita en la memoria de Frank y los cuatro rediseños citados ya están en qa; no tiene estado de «hecho».

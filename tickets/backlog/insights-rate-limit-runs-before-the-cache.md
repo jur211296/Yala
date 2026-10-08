@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: insights, ai
 created: 2026-10-07
-updated: 2026-10-07
+updated: 2026-10-08
 source: revisión del uso de IA (docs/ai-usage-review-2026-10.md, hallazgo H3)
 ---
 
@@ -34,3 +34,9 @@ Copiar el orden de `TrendsAIService`: caché → intervalo → cliente, en los c
 
 - Test: dos llamadas con la misma clave separadas por menos de 5 s devuelven la caché sin error.
 - Test: un acierto de caché no llama a `ProxyClientFactory`.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `InsightsLLMService.generateInsights` mantiene el orden `ProxyClientFactory.makeOpenAI` → `lastCallTime` < 5 s → `rateLimited` → caché. Los dos commits posteriores al 2026-10-07 sobre el fichero (`3a0090cab`, `be06b429e`) no lo tocan.
+
+Triage 2026-10-08: abierto · low → low · `InsightsLLMService.generateInsights` sigue pidiendo el cliente, luego el intervalo de 5 s y al final la caché; `TrendsAIService.generate` ya lo hace en el orden bueno.

@@ -4,6 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, sync"
 created: 2026-09-11
+updated: 2026-10-08
 source: "review adversarial del paso 9 (`session-exits-one-verb-per-session`), lente de pérdida de datos"
 ---
 
@@ -33,3 +34,10 @@ siempre.
 
 - [ ] Un evento con `succeeded == false` no cuenta como éxito en ningún campo, o se documenta por qué uno sí.
 - [ ] Ninguna puerta de quiescencia queda cerrada para siempre por el cambio (test por consumidor).
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `iCloudSyncService.apply`: `consecutiveFailures = 0` y `hasCompletedFirstImport = true` siguen en la rama de fin sin condicionar a `succeeded`; solo `mirrorReportedNotAuthenticated` y el ancla del export lo miran. El docblock de `apply` todavía cita este ticket como pendiente.
+- Ningún commit posterior al 2026-09-11 sobre `iCloudSyncService.swift` cambió esa rama (los cinco que lo tocan son de Restaurar y de la vuelta a iCloud).
+
+Triage 2026-10-08: abierto · low → low · `iCloudSyncService.apply` sigue poniendo `consecutiveFailures = 0` y `hasCompletedFirstImport = true` sin mirar `succeeded`; solo el ancla y `mirrorReportedNotAuthenticated` lo miran.

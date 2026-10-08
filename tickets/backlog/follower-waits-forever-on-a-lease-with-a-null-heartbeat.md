@@ -4,6 +4,7 @@ status: backlog
 priority: very-low
 area: "modo-nube, migración, backend"
 created: 2026-09-23
+updated: 2026-10-08
 source: "review adversarial de `adopt-follower-waits-for-the-leader-with-no-ceiling` (2026-09-23), lente de relojes"
 ---
 
@@ -30,3 +31,10 @@ siempre. Hoy el INSERT y la promoción rellenan los dos campos, así que haría 
 ## Criterios de aceptación
 
 - [ ] La consulta está hecha y el resultado escrito aquí.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `qa/cloud/g16_04_claim_no_takeover_after_the_cutover.sql` (:30, :82) sigue declarando que un latido nulo no vence nunca.
+- La consulta a producción sigue sin hacerse: este triage no toca producción.
+
+Triage 2026-10-08: abierto · very-low → very-low · falta la consulta; hoy el INSERT y la promoción rellenan el latido.

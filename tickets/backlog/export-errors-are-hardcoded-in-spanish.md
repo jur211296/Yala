@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "export, l10n"
 created: 2026-09-15
-updated: 2026-09-15
+updated: 2026-10-08
 source: "review adversarial de `cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes` (2026-09-15)"
 ---
 
@@ -32,3 +32,10 @@ filtros seleccionados.».
 ## Relación con otros tickets
 
 - `cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes` — donde se vio.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `TransactionsExportError.errorDescription` (`Yala/Utils/TransactionsExportService.swift`) sigue devolviendo los tres literales en español sin `ls()`.
+- Sigue pendiente la decisión 1/2. Recomendación: la 1 (traducir los tres textos con `ls()`), que es lo mínimo y no cambia el asistente.
+
+Triage 2026-10-08: abierto · low → low · los tres errores siguen siendo literales en español; solo salen cuando la exportación falla.

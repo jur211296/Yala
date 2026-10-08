@@ -1,9 +1,10 @@
 ---
 id: fx-repair-sweep-is-the-only-boot-sweep-without-a-uitest-gate
 status: backlog
-priority: low
+priority: very-low
 area: "currency, testing"
 created: 2026-09-08
+updated: 2026-10-08
 source: hallazgo de camino en chat-rows-sealed-before-the-fix-have-no-repair-path (2026-09-08)
 ---
 
@@ -42,3 +43,10 @@ suite: un fetch de tabla completa más un `fetchCount` en cada lanzamiento de ca
 - [ ] El barrido queda gateado por `!uiTestActive` como sus vecinos, o queda escrito por qué éste no
       debe estarlo.
 - [ ] Si se gatea, comprobar que ningún XCUITest dependía de que corriera.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `AppBootstrapper.loadExchangeRates` sigue llamando a `repairLegacyOneToOneRatesIfNeeded` sin `!uiTestActive`, mientras el barrido del signo del chat (paso 2.6) y los pasos 4, 4b y 4c sí lo llevan.
+- Hoy no muerde: el propio ticket midió cero candidatas con el seed en PEN. Es un riesgo latente de test intermitente, no un hueco del gate.
+
+Triage 2026-10-08: abierto · low → very-low · sigue sin gate de UI tests pero hoy no tiene candidatas; es higiene de la suite.

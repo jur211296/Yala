@@ -42,3 +42,9 @@ huella mientras forme parte de un rename en el índice (lo que se sella no descr
 `account-currency-change-leaves-scheduled-and-favorites-stale`: dos tickets movidos `backlog/` → `qa/` con `git mv`; tras
 el `git add`, el hook bloqueó el commit. Con `diff.renames=false` la huella calculada era idéntica a la sellada (medido),
 así que el disco no había cambiado. Se re-selló sobre el mismo contenido.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `qa/scripts/worktree-stamp.sh:35` sigue con `git diff HEAD --name-only -z`, sin `--no-renames`. Ni el script ni su test tienen commits desde el 2026-09-23.
+
+Triage 2026-10-08: abierto · low → low · sigue pasando y volvió a morder el 8-oct en un commit con tickets movidos, pero cuesta un re-sellado y la baja que no se ve está en un renombrado.

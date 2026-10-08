@@ -4,6 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, groups"
 created: 2026-09-30
+updated: 2026-10-08
 source: "review adversarial de `sign-out-wipe-abort-loops-the-groups-gate` (lentes 1 y 2)"
 ---
 
@@ -28,3 +29,10 @@ se haya intentado nada. Se cura con un «Volver». No hay pérdida de datos ni b
 
 - [ ] Un testigo de un intento de hace días no enseña el aviso en una puerta nueva.
 - [ ] El aviso sigue saliendo en el arranque que sigue al borrado que no pudo.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `GroupsGateWipeFailureMarker` sigue siendo un `Bool` sin fecha (`cloudSync.groupsGate.wipeCouldNotDelete`), y nadie lo retira al completar el onboarding: las retiradas son la salida del aviso y el paso de la puerta (`WelcomeGroupsGateView`), un borrado que completa (`SwiftDataConfiguration`, `DataWipeService`) y `-uitest-reset`.
+- El único commit posterior que lo toca (`9e5b6b0bf`) no cambió eso.
+
+Triage 2026-10-08: abierto · low → low · el testigo sigue sin caducidad ni retirada al terminar el onboarding; el aviso falso se cura con «Volver» y no pierde datos.

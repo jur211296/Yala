@@ -116,7 +116,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | apple-id-close-notice-does-not-say-what-else-the-close-does | done | tickets/done/apple-id-close-notice-does-not-say-what-else-the-close-does.md |
 | apple-watch | backlog | tickets/backlog/apple-watch.md |
 | applepay-shortcut-warm-launch-empty-data | done | tickets/done/applepay-shortcut-warm-launch-empty-data.md |
-| apply-better-ui-emil-design-eng-rules-to-redesigns | backlog | tickets/backlog/apply-better-ui-emil-design-eng-rules-to-redesigns.md |
+| apply-better-ui-emil-design-eng-rules-to-redesigns | discarded | tickets/discarded/apply-better-ui-emil-design-eng-rules-to-redesigns.md |
 | apply-overwrites-a-pending-local-write-without-its-guards | done | tickets/done/apply-overwrites-a-pending-local-write-without-its-guards.md |
 | apppreferences-rewritten-on-launch | blocked | tickets/blocked/apppreferences-rewritten-on-launch.md |
 | approximate-mark-ors-over-whole-period | done | tickets/done/approximate-mark-ors-over-whole-period.md |
@@ -294,7 +294,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | encargos-markdown-triggers-the-whole-ios-suite | backlog | tickets/backlog/encargos-markdown-triggers-the-whole-ios-suite.md |
 | ensure-rates-for-existing-transactions-has-no-callers | backlog | tickets/backlog/ensure-rates-for-existing-transactions-has-no-callers.md |
 | entitlement-sync-forzado-es-noop-si-hay-otro-en-vuelo | backlog | tickets/backlog/entitlement-sync-forzado-es-noop-si-hay-otro-en-vuelo.md |
-| es-ar-detach-and-signout-copy-lost-the-voseo | backlog | tickets/backlog/es-ar-detach-and-signout-copy-lost-the-voseo.md |
+| es-ar-detach-and-signout-copy-lost-the-voseo | discarded | tickets/discarded/es-ar-detach-and-signout-copy-lost-the-voseo.md |
 | es-ar-storage-groups-block-is-in-tuteo-not-voseo | backlog | tickets/backlog/es-ar-storage-groups-block-is-in-tuteo-not-voseo.md |
 | exchange-rate-date-keys-follow-the-phone-calendar | backlog | tickets/backlog/exchange-rate-date-keys-follow-the-phone-calendar.md |
 | exchange-rate-detail-shows-zero-for-low-denomination-currencies | backlog | tickets/backlog/exchange-rate-detail-shows-zero-for-low-denomination-currencies.md |
@@ -614,7 +614,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | private-gate-wipe-failure-copy-claims-icloud-is-intact | done | tickets/done/private-gate-wipe-failure-copy-claims-icloud-is-intact.md |
 | private-icloud-gate-back-lands-on-the-wrong-branch | backlog | tickets/backlog/private-icloud-gate-back-lands-on-the-wrong-branch.md |
 | private-sign-out-blocks-on-a-cloud-keychain-read-error | backlog | tickets/backlog/private-sign-out-blocks-on-a-cloud-keychain-read-error.md |
-| private-sign-out-counts-group-writes-without-capturing-them | backlog | tickets/backlog/private-sign-out-counts-group-writes-without-capturing-them.md |
+| private-sign-out-counts-group-writes-without-capturing-them | done | tickets/done/private-sign-out-counts-group-writes-without-capturing-them.md |
 | private-sign-out-keeps-legacy-cloudkit-groups | backlog | tickets/backlog/private-sign-out-keeps-legacy-cloudkit-groups.md |
 | private-sign-out-misses-group-edits-made-during-the-icloud-wait | backlog | tickets/backlog/private-sign-out-misses-group-edits-made-during-the-icloud-wait.md |
 | private-sign-out-proceeds-with-a-migration-in-flight | qa | tickets/qa/private-sign-out-proceeds-with-a-migration-in-flight.md |
@@ -629,7 +629,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | qa-no-puede-crear-cuenta-en-otra-divisa | done | tickets/done/qa-no-puede-crear-cuenta-en-otra-divisa.md |
 | qa-yml-no-cancela-la-corrida-anterior-de-la-misma-rama | discarded | tickets/discarded/qa-yml-no-cancela-la-corrida-anterior-de-la-misma-rama.md |
 | queued-offer-after-dismiss-flakes-on-a-cold-simulator | backlog | tickets/backlog/queued-offer-after-dismiss-flakes-on-a-cold-simulator.md |
-| readme-index-duplicates-internal-worktree-files | backlog | tickets/backlog/readme-index-duplicates-internal-worktree-files.md |
+| readme-index-duplicates-internal-worktree-files | done | tickets/done/readme-index-duplicates-internal-worktree-files.md |
 | readme-index-generator-counts-worktree-copies | discarded | tickets/discarded/readme-index-generator-counts-worktree-copies.md |
 | readme-index-generator-walks-into-claude-worktrees | discarded | tickets/discarded/readme-index-generator-walks-into-claude-worktrees.md |
 | readme-index-lists-files-from-other-worktrees | discarded | tickets/discarded/readme-index-lists-files-from-other-worktrees.md |
@@ -647,7 +647,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | reinstall-without-network-has-no-cloud-door | done | tickets/done/reinstall-without-network-has-no-cloud-door.md |
 | rejected-member-cold-tap-does-nothing | done | tickets/done/rejected-member-cold-tap-does-nothing.md |
 | rejoin-tap-renotifies-admins | done | tickets/done/rejoin-tap-renotifies-admins.md |
-| relay-identity-ledger-missing-after-an-update-mid-migration | backlog | tickets/backlog/relay-identity-ledger-missing-after-an-update-mid-migration.md |
+| relay-identity-ledger-missing-after-an-update-mid-migration | discarded | tickets/discarded/relay-identity-ledger-missing-after-an-update-mid-migration.md |
 | relay-row-rekeyed-then-deleted-tombstones-the-leader-identity | done | tickets/done/relay-row-rekeyed-then-deleted-tombstones-the-leader-identity.md |
 | remote-onboarding-signal-ignores-the-session-axis | backlog | tickets/backlog/remote-onboarding-signal-ignores-the-session-axis.md |
 | remote-wipe-alert-skips-the-router | done | tickets/done/remote-wipe-alert-skips-the-router.md |
@@ -771,7 +771,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | stats-filter-segment-tap-should-ask-include-or-exclude | backlog | tickets/backlog/stats-filter-segment-tap-should-ask-include-or-exclude.md |
 | stats-per-account-branch-keeps-stale-live-anchor | backlog | tickets/backlog/stats-per-account-branch-keeps-stale-live-anchor.md |
 | step-flows-should-match-the-sep15-reference | qa | tickets/qa/step-flows-should-match-the-sep15-reference.md |
-| storage-actions-release-the-working-flag-under-a-running-resume | backlog | tickets/backlog/storage-actions-release-the-working-flag-under-a-running-resume.md |
+| storage-actions-release-the-working-flag-under-a-running-resume | discarded | tickets/discarded/storage-actions-release-the-working-flag-under-a-running-resume.md |
 | storage-groups-section-stays-active-during-the-migrate-check | backlog | tickets/backlog/storage-groups-section-stays-active-during-the-migrate-check.md |
 | storage-mode-is-a-proxy-for-the-mirror-in-the-wipe-signal | backlog | tickets/backlog/storage-mode-is-a-proxy-for-the-mirror-in-the-wipe-signal.md |
 | storage-mode-unknown-raw-reads-as-icloud | backlog | tickets/backlog/storage-mode-unknown-raw-reads-as-icloud.md |
@@ -785,7 +785,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | subscription-success-without-pro | done | tickets/done/subscription-success-without-pro.md |
 | suggestions-rewriter-drops-german-and-polish-rewrites | backlog | tickets/backlog/suggestions-rewriter-drops-german-and-polish-rewrites.md |
 | superseding-intent-can-strand-the-sign-out-coordinator | done | tickets/done/superseding-intent-can-strand-the-sign-out-coordinator.md |
-| sync-rpcs-accept-a-malformed-hlc | backlog | tickets/backlog/sync-rpcs-accept-a-malformed-hlc.md |
+| sync-rpcs-accept-a-malformed-hlc | done | tickets/done/sync-rpcs-accept-a-malformed-hlc.md |
 | sync-runtime-safety-note-assumes-every-prod-device-is-icloud | backlog | tickets/backlog/sync-runtime-safety-note-assumes-every-prod-device-is-icloud.md |
 | synced-prefs-outside-prefsynckey | discarded | tickets/discarded/synced-prefs-outside-prefsynckey.md |
 | tag-chips-change-order-on-every-launch | backlog | tickets/backlog/tag-chips-change-order-on-every-launch.md |
@@ -817,7 +817,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | verify-reads-a-failed-local-fetch-as-an-empty-outbox | done | tickets/done/verify-reads-a-failed-local-fetch-as-an-empty-outbox.md |
 | vigilante-calla-si-no-puede-comprobar-la-nocturna | done | tickets/done/vigilante-calla-si-no-puede-comprobar-la-nocturna.md |
 | vigilante-margen-menor-que-el-retraso-real-del-cron | done | tickets/done/vigilante-margen-menor-que-el-retraso-real-del-cron.md |
-| vision-amount-sign-contract-is-only-a-prompt-example | backlog | tickets/backlog/vision-amount-sign-contract-is-only-a-prompt-example.md |
+| vision-amount-sign-contract-is-only-a-prompt-example | discarded | tickets/discarded/vision-amount-sign-contract-is-only-a-prompt-example.md |
 | vision-reads-every-dollar-sign-as-usd | qa | tickets/qa/vision-reads-every-dollar-sign-as-usd.md |
 | voice-entry-end-to-end | qa | tickets/qa/voice-entry-end-to-end.md |
 | voice-language-and-silence-handling-differ-between-chat-and-sheet | backlog | tickets/backlog/voice-language-and-silence-handling-differ-between-chat-and-sheet.md |
@@ -849,7 +849,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | welcome-shows-a-takeover-exit-as-a-connection-error | backlog | tickets/backlog/welcome-shows-a-takeover-exit-as-a-connection-error.md |
 | welcome-start-fresh-wipes-before-ask | done | tickets/done/welcome-start-fresh-wipes-before-ask.md |
 | widget-de-tc-no-localiza-separadores | backlog | tickets/backlog/widget-de-tc-no-localiza-separadores.md |
-| widget-fallback-summary-uses-ten-rows | backlog | tickets/backlog/widget-fallback-summary-uses-ten-rows.md |
+| widget-fallback-summary-uses-ten-rows | discarded | tickets/discarded/widget-fallback-summary-uses-ten-rows.md |
 | widget-period-balance-ignores-group-bridge-adjustment | backlog | tickets/backlog/widget-period-balance-ignores-group-bridge-adjustment.md |
 | widget-snapshot-visitor-overwrites-owner | discarded | tickets/discarded/widget-snapshot-visitor-overwrites-owner.md |
 | wipe-alert-fires-on-a-session-that-no-longer-obeys-the-signal | done | tickets/done/wipe-alert-fires-on-a-session-that-no-longer-obeys-the-signal.md |

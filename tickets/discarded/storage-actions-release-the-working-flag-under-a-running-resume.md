@@ -1,11 +1,14 @@
 ---
 id: storage-actions-release-the-working-flag-under-a-running-resume
-status: backlog
+status: discarded
 priority: low
 area: "modo-nube, migración, ajustes"
 created: 2026-09-16
 source: "segunda pasada de review de `reverse-upload-has-no-ceiling-and-no-exit` (2026-09-16), lente de copy — duda; anterior a ese ticket"
+updated: 2026-10-08
 ---
+
+Why: Discarded 2026-10-08. Duplicado de `reverse-tap-is-lost-while-a-resume-is-running`: los dos describen que `CloudMigrationController.startReverse` no espera al `resume()` en vuelo, que el runner descarta sus `submit` por `runGuarded` y que su `defer` baja `isWorking` antes de tiempo. Sigue pasando el 2026-10-08 (`startReverse` y `resetAfterRollback` ponen `isWorking = true` sin `guard`); lo único que añade este, `resetAfterRollback`, va a aquel como fusión.
 
 # «Volver a iCloud» confirmado durante un re-kick no hace nada y re-habilita los botones antes de tiempo
 
@@ -37,3 +40,5 @@ El journal está a salvo: la exclusión real la da `MigrationRunner.runGuarded`.
 ## Relacionado
 
 - `reverse-upload-has-no-ceiling-and-no-exit` (su `cancelReverseUpload` ya espera a que suelte).
+
+Triage 2026-10-08: duplicado · low → — · mismo defecto que reverse-tap-is-lost-while-a-resume-is-running, que sigue abierto; este solo añade el camino de resetAfterRollback.

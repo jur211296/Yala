@@ -1,10 +1,11 @@
 ---
 id: secondary-session-retirement-leaves-the-guest-cloud-session
 status: backlog
-priority: low
+priority: very-low
 area: "sesiones, nube, keychain"
 created: 2026-09-13
 source: "review adversarial del PR-B del paso 12 (`shell-derives-from-two-session-axes`), lente «lo que queda en disco» · F3"
+updated: 2026-10-08
 ---
 
 # La retirada de la sesión de visita no cierra la sesión de nube que la visita dejó
@@ -62,3 +63,11 @@ en los teléfonos alcanzados, así que armar ahí no alcanza a nadie sin reabrir
 
 Los dos no se hablan hoy a propósito: ensanchar la retirada de la visita no entraba en el alcance de aquel
 encargo, y su población sigue siendo de desarrollo.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `SecondarySessionRetirement.purgeIfNeeded` sigue sin armar `CloudSessionRetirement` en la rama `if tuvoVisita`; el fichero no tiene commits desde `783a4ec9b`.
+- La mitad del criterio sobre el docblock ya está hecha: el docblock dice «LO QUE **NO** ALCANZA… no el Keychain» y cita este ticket. Falta decidir A o B.
+- Recomendación: A (limpiar a mano los teléfonos de QA), porque la `doneKey` ya está escrita en ellos y B no los alcanza sin reabrir la marca.
+
+Triage 2026-10-08: abierto · low → very-low · sigue igual en el código, pero solo alcanza a teléfonos de QA y builds Dev, nunca a producción, y el docblock ya avisa del límite.

@@ -4,6 +4,7 @@ status: backlog
 priority: low
 area: "groups, sync"
 created: 2026-09-28
+updated: 2026-10-08
 source: "review adversarial de `a-wipe-on-a-device-without-the-groups-loses-their-rows-everywhere` (lentes de sync y de grupos, 2026-09-28); inferido, sin medir qué hace iOS al pasar la cuota"
 ---
 
@@ -27,3 +28,10 @@ Antes, medir en device qué hace `NSUbiquitousKeyValueStore` al pasar la cuota.
 ## Relacionados
 
 - [[a-wipe-on-a-device-without-the-groups-loses-their-rows-everywhere]]
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `GroupsRemoteWipeDivision.swift:42` sigue declarando que la clave del KV no se retira nunca; no hay `removeObject` de `kvKey`.
+- Sigue sin medir qué hace `NSUbiquitousKeyValueStore` al pasar la cuota.
+
+Triage 2026-10-08: abierto · low → low · la clave sigue sin techo ni retirada; el techo teórico ronda las 25.000 ids.

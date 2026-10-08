@@ -1,10 +1,10 @@
 ---
 id: flows-atlas-predates-session-redesign
 status: backlog
-priority: low
+priority: very-low
 area: "docs, modo-nube, onboarding"
 created: 2026-09-10
-updated: 2026-09-13
+updated: 2026-10-08
 source: "review adversarial del paso 7 del rediseño de sesiones (`onboarding-purpose-drops-groups-card`)"
 ---
 
@@ -77,3 +77,11 @@ sesiones terminó y la decisión deja de poder aplazarse por «vendrán más pas
 - [ ] Decisión tomada y escrita aquí.
 - [ ] Si se re-ancla: `node docs/flows/modo-nube/check.mjs` en `RESULT: OK` contra el árbol del
       re-anclaje, y la cabecera del Atlas con la fecha nueva.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `node docs/flows/modo-nube/check.mjs` da hoy **58 fallos** (eran 55 tras el PR-B del 2026-09-13). El único commit sobre `docs/flows/` desde el 2026-09-10 es `783a4ec9b`, el mismo PR-B: nadie lo ha re-anclado.
+- Nada lo corre: ni el CI ni el `/gate`. El daño es de lectura: quien abre el Atlas cree que cuenta la app de hoy.
+- **Decisión pendiente (Jürgen).** A) Re-anclarlo entero con capturas nuevas. B) Retirarlo y dejar `docs/sessions/2026-09-09-matriz-escenarios-sesiones.md` como mapa de escenarios. C) Dejarlo y poner un aviso «anclado a `5bbb5690`, no refleja el rediseño de sesiones» en la cabecera del `index.html` y del README. **Recomendada: C ya (diez minutos) y B cuando haga falta el espacio**; re-anclar 154 paneles no compensa mientras nadie lo consulte. La prioridad es la de C.
+
+Triage 2026-10-08: abierto · low → very-low · sigue rojo (58 fallos de check.mjs) y nadie lo consulta como gate; es documentación interna de mantenimiento.

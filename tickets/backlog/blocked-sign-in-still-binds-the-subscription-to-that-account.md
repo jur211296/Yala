@@ -5,6 +5,7 @@ priority: low
 area: "modo-nube, suscripción"
 created: 2026-09-16
 source: "review adversarial de `settings-migrate-to-cloud-adopts-silently-instead-of-migrating` (lente de identidad, hallazgo 5), 2026-09-16"
+updated: 2026-10-08
 ---
 
 # Un inicio de sesión que Yala rechaza vincula igual la suscripción del teléfono a esa cuenta
@@ -45,3 +46,10 @@ sesión de otra cuenta que entre por ella. Pero `CloudAuthService.signIn(with:)`
 `AccountEntitlementService.handleSignIn()` en un `Task`, y `signOut()` suelta la sesión tras dos `await`: en ese hueco el
 `Task` puede vincular la suscripción del teléfono a la cuenta rechazada (leído, sin ejecutar; la caché local la protege
 `persist`, el servidor no). Es la misma clase que este ticket.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `CloudAuthService.signIn(with:)` sigue lanzando `AccountEntitlementService.shared.handleSignIn()` en un `Task` nada más firmar, y `sync(force:)` hace `bindEntitlement` sin mirar si el flujo acepta la cuenta.
+- Sigue latente: `CloudSyncFlags.accountEntitlementCompiledDefault = false`, así que ningún cliente resuelve Pro por la cuenta.
+
+Triage 2026-10-08: abierto · low → low · el bind sigue saliendo antes de que el flujo acepte la cuenta, pero es latente mientras `accountEntitlementEnabled` siga apagado; el criterio pide resolverlo antes de encenderlo.

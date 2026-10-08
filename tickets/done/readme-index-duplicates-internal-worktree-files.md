@@ -1,10 +1,10 @@
 ---
 id: readme-index-duplicates-internal-worktree-files
-status: backlog
+status: done
 priority: low
 area: "docs"
 created: 2026-09-09
-updated: 2026-10-07
+updated: 2026-10-08
 source: visto al reindexar en el cierre del candado anti-atribución
 ---
 
@@ -89,3 +89,10 @@ este ticket no tenía:
   cierre. En esas corridas ninguno ensució nada, pero no se midió si es por diseño o por suerte.
 - Reaperturas: con éstas son ocho cierres que tropezaron con el mismo diff.
 
+## Medido en 2.1 (triage 2026-10-08)
+
+- Arreglado en ef7813db2 (2026-09-21): el `dirs[:]` de `scripts/indice_readme.py` excluye además cualquier subdirectorio que contenga un `.git` (fichero en un worktree, directorio en un clon), sin depender del nombre. Así el resultado es el mismo con worktrees vivos o sin ellos.
+- `README.md` de hoy: la línea de «Ficheros de más de 60 KB» lista 12 ficheros reales, cada uno una vez, sin ninguna ruta `.claude/worktrees/`, y con los tres que las copias expulsaban (`MODO-NUBE-DIFERIDOS.md`, `groups-consent-door-spec.md`, `AUDIT-UI-patterns.md`).
+- Hermanos: `frescura.py` recorre con `glob('**/*.md')`, que no entra en directorios ocultos como `.claude/`; `glosario.py` y `reorg_docs.py` solo leen rutas concretas. Ninguno arrastra el doble conteo.
+
+Triage 2026-10-08: resuelto · low → — · ef7813db2 excluye los checkouts anidados por su `.git` y el README ya lista cada fichero una vez.

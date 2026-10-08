@@ -4,6 +4,7 @@ status: backlog
 priority: low
 area: "onboarding, modo-nube, groups"
 created: 2026-09-27
+updated: 2026-10-08
 source: "Paso 0 de `late-notice-of-a-welcome-private-session-purges-groups-joined-later` (2026-09-27); inferido por lectura, NO reproducido"
 ---
 
@@ -39,3 +40,10 @@ Si el testigo debe retirarse al cancelar el alert (la persona no siguió adelant
 ## Relacionados
 
 - [[late-notice-of-a-welcome-private-session-purges-groups-joined-later]]
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- El testigo lo escribe `WelcomePrivateICloudGateView` y lo retiran cuatro sitios: `onKeep` de la hoja, el éxito del borrado tardío, `.standDown` de `runLateICloudMirrorCheck` y `LateICloudMirrorNoticeView`. Ninguno está en Restaurar ni en el «Cancelar» del alert de `startFreshPrivateOnboarding`.
+- Decisión pendiente. A) retirarlo al cancelar el alert, porque la persona no siguió por esa puerta y, si vuelve a elegir privado, `continueWithoutValidating` lo escribe otra vez; B) retirarlo al entrar por Restaurar. Recomendada: A, porque cubre Restaurar y cualquier otra salida posterior con un solo punto. Con A sigue en `low`.
+
+Triage 2026-10-08: abierto · low → low · `markPrivateChoseWithoutICloud` lo sigue escribiendo solo `WelcomePrivateICloudGateView`, y solo lo retiran el aviso tardío (×3) y su hoja; Restaurar y el «Cancelar» del alert no lo tocan.

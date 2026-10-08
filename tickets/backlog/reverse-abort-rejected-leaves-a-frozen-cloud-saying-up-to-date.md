@@ -1,9 +1,10 @@
 ---
 id: reverse-abort-rejected-leaves-a-frozen-cloud-saying-up-to-date
 status: backlog
-priority: low
+priority: medium
 area: "modo-nube, sync, migración"
 created: 2026-09-16
+updated: 2026-10-08
 source: "review adversarial de `reverse-upload-has-no-ceiling-and-no-exit` (2026-09-16), lente de datos — H3; decisión D17 (c) de Jürgen: ticket aparte"
 ---
 
@@ -52,3 +53,11 @@ nueva, pero ahora se ve justo después de un aviso de «vuelve a intentarlo en u
 ## Relacionado
 
 - `reverse-upload-has-no-ceiling-and-no-exit` (D17) · `cloud-engine-can-start-with-a-reverse-abort-pending`.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `StorageSettingsView.syncStatusSection`: tres ramas, `CloudAttestNotice.isShowing`, `controller.syncNeedsSignIn` y un `else` que pinta `L10n.Storage.Sync.upToDate` con el check verde. Ni `.stoppedUntilRelaunch` ni un efecto de migración pendiente tienen rama propia.
+- `MigrationWorkExecutor` `case .reverseRollback`: `otherLeader`/`rejected` siguen dándose por completados y `sessionExpired` sigue lanzando y quedando pendiente.
+- ad344b12d (2026-09-17) añadió la puerta de «vuelve a entrar» (`reverseNeedsSignIn`) solo para las cuatro fases de la vuelta anteriores al montaje del espejo; el `reverseRollback` pendiente tras salir de `reverseUpload` no la enciende. Inferido, sin medir: con la sesión borrada ese caso no tiene puerta para firmar.
+
+Triage 2026-10-08: abierto · low → medium · el copy le dice a la persona que sus datos están al día cuando nada sube; las causas son raras (relevo de otro dispositivo, sesión borrada a mitad), pero la mentira es sobre sus datos.

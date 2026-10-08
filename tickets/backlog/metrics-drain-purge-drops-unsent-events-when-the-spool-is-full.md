@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "métricas, canarios"
 created: 2026-09-26
-updated: 2026-09-26
+updated: 2026-10-08
 source: "review adversarial de `prefs-push-purge-drops-a-change-made-during-the-upload` (2026-09-26), lente de gemelos"
 ---
 
@@ -35,3 +35,9 @@ emiten justo mientras se vacía la cola pueden perderse sin rastro, y la racha q
 
 - Molde: `PrefsOutbox.removeEntries(pushed:)` (compara la identidad de lo que viajó). `MetricsEvent` puede necesitar un id
   si no lo tiene.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- Sin cambios: `MetricsService` purga con `MetricsSpool.removeFirst(batch.count, …)` en las ramas `.delivered` y `.dropped`, y `MetricsSpool.enqueue` recorta con `queue.removeFirst(queue.count - capacity)`. Los commits posteriores al fichero añaden canarios (`84c3c3b3e`, `d9462c742`), no tocan la purga.
+
+Triage 2026-10-08: abierto · low → low · `MetricsService.kickDrain` sigue purgando con `MetricsSpool.removeFirst(batch.count)` por posición, y `MetricsSpool.enqueue` sigue recortando por el frente al llegar a `capacity = 50`.

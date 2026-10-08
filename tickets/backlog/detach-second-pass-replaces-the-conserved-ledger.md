@@ -5,6 +5,7 @@ priority: low
 area: "groups, modo-nube"
 created: 2026-10-01
 source: "review adversarial de `groups-detach-ledger-has-no-exit` (lente del arranque y los escritores del libro)"
+updated: 2026-10-08
 ---
 
 # Un segundo desasociar con transacciones REEMPLAZA el libro de conservados en vez de sumarle
@@ -30,3 +31,10 @@ desasociar a medias (`GroupsDetachPendingPurge`).
 
 Con el mismo `sub`, `record` suma a lo que ya hay (gastos, liquidaciones y sus movimientos) en vez de sustituirlo. Con
 otro `sub`, reemplaza como hoy.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `GroupsDetachedBridgeLedger.record` (`GroupsAssociationDetach.swift`) sigue reemplazando el libro entero: su docblock dice «Reemplaza, no acumula», sin distinguir el mismo `sub`.
+- `detachBridge` solo conserva el libro anterior por `ledgerBelongsToThisAccount` en la pasada que no encuentra nada. Sin commits funcionales en el fichero desde el 2026-10-01 (solo el merge `b4108e9c3`).
+
+Triage 2026-10-08: abierto · low → low · `record` sigue reemplazando con el mismo `sub`; el duplicado exige un borrado fallido, volver a entrar, un gasto nuevo puenteado y re-asociar.

@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, migración"
 created: 2026-09-26
-updated: 2026-09-26
+updated: 2026-10-08
 source: "review adversarial de `reverse-upload-sample-reads-unreadable-rows-as-drained` (2026-09-26, lente de consumidores)"
 ---
 
@@ -49,3 +49,12 @@ Solo muerde en la PRIMERA captura: las coordenadas ya persistidas no se borran.
 
 - `reverse-upload-sample-reads-unreadable-rows-as-drained`.
 - `an-incomplete-inventory-reads-as-the-whole-corpus`: el mismo paso, con el inventario.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `MigrationWorkExecutor.assignIdentity` sigue sin leer `report.structuralFailure`: captura, guarda, siembra el registro y emite el breadcrumb. El único consumidor del campo es `reverseUploadStatus` (devuelve `.unreadable`).
+- `pinAdoptedIdentities` tampoco lo mira: siembra y marca el adopt igual.
+- Los dos commits posteriores sobre el fichero (`84c3c3b3e`, `73a16599b`) no tocan este paso.
+- Recomendación para la decisión 1: tratarlo como `.localFailure`, igual que un inventario ilegible en el mismo paso; para la 2, solo rastro (el adopt ya es best-effort).
+
+Triage 2026-10-08: abierto · low → low · assignIdentity y pinAdoptedIdentities siguen ignorando structuralFailure, pero hace falta que el SQLite del espejo no abra en la primera captura.

@@ -4,6 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, groups"
 created: 2026-09-11
+updated: 2026-10-08
 source: "paso 8 del rediseño de sesiones (`full-mode-activation-must-ask-where-personal-data-lives`), decisión D6 del Paso 0"
 ---
 
@@ -46,3 +47,10 @@ entró en la cuenta mientras la respuesta se perdía. Ahí el texto «Esta cuent
 falso —el otro teléfono entró y aún no subió nada— y «No cambiamos nada» también: la promoción de este teléfono sí
 cambió la cuenta. Adoptar en sitio (el alcance de este ticket) lo resolvería igual; si se toca el copy antes, tenerlo
 en cuenta.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `FullModeActivationFlowLogic.promotionStep` sigue convirtiendo `.routeReturningUser` en `.blocked(.accountAlreadyHasPersonalData)`, y `FullModeActivationFinaleView` enseña «Tu cuenta ya tiene finanzas personales… cierra sesión y vuelve a entrar». No hay adopt en sitio ni consulta de `kind` antes del onboarding.
+- El descubrimiento de `kind` en el sign-in vive ya en `tickets/qa/cloud-sign-in-discovers-account-kind.md`; cuando pase QA, la primera mitad del alcance (preguntar antes del onboarding) tendría de dónde leer.
+
+Triage 2026-10-08: abierto · low → low · la promoción sigue bloqueando tras el onboarding con una cuenta ya completa; es seguro (no escribe) y hay salida: cerrar sesión y volver a entrar.

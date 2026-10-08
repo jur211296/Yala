@@ -1,10 +1,10 @@
 ---
 id: private-sign-out-counts-group-writes-without-capturing-them
-status: backlog
+status: done
 priority: low
 area: "groups, modo-nube"
 created: 2026-09-26
-updated: 2026-09-26
+updated: 2026-10-08
 source: "review adversarial de `groups-drain-failure-reads-as-nothing-pending` (2026-09-26), lente de datos"
 ---
 
@@ -42,3 +42,11 @@ medio asentar es el SIGTRAP de `swiftdata-cloudkit.md`. Meterla tal cual cambiar
 
 - [ ] Un gasto de grupo solo en el History o solo en el espejo bloquea el cierre privado con «vuelve a entrar».
 - [ ] Sin nada pendiente, el cierre privado no cambia.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- Arreglado en 70b8c1e67 (PR #294, ticket `groups-outbox-rows-without-a-live-session-have-no-exit`): `CloudSessionSignOut.captureGroupsBeforeCountingThem` captura el History de grupos detrás de `awaitPersonalQuiescenceForGroupsSignOut` (la segunda vía de «Por dónde va») antes de `blockIfGroupsCannotUpload`, al entrar en `performSessionExit` y en `finalizeSessionExit`.
+- `groupsLossRowIDs` une las filas vivas del outbox con `exitWitness.mirrorPendingMutationIDs` (el espejo del App Group), así que un gasto solo en el espejo también cuenta.
+- Lo que queda fuera —lo apuntado durante la segunda espera, ya sin `await` posible— tiene su ticket: `private-sign-out-misses-group-edits-made-during-the-icloud-wait`.
+
+Triage 2026-10-08: resuelto · low → — · la celda C captura el History tras la quiescencia y cuenta el espejo desde 70b8c1e67 (PR #294).

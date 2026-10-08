@@ -1,8 +1,9 @@
 ---
 id: prefs-synced-keys-upload-not-download
 status: backlog
+priority: very-low
 created: 2026-08-06
-updated: 2026-09-16
+updated: 2026-10-08
 source: YalaWiki/Bugs/prefs-cinco-keys-synced-suben-y-no-vuelven.md
 ---
 
@@ -216,3 +217,11 @@ de comportamiento que hacer hoy.
 - **Propuesta al retomarlo:** quitar del criterio la comprobación en aparato real.
 
 Coordenadas medidas por un lector del barrido sobre `2.1` @ `bebd57a57`.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- Las cinco claves ya son `synced: false` (`AppPreferences.swift`:637, 665, 680, 687, 694), con la red `SyncedKeysArePrefSyncKeysTests`.
+- `financialMindset` sigue con un único emisor (`OnboardingView.swift`:1711) y funciona. Lo único vivo es su red de escritores, que sigue sin escribir: protege de un defecto futuro.
+- La propuesta del 2026-09-16 de quitar del criterio la comprobación en aparato sigue en pie.
+
+Triage 2026-10-08: abierto · sin prioridad → very-low · lo que queda es una red de test para un defecto futuro; hoy no hay fallo.

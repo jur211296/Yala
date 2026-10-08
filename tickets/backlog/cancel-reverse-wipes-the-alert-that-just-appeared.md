@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, migración"
 created: 2026-09-21
-updated: 2026-09-21
+updated: 2026-10-08
 source: "review adversarial de `reverse-pre-mount-ceiling-has-no-alert-and-leaves-network-verify-out` (2026-09-21), lente del aviso"
 ---
 
@@ -49,3 +49,10 @@ esperaba». Antes del 2026-09-21 la ventana existía igual pero casi no había q
 
 - `reverse-pre-mount-ceiling-has-no-alert-and-leaves-network-verify-out` — el que puso el aviso que ahora se puede borrar.
 - `reverse-before-mount-has-no-way-to-abandon-the-return` — el que puso el botón en estas cuatro fases.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `CloudMigrationController.cancelReverse()` apunta ya el «sí» antes de la espera (`cancelReverseRequested = true`), pero al despertar sigue haciendo `lastError = nil` sin distinguir un aviso nacido durante la espera; `lastError` sigue siendo un `String?` sin identidad.
+- La decisión 1/2 del ticket sigue sin tomar.
+
+Triage 2026-10-08: abierto · low → low · el `lastError = nil` tras la espera sigue igual; carrera de una pasada de red y solo afecta al copy, no a los datos.

@@ -1,10 +1,11 @@
 ---
 id: ensure-rates-for-existing-transactions-has-no-callers
 status: backlog
-priority: low
+priority: very-low
 area: "currency, fx, limpieza"
 created: 2026-09-08
 source: review adversarial de repair-queue-has-no-exit-for-partial-rate-rows (2026-09-08)
+updated: 2026-10-08
 ---
 
 # `ensureRatesForExistingTransactions` no la llama nadie
@@ -34,3 +35,11 @@ La segunda tiene consecuencias para el usuario, así que no es un borrado mecán
 - [ ] Decidir cuál de las dos es, mirando el historial de git de sus llamadores.
 - [ ] Si es muerta: retirarla del servicio y del protocolo.
 - [ ] Si falta el cableado: reponerlo donde corresponda, con test.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- Sigue sin llamadores: `git grep` solo la encuentra en `ExchangeRateService.swift` (protocolo, línea 24, y definición, línea 341).
+- Primer criterio respondido: `git log -S` muestra que nació en `b6ad52ce8` (2026-01-31, «centralize currency definitions») sin ningún llamador, y ningún commit posterior la llamó. No es una llamada perdida en un refactor.
+- Recomendación: opción 1 (código muerto, retirarla del servicio y del protocolo). Con ella baja a `very-low`: es limpieza.
+
+Triage 2026-10-08: abierto · low → very-low · nunca tuvo llamadores desde que nació en b6ad52ce8; es limpieza de código muerto, sin efecto para el usuario.

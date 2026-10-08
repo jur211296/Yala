@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "groups, invitaciones, copy"
 created: 2026-09-15
-updated: 2026-09-15
+updated: 2026-10-08
 source: "review adversarial de `groups-sync-reads-a-missing-attest-401-as-a-session-expiry` (2026-09-15)"
 ---
 
@@ -38,3 +38,10 @@ conexión está bien: lo que falló fue otra cosa.
 
 - `invite-link-five-causes-one-message` — el mismo problema al otro lado, al unirse con el enlace.
 - `groups-sync-reads-a-missing-attest-401-as-a-session-expiry` — de donde sale.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `GroupDetailViewModel` (bloque de crear el enlace) y `GroupMembersView` siguen con un `catch` genérico que muestra `L10n.Groups.Errors.inviteFailed`. El copy en `en` sigue siendo «Couldn't create the invite link. Check your connection and try again.».
+- El copy por causa (`GroupInviteLinkCreationLogic.blocker`) solo cubre el `else` de grupo legacy o canal apagado, no el fallo del RPC.
+
+Triage 2026-10-08: abierto · low → low · El `catch` de `GroupDetailViewModel` y de `GroupMembersView.createShareLink` sigue mostrando `L10n.Groups.Errors.inviteFailed` («revisa tu conexión») para cualquier error del RPC.

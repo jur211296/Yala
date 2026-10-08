@@ -5,6 +5,7 @@ priority: low
 area: "modo-nube, migración"
 created: 2026-09-17
 source: "review adversarial de `reverse-before-mount-stays-stuck-with-an-expired-session` (2026-09-17), lente de sesión — hallazgo S1"
+updated: 2026-10-08
 ---
 
 # El barrido de la vuelta a iCloud sigue leyendo una sesión caducada como si fuera red
@@ -51,3 +52,11 @@ cuando una tabla no se deja leer (antes daba el barrido por hecho con los zombie
 devuelve `false` sin techo ni `observeReversePreMountStall`, así que con una tabla ilegible para siempre la vuelta
 se queda parada en ese punto sin decir nada. Es la misma falta de salida que este ticket; el arreglo debería
 cubrir las dos causas.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `MigrationWorkExecutor.sweepZombies` sigue con `case .sessionExpired, .accountUnavailable, .transient: return .transient`, y `ZombieSweepOutcome` (MigrationRunner.swift) solo tiene `.completed` y `.transient`.
+- `noteReverseSessionExpiry` sigue llamándose solo desde `.drain`, `.freeze`, `.claim` y `.verify`; `driveReverseReconcile(.deletingZombies)` devuelve `false` en `.transient` sin techo ni tarjeta.
+- `reverseReconcile` no tiene salida: la máquina de estados no acepta abandono en ninguno de sus cuatro sub-estados.
+
+Triage 2026-10-08: abierto · low → low · sigue pasando (sweepZombies lee la sesión caducada como red), pero la ventana es la espera de quiescencia más el barrido tras remontar el espejo y la vuelta a iCloud apenas es alcanzable hoy.

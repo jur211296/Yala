@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "welcome, icloud, restore, observabilidad"
 created: 2026-09-21
-updated: 2026-09-21
+updated: 2026-10-08
 source: "review adversarial de `restore-treats-budgets-and-groups-as-no-data` (2026-09-21), hallazgo 6 de la lente de consumidores"
 ---
 
@@ -38,3 +38,10 @@ ninguna decisión.
 
 - `restore-treats-budgets-and-groups-as-no-data` — de donde sale.
 - `restore-says-no-data-when-the-icloud-import-never-settled` — el que creó la señal.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `Yala/App/Logic/RestoreBreadcrumb.swift` tiene `settled`, `importIncomplete`, `destination`, `wiped`, `cloudPaused` y `cloudUnverified`; ninguna para `.found`.
+- `WelcomeRestoreView`: la rama `if summary.hasAnyData { state = .found(summary) }` no emite ninguna miga.
+
+Triage 2026-10-08: abierto · low → low · observabilidad aditiva; no cambia ninguna decisión del flujo.

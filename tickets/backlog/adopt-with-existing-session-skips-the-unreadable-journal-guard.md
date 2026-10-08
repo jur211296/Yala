@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, bienvenida, migración"
 created: 2026-09-25
-updated: 2026-09-25
+updated: 2026-10-08
 source: "review adversarial de `an-undecodable-migration-phase-reads-as-never-started` (2026-09-25)"
 ---
 
@@ -27,3 +27,9 @@ por un build más nuevo implica el onboarding ya completo, y un fetch que lanza 
 ## Criterios de aceptación
 
 - [ ] Con el registro ilegible, el adopt de la bienvenida no empieza y la pantalla lo dice o se queda como estaba.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `CloudMigrationController.startAdoptWithExistingSession` sigue sin `guard readJournalDecisionInputs() != nil`; los dos guards del fichero siguen solo en `startMigration` y `startReverse`.
+
+Triage 2026-10-08: abierto · low → low · la asimetría de guards sigue; en la práctica no se alcanza (fila de un build más nuevo implica onboarding completo).

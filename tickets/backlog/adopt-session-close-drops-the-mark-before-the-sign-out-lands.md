@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, sesiones, adopt"
 created: 2026-09-24
-updated: 2026-09-24
+updated: 2026-10-08
 source: "review adversarial de `settings-adopt-stalled-before-the-claim-keeps-the-session` (2026-09-24), lente de tiempos"
 ---
 
@@ -30,3 +30,10 @@ arranque) ya no la reconoce como del adopt.
 Si merece la pena mantener la marca hasta que el cierre aterrice (borrarla después de `signOut`, y que `signOut` no la borre
 antes de cerrar), a cambio de tocar `CloudAuthService.signOut`, que comparten todos los cierres. La ventana es de menos de un
 segundo.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `closeSessionOfExitedAdopt` y la rama adopt de `continueToClaim` (`CloudMigrationController.swift`) siguen llamando a `AdoptSessionOwnership.record(nil)` antes de `await closeSessionIfOpened`.
+- `CloudAuthService.signOut` sigue borrando la marca al entrar, antes de `await AccountEntitlementService.shared.handleSignOut()` y de `client.signOut(scope: .local)`, cuyo fallo solo deja un breadcrumb.
+
+Triage 2026-10-08: abierto · low → low · la marca se sigue borrando antes del cierre de sesión en los tres caminos; ventana de menos de un segundo o un `signOut` que falla.

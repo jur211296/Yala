@@ -1,10 +1,10 @@
 ---
 id: restore-error-state-is-never-reached
 status: backlog
-priority: low
+priority: very-low
 area: "icloud, restore, onboarding"
 created: 2026-09-21
-updated: 2026-09-21
+updated: 2026-10-08
 source: "medido al recorrer los call-sites de `startSearch` en `abandoned-restore-no-longer-clears-the-session-window-clock`, 2026-09-21"
 ---
 
@@ -53,3 +53,11 @@ Dos salidas y ninguna es obvia:
 - [ ] `WelcomeRestoreView` no tiene estados que el `switch` pinte y nadie asigne.
 - [ ] Si el caso se retira, sus claves de copy se retiran también de las 7 lenguas.
 - [ ] Los sitios que cuentan «los cinco botones de volver a buscar» quedan al día con el número real.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `WelcomeRestoreView.swift`: `case error` y `errorView` siguen; ninguna de las asignaciones `state = .…` del fichero es `.error`. `showRefreshToolbar` sigue incluyendo `.error`.
+- `ICloudRestoreInProgressLogic.swift` sigue hablando de «los cinco botones de volver a buscar».
+- Decisión: **A.** retirar el caso, su vista y sus claves; **B.** cablearlo a un fallo real de la búsqueda (cambio de producto). Recomendada **A**: `startSearch` no tiene hoy ningún fallo distinto de los que ya tienen estado propio, y un estado nuevo se escribe cuando exista el fallo. La prioridad es la de A.
+
+Triage 2026-10-08: abierto · low → very-low · código y copy muertos sin efecto para el usuario; con A es limpieza.

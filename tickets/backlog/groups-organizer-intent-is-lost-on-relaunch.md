@@ -4,6 +4,7 @@ status: backlog
 priority: low
 area: "onboarding, groups"
 created: 2026-09-10
+updated: 2026-10-08
 source: "medido durante `cloud-sign-in-discovers-account-kind` (bloque [I])"
 ---
 
@@ -47,3 +48,11 @@ antes de ese barrido es exactamente lo que ese ticket existe para deshacer.
 ## Depende de
 
 `shell-derives-from-two-session-axes` (paso 12), o su decisión sobre dónde vive ese estado.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `groupsOrganizerFlowActive` sigue siendo `@State` de `ContentView`, y `adoptCompleteAccountFromGroups` lo apaga y deja `navigation.selectedMainTab = .groups` solo en memoria. Si el adopt acaba pidiendo relanzar, nada lo retoma.
+- El destino persistido `WelcomePendingDestinationStore.set(.groupsOrganizer)` existe, pero solo lo escribe la vuelta al neutro de la puerta de Grupos; el adopt no lo usa.
+- La dependencia que bloqueaba el ticket (`shell-derives-from-two-session-axes`) ya está en `done`, así que se puede hacer.
+
+Triage 2026-10-08: abierto · low → low · la intención del organizador sigue viviendo en memoria y se pierde si el adopt pide relanzar; la persona la retoma desde la pestaña Grupos.

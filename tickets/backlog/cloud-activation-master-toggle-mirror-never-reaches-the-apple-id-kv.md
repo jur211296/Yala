@@ -5,6 +5,7 @@ priority: low
 area: "sesiones, notificaciones"
 created: 2026-09-30
 source: "residual de `full-activation-local-state-never-reaches-the-apple-id-kv`"
+updated: 2026-10-08
 ---
 
 # Tras «Activar Yala completo → nube», el espejo del interruptor maestro de pagos no llega al iCloud del Apple ID
@@ -28,3 +29,9 @@ reinstalo la app, me los vuelve a encender.
 ## Qué hay que decidir
 
 Si `.freshCloud` arma también la subida del espejo (solo el espejo, no las preferencias), o se acepta.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `FullModeActivationFlowLogic.handsLocalStateToAppleID` sigue devolviendo `false` para `.freshCloud`, así que `PrivateBirthKeyValueHandover.arm()` no se arma en la rama de la nube; `ScheduledPaymentNotificationService` no tiene commits desde el 2026-09-30.
+
+Triage 2026-10-08: abierto · low → low · `.freshCloud` sigue sin subir el espejo del interruptor; población medida en cero el 2026-09-14 y solo cuesta un ajuste tras reinstalar.

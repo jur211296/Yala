@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, sync, preferencias"
 created: 2026-09-26
-updated: 2026-09-26
+updated: 2026-10-08
 source: "review adversarial de `prefs-push-purge-drops-a-change-made-during-the-upload` (2026-09-26), lente de carreras; previo a ese diff"
 ---
 
@@ -30,3 +30,10 @@ y sin avisar. Y como el pull del mismo ciclo pinta el valor del servidor, en pan
 - [ ] Medir qué rechazos de `apply_pref` son permanentes (leer el RPC en staging).
 - [ ] Si hay alguno: distinguir `upstream_4xx` de `upstream_5xx` y darle a la entry rechazada para siempre una salida
   (dead-letter con rastro), con test.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `gateway/src/sync/routes.ts`: `status: "noop", reason: "malformed"` y `reason: upstream_${status}` sin distinguir 4xx de 5xx; `PrefsOutbox` no tiene dead-letter ni contador de intentos.
+- El tope de HLC de 2026-10-07 recorta en un trigger y no cambia ninguna respuesta del RPC, así que no añade un rechazo permanente nuevo. El cuerpo de `apply_pref` sigue fuera del repo: el primer criterio (medir) sigue pendiente.
+
+Triage 2026-10-08: abierto · low → low · el rechazo permanente sigue sin medirse; sin él es un reintento inocuo por ciclo.

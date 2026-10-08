@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: ai, chat, insights, image
 created: 2026-10-07
-updated: 2026-10-07
+updated: 2026-10-08
 source: revisión del uso de IA (docs/ai-usage-review-2026-10.md, hallazgo H6)
 ---
 
@@ -43,3 +43,9 @@ ChatSuggestionsLLMService.swift:150, SuggestionsRewriterService.swift:222. El SD
 
 - Cada `ChatQuery` de la lista lleva su `json_schema` estricto (test por servicio).
 - Ningún icono de Insights sale de fuera de la lista cerrada.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- Siguen 8 `responseFormat: .jsonObject` y ningún `jsonSchema` en `Yala/`: `ChatIntentClassifierService.swift:90`, `ImageVisionService.swift:216`, `InsightsLLMService.swift:235/510/669` (tres, no cuatro), `TrendsAIService.swift:124`, `ChatSuggestionsLLMService.swift:150`, `SuggestionsRewriterService.swift:222`.
+
+Triage 2026-10-08: abierto · low → low · ninguna llamada ha pasado a esquema estricto; robustez, sin datos en riesgo.

@@ -1,8 +1,9 @@
 ---
 id: cloud-tx-epoch-orphan-relations
 status: backlog
+priority: high
 created: 2026-07-17
-updated: 2026-08-26
+updated: 2026-10-08
 source: YalaWiki/Bugs/qa_cloud-tx-epoca-relaciones-huerfanas.md
 ---
 
@@ -89,3 +90,11 @@ panel DEBUG en A (diagnóstico FX/diverged) es el primer paso de la investigaci�
 reproducción en qa/cloud/README § /metrics (SQL API con el token OAuth de wrangler).
 
 migrated from YalaWiki Bugs/qa_cloud-tx-epoca-relaciones-huerfanas.md @ 1934e8ad
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- Nadie lo ha investigado desde el 2026-07-17: no hay commits posteriores de la reversa sobre relaciones, y `docs/DECISIONS.md` lo deja como H-4 «abierto pre-D9».
+- La reversa sigue siendo una función viva de 2.1 («Volver a iCloud», unos 30 tickets `reverse-*` abiertos).
+- Sube a `high` porque es daño a datos en un camino normal (la única TX de época observada perdió las dos relaciones). No va a `very-high` solo porque no se ha vuelto a reproducir desde que se reescribió media reversa. **Siguiente paso:** la repro del ticket (migrar → crear TX → reversa → mirar relaciones). Si se reproduce, `very-high`.
+
+Triage 2026-10-08: abierto · sin prioridad → high · daño a datos observado en la reversa, nunca investigado; sube a very-high si la repro lo confirma.

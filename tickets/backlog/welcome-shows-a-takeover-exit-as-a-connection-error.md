@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, bienvenida"
 created: 2026-09-24
-updated: 2026-09-24
+updated: 2026-10-08
 source: "sesión de `displaced-migration-leader-keeps-uploading-after-a-takeover` (2026-09-24), hallazgo al recorrer las superficies de la salida"
 ---
 
@@ -35,3 +35,9 @@ Una fase propia en la bienvenida con el texto de Almacenamiento (`storage.failed
 ## Criterios de aceptación
 
 - [ ] En la bienvenida, la salida `otherDevice` muestra el mismo texto que Almacenamiento, no el de la conexión.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `CloudWelcomeSignInFlow.phase(for:)`, rama `.failed`: ahora distingue `adoptClaimExit`, `.lineageUnproven` y `.leaderRowsNotArrived`; `.otherDevice` sigue cayendo a `.error(retryable: true)`.
+
+Triage 2026-10-08: abierto · low → low · el relevo perdido sigue saliendo como error de conexión; camino raro.

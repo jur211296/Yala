@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "testing, grupos"
 created: 2026-09-26
-updated: 2026-09-26
+updated: 2026-10-08
 source: "`groups-drain-failure-reads-as-nothing-pending` (2026-09-26), medido en el simulador del gate"
 ---
 
@@ -31,3 +31,10 @@ el directorio del simulador una vez.
 ## Criterios de aceptación
 
 - [ ] Una corrida completa de `YalaTests` no deja archivos en `GroupsSyncOutboxMirror/` del App Group.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `GroupsSyncClient.init` sigue con `outboxMirror: GroupsOutboxMirror? = GroupsOutboxMirror()` (`Groups/GroupsSyncClient.swift:358`).
+- En `YalaTests/` hay unas 184 construcciones de `GroupsSyncClient(` y solo unas 27 pasan `outboxMirror:` en las diez líneas siguientes (conteo con grep, aproximado).
+
+Triage 2026-10-08: abierto · low → low · sigue igual (el espejo real por defecto en casi todos los tests); es higiene de tests que ya obligó a inyectar un testigo, sin efecto en la app.

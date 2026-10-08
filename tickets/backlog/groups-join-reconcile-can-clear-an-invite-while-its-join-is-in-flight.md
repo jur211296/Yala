@@ -4,6 +4,7 @@ status: backlog
 priority: low
 area: "groups, invitaciones"
 created: 2026-09-17
+updated: 2026-10-08
 source: "review adversarial de `groups-actions-read-an-offline-token-refresh-as-a-session-expiry` (lente de lógica), 2026-09-17; anterior a ese cambio"
 ---
 
@@ -39,3 +40,11 @@ gastar el tap después de la respuesta, conservando «a lo sumo un `join_group` 
 
 - `rejected-member-cold-tap-does-nothing` — de donde salen el tap armado y la re-solicitud del miembro rechazado.
 - `groups-join-is-not-retried-when-the-network-returns` — la cadencia del reintento.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `GroupBackendInviteEntryHandler.attemptJoin` sigue gastando el tap (`consumeInviteTapArm`) antes del `await` de `join_group`, y `GroupJoinReconciler` sigue sin guarda de reentrada ni marca de «unión en vuelo».
+- El único commit posterior sobre esos ficheros (`5f00f0566`, la puerta del invitado) no toca esta ventana.
+- Hace falta un miembro rechazado, que el `.active` caiga dentro de la llamada y un fallo pasajero a la vez; volver a tocar el enlace lo recupera.
+
+Triage 2026-10-08: abierto · low → low · la ventana sigue abierta pero exige tres condiciones a la vez y volver a tocar el enlace la recupera.

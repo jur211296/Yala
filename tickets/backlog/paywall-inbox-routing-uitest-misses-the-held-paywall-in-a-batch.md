@@ -5,6 +5,7 @@ priority: low
 area: "testing, routing"
 owner: frank
 created: 2026-10-01
+updated: 2026-10-08
 source: "gate de `superseding-intent-can-strand-the-sign-out-coordinator`"
 ---
 
@@ -27,3 +28,10 @@ propio test). Lo nuevo es la dependencia del CONJUNTO: aislado pasa con margen.
 
 Repetir el lote de seis unas cuantas veces para ver si el rojo es del orden (qué corre antes) o del azar, y en qué
 paso cae. Si es del orden, mirar qué deja puesto la clase anterior.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `YalaUITests/Flows/PaywallInboxAlertRoutingUITests.swift` sin commits desde el 2026-10-01; el paso 2 sigue con `waitForExistence(timeout: 45)` sobre `trial_offer_dismiss`.
+- Nadie ha repetido el lote de seis: falta la medición que pide «Qué falta».
+
+Triage 2026-10-08: abierto · low → low · intermitencia de test dependiente del lote, sin medir aún si es del orden; no deja ciego al gate de nada que el test aislado no cubra.

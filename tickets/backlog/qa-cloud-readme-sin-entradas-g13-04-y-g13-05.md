@@ -1,10 +1,10 @@
 ---
 id: qa-cloud-readme-sin-entradas-g13-04-y-g13-05
 status: backlog
-priority: low
+priority: very-low
 area: docs, backend
 created: 2026-09-08
-updated: 2026-09-08
+updated: 2026-10-08
 source: medido al escribir `docs/RUNBOOK-staging-ddl.md` (2026-09-08)
 ---
 
@@ -37,3 +37,10 @@ mira quien llegue dentro de seis meses.
 - [ ] El puntero de `g13_04…sql:171` resuelve a algo real.
 - [ ] Si el runbook y el README se solapan, uno enlaza al otro en vez de repetirlo — dos copias del
       mismo conteo es como nació el drift que arregla este ticket.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `qa/cloud/README.md` nombra `g13_04` y `g13_05` solo de pasada (hacia las líneas 1602 y 1645, dentro de otras entradas); ninguna sección propia.
+- `qa/cloud/g13_04_join_group_reports_transition.sql:171` sigue diciendo «ver la entrada g13_04 de este README».
+
+Triage 2026-10-08: abierto · low → very-low · doc de mantenimiento interno: un puntero roto en el registro de migraciones, sin efecto en la app ni en el gate.

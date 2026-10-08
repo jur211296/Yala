@@ -1,9 +1,10 @@
 ---
 id: fx-rate-derivation-threshold-reseals-one-to-one
 status: backlog
-priority: low
+priority: very-low
 area: currency
 created: 2026-09-08
+updated: 2026-10-08
 source: hallazgo de camino en chat-assistant-plants-exchange-rate-one (review adversarial, 2026-09-08)
 ---
 
@@ -64,3 +65,10 @@ NaN». **Es falso, y se midió**: la guard de entrada ya garantiza `isFinite` y 
 - [ ] Si se cambia, cambiarlo **en todos los sitios a la vez**, `recalculatePreferredCurrency`
       incluido, o la fila cambiará de número al repararse.
 - [ ] Test con un monto dentro de la banda y control positivo por mutación.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- El escalón `abs(amount) > 0.0001` sigue en todas las rutas que derivan la tasa: `TransactionItem.recalculatePreferredCurrency`, `NewTransactionViewModel`, `InboxDraftEditSheet`, `ChatAssistantViewModel`, `DraftService` (cinco sitios), `CurrencyChangeService` y `TransactionCSVImportService` (dos). Ninguno cambió desde el 2026-09-08.
+- La banda solo se alcanza con importes de 0,0001 o menos, que nadie teclea: el propio ticket lo dice.
+
+Triage 2026-10-08: abierto · low → very-low · el umbral sigue igual en todas las rutas, pero la banda que muerde (importes de 0,0001 o menos) no es una entrada humana.

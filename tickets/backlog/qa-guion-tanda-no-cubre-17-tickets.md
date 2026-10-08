@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: qa
 created: 2026-09-06
-updated: 2026-09-16
+updated: 2026-10-08
 source: hallazgo al añadir groups-archived-group-rejects-join al guion (2026-09-06)
 ---
 
@@ -51,3 +51,10 @@ chat de IA, servidor, mismo Apple ID, cambio de Apple ID, dos teléfonos y los d
 del móvil prestado desapareció: murió con el ADR del 2026-09-09. El script que lo genera cruzó las filas con
 `ls tickets/qa/*.md` y paraba si faltaba una, pero vivía en el scratchpad de la sesión: **no es el
 comprobador del punto 2**, que sigue pendiente.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- Medido hoy: `tickets/qa/` tiene 60 tickets y 24 no aparecen nombrados en `qa/guion-tanda.md`, cuya cabecera dice «Actualizado: 2026-10-04 · 36 tickets». El punto 1 se rehízo dos veces (16-sep, 4-oct) y el desfase vuelve.
+- Sigue sin existir un comprobador en `qa/` ni en `qa/scripts/` que cruce `tickets/qa/*.md` con el guion: el punto 2 está sin hacer.
+
+Triage 2026-10-08: abierto · low → low · tooling de QA: la medición de hoy confirma que repartir a mano no basta, pero no afecta a la app.
