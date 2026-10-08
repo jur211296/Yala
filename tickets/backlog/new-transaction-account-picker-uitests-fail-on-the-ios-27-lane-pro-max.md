@@ -4,7 +4,7 @@ status: backlog
 priority: medium
 area: "qa, xcuitest, transactions"
 created: 2026-10-02
-updated: 2026-10-07
+updated: 2026-10-08
 source: gate de list-column-too-narrow-for-accessibility-text-on-a-turned-pro-max (carril adaptativo)
 ---
 
@@ -36,6 +36,13 @@ falló una vez en lote y pasó dos aislado: ése sí es inestable bajo carga, no
 (`BD413F36`), con el mismo «Automation type mismatch … PopUpButton»: en lote y otra vez aislado, con el centinela en 0
 (solo en el simulador). Sesión `fresh-start-drops-mirror-entries-of-another-identity-without-counting-them`, que no toca el
 formulario de registro. Así que no es del Pro Max: es del runtime iOS 27.0.
+
+## Y `test_createTransaction` también en el iPhone 17 Pro del gate (2026-10-08)
+
+Sesión `late-icloud-wipe-stays-frozen-after-a-settled-failed-migration` (no toca el formulario de registro), simulador
+`iPhone 17 Pro` iOS 27.0 `46287CFE`: «No se montó AccountSelectorSheet con filas.» en lote y dos veces aislado, centinela en
+0. **El build de `2.1` sin el cambio de la sesión (`efb6ae72e`) falla igual**, aislado. El rojo del gate de esa sesión es
+este ticket.
 
 ## Qué falta medir
 

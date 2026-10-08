@@ -129,7 +129,7 @@ struct PrivateGateHalfwayWipeFlagsTests {
         #expect(StorageModePersistence.isICloudCorpusWipeLeftHalfway(d), "salir olvidó que iCloud ya quedó vacío")
         #expect(Logic.lateWipeLaunch(armed: StorageModePersistence.isICloudCorpusWipeArmed(d),
                                      leftHalfway: StorageModePersistence.isICloudCorpusWipeLeftHalfway(d),
-                                     cancelledInCloudNoticePending: false, waivedForCloud: false, migrationAtRest: true,
+                                     cancelledInCloudNoticePending: false, waivedForCloud: false, migrationAtRest: true, migrationFailedAndSettled: false,
                                      storageMode: .icloud) == .askLeftHalfway)
     }
 

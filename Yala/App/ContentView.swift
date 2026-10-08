@@ -485,6 +485,11 @@ struct ContentView: View {
                     // que ahora lo eligió la persona. Se retira el testigo: ya decidió, y volver a
                     // preguntárselo en cada arranque sería no haberla escuchado.
                     StorageModePersistence.clearPrivateChoseWithoutICloud()
+                    // **Y el borrado que esperaba su respuesta se retira con ella** (ticket
+                    // `late-icloud-wipe-stays-frozen-after-a-settled-failed-migration`): tras una ida fallida, un arm que no
+                    // llegó a tocar nada se pregunta con este aviso y se queda puesto hasta que la persona contesta. Sin
+                    // arm (lo normal), no hace nada.
+                    StorageModePersistence.clearICloudCorpusWipeArm()
                 },
                 // El alcance no lo decide esta vista: el aviso EMPIEZA un borrado, el borrado a medias TERMINA el que
                 // se armó (`performLateICloudWipe`).
@@ -1973,18 +1978,24 @@ struct ContentView: View {
         //
         // **Y con una migración a la nube en vuelo, el borrado pendiente se congela** (ticket
         // `late-wipe-arm-is-dropped-silently-when-the-device-moves-to-the-cloud`): reanudarlo se llevaría lo que la ida está
-        // subiendo. «En reposo» es `migrationAtRest`, el estricto: la oferta del cambio de Apple ID y el cierre privado
-        // aceptan además una ida fallida sin nada pendiente (`migrationAllowsPrivateSessionClose`), y aquí no, porque con
-        // «Reintentar» a la vista la renuncia de «Activar la nube sin borrar» todavía puede servir. Solo se paga con algo
-        // que decidir. Se espera al bootstrap antes de leerlo: sin el journal configurado la lectura dice
-        // `notStarted`, que es el lado que concede.
+        // subiendo. «En reposo» es `migrationAtRest`, el estricto, y es lo único que lee la caducidad de la renuncia: con
+        // «Reintentar» a la vista, «Activar la nube sin borrar» todavía puede servir.
+        //
+        // **Pero una ida que FALLÓ y ya está asentada no sube nada, y ahí el borrado no se congela: se vuelve a preguntar**
+        // (ticket `late-icloud-wipe-stays-frozen-after-a-settled-failed-migration`, decisión B de Jürgen). Es la segunda
+        // lectura, `migrationFailedAndSettled`, del MISMO `MigrationRestReading`: la renuncia sigue mandando y nada se
+        // reanuda a ciegas (`lateWipeLaunch`). Solo se paga con algo que decidir. Se espera al bootstrap antes de leer: sin
+        // el journal configurado la lectura dice `notStarted`, que es el lado que concede.
         var migrationAtRest = true
+        var migrationFailedAndSettled = false
         if CloudSyncFlags.storageMode == .icloud,
            StorageModePersistence.hasPendingICloudCorpusWipe()
             || StorageModePersistence.isPendingICloudCorpusWipeWaivedForTheCloud() {
             await waitForBootstrap()
             guard !Task.isCancelled else { return }
-            migrationAtRest = AppleIDChangeCloseLogic.migrationAtRest(MigrationRestReading.live)
+            let reading = MigrationRestReading.live
+            migrationAtRest = AppleIDChangeCloseLogic.migrationAtRest(reading)
+            migrationFailedAndSettled = AppleIDChangeCloseLogic.migrationFailedAndSettled(reading)
         }
         if WelcomePrivateICloudGateLogic.waiverLapses(
             waivedForCloud: StorageModePersistence.isPendingICloudCorpusWipeWaivedForTheCloud(),
@@ -2003,6 +2014,7 @@ struct ContentView: View {
             cancelledInCloudNoticePending: StorageModePersistence.isICloudCorpusWipeCancelledInCloudNoticePending(),
             waivedForCloud: StorageModePersistence.isPendingICloudCorpusWipeWaivedForTheCloud(),
             migrationAtRest: migrationAtRest,
+            migrationFailedAndSettled: migrationFailedAndSettled,
             storageMode: CloudSyncFlags.storageMode
         ) {
         case .none:
@@ -2067,6 +2079,30 @@ struct ContentView: View {
         case .holdForMigration:
             // Ni reanudar ni preguntar con la ida en vuelo; el borrado sigue pendiente para el arranque siguiente.
             return
+        case .holdForWaiver:
+            // Tras una ida fallida y asentada, la renuncia de «Activar la nube sin borrar» gana: ni se pregunta ni se
+            // borra. El borrado sigue pendiente y la renuncia no caduca hasta el reposo estricto.
+            return
+        case .askAfterFailedMigration:
+            // **Tras una ida fallida y asentada, el arm no se reanuda a ciegas: se vuelve a preguntar.** Se clasifica como
+            // un borrado que falló: con la zona de iCloud ya ida, «a medias» y su pantalla (la marca va antes de desarmar,
+            // así que un kill la vuelve a preguntar). Sin tocar nada, sigue la comprobación de siempre, donde el aviso del
+            // espejo tardío vuelve a preguntar con el corpus, y **el arm se queda puesto hasta que la persona contesta**
+            // (lo retira «Déjalo así»; «Borrar» lo vuelve a armar): desarmado aquí, un arranque sin red o una hoja
+            // deslizada lo perdían, y con él el diálogo de Ajustes y el aviso de la nube (review adversarial del
+            // 2026-10-08, dos lentes).
+            switch WelcomePrivateICloudGateLogic.classifyLateWipeFailure(
+                groupsPending: false,
+                zoneDone: StorageModePersistence.isICloudCorpusWipeZoneDone(),
+                wasLeftHalfway: StorageModePersistence.isICloudCorpusWipeLeftHalfway()
+            ) {
+            case .leftHalfway:
+                StorageModePersistence.leaveICloudCorpusWipeHalfway()
+                RouterEntryGate.shared.submit(.presentLateICloudMirrorNotice(.wipeLeftHalfway))
+                return
+            case .untouched, .groupsPending:
+                break
+            }
         }
         let watching = StorageModePersistence.privateChoseWithoutICloud()
         // **El pre-filtro es «¿este mount espeja?», no «¿hay iCloud?»**: sin espejo adjunto no hay nada
