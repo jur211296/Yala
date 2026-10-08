@@ -409,15 +409,7 @@ final class ChatAssistantService {
         // (es-AR → es uses tuteo en system prompt; el voseo se maneja en el bundle de strings,
         // no aquí). Si una variante necesita registro distinto en el futuro, añadir case explícito.
         let baseLanguage = SupportedLocale.from(language)?.code ?? String(language.prefix(2))
-        let register: String
-        switch baseLanguage {
-        case "es": register = "tuteo (tú)"
-        case "de": register = "du"
-        case "fr": register = "tu"
-        case "it": register = "tu"
-        case "pt": register = "você"
-        default: register = "informal you"
-        }
+        let register = AIPromptLanguage.informalRegister(forBaseLanguage: baseLanguage)
 
         return """
         Eres el asistente financiero de Yala. Ayudas al usuario a entender sus finanzas respondiendo preguntas sobre gastos, ingresos, presupuestos, cuentas, patrones y proyecciones.

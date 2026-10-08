@@ -5,7 +5,7 @@ import type { BenchTask } from "./types";
 
 /**
  * Un caso: las líneas del plan de flujo de caja que se pasaron. La app solo llama con al menos una
- * (`guard !deviations.isEmpty`). `locale` = idioma de la app; el prompt tampoco lo manda.
+ * (`guard !deviations.isEmpty`). `locale` = idioma de la app, que el prompt pide desde el 2026-10-07.
  */
 export interface DeviationCase {
   id: string;
@@ -23,6 +23,6 @@ export function deviationContext(c: DeviationCase) {
 export const insightsDeviationTask: BenchTask<DeviationCase> = {
   name: "insights.deviation",
   baseParams: { temperature: 0.4, responseFormat: "json_object", jsonSchema: INSIGHTS_SCHEMAS["insights.deviation"] },
-  body: (c) => deviationBody(c.input),
+  body: (c) => deviationBody(c.input, c.locale),
   grade: (content, c) => gradeComment(content, deviationContext(c), !!c.allowNull),
 };

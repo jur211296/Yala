@@ -2,6 +2,7 @@ import { categoryName, seedCategories, subcategoryName } from "./appCatalog";
 import { dateContext } from "./appRequests";
 import { buildContext, canonicalMerchant, type BuiltContext, type Json, type Persona } from "./chatContext";
 import { baseLang, detectLang } from "./lang";
+import { informalRegister } from "./insightsRequests";
 import { interpolate, readRepoFile, swiftMultilineAfter } from "./swift";
 import type { Grade } from "./grading";
 
@@ -30,14 +31,17 @@ function baseLanguageCode(language: string): string {
   return codes.includes(base) ? base : base;
 }
 
-/** El registro que la app pide según el idioma (switch de `buildSystemPromptStatic`, leído del Swift). */
+/**
+ * El registro que la app pide según el idioma: el chat calcula su código base y lo busca en la tabla de
+ * `AIPromptLanguage.informalRegister(forBaseLanguage:)`, que comparte con Insights desde el 2026-10-07.
+ */
 export function chatRegister(language: string): string {
   const src = readRepoFile(SWIFT.chat);
   const fn = src.slice(src.indexOf("private func buildSystemPromptStatic("));
-  const cases = new Map([...fn.matchAll(/case "([\w-]+)": register = "([^"]+)"/g)].map((m) => [m[1], m[2]]));
-  const fallback = fn.match(/default: register = "([^"]+)"/)?.[1];
-  if (!fallback || cases.size === 0) throw new Error("chatAnswer: no encuentro el switch de registro en el Swift");
-  return cases.get(baseLanguageCode(language)) ?? fallback;
+  if (!fn.includes("AIPromptLanguage.informalRegister(forBaseLanguage: baseLanguage)")) {
+    throw new Error("chatAnswer: el chat ya no pide el trato a AIPromptLanguage con su código base");
+  }
+  return informalRegister(baseLanguageCode(language));
 }
 
 const TONE_KEY = 'toneInstruction.isEmpty ? "" : "16. Tono: \\(toneInstruction)"';

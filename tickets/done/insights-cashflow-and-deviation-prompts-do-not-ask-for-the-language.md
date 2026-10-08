@@ -1,6 +1,6 @@
 ---
 id: insights-cashflow-and-deviation-prompts-do-not-ask-for-the-language
-status: backlog
+status: done
 priority: high
 area: insights, ai, l10n
 created: 2026-10-07
@@ -31,3 +31,9 @@ volver a correr `npm run bench -- --task insights.cashflow,insights.deviation`: 
 ## Hecho cuando
 
 - Los dos comentarios salen en el idioma de la app en los 14 locales del banco, sin bajar del 100 % sin idioma.
+
+## Hecho (2026-10-07)
+
+Los dos prompts piden el idioma de la app con nombre y código, y el banco lo mide en los 14 locales: ver
+`gateway/bench/results/2026-10-07-idioma/REPORT-idioma.md`. El device-QA de las dos pantallas va con el ticket hermano
+`ai-comments-ignore-the-app-language`, en `qa`.

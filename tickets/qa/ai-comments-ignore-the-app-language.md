@@ -1,10 +1,11 @@
 ---
 id: ai-comments-ignore-the-app-language
-status: backlog
+status: qa
 priority: medium
 area: insights, ai
 created: 2026-10-07
 updated: 2026-10-07
+qa-status: needs-testing
 source: revisión del uso de IA (docs/ai-usage-review-2026-10.md, hallazgo H1)
 ---
 
@@ -42,3 +43,29 @@ español aunque la app esté en alemán. Esto último es **inferido**, no medido
 - Un test de payload fija que `InsightsViewModel` manda el idioma de `AppLocale`, no el de la región.
 - Los prompts de flujo de caja y desviación contienen el idioma recibido (test de prompt puro).
 - Device-QA: app en inglés con región Perú → Insights, flujo de caja y desviación salen en inglés.
+
+## Hecho (2026-10-07)
+
+- Insights, el flujo de caja y las desviaciones piden el idioma de la app (`AIPromptLanguage.current`, que sale de
+  `AppLocale`), con nombre y código («italiano (it)») y el trato de ese idioma (`du`, `tu`, `você`). El código solo era
+  ambiguo dentro de una frase en español: «Responde en it» sacó un caso en español en el banco.
+- Las reglas ya no citan entre comillas «gasto» e «ingreso»: el modelo las copiaba tal cual («Coffee gasto was…»).
+- Los nombres de mes del flujo de caja van en el idioma de la app, y las tres cachés llevan el idioma.
+- Banco (`gateway/bench/results/2026-10-07-idioma/REPORT-idioma.md`, fila activa `gpt-6-luna`, 14 locales, 2 repeticiones):
+  flujo de caja 25 → 100 %, desviaciones 21 → 100 %, tarjetas 91 → 100 %; 0 respuestas en otro idioma.
+- Tests: `YalaTests/InsightsResponseLanguageTests` (la petición que sale de verdad, con el idioma de la app distinto del
+  de la región; rojo con el código viejo).
+
+## Guion de device-QA (Jürgen)
+
+Hace falta Pro, el consentimiento de IA aceptado y red. Con un iPhone real, build de TestFlight. El caso del idioma
+forzado dentro de Yala con el iPhone en otro idioma está visto en el simulador (capturas del PR) y fijado en test; aquí se
+mira lo que ve casi todo el mundo.
+
+1. Ajustes del iPhone → Apps → **Yala** → Idioma → **English** (el iPhone puede seguir en español y en región Perú).
+2. En Yala, Estadísticas → **Resumen** → toca «Smart summary»: el análisis de la IA sale en **inglés**.
+3. Planificación → **Flujo de caja** (con un plan creado) → abre las gráficas: el comentario de la IA bajo la proyección
+   sale en **inglés**, y si te pasaste en alguna línea del plan, el de desviaciones también. Antes salían en español.
+4. Vuelve a Ajustes del iPhone → Yala → Idioma → **Deutsch**, abre Yala y repite 2 y 3: todo en **alemán**, sin palabras
+   sueltas en español («gasto», «presupuesto») y sin el comentario en inglés de antes.
+5. Devuelve el idioma de Yala al que tenías.

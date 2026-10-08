@@ -76,11 +76,13 @@ final class InsightsLLMService {
 
     // MARK: - Cache
 
-    /// Build a cache key from period + filter hash + transaction count + comparison mode + locale context
-    func cacheKey(period: String, filterHash: Int, txnCount: Int, comparisonMode: String = "month", tone: InsightTone = .normal, focus: InsightFocus = .balanced) -> String {
+    /// Build a cache key from period + filter hash + transaction count + comparison mode + locale context.
+    /// Lleva el idioma de la app: sin él, cambiar de idioma devolvía 5 min el análisis en el idioma anterior.
+    func cacheKey(period: String, filterHash: Int, txnCount: Int, comparisonMode: String = "month", tone: InsightTone = .normal, focus: InsightFocus = .balanced, language: String? = nil) -> String {
+        let language = language ?? AIPromptLanguage.current
         let country = Locale.current.region?.identifier ?? ""
         let currencyFormat = UserDefaults.standard.string(forKey: "currencyDisplayFormat") ?? "code"
-        return "\(period)_\(filterHash)_\(txnCount)_\(comparisonMode)_\(tone.rawValue)_\(focus.rawValue)_\(country)_\(currencyFormat)"
+        return "\(period)_\(filterHash)_\(txnCount)_\(comparisonMode)_\(tone.rawValue)_\(focus.rawValue)_\(country)_\(currencyFormat)_\(language)"
     }
 
     /// Get cached response if valid (< 5 minutes old)
@@ -133,8 +135,11 @@ final class InsightsLLMService {
         let jsonData = try JSONSerialization.data(withJSONObject: aggregatedData)
         let jsonString = String(data: jsonData, encoding: .utf8) ?? "{}"
 
-        // Extract locale, country and comparison context from aggregated data
-        let locale = aggregatedData["locale"] as? String ?? "es"
+        // Extract locale, country and comparison context from aggregated data.
+        // `locale` es el idioma de la app (`InsightsViewModel` manda `AIPromptLanguage.current`).
+        let locale = aggregatedData["locale"] as? String ?? AIPromptLanguage.current
+        let languageLine = Self.languageInstruction(locale)
+        let register = AIPromptLanguage.informalRegister(forBaseLanguage: AIPromptLanguage.baseCode(of: locale))
         let country = aggregatedData["country"] as? String ?? ""
         let comparisonRef = aggregatedData["comparison_ref"] as? String ?? "periodo anterior"
         let comparisonLabel = aggregatedData["comparison_label"] as? String ?? ""
@@ -178,7 +183,7 @@ final class InsightsLLMService {
         4. Si un campo dice "N/A" o no existe, NO menciones ese tema
         5. Los montos están en \(currencyCode). SIEMPRE formatea: \(currencyDisplay) NÚMERO (ej: \(currencyDisplay) 4,500). La divisa SIEMPRE va ANTES del número, NUNCA después.
 
-        IDIOMA: Responde SIEMPRE en \(locale). Nunca mezcles idiomas.
+        \(languageLine)
 
         COMPARACIONES: Las variaciones se comparan contra "\(comparisonRef)" (\(comparisonLabel)).
         \(filterContext)
@@ -195,13 +200,13 @@ final class InsightsLLMService {
         - Si el opcional supera al esencial, es una señal de alerta
 
         REGLAS DE VOZ (OBLIGATORIAS — aplican siempre, independiente del tono):
-        - Tutea al usuario ("tú"), como un amigo que sabe de finanzas
+        - Trato: \(register), como un amigo que sabe de finanzas
         - Lidera con el dato, opinión después
         - NUNCA culpar, regañar ni juzgar — siempre constructivo y orientado a solución
         - NUNCA uses: "Debes...", "Tienes que...", "Es fácil", "Obviamente...", "Como ya sabes..."
         - Celebrar logros genuinamente pero con mesura
         - Solo afirmaciones, datos, observaciones y guías. NUNCA preguntas
-        - Usa "gasto" o "ingreso", NUNCA "transacción" (excepto contexto técnico)
+        - Habla de gastos e ingresos, NUNCA de transacciones (excepto contexto técnico)
         - No menciones rachas ni streaks
         - Propón alternativas en vez de señalar problemas — inspira, no asustes
         \(toneInstruction)\(focusInstruction)
@@ -291,6 +296,19 @@ final class InsightsLLMService {
     func invalidateCache() {
         cache.removeAll()
         contextualCache.removeAll()
+    }
+
+    // MARK: - Idioma
+
+    /// La línea de idioma de los tres prompts de Insights (tarjetas, flujo de caja y desviaciones).
+    ///
+    /// Los prompts están en español, y sin esta línea el modelo contestaba en español a quien no lo habla: en el
+    /// banco del 2026-10-07 el flujo de caja y las desviaciones acertaban el idioma entre el 21 y el 57 % con todos
+    /// los modelos. La segunda frase es para el vocabulario que las reglas citan en español, que se colaba en otros
+    /// idiomas («Dein Gasto», «gasto oscylował», «ingressos»).
+    static func languageInstruction(_ language: String) -> String {
+        let label = AIPromptLanguage.label(for: language)
+        return "IDIOMA: Responde SIEMPRE en \(label), el idioma de la app del usuario, aunque estas instrucciones estén en español. Nunca mezcles idiomas ni copies palabras de estas instrucciones: gasto, ingreso, presupuesto y plan se dicen con la palabra propia de ese idioma."
     }
 
     // MARK: - Tone & Focus Instructions
@@ -450,8 +468,10 @@ final class InsightsLLMService {
     /// Uses contextualCache with 24h TTL. Key includes projection hash for invalidation.
     func generateCashFlowInsight(
         projection: CashFlowProjection,
-        currencyCode: String
+        currencyCode: String,
+        language: String? = nil
     ) async throws -> String? {
+        let language = language ?? AIPromptLanguage.current
         let client: OpenAI
         do {
             client = try await ProxyClientFactory.makeOpenAI(task: .insightsCashflow)
@@ -464,10 +484,10 @@ final class InsightsLLMService {
             throw InsightsLLMError.rateLimited
         }
 
-        // Cache key: date + projection hash
+        // Cache key: date + projection hash + idioma (sin él, cambiar de idioma devolvía 24 h el comentario viejo)
         let dayString = Self.dayFormatter.string(from: Date.now)
         let projHash = Self.projectionHash(projection)
-        let cacheKey = "cashflow_\(dayString)_\(projHash)"
+        let cacheKey = "cashflow_\(dayString)_\(projHash)_\(language)"
 
         // Check cache (24h TTL)
         if let entry = contextualCache[cacheKey],
@@ -478,26 +498,11 @@ final class InsightsLLMService {
         lastContextualCallTime = Date.now
 
         // Build compact JSON
-        let data = Self.buildCashFlowPayload(projection: projection, currencyCode: currencyCode)
+        let data = Self.buildCashFlowPayload(projection: projection, currencyCode: currencyCode, language: language)
         let jsonData = try JSONSerialization.data(withJSONObject: data)
         let jsonString = String(data: jsonData, encoding: .utf8) ?? "{}"
 
-        let currencyDisplay = CurrencyCode(rawValue: currencyCode)?.symbol ?? currencyCode
-
-        let systemPrompt = """
-        Eres un analista financiero personal. Genera UNA SOLA oración (máximo 150 caracteres) sobre la proyección de flujo de caja del usuario.
-
-        REGLAS CRÍTICAS:
-        - SOLO menciona datos presentes en el JSON. NUNCA inventes montos o meses
-        - Cada afirmación debe corresponder a un campo específico
-        - Tutea ("tú"), lidera con el dato, nunca regañes ni juzgues, nunca hagas preguntas
-        - NUNCA uses "Debes...", "Tienes que...", "Obviamente..."
-        - Usa "gasto"/"ingreso", no "transacción". Siempre constructivo
-        - Usa **negritas** para la cifra clave
-        - Montos en \(currencyCode): SIEMPRE \(currencyDisplay) NÚMERO (ej: \(currencyDisplay) 4,500). Divisa ANTES del número
-
-        JSON: {"comment": "una oración"} o {"comment": null} si no hay nada interesante.
-        """
+        let systemPrompt = Self.cashFlowSystemPrompt(currencyCode: currencyCode, language: language)
 
         let query = ChatQuery(
             messages: try buildChatMessages(system: systemPrompt, user: "Proyección de flujo de caja:\n\(jsonString)"),
@@ -542,7 +547,33 @@ final class InsightsLLMService {
         return hash
     }
 
-    private static func buildCashFlowPayload(projection: CashFlowProjection, currencyCode: String) -> [String: Any] {
+    /// El prompt de sistema del comentario del flujo de caja, en el idioma de la app (`language`, BCP-47).
+    static func cashFlowSystemPrompt(currencyCode: String, language: String) -> String {
+        let currencyDisplay = CurrencyCode(rawValue: currencyCode)?.symbol ?? currencyCode
+        let languageLine = languageInstruction(language)
+        let register = AIPromptLanguage.informalRegister(forBaseLanguage: AIPromptLanguage.baseCode(of: language))
+        return """
+        Eres un analista financiero personal. Genera UNA SOLA oración (máximo 150 caracteres) sobre la proyección de flujo de caja del usuario.
+
+        \(languageLine)
+
+        REGLAS CRÍTICAS:
+        - SOLO menciona datos presentes en el JSON. NUNCA inventes montos o meses
+        - Cada afirmación debe corresponder a un campo específico
+        - Trato: \(register). Lidera con el dato, nunca regañes ni juzgues, nunca hagas preguntas
+        - NUNCA uses "Debes...", "Tienes que...", "Obviamente..."
+        - Habla de gastos e ingresos, nunca de transacciones. Siempre constructivo
+        - Usa **negritas** para la cifra clave
+        - Montos en \(currencyCode): SIEMPRE \(currencyDisplay) NÚMERO (ej: \(currencyDisplay) 4,500). Divisa ANTES del número
+
+        JSON: {"comment": "una oración"} o {"comment": null} si no hay nada interesante.
+        """
+    }
+
+    /// Los datos del comentario del flujo de caja. Los nombres de mes van en el idioma de la app, no en el del
+    /// sistema: con el override de idioma, `Locale.current` seguía escribiendo «oct 2026» a quien lee alemán.
+    static func buildCashFlowPayload(projection: CashFlowProjection, currencyCode: String, language: String) -> [String: Any] {
+        let monthStyle = Date.FormatStyle.dateTime.month(.abbreviated).year().locale(Locale(identifier: language))
         let months = projection.months
         let currentMonth = months.first(where: { $0.isCurrent })
         let monthsWithBalance = months.filter { $0.accumulatedBalance != nil }
@@ -561,7 +592,7 @@ final class InsightsLLMService {
 
         if let current = currentMonth {
             payload["currentMonth"] = [
-                "name": current.date.formatted(.dateTime.month(.abbreviated).year()).lowercased(),
+                "name": current.date.formatted(monthStyle).lowercased(),
                 "income": Int(current.totalIncome),
                 "expense": Int(current.totalExpense),
                 "net": Int(current.netFlow),
@@ -571,14 +602,14 @@ final class InsightsLLMService {
 
         if let last = months.last {
             payload["endMonth"] = [
-                "name": last.date.formatted(.dateTime.month(.abbreviated).year()).lowercased(),
+                "name": last.date.formatted(monthStyle).lowercased(),
                 "accumulated": Int(last.accumulatedBalance ?? 0),
             ]
         }
 
         if let lowest = lowestMonth {
             payload["lowestAccumulated"] = [
-                "month": lowest.date.formatted(.dateTime.month(.abbreviated).year()).lowercased(),
+                "month": lowest.date.formatted(monthStyle).lowercased(),
                 "balance": Int(lowest.accumulatedBalance ?? 0),
             ]
         }
@@ -590,8 +621,10 @@ final class InsightsLLMService {
 
     func generateDeviationInsight(
         deviations: [(name: String, planned: Double, actual: Double, excess: Double)],
-        currencyCode: String
+        currencyCode: String,
+        language: String? = nil
     ) async throws -> String? {
+        let language = language ?? AIPromptLanguage.current
         let client: OpenAI
         do {
             client = try await ProxyClientFactory.makeOpenAI(task: .insightsDeviation)
@@ -606,7 +639,7 @@ final class InsightsLLMService {
 
         guard !deviations.isEmpty else { return nil }
 
-        let cacheKey = "deviation_\(Self.dayFormatter.string(from: Date.now))_\(deviations.map(\.name).joined())"
+        let cacheKey = "deviation_\(Self.dayFormatter.string(from: Date.now))_\(deviations.map(\.name).joined())_\(language)"
 
         if let entry = contextualCache[cacheKey],
            Date.now.timeIntervalSince(entry.timestamp) < 86400 {
@@ -627,21 +660,8 @@ final class InsightsLLMService {
 
         let jsonData = try JSONSerialization.data(withJSONObject: payload)
         let jsonString = String(data: jsonData, encoding: .utf8) ?? "{}"
-        let currencyDisplay = CurrencyCode(rawValue: currencyCode)?.symbol ?? currencyCode
 
-        let systemPrompt = """
-        Eres un analista financiero personal. Genera UNA SOLA oración (máximo 150 caracteres) sobre las subcategorías donde el usuario gastó más de lo planeado.
-
-        REGLAS CRÍTICAS:
-        - SOLO menciona datos presentes en el JSON. NUNCA inventes montos o nombres
-        - Tutea ("tú"), lidera con el dato, nunca regañes ni juzgues, nunca hagas preguntas
-        - NUNCA uses "Debes...", "Tienes que...", "Obviamente..."
-        - Usa "gasto", no "transacción". Siempre constructivo, sugiere algo práctico si puedes
-        - Usa **negritas** para la cifra clave
-        - Montos en \(currencyCode): SIEMPRE \(currencyDisplay) NÚMERO (ej: \(currencyDisplay) 4,500). Divisa ANTES del número
-
-        JSON: {"comment": "una oración"} o {"comment": null} si no hay nada interesante.
-        """
+        let systemPrompt = Self.deviationSystemPrompt(currencyCode: currencyCode, language: language)
 
         let query = ChatQuery(
             messages: try buildChatMessages(system: systemPrompt, user: "Desviaciones del plan:\n\(jsonString)"),
@@ -671,5 +691,27 @@ final class InsightsLLMService {
         } catch {
             throw InsightsLLMError.networkError(error)
         }
+    }
+
+    /// El prompt de sistema del comentario de las desviaciones del plan, en el idioma de la app (`language`, BCP-47).
+    static func deviationSystemPrompt(currencyCode: String, language: String) -> String {
+        let currencyDisplay = CurrencyCode(rawValue: currencyCode)?.symbol ?? currencyCode
+        let languageLine = languageInstruction(language)
+        let register = AIPromptLanguage.informalRegister(forBaseLanguage: AIPromptLanguage.baseCode(of: language))
+        return """
+        Eres un analista financiero personal. Genera UNA SOLA oración (máximo 150 caracteres) sobre las subcategorías donde el usuario gastó más de lo planeado.
+
+        \(languageLine)
+
+        REGLAS CRÍTICAS:
+        - SOLO menciona datos presentes en el JSON. NUNCA inventes montos o nombres
+        - Trato: \(register). Lidera con el dato, nunca regañes ni juzgues, nunca hagas preguntas
+        - NUNCA uses "Debes...", "Tienes que...", "Obviamente..."
+        - Habla de gastos, nunca de transacciones. Siempre constructivo, sugiere algo práctico si puedes
+        - Usa **negritas** para la cifra clave
+        - Montos en \(currencyCode): SIEMPRE \(currencyDisplay) NÚMERO (ej: \(currencyDisplay) 4,500). Divisa ANTES del número
+
+        JSON: {"comment": "una oración"} o {"comment": null} si no hay nada interesante.
+        """
     }
 }

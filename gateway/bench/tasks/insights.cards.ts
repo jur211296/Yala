@@ -11,9 +11,17 @@ export interface CardsCase {
   input: CardsInput;
 }
 
+/**
+ * Lo que la app manda desde el 2026-10-07: el idioma de la app (`locale` del caso), no `input.language`, que guarda
+ * el idioma de la región con el que se midió la sesión 2.
+ */
+export function cardsInput(c: CardsCase): CardsInput {
+  return { ...c.input, language: c.locale };
+}
+
 export function cardsContext(c: CardsCase) {
   return {
-    data: cardsPayload(c.input),
+    data: cardsPayload(cardsInput(c)),
     locale: c.locale,
     money: moneyMarkers(c.input.currency, currencySymbol(c.input.currency), currencyDisplay(c.input.currency, c.input.currencyDisplayFormat)),
   };
@@ -22,6 +30,6 @@ export function cardsContext(c: CardsCase) {
 export const insightsCardsTask: BenchTask<CardsCase> = {
   name: "insights.cards",
   baseParams: { temperature: 0.4, responseFormat: "json_object", jsonSchema: INSIGHTS_SCHEMAS["insights.cards"] },
-  body: (c) => cardsBody(c.input),
+  body: (c) => cardsBody(cardsInput(c)),
   grade: (content, c) => gradeCards(content, cardsContext(c)),
 };
