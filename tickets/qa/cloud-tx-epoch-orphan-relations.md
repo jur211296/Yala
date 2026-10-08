@@ -1,7 +1,7 @@
 ---
 id: cloud-tx-epoch-orphan-relations
-status: backlog
-priority: high
+status: qa
+priority: medium
 created: 2026-07-17
 updated: 2026-10-08
 source: YalaWiki/Bugs/qa_cloud-tx-epoca-relaciones-huerfanas.md
@@ -98,3 +98,76 @@ migrated from YalaWiki Bugs/qa_cloud-tx-epoca-relaciones-huerfanas.md @ 1934e8ad
 - Sube a `high` porque es daño a datos en un camino normal (la única TX de época observada perdió las dos relaciones). No va a `very-high` solo porque no se ha vuelto a reproducir desde que se reescribió media reversa. **Siguiente paso:** la repro del ticket (migrar → crear TX → reversa → mirar relaciones). Si se reproduce, `very-high`.
 
 Triage 2026-10-08: abierto · sin prioridad → high · daño a datos observado en la reversa, nunca investigado; sube a very-high si la repro lo confirma.
+
+## Repro (2026-10-08, build `2.1` @ `4e22b6036` + esta rama): NO se reproduce en nuestro código
+
+**Variante usada: test de integración, no nube real.** La reversa espera a que el espejo de CloudKit exporte
+(`reverseUpload`) y el simulador no tiene cuenta de iCloud; la sesión de la nube en el simulador pide además
+`YALA_DEV_SHARED_SECRET`, que no está en `~/Secrets`. La repro de extremo a extremo queda para el device-QA de abajo.
+
+`YalaTests/CloudSync/ReverseEpochTxRelationsTests.swift` recorre los pasos REALES del `MigrationWorkExecutor` que
+escriben en el store personal durante la reversa —`reverseDrainOnce` (drain + push + pull), `verify` (pull + Merkle),
+`sweepZombies`, `verifyRebinds`, `healDuplicates`, `reverseUploadStatus`— y el dedup del arranque siguiente
+(`CategoryDeduplicationService.runAllDeduplication`), sobre un store on-disk y contra un backend falso que GUARDA lo
+subido y lo devuelve por `server_seq`: el movimiento de la época recibe su propio eco, como en staging. Lee las
+relaciones en caliente y tras «matar y reabrir» (contenedor nuevo sobre el mismo disco), por IDENTIDAD
+(`shortcutID`/`syncID`), y exige una sola cuenta y una sola subcategoría y cero `SyncDanglingRef`.
+
+Cinco variantes, las cinco verdes en dos corridas (antes y después del rebase):
+
+| Variante | Qué cubre |
+|---|---|
+| reversa inmediata | el caso original (~4 min): el eco baja DENTRO de la reversa, en el pull del drenaje |
+| reversa tras varios ciclos | la espera larga: el eco ya bajó en la nube estable |
+| re-pull completo | el cursor a 0 dentro de la reversa: el corpus entero se re-aplica |
+| verificación en desacuerdo | el Merkle no cuadra a la primera (el device tenía divergencia en `tx_items`) y la reversa vuelve al drenaje |
+| movimiento creado en otro contexto | la vista guarda en su contexto y la reversa corre en otro con las inversas ya cargadas |
+
+**Control rojo:** con el applier de `account_ref` de `tx_items` cambiado por `m.account = nil` las cinco caen (14
+aserciones en la corrida de cuatro variantes). Un mutante más débil —la búsqueda de la cuenta devuelve `nil`— sigue
+VERDE, y es información: deja un `SyncDanglingRef` y el pase final de `pullAndApplyOnce` (`reresolveDanglingRefs`)
+lo re-adjunta en el mismo ciclo. Para que la pérdida dure, la cuenta tiene que NO encontrarse por `shortcutID` ni en el
+apply ni en el pase final.
+
+## Lo que deja la investigación
+
+- **La asimetría es la pista:** se perdieron cuenta y subcategoría, que el applier resuelve por `shortcutID`
+  (`EntityApplyMap.findAccount/findSubcategory(byShortcutID:)`), y sobrevivió la categoría, que resuelve por `syncID`.
+  En nuestro código, lo único que escribe las relaciones de UN movimiento es ese applier, y solo la fila de la época
+  queda por encima del cursor. Si el `account_ref` del eco no casa con el `shortcutID` local, la relación queda en
+  `nil` con un dangler que nadie vuelve a resolver tras la reversa (en `.icloud` no hay pull).
+- **No encontré quién cambie esos `shortcutID` en la ventana:** `repairCollapsedIdentityUUIDs` (el único que regenera
+  justo cuenta, subcategoría y etiqueta, nunca categoría) aborta en `.cloud` con la migración en curso; la regeneración
+  del arranque es one-shot con centinela; la restauración del relevo y el linaje no tocan cuentas ni subcategorías.
+- **Fuera del alcance del test**, y por tanto sospechosos que quedan: (1) el espejo de CloudKit al remontar (export del
+  movimiento sin CKRecord e import de la zona); (2) el bucle del runtime que sigue corriendo en las fases previas al
+  montaje (`performCycle` no re-mira `canRunDomain`), aunque aplica las mismas filas con los mismos resolvers; (3) un
+  duplicado de cuenta o subcategoría que llegue tras el montaje y lo fusionen `healDuplicates` o el dedup del arranque:
+  re-apuntan por la inversa y borran al perdedor con `.nullify`. Esto último invalida una de las exclusiones de arriba:
+  un merge hacia un ganador con el mismo nombre dejaría las 2.311 transacciones «intactas» en pantalla.
+- **Baja de `high` a `medium`**: no se reproduce en ninguna variante del camino de la reversa que vive en el repo, y
+  queda la guardia. Vuelve a `very-high` si el device-QA lo reproduce.
+
+## Device-QA (iPhone de pruebas, ~45 min, la mayor parte esperando)
+
+Montaje:
+1. Un iPhone de pruebas con sesión de iCloud, por cable al Mac.
+2. Xcode: scheme **Yala Dev** (va a STAGING), compilado desde `2.1` con este PR, Run al iPhone.
+3. En el Mac, abre **Consola**, elige el iPhone en la barra lateral, pulsa «Iniciar» y escribe `danglingRef` en el
+   buscador. Déjala abierta todo el rato.
+
+Reversa rápida (el caso original):
+1. Ajustes › Dónde viven tus datos › **Migrar a la nube**, con la cuenta de pruebas. Espera a «Nube activa».
+2. Crea dos movimientos de gasto, cada uno con **cuenta** y **subcategoría**: «QA rápida 1» y «QA rápida 2».
+3. Antes de 5 minutos: Dónde viven tus datos › **Volver a iCloud**. Cuando lo pida, cierra y abre Yala; espera a que
+   termine.
+4. Registros: los dos aparecen bajo su cuenta. Ábrelos: cuenta y subcategoría siguen puestas.
+5. Cierra Yala del todo (deslizar en el selector de apps) y ábrela: lo mismo.
+6. Mira la Consola: ¿alguna línea `CloudSyncApply danglingRef tx_items.account_ref` o `…subcategory_ref`? Anota sí o no.
+
+Espera larga:
+7. Migra otra vez a la nube, crea «QA lenta» con cuenta y subcategoría y deja Yala abierta 30 minutos.
+8. Volver a iCloud y repite los pasos 4 a 6 con «QA lenta».
+
+Si algún movimiento pierde la cuenta o la subcategoría: anota cuál, si la Consola mostró `danglingRef` y si en
+Ajustes › Cuentas aparece la cuenta duplicada. Con `danglingRef` es el applier; sin él y sin duplicado, es el espejo.

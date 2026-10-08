@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (822)
+## Index (823)
 
 | id | status | path |
 |---|---|---|
@@ -223,7 +223,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | cloud-signout-with-the-engine-stopped-says-check-your-connection | done | tickets/done/cloud-signout-with-the-engine-stopped-says-check-your-connection.md |
 | cloud-sync-status-says-all-synced-with-changes-still-pending | backlog | tickets/backlog/cloud-sync-status-says-all-synced-with-changes-still-pending.md |
 | cloud-tab-does-not-say-this-phone-cannot-sync-personal-data | done | tickets/done/cloud-tab-does-not-say-this-phone-cannot-sync-personal-data.md |
-| cloud-tx-epoch-orphan-relations | backlog | tickets/backlog/cloud-tx-epoch-orphan-relations.md |
+| cloud-tx-epoch-orphan-relations | qa | tickets/qa/cloud-tx-epoch-orphan-relations.md |
 | cloudsync-account-currency-orphans-receiver-history | backlog | tickets/backlog/cloudsync-account-currency-orphans-receiver-history.md |
 | cloudsync-witnesses-survive-the-sign-out-wipe | backlog | tickets/backlog/cloudsync-witnesses-survive-the-sign-out-wipe.md |
 | cobertura-ui-diaria-cuelga-del-push | discarded | tickets/discarded/cobertura-ui-diaria-cuelga-del-push.md |
@@ -687,6 +687,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | reverse-exit-leaves-a-partial-copy-in-icloud | backlog | tickets/backlog/reverse-exit-leaves-a-partial-copy-in-icloud.md |
 | reverse-exit-on-a-reverted-account-rejects-the-retry | backlog | tickets/backlog/reverse-exit-on-a-reverted-account-rejects-the-retry.md |
 | reverse-hidden-on-a-born-cloud-second-device | backlog | tickets/backlog/reverse-hidden-on-a-born-cloud-second-device.md |
+| reverse-leaves-dangling-refs-it-can-no-longer-resolve | backlog | tickets/backlog/reverse-leaves-dangling-refs-it-can-no-longer-resolve.md |
 | reverse-mount-can-reimport-a-late-leader-identity | backlog | tickets/backlog/reverse-mount-can-reimport-a-late-leader-identity.md |
 | reverse-offered-on-a-device-without-icloud | backlog | tickets/backlog/reverse-offered-on-a-device-without-icloud.md |
 | reverse-pre-mount-ceiling-charges-a-stall-to-whoever-stops-it-last | done | tickets/done/reverse-pre-mount-ceiling-charges-a-stall-to-whoever-stops-it-last.md |
