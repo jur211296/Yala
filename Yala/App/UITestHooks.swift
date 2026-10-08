@@ -325,6 +325,18 @@ final class UITestHooks {
     /// producción. Y el store arranca vacío con `-uitest-reset`, que es la otra condición viva.
     nonisolated static var showRemoteWipeNotice: Bool { hasArg("-uitest-remote-wipe-notice") }
 
+    /// `-uitest-remote-wipe-notice-never-mounts`: el aviso de vaciado remoto «no llega a montarse» — la
+    /// condición viva se enciende igual, pero su RED VISUAL (`showRemoteWipeAlert`) no, ni en el drenaje ni
+    /// en los reintentos de la red. Es lo que pasa cuando UIKit descarta la presentación con el anchor
+    /// ocupado, y existe para el XCUITest del DESARME (ticket `presentation-net-desarm-has-no-automated-net`):
+    /// la red tiene que recorrer `.retry` hasta `.exhausted` y soltar la condición viva.
+    ///
+    /// **Finge la ENTRADA, no la decisión**: la sonda (`ModalPresentationProbe`), el veredicto de
+    /// `RelaunchNetLogic` y el desarme son los de producción. No toca el binding del alert —eso sería el
+    /// setter no-op que prohíbe la regla (1) de `.claude/rules/swiftui-ds.md`— y tampoco ciega a la sonda,
+    /// que ejercitaría «la sonda miente», otro escenario con otro desenlace. Solo DEBUG.
+    nonisolated static var remoteWipeNoticeNeverMounts: Bool { hasArg("-uitest-remote-wipe-notice-never-mounts") }
+
     /// `-uitest-apple-id-changed`: tras el seed, encola `.appleIDChangedClosePrivate` — la hoja «Cambiaste
     /// de cuenta de iCloud».
     ///
@@ -338,6 +350,13 @@ final class UITestHooks {
     /// manual siguiente del simulador borraría el store. Para recorrer la fase de bloqueo, acompáñalo de
     /// `-uitest-groups-outbox-pending`.
     nonisolated static var showAppleIDChangedNotice: Bool { hasArg("-uitest-apple-id-changed") }
+
+    /// `-uitest-apple-id-close-never-mounts`: la hoja «Cambiaste de cuenta de iCloud» «no llega a montarse» —
+    /// la condición viva (`appleIDCloseNotice`) se enciende igual, pero su red visual (`showSheet` de
+    /// `AppleIDCloseNoticeModifier`) no, ni al armarse ni en los reintentos. Gemelo de
+    /// `remoteWipeNoticeNeverMounts`, para el XCUITest del desarme de esta otra red: el `onAppear` del
+    /// contenido no dispara nunca, la red agota el cap y suelta el aviso. Solo DEBUG.
+    nonisolated static var appleIDCloseNoticeNeverMounts: Bool { hasArg("-uitest-apple-id-close-never-mounts") }
 
     /// `-uitest-groups-outbox-pending`: tras el seed, deja UNA fila viva en el outbox de Grupos, sin sesión.
     ///

@@ -18,6 +18,9 @@
 //      otro envoltorio de presentación—, el aviso se iría solo a los ~9 s y nadie se enteraría: el
 //      caso 1 de esta suite espera esa ventana entera con el alert delante.
 //   3. A dónde aterriza cada botón, que es la otra mitad del ticket.
+//   4. El DESARME de esa red: si el aviso no llega a montarse, la red agota su cap y suelta la condición
+//      viva, y lo retenido presenta (ticket `presentation-net-desarm-has-no-automated-net`). Ese caso entra
+//      por un seam propio, `-uitest-remote-wipe-notice-never-mounts`; los demás corren sin él.
 //
 //  **Lo que NO cubre, y tiene ticket propio**: el PRODUCTOR. En producción el aviso lo pide la gracia
 //  de cinco segundos de `ContentView`, que arranca cuando las filas personales desaparecen del store
@@ -88,6 +91,54 @@ final class RemoteWipeNoticeRoutingUITests: XCTestCase {
             (`ModalPresentationProbe`) dejó de reconocer la presentación de un `.alert` en este runtime:
             arréglala antes de que el desarme se coma avisos buenos.
             """)
+    }
+
+    /// **El DESARME: si el aviso no llega a montarse, la red agota su cap y suelta la condición viva** (ticket
+    /// `presentation-net-desarm-has-no-automated-net`). Hasta el 2026-10-07 esta cura estaba medida solo a mano,
+    /// editando el alert a `.constant(false)`; en el repo quedaba el escáner que fija su forma.
+    ///
+    /// `-uitest-remote-wipe-notice-never-mounts` enciende la condición viva y deja el alert sin montar en el
+    /// drenaje y en cada reintento; la sonda de UIKit, el veredicto de `RelaunchNetLogic` y el desarme son los de
+    /// producción. El caso 1 de esta suite sigue corriendo SIN el seam (regla `L103` de `testing.md`): él prueba
+    /// que la red deja en paz un aviso que sí está en pantalla; éste, que suelta el que no.
+    ///
+    /// Se afirman las dos consecuencias, y las dos con su control:
+    ///  · **mientras la red reintenta, lo retenido espera** — el paywall no está a los 4 s. Si la matriz colgara
+    ///    del `@State` del alert en vez de la condición viva, con el alert sin montar el paywall saldría al
+    ///    instante;
+    ///  · **al agotarse, la condición viva se suelta** — el paywall presenta sin que nadie conteste nada. Medido
+    ///    el 2026-10-07: la red suelta a los ~9,4 s del drenaje; sin el desarme, el paywall no sale nunca.
+    func test_noticeThatNeverMounts_netExhausts_andReleasesTheRouter() {
+        let app = XCUIApplication()
+        app.launchForUITest(seed: nil, trialOffer: true, remoteWipeNoticeNeverMounts: true,
+                            extraArguments: ["-uitest-remote-wipe-notice"])
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap no completó.")
+
+        let alert = notice(in: app)
+        let offer = app.buttons["trial_offer_dismiss"]
+        let offerAppears = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == true"), object: offer)
+        XCTAssertEqual(XCTWaiter().wait(for: [offerAppears], timeout: 4), .timedOut, """
+            El paywall presentó mientras la red del aviso seguía reintentando: la matriz no está retenida por la
+            condición viva (`remoteWipeNoticePending`), o el drenaje dejó de encenderla.
+            """)
+        XCTAssertFalse(alert.exists, """
+            El aviso se montó con `-uitest-remote-wipe-notice-never-mounts`: el seam no alcanza a quien lo enciende
+            y este caso no está midiendo el desarme.
+            """)
+
+        // 45 s como en `test_notice_keepWaiting_…`: el cap son ~9 s, y lo demás es el desmontaje y el drenaje.
+        XCTAssertTrue(offer.waitForExistence(timeout: 45), """
+            Lo retenido no presentó tras agotarse la red: el desarme no soltó la condición viva
+            (`remoteWipeNoticePending`) y el router se quedó retenido por un aviso que nunca se vio — el brick
+            del ticket `remote-wipe-alert-skips-the-router`.
+            """)
+        XCTAssertFalse(alert.exists, "El aviso apareció a la vez que el paywall: se soltó y siguió montándose.")
+
+        // Y la app sigue viva: nada quedó pegado por encima, y el aviso soltado no vuelve.
+        offer.tap()
+        XCTAssertTrue(app.buttons["panel_inbox_button"].waitForExistence(timeout: 10),
+                      "El Panel no quedó accesible tras el desarme y el paywall.")
+        XCTAssertFalse(alert.exists, "El aviso soltado por la red volvió a presentarse.")
     }
 
     func test_notice_keepWaiting_leavesTheAppWhereItWas() {

@@ -1,9 +1,10 @@
 ---
 id: presentation-net-desarm-has-no-automated-net
-status: backlog
+status: done
 priority: medium
 area: "testing, sesiones, routing"
 created: 2026-09-14
+updated: 2026-10-08
 source: "review adversarial de `remote-wipe-alert-skips-the-router`, lente de tests"
 ---
 
@@ -58,8 +59,30 @@ lo cubren la tabla pura (`AppleIDCloseNoticeLogicTests`) y un escáner que fija 
 
 ## Criterios de aceptación
 
-- [ ] Un XCUITest ejercita el camino `.retry` → `.exhausted` y afirma las dos consecuencias: la
+- [x] Un XCUITest ejercita el camino `.retry` → `.exhausted` y afirma las dos consecuencias: la
       condición viva se suelta y el intent retenido detrás presenta.
-- [ ] El test de la presentación NORMAL sigue corriendo **sin** ese seam (regla `L103` de
+- [x] El test de la presentación NORMAL sigue corriendo **sin** ese seam (regla `L103` de
       `testing.md`: el seam que fuerza un predicado no puede ser el único camino).
-- [ ] El escáner del tramo del drenaje sigue fijando el orden, con el seam dentro.
+- [x] El escáner del tramo del drenaje sigue fijando el orden, con el seam dentro.
+
+## Cierre (2026-10-08)
+
+**El seam no va solo en el drenaje, va en el único escritor de la red visual de cada aviso.** El `.retry` de la red
+vuelve a escribir el flag visual sin condición, así que un seam solo en el drenaje lo dejaría montar en el primer
+reintento y la red acabaría en `.satisfied`, nunca en `.exhausted` (inferido del código). Por eso el drenaje y el
+reintento pasan por `mountRemoteWipeAlert()` (`ContentView`), y el armado y el reintento de la hoja por
+`mountSheet()` (`AppleIDCloseNoticeModifier`), con el `#if DEBUG` dentro. Ni el binding ni la sonda se tocan.
+
+- Seams: `-uitest-remote-wipe-notice-never-mounts` y `-uitest-apple-id-close-never-mounts`, nombrados en
+  `launchForUITest`.
+- XCUITest: `RemoteWipeNoticeRoutingUITests.test_noticeThatNeverMounts_netExhausts_andReleasesTheRouter` y
+  `AppleIDCloseNoticeUITests.test_sheetThatNeverMounts_netExhausts_andReleasesTheRouter`. Afirman que lo retenido
+  espera mientras la red reintenta, que presenta al agotarse y que el aviso no se ve nunca.
+- Escáneres: el tramo del drenaje fija `… = true mountRemoteWipeAlert() arm…()`, el cuerpo de cada escritor se
+  fija entero con su `#if DEBUG`, y el conteo de escritores del aviso pasa de 7 a 6.
+- Medido: receta del 14-sep reproducida en las dos redes (sueltan a los ~9,4 s). Cada caso nuevo pasó 7 de 8
+  en la sesión, y 3 de 3 seguidos sobre la build final. Con el desarme anulado, los dos caen en la espera de la
+  oferta y los escáneres de forma también.
+- **Los dos rojos no son del seam**: es el drenaje que no llega tras soltar un bloqueo de la matriz. Sale también
+  con la receta original sin seam (1 de 16 en la hoja) y en el aviso de vaciado (1 de 40). Medido, con propuesta
+  y con estos casos registrados, en `queued-offer-after-dismiss-flakes-on-a-cold-simulator`.

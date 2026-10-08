@@ -1588,8 +1588,22 @@ struct ContentView: View {
             storageMode: CloudSyncFlags.storageMode)
         guard sessionObeysWipeSignal else { return }
         remoteWipeNoticePending = true
-        showRemoteWipeAlert = true
+        mountRemoteWipeAlert()
         armRemoteWipeNoticePresentationNet()
+    }
+
+    /// **El único sitio que enciende la RED VISUAL del aviso**: el drenaje y el reintento de la red pasan por
+    /// aquí. Va aparte para que el seam del XCUITest del desarme (`-uitest-remote-wipe-notice-never-mounts`)
+    /// alcance a los dos con un solo `#if DEBUG`: con él puesto, la condición viva se enciende y el alert no
+    /// monta nunca, que es exactamente «UIKit descartó la presentación». Un seam solo en el drenaje no
+    /// llegaría al desarme: el primer reintento montaría el aviso y la red acabaría en `.satisfied`
+    /// (ticket `presentation-net-desarm-has-no-automated-net`).
+    @MainActor
+    private func mountRemoteWipeAlert() {
+        #if DEBUG
+        guard !UITestHooks.remoteWipeNoticeNeverMounts else { return }
+        #endif
+        showRemoteWipeAlert = true
     }
 
     /// **Verificación de presentación EFECTIVA del aviso, y su desarme.** Un `.alert` que se enciende
@@ -1657,7 +1671,7 @@ struct ContentView: View {
                     // contestado — con la matriz libre, que es lo peor de las dos mitades: el router
                     // drenaría lo siguiente y lo montaría debajo.
                     guard !Task.isCancelled, remoteWipeNoticePending else { return }
-                    showRemoteWipeAlert = true
+                    mountRemoteWipeAlert()
                     try? await Task.sleep(for: RelaunchNetLogic.retryInterval)
                 case .exhausted:
                     remoteWipeNoticePending = false

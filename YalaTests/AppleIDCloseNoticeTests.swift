@@ -445,7 +445,7 @@ struct AppleIDCloseNoticeWiringTests {
         #expect(net.contains(Self.squashed("""
             guard AppleIDCloseNoticeLogic.presentationArmed(
                 notice: notice, phase: CloudSessionSignOut.shared.phase) else { return }
-            showSheet = true
+            mountSheet()
             """)))
         #expect(net.contains(Self.squashed("""
             case .exhausted:
@@ -464,6 +464,38 @@ struct AppleIDCloseNoticeWiringTests {
             el desarme de la red cambió de forma. Al agotarse el cap tiene que soltar la condición viva —o el \
             router se queda retenido el resto de la sesión— y reconocer el bloqueo de su cierre.
             """)
+    }
+
+    /// **La red visual de la hoja se enciende en UN solo sitio, con el seam del XCUITest del desarme dentro y
+    /// solo en DEBUG** (ticket `presentation-net-desarm-has-no-automated-net`). El armado y el reintento llaman a
+    /// `mountSheet()`; con `-uitest-apple-id-close-never-mounts` la condición viva sigue puesta y la hoja no monta
+    /// nunca, que es lo que el XCUITest necesita para recorrer `.retry` → `.exhausted`. Cuerpo entero por
+    /// igualdad: un `#endif` después de la asignación apagaría la hoja solo en Release, donde ningún test corre.
+    @Test("MUTACIÓN: la hoja se enciende en un solo sitio, con el seam del desarme dentro y solo en DEBUG")
+    func theSheetHasASingleWriterWithTheDebugSeamInside() throws {
+        let notice = try Self.noticeCode()
+        let writer = Self.squashed(try Self.body(of: "private func mountSheet() {", in: notice))
+        #expect(writer == Self.squashed("""
+            #if DEBUG
+            guard !UITestHooks.appleIDCloseNoticeNeverMounts else { return }
+            #endif
+            showSheet = true
+            """), "el único escritor de la hoja cambió de forma: \(writer)")
+        #expect(Self.count("showSheet = true", in: notice) == 1, """
+            la hoja se enciende fuera de `mountSheet()`. Ese sitio no lo alcanza el seam del XCUITest del desarme, \
+            y si es el reintento de la red, el test deja de llegar a `.exhausted`.
+            """)
+        let arm = Self.squashed(try Self.body(of: "private func arm() {", in: notice))
+        #expect(arm.hasPrefix("mountSheet()"), "el armado dejó de encender la hoja por `mountSheet()`")
+        let hooks = try Self.source("Yala/App/UITestHooks.swift")
+        let launcher = try Self.source("YalaUITests/Support/XCUIApplication+Yala.swift")
+        #expect(hooks.contains("hasArg(\"-uitest-apple-id-close-never-mounts\")"), "`UITestHooks` no lee el arg del seam")
+        #expect(launcher.contains("args.append(\"-uitest-apple-id-close-never-mounts\")"),
+                "el lanzador del XCUITest no pasa el mismo arg que lee `UITestHooks`: el seam valdría `false` en silencio")
+    }
+
+    private static func count(_ needle: String, in haystack: String) -> Int {
+        haystack.components(separatedBy: needle).count - 1
     }
 
     @Test("MUTACIÓN: el relevo al cover mira la fase REAL, y el re-armado solo atiende un desmontaje real")

@@ -272,10 +272,12 @@ struct RemoteWipeSignalWiringTests {
         // a pelo —el bug exacto que este ticket cierra— no pondría rojo nada: los otros escáneres
         // cuentan el `submit` y la condición viva, que un bypass directo no toca.
         //
-        // Los siete, y por qué: el drenaje lo enciende (1); la red lo apaga y lo re-enciende en el
-        // reintento (2); el desarme del cap lo apaga (1); y lo apagan las tres salidas —«Empezar de
-        // cero», «Ahora no» y la llegada de la señal explícita— (3).
-        #expect(try Self.countInProduction("showRemoteWipeAlert = ") == 7, """
+        // Los seis, y por qué: lo enciende UN solo sitio, `mountRemoteWipeAlert()`, por el que pasan el
+        // drenaje y el reintento de la red (1) —desde el 2026-10-07, para que el seam del XCUITest del
+        // desarme los alcance a los dos—; la red lo apaga antes de re-encenderlo (1); el desarme del cap
+        // lo apaga (1); y lo apagan las tres salidas —«Empezar de cero», «Ahora no» y la llegada de la
+        // señal explícita— (3).
+        #expect(try Self.countInProduction("showRemoteWipeAlert = ") == 6, """
             las asignaciones al flag del aviso cambiaron de número en `Yala/`. Si añadiste un escritor,
             pregúntate primero si debería ser un `submit(.presentRemoteWipeNotice)`: quien enciende este
             aviso desde fuera del drenaje se salta la matriz de readiness y desmonta lo que el anchor
@@ -308,7 +310,7 @@ struct RemoteWipeSignalWiringTests {
             + "guard hasCompletedOnboarding else { return } "
             + Self.origenEsperado(defaultsArg: "")
             + " guard sessionObeysWipeSignal else { return } "
-            + "remoteWipeNoticePending = true showRemoteWipeAlert = true "
+            + "remoteWipeNoticePending = true mountRemoteWipeAlert() "
             + "armRemoteWipeNoticePresentationNet()"
         #expect(Self.count(tramo, in: vista) == 1, """
             el drenaje del aviso de vaciado remoto cambió de forma. Se mide TODO el tramo, no solo que
@@ -332,6 +334,44 @@ struct RemoteWipeSignalWiringTests {
 
         #expect(try Self.countInProduction("@State private var remoteWipeNoticePending") == 1,
                 "la condición viva del aviso no está declarada exactamente una vez: el escáner mide otra cosa")
+    }
+
+    /// **La red visual del aviso se enciende en UN solo sitio, y el seam del XCUITest del desarme vive
+    /// dentro, solo en DEBUG** (ticket `presentation-net-desarm-has-no-automated-net`). El drenaje y el
+    /// reintento de la red llaman a `mountRemoteWipeAlert()`; con `-uitest-remote-wipe-notice-never-mounts`
+    /// la condición viva se enciende y el alert no monta nunca, que es lo que el XCUITest necesita para
+    /// recorrer `.retry` → `.exhausted`.
+    ///
+    /// Se fija el cuerpo ENTERO por igualdad: un `#if DEBUG` que se cerrara después de la asignación
+    /// dejaría el aviso sin encender en producción —solo en Release, donde ningún test corre—, y un seam
+    /// sin el `#if` lo dejaría al alcance de cualquier build. Y se cuentan las dos llamadas: si el
+    /// reintento volviera a escribir el flag a mano, el seam dejaría de alcanzarlo, el primer reintento
+    /// montaría el aviso y el XCUITest del desarme se quedaría esperando un `.exhausted` que no llega.
+    @Test("MUTACIÓN: la red visual del aviso se enciende en un solo sitio, con el seam del desarme dentro y solo en DEBUG")
+    func theVisualNetHasASingleWriterWithTheDebugSeamInside() throws {
+        let vista = try Self.code("Yala/App/ContentView.swift")
+        let cuerpo = "private func mountRemoteWipeAlert() { #if DEBUG "
+            + "guard !UITestHooks.remoteWipeNoticeNeverMounts else { return } #endif "
+            + "showRemoteWipeAlert = true }"
+        #expect(Self.count(cuerpo, in: vista) == 1, """
+            el único escritor de la red visual del aviso cambió de forma. Esperado exactamente: \(cuerpo)
+            """)
+        #expect(try Self.countInProduction("showRemoteWipeAlert = true") == 1, """
+            el aviso de vaciado remoto se enciende fuera de `mountRemoteWipeAlert()`. Ese sitio no lo alcanza
+            el seam del XCUITest del desarme, y si es el reintento de la red, el test deja de llegar a
+            `.exhausted`.
+            """)
+        #expect(Self.count("mountRemoteWipeAlert()", in: vista) == 3, """
+            `mountRemoteWipeAlert()` no aparece exactamente tres veces en `ContentView` (su declaración, el
+            drenaje y el reintento de la red).
+            """)
+        let hooks = try Self.code("Yala/App/UITestHooks.swift")
+        #expect(hooks.contains("static var remoteWipeNoticeNeverMounts: Bool { "
+                               + "hasArg(\"-uitest-remote-wipe-notice-never-mounts\") }"),
+                "el seam no lee su arg por `hasArg`, que es lo que lo deja inerte fuera de `-uitest` y en Release")
+        let launcher = try Self.code("YalaUITests/Support/XCUIApplication+Yala.swift")
+        #expect(launcher.contains("args.append(\"-uitest-remote-wipe-notice-never-mounts\")"),
+                "el lanzador del XCUITest no pasa el mismo arg que lee `UITestHooks`: el seam valdría `false` en silencio")
     }
 
     /// **La matriz de readiness cuelga de la CONDICIÓN VIVA, nunca del `@State` del alert.** Es la regla

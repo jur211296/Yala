@@ -79,11 +79,24 @@ struct AppleIDCloseNoticeModifier: ViewModifier {
     }
 
     private func arm() {
-        showSheet = true
+        mountSheet()
         // Un solo bucle vivo: dos togglando el mismo binding reproducirían la carrera que la red existe
         // para impedir.
         netTask?.cancel()
         netTask = Task { @MainActor in await verifyPresentation() }
+    }
+
+    /// **El único sitio que enciende la red visual de la hoja**: el armado y el reintento de la red pasan por
+    /// aquí. Va aparte para que el seam del XCUITest del desarme (`-uitest-apple-id-close-never-mounts`)
+    /// alcance a los dos con un solo `#if DEBUG`: con él puesto, la condición viva sigue encendida y la hoja
+    /// no monta nunca, así que el `onAppear` no dispara y la red agota el cap. Un seam solo en el drenaje no
+    /// bastaría aquí ni en el armado: quien enciende la hoja es este modificador, y el reintento la volvería
+    /// a montar (ticket `presentation-net-desarm-has-no-automated-net`).
+    private func mountSheet() {
+        #if DEBUG
+        guard !UITestHooks.appleIDCloseNoticeNeverMounts else { return }
+        #endif
+        showSheet = true
     }
 
     private func stopPresenting() {
@@ -124,7 +137,7 @@ struct AppleIDCloseNoticeModifier: ViewModifier {
                 // encender la hoja la presentaría con la matriz ya libre.
                 guard AppleIDCloseNoticeLogic.presentationArmed(
                     notice: notice, phase: CloudSessionSignOut.shared.phase) else { return }
-                showSheet = true
+                mountSheet()
                 do {
                     try await Task.sleep(for: RelaunchNetLogic.retryInterval)
                 } catch {

@@ -48,6 +48,8 @@ extension XCUIApplication {
         foreignAccount: String? = nil,
         fakeBeacon: String? = nil,
         appleIDChanged: Bool = false,
+        appleIDCloseNeverMounts: Bool = false,
+        remoteWipeNoticeNeverMounts: Bool = false,
         groupsOutboxPending: Bool = false,
         groupsAttestTerminal: Bool = false,
         fakeAttestSupport: Bool = false,
@@ -146,6 +148,11 @@ extension XCUIApplication {
         // el simulador. Dos redes, cada una para su caso: el nombre de los dos args lo fija un test de paridad
         // con `UITestHooks` (`AppleIDCloseNoticeWiringTests`), y si la SIEMBRA fallara, la app no encola la hoja.
         if appleIDChanged { args.append("-uitest-apple-id-changed") }
+        // Los dos seams del XCUITest del DESARME: la condición viva se enciende y la presentación no monta
+        // nunca. NOMBRADOS por lo mismo que sus vecinos y con un agravante: un typo dejaría el aviso montando
+        // de verdad, y el caso del desarme se quedaría esperando un paywall que solo sale al contestarlo.
+        if appleIDCloseNeverMounts { args.append("-uitest-apple-id-close-never-mounts") }
+        if remoteWipeNoticeNeverMounts { args.append("-uitest-remote-wipe-notice-never-mounts") }
         if groupsOutboxPending { args.append("-uitest-groups-outbox-pending") }
         // El veredicto de App Attest terminal. NOMBRADO por lo mismo que sus vecinos, y con un agravante
         // propio: el test que prueba la AUSENCIA del aviso se lanza con este arg puesto y SIN
