@@ -1,10 +1,10 @@
 ---
 id: entitlement-sync-forzado-es-noop-si-hay-otro-en-vuelo
 status: backlog
-priority: medium
+priority: low
 area: pro
 created: 2026-09-05
-updated: 2026-09-05
+updated: 2026-10-08
 ---
 
 # El Pro de tu cuenta puede no aparecer al entrar, si el arranque estaba mirándolo
@@ -81,3 +81,12 @@ nadie las vuelva a perseguir:
   instante, los repara el `onChange(dataVersion)`.
 - `CloudSessionSignOut`: trata `.coalesced` explícitamente, con reloop de 250 ms. No es hit.
 - `GroupsSyncClient.syncNowFromPush`: reporta `.noData` de más al sistema; nadie lee después.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- Sin cambios desde el 05-sep (ningún commit en `AccountEntitlementService.swift`). El `guard !isWorking` que devuelve `false` con `force` está en `:85-88`, y el reintento del `defer` sigue descartando su `Bool` en `:97`.
+- `handleSignIn()` (`:146-149`) sigue cortando antes de `updateSubscriptionStatus()`. Ahora lo llama `CloudAuthService.swift:342`.
+- El sync de arranque y foreground es `AppBootstrapper.scheduleAccountEntitlementSync()` (`:2779-2785`); el post-compra sigue en `StoreKitManager.swift:208`.
+- Matiz: sin sesión de nube, el sync de arranque sale en el `guard userIDProvider()` (`:84`), antes de marcar `isWorking`. La colisión exige un sync en vuelo con la sesión ya puesta, y eso acota la ventana.
+
+Triage 2026-10-08: abierto · medium → low · el `force` sigue rindiéndose ante `isWorking` (`AccountEntitlementService.swift:85-88`) y `handleSignIn` corta antes de `updateSubscriptionStatus()`; la ventana es estrecha y se repara en el siguiente foreground.

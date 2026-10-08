@@ -1,9 +1,10 @@
 ---
 id: settings-migrate-blocks-a-second-device-before-its-marker
 status: backlog
-priority: medium
+priority: high
 area: "modo-nube, settings"
 created: 2026-09-16
+updated: 2026-10-08
 source: "review adversarial de `settings-migrate-to-cloud-adopts-silently-instead-of-migrating` (Paso 0 · D14: Jürgen, ticket aparte), 2026-09-16"
 ---
 
@@ -78,3 +79,25 @@ basta —`adoptSharedRowsProof` exige además que en cada tabla que sube estén 
 duplicarían—. Y este es ahora el hueco que queda del escenario de ese ticket: el segundo teléfono que YA tenía Yala, con
 el líder parado tras el cutover del servidor, no llega al adopt desde Ajustes.
 
+## Medido en 2.1 (triage 2026-10-08)
+
+- `StorageMigrationIdentityGateLogic.check` (`StorageMigrationIdentityGateLogic.swift:134-171`): una cuenta `complete` que este
+  dispositivo no reclamó sigue en `.blocked(.accountHasPersonalData)`.
+- `edc92f5af` (06-oct) recuerda el rechazo y apaga el botón con el motivo, pero el motivo sigue siendo el mismo texto falso.
+- `high`: con el líder abandonado o reinstalado, nadie puede volver a activar la nube en esa cuenta, y ningún texto lo dice.
+  Los datos siguen a salvo en privado.
+
+## Pregunta para Jürgen (triage 2026-10-08)
+
+Cómo distinguir «es mi otro iPhone» en la puerta de «Migrar a la nube»:
+
+- **A** · Decir la verdad sobre la migración en curso: exponer `migration_in_progress` en `/account/exists` y, con el faro
+  de esta cuenta, decir «Otro de tus dispositivos está llevando tus datos a la nube: termina o reintenta allí».
+- **B** · Reusar la guarda de linaje que ya existe (`MigrationWorkExecutor.lineageSharedLiveRows` / `adoptSharedRowsProof`)
+  para dejar pasar al adopt.
+- **C** · Aceptar el bloqueo y documentarlo.
+
+**Recomendación: A primero.** Cierra la mentira y nombra la salida para los tres casos: marca en camino, líder parado y
+reinstalación. B no ayuda cuando el líder no terminó. Con A, `high`.
+
+Triage 2026-10-08: abierto · medium → high · StorageMigrationIdentityGateLogic.check sigue convirtiendo blockedAccountIsComplete en accountHasPersonalData, y edc92f5af solo recuerda el rechazo; la migración abandonada por su líder sigue sin salida nombrada.

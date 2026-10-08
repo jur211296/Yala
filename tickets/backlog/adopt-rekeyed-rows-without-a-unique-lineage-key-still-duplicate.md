@@ -4,7 +4,7 @@ status: backlog
 priority: medium
 area: "modo-nube, adopt"
 created: 2026-09-25
-updated: 2026-09-25
+updated: 2026-10-08
 source: "ticket `adopt-window-late-leader-identity-export-can-duplicate-after-the-remount` (2026-09-25), residual del Paso 0"
 ---
 
@@ -47,3 +47,11 @@ antiguos, pueden aparecer dos veces en todos tus teléfonos.
 
 - [ ] Medido con el canario si CloudKit le da la razón al líder desplazado y, si se la da, que el adopt no duplique las
       filas sin clave única.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `lineageKeyRebinds` (`Yala/Services/CloudSync/MigrationWorkExecutor.swift:2819-2832`) sigue exigiendo clave en todas las filas vivas de la tabla y unicidad a los dos lados; solo mira filas vivas.
+- `adoptLineageExemptTables` (`:2442`) sigue dejando fuera los tipos de cambio. El canario `cloudRelayIdentityRestored` (`:834`, `:2952`) existe; su lectura de flota no consta en ningún sitio.
+- `84c3c3b3e` (05-oct) añadió otro canario (lo que el espejo sube sin linaje), no el casado de estas filas.
+
+Triage 2026-10-08: abierto · medium → medium · el casado por linaje sigue sin cubrir categorías del usuario, claves repetidas, tipos de cambio ni gemelas borradas; el canario sigue sin leerse.

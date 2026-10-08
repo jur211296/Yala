@@ -4,7 +4,7 @@ status: backlog
 priority: medium
 area: "testing, currency"
 created: 2026-09-15
-updated: 2026-09-26
+updated: 2026-10-08
 source: "gate de `cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes` (2026-09-15): único rojo de la suite completa"
 ---
 
@@ -74,3 +74,12 @@ en el resumen. Dos sospechosos concretos, los dos ya conocidos en `.claude/rules
 
 Mismo test, mismas dos líneas (`:1115`, `:1118`). Suite completa de `YalaTests` tres veces sobre el mismo árbol: **1 roja de 3**
 (8166 tests, 1 fallido con 2 issues), y aislado pasa. El cambio de esa rama no toca Registros ni montos aproximados.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- Sin arreglo. `ApproximateAmountMarkTests.swift` no tiene commits desde el 2026-09-26.
+- El test es `smallBalanceBetweenTwoBigSidesMarks` (`:1091`). Sus dos `#expect` están hoy en `:1116` y `:1118`.
+- La suite solo restaura `SessionState.shared.selectedPeriod`. No fija `includeGroupTransactionsInFeed` ni la divisa preferida, que son los dos sospechosos del ticket.
+- La vecina que escribe el estado sigue sin identificar.
+
+Triage 2026-10-08: abierto · medium → medium · sin arreglo: `RecordsSummaryApproximateMarkTests` (`:1091`) sigue sin fijar las preferencias globales que lee `applyFilters`, y la vecina escritora sigue sin nombre.

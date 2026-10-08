@@ -4,7 +4,7 @@ status: backlog
 priority: medium
 area: qa, cloud
 created: 2026-09-03
-updated: 2026-09-10
+updated: 2026-10-08
 source: aparecido al correr la batería del gateway con credenciales vivas (2026-09-03)
 ---
 
@@ -112,3 +112,11 @@ npx vitest run test/account.goldens.test.ts -t "20. la cuenta congelada"
   está en `qa/cloud/README.md`.
 - **El usuario C no existe** en `auth.users` de staging (comprobado el mismo día). No afecta a este
   test, pero el `.env` lo prometía.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- El test sigue igual en `gateway/test/account.goldens.test.ts:857-862`, sin timeout propio, y `gateway/vitest.config.ts` no fija `testTimeout` (5 s por defecto). No hay commits que lo toquen para esto desde el 10-sep.
+- Sigue citado como «el único rojo» de la batería en `qa/cloud/README.md:1784,1869,1931` y en tres tickets cerrados: un rojo que todos aprenden a ignorar.
+- No corrido en este triage: pide credenciales de staging.
+
+Triage 2026-10-08: abierto · medium → medium · el golden 20 sigue con el timeout de 5 s por defecto y sin medir por qué tarda 9 s; la batería convive con un rojo conocido.

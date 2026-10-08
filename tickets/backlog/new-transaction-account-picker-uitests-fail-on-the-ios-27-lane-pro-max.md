@@ -1,7 +1,7 @@
 ---
 id: new-transaction-account-picker-uitests-fail-on-the-ios-27-lane-pro-max
 status: backlog
-priority: medium
+priority: high
 area: "qa, xcuitest, transactions"
 created: 2026-10-02
 updated: 2026-10-08
@@ -88,3 +88,5 @@ y el «Automation type mismatch … PopUpButton». Como ese diff toca `NewTransa
 `EdgeCasesUITests.test_extremeMinimumAmountSaves`, iPhone 17 Pro de iOS 27.0 (`46287CFE`), en lote de 10 suites (31
 casos, 30 verdes), centinela en 0 (solo en el simulador), mismo «Automation type mismatch … PopUpButton». Ese cambio
 no toca el formulario de registro.
+
+Triage 2026-10-08: abierto · medium → high · lleva seis gates seguidos en rojo en iOS 27.0 con el árbol base; los tres tests siguen buscando `app.buttons` con `account_selector_row_` (`TransactionsCrudUITests.swift:61`) y la red del alta de un registro está ciega en el runtime del gate.

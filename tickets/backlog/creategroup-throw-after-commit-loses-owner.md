@@ -4,7 +4,7 @@ status: backlog
 area: groups
 priority: medium
 created: 2026-08-29
-updated: 2026-08-29
+updated: 2026-10-08
 source: docs/aprendizajes-tecnicos.md
 ---
 
@@ -30,3 +30,10 @@ de transporte». Esa es la parte difícil, y es de diseño.
 ## De dónde sale
 
 Residual medido y no cerrado en [docs/aprendizajes-tecnicos.md#un-gate-por-zona-calculado-sobre-filas-vivas-es-la-herramienta-equivocada-para-un-tombstone-por](../../docs/aprendizajes-tecnicos.md#un-gate-por-zona-calculado-sobre-filas-vivas-es-la-herramienta-equivocada-para-un-tombstone-por).
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `GroupBackendMembershipService.swift:103`: el RPC va primero (`:139`) y `isOwner = true` solo se escribe dentro del `saveUnderOutboxAuthor` posterior (`:165`). Si el RPC lanza tras el commit del servidor, no se escribe nada.
+- El pull no lo repara: `isOwner` es local y `owner_user_id` no está en el manifiesto (`GroupService.swift:838-846`). La única reparación existente es `reconcileServerSideOwnership` (`GroupService.swift:815`), y solo corre tras un `yala_owner_cannot_leave`, es decir, si la persona intenta salir del grupo.
+
+Triage 2026-10-08: abierto · medium → medium · `createGroup` sigue materializando solo tras un RPC con éxito (`GroupBackendMembershipService.swift:103-165`) y el pull no trae `isOwner`; ningún commit lo toca desde el 08-03.

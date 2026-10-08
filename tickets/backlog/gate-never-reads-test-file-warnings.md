@@ -1,10 +1,11 @@
 ---
 id: gate-never-reads-test-file-warnings
 status: backlog
-priority: medium
+priority: low
 area: "qa, gate"
 created: 2026-09-10
 source: "cierre de `beacon-routes-only-never-blocks`, 2026-09-10"
+updated: 2026-10-08
 ---
 
 # El gate no mira los warnings de los ficheros de test, y los de la app los lee de un build incremental
@@ -44,3 +45,11 @@ que los incluya de verdad. Dos piezas, a decidir cómo:
   antes del build y del test. Un `clean build` también sirve, pero cuesta varios minutos por scheme.
 
 Fuera de alcance: los warnings preexistentes de otros ficheros, que el gate ya declara no bloqueantes.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `/gate` §1 (`.claude/commands/gate.md:24-27`) sigue siendo un `build` incremental sin `touch` ni `clean`. El target `build` del scheme no compila `YalaTests`.
+- `/gate` §2 (`:37-42`) sigue filtrando con `grep -E "(Test run with|Test Suite|Test Case|Executed|passed|failed|error:)"`, sin `warning:`.
+- Los dos commits del fichero desde el 10-sep (`c7fa850fe`, `a4454b8e2`) tocan la medición de XCUITest y la cola del simulador, no esto.
+
+Triage 2026-10-08: abierto · medium → low · el §2 del gate sigue filtrando fuera `warning:` (`gate.md:41`) y el §1 sigue leyendo un build incremental; es tooling, y un warning de test no llega al usuario.

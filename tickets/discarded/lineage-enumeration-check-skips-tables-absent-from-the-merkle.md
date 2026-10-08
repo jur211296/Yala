@@ -1,12 +1,14 @@
 ---
 id: lineage-enumeration-check-skips-tables-absent-from-the-merkle
-status: backlog
+status: discarded
 priority: medium
 area: "modo-nube, migración"
 created: 2026-09-24
-updated: 2026-09-24
+updated: 2026-10-08
 source: "ticket `lineage-coverage-blocks-forever-after-a-row-deleted-during-the-wait` (2026-09-24), hallazgo menor medido en su ficha original"
 ---
+
+Why: Discarded 2026-10-08. Premisa falsa: /sync/merkle emite las 16 tablas del manifest, también las vacías con count 0, o falla con 502
 
 # La comprobación de la enumeración solo mira las tablas que trae el Merkle
 
@@ -34,3 +36,9 @@ servidor ya tenía.
 - [ ] Medido qué tablas devuelve `/sync/merkle`.
 - [ ] Si alguna puede faltar: una tabla enumerada o del inventario local ausente del Merkle no da la enumeración por
       completa (o se justifica por qué no hace falta).
+
+## Medido en 2.1 (triage 2026-10-08)
+
+`handleSyncMerkle` (`gateway/src/sync/routes.ts:361-396`) recorre **todas** las `SYNCABLE_ENTITIES` del manifest (`gateway/src/sync/manifest.ts:38`). Escribe `entities[entity] = { count, hash }` para cada una, también con `count: 0`, y si una tabla falla devuelve 502. Así que ninguna tabla del canal puede faltar en `merkle.entities`: el hueco es teórico, como el propio ticket preveía.
+
+Triage 2026-10-08: descartado · medium → — · premisa falsa: `/sync/merkle` emite las 16 tablas del manifest, también las vacías con `count: 0`, o falla con 502 (`gateway/src/sync/routes.ts:361-396`).

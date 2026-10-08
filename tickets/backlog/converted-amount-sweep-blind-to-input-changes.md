@@ -1,9 +1,10 @@
 ---
 id: converted-amount-sweep-blind-to-input-changes
 status: backlog
-priority: medium
+priority: low
 area: "fx, testing"
 created: 2026-09-08
+updated: 2026-10-08
 source: barrido del patrón de bulk-update-account-leaves-converted-amount-stale (2026-09-08)
 ---
 
@@ -80,3 +81,11 @@ modelo que recompute por construcción y prohibir la asignación directa.
       casos deliberados.
 - [ ] Si el elegido es tocar el grupo `money`: comprobar antes qué le pasa al Merkle y al parity del
       manifest.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- Sin barrido gemelo para los inputs: en `YalaTests` solo están `ManualWriteRateQualityTests` y `ManualWriteRateQualityBehaviorTests`. `currency_code` sigue sin grupo (`EntityEmissionMap.swift:180`); el grupo `money` está en `:179` y `:186-189`.
+- El control positivo vivo, `InitialBalanceService.swift:254`, sigue sin recomputar.
+- **No es duplicado de `initial-balance-date-move-leaves-converted-amount-stale` (comprobado en este triage).** Arreglar el barrido detecta ese caso, no lo arregla: el recálculo y su test siguen haciendo falta. Solo la tercera vía (encapsular la escritura del input en un método que recompute) lo arreglaría de paso, y no está elegida. Se quedan los dos: aquel como hijo y control positivo de éste.
+
+Triage 2026-10-08: abierto · medium → low · el barrido sigue mirando solo la escritura de la derivada (`ManualWriteRateQualityTests`) y `currency_code` sigue fuera del grupo `money` (`EntityEmissionMap.swift:180`); es un hueco de detector, y su positivo vivo tiene ticket propio.

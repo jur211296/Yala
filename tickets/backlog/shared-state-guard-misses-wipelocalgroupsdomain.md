@@ -1,9 +1,10 @@
 ---
 id: shared-state-guard-misses-wipelocalgroupsdomain
 status: backlog
-priority: medium
+priority: low
 area: "testing"
 created: 2026-09-11
+updated: 2026-10-08
 source: "review adversarial de `detach-history-replay-can-tombstone-groups-on-next-launch` (lente de contrato)"
 ---
 
@@ -29,3 +30,14 @@ hueco, no un rojo.
 Que el escáner cuente también `wipeLocalGroupsDomain(` — y que se mire si hay un tercer escritor del espejo
 con el mismo perfil antes de cerrar. La aserción del guard tiene que seguir muriendo con su mutante: quitar
 el trait de una suite listada debe dar rojo.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- El escáner de `SharedStateIsolationTests.swift:313-314` cuenta `wipeAllUserData(`, `wipePersonalDataKeepingGroups(` y
+  `wipeLocallyForRemoteWipeSignal(` (las dos últimas son posteriores al ticket). Sigue sin contar `wipeLocalGroupsDomain(`.
+- `DataWipeService.wipeLocalGroupsDomain` (`DataWipeService.swift:642`): `resetSyncState` sigue purgando el espejo real por
+  defecto (`GroupsOutboxMirror()?.purgeAll()`).
+- 14 suites lo llaman. Revisé las que tienen menos `resetSyncState` que llamadas (`CloudSessionRetirementTests`, `WelcomeKeptGroups`,
+  `WelcomePrivateICloudGate`, `FreshStartGroupsLossExit`), y o lo inyectan o llevan el trait: hoy no hay ninguna suite en rojo.
+
+Triage 2026-10-08: abierto · medium → low · El escáner sigue buscando solo wipeAllUserData(, wipePersonalDataKeepingGroups( y wipeLocallyForRemoteWipeSignal(; wipeLocalGroupsDomain sigue purgando el espejo real por defecto, aunque hoy las 14 suites que lo llaman inyectan el seam.

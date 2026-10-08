@@ -4,7 +4,7 @@ status: backlog
 priority: medium
 area: "routing, groups"
 created: 2026-07-11
-updated: 2026-08-26
+updated: 2026-10-08
 source: YalaWiki/Backlog/alerts-huerfanos-detras-de-fullscreencovers.md
 ---
 
@@ -51,3 +51,11 @@ un blocker pegado de una hoja que no se cerró bien retendría la cola entera.
 Diferido D3 de `/review-plan` del fix join intent — plan `~/.claude/plans/abundant-hatching-hippo.md`; ticket relacionado `Bugs/qa_groups-join-intent-reconciler.md`.
 
 migrated from YalaWiki Backlog/alerts-huerfanos-detras-de-fullscreencovers.md @ 1934e8ad
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- **La primera mitad está cubierta.** `ContentViewReadinessLogic.blocker` (`:155-215`) ya retiene la cola del shell mientras haya un cover de la cadena del Welcome o de Grupos. Esto incluye `welcomeFlow`, `groupInviteOnboarding`, `groupsConsent` y `groupsSignIn`. Los alerts de `.contentView` (`.showInviteError`, `.showGroupSyncError`) esperan a que se cierren.
+- `.presentGroupReconnect` ya no existe en el código.
+- **La segunda mitad sigue igual.** `ownModalVisible` (`ContentView.swift:3664-3666`) solo cuenta `showDowngradeResolution`, `showTrialExpired` y `activeMilestone`. La hoja de Ajustes abierta desde una pestaña no entra en la matriz del shell. `PanelSheetState.hasActivePresentation` (`:85`) solo la lee la puerta del Panel.
+
+Triage 2026-10-08: abierto · medium → medium · los covers ya bloquean la cola (`ContentViewReadinessLogic.blocker`), pero las hojas de pestaña, como Ajustes, siguen fuera de `ownModalVisible` (`ContentView.swift:3664`).

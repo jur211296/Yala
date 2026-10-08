@@ -4,6 +4,7 @@ status: backlog
 priority: medium
 area: "modo-nube, onboarding"
 created: 2026-09-10
+updated: 2026-10-08
 source: "review adversarial del paso 4 (`welcome-private-fresh-start-skips-icloud-check`), lente CloudKit"
 ---
 
@@ -57,3 +58,10 @@ los cierres privados nuevos entran en ella (`finalizeSessionExit` arma el boot-w
 `.awaitingRelaunch`, y el cover y la salida al pasar a segundo plano cuelgan de esa fase). Lo que sí deja es
 el precedente de borrar por archivos un store CON espejo tras confirmar el export, y el abort del boot-wipe
 en `.icloud` desarma en vez de reintentar (`SignOutWipeHookTests.baseDeleteFails_inICloudMode_…`).
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- Ha mejorado: tras borrar la zona, `performICloudCorpusWipe` apunta `markICloudCorpusWipeZoneDone()` (`ContentView.swift:2261`). Con el arm puesto, el arranque siguiente reanuda el borrado (`.resume`, `ContentView.swift:2035`), y solo pregunta si ya no quedaba armado.
+- Sigue pendiente lo de fondo. El camino tardío sigue llamando a `DataWipeService.wipeAllUserData` con el espejo adjunto (`ContentView.swift:2288`), y no existe un boot-wipe por archivos antes del mount. La reanudación corre con el espejo ya montado, así que la ventana de re-exportación sigue abierta. Criterios 1 y 2 sin cumplir.
+
+Triage 2026-10-08: abierto · medium → medium · la reanudación al arrancar mitiga la reaparición, pero el borrado tardío sigue borrando filas con el espejo adjunto (`ContentView.swift:2288`) y no hay boot-wipe por archivos.

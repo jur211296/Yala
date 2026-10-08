@@ -1,10 +1,10 @@
 ---
 id: groups-archived-still-accepts-changes
 status: backlog
-priority: medium
+priority: low
 area: groups
 created: 2026-09-06
-updated: 2026-09-06
+updated: 2026-10-08
 source: hallazgo al revisar el copy en groups-archived-group-rejects-join (2026-09-06)
 ---
 
@@ -89,3 +89,16 @@ y eso no lo decide quien implementa.
 
 - [[groups-archived-group-rejects-join]] — el ticket que destapó esto al revisar el copy.
 - [[rejected-member-cold-tap-does-nothing]] — donde se anotó por primera vez que el copy mentía.
+
+## Medido en 2.1 (triage 2026-10-08)
+- `canCurrentUserParticipate` vive hoy en `GroupDetailViewModel.swift:101-106`; sigue sin mirar `isArchived`.
+- `validateGroupIsWritable`: `GroupExpenseService.swift:580` y `GroupService.swift:140`, solo `isMigratedFrozen`.
+- El copy `groups.reconnect.archived.body` (`L10n.Groups.Reconnect.archivedBody`) se usa en un único sitio: `ContentView.swift:1216`, el aviso del join, donde es verdad.
+
+## Pregunta para Jürgen (triage 2026-10-08)
+- **A.** Archivar congela el grupo (molde `isMigratedFrozen`), decidiendo antes qué pasa con las deudas abiertas.
+- **B.** Ajustar el copy para que diga solo lo verdadero (no admite gente nueva, sale de listas y resúmenes). Barato, sin cambiar semántica.
+- **C.** Dejarlo: hoy el copy solo sale donde es verdad.
+- **Recomendación: B** — cierra el riesgo de reuso del copy sin quitarle a nadie la salida de liquidar. Con B, prioridad `low`.
+
+Triage 2026-10-08: abierto · medium → low · Sigue igual: ningún predicado del detalle ni de los servicios mira isArchived; necesita decisión de producto (pregunta añadida, recomendada B: ajustar el copy).

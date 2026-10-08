@@ -1,10 +1,10 @@
 ---
 id: after-session-redesign-review-widgets-siri-applepay-and-web-copy
 status: backlog
-priority: medium
+priority: high
 area: "widgets, intents, web, marketing"
 created: 2026-09-09
-updated: 2026-09-14
+updated: 2026-10-08
 source: "ADR 2026-09-09 «Sesiones — dos ejes» — consecuencias; pedido por Jürgen para DESPUÉS del rediseño"
 ---
 
@@ -88,3 +88,12 @@ Preguntadas una a una antes de soltar la cola autónoma. **Mandan sobre lo escri
 - **El widget en «solo grupos» invita a activar Yala completo.** No se queda vacío ni se convierte en un
   widget de grupos: dice que aún no hay finanzas personales y lleva a activarlas. El hueco se usa como
   puerta de entrada.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- El prerequisito ya está: `shell-derives-from-two-session-axes` está en `done`.
+- Los tres limpiadores siguen colgando solo de cierres. `WidgetDataCache.clearCache()`: `DataWipeService.swift:283,1059`, `CloudSessionSignOut.swift:1519`, `SecondarySessionRetirement.swift:110`. `SiriIntentContextCache.clear()`: solo `AppGroupInboundPurge.swift:67`. `cancelAllNotifications()`: `CloudSessionSignOut.swift:1515`, `SwiftDataConfiguration.swift:559`, `SecondarySessionRetirement.swift:112`.
+- `startFreshAfterRemoteWipeNotice` (`ContentView.swift:1710`) no llama a ninguno ⇒ tras un vaciado remoto siguen el saldo del widget, las subcategorías de Siri y los recordatorios con montos del dueño.
+- El widget en «solo grupos» no invita a activar Yala completo: nada de eso en `YalaWidgets/`.
+
+Triage 2026-10-08: abierto · medium → high · el prerequisito ya está en done y el hueco medido el 14-sep sigue: un vaciado remoto deja widget, Siri y recordatorios del dueño (ContentView.swift:1710).

@@ -148,7 +148,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | cancel-reverse-wipes-the-alert-that-just-appeared | backlog | tickets/backlog/cancel-reverse-wipes-the-alert-that-just-appeared.md |
 | cashflow-scheduled-line-ignores-payment-currency | backlog | tickets/backlog/cashflow-scheduled-line-ignores-payment-currency.md |
 | cashflow-spend-prediction | backlog | tickets/backlog/cashflow-spend-prediction.md |
-| cerrar-total-para-ante-un-check-rojo-que-no-bloquea | backlog | tickets/backlog/cerrar-total-para-ante-un-check-rojo-que-no-bloquea.md |
+| cerrar-total-para-ante-un-check-rojo-que-no-bloquea | discarded | tickets/discarded/cerrar-total-para-ante-un-check-rojo-que-no-bloquea.md |
 | changing-an-account-currency-orphans-its-whole-history | qa | tickets/qa/changing-an-account-currency-orphans-its-whole-history.md |
 | chat-assistant-is-down | discarded | tickets/discarded/chat-assistant-is-down.md |
 | chat-assistant-plants-exchange-rate-one | done | tickets/done/chat-assistant-plants-exchange-rate-one.md |
@@ -166,7 +166,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | chat-rows-sealed-before-the-fix-have-no-repair-path | done | tickets/done/chat-rows-sealed-before-the-fix-have-no-repair-path.md |
 | chat-rows-with-unsigned-amount-have-no-repair-path | done | tickets/done/chat-rows-with-unsigned-amount-have-no-repair-path.md |
 | chat-sends-every-past-turn-to-the-model | backlog | tickets/backlog/chat-sends-every-past-turn-to-the-model.md |
-| ci-allowlist-no-cubre-encargos-ni-qa-scripts | backlog | tickets/backlog/ci-allowlist-no-cubre-encargos-ni-qa-scripts.md |
+| ci-allowlist-no-cubre-encargos-ni-qa-scripts | discarded | tickets/discarded/ci-allowlist-no-cubre-encargos-ni-qa-scripts.md |
 | ci-avisador-de-rojos-advisory-tiene-la-clave-mal | done | tickets/done/ci-avisador-de-rojos-advisory-tiene-la-clave-mal.md |
 | ci-checkout-v4-runs-on-deprecated-node | backlog | tickets/backlog/ci-checkout-v4-runs-on-deprecated-node.md |
 | ci-destination-assumes-a-simulator-that-may-not-exist | done | tickets/done/ci-destination-assumes-a-simulator-that-may-not-exist.md |
@@ -193,7 +193,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | claude-mcp-revoke-from-claude-leaves-supabase-session | backlog | tickets/backlog/claude-mcp-revoke-from-claude-leaves-supabase-session.md |
 | claude-plugin-read-only-mcp-connector | backlog | tickets/backlog/claude-plugin-read-only-mcp-connector.md |
 | clock-ahead-retried-older-change-beats-the-newer-one | backlog | tickets/backlog/clock-ahead-retried-older-change-beats-the-newer-one.md |
-| clock-drift-aborted-drain-lets-the-pull-overwrite-untranslated-edits | backlog | tickets/backlog/clock-drift-aborted-drain-lets-the-pull-overwrite-untranslated-edits.md |
+| clock-drift-aborted-drain-lets-the-pull-overwrite-untranslated-edits | discarded | tickets/discarded/clock-drift-aborted-drain-lets-the-pull-overwrite-untranslated-edits.md |
 | cloud-activation-master-toggle-mirror-never-reaches-the-apple-id-kv | backlog | tickets/backlog/cloud-activation-master-toggle-mirror-never-reaches-the-apple-id-kv.md |
 | cloud-attest-notice-does-not-cover-a-gateway-rejected-token | backlog | tickets/backlog/cloud-attest-notice-does-not-cover-a-gateway-rejected-token.md |
 | cloud-engine-can-start-with-a-reverse-abort-pending | backlog | tickets/backlog/cloud-engine-can-start-with-a-reverse-abort-pending.md |
@@ -228,7 +228,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | cloudsync-witnesses-survive-the-sign-out-wipe | backlog | tickets/backlog/cloudsync-witnesses-survive-the-sign-out-wipe.md |
 | cobertura-ui-diaria-cuelga-del-push | discarded | tickets/discarded/cobertura-ui-diaria-cuelga-del-push.md |
 | cola-b-redesigns-must-hold-up-at-ipad-width | done | tickets/done/cola-b-redesigns-must-hold-up-at-ipad-width.md |
-| completed-mode-escalates-a-second-groups-only-device | backlog | tickets/backlog/completed-mode-escalates-a-second-groups-only-device.md |
+| completed-mode-escalates-a-second-groups-only-device | discarded | tickets/discarded/completed-mode-escalates-a-second-groups-only-device.md |
 | consecutive-wipes-whole-convergence-ignores-the-second-division | backlog | tickets/backlog/consecutive-wipes-whole-convergence-ignores-the-second-division.md |
 | converted-amount-sweep-blind-to-input-changes | backlog | tickets/backlog/converted-amount-sweep-blind-to-input-changes.md |
 | corpus-de-test-de-staging-crece-sin-limite | backlog | tickets/backlog/corpus-de-test-de-staging-crece-sin-limite.md |
@@ -494,7 +494,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | ipad-list-highlights-the-open-row | backlog | tickets/backlog/ipad-list-highlights-the-open-row.md |
 | ipad-multiple-windows-share-one-navigation-state | done | tickets/done/ipad-multiple-windows-share-one-navigation-state.md |
 | ipad-narrowing-the-window-on-groups-crashes-the-app | done | tickets/done/ipad-narrowing-the-window-on-groups-crashes-the-app.md |
-| ipad-native-app | backlog | tickets/backlog/ipad-native-app.md |
+| ipad-native-app | done | tickets/done/ipad-native-app.md |
 | ipad-real-multiwindow-with-per-scene-state | done | tickets/done/ipad-real-multiwindow-with-per-scene-state.md |
 | ipad-records-empty-detail-half-hidden-with-chat-open | backlog | tickets/backlog/ipad-records-empty-detail-half-hidden-with-chat-open.md |
 | ipad-reports-and-search-get-a-readable-width | backlog | tickets/backlog/ipad-reports-and-search-get-a-readable-width.md |
@@ -533,7 +533,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | leader-displaced-after-the-cutover-pushes-its-residual-in-the-reconcile | done | tickets/done/leader-displaced-after-the-cutover-pushes-its-residual-in-the-reconcile.md |
 | leaving-and-reentering-restore-renews-the-hard-cap | done | tickets/done/leaving-and-reentering-restore-renews-the-hard-cap.md |
 | lineage-coverage-blocks-forever-after-a-row-deleted-during-the-wait | done | tickets/done/lineage-coverage-blocks-forever-after-a-row-deleted-during-the-wait.md |
-| lineage-enumeration-check-skips-tables-absent-from-the-merkle | backlog | tickets/backlog/lineage-enumeration-check-skips-tables-absent-from-the-merkle.md |
+| lineage-enumeration-check-skips-tables-absent-from-the-merkle | discarded | tickets/discarded/lineage-enumeration-check-skips-tables-absent-from-the-merkle.md |
 | list-column-too-narrow-for-accessibility-text-on-a-turned-pro-max | done | tickets/done/list-column-too-narrow-for-accessibility-text-on-a-turned-pro-max.md |
 | live-anchor-breakdown-doubles-the-approximate-glyph | backlog | tickets/backlog/live-anchor-breakdown-doubles-the-approximate-glyph.md |
 | local-wipes-other-than-sign-out-do-not-look-at-an-in-flight-migration | backlog | tickets/backlog/local-wipes-other-than-sign-out-do-not-look-at-an-in-flight-migration.md |
@@ -558,7 +558,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | navigation-uitests-look-for-the-iphone-tab-bar-on-ipad | backlog | tickets/backlog/navigation-uitests-look-for-the-iphone-tab-bar-on-ipad.md |
 | needsrelaunch-hides-the-groups-section | done | tickets/done/needsrelaunch-hides-the-groups-section.md |
 | neutral-boot-hands-owner-prefs-to-whoever-signs-in-next | done | tickets/done/neutral-boot-hands-owner-prefs-to-whoever-signs-in-next.md |
-| neutral-mount-wiring-scan-is-red-on-2-1 | backlog | tickets/backlog/neutral-mount-wiring-scan-is-red-on-2-1.md |
+| neutral-mount-wiring-scan-is-red-on-2-1 | done | tickets/done/neutral-mount-wiring-scan-is-red-on-2-1.md |
 | new-transaction-account-picker-uitests-fail-on-the-ios-27-lane-pro-max | backlog | tickets/backlog/new-transaction-account-picker-uitests-fail-on-the-ios-27-lane-pro-max.md |
 | nightly-ui-suite-hits-its-110-minute-cap-every-night | backlog | tickets/backlog/nightly-ui-suite-hits-its-110-minute-cap-every-night.md |
 | no-hay-seed-con-miembro-rechazado | backlog | tickets/backlog/no-hay-seed-con-miembro-rechazado.md |
@@ -623,7 +623,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | push-client-ignores-yala-kind | backlog | tickets/backlog/push-client-ignores-yala-kind.md |
 | push-unexpected-4xx-is-told-to-try-again-later | backlog | tickets/backlog/push-unexpected-4xx-is-told-to-try-again-later.md |
 | qa-cloud-readme-sin-entradas-g13-04-y-g13-05 | backlog | tickets/backlog/qa-cloud-readme-sin-entradas-g13-04-y-g13-05.md |
-| qa-de-producto-toca-el-simulador-sin-cola | backlog | tickets/backlog/qa-de-producto-toca-el-simulador-sin-cola.md |
+| qa-de-producto-toca-el-simulador-sin-cola | discarded | tickets/discarded/qa-de-producto-toca-el-simulador-sin-cola.md |
 | qa-folder-keeps-evidence-of-tickets-that-already-left | backlog | tickets/backlog/qa-folder-keeps-evidence-of-tickets-that-already-left.md |
 | qa-guion-tanda-no-cubre-17-tickets | backlog | tickets/backlog/qa-guion-tanda-no-cubre-17-tickets.md |
 | qa-no-puede-crear-cuenta-en-otra-divisa | done | tickets/done/qa-no-puede-crear-cuenta-en-otra-divisa.md |

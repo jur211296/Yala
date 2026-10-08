@@ -1,10 +1,11 @@
 ---
 id: groups-pull-cuesta-cinco-viajes-por-grupo
 status: backlog
-priority: medium
+priority: low
 area: "backend, sync"
 created: 2026-09-08
 source: medido al instrumentar los goldens de staging (goldens-de-staging-solo-pasan-a-trozos, 2026-09-08)
+updated: 2026-10-08
 ---
 
 # El pull de Grupos cuesta 5 peticiones por grupo, haya o no algo que traer
@@ -77,3 +78,9 @@ tiene que resolver eso, no ignorarlo.
 - [ ] Sigue sin haber deltas perdidos por truncación: el caso que descartó el `in.(...)` se prueba,
       no se argumenta.
 - [ ] Medido antes y después con el mismo método (contar peticiones, no estimarlas).
+
+## Medido en 2.1 (triage 2026-10-08)
+- `handleGroupsPull` en `gateway/src/groups/routes.ts:431`; `fetchGroupPage` (`:491-517`) lanza los 5 RPC `groups_pull_rows_<tabla>` por grupo, con el cursor solo como `p_after_seq`.
+- Sin commits en ese fichero desde el 2026-09-08. Baja a `low`: ningún usuario real se acerca a 200 grupos.
+
+Triage 2026-10-08: abierto · medium → low · handleGroupsPull sigue haciendo 1 + 5×grupos llamadas por pull; ningún usuario real está cerca del techo, así que no es urgente.

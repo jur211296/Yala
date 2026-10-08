@@ -4,7 +4,7 @@ status: backlog
 priority: medium
 area: qa
 created: 2026-09-02
-updated: 2026-09-10
+updated: 2026-10-08
 ---
 
 # Hay 19 señales de vigilancia que no las emite nadie, y dos tickets las usan como prueba de que todo va bien
@@ -275,3 +275,11 @@ importa más que antes, no menos.
 - No se ha auditado el lado del dashboard de Analytics Engine: **infiero** que un slug sin emisor no
   produce filas, pero no he mirado si alguna query guardada los consulta y devuelve un panel vacío que
   alguien esté leyendo como verde.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- Script del propio ticket, hoy: 11 canarios huérfanos (`MetricsService.swift:44`, `:96-103`, `:298-299`) y los 8 breadcrumbs de `GroupsSyncBreadcrumb.swift`; las coordenadas de los canarios se movieron (+26).
+- Ya hecho: el criterio 1 está tachado (`groups-join-intent-reconciler.md:179`); el paso 3 del ticket de Siri está marcado INEJECUTABLE (`tickets/done/storekit-appgroup-siri-pro-gate.md:117`); el docblock de `MigrationWorkExecutor.swift:160` ya dice que `cloudReverseDegradedNoMap` no existe.
+- Sigue: `qa/coverage-index.json` cita aún `cloudkitGroupEnqueueDroppedNoEngine`, `cloudkitGroupSyncPromotedToAuto` y `groupsIdentityBootMismatch` (×2) como cobertura; los 4 `groupsCk*` sin aviso; `intentFailed` sin reponer; `cloudReverseDegradedNoMap` sin emitir.
+
+Triage 2026-10-08: abierto · medium → medium · re-medido con su script: siguen 11 canarios y 8 breadcrumbs sin emisor, el índice de cobertura los cita y el gate Pro del atajo sigue sin señal (`QuickExpenseIntent.swift:209`).

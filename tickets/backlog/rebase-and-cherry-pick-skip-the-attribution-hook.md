@@ -1,9 +1,10 @@
 ---
 id: rebase-and-cherry-pick-skip-the-attribution-hook
 status: backlog
-priority: medium
+priority: low
 area: "proceso"
 created: 2026-09-09
+updated: 2026-10-08
 source: lente adversarial al cerrar el-hook-que-prohibe-atribuir-a-una-ia-no-corre-en-este-repo
 ---
 
@@ -60,3 +61,20 @@ o `git merge --abort` a mano. Y un `--fixup`/`--squash` cuyo commit destino teng
 disparador en el ASUNTO es incorregible —git copia ese asunto y no te deja editarlo—, así
 que la única salida sería `--no-verify`. Hoy es latente: ninguno de los 3348 asuntos del
 historial dispara.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- Sigue sin cubrirse. `.githooks` solo tiene `commit-msg` y `pre-commit`.
+- El paso «Candado anti-atribución» de `.github/workflows/qa.yml:82-83` corre el banco del hook (`qa/scripts/commit-msg-test.sh`). No escanea los commits del PR.
+- Contexto nuevo: desde ADR-054 de casa, los PR se mergean en servidor por auto-merge. Ese camino no lo ve ningún hook local.
+- Medido: 0 commits con atribución en `origin/2.1` desde el 2026-09-10.
+
+## Pregunta para Jürgen (triage 2026-10-08)
+
+- **A** (recomendada): la opción 2, un check de CI sobre los commits del PR (autor y mensaje). Es el único que ve el auto-merge del servidor.
+- **B**: la opción 1, `pre-push` local, con el riesgo de falsos positivos de ADR-009.
+- **C**: nada, y cerrar el ticket. Lleva un mes con 0 fugas.
+
+Con A, la prioridad es `low`.
+
+Triage 2026-10-08: abierto · medium → low · `qa.yml:82` solo prueba el banco del hook y no escanea los commits del PR; 0 fugas medidas en 2.1 desde el 2026-09-10.

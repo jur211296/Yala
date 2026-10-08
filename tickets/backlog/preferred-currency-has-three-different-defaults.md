@@ -4,6 +4,7 @@ status: backlog
 priority: medium
 area: "currency, preferences"
 created: 2026-09-09
+updated: 2026-10-08
 source: hallazgo de camino de `qa-no-puede-crear-cuenta-en-otra-divisa` (2026-09-09)
 ---
 
@@ -65,3 +66,25 @@ entorno. **Esa coincidencia es justo lo que lo hace invisible aquí y visible fu
   `detectCurrencyFromRegion(regionCode:)` ya es inyectable, así que no hace falta tocar el entorno.
 - Decidir cuál es el default correcto es parte del ticket, y no es obvio: la región es más útil para
   un usuario nuevo, y un literal es más predecible para el reparador de tasas.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- Siguen los cuatro defaults:
+  - `CurrencyUtils.swift:829` → región (`defaultCode`, `:820`).
+  - `AppPreferences.swift:81` → `.pen`.
+  - `ExchangeRateService.swift:693` → `"PEN"`.
+  - `WidgetDataCache.swift:350` → `"USD"`.
+- La quinta dimensión se cerró: 1cf0030b1 dejó un solo dominio de preferencias, y los cuatro leen `UserDefaults.standard`.
+- «Empiezo de cero» sigue borrando la key (`Yala/Utils/DataWipeService.swift:1217`).
+
+## Pregunta para Jürgen (triage 2026-10-08)
+
+¿Qué divisa preferida vale si la key falta?
+
+- **A** (recomendada): la de la región del dispositivo, que es lo que ya usa `CurrencyDefaults.currentPreferred`, el lector que decide la conversión persistida. Los otros tres la llaman.
+- **B**: PEN literal en los cuatro.
+- **C**: USD literal en los cuatro.
+
+Con A, la prioridad es `medium`.
+
+Triage 2026-10-08: abierto · medium → medium · siguen cuatro defaults distintos (región / `.pen` / `"PEN"` / `"USD"` en `WidgetDataCache.swift:350`); solo se cerró lo del dominio, en 1cf0030b1.

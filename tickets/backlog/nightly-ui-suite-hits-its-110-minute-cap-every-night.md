@@ -1,7 +1,7 @@
 ---
 id: nightly-ui-suite-hits-its-110-minute-cap-every-night
 status: backlog
-priority: medium
+priority: high
 area: testing
 created: 2026-10-07
 updated: 2026-10-08
@@ -55,3 +55,9 @@ tenía vetado.
   limpieza de procesos huérfanos tras el corte gastó otros ~3,5 min. Sin ese rojo el job habría acabado hacia los 146
   min: dentro, pero con 4 min de margen. Ese margen es el problema de este ticket: cualquier rojo de unit con
   reintentos cancela el job de la nocturna.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+`gh run list --workflow qa.yml --event schedule --limit 10`. El paso de UI duró 110 min en las siete últimas nocturnas, del 2 al 8-oct, y 102, 100 y 85 min en las tres anteriores. La de hoy (37802106095): 16:12:20 → 18:02:34, y el job 146,7 min frente a un tope de 150. Dos de las diez acabaron `cancelled` (7-oct y 2-oct). El tope sigue en `qa.yml:485` (`timeout-minutes: 110`) con `-retry-tests-on-failure` (`:494`).
+
+Triage 2026-10-08: abierto · medium → high · las diez últimas nocturnas siguen agotando el tope del paso de UI (la de hoy, 37802106095, 110 min y el job a 146,7 de 150), así que las suites del final del alfabeto, `TransactionsCrudUITests` incluida, no corren en ningún CI.

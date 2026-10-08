@@ -1,9 +1,10 @@
 ---
 id: currency-change-service-tests-mirror-the-logic
 status: backlog
-priority: medium
+priority: low
 area: "testing, currency"
 created: 2026-09-07
+updated: 2026-10-08
 source: hallazgo de camino en fx-manual-writes-seal-approximate-as-final (2026-09-07)
 ---
 
@@ -49,3 +50,5 @@ El molde está escrito y funciona — tres casos, 0,08 s.
       pone alguno en rojo. Hoy no pone ninguno.
 - [ ] El caso del progreso llama al servicio con su `onProgress` real, o se borra: un bucle `% 20` en
       un test no prueba nada del código de producción.
+
+Triage 2026-10-08: abierto · medium → low · `CurrencyChangeServiceTests.swift` sigue copiando la derivación (`:19`) y el `% 20` (`:83`) sin llamar al servicio; es un hueco solo de tests, y el molde que sí lo llama ya existe (`ManualWriteRateQualityBehaviorTests.swift:190`).

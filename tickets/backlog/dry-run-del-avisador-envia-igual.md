@@ -1,10 +1,11 @@
 ---
 id: dry-run-del-avisador-envia-igual
 status: backlog
-priority: medium
+priority: low
 area: "tooling, avisos"
 created: 2026-09-09
 source: medido al cerrar `qa-no-puede-crear-cuenta-en-otra-divisa` (2026-09-09)
+updated: 2026-10-08
 ---
 
 # `--dry-run` no simula nada si va con `--avisar`: manda el aviso de verdad
@@ -51,3 +52,11 @@ contrato está escrito y el orden de los `if` lo incumple.
 - Ojo al arreglarlo: `--probar` (`:1961`) cae en la misma cadena y detrás de `--avisar`, así que
   tiene el mismo problema. Los dos se arreglan igual — mover la comprobación de los dos flags
   **antes** del despacho por modo, o hacer que `modo_avisar` los respete.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `~/.claude/hooks/avisar_grok.py` (fichero del 7-oct): `main()` sigue comprobando `--avisar` (`:2162`) antes que `--dry-run` (`:2164`) y `--probar` (`:2166`).
+- `modo_avisar` (`:1991`) no mira `--dry-run` ni `--probar` en ningún punto: compone y llama a `despachar` (`:2076`).
+- La ayuda sigue prometiendo «NO envia» (`:185`). Los tres commits del fichero desde el 09-sep (`9cc2a14`, `30ec1b1`, `4ef9a98` en el git de `~/.claude`) no tocan el orden.
+
+Triage 2026-10-08: abierto · medium → low · `main()` de `avisar_grok.py` sigue despachando `--avisar` (`:2162`) antes que `--dry-run` (`:2164`); tooling de `~/.claude`, sin datos en riesgo.

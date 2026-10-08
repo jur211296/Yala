@@ -4,6 +4,7 @@ status: backlog
 priority: medium
 area: "groups, settings"
 created: 2026-09-27
+updated: 2026-10-08
 source: "review adversarial de `wipe-data-keeps-groups-but-drops-their-bridged-rows` (2026-09-27, lentes de momento y de reglas); inferido por lectura, NO reproducido"
 ---
 
@@ -42,3 +43,13 @@ Mientras tanto hay una ventana (inferida): si en el origen se aprueba el borrado
 llegue el borrado de su pata virtual, la transacción real (D7, sin `splitSettlementID`) sobrevive; el receptor ve la
 liquidación sin ninguna pata, la re-puentea y el Inbox vuelve a pedir ese pago. Converger en el mismo proceso
 (`GroupsBridgeRestoreConvergence.runAfterActivation`, que ya espera la quiescencia) cerraría la mayor parte.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `DataWipeService.wipePersonalDataKeepingGroups` marca la convergencia pendiente (`DataWipeService.swift:338-339`).
+- El único que la ejecuta es `retryPendingBridges` (`AppBootstrapper.swift:1795`), en `bootstrap()` y en `rebootstrapAfterSwap`, y «Vaciar datos» no hace swap de container.
+- `runAfterActivation` (`GroupsBridgeRestoreConvergence.swift:198`) ya espera la quiescencia, pero solo lo llama `FullModeActivationView.swift:463`.
+- Recomendación técnica: llamarlo al terminar el onboarding que sigue al vaciado.
+- Desde el 2026-09-28 (`8993e4ce5`, `ae204458d`, `1c81703ff`) el receptor tardío corta por la hora de la señal y reparte lo que repone. La nota sobre el receptor no se re-midió: su convergencia también espera a un arranque en frío.
+
+Triage 2026-10-08: abierto · medium → medium · DataWipeService marca la convergencia pendiente, pero solo la ejecuta el arranque (retryPendingBridges); «Vaciar datos» no pasa por un swap de container y nadie converge en caliente

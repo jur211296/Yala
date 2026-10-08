@@ -1,9 +1,10 @@
 ---
 id: weekday-bar-daily-average-unmarked
 status: backlog
-priority: medium
+priority: low
 area: "currency, ui"
 created: 2026-09-09
+updated: 2026-10-08
 source: device-QA de fx-approximate-mark-missing-on-secondary-surfaces (2026-09-09)
 ---
 
@@ -70,3 +71,12 @@ active.
 - [[fx-approximate-mark-missing-on-secondary-surfaces]] — la tanda que cubrió las otras superficies.
 - [[fx-per-bucket-approximate-signal-missing]] — por qué los siete días se quedan sin marca.
 - [[pie-header-total-unmarked]] — el otro agregado de período que quedó sin marca, hallado a la vez.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- El total se llama hoy `weeklyAverage` (`WeekdayBarPanelWidget.swift:29-31`, antes `weekTotal`). Su `AmountText` (`:36`) sigue sin `isEstimate:`.
+- Los siete buckets (`:137`) siguen sin marca, y eso es lo correcto.
+- Ningún commit tocó el fichero desde el 2026-09-09.
+- `pie-header-total-unmarked` es otra superficie, sigue abierto y no es un duplicado.
+
+Triage 2026-10-08: abierto · medium → low · El AmountText del total semanal sigue sin isEstimate; el gemelo pie-header-total-unmarked es otra superficie y sigue abierto

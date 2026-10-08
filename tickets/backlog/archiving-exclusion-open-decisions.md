@@ -4,7 +4,7 @@ status: backlog
 priority: medium
 area: "accounts, panel, subscription"
 created: 2026-10-03
-updated: 2026-10-03
+updated: 2026-10-08
 source: hallazgos de archived-accounts-still-count-in-the-panel-total, 2026-10-03
 ---
 
@@ -34,3 +34,20 @@ migración que las excluya movería datos de todos los usuarios en silencio.
 ## Qué hace falta
 
 Una respuesta por punto. Con la del 1 se cierran casi solas la 2 y la 3.
+
+## Pregunta para Jürgen (triage 2026-10-08)
+
+Con la respuesta al punto 1 se cierran casi solas la 2 y la 3.
+
+- **A.** Archivar quita la cuenta del saldo y del carrusel, pero conserva su historial en Registros y Estadísticas. «Archivada» deja de sumar por sí sola, y archivar deja de encender «Excluir». El downgrade y las archivadas de antes del 03-oct quedan coherentes sin migrar nada.
+- **B.** Archivar excluye de todo (lo que hace hoy el formulario). El downgrade también excluye, y al volver a Pro re-incluye las suyas. Se migran las archivadas viejas.
+- **C.** Dejarlo como está.
+
+**Recomendación: A.** Una tarjeta cerrada no debería borrar «Gastos 2025», y A no mueve datos de nadie en silencio. Con A la prioridad es `medium`.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `DowngradeResolutionSheet.archiveExcessItems` (`Yala/App/Views/Subscription/DowngradeResolutionSheet.swift:313-318`) sigue archivando sin excluir.
+- Registros sigue descartando las cuentas excluidas (`Yala/App/ViewModels/RecordsViewModel.swift:290`, `:354`). No hay migración de las archivadas de antes del 03-oct.
+
+Triage 2026-10-08: abierto · medium → medium · las tres preguntas siguen sin respuesta; el downgrade archiva sin excluir (DowngradeResolutionSheet.swift:313) y Registros oculta las excluidas.

@@ -1,9 +1,10 @@
 ---
 id: unit-test-suites-leave-orphan-userdefaults-domains
 status: backlog
-priority: medium
+priority: low
 area: "testing, disco, simulador"
 created: 2026-09-13
+updated: 2026-10-08
 source: "medido de camino en el PR-B del paso 12 (`shell-derives-from-two-session-axes`), diagnosticando ocho XCUITest rojos"
 ---
 
@@ -48,3 +49,11 @@ Medido el 2026-09-13 en el contenedor de `com.jurgenschmidt.yala.dev` del iPhone
       `git grep` de arriba: las dos cuentas tienen que coincidir.
 - [ ] Tras una corrida completa de `YalaTests`, el contenedor del simulador no gana ficheros en
       `Library/Preferences`. Medido, no supuesto.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- Re-medido con el mismo `git grep` del ticket: **59** ficheros de `YalaTests/` crean `UserDefaults(suiteName:)` y **25** llaman a `removePersistentDomain`. **35** crean suites sin destruirlas. Al abrirse el ticket eran 45 y 17: el hueco crece.
+- `AppPreferencesTests.swift:27`, el caso medido, sigue sin destruir su suite.
+- El contenedor del simulador no se re-midió: el triage no lo toca.
+
+Triage 2026-10-08: abierto · medium → low · El hueco creció: 59 ficheros de YalaTests crean UserDefaults(suiteName:), 25 llaman a removePersistentDomain y 35 crean suites sin destruirlas (eran 45/17)

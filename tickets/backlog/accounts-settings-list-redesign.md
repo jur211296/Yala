@@ -4,7 +4,7 @@ status: backlog
 priority: medium
 area: "accounts, settings, ui"
 created: 2026-10-03
-updated: 2026-10-03
+updated: 2026-10-08
 source: diseño aprobado por Jürgen el 2026-10-03 (lienzo «Cuentas del Panel — propuestas», página «Rediseño de cuentas», pantallas 4 y 6)
 ---
 
@@ -28,3 +28,10 @@ Segunda entrega del rediseño de cuentas (la primera es `panel-accounts-redesign
 
 - El subtítulo de Archivadas no puede decir «no suman al total» sin decidir `archived-accounts-still-count-in-the-panel-total`. Decidido el 2026-10-03: suma lo que no está excluido; archivar desde el formulario excluye, pero una archivada re-incluida (o archivada antes de ese día, o por el downgrade) suma. El subtítulo no puede afirmar «no suman» a secas.
 - Reordenar se queda (botón de la toolbar, como hoy).
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- La fila sigue enseñando el número de cuenta en lugar del nombre si lo hay (`Yala/App/Views/Settings/AccountsSettingsListView.swift:293-296`).
+- Tocar sigue abriendo `AccountFormView` directo (`:104`, `:109`), no `AccountDetailSheet`. No hay filas de colecciones, del sistema ni de archivadas con lote. El fichero no ha cambiado desde el 03-oct.
+
+Triage 2026-10-08: abierto · medium → medium · nada de la segunda entrega está hecho: la fila prioriza el número y tocar abre el formulario (AccountsSettingsListView.swift:293-296).

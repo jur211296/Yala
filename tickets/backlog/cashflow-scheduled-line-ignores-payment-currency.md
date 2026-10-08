@@ -29,3 +29,5 @@ como si fueran soles.
 
 - [ ] El flujo de caja convierte el importe de un pago programado a la divisa en la que pinta el plan.
 - [ ] Test con un pago en USD y preferida PEN que discrimine (con tasa ≠ 1), con control rojo.
+
+Triage 2026-10-08: abierto · medium → medium · creado hoy y vivo: `estimateScheduled` devuelve `abs(payment.amount)` sin mirar `currencyCode` (`CashFlowProjectionCalculator.swift:477`).

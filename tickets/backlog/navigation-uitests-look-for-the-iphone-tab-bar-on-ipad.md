@@ -1,9 +1,9 @@
 ---
 id: navigation-uitests-look-for-the-iphone-tab-bar-on-ipad
 status: backlog
-priority: medium
+priority: low
 area: "qa, ipad, navigation"
-updated: 2026-09-27
+updated: 2026-10-08
 created: 2026-09-27
 source: "fase 0 del carril adaptativo (ipad-multiple-windows-share-one-navigation-state), 2026-09-27"
 ---
@@ -47,3 +47,5 @@ suites.
 
 - [[ipad-multiple-windows-share-one-navigation-state]] — donde se midió.
 - [[ipad-sidebar-and-list-detail-for-records-and-planning]] — la fase que más lo necesita.
+
+Triage 2026-10-08: abierto · medium → low · no hay helper de pestañas en `YalaUITests/Support/XCUIApplication+Yala.swift`, y `tabBars` ha crecido de 19 usos en 16 ficheros a 32 usos en 19.

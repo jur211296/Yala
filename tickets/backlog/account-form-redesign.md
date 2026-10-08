@@ -4,7 +4,7 @@ status: backlog
 priority: medium
 area: "accounts, ui"
 created: 2026-10-03
-updated: 2026-10-03
+updated: 2026-10-08
 source: diseño aprobado por Jürgen el 2026-10-03 (lienzo «Cuentas del Panel — propuestas», página «Rediseño de cuentas», pantallas 5 y 8)
 ---
 
@@ -29,3 +29,10 @@ Tercera entrega del rediseño de cuentas, **después** de `account-form-as-mediu
   monta: toda cuenta nueva sale con `AppConstants.defaultColorHex`. El icono tampoco se elige: sale del tipo al
   guardar (`AccountFormViewModel.swift:636`).
 - «Balance inicial» (`account.initialBalance`) es el saldo de hoy al crear; el nombre confunde.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `colorSection` sigue definida y sin montar: su única aparición es la declaración (`Yala/App/Views/Accounts/AccountFormView.swift:669`). No hay vista previa de la tarjeta ni «Más opciones».
+- Desde el 03-oct el formulario solo cambió por `b8a371f9d` (archivar excluye) y `4ec6f0c5e` (PR #400, divisas): ninguno es esta entrega.
+
+Triage 2026-10-08: abierto · medium → medium · ninguna pieza de la tercera entrega está hecha y el color sigue sin poder elegirse (colorSection sin montar, AccountFormView.swift:669).

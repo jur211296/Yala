@@ -1,9 +1,10 @@
 ---
 id: sync-runtime-safety-note-assumes-every-prod-device-is-icloud
 status: backlog
-priority: medium
+priority: very-low
 area: modo-nube
 created: 2026-09-10
+updated: 2026-10-08
 source: "medido el 2026-09-10 al alinear el percent de la elección nube"
 ---
 
@@ -51,3 +52,11 @@ de rollout.
 ## Relacionados
 
 - `wrangler-prod-onboarding-choice-percent-drift`
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- El texto sigue intacto y se movió: el punto (b) está en `CloudSyncFlags.swift:588`, dentro del docblock de `syncRuntimeEnabled` (`:585-593`).
+- Ninguno de los commits de `CloudSyncFlags.swift` desde el 2026-09-10 reescribe ese bloque.
+- Por qué very-low: es un comentario de mantenimiento. El comportamiento es el correcto.
+
+Triage 2026-10-08: abierto · medium → very-low · El punto (b) del docblock de syncRuntimeEnabled sigue diciendo que todos los devices de producción son .icloud; es un comentario, no un fallo de código

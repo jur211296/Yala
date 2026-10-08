@@ -1,10 +1,10 @@
 ---
 id: storage-mode-is-a-proxy-for-the-mirror-in-the-wipe-signal
 status: backlog
-priority: medium
+priority: low
 area: "sesiones, modo-nube"
 created: 2026-09-14
-updated: 2026-09-14
+updated: 2026-10-08
 source: "review adversarial de `remote-wipe-signal-honored-by-any-session`, lente de caminos y alcance"
 ---
 
@@ -55,3 +55,11 @@ y se cierra con la misma decisión.
 - [ ] Decidido si el eje del vaciado remoto lee el mount, el modo, o los dos.
 - [ ] Si lee el mount: declara su seam de test, con el default en la verdad del host (`false`).
 - [ ] Una sesión privada en la ventana del cutover no pierde su señal de vaciado.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `wipeSignalsAppleIDDevices` sigue en `DestructiveScopeLogic.swift:179-181`, con `confirmedPrivateSession && storageMode == .icloud`. `wipeSignalObeyedByThisSession` (`:228-230`) delega en él.
+- `StorageModePersistence.isCloudWithMirrorOn` (`CloudSyncFlags.swift:138`) sigue declarando legítima la ventana con `.cloud` y el espejo vivo. `writeCloudArmed` se escribe en `BornCloudSignUpService.swift:377` y `MigrationWorkExecutor.swift:1405/2407`.
+- Por qué low: el espejo baja los borrados igual, así que no hay datos en riesgo. Lo que se pierde es el reseteo de preferencias, el aterrizaje y el aviso, y solo dentro de una ventana transitoria del cutover. El gemelo que da lo perdido por definitivo es `remote-wipe-signal-is-burned-even-when-the-session-ignores-it`, que sigue abierto.
+
+Triage 2026-10-08: abierto · medium → low · Los dos extremos de la señal siguen decidiendo con storageMode == .icloud y no con el montaje del espejo; ningún commit cambió el eje después de a64e02e76 y 21477f598 (2026-09-14), que el ticket ya describe

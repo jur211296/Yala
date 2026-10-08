@@ -4,7 +4,7 @@ status: backlog
 priority: medium
 area: groups
 created: 2026-07-01
-updated: 2026-08-26
+updated: 2026-10-08
 source: YalaWiki/Backlog/groups-busqueda-interna.md
 ---
 
@@ -84,3 +84,9 @@ Alimentado por `.searchable(text: $viewModel.searchText, ...)` en `GroupsContain
 - **Categoría/subcategoría vía bridge es inconsistente entre miembros** (per-usuario, no siempre poblada) — si se incluye en el matching, documentar que dos miembros del mismo grupo podrían obtener resultados de búsqueda distintos para el mismo gasto según si SU bridge personal tiene la subcategoría resuelta. Puede ser aceptable, pero vale la pena decidirlo consciente, no por accidente.
 
 migrated from YalaWiki Backlog/groups-busqueda-interna.md @ 1934e8ad
+
+## Medido en 2.1 (triage 2026-10-08)
+- `GroupsViewModel.filteredGroups` → `GroupsViewModel.swift:101-106` (solo nombre); `.searchable` solo en `GroupsContainerView.swift:163`.
+- `GroupRecordsView.swift` sigue sin filtro: `groupedByDate` en `:408`.
+
+Triage 2026-10-08: abierto · medium → medium · La búsqueda de Grupos sigue siendo solo por nombre de grupo; GroupRecordsView no tiene .searchable ni filtro.

@@ -5,6 +5,7 @@ priority: medium
 area: currency
 created: 2026-09-09
 source: hallazgo de camino en fx-approximate-mark-missing-on-secondary-surfaces (2026-09-09)
+updated: 2026-10-08
 ---
 
 # El saldo de un mes cerrado nunca avisa de que es aproximado
@@ -57,3 +58,11 @@ alimenta a la vez la curva y el KPI, y tocarlo es cirugía en núcleo con suite 
   tenía señal. Éste es el trozo que exigía producirla en el núcleo.
 - `fx-manual-writes-seal-approximate-as-final` (high) — por qué la señal se enciende menos de lo que
   debería en origen.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `TrendDataProcessor.fillBalanceBuckets` (`TrendDataProcessor.swift:296`) sigue sin mirar `isExchangeRateProvisional`. El resultado solo expone `liveAnchorIsApproximate` (`:49`, `:248-259`), que vale para el ancla en vivo y no para el `finalBalance` de un período cerrado (`:262`).
+- `BalanceKPICalculator.swift:142` sigue devolviendo `isApproximate: false` fijo en el régimen cerrado.
+- Ningún commit en esos dos ficheros desde el 09-sep.
+
+Triage 2026-10-08: abierto · medium → medium · `fillBalanceBuckets` (`TrendDataProcessor.swift:296`) no produce la señal y `BalanceKPICalculator.swift:142` sigue con `isApproximate: false` en el período cerrado.

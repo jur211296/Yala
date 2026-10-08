@@ -103,3 +103,5 @@ convertidas. Siguen abiertos los AC 2 y 3 (medir la ventana por orden de llegada
 el teléfono que cambia la divisa convierte, en el mismo guardado, historial (tasa de su fecha), borradores pendientes
 (tasa de su fecha), pagos programados personales y favoritos (tasa de hoy), y el aviso lo enumera antes. Este ticket
 sigue abierto por el RECEPTOR: el applier de `accounts` escribe la divisa nueva sin mirar lo que el otro teléfono tiene.
+
+Triage 2026-10-08: abierto · medium → medium · el emisor ya convierte (4ec6f0c5e, PR #400), pero el applier de `accounts` sigue escribiendo `currency_code` a ciegas en el receptor (`EntityApplyMap.swift:524`).

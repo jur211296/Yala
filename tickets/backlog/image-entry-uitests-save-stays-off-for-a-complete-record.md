@@ -4,6 +4,7 @@ status: backlog
 priority: medium
 area: "image"
 created: 2026-10-07
+updated: 2026-10-08
 source: hallazgo del encargo 2026-10-07-ipad-drop-unreadable-file-fails-silently
 ---
 
@@ -27,3 +28,11 @@ Los otros dos casos de la suite pasan.
 - No se averiguó qué condición de `VoiceDraftReadiness` falla. El seam `-uitest-image-result` fecha lo leído como «hoy»
   en `yyyy-MM-dd`; una fecha leída como futura (`isFutureDate`) apagaría «Guardar», y es la primera hipótesis a medir,
   no una causa comprobada. Si es eso, podría pasar también fuera del test.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- Sin commit de arreglo desde el 07-oct en `ImageEntryReviewUITests.swift`, `ImageSelectionView.swift` ni `UITestHooks.swift`.
+- «Guardar» sigue gobernado por `VoiceDraftReadiness` con `isFutureDate: draft.effectiveDate > Date.now` (`ImageSelectionView.swift:472`).
+- El seam sigue fechando «hoy» como `yyyy-MM-dd` en `en_US_POSIX` (`ImageSelectionView.swift:1019-1022`). La hipótesis de la fecha futura sigue sin medir.
+
+Triage 2026-10-08: abierto · medium → medium · sin arreglo desde el 07-oct; la causa sigue sin medir y podría ser de producto (`ImageSelectionView.swift:472`, `isFutureDate`).

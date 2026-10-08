@@ -1,9 +1,10 @@
 ---
 id: save-error-alert-lies-when-the-context-autosaves
 status: backlog
-priority: medium
+priority: low
 area: "accounts, swiftdata"
 created: 2026-09-09
+updated: 2026-10-08
 source: review adversarial de changing-an-account-currency-orphans-its-whole-history (2026-09-09)
 ---
 
@@ -44,3 +45,11 @@ recarga. También preexistente.
 ## Relacionados
 
 - `changing-an-account-currency-orphans-its-whole-history` — de donde sale la medición.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `AccountFormViewModel.saveAccount` (`AccountFormViewModel.swift:569`): el `catch` de `:635-642` enciende
+  `isShowingSaveError` y devuelve `false`, sin `rollback()`. Sigue habiendo cero `autosaveEnabled = false`.
+- `low`: el `save()` del formulario rara vez lanza, y no se pierde nada; el defecto es un mensaje falso.
+
+Triage 2026-10-08: abierto · medium → low · saveAccount sigue encendiendo isShowingSaveError sin rollback sobre el mainContext compartido; los commits posteriores (93d2cdc41, b8a371f9d, 4ec6f0c5e) no tocaron esa rama.
