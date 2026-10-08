@@ -48,6 +48,91 @@ struct WireValueDecoderTests {
         #expect(WireValueDecoder.double(.bool(true)) == nil)
     }
 
+    // MARK: - money/rate: lo NO FINITO no entra (ticket `wire-decoder-accepts-non-finite-money`)
+
+    /// Las formas en que un no finito llega por el wire. `"NaN"` es la de Postgres para un `NUMERIC`; el resto, las que
+    /// `Double(String)` acepta (medido: cualquier caja, `infinity`, y un decimal que desborda a `inf`).
+    static let nonFiniteWireStrings = [
+        "nan", "NaN", "NAN", "inf", "-inf", "+inf", "Inf", "INF", "Infinity", "-Infinity", "infinity",
+        "1e400", "-1e400", "snan", "nan(0x1)",
+    ]
+
+    @Test(arguments: nonFiniteWireStrings)
+    func double_rejectsNonFinite(_ raw: String) {
+        // Premisa del caso: `Double(String)` SÍ lo convierte en un no finito. Sin ella el caso pasaría sin medir nada.
+        let parsed = Double(raw)
+        #expect(parsed.map { !$0.isFinite } == true, "premisa: \(raw) no da un no finito")
+        #expect(WireValueDecoder.double(.string(raw)) == nil)
+        #expect(WireValueDecoder.isNonFiniteNumber(.string(raw)))
+    }
+
+    @Test func double_rejectsNonFiniteNumberCase() {
+        // `JSONDecoder` no produce `.number` no finito, pero el `WireValue` también se construye a mano.
+        for d in [Double.nan, .infinity, -.infinity] {
+            #expect(WireValueDecoder.double(.number(d)) == nil)
+            #expect(WireValueDecoder.isNonFiniteNumber(.number(d)))
+        }
+    }
+
+    @Test func isNonFiniteNumber_isFalseForEverythingElse() {
+        for v: WireValue in [.string("12.5000"), .number(12.5), .string("0"), .string("-0.0000"), .string("1e-400"),
+                             .string("abc"), .string(""), .string(" nan"), .null, .bool(true), .array([]), .object([:])] {
+            #expect(!WireValueDecoder.isNonFiniteNumber(v), "\(v)")
+        }
+        // El subnormal sí es finito y entra.
+        #expect(WireValueDecoder.double(.string("4.9e-324")) == 5e-324)
+    }
+
+    /// Un JSON con un número no finito NO llega a ser `WireValue`: `JSONDecoder` lo rechaza. Es lo que hace que el
+    /// agujero sea solo la rama `.string` (medido, y fijado aquí por si un decoder futuro lo tolera).
+    @Test func jsonNumberNonFinite_neverReachesTheDecoder() {
+        #expect(throws: (any Error).self) { _ = try self.wire("1e400") }
+        #expect(throws: (any Error).self) { _ = try self.wire("NaN") }
+    }
+
+    // MARK: - Las dos direcciones coinciden: lo que el emisor rechaza, el decoder también
+
+    /// Ida: `Canonc1Codec` rechaza al EMITIR cada no finito. Vuelta: el decoder lo rechaza al RECIBIR. Si un día
+    /// alguien relaja una de las dos, este caso las separa.
+    @Test(arguments: nonFiniteWireStrings)
+    func emitterAndDecoder_rejectTheSameNonFinite(_ raw: String) throws {
+        let value = try #require(Double(raw))
+        for scale in [Canonc1Codec.moneyScale, Canonc1Codec.rateScale] {
+            #expect(throws: Canonc1Error.nonFiniteNumber) { _ = try Canonc1Codec.decimalFixed(value, scale: scale) }
+        }
+        #expect(WireValueDecoder.double(.string(raw)) == nil)
+    }
+
+    /// Y lo que el emisor SÍ emite, el decoder lo devuelve igual: el arreglo no se come valores buenos.
+    @Test func whatTheEmitterEmits_theDecoderAccepts() throws {
+        let samples: [(Double, Int)] = [(19.99, 4), (-0.0, 4), (0.00005, 4), (99_999_999_999_999.98, 4), (-12.5, 4),
+                                        (3.62, 8), (0.00000001, 8), (9_999_999_999.99, 8)]
+        for (value, scale) in samples {
+            let emitted = try Canonc1Codec.decimalFixed(value, scale: scale)
+            let back = try #require(WireValueDecoder.double(.string(emitted)), "\(emitted)")
+            #expect(try Canonc1Codec.decimalFixed(back, scale: scale) == emitted)
+        }
+    }
+
+    // MARK: - int: un no finito o fuera de rango no ABORTA el proceso
+
+    @Test func int_nonFiniteOrOutOfRange_isNil_notACrash() {
+        // Con el `Int(d)` de antes, cualquiera de estos abortaba el proceso en el apply.
+        for raw in ["nan", "NaN", "inf", "-Infinity", "1e400", "1e300", "-9.3e18"] {
+            #expect(WireValueDecoder.int(.string(raw)) == nil, "\(raw)")
+        }
+        for d in [Double.nan, .infinity, 1e300, -1e300] {
+            #expect(WireValueDecoder.int(.number(d)) == nil, "\(d)")
+        }
+        // Lo de siempre sigue igual: entero, truncado hacia cero, string entero y string decimal.
+        #expect(WireValueDecoder.int(.number(3)) == 3)
+        #expect(WireValueDecoder.int(.number(3.9)) == 3)
+        #expect(WireValueDecoder.int(.number(-3.9)) == -3)
+        #expect(WireValueDecoder.int(.string("42")) == 42)
+        #expect(WireValueDecoder.int(.string("42.7")) == 42)
+        #expect(WireValueDecoder.int(.null) == nil)
+    }
+
     // MARK: - uuid[] : array y null = "sin filtro"
 
     @Test func uuidArray_nullVsArray() {

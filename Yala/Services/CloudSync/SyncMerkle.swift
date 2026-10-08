@@ -462,8 +462,10 @@ extension CloudSyncEngine {
         var diverged: [String] = []
         for table in EntityApplyMap.wiredTables.sorted() {
             if quarantinedTables.contains(table) {
-                // Defensivo: la cuarentena solo guarda tablas NO cableadas hoy; si una cableada
-                // apareciera (drift futuro), saltarla es lo honesto.
+                // Una tabla cableada llega a la cuarentena con un upsert de dinero no finito (ticket
+                // `wire-decoder-accepts-non-finite-money`): el teléfono no tiene esa fila y compararla daría una
+                // divergencia falsa. Dura lo que dura la fila mala en el servidor, cuyo Merkle no puede hashearla
+                // (502, `gateway/src/sync/routes.ts`); al reescribirla llega otra versión y la cuarentena se retira.
                 CloudSyncBreadcrumb.merkleEntitySkippedQuarantined(entity: table)
                 continue
             }

@@ -62,6 +62,12 @@ enum GroupsSyncBreadcrumb {
         logger.notice("GroupsSync applySkippedDelta entity=\(entity, privacy: .public) — delta descartado; cursor avanza sin aplicar")
     }
 
+    /// Un upsert traía un importe NO FINITO (`columns`, sin valores) y no se aplicó (ticket
+    /// `wire-decoder-accepts-non-finite-money`): la fila local se queda como estaba y el cursor avanza.
+    static func groupsApplyNonFiniteMoney(entity: String, columns: [String]) {
+        logger.notice("GroupsSync applyNonFiniteMoney entity=\(entity, privacy: .public) columns=\(columns.joined(separator: ","), privacy: .public) — no aplicado; cursor avanza")
+    }
+
     // MARK: - Espejo del outbox (endurecimiento B2)
 
     /// El rehydrate del boot re-insertó `count` filas del espejo App Group que el `GroupSyncOutbox` había

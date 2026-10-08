@@ -23,7 +23,8 @@
 //   - **D-4**: todo se escribe bajo `author = outboxSaveAuthor` (echo-suppression del drain).
 //   - **D-5/F-3 (cursor atómico + cero-descartes + rollback)**: por página, aplicar TODOS los deltas +
 //     cuarentenar + `clock` persist + `serverSeqCursor = max` en UN `saveWithAuthor`. TODO delta o se
-//     aplica al @Model o va a `SyncQuarantine` — no hay tercer camino. Si el save FALLA, `rollback()`
+//     aplica al @Model o va a `SyncQuarantine` — no hay tercer camino. Va a cuarentena el de una tabla no
+//     cableada y el upsert con dinero o tasa no finitos (`EntityApplyMap.nonFiniteMoneyColumns`). Si el save FALLA, `rollback()`
 //     obligatorio: dejar el contexto sucio con el grafo remoto haría que un autosave posterior lo
 //     flusheara bajo un autor NO-motor → laundering.
 //   - **F-2 (refs colgadas)**: un `_ref` singular sin destino local se registra en `SyncDanglingRef`
@@ -62,7 +63,7 @@ private enum ApplyTestCrash: Error { case suppressed }
 enum ApplyGuardRead: Equatable {
     /// El `SyncOutbox` vivo del que sale el guard LWW (D-1).
     case pendingGuards
-    /// Los `serverSeq` ya cuarentenados (dedupe D-5/D-6).
+    /// La cuarentena: sus `serverSeq` (dedupe D-5/D-6) y sus filas, que una versión posterior retira.
     case quarantineSeqs
 }
 
@@ -282,12 +283,30 @@ extension CloudSyncEngine {
             // una escritura local pendiente, y un dedupe vacío re-inserta cuarentenas. Lanzan → `catch` de
             // abajo (rollback, `false`, cursor quieto) → el ciclo sale `.transient` y reintenta.
             let guards = try buildPendingGuards(context)
-            // El dedupe solo se lee si la página trae algo que cuarentenar: hoy casi nunca (las 16 tablas
-            // están cableadas), así que ni cuesta una lectura en el camino caliente ni una cuarentena
-            // ilegible frena páginas que no la necesitan.
-            let needsQuarantine = page.deltas.contains { !EntityApplyMap.isWired(table: $0.entityType) }
-            var quarantineSeqs: Set<Int64> = needsQuarantine ? try existingQuarantineSeqs(context) : []
+            // Dinero o tasa NO FINITOS en un upsert cableado (ticket `wire-decoder-accepts-non-finite-money`): ese
+            // delta va ENTERO a cuarentena (D-5: o se aplica o se cuarentena). Aplicarlo sin la columna dejaba un
+            // born-remote en 0 o un grupo `money` mezclado; con ella, el valor rompía los totales y no podía volver a
+            // subir. Por `serverSeq`, que es único dentro de una página.
+            var nonFiniteBySeq: [Int64: [String]] = [:]
+            for delta in page.deltas where delta.op == .upsert && EntityApplyMap.isWired(table: delta.entityType) {
+                let columns = EntityApplyMap.nonFiniteMoneyColumns(table: delta.entityType, fields: delta.fields)
+                if !columns.isEmpty { nonFiniteBySeq[delta.serverSeq] = columns }
+            }
+            // La cuarentena solo se lee si la página trae algo que cuarentenar o si ya hay filas que una versión
+            // posterior podría retirar (el testigo lockstep): hoy casi nunca, así que no cuesta una lectura en el
+            // camino caliente. Con filas pendientes SÍ se lee en cada página, y si no se deja leer la página no se
+            // aplica: sin ella no se puede retirar la versión vieja, y el cursor la dejaría atrás para siempre.
+            let needsQuarantine = !nonFiniteBySeq.isEmpty
+                || page.deltas.contains { !EntityApplyMap.isWired(table: $0.entityType) }
+            let existingQuarantine: [SyncQuarantine] = (needsQuarantine || cursor.quarantinePendingCount > 0)
+                ? try existingQuarantineRows(context) : []
+            var quarantineSeqs = Set(existingQuarantine.map(\.serverSeq))
+            // Por fila (tabla + `syncID`), para que la retirada no recorra la cuarentena entera en cada delta.
+            var quarantined = Dictionary(grouping: existingQuarantine) { QuarantineKey(table: $0.entityType, syncID: $0.syncID) }
             var newQuarantineCount = 0
+            var retiredQuarantineCount = 0
+            var nonFiniteQuarantined: [(entity: String, serverSeq: Int64, columns: [String])] = []
+            var superseded: [String: Int] = [:]
 
             try saveWithAuthor(context, Self.outboxSaveAuthor) {
                 for delta in page.deltas {
@@ -296,9 +315,24 @@ extension CloudSyncEngine {
                         receiveRemoteClock(remote, now: now)
                     }
                     if EntityApplyMap.isWired(table: delta.entityType) {
-                        try dispatchApply(delta, guard: guards[delta.syncID], context: context)
+                        if let columns = nonFiniteBySeq[delta.serverSeq] {
+                            if quarantineDelta(delta, existing: &quarantineSeqs, context: context) {
+                                newQuarantineCount += 1
+                                nonFiniteQuarantined.append((delta.entityType, delta.serverSeq, columns))
+                            }
+                        } else {
+                            try dispatchApply(delta, guard: guards[delta.syncID], context: context)
+                        }
+                        // Lo que la cuarentena guardaba de esta fila con un `serverSeq` anterior ya no es su
+                        // versión: el drenaje del arranque lo re-aplicaría encima de esta. Se retira.
+                        let retired = retireSupersededQuarantine(of: delta, rows: &quarantined, seqs: &quarantineSeqs,
+                                                                 context: context)
+                        if retired > 0 {
+                            retiredQuarantineCount += retired
+                            superseded[delta.entityType, default: 0] += retired
+                        }
                     } else {
-                        // §d.6/D-5: entity_type aún no materializable (10 de 16) → cuarentena (dedup seq).
+                        // §d.6/D-5: entity_type no materializable → cuarentena (dedup seq).
                         if quarantineDelta(delta, existing: &quarantineSeqs, context: context) {
                             newQuarantineCount += 1
                         }
@@ -307,13 +341,23 @@ extension CloudSyncEngine {
                 // D-5 + D-3: cursor + reloj en el MISMO save. `max` defensivo (nunca retroceder).
                 cursor.serverSeqCursor = max(cursor.serverSeqCursor, page.maxServerSeq)
                 cursor.clockLatestHLC = clockLatestString
-                // I9 (§d.5 A1): testigo lockstep — se bumpea en el MISMO save que INSERTA las filas de
-                // cuarentena (ÚNICO sitio de insert). Guard de recreación depende de esta atomicidad.
-                if newQuarantineCount > 0 {
-                    cursor.quarantinePendingCount += Int64(newQuarantineCount)
+                // I9 (§d.5 A1): testigo lockstep — se mueve en el MISMO save que INSERTA o RETIRA las filas de
+                // cuarentena. Guard de recreación depende de esta atomicidad.
+                if newQuarantineCount > 0 || retiredQuarantineCount > 0 {
+                    cursor.quarantinePendingCount = max(
+                        0, cursor.quarantinePendingCount + Int64(newQuarantineCount - retiredQuarantineCount))
                 }
                 // Seam de test (D-5/F-3): crash antes del commit → rollback, cursor NO avanza.
                 if _testThrowOnApplySave { throw ApplyTestCrash.suppressed }
+            }
+            // Rastro y canario DESPUÉS del save: con rollback no se cuarentenó nada.
+            for item in nonFiniteQuarantined {
+                CloudSyncBreadcrumb.applyNonFiniteQuarantined(entity: item.entity, serverSeq: item.serverSeq,
+                                                              columns: item.columns)
+                MetricsService.cloudSyncPullNonFiniteMoney(channel: "personal", table: item.entity)
+            }
+            for (entity, count) in superseded.sorted(by: { $0.key < $1.key }) {
+                CloudSyncBreadcrumb.quarantineSuperseded(entity: entity, count: count)
             }
             return true
         } catch {
@@ -543,26 +587,56 @@ extension CloudSyncEngine {
         return true
     }
 
-    /// Set de DEDUPE de la cuarentena. LANZA si no se puede leer: un set vacío por error re-insertaría
-    /// duplicadas las filas ya cuarentenadas (y bumpearía el testigo lockstep por ellas).
-    private func existingQuarantineSeqs(_ context: ModelContext) throws -> Set<Int64> {
+    /// Filas de la cuarentena: su `serverSeq` es el DEDUPE y su `syncID` lo que una versión posterior retira. LANZA si
+    /// no se puede leer: vacío por error re-insertaría duplicadas las filas ya cuarentenadas (y bumpearía el testigo
+    /// lockstep por ellas), y dejaría sin retirar la versión vieja que el drenaje del arranque re-aplicaría.
+    private func existingQuarantineRows(_ context: ModelContext) throws -> [SyncQuarantine] {
         do {
             if _testThrowOnApplyRead == .quarantineSeqs { throw ApplyGuardReadError.unreadable(.quarantineSeqs) }
-            return Set(try context.fetch(FetchDescriptor<SyncQuarantine>()).map(\.serverSeq))
+            return try context.fetch(FetchDescriptor<SyncQuarantine>())
         } catch {
             #if DEBUG
-            print("CloudSyncEngine.existingQuarantineSeqs: fetch falló (la página NO se aplica): \(error)")
+            print("CloudSyncEngine.existingQuarantineRows: fetch falló (la página NO se aplica): \(error)")
             #endif
             throw ApplyGuardReadError.unreadable(.quarantineSeqs)
         }
     }
 
+    /// Retira de la cuarentena lo que guardaba de ESTA fila (misma tabla y `syncID`) con un `serverSeq` anterior al
+    /// del delta que acaba de aplicarse o cuarentenarse. El pull es full-row y por fila llega solo su versión vigente,
+    /// así que lo anterior ya no es la fila: re-aplicarlo en el drenaje del arranque pisaría la buena, y conservarlo
+    /// apagaría el Merkle de esa tabla para siempre (`quarantinedTables`). Devuelve cuántas retiró.
+    private func retireSupersededQuarantine(
+        of delta: PulledDelta, rows: inout [QuarantineKey: [SyncQuarantine]], seqs: inout Set<Int64>,
+        context: ModelContext
+    ) -> Int {
+        let key = QuarantineKey(table: delta.entityType, syncID: delta.syncID)
+        guard var forRow = rows[key], !forRow.isEmpty else { return 0 }
+        var retired = 0
+        forRow.removeAll { row in
+            guard row.serverSeq < delta.serverSeq else { return false }
+            context.delete(row)
+            seqs.remove(row.serverSeq)
+            retired += 1
+            return true
+        }
+        rows[key] = forRow
+        return retired
+    }
+
+    /// Una fila de la cuarentena: su tabla y su `syncID`.
+    private struct QuarantineKey: Hashable {
+        let table: String
+        let syncID: UUID
+    }
+
     // MARK: - Drenaje de cuarentena (upgrade path, I9 §F)
 
     /// Re-aplica las filas de `SyncQuarantine` cuya `entityType` YA está cableada al apply (típicamente
-    /// tras un update de app que cablea una entidad antes no materializable). HOY es SIEMPRE no-op en
-    /// prod: las 6 tablas cableadas nunca se cuarentenan → la cuarentena solo guarda las 10 no cableadas;
-    /// el mecanismo queda listo para cuando un update cablee más.
+    /// tras un update de app que cablea una entidad antes no materializable). Las 16 tablas están cableadas,
+    /// así que lo único de una tabla cableada que llega a la cuarentena es un upsert con dinero no finito
+    /// (ticket `wire-decoder-accepts-non-finite-money`), y ese se SALTA: no se consume hasta que una versión
+    /// posterior de la fila lo retira en `applyPage`.
     ///
     /// GUARDIA (F-8, misma disciplina anti-laundering que `applyPage`): SOLO llamable desde `start()`
     /// del runtime (o tests) tras `rehydrateOutboxFromMirror` **y** un `drainOnce` SÍNCRONO inmediatamente
@@ -588,7 +662,9 @@ extension CloudSyncEngine {
             return
         }
         let drainable = rows.filter { EntityApplyMap.isWired(table: $0.entityType) }
-        guard !drainable.isEmpty else { return }  // hoy SIEMPRE vacío en prod (las 6 cableadas no se cuarentenan)
+        // Una tabla cableada solo llega aquí con dinero no finito (ticket `wire-decoder-accepts-non-finite-money`),
+        // y esa fila se salta abajo: en la práctica no se consume nada.
+        guard !drainable.isEmpty else { return }
 
         let cursor: SyncCursor
         do {
@@ -622,6 +698,12 @@ extension CloudSyncEngine {
                         #if DEBUG
                         print("CloudSyncEngine.drainQuarantineOnce: rawDelta no decodifica (\(row.entityType)): \(error)")
                         #endif
+                        continue
+                    }
+                    // Un delta con dinero no finito se queda: la tabla está cableada, pero aplicarlo es justo lo que
+                    // la cuarentena evita. Sale cuando llega una versión posterior de la fila (`applyPage`).
+                    if delta.op == .upsert,
+                       !EntityApplyMap.nonFiniteMoneyColumns(table: delta.entityType, fields: delta.fields).isEmpty {
                         continue
                     }
                     // D-3: integra el HLC de fila en el reloj.

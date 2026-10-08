@@ -48,7 +48,8 @@ enum SplitConfigCodec {
 
     /// Decodifica el CSV de pares "uuid:value". El uuidString usa "-" (no ":") y el
     /// valor es un Double ("." decimal), así que split(":") da exactamente 2 partes.
-    /// Pares malformados se descartan.
+    /// Pares malformados se descartan, y también un valor NO FINITO (`"nan"`, `"inf"`): este CSV baja del servidor
+    /// como texto (`split_values_raw`) y `Double(String)` los acepta (ticket `wire-decoder-accepts-non-finite-money`).
     static func decodeValues(_ csv: String?) -> [UUID: Double] {
         guard let csv, !csv.isEmpty else { return [:] }
         var result: [UUID: Double] = [:]
@@ -56,7 +57,8 @@ enum SplitConfigCodec {
             let parts = token.split(separator: ":")
             guard parts.count == 2,
                   let id = UUID(uuidString: parts[0].trimmingCharacters(in: .whitespaces)),
-                  let value = Double(parts[1].trimmingCharacters(in: .whitespaces))
+                  let value = Double(parts[1].trimmingCharacters(in: .whitespaces)),
+                  value.isFinite
             else { continue }
             result[id] = value
         }

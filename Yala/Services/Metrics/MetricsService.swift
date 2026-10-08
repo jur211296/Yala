@@ -139,6 +139,12 @@ enum MetricsCanary: String {
     case cloudSyncMutationRejected
     case cloudSyncClockReceiveRejected
     case cloudSyncMerkleDivergence
+    /// Un importe o una tasa NO FINITOS (`NaN`, `±inf`) llegaron por el pull y no entraron al teléfono (ticket
+    /// `wire-decoder-accepts-non-finite-money`). `detail` = `<canal>|<tabla>`: `personal|tx_items` (el delta va a
+    /// cuarentena) o `groups|split_expenses` (el delta se salta). Una vez por proceso y `detail`. Distinto de cero
+    /// dice que hay filas así en el servidor: ninguna app de Yala las emite (`Canonc1Codec` las rechaza), así que
+    /// vienen de un cliente que no pasa por el códec o de una escritura directa a la base.
+    case cloudSyncPullNonFiniteMoney
     case cloudCutoverLeaderOrphanReconciled
     case cloudAdoptOrphanReconciled
     /// El adopt se paró por la guarda de linaje (ticket `markerless-adopt-stays-blocked-while-another-device-writes-to-the-account`).
@@ -993,6 +999,11 @@ extension MetricsService {
 
     static func cloudSyncMerkleDivergence(entity: String) {
         canary(.cloudSyncMerkleDivergence, detail: entity)
+    }
+
+    static func cloudSyncPullNonFiniteMoney(channel: String, table: String) {
+        let detail = "\(channel)|\(table)"
+        canaryOnce(.cloudSyncPullNonFiniteMoney, key: detail, detail: detail)
     }
 
     static func groupMerkleDivergence(groupCount: Int) {
