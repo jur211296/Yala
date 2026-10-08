@@ -34,8 +34,14 @@ import {
   cashFlowBody,
   cashFlowPayload,
   currencySymbol,
+  baseCode,
+  cashFlowSystemPrompt,
   deviationBody,
   deviationPayload,
+  deviationSystemPrompt,
+  informalRegister,
+  languageInstruction,
+  languageLabel,
   nsJSON,
   trendsBody,
   trendsPayload,
@@ -117,7 +123,26 @@ describe("cuerpos = los de la app", () => {
     expect(sys).toContain('contra "periodo anterior" (vs Sep 26).');
     expect(sys).toContain("ENFOQUE — EQUILIBRADO:");
     const src = swift(INSIGHTS);
-    for (const line of sys.split("\n").filter((l) => l.trim() && !/S\/|PEN|vs Sep 26|IDIOMA|periodo anterior/.test(l))) expect(src, line).toContain(line.trim());
+    for (const line of sys.split("\n").filter((l) => l.trim() && !/S\/|PEN|vs Sep 26|IDIOMA|Trato:|periodo anterior/.test(l))) expect(src, line).toContain(line.trim());
+  });
+
+  it("Insights, flujo y desviaciones: piden el idioma de la app con la línea y el trato del Swift", () => {
+    expect(languageInstruction("de")).toBe(
+      "IDIOMA: Responde SIEMPRE en alemán (de), el idioma de la app del usuario, aunque estas instrucciones estén en español. Nunca mezcles idiomas ni copies palabras de estas instrucciones: gasto, ingreso, presupuesto y plan se dicen con la palabra propia de ese idioma.",
+    );
+    expect(languageLabel("zh-Hans")).toBe("chino (zh-Hans)");
+    expect(languageLabel("ko")).toBe("ko");
+    expect(informalRegister(baseCode("es-PE"))).toBe("tuteo (tú)");
+    expect(informalRegister(baseCode("pt-PT"))).toBe("você");
+    expect(informalRegister(baseCode("zh-Hans"))).toBe("informal you");
+    const cards = msgs(cardsBody({ ...baseCards, language: "de" }))[0].content;
+    expect(cards).toContain(languageInstruction("de"));
+    expect(cards).toContain("- Trato: du, como un amigo que sabe de finanzas");
+    for (const sys of [cashFlowSystemPrompt("EUR", "pt-BR"), deviationSystemPrompt("EUR", "pt-BR")]) {
+      expect(sys).toContain(languageInstruction("pt-BR"));
+      expect(sys).toContain("- Trato: você. Lidera con el dato");
+      expect(sys).not.toMatch(/\\\(/);
+    }
   });
 
   it("Insights: tono, región y filtro de exclusión entran como en la app", () => {
@@ -148,32 +173,32 @@ describe("cuerpos = los de la app", () => {
   it("flujo de caja: prompt con el símbolo de `CurrencyCode` y payload de `buildCashFlowPayload`", () => {
     const b = cashFlowBody({
       currency: "EUR",
-      deviceLocale: "de-DE",
       startingBalance: 1200.5,
       months: [
         { month: "2026-09", income: 3000, expense: 2800 },
         { month: "2026-10", income: 3000, expense: 3500, isCurrent: true },
         { month: "2026-11", income: 3000, expense: 4000 },
       ],
-    });
+    }, "de-DE");
     const [sys, user] = msgs(b).map((m) => m.content);
     expect(sys).toContain(FINGERPRINTS["insights.cashflow"]);
     expect(sys).toContain("Montos en EUR: SIEMPRE € NÚMERO (ej: € 4,500)");
-    expect(sys).not.toMatch(/IDIOMA|\\\(/); // la app NO le dice el idioma (hallazgo del banco)
+    expect(sys).toContain(languageInstruction("de-DE")); // desde el 2026-10-07 la app le dice el idioma
+    expect(sys).not.toMatch(/\\\(/);
     expect(user).toBe(
       'Proyección de flujo de caja:\n{"startingBalance":1200.5,"monthsTotal":3,"monthsPositive":2,"monthsNegative":1,"avgMonthlyNet":-433,"currency":"EUR",' +
         '"currentMonth":{"name":"okt. 2026","income":3000,"expense":3500,"net":-500,"accumulated":900},"endMonth":{"name":"nov. 2026","accumulated":-99},' +
         '"lowestAccumulated":{"month":"nov. 2026","balance":-99}}',
     );
     expect(swift(INSIGHTS)).toContain('user: "Proyección de flujo de caja:\\n\\(jsonString)"');
-    const before = cashFlowPayload({ currency: "EUR", deviceLocale: "it-IT", startingBalance: 100, balanceFrom: 1, months: [{ month: "2026-09", income: 10, expense: 5 }, { month: "2026-10", income: 10, expense: 50 }] });
+    const before = cashFlowPayload({ currency: "EUR", startingBalance: 100, balanceFrom: 1, months: [{ month: "2026-09", income: 10, expense: 5 }, { month: "2026-10", income: 10, expense: 50 }] }, "it-IT");
     expect(before.lowestAccumulated).toEqual({ month: "ott 2026", balance: 60 }); // el mes sin saldo no cuenta como el más bajo
   });
 
   it("desviaciones: trunca cada importe y suma los excesos SIN truncar antes", () => {
     const p = deviationPayload({ currency: "PLN", deviations: [{ name: "A", planned: 400.9, actual: 612.9, excess: 212.6 }, { name: "B", planned: 10, actual: 15.5, excess: 5.5 }] });
     expect(nsJSON(p)).toBe('{"items":[{"name":"A","planned":400,"actual":612,"excess":212},{"name":"B","planned":10,"actual":15,"excess":5}],"totalExcess":218,"currency":"PLN"}');
-    const sys = msgs(deviationBody({ currency: "PLN", deviations: [] }))[0].content;
+    const sys = msgs(deviationBody({ currency: "PLN", deviations: [] }, "pl"))[0].content;
     expect(sys).toContain(FINGERPRINTS["insights.deviation"]);
     expect(sys).toContain("SIEMPRE zł NÚMERO");
     expect(currencySymbol("pen")).toBe("S/");

@@ -269,7 +269,7 @@ final class InsightsViewModel {
 
     // MARK: - Helpers
 
-    private func buildAggregatedData(
+    func buildAggregatedData(
         _ data: InsightData,
         currencyCode: String,
         comparisonMode: ComparisonMode,
@@ -283,7 +283,9 @@ final class InsightsViewModel {
             "currency": currencyCode,
             // Snapshot al payload IA — no reactivo. YalaFormatter deprecated permitido.
             "currency_display": YalaFormatterStatic.currencyIdentifier(for: currencyCode),
-            "locale": Locale.current.language.languageCode?.identifier ?? "es",
+            // El idioma de la app, no el de la región: con la app en inglés y el iPhone en Perú,
+            // `Locale.current.language` decía español y el análisis llegaba en español.
+            "locale": AIPromptLanguage.current,
             "country": Locale.current.region?.identifier ?? "",
             "comparison_ref": comparisonLabel,
             "comparison_label": data.periodSummary.previousPeriodLabel,

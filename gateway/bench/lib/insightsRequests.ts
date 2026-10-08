@@ -26,6 +26,7 @@ const PATHS = {
   insightsVM: "Yala/App/ViewModels/InsightsViewModel.swift",
   trends: "Yala/Services/TrendsAIService.swift",
   currency: "Yala/Utils/CurrencyUtils.swift",
+  language: "Yala/Services/AIPromptLanguage.swift",
 } as const;
 
 // ---------- utilidades Swift ----------
@@ -95,6 +96,42 @@ const intRounded = (x: number): number => {
   return r === 0 ? 0 : r;
 };
 
+// ---------- idioma y trato (compartidos por los tres prompts de Insights y el chat) ----------
+
+/** `AIPromptLanguage.baseCode(of:)`: «es-PE» → «es», «zh-Hans» → «zh». */
+export function baseCode(language: string): string {
+  return new Intl.Locale(language).language;
+}
+
+/** Una tabla `switch` de `AIPromptLanguage` (`case "x": return "y"`), solo dentro de su función. */
+function languageTable(marker: string): { cases: Map<string, string>; fallback: string | null } {
+  const rest = from(readRepoFile(PATHS.language), marker);
+  const end = rest.indexOf("\n    static func ", marker.length);
+  const fn = end < 0 ? rest : rest.slice(0, end);
+  const cases = new Map([...fn.matchAll(/case "([\w-]+)": return "([^"]+)"/g)].map((m) => [m[1], m[2]]));
+  if (cases.size === 0) throw new Error(`swift: no encuentro la tabla de «${marker}» en AIPromptLanguage`);
+  return { cases, fallback: fn.match(/default: return "([^"]+)"/)?.[1] ?? null };
+}
+
+/** `AIPromptLanguage.informalRegister(forBaseLanguage:)`, con la tabla leída del Swift. */
+export function informalRegister(base: string): string {
+  const { cases, fallback } = languageTable("static func informalRegister(");
+  if (!fallback) throw new Error("swift: el trato de AIPromptLanguage no tiene default");
+  return cases.get(base) ?? fallback;
+}
+
+/** `AIPromptLanguage.label(for:)`: «italiano (it)», o el código si el idioma no tiene nombre. */
+export function languageLabel(language: string): string {
+  const name = languageTable("static func spanishName(").cases.get(baseCode(language));
+  return name ? `${name} (${language})` : language;
+}
+
+/** `InsightsLLMService.languageInstruction(_:)`: la línea de idioma de los tres prompts de Insights. */
+export function languageInstruction(language: string): string {
+  const fn = from(readRepoFile(PATHS.insights), "static func languageInstruction(");
+  return interpolate(swiftLineLiteralAfter(fn, "return "), { label: languageLabel(language) });
+}
+
 // ---------- tono y enfoque (compartidos por Insights y Tendencias) ----------
 
 export type InsightTone = "normal" | "considerate" | "sarcastic";
@@ -138,7 +175,8 @@ export interface CardsFilters {
 export interface CardsInput {
   currency: string;
   currencyDisplayFormat: "code" | "symbol";
-  /** `Locale.current.language.languageCode` (solo el idioma: «es», «zh»…). */
+  /** El idioma de la app, `AIPromptLanguage.current` (BCP-47: «es-PE», «zh-Hans»…). Hasta el 2026-10-07 la app
+   * mandaba `Locale.current.language.languageCode`, el de la región. */
   language: string;
   /** `Locale.current.region` («PE», «ES»…), «» si no hay. */
   country: string;
@@ -294,7 +332,8 @@ export function cardsSystemPrompt(c: CardsInput, payload: Record<string, unknown
   return interpolate(tpl, {
     currencyCode: c.currency,
     currencyDisplay: String(payload.currency_display),
-    locale: c.language,
+    languageLine: languageInstruction(c.language),
+    register: informalRegister(baseCode(c.language)),
     comparisonRef: String(payload.comparison_ref),
     comparisonLabel: String(payload.comparison_label),
     filterContext: cardsFilterPrompt(payload),
@@ -331,8 +370,6 @@ export function cardsBody(c: CardsInput): Record<string, unknown> {
 
 export interface CashFlowInput {
   currency: string;
-  /** Idioma del iPhone (`Locale.current`), con el que la app escribe los nombres de mes. */
-  deviceLocale: string;
   startingBalance: number;
   /**
    * Meses de la proyección en orden. `accumulated` explícito o, si se omite, `startingBalance` más el neto
@@ -367,14 +404,14 @@ export function cashFlowMonths(c: CashFlowInput): CashFlowMonthCalc[] {
   });
 }
 
-/** `date.formatted(.dateTime.month(.abbreviated).year()).lowercased()` con el idioma del iPhone. */
+/** `date.formatted(monthStyle).lowercased()`: mes abreviado y año en el idioma de la app. */
 export function monthName(month: string, locale: string): string {
   const d = new Date(`${month}-15T12:00:00Z`);
   return new Intl.DateTimeFormat(locale, { month: "short", year: "numeric", timeZone: "UTC" }).format(d).toLowerCase();
 }
 
-/** Réplica de `InsightsLLMService.buildCashFlowPayload`. */
-export function cashFlowPayload(c: CashFlowInput): Record<string, unknown> {
+/** Réplica de `InsightsLLMService.buildCashFlowPayload`. `language` = idioma de la app (los nombres de mes). */
+export function cashFlowPayload(c: CashFlowInput, language: string): Record<string, unknown> {
   const months = cashFlowMonths(c);
   const current = months.find((m) => m.isCurrent);
   const withBalance = months.filter((m) => m.accumulated !== null);
@@ -393,7 +430,7 @@ export function cashFlowPayload(c: CashFlowInput): Record<string, unknown> {
   };
   if (current) {
     p.currentMonth = {
-      name: monthName(current.month, c.deviceLocale),
+      name: monthName(current.month, language),
       income: int(current.income),
       expense: int(current.expense),
       net: int(current.net),
@@ -401,22 +438,30 @@ export function cashFlowPayload(c: CashFlowInput): Record<string, unknown> {
     };
   }
   const last = months[months.length - 1];
-  if (last) p.endMonth = { name: monthName(last.month, c.deviceLocale), accumulated: int(last.accumulated ?? 0) };
-  if (lowest) p.lowestAccumulated = { month: monthName(lowest.month, c.deviceLocale), balance: int(lowest.accumulated ?? 0) };
+  if (last) p.endMonth = { name: monthName(last.month, language), accumulated: int(last.accumulated ?? 0) };
+  if (lowest) p.lowestAccumulated = { month: monthName(lowest.month, language), balance: int(lowest.accumulated ?? 0) };
   return p;
 }
 
-export function cashFlowSystemPrompt(currency: string): string {
-  const fn = from(readRepoFile(PATHS.insights), "func generateCashFlowInsight(");
-  return interpolate(swiftMultilineAfter(fn, "let systemPrompt = \"\"\""), {
+/** `InsightsLLMService.cashFlowSystemPrompt(currencyCode:language:)`. */
+export function cashFlowSystemPrompt(currency: string, language: string): string {
+  return commentSystemPrompt("static func cashFlowSystemPrompt(", currency, language);
+}
+
+/** Los dos comentarios de una frase comparten forma: divisa, línea de idioma y trato. */
+function commentSystemPrompt(marker: string, currency: string, language: string): string {
+  const fn = from(readRepoFile(PATHS.insights), marker);
+  return interpolate(swiftMultilineAfter(fn, "return \"\"\""), {
     currencyCode: currency,
     currencyDisplay: currencySymbol(currency) ?? currency,
+    languageLine: languageInstruction(language),
+    register: informalRegister(baseCode(language)),
   });
 }
 
-export function cashFlowBody(c: CashFlowInput): Record<string, unknown> {
-  const user = userMessage("func generateCashFlowInsight(", "buildChatMessages(system: systemPrompt, user: ", nsJSON(cashFlowPayload(c)), "jsonString");
-  return body(cashFlowSystemPrompt(c.currency), user);
+export function cashFlowBody(c: CashFlowInput, language: string): Record<string, unknown> {
+  const user = userMessage("func generateCashFlowInsight(", "buildChatMessages(system: systemPrompt, user: ", nsJSON(cashFlowPayload(c, language)), "jsonString");
+  return body(cashFlowSystemPrompt(c.currency, language), user);
 }
 
 // ---------- insights.deviation ----------
@@ -437,17 +482,14 @@ export function deviationPayload(c: DeviationInput): Record<string, unknown> {
   };
 }
 
-export function deviationSystemPrompt(currency: string): string {
-  const fn = from(readRepoFile(PATHS.insights), "func generateDeviationInsight(");
-  return interpolate(swiftMultilineAfter(fn, "let systemPrompt = \"\"\""), {
-    currencyCode: currency,
-    currencyDisplay: currencySymbol(currency) ?? currency,
-  });
+/** `InsightsLLMService.deviationSystemPrompt(currencyCode:language:)`. */
+export function deviationSystemPrompt(currency: string, language: string): string {
+  return commentSystemPrompt("static func deviationSystemPrompt(", currency, language);
 }
 
-export function deviationBody(c: DeviationInput): Record<string, unknown> {
+export function deviationBody(c: DeviationInput, language: string): Record<string, unknown> {
   const user = userMessage("func generateDeviationInsight(", "buildChatMessages(system: systemPrompt, user: ", nsJSON(deviationPayload(c)), "jsonString");
-  return body(deviationSystemPrompt(c.currency), user);
+  return body(deviationSystemPrompt(c.currency, language), user);
 }
 
 // ---------- trends.summary ----------

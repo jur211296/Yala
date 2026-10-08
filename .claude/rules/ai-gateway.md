@@ -10,6 +10,8 @@ paths:
   - "Yala/App/Services/ProxyErrorMapper.swift"
   - "Yala/App/Services/ImageVision/**"
   - "Yala/Services/VoiceTranscriptionService.swift"
+  - "Yala/Services/AIPromptLanguage.swift"
+  - "Yala/Services/InsightsLLMService.swift"
 ---
 
 # Proxy de IA: el gateway decide, la app dice qué pide (2026-10-07)
@@ -56,6 +58,16 @@ calidad medida y después por precio**. La app ya no decide nada: dice qué tare
   Sin él, 1536 (`PhotoUploadSizing`). Nunca se amplía. Cambiar el modelo de la foto puede cambiar ese número sin release.
 - **El «$» a secas lo decide la divisa principal del usuario** (`VisionCurrencyContext.dollarAlone`): si no se escribe con
   «$», es `null` y se elige en la revisión. El prompt enseña ¥ (JPY o CNY según el texto), R$, zł y CHF.
+
+## El idioma de la respuesta (2026-10-07)
+
+- **El idioma lo da `AIPromptLanguage.current` (de `AppLocale`), nunca `Locale.current`**, que es la región de formato:
+  con la app en inglés y el iPhone en Perú decía español. Toda llamada que escriba texto que el usuario lee lo pide.
+- **En el prompt va con nombre y código** (`AIPromptLanguage.label`: «italiano (it)»). El código solo dentro de una frase
+  en español se lee como palabra («Responde en it», «en de») y el banco sacó un caso en español.
+- **Las reglas no citan vocabulario español entre comillas** («Usa "gasto"»): el modelo lo copiaba tal cual en otros
+  idiomas («Coffee gasto was…»). Medido en `gateway/bench/results/2026-10-07-idioma/REPORT-idioma.md`.
+- **Una caché de texto generado lleva el idioma en la clave**, o cambiar de idioma devuelve el texto viejo.
 
 ## El banco (`gateway/bench/`)
 
