@@ -57,3 +57,10 @@ propósito**: es un servicio compartido por media docena de pantallas y merece s
 - El arreglo es de una línea por función, con el test que ya tiene de molde `GroupShareableSummaryLogic`.
 
 Triage 2026-10-08: abierto · low → low · los repartos siguen sin dedup y un duplicado dobla lo que cada uno debe, pero solo con una anomalía de sync.
+
+## Estadísticas tiene el mismo hueco (2026-10-08)
+
+Medido al arreglar `groups-stats-no-deduplica-gastos`: `GroupStatsViewModel.computeMyPortion` y
+`recalculateDualTotals` suman `allShares` sin deduplicar por `id`. Los gastos ya se deduplican desde
+ese arreglo, pero un reparto repetido dobla «Mi parte» en Estadísticas. Se arregla con el mismo molde
+de una línea; no entró en ese cambio porque son repartos, no gastos.

@@ -347,4 +347,105 @@ struct GroupStatsViewModelTests {
         #expect(vm.perCurrencyStats.isEmpty)
         #expect(vm.categoriesWereConverted == false)
     }
+
+    // MARK: - Duplicados por id (merges del canal de sync)
+    //
+    // Los gastos llegan repetidos por merges del canal de sync (premisa escrita en
+    // `GroupBalanceService`). Estadísticas tiene que contarlos UNA vez, como ya hacen la barra de
+    // presupuesto de Registros (`GroupBudgetLogic`), el resumen compartible y los balances. Todos los
+    // tests de esta sección salen rojos con el ViewModel anterior al arreglo (control medido el
+    // 2026-10-08 sobre 823cb3b79).
+
+    /// El caso del ticket: un gasto de S/ 400 repetido y otro de S/ 1.700 son S/ 2.100, no S/ 2.500.
+    @Test func duplicadosPorIdNoInflanElTotal() {
+        let shared = UUID()
+        let vm = makeVM(expenses: [
+            makeExpense(id: shared, amount: 400, paidByMemberID: "A"),
+            makeExpense(id: shared, amount: 400, paidByMemberID: "A"),
+            makeExpense(amount: 1_700, paidByMemberID: "B"),
+        ], shares: [], members: [])
+        #expect(vm.totalSpent == 2_100)
+        #expect(vm.totalsByCurrency.map { $0.total } == [2_100])
+    }
+
+    /// No basta con el total: «quién paga», el donut y la tendencia salen de la misma lista. Un arreglo
+    /// que deduplicara solo la suma del total dejaría a «A» pagando el doble en la misma pantalla.
+    @Test func duplicadosPorIdNoInflanNingunDesglose() {
+        let shared = UUID()
+        let vm = makeVM(expenses: [
+            makeExpense(id: shared, amount: 400, paidByMemberID: "A", subcategoryName: "Comida"),
+            makeExpense(id: shared, amount: 400, paidByMemberID: "A", subcategoryName: "Comida"),
+            makeExpense(amount: 400, paidByMemberID: "B", subcategoryName: "Transporte"),
+        ], shares: [], members: [])
+        #expect(vm.memberSpending.first { $0.id == "A" }?.totalPaid == 400)
+        let comida = vm.categoryBreakdown.first { $0.subcategoryName == "Comida" }
+        #expect(comida?.amount == 400)
+        #expect(comida?.percentage == 50)
+        #expect(vm.monthlyTrend.reduce(0) { $0 + $1.totalSpent } == 800)
+    }
+
+    /// Modo «Todas»: el carrusel por moneda, el donut convertido y las tarjetas de total por moneda.
+    @Test func duplicadosPorIdNoInflanElModoTodas() {
+        let shared = UUID()
+        let vm = makeVM(
+            expenses: [
+                makeExpense(id: shared, amount: 30, currencyCode: "USD", paidByMemberID: "A", subcategoryName: "Comida"),
+                makeExpense(id: shared, amount: 30, currencyCode: "USD", paidByMemberID: "A", subcategoryName: "Comida"),
+                makeExpense(amount: 100, currencyCode: "PEN", paidByMemberID: "B", subcategoryName: "Comida"),
+            ],
+            shares: [], members: [],
+            currencyCode: "PEN", selection: .all, preferredCurrency: "PEN",
+            converter: MockCurrencyConverter(fixedRate: 2)
+        )
+        let usd = vm.perCurrencyStats.first { $0.currencyCode == "USD" }
+        #expect(usd?.memberSpending.reduce(0) { $0 + $1.totalPaid } == 30)
+        #expect(usd?.monthlyTrend.reduce(0) { $0 + $1.totalSpent } == 30)
+        // Comida = 100 (PEN) + 30×2 (USD→PEN), una sola vez.
+        #expect(vm.categoryBreakdown.map(\.amount) == [160])
+        let totals = Dictionary(vm.totalsByCurrency.map { ($0.currencyCode, $0.total) }, uniquingKeysWith: { a, _ in a })
+        #expect(totals["USD"] == 30)
+    }
+
+    /// Las dos copias de un duplicado no tienen por qué ser iguales: el merge puede dejar dos versiones
+    /// del mismo gasto. Se queda la PRIMERA, como en los otros tres. Y la lista de monedas sale de la
+    /// lista ya deduplicada: si no, el selector ofrecería una moneda cuyo único gasto es la copia
+    /// descartada, con su pestaña vacía. Deduplicar solo en `periodExpenses` deja este test en rojo.
+    @Test func monedasSalenDeLaListaDeduplicada() {
+        let shared = UUID()
+        let vm = makeVM(expenses: [
+            makeExpense(id: shared, amount: 400, currencyCode: "PEN", paidByMemberID: "A"),
+            makeExpense(id: shared, amount: 120, currencyCode: "USD", paidByMemberID: "A"),
+        ], shares: [], members: [], currencyCode: "PEN")
+        #expect(vm.availableCurrencies == ["PEN"])
+        #expect(vm.totalsByCurrency.map { $0.currencyCode } == ["PEN"])
+        #expect(vm.totalSpent == 400)
+    }
+
+    /// La cifra que el usuario compara: «Total gastado» en Estadísticas y lo gastado en la barra de
+    /// presupuesto de Registros, para el mismo grupo (una moneda, período «Todo»). Lleva un saldo de
+    /// apertura, que las dos excluyen, y un duplicado cuyas copias difieren, para fijar que las dos
+    /// pantallas se quedan con la MISMA copia.
+    @Test func totalCoincideConLaBarraDePresupuesto() throws {
+        let dupIgual = UUID()
+        let dupDistinto = UUID()
+        let opening = makeExpense(amount: 900, paidByMemberID: "B")
+        opening.isOpeningBalance = true
+        let expenses = [
+            makeExpense(id: dupIgual, amount: 400, paidByMemberID: "A"),
+            makeExpense(id: dupIgual, amount: 400, paidByMemberID: "A"),
+            makeExpense(id: dupDistinto, amount: 50, paidByMemberID: "B"),
+            makeExpense(id: dupDistinto, amount: 80, paidByMemberID: "B"),
+            makeExpense(amount: 1_700, paidByMemberID: "B"),
+            opening,
+        ]
+        let vm = makeVM(expenses: expenses, shares: [], members: [], currencyCode: "PEN")
+        let budget = try #require(GroupBudgetLogic.progress(
+            limitAmount: 3_000,
+            currencyCode: "PEN",
+            expenses: expenses,
+            converter: MockCurrencyConverter(fixedRate: 1)
+        ))
+        #expect(budget.spentAmount == 2_150)
+        #expect(vm.totalSpent == budget.spentAmount)
+    }
 }
