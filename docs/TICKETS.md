@@ -441,7 +441,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-shareable-summary | done | tickets/done/groups-shareable-summary.md |
 | groups-sign-out-quiescence-gate-fails-open-with-drive-off | backlog | tickets/backlog/groups-sign-out-quiescence-gate-fails-open-with-drive-off.md |
 | groups-signout-reentry-banner-has-no-producer | backlog | tickets/backlog/groups-signout-reentry-banner-has-no-producer.md |
-| groups-stats-no-deduplica-gastos | backlog | tickets/backlog/groups-stats-no-deduplica-gastos.md |
+| groups-stats-no-deduplica-gastos | qa | tickets/qa/groups-stats-no-deduplica-gastos.md |
 | groups-stuck-drain-on-a-healthy-phone-says-try-again-later | qa | tickets/qa/groups-stuck-drain-on-a-healthy-phone-says-try-again-later.md |
 | groups-sync-reads-a-missing-attest-401-as-a-session-expiry | done | tickets/done/groups-sync-reads-a-missing-attest-401-as-a-session-expiry.md |
 | groups-sync-treats-an-infra-403-as-an-account-verdict | done | tickets/done/groups-sync-treats-an-infra-403-as-an-account-verdict.md |

@@ -1300,9 +1300,9 @@
         "F-S5-08"
       ],
       "classification": "agentic",
-      "coverage": "device-qa + unit:YalaTests/GroupExpenseIconResolverTests (H-2026-07-18-9: el donut de categorías y el feed de gastos comparten ahora GroupExpenseIconResolver.buildNameLookup/resolve — misma regla de icono/color por nombre normalizado; el matching quedó case-insensitive)",
+      "coverage": "device-qa + unit:YalaTests/GroupExpenseIconResolverTests (H-2026-07-18-9: el donut de categorías y el feed de gastos comparten ahora GroupExpenseIconResolver.buildNameLookup/resolve — misma regla de icono/color por nombre normalizado; el matching quedó case-insensitive) + unit:YalaTests/GroupStatsViewModelTests (2026-10-08, groups-stats-no-deduplica-gastos: los gastos se deduplican por id en loadStats, molde de GroupBudgetLogic; cinco casos rojos con el código anterior, uno fija que «Total gastado» coincide con la barra de presupuesto de Registros y otro, verificado con mutante, que la lista de monedas sale de la lista deduplicada)",
       "owner": "",
-      "lastVerified": "2026-09-13"
+      "lastVerified": "2026-10-08"
     },
     {
       "area": "icloud-sync-multi-device",
