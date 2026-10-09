@@ -120,9 +120,10 @@ describe("saldos", () => {
     expect(byName).toEqual({ BCP: 849.5, "Ahorro USD": 100, Vieja: 50, Préstamo: -999 });
   });
 
-  it("el total deja fuera archivadas y excluidas, y convierte cada divisa con la tasa de hoy", () => {
+  it("el total deja fuera las excluidas, no las archivadas, y convierte cada divisa con la tasa de hoy", () => {
+    // Archivar no decide la suma (2026-10-03): «Vieja» no se lista sin pedirla, pero su saldo cuenta, como en el Panel.
     const r = computeBalances(accounts, txs, "PEN", RATES, { incluirArchivadas: false, todayUtc: TODAY_UTC });
-    expect(r.total.importe).toBeCloseTo(849.5 + 340);
+    expect(r.total.importe).toBeCloseTo(849.5 + 340 + 50);
     expect(r.total.aproximado).toBe(false);
     // Sin fila de hoy se usa la última anterior, y eso es «≈», igual que en la app.
     expect(computeBalances(accounts, txs, "PEN", RATES, { incluirArchivadas: false, todayUtc: "2026-09-26" }).total.aproximado).toBe(true);

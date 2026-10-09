@@ -273,7 +273,12 @@ describe("chat.answer: el cuerpo de ChatAssistantService.runAskFlow", () => {
       for (const c of ctx.categories) {
         const subs = c.subcategories.reduce((a: number, s: { total_last_month: number }) => a + s.total_last_month, 0);
         expect(subs, `${p.id} ${c.name}`).toBeCloseTo(c.total_last_month, 6);
+        const subsToDate = c.subcategories.reduce((a: number, s: { total_last_month_to_date: number }) => a + s.total_last_month_to_date, 0);
+        expect(subsToDate, `${p.id} ${c.name} to_date`).toBeCloseTo(c.total_last_month_to_date, 6);
+        expect(c.total_last_month_to_date, `${p.id} ${c.name} to_date ≤ entero`).toBeLessThanOrEqual(c.total_last_month + 1e-9);
       }
+      // El mes pasado hasta hoy es parte del mes pasado entero (igual solo si hoy no existe en el mes pasado).
+      expect(ctx.periods.last_month_to_date.expense, p.id).toBeLessThanOrEqual(ctx.periods.last_month.expense + 1e-9);
       expect(ctx.metadata.date_today).toBe(p.today);
       expect(ctx.anomalies).toBeUndefined();
     }

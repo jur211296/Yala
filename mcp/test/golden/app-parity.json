@@ -144,7 +144,7 @@
             "00000000-0000-4000-8000-000000001006" : 60
           },
           "aproximado" : true,
-          "total" : 13309.70616
+          "total" : 12421.70616
         },
         "budgets" : {
           "00000000-0000-4000-8000-000000006001" : 3555.805468,
@@ -243,11 +243,11 @@
               "ingresos" : false,
               "neto" : true
             },
-            "gasto_medio_diario" : 5.2314590000000001,
-            "gastos" : 1344.48504,
+            "gasto_medio_diario" : 8.686712,
+            "gastos" : 2232.48504,
             "ingresos" : 7120,
-            "neto" : 5775.5149600000004,
-            "tasa_de_ahorro_pct" : 81.116782999999998
+            "neto" : 4887.5149600000004,
+            "tasa_de_ahorro_pct" : 68.644873000000004
           },
           "mes_actual" : {
             "aproximado" : {
@@ -255,11 +255,11 @@
               "ingresos" : false,
               "neto" : true
             },
-            "gasto_medio_diario" : 61.320360000000001,
-            "gastos" : 858.48504000000003,
+            "gasto_medio_diario" : 124.748931,
+            "gastos" : 1746.48504,
             "ingresos" : 4120,
-            "neto" : 3261.51496,
-            "tasa_de_ahorro_pct" : 79.162983999999994
+            "neto" : 2373.51496,
+            "tasa_de_ahorro_pct" : 57.609586
           },
           "mes_pasado" : {
             "aproximado" : {
