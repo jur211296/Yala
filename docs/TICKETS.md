@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (834)
+## Index (835)
 
 | id | status | path |
 |---|---|---|
@@ -653,6 +653,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | reentry-counts-as-fresh-install | qa | tickets/qa/reentry-counts-as-fresh-install.md |
 | reentry-killswitch-closes-both-doors | done | tickets/done/reentry-killswitch-closes-both-doors.md |
 | registros-calendario-cuenta-gastos-por-signo | done | tickets/done/registros-calendario-cuenta-gastos-por-signo.md |
+| reinstall-mid-migration-has-no-exit-from-the-identity-gate | backlog | tickets/backlog/reinstall-mid-migration-has-no-exit-from-the-identity-gate.md |
 | reinstall-without-network-has-no-cloud-door | done | tickets/done/reinstall-without-network-has-no-cloud-door.md |
 | rejected-member-cold-tap-does-nothing | done | tickets/done/rejected-member-cold-tap-does-nothing.md |
 | rejoin-tap-renotifies-admins | done | tickets/done/rejoin-tap-renotifies-admins.md |
@@ -739,7 +740,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | session-redesign-implementation-order | backlog | tickets/backlog/session-redesign-implementation-order.md |
 | session-redesign-web-and-store-copy | backlog | tickets/backlog/session-redesign-web-and-store-copy.md |
 | settings-adopt-stalled-before-the-claim-keeps-the-session | done | tickets/done/settings-adopt-stalled-before-the-claim-keeps-the-session.md |
-| settings-migrate-blocks-a-second-device-before-its-marker | backlog | tickets/backlog/settings-migrate-blocks-a-second-device-before-its-marker.md |
+| settings-migrate-blocks-a-second-device-before-its-marker | qa | tickets/qa/settings-migrate-blocks-a-second-device-before-its-marker.md |
 | settings-migrate-to-cloud-adopts-silently-instead-of-migrating | done | tickets/done/settings-migrate-to-cloud-adopts-silently-instead-of-migrating.md |
 | settings-redesign-as-grouped-lists-like-ios | qa | tickets/qa/settings-redesign-as-grouped-lists-like-ios.md |
 | settings-sign-out-scope-says-groups-stay-in-an-account-that-may-not-exist | backlog | tickets/backlog/settings-sign-out-scope-says-groups-stay-in-an-account-that-may-not-exist.md |
