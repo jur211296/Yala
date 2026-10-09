@@ -171,7 +171,7 @@ describe("criterios", () => {
 import { categoryName, currencySymbol, seedSubcategoryNames, subcategoryName } from "../bench/lib/appCatalog";
 import { chatDynamicPrompt, chatRegister, chatStaticPrompt, extractNumbers, fidelity, gradeChatAnswer, matchesValue, personaContext, triggersAnomalies } from "../bench/lib/chatAnswer";
 import { toAppJSON } from "../bench/lib/chatContext";
-import { gradeRewrite, isValidSuggestion, parseRewritten, rewriteBody, type RewriteCase } from "../bench/lib/chatRewrite";
+import { commonWordSet, gradeRewrite, isPolishInflection, isValidSuggestion, parseRewritten, rewriteBody, type RewriteCase } from "../bench/lib/chatRewrite";
 import { gradeTextParse, matchSubcategory, parseNoteResponse, textParseBody, type TextParseCase } from "../bench/lib/textParse";
 import { PERSONAS } from "../bench/tasks/chat.answer";
 
@@ -335,7 +335,7 @@ describe("chat.rewrite: el cuerpo de SuggestionsRewriterService.rewrite", () => 
   });
 
   it("las inválidas de cada caso son exactamente las que el isValid de la app manda a reescribir", () => {
-    for (const c of cases) expect(c.suggestions.filter((s) => !isValidSuggestion(s, c.whitelist)), c.id).toEqual(c.invalid);
+    for (const c of cases) expect(c.suggestions.filter((s) => !isValidSuggestion(s, c.whitelist, c.language)), c.id).toEqual(c.invalid);
   });
 
   it("parseRewritten y el criterio", () => {
@@ -347,6 +347,68 @@ describe("chat.rewrite: el cuerpo de SuggestionsRewriterService.rewrite", () => 
     expect(gradeRewrite(JSON.stringify({ suggestions: [...good.slice(0, 2), "¿Gasté más en Wong o en Tambo?"] }), c).pass).toBe(false);
     expect(gradeRewrite(JSON.stringify({ suggestions: good.slice(0, 2) }), c).pass).toBe(false);
     expect(gradeRewrite(JSON.stringify({ suggestions: [...good.slice(0, 2), "How much did I spend at Tambo last week?"] }), c).pass).toBe(false);
+  });
+});
+
+describe("chat.rewrite: el isValid replicado en alemán, polaco e inglés (ticket suggestions-rewriter-drops-german-and-polish-rewrites)", () => {
+  const empty = { categories: [], subcategories: [], budgets: [], tags: [], merchants: [] };
+  const de = { ...empty, categories: ["Lebensmittel", "Freizeit"], subcategories: ["Restaurant", "Tanken", "Supermarkt"], merchants: ["Rewe", "Lidl"] };
+  const pl = { ...empty, categories: ["Jedzenie", "Rozrywka"], subcategories: ["Restauracje", "Kino", "Apteka"], merchants: ["Biedronka", "Żabka", "Lidl"] };
+  const en = { ...empty, categories: ["Food"], subcategories: ["Gas"], merchants: ["Costco"] };
+  const es = { ...empty, categories: ["Comida"], subcategories: ["Restaurantes"], merchants: ["Tambo"] };
+
+  it("frases correctas pasan: sustantivos alemanes, meses, días, «I» y nombres declinados", () => {
+    for (const t of [
+      "Wie viel habe ich diesen Monat bei Rewe ausgegeben?",
+      "Wie hoch waren meine Ausgaben für Lebensmittel im Oktober?",
+      "Wie viel ist noch im Budget für Freizeit übrig?",
+      "Habe ich am Samstag mehr für Restaurants ausgegeben als im Vergleich zum Vormonat?",
+      "An welchen Wochentagen gebe ich mehr für Supermärkte aus?",
+    ]) expect(isValidSuggestion(t, de, "de-DE"), t).toBe(true);
+    for (const t of [
+      "Ile wydałem w Biedronce w tym miesiącu?",
+      "Ile wydałem w Żabce w tym tygodniu?",
+      "Ile wydałem w Aptece?",
+      "Ile wydałem na Rozrywkę?",
+      "Ile wydałem w Restauracjach w tym miesiącu?",
+      "Ile wydałem w Lidlu?",
+      "Ile zostało Ci w budżecie Jedzenie?",
+      "Jak wydatki na Rozrywkę wypadają względem Twojego budżetu?",
+    ]) expect(isValidSuggestion(t, pl, "pl-PL"), t).toBe(true);
+    for (const t of ["How much did I spend at Costco in October?", "Did I spend more on Gas on Saturday than on Sunday?"]) {
+      expect(isValidSuggestion(t, en, "en-US"), t).toBe(true);
+    }
+  });
+
+  it("un comercio o una categoría inventada sigue sin pasar, en los cuatro idiomas", () => {
+    expect(isValidSuggestion("Wie viel habe ich bei Aldi ausgegeben?", de, "de-DE")).toBe(false);
+    expect(isValidSuggestion("Wie hoch waren meine Kosten für Strom?", de, "de")).toBe(false);
+    expect(isValidSuggestion("Wie viel zahle ich im Monat für Spotify?", de, "de-DE")).toBe(false);
+    expect(isValidSuggestion("Ile wydałem w Rossmannie?", pl, "pl-PL")).toBe(false);
+    expect(isValidSuggestion("Ile wydałem na Ubrania?", pl, "pl-PL")).toBe(false);
+    expect(isValidSuggestion("How much did I spend at Walmart in October?", en, "en-US")).toBe(false);
+    expect(isValidSuggestion("How much did I spend on Insurance?", en, "en-US")).toBe(false);
+    expect(isValidSuggestion("¿Cuánto gasté en Wong en octubre?", es, "es-PE")).toBe(false);
+    expect(isValidSuggestion("¿Cuánto gasté en Comisiones este mes?", es, "es-PE")).toBe(false);
+  });
+
+  it("las listas son del idioma: el alemán no abre el español ni la declinación polaca abre otro idioma", () => {
+    expect(isValidSuggestion("¿Cuánto gasté este Monat?", es, "es-PE")).toBe(false);
+    expect(isValidSuggestion("Wie viel habe ich in Biedronce ausgegeben?", { ...empty, merchants: ["Biedronka"] }, "de-DE")).toBe(false);
+    expect(commonWordSet("de_DE").has("monat")).toBe(true);
+    expect(commonWordSet("en-GB").has("i")).toBe(true);
+    expect(commonWordSet("es").has("cuánto")).toBe(true);
+    expect(commonWordSet("es").has("monat")).toBe(false);
+  });
+
+  it("la declinación polaca: raíz con alternancia k→c, sin abrir palabras que solo comparten el principio", () => {
+    expect(isPolishInflection("biedronce", "biedronka")).toBe(true);
+    expect(isPolishInflection("żabce", "żabka")).toBe(true);
+    expect(isPolishInflection("kinie", "kino")).toBe(true);
+    expect(isPolishInflection("restauracjach", "restauracje")).toBe(true);
+    expect(isPolishInflection("biedronkowski", "biedronka")).toBe(false);
+    expect(isPolishInflection("rossmannie", "lidl")).toBe(false);
+    expect(isPolishInflection("domu", "dom")).toBe(false);
   });
 });
 

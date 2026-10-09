@@ -186,7 +186,16 @@ async function runTask(name: TaskName): Promise<void> {
   }
   console.log(`${name}: ${jobs.length} llamadas pendientes (${vs.length} variantes × ${cases.length} casos)`);
   let n = 0;
+  // Tope de gasto de ESTA corrida (`--max-usd 0.50`): la clave del banco cobra del saldo de producción. Al llegar, no se
+  // lanza ninguna llamada más; lo que falte se repite al reanudar. Las que ya están en vuelo pueden pasarse un poco.
+  const maxUsd = Number(arg("max-usd") ?? Infinity);
+  let spent = 0;
+  let capped = 0;
   await pool(jobs, Number(arg("concurrency") ?? 4), async ({ c, v, rep }) => {
+    if (spent >= maxUsd) {
+      capped++;
+      return;
+    }
     const route = routeFor(task, v);
     const body = task.body(c, v);
     const started = performance.now();
@@ -226,9 +235,11 @@ async function runTask(name: TaskName): Promise<void> {
       at: new Date().toISOString(),
     };
     appendFileSync(out, `${JSON.stringify(row)}\n`);
+    spent += row.cost ?? 0;
     n++;
     if (n % 20 === 0 || res.status !== 200) console.log(`  ${n}/${jobs.length} ${v.candidate.id} ${v.effort ?? ""} ${v.detail ?? ""} ${v.edge ?? ""} ${c.id} → ${res.status}${res.error ? ` ${res.error.slice(0, 120)}` : ""}`);
   });
+  console.log(`${name}: ${spent.toFixed(4)} USD en esta corrida${capped ? ` · tope de ${maxUsd} USD alcanzado, ${capped} llamadas sin lanzar` : ""}`);
 }
 
 // ---------- resumen ----------
