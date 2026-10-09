@@ -429,7 +429,9 @@ export function buildContext(p: Persona): BuiltContext {
       country: p.country,
       excluded_accounts: [],
     },
-    balances: { accounts, total_balance: totalBalance },
+    // Las personas del banco no tienen cuentas de Grupos: el total suma todo, como la app con «Grupos en el total»
+    // encendido (su default).
+    balances: { accounts, total_balance: totalBalance, total_includes_groups: true },
     periods: {
       today: summarize(iv.today),
       current_week: summarize(iv.currentWeek),

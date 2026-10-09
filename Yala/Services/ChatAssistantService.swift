@@ -68,6 +68,7 @@ final class ChatAssistantService {
     ///
     /// - `forceIntent`: si está presente, salta el classifier (usado por quick-reply
     ///   chips de ambiguous para no reclasificar el mismo texto retórico).
+    /// - `includeGroupsInTotal`: el ajuste «Grupos en el total» del Panel; el saldo total del contexto lo sigue.
     ///
     /// Retorna `ChatAssistantResponse` con `text` + `attachments` opcionales (drafts
     /// para `register`, quick-replies para `ambiguous`).
@@ -77,6 +78,7 @@ final class ChatAssistantService {
         modelContext: ModelContext,
         currencyCode: String,
         converter: CurrencyConverting,
+        includeGroupsInTotal: Bool,
         forceIntent: ChatIntent? = nil
     ) async throws -> ChatAssistantResponse {
         // === Common guards (apply to all 3 paths) ===
@@ -116,6 +118,7 @@ final class ChatAssistantService {
                 modelContext: modelContext,
                 currencyCode: currencyCode,
                 converter: converter,
+                includeGroupsInTotal: includeGroupsInTotal,
                 client: client
             )
             return ChatAssistantResponse(text: text, attachments: nil, intent: .ask)
@@ -140,6 +143,7 @@ final class ChatAssistantService {
         modelContext: ModelContext,
         currencyCode: String,
         converter: CurrencyConverting,
+        includeGroupsInTotal: Bool,
         client: OpenAI
     ) async throws -> String {
         let needsAnomalies = AnomalyKeywords.matches(question)
@@ -161,7 +165,8 @@ final class ChatAssistantService {
             converter: converter,
             language: language,
             country: country,
-            includeAnomalies: needsAnomalies
+            includeAnomalies: needsAnomalies,
+            includeGroupsInTotal: includeGroupsInTotal
         )
 
         let systemPrompt = buildSystemPrompt(
@@ -431,6 +436,7 @@ final class ChatAssistantService {
         13. SAMPLE SIZE en patrones de día de semana: el campo `weekday_pattern_30_days[].sample_size` indica cuántas tx hay en ese weekday durante los 30 días. Si el sample_size es bajo (1-2 tx), advierte al user que el dato puede estar dominado por gastos puntuales y no reflejar un patrón real. NUNCA presentes un weekday total como \"patrón\" si solo se basa en 1-2 tx.
         14. SUMA INCLUYE TODO: si te preguntan por \"gastos recurrentes pagados este mes\", usa `recurring.paid_this_month` (lista con fechas y montos). Para pendientes, usa `recurring.pending_next_30_days`.
         15. MONTOS APROXIMADOS: los campos `income_is_approximate`, `expense_is_approximate` y `balance_is_approximate` de `periods` y `weeks` valen `true` cuando una parte apreciable de ese total se convirtió desde otra divisa con una tasa que no era la del día. Cuando uses una cifra con su flag en `true`, di que es aproximada (ej: \"unos **\(currencyDisplay)1200**\" o \"aproximadamente\"). Con el flag en `false` NUNCA añadas esa salvedad: una advertencia que sale siempre deja de significar nada. Los flags NO cambian el número, solo cómo lo presentas.
+        15b. SALDO TOTAL: `balances.total_balance` es el saldo total que el usuario ve en el Panel. Con `balances.total_includes_groups` en `false` el usuario apagó el ajuste «Incluir grupos en saldo total»: las cuentas de `balances.accounts` con `type` \"system\" (las de Grupos) aparecen en la lista pero NO están sumadas en el total; dilo si las mencionas y NUNCA las sumes tú. Con `true` sí están sumadas.
         \(toneInstruction.isEmpty ? "" : "16. Tono: \(toneInstruction)")
         \(focusInstruction.isEmpty ? "" : "17. Enfoque: \(focusInstruction)")
 

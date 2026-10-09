@@ -13,6 +13,8 @@
 //     (decisión de Jürgen, 2026-10-03, `.claude/rules/session-filters.md`): una cuenta archivada
 //     que el usuario volvió a incluir suma aquí igual que en el Panel. Las cuentas que salen en
 //     `balances` son las del conteo del Panel (`PanelTotalAccountsLogic.countableAccounts`).
+//   - «Grupos en el total» apagado → `balances.total_balance` deja fuera las cuentas de Grupos con la misma regla
+//     que el Panel (`PanelTotalAccountsLogic.accountsForTotal`); siguen listadas en `balances.accounts`
 //   - comparar el mes en curso → `periods.last_month_to_date` y `total_last_month_to_date`: el
 //     mes pasado hasta el día equivalente a hoy, la misma alineación que el hero de Tendencias
 //   - tx.balanceAdjustmentType != nil → filtrado
@@ -34,6 +36,8 @@ final class FullFinancialContextBuilder {
         let context: FullFinancialContext
         let timestamp: Date
         let includedAnomalies: Bool
+        /// El ajuste con el que se calculó el total: si cambia, la caché no vale.
+        let includedGroupsInTotal: Bool
     }
 
     private var cache: CacheEntry?
@@ -51,6 +55,7 @@ final class FullFinancialContextBuilder {
         language: String,
         country: String,
         includeAnomalies: Bool,
+        includeGroupsInTotal: Bool,
         now: Date = .now
     ) -> FullFinancialContext {
         let calendar = Calendar.current
@@ -71,6 +76,7 @@ final class FullFinancialContextBuilder {
             language: language,
             country: country,
             includeAnomalies: includeAnomalies,
+            includeGroupsInTotal: includeGroupsInTotal,
             adjustment: adjustment,
             now: now
         )
@@ -80,6 +86,9 @@ final class FullFinancialContextBuilder {
     /// instantiating a ModelContext (whose CloudKit container has a known race
     /// condition in suite mode). Production callers use `build(modelContext:...)`
     /// which fetches and delegates here.
+    ///
+    /// `includeGroupsInTotal` es el ajuste «Grupos en el total» del Panel (`AppPreferences.includeGroupsInPanelTotal`):
+    /// lo pasa quien construye el contexto. Su default `true` es el default del ajuste.
     func buildFromArrays(
         transactions: [TransactionItem],
         budgets: [Budget],
@@ -92,11 +101,13 @@ final class FullFinancialContextBuilder {
         language: String,
         country: String,
         includeAnomalies: Bool,
+        includeGroupsInTotal: Bool = true,
         adjustment: GroupBridgeStatsAdjustment = .none,
         now: Date = .now
     ) -> FullFinancialContext {
         if let entry = cache,
            now.timeIntervalSince(entry.timestamp) < Self.ttlSeconds,
+           entry.includedGroupsInTotal == includeGroupsInTotal,
            includeAnomalies == false || entry.includedAnomalies {
             return entry.context
         }
@@ -139,6 +150,7 @@ final class FullFinancialContextBuilder {
 
         let balances = buildBalances(
             accounts: PanelTotalAccountsLogic.countableAccounts(allAccounts),
+            includeGroupsInTotal: includeGroupsInTotal,
             allRawTx: allTx,
             preferredCurrency: currencyCode,
             converter: converter
@@ -249,7 +261,8 @@ final class FullFinancialContextBuilder {
         cache = CacheEntry(
             context: context,
             timestamp: now,
-            includedAnomalies: includeAnomalies
+            includedAnomalies: includeAnomalies,
+            includedGroupsInTotal: includeGroupsInTotal
         )
         return context
     }
@@ -394,8 +407,11 @@ final class FullFinancialContextBuilder {
         )
     }
 
+    /// Lista todas las cuentas que cuentan (`accounts`) y suma las del total del Panel sin filtro de cuentas:
+    /// con «Grupos en el total» apagado, `accountsForTotal` quita las cuentas sistema de Grupos solo de la suma.
     private func buildBalances(
         accounts: [Account],
+        includeGroupsInTotal: Bool,
         allRawTx: [TransactionItem],
         preferredCurrency: String,
         converter: CurrencyConverting
@@ -413,14 +429,19 @@ final class FullFinancialContextBuilder {
         // en vez de suma de snapshots históricos — el LLM debe ver el saldo
         // disponible HOY, no la acumulación con TCs de distintos momentos.
         let total = LiveBalanceCalculator.liveBalance(
-            accounts: accounts,
+            accounts: PanelTotalAccountsLogic.accountsForTotal(
+                accounts,
+                includeGroups: includeGroupsInTotal,
+                hasSelectedAccount: false
+            ),
             transactions: allRawTx,
             preferredCurrencyCode: preferredCurrency,
             converter: converter
         )
         return FullFinancialContext.BalancesSection(
             accounts: entries,
-            totalBalance: safeDouble(total)
+            totalBalance: safeDouble(total),
+            totalIncludesGroups: includeGroupsInTotal
         )
     }
 
