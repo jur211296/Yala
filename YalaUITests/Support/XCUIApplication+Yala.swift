@@ -169,10 +169,10 @@ extension XCUIApplication {
         // positivo caería culpando al diálogo. Su nombre lo fija un test de paridad con `UITestHooks`
         // (`PendingICloudWipeMigrationWiringTests`).
         if pendingICloudWipe { args.append("-uitest-pending-icloud-wipe") }
-        // La respuesta fingida de la puerta de identidad de «Migrar a la nube» (`personalData` o `proceed`). NOMBRADO por lo
-        // mismo que sus vecinos: un typo en el arg dejaría la puerta preguntando de verdad, la comprobación no podría (sin
-        // sesión real) y el flujo seguiría al consentimiento, un rojo que culparía a la hoja. Su nombre y sus valores los
-        // fija un test de paridad con `UITestHooks` (`MigrationIdentityGateWiringTests`).
+        // La respuesta fingida de la puerta de identidad de «Migrar a la nube» (`personalData`, `proceed` u
+        // `otherDeviceMigrating`). NOMBRADO por lo mismo que sus vecinos: un typo en el arg dejaría la puerta preguntando de
+        // verdad, la comprobación no podría (sin sesión real) y el flujo seguiría al consentimiento, un rojo que culparía a la
+        // hoja. Su nombre y sus valores los fija un test de paridad con `UITestHooks` (`MigrationIdentityGateWiringTests`).
         if let fakeMigrationIdentity {
             args.append("-uitest-fake-migration-identity")
             args.append(fakeMigrationIdentity)

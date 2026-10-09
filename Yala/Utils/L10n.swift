@@ -7601,6 +7601,8 @@ enum L10n {
                 case .anotherGroupsAccountAssociated: return ls("storage.migrate.refusedOtherGroups", comment: "")
                 case .accountReturnedToICloud:        return ls("storage.migrate.refusedReturned", comment: "")
                 case .sessionFromBeforeFreshStart:    return ls("storage.migrate.refusedFreshStart", comment: "")
+                case .migrationInProgressOnAnotherDevice:
+                    return ls("storage.migrate.refusedOtherDevice", comment: "")
                 }
             }
         }
@@ -7760,6 +7762,12 @@ enum L10n {
             /// enseña. En una sesión solo-grupos esa sección no existe (`groups-only-session-storage-screen-says-data-lives-in-icloud`).
             static var freshStartSessionBody: String { ls("storage.migrateBlock.freshStartSessionBody", comment: "") }
             static var useAnotherAccount: String { ls("storage.migrateBlock.useAnotherAccount", comment: "") }
+            /// Otro dispositivo de esta misma persona está llevando sus datos a esa cuenta (ticket
+            /// `settings-migrate-blocks-a-second-device-before-its-marker`, opción A de Jürgen del 2026-10-08). El título es su
+            /// texto. El cuerpo nombra las dos salidas —terminar allí, o reintentar allí si se paró— y no promete que aquí se
+            /// active solo: con el otro parado no pasaría nunca.
+            static var otherDeviceTitle: String { ls("storage.migrateBlock.otherDeviceTitle", comment: "") }
+            static var otherDeviceBody: String { ls("storage.migrateBlock.otherDeviceBody", comment: "") }
             /// Junto a «Usar otra cuenta» cuando la cuenta rechazada era de Apple: en el iPhone, «Iniciar sesión con Apple»
             /// firma siempre con el Apple ID del dispositivo, así que elegir Apple otra vez acaba en la misma cuenta
             /// (Jürgen, 2026-09-16; poder elegir otro Apple ID es otro ticket).
@@ -7771,6 +7779,7 @@ enum L10n {
                 case .anotherGroupsAccountAssociated: return otherGroupsTitle
                 case .accountReturnedToICloud:        return returnedTitle
                 case .sessionFromBeforeFreshStart:    return freshStartSessionTitle
+                case .migrationInProgressOnAnotherDevice: return otherDeviceTitle
                 }
             }
 
@@ -7793,6 +7802,8 @@ enum L10n {
                     return returnedBody
                 case .sessionFromBeforeFreshStart:
                     return freshStartSessionBody
+                case .migrationInProgressOnAnotherDevice:
+                    return otherDeviceBody
                 }
             }
         }

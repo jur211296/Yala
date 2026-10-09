@@ -375,6 +375,29 @@ alguna de las 22 tablas.
 **Marcha atrás:** `qa/cloud/hlc01_rollback.sql` (quita los 22 triggers y las 3 funciones). La normalización no se
 deshace y no hace falta: solo acotó HLC por encima de `now() + 60 s`, nunca un valor.
 
+## `migration_in_progress` en `/account/exists` — solo Worker, sin SQL (staging y producción, 2026-10-09)
+
+Ticket `settings-migrate-blocks-a-second-device-before-its-marker` (opción A de Jürgen, deploy autorizado el 2026-10-09
+14:01). `/account/exists` añade `migration_in_progress: true|false` cuando la fila existe; la app instalada lo ignora
+(decodifica sin claves estrictas) y la nueva lo lee para el aviso de «otro de tus dispositivos».
+
+**No hay migración SQL.** Los grants de `profiles` son a nivel tabla (`qa/cloud/g15_01_account_kind.sql:25-28`), así que el
+`select` con el JWT del usuario ya podía leer la columna. Medido antes de desplegar, por PostgREST con la clave anónima y
+`limit=0` (no devuelve filas): `select=id,kind,migration_in_progress` da **200** en los dos proyectos, y el control con una
+columna inexistente da **400 / 42703**. El token de gestión (`~/Secrets/yala-supabase-mgmt/pat`) seguía dando
+`Invalid access token`, así que no se leyeron los `md5` de funciones: ninguna cambió.
+
+| Paso | Antes | Después | Resultado |
+|---|---|---|---|
+| Worker staging (`npm run deploy:staging`) | `de51aa1b-cb70-4911-9f83-c5f8eef4c4fc` (2026-10-08 00:01Z) | `47b02439-ab1f-4ef6-9604-3b15f4b53675` | goldens de `account.goldens.test.ts` con el código local: 34 en verde, 3 saltados por fixture, 1 rojo (el 20 falla igual en `HEAD`: `account-goldens-freeze-read-test-times-out`); el Worker desplegado, con el usuario B: `false` → (ida en curso por PATCH) `true` → (limpia) `false` |
+| Worker producción (`npm run deploy:production`) | `4e93d41f-c01c-469c-b601-d602bf741dfb` (2026-10-08 00:03Z) | `c2b95bd0-43f9-4ff9-9d53-2331b1b3ea1b` | humo: `/account/exists` sin JWT → 401 `yala_attest_required` y con JWT inválido → 401 `yala_attest_invalid`, como antes; `/config` → 200. Sin usuario de test en producción, el campo nuevo no se pidió ahí: lo prueban los goldens contra staging con el mismo código |
+
+Entre el deploy anterior y este no cambió nada más de `gateway/src`, `wrangler.toml` ni los manifiestos (medido con
+`git diff b4b988ea9 HEAD`): el deploy llevó solo este cambio.
+
+**Marcha atrás:** `npx wrangler rollback 4e93d41f-c01c-469c-b601-d602bf741dfb --env production` (y `de51aa1b-…` en staging).
+La app nueva sin el campo cae al aviso de siempre, que sigue bloqueando.
+
 ---
 
 ## Referencias

@@ -149,7 +149,7 @@ final class UITestHooks {
     /// antes corre igual. Solo DEBUG.
     nonisolated static var signOutKeepsSession: Bool { hasArg("-uitest-sign-out-keeps-session") }
 
-    /// Valor de `-uitest-fake-migration-identity <personalData|proceed>`: finge la RESPUESTA de la puerta de identidad de
+    /// Valor de `-uitest-fake-migration-identity <personalData|proceed|otherDeviceMigrating>`: finge la RESPUESTA de la puerta de identidad de
     /// «Migrar a la nube» (`CloudMigrationController.checkMigrationIdentity`), para el XCUITest de la hoja del bloqueo
     /// (ticket `settings-migrate-to-cloud-adopts-silently-instead-of-migrating`). El simulador no puede preguntar a
     /// `/account/exists` con una sesión real, así que sin esto la hoja no se ve.
@@ -164,6 +164,9 @@ final class UITestHooks {
         switch parseValue(after: "-uitest-fake-migration-identity", from: ProcessInfo.processInfo.arguments) {
         case "personalData": return .blocked(.accountHasPersonalData)
         case "proceed":      return .proceed
+        // Otro dispositivo de esta persona está llevando sus datos a la cuenta (ticket
+        // `settings-migrate-blocks-a-second-device-before-its-marker`). Finge la respuesta, no la decisión.
+        case "otherDeviceMigrating": return .blocked(.migrationInProgressOnAnotherDevice)
         default:             return nil
         }
         #else

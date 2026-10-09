@@ -100,6 +100,7 @@ describe("GET /account/exists · kind", () => {
     const cap = stubFetch({ status: 200, body: [{ id: SUB, kind: "complete" }] });
     await exists(makeEnv());
     expect(cap.urls.some((u) => u.includes("select=id%2Ckind") || u.includes("select=id,kind"))).toBe(true);
+    expect(cap.urls.some((u) => u.includes("migration_in_progress"))).toBe(true);
   });
 
   it("cuenta completa → { exists: true, kind: 'complete' }", async () => {
@@ -137,6 +138,67 @@ describe("GET /account/exists · kind", () => {
     stubFetch({ status: 500, body: { message: "boom" } });
     const res = await exists(makeEnv());
     expect(res.status).toBe(502);
+  });
+});
+
+describe("GET /account/exists · migration_in_progress (2026-10-09)", () => {
+  it("migración en curso → lo dice, junto al kind", async () => {
+    stubFetch({ status: 200, body: [{ id: SUB, kind: "complete", migration_in_progress: true }] });
+    expect(await (await exists(makeEnv())).json()).toEqual({
+      exists: true,
+      kind: "complete",
+      migration_in_progress: true,
+    });
+  });
+
+  it("sin migración en curso → false explícito (no ausente: el cliente distingue «no hay» de «no lo sé» solo por el valor)", async () => {
+    stubFetch({ status: 200, body: [{ id: SUB, kind: "complete", migration_in_progress: false }] });
+    expect(await (await exists(makeEnv())).json()).toEqual({
+      exists: true,
+      kind: "complete",
+      migration_in_progress: false,
+    });
+  });
+
+  it("valor fuera del dominio (null, string) → se OMITE, como un kind desconocido", async () => {
+    for (const raro of [null, "true", 1]) {
+      stubFetch({ status: 200, body: [{ id: SUB, kind: "complete", migration_in_progress: raro }] });
+      const cuerpo = (await (await exists(makeEnv())).json()) as Record<string, unknown>;
+      expect(cuerpo).toEqual({ exists: true, kind: "complete" });
+      expect("migration_in_progress" in cuerpo).toBe(false);
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("cuenta inexistente → sin el campo", async () => {
+    stubFetch({ status: 200, body: [] });
+    const cuerpo = (await (await exists(makeEnv())).json()) as Record<string, unknown>;
+    expect(cuerpo).toEqual({ exists: false });
+  });
+
+  /**
+   * La app YA INSTALADA (TestFlight y builds anteriores) decodifica `{ exists: Bool, kind: String? }` con `Decodable`,
+   * sin claves estrictas (`CloudAccountClient.ExistsResponse`). El cambio es aditivo si, quitando las claves que esa app
+   * no conoce, la respuesta es la de antes byte a byte: mismos valores y mismos tipos.
+   */
+  it("la app vieja lee lo mismo que antes: exists y kind intactos, con sus tipos", async () => {
+    const casos: Array<[Record<string, unknown>, Record<string, unknown>]> = [
+      [{ id: SUB, kind: "complete", migration_in_progress: true }, { exists: true, kind: "complete" }],
+      [{ id: SUB, kind: "complete", migration_in_progress: false }, { exists: true, kind: "complete" }],
+      [{ id: SUB, kind: "groups_only", migration_in_progress: false }, { exists: true, kind: "groups_only" }],
+      [{ id: SUB, migration_in_progress: true }, { exists: true }],
+    ];
+    for (const [fila, comoLaLeiaLaAppVieja] of casos) {
+      stubFetch({ status: 200, body: [fila] });
+      const res = await exists(makeEnv());
+      expect(res.status).toBe(200);
+      const cuerpo = (await res.json()) as Record<string, unknown>;
+      const vistoPorLaAppVieja: Record<string, unknown> = { exists: cuerpo.exists };
+      if ("kind" in cuerpo) vistoPorLaAppVieja.kind = cuerpo.kind;
+      expect(vistoPorLaAppVieja).toEqual(comoLaLeiaLaAppVieja);
+      expect(typeof cuerpo.exists).toBe("boolean");
+      vi.unstubAllGlobals();
+    }
   });
 });
 

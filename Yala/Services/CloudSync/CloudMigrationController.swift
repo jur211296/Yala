@@ -865,11 +865,13 @@ final class CloudMigrationController {
         let answer: StorageMigrationIdentityGateLogic.Answer
         var discovery: CloudIdentityRoutingLogic.Discovery?
         var userID: String?
+        var accountMigrationInProgress = false
         switch await CloudIdentityDiscovery().discover(gate: .settingsMigrateToCloud) {
-        case let .discovered(found, id):
+        case let .discovered(found, id, migrationInProgress):
             answer = .discovered(found)
             discovery = found
             userID = id
+            accountMigrationInProgress = migrationInProgress
         case .unavailable:
             answer = .unavailable
         }
@@ -893,7 +895,10 @@ final class CloudMigrationController {
             sessionOpenedByThisAttempt: sessionOpenedByThisAttempt,
             // El sello de «Empezar desde cero», del mismo dominio en el que lo leen `GroupsAccountAssociation` y el bridge.
             deviceSealedForFreshStart: UserDefaults.standard.bool(
-                forKey: AppPreferences.Keys.groupsDomainSealedForFreshStart))
+                forKey: AppPreferences.Keys.groupsDomainSealedForFreshStart),
+            // Ticket `settings-migrate-blocks-a-second-device-before-its-marker`: solo cambian el MOTIVO de una parada.
+            accountMigrationInProgress: accountMigrationInProgress,
+            beaconNamesThisAccount: CloudBeacon().namesAccount(sub: userID))
         return (check, discovery)
     }
 
@@ -971,10 +976,13 @@ final class CloudMigrationController {
         let attempt = migrationAttempt
         migrationAttempt = nil
         let openedSession = attempt?.sessionOpenedByThisAttempt ?? false
+        // El faro se lee con la sesión del claim todavía viva: la línea siguiente puede cerrarla.
+        let beaconNamesClaimedAccount = CloudBeacon().namesAccount(sub: CloudAuthService.shared.currentUserID)
         let rejectedProvider = await closeSessionIfOpened(openedSession)
         publishBlock(
             StorageMigrationIdentityGateLogic.blockForClaimRefusal(
-                checkedDiscovery: attempt?.checkedDiscovery, claimState: refusal.claimState),
+                checkedDiscovery: attempt?.checkedDiscovery, claimState: refusal.claimState,
+                beaconNamesThisAccount: beaconNamesClaimedAccount),
             offersAnotherAccount: openedSession,
             rejectedProvider: rejectedProvider,
             stage: "claim")

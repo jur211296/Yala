@@ -115,6 +115,15 @@ final class CloudBeacon {
         return store.string(forKey: Keys.accountHash)
     }
 
+    /// El faro está puesto y nombra la cuenta de este `sub`: el dispositivo de este Apple ID que la reclamó escribió su hash.
+    /// Lo lee la puerta de «Migrar a la nube» para decir «otro de tus dispositivos está llevando tus datos a la nube»
+    /// (`StorageMigrationIdentityGateLogic`, ticket `settings-migrate-blocks-a-second-device-before-its-marker`). Un faro sin
+    /// hash —el fingido de `-uitest-fake-beacon`, o uno escrito sin `sub`— no nombra ninguna cuenta.
+    func namesAccount(sub: String?) -> Bool {
+        guard let sub, !sub.isEmpty, isCloudAccountLinked, let hash = accountHash else { return false }
+        return hash == Self.hash(sub)
+    }
+
     /// Hash SHA-256 del `sub`, truncado a 16 hex chars (no reversible, sin PII).
     static func hash(_ sub: String) -> String {
         let digest = SHA256.hash(data: Data(sub.utf8))

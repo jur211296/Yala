@@ -95,6 +95,16 @@ async function exists(jwt: string): Promise<boolean> {
   return ((await res.json()) as { exists: boolean }).exists;
 }
 
+/** `exists` crudo, con todas las claves que mande el Worker. */
+async function existsRaw(jwt: string): Promise<{ exists: boolean; kind?: string; migration_in_progress?: unknown }> {
+  const res = await app.fetch(
+    new Request("https://gw.local/account/exists", { method: "GET", headers: { Authorization: `Bearer ${jwt}` } }),
+    env,
+  );
+  expect(res.status).toBe(200);
+  return (await res.json()) as { exists: boolean; kind?: string; migration_in_progress?: unknown };
+}
+
 interface ProgressResult {
   ok?: boolean;
   reason?: string;
@@ -1044,13 +1054,14 @@ describeStaging("g15_01 goldens · kind de la cuenta (staging real)", () => {
     subC = decodeSub(jwtC);
   });
 
-  /** `exists` crudo: aquí importa el `kind`, no solo el booleano del helper de arriba. */
+  /**
+   * `exists` tal como lo lee la app de este bloque: `exists` + `kind`. Desde el 2026-10-09 la respuesta trae además
+   * `migration_in_progress` (golden 33), que este bloque no mide: se quita aquí para que el ciclo del `kind` no dependa del
+   * valor que dejen los goldens de la migración en la fila.
+   */
   async function existsFull(jwt: string): Promise<{ exists: boolean; kind?: string }> {
-    const res = await app.fetch(
-      new Request("https://gw.local/account/exists", { method: "GET", headers: { Authorization: `Bearer ${jwt}` } }),
-      env,
-    );
-    return (await res.json()) as { exists: boolean; kind?: string };
+    const { migration_in_progress: _mip, ...resto } = await existsRaw(jwt);
+    return resto;
   }
 
   /** El sello de g16_02: cuándo entró por primera vez en lo personal un dispositivo que no es el líder. */
@@ -1160,5 +1171,39 @@ describeStaging("g15_01 goldens · kind de la cuenta (staging real)", () => {
   it("32. un claim con kind fuera del dominio → 400, sin llegar al RPC", async () => {
     const res = await claim(jwtA, { device_id: DEV_A, provider: "apple", kind: "premium" });
     expect(res.status).toBe(400);
+  });
+});
+
+// settings-migrate-blocks-a-second-device-before-its-marker (2026-10-09) — `/account/exists` dice si la cuenta tiene una ida
+// en curso. Usa sub B y deja `migration_in_progress=false` y el líder vacío, como el golden 3.
+describeStaging("2026-10-09 goldens · migration_in_progress en /account/exists (staging real)", () => {
+  it("33. con una ida en curso lo dice; sin ella, false; y exists/kind no cambian para la app que no conoce el campo", async () => {
+    const antes = await existsRaw(jwtB);
+    expect(antes.exists).toBe(true);
+    // Con la fila existente el campo viaja SIEMPRE, booleano: la columna es legible con el JWT del dueño (grants a nivel
+    // tabla de `profiles`). Si faltara aquí, el Worker estaría leyendo otra columna o la base no la tendría.
+    expect(typeof antes.migration_in_progress).toBe("boolean");
+    const comoLaAppVieja = (r: { exists: boolean; kind?: string }) => ({ exists: r.exists, kind: r.kind });
+
+    // Una ida en curso de OTRO dispositivo, con el lease vigente (molde del golden 3).
+    expect(
+      await patchProfile(jwtB, {
+        migration_in_progress: true,
+        leader_device_id: DEV_OTHER,
+        migration_updated_at: new Date().toISOString(),
+      }),
+    ).toBeLessThan(300);
+    try {
+      const enCurso = await existsRaw(jwtB);
+      expect(enCurso.migration_in_progress).toBe(true);
+      expect(comoLaAppVieja(enCurso)).toEqual(comoLaAppVieja(antes));
+    } finally {
+      // Limpia el estado aunque falle una aserción: la fila de B la leen los goldens siguientes.
+      await patchProfile(jwtB, { migration_in_progress: false, leader_device_id: null });
+    }
+
+    const terminada = await existsRaw(jwtB);
+    expect(terminada.migration_in_progress).toBe(false);
+    expect(comoLaAppVieja(terminada)).toEqual(comoLaAppVieja(antes));
   });
 });

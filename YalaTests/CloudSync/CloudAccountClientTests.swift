@@ -403,6 +403,42 @@ struct CloudAccountClientTests {
         #expect(await client.exists(jwt: "j") == .exists(true, kind: nil))
     }
 
+    // MARK: - GET /account/exists · migration_in_progress (2026-10-09)
+
+    /// La ida en curso viaja hasta la puerta de «Migrar» (ticket `settings-migrate-blocks-a-second-device-before-its-marker`).
+    @Test func exists_200ConMigracionEnCurso_loDice() async {
+        let stub = AccountStubHTTP(status: 200,
+                                   body: Data(#"{"exists":true,"kind":"complete","migration_in_progress":true}"#.utf8))
+        let client = CloudAccountClient(baseURL: base, urlSession: stub)
+        #expect(await client.exists(jwt: "j") == .exists(true, kind: .complete, migrationInProgress: true))
+    }
+
+    @Test func exists_200SinMigracionEnCurso_false() async {
+        let stub = AccountStubHTTP(status: 200,
+                                   body: Data(#"{"exists":true,"kind":"complete","migration_in_progress":false}"#.utf8))
+        let client = CloudAccountClient(baseURL: base, urlSession: stub)
+        #expect(await client.exists(jwt: "j") == .exists(true, kind: .complete, migrationInProgress: false))
+    }
+
+    /// Un gateway anterior no manda el campo: es `false`, que deja la puerta con el aviso de siempre.
+    @Test func exists_200SinElCampo_esFalse() async {
+        let stub = AccountStubHTTP(status: 200, body: Data(#"{"exists":true,"kind":"complete"}"#.utf8))
+        let client = CloudAccountClient(baseURL: base, urlSession: stub)
+        #expect(await client.exists(jwt: "j") == .exists(true, kind: .complete, migrationInProgress: false))
+    }
+
+    /// Un valor que no es booleano NO tumba el decode: sin esto, el `try?` de `exists` lo convertía en `.transient` y el
+    /// sign-in de todas las puertas se quedaba en «reintentar». `exists` y `kind` se leen igual.
+    @Test func exists_200ConValorRaro_seLeeComoAusenteYNoEsTransient() async {
+        for raro in [#""true""#, "1", "null", #"{"a":1}"#] {
+            let stub = AccountStubHTTP(status: 200,
+                                       body: Data(#"{"exists":true,"kind":"complete","migration_in_progress":\#(raro)}"#.utf8))
+            let client = CloudAccountClient(baseURL: base, urlSession: stub)
+            #expect(await client.exists(jwt: "j") == .exists(true, kind: .complete, migrationInProgress: false),
+                    "valor \(raro)")
+        }
+    }
+
     @Test func exists_200false_noTraeKind() async {
         let stub = AccountStubHTTP(status: 200, body: Data(#"{"exists":false}"#.utf8))
         let client = CloudAccountClient(baseURL: base, urlSession: stub)
