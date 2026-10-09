@@ -5296,6 +5296,7 @@
 
 /* Storage migrate card, after the identity check refused the live account: it was signed in before a fresh start */
 "storage.migrate.refusedFreshStart" = "Sua conta Yala atual pode ser de outra pessoa: ela já estava conectada quando aqui se começou do zero. Para escolher a sua, desvincule-a em “Grupos” e toque de novo em “Ativar a nuvem”.";
+"storage.migrate.refusedOtherDevice" = "Outro dos seus dispositivos está levando seus dados para esta conta. Termine a ativação lá ou, se ela parou, tente de novo nesse dispositivo.";
 
 /* Storage adopt card: the live session is a different Yala account than the one that migrated (%@ = Apple|Google) */
 "storage.adopt.otherAccountNote" = "Esta cópia na nuvem pertence a outra conta Yala, a de %@. Saia e entre com essa conta para continuar.";
@@ -6046,6 +6047,8 @@
 "storage.migrateBlock.appleSameAccountNote" = "Com a Apple, o Yala usa sempre a conta deste dispositivo. Para usar outra, escolha o Google.";
 "storage.migrateBlock.freshStartSessionTitle" = "Esta conta pode ser de outra pessoa";
 "storage.migrateBlock.freshStartSessionBody" = "Nada mudou. Seus grupos usam uma conta que já estava conectada neste dispositivo e, como aqui se começou do zero, ela pode ser de outra pessoa. Para levar seus dados para a nuvem, desvincule-a em “Grupos” e toque de novo em “Ativar a nuvem”: você poderá escolher sua conta.";
+"storage.migrateBlock.otherDeviceTitle" = "Outro dos seus dispositivos está levando seus dados para a nuvem";
+"storage.migrateBlock.otherDeviceBody" = "Nada mudou. Termine a ativação nesse dispositivo ou, se ela parou, tente de novo lá. Quando terminar, você poderá ativar a nuvem aqui.";
 
 /* Restaurar: la busqueda termino vacia y el servidor nunca contesto — no sabemos si hay datos (reinstall-without-network-has-no-cloud-door) */
 "welcome.restore.cloudUnverifiedTitle" = "Não conseguimos verificar seus dados";

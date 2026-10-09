@@ -28,10 +28,13 @@ struct StorageMigrationIdentityGateLogicTests {
                        claimedHere: Bool = false,
                        unansweredClaim: Bool = false,
                        freshStart: Bool = false,
-                       openedHere: Bool = false) -> Logic.Check {
+                       openedHere: Bool = false,
+                       migrationInProgress: Bool = false,
+                       beacon: Bool = false) -> Logic.Check {
         Logic.check(answer: .discovered(discovery), deviceState: state, isAssociatedGroupsAccount: associated,
                     claimedForMigrationHere: claimedHere, hasUnansweredMigrationClaim: unansweredClaim,
-                    sessionOpenedByThisAttempt: openedHere, deviceSealedForFreshStart: freshStart)
+                    sessionOpenedByThisAttempt: openedHere, deviceSealedForFreshStart: freshStart,
+                    accountMigrationInProgress: migrationInProgress, beaconNamesThisAccount: beacon)
     }
 
     // MARK: - La fila de Ajustes, de punta a punta
@@ -88,7 +91,9 @@ struct StorageMigrationIdentityGateLogicTests {
                                             claimedForMigrationHere: claimedHere,
                                             hasUnansweredMigrationClaim: claimedHere,
                                             sessionOpenedByThisAttempt: openedHere,
-                                            deviceSealedForFreshStart: freshStart) == .couldNotCheck)
+                                            deviceSealedForFreshStart: freshStart,
+                                            accountMigrationInProgress: true,
+                                            beaconNamesThisAccount: true) == .couldNotCheck)
                     }
                 }
             }
@@ -257,19 +262,105 @@ struct StorageMigrationIdentityGateLogicTests {
     /// `existing_stable` es la que volvió a iCloud. Las demás se completaron entre la comprobación y el claim.
     @Test("claim devuelto con existing_stable: solo-grupos → volvió a iCloud; lo demás → ya tiene finanzas personales")
     func avisoDelClaim() {
-        #expect(Logic.blockForClaimRefusal(checkedDiscovery: .groupsOnly, claimState: .existingStable) == .accountReturnedToICloud)
-        #expect(Logic.blockForClaimRefusal(checkedDiscovery: .newAccount, claimState: .existingStable) == .accountHasPersonalData)
-        #expect(Logic.blockForClaimRefusal(checkedDiscovery: .complete, claimState: .existingStable) == .accountHasPersonalData)
-        #expect(Logic.blockForClaimRefusal(checkedDiscovery: nil, claimState: .existingStable) == .accountHasPersonalData)
+        // Con y sin faro: `existing_stable` no es una ida en curso, así que el faro no cambia nada aquí.
+        for beacon in [false, true] {
+            #expect(Logic.blockForClaimRefusal(checkedDiscovery: .groupsOnly, claimState: .existingStable,
+                                               beaconNamesThisAccount: beacon) == .accountReturnedToICloud)
+            #expect(Logic.blockForClaimRefusal(checkedDiscovery: .newAccount, claimState: .existingStable,
+                                               beaconNamesThisAccount: beacon) == .accountHasPersonalData)
+            #expect(Logic.blockForClaimRefusal(checkedDiscovery: .complete, claimState: .existingStable,
+                                               beaconNamesThisAccount: beacon) == .accountHasPersonalData)
+            #expect(Logic.blockForClaimRefusal(checkedDiscovery: nil, claimState: .existingStable,
+                                               beaconNamesThisAccount: beacon) == .accountHasPersonalData)
+        }
     }
 
     /// `claiming_in_progress` es otro dispositivo migrando esa cuenta (Jürgen, 2026-09-16: parar y avisar). Nunca «volvió a
     /// iCloud», tampoco si la comprobación la vio solo-grupos: otro dispositivo la acaba de promover.
-    @Test("claim devuelto con claiming_in_progress: siempre ya tiene finanzas personales")
+    @Test("claim devuelto con claiming_in_progress sin faro: ya tiene finanzas personales")
     func avisoDelClaimEnCurso() {
         for discovery in [.groupsOnly, .newAccount, .complete, nil] as [CloudIdentityRoutingLogic.Discovery?] {
-            #expect(Logic.blockForClaimRefusal(checkedDiscovery: discovery, claimState: .claimingInProgress)
+            #expect(Logic.blockForClaimRefusal(checkedDiscovery: discovery, claimState: .claimingInProgress,
+                                               beaconNamesThisAccount: false)
                     == .accountHasPersonalData, "comprobación \(String(describing: discovery))")
+        }
+    }
+
+    /// Ticket `settings-migrate-blocks-a-second-device-before-its-marker`, la segunda capa: si la comprobación pasó antes de
+    /// que el primer iPhone reclamara la cuenta, es el claim el que contesta `claiming_in_progress`. Con el faro de esta
+    /// cuenta, es otro dispositivo de esta misma persona, y el aviso lo dice —venga de donde venga la comprobación—.
+    @Test("claim devuelto con claiming_in_progress y el faro de la cuenta: otro de tus dispositivos")
+    func avisoDelClaimEnCursoConFaro() {
+        for discovery in [.groupsOnly, .newAccount, .complete, nil] as [CloudIdentityRoutingLogic.Discovery?] {
+            #expect(Logic.blockForClaimRefusal(checkedDiscovery: discovery, claimState: .claimingInProgress,
+                                               beaconNamesThisAccount: true)
+                    == .migrationInProgressOnAnotherDevice, "comprobación \(String(describing: discovery))")
+        }
+    }
+
+    // MARK: - El segundo iPhone del mismo iCloud (ticket `settings-migrate-blocks-a-second-device-before-its-marker`)
+
+    /// El bug del ticket: con la ida del primer iPhone en curso, el segundo leía «Esa cuenta ya tiene finanzas personales».
+    /// Con la ida en curso y el faro de esta cuenta, el motivo es otro —y sigue siendo un BLOQUEO—, se asocie lo que se asocie
+    /// y venga de donde venga la sesión.
+    @Test("cuenta completa + ida en curso + faro de la cuenta → otro de tus dispositivos")
+    func idaEnCursoConFaro_motivoNuevo() {
+        for associated in [true, false, nil] as [Bool?] {
+            for freshStart in [false, true] {
+                for openedHere in [false, true] {
+                    #expect(check(.complete, associated: associated, freshStart: freshStart, openedHere: openedHere,
+                                  migrationInProgress: true, beacon: true)
+                            == .blocked(.migrationInProgressOnAnotherDevice),
+                            "asociada=\(String(describing: associated)) sellado=\(freshStart) abierta=\(openedHere)")
+                }
+            }
+        }
+    }
+
+    /// **La mitad que no se puede perder**: sin ida en curso, una cuenta completa es de datos que no son de este teléfono y el
+    /// aviso es el de siempre, con faro o sin él.
+    @Test("cuenta completa sin ida en curso → ya tiene finanzas personales, con faro o sin él")
+    func sinIdaEnCurso_motivoDeSiempre() {
+        for beacon in [false, true] {
+            for associated in [true, false, nil] as [Bool?] {
+                #expect(check(.complete, associated: associated, migrationInProgress: false, beacon: beacon)
+                        == .blocked(.accountHasPersonalData),
+                        "faro=\(beacon) asociada=\(String(describing: associated))")
+            }
+        }
+    }
+
+    /// Sin el faro de esta cuenta, «otro de tus dispositivos» podría ser falso: la cuenta en curso puede ser de otra persona
+    /// que firmó con su cuenta en este teléfono.
+    @Test("cuenta completa + ida en curso SIN el faro de la cuenta → ya tiene finanzas personales")
+    func idaEnCursoSinFaro_motivoDeSiempre() {
+        #expect(check(.complete, associated: nil, migrationInProgress: true, beacon: false)
+                == .blocked(.accountHasPersonalData))
+    }
+
+    /// Los dos datos solo cambian el MOTIVO de una parada que ya existía: no abren nada que estuviera cerrado ni cierran nada
+    /// que estuviera abierto. «Reintentar» del propio líder sigue pasando, y una cuenta nueva o solo-grupos sigue igual.
+    @Test("la ida en curso y el faro no cambian ningún veredicto que no fuera «ya tiene finanzas personales»")
+    func idaEnCurso_noTocaLosDemasVeredictos() {
+        for discovery in [.newAccount, .groupsOnly, .complete] as [Discovery] {
+            for associated in [true, false, nil] as [Bool?] {
+                for claimedHere in [false, true] {
+                    for freshStart in [false, true] {
+                        let before = check(discovery, associated: associated, claimedHere: claimedHere,
+                                           freshStart: freshStart)
+                        let after = check(discovery, associated: associated, claimedHere: claimedHere,
+                                          freshStart: freshStart, migrationInProgress: true, beacon: true)
+                        if before == .blocked(.accountHasPersonalData) {
+                            #expect(after == .blocked(.migrationInProgressOnAnotherDevice))
+                        } else {
+                            #expect(after == before, """
+                                \(discovery) asociada=\(String(describing: associated)) sellado=\(claimedHere) \
+                                desdeCero=\(freshStart)
+                                """)
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -282,6 +373,7 @@ struct StorageMigrationIdentityGateLogicTests {
         #expect(Logic.Block.anotherGroupsAccountAssociated.slug == "other_groups_account")
         #expect(Logic.Block.accountReturnedToICloud.slug == "returned_to_icloud")
         #expect(Logic.Block.sessionFromBeforeFreshStart.slug == "fresh_start_session")
+        #expect(Logic.Block.migrationInProgressOnAnotherDevice.slug == "other_device_migrating")
         #expect(Set(Logic.Block.allCases.map(\.slug)).count == Logic.Block.allCases.count)
     }
 
@@ -363,6 +455,37 @@ struct StorageMigrationIdentityGateLogicTests {
         #expect(Copy.body(for: .accountReturnedToICloud, offersAnotherAccount: false, associatedEmail: nil)
                 == Copy.returnedBody)
         #expect(Copy.title(for: .sessionFromBeforeFreshStart) == Copy.freshStartSessionTitle)
+        #expect(Copy.title(for: .migrationInProgressOnAnotherDevice) == Copy.otherDeviceTitle)
+    }
+
+    /// «Otro de tus dispositivos» tiene un solo cuerpo: no ofrece otra cuenta en el texto (el botón, si sale, ya lo dice) y
+    /// no nombra el correo de grupos.
+    @Test("«otro de tus dispositivos» tiene un solo cuerpo, y la tarjeta su nota")
+    func cuerpoDeOtroDispositivo() {
+        for offers in [true, false] {
+            for email in [nil, "", "ana@example.com"] as [String?] {
+                #expect(Copy.body(for: .migrationInProgressOnAnotherDevice, offersAnotherAccount: offers,
+                                  associatedEmail: email) == Copy.otherDeviceBody)
+            }
+        }
+        #expect(L10n.Storage.Migrate.refusedNote(for: .migrationInProgressOnAnotherDevice)
+                != L10n.Storage.Migrate.refusedNote(for: .accountHasPersonalData))
+    }
+
+    /// El texto es la decisión de Jürgen (2026-10-08): el título lo dice tal cual, y ni el título ni el cuerpo ni la nota
+    /// repiten «ya tiene finanzas personales», que es el texto falso que el ticket retira.
+    @Test("en español, el aviso dice lo que decidió Jürgen y no repite el texto falso")
+    func textoDeJurgen() throws {
+        let strings = StringsFileParser.parseStrings(forLocale: "es-419")
+        let title = try #require(strings["storage.migrateBlock.otherDeviceTitle"])
+        let body = try #require(strings["storage.migrateBlock.otherDeviceBody"])
+        let note = try #require(strings["storage.migrate.refusedOtherDevice"])
+        #expect(title == "Otro de tus dispositivos está llevando tus datos a la nube")
+        for text in [title, body, note] {
+            #expect(!text.contains("finanzas personales"), "repite el texto falso: \(text)")
+        }
+        #expect(body.contains("reinténtala allí"))
+        #expect(note.contains("reinténtala en ese dispositivo"))
     }
 
     /// El aviso de la sesión de antes tiene un solo cuerpo: no nombra el correo (la sección «Grupos» ya lo enseña) ni cambia

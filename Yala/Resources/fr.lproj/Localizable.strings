@@ -5297,6 +5297,7 @@
 
 /* Storage migrate card, after the identity check refused the live account: it was signed in before a fresh start */
 "storage.migrate.refusedFreshStart" = "Ton compte Yala actuel appartient peut-être à quelqu’un d’autre : il était déjà connecté quand on est reparti de zéro ici. Pour choisir le tien, dissocie-le dans « Groupes » et touche à nouveau « Activer le cloud ».";
+"storage.migrate.refusedOtherDevice" = "Un autre de tes appareils transfère tes données vers ce compte. Termine l’activation là-bas ou, si elle s’est arrêtée, réessaie sur l’autre appareil.";
 
 /* Storage adopt card: the live session is a different Yala account than the one that migrated (%@ = Apple|Google) */
 "storage.adopt.otherAccountNote" = "Cette copie du cloud appartient à un autre compte Yala, celui de %@. Déconnecte-toi et connecte-toi avec ce compte pour continuer.";
@@ -6047,6 +6048,8 @@
 "storage.migrateBlock.appleSameAccountNote" = "Avec Apple, Yala utilise toujours le compte de cet appareil. Pour en utiliser un autre, choisis Google.";
 "storage.migrateBlock.freshStartSessionTitle" = "Ce compte appartient peut-être à quelqu’un d’autre";
 "storage.migrateBlock.freshStartSessionBody" = "Rien n’a changé. Tes groupes utilisent un compte qui était déjà connecté sur cet appareil et, comme on y est reparti de zéro, il appartient peut-être à quelqu’un d’autre. Pour mettre tes données dans le cloud, dissocie-le dans « Groupes » et touche à nouveau « Activer le cloud » : tu pourras choisir ton compte.";
+"storage.migrateBlock.otherDeviceTitle" = "Un autre de tes appareils transfère tes données vers le cloud";
+"storage.migrateBlock.otherDeviceBody" = "Rien n’a changé. Termine l’activation sur l’autre appareil ou, si elle s’est arrêtée, réessaie là-bas. Une fois terminée, tu pourras activer le cloud ici.";
 
 /* Restaurar: la busqueda termino vacia y el servidor nunca contesto — no sabemos si hay datos (reinstall-without-network-has-no-cloud-door) */
 "welcome.restore.cloudUnverifiedTitle" = "Nous n'avons pas pu vérifier vos données";

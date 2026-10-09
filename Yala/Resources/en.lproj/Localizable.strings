@@ -4635,7 +4635,7 @@
 
 /* MARK: Modo Nube (I14) — almacenamiento / migración / consentimiento */
 "storage.title" = "Where your data lives";
-"storage.waitingForLeader" = "Another of your devices is activating the cloud for this account. Wait for it to finish.";
+"storage.waitingForLeader" = "One of your other devices is activating the cloud for this account. Wait for it to finish.";
 "storage.status.icloudTitle" = "Private iCloud";
 "storage.status.icloudBody" = "Your data lives on your device and syncs through your private iCloud. No one else can read it — not even us.";
 "storage.status.cloudTitle" = "Your cloud account";
@@ -5302,6 +5302,7 @@
 
 /* Storage migrate card, after the identity check refused the live account: it was signed in before a fresh start */
 "storage.migrate.refusedFreshStart" = "Your current Yala account may belong to someone else: it was already signed in when this device started fresh. To choose yours, unlink it in “Groups” and tap “Turn on the cloud” again.";
+"storage.migrate.refusedOtherDevice" = "One of your other devices is moving your data to this account. Finish turning on the cloud there or, if it stopped, try again on that device.";
 
 /* Storage adopt card: the live session is a different Yala account than the one that migrated (%@ = Apple|Google) */
 "storage.adopt.otherAccountNote" = "This cloud copy belongs to a different Yala account — the %@ one. Sign out and sign in with that account to continue.";
@@ -6052,6 +6053,8 @@
 "storage.migrateBlock.appleSameAccountNote" = "With Apple, Yala always uses this device’s account. To use another one, choose Google.";
 "storage.migrateBlock.freshStartSessionTitle" = "This account may belong to someone else";
 "storage.migrateBlock.freshStartSessionBody" = "Nothing has changed. Your groups use an account that was already signed in on this device, and since this device started fresh, it may belong to someone else. To move your data to the cloud, unlink it in “Groups” and tap “Turn on the cloud” again: you’ll be able to choose your account.";
+"storage.migrateBlock.otherDeviceTitle" = "One of your other devices is moving your data to the cloud";
+"storage.migrateBlock.otherDeviceBody" = "Nothing has changed. Finish turning on the cloud on that device or, if it stopped, try again there. Once it’s done, you’ll be able to turn on the cloud here.";
 
 /* Restaurar: la busqueda termino vacia y el servidor nunca contesto — no sabemos si hay datos (reinstall-without-network-has-no-cloud-door) */
 "welcome.restore.cloudUnverifiedTitle" = "We couldn't check your data";

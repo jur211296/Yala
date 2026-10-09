@@ -109,15 +109,18 @@ nonisolated enum CloudWelcomeSignInFlow {
     /// Quién USA ese `kind` para elegir pantalla es el ticket `cloud-sign-in-discovers-account-kind`
     /// (bloque [I] del ADR §7): aquí solo se transporta.
     enum ExistsRoute: Equatable {
-        case accountFound(kind: AccountKind?)
+        /// `migrationInProgress`: la cuenta tiene una ida en curso. Solo lo lee la puerta de «Migrar a la nube»
+        /// (`StorageMigrationIdentityGateLogic.check`); las demás puertas lo transportan sin mirarlo.
+        case accountFound(kind: AccountKind?, migrationInProgress: Bool = false)
         case accountMissing
         case failed(retryable: Bool)
     }
 
     static func route(_ outcome: ExistsOutcome) -> ExistsRoute {
         switch outcome {
-        case let .exists(true, kind): .accountFound(kind: kind)
-        case .exists(false, _): .accountMissing
+        case let .exists(true, kind, migrationInProgress):
+            .accountFound(kind: kind, migrationInProgress: migrationInProgress)
+        case .exists(false, _, _): .accountMissing
         case .sessionExpired: .failed(retryable: true)
         case .transient: .failed(retryable: true)
         }

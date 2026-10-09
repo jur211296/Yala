@@ -280,14 +280,27 @@ export async function handleAccountDelete(c: Ctx): Promise<Response> {
  * ¿El `sub` autenticado ya tiene fila en `profiles`? Es un HINT de encaminamiento barato para la UI
  * (§f.1) — NO la garantía anti-doble-siembra: esa la da la atomicidad de `POST /account/claim`. RLS
  * filtra a la fila del propio usuario, así que basta con ver si hay una.
+ *
+ * `migration_in_progress` (ADITIVO, 2026-10-09, ticket `settings-migrate-blocks-a-second-device-before-its-marker`):
+ * con la cuenta `complete` y una ida en curso, la puerta de «Migrar a la nube» de OTRO dispositivo del mismo Apple ID
+ * dice «otro de tus dispositivos está llevando tus datos a la nube» en vez de «esa cuenta ya tiene finanzas
+ * personales». Solo lo arma el claim con `migration` (`claim_account`); el alta born-cloud lo deja en `false`. Se emite
+ * solo si la fila existe y el valor es booleano: un cliente anterior lo ignora (decodifica sin claves estrictas) y el de
+ * hoy lee la AUSENCIA como `false`, que cae al aviso de siempre. La columna se lee con el JWT del usuario porque los
+ * grants de `profiles` son a nivel tabla (`qa/cloud/g15_01_account_kind.sql`): no hace falta SQL nuevo.
  */
 export async function handleAccountExists(c: Ctx): Promise<Response> {
   const auth = await requireUser(c);
   if (auth instanceof Response) return auth;
 
-  const { ok, status, rows } = await getRows(c.env, auth.userJWT, "profiles", "select=id,kind&limit=1");
+  const { ok, status, rows } = await getRows(
+    c.env,
+    auth.userJWT,
+    "profiles",
+    "select=id,kind,migration_in_progress&limit=1",
+  );
   if (!ok) return jsonError("yala_unavailable", `exists upstream ${status}`, 502);
-  const row = rows[0] as { kind?: unknown } | undefined;
+  const row = rows[0] as { kind?: unknown; migration_in_progress?: unknown } | undefined;
   if (!row) return c.json({ exists: false });
 
   // `kind` se OMITE si el upstream no lo trae, o trae algo fuera del dominio: el cliente lee la
@@ -295,5 +308,9 @@ export async function handleAccountExists(c: Ctx): Promise<Response> {
   // se corrige en el refresco siguiente. Emitir un valor desconocido sería peor que callar — el
   // cliente lo guardaría en su caché sellada y no tendría de qué corregirse.
   const kind = row.kind === "complete" || row.kind === "groups_only" ? row.kind : undefined;
-  return c.json(kind ? { exists: true, kind } : { exists: true });
+  const out: { exists: true; kind?: string; migration_in_progress?: boolean } = { exists: true };
+  if (kind) out.kind = kind;
+  // Mismo trato que `kind`: fuera del dominio se omite, y el cliente lo lee como `false`.
+  if (typeof row.migration_in_progress === "boolean") out.migration_in_progress = row.migration_in_progress;
+  return c.json(out);
 }

@@ -1086,7 +1086,7 @@ struct WelcomeCloudSignInView: View {
         // prueba de Apple del faro huérfano podría borrar el faro de una cuenta viva (lente B de la review).
         let firmadoCon = provider
         switch await CloudIdentityDiscovery(sessionProviderName: { firmadoCon.rawValue }).discover(gate: identityGate) {
-        case .discovered(.newAccount, _):
+        case .discovered(.newAccount, _, _):
             // Guard R9 SUB-FIRST (sesión 2, H4): antes del `.notFound` engañoso, consultar el
             // faro del device — si la cuenta nube de este Apple ID se creó con OTRO método y
             // este sub NO la matchea, lo probable es "método equivocado", no "sin cuenta".
@@ -1114,7 +1114,7 @@ struct WelcomeCloudSignInView: View {
             }
         case .unavailable(let retryable):
             phase = .error(retryable: retryable)
-        case .discovered(let discovery, _):
+        case .discovered(let discovery, _, _):
             // El tipo de cuenta ya lo cacheó el motor: es el único punto de la app donde el backend lo dice
             // antes de que la sesión esté en marcha.
             //
