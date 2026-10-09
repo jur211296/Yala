@@ -88,3 +88,12 @@ entorno. **Esa coincidencia es justo lo que lo hace invisible aquí y visible fu
 Con A, la prioridad es `medium`.
 
 Triage 2026-10-08: abierto · medium → medium · siguen cuatro defaults distintos (región / `.pen` / `"PEN"` / `"USD"` en `WidgetDataCache.swift:350`); solo se cerró lo del dominio, en 1cf0030b1.
+
+## Medido de camino (2026-10-09, `exchange-rate-detail-shows-zero-for-low-denomination-currencies`)
+
+Otra cara del mismo defecto, en un fixture de QA. Arranque con `-uitest -uitest-reset -uitest-skip-onboarding
+-uitest-pro -uitest-seed realista -uitest-seed-foreign-account VND -AppleLanguages (es) -AppleLocale es_ES`:
+el Panel y Registros enseñan todo en **S/**, pero los gastos «QA-FX VND» se guardaron convertidos a **EUR**
+(el detalle dice «≈ € -350,00»). `DevSeedForeignCurrencyAccount` lee la preferida de
+`CurrencyDefaults.currentPreferred` (L104); inferido, sin medir: con `es_ES` esa lectura cae a la región (EUR).
+Un `/qa` de la familia FX con ese fixture mide otra divisa de la que cree medir.
