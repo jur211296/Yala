@@ -1113,8 +1113,32 @@ struct ContentView: View {
         // El exit-on-background del relaunch terminal (decisión owner UX 2026-07-14) vive en YalaApp, NO aquí.
     }
 
+    /// Recalcula la matriz. **Bloquear es inmediato; liberar va una vuelta del main actor después.**
+    ///
+    /// Casi todos los llamadores son acciones de `onChange` (`ReadinessGateObservers`, `isWipingData`, el
+    /// asentamiento del arranque, la fase del cierre…), que corren DENTRO de la actualización de la vista. Liberar
+    /// ahí es `markReady`, que sube la `revision`, y medido el 2026-10-08 el `.onChange(of: revision)` de este mismo
+    /// cuerpo a veces no llega a ver ese bump: la cola no vuelve a drenar y lo retenido —oferta de prueba, aviso de
+    /// bandeja, invitación— no sale hasta relanzar la app (1 de 7-16 arranques al cerrar la hoja del cambio de
+    /// Apple ID o el aviso de vaciado remoto). Fuera de la actualización, el bump re-evalúa el cuerpo y llega.
+    ///
+    /// Solo se aplaza la liberación, y por eso no abre ninguna ventana: un bloqueo que llega en el mismo tick que
+    /// un drenaje sigue reteniendo en el acto, y la vuelta aplazada vuelve a medir la matriz antes de liberar.
+    /// Liberar más tarde solo retrasa un drenaje; nunca añade otro.
     @MainActor
     private func updateContentViewReadiness() {
+        guard ContentViewReadinessLogic.blocker(state: currentShellReadinessState()) == nil else {
+            applyContentViewReadiness()
+            return
+        }
+        Task { @MainActor in applyContentViewReadiness() }
+    }
+
+    /// Publica el blocker y marca el consumidor en el acto. Directo solo desde `drainContentViewIntents`, que drena
+    /// en la misma llamada y no depende de que el `onChange(of: revision)` vea el bump; el resto pasa por
+    /// `updateContentViewReadiness`.
+    @MainActor
+    private func applyContentViewReadiness() {
         let state = currentShellReadinessState()
         let currentBlocker = ContentViewReadinessLogic.blocker(state: state)
         // Publica el blocker para los guards de drain de .mainTab/.panel
@@ -1179,7 +1203,7 @@ struct ContentView: View {
            next.supersedesWelcomeChain,
            ContentViewReadinessLogic.isBlockedSolelyByWelcomeChain(state: currentShellReadinessState()) {
             dismissWelcomeChainForSupersedingIntent(for: next.id)
-            updateContentViewReadiness()  // recompute síncrono → markReady(.contentView)
+            applyContentViewReadiness()  // recompute síncrono → markReady(.contentView)
         }
         guard let intent = AppRouter.shared.drainNext(for: .contentView, in: navigation.id) else { return }
         switch intent {

@@ -90,3 +90,10 @@ casos, 30 verdes), centinela en 0 (solo en el simulador), mismo «Automation typ
 no toca el formulario de registro.
 
 Triage 2026-10-08: abierto · medium → high · lleva seis gates seguidos en rojo en iOS 27.0 con el árbol base; los tres tests siguen buscando `app.buttons` con `account_selector_row_` (`TransactionsCrudUITests.swift:61`) y la red del alta de un registro está ciega en el runtime del gate.
+
+## 2026-10-08 (tarde) · otra vez en el gate del iPhone 17 Pro
+
+Gate de `queued-offer-after-dismiss-flakes-on-a-cold-simulator` (el diff solo aplaza la liberación de la matriz del
+shell; no toca el formulario de registro). `test_createTransaction`: «No se montó AccountSelectorSheet con filas.» en el
+lote de 37 suites (126 casos, centinela en 0, 428 muestreos) y otra vez aislado sobre el mismo binario. Los otros 120
+casos del lote, verdes. Mismo simulador (`46287CFE`) en el que la medición de la mañana vio fallar a 2.1 limpio.
