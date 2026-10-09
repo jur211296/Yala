@@ -32,3 +32,11 @@ banco (`trendsSystemPrompt` en `gateway/bench/lib/insightsRequests.ts`) y volver
 - `TrendsAIService.systemPrompt` sigue con «Responde SIEMPRE en \(input.locale)» (`:285`) y «Usa "gasto" o "ingreso"» (`:291`); no usa `InsightsLLMService.languageInstruction` ni `AIPromptLanguage`.
 
 Triage 2026-10-08: abierto · low → very-low · el prompt sigue igual, pero hoy no se ve nada (100 % de idioma con el modelo activo) y solo mordería si se baja de modelo.
+
+## Medido con Claude (banco del 2026-10-08)
+
+Con Claude sí muerde, y es lo que deja fuera a Anthropic en Tendencias (`docs/ai-model-bench-2026-10-claude.md`):
+Sonnet 5.5 contesta entero en español a `t05-en-GB-week` y `t08-fr-previous-zero`, y escribe «Dein Gasto», «Ingreso» o
+«aucun gasto» en otros casos. Acierto 84,4 %; sin contar el idioma, 96,9 %. Haiku 5.5 falla el idioma en 7 a 9 de 32.
+`gpt-6.1-sol` y Gemini 3.8 Flash, con el mismo prompt, no tropiezan. Si algún día se quiere a Anthropic de relevo en
+Tendencias, este ticket va primero.
