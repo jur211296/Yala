@@ -342,6 +342,14 @@ enum TransactionUpdateService {
                 print("TransactionUpdateService: Failed to save updates: \(error)")
                 #endif
             }
+            // Los importes se mutaron EN SITIO y quien los pinta precalculado —el Panel— no observa
+            // los `@Model` uno a uno: sin este aviso seguía con los números de antes toda la sesión
+            // (ticket `reparacion-de-tasas-no-avisa-al-panel`). Va aquí, en el escritor, y no en sus
+            // llamadores: son cuatro y el quinto se lo olvidaría. Solo con el guardado hecho: con el
+            // `save()` fallido no hay nada nuevo en disco que recargar.
+            if savedCleanly {
+                SessionState.shared.incrementDataVersion()
+            }
         }
 
         // 5. Dejar constancia del resultado, y sobre todo del NO-resultado.
