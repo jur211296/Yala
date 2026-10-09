@@ -84,29 +84,84 @@ export function rewriteBody(c: RewriteCase): Record<string, unknown> {
 
 // ---------- réplica del validador de la app ----------
 
-let commonCache: Set<string> | null = null;
+let commonCache: { all: Set<string>; byLang: Map<string, Set<string>> } | null = null;
 
-function commonWords(): Set<string> {
+/** `commonWords` y `commonWordsByLanguage`, leídos del Swift: las listas no pueden divergir. */
+function commonLists(): { all: Set<string>; byLang: Map<string, Set<string>> } {
   if (!commonCache) {
     const src = readRepoFile(SWIFT);
-    const start = src.indexOf("private static let commonWords");
-    const end = src.indexOf("]", start);
-    commonCache = new Set([...src.slice(start, end).matchAll(/"([^"]+)"/g)].map((m) => m[1]));
+    const start = src.indexOf("private static let commonWords: Set<String> = [");
+    if (start < 0) throw new Error("chatRewrite: no encuentro commonWords en el Swift");
+    const all = new Set([...src.slice(start, src.indexOf("]", start)).matchAll(/"([^"]+)"/g)].map((m) => m[1]));
+    const bStart = src.indexOf("private static let commonWordsByLanguage: [String: Set<String>] = [");
+    if (bStart < 0) throw new Error("chatRewrite: no encuentro commonWordsByLanguage en el Swift");
+    const block = src.slice(bStart + "private static let commonWordsByLanguage".length, src.indexOf("\n    ]\n", bStart));
+    const byLang = new Map<string, Set<string>>();
+    for (const m of block.matchAll(/"([\w-]+)": \[([^\]]*)\]/g)) {
+      byLang.set(m[1], new Set([...m[2].matchAll(/"([^"]+)"/g)].map((x) => x[1])));
+    }
+    if (byLang.size === 0) throw new Error("chatRewrite: commonWordsByLanguage sin idiomas");
+    commonCache = { all, byLang };
   }
   return commonCache;
 }
 
-/** `isValid`: toda palabra con mayúscula inicial (menos la primera) es común, está en la lista o la contiene. */
-export function isValidSuggestion(text: string, w: Whitelist): boolean {
+/** `commonWordSet(for:)`: las de siempre más las del idioma base («de-DE» → «de»). */
+export function commonWordSet(language: string): Set<string> {
+  const { all, byLang } = commonLists();
+  return new Set([...all, ...(byLang.get(baseLanguage(language)) ?? [])]);
+}
+
+/** `foldingUmlauts`: «ä», «ö», «ü» → «a», «o», «u» (el plural alemán: «Markt» → «Märkte»). */
+export function foldingUmlauts(text: string): string {
+  return text.normalize("NFC").replace(/ä/g, "a").replace(/ö/g, "o").replace(/ü/g, "u");
+}
+
+/** `baseLanguage`: «de-DE», «de_DE», «de» → «de». */
+export function baseLanguage(language: string): string {
+  return (language.split(/[-_]/)[0] ?? "").toLowerCase();
+}
+
+const PL_VOWELS = new Set(["a", "e", "i", "o", "u", "y", "ą", "ę", "ó"]);
+const PL_ALTERNATIONS: [string, string][] = [["ch", "sz"], ["k", "c"], ["g", "dz"], ["ł", "l"], ["t", "ci"], ["d", "dzi"], ["r", "rz"]];
+
+/** `isPolishInflection`: raíz del nombre (sin vocal final, o con la alternancia k→c…) + 4 letras o menos. */
+export function isPolishInflection(word: string, name: string): boolean {
+  const w = [...word];
+  for (const part of name.split(/[^\p{L}\p{N}\p{M}]+/u).filter(Boolean)) {
+    const p = [...part];
+    if (p.length < 4) continue;
+    if (PL_VOWELS.has(p[p.length - 1])) p.pop();
+    const stem = p.join("");
+    const stems = [stem];
+    const alt = PL_ALTERNATIONS.find(([from]) => stem.endsWith(from));
+    if (alt) stems.push(stem.slice(0, stem.length - alt[0].length) + alt[1]);
+    for (const s of stems) {
+      const n = [...s].length;
+      if (n >= 3 && word.startsWith(s) && w.length - n <= 4) return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * `isValid`: toda palabra con mayúscula inicial (menos la primera) es común en el idioma, está en la lista, la contiene
+ * o es una forma declinada de un nombre de la lista (polaco, y el plural con diéresis del alemán).
+ */
+export function isValidSuggestion(text: string, w: Whitelist, language: string): boolean {
   const all = [...w.categories, ...w.subcategories, ...w.budgets, ...w.tags, ...w.merchants].map((x) => x.toLowerCase());
   const set = new Set(all);
+  const common = commonWordSet(language);
   const words = text.split(/[^\p{L}\p{N}\p{M}]+/u).filter(Boolean);
   if (words.length <= 1) return true;
   for (const word of words.slice(1)) {
     if (!/^\p{Lu}/u.test(word)) continue;
     const lower = word.toLowerCase();
-    if (commonWords().has(lower) || set.has(lower)) continue;
+    if (common.has(lower) || set.has(lower)) continue;
     if (all.some((x) => x.includes(lower) || lower.includes(x))) continue;
+    const base = baseLanguage(language);
+    if (base === "pl" && all.some((x) => isPolishInflection(lower, x))) continue;
+    if (base === "de" && all.some((x) => foldingUmlauts(lower).includes(foldingUmlauts(x)))) continue;
     return false;
   }
   return true;
@@ -176,6 +231,8 @@ export function gradeRewrite(content: string, c: RewriteCase): Grade {
   const target = baseLang(c.language);
   const problems: string[] = [];
   let appKept = 0;
+  // Frases que la app enseñaría con un nombre inventado: el validador tiene que dejarlas en cero.
+  let appKeptForbidden = 0;
   const result: string[] = [];
   let idx = 0;
   for (const original of c.suggestions) {
@@ -183,7 +240,11 @@ export function gradeRewrite(content: string, c: RewriteCase): Grade {
     if (idx >= items.length) continue;
     const t = items[idx++].trim();
     if (!t || [...t].length > maxLen) continue;
-    if (isValidSuggestion(t, c.whitelist)) { result.push(t); appKept++; }
+    if (isValidSuggestion(t, c.whitelist, c.language)) {
+      result.push(t);
+      appKept++;
+      if (mentionsForbidden(t, c.forbidden)) appKeptForbidden++;
+    }
   }
   items.forEach((raw, i) => {
     const t = raw.trim();
@@ -208,6 +269,7 @@ export function gradeRewrite(content: string, c: RewriteCase): Grade {
       n: items.length,
       want: c.invalid.length,
       appKept,
+      appKeptForbidden,
       appEnough: result.length >= minItems,
       ...(problems.length ? { problems } : {}),
       items,

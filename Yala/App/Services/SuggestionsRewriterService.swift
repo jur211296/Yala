@@ -76,7 +76,7 @@ final class SuggestionsRewriterService {
     ) async throws -> [ChatSuggestion] {
         guard !suggestions.isEmpty else { throw ChatSuggestionsParseError.emptyArray }
 
-        let invalid = suggestions.filter { !isValid($0, whitelist: whitelist) }
+        let invalid = suggestions.filter { !isValid($0, whitelist: whitelist, language: language) }
         if invalid.isEmpty { return suggestions }
 
         // Hay inválidas → re-prompt al LLM
@@ -99,7 +99,7 @@ final class SuggestionsRewriterService {
         var result: [ChatSuggestion] = []
         var rewriteIdx = 0
         for original in suggestions {
-            if isValid(original, whitelist: whitelist) {
+            if isValid(original, whitelist: whitelist, language: language) {
                 result.append(original)
             } else if rewriteIdx < rewritten.count {
                 let newText = rewritten[rewriteIdx]
@@ -109,7 +109,7 @@ final class SuggestionsRewriterService {
                       trimmed.count <= ChatSuggestionsConstants.maxTextLength else { continue }
                 // Re-validar la reescrita; si LLM aún la dejó inválida, descartar.
                 let candidate = ChatSuggestion(text: trimmed, icon: original.icon, type: original.type)
-                if isValid(candidate, whitelist: whitelist) {
+                if isValid(candidate, whitelist: whitelist, language: language) {
                     result.append(candidate)
                 }
             }
@@ -126,24 +126,91 @@ final class SuggestionsRewriterService {
     /// y el user tiene "Restaurantes", OK. Si menciona "Entretenimiento" y el user
     /// no tiene esa cat/budget/etc, inválida.
     ///
-    /// Estrategia conservadora: extraemos palabras "candidatas" (capitalizadas o entre
-    /// comillas) y validamos que cada una esté en el whitelist o sea una palabra común
-    /// (ignoramos preposiciones/artículos/verbos comunes).
-    func isValid(_ suggestion: ChatSuggestion, whitelist: Whitelist) -> Bool {
+    /// Estrategia conservadora: extraemos palabras "candidatas" (con mayúscula inicial, menos
+    /// la primera) y cada una tiene que ser una palabra común del idioma, estar en el whitelist
+    /// o ser una forma declinada de un nombre del whitelist (polaco, y el plural con diéresis
+    /// del alemán). Una desconocida invalida la frase:
+    /// un falso rechazo cae a las sugerencias fijas, un falso acierto enseña algo que el
+    /// usuario no tiene.
+    ///
+    /// `language` es `AppLocale.current.identifier` («de», «de-DE», «zh-Hans»): en alemán
+    /// todo sustantivo va con mayúscula, así que sin su lista ninguna frase pasaba.
+    ///
+    /// ⚠️ El banco (`gateway/bench/lib/chatRewrite.ts`) replica esta función y LEE las dos
+    /// listas de este fichero: cambia la lógica aquí y allí a la vez.
+    func isValid(_ suggestion: ChatSuggestion, whitelist: Whitelist, language: String) -> Bool {
         let lowerWhitelist = whitelist.lowercasedAll
+        let common = Self.commonWordSet(for: language)
         let candidates = extractCandidates(from: suggestion.text)
 
         for candidate in candidates {
             let lower = candidate.lowercased()
-            if Self.commonWords.contains(lower) { continue }
+            if common.contains(lower) { continue }
             // Si la candidata aparece en el whitelist, OK.
             if lowerWhitelist.contains(lower) { continue }
             // Si la candidata es substring de algún whitelist item, OK ("Bus" matchea "Bus" dentro de "Transporte/Bus")
             if lowerWhitelist.contains(where: { $0.contains(lower) || lower.contains($0) }) { continue }
+            // Forma declinada de un nombre real: en polaco «w Biedronce» es «Biedronka»; en alemán,
+            // el plural con diéresis: «Supermärkte» es «Supermarkt».
+            switch Self.baseLanguage(language) {
+            case "pl":
+                if lowerWhitelist.contains(where: { Self.isPolishInflection(lower, of: $0) }) { continue }
+            case "de":
+                let folded = Self.foldingUmlauts(lower)
+                if lowerWhitelist.contains(where: { folded.contains(Self.foldingUmlauts($0)) }) { continue }
+            default:
+                break
+            }
             // Candidata desconocida → suggestion inválida.
             return false
         }
         return true
+    }
+
+    /// ¿`word` es una forma declinada de alguna palabra de `name`, en polaco? Una palabra del
+    /// nombre de 4 letras o más, sin su vocal final, es la raíz: «żabka» → «żabk». `word` vale si
+    /// empieza por esa raíz, o por la raíz con la alternancia del locativo/dativo en la última
+    /// consonante (k→c, g→dz, ch→sz, ł→l, t→ci, d→dzi, r→rz), y lo que sigue mide 4 letras o
+    /// menos: «żabce», «biedronce», «aptece», «rozrywkę», «restauracjach», «kinie».
+    /// Solo polaco: es el único idioma de la app que declina los nombres propios.
+    nonisolated static func isPolishInflection(_ word: String, of name: String) -> Bool {
+        let vowels: Set<Character> = ["a", "e", "i", "o", "u", "y", "ą", "ę", "ó"]
+        let alternations: [(String, String)] = [
+            ("ch", "sz"), ("k", "c"), ("g", "dz"), ("ł", "l"), ("t", "ci"), ("d", "dzi"), ("r", "rz")
+        ]
+        for part in name.split(whereSeparator: { !$0.isLetter && !$0.isNumber }) {
+            guard part.count >= 4 else { continue }
+            var stem = String(part)
+            if let last = stem.last, vowels.contains(last) { stem.removeLast() }
+            var stems = [stem]
+            if let alternation = alternations.first(where: { stem.hasSuffix($0.0) }) {
+                stems.append(String(stem.dropLast(alternation.0.count)) + alternation.1)
+            }
+            for s in stems where s.count >= 3 && word.hasPrefix(s) && word.count - s.count <= 4 {
+                return true
+            }
+        }
+        return false
+    }
+
+    /// «ä», «ö», «ü» → «a», «o», «u»: el plural alemán pone diéresis a la raíz («Markt» → «Märkte»).
+    nonisolated static func foldingUmlauts(_ text: String) -> String {
+        String(text.map { character -> Character in
+            switch character {
+            case "ä": return "a"
+            case "ö": return "o"
+            case "ü": return "u"
+            default: return character
+            }
+        })
+    }
+
+    /// «de-DE», «de_DE», «de» → «de».
+    nonisolated static func baseLanguage(_ language: String) -> String {
+        language
+            .split(whereSeparator: { $0 == "-" || $0 == "_" })
+            .first
+            .map { $0.lowercased() } ?? ""
     }
 
     /// Extrae palabras "candidatas" para validar — palabras capitalizadas dentro del texto
@@ -164,10 +231,15 @@ final class SuggestionsRewriterService {
         return candidates
     }
 
+    /// Palabras comunes de cualquier idioma más las del idioma de la app.
+    nonisolated static func commonWordSet(for language: String) -> Set<String> {
+        commonWords.union(commonWordsByLanguage[baseLanguage(language)] ?? [])
+    }
+
     /// Palabras capitalizadas comunes que NO son nombres de elementos del user.
     /// Listado conservador — si una palabra falsa-positiva ocurre, se considera "desconocida"
     /// y la suggestion se marca inválida (caso aceptable: el rewriter la arregla).
-    private static let commonWords: Set<String> = [
+    nonisolated private static let commonWords: Set<String> = [
         // Spanish common
         "este", "esta", "cómo", "como", "cuánto", "cuanto", "cuándo", "cuando",
         "porqué", "porque", "qué", "que", "dónde", "donde", "cuáles", "cuales",
@@ -176,6 +248,43 @@ final class SuggestionsRewriterService {
         // English common
         "this", "that", "how", "much", "many", "when", "where", "what", "which",
         "month", "week", "year", "day", "previous", "average", "total"
+    ]
+
+    /// Palabras con mayúscula por gramática en cada idioma, que no nombran nada del usuario.
+    /// Alemán: todo sustantivo va con mayúscula; aquí solo los genéricos de una pregunta de
+    /// finanzas (tiempo, totales, comparación), meses, días y el «Sie» formal. NO entran los
+    /// que podrían ser una categoría inventada («Abos», «Rechnungen», «Miete»): esos tienen que
+    /// estar en el whitelist. Polaco: el «Ty/Twój» de cortesía, que se escribe con mayúscula.
+    /// Inglés: «I», meses y días.
+    nonisolated private static let commonWordsByLanguage: [String: Set<String>] = [
+        "de": [
+            "monat", "monate", "monats", "monaten", "monatlich", "woche", "wochen", "wochenende",
+            "jahr", "jahre", "jahres", "jahren", "tag", "tage", "tagen", "tages", "quartal",
+            "vormonat", "vormonats", "vorjahr", "vorjahres", "vorwoche", "monatsende", "monatsanfang",
+            "wochentag", "wochentage", "wochentagen",
+            "ausgaben", "ausgabe", "einnahmen", "einnahme", "einkommen", "kosten", "budget", "budgets",
+            "geld", "summe", "gesamt", "gesamtausgaben", "gesamtsumme", "betrag", "beträge",
+            "durchschnitt", "schnitt", "vergleich", "kategorie", "kategorien", "unterkategorie",
+            "unterkategorien", "konto", "konten", "kontostand", "saldo", "bilanz", "überblick",
+            "übersicht", "trend", "prozent", "euro", "rest", "anteil", "höhe", "verlauf",
+            "entwicklung", "prognose", "ersparnis", "ersparnisse", "sparquote", "limit", "ende",
+            "anfang", "mitte", "zahlungen", "zahlung", "transaktionen", "transaktion", "buchungen",
+            "januar", "jänner", "februar", "märz", "april", "mai", "juni", "juli", "august",
+            "september", "oktober", "november", "dezember",
+            "montag", "dienstag", "mittwoch", "donnerstag", "freitag", "samstag", "sonnabend", "sonntag",
+            "sie", "ihr", "ihre", "ihren", "ihrem", "ihrer", "ihnen"
+        ],
+        "pl": [
+            "ty", "ci", "cię", "ciebie", "tobie", "tobą", "twój", "twoja", "twoje", "twojego", "twojej",
+            "twojemu", "twoim", "twoją", "twoich", "twoimi", "wy", "was", "wam", "wami", "wasz", "wasza",
+            "wasze", "waszego", "waszej", "waszym", "waszych"
+        ],
+        "en": [
+            "i",
+            "january", "february", "march", "april", "may", "june", "july", "august",
+            "september", "october", "november", "december",
+            "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"
+        ]
     ]
 
     // MARK: - LLM Rewrite

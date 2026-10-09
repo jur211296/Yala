@@ -57,6 +57,7 @@ Antes de una revisión:
 | `--reps N` | Repeticiones por caso (variabilidad) |
 | `--concurrency N` | Llamadas en paralelo (4 por defecto) |
 | `--date AAAA-MM-DD` | Carpeta de resultados (por defecto, hoy). `smoke` no se commitea |
+| `--max-usd 0.50` | Tope de gasto de la corrida: al llegar, no lanza más llamadas (lo que falte se repite al reanudar) |
 
 ## Cómo está hecho, y por qué
 
