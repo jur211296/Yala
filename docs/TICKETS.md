@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (826)
+## Index (828)
 
 | id | status | path |
 |---|---|---|
@@ -277,6 +277,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | distribution-balance-kpi-skips-fx | done | tickets/done/distribution-balance-kpi-skips-fx.md |
 | distribution-default-should-be-detail-not-charts | backlog | tickets/backlog/distribution-default-should-be-detail-not-charts.md |
 | distribution-pie-totals-styled-differently-per-page | backlog | tickets/backlog/distribution-pie-totals-styled-differently-per-page.md |
+| distribution-sankey-recomputes-on-every-render-with-all-time | backlog | tickets/backlog/distribution-sankey-recomputes-on-every-render-with-all-time.md |
 | distribution-subviews-miss-the-new-panel-hero | qa | tickets/qa/distribution-subviews-miss-the-new-panel-hero.md |
 | dmarc-sube-la-politica-tras-observar | backlog | tickets/backlog/dmarc-sube-la-politica-tras-observar.md |
 | doble-conteo-dia1-previo-thismonth | done | tickets/done/doble-conteo-dia1-previo-thismonth.md |
@@ -291,7 +292,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | el-gate-no-corre-un-check-que-el-ci-si-bloquea | backlog | tickets/backlog/el-gate-no-corre-un-check-que-el-ci-si-bloquea.md |
 | el-hook-que-prohibe-atribuir-a-una-ia-no-corre-en-este-repo | done | tickets/done/el-hook-que-prohibe-atribuir-a-una-ia-no-corre-en-este-repo.md |
 | el-job-de-tests-del-ci-no-tiene-timeout | done | tickets/done/el-job-de-tests-del-ci-no-tiene-timeout.md |
-| el-saldo-de-distribucion-no-se-entera-de-un-registro-nuevo | backlog | tickets/backlog/el-saldo-de-distribucion-no-se-entera-de-un-registro-nuevo.md |
+| el-saldo-de-distribucion-no-se-entera-de-un-registro-nuevo | done | tickets/done/el-saldo-de-distribucion-no-se-entera-de-un-registro-nuevo.md |
 | el-turno-del-simulador-cubre-tambien-la-compilacion | backlog | tickets/backlog/el-turno-del-simulador-cubre-tambien-la-compilacion.md |
 | encargos-markdown-triggers-the-whole-ios-suite | backlog | tickets/backlog/encargos-markdown-triggers-the-whole-ios-suite.md |
 | ensure-rates-for-existing-transactions-has-no-callers | backlog | tickets/backlog/ensure-rates-for-existing-transactions-has-no-callers.md |
@@ -798,6 +799,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | the-gate-stamp-hides-the-deleted-side-of-a-staged-rename | backlog | tickets/backlog/the-gate-stamp-hides-the-deleted-side-of-a-staged-rename.md |
 | transaction-save-helper-flake-one-per-suite | discarded | tickets/discarded/transaction-save-helper-flake-one-per-suite.md |
 | transaction-service-bulk-block-is-dead-code | backlog | tickets/backlog/transaction-service-bulk-block-is-dead-code.md |
+| trends-cards-ignore-an-in-place-amount-edit | backlog | tickets/backlog/trends-cards-ignore-an-in-place-amount-edit.md |
 | trends-comparison-kpi-vs-curve | done | tickets/done/trends-comparison-kpi-vs-curve.md |
 | trends-hero-keeps-the-previous-period-after-changing-it-on-trends | qa | tickets/qa/trends-hero-keeps-the-previous-period-after-changing-it-on-trends.md |
 | trends-insight-card-v2-bullets | qa | tickets/qa/trends-insight-card-v2-bullets.md |

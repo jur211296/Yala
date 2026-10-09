@@ -355,6 +355,7 @@ struct DetailContainerView: View {
                 allSubcategories: dataViewModel.allSubcategories,
                 tags: dataViewModel.tags,
                 allTransactions: dataViewModel.allTransactions,
+                dataGeneration: dataViewModel.dataGeneration,
                 viewModel: trendsViewModel,
                 insightsViewModel: insightsViewModel,
                 defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue

@@ -135,4 +135,50 @@ final class StatisticsHeroLikePanelUITests: XCTestCase {
         modes.element(boundBy: 0).tap()
         assertPanelHero(app, in: "Distribución › Gráficas")
     }
+
+    /// Registrar un movimiento desde Distribución cambia la cifra del hero sin salir de la pestaña. Hasta el 2026-10-09 el
+    /// hero (el saldo, y el flujo fuera de Balance) solo se recalculaba al tocar un filtro: tras el alta seguía con el
+    /// número viejo mientras el Panel ya enseñaba el nuevo (ticket `el-saldo-de-distribucion-no-se-entera-de-un-registro-nuevo`).
+    /// Con el observador viejo (`allTransactions.count`, que solo recalculaba el Sankey) este caso da rojo.
+    func test_distributionHeroFollowsANewRecord() {
+        let app = XCUIApplication()
+        app.launchForUITest(pro: true)
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+
+        app.tabBars.buttons.element(boundBy: 1).tap()
+        openChip(app, "detail_chip_categorías")
+
+        let heroAmount = app.descendants(matching: .any)["stats_hero_amount"]
+        XCTAssertTrue(heroAmount.waitForExistence(timeout: 15), "No se ve la cifra del hero de Distribución.")
+        let before = heroAmount.label
+
+        let fab = app.buttons["fab_new_transaction"]
+        XCTAssertTrue(fab.waitForExistence(timeout: 5), "Falta «+» en Distribución.")
+        XCTAssertTrue(fab.waitForHittable(timeout: 5), "«+» no es alcanzable en Distribución.")
+        fab.tap()
+        let manual = app.buttons["fab_manual"]
+        XCTAssertTrue(manual.waitForExistence(timeout: 5), "No se expandió el menú del «+» (fab_manual).")
+        manual.tap()
+
+        let amountField = app.textFields["new_transaction_amount"]
+        XCTAssertTrue(amountField.waitForExistence(timeout: 5), "No apareció new_transaction_amount.")
+        amountField.tap()
+        amountField.typeText("50")
+        app.chooseFirstSelectorRow(chip: "new_transaction_account_chip", rowPrefix: "account_selector_row_")
+        XCTAssertTrue(
+            app.buttons["new_transaction_subcategory_chip"].waitForExistence(timeout: 5),
+            "No volvió al formulario tras elegir cuenta.")
+        app.chooseFirstSelectorRow(chip: "new_transaction_subcategory_chip", rowPrefix: "subcategory_selector_row_")
+        let save = app.buttons["new_transaction_save"]
+        XCTAssertTrue(save.waitForExistence(timeout: 5), "No apareció new_transaction_save.")
+        save.tap()
+        app.dismissTransactionSuccess()
+
+        XCTAssertTrue(heroAmount.waitForExistence(timeout: 5), "Tras el alta ya no se ve la cifra del hero.")
+        let changed = NSPredicate(format: "label != %@", before)
+        let result = XCTWaiter.wait(for: [expectation(for: changed, evaluatedWith: heroAmount)], timeout: 5)
+        XCTAssertEqual(
+            result, .completed,
+            "El hero de Distribución sigue en \(before) tras registrar un gasto de 50: no se recalculó con el alta.")
+    }
 }
