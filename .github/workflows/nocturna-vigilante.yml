@@ -30,6 +30,11 @@ name: Vigilante de la nocturna
 #
 # SI MUEVES EL CRON DE `qa.yml`: el vigilante lo lee solo y corre su «día» con él, pero sus
 # propios crons de aquí abajo están puestos a mano tras el plazo. Muévelos también.
+#
+# LA UI EN TANDAS (2026-10-09) NO LE CAMBIA NADA: las tandas son jobs del MISMO run de `qa.yml`,
+# y el vigilante cuenta runs (`schedule`/`workflow_dispatch`), no jobs. Si algún día las tandas se
+# reparten en noches o crons distintos, esto sí deja de valer: un run diario ya no sería la suite
+# entera.
 
 on:
   schedule:
@@ -51,7 +56,8 @@ on:
         options: ['no', 'si']
 
 # Serializa. Sin esto, dos pushes casi simultáneos abren dos vigilantes que leen «no hay
-# corrida» a la vez y lanzan DOS nocturnas de 150 minutos. Ojo, medido el 2026-10-06: GitHub
+# corrida» a la vez y lanzan DOS nocturnas (cada una, desde el 2026-10-09, cuatro `macos-26` durante
+# ~1,3 h: el job `tests` y las tres tandas del job `ui`). Ojo, medido el 2026-10-06: GitHub
 # deja UN solo run pendiente por grupo y cancela el pendiente anterior cuando llega otro (con
 # cuatro dispatches seguidos, el 2.º y el 3.º salieron «cancelled»). Aquí no hace daño —todos
 # deciden lo mismo y decide el último—, pero al probar, lánzalos de uno en uno.
