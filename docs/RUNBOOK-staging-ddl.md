@@ -377,6 +377,77 @@ deshace y no hace falta: solo acotó HLC por encima de `now() + 60 s`, nunca un 
 
 ---
 
+## `g17_01_reverse_claim_keeps_reverted_at.sql` — «Volver a iCloud» se puede reintentar en el 2.º dispositivo (PENDIENTE, 2026-10-09)
+
+**Estado: preparada y probada en local; NO aplicada en ningún entorno.** Autorizada por Jürgen el 2026-10-09 14:01. La
+sesión que la preparó no tenía acceso de escritura a ninguna de las dos bases: el token de gestión
+(`~/Secrets/yala-supabase-mgmt/pat`) da **401** en los dos proyectos, el conector de Supabase pedía OAuth y no hay URI de
+base en `~/Secrets`. Ticket: `reverse-exit-on-a-reverted-account-rejects-the-retry`.
+
+**Qué arregla.** En una cuenta que ya volvió a iCloud desde otro teléfono, el claim de la vuelta borraba `reverted_at`, y
+con él la mitad del guard de `g15_02` que deja pasar al segundo dispositivo. Medido en staging el 2026-10-09 con el golden
+16-ter (función viva, sin tocarla): tras el claim de B, `reverted_at` queda a null y **el tercer dispositivo, el re-claim
+del mismo B y el reintento tras salir reciben `not_complete`**. La migración cambia cada `reverted_at = null` por
+`reverted_at = case when kind = 'complete' then null else reverted_at end`: igual que hoy en una cuenta `complete`,
+conservado en una `groups_only`. **Sin cambio de Worker ni de app**: mismos códigos y misma forma de respuesta.
+
+**Probado en local** (`bash qa/cloud/g17_01-local-test.sh`, Postgres 17 desechable con una réplica del RPC escrita desde
+el contrato del README): el §3 de conducta falla con el cuerpo viejo en los cuatro caminos del ticket y deja verdes los
+cuatro controles; la migración pasa 11/11; re-aplicar es no-op; el rollback vuelve al md5 de partida; un cuerpo divergido
+aborta en la guarda. Dos mutantes de la sustitución (solo la primera escritura; no borrar nunca) los caza el §3.
+
+**Repara también a quien el bug ya atascó** (§1-bis, añadido por la review): las filas `groups_only` con
+`personal_claimed_at` y sin `reverted_at` —solo las deja una vuelta completada a la que un claim posterior le borró
+`reverted_at`— recuperan `reverted_at`. Sin eso, el arreglo de la función no curaría a quien ya recibe «tu cuenta no
+lo permitía», ni el canario `cloudReverseClaimRejected|not_complete` llegaría a cero.
+
+### Los pasos, en orden
+
+Desde la raíz del repo. `$STAGING_DB_URL` y `$PROD_DB_URL` son la URI del pooler de cada proyecto (*Dashboard → Project
+Settings → Database → Connection string → URI, session pooler, puerto 5432*); la contraseña no está en el repo. Con el
+conector de Supabase autenticado, cada `psql -1 -f` equivale a `apply_migration` con el contenido del fichero.
+
+1. **Medir antes, en staging** (`fostjbbwstyuunmmefuk`). Tiene que salir `14fc5e2c54766dd7c5706966c7381f51` (el final de
+   `g15_02`, medido en producción el 16-sep). Si sale otro, para: la migración abortaría igual.
+   ```bash
+   psql "$STAGING_DB_URL" -At -c "select md5(prosrc), md5(pg_get_functiondef(p.oid)) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='migration_progress' and p.pronargs=2"
+   psql "$STAGING_DB_URL" -At -c "select pg_get_functiondef('public.migration_progress(text,text)'::regprocedure)" > /tmp/migration_progress.staging.antes.sql
+   grep -c 'reverted_at = null' /tmp/migration_progress.staging.antes.sql   # tiene que dar 3; si no, la migración aborta
+   psql "$STAGING_DB_URL" -At -c "select count(*) from public.profiles where kind='groups_only' and personal_claimed_at is not null and reverted_at is null"   # cuentas ya atascadas
+   ```
+2. **Aplicar en staging.** El §3 corre dentro y aborta todo si un escenario falla.
+   ```bash
+   psql -1 -v ON_ERROR_STOP=1 -f qa/cloud/g17_01_reverse_claim_keeps_reverted_at.sql "$STAGING_DB_URL"
+   ```
+   Esperado: `g17_01: 3 sustitución(es)`, `g17_01: K cuenta(s) ya revertida(s) recuperan reverted_at` (K = el
+   recuento del paso 1) y `g17_01 OK · 11/11 escenarios`. Apunta K y el md5 nuevo (el comando del paso 1).
+3. **Goldens contra staging**, desde `gateway/`:
+   ```bash
+   set -a; . ~/Secrets/yala-supabase-test/test-users.env; set +a
+   npm run sync:manifest && npx vitest run test/account.goldens.test.ts -t "I11-3"
+   ```
+   Esperado: 11/11, **con el 16-ter en verde** (hoy, sin la migración, es el único rojo).
+4. **Producción** (`kefvaiymtgytemwbltlz`): el paso 1 (mismo md5 de partida), el paso 2 con `$PROD_DB_URL`, y el md5
+   nuevo tiene que ser **el mismo** que en staging. El §3 usa usuarios sintéticos dentro de savepoints: no deja filas ni
+   toca a nadie real.
+5. **Humo en producción** sin datos de usuarios: re-aplicar el fichero (rama no-op: corre el §3 otra vez contra el cuerpo
+   ya cambiado; prueba el camino nuevo y, con sus controles `complete`, `born-cloud`, solo grupos y la ida abandonada, que
+   el viejo sigue igual), y `POST /account/migration` sin JWT → el mismo 401 de antes.
+6. **Apuntar** el antes → después (md5 de los dos entornos, N, resultado del §3 y de los goldens) aquí, en el ticket y en
+   el PR que lo cierre.
+
+**Marcha atrás:** `psql -1 -v ON_ERROR_STOP=1 -f qa/cloud/g17_01_rollback.sql "$..._DB_URL"` — devuelve el cuerpo al md5
+`14fc5e2c…` y aborta si el vivo no es el de g17_01. No reescribe filas.
+
+**Después del deploy**, cinco textos describen el reset como vigente y se corrigen cuando deje de serlo (hoy son
+verdad): el residual de `MigrationStateMachine.swift` (rama `reverseClaimRejected`), «`reverted_at` queda null» en
+`MigrationWorkExecutor.swift` (`.reverseRollback`) y `CloudSyncEngine.swift` (docblock del rastro `reverseRollback`), el apartado
+«Reversa server-side» de `qa/cloud/README.md` y la lista de residuales de la regla «El claim de la reversa tampoco
+puede quedarse sin salida» en `.claude/rules/swiftdata-cloudkit.md`. Y se mira el canario
+`cloudReverseClaimRejected` con detalle `not_complete`: tiene que caer a cero.
+
+---
+
 ## Referencias
 
 - Detalle por migración y su historia: `qa/cloud/README.md` (la entrada de `g14_01` está en

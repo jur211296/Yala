@@ -480,6 +480,7 @@ describeStaging("I10 goldens · /account/migration + lease (staging real)", () =
 // `kind` tiene sub B cuando llegue: un `not_complete` inesperado es andamio roto, no RPC roto.
 const DEV_REV = "device-B-rev-leader";
 const DEV_REV_OTHER = "device-rev-usurper";
+const DEV_REV_THIRD = "device-rev-third"; // el 3.er dispositivo del 16-ter (g17_01)
 
 describeStaging("I11-3 goldens · /account/migration reverse_* (staging real)", () => {
   // Red de arranque: la degradación del 16 es durable y `kind` no se puede PATCHear. Ver `ensureCompleteKind`.
@@ -622,6 +623,53 @@ describeStaging("I11-3 goldens · /account/migration reverse_* (staging real)", 
     // Idempotente tras el flip (resume del complete): rip ya false + reverted_at set → ok.
     expect((await migrationProgress(jwtB, { device_id: DEV_REV, action: "reverse_complete" })).body.ok).toBe(true);
     expect((await readProfile(jwtB))?.reverted_at).toBe(p?.reverted_at);
+  });
+
+  it("16-ter. tras revertir, el 2.º device puede SALIR y REINTENTAR; un 3.º oye 'other_leader' (REQUIERE g17_01)", async () => {
+    // Los tres caminos de `reverse-exit-on-a-reverted-account-rejects-the-retry`, sobre el estado REAL que deja el
+    // golden 16 (`groups_only` + `reverted_at`). Hasta g17_01 el claim fresco borraba `reverted_at` y la cuenta se
+    // quedaba sin la mitad del guard que la dejaba pasar: el 3.º oía `not_complete` en vez de `other_leader` (c), el
+    // reintento del mismo líder tras perder la respuesta también (b), y salir y reintentar también (a).
+    const antes = await readProfile(jwtB);
+    expect(antes?.kind).toBe("groups_only");
+    expect(antes?.reverted_at).not.toBeNull();
+
+    const claim = await migrationProgress(jwtB, { device_id: DEV_REV_OTHER, action: "reverse_claim" });
+    const tercero = await migrationProgress(jwtB, { device_id: DEV_REV_THIRD, action: "reverse_claim" }); // (c)
+    const reclaim = await migrationProgress(jwtB, { device_id: DEV_REV_OTHER, action: "reverse_claim" }); // (b)
+    const tras = await readProfile(jwtB);
+    const salida = await migrationProgress(jwtB, { device_id: DEV_REV_OTHER, action: "reverse_abort" });
+    const trasSalir = await readProfile(jwtB);
+    const reintento = await migrationProgress(jwtB, { device_id: DEV_REV_OTHER, action: "reverse_claim" }); // (a)
+
+    // Desarmar ANTES de aserjar: un `expect` que falle dejaría a sub B con rip=true latcheado. Y si `reverted_at`
+    // se perdió (staging sin g17_01) se repone, para que el 16-bis mida su guard y no el rojo de éste.
+    await migrationProgress(jwtB, { device_id: DEV_REV_OTHER, action: "reverse_abort" });
+    if ((await readProfile(jwtB))?.reverted_at == null) {
+      await patchProfile(jwtB, { reverted_at: antes?.reverted_at ?? null });
+    }
+
+    // Lo que lee la app instalada (`CloudAccountClient.MigrationResponse`): `ok` booleano y, si no, `reason`
+    // como texto, con códigos que ya conoce. g17_01 cambia CUÁL recibe aquí, no la forma.
+    for (const r of [claim, tercero, reclaim, salida, reintento]) {
+      expect(r.status).toBe(200);
+      expect(typeof r.body.ok).toBe("boolean");
+      if (r.body.ok === false) expect(typeof r.body.reason).toBe("string");
+    }
+
+    expect(claim.body.ok).toBe(true);
+    expect(tercero.body.ok).toBe(false);
+    expect(tercero.body.reason).toBe("other_leader"); // (c): B lidera con el lease vivo
+    expect(reclaim.body.ok).toBe(true); // (b): re-claim idempotente del mismo líder
+    expect(tras?.reverse_in_progress).toBe(true);
+    expect(tras?.leader_device_id).toBe(DEV_REV_OTHER);
+    expect(tras?.reverted_at).toBe(antes?.reverted_at); // el claim ya no borra la prueba de que volvió
+
+    expect(salida.body.ok).toBe(true);
+    expect(trasSalir?.reverse_in_progress).toBe(false);
+    expect(trasSalir?.reverse_frozen_at).toBeNull(); // salir sigue des-congelando
+    expect(trasSalir?.reverted_at).toBe(antes?.reverted_at);
+    expect(reintento.body.ok).toBe(true); // (a): el reintento avanza
   });
 
   it("16-bis. tras revertir: el 2.º device SÍ puede reclamar; una cuenta de solo grupos NO ('not_complete')", async () => {
