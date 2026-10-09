@@ -1,10 +1,10 @@
 ---
 id: budget-interval-counts-next-period-midnight
-status: backlog
+status: done
 priority: medium
 area: budgets
 created: 2026-09-26
-updated: 2026-09-26
+updated: 2026-10-09
 source: encargo 2026-09-26-plugin-claude-mcp-fase0-spike (hallazgo al portar el cálculo de presupuestos)
 ---
 
@@ -38,3 +38,19 @@ El conector de Claude (`mcp/src/logic/budgets.ts`) ya cuenta por días inclusivo
 Restar un segundo al `end` en las ramas semanal, mensual y anual de los tres sitios, con un test por rama con una
 transacción a las 00:00 del primer día del periodo siguiente. El caso «único» usa las fechas del presupuesto y
 hay que mirar si `endDate` se guarda a medianoche antes de tocarlo.
+
+## Resolución (2026-10-09)
+
+Un helper, `BudgetPeriodInterval` (`Yala/App/Logic/Helpers/`): todo periodo de presupuesto cierra en el último
+segundo de su último día. El ticket citaba tres sitios; medidos con grep eran siete, y pasan todos por él:
+Presupuestos (periodo elegido **y** su historial, que es donde más mordía porque mira periodos pasados), Panel,
+Insights y con él el chat, los avisos de umbral (`BudgetAlertService`), las gráficas del presupuesto
+(`BudgetChartsView`) y el gasto por bucket del score (`FinancialScoreCalculator`, cuyo bucket de puntuación no
+cambia: solo el del gasto se cierra).
+
+**Único:** el editor solo elige el día y su valor inicial es `Date.now` con hora, así que lo guardado puede
+llevar cualquier hora. Se lee como días enteros, `[inicio del día de inicio, fin del día de fin]`, igual que el
+conector de Claude. No se migra nada.
+
+Lo fija `YalaTests/BudgetPeriodIntervalTests` sitio por sitio (semanal, mensual y anual), rojo con el helper
+mutado a la semántica vieja.

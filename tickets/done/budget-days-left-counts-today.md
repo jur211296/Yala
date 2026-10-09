@@ -1,10 +1,10 @@
 ---
 id: budget-days-left-counts-today
-status: backlog
+status: done
 priority: low
 area: budgets
 created: 2026-09-06
-updated: 2026-09-06
+updated: 2026-10-09
 source: decisión de Jürgen del 2026-09-06 sobre tickets/qa/undercount-dias-intervalos-cerrados.md
 ---
 
@@ -39,3 +39,17 @@ cierra en 23:59:59 — normalizar (`end.addingTimeInterval(1)`) antes de contar,
 ## Relacionados
 
 - [[undercount-dias-intervalos-cerrados]] — el bug de conteo del que salió, en `qa/`.
+
+## Resolución (2026-10-09)
+
+- [x] `BudgetPeriodInterval.daysLeft` cuenta desde hoy hasta el último día, los dos incluidos: 1 si acaba hoy,
+      2 si acaba mañana, 0 si acabó ayer.
+- [x] Promedio diario: medido, la app no lo calcula en ningún sitio; lo deriva el modelo del chat de `days_left`,
+      que dentro del periodo ya nunca es 0 (test que recorre cada hora de un mes).
+- [x] Barrido: Presupuestos y Panel (`summaryDaysRemaining`, que conserva −1 = «Finalizado» y 0 = aún no
+      empieza) y el chat pasan por el mismo helper. Test parametrizado con los tres casos en los cuatro sitios.
+- [x] Singular: `budgets.days.remaining.one` en los 16 `.lproj`; las tres vistas eligen con
+      `L10n.Budgets.daysRemaining(_:)`.
+
+Fuera, a propósito: `HeroMonthCalculator.daysRemaining` (no es de presupuestos y no se pinta) y el conector
+`mcp/` (sigue diciendo 0 el último día; divergencia anotada en el PR).
