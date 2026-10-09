@@ -127,8 +127,7 @@ inyectan el proveedor — no el cliente entero.
   JWT, `yala_attest_required` para el attest. Fundidos, el cliente leería una sesión muerta como pasajera y
   reintentaría para siempre. En las dos guards de Grupos lo fija `gateway/test/groups.attest401.test.ts`; en
   `sync/account.ts`, `account.delete.test.ts`; en `sync/routes.ts`, `gateway/test/sync.attest401.test.ts` (2026-09-16),
-  **que solo corren a mano**: el CI no
-  ejecuta la suite del gateway (`ci-no-corre-la-suite-del-gateway`). Se corre con
+  y los tres los corre el job `gateway` de `qa.yml` en cada push (desde el 2026-10-08). A mano, con
   `npm test -- test/groups.attest401.test.ts`; el `pretest` copia los manifests, y `npx vitest` a pelo falla con
   «Cannot find module …group_capability_manifest.json».
 - **El canal personal también lo lee pasajero desde el 2026-09-16** (`SyncPushClient`, `SyncPullClient`, `PrefsSyncClient`;

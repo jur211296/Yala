@@ -1,6 +1,6 @@
 ---
 id: ci-no-corre-la-suite-del-gateway
-status: backlog
+status: done
 priority: high
 area: platform
 created: 2026-09-04
@@ -125,3 +125,26 @@ volver a entrar, y ni el CI ni la suite de iOS lo verían.
 - La mitad de la allowlist (`encargos/*`) la lleva también `encargos-markdown-triggers-the-whole-ios-suite`; el job del gateway es solo de este ticket.
 
 Triage 2026-10-08: abierto · medium → high · sigue sin job de vitest para `gateway/` (`qa.yml` solo tiene coverage-index, mcp, changes, tests y aviso) y `deploy:production` tampoco corre tests: los guards anti-deploy destructivo no los ejecuta nadie.
+
+## Cierre (2026-10-08)
+
+Hecho la propuesta 1: un job `gateway` en `.github/workflows/qa.yml` con la forma del de `mcp` (Ubuntu, Node 22,
+`npm ci` + `npm run typecheck` + `npm test` en `gateway/`). Corre en cada push y cada PR, no solo cuando el diff toca
+`gateway/`: es un minuto de Linux, y así el check se puede exigir en el ruleset.
+
+- **Los goldens de staging no se saltaban solos, lanzaban.** Medido sin secretos: 4 ficheros en rojo
+  (`account.goldens`, `groups.goldens`, `push.fanout`, `sync.goldens`) porque su `beforeAll` tira «Falta USER_A_PASS».
+  `gateway/test/staging.ts` los salta cuando no hay **ninguna** credencial; con alguna puesta y otra no siguen
+  lanzando, para que un entorno a medias en la Mac no dé un verde que no probó staging.
+- Sin secretos: **449 verdes, 84 skipped, 0 rojos, ~2 s**. Los cinco del encargo corren (59 tests).
+- Control rojo, local: `MIN_SUPPORTED_BUILD = "42"` en producción tumba `wrangler.forceupdate.test.ts`; un percent de
+  producción a 50 tumba dos casos de `config.test.ts`. En CI, con un PR borrador (ver el PR de este ticket).
+- La allowlist de `changes` no se toca: `gateway/*` sigue saltando la suite iOS.
+
+Queda fuera, y abierto:
+
+- `deploy:production` sigue sin correr la suite antes de desplegar.
+- El ruleset de `2.1` exige `tests` y `coverage-index`, no `gateway`: meterlo es de Jürgen.
+- La propuesta 2 (`encargos/*`, `qa/coverage-index.json` en la allowlist) es de `encargos-markdown-triggers-the-whole-ios-suite`.
+- Dos comentarios Swift dicen todavía que el CI no corre esta suite (`SyncPushClient.swift:104`,
+  `GroupsMembershipClientTests.swift:305`). No se tocan aquí para no meter Swift en un PR de CI.
