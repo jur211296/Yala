@@ -106,6 +106,11 @@ jobs:
       # mal; su banco lo simula con un `gh` falso que miente a proposito.
       - name: Vigilante de la nocturna (ci-vigilante-nocturna.sh)
         run: bash qa/scripts/ci-vigilante-nocturna-test.sh
+      # El reparto de la suite de UI en tandas (job `ui`). Si se rompe, no da error: deja una suite
+      # sin correr ninguna noche, que es justo el fallo que el reparto vino a quitar. Su banco
+      # comprueba sobre el árbol real que entre las tandas corren todas, una vez cada una.
+      - name: Reparto de la UI en tandas (ci-ui-tandas.sh)
+        run: bash qa/scripts/ci-ui-tandas-test.sh
 
   # Suite del conector MCP de Claude (`mcp/`): typecheck y tests unitarios, sin red. Corre en
   # cada push, como `coverage-index`: es barata (Linux, segundos) y así un cambio de esquema que
@@ -290,21 +295,30 @@ jobs:
     if: ${{ !cancelled() && needs.changes.outputs.run_tests != 'false' }}
     runs-on: macos-26
     # ------------------------------------------------------------------------------
-    # TOPES DE TIEMPO (2026-09-07). Sin `timeout-minutes` GitHub aplica su default de
+    # TOPES DE TIEMPO (2026-09-07; tabla rehecha el 2026-10-09). Sin `timeout-minutes` GitHub aplica su default de
     # **360 minutos**, y este job no tenia ninguno: ni aqui ni a nivel de workflow. El
     # problema que eso creaba no era el gasto sino el DIAGNOSTICO — un cuelgue real era
     # indistinguible de una corrida lenta, y nadie se enteraba hasta las seis horas.
     #
-    # Los numeros salen de medir, no de estimar: 39 runs con la suite ejecutada
-    # (2026-09-06/07), tiempos por PASO leidos de la API de Actions.
+    # Los numeros salen de medir, no de estimar: tiempos por PASO leidos de la API de Actions.
+    # La tabla de 2026-09-07 (39 runs) daba la UI en 67 min de mediana y 76 de maximo; el
+    # 2026-10-09 ya no era verdad. Lo de hoy, medido sobre las nocturnas del 5 al 8-oct y los
+    # 8 ultimos PR verdes (8/9-oct):
     #
-    #   paso / conjunto          mediana    p95     max   tope
-    #   Build for testing            9,7   11,9    13,7     25
-    #   Unit pure-logic              8,9   13,2    17,0     30
-    #   Unit context-based           2,4    3,1     3,5     10
-    #   UI (solo nocturna)          67,2   75,5    76,2    110
-    #   JOB en un PR (sin UI)       21,6   27,2    29,9     45
-    #   JOB en la nocturna          88,9   99,5   101,7    150
+    #   paso / conjunto              medido          tope
+    #   Build for testing            13,3-15,7         25
+    #   Unit pure-logic              12,3-15,8         30
+    #   Unit context-based            2,6-3,8          10
+    #   JOB `tests` en un PR         27-43 (mediana 32) 45
+    #   JOB `tests` en la nocturna   36 (sin UI)       60
+    #   UI, suite entera en serie    ~141 (estimado)    —   ← ya no corre asi; ver job `ui`
+    #
+    # LA UI SALIO DE ESTE JOB el 2026-10-09 (ticket nightly-ui-suite-hits-its-110-minute-cap-every-
+    # night). En serie ya no cabia: del 2 al 8-oct el paso agoto sus 110 min las siete noches, solo
+    # corrian 65 de las 85 suites —siempre las mismas, por orden alfabetico— y el job iba a 146,7
+    # de 150, asi que un rojo de unit con reintentos lo cancelaba entero (2 y 7-oct). Ahora corre
+    # en el job `ui`, partida en tandas paralelas; sus topes y cifras estan alli. Este job queda
+    # igual en la nocturna que en un PR, y su tope de nocturna baja de 150 a 60.
     #
     # Los topes de JOB son ~1,5x el maximo observado; los de PASO, ~1,4-1,8x. Se ha
     # tirado hacia lo holgado a proposito: el coste de un tope generoso es una hora de
@@ -336,7 +350,10 @@ jobs:
     # `timeout-minutes` admite una expresion (comprobado con actionlint 1.7.12, que
     # rechaza el texto plano con «expecting a single ${{...}} expression or float number
     # literal»), y es lo que deja tener UN solo job en vez de dos casi identicos.
-    timeout-minutes: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && 150 || 45 }}
+    # El PR se queda en 45 a proposito (es el gate; no se toca). La nocturna corre lo mismo pero
+    # le cuesta mas porque nace en horas punta del runner: 36 min medidos, y 60 deja 24 de margen
+    # para un rojo de unit con sus reintentos (~5,5 min el 7-oct).
+    timeout-minutes: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && 60 || 45 }}
     # Los tests de intervalos construyen sus expectativas con un calendario fijado a
     # America/Lima, pero el SSOT que comparan (`DetailPeriod.dateInterval`) resuelve sus
     # fechas con `userConfiguredCalendar()` = `Calendar.current`. En la Mac del owner las
@@ -367,16 +384,15 @@ jobs:
       # Los tests que siguen en rojo tras repetirlos solos (`ci-reintentar-rojos.sh`).
       unit_pure_rojos: ${{ steps.unit_pure.outputs.rojos }}
       unit_context: ${{ steps.unit_context.outcome }}
-      ui: ${{ steps.ui.outcome }}
       ui_tocaba: ${{ steps.contexto.outputs.ui_tocaba }}
     env:
       TEST_RUNNER_TZ: America/Lima
-      # Unica fuente de «esta corrida lleva UI». La gobierna el paso de UI (`if:`) y la
-      # lee el JOB `aviso` de mas abajo para no confundir «saltado a proposito» con «no
-      # llego a correr» — dos cosas que en `steps.<id>.outcome` se llaman IGUAL: `skipped`.
-      # La condicion aparece dos veces en el fichero (aqui y en `timeout-minutes` del
-      # job) porque el tope del job se evalua antes de que exista `env`. Si cambia una,
-      # cambia la otra.
+      # Unica fuente de «esta corrida lleva UI» para el JOB `aviso` de mas abajo, que la lee
+      # para no confundir «saltado a proposito» con «no llego a correr» — dos cosas que en
+      # `needs.<job>.outputs` llegan IGUAL: vacias.
+      # La condicion aparece TRES veces en el fichero: aqui, en `timeout-minutes` de este job
+      # (se evalua antes de que exista `env`) y en el `if:` del job `ui` (un `if:` de job no
+      # ve el `env` de otro job). Si cambia una, cambian las tres.
       UI_TOCABA: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
     steps:
       # `UI_TOCABA` sale por un paso, y no como `outputs: ui_tocaba: ${{ env.UI_TOCABA }}`,
@@ -387,8 +403,7 @@ jobs:
       # ejecucion, y aqui un vacio haria que el aviso gritara «la suite no corrio» en cada
       # PR. Una linea de mas cuesta menos que averiguarlo en produccion.
       #
-      # Lo que evita: que la condicion de UI_TOCABA se escriba una TERCERA vez en el fichero
-      # (ya esta en el `env:` de este job y en su `timeout-minutes`).
+      # Lo que evita: que la condicion de UI_TOCABA se escriba una CUARTA vez en el fichero.
       - name: Exponer si a la UI le tocaba correr
         id: contexto
         run: echo "ui_tocaba=$UI_TOCABA" >> "$GITHUB_OUTPUT"
@@ -503,28 +518,132 @@ jobs:
             -derivedDataPath .ddp \
             -parallel-testing-enabled NO \
             -retry-tests-on-failure
-      # SOLO EN LA NOCTURNA (2026-09-06, decision del owner). La suite entera de UI, sin
-      # paralelismo y con reintentos, tarda 67 min de mediana y 76 en el peor caso medido:
-      # es el 76 % del reloj del job y la razon por la que el check de un PR no cerraba
-      # dentro de una sesion de trabajo. En un PR este paso queda `skipped` a proposito.
-      #
-      # Lo que cubre el hueco en el PR es el gate local, que corre los XCUITest de las
-      # areas TOCADAS antes de cada commit; aqui se corre la suite COMPLETA cada noche.
-      # Sigue siendo advisory, por lo mismo que los dos de arriba.
-      - name: UI tests (YalaUITests) — solo nocturna · advisory (flaky en runner frío, ver Lista Negra)
+
+  # --------------------------------------------------------------------------------
+  # SUITE DE UI, SOLO EN LA NOCTURNA, PARTIDA EN TANDAS PARALELAS  (2026-10-09)
+  #
+  # Solo nocturna desde el 2026-09-06 (decision del owner): en un PR este job queda `skipped` a
+  # proposito. Lo que cubre el hueco en el PR es el gate local, que corre los XCUITest de las
+  # areas TOCADAS antes de cada commit; aqui se corre la suite COMPLETA cada noche. Sigue siendo
+  # advisory, por lo mismo que los pasos de unit (`continue-on-error`).
+  #
+  # POR QUE EN TANDAS. Hasta el 2026-10-09 era un paso del job `tests`, en serie detras de build
+  # y unit. Medido en la nocturna 37802106095 (8-oct): 36 min antes de la UI; la UI llego a los
+  # 110 de su tope con 65 de las 85 suites cerradas (192 de 250 casos, ~0,56 min por caso, solo 2
+  # reintentos: lentitud, no reintentos ni cuelgue). La suite entera habria pedido ~141 min y el
+  # job ~177. Descartado:
+  #   · subir topes: un job de ~3 h en serie que vuelve a quedarse corto en cuanto crezca la suite;
+  #   · dos noches alternas: cada suite correria cada 48 h, y lo pedido es cada 24;
+  #   · quitar el reintento: 2 reintentos medidos, no es lo que gasta el tiempo.
+  #
+  # COMO SE REPARTE. `qa/scripts/ci-ui-tandas.sh` lee el arbol de `YalaUITests/` y reparte las
+  # suites por numero de `func test`; una suite nueva entra sola, sin tocar este fichero. La
+  # ULTIMA tanda corre el target entero menos lo de las otras, asi que ninguna suite se queda
+  # fuera aunque el descubrimiento no la vea (detalle en el script; banco en `coverage-index`).
+  # Cada tanda va en su `macos-26` con su propio build: compartir el build por artefacto costaria
+  # subir y bajar `.ddp`, y el build son ~15 min en paralelo con las otras tandas.
+  #
+  # CUANTAS TANDAS. Las decide la matriz, y SOLO la matriz: el script recibe
+  # `strategy.job-index` y `strategy.job-total`, asi que no hay un segundo numero que pueda
+  # quedarse desfasado y dejar una tanda sin lanzar. Al cambiarlas, lo unico que hay que tocar a
+  # mano son las salidas `ui_N` de abajo y su lectura en el job `aviso`.
+  #
+  # TOPES. Paso de UI 110 y job 150. Antes de la UI cada tanda gasta ~20 min (simulador hasta 3,
+  # build hasta 16), asi que aunque el paso agote sus 110 el job conserva ~20 min: el corte lo da
+  # siempre el tope del PASO, que deja el job vivo para contarlo (ver «POR QUE TAMBIEN EN CADA
+  # PASO» en el job `tests`).
+  #
+  # POR QUE TRES Y NO DOS. Con dos se midio (dispatch 37906397439, 2026-10-09): las 85 suites
+  # arrancaron y cerraron, y cada paso de UI tardo 83,3 min — bajo los 110, pero con 1,3x de
+  # holgura y no las 1,4-1,8x que pide esta tabla. Y la suite crece deprisa: 149 casos el
+  # 11-sep, 250 el 9-oct; a ese ritmo dos tandas tocan el tope en semanas. La suite entera
+  # sumo 158 min ese dia; repartida en tres, con los mismos tiempos por suite, la tanda mas
+  # larga queda en ~61 min de UI (+~4 de arranque del runner de tests). Tres `macos-26` mas a la
+  # vez durante ~1,3 h por noche, del mismo tipo y gratis en un repo publico; no es un runner de
+  # pago.
+  #
+  # MEDIDO CON TRES (dispatch 37917143838, 2026-10-09; las 85 suites arrancaron y cerraron):
+  #
+  #   tanda   suites   paso de UI   job    tope paso / job
+  #     1       28        48,1      60,3      110 / 150
+  #     2       28        69,4      85,1      110 / 150
+  #     3       29        57,2      71,2      110 / 150
+  #
+  # La 2 pesa mas porque el reparto cuenta casos, no minutos: le cayeron `ImageEntryReviewUITests`
+  # (9 min, con tres rojos que repiten tres veces cada uno) y `SessionExitsPerCellUITests` (8). Aun
+  # asi va a 1,6x de su tope. Si un dia una tanda pasa de ~80 min de UI, la
+  # salida es una cuarta tanda (matriz + `ui_4`), no subir el tope.
+  ui:
+    name: UI tests (tanda ${{ matrix.tanda }})
+    # Sin `needs`: arranca a la vez que `tests`. Tercera aparicion de la condicion de UI_TOCABA
+    # (ver el `env:` del job `tests`).
+    if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+    runs-on: macos-26
+    timeout-minutes: 150
+    strategy:
+      # Una tanda que falla no puede cancelar a las otras: perderiamos su parte de la suite.
+      fail-fast: false
+      matrix:
+        tanda: [1, 2, 3]
+    env:
+      TEST_RUNNER_TZ: America/Lima
+    # Una salida por tanda, con nombre fijo. En una matriz, si dos patas escriben la MISMA salida
+    # gana la ultima en acabar; por eso cada pata escribe solo la suya. Si una llega vacia al
+    # aviso, el aviso lo lee como «no llego a correr» (falla cerrado).
+    outputs:
+      ui_1: ${{ steps.salida.outputs.ui_1 }}
+      ui_2: ${{ steps.salida.outputs.ui_2 }}
+      ui_3: ${{ steps.salida.outputs.ui_3 }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Seleccionar Xcode (latest-stable 26.x)
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+      - name: Crear Secrets.xcconfig (placeholder para CI)
+        run: cp Secrets.xcconfig.template Secrets.xcconfig
+      # Mismo paso y mismo porque que en el job `tests`.
+      - name: Simulador del runner
+        id: sim
+        timeout-minutes: 25
+        run: bash qa/scripts/ci-simulador.sh
+      - name: Build for testing
+        timeout-minutes: 25
+        run: |
+          xcodebuild build-for-testing \
+            -scheme "Yala Dev" \
+            -project Yala.xcodeproj \
+            -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.udid }}" \
+            -derivedDataPath .ddp \
+            -quiet
+      - name: UI tests (YalaUITests, tanda ${{ matrix.tanda }}) — advisory (flaky en runner frío, ver Lista Negra)
         id: ui
-        if: ${{ env.UI_TOCABA == 'true' }}
         continue-on-error: true
         timeout-minutes: 110
+        env:
+          JOB_INDEX: ${{ strategy.job-index }}
+          JOB_TOTAL: ${{ strategy.job-total }}
         run: |
+          set -euo pipefail
+          # Si el reparto falla, el paso falla aqui y el aviso lo cuenta: nunca arranca
+          # `xcodebuild` sin lista, que correria el target entero en cada tanda.
+          args=$(bash qa/scripts/ci-ui-tandas.sh "$((JOB_INDEX + 1))" "$JOB_TOTAL")
+          # Un argumento por linea y sin espacios (nombres de clase): el troceo es el buscado.
+          # shellcheck disable=SC2086
           xcodebuild test-without-building \
             -scheme "Yala Dev" \
             -project Yala.xcodeproj \
             -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.udid }}" \
-            -only-testing:YalaUITests \
+            $args \
             -derivedDataPath .ddp \
             -parallel-testing-enabled NO \
             -retry-tests-on-failure
+      - name: Resultado de la tanda
+        id: salida
+        if: ${{ always() }}
+        env:
+          RESULTADO: ${{ steps.ui.outcome }}
+        run: echo "ui_${{ matrix.tanda }}=$RESULTADO" >> "$GITHUB_OUTPUT"
 
   # --------------------------------------------------------------------------------
   # EL AVISO, EN SU PROPIO CHECK  (2026-09-09, decision del owner)
@@ -551,7 +670,9 @@ jobs:
   # ningun canal se pone en rojo — ahi si, porque entonces nadie se ha enterado.
   aviso:
     name: ¿Se ha enterado alguien de los rojos advisory?
-    needs: tests
+    # Espera tambien al job `ui`. En un PR `ui` sale `skipped` al instante, asi que no retrasa
+    # nada; en la nocturna el aviso sale cuando acaban todas las tandas.
+    needs: [tests, ui]
     # `!cancelled()` y NO `always()`, y la diferencia importa mucho: `always()` corre tambien
     # cuando el RUN ENTERO se cancela. Y el run entero se cancela de dos formas: a mano —con un
     # job de hasta 90 min en `macos-26`, cancelar al ver un typo es lo normal— y, desde el
@@ -588,9 +709,12 @@ jobs:
           R_UNIT_PURE: ${{ needs.tests.outputs.unit_pure }}
           R_UNIT_PURE_ROJOS: ${{ needs.tests.outputs.unit_pure_rojos }}
           R_UNIT_CONTEXT: ${{ needs.tests.outputs.unit_context }}
-          R_UI: ${{ needs.tests.outputs.ui }}
+          R_UI_1: ${{ needs.ui.outputs.ui_1 }}
+          R_UI_2: ${{ needs.ui.outputs.ui_2 }}
+          R_UI_3: ${{ needs.ui.outputs.ui_3 }}
           UI_TOCABA: ${{ needs.tests.outputs.ui_tocaba }}
           RESULTADO_JOB: ${{ needs.tests.result }}
+          RESULTADO_UI: ${{ needs.ui.result }}
           REPO: ${{ github.repository }}
           RAMA: ${{ github.ref_name }}
           SHA: ${{ github.sha }}
@@ -609,7 +733,9 @@ jobs:
             fi
           fi
           [ "$R_UNIT_CONTEXT" != "failure" ] || fallidos="$fallidos\n- Unit tests (context-based)"
-          [ "$R_UI" != "failure" ]           || fallidos="$fallidos\n- UI tests (YalaUITests)"
+          [ "$R_UI_1" != "failure" ]         || fallidos="$fallidos\n- UI tests (YalaUITests, tanda 1)"
+          [ "$R_UI_2" != "failure" ]         || fallidos="$fallidos\n- UI tests (YalaUITests, tanda 2)"
+          [ "$R_UI_3" != "failure" ]         || fallidos="$fallidos\n- UI tests (YalaUITests, tanda 3)"
 
           # Un paso advisory que no llego a EJECUTARSE deja `outcome` en `skipped`, no en
           # `failure`: el job murio en un paso ANTERIOR (setup, Secrets, build) y GitHub salto
@@ -633,11 +759,15 @@ jobs:
               *) sin_correr="si" ;;
             esac
           done
+          # La UI corre en tandas (job `ui`): cada una tiene que haber dejado su resultado. Una
+          # salida vacia es una tanda que no corrio o cuyo resultado no llego, y no se da por buena.
           if [ "$UI_TOCABA" = "true" ]; then
-            case "$R_UI" in
-              success|failure) ;;
-              *) sin_correr="si" ;;
-            esac
+            for r in "$R_UI_1" "$R_UI_2" "$R_UI_3"; do
+              case "$r" in
+                success|failure) ;;
+                *) sin_correr="si" ;;
+              esac
+            done
           fi
 
           if [ -n "$sin_correr" ]; then
@@ -646,9 +776,10 @@ jobs:
               "CI de $REPO ($RAMA): el job murio antes de los tests y la suite NO llego a correr." \
               "" \
               "Los pasos de test quedaron sin ejecutar (pure-logic: '$R_UNIT_PURE', context-based:" \
-              "'$R_UNIT_CONTEXT', UI: '$R_UI' — a la UI le tocaba correr: '$UI_TOCABA'; el job" \
-              "\`tests\` acabo en '$RESULTADO_JOB'). Un valor vacio significa que el job fue" \
-              "CANCELADO y no llego a dejar resultado — casi siempre, su tope de tiempo." \
+              "'$R_UNIT_CONTEXT', UI: tandas '$R_UI_1' / '$R_UI_2' / '$R_UI_3' — a la UI le tocaba correr:" \
+              "'$UI_TOCABA'; el job \`tests\` acabo en '$RESULTADO_JOB', el \`ui\` en '$RESULTADO_UI')." \
+              "Un valor vacio significa que el job (o esa tanda) fue CANCELADO y no llego a dejar" \
+              "resultado — casi siempre, su tope de tiempo." \
               "Esto NO es un verde: es un run que no probo nada." \
               "La causa esta en un paso ANTERIOR del job — mira el log.")
           elif [ -n "$fallidos" ]; then
@@ -662,7 +793,7 @@ jobs:
               "Pasos en rojo:$(printf '%b' "$fallidos")")
           else
             if [ "$UI_TOCABA" = "true" ]; then
-              echo "::notice title=Suite en verde::Los tres pasos advisory corrieron (UI incluida) y ninguno fallo."
+              echo "::notice title=Suite en verde::Los pasos advisory corrieron (todas las tandas de UI incluidas) y ninguno fallo."
             else
               echo "::notice title=Suite en verde::Los dos pasos de unit corrieron y ninguno fallo. La UI corre en la nocturna."
             fi
