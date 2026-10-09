@@ -9,6 +9,7 @@
  * comparten users A/B). Los 2 fallos PREEXISTENTES de account.goldens (cuenta B claimeada) NO son de G2.
  */
 import { beforeAll, describe, expect, it } from "vitest";
+import { describeStaging } from "./staging";
 import app from "../src/index";
 import type { Env } from "../src/env";
 import type { GroupPushResponse, GroupPullResponse, GroupMerkleResponse } from "../src/groups/types";
@@ -204,7 +205,7 @@ beforeAll(async () => {
   subB = decodeSub(jwtB);
 }, 30_000);
 
-describe("G2 goldens · /groups/* contra staging real", () => {
+describeStaging("G2 goldens · /groups/* contra staging real", () => {
   it("2. push A (expense gmoney + 2 shares gshare) → applied; pull B ve grupo/members/expense/shares con p_group_id/p_sync_id correctos", async () => {
     const { gid } = await setupGroup("push-pull");
     const expId = uuid();
@@ -515,7 +516,7 @@ async function rpcGw(jwt: string | null, fn: string, body: unknown): Promise<{ s
   return { status: res.status, body: text ? JSON.parse(text) : null };
 }
 
-describe("G3 goldens · /groups/rpc/* contra staging real", () => {
+describeStaging("G3 goldens · /groups/rpc/* contra staging real", () => {
   it("1. create_group vía gateway → 200 {group_id, member_key==sub}; meta completa (simplify/show/members_can_invite) escrita", async () => {
     const gid = freshGid();
     // Los 3 params nuevos (A3, g3_01) con valores NO-default (true) para probar que el gateway los pasa.
@@ -767,7 +768,7 @@ describe("G3 goldens · /groups/rpc/* contra staging real", () => {
 // ============================================================================
 // G7 goldens · cifrado pgcrypto de columnas de grupos (post-aplicación g7_01 + recrypt + g7_02)
 // ============================================================================
-describe("G7 goldens · pgcrypto encryption contra staging real", () => {
+describeStaging("G7 goldens · pgcrypto encryption contra staging real", () => {
   it("g7-logging-settings: yala_logging_settings asserta el gate §16e (la llave nunca en logs)", async () => {
     const res = await fetch(`${URL}/rest/v1/rpc/yala_logging_settings`, {
       method: "POST",
@@ -850,7 +851,7 @@ async function readMember(jwt: string, gid: string, memberKey: string): Promise<
 // owner, y group_members no admite UPDATE directo). Mitigación: el ORDER BY es copia
 // byte-idéntica de groups_forget_user loop1 (g7_02:311-315, ya confiable). Con un 3er user, añadir un golden
 // de ordenamiento.
-describe("G10 goldens · transfer_group_ownership contra staging real (post-aplicación g10_01)", () => {
+describeStaging("G10 goldens · transfer_group_ownership contra staging real (post-aplicación g10_01)", () => {
   it("1. owner con co-member elegible → transfiere al heredero; heredero promovido a admin; owner intacto (el leave lo hace el cliente); retry-transient → already", async () => {
     // setupGroup: A owner+admin, B joined+approved (active, user_id=subB, role=member, member_key=subB).
     const { gid } = await setupGroup("transfer-heir");
