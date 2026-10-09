@@ -128,6 +128,39 @@ jobs:
       - run: npm run typecheck
       - run: npm test
 
+  # Suite del gateway (`gateway/`, el Worker de Cloudflare): typecheck y vitest, sin red. Hasta el
+  # 2026-10-08 no la corría nadie: `gateway/*` salta la suite iOS (job `changes`) y nada la
+  # sustituía. Ahí viven los guards que paran un deploy destructivo —`MIN_SUPPORTED_BUILD` en
+  # `wrangler.forceupdate.test.ts` y los percents de producción en `config.test.ts`—, el 401 que lee
+  # el cliente iOS (`groups.attest401.test.ts`) y el fan-out de avisos (`push.fanout.unit.test.ts`).
+  #
+  # Corre en CADA push, como `mcp`, y no solo cuando el diff toca `gateway/`: cuesta un minuto de
+  # Ubuntu, y un check filtrado por ruta no se puede exigir en el ruleset (en los PR que no tocan
+  # `gateway/` se quedaría pendiente para siempre).
+  #
+  # Los goldens contra staging (`account.goldens`, `groups.goldens`, `push.fanout`, `sync.goldens`)
+  # salen `skipped`: aquí no hay ninguna credencial de staging y `test/staging.ts` los salta cuando
+  # faltan TODAS. Medido el 2026-10-08: 449 verdes y 84 skipped en ~2 s.
+  #
+  # `deploy:production` (en `gateway/package.json`) sigue sin correr esta suite antes de desplegar:
+  # este job la corre en el PR, no en la Mac que despliega.
+  gateway:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: gateway
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: gateway/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+
   # Decide si el job `tests` (macos-26, ~1,5 h de reloj) tiene algo que probar. Un
   # cambio de solo docs/tickets no puede romper el build ni la suite y hasta ahora
   # encolaba el runner de simulador igual: el PR #41 (3 ficheros .md) esperó 1 h 45 min.
@@ -204,8 +237,8 @@ jobs:
             case "$file" in
               docs/*|tickets/*|marketing/*|Web/*|.claude/*) ;;
               README.md|CLAUDE.md|LICENSE|LICENSE.md|LICENSE.txt) ;;
-              # `gateway/` es el Worker de Cloudflare (TypeScript, su propia suite con
-              # vitest) y `qa/cloud/` son scripts contra staging: ninguno entra en el build
+              # `gateway/` es el Worker de Cloudflare (TypeScript, su suite con vitest corre
+              # en el job `gateway`) y `qa/cloud/` son scripts contra staging: ninguno entra en el build
               # de iOS. ACOTADO a `qa/cloud/` a proposito — `qa/scripts/` y
               # `qa/validate-coverage.*` SI deciden como se verifica el proyecto, asi que
               # siguen disparando la suite. Meter `qa/*` entero seria el error.

@@ -7,6 +7,7 @@
  * (UUID fresco): NO hay cleanup posible (DELETE revocado por diseño). Ver qa/cloud/README.
  */
 import { beforeAll, describe, expect, it } from "vitest";
+import { describeStaging } from "./staging";
 import app from "../src/index";
 import type { Env } from "../src/env";
 import { setBreakingColumnsForTest } from "../src/sync/schemaGate";
@@ -123,7 +124,7 @@ beforeAll(async () => {
   subA = decodeSub(jwtA);
 });
 
-describe("I6 goldens · /sync/* contra staging real", () => {
+describeStaging("I6 goldens · /sync/* contra staging real", () => {
   it("1. user_id SIEMPRE del JWT: un user_id ajeno en el payload se descarta; la fila queda del caller", async () => {
     const sid = uuid();
     const r = await push(jwtA, [
