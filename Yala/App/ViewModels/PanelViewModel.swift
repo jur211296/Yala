@@ -245,6 +245,18 @@ final class PanelViewModel {
     /// Whether the app is in background — suppresses recalculation to prevent 0x8BADF00D
     private(set) var isInBackground = false
 
+    /// «¿Está la app activa?» para el freno del recálculo. Costura de test: el `applicationState` del
+    /// host de unit tests no es fiable (molde de `RecalculationDebouncer`). Producción no la toca.
+    @ObservationIgnored
+    var isApplicationActive: @MainActor () -> Bool = { UIApplication.shared.applicationState == .active }
+
+    #if DEBUG
+    /// Cuántas veces ha corrido `performCalculation`. Solo para medir: los tests cuentan con él que un
+    /// evento produce UN recálculo y no más, y la traza de DEBUG lo imprime con su motivo.
+    @ObservationIgnored
+    private(set) var debugCalculationRuns = 0
+    #endif
+
     // MARK: - Loaded Data
 
     private(set) var accounts: [Account] = []
@@ -2527,12 +2539,24 @@ final class PanelViewModel {
         scheduleRecalculation(reload: true)
     }
 
+    /// Han llegado tasas nuevas a disco (`.yalaExchangeRatesUpdated`, que el Panel recibe en
+    /// `PanelDataObservers`). Persistir tasas no toca ninguna fila, así que basta recalcular: el saldo
+    /// vivo, su marca «≈» y la card de resultado cambiario vuelven a convertir con la caché del converter
+    /// ya invalidada por el receptor del arranque, que corre al postear —el recálculo llega 150 ms
+    /// después—. El widget de tipo de cambio solo se rehace con su marca: sin ella seguiría enseñando la
+    /// tasa de antes. Sin esto, el Panel se quedaba con la tasa vieja y el «≈» encendido hasta que el
+    /// usuario tocara algo (ticket `panel-no-recalcula-al-llegar-tasas-nuevas`).
+    func exchangeRatesDidUpdate() {
+        SessionState.shared.needsExchangeRateWidgetRefresh = true
+        recalculateData()
+    }
+
     /// Shared debounce (150ms). `pendingReload` ensures a reload request isn't lost
     /// if a subsequent calculate-only call arrives within the debounce window.
     /// Guarded by isInBackground to prevent 0x8BADF00D during snapshot capture.
     private func scheduleRecalculation(reload: Bool) {
         guard !isInBackground else { return }
-        guard UIApplication.shared.applicationState == .active else { return }
+        guard isApplicationActive() else { return }
         if reload { pendingReload = true }
         recalculateTask?.cancel()
         recalculateTask = Task { @MainActor in
@@ -2550,6 +2574,10 @@ final class PanelViewModel {
     /// Runs all widget calculations from cached data (no SwiftData fetch).
     private func performCalculation() {
         guard let sessionState, let context = modelContext else { return }
+        #if DEBUG
+        debugCalculationRuns += 1
+        print("PanelViewModel: performCalculation #\(debugCalculationRuns)")
+        #endif
         calculateTrendData(
             accounts: accounts,
             transactions: transactions,
