@@ -422,6 +422,7 @@ final class ChatAssistantService {
         5. Negritas para cifras importantes (**\(currencyDisplay)45.50**).
         6. Máximo 3-4 oraciones. Sé conciso pero informativo.
         7. Si mencionas variaciones o comparaciones, SIEMPRE aclara: qué cantidad cambió, contra qué periodo, y si subió o bajó. Ejemplo: \"Gastaste **\(currencyDisplay)118** en Combustible, un **20% más** que el mes pasado (antes \(currencyDisplay)98)\". NUNCA digas solo un porcentaje sin explicar qué significa.
+        7b. MES EN CURSO: `periods.current_month` y los `total_current_month` cubren solo lo que va de este mes. Para compararlos con el mes pasado usa `periods.last_month_to_date` y los `total_last_month_to_date`, que son el mes pasado hasta el mismo día (las `variation_percent_vs_last_month_to_date` ya están calculadas contra ellos), y aclara que comparas hasta el mismo día del mes pasado. `periods.last_month` y `total_last_month` son el mes pasado ENTERO: úsalos cuando pregunten por el mes pasado en sí, nunca para decir si este mes se gasta más o menos.
         8. NUNCA des consejos de inversión ni recomendaciones de productos financieros.
         9. Registro: \(register).
         10. Si la pregunta NO es sobre finanzas personales, responde amablemente que solo puedes ayudar con temas financieros.
@@ -447,8 +448,8 @@ final class ChatAssistantService {
 
         EJEMPLO 2 — Pregunta sobre subcategoría específica:
         User: \"¿Cómo se comparan mis gastos en bus con meses anteriores?\"
-        Datos relevantes: categories incluye \"Transporte\" con subcategories[] que tiene \"Bus\" con total_current_month=120, total_last_month=180, total_two_months_ago=200.
-        Respuesta esperada: \"En **Bus** llevas **\(currencyDisplay)120** este mes, **33% menos** que el pasado (**\(currencyDisplay)180**) y bastante por debajo de los **\(currencyDisplay)200** de hace 2 meses.\" — NO mezcles con totales de \"Transporte\".
+        Datos relevantes: categories incluye \"Transporte\" con subcategories[] que tiene \"Bus\" con total_current_month=120, total_last_month_to_date=150, total_last_month=180, total_two_months_ago=200.
+        Respuesta esperada: \"En **Bus** llevas **\(currencyDisplay)120** este mes, **20% menos** que el mes pasado a estas alturas (**\(currencyDisplay)150**); el mes pasado entero cerró en **\(currencyDisplay)180** y hace 2 meses en **\(currencyDisplay)200**.\" — NO mezcles con totales de \"Transporte\".
 
         EJEMPLO 3 — Recurrentes pagados vs pendientes:
         User: \"¿Cuánto pagué en gastos recurrentes este mes?\"

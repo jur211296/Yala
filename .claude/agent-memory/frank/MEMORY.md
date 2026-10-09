@@ -22,6 +22,7 @@
 - [UI compleja: capturas antes de cerrar](feedback_ui_compleja_capturas_antes_de_cerrar.md) — aprueba sobre el simulador, no el lienzo; pide aire.
 - [El atasco se prueba con segundos y el mismo cambio](feedback_el_atasco_se_prueba_con_segundos_y_el_mismo_cambio.md) — backoff de segundos + mismo fallo antes de abrir una salida que pierde datos.
 - [Esperar un PR ajeno: mira si puede entrar](feedback_esperar_un_pr_ajeno_mira_si_puede_entrar.md) — DIRTY no entra solo aunque el CI pase; rebasa y sigue.
+- [Simulador ajeno parado: se pregunta](feedback_simulador_ajeno_parado_se_pregunta.md) — si su sesión espera a Jürgen, aprobó usarlo sin apagarlo.
 
 ## Cómo mido y cómo entrego
 - [`tablero --nota` sustituye](feedback_tablero_nota_sustituye.md) — lee la nota antes y concatena; borró una decisión.

@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (828)
+## Index (830)
 
 | id | status | path |
 |---|---|---|
@@ -101,6 +101,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | ai-recommended-budgets | backlog | tickets/backlog/ai-recommended-budgets.md |
 | ai-responses-use-json-object-not-a-strict-schema | backlog | tickets/backlog/ai-responses-use-json-object-not-a-strict-schema.md |
 | ai-text-model-generation-upgrade | done | tickets/done/ai-text-model-generation-upgrade.md |
+| aligned-previous-interval-counts-the-next-midnight | backlog | tickets/backlog/aligned-previous-interval-counts-the-next-midnight.md |
 | alternating-definitive-causes-never-reach-the-short-ceiling | done | tickets/done/alternating-definitive-causes-never-reach-the-short-ceiling.md |
 | an-incomplete-inventory-reads-as-the-whole-corpus | done | tickets/done/an-incomplete-inventory-reads-as-the-whole-corpus.md |
 | an-undecodable-migration-phase-reads-as-never-started | done | tickets/done/an-undecodable-migration-phase-reads-as-never-started.md |
@@ -153,9 +154,9 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | changing-an-account-currency-orphans-its-whole-history | qa | tickets/qa/changing-an-account-currency-orphans-its-whole-history.md |
 | chat-assistant-is-down | discarded | tickets/discarded/chat-assistant-is-down.md |
 | chat-assistant-plants-exchange-rate-one | done | tickets/done/chat-assistant-plants-exchange-rate-one.md |
-| chat-compares-with-the-month-in-progress | backlog | tickets/backlog/chat-compares-with-the-month-in-progress.md |
+| chat-compares-with-the-month-in-progress | done | tickets/done/chat-compares-with-the-month-in-progress.md |
 | chat-context-encoding-failure-is-silent | backlog | tickets/backlog/chat-context-encoding-failure-is-silent.md |
-| chat-context-treats-archived-accounts-as-excluded | backlog | tickets/backlog/chat-context-treats-archived-accounts-as-excluded.md |
+| chat-context-treats-archived-accounts-as-excluded | done | tickets/done/chat-context-treats-archived-accounts-as-excluded.md |
 | chat-creates-only-one-transaction-per-message | backlog | tickets/backlog/chat-creates-only-one-transaction-per-message.md |
 | chat-dictation-looks-poor | qa | tickets/qa/chat-dictation-looks-poor.md |
 | chat-draft-card-redesign | qa | tickets/qa/chat-draft-card-redesign.md |
@@ -167,6 +168,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | chat-rows-sealed-before-the-fix-have-no-repair-path | done | tickets/done/chat-rows-sealed-before-the-fix-have-no-repair-path.md |
 | chat-rows-with-unsigned-amount-have-no-repair-path | done | tickets/done/chat-rows-with-unsigned-amount-have-no-repair-path.md |
 | chat-sends-every-past-turn-to-the-model | backlog | tickets/backlog/chat-sends-every-past-turn-to-the-model.md |
+| chat-total-ignores-the-panel-groups-toggle | backlog | tickets/backlog/chat-total-ignores-the-panel-groups-toggle.md |
 | ci-allowlist-no-cubre-encargos-ni-qa-scripts | discarded | tickets/discarded/ci-allowlist-no-cubre-encargos-ni-qa-scripts.md |
 | ci-avisador-de-rojos-advisory-tiene-la-clave-mal | done | tickets/done/ci-avisador-de-rojos-advisory-tiene-la-clave-mal.md |
 | ci-checkout-v4-runs-on-deprecated-node | backlog | tickets/backlog/ci-checkout-v4-runs-on-deprecated-node.md |
