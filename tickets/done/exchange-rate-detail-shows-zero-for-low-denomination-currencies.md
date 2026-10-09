@@ -1,9 +1,10 @@
 ---
 id: exchange-rate-detail-shows-zero-for-low-denomination-currencies
-status: backlog
+status: done
 priority: medium
 area: "currency, ui"
 created: 2026-09-08
+updated: 2026-10-09
 source: hallazgo de camino en chat-assistant-plants-exchange-rate-one (review adversarial, 2026-09-08)
 ---
 
@@ -54,3 +55,22 @@ para el usuario; el ticket de la tasa arregla el dato, éste arregla lo que se v
 - [ ] Si se invierte la presentación, comprobar que no se rompe el caso normal (PEN→USD y similares).
 - [ ] Buscar el patrón: `String(format: "%.4f"` y sus primos sobre tasas en otras pantallas —el chip
       del formulario de transacción es candidato.
+
+## Hecho (2026-10-09)
+
+- Un solo formateador de tasas, `ExchangeRateDisplayFormatter` (`Yala/App/Logic/`). Tasa ≥ 1: de 2 a 4
+  decimales. Tasa < 1: los decimales que den 4 cifras significativas. Separadores del idioma, los mismos
+  que los importes. VND→USD pasa de «0,0000» a «0,00004082»; PEN→USD sigue «0,2667».
+- Lo usan el detalle de la transacción, el widget de tipos de cambio del Panel (chips, tooltip, eje y
+  etiquetas), la hoja de ganancia cambiaria, las dos pantallas de Ajustes de divisas y el chip «TC:» del
+  formulario de nuevo registro (el candidato que nombraba este ticket).
+- **No se invierte la presentación.** Con las capturas delante, «TC: 0,00003861» se lee bien en la fila del
+  detalle y no abre ninguna decisión de UI. Si se quisiera «1 € = 25.900 ₫» en algún par, queda como
+  propuesta (A: dejar así, recomendado · B: invertir solo cuando la tasa < 0,01), no aplicada.
+- **`TransferAmountInputView` no se toca.** Allí la tasa es un campo editable que se vuelve a parsear y ya
+  se invierte cuando es menor que 1, así que nunca sale «0,0000». Cambiar su formato (separador de miles,
+  coma) arriesga la entrada y no hay test que fije el parseo en es y en; sigue con `%.4f` sin localizar.
+- Tests: `ExchangeRateDisplayFormatterTests` (VND, IDR, KRW, JPY, KWD y PEN contra USD en es y en, todos
+  los pares de la tabla legibles a < 0,1 %) + `ExchangeRateDisplayFormatterWiringTests` (las seis
+  pantallas). Control rojo: con el formateador vuelto a `%.4f`, caen.
+- Capturas en el simulador (seed `realista` + cuenta en VND): gasto en VND con preferida EUR: antes «TC: 0.0000», después «TC: 0,00003861»; widget: antes «3.5500», después «3,55».

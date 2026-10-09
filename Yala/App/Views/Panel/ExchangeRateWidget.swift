@@ -387,7 +387,7 @@ struct ExchangeRateWidget: View {
 
     /// Format rate in a more compact way for inline labels
     private func formatRateCompact(_ value: Double) -> String {
-        String(format: "%.4f", value)
+        ExchangeRateDisplayFormatter.string(value)
     }
 
     // MARK: - Tooltip
@@ -493,7 +493,7 @@ struct ExchangeRateWidget: View {
     // MARK: - Helpers
 
     private func formatRate(_ value: Double) -> String {
-        String(format: "%.4f", value)
+        ExchangeRateDisplayFormatter.string(value)
     }
 
     private static let tooltipDayFormatter: DateFormatter = {
