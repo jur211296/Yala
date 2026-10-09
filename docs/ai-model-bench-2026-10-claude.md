@@ -102,6 +102,26 @@ Acuerdo con las muestras puntuadas a mano:
   determinista y la lectura a mano.
 - **Coste del juicio**: 0,0045 USD por respuesta con Sonnet (29 juicios, 0,13 USD).
 
+### Cambio del mismo día: en Insights juzga Gemini solo
+
+Pedido por Jürgen el 2026-10-08, tras ver la tabla de arriba. **En `insights.cards`, `insights.cashflow` e
+`insights.deviation` decide Gemini 3.8 Flash solo**, y Sonnet cuando el candidato es de Google: nadie juzga a su propio
+proveedor. `trends.summary` y `chat.answer` siguen como arriba.
+
+Poner a Gemini primero no bastaba: el banco junta a los dos primeros jueces de otro proveedor y exige que aprueben los
+dos. Esa pareja era Gemini + Sonnet en cualquier orden, así que ningún veredicto cambiaba. Por eso en Insights decide uno.
+
+Recalculado sobre los juicios ya pagados del 7-oct (`--agreement --date 2026-10-07`), sin llamadas nuevas:
+
+| Veredicto del banco | Respuestas | Acuerdo | κ de Cohen |
+|---|---|---|---|
+| Insights, pareja (antes) | 30 | 67 % | 0,33 |
+| Insights, Gemini solo (ahora) | 30 | 87 % | 0,52 |
+| Las cuatro tareas juntas, antes → ahora | 40 | 63 % → 78 % | 0,30 → 0,39 |
+
+Sigue sin decidir: κ 0,52 no llega al 0,6 del listón. Pero ahora mide lo que mide la nota a mano, y cuesta un juicio por
+respuesta en vez de dos.
+
 ## Qué se midió, y cómo
 
 - **Los mismos casos y el mismo listón que el banco vigente**: 16 casos por tarea en 14 locales, el cuerpo exacto de la
