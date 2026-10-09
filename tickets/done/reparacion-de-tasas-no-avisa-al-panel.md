@@ -1,9 +1,10 @@
 ---
 id: reparacion-de-tasas-no-avisa-al-panel
-status: backlog
+status: done
 priority: medium
 area: currency
 created: 2026-09-07
+updated: 2026-10-09
 source: review adversarial de fx-pnl-education-card (2026-09-07)
 ---
 
@@ -36,5 +37,27 @@ No se autocura en la primera sesión.
 
 ## Criterio de hecho (AC)
 
-- [ ] La reparación bumpea `dataVersion` (o el camino equivalente) para que el Panel recalcule.
-- [ ] Un test fija que reparar importes provisionales despierta al Panel.
+- [x] La reparación bumpea `dataVersion` (o el camino equivalente) para que el Panel recalcule.
+- [x] Un test fija que reparar importes provisionales despierta al Panel.
+
+## Resuelto el 2026-10-09 (encargo `panel-recalculates-on-new-rates`)
+
+**Medido antes de tocar nada.** La premisa «toda esa sesión» no se cumplía en el ARRANQUE: la reparación
+corre dentro de `await loadExchangeRates` (paso 2) y el bootstrap bumpea `dataVersion` al final (paso 19,
+`AppBootstrapper.swift:695`), así que el Panel ya recargaba. El hueco real eran los otros llamadores:
+`UserDataResetView` (no bumpea tras reparar) e `ImportIntroSheet` (bumpea ANTES de lanzar la reparación en
+un `Task`).
+
+**Arreglo.** `updateProvisionalTransactions` bumpea `SessionState.shared.dataVersion` cuando cambió algo y
+el `save()` salió bien. Dentro del escritor, no en sus cuatro llamadores. Es lo que ya hacía su gemelo
+`ChatUnsignedExpenseRepairService`.
+
+**Recálculos por evento, medidos**: el Panel recarga una vez por `dataVersion` (debounce de 150 ms).
+Una reparación que no cambia nada, o con la cola vacía, no bumpea. En arranque en frío con algo que curar
+hay una recarga más en las pantallas que observan `dataVersion` (la del bump propio, antes del final):
+aceptado, Paso 0 D3. Efecto colateral: Estadísticas, que también cuelga de `dataVersion`, ve la reparación.
+
+Tests: `ProvisionalRepairWakesPanelTests` (cura y bumpea exactamente una vez; cola vacía y segunda pasada
+no bumpean). Con el código viejo, el primero sale rojo.
+
+El widget de inicio no se refresca tras reparar fuera del arranque: `estadisticas-y-widget-no-se-enteran-de-tasas-nuevas`.
