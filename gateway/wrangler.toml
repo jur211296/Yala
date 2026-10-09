@@ -133,7 +133,7 @@ CLOUD_MODE_ROLLOUT_PERCENT = "100"
 # Clase de latencia de CLOUD_MODE (hasta 6 h, nadie lo enforza server-side): gatea la ENTRADA al alta
 # born-cloud, nunca el runtime de una cuenta ya creada. `test/config.test.ts` fija los TRES percents
 # vivos leyendo este fichero: moverlos es un diff que rompe un test, no un deploy silencioso.
-CLOUD_ONBOARDING_CHOICE_ROLLOUT_PERCENT = "100"
+CLOUD_ONBOARDING_CHOICE_ROLLOUT_PERCENT = "50"
 # EN 100 desde el 2026-07-31: es el paso 3 de D-R1, la segunda mitad del encendido de Grupos.
 # `CloudSyncFlags.groupsBackendEnabled` es `groupsBackendCompiledDefault && CloudRemoteFlags
 # .groupsBackendEnabled`, así que el flip compilado de `5490544d` era un NO-OP hasta esta línea.
@@ -170,7 +170,7 @@ CLOUD_ONBOARDING_CHOICE_ROLLOUT_PERCENT = "100"
 GROUPS_BACKEND_ROLLOUT_PERCENT = "100"
 # Forzado de actualización (min-version): 0 = desactivado. Se sube al build mínimo soportado cuando
 # haya que forzar una versión crítica (requiere que /config esté vivo en prod — D9/Modo Nube).
-MIN_SUPPORTED_BUILD = "0"
+MIN_SUPPORTED_BUILD = "42"
 
 [[env.production.d1_databases]]
 binding = "DB"
