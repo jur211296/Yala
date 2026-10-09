@@ -81,10 +81,14 @@ extension FullFinancialContext {
     struct BalancesSection: Codable, Equatable {
         let accounts: [AccountEntry]
         let totalBalance: Double
+        /// Si `totalBalance` suma las cuentas de Grupos (`type == "system"`), igual que el total del Panel con
+        /// «Grupos en el total» (`includeGroupsInPanelTotal`). Esas cuentas salen en `accounts` en los dos casos.
+        let totalIncludesGroups: Bool
 
         enum CodingKeys: String, CodingKey {
             case accounts
             case totalBalance = "total_balance"
+            case totalIncludesGroups = "total_includes_groups"
         }
     }
 

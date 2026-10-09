@@ -14,6 +14,7 @@ struct ChatSheetView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.yalaTheme) private var theme
     @Environment(SessionState.self) private var sessionState
+    @Environment(AppPreferences.self) private var appPreferences
     @State private var viewModel = ChatAssistantViewModel()
     @State private var showAISettingsSheet = false
     @State private var showTopicsSheet = false
@@ -48,6 +49,8 @@ struct ChatSheetView: View {
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
         .onAppear {
+            // Antes que nada: el saldo total del chat sigue «Grupos en el total» del Panel.
+            viewModel.setAppPreferences(appPreferences)
             viewModel.setContext(modelContext)
             // setContext ya consume el signal persistido en UserDefaults; aquí
             // cubrimos el caso del signal in-memory llegado mientras el sheet

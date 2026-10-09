@@ -138,6 +138,20 @@ final class ChatAssistantViewModel {
 
     // MARK: - Setup
 
+    /// Las preferencias de la app, que inyecta la hoja del chat (molde de `PanelViewModel.setAppPreferences`). El
+    /// saldo total que ve Yala IA sigue «Grupos en el total» del Panel; sin preferencias, su default (`true`), como
+    /// el Panel.
+    private weak var appPreferences: AppPreferences?
+
+    func setAppPreferences(_ prefs: AppPreferences) {
+        appPreferences = prefs
+    }
+
+    /// El ajuste «Grupos en el total» con el que se pide la respuesta, leído en el momento de preguntar.
+    var includeGroupsInTotal: Bool {
+        appPreferences?.includeGroupsInPanelTotal ?? true
+    }
+
     func setContext(_ ctx: ModelContext, autoLoadSuggestions: Bool = true) {
         modelContext = ctx
         loadPersistedSession()
@@ -223,6 +237,7 @@ final class ChatAssistantViewModel {
                 modelContext: context,
                 currencyCode: currencyCode,
                 converter: CurrencyConverter.shared,
+                includeGroupsInTotal: includeGroupsInTotal,
                 forceIntent: forceIntent
             )
 
@@ -886,6 +901,7 @@ final class ChatAssistantViewModel {
                 modelContext: context,
                 currencyCode: currencyCode,
                 converter: CurrencyConverter.shared,
+                includeGroupsInTotal: includeGroupsInTotal,
                 forceIntent: forceIntent
             )
 
