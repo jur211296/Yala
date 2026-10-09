@@ -338,45 +338,6 @@ a `false`, por el mismo `PATCH` de la Management API. Es defensa en profundidad;
 
 ---
 
-## `hlc01_cap_future_hlc.sql` — tope a un HLC del futuro (staging y producción, 2026-10-07)
-
-**Aplicada en staging (`fostjbbwstyuunmmefuk`) y en producción (`kefvaiymtgytemwbltlz`) el 2026-10-07.** Verificado:
-**22** triggers `cap_future_hlc` y la sonda `qa/cloud/hlc01-cap-staging-probe.sh` **4/4**. No constan en el repo la
-hora, el número de filas normalizadas ni quién la corrió. Lo de abajo queda como registro de cómo se aplica y de qué
-comprobar si hay que repetirlo.
-
-La escribió una sesión nocturna sin credencial de escritura: el token de
-gestión de `~/Secrets/yala-supabase-mgmt/pat` daba **401** en los dos proyectos y el conector Supabase de Claude
-pedía OAuth. Tickets `personal-clock-ahead-wins-every-conflict-until-real-time-catches-up` y
-`groups-clock-ahead-wins-every-conflict-until-real-time-catches-up`; las decisiones, en el Paso 0 del encargo
-`encargos/lanzados/2026-10-07-clock-ahead-wins-every-conflict-server-cap.md`.
-
-Pone un trigger `cap_future_hlc` en las 22 tablas sincronizadas (17 personales + 5 de Grupos) que guarda todo HLC
-acotado a `now() + 60 s`, y normaliza lo que ya estuviera por encima. **No toca ningún RPC ni ninguna respuesta**:
-el cliente viejo sigue igual. Es transaccional (`begin`/`commit`) e idempotente, y aborta sin tocar nada si falta
-alguna de las 22 tablas.
-
-**Orden: staging → sonda → producción.**
-
-1. **Staging.** Supabase → proyecto `fostjbbwstyuunmmefuk` → *SQL Editor* → *New query* → pega el fichero entero →
-   *Run*. Deben salir los avisos `hlc01: tope aplicado a 22 tablas; N filas normalizadas` y, en staging,
-   `hlc01: tablas con columna hlc que NO reciben el tope: spike_…` (las `spike_*` no sincronizan; es esperado).
-   Con `apply_migration` del MCP, **quita antes el `begin;` y el `commit;`**: ese applier ya envuelve en
-   transacción (la trampa de `g14_01`, arriba).
-2. **Sonda**, desde el repo: `bash qa/cloud/hlc01-cap-staging-probe.sh` → `hlc01-staging: 4/4 PASS`. Antes de
-   aplicar da **1/4** (medido el 2026-10-07: el HLC de un mes se guardaba entero y el otro dispositivo perdía con
-   `all_units_stale`).
-3. **Producción.** Lo mismo en `kefvaiymtgytemwbltlz`. No hay usuarios de test ahí; se verifica con
-   `select count(*) from pg_trigger where tgname = 'cap_future_hlc' and not tgisinternal;` → **22**.
-4. ✅ **Hecho el 2026-10-08:** el trigger y sus funciones están en los dos snapshots (`supabase-staging.ddl`, al
-   final, y `supabase-groups-staging.ddl` §10). El banco local (`bash qa/cloud/hlc01-cap-test.sh`) sigue en 33/33:
-   retira el tope antes de sembrar.
-
-**Marcha atrás:** `qa/cloud/hlc01_rollback.sql` (quita los 22 triggers y las 3 funciones). La normalización no se
-deshace y no hace falta: solo acotó HLC por encima de `now() + 60 s`, nunca un valor.
-
----
-
 ## `g17_01_reverse_claim_keeps_reverted_at.sql` — «Volver a iCloud» se puede reintentar en el 2.º dispositivo (PENDIENTE, 2026-10-09)
 
 **Estado: preparada y probada en local; NO aplicada en ningún entorno.** Autorizada por Jürgen el 2026-10-09 14:01. La
@@ -445,6 +406,45 @@ verdad): el residual de `MigrationStateMachine.swift` (rama `reverseClaimRejecte
 «Reversa server-side» de `qa/cloud/README.md` y la lista de residuales de la regla «El claim de la reversa tampoco
 puede quedarse sin salida» en `.claude/rules/swiftdata-cloudkit.md`. Y se mira el canario
 `cloudReverseClaimRejected` con detalle `not_complete`: tiene que caer a cero.
+
+---
+
+## `hlc01_cap_future_hlc.sql` — tope a un HLC del futuro (staging y producción, 2026-10-07)
+
+**Aplicada en staging (`fostjbbwstyuunmmefuk`) y en producción (`kefvaiymtgytemwbltlz`) el 2026-10-07.** Verificado:
+**22** triggers `cap_future_hlc` y la sonda `qa/cloud/hlc01-cap-staging-probe.sh` **4/4**. No constan en el repo la
+hora, el número de filas normalizadas ni quién la corrió. Lo de abajo queda como registro de cómo se aplica y de qué
+comprobar si hay que repetirlo.
+
+La escribió una sesión nocturna sin credencial de escritura: el token de
+gestión de `~/Secrets/yala-supabase-mgmt/pat` daba **401** en los dos proyectos y el conector Supabase de Claude
+pedía OAuth. Tickets `personal-clock-ahead-wins-every-conflict-until-real-time-catches-up` y
+`groups-clock-ahead-wins-every-conflict-until-real-time-catches-up`; las decisiones, en el Paso 0 del encargo
+`encargos/lanzados/2026-10-07-clock-ahead-wins-every-conflict-server-cap.md`.
+
+Pone un trigger `cap_future_hlc` en las 22 tablas sincronizadas (17 personales + 5 de Grupos) que guarda todo HLC
+acotado a `now() + 60 s`, y normaliza lo que ya estuviera por encima. **No toca ningún RPC ni ninguna respuesta**:
+el cliente viejo sigue igual. Es transaccional (`begin`/`commit`) e idempotente, y aborta sin tocar nada si falta
+alguna de las 22 tablas.
+
+**Orden: staging → sonda → producción.**
+
+1. **Staging.** Supabase → proyecto `fostjbbwstyuunmmefuk` → *SQL Editor* → *New query* → pega el fichero entero →
+   *Run*. Deben salir los avisos `hlc01: tope aplicado a 22 tablas; N filas normalizadas` y, en staging,
+   `hlc01: tablas con columna hlc que NO reciben el tope: spike_…` (las `spike_*` no sincronizan; es esperado).
+   Con `apply_migration` del MCP, **quita antes el `begin;` y el `commit;`**: ese applier ya envuelve en
+   transacción (la trampa de `g14_01`, arriba).
+2. **Sonda**, desde el repo: `bash qa/cloud/hlc01-cap-staging-probe.sh` → `hlc01-staging: 4/4 PASS`. Antes de
+   aplicar da **1/4** (medido el 2026-10-07: el HLC de un mes se guardaba entero y el otro dispositivo perdía con
+   `all_units_stale`).
+3. **Producción.** Lo mismo en `kefvaiymtgytemwbltlz`. No hay usuarios de test ahí; se verifica con
+   `select count(*) from pg_trigger where tgname = 'cap_future_hlc' and not tgisinternal;` → **22**.
+4. ✅ **Hecho el 2026-10-08:** el trigger y sus funciones están en los dos snapshots (`supabase-staging.ddl`, al
+   final, y `supabase-groups-staging.ddl` §10). El banco local (`bash qa/cloud/hlc01-cap-test.sh`) sigue en 33/33:
+   retira el tope antes de sembrar.
+
+**Marcha atrás:** `qa/cloud/hlc01_rollback.sql` (quita los 22 triggers y las 3 funciones). La normalización no se
+deshace y no hace falta: solo acotó HLC por encima de `now() + 60 s`, nunca un valor.
 
 ---
 

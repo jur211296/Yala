@@ -1,10 +1,10 @@
 ---
 id: reverse-exit-on-a-reverted-account-rejects-the-retry
-status: backlog
+status: blocked
 priority: high
 area: "modo-nube, migración, backend"
 created: 2026-09-16
-updated: 2026-10-08
+updated: 2026-10-09
 source: "review adversarial de `reverse-upload-has-no-ceiling-and-no-exit` (2026-09-16), lente de datos — H1; decisión D17 (b) de Jürgen: ticket aparte"
 ---
 
@@ -86,3 +86,42 @@ los tres. Otra opción que cierra solo el segundo y el tercero: evaluar reserva,
   volver a iCloud en ese dispositivo, y su única salida es escribir a soporte.
 
 Triage 2026-10-08: abierto · medium → high · El arreglo es de backend y no existe: ningún SQL posterior a g15_02 (10-sep) cambia el reset de reverted_at en el claim fresco; el cliente solo tiene la salida a soporte de 13a20e6fb.
+
+## Preparado el 2026-10-09 — bloqueado en el deploy (falta una credencial)
+
+**Qué espera:** que alguien con acceso de escritura a las bases de Supabase aplique `qa/cloud/g17_01_reverse_claim_keeps_reverted_at.sql`
+en staging y luego en producción, con los pasos de `docs/RUNBOOK-staging-ddl.md` § `g17_01`. La sesión no tenía cómo: el
+token de gestión (`~/Secrets/yala-supabase-mgmt/pat`) da 401 en los dos proyectos, el conector de Supabase pedía OAuth y no
+hay URI de base en `~/Secrets`. Deploy autorizado por Jürgen el 2026-10-09 14:01.
+
+**Medido contra la función viva de staging, sin tocarla** (golden 16-ter, `gateway/test/account.goldens.test.ts`): tras el
+claim del 2.º dispositivo sobre una cuenta ya revertida, `reverted_at` queda a null, y el 3.er dispositivo, el re-claim del
+mismo y el reintento tras salir reciben `not_complete`. Los tres caminos del ticket, reproducidos. No se leyó
+`pg_get_functiondef` (sin acceso de lectura a funciones): es el paso 1 del RUNBOOK.
+
+**El arreglo** (`g17_01`): cada `reverted_at = null` de `migration_progress` (exactamente 3: claim fresco y dos takeovers)
+pasa a `case when kind = 'complete' then null else reverted_at end`. Igual que hoy en una cuenta `complete` (golden 17);
+conservado en una `groups_only`. El §1-bis repara las cuentas que el bug ya atascó (`groups_only` + `personal_claimed_at`
++ sin `reverted_at`). Sin cambio de Worker ni de app: mismos códigos y forma de respuesta (lo fija el 16-ter).
+Marcha atrás: `qa/cloud/g17_01_rollback.sql`.
+
+**Probado:** banco local `bash qa/cloud/g17_01-local-test.sh` (Postgres 17, réplica del RPC desde el contrato): el §3 falla
+con el cuerpo viejo en los cuatro caminos y pasa 11/11 con el nuevo; reparación, rollback, re-aplicación no-op y guardas
+(cuerpo divergido, cuarta escritura) en verde; cuatro mutantes muertos. Review adversarial de dos lentes: ningún
+consumidor (SQL, Worker, app) lee el valor de `reverted_at`; de ella salieron la reparación de los ya atascados, el número
+fijado a 3 y la comprobación de atributos de la función.
+
+**Cuando se aplique**, cierra el criterio: goldens `-t "I11-3"` 11/11 con el 16-ter verde, el canario
+`cloudReverseClaimRejected|not_complete` a cero, y los cinco textos del cliente y de las reglas que describen el reset
+(lista en el RUNBOOK). Después, el device-QA:
+
+### Guion de device-QA (dos iPhone, misma cuenta en la nube)
+
+1. En los dos iPhone, Yala con la misma cuenta en la nube (Ajustes → «Dónde viven tus datos» dice «En la nube»).
+2. En el iPhone 1: «Dónde viven tus datos» → «Volver a iCloud» y espera a que termine («En iCloud»).
+3. En el iPhone 2: «Dónde viven tus datos» → «Volver a iCloud». Cuando la barra esté en la espera de subida, toca
+   «Cancelar y seguir en la nube» y confirma. Esperado: vuelve a «En la nube».
+4. En el iPhone 2, otra vez «Volver a iCloud». Esperado: la barra avanza; **no** sale «tu cuenta no lo permitía» ni el
+   correo de soporte.
+5. (Opcional, con un tercer dispositivo) mientras el 2 sube, toca «Volver a iCloud» en el 3. Esperado: el aviso de que otro
+   dispositivo está volviendo, no «tu cuenta no lo permitía».

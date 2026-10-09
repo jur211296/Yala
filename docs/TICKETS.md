@@ -694,7 +694,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | reverse-cutover-cerrado-para-cuentas-born-cloud | qa | tickets/qa/reverse-cutover-cerrado-para-cuentas-born-cloud.md |
 | reverse-exit-alert-published-off-screen-never-shows | backlog | tickets/backlog/reverse-exit-alert-published-off-screen-never-shows.md |
 | reverse-exit-leaves-a-partial-copy-in-icloud | backlog | tickets/backlog/reverse-exit-leaves-a-partial-copy-in-icloud.md |
-| reverse-exit-on-a-reverted-account-rejects-the-retry | backlog | tickets/backlog/reverse-exit-on-a-reverted-account-rejects-the-retry.md |
+| reverse-exit-on-a-reverted-account-rejects-the-retry | blocked | tickets/blocked/reverse-exit-on-a-reverted-account-rejects-the-retry.md |
 | reverse-hidden-on-a-born-cloud-second-device | backlog | tickets/backlog/reverse-hidden-on-a-born-cloud-second-device.md |
 | reverse-leaves-dangling-refs-it-can-no-longer-resolve | backlog | tickets/backlog/reverse-leaves-dangling-refs-it-can-no-longer-resolve.md |
 | reverse-mount-can-reimport-a-late-leader-identity | backlog | tickets/backlog/reverse-mount-can-reimport-a-late-leader-identity.md |
