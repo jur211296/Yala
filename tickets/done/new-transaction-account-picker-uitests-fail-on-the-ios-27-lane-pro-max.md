@@ -1,6 +1,6 @@
 ---
 id: new-transaction-account-picker-uitests-fail-on-the-ios-27-lane-pro-max
-status: backlog
+status: done
 priority: high
 area: "qa, xcuitest, transactions"
 created: 2026-10-02
@@ -103,3 +103,47 @@ casos del lote, verdes. Mismo simulador (`46287CFE`) en el que la medición de l
 Gate de `after-session-redesign-review-widgets-siri-applepay-and-web-copy` (no toca «Nuevo registro» ni los selectores),
 `iPhone 17 Pro` iOS 27.0 `46287CFE`: `test_extremeMinimumAmountSaves` y `test_createTransaction` fallan en lote con el
 centinela en 0. **Un build de `2.1` sin el cambio (`4c973dd8a`) falla igual en los dos, aislado.**
+
+## 2026-10-09 · Resuelto: el toque al chip se perdía mientras entraba el teclado (arreglo del test)
+
+**Qué pasaba, medido** en el `iPhone 17 Pro` iOS 27.0 (`46287CFE`), con una sonda que vuelca el árbol y los marcos:
+los tres tests teclean el monto y tocan el chip de cuenta acto seguido. En ese instante el teclado **sigue entrando**
+(su marco estaba en y=891, fuera de la pantalla de 874) y el formulario aún no ha subido para dejarle sitio: el chip
+está en y=716. XCUITest sintetiza el toque ahí; cuando llega, el formulario ya subió (chip en y=513) y el toque cae en
+vacío. No corre ni el `dismissKeyboard()` de la acción del chip: el árbol del fallo trae el teclado arriba, el monto
+con el foco y ninguna hoja. Un **segundo toque**, con todo quieto, abre la hoja con sus dos filas. Con una pausa
+antes de tocar (la sonda que vuelca el árbol primero) pasa siempre; sin ella falla siempre.
+
+**Lo que no era:** el aviso «Automation type mismatch … PopUpButton». Con la hoja abierta, las filas salen como
+`Button` (`account_selector_row_Ahorros USD`, `…_Cuenta Principal`); el aviso lo da otro nodo al resolver la
+consulta y no impide nada. Tampoco es del producto: a una persona el chip se le mueve solo mientras anima el teclado
+y toca donde lo ve. Por qué solo en 27.0: el teclado tarda más en entrar que en 26.x (inferido; coherente con la regla
+de `testing.md` de que 27.0 es ~2× más lento en el ciclo de UI) y `typeText` no espera a que termine.
+
+**El arreglo** (`YalaUITests/Support/XCUIApplication+Yala.swift`): `openSelectorFirstRow(chip:rowPrefix:)` y
+`chooseFirstSelectorRow(chip:rowPrefix:)`. Antes de tocar esperan a que el teclado acabe de moverse y el chip esté
+quieto (`waitForSettledLayout`: dos lecturas seguidas con el mismo marco y el teclado dentro de la ventana), y buscan
+la fila por identificador con `descendants(matching: .any)`. Si el chip queda fuera de la fila horizontal, la
+desplazan antes (lo que pedía `record-selectors-uitest-taps-the-tags-chip-off-screen`). Las aserciones no bajan: el
+chip tiene que existir y ser alcanzable, la fila tiene que montarse, y el resto de cada test sigue igual.
+
+Lo usan las cuatro suites con el patrón `account_selector_row_`: `TransactionsCrudUITests` (`test_createTransaction`
+y el bucle de `test_recordSelectorsOpenAtMediumDetent`), `QuickActionsFavoritesUITests`, `EdgeCasesUITests` y
+`ChatMessagingLayoutUITests#test_draftDetails_opensSheet_withTheNewRecordAccountSelector`. En los tres flujos rojos
+también la subcategoría, que va justo después en el mismo formulario.
+
+**Verificado con mutantes** (activables por `TEST_RUNNER_…` en una build temporal, retirados): sin ninguna espera
+antes del toque, `test_createTransaction` rojo; solo con `waitForSettledLayout`, verde 2 de 2, y sus lecturas la
+ven trabajar (teclado con `maxY` 1118 y chip en 716, luego teclado en 816 y chip **todavía** en 716 una lectura más,
+luego chip en 513). Por eso la guarda exige el chip quieto, no solo el teclado. Un tercer mutante, sin la espera de
+asentamiento pero con el `waitForExistence` previo, también pasó: en iOS 27 esa llamada tarda ~1 s aunque el chip ya
+exista, y ese segundo tapa la carrera por accidente. La guarda es la espera de asentamiento, no esa latencia.
+
+**Runtime anterior:** en la Mini solo hay iOS 27.0 instalado; 26.x no se pudo medir aquí. La red de ese runtime es el
+CI (Xcode 26.6).
+
+**Verde, medido el 2026-10-09** sobre `82ab8d877` (tras el merge del PR #413), `iPhone 17 Pro` iOS 27.0 `46287CFE`, un
+solo simulador, centinela «estuviste solo» en todas: las cuatro suites tocadas en lote (`TransactionsCrudUITests`,
+`QuickActionsFavoritesUITests`, `EdgeCasesUITests`, `ChatMessagingLayoutUITests`) **13 de 13, dos rondas**, y los tres
+casos de este ticket **aislados, dos rondas, 6 de 6**. `test_recordSelectorsOpenAtMediumDetent` incluido: ver
+`record-selectors-uitest-taps-the-tags-chip-off-screen`.
