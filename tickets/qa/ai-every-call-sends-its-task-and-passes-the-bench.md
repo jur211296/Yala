@@ -4,7 +4,7 @@ status: qa
 priority: high
 area: ai, gateway, app, voice, image, quota
 created: 2026-10-07
-updated: 2026-10-07
+updated: 2026-10-08
 qa-status: needs-testing
 source: sesión 1 de ai-model-choice-lives-in-the-app-binary (encargo gpt-4-1-nano-shuts-down-on-october-23)
 ---
@@ -93,6 +93,10 @@ source: sesión 1 de ai-model-choice-lives-in-the-app-binary (encargo gpt-4-1-na
    - cuotas y límites del proveedor para el tráfico de Yala;
    - `LEGACY_OVERRIDES` con el mejor de OpenAI para esa tarea: las versiones instaladas prometen OpenAI, y
      `routeFor` se niega a servirles otro proveedor (test en `ai.routing.test.ts`).
+
+   **Anthropic medido el 2026-10-08 y descartado** (`docs/ai-model-bench-2026-10-claude.md`): ni Sonnet 5.5 ni Haiku
+   5.5 pasan el listón en tarjetas de Insights ni en Tendencias. El candidato de este paso sigue siendo Gemini 3.8
+   Flash en Tendencias (100 %, p95 5,2 s, 1,53 USD por 1 000 frente a 96,9 % y 4,16 de `gpt-6.1-sol`).
 8. **Revisión periódica de modelos.** El comando ya existe (`npm run bench -- --task all`, en
    `gateway/bench/README.md`). Falta decidir la cadencia y quién la dispara (propuesta: trimestral, y
    siempre que OpenAI anuncie un apagado en https://developers.openai.com/api/docs/deprecations).

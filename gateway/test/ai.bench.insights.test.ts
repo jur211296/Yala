@@ -377,6 +377,13 @@ describe("juez", () => {
     expect(JUDGES.length).toBeGreaterThanOrEqual(3);
   });
 
+  it("Sonnet 5.5 abre la lista y a Anthropic lo juzgan otros (2026-10-08)", () => {
+    for (const p of ["openai", "gemini", "xai", "workersai"]) expect(judgesFor(p)[0].id).toBe("anthropic:claude-sonnet-5-5");
+    expect(judgesFor("anthropic").map((j) => j.provider)).not.toContain("anthropic");
+    // Sonnet 5.5 rechaza una temperatura distinta de la de por defecto: el juez no la manda.
+    expect(JUDGES.find((j) => j.id === "anthropic:claude-sonnet-5-5")?.temperature).toBeUndefined();
+  });
+
   it("veredicto = no contradice y es útil; JSON ilegible = sin veredicto", () => {
     const v = parseVerdict('{"contradice_datos":false,"util":true,"voz_ok":false,"motivo":"x"}');
     expect(v && verdictPass(v)).toBe(true);
