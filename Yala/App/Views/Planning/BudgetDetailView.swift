@@ -167,7 +167,7 @@ struct BudgetDetailView: View {
                         .font(DS.Typography.label)
                         .foregroundStyle(.secondary)
                 } else {
-                    Text(String(format: NSLocalizedString("budgets.days.remaining", comment: ""), "\(summary.daysRemaining)"))
+                    Text(L10n.Budgets.daysRemaining(summary.daysRemaining))
                         .font(DS.Typography.label)
                         .foregroundStyle(.secondary)
                 }

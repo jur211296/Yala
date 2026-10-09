@@ -565,7 +565,10 @@ enum WidgetDataCache {
             let start = calendar.date(from: calendar.dateComponents([.year], from: now)) ?? now
             interval = DateInterval(start: start, end: now)
         case .unique:
-            interval = DateInterval(start: budget.startDate ?? now, end: budget.endDate ?? now)
+            // Días enteros, como en Presupuestos: la hora guardada en las fechas no decide nada.
+            interval = BudgetPeriodInterval.unique(
+                start: budget.startDate ?? now, end: budget.endDate ?? now, calendar: calendar
+            )
         }
 
         return BudgetsViewModel.calculateSpending(

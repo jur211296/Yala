@@ -6567,3 +6567,6 @@
 
 /* Registro por imagen: progreso al leer las páginas de un PDF */
 "image.entry.readingPageProgress" = "%2$dページ中%1$dページ目";
+
+/* Budget row: exactly one day left in the period (today counts) */
+"budgets.days.remaining.one" = "残り1日";

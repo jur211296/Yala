@@ -97,8 +97,7 @@ struct BudgetWidgetRow: View {
         if summary.daysRemaining == -1 {
             return NSLocalizedString("budgets.period.past", comment: "")
         } else {
-            let key = NSLocalizedString("budgets.days.remaining", comment: "")
-            return String(format: key, "\(summary.daysRemaining)")
+            return L10n.Budgets.daysRemaining(summary.daysRemaining)
         }
     }
 }

@@ -6567,3 +6567,6 @@
 
 /* Registro por imagen: progreso al leer las páginas de un PDF */
 "image.entry.readingPageProgress" = "第 %1$d 页，共 %2$d 页";
+
+/* Budget row: exactly one day left in the period (today counts) */
+"budgets.days.remaining.one" = "剩余 1 天";

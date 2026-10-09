@@ -218,7 +218,9 @@ final class BudgetsViewModel {
 
         // Load transactions (filtered by earliest budget date to avoid loading all history)
         let earliestDate = allBudgets.compactMap { budget -> Date? in
-            if let start = budget.startDate { return start }
+            // Desde el inicio del DÍA: el único cuenta días enteros (`BudgetPeriodInterval.unique`) y su
+            // fecha guardada puede llevar hora; desde la hora se perderían los gastos de esa mañana.
+            if let start = budget.startDate { return Calendar.current.startOfDay(for: start) }
             return Calendar.current.date(byAdding: .year, value: -1, to: Date.now)
         }.min() ?? Calendar.current.date(byAdding: .year, value: -1, to: Date.now) ?? Date.now
         let capturedDate = earliestDate
@@ -390,26 +392,23 @@ final class BudgetsViewModel {
             let interval: DateInterval
             let label: String
 
+            guard let historyInterval = Self.historyInterval(
+                periodType: periodType,
+                offset: offset,
+                selectedWeek: selectedWeek,
+                selectedMonth: selectedMonth,
+                selectedYear: selectedYear,
+                calendar: calendar
+            ) else { continue }
+            interval = historyInterval
+
             switch periodType {
             case .weekly:
-                guard let weekStart = calendar.date(byAdding: .weekOfYear, value: offset, to: selectedWeek) else { continue }
-                let weekEnd = calendar.date(byAdding: .day, value: 7, to: weekStart) ?? weekStart
-                interval = DateInterval(start: weekStart, end: weekEnd)
-                label = Self.weekDateFormatter.string(from: weekStart)
-
+                label = Self.weekDateFormatter.string(from: interval.start)
             case .monthly:
-                guard let monthStart = calendar.date(byAdding: .month, value: offset, to: selectedMonth) else { continue }
-                let monthEnd = calendar.date(byAdding: .month, value: 1, to: monthStart) ?? monthStart
-                interval = DateInterval(start: monthStart, end: monthEnd)
-                label = Self.monthLabelFormatter.string(from: monthStart)
-
+                label = Self.monthLabelFormatter.string(from: interval.start)
             case .yearly:
-                let year = selectedYear + offset
-                guard let yearStart = calendar.date(from: DateComponents(year: year, month: 1, day: 1)),
-                      let yearEnd = calendar.date(from: DateComponents(year: year + 1, month: 1, day: 1)) else { continue }
-                interval = DateInterval(start: yearStart, end: yearEnd)
-                label = "\(year)"
-
+                label = "\(selectedYear + offset)"
             case .unique:
                 continue
             }
@@ -419,6 +418,33 @@ final class BudgetsViewModel {
         }
 
         return results
+    }
+
+    /// Periodo `offset` (0 = el elegido, −1 = el anterior…) del historial de un presupuesto recurrente.
+    /// Cierra en el último segundo del periodo: un gasto del día 1 a las 00:00 cuenta solo en su barra.
+    static func historyInterval(
+        periodType: BudgetPeriodType,
+        offset: Int,
+        selectedWeek: Date,
+        selectedMonth: Date,
+        selectedYear: Int,
+        calendar: Calendar
+    ) -> DateInterval? {
+        switch periodType {
+        case .weekly:
+            guard let weekStart = calendar.date(byAdding: .weekOfYear, value: offset, to: selectedWeek) else { return nil }
+            return BudgetPeriodInterval.week(startingAt: weekStart, calendar: calendar)
+        case .monthly:
+            guard let monthStart = calendar.date(byAdding: .month, value: offset, to: selectedMonth) else { return nil }
+            return BudgetPeriodInterval.month(startingAt: monthStart, calendar: calendar)
+        case .yearly:
+            let year = selectedYear + offset
+            guard let yearStart = calendar.date(from: DateComponents(year: year, month: 1, day: 1)),
+                  let nextYearStart = calendar.date(from: DateComponents(year: year + 1, month: 1, day: 1)) else { return nil }
+            return BudgetPeriodInterval.closing(start: yearStart, nextStart: nextYearStart, calendar: calendar)
+        case .unique:
+            return nil
+        }
     }
 
     /// Returns daily cumulative spending for the current budget period (for area chart).
@@ -686,17 +712,8 @@ final class BudgetsViewModel {
         let calendar = userConfiguredCalendar()
         let today = Date.now
 
-        // If the period has ended (today is after the period), return -1 to indicate "Past"
-        if today > interval.end {
-            return -1
-        }
-
-        // If today is not in the budget period yet, return 0
-        guard interval.contains(today) else { return 0 }
-
-        // Calculate days from today to end of period
-        let components = calendar.dateComponents([.day], from: today, to: interval.end)
-        return max(0, components.day ?? 0)
+        // -1 = periodo terminado («Finalizado»), 0 = aún no empieza; en curso, hoy cuenta.
+        return BudgetPeriodInterval.summaryDaysRemaining(now: today, in: interval, calendar: calendar)
     }
 
     // MARK: - Period Date Interval
@@ -705,41 +722,32 @@ final class BudgetsViewModel {
     func getBudgetDateInterval(budget: Budget) -> DateInterval {
         let calendar = userConfiguredCalendar()
 
+        // Todos cierran en el último segundo del periodo (`BudgetPeriodInterval`): con el `end` en la
+        // medianoche siguiente, un gasto de ese instante contaba también en este periodo.
         guard let periodType = BudgetPeriodType(rawValue: budget.periodType) else {
             // Fallback to selected month if invalid
-            let start = selectedMonth
-            let end = calendar.date(byAdding: .month, value: 1, to: start) ?? start
-            return DateInterval(start: start, end: end)
+            return BudgetPeriodInterval.month(startingAt: selectedMonth, calendar: calendar)
         }
 
         switch periodType {
         case .weekly:
             // Use selected week for this budget's period
-            let weekStart = selectedWeek
-            let weekEnd = calendar.date(byAdding: .day, value: 7, to: weekStart) ?? weekStart
-            return DateInterval(start: weekStart, end: weekEnd)
+            return BudgetPeriodInterval.week(startingAt: selectedWeek, calendar: calendar)
 
         case .monthly:
             // Use selected month for this budget's period
-            let monthStart = selectedMonth
-            let monthEnd = calendar.date(byAdding: .month, value: 1, to: monthStart) ?? monthStart
-            return DateInterval(start: monthStart, end: monthEnd)
+            return BudgetPeriodInterval.month(startingAt: selectedMonth, calendar: calendar)
 
         case .yearly:
             // Use selected year for this budget's period
-            let year = selectedYear
-            let yearStart = calendar.date(from: DateComponents(year: year, month: 1, day: 1)) ?? Date.now
-            let yearEnd = calendar.date(from: DateComponents(year: year + 1, month: 1, day: 1)) ?? yearStart
-            return DateInterval(start: yearStart, end: yearEnd)
+            return BudgetPeriodInterval.year(selectedYear, calendar: calendar, fallbackStart: Date.now)
 
         case .unique:
             guard let start = budget.startDate, let end = budget.endDate else {
                 // Fallback to selected month if dates are missing
-                let start = selectedMonth
-                let end = calendar.date(byAdding: .month, value: 1, to: start) ?? start
-                return DateInterval(start: start, end: end)
+                return BudgetPeriodInterval.month(startingAt: selectedMonth, calendar: calendar)
             }
-            return DateInterval(start: start, end: end)
+            return BudgetPeriodInterval.unique(start: start, end: end, calendar: calendar)
         }
     }
 

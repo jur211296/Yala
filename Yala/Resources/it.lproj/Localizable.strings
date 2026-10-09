@@ -6565,3 +6565,6 @@
 
 /* Registro por imagen: progreso al leer las páginas de un PDF */
 "image.entry.readingPageProgress" = "Pagina %1$d di %2$d";
+
+/* Budget row: exactly one day left in the period (today counts) */
+"budgets.days.remaining.one" = "1 giorno rimanente";

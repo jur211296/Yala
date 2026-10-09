@@ -207,7 +207,7 @@
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/BudgetsCrudUITests",
       "owner": "",
-      "lastVerified": "2026-10-07"
+      "lastVerified": "2026-10-09"
     },
     {
       "area": "cash-flow-charts-comments",
@@ -3184,13 +3184,16 @@
         "Yala/App/Logic/Helpers/DateIntervalDayCount.swift",
         "Yala/App/Logic/Calculators/WeekdaySpendingCalculator.swift",
         "Yala/App/Logic/Calculators/InsightsCalculator.swift",
-        "Yala/Services/Chat/FullFinancialContextBuilder.swift"
+        "Yala/Services/Chat/FullFinancialContextBuilder.swift",
+        "Yala/App/Logic/Helpers/BudgetPeriodInterval.swift",
+        "Yala/App/ViewModels/BudgetsViewModel.swift",
+        "Yala/App/Logic/Calculators/FinancialScoreCalculator.swift"
       ],
       "scenarioIDs": [],
       "classification": "manual",
-      "coverage": "unit:YalaTests/DateIntervalDayCountTests (6 casos, incluido el que sostiene el diseño: normalizar NO altera un intervalo que ya cierra a medianoche, así que el helper no necesita guarda) + WeekdaySpendingCalculatorTests (2 casos de COMPORTAMIENTO sobre período cerrado). AVISO MEDIDO 2026-09-03: al mutar el helper caen SOLO sus propios tests — de los cuatro call-sites, únicamente WeekdaySpendingCalculator tiene cobertura de comportamiento. InsightsCalculator, FullFinancialContextBuilder y WidgetDataCache están cubiertos solo indirectamente. Si tocas un promedio diario ahí, escribe el caso y compruébalo con una mutación: un verde no prueba nada por sí solo en esta área.",
+      "coverage": "2026-10-09 (`budget-interval-counts-next-period-midnight` + `budget-days-left-counts-today`): todo periodo de presupuesto sale de `BudgetPeriodInterval` y cierra en su último segundo (Presupuestos y su historial, Panel, Insights/chat, avisos de umbral, gráficas del presupuesto, gasto por bucket del score, único del widget); los días que quedan cuentan hoy (1 el último día). unit:YalaTests/BudgetPeriodIntervalTests (sitio por sitio, con el helper mutado a la semántica vieja en rojo). | unit:YalaTests/DateIntervalDayCountTests (6 casos, incluido el que sostiene el diseño: normalizar NO altera un intervalo que ya cierra a medianoche, así que el helper no necesita guarda) + WeekdaySpendingCalculatorTests (2 casos de COMPORTAMIENTO sobre período cerrado). AVISO MEDIDO 2026-09-03: al mutar el helper caen SOLO sus propios tests — de los cuatro call-sites, únicamente WeekdaySpendingCalculator tiene cobertura de comportamiento. InsightsCalculator, FullFinancialContextBuilder y WidgetDataCache están cubiertos solo indirectamente. Si tocas un promedio diario ahí, escribe el caso y compruébalo con una mutación: un verde no prueba nada por sí solo en esta área.",
       "owner": "frank",
-      "lastVerified": "2026-09-08"
+      "lastVerified": "2026-10-09"
     },
     {
       "area": "adaptive-navigation-sidebar-list-detail",

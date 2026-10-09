@@ -615,7 +615,7 @@ final class FullFinancialContextBuilder {
     ) -> [FullFinancialContext.BudgetEntry] {
         let active = allBudgets.filter { $0.isActive }
         return active.map { budget in
-            let interval = InsightsCalculator.currentBudgetInterval(for: budget)
+            let interval = InsightsCalculator.currentBudgetInterval(for: budget, now: now)
             // Canonical spending path: filtra por resolvedSubcategoryIDs/AccountIDs/
             // TagIDs/natures + includeSharedExpenses y convierte con TC actual
             // (convertWithLatestRate). El sistema moderno NO setea `budget.category`
@@ -631,7 +631,8 @@ final class FullFinancialContextBuilder {
             )
             let limit = budget.limitAmount
             let usagePct: Double? = limit > 0 ? (spent / limit) * 100 : nil
-            let daysLeft = max(0, calendar.dateComponents([.day], from: now, to: interval.end).day ?? 0)
+            // Hoy cuenta: el último día del presupuesto queda 1, no 0 (decisión de Jürgen, 2026-09-06).
+            let daysLeft = BudgetPeriodInterval.daysLeft(now: now, in: interval, calendar: calendar)
             let status: FullFinancialContext.BudgetStatus
             if limit <= 0 {
                 status = .noLimit
