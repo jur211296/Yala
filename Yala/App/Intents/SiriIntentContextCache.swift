@@ -75,6 +75,9 @@ enum SiriIntentContextCache {
     /// Borra el snapshot. Lo invocan las purgas de FRONTERA de sesión
     /// (`AppGroupInboundPurge.purgeInboundSurfaces`): el snapshot lleva los nombres de subcategoría
     /// —que pueden ser propios del usuario— y su divisa, y el App Group es compartido entre cuentas.
+    /// Y desde el 2026-10-08 también todo borrado de filas personales (`DataWipeService.wipeAllUserData`,
+    /// PASO 3) y el «Empezar de cero» del aviso de vaciado remoto (`RemoteWipeSharedSurfaces`), que
+    /// dejaban vivas las subcategorías borradas hasta el siguiente primer plano.
     /// Ausente ≠ incorrecto: `read()` devuelve `nil` y la app lo reconstruye en el próximo `refresh`.
     nonisolated static func clear(
         defaults: UserDefaults? = SiriIntentContextCache.appGroupDefaults

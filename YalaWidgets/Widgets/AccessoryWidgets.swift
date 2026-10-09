@@ -124,6 +124,7 @@ struct AccessoryBalanceWidget: Widget {
     var body: some WidgetConfiguration {
         AppIntentConfiguration(kind: kind, intent: AccessoryBalanceIntent.self, provider: AccessoryBalanceProvider()) { entry in
             AccessoryBalanceWidgetView(entry: entry)
+                .invitesToActivateFullWhenGroupsOnly()
                 .containerBackground(.clear, for: .widget)
         }
         .configurationDisplayName("widget.gallery.accessoryBalance")
@@ -197,6 +198,7 @@ struct AccessoryExpenseWidget: Widget {
     var body: some WidgetConfiguration {
         AppIntentConfiguration(kind: kind, intent: AccessoryExpenseIntent.self, provider: AccessoryExpenseProvider()) { entry in
             AccessoryExpenseWidgetView(entry: entry)
+                .invitesToActivateFullWhenGroupsOnly()
                 .containerBackground(.clear, for: .widget)
         }
         .configurationDisplayName("widget.gallery.accessoryExpense")
@@ -277,8 +279,11 @@ struct AccessoryBudgetWidget: Widget {
     var body: some WidgetConfiguration {
         AppIntentConfiguration(kind: kind, intent: AccessoryBudgetIntent.self, provider: AccessoryBudgetProvider()) { entry in
             AccessoryBudgetWidgetView(entry: entry)
-                .containerBackground(.clear, for: .widget)
+                // El enlace va DENTRO del modificador: en solo grupos la invitación lo sustituye por el suyo, y dos
+                // `widgetURL` en la misma jerarquía no tienen comportamiento definido.
                 .widgetURL(WidgetURLHelper.url(for: "budgets"))
+                .invitesToActivateFullWhenGroupsOnly()
+                .containerBackground(.clear, for: .widget)
         }
         .configurationDisplayName("widget.gallery.accessoryBudget")
         .description("widget.gallery.accessoryBudget.desc")
@@ -394,8 +399,11 @@ struct AccessoryNextPaymentWidget: Widget {
     var body: some WidgetConfiguration {
         AppIntentConfiguration(kind: kind, intent: AccessoryNextPaymentIntent.self, provider: AccessoryNextPaymentProvider()) { entry in
             AccessoryNextPaymentWidgetView(entry: entry)
-                .containerBackground(.clear, for: .widget)
+                // El enlace va DENTRO del modificador: en solo grupos la invitación lo sustituye por el suyo, y dos
+                // `widgetURL` en la misma jerarquía no tienen comportamiento definido.
                 .widgetURL(WidgetURLHelper.url(for: "planning"))
+                .invitesToActivateFullWhenGroupsOnly()
+                .containerBackground(.clear, for: .widget)
         }
         .configurationDisplayName("widget.gallery.accessoryPayment")
         .description("widget.gallery.accessoryPayment.desc")

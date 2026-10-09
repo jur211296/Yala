@@ -186,6 +186,15 @@ enum WidgetDataService {
 
     private static let cacheKey = "widget_data_cache"
 
+    /// Espejo de `WidgetDataCache.groupsOnlySessionKey` (target de la app): la escribe la app cuando la sesión de este
+    /// teléfono es solo grupos. Va fuera del snapshot para no tocar su decode. Ausente ⇒ `false`.
+    static let groupsOnlySessionKey = "widget_groupsOnlySession"
+
+    /// ¿Esta sesión es solo grupos? Entonces no hay finanzas personales que pintar y el widget invita a activarlas.
+    static var isGroupsOnlySession: Bool {
+        sharedDefaults?.bool(forKey: groupsOnlySessionKey) ?? false
+    }
+
     /// App Group identifier read from Info.plist
     private static var appGroupIdentifier: String {
         Bundle.main.object(forInfoDictionaryKey: "APP_GROUP_IDENTIFIER") as? String

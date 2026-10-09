@@ -38,8 +38,12 @@ final class TestProcessGuard: NSObject {
     /// ADEMÁS `DataWipeService.resetAllUserPreferences`, así que está protegida por los dos lados —
     /// el trait cubre a quien ejecuta el wipe, esto cubre a quien pasa por un ViewModel.
     ///
+    ///
+    /// **Y una cuarta desde el 2026-10-08**: `widget_groupsOnlySession`, que `WidgetDataCache.updateCache` publica
+    /// junto al snapshot (lo que el widget enseña en una sesión solo grupos) y que también escribe el `didSet` de
+    /// `SessionState.hasPrivateSession`. Mismos escritores de producción, mismo problema.
     nonisolated static let protectedKeys = [
-        "widget_data_cache", "firstWeekday", "defaultPeriod",
+        "widget_data_cache", "firstWeekday", "defaultPeriod", "widget_groupsOnlySession",
     ]
 
     /// El estado capturado al cargar el bundle. `nonisolated(unsafe)` porque lo escribe una vez el

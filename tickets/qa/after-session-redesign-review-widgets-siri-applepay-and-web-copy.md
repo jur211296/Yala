@@ -1,10 +1,10 @@
 ---
 id: after-session-redesign-review-widgets-siri-applepay-and-web-copy
-status: backlog
+status: qa
 priority: high
 area: "widgets, intents, web, marketing"
 created: 2026-09-09
-updated: 2026-10-08
+updated: 2026-10-09
 source: "ADR 2026-09-09 «Sesiones — dos ejes» — consecuencias; pedido por Jürgen para DESPUÉS del rediseño"
 ---
 
@@ -44,16 +44,19 @@ afirmando.
 
 ## Dentro del repo (Frank)
 
-- [ ] **Widgets** (`YalaWidgets/`, DTO del App Group): qué enseñan en la celda «sin privada + nube solo
+- [x] **Widgets** (`YalaWidgets/`, DTO del App Group): qué enseñan en la celda «sin privada + nube solo
       grupos» (no hay Panel) y en «nube completa» (¿la caché sobrevive al cierre de sesión? ¿se vacía con
       el wipe local?). El ticket descartado `widget-snapshot-visitor-overwrites-owner` describía el
       síntoma para la visita; el hecho de fondo —la caché del widget no sabe de sesiones— sigue vivo.
-- [ ] **Siri** y **Apple Pay** (cola en App Group, `Yala/App/Intents`): qué pasa con una entrada en cola
+- [x] **Siri** y **Apple Pay** (cola en App Group, `Yala/App/Intents`): qué pasa con una entrada en cola
       cuando la sesión activa es solo-grupos, o cuando se cerró sesión entre el intent y el drenaje.
-- [ ] **Notificaciones** de informes y recordatorios (`ReportNotificationService`, pagos planificados):
+- [x] **Notificaciones** de informes y recordatorios (`ReportNotificationService`, pagos planificados):
       que no programen nada sin finanzas personales, y que el cierre de sesión las cancele.
-- [ ] **Exportación** (`ExportWizard`): qué exporta cada celda.
-- [ ] `qa/coverage-index.json`: áreas nuevas por celda de sesión.
+      — 2026-10-08: el cierre las cancela (los tres caminos de `cancelAllNotifications()`) y ahora también el
+      vaciado remoto. «Nada sin finanzas personales» queda INFERIDO: en solo grupos no hay `NotificationItem` ni
+      `ScheduledPayment` que programar; los informes no se programan (salen al abrir). Lo cubre el device-QA.
+- [x] **Exportación** (`ExportWizard`): qué exporta cada celda.
+- [x] `qa/coverage-index.json`: áreas nuevas por celda de sesión.
 
 ## Fuera del territorio de Frank (Lola — `marketing/` y `Web/`)
 
@@ -97,3 +100,74 @@ Preguntadas una a una antes de soltar la cola autónoma. **Mandan sobre lo escri
 - El widget en «solo grupos» no invita a activar Yala completo: nada de eso en `YalaWidgets/`.
 
 Triage 2026-10-08: abierto · medium → high · el prerequisito ya está en done y el hueco medido el 14-sep sigue: un vaciado remoto deja widget, Siri y recordatorios del dueño (ContentView.swift:1710).
+
+## Lo entregado (2026-10-08)
+
+**Vaciado remoto: las dos ramas del receptor limpian lo que hay fuera del store.**
+
+- **«Empezar de cero» del aviso** (`ContentView.startFreshAfterRemoteWipeNotice`) llama a `RemoteWipeSharedSurfaces`
+  (molde de `purgeSharedSurfaces`): vacía el snapshot del widget y el de Siri, retira los avisos programados y barre
+  las marcas del resumen diario de pagos (con lo programado retirado, «este día ya tiene resumen» mentiría). Las de
+  avisos ya entregados se quedan: si las filas vuelven tras un hueco pasajero de CloudKit, barrerlas repetía banners.
+  No toca las colas de Apple Pay/Siri ni los avisos ya entregados: son capturas e historial de este teléfono.
+- **La señal** (`handleRemoteWipeSignal`) ya vaciaba el widget y cancelaba los avisos dentro del borrado orquestado; le
+  faltaba Siri. `SiriIntentContextCache.clear()` entra en el PASO 3 de `DataWipeService.wipeAllUserData`, junto al
+  widget: así cubre también «Vaciar datos» y los borrados del Welcome y del aviso tardío, que tenían el mismo hueco. No
+  se cancela nada más en esa rama: correría contra la reprogramación de los recordatorios que sobreviven al corte.
+- **«Ahora no» no limpia**: los datos pueden volver, y el aviso vuelve si siguen fuera.
+
+**Widget en solo grupos: invita a activar Yala completo** (decisión del 2026-09-09).
+
+- La app publica el eje en una clave propia del App Group (`widget_groupsOnlySession`), fuera del snapshot para no
+  arriesgar su decode. La escriben `WidgetDataCache.updateCache` y el `didSet` de `SessionState.hasPrivateSession`.
+- Los 15 widgets de datos (11 de pantalla de inicio y 4 de pantalla bloqueada) pintan «Aún no tienes finanzas
+  personales · Activar Yala completo»; los de entrada rápida no cambian. El toque abre `yala://activate-full`: en solo
+  grupos, «Activar Yala completo»; si ya se activó, el Panel. Textos en los 16 idiomas del widget.
+
+**Medido de paso.**
+
+- Siri en solo grupos se para sola (snapshot con `hasRealAccount == false`). Apple Pay no: lo deja escrito
+  `apple-pay-capture-in-a-groups-only-session-has-no-personal-inbox`.
+- Exportación: ya va por celda (Perfil → «Exportar datos» abre la de Grupos en solo grupos y la personal en el resto).
+- `coverage-index`: actualizadas las áreas de iCloud/multidispositivo, widgets, Siri y deep links.
+
+**Tests**: `YalaTests/CloudSync/RemoteWipeSharedSurfacesTests.swift` (seis suites). La de la señal recorre
+`wipeLocallyForRemoteWipeSignal` real contra un store en disco y el App Group del host, y sale roja sin el cambio.
+
+## Guion de device-QA (Jürgen)
+
+Hace falta un iPhone «prestado» con TU Apple ID y Yala en sesión privada, y otro dispositivo tuyo (iPad o iPhone)
+con Yala en el mismo Apple ID. El simulador no tiene CloudKit, por eso esto va en dispositivo.
+
+1. En el iPhone prestado, abre Yala con algunos movimientos, un pago programado para mañana y una subcategoría propia.
+2. Añade el widget **Balance** a la pantalla de inicio y comprueba que enseña tu saldo.
+3. Cierra Yala en el iPhone (deslízala fuera del selector de apps).
+4. En el otro dispositivo: Perfil → Ajustes → **Vaciar datos** → confirma.
+5. Espera 1-2 minutos y abre Yala en el iPhone prestado.
+6. Según lo que salga:
+   - **Si aparece «Tus datos fueron eliminados de iCloud»**, toca **Empezar de cero**.
+   - **Si no aparece aviso** y la app se vacía sola, sigue.
+7. Sal a la pantalla de inicio. **El widget Balance ya no enseña tu saldo** (sale vacío o en cero).
+8. Ajustes del iPhone → Notificaciones → Yala no tiene que sonar mañana con el pago programado. Para comprobarlo
+   antes: cambia la hora del pago a dentro de 2 minutos ANTES del paso 4 y espera; no debe llegar el aviso.
+9. Di «Oye Siri, gasto en Yala» con una frase que nombre tu subcategoría propia: el borrador que salga no debe
+   proponerla (si eres Pro).
+
+**Widget en solo grupos** (cualquier iPhone):
+
+1. Entra en Yala por «Vengo por un grupo» (o usa un teléfono ya en solo grupos).
+2. Añade el widget **Balance**: tiene que decir «Aún no tienes finanzas personales · Activar Yala completo».
+3. Tócalo: se abre Yala en «Activar Yala completo».
+4. Termina la activación y vuelve a la pantalla de inicio: el widget pasa a enseñar el saldo.
+
+## Residuales (review adversarial del 2026-10-08, dos lentes)
+
+- **Galería de widgets en solo grupos**: el modificador no distingue la vista previa, así que la galería enseña 15
+  invitaciones iguales. Decisión de producto, no se tocó.
+- **Reprogramación en vuelo** (inferido): una tarea de `rescheduleAllNotifications` que suspende justo antes de
+  «Empezar de cero» puede volver a programar algo del dueño tras la purga; nada arma `isPersonalWipeArmed` aquí. La
+  ventana es estrecha: el toque llega al menos 5 s después de la caída de las filas.
+- **Siri sin subcategorías en la misma sesión** (inferido): tras un borrado con onboarding sin salir de la app, el
+  primer dictado va con listas vacías hasta el siguiente primer plano (antes iba con las viejas). Degrada, no bloquea.
+- **Previo a este cambio**: `DataWipeService.rescheduleSurvivingReminders` no vuelve a planificar los resúmenes de los
+  pagos que sobreviven al corte; quedan mudos hasta el siguiente primer plano.

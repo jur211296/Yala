@@ -278,9 +278,16 @@ final class DataWipeService {
         GroupsDetachedBridgeLedger.clear()
 
         // ============================================================
-        // PASO 3: Limpiar cache de widgets + TipKit
+        // PASO 3: Limpiar cache de widgets + snapshot de Siri + TipKit
         // ============================================================
         WidgetDataCache.clearCache()
+        // El snapshot que lee el intent de Siri sin abrir SwiftData lleva los nombres de las subcategorías que el
+        // PASO 1 se acaba de llevar, y sin esto sobrevivía hasta el siguiente primer plano: tras el vaciado de otro
+        // dispositivo, Siri seguía ofreciendo las del dueño (ticket
+        // `after-session-redesign-review-widgets-siri-applepay-and-web-copy`). Va aquí, junto al widget, porque es el
+        // mismo hueco en TODO borrado de filas. Ausente es un estado esperado: el intent no bloquea y la app lo rehace
+        // en su próximo `refresh` con lo que haya quedado.
+        SiriIntentContextCache.clear()
         do {
             try Tips.resetDatastore()
         } catch {

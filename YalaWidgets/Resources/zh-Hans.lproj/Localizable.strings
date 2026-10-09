@@ -149,3 +149,9 @@
 "widget.gallery.monthSummary" = "本月概览";
 "widget.gallery.monthSummary.desc" = "本月的余额、按类别的支出和预算";
 "widget.ui.monthSummary" = "本月概览";
+
+/* Widget en una sesión solo grupos: no hay finanzas personales que mostrar */
+"widget.groupsOnly.title" = "还没有个人财务";
+
+/* Widget solo grupos: llamada a activar Yala completo (mismo texto que groups.activate.title) */
+"widget.groupsOnly.cta" = "激活完整 Yala";

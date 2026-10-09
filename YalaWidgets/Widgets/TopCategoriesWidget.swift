@@ -235,6 +235,7 @@ struct TopCategoriesWidget: Widget {
             provider: TopCategoriesWidgetProvider()
         ) { entry in
             TopCategoriesWidgetView(entry: entry)
+                .invitesToActivateFullWhenGroupsOnly()
                 .containerBackground(Color(.secondarySystemGroupedBackground), for: .widget)
         }
         .configurationDisplayName("widget.gallery.topCategories")

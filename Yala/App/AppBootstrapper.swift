@@ -2418,6 +2418,16 @@ final class AppBootstrapper {
         case "panel":
             setOrDeferDeepLink(.panel)
 
+        case "activate-full":
+            // El widget de una sesión solo grupos invita a activar Yala completo (decisión de Jürgen, 2026-09-09). Se
+            // decide con el eje VIVO, no con el que tenía el widget al pintarse: si la persona ya lo activó, el toque
+            // lleva al Panel, que es lo que ese widget enseña ahora.
+            if sessionState.isGroupsFocusedShell {
+                RouterEntryGate.shared.submit(.presentFullModeActivation)
+            } else {
+                setOrDeferDeepLink(.panel)
+            }
+
         case "statistics":
             if url.pathComponents.contains("records") {
                 setOrDeferDeepLink(.records)
