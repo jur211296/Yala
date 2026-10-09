@@ -89,6 +89,12 @@ Antes de una revisión:
 Grok en Insights. Se queda así para la revisión trimestral: se paga con los créditos de Anthropic. Acuerdo medido con
 las muestras a mano, en `docs/ai-model-bench-2026-10-claude.md`: en Insights no decide (55 %, κ 0,23), como ninguno antes.
 
+**Excepción, el mismo 2026-10-08: en las tres tareas `insights.*` juzga Gemini 3.8 Flash solo** (`judgeOrder` y
+`judgesFor`). A los candidatos de Gemini los juzga Sonnet. Ahí Sonnet coincidía con la nota a mano un 55 % y Gemini un
+85 %. Uno solo, y no la pareja, porque la pareja era Gemini + Sonnet en cualquier orden y el veredicto no cambiaba. Con
+Gemini solo, el acuerdo del banco en Insights pasa del 67 % al 87 % (κ 0,33 → 0,52) y cada respuesta cuesta un juicio,
+no dos. `trends.summary` sigue con la pareja que abre Sonnet.
+
 ## `chat.answer`: el juez va aparte (sesión 2 · chat y nota)
 
 `npm run bench -- --task chat.answer` aplica solo el criterio determinista (cifras que salen del contexto, idioma,
