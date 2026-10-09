@@ -27,8 +27,8 @@
  * Los casos de attest llevan un CONTROL con un token vigente firmado con el mismo secreto: sin él, un secreto mal
  * puesto haría fallar la verificación de cualquier token, y los casos saldrían verdes por el motivo equivocado.
  *
- * **Nadie lo corre automáticamente**: el CI no ejecuta la suite del gateway (`ci-no-corre-la-suite-del-gateway`). Se
- * corre con `npm test -- test/groups.attest401.test.ts`; el `pretest` copia los manifests.
+ * Lo corre el job `gateway` de `.github/workflows/qa.yml` en cada push (desde el 2026-10-08). A mano:
+ * `npm test -- test/groups.attest401.test.ts`; el `pretest` copia los manifests.
  */
 import { SignJWT } from "jose";
 import { afterEach, describe, expect, it, vi } from "vitest";

@@ -29,6 +29,7 @@
  * passthrough del RPC quedan cubiertos OFFLINE en account.delete.test.ts (corre en CI).
  */
 import { beforeAll, describe, expect, it } from "vitest";
+import { describeStaging } from "./staging";
 import app from "../src/index";
 import type { Env } from "../src/env";
 
@@ -235,7 +236,7 @@ beforeAll(async () => {
   subB = decodeSub(jwtB);
 });
 
-describe("I7a goldens · /account/* contra staging real", () => {
+describeStaging("I7a goldens · /account/* contra staging real", () => {
   it("1. dos claims CONCURRENTES del mismo sub desde DOS dispositivos → exactamente uno 'created', el otro 'existing_stable'", async (ctx) => {
     // Requiere profiles[subA] AUSENTE (limpieza previa en contexto service — ver README/header).
     // SKIP limpio si el seed no está preparado (2026-07-15): el golden es one-shot-tras-seed por
@@ -309,7 +310,7 @@ describe("I7a goldens · /account/* contra staging real", () => {
 // dejan la fila en estado estable — la limpieza pre-run de la suite la resetea). Ver header.
 const DEV_LEADER = "device-B-leader";
 
-describe("I10 goldens · /account/migration + lease (staging real)", () => {
+describeStaging("I10 goldens · /account/migration + lease (staging real)", () => {
   it("6. cutover por el LÍDER registrado → ok:true y estampa migrated_at (idempotente)", async () => {
     // Estado in-progress con ESTE device como líder (migrated_at limpio).
     expect(
@@ -480,7 +481,7 @@ describe("I10 goldens · /account/migration + lease (staging real)", () => {
 const DEV_REV = "device-B-rev-leader";
 const DEV_REV_OTHER = "device-rev-usurper";
 
-describe("I11-3 goldens · /account/migration reverse_* (staging real)", () => {
+describeStaging("I11-3 goldens · /account/migration reverse_* (staging real)", () => {
   // Red de arranque: la degradación del 16 es durable y `kind` no se puede PATCHear. Ver `ensureCompleteKind`.
   beforeAll(async () => {
     await ensureCompleteKind(jwtB, DEV_REV, "google");
@@ -807,7 +808,7 @@ async function prefExists(jwt: string, key: string): Promise<boolean> {
   return ((await res.json()) as unknown[]).length > 0;
 }
 
-describe("Freeze enforcement · /sync/push + /prefs/push con reverse_frozen_at (staging real)", () => {
+describeStaging("Freeze enforcement · /sync/push + /prefs/push con reverse_frozen_at (staging real)", () => {
   const SID0 = crypto.randomUUID();
   const SID1 = crypto.randomUUID();
   const HLC0 = hlcOf(Date.UTC(2026, 6, 11, 12, 0, 0));
@@ -892,7 +893,7 @@ describe("Freeze enforcement · /sync/push + /prefs/push con reverse_frozen_at (
 const DEV_HB = "device-B-hb-leader";
 const DEV_HB_OTHER = "device-hb-usurper";
 
-describe("I14-pre goldens · /account/migration heartbeat (staging real, REQUIERE deploy i14_heartbeat_action + Worker)", () => {
+describeStaging("I14-pre goldens · /account/migration heartbeat (staging real, REQUIERE deploy i14_heartbeat_action + Worker)", () => {
   it("23. heartbeat es acción VÁLIDA en el edge (no 400) y sin run activo → ok:false 'not_in_progress'", async () => {
     // Sin migración ni reversa en curso.
     expect(
@@ -970,7 +971,7 @@ describe("I14-pre goldens · /account/migration heartbeat (staging real, REQUIER
   });
 });
 
-describe("g3_02 goldens · claim promociona fila LIGERA de grupos (staging real)", () => {
+describeStaging("g3_02 goldens · claim promociona fila LIGERA de grupos (staging real)", () => {
   // El claim LIGERO de create_group/join_group (G1) inserta profiles(id) sin vida personal
   // (personal_claimed_at NULL). g3_02: claim_account PROMOCIONA esa fila a 'created' — el camino
   // del usuario solo-grupos que activa Yala completo (antes: existing_stable → migración bloqueada).
@@ -1026,7 +1027,7 @@ describe("g3_02 goldens · claim promociona fila LIGERA de grupos (staging real)
 // —mismo criterio que los goldens 1 y 2— porque termina dejando la cuenta promovida. Reset:
 //   delete from public.profiles where id = (select id from auth.users where email='i5-user-c@test.yala');
 // El golden del guard, en cambio, no depende del estado y corre siempre.
-describe("g15_01 goldens · kind de la cuenta (staging real)", () => {
+describeStaging("g15_01 goldens · kind de la cuenta (staging real)", () => {
   let jwtC = "";
   let subC = "";
 
