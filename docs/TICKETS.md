@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (824)
+## Index (825)
 
 | id | status | path |
 |---|---|---|
@@ -282,6 +282,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | dormant-convergence-request-from-a-groups-only-wipe | backlog | tickets/backlog/dormant-convergence-request-from-a-groups-only-wipe.md |
 | dos-criterios-de-aproximado-en-la-misma-pantalla | backlog | tickets/backlog/dos-criterios-de-aproximado-en-la-misma-pantalla.md |
 | drain-duplicates-the-unit-clock-when-its-row-cannot-be-read | done | tickets/done/drain-duplicates-the-unit-clock-when-its-row-cannot-be-read.md |
+| drained-intent-that-presents-nothing-may-strand-the-next | backlog | tickets/backlog/drained-intent-that-presents-nothing-may-strand-the-next.md |
 | dry-run-del-avisador-envia-igual | backlog | tickets/backlog/dry-run-del-avisador-envia-igual.md |
 | duplicate-exchange-rate-rows-pick-an-arbitrary-rate | backlog | tickets/backlog/duplicate-exchange-rate-rows-pick-an-arbitrary-rate.md |
 | edgecases-extreme-minimum-flaky-under-load | done | tickets/done/edgecases-extreme-minimum-flaky-under-load.md |
@@ -629,7 +630,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | qa-guion-tanda-no-cubre-17-tickets | backlog | tickets/backlog/qa-guion-tanda-no-cubre-17-tickets.md |
 | qa-no-puede-crear-cuenta-en-otra-divisa | done | tickets/done/qa-no-puede-crear-cuenta-en-otra-divisa.md |
 | qa-yml-no-cancela-la-corrida-anterior-de-la-misma-rama | discarded | tickets/discarded/qa-yml-no-cancela-la-corrida-anterior-de-la-misma-rama.md |
-| queued-offer-after-dismiss-flakes-on-a-cold-simulator | backlog | tickets/backlog/queued-offer-after-dismiss-flakes-on-a-cold-simulator.md |
+| queued-offer-after-dismiss-flakes-on-a-cold-simulator | done | tickets/done/queued-offer-after-dismiss-flakes-on-a-cold-simulator.md |
 | readme-index-duplicates-internal-worktree-files | done | tickets/done/readme-index-duplicates-internal-worktree-files.md |
 | readme-index-generator-counts-worktree-copies | discarded | tickets/discarded/readme-index-generator-counts-worktree-copies.md |
 | readme-index-generator-walks-into-claude-worktrees | discarded | tickets/discarded/readme-index-generator-walks-into-claude-worktrees.md |

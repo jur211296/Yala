@@ -1,6 +1,6 @@
 ---
 id: queued-offer-after-dismiss-flakes-on-a-cold-simulator
-status: backlog
+status: done
 priority: high
 area: "testing, xcuitest, presentaciones"
 created: 2026-09-15
@@ -8,7 +8,7 @@ updated: 2026-10-08
 source: "gate de `cloud-signout-collapses-a-groups-session-expiry-into-permanent` (2026-09-15)"
 ---
 
-# La oferta que espera en la cola a veces no aparece al cerrar la hoja, con el simulador recién arrancado
+# Al cerrar un aviso, lo que esperaba en cola (oferta, aviso de bandeja, invitación) a veces no salía hasta relanzar la app
 
 ## Lo que pasó (medido)
 
@@ -235,3 +235,34 @@ una regresión. Cualquier otra línea de fallo sí lo es.
 - Sube a `high` porque una persona se queda sin el aviso en cola (paywall, aviso de bandeja, invitación) hasta relanzar la app. Además, tumba cuatro XCUITest del gate.
 
 Triage 2026-10-08: abierto · medium → high · 6647d173b midió que es producto: `markReady` sube la revisión dentro del update y el `onChange` no llega (`ReadinessGateObservers.swift:93`, `ContentView.swift:835`); sin arreglo.
+
+## Arreglado (2026-10-08, opción A)
+
+`ContentView.updateContentViewReadiness` **bloquea en el acto y libera una vuelta del main actor después**
+(`Task { @MainActor in applyContentViewReadiness() }`, que vuelve a medir la matriz antes de `markReady`). Así el bump
+de la `revision` ocurre fuera de la actualización de la vista y el `onChange(of: revision)` llega. Se aplaza solo la
+liberación: aplazar también el bloqueo dejaría una vuelta en la que se drena con el shell ya tapado. Vale para todos
+los llamadores que corren dentro de un `onChange` (los 28 de `ReadinessGateObservers`, `isWipingData`,
+`isMainTabModalVisible`, el asentamiento del arranque y la fase del cierre), no solo para la hoja del Apple ID. El
+derribo B4-04 de `drainContentViewIntents` sigue síncrono (`applyContentViewReadiness`): drena en la misma llamada.
+
+**«Dos drains en el mismo tick» no se reabre**: liberar más tarde solo retrasa el drenaje. En `dismissSplash` de hecho
+desaparece el doble drenaje que podía darse antes (el `markReady` síncrono más el drenaje explícito).
+
+**Medido** con la misma instrumentación del 2026-10-08 (`DIAGREADY`/`DIAGROUTER`/`DIAGREV`/`DIAGDRAIN`), `simctl launch
+--console-pty`, un solo simulador (iPhone 17 Pro, iOS 27.0), descartado el primer arranque tras el boot:
+
+| Seam | Antes | Después |
+|---|---|---|
+| `-uitest-apple-id-close-never-mounts` | **2 atascados de 25** (`blocker=nil` → `markReady bumped -> 9` y nada más) | **0 de 50** |
+| `-uitest-remote-wipe-notice-never-mounts` | 0 de 25 (su tasa medida es 1 de 40: N=25 no la distingue) | 0 de 25 |
+
+Pin: `YalaTests/ContentViewReadinessReleaseWiringTests` (cuerpo entero de `updateContentViewReadiness`, un solo
+`markReady(.contentView` en todo `Yala/`, la condición de `applyContentViewReadiness` y sus tres llamadores). Regla en
+`.claude/rules/swiftui-ds.md`. Los cuatro XCUITest del registro de arriba pasan en el gate.
+
+**Residual, preexistente y fuera de este arreglo** (review adversarial): el bump de `drainNext` también ocurre dentro
+del `onChange(revision)`. Si el intent drenado no presenta nada (`.remoteOnboardingCompleted`, un
+`.presentRemoteWipeNotice` que ya no aplica), el siguiente de la cola podría esperar al próximo bump por el mismo
+mecanismo. No medido.
+
