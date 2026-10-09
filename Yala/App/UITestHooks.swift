@@ -442,10 +442,11 @@ final class UITestHooks {
         #endif
     }
 
-    /// Valor de `-uitest-image-result <one|incomplete|two|partial|none|trial-used-up>`: el registro por imagen no abre
+    /// Valor de `-uitest-image-result <one|incomplete|two|partial|none|trial-used-up|pages|pages-trial>`: el registro por imagen no abre
     /// Fotos ni llama a la red (`trial-used-up`: el gateway contesta que el cupo de prueba de fotos se agotó). «Fotos» usa los recibos de ejemplo de la práctica guiada y la hoja «lee» lo que diga el perfil,
     /// resuelto contra los datos sembrados (`one`: un gasto · `incomplete`: sin subcategoría · `two`: dos fotos, un gasto
-    /// cada una · `partial`: dos fotos y la segunda falla · `none`: ninguna trae importe). El selector de Fotos es de
+    /// cada una · `partial`: dos fotos y la segunda falla · `none`: ninguna trae importe · `pages`: un gasto distinto por
+    /// página de PDF · `pages-trial`: la primera página se lee y en las demás se acaba el cupo de prueba). El selector de Fotos es de
     /// otro proceso y en el simulador el servicio no contesta: sin esto no hay lectura que capturar ni probar.
     nonisolated static var imageResult: String? {
         #if DEBUG
@@ -456,9 +457,10 @@ final class UITestHooks {
         #endif
     }
 
-    /// Valor de `-uitest-receipt-drop <unreadable|readable>`: en cuanto la ventana queda libre, suelta un recibo por el
-    /// camino real del `onDrop` (`ReceiptDropHandler.handle`). `unreadable`: un «PDF» que no lo es · `readable`: el recibo de
-    /// ejemplo como imagen (con `-uitest-image-result` para que la hoja «lea» sin red). El arrastre entre apps no se puede
+    /// Valor de `-uitest-receipt-drop <unreadable|readable|pdf3|pdf3-locked>`: en cuanto la ventana queda libre, suelta un
+    /// recibo por el camino real del `onDrop` (`ReceiptDropHandler.handle`). `unreadable`: un «PDF» que no lo es ·
+    /// `readable`: el recibo de ejemplo como imagen · `pdf3`: un extracto ficticio de tres páginas · `pdf3-locked`: el mismo
+    /// con la contraseña «1234» (con `-uitest-image-result` para que la hoja «lea» sin red). El arrastre entre apps no se puede
     /// conducir desde XCUITest; esto prueba todo lo que hay detrás de soltar.
     nonisolated static var receiptDrop: String? {
         #if DEBUG

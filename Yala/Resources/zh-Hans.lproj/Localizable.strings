@@ -6518,7 +6518,7 @@
 "image.entry.failure.unreadableFile.title" = "无法打开这个文件";
 
 /* Image entry failure: unreadable file, why and what to try */
-"image.entry.failure.unreadableFile.message" = "它可能是空的、已损坏或受密码保护。试试这张收据的其他照片或 PDF。";
+"image.entry.failure.unreadableFile.message" = "它可能是空的或已损坏。试试这张收据的其他照片或 PDF。";
 
 /* Account currency change: title of the confirmation when the account has no movements but has scheduled payments or favorites to convert. %@ = new currency code */
 "account.currencyChange.confirmTitleNoHistory" = "将币种更改为 %@？";
@@ -6537,3 +6537,33 @@
 
 /* Account currency change confirmation: closing sentence when there are no movements to convert */
 "account.currencyChange.cannotUndo" = "此操作无法撤销。";
+
+/* Registro por imagen: título al pedir la contraseña de un PDF */
+"image.entry.password.title" = "此 PDF 有密码";
+
+/* Registro por imagen: explicación bajo el título de la contraseña */
+"image.entry.password.message" = "输入密码以打开文件。密码只在此设备上使用，不会保存或发送。";
+
+/* Registro por imagen: campo seguro de la contraseña del PDF */
+"image.entry.password.field" = "PDF 密码";
+
+/* Registro por imagen: botón que abre el PDF con la contraseña */
+"image.entry.password.open" = "打开";
+
+/* Registro por imagen: la contraseña del PDF no lo abre */
+"image.entry.password.wrong" = "密码不正确。请检查后重试。";
+
+/* Registro por imagen: una página del PDF no entró en el tope; %d = tope de páginas */
+"image.entry.pagesLeftOutOne" = "有 1 页未读取：每次最多读取 %d 页。如需读取，请放在另一个 PDF 中上传。";
+
+/* Registro por imagen: páginas del PDF fuera del tope; %1$d = páginas, %2$d = tope */
+"image.entry.pagesLeftOutMany" = "有 %1$d 页未读取：每次最多读取 %2$d 页。如需读取，请放在另一个 PDF 中上传。";
+
+/* Registro por imagen: el cupo de prueba se acabó a mitad y una foto o página quedó sin leer */
+"image.entry.trialLeftOutOne" = "你已用完试用照片识别：有 1 张未读取。";
+
+/* Registro por imagen: el cupo de prueba se acabó a mitad; %d = fotos o páginas sin leer */
+"image.entry.trialLeftOutMany" = "你已用完试用照片识别：有 %d 张未读取。";
+
+/* Registro por imagen: progreso al leer las páginas de un PDF */
+"image.entry.readingPageProgress" = "第 %1$d 页，共 %2$d 页";

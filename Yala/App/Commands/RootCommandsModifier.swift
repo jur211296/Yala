@@ -40,9 +40,10 @@ struct RootCommandsModifier: ViewModifier {
 // MARK: - Soltar un recibo
 
 /// Soltar una imagen o un PDF sobre Yala abre Nuevo registro por imagen (`ReceiptDropLogic`). Solo el primer
-/// elemento: la pantalla de imagen trabaja con una. Un PDF entra como su primera página.
+/// elemento. Un PDF se guarda tal cual y la hoja lo lee página a página (`PDFPageImport`, desde el 2026-10-08); si tiene
+/// contraseña, la pide la hoja.
 ///
-/// Lo que no se puede abrir (PDF vacío o protegido, imagen dañada) abre el mismo registro por imagen en su fallo
+/// Lo que no se puede abrir (PDF vacío o dañado, imagen dañada) abre el mismo registro por imagen en su fallo
 /// «No pude abrir este archivo», el de Archivo desde dentro. Hasta el 2026-10-07 solo se escribía en el log: el sistema
 /// ya había dado el soltar por aceptado y el usuario no veía nada. Lo que nunca es imagen ni PDF no llega aquí: el
 /// `onDrop` solo acepta `acceptedTypes`, así que el sistema lo rechaza antes de soltar.
@@ -86,27 +87,36 @@ enum ReceiptDropHandler {
         return true
     }
 
-    /// Lo que sale de lo soltado, sin efectos: el JPEG que se va a leer, o el fallo que se le enseña al usuario.
+    /// Lo que sale de lo soltado, sin efectos: el fichero que se va a leer (una imagen en JPEG, o el PDF tal cual, bloqueado
+    /// o no), o el fallo que se le enseña al usuario.
     enum Outcome: Equatable {
-        case readable(jpeg: Data)
+        case readable(file: Data, isPDF: Bool)
         case failed(ImageEntryFailure)
     }
 
     static func outcome(for data: Data?, isPDF: Bool) -> Outcome {
         guard let data else { return .failed(.unreadableFile) }
-        let jpeg = isPDF ? firstPageJPEG(pdfData: data) : UIImage(data: data)?.jpegData(compressionQuality: 0.9)
-        guard let jpeg else {
+        if isPDF {
+            guard PDFPageImport.canOpen(data) else {
+                #if DEBUG
+                print("ReceiptDropHandler: Error: lo soltado no es un PDF legible")
+                #endif
+                return .failed(.unreadableFile)
+            }
+            return .readable(file: data, isPDF: true)
+        }
+        guard let jpeg = UIImage(data: data)?.jpegData(compressionQuality: 0.9) else {
             #if DEBUG
             print("ReceiptDropHandler: Error: lo soltado no es una imagen legible")
             #endif
             return .failed(.unreadableFile)
         }
-        return .readable(jpeg: jpeg)
+        return .readable(file: jpeg, isPDF: false)
     }
 
     /// A dónde va lo soltado. Separado para probar que ningún camino termina en silencio.
     struct Sink {
-        var store: (Data) -> URL?
+        var store: (_ file: Data, _ isPDF: Bool) -> URL?
         var present: (URL) -> Void
         var fail: (ImageEntryFailure) -> Void
 
@@ -132,8 +142,8 @@ enum ReceiptDropHandler {
         switch outcome(for: data, isPDF: isPDF) {
         case .failed(let failure):
             sink.fail(failure)
-        case .readable(let jpeg):
-            guard let url = sink.store(jpeg) else {
+        case .readable(let file, let isPDF):
+            guard let url = sink.store(file, isPDF) else {
                 sink.fail(.generic)
                 return
             }
@@ -141,25 +151,15 @@ enum ReceiptDropHandler {
         }
     }
 
-    /// La primera página del PDF como imagen, a 2× para que el texto del recibo se lea. También la usa Archivo en el
-    /// registro por imagen. Un PDF protegido con contraseña cuenta como ilegible: PDFKit lo entrega bloqueado y aquí no hay
-    /// dónde pedir la contraseña.
-    static func firstPageJPEG(pdfData: Data) -> Data? {
-        guard let document = PDFDocument(data: pdfData), !document.isLocked,
-              let page = document.page(at: 0) else { return nil }
-        let bounds = page.bounds(for: .mediaBox)
-        let size = CGSize(width: bounds.width * 2, height: bounds.height * 2)
-        return page.thumbnail(of: size, for: .mediaBox).jpegData(compressionQuality: 0.9)
-    }
-
-    /// Al mismo sitio que la extensión de compartir (`SharedContainerService.pendingImagesURL`), con extensión `.jpg`
-    /// para que `pendingImageURLs()` lo reconozca si hay que recuperarlo.
-    private static func writePending(_ jpeg: Data) -> URL? {
+    /// Al mismo sitio que la extensión de compartir (`SharedContainerService.pendingImagesURL`), con extensión `.jpg` o
+    /// `.pdf` para que `pendingImageURLs()` lo reconozca si hay que recuperarlo (y la purga del App Group, si hay que
+    /// borrarlo).
+    private static func writePending(_ file: Data, isPDF: Bool) -> URL? {
         SharedContainerService.ensurePendingImagesDirectory()
         guard let directory = SharedContainerService.pendingImagesURL else { return nil }
-        let url = directory.appendingPathComponent("drop-\(UUID().uuidString).jpg")
+        let url = directory.appendingPathComponent("drop-\(UUID().uuidString).\(isPDF ? "pdf" : "jpg")")
         do {
-            try jpeg.write(to: url, options: .atomic)
+            try file.write(to: url, options: .atomic)
             return url
         } catch {
             #if DEBUG
@@ -191,6 +191,10 @@ private struct UITestReceiptDropSeam: ViewModifier {
             case "readable":
                 type = .png
                 data = UIImage(named: "ExampleImages/example-receipt-es")?.pngData()
+            case "pdf3", "pdf3-locked":
+                // Un extracto ficticio de tres páginas; `-locked`, con la contraseña «1234».
+                type = .pdf
+                data = UITestStatementPDF.make(pages: 3, password: kind == "pdf3-locked" ? "1234" : nil)
             default:
                 type = .pdf
                 data = Data("no es un PDF".utf8)
@@ -207,3 +211,26 @@ private struct UITestReceiptDropSeam: ViewModifier {
         #endif
     }
 }
+
+#if DEBUG
+/// El extracto de los XCUITest de PDF: N páginas con un movimiento por página, opcionalmente con contraseña.
+enum UITestStatementPDF {
+    static func make(pages: Int, password: String?) -> Data? {
+        let data = UIGraphicsPDFRenderer(bounds: CGRect(x: 0, y: 0, width: 595, height: 842)).pdfData { context in
+            for page in 1...max(1, pages) {
+                context.beginPage()
+                let text = "Extracto ficticio · página \(page) de \(pages)\n\nMovimiento \(page)   -\(9 + page),00"
+                (text as NSString).draw(
+                    in: CGRect(x: 48, y: 64, width: 500, height: 200),
+                    withAttributes: [.font: UIFont.systemFont(ofSize: 18)]
+                )
+            }
+        }
+        guard let password else { return data }
+        return PDFDocument(data: data)?.dataRepresentation(options: [
+            PDFDocumentWriteOption.userPasswordOption: password,
+            PDFDocumentWriteOption.ownerPasswordOption: password,
+        ])
+    }
+}
+#endif

@@ -6814,6 +6814,28 @@ enum L10n {
             /// El plan free probó la foto con su cupo de prueba entero (`yala_trial_exhausted` del gateway).
             static var failureTrialUsedUpTitle: String { ls("image.entry.failure.trialUsedUp.title", comment: "Free plan used up its trial photos") }
             static var failureTrialUsedUpMessage: String { ls("image.entry.failure.trialUsedUp.message", comment: "Free plan used up its trial photos: Pro has no limit") }
+
+            // Un PDF página a página (ticket pdf-statement-reads-only-the-first-page, 2026-10-08).
+            static func readingPageProgress(_ current: Int, _ total: Int) -> String {
+                String(format: ls("image.entry.readingPageProgress", comment: ""), current, total)
+            }
+            static var passwordTitle: String { ls("image.entry.password.title", comment: "") }
+            static var passwordMessage: String { ls("image.entry.password.message", comment: "") }
+            static var passwordField: String { ls("image.entry.password.field", comment: "") }
+            static var passwordOpen: String { ls("image.entry.password.open", comment: "") }
+            static var passwordWrong: String { ls("image.entry.password.wrong", comment: "") }
+            /// Páginas de PDF que no entraron en la tanda; `limit` es el tope de páginas por vez.
+            static func pagesLeftOut(_ count: Int, limit: Int) -> String {
+                count == 1
+                    ? String(format: ls("image.entry.pagesLeftOutOne", comment: ""), limit)
+                    : String(format: ls("image.entry.pagesLeftOutMany", comment: ""), count, limit)
+            }
+            /// El cupo de prueba se acabó a mitad de la tanda: `count` fotos o páginas sin leer.
+            static func trialLeftOut(_ count: Int) -> String {
+                count == 1
+                    ? ls("image.entry.trialLeftOutOne", comment: "")
+                    : String(format: ls("image.entry.trialLeftOutMany", comment: ""), count)
+            }
         }
     }
 

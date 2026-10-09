@@ -63,14 +63,16 @@ struct ReceiptDropHandlerTests {
     /// Lo que el sink recibe: cuántas veces guardó, qué presentó y qué fallo enseñó.
     private final class Recorder {
         var stored = 0
+        var storedPDFs = 0
         var presented: [URL] = []
         var failures: [ImageEntryFailure] = []
 
         func sink(storeSucceeds: Bool = true) -> ReceiptDropHandler.Sink {
             ReceiptDropHandler.Sink(
-                store: { _ in
+                store: { _, isPDF in
                     self.stored += 1
-                    return storeSucceeds ? URL(fileURLWithPath: "/tmp/drop-test.jpg") : nil
+                    if isPDF { self.storedPDFs += 1 }
+                    return storeSucceeds ? URL(fileURLWithPath: isPDF ? "/tmp/drop-test.pdf" : "/tmp/drop-test.jpg") : nil
                 },
                 present: { self.presented.append($0) },
                 fail: { self.failures.append($0) }
@@ -81,19 +83,19 @@ struct ReceiptDropHandlerTests {
     // MARK: - Qué sale de lo soltado
 
     @Test func readableImage_isReadable() {
-        guard case .readable(let jpeg) = ReceiptDropHandler.outcome(for: Self.png(), isPDF: false) else {
+        guard case .readable(let jpeg, let isPDF) = ReceiptDropHandler.outcome(for: Self.png(), isPDF: false) else {
             Issue.record("Una imagen legible tiene que salir como JPEG")
             return
         }
+        #expect(!isPDF)
         #expect(UIImage(data: jpeg) != nil)
     }
 
-    @Test func readablePDF_isItsFirstPage() {
-        guard case .readable(let jpeg) = ReceiptDropHandler.outcome(for: Self.onePagePDF(), isPDF: true) else {
-            Issue.record("Un PDF de una página tiene que salir como su primera página")
-            return
-        }
-        #expect(UIImage(data: jpeg) != nil)
+    /// Desde el 2026-10-08 un PDF se guarda TAL CUAL: la hoja lo lee página a página (`PDFPageImport`). Hasta entonces se
+    /// guardaba solo su primera página como JPEG y las demás se perdían.
+    @Test func readablePDF_isKeptWhole_forTheSheetToReadPageByPage() {
+        let data = Self.onePagePDF()
+        #expect(ReceiptDropHandler.outcome(for: data, isPDF: true) == .readable(file: data, isPDF: true))
     }
 
     @Test func dataThatCouldNotBeLoaded_isAnUnreadableFile() {
@@ -117,13 +119,13 @@ struct ReceiptDropHandlerTests {
         #expect(ReceiptDropHandler.outcome(for: data, isPDF: true) == .failed(.unreadableFile))
     }
 
-    /// Protegido con contraseña, PDFKit lo abre bloqueado y AUN ASÍ entrega su primera página (medido el 2026-10-07): sin
-    /// el `isLocked`, el soltar lo daba por legible.
-    @Test func passwordProtectedPDF_isAnUnreadableFile() throws {
+    /// Protegido con contraseña ya no es ilegible (2026-10-08): se guarda bloqueado y la hoja pide la contraseña. Hasta
+    /// entonces caía en «No pude abrir este archivo» sin dónde escribirla.
+    @Test func passwordProtectedPDF_isKept_forTheSheetToAskForThePassword() throws {
         let data = try #require(Self.lockedPDF())
         let document = try #require(PDFDocument(data: data))
         #expect(document.isLocked, "El PDF del test tiene que llegar bloqueado, o el caso no prueba nada")
-        #expect(ReceiptDropHandler.outcome(for: data, isPDF: true) == .failed(.unreadableFile))
+        #expect(ReceiptDropHandler.outcome(for: data, isPDF: true) == .readable(file: data, isPDF: true))
     }
 
     // MARK: - Ningún camino acaba en silencio
@@ -157,6 +159,7 @@ struct ReceiptDropHandlerTests {
         let recorder = Recorder()
         ReceiptDropHandler.receive(Self.onePagePDF(), isPDF: true, sink: recorder.sink())
         #expect(recorder.stored == 1)
+        #expect(recorder.storedPDFs == 1, "Un PDF se guarda como PDF, con su extensión, para que la hoja lo trocee")
         #expect(recorder.presented.count == 1)
         #expect(recorder.failures.isEmpty)
     }
