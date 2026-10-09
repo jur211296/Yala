@@ -324,6 +324,106 @@ extension XCUIApplication {
         return self
     }
 
+    // MARK: - Selectores (cuenta, subcategoría, etiquetas)
+
+    /// Abre un selector desde su chip (o fila) y devuelve su primera fila, sin tocarla.
+    ///
+    /// **Por qué no basta con `chip.tap()`** (medido el 2026-10-09, iPhone 17 Pro, iOS 27.0): tras
+    /// `typeText` en el monto, el teclado sigue ENTRANDO —su marco estaba en y=891, fuera de la
+    /// pantalla— y el formulario aún no ha subido para dejarle sitio. XCUITest sintetiza el toque
+    /// donde estaba el chip (y=716); cuando llega, el chip ya está en y=513 y el toque se pierde sin
+    /// error. La hoja no se monta y el rojo dice «No se montó AccountSelectorSheet con filas». Un
+    /// segundo toque, con todo quieto, la abre. iOS 27 anima el teclado más despacio que 26.x, por
+    /// eso el rojo solo salía en 27.0. El aviso «Automation type mismatch … PopUpButton» del log
+    /// no era la causa: con la hoja abierta, las filas salen como `Button`.
+    ///
+    /// Así que antes de tocar se espera a que el teclado acabe de moverse y el chip deje de
+    /// moverse (`waitForSettledLayout`), y la fila se busca por identificador con cualquier tipo
+    /// de elemento, para que un cambio de tipo de accesibilidad del runtime no la deje ciega.
+    ///
+    /// Medido con mutantes: sin ninguna espera, rojo; solo con `waitForSettledLayout`, verde, y sus
+    /// lecturas la ven esperar (teclado aún fuera de la pantalla, luego el chip una lectura más en su
+    /// sitio viejo). El `waitForExistence` previo también lo tapa hoy, por accidente: en iOS 27 tarda
+    /// ~1 s aunque el chip ya exista. No te fíes de esa latencia; la guarda es la espera de asentamiento.
+    @discardableResult
+    func openSelectorFirstRow(
+        chip chipID: String,
+        rowPrefix: String,
+        timeout: TimeInterval = 5,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) -> XCUIElement {
+        let chip = buttons[chipID]
+        XCTAssertTrue(chip.waitForExistence(timeout: timeout), "No apareció \(chipID).", file: file, line: line)
+        XCTAssertTrue(
+            waitForSettledLayout(of: chip, timeout: timeout),
+            "\(chipID) no dejó de moverse (¿el teclado sigue entrando o saliendo?).",
+            file: file, line: line
+        )
+        // En la fila horizontal de chips de «Nuevo registro», con cuenta y subcategoría elegidas, el de
+        // etiquetas queda a la derecha del borde (x=417 en 402 pt, ticket
+        // `record-selectors-uitest-taps-the-tags-chip-off-screen`): se desplaza la fila hasta verlo, con un
+        // arrastre horizontal a la altura del chip (la primera vista con scroll que lo contiene es la vertical
+        // del formulario, que no se mueve de lado). Se mira el marco y no `isHittable`: con el chip entero
+        // fuera de la pantalla, `isHittable` no devuelve `false`, LANZA («Activation point invalid»).
+        var swipes = 0
+        let origin = coordinate(withNormalizedOffset: .zero)
+        let windowFrame = windows.firstMatch.frame
+        while !windowFrame.contains(chip.frame) && swipes < 3 {
+            let width = windowFrame.width
+            origin.withOffset(CGVector(dx: width * 0.75, dy: chip.frame.midY))
+                .press(forDuration: 0.05, thenDragTo: origin.withOffset(CGVector(dx: width * 0.25, dy: chip.frame.midY)))
+            _ = waitForSettledLayout(of: chip, timeout: timeout)
+            swipes += 1
+        }
+        XCTAssertTrue(chip.waitForHittable(timeout: timeout), "\(chipID) existe pero no es alcanzable.", file: file, line: line)
+        chip.tap()
+        let row = descendants(matching: .any)
+            .matching(NSPredicate(format: "identifier BEGINSWITH %@", rowPrefix))
+            .firstMatch
+        XCTAssertTrue(
+            row.waitForExistence(timeout: timeout),
+            "No se montó el selector de \(chipID) con filas (\(rowPrefix)…).",
+            file: file, line: line
+        )
+        return row
+    }
+
+    /// Abre un selector desde su chip y elige su primera fila (sin acoplarse al nombre del seed).
+    func chooseFirstSelectorRow(
+        chip chipID: String,
+        rowPrefix: String,
+        timeout: TimeInterval = 5,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        openSelectorFirstRow(chip: chipID, rowPrefix: rowPrefix, timeout: timeout, file: file, line: line).tap()
+    }
+
+    /// Espera a que el teclado termine de entrar o salir y `element` esté quieto: dos lecturas
+    /// seguidas con el mismo marco. Devuelve `false` si no se asienta antes de `timeout`.
+    func waitForSettledLayout(of element: XCUIElement, timeout: TimeInterval = 5) -> Bool {
+        let deadline = Date().addingTimeInterval(timeout)
+        let windowMaxY = windows.firstMatch.frame.maxY
+        var lastFrame: CGRect?
+        var stableReads = 0
+        while Date() < deadline {
+            let keyboard = keyboards.firstMatch
+            // Entrando o saliendo, el teclado asoma por debajo de la ventana.
+            let keyboardSettled = !keyboard.exists || keyboard.frame.maxY <= windowMaxY + 0.5
+            let frame = element.frame
+            if keyboardSettled, frame == lastFrame {
+                stableReads += 1
+                if stableReads >= 2 { return true }
+            } else {
+                stableReads = 0
+            }
+            lastFrame = frame
+            RunLoop.current.run(until: Date().addingTimeInterval(0.15))
+        }
+        return false
+    }
+
     // MARK: - Menú (···) de Registros
 
     /// El menú (···) de la toolbar de Registros (tab Registros de Estadísticas /

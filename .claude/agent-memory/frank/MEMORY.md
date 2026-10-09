@@ -163,6 +163,7 @@
 - [El tope del test de cancelación es PROPIO](feedback_el_tope_del_test_de_cancelacion_es_propio.md) — el mutante que deja la…
 - [Mi arreglo cumple una premisa que era FALSA](feedback_mi_arreglo_cumple_una_premisa_que_era_falsa.md) — busca quién depend…
 - [El mutante que sobrevive puede SOBRAR](feedback_el_mutante_que_sobrevive_puede_sobrar.md) — dos respuestas: falta un test.
+- [El mutante sobrevive por una latencia ajena](feedback_el_mutante_sobrevive_por_una_latencia_ajena.md) — al mutar una espera, prueba nada/solo la mía/solo la ajena.
 - [Pedir en los dos extremos duplica](feedback_pedir_en_los_dos_extremos_duplica.md) — si la reparación re-hace todo y no un delta.
 - [El motivo que cae no retira el mecanismo](feedback_el_motivo_que_cae_no_retira_el_mecanismo.md) — quité la petición de #284 y cubría tres casos más.
 - [El dueño se FECHA, no se recuerda](feedback_el_dueno_se_fecha_no_se_recuerda.md) — «último visto» cayó 3 veces; la red de rescate no toca lo decidido «ninguno».

@@ -62,15 +62,14 @@ final class EdgeCasesUITests: XCTestCase {
         amountField.tap()
         amountField.typeText("0.01")
 
-        app.buttons["new_transaction_account_chip"].tap()
-        app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "account_selector_row_"))
-            .firstMatch.tap()
+        // El helper espera a que el teclado termine de entrar: en iOS 27.0 el toque inmediato se perdía.
+        app.chooseFirstSelectorRow(chip: "new_transaction_account_chip", rowPrefix: "account_selector_row_")
 
-        let subcatChip = app.buttons["new_transaction_subcategory_chip"]
-        XCTAssertTrue(subcatChip.waitForExistence(timeout: 5), "No volvió al formulario tras elegir cuenta.")
-        subcatChip.tap()
-        app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "subcategory_selector_row_"))
-            .firstMatch.tap()
+        XCTAssertTrue(
+            app.buttons["new_transaction_subcategory_chip"].waitForExistence(timeout: 5),
+            "No volvió al formulario tras elegir cuenta."
+        )
+        app.chooseFirstSelectorRow(chip: "new_transaction_subcategory_chip", rowPrefix: "subcategory_selector_row_")
 
         let saveButton = app.buttons["new_transaction_save"]
         XCTAssertTrue(saveButton.waitForExistence(timeout: 5), "No apareció new_transaction_save.")
