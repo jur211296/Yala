@@ -2443,56 +2443,15 @@ final class PanelViewModel {
         )
     }
 
-    /// Get date interval for a budget period
-    private func getBudgetDateInterval(budget: Budget) -> DateInterval {
-        let calendar = userConfiguredCalendar()
-
-        guard let periodType = BudgetPeriodType(rawValue: budget.periodType) else {
-            let start = calendar.startOfMonth(for: Date.now)
-            let end = calendar.date(byAdding: .month, value: 1, to: start) ?? start
-            return DateInterval(start: start, end: end)
-        }
-
-        switch periodType {
-        case .weekly:
-            let weekStart = calendar.startOfWeek(for: Date.now)
-            let weekEnd = calendar.date(byAdding: .day, value: 7, to: weekStart) ?? weekStart
-            return DateInterval(start: weekStart, end: weekEnd)
-
-        case .monthly:
-            let monthStart = calendar.startOfMonth(for: Date.now)
-            let monthEnd = calendar.date(byAdding: .month, value: 1, to: monthStart) ?? monthStart
-            return DateInterval(start: monthStart, end: monthEnd)
-
-        case .yearly:
-            let year = calendar.component(.year, from: Date.now)
-            let yearStart = calendar.date(from: DateComponents(year: year, month: 1, day: 1)) ?? Date.now
-            let yearEnd = calendar.date(from: DateComponents(year: year + 1, month: 1, day: 1)) ?? yearStart
-            return DateInterval(start: yearStart, end: yearEnd)
-
-        case .unique:
-            guard let start = budget.startDate, let end = budget.endDate else {
-                let monthStart = calendar.startOfMonth(for: Date.now)
-                let monthEnd = calendar.date(byAdding: .month, value: 1, to: monthStart) ?? monthStart
-                return DateInterval(start: monthStart, end: monthEnd)
-            }
-            return DateInterval(start: start, end: end)
-        }
+    /// Periodo EN CURSO del presupuesto. Cierra en su último segundo (`BudgetPeriodInterval`):
+    /// con el `end` en la medianoche siguiente, un gasto de ese instante contaba en los dos periodos.
+    func getBudgetDateInterval(budget: Budget) -> DateInterval {
+        BudgetPeriodInterval.current(for: budget, now: Date.now, calendar: userConfiguredCalendar())
     }
 
-    /// Calculate days remaining in budget period
-    private func getBudgetDaysRemaining(budget: Budget, interval: DateInterval) -> Int {
-        let calendar = userConfiguredCalendar()
-        let today = Date.now
-
-        if today > interval.end {
-            return -1  // Period has ended
-        }
-
-        guard interval.contains(today) else { return 0 }
-
-        let components = calendar.dateComponents([.day], from: today, to: interval.end)
-        return max(0, components.day ?? 0)
+    /// Días que le quedan al presupuesto, contando hoy: -1 si ya acabó, 0 si aún no empieza.
+    func getBudgetDaysRemaining(budget: Budget, interval: DateInterval) -> Int {
+        BudgetPeriodInterval.summaryDaysRemaining(now: Date.now, in: interval, calendar: userConfiguredCalendar())
     }
 
     /// Determine budget status

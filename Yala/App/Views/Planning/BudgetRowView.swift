@@ -113,8 +113,7 @@ struct BudgetRowView: View {
         if summary.daysRemaining == -1 {
             daysText = NSLocalizedString("budgets.period.past", comment: "")
         } else {
-            let daysKey = NSLocalizedString("budgets.days.remaining", comment: "")
-            daysText = String(format: daysKey, "\(summary.daysRemaining)")
+            daysText = L10n.Budgets.daysRemaining(summary.daysRemaining)
         }
 
         // A tamaños de accesibilidad las dos cifras van una bajo otra, sin el separador: en fila se

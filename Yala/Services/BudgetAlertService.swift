@@ -68,7 +68,9 @@ final class BudgetAlertService {
 
         // 2. Fetch transactions within budget periods (not all history)
         let earliestDate = budgets.compactMap { budget -> Date? in
-            if let start = budget.startDate { return start }
+            // Desde el inicio del DÍA: el único cuenta días enteros (`BudgetPeriodInterval.unique`) y su
+            // fecha guardada puede llevar hora; desde la hora se perderían los gastos de esa mañana.
+            if let start = budget.startDate { return Calendar.current.startOfDay(for: start) }
             return Calendar.current.date(byAdding: .year, value: -1, to: Date.now)
         }.min() ?? Calendar.current.date(byAdding: .year, value: -1, to: Date.now) ?? Date.now
         let capturedDate = earliestDate
@@ -189,36 +191,8 @@ final class BudgetAlertService {
     /// Calcula el intervalo del período actual. `now` se inyecta opcionalmente
     /// en tests para hacer el resultado determinístico (sin depender de `Date.now`).
     func getCurrentPeriodInterval(for budget: Budget, now: Date = .now) -> DateInterval {
-        let calendar = userConfiguredCalendar()
-
-        guard let periodType = BudgetPeriodType(rawValue: budget.periodType) else {
-            let monthStart = calendar.startOfMonth(for: now)
-            let monthEnd = calendar.date(byAdding: .month, value: 1, to: monthStart) ?? monthStart
-            return DateInterval(start: monthStart, end: monthEnd)
-        }
-
-        switch periodType {
-        case .weekly:
-            let weekStart = calendar.startOfWeek(for: now)
-            let weekEnd = calendar.date(byAdding: .day, value: 7, to: weekStart) ?? weekStart
-            return DateInterval(start: weekStart, end: weekEnd)
-        case .monthly:
-            let monthStart = calendar.startOfMonth(for: now)
-            let monthEnd = calendar.date(byAdding: .month, value: 1, to: monthStart) ?? monthStart
-            return DateInterval(start: monthStart, end: monthEnd)
-        case .yearly:
-            let year = calendar.component(.year, from: now)
-            let yearStart = calendar.date(from: DateComponents(year: year, month: 1, day: 1)) ?? now
-            let yearEnd = calendar.date(from: DateComponents(year: year + 1, month: 1, day: 1)) ?? yearStart
-            return DateInterval(start: yearStart, end: yearEnd)
-        case .unique:
-            guard let start = budget.startDate, let end = budget.endDate else {
-                let monthStart = calendar.startOfMonth(for: now)
-                let monthEnd = calendar.date(byAdding: .month, value: 1, to: monthStart) ?? monthStart
-                return DateInterval(start: monthStart, end: monthEnd)
-            }
-            return DateInterval(start: start, end: end)
-        }
+        // Mismo periodo que el Panel e Insights: cierra en su último segundo (`BudgetPeriodInterval`).
+        BudgetPeriodInterval.current(for: budget, now: now, calendar: userConfiguredCalendar())
     }
 
     // MARK: - Spending Calculation

@@ -31,8 +31,12 @@ struct BudgetAlertServiceTests {
         let budget = makeBudget(periodType: "weekly")
         let interval = service.getCurrentPeriodInterval(for: budget, now: Self.testNow)
 
-        let days = Calendar.current.dateComponents([.day], from: interval.start, to: interval.end).day!
-        #expect(days == 7)
+        // Siete días enteros, cerrando en el último segundo del séptimo: la medianoche del lunes
+        // siguiente ya no es de esta semana (`budget-interval-counts-next-period-midnight`).
+        #expect(DateIntervalDayCount.days(in: interval, calendar: Calendar.current) == 7)
+        let nextWeekStart = Calendar.current.date(byAdding: .day, value: 7, to: interval.start)!
+        #expect(interval.end == nextWeekStart.addingTimeInterval(-1))
+        #expect(!interval.contains(nextWeekStart))
     }
 
     @MainActor @Test func monthlyPeriod_containsNow() {
@@ -62,15 +66,19 @@ struct BudgetAlertServiceTests {
         #expect(components.day == 1)
     }
 
-    @MainActor @Test func uniquePeriod_usesExactDates() {
+    /// El único cuenta sus dos días enteros: el 30 de junio guardado a las 00:00 (como lo deja el
+    /// selector) llega hasta las 23:59:59 de ese día, no hasta su primer instante.
+    @MainActor @Test func uniquePeriod_usesWholeDays() {
         let start = Calendar.current.date(from: DateComponents(year: 2026, month: 3, day: 1))!
         let end = Calendar.current.date(from: DateComponents(year: 2026, month: 6, day: 30))!
         let service = BudgetAlertService.shared
         let budget = makeBudget(periodType: "unique", startDate: start, endDate: end)
         let interval = service.getCurrentPeriodInterval(for: budget, now: Self.testNow)
 
+        let july1 = Calendar.current.date(from: DateComponents(year: 2026, month: 7, day: 1))!
         #expect(interval.start == start)
-        #expect(interval.end == end)
+        #expect(interval.end == july1.addingTimeInterval(-1))
+        #expect(!interval.contains(july1))
     }
 
     @MainActor @Test func uniquePeriod_noDates_fallbackMonthly() {

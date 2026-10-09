@@ -561,39 +561,11 @@ struct InsightsCalculator {
         return total
     }
 
-    /// Returns the current budget period interval based on the budget's periodType and Date.now.
-    static func currentBudgetInterval(for budget: Budget) -> DateInterval {
-        let calendar = userConfiguredCalendar()
-        let now = Date.now
-
-        guard let periodType = BudgetPeriodType(rawValue: budget.periodType) else {
-            let monthStart = calendar.startOfMonth(for: now)
-            let monthEnd = calendar.date(byAdding: .month, value: 1, to: monthStart) ?? monthStart
-            return DateInterval(start: monthStart, end: monthEnd)
-        }
-
-        switch periodType {
-        case .weekly:
-            let weekStart = calendar.startOfWeek(for: now)
-            let weekEnd = calendar.date(byAdding: .day, value: 7, to: weekStart) ?? weekStart
-            return DateInterval(start: weekStart, end: weekEnd)
-        case .monthly:
-            let monthStart = calendar.startOfMonth(for: now)
-            let monthEnd = calendar.date(byAdding: .month, value: 1, to: monthStart) ?? monthStart
-            return DateInterval(start: monthStart, end: monthEnd)
-        case .yearly:
-            let year = calendar.component(.year, from: now)
-            let yearStart = calendar.date(from: DateComponents(year: year, month: 1, day: 1)) ?? now
-            let yearEnd = calendar.date(from: DateComponents(year: year + 1, month: 1, day: 1)) ?? yearStart
-            return DateInterval(start: yearStart, end: yearEnd)
-        case .unique:
-            guard let start = budget.startDate, let end = budget.endDate else {
-                let monthStart = calendar.startOfMonth(for: now)
-                let monthEnd = calendar.date(byAdding: .month, value: 1, to: monthStart) ?? monthStart
-                return DateInterval(start: monthStart, end: monthEnd)
-            }
-            return DateInterval(start: start, end: end)
-        }
+    /// Periodo EN CURSO del presupuesto (lo usa también el chat). Cierra en su último segundo
+    /// (`BudgetPeriodInterval`): con el `end` en la medianoche siguiente, un gasto de ese instante
+    /// contaba en los dos periodos.
+    static func currentBudgetInterval(for budget: Budget, now: Date = .now) -> DateInterval {
+        BudgetPeriodInterval.current(for: budget, now: now, calendar: userConfiguredCalendar())
     }
 
     private static func calculateCommitments(
@@ -650,7 +622,7 @@ struct InsightsCalculator {
             // Filter transactions within the budget's OWN current period (not the global Insights period)
             let budgetTxns: [TransactionItem]
             if let category = budget.category {
-                let budgetInterval = currentBudgetInterval(for: budget)
+                let budgetInterval = currentBudgetInterval(for: budget, now: now)
                 let categoryTxns = txnsByCategory[category.persistentModelID] ?? []
                 budgetTxns = categoryTxns.filter { budgetInterval.contains($0.date) }
             } else {

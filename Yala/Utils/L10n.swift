@@ -5126,6 +5126,14 @@ enum L10n {
     // MARK: - Budgets
 
     enum Budgets {
+        /// «N días restantes», en singular cuando queda uno: el último día del presupuesto todavía
+        /// cuenta (decisión de Jürgen, 2026-09-06).
+        static func daysRemaining(_ days: Int) -> String {
+            days == 1
+                ? ls("budgets.days.remaining.one", comment: "")
+                : String(format: ls("budgets.days.remaining", comment: ""), "\(days)")
+        }
+
         enum Widget {
             static var selectFavorites: String {
                 ls("budgets.widget.selectFavorites", comment: "")
