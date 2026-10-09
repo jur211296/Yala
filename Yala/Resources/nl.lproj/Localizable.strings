@@ -6518,7 +6518,7 @@
 "image.entry.failure.unreadableFile.title" = "Ik kon dit bestand niet openen";
 
 /* Image entry failure: unreadable file, why and what to try */
-"image.entry.failure.unreadableFile.message" = "Het is misschien leeg, beschadigd of met een wachtwoord beveiligd. Probeer een andere foto of pdf van het bonnetje.";
+"image.entry.failure.unreadableFile.message" = "Het is misschien leeg of beschadigd. Probeer een andere foto of pdf van het bonnetje.";
 
 /* Account currency change: title of the confirmation when the account has no movements but has scheduled payments or favorites to convert. %@ = new currency code */
 "account.currencyChange.confirmTitleNoHistory" = "Valuta wijzigen naar %@?";
@@ -6537,3 +6537,33 @@
 
 /* Account currency change confirmation: closing sentence when there are no movements to convert */
 "account.currencyChange.cannotUndo" = "Dit kan niet ongedaan worden gemaakt.";
+
+/* Registro por imagen: título al pedir la contraseña de un PDF */
+"image.entry.password.title" = "Deze pdf heeft een wachtwoord";
+
+/* Registro por imagen: explicación bajo el título de la contraseña */
+"image.entry.password.message" = "Vul het in om het bestand te openen. Het wordt alleen op dit apparaat gebruikt: het wordt niet bewaard of verstuurd.";
+
+/* Registro por imagen: campo seguro de la contraseña del PDF */
+"image.entry.password.field" = "Wachtwoord van de pdf";
+
+/* Registro por imagen: botón que abre el PDF con la contraseña */
+"image.entry.password.open" = "Open";
+
+/* Registro por imagen: la contraseña del PDF no lo abre */
+"image.entry.password.wrong" = "Onjuist wachtwoord. Controleer het en probeer het opnieuw.";
+
+/* Registro por imagen: una página del PDF no entró en el tope; %d = tope de páginas */
+"image.entry.pagesLeftOutOne" = "1 pagina is niet gelezen: er worden er tot %d tegelijk gelezen. Upload haar in een andere pdf om haar te lezen.";
+
+/* Registro por imagen: páginas del PDF fuera del tope; %1$d = páginas, %2$d = tope */
+"image.entry.pagesLeftOutMany" = "%1$d pagina’s zijn niet gelezen: er worden er tot %2$d tegelijk gelezen. Upload ze in een andere pdf om ze te lezen.";
+
+/* Registro por imagen: el cupo de prueba se acabó a mitad y una foto o página quedó sin leer */
+"image.entry.trialLeftOutOne" = "Je proeffoto’s zijn op: 1 is niet gelezen.";
+
+/* Registro por imagen: el cupo de prueba se acabó a mitad; %d = fotos o páginas sin leer */
+"image.entry.trialLeftOutMany" = "Je proeffoto’s zijn op: %d zijn niet gelezen.";
+
+/* Registro por imagen: progreso al leer las páginas de un PDF */
+"image.entry.readingPageProgress" = "Pagina %1$d van %2$d";

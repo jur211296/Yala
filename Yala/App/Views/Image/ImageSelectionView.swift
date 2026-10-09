@@ -14,6 +14,9 @@
 //     avisan aparte y se reintentan sin perder lo leído.
 //  4. **Fallo** — qué pasó en lenguaje de usuario y una salida (`ImageEntryFailure`).
 //
+//  Un PDF se lee página a página, cada una como una foto más (hasta 10 por vez, `PDFPageImport`); si tiene contraseña,
+//  la hoja la pide antes de leer (fase **Contraseña**) y la olvida en cuanto la usa.
+//
 
 import PhotosUI
 import SwiftData
@@ -41,6 +44,16 @@ struct ImageSelectionView: View {
     @State private var readingImages: [UIImage] = []
     @State private var readingIndex = 0
     @State private var failedImages: [UIImage] = []
+    /// Por qué no se leyó cada una de `failedImages`, en el mismo orden: decide si el aviso ofrece reintentar o Yala Pro.
+    @State private var failedReasons: [ImageEntryFailure] = []
+    /// Las fotos que son páginas de un PDF: una sin movimientos (portada, condiciones) no se avisa como fallo.
+    @State private var documentPages: Set<ObjectIdentifier> = []
+    /// Páginas de PDF que no entraron por el tope de la tanda; se avisan en lo leído.
+    @State private var pagesLeftOut = 0
+    /// Los ficheros de Archivo (o el PDF soltado) mientras se abren; se detiene en un PDF con contraseña.
+    @State private var fileBatch: ImageFileBatch?
+    /// La contraseña que se está escribiendo. Solo vive aquí: se borra al usarla y al cerrar la hoja.
+    @State private var pdfPassword = ""
     @State private var readTask: Task<Void, Never>?
     @State private var drafts: [InboxDraft] = []
     @State private var detailDraft: InboxDraft?
@@ -66,13 +79,15 @@ struct ImageSelectionView: View {
 
     private enum Phase: Equatable {
         case choose
+        /// Un PDF con contraseña espera a que se escriba. `wrongPassword` si la anterior no lo abrió.
+        case password(wrongPassword: Bool)
         case reading
         case review
         case failure(ImageEntryFailure)
     }
 
     private let buttonHeight: CGFloat = 48 // A11Y-DT: tap target de los botones de la hoja
-    private let maxPhotos = 10
+    private let maxPhotos = PDFPageImport.maxPagesPerBatch
 
     var body: some View {
         VStack(spacing: DS.Spacing.none) {
@@ -154,6 +169,8 @@ struct ImageSelectionView: View {
         switch phase {
         case .choose:
             chooseContent
+        case .password(let wrongPassword):
+            passwordContent(wrongPassword: wrongPassword)
         case .reading:
             readingContent
         case .review:
@@ -288,6 +305,65 @@ struct ImageSelectionView: View {
         return index < labels.count ? labels[index] : ""
     }
 
+    // MARK: - Contraseña
+
+    /// Un PDF con contraseña: se pide aquí y se desbloquea en el dispositivo (`ImageFileBatch`). Cancelar salta ese PDF y
+    /// sigue con lo demás que se eligió; si no queda nada, vuelve a elegir.
+    private func passwordContent(wrongPassword: Bool) -> some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.lg) {
+            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                Text(L10n.Image.Entry.passwordTitle)
+                    .font(DS.Typography.title3)
+                    .foregroundStyle(.thPrimaryText)
+                    .accessibilityAddTraits(.isHeader)
+                    .accessibilityIdentifier("image_password_title")
+                Text(L10n.Image.Entry.passwordMessage)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                SecureField(L10n.Image.Entry.passwordField, text: $pdfPassword)
+                    .textContentType(.password)
+                    .submitLabel(.go)
+                    .onSubmit(submitPassword)
+                    .font(DS.Typography.body)
+                    .padding(.horizontal, DS.Spacing.md)
+                    .frame(minHeight: buttonHeight)
+                    .background(
+                        RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
+                            .fill(.thCard)
+                    )
+                    .accessibilityIdentifier("image_password_field")
+                if wrongPassword {
+                    Text(L10n.Image.Entry.passwordWrong)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(DS.Semantic.errorForeground)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("image_password_wrong")
+                }
+            }
+
+            Spacer(minLength: DS.Spacing.lg)
+
+            HStack(spacing: DS.Spacing.md) {
+                secondaryButton(L10n.Action.cancel, identifier: "image_password_cancel", action: skipLockedFile)
+                primaryButton(
+                    L10n.Image.Entry.passwordOpen,
+                    isEnabled: !pdfPassword.isEmpty,
+                    identifier: "image_password_open",
+                    action: submitPassword
+                )
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.top, DS.Spacing.xs)
+        .dismissKeyboardOnTap()
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("image_password")
+    }
+
     // MARK: - Leyendo
 
     private var readingContent: some View {
@@ -333,9 +409,11 @@ struct ImageSelectionView: View {
     }
 
     private var readingStepText: String {
-        readingImages.count > 1
-            ? L10n.Image.Entry.readingProgress(readingIndex + 1, readingImages.count)
-            : L10n.Image.Entry.readingStep
+        guard readingImages.count > 1 else { return L10n.Image.Entry.readingStep }
+        let isPage = currentReadingImage.map { documentPages.contains(ObjectIdentifier($0)) } ?? false
+        return isPage
+            ? L10n.Image.Entry.readingPageProgress(readingIndex + 1, readingImages.count)
+            : L10n.Image.Entry.readingProgress(readingIndex + 1, readingImages.count)
     }
 
     // MARK: - Lo leído
@@ -372,8 +450,12 @@ struct ImageSelectionView: View {
                         }
                     }
 
-                    if !failedImages.isEmpty {
-                        failedPhotosBanner
+                    if let notice = ImageEntryFlowLogic.failedPhotosNotice(for: failedReasons) {
+                        failedPhotosBanner(notice)
+                    }
+
+                    if pagesLeftOut > 0 {
+                        pagesLeftOutNote
                     }
 
                     if !allSaved {
@@ -429,21 +511,30 @@ struct ImageSelectionView: View {
         .accessibilityHidden(true)
     }
 
-    private var failedPhotosBanner: some View {
+    /// Las fotos o páginas que no se leyeron. Si se acabó el cupo de prueba, reintentar no sirve: ofrece Yala Pro.
+    private func failedPhotosBanner(_ notice: ImageEntryFlowLogic.FailedPhotosNotice) -> some View {
         HStack(spacing: DS.Spacing.sm) {
             Image(systemName: "exclamationmark.triangle.fill")
                 .foregroundStyle(DS.Semantic.warningForeground)
                 .accessibilityHidden(true)
-            Text(L10n.Image.Entry.photosFailed(failedImages.count))
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.thPrimaryText)
-                .fixedSize(horizontal: false, vertical: true)
-            Spacer(minLength: DS.Spacing.sm)
-            Button(L10n.Action.retry, action: retryFailedPhotos)
-                .font(DS.Typography.label)
-                .foregroundStyle(DS.Semantic.warningForeground)
-                .frame(minHeight: 44)
-                .accessibilityIdentifier("image_retry_failed")
+            switch notice {
+            case .retry(let count):
+                failedPhotosText(L10n.Image.Entry.photosFailed(count))
+                Spacer(minLength: DS.Spacing.sm)
+                Button(L10n.Action.retry, action: retryFailedPhotos)
+                    .font(DS.Typography.label)
+                    .foregroundStyle(DS.Semantic.warningForeground)
+                    .frame(minHeight: 44)
+                    .accessibilityIdentifier("image_retry_failed")
+            case .trialUsedUp(let count):
+                failedPhotosText(L10n.Image.Entry.trialLeftOut(count))
+                Spacer(minLength: DS.Spacing.sm)
+                Button(L10n.Voice.trialSeePro) { showUpgrade = true }
+                    .font(DS.Typography.label)
+                    .foregroundStyle(DS.Semantic.warningForeground)
+                    .frame(minHeight: 44)
+                    .accessibilityIdentifier("image_trial_see_pro")
+            }
         }
         .padding(.horizontal, DS.Spacing.md)
         .background(
@@ -452,6 +543,28 @@ struct ImageSelectionView: View {
         )
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("image_failed_photos")
+    }
+
+    private func failedPhotosText(_ text: String) -> some View {
+        Text(text)
+            .font(DS.Typography.subheadline)
+            .foregroundStyle(.thPrimaryText)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
+    /// Un PDF más largo que el tope: lo leído son sus primeras páginas, y la persona lo sabe.
+    private var pagesLeftOutNote: some View {
+        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
+            Image(systemName: "doc.on.doc")
+                .foregroundStyle(.secondary)
+                .accessibilityHidden(true)
+            Text(L10n.Image.Entry.pagesLeftOut(pagesLeftOut, limit: maxPhotos))
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.thPrimaryText)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("image_pages_left_out")
     }
 
     private var reviewTitle: String {
@@ -674,12 +787,7 @@ struct ImageSelectionView: View {
         switch result {
         case .success(let urls):
             guard !urls.isEmpty else { return }
-            let loaded = urls.prefix(maxPhotos).compactMap(loadImage(from:))
-            guard !loaded.isEmpty else {
-                phase = .failure(.unreadableFile)
-                return
-            }
-            startReading(loaded)
+            openFiles(urls.compactMap(loadFile(from:)))
         case .failure(let error):
             #if DEBUG
             print("ImageSelectionView: Error importing files: \(error)")
@@ -688,24 +796,77 @@ struct ImageSelectionView: View {
         }
     }
 
-    /// Una imagen, o la primera página de un PDF (el mismo render que soltar un recibo en el iPad).
-    private func loadImage(from url: URL) -> UIImage? {
+    /// Lo que hay en el fichero, como imagen o como PDF. `nil` si no se pudo leer del disco.
+    private func loadFile(from url: URL) -> ImageFileBatch.File? {
         let hasAccess = url.startAccessingSecurityScopedResource()
         defer {
             if hasAccess { url.stopAccessingSecurityScopedResource() }
         }
         do {
             let data = try Data(contentsOf: url)
-            if UTType(filenameExtension: url.pathExtension)?.conforms(to: .pdf) == true {
-                return ReceiptDropHandler.firstPageJPEG(pdfData: data).flatMap { UIImage(data: $0) }
-            }
-            return UIImage(data: data)
+            return Self.isPDF(url) ? .pdf(data) : .image(data)
         } catch {
             #if DEBUG
             print("ImageSelectionView: Error reading file: \(error)")
             #endif
             return nil
         }
+    }
+
+    private static func isPDF(_ url: URL) -> Bool {
+        UTType(filenameExtension: url.pathExtension)?.conforms(to: .pdf) == true
+    }
+
+    /// Abre los ficheros en orden —cada página de PDF es una foto más, hasta el tope— y se para a pedir la contraseña de
+    /// un PDF que la tenga. En la práctica guiada, una sola: es la práctica de UN registro.
+    private func openFiles(_ files: [ImageFileBatch.File]) {
+        guard !files.isEmpty else {
+            phase = .failure(.unreadableFile)
+            return
+        }
+        fileBatch = ImageFileBatch(files: files, limit: isSetupTrial ? 1 : maxPhotos)
+        continueFileBatch(password: nil)
+    }
+
+    private func continueFileBatch(password: String?) {
+        guard var batch = fileBatch else { return }
+        let step = batch.advance(password: password)
+        fileBatch = batch
+        switch step {
+        case .needsPassword(let wrongPassword):
+            phase = .password(wrongPassword: wrongPassword)
+        case .finished:
+            finishFileBatch(batch)
+        }
+    }
+
+    private func submitPassword() {
+        guard !pdfPassword.isEmpty else { return }
+        let password = pdfPassword
+        // Se olvida en cuanto se usa: si no abre el PDF, se vuelve a escribir.
+        pdfPassword = ""
+        continueFileBatch(password: password)
+    }
+
+    private func skipLockedFile() {
+        pdfPassword = ""
+        fileBatch?.skipLockedFile()
+        continueFileBatch(password: nil)
+    }
+
+    private func finishFileBatch(_ batch: ImageFileBatch) {
+        fileBatch = nil
+        pdfPassword = ""
+        guard !batch.images.isEmpty else {
+            // Solo se saltó la contraseña: no falló nada, se vuelve a elegir.
+            if batch.unreadableFiles == 0, batch.skippedLockedFiles > 0 {
+                phase = .choose
+            } else {
+                phase = .failure(.unreadableFile)
+            }
+            return
+        }
+        startReading(batch.images, documentPages: batch.documentPages, pagesLeftOut: batch.pagesLeftOut)
     }
 
     /// Una foto compartida desde otra app (o soltada en el iPad) llega ya elegida: se lee directamente. Lo soltado que no
@@ -721,6 +882,11 @@ struct ImageSelectionView: View {
         do {
             let data = try Data(contentsOf: url)
             SharedContainerService.removePendingImage(at: url)
+            // Un PDF soltado en el iPad llega tal cual: se trocea aquí, donde se puede pedir su contraseña.
+            if Self.isPDF(url) {
+                openFiles([.pdf(data)])
+                return
+            }
             guard let image = UIImage(data: data) else {
                 phase = .failure(.unreadable)
                 return
@@ -737,10 +903,17 @@ struct ImageSelectionView: View {
 
     // MARK: - Leer
 
-    private func startReading(_ batch: [UIImage]) {
+    private func startReading(
+        _ batch: [UIImage],
+        documentPages pages: Set<ObjectIdentifier> = [],
+        pagesLeftOut leftOut: Int = 0
+    ) {
         guard !batch.isEmpty else { return }
         images = batch
+        documentPages = pages
+        pagesLeftOut = leftOut
         failedImages = []
+        failedReasons = []
         drafts = []
         saveFailed = false
         guard networkMonitor.isConnected else {
@@ -786,15 +959,33 @@ struct ImageSelectionView: View {
         var outcomes: [ImageReadOutcome] = []
         var readDrafts: [InboxDraft] = []
         var failed: [UIImage] = []
+        var reasons: [ImageEntryFailure] = []
+        var skipsTheRest = false
+
+        func fail(_ image: UIImage, _ failure: ImageEntryFailure) {
+            outcomes.append(.failed(failure))
+            failed.append(image)
+            reasons.append(failure)
+            skipsTheRest = skipsTheRest || ImageEntryFlowLogic.skipsRemainingReads(after: failure)
+        }
 
         for (index, image) in batch.enumerated() {
             readingIndex = index
+            // Sin cupo de prueba, las siguientes fallarían igual: no se piden.
+            guard !skipsTheRest else {
+                fail(image, .trialUsedUp)
+                continue
+            }
             do {
                 let found = try await analyze(image, index: index)
                 guard !Task.isCancelled else { return }
                 if found.isEmpty {
-                    outcomes.append(.failed(.noAmount))
-                    failed.append(image)
+                    // Una página de PDF sin movimientos (portada, condiciones) no es un fallo que avisar.
+                    if documentPages.contains(ObjectIdentifier(image)) {
+                        outcomes.append(.empty)
+                    } else {
+                        fail(image, .noAmount)
+                    }
                 } else {
                     outcomes.append(.read)
                     readDrafts.append(contentsOf: found)
@@ -804,15 +995,13 @@ struct ImageSelectionView: View {
                 #if DEBUG
                 print("ImageSelectionView: Error reading photo \(index + 1): \(error)")
                 #endif
-                outcomes.append(.failed(ImageEntryFlowLogic.failure(for: error, isConnected: networkMonitor.isConnected)))
-                failed.append(image)
+                fail(image, ImageEntryFlowLogic.failure(for: error, isConnected: networkMonitor.isConnected))
             } catch {
                 guard !Task.isCancelled else { return }
                 #if DEBUG
                 print("ImageSelectionView: Error reading photo \(index + 1): \(error)")
                 #endif
-                outcomes.append(.failed(ImageEntryFlowLogic.failure(forUnknownErrorWhenConnected: networkMonitor.isConnected)))
-                failed.append(image)
+                fail(image, ImageEntryFlowLogic.failure(forUnknownErrorWhenConnected: networkMonitor.isConnected))
             }
         }
 
@@ -821,6 +1010,7 @@ struct ImageSelectionView: View {
             if appending {
                 // El reintento volvió a fallar: lo leído sigue ahí, con las mismas fotos avisadas.
                 failedImages = failed
+                failedReasons = reasons
                 phase = .review
             } else {
                 phase = .failure(failure)
@@ -835,6 +1025,7 @@ struct ImageSelectionView: View {
             // La práctica guiada es de UN registro: se revisa el primero; los demás quedan en la Bandeja.
             drafts = isSetupTrial ? Array(combined.prefix(1)) : combined
             failedImages = failed
+            failedReasons = reasons
             phase = .review
             UINotificationFeedbackGenerator().notificationOccurred(.success)
         }
@@ -914,6 +1105,11 @@ struct ImageSelectionView: View {
         images = []
         readingImages = []
         failedImages = []
+        failedReasons = []
+        documentPages = []
+        pagesLeftOut = 0
+        fileBatch = nil
+        pdfPassword = ""
         saveFailed = false
         phase = .choose
     }
@@ -967,6 +1163,8 @@ struct ImageSelectionView: View {
     private func tearDown() {
         readTask?.cancel()
         readTask = nil
+        fileBatch = nil
+        pdfPassword = ""
         let pending = pendingDrafts
         if let first = pending.first {
             reportTrial(
@@ -1013,6 +1211,9 @@ struct ImageSelectionView: View {
             return []
         case "partial" where index == 1:
             throw VisionError.invalidResponse
+        case "pages-trial" where index > 0:
+            // El cupo de prueba se acaba tras la primera página.
+            throw VisionError.networkError(ProxyErrorMapper.trialExhaustedResponse())
         default:
             break
         }
@@ -1021,10 +1222,12 @@ struct ImageSelectionView: View {
         formatter.locale = Locale(identifier: "en_US_POSIX")
         let today = formatter.string(from: Date.now)
         let isFirst = index == 0
+        // `pages`: un movimiento distinto por página, para que la deduplicación no junte dos páginas en uno.
+        let perPage = profile.hasPrefix("pages")
         let transaction = VisionTransaction(
-            amount: isFirst ? -251.81 : -22,
+            amount: perPage ? -Double(10 + index) : (isFirst ? -251.81 : -22),
             date: today,
-            merchant: isFirst ? "Restaurante El Buen Gusto" : "Taxi",
+            merchant: perPage ? "Página \(index + 1)" : (isFirst ? "Restaurante El Buen Gusto" : "Taxi"),
             note: nil,
             currency: uiTestAccountCurrency()
         )

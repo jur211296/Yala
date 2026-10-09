@@ -147,6 +147,23 @@ describe("criterios", () => {
     expect(g([t(-10, "2026-10-01"), t(5, "2026-10-02"), t(-1, "2026-10-02")]).pass).toBe(false); // de más
     expect(g([t(-10, "2026-10-01"), t(5, "2026-10-02"), { ...t(0, "2026-10-02"), amount: null }]).pass).toBe(true); // sin importe: no cuenta
   });
+
+  it("foto: una página de extracto sin movimientos acierta vacía, y un saldo leído como movimiento la hace fallar", () => {
+    const empty: PhotoCase = { id: "stmt-x", file: "", today: "2026-10-08", kind: "", lang: "es", source: "", expect: { imageType: "unknown", transactions: [] } };
+    const conf = { overall: 1, imageType: 1 };
+    const g = (txs: unknown[]) => gradePhoto(JSON.stringify({ imageType: "list", transactions: txs, confidence: conf }), empty);
+    expect(g([]).pass).toBe(true);
+    expect(g([{ amount: 3250.4, date: "2026-09-01", merchant: "SALDO ANTERIOR", note: null, currency: "PEN" }]).pass).toBe(false);
+  });
+
+  it("los casos multipágina (`stmt-*`) existen, tienen su imagen y una página sin movimientos al menos", () => {
+    const cases = (JSON.parse(readFileSync(new URL("../bench/cases/photo.read.json", import.meta.url), "utf8")) as { cases: PhotoCase[] }).cases
+      .filter((c) => c.id.startsWith("stmt-"));
+    expect(cases.length).toBeGreaterThanOrEqual(12);
+    for (const c of cases) expect(() => readFileSync(new URL(`../bench/cases/photo/${c.file}`, import.meta.url))).not.toThrow();
+    expect(cases.some((c) => c.expect.transactions.length === 0)).toBe(true);
+    expect(Math.max(...cases.map((c) => c.expect.transactions.length))).toBeGreaterThanOrEqual(40);
+  });
 });
 
 // ---------- sesión 2 · chat y nota (trabajador A): text.parse, chat.answer, chat.rewrite ----------

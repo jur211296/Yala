@@ -80,4 +80,61 @@ final class ReceiptDropUITests: XCTestCase {
         )
         XCTAssertFalse(app.staticTexts["image_failure_title"].exists, "El fallo del soltar rechazado volvió a salir.")
     }
+
+    // MARK: - PDF de varias páginas (ticket pdf-statement-reads-only-the-first-page)
+
+    private func waitForReview(_ app: XCUIApplication, rows: Int, file: StaticString = #filePath, line: UInt = #line) {
+        XCTAssertTrue(
+            app.staticTexts["image_review_title"].waitForExistence(timeout: 40),
+            "El PDF soltado tenía que leerse y enseñar lo leído (image_review_title).", file: file, line: line
+        )
+        XCTAssertEqual(
+            app.buttons.matching(identifier: "voice_draft_row").count, rows,
+            "Tenía que haber un registro por página leída.", file: file, line: line
+        )
+    }
+
+    /// El rojo del ticket: con el código de antes, de un extracto de tres páginas solo salía la primera.
+    func test_threePagePDF_readsEveryPage() {
+        let app = launch(drop: "pdf3", aiConsent: true, extraArguments: ["-uitest-image-result", "pages"])
+        waitForReview(app, rows: 3)
+        XCTAssertFalse(app.otherElements["image_failed_photos"].exists, "Ninguna página falló: no hay aviso.")
+        XCTAssertFalse(app.otherElements["image_pages_left_out"].exists, "Tres páginas caben: no hay aviso de tope.")
+    }
+
+    /// Con contraseña: la hoja la pide, dice «incorrecta» si no abre (no «ilegible») y con la buena lee las tres.
+    func test_lockedPDF_asksForThePassword_andReadsEveryPage() {
+        let app = launch(drop: "pdf3-locked", aiConsent: true, extraArguments: ["-uitest-image-result", "pages"])
+
+        let field = app.secureTextFields["image_password_field"]
+        XCTAssertTrue(field.waitForExistence(timeout: 20), "Un PDF con contraseña tenía que pedirla (image_password_field).")
+        XCTAssertFalse(app.staticTexts["image_failure_title"].exists, "Un PDF con contraseña no es un archivo ilegible.")
+        let open = app.buttons["image_password_open"]
+        XCTAssertFalse(open.isEnabled, "Sin contraseña escrita, «Abrir» va apagado.")
+
+        field.tap()
+        field.typeText("0000")
+        open.tap()
+        XCTAssertTrue(
+            app.staticTexts["image_password_wrong"].waitForExistence(timeout: 10),
+            "Una contraseña que no abre tenía que decir «Contraseña incorrecta» (image_password_wrong)."
+        )
+        XCTAssertFalse(app.staticTexts["image_failure_title"].exists, "Contraseña incorrecta no es «no pude abrirlo».")
+
+        field.tap()
+        field.typeText("1234")
+        open.tap()
+        waitForReview(app, rows: 3)
+    }
+
+    /// El cupo de prueba se acaba tras la primera página: se revisa lo leído y el aviso ofrece Yala Pro, no reintentar.
+    func test_trialUsedUpMidway_keepsWhatWasRead_andOffersPro() {
+        let app = launch(drop: "pdf3", aiConsent: true, extraArguments: ["-uitest-image-result", "pages-trial"])
+        waitForReview(app, rows: 1)
+        XCTAssertTrue(
+            app.buttons["image_trial_see_pro"].waitForExistence(timeout: 5),
+            "Las páginas sin leer por cupo tenían que ofrecer Yala Pro (image_trial_see_pro)."
+        )
+        XCTAssertFalse(app.buttons["image_retry_failed"].exists, "Sin cupo, reintentar fallaría igual: no se ofrece.")
+    }
 }

@@ -6507,7 +6507,7 @@
 "image.entry.failure.unreadableFile.title" = "Je n’ai pas pu ouvrir ce fichier";
 
 /* Image entry failure: unreadable file, why and what to try */
-"image.entry.failure.unreadableFile.message" = "Il est peut-être vide, endommagé ou protégé par un mot de passe. Essaie une autre photo ou un autre PDF du reçu.";
+"image.entry.failure.unreadableFile.message" = "Il est peut-être vide ou endommagé. Essaie une autre photo ou un autre PDF du reçu.";
 
 /* Account currency change: title of the confirmation when the account has no movements but has scheduled payments or favorites to convert. %@ = new currency code */
 "account.currencyChange.confirmTitleNoHistory" = "Changer la devise en %@ ?";
@@ -6526,3 +6526,33 @@
 
 /* Account currency change confirmation: closing sentence when there are no movements to convert */
 "account.currencyChange.cannotUndo" = "Cette action est irréversible.";
+
+/* Registro por imagen: título al pedir la contraseña de un PDF */
+"image.entry.password.title" = "Ce PDF a un mot de passe";
+
+/* Registro por imagen: explicación bajo el título de la contraseña */
+"image.entry.password.message" = "Saisis-le pour ouvrir le fichier. Il n’est utilisé que sur cet appareil : il n’est ni enregistré ni envoyé.";
+
+/* Registro por imagen: campo seguro de la contraseña del PDF */
+"image.entry.password.field" = "Mot de passe du PDF";
+
+/* Registro por imagen: botón que abre el PDF con la contraseña */
+"image.entry.password.open" = "Ouvrir";
+
+/* Registro por imagen: la contraseña del PDF no lo abre */
+"image.entry.password.wrong" = "Mot de passe incorrect. Vérifie-le et réessaie.";
+
+/* Registro por imagen: una página del PDF no entró en el tope; %d = tope de páginas */
+"image.entry.pagesLeftOutOne" = "1 page n’a pas été lue : on en lit jusqu’à %d à la fois. Pour la lire, envoie-la dans un autre PDF.";
+
+/* Registro por imagen: páginas del PDF fuera del tope; %1$d = páginas, %2$d = tope */
+"image.entry.pagesLeftOutMany" = "%1$d pages n’ont pas été lues : on en lit jusqu’à %2$d à la fois. Pour les lire, envoie-les dans un autre PDF.";
+
+/* Registro por imagen: el cupo de prueba se acabó a mitad y una foto o página quedó sin leer */
+"image.entry.trialLeftOutOne" = "Tu as utilisé tes photos d’essai : 1 n’a pas été lue.";
+
+/* Registro por imagen: el cupo de prueba se acabó a mitad; %d = fotos o páginas sin leer */
+"image.entry.trialLeftOutMany" = "Tu as utilisé tes photos d’essai : %d n’ont pas été lues.";
+
+/* Registro por imagen: progreso al leer las páginas de un PDF */
+"image.entry.readingPageProgress" = "Page %1$d sur %2$d";

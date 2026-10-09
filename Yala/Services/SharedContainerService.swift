@@ -45,7 +45,8 @@ enum SharedContainerService {
                 includingPropertiesForKeys: [.creationDateKey],
                 options: .skipsHiddenFiles
             )
-            let images = contents.filter { $0.pathExtension.lowercased() == "jpg" || $0.pathExtension.lowercased() == "png" }
+            // `.pdf`: un PDF soltado en el iPad se guarda tal cual y la hoja lo trocea (`ReceiptDropHandler`).
+            let images = contents.filter { ["jpg", "png", "pdf"].contains($0.pathExtension.lowercased()) }
             let dated = images.map { imageURL -> (url: URL, date: Date) in
                 let date = (try? imageURL.resourceValues(forKeys: [.creationDateKey]).creationDate) ?? .distantPast
                 return (imageURL, date)
