@@ -170,7 +170,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | ci-avisador-de-rojos-advisory-tiene-la-clave-mal | done | tickets/done/ci-avisador-de-rojos-advisory-tiene-la-clave-mal.md |
 | ci-checkout-v4-runs-on-deprecated-node | backlog | tickets/backlog/ci-checkout-v4-runs-on-deprecated-node.md |
 | ci-destination-assumes-a-simulator-that-may-not-exist | done | tickets/done/ci-destination-assumes-a-simulator-that-may-not-exist.md |
-| ci-no-corre-la-suite-del-gateway | backlog | tickets/backlog/ci-no-corre-la-suite-del-gateway.md |
+| ci-no-corre-la-suite-del-gateway | done | tickets/done/ci-no-corre-la-suite-del-gateway.md |
 | ci-one-red-in-pure-logic-triples-the-step-and-the-job-ceiling-cancels-it | done | tickets/done/ci-one-red-in-pure-logic-triples-the-step-and-the-job-ceiling-cancels-it.md |
 | ci-runner-se-queda-sin-simuladores-y-tumba-build-for-testing | done | tickets/done/ci-runner-se-queda-sin-simuladores-y-tumba-build-for-testing.md |
 | ci-runner-sesion-de-ci-arranca-servicios-que-no-usa | backlog | tickets/backlog/ci-runner-sesion-de-ci-arranca-servicios-que-no-usa.md |
