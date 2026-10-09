@@ -82,6 +82,13 @@ Antes de una revisión:
 3. `npm run bench -- --task <tarea>` y, con el resultado, su fila en `ROUTES` (`src/ai/routes.ts`). Si el proveedor no
    tiene JSON libre (Anthropic), su esquema va con los demás.
 
+## Los jueces (2026-10-08)
+
+**Claude Sonnet 5.5 juzga a todos los proveedores menos al suyo**, en `chat.answer` y en Insights y Tendencias
+(`lib/insightsJudge.ts`, `JUDGES`). A los candidatos de Anthropic los juzgan otros: Gemini en `chat.answer`; Gemini y
+Grok en Insights. Se queda así para la revisión trimestral: se paga con los créditos de Anthropic. Acuerdo medido con
+las muestras a mano, en `docs/ai-model-bench-2026-10-claude.md`: en Insights no decide (55 %, κ 0,23), como ninguno antes.
+
 ## `chat.answer`: el juez va aparte (sesión 2 · chat y nota)
 
 `npm run bench -- --task chat.answer` aplica solo el criterio determinista (cifras que salen del contexto, idioma,
@@ -90,13 +97,14 @@ un juez de OTRO proveedor, después y solo si su acuerdo con una muestra puntuad
 
 ```bash
 npx vite-node bench/tasks/chat.answer.judge.ts -- sample --n 36        # plantilla: se puntúa A MANO antes de ver al juez
-npx vite-node bench/tasks/chat.answer.judge.ts -- agree --judges gemini:gemini-3.8-flash,anthropic:claude-sonnet-5-5
-npx vite-node bench/tasks/chat.answer.judge.ts -- apply --judges gemini:gemini-3.8-flash,anthropic:claude-sonnet-5-5 --first
+npx vite-node bench/tasks/chat.answer.judge.ts -- agree --judges anthropic:claude-sonnet-5-5,gemini:gemini-3.8-flash
+npx vite-node bench/tasks/chat.answer.judge.ts -- apply --judges anthropic:claude-sonnet-5-5,gemini:gemini-3.8-flash --first
 npm run bench -- --report --task chat.answer
 ```
 
-`--first` usa el primer juez que no sea del proveedor del candidato (Gemini juzga a todos menos a Google; Sonnet, a
-Google). Los juicios quedan en `<tarea>.judge.jsonl`, con su coste (lo cuenta `--spend`), y no se pagan dos veces.
+`--first` usa el primer juez que no sea del proveedor del candidato. Desde el 2026-10-08 Sonnet 5.5 va primero (acuerdo
+100 %, κ 1,00 en la muestra del 7-oct) y juzga a todos menos a Anthropic; a Anthropic lo juzga Gemini. Nadie juzga a su
+propio proveedor. Los juicios quedan en `<tarea>.judge.jsonl`, con su coste (lo cuenta `--spend`), y no se pagan dos veces.
 Si se corrige un criterio después de medir, `chat.answer.judge.ts -- regrade` y `text.regrade.ts -- --task
 text.parse|chat.rewrite` vuelven a puntuar con la respuesta guardada, sin llamar a nadie. Informe de la sesión 2:
 `results/2026-10-07/REPORT-chat-y-nota.md`.

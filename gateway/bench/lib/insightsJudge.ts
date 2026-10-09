@@ -5,7 +5,7 @@
  *   npx vite-node bench/lib/insightsJudgeCli.ts -- --task insights.cards --keys <f>  # juzga esas respuestas
  *   npx vite-node bench/lib/insightsJudgeCli.ts -- --task insights.cards --only openai:gpt-6-luna
  *   npx vite-node bench/lib/insightsJudgeCli.ts -- --agreement                       # acuerdo con la muestra a mano
- *   (con `--judges all` juzgan los tres, para medir el acuerdo de cada uno)
+ *   (con `--judges all` juzgan todos, para medir el acuerdo de cada uno; con `--judges <id,id>`, solo esos)
  *
  * Pregunta dos cosas y anota una tercera: ¿alguna afirmación CONTRADICE los datos (dirección, atribución, algo que
  * no está, una comparación imposible)?, ¿dice algo ÚTIL y concreto sobre estos datos? y ¿respeta la voz de la app?
@@ -38,11 +38,13 @@ export interface Judge {
 }
 
 /**
- * En este orden; cada respuesta la miran los dos primeros de otro proveedor. Sin Anthropic a propósito: la clave del
- * banco se quedó sin crédito a mitad de la criba (2026-10-07, 21:43 UTC) y los jueces tienen que ser los mismos para
- * todas las respuestas que se comparan.
+ * En este orden; cada respuesta la miran los dos primeros de otro proveedor. Desde el 2026-10-08 abre Claude Sonnet 5.5
+ * (créditos de Anthropic; su acuerdo con la muestra a mano, en `docs/ai-model-bench-2026-10-claude.md`): juzga a
+ * OpenAI, Google, xAI y Workers AI junto a Gemini, y a Anthropic lo juzgan Gemini y Grok, porque nadie juzga a su propio
+ * proveedor. Sin temperatura: Sonnet 5.5 rechaza un valor distinto del de por defecto.
  */
 export const JUDGES: Judge[] = [
+  { id: "anthropic:claude-sonnet-5-5", provider: "anthropic", model: "claude-sonnet-5-5", effort: "low" },
   { id: "gemini:gemini-3.8-flash", provider: "gemini", model: "gemini-3.8-flash", effort: "low", temperature: 0 },
   { id: "xai:grok-4.3", provider: "xai", model: "grok-4.3", temperature: 0 },
   { id: "workersai:gpt-oss-120b", provider: "workersai", model: "@cf/openai/gpt-oss-120b", effort: "low" },
@@ -430,7 +432,13 @@ export async function main(): Promise<void> {
       if (row.status !== 200 || !row.appParsed || !row.detailOut.out) continue;
       if (only && !only.some((o) => row.candidate === o || row.candidate.startsWith(`${o}:`) || `${row.candidate}|${row.effort ?? "-"}` === o)) continue;
       if (keyFilter && !keyFilter.has(`${task}|${rowKey(row)}`)) continue;
-      const js = judgeFilter === "all" ? JUDGES : judgesFor(row.provider);
+      // `--judges all`: todos (para medir el acuerdo de cada uno); `--judges a,b`: solo esos. Nunca el del propio proveedor.
+      const js =
+        judgeFilter === "all"
+          ? JUDGES.filter((j) => j.provider !== row.provider)
+          : judgeFilter
+            ? JUDGES.filter((j) => judgeFilter.split(",").includes(j.id) && j.provider !== row.provider)
+            : judgesFor(row.provider);
       for (const judge of js) if (!done.has(`${rowKey(row)}|${judge.id}`)) jobs.push({ row, judge });
     }
     console.log(`${task}: ${jobs.length} juicios pendientes`);
