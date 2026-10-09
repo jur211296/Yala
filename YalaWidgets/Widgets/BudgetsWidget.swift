@@ -327,6 +327,7 @@ struct BudgetsWidget: Widget {
             provider: BudgetsWidgetProvider()
         ) { entry in
             BudgetsWidgetView(entry: entry)
+                .invitesToActivateFullWhenGroupsOnly()
                 .containerBackground(Color(.secondarySystemGroupedBackground), for: .widget)
         }
         .configurationDisplayName("widget.gallery.budgets")

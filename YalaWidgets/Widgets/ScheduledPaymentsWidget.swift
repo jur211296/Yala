@@ -361,6 +361,7 @@ struct ScheduledPaymentsWidget: Widget {
             provider: ScheduledPaymentsProvider()
         ) { entry in
             ScheduledPaymentsWidgetView(entry: entry)
+                .invitesToActivateFullWhenGroupsOnly()
                 .containerBackground(Color(.secondarySystemGroupedBackground), for: .widget)
         }
         .configurationDisplayName("widget.gallery.scheduledPayments")

@@ -4,7 +4,7 @@ status: backlog
 priority: high
 area: "qa, xcuitest, transactions"
 created: 2026-10-02
-updated: 2026-10-08
+updated: 2026-10-09
 source: gate de list-column-too-narrow-for-accessibility-text-on-a-turned-pro-max (carril adaptativo)
 ---
 
@@ -97,3 +97,9 @@ Gate de `queued-offer-after-dismiss-flakes-on-a-cold-simulator` (el diff solo ap
 shell; no toca el formulario de registro). `test_createTransaction`: «No se montó AccountSelectorSheet con filas.» en el
 lote de 37 suites (126 casos, centinela en 0, 428 muestreos) y otra vez aislado sobre el mismo binario. Los otros 120
 casos del lote, verdes. Mismo simulador (`46287CFE`) en el que la medición de la mañana vio fallar a 2.1 limpio.
+
+## 2026-10-09 · otra vez en el gate, bisecado contra `4c973dd8a`
+
+Gate de `after-session-redesign-review-widgets-siri-applepay-and-web-copy` (no toca «Nuevo registro» ni los selectores),
+`iPhone 17 Pro` iOS 27.0 `46287CFE`: `test_extremeMinimumAmountSaves` y `test_createTransaction` fallan en lote con el
+centinela en 0. **Un build de `2.1` sin el cambio (`4c973dd8a`) falla igual en los dos, aislado.**

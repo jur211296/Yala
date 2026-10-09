@@ -1734,6 +1734,9 @@ struct ContentView: View {
     private func startFreshAfterRemoteWipeNotice() {
         remoteWipeNoticePending = false
         showRemoteWipeAlert = false
+        // Las filas ya se fueron por el espejo y aquí no corre ningún borrado de `DataWipeService`: sin esto, el widget,
+        // Siri y los recordatorios programados seguían enseñando los datos del dueño (ver `RemoteWipeSharedSurfaces`).
+        RemoteWipeSharedSurfaces.purgeAfterMirrorWipe()
         // Reset seed guards so onboarding can re-create data. El centinela de categorías va por
         // `CategorySeedSentinel.currentKey`: está namespaceado por store (personal vs
         // `YalaModel-UITest`) y el literal suelto apuntaría al del otro proceso.

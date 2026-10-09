@@ -504,8 +504,8 @@ struct PrivateSessionMarkWiringTests {
     /// y la aserción de arriba pasaría verde sin medir nada — la familia de «Executed 0 tests».
     @Test("control: el escáner de producción encuentra algo")
     func theProductionScannerActuallyFindsThings() {
-        #expect(Self.countInProduction("PrivateSessionMark.hasPrivateSession(") == 18, """
-            el eje 1 tiene DIECIOCHO consumidores de la lectura conservadora. Si este número cambia, hay un
+        #expect(Self.countInProduction("PrivateSessionMark.hasPrivateSession(") == 19, """
+            el eje 1 tiene DIECINUEVE consumidores de la lectura conservadora. Si este número cambia, hay un
             constructor nuevo y hay que decidir con qué lectura contesta — y si el consumidor nuevo
             alcanza datos de FUERA de este teléfono, la lectura que le toca es la otra.
 
@@ -529,6 +529,10 @@ struct PrivateSessionMarkWiringTests {
             del Apple ID. Lee las DOS lecturas porque ninguna basta sola: con la marca en `false` la
             puerta se cierra aunque ya no esté la marca del neutro solo-grupos —«Activar Yala completo»
             la levanta al relanzar—, y la permisiva es la única que distingue `false` de ausente.
+
+            El decimonoveno (2026-10-08) es `WidgetDataCache.updateCache`, que publica para el widget si la
+            sesión es solo grupos. Con la MISMA lectura que la shell: su `true` de más enseña el widget de
+            siempre, que es el lado que conserva; no alcanza datos fuera del teléfono.
             """)
     }
 

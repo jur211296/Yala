@@ -149,3 +149,9 @@
 "widget.gallery.monthSummary" = "Riepilogo del mese";
 "widget.gallery.monthSummary.desc" = "Il tuo saldo, le spese per categoria e i budget del mese";
 "widget.ui.monthSummary" = "Riepilogo del mese";
+
+/* Widget en una sesión solo grupos: no hay finanzas personales que mostrar */
+"widget.groupsOnly.title" = "Ancora nessuna finanza personale";
+
+/* Widget solo grupos: llamada a activar Yala completo (mismo texto que groups.activate.title) */
+"widget.groupsOnly.cta" = "Attiva Yala completo";

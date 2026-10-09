@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: testing
 created: 2026-10-07
-updated: 2026-10-08
+updated: 2026-10-09
 source: rojo del gate de advisory-ui-tests-fail-every-retry, bisecado contra la base
 ---
 
@@ -43,3 +43,9 @@ la derecha: si no lo enseña, es también de producto.
 - Sigue sin mirarse la pregunta de producto (si la fila enseña que hay un chip más a la derecha en 402 pt).
 
 Triage 2026-10-08: abierto · low → low · rojo determinista de un test, no de la app; ensucia los gates que corren esa suite, pero no los deja ciegos.
+
+## 2026-10-09 · sigue en el gate, bisecado contra `4c973dd8a`
+
+Gate de `after-session-redesign-review-widgets-siri-applepay-and-web-copy`, `iPhone 17 Pro` iOS 27.0 `46287CFE`: falla
+en lote (centinela en 0) con `Failed to compute hit point for Button … new_transaction_tags_chip` en `{444, 716}`. **Un
+build de `2.1` sin el cambio (`4c973dd8a`) falla igual, aislado.**

@@ -149,3 +149,9 @@
 "widget.gallery.monthSummary" = "今月のまとめ";
 "widget.gallery.monthSummary.desc" = "今月の残高、カテゴリー別の支出、予算";
 "widget.ui.monthSummary" = "今月のまとめ";
+
+/* Widget en una sesión solo grupos: no hay finanzas personales que mostrar */
+"widget.groupsOnly.title" = "個人の家計はまだありません";
+
+/* Widget solo grupos: llamada a activar Yala completo (mismo texto que groups.activate.title) */
+"widget.groupsOnly.cta" = "Yalaの全機能を有効化";

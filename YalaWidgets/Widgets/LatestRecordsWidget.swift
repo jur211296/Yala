@@ -303,6 +303,7 @@ struct LatestRecordsWidget: Widget {
             provider: LatestRecordsProvider()
         ) { entry in
             LatestRecordsWidgetView(entry: entry)
+                .invitesToActivateFullWhenGroupsOnly()
                 .containerBackground(Color(.secondarySystemGroupedBackground), for: .widget)
         }
         .configurationDisplayName("widget.gallery.latestRecords")
