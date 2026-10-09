@@ -168,6 +168,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | chat-rows-sealed-before-the-fix-have-no-repair-path | done | tickets/done/chat-rows-sealed-before-the-fix-have-no-repair-path.md |
 | chat-rows-with-unsigned-amount-have-no-repair-path | done | tickets/done/chat-rows-with-unsigned-amount-have-no-repair-path.md |
 | chat-sends-every-past-turn-to-the-model | backlog | tickets/backlog/chat-sends-every-past-turn-to-the-model.md |
+| chat-suggestions-reject-the-users-own-recurring-payments | backlog | tickets/backlog/chat-suggestions-reject-the-users-own-recurring-payments.md |
 | chat-total-ignores-the-panel-groups-toggle | done | tickets/done/chat-total-ignores-the-panel-groups-toggle.md |
 | ci-allowlist-no-cubre-encargos-ni-qa-scripts | discarded | tickets/discarded/ci-allowlist-no-cubre-encargos-ni-qa-scripts.md |
 | ci-avisador-de-rojos-advisory-tiene-la-clave-mal | done | tickets/done/ci-avisador-de-rojos-advisory-tiene-la-clave-mal.md |
@@ -794,7 +795,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | stuck-groups-loss-without-a-count-covers-own-edits-made-after-the-notice | done | tickets/done/stuck-groups-loss-without-a-count-covers-own-edits-made-after-the-notice.md |
 | stuck-groups-unread-history-with-another-account-names-one-cause | backlog | tickets/backlog/stuck-groups-unread-history-with-another-account-names-one-cause.md |
 | subscription-success-without-pro | done | tickets/done/subscription-success-without-pro.md |
-| suggestions-rewriter-drops-german-and-polish-rewrites | backlog | tickets/backlog/suggestions-rewriter-drops-german-and-polish-rewrites.md |
+| suggestions-rewriter-drops-german-and-polish-rewrites | qa | tickets/qa/suggestions-rewriter-drops-german-and-polish-rewrites.md |
 | superseding-intent-can-strand-the-sign-out-coordinator | done | tickets/done/superseding-intent-can-strand-the-sign-out-coordinator.md |
 | sync-rpcs-accept-a-malformed-hlc | done | tickets/done/sync-rpcs-accept-a-malformed-hlc.md |
 | sync-runtime-safety-note-assumes-every-prod-device-is-icloud | backlog | tickets/backlog/sync-runtime-safety-note-assumes-every-prod-device-is-icloud.md |
