@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (852)
+## Index (857)
 
 | id | status | path |
 |---|---|---|
@@ -568,6 +568,10 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | migration-takeover-uploads-without-a-lineage-check | done | tickets/done/migration-takeover-uploads-without-a-lineage-check.md |
 | more-tab-missing-profile-button | done | tickets/done/more-tab-missing-profile-button.md |
 | multi-currency-accounts | backlog | tickets/backlog/multi-currency-accounts.md |
+| multi-currency-accounts-1-model-and-sync | backlog | tickets/backlog/multi-currency-accounts-1-model-and-sync.md |
+| multi-currency-accounts-2-card-view | backlog | tickets/backlog/multi-currency-accounts-2-card-view.md |
+| multi-currency-accounts-3-pickers-and-capture | backlog | tickets/backlog/multi-currency-accounts-3-pickers-and-capture.md |
+| multi-currency-accounts-4-reports-and-export | backlog | tickets/backlog/multi-currency-accounts-4-reports-and-export.md |
 | navigation-uitests-look-for-the-iphone-tab-bar-on-ipad | backlog | tickets/backlog/navigation-uitests-look-for-the-iphone-tab-bar-on-ipad.md |
 | needsrelaunch-hides-the-groups-section | done | tickets/done/needsrelaunch-hides-the-groups-section.md |
 | neutral-boot-hands-owner-prefs-to-whoever-signs-in-next | done | tickets/done/neutral-boot-hands-owner-prefs-to-whoever-signs-in-next.md |
