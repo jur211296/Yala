@@ -96,7 +96,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | ai-chat-reads-heavier-than-a-messaging-app | qa | tickets/qa/ai-chat-reads-heavier-than-a-messaging-app.md |
 | ai-comments-ignore-the-app-language | qa | tickets/qa/ai-comments-ignore-the-app-language.md |
 | ai-every-call-sends-its-task-and-passes-the-bench | qa | tickets/qa/ai-every-call-sends-its-task-and-passes-the-bench.md |
-| ai-insights-error-card-shows-raw-english-errors | backlog | tickets/backlog/ai-insights-error-card-shows-raw-english-errors.md |
+| ai-insights-error-card-shows-raw-english-errors | done | tickets/done/ai-insights-error-card-shows-raw-english-errors.md |
 | ai-model-choice-lives-in-the-app-binary | done | tickets/done/ai-model-choice-lives-in-the-app-binary.md |
 | ai-recommended-budgets | backlog | tickets/backlog/ai-recommended-budgets.md |
 | ai-responses-use-json-object-not-a-strict-schema | backlog | tickets/backlog/ai-responses-use-json-object-not-a-strict-schema.md |

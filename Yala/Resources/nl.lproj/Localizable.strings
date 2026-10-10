@@ -6573,3 +6573,15 @@
 
 /* Budget row: exactly one day left in the period (today counts) */
 "budgets.days.remaining.one" = "1 dag over";
+
+/* Insights/Trends AI card: the analysis failed because the device is offline */
+"insights.aiError.offline" = "Je hebt een verbinding nodig om de AI-analyse te maken.";
+
+/* Insights/Trends AI card: the daily AI quota is used up (gateway 429 yala_quota_daily) */
+"insights.aiError.dailyLimit" = "Je hebt je AI-analyses voor vandaag opgebruikt. Kom morgen terug.";
+
+/* Insights/Trends AI card: too many requests in a short time (burst limit) */
+"insights.aiError.tooManyRequests" = "Je hebt meerdere analyses kort na elkaar aangevraagd. Wacht even en probeer het opnieuw.";
+
+/* Insights/Trends AI card: the server could not confirm the Pro subscription (gateway 403 yala_pro_required) */
+"insights.aiError.proRequired" = "We konden je Yala Pro niet bevestigen. Probeer het zo opnieuw.";

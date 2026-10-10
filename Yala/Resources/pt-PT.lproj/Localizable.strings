@@ -5834,3 +5834,15 @@
 
 /* Budget row: exactly one day left in the period (today counts) */
 "budgets.days.remaining.one" = "1 dia restante";
+
+/* Insights/Trends AI card: the analysis failed because the device is offline */
+"insights.aiError.offline" = "Precisas de ligação à internet para gerar a análise com IA.";
+
+/* Insights/Trends AI card: the daily AI quota is used up (gateway 429 yala_quota_daily) */
+"insights.aiError.dailyLimit" = "Esgotaste as análises com IA de hoje. Volta amanhã.";
+
+/* Insights/Trends AI card: too many requests in a short time (burst limit) */
+"insights.aiError.tooManyRequests" = "Pediste várias análises seguidas. Espera um momento e tenta de novo.";
+
+/* Insights/Trends AI card: the server could not confirm the Pro subscription (gateway 403 yala_pro_required) */
+"insights.aiError.proRequired" = "Não conseguimos confirmar o teu Yala Pro. Tenta de novo daqui a pouco.";

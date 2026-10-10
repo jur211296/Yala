@@ -40,3 +40,9 @@ Sonnet 5.5 contesta entero en español a `t05-en-GB-week` y `t08-fr-previous-zer
 «aucun gasto» en otros casos. Acierto 84,4 %; sin contar el idioma, 96,9 %. Haiku 5.5 falla el idioma en 7 a 9 de 32.
 `gpt-6.1-sol` y Gemini 3.8 Flash, con el mismo prompt, no tropiezan. Si algún día se quiere a Anthropic de relevo en
 Tendencias, este ticket va primero.
+
+## Visto también (2026-10-09)
+
+- El mismo prompt fija el trato en español: «Tutea al usuario» (`TrendsAIService.swift:288`). Insights, el flujo de caja y
+  las desviaciones ya piden el trato de cada idioma con `AIPromptLanguage.informalRegister` (ticket
+  `ai-comments-ignore-the-app-language`). Al arreglar este ticket, que Tendencias use lo mismo.

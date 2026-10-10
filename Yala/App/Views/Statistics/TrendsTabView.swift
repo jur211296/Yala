@@ -787,10 +787,10 @@ struct TrendsTabView: View {
         case .loaded(let aiBullets) where !aiBullets.isEmpty:
             proAIInsightCard(aiBullets: aiBullets)
         case .loaded, .idle:
-            proPreAIInsightCard(ruleBullets: ruleBullets, failed: false)
-        case .failed:
+            proPreAIInsightCard(ruleBullets: ruleBullets, failure: nil)
+        case .failed(let failure):
             // V2-06: si la IA falla, vuelven los bullets de reglas con el CTA para reintentar.
-            proPreAIInsightCard(ruleBullets: ruleBullets, failed: true)
+            proPreAIInsightCard(ruleBullets: ruleBullets, failure: failure)
         }
     }
 
@@ -869,14 +869,14 @@ struct TrendsTabView: View {
     }
 
     @ViewBuilder
-    private func proPreAIInsightCard(ruleBullets: [TrendInsightBullet], failed: Bool) -> some View {
+    private func proPreAIInsightCard(ruleBullets: [TrendInsightBullet], failure: AIInsightFailure?) -> some View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
             proInsightHeader
 
             ruleBulletList(ruleBullets)
 
-            if failed {
-                Text(L10n.Chat.errorGeneric)
+            if let failure {
+                Text(AIInsightCardComponents.message(for: failure))
                     .font(DS.Typography.caption)
                     .foregroundStyle(.secondary)
             }
