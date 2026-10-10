@@ -27,6 +27,8 @@ enum DraftToGroupExpenseTemplateLogic {
     ///   - date: fecha DEL DRAFT. Sin default a propósito — ver el campo `date` de
     ///     `GroupExpensePrefillTemplate`: un default `.now` reintroduce el bug que este
     ///     parámetro existe para cerrar, y lo hace sin que nadie lo note.
+    ///   - subcategory: categoría DEL DRAFT. Sin default por lo mismo que `date`: sin ella el gasto
+    ///     nacía sin clasificar y el puente pedía otra vez la categoría con un borrador nuevo.
     static func buildTemplate(
         amount: Double,
         cachedCurrencyCode: String?,
@@ -34,7 +36,8 @@ enum DraftToGroupExpenseTemplateLogic {
         activeMemberIDs: [UUID],
         groupCurrencyCode: String,
         accountPrefill: Account? = nil,
-        date: Date
+        date: Date,
+        subcategory: Subcategory?
     ) -> GroupExpensePrefillTemplate {
         GroupExpensePrefillTemplate(
             totalAmount: abs(amount),
@@ -44,7 +47,8 @@ enum DraftToGroupExpenseTemplateLogic {
             values: [:],
             description: note,
             accountPrefill: accountPrefill,
-            date: date
+            date: date,
+            subcategory: subcategory
         )
     }
 }

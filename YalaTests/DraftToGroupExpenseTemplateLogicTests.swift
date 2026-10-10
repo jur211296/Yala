@@ -24,7 +24,7 @@ struct DraftToGroupExpenseTemplateLogicTests {
     @Test func negativeAmount_normalizedToPositive() {
         let t = DraftToGroupExpenseTemplateLogic.buildTemplate(
             amount: -42.5, cachedCurrencyCode: "PEN", note: "Cena",
-            activeMemberIDs: [], groupCurrencyCode: "USD", date: Self.draftDate
+            activeMemberIDs: [], groupCurrencyCode: "USD", date: Self.draftDate, subcategory: nil
         )
         #expect(t.totalAmount == 42.5)
     }
@@ -32,7 +32,7 @@ struct DraftToGroupExpenseTemplateLogicTests {
     @Test func positiveAmount_unchanged() {
         let t = DraftToGroupExpenseTemplateLogic.buildTemplate(
             amount: 30, cachedCurrencyCode: "PEN", note: "x",
-            activeMemberIDs: [], groupCurrencyCode: "USD", date: Self.draftDate
+            activeMemberIDs: [], groupCurrencyCode: "USD", date: Self.draftDate, subcategory: nil
         )
         #expect(t.totalAmount == 30)
     }
@@ -40,7 +40,7 @@ struct DraftToGroupExpenseTemplateLogicTests {
     @Test func cachedCurrency_takesPrecedence() {
         let t = DraftToGroupExpenseTemplateLogic.buildTemplate(
             amount: -10, cachedCurrencyCode: "PEN", note: "x",
-            activeMemberIDs: [], groupCurrencyCode: "USD", date: Self.draftDate
+            activeMemberIDs: [], groupCurrencyCode: "USD", date: Self.draftDate, subcategory: nil
         )
         #expect(t.currencyCode == "PEN")
     }
@@ -48,7 +48,7 @@ struct DraftToGroupExpenseTemplateLogicTests {
     @Test func nilCachedCurrency_fallsBackToGroup() {
         let t = DraftToGroupExpenseTemplateLogic.buildTemplate(
             amount: -10, cachedCurrencyCode: nil, note: "x",
-            activeMemberIDs: [], groupCurrencyCode: "USD", date: Self.draftDate
+            activeMemberIDs: [], groupCurrencyCode: "USD", date: Self.draftDate, subcategory: nil
         )
         #expect(t.currencyCode == "USD")
     }
@@ -56,7 +56,7 @@ struct DraftToGroupExpenseTemplateLogicTests {
     @Test func splitTypeIsEqual_andValuesEmpty() {
         let t = DraftToGroupExpenseTemplateLogic.buildTemplate(
             amount: -10, cachedCurrencyCode: "USD", note: "x",
-            activeMemberIDs: [UUID(), UUID()], groupCurrencyCode: "USD", date: Self.draftDate
+            activeMemberIDs: [UUID(), UUID()], groupCurrencyCode: "USD", date: Self.draftDate, subcategory: nil
         )
         #expect(t.splitType == .equal)
         #expect(t.values.isEmpty)
@@ -66,7 +66,7 @@ struct DraftToGroupExpenseTemplateLogicTests {
         let ids = [UUID(), UUID(), UUID()]
         let t = DraftToGroupExpenseTemplateLogic.buildTemplate(
             amount: -10, cachedCurrencyCode: "USD", note: "Almuerzo equipo",
-            activeMemberIDs: ids, groupCurrencyCode: "USD", date: Self.draftDate
+            activeMemberIDs: ids, groupCurrencyCode: "USD", date: Self.draftDate, subcategory: nil
         )
         #expect(t.participantIDs == ids)
         #expect(t.description == "Almuerzo equipo")
@@ -81,7 +81,7 @@ struct DraftToGroupExpenseTemplateLogicTests {
     @Test func draftDate_isCarriedThrough_notReplacedByToday() {
         let t = DraftToGroupExpenseTemplateLogic.buildTemplate(
             amount: -10, cachedCurrencyCode: "PEN", note: "Almuerzo del martes",
-            activeMemberIDs: [], groupCurrencyCode: "PEN", date: Self.draftDate
+            activeMemberIDs: [], groupCurrencyCode: "PEN", date: Self.draftDate, subcategory: nil
         )
         #expect(t.date == Self.draftDate)
     }
@@ -94,9 +94,32 @@ struct DraftToGroupExpenseTemplateLogicTests {
         let other = Date(timeIntervalSince1970: 1_700_123_456)  // distinto y con hora "sucia"
         let t = DraftToGroupExpenseTemplateLogic.buildTemplate(
             amount: -10, cachedCurrencyCode: "PEN", note: "x",
-            activeMemberIDs: [], groupCurrencyCode: "PEN", date: other
+            activeMemberIDs: [], groupCurrencyCode: "PEN", date: other, subcategory: nil
         )
         #expect(t.date == other)
         #expect(t.date != Self.draftDate)
+    }
+
+    // MARK: - La categoría del draft (ticket `shared-scheduled-expense-shows-twice-in-inbox`)
+
+    /// Sin la categoría, el gasto de grupo nacía sin clasificar y el puente dejaba en la Bandeja otro
+    /// borrador del mismo gasto pidiéndola. La plantilla la lleva tal cual, y `applyTemplate` la deja
+    /// elegida en el formulario (el `subcategoryName` es lo que llega a `createExpense` y al puente).
+    @MainActor @Test func draftSubcategory_isCarriedThrough_andSelectedInTheForm() {
+        let category = YalaCategory(name: "Hogar", colorHex: "#EF4444", isIncome: false)
+        let subcategory = Subcategory(name: "Streaming", colorHex: nil, natureRawValue: SubcategoryNeed.essential.rawValue,
+                                      iconName: "tv", category: category)
+        let t = DraftToGroupExpenseTemplateLogic.buildTemplate(
+            amount: -10, cachedCurrencyCode: "PEN", note: "x",
+            activeMemberIDs: [], groupCurrencyCode: "PEN", date: Self.draftDate, subcategory: subcategory
+        )
+        #expect(t.subcategory === subcategory)
+
+        let group = SplitGroup(name: "Casa", currencyCode: "PEN")
+        let me = SplitMember(groupZoneID: group.cloudKitZoneID, displayName: "Yo", isCurrentUser: true)
+        let vm = GroupExpenseViewModel(group: group, members: [me], memberNameLookup: [me.id.uuidString: "Yo"])
+        vm.applyTemplate(t)
+        #expect(vm.selectedSubcategory === subcategory)
+        #expect(vm.subcategoryName == "Streaming")
     }
 }

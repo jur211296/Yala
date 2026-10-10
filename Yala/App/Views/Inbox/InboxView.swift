@@ -110,20 +110,10 @@ struct InboxView: View {
         guard !members.isEmpty else { return nil }
         let lookup = Dictionary(members.map { ($0.id.uuidString, $0.resolvedDisplayName) }, uniquingKeysWith: { first, _ in first })
 
-        let template = GroupExpensePrefillTemplate(
-            totalAmount: payment.splitTotalAmount ?? abs(payment.amount),
-            currencyCode: payment.currencyCode,
-            splitType: SplitType(rawValue: payment.splitType ?? "equal") ?? .equal,
-            participantIDs: payment.resolvedParticipantIDs(),
-            values: payment.resolvedSplitValues(),
-            description: payment.name,
-            accountPrefill: payment.account,
-            // La del DRAFT (el vencimiento que se está aprobando), no `payment.nextDueDate`: el
-            // pago recurrente ya avanzó su próxima fecha, así que tomarla de ahí fecharía el gasto
-            // en el vencimiento SIGUIENTE. El draft es la ocurrencia concreta que el usuario ve.
-            // `effectiveDate` y no `date`: éste es opcional y su fallback (`createdAt`) es el que
-            // el resto del Inbox ya usa para mostrar y ordenar.
-            date: draft.effectiveDate
+        // `effectiveDate` y no `date`: éste es opcional y su fallback (`createdAt`) es el que el resto
+        // del Inbox ya usa para mostrar y ordenar. Por qué la del draft y no la del pago: en la lógica.
+        let template = GroupScheduledExpenseTemplateLogic.buildTemplate(
+            payment: payment, draftDate: draft.effectiveDate
         )
         return (group, members, lookup, template)
     }
@@ -211,7 +201,8 @@ struct InboxView: View {
             accountPrefill: draft.account,
             // `effectiveDate`: `date` es opcional y su fallback (`createdAt`) es el que el resto
             // del Inbox usa para mostrar y ordenar.
-            date: draft.effectiveDate
+            date: draft.effectiveDate,
+            subcategory: draft.subcategory
         )
         return ConversionContext(draft: draft, group: group, members: members, lookup: lookup, template: template)
     }

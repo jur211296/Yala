@@ -378,6 +378,11 @@ final class GroupExpenseViewModel {
         if let account = template.accountPrefill {
             selectedAccount = account
         }
+        // La categoría del origen. Sin ella el gasto nacía sin clasificar y el puente dejaba otro borrador
+        // del mismo gasto en la Bandeja pidiéndola (`shared-scheduled-expense-shows-twice-in-inbox`).
+        if let subcategory = template.subcategory {
+            selectedSubcategory = subcategory
+        }
     }
 
     func prefill(from expense: SplitExpense, shares: [SplitShare]) {

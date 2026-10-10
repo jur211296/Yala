@@ -9,7 +9,8 @@
 //  guardar el form de grupo. Fix: podar el VM antes de borrar/persistir (finalizeConvertedDraft).
 //
 //  El test replica el flujo del crash (editor → Convertir → form de grupo → Guardar) y
-//  verifica que la app sobrevive y que el draft manual queda REEMPLAZADO por el draft-puente.
+//  verifica que la app sobrevive y que el borrador convertido sale de la Bandeja sin dejar otro
+//  del mismo gasto (desde el 2026-10-10 la categoría del borrador viaja al gasto de grupo).
 //
 //  Usa el seed `grupos-invitado` (UN solo grupo elegible) a propósito: con >1 grupo el flujo
 //  pasa por el `GroupPickerSheet`, un sheet-sobre-sheet que XCUITest no puede tocar de forma
@@ -43,7 +44,7 @@ final class InboxConvertToGroupUITests: XCTestCase {
     }
 
     /// Regresión: convertir un draft a gasto de grupo NO debe matar la app (la fila del draft
-    /// borrado no debe re-renderizarse) y debe reemplazar el draft personal por el draft-puente.
+    /// borrado no debe re-renderizarse) y el borrador convertido no debe volver como borrador de grupo.
     func test_convertDraftToGroupExpense_survivesAndReplacesDraft() {
         let app = XCUIApplication()
         app.launchForUITest(pro: true, seed: "grupos-invitado")
@@ -93,24 +94,15 @@ final class InboxConvertToGroupUITests: XCTestCase {
         // 2. Assert explícito anti-crash: el proceso sigue en foreground.
         XCTAssertEqual(app.state, .runningForeground, "La app no está en foreground tras Guardar (posible crash).")
 
-        // 3. El draft manual fue REEMPLAZADO por el draft-puente de grupo: re-abrir "Almuerzo
-        //    equipo" abre el sheet de finalización de grupo (YalaPrimaryButton → `primary_button`),
-        //    NO el editor personal (`inbox_approve_button`) ni vuelve a ofrecer Convertir
-        //    (`.groupExpense` no está en la allowlist de conversión).
-        let rowConverted = app.buttons["inbox_draft_row_\(draftA)"]
-        XCTAssertTrue(rowConverted.waitForExistence(timeout: 5), "No apareció la fila del draft convertido.")
-        rowConverted.tap()
+        // 3. El borrador convertido NO vuelve a la Bandeja (ticket `shared-scheduled-expense-shows-twice-in-inbox`).
+        //    Hasta el 2026-10-10 la plantilla del formulario no llevaba la categoría del borrador: el gasto nacía sin
+        //    clasificar y el puente dejaba otro borrador del mismo gasto pidiéndola, que este test daba por bueno
+        //    («reemplazado por el draft-puente»). El borrador sembrado trae cuenta y categoría, así que ahora el
+        //    gasto nace clasificado y no queda nada que finalizar. Que la conversión se hizo lo prueba que la fila
+        //    desaparezca con la app viva y el otro borrador intacto: sin convertir, el borrador seguiría ahí.
         XCTAssertTrue(
-            app.buttons["primary_button"].waitForExistence(timeout: 5),
-            "No se abrió el sheet de finalización de grupo del draft convertido."
-        )
-        XCTAssertFalse(
-            app.buttons["inbox_approve_button"].exists,
-            "El draft convertido abrió el editor personal (no se convirtió)."
-        )
-        XCTAssertFalse(
-            app.buttons["inbox_convert_to_shared_button"].exists,
-            "El draft convertido volvió a ofrecer Convertir (sigue siendo un draft personal manual)."
+            app.buttons["inbox_draft_row_\(draftA)"].waitForNonExistence(timeout: 5),
+            "El gasto convertido sigue en la Bandeja: o no se convirtió, o el puente volvió a pedir su categoría."
         )
     }
 
