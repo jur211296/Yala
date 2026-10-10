@@ -249,7 +249,9 @@ final class RecordsViewModel: Filterable {
         accounts: [Account],
         categories: [Category],
         tags: [Tag],
-        context: ModelContext
+        context: ModelContext,
+        currencyCode: String,
+        converter: CurrencyConverting = CurrencyConverter.shared
     ) {
         // Proyección "mi parte" desde el set AMPLIO (con AMBAS hermanas del bridge, antes de
         // cualquier filtro por cuenta/tag) — cierra el edge account-filter.
@@ -332,12 +334,16 @@ final class RecordsViewModel: Filterable {
         }
 
         // Update cached summary (calculated once per filter change, not per render)
-        calculateSummary()
+        calculateSummary(currencyCode: currencyCode, converter: converter)
     }
 
     /// Calculate summary from grouped records (called once when data changes)
     /// Balance = Income - Expense (excludes adjustments and transfers for consistency)
-    private func calculateSummary() {
+    ///
+    /// `currencyCode` es la divisa principal en la que la pantalla pinta los tres números: cada
+    /// importe se lleva a ella antes de sumar, con la misma regla que el Panel
+    /// (`CashFlowCalculator.resolvedAmount`).
+    private func calculateSummary(currencyCode: String, converter: CurrencyConverting) {
         var income: Double = 0
         var expense: Double = 0
         // Magnitudes sumadas (nunca netos) para el cociente de `ApproximateMarkThreshold`: los
@@ -362,14 +368,17 @@ final class RecordsViewModel: Filterable {
                     // con CashFlowCalculator): un monto de signo contrario a su
                     // categoría reduce el bucket (reembolso), no suma magnitud.
                     // `statsAdjustment` proyecta un gasto de grupo Caso A a "mi parte" (neto).
-                    let amount = statsAdjustment.amountInPreferredCurrency(record)
-                    // Este resumen NO convierte: lee el `amountInPreferredCurrency` que ya se
-                    // guardó. Quien sabe si aquella tasa era la del día es el flag — el del
-                    // `adjustment`, que en un gasto de grupo hace el OR de todas las patas que
-                    // forman `amount`. Es la rama «misma divisa» de `CashFlowCalculator`, y aquí
-                    // es la única que hay.
+                    // Paridad con el Panel: el monto guardado solo vale si se guardó en ESTA divisa
+                    // principal; si se guardó en otra (el usuario cambió de divisa y la fila aún no
+                    // se recalculó), se reconvierte desde el nativo. La marca sale de la rama que
+                    // decidió: el flag (vía `statsAdjustment`) o la calidad de la conversión.
+                    let resolved = CashFlowCalculator.resolvedAmount(
+                        record, currencyCode: currencyCode,
+                        adjustment: statsAdjustment, converter: converter
+                    )
+                    let amount = resolved.value
                     let magnitude = abs(amount)
-                    let approximate = statsAdjustment.approximateMagnitude(record, magnitude: magnitude)
+                    let approximate = resolved.approximateMagnitude
                     if TransactionClassificationLogic.isIncome(record) {
                         income += amount
                         incomeTotalMagnitude += magnitude

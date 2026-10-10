@@ -58,7 +58,8 @@ struct RecordsCalendarView: View {
     }
 
     var body: some View {
-        let spending = DailySpendingCalculator.compute(groups: groups, adjustment: adjustment)
+        let spending = DailySpendingCalculator.compute(
+            groups: groups, adjustment: adjustment, currencyCode: currencyCode)
         let range = effectiveRange
         let layout = RecordsCalendarLayout.resolve(
             range: range, firstWeekday: appPreferences.firstWeekday.rawValue, calendar: calendar)

@@ -290,7 +290,7 @@ struct GroupBridgeApproximateMarkTests {
             let vm = RecordsViewModel()
             vm.applyFilters(
                 transactions: e.transacciones, accounts: e.cuentas,
-                categories: [], tags: [], context: context
+                categories: [], tags: [], context: context, currencyCode: "PEN"
             )
 
             #expect(vm.recordsSummary.expense == 100)
@@ -308,7 +308,7 @@ struct GroupBridgeApproximateMarkTests {
             let vm = RecordsViewModel()
             vm.applyFilters(
                 transactions: e.transacciones, accounts: e.cuentas,
-                categories: [], tags: [], context: context
+                categories: [], tags: [], context: context, currencyCode: "PEN"
             )
 
             #expect(vm.recordsSummary.expense == 100)

@@ -423,7 +423,8 @@ struct RecordsStandaloneView: View {
             accounts: dataViewModel.accounts,
             categories: dataViewModel.categories,
             tags: dataViewModel.tags,
-            context: modelContext
+            context: modelContext,
+            currencyCode: appPreferences.defaultCurrencyCode.rawValue
         )
     }
 

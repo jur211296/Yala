@@ -55,7 +55,8 @@ final class StatisticsRecalculation {
             accounts: inputs.accounts,
             categories: inputs.categories,
             tags: inputs.tags,
-            context: context
+            context: context,
+            currencyCode: inputs.currencyCode
         )
         trends.calculateTrendData(
             accounts: inputs.accounts,

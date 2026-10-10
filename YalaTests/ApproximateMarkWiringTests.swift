@@ -433,12 +433,18 @@ struct ApproximateMarkSecondarySurfacesWiringTests {
         (fichero: "Yala/App/Logic/Calculators/HeroBucketsCalculator.swift",
          desde: "static func calculate(", hasta: "return Buckets(",
          accessor: "adjustment.approximateMagnitude(tx, magnitude: amount)"),
+        // Desde el 2026-10-10 la regla vive en `CashFlowCalculator.resolvedAmount`, compartida por el
+        // Panel y Registros (ticket `records-summary-mixes-preferred-currencies`): se fija el helper y
+        // que los dos productores deleguen en él.
+        (fichero: "Yala/App/Logic/Calculators/CashFlowCalculator.swift",
+         desde: "static func resolvedAmount(", hasta: "static func calculateCashFlow(",
+         accessor: "adjustment.approximateMagnitude(tx, magnitude: abs(value))"),
         (fichero: "Yala/App/Logic/Calculators/CashFlowCalculator.swift",
          desde: "static func calculateCashFlow(", hasta: "var chartData: [CashFlowData] = []",
-         accessor: "adjustment.approximateMagnitude(tx, magnitude: abs(val))"),
+         accessor: "let resolved = resolvedAmount("),
         (fichero: "Yala/App/ViewModels/RecordsViewModel.swift",
-         desde: "private func calculateSummary()", hasta: "let newSummary = RecordsSummary(",
-         accessor: "statsAdjustment.approximateMagnitude(record, magnitude: magnitude)"),
+         desde: "private func calculateSummary(", hasta: "let newSummary = RecordsSummary(",
+         accessor: "let resolved = CashFlowCalculator.resolvedAmount("),
         (fichero: "Yala/Services/WidgetDataCache.swift",
          desde: "static func buildPeriodSummary(", hasta: "var balanceApproximateMagnitude",
          accessor: "adjustment.approximateMagnitude(tx, magnitude: abs(amount))"),
