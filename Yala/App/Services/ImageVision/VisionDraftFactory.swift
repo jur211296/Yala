@@ -149,8 +149,10 @@ import SwiftData
         return calendar.date(bySettingHour: 12, minute: 0, second: 0, of: date)
     }
 
+    /// La nota del draft: el comercio limpio y, si aporta, un dato útil. Nunca la plantilla del banco
+    /// («Consumo con tarjeta de crédito BCP»), números de operación ni la tarjeta enmascarada: lo quita
+    /// `VisionNoteCleaner`, también de las respuestas que el prompt nuevo no evite.
     static func buildNote(merchant: String?, note: String?) -> String {
-        let parts = [merchant, note].compactMap { $0 }.filter { !$0.isEmpty }
-        return parts.joined(separator: " - ")
+        VisionNoteCleaner.note(merchant: merchant, note: note)
     }
 }

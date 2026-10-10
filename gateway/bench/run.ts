@@ -294,7 +294,25 @@ export function summarize(task: TaskName): string | null {
       `| \`${cand.split(":").slice(1).join(":")}\` | ${r0.provider} | ${effort} | ${detail} | ${edge === "0" ? "original" : edge} | ${s.rs.length} | ${(s.acc * 100).toFixed(1)} % | ${(s.parsed * 100).toFixed(0)} % | ${s.errors} | ${s.p50} | ${s.p95} | ${Math.round(s.tin)} | ${Math.round(s.tout)} | ${s.meanCost.toFixed(6)} | ${(s.meanCost * 1000).toFixed(3)} |`,
     );
   }
-  const md = `# ${task} — banco del ${date}\n\nPrecios comprobados el ${CHECKED}. Generado por \`npm run bench -- --report\`.\n\n${lines.join("\n")}\n`;
+  // Foto: además del acierto, cada campo por movimiento esperado, y la nota cruda frente a la limpia (ticket
+  // image-note-uses-bank-template-instead-of-merchant). Solo las filas que traen esas cuentas.
+  const fields: string[] = [];
+  if (task === "photo.read") {
+    fields.push(
+      "",
+      "| Candidato | Movimientos esperados | Importe | Importe + fecha + divisa | Comercio | Nota cruda | Nota limpia |",
+      "|---|---|---|---|---|---|---|",
+    );
+    for (const s of stats) {
+      const d = s.rs.map((r) => r.detailOut as Record<string, number>).filter((x) => typeof x?.noteRawHits === "number");
+      if (!d.length) continue;
+      const sum = (k: string) => d.reduce((a, x) => a + (x[k] ?? 0), 0);
+      const n = sum("expected");
+      const p = (k: string) => `${sum(k)} (${((sum(k) / (n || 1)) * 100).toFixed(1)} %)`;
+      fields.push(`| \`${s.k.split("|")[0].split(":").slice(1).join(":")}\` | ${n} | ${p("amountHits")} | ${p("fullHits")} | ${p("merchantHits")} | ${p("noteRawHits")} | ${d.some((x) => typeof x.noteCleanHits === "number") ? p("noteCleanHits") : "—"} |`);
+    }
+  }
+  const md = `# ${task} — banco del ${date}\n\nPrecios comprobados el ${CHECKED}. Generado por \`npm run bench -- --report\`.\n\n${[...lines, ...fields].join("\n")}\n`;
   writeFileSync(new URL(`${task}.md`, RESULTS), md);
   return md;
 }

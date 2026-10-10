@@ -1,6 +1,7 @@
 import { baseLang, detectLang } from "./lang";
 import type { SuggestionsContext } from "./appRequests";
 import { isValidSuggestion } from "./chatRewrite";
+import { rawNote } from "./noteCleaner";
 
 /**
  * Criterios de acierto por tarea. Cada uno replica primero lo que hace la APP con la respuesta
@@ -131,6 +132,11 @@ export interface ExpectedTx {
   merchant?: string;
   /** Importes alternativos aceptables (p. ej. total con o sin propina), con su signo. */
   amountAlt?: number[];
+  /**
+   * Lo que la NOTA final tiene que nombrar (todas sus palabras de 3+ letras), sin plantilla de banco ni códigos.
+   * Sin él, la nota se mide contra `merchant` con la regla de `merchantOk` (la mitad de sus palabras).
+   */
+  noteWant?: string;
 }
 
 export interface PhotoCase {
@@ -198,6 +204,42 @@ function merchantOk(got: VisionTx, e: ExpectedTx): boolean {
   return tokens.filter((w) => hay.includes(w)).length / tokens.length >= 0.5;
 }
 
+// ---------- nota (ticket image-note-uses-bank-template-instead-of-merchant) ----------
+
+/** Palabras de plantilla de banco que nunca deben llegar a la nota (comparadas sin tildes, palabra entera). */
+const NOTE_FORBIDDEN = new Set([
+  "consumo", "compra", "compras", "tarjeta", "credito", "debito", "pago", "pagaste", "operacion", "purchase", "card",
+  "payment", "transaction", "yapeaste", "bcp", "interbank", "bbva", "scotiabank", "yape", "plin", "nro", "op", "ref",
+  "autorizacion", "approved", "aprobado", "realizaste",
+]);
+
+function words(s: string): string[] {
+  return norm(s).split(/[^a-z0-9]+/).filter(Boolean);
+}
+
+/**
+ * La nota es buena si nombra lo esperado y no trae plantilla de banco (salvo palabras que el propio comercio lleve),
+ * números de 4+ cifras ni asteriscos.
+ */
+export function noteOk(text: string, e: ExpectedTx): boolean {
+  const ws = words(text);
+  // Lo que el comercio esperado ya trae (p. ej. «PAGO TARJETA» en un extracto) no cuenta como plantilla colada…
+  const allowed = new Set(words(e.noteWant ?? e.merchant ?? ""));
+  // …pero tampoco se exige: se exige el nombre, no la plantilla que lo rodeaba («TRANSF. RECIBIDA M. QUISPE»).
+  const want = [...allowed].filter((w) => w.length >= 3 && !NOTE_TEMPLATE.has(w));
+  if (/\*/.test(text) || /\d{4,}/.test(text)) return false;
+  if (ws.some((w) => NOTE_FORBIDDEN.has(w) && !allowed.has(w))) return false;
+  if (want.length === 0) return text.trim().length > 0;
+  const hits = want.filter((w) => ws.includes(w) || norm(text).includes(w)).length;
+  return e.noteWant ? hits === want.length : hits / want.length >= 0.5;
+}
+
+/** Plantilla que un comercio esperado de extracto puede traer y que la nota limpia no tiene por qué repetir. */
+const NOTE_TEMPLATE = new Set([
+  ...NOTE_FORBIDDEN, "transf", "transferencia", "transfer", "recibida", "recibido", "zelle", "online", "from", "movil",
+  "suscripcion", "devolucion",
+]);
+
 /**
  * Acierta si la foto produce EXACTAMENTE los movimientos esperados: mismo número de movimientos con
  * importe (los de importe nulo los descarta el usuario en la revisión y no cuentan), y cada esperado
@@ -205,7 +247,13 @@ function merchantOk(got: VisionTx, e: ExpectedTx): boolean {
  * secundaria): un comercio mal leído se corrige en la revisión; un importe o una fecha mal leídos se
  * cuelan.
  */
-export function gradePhoto(content: string, c: PhotoCase): Grade {
+export function gradePhoto(
+  content: string,
+  c: PhotoCase,
+  /** La limpieza de la app (`cleanNotes`, que compila el Swift). Sin ella, solo se mide la nota cruda: así los tests y
+   * el CI de Ubuntu no necesitan `swiftc`. */
+  cleanNotes?: (pairs: [string | null, string | null][]) => string[],
+): Grade {
   const parsed = parseVision(content);
   if (!parsed) return { pass: false, appParsed: false, detail: { error: "decode de la app" } };
   const got = parsed.transactions.filter((t) => t.amount !== null);
@@ -215,6 +263,7 @@ export function gradePhoto(content: string, c: PhotoCase): Grade {
   let fullHits = 0;
   let merchantHits = 0;
   const misses: string[] = [];
+  const notePairs: { e: ExpectedTx; raw: string; pair: [string | null, string | null] }[] = [];
   for (const e of expected) {
     // Primero el emparejamiento completo; si no, al menos por importe (para las métricas por campo).
     let idx = got.findIndex(
@@ -232,12 +281,21 @@ export function gradePhoto(content: string, c: PhotoCase): Grade {
       if (full) fullHits++;
       else misses.push(`${e.amount}: fecha ${got[idx].date} (esp. ${e.date}) divisa ${got[idx].currency} (esp. ${e.currency})`);
       if (merchantOk(got[idx], e)) merchantHits++;
+      notePairs.push({ e, raw: rawNote(got[idx].merchant, got[idx].note), pair: [got[idx].merchant, got[idx].note] });
     } else {
       misses.push(`${e.amount}: no leído`);
     }
   }
   const extra = got.length - used.size;
   const pass = fullHits === expected.length && extra === 0;
+  // La nota: cruda (como la armaba la app antes) y con la limpieza real de la app (`VisionNoteCleaner`).
+  const cleaned = cleanNotes?.(notePairs.map((n) => n.pair));
+  const notes = notePairs.map((n, i) => ({
+    raw: n.raw,
+    clean: cleaned?.[i] ?? null,
+    rawOk: noteOk(n.raw, n.e),
+    cleanOk: cleaned ? noteOk(cleaned[i], n.e) : false,
+  }));
   return {
     pass,
     appParsed: true,
@@ -248,6 +306,9 @@ export function gradePhoto(content: string, c: PhotoCase): Grade {
       fullHits,
       amountHits,
       merchantHits,
+      noteRawHits: notes.filter((n) => n.rawOk).length,
+      ...(cleaned ? { noteCleanHits: notes.filter((n) => n.cleanOk).length } : {}),
+      notes: notes.map(({ raw, clean }, i) => ({ raw, clean, pair: notePairs[i].pair, expected: expected.indexOf(notePairs[i].e) })),
       extra,
       ...(misses.length ? { misses: misses.slice(0, 6) } : {}),
     },

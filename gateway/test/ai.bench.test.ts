@@ -10,7 +10,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { FINGERPRINTS } from "../src/ai/resolve";
 import { dateContext, intentSystemPrompt, photoSystemPrompt, suggestionsSystemPrompt } from "../bench/lib/appRequests";
-import { gradeIntent, gradePhoto, gradeSuggestions, parseVision, type PhotoCase } from "../bench/lib/grading";
+import { gradeIntent, gradePhoto, gradeSuggestions, noteOk, parseVision, type PhotoCase } from "../bench/lib/grading";
 import { detectLang } from "../bench/lib/lang";
 import { interpolate, swiftMultilineAfter } from "../bench/lib/swift";
 
@@ -146,6 +146,36 @@ describe("criterios", () => {
     expect(g([t(-10, "2026-10-01"), t(5, "2026-10-02", "USD")]).pass).toBe(false); // divisa
     expect(g([t(-10, "2026-10-01"), t(5, "2026-10-02"), t(-1, "2026-10-02")]).pass).toBe(false); // de más
     expect(g([t(-10, "2026-10-01"), t(5, "2026-10-02"), { ...t(0, "2026-10-02"), amount: null }]).pass).toBe(true); // sin importe: no cuenta
+  });
+
+  it("foto: la nota buena nombra el comercio sin plantilla de banco, códigos ni asteriscos", () => {
+    const e = { amount: -105.6, date: "2026-10-10", currency: "USD", merchant: "GROK XAI", noteWant: "Grok" };
+    expect(noteOk("Grok (xAI)", e)).toBe(true);
+    expect(noteOk("GROK XAI - Consumo con tarjeta de crédito BCP", e)).toBe(false); // el reporte del 2026-10-10
+    expect(noteOk("Grok 004512", e)).toBe(false); // número de operación
+    expect(noteOk("Grok ****5512", e)).toBe(false); // tarjeta enmascarada
+    expect(noteOk("xAI", e)).toBe(false); // no nombra lo esperado
+    // Lo que el comercio esperado ya trae no cuenta como plantilla, pero tampoco se exige.
+    const stmt = { amount: -50, date: null, currency: "PEN", merchant: "TRANSF. RECIBIDA M. QUISPE" };
+    expect(noteOk("M. Quispe", stmt)).toBe(true);
+    expect(noteOk("PAGO TARJETA", { amount: -1, date: null, currency: null, merchant: "PAGO TARJETA" })).toBe(true);
+  });
+
+  it("foto: sin la limpieza de la app se mide solo la nota cruda (el CI no tiene swiftc)", () => {
+    const c: PhotoCase = {
+      id: "b", file: "", today: "2026-10-10", kind: "", lang: "es", source: "",
+      expect: { imageType: "single", transactions: [{ amount: -105.6, date: "2026-10-10", currency: "USD", merchant: "GROK XAI", noteWant: "Grok" }] },
+    };
+    const body = JSON.stringify({
+      imageType: "single",
+      transactions: [{ amount: -105.6, date: "2026-10-10", merchant: "GROK XAI", note: "Consumo con tarjeta de crédito BCP", currency: "USD" }],
+      confidence: { overall: 1, imageType: 1 },
+    });
+    const raw = gradePhoto(body, c);
+    expect(raw.detail.noteRawHits).toBe(0);
+    expect(raw.detail.noteCleanHits).toBeUndefined();
+    const cleaned = gradePhoto(body, c, (pairs) => pairs.map(() => "Grok (xAI)"));
+    expect(cleaned.detail.noteCleanHits).toBe(1);
   });
 
   it("foto: una página de extracto sin movimientos acierta vacía, y un saldo leído como movimiento la hace fallar", () => {

@@ -128,6 +128,9 @@ final class ImageVisionService {
         - "unknown": Cannot identify as financial
 
         Rules:
+        - Merchant: the shop, service or person as printed. Never the bank, the wallet (Yape, Plin) or the card.
+        - Note: null, unless a short detail helps to know where the money went (branch, city). Never the bank's
+          template text ("Consumo con tarjeta de crédito BCP", "Purchase approved"), operation numbers or card digits.
         - Amounts: No currency symbol, expenses are NEGATIVE, income is POSITIVE
         - Dates: ALWAYS convert to YYYY-MM-DD format
         - Currency: Extract from symbols or explicit mentions
