@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (836)
+## Index (838)
 
 | id | status | path |
 |---|---|---|
@@ -145,6 +145,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | budget-interval-counts-next-period-midnight | done | tickets/done/budget-interval-counts-next-period-midnight.md |
 | budget-tied-to-income-or-expense | backlog | tickets/backlog/budget-tied-to-income-or-expense.md |
 | bulk-edit-uitests-fail-on-the-small-iphone | backlog | tickets/backlog/bulk-edit-uitests-fail-on-the-small-iphone.md |
+| bulk-move-to-another-currency-account-relabels-the-amount | backlog | tickets/backlog/bulk-move-to-another-currency-account-relabels-the-amount.md |
 | bulk-update-account-leaves-converted-amount-stale | done | tickets/done/bulk-update-account-leaves-converted-amount-stale.md |
 | canarios-y-breadcrumbs-sin-emisor | backlog | tickets/backlog/canarios-y-breadcrumbs-sin-emisor.md |
 | cancel-reverse-wipes-the-alert-that-just-appeared | backlog | tickets/backlog/cancel-reverse-wipes-the-alert-that-just-appeared.md |
@@ -593,6 +594,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | pending-reverse-complete-runs-with-whatever-session-is-live | backlog | tickets/backlog/pending-reverse-complete-runs-with-whatever-session-is-live.md |
 | personal-clock-ahead-wins-every-conflict-until-real-time-catches-up | qa | tickets/qa/personal-clock-ahead-wins-every-conflict-until-real-time-catches-up.md |
 | personal-clock-rollback-wedges-the-drain-forever | done | tickets/done/personal-clock-rollback-wedges-the-drain-forever.md |
+| personal-cloudkit-schema-snapshot-misses-optional-fields | backlog | tickets/backlog/personal-cloudkit-schema-snapshot-misses-optional-fields.md |
 | personal-drain-that-always-aborts-blocks-cloud-sign-out-with-a-wait-a-moment-copy | qa | tickets/qa/personal-drain-that-always-aborts-blocks-cloud-sign-out-with-a-wait-a-moment-copy.md |
 | personal-loss-without-a-count-covers-own-edits-made-after-the-notice | backlog | tickets/backlog/personal-loss-without-a-count-covers-own-edits-made-after-the-notice.md |
 | personal-sign-out-reads-an-unfinished-drain-as-nothing-pending | done | tickets/done/personal-sign-out-reads-an-unfinished-drain-as-nothing-pending.md |
