@@ -1,10 +1,11 @@
 ---
 id: born-cloud-signup-lands-on-existing-account-silently
-status: backlog
+status: qa
 priority: medium
 area: "onboarding, modo-nube, copy"
 created: 2026-09-10
-updated: 2026-10-07
+updated: 2026-10-09
+qa-status: needs-testing
 source: "review adversarial (lente de producto) de `beacon-routes-only-never-blocks`, 2026-09-10"
 ---
 
@@ -44,3 +45,44 @@ A qué parte corresponde: es la primera de las dos preguntas de «Qué hay que d
 `existing_stable` deja de compartir «¡Tu cuenta está lista!» con la re-entrada y dice ese texto. La segunda pregunta
 (avisar ya en el intro del alta) no se elige. El texto, con las palabras de Jürgen, se lleva a todos los idiomas de la
 app.
+
+## Hecho (2026-10-09)
+
+La decisión de Jürgen, aplicada tal cual: la pantalla final del alta que entra en una cuenta que ya existía dice
+**«Ya tenías una cuenta, has entrado en ella»**. Debajo sigue «Ya puedes empezar. Todo lo que registres se guardará en
+tu cuenta.» y el botón «Empezar», que lleva a la app como en la re-entrada. Quien entra desde «Ya tengo cuenta» sigue
+viendo «¡Tu cuenta está lista!».
+
+- El comportamiento no cambia: el alta sigue entrando en la cuenta existente sin sembrar nada encima. Solo cambia lo que
+  se le dice a la persona.
+- El intro del alta no cambia (la segunda pregunta no se eligió).
+- El texto está en los 16 idiomas; en los tres españoles, las palabras de Jürgen.
+- Tests de lógica y del cableado de la pantalla: `WelcomeSignUpEnteredExistingAccountTests` en
+  `YalaTests/CloudWelcomeSignInFlowTests.swift`, con control rojo (el origen ignorado los pone en rojo).
+- Sin capturas: el alta con Apple no se puede conducir en el simulador, y no hay costura de UI test para el claim.
+
+### Lo que queda fuera, y por qué
+
+Si ese mismo alta cae en un teléfono que tenía el espejo de iCloud montado, el adopt no termina en la pantalla de
+«listo» sino en «Ya casi está — reinicia Yala», y tras reabrir la persona entra en la cuenta sin que nada se lo diga.
+Es raro (el alta de «Es mi primera vez» nace con el almacenamiento neutro) y la decisión habla de la pantalla de
+«¡Tu cuenta está lista!», así que no se ha tocado. Ticket propio: `born-cloud-signup-into-existing-account-relaunch-says-nothing`.
+
+## Guion de device-QA (Jürgen)
+
+Necesitas un iPhone de pruebas con un Apple ID que **ya tenga** cuenta de Yala en la nube, y la build de este PR
+(TestFlight o instalada desde Xcode).
+
+1. Borra Yala del iPhone y vuelve a instalarla, para que arranque en la bienvenida.
+2. Toca **«Es mi primera vez en Yala»**.
+3. Si sale «Este Apple ID ya tiene una cuenta de Yala creada con…», toca **«Crear otra cuenta»**; si no, sigue al paso 4.
+4. Elige **«Tu cuenta en la nube»** y acepta el consentimiento.
+5. Toca **«Registrarse con Apple»** y confirma con Face ID.
+6. Verás «Creando tu cuenta…» y luego la barra de «Conectando con tu cuenta…».
+7. **Lo que tiene que salir:** «Ya tenías una cuenta, has entrado en ella», con «Empezar» debajo.
+8. Toca **«Empezar»**: tienes que caer en la app con los datos de esa cuenta, sin pasar por el onboarding.
+9. **Control:** borra y reinstala otra vez, toca **«Ya tengo una cuenta»** → Apple. Al terminar tiene que salir
+   **«¡Tu cuenta está lista!»**, como siempre.
+
+Si en el paso 7 sale «Ya casi está — reinicia Yala», es el caso de «Lo que queda fuera»: apúntalo y no lo cuentes
+como fallo de este ticket.
