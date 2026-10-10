@@ -101,7 +101,8 @@ struct CashFlowDetailLineRow: View {
                 value: displayAmount,
                 currencyCode: currencyCode,
                 font: DS.Typography.amountSmall.weight(.semibold).monospacedDigit(),
-                tint: .color(amountColor)
+                tint: .color(amountColor),
+                isEstimate: displaysPlanned && lineResult.isPlannedApproximate
             )
 
             // Progress bar for current month
@@ -124,7 +125,7 @@ struct CashFlowDetailLineRow: View {
                     Image(systemName: isGood ? "checkmark.circle.fill" : "exclamationmark.circle.fill")
                         .font(DS.Typography.captionSmall)
                         .foregroundStyle(isGood ? Color.electricIndigo : Color.hotPink)
-                    Text(L10n.CashFlowPlan.plan + ": " + YalaFormatter.amountCompactTable(value: lineResult.plannedAmount))
+                    Text(L10n.CashFlowPlan.plan + ": " + (lineResult.isPlannedApproximate ? "≈ " : "") + YalaFormatter.amountCompactTable(value: lineResult.plannedAmount))
                         .font(DS.Typography.captionSmall)
                         .foregroundStyle(.tertiary)
                 }
@@ -139,6 +140,11 @@ struct CashFlowDetailLineRow: View {
             return real
         }
         return lineResult.plannedAmount
+    }
+
+    /// El importe grande es el del plan (no el real): solo entonces aplica su «≈».
+    private var displaysPlanned: Bool {
+        !(lineResult.realAmount != nil && (month.isPast || month.isCurrent))
     }
 
     private var amountColor: Color {

@@ -22,6 +22,8 @@ struct SuggestedLine: Identifiable {
     var estimationMethod: EstimationMethod
     let monthsWithActivity: Int
     var isSelected: Bool
+    /// `suggestedAmount` salió de convertir el pago programado con una tasa no exacta («≈»).
+    var isApproximate: Bool = false
 }
 
 // MARK: - ViewModel
@@ -206,6 +208,9 @@ final class CashFlowPlanViewModel {
         let existingCatKeys = Set(suggestions.compactMap { $0.category?.persistentModelID })
 
         for payment in scheduledPayments where payment.isActive {
+            let converted = ScheduledPaymentAmountConversion.magnitude(
+                of: payment, in: resolvedCurrency, converter: CurrencyConverter.shared
+            )
             let paymentSubKey = payment.subcategory?.persistentModelID
             let paymentCatKey = payment.subcategory?.category?.persistentModelID
 
@@ -219,10 +224,11 @@ final class CashFlowPlanViewModel {
                 scheduledPayment: payment,
                 name: payment.name,
                 isIncome: payment.transactionType == "income",
-                suggestedAmount: abs(payment.amount),
+                suggestedAmount: converted.amount,
                 estimationMethod: .scheduled,
                 monthsWithActivity: 6,
-                isSelected: true
+                isSelected: true,
+                isApproximate: converted.isApproximate
             ))
         }
 
@@ -250,6 +256,8 @@ final class CashFlowPlanViewModel {
         suggestedLines[idx].suggestedAmount = calculateAmount(
             for: suggestedLines[idx], method: method, manualAmount: manualAmount
         )
+        suggestedLines[idx].isApproximate = method == .scheduled
+            && (scheduledConversion(for: suggestedLines[idx])?.isApproximate ?? false)
     }
 
     /// Preview amount for a method without mutating state
@@ -257,12 +265,20 @@ final class CashFlowPlanViewModel {
         calculateAmount(for: line, method: method, manualAmount: manualAmount)
     }
 
+    /// El pago de la línea en la divisa del plan; `nil` si la línea no lleva pago.
+    private func scheduledConversion(for line: SuggestedLine) -> ScheduledPaymentAmountConversion.Result? {
+        guard let payment = line.scheduledPayment else { return nil }
+        return ScheduledPaymentAmountConversion.magnitude(
+            of: payment, in: cachedCurrencyCode ?? payment.currencyCode, converter: CurrencyConverter.shared
+        )
+    }
+
     private func calculateAmount(for line: SuggestedLine, method: EstimationMethod, manualAmount: Double? = nil) -> Double {
         if method == .manual {
             return manualAmount ?? line.suggestedAmount
         }
-        if method == .scheduled, let payment = line.scheduledPayment {
-            return abs(payment.amount)
+        if method == .scheduled, let converted = scheduledConversion(for: line) {
+            return converted.amount
         }
         guard let index = cachedIndex, let refDate = cachedReferenceDate else {
             return line.suggestedAmount

@@ -45,6 +45,9 @@ struct CashFlowLineResult {
     let isOverride: Bool
     let estimationMethod: EstimationMethod
     let subcategoryBreakdown: [SubcategoryLineResult]?
+    /// `plannedAmount` salió de convertir un pago programado con una tasa no exacta: se pinta «≈».
+    /// Solo lo enciende una línea `.scheduled` sin override (`ScheduledPaymentAmountConversion`).
+    var isPlannedApproximate: Bool = false
 }
 
 struct CashFlowOtherResult {
@@ -171,11 +174,13 @@ struct CashFlowProjectionCalculator {
         let currentMKey = Self.monthKey(for: currentMonthStart, calendar: calendar)
         let incomeLines = sortLinesByAmountGrouped(
             lines.filter { $0.isEnabled && $0.isIncome },
-            monthKey: currentMKey, monthDate: currentMonthStart, index: index, calendar: calendar
+            monthKey: currentMKey, monthDate: currentMonthStart, index: index,
+            currencyCode: currencyCode, converter: converter, calendar: calendar
         )
         let expenseLines = sortLinesByAmountGrouped(
             lines.filter { $0.isEnabled && !$0.isIncome },
-            monthKey: currentMKey, monthDate: currentMonthStart, index: index, calendar: calendar
+            monthKey: currentMKey, monthDate: currentMonthStart, index: index,
+            currencyCode: currencyCode, converter: converter, calendar: calendar
         )
 
         // Resolve starting balance month (nil defaults to current month)
@@ -204,7 +209,8 @@ struct CashFlowProjectionCalculator {
                 calculateLineResult(
                     line: line, monthDate: monthDate, monthKey: mKey,
                     isPast: isPast, isCurrent: isCurrent,
-                    index: index, calendar: calendar
+                    index: index, currencyCode: currencyCode, converter: converter,
+                    calendar: calendar
                 )
             }
 
@@ -212,7 +218,8 @@ struct CashFlowProjectionCalculator {
                 calculateLineResult(
                     line: line, monthDate: monthDate, monthKey: mKey,
                     isPast: isPast, isCurrent: isCurrent,
-                    index: index, calendar: calendar
+                    index: index, currencyCode: currencyCode, converter: converter,
+                    calendar: calendar
                 )
             }
 
@@ -296,6 +303,8 @@ struct CashFlowProjectionCalculator {
         monthDate: Date, monthKey: String,
         isPast: Bool, isCurrent: Bool,
         index: TransactionIndex,
+        currencyCode: String,
+        converter: any CurrencyConverting,
         calendar: Calendar
     ) -> CashFlowLineResult {
 
@@ -303,12 +312,17 @@ struct CashFlowProjectionCalculator {
         let isOverride = override != nil
 
         let plannedAmount: Double
+        let isPlannedApproximate: Bool
         if let override {
             plannedAmount = override.amount
+            isPlannedApproximate = false
         } else {
-            plannedAmount = estimatePlannedAmount(
-                line: line, monthDate: monthDate, index: index, calendar: calendar
+            let estimate = estimatePlanned(
+                line: line, monthDate: monthDate, index: index,
+                currencyCode: currencyCode, converter: converter, calendar: calendar
             )
+            plannedAmount = estimate.amount
+            isPlannedApproximate = estimate.isApproximate
         }
 
         let realAmount: Double?
@@ -362,7 +376,8 @@ struct CashFlowProjectionCalculator {
             difference: difference, differencePercent: differencePercent,
             progress: progress, isOverride: isOverride,
             estimationMethod: line.method,
-            subcategoryBreakdown: subcategoryBreakdown
+            subcategoryBreakdown: subcategoryBreakdown,
+            isPlannedApproximate: isPlannedApproximate
         )
     }
 
@@ -379,6 +394,28 @@ struct CashFlowProjectionCalculator {
 
     // MARK: - Estimation Methods
 
+    /// Importe planificado + si salió de una tasa aproximada. Solo la rama `.scheduled` convierte:
+    /// las demás leen el `TransactionIndex`, que ya está en `currencyCode`.
+    private static func estimatePlanned(
+        line: CashFlowLine, monthDate: Date,
+        index: TransactionIndex,
+        currencyCode: String, converter: any CurrencyConverting,
+        calendar: Calendar
+    ) -> (amount: Double, isApproximate: Bool) {
+        if line.method == .scheduled, let payment = line.scheduledPayment {
+            let estimate = estimateScheduled(
+                payment: payment, monthDate: monthDate,
+                currencyCode: currencyCode, converter: converter, calendar: calendar
+            )
+            return (estimate.amount, estimate.isApproximate)
+        }
+        return (
+            estimatePlannedAmount(line: line, monthDate: monthDate, index: index, calendar: calendar),
+            false
+        )
+    }
+
+    /// Rama sin conversión. `.scheduled` con pago vivo NO llega aquí: lo resuelve `estimatePlanned`.
     private static func estimatePlannedAmount(
         line: CashFlowLine, monthDate: Date,
         index: TransactionIndex, calendar: Calendar
@@ -395,9 +432,7 @@ struct CashFlowProjectionCalculator {
         case .manual:
             return line.manualAmount ?? 0
         case .scheduled:
-            if let payment = line.scheduledPayment {
-                return estimateScheduled(payment: payment, monthDate: monthDate, calendar: calendar)
-            }
+            // Con pago, `estimatePlanned` ya salió antes por la ruta que convierte.
             return line.manualAmount ?? 0
         case .trend:
             return estimateTrend(line: line, referenceDate: monthDate, index: index, calendar: calendar)
@@ -467,14 +502,21 @@ struct CashFlowProjectionCalculator {
 
     // MARK: - Scheduled Estimation
 
+    /// Importe del pago en el mes, **convertido a la divisa del plan** (`currencyCode`).
     static func estimateScheduled(
-        payment: ScheduledPayment, monthDate: Date, calendar: Calendar
-    ) -> Double {
+        payment: ScheduledPayment, monthDate: Date,
+        currencyCode: String, converter: any CurrencyConverting,
+        calendar: Calendar
+    ) -> ScheduledPaymentAmountConversion.Result {
         let params = payment.dateCalculatorParams
         let dates = ScheduledPaymentDateCalculator.paymentDatesInMonth(
             params: params, month: monthDate, calendar: calendar
         )
-        return abs(payment.amount) * Double(dates.count)
+        guard !dates.isEmpty else { return .init(amount: 0, isApproximate: false) }
+        let perPayment = ScheduledPaymentAmountConversion.magnitude(
+            of: payment, in: currencyCode, converter: converter
+        )
+        return .init(amount: perPayment.amount * Double(dates.count), isApproximate: perPayment.isApproximate)
     }
 
     // MARK: - Trend Estimation (Linear Regression)
@@ -597,12 +639,17 @@ struct CashFlowProjectionCalculator {
     private static func sortLinesByAmountGrouped(
         _ lines: [CashFlowLine],
         monthKey: String, monthDate: Date,
-        index: TransactionIndex, calendar: Calendar
+        index: TransactionIndex,
+        currencyCode: String, converter: any CurrencyConverting,
+        calendar: Calendar
     ) -> [CashFlowLine] {
         // Pre-compute amounts once per line (O(n)) to avoid redundant calls during sort
         let amounts: [UUID: Double] = Dictionary(uniqueKeysWithValues: lines.map { line in
             let amt = line.overrides?.first(where: { $0.monthKey == monthKey })?.amount
-                ?? estimatePlannedAmount(line: line, monthDate: monthDate, index: index, calendar: calendar)
+                ?? estimatePlanned(
+                    line: line, monthDate: monthDate, index: index,
+                    currencyCode: currencyCode, converter: converter, calendar: calendar
+                ).amount
             return (line.id, amt)
         })
 

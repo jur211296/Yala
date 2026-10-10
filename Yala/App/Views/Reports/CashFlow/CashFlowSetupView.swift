@@ -270,7 +270,8 @@ struct CashFlowSetupView: View {
                 value: line.suggestedAmount,
                 currencyCode: currencyCode,
                 font: DS.Typography.body.monospacedDigit(),
-                tint: line.isIncome ? .color(Color.electricIndigo) : .primary
+                tint: line.isIncome ? .color(Color.electricIndigo) : .primary,
+                isEstimate: line.isApproximate
             )
 
             Button {
