@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (836)
+## Index (837)
 
 | id | status | path |
 |---|---|---|
@@ -136,7 +136,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | blocked-copy-mapping-lives-in-three-views-untestable | backlog | tickets/backlog/blocked-copy-mapping-lives-in-three-views-untestable.md |
 | blocked-sign-in-still-binds-the-subscription-to-that-account | backlog | tickets/backlog/blocked-sign-in-still-binds-the-subscription-to-that-account.md |
 | born-cloud-sign-up-over-mirror-imported-rows-skips-the-corpus-check | backlog | tickets/backlog/born-cloud-sign-up-over-mirror-imported-rows-skips-the-corpus-check.md |
-| born-cloud-signup-lands-on-existing-account-silently | backlog | tickets/backlog/born-cloud-signup-lands-on-existing-account-silently.md |
+| born-cloud-signup-into-existing-account-relaunch-says-nothing | backlog | tickets/backlog/born-cloud-signup-into-existing-account-relaunch-says-nothing.md |
+| born-cloud-signup-lands-on-existing-account-silently | qa | tickets/qa/born-cloud-signup-lands-on-existing-account-silently.md |
 | borncloud-consent-epoch-written-before-the-guard-decides | backlog | tickets/backlog/borncloud-consent-epoch-written-before-the-guard-decides.md |
 | bridge-de-grupos-pierde-la-marca-de-sus-patas | done | tickets/done/bridge-de-grupos-pierde-la-marca-de-sus-patas.md |
 | bridge-synthesis-trusts-a-zero-converted-amount | backlog | tickets/backlog/bridge-synthesis-trusts-a-zero-converted-amount.md |
