@@ -2957,23 +2957,16 @@ final class PanelViewModel {
         if newBalances != accountBalances { accountBalances = newBalances }
     }
 
-    /// Pre-computes period-specific expenses per account (expenses-only mode).
+    /// Pre-computes period-specific expenses per account (expenses-only mode). La regla es `AccountSpendingLogic`, la
+    /// misma de la vista de cuenta: una devolución resta.
     /// Called from performCalculation() — recalculates on period/filter changes.
     private func calculateAccountPeriodExpenses() {
-        let interval = panelDateInterval
-        var newExpenses: [PersistentIdentifier: Double] = [:]
-        for account in accounts {
-            newExpenses[account.persistentModelID] = 0
-        }
-        for transaction in transactions {
-            guard let account = transaction.account else { continue }
-            let accountID = account.persistentModelID
-            guard newExpenses[accountID] != nil else { continue }
-            guard interval.contains(transaction.date) else { continue }
-            guard transaction.balanceAdjustmentType == nil else { continue }
-            guard transaction.category?.isIncome == false else { continue }
-            newExpenses[accountID] = (newExpenses[accountID] ?? 0) + abs(transaction.amount)
-        }
+        let newExpenses = AccountSpendingLogic.spentByAccount(
+            transactions,
+            accounts: accounts.map(\.persistentModelID),
+            in: panelDateInterval,
+            key: \.persistentModelID
+        )
         if newExpenses != accountPeriodExpenses { accountPeriodExpenses = newExpenses }
     }
 
