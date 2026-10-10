@@ -582,5 +582,25 @@
 			<string>Przeliczyć %d transakcji?</string>
 		</dict>
 	</dict>
+	<key>storage.sync.waitingForConnection</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d zmiana czeka na połączenie</string>
+			<key>few</key>
+			<string>%d zmiany czekają na połączenie</string>
+			<key>many</key>
+			<string>%d zmian czeka na połączenie</string>
+			<key>other</key>
+			<string>%d zmiany czeka na połączenie</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

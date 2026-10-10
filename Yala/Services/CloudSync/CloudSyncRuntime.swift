@@ -144,7 +144,9 @@ final class CloudSyncRuntime {
 
     private var isCycling = false
     private var pendingCycle = false
-    private var consecutiveTransients = 0
+    /// `private(set)` y no `private` solo para LEERLO (ticket `cloud-sync-status-says-all-synced-with-changes-still-pending`):
+    /// la tarjeta «Sincronización» lo usa para saber si el último ciclo completó (`SyncStatusSectionLogic.engineIsHealthy`).
+    private(set) var consecutiveTransients = 0
     private var cadenceTask: Task<Void, Never>?
 
     /// SERIO-2 (teardown M1 vs ciclo en vuelo): `Task.cancel()` es COOPERATIVO y `performCycle` no

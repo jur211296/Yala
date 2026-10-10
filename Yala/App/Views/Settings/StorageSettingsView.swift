@@ -15,6 +15,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct StorageSettingsView: View {
 
@@ -520,14 +521,23 @@ struct StorageSettingsView: View {
             //
             // Y va ANTES de `syncNeedsSignIn` porque re-firmar no arregla un attest roto: ofrecer ahí el botón de
             // sign-in mandaría a la persona a un gesto que no cambia nada.
-            if CloudAttestNotice.isShowing(verdictIsTerminal: attestVerdictIsTerminal) {
+            //
+            // **Y el check verde ya no es el `else`** (ticket `cloud-sync-status-says-all-synced-with-changes-still-pending`,
+            // decisión de Jürgen del 2026-10-07): sin red, con el motor en backoff o `.idle`, los cambios sin subir caían
+            // ahí y la pantalla decía «Todo sincronizado». El orden de las cuatro ramas vive en `SyncStatusSectionLogic`.
+            switch SyncStatusSectionLogic.decide(
+                attestNoticeShowing: CloudAttestNotice.isShowing(verdictIsTerminal: attestVerdictIsTerminal),
+                needsSignIn: controller.syncNeedsSignIn, signInPendingCount: controller.pendingUploadCount,
+                isCloud: CloudSyncFlags.storageMode == .cloud, pendingCount: controller.pendingSyncCount,
+                engineIsHealthy: controller.syncEngineIsHealthy) {
+            case .attestUnavailable:
                 CloudAttestNoticeBanner(accessibilityID: "storage_sync_attest_banner")
-            } else if controller.syncNeedsSignIn {
+            case .needsSignIn(let pending):
                 // Sin cifra si la cola no se dejó contar: el motor sigue parado y firmar sigue siendo la salida (ticket
                 // `an-unreadable-migration-journal-reads-as-never-started`). Naranja solo el icono, como la nota de la
                 // vuelta de esta misma pantalla: como TEXTO, `warningForeground` sobre la tarjeta blanca no llega a AA.
                 Label {
-                    if let pending = controller.pendingUploadCount {
+                    if let pending {
                         Text(L10n.Storage.Sync.needsSignIn(pending))
                     } else {
                         Text(L10n.Storage.Sync.needsSignInUncounted)
@@ -539,14 +549,31 @@ struct StorageSettingsView: View {
                 .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
                 .accessibilityElement(children: .combine)
-                .accessibilityIdentifier(controller.pendingUploadCount == nil
+                .accessibilityIdentifier(pending == nil
                                          ? "storage_sync_needs_signin_uncounted" : "storage_sync_needs_signin_count")
                 YalaPrimaryButton(L10n.Storage.Sync.signInButton, icon: "person.crop.circle.badge.checkmark",
                                   isDisabled: controller.isWorking) {
                     Task { await controller.signInToResumeSync() }
                 }
                 .accessibilityIdentifier("storage_sync_signin_button")
-            } else {
+            case .waitingForConnection(let pending):
+                // Gris y sin botón: es pasajero y no hay nada que pulsar —sube solo con el siguiente ciclo sano—, así que
+                // ni el verde del check ni el naranja de la puerta de firmar.
+                Label {
+                    if let pending {
+                        Text(L10n.Storage.Sync.waitingForConnection(pending))
+                    } else {
+                        Text(L10n.Storage.Sync.waitingForConnectionUncounted)
+                    }
+                } icon: {
+                    Image(systemName: "icloud.and.arrow.up")
+                }
+                .font(DS.Typography.caption)
+                .foregroundStyle(.secondary)
+                .accessibilityElement(children: .combine)
+                .accessibilityIdentifier(pending == nil
+                                         ? "storage_sync_waiting_uncounted" : "storage_sync_waiting_count")
+            case .upToDate:
                 HStack(spacing: DS.Spacing.sm) {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundStyle(DS.Semantic.successForeground)
@@ -554,10 +581,21 @@ struct StorageSettingsView: View {
                         .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                 }
+                .accessibilityElement(children: .combine)
+                .accessibilityIdentifier("storage_sync_up_to_date")
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .storageCardStyle()
+        // **El recuento se entera cuando algo guarda, sin otro sondeo**: apuntar un gasto, el drain que lo pasa al outbox y
+        // la subida que lo borra guardan, y cada guardado avisa con `ModelContext.didSave`. El sondeo de 1 s de arriba solo
+        // relee el estado del motor (`refresh()`), que no hace fetch. La tarea vive lo que vive la sección: solo en la nube.
+        .task {
+            controller.refreshPendingSyncCount()
+            for await _ in NotificationCenter.default.notifications(named: ModelContext.didSave) {
+                controller.refreshPendingSyncCount()
+            }
+        }
     }
 
     // MARK: - Progress card (transitional)

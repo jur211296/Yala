@@ -5406,6 +5406,8 @@
 
 /* Sincronización parada hasta iniciar sesión, cuando no se pudo contar cuántos cambios faltan */
 "storage.sync.needsSignInUncounted" = "Inicia sessão para enviar as tuas alterações";
+"storage.sync.waitingForConnection" = "%d alterações a aguardar ligação";
+"storage.sync.waitingForConnectionUncounted" = "Alterações a aguardar ligação";
 
 /* Ver qué migraría: los conteos no se pudieron leer */
 "storage.migrate.previewUnreadable" = "Não conseguimos contar os teus dados. Tenta novamente daqui a pouco.";

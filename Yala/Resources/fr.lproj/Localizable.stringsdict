@@ -466,5 +466,21 @@
 			<string>Convertir %d opérations ?</string>
 		</dict>
 	</dict>
+	<key>storage.sync.waitingForConnection</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d modification en attente de connexion</string>
+			<key>other</key>
+			<string>%d modifications en attente de connexion</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

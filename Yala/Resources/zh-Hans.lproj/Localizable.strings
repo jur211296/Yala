@@ -6145,6 +6145,7 @@
 
 /* Sincronización parada hasta iniciar sesión, cuando no se pudo contar cuántos cambios faltan */
 "storage.sync.needsSignInUncounted" = "登录以上传你的更改";
+"storage.sync.waitingForConnectionUncounted" = "更改正在等待连接";
 
 /* Ver qué migraría: los conteos no se pudieron leer */
 "storage.migrate.previewUnreadable" = "无法统计你的数据。请稍后重试。";

@@ -595,6 +595,9 @@ struct MigrationJournalUnreadableWiringTests {
             "reverseSessionExpiry = _runner?.lastReverseSessionExpiry",
             "readLiveSession()",
             "refreshSyncBanner()",
+            // Desde `cloud-sync-status-says-all-synced-with-changes-still-pending`: ¿completó el motor su último ciclo?
+            // Sin fetch, para la tarjeta «Sincronización».
+            "refreshSyncEngineHealth()",
         ])
     }
 
@@ -791,11 +794,14 @@ struct MigrationJournalUnreadableWiringTests {
         ])
         let sync = Self.lines(try Self.body(of: "private func syncStatusSection(_ controller: CloudMigrationController) -> some View {",
                                             in: view))
-        let label = try #require(sync.firstIndex(of: "} else if controller.syncNeedsSignIn {"))
+        // Desde `cloud-sync-status-says-all-synced-with-changes-still-pending` la rama es un `case` de
+        // `SyncStatusSectionLogic.Status`, y la cifra (`nil` = sin contar) viaja dentro de él.
+        let label = try #require(sync.firstIndex(of: "case .needsSignIn(let pending):"))
+        #expect(sync.contains("needsSignIn: controller.syncNeedsSignIn, signInPendingCount: controller.pendingUploadCount,"))
         #expect(Array(sync[label..<(label + 8)]) == [
-            "} else if controller.syncNeedsSignIn {",
+            "case .needsSignIn(let pending):",
             "Label {",
-            "if let pending = controller.pendingUploadCount {",
+            "if let pending {",
             "Text(L10n.Storage.Sync.needsSignIn(pending))",
             "} else {",
             "Text(L10n.Storage.Sync.needsSignInUncounted)",

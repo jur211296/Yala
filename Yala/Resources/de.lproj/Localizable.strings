@@ -6133,6 +6133,7 @@
 
 /* Sincronización parada hasta iniciar sesión, cuando no se pudo contar cuántos cambios faltan */
 "storage.sync.needsSignInUncounted" = "Melde dich an, um deine Änderungen hochzuladen";
+"storage.sync.waitingForConnectionUncounted" = "Änderungen warten auf eine Verbindung";
 
 /* Ver qué migraría: los conteos no se pudieron leer */
 "storage.migrate.previewUnreadable" = "Wir konnten deine Daten nicht zählen. Versuche es gleich noch einmal.";
