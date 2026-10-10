@@ -43,6 +43,13 @@ struct GroupExpensePrefillTemplate {
     /// `DraftToGroupExpenseTemplateLogic`) nacieron con él. Quien añada un tercero tiene que
     /// decidir qué fecha corresponde, y el compilador se lo va a exigir.
     let date: Date
+    /// La categoría del origen (la del pago planificado o la del borrador convertido).
+    ///
+    /// **Sin valor por defecto, por la misma razón que `date`.** Sin ella el gasto de grupo nacía sin
+    /// clasificar y el puente dejaba en la Bandeja OTRO borrador del mismo gasto pidiendo la categoría que
+    /// la persona ya había elegido (ticket `shared-scheduled-expense-shows-twice-in-inbox`). `nil` es una
+    /// respuesta válida —el origen no tenía categoría y el puente la pedirá—, pero la decide cada productor.
+    let subcategory: Subcategory?
 }
 
 struct GroupExpenseFormView: View {

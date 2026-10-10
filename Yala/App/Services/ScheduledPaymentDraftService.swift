@@ -49,6 +49,8 @@ struct ScheduledPaymentDraftService {
         var draftsCreated = 0
         // Antes de crear nada: los pendientes de una ocurrencia que la persona ya descartó se archivan.
         var hasChanges = archiveDraftsOfDismissedOccurrences(context: context)
+        // Y los «elige categoría» que dejó aprobar un gasto compartido planificado antes del arreglo.
+        if classifyPointersOfApprovedGroupPlannedExpenses(context: context) { hasChanges = true }
 
         for payment in duePayments {
             // Skip if this date has been pre-skipped by user
@@ -153,6 +155,71 @@ struct ScheduledPaymentDraftService {
             DraftService.cacheArchiveDisplayValues(draft)
             draft.status = .rejected
             draft.updatedAt = Date.now
+            changed = true
+        }
+        return changed
+    }
+
+    // MARK: - Approved Group Planned Expenses
+
+    /// Resuelve cada borrador PENDIENTE «elige categoría» de un gasto de grupo que nació de aprobar un pago planificado
+    /// de grupo con categoría, como si la persona lo aprobara con esa categoría. Devuelve si cambió algo.
+    ///
+    /// Ticket `shared-scheduled-expense-shows-twice-in-inbox`: hasta el arreglo, el formulario de grupo que abre la
+    /// Bandeja no recibía la categoría del pago, el gasto nacía sin clasificar y el puente dejaba ese borrador del mismo
+    /// gasto (misma nota, importe y fecha). Esto barre los que ya están en los teléfonos. Solo cuando todo lo prueba:
+    /// el borrador pide solo la categoría (ni opt-in ni puntero a otra transacción), la transacción REAL del gasto sigue
+    /// sin categoría y `handleGroupScheduledExpenseApproved` la enlazó a un pago planificado de grupo que tiene una de
+    /// usuario. Con el puente apagado no hay transacción real enlazada al pago y no se toca (residual del ticket).
+    /// Idempotente: resuelto, el borrador ya no existe y la transacción ya tiene categoría, así que el puente tampoco lo
+    /// vuelve a crear.
+    private static func classifyPointersOfApprovedGroupPlannedExpenses(context: ModelContext) -> Bool {
+        let groupExpenseRaw = DraftSourceType.groupExpense.rawValue
+        let pointers: [InboxDraft]
+        do {
+            pointers = try context.fetch(FetchDescriptor<InboxDraft>(predicate: #Predicate<InboxDraft> {
+                $0.statusRaw == "pending" && $0.sourceTypeRaw == groupExpenseRaw && $0.splitExpenseID != nil
+            })).filter {
+                !$0.optInPersonalOnly && $0.targetTransactionID == nil
+                    && $0.needsUserInput == [DraftInputRequirement.subcategory]
+            }
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentDraftService: Error fetching group category drafts: \(error)")
+            #endif
+            return false
+        }
+        guard !pointers.isEmpty else { return false }
+
+        var changed = false
+        for pointer in pointers {
+            guard let splitID = pointer.splitExpenseID else { continue }
+            let real: TransactionItem
+            let payment: ScheduledPayment
+            do {
+                let txs = try context.fetch(FetchDescriptor<TransactionItem>(
+                    predicate: #Predicate<TransactionItem> { $0.splitExpenseID == splitID }))
+                guard let found = txs.first(where: { $0.account?.isSystemAccount == false }),
+                      found.subcategory == nil,
+                      let paymentID = found.scheduledPaymentID.flatMap(UUID.init(uuidString:)) else { continue }
+                var descriptor = FetchDescriptor<ScheduledPayment>(predicate: #Predicate { $0.id == paymentID })
+                descriptor.fetchLimit = 1
+                guard let foundPayment = try context.fetch(descriptor).first else { continue }
+                real = found
+                payment = foundPayment
+            } catch {
+                #if DEBUG
+                print("ScheduledPaymentDraftService: Error resolving group category draft: \(error)")
+                #endif
+                continue
+            }
+            guard payment.isGroupPayment, let subcategory = payment.subcategory, !subcategory.isAnySystem else { continue }
+
+            // Lo mismo que aprobar ese borrador desde la Bandeja (`DraftService.approveDraft`, rama del puntero).
+            real.subcategory = subcategory
+            real.category = subcategory.safeCategory
+            InboxRowPruneCoordinator.shared.pruneRow(pointer.persistentModelID)
+            context.delete(pointer)
             changed = true
         }
         return changed
