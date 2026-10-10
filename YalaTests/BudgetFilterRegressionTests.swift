@@ -212,3 +212,10 @@ struct BudgetFilterRegressionTests {
         #expect(result.first?.subcategory?.persistentModelID == subOptional.persistentModelID)
     }
 }
+
+// PRUEBA DEL CI (ci-warns-but-does-not-block) — rojo a propósito, nunca se mergea.
+extension BudgetFilterRegressionTests {
+    @Test func pruebaCI_contextBased_rojoAPropósito() {
+        #expect(Bool(false), "rojo a propósito: comprueba que context-based pone `tests` en rojo")
+    }
+}
