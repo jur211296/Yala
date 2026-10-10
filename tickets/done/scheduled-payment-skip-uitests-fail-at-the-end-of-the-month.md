@@ -1,10 +1,10 @@
 ---
 id: scheduled-payment-skip-uitests-fail-at-the-end-of-the-month
-status: backlog
+status: done
 priority: medium
 area: "testing, planificación"
 created: 2026-09-29
-updated: 2026-09-30
+updated: 2026-10-10
 source: "gate de sheet-size-follows-the-device-not-the-window, 2026-09-29"
 ---
 
@@ -33,3 +33,21 @@ cae en el mes en curso.
 
 Que el test no dependa del día: sembrar un pago que caiga dentro del mes en curso, o que el test pase a «Próximo mes»
 si el actual está vacío. Revisar si otros XCUITest de Planificación leen «Este mes» con la misma semilla.
+
+## Resuelto (2026-10-10)
+
+**Causa, medida:** `ScheduledPaymentDateCalculator.applyPostFilters` descarta las fechas anteriores a `createdAt`, que
+es el momento de la siembra. Los 8 pagos van del día 3 al 28 ⇒ sembrando el **29, 30 o 31** el mes en curso queda
+vacío. Medido con `DevSeedScheduledPaymentsMonthCoverageTests` sobre la semilla vieja: vacío en los 30 días 29-31 de
+2026 y el 29-feb-2028; ningún otro día. Febrero de 28 días nunca falla.
+
+**Arreglo:** el perfil `minimal` siembra además «Recibo fin de mes» (`dayOfMonth: 31` → último día de cada mes, que
+nunca queda atrás). Del 1 al 28 se ordena el último, así que no cambia la fila que toca ningún test. `realista` y el
+resto de perfiles no lo ven.
+
+**Reproducción a demanda:** `-uitest-scheduled-seed-day <N>` siembra los pagos como si hoy fuera el día N del mes en
+curso. Con la semilla vieja, `test_skippingOccurrencePersists_onLastDayOfMonth` cae con el mismo mensaje del ticket
+(«No se montó la lista de pagos programados», línea 37); con el arreglo, 3 corridas seguidas de la clase entera
+(4/4 casos, incluidos último y primer día del mes) en verde. Los demás XCUITest de Planificación
+(`ScheduledPaymentsCrud`, `ScheduledPaymentRecurrenceA11y`, `IPhoneLandscape`, `AdaptiveNavigation`): 20/20 verdes.
+Ningún otro lee las filas de «Este mes».

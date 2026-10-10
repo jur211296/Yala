@@ -2073,16 +2073,17 @@
         "Yala/App/Views/Shared/PeriodNavigationHeader.swift",
         "Yala/App/Logic/ScheduledDraftOccurrenceLogic.swift",
         "Yala/App/Services/ScheduledPaymentDraftService.swift",
-        "Yala/Services/DraftService.swift"
+        "Yala/Services/DraftService.swift",
+        "Yala/Seed/DevSeedScheduledPayments.swift"
       ],
       "scenarioIDs": [
         "F-SCH-02",
         "F-SCH-03"
       ],
       "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/ScheduledPaymentSkipUITests | 2026-10-08 (`inbox-dismiss-x-does-not-delete-the-draft-for-good`): descartar (x, swipe, lote, papelera) el borrador de un pago programado salta la ocurrencia que retiene en los tres orígenes y archiva sus gemelos de otro dispositivo; volver a pendientes deshace el salto; aprobar una ocurrencia ya dejada atrás no avanza dos veces. unit:YalaTests/InboxDismissScheduledDraftTests,YalaTests/ScheduledDraftOccurrenceLogicTests,YalaTests/CloudSync/InboxDismissScheduledDraftCloudTests (dos dispositivos por el wire de la nube) — rojo en 2.1. Device-QA de dos iPhone en tickets/qa/inbox-dismiss-x-does-not-delete-the-draft-for-good.md.",
+      "coverage": "xcuitest:YalaUITests/ScheduledPaymentSkipUITests | 2026-10-10 (`scheduled-payment-skip-uitests-fail-at-the-end-of-the-month`): la suite ya no depende del día — el perfil `minimal` siembra «Recibo fin de mes» (último día de cada mes) y `-uitest-scheduled-seed-day <N>` fuerza la fecha de la siembra; casos `_onLastDayOfMonth` (rojo con la semilla vieja, mutante verificado) y `_onFirstDayOfMonth`. unit:YalaTests/DevSeedScheduledPaymentsMonthCoverageTests (todos los días de 2026 + feb-2028; con la semilla vieja «Este mes» queda vacío los días 29-31). | 2026-10-08 (`inbox-dismiss-x-does-not-delete-the-draft-for-good`): descartar (x, swipe, lote, papelera) el borrador de un pago programado salta la ocurrencia que retiene en los tres orígenes y archiva sus gemelos de otro dispositivo; volver a pendientes deshace el salto; aprobar una ocurrencia ya dejada atrás no avanza dos veces. unit:YalaTests/InboxDismissScheduledDraftTests,YalaTests/ScheduledDraftOccurrenceLogicTests,YalaTests/CloudSync/InboxDismissScheduledDraftCloudTests (dos dispositivos por el wire de la nube) — rojo en 2.1. Device-QA de dos iPhone en tickets/qa/inbox-dismiss-x-does-not-delete-the-draft-for-good.md.",
       "owner": "",
-      "lastVerified": "2026-10-08"
+      "lastVerified": "2026-10-10"
     },
     {
       "area": "scheduled-payments",

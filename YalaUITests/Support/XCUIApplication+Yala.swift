@@ -64,6 +64,7 @@ extension XCUIApplication {
         settlementAmountChange: Bool = false,
         lateNoticeKeptGroups: Bool = false,
         welcomeAfterAdoptExit: Bool = false,
+        scheduledSeedDay: Int? = nil,
         extraArguments: [String] = []
     ) -> XCUIApplication {
         var args = ["-uitest"]
@@ -148,6 +149,12 @@ extension XCUIApplication {
         // el simulador. Dos redes, cada una para su caso: el nombre de los dos args lo fija un test de paridad
         // con `UITestHooks` (`AppleIDCloseNoticeWiringTests`), y si la SIEMBRA fallara, la app no encola la hoja.
         if appleIDChanged { args.append("-uitest-apple-id-changed") }
+        // Siembra los pagos planificados como si hoy fuera el día N del mes en curso (`UITestHooks.scheduledSeedToday`).
+        // Nombrado y no por `extraArguments:`: un typo dejaría la fecha real y el caso de fin de mes saldría verde sin medirlo.
+        if let scheduledSeedDay {
+            args.append("-uitest-scheduled-seed-day")
+            args.append(String(scheduledSeedDay))
+        }
         // Los dos seams del XCUITest del DESARME: la condición viva se enciende y la presentación no monta
         // nunca. NOMBRADOS por lo mismo que sus vecinos y con un agravante: un typo dejaría el aviso montando
         // de verdad, y el caso del desarme se quedaría esperando un paywall que solo sale al contestarlo.

@@ -726,7 +726,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | savings-tracking | backlog | tickets/backlog/savings-tracking.md |
 | scene-phase-active-guard-may-leave-the-brake-paused | backlog | tickets/backlog/scene-phase-active-guard-may-leave-the-brake-paused.md |
 | scheduled-payment-once-labeled-monthly | backlog | tickets/backlog/scheduled-payment-once-labeled-monthly.md |
-| scheduled-payment-skip-uitests-fail-at-the-end-of-the-month | backlog | tickets/backlog/scheduled-payment-skip-uitests-fail-at-the-end-of-the-month.md |
+| scheduled-payment-skip-uitests-fail-at-the-end-of-the-month | done | tickets/done/scheduled-payment-skip-uitests-fail-at-the-end-of-the-month.md |
 | scheduled-payments-notif-dedup | qa | tickets/qa/scheduled-payments-notif-dedup.md |
 | secondary-currency-prompt-uitest-red-on-iphone-se | backlog | tickets/backlog/secondary-currency-prompt-uitest-red-on-iphone-se.md |
 | secondary-entry-healing-writes-owner-not-session | discarded | tickets/discarded/secondary-entry-healing-writes-owner-not-session.md |

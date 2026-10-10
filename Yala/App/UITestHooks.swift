@@ -528,6 +528,34 @@ final class UITestHooks {
     /// `ScheduledPaymentSkipUITests` opera sobre el `firstMatch` de las filas.
     nonisolated static var scheduledDueToday: Bool { hasArg("-uitest-scheduled-due-today") }
 
+    /// `-uitest-scheduled-seed-day <N>`: siembra los pagos planificados como si hoy fuera el día `N` del mes
+    /// EN CURSO (recortado a su longitud: `31` es siempre el último día). Solo mueve el «hoy» de
+    /// `DevSeedScheduledPayments` —sus fechas y su `createdAt`—; la app sigue mirando el reloj real, así que
+    /// «Este mes» es el mismo mes. Existe para reproducir sin esperar a fin de mes el rojo de
+    /// `scheduled-payment-skip-uitests-fail-at-the-end-of-the-month`: sembrando del 29 en adelante, «Este mes»
+    /// se quedaba vacío. Nil si falta o no es un número.
+    nonisolated static var scheduledSeedToday: Date? {
+        #if DEBUG
+        guard isActive,
+              let raw = parseValue(after: "-uitest-scheduled-seed-day", from: ProcessInfo.processInfo.arguments),
+              let day = Int(raw)
+        else { return nil }
+        return seedDate(dayOfCurrentMonth: day, now: .now)
+        #else
+        return nil
+        #endif
+    }
+
+    /// Pure-logic de `scheduledSeedToday`: mediodía del día `day` del mes de `now`, recortado a `1...longitud`.
+    /// Mediodía y no medianoche: una fecha a medianoche cae en la frontera cerrada de `DateInterval`.
+    nonisolated static func seedDate(dayOfCurrentMonth day: Int, now: Date, calendar: Calendar = .current) -> Date? {
+        guard let monthLength = calendar.range(of: .day, in: .month, for: now)?.count else { return nil }
+        var comps = calendar.dateComponents([.year, .month], from: now)
+        comps.day = min(max(day, 1), monthLength)
+        comps.hour = 12
+        return calendar.date(from: comps)
+    }
+
     /// `-uitest-fail-wipe`: hace que los borrados LANCEN antes de tocar nada, dejando los datos
     /// intactos. Es la superficie que faltaba para ver en pantalla las ramas de FALLO que en producción
     /// son mudas.
