@@ -231,7 +231,8 @@ struct SiriNaturalEntryIntent: AppIntent {
             parsedTransactions = try await TranscriptionParserService.shared.parseMultiple(
                 text: finalText,
                 expenseSubcategories: cachedContext?.expenseSubcategories ?? [],
-                incomeSubcategories: cachedContext?.incomeSubcategories ?? []
+                incomeSubcategories: cachedContext?.incomeSubcategories ?? [],
+                currency: cachedContext?.parserCurrency ?? .unknown
             )
         } catch {
             #if DEBUG

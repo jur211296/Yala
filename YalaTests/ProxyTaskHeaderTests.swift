@@ -160,12 +160,22 @@ struct ProxyTaskHeaderTests {
         #expect(longest == CGFloat(PhotoUploadSizing.defaultMaxEdge), "la foto subió a \(longest) px")
     }
 
-    @Test("leer una nota: text.parse")
-    func textParse() async {
+    @Test("leer una nota: text.parse, con JSON estricto y las divisas del usuario en el prompt")
+    func textParse() async throws {
         let sent = await capture {
-            _ = try? await TranscriptionParserService().parseMultiple(text: "taxi 12", expenseSubcategories: ["Taxi"], incomeSubcategories: [])
+            _ = try? await TranscriptionParserService().parseMultiple(
+                text: "taxi 12", expenseSubcategories: ["Taxi"], incomeSubcategories: [],
+                currency: ParserCurrencyContext(mainCurrency: "ARS", accountCurrencies: ["ARS"])
+            )
         }
         expectTask(sent, .textParse)
+        let raw = try #require(sent.first?.body)
+        let body = try #require(try JSONSerialization.jsonObject(with: raw) as? [String: Any])
+        let format = try #require(body["response_format"] as? [String: Any], "la petición del parser salió sin response_format")
+        #expect(format["type"] as? String == "json_schema")
+        #expect((format["json_schema"] as? [String: Any])?["strict"] as? Bool == true)
+        let system = try #require(((body["messages"] as? [[String: Any]])?.first)?["content"] as? String)
+        #expect(system.contains("La divisa principal del usuario es ARS"))
     }
 
     @Test("transcribir: voice.transcribe con el idioma elegido")

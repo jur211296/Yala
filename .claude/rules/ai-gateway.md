@@ -10,6 +10,7 @@ paths:
   - "Yala/App/Services/ProxyErrorMapper.swift"
   - "Yala/App/Services/ImageVision/**"
   - "Yala/Services/VoiceTranscriptionService.swift"
+  - "Yala/Services/TranscriptionParserService.swift"
   - "Yala/Services/AIPromptLanguage.swift"
   - "Yala/Services/InsightsLLMService.swift"
 ---
@@ -58,6 +59,18 @@ calidad medida y después por precio**. La app ya no decide nada: dice qué tare
   Sin él, 1536 (`PhotoUploadSizing`). Nunca se amplía. Cambiar el modelo de la foto puede cambiar ese número sin release.
 - **El «$» a secas lo decide la divisa principal del usuario** (`VisionCurrencyContext.dollarAlone`): si no se escribe con
   «$», es `null` y se elige en la revisión. El prompt enseña ¥ (JPY o CNY según el texto), R$, zł y CHF.
+
+## La lectura de una frase (`text.parse`, 2026-10-09)
+
+- **El formato lo decide la fila, no la app.** La app manda `json_schema` estricto (`TextParseResponseSchema`), pero la
+  fila `managed` lo ignora: el JSON estricto vive en `ROUTES["text.parse"]` (`json_object` + `TEXT_PARSE_SCHEMA` +
+  `strictSchema`), y por eso alcanza también a las versiones instaladas. Si cambias un campo del DTO, cambia los dos
+  esquemas: `TranscriptionParserCurrencyTests.schemaMatchesTheGateway` compara sus `required`.
+- **Los nombres de divisa compartidos se resuelven en Swift** (`ParserCurrencyContext`: principal → la única cuenta de
+  la familia → el defecto) y el prompt recibe el código ya decidido. Las familias y las palabras clave de los ejemplos
+  van UNA POR LÍNEA porque el banco las lee del Swift con una regex (`bench/lib/textParse.ts`).
+- **Un ejemplo del prompt solo enseña una subcategoría de la lista del usuario** (o `null`): un nombre fijo enseña a
+  inventar. Y la fecha tiene una sola regla: siempre `YYYY-MM-DD`, hoy si no la dijo.
 
 ## El idioma de la respuesta (2026-10-07)
 
