@@ -600,7 +600,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | pending-reverse-complete-runs-with-whatever-session-is-live | backlog | tickets/backlog/pending-reverse-complete-runs-with-whatever-session-is-live.md |
 | personal-clock-ahead-wins-every-conflict-until-real-time-catches-up | qa | tickets/qa/personal-clock-ahead-wins-every-conflict-until-real-time-catches-up.md |
 | personal-clock-rollback-wedges-the-drain-forever | done | tickets/done/personal-clock-rollback-wedges-the-drain-forever.md |
-| personal-cloudkit-schema-snapshot-misses-optional-fields | backlog | tickets/backlog/personal-cloudkit-schema-snapshot-misses-optional-fields.md |
+| personal-cloudkit-cashflow-override-line-declared-as-reference | backlog | tickets/backlog/personal-cloudkit-cashflow-override-line-declared-as-reference.md |
+| personal-cloudkit-schema-snapshot-misses-optional-fields | blocked | tickets/blocked/personal-cloudkit-schema-snapshot-misses-optional-fields.md |
 | personal-drain-that-always-aborts-blocks-cloud-sign-out-with-a-wait-a-moment-copy | qa | tickets/qa/personal-drain-that-always-aborts-blocks-cloud-sign-out-with-a-wait-a-moment-copy.md |
 | personal-loss-without-a-count-covers-own-edits-made-after-the-notice | backlog | tickets/backlog/personal-loss-without-a-count-covers-own-edits-made-after-the-notice.md |
 | personal-sign-out-reads-an-unfinished-drain-as-nothing-pending | done | tickets/done/personal-sign-out-reads-an-unfinished-drain-as-nothing-pending.md |
