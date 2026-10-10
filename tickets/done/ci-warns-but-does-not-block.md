@@ -1,10 +1,10 @@
 ---
 id: ci-warns-but-does-not-block
-status: backlog
+status: done
 priority: medium
 area: platform
 created: 2026-09-04
-updated: 2026-10-08
+updated: 2026-10-10
 source: residuales de ci-verde-con-la-suite-en-rojo al cerrarlo (2026-09-04)
 ---
 
@@ -87,3 +87,29 @@ La conclusión de fondo —el gate no corría lo que podía romperse— se sosti
 - El `TODO(@jur, 2026-07-15)` sigue en `qa.yml:251`.
 
 Triage 2026-10-08: abierto · medium → medium · el paso 4 está hecho (UI a la nocturna, 6a9df9898); el paso 3 sigue: los tres pasos de test con `continue-on-error` (`qa.yml:431`, `:456`, `:484`), así que el check `tests` que exige el ruleset sale verde con unit en rojo.
+
+## Resuelto el 2026-10-10 (paso 3)
+
+**Qué cambia:** un unit test en rojo pone el check `tests` en rojo, y como el ruleset de `2.1` lo
+exige, el auto-merge ya no mergea con un unit en rojo. La UI sigue advisory y solo nocturna.
+
+- Fuera `continue-on-error` de los dos pasos de unit (pure-logic y context-based).
+- Context-based pasa al reintento acotado de `ci-reintentar-rojos.sh` (antes,
+  `-retry-tests-on-failure`, que con Swift Testing repite la selección entera) y corre aunque
+  pure-logic salga en rojo.
+- El aviso distingue «unit en rojo: frena el merge» de «UI en rojo: no lo frena».
+- Banco nuevo `qa/scripts/ci-unit-bloqueante-test.sh` en `coverage-index`: cae si un paso de unit
+  vuelve a llevar `continue-on-error` o `-retry-tests-on-failure`.
+- Regla de área: `.claude/rules/ci-qa.md`.
+
+**El prerequisito del EXC_BREAKPOINT, medido:** en los 300 runs del 30-sep al 10-oct, todos los
+rojos de unit fueron deterministas y reales (`PrivateSessionMarkTests` el 3-oct, `UploadOrderTests`
+el 7-oct, `WidgetDataServiceIntervalTests` el 6-oct), y los dos primeros entraron en `2.1` gracias
+al advisory. Ninguno fue un crash de proceso: 0 de 73 logs del job `tests` traen `Restarting after
+unexpected exit`. (El log del crash de junio, 26963873224, ya caducó: no se pudo contrastar el patrón con
+un crash real.)
+
+**Residuales que quedan fuera, con su sitio:** la carrera de `GroupsRetentionUITests`, las áreas sin
+`lastVerified` y la causa de `systemsetup` siguen como estaban (son de UI o de otro mecanismo). El
+`TODO(@jur, 2026-07-15)` de `qa.yml` se retiró: su premisa era el crash que ya no aparece. El tope
+de 45 min del job va a `ci-tests-job-ceiling-cancels-green-runs`.
