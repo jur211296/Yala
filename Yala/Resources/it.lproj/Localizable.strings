@@ -502,7 +502,7 @@
 "common.loading" = "Caricamento...";
 "common.error" = "Errore";
 "common.success" = "Successo";
-"common.dataPrivacy" = "I tuoi dati non lasciano mai il tuo dispositivo";
+"common.dataPrivacy" = "Dove si trovano i tuoi dati";
 "common.active" = "Attive";
 "common.hidden" = "Nascoste";
 "common.inactive" = "Inattive";
@@ -1150,8 +1150,8 @@
 "profile.allowedChars" = "Solo lettere, numeri e underscore";
 "profile.aliasAvailable" = "Alias disponibile";
 "profile.aliasHelper" = "3-20 caratteri. Solo lettere, numeri e underscore.";
-"profile.privacyTitle" = "I tuoi dati non lasciano mai il tuo dispositivo";
-"profile.privacyDesc" = "Yala memorizza i tuoi dati personali solo sul tuo dispositivo. Le funzioni IA (voce, immagine e insights) sono opzionali e elaborano solo dati riassuntivi — mai le tue spese individuali o informazioni personali.";
+"profile.privacyTitle" = "Dove si trovano i tuoi dati";
+"profile.privacyDesc" = "Con il tuo account nel tuo iCloud privato, i tuoi dati sono salvati sul tuo dispositivo e nel tuo iCloud. Con il tuo account nel cloud, sono salvati sui server di Yala. Ciò che aggiungi in un gruppo, insieme al tuo alias, è salvato sui server di Yala perché il gruppo lo veda. Le funzioni IA (voce, immagine e insights) sono opzionali: ciò che invii passa dal nostro server fino a OpenAI, che lo elabora.";
 "profile.aliasFutureNote" = "Nota: La validazione dell'unicita dell'alias sara disponibile quando verra implementata la funzionalita di spese condivise.";
 "profile.proMember" = "Membro PRO";
 "profile.choosePhoto" = "Scegli foto";
@@ -1830,9 +1830,9 @@
 "onboarding.usageMode.fullControl.desc" = "Includi tutto nel tuo saldo — conti, carte e quello che va e viene con altre persone. Il numero che vedi è quello che è davvero tuo.";
 "onboarding.privacyTitle" = "Tutto pronto";
 "onboarding.privacySubtitle" = "Puoi iniziare a usare Yala";
-"onboarding.privacyLocal" = "I tuoi dati finanziari restano sul tuo dispositivo";
+"onboarding.privacyLocal" = "I tuoi dati finanziari sono salvati nel tuo account";
 "onboarding.privacyNoTracking" = "Nessun tracciamento né pubblicità";
-"onboarding.privacyIcloud" = "Solo tu hai accesso ai tuoi dati";
+"onboarding.privacyIcloud" = "Accedi ai tuoi dati con il tuo account";
 "onboarding.privacyNoSharing" = "Le funzioni IA non condividono né archiviano dati sensibili";
 "onboarding.categoriesDefault" = "Categorie predefinite";
 "onboarding.categoriesCustom" = "Categorie personalizzate";
@@ -1855,9 +1855,9 @@
 "onboarding.balanceManualOption" = "Conosco il mio saldo";
 "onboarding.balanceManualHint" = "Lo inserisci tu";
 "onboarding.balanceGuidedIncompleteHint" = "Non hai completato il calcolo. Tocca per riprenderlo.";
-"onboarding.privacyLocalShort" = "Dati sul tuo dispositivo";
+"onboarding.privacyLocalShort" = "Dati nel tuo account";
 "onboarding.privacyNoTrackingShort" = "Niente tracciamento né annunci";
-"onboarding.privacyIcloudShort" = "Solo tu accedi";
+"onboarding.privacyIcloudShort" = "Accesso con il tuo account";
 "onboarding.privacyNoSharingShort" = "IA sicura";
 "onboarding.accountBalanceGuideTitle" = "Come calcolo il mio saldo?";
 "onboarding.accountBalanceGuideIntro" = "Il tuo saldo iniziale dice a Yala con quanti soldi parti. Non deve essere esatto al centesimo — una stima va benissimo. Ecco come ragionarci in base al tipo di conto che hai scelto.";
@@ -4151,7 +4151,7 @@
 "welcome.hero.title" = "Le tue finanze personali,";
 "welcome.hero.titleAccent" = "senza sforzo.";
 "welcome.hero.cta" = "Iniziare";
-"welcome.hero.trust" = "100% privato · Le tue info rimangono con te";
+"welcome.hero.trust" = "Niente tracciamento né annunci";
 
 "welcome.hero.cards.capture.title" = "Foto degli scontrini";
 "welcome.hero.cards.capture.body" = "Inquadra. Yala legge.";
@@ -4166,7 +4166,7 @@
 "welcome.hero.cards.import.title" = "Importa il tuo storico";
 "welcome.hero.cards.import.body" = "PDF, CSV, Excel. Fatto.";
 "welcome.hero.cards.icloud.title" = "iCloud privato";
-"welcome.hero.cards.icloud.body" = "I tuoi dati, nel tuo iCloud. Niente server.";
+"welcome.hero.cards.icloud.body" = "I tuoi dati, nel tuo iCloud.";
 "welcome.hero.cards.more.title" = "E molto altro";
 "welcome.hero.cards.more.body" = "Scopriamolo insieme.";
 
@@ -4436,7 +4436,7 @@
 /* Group-expense draft approved but its source expense was deleted remotely (no TX exists) */
 "inbox.errorGroupExpenseGone" = "Questa spesa condivisa non esiste più nel gruppo.";
 "whatsNew.v20.groups.title" = "Gruppi (Beta)";
-"whatsNew.v20.groups.description" = "Crea gruppi per dividere le spese e Yala calcola chi deve cosa a chi. E tranquillo: tutto viaggia sul tuo iCloud privato, mai sui nostri server.";
+"whatsNew.v20.groups.description" = "Crea gruppi per dividere le spese e Yala calcola chi deve cosa a chi.";
 "whatsNew.v20.ai.title" = "Ti presentiamo Yala IA";
 "whatsNew.v20.ai.description" = "Il tuo assistente finanziario con intelligenza artificiale. Fagli domande sul tuo denaro, chiedigli di registrare le tue spese e ricevi analisi chiare del tuo mese. Come un amico che se ne intende di finanze, a un messaggio di distanza.";
 "whatsNew.v20.redesign.title" = "Tutto un nuovo look";
