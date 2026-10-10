@@ -1090,7 +1090,6 @@
 "insights.analyzingData" = "Analisando seus dados...";
 "insights.activateAITitle" = "Resumo inteligente disponível";
 "insights.activateAIBody" = "Ative e personalize em Perfil > Funcionalidades com IA.";
-"insights.activateAIDisclaimer" = "Apenas dados resumidos são enviados à OpenAI (totais, percentuais, tendências). As tuas despesas individuais e dados pessoais nunca são compartilhados.";
 "insights.activate" = "Ativar";
 "insights.goToSettings" = "Ir para ajustes";
 "insights.notInterested" = "Não me interessa";
@@ -1831,7 +1830,6 @@
 "onboarding.privacyLocal" = "Seus dados financeiros ficam na sua conta";
 "onboarding.privacyNoTracking" = "Sem rastreamento nem anúncios";
 "onboarding.privacyIcloud" = "Você acessa seus dados com sua conta";
-"onboarding.privacyNoSharing" = "As funções de IA não partilham nem armazenam dados sensíveis";
 "onboarding.categoriesDefault" = "Categorias padrão";
 "onboarding.categoriesCustom" = "Categorias personalizadas";
 "onboarding.privacyTutorialsHint" = "Descobre os tutoriais e dicas do Yala";
@@ -1856,7 +1854,8 @@
 "onboarding.privacyLocalShort" = "Dados na sua conta";
 "onboarding.privacyNoTrackingShort" = "Sem rastreamento nem anúncios";
 "onboarding.privacyIcloudShort" = "Acesso com sua conta";
-"onboarding.privacyNoSharingShort" = "IA segura";
+"onboarding.privacyAIShort" = "IA pelo nosso servidor";
+"onboarding.privacyAIDetail" = "Você decide se quer usar";
 "onboarding.accountBalanceGuideTitle" = "Como calculo o meu saldo?";
 "onboarding.accountBalanceGuideIntro" = "O teu saldo inicial diz ao Yala com quanto dinheiro começas. Não precisa ser exato ao cêntimo — uma estimativa serve perfeitamente. Aqui explicamos como pensá-lo conforme o tipo de conta que escolheste.";
 "onboarding.accountBalanceGuideGeneral" = "Se usas uma conta geral para agrupar todos os teus meios de pagamento numa moeda, o teu saldo reflete quanto dinheiro tens disponível.\n\nPara calculá-lo, soma tudo: contas à ordem, poupanças, dinheiro. Se tens gastos pendentes em cartões de crédito, podes subtraí-los para uma imagem mais precisa — ou gerir cada cartão como conta separada mais tarde.\n\nEsse número final é o teu saldo inicial.";

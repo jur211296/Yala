@@ -1090,7 +1090,6 @@
 "insights.analyzingData" = "Analyse de vos données...";
 "insights.activateAITitle" = "Aperçu intelligent disponible";
 "insights.activateAIBody" = "Activez et personnalisez dans Profil > Fonctionnalités IA.";
-"insights.activateAIDisclaimer" = "Seules des données résumées sont envoyées à OpenAI (totaux, pourcentages, tendances). Tes dépenses individuelles et données personnelles ne sont jamais partagées.";
 "insights.activate" = "Activer";
 "insights.goToSettings" = "Aller aux réglages";
 "insights.notInterested" = "Pas intéressé";
@@ -1833,7 +1832,6 @@
 "onboarding.privacyLocal" = "Vos données financières sont stockées dans votre compte";
 "onboarding.privacyNoTracking" = "Ni suivi, ni publicité";
 "onboarding.privacyIcloud" = "Vous accédez à vos données avec votre compte";
-"onboarding.privacyNoSharing" = "Les fonctions IA ne partagent ni ne stockent de données sensibles";
 "onboarding.categoriesDefault" = "Catégories par défaut";
 "onboarding.categoriesCustom" = "Catégories personnalisées";
 "onboarding.privacyTutorialsHint" = "Découvre les tutoriels et conseils de Yala";
@@ -1858,7 +1856,8 @@
 "onboarding.privacyLocalShort" = "Données dans votre compte";
 "onboarding.privacyNoTrackingShort" = "Sans suivi ni publicités";
 "onboarding.privacyIcloudShort" = "Accès avec votre compte";
-"onboarding.privacyNoSharingShort" = "IA sécurisée";
+"onboarding.privacyAIShort" = "IA via notre serveur";
+"onboarding.privacyAIDetail" = "Tu décides si tu l'utilises";
 "onboarding.accountBalanceGuideTitle" = "Comment calculer mon solde ?";
 "onboarding.accountBalanceGuideIntro" = "Ton solde initial indique à Yala avec combien d'argent tu démarres. Pas besoin d'être exact au centime — une approximation suffit. Voici comment y réfléchir selon le type de compte que tu as choisi.";
 "onboarding.accountBalanceGuideGeneral" = "Si tu utilises un compte général pour regrouper tous tes moyens de paiement dans une devise, ton solde reflète combien d'argent tu as disponible.\n\nPour le calculer, additionne tout : comptes courants, épargne, espèces. Si tu as des dépenses en cours sur des cartes de crédit, tu peux les soustraire pour une image plus précise — ou suivre chaque carte comme un compte séparé plus tard.\n\nCe chiffre final est ton solde initial.";

@@ -1768,9 +1768,9 @@
         "F-ONB-06"
       ],
       "classification": "agentic",
-      "coverage": "device-qa",
+      "coverage": "device-qa | 2026-10-10 (`in-app-ai-privacy-claims-need-a-policy-check`): la tarjeta «IA segura» del último paso pasa a «IA a través de nuestro servidor» + «Tú decides si usarla» (título + subtítulo, solo esa tarjeta). Verificado en simulador iPhone SE (3.ª gen, iOS 27.0) en es-419, en y pl: entra sin truncar. Las frases viejas quedan vetadas en los 16 idiomas por unit:YalaTests/PrivacyCopyForbiddenPhrasesTests.",
       "owner": "",
-      "lastVerified": "2026-10-02"
+      "lastVerified": "2026-10-10"
     },
     {
       "area": "onboarding-redesign-flow",

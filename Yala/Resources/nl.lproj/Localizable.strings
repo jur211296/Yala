@@ -1092,7 +1092,6 @@
 "insights.analyzingData" = "Je gegevens worden geanalyseerd...";
 "insights.activateAITitle" = "Slim overzicht beschikbaar";
 "insights.activateAIBody" = "Schakel het in en pas aan via Profiel > AI-functies.";
-"insights.activateAIDisclaimer" = "Alleen samengevatte gegevens worden naar OpenAI gestuurd (totalen, percentages, trends). Je individuele transacties en persoonlijke gegevens worden nooit gedeeld.";
 "insights.activate" = "Activeren";
 "insights.goToSettings" = "Naar instellingen";
 "insights.notInterested" = "Niet geïnteresseerd";
@@ -1832,7 +1831,6 @@
 "onboarding.privacyLocal" = "Je financiële gegevens worden in je account bewaard";
 "onboarding.privacyNoTracking" = "Geen tracking of advertenties";
 "onboarding.privacyIcloud" = "Je opent je gegevens met je account";
-"onboarding.privacyNoSharing" = "AI-functies delen of bewaren geen gevoelige gegevens";
 "onboarding.categoriesDefault" = "Standaardcategorieën";
 "onboarding.categoriesCustom" = "Aangepaste categorieën";
 "onboarding.privacyTutorialsHint" = "Ontdek de tutorials en tips van Yala";
@@ -1861,7 +1859,8 @@
 "onboarding.privacyLocalShort" = "Gegevens in je account";
 "onboarding.privacyNoTrackingShort" = "Geen tracking of advertenties";
 "onboarding.privacyIcloudShort" = "Toegang met je account";
-"onboarding.privacyNoSharingShort" = "Veilige AI";
+"onboarding.privacyAIShort" = "AI via onze server";
+"onboarding.privacyAIDetail" = "Jij bepaalt of je het gebruikt";
 "onboarding.accountBalanceGuideTitle" = "Hoe bereken ik mijn saldo?";
 "onboarding.accountBalanceGuideIntro" = "Je beginsaldo vertelt Yala met hoeveel geld je begint. Het hoeft niet tot op de cent te kloppen — een ruwe schatting is prima. Hier lees je hoe je erover kunt nadenken, afhankelijk van het type rekening dat je hebt gekozen.";
 "onboarding.accountBalanceGuideGeneral" = "Als je een algemene rekening gebruikt om al je betaalmiddelen in één valuta te bundelen, weerspiegelt je saldo hoeveel geld je beschikbaar hebt.\n\nTel alles op: betaalrekeningen, spaarrekeningen, contant geld. Heb je openstaande creditcardkosten, dan kun je die aftrekken voor een nauwkeuriger beeld — of later elke kaart als aparte rekening bijhouden.\n\nDat eindgetal is je beginsaldo.";

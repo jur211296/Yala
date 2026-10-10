@@ -314,7 +314,8 @@
 "onboarding.privacyLocalShort" = "Data in your account";
 "onboarding.privacyNoTrackingShort" = "No tracking or ads";
 "onboarding.privacyIcloudShort" = "Access with your account";
-"onboarding.privacyNoSharingShort" = "Safe AI";
+"onboarding.privacyAIShort" = "AI through our server";
+"onboarding.privacyAIDetail" = "You decide whether to use it";
 
 "stats.sankey.subtitle" = "Flow distribution";
 
@@ -1794,7 +1795,6 @@
 "inbox.transactionsCreated" = "transactions created";
 "inbox.viewInRecords" = "View in records";
 "insights.activate" = "Activate";
-"insights.activateAIDisclaimer" = "Only summarized data is sent to OpenAI (totals, percentages, trends). Your individual transactions and personal data are never shared.";
 "insights.activateAITitle" = "Smart Overview available";
 "insights.activeSubscriptions" = "Active subscriptions";
 "insights.aiSectionTitle" = "Artificial Intelligence";
@@ -2135,7 +2135,6 @@
 "onboarding.periodTitle" = "Default period";
 "onboarding.privacyIcloud" = "You access your data with your account";
 "onboarding.privacyLocal" = "Your financial data is stored in your account";
-"onboarding.privacyNoSharing" = "AI features don't share or store sensitive data";
 "onboarding.privacyNoTracking" = "No tracking or ads";
 "onboarding.privacySubtitle" = "You're ready to start using Yala";
 "onboarding.privacyTitle" = "All Set";

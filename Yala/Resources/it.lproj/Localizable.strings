@@ -1090,7 +1090,6 @@
 "insights.analyzingData" = "Analizzando i tuoi dati...";
 "insights.activateAITitle" = "Panoramica intelligente disponibile";
 "insights.activateAIBody" = "Attivalo e personalizzalo in Profilo > Funzionalità IA.";
-"insights.activateAIDisclaimer" = "Solo dati riassuntivi vengono inviati a OpenAI (totali, percentuali, tendenze). Le tue spese individuali e i dati personali non vengono mai condivisi.";
 "insights.activate" = "Attivare";
 "insights.goToSettings" = "Vai alle impostazioni";
 "insights.notInterested" = "Non mi interessa";
@@ -1833,7 +1832,6 @@
 "onboarding.privacyLocal" = "I tuoi dati finanziari sono salvati nel tuo account";
 "onboarding.privacyNoTracking" = "Nessun tracciamento né pubblicità";
 "onboarding.privacyIcloud" = "Accedi ai tuoi dati con il tuo account";
-"onboarding.privacyNoSharing" = "Le funzioni IA non condividono né archiviano dati sensibili";
 "onboarding.categoriesDefault" = "Categorie predefinite";
 "onboarding.categoriesCustom" = "Categorie personalizzate";
 "onboarding.privacyTutorialsHint" = "Scopri i tutorial e i consigli di Yala";
@@ -1858,7 +1856,8 @@
 "onboarding.privacyLocalShort" = "Dati nel tuo account";
 "onboarding.privacyNoTrackingShort" = "Niente tracciamento né annunci";
 "onboarding.privacyIcloudShort" = "Accesso con il tuo account";
-"onboarding.privacyNoSharingShort" = "IA sicura";
+"onboarding.privacyAIShort" = "IA tramite il nostro server";
+"onboarding.privacyAIDetail" = "Decidi tu se usarla";
 "onboarding.accountBalanceGuideTitle" = "Come calcolo il mio saldo?";
 "onboarding.accountBalanceGuideIntro" = "Il tuo saldo iniziale dice a Yala con quanti soldi parti. Non deve essere esatto al centesimo — una stima va benissimo. Ecco come ragionarci in base al tipo di conto che hai scelto.";
 "onboarding.accountBalanceGuideGeneral" = "Se usi un conto generale per raggruppare tutti i tuoi metodi di pagamento in una valuta, il tuo saldo riflette quanti soldi hai disponibili.\n\nPer calcolarlo, somma tutto: conti correnti, risparmi, contanti. Se hai spese in sospeso su carte di credito, puoi sottrarle per un'immagine più precisa — o gestire ogni carta come conto separato in seguito.\n\nQuel numero finale è il tuo saldo iniziale.";

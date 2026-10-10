@@ -1092,7 +1092,6 @@
 "insights.analyzingData" = "データを分析中...";
 "insights.activateAITitle" = "スマート概要を利用できます";
 "insights.activateAIBody" = "プロフィール > AI機能で有効化・カスタマイズできます。";
-"insights.activateAIDisclaimer" = "OpenAIには集計データのみが送信されます(合計、割合、推移)。個別の取引や個人情報は共有されません。";
 "insights.activate" = "有効化";
 "insights.goToSettings" = "設定に移動";
 "insights.notInterested" = "興味なし";
@@ -1832,7 +1831,6 @@
 "onboarding.privacyLocal" = "家計データはあなたのアカウントに保存されます";
 "onboarding.privacyNoTracking" = "トラッキングや広告はありません";
 "onboarding.privacyIcloud" = "データにはあなたのアカウントでアクセスします";
-"onboarding.privacyNoSharing" = "AI機能は機微データを共有・保存しません";
 "onboarding.categoriesDefault" = "既定のカテゴリー";
 "onboarding.categoriesCustom" = "カスタムカテゴリー";
 "onboarding.privacyTutorialsHint" = "Yalaのチュートリアルとヒントを見る";
@@ -1861,7 +1859,8 @@
 "onboarding.privacyLocalShort" = "データはあなたのアカウントに";
 "onboarding.privacyNoTrackingShort" = "追跡や広告なし";
 "onboarding.privacyIcloudShort" = "アカウントでアクセス";
-"onboarding.privacyNoSharingShort" = "安全な AI";
+"onboarding.privacyAIShort" = "AIは当社のサーバーを経由";
+"onboarding.privacyAIDetail" = "使うかどうかはあなたが決めます";
 "onboarding.accountBalanceGuideTitle" = "残高はどう計算する？";
 "onboarding.accountBalanceGuideIntro" = "初期残高は、Yalaに「いくらから始めるか」を伝えるものです。1円単位の正確さは不要、おおよその額で十分です。選んだ口座の種類ごとの考え方を以下に示します。";
 "onboarding.accountBalanceGuideGeneral" = "1つの通貨で支払い手段をまとめた一般口座を使う場合、残高は使えるお金の合計を表します。\n\n計算するには普通預金、貯蓄、現金などすべてを合算します。クレジットカードの未払い分があれば、より正確に把握するために差し引いてもよいですし、あとで各カードを別の口座として管理することもできます。\n\nその最終値が初期残高です。";

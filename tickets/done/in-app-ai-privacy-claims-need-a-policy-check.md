@@ -1,9 +1,10 @@
 ---
 id: in-app-ai-privacy-claims-need-a-policy-check
-status: backlog
+status: done
 priority: high
 area: "l10n, privacy, ai"
 created: 2026-10-10
+updated: 2026-10-10
 source: "Encargo 2026-10-10-app-privacy-copy-data-never-leaves-device (hallazgo), medido sobre origin/2.1 349f3145c"
 ---
 
@@ -35,3 +36,17 @@ escaneo manda la imagen del recibo, que es un gasto individual: la tercera frase
 ## Hecho cuando
 
 Ninguna frase visible de la app promete sobre la IA algo que la política no diga, en los 16 idiomas.
+
+## Resuelto (2026-10-10)
+
+Jürgen eligió la opción B (10-oct, 16:25): no esperar a la política y decir ya algo cierto.
+
+- La tarjeta del último paso del onboarding dice «IA a través de nuestro servidor» y debajo «Tú decides
+  si usarla», en los 16 idiomas. Las claves nuevas son `onboarding.privacyAIShort` y
+  `onboarding.privacyAIDetail`; `onboarding.privacyNoSharingShort` desaparece.
+- Las dos claves sin uso (`onboarding.privacyNoSharing`, `insights.activateAIDisclaimer`) se borran, con
+  sus accesores de `L10n.swift`. Un grep confirmó que nadie las leía.
+- `PrivacyCopyForbiddenPhrasesTests` caza ahora las tres promesas en todos los idiomas. «IA segura» y sus
+  traducciones cuentan solo como frase entera, para no cazar «copia segura».
+
+Medido en simulador iPhone SE (3.ª gen, iOS 27.0) en es-419, en y pl: la tarjeta entra sin truncar.

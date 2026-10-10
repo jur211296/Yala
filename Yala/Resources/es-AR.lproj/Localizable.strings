@@ -433,7 +433,8 @@
 "onboarding.privacyLocalShort" = "Datos en tu cuenta";
 "onboarding.privacyNoTrackingShort" = "Sin rastreo ni anuncios";
 "onboarding.privacyIcloudShort" = "Acceso con tu cuenta";
-"onboarding.privacyNoSharingShort" = "IA segura";
+"onboarding.privacyAIShort" = "IA a través de nuestro servidor";
+"onboarding.privacyAIDetail" = "Vos decidís si usarla";
 
 // Panel — Live Anchor Education (voseo overrides)
 "panel.liveAnchorEducation.heroFormat" = "Hoy tenés %@";
@@ -1861,7 +1862,6 @@
 "inbox.viewInRecords" = "Ver en registros";
 "insights.activate" = "Activar";
 "insights.activateAIBody" = "Actívalo y personalízalo en Perfil > Funcionalidades con IA.";
-"insights.activateAIDisclaimer" = "Solo se envían datos resumidos a OpenAI (totales, porcentajes, tendencias). Nunca se comparten tus gastos individuales ni datos personales.";
 "insights.activateAITitle" = "Resumen inteligente disponible";
 "insights.activeSubscriptions" = "Suscripciones activas";
 "insights.aiCaption" = "OpenAI analiza tus datos agregados para generar análisis personalizados. No se envían transacciones individuales.";
@@ -2178,7 +2178,6 @@
 "onboarding.periodSubtitle" = "¿Qué rango de tiempo prefieres ver al abrir la app?";
 "onboarding.periodTitle" = "Período predeterminado";
 "onboarding.privacyLocal" = "Tus datos financieros se guardan en tu cuenta";
-"onboarding.privacyNoSharing" = "Las funciones de IA no comparten ni almacenan datos sensibles";
 "onboarding.privacyNoTracking" = "Sin rastreo ni anuncios";
 "onboarding.privacyTitle" = "Todo listo";
 "onboarding.privacyTutorialsHint" = "Descubre los tutoriales y consejos de Yala";
